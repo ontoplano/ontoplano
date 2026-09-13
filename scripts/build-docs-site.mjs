@@ -159,6 +159,19 @@ h2 { font-size: 1.3rem; margin: 2.5rem 0 0.75rem; padding-top: 0.5rem;
      border-top: 1px solid var(--line); }
 h3 { font-size: 1.05rem; margin: 1.75rem 0 0.5rem; }
 p, ul, ol { margin: 0.75rem 0; }
+/*
+ * A run of characters with nowhere to break wraps instead of leaving the
+ * column.
+ *
+ * These pages are generated from the code, so they are full of them: a route
+ * with no spaces in it, a release URL, a column name — every one of them wider
+ * than a phone. "anywhere" rather than "break-word" because only the first is
+ * counted when the browser works out how narrow the article is allowed to be,
+ * and neither breaks a word that fits, so prose is untouched. Code blocks are
+ * deliberately not in the list: a wide one scrolls inside itself, and a command
+ * folded onto two lines is a command somebody will copy wrong.
+ */
+h1, h2, h3, p, li, blockquote { overflow-wrap: anywhere; }
 code { font-family: var(--mono); font-size: 0.86em; background: var(--soft);
        border: 1px solid var(--line); padding: 0.05em 0.3em; }
 pre { overflow-x: auto; background: var(--soft); border: 1px solid var(--line);
@@ -252,8 +265,16 @@ footer { margin-top: 4rem; padding-top: 1rem; border-top: 1px solid var(--line);
  */
 @media (max-width: 60rem) {
   /* The 3rem gap is the space between a sidebar and an article. Stacked, it
-     is three of those above the thing somebody came to read. */
-  .wrap { display: flex; flex-direction: column; gap: 0; padding-top: 1.25rem; }
+     is three of those above the thing somebody came to read.
+
+     align-items means something else once the axis turns: side by side it
+     holds the nav and the article to the top, stacked it decides how wide they
+     are, and the flex-start up there sizes each one to its own content. So a
+     page with a wide table on it became as wide as that table — the document
+     scrolled sideways, taking the heading and every paragraph with it, instead
+     of the table scrolling inside its own box. */
+  .wrap { display: flex; flex-direction: column; align-items: stretch; gap: 0;
+          padding-top: 1.25rem; }
   nav { position: static; display: contents; }
   /* The header, tightened: these margins were spacing out a sidebar, and
      stacked they push the article most of a screen down on their own. */

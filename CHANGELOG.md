@@ -18,6 +18,27 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.167.1 — 2026-09-13
+
+- **Lists sit on one surface instead of floating apart.** Recipes, diary
+  entries, ideas and habits were a card each on the page's own background, with
+  a strip of it showing between every two; they are now rows of one bordered
+  surface, the way the todo and activity lists already were. Inventory's
+  filters moved onto the top of the panel they filter.
+- **A notebook's tasks are worked on where they are.** The Tasks tab was a list
+  you could read: you could see that four things about the kitchen were waiting
+  and could not tick one off without going somewhere else. It is now the same
+  list the to-do room shows — tick off, put on a day, edit, put away, delete —
+  and a task written there is filed under that notebook without being asked.
+- **A note can be put away too.** Hidden, not deleted: it stays in its
+  notebook, keeps its number and its tags, and comes back unchanged. The strip
+  says how many are away.
+- **The docs stopped scrolling sideways on a phone.** Every page was as wide as
+  its widest table; the table scrolls in its own box now and the words wrap.
+- **An assistant can ask for one notebook's tasks** rather than reading the
+  whole list to find four of them, and can read a notebook's notes at all,
+  which it could not before.
+
 ## 0.167.0 — 2026-09-13
 
 - **A todo can be put away.** Neither finished nor deleted — a task that

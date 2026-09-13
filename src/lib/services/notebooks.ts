@@ -7,6 +7,7 @@ import { diaryEntries, exceptionalTasks, goals, notebooks, todoTasks } from '$li
 import type { Ctx } from './ctx.js';
 import { tagsForEntries } from './diary.js';
 import { peopleForEntries } from './people.js';
+import { listTodosIn } from './todos.js';
 import { ConflictError, NotFoundError } from './errors.js';
 import { stamp, stamps } from './time.js';
 import { num, optionalStr, str } from './validate.js';
@@ -216,6 +217,7 @@ export function listOrphanedNotes(ctx: Ctx) {
 			title: diaryEntries.title,
 			content: diaryEntries.content,
 			forDate: diaryEntries.forDate,
+			archivedAt: diaryEntries.archivedAt,
 			createdAt: diaryEntries.createdAt
 		})
 		.from(diaryEntries)
@@ -306,6 +308,7 @@ export function contentsOf(ctx: Ctx, id: number) {
 					title: diaryEntries.title,
 					content: diaryEntries.content,
 					forDate: diaryEntries.forDate,
+					archivedAt: diaryEntries.archivedAt,
 					createdAt: diaryEntries.createdAt,
 					ownerId: diaryEntries.userId,
 					authorName: user.name
@@ -322,17 +325,10 @@ export function contentsOf(ctx: Ctx, id: number) {
 				}))
 		),
 
-		todos: db
-			.select({
-				id: todoTasks.id,
-				title: todoTasks.title,
-				status: todoTasks.status,
-				scheduledDate: todoTasks.scheduledDate
-			})
-			.from(todoTasks)
-			.where(and(eq(todoTasks.notebookId, id), eq(todoTasks.userId, ctx.userId)))
-			.orderBy(todoTasks.status, todoTasks.sortOrder)
-			.all(),
+		// The whole todo, not a label and a status: the notebook's Tasks tab
+		// operates on these the way the to-do room does, which needs everything
+		// a row there shows — the category, the ratings, whether it is put away.
+		todos: listTodosIn(ctx, id),
 
 		blocks: db
 			.select({

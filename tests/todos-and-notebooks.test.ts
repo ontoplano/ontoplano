@@ -391,3 +391,59 @@ describe('archiving a todo', () => {
 		expect(todos.listTodos(ctx).find((t) => t.id === id)!.archivedAt).toBeNull();
 	});
 });
+
+/**
+ * The same idea for a note: hidden, and still there.
+ *
+ * A notebook kept for a year holds notes that have stopped being current and
+ * are still not things to delete — the trip is over, the argument is settled.
+ */
+describe('archiving a note', () => {
+	test('hides it from the notebook and brings it back unchanged', () => {
+		const book = notebooks.createNotebook(ctx, { title: 'Lisbon' });
+		const id = diary.createEntry(ctx, {
+			content: 'where to eat',
+			title: 'Restaurants',
+			tags: 'food',
+			notebookId: book
+		});
+
+		diary.archiveEntry(ctx, id);
+		const away = notebooks.contentsOf(ctx, book).entries.find((e) => e.id === id)!;
+		expect(away.archivedAt).not.toBeNull();
+		// Still in its notebook, with everything it carried.
+		expect(away.title).toBe('Restaurants');
+		expect(away.tags.map((t) => t.name)).toEqual(['food']);
+
+		diary.archiveEntry(ctx, id, false);
+		expect(notebooks.contentsOf(ctx, book).entries.find((e) => e.id === id)!.archivedAt).toBeNull();
+	});
+
+	test("is nobody else's to put away", () => {
+		const book = notebooks.createNotebook(ctx, { title: 'Only mine' });
+		const id = diary.createEntry(ctx, { content: 'private', notebookId: book });
+		expect(() => diary.archiveEntry(theirs, id)).toThrow();
+		expect(notebooks.contentsOf(ctx, book).entries[0].archivedAt).toBeNull();
+	});
+});
+
+/**
+ * A notebook's Tasks tab is the to-do room looking at one subject, so it needs
+ * the whole todo rather than a title and a status.
+ */
+describe("a notebook's tasks", () => {
+	test('come back as full todos, and only that notebook’s', () => {
+		const book = notebooks.createNotebook(ctx, { title: 'Kitchen tasks' });
+		const mine = todos.createTodo(ctx, {
+			title: 'measure the wall',
+			notes: 'the long one',
+			notebookId: book
+		});
+		todos.createTodo(ctx, { title: 'unrelated' });
+
+		const found = notebooks.contentsOf(ctx, book).todos;
+		expect(found.map((t) => t.id)).toEqual([mine]);
+		expect(found[0]).toMatchObject({ notes: 'the long one', archivedAt: null });
+		expect(found[0].ratings).toEqual({ urgency: null, interest: null, energy: null });
+	});
+});

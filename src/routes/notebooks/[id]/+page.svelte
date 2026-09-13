@@ -124,7 +124,13 @@
 		class="card-accent flex flex-col border border-gray-200 bg-white shadow-card"
 		style="--card-accent: {SECTION_COLORS.diary}"
 	>
-		<NotebookDetail notebook={data.notebook} contents={data.contents} allPeople={data.allPeople} />
+		<NotebookDetail
+			notebook={data.notebook}
+			contents={data.contents}
+			allPeople={data.allPeople}
+			categories={data.categories}
+			pickableNotebooks={data.pickableNotebooks}
+		/>
 	</section>
 </div>
 

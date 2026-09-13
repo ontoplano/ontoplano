@@ -1,10 +1,12 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
+import { listCategories } from '$lib/services/activities';
 import {
 	contentsOf,
 	listNotebooks,
 	listOrphanedNotes,
-	notebookTree
+	notebookTree,
+	pickableNotebooks
 } from '$lib/services/notebooks';
 import { listPeople } from '$lib/services/people';
 import { notebookActions } from './actions';
@@ -40,6 +42,10 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 		orphaned,
 		orphanedSelected: wantsOrphaned || (selected === null && orphaned.length > 0),
 		contents: selected ? contentsOf(ctx, selected) : null,
+		// The Tasks tab is the to-do room looking at one subject, and its editor
+		// offers the same two pickers.
+		categories: listCategories(ctx),
+		pickableNotebooks: pickableNotebooks(ctx),
 		// For the People field on a note, which completes rather than duplicates.
 		allPeople: listPeople(ctx)
 	};

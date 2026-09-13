@@ -129,6 +129,25 @@ export function listTodos(ctx: Ctx): Todo[] {
 }
 
 /**
+ * Everything filed under one notebook.
+ *
+ * The same rows `listTodos` returns, narrowed — the notebook's Tasks tab is
+ * the to-do room looking at one subject, so it needs the whole todo rather
+ * than a title and a status.
+ */
+export function listTodosIn(ctx: Ctx, notebookId: number): Todo[] {
+	return db
+		.select(SELECTION)
+		.from(todoTasks)
+		.leftJoin(categories, eq(todoTasks.categoryId, categories.id))
+		.leftJoin(notebooks, eq(todoTasks.notebookId, notebooks.id))
+		.where(and(eq(todoTasks.notebookId, notebookId), eq(todoTasks.userId, ctx.userId)))
+		.orderBy(asc(todoTasks.sortOrder), asc(todoTasks.createdAt))
+		.all()
+		.map(shape);
+}
+
+/**
  * The general list: todos not pulled onto a particular day.
  *
  * `openOnly` drops the ones already finished or skipped. The board wants them

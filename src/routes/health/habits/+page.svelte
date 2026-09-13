@@ -492,7 +492,18 @@
 			{/if}
 		</div>
 	{:else}
-		<div class="space-y-3" data-tour="habit-list">
+		<!--
+			One surface, and a habit is a row on it.
+
+			The coloured edge down the left is what tells one habit from another —
+			it does not need a card each and a strip of page between them to do
+			that, and a screen of separate boxes read as a scatter rather than as
+			the list it is.
+		-->
+		<div
+			class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card"
+			data-tour="habit-list"
+		>
 			{#each filteredHabits() as habit, i (habit.id)}
 				{@const occ = occurrencesForHabit(habit.id)}
 				{@const todayLogged = occ.some((o) => o.date === data.today)}
@@ -500,9 +511,7 @@
 				{@const isNeutral = habit.type === 'neutral'}
 				<div
 					use:keepInView={i === selectedHabitIndex}
-					class="border border-gray-200 bg-white shadow-card {i === selectedHabitIndex
-						? 'ring-2 ring-gray-900 ring-inset'
-						: ''}"
+					class={i === selectedHabitIndex ? 'ring-2 ring-gray-900 ring-inset' : ''}
 					style="border-left-width: 4px; border-left-color: {isBad
 						? HABIT_BAD_ACCENT
 						: isNeutral

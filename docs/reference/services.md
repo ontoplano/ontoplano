@@ -1121,6 +1121,16 @@ the count is whatever was sent rather than a fixed three.
 
 #### `updateEntry(ctx, id, raw)`
 
+#### `archiveEntry(ctx, id, away)`
+
+Put a note away, or take it back out.
+
+Hidden, not gone. A notebook kept for a year accumulates notes that have
+stopped being interesting and are still not things to delete — the trip is
+over, the flat is rented, the argument is settled — and a list of forty
+notes where six are current is a list nobody reads. The note keeps its
+number, its tags and its people, and comes back exactly as it was.
+
 #### `deleteEntry(ctx, id)`
 
 #### `latestEntry(ctx)`
@@ -4574,6 +4584,14 @@ would have had to remember what it used to be.
 #### `listTodos(ctx)`
 
 Everything, ordered the way the board wants it.
+
+#### `listTodosIn(ctx, notebookId)`
+
+Everything filed under one notebook.
+
+The same rows `listTodos` returns, narrowed — the notebook's Tasks tab is
+the to-do room looking at one subject, so it needs the whole todo rather
+than a title and a status.
 
 #### `listUnscheduled(ctx, options)`
 

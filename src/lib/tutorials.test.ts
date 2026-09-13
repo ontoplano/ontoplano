@@ -67,10 +67,12 @@ describe('the guided tours', () => {
 			 * A single-line field is a `OneLine` rather than an `<input>` — see
 			 * `tests/autofill-field-names.test.ts` for why — and it takes its
 			 * anchor as a prop, so the attribute is not in this file's markup
-			 * even though it is in the rendered page.
+			 * even though it is in the rendered page. Any prop ending in `Tour`
+			 * counts: a component drawing two anchored things needs a name per
+			 * anchor, as `TodoRows` does for its list and its new button.
 			 */
 			const written =
-				markup.includes(`data-tour="${anchor}"`) || markup.includes(`dataTour="${anchor}"`);
+				markup.includes(`data-tour="${anchor}"`) || new RegExp(`Tour="${anchor}"`).test(markup);
 			if (anchor && !written) dangling.push(anchor);
 		}
 

@@ -325,6 +325,8 @@
 					{orphaned}
 					{showingOrphans}
 					allPeople={data.allPeople}
+					categories={data.categories}
+					pickableNotebooks={data.pickableNotebooks}
 				/>
 			</Card>
 		</div>

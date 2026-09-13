@@ -182,6 +182,26 @@ export function updateEntry(
 	cleanupOrphanTags(ctx.userId);
 }
 
+/**
+ * Put a note away, or take it back out.
+ *
+ * Hidden, not gone. A notebook kept for a year accumulates notes that have
+ * stopped being interesting and are still not things to delete — the trip is
+ * over, the flat is rented, the argument is settled — and a list of forty
+ * notes where six are current is a list nobody reads. The note keeps its
+ * number, its tags and its people, and comes back exactly as it was.
+ */
+export function archiveEntry(ctx: Ctx, id: number, away = true): void {
+	const now = stamp(ctx);
+	const res = db
+		.update(diaryEntries)
+		.set({ archivedAt: away ? now : null, updatedAt: now })
+		.where(and(eq(diaryEntries.id, id), eq(diaryEntries.userId, ctx.userId)))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('entry');
+}
+
 export function deleteEntry(ctx: Ctx, id: number): void {
 	const res = db
 		.delete(diaryEntries)

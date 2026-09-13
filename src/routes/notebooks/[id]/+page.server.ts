@@ -3,7 +3,8 @@ import { error } from '@sveltejs/kit';
 import { buildCtx } from '$lib/services/ctx';
 import { host } from '$lib/services/host';
 import { NotFoundError } from '$lib/services/errors';
-import { contentsOf, getNotebook } from '$lib/services/notebooks';
+import { contentsOf, getNotebook, pickableNotebooks } from '$lib/services/notebooks';
+import { listCategories } from '$lib/services/activities';
 import { listPeople } from '$lib/services/people';
 import { notebookActions } from '../actions';
 
@@ -23,6 +24,10 @@ export const load = async ({ locals, params }: IsolatedEvent) => {
 		return {
 			notebook: getNotebook(ctx, id),
 			contents: contentsOf(ctx, id),
+			// The Tasks tab is the to-do room looking at one subject, and its
+			// editor offers the same two pickers.
+			categories: listCategories(ctx),
+			pickableNotebooks: pickableNotebooks(ctx),
 			allPeople: listPeople(ctx),
 			onFamilyPlan: host.familyUserIds(ctx.userId).length > 1
 		};

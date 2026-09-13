@@ -398,9 +398,17 @@
 			{/if}
 		</div>
 	{:else}
+		<!--
+			One surface, and an entry is a row on it.
+
+			Each entry used to be a card of its own, so a month of writing was a
+			column of boxes with a strip of page between every two of them. The
+			diary is one thing you scroll, which is what every other list in the
+			app already looks like: one bordered surface, a hairline between rows.
+		-->
 		<!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
 		<div
-			class="space-y-3"
+			class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card"
 			data-tour="diary-list"
 			onpointerover={handleEntriesPointerOver}
 			onpointerout={handleEntriesPointerOut}
@@ -410,10 +418,7 @@
 				<div
 					use:keepInView={i === selectedIndex}
 					id="diary-{entry.seq}"
-					class="lift relative border border-gray-200 bg-white p-4 shadow-card transition-all {i ===
-					selectedIndex
-						? 'kb-cursor'
-						: ''}"
+					class="relative p-4 {i === selectedIndex ? 'kb-cursor -outline-offset-2' : ''}"
 				>
 					<div class="md mb-2 text-sm text-gray-900">
 						<!-- `renderMarkdown` escapes every character of the input before it emits a

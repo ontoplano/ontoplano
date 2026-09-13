@@ -908,8 +908,8 @@
 		wrapped into three ragged rows on a phone — a segment, two toggles, a
 		search box and a button, each breaking wherever it happened to run out
 		of width. The bar carries the one thing you came to do; which list you
-		are in and what it hides are the page's own row, which can wrap in
-		peace.
+		are in and what it hides are a row along the top of the panel they
+		filter, which can wrap in peace.
 	-->
 	<RoomBar title="Inventory">
 		{#snippet actions()}
@@ -923,81 +923,6 @@
 			</button>
 		{/snippet}
 	</RoomBar>
-
-	<!--
-		Three kinds of thing, so they look like three: which list you are in
-		(one setting, one track), what it hides (two quiet toggles), and a way
-		to search it. The one thing you came to do is in the bar above.
-	-->
-	<div class="space-y-2">
-		<div class="seg w-full" role="group" aria-label="Which list">
-			<button
-				onclick={() => (filterType = 'all')}
-				aria-pressed={filterType === 'all'}
-				title="Everything, both lists">All</button
-			>
-			<button
-				onclick={() => (filterType = filterType === 'replenish' ? 'all' : 'replenish')}
-				aria-pressed={filterType === 'replenish'}
-				title="Restock ({keyFor('/inventory', 'filter-replenish')})">Restock</button
-			>
-			<button
-				onclick={() => (filterType = filterType === 'someday' ? 'all' : 'someday')}
-				aria-pressed={filterType === 'someday'}
-				title="Wishlist ({keyFor('/inventory', 'filter-someday')})">Wishlist</button
-			>
-			<button
-				onclick={() => (filterType = filterType === 'short' ? 'all' : 'short')}
-				aria-pressed={filterType === 'short'}
-				class="seg-alarm"
-				title="Only what you have fewer of than you keep">Short</button
-			>
-		</div>
-
-		<div class="flex flex-wrap items-center gap-2">
-			<button
-				onclick={() => (showBought = !showBought)}
-				aria-pressed={showBought}
-				class="btn btn-sm btn-quiet"
-				title="Show what you already have ({keyFor('/inventory', 'toggle-show-bought')})"
-			>
-				{showBought ? 'Hide' : 'Show'} bought
-			</button>
-			<button
-				onclick={() => (showSnoozed = !showSnoozed)}
-				aria-pressed={showSnoozed}
-				class="btn btn-sm btn-quiet"
-				title="Show what you put away ({keyFor('/inventory', 'toggle-show-snoozed')})"
-			>
-				{showSnoozed ? 'Hide' : 'Show'} archived
-			</button>
-			<label class="sr-only" for="inventory-find">Find</label>
-			<OneLine
-				id="inventory-find"
-				name="find"
-				bind:value={find}
-				placeholder="Find…"
-				class="input min-w-32 flex-1 py-1 text-sm"
-			/>
-			<button onclick={() => (showCategories = true)} class="btn btn-sm btn-quiet"
-				>Categories</button
-			>
-		</div>
-	</div>
-
-	<!--
-		What the filters are keeping off the screen, in the layout whether or not
-		there is anything to say. Rendered invisible rather than removed: a line
-		that appears and disappears as filters are switched would move every card
-		under it each time.
-	-->
-	<p
-		class="-mt-2 text-xs text-gray-500 {notShowing > 0 ? '' : 'invisible'}"
-		aria-hidden={notShowing > 0 ? undefined : 'true'}
-	>
-		Not showing {notShowing}
-		{notShowing === 1 ? 'item' : 'items'}
-	</p>
 
 	{#if !online || ticks.pending.length > 0}
 		<Banner kind="warning">
@@ -1105,75 +1030,160 @@
 		also the handle: the house is as wide as its names need, and the space
 		comes off the list, which is the only place it can come from.
 	-->
-	<div
-		class="grid overflow-hidden border border-gray-200 bg-white shadow-card lg:grid-cols-[var(--house)_auto_1fr]"
-		style="--house: {panelRem}rem"
-	>
-		<section class="self-start">
-			<header
-				class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 px-4 py-2"
-			>
-				<h2 class="eyebrow text-gray-600">Where things live</h2>
-				<button
-					onclick={() => (addingLocation = true)}
-					class="icon-btn"
-					title="New location"
-					aria-label="New location"><Icon name="plus" /></button
-				>
-			</header>
+	<!--
+		And the filters are part of that surface rather than a row above it.
 
-			<!-- Capped on a phone, where the panel sits above the list rather than
+		Which list you are in and what it hides describe exactly what the panel
+		underneath is showing, so they sit on it: a toolbar along the top of the
+		same white, above the line that separates it from the rows it filters.
+		Loose on the page they were three controls of three shapes floating over
+		the thing they act on.
+	-->
+	<div class="border border-gray-200 bg-white shadow-card">
+		<!--
+			Three kinds of thing, so they look like three: which list you are in
+			(one setting, one track), what it hides (two quiet toggles), and a way
+			to search it. The one thing you came to do is in the bar above.
+		-->
+		<div class="space-y-2 border-b border-gray-200 p-4">
+			<div class="seg w-full" role="group" aria-label="Which list">
+				<button
+					onclick={() => (filterType = 'all')}
+					aria-pressed={filterType === 'all'}
+					title="Everything, both lists">All</button
+				>
+				<button
+					onclick={() => (filterType = filterType === 'replenish' ? 'all' : 'replenish')}
+					aria-pressed={filterType === 'replenish'}
+					title="Restock ({keyFor('/inventory', 'filter-replenish')})">Restock</button
+				>
+				<button
+					onclick={() => (filterType = filterType === 'someday' ? 'all' : 'someday')}
+					aria-pressed={filterType === 'someday'}
+					title="Wishlist ({keyFor('/inventory', 'filter-someday')})">Wishlist</button
+				>
+				<button
+					onclick={() => (filterType = filterType === 'short' ? 'all' : 'short')}
+					aria-pressed={filterType === 'short'}
+					class="seg-alarm"
+					title="Only what you have fewer of than you keep">Short</button
+				>
+			</div>
+
+			<div class="flex flex-wrap items-center gap-2">
+				<button
+					onclick={() => (showBought = !showBought)}
+					aria-pressed={showBought}
+					class="btn btn-sm btn-quiet"
+					title="Show what you already have ({keyFor('/inventory', 'toggle-show-bought')})"
+				>
+					{showBought ? 'Hide' : 'Show'} bought
+				</button>
+				<button
+					onclick={() => (showSnoozed = !showSnoozed)}
+					aria-pressed={showSnoozed}
+					class="btn btn-sm btn-quiet"
+					title="Show what you put away ({keyFor('/inventory', 'toggle-show-snoozed')})"
+				>
+					{showSnoozed ? 'Hide' : 'Show'} archived
+				</button>
+				<label class="sr-only" for="inventory-find">Find</label>
+				<OneLine
+					id="inventory-find"
+					name="find"
+					bind:value={find}
+					placeholder="Find…"
+					class="input min-w-32 flex-1 py-1 text-sm"
+				/>
+				<button onclick={() => (showCategories = true)} class="btn btn-sm btn-quiet"
+					>Categories</button
+				>
+			</div>
+
+			<!--
+				What the filters are keeping off the screen, in the layout whether or
+				not there is anything to say. Rendered invisible rather than removed: a
+				line that appears and disappears as filters are switched would move
+				every card under it each time.
+			-->
+			<p
+				class="text-xs text-gray-500 {notShowing > 0 ? '' : 'invisible'}"
+				aria-hidden={notShowing > 0 ? undefined : 'true'}
+			>
+				Not showing {notShowing}
+				{notShowing === 1 ? 'item' : 'items'}
+			</p>
+		</div>
+
+		<div
+			class="grid overflow-hidden lg:grid-cols-[var(--house)_auto_1fr]"
+			style="--house: {panelRem}rem"
+		>
+			<section class="self-start">
+				<header
+					class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 px-4 py-2"
+				>
+					<h2 class="eyebrow text-gray-600">Where things live</h2>
+					<button
+						onclick={() => (addingLocation = true)}
+						class="icon-btn"
+						title="New location"
+						aria-label="New location"><Icon name="plus" /></button
+					>
+				</header>
+
+				<!-- Capped on a phone, where the panel sits above the list rather than
 			     beside it: a house with twenty drawers would otherwise push the
 			     things themselves off the bottom of the screen. -->
-			<ul
-				class="max-h-64 divide-y divide-gray-200 overflow-y-auto lg:max-h-none lg:overflow-visible"
-			>
-				{@render locationRow(null, 'Everything', allowedItems.length, 0)}
-				{#each data.locationTree as root (root.id)}
-					{@render branch(root, 0)}
-				{/each}
-				{#if unfiledCount > 0}
-					{@render locationRow(0, 'Not filed anywhere', unfiledCount, 0)}
-				{/if}
-			</ul>
+				<ul
+					class="max-h-64 divide-y divide-gray-200 overflow-y-auto lg:max-h-none lg:overflow-visible"
+				>
+					{@render locationRow(null, 'Everything', allowedItems.length, 0)}
+					{#each data.locationTree as root (root.id)}
+						{@render branch(root, 0)}
+					{/each}
+					{#if unfiledCount > 0}
+						{@render locationRow(0, 'Not filed anywhere', unfiledCount, 0)}
+					{/if}
+				</ul>
 
-			<p class="border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
-				Drag a thing onto a location to say where it lives.
-			</p>
-		</section>
+				<p class="border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
+					Drag a thing onto a location to say where it lives.
+				</p>
+			</section>
 
-		<!--
+			<!--
 			Desktop only, and not a scrollbar's worth of hit area: on a phone the
 			panel sits above the list, where there is no width to take, and a
 			finger landing on a two-pixel target belongs to the page's scroll.
 		-->
-		<div
-			role="separator"
-			aria-orientation="vertical"
-			aria-label="Widen or narrow the locations panel"
-			class="mouse-only hidden w-2 cursor-col-resize touch-none border-x border-gray-200 transition-colors lg:block {draggingPanel
-				? 'bg-gray-300'
-				: 'bg-gray-100 hover:bg-gray-200'}"
-			onpointerdown={widenPanel}
-		></div>
+			<div
+				role="separator"
+				aria-orientation="vertical"
+				aria-label="Widen or narrow the locations panel"
+				class="mouse-only hidden w-2 cursor-col-resize touch-none border-x border-gray-200 transition-colors lg:block {draggingPanel
+					? 'bg-gray-300'
+					: 'bg-gray-100 hover:bg-gray-200'}"
+				onpointerdown={widenPanel}
+			></div>
 
-		<form
-			method="POST"
-			action="?/setLocationPanelWidth"
-			class="hidden"
-			bind:this={panelForm}
-			use:enhance={() => async () => {}}
-		>
-			<input type="hidden" name="rem" value={panelRem} />
-		</form>
+			<form
+				method="POST"
+				action="?/setLocationPanelWidth"
+				class="hidden"
+				bind:this={panelForm}
+				use:enhance={() => async () => {}}
+			>
+				<input type="hidden" name="rem" value={panelRem} />
+			</form>
 
-		<div class="min-w-0 space-y-4 p-4">
-			{#if replenishItems.length > 0}
-				<div data-tour="shopping-list">
-					<!-- "Inventory" was this heading's name before the room took it. These
+			<div class="min-w-0 space-y-4 p-4">
+				{#if replenishItems.length > 0}
+					<div data-tour="shopping-list">
+						<!-- "Inventory" was this heading's name before the room took it. These
 			     are the things you restock; the room is both halves. -->
-					<h2 class="mb-2 text-sm font-bold text-gray-500">To restock</h2>
-					<!--
+						<h2 class="mb-2 text-sm font-bold text-gray-500">To restock</h2>
+						<!--
 				One category per card, flowing into columns.
 
 				As one tall list this was a metre of scrolling with a name at the left
@@ -1181,56 +1191,56 @@
 				than a grid because the categories are of wildly different lengths and
 				a grid would leave a row as tall as its longest cell.
 			-->
-					{#each replenishByPlace as place (place.id)}
-						{#if showPlaces}
-							<!-- The address, root down, the same string the panel shows. -->
-							<h3 class="mt-4 mb-2 flex items-center gap-2 text-sm text-gray-700 first:mt-0">
-								<Icon name="shopping" class="size-4 shrink-0 text-gray-400" />
-								<span class="font-medium">{place.label}</span>
-							</h3>
-						{/if}
-						<!-- A grid rather than newspaper columns: each place is its own
+						{#each replenishByPlace as place (place.id)}
+							{#if showPlaces}
+								<!-- The address, root down, the same string the panel shows. -->
+								<h3 class="mt-4 mb-2 flex items-center gap-2 text-sm text-gray-700 first:mt-0">
+									<Icon name="shopping" class="size-4 shrink-0 text-gray-400" />
+									<span class="font-medium">{place.label}</span>
+								</h3>
+							{/if}
+							<!-- A grid rather than newspaper columns: each place is its own
 						     block now, so a place with one category was a quarter-width
 						     strip beside three quarters of nothing. -->
-						<div class="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-							{#each place.categories as category (category.name)}
-								<section
-									class="mb-4 break-inside-avoid border border-gray-200 bg-white shadow-card"
-								>
-									<h4 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-500">
-										{category.name}
-									</h4>
-									<div class="divide-y divide-gray-200">
-										{#each category.items as item (item.id)}
-											{@const globalIdx = filteredItems.indexOf(item)}
-											<!--
+							<div class="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+								{#each place.categories as category (category.name)}
+									<section
+										class="mb-4 break-inside-avoid border border-gray-200 bg-white shadow-card"
+									>
+										<h4 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-500">
+											{category.name}
+										</h4>
+										<div class="divide-y divide-gray-200">
+											{#each category.items as item (item.id)}
+												{@const globalIdx = filteredItems.indexOf(item)}
+												<!--
 									Still to buy is the normal state of a shopping list, and a wash of
 									alarm colour behind every row spends the one signal that should
 									mean something is wrong. The unticked box already says it. Only
 									what you have — blue — and what you put away — dimmed — are marked.
 								-->
-											<div
-												use:keepInView={globalIdx === selectedIndex}
-												draggable="true"
-												ondragstart={(e) => {
-													dragging = item.id;
-													// Firefox refuses to start a drag with no payload set.
-													e.dataTransfer?.setData('text/plain', String(item.id));
-												}}
-												ondragend={() => {
-													dragging = null;
-													dragOver = null;
-													stopFollowing();
-												}}
-												class="flex cursor-grab items-center gap-x-3 px-4 py-2 {item.snoozed
-													? 'bg-gray-50 opacity-50'
-													: item.bought
-														? 'bg-blue-50'
-														: ''} {globalIdx === selectedIndex
-													? 'ring-2 ring-gray-400 ring-inset'
-													: ''}"
-											>
-												<!--
+												<div
+													use:keepInView={globalIdx === selectedIndex}
+													draggable="true"
+													ondragstart={(e) => {
+														dragging = item.id;
+														// Firefox refuses to start a drag with no payload set.
+														e.dataTransfer?.setData('text/plain', String(item.id));
+													}}
+													ondragend={() => {
+														dragging = null;
+														dragOver = null;
+														stopFollowing();
+													}}
+													class="flex cursor-grab items-center gap-x-3 px-4 py-2 {item.snoozed
+														? 'bg-gray-50 opacity-50'
+														: item.bought
+															? 'bg-blue-50'
+															: ''} {globalIdx === selectedIndex
+														? 'ring-2 ring-gray-400 ring-inset'
+														: ''}"
+												>
+													<!--
 										The count down the left edge, where the thumb already is
 										and where the tick used to be. Stacked rather than in a
 										line: three controls across the front of a row is forty
@@ -1238,111 +1248,112 @@
 										have, and a name that has run out of width breaks one
 										letter per line.
 									-->
-												{@render quantity(item)}
+													{@render quantity(item)}
 
-												<div class="min-w-0 flex-1">
-													<span class="text-sm break-words text-gray-900">{item.name}</span>
-													{#if item.notes}
-														<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
-													{/if}
-													{@render expectedPrice(item)}
-													{@render meta(item)}
-												</div>
+													<div class="min-w-0 flex-1">
+														<span class="text-sm break-words text-gray-900">{item.name}</span>
+														{#if item.notes}
+															<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
+														{/if}
+														{@render expectedPrice(item)}
+														{@render meta(item)}
+													</div>
 
-												<!-- Everything else at the right edge, same order, same x, every row. -->
-												<div class="row-actions">
-													<form
-														method="POST"
-														action="?/toggleSnoozed"
-														use:enhance={tick('toggleSnoozed')}
-													>
-														<input type="hidden" name="id" value={item.id} />
-														<button
-															type="submit"
-															class="icon-btn"
-															aria-pressed={item.snoozed}
-															title={item.snoozed ? 'Put it back on the list' : 'Put it away'}
-															aria-label="{item.snoozed ? 'Unarchive' : 'Archive'}: {item.name}"
-														>
-															<Icon name={item.snoozed ? 'undo' : 'archive'} />
-														</button>
-													</form>
-													<button
-														onclick={() => startEdit(item)}
-														class="icon-btn"
-														title="Edit"
-														aria-label="Edit {item.name}"><Icon name="edit" /></button
-													>
-													{#if confirmingDelete === item.id}
+													<!-- Everything else at the right edge, same order, same x, every row. -->
+													<div class="row-actions">
 														<form
 															method="POST"
-															action="?/delete"
-															use:enhance={deferDelete(item.id, item.name)}
+															action="?/toggleSnoozed"
+															use:enhance={tick('toggleSnoozed')}
 														>
 															<input type="hidden" name="id" value={item.id} />
-															<button type="submit" class="btn btn-sm btn-danger" use:armed>
-																Confirm?
+															<button
+																type="submit"
+																class="icon-btn"
+																aria-pressed={item.snoozed}
+																title={item.snoozed ? 'Put it back on the list' : 'Put it away'}
+																aria-label="{item.snoozed ? 'Unarchive' : 'Archive'}: {item.name}"
+															>
+																<Icon name={item.snoozed ? 'undo' : 'archive'} />
 															</button>
 														</form>
 														<button
-															type="button"
-															onclick={() => {
-																confirmingDelete = null;
-															}}
-															class="btn btn-sm"
+															onclick={() => startEdit(item)}
+															class="icon-btn"
+															title="Edit"
+															aria-label="Edit {item.name}"><Icon name="edit" /></button
 														>
-															Cancel
-														</button>
-													{:else}
-														<button
-															type="button"
-															onclick={() => {
-																confirmingDelete = item.id;
-															}}
-															class="icon-btn icon-btn-danger"
-															title="Delete"
-															aria-label="Delete {item.name}"><Icon name="trash" /></button
-														>
-													{/if}
+														{#if confirmingDelete === item.id}
+															<form
+																method="POST"
+																action="?/delete"
+																use:enhance={deferDelete(item.id, item.name)}
+															>
+																<input type="hidden" name="id" value={item.id} />
+																<button type="submit" class="btn btn-sm btn-danger" use:armed>
+																	Confirm?
+																</button>
+															</form>
+															<button
+																type="button"
+																onclick={() => {
+																	confirmingDelete = null;
+																}}
+																class="btn btn-sm"
+															>
+																Cancel
+															</button>
+														{:else}
+															<button
+																type="button"
+																onclick={() => {
+																	confirmingDelete = item.id;
+																}}
+																class="icon-btn icon-btn-danger"
+																title="Delete"
+																aria-label="Delete {item.name}"><Icon name="trash" /></button
+															>
+														{/if}
+													</div>
 												</div>
-											</div>
-										{/each}
-									</div>
-								</section>
-							{/each}
-						</div>
-					{/each}
-				</div>
-			{/if}
+											{/each}
+										</div>
+									</section>
+								{/each}
+							</div>
+						{/each}
+					</div>
+				{/if}
 
-			{#if somedayItems.length > 0}
-				<div data-tour="shopping-list">
-					<h2 class="mb-2 text-sm font-bold text-gray-500">Wishlist</h2>
-					<!-- The same column width as a category, so the two halves of the page
+				{#if somedayItems.length > 0}
+					<div data-tour="shopping-list">
+						<h2 class="mb-2 text-sm font-bold text-gray-500">Wishlist</h2>
+						<!-- The same column width as a category, so the two halves of the page
 			     line up instead of one running the full width of the screen. -->
-					<div
-						class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card lg:w-1/2 xl:w-1/3 2xl:w-1/4"
-					>
-						{#each somedayItems as item (item.id)}
-							{@const globalIdx = filteredItems.indexOf(item)}
-							<div
-								use:keepInView={globalIdx === selectedIndex}
-								draggable="true"
-								ondragstart={(e) => {
-									dragging = item.id;
-									// Firefox refuses to start a drag with no payload set.
-									e.dataTransfer?.setData('text/plain', String(item.id));
-								}}
-								ondragend={() => {
-									dragging = null;
-									dragOver = null;
-									stopFollowing();
-								}}
-								class="flex cursor-grab items-center gap-x-3 px-4 py-2 {globalIdx === selectedIndex
-									? 'bg-gray-50'
-									: ''} {item.snoozed ? 'opacity-50' : ''}"
-							>
-								<!--
+						<div
+							class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card lg:w-1/2 xl:w-1/3 2xl:w-1/4"
+						>
+							{#each somedayItems as item (item.id)}
+								{@const globalIdx = filteredItems.indexOf(item)}
+								<div
+									use:keepInView={globalIdx === selectedIndex}
+									draggable="true"
+									ondragstart={(e) => {
+										dragging = item.id;
+										// Firefox refuses to start a drag with no payload set.
+										e.dataTransfer?.setData('text/plain', String(item.id));
+									}}
+									ondragend={() => {
+										dragging = null;
+										dragOver = null;
+										stopFollowing();
+									}}
+									class="flex cursor-grab items-center gap-x-3 px-4 py-2 {globalIdx ===
+									selectedIndex
+										? 'bg-gray-50'
+										: ''} {item.snoozed ? 'opacity-50' : ''}"
+								>
+									<!--
 									A tick here and a count over there, deliberately.
 
 									A wishlist item is a chair or a pair of headphones — you own
@@ -1350,112 +1361,117 @@
 									anybody is asking. The things you restock are the ones a
 									number is about.
 								-->
-								<form method="POST" action="?/toggleBought" use:enhance={tick('toggleBought')}>
-									<input type="hidden" name="id" value={item.id} />
-									<button
-										type="submit"
-										aria-pressed={item.bought}
-										class="flex size-5 items-center justify-center border transition {item.bought
-											? 'border-blue-600 bg-blue-600 text-white'
-											: 'border-gray-400 bg-white text-transparent hover:border-gray-600'}"
-										title={item.bought ? 'Put it back on the list' : 'Got it'}
-										aria-label="{item.bought ? 'Put back on the list' : 'Got it'}: {item.name}"
-									>
-										<Icon name="check" size={14} />
-									</button>
-								</form>
-
-								<div class="min-w-0 flex-1">
-									<span
-										class="text-sm {item.bought ? 'text-gray-500 line-through' : 'text-gray-900'}"
-									>
-										{item.name}
-									</span>
-									{#if item.notes}
-										<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
-									{/if}
-									{@render expectedPrice(item)}
-									{@render usedIn(item)}
-								</div>
-
-								<div class="row-actions">
-									<form method="POST" action="?/toggleSnoozed" use:enhance={tick('toggleSnoozed')}>
+									<form method="POST" action="?/toggleBought" use:enhance={tick('toggleBought')}>
 										<input type="hidden" name="id" value={item.id} />
 										<button
 											type="submit"
-											class="icon-btn"
-											aria-pressed={item.snoozed}
-											title={item.snoozed ? 'Put it back on the list' : 'Put it away'}
-											aria-label="{item.snoozed ? 'Unarchive' : 'Archive'}: {item.name}"
+											aria-pressed={item.bought}
+											class="flex size-5 items-center justify-center border transition {item.bought
+												? 'border-blue-600 bg-blue-600 text-white'
+												: 'border-gray-400 bg-white text-transparent hover:border-gray-600'}"
+											title={item.bought ? 'Put it back on the list' : 'Got it'}
+											aria-label="{item.bought ? 'Put back on the list' : 'Got it'}: {item.name}"
 										>
-											<Icon name={item.snoozed ? 'undo' : 'archive'} />
+											<Icon name="check" size={14} />
 										</button>
 									</form>
-									<button
-										onclick={() => startEdit(item)}
-										class="icon-btn"
-										title="Edit"
-										aria-label="Edit {item.name}"><Icon name="edit" /></button
-									>
-									{#if confirmingDelete === item.id}
+
+									<div class="min-w-0 flex-1">
+										<span
+											class="text-sm {item.bought ? 'text-gray-500 line-through' : 'text-gray-900'}"
+										>
+											{item.name}
+										</span>
+										{#if item.notes}
+											<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
+										{/if}
+										{@render expectedPrice(item)}
+										{@render usedIn(item)}
+									</div>
+
+									<div class="row-actions">
 										<form
 											method="POST"
-											action="?/delete"
-											use:enhance={deferDelete(item.id, item.name)}
+											action="?/toggleSnoozed"
+											use:enhance={tick('toggleSnoozed')}
 										>
 											<input type="hidden" name="id" value={item.id} />
-											<button type="submit" class="btn btn-sm btn-danger" use:armed>
-												Confirm?
+											<button
+												type="submit"
+												class="icon-btn"
+												aria-pressed={item.snoozed}
+												title={item.snoozed ? 'Put it back on the list' : 'Put it away'}
+												aria-label="{item.snoozed ? 'Unarchive' : 'Archive'}: {item.name}"
+											>
+												<Icon name={item.snoozed ? 'undo' : 'archive'} />
 											</button>
 										</form>
 										<button
-											type="button"
-											onclick={() => {
-												confirmingDelete = null;
-											}}
-											class="btn btn-sm"
+											onclick={() => startEdit(item)}
+											class="icon-btn"
+											title="Edit"
+											aria-label="Edit {item.name}"><Icon name="edit" /></button
 										>
-											Cancel
-										</button>
-									{:else}
-										<button
-											type="button"
-											onclick={() => {
-												confirmingDelete = item.id;
-											}}
-											class="icon-btn icon-btn-danger"
-											title="Delete"
-											aria-label="Delete {item.name}"><Icon name="trash" /></button
-										>
-									{/if}
+										{#if confirmingDelete === item.id}
+											<form
+												method="POST"
+												action="?/delete"
+												use:enhance={deferDelete(item.id, item.name)}
+											>
+												<input type="hidden" name="id" value={item.id} />
+												<button type="submit" class="btn btn-sm btn-danger" use:armed>
+													Confirm?
+												</button>
+											</form>
+											<button
+												type="button"
+												onclick={() => {
+													confirmingDelete = null;
+												}}
+												class="btn btn-sm"
+											>
+												Cancel
+											</button>
+										{:else}
+											<button
+												type="button"
+												onclick={() => {
+													confirmingDelete = item.id;
+												}}
+												class="icon-btn icon-btn-danger"
+												title="Delete"
+												aria-label="Delete {item.name}"><Icon name="trash" /></button
+											>
+										{/if}
+									</div>
 								</div>
-							</div>
-						{/each}
+							{/each}
+						</div>
 					</div>
-				</div>
-			{/if}
+				{/if}
 
-			{#if filteredItems.length === 0}
-				<div class="py-12 text-center text-sm text-gray-500">
-					{#if items.length === 0}
-						<EmptyState
-							icon="shopping"
-							title="The list is empty"
-							description="Inventory is what you keep stocked; the wishlist is what you might buy one day."
-						>
-							{#snippet action()}
-								<button onclick={() => (showForm = true)} class="btn btn-primary">
-									<Icon name="plus" /> New item
-								</button>
-							{/snippet}
-						</EmptyState>
-					{:else if notShowing > 0}
-						Nothing here matches the current filter.
-					{:else}
-						No items match the current filter.
-					{/if}
-				</div>
-			{/if}
+				{#if filteredItems.length === 0}
+					<div class="py-12 text-center text-sm text-gray-500">
+						{#if items.length === 0}
+							<EmptyState
+								icon="shopping"
+								title="The list is empty"
+								description="Inventory is what you keep stocked; the wishlist is what you might buy one day."
+							>
+								{#snippet action()}
+									<button onclick={() => (showForm = true)} class="btn btn-primary">
+										<Icon name="plus" /> New item
+									</button>
+								{/snippet}
+							</EmptyState>
+						{:else if notShowing > 0}
+							Nothing here matches the current filter.
+						{:else}
+							No items match the current filter.
+						{/if}
+					</div>
+				{/if}
+			</div>
 		</div>
 	</div>
 </div>

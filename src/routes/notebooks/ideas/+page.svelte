@@ -390,14 +390,22 @@
 			{/if}
 		</div>
 	{:else}
-		<div class="space-y-3" data-tour="idea-list">
+		<!--
+			One surface, and an idea is a row on it.
+
+			A card each meant twenty captured thoughts drew twenty boxes on the
+			page's ground, with the background showing through between every two.
+			They are one list, so they sit on one surface with a hairline between
+			them — the same shape the todo list and the activities list have.
+		-->
+		<div
+			class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card"
+			data-tour="idea-list"
+		>
 			{#each filteredIdeas as idea, i (idea.id)}
 				<div
 					use:keepInView={i === clampedSelectedIndex}
-					class="lift relative border border-gray-200 bg-white p-4 shadow-card transition-all {i ===
-					clampedSelectedIndex
-						? 'kb-cursor'
-						: ''}"
+					class="relative p-4 {i === clampedSelectedIndex ? 'kb-cursor -outline-offset-2' : ''}"
 				>
 					<div class="mb-2 flex items-start gap-4">
 						<form

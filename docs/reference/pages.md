@@ -566,12 +566,6 @@ The verdicts arrive as one field per answered block —
 list and this is one list rather than four parallel ones that could get
 out of step with each other.
 
-### `/tasks/todo`
-
-**`archive`**
-
-Put one away, or take it back out. Neither done nor gone.
-
 ### `/welcome/password`
 
 The one page between a family invitation's link and the app.

@@ -1,10 +1,11 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from '@sveltejs/kit';
 import { buildCtx } from '$lib/services/ctx';
-import { createEntry, deleteEntry, updateEntry } from '$lib/services/diary';
+import { archiveEntry, createEntry, deleteEntry, updateEntry } from '$lib/services/diary';
 import { setEntryPeople } from '$lib/services/people';
 import { toActionFailure } from '$lib/http-errors';
 import { importVaultAction } from '$lib/server/import-vault-action';
+import { todoHandlers } from '$lib/server/todo-actions';
 import {
 	createNotebook,
 	deleteNotebook,
@@ -135,6 +136,27 @@ export const notebookActions = {
 		}
 	},
 
+	/**
+	 * Put a note away, or take it back out.
+	 *
+	 * Hidden, not deleted: the note stays in the notebook and comes back
+	 * unchanged. No confirmation, because this is the reversible one — the
+	 * button beside it is what deletes, and that one asks.
+	 */
+	archiveEntry: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			archiveEntry(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				formData.get('away') !== 'false'
+			);
+			return { success: true, action: 'archiveEntry' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
 	deleteEntry: async ({ request, locals }) => {
 		const formData = await request.formData();
 		try {
@@ -168,5 +190,21 @@ export const notebookActions = {
 	 * sending them to a settings page headed "An Obsidian vault" was a door
 	 * nobody found.
 	 */
-	importVault: importVaultAction
+	importVault: importVaultAction,
+
+	/*
+	 * The todos filed under this notebook, operated on here.
+	 *
+	 * A notebook's Tasks tab is the to-do room looking at one subject, so it
+	 * runs the room's own handlers rather than a second implementation of them.
+	 * Prefixed because the plain names above already belong to the notebook —
+	 * see `$lib/todo-actions` for the names the markup posts to.
+	 */
+	todoCreate: todoHandlers.create,
+	todoUpdate: todoHandlers.update,
+	todoStatus: todoHandlers.setStatus,
+	todoSchedule: todoHandlers.schedule,
+	todoDelegate: todoHandlers.delegate,
+	todoArchive: todoHandlers.archive,
+	todoDelete: todoHandlers.remove
 } satisfies Actions;

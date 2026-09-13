@@ -288,7 +288,7 @@ _Needs `search:read`; read-only._
 
 ### `todos` — The todo list
 
-Tasks with no date on them yet. A todo gains a date by being put on a day, which promotes it onto the week.
+Tasks with no date on them yet. A todo gains a date by being put on a day, which promotes it onto the week. Pass `notebookId` when the question is about one subject — reading the whole list to find four tasks about the kitchen is somebody’s entire todo list going past for no reason.
 
 _Needs `tasks:read`; read-only._
 
@@ -391,6 +391,24 @@ _Needs `notes:read`; read-only._
 ### `write_entry` — Write a diary entry
 
 Add an entry. Markdown. Writing one when asked is the point of this tool — keep their words and their voice where you have them, and do not invent an entry nobody asked for. Put it in a notebook when it is about one subject; leave the notebook off for an ordinary day.
+
+_Needs `notes:write`; writes._
+
+### `notebook_notes` — The notes in a notebook
+
+What has been written against one subject, newest first, with the id of each note. `diary` deliberately shows only entries outside a notebook, so this is the way to read one — and the way to find the id `archive_note` wants.
+
+_Needs `notes:read`; read-only._
+
+### `archive_note` — Put a note away
+
+Hide a note without deleting it — for one that has stopped being current and is not something to throw out: the trip is over, the flat is rented. It stays in its notebook and comes back with `unarchive_note`. Notes are never deleted through a tool.
+
+_Needs `notes:write`; writes._
+
+### `unarchive_note` — Bring a note back
+
+Bring back a note that was put away, so it shows in its notebook again. `notebook_notes` with `includeArchived` says which ones are away.
 
 _Needs `notes:write`; writes._
 

@@ -100,9 +100,23 @@
 			{/snippet}
 		</EmptyState>
 	{:else}
-		<div class="gap-4 lg:columns-2 2xl:columns-3" data-tour="recipe-list">
+		<!--
+			One surface, and the recipes are its cells.
+
+			Every recipe used to be a card of its own on the page's ground, which
+			at four recipes is four boxes floating in a field of background and at
+			twenty is a mosaic. The list is one thing, so it is one surface: a
+			hairline between rows down to the phone, and the same hairline between
+			columns once there is room for two of them. In the two-column layout
+			that line is a one-pixel grid gap with the surface showing through it,
+			which is why the surface is gray behind cells that are white.
+		-->
+		<div
+			class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card lg:grid lg:grid-cols-2 lg:gap-px lg:divide-y-0 lg:bg-gray-200 2xl:grid-cols-3"
+			data-tour="recipe-list"
+		>
 			{#each visible as recipe (recipe.id)}
-				<div class="relative mb-4 break-inside-avoid">
+				<div class="relative bg-white">
 					<!--
 						Putting a recipe on a day, without opening it first.
 
@@ -127,7 +141,7 @@
 					</button>
 					<a
 						href={resolve('/health/recipes/[id]', { id: String(recipe.id) })}
-						class="lift block border border-gray-200 bg-white p-4 shadow-card max-sm:flex max-sm:items-start max-sm:gap-3"
+						class="block h-full p-4 transition-colors hover:bg-gray-50 max-sm:flex max-sm:items-start max-sm:gap-3"
 					>
 						<!--
 						The picture, when there is one: a cookbook you recognise by

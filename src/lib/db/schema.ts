@@ -363,6 +363,15 @@ export const diaryEntries = sqliteTable(
 		content: text('content').notNull(),
 		forDate: text('for_date'),
 		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
+		/**
+		 * When it was put away, or null.
+		 *
+		 * Hidden rather than gone: the note stays where it is, keeps its number
+		 * and its tags, and comes back unchanged. A notebook somebody has kept
+		 * for a year holds notes that have stopped being interesting and are
+		 * still not things to delete.
+		 */
+		archivedAt: text('archived_at'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),

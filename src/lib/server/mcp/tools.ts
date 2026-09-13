@@ -23,7 +23,7 @@
 import { localDateOf, type Ctx } from '$lib/services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 
-import { createEntry, listEntries } from '$lib/services/diary.js';
+import { archiveEntry, createEntry, listEntries } from '$lib/services/diary.js';
 import { createActivity, listActivities, updateActivity } from '$lib/services/activities.js';
 import { createHabit, listHabits, updateHabit, HABIT_TYPES } from '$lib/services/habits.js';
 import {
@@ -148,7 +148,8 @@ import {
 	listTodos,
 	scheduleTodo,
 	setTodoStatus,
-	updateTodo
+	updateTodo,
+	type Todo
 } from '$lib/services/todos.js';
 import { getUpcomingSchedule } from '$lib/services/schedule.js';
 import { createExceptional } from '$lib/services/slots.js';
@@ -243,6 +244,31 @@ function limitOf(args: Record<string, unknown>, fallback: number, ceiling = 200)
 	const raw = Number(args.limit ?? fallback);
 	if (!Number.isFinite(raw) || raw < 1) return fallback;
 	return Math.min(Math.floor(raw), ceiling);
+}
+
+/**
+ * A todo as little as it can be said in.
+ *
+ * The service's shape is written for the app, which wants every column laid
+ * out whether or not it holds anything. Sent to a model, forty of those are
+ * mostly the words `null`, `categoryColor` and an empty ratings object —
+ * paid for three times over on the way in, the way out and again next turn.
+ * Anything absent is left out; a reader learns the same thing from a missing
+ * key as from a null one.
+ */
+function briefly(todo: Todo): Record<string, unknown> {
+	const out: Record<string, unknown> = { id: todo.id, title: todo.title, status: todo.status };
+	if (todo.notes) out.notes = todo.notes;
+	if (todo.scheduledDate) out.scheduledDate = todo.scheduledDate;
+	if (todo.categoryName) out.category = todo.categoryName;
+	if (todo.notebookId !== null) out.notebookId = todo.notebookId;
+	if (todo.notebookTitle) out.notebook = todo.notebookTitle;
+	if (todo.archivedAt) out.archivedAt = todo.archivedAt;
+	const ratings = Object.fromEntries(
+		Object.entries(todo.ratings).filter(([, value]) => value !== null)
+	);
+	if (Object.keys(ratings).length > 0) out.ratings = ratings;
+	return out;
 }
 
 /** A 1–5 rating, or nothing. Bad numbers are refused before a service sees them. */
@@ -810,11 +836,33 @@ export const TOOLS: Tool[] = [
 		name: 'todos',
 		title: 'The todo list',
 		description:
-			'Tasks with no date on them yet. A todo gains a date by being put on a day, which promotes it onto the week.',
+			'Tasks with no date on them yet. A todo gains a date by being put on a day, which promotes it onto the week. Pass `notebookId` when the question is about one subject \u2014 reading the whole list to find four tasks about the kitchen is somebody\u2019s entire todo list going past for no reason.',
 		scope: 'tasks:read',
 		writes: false,
-		input: object({ limit: count('How many to return.', 50) }),
-		run: (ctx, args) => listTodos(ctx).slice(0, limitOf(args, 50))
+		input: object({
+			limit: count('How many to return.', 50),
+			notebookId: {
+				type: 'integer',
+				description:
+					'Only the tasks filed under this notebook, as `notebooks` gives its id. `0` is the ones filed under nothing.'
+			},
+			includeArchived: {
+				type: 'boolean',
+				description:
+					'Include the tasks that have been put away. Off by default, which is what putting away means.'
+			}
+		}),
+		run: (ctx, args) => {
+			let rows = listTodos(ctx);
+			if (!args.includeArchived) rows = rows.filter((todo) => !todo.archivedAt);
+			if (args.notebookId !== undefined) {
+				const wanted = Number(args.notebookId);
+				rows = rows.filter((todo) =>
+					wanted === 0 ? todo.notebookId === null : todo.notebookId === wanted
+				);
+			}
+			return rows.slice(0, limitOf(args, 50)).map(briefly);
+		}
 	},
 	{
 		name: 'add_todo',
@@ -1253,6 +1301,64 @@ export const TOOLS: Tool[] = [
 				notebookId: args.notebookId ?? null
 			});
 			return { id };
+		}
+	},
+	{
+		name: 'notebook_notes',
+		title: 'The notes in a notebook',
+		description:
+			'What has been written against one subject, newest first, with the id of each note. `diary` deliberately shows only entries outside a notebook, so this is the way to read one \u2014 and the way to find the id `archive_note` wants.',
+		scope: 'notes:read',
+		writes: false,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The notebook\u2019s id, as `notebooks` gives it.' },
+				includeArchived: {
+					type: 'boolean',
+					description: 'Include the notes that have been put away. Off by default, as on the page.'
+				}
+			},
+			['id']
+		),
+		run: (ctx, args) => {
+			const notes = contentsOf(ctx, Number(args.id)).entries;
+			return args.includeArchived ? notes : notes.filter((note) => !note.archivedAt);
+		}
+	},
+	{
+		/*
+		 * Hidden, not deleted \u2014 which is why an assistant may do it.
+		 *
+		 * Deleting somebody's writing is theirs to do in the app. Putting a note
+		 * out of the way destroys nothing: it stays in its notebook, keeps its
+		 * number, its tags and the people it is about, and comes back unchanged.
+		 */
+		name: 'archive_note',
+		title: 'Put a note away',
+		description:
+			'Hide a note without deleting it \u2014 for one that has stopped being current and is not something to throw out: the trip is over, the flat is rented. It stays in its notebook and comes back with `unarchive_note`. Notes are never deleted through a tool.',
+		scope: 'notes:write',
+		writes: true,
+		input: object(
+			{ id: { type: 'integer', description: 'The note\u2019s id, as `notebook_notes` gives it.' } },
+			['id']
+		),
+		run: (ctx, args) => {
+			archiveEntry(ctx, Number(args.id), true);
+			return { ok: true };
+		}
+	},
+	{
+		name: 'unarchive_note',
+		title: 'Bring a note back',
+		description:
+			'Bring back a note that was put away, so it shows in its notebook again. `notebook_notes` with `includeArchived` says which ones are away.',
+		scope: 'notes:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The note\u2019s id.' } }, ['id']),
+		run: (ctx, args) => {
+			archiveEntry(ctx, Number(args.id), false);
+			return { ok: true };
 		}
 	},
 	{

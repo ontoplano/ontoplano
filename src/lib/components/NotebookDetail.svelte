@@ -15,8 +15,10 @@
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
 	import { SECTION_COLORS } from '$lib/colors';
 	import { HORIZON_LABELS, type Horizon } from '$lib/goals';
-	import { CLOSED_STATUSES, STATUS_LABELS } from '$lib/task-status';
-	import type { Status } from '$lib/task-status';
+	import { CLOSED_STATUSES } from '$lib/task-status';
+	import TodoRows from '$lib/components/TodoRows.svelte';
+	import { NOTEBOOK_TODO_ACTIONS } from '$lib/todo-actions';
+	import type { Todo } from '$lib/services/todos';
 	import { renderMarkdown } from '$lib/markdown';
 
 	/**
@@ -33,6 +35,8 @@
 		title?: string;
 		content: string;
 		createdAt: string;
+		/** When it was put away, or null. Hidden, not deleted. */
+		archivedAt?: string | null;
 		tags: { id: number; name: string }[];
 		people: { id: number; name: string }[];
 	};
@@ -42,12 +46,14 @@
 		contents = null,
 		orphaned = [],
 		showingOrphans = false,
-		allPeople = []
+		allPeople = [],
+		categories = [],
+		pickableNotebooks = []
 	}: {
 		notebook?: { id: number; title: string; description: string } | null;
 		contents?: {
 			entries: Entry[];
-			todos: { id: number; title: string; status: Status; scheduledDate: string | null }[];
+			todos: Todo[];
 			blocks: { id: number; label: string | null; date: string; startTime: string }[];
 			goals: { id: number; title: string; horizon: Horizon; periodStart: string; status: string }[];
 		} | null;
@@ -55,9 +61,22 @@
 		showingOrphans?: boolean;
 		/** Everybody already known, so the field completes rather than duplicates. */
 		allPeople?: { id: number; name: string }[];
+		/** What the Tasks tab's editor offers, the same as the to-do room's. */
+		categories?: { id: number; name: string }[];
+		pickableNotebooks?: { id: number; title: string }[];
 	} = $props();
 
 	let editingNoteId = $state<number | null>(null);
+
+	/**
+	 * Whether the put-away notes are showing.
+	 *
+	 * Away by default, which is what putting away means. A notebook kept for a
+	 * year holds notes that have stopped being interesting and are still not
+	 * things to delete, and a list of forty where six are current is a list
+	 * nobody reads.
+	 */
+	let showArchivedNotes = $state(false);
 
 	/*
 	 * Which notes are open. Closed is the resting state, and opening one does
@@ -178,11 +197,22 @@
 	type Tab = 'notes' | 'tasks' | 'goals';
 	let tab = $state<Tab>('notes');
 
-	// Whichever notebook you move to opens on its notes, not on whichever tab
-	// the last one happened to be showing.
+	/*
+	 * Whichever notebook you move to opens on its notes, not on whichever tab
+	 * the last one happened to be showing.
+	 *
+	 * Compared by which notebook it is, not by the object: the props arrive
+	 * fresh from every load, so watching `notebook` itself sent you back to
+	 * Notes each time something on the Tasks tab was ticked off or put away.
+	 * Deliberately not reactive — it is a memory of the last render, and
+	 * writing it must not be what schedules the next one.
+	 */
+	let subjectOnScreen: string | null = null;
+
 	$effect(() => {
-		void notebook?.id;
-		void showingOrphans;
+		const subject = showingOrphans ? 'orphans' : String(notebook?.id ?? '');
+		if (subject === subjectOnScreen) return;
+		subjectOnScreen = subject;
 		tab = 'notes';
 	});
 
@@ -195,8 +225,19 @@
 	 * with nine and none. Notes have no such thing to say, so they keep a plain
 	 * count rather than gaining a denominator that means nothing.
 	 */
+	/** The notes on screen: everything, or everything still out. */
+	const shownNotes = $derived.by(() => {
+		const all = contents?.entries ?? orphaned;
+		return showArchivedNotes ? all : all.filter((entry) => !entry.archivedAt);
+	});
+
+	/** How many are put away, so the button can say what it would bring back. */
+	const putAwayNotes = $derived(
+		(contents?.entries ?? orphaned).filter((entry) => entry.archivedAt).length
+	);
+
 	const tabs = $derived<{ key: Tab; label: string; count: number; done?: number }[]>([
-		{ key: 'notes', label: 'Notes', count: contents?.entries.length ?? orphaned.length },
+		{ key: 'notes', label: 'Notes', count: shownNotes.length },
 		{
 			key: 'tasks',
 			label: 'Tasks',
@@ -295,7 +336,7 @@
 
 	<div class="nb-body">
 		{#if showingOrphans}
-			{@render noteList(orphaned, null)}
+			{@render noteList(shownNotes, null)}
 		{:else if !notebook || !contents}
 			<EmptyState icon="notebook" title="Nothing chosen" />
 		{:else}
@@ -319,6 +360,16 @@
 					{/each}
 				</div>
 				{#if tab === 'notes'}
+					<!-- Nothing is hidden without the strip saying how much. -->
+					{#if putAwayNotes > 0 || showArchivedNotes}
+						<button
+							type="button"
+							onclick={() => (showArchivedNotes = !showArchivedNotes)}
+							class="btn btn-sm mr-2 shrink-0"
+						>
+							{showArchivedNotes ? 'Hide archived' : `Show archived (${putAwayNotes})`}
+						</button>
+					{/if}
 					<button
 						type="button"
 						onclick={() => (composing = !composing)}
@@ -411,12 +462,34 @@
 					</form>
 				{/if}
 
-				{@render noteList(contents.entries, notebook.id)}
+				{@render noteList(shownNotes, notebook.id)}
 			{:else if tab === 'tasks'}
-				{#if contents.blocks.length === 0 && contents.todos.length === 0}
-					<p class="px-4 py-3 text-sm text-gray-500">Nothing to do for this yet.</p>
-				{:else}
-					<ul class="divide-y divide-gray-200">
+				<!--
+					The to-do room, looking at one subject.
+
+					A notebook's tasks used to be a read-only list: you could see that
+					four things about the kitchen were waiting and could not tick one
+					off without going somewhere else. It is the same component the
+					room uses, so a todo behaves the same way wherever it is found —
+					and a new one written here lands in this notebook.
+				-->
+				<div class="px-4 py-3">
+					<TodoRows
+						todos={contents.todos}
+						{categories}
+						notebooks={pickableNotebooks}
+						actions={NOTEBOOK_TODO_ACTIONS}
+						notebookId={notebook.id}
+					/>
+				</div>
+
+				<!--
+					Blocks below, and still a list: a block is a thing that happens at
+					a time rather than a thing to finish, and it is edited on the day
+					it sits on.
+				-->
+				{#if contents.blocks.length > 0}
+					<ul class="divide-y divide-gray-200 border-t border-gray-200">
 						{#each contents.blocks as block (`b${block.id}`)}
 							<li class="flex items-center gap-3 px-4 py-2 text-sm">
 								<Icon name="calendar" class="shrink-0 text-gray-500" />
@@ -424,20 +497,6 @@
 								<span class="tabular shrink-0 text-xs text-gray-500">
 									{block.date}
 									{block.startTime}
-								</span>
-							</li>
-						{/each}
-						{#each contents.todos as todo (`t${todo.id}`)}
-							<li class="flex items-center gap-3 px-4 py-2 text-sm">
-								<Icon name="check" class="shrink-0 text-gray-500" />
-								<span
-									class="min-w-0 flex-1 truncate text-gray-900"
-									class:line-through={todo.status === 'done'}
-								>
-									{todo.title}
-								</span>
-								<span class="shrink-0 text-xs text-gray-500">
-									{todo.scheduledDate ?? STATUS_LABELS[todo.status]}
 								</span>
 							</li>
 						{/each}
@@ -588,6 +647,9 @@
 						<div class="mt-1 flex flex-wrap items-center gap-2">
 							<span class="tabular text-xs text-gray-500">
 								{entry.seq === null ? '' : `#${entry.seq} · `}{when(entry.createdAt)}
+								{#if entry.archivedAt}
+									· archived
+								{/if}
 								{#if 'author' in entry && entry.author}
 									· {entry.author}
 								{/if}
@@ -614,6 +676,23 @@
 									title="Edit this note"
 									aria-label="Edit this note"><Icon name="edit" /></button
 								>
+								<!--
+									Away, and back. No confirmation: this is the reversible one
+									— the note stays where it is and comes back unchanged. The
+									button beside it is what deletes, and that one asks.
+								-->
+								<form method="post" action="?/archiveEntry" use:enhance>
+									<input type="hidden" name="id" value={entry.id} />
+									<input type="hidden" name="away" value={entry.archivedAt ? 'false' : 'true'} />
+									<button
+										type="submit"
+										class="icon-btn"
+										title={entry.archivedAt ? 'Take it back out' : 'Put it away'}
+										aria-label={entry.archivedAt ? 'Take it back out' : 'Put it away'}
+									>
+										<Icon name={entry.archivedAt ? 'undo' : 'archive'} />
+									</button>
+								</form>
 								{#if confirmDeleteNote === entry.id}
 									<form
 										method="post"

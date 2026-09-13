@@ -556,6 +556,17 @@
 			}
 		}
 	},
+	"archive_note": {
+		"scope": "notes:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"archive_recipe": {
 		"scope": "kitchen:write",
 		"writes": true,
@@ -1385,6 +1396,21 @@
 			}
 		}
 	},
+	"notebook_notes": {
+		"scope": "notes:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"includeArchived": {
+				"type": "boolean",
+				"required": false
+			}
+		}
+	},
 	"notebooks": {
 		"scope": "notes:read",
 		"writes": false,
@@ -1837,7 +1863,15 @@
 		"writes": false,
 		"destroys": false,
 		"params": {
+			"includeArchived": {
+				"type": "boolean",
+				"required": false
+			},
 			"limit": {
+				"type": "integer",
+				"required": false
+			},
+			"notebookId": {
 				"type": "integer",
 				"required": false
 			}
@@ -1845,6 +1879,17 @@
 	},
 	"unarchive_item": {
 		"scope": "shopping:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"unarchive_note": {
+		"scope": "notes:write",
 		"writes": true,
 		"destroys": false,
 		"params": {
