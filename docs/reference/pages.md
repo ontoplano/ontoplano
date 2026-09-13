@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**56 pages, 218 actions.**
+**56 pages, 219 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -68,7 +68,7 @@ write surface for everything else; both end up calling the same
 | `/tasks/board`                       | `setStatus`, `reorder`, `schedule`, `promote`, `demote`, `createTodo`, `setRatings`, `remind`, `unremind`, `editInstance`, `resolveActivity`, `deleteInstance`, `deleteTodo`                                                                                                                                                                                                        |
 | `/tasks/plan`                        | `create`, `update`, `toggleActive`, `delete`, `bulkDelete`, `copyToWeekdays`, `addCalendar`, `removeCalendar`, `applyTemplate`, `saveScheme`, `loadScheme`, `deleteScheme`, `renameScheme`, `scheduleTodo`, `unscheduleBlock`, `convertRepeat`, `moveOccurrence`, `setStatus`, `suppress`, `unsuppress`, `createExceptional`, `updateExceptional`, `deleteExceptional`, `importCsv` |
 | `/tasks/review`                      | `saveNote`, `keepStale`, `completeStale`, `dropStale`, `resolve`, `settle`, `carry`                                                                                                                                                                                                                                                                                                 |
-| `/tasks/todo`                        | `create`, `update`, `setStatus`, `schedule`, `delete`, `delegate`                                                                                                                                                                                                                                                                                                                   |
+| `/tasks/todo`                        | `create`, `update`, `archive`, `setStatus`, `schedule`, `delete`, `delegate`                                                                                                                                                                                                                                                                                                        |
 | `/welcome`                           | `assistantToken`, `finish`                                                                                                                                                                                                                                                                                                                                                          |
 | `/welcome/password`                  | `default`                                                                                                                                                                                                                                                                                                                                                                           |
 
@@ -565,6 +565,12 @@ The verdicts arrive as one field per answered block —
 `verdict=<id>:<verb>[:<date>]` — because a form posts repeated names as a
 list and this is one list rather than four parallel ones that could get
 out of step with each other.
+
+### `/tasks/todo`
+
+**`archive`**
+
+Put one away, or take it back out. Neither done nor gone.
 
 ### `/welcome/password`
 

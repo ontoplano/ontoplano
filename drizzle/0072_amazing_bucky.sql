@@ -1,0 +1,1 @@
+ALTER TABLE `todo_tasks` ADD `archived_at` text;

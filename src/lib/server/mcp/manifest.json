@@ -571,6 +571,17 @@
 			}
 		}
 	},
+	"archive_todo": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"archive_workout": {
 		"scope": "workouts:write",
 		"writes": true,
@@ -1834,6 +1845,17 @@
 	},
 	"unarchive_item": {
 		"scope": "shopping:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"unarchive_todo": {
+		"scope": "tasks:write",
 		"writes": true,
 		"destroys": false,
 		"params": {

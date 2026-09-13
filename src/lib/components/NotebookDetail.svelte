@@ -15,7 +15,7 @@
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
 	import { SECTION_COLORS } from '$lib/colors';
 	import { HORIZON_LABELS, type Horizon } from '$lib/goals';
-	import { STATUS_LABELS } from '$lib/task-status';
+	import { CLOSED_STATUSES, STATUS_LABELS } from '$lib/task-status';
 	import type { Status } from '$lib/task-status';
 	import { renderMarkdown } from '$lib/markdown';
 
@@ -49,7 +49,7 @@
 			entries: Entry[];
 			todos: { id: number; title: string; status: Status; scheduledDate: string | null }[];
 			blocks: { id: number; label: string | null; date: string; startTime: string }[];
-			goals: { id: number; title: string; horizon: Horizon; periodStart: string }[];
+			goals: { id: number; title: string; horizon: Horizon; periodStart: string; status: string }[];
 		} | null;
 		orphaned?: Entry[];
 		showingOrphans?: boolean;
@@ -186,14 +186,31 @@
 		tab = 'notes';
 	});
 
-	const tabs = $derived<{ key: Tab; label: string; count: number }[]>([
+	/**
+	 * How far along, where that means something.
+	 *
+	 * A tab that says "9" says how much there is and nothing about whether any
+	 * of it is finished, which for a list of tasks is the more interesting half
+	 * — a subject with nine tasks and two done is in a different state from one
+	 * with nine and none. Notes have no such thing to say, so they keep a plain
+	 * count rather than gaining a denominator that means nothing.
+	 */
+	const tabs = $derived<{ key: Tab; label: string; count: number; done?: number }[]>([
 		{ key: 'notes', label: 'Notes', count: contents?.entries.length ?? orphaned.length },
 		{
 			key: 'tasks',
 			label: 'Tasks',
-			count: (contents?.todos.length ?? 0) + (contents?.blocks.length ?? 0)
+			count: (contents?.todos.length ?? 0) + (contents?.blocks.length ?? 0),
+			// A block on the grid is a thing that happens rather than a thing to
+			// finish, so only the todos are counted as done or not.
+			done: contents?.todos.filter((todo) => CLOSED_STATUSES.includes(todo.status)).length ?? 0
 		},
-		{ key: 'goals', label: 'Goals', count: contents?.goals.length ?? 0 }
+		{
+			key: 'goals',
+			label: 'Goals',
+			count: contents?.goals.length ?? 0,
+			done: contents?.goals.filter((goal) => goal.status !== 'open').length ?? 0
+		}
 	]);
 
 	function when(iso: string): string {
@@ -295,7 +312,9 @@
 							style={tab === t.key ? `border-color: ${SECTION_COLORS.diary}` : ''}
 						>
 							{t.label}
-							<span class="tabular ml-1 text-xs text-gray-500">{t.count}</span>
+							<span class="tabular ml-1 text-xs text-gray-500">
+								{t.done !== undefined && t.count > 0 ? `${t.done}/${t.count}` : t.count}
+							</span>
 						</button>
 					{/each}
 				</div>

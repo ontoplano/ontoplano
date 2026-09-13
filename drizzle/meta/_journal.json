@@ -505,6 +505,13 @@
       "when": 1789249446458,
       "tag": "0071_graceful_gamora",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "6",
+      "when": 1789301067925,
+      "tag": "0072_amazing_bucky",
+      "breakpoints": true
     }
   ]
 }

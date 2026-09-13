@@ -40,6 +40,8 @@ export type Todo = {
 	categoryColor: string | null;
 	notebookId: number | null;
 	notebookTitle: string | null;
+	/** When it was put away, or null. Put away is not the same as finished. */
+	archivedAt: string | null;
 	ratings: RatingValues;
 	createdAt: string;
 	updatedAt: string;
@@ -57,6 +59,7 @@ const SELECTION = {
 	categoryColor: categories.color,
 	notebookId: todoTasks.notebookId,
 	notebookTitle: notebooks.title,
+	archivedAt: todoTasks.archivedAt,
 	urgency: todoTasks.urgency,
 	interest: todoTasks.interest,
 	energy: todoTasks.energy,
@@ -77,6 +80,7 @@ function shape(r: Record<string, unknown>): Todo {
 		categoryColor: (r.categoryColor as string) ?? null,
 		notebookId: (r.notebookId as number) ?? null,
 		notebookTitle: (r.notebookTitle as string) ?? null,
+		archivedAt: (r.archivedAt as string) ?? null,
 		ratings: {
 			urgency: (r.urgency as number) ?? null,
 			interest: (r.interest as number) ?? null,
@@ -85,6 +89,30 @@ function shape(r: Record<string, unknown>): Todo {
 		createdAt: r.createdAt as string,
 		updatedAt: r.updatedAt as string
 	};
+}
+
+/**
+ * Put a todo away, or take it back out.
+ *
+ * Neither done nor gone: a task somebody is not going to look at for a while
+ * and is not willing to delete. Its own column rather than a fifth status,
+ * because archived and unfinished are different answers to different
+ * questions — coming back to it has to find it exactly as it was, and a status
+ * would have had to remember what it used to be.
+ */
+export function archiveTodo(ctx: Ctx, id: number, away = true): void {
+	const owned = db
+		.select({ id: todoTasks.id })
+		.from(todoTasks)
+		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
+		.get();
+	if (!owned) throw new NotFoundError('todo');
+
+	const now = stamp(ctx);
+	db.update(todoTasks)
+		.set({ archivedAt: away ? now : null, updatedAt: now })
+		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
+		.run();
 }
 
 /** Everything, ordered the way the board wants it. */

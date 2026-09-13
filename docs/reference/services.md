@@ -4561,6 +4561,16 @@ being copied into a second table, so nothing has to be kept in sync.
 
 ### Functions
 
+#### `archiveTodo(ctx, id, away)`
+
+Put a todo away, or take it back out.
+
+Neither done nor gone: a task somebody is not going to look at for a while
+and is not willing to delete. Its own column rather than a fifth status,
+because archived and unfinished are different answers to different
+questions — coming back to it has to find it exactly as it was, and a status
+would have had to remember what it used to be.
+
 #### `listTodos(ctx)`
 
 Everything, ordered the way the board wants it.

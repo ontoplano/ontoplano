@@ -358,3 +358,36 @@ describe('notebooks as folders', () => {
 		expect(root.totals?.entries).toBe(3);
 	});
 });
+
+/**
+ * Put away, which is neither done nor gone.
+ *
+ * A task somebody is not going to look at for a while and is not willing to
+ * delete. Its own column rather than a fifth status, because archived and
+ * unfinished are answers to different questions — and coming back to it has to
+ * find it exactly as it was, which a status could not promise.
+ */
+describe('archiving a todo', () => {
+	test('puts it away without finishing it, and brings it back unchanged', () => {
+		const id = todos.createTodo(ctx, { title: 'the tax thing', notes: 'later' });
+		todos.setTodoStatus(ctx, id, 'doing');
+
+		todos.archiveTodo(ctx, id);
+		const away = todos.listTodos(ctx).find((t) => t.id === id)!;
+		expect(away.archivedAt).not.toBeNull();
+		// Still exactly what it was: not finished, and everything about it kept.
+		expect(away.status).toBe('doing');
+		expect(away.notes).toBe('later');
+
+		todos.archiveTodo(ctx, id, false);
+		const back = todos.listTodos(ctx).find((t) => t.id === id)!;
+		expect(back.archivedAt).toBeNull();
+		expect(back.status).toBe('doing');
+	});
+
+	test("is nobody else's to put away", () => {
+		const id = todos.createTodo(ctx, { title: 'mine' });
+		expect(() => todos.archiveTodo(theirs, id)).toThrow();
+		expect(todos.listTodos(ctx).find((t) => t.id === id)!.archivedAt).toBeNull();
+	});
+});

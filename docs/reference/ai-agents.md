@@ -316,6 +316,18 @@ Undo a finish or a drop: the todo goes back to not-done. Use it when something w
 
 _Needs `tasks:write`; writes._
 
+### `archive_todo` — Put a todo away for now
+
+Put a todo out of the way without finishing it or dropping it — for something that matters but not this month. It keeps its notes, its notebook and its state, and comes back with `unarchive_todo`. Prefer this to dropping when somebody says "not now" rather than "not going to".
+
+_Needs `tasks:write`; writes._
+
+### `unarchive_todo` — Bring a todo back
+
+Bring back a todo that was put away, so it shows on the list again. It returns in whatever state it left in. `todos` says which ones are archived.
+
+_Needs `tasks:write`; writes._
+
 ### `change_todo` — Change a todo
 
 Rewrite a todo’s title or notes. Only the fields given change. Moving it on or off a day is `schedule_todo`; done and not-done are `finish_todo` and `reopen_todo`.

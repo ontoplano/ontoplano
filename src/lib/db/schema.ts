@@ -588,6 +588,15 @@ export const todoTasks = sqliteTable(
 		status: text('status', { enum: ['todo', 'doing', 'done', 'skipped'] })
 			.notNull()
 			.default('todo'),
+		/*
+		 * Put away, which is not the same as finished.
+		 *
+		 * Its own column rather than a fifth status, because it is a different
+		 * question: a task can be archived and still not done, and coming back
+		 * to it has to find it exactly as it was. A status would have had to
+		 * remember what it used to be.
+		 */
+		archivedAt: text('archived_at'),
 		sortOrder: integer('sort_order').notNull().default(0),
 		// How pressing, how appealing, how much it will take out of you, 1-5.
 		// Nullable on purpose: forcing three numbers onto every task is how a

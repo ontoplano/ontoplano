@@ -18,6 +18,19 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.167.0 — 2026-09-13
+
+- **A todo can be put away.** Neither finished nor deleted — a task that
+  matters but not this month. It leaves the list keeping everything about
+  itself, including whether it was half-started, and comes back exactly as it
+  was. "Show archived" brings them into view; an assistant has `archive_todo`
+  and `unarchive_todo`.
+- **The to-do list filters by notebook**, with an answer for the ones nobody
+  filed: "Not in one" is a thing people go looking for, not the absence of a
+  filter.
+- **A notebook's tabs say how far along it is** — "Tasks 2/9" rather than
+  "Tasks 9". Notes keep a plain count, having nothing of the sort to say.
+
 ## 0.166.1 — 2026-09-13
 
 - **An instance never writes another instance's database path into its config.**

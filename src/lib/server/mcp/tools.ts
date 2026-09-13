@@ -142,6 +142,7 @@ import {
 } from '$lib/services/shopping.js';
 import { getTodayBoard } from '$lib/services/today.js';
 import {
+	archiveTodo,
 	createTodo,
 	deleteTodo,
 	listTodos,
@@ -905,6 +906,43 @@ export const TOOLS: Tool[] = [
 		subject: todoById,
 		run: (ctx, args) => {
 			setTodoStatus(ctx, Number(args.id), 'todo');
+			return { ok: true };
+		}
+	},
+	{
+		/*
+		 * Put away, which is neither done nor dropped.
+		 *
+		 * `finish_todo` says it happened and `drop_todo` says it will not; this
+		 * says "not now, and I am not throwing it out". A task keeps everything
+		 * about itself, including whether it was half-started, and comes back
+		 * exactly as it was — so it needs both directions, as archiving always
+		 * does.
+		 */
+		name: 'archive_todo',
+		title: 'Put a todo away for now',
+		description:
+			'Put a todo out of the way without finishing it or dropping it — for something that matters but not this month. It keeps its notes, its notebook and its state, and comes back with `unarchive_todo`. Prefer this to dropping when somebody says "not now" rather than "not going to".',
+		scope: 'tasks:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The todo\u2019s id.' } }, ['id']),
+		subject: todoById,
+		run: (ctx, args) => {
+			archiveTodo(ctx, Number(args.id), true);
+			return { ok: true };
+		}
+	},
+	{
+		name: 'unarchive_todo',
+		title: 'Bring a todo back',
+		description:
+			'Bring back a todo that was put away, so it shows on the list again. It returns in whatever state it left in. `todos` says which ones are archived.',
+		scope: 'tasks:write',
+		writes: true,
+		input: object({ id: { type: 'integer', description: 'The todo\u2019s id.' } }, ['id']),
+		subject: todoById,
+		run: (ctx, args) => {
+			archiveTodo(ctx, Number(args.id), false);
 			return { ok: true };
 		}
 	},

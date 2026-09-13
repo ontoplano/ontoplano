@@ -12,7 +12,8 @@ import {
 	listTodos,
 	scheduleTodo,
 	setTodoStatus,
-	updateTodo
+	updateTodo,
+	archiveTodo
 } from '$lib/services/todos';
 
 export const load = async ({ locals }: IsolatedEvent) => {
@@ -66,6 +67,21 @@ export const actions = {
 				ratings: ratingsFromForm(formData)
 			});
 			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** Put one away, or take it back out. Neither done nor gone. */
+	archive: async ({ request, locals }: IsolatedEvent) => {
+		const formData = await request.formData();
+		try {
+			archiveTodo(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				formData.get('away') !== 'false'
+			);
+			return { success: true, action: 'archive' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

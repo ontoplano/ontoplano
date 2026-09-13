@@ -24,6 +24,16 @@
 	let showForm = $state(false);
 	let editingId: number | null = $state(null);
 	let showCompleted = $state(false);
+	/** Put-away tasks are out of the way by default; that is what putting away is. */
+	let showArchived = $state(false);
+	/**
+	 * Which notebook's tasks to show.
+	 *
+	 * `''` is all of them, `'none'` the ones filed under nothing — which is a
+	 * real answer and not the absence of one: a task nobody has placed is
+	 * exactly what somebody goes looking for.
+	 */
+	let notebookFilter = $state('');
 	let selectedIndex = $state(0);
 	let delegatingId: number | null = $state(null);
 	let confirmingDelete: number | null = $state(null);
@@ -85,9 +95,17 @@
 	}
 
 	let visibleTodos = $derived.by(() => {
-		const shown = showCompleted
+		let shown = showCompleted
 			? data.todos
 			: data.todos.filter((t: Todo) => !CLOSED_STATUSES.includes(shownStatus(t)));
+
+		// Away unless asked for. An archived task is one somebody has decided
+		// not to look at, so the list honours that until they say otherwise.
+		if (!showArchived) shown = shown.filter((t: Todo) => t.archivedAt === null);
+
+		if (notebookFilter === 'none') shown = shown.filter((t: Todo) => t.notebookId === null);
+		else if (notebookFilter !== '')
+			shown = shown.filter((t: Todo) => String(t.notebookId) === notebookFilter);
 
 		return [...shown].sort((a: Todo, b: Todo) =>
 			newestFirst ? b.createdAt.localeCompare(a.createdAt) : a.createdAt.localeCompare(b.createdAt)
@@ -256,6 +274,21 @@
 			<button onclick={() => (showCompleted = !showCompleted)} class="btn btn-sm">
 				{showCompleted ? 'Hide completed' : 'Show completed'}
 			</button>
+			<button onclick={() => (showArchived = !showArchived)} class="btn btn-sm">
+				{showArchived ? 'Hide archived' : 'Show archived'}
+			</button>
+			<!-- "Not in one" is an answer, not the absence of a filter: a task
+			     nobody has placed is the thing people go looking for. -->
+			<label class="text-sm">
+				<span class="sr-only">Notebook</span>
+				<select bind:value={notebookFilter} class="select">
+					<option value="">Every notebook</option>
+					<option value="none">Not in one</option>
+					{#each data.notebooks as book (book.id)}
+						<option value={String(book.id)}>{book.title}</option>
+					{/each}
+				</select>
+			</label>
 			<button
 				onclick={flipOrder}
 				class="btn btn-sm"
@@ -543,6 +576,25 @@
 							>
 								<Icon name="edit" />
 							</button>
+							<!--
+								Away, and back. Not a confirmation: putting a task away is
+								the reversible one — the button beside it is what deletes,
+								and that one asks.
+							-->
+							<!-- Plain `use:enhance`: the default applies the result and
+							     re-reads the page, which is how the row leaves the list. -->
+							<form method="post" action="?/archive" use:enhance>
+								<input type="hidden" name="id" value={todo.id} />
+								<input type="hidden" name="away" value={todo.archivedAt ? 'false' : 'true'} />
+								<button
+									type="submit"
+									class="icon-btn"
+									title={todo.archivedAt ? 'Take it back out' : 'Put it away'}
+									aria-label={todo.archivedAt ? 'Take it back out' : 'Put it away'}
+								>
+									<Icon name={todo.archivedAt ? 'undo' : 'archive'} />
+								</button>
+							</form>
 							{#if confirmingDelete === todo.id}
 								<form
 									id="delete-form-{todo.id}"

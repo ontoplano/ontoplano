@@ -72,7 +72,7 @@ exist.
 | [`suppressed_slots`](#suppressed_slots)           | 5       | yes               |
 | [`tags`](#tags)                                   | 3       | yes               |
 | [`task_records`](#task_records)                   | 15      | yes               |
-| [`todo_tasks`](#todo_tasks)                       | 15      | yes               |
+| [`todo_tasks`](#todo_tasks)                       | 16      | yes               |
 | [`user`](#user)                                   | 11      | —                 |
 | [`user_settings`](#user_settings)                 | 4       | yes               |
 | [`verification`](#verification)                   | 6       | —                 |
@@ -1324,6 +1324,7 @@ Checks — enforced by the database, not only by the service layer:
 | `notebook_id`    | integer | null     | —                     | → `notebooks.id`  |
 | `scheduled_date` | text    | null     | —                     | —                 |
 | `status`         | text    | not null | `'todo'`              | —                 |
+| `archived_at`    | text    | null     | —                     | —                 |
 | `sort_order`     | integer | not null | `0`                   | —                 |
 | `urgency`        | integer | null     | —                     | —                 |
 | `interest`       | integer | null     | —                     | —                 |
