@@ -319,17 +319,22 @@ test('the phone can leave the instance it is', async ({ page }) => {
 	});
 
 	// The connected one is chosen first, and its own paragraph is showing.
-	await expect(page.getByRole('radio', { name: /Connect to an instance/ })).toHaveAttribute(
+	await expect(page.getByRole('radio', { name: /Cloud instance/ })).toHaveAttribute(
 		'aria-checked',
 		'true'
 	);
-	await expect(page.getByText(/Assistants reach it over MCP/)).toBeVisible();
+	await expect(page.getByRole('heading', { name: 'Connect to an external server' })).toBeVisible();
+	await expect(page.getByText('Works with AI assistants')).toBeVisible();
 
-	// And the other one says what it costs before anybody presses it — as a
-	// list, because this is the one decision in the app that cannot be undone
-	// by pressing something else later.
-	await page.getByRole('radio', { name: /This phone only/ }).click();
-	await expect(page.getByText(/Nothing is backed up/)).toBeVisible();
-	await expect(page.getByText(/Reminders still arrive/)).toBeVisible();
+	/*
+	 * And the other one says what it costs before anybody presses it — as a
+	 * list, because this is the one decision in the app that cannot be undone
+	 * by pressing something else later. Each line is marked with what it is:
+	 * four plain lines read as four good things whichever column they are in.
+	 */
+	await page.getByRole('radio', { name: /On device/ }).click();
+	await expect(page.getByRole('heading', { name: /on the phone only/ })).toBeVisible();
+	await expect(page.getByText('No backups')).toBeVisible();
+	await expect(page.getByText('Fully offline')).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Start isolated instance' })).toBeEnabled();
 });

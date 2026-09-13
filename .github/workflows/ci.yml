@@ -31,6 +31,17 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Tags, not just the one commit.
+          #
+          # Two generated files name the newest release — the download links on
+          # the install page and the badges — and `git describe` is where that
+          # name comes from. A shallow clone has no tags, so the generator falls
+          # back to "go and find the latest release yourself" and the check then
+          # compares that against a page written on a machine that did know.
+          # It left `docs:check` red on a green tree, which is the worst kind of
+          # red: it says the docs are stale when what is stale is the clone.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v4
         with:

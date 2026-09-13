@@ -106,26 +106,26 @@
 	 */
 	const CHOICES = {
 		connected: {
-			label: 'Connect to an instance',
+			label: 'Cloud instance',
 			glyph: 'server' as const,
+			heading: 'Connect to an external server',
 			says: [
-				'The official instance, or one you run yourself.',
-				'Your week is on every device you sign in from.',
-				'Backed up wherever that instance is backed up.',
-				'Assistants reach it over MCP, and plugins work.',
-				'Reminders arrive on every device, not just this one.'
+				{ has: true, line: 'Reachable from any device' },
+				{ has: true, line: 'Backed up' },
+				{ has: true, line: 'Works with AI assistants' },
+				{ has: true, line: 'Plugins work' }
 			],
 			proceed: 'Connect'
 		},
 		phone: {
-			label: 'This phone only',
+			label: 'On device',
 			glyph: 'phone' as const,
+			heading: 'Use ontoplano on the phone only',
 			says: [
-				'Everything lives on this phone. Nothing leaves it.',
-				'No account, no sign-in, nothing to reach.',
-				'Reminders still arrive — this phone schedules them itself.',
-				'Nothing is backed up: if the phone goes, so does what is on it.',
-				'No assistants over MCP, and no plugins.'
+				{ has: true, line: 'Fully offline' },
+				{ has: false, line: 'Cannot be reached from another device' },
+				{ has: false, line: 'No AI assistants' },
+				{ has: false, line: 'No backups' }
 			],
 			proceed: 'Start isolated instance'
 		}
@@ -145,7 +145,10 @@
 		(kind as Kind) === 'phone' && alreadyHere
 			? {
 					...CHOICES.phone,
-					says: ['This phone already has one, with whatever you put in it.', ...CHOICES.phone.says],
+					says: [
+						{ has: true, line: 'This phone already has one, with whatever you put in it.' },
+						...CHOICES.phone.says
+					],
 					proceed: 'Go to isolated instance'
 				}
 			: CHOICES[kind]
@@ -214,21 +217,41 @@
 	</div>
 
 	<!--
-		A fixed block whichever is chosen, so choosing moves nothing under it.
-		Both lists are the same length for the same reason.
+		What each answer costs, headed and ticked off.
+		
+		A fixed block whichever is chosen, so choosing moves nothing under it,
+		and both lists are the same length for the same reason. The mark says
+		which way each line goes — a tick for what you get, a cross for what you
+		give up — because a list of plain lines reads as four good things
+		whichever column it is in. Colour is the second signal and never the
+		only one: blue and red rather than green and red, and a shape either
+		way.
 	-->
-	<ul class="mt-4 min-h-40 space-y-1 text-sm text-gray-600">
-		{#each chosen.says as line (line)}
-			<li class="flex gap-2">
-				<span class="text-gray-400" aria-hidden="true">—</span>
-				<span>{line}</span>
+	<h2 class="mt-4 text-sm font-semibold text-gray-900">{chosen.heading}</h2>
+	<ul class="mt-2 min-h-36 space-y-1.5 text-sm">
+		{#each chosen.says as said (said.line)}
+			<li class="flex items-start gap-2">
+				<span
+					class="mt-0.5 shrink-0 {said.has ? 'text-blue-700' : 'text-red-700'}"
+					aria-hidden="true"
+				>
+					<Icon name={said.has ? 'check' : 'close'} size={16} />
+				</span>
+				<span class={said.has ? 'text-gray-700' : 'text-gray-500'}>{said.line}</span>
 			</li>
 		{/each}
 	</ul>
 
 	{#if kind === 'connected'}
 		<label class="mt-2 block text-sm">
-			<span class="text-gray-600">Its address</span>
+			<!-- Without the scheme: the field below already holds the whole
+			     address, and saying it twice in full reads as a mistake. -->
+			<span class="text-gray-600">
+				Enter any instance URL — official instance is {OFFICIAL_INSTANCE.replace(
+					/^https?:\/\//,
+					''
+				)}
+			</span>
 			<OneLine
 				name="instance"
 				bind:value={address}

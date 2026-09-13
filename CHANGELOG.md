@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.165.4 — 2026-09-13
+
+- **The instance chooser says what it is.** "Cloud instance" and "On device"
+  rather than "Connect to an instance" and "This phone only", each with a
+  heading and a list you can read down: a tick against what you get, a cross
+  against what you give up. Four plain lines read as four good things whichever
+  side they are on.
+- **The address field says what to put in it** — any instance URL, with the
+  official one named.
+
 ## 0.165.3 — 2026-09-13
 
 - **No more flick at the start of a movement.** A screen was made visible in

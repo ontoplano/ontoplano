@@ -1441,29 +1441,33 @@ built.set('README.md', await format(indexPage(PAGES, WRITTEN)));
 
 if (CHECK) {
 	/*
-	 * A clone with no tags cannot know what the newest release is, so the
-	 * download block it would generate is the fallback rather than the real
-	 * addresses — and comparing that against the committed page would fail
-	 * every CI run, which fetches one commit and no tags.
+	 * A clone with no tags cannot know what the newest release is.
 	 *
-	 * The same hole `build-badges.mjs` has, answered the same way: the lines
-	 * that depend on knowing the tag are not checked when the tag is unknown.
-	 * Everything else on the page still is.
+	 * The install page names the release's own files — `ontoplano-0.165.3-…` —
+	 * and takes that name from `git describe`. Without a tag the generator
+	 * writes the honest fallback instead, which is different prose, not just
+	 * different addresses. So the page cannot be compared at all here, and
+	 * saying so is better than what this used to do: drop the lines carrying a
+	 * `/releases/` URL and compare the rest, which still differed and reported
+	 * a stale page on a tree where nothing was stale. It left CI red for a
+	 * clone's missing tags.
+	 *
+	 * CI fetches tags now (`.github/workflows/ci.yml`), so this is the fork's
+	 * path rather than ours — and a fork gets a check that passes rather than
+	 * one that is wrong.
 	 */
 	const blind = releaseTag() === null;
-	const comparable = (text) =>
-		blind
-			? text
-					.split('\n')
-					.filter((l) => !l.includes('/releases/'))
-					.join('\n')
-			: text;
+	const NAMES_THE_RELEASE = new Set(['running-it.md']);
 
 	const stale = [];
+	const unchecked = [];
 	for (const [file, content] of built) {
+		if (blind && NAMES_THE_RELEASE.has(file)) {
+			unchecked.push(file);
+			continue;
+		}
 		const path = join(OUT, file);
-		if (!existsSync(path) || comparable(readFileSync(path, 'utf8')) !== comparable(content))
-			stale.push(file);
+		if (!existsSync(path) || readFileSync(path, 'utf8') !== content) stale.push(file);
 	}
 	// Something committed that the generator no longer produces is drift too.
 	const extra = existsSync(OUT)
@@ -1476,10 +1480,32 @@ if (CHECK) {
 		for (const f of extra) console.error(`  orphan:  docs/reference/${f}`);
 		process.exit(1);
 	}
-	console.log(`docs: ${built.size} pages up to date`);
+	if (unchecked.length > 0)
+		console.log(
+			`docs: ${unchecked.join(', ')} not checked — this clone has no tags, so the ` +
+				'release its download links name is unknown'
+		);
+	console.log(`docs: ${built.size - unchecked.length} pages up to date`);
 } else {
 	rmSync(OUT, { recursive: true, force: true });
 	mkdirSync(OUT, { recursive: true });
 	for (const [file, content] of built) writeFileSync(join(OUT, file), content);
 	console.log(`docs: wrote ${built.size} pages to docs/reference/`);
+
+	/*
+	 * Which release the download links now name, said out loud.
+	 *
+	 * `git describe` answers with the newest tag *this clone has*, and a clone
+	 * that has not fetched tags since the last release has an old one — so
+	 * running this there quietly rewrites the install page backwards to a
+	 * version that is no longer current, and it looks like an ordinary
+	 * regeneration in the diff. That happened. One line is the difference
+	 * between noticing and committing it.
+	 */
+	const tag = releaseTag();
+	console.log(
+		tag
+			? `docs: the download links name ${tag} — \`git fetch --tags\` if that is not the newest`
+			: 'docs: no tag in this clone, so the download links point at the releases page'
+	);
 }
