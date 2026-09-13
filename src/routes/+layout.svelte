@@ -8,7 +8,7 @@
 	import { live } from '$lib/live';
 	import { afterNavigate, goto, onNavigate } from '$app/navigation';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
-	import { PAGE_TURN, turnIn, turnOut } from '$lib/page-turn.svelte';
+	import { PAGE_TURN, tune, turnIn, turnOut } from '$lib/page-turn.svelte';
 	import { PAGE_TURN_DEFAULTS } from '$lib/page-turn';
 	import type { LayoutServerData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
@@ -75,6 +75,18 @@
 	 */
 	$effect(() => {
 		document.documentElement.style.setProperty('--page-turn', `${PAGE_TURN.durationMs}ms`);
+	});
+
+	/*
+	 * The instance's own numbers, if it has set any.
+	 *
+	 * In an effect rather than at the top: the Instance page turns these under
+	 * the reader's hand while they judge them, and this must not put the saved
+	 * ones back on the next navigation — so it tracks the loaded value and
+	 * nothing else.
+	 */
+	$effect(() => {
+		if (data.pageTurn) tune(data.pageTurn);
 	});
 
 	/*

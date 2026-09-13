@@ -103,14 +103,20 @@ export default defineConfig({
 		{
 			name: 'app',
 			testIgnore: [
-				'**/{registration,admin}.e2e.ts',
+				'**/{registration,admin,page-turn-tuner}.e2e.ts',
 				'**/{.worktrees,.claude}/**',
 				'**/e2e-isolated/**'
 			]
 		},
-		// The administrator is the oldest account, so this cannot run until
-		// something has made accounts.
-		{ name: 'admin', testMatch: '**/admin.e2e.ts', dependencies: ['app'] },
+		/*
+		 * The pages only the instance's owner can open.
+		 *
+		 * The owner is the oldest account, so neither of these can run until
+		 * something has made accounts — and not beside `app` either, which is
+		 * making them: "the oldest account" is a moving target while that
+		 * project runs, and signing in as it races.
+		 */
+		{ name: 'admin', testMatch: '**/{admin,page-turn-tuner}.e2e.ts', dependencies: ['app'] },
 		{ name: 'registration', testMatch: '**/registration.e2e.ts', dependencies: ['app', 'admin'] }
 	]
 });

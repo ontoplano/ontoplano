@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.163.0 — 2026-09-13
+
+- **How the page turns is yours to set, on the Instance page.** Three sliders —
+  speed, grain, hardness — and they take effect as you move them, because
+  "hardness 30" means nothing until the screen does it. "Show me" plays the
+  turn on the spot rather than making you navigate away to see what you
+  changed, and there is a way back to the numbers it shipped with. Saved to
+  `config.toml`: it is the instance's feel, so everybody who opens this copy
+  gets it.
+
 ## 0.162.7 — 2026-09-13
 
 - **The habit grid uses the whole width.** Ninety days is thirteen columns, and

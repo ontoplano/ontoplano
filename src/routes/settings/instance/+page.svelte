@@ -12,10 +12,38 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { REGISTRATION_MODES } from '$lib/registration';
+	import { PAGE_TURN_DEFAULTS, PAGE_TURN_RANGES, type PageTurnTuning } from '$lib/page-turn';
+	import { PAGE_TURN, tune, turnIn, turnOut } from '$lib/page-turn.svelte';
 	import StagingBand from '$lib/components/StagingBand.svelte';
 	import type { PageServerData, ActionData } from './$types';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
+
+	/*
+	 * The page turn, judged while it is being set.
+	 *
+	 * Three numbers nobody can pick from a description: "hardness 30" means
+	 * nothing until the screen does it. So moving a slider puts the value in
+	 * force immediately — the whole app dissolves by these numbers from that
+	 * moment — and "Show me" plays a turn here rather than making somebody
+	 * navigate away to see what they just changed. Saving writes it to
+	 * config.toml; until then it is this session only, and a reload puts the
+	 * instance's own numbers back.
+	 */
+	const turnDials = Object.entries(PAGE_TURN_RANGES) as [
+		keyof PageTurnTuning,
+		(typeof PAGE_TURN_RANGES)[keyof PageTurnTuning]
+	][];
+
+	let turnSurface = $state<HTMLElement>();
+
+	function showTheTurn() {
+		if (!turnSurface) return;
+		turnOut(turnSurface);
+		// The two halves, back to back: out over the wait it would be covering,
+		// then in, which is the whole gesture somebody is trying to judge.
+		setTimeout(() => turnIn(turnSurface), PAGE_TURN.durationMs / 2);
+	}
 
 	/**
 	 * The export, as a file the browser saves rather than a page of addresses.
@@ -356,6 +384,73 @@
 			</label>
 
 			<button class="btn btn-primary">Save</button>
+		</form>
+	</Card>
+
+	<!--
+		Three numbers, and the only way to judge them.
+		
+		This is the instance's feel rather than an account's setting, which is
+		why it is on this page: everybody who opens this copy of ontoplano gets
+		the same dissolve, the way they get the same tagline.
+	-->
+	<Card
+		title="Changing screen"
+		description="How the page dissolves on the way to the next one. Everyone on this instance sees it."
+	>
+		<form
+			method="post"
+			action="?/setPageTurn"
+			use:settingsForm={{ notice: 'Saved.' }}
+			class="space-y-4"
+		>
+			{#each turnDials as [key, dial] (key)}
+				<label class="block">
+					<span class="mb-1 flex items-baseline justify-between gap-2">
+						<span class="eyebrow text-gray-600">{dial.label}</span>
+						<span class="tabular text-xs text-gray-500">{PAGE_TURN[key]}{dial.unit}</span>
+					</span>
+					<input
+						type="range"
+						name={key}
+						min={dial.min}
+						max={dial.max}
+						step={dial.step}
+						value={PAGE_TURN[key]}
+						oninput={(e) => tune({ [key]: Number(e.currentTarget.value) })}
+						class="w-full"
+					/>
+				</label>
+			{/each}
+
+			<!--
+				Something to dissolve. Not the whole page: the controls have to stay
+				where they are while the reader watches, or they are chasing the
+				thing they are adjusting. No `page-turning` class either — that rule
+				takes presses away from a screen on its way out, and this one is not
+				on its way anywhere.
+			-->
+			<div
+				bind:this={turnSurface}
+				class="flex items-center justify-center border border-gray-200 bg-gray-50 px-4 py-8 text-center"
+			>
+				<span class="text-sm text-gray-600">
+					{PAGE_TURN.durationMs}ms, grain {PAGE_TURN.grain}, hardness {PAGE_TURN.hardness}
+				</span>
+			</div>
+
+			<div class="flex flex-wrap items-center gap-2">
+				<button type="button" class="btn" onclick={showTheTurn}>Show me</button>
+				<button
+					type="button"
+					class="btn"
+					onclick={() => tune(PAGE_TURN_DEFAULTS)}
+					disabled={turnDials.every(([key]) => PAGE_TURN[key] === PAGE_TURN_DEFAULTS[key])}
+				>
+					Back to the defaults
+				</button>
+				<button class="btn btn-primary">Save</button>
+			</div>
 		</form>
 	</Card>
 

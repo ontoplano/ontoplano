@@ -5,15 +5,21 @@
  * Svelte — the end-to-end test imports the defaults to assert against — and a
  * module holding Svelte state cannot be loaded by plain Node.
  *
- * The numbers themselves are `PAGE_TURN_DEFAULTS`, in that file, and changing
- * the feel of the dissolve means editing them there. There was a screen with
- * sliders on it that turned them while the app ran; it is gone. This is three
- * numbers in one file, not a setting, and certainly not a setting with a page.
+ * The numbers themselves start as `PAGE_TURN_DEFAULTS`, in that file, and the
+ * instance may hold three of its own — the feel of the app is the operator's
+ * call, not each account's. `tune()` is what the Instance page's sliders move,
+ * which is why this is state and not a constant: turning a slider has to
+ * change the turn under the reader's hand, or there is no way to judge it.
  */
 import { PAGE_TURN_DEFAULTS, type PageTurnTuning } from './page-turn.js';
 
 /** What is in force. One place, read wherever the dissolve is drawn. */
-export const PAGE_TURN: PageTurnTuning = PAGE_TURN_DEFAULTS;
+export const PAGE_TURN: PageTurnTuning = $state({ ...PAGE_TURN_DEFAULTS });
+
+/** Put a set of numbers in force, now, everywhere the dissolve is drawn. */
+export function tune(numbers: Partial<PageTurnTuning>): void {
+	Object.assign(PAGE_TURN, numbers);
+}
 
 /**
  * The dissolve, in two halves, driven from script.

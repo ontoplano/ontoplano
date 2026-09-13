@@ -85,9 +85,12 @@ actually listening names an address here.
 
 ### `[ui]`
 
-| Key           | Type     | Means                                                                   |
-| ------------- | -------- | ----------------------------------------------------------------------- |
-| `undoSeconds` | `number` | Seconds a delete waits, undoably, before it happens. Zero turns it off. |
+| Key                | Type     | Means                                                                   |
+| ------------------ | -------- | ----------------------------------------------------------------------- |
+| `undoSeconds`      | `number` | Seconds a delete waits, undoably, before it happens. Zero turns it off. |
+| `pageTurnMs`       | `number` | —                                                                       |
+| `pageTurnGrain`    | `number` | —                                                                       |
+| `pageTurnHardness` | `number` | —                                                                       |
 
 ### `[legal]`
 

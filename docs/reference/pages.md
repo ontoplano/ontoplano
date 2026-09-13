@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**56 pages, 217 actions.**
+**56 pages, 218 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -58,7 +58,7 @@ write surface for everything else; both end up calling the same
 | `/settings/account/import`           | `importTasks`, `importVault`, `importAccount`                                                                                                                                                                                                                                                                                                                                       |
 | `/settings/billing`                  | `acceptFamilyOffer`, `declineFamilyOffer`, `checkout`, `switchInterval`                                                                                                                                                                                                                                                                                                             |
 | `/settings/family`                   | `addSeat`, `withdrawInvite`, `removeSeat`                                                                                                                                                                                                                                                                                                                                           |
-| `/settings/instance`                 | `exportSubscribers`, `setRegistration`, `setEmailChange`, `setClientErrors`, `createInvite`, `revokeInvite`                                                                                                                                                                                                                                                                         |
+| `/settings/instance`                 | `exportSubscribers`, `setRegistration`, `setEmailChange`, `setPageTurn`, `setClientErrors`, `createInvite`, `revokeInvite`                                                                                                                                                                                                                                                          |
 | `/settings/integrations`             | `createKey`, `putBack`                                                                                                                                                                                                                                                                                                                                                              |
 | `/settings/integrations/connections` | `createToken`, `calendarLink`, `putBack`, `revokeToken`, `updateStream`, `deleteStream`, `createWebhook`, `deleteWebhook`, `reviveWebhook`                                                                                                                                                                                                                                          |
 | `/settings/integrations/widget`      | `connect`                                                                                                                                                                                                                                                                                                                                                                           |
@@ -412,6 +412,16 @@ These describe the machine, not the account, so they are only readable and
 writable on a self-hosted instance by its owner. Anyone else gets a 404 —
 "not yours" and "not there" are the same answer. This page moves to /admin
 once roles land.
+
+**`setPageTurn`**
+
+How changing screen looks, as three numbers.
+
+Held to the same bounds the sliders have, on the way in as well: a form
+is a thing anybody can post, and a two-second dissolve on every
+navigation is not a setting, it is a broken app. Out of range is clamped
+rather than refused — the reader asked for "as slow as it goes", and
+that is a sentence this can answer.
 
 ### `/settings/integrations`
 
