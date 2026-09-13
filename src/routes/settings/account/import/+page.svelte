@@ -1,17 +1,19 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
+	import Banner from '$lib/components/Banner.svelte';
 	import Card from '$lib/components/Card.svelte';
 	import MarkdownImport from '$lib/components/MarkdownImport.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { settingsForm } from '$lib/actions/settings-form';
-	import type { ActionData } from './$types';
+	import type { ActionData, PageData } from './$types';
 	import { IMPORT_KINDS } from '$lib/imports-catalogue';
+	import { tooBigToSend } from '$lib/upload-ceiling';
 
 	/** The ones this card takes: a file, worked out by what is in it. */
 	const fromFiles = IMPORT_KINDS.filter((k) => k.becomes === 'todos');
 
-	let { form }: { form: ActionData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	/**
 	 * The chosen files, read here rather than posted.
@@ -27,16 +29,36 @@
 	let fileError = $state<string | null>(null);
 
 	/** A paste beyond this is not a task list, and the server refuses it anyway. */
-	const MAX_BYTES = 2_000_000;
+	const MAX_TASKS_BYTES = 2_000_000;
 
-	async function readChosen(event: Event, many: boolean): Promise<string | null> {
+	/**
+	 * What a restore may weigh, which is what the server can be sent at all.
+	 *
+	 * A whole account is not a task list: with pictures in it an export passes
+	 * ten megabytes without trying. It used to be held to the same two, and
+	 * being refused here left the box empty — so the form posted nothing and the
+	 * server answered "that file is not JSON", which was true of the empty
+	 * string and told nobody anything. Pasting it instead got as far as the
+	 * server's own ceiling and came back a 500 with "something went wrong on
+	 * our side".
+	 *
+	 * So the page knows the real number and says both: how big the file is, and
+	 * what this instance takes.
+	 */
+	const restoreCeiling = $derived(data.uploadCeiling);
+
+	async function readChosen(
+		event: Event,
+		{ many, ceiling }: { many: boolean; ceiling: number }
+	): Promise<string | null> {
 		fileError = null;
 		const files = [...((event.currentTarget as HTMLInputElement).files ?? [])];
 		if (files.length === 0) return null;
 
 		const total = files.reduce((sum, f) => sum + f.size, 0);
-		if (total > MAX_BYTES) {
-			fileError = `That is ${Math.round(total / 1_000_000)}MB. Two megabytes is the most this reads at once.`;
+		const refused = tooBigToSend(total, ceiling);
+		if (refused) {
+			fileError = refused;
 			return null;
 		}
 
@@ -47,14 +69,23 @@
 	}
 
 	async function readTasks(event: Event) {
-		const text = await readChosen(event, true);
+		const text = await readChosen(event, { many: true, ceiling: MAX_TASKS_BYTES });
 		if (text !== null) importText = text;
 	}
 
 	async function readRestore(event: Event) {
-		const text = await readChosen(event, false);
+		const text = await readChosen(event, { many: false, ceiling: restoreCeiling });
 		if (text !== null) restoreText = text;
 	}
+
+	/**
+	 * And a paste is measured too, on the way out rather than on the way back.
+	 *
+	 * Somebody who pastes sixteen megabytes into the box gets the same sentence
+	 * as somebody who chose the file, instead of a 500 from a server that
+	 * refused the body before this app saw it.
+	 */
+	const restoreTooBig = $derived(tooBigToSend(new Blob([restoreText]).size, restoreCeiling));
 </script>
 
 <div class="space-y-4">
@@ -183,6 +214,10 @@
 				class="input font-mono text-xs"
 			></textarea>
 
+			{#if restoreTooBig}
+				<Banner kind="error">{restoreTooBig}</Banner>
+			{/if}
+
 			<!--
 				Said before the button, in the words of what it does.
 
@@ -207,7 +242,10 @@
 				wrote will.
 			</p>
 
-			<button type="submit" class="btn btn-sm">Restore</button>
+			<!-- Not pressable while the thing in the box cannot be sent: the server
+			     refuses a body that size before this app sees it, and what comes
+			     back is a 500 rather than a reason. -->
+			<button type="submit" class="btn btn-sm" disabled={restoreTooBig !== null}>Restore</button>
 		</form>
 
 		{#if form?.success && form.action === 'importAccount'}

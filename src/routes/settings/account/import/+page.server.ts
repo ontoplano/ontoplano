@@ -5,6 +5,7 @@ import { importTasks } from '$lib/services/imports';
 import { importAccount, NOT_PORTABLE } from '$lib/server/services/account-import';
 import { toActionFailure } from '$lib/http-errors';
 import { importVaultAction } from '$lib/server/import-vault-action';
+import { ENVELOPE, parseByteSize } from '$lib/server/body-limit';
 
 /**
  * Bringing things in, on a page of its own.
@@ -15,11 +16,31 @@ import { importVaultAction } from '$lib/server/import-vault-action';
  * its own act, done once, and it reads better as its own page than as the
  * tail of somebody else's.
  */
+/** adapter-node's own default, which is what an instance that sets nothing has. */
+const ADAPTER_DEFAULT = 512 * 1024;
+
 export const load: PageServerLoad = async () => {
+	/*
+	 * The biggest thing this instance can actually be sent.
+	 *
+	 * `adapter-node` refuses a larger body with a plain 413 before any of this
+	 * app's code runs, so the page has to know the number rather than find out
+	 * by being refused. An export of an account with pictures in it passes 12MB
+	 * easily — the one that prompted this was 16MB — and what came back was a
+	 * 500 and "something went wrong on our side", which named nothing.
+	 *
+	 * `0` disables the limit outright, which is a deliberate answer and means
+	 * there is no ceiling to warn about.
+	 */
+	const parsed = parseByteSize(process.env.BODY_SIZE_LIMIT);
+	const limit = parsed === 0 ? 0 : (parsed ?? ADAPTER_DEFAULT);
+
 	return {
 		// Said on the page rather than written into it twice: the reasons live
 		// beside the tables they are about, in account-import.ts.
-		notPortable: Object.keys(NOT_PORTABLE).length
+		notPortable: Object.keys(NOT_PORTABLE).length,
+		/** Bytes, or 0 for no ceiling. Already less the multipart framing. */
+		uploadCeiling: limit === 0 ? 0 : Math.max(limit - ENVELOPE, 0)
 	};
 };
 

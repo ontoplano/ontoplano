@@ -8,7 +8,7 @@
  * through `host.mediaLimits()`, and this is what the server binds there.
  */
 import { loadConfig } from './config.js';
-import { ENVELOPE, pictureCeiling } from './db/assert-body-limit.js';
+import { ENVELOPE, pictureCeiling } from './body-limit.js';
 import type { MediaLimits } from '$lib/services/media-limits.js';
 
 /**

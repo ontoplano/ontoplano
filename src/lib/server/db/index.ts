@@ -5,7 +5,7 @@ import { bindDb, db as bound } from '$lib/db/index.js';
 import { bindServerHost } from '../host.js';
 import { loadConfig, ensureDirectories } from '../config.js';
 import { assertMigrated } from './assert-migrated.js';
-import { reconcileBodyLimit } from './assert-body-limit.js';
+import { reconcileBodyLimit } from '../body-limit.js';
 
 // A server about to serve must be migrated; a BUILD must not care. `vite
 // build` loads this module on whatever machine is building, and that

@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-	pictureCeiling,
-	reconcileBodyLimit,
-	parseByteSize
-} from '../src/lib/server/db/assert-body-limit';
+import { pictureCeiling, reconcileBodyLimit, parseByteSize } from '../src/lib/server/body-limit';
 
 /**
  * The setting that made the configured maximum impossible.

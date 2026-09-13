@@ -18,6 +18,18 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.165.7 — 2026-09-13
+
+- **Restoring an export says why it will not fit, before you send it.** An
+  account with pictures in it exports to more than a small instance will
+  accept, and what came back was either "that file is not JSON" — because
+  choosing the file hit a two-megabyte cap meant for a task list and left the
+  box empty — or a 500 saying "something went wrong on our side", because the
+  server refuses an oversized body before any of the app runs. The page knows
+  the real ceiling now, names both sizes, points at `make db-import` for the
+  machine itself, and will not let you press Restore on something that cannot
+  be sent.
+
 ## 0.165.6 — 2026-09-13
 
 - **`make reset-dev` gives you a clean slate, every time.** It moved the old
