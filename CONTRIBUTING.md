@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for contributing! As of now, Ontoplano is one person's project, so every issue,
+Thanks for the interest in contributing! As of now, Ontoplano is one person's project, so every issue,
 fix and pull request genuinely helps it.
 
 ## Ways to contribute
@@ -9,8 +9,9 @@ fix and pull request genuinely helps it.
 - **Fix a bug** — link the issue it closes.
 - **Build a feature** — open an issue first so we agree on the shape before.
   you write much. `ROADMAP.md` lists what is already intended.
-- **Improve the docs** — the handwritten half lives in `docs/prose/`; the
-  rest is generated from the code.
+- **Improve the docs** — most of it is generated from the code; to avoid
+  having to keep up with it, but there are handwritten parts, living
+  in `docs/prose/`, to improve.
 - **Package it** — there is no Windows installer yet.
 
 No CLA. You keep the copyright to what you write; it goes in under AGPL-3.0.
@@ -30,6 +31,7 @@ SQLite DB is at `~/.local/share/ontoplano/ontoplano.db`, config at
 
 There are a lot of make targets. Bare `make` lists them; `make vars` says which
 switches each one takes, `make vars ONLY=package` for one.
+`make android` will build the app and `make android-install` installs it using adb.
 
 ### Tests and lint
 
@@ -108,7 +110,8 @@ Match what is around you — naming, layout, comment density. The rules a
 reviewer or a lint rule will stop you on:
 
 - **Ownership lives in the `WHERE`.** Every query touching user data filters
-  by the account inside the statement.
+  by the account inside the statement, not after running a more general
+  query.
 - **Routes do not query the database.** `+page.server.ts` calls a service in
   `src/lib/services/` (`src/lib/server/services/` for the server-only
   modules); a lint rule enforces it.
