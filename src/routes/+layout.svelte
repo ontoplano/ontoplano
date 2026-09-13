@@ -12,7 +12,14 @@
 	import { NAV_PLACES } from '$lib/sections-nav';
 	import { accentsWith, placesFor } from '$lib/nav-order';
 	import { provideSwipeSurface } from '$lib/swipe-surface';
-	import { slideAway, slideOn, slidesHere, stopHiding } from '$lib/slide';
+	import {
+		holdHeight,
+		releaseHeight,
+		slideAway,
+		slideOn,
+		slidesHere,
+		stopHiding
+	} from '$lib/slide';
 	import { MARK_CLIP_PATH } from '$lib/logo/mark-shape';
 	import { CHOOSE_PATH, inPhoneApp, storedChoice } from '$lib/instance-choice';
 	import { THEMES } from '$lib/theme.js';
@@ -275,7 +282,11 @@
 		return allNav.length + (beside >= 0 ? beside : BESIDE_THE_WHEEL.length);
 	}
 
+	/** The panel that moves. Its content is `pageBody`, which is what is replaced. */
 	let page$ = $state<HTMLElement>();
+	let pageBody = $state<HTMLElement>();
+	/** Kept as tall as what left, so nothing below walks up the page. */
+	let roomFrame = $state<HTMLElement>();
 	/** Where the copy of the outgoing room is put. Svelte never fills it. */
 	let roomStage = $state<HTMLElement>();
 	let changedRoom = 0;
@@ -303,14 +314,31 @@
 		 */
 		const offTheWheel = from < 0 || to < 0 || from >= allNav.length || to >= allNav.length;
 		changedRoom = from === to ? 0 : (offTheWheel ? 1 : -1) * Math.sign(to - from);
-		// `arc`: a room change is a turn of the menu, so it travels round the
-		// wheel rather than straight across. See `$lib/slide`.
-		if (changedRoom && page$ && roomStage && slidesHere())
-			slideAway(roomStage, page$, changedRoom, true);
+		if (!changedRoom || !page$ || !pageBody || !roomStage || !slidesHere()) return;
+
+		/*
+		 * Both halves now, rather than one now and one when the data lands.
+		 *
+		 * The movement used to be: take the old room off, wait for the next one
+		 * to load, bring it on — so the arrival *was* the load, and on a slow
+		 * one the screen left and nothing happened until it finished. It is the
+		 * other way round now: the room leaves, the empty panel arrives behind
+		 * it, and if the data has not come by the time it settles the mark turns
+		 * in the middle of a panel that has already stopped moving.
+		 *
+		 * `arc`: a room change is a turn of the menu, so it travels round the
+		 * wheel rather than straight across. See `$lib/slide`.
+		 */
+		holdHeight(roomFrame, pageBody);
+		slideAway(roomStage, pageBody, changedRoom, true);
+		slideOn(page$, changedRoom, true);
 	});
 
 	afterNavigate(() => {
-		if (changedRoom && page$ && slidesHere()) slideOn(page$, changedRoom, true);
+		// In place: the panel arrived while the data was loading, so the room
+		// appears where it already is rather than sliding in a second time.
+		stopHiding(pageBody);
+		releaseHeight(roomFrame);
 		changedRoom = 0;
 	});
 
@@ -323,7 +351,10 @@
 	 * on view, whether a movement finished or not.
 	 */
 	$effect(() => {
-		if (!navigating.to) stopHiding(page$);
+		if (!navigating.to) {
+			stopHiding(pageBody);
+			releaseHeight(roomFrame);
+		}
 	});
 
 	afterNavigate(() => scroller?.scrollTo({ top: 0 }));
@@ -934,8 +965,10 @@
 			<!-- `.slide-frame` clips the movement between rooms, and gives the page
 			     gutter back first so a card that bleeds to the screen edge still
 			     reaches it. -->
-			<div class="slide-frame">
-				<div bind:this={page$}>{@render children()}</div>
+			<div bind:this={roomFrame} class="slide-frame">
+				<div bind:this={page$}>
+					<div bind:this={pageBody}>{@render children()}</div>
+				</div>
 				<div bind:this={roomStage} class="slide-stage" aria-hidden="true"></div>
 
 				<!--

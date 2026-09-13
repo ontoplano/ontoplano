@@ -1507,6 +1507,19 @@ the public internet is a probe that describes the filesystem to strangers.
 
 #### `resources()`
 
+#### `instanceName()`
+
+Which instance is speaking, as a host name.
+
+A box runs more than one of these — production, staging, and the demo — and
+the watcher that carries a warning to a phone knows only which box it polled.
+So "teleonto: 4 mails failed to send" was a true sentence about one of three
+instances, and the /admin it points at is whichever one you happen to open.
+
+`ORIGIN` is where this process is actually served from, which is the only
+honest answer and already set on every deployment. Empty when it is not —
+a development run, a test — and then the warnings read as they used to.
+
 #### `warnings(r)`
 
 Whatever is currently over the line, as sentences a person can read.
@@ -4922,15 +4935,45 @@ Removed; the workouts in it keep existing and simply have no kind.
 
 #### `updateWorkout(ctx, id, input)`
 
+#### `setWorkoutMeasures(ctx, workoutId, raw)`
+
+Declare what this workout measures: names and units, no numbers.
+
+Replaced wholesale rather than diffed, for the same reason a session's lines
+are — it is one short list somebody edits as a block, and matching rows up
+by id would be work in aid of nothing. A blank row is one that was opened
+and abandoned, not an error.
+
 #### `setArchived(ctx, id, archived)`
 
 #### `deleteWorkout(ctx, id)`
 
 For one made by mistake: gone, and cleared off any block it was on.
 
-#### `done(ctx, id)`
+Refused once it has been done, because the sessions behind it are the
+record of what somebody actually did and deleting the plan would take them
+with it. A plan with history is archived — it leaves the list and keeps
+everything it knows.
+
+#### `done(ctx, id, on)`
 
 Record that a session happened — the "cooked" of the gym.
+
+Writes a session with nothing measured: ticking Done says it happened, and
+saying how much of what is `logWorkout`. `lastDoneAt` is kept in step
+because half the app reads it to answer "when did I last do this", and a
+count over the sessions would be the same answer at more cost.
+
+#### `ensureSession(ctx, workoutId, doneOn)`
+
+A session for this workout on this day, made only if there is not one.
+
+Two paths say a workout happened — the Done button in Health, and ticking
+its block off on the week — and the first calls the second, so an
+unconditional insert would write the same session twice for one press. The
+explicit form (`logWorkout`) always inserts, which is what somebody
+recording two runs in a day wants; this is the quick tick, and a tick is
+about a day.
 
 #### `scheduleWorkout(ctx, id, input)`
 
@@ -4949,7 +4992,46 @@ The inverse of the binding in `setInstanceStatus`: ticking Done in Health
 must not leave the week still asking for it. Only today's occurrence, and
 only one: a workout done on Tuesday says nothing about Thursday's.
 
+#### `logWorkout(ctx, workoutId, input)`
+
+Write down a session: the day, anything noted, and the lines.
+
+#### `getSession(ctx, id)`
+
+#### `updateSession(ctx, id, input)`
+
+Correct one: the day, the note, and every line, in one go.
+
+#### `deleteSession(ctx, id)`
+
+For a session logged by accident. Its lines go with it.
+
+#### `listSessions(ctx, opts)`
+
+Sessions, newest first, with their lines already attached.
+
+Two queries rather than one per session: the lines come back in a single
+`IN` and are handed out by id, which is the shape the notebooks use for a
+note's tags and people.
+
+#### `measureHistory(ctx, activity, opts)`
+
+One activity over time, ready to be drawn.
+
+Grouped by the person's own word for it rather than by workout: "ran" is
+one line whether it happened in the morning session or on a Sunday, which
+is what somebody asking "am I running more" means. Oldest first, because
+that is the direction a chart's x-axis runs.
+
+#### `measuredActivities(ctx)`
+
+Everything this account has ever measured, for a picker or a chart's menu.
+
 ### Types
 
 - `WorkoutCategory`
 - `Workout`
+- `Measure` — One line of a session: ran 5 km, deadlifted 120 kg, did the routine.
+- `Session`
+- `MeasureInput`
+- `SessionInput`

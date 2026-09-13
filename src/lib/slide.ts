@@ -67,6 +67,26 @@ export const SWIPE_MIN_PX = 60;
 export const SWIPE_RATIO = 1.6;
 
 /**
+ * Keep the frame as tall as what just left, until the next screen arrives.
+ *
+ * The content goes out of sight the moment the movement starts, so without
+ * this the frame collapses to nothing: the page jumps to the top, whatever is
+ * below it walks up the screen, and the mark that turns while you wait has no
+ * room to turn in. Capped at the window, because holding a frame three screens
+ * tall reserves space nobody can see.
+ *
+ * Returns the way to give it back.
+ */
+export function holdHeight(frame: HTMLElement | undefined, body: HTMLElement | undefined): void {
+	if (!frame || !body) return;
+	frame.style.minHeight = `${Math.min(body.offsetHeight, window.innerHeight)}px`;
+}
+
+export function releaseHeight(frame: HTMLElement | undefined): void {
+	if (frame) frame.style.minHeight = '';
+}
+
+/**
  * Put a screen back on view without moving it.
  *
  * For the navigation that never arrives — one abandoned, or superseded by

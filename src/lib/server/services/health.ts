@@ -4,6 +4,7 @@ import { statSync, statfsSync } from 'node:fs';
 import { sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { loadConfig } from '$lib/server/config';
+import { isDemo } from '$lib/server/settings';
 import { openFailureCount } from './mail-log.js';
 import { chasedCheckouts } from './billing.js';
 
@@ -130,18 +131,44 @@ export const LIMITS = {
 	loadPerCore: 2
 } as const;
 
+/**
+ * Which instance is speaking, as a host name.
+ *
+ * A box runs more than one of these — production, staging, and the demo — and
+ * the watcher that carries a warning to a phone knows only which box it polled.
+ * So "teleonto: 4 mails failed to send" was a true sentence about one of three
+ * instances, and the /admin it points at is whichever one you happen to open.
+ *
+ * `ORIGIN` is where this process is actually served from, which is the only
+ * honest answer and already set on every deployment. Empty when it is not —
+ * a development run, a test — and then the warnings read as they used to.
+ */
+export function instanceName(): string {
+	const origin = process.env.ORIGIN;
+	if (!origin) return '';
+	try {
+		return new URL(origin).host;
+	} catch {
+		return '';
+	}
+}
+
 /** Whatever is currently over the line, as sentences a person can read. */
 export function warnings(r: Resources = resources()): string[] {
 	const out: string[] = [];
+	// Said once, at the front of each line, because a warning arrives on its own
+	// in a chat message with no context around it.
+	const here = instanceName();
+	const said = (text: string) => out.push(here ? `${here}: ${text}` : text);
 
 	const tight =
 		r.diskFreeMb <= LIMITS.diskFreeMb ||
 		(r.diskUsedPercent >= LIMITS.diskUsedPercent && r.diskFreeMb < 10_240);
 	if (tight) {
-		out.push(`disk ${r.diskUsedPercent}% full, ${r.diskFreeMb}MB left`);
+		said(`disk ${r.diskUsedPercent}% full, ${r.diskFreeMb}MB left`);
 	}
 	if (r.memoryUsedPercent >= LIMITS.memoryUsedPercent) {
-		out.push(`memory ${r.memoryUsedPercent}% used, ${r.memoryFreeMb}MB free`);
+		said(`memory ${r.memoryUsedPercent}% used, ${r.memoryFreeMb}MB free`);
 	}
 	/*
 	 * The one that moves first when people arrive.
@@ -152,15 +179,24 @@ export function warnings(r: Resources = resources()): string[] {
 	 */
 	const cores = Math.max(1, cpus().length);
 	if (r.load1 >= LIMITS.loadPerCore * cores) {
-		out.push(`load ${r.load1.toFixed(2)} on ${cores} core${cores === 1 ? '' : 's'}`);
+		said(`load ${r.load1.toFixed(2)} on ${cores} core${cores === 1 ? '' : 's'}`);
 	}
 	// Failed mail belongs here because this is the channel somebody is already
 	// watching: the guard timer and the off-box watcher alert on a warning
 	// appearing, so a broken mailer reaches a phone instead of only a log.
 	try {
-		const failed = openFailureCount();
+		/*
+		 * Not on the demo, whose /admin deliberately shows nothing.
+		 *
+		 * The demo signs every visitor into one account and its administration
+		 * page hides the mail list along with everything else somebody else's
+		 * data would be in — so an alert saying "/admin lists them" points at a
+		 * page that is empty by construction. That is a false alarm whichever
+		 * way you read it, and the one thing an alerting channel cannot afford.
+		 */
+		const failed = isDemo() ? 0 : openFailureCount();
 		if (failed > 0) {
-			out.push(
+			said(
 				failed === 1
 					? 'one mail failed to send — /admin lists it'
 					: `${failed} mails failed to send — /admin lists them`
@@ -190,7 +226,7 @@ export function warnings(r: Resources = resources()): string[] {
 			// notification destination URL and which events it is subscribed
 			// to. Only counts payments the webhook never reached (a webhook
 			// that merely lost a race to the success page does not).
-			out.push(
+			said(
 				`billing webhook silent: ${chased} payment${chased === 1 ? '' : 's'} in the last 24h ` +
 					'the app had to confirm by polling the provider, because no webhook arrived. ' +
 					"Check the provider's webhook destination and its subscribed events."

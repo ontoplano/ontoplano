@@ -97,6 +97,48 @@ describe('warnings', () => {
 		});
 		expect(said).toHaveLength(2);
 	});
+
+	/*
+	 * A box runs production, staging and the demo.
+	 *
+	 * The watcher that carries a warning to a phone knows which box it polled
+	 * and not which of the three answered, so "teleonto: 4 mails failed to
+	 * send — /admin lists them" was a true sentence about an instance nobody
+	 * could identify, pointing at whichever /admin you happened to open.
+	 */
+	it('says which instance it came from', () => {
+		const had = process.env.ORIGIN;
+		process.env.ORIGIN = 'https://staging.ontoplano.com';
+		try {
+			const said = health.warnings({
+				...base,
+				diskUsedPercent: 99,
+				diskFreeMb: 100,
+				memoryUsedPercent: 10
+			});
+			expect(said[0]).toContain('staging.ontoplano.com');
+			expect(health.instanceName()).toBe('staging.ontoplano.com');
+		} finally {
+			if (had === undefined) delete process.env.ORIGIN;
+			else process.env.ORIGIN = had;
+		}
+	});
+
+	it('says nothing about where it is when nothing told it', () => {
+		const had = process.env.ORIGIN;
+		delete process.env.ORIGIN;
+		try {
+			const said = health.warnings({
+				...base,
+				diskUsedPercent: 99,
+				diskFreeMb: 100,
+				memoryUsedPercent: 10
+			});
+			expect(said[0]).toMatch(/^disk /);
+		} finally {
+			if (had !== undefined) process.env.ORIGIN = had;
+		}
+	});
 });
 
 describe('tokenMatches', () => {

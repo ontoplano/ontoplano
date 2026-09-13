@@ -1,5 +1,11 @@
 import type { RequestHandler } from './$types';
-import { databaseReachable, resources, tokenMatches, warnings } from '$lib/server/services/health';
+import {
+	databaseReachable,
+	instanceName,
+	resources,
+	tokenMatches,
+	warnings
+} from '$lib/server/services/health';
 import { billingStatus } from '$lib/server/services/billing';
 import { build } from '$lib/server/services/version';
 import { healthToken } from '$lib/server/settings';
@@ -48,6 +54,14 @@ export const GET: RequestHandler = async ({ request, url }) => {
 			// session, and a version string tells a stranger which bugs to try.
 			...(detail
 				? {
+						/*
+						 * Which instance this is, not only which box.
+						 *
+						 * A box runs production, staging and the demo, and a watcher
+						 * knows the address it polled and not what the thing answering
+						 * calls itself. Behind the token with the rest of the detail.
+						 */
+						instance: instanceName(),
 						resources: detail,
 						warnings: warnings(detail),
 						build: build(),

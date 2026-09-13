@@ -604,7 +604,7 @@
 									onclick={() => {
 										confirmingDeleteId = idea.id;
 									}}
-									class="icon-btn icon-btn-danger row-actions-last"
+									class="icon-btn icon-btn-danger"
 								>
 									<Icon name="trash" />
 								</button>

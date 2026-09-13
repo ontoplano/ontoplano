@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**69 tables.**
+**72 tables.**
 
 | Table                                             | Columns | Belongs to a user |
 | ------------------------------------------------- | ------- | ----------------- |
@@ -79,6 +79,9 @@ exist.
 | [`webhook_subscriptions`](#webhook_subscriptions) | 11      | yes               |
 | [`weekly_reviews`](#weekly_reviews)               | 7       | yes               |
 | [`workout_categories`](#workout_categories)       | 5       | yes               |
+| [`workout_measures`](#workout_measures)           | 7       | yes               |
+| [`workout_plan_measures`](#workout_plan_measures) | 6       | yes               |
+| [`workout_sessions`](#workout_sessions)           | 7       | yes               |
 | [`workouts`](#workouts)                           | 11      | yes               |
 
 ## account
@@ -1445,6 +1448,58 @@ Indexes:
 
 - `workout_categories_user_idx` on `user_id`
 - `workout_categories_user_name_unique` on `user_id`, `name` — unique
+
+## workout_measures
+
+| Column       | Type    | Null     | Default | Notes                   |
+| ------------ | ------- | -------- | ------- | ----------------------- |
+| `id`         | integer | not null | —       | primary key, auto       |
+| `user_id`    | text    | not null | —       | → `user.id`             |
+| `session_id` | integer | not null | —       | → `workout_sessions.id` |
+| `activity`   | text    | not null | —       | —                       |
+| `amount`     | real    | null     | —       | —                       |
+| `unit`       | text    | not null | `''`    | —                       |
+| `sort_order` | integer | not null | `0`     | —                       |
+
+Indexes:
+
+- `workout_measures_user_idx` on `user_id`
+- `workout_measures_session_idx` on `session_id`
+- `workout_measures_activity_idx` on `user_id`, `activity`
+
+## workout_plan_measures
+
+| Column       | Type    | Null     | Default | Notes             |
+| ------------ | ------- | -------- | ------- | ----------------- |
+| `id`         | integer | not null | —       | primary key, auto |
+| `user_id`    | text    | not null | —       | → `user.id`       |
+| `workout_id` | integer | not null | —       | → `workouts.id`   |
+| `activity`   | text    | not null | —       | —                 |
+| `unit`       | text    | not null | `''`    | —                 |
+| `sort_order` | integer | not null | `0`     | —                 |
+
+Indexes:
+
+- `workout_plan_measures_user_idx` on `user_id`
+- `workout_plan_measures_workout_idx` on `workout_id`
+
+## workout_sessions
+
+| Column       | Type    | Null     | Default               | Notes             |
+| ------------ | ------- | -------- | --------------------- | ----------------- |
+| `id`         | integer | not null | —                     | primary key, auto |
+| `user_id`    | text    | not null | —                     | → `user.id`       |
+| `workout_id` | integer | not null | —                     | → `workouts.id`   |
+| `done_on`    | text    | not null | —                     | —                 |
+| `notes`      | text    | not null | `''`                  | —                 |
+| `created_at` | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+| `updated_at` | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `workout_sessions_user_idx` on `user_id`
+- `workout_sessions_workout_idx` on `workout_id`
+- `workout_sessions_done_idx` on `done_on`
 
 ## workouts
 

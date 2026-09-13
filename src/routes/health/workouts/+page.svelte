@@ -35,12 +35,53 @@
 		return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 	}
 
+	/*
+	 * What a workout declares it measures, edited on the workout itself.
+	 *
+	 * A run is kilometres and a pace; a push day is what was benched and for
+	 * how many reps. Naming them here is not recording anything — no value is
+	 * given — it is deciding what writing a session down will ask for, so the
+	 * common case is already on screen instead of being typed out every week.
+	 * A session may still measure anything: this is a suggestion, not a rule.
+	 */
+	let declared: { activity: string; unit: string }[] = $state([blankDeclared()]);
+
+	function blankDeclared() {
+		return { activity: '', unit: '' };
+	}
+
+	/** The last row is always empty, so typing into it grows the list. */
+	function declaredTyped(index: number) {
+		if (index === declared.length - 1 && declared[index].activity.trim() !== '')
+			declared.push(blankDeclared());
+	}
+
+	function removeDeclared(index: number) {
+		declared.splice(index, 1);
+		if (declared.length === 0) declared.push(blankDeclared());
+	}
+
+	/*
+	 * And both directions, because this order is the order the session form
+	 * opens in — a run that measures distance before pace asks for them in that
+	 * order every week. The lines of a session have no such buttons: their
+	 * order is how they were typed on the day, and nothing later reads it.
+	 */
+	function moveDeclared(index: number, by: number) {
+		const to = index + by;
+		if (to < 0 || to >= declared.length) return;
+		const [row] = declared.splice(index, 1);
+		declared.splice(to, 0, row);
+	}
+
 	function openNew() {
 		editing = null;
+		declared = [blankDeclared()];
 		showForm = true;
 	}
 	function openEdit(t: (typeof data.workouts)[number]) {
 		editing = t;
+		declared = [...t.measures.map((m) => ({ ...m })), blankDeclared()];
 		showForm = true;
 	}
 
@@ -48,6 +89,142 @@
 	let addingCategory = $state(false);
 	let editingCategory = $state<number | null>(null);
 	let confirmDeleteCategory = $state<number | null>(null);
+
+	/*
+	 * The register: what was actually done, and how much of it.
+	 *
+	 * "Last done" says whether somebody is keeping a workout up and cannot say
+	 * whether they are getting anywhere with it. A session is a day plus lines
+	 * of activity, amount and unit in their own words — ran 5 km, deadlifted
+	 * 120 kg — so the answer to "am I lifting more than in March" is in the app
+	 * rather than in a notebook, and a chart can be drawn over it.
+	 */
+
+	type Session = (typeof data.sessions)[number];
+	type Line = { activity: string; amount: string; unit: string };
+
+	/** A row nobody has typed in yet. The form always ends with one. */
+	const blankLine = (): Line => ({ activity: '', amount: '', unit: '' });
+
+	/** The sessions of one workout, newest first, as the loader ordered them. */
+	function sessionsOf(workoutId: number): Session[] {
+		return data.sessions.filter((session) => session.workoutId === workoutId);
+	}
+
+	/**
+	 * Which workout's register is being written, and what is in the form.
+	 *
+	 * `logging` is the workout; `editingSession` is set as well when an
+	 * existing session is being corrected, so the two share one dialog and one
+	 * set of rows rather than drifting apart as a "new" and an "edit" form.
+	 */
+	let logging: (typeof data.workouts)[number] | null = $state(null);
+	let editingSession: Session | null = $state(null);
+	let logDate = $state(todayStr());
+	let logNotes = $state('');
+	let lines: Line[] = $state([blankLine()]);
+	let confirmDeleteSession: Session | null = $state(null);
+
+	/**
+	 * What this workout was measured by last time, with the amounts blank.
+	 *
+	 * Somebody who logged "ran / km" last week is logging "ran / km" this week,
+	 * and typing the word again every time is the friction that stops a
+	 * register being kept. Nothing is set up in advance — the second session
+	 * learns from the first, and an empty history opens on one empty row.
+	 */
+	function openingLines(workout: (typeof data.workouts)[number]): Line[] {
+		// A plain Set, deliberately: it lives and dies inside this call and
+		// nothing renders from it, so there is nothing for a reactive one to
+		// notify.
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity
+		const seen = new Set<string>();
+		const out: Line[] = [];
+
+		// What the workout says it measures comes first, in the order it was
+		// written there: that list is somebody's answer to "what is this for".
+		for (const measure of workout.measures) {
+			const key = `${measure.activity} ${measure.unit}`;
+			if (seen.has(key)) continue;
+			seen.add(key);
+			out.push({ activity: measure.activity, amount: '', unit: measure.unit });
+		}
+
+		// Then anything past sessions measured that the workout never named —
+		// somebody who logged a thing twice is likely to log it again.
+		for (const session of sessionsOf(workout.id)) {
+			for (const measure of session.measures) {
+				const key = `${measure.activity} ${measure.unit}`;
+				if (seen.has(key)) continue;
+				seen.add(key);
+				out.push({ activity: measure.activity, amount: '', unit: measure.unit });
+			}
+		}
+		return out.length > 0 ? [...out, blankLine()] : [blankLine()];
+	}
+
+	function startLog(workout: (typeof data.workouts)[number]) {
+		logging = workout;
+		editingSession = null;
+		logDate = todayStr();
+		logNotes = '';
+		lines = openingLines(workout);
+	}
+
+	function startEditSession(workout: (typeof data.workouts)[number], session: Session) {
+		logging = workout;
+		editingSession = session;
+		logDate = session.doneOn;
+		logNotes = session.notes;
+		lines = [
+			...session.measures.map((measure) => ({
+				activity: measure.activity,
+				amount: measure.amount === null ? '' : String(measure.amount),
+				unit: measure.unit
+			})),
+			blankLine()
+		];
+	}
+
+	function closeLog() {
+		logging = null;
+		editingSession = null;
+	}
+
+	/**
+	 * The last row is always empty, so there is nothing to press to add one.
+	 *
+	 * Typing into the blank row at the bottom grows the list, the way a
+	 * spreadsheet does. The explicit "Add a line" button is still there for
+	 * a finger on a phone, where noticing that a row appeared below the fold
+	 * is not a thing to rely on.
+	 */
+	function lineTyped(index: number) {
+		if (index === lines.length - 1 && lines[index].activity.trim() !== '') lines.push(blankLine());
+	}
+
+	function removeLine(index: number) {
+		lines.splice(index, 1);
+		if (lines.length === 0) lines.push(blankLine());
+	}
+
+	/**
+	 * The day a session happened, as a person would say it.
+	 *
+	 * `2026-09-10` is what the database holds, and a column of them is a column
+	 * to decode. The year is dropped inside the current one, where it is the
+	 * same on every row and says nothing.
+	 */
+	function dayOf(iso: string): string {
+		const day = new Date(`${iso}T00:00:00`);
+		if (Number.isNaN(day.getTime())) return iso;
+		const thisYear = day.getFullYear() === new Date().getFullYear();
+		return day.toLocaleDateString(undefined, {
+			day: 'numeric',
+			month: 'short',
+			...(thisYear ? {} : { year: 'numeric' })
+		});
+	}
 </script>
 
 <div class="space-y-4">
@@ -97,6 +274,16 @@
 							</button>
 						</form>
 
+						<!-- The tick says it happened; this says how much of what. -->
+						<button
+							class="icon-btn"
+							title="Write down what you did"
+							aria-label="Write down what you did for {t.title}"
+							onclick={() => startLog(t)}
+						>
+							<Icon name="note" />
+						</button>
+
 						<button
 							class="icon-btn"
 							title="Put it on a day"
@@ -125,12 +312,100 @@
 					</div>
 
 					{#if expanded === t.id}
-						<div
-							class="w-full border-t border-gray-100 pt-3 text-sm whitespace-pre-wrap text-gray-700"
-						>
-							{#if t.plan}{t.plan}{:else}<span class="text-gray-400"
-									>No plan written yet — Edit adds one.</span
-								>{/if}
+						{@const history = sessionsOf(t.id)}
+						<div class="w-full space-y-3 border-t border-gray-100 pt-3">
+							<div class="text-sm whitespace-pre-wrap text-gray-700">
+								{#if t.plan}{t.plan}{:else}<span class="text-gray-400"
+										>No plan written yet — Edit adds one.</span
+									>{/if}
+							</div>
+
+							<!--
+							What was actually done, under the plan for it.
+
+							The plan is the intention and this is the record, and they belong
+							on the same panel: somebody opening a workout to see what it asks
+							of them is the same person wondering what they managed last time.
+						-->
+							<div class="border-t border-gray-100 pt-3">
+								<div class="mb-2 flex items-center justify-between">
+									<h3 class="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+										What you did
+									</h3>
+									<button class="btn btn-sm" onclick={() => startLog(t)}>
+										<Icon name="plus" /> Write one down
+									</button>
+								</div>
+
+								{#if history.length === 0}
+									<p class="text-sm text-gray-500">
+										Nothing written down yet. Record what you did and how much of it, and it becomes
+										something you can look back over.
+									</p>
+								{:else}
+									<ul class="divide-y divide-gray-100 border-t border-gray-100">
+										{#each history as session (session.id)}
+											<li class="flex items-start gap-3 py-2 text-sm">
+												<span class="tabular w-20 shrink-0 text-gray-500"
+													>{dayOf(session.doneOn)}</span
+												>
+												<div class="min-w-0 flex-1">
+													{#if session.measures.length === 0}
+														<span class="text-gray-400">Done</span>
+													{:else}
+														<!--
+															Each measure as three parts rather than one sentence.
+
+															"benched 80 kg · for 10 reps · overhead pressed 44 kg" is a
+															line you read; what somebody scanning a column of these
+															wants is the figures, and they carried the same weight as
+															the words around them. The number takes the emphasis and
+															the tabular digits, so a month of sessions reads down the
+															column as well as across.
+														-->
+														<span class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+															{#each session.measures as measure (measure.id)}
+																<span class="inline-flex items-baseline gap-1">
+																	<span class="text-gray-500">{measure.activity}</span>
+																	{#if measure.amount !== null}
+																		<span class="tabular font-medium text-gray-900"
+																			>{measure.amount}</span
+																		>
+																		{#if measure.unit}
+																			<span class="text-xs text-gray-500">{measure.unit}</span>
+																		{/if}
+																	{/if}
+																</span>
+															{/each}
+														</span>
+													{/if}
+													{#if session.notes}
+														<p class="text-xs text-gray-500">{session.notes}</p>
+													{/if}
+												</div>
+												<div class="flex shrink-0 items-center gap-1">
+													<button
+														class="icon-btn"
+														title="Correct this"
+														aria-label="Correct the session on {session.doneOn}"
+														onclick={() => startEditSession(t, session)}
+													>
+														<Icon name="edit" />
+													</button>
+													<button
+														class="icon-btn icon-btn-danger"
+														title="Remove this"
+														aria-label="Remove the session on {session.doneOn}"
+														onclick={() => (confirmDeleteSession = session)}
+													>
+														<Icon name="trash" />
+													</button>
+												</div>
+											</li>
+										{/each}
+									</ul>
+								{/if}
+							</div>
 						</div>
 					{/if}
 				</li>
@@ -231,6 +506,80 @@
 					placeholder="Bench, rows, dips. 4×8.">{editing?.plan ?? ''}</textarea
 				>
 			</label>
+
+			<!--
+				What this workout measures — names, not numbers.
+
+				Nothing is recorded here. It decides what the form for a session
+				opens on, so writing one down is filling in figures beside words
+				somebody already chose rather than typing "deadlifted" again every
+				week. A session may still measure anything; this is what is already
+				on screen.
+			-->
+			<div>
+				<span class="text-sm text-gray-600">What it measures</span>
+				<p class="mb-2 text-xs text-gray-500">
+					Suggested when you write a session down. A run measures kilometres; a push day measures
+					what you benched and for how many reps.
+				</p>
+				<div class="mb-1 grid grid-cols-[1fr_6rem_auto] gap-2 text-xs text-gray-500">
+					<span>What</span>
+					<span>Unit</span>
+					<span></span>
+				</div>
+				{#each declared as measure, index (index)}
+					<div class="mb-2 grid grid-cols-[1fr_6rem_auto] items-center gap-2">
+						<!-- A plain input, not a `OneLine`: it completes from the datalist
+						     the session form declares, and a textarea cannot carry one.
+						     See `tests/autofill-field-names.test.ts`. -->
+						<input
+							type="text"
+							name="planActivity"
+							list="workout-activities"
+							placeholder="ran"
+							autocomplete="off"
+							bind:value={measure.activity}
+							oninput={() => declaredTyped(index)}
+							class="input"
+						/>
+						<OneLine name="planUnit" placeholder="km" bind:value={measure.unit} class="input" />
+						<div class="flex items-center">
+							<button
+								type="button"
+								class="icon-btn"
+								disabled={index === 0}
+								title="Ask for this one earlier"
+								aria-label="Move {measure.activity || 'this'} up"
+								onclick={() => moveDeclared(index, -1)}
+							>
+								<Icon name="chevron-up" />
+							</button>
+							<button
+								type="button"
+								class="icon-btn"
+								disabled={index === declared.length - 1}
+								title="Ask for this one later"
+								aria-label="Move {measure.activity || 'this'} down"
+								onclick={() => moveDeclared(index, 1)}
+							>
+								<Icon name="chevron-down" />
+							</button>
+							<button
+								type="button"
+								class="icon-btn icon-btn-danger"
+								title="Take this one out"
+								aria-label="Stop measuring {measure.activity || 'this'}"
+								onclick={() => removeDeclared(index)}
+							>
+								<Icon name="minus" />
+							</button>
+						</div>
+					</div>
+				{/each}
+				<button type="button" class="btn btn-sm" onclick={() => declared.push(blankDeclared())}>
+					<Icon name="plus" /> Measure something else
+				</button>
+			</div>
 		</div>
 	</form>
 	{#snippet footer()}
@@ -305,9 +654,161 @@
 	{/snippet}
 </Modal>
 
+<!--
+	What you did, and how much of it.
+
+	One dialog for writing a session down and for correcting one, because they
+	are the same three questions — when, what, and anything worth saying — and
+	two forms would have drifted. The lines post as three parallel lists rather
+	than indexed names: rows are added and removed here, and a gap left by a
+	removed `measure[3]` is a hole the server would have to code around.
+-->
+<Modal
+	open={logging !== null}
+	error={form?.message}
+	title={editingSession ? 'Correct what you did' : 'What did you do?'}
+	description="Everything here is optional. A session with nothing measured is still a session."
+	onclose={closeLog}
+	size="md"
+>
+	{#if logging}
+		<form
+			id="log-form"
+			method="post"
+			action={editingSession ? '?/updateSession' : '?/log'}
+			use:enhance={() =>
+				({ result, update }) => {
+					if (result.type === 'success') closeLog();
+					return update({ reset: false });
+				}}
+		>
+			<input type="hidden" name="id" value={logging.id} />
+			{#if editingSession}<input type="hidden" name="sessionId" value={editingSession.id} />{/if}
+
+			<p class="mb-3 text-sm font-medium text-gray-900">{logging.title}</p>
+
+			<div class="grid gap-3 sm:grid-cols-2">
+				<label class="block text-sm">
+					<span class="text-gray-600">Day</span>
+					<input
+						name="doneOn"
+						type="date"
+						required
+						bind:value={logDate}
+						class="input mt-1 w-full"
+						autocomplete="off"
+					/>
+				</label>
+			</div>
+
+			<!--
+				Activity, amount, unit — the person's own words in all three. Nothing
+				here knows what a kilometre is, which is what lets somebody log pages
+				read or minutes held in the same table as a deadlift.
+			-->
+			<div class="mt-4">
+				<div class="mb-1 grid grid-cols-[1fr_5rem_5rem_2rem] gap-2 text-xs text-gray-500">
+					<span>What you did</span>
+					<span>How much</span>
+					<span>Unit</span>
+					<span></span>
+				</div>
+				{#each lines as line, index (index)}
+					<div class="mb-2 grid grid-cols-[1fr_5rem_5rem_2rem] items-center gap-2">
+						<!-- A plain input, not a `OneLine`: it completes from the datalist
+						     below, and a textarea cannot carry one. See
+						     `tests/autofill-field-names.test.ts`, which exempts exactly
+						     this case. -->
+						<input
+							type="text"
+							name="measureActivity"
+							list="workout-activities"
+							placeholder="ran"
+							autocomplete="off"
+							bind:value={line.activity}
+							oninput={() => lineTyped(index)}
+							class="input"
+						/>
+						<NumberBox
+							name="measureAmount"
+							min="0"
+							step="any"
+							placeholder="5"
+							bind:value={line.amount}
+							class="tabular"
+						/>
+						<OneLine name="measureUnit" placeholder="km" bind:value={line.unit} class="input" />
+						<button
+							type="button"
+							class="icon-btn icon-btn-danger"
+							title="Take this line out"
+							aria-label="Take out the line for {line.activity || 'this row'}"
+							onclick={() => removeLine(index)}
+						>
+							<Icon name="minus" />
+						</button>
+					</div>
+				{/each}
+
+				<button type="button" class="btn btn-sm" onclick={() => lines.push(blankLine())}>
+					<Icon name="plus" /> Add a line
+				</button>
+			</div>
+
+			<label class="mt-4 block text-sm">
+				<span class="text-gray-600">Anything worth saying</span>
+				<textarea
+					name="notes"
+					rows="2"
+					bind:value={logNotes}
+					class="input mt-1 w-full"
+					placeholder="Felt heavy. Right knee complained on the last set."
+				></textarea>
+			</label>
+		</form>
+	{/if}
+	{#snippet footer()}
+		<button class="btn" type="button" onclick={closeLog}>Cancel</button>
+		<button class="btn btn-primary" type="submit" form="log-form">
+			{editingSession ? 'Save' : 'Write it down'}
+		</button>
+	{/snippet}
+</Modal>
+
+<!-- A session logged by accident. Its lines go with it, and nothing else does. -->
+<Modal
+	open={confirmDeleteSession !== null}
+	title="Remove this session?"
+	onclose={() => (confirmDeleteSession = null)}
+	size="sm"
+>
+	{#if confirmDeleteSession}
+		<p class="text-sm text-gray-600">
+			What you recorded on <strong>{confirmDeleteSession.doneOn}</strong> is removed for good. The workout
+			itself stays.
+		</p>
+	{/if}
+	{#snippet footer()}
+		<button class="btn" type="button" onclick={() => (confirmDeleteSession = null)}>Keep it</button>
+		<form
+			method="post"
+			action="?/deleteSession"
+			use:enhance={() =>
+				({ result, update }) => {
+					if (result.type === 'success') confirmDeleteSession = null;
+					return update();
+				}}
+		>
+			<input type="hidden" name="sessionId" value={confirmDeleteSession?.id} />
+			<button class="btn btn-danger" type="submit" use:armed>Remove</button>
+		</form>
+	{/snippet}
+</Modal>
+
 <!-- Hard delete, only from the archived list, confirmed in its own dialog. -->
 <Modal
 	open={confirmingDelete !== null}
+	error={form?.message}
 	title="Delete this workout?"
 	onclose={() => (confirmingDelete = null)}
 	size="sm"
@@ -317,6 +818,9 @@
 			<strong>{confirmingDelete.title}</strong> is deleted for good, and comes off any day it was planned
 			on. To keep it, leave it archived instead.
 		</p>
+		<!-- One that has been done is refused, and the dialog stays open to say
+		     so: the sessions behind it are the record of what somebody actually
+		     did, and deleting the plan would take them with it. -->
 	{/if}
 	{#snippet footer()}
 		<button class="btn" type="button" onclick={() => (confirmingDelete = null)}>Keep it</button>
@@ -447,3 +951,17 @@
 		>
 	{/snippet}
 </Modal>
+
+<!--
+	The names this account has used before, so "deadlifted" is spelled the same
+	way every time and a chart can group by it.
+
+	At the page level rather than inside a dialog: both the workout form and the
+	session form complete from it, and a `list=` pointing at a datalist that is
+	not currently rendered completes from nothing.
+-->
+<datalist id="workout-activities">
+	{#each data.activityNames as known (`${known.activity} ${known.unit}`)}
+		<option value={known.activity}></option>
+	{/each}
+</datalist>

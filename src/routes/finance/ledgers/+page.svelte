@@ -193,285 +193,296 @@
 		/>
 	{:else}
 		{@const current = data.current}
-		<!-- What this ledger is, and what can be done to it. -->
-		<div class="flex flex-wrap items-center gap-2 rounded border border-gray-200 px-3 py-2">
-			<span class="text-sm font-semibold text-gray-900">{current.name}</span>
-			<span class="text-xs text-gray-500">
-				{LEDGER_KIND_LABELS[current.kind]}{current.lastOn ? ` · last ${current.lastOn}` : ''}
-			</span>
-			{#if data.unsorted > 0}
-				<a
-					href={resolve('/finance/rules')}
-					class="rounded bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-800"
-				>
-					{data.unsorted} uncategorized →
-				</a>
-			{/if}
-			<!-- On a phone these are the row, not an afterthought pushed right. -->
-			<span class="flex w-full items-center gap-1 sm:ml-auto sm:w-auto">
-				<button class="btn btn-sm" onclick={() => (showImport = true)}>
-					<Icon name="download" /> Import
-				</button>
-				<button class="btn btn-sm" onclick={() => (showNewMovement = true)}>
-					<Icon name="plus" /> Line
-				</button>
-				<button
-					class="icon-btn"
-					aria-label="Edit {current.name}"
-					onclick={() => (editingLedger = current)}
-				>
-					<Icon name="edit" />
-				</button>
-				<form method="post" action="?/moveLedger" use:enhance>
-					<input type="hidden" name="id" value={current.id} />
-					<input type="hidden" name="delta" value="-1" />
-					<button class="icon-btn" aria-label="Move {current.name} earlier">
-						<Icon name="chevron-up" />
-					</button>
-				</form>
-				<form method="post" action="?/moveLedger" use:enhance>
-					<input type="hidden" name="id" value={current.id} />
-					<input type="hidden" name="delta" value="1" />
-					<button class="icon-btn" aria-label="Move {current.name} later">
-						<Icon name="chevron-down" />
-					</button>
-				</form>
-				<form method="post" action="?/archiveLedger" use:enhance>
-					<input type="hidden" name="id" value={current.id} />
-					<input type="hidden" name="archived" value="true" />
-					<button class="icon-btn" aria-label="Archive {current.name}" title="Put it away">
-						<Icon name="archive" />
-					</button>
-				</form>
-				<button
-					class="icon-btn"
-					aria-label="Delete {current.name}"
-					onclick={() => (deletingLedger = current)}
-				>
-					<Icon name="trash" />
-				</button>
-			</span>
-		</div>
+		<!--
+			One surface, top to bottom, rather than three things in a field.
 
-		<!-- Finding one line among a year of them. -->
-		<div class="flex flex-wrap items-center gap-2">
-			<input
-				value={data.query}
-				placeholder="Search descriptions"
-				class="input w-56"
-				oninput={(e) => filter({ q: (e.currentTarget as HTMLInputElement).value })}
-			/>
-			<!--
-				The months this ledger has, not a date field.
-				
-				`input type="month"` is a picker in Chromium and a bare text box in
-				Firefox, where typing "2" filters to nothing and the box explains
-				nothing. A list of the months there is something to look at is
-				native everywhere, and shorter.
-			-->
-			<select
-				class="select w-auto"
-				aria-label="Month"
-				value={data.month}
-				onchange={(e) => filter({ month: (e.currentTarget as HTMLSelectElement).value })}
-			>
-				<option value="">Every month</option>
-				{#each data.months as m (m)}
-					<option value={m}>{monthName(m)}</option>
-				{/each}
-			</select>
-			{#if data.query || data.month}
-				<button class="btn btn-sm" onclick={() => filter({ q: '', month: '' })}>Clear</button>
-			{/if}
-			<span class="ml-auto text-xs text-gray-500 tabular-nums">
-				{data.movements.length} shown
-			</span>
-		</div>
-
-		{#if data.movements.length === 0}
-			<EmptyState
-				icon="wallet"
-				title="Nothing here yet"
-				description="Import this ledger's export, or write a line by hand. Lines already imported are never added twice."
-			/>
-		{:else}
-			<!-- The list scrolls inside itself: a year of a card's statement is
-			     hundreds of rows, and the ledger switcher must stay reachable. -->
-			<!--
-				A statement is a table on a desktop and a list on a phone.
-				Six columns across 390px squeezed the amount off the right and
-				stood the tag chips on their heads — "# p ix" down the side of
-				the screen. The same rows, laid out twice: the table below the
-				`sm` breakpoint is replaced by a block per movement, with the
-				day and the description on the first line and everything that
-				sorts it on the second.
-			-->
-			<ul
-				class="max-h-[70vh] divide-y divide-gray-100 overflow-y-auto rounded border border-gray-200 sm:hidden"
-			>
-				{#each data.movements as m (m.id)}
-					{#if yearBands.has(m.id)}
-						<li
-							class="bg-gray-50 px-4 py-1 text-center text-xs font-medium tracking-widest text-gray-500 tabular-nums"
-						>
-							{yearBands.get(m.id)}
-						</li>
-					{/if}
-					<li
-						class="px-4 py-2.5"
-						style={m.categoryColor
-							? `background-color: ${m.categoryColor}${CATEGORY_WASH_ALPHA}`
-							: ''}
+			The ledger's name, what narrows it and the lines themselves are one
+			statement read downwards, and they were drawn as a box, a loose row of
+			controls on the page's own ground, and a second box. The table had no
+			background of its own either, so the page showed through every row a
+			category had washed — which is what made the colour look like it was
+			painted straight onto the ground. One white surface now, with a rule
+			under each band.
+		-->
+		<div class="border border-gray-200 bg-white shadow-card">
+			<!-- What this ledger is, and what can be done to it. -->
+			<div class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-3 py-2">
+				<span class="text-sm font-semibold text-gray-900">{current.name}</span>
+				<span class="text-xs text-gray-500">
+					{LEDGER_KIND_LABELS[current.kind]}{current.lastOn ? ` · last ${current.lastOn}` : ''}
+				</span>
+				{#if data.unsorted > 0}
+					<a
+						href={resolve('/finance/rules')}
+						class="rounded bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-800"
 					>
-						<div class="flex items-baseline gap-2">
-							<span class="shrink-0 text-xs text-gray-500 tabular-nums">
-								{dayOf(m.occurredOn)}
-							</span>
-							<span class="min-w-0 flex-1 truncate text-gray-900" title={m.description}>
-								{m.description}
-							</span>
-							<span
-								class="shrink-0 tabular-nums {m.amountCents >= 0
-									? 'text-blue-700'
-									: 'text-gray-900'}"
-							>
-								{money(m.amountCents)}
-							</span>
-						</div>
-						<div class="mt-1 flex items-center gap-2">
-							{#if m.category}
-								<span
-									class="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium"
-									style="color: {m.categoryColor}"
-								>
-									<span
-										class="inline-block h-2 w-2 rounded-sm"
-										style="background-color: {m.categoryColor}"
-									></span>
-									{m.category}
-								</span>
-							{/if}
-							<span class="flex min-w-0 flex-1 flex-wrap gap-1">
-								{#each m.tags as tag (tag.name)}
-									<span
-										class="rounded-full px-1.5 py-0.5 text-xs whitespace-nowrap"
-										style="background-color: {tag.color}1f; color: {tag.color}"
-									>
-										#{tag.name}
-									</span>
-								{/each}
-							</span>
-							<button
-								class="icon-btn shrink-0"
-								aria-label="Edit this line"
-								onclick={() => (editingId = m.id)}
-							>
-								<Icon name="edit" />
-							</button>
-							<button
-								class="icon-btn shrink-0"
-								aria-label="Delete this line"
-								onclick={() => (deletingMovement = m)}
-							>
-								<Icon name="trash" />
-							</button>
-						</div>
-					</li>
-				{/each}
-			</ul>
+						{data.unsorted} uncategorized →
+					</a>
+				{/if}
+				<!-- On a phone these are the row, not an afterthought pushed right. -->
+				<span class="flex w-full items-center gap-1 sm:ml-auto sm:w-auto">
+					<button class="btn btn-sm" onclick={() => (showImport = true)}>
+						<Icon name="download" /> Import
+					</button>
+					<button class="btn btn-sm" onclick={() => (showNewMovement = true)}>
+						<Icon name="plus" /> Line
+					</button>
+					<button
+						class="icon-btn"
+						aria-label="Edit {current.name}"
+						onclick={() => (editingLedger = current)}
+					>
+						<Icon name="edit" />
+					</button>
+					<form method="post" action="?/moveLedger" use:enhance>
+						<input type="hidden" name="id" value={current.id} />
+						<input type="hidden" name="delta" value="-1" />
+						<button class="icon-btn" aria-label="Move {current.name} earlier">
+							<Icon name="chevron-up" />
+						</button>
+					</form>
+					<form method="post" action="?/moveLedger" use:enhance>
+						<input type="hidden" name="id" value={current.id} />
+						<input type="hidden" name="delta" value="1" />
+						<button class="icon-btn" aria-label="Move {current.name} later">
+							<Icon name="chevron-down" />
+						</button>
+					</form>
+					<form method="post" action="?/archiveLedger" use:enhance>
+						<input type="hidden" name="id" value={current.id} />
+						<input type="hidden" name="archived" value="true" />
+						<button class="icon-btn" aria-label="Archive {current.name}" title="Put it away">
+							<Icon name="archive" />
+						</button>
+					</form>
+					<button
+						class="icon-btn"
+						aria-label="Delete {current.name}"
+						onclick={() => (deletingLedger = current)}
+					>
+						<Icon name="trash" />
+					</button>
+				</span>
+			</div>
 
-			<div class="hidden max-h-[60vh] overflow-y-auto rounded border border-gray-200 sm:block">
-				<table class="w-full text-sm">
-					<thead class="sticky top-0 bg-white">
-						<tr class="border-b border-gray-200 text-left text-xs text-gray-500">
-							<th class="px-3 py-2 font-medium">Day</th>
-							<th class="px-3 py-2 font-medium">Description</th>
-							<th class="px-3 py-2 font-medium">Category</th>
-							<th class="px-3 py-2 font-medium">Tags</th>
-							<th class="px-3 py-2 text-right font-medium">Amount</th>
-							<th class="px-3 py-2"><span class="sr-only">Actions</span></th>
-						</tr>
-					</thead>
-					<tbody class="divide-y divide-gray-100">
-						{#each data.movements as m (m.id)}
-							{#if yearBands.has(m.id)}
-								<tr class="bg-gray-50">
-									<td
-										colspan="6"
-										class="px-3 py-1 text-center text-xs font-medium tracking-widest text-gray-500 tabular-nums"
-									>
-										{yearBands.get(m.id)}
-									</td>
-								</tr>
-							{/if}
-							<tr
-								style={m.categoryColor
-									? `background-color: ${m.categoryColor}${CATEGORY_WASH_ALPHA}`
-									: ''}
+			<!-- Finding one line among a year of them. -->
+			<div class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-3 py-2">
+				<input
+					value={data.query}
+					placeholder="Search descriptions"
+					class="input w-56"
+					oninput={(e) => filter({ q: (e.currentTarget as HTMLInputElement).value })}
+				/>
+				<!--
+					The months this ledger has, not a date field.
+
+					`input type="month"` is a picker in Chromium and a bare text box in
+					Firefox, where typing "2" filters to nothing and the box explains
+					nothing. A list of the months there is something to look at is
+					native everywhere, and shorter.
+				-->
+				<select
+					class="select w-auto"
+					aria-label="Month"
+					value={data.month}
+					onchange={(e) => filter({ month: (e.currentTarget as HTMLSelectElement).value })}
+				>
+					<option value="">Every month</option>
+					{#each data.months as m (m)}
+						<option value={m}>{monthName(m)}</option>
+					{/each}
+				</select>
+				{#if data.query || data.month}
+					<button class="btn btn-sm" onclick={() => filter({ q: '', month: '' })}>Clear</button>
+				{/if}
+				<span class="ml-auto text-xs text-gray-500 tabular-nums">
+					{data.movements.length} shown
+				</span>
+			</div>
+
+			{#if data.movements.length === 0}
+				<EmptyState
+					icon="wallet"
+					title="Nothing here yet"
+					description="Import this ledger's export, or write a line by hand. Lines already imported are never added twice."
+				/>
+			{:else}
+				<!-- The list scrolls inside itself: a year of a card's statement is
+				     hundreds of rows, and the ledger switcher must stay reachable. -->
+				<!--
+					A statement is a table on a desktop and a list on a phone.
+					Six columns across 390px squeezed the amount off the right and
+					stood the tag chips on their heads — "# p ix" down the side of
+					the screen. The same rows, laid out twice: the table below the
+					`sm` breakpoint is replaced by a block per movement, with the
+					day and the description on the first line and everything that
+					sorts it on the second.
+				-->
+				<ul class="max-h-[70vh] divide-y divide-gray-100 overflow-y-auto sm:hidden">
+					{#each data.movements as m (m.id)}
+						{#if yearBands.has(m.id)}
+							<li
+								class="bg-gray-50 px-4 py-1 text-center text-xs font-medium tracking-widest text-gray-500 tabular-nums"
 							>
-								<td class="px-3 py-2 whitespace-nowrap text-gray-500 tabular-nums">
+								{yearBands.get(m.id)}
+							</li>
+						{/if}
+						<li
+							class="px-4 py-2.5"
+							style={m.categoryColor
+								? `background-color: ${m.categoryColor}${CATEGORY_WASH_ALPHA}`
+								: ''}
+						>
+							<div class="flex items-baseline gap-2">
+								<span class="shrink-0 text-xs text-gray-500 tabular-nums">
 									{dayOf(m.occurredOn)}
-								</td>
-								<td class="max-w-xs truncate px-3 py-2 text-gray-900" title={m.description}>
+								</span>
+								<span class="min-w-0 flex-1 truncate text-gray-900" title={m.description}>
 									{m.description}
-								</td>
-								<td class="px-3 py-2 whitespace-nowrap">
-									{#if m.category}
-										<span
-											class="inline-flex items-center gap-1.5 text-xs font-medium"
-											style="color: {m.categoryColor}"
-										>
-											<span
-												class="inline-block h-2 w-2 rounded-sm"
-												style="background-color: {m.categoryColor}"
-											></span>
-											{m.category}
-										</span>
-									{:else}
-										<span class="text-xs text-gray-400">—</span>
-									{/if}
-								</td>
-								<td class="px-3 py-2">
-									<span class="flex flex-wrap gap-1">
-										{#each m.tags as tag (tag.name)}
-											<span
-												class="rounded-full px-1.5 py-0.5 text-xs"
-												style="background-color: {tag.color}1f; color: {tag.color}"
-											>
-												#{tag.name}
-											</span>
-										{/each}
-									</span>
-								</td>
-								<td
-									class="px-3 py-2 text-right whitespace-nowrap tabular-nums {m.amountCents >= 0
+								</span>
+								<span
+									class="shrink-0 tabular-nums {m.amountCents >= 0
 										? 'text-blue-700'
 										: 'text-gray-900'}"
 								>
 									{money(m.amountCents)}
-								</td>
-								<td class="px-3 py-2 text-right whitespace-nowrap">
-									<button
-										class="icon-btn"
-										aria-label="Edit this line"
-										onclick={() => (editingId = m.id)}
+								</span>
+							</div>
+							<div class="mt-1 flex items-center gap-2">
+								{#if m.category}
+									<span
+										class="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium"
+										style="color: {m.categoryColor}"
 									>
-										<Icon name="edit" />
-									</button>
-									<button
-										class="icon-btn"
-										aria-label="Delete this line"
-										onclick={() => (deletingMovement = m)}
-									>
-										<Icon name="trash" />
-									</button>
-								</td>
+										<span
+											class="inline-block h-2 w-2 rounded-sm"
+											style="background-color: {m.categoryColor}"
+										></span>
+										{m.category}
+									</span>
+								{/if}
+								<span class="flex min-w-0 flex-1 flex-wrap gap-1">
+									{#each m.tags as tag (tag.name)}
+										<span
+											class="rounded-full px-1.5 py-0.5 text-xs whitespace-nowrap"
+											style="background-color: {tag.color}1f; color: {tag.color}"
+										>
+											#{tag.name}
+										</span>
+									{/each}
+								</span>
+								<button
+									class="icon-btn shrink-0"
+									aria-label="Edit this line"
+									onclick={() => (editingId = m.id)}
+								>
+									<Icon name="edit" />
+								</button>
+								<button
+									class="icon-btn shrink-0"
+									aria-label="Delete this line"
+									onclick={() => (deletingMovement = m)}
+								>
+									<Icon name="trash" />
+								</button>
+							</div>
+						</li>
+					{/each}
+				</ul>
+
+				<div class="hidden max-h-[60vh] overflow-y-auto sm:block">
+					<table class="statement w-full text-sm">
+						<thead class="sticky top-0 bg-white">
+							<tr class="border-b border-gray-200 text-left text-xs text-gray-500">
+								<th class="px-3 py-2 font-medium">Day</th>
+								<th class="px-3 py-2 font-medium">Description</th>
+								<th class="px-3 py-2 font-medium">Category</th>
+								<th class="px-3 py-2 font-medium">Tags</th>
+								<th class="px-3 py-2 text-right font-medium">Amount</th>
+								<th class="px-3 py-2"><span class="sr-only">Actions</span></th>
 							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-		{/if}
+						</thead>
+						<tbody class="divide-y divide-gray-100">
+							{#each data.movements as m (m.id)}
+								{#if yearBands.has(m.id)}
+									<tr class="bg-gray-50">
+										<td
+											colspan="6"
+											class="px-3 py-1 text-center text-xs font-medium tracking-widest text-gray-500 tabular-nums"
+										>
+											{yearBands.get(m.id)}
+										</td>
+									</tr>
+								{/if}
+								<tr
+									style={m.categoryColor
+										? `background-color: ${m.categoryColor}${CATEGORY_WASH_ALPHA}`
+										: ''}
+								>
+									<td class="px-3 py-2 whitespace-nowrap text-gray-500 tabular-nums">
+										{dayOf(m.occurredOn)}
+									</td>
+									<td class="max-w-xs truncate px-3 py-2 text-gray-900" title={m.description}>
+										{m.description}
+									</td>
+									<td class="px-3 py-2 whitespace-nowrap">
+										{#if m.category}
+											<span
+												class="inline-flex items-center gap-1.5 text-xs font-medium"
+												style="color: {m.categoryColor}"
+											>
+												<span
+													class="inline-block h-2 w-2 rounded-sm"
+													style="background-color: {m.categoryColor}"
+												></span>
+												{m.category}
+											</span>
+										{:else}
+											<span class="text-xs text-gray-400">—</span>
+										{/if}
+									</td>
+									<td class="px-3 py-2">
+										<span class="flex flex-wrap gap-1">
+											{#each m.tags as tag (tag.name)}
+												<span
+													class="rounded-full px-1.5 py-0.5 text-xs"
+													style="background-color: {tag.color}1f; color: {tag.color}"
+												>
+													#{tag.name}
+												</span>
+											{/each}
+										</span>
+									</td>
+									<td
+										class="px-3 py-2 text-right whitespace-nowrap tabular-nums {m.amountCents >= 0
+											? 'text-blue-700'
+											: 'text-gray-900'}"
+									>
+										{money(m.amountCents)}
+									</td>
+									<td class="px-3 py-2 text-right whitespace-nowrap">
+										<button
+											class="icon-btn"
+											aria-label="Edit this line"
+											onclick={() => (editingId = m.id)}
+										>
+											<Icon name="edit" />
+										</button>
+										<button
+											class="icon-btn"
+											aria-label="Delete this line"
+											onclick={() => (deletingMovement = m)}
+										>
+											<Icon name="trash" />
+										</button>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			{/if}
+		</div>
 	{/if}
 
 	<p class="text-xs text-gray-500">
@@ -822,3 +833,18 @@
 		</form>
 	{/snippet}
 </Modal>
+
+<style>
+	/*
+	 * A washed line is one band, not a row of tiles.
+	 *
+	 * The category colour is set on the row, and a browser paints a row's
+	 * background cell by cell — so every corner the playful style rounds cuts a
+	 * notch out of the colour, and a categorised line came out as five rounded
+	 * blocks with the page showing through between them. The row is what carries
+	 * the colour, so the cells inside it have no corners of their own.
+	 */
+	.statement :is(td, th) {
+		border-radius: 0;
+	}
+</style>

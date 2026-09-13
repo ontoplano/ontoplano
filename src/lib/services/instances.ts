@@ -15,6 +15,7 @@ import { db } from '$lib/db/index.js';
 import { isStatus } from '../task-status.js';
 import type { Ctx } from './ctx.js';
 import { createReminder } from './reminders.js';
+import { ensureSession } from './workouts.js';
 import {
 	deleteExceptional,
 	moveOccurrence,
@@ -691,10 +692,11 @@ export function setInstanceStatus(ctx: Ctx, id: number, rawStatus: unknown): voi
 	 */
 	const workoutId = instance.slotWorkoutId ?? instance.oneOffWorkoutId;
 	if (workoutId && status === 'done') {
-		db.update(workouts)
-			.set({ lastDoneAt: completedAt ?? stamp(ctx), updatedAt: stamp(ctx) })
-			.where(and(eq(workouts.id, workoutId), eq(workouts.userId, ctx.userId)))
-			.run();
+		// A session on the day the block was for, which is what the register
+		// wants: ticking Thursday's block off on Saturday records Thursday.
+		// `ensureSession` also moves the workout's "last done" stamp, so the two
+		// cannot disagree.
+		ensureSession(ctx, workoutId, (completedAt ?? stamp(ctx)).slice(0, 10));
 	}
 }
 

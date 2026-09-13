@@ -480,6 +480,10 @@
 				"type": "integer",
 				"required": false
 			},
+			"measures": {
+				"type": "array",
+				"required": false
+			},
 			"minutes": {
 				"type": "integer",
 				"required": false
@@ -1110,6 +1114,29 @@
 			}
 		}
 	},
+	"change_workout_session": {
+		"scope": "workouts:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"done_on": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"measures": {
+				"type": "array",
+				"required": false
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
 	"close_goal": {
 		"scope": "tasks:write",
 		"writes": true,
@@ -1367,6 +1394,29 @@
 			"value": {
 				"type": "number",
 				"required": false
+			}
+		}
+	},
+	"log_workout": {
+		"scope": "workouts:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"done_on": {
+				"type": "string",
+				"required": false
+			},
+			"measures": {
+				"type": "array",
+				"required": false
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			},
+			"workout_id": {
+				"type": "integer",
+				"required": true
 			}
 		}
 	},
@@ -1666,6 +1716,17 @@
 			}
 		}
 	},
+	"remove_workout_session": {
+		"scope": "workouts:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"reopen_goal": {
 		"scope": "tasks:write",
 		"writes": true,
@@ -1750,6 +1811,21 @@
 			},
 			"id": {
 				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"set_workout_measures": {
+		"scope": "workouts:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"measures": {
+				"type": "array",
 				"required": true
 			}
 		}
@@ -2010,6 +2086,12 @@
 			}
 		}
 	},
+	"workout_activities": {
+		"scope": "workouts:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
+	},
 	"workout_categories": {
 		"scope": "workouts:read",
 		"writes": false,
@@ -2024,6 +2106,40 @@
 			"id": {
 				"type": "integer",
 				"required": true
+			}
+		}
+	},
+	"workout_history": {
+		"scope": "workouts:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"activity": {
+				"type": "string",
+				"required": true
+			},
+			"since": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"workout_sessions": {
+		"scope": "workouts:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"limit": {
+				"type": "integer",
+				"required": false
+			},
+			"since": {
+				"type": "string",
+				"required": false
+			},
+			"workout_id": {
+				"type": "integer",
+				"required": false
 			}
 		}
 	},

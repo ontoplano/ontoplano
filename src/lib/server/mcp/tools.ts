@@ -99,7 +99,15 @@ import {
 	done as workoutDone,
 	listWorkoutCategories,
 	createWorkoutCategory,
-	deleteWorkoutCategory
+	deleteWorkoutCategory,
+	setWorkoutMeasures,
+	deleteSession,
+	getSession,
+	listSessions,
+	logWorkout,
+	measureHistory,
+	measuredActivities,
+	updateSession
 } from '$lib/services/workouts.js';
 import {
 	listBills,
@@ -270,6 +278,33 @@ function briefly(todo: Todo): Record<string, unknown> {
 	if (Object.keys(ratings).length > 0) out.ratings = ratings;
 	return out;
 }
+
+/**
+ * A list of what something is measured by: names and units, no amounts.
+ *
+ * The workout's own declaration, shared by the tool that makes one and the
+ * tool that changes what it measures, so the two cannot describe it
+ * differently.
+ */
+const MEASURE_NAMES = {
+	type: 'array',
+	description:
+		'What this workout is measured by, in the order a session should be asked for them. Names and units in the person\u2019s own words; no amounts.',
+	items: {
+		type: 'object',
+		properties: {
+			activity: {
+				type: 'string',
+				description: 'What is measured: \u201cran\u201d, \u201cbenched\u201d.'
+			},
+			unit: {
+				type: 'string',
+				description: 'Of what: \u201ckm\u201d, \u201ckg\u201d, \u201creps\u201d.'
+			}
+		},
+		required: ['activity']
+	}
+} as const;
 
 /** A 1–5 rating, or nothing. Bad numbers are refused before a service sees them. */
 const rating = (value: unknown, what: string): number | undefined => {
@@ -478,6 +513,7 @@ const workoutCategoryById = (ctx: Ctx, args: Record<string, unknown>) =>
 // These four getters throw on a bad id; the protocol layer reads that as null.
 const locationById = (ctx: Ctx, args: Record<string, unknown>) => getLocation(ctx, idOf(args));
 const recipeById = (ctx: Ctx, args: Record<string, unknown>) => getRecipe(ctx, idOf(args));
+const workoutSessionById = (ctx: Ctx, args: Record<string, unknown>) => getSession(ctx, idOf(args));
 const workoutById = (ctx: Ctx, args: Record<string, unknown>) => getWorkout(ctx, idOf(args));
 const billById = (ctx: Ctx, args: Record<string, unknown>) => getBill(ctx, idOf(args));
 const billWithPayments = (ctx: Ctx, args: Record<string, unknown>) => ({
@@ -2960,6 +2996,199 @@ export const TOOLS: Tool[] = [
 		})
 	},
 	{
+		/*
+		 * What a workout is for, as names without numbers.
+		 *
+		 * Nothing is recorded by declaring these: they decide what writing a
+		 * session down asks for, which is why they belong to the workout rather
+		 * than to any one session of it.
+		 */
+		name: 'set_workout_measures',
+		title: 'Say what a workout measures',
+		description:
+			'Declare what a workout is measured by \u2014 a run by kilometres and a pace, a push day by what was benched and for how many reps. Names and units only; no amounts. Replaces the list it has, so send all of them. A session may still measure anything: this decides what its form opens on.',
+		scope: 'workouts:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The workout, from `workouts`.' },
+				measures: MEASURE_NAMES
+			},
+			['id', 'measures']
+		),
+		subject: workoutById,
+		run: (ctx, args) => {
+			setWorkoutMeasures(ctx, Number(args.id), args.measures);
+			return { ok: true };
+		}
+	},
+	{
+		/*
+		 * The register, which is the half `workouts` cannot answer.
+		 *
+		 * A workout says what somebody intends to do and when they last did it.
+		 * A session says what they actually did and how much of it, which is the
+		 * question behind "am I lifting more than in March".
+		 */
+		name: 'workout_sessions',
+		title: 'What was actually done',
+		description:
+			'Sessions, newest first: the day, anything noted, and lines of activity, amount and unit in the person’s own words — ran 5 km, deadlifted 120 kg. Narrow it with `workout_id` or `since` rather than reading everything.',
+		scope: 'workouts:read',
+		writes: false,
+		input: object({
+			workout_id: { type: 'integer', description: 'Only this workout’s, from `workouts`.' },
+			since: text('Only sessions on or after this day, as YYYY-MM-DD.'),
+			limit: count('How many sessions.', 50)
+		}),
+		run: (ctx, args) => ({
+			sessions: listSessions(ctx, {
+				workoutId: args.workout_id === undefined ? undefined : Number(args.workout_id),
+				since: args.since === undefined ? undefined : day(args.since, 'since'),
+				limit: limitOf(args, 50)
+			})
+		})
+	},
+	{
+		name: 'log_workout',
+		title: 'Write down a session',
+		description:
+			'Record that a workout happened, and how much of what was done. Everything but the workout is optional: a session with no lines is one that happened. Use the person’s own words and units — "ran" and "km", not a normalised distance — because that is what a chart of it will be grouped by. `workout_sessions` shows what they have called things before.',
+		scope: 'workouts:write',
+		writes: true,
+		input: object(
+			{
+				workout_id: { type: 'integer', description: 'Which workout, from `workouts`.' },
+				done_on: text('The day, as YYYY-MM-DD. Today if left off.'),
+				notes: text('Anything worth saying about it.'),
+				measures: {
+					type: 'array',
+					description:
+						'What was done, a line each. `amount` and `unit` may be left off for something that happened without a number attached.',
+					items: {
+						type: 'object',
+						properties: {
+							activity: { type: 'string', description: 'What was done: "ran", "deadlifted".' },
+							amount: { type: 'number', description: 'How much.' },
+							unit: { type: 'string', description: 'Of what: "km", "kg", "reps".' }
+						},
+						required: ['activity']
+					}
+				}
+			},
+			['workout_id']
+		),
+		run: (ctx, args) => ({
+			id: logWorkout(ctx, Number(args.workout_id), {
+				doneOn: args.done_on,
+				notes: args.notes ?? '',
+				measures: args.measures ?? []
+			})
+		})
+	},
+	{
+		name: 'change_workout_session',
+		title: 'Correct a session',
+		description:
+			'Rewrite a session that was written down wrong. The lines are replaced by the ones given, so send them all; leaving `measures` off keeps the ones it has.',
+		scope: 'workouts:write',
+		writes: true,
+		input: object(
+			{
+				id: { type: 'integer', description: 'The session’s id, from `workout_sessions`.' },
+				done_on: text('The day it actually happened, as YYYY-MM-DD.'),
+				notes: text('What to say about it instead.'),
+				measures: {
+					type: 'array',
+					description: 'The lines, replacing every one it has.',
+					items: {
+						type: 'object',
+						properties: {
+							activity: { type: 'string' },
+							amount: { type: 'number' },
+							unit: { type: 'string' }
+						},
+						required: ['activity']
+					}
+				}
+			},
+			['id']
+		),
+		subject: workoutSessionById,
+		run: (ctx, args) => {
+			const current = getSession(ctx, Number(args.id));
+			updateSession(ctx, current.id, {
+				doneOn: args.done_on ?? current.doneOn,
+				notes: args.notes ?? current.notes,
+				measures: args.measures
+			});
+			return { ok: true };
+		}
+	},
+	{
+		/*
+		 * Removable, unlike the things under `ai-never-deletes-precious-data`.
+		 *
+		 * A session written down twice, or against the wrong workout, is a
+		 * mistake in a log rather than somebody's writing — and the way back
+		 * from `log_workout` has to exist for the same reason every other verb
+		 * here has its inverse.
+		 */
+		name: 'remove_workout_session',
+		title: 'Remove a session',
+		description:
+			'Delete a session that was logged by accident. Its lines go with it; the workout itself stays. For correcting one rather than removing it, use `change_workout_session`.',
+		scope: 'workouts:write',
+		writes: true,
+		destroys: true,
+		input: object(
+			{ id: { type: 'integer', description: 'The session’s id, from `workout_sessions`.' } },
+			['id']
+		),
+		subject: workoutSessionById,
+		run: (ctx, args) => {
+			deleteSession(ctx, Number(args.id));
+			return { ok: true };
+		}
+	},
+	{
+		/*
+		 * One activity over time, in the shape a chart wants.
+		 *
+		 * Grouped by the person's own word rather than by workout, because "am I
+		 * running more" is a question about running and not about which session
+		 * it happened in.
+		 */
+		name: 'workout_history',
+		title: 'One activity over time',
+		description:
+			'Every time one activity was measured, oldest first — the shape to draw or to compare against. `workout_activities` lists what this account has measured and how often, which is where the name comes from.',
+		scope: 'workouts:read',
+		writes: false,
+		input: object(
+			{
+				activity: text('The activity, exactly as it was written down: "ran".'),
+				since: text('Only from this day on, as YYYY-MM-DD.')
+			},
+			['activity']
+		),
+		run: (ctx, args) => ({
+			points: measureHistory(ctx, String(args.activity), {
+				since: args.since === undefined ? undefined : day(args.since, 'since')
+			})
+		})
+	},
+	{
+		name: 'workout_activities',
+		title: 'What this account measures',
+		description:
+			'Every activity and unit that has ever been written down, with how many times — the names `workout_history` takes, and the ones to reuse when logging so a chart groups them together.',
+		scope: 'workouts:read',
+		writes: false,
+		input: object({}),
+		run: (ctx) => ({ activities: measuredActivities(ctx) })
+	},
+	{
 		name: 'workout_categories',
 		title: 'The categories of workout this account keeps',
 		description:
@@ -3012,7 +3241,8 @@ export const TOOLS: Tool[] = [
 				category_id: { type: 'integer', description: 'Its category, from `workout_categories`.' },
 				plan: text('What to do, as Markdown.'),
 				minutes: { type: 'integer', description: 'Roughly how long it takes.' },
-				notes: text('Anything else.')
+				notes: text('Anything else.'),
+				measures: MEASURE_NAMES
 			},
 			['title']
 		),
@@ -3022,7 +3252,8 @@ export const TOOLS: Tool[] = [
 				categoryId: args.category_id,
 				plan: args.plan ?? '',
 				minutes: args.minutes ?? null,
-				notes: args.notes ?? ''
+				notes: args.notes ?? '',
+				measures: args.measures
 			})
 		})
 	},

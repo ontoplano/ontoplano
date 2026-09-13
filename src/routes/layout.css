@@ -947,6 +947,68 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
+	 * A screen that is one card and nothing else.
+	 *
+	 * Sign in, the password pages, the plan page after registering: no
+	 * navigation, no room around them, one panel in the middle of the window.
+	 * Six files spelled that out as the same four utilities on a flex box and
+	 * the same five on the panel inside it, and they had already drifted — one
+	 * shadow here, another there.
+	 *
+	 * On a phone the panel IS the screen. Centred, a short form left a band of
+	 * page above it and another below — which is what sign-in looked like
+	 * beside register, whose extra fields happened to fill the height — and a
+	 * border drawn around something that reaches both edges of the screen is a
+	 * line saying the screen ends where it visibly ends. Above the phone
+	 * breakpoint it is a card on a page again.
+	 *
+	 * The width is the call site's: these are `max-w-sm` for a form and
+	 * `max-w-md` for a page with prose on it, and that only ever applies from
+	 * `sm:` up.
+	 */
+	.solo-screen {
+		display: flex;
+		justify-content: center;
+		/*
+		 * The viewport you can see, not the one the address bar is hiding
+		 * behind: `100vh` on a phone is taller than the window and puts a
+		 * screenful of form behind a scroll it does not need.
+		 */
+		min-height: 100dvh;
+		align-items: stretch;
+	}
+
+	.solo-card {
+		--solo-card-padding: 2rem;
+		width: 100%;
+		background-color: var(--color-white);
+		padding: var(--solo-card-padding);
+	}
+
+	@media (max-width: 639px) {
+		.solo-card {
+			/*
+			 * Nothing sits above or below the card any more, so it clears the
+			 * status bar and the home indicator itself — the app on a phone
+			 * draws under both.
+			 */
+			padding-top: calc(var(--safe-top) + var(--solo-card-padding));
+			padding-bottom: calc(var(--safe-bottom) + var(--solo-card-padding));
+		}
+	}
+
+	@media (min-width: 640px) {
+		.solo-screen {
+			align-items: center;
+		}
+
+		.solo-card {
+			border: 1px solid var(--color-gray-200);
+			box-shadow: var(--shadow-card);
+		}
+	}
+
+	/*
 	 * The button ladder.
 	 *
 	 * A default button used to be white with a border and a shadow, which is one
@@ -1256,36 +1318,46 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * A card's actions, blocked into the corner rather than strung along a row.
 	 *
 	 * They used to be a row above the text, which squeezed it and put delete
-	 * next to edit. Two abreast puts the safe ones on the top line and delete
-	 * on the bottom, and — unlike a single column — a card with four actions
-	 * does not end up three times taller than the line of text it holds.
+	 * next to edit. Blocked into the corner keeps delete away from edit and —
+	 * unlike a single column — a card with five actions does not end up four
+	 * times taller than the line of text it holds.
+	 *
+	 * Three abreast rather than two. Two put five buttons in a column of two
+	 * and three, which is a shape with a hole in it and a card as tall as the
+	 * tallest thing on the row. Three fills the first line and right-aligns
+	 * what is left over, so the block is two lines wherever it appears, and a
+	 * row with three actions — a finished task, which has no "do it today" or
+	 * "put it on a day" — is one line and a shorter card.
 	 */
 	.row-actions-stack {
-		display: grid;
-		grid-template-columns: repeat(2, auto);
+		display: flex;
+		flex-wrap: wrap;
+		/* Wide enough for exactly three, so the fourth wraps. */
+		max-width: calc(3 * var(--row-action-size) + 2 * 0.25rem);
 		flex: none;
 		align-self: start;
-		justify-items: end;
+		/* A part-full last line sits under the right-hand end of the one above,
+		   rather than starting a second column on the left. */
+		justify-content: flex-end;
 		gap: 0.25rem;
 		margin-left: auto;
 	}
 
-	/*
-	 * Delete is last, so it lands in the bottom corner. When it is alone on
-	 * that line it keeps the right-hand column, as far from the button above
-	 * it as the grid is wide.
-	 */
-	.row-actions-last {
-		grid-column: 2;
+	.row-actions-stack {
+		--row-action-size: 2.25rem;
 	}
 
 	/*
 	 * Compact with a mouse. A finger keeps the 44px every other control has.
 	 */
 	@media (pointer: fine) {
+		.row-actions-stack {
+			--row-action-size: 1.75rem;
+		}
+
 		.row-actions-stack .icon-btn {
-			width: 1.75rem;
-			height: 1.75rem;
+			width: var(--row-action-size);
+			height: var(--row-action-size);
 		}
 	}
 

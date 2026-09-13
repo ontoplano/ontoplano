@@ -11,8 +11,8 @@
 	<title>Choose a password — Ontoplano</title>
 </svelte:head>
 
-<div class="flex min-h-screen items-center justify-center bg-gray-100">
-	<div class="w-full max-w-md border border-gray-200 bg-white p-8 shadow-card">
+<div class="solo-screen bg-gray-100">
+	<div class="solo-card sm:max-w-md">
 		<h1 class="mb-2 text-xl font-bold tracking-tight text-gray-900">Choose your password</h1>
 		<p class="mb-6 text-sm text-gray-700">Your account is ready — this is how you get back in.</p>
 

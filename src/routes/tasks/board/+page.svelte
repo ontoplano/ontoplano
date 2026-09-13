@@ -802,7 +802,6 @@
 								max="1440"
 								step="5"
 								value={card.durationMinutes}
-								class="tabular"
 							/>
 						</Field>
 

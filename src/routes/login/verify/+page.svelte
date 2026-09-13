@@ -37,8 +37,8 @@
 	});
 </script>
 
-<div class="flex min-h-screen items-center justify-center bg-gray-100">
-	<div class="w-full max-w-sm border border-gray-200 bg-white p-8 shadow-card">
+<div class="solo-screen bg-gray-100">
+	<div class="solo-card sm:max-w-sm">
 		<h1 class="mb-6 text-xl font-bold tracking-tight text-gray-900">Confirm your address</h1>
 
 		{#if form && 'message' in form && form.message}

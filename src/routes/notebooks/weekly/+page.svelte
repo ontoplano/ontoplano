@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import Card from '$lib/components/Card.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import type { PageServerData } from './$types';
 
@@ -33,15 +32,32 @@
 -->
 <div class="space-y-4">
 	{#if data.weeks.length === 0}
-		<EmptyState
-			icon="note"
-			title="Nothing written yet"
-			description="Every week you write about in the review shows up here."
-		/>
+		<div class="border border-gray-200 bg-white shadow-sm">
+			<EmptyState
+				icon="note"
+				title="Nothing written yet"
+				description="Every week you write about in the review shows up here."
+			/>
+		</div>
 	{:else}
-		<div class="space-y-3">
+		<!--
+			One surface, and a week is a row on it.
+
+			Each week used to be a card of its own with its own accent edge, so a
+			year of writing was a column of boxes with a strip of page between
+			every two — and on a phone, where a card bleeds to both screen edges,
+			twelve accent bars stacked up the side with gaps between them. The
+			same shape the diary and the to-do list already have: one bordered
+			surface, a hairline between rows, and the accent on the surface
+			rather than on each row of it.
+		-->
+		<div
+			class="card-accent divide-y divide-gray-200 border border-gray-200 bg-white shadow-card"
+			style="--card-accent: var(--section-accent)"
+		>
 			{#each data.weeks as week (week.weekStart)}
-				<Card title={weekLabel(week.weekStart)} accent="var(--section-accent)">
+				<article class="p-4">
+					<h2 class="mb-2 text-sm font-semibold text-gray-900">{weekLabel(week.weekStart)}</h2>
 					<!-- The note as it was typed: paragraphs stay paragraphs. -->
 					<p class="text-sm whitespace-pre-wrap text-gray-900">{week.note}</p>
 					<div class="mt-2">
@@ -52,7 +68,7 @@
 							Open that week
 						</a>
 					</div>
-				</Card>
+				</article>
 			{/each}
 		</div>
 	{/if}

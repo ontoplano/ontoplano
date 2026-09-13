@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**56 pages, 219 actions.**
+**56 pages, 222 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -33,7 +33,7 @@ write surface for everything else; both end up calling the same
 | `/health/habits`                     | `create`, `update`, `delete`, `logOccurrence`, `toggleOccurrence`, `updateOccurrence`, `deleteOccurrence`                                                                                                                                                                                                                                                                           |
 | `/health/recipes`                    | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/health/recipes/[id]`               | —                                                                                                                                                                                                                                                                                                                                                                                   |
-| `/health/workouts`                   | `create`, `update`, `done`, `schedule`, `archive`, `delete`, `createCategory`, `renameCategory`, `deleteCategory`                                                                                                                                                                                                                                                                   |
+| `/health/workouts`                   | `create`, `update`, `done`, `log`, `updateSession`, `deleteSession`, `schedule`, `archive`, `delete`, `createCategory`, `renameCategory`, `deleteCategory`                                                                                                                                                                                                                          |
 | `/instance`                          | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/inventory`                         | `setCategoryFood`, `setCategoryShared`, `renameCategory`, `deleteCategory`, `saveCategories`, `createCategory`, `create`, `update`, `setQty`, `toggleBought`, `paid`, `delete`, `restock`, `toggleSnoozed`, `createLocation`, `updateLocation`, `deleteLocation`, `setLocationPanelWidth`, `putItem`, `setFields`                                                                   |
 | `/legal/privacy`                     | —                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -168,6 +168,25 @@ of forty cards, and forty round trips to ask "does this one have a picture"
 is how a list stops being instant.
 
 ### `/health/workouts`
+
+How much of the register the page carries.
+
+The history under a workout is read, not paged: somebody wants to see the
+last few months of a thing they do twice a week, and a year of that is a
+couple of hundred rows. Far enough back to be useful, short enough that the
+page is not a database dump.
+
+**`log`**
+
+Write down a session: the day, anything noted, and the lines.
+
+**`updateSession`**
+
+Correct one that was written down wrong.
+
+**`deleteSession`**
+
+For one logged by accident. Its lines go with it.
 
 **`deleteCategory`**
 

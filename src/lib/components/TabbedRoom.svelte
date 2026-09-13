@@ -5,7 +5,14 @@
 	import { scrollHints } from '$lib/actions/scroll-hints';
 	import { onSwipe } from '$lib/swipe';
 	import { swipeSurface } from '$lib/swipe-surface';
-	import { slideAway, slideOn, slidesHere, stopHiding } from '$lib/slide';
+	import {
+		holdHeight,
+		releaseHeight,
+		slideAway,
+		slideOn,
+		slidesHere,
+		stopHiding
+	} from '$lib/slide';
 
 	/**
 	 * A room with tabs: the strip, and the movement between them.
@@ -62,7 +69,11 @@
 	const at = $derived(tabFor(page.url.pathname));
 	const here = (index: number) => index === at;
 
+	/** The panel that moves. Its content is `body`, which is what is replaced. */
 	let pane = $state<HTMLElement>();
+	let body = $state<HTMLElement>();
+	/** Kept as tall as what left, so nothing below walks up the page. */
+	let frame = $state<HTMLElement>();
 	/** Where the copy of the outgoing screen is put. Svelte never fills it. */
 	let stage = $state<HTMLElement>();
 
@@ -103,11 +114,29 @@
 		const from = tabFor(navigation.from?.url.pathname ?? '');
 		const to = tabFor(navigation.to?.url.pathname ?? '');
 		went = from < 0 || to < 0 || from === to ? 0 : Math.sign(to - from);
-		if (went && pane && stage && slidesHere()) slideAway(stage, pane, went);
+		if (!went || !pane || !body || !stage || !slidesHere()) return;
+
+		/*
+		 * Both halves now, rather than one now and one when the data lands.
+		 *
+		 * The movement used to be: take the old screen off, wait for the next
+		 * one to load, bring it on. So the arrival was the load — press a tab on
+		 * a slow connection and the screen leaves, nothing happens, and then
+		 * something slides in. What an app does is move when you ask it to and
+		 * then wait, which is this: the content leaves, the empty panel arrives
+		 * behind it, and if the data is not there by the time it settles the
+		 * mark turns in the middle of a panel that has already stopped moving.
+		 */
+		holdHeight(frame, body);
+		slideAway(stage, body, went);
+		slideOn(pane, went);
 	});
 
 	afterNavigate(() => {
-		if (went && pane && slidesHere()) slideOn(pane, went);
+		// In place: the panel arrived while the data was loading, so the content
+		// appears where it already is rather than sliding in a second time.
+		stopHiding(body);
+		releaseHeight(frame);
 		went = 0;
 	});
 
@@ -120,7 +149,10 @@
 	 * on view, whether a movement finished or not.
 	 */
 	$effect(() => {
-		if (!navigating.to) stopHiding(pane);
+		if (!navigating.to) {
+			stopHiding(body);
+			releaseHeight(frame);
+		}
 	});
 </script>
 
@@ -154,8 +186,15 @@
 
 	<!-- `.slide-frame` is where the movement is clipped, and why it gives the
 	     page gutter back first. -->
-	<div class="slide-frame">
-		<div bind:this={pane}>{@render children()}</div>
+	<div bind:this={frame} class="slide-frame">
+		<div bind:this={pane}>
+			<div bind:this={body}>{@render children()}</div>
+		</div>
 		<div bind:this={stage} class="slide-stage" aria-hidden="true"></div>
+		<!--
+			No mark of its own: the shell already turns one behind whatever has
+			left, and this frame sits inside that one. Two would be two marks
+			turning at different heights for one wait.
+		-->
 	</div>
 </div>

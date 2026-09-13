@@ -5,12 +5,14 @@ import { visit } from './helpers/visit';
 /**
  * Workouts, the Health tab, driven the way a person uses it.
  *
- * A workout is written down, marked done, edited, archived and deleted — the
- * whole life of one — and the delete is confirmed in its own dialog, never
- * under the icon that asked for it. Checked at phone width too, because Health
- * is used on the phone at the gym as much as anywhere.
+ * A workout is written down, marked done, edited and archived — the whole life
+ * of one — and deleting it is confirmed in its own dialog, never under the icon
+ * that asked for it. One that has been done is refused outright, because the
+ * sessions behind it are what actually happened; the test below it covers the
+ * one made by mistake. Checked at phone width too, because Health is used on
+ * the phone at the gym as much as anywhere.
  */
-test('a workout can be added, done, edited, and deleted behind a confirmation', async ({
+test('a workout can be added, done, edited and archived, and its history protects it', async ({
 	page
 }) => {
 	await register(page, `workouts-${Date.now()}@example.test`);
@@ -66,7 +68,33 @@ test('a workout can be added, done, edited, and deleted behind a confirmation', 
 	await expect(confirm.getByText(/deleted for good/)).toBeVisible();
 	await page.waitForTimeout(600); // the confirm button is armed
 	await confirm.getByRole('button', { name: 'Delete', exact: true }).click();
-	await expect(page.getByText('Push day')).toHaveCount(0);
+
+	// Refused, because it has been done: the sessions behind it are the record
+	// of what actually happened, and deleting the plan would take them too. It
+	// stays in the archive, which is where a workout with history belongs.
+	await expect(confirm.getByText(/Archive it instead/)).toBeVisible();
+	await confirm.getByRole('button', { name: 'Keep it' }).click();
+	await expect(page.getByText('Push day')).toBeVisible();
+});
+
+/** One made by mistake, never done, is still deleted outright. */
+test('a workout that was never done is deleted outright', async ({ page }) => {
+	await register(page, `workouts-fresh-${Date.now()}@example.test`);
+	await visit(page, '/health/workouts');
+
+	await page.getByRole('button', { name: /New workout/ }).click();
+	const add = page.getByRole('dialog');
+	await add.locator('[name="heading"]').fill('Typo day');
+	await add.getByRole('button', { name: 'Add', exact: true }).click();
+	await expect(page.getByText('Typo day')).toBeVisible();
+
+	await page.getByRole('button', { name: 'Archive Typo day' }).click();
+	await page.getByRole('button', { name: /Archived/ }).click();
+	await page.getByRole('button', { name: 'Delete Typo day' }).click();
+	const confirm = page.getByRole('dialog');
+	await page.waitForTimeout(600); // the confirm button is armed
+	await confirm.getByRole('button', { name: 'Delete', exact: true }).click();
+	await expect(page.getByText('Typo day')).toHaveCount(0);
 });
 
 /**

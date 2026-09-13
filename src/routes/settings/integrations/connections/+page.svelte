@@ -366,7 +366,6 @@ Token: ${token}`;
 							min="1"
 							max="3650"
 							placeholder="never"
-							class="tabular"
 						/>
 					</Field>
 
@@ -661,7 +660,7 @@ Token: ${token}`;
 									min="1"
 									max="3650"
 									value={stream.retentionDays ?? ''}
-									class="w-16 border border-gray-300 px-2 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+									class="w-20"
 								/>
 								days
 							</label>

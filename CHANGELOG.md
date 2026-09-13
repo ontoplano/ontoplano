@@ -18,6 +18,41 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.168.0 — 2026-09-13
+
+- **Workouts keep a register.** "Last done" says whether you are keeping a
+  workout up and cannot say whether you are getting anywhere with it. A session
+  is now a day plus lines of what you did and how much of it — ran 5 km,
+  deadlifted 120 kg — in your own words and units, under the plan it belongs
+  to. Correct one, remove one, and a workout with history is archived rather
+  than deleted, because the sessions behind it are the record.
+- **A workout says what it measures.** Names and units on the workout itself —
+  a run measures kilometres and a pace; a push day measures what you benched
+  and for how many reps — so writing a session down is filling in figures
+  beside words you already chose. A session may still measure anything.
+- **An assistant can read and write the register**: `workout_sessions`,
+  `log_workout`, `change_workout_session`, `remove_workout_session`,
+  `set_workout_measures`, and `workout_history` for one activity over time.
+- **A place folds away on the inventory list too.** Pressing a location heading
+  puts it and everything under it out of sight — the same fold the tree beside
+  it has, so the two halves cannot disagree about what is open.
+- **The screen moves when you ask it to, not when the data arrives.** Changing
+  tab or room used to take the old screen off, wait for the next one to load,
+  and only then bring it on — so on a slow connection the screen left and
+  nothing happened. Now the movement finishes either way, and the mark turns in
+  the middle of a panel that has already stopped moving.
+- **Weekly notes are one surface** rather than a column of cards each with its
+  own accent edge.
+- **The row of actions beside a task is two lines, not a column with a hole in
+  it** — three abreast, the rest right-aligned under them. A finished task has
+  three and takes one line, so the row is shorter.
+- **Sign-in fills the screen on a phone**, the way registering already did,
+  instead of floating as a card between two dark bands.
+- **Number fields carry the app's own stepper** instead of the browser's.
+- **An ops warning says which instance it came from.** A box runs production,
+  staging and the demo; "4 mails failed to send" named none of them. The demo
+  raises no mail warning at all, its administration page having nothing to show.
+
 ## 0.167.1 — 2026-09-13
 
 - **Lists sit on one surface instead of floating apart.** Recipes, diary

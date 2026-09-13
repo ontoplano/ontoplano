@@ -262,3 +262,213 @@ describe('a workout block is named after its workout', () => {
 		expect(grid.blockName(slot)).toBe('Leg day (heavy)');
 	});
 });
+
+/**
+ * The register: what was actually done, and how much of it.
+ *
+ * "Last done" answers whether somebody is keeping a workout up and cannot
+ * answer whether they are getting anywhere with it. These rows are the second
+ * question, and the rules that matter are that the numbers survive a
+ * round trip in the person's own units, that the stamp on the workout agrees
+ * with them whichever way the sessions move, and that none of it is reachable
+ * from another account.
+ */
+describe('writing down a session', () => {
+	test('keeps the words and the numbers exactly as they were given', () => {
+		const id = workouts.createWorkout(ctx, { title: 'Pull day', categoryId: strength });
+		const session = workouts.logWorkout(ctx, id, {
+			doneOn: '2026-09-10',
+			notes: 'felt heavy',
+			measures: [
+				{ activity: 'deadlifted for 5 reps', amount: 120, unit: 'kg' },
+				{ activity: 'ran', amount: 5.5, unit: 'km' },
+				// No number attached: doing the routine is a thing that happened.
+				{ activity: 'did the mobility routine' }
+			]
+		});
+
+		const found = workouts.getSession(ctx, session);
+		expect(found.doneOn).toBe('2026-09-10');
+		expect(found.notes).toBe('felt heavy');
+		expect(found.measures.map((m) => [m.activity, m.amount, m.unit])).toEqual([
+			['deadlifted for 5 reps', 120, 'kg'],
+			['ran', 5.5, 'km'],
+			['did the mobility routine', null, '']
+		]);
+	});
+
+	test('drops a line somebody opened and did not fill in', () => {
+		const id = workouts.createWorkout(ctx, { title: 'Abandoned row', categoryId: strength });
+		const session = workouts.logWorkout(ctx, id, {
+			measures: [{ activity: 'swam', amount: 1, unit: 'km' }, { activity: '   ' }, { activity: '' }]
+		});
+		expect(workouts.getSession(ctx, session).measures).toHaveLength(1);
+	});
+
+	test('moves the workout’s last-done stamp, and moves it back', () => {
+		const id = workouts.createWorkout(ctx, { title: 'Stamped', categoryId: strength });
+		const older = workouts.logWorkout(ctx, id, { doneOn: '2026-08-01' });
+		const newer = workouts.logWorkout(ctx, id, { doneOn: '2026-09-01' });
+
+		const stamped = () => workouts.getWorkout(ctx, id).lastDoneAt;
+		expect(stamped()).toBe('2026-09-01');
+
+		// Removing the newest moves it back to the one that is still there,
+		// rather than leaving it pointing at something that no longer exists.
+		workouts.deleteSession(ctx, newer);
+		expect(stamped()).toBe('2026-08-01');
+
+		workouts.deleteSession(ctx, older);
+		expect(stamped()).toBeNull();
+	});
+
+	test('the quick tick writes one session a day, however often it is pressed', () => {
+		const id = workouts.createWorkout(ctx, { title: 'Ticked', categoryId: strength });
+		workouts.done(ctx, id);
+		workouts.done(ctx, id);
+		expect(workouts.listSessions(ctx, { workoutId: id })).toHaveLength(1);
+	});
+
+	test('correcting one replaces every line', () => {
+		const id = workouts.createWorkout(ctx, { title: 'Corrected', categoryId: strength });
+		const session = workouts.logWorkout(ctx, id, {
+			doneOn: '2026-09-02',
+			measures: [{ activity: 'ran', amount: 3, unit: 'km' }]
+		});
+
+		workouts.updateSession(ctx, session, {
+			doneOn: '2026-09-03',
+			notes: 'it was the third',
+			measures: [{ activity: 'ran', amount: 4, unit: 'km' }]
+		});
+
+		const found = workouts.getSession(ctx, session);
+		expect(found.doneOn).toBe('2026-09-03');
+		expect(found.measures).toHaveLength(1);
+		expect(found.measures[0].amount).toBe(4);
+		expect(workouts.getWorkout(ctx, id).lastDoneAt).toBe('2026-09-03');
+	});
+
+	test('a workout with history is archived, not deleted', () => {
+		const id = workouts.createWorkout(ctx, { title: 'Has history', categoryId: strength });
+		workouts.logWorkout(ctx, id, { doneOn: '2026-09-05' });
+		expect(() => workouts.deleteWorkout(ctx, id)).toThrow(/Archive it instead/);
+
+		// One made by mistake still goes.
+		const fresh = workouts.createWorkout(ctx, { title: 'Never done', categoryId: strength });
+		expect(() => workouts.deleteWorkout(ctx, fresh)).not.toThrow();
+	});
+
+	test('is nobody else’s to read, write or remove', () => {
+		const id = workouts.createWorkout(ctx, { title: 'Private session', categoryId: strength });
+		const session = workouts.logWorkout(ctx, id, {
+			measures: [{ activity: 'ran', amount: 1, unit: 'km' }]
+		});
+
+		expect(() => workouts.logWorkout(theirs, id, {})).toThrow();
+		expect(() => workouts.getSession(theirs, session)).toThrow();
+		expect(() => workouts.deleteSession(theirs, session)).toThrow();
+		expect(workouts.listSessions(theirs, { workoutId: id })).toEqual([]);
+	});
+});
+
+describe('one activity over time', () => {
+	test('is grouped by the word, not by the workout it happened in', () => {
+		const morning = workouts.createWorkout(ctx, { title: 'Morning run', categoryId: strength });
+		const sunday = workouts.createWorkout(ctx, { title: 'Sunday long one', categoryId: strength });
+		workouts.logWorkout(ctx, morning, {
+			doneOn: '2026-09-07',
+			measures: [{ activity: 'jogged', amount: 5, unit: 'km' }]
+		});
+		workouts.logWorkout(ctx, sunday, {
+			doneOn: '2026-09-08',
+			measures: [{ activity: 'jogged', amount: 12, unit: 'km' }]
+		});
+
+		// Oldest first, which is the direction a chart's x-axis runs.
+		const points = workouts.measureHistory(ctx, 'jogged');
+		expect(points.map((p) => [p.doneOn, p.amount])).toEqual([
+			['2026-09-07', 5],
+			['2026-09-08', 12]
+		]);
+
+		expect(workouts.measureHistory(ctx, 'jogged', { since: '2026-09-08' })).toHaveLength(1);
+		expect(workouts.measuredActivities(ctx).find((a) => a.activity === 'jogged')?.times).toBe(2);
+		expect(workouts.measureHistory(theirs, 'jogged')).toEqual([]);
+	});
+});
+
+/**
+ * What a workout declares it measures.
+ *
+ * Names without numbers, on the workout rather than on any one session of it:
+ * they decide what writing a session down asks for. A suggestion, not a rule —
+ * a session may still measure anything.
+ */
+describe('what a workout measures', () => {
+	test('keeps the names, the units and the order they were given in', () => {
+		const id = workouts.createWorkout(ctx, {
+			title: 'Long run',
+			categoryId: strength,
+			measures: [
+				{ activity: 'ran', unit: 'km' },
+				{ activity: 'pace', unit: 'min/km' }
+			]
+		});
+
+		expect(workouts.getWorkout(ctx, id).measures).toEqual([
+			{ activity: 'ran', unit: 'km' },
+			{ activity: 'pace', unit: 'min/km' }
+		]);
+
+		// Replaced wholesale, and the new order is the order it keeps.
+		workouts.setWorkoutMeasures(ctx, id, [
+			{ activity: 'pace', unit: 'min/km' },
+			{ activity: 'ran', unit: 'km' },
+			// Opened and abandoned: dropped rather than refused.
+			{ activity: '  ' }
+		]);
+		expect(workouts.getWorkout(ctx, id).measures.map((m) => m.activity)).toEqual(['pace', 'ran']);
+	});
+
+	test('is left alone by an edit that says nothing about it', () => {
+		const id = workouts.createWorkout(ctx, {
+			title: 'Left alone',
+			categoryId: strength,
+			measures: [{ activity: 'swam', unit: 'm' }]
+		});
+		workouts.updateWorkout(ctx, id, { title: 'Left alone, renamed', categoryId: strength });
+		expect(workouts.getWorkout(ctx, id).measures).toHaveLength(1);
+	});
+
+	test('declares nothing about what a session may record', () => {
+		const id = workouts.createWorkout(ctx, {
+			title: 'Suggestion only',
+			categoryId: strength,
+			measures: [{ activity: 'ran', unit: 'km' }]
+		});
+		// Something the workout never named, written down anyway.
+		const session = workouts.logWorkout(ctx, id, {
+			measures: [{ activity: 'skipped rope', amount: 200, unit: 'turns' }]
+		});
+		expect(workouts.getSession(ctx, session).measures[0].activity).toBe('skipped rope');
+	});
+
+	test("is nobody else's to declare", () => {
+		const id = workouts.createWorkout(ctx, { title: 'Private measures', categoryId: strength });
+		expect(() =>
+			workouts.setWorkoutMeasures(theirs, id, [{ activity: 'ran', unit: 'km' }])
+		).toThrow();
+		expect(workouts.getWorkout(ctx, id).measures).toEqual([]);
+	});
+
+	test('goes with the workout when it is deleted', () => {
+		const id = workouts.createWorkout(ctx, {
+			title: 'Gone with it',
+			categoryId: strength,
+			measures: [{ activity: 'ran', unit: 'km' }]
+		});
+		workouts.deleteWorkout(ctx, id);
+		expect(() => workouts.getWorkout(ctx, id)).toThrow();
+	});
+});

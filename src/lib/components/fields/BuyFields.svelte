@@ -68,14 +68,7 @@
 		     what this is bigger than the count on the row. One, for almost
 		     everything, which is why it is filled in already. -->
 		<Field label="How many you keep" span={6} hint="The count the list compares against.">
-			<NumberBox
-				name="idealQty"
-				min="0"
-				step="1"
-				inputmode="numeric"
-				bind:value={idealQty}
-				class="tabular"
-			/>
+			<NumberBox name="idealQty" min="0" step="1" inputmode="numeric" bind:value={idealQty} />
 		</Field>
 
 		<Field label="Category" span={6}>

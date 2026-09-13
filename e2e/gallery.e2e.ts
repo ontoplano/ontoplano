@@ -55,7 +55,9 @@ test('a picture lives once, however many albums hold it', async ({ page }) => {
 		await page.getByRole('button', { name: 'New album' }).click();
 		await page.locator('[name="heading"]').fill(name);
 		await page.getByRole('button', { name: 'Create', exact: true }).click();
-		await expect(page.getByText(name)).toBeVisible();
+		// The tile, not the name wherever it appears: an album is a row in the
+		// folder panel as well as a card in the grid beside it.
+		await expect(page.getByRole('link', { name: new RegExp(`^${name}`) })).toBeVisible();
 	}
 
 	// A picture into Trips: choosing the file is the submit.

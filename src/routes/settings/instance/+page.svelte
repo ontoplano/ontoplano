@@ -464,7 +464,7 @@
 				</Field>
 
 				<Field label="Code expires in" span={6} hint="Days. Leave empty for no expiry.">
-					<NumberBox autocomplete="off" name="expiresInDays" min="1" max="365" class="tabular" />
+					<NumberBox autocomplete="off" name="expiresInDays" min="1" max="365" />
 				</Field>
 
 				{#if data.sellsAnything}

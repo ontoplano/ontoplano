@@ -820,6 +820,48 @@ The workouts you have written down, under Health. Each has a category and a plan
 
 _Needs `workouts:read`; read-only._
 
+### `set_workout_measures` — Say what a workout measures
+
+Declare what a workout is measured by — a run by kilometres and a pace, a push day by what was benched and for how many reps. Names and units only; no amounts. Replaces the list it has, so send all of them. A session may still measure anything: this decides what its form opens on.
+
+_Needs `workouts:write`; writes._
+
+### `workout_sessions` — What was actually done
+
+Sessions, newest first: the day, anything noted, and lines of activity, amount and unit in the person’s own words — ran 5 km, deadlifted 120 kg. Narrow it with `workout_id` or `since` rather than reading everything.
+
+_Needs `workouts:read`; read-only._
+
+### `log_workout` — Write down a session
+
+Record that a workout happened, and how much of what was done. Everything but the workout is optional: a session with no lines is one that happened. Use the person’s own words and units — "ran" and "km", not a normalised distance — because that is what a chart of it will be grouped by. `workout_sessions` shows what they have called things before.
+
+_Needs `workouts:write`; writes._
+
+### `change_workout_session` — Correct a session
+
+Rewrite a session that was written down wrong. The lines are replaced by the ones given, so send them all; leaving `measures` off keeps the ones it has.
+
+_Needs `workouts:write`; writes._
+
+### `remove_workout_session` — Remove a session
+
+Delete a session that was logged by accident. Its lines go with it; the workout itself stays. For correcting one rather than removing it, use `change_workout_session`.
+
+_Needs `workouts:write` and `destructive`; deletes._
+
+### `workout_history` — One activity over time
+
+Every time one activity was measured, oldest first — the shape to draw or to compare against. `workout_activities` lists what this account has measured and how often, which is where the name comes from.
+
+_Needs `workouts:read`; read-only._
+
+### `workout_activities` — What this account measures
+
+Every activity and unit that has ever been written down, with how many times — the names `workout_history` takes, and the ones to reuse when logging so a chart groups them together.
+
+_Needs `workouts:read`; read-only._
+
 ### `workout_categories` — The categories of workout this account keeps
 
 The categories a workout can be filed under — this account’s own list, not a fixed one. `add_workout` and `change_workout` take a category_id from here.

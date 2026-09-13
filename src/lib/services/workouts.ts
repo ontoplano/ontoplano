@@ -13,10 +13,17 @@
  * that pointed at it are its history. `deleteWorkout` is for one made by
  * mistake and clears itself off any block (the FK is set-null).
  */
-import { and, asc, eq, getTableColumns, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, getTableColumns, inArray, isNull, sql } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
-import { exceptionalTasks, workoutCategories, workouts } from '$lib/db/schema.js';
+import {
+	exceptionalTasks,
+	workoutCategories,
+	workoutMeasures,
+	workoutPlanMeasures,
+	workoutSessions,
+	workouts
+} from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { stamp, stamps } from './time.js';
@@ -40,6 +47,26 @@ export const MAX_TITLE_LENGTH = 200;
 export const MAX_PLAN_LENGTH = 8000;
 export const MAX_NOTE_LENGTH = 2000;
 
+/** What somebody did, in their words, and the unit they said it in. */
+export const MAX_ACTIVITY_LENGTH = 120;
+export const MAX_UNIT_LENGTH = 20;
+
+/**
+ * How many lines one session may hold.
+ *
+ * Generous rather than tight — a lifting session is genuinely a dozen lines —
+ * and there only so that a form cannot post ten thousand rows.
+ */
+export const MAX_MEASURES_PER_SESSION = 50;
+
+/**
+ * The biggest number a measure may carry.
+ *
+ * Nothing here knows what a kilometre is, so the only honest bound is one no
+ * real body reaches in any unit anybody would use.
+ */
+export const MAX_AMOUNT = 1_000_000;
+
 export type Workout = {
 	id: number;
 	title: string;
@@ -50,6 +77,38 @@ export type Workout = {
 	minutes: number | null;
 	lastDoneAt: string | null;
 	archived: boolean;
+	/**
+	 * What this workout measures, as names without numbers.
+	 *
+	 * A suggestion rather than a rule: writing a session down starts from
+	 * these, and a session may still measure anything.
+	 */
+	measures: { activity: string; unit: string }[];
+};
+
+/** One line of a session: ran 5 km, deadlifted 120 kg, did the routine. */
+export type Measure = {
+	id: number;
+	activity: string;
+	amount: number | null;
+	unit: string;
+};
+
+export type Session = {
+	id: number;
+	workoutId: number;
+	workoutTitle: string;
+	doneOn: string;
+	notes: string;
+	measures: Measure[];
+};
+
+export type MeasureInput = { activity: unknown; amount?: unknown; unit?: unknown };
+
+export type SessionInput = {
+	doneOn?: unknown;
+	notes?: unknown;
+	measures?: MeasureInput[] | unknown;
 };
 
 type WorkoutInput = {
@@ -58,6 +117,8 @@ type WorkoutInput = {
 	plan?: unknown;
 	notes?: unknown;
 	minutes?: unknown;
+	/** What it measures. Left out means "leave what it has". */
+	measures?: { activity: unknown; unit?: unknown }[] | unknown;
 };
 
 function toWorkout(t: typeof workouts.$inferSelect & { categoryName?: string | null }): Workout {
@@ -70,15 +131,49 @@ function toWorkout(t: typeof workouts.$inferSelect & { categoryName?: string | n
 		notes: t.notes ?? '',
 		minutes: t.minutes,
 		lastDoneAt: t.lastDoneAt,
-		archived: t.archivedAt !== null
+		archived: t.archivedAt !== null,
+		measures: []
 	};
+}
+
+/**
+ * Hang each workout's declared measures off it, in one query.
+ *
+ * One `IN` rather than a query per workout, the same shape the sessions use
+ * for their lines and the notebooks use for a note's tags.
+ */
+function withMeasures(rows: Workout[]): Workout[] {
+	if (rows.length === 0) return rows;
+	const declared = db
+		.select({
+			workoutId: workoutPlanMeasures.workoutId,
+			activity: workoutPlanMeasures.activity,
+			unit: workoutPlanMeasures.unit
+		})
+		.from(workoutPlanMeasures)
+		.where(
+			inArray(
+				workoutPlanMeasures.workoutId,
+				rows.map((row) => row.id)
+			)
+		)
+		.orderBy(asc(workoutPlanMeasures.sortOrder), asc(workoutPlanMeasures.id))
+		.all();
+
+	const byWorkout = new Map<number, { activity: string; unit: string }[]>();
+	for (const row of declared) {
+		const held = byWorkout.get(row.workoutId) ?? [];
+		held.push({ activity: row.activity, unit: row.unit });
+		byWorkout.set(row.workoutId, held);
+	}
+	return rows.map((row) => ({ ...row, measures: byWorkout.get(row.id) ?? [] }));
 }
 
 export function listWorkouts(ctx: Ctx, opts: { includeArchived?: boolean } = {}): Workout[] {
 	const where = opts.includeArchived
 		? eq(workouts.userId, ctx.userId)
 		: and(eq(workouts.userId, ctx.userId), isNull(workouts.archivedAt));
-	return db
+	const rows = db
 		.select({ ...getTableColumns(workouts), categoryName: workoutCategories.name })
 		.from(workouts)
 		.leftJoin(workoutCategories, eq(workouts.categoryId, workoutCategories.id))
@@ -86,6 +181,7 @@ export function listWorkouts(ctx: Ctx, opts: { includeArchived?: boolean } = {})
 		.orderBy(asc(workouts.archivedAt), asc(workouts.title))
 		.all()
 		.map(toWorkout);
+	return withMeasures(rows);
 }
 
 /**
@@ -182,7 +278,7 @@ export function getWorkout(ctx: Ctx, id: number): Workout {
 		.where(and(eq(workouts.id, id), eq(workouts.userId, ctx.userId)))
 		.get();
 	if (!found) throw new NotFoundError('workout');
-	return toWorkout(found);
+	return withMeasures([toWorkout(found)])[0];
 }
 
 function fields(ctx: Ctx, input: WorkoutInput) {
@@ -204,6 +300,7 @@ export function createWorkout(ctx: Ctx, input: WorkoutInput): number {
 		.values({ userId: ctx.userId, ...fields(ctx, input), ...stamps(ctx) })
 		.returning({ id: workouts.id })
 		.get();
+	if (input.measures !== undefined) setWorkoutMeasures(ctx, inserted.id, input.measures);
 	return inserted.id;
 }
 
@@ -212,6 +309,49 @@ export function updateWorkout(ctx: Ctx, id: number, input: WorkoutInput): void {
 	db.update(workouts)
 		.set({ ...fields(ctx, input), updatedAt: stamp(ctx) })
 		.where(and(eq(workouts.id, id), eq(workouts.userId, ctx.userId)))
+		.run();
+	if (input.measures !== undefined) setWorkoutMeasures(ctx, id, input.measures);
+}
+
+/**
+ * Declare what this workout measures: names and units, no numbers.
+ *
+ * Replaced wholesale rather than diffed, for the same reason a session's lines
+ * are — it is one short list somebody edits as a block, and matching rows up
+ * by id would be work in aid of nothing. A blank row is one that was opened
+ * and abandoned, not an error.
+ */
+export function setWorkoutMeasures(ctx: Ctx, workoutId: number, raw: unknown): void {
+	getWorkout(ctx, workoutId); // ownership
+
+	if (raw !== undefined && raw !== null && !Array.isArray(raw))
+		throw new ValidationError('Measures have to be a list');
+	const rows = ((raw ?? []) as { activity?: unknown; unit?: unknown }[])
+		.filter((row) => row && String(row.activity ?? '').trim() !== '')
+		.map((row) => ({
+			activity: str(row.activity, 'activity', { max: MAX_ACTIVITY_LENGTH }),
+			unit: optionalStr(row.unit, 'unit', { max: MAX_UNIT_LENGTH }) || ''
+		}));
+	if (rows.length > MAX_MEASURES_PER_SESSION)
+		throw new ValidationError(`A workout takes at most ${MAX_MEASURES_PER_SESSION} measures`);
+
+	db.delete(workoutPlanMeasures)
+		.where(
+			and(eq(workoutPlanMeasures.workoutId, workoutId), eq(workoutPlanMeasures.userId, ctx.userId))
+		)
+		.run();
+
+	if (rows.length === 0) return;
+	db.insert(workoutPlanMeasures)
+		.values(
+			rows.map((row, index) => ({
+				userId: ctx.userId,
+				workoutId,
+				activity: row.activity,
+				unit: row.unit,
+				sortOrder: index
+			}))
+		)
 		.run();
 }
 
@@ -223,20 +363,100 @@ export function setArchived(ctx: Ctx, id: number, archived: boolean): void {
 		.run();
 }
 
-/** For one made by mistake: gone, and cleared off any block it was on. */
+/**
+ * For one made by mistake: gone, and cleared off any block it was on.
+ *
+ * Refused once it has been done, because the sessions behind it are the
+ * record of what somebody actually did and deleting the plan would take them
+ * with it. A plan with history is archived — it leaves the list and keeps
+ * everything it knows.
+ */
 export function deleteWorkout(ctx: Ctx, id: number): void {
 	getWorkout(ctx, id);
+
+	const sessions = db
+		.select({ count: sql<number>`count(*)` })
+		.from(workoutSessions)
+		.where(and(eq(workoutSessions.workoutId, id), eq(workoutSessions.userId, ctx.userId)))
+		.get();
+	if (sessions && sessions.count > 0)
+		throw new ValidationError(
+			`That workout has ${sessions.count} session${sessions.count === 1 ? '' : 's'} recorded against it. Archive it instead — deleting it would take them too.`
+		);
+
 	db.delete(workouts)
 		.where(and(eq(workouts.id, id), eq(workouts.userId, ctx.userId)))
 		.run();
 }
 
-/** Record that a session happened — the "cooked" of the gym. */
-export function done(ctx: Ctx, id: number): void {
+/**
+ * Record that a session happened — the "cooked" of the gym.
+ *
+ * Writes a session with nothing measured: ticking Done says it happened, and
+ * saying how much of what is `logWorkout`. `lastDoneAt` is kept in step
+ * because half the app reads it to answer "when did I last do this", and a
+ * count over the sessions would be the same answer at more cost.
+ */
+export function done(ctx: Ctx, id: number, on?: string): number {
 	getWorkout(ctx, id);
+	return ensureSession(ctx, id, on ?? stamp(ctx).slice(0, 10));
+}
+
+/**
+ * A session for this workout on this day, made only if there is not one.
+ *
+ * Two paths say a workout happened — the Done button in Health, and ticking
+ * its block off on the week — and the first calls the second, so an
+ * unconditional insert would write the same session twice for one press. The
+ * explicit form (`logWorkout`) always inserts, which is what somebody
+ * recording two runs in a day wants; this is the quick tick, and a tick is
+ * about a day.
+ */
+export function ensureSession(ctx: Ctx, workoutId: number, doneOn: string): number {
+	const existing = db
+		.select({ id: workoutSessions.id })
+		.from(workoutSessions)
+		.where(
+			and(
+				eq(workoutSessions.workoutId, workoutId),
+				eq(workoutSessions.userId, ctx.userId),
+				eq(workoutSessions.doneOn, doneOn)
+			)
+		)
+		.get();
+	if (existing) {
+		touchLastDone(ctx, workoutId);
+		return existing.id;
+	}
+
+	const inserted = db
+		.insert(workoutSessions)
+		.values({ userId: ctx.userId, workoutId, doneOn, notes: '', ...stamps(ctx) })
+		.returning({ id: workoutSessions.id })
+		.get();
+
+	touchLastDone(ctx, workoutId);
+	return inserted.id;
+}
+
+/**
+ * `lastDoneAt` is the newest session there is, recomputed rather than assumed.
+ *
+ * Logging a session for last Tuesday must not claim the workout was done
+ * today, and deleting the most recent one must move the date back rather than
+ * leave it pointing at something that no longer exists.
+ */
+function touchLastDone(ctx: Ctx, workoutId: number): void {
+	const newest = db
+		.select({ doneOn: workoutSessions.doneOn })
+		.from(workoutSessions)
+		.where(and(eq(workoutSessions.workoutId, workoutId), eq(workoutSessions.userId, ctx.userId)))
+		.orderBy(desc(workoutSessions.doneOn))
+		.get();
+
 	db.update(workouts)
-		.set({ lastDoneAt: stamp(ctx), updatedAt: stamp(ctx) })
-		.where(and(eq(workouts.id, id), eq(workouts.userId, ctx.userId)))
+		.set({ lastDoneAt: newest?.doneOn ?? null, updatedAt: stamp(ctx) })
+		.where(and(eq(workouts.id, workoutId), eq(workouts.userId, ctx.userId)))
 		.run();
 }
 
@@ -289,4 +509,249 @@ export function doneToday(ctx: Ctx, id: number): void {
 		)
 		.get();
 	if (block) setOccurrenceStatus(ctx, `exceptional:${block.id}`, 'done');
+}
+
+/*
+ * The register: what was actually done, and how much of it.
+ *
+ * `lastDoneAt` answers "am I keeping this up" and cannot answer "am I getting
+ * stronger". These rows are the second question — a day, and lines of
+ * activity, amount and unit in the person's own words, so a chart can be drawn
+ * over them later without anything here having to know what a kilometre is.
+ *
+ * Everything is optional. A session with no lines is a session that happened;
+ * a line with no amount is "did the mobility routine", which is a real thing
+ * to have done and would otherwise go back into a notes field where nothing
+ * can read it.
+ */
+
+/** A date the register accepts: the day it happened, not a timestamp. */
+const DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+function measureRows(raw: unknown): { activity: string; amount: number | null; unit: string }[] {
+	if (raw === undefined || raw === null) return [];
+	if (!Array.isArray(raw)) throw new ValidationError('Measures have to be a list');
+	if (raw.length > MAX_MEASURES_PER_SESSION)
+		throw new ValidationError(`A session takes at most ${MAX_MEASURES_PER_SESSION} lines`);
+
+	return (
+		raw
+			// A blank line is somebody who opened a row and did not fill it in, which
+			// is not an error — it is a row they changed their mind about.
+			.filter((row) => row && String((row as MeasureInput).activity ?? '').trim() !== '')
+			.map((row) => {
+				const input = row as MeasureInput;
+				const amount =
+					input.amount === undefined || input.amount === null || input.amount === ''
+						? null
+						: num(input.amount, 'amount', { min: 0, max: MAX_AMOUNT });
+				return {
+					activity: str(input.activity, 'activity', { max: MAX_ACTIVITY_LENGTH }),
+					amount,
+					unit: optionalStr(input.unit, 'unit', { max: MAX_UNIT_LENGTH }) || ''
+				};
+			})
+	);
+}
+
+function writeMeasures(ctx: Ctx, sessionId: number, raw: unknown): void {
+	const rows = measureRows(raw);
+
+	// Replaced wholesale rather than diffed: a session's lines are one thing
+	// somebody edits as a block, and matching them up by id would be work in
+	// aid of nothing.
+	db.delete(workoutMeasures)
+		.where(and(eq(workoutMeasures.sessionId, sessionId), eq(workoutMeasures.userId, ctx.userId)))
+		.run();
+
+	if (rows.length === 0) return;
+	db.insert(workoutMeasures)
+		.values(
+			rows.map((row, index) => ({
+				userId: ctx.userId,
+				sessionId,
+				activity: row.activity,
+				amount: row.amount,
+				unit: row.unit,
+				sortOrder: index
+			}))
+		)
+		.run();
+}
+
+function dayOf(ctx: Ctx, value: unknown): string {
+	if (value === undefined || value === null || value === '') return stamp(ctx).slice(0, 10);
+	return str(value, 'date', { max: 10, pattern: DAY_PATTERN });
+}
+
+/** Write down a session: the day, anything noted, and the lines. */
+export function logWorkout(ctx: Ctx, workoutId: number, input: SessionInput): number {
+	getWorkout(ctx, workoutId); // ownership
+	const inserted = db
+		.insert(workoutSessions)
+		.values({
+			userId: ctx.userId,
+			workoutId,
+			doneOn: dayOf(ctx, input.doneOn),
+			notes: optionalStr(input.notes, 'notes', { max: MAX_NOTE_LENGTH }) || '',
+			...stamps(ctx)
+		})
+		.returning({ id: workoutSessions.id })
+		.get();
+
+	writeMeasures(ctx, inserted.id, input.measures);
+	touchLastDone(ctx, workoutId);
+	return inserted.id;
+}
+
+export function getSession(ctx: Ctx, id: number): Session {
+	const found = listSessions(ctx, { sessionId: id })[0];
+	if (!found) throw new NotFoundError('session');
+	return found;
+}
+
+/** Correct one: the day, the note, and every line, in one go. */
+export function updateSession(ctx: Ctx, id: number, input: SessionInput): void {
+	const existing = getSession(ctx, id);
+
+	db.update(workoutSessions)
+		.set({
+			doneOn: dayOf(ctx, input.doneOn),
+			notes: optionalStr(input.notes, 'notes', { max: MAX_NOTE_LENGTH }) || '',
+			updatedAt: stamp(ctx)
+		})
+		.where(and(eq(workoutSessions.id, id), eq(workoutSessions.userId, ctx.userId)))
+		.run();
+
+	if (input.measures !== undefined) writeMeasures(ctx, id, input.measures);
+	touchLastDone(ctx, existing.workoutId);
+}
+
+/** For a session logged by accident. Its lines go with it. */
+export function deleteSession(ctx: Ctx, id: number): void {
+	const existing = getSession(ctx, id);
+	db.delete(workoutSessions)
+		.where(and(eq(workoutSessions.id, id), eq(workoutSessions.userId, ctx.userId)))
+		.run();
+	touchLastDone(ctx, existing.workoutId);
+}
+
+/**
+ * Sessions, newest first, with their lines already attached.
+ *
+ * Two queries rather than one per session: the lines come back in a single
+ * `IN` and are handed out by id, which is the shape the notebooks use for a
+ * note's tags and people.
+ */
+export function listSessions(
+	ctx: Ctx,
+	opts: { workoutId?: number; sessionId?: number; since?: string; limit?: number } = {}
+): Session[] {
+	const where = [eq(workoutSessions.userId, ctx.userId)];
+	if (opts.workoutId !== undefined) where.push(eq(workoutSessions.workoutId, opts.workoutId));
+	if (opts.sessionId !== undefined) where.push(eq(workoutSessions.id, opts.sessionId));
+	if (opts.since !== undefined)
+		where.push(
+			sql`${workoutSessions.doneOn} >= ${str(opts.since, 'since', { max: 10, pattern: DAY_PATTERN })}`
+		);
+
+	let query = db
+		.select({
+			id: workoutSessions.id,
+			workoutId: workoutSessions.workoutId,
+			workoutTitle: workouts.title,
+			doneOn: workoutSessions.doneOn,
+			notes: workoutSessions.notes
+		})
+		.from(workoutSessions)
+		.innerJoin(workouts, eq(workoutSessions.workoutId, workouts.id))
+		.where(and(...where))
+		.orderBy(desc(workoutSessions.doneOn), desc(workoutSessions.id))
+		.$dynamic();
+
+	if (opts.limit !== undefined) query = query.limit(opts.limit);
+	const sessions = query.all();
+	if (sessions.length === 0) return [];
+
+	const lines = db
+		.select({
+			id: workoutMeasures.id,
+			sessionId: workoutMeasures.sessionId,
+			activity: workoutMeasures.activity,
+			amount: workoutMeasures.amount,
+			unit: workoutMeasures.unit
+		})
+		.from(workoutMeasures)
+		.where(
+			and(
+				eq(workoutMeasures.userId, ctx.userId),
+				inArray(
+					workoutMeasures.sessionId,
+					sessions.map((session) => session.id)
+				)
+			)
+		)
+		.orderBy(asc(workoutMeasures.sortOrder), asc(workoutMeasures.id))
+		.all();
+
+	const bySession = new Map<number, Measure[]>();
+	for (const line of lines) {
+		const held = bySession.get(line.sessionId) ?? [];
+		held.push({ id: line.id, activity: line.activity, amount: line.amount, unit: line.unit });
+		bySession.set(line.sessionId, held);
+	}
+
+	return sessions.map((session) => ({ ...session, measures: bySession.get(session.id) ?? [] }));
+}
+
+/**
+ * One activity over time, ready to be drawn.
+ *
+ * Grouped by the person's own word for it rather than by workout: "ran" is
+ * one line whether it happened in the morning session or on a Sunday, which
+ * is what somebody asking "am I running more" means. Oldest first, because
+ * that is the direction a chart's x-axis runs.
+ */
+export function measureHistory(
+	ctx: Ctx,
+	activity: string,
+	opts: { since?: string } = {}
+): { doneOn: string; amount: number | null; unit: string; workoutTitle: string }[] {
+	const where = [
+		eq(workoutMeasures.userId, ctx.userId),
+		eq(workoutMeasures.activity, str(activity, 'activity', { max: MAX_ACTIVITY_LENGTH }))
+	];
+	if (opts.since !== undefined)
+		where.push(
+			sql`${workoutSessions.doneOn} >= ${str(opts.since, 'since', { max: 10, pattern: DAY_PATTERN })}`
+		);
+
+	return db
+		.select({
+			doneOn: workoutSessions.doneOn,
+			amount: workoutMeasures.amount,
+			unit: workoutMeasures.unit,
+			workoutTitle: workouts.title
+		})
+		.from(workoutMeasures)
+		.innerJoin(workoutSessions, eq(workoutMeasures.sessionId, workoutSessions.id))
+		.innerJoin(workouts, eq(workoutSessions.workoutId, workouts.id))
+		.where(and(...where))
+		.orderBy(asc(workoutSessions.doneOn), asc(workoutSessions.id))
+		.all();
+}
+
+/** Everything this account has ever measured, for a picker or a chart's menu. */
+export function measuredActivities(ctx: Ctx): { activity: string; unit: string; times: number }[] {
+	return db
+		.select({
+			activity: workoutMeasures.activity,
+			unit: workoutMeasures.unit,
+			times: sql<number>`count(*)`
+		})
+		.from(workoutMeasures)
+		.where(eq(workoutMeasures.userId, ctx.userId))
+		.groupBy(workoutMeasures.activity, workoutMeasures.unit)
+		.orderBy(desc(sql`count(*)`), asc(workoutMeasures.activity))
+		.all();
 }

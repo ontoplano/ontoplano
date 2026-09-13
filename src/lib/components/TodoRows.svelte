@@ -457,14 +457,7 @@
 						/>
 					</Field>
 					<Field label="Minutes" span={3}>
-						<NumberBox
-							autocomplete="off"
-							name="durationMinutes"
-							min="15"
-							step="15"
-							value="60"
-							class="tabular"
-						/>
+						<NumberBox autocomplete="off" name="durationMinutes" min="15" step="15" value="60" />
 					</Field>
 					<Field label="Category" span={12} required>
 						<select name="categoryId" required class="select">
@@ -688,7 +681,7 @@
 									onclick={() => {
 										confirmingDelete = todo.id;
 									}}
-									class="icon-btn icon-btn-danger row-actions-last"
+									class="icon-btn icon-btn-danger"
 								>
 									<Icon name="trash" />
 								</button>

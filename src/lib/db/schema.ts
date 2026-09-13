@@ -2545,6 +2545,120 @@ export const workouts = sqliteTable(
 	]
 );
 
+/**
+ * What a workout measures, declared on the workout itself.
+ *
+ * The session rows below are what actually happened; these are what this
+ * workout is *for* — a run measures kilometres and a pace, a push day measures
+ * what was benched and for how many reps. No amount: nothing is being recorded
+ * here, only named, so that writing a session down is filling in numbers
+ * beside words somebody already chose rather than typing "deadlifted" again
+ * every week.
+ *
+ * A suggestion and not a rule. A session may measure anything, including
+ * things this list never mentioned — the point is that the common case is
+ * already on screen.
+ */
+export const workoutPlanMeasures = sqliteTable(
+	'workout_plan_measures',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		workoutId: integer('workout_id')
+			.notNull()
+			.references(() => workouts.id, { onDelete: 'cascade' }),
+		/** What is measured, in their words: "ran", "benched", "for". */
+		activity: text('activity').notNull(),
+		/** "km", "kg", "reps", "min" — theirs, and free to be empty. */
+		unit: text('unit').notNull().default(''),
+		sortOrder: integer('sort_order').notNull().default(0)
+	},
+	(table) => [
+		index('workout_plan_measures_user_idx').on(table.userId),
+		index('workout_plan_measures_workout_idx').on(table.workoutId)
+	]
+);
+
+/**
+ * One time a workout was done.
+ *
+ * `lastDoneAt` on the workout says when the most recent session was and
+ * nothing else, which answers "am I keeping this up" and cannot answer "am I
+ * getting stronger". A row per session is the register: the day it happened,
+ * what was noted about it, and — in `workout_measures` below — how much of
+ * what was actually done.
+ *
+ * Cascades from the workout, and `deleteWorkout` refuses once there are any:
+ * deleting a plan is for one made by mistake, and a plan with history behind
+ * it is archived instead.
+ */
+export const workoutSessions = sqliteTable(
+	'workout_sessions',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		workoutId: integer('workout_id')
+			.notNull()
+			.references(() => workouts.id, { onDelete: 'cascade' }),
+		/** The day it happened, as YYYY-MM-DD. Not a timestamp: nobody logs a set at 19:43. */
+		doneOn: text('done_on').notNull(),
+		notes: text('notes').notNull().default(''),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`),
+		updatedAt: text('updated_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('workout_sessions_user_idx').on(table.userId),
+		index('workout_sessions_workout_idx').on(table.workoutId),
+		index('workout_sessions_done_idx').on(table.doneOn)
+	]
+);
+
+/**
+ * How much of what, in one session: ran 5 km, deadlifted 120 kg.
+ *
+ * Three columns rather than free text, because the point of writing it down
+ * is being able to draw it later — "5km" in a notes field is a story about a
+ * run, and `5` with `km` beside it is a point on a line. All three are the
+ * person's own words and units; nothing here knows what a kilometre is, which
+ * is what lets somebody log pages read or minutes held.
+ *
+ * `amount` is nullable: "did the mobility routine" is a thing that happened
+ * with no number attached, and refusing to record it would send that back to
+ * the notes field.
+ */
+export const workoutMeasures = sqliteTable(
+	'workout_measures',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		sessionId: integer('session_id')
+			.notNull()
+			.references(() => workoutSessions.id, { onDelete: 'cascade' }),
+		/** What was done, in their words: "ran", "deadlifted for 5 reps". */
+		activity: text('activity').notNull(),
+		amount: real('amount'),
+		/** "km", "kg", "reps", "min" — theirs, and free to be empty. */
+		unit: text('unit').notNull().default(''),
+		sortOrder: integer('sort_order').notNull().default(0)
+	},
+	(table) => [
+		index('workout_measures_user_idx').on(table.userId),
+		index('workout_measures_session_idx').on(table.sessionId),
+		// What a plot groups by, so the line for "ran" is one query.
+		index('workout_measures_activity_idx').on(table.userId, table.activity)
+	]
+);
+
 // --- Inventory: locations, and the things that live in them ---
 //
 // The shopping list is a flat "to buy". An inventory is the other half — what

@@ -107,7 +107,12 @@ export const USER_TABLES: OwnedTable[] = [
 	owned('recipeItems', schema.recipeItems as never),
 	owned('recipes', schema.recipes as never),
 	// Workouts point at their categories, so they go first — the foreign key
-	// is SET NULL, but the deletion order should not need it to be.
+	// is SET NULL, but the deletion order should not need it to be. The
+	// register goes before the workouts for the same reason: a measure names
+	// its session and a session names its workout.
+	owned('workoutMeasures', schema.workoutMeasures as never),
+	owned('workoutSessions', schema.workoutSessions as never),
+	owned('workoutPlanMeasures', schema.workoutPlanMeasures as never),
 	owned('workouts', schema.workouts as never),
 	owned('workoutCategories', schema.workoutCategories as never),
 	owned('pricePoints', schema.pricePoints as never),

@@ -192,7 +192,7 @@
 						step="any"
 						min="0"
 						placeholder="2"
-						class="w-16"
+						class="w-20"
 						aria-label="Amount"
 					/>
 					<input

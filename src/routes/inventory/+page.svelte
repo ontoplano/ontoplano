@@ -472,29 +472,57 @@
 			byLocation.set(key, [...(byLocation.get(key) ?? []), item]);
 		}
 
-		// Depth-first through the tree, so the groups arrive in the order the
-		// panel shows them rather than in whatever order the rows came back.
-		const order: number[] = [];
-		const walk = (nodes: PageServerData['locationTree']) => {
+		/*
+		 * Depth-first through the tree, so the groups arrive in the order the
+		 * panel shows them rather than in whatever order the rows came back.
+		 *
+		 * A folded place takes what is inside it with it — its own things and
+		 * everything under it — which is the same fold the panel's chevron
+		 * makes, on the half that lists them. Folding the kitchen on either
+		 * side puts away the kitchen, the drawers in it and what is in those.
+		 * The heading stays, with a count, so a fold never loses a place.
+		 */
+		const order: { id: number; under: number | null }[] = [];
+		const walk = (nodes: PageServerData['locationTree'], under: number | null) => {
 			for (const node of nodes) {
-				order.push(node.id);
-				walk(node.children);
+				order.push({ id: node.id, under });
+				walk(node.children, node.id);
 			}
 		};
-		walk(data.locationTree);
+		walk(data.locationTree, null);
+
+		const parentOf = new Map(order.map((node) => [node.id, node.under]));
+		const insideAFold = (id: number) => {
+			for (let at = parentOf.get(id) ?? null; at !== null; at = parentOf.get(at) ?? null)
+				if (folded.has(at)) return true;
+			return false;
+		};
+
+		/** What a folded place is holding, counting everything under it too. */
+		const held = (id: number) => {
+			let total = byLocation.get(id)?.length ?? 0;
+			for (const node of order) if (node.under === id) total += held(node.id);
+			return total;
+		};
 
 		const groups = order
-			.filter((id) => byLocation.has(id))
+			.map((node) => node.id)
+			.filter((id) => !insideAFold(id))
+			.filter((id) => byLocation.has(id) || (folded.has(id) && held(id) > 0))
 			.map((id) => ({
 				id,
 				label: locationPaths.get(id) ?? 'Somewhere',
-				categories: byCategory(byLocation.get(id) ?? [])
+				folded: folded.has(id),
+				held: held(id),
+				categories: folded.has(id) ? [] : byCategory(byLocation.get(id) ?? [])
 			}));
 
 		if (byLocation.has(0)) {
 			groups.push({
 				id: 0,
 				label: 'Not filed anywhere',
+				folded: false,
+				held: byLocation.get(0)?.length ?? 0,
 				categories: byCategory(byLocation.get(0) ?? [])
 			});
 		}
@@ -1193,10 +1221,40 @@
 			-->
 						{#each replenishByPlace as place (place.id)}
 							{#if showPlaces}
-								<!-- The address, root down, the same string the panel shows. -->
+								<!--
+									The address, root down, the same string the panel shows —
+									and the same fold. Pressing it puts the place away with
+									everything under it, which is what the panel's chevron does
+									to the tree; one state, so the two halves cannot disagree
+									about what is open. "Not filed anywhere" is not a place and
+									has nothing to fold.
+								-->
 								<h3 class="mt-4 mb-2 flex items-center gap-2 text-sm text-gray-700 first:mt-0">
-									<Icon name="shopping" class="size-4 shrink-0 text-gray-400" />
-									<span class="font-medium">{place.label}</span>
+									{#if place.id === 0}
+										<Icon name="shopping" class="size-4 shrink-0 text-gray-400" />
+										<span class="font-medium">{place.label}</span>
+									{:else}
+										<button
+											type="button"
+											class="flex items-center gap-2 text-left transition hover:text-gray-900"
+											aria-expanded={!place.folded}
+											title={place.folded
+												? `Show what is in ${place.label}`
+												: `Fold ${place.label}`}
+											onclick={() => toggleFold(place.id)}
+										>
+											<Icon
+												name="chevron-down"
+												class="size-4 shrink-0 text-gray-400 transition-transform {place.folded
+													? '-rotate-90'
+													: ''}"
+											/>
+											<span class="font-medium">{place.label}</span>
+											{#if place.folded}
+												<span class="tabular text-xs text-gray-500">{place.held}</span>
+											{/if}
+										</button>
+									{/if}
 								</h3>
 							{/if}
 							<!-- A grid rather than newspaper columns: each place is its own

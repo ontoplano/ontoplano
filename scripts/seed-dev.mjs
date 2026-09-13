@@ -1726,6 +1726,102 @@ workout('Pull day', 'Strength', 'Rows, pulldowns, curls, face pulls. 4×8.', { m
 workout('Easy 5k', 'Cardio', 'Conversational pace, flat route.', { minutes: 30 });
 workout('Mobility', 'Mobility', 'Hips, shoulders, ankles. Follow the video.', { minutes: 20 });
 
+// The register under them: what was actually done, and how much of it.
+//
+// Several weeks of it, and going up, because a screenshot of one session is a
+// screenshot of an empty feature — the point of the numbers is the shape they
+// make over time. The dates are counted back from today so the seed is never
+// a museum of last spring.
+const pushPlan = one('select id from workouts where user_id = ? and title = ?', uid, 'Push day');
+const pullPlan = one('select id from workouts where user_id = ? and title = ?', uid, 'Pull day');
+const runPlan = one('select id from workouts where user_id = ? and title = ?', uid, 'Easy 5k');
+
+const daysBack = (days) => {
+	const day = new Date();
+	day.setDate(day.getDate() - days);
+	return day.toISOString().slice(0, 10);
+};
+
+const session = (workoutId, days, lines, notes = '') => {
+	if (!workoutId) return;
+	const doneOn = daysBack(days);
+	const already = one(
+		'select id from workout_sessions where user_id = ? and workout_id = ? and done_on = ?',
+		uid,
+		workoutId,
+		doneOn
+	);
+	if (already) return;
+
+	const id = run(
+		'insert into workout_sessions (user_id, workout_id, done_on, notes) values (?, ?, ?, ?)',
+		uid,
+		workoutId,
+		doneOn,
+		notes
+	);
+	lines.forEach(([activity, amount, unit], index) =>
+		run(
+			'insert into workout_measures (user_id, session_id, activity, amount, unit, sort_order) values (?, ?, ?, ?, ?, ?)',
+			uid,
+			id,
+			activity,
+			amount,
+			unit,
+			index
+		)
+	);
+	run('update workouts set last_done_at = ? where id = ? and user_id = ?', doneOn, workoutId, uid);
+};
+
+// Bench going up five kilos a month, which is what somebody keeping a register
+// is looking for when they open it.
+[
+	[38, 72.5, 8],
+	[31, 75, 8],
+	[24, 75, 10],
+	[17, 77.5, 8],
+	[10, 80, 8],
+	[3, 80, 10]
+].forEach(([days, kilos, reps]) =>
+	session(pushPlan?.id, days, [
+		['benched', kilos, 'kg'],
+		['for', reps, 'reps'],
+		['overhead pressed', Math.round(kilos * 0.55 * 2) / 2, 'kg']
+	])
+);
+
+[
+	[35, 100],
+	[28, 105],
+	[21, 110],
+	[14, 110],
+	[7, 115]
+].forEach(([days, kilos], index) =>
+	session(
+		pullPlan?.id,
+		days,
+		[
+			['deadlifted', kilos, 'kg'],
+			['rowed', Math.round(kilos * 0.6), 'kg']
+		],
+		index === 2 ? 'Back was tight — kept it light on the rows.' : ''
+	)
+);
+
+[
+	[33, 5.1, 29],
+	[26, 5.4, 30],
+	[19, 6.2, 34],
+	[12, 5.0, 27],
+	[5, 7.1, 39]
+].forEach(([days, km, minutes]) =>
+	session(runPlan?.id, days, [
+		['ran', km, 'km'],
+		['for', minutes, 'min']
+	])
+);
+
 // --- Pictures ---------------------------------------------------------------
 //
 // Two of them, drawn here rather than shipped as files: a seed that carries

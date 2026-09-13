@@ -510,7 +510,7 @@
 					bind:value={howFar}
 					autocomplete="off"
 					title="How many days to cover, up to {data.maxDays}"
-					class="tabular w-20 py-1 text-sm"
+					class="w-20"
 				/>
 				<span class="text-xs whitespace-nowrap text-gray-500">days</span>
 				<button type="submit" class="btn btn-sm" title="Look that far">Go</button>

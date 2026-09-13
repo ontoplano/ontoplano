@@ -87,8 +87,8 @@
 	}
 </script>
 
-<div class="flex min-h-screen items-center justify-center bg-gray-100">
-	<div class="w-full max-w-md border border-gray-200 bg-white p-8 shadow-card">
+<div class="solo-screen bg-gray-100">
+	<div class="solo-card sm:max-w-md">
 		{#if data.mode === 'expired'}
 			<h1 class="mb-4 text-xl font-bold tracking-tight text-gray-900">Your subscription ended</h1>
 			<p class="text-sm text-gray-700">

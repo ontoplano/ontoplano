@@ -446,7 +446,7 @@
 									inputmode={target.whole ? 'numeric' : 'decimal'}
 									placeholder="3"
 									bind:value={target.value}
-									class="tabular w-24 shrink-0"
+									class="w-24 shrink-0"
 								/>
 								<input
 									autocomplete="off"
@@ -673,7 +673,7 @@
 																step="any"
 																value={target.currentValue}
 																aria-label={`Progress towards ${target.targetValue} ${target.unit}`.trim()}
-																class="tabular w-20 border border-gray-300 px-2 py-1 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+																class="w-20"
 															/>
 														{/if}
 														<span class="tabular text-xs text-gray-500">

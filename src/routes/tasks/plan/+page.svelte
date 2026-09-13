@@ -3023,7 +3023,7 @@
 									min="1"
 									max={MAX_INTERVAL}
 									bind:value={recurrenceInterval}
-									class="tabular w-16 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+									class="w-20"
 								/>
 								{recurrenceKind === 'weeks' ? 'weeks' : 'days'}
 							</label>
@@ -3036,7 +3036,7 @@
 									min="1"
 									max="31"
 									bind:value={recurrenceMonthDay}
-									class="tabular w-16 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+									class="w-20"
 								/>
 								of each month
 							</label>
@@ -3268,7 +3268,7 @@
 								step="5"
 								bind:value={remindLead}
 								placeholder="0"
-								class="tabular w-28"
+								class="w-28"
 								aria-label="Minutes before it starts"
 							/>
 							<div class="flex flex-wrap gap-1">
