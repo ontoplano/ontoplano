@@ -832,7 +832,7 @@
 						     reads as the other half being decoration. -->
 						<a
 							href={resolve('/')}
-							class="text-lg font-bold tracking-tight whitespace-nowrap text-chrome-ink transition hover:brightness-125"
+							class="wordmark text-lg whitespace-nowrap text-chrome-ink transition hover:brightness-125"
 							>Ontoplano</a
 						>
 					</div>

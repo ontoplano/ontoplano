@@ -34,7 +34,7 @@
 
 <div class="solo-screen bg-gray-50">
 	<div class="solo-card sm:max-w-sm">
-		<h1 class="mb-6 text-xl font-bold tracking-tight text-gray-900">Ontoplano</h1>
+		<h1 class="wordmark mb-6 text-2xl text-gray-900">Ontoplano</h1>
 
 		{#if data.staging}
 			<div class="mb-5"><StagingBand /></div>

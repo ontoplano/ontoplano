@@ -18,6 +18,12 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.173.14 — 2026-09-14
+
+- **The app writes its name the way the site does.** The wordmark — the
+  header's, and the one over the sign-in form — is set in Outfit now, light
+  and a touch tracked, bundled with the app like its other faces.
+
 ## 0.173.13 — 2026-09-14
 
 - **The glow stays inside its wedge.** The black edges are the limits of the

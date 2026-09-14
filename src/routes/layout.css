@@ -1,6 +1,22 @@
 @import 'tailwindcss' source(none);
 @import '@fontsource-variable/ibm-plex-sans';
 @import '@fontsource-variable/jetbrains-mono';
+/* Outfit draws the app's own name — see `.wordmark` below. */
+@import '@fontsource-variable/outfit';
+
+/*
+ * The name, set the way the site sets it.
+ *
+ * Everywhere else the app speaks in Plex; its own name is the one word set in
+ * Outfit, light and a touch tracked — the same face the front page uses, so
+ * the word reads as the same word on both. One class, wherever the app writes
+ * "Ontoplano".
+ */
+.wordmark {
+	font-family: 'Outfit Variable', ui-sans-serif, system-ui, sans-serif;
+	font-weight: 350;
+	letter-spacing: 0.01em;
+}
 @plugin '@tailwindcss/forms';
 
 /*
