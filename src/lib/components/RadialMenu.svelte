@@ -25,6 +25,16 @@
 	export type Wedge = { key: string; label: string; icon: IconName; color: string };
 
 	let {
+		/**
+		 * What stands in the middle.
+		 *
+		 * `mark` for the rooms — the wheel is the logo, so its middle is the
+		 * logo. `plus` for the capture wheel, which is summoned from the `+`
+		 * in the bar and has nothing to do with the brand: a wheel that flew
+		 * the logo up out of the plus button was answering with the wrong
+		 * thing entirely.
+		 */
+		middle = 'mark',
 		items,
 		open = false,
 		/** Where the gesture began, in viewport coordinates. */
@@ -44,6 +54,7 @@
 		onselect,
 		onclose
 	}: {
+		middle?: 'mark' | 'plus';
 		items: Wedge[];
 		open?: boolean;
 		origin?: { x: number; y: number };
@@ -650,14 +661,31 @@
 						the wheel a different drawing from the one in the bar it came
 						out of. The logo includes its ring; this is the logo.
 					-->
-					<image
-						href={mark}
-						x={-MEDALLION}
-						y={-MEDALLION}
-						width={MEDALLION * 2}
-						height={MEDALLION * 2}
-						style="pointer-events: none"
-					/>
+					{#if middle === 'plus'}
+						<!-- The same plus that is in the bar, at the size of the hole.
+						     Drawn rather than an icon at a size: this one is as big as
+						     the middle of the wheel, and a glyph scaled that far is a
+						     glyph with the wrong weight. -->
+						<g style="pointer-events: none">
+							<path
+								d="M 0 {-MEDALLION * 0.52} V {MEDALLION * 0.52} M {-MEDALLION *
+									0.52} 0 H {MEDALLION * 0.52}"
+								stroke="var(--color-chrome-ink)"
+								stroke-width={MEDALLION * 0.16}
+								stroke-linecap="round"
+								fill="none"
+							/>
+						</g>
+					{:else}
+						<image
+							href={mark}
+							x={-MEDALLION}
+							y={-MEDALLION}
+							width={MEDALLION * 2}
+							height={MEDALLION * 2}
+							style="pointer-events: none"
+						/>
+					{/if}
 				</g>
 
 				<polygon

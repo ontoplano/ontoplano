@@ -88,6 +88,7 @@
 
 <RadialMenu
 	items={wedges}
+	middle="plus"
 	{open}
 	{origin}
 	{dragging}

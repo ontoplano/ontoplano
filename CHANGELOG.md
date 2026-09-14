@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.176.1 — 2026-09-14
 
+- **The capture wheel has a big plus in its middle.** It was flying the app's
+  own mark up out of the `+` button — the wrong answer to a wheel that has
+  nothing to do with the brand. Same journey, its own symbol.
 - **The wheel's middle is the logo, whole.** It was the medallion with the
   ring cropped off and a black ring drawn back around it — a different
   drawing from the one in the bar it came out of, and eight pixels taken from
