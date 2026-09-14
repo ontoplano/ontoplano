@@ -1,6 +1,6 @@
 <script lang="ts">
 	import mark from '$lib/logo/mark.png';
-	import { MARK_MIDDLE } from '$lib/logo/mark-shape';
+	import { MARK_FIELD, MARK_MIDDLE } from '$lib/logo/mark-shape';
 	import { markCorners, markPath, markPoints } from '$lib/logo/mark-geometry';
 	import Icon, { type IconName } from '$lib/components/Icon.svelte';
 	import { wedgeAt, wedgeCentre, wedgeEdges, wedgeStep } from '$lib/radial';
@@ -99,13 +99,17 @@
 	/**
 	 * What an edge is when it is nobody's.
 	 *
-	 * Black in both themes, deliberately: the wheel is a dark ring of wedges
-	 * over a dimmed page, and an edge that follows the theme would be a white
+	 * The mark's own dark, measured off `mark.png` by `yarn icons` — the same
+	 * colour the drawing separates its wedges with, and the one the phone bar
+	 * wears. It was pure black, which is a colour the drawing does not
+	 * contain: a wheel made of the mark is made of the mark's colours.
+	 *
+	 * Dark in both themes, deliberately: the wheel is a ring of wedges over a
+	 * dimmed page, and an edge that followed the theme would be a white
 	 * outline in the dark one — a second bright shape competing with the mark
-	 * in the middle. Black reads as the gap between the pieces, which is what
-	 * it is until one of them is chosen.
+	 * in the middle.
 	 */
-	const EDGE_DARK = '#000000';
+	const EDGE_DARK = MARK_FIELD;
 
 	/**
 	 * The rim, as one filled band per side.
@@ -567,6 +571,44 @@
 					{/each}
 				</g>
 
+				{#if active >= 0}
+					{@const lit = items[active].color}
+					<!--
+						The glow of the chosen wedge, and nothing but the wedge.
+
+						Drawn here, with the wedges, so both rims are painted over
+						it: the light stops at the black edges instead of washing
+						across them. It sat after the rim bands, which is why the
+						outer one came up tinted while the inner one did not.
+
+						The black edges do not change: they are the limits of the
+						selection, and light must not cross them into a neighbour. So
+						the glow is not a shadow cast outward — it is a radial wash in
+						the room's own colour, brightening away from the centre, drawn
+						inside the wedge's own shape and cut to the ring like every
+						wedge is. Contained is the point: the light ends exactly at
+						the borders, which is what lets it burn brighter inside them.
+						A gradient rather than a blur, so the falloff is smooth and
+						owes nothing to a filter radius.
+					-->
+					<defs>
+						<radialGradient
+							id="{clipId}-glow"
+							gradientUnits="userSpaceOnUse"
+							cx="0"
+							cy="0"
+							r={OUTER}
+						>
+							<stop offset="35%" stop-color={lit} stop-opacity="0" />
+							<stop offset="72%" stop-color={lit} stop-opacity="0.45" />
+							<stop offset="100%" stop-color={lit} stop-opacity="0.92" />
+						</radialGradient>
+					</defs>
+					<g clip-path="url(#{clipId})" style="pointer-events: none">
+						<path d={wedgePath(active)} fill="url(#{clipId}-glow)" />
+					</g>
+				{/if}
+
 				<!-- The hole. Let go here and nothing happens, which is what makes
 				     the gesture safe to start. Escape does the same from the keyboard,
 				     handled on the window above. The mark is drawn over it below —
@@ -665,38 +707,6 @@
 					them, and cannot get the mapping wrong because there is no
 					mapping.
 				-->
-				{#if active >= 0}
-					{@const lit = items[active].color}
-					<!--
-						The glow of the chosen wedge, and nothing but the wedge.
-
-						The black edges do not change: they are the limits of the
-						selection, and light must not cross them into a neighbour. So
-						the glow is not a shadow cast outward — it is a radial wash in
-						the room's own colour, brightening away from the centre, drawn
-						inside the wedge's own shape and cut to the ring like every
-						wedge is. Contained is the point: the light ends exactly at
-						the borders, which is what lets it burn brighter inside them.
-						A gradient rather than a blur, so the falloff is smooth and
-						owes nothing to a filter radius.
-					-->
-					<defs>
-						<radialGradient
-							id="{clipId}-glow"
-							gradientUnits="userSpaceOnUse"
-							cx="0"
-							cy="0"
-							r={OUTER}
-						>
-							<stop offset="35%" stop-color={lit} stop-opacity="0" />
-							<stop offset="72%" stop-color={lit} stop-opacity="0.45" />
-							<stop offset="100%" stop-color={lit} stop-opacity="0.92" />
-						</radialGradient>
-					</defs>
-					<g clip-path="url(#{clipId})" style="pointer-events: none">
-						<path d={wedgePath(active)} fill="url(#{clipId}-glow)" />
-					</g>
-				{/if}
 			</svg>
 
 			<!--

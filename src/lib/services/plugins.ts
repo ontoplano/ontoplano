@@ -35,6 +35,28 @@ const MAX_TEXT = 200;
 /** `source` doubles as the stream namespace, so it obeys the same shape. */
 export const SOURCE_PATTERN = /^[a-z][a-z0-9_-]*$/;
 
+/**
+ * A plugin's homepage, if it gives one: an ordinary web address or nothing.
+ *
+ * Stored as free text once, which is a loaded gun — `javascript:` and `data:`
+ * are strings too, and the first screen that draws this as a link would be an
+ * XSS. Nothing renders it today; the check belongs here rather than in
+ * whatever renders it first.
+ */
+function webAddress(value: unknown): string {
+	const raw = text(value, 'homepage');
+	if (!raw) return '';
+	let url: URL;
+	try {
+		url = new URL(raw);
+	} catch {
+		throw new ValidationError('homepage must be a web address');
+	}
+	if (url.protocol !== 'http:' && url.protocol !== 'https:')
+		throw new ValidationError('homepage must be an http or https address');
+	return url.toString();
+}
+
 function text(value: unknown, field: string, { required = false } = {}): string {
 	if (value === undefined || value === null) {
 		if (required) throw new ValidationError(`${field} is required`);
@@ -145,7 +167,7 @@ export function upsertManifest(
 		source,
 		name: text(input.name, 'name') || source,
 		description: text(input.description, 'description'),
-		homepage: text(input.homepage, 'homepage'),
+		homepage: webAddress(input.homepage),
 		metaKeys: JSON.stringify(parseMetaKeys(input.metaKeys)),
 		updatedAt: new Date().toISOString()
 	};

@@ -24,6 +24,9 @@ import { PROTOCOL_VERSION, SERVER_INFO, handleBody } from '$lib/server/mcp/proto
  * stream is told there is not one, rather than being left holding a connection
  * that will never carry anything.
  */
+/** The same 256 KB every other endpoint takes, batch included. */
+const MAX_MCP_BODY_BYTES = 256 * 1024;
+
 export const POST: RequestHandler = async (event) => {
 	try {
 		const header = event.request.headers.get('authorization') ?? '';
@@ -44,7 +47,21 @@ export const POST: RequestHandler = async (event) => {
 
 		let body: unknown;
 		try {
-			body = await event.request.json();
+			/*
+			 * With a ceiling, like every other endpoint.
+			 *
+			 * This was the one route reading an unbounded body, and JSON-RPC
+			 * lets a body be a batch — so one authenticated request could ask
+			 * for the whole tool list a quarter of a million times and the
+			 * process would build every answer before sending any of them.
+			 * `readJson` is not reusable here (it insists on an object), so
+			 * the same cap is applied to the text.
+			 */
+			const declared = Number(event.request.headers.get('content-length'));
+			if (Number.isFinite(declared) && declared > MAX_MCP_BODY_BYTES) throw new Error('too large');
+			const text = await event.request.text();
+			if (text.length > MAX_MCP_BODY_BYTES) throw new Error('too large');
+			body = JSON.parse(text);
 		} catch {
 			return Response.json(
 				{ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'That is not JSON.' } },

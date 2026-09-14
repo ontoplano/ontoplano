@@ -137,17 +137,37 @@ export function reviveSubscription(ctx: Ctx, id: number): void {
 	if (res.changes === 0) throw new NotFoundError('Webhook');
 }
 
+/**
+ * A subscription as the API and the page describe it.
+ *
+ * Without its secret, deliberately: the secret is a credential, and this is
+ * the shape a *list* answers with. It used to be here, so every GET of
+ * `/api/v1/webhooks`, every load of the Integrations page and every account
+ * export carried the signing key for every hook — a read-only leak anywhere
+ * handed over the ability to forge signed deliveries for ever, and there is
+ * nothing to rotate. The API tokens beside it have always worked the other
+ * way: shown once, hashed after. `withSecret` below is that one showing.
+ */
 export function serialiseSubscription(s: Subscription) {
 	return {
 		id: s.id,
 		url: s.url,
 		events: s.events.split(',').filter(Boolean),
-		secret: s.secret,
+		/*
+		 * Enough to tell two hooks apart and to check against what the receiver
+		 * was given, and not enough to sign with.
+		 */
+		secret_hint: `${s.secret.slice(0, 6)}…`,
 		last_delivery_at: s.lastDeliveryAt,
 		last_status: s.lastStatus,
 		disabled: Boolean(s.disabledAt),
 		created_at: s.createdAt
 	};
+}
+
+/** The one answer that carries the secret: the reply to the call that minted it. */
+export function serialiseNewSubscription(s: Subscription) {
+	return { ...serialiseSubscription(s), secret: s.secret };
 }
 
 /**

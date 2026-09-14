@@ -373,9 +373,21 @@ function roomsOf(tool: { scope: string }): Room[] {
 	}
 }
 
+/** How many messages one JSON-RPC batch may carry. */
+const MAX_BATCH = 50;
+
 export function handleBody(caller: Caller, body: unknown): RpcResponse | RpcResponse[] | null {
 	if (Array.isArray(body)) {
 		if (body.length === 0) return fail(null, INVALID_REQUEST, 'An empty batch is not a request.');
+		/*
+		 * A batch is a convenience, not a lever.
+		 *
+		 * Every answer is built before any is sent, and `tools/list` answers
+		 * with the whole tool table — so an unbounded batch is an unbounded
+		 * amount of memory for one request. The spec allows refusing one.
+		 */
+		if (body.length > MAX_BATCH)
+			return fail(null, INVALID_REQUEST, `A batch may hold at most ${MAX_BATCH} messages.`);
 		const answers = body
 			.map((one) => handle(caller, (one ?? {}) as RpcRequest))
 			.filter((a): a is RpcResponse => a !== null);

@@ -47,6 +47,15 @@ function isWrite(method: string): boolean {
  * door: an assistant asked to "create 1000 goals" spends this budget one
  * write at a time and is told to slow down, exactly as a plugin would be.
  */
+/**
+ * The token id a session's calls are charged to.
+ *
+ * Not a real token, and it does not need to be: the per-account half of the
+ * budget is what actually bounds a session, and this keeps the per-token half
+ * from being a free lane. Negative so it can never collide with a row id.
+ */
+export const SESSION_BUDGET_KEY = -1;
+
 export function spendCallBudget(tokenId: number, userId: string, write: boolean): void {
 	const perToken = rateLimit(
 		`api:${tokenId}:${write ? 'w' : 'r'}`,
@@ -101,6 +110,22 @@ export function authenticateApi(
 	}
 
 	if (event.locals.user) {
+		/*
+		 * The budget is the account's, not the token's.
+		 *
+		 * It used to be spent only on the bearer branch, so signing in and
+		 * calling the same endpoints from a script was unlimited — and some of
+		 * those endpoints make the server talk to somebody else. Ticking a
+		 * shopping item on and off is two cheap requests and ten outbound
+		 * POSTs from this instance's address, for as long as you care to loop.
+		 * A session is a means of authenticating, not a licence.
+		 *
+		 * Keyed on the account for both halves, since there is no token id: the
+		 * per-token allowance is spent against the same key, which is the
+		 * account's own and cannot be spoofed.
+		 */
+		spendCallBudget(SESSION_BUDGET_KEY, event.locals.user.id, isWrite(event.request.method));
+
 		assertNoPaymentHold(event.locals.user.id);
 		return { ctx: buildCtx(event.locals.user.id, { now }), via: 'session', holds: () => true };
 	}

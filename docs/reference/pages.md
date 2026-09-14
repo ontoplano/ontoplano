@@ -108,6 +108,10 @@ Paddle.js reads that itself and opens its overlay. The page is only the
 overlay's backdrop — the terms were already read on /start or the
 billing page, so nothing here competes with the payment window.
 
+### `/data/[slug]`
+
+Half a year by default, ten years at most: a window, not an argument.
+
 ### `/demo`
 
 The demo's front door.

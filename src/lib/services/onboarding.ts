@@ -11,7 +11,7 @@ import {
 	setTimezone,
 	setWeekSettings
 } from './settings.js';
-import { HIDEABLE_SECTIONS } from '../sections.js';
+import { HIDEABLE_ROOMS } from '../sections.js';
 import type { Ctx } from './ctx.js';
 import { parseTimezone } from './preferences.js';
 import { clearWeeklyPlanIn } from './slots.js';
@@ -117,7 +117,9 @@ export function completeFirstRun(ctx: Ctx, raw: FirstRunInput): TemplateKey {
 		const wanted = new Set(raw.rooms.filter((r): r is string => typeof r === 'string'));
 		setHiddenSections(
 			ctx.userId,
-			HIDEABLE_SECTIONS.map((s) => s.id).filter((id) => !wanted.has(id))
+			// The rooms, not their tabs: first run never asked about a tab, so
+			// leaving one out here would put it away without being asked.
+			HIDEABLE_ROOMS.map((s) => s.id).filter((id) => !wanted.has(id))
 		);
 	}
 

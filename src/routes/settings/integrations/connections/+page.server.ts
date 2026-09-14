@@ -83,11 +83,17 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			caution: SCOPE_CAUTIONS[key] ?? null
 		})),
 		displays: STREAM_DISPLAYS,
+		/*
+		 * Without the secret. It is a credential, and a page that lists it is a
+		 * page whose payload hands over the ability to forge signed deliveries
+		 * — for ever, since there is nothing to rotate. Shown once, when it is
+		 * made, exactly as an API token is.
+		 */
 		webhooks: listSubscriptions(ctx).map((s) => ({
 			id: s.id,
 			url: s.url,
 			events: s.events.split(',').filter(Boolean),
-			secret: s.secret,
+			secretHint: `${s.secret.slice(0, 6)}…`,
 			lastDeliveryAt: s.lastDeliveryAt,
 			lastStatus: s.lastStatus,
 			disabled: Boolean(s.disabledAt)
@@ -222,11 +228,12 @@ export const actions: Actions = {
 		const formData = await request.formData();
 
 		try {
-			createSubscription(ctx, {
+			const made = createSubscription(ctx, {
 				url: formData.get('url'),
 				events: formData.getAll('events')
 			});
-			return { success: true, action: 'createWebhook' };
+			// The one time it is shown. Copied now or not at all.
+			return { success: true, action: 'createWebhook', secret: made.secret };
 		} catch (e) {
 			return toActionFailure(e);
 		}

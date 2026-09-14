@@ -266,7 +266,7 @@ _Needs `schedule:write`; writes._
 
 Remove a block from a day because it is not happening — the meeting moved, the class was called off, it was put on the wrong day. This is NOT the same as marking it skipped: skipped means it was meant to happen and did not, which is a fact the weekly review asks about, and cancelled means it was never going to. Use `finish_block` with "skipped" for the first and this for the second. A repeating block is only removed from that one day.
 
-_Needs `schedule:write`; writes._
+_Needs `schedule:write` and `destructive`; deletes._
 
 ### `upcoming` — The days ahead
 
@@ -956,7 +956,7 @@ _Needs `statements:write`; writes._
 
 The rule goes; the lines it sorted stay, now sorted by the rules that remain.
 
-_Needs `statements:write`; writes._
+_Needs `statements:write` and `destructive`; deletes._
 
 ### `sort_rules` — The sorting rules
 

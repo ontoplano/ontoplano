@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { OWNER, makeDatabase, seedAccounts } from './helpers/db';
 
@@ -597,7 +598,13 @@ describe('the descriptions', () => {
  * refusal. It produces a workaround.
  */
 describe('the afternoon that went wrong', () => {
-	const PLANNER = ['today:read', 'schedule:read', 'schedule:write'];
+	/*
+	 * A planner that may also take something off a day.
+	 *
+	 * `cancel_block` removes the row, so it asks for `destructive` like every
+	 * other delete — the write scope alone is deliberately not enough.
+	 */
+	const PLANNER = ['today:read', 'schedule:read', 'schedule:write', 'destructive'];
 
 	function tool(name: string, args: Record<string, unknown>) {
 		return call(PLANNER, {
@@ -889,7 +896,12 @@ describe('the opened rooms', () => {
 	const rpc = (id: number, name: string, args: Record<string, unknown>, scopes: string[]) =>
 		call(scopes, { jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args } });
 
-	it('refuses a category that names nothing, listing the real ones', () => {
+	/*
+	 * And it names the tool to ask rather than answering with the list: this
+	 * token holds `schedule:write` and not `schedule:read`, and the names are
+	 * what the read grant is for. The tool it points at is gated.
+	 */
+	it('refuses a category that names nothing, without reciting them', () => {
 		const answer = rpc(
 			1,
 			'add_block',
@@ -903,7 +915,8 @@ describe('the opened rooms', () => {
 		);
 		expect(answer.result.isError).toBe(true);
 		expect(answer.result.content[0].text).toContain('No category called "wrok"');
-		expect(answer.result.content[0].text).toContain('work');
+		expect(answer.result.content[0].text).toContain('categories');
+		expect(answer.result.content[0].text).not.toContain('work,');
 	});
 
 	it('adds to the repeating week, changes it, and takes it out again', () => {
@@ -1067,12 +1080,14 @@ describe('the opened rooms', () => {
 		const out = rpc(63, 'file_shopping_item', { id: row.id, section: '' }, ['shopping:write']);
 		expect(out.result.isError).toBe(false);
 
-		// A section nobody has is refused with the ones that exist.
+		// A section nobody has is refused — pointing at the tool that lists
+		// them rather than listing them, since this token cannot read them.
 		const missing = rpc(64, 'file_shopping_item', { id: row.id, section: 'aisle nine' }, [
 			'shopping:write'
 		]);
 		expect(missing.result.isError).toBe(true);
-		expect(missing.result.content?.[0]?.text).toContain('Dairy');
+		expect(missing.result.content?.[0]?.text).toContain('shopping_categories');
+		expect(missing.result.content?.[0]?.text).not.toContain('Dairy');
 	});
 
 	it('removes an empty notebook, and refuses one holding writing', () => {
@@ -1605,11 +1620,18 @@ describe('the inventory over MCP', () => {
 		expect(found[0].location).toBe('Living room › White chest › First drawer');
 		expect(found[0].fields).toEqual({ length: '5m', kind: 'tailor' });
 
-		// Unfiling is the inverse of filing.
+		/*
+		 * Unfiling is the inverse of filing: the thing stops being inventory.
+		 *
+		 * It used to come back with `location: null`, which is how a token
+		 * holding `inventory:read` alone could read the shopping list — a row
+		 * with no address is a shopping line, and the two grants are separate
+		 * on purpose. Gone from this answer is the right answer.
+		 */
 		rpc(9, 'put_item', { id: tape.id }, ['inventory:write']);
 		const unfiled = rpc(10, 'where_is', { name: 'tape' }, ['inventory:read']).result
 			.structuredContent.things as { location: string | null }[];
-		expect(unfiled[0].location).toBeNull();
+		expect(unfiled).toEqual([]);
 	});
 
 	it('a location refuses to be put inside itself, and removal lifts children', () => {
@@ -1642,6 +1664,28 @@ describe('the inventory over MCP', () => {
 describe('the destructive grant', () => {
 	const rpc = (id: number, name: string, args: Record<string, unknown>, scopes: string[]) =>
 		call(scopes, { jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args } });
+
+	/*
+	 * The flag is what the gate reads, so the flag is what has to be right.
+	 *
+	 * Every test below starts from `TOOLS.filter(t => t.destroys)` — which
+	 * proves the flagged ones are gated and says nothing about a tool that
+	 * deletes without the flag. Two did: `delete_sort_rule` wiped a finance
+	 * rule and `cancel_block` removed a block, both on the room's write scope
+	 * alone, while the sentence somebody granted said "never remove". This
+	 * reads the source instead: a tool whose own body calls a deleting service
+	 * is a tool that destroys something.
+	 */
+	it('a tool that deletes something says so', () => {
+		const unflagged = TOOLS.filter((t) => !t.destroys)
+			// The tool's own body, not a slice of the file: what it calls is
+			// what it does. `delete…` and `cancelOccurrence` are what the
+			// services name a delete; `archive…` and `finish…` keep the row.
+			.filter((t) => /\b(delete[A-Z]\w*|cancelOccurrence)\s*\(/.test(t.run.toString()))
+			.map((t) => t.name);
+
+		expect(unflagged, 'these delete a row without asking for the destructive grant').toEqual([]);
+	});
 
 	it('every deleting tool is refused on the write scope alone, naming the grant', () => {
 		for (const t of TOOLS.filter((t) => t.destroys)) {

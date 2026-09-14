@@ -5,6 +5,7 @@ import { toJsonError } from '$lib/http-errors';
 import {
 	createSubscription,
 	listSubscriptions,
+	serialiseNewSubscription,
 	serialiseSubscription
 } from '$lib/server/services/webhooks';
 
@@ -29,7 +30,9 @@ export const POST: RequestHandler = async (event) => {
 		const { ctx } = authenticateApi(event, 'webhooks:manage');
 		const body = await readJson(event);
 		const subscription = createSubscription(ctx, { url: body.url, events: body.events });
-		return Response.json(serialiseSubscription(subscription), { status: 201 });
+		// The one place the secret is ever sent: keep it, there is no second
+		// chance to read it and nothing to rotate it with.
+		return Response.json(serialiseNewSubscription(subscription), { status: 201 });
 	} catch (e) {
 		return toJsonError(e);
 	}

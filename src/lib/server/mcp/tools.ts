@@ -347,7 +347,12 @@ const gaveARating = (args: Record<string, unknown>) =>
  *
  * This used to fall back to the first category on a miss, so a typo filed
  * work under the wrong part of life and reported success. A blind write is
- * worse than a refusal: the refusal lists the names to pick from.
+ * worse than a refusal.
+ *
+ * The refusal names the tool to call rather than listing the categories: a
+ * token may hold `schedule:write` and not `schedule:read`, and an error
+ * message is not the place to hand over the names that the read grant is
+ * what gates. The tool it points at is gated properly.
  */
 function categoryByName(ctx: Ctx, wanted: unknown): { id: number; name: string } {
 	const all = listCategories(ctx) as { id: number; name: string }[];
@@ -364,7 +369,7 @@ function categoryByName(ctx: Ctx, wanted: unknown): { id: number; name: string }
 		all.find((c) => c.name.toLowerCase().includes(said));
 	if (!hit)
 		throw new ValidationError(
-			`No category called "${String(wanted)}". This account has: ${all.map((c) => c.name).join(', ')}.`
+			`No category called "${String(wanted)}". Call \`categories\` for the names.`
 		);
 	return hit;
 }
@@ -392,7 +397,7 @@ function habitByName(ctx: Ctx, wanted: unknown): { id: number; name: string } {
 	if (near.length === 0)
 		throw new ValidationError(
 			`No habit called "${String(wanted)}"${
-				all.length > 0 ? `. This account has: ${all.map((h) => h.name).join(', ')}.` : '.'
+				all.length > 0 ? '. Call `habits` for the names.' : '.'
 			}`
 		);
 	if (near.length > 1)
@@ -501,6 +506,8 @@ const shoppingCategoryById = (ctx: Ctx, args: Record<string, unknown>) =>
 	oneOf(listShoppingCategories(ctx) as { id: number }[], idOf(args));
 const slotById = (ctx: Ctx, args: Record<string, unknown>) =>
 	oneOf(listWeeklySlots(ctx) as { id: number }[], idOf(args));
+const sortRuleById = (ctx: Ctx, args: Record<string, unknown>) =>
+	oneOf(listRules(ctx) as { id: number }[], idOf(args));
 const habitById = (ctx: Ctx, args: Record<string, unknown>) =>
 	oneOf(listHabits(ctx) as { id: number }[], idOf(args));
 const reminderById = (ctx: Ctx, args: Record<string, unknown>) =>
@@ -800,6 +807,12 @@ export const TOOLS: Tool[] = [
 			'Remove a block from a day because it is not happening — the meeting moved, the class was called off, it was put on the wrong day. This is NOT the same as marking it skipped: skipped means it was meant to happen and did not, which is a fact the weekly review asks about, and cancelled means it was never going to. Use `finish_block` with "skipped" for the first and this for the second. A repeating block is only removed from that one day.',
 		scope: 'schedule:write',
 		writes: true,
+		/*
+		 * Cancelling removes the row — `cancelOccurrence` deletes the one-off
+		 * or the instance — so it is a delete however gently it is described,
+		 * and it asks for the grant every other delete asks for.
+		 */
+		destroys: true,
 		input: object(
 			{ id: text('The block\u2019s id, exactly as the day gave it — like `slot:42`.') },
 			['id']
@@ -1605,7 +1618,7 @@ export const TOOLS: Tool[] = [
 					all.find((c) => c.name.toLowerCase().includes(said));
 				if (!hit)
 					throw new ValidationError(
-						`No section called "${String(args.section)}". This list has: ${all.map((c) => c.name).join(', ') || 'none yet'}.`
+						`No section called "${String(args.section)}". Call \`shopping_categories\` for the names.`
 					);
 				shoppingCategoryId = hit.id;
 			}
@@ -1858,7 +1871,7 @@ export const TOOLS: Tool[] = [
 					all.find((c) => c.name.toLowerCase().includes(said));
 				if (!hit)
 					throw new ValidationError(
-						`No section called "${String(args.section)}". This list has: ${all.map((c) => c.name).join(', ') || 'none yet'}.`
+						`No section called "${String(args.section)}". Call \`shopping_categories\` for the names.`
 					);
 				categoryId = hit.id;
 			}
@@ -2846,9 +2859,23 @@ export const TOOLS: Tool[] = [
 		writes: false,
 		input: object({ name: text('The thing, by name or part of it.') }, ['name']),
 		run: (ctx, args) => {
-			const wanted = String(args.name ?? '').toLowerCase();
+			/*
+			 * A name, and only things that live somewhere.
+			 *
+			 * An empty name matched every row — `''.includes` is always true —
+			 * and the rows include plain shopping-list lines, which have no
+			 * address at all. So a token holding `inventory:read` could read
+			 * the shopping list ten names at a time, and the two grants are
+			 * separate on purpose: "a widget that wanted the list does not get
+			 * told where the spare keys are kept", and not the reverse either.
+			 */
+			const wanted = String(args.name ?? '')
+				.trim()
+				.toLowerCase();
+			if (!wanted) throw new ValidationError('Say what to look for.');
+
 			const hits = listShoppingItems(ctx)
-				.filter((i) => i.name.toLowerCase().includes(wanted))
+				.filter((i) => i.locationId !== null && i.name.toLowerCase().includes(wanted))
 				.slice(0, 10)
 				.map((i) => ({
 					id: i.id,
@@ -3497,6 +3524,18 @@ export const TOOLS: Tool[] = [
 		description: 'The rule goes; the lines it sorted stay, now sorted by the rules that remain.',
 		scope: 'statements:write',
 		writes: true,
+		/*
+		 * It is a delete, so it needs the grant that says so.
+		 *
+		 * `destroys` is what `assertAllowed` demands `destructive` for, and the
+		 * sentence somebody grants reads "with only the write grants, it can
+		 * add and change but never remove". Without this flag the default
+		 * assistant token — which deliberately holds no `destructive` — could
+		 * wipe every sorting rule, and with them the categorisation of a whole
+		 * statement history.
+		 */
+		destroys: true,
+		subject: sortRuleById,
 		input: object({ id: { type: 'integer', description: 'The rule, as listed by sort_rules.' } }, [
 			'id'
 		]),

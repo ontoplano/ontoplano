@@ -161,7 +161,21 @@ const guardedConnector: buildConnector.connector = (opts, cb) => {
 	inner(opts, cb);
 };
 
-export const publicDispatcher: Dispatcher = new Agent({ connect: guardedConnector });
+/**
+ * How many sockets this instance will hold open to one place at a time.
+ *
+ * Unset, undici keeps no ceiling at all — and every webhook delivery holds a
+ * socket for up to its five-second timeout. Ten subscriptions pointed at one
+ * slow address, fed by a loop of cheap writes, is thousands of concurrent
+ * connections in a single-process app: the third party is hammered from this
+ * instance's address and the instance runs out of file descriptors doing it.
+ */
+const MAX_SOCKETS_PER_HOST = 8;
+
+export const publicDispatcher: Dispatcher = new Agent({
+	connect: guardedConnector,
+	connections: MAX_SOCKETS_PER_HOST
+});
 
 /**
  * `fetch`, for a URL a user typed.

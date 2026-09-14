@@ -110,6 +110,14 @@
 		rooms = [...shown, ...rooms.filter((r) => r.hidden)];
 	}
 
+	/** Put one tab away, or bring it back — the room stays where it is. */
+	function toggleLeaf(id: string) {
+		rooms = rooms.map((r) => ({
+			...r,
+			leaves: r.leaves.map((l) => (l.id === id ? { ...l, hidden: !l.hidden } : l))
+		}));
+	}
+
 	function toggleRoom(key: string) {
 		rooms = rooms.map((r) => (r.key === key ? { ...r, hidden: !r.hidden } : r));
 	}
@@ -574,6 +582,39 @@
 						<span class="eyebrow shrink-0 text-gray-500">always on</span>
 					{/if}
 				</div>
+
+				<!--
+					The tabs inside the room, one line each.
+					
+					Indented under it rather than listed beside it: they are not
+					rooms, and putting Recipes away should leave Workouts where
+					it is. A room that is itself put away says so once and does
+					not offer the choice twice.
+				-->
+				{#each room.leaves as leaf (leaf.id)}
+					<div
+						class="ml-8 flex items-center gap-3 border border-l-2 border-gray-200 border-l-gray-300 px-3 py-1.5 text-sm"
+					>
+						{#if leaf.hidden || room.hidden}
+							<input type="hidden" name="hidden" value={leaf.id} />
+						{/if}
+						<span class="min-w-0 flex-1 truncate {room.hidden ? 'text-gray-400' : 'text-gray-700'}"
+							>{leaf.label}</span
+						>
+						{#if room.hidden}
+							<span class="eyebrow shrink-0 text-gray-400">with the room</span>
+						{:else}
+							<button
+								type="button"
+								onclick={() => toggleLeaf(leaf.id)}
+								class="btn btn-sm shrink-0"
+								aria-pressed={leaf.hidden}
+							>
+								{leaf.hidden ? 'Show' : 'Hide'}
+							</button>
+						{/if}
+					</div>
+				{/each}
 			{/each}
 
 			<div class="flex flex-wrap items-center gap-2 pt-2">

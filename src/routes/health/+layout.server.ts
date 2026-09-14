@@ -1,4 +1,5 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
+import { getHiddenSections } from '$lib/services/settings';
 import { buildCtx } from '$lib/services/ctx';
 import { listStreams } from '$lib/services/streams';
 
@@ -12,9 +13,13 @@ import { listStreams } from '$lib/services/streams';
  * plus whatever streams exist, and an account with none sees one tab.
  */
 export const load = async ({ locals }: IsolatedEvent) => {
-	const streams = listStreams(buildCtx(locals.user!.id));
+	const ctx = buildCtx(locals.user!.id);
+	const streams = listStreams(ctx);
 
 	return {
+		// What the account has put away, so the tabs can honour it — a room
+		// draws its own strip, and the shell's copy does not reach in here.
+		hiddenSections: getHiddenSections(ctx.userId),
 		streams: streams.map((s) => ({ slug: s.slug, name: s.name }))
 	};
 };

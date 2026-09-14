@@ -68,14 +68,20 @@ test('it asks one thing at a time, and the rooms you keep are the rooms you get'
 	// nothing on their own.
 	await page.getByRole('button', { name: 'Notebooks' }).hover();
 	await expect(page.getByText('A subject you write against')).toBeVisible();
-	await page.getByRole('button', { name: 'Recipes' }).hover();
-	await expect(page.getByText('a list of shopping items with amounts')).toBeVisible();
+	await page.getByRole('button', { name: 'Health' }).hover();
+	await expect(page.getByText('Habits with streaks')).toBeVisible();
 
-	// Everything is on to begin with; turn two off.
-	await expect(page.getByText('10 of 10 on.')).toBeVisible();
+	/*
+	 * The rooms, and only the rooms.
+	 *
+	 * The tabs inside one — Recipes, Habits, Workouts in Health — can be put
+	 * away too, but in Preferences: asking about them before somebody has
+	 * opened the app is asking about something they have no opinion on yet.
+	 */
+	await expect(page.getByText('9 of 9 on.')).toBeVisible();
 	await page.getByRole('button', { name: 'People' }).click();
 	await page.getByRole('button', { name: 'Health' }).click();
-	await expect(page.getByText('8 of 10 on.')).toBeVisible();
+	await expect(page.getByText('7 of 9 on.')).toBeVisible();
 
 	await page.getByRole('button', { name: 'Next' }).click();
 	await expect(page.getByRole('heading', { name: 'How should it look?' })).toBeVisible();

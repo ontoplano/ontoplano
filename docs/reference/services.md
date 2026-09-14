@@ -4912,6 +4912,20 @@ A disabled address can be tried again after the receiver is fixed.
 
 #### `serialiseSubscription(s)`
 
+A subscription as the API and the page describe it.
+
+Without its secret, deliberately: the secret is a credential, and this is
+the shape a _list_ answers with. It used to be here, so every GET of
+`/api/v1/webhooks`, every load of the Integrations page and every account
+export carried the signing key for every hook — a read-only leak anywhere
+handed over the ability to forge signed deliveries for ever, and there is
+nothing to rotate. The API tokens beside it have always worked the other
+way: shown once, hashed after. `withSecret` below is that one showing.
+
+#### `serialiseNewSubscription(s)`
+
+The one answer that carries the secret: the reply to the call that minted it.
+
 #### `emit(ctx, event, data)`
 
 Fire an event: find who listens, deliver to each, never block the caller.

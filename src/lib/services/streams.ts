@@ -1,6 +1,7 @@
-import { and, asc, desc, eq, gte, inArray, isNotNull, lt, lte } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gte, inArray, isNotNull, lt, lte } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
+import { SOURCE_PATTERN } from '$lib/services/plugins.js';
 import { dataPoints, dataStreams } from '$lib/db/schema.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { stamps } from './time.js';
@@ -36,7 +37,7 @@ export function upsertStream(
 	const values = {
 		slug: slug(input.slug, 'slug'),
 		name: str(input.name, 'name', { max: 80 }),
-		source: str(input.source, 'source', { max: 60 }),
+		source: str(input.source, 'source', { max: 60, pattern: SOURCE_PATTERN }),
 		kind: oneOf(input.kind, 'kind', STREAM_KINDS),
 		unit: optionalStr(input.unit, 'unit', { max: 20 }),
 		display:
@@ -171,6 +172,17 @@ interface NormalisedPoint {
 	meta: string;
 }
 
+/*
+ * What a measurement may be.
+ *
+ * `num` already refuses NaN and Infinity, which leaves 1.7e308 — a legal
+ * double that is not a measurement of anything. One of them broke the chart
+ * for good: the span overflowed, every y came out NaN, and the axis rendered
+ * five ticks all keyed NaN. A quadrillion is past any real reading and well
+ * inside what arithmetic survives.
+ */
+const VALUE_BOUNDS = { min: -1e15, max: 1e15 };
+
 function normalisePoint(ctx: Ctx, raw: unknown, kind: StreamKind): NormalisedPoint {
 	if (typeof raw !== 'object' || raw === null) throw new ValidationError('point must be an object');
 	const p = raw as Record<string, unknown>;
@@ -187,9 +199,9 @@ function normalisePoint(ctx: Ctx, raw: unknown, kind: StreamKind): NormalisedPoi
 	const hasValue = p.value !== undefined && p.value !== null;
 	if (kind === 'measurement' || kind === 'counter') {
 		if (!hasValue) throw new ValidationError(`value is required for '${kind}' streams`);
-		valueNum = num(p.value, 'value');
+		valueNum = num(p.value, 'value', VALUE_BOUNDS);
 	} else if (hasValue) {
-		if (typeof p.value === 'number') valueNum = num(p.value, 'value');
+		if (typeof p.value === 'number') valueNum = num(p.value, 'value', VALUE_BOUNDS);
 		else valueText = str(p.value, 'value', { max: 500 });
 	}
 
@@ -353,17 +365,37 @@ export interface StreamStats {
 }
 
 export function streamStats(ctx: Ctx, streamId: number): StreamStats {
-	const rows = db
+	/*
+	 * Three questions, three cheap answers.
+	 *
+	 * This used to select every point of the stream and count the array — on a
+	 * page that does it once per stream. A producer writing once a second sits
+	 * inside its own budget and still reaches a million rows in a fortnight, at
+	 * which point opening Integrations pulled the lot into memory, fifty times
+	 * over. The database can count, and it can order.
+	 */
+	const mine = and(eq(dataPoints.streamId, streamId), eq(dataPoints.userId, ctx.userId));
+
+	const counted = db.select({ n: count() }).from(dataPoints).where(mine).get();
+	const latest = db
 		.select()
 		.from(dataPoints)
-		.where(and(eq(dataPoints.streamId, streamId), eq(dataPoints.userId, ctx.userId)))
+		.where(mine)
 		.orderBy(desc(dataPoints.at))
-		.all();
+		.limit(1)
+		.get();
+	const first = db
+		.select({ at: dataPoints.at })
+		.from(dataPoints)
+		.where(mine)
+		.orderBy(asc(dataPoints.at))
+		.limit(1)
+		.get();
 
 	return {
-		count: rows.length,
-		latest: rows[0] ?? null,
-		firstAt: rows.length > 0 ? rows[rows.length - 1].at : null
+		count: counted?.n ?? 0,
+		latest: latest ?? null,
+		firstAt: first?.at ?? null
 	};
 }
 

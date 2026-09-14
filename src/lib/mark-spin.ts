@@ -15,8 +15,28 @@
  */
 import { SLIDE_MS, WAIT_MARK_AT } from './slide';
 
-/** One full turn, in milliseconds. */
+/** One full turn, in milliseconds, at full speed. */
 export const TURN_MS = 1100;
+
+/**
+ * It does not start at full speed, and it does not stop at it either.
+ *
+ * A turn that snaps to its top speed reads as a video starting; a wheel that
+ * is given a push winds up, holds, and runs down as it settles. `SPIN_UP_MS`
+ * is how long the winding takes, `SLOWEST` is the fraction of full speed it
+ * begins and ends at, and `DECEL_DEGREES` is how far out from its resting
+ * place it starts easing off.
+ *
+ * These three are the whole feel of it. Longer `SPIN_UP_MS` or lower
+ * `SLOWEST` make the wind-up more pronounced; bigger `DECEL_DEGREES` makes it
+ * coast further before it settles.
+ */
+const SPIN_UP_MS = 1400;
+const SLOWEST = 0.1;
+const DECEL_DEGREES = 540;
+
+/** Ease-out: quick at first, gentler as it approaches the top. */
+const eased = (t: number) => 1 - (1 - t) * (1 - t);
 
 const DELAY_MS = Math.round(SLIDE_MS * WAIT_MARK_AT);
 
@@ -70,7 +90,20 @@ function frame(now: number): void {
 		return;
 	}
 
-	angle += spin * (dt / TURN_MS) * 360;
+	/*
+	 * How fast it is turning this frame.
+	 *
+	 * Winding up from `SLOWEST` over `SPIN_UP_MS`, and — once it has been told
+	 * to stop — running down again over the last `DECEL_DEGREES` before the
+	 * upright it is aiming at. Never all the way to nothing, or it would
+	 * approach the resting place without ever arriving.
+	 */
+	const wound = eased(Math.min(1, (now - startedAt - DELAY_MS) / SPIN_UP_MS));
+	const left = Math.abs(restAt - angle);
+	const landing = windingDown ? Math.min(1, left / DECEL_DEGREES) : 1;
+	const rate = SLOWEST + (1 - SLOWEST) * Math.min(wound, landing);
+
+	angle += spin * rate * (dt / TURN_MS) * 360;
 	if (windingDown && (spin > 0 ? angle >= restAt : angle <= restAt)) {
 		rest();
 		return;
@@ -128,5 +161,13 @@ export function stopMarkSpin(): void {
 		return;
 	}
 	windingDown = true;
-	restAt = (spin > 0 ? Math.ceil(angle / 360) : Math.floor(angle / 360)) * 360;
+	/*
+	 * The next upright far enough away to slow down into.
+	 *
+	 * Stopping at the very next one can mean a few degrees, which is a stop
+	 * rather than a landing — so if there is not most of a turn left to slow
+	 * over, it goes round once more.
+	 */
+	const next = (spin > 0 ? Math.ceil(angle / 360) : Math.floor(angle / 360)) * 360;
+	restAt = Math.abs(next - angle) < DECEL_DEGREES * 0.5 ? next + spin * 360 : next;
 }

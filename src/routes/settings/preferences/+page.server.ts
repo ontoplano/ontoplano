@@ -14,7 +14,7 @@ import {
 	visibleCards,
 	type DashboardCardId
 } from '$lib/dashboard';
-import { HIDEABLE_SECTIONS, isHideableSection } from '$lib/sections';
+import { HIDEABLE_SECTIONS, isHideableSection, leavesOf } from '$lib/sections';
 import { placesFor } from '$lib/nav-order';
 import { zoneGroups } from '$lib/timezones';
 import { NAV_PLACES } from '$lib/sections-nav';
@@ -115,7 +115,18 @@ export const load = async ({ locals }: IsolatedEvent) => {
 					 * than derived.
 					 */
 					hide: p.hide ?? null,
-					hidden: p.hide !== undefined && hidden.includes(p.hide)
+					hidden: p.hide !== undefined && hidden.includes(p.hide),
+					/*
+					 * The tabs inside this room, each able to go on its own.
+					 *
+					 * Hiding Recipes should leave Workouts where it is, which a
+					 * flat list could not say — it listed Recipes beside Health
+					 * as though they were the same kind of thing.
+					 */
+					leaves: leavesOf(p.hide ?? p.key).map((leaf) => ({
+						...leaf,
+						hidden: hidden.includes(leaf.id)
+					}))
 				};
 			});
 		})(),

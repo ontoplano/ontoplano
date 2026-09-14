@@ -23,7 +23,7 @@ beforeAll(async () => {
 });
 
 /** A replenish item with nothing in the cupboard yet, and its id. */
-function keep(name: string, idealQty: number, price?: number): number {
+function keep(name: string, idealQty: number, price?: string): number {
 	s.createItem(ctx, { name, type: 'replenish', idealQty, price });
 	return s.shoppingRun(ctx).lines.find((line) => line.name === name)!.id;
 }

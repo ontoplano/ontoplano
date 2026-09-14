@@ -7,7 +7,7 @@ import { completeFirstRun, needsFirstRun, TEMPLATES } from '$lib/services/onboar
 import { passwordPending } from '$lib/server/services/family-invite';
 import { createToken } from '$lib/server/services/tokens';
 import { ASSISTANT_SCOPES } from '$lib/server/mcp/tools';
-import { HIDEABLE_SECTIONS } from '$lib/sections';
+import { HIDEABLE_ROOMS } from '$lib/sections';
 import { zoneGroups } from '$lib/timezones';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
@@ -28,7 +28,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		zones: zoneGroups(),
 		// The rooms somebody can turn off, with the sentence that says what each
 		// one is — the same list preferences shows, so the two cannot disagree.
-		rooms: HIDEABLE_SECTIONS,
+		rooms: HIDEABLE_ROOMS,
 		theme: getTheme(locals.user!.id) ?? DEFAULT_THEME,
 		templates: TEMPLATES.map((t) => ({
 			key: t.key,

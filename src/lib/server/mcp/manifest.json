@@ -195,7 +195,11 @@
 			"type": {
 				"type": "string",
 				"required": false,
-				"enum": ["bad", "good", "neutral"]
+				"enum": [
+					"bad",
+					"good",
+					"neutral"
+				]
 			}
 		}
 	},
@@ -291,7 +295,13 @@
 			"relationship": {
 				"type": "string",
 				"required": false,
-				"enum": ["family", "friend", "other", "partner", "professional"]
+				"enum": [
+					"family",
+					"friend",
+					"other",
+					"partner",
+					"professional"
+				]
 			},
 			"remindOnBirthday": {
 				"type": "boolean",
@@ -366,7 +376,12 @@
 			"repeats": {
 				"type": "string",
 				"required": false,
-				"enum": ["every_n_days", "every_n_weeks", "monthly", "weekly"]
+				"enum": [
+					"every_n_days",
+					"every_n_weeks",
+					"monthly",
+					"weekly"
+				]
 			},
 			"start_time": {
 				"type": "string",
@@ -440,7 +455,10 @@
 			"type": {
 				"type": "string",
 				"required": false,
-				"enum": ["replenish", "someday"]
+				"enum": [
+					"replenish",
+					"someday"
+				]
 			}
 		}
 	},
@@ -667,7 +685,7 @@
 	"cancel_block": {
 		"scope": "schedule:write",
 		"writes": true,
-		"destroys": false,
+		"destroys": true,
 		"params": {
 			"id": {
 				"type": "string",
@@ -837,7 +855,11 @@
 			"type": {
 				"type": "string",
 				"required": false,
-				"enum": ["bad", "good", "neutral"]
+				"enum": [
+					"bad",
+					"good",
+					"neutral"
+				]
 			}
 		}
 	},
@@ -911,7 +933,13 @@
 			"relationship": {
 				"type": "string",
 				"required": false,
-				"enum": ["family", "friend", "other", "partner", "professional"]
+				"enum": [
+					"family",
+					"friend",
+					"other",
+					"partner",
+					"professional"
+				]
 			},
 			"remindOnBirthday": {
 				"type": "boolean",
@@ -986,7 +1014,12 @@
 			"repeats": {
 				"type": "string",
 				"required": false,
-				"enum": ["every_n_days", "every_n_weeks", "monthly", "weekly"]
+				"enum": [
+					"every_n_days",
+					"every_n_weeks",
+					"monthly",
+					"weekly"
+				]
 			},
 			"start_time": {
 				"type": "string",
@@ -1153,7 +1186,11 @@
 			"status": {
 				"type": "string",
 				"required": true,
-				"enum": ["abandoned", "achieved", "missed"]
+				"enum": [
+					"abandoned",
+					"achieved",
+					"missed"
+				]
 			}
 		}
 	},
@@ -1192,7 +1229,7 @@
 	"delete_sort_rule": {
 		"scope": "statements:write",
 		"writes": true,
-		"destroys": false,
+		"destroys": true,
 		"params": {
 			"id": {
 				"type": "integer",
@@ -1271,7 +1308,11 @@
 			"status": {
 				"type": "string",
 				"required": true,
-				"enum": ["done", "skipped", "todo"]
+				"enum": [
+					"done",
+					"skipped",
+					"todo"
+				]
 			}
 		}
 	},

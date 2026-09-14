@@ -21,13 +21,16 @@
 	let confirmRevoke = $state<number | null>(null);
 	let confirmDeleteStream = $state<number | null>(null);
 	let confirmDeleteWebhook = $state<number | null>(null);
-	let revealedSecret = $state<number | null>(null);
 	let selectedIndex = $state(-1);
 	let copied = $state(false);
 
 	const newToken = $derived(form?.success && form.action === 'createToken' ? form.token : null);
 	const newFeedUrl = $derived(
 		form?.success && form.action === 'calendarLink' ? form.feedUrl : null
+	);
+	/** A hook's signing secret, the once it is ever shown. */
+	const newWebhookSecret = $derived(
+		form?.success && form.action === 'createWebhook' ? form.secret : null
 	);
 
 	// The sentence a scope was granted as, everywhere a scope is shown — the
@@ -726,8 +729,22 @@ Streams push data in, webhooks let your programs listen."
 			bind:open={showWebhookForm}
 			error={form?.message}
 			title="New webhook"
-			description="Each delivery is signed with a secret, shown on the row, so your receiver can check it is really this server."
+			description="Each delivery is signed with a secret, shown once when the hook is made, so your receiver can check it is really this server."
 		>
+			{#if newWebhookSecret}
+				<!-- Copied now or not at all: nothing stores it back, and there is
+			     no way to rotate one — a hook whose secret is lost is deleted
+			     and made again. -->
+				<div class="mb-4 border border-blue-200 bg-blue-50 p-4">
+					<p class="text-sm font-semibold text-blue-900">
+						Hook created — copy its secret now, it won't be shown again.
+					</p>
+					<code
+						class="mt-2 block overflow-x-auto border border-blue-200 bg-white px-3 py-2 font-mono text-xs text-gray-900"
+						>{newWebhookSecret}</code
+					>
+				</div>
+			{/if}
 			<form
 				id="webhook-form"
 				method="post"
@@ -800,19 +817,11 @@ Streams push data in, webhooks let your programs listen."
 										· nothing delivered yet
 									{/if}
 								</p>
+								<!-- Enough to tell which secret this is, never enough to
+								     sign with: the whole one is shown once, when the hook
+								     is made. -->
 								<p class="mt-1 text-xs text-gray-500">
-									Secret:
-									{#if revealedSecret === hook.id}
-										<code class="font-mono break-all">{hook.secret}</code>
-									{:else}
-										<button
-											type="button"
-											class="underline underline-offset-2"
-											onclick={() => (revealedSecret = hook.id)}
-										>
-											show
-										</button>
-									{/if}
+									Secret: <code class="font-mono">{hook.secretHint}</code>
 								</p>
 							</div>
 							<div class="flex shrink-0 items-center gap-2">

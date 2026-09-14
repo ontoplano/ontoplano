@@ -18,6 +18,70 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.176.0 — 2026-09-14
+
+Security and a menu that goes one level deeper. The audit before the store
+release found four things worth naming, all fixed here.
+
+- **A webhook's signing secret is shown once, when the hook is made.** It was
+  returned by every listing of `/api/v1/webhooks`, sat in the Integrations
+  page's payload and rode along in account exports — so any read-only leak
+  handed over the ability to forge signed deliveries for ever, and there is
+  nothing to rotate. The row shows the first characters now, enough to tell
+  two hooks apart and not enough to sign with. The API tokens beside it have
+  always worked this way.
+- **Signing in is no longer a way around the rate limit.** The call budget
+  was spent on API tokens only, so a script with a session could ask the
+  server to post to somebody else's address as fast as it liked — ticking one
+  shopping item on and off is two cheap requests and ten outbound deliveries.
+  The budget is the account's now, and this instance holds a bounded number
+  of sockets open to any one host.
+- **An assistant that may not delete really cannot.** Two tools — deleting a
+  finance sorting rule, taking a block off a day — removed rows on the room's
+  write grant alone, while the sentence somebody granted says "it can add and
+  change but never remove". Both ask for the destructive grant now, both show
+  up in the assistant log with a way back, and a test reads the tools' own
+  code so the next one cannot slip through. **Tokens minted before this
+  update will be refused those two calls until the grant is added.**
+- **The assistant surface stops leaking names it was not granted.** A refusal
+  used to recite every habit, category or shopping section; it names the tool
+  to ask instead, and that tool is gated. `where_is` needs a name and answers
+  only about things that have a place, rather than reading out the shopping
+  list to a token that may only see the cupboard.
+- **The MCP endpoint takes a bounded body and a bounded batch**, like every
+  other endpoint.
+- **Opening Integrations no longer reads every data point ever recorded** —
+  it asked the database for all of them and counted the array, once per
+  stream.
+- **A tab can be put away without its room.** Hiding worked at one level, and
+  Health ignored it entirely: Recipes could be switched off and the tab stayed.
+  Preferences shows the rooms with their tabs underneath now, so Recipes can
+  go while Workouts stays. First run still asks about rooms only.
+- **The wheel is drawn in the mark's own colours.** Its edges were pure
+  black, which is a colour the logo does not contain; the highlight also
+  stops at them rather than washing over the outer one.
+- **The turning mark winds up and runs down**, instead of snapping to full
+  speed and holding it.
+- Also fixed: a crafted `?days=` on a stream's page answered with an error
+  instead of a sensible window; an absurd value could break a chart for good;
+  a plugin's homepage is checked as a web address; and a stream's namespace
+  obeys the same shape a manifest must declare.
+
+## 0.175.1 — 2026-09-14
+
+- **Android's own backup no longer copies a phone-only instance to Drive.**
+  `allowBackup` was on, which means the system copies everything under the
+  app's data directory to the person's Google account — and that directory
+  holds the isolated instance's whole database. The screen that offers that
+  instance says "no network, ever, for anything" and "nothing is copied
+  anywhere"; both were false, and nobody was asked. Exporting from Settings
+  is the backup, as the app already says.
+- **The store build no longer trusts certificates installed on the phone.**
+  That trust is what `make https-local` needs and what a release must not
+  have: anything that can add a certificate — an MDM, malware, a captive
+  portal that talked somebody through it — could read the app's traffic. The
+  dev and staging apps keep it; the official one trusts the system's own.
+
 ## 0.175.0 — 2026-09-14
 
 - **A shopping list you can take to the shop.** One button in Inventory opens

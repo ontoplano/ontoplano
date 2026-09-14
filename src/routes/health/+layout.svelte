@@ -1,12 +1,16 @@
 <script lang="ts">
 	import TabbedRoom from '$lib/components/TabbedRoom.svelte';
+	import { isHidden } from '$lib/sections';
 	import { resolve } from '$app/paths';
 	import type { Snippet } from 'svelte';
 
 	let {
 		children,
 		data
-	}: { children: Snippet; data: { streams: { slug: string; name: string }[] } } = $props();
+	}: {
+		children: Snippet;
+		data: { streams: { slug: string; name: string }[]; hiddenSections: string[] };
+	} = $props();
 
 	/**
 	 * Habits, and then whatever this account measures.
@@ -18,10 +22,24 @@
 	// Through `resolve` rather than a template string: a stream's slug reaches
 	// the URL as a parameter of the route that owns it, so a slug with anything
 	// interesting in it is escaped rather than pasted.
+	/*
+	 * The tabs this account keeps.
+	 *
+	 * Each is a thing that can be put away on its own — hiding Recipes leaves
+	 * Workouts where it is — which the Notebooks room beside this one has
+	 * always honoured and this one did not, so the preference existed and did
+	 * nothing here.
+	 */
 	const tabs = $derived([
-		{ href: resolve('/health/habits'), label: 'Habits' },
-		{ href: resolve('/health/workouts'), label: 'Workouts' },
-		{ href: resolve('/health/recipes'), label: 'Recipes' },
+		...(isHidden(data.hiddenSections, 'habits')
+			? []
+			: [{ href: resolve('/health/habits'), label: 'Habits' }]),
+		...(isHidden(data.hiddenSections, 'workouts')
+			? []
+			: [{ href: resolve('/health/workouts'), label: 'Workouts' }]),
+		...(isHidden(data.hiddenSections, 'recipes')
+			? []
+			: [{ href: resolve('/health/recipes'), label: 'Recipes' }]),
 		...data.streams.map((s) => ({ href: resolve('/data/[slug]', { slug: s.slug }), label: s.name }))
 	]);
 </script>
