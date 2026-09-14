@@ -1250,18 +1250,18 @@ const movement = (ledgerId, occurredOn, amountCents, description, n = 1) => {
 // box has nothing to find. So the recurring ones recur and everything else is
 // what a month actually has in it. The two December/January lines are there so
 // the list crosses a year and shows the band that says which one.
-movement(account, '2025-12-28', -9000, 'Cachacanoponto');
-movement(account, '2026-01-01', -4250, 'Personalfarma');
+movement(account, '2025-12-28', -9000, 'Bar do Ponto');
+movement(account, '2026-01-01', -4250, 'Farmácia do Bairro');
 
 // July
 movement(account, '2026-07-02', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
 movement(account, '2026-07-03', -5000, 'Transferência enviada pelo Pix - Ontoplano - apoio mensal');
 movement(account, '2026-07-05', -180000, 'Pagamento de boleto - Aluguel Imobiliária Vista');
-movement(account, '2026-07-06', -22000, 'Débito automático - Sítio Boa Terra - cesta semanal');
-movement(account, '2026-07-07', -13500, 'Débito automático - Sabesp');
+movement(account, '2026-07-06', -22000, 'Débito automático - Sítio Terra Viva - cesta semanal');
+movement(account, '2026-07-07', -13500, 'Débito automático - Águas da Cidade');
 movement(account, '2026-07-08', -14000, 'Débito automático - Bloco Escalada Indoor');
-movement(account, '2026-07-09', -9990, 'Débito automático - Vivo Fibra');
-movement(account, '2026-07-10', -45900, 'Pagamento de boleto - Unimed');
+movement(account, '2026-07-09', -9990, 'Débito automático - Fibra Boa Onda');
+movement(account, '2026-07-10', -45900, 'Pagamento de boleto - Plano Vitalis');
 movement(
 	account,
 	'2026-07-11',
@@ -1269,23 +1269,23 @@ movement(
 	'Transferência enviada pelo Pix - Racha de Quinta - mensalidade'
 );
 movement(account, '2026-07-12', -15990, 'Pagamento de boleto - Companhia de Energia');
-movement(account, '2026-07-14', -21000, 'Compra no débito - Posto Ipiranga');
+movement(account, '2026-07-14', -21000, 'Compra no débito - Posto Bandeirante');
 movement(
 	account,
 	'2026-07-16',
 	-38400,
 	'Pagamento de boleto - Madeireira São Jorge - tábuas de cedro'
 );
-movement(account, '2026-07-17', 32000, 'Estorno de compra - Magazine Luiza');
+movement(account, '2026-07-17', 32000, 'Estorno de compra - Loja Cometa');
 movement(account, '2026-07-19', -9700, 'Compra no débito - Floricultura Raiz');
-movement(account, '2026-07-21', -8000, 'Saque - Banco24Horas Terminal 4412');
+movement(account, '2026-07-21', -8000, 'Saque - Caixa Eletrônico Terminal 4412');
 movement(
 	account,
 	'2026-07-24',
 	-25000,
-	'Transferência enviada pelo Pix - Dona Cleide - •••.447.201-•• - ITAÚ UNIBANCO (0341) Agência: 3712 Conta: 04418-2'
+	'Transferência enviada pelo Pix - Dona Cleide - •••.447.201-•• - BANCO DO PORTO (0999) Agência: 3712 Conta: 04418-2'
 );
-movement(account, '2026-07-28', -300000, 'Aplicação - Tesouro Selic 2029');
+movement(account, '2026-07-28', -300000, 'Aplicação - CDB Renda Fixa 2029');
 movement(
 	account,
 	'2026-07-30',
@@ -1297,11 +1297,11 @@ movement(
 movement(account, '2026-08-03', -5000, 'Transferência enviada pelo Pix - Ontoplano - apoio mensal');
 movement(account, '2026-08-05', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
 movement(account, '2026-08-05', -180000, 'Pagamento de boleto - Aluguel Imobiliária Vista');
-movement(account, '2026-08-06', -22000, 'Débito automático - Sítio Boa Terra - cesta semanal');
-movement(account, '2026-08-07', -14120, 'Débito automático - Sabesp');
+movement(account, '2026-08-06', -22000, 'Débito automático - Sítio Terra Viva - cesta semanal');
+movement(account, '2026-08-07', -14120, 'Débito automático - Águas da Cidade');
 movement(account, '2026-08-08', -14000, 'Débito automático - Bloco Escalada Indoor');
-movement(account, '2026-08-09', -9990, 'Débito automático - Vivo Fibra');
-movement(account, '2026-08-10', -45900, 'Pagamento de boleto - Unimed');
+movement(account, '2026-08-09', -9990, 'Débito automático - Fibra Boa Onda');
+movement(account, '2026-08-10', -45900, 'Pagamento de boleto - Plano Vitalis');
 movement(
 	account,
 	'2026-08-11',
@@ -1315,23 +1315,23 @@ movement(
 	account,
 	'2026-08-18',
 	-120000,
-	'Transferência enviada pelo Pix - Zé Cova - •••.821.910-•• - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 89023719-0'
+	'Transferência enviada pelo Pix - Zé Cova - •••.821.910-•• - PAGAMENTOS ORIÓN - IP (0998) Agência: 1 Conta: 89023719-0'
 );
-movement(account, '2026-08-20', -18700, 'Compra no débito - Posto Ipiranga');
+movement(account, '2026-08-20', -18700, 'Compra no débito - Posto Bandeirante');
 movement(account, '2026-08-22', -64300, 'Pagamento de boleto - IPVA 2026 parcela 3/3');
 movement(account, '2026-08-26', -11200, 'Compra no débito - Pet Shop Focinho Feliz');
-movement(account, '2026-08-29', -300000, 'Aplicação - Tesouro Selic 2029');
+movement(account, '2026-08-29', -300000, 'Aplicação - CDB Renda Fixa 2029');
 
 // September
 movement(account, '2026-09-03', -5000, 'Transferência enviada pelo Pix - Ontoplano - apoio mensal');
 movement(account, '2026-09-05', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
 movement(account, '2026-09-05', -180000, 'Pagamento de boleto - Aluguel Imobiliária Vista');
-movement(account, '2026-09-06', -22000, 'Débito automático - Sítio Boa Terra - cesta semanal');
-movement(account, '2026-09-07', -12880, 'Débito automático - Sabesp');
+movement(account, '2026-09-06', -22000, 'Débito automático - Sítio Terra Viva - cesta semanal');
+movement(account, '2026-09-07', -12880, 'Débito automático - Águas da Cidade');
 movement(account, '2026-09-08', -14000, 'Débito automático - Bloco Escalada Indoor');
 movement(account, '2026-09-09', -15880, 'Pagamento de boleto - Companhia de Energia');
-movement(account, '2026-09-09', -9990, 'Débito automático - Vivo Fibra');
-movement(account, '2026-09-10', -45900, 'Pagamento de boleto - Unimed');
+movement(account, '2026-09-09', -9990, 'Débito automático - Fibra Boa Onda');
+movement(account, '2026-09-10', -45900, 'Pagamento de boleto - Plano Vitalis');
 movement(account, '2026-09-11', 120000, 'Transferência recebida pelo Pix - Restituição IRPF');
 movement(
 	account,
@@ -1346,37 +1346,37 @@ movement(account, '2026-09-12', -7600, 'Compra no débito - Feira da Praça');
 // every line is the supermarket is a card statement nobody has.
 movement(creditCard, '2026-07-04', -8600, 'Casa do Jardineiro - mudas e substrato');
 movement(creditCard, '2026-07-08', -19900, 'Mercado Bom Preço');
-movement(creditCard, '2026-07-11', -3990, 'Spotify');
-movement(creditCard, '2026-07-13', -5590, 'Netflix.com');
+movement(creditCard, '2026-07-11', -3990, 'Sonora Streaming');
+movement(creditCard, '2026-07-13', -5590, 'Cinefila.tv');
 movement(creditCard, '2026-07-15', -7400, 'Padaria Estrela');
 movement(creditCard, '2026-07-17', -16800, 'Açougue do Zeca - corte do sítio');
-movement(creditCard, '2026-07-18', -8900, 'Uber *Trip');
-movement(creditCard, '2026-07-19', -13400, 'Drogaria São Paulo');
-movement(creditCard, '2026-07-20', -24900, 'Ferramentas Tramontina - formão e goiva');
+movement(creditCard, '2026-07-18', -8900, 'Corrida *Vaivem');
+movement(creditCard, '2026-07-19', -13400, 'Drogaria Bom Dia');
+movement(creditCard, '2026-07-20', -24900, 'Ferramentas Boa Lâmina - formão e goiva');
 movement(creditCard, '2026-07-22', -9800, 'Bloco Escalada Indoor - sapatilha');
-movement(creditCard, '2026-07-25', -4780, 'Ifood *Cantina da Vó');
-movement(creditCard, '2026-07-27', -29900, 'Amazon Marketplace');
-movement(creditCard, '2026-08-02', -13900, 'Petz - areia e ração dos dois');
+movement(creditCard, '2026-07-25', -4780, 'Delivery *Cantina da Vó');
+movement(creditCard, '2026-07-27', -29900, 'Loja Online Tucano');
+movement(creditCard, '2026-08-02', -13900, 'Pet Center - areia e ração dos dois');
 movement(creditCard, '2026-08-06', -18740, 'Mercado Bom Preço');
 movement(creditCard, '2026-08-09', -4200, 'Hortifruti da Esquina');
-movement(creditCard, '2026-08-11', -3990, 'Spotify');
+movement(creditCard, '2026-08-11', -3990, 'Sonora Streaming');
 movement(creditCard, '2026-08-12', -6700, 'Casa do Jardineiro - sementes de manjericão');
-movement(creditCard, '2026-08-13', -5590, 'Netflix.com');
+movement(creditCard, '2026-08-13', -5590, 'Cinefila.tv');
 movement(creditCard, '2026-08-14', -1000, 'Casa - do caralho');
-movement(creditCard, '2026-08-16', -11250, 'Cinemark Shopping');
+movement(creditCard, '2026-08-16', -11250, 'Cine Palácio');
 movement(creditCard, '2026-08-17', -21900, 'Chuteira Store - travinha');
-movement(creditCard, '2026-08-19', -2390, 'Dm *Company');
-movement(creditCard, '2026-08-19', -2390, 'Dm *Company', 2);
-movement(creditCard, '2026-08-21', -9800, 'Ifood *Sushi Kenzo');
+movement(creditCard, '2026-08-19', -2390, 'Assinatura *Nuvem');
+movement(creditCard, '2026-08-19', -2390, 'Assinatura *Nuvem', 2);
+movement(creditCard, '2026-08-21', -9800, 'Delivery *Sushi Kenzo');
 movement(creditCard, '2026-08-23', -5400, 'Bloco Escalada Indoor - magnésio');
-movement(creditCard, '2026-08-27', -15600, 'Renner');
-movement(creditCard, '2026-09-02', -8300, 'Uber *Trip');
+movement(creditCard, '2026-08-27', -15600, 'Vestir Roupas');
+movement(creditCard, '2026-09-02', -8300, 'Corrida *Vaivem');
 movement(creditCard, '2026-09-04', -12400, 'Madeireira São Jorge - lixas e verniz');
 movement(creditCard, '2026-09-06', -21300, 'Mercado Bom Preço');
-movement(creditCard, '2026-09-07', -13900, 'Petz - areia e ração dos dois');
+movement(creditCard, '2026-09-07', -13900, 'Pet Center - areia e ração dos dois');
 movement(creditCard, '2026-09-08', -5100, 'Hortifruti da Esquina');
 movement(creditCard, '2026-09-09', -17600, 'Açougue do Zeca - corte do sítio');
-movement(creditCard, '2026-09-11', -3990, 'Spotify');
+movement(creditCard, '2026-09-11', -3990, 'Sonora Streaming');
 
 const sortRule = (kind, name, pattern, position, color) => {
 	if (
@@ -1407,19 +1407,19 @@ const sortRule = (kind, name, pattern, position, color) => {
 // life in it specific enough to need them.
 sortRule('category', 'Ontoplano', 'ontoplano', 0, '#4338ca');
 sortRule('category', 'Rent', 'aluguel', 1, '#7c2d12');
-sortRule('category', 'Cats', 'veterinária|pet shop|petz', 2, '#a16207');
+sortRule('category', 'Cats', 'veterinária|pet shop|pet center', 2, '#a16207');
 sortRule('category', 'Garden', 'jardineiro|floricultura|muda|semente', 3, '#15803d');
 sortRule('category', 'Woodwork', 'madeireira|ferramenta|serralheria|formão', 4, '#92400e');
 sortRule('category', 'Climbing', 'escalada|magnésio', 5, '#c2410c');
 sortRule('category', 'Football', 'racha|chuteira', 6, '#166534');
-sortRule('category', 'Health', 'unimed|drogaria|farma', 7, '#0e7490');
-sortRule('category', 'Utilities', 'energia|sabesp|vivo', 8, '#b45309');
+sortRule('category', 'Health', 'vitalis|drogaria|farmácia', 7, '#0e7490');
+sortRule('category', 'Utilities', 'energia|águas|fibra', 8, '#b45309');
 sortRule('category', 'Farm food', 'sítio|açougue|hortifruti|feira', 9, '#4d7c0f');
 sortRule('category', 'Groceries', 'mercado|padaria', 10, '#1d4ed8');
-sortRule('category', 'Transport', 'posto|uber', 11, '#0369a1');
-sortRule('category', 'Eating out', 'ifood|cantina|sushi', 12, '#be123c');
-sortRule('category', 'Subscriptions', String.raw`dm \*|spotify|netflix`, 13, '#6d28d9');
-sortRule('category', 'Savings', 'aplicação|tesouro', 14, '#0f766e');
+sortRule('category', 'Transport', 'posto|corrida', 11, '#0369a1');
+sortRule('category', 'Eating out', 'delivery|cantina|sushi', 12, '#be123c');
+sortRule('category', 'Subscriptions', String.raw`assinatura \*|sonora|cinefila`, 13, '#6d28d9');
+sortRule('category', 'Savings', 'aplicação|cdb', 14, '#0f766e');
 sortRule('tag', 'healthy', 'sítio|hortifruti|escalada|racha|feira', 0, '#0f766e');
 sortRule('tag', 'pix', 'pix', 1, '#9d174d');
 
