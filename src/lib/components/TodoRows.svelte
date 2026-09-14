@@ -1,5 +1,7 @@
 <script lang="ts">
 	import NumberBox from '$lib/components/NumberBox.svelte';
+	import { setRoomAction } from '$lib/room-action.svelte';
+	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { enhance } from '$app/forms';
 	import Backlinks from '$lib/components/Backlinks.svelte';
 	import TodoFields from '$lib/components/fields/TodoFields.svelte';
@@ -309,20 +311,46 @@
 			selectedIndex = visibleTodos.length - 1;
 		}
 	});
+
+	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
+	setRoomAction(() => ({
+		label: 'New to-do',
+		run: startNew,
+		tour: newTour ?? '',
+		kbd: shortcutRoom ? keyFor(shortcutRoom, 'new') : ''
+	}));
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<div class="flex flex-wrap items-center justify-between gap-2">
-		<div class="flex flex-wrap items-center gap-3">
-			<button onclick={() => (showCompleted = !showCompleted)} class="btn btn-sm">
-				{showCompleted ? 'Hide completed' : 'Show completed'}
+	<RoomToolbar>
+		{#snippet tools()}
+			<!--
+				One row on a phone, not three.
+
+				"Show completed", the notebook picker and the sort order each took
+				a line of their own at 390px — a third of the screen spent before
+				a single task. The labels say the short form where there is no
+				room for the long one, and the picker gives up its width first.
+
+				A toggle also says which way it is set rather than only what
+				pressing it would do: `aria-pressed` is what the app's own `.btn`
+				reads to draw a control as held.
+			-->
+			<button
+				onclick={() => (showCompleted = !showCompleted)}
+				aria-pressed={showCompleted}
+				class="btn btn-sm shrink-0"
+			>
+				<span class="sm:hidden">Completed</span>
+				<span class="hidden sm:inline">{showCompleted ? 'Hide completed' : 'Show completed'}</span>
 			</button>
 			<!-- Named with its number so a put-away task is never quietly gone:
 			     nothing is hidden without the list saying how much. -->
 			<button
 				onclick={() => (showArchived = !showArchived)}
+				aria-pressed={showArchived}
 				class="btn btn-sm"
 				hidden={putAway === 0 && !showArchived}
 			>
@@ -331,9 +359,9 @@
 			{#if notebookId === null}
 				<!-- "Not in one" is an answer, not the absence of a filter: a task
 				     nobody has placed is the thing people go looking for. -->
-				<label class="text-sm">
+				<label class="min-w-0 flex-1 text-sm sm:flex-none">
 					<span class="sr-only">Notebook</span>
-					<select bind:value={notebookFilter} class="select">
+					<select bind:value={notebookFilter} class="select w-full">
 						<option value="">Every notebook</option>
 						<option value="none">Not in one</option>
 						{#each notebooks as book (book.id)}
@@ -344,24 +372,17 @@
 			{/if}
 			<button
 				onclick={flipOrder}
-				class="btn btn-sm"
+				class="btn btn-sm shrink-0"
 				title={newestFirst
 					? 'Newest at the top — press for the oldest'
 					: 'Oldest at the top — press for the newest'}
 			>
 				<Icon name={newestFirst ? 'chevron-down' : 'chevron-up'} />
-				{newestFirst ? 'Newest first' : 'Oldest first'}
+				<span class="sm:hidden">{newestFirst ? 'Newest' : 'Oldest'}</span>
+				<span class="hidden sm:inline">{newestFirst ? 'Newest first' : 'Oldest first'}</span>
 			</button>
-		</div>
-		<button onclick={startNew} class="btn btn-primary btn-sm" data-tour={newTour}>
-			<Icon name="plus" /> New to-do
-			{#if shortcutRoom}
-				<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
-					>{keyFor(shortcutRoom, 'new')}</kbd
-				>
-			{/if}
-		</button>
-	</div>
+		{/snippet}
+	</RoomToolbar>
 
 	<Modal
 		bind:open={showForm}

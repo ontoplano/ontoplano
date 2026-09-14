@@ -1,4 +1,5 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
+import { listNotebooks } from '$lib/services/notebooks';
 import { fail } from '@sveltejs/kit';
 import { ratingsFromForm } from '$lib/ratings';
 import { isStatus, type Status } from '$lib/task-status';
@@ -189,6 +190,9 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 		categories: listCategories(ctx)
 			.map((c) => ({ id: c.id, name: c.name, color: c.color }))
 			.sort((a, b) => a.name.localeCompare(b.name)),
+		// A card is a to-do, and a to-do can belong to a notebook — the form
+		// here shares `TodoFields` with the to-do list, which offers it.
+		notebooks: listNotebooks(ctx).map((n) => ({ id: n.id, title: n.title })),
 		/** Reminders already set, keyed by the block they belong to. */
 		reminders: listReminders(ctx)
 			.filter((r) => r.subjectKind === 'instance' && r.subjectId !== null)

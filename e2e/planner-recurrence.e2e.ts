@@ -62,7 +62,7 @@ test('a block that comes back every two days lands on every second day', async (
 	const anchor = dayAfter(start, 0);
 	await visit(page, `/tasks/plan?from=${anchor}`);
 
-	await page.getByRole('button', { name: '+ New' }).click();
+	await page.getByRole('button', { name: 'New block' }).click();
 	const form = page.getByRole('dialog');
 	await form.getByRole('button', { name: 'Comes back', exact: true }).first().click();
 	await form.getByRole('button', { name: 'Every N days', exact: true }).click();
@@ -100,7 +100,7 @@ test('a fortnightly block skips the week between', async ({ page }) => {
 	// its own first day drew nothing at all for this one.
 	await visit(page, `/tasks/plan?view=day&from=${dayAfter(start, 3)}`);
 
-	await page.getByRole('button', { name: '+ New' }).click();
+	await page.getByRole('button', { name: 'New block' }).click();
 	const form = page.getByRole('dialog');
 	await form.getByRole('button', { name: 'Comes back', exact: true }).first().click();
 	await form.getByRole('button', { name: 'Every N weeks', exact: true }).click();
@@ -134,7 +134,7 @@ test('a monthly block lands on its date and nowhere else', async ({ page }) => {
 	const target = dayAfter(start, 3);
 	const monthDay = String(Number(target.slice(8, 10)));
 
-	await page.getByRole('button', { name: '+ New' }).click();
+	await page.getByRole('button', { name: 'New block' }).click();
 	const form = page.getByRole('dialog');
 	await form.getByRole('button', { name: 'Comes back', exact: true }).first().click();
 	await form.getByRole('button', { name: 'Every month', exact: true }).click();
@@ -165,7 +165,7 @@ test('skipping one occurrence leaves the block’s other days alone', async ({ p
 	const anchor = dayAfter(start, 0);
 	await visit(page, `/tasks/plan?from=${anchor}`);
 
-	await page.getByRole('button', { name: '+ New' }).click();
+	await page.getByRole('button', { name: 'New block' }).click();
 	const form = page.getByRole('dialog');
 	await form.getByRole('button', { name: 'Comes back', exact: true }).first().click();
 	await form.getByRole('button', { name: 'Every N days', exact: true }).click();
@@ -216,7 +216,7 @@ test('editing a block does not quietly shift the rhythm it already had', async (
 	const anchor = dayAfter(start, 0);
 	await visit(page, `/tasks/plan?from=${anchor}`);
 
-	await page.getByRole('button', { name: '+ New' }).click();
+	await page.getByRole('button', { name: 'New block' }).click();
 	const form = page.getByRole('dialog');
 	await form.getByRole('button', { name: 'Comes back', exact: true }).first().click();
 	await form.getByRole('button', { name: 'Every N days', exact: true }).click();
@@ -375,7 +375,7 @@ test.describe('the preview on the grid', () => {
 		const previews = page.locator('.og-event--preview');
 		expect(await previews.count()).toBe(0);
 
-		await page.getByRole('button', { name: '+ New' }).click();
+		await page.getByRole('button', { name: 'New block' }).click();
 		const form = page.getByRole('dialog');
 		await expect(form).toBeVisible();
 		await form.locator('[name="mode"]').selectOption('category');
@@ -417,7 +417,7 @@ test.describe('the preview on the grid', () => {
 		await expect(page.locator('.ec-main')).toBeVisible();
 
 		// A block of its own, so this test owns what it counts.
-		await page.getByRole('button', { name: '+ New' }).click();
+		await page.getByRole('button', { name: 'New block' }).click();
 		const form = page.getByRole('dialog');
 		await form.locator('[name="mode"]').selectOption('category');
 		await form.locator('[name="label"]').fill('the-one');
@@ -458,7 +458,7 @@ test.describe('the preview on the grid', () => {
 		await expect(page.locator('.ec-main')).toBeVisible();
 		await page.waitForTimeout(600);
 
-		await page.getByRole('button', { name: '+ New' }).click();
+		await page.getByRole('button', { name: 'New block' }).click();
 		const form = page.getByRole('dialog');
 		await form.getByRole('button', { name: 'Once only', exact: true }).click();
 		await form.locator('[name="mode"]').selectOption('category');
@@ -483,7 +483,7 @@ test.describe('the preview on the grid', () => {
 		await expect(page.locator('.ec-main')).toBeVisible();
 		await page.waitForTimeout(600);
 
-		await page.getByRole('button', { name: '+ New' }).click();
+		await page.getByRole('button', { name: 'New block' }).click();
 		const form = page.getByRole('dialog');
 		await form.locator('[name="mode"]').selectOption('category');
 		await form.locator('[name="label"]').fill('late one');
@@ -677,7 +677,7 @@ test('a weekly block does not fill in the weeks before it existed', async ({ pag
 	const thisThursday = dayAfter(start, 3);
 	await visit(page, `/tasks/plan?from=${dayAfter(start, 0)}`);
 
-	await page.getByRole('button', { name: '+ New' }).click();
+	await page.getByRole('button', { name: 'New block' }).click();
 	const form = page.getByRole('dialog');
 	await form.getByRole('button', { name: 'Comes back', exact: true }).first().click();
 	await form.getByRole('button', { name: 'Every week', exact: true }).click();

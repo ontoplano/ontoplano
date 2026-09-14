@@ -1,6 +1,9 @@
 <script lang="ts">
 	/* biome-ignore-all assist/source/organizeImports lint/correctness/noUnusedImports lint/correctness/noUnusedVariables lint/style/useConst: Svelte template and rune usage in this file triggers false positives in current Biome diagnostics. */
 	import { enhance } from '$app/forms';
+	import FilterChips from '$lib/components/FilterChips.svelte';
+	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
+	import { setRoomAction } from '$lib/room-action.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
@@ -158,31 +161,19 @@
 			}
 		}
 	}
+
+	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
+	setRoomAction(() => ({
+		label: 'New idea',
+		open: showForm,
+		tour: 'idea-new',
+		run: () => (showForm ? closeForms() : openIdeaForm())
+	}));
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<!-- The heading is the layout's — Notebooks, with the Ideas tab lit. This
-	     row only holds the page's own button, pushed to the end, exactly as the
-	     Diary beside it does. A second `RoomBar` here drew a whole second
-	     header inside the first one. -->
-	<div class="flex flex-wrap items-center justify-end gap-3">
-		<button
-			onclick={() => {
-				if (showForm) {
-					closeForms();
-				} else {
-					openIdeaForm();
-				}
-			}}
-			class="btn btn-sm"
-			data-tour="idea-new"
-		>
-			{showForm ? 'Cancel' : 'New idea'}
-		</button>
-	</div>
-
 	<!--
 		The tags fold away, and start folded.
 
@@ -255,81 +246,30 @@
 
 	<!-- Two rows of filters over an empty list is chrome with nothing to act on. -->
 	{#if data.ideas.length > 0}
-		<div class="flex flex-wrap items-center gap-3">
-			<div class="flex flex-wrap items-center gap-2">
-				<span class="text-xs font-medium tracking-wide text-gray-500 uppercase">Applied</span>
-				<button
-					onclick={() => {
-						filterApplied = 'all';
-						selectedIndex = 0;
-					}}
-					class="chip {filterApplied === 'all'
-						? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-						: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
-				>
-					All
-				</button>
-				<button
-					onclick={() => {
-						filterApplied = 'applied';
-						selectedIndex = 0;
-					}}
-					class="chip {filterApplied === 'applied'
-						? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-						: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
-				>
-					Applied
-				</button>
-				<button
-					onclick={() => {
-						filterApplied = 'not-applied';
-						selectedIndex = 0;
-					}}
-					class="chip {filterApplied === 'not-applied'
-						? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-						: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
-				>
-					Not Applied
-				</button>
-			</div>
-
-			<div class="flex flex-wrap items-center gap-2">
-				<span class="text-xs font-medium tracking-wide text-gray-500 uppercase">Favorite</span>
-				<button
-					onclick={() => {
-						filterFavorite = 'all';
-						selectedIndex = 0;
-					}}
-					class="chip {filterFavorite === 'all'
-						? 'border-amber-500 bg-amber-50 text-amber-700'
-						: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
-				>
-					All
-				</button>
-				<button
-					onclick={() => {
-						filterFavorite = 'favorite';
-						selectedIndex = 0;
-					}}
-					class="chip {filterFavorite === 'favorite'
-						? 'border-amber-500 bg-amber-50 text-amber-700'
-						: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
-				>
-					Favorites
-				</button>
-				<button
-					onclick={() => {
-						filterFavorite = 'not-favorite';
-						selectedIndex = 0;
-					}}
-					class="chip {filterFavorite === 'not-favorite'
-						? 'border-amber-500 bg-amber-50 text-amber-700'
-						: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
-				>
-					Not Favorite
-				</button>
-			</div>
-		</div>
+		<RoomToolbar>
+			{#snippet filters()}
+				<FilterChips
+					label="Applied"
+					bind:value={filterApplied}
+					onchange={() => (selectedIndex = 0)}
+					options={[
+						{ value: 'all', label: 'All' },
+						{ value: 'applied', label: 'Applied' },
+						{ value: 'not-applied', label: 'Not applied' }
+					]}
+				/>
+				<FilterChips
+					label="Favourite"
+					bind:value={filterFavorite}
+					onchange={() => (selectedIndex = 0)}
+					options={[
+						{ value: 'all', label: 'All' },
+						{ value: 'favorite', label: 'Favourites' },
+						{ value: 'not-favorite', label: 'Not favourite' }
+					]}
+				/>
+			{/snippet}
+		</RoomToolbar>
 	{/if}
 
 	<FormError message={form?.message} />

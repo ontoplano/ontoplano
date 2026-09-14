@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import FilterChips from '$lib/components/FilterChips.svelte';
+	import { setRoomAction } from '$lib/room-action.svelte';
+	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -286,83 +289,51 @@
 		const days = scheduledDaysState.map((checked, i) => (checked ? i : -1)).filter((i) => i !== -1);
 		return days.join(',');
 	}
+
+	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
+	setRoomAction(() => ({
+		label: 'New habit',
+		open: showForm,
+		tour: 'habit-new',
+		run: () => {
+			if (showForm && !editingId) {
+				showForm = false;
+				resetForm();
+				return;
+			}
+			editingId = null;
+			showForm = !showForm;
+			confirmingDeleteId = null;
+			if (!showForm) {
+				resetForm();
+				return;
+			}
+			tick().then(() => {
+				const nameInput = document.querySelector<HTMLInputElement>('input[name="label"]');
+				nameInput?.focus();
+			});
+		}
+	}));
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<!-- The filters and "New habit" share a line: the button used to have a row
-	     of its own with an empty spacer beside it. -->
-	<div class="flex flex-wrap items-center gap-2">
-		<button
-			onclick={() => {
-				if (showForm && !editingId) {
-					showForm = false;
-					resetForm();
-					return;
-				}
-				editingId = null;
-				showForm = !showForm;
-				confirmingDeleteId = null;
-				if (!showForm) {
-					resetForm();
-					return;
-				}
-				tick().then(() => {
-					const nameInput = document.querySelector<HTMLInputElement>('input[name="label"]');
-					nameInput?.focus();
-				});
-			}}
-			class="btn btn-sm order-last ml-auto"
-			data-tour="habit-new"
-		>
-			{showForm ? 'Cancel' : 'New habit'}
-		</button>
-		<button
-			onclick={() => {
-				typeFilter = 'all';
-				selectedHabitIndex = 0;
-			}}
-			class="border px-3 py-1 text-sm transition {typeFilter === 'all'
-				? 'border-gray-900 bg-gray-900 text-white'
-				: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
-		>
-			All
-		</button>
-		<button
-			onclick={() => {
-				typeFilter = 'bad';
-				selectedHabitIndex = 0;
-			}}
-			class="border px-3 py-1 text-sm transition {typeFilter === 'bad'
-				? 'border-red-600 bg-red-600 text-white'
-				: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
-		>
-			Bad
-		</button>
-		<button
-			onclick={() => {
-				typeFilter = 'good';
-				selectedHabitIndex = 0;
-			}}
-			class="border px-3 py-1 text-sm transition {typeFilter === 'good'
-				? 'border-blue-600 bg-blue-600 text-white'
-				: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
-		>
-			Good
-		</button>
-		<button
-			onclick={() => {
-				typeFilter = 'neutral';
-				selectedHabitIndex = 0;
-			}}
-			class="border px-3 py-1 text-sm transition {typeFilter === 'neutral'
-				? 'border-gray-600 bg-gray-600 text-white'
-				: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
-		>
-			Neutral
-		</button>
-	</div>
+	<RoomToolbar>
+		{#snippet filters()}
+			<FilterChips
+				label="Kind"
+				bind:value={typeFilter}
+				onchange={() => (selectedHabitIndex = 0)}
+				options={[
+					{ value: 'all', label: 'All' },
+					{ value: 'good', label: 'Good' },
+					{ value: 'bad', label: 'Bad' },
+					{ value: 'neutral', label: 'Neutral' }
+				]}
+			/>
+		{/snippet}
+	</RoomToolbar>
 
 	<FormError message={form?.message} />
 
@@ -511,7 +482,7 @@
 				{@const isNeutral = habit.type === 'neutral'}
 				<div
 					use:keepInView={i === selectedHabitIndex}
-					class={i === selectedHabitIndex ? 'ring-2 ring-gray-900 ring-inset' : ''}
+					class={i === selectedHabitIndex ? 'kbd-cursor' : ''}
 					style="border-left-width: 4px; border-left-color: {isBad
 						? HABIT_BAD_ACCENT
 						: isNeutral

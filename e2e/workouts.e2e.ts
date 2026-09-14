@@ -167,7 +167,7 @@ test('a workout planned from the week is named after the workout', async ({ page
 	await expect(page.getByText('Pull day')).toBeVisible();
 
 	await visit(page, '/tasks/plan');
-	await page.getByRole('button', { name: '+ New' }).click();
+	await page.getByRole('button', { name: 'New block' }).click();
 	const block = page.getByRole('dialog');
 	await block.locator('[name="mode"]').selectOption('workout');
 	// No category is asked for: being a workout is what it is filed under.

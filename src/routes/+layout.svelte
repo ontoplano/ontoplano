@@ -1072,7 +1072,7 @@
 
 		<main
 			bind:this={scroller}
-			class="page-gutter relative z-10 mx-auto w-full max-w-page flex-1 overflow-y-auto overscroll-y-contain pt-[calc(var(--safe-top)+1rem)] pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+var(--help-dock-height)+0.75rem)] lg:overflow-visible lg:pt-6 lg:pb-[calc(var(--help-dock-height)+1.5rem)]"
+			class="page-gutter relative z-10 mx-auto w-full max-w-page flex-1 overflow-y-auto overscroll-y-contain pt-[calc(var(--safe-top)+1rem)] pb-[calc(var(--mobile-nav-height)+var(--safe-bottom)+var(--help-dock-height)+var(--bar-mark-rise)+0.75rem)] lg:overflow-visible lg:pt-6 lg:pb-[calc(var(--help-dock-height)+1.5rem)]"
 		>
 			<!-- `.slide-frame` clips the movement between rooms, and gives the page
 			     gutter back first so a card that bleeds to the screen edge still

@@ -1,5 +1,10 @@
 <script lang="ts">
 	import NumberBox from '$lib/components/NumberBox.svelte';
+	import TodoFields from '$lib/components/fields/TodoFields.svelte';
+	import PeriodNav from '$lib/components/PeriodNav.svelte';
+	import Swatch from '$lib/components/Swatch.svelte';
+	import { setRoomAction } from '$lib/room-action.svelte';
+	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { enhance } from '$app/forms';
@@ -513,6 +518,13 @@
 			resolve(`/tasks/board?date=${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`)
 		);
 	}
+
+	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
+	setRoomAction(() => ({
+		label: 'New card',
+		run: openForm,
+		kbd: keyFor('/tasks/board', 'new')
+	}));
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -520,102 +532,97 @@
 <div class="space-y-4">
 	<FormError message={form?.message} />
 
-	<div class="flex flex-wrap items-center justify-between gap-3">
-		<div class="flex items-center gap-1" data-tour="board-tabs">
-			{#each [{ v: 'today', l: 'Today' }, { v: 'general', l: 'To-do' }] as t (t.v)}
-				<button
-					onclick={() => {
-						tab = t.v as typeof tab;
-						focusRow = 0;
-					}}
-					class="tab-link border-b-2 px-3 py-1.5 text-sm {tab === t.v
-						? 'font-semibold text-gray-900'
-						: 'border-transparent font-medium text-gray-500 hover:text-gray-900'}"
-					style={tab === t.v ? 'border-color: var(--section-accent)' : ''}
-				>
-					{t.l}
-				</button>
-			{/each}
-		</div>
+	<!--
+		The same order the plan has, because it is the same room: where you are
+		first, then what shape you are looking at it in.
+	-->
+	{#if tab === 'today'}
+		<PeriodNav
+			unit="day"
+			atNow={data.date === data.today}
+			onprev={() => shiftDay(-1)}
+			onnext={() => shiftDay(1)}
+			onnow={() => goto(resolve('/tasks/board'))}
+		>
+			<span class="tabular text-sm text-gray-600">
+				{data.date === data.today ? 'Today' : data.date}
+			</span>
+		</PeriodNav>
+	{/if}
 
-		<div class="flex items-center gap-2">
-			{#if tab === 'today'}
-				<button
-					onclick={() => shiftDay(-1)}
-					class="border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
-					aria-label="Previous day">&larr;</button
-				>
-				<button
-					onclick={() => goto(resolve('/tasks/board'))}
-					class="tabular border px-2 py-1 text-sm shadow-sm {data.date === data.today
-						? 'border-gray-900 bg-gray-900 text-white'
-						: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
-				>
-					{data.date === data.today ? 'Today' : data.date}
-				</button>
-				<button
-					onclick={() => shiftDay(1)}
-					class="border border-gray-300 bg-white px-2 py-1 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
-					aria-label="Next day">&rarr;</button
-				>
-			{/if}
-			<button onclick={openForm} class="btn btn-primary btn-sm">
-				New <kbd class="ml-1 border border-gray-600 bg-gray-800 px-1 text-xs"
-					>{keyFor('/tasks/board', 'new')}</kbd
-				>
+	<RoomToolbar>
+		{#snippet tools()}
+			<!-- Sort, energy and the rest are three rows on a phone before a
+			     single card. They fold behind one button there and stay open on
+			     a wide screen. -->
+			<button
+				onclick={() => (filtersOpen = !filtersOpen)}
+				class="btn btn-sm sm:hidden"
+				aria-expanded={filtersOpen}
+				aria-pressed={filtersOpen}
+				data-tour="board-ratings"
+			>
+				{filtersOpen ? 'Hide filters' : 'Filters'}
 			</button>
-		</div>
-	</div>
 
-	<!-- Sort, energy and the rest are three rows on a phone before a single card.
-	     They fold behind one button there and stay open on a wide screen. -->
-	<button
-		onclick={() => (filtersOpen = !filtersOpen)}
-		class="btn btn-sm sm:hidden"
-		aria-expanded={filtersOpen}
-		data-tour="board-ratings"
-	>
-		{filtersOpen ? 'Hide filters' : 'Filters'}
-	</button>
+			<!-- Today against To-do is a choice of shape, exactly as Day/Week/
+			     Month is on the plan — so it is the same control, and it shares
+			     the row rather than spending one of its own. -->
+			<div class="seg ml-auto" role="group" aria-label="What to show" data-tour="board-tabs">
+				{#each [{ v: 'today', l: 'Today' }, { v: 'general', l: 'To-do' }] as t (t.v)}
+					<button
+						onclick={() => {
+							tab = t.v as typeof tab;
+							focusRow = 0;
+						}}
+						aria-pressed={tab === t.v}>{t.l}</button
+					>
+				{/each}
+			</div>
+		{/snippet}
+		{#snippet filters()}
+			<div
+				class="{filtersOpen
+					? 'flex'
+					: 'hidden'} flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:flex"
+				data-tour="board-ratings"
+			>
+				<div class="flex items-center gap-1">
+					<span class="eyebrow text-gray-600">Sort</span>
+					{#each [{ v: 'default', l: 'Default' }, { v: 'urgency', l: 'Urgency' }, { v: 'interest', l: 'Interest' }, { v: 'energy', l: 'Energy' }] as opt (opt.v)}
+						<button
+							onclick={() => (sortBy = opt.v as typeof sortBy)}
+							class="border px-2 py-0.5 {sortBy === opt.v
+								? 'border-gray-900 bg-gray-900 font-semibold text-white'
+								: 'border-gray-300 bg-white text-gray-600 hover:text-gray-900'}">{opt.l}</button
+						>
+					{/each}
+				</div>
 
-	<div
-		class="{filtersOpen ? 'flex' : 'hidden'} flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:flex"
-		data-tour="board-ratings"
-	>
-		<div class="flex items-center gap-1">
-			<span class="eyebrow text-gray-600">Sort</span>
-			{#each [{ v: 'default', l: 'Default' }, { v: 'urgency', l: 'Urgency' }, { v: 'interest', l: 'Interest' }, { v: 'energy', l: 'Energy' }] as opt (opt.v)}
-				<button
-					onclick={() => (sortBy = opt.v as typeof sortBy)}
-					class="border px-2 py-0.5 {sortBy === opt.v
-						? 'border-gray-900 bg-gray-900 font-semibold text-white'
-						: 'border-gray-300 bg-white text-gray-600 hover:text-gray-900'}">{opt.l}</button
-				>
-			{/each}
-		</div>
+				<div class="flex items-center gap-1">
+					<span class="eyebrow text-gray-600">Energy up to</span>
+					{#each [1, 2, 3, 4, 5] as n (n)}
+						<button
+							onclick={() => (maxEnergy = maxEnergy === n ? null : n)}
+							class="tabular h-6 w-6 border {maxEnergy === n
+								? 'border-gray-900 bg-gray-900 font-semibold text-white'
+								: 'border-gray-300 bg-white text-gray-500 hover:text-gray-900'}">{n}</button
+						>
+					{/each}
+				</div>
 
-		<div class="flex items-center gap-1">
-			<span class="eyebrow text-gray-600">Energy up to</span>
-			{#each [1, 2, 3, 4, 5] as n (n)}
-				<button
-					onclick={() => (maxEnergy = maxEnergy === n ? null : n)}
-					class="tabular h-6 w-6 border {maxEnergy === n
-						? 'border-gray-900 bg-gray-900 font-semibold text-white'
-						: 'border-gray-300 bg-white text-gray-500 hover:text-gray-900'}">{n}</button
-				>
-			{/each}
-		</div>
+				<label class="flex items-center gap-1 text-gray-600">
+					<input type="checkbox" bind:checked={showDone} class="h-3 w-3" />
+					Show skipped
+				</label>
 
-		<label class="flex items-center gap-1 text-gray-600">
-			<input type="checkbox" bind:checked={showDone} class="h-3 w-3" />
-			Show skipped
-		</label>
-
-		<span class="kbd-hint text-gray-500">
-			Number keys set <strong class="font-semibold text-gray-600">{ratingKey}</strong> — u / i / y to
-			switch
-		</span>
-	</div>
+				<span class="kbd-hint text-gray-500">
+					Number keys set <strong class="font-semibold text-gray-600">{ratingKey}</strong> — u / i / y
+					to switch
+				</span>
+			</div>
+		{/snippet}
+	</RoomToolbar>
 
 	<Modal bind:open={showForm} error={form?.message} title="New card" size="sm">
 		<form
@@ -632,27 +639,22 @@
 				<input type="hidden" name="scheduledDate" value={data.date} />
 			{/if}
 
+			<!--
+				The same fields a to-do is made of, because a card is a to-do.
+
+				This form had grown its own smaller version — a title, a category
+				and the ratings — so a card made here could not carry notes or
+				belong to a notebook, while the identical thing made one tab away
+				could. `TodoFields` is the one form; `compact` is what folds the
+				rest away until it is wanted.
+			-->
 			<FormGrid>
-				<Field label="Title" span={12} required>
-					<OneLine name="heading" class="input" required />
-				</Field>
-
-				<Field label="Category" span={12}>
-					<select name="categoryId" class="select">
-						<option value="">— none —</option>
-						{#each data.categories as cat (cat.id)}
-							<option value={cat.id}>{cat.name}</option>
-						{/each}
-					</select>
-				</Field>
-
-				<MoreOptions label="Urgency, interest, energy" count={ratingsSet}>
-					{#each RATINGS as r (r)}
-						<div class="col-span-12">
-							<RatingPicker rating={r} bind:value={formRatings[r]} />
-						</div>
-					{/each}
-				</MoreOptions>
+				<TodoFields
+					categories={data.categories}
+					notebooks={data.notebooks}
+					bind:ratings={formRatings}
+					compact
+				/>
 			</FormGrid>
 		</form>
 
@@ -866,7 +868,7 @@
 		>
 			{#each dayTotals as total (total.name)}
 				<span class="flex items-center gap-2 text-sm">
-					<span class="h-3 w-1" style="background-color: {total.color}"></span>
+					<Swatch color={total.color} />
 					<span class="text-gray-700">{total.name}</span>
 					<span class="tabular text-gray-500">{formatDuration(total.minutes)}</span>
 				</span>
@@ -995,7 +997,7 @@
 									tabindex="0"
 									class="cursor-grab border bg-white px-2 py-1.5 shadow-card {focusCol === ci &&
 									focusRow === ri
-										? 'ring-2 ring-gray-900 ring-inset'
+										? 'kbd-cursor'
 										: ''} {dragging?.uid === card.uid ? 'opacity-40' : ''} border-gray-200"
 								>
 									<div class="flex items-start gap-2">

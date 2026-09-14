@@ -275,8 +275,12 @@ test('n opens a new card and g switches the tab, from the keyboard', async ({ pa
 	await visit(page, '/tasks/board');
 
 	await page.keyboard.press('g');
-	await expect(page.getByRole('button', { name: 'To-do', exact: true })).toHaveClass(
-		/font-semibold/
+	// The Today/To-do switch is the app's segmented control now — the same one
+	// the plan uses for Day/Week/Month — so which side is chosen is said with
+	// `aria-pressed` rather than with a font weight.
+	await expect(page.getByRole('button', { name: 'To-do', exact: true })).toHaveAttribute(
+		'aria-pressed',
+		'true'
 	);
 
 	await page.keyboard.press('n');

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import Swatch from '$lib/components/Swatch.svelte';
 	import { resolve } from '$app/paths';
 	import CategoryDonut from '$lib/components/CategoryDonut.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -123,8 +124,7 @@
 			<div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">
 				{#each data.byCategory.categories as c (c.name)}
 					<span class="flex items-center gap-1.5 text-gray-600">
-						<span class="inline-block h-2 w-2 rounded-sm" style="background-color: {c.color}"
-						></span>
+						<Swatch color={c.color} shape="dot" />
 						{c.name}
 						<span class="text-gray-400 tabular-nums">{money(c.totalCents)}</span>
 					</span>

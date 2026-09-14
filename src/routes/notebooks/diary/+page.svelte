@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { setRoomAction } from '$lib/room-action.svelte';
+	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import NoteFields from '$lib/components/fields/NoteFields.svelte';
@@ -174,15 +176,30 @@
 				break;
 		}
 	}
+
+	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
+	setRoomAction(() => ({
+		label: 'New entry',
+		open: showForm,
+		tour: 'diary-new',
+		run: () => {
+			showForm = !showForm;
+			showWinsForm = false;
+			editingId = null;
+			if (!showForm) return;
+			tick().then(() => {
+				const ta = document.querySelector<HTMLTextAreaElement>('textarea[name="content"]');
+				ta?.focus();
+			});
+		}
+	}));
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<!-- The heading is the layout's — Notes, with the Diary tab lit. This row
-	     only holds the page's own buttons, pushed to the end. -->
-	<div class="flex flex-wrap items-center justify-end gap-3">
-		<div class="flex flex-wrap items-center gap-2">
+	<RoomToolbar>
+		{#snippet tools()}
 			{#if winsEnabled}
 				<button
 					onclick={() => {
@@ -197,24 +214,8 @@
 					{showWinsForm ? 'Cancel' : 'New wins'}
 				</button>
 			{/if}
-			<button
-				onclick={() => {
-					showForm = !showForm;
-					showWinsForm = false;
-					editingId = null;
-					if (!showForm) return;
-					tick().then(() => {
-						const ta = document.querySelector<HTMLTextAreaElement>('textarea[name="content"]');
-						ta?.focus();
-					});
-				}}
-				class="btn btn-sm"
-				data-tour="diary-new"
-			>
-				{showForm ? 'Cancel' : 'New entry'}
-			</button>
-		</div>
-	</div>
+		{/snippet}
+	</RoomToolbar>
 
 	{#if data.allTags.length > 0}
 		<div class="flex flex-wrap gap-2">

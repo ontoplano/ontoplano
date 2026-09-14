@@ -2742,12 +2742,9 @@ departure and everything else falls out of it.
 
 What has actually changed, as opposed to what I meant to change.
 
-**Mornings hold.** The block before ten is the only one I never move, and it
-is the only reason anything long ever gets finished.
+**Mornings hold.** The block before ten is the only one I never move, and it is the only reason anything long ever gets finished.
 
-**Afternoons are fiction.** I plan two hours of deep work at 14:00 and spend
-it on mail, every time. That block should say *admin* and I should stop
-pretending otherwise.
+**Afternoons are fiction.** I plan two hours of deep work at 14:00 and spend it on mail, every time. That block should say *admin* and I should stop pretending otherwise.
 
 ---
 

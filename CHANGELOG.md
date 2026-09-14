@@ -18,6 +18,54 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.174.0 — 2026-09-14
+
+A minor, and it is what that number is for: every screen in the app now wears
+the same furniture, drawn once.
+
+- **Every screen's main action is in the same place — the room's own bar, top
+  right.** Fourteen screens each drew their own: filled on one tab and quiet
+  on the next, right-aligned here and on the left in Finance, and on Plan it
+  said "+ New" while the identical button on Notebooks said "New notebook".
+  One button now, one look, one corner, and a screen declares what it is for
+  rather than building it.
+- **The bar is the same height whether or not a screen has one**, so sliding
+  from Activities to Review no longer moves the tabs and everything under
+  them.
+- **The row of tools under the tabs is one shape everywhere.** Filters that
+  sprawled on one tab and folded on the next, three ragged rows on To-do,
+  content starting at a different height on every screen — one component,
+  filled in.
+- **Filters look like filters.** Ideas had two rows in two different selected
+  colours, Habits four of its own; every one of them wears the section's
+  colour now, and a group's name is set the way every other label in the app
+  is.
+- **The Board is the Plan's twin.** Where you are comes first, with the same
+  arrows the plan has — it had bordered `←`/`→` text buttons and a filled
+  Today pill of its own — and Today against To-do is the segmented control
+  the plan uses for Day/Week/Month, sharing a row rather than spending one.
+- **A card is a to-do.** The board's "New card" form had grown a smaller
+  version of the to-do form: a title, a category and the ratings. It is the
+  same form now, so a card can carry notes and belong to a notebook.
+- **Settings is a room like any other**: its tabs answer a swipe, its header
+  is the shape every room's is, and the strip no longer arrives at the last
+  tab scrolled half off itself. Administration comes with it.
+- **The phone's top bar takes the room's colour**, the way the page under it
+  always did — it was the one place where changing rooms changed nothing
+  above the tabs.
+- **A colour that stands for something is drawn one way.** Category spines,
+  tag dots and ledger stripes were nine slightly different marks; a black
+  category is also no longer invisible on the dark theme.
+- **Nothing wears a keyboard cursor where there is no keyboard.** Eight lists
+  drew a hard outline on their first row, which on a phone looked like a
+  stuck tap.
+- **A toggle says which way it is set** rather than only what pressing it
+  would do, and To-do's three stacked controls are one row on a phone.
+- **The last row of a list clears the bar.** It sat under the raised mark in
+  the middle of the phone's bar.
+- **A week still running is not a week you failed** — the review says so
+  instead of presenting nought of forty-two as a result.
+
 ## 0.173.15 — 2026-09-14
 
 - **Changing tab turns the medallion too**, against the way the tabs are

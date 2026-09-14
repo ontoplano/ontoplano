@@ -15,7 +15,12 @@
 	 * `.eyebrow`; the other two were drift.
 	 */
 	let {
-		title,
+		/**
+		 * The label above the card. Optional: a card whose title would repeat
+		 * the room's own name — "Notebooks" inside Notebooks, "Everyone" over
+		 * the only group People has — says nothing, so it says nothing.
+		 */
+		title = '',
 		description = '',
 		/** The section's colour, drawn as a rule above the header. Omit for chrome. */
 		accent = '',
@@ -24,7 +29,7 @@
 		actions,
 		children
 	}: {
-		title: string;
+		title?: string;
 		description?: string;
 		accent?: string;
 		flush?: boolean;
@@ -59,9 +64,10 @@
 	-->
 	<header
 		class="section-tint flex flex-wrap items-start justify-between gap-x-4 gap-y-2 border-b border-gray-200 px-4 py-3"
+		hidden={!title && !description && !actions}
 	>
 		<div class="min-w-0 flex-1">
-			<h2 class="eyebrow text-gray-600">{title}</h2>
+			{#if title}<h2 class="eyebrow text-gray-600">{title}</h2>{/if}
 			{#if description}
 				<!--
 					pre-line: a description may break itself onto a second line with \n.

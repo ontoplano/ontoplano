@@ -1,5 +1,8 @@
 <script lang="ts">
 	import NumberBox from '$lib/components/NumberBox.svelte';
+	import Swatch from '$lib/components/Swatch.svelte';
+	import { setRoomAction } from '$lib/room-action.svelte';
+	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { COUNT_STEP, NUMBER_KINDS } from '$lib/number-kinds';
 	import { resolve } from '$app/paths';
@@ -217,33 +220,32 @@
 			selectedIndex = Math.min(Math.max(selectedIndex + (action === 'next' ? 1 : -1), 0), max);
 		}
 	}
+
+	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
+	setRoomAction(() => ({
+		label: 'New goal',
+		tour: 'goal-new',
+		kbd: keyFor('/goals', 'new'),
+		run: openCreate
+	}));
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<RoomBar title="Goals">
-		{#snippet actions()}
-			<div class="flex items-center gap-2">
-				<!-- Nothing to filter and nothing to file: an account with no goals is
-			     offered one button, which is the one that helps. -->
-				<!-- Managing areas is not filtering by them: the button that opens
-				     the list of areas belongs up here with "New goal", and the
-				     filters live together on their own line below. -->
-				{#if data.goals.length > 0}
-					<button onclick={() => (showAreas = true)} class="btn btn-sm" data-tour="goal-areas">
-						Areas
-					</button>
-				{/if}
-				<button onclick={openCreate} class="btn btn-primary btn-sm" data-tour="goal-new">
-					<Icon name="plus" /> New goal
-					<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
-						>{keyFor('/goals', 'new')}</kbd
-					>
+	<RoomBar title="Goals" />
+	<RoomToolbar>
+		{#snippet tools()}
+			<!-- Managing areas is not filtering by them, so it stands with the
+			     tools rather than among the filters below. Nothing to manage on
+			     an account with no goals. -->
+			{#if data.goals.length > 0}
+				<button onclick={() => (showAreas = true)} class="btn btn-sm" data-tour="goal-areas">
+					Areas
 				</button>
-			</div>
+			{/if}
 		{/snippet}
-	</RoomBar>
+	</RoomToolbar>
 
 	<FormError message={form?.message} />
 
@@ -258,7 +260,7 @@
 			<div class="divide-y divide-gray-200 border border-gray-200">
 				{#each data.areas as area (area.id)}
 					<div class="flex items-center gap-3 px-3 py-2">
-						<span class="h-4 w-1 shrink-0" style="background-color: {area.color}"></span>
+						<Swatch color={area.color} shape="tall" />
 						<span class="flex-1 text-sm text-gray-900">{area.name}</span>
 						<form method="post" action="?/deleteArea" use:enhance>
 							<input type="hidden" name="id" value={area.id} />

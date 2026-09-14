@@ -1,5 +1,6 @@
 <script lang="ts">
 	import RoomBar from '$lib/components/RoomBar.svelte';
+	import { setRoomAction } from '$lib/room-action.svelte';
 	import { enhance } from '$app/forms';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { resolve } from '$app/paths';
@@ -642,6 +643,15 @@
 				break;
 		}
 	}
+
+	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
+	setRoomAction(() => ({
+		label: 'Add item',
+		open: showForm,
+		tour: 'shopping-new',
+		kbd: keyFor('/inventory', 'new'),
+		run: () => (showForm ? (showForm = false) : openCreateForm())
+	}));
 </script>
 
 <svelte:window
@@ -754,9 +764,7 @@
 			}}
 			class="flex w-full items-center gap-2 py-2 pr-3 text-left text-sm transition {location === id
 				? 'bg-gray-100 font-medium text-gray-900'
-				: 'text-gray-700 hover:bg-gray-50'} {dragOver === (id ?? -1)
-				? 'ring-2 ring-gray-900 ring-inset'
-				: ''}"
+				: 'text-gray-700 hover:bg-gray-50'} {dragOver === (id ?? -1) ? 'kbd-cursor' : ''}"
 			style="padding-left: {0.25 + depth * 0.9}rem"
 		>
 			<!-- Where a foldable row keeps its chevron. Drawn on every row, so a
@@ -821,7 +829,7 @@
 				class="flex min-w-0 flex-1 items-center gap-2 py-2 pr-2 pl-2 text-left text-sm transition {location ===
 				node.id
 					? 'font-medium text-gray-900'
-					: 'text-gray-700'} {dragOver === node.id ? 'ring-2 ring-gray-900 ring-inset' : ''}"
+					: 'text-gray-700'} {dragOver === node.id ? 'kbd-cursor' : ''}"
 			>
 				<span class="truncate" title={node.name}>{node.name}</span>
 				<span
@@ -939,18 +947,7 @@
 		are in and what it hides are a row along the top of the panel they
 		filter, which can wrap in peace.
 	-->
-	<RoomBar title="Inventory">
-		{#snippet actions()}
-			<button
-				onclick={() => (showForm ? (showForm = false) : openCreateForm())}
-				class="btn btn-sm btn-primary"
-				data-tour="shopping-new"
-			>
-				{showForm ? 'Cancel' : 'Add item'}
-				<kbd class="border border-white/30 px-1">{keyFor('/inventory', 'new')}</kbd>
-			</button>
-		{/snippet}
-	</RoomBar>
+	<RoomBar title="Inventory" />
 
 	{#if !online || ticks.pending.length > 0}
 		<Banner kind="warning">

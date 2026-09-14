@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Swatch from '$lib/components/Swatch.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
@@ -129,10 +130,7 @@
 								</form>
 							{:else}
 								<div class="flex items-center gap-2">
-									<span
-										class="inline-block h-3 w-3 shrink-0 rounded-sm"
-										style="background-color: {rule.color}"
-									></span>
+									<Swatch color={rule.color} shape="dot" />
 									<span class="shrink-0 text-sm font-medium text-gray-900">{rule.name}</span>
 									<code class="min-w-0 flex-1 truncate text-xs text-gray-500" title={rule.pattern}>
 										/{rule.pattern}/i

@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Swatch from '$lib/components/Swatch.svelte';
+	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
+	import { setRoomAction } from '$lib/room-action.svelte';
 	import { CSV_PARSER_KEY, sniffCsv, type CsvMapping } from '$lib/bank-parsers';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -139,51 +142,52 @@
 	);
 	const asDecimal = (cents: number) => (Math.abs(cents) / 100).toFixed(2);
 	const today = new Date().toISOString().slice(0, 10);
+
+	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
+	setRoomAction(() => ({ label: 'New ledger', run: () => (showNewLedger = true) }));
 </script>
 
 <div class="space-y-4">
-	<!-- The ledgers themselves. -->
-	<div class="flex flex-wrap items-center gap-2">
-		{#each active as ledger (ledger.id)}
-			<!--
+	<RoomToolbar>
+		{#snippet tools()}
+			{#each active as ledger (ledger.id)}
+				<!--
 				One ledger, as a tile you can read at a glance: what it is
 				called over what it holds. Written as two lines rather than
 				four things strung across one, because on a phone the strung
 				version ran two ledgers into each other and off the screen.
 			-->
-			<button
-				class="flex min-w-36 shrink-0 flex-col items-start gap-0.5 rounded border px-3 py-2 text-left transition-colors {data
-					.current?.id === ledger.id
-					? 'border-gray-900 bg-gray-50'
-					: 'border-gray-200 hover:border-gray-400'}"
-				onclick={() => show(ledger.id)}
-			>
-				<span class="w-full truncate text-sm font-medium text-gray-900">{ledger.name}</span>
-				<span class="flex w-full items-baseline gap-2">
-					<span class="text-xs text-gray-500">{LEDGER_KIND_LABELS[ledger.kind]}</span>
-					<span class="text-xs text-gray-400 tabular-nums">{ledger.count}</span>
-					<span
-						class="ml-auto text-xs tabular-nums {ledger.balanceCents < 0
-							? 'text-red-600'
-							: 'text-blue-700'}"
-					>
-						{money(ledger.balanceCents)}
+				<button
+					class="flex min-w-36 shrink-0 flex-col items-start gap-0.5 rounded border px-3 py-2 text-left transition-colors {data
+						.current?.id === ledger.id
+						? 'border-gray-900 bg-gray-50'
+						: 'border-gray-200 hover:border-gray-400'}"
+					onclick={() => show(ledger.id)}
+				>
+					<span class="w-full truncate text-sm font-medium text-gray-900">{ledger.name}</span>
+					<span class="flex w-full items-baseline gap-2">
+						<span class="text-xs text-gray-500">{LEDGER_KIND_LABELS[ledger.kind]}</span>
+						<span class="text-xs text-gray-400 tabular-nums">{ledger.count}</span>
+						<span
+							class="ml-auto text-xs tabular-nums {ledger.balanceCents < 0
+								? 'text-red-600'
+								: 'text-blue-700'}"
+						>
+							{money(ledger.balanceCents)}
+						</span>
 					</span>
-				</span>
-			</button>
-		{/each}
-		<button class="btn btn-sm" onclick={() => (showNewLedger = true)}>
-			<Icon name="plus" /> New ledger
-		</button>
-		{#if archived.length > 0}
-			<button
-				class="text-xs text-gray-500 hover:text-gray-700"
-				onclick={() => (showArchived = !showArchived)}
-			>
-				{showArchived ? 'Hide' : 'Show'} archived ({archived.length})
-			</button>
-		{/if}
-	</div>
+				</button>
+			{/each}
+			{#if archived.length > 0}
+				<button
+					class="text-xs text-gray-500 hover:text-gray-700"
+					onclick={() => (showArchived = !showArchived)}
+				>
+					{showArchived ? 'Hide' : 'Show'} archived ({archived.length})
+				</button>
+			{/if}
+		{/snippet}
+	</RoomToolbar>
 
 	{#if showArchived && archived.length > 0}
 		<ul class="divide-y divide-gray-100 rounded border border-gray-200">
@@ -388,10 +392,7 @@
 										class="inline-flex shrink-0 items-center gap-1.5 text-xs font-medium"
 										style="color: {m.categoryColor}"
 									>
-										<span
-											class="inline-block h-2 w-2 rounded-sm"
-											style="background-color: {m.categoryColor}"
-										></span>
+										<Swatch color={m.categoryColor ?? '#6b7280'} shape="dot" />
 										{m.category}
 									</span>
 								{/if}
@@ -465,10 +466,7 @@
 												class="inline-flex items-center gap-1.5 text-xs font-medium"
 												style="color: {m.categoryColor}"
 											>
-												<span
-													class="inline-block h-2 w-2 rounded-sm"
-													style="background-color: {m.categoryColor}"
-												></span>
+												<Swatch color={m.categoryColor ?? '#6b7280'} shape="dot" />
 												{m.category}
 											</span>
 										{:else}

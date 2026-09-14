@@ -1,5 +1,8 @@
 <script lang="ts">
 	import Backlinks from '$lib/components/Backlinks.svelte';
+	import Swatch from '$lib/components/Swatch.svelte';
+	import { setRoomAction } from '$lib/room-action.svelte';
+	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { enhance } from '$app/forms';
 	import FormError from '$lib/components/FormError.svelte';
@@ -97,40 +100,44 @@
 			}
 		}
 	}
+
+	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
+	setRoomAction(() => ({
+		label: 'New activity',
+		open: showForm,
+		run: () => {
+			showForm = !showForm;
+			editingId = null;
+			if (!showForm) return;
+			tick().then(() => {
+				const nameInput = document.querySelector<HTMLInputElement>('#activity-name');
+				nameInput?.focus();
+			});
+		}
+	}));
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<div class="flex items-center justify-end gap-2">
-		<button
-			onclick={() => {
-				showCategoryForm = !showCategoryForm;
-				editingCategoryId = null;
-				if (showCategoryForm) {
-					newCatColor = CATEGORY_DEFAULT_NEW;
-				}
-			}}
-			class="btn btn-sm"
-			data-tour="activity-categories"
-		>
-			{showCategoryForm ? 'Hide Categories' : 'Manage Categories'}
-		</button>
-		<button
-			onclick={() => {
-				showForm = !showForm;
-				editingId = null;
-				if (!showForm) return;
-				tick().then(() => {
-					const nameInput = document.querySelector<HTMLInputElement>('#activity-name');
-					nameInput?.focus();
-				});
-			}}
-			class="btn btn-primary btn-sm"
-		>
-			New activity
-		</button>
-	</div>
+	<RoomToolbar>
+		{#snippet tools()}
+			<button
+				onclick={() => {
+					showCategoryForm = !showCategoryForm;
+					editingCategoryId = null;
+					if (showCategoryForm) {
+						newCatColor = CATEGORY_DEFAULT_NEW;
+					}
+				}}
+				aria-pressed={showCategoryForm}
+				class="btn btn-sm"
+				data-tour="activity-categories"
+			>
+				{showCategoryForm ? 'Hide categories' : 'Manage categories'}
+			</button>
+		{/snippet}
+	</RoomToolbar>
 
 	<Modal bind:open={showCategoryForm} error={form?.message} title="Categories" size="sm">
 		<div class="space-y-3">
@@ -173,10 +180,7 @@
 								</button>
 							</form>
 						{:else}
-							<span
-								class="inline-block h-4 w-4 shrink-0 border border-gray-200"
-								style="background-color: {cat.color}"
-							></span>
+							<Swatch color={cat.color} shape="tall" />
 							<span class="flex-1 text-sm text-gray-900">{cat.name}</span>
 							<button
 								title="Edit"
@@ -372,7 +376,7 @@
 					use:keepInView={i === selectedIndex}
 					class="flex flex-col gap-2 px-4 py-3 transition-colors sm:flex-row sm:items-center sm:gap-4 {i ===
 					selectedIndex
-						? 'ring-2 ring-gray-900 ring-inset'
+						? 'kbd-cursor'
 						: ''} {!activity.active ? 'opacity-50' : ''}"
 					style="border-left: 4px solid {catColor(activity.categoryId)}"
 				>

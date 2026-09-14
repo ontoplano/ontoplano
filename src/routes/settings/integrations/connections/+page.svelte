@@ -468,7 +468,7 @@ Token: ${token}`;
 						use:keepInView={selectedIndex === i}
 						class="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-4 {selectedIndex ===
 						i
-							? 'ring-2 ring-gray-900 ring-inset'
+							? 'kbd-cursor'
 							: ''}"
 					>
 						<div class="min-w-0 flex-1">

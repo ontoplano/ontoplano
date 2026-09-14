@@ -1,5 +1,7 @@
 <script lang="ts">
 	import NumberBox from '$lib/components/NumberBox.svelte';
+	import { setRoomAction } from '$lib/room-action.svelte';
+	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { enhance } from '$app/forms';
@@ -44,31 +46,32 @@
 			showForm = true;
 		}
 	}
+
+	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
+	setRoomAction(() => ({
+		label: 'New recipe',
+		tour: 'recipe-new',
+		kbd: keyFor('/health/recipes', 'new'),
+		run: () => (showForm = true)
+	}));
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<div class="flex flex-wrap items-center justify-between gap-3">
-		<h1 class="text-lg font-bold text-gray-900">Recipes</h1>
-		<div class="flex flex-wrap items-center gap-2">
+	<RoomToolbar>
+		{#snippet tools()}
 			{#if data.recipes.length > 0}
-				<button onclick={() => (onlyMakeable = !onlyMakeable)} class="btn btn-sm">
+				<button
+					onclick={() => (onlyMakeable = !onlyMakeable)}
+					aria-pressed={onlyMakeable}
+					class="btn btn-sm"
+				>
 					{onlyMakeable ? 'Show all' : 'What I can make now'}
 				</button>
 			{/if}
-			<button
-				onclick={() => (showForm = true)}
-				class="btn btn-primary btn-sm"
-				data-tour="recipe-new"
-			>
-				<Icon name="plus" /> New recipe
-				<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
-					>{keyFor('/health/recipes', 'new')}</kbd
-				>
-			</button>
-		</div>
-	</div>
+		{/snippet}
+	</RoomToolbar>
 
 	<FormError message={form?.message} />
 

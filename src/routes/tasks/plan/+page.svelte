@@ -1,5 +1,8 @@
 <script lang="ts">
 	import NumberBox from '$lib/components/NumberBox.svelte';
+	import PeriodNav from '$lib/components/PeriodNav.svelte';
+	import Swatch from '$lib/components/Swatch.svelte';
+	import { setRoomAction } from '$lib/room-action.svelte';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Banner from '$lib/components/Banner.svelte';
@@ -2280,6 +2283,21 @@
 			if (moved) (source as Slot).recurrence = serialiseRecurrence(moved);
 		} else (source as Exceptional).date = date;
 	}
+
+	/*
+	 * This screen's one verb, drawn by the room's bar — see $lib/room-action.
+	 *
+	 * One button, not two. "+ One-off" and "+ Weekly" made you answer "how
+	 * often does this repeat" before you had said what it was — and the form
+	 * asks the same question again, two lines below the name. So it opens the
+	 * form on the day you are looking at, and both keyboard shortcuts still
+	 * open it at their own setting.
+	 */
+	setRoomAction(() => ({
+		label: 'New block',
+		open: showForm,
+		run: () => (showForm ? closeForm() : startNew('weekly'))
+	}));
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -2334,19 +2352,15 @@
 			far edge of a wide screen, a metre of nothing between it and the date
 			it belonged to.
 		-->
-		<div class="flex w-full items-center gap-2 sm:w-auto">
-			<button
-				onclick={goToPrevWeek}
-				disabled={!data.range.prev}
-				class="icon-btn h-11 w-11 shrink-0 disabled:opacity-30"
-				title={`Back one ${effectiveView} ([)`}
-				aria-label="Back one {effectiveView}"
-			>
-				<Icon name="arrow-left" size={22} />
-			</button>
-
-			<!-- Where you are, in words, between the two things that change it. -->
-			<span class="min-w-0 flex-1 truncate text-center text-sm text-gray-600 sm:flex-none">
+		<PeriodNav
+			unit={effectiveView}
+			atNow={data.range.isCurrent}
+			prevDisabled={!data.range.prev}
+			onprev={goToPrevWeek}
+			onnext={goToNextWeek}
+			onnow={goToToday}
+		>
+			<span class="truncate text-sm text-gray-600">
 				{#if effectiveView === 'month'}
 					{monthLabel(data.range.month)}
 				{:else if effectiveView === 'day'}
@@ -2361,20 +2375,7 @@
 					{/if}
 				{/if}
 			</span>
-
-			{#if !data.range.isCurrent}
-				<button onclick={goToToday} class="btn btn-sm shrink-0" title="Back to today">Today</button>
-			{/if}
-
-			<button
-				onclick={goToNextWeek}
-				class="icon-btn h-11 w-11 shrink-0"
-				title="Forward one {effectiveView} (])"
-				aria-label="Forward one {effectiveView}"
-			>
-				<Icon name="arrow-right" size={22} />
-			</button>
-		</div>
+		</PeriodNav>
 
 		<!-- Pinned right on a laptop; on a phone it takes the second line whole, so
 		     the two controls sit at the ends instead of huddling in one corner. -->
@@ -2410,24 +2411,6 @@
 					>
 				{/each}
 			</div>
-
-			<!--
-				One button, not two.
-
-				"+ One-off" and "+ Weekly" made you answer "how often does this
-				repeat" before you had said what it was — and the form asks the
-				same question again, with the answer changeable, two lines below
-				the name. So the toolbar asks nothing: it opens the form on the
-				day you are looking at, and the repeat control is where it always
-				was. Both keyboard shortcuts still open it at their own setting.
-			-->
-			<button
-				onclick={() => (showForm ? closeForm() : startNew('weekly'))}
-				class="btn btn-sm btn-primary"
-				title="New block (n)"
-			>
-				{showForm ? 'Cancel' : '+ New'}
-			</button>
 		</div>
 	</div>
 
@@ -2665,10 +2648,7 @@
 							<ul class="divide-y divide-gray-200">
 								{#each data.feeds as feed (feed.id)}
 									<li class="flex flex-wrap items-center gap-3 px-4 py-3">
-										<span
-											class="h-3 w-1 shrink-0 rounded-full"
-											style="background-color: {feed.color}"
-										></span>
+										<Swatch color={feed.color} />
 										<div class="min-w-0 flex-1">
 											<p class="truncate text-sm text-gray-900">{feed.name}</p>
 											{#if feed.lastError}
@@ -3533,10 +3513,7 @@
 						title="Drag onto the grid, or tap and then tap a time"
 					>
 						{#if todo.categoryColor}
-							<span
-								class="mr-1 inline-block h-2 w-1 align-middle"
-								style="background-color: {todo.categoryColor}"
-							></span>
+							<Swatch color={todo.categoryColor} />
 						{/if}
 						{todo.title}
 						<!--

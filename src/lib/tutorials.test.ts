@@ -72,7 +72,12 @@ describe('the guided tours', () => {
 			 * anchor, as `TodoRows` does for its list and its new button.
 			 */
 			const written =
-				markup.includes(`data-tour="${anchor}"`) || new RegExp(`Tour="${anchor}"`).test(markup);
+				markup.includes(`data-tour="${anchor}"`) ||
+				new RegExp(`Tour="${anchor}"`).test(markup) ||
+				// The screen's primary verb is declared rather than drawn — the
+				// room's bar draws it, wherever the page happens to be. See
+				// `$lib/room-action`.
+				new RegExp(`tour: '${anchor}'`).test(markup);
 			if (anchor && !written) dangling.push(anchor);
 		}
 

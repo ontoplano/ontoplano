@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { setRoomAction } from '$lib/room-action.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { enhance } from '$app/forms';
@@ -93,6 +94,14 @@
 			year: 'numeric'
 		});
 	}
+
+	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
+	setRoomAction(() => ({
+		label: 'New person',
+		tour: 'people-new',
+		kbd: keyFor('/notebooks/people', 'new'),
+		run: openCreate
+	}));
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -102,19 +111,11 @@
 		No second heading: the room's name is above and the People tab is lit,
 		so a page saying "People" under both said it three times.
 	-->
-	<div class="flex flex-wrap items-center justify-end gap-3">
-		<button onclick={openCreate} class="btn btn-primary btn-sm" data-tour="people-new">
-			<Icon name="plus" /> New person
-			<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
-				>{keyFor('/notebooks/people', 'new')}</kbd
-			>
-		</button>
-	</div>
 
 	<FormError message={form?.message} />
 
 	<div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-		<Card title="Everyone" accent={SECTION_COLORS.diary} flush>
+		<Card accent={SECTION_COLORS.diary} flush>
 			{#if data.people.length === 0}
 				<EmptyState
 					icon="user"
@@ -138,9 +139,7 @@
 						-->
 						<div
 							use:keepInView={selectedIndex === i}
-							class="list-row {selectedIndex === i
-								? 'bg-gray-100 ring-2 ring-gray-900 ring-inset'
-								: ''}"
+							class="list-row {selectedIndex === i ? 'kbd-cursor' : ''}"
 						>
 							<div class="list-row-main flex min-w-0 items-center gap-3">
 								<!--

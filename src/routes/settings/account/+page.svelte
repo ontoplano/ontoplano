@@ -377,11 +377,7 @@
 
 		<div class="divide-y divide-gray-200 border-t border-gray-200" data-tour="account-sessions">
 			{#each data.sessions as s, i (s.id)}
-				<div
-					class="flex items-center gap-4 px-4 py-3 {selected === i
-						? 'bg-gray-100 ring-2 ring-gray-900 ring-inset'
-						: ''}"
-				>
+				<div class="flex items-center gap-4 px-4 py-3 {selected === i ? 'kbd-cursor' : ''}">
 					<div class="min-w-0 flex-1">
 						<p class="text-sm font-medium text-gray-900">
 							{s.device}

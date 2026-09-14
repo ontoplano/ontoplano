@@ -28,8 +28,10 @@ describe('the screen moves when you ask it to', () => {
 			const source = readFileSync(file, 'utf8');
 
 			// The movement itself: a copy of the outgoing screen is sent off and
-			// the panel behind it is brought on.
-			const movement = /slideAway\([^)]*\);\s*\n\s*slideOn\(/;
+			// the panel behind it is brought on. The arrival is kept — `landOn`
+			// asks whether it is still running when the data finally lands — so
+			// the second half may be assigned rather than called bare.
+			const movement = /slideAway\([^)]*\);\s*\n\s*(?:\w+ = )?slideOn\(/;
 			expect(movement.test(source), 'both halves of the movement are here').toBe(true);
 
 			// And the block they sit in is the one that runs at the press.

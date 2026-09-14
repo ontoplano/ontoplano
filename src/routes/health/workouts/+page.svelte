@@ -1,5 +1,7 @@
 <script lang="ts">
 	import NumberBox from '$lib/components/NumberBox.svelte';
+	import { setRoomAction } from '$lib/room-action.svelte';
+	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { enhance } from '$app/forms';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -225,20 +227,23 @@
 			...(thisYear ? {} : { year: 'numeric' })
 		});
 	}
+
+	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
+	setRoomAction(() => ({
+		label: 'New workout',
+		run: openNew
+	}));
 </script>
 
 <div class="space-y-4">
-	<div class="flex items-center justify-between">
-		<p class="text-sm text-gray-500">Workouts you can drop onto the week like a meal.</p>
-		<div class="flex items-center gap-2">
+	<RoomToolbar>
+		{#snippet tools()}
 			<button class="btn btn-sm btn-quiet" onclick={() => (showCategories = true)}
 				>Categories</button
 			>
-			<button class="btn btn-primary btn-sm" onclick={openNew}>
-				<Icon name="plus" /> New workout
-			</button>
-		</div>
-	</div>
+			<p class="text-sm text-gray-500">Workouts you can drop onto the week like a meal.</p>
+		{/snippet}
+	</RoomToolbar>
 
 	{#if active.length === 0}
 		<EmptyState

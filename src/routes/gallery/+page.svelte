@@ -1,5 +1,7 @@
 <script lang="ts">
 	import RoomBar from '$lib/components/RoomBar.svelte';
+	import { setRoomAction } from '$lib/room-action.svelte';
+	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { deserialize, enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -180,6 +182,9 @@
 
 	let renaming: (typeof data.albums)[number] | null = $state(null);
 	let confirmingDelete: (typeof data.albums)[number] | null = $state(null);
+
+	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
+	setRoomAction(() => ({ label: 'New album', run: () => (showNew = true) }));
 </script>
 
 <!--
@@ -321,32 +326,27 @@
 {/snippet}
 
 <div class="space-y-4">
-	<RoomBar title="Gallery">
-		{#snippet actions()}
-			<span class="flex items-center gap-2">
-				<!-- A folder of pictures, with its subfolders as albums. -->
-				<!-- Ask first: what is in this folder, and what would be refused. -->
-				<form method="post" action="?/planFolder" bind:this={planForm} use:enhance>
-					<input type="hidden" name="files" />
-					<label class="btn btn-sm cursor-pointer">
-						<Icon name="download" /> Import a folder
-						<input
-							type="file"
-							accept="image/png,image/jpeg,image/gif,image/webp"
-							multiple
-							use:directory
-							class="hidden"
-							onchange={folderChosen}
-						/>
-					</label>
-				</form>
-
-				<button class="btn btn-primary btn-sm" onclick={() => (showNew = true)}>
-					<Icon name="plus" /> New album
-				</button>
-			</span>
+	<RoomBar title="Gallery" />
+	<RoomToolbar>
+		{#snippet tools()}
+			<!-- A folder of pictures, with its subfolders as albums. -->
+			<!-- Ask first: what is in this folder, and what would be refused. -->
+			<form method="post" action="?/planFolder" bind:this={planForm} use:enhance>
+				<input type="hidden" name="files" />
+				<label class="btn btn-sm cursor-pointer">
+					<Icon name="download" /> Import a folder
+					<input
+						type="file"
+						accept="image/png,image/jpeg,image/gif,image/webp"
+						multiple
+						use:directory
+						class="hidden"
+						onchange={folderChosen}
+					/>
+				</label>
+			</form>
 		{/snippet}
-	</RoomBar>
+	</RoomToolbar>
 
 	<!--
 		What would happen, before it happens.

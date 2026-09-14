@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { SvelteSet } from 'svelte/reactivity';
+	import { setRoomAction } from '$lib/room-action.svelte';
+	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { NOTEBOOK_SEPARATOR } from '$lib/services/notebooks';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -89,18 +91,22 @@
 		if (n.goals) parts.push(`${n.goals} ${n.goals === 1 ? 'goal' : 'goals'}`);
 		return parts.join(' · ') || 'nothing in it yet';
 	}
+
+	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
+	setRoomAction(() => ({
+		label: 'New notebook',
+		tour: 'notebook-new',
+		kbd: keyFor('/notebooks', 'new'),
+		run: openCreate
+	}));
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
 	<!-- The heading is the layout's — Notes, with this tab lit. -->
-	<div class="flex flex-wrap items-center justify-between gap-3">
-		<p class="page-intro">
-			A subject you write against with no deadline — a book you are reading, a trip, a renovation.
-			Notes, tasks and goals can belong to one, and everything about it collects here.
-		</p>
-		<div class="flex flex-wrap items-center gap-2">
+	<RoomToolbar>
+		{#snippet tools()}
 			<!--
 				The importer used to be a link to a settings page, which is a page
 				nobody goes looking for and which is headed "An Obsidian vault" —
@@ -117,14 +123,12 @@
 			>
 				Import markdown
 			</button>
-			<button onclick={openCreate} class="btn btn-primary btn-sm" data-tour="notebook-new">
-				<Icon name="plus" /> New notebook
-				<kbd class="border border-gray-600 bg-gray-800 px-1 text-xs"
-					>{keyFor('/notebooks', 'new')}</kbd
-				>
-			</button>
-		</div>
-	</div>
+		{/snippet}
+	</RoomToolbar>
+	<p class="page-intro">
+		A subject you write against with no deadline — a book you are reading, a trip, a renovation.
+		Notes, tasks and goals can belong to one, and everything about it collects here.
+	</p>
 
 	<FormError message={form?.message} />
 
@@ -160,7 +164,7 @@
 	{/if}
 
 	<div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.8fr)]">
-		<Card title="Notebooks" accent={SECTION_COLORS.diary} flush>
+		<Card accent={SECTION_COLORS.diary} flush>
 			{#if data.notebooks.length === 0}
 				<EmptyState
 					icon="notebook"

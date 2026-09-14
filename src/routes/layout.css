@@ -502,7 +502,17 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 		margin-inline: calc(-1 * var(--page-gutter));
 		padding-inline: var(--page-gutter);
 		padding-top: calc(var(--safe-top) + 0.75rem);
-		background-color: var(--color-gray-100);
+		/*
+		 * The room's own colour, exactly as `.page-surface` takes it — the bar
+		 * is the top of the page it is stuck to, not a slab laid over it. It
+		 * was a flat grey, so the phone was the one place where moving between
+		 * rooms changed nothing above the tabs.
+		 */
+		background-color: color-mix(in srgb, var(--section-accent) 4%, var(--color-gray-100));
+	}
+
+	html[data-style='playful'] .room-bar {
+		background-color: color-mix(in srgb, var(--section-accent) 9%, var(--color-gray-100));
 	}
 }
 
@@ -1077,6 +1087,21 @@ label:has(> input[type='radio']:not(:disabled)) {
 		translate: 0 0;
 	}
 
+	/*
+	 * A toggle that is on looks on.
+	 *
+	 * "Show completed" and "Hide completed" told you what pressing would do
+	 * and never which way the switch was set — the same button, two labels,
+	 * no state. `aria-pressed` is the honest answer for a screen reader, so
+	 * it is what the eye reads too.
+	 */
+	.btn[aria-pressed='true'] {
+		border-color: var(--color-gray-900);
+		background-color: color-mix(in srgb, var(--color-gray-900) 12%, var(--btn-face));
+		color: var(--color-gray-900);
+		font-weight: 600;
+	}
+
 	.btn-primary {
 		--btn-ink: var(--ink-on-fill);
 		--btn-ink-hover: var(--ink-on-fill);
@@ -1337,6 +1362,31 @@ label:has(> input[type='radio']:not(:disabled)) {
 		.row-actions-stack .icon-btn {
 			width: var(--row-action-size);
 			height: var(--row-action-size);
+		}
+	}
+
+	/*
+	 * Where the keyboard cursor is — and only where there is a keyboard.
+	 *
+	 * Eight lists drew this as `ring-2 ring-gray-900 ring-inset`, and every
+	 * one of them starts at index 0: on a phone, which has no arrow keys to
+	 * move it with, the first row of every list wore a hard white outline
+	 * that looked like a stuck tap. It is a mouse-and-keyboard affordance, so
+	 * it is drawn for a mouse and a keyboard.
+	 */
+	.kbd-cursor {
+		background-color: var(--color-gray-100);
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.kbd-cursor {
+			box-shadow: inset 0 0 0 2px var(--color-gray-900);
+		}
+	}
+
+	@media (pointer: coarse) {
+		.kbd-cursor {
+			background-color: transparent;
 		}
 	}
 

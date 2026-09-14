@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import PeriodNav from '$lib/components/PeriodNav.svelte';
+	import Swatch from '$lib/components/Swatch.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { ActionData, PageData } from './$types';
@@ -137,45 +139,28 @@
 </script>
 
 <div class="space-y-4">
-	<!-- ← week → as one block, arrows hugging what they move — the same shape
-	     the plan's header has, because they are the same control. -->
-	<div class="flex items-center gap-2">
-		<button
-			class="icon-btn h-11 w-11 shrink-0"
-			title="Previous week ([)"
-			aria-label="Previous week"
-			onclick={() =>
-				// The route is resolved; the rule cannot see through the query string.
-				// eslint-disable-next-line svelte/no-navigation-without-resolve
-				goto(`${resolve('/tasks/review')}?week=${data.week.prev}`)}
-		>
-			<Icon name="arrow-left" size={22} />
-		</button>
-
-		<div class="min-w-0">
-			<h2 class="text-base font-semibold text-gray-900">
-				Week {data.week.number}, {data.week.year}
-			</h2>
-			<p class="truncate text-sm text-gray-500">
-				{pretty(data.reading.weekStart)} — {pretty(data.reading.weekEnd)}
-				{#if data.week.isCurrent}
-					· still running
-				{/if}
-			</p>
-		</div>
-
-		<button
-			class="icon-btn h-11 w-11 shrink-0"
-			title="Next week (])"
-			aria-label="Next week"
-			onclick={() =>
-				// The route is resolved; the rule cannot see through the query string.
-				// eslint-disable-next-line svelte/no-navigation-without-resolve
-				goto(`${resolve('/tasks/review')}?week=${data.week.next}`)}
-		>
-			<Icon name="arrow-right" size={22} />
-		</button>
-	</div>
+	<PeriodNav
+		unit="week"
+		nowLabel="This week"
+		atNow={data.week.isCurrent}
+		onprev={() =>
+			// The route is resolved; the rule cannot see through the query string.
+			// eslint-disable-next-line svelte/no-navigation-without-resolve
+			goto(`${resolve('/tasks/review')}?week=${data.week.prev}`)}
+		onnext={() =>
+			// eslint-disable-next-line svelte/no-navigation-without-resolve
+			goto(`${resolve('/tasks/review')}?week=${data.week.next}`)}
+	>
+		<h2 class="text-base font-semibold text-gray-900">
+			Week {data.week.number}, {data.week.year}
+		</h2>
+		<p class="truncate text-sm text-gray-500">
+			{pretty(data.reading.weekStart)} — {pretty(data.reading.weekEnd)}
+			{#if data.week.isCurrent}
+				· still running
+			{/if}
+		</p>
+	</PeriodNav>
 
 	{#if data.reading.planned === 0}
 		<div class="border border-gray-200 bg-white shadow-card">
@@ -210,6 +195,20 @@
 							{data.reading.skipped} skipped.
 						{/if}
 					</p>
+
+					<!--
+						A week that has not happened yet is not a week you failed.
+
+						Monday morning read as an autopsy: nought of forty-two, nought
+						per cent, nothing moved. The numbers are the same; what they
+						mean while the week is still running is different, and the
+						page says which it is looking at.
+					-->
+					{#if data.week.isCurrent}
+						<p class="text-sm text-gray-500">
+							This week is still running — these fill in as you tick things off.
+						</p>
+					{/if}
 				</div>
 			</Card>
 
@@ -218,10 +217,7 @@
 				<ul class="space-y-2">
 					{#each data.reading.byCategory as cat (cat.id ?? 'none')}
 						<li class="flex items-center gap-2 text-sm">
-							<span
-								class="h-3 w-1 shrink-0 rounded-full"
-								style="background-color: {cat.color ?? CATEGORY_FALLBACK_COLOR}"
-							></span>
+							<Swatch color={cat.color ?? CATEGORY_FALLBACK_COLOR} />
 							<span class="min-w-0 flex-1 truncate text-gray-700">{cat.name}</span>
 							<span class="tabular shrink-0 text-xs text-gray-500">
 								{cat.done}/{cat.planned}
@@ -235,7 +231,11 @@
 			     a goal's value has no history, so this can only say it was touched. -->
 			<Card title="Goals you touched" accent="var(--section-accent)">
 				{#if data.goals.length === 0}
-					<EmptyState icon="goals" title="No goal moved that week" compact />
+					<EmptyState
+						icon="goals"
+						title={data.week.isCurrent ? 'No goal moved yet' : 'No goal moved that week'}
+						compact
+					/>
 				{:else}
 					<ul class="space-y-2">
 						{#each data.goals as goal (goal.id)}
@@ -316,10 +316,7 @@
 							<ul class="divide-y divide-gray-200">
 								{#each day.items as item (item.id)}
 									<li class="flex items-center gap-3 px-4 py-2 hover:bg-gray-50">
-										<span
-											class="h-3 w-1 shrink-0 rounded-full"
-											style="background-color: {item.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
-										></span>
+										<Swatch color={item.categoryColor ?? CATEGORY_FALLBACK_COLOR} />
 										<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{item.title}</span>
 										<span class="tabular shrink-0 text-xs text-gray-500">{pretty(item.date)}</span>
 
@@ -416,10 +413,7 @@
 											name="verdict"
 											value="{item.id}:{item.verb}{item.on ? `:${item.on}` : ''}"
 										/>
-										<span
-											class="h-3 w-1 shrink-0 rounded-full"
-											style="background-color: {item.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
-										></span>
+										<Swatch color={item.categoryColor ?? CATEGORY_FALLBACK_COLOR} />
 										<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{item.title}</span>
 										<span class="shrink-0 text-xs font-medium text-gray-600">
 											{VERB_LABELS[item.verb]}{item.on ? ` · ${pretty(item.on)}` : ''}

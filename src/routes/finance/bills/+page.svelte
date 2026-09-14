@@ -1,5 +1,6 @@
 <script lang="ts">
 	import NumberBox from '$lib/components/NumberBox.svelte';
+	import { setRoomAction } from '$lib/room-action.svelte';
 	import { enhance } from '$app/forms';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -118,6 +119,9 @@
 		}
 		return line;
 	}
+
+	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
+	setRoomAction(() => ({ label: 'New bill', run: openNew }));
 </script>
 
 <div class="space-y-5">
@@ -134,11 +138,6 @@
 		<div>
 			<div class="text-xs text-gray-500">Difference</div>
 			<div class="text-lg font-semibold text-gray-900">{gapText(data.summary.difference)}</div>
-		</div>
-		<div class="ml-auto">
-			<button class="btn btn-primary btn-sm" onclick={openNew}>
-				<Icon name="plus" /> New bill
-			</button>
 		</div>
 	</div>
 
