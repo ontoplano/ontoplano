@@ -384,11 +384,108 @@ if (rasteriser) {
 	stale += pngs.length;
 }
 
+/**
+ * Where the mark's ring ends and its middle begins, as a fraction of the half
+ * width — and the colour of each of the ring's sides.
+ *
+ * The wheel the rooms open in is the mark at two hundred and ninety pixels:
+ * its ring is the wheel's rim and its middle is the hole you let go in. Both
+ * of those are properties of the drawing, so both are measured off it here
+ * rather than typed into a component as numbers that were right in September.
+ *
+ * The ring is read along a ray from the centre: the middle is coloured, the
+ * field between the middle and the ring is nearly black, and the ring is
+ * coloured again. The first dark pixel going outward is the edge of the
+ * middle; the colour at the outermost band, sampled at the midpoint of each
+ * side, is what that side is painted.
+ */
+function markParts(polygon) {
+	const rendered = markAlpha();
+	if (!rendered || !polygon) return null;
+	const { pixels, width, height } = rendered;
+	const cx = width / 2;
+	const cy = height / 2;
+
+	/** The outline's corners, back in pixels of the sampled raster. */
+	const corners = (polygon.match(/[\d.]+%\s+[\d.]+%/g) ?? []).map((pair) => {
+		const [x, y] = pair.split(/\s+/).map((n) => (parseFloat(n) / 100) * width);
+		return [x, y];
+	});
+	if (corners.length < 3) return null;
+
+	const at = (x, y) => {
+		const i = (Math.round(y) * width + Math.round(x)) * 4;
+		return { r: pixels[i], g: pixels[i + 1], b: pixels[i + 2], a: pixels[i + 3] };
+	};
+	/** Near-black: the field the wedges are laid into. */
+	const dark = (p) => p.a > 24 && p.r + p.g + p.b < 150;
+
+	// Outward from the middle, in eight directions, and the smallest answer —
+	// so a medallion that is not quite centred is not read as bigger than it is.
+	let middle = 1;
+	for (let k = 0; k < 8; k++) {
+		const angle = (k / 8) * Math.PI * 2;
+		for (let r = 4; r < cx; r++) {
+			const p = at(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
+			if (dark(p)) {
+				middle = Math.min(middle, r / cx);
+				break;
+			}
+		}
+	}
+
+	/*
+	 * And each side's colour, at the midpoint of the side.
+	 *
+	 * Off the measured corners rather than off an idealised octagon, so the
+	 * colours come back in the same order as the points they belong to — the
+	 * rim is drawn as one segment per side, and a list that starts in the wrong
+	 * place is a rim with its colours rotated.
+	 *
+	 * Pulled a tenth of the way toward the middle: the midpoint of a side sits
+	 * exactly on the outline, where the pixels are half transparent, and a
+	 * sample there comes back as a wash of the ring and whatever is behind it.
+	 */
+	const edges = corners.map(([ax, ay], i) => {
+		const [bx, by] = corners[(i + 1) % corners.length];
+		const mx = (ax + bx) / 2;
+		const my = (ay + by) / 2;
+		const p = at(mx + (cx - mx) * 0.1, my + (cy - my) * 0.1);
+		return `#${[p.r, p.g, p.b].map((n) => n.toString(16).padStart(2, '0')).join('')}`;
+	});
+
+	return { middle: Number(middle.toFixed(4)), edges };
+}
+
 const polygon = outlinePolygon();
 if (polygon) {
+	const parts = markParts(polygon);
 	write(
 		'src/lib/logo/mark-shape.ts',
-		`${'/'}**\n * The mark's own outline, measured from \`mark.png\` by \`yarn icons\`.\n *\n * Do not edit: replace the logo and run \`yarn icons\` instead. It is what lets\n * the phone bar's raised button be the shape of the mark rather than a circle\n * with the mark inside it.\n */\nexport const MARK_CLIP_PATH =\n\t'polygon(${polygon})';\n`
+		[
+			`${'/'}**`,
+			` * The mark's own outline, measured from \`mark.png\` by \`yarn icons\`.`,
+			' *',
+			' * Do not edit: replace the logo and run `yarn icons` instead. It is what lets',
+			" * the phone bar's raised button be the shape of the mark rather than a circle",
+			' * with the mark inside it.',
+			' */',
+			`export const MARK_CLIP_PATH =\n\t'polygon(${polygon})';`,
+			'',
+			`${'/'}**`,
+			" * How much of the mark's half width its middle takes, and what colour each",
+			' * side of its ring is.',
+			' *',
+			' * The section wheel is this drawing at two hundred and ninety pixels: the',
+			" * ring is the wheel's rim, and the middle is the hole you let go in to",
+			' * change your mind. Measured rather than typed, for the same reason the',
+			' * outline is.',
+			' */',
+			`export const MARK_MIDDLE = ${parts ? parts.middle : 0.48};`,
+			'',
+			`export const MARK_EDGE_COLOURS = [\n${(parts?.edges ?? []).map((c) => `\t'${c}'`).join(',\n')}\n] as const;`,
+			''
+		].join('\n')
 	);
 } else {
 	console.log('  no rasteriser — src/lib/logo/mark-shape.ts left alone');

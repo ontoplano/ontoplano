@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Logo from '$lib/components/Logo.svelte';
-	import { markPoints } from '$lib/logo/mark-shape';
+	import { MARK_CLIP_PATH, MARK_EDGE_COLOURS, MARK_MIDDLE } from '$lib/logo/mark-shape';
+	import { markCorners, markPoints } from '$lib/logo/mark-geometry';
 	import Icon, { type IconName } from '$lib/components/Icon.svelte';
 	import { wedgeAt, wedgeCentre, wedgeEdges, wedgeStep } from '$lib/radial';
 
@@ -65,7 +66,19 @@
 	const clipId = `pie-mark-${Math.random().toString(36).slice(2, 8)}`;
 
 	const OUTER = 145;
+
+	/**
+	 * How thick the rim is, and how big the hole is.
+	 *
+	 * The rim is the mark's ring at this size; eight pixels is what that ring
+	 * looks like when the whole drawing is two hundred and ninety across. The
+	 * hole is the mark's middle at the same scale, so the medallion in it is
+	 * the size it would be if the wheel simply were the logo — which is the
+	 * idea.
+	 */
+	const RIM = 8;
 	const INNER = 57;
+	const HOLE = INNER - 2;
 	/** Room for the ring plus the shadow it casts. */
 	const PAD = 13;
 
@@ -370,12 +383,7 @@
 					muscle memory never registers. On its own surface the same tint
 					reads as the section it stands for.
 				-->
-				<polygon
-					points={markPoints(OUTER)}
-					fill="var(--color-white)"
-					stroke="var(--color-gray-200)"
-					stroke-width="1"
-				/>
+				<polygon points={markPoints(OUTER)} fill="var(--color-white)" />
 
 				<!--
 					Cut to the octagon, which is what makes each wedge a trapezoid.
@@ -449,14 +457,36 @@
 				     an element, not a shape, so it is the same picture as everywhere
 				     else rather than a copy of it in paths. -->
 				<polygon
-					points={markPoints(INNER - 2)}
-					class="fill-white stroke-gray-300"
-					stroke-width="1.5"
+					points={markPoints(HOLE)}
+					class="fill-white"
 					style="pointer-events: auto"
 					onpointerenter={() => (active = -1)}
 					onclick={() => afterOpening(onclose)}
 					role="presentation"
 				/>
+
+				<!--
+					The ring, on the outside where it belongs.
+					
+					One segment per side, each the colour that side is painted in the
+					mark — sampled off the picture by `yarn icons`, like the outline
+					itself. Drawn last so the wedges end under it rather than beside
+					it: the rim is the edge of the whole thing, not a border around
+					each piece.
+				-->
+				{#each markCorners(OUTER) as corner, i (i)}
+					{@const next = markCorners(OUTER)[(i + 1) % MARK_EDGE_COLOURS.length]}
+					<line
+						x1={corner.x}
+						y1={corner.y}
+						x2={next.x}
+						y2={next.y}
+						stroke={MARK_EDGE_COLOURS[i % MARK_EDGE_COLOURS.length]}
+						stroke-width={RIM}
+						stroke-linecap="square"
+						style="pointer-events: none"
+					/>
+				{/each}
 			</svg>
 
 			<!--
@@ -467,11 +497,26 @@
 				where you started. Nothing under the pointer moves when the wheel
 				opens, which is the whole reason the gesture is safe.
 			-->
+			<!--
+				The middle of the mark, without the ring around it.
+				
+				The ring is the wheel's rim now, so drawing the whole picture in here
+				as well would be the same octagon twice, one of them the size of a
+				coin. The mark is drawn big enough that its ring falls outside this
+				box — `MARK_MIDDLE` is how much of it the middle takes, measured off
+				the picture — and the box is cut to the mark's own shape, so what is
+				left is the medallion and the field it sits on.
+			-->
 			<span
-				class="pie-mark pointer-events-none absolute"
-				style="width: {(INNER - 2) * 2}px; height: {(INNER - 2) * 2}px"
+				class="pie-mark pointer-events-none absolute overflow-hidden"
+				style="width: {HOLE * 2}px; height: {HOLE * 2}px; clip-path: {MARK_CLIP_PATH}"
 			>
-				<Logo fill />
+				<span
+					class="absolute top-1/2 left-1/2 block -translate-x-1/2 -translate-y-1/2"
+					style="width: {(HOLE / MARK_MIDDLE) * 2}px; height: {(HOLE / MARK_MIDDLE) * 2}px"
+				>
+					<Logo fill />
+				</span>
 			</span>
 		</div>
 	</div>

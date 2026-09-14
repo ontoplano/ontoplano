@@ -20,9 +20,10 @@ releases mattered.
 
 ## 0.171.0 — 2026-09-14
 
-- **The section wheel is the shape of the mark.** An octagon with the same
-  edge as the logo, the rooms as trapezoids around it, and the mark itself in
-  the middle — which is the way out, the same button you pressed to get there.
+- **The section wheel is the mark, at wheel size.** An octagon with the same
+  edge as the logo, the logo's own coloured ring as its rim, the rooms as
+  trapezoids inside it, and the medallion from the middle of the mark in the
+  hole — which is the way out, the same button you pressed to get there.
 - **It grows out of that button.** The wheel comes out of the mark at the mark's
   own size, so the thing under your finger stays put and the rooms bloom around
   it. On a phone that means it travels up from the bar as it grows.
