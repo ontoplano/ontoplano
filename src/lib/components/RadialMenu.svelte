@@ -1,7 +1,6 @@
 <script lang="ts">
-	import Logo from '$lib/components/Logo.svelte';
-	import { MARK_CLIP_PATH, MARK_EDGE_COLOURS, MARK_MIDDLE } from '$lib/logo/mark-shape';
-	import { markCorners, markPoints } from '$lib/logo/mark-geometry';
+	import mark from '$lib/logo/mark.png';
+	import { markCorners, markPath, markPoints } from '$lib/logo/mark-geometry';
 	import Icon, { type IconName } from '$lib/components/Icon.svelte';
 	import { wedgeAt, wedgeCentre, wedgeEdges, wedgeStep } from '$lib/radial';
 
@@ -77,8 +76,85 @@
 	 * idea.
 	 */
 	const RIM = 8;
+	const INNER_RIM = 4;
+
+	/**
+	 * How much of the hole the mark in the middle takes.
+	 *
+	 * All of it. The hole is the mark's shape at the same size, so the two edges
+	 * are one edge: the wedges stop where the mark begins and there is no band
+	 * of ground between them for the eye to read as a ring.
+	 */
+	const MIDDLE_INSET = 1;
+
+	/**
+	 * How much of the theme's ink goes into a wedge's glyph and name.
+	 *
+	 * Enough that the eight are plainly legible on either ground, not so much
+	 * that they stop being eight colours. The colour still carries which room
+	 * it is; the ink carries that it is a word.
+	 */
+	const GLYPH_INK = 55;
+
+	/**
+	 * What an edge is when it is nobody's.
+	 *
+	 * Black in both themes, deliberately: the wheel is a dark ring of wedges
+	 * over a dimmed page, and an edge that follows the theme would be a white
+	 * outline in the dark one — a second bright shape competing with the mark
+	 * in the middle. Black reads as the gap between the pieces, which is what
+	 * it is until one of them is chosen.
+	 */
+	const EDGE_DARK = '#000000';
+
+	/**
+	 * The rim, as one filled band per side.
+	 *
+	 * The inner edge is the same outline scaled toward the middle. How far is
+	 * arithmetic rather than taste: moving every side of a polygon inward by
+	 * `RIM` moves its corners inward by `RIM / cos(π/n)`, so the scale that
+	 * gives a band of an even thickness all the way round follows from the
+	 * number of sides the mark happens to have.
+	 */
+	/** One band per side, between an outline and the same outline scaled in. */
+	function bands(radius: number, thickness: number): string[] {
+		const outer = markCorners(radius);
+		const n = outer.length;
+		const inner = markCorners(radius * (1 - thickness / (radius * Math.cos(Math.PI / n))));
+		return outer.map((corner, i) => {
+			const next = (i + 1) % n;
+			return [corner, outer[next], inner[next], inner[i]]
+				.map(({ x, y }) => `${x.toFixed(2)},${y.toFixed(2)}`)
+				.join(' ');
+		});
+	}
+
+	const rim = $derived(bands(OUTER, RIM));
+
 	const INNER = 57;
 	const HOLE = INNER - 2;
+
+	/**
+	 * And the same ring around the hole.
+	 *
+	 * Thinner, because it is a shorter edge and the mark is right behind it —
+	 * at the rim's weight it would read as a second ring on the logo rather
+	 * than as the edge of the wedges.
+	 */
+	const innerRim = $derived(bands(HOLE, INNER_RIM));
+
+	/** The medallion's own radius, once the inset is taken off the hole. */
+	const MEDALLION = HOLE * MIDDLE_INSET;
+
+	/**
+	 * Where a wedge starts, which is inside the hole rather than at its edge.
+	 *
+	 * The hole is an octagon and a wedge is drawn with arcs, so the two only
+	 * meet where the octagon's corners are. Starting at its inner circle — the
+	 * distance to the middle of a side — puts the whole of the hole's outline
+	 * inside painted wedge, and the clip cuts it back to exactly that outline.
+	 */
+	const WEDGE_INNER = HOLE * Math.cos(Math.PI / 8) - 1;
 	/** Room for the ring plus the shadow it casts. */
 	const PAD = 13;
 
@@ -112,6 +188,7 @@
 			held = false;
 			swallowClick = false;
 			travelled = 0;
+			blooming = false;
 			return;
 		}
 		const margin = OUTER + PAD;
@@ -122,6 +199,11 @@
 		};
 		held = dragging;
 		travelled = 0;
+
+		// Arriving. Nothing the pointer sweeps over on the way counts.
+		blooming = true;
+		const settled = setTimeout(() => (blooming = false), BLOOM_MS);
+		return () => clearTimeout(settled);
 	});
 
 	/**
@@ -161,6 +243,28 @@
 
 	/** A press that never went anywhere is a tap, not a gesture. */
 	const DRAG_THRESHOLD = 16;
+
+	/**
+	 * How long the wheel takes to arrive, and the fact that it is still
+	 * arriving.
+	 *
+	 * Nothing under the pointer is chosen while it does. The wheel grows out of
+	 * the button now, which means that for the first frames it is small and
+	 * centred on the pointer — so a wedge sweeps past underneath, its
+	 * `pointerenter` fires, and the thing you have not chosen yet is the thing
+	 * the arrow keys start from. The first press of ArrowRight then lands one
+	 * wedge further along than anybody meant, which is how this was found.
+	 *
+	 * The number is here and the animation is told it, rather than the two
+	 * agreeing by being typed out twice.
+	 */
+	const BLOOM_MS = 190;
+	let blooming = $state(false);
+
+	/** Hovering a wedge chooses it, once the wheel has stopped moving. */
+	function hover(i: number) {
+		if (!blooming) active = i;
+	}
 
 	/**
 	 * Every click the pie accepts has to survive this first.
@@ -266,12 +370,22 @@
 		const at = (r: number, a: number) =>
 			`${(r * Math.cos(a)).toFixed(2)} ${(r * Math.sin(a)).toFixed(2)}`;
 
+		/*
+		 * Drawn from inside the hole, not from the edge of it.
+		 *
+		 * The clip is what cuts the middle out, and it cuts an octagon — whose
+		 * flat sides are nearer the centre than its corners are. A wedge that
+		 * started at the hole's own radius therefore stopped short along four of
+		 * the eight directions, and the ground showed through as a pale ring
+		 * around the mark. Starting inside the octagon's inner circle and letting
+		 * the clip do the work means the two edges are the same edge.
+		 */
 		return [
-			`M ${at(INNER, from)}`,
+			`M ${at(WEDGE_INNER, from)}`,
 			`L ${at(OUTER, from)}`,
 			`A ${OUTER} ${OUTER} 0 ${big} 0 ${at(OUTER, to)}`,
-			`L ${at(INNER, to)}`,
-			`A ${INNER} ${INNER} 0 ${big} 1 ${at(INNER, from)}`,
+			`L ${at(WEDGE_INNER, to)}`,
+			`A ${WEDGE_INNER} ${WEDGE_INNER} 0 ${big} 1 ${at(WEDGE_INNER, from)}`,
 			'Z'
 		].join(' ');
 	}
@@ -360,7 +474,8 @@
 		<div
 			class="pie pointer-events-none absolute"
 			style="left: {centre.x - size / 2}px; top: {centre.y -
-				size / 2}px; width: {size}px; height: {size}px; --pie-from: {grewFrom.x}px {grewFrom.y}px"
+				size /
+					2}px; width: {size}px; height: {size}px; --pie-from: {grewFrom.x}px {grewFrom.y}px; --pie-bloom: {BLOOM_MS}ms"
 		>
 			<svg viewBox="{-size / 2} {-size / 2} {size} {size}" class="h-full w-full overflow-visible">
 				<!--
@@ -371,9 +486,18 @@
 					the rooms sit in has the same edge as the button that opened it and
 					the icon in the middle of it. One shape, three sizes.
 				-->
+				<!--
+					The ring the wedges live in, as one shape with a hole in it.
+					
+					Two octagons and `evenodd`, so the inside edge of every wedge is the
+					mark's shape as well. It was the arc each wedge is drawn with, which
+					put a circle in the middle of a thing made of straight lines — and
+					the mark sitting in that circle looked like it had been dropped in
+					rather than cut from it.
+				-->
 				<defs>
-					<clipPath id={clipId}>
-						<polygon points={markPoints(OUTER)} />
+					<clipPath id={clipId} clip-rule="evenodd">
+						<path d="{markPath(OUTER)} {markPath(HOLE)}" clip-rule="evenodd" />
 					</clipPath>
 				</defs>
 				<!--
@@ -407,7 +531,7 @@
 						<g
 							class="pointer-events-auto cursor-pointer transition-opacity"
 							style="opacity: {active === -1 || on ? 1 : 0.45}"
-							onpointerenter={() => (active = i)}
+							onpointerenter={() => hover(i)}
 							onclick={() => afterOpening(() => onselect(item.key))}
 							role="menuitem"
 							tabindex="-1"
@@ -420,7 +544,22 @@
 								stroke-opacity={on ? 1 : 0.35}
 								stroke-width="1.5"
 							/>
-							<g style="color: {on ? '#fff' : item.color}" transform="translate({p.x} {p.y})">
+							<!--
+							The room's colour, pulled most of the way to the ink.
+							
+							At full strength a wedge's own colour on the wheel's ground is
+							the section reading as a stain rather than as a word: dark
+							violet on a dark panel, pale amber on a light one. `--color-black`
+							is the theme's ink — white in the dark theme, black in the light
+							one — so one expression is high contrast in both, and what
+							survives of the colour is enough to tell the eight apart.
+						-->
+							<g
+								style="color: {on
+									? '#fff'
+									: `color-mix(in srgb, var(--color-black) ${GLYPH_INK}%, ${item.color})`}"
+								transform="translate({p.x} {p.y})"
+							>
 								<!--
 								Lifted by 20 to leave room for the name under it. Where the
 								name is not drawn — a touch screen, see the style block —
@@ -456,37 +595,104 @@
 				     handled on the window above. The mark is drawn over it below —
 				     an element, not a shape, so it is the same picture as everywhere
 				     else rather than a copy of it in paths. -->
+				<!--
+					The logo, whole, in the middle of its own wheel.
+					
+					Not a piece of it: the rim out there is the ring at wheel size and
+					this is the mark at the size of a button — the same picture in two
+					places, which is what a maker's mark in the middle of a thing is.
+					
+					Drawn in the SVG rather than laid over it in HTML. As an element of
+					its own it was a box positioned by percentages against a shape
+					placed by coordinates, and the two agreed to within a few pixels —
+					which showed as a pale ring around the mark in the light theme and
+					was invisible in the dark one. Here it is the same units as the hole
+					it fills.
+				-->
+				<image
+					href={mark}
+					x={-MEDALLION}
+					y={-MEDALLION}
+					width={MEDALLION * 2}
+					height={MEDALLION * 2}
+					style="pointer-events: none"
+				/>
+
 				<polygon
 					points={markPoints(HOLE)}
-					class="fill-white"
-					style="pointer-events: auto"
-					onpointerenter={() => (active = -1)}
+					class="pie-hole"
+					fill="transparent"
+					style="pointer-events: all"
+					onpointerenter={() => hover(-1)}
 					onclick={() => afterOpening(onclose)}
 					role="presentation"
-				/>
+				>
+					<!-- It used to say the word. The mark says it now, which is only
+					     true for somebody looking at it — this is the half that is not,
+					     and it is what the tests press. Not `role="button"`: the way in
+					     from a keyboard is Escape and the arrow keys, on the window, the
+					     same as it is for the wedges. -->
+					<title>Cancel</title>
+				</polygon>
 
 				<!--
 					The ring, on the outside where it belongs.
 					
-					One segment per side, each the colour that side is painted in the
-					mark — sampled off the picture by `yarn icons`, like the outline
-					itself. Drawn last so the wedges end under it rather than beside
-					it: the rim is the edge of the whole thing, not a border around
-					each piece.
+					One band per side, each the colour that side is painted in the mark
+					— sampled off the picture by `yarn icons`, like the outline itself.
+					Drawn last so the wedges end under it rather than beside it: the rim
+					is the edge of the whole thing, not a border around each piece.
+					
+					Filled quadrilaterals rather than eight stroked lines. A stroke is
+					centred on its path and its ends are square, so at every corner two
+					of them overlapped at an angle and left a notch sticking out past
+					the outline — eight little spikes, one per vertex. A band between
+					the outline and the same outline scaled inward meets its neighbour
+					on the bisector, which is a mitre, which is what the ring in the
+					picture has.
 				-->
-				{#each markCorners(OUTER) as corner, i (i)}
-					{@const next = markCorners(OUTER)[(i + 1) % MARK_EDGE_COLOURS.length]}
-					<line
-						x1={corner.x}
-						y1={corner.y}
-						x2={next.x}
-						y2={next.y}
-						stroke={MARK_EDGE_COLOURS[i % MARK_EDGE_COLOURS.length]}
-						stroke-width={RIM}
-						stroke-linecap="square"
-						style="pointer-events: none"
-					/>
+				<!--
+					Both edges, black, until something is chosen.
+					
+					The wheel is a ring of wedges over a dimmed page: an outline that
+					followed the theme would be a white shape in the dark one,
+					competing with the mark in the middle. Black reads as the gap
+					between the pieces, which is what it is until one of them is
+					being pointed at.
+				-->
+				{#each [...rim, ...innerRim] as band, i (i)}
+					<polygon points={band} fill={EDGE_DARK} class="pie-edge" style="pointer-events: none" />
 				{/each}
+
+				<!--
+					And then the chosen room's colour, on the two edges that are its
+					own — the outer rim and the inner one, the two sides of the piece
+					being pointed at.
+					
+					Cut to the wedge rather than worked out side by side. With the
+					eight rooms the app ships a wedge is exactly one side of the
+					octagon, but hide a room and it is one and a half: clipping the
+					whole ring to the wedge's own shape is right for any number of
+					them, and cannot get the mapping wrong because there is no
+					mapping.
+				-->
+				{#if active >= 0}
+					<defs>
+						<clipPath id="{clipId}-lit">
+							<path d={wedgePath(active)} />
+						</clipPath>
+					</defs>
+					<g clip-path="url(#{clipId}-lit)">
+						{#each [...rim, ...innerRim] as band, i (i)}
+							<polygon
+								points={band}
+								fill={items[active].color}
+								class="pie-edge"
+								style="pointer-events: none"
+							/>
+						{/each}
+					</g>
+				{/if}
 			</svg>
 
 			<!--
@@ -497,27 +703,6 @@
 				where you started. Nothing under the pointer moves when the wheel
 				opens, which is the whole reason the gesture is safe.
 			-->
-			<!--
-				The middle of the mark, without the ring around it.
-				
-				The ring is the wheel's rim now, so drawing the whole picture in here
-				as well would be the same octagon twice, one of them the size of a
-				coin. The mark is drawn big enough that its ring falls outside this
-				box — `MARK_MIDDLE` is how much of it the middle takes, measured off
-				the picture — and the box is cut to the mark's own shape, so what is
-				left is the medallion and the field it sits on.
-			-->
-			<span
-				class="pie-mark pointer-events-none absolute overflow-hidden"
-				style="width: {HOLE * 2}px; height: {HOLE * 2}px; clip-path: {MARK_CLIP_PATH}"
-			>
-				<span
-					class="absolute top-1/2 left-1/2 block -translate-x-1/2 -translate-y-1/2"
-					style="width: {(HOLE / MARK_MIDDLE) * 2}px; height: {(HOLE / MARK_MIDDLE) * 2}px"
-				>
-					<Logo fill />
-				</span>
-			</span>
 		</div>
 	</div>
 {/if}
@@ -626,17 +811,11 @@
 	}
 
 	.pie {
-		animation: bloom 190ms cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
+		animation: bloom var(--pie-bloom, 190ms) cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
 		filter: drop-shadow(0 8px 24px rgb(0 0 0 / 0.35));
 		/* Set on the element: where the press happened, so the wheel comes out
 		   of the button rather than out of the middle of the screen. */
 		transform-origin: var(--pie-from, 50% 50%);
-	}
-
-	.pie-mark {
-		left: 50%;
-		top: 50%;
-		transform: translate(-50%, -50%);
 	}
 
 	/*

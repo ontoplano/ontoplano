@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.171.0 — 2026-09-14
 
+- **The wheel's edges are black until you point at something**, and then the
+  two that belong to that room — the outer rim and the inner one — light up in
+  its colour. The mark in the middle stays as it is.
+- **The glyphs read against their ground**, dark on a light wheel and light on
+  a dark one, with enough of the room's colour left to tell the eight apart.
 - **The section wheel is the mark, at wheel size.** An octagon with the same
   edge as the logo, the logo's own coloured ring as its rim, the rooms as
   trapezoids inside it, and the medallion from the middle of the mark in the

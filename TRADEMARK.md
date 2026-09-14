@@ -66,5 +66,5 @@ somebody guess.
 
 ---
 
-*Unregistered marks, used in commerce. This file states a position; it is not
-legal advice and it is not a licence to anything it does not name.*
+_Unregistered marks, used in commerce. This file states a position; it is not
+legal advice and it is not a licence to anything it does not name._

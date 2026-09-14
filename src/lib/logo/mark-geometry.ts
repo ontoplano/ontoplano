@@ -24,3 +24,9 @@ export function markPoints(radius: number): string {
 		.map(({ x, y }) => `${x.toFixed(2)},${y.toFixed(2)}`)
 		.join(' ');
 }
+
+/** The same, as a closed SVG path — for the places that need two of them. */
+export function markPath(radius: number): string {
+	const corners = markCorners(radius);
+	return `${corners.map(({ x, y }, i) => `${i === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`).join(' ')} Z`;
+}

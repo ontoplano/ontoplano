@@ -31,6 +31,18 @@ async function centreOf(page: Page) {
  * how the first version of this test aimed at Todo and hit Note.
  */
 async function pieCentre(page: Page) {
+	/*
+	 * After it has stopped moving.
+	 *
+	 * The wheel grows out of the button that opened it, so for the first fifth
+	 * of a second it is small and sitting over that button — and a box measured
+	 * then has its middle nowhere near where the wheel is going to be. Every
+	 * gesture in this file is aimed from this point, so measuring it early aims
+	 * them at a wedge and the test releases on something it meant to avoid.
+	 */
+	await page
+		.locator('.pie')
+		.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
 	const box = await page.locator('.pie').boundingBox();
 	if (!box) throw new Error('the pie is not open');
 	return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
@@ -46,7 +58,7 @@ test('click the trigger, then pick a wedge', async ({ page }) => {
 	await page.mouse.down();
 	await page.mouse.up();
 
-	await expect(page.getByText('cancel')).toBeVisible();
+	await expect(page.locator('.pie-hole')).toBeVisible();
 	await page.getByText('Idea', { exact: true }).click();
 
 	await expect(page.getByRole('heading', { name: /new idea/i })).toBeVisible();
@@ -91,9 +103,9 @@ test('the arrow keys reach every wedge, and escape leaves', async ({ page }) => 
 	await page.mouse.down();
 	await page.mouse.up();
 
-	await expect(page.getByText('cancel')).toBeVisible();
+	await expect(page.locator('.pie-hole')).toBeVisible();
 	await page.keyboard.press('Escape');
-	await expect(page.getByText('cancel')).toBeHidden();
+	await expect(page.locator('.pie-hole')).toBeHidden();
 
 	// Open again and walk to the third wedge: Note.
 	await page.mouse.down();
@@ -122,7 +134,7 @@ test('letting go in the hole does nothing at all', async ({ page }) => {
 	await page.mouse.up();
 
 	await expect(page.locator('dialog[open]')).toHaveCount(0);
-	await expect(page.getByText('cancel')).toBeHidden();
+	await expect(page.locator('.pie-hole')).toBeHidden();
 });
 
 test('the thumb trigger is for thumbs, and the header one is for cursors', async ({ page }) => {
@@ -158,7 +170,7 @@ test('the section pie lands you in the room', async ({ page }) => {
 	// are tabs inside Notebooks and Health now, not rooms of their own. No
 	// Home either — the bar carries that as a plain button, so no wedge is
 	// spent on it.
-	await expect(page.getByText('cancel')).toBeVisible();
+	await expect(page.locator('.pie-hole')).toBeVisible();
 	for (const room of ['Tasks', 'Goals', 'Notebooks', 'Health', 'Finance', 'Inventory']) {
 		await expect(page.locator('.pie').getByText(room, { exact: true })).toBeVisible();
 	}
@@ -184,9 +196,9 @@ test.describe('with a finger', () => {
 		const box = (await (await trigger(page)).boundingBox())!;
 		await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
 
-		await expect(page.getByText('cancel')).toBeVisible();
+		await expect(page.locator('.pie-hole')).toBeVisible();
 		await page.waitForTimeout(400);
-		await expect(page.getByText('cancel')).toBeVisible();
+		await expect(page.locator('.pie-hole')).toBeVisible();
 	});
 
 	test('the pie is not text you can select', async ({ page }) => {
@@ -195,7 +207,7 @@ test.describe('with a finger', () => {
 
 		const box = (await (await trigger(page)).boundingBox())!;
 		await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
-		await expect(page.getByText('cancel')).toBeVisible();
+		await expect(page.locator('.pie-hole')).toBeVisible();
 
 		// A long press over a wedge used to start a text selection, which took the
 		// gesture away and left the release doing nothing.
