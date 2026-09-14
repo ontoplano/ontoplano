@@ -18,6 +18,15 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.173.3 — 2026-09-14
+
+- **The wait is the menu, turning.** While a screen is loading, the mark that
+  opens the rooms — the corner of the header, the raised button in the phone
+  bar — turns in place, instead of a mark conjured behind the departing
+  screen. Nothing new appears; the thing that is always there does the
+  waiting. Quick navigations still never visibly spin, and with reduced
+  motion the menu holds still.
+
 ## 0.173.2 — 2026-09-14
 
 - **Inside the installed app, nothing opens an outside checkout.** Google

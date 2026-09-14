@@ -490,6 +490,17 @@
 	 * it is the real page, and it is already on screen.
 	 */
 	let givenUp = $state(false);
+	/*
+	 * While the wait is on, the menu itself turns.
+	 *
+	 * There used to be a mark spawned behind the departing screen for this;
+	 * spinning a thing that appeared for the occasion. The mark that opens the
+	 * rooms is already on every screen — the corner of the header, the raised
+	 * button in the phone bar — so that is the one that turns. Its delay comes
+	 * off SLIDE_MS, so a navigation that finishes inside the movement never
+	 * visibly spins at all.
+	 */
+	const waiting = $derived(Boolean(navigating.to) && !givenUp);
 	$effect(() => {
 		if (!navigating.to) {
 			givenUp = false;
@@ -788,7 +799,8 @@
 							onpointerdown={(e) => rooms?.summon(e)}
 							class="pie-handle flex h-8 w-8 items-center justify-center transition hover:brightness-125 {roomsOpen
 								? 'pie-handle-held'
-								: ''}"
+								: ''} {waiting ? 'mark-waiting' : ''}"
+							style="--nav-waiting-delay: {Math.round(SLIDE_MS * WAIT_MARK_AT)}ms"
 							aria-label="Jump to a section"
 							title="Jump to a section"
 							data-tour="rooms"
@@ -1050,25 +1062,6 @@
 					<div bind:this={pageBody}>{@render children()}</div>
 				</div>
 				<div bind:this={roomStage} class="slide-stage" aria-hidden="true"></div>
-
-				<!--
-					What is behind a screen that has left: the wait itself.
-
-					The movement happens the moment you ask for it, so between the old
-					screen going and the new one arriving there is nothing to look at.
-					The mark turns there, underneath the screen on its way out, so it is
-					already turning by the time that screen has cleared. Its delay comes
-					off `SLIDE_MS` rather than being a number here as well.
-				-->
-				{#if navigating.to && !givenUp}
-					<div
-						class="nav-waiting"
-						aria-hidden="true"
-						style="--nav-waiting-delay: {Math.round(SLIDE_MS * WAIT_MARK_AT)}ms"
-					>
-						<Logo size={40} />
-					</div>
-				{/if}
 			</div>
 		</main>
 
@@ -1168,10 +1161,12 @@
 					></span>
 					<button
 						onpointerdown={(e) => rooms?.summon(e)}
-						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-rise)); height: var(--bar-mark); width: var(--bar-mark)"
+						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-rise)); height: var(--bar-mark); width: var(--bar-mark); --nav-waiting-delay: {Math.round(
+							SLIDE_MS * WAIT_MARK_AT
+						)}ms"
 						class="tap tap-shape pie-handle absolute left-1/2 flex -translate-x-1/2 items-center justify-center {roomsOpen
 							? 'pie-handle-held text-chrome-ink'
-							: 'text-chrome-muted'}"
+							: 'text-chrome-muted'} {waiting ? 'bar-mark-waiting' : ''}"
 						aria-label="Go to a section"
 						title="Go to a section"
 						data-tour="rooms"

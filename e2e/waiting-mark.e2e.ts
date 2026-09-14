@@ -3,80 +3,94 @@ import { register } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
- * The mark that turns while you wait sits in one place, whatever page it is
- * waiting on top of.
+ * The wait is the menu, turning.
  *
- * It was positioned at 25% of the frame — and the frame is held at the height
- * of whatever screen just left, so a quarter of the way down a settings page
- * three screens tall is a different place from a quarter of the way down a
- * short one. It moved between every navigation, and starting from halfway down
- * a long page it was above the top of the window, waiting where nobody could
- * see it. Horizontally it never moved, because that half was centred rather
- * than measured off the page.
+ * Nothing is spawned while a navigation is in flight: the mark that opens the
+ * rooms — already in the header, already the raised button in the phone bar —
+ * is the thing that turns. So what is tested is that the mark the screen
+ * already has picks up the turn while a navigation drags, and puts it down
+ * when the page lands.
  *
- * The element is put on the frame here rather than caught mid-navigation: a
- * room loads in a few milliseconds against a local server, and the property
- * being checked is where the app's own CSS puts this element, which does not
- * depend on how it came to be there.
+ * The navigation is made to drag by holding its response, because against a
+ * local server a room loads inside the slide — which is exactly why the delay
+ * exists, and why an unheld navigation must never visibly spin.
  */
-test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+test('the header mark turns while a navigation drags, and stops when it lands', async ({
+	page
+}) => {
+	await register(page, `menu-turn-${Date.now()}@test.invalid`);
+	await visit(page, '/tasks/todo');
 
-/** Where the mark lands on the screen, and how tall the page under it is. */
-const WHERE = `(() => {
-	const frame = document.querySelector('.slide-frame');
-	let mark = document.querySelector('.nav-waiting');
-	if (!mark) {
-		mark = document.createElement('div');
-		mark.className = 'nav-waiting';
-		mark.style.setProperty('--nav-waiting-delay', '0ms');
-		mark.innerHTML = '<div style="width:40px;height:40px"></div>';
-		frame.append(mark);
-	}
-	const box = mark.firstElementChild.getBoundingClientRect();
-	return {
-		top: Math.round(box.top),
-		centre: Math.round(box.left + box.width / 2),
-		inTheWindow: box.top >= 0 && box.bottom <= window.innerHeight,
-		frame: Math.round(frame.getBoundingClientRect().height)
-	};
-})()`;
+	/*
+	 * The app's service worker fetches pages itself, and requests a service
+	 * worker makes cannot be held by route interception — so the hold below
+	 * would silently not hold. The worker is not what is being tested; out it
+	 * goes for this page.
+	 */
+	await page.evaluate(async () => {
+		const registrations = await navigator.serviceWorker.getRegistrations();
+		await Promise.all(registrations.map((r) => r.unregister()));
+	});
+	await visit(page, '/tasks/todo');
 
-test('the waiting mark is in the same place on every page', async ({ page }) => {
-	await register(page, `wait-${Date.now()}@test.invalid`);
+	const mark = page.locator('header [data-tour=rooms]');
+	await expect(mark).toBeVisible();
 
-	const seen: { top: number; centre: number; frame: number }[] = [];
-	for (const where of ['/tasks/board', '/settings/account', '/notebooks']) {
-		await visit(page, where);
-		const at = await page.evaluate(WHERE);
-		expect(at.inTheWindow, `${where}: the mark is off the screen`).toBe(true);
-		seen.push(at);
-	}
+	// Nothing in flight: the menu holds still.
+	await expect(mark).not.toHaveClass(/mark-waiting/);
 
-	// The pages are genuinely different heights — otherwise this proves nothing.
-	const heights = seen.map((s) => s.frame);
-	expect(Math.max(...heights) - Math.min(...heights)).toBeGreaterThan(100);
+	let release: () => void = () => {};
+	const held = new Promise<void>((resolve) => (release = resolve));
+	await page.route('**/goals**', async (route) => {
+		await held;
+		await route.continue();
+	});
 
-	// And the mark did not move.
-	expect(new Set(seen.map((s) => s.top)).size, `tops: ${heights.join()}`).toBe(1);
-	expect(new Set(seen.map((s) => s.centre)).size).toBe(1);
+	await page.getByRole('link', { name: 'Goals' }).click();
+	await expect(mark).toHaveClass(/mark-waiting/);
+	// And the class is wired to a real animation, not a name lost in a rename.
+	await expect
+		.poll(() => mark.evaluate((el) => getComputedStyle(el).animationName))
+		.toContain('mark-turn');
+
+	// Let the page land: the held response goes through, the class comes off.
+	release();
+	await expect(mark).not.toHaveClass(/mark-waiting/);
 });
 
-test('and stays there when the navigation started halfway down a long page', async ({ page }) => {
-	await register(page, `wait-deep-${Date.now()}@test.invalid`);
-	await visit(page, '/settings/account');
+test.describe('on a phone', () => {
+	test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-	const atTop = await page.evaluate(WHERE);
-	await page.evaluate(() => document.querySelector('main')?.scrollTo({ top: 900 }));
-	await page.waitForTimeout(200);
-	const scrolled = await page.evaluate(WHERE);
+	test('the turn belongs to the raised mark in the bar, translate intact', async ({ page }) => {
+		await register(page, `bar-turn-${Date.now()}@test.invalid`);
+		await visit(page, '/tasks/todo');
 
-	expect(scrolled.inTheWindow, 'the mark scrolled off the screen').toBe(true);
-	/*
-	 * Within a few pixels, not to the pixel: the offset is a fraction of the
-	 * window, and a window that gains or loses a few pixels of its own chrome
-	 * as it scrolls moves it by that much. What is being asserted is that it
-	 * did not travel with the page — nine hundred pixels of scroll, and it is
-	 * where it was.
-	 */
-	expect(Math.abs(scrolled.top - atTop.top)).toBeLessThan(16);
+		const mark = page.locator('nav [data-tour=rooms]');
+		await expect(mark).toBeVisible();
+		await expect(mark).not.toHaveClass(/bar-mark-waiting/);
+
+		/*
+		 * The animation is checked with the class applied directly: on a phone
+		 * the way between rooms is the wheel, and driving a full gesture to hold
+		 * a navigation open buys nothing over asking whether the CSS the class
+		 * names still exists and still carries the centring translate — losing
+		 * that translate is the failure this guards (the button walks off to
+		 * the right while it spins).
+		 */
+		const spun = await mark.evaluate((el) => {
+			el.classList.add('bar-mark-waiting');
+			const style = getComputedStyle(el);
+			return { animation: style.animationName, transform: style.transform };
+		});
+		expect(spun.animation).toContain('bar-mark-turn');
+
+		const still = await page.evaluate(() => {
+			const el = document.querySelector('nav [data-tour=rooms]')!;
+			el.classList.remove('bar-mark-waiting');
+			return getComputedStyle(el).transform;
+		});
+		// With and without the animation, the button is centred by the same
+		// translate: half its own width to the left.
+		expect(still).toBe(spun.transform);
+	});
 });

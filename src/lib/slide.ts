@@ -18,20 +18,14 @@
 export const SLIDE_MS = 260;
 
 /**
- * When the mark that turns while you wait starts fading in.
+ * When the menu's mark starts turning, while a navigation is in flight.
  *
- * A fraction of the movement rather than a number of its own: the mark is
- * behind the screen that is leaving, so what matters is that it is already
- * turning by the time the screen has cleared and there is ground to see. Both
- * ends of that are `SLIDE_MS`, and a delay written independently of it drifts
- * the day the movement is retimed.
- *
- * It was a flat 320ms once — sixty milliseconds *after* the movement ended —
- * and in front of the departing screen rather than behind it, which is why it
- * had to wait: appearing over a screen that is still there reads as a flicker.
- * Behind it, it can start straight away, and most navigations then finish
- * without anybody seeing it at all, which is the point. The ones that do not
- * find it already there.
+ * The wait is shown by the mark that opens the rooms — the corner of the
+ * header, the raised button in the phone bar — turning in place; nothing is
+ * spawned for the occasion. A fraction of the movement rather than a number
+ * of its own: a navigation that finishes inside the slide should never
+ * visibly spin the menu, and both ends of that are `SLIDE_MS` — a delay
+ * written independently of it drifts the day the movement is retimed.
  */
 export const WAIT_MARK_AT = 0.35;
 
