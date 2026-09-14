@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'vitest';
-import { parseCsv, readDate, readMoney, sniffCsv, splitRow } from '../src/lib/bank-parsers/csv';
+import {
+	parseCsv,
+	readDate,
+	readMoney,
+	readRows,
+	sniffCsv,
+	splitRow
+} from '../src/lib/bank-parsers/csv';
 
 /**
  * Reading somebody else's bank, without anybody having written a parser for
@@ -78,6 +85,79 @@ describe('reading a date', () => {
 		expect(readDate('Description', true)).toBeNull();
 		expect(readDate('32/01/2026', true)).toBeNull();
 		expect(readDate('04/13/2026', true)).toBeNull();
+	});
+});
+
+/**
+ * The four the first cut got wrong, each one its own case.
+ *
+ * Three of them lose or corrupt somebody's money silently, which is the only
+ * kind of bug in an importer that matters: a file that fails to import is a
+ * afternoon, and a file that imports wrong is a wrong answer nobody questions.
+ */
+describe('the ways this went wrong before', () => {
+	test('a column called "Paid out" is not the bank\'s id', () => {
+		/*
+		 * `paid out` contains the letters of `id`, and the guesser matched
+		 * substrings — so the outgoing column became the identifier, every
+		 * withdrawal of the same amount shared a fingerprint, and the second
+		 * one was dropped as already imported. Silently.
+		 */
+		const file = [
+			'Date,Description,Paid out,Paid in',
+			'02/03/2026,CASH MACHINE,20.00,',
+			'09/03/2026,CASH MACHINE,20.00,'
+		].join('\n');
+		const sniff = sniffCsv(file)!;
+		expect(sniff.mapping.id).toBeUndefined();
+
+		const rows = parseCsv(file, sniff.mapping);
+		expect(rows).toHaveLength(2);
+		// Two withdrawals of the same amount are two movements, and nothing
+		// about them may collapse them into one.
+		expect(rows.every((r) => r.externalId === undefined)).toBe(true);
+	});
+
+	test('a column of numbers is not the id either', () => {
+		// Named `id` and holding a line number: taking it would fingerprint by
+		// something that repeats across files.
+		const file = [
+			'Date,Id,Description,Amount',
+			'02/03/2026,1,A,-1.00',
+			'03/03/2026,2,B,-2.00'
+		].join('\n');
+		expect(sniffCsv(file)!.mapping.id).toBeUndefined();
+	});
+
+	test('a headerless month-first file keeps its first line', () => {
+		// `03/14/2026` is not a date read day-first, so the row looked like a
+		// header and the movement on it was eaten.
+		const file = ['03/14/2026,WHOLE FOODS,-52.18', '03/02/2026,PAYROLL,1500.00'].join('\n');
+		const sniff = sniffCsv(file)!;
+		expect(sniff.headerless).toBe(true);
+		expect(parseCsv(file, sniff.mapping)).toHaveLength(2);
+	});
+
+	test('a newline inside a quoted field does not break its row', () => {
+		const file = ['Date,Description,Amount', '02/03/2026,"SHOP\nBRANCH 4",-12.30'].join('\n');
+		const rows = parseCsv(file, sniffCsv(file)!.mapping);
+		expect(rows).toHaveLength(1);
+		expect(rows[0].description).toBe('SHOP\nBRANCH 4');
+		expect(rows[0].amountCents).toBe(-1230);
+	});
+
+	test('two ways of saying negative do not cancel out', () => {
+		// `(-12.30)` is an export being emphatic, not a double negative.
+		expect(readMoney('(-12.30)')).toBe(-1230);
+		expect(readMoney('(12.30-)')).toBe(-1230);
+	});
+
+	test('and the whole-file reader drops blank rows without dropping data', () => {
+		const rows = readRows('a,b\n\n\nc,d\n', ',');
+		expect(rows).toEqual([
+			['a', 'b'],
+			['c', 'd']
+		]);
 	});
 });
 

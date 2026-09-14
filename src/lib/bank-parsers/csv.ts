@@ -148,16 +148,39 @@ function sniffDelimiter(lines: string[]): string {
 	return best;
 }
 
-/** One CSV row into its fields, respecting `"quotes, like this"`. */
-export function splitRow(line: string, delimiter: string): string[] {
-	const out: string[] = [];
+/**
+ * The whole file into rows of fields, respecting quotes — newlines included.
+ *
+ * Splitting on newlines first and parsing quotes afterwards is the obvious way
+ * and it is wrong: a description like `"Shop\nBranch 4"` is one field of one
+ * row, and cutting the text on that newline turns it into two rows, neither of
+ * which reads. So the walk is over the whole text at once, and a newline
+ * inside quotes is just a character.
+ *
+ * Blank rows are dropped here rather than by the callers, which used to filter
+ * lines before parsing and cannot any more.
+ */
+export function readRows(text: string, delimiter: string): string[][] {
+	const rows: string[][] = [];
+	let row: string[] = [];
 	let field = '';
 	let quoted = false;
-	for (let i = 0; i < line.length; i++) {
-		const c = line[i];
+
+	const endField = () => {
+		row.push(field.trim());
+		field = '';
+	};
+	const endRow = () => {
+		endField();
+		if (row.some((cell) => cell !== '')) rows.push(row);
+		row = [];
+	};
+
+	for (let i = 0; i < text.length; i++) {
+		const c = text[i];
 		if (quoted) {
 			if (c === '"') {
-				if (line[i + 1] === '"') {
+				if (text[i + 1] === '"') {
 					field += '"';
 					i++;
 				} else quoted = false;
@@ -165,13 +188,17 @@ export function splitRow(line: string, delimiter: string): string[] {
 			continue;
 		}
 		if (c === '"') quoted = true;
-		else if (c === delimiter) {
-			out.push(field.trim());
-			field = '';
-		} else field += c;
+		else if (c === delimiter) endField();
+		else if (c === '\n') endRow();
+		else if (c !== '\r') field += c;
 	}
-	out.push(field.trim());
-	return out;
+	endRow();
+	return rows;
+}
+
+/** One line into its fields. The whole-file reader is what parsing uses. */
+export function splitRow(line: string, delimiter: string): string[] {
+	return readRows(line, delimiter)[0] ?? [''];
 }
 
 /** A date in any of the shapes a bank writes, or null. */
@@ -204,12 +231,19 @@ export function readMoney(raw: string): number | null {
 	let text = raw.trim();
 	if (!text) return null;
 
+	/*
+	 * Negative, and only once.
+	 *
+	 * Three notations mean the same thing — a leading minus, a trailing minus,
+	 * and accounting's parentheses — and a file can carry two of them at once:
+	 * `(-12.30)` is somebody's export being emphatic, not a double negative.
+	 * Toggling per mark turned that into a credit, which is the worst kind of
+	 * arithmetic bug: quiet, and the wrong way round.
+	 */
 	let negative = false;
-	// `(12.30)` is accounting for -12.30, and a trailing `-` is some exports'
-	// way of saying the same thing.
 	if (/^\(.*\)$/.test(text)) {
 		negative = true;
-		text = text.slice(1, -1);
+		text = text.slice(1, -1).trim();
 	}
 	if (text.endsWith('-')) {
 		negative = true;
@@ -217,7 +251,7 @@ export function readMoney(raw: string): number | null {
 	}
 	text = text.replace(/[^\d,.-]/g, '');
 	if (text.startsWith('-')) {
-		negative = !negative;
+		negative = true;
 		text = text.slice(1);
 	}
 	if (!/\d/.test(text)) return null;
@@ -239,16 +273,60 @@ export function readMoney(raw: string): number | null {
 	return negative ? -cents : cents;
 }
 
-/** The header this column is, by name; -1 for none of them. */
+/**
+ * The header this column is, by name; `undefined` for none of them.
+ *
+ * Exact first, then whole words — `Data` beats `Data de compensação` for the
+ * date, and `Valor (R$)` still finds `valor`.
+ *
+ * Whole words, not substrings, and the difference was a data-loss bug: `paid
+ * out` contains the letters of `id`, so a British statement's outgoing column
+ * was read as the bank's identifier for the movement. Every withdrawal of the
+ * same amount then shared a fingerprint, and the second one was quietly
+ * dropped as already imported.
+ */
 function guessColumn(headers: string[], field: keyof typeof ALIASES): string | undefined {
 	const wanted = ALIASES[field];
 	const named = headers.map(plain);
-	// Exact first, then contains — `Data` beats `Data de compensação` for the
-	// date, and `Valor (R$)` still finds `valor`.
+
 	const exact = named.findIndex((h) => wanted.includes(h));
 	if (exact >= 0) return headers[exact];
-	const partial = named.findIndex((h) => wanted.some((w) => h.includes(w)));
-	return partial >= 0 ? headers[partial] : undefined;
+
+	const whole = named.findIndex((h) => {
+		const words = h.split(' ');
+		return wanted.some((w) => (w.includes(' ') ? h.includes(w) : words.includes(w)));
+	});
+	return whole >= 0 ? headers[whole] : undefined;
+}
+
+/**
+ * Whether a column's values actually look like identifiers.
+ *
+ * A header called `id` is not enough. The column has to hold something that
+ * could be a bank's reference — not empty, not the same value twice, and not a
+ * number that is really money. The importer uses this column to decide that a
+ * line has been seen before, so a wrong guess here loses rows rather than
+ * mislabelling them, and the guard is worth more than the convenience.
+ */
+function looksLikeIds(rows: string[][], at: number): boolean {
+	if (at < 0) return false;
+	const values = rows.map((r) => (r[at] ?? '').trim()).filter(Boolean);
+	// Every row has to carry one: a column that is blank half the time cannot
+	// be what the bank calls each movement.
+	if (values.length === 0 || values.length !== rows.length) return false;
+	if (new Set(values).size !== values.length) return false;
+
+	/*
+	 * And not a column of numbers.
+	 *
+	 * Made only of digits and the punctuation money uses, it is far likelier to
+	 * be an amount, a balance or a line number than the bank's reference — and
+	 * being wrong here loses rows, while being shy costs nothing: a movement
+	 * with no id is fingerprinted by its content instead, which is what every
+	 * card export already does. A bank whose reference really is a bare number
+	 * can be pointed at by hand on the import screen.
+	 */
+	return !values.every((v) => /^[\d.,\s()+-]+$/.test(v));
 }
 
 /**
@@ -265,15 +343,26 @@ export function sniffCsv(text: string): CsvSniff | null {
 	if (lines.length < 2) return null;
 
 	const delimiter = sniffDelimiter(lines);
-	const headers = splitRow(lines[0], delimiter);
+	const all = readRows(text, delimiter);
+	if (all.length < 2) return null;
+	const headers = all[0];
 	if (headers.length < 2) return null;
 
 	// A header row is one whose cells are not dates and not money. A file that
 	// starts straight into its data gets columns named by position, which the
 	// person can then point at.
-	const headerless = headers.some((h) => readDate(h, true) !== null);
+	/*
+	 * Either orientation, or a month-first file loses its first line.
+	 *
+	 * `03/14/2026` is not a date read day-first — the fourteenth month — so a
+	 * headerless American export looked like it had a header and its first
+	 * movement was eaten as one. Whether the file is day-first is worked out
+	 * further down, from the data; this question comes first and has to be
+	 * asked without the answer.
+	 */
+	const headerless = headers.some((h) => readDate(h, true) !== null || readDate(h, false) !== null);
 	const names = headerless ? headers.map((_, i) => `Column ${i + 1}`) : headers;
-	const rows = lines.slice(headerless ? 0 : 1).map((l) => splitRow(l, delimiter));
+	const rows = headerless ? all : all.slice(1);
 
 	const mapping: CsvMapping = {
 		date: guessColumn(names, 'date') ?? names[0],
@@ -281,9 +370,13 @@ export function sniffCsv(text: string): CsvSniff | null {
 		amount: guessColumn(names, 'amount'),
 		moneyIn: guessColumn(names, 'moneyIn'),
 		moneyOut: guessColumn(names, 'moneyOut'),
-		id: guessColumn(names, 'id'),
+		id: undefined,
 		dayFirst: true
 	};
+
+	// Named like an id *and* holding things that could be ids.
+	const idNamed = guessColumn(names, 'id');
+	if (idNamed && looksLikeIds(rows, names.indexOf(idNamed))) mapping.id = idNamed;
 
 	/*
 	 * A pair of direction columns wins over a single amount, when both look
@@ -330,11 +423,8 @@ export function parseCsv(text: string, mapping: CsvMapping): ParsedMovement[] {
 	const idAt = at(mapping.id);
 	if (dateAt < 0) return [];
 
-	const lines = text
-		.split(/\r?\n/)
-		.map((l) => l.trim())
-		.filter(Boolean);
-	const rows = lines.slice(sniffed.headerless ? 0 : 1).map((l) => splitRow(l, sniffed.delimiter));
+	const all = readRows(text, sniffed.delimiter);
+	const rows = sniffed.headerless ? all : all.slice(1);
 
 	const out: ParsedMovement[] = [];
 	for (const row of rows) {

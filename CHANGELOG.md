@@ -58,6 +58,12 @@ releases mattered.
 
 ## 0.173.0 — 2026-09-14
 
+- **The CSV reader no longer mistakes an outgoing column for the bank's own
+  reference.** `Paid out` contains the letters of `id`, so on a British
+  statement every withdrawal of the same amount shared a fingerprint and the
+  second one was dropped as already imported. It also keeps the first line of
+  a headerless month-first file, survives a newline inside a quoted field,
+  and reads `(-12.30)` as money going out rather than coming in.
 - **Any bank's CSV can be imported now, by naming its columns.** It reads the
   header and says which column it thinks is the date, the description and the
   money; anything it got wrong is a dropdown. Semicolons and tabs as well as

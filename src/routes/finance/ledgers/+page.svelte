@@ -744,7 +744,32 @@
 									</select>
 								</label>
 							{/if}
+							<label class="block text-sm">
+								<span class="text-gray-600">The bank's own id</span>
+								<select
+									class="select mt-1 w-full"
+									value={mapping.id ?? ''}
+									onchange={(e) => nameColumn('id', e.currentTarget.value)}
+								>
+									<option value="">— none —</option>
+									{#each headers as h (h)}<option value={h}>{h}</option>{/each}
+								</select>
+							</label>
 						</div>
+						<!--
+							The id has to be visible, because getting it wrong loses lines.
+							
+							A movement carrying the bank's own reference is matched on that
+							reference, so a column wrongly taken for one makes two real
+							movements look like the same movement and the second is dropped
+							as already imported. It is guessed conservatively — named like
+							an id and holding something that could be one — and it is here
+							so that the guess can be seen and undone.
+						-->
+						<p class="text-xs text-gray-500">
+							Leave the id as none unless the file really carries the bank's own reference per line.
+							Without one, a line is matched on its date, amount and description instead.
+						</p>
 						<label class="flex items-center gap-2 text-sm text-gray-700">
 							<input type="checkbox" bind:checked={mapping.dayFirst} />
 							Dates are day first — 02/03 is the second of March
