@@ -14,6 +14,7 @@
 		slidesHere,
 		stopHiding
 	} from '$lib/slide';
+	import { hintMarkSpin } from '$lib/mark-spin';
 
 	/**
 	 * A room with tabs: the strip, and the movement between them.
@@ -153,6 +154,10 @@
 		holdHeight(frame, body);
 		slideAway(stage, body, went);
 		arriving = slideOn(pane, went);
+		// The waiting medallion turns against the way the tabs are sweeping,
+		// the same rule the rooms follow. The layout starts the spin; this is
+		// the tab telling it which way things went.
+		hintMarkSpin(-went);
 	});
 
 	afterNavigate(() => {

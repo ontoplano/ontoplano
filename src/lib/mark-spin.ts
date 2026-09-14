@@ -28,6 +28,16 @@ let startedAt = 0;
 let windingDown = false;
 /** Which way it turns: the way the screens are moving, +1 or -1. */
 let spin = 1;
+/**
+ * A direction whispered by a slide the layout cannot see — a tab's. The
+ * layout starts the spin, but a tab change is the room's own movement; the
+ * room says which way it went and the next start takes it, once.
+ */
+let hint = 0;
+
+export function hintMarkSpin(direction: number): void {
+	hint = direction;
+}
 /** Where the wind-down rests: the next full turn, in the turn's own direction. */
 let restAt = 0;
 
@@ -41,6 +51,7 @@ function rest(): void {
 	angle = 0;
 	last = 0;
 	windingDown = false;
+	hint = 0;
 	for (const el of els) {
 		el.style.removeProperty('rotate');
 		el.style.removeProperty('transition');
@@ -77,7 +88,7 @@ function frame(now: number): void {
  */
 export function startMarkSpin(
 	marks: (HTMLElement | null | undefined)[],
-	direction: number = 1
+	direction: number = 0
 ): void {
 	if (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)
 		return;
@@ -91,7 +102,11 @@ export function startMarkSpin(
 	// rotate property would smear each step into the next.
 	for (const el of els) el.style.transition = 'none';
 
-	spin = direction < 0 ? -1 : 1;
+	// The rooms' direction wins; a tab's hint speaks when the rooms did not
+	// move; with neither, the turn keeps its old clockwise.
+	const asked = direction || hint || 1;
+	hint = 0;
+	spin = asked < 0 ? -1 : 1;
 	if (raf) {
 		// Still turning (or winding down): fold the new wait into the turn.
 		windingDown = false;

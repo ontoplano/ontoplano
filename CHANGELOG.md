@@ -18,6 +18,11 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.173.15 — 2026-09-14
+
+- **Changing tab turns the medallion too**, against the way the tabs are
+  sweeping — the same rule the rooms follow.
+
 ## 0.173.14 — 2026-09-14
 
 - **The app writes its name the way the site does.** The wordmark — the
