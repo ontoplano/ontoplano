@@ -391,6 +391,24 @@
 		].join(' ');
 	}
 
+	/**
+	 * The same wedge as a slice from the centre, for cutting the lit ring to.
+	 *
+	 * `wedgePath` starts just inside the hole, because that is where a wedge is
+	 * painted from. The ring around the hole reaches further in than that, so
+	 * clipping it to a wedge left the innermost few pixels of the band outside
+	 * the clip — a black sliver along the inside edge of whichever wedge was
+	 * chosen, inside its own border. A slice with no hole in it has nothing to
+	 * leave out.
+	 */
+	function sectorPath(i: number): string {
+		const { from, to } = wedgeEdges(i, items.length);
+		const big = wedgeStep(items.length) > Math.PI ? 1 : 0;
+		const at = (r: number, a: number) =>
+			`${(r * Math.cos(a)).toFixed(2)} ${(r * Math.sin(a)).toFixed(2)}`;
+		return `M 0 0 L ${at(OUTER, from)} A ${OUTER} ${OUTER} 0 ${big} 0 ${at(OUTER, to)} Z`;
+	}
+
 	/** Where a wedge's label sits: upright, never rotated. Rotated text at a
 	 *  glance is unreadable, and glance is the whole point. */
 	function labelAt(i: number): { x: number; y: number } {
@@ -692,7 +710,7 @@
 				{#if active >= 0}
 					<defs>
 						<clipPath id="{clipId}-lit">
-							<path d={wedgePath(active)} />
+							<path d={sectorPath(active)} />
 						</clipPath>
 					</defs>
 					<g clip-path="url(#{clipId}-lit)">
