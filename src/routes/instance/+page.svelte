@@ -8,6 +8,7 @@
 		OFFICIAL_INSTANCE,
 		chooseOnThisPhone,
 		inPhoneApp,
+		launchAddress,
 		phoneInstanceExists,
 		rememberInstance,
 		storedInstance,
@@ -80,7 +81,7 @@
 		const instance = carried.get(ARRIVING_AT);
 		if (instance) {
 			rememberInstance(instance);
-			location.replace(instance);
+			location.replace(launchAddress(instance));
 		}
 	});
 

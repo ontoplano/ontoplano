@@ -1,6 +1,7 @@
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vitest/config';
 import { sveltekit } from '@sveltejs/kit/vite';
 
@@ -14,6 +15,11 @@ import { sveltekit } from '@sveltejs/kit/vite';
  */
 export default defineConfig({
 	plugins: [sveltekit()],
+	// The same identity vite.config.ts bakes into real builds, so code that
+	// reads __APP_VERSION__ behaves in a unit test the way it does everywhere.
+	define: {
+		__APP_VERSION__: JSON.stringify(JSON.parse(readFileSync('package.json', 'utf8')).version)
+	},
 	test: {
 		include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
 		exclude: ['**/node_modules/**', '**/*.e2e.ts', '**/{.worktrees,.claude}/**'],

@@ -31,6 +31,13 @@ declare global {
 			 * saved to a home screen on a phone with no app on it.
 			 */
 			nativeApp?: boolean;
+			/**
+			 * Which version that app announced at its last launch — unset for
+			 * a browser, and for an app old enough not to say. The shell can
+			 * fall behind the pages it draws, and this is how the pages find
+			 * out.
+			 */
+			nativeAppVersion?: string;
 		}
 
 		/**

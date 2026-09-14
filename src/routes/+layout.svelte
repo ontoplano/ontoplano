@@ -42,10 +42,36 @@
 	import { palette } from '$lib/palette.svelte';
 	import type { IconName } from '$lib/components/Icon.svelte';
 	import { suppressAutofill } from '$lib/autofill';
+	import { APP_UPDATE_HUSH_KEY } from '$lib/platform';
 	import { smartNumberFields } from '$lib/number-fields';
 	import type { Snippet } from 'svelte';
 
 	let { children, data }: { children: Snippet; data: LayoutServerData } = $props();
+
+	/*
+	 * The update warning can be put away, per instance version: "not now" said
+	 * to 0.174.0 holds until the instance moves past it. Read in an effect
+	 * rather than at init so the server and the first client render agree, and
+	 * a storage that throws (private mode) leaves the warning standing, which
+	 * is the safe way round.
+	 */
+	let updateHushed = $state(false);
+	$effect(() => {
+		if (!data.appUpdate) return;
+		try {
+			updateHushed = localStorage.getItem(APP_UPDATE_HUSH_KEY) === data.appUpdate.instance;
+		} catch {
+			updateHushed = false;
+		}
+	});
+	function hushUpdate() {
+		updateHushed = true;
+		try {
+			localStorage.setItem(APP_UPDATE_HUSH_KEY, data.appUpdate!.instance);
+		} catch {
+			// Nowhere to remember it: it comes back next launch, which is fair.
+		}
+	}
 
 	/*
 	 * First launch on a phone asks where your ontoplano lives.
@@ -693,6 +719,37 @@
 						</form>
 					{/if}
 				</span>
+			</div>
+		{/if}
+
+		{#if data.appUpdate && !updateHushed}
+			<!--
+				The installed app is a minor behind the instance drawing these
+				pages, which is the state where a page can ask the shell for
+				something it does not have. Said before it errors rather than
+				after, with both numbers on it, and dismissible — the person may
+				well not be able to update right now, and the app still mostly
+				works. Amber like staging: a warning, not a wall.
+
+				Only the native app ever sees this (the answer rides on the
+				launch cookie), so the top inset is real: without it the words
+				sit under the phone's clock.
+			-->
+			<div
+				class="relative z-50 flex flex-wrap items-center justify-between gap-2 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950"
+				style="padding-top: calc(var(--safe-top, 0px) + 0.5rem)"
+			>
+				<span>
+					<strong>Update the app.</strong>
+					It is {data.appUpdate.app} and this instance runs {data.appUpdate.instance} — some things may
+					not work until it catches up.
+				</span>
+				<button
+					class="shrink-0 border border-amber-700 px-2 py-1 text-xs font-semibold hover:bg-amber-400"
+					onclick={hushUpdate}
+				>
+					Not now
+				</button>
 			</div>
 		{/if}
 

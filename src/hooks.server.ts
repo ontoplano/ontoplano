@@ -32,7 +32,13 @@ import {
 import { accessHoldFor, holdDestination } from '$lib/server/services/access';
 import { record } from '$lib/services/audit';
 import { toJsonError } from '$lib/http-errors';
-import { APP_COOKIE, APP_LAUNCH_PARAM, APP_LAUNCH_VALUE } from '$lib/platform';
+import {
+	APP_COOKIE,
+	APP_LAUNCH_PARAM,
+	APP_LAUNCH_VALUE,
+	APP_VERSION_COOKIE,
+	APP_VERSION_PARAM
+} from '$lib/platform';
 import { refuse } from '$lib/server/refuse';
 import { demoRefusal } from '$lib/server/demo-guard';
 
@@ -236,22 +242,35 @@ const handleNativeApp: Handle = async ({ event, resolve }) => {
 		event.url.searchParams.get(APP_LAUNCH_PARAM) === APP_LAUNCH_VALUE;
 
 	if (declared) {
-		event.cookies.set(APP_COOKIE, APP_LAUNCH_VALUE, {
+		const cookie = {
 			path: '/',
 			httpOnly: true,
 			// A LAN build opens an http origin — `make android-lan` — and a secure
 			// cookie there is a cookie the phone never sends back.
 			secure: event.url.protocol === 'https:',
-			sameSite: 'lax',
+			sameSite: 'lax' as const,
 			maxAge: 60 * 60 * 24 * 365
-		});
+		};
+		event.cookies.set(APP_COOKIE, APP_LAUNCH_VALUE, cookie);
+
+		// The shell's version rides beside the mark, and only a thing that
+		// reads as a version is kept: the parameter is whatever the address
+		// carried, and a warning built on a garbled string warns about nothing.
+		const announced = event.url.searchParams.get(APP_VERSION_PARAM);
+		if (announced && /^\d+\.\d+\.\d+$/.test(announced)) {
+			event.cookies.set(APP_VERSION_COOKIE, announced, cookie);
+		}
 
 		const clean = new URL(event.url);
 		clean.searchParams.delete(APP_LAUNCH_PARAM);
+		clean.searchParams.delete(APP_VERSION_PARAM);
 		redirect(302, `${clean.pathname}${clean.search}${clean.hash}`);
 	}
 
 	event.locals.nativeApp = event.cookies.get(APP_COOKIE) === APP_LAUNCH_VALUE;
+	event.locals.nativeAppVersion = event.locals.nativeApp
+		? event.cookies.get(APP_VERSION_COOKIE)
+		: undefined;
 	return resolve(event);
 };
 

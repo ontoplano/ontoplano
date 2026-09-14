@@ -20,6 +20,8 @@ import { buildCtx } from '$lib/services/ctx';
 import { loadConfig } from '$lib/server/config';
 import { mediaLimits } from '$lib/services/media';
 import { publicKey } from '$lib/server/services/push';
+import { build } from '$lib/server/services/version';
+import { appBehindInstance } from '$lib/platform';
 import { invitationFor } from '$lib/server/services/subscriptions';
 
 export const load: LayoutServerLoad = async (event) => {
@@ -124,7 +126,25 @@ export const load: LayoutServerLoad = async (event) => {
 	 */
 	const familyOffer = event.locals.user ? invitationFor(event.locals.user.id) : null;
 
+	/*
+	 * An installed app that has fallen behind this instance.
+	 *
+	 * The pages are always the instance's — they came from it — but the shell
+	 * around them updates on the store's schedule, and a shell a minor behind
+	 * can meet a page that assumes a bridge it does not have. Named versions
+	 * rather than a sentence about them, so the person can see exactly how far
+	 * behind they are; null for a browser, an isolated instance (its shell and
+	 * pages are one build), and ordinary patch drift.
+	 */
+	const instanceVersion = build().version;
+	const appUpdate =
+		event.locals.nativeAppVersion &&
+		appBehindInstance(event.locals.nativeAppVersion, instanceVersion)
+			? { app: event.locals.nativeAppVersion, instance: instanceVersion }
+			: null;
+
 	return {
+		appUpdate,
 		user: event.locals.user ?? null,
 		familyOffer,
 		categories: userCategories,

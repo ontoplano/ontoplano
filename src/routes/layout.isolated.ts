@@ -33,6 +33,9 @@ export async function load(event: IsolatedEvent): Promise<LayoutServerData> {
 	const ctx = buildCtx(user.id);
 	return {
 		user,
+		// The device's shell and its pages are one build — there is no version
+		// for either to fall behind.
+		appUpdate: null,
 		// Nobody shares a device's instance, so nobody can offer to pay for it.
 		familyOffer: null,
 		categories: listCategories(ctx).map((c) => ({

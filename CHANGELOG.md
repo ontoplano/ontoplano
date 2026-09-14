@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.173.1 — 2026-09-14
+
+- **A phone app that has fallen behind its instance says so.** The installed
+  shell updates on the store's schedule, not when the instance deploys, and a
+  shell a minor behind can meet a page that expects more than it has. The app
+  now says which version it is on every request, and the page answers with a
+  band naming both versions — update, or some things may not work. "Not now"
+  puts it away until the instance moves again; patch drift stays quiet,
+  being the permanent state of any store install.
+
 ## 0.173.0 — 2026-09-14
 
 - **Any bank's CSV can be imported now, by naming its columns.** It reads the

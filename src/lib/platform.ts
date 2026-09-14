@@ -58,12 +58,61 @@ export function isStandalone(): boolean {
  * the native instance chooser, so the only useful question is whether *the
  * app* is drawing this page, and the app is the one thing that knows.
  *
- * So it says so: every launch opens `?app=android` (`Instance.launchUrl` in
- * `android/native/java/Instance.java`), the server writes that into a cookie
- * and redirects the parameter back off the address, and from then on
- * `locals.nativeApp` is the answer for every request on this install —
- * including the ones that come back from a deep link months later.
+ * So it says so: every launch leaves the copy on the device for the chosen
+ * instance through `launchAddress` (`$lib/instance-choice.ts`), which puts
+ * `?app=android` on the address. The server writes that into a cookie and
+ * redirects the parameter back off, and from then on `locals.nativeApp` is
+ * the answer for every request on this install — including the ones that come
+ * back from a deep link months later.
  */
 export const APP_LAUNCH_PARAM = 'app';
 export const APP_LAUNCH_VALUE = 'android';
 export const APP_COOKIE = 'ontoplano_app';
+
+/**
+ * Which version of the app is asking, announced the same way.
+ *
+ * The pages the app draws are the instance's pages, so they are always the
+ * instance's version — what can fall behind is the installed shell around
+ * them: the alarms, the chooser, whatever bridge the pages start expecting
+ * next. The shell's own version rides on the launch address beside the mark
+ * above (`launchAddress` in `$lib/instance-choice.ts`), and the server keeps
+ * it in a cookie the same way. A cookie rather than the user agent, which
+ * would always be current: the app's pages arrive through its service worker,
+ * and a service worker's fetches carry the cookies and not the shell's custom
+ * user agent — on this suite's Chromium and on Android's web view alike. The
+ * cookie is a launch behind after an update, which only ever errs quiet.
+ */
+export const APP_VERSION_PARAM = 'app_version';
+export const APP_VERSION_COOKIE = 'ontoplano_app_version';
+
+/**
+ * Where "not now" is remembered, holding the instance version it was said to.
+ * The warning stays away until the instance moves again — a dismissal means
+ * "I know about this one", not "never tell me".
+ */
+export const APP_UPDATE_HUSH_KEY = 'ontoplano_update_hushed';
+
+/**
+ * Whether an installed app is far enough behind an instance to warn about.
+ *
+ * Behind on the minor, not the patch. The repo's own rule (see CHANGELOG.md)
+ * is that the patch carries the ordinary day's work and the minor is a
+ * structural change — and the native shell only stops fitting the pages when
+ * the structure moves. Patch skew is also the *permanent* state of a store
+ * install, since a store rollout trails the deploy by days; warning on it
+ * would be a banner that never leaves.
+ *
+ * A version that does not parse compares as not-behind: a warning built on a
+ * garbled string is a warning about nothing.
+ */
+export function appBehindInstance(app: string, instance: string): boolean {
+	const parse = (v: string) => {
+		const m = /^(\d+)\.(\d+)\.\d+/.exec(v);
+		return m ? { major: +m[1], minor: +m[2] } : null;
+	};
+	const a = parse(app);
+	const b = parse(instance);
+	if (!a || !b) return false;
+	return a.major < b.major || (a.major === b.major && a.minor < b.minor);
+}

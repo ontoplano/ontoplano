@@ -18,6 +18,7 @@ import {
 	ARRIVING_TO_ASK,
 	forgetInstance,
 	inPhoneApp,
+	launchAddress,
 	rememberInstance,
 	storedInstance
 } from '$lib/instance-choice';
@@ -54,7 +55,7 @@ if (inPhoneApp() && isIsolatedBuild()) {
 	} else if (carried.get(ARRIVING_AT)) {
 		const instance = carried.get(ARRIVING_AT)!;
 		rememberInstance(instance);
-		location.replace(instance);
+		location.replace(launchAddress(instance));
 	} else {
 		/*
 		 * An address is a real navigation — it leaves this origin.
@@ -67,7 +68,7 @@ if (inPhoneApp() && isIsolatedBuild()) {
 		 * router, in the root layout, where it is one line of `goto`.
 		 */
 		const going = storedInstance();
-		if (going) location.replace(going);
+		if (going) location.replace(launchAddress(going));
 	}
 }
 

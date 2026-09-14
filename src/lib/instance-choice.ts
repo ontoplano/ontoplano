@@ -1,3 +1,5 @@
+import { APP_LAUNCH_PARAM, APP_LAUNCH_VALUE, APP_VERSION_PARAM } from '$lib/platform';
+
 /**
  * Which instance this app opens on, when the person has said.
  *
@@ -106,6 +108,30 @@ export async function suggestedInstance(): Promise<string | null> {
 		return typeof said.suggests === 'string' && said.suggests ? said.suggests : null;
 	} catch {
 		return null;
+	}
+}
+
+/**
+ * The address a launch actually navigates to: the instance, wearing the mark.
+ *
+ * `?app=android` is how the instance's pages learn they are inside the app —
+ * see `$lib/platform.ts` — and the shell's own version rides beside it, so an
+ * instance that has moved on can say "update the app". Announced here, on the
+ * way out of the copy on the device, because this is the one line every
+ * launch passes through; the server keeps both in cookies and takes the
+ * parameters straight back off the address.
+ */
+export function launchAddress(instance: string): string {
+	try {
+		const url = new URL(instance);
+		url.searchParams.set(APP_LAUNCH_PARAM, APP_LAUNCH_VALUE);
+		if (typeof __APP_VERSION__ === 'string')
+			url.searchParams.set(APP_VERSION_PARAM, __APP_VERSION__);
+		return url.toString();
+	} catch {
+		// Whatever this address is, it is not one to decorate — let the
+		// navigation fail or succeed as itself.
+		return instance;
 	}
 }
 
