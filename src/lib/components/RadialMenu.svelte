@@ -138,18 +138,17 @@
 	const INNER = 57;
 	const HOLE = INNER - 2;
 
-	/**
-	 * And the same ring around the hole, at the same weight.
-	 *
-	 * This one is the mark's own ring, drawn rather than photographed: the
-	 * picture in the middle is the medallion with its ring cropped off, and
-	 * this band stands where that ring was. Which is why it can be black, and
-	 * why it can light up — a ring in a PNG can do neither.
-	 */
-	const innerRim = $derived(bands(HOLE, RIM));
-
 	/** Inside the ring that the inner band draws, which is where the mark goes. */
-	const MEDALLION = (HOLE - RIM) * MIDDLE_INSET;
+	/**
+	 * The mark fills the hole.
+	 *
+	 * There used to be a black ring drawn between the two — the mark's own
+	 * ring, redrawn at wheel size — which took eight pixels from the wedges
+	 * and put a second outline inside the one the wheel already has. Without
+	 * it the wedges reach the mark and the mark reaches them, which is what
+	 * the drawing does.
+	 */
+	const MEDALLION = HOLE * MIDDLE_INSET;
 
 	/**
 	 * Where a wedge starts, which is inside the hole rather than at its edge.
@@ -629,20 +628,37 @@
 					was invisible in the dark one. Here it is the same units as the hole
 					it fills.
 				-->
-				<defs>
-					<clipPath id="{clipId}-mark">
-						<path d={markPath(MEDALLION)} />
-					</clipPath>
-				</defs>
-				<image
-					href={mark}
-					x={-MEDALLION / MARK_MIDDLE}
-					y={-MEDALLION / MARK_MIDDLE}
-					width={(MEDALLION / MARK_MIDDLE) * 2}
-					height={(MEDALLION / MARK_MIDDLE) * 2}
-					clip-path="url(#{clipId}-mark)"
-					style="pointer-events: none"
-				/>
+				<!--
+					And it flies there from the button that opened it.
+
+					The wheel blooms in place; the mark comes up out of the bar —
+					which is where it was a moment ago and where the finger still
+					is — and lands in the middle. `--mark-from` is that button's
+					place in this drawing's own coordinates, so the same markup
+					works wherever the wheel was summoned from.
+				-->
+				<g
+					class="pie-mark"
+					style="--mark-from-x: {grewFrom.x - size / 2}px; --mark-from-y: {grewFrom.y -
+						size / 2}px; --pie-bloom: {BLOOM_MS}ms"
+				>
+					<!--
+						The whole mark, not its middle.
+
+						It used to be scaled so that the medallion alone filled the
+						hole and the ring was cropped away — which made the thing in
+						the wheel a different drawing from the one in the bar it came
+						out of. The logo includes its ring; this is the logo.
+					-->
+					<image
+						href={mark}
+						x={-MEDALLION}
+						y={-MEDALLION}
+						width={MEDALLION * 2}
+						height={MEDALLION * 2}
+						style="pointer-events: none"
+					/>
+				</g>
 
 				<polygon
 					points={markPoints(HOLE)}
@@ -686,7 +702,7 @@
 					between the pieces, which is what it is until one of them is
 					being pointed at.
 				-->
-				{#each [...rim, ...innerRim] as band, i (i)}
+				{#each rim as band, i (i)}
 					<polygon points={band} fill={EDGE_DARK} class="pie-edge" style="pointer-events: none" />
 				{/each}
 
@@ -806,6 +822,32 @@
 	}
 
 	/*
+	 * The mark's own journey, up from the bar into the middle.
+	 *
+	 * It travels a little longer than the wheel takes to bloom and lands with
+	 * a touch of overshoot, so it reads as the thing you pressed arriving
+	 * rather than as part of the wheel growing.
+	 */
+	.pie-mark {
+		/*
+		 * Longer than the bloom, so the mark lands after the wheel rather than
+		 * with it — at the bloom's own pace the whole journey was over inside a
+		 * fifth of a second, which is not something an eye catches.
+		 */
+		animation: mark-arrives calc(var(--pie-bloom, 190ms) * 2.6) cubic-bezier(0.16, 0.7, 0.22, 1.06)
+			both;
+	}
+
+	@keyframes mark-arrives {
+		from {
+			transform: translate(var(--mark-from-x, 0), var(--mark-from-y, 0)) scale(0.32);
+		}
+		to {
+			transform: translate(0, 0) scale(1);
+		}
+	}
+
+	/*
 	 * It grows out of the button, at the size of the button.
 	 *
 	 * `0.28` is not a taste: the mark in the middle of the wheel is
@@ -827,7 +869,8 @@
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.pie {
+		.pie,
+		.pie-mark {
 			animation: none;
 		}
 	}

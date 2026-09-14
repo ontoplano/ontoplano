@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.176.1 — 2026-09-14
+
+- **The wheel's middle is the logo, whole.** It was the medallion with the
+  ring cropped off and a black ring drawn back around it — a different
+  drawing from the one in the bar it came out of, and eight pixels taken from
+  the rooms. The rooms have them back, and the mark in the middle is the mark.
+- **The logo flies up into the wheel.** It comes out of the bar where your
+  thumb is and lands in the middle, a beat after the rooms have bloomed
+  around it.
+
 ## 0.176.0 — 2026-09-14
 
 Security and a menu that goes one level deeper. The audit before the store
