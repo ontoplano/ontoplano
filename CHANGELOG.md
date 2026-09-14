@@ -18,6 +18,14 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.176.5 — 2026-09-14
+
+- **Fixed: every settings form stopped saving.** A hook added for the device's
+  restore made the submit handler read an argument, and the test that stands in
+  for SvelteKit was calling it with none — so the suite went red on a change
+  that worked in a browser. The stand-in now calls it the way SvelteKit does,
+  and the hook has tests of its own.
+
 ## 0.176.4 — 2026-09-14
 
 - **A device can take an export back in.** It was left out of the last release

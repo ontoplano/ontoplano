@@ -37,23 +37,36 @@ afterEach(() => {
 	vi.unstubAllGlobals();
 });
 
-/** Run the submit handler `settingsForm` registered, with a given result. */
+/**
+ * Run the submit handler `settingsForm` registered, with a given result.
+ *
+ * The handler is called the way SvelteKit calls it — with the form data about
+ * to be sent and a way to call the send off — because it reads both. It used
+ * to be called with nothing here, which passed for as long as the handler
+ * ignored its argument and broke the moment it stopped.
+ */
 async function submitWith(result: Record<string, unknown>, options = {}) {
 	document.body.innerHTML = '<form></form>';
 	settingsForm(document.querySelector('form')!, options);
 
-	const [, submit] = enhance.mock.calls[0] as [HTMLFormElement, () => unknown];
+	const [, submit] = enhance.mock.calls[0] as [HTMLFormElement, (arg: unknown) => unknown];
 	const update = vi.fn();
-	// `enhance` hands back a function that returns the callback run on response.
-	const onResponse = (await submit()) as (arg: unknown) => Promise<void>;
-	await onResponse({ result, update });
-	return update;
+	const cancel = vi.fn();
+	const formData = new FormData();
+
+	// `enhance` hands back a function that returns the callback run on response
+	// — or nothing at all, when the submission was called off.
+	const onResponse = (await submit({ formData, cancel })) as
+		| ((arg: unknown) => Promise<void>)
+		| undefined;
+	if (onResponse) await onResponse({ result, update });
+	return { update, cancel, formData, sent: onResponse !== undefined };
 }
 
 describe('a form that shows stored state', () => {
 	test('is updated without being reset', async () => {
 		// The bug: `reset()` empties a form whose controls came from `data`.
-		const update = await submitWith({ type: 'success' });
+		const { update } = await submitWith({ type: 'success' });
 		expect(update).toHaveBeenCalledWith({ reset: false });
 	});
 
@@ -164,5 +177,45 @@ describe('a textarea the size of what is in it', () => {
 		Object.defineProperty(node, 'scrollHeight', { value: 400, configurable: true });
 		node.dispatchEvent(new Event('input'));
 		expect(node.style.height).toBe('96px');
+	});
+});
+
+/**
+ * Something that has to happen before the form is sent, and succeed.
+ *
+ * One thing wanted this: a device taking a copy of the account before a
+ * restore destroys it. There is nowhere on a phone to write that copy beside
+ * the database, so the page downloads it — and if the download does not
+ * happen, sending the form anyway is precisely the outcome the copy exists to
+ * prevent.
+ */
+describe('something that has to happen first', () => {
+	test('runs before the send, and may add to what is sent', async () => {
+		const { sent, formData } = await submitWith(
+			{ type: 'success' },
+			{
+				before: (data: FormData) => {
+					data.set('rescue', 'ontoplano-before-import.json');
+					return true;
+				}
+			}
+		);
+
+		expect(sent).toBe(true);
+		expect(formData.get('rescue')).toBe('ontoplano-before-import.json');
+	});
+
+	test('calls the send off when it fails, and nothing is submitted', async () => {
+		const { sent, cancel } = await submitWith({ type: 'success' }, { before: () => false });
+
+		expect(cancel).toHaveBeenCalled();
+		expect(sent).toBe(false);
+	});
+
+	test('a form without one is sent as it always was', async () => {
+		const { sent, cancel } = await submitWith({ type: 'success' });
+
+		expect(cancel).not.toHaveBeenCalled();
+		expect(sent).toBe(true);
 	});
 });
