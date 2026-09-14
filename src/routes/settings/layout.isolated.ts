@@ -8,5 +8,13 @@
 import type { LayoutServerData } from './$types';
 
 export async function load(): Promise<LayoutServerData> {
-	return { canEditInstance: false, canAdminister: false, billable: false, family: false };
+	return {
+		canEditInstance: false,
+		canAdminister: false,
+		billable: false,
+		family: false,
+		// No account here and no server: what is left is the person's own
+		// preferences, which are as much theirs on a device as anywhere.
+		hasAccount: false
+	};
 }

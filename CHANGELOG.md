@@ -18,6 +18,18 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.174.1 — 2026-09-14
+
+- **The phone has a header again, in the room's own colour.** It was a flat
+  grey slab: the one place in the app where changing rooms changed nothing
+  above the tabs. It takes the same deep section colour the desktop header
+  has, with the same inks on it.
+- **Preferences work on a device's own instance.** The whole settings area
+  was excluded from the isolated build, so a phone-only instance answered
+  "this screen needs an instance with a server" to a page about the person
+  rather than the deployment — its server file had been written for the
+  device all along. The tabs on a device now show what it actually carries.
+
 ## 0.174.0 — 2026-09-14
 
 A minor, and it is what that number is for: every screen in the app now wears

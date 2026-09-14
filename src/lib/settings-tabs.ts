@@ -14,15 +14,26 @@ export function settingsTabs(who: {
 	family?: boolean;
 	canEditInstance?: boolean;
 	canAdminister?: boolean;
+	/**
+	 * Whether there is an account and a server behind this instance.
+	 *
+	 * False on a device's own instance: there is nobody to sign in as, no
+	 * sessions to end, no mail to send and no server for an assistant to
+	 * talk to. Preferences are still the person's, so they stay — a tab
+	 * that opens onto "this screen needs an instance with a server" is
+	 * worse than no tab.
+	 */
+	hasAccount?: boolean;
 }): SettingsTab[] {
+	const account = who.hasAccount !== false;
 	return [
-		{ href: '/settings/account', label: 'Account' },
+		...(account ? [{ href: '/settings/account', label: 'Account' }] : []),
 		{ href: '/settings/preferences', label: 'Preferences' },
 		...(who.billable ? [{ href: '/settings/billing', label: 'Billing' }] : []),
 		...(who.family ? [{ href: '/settings/family', label: 'Family' }] : []),
 		// Named for the half people come here for. The tab strip inside splits
 		// assistants from the calendar link, the webhooks and the data streams.
-		{ href: '/settings/integrations', label: 'AI & Integrations' },
+		...(account ? [{ href: '/settings/integrations', label: 'AI & Integrations' }] : []),
 		...(who.canEditInstance ? [{ href: '/settings/instance', label: 'Instance' }] : []),
 		...(who.canAdminister ? [{ href: '/admin', label: 'Administration' }] : [])
 	];

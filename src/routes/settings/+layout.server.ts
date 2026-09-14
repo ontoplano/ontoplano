@@ -21,6 +21,9 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 		// Family is a tab for the people it belongs to: the payer of a plan with
 		// more than one seat, and anybody sitting on one of those seats.
 		family:
-			!isSelfHosted() && (seatsFor(locals.user!.id) > 1 || seatOwnerOf(locals.user!.id) !== null)
+			!isSelfHosted() && (seatsFor(locals.user!.id) > 1 || seatOwnerOf(locals.user!.id) !== null),
+		// There is an account here, and a server behind it. The device's own
+		// instance says otherwise — see `layout.isolated.ts`.
+		hasAccount: true
 	};
 };

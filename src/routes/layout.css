@@ -503,16 +503,50 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 		padding-inline: var(--page-gutter);
 		padding-top: calc(var(--safe-top) + 0.75rem);
 		/*
-		 * The room's own colour, exactly as `.page-surface` takes it — the bar
-		 * is the top of the page it is stuck to, not a slab laid over it. It
-		 * was a flat grey, so the phone was the one place where moving between
-		 * rooms changed nothing above the tabs.
+		 * A header, in the room's own colour — the same one the desktop's has.
+		 *
+		 * The phone had a flat grey slab, so it was the one place where moving
+		 * between rooms changed nothing above the tabs. It takes `.bg-chrome`'s
+		 * expression rather than the page's tint: the deep version of the
+		 * section's colour, with the chrome's own ink on it, so the top of a
+		 * phone screen says which room you are in as plainly as a laptop does.
 		 */
-		background-color: color-mix(in srgb, var(--section-accent) 4%, var(--color-gray-100));
+		background-color: var(--color-chrome);
+		color: var(--color-chrome-ink);
 	}
 
 	html[data-style='playful'] .room-bar {
-		background-color: color-mix(in srgb, var(--section-accent) 9%, var(--color-gray-100));
+		/* For browsers without relative colour syntax, the same fallback the
+		   desktop header uses. */
+		background-color: color-mix(in srgb, var(--section-accent) 40%, #0b1220);
+		background-color: oklch(from var(--section-accent) 0.3 c h);
+	}
+
+	/* On that ground the name and the tabs take the chrome's inks, the way
+	   the header's do above `lg`. */
+	.room-bar h1 {
+		color: var(--color-chrome-ink);
+	}
+
+	.room-bar .tab-link {
+		color: var(--color-chrome-muted);
+	}
+
+	.room-bar .tab-link[aria-current='page'] {
+		color: var(--color-chrome-ink);
+		border-color: var(--section-accent);
+	}
+
+	.room-bar nav {
+		border-color: color-mix(in srgb, var(--color-chrome-ink) 18%, transparent);
+	}
+
+	/* And the action in the corner: quiet on the chrome rather than on a
+	   page that is no longer behind it. */
+	.room-bar .btn {
+		border-color: color-mix(in srgb, var(--color-chrome-ink) 30%, transparent);
+		background-color: color-mix(in srgb, var(--color-chrome-ink) 12%, transparent);
+		color: var(--color-chrome-ink);
 	}
 }
 

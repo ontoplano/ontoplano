@@ -68,7 +68,23 @@ const pages = import.meta.glob(
 		'!/src/routes/login/**',
 		'!/src/routes/mail/**',
 		'!/src/routes/newsletter/**',
-		'!/src/routes/settings/**',
+		/*
+		 * Settings, page by page rather than wholesale.
+		 *
+		 * The whole directory used to be excluded, so a device answered "this
+		 * screen needs an instance with a server" to Preferences — which is
+		 * about the person, not the deployment, and whose server file was
+		 * already written against `IsolatedEvent`. What genuinely cannot come
+		 * is named instead: billing and the family plan are somebody's
+		 * subscription, Instance is a deployment, Integrations is a server
+		 * other software talks to, and the account page reaches for sessions,
+		 * passwords and mail.
+		 */
+		'!/src/routes/settings/account/**',
+		'!/src/routes/settings/billing/**',
+		'!/src/routes/settings/family/**',
+		'!/src/routes/settings/instance/**',
+		'!/src/routes/settings/integrations/**',
 		'!/src/routes/start/**',
 		'!/src/routes/welcome/**'
 	],
@@ -93,7 +109,11 @@ const notHere = import.meta.glob(
 		'/src/routes/login/**/+page.server.ts',
 		'/src/routes/mail/**/+page.server.ts',
 		'/src/routes/newsletter/**/+page.server.ts',
-		'/src/routes/settings/**/+page.server.ts',
+		'/src/routes/settings/account/**/+page.server.ts',
+		'/src/routes/settings/billing/**/+page.server.ts',
+		'/src/routes/settings/family/**/+page.server.ts',
+		'/src/routes/settings/instance/**/+page.server.ts',
+		'/src/routes/settings/integrations/**/+page.server.ts',
 		'/src/routes/start/+page.server.ts',
 		'/src/routes/welcome/**/+page.server.ts'
 	],

@@ -50,7 +50,6 @@
 	});
 
 	/** How many of the folded-away ratings currently carry a value. */
-	const ratingsSet = $derived(Object.values(formRatings).filter((v) => v !== null).length);
 
 	/**
 	 * The card being edited.
