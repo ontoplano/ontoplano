@@ -120,6 +120,13 @@ Signing in is an address and a password.
 Email is optional — without SMTP settings, confirmation and reset links are
 written to the server log instead of sent.
 
+## The name
+
+The code is AGPL-3.0-or-later. The name, the wordmark and the mark are not:
+they are trademarks, and [`TRADEMARK.md`](TRADEMARK.md) says what you may do
+with them — which includes shipping this software unmodified with its name and
+artwork intact, and does not include putting them on a fork.
+
 ## Sponsors
 
 Sponsor me at https://github.com/sponsors/chedieck
