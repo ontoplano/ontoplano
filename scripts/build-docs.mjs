@@ -453,7 +453,18 @@ function servicesPage() {
 	const modules = [];
 	for (const { dir, file } of files) {
 		const source = parse(join(dir, file));
-		const name = file.replace(/\.ts$/, '');
+		/*
+		 * The module's name, and where it lives when that is ambiguous.
+		 *
+		 * The two directories can hold the same basename — `account-import` is
+		 * one of the portable services and also, under `server/`, the wrapper
+		 * that takes a copy on disk first. Two identical names made two rows
+		 * pointing at one anchor, so half the links went to the wrong module.
+		 */
+		const bare = file.replace(/\.ts$/, '');
+		const onServer = dir.endsWith(join('server', 'services'));
+		const twin = files.some((f) => f.file === file && f.dir !== dir);
+		const name = twin && onServer ? `server/${bare}` : bare;
 
 		const moduleDoc = moduleDocOf(source);
 

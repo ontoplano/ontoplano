@@ -416,24 +416,15 @@ file — the same arrangement the task import uses, for the same reason.
 The path matters as well as the text, because a vault's folders are
 structure and they come across as tags.
 
-**`previewImport`**
-
-What a restore would do, said before it does anything.
-
-The restore empties the account first, so everything worth knowing about
-the file \u2014 whose it was, what lands, what is left behind, what the
-import would refuse \u2014 has to be on the screen before the word REPLACE
-is typed, not in the message after. Reads the same text the restore will
-read and writes nothing.
-
 **`importAccount`**
 
-Put an exported account back \u2014 into this one, over what is here.
+And the restore, with this server's own safety copy taken first.
 
-Destructive, so it asks for a typed word rather than a click: this
-empties the account before it fills it, and the one thing worse than an
-import that fails is an import that half-succeeds over a real week.
-`importAccount` is one transaction for the same reason.
+Written beside the database rather than handed to the browser: it is a
+net for an operator asked "can you put Ana back", it has to exist whether
+or not anybody is still looking at the page, and the path lands on the
+audit line the import writes. A device cannot do that and does something
+else — see its `page.isolated.ts`.
 
 ### `/settings/billing`
 
