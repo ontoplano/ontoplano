@@ -18,6 +18,12 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.173.10 — 2026-09-14
+
+- **A mouse gets no movement again.** The landing that replays a late
+  arrival forgot that a fine pointer opts out of the slides entirely, and
+  the desktop caught an arrival animation on screens that never slid.
+
 ## 0.173.9 — 2026-09-14
 
 - **The phone bar wears the mark's own field.** The dark ground between the

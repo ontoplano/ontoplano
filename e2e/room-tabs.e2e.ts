@@ -529,11 +529,59 @@ test.describe('with a mouse', () => {
  * the room finally in it, and this holds a navigation open past the slide to
  * see that it does.
  */
-test('a room that arrives after the slide still slides in', async ({ page }) => {
-	await register(page, `late-arrival-${Date.now()}@test.invalid`);
-	await visit(page, '/tasks/todo');
+test.describe('with a coarse pointer on a wide screen', () => {
+	test.use({ hasTouch: true });
 
-	// Requests the app's service worker makes cannot be held by interception.
+	test('a room that arrives after the slide still slides in', async ({ page }) => {
+		await register(page, `late-arrival-${Date.now()}@test.invalid`);
+		await visit(page, '/tasks/todo');
+
+		// Requests the app's service worker makes cannot be held by interception.
+		await page.evaluate(async () => {
+			const registrations = await navigator.serviceWorker.getRegistrations();
+			await Promise.all(registrations.map((r) => r.unregister()));
+		});
+		await visit(page, '/tasks/todo');
+
+		let release: () => void = () => {};
+		const held = new Promise<void>((resolve) => (release = resolve));
+		await page.route('**/goals**', async (route) => {
+			await held;
+			await route.continue();
+		});
+
+		const pane = page.locator('.slide-frame > div').first();
+
+		await page.getByRole('link', { name: 'Goals' }).click();
+		// Let the empty panel's own arrival finish: the slide is over, the data
+		// is not, and the old content is hidden where it stands.
+		await page.waitForTimeout(700);
+		expect(await pane.evaluate((el) => getComputedStyle(el).transform)).toBe('none');
+
+		release();
+		// The landing plays the arrival again: the pane leaves its resting place
+		// for the far side and travels back — never a reveal in place.
+		await expect
+			.poll(async () => pane.evaluate((el) => el.style.transform), { timeout: 2000 })
+			.toMatch(/rotate/);
+		// And it settles: transform handed back, the room standing where it landed.
+		await expect
+			.poll(async () => pane.evaluate((el) => el.style.transform), { timeout: 2000 })
+			.toBe('');
+	});
+});
+
+/**
+ * And with a mouse, no movement at all — not even the landing.
+ *
+ * `slidesHere()` says a fine pointer gets none of this. The landing that
+ * replays a late arrival briefly forgot that: the direction survived the
+ * skipped slide, and the desktop caught an arrival animation on a screen
+ * that never slid.
+ */
+test('a mouse gets no movement, however slow the load', async ({ page }) => {
+	await register(page, `no-slide-${Date.now()}@test.invalid`);
+	await visit(page, '/tasks/todo');
 	await page.evaluate(async () => {
 		const registrations = await navigator.serviceWorker.getRegistrations();
 		await Promise.all(registrations.map((r) => r.unregister()));
@@ -548,21 +596,17 @@ test('a room that arrives after the slide still slides in', async ({ page }) => 
 	});
 
 	const pane = page.locator('.slide-frame > div').first();
+	const body = pane.locator('> div').first();
 
 	await page.getByRole('link', { name: 'Goals' }).click();
-	// Let the empty panel's own arrival finish: the slide is over, the data
-	// is not, and the old content is hidden where it stands.
-	await page.waitForTimeout(700);
-	expect(await pane.evaluate((el) => getComputedStyle(el).transform)).toBe('none');
+	await page.waitForTimeout(400);
+	// Mid-load: nothing hidden, nothing moved.
+	expect(await body.evaluate((el) => (el as HTMLElement).style.visibility)).toBe('');
+	expect(await pane.evaluate((el) => (el as HTMLElement).style.transform)).toBe('');
 
 	release();
-	// The landing plays the arrival again: the pane leaves its resting place
-	// for the far side and travels back — never a reveal in place.
-	await expect
-		.poll(async () => pane.evaluate((el) => el.style.transform), { timeout: 2000 })
-		.toMatch(/rotate/);
-	// And it settles: transform handed back, the room standing where it landed.
-	await expect
-		.poll(async () => pane.evaluate((el) => el.style.transform), { timeout: 2000 })
-		.toBe('');
+	await page.waitForURL('**/goals');
+	await page.waitForTimeout(400);
+	// Landed: still nothing.
+	expect(await pane.evaluate((el) => (el as HTMLElement).style.transform)).toBe('');
 });

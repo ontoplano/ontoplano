@@ -353,7 +353,13 @@
 		// A navigation that leaves the app takes the page away itself; hiding
 		// the room for it only means staring at nothing while it goes.
 		if (!navigation.to || navigation.willUnload) changedRoom = 0;
-		if (!changedRoom || !page$ || !pageBody || !roomStage || !slidesHere()) return;
+		// Zeroed when the movement is skipped, or the landing in afterNavigate
+		// would play an arrival on a screen that never slid — which is how the
+		// desktop briefly caught a transition it was never meant to have.
+		if (!changedRoom || !page$ || !pageBody || !roomStage || !slidesHere()) {
+			changedRoom = 0;
+			return;
+		}
 
 		/*
 		 * Both halves at the press, rather than one at the press and one when

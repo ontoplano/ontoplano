@@ -131,7 +131,12 @@
 		// the page away itself, and hiding the screen for it only means staring
 		// at nothing while it goes.
 		if (!navigation.to || navigation.willUnload) went = 0;
-		if (!went || !pane || !body || !stage || !slidesHere()) return;
+		// Zeroed when the movement is skipped — see the same guard in the root
+		// layout: a direction left set here becomes a landing nothing asked for.
+		if (!went || !pane || !body || !stage || !slidesHere()) {
+			went = 0;
+			return;
+		}
 
 		/*
 		 * Both halves at the press, rather than one at the press and one when
