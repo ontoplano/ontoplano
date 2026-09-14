@@ -1,5 +1,6 @@
 <script lang="ts">
 	import mark from '$lib/logo/mark.png';
+	import { MARK_MIDDLE } from '$lib/logo/mark-shape';
 	import { markCorners, markPath, markPoints } from '$lib/logo/mark-geometry';
 	import Icon, { type IconName } from '$lib/components/Icon.svelte';
 	import { wedgeAt, wedgeCentre, wedgeEdges, wedgeStep } from '$lib/radial';
@@ -76,7 +77,6 @@
 	 * idea.
 	 */
 	const RIM = 8;
-	const INNER_RIM = 4;
 
 	/**
 	 * How much of the hole the mark in the middle takes.
@@ -135,16 +135,17 @@
 	const HOLE = INNER - 2;
 
 	/**
-	 * And the same ring around the hole.
+	 * And the same ring around the hole, at the same weight.
 	 *
-	 * Thinner, because it is a shorter edge and the mark is right behind it —
-	 * at the rim's weight it would read as a second ring on the logo rather
-	 * than as the edge of the wedges.
+	 * This one is the mark's own ring, drawn rather than photographed: the
+	 * picture in the middle is the medallion with its ring cropped off, and
+	 * this band stands where that ring was. Which is why it can be black, and
+	 * why it can light up — a ring in a PNG can do neither.
 	 */
-	const innerRim = $derived(bands(HOLE, INNER_RIM));
+	const innerRim = $derived(bands(HOLE, RIM));
 
-	/** The medallion's own radius, once the inset is taken off the hole. */
-	const MEDALLION = HOLE * MIDDLE_INSET;
+	/** Inside the ring that the inner band draws, which is where the mark goes. */
+	const MEDALLION = (HOLE - RIM) * MIDDLE_INSET;
 
 	/**
 	 * Where a wedge starts, which is inside the hole rather than at its edge.
@@ -599,8 +600,9 @@
 					The logo, whole, in the middle of its own wheel.
 					
 					Not a piece of it: the rim out there is the ring at wheel size and
-					this is the mark at the size of a button — the same picture in two
-					places, which is what a maker's mark in the middle of a thing is.
+					this is the middle of it, with its ring cropped away — the band
+					around it is that ring, drawn, so that it can be black when nothing
+					is chosen and the room's colour when something is.
 					
 					Drawn in the SVG rather than laid over it in HTML. As an element of
 					its own it was a box positioned by percentages against a shape
@@ -609,12 +611,18 @@
 					was invisible in the dark one. Here it is the same units as the hole
 					it fills.
 				-->
+				<defs>
+					<clipPath id="{clipId}-mark">
+						<path d={markPath(MEDALLION)} />
+					</clipPath>
+				</defs>
 				<image
 					href={mark}
-					x={-MEDALLION}
-					y={-MEDALLION}
-					width={MEDALLION * 2}
-					height={MEDALLION * 2}
+					x={-MEDALLION / MARK_MIDDLE}
+					y={-MEDALLION / MARK_MIDDLE}
+					width={(MEDALLION / MARK_MIDDLE) * 2}
+					height={(MEDALLION / MARK_MIDDLE) * 2}
+					clip-path="url(#{clipId}-mark)"
 					style="pointer-events: none"
 				/>
 
@@ -669,6 +677,11 @@
 					own — the outer rim and the inner one, the two sides of the piece
 					being pointed at.
 					
+					Darker than the wedge it borders, not the same: at full strength
+					the edge and the fill are one block of colour and the wedge stops
+					having an outline exactly when it most needs one. Same hue, less
+					light — which is what a border is.
+					
 					Cut to the wedge rather than worked out side by side. With the
 					eight rooms the app ships a wedge is exactly one side of the
 					octagon, but hide a room and it is one and a half: clipping the
@@ -686,7 +699,7 @@
 						{#each [...rim, ...innerRim] as band, i (i)}
 							<polygon
 								points={band}
-								fill={items[active].color}
+								fill="color-mix(in srgb, {items[active].color} 62%, #000)"
 								class="pie-edge"
 								style="pointer-events: none"
 							/>
