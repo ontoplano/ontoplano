@@ -515,7 +515,10 @@
 	let deskMark = $state<HTMLElement>();
 	let barMark = $state<HTMLElement>();
 	$effect(() => {
-		if (waiting) startMarkSpin([deskMark, barMark]);
+		// The medallion turns the way the rooms are sweeping: the leaving
+		// screen rotates by -changedRoom around the hub, so that is the turn.
+		// A navigation with no room movement spins the one way it always did.
+		if (waiting) startMarkSpin([deskMark, barMark], -changedRoom || 1);
 		else stopMarkSpin();
 	});
 	$effect(() => {

@@ -26,7 +26,9 @@ let angle = 0;
 let last = 0;
 let startedAt = 0;
 let windingDown = false;
-/** Where the wind-down rests: the next multiple of a full turn. */
+/** Which way it turns: the way the screens are moving, +1 or -1. */
+let spin = 1;
+/** Where the wind-down rests: the next full turn, in the turn's own direction. */
 let restAt = 0;
 
 function paint(deg: number): void {
@@ -57,8 +59,8 @@ function frame(now: number): void {
 		return;
 	}
 
-	angle += (dt / TURN_MS) * 360;
-	if (windingDown && angle >= restAt) {
+	angle += spin * (dt / TURN_MS) * 360;
+	if (windingDown && (spin > 0 ? angle >= restAt : angle <= restAt)) {
 		rest();
 		return;
 	}
@@ -66,8 +68,17 @@ function frame(now: number): void {
 	raf = requestAnimationFrame(frame);
 }
 
-/** The wait is on: turn these. Calling again mid-wind-down keeps the turn. */
-export function startMarkSpin(marks: (HTMLElement | null | undefined)[]): void {
+/**
+ * The wait is on: turn these, the way the screens are moving.
+ *
+ * `direction` is the navigation's own — the medallion turns with the rooms
+ * rather than always the one way. Calling again mid-wind-down keeps the turn,
+ * taking the new direction with it.
+ */
+export function startMarkSpin(
+	marks: (HTMLElement | null | undefined)[],
+	direction: number = 1
+): void {
 	if (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)
 		return;
 
@@ -80,6 +91,7 @@ export function startMarkSpin(marks: (HTMLElement | null | undefined)[]): void {
 	// rotate property would smear each step into the next.
 	for (const el of els) el.style.transition = 'none';
 
+	spin = direction < 0 ? -1 : 1;
 	if (raf) {
 		// Still turning (or winding down): fold the new wait into the turn.
 		windingDown = false;
@@ -101,5 +113,5 @@ export function stopMarkSpin(): void {
 		return;
 	}
 	windingDown = true;
-	restAt = Math.ceil(angle / 360) * 360;
+	restAt = (spin > 0 ? Math.ceil(angle / 360) : Math.floor(angle / 360)) * 360;
 }
