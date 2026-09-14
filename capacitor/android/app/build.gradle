@@ -7,8 +7,8 @@ android {
         applicationId "app.ontoplano.isolated"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 17500
-        versionName "0.175.0"
+        versionCode 17600
+        versionName "0.176.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -23,22 +23,22 @@ android {
             dimension "instance"
             applicationId "app.ontoplano"
             resValue "string", "app_name", "Ontoplano"
-            versionCode 17500
-            versionName "0.175.0"
+            versionCode 17600
+            versionName "0.176.0"
         }
         dev {
             dimension "instance"
             applicationId "app.ontoplano.dev"
             resValue "string", "app_name", "OntoplanoDev"
-            versionCode 17500
-            versionName "0.175.0"
+            versionCode 17600
+            versionName "0.176.0"
         }
         staging {
             dimension "instance"
             applicationId "app.ontoplano.staging"
             resValue "string", "app_name", "OntoplanoStaging"
-            versionCode 17500
-            versionName "0.175.0"
+            versionCode 17600
+            versionName "0.176.0"
         }
     }
     // ontoplano flavours >>>
