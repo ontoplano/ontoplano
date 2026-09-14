@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**56 pages, 222 actions.**
+**56 pages, 223 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -54,7 +54,7 @@ write surface for everything else; both end up calling the same
 | `/offline`                           | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/reminders`                         | `create`, `dismiss`, `remove`, `addSound`, `removeSound`, `setSound`                                                                                                                                                                                                                                                                                                                |
 | `/search`                            | —                                                                                                                                                                                                                                                                                                                                                                                   |
-| `/settings/account`                  | `setWeeklyReviewMail`, `changeEmail`, `changePassword`, `revokeSession`, `signOutEverywhere`, `delete`                                                                                                                                                                                                                                                                              |
+| `/settings/account`                  | `setWeeklyReviewMail`, `changeEmail`, `changePassword`, `revokeSession`, `signOutEverywhere`, `empty`, `delete`                                                                                                                                                                                                                                                                     |
 | `/settings/account/import`           | `importTasks`, `importVault`, `previewImport`, `importAccount`                                                                                                                                                                                                                                                                                                                      |
 | `/settings/billing`                  | `acceptFamilyOffer`, `declineFamilyOffer`, `checkout`, `switchInterval`                                                                                                                                                                                                                                                                                                             |
 | `/settings/family`                   | `addSeat`, `withdrawInvite`, `removeSeat`                                                                                                                                                                                                                                                                                                                                           |
@@ -361,11 +361,26 @@ Keeping the current session alive would be friendlier and wrong: someone
 clicking this has usually decided they do not know who else is logged in,
 and the answer to that is nobody.
 
+**`empty`**
+
+Empty the account, and keep it.
+
+The password, because this is the other irreversible button on the page
+and the only thing standing between it and a borrowed laptop is that the
+person at the keyboard knows something. The typed word on top of it is
+the same idea as the address below: a thing you cannot do by reflex.
+
+It is the account's own data and nobody else's — `emptyAccount` walks the
+tables by `user_id`, so there is no id to pass in and nothing an
+attacker could aim somewhere else. The session says who this is.
+
 **`delete`**
 
 Deleting an account is irreversible, so it asks for the account's own
 email address rather than a yes/no — the point is to make it impossible to
-do by reflex, not to add a step.
+do by reflex, not to add a step. And for the password on top of that:
+the address is written on the screen above the box, so on a machine
+somebody else is signed into it is a step rather than a barrier.
 
 ### `/settings/account/import`
 

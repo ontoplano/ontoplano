@@ -16,6 +16,7 @@ import { PLANS } from '../../plans.js';
 import { record as audit } from '$lib/services/audit.js';
 import { RateLimitedError } from '$lib/services/errors.js';
 import { resolvePlan } from './subscriptions.js';
+import { build } from './version.js';
 import * as schema from '$lib/db/schema.js';
 
 /**
@@ -234,6 +235,16 @@ export function unaccountedTables(): string[] {
 
 export type AccountExport = {
 	exportedAt: string;
+	/**
+	 * The version of ontoplano that wrote the file.
+	 *
+	 * Nothing reads it. It is here because a data file that does not say what
+	 * made it is a file somebody has to guess about later — and the moment to
+	 * write it down is when the file is made, not when the guessing starts. An
+	 * import that meets a shape it does not recognise can one day say "this was
+	 * written by 0.169.0" instead of "that file is not an ontoplano export".
+	 */
+	version: string;
 	account: { id: string; name: string; email: string };
 	data: Record<string, unknown[]>;
 };
@@ -341,7 +352,7 @@ export function collectAccount(userId: string, now: Date = new Date()): AccountE
 	const data: Record<string, unknown[]> = {};
 	for (const table of USER_TABLES) data[table.name] = table.rows(userId);
 
-	return { exportedAt: now.toISOString(), account, data };
+	return { exportedAt: now.toISOString(), version: build().version, account, data };
 }
 
 /**
@@ -390,7 +401,52 @@ export function exportAccount(
 	for (const table of USER_TABLES)
 		data[table.name] = leaveOut.has(table.name) ? [] : table.rows(userId);
 
-	return { exportedAt: now.toISOString(), account, data };
+	return { exportedAt: now.toISOString(), version: build().version, account, data };
+}
+
+/**
+ * What survives when an account is emptied but kept.
+ *
+ * Emptying is not deleting: the account stays, so the four things that are
+ * about the account rather than made by it stay with it.
+ *
+ *  - `userSettings` — the theme, the first day of the week, the choices that
+ *    make the app the person's. Losing those is not "my data is gone", it is
+ *    "the app forgot who I am", which nobody asks for.
+ *  - `subscriptions` and `billingCheckouts` — what they are paying, which
+ *    emptying a notebook has no business cancelling.
+ *  - `auditEvents` — the instance's record of what was done to this account,
+ *    including the emptying itself. An erasure that erases the note of the
+ *    erasure is the one shape this must not have.
+ *
+ * Everything else in `USER_TABLES` goes. Named as what is KEPT rather than as
+ * what is deleted on purpose: a table added next year is content until
+ * somebody says otherwise, so it is emptied by default, and the test on this
+ * list makes them say so.
+ */
+export const KEPT_WHEN_EMPTIED = [
+	'userSettings',
+	'subscriptions',
+	'billingCheckouts',
+	'auditEvents'
+] as const;
+
+/**
+ * Empty the account, and leave the account.
+ *
+ * Everything the person made — the same rows an export carries — in one
+ * transaction, so a failure part-way leaves them with what they had rather
+ * than with half of it. They stay signed in, on the same plan, with the same
+ * address and password, looking at an app with nothing in it.
+ *
+ * `deleteAccount` below is the other one: this walks the same tables and stops
+ * before the rows that ARE the account.
+ */
+export function emptyAccount(userId: string): void {
+	const kept = new Set<string>(KEPT_WHEN_EMPTIED);
+	db.transaction((tx) => {
+		for (const table of USER_TABLES) if (!kept.has(table.name)) table.remove(tx, userId);
+	});
 }
 
 /**

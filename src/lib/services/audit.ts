@@ -23,6 +23,9 @@ export const AUDIT_EVENTS = [
 	'data_exported',
 	'data_imported',
 	'account_deleted',
+	// Emptied, not deleted: the account is still here and so is this line,
+	// which `emptyAccount` keeps on purpose.
+	'account_emptied',
 	'role_changed',
 	'plan_changed',
 	'plan_end_set',

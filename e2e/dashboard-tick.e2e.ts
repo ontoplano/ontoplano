@@ -155,7 +155,20 @@ test('answering the block at the top moves nothing under it', async ({ page }) =
 
 		// Still there with the day answered in it, rather than gone.
 		await expect(page.locator('.now-card')).toBeVisible();
-		await expect(page.getByText('Nothing else today')).toBeVisible();
+
+		/*
+		 * And only then is the day empty — some weekdays hold two.
+		 *
+		 * This asserted "Nothing else today" outright, which is the state of a
+		 * day whose single block has just been answered. The starter week puts
+		 * two on some weekdays, so on those the card correctly shows the next
+		 * one and the assertion failed on the calendar rather than on anything
+		 * the app did. What holds either way is the line above: the card is
+		 * still there. The empty copy is checked when the day is actually
+		 * empty.
+		 */
+		if ((await done.count()) === 0)
+			await expect(page.getByText('Nothing else today')).toBeVisible();
 	}
 
 	// Whatever the day held, the card under the top of the page has not moved.

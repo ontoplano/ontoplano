@@ -1,6 +1,24 @@
 import { defineConfig } from '@playwright/test';
+import { existsSync, readdirSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
+
+/**
+ * Every other checkout sitting inside this one.
+ *
+ * A git worktree is a whole second copy of the repo, and a spec found in one
+ * is loaded against that copy's files — where `$lib` does not resolve, so the
+ * run dies before a single test starts, naming a path nobody was working in.
+ * `.worktrees/` was ignored by name below; worktrees made anywhere else were
+ * not, and one called `aaaa` at the root took the whole suite out.
+ *
+ * Found rather than listed: a directory with a `.git` in it is not part of
+ * this working tree, whatever it is called. That covers the sibling
+ * repositories too, which is right for the same reason.
+ */
+const otherCheckouts = readdirSync('.', { withFileTypes: true })
+	.filter((entry) => entry.isDirectory() && existsSync(join(entry.name, '.git')))
+	.map((entry) => `**/${entry.name}/**`);
 
 /**
  * The tests get their own database.
@@ -89,7 +107,7 @@ export default defineConfig({
 	testMatch: '**/*.e2e.{ts,js}',
 	// Worktrees are whole copies of the repo; without this every spec would
 	// run once per open worktree.
-	testIgnore: ['**/{.worktrees,.claude}/**', '**/e2e-isolated/**'],
+	testIgnore: ['**/{.worktrees,.claude}/**', '**/e2e-isolated/**', ...otherCheckouts],
 
 	/*
 	 * The registration tests go last, on their own.
@@ -102,10 +120,15 @@ export default defineConfig({
 	projects: [
 		{
 			name: 'app',
+			// A project's own `testIgnore` replaces the one above rather than
+			// adding to it, so the list of other checkouts has to be spread in
+			// here as well. `admin` and `registration` set only `testMatch` and
+			// keep the top-level list.
 			testIgnore: [
 				'**/{registration,admin}.e2e.ts',
 				'**/{.worktrees,.claude}/**',
-				'**/e2e-isolated/**'
+				'**/e2e-isolated/**',
+				...otherCheckouts
 			]
 		},
 		/*

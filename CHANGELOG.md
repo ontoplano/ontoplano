@@ -18,6 +18,29 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.169.0 — 2026-09-14
+
+- **A danger zone at the bottom of the account page**, on red, with the two
+  irreversible things in it. **Delete everything in this account** is new: it
+  takes every task, note, habit, goal, picture and record, and leaves the
+  account — same address, same password, same plan, an app with nothing in it.
+  Beside it, deleting the account itself.
+- **Both ask for your password**, and for a word typed out: `DELETE EVERYTHING`
+  for the first, your own address for the second. Deleting the account only
+  asked for the address before, which is written on the screen above the box.
+- **A page in the docs about deleting your data** — what each one does, that
+  neither can be undone, and how long an instance's backups go back.
+- **An export says which version of ontoplano wrote it.** Nothing reads it yet;
+  a data file that cannot say what made it is one somebody has to guess about
+  later.
+
+## 0.168.5 — 2026-09-13
+
+- **The mark that turns while you wait stays in one place.** It was set a
+  quarter of the way down the page it was waiting on, so it landed somewhere
+  different on every screen — and above the top of the window entirely when the
+  navigation started from halfway down a long one.
+
 ## 0.168.4 — 2026-09-13
 
 - **The demo says no to an export instead of preparing one for ever.** An

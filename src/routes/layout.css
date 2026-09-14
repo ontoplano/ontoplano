@@ -556,9 +556,19 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
  * screen clears and the mark is already turning on the ground behind it.
  */
 .nav-waiting {
-	position: absolute;
+	/*
+	 * Fixed, and a fraction of the WINDOW rather than of the frame.
+	 *
+	 * `top: 25%` of a frame that is held at the height of whatever just left
+	 * puts the mark a quarter of the way down that page — which is a different
+	 * place on the screen every time, and off the screen entirely when the
+	 * navigation started from halfway down a long one. It is the one thing on
+	 * screen at that moment, so it belongs where the eye already is: the same
+	 * spot, every time, whatever the page behind it was.
+	 */
+	position: fixed;
 	inset-inline: 0;
-	top: 25%;
+	top: var(--nav-waiting-top);
 	z-index: 1;
 	display: flex;
 	justify-content: center;
@@ -569,12 +579,19 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 		nav-waiting-turn 1.1s linear var(--nav-waiting-delay) infinite;
 }
 
-/*
- * The fallback for a page rendered before the layout has set it: the delay is
- * a fraction of the movement, and `$lib/slide` owns both numbers.
- */
 .nav-waiting {
+	/*
+	 * The fallback for a page rendered before the layout has set it: the delay
+	 * is a fraction of the movement, and `$lib/slide` owns both numbers.
+	 */
 	--nav-waiting-delay: 90ms;
+
+	/*
+	 * A third of the way down the window: clear of the header and the tab
+	 * strip, above the middle, which is where a thing you are waiting for reads
+	 * as being at the top of what is coming rather than floating in the page.
+	 */
+	--nav-waiting-top: 33vh;
 }
 
 @keyframes nav-waiting-show {
@@ -3263,4 +3280,46 @@ html[data-pie-open] .float-layer {
 	height: calc(1lh + 1rem + 2px);
 	min-height: 0;
 	white-space: pre;
+}
+
+/*
+ * The bottom of the account page, where the two irreversible things live.
+ *
+ * Red ground rather than a red border on white: the point is that the eye
+ * knows this part of the page is different before it has read anything, and a
+ * hairline does not do that. `--color-red-50` is remapped in the dark theme —
+ * see the note by that override — so this is a tint in both, never a slab of
+ * saturated red under body text.
+ */
+.danger-zone {
+	border: 1px solid var(--color-red-300);
+	background-color: var(--color-red-50);
+}
+
+.danger-zone-title {
+	border-bottom: 1px solid var(--color-red-300);
+	padding: 0.75rem 1rem;
+	font-size: 0.75rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--color-red-700);
+}
+
+/*
+ * Each row is its own line at the width of a phone: the button sitting beside
+ * two lines of explanation squeezes the sentence into a column three words
+ * wide.
+ */
+.danger-zone-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.75rem 1rem;
+	padding: 1rem;
+}
+
+.danger-zone-row + .danger-zone-row {
+	border-top: 1px solid var(--color-red-300);
 }

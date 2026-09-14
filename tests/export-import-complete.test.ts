@@ -116,6 +116,24 @@ describe('a round trip loses nothing', () => {
 /** The tables that hold picture bytes, and the only ones this export drops. */
 const PICTURE_TABLES = ['media', 'albumMedia', 'mediaTags', 'recipeImages'];
 
+describe('the file says what wrote it', () => {
+	test('an export carries the version', () => {
+		const file = account.exportAccount(OWNER, new Date('2026-09-01T09:00:05Z'));
+		// Nothing reads it yet. It is here so that the files people already have
+		// say what made them, by the time anything wants to know.
+		expect(file.version).toMatch(/^\d+\.\d+\.\d+$/);
+	});
+
+	test('and a file written before that still imports', () => {
+		const file = account.exportAccount(OWNER, new Date('2026-09-01T09:00:06Z'));
+		const old = JSON.parse(JSON.stringify(file));
+		delete old.version;
+		const parsed = accountImport.parseExport(old);
+		expect(parsed.version).toBe('');
+		expect(() => accountImport.importAccount(STRANGER, parsed)).not.toThrow();
+	});
+});
+
 describe('an export without pictures', () => {
 	test('is the same account minus exactly the picture tables', () => {
 		const slim = account.exportAccount(OWNER, new Date('2026-09-01T09:00:02Z'), {

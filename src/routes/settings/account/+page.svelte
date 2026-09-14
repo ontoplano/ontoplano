@@ -7,6 +7,7 @@
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { resolve } from '$app/paths';
+	import { EMPTY_CONFIRMATION } from '$lib/danger';
 	import { notify } from '$lib/notify.svelte';
 	import { page } from '$app/state';
 	import Card from '$lib/components/Card.svelte';
@@ -114,6 +115,8 @@
 			await invalidateAll();
 		}
 	}
+	let emptying = $state(false);
+
 	let confirmRevoke = $state<string | null>(null);
 	let confirmSignOutAll = $state(false);
 	let selected = $state(-1);
@@ -586,17 +589,87 @@
 		{/if}
 	</Card>
 
-	<Card title="Delete your account" accent="#b91c1c">
-		{#snippet actions()}
-			<button onclick={() => (confirming = true)} class="btn btn-danger btn-sm">
+	<!--
+		The two irreversible things, together, at the bottom, on red.
+
+		Apart they were two ordinary cards in a column of ordinary cards, and the
+		one that ends the account looked like the one that changes the theme.
+		Together and last, under a heading that says what the section is, they
+		read as the part of the page you have to mean.
+	-->
+	<section class="danger-zone">
+		<h2 class="danger-zone-title">Danger zone</h2>
+
+		<div class="danger-zone-row">
+			<div class="min-w-0">
+				<h3 class="text-sm font-semibold text-red-700">Delete everything in this account</h3>
+				<p class="mt-1 max-w-2xl text-sm text-gray-600">
+					Every task, note, habit, goal, picture and record goes. The account stays: same address,
+					same password, same plan, an app with nothing in it. Download an export first if you might
+					want any of it back.
+				</p>
+			</div>
+			<button onclick={() => (emptying = true)} class="btn btn-danger btn-sm shrink-0">
+				<Icon name="trash" /> Delete everything
+			</button>
+		</div>
+
+		<div class="danger-zone-row">
+			<div class="min-w-0">
+				<h3 class="text-sm font-semibold text-red-700">Delete this account</h3>
+				<p class="mt-1 max-w-2xl text-sm text-gray-600">
+					The data and the account both, and you are signed out for good. This cannot be undone.
+				</p>
+			</div>
+			<button onclick={() => (confirming = true)} class="btn btn-danger btn-sm shrink-0">
 				<Icon name="trash" /> Delete account
 			</button>
+		</div>
+	</section>
+
+	<Modal
+		open={emptying}
+		error={form?.success ? undefined : form?.message}
+		onclose={() => (emptying = false)}
+		title="Delete everything in this account"
+		description="Every row you have made goes. The account itself stays. This cannot be undone."
+		size="sm"
+	>
+		<!--
+			The sheet closes when it worked and stays open when it did not: a wrong
+			password is answered in front of the person who typed it.
+		-->
+		<form
+			id="empty-form"
+			method="post"
+			action="?/empty"
+			use:enhance={() =>
+				async ({ update, result }) => {
+					if (result.type === 'success') emptying = false;
+					await update({ reset: result.type === 'success' });
+				}}
+		>
+			<FormGrid>
+				<Field label="Type {EMPTY_CONFIRMATION} to confirm" span={12} required>
+					<input name="confirm" autocomplete="off" required class="input" />
+				</Field>
+				<Field label="Your password" span={12} required>
+					<input
+						name="password"
+						type="password"
+						autocomplete="current-password"
+						required
+						class="input"
+					/>
+				</Field>
+			</FormGrid>
+		</form>
+
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={() => (emptying = false)}>Cancel</button>
+			<button type="submit" form="empty-form" class="btn btn-danger">Delete everything</button>
 		{/snippet}
-		<p class="text-sm text-gray-500">
-			This removes every row belonging to you and cannot be undone. Download an export first if you
-			might want the data back.
-		</p>
-	</Card>
+	</Modal>
 
 	<Modal
 		open={confirming}
@@ -610,6 +683,15 @@
 			<FormGrid>
 				<Field label="Type {data.email} to confirm" span={12} required>
 					<input name="email" autocomplete="off" required class="input" />
+				</Field>
+				<Field label="Your password" span={12} required>
+					<input
+						name="password"
+						type="password"
+						autocomplete="current-password"
+						required
+						class="input"
+					/>
 				</Field>
 			</FormGrid>
 		</form>

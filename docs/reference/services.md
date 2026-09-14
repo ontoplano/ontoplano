@@ -264,6 +264,18 @@ rows and nothing else.
 
 #### `exportAccount(userId, now, opts)`
 
+#### `emptyAccount(userId)`
+
+Empty the account, and leave the account.
+
+Everything the person made — the same rows an export carries — in one
+transaction, so a failure part-way leaves them with what they had rather
+than with half of it. They stay signed in, on the same plan, with the same
+address and password, looking at an app with nothing in it.
+
+`deleteAccount` below is the other one: this walks the same tables and stops
+before the rows that ARE the account.
+
 #### `deleteAccount(userId)`
 
 Delete the account and everything in it.

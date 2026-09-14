@@ -119,6 +119,21 @@ export function demoRefusal(method: string, path: string, search = ''): DemoRefu
 		};
 	}
 
+	/*
+	 * And emptying it, for the same reason plus one.
+	 *
+	 * A visitor who empties the demo is left looking at the app with nothing in
+	 * it, which is the one thing the demo exists not to be. "Reset demo account"
+	 * in the menu gives them a fresh one, but they would have to find it after
+	 * making the app look broken.
+	 */
+	if (writes && path === '/settings/account' && new URLSearchParams(search).has('/empty')) {
+		return {
+			said: 'The demo account is temporary — emptying it would only leave you with less to look at.',
+			scope: 'demo-account'
+		};
+	}
+
 	if (under(path, DEMO_NO_EXPORT))
 		return {
 			said: 'The demo account is temporary — there is nothing in it to take away.',

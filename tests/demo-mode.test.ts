@@ -123,6 +123,16 @@ describe('the demo refusals', () => {
 		expect(said('GET', '/settings/account')).toBeNull();
 	});
 
+	it('refuse emptying the demo account as well as deleting it', () => {
+		// Both live in the danger zone at the bottom of the account page, and
+		// both would leave a visitor with less demo than they arrived with.
+		expect(said('POST', '/settings/account', '?/empty')).toMatch(/temporary/i);
+		expect(demoRefusal('POST', '/settings/account', '?/empty')?.scope).toBe('demo-account');
+		expect(said('POST', '/settings/account', '?/delete')).toMatch(/temporary/i);
+		// The rest of the page still works: changing a name is not destroying it.
+		expect(said('POST', '/settings/account', '?/rename')).toBeNull();
+	});
+
 	it('leave the administration pages readable', () => {
 		// Deliberate: somebody deciding whether to run this themselves should see
 		// what administering it looks like.

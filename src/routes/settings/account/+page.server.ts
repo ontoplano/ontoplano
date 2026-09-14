@@ -7,6 +7,7 @@ import { loadConfig } from '$lib/server/config';
 import { isEmailConfigured } from '$lib/server/email';
 import {
 	deleteAccount,
+	emptyAccount,
 	exportAllowance,
 	exportsAllowedFor,
 	hoursUntil
@@ -15,6 +16,7 @@ import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/http-errors';
 import { listSessions, sessionTokenById } from '$lib/server/services/sessions';
 import { record } from '$lib/services/audit';
+import { EMPTY_CONFIRMATION } from '$lib/danger';
 import {
 	reviewMailHour,
 	setWeeklyReviewMail,
@@ -197,17 +199,54 @@ export const actions: Actions = {
 	},
 
 	/**
+	 * Empty the account, and keep it.
+	 *
+	 * The password, because this is the other irreversible button on the page
+	 * and the only thing standing between it and a borrowed laptop is that the
+	 * person at the keyboard knows something. The typed word on top of it is
+	 * the same idea as the address below: a thing you cannot do by reflex.
+	 *
+	 * It is the account's own data and nobody else's — `emptyAccount` walks the
+	 * tables by `user_id`, so there is no id to pass in and nothing an
+	 * attacker could aim somewhere else. The session says who this is.
+	 */
+	empty: async ({ request, locals }) => {
+		const user = locals.user!;
+		const formData = await request.formData();
+		const password = formData.get('password')?.toString() ?? '';
+		const confirmation = formData.get('confirm')?.toString()?.trim() ?? '';
+
+		if (confirmation.toLowerCase() !== EMPTY_CONFIRMATION.toLowerCase())
+			return fail(400, { message: `Type ${EMPTY_CONFIRMATION} exactly to confirm` });
+		if (!(await verifyPassword(user.id, password)))
+			return fail(400, { message: 'That is not your password' });
+
+		// Before, not after: `emptyAccount` keeps the audit log precisely so
+		// this line survives it, and writing it first means a failure in the
+		// transaction leaves a note that somebody tried.
+		record(user.id, 'account_emptied', { detail: { email: user.email } });
+		emptyAccount(user.id);
+
+		return { success: true, message: 'Everything in this account has been deleted.' };
+	},
+
+	/**
 	 * Deleting an account is irreversible, so it asks for the account's own
 	 * email address rather than a yes/no — the point is to make it impossible to
-	 * do by reflex, not to add a step.
+	 * do by reflex, not to add a step. And for the password on top of that:
+	 * the address is written on the screen above the box, so on a machine
+	 * somebody else is signed into it is a step rather than a barrier.
 	 */
 	delete: async ({ request, locals, cookies }) => {
 		const user = locals.user!;
 		const formData = await request.formData();
 		const confirmation = formData.get('email')?.toString()?.trim() ?? '';
+		const password = formData.get('password')?.toString() ?? '';
 
 		if (confirmation.toLowerCase() !== user.email.toLowerCase())
 			return fail(400, { message: 'Type your email address exactly to confirm' });
+		if (!(await verifyPassword(user.id, password)))
+			return fail(400, { message: 'That is not your password' });
 
 		// The instance's last note that the account was closed by its owner.
 		// `deleteAccount` disowns this row rather than deleting it with the

@@ -190,6 +190,10 @@ export function parseExport(raw: unknown): AccountExport {
 
 	return {
 		exportedAt: typeof body.exportedAt === 'string' ? body.exportedAt : '',
+		// Empty for a file written before exports carried one. Nothing reads it
+		// yet; it is kept through the parse so that when something does, the
+		// files already in people's folders have it.
+		version: typeof body.version === 'string' ? body.version : '',
 		account:
 			body.account && typeof body.account === 'object'
 				? (body.account as AccountExport['account'])
