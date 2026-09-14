@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { CSV_PARSER_KEY, sniffCsv, type CsvMapping } from '$lib/bank-parsers';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -47,6 +48,30 @@
 
 	let showImport = $state(false);
 	let statementText = $state('');
+
+	/*
+	 * Which export was chosen, and — for the generic one — what its columns are.
+	 *
+	 * Sniffed in the browser rather than on a round trip: the file is already
+	 * here, the answer is needed the moment it arrives, and a person correcting
+	 * a guess should not be waiting on a server to find out it was wrong.
+	 */
+	let source = $state('');
+	const sniffed = $derived(
+		source === CSV_PARSER_KEY && statementText.trim() ? sniffCsv(statementText) : null
+	);
+
+	/** The guess, and then whatever it has been corrected to. */
+	let mapping = $state<CsvMapping | null>(null);
+	$effect(() => {
+		mapping = sniffed ? { ...sniffed.mapping } : null;
+	});
+
+	/** A column that is not named is absent, not the empty string. */
+	function nameColumn(field: 'amount' | 'moneyIn' | 'moneyOut' | 'id', value: string) {
+		if (!mapping) return;
+		mapping = { ...mapping, [field]: value || undefined };
+	}
 	let importForm: HTMLFormElement | undefined = $state();
 
 	let showNewMovement = $state(false);
@@ -221,7 +246,16 @@
 				{/if}
 				<!-- On a phone these are the row, not an afterthought pushed right. -->
 				<span class="flex w-full items-center gap-1 sm:ml-auto sm:w-auto">
-					<button class="btn btn-sm" onclick={() => (showImport = true)}>
+					<!-- The ledger's own default, or the generic reader: opening the
+					     screen with nothing chosen would make the first thing anybody
+					     does be choosing something they have no opinion about yet. -->
+					<button
+						class="btn btn-sm"
+						onclick={() => {
+							source = data.current?.defaultParser || CSV_PARSER_KEY;
+							showImport = true;
+						}}
+					>
 						<Icon name="download" /> Import
 					</button>
 					<button class="btn btn-sm" onclick={() => (showNewMovement = true)}>
@@ -640,10 +674,84 @@
 			<div class="grid gap-3">
 				<label class="block text-sm">
 					<span class="text-gray-600">Export</span>
-					<select name="source" class="select mt-1 w-full" value={data.current.defaultParser ?? ''}>
+					<select name="source" class="select mt-1 w-full" bind:value={source}>
 						{#each data.parsers as p (p.key)}<option value={p.key}>{p.name}</option>{/each}
 					</select>
 				</label>
+
+				<!--
+					What the columns are, when the file is anybody's CSV.
+					
+					Shown filled in rather than blank: the guess is right most of the
+					time and the work is confirming it, not doing it. Every control
+					here is the same list — the file's own headers — because the
+					question is always "which of these is it", and a free text box
+					would be asking somebody to type a header name they can see.
+				-->
+				{#if sniffed && mapping}
+					{@const headers = sniffed.headers}
+					<div class="grid gap-2 border border-gray-200 bg-gray-50 p-3">
+						<p class="text-xs text-gray-600">
+							{sniffed.headerless
+								? 'No header row, so the columns are numbered. Point at the right ones:'
+								: 'Read from the header. Change anything it got wrong:'}
+						</p>
+						<div class="grid gap-2 sm:grid-cols-2">
+							<label class="block text-sm">
+								<span class="text-gray-600">Date</span>
+								<select class="select mt-1 w-full" bind:value={mapping.date}>
+									{#each headers as h (h)}<option value={h}>{h}</option>{/each}
+								</select>
+							</label>
+							<label class="block text-sm">
+								<span class="text-gray-600">Description</span>
+								<select class="select mt-1 w-full" bind:value={mapping.description}>
+									{#each headers as h (h)}<option value={h}>{h}</option>{/each}
+								</select>
+							</label>
+							<label class="block text-sm">
+								<span class="text-gray-600">Amount</span>
+								<select
+									class="select mt-1 w-full"
+									value={mapping.amount ?? ''}
+									onchange={(e) => nameColumn('amount', e.currentTarget.value)}
+								>
+									<option value="">— two columns instead —</option>
+									{#each headers as h (h)}<option value={h}>{h}</option>{/each}
+								</select>
+							</label>
+							{#if !mapping.amount}
+								<label class="block text-sm">
+									<span class="text-gray-600">Money in</span>
+									<select
+										class="select mt-1 w-full"
+										value={mapping.moneyIn ?? ''}
+										onchange={(e) => nameColumn('moneyIn', e.currentTarget.value)}
+									>
+										<option value="">— none —</option>
+										{#each headers as h (h)}<option value={h}>{h}</option>{/each}
+									</select>
+								</label>
+								<label class="block text-sm">
+									<span class="text-gray-600">Money out</span>
+									<select
+										class="select mt-1 w-full"
+										value={mapping.moneyOut ?? ''}
+										onchange={(e) => nameColumn('moneyOut', e.currentTarget.value)}
+									>
+										<option value="">— none —</option>
+										{#each headers as h (h)}<option value={h}>{h}</option>{/each}
+									</select>
+								</label>
+							{/if}
+						</div>
+						<label class="flex items-center gap-2 text-sm text-gray-700">
+							<input type="checkbox" bind:checked={mapping.dayFirst} />
+							Dates are day first — 02/03 is the second of March
+						</label>
+						<input type="hidden" name="mapping" value={JSON.stringify(mapping)} />
+					</div>
+				{/if}
 				<label class="flex items-center gap-2 text-sm text-gray-700">
 					<input type="checkbox" name="flip" />
 					Flip amounts — for an export whose signs mean the opposite

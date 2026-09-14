@@ -13,13 +13,28 @@
  * "flip amounts" switch on the import screen exists for the person, not to
  * paper over a parser that got its own bank wrong.
  */
+import { csvColumns } from './csv.js';
 import { nubankContaCorrente, nubankCreditCardMonth } from './nubank.js';
 
 export { decimalToCents } from './shape.js';
 export type { BankParser, ParsedMovement } from './shape.js';
 import type { BankParser } from './shape.js';
 
-export const BANK_PARSERS: readonly BankParser[] = [nubankContaCorrente, nubankCreditCardMonth];
+/**
+ * The generic one leads, because it is the answer for most people.
+ *
+ * A list that opened with two shapes of one Brazilian bank told everybody else
+ * the app could not read their statement. It can read most of them; it just
+ * has to be shown which column is which, and that is the first entry now.
+ */
+export const BANK_PARSERS: readonly BankParser[] = [
+	csvColumns,
+	nubankContaCorrente,
+	nubankCreditCardMonth
+];
+
+export { parseCsv, sniffCsv, type CsvMapping, type CsvSniff } from './csv.js';
+export const CSV_PARSER_KEY = 'csv:columns';
 
 export function parserKey(p: BankParser): string {
 	return `${p.bank}:${p.slug}`;

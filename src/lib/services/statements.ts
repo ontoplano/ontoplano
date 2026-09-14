@@ -13,7 +13,14 @@ import { and, desc, eq, gte, inArray } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
 import { financeRules, financeTransactions, ledgers } from '$lib/db/schema.js';
-import { parserFor, BANK_PARSERS, parserKey } from '../bank-parsers/index.js';
+import {
+	parserFor,
+	parseCsv,
+	BANK_PARSERS,
+	CSV_PARSER_KEY,
+	parserKey,
+	type CsvMapping
+} from '../bank-parsers/index.js';
 import type { Ctx } from './ctx.js';
 import { getLedger } from './ledgers.js';
 import { stamp } from './time.js';
@@ -126,10 +133,21 @@ function lineHash(input: string): string {
  * `flip` negates every amount, for an export whose signs mean the opposite
  * of what the parser expects — a statement kept from the card's point of
  * view, say.
+ *
+ * `mapping` is for the generic CSV reader, and only for it: which column holds
+ * the date, which the description, which the money. Absent, that reader falls
+ * back to what it guessed from the header, which is the ordinary case — the
+ * mapping arrives when somebody has corrected the guess on the screen.
  */
 export function importStatement(
 	ctx: Ctx,
-	input: { ledgerId: unknown; source: unknown; text: unknown; flip?: boolean }
+	input: {
+		ledgerId: unknown;
+		source: unknown;
+		text: unknown;
+		flip?: boolean;
+		mapping?: CsvMapping | null;
+	}
 ): { added: number; skipped: number } {
 	const ledgerId = num(input.ledgerId, 'ledger', { int: true });
 	getLedger(ctx, ledgerId); // ownership
@@ -138,9 +156,15 @@ export function importStatement(
 	if (!parser) throw new ValidationError('No parser knows that export.');
 	const text = str(input.text, 'statement', { max: MAX_STATEMENT_LENGTH });
 
-	const parsed = parser.parse(text).slice(0, MAX_STATEMENT_LINES);
+	const read =
+		source === CSV_PARSER_KEY && input.mapping ? parseCsv(text, input.mapping) : parser.parse(text);
+	const parsed = read.slice(0, MAX_STATEMENT_LINES);
 	if (parsed.length === 0)
-		throw new ValidationError(`That does not look like "${parser.name}" — no lines matched.`);
+		throw new ValidationError(
+			source === CSV_PARSER_KEY
+				? 'No line in that file had both a date and an amount in the columns named.'
+				: `That does not look like "${parser.name}" — no lines matched.`
+		);
 
 	// Two identical lines in one file are two real movements (two espressos,
 	// same price, same day): each gets its occurrence number, so they keep

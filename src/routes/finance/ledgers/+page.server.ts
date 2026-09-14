@@ -121,11 +121,30 @@ export const actions = {
 	import: async ({ request, locals }: IsolatedEvent) => {
 		const form = await request.formData();
 		try {
+			/*
+			 * The column mapping, when the screen sent one.
+			 *
+			 * It travels as JSON in one field rather than as six: the shape is
+			 * the generic reader's and it is built there, so a field per column
+			 * would be this action knowing about columns it has no other reason
+			 * to know about. Unreadable JSON is no mapping at all, which falls
+			 * back to the reader's own guess rather than failing the import.
+			 */
+			const mappingField = form.get('mapping');
+			let mapping = null;
+			try {
+				mapping =
+					typeof mappingField === 'string' && mappingField ? JSON.parse(mappingField) : null;
+			} catch {
+				mapping = null;
+			}
+
 			const result = importStatement(buildCtx(locals.user!.id), {
 				ledgerId: form.get('ledgerId'),
 				source: form.get('source'),
 				text: form.get('text'),
-				flip: form.get('flip') === 'on'
+				flip: form.get('flip') === 'on',
+				mapping
 			});
 			return { success: true, ...result };
 		} catch (e) {

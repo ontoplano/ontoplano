@@ -4255,6 +4255,11 @@ set of lines, because a ledger is part of what a line is.
 of what the parser expects — a statement kept from the card's point of
 view, say.
 
+`mapping` is for the generic CSV reader, and only for it: which column holds
+the date, which the description, which the money. Absent, that reader falls
+back to what it guessed from the header, which is the ordinary case — the
+mapping arrives when somebody has corrected the guess on the screen.
+
 #### `recordMovement(ctx, input)`
 
 One line, recorded by hand or pushed in by a plugin.

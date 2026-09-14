@@ -18,6 +18,15 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.173.0 — 2026-09-14
+
+- **Any bank's CSV can be imported now, by naming its columns.** It reads the
+  header and says which column it thinks is the date, the description and the
+  money; anything it got wrong is a dropdown. Semicolons and tabs as well as
+  commas, `1.234,56` as well as `1,234.56`, a pair of money-in and money-out
+  columns as well as one signed one, month-first dates, and files with no
+  header row at all.
+
 ## 0.172.0 — 2026-09-14
 
 - **The seeded finances belong to somebody in particular** — somebody who
