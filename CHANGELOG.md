@@ -18,6 +18,11 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.173.6 — 2026-09-14
+
+- **The turning mark lands on its feet.** When the page arrived mid-turn it
+  snapped upright; it now finishes the turn it is in and rests there.
+
 ## 0.173.5 — 2026-09-14
 
 - **The phone can actually say yes to notifications now.** Reminders are

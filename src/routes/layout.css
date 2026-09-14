@@ -539,38 +539,17 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 }
 
 /*
- * The wait is the menu, turning.
+ * The wait is the menu, turning — driven by `$lib/mark-spin`, not by a class.
  *
  * There is no spawned spinner: the mark that opens the rooms is already on
  * every screen — the corner of the header above lg, the raised button in the
- * phone bar under it — and while a navigation is in flight it is the thing
- * that turns. The delay is a fraction of the movement (`$lib/slide` owns both
- * numbers), so a navigation that finishes inside the slide never visibly
- * spins; the ones that drag find the menu already turning.
+ * phone bar under it — and while a navigation is in flight a frame loop turns
+ * it by writing its `rotate` property, which composes after the `translate`
+ * that centres the bar's button, so it spins in place. A loop rather than an
+ * animation because of how it ends: the turn carries on to upright and rests
+ * there, where taking a class off snaps. Reduced motion and the start-up
+ * delay are the loop's business too.
  */
-.mark-waiting {
-	animation: mark-turn 1.1s linear var(--nav-waiting-delay, 90ms) infinite;
-}
-
-@keyframes mark-turn {
-	to {
-		rotate: 360deg;
-	}
-}
-
-/* The phone bar's mark takes the same turn. Its centring is the `translate`
-   property (that is what the translate utility compiles to), and the `rotate`
-   property the animation drives composes after it — so the button spins in
-   place. Keyframes that drove `transform` instead stacked a second translate
-   on top and sent the mark wandering. */
-
-/* For somebody who asked for less motion, the wait shows in the progress bar
-   at the top alone; the menu holds still. */
-@media (prefers-reduced-motion: reduce) {
-	.mark-waiting {
-		animation: none;
-	}
-}
 
 .slide-frame {
 	position: relative;

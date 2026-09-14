@@ -15,12 +15,10 @@
 	import {
 		holdHeight,
 		releaseHeight,
-		SLIDE_MS,
 		slideAway,
 		slideOn,
 		slidesHere,
-		stopHiding,
-		WAIT_MARK_AT
+		stopHiding
 	} from '$lib/slide';
 	import { MARK_CLIP_PATH } from '$lib/logo/mark-shape';
 	import { CHOOSE_PATH, inPhoneApp, storedChoice } from '$lib/instance-choice';
@@ -43,6 +41,7 @@
 	import type { IconName } from '$lib/components/Icon.svelte';
 	import { suppressAutofill } from '$lib/autofill';
 	import { APP_UPDATE_HUSH_KEY } from '$lib/platform';
+	import { startMarkSpin, stopMarkSpin } from '$lib/mark-spin';
 	import { smartNumberFields } from '$lib/number-fields';
 	import type { Snippet } from 'svelte';
 
@@ -501,6 +500,13 @@
 	 * visibly spins at all.
 	 */
 	const waiting = $derived(Boolean(navigating.to) && !givenUp);
+	/* The two marks the spin turns: the header's and the phone bar's. */
+	let deskMark = $state<HTMLElement>();
+	let barMark = $state<HTMLElement>();
+	$effect(() => {
+		if (waiting) startMarkSpin([deskMark, barMark]);
+		else stopMarkSpin();
+	});
 	$effect(() => {
 		if (!navigating.to) {
 			givenUp = false;
@@ -796,11 +802,11 @@
 						     one — the same reason the phone bar's button is clipped to
 						     the mark rather than drawn as a circle holding it. -->
 						<button
+							bind:this={deskMark}
 							onpointerdown={(e) => rooms?.summon(e)}
 							class="pie-handle flex h-8 w-8 items-center justify-center transition hover:brightness-125 {roomsOpen
 								? 'pie-handle-held'
-								: ''} {waiting ? 'mark-waiting' : ''}"
-							style="--nav-waiting-delay: {Math.round(SLIDE_MS * WAIT_MARK_AT)}ms"
+								: ''}"
 							aria-label="Jump to a section"
 							title="Jump to a section"
 							data-tour="rooms"
@@ -1160,13 +1166,12 @@
 						class="pointer-events-none absolute left-1/2 -translate-x-1/2 bg-chrome"
 					></span>
 					<button
+						bind:this={barMark}
 						onpointerdown={(e) => rooms?.summon(e)}
-						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-rise)); height: var(--bar-mark); width: var(--bar-mark); --nav-waiting-delay: {Math.round(
-							SLIDE_MS * WAIT_MARK_AT
-						)}ms"
+						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-rise)); height: var(--bar-mark); width: var(--bar-mark)"
 						class="tap tap-shape pie-handle absolute left-1/2 flex -translate-x-1/2 items-center justify-center {roomsOpen
 							? 'pie-handle-held text-chrome-ink'
-							: 'text-chrome-muted'} {waiting ? 'mark-waiting' : ''}"
+							: 'text-chrome-muted'}"
 						aria-label="Go to a section"
 						title="Go to a section"
 						data-tour="rooms"
