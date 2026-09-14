@@ -126,6 +126,40 @@ export async function phoneWillNotify(): Promise<boolean> {
 	}
 }
 
+/** How far ahead a test notification is booked: long enough to lock the
+ * phone if you want to see it arrive outside the app, short enough to still
+ * be about the button you just pressed. */
+const TEST_DELAY_MS = 4000;
+
+/** An id no reminder can have, so a test never cancels or shadows a real one. */
+const TEST_ID = MAX_ID;
+
+/**
+ * Book one notification a few seconds out, so the whole chain can be seen to
+ * work — permission, the plugin, Android actually showing it — without
+ * setting a reminder and waiting a minute.
+ */
+export async function testPhoneNotification(): Promise<boolean> {
+	const notifications = phoneNotifications();
+	if (!notifications) return false;
+	try {
+		await notifications.schedule({
+			notifications: [
+				{
+					id: TEST_ID,
+					title: 'ontoplano',
+					body: 'A test — reminders will look like this.',
+					schedule: { at: new Date(Date.now() + TEST_DELAY_MS), allowWhileIdle: true },
+					smallIcon: 'ic_launcher_foreground'
+				}
+			]
+		});
+		return true;
+	} catch {
+		return false;
+	}
+}
+
 /**
  * Ask Android for permission, and book what is already due once it is given.
  *

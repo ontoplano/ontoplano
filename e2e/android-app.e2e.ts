@@ -75,3 +75,56 @@ test('a browser is never told to update', async ({ page }) => {
 	await visit(page, '/tasks/todo');
 	await expect(page.getByText('Update the app.')).toHaveCount(0);
 });
+
+/**
+ * Inside the app, the notifications section speaks Android.
+ *
+ * The web view has no Push API, and the page used to answer "This browser
+ * cannot do it" — about an app whose reminders arrive through Android's own
+ * alarms. Nothing in the UI ever asked Android for the permission, either,
+ * which is why a fresh install never notified: the scheduler only books
+ * alarms once permission is granted, and nobody granted it.
+ *
+ * The plugin is stubbed the way the shell injects it, because this suite runs
+ * in a browser: what is being tested is the page's side of the conversation.
+ */
+test.describe('notifications inside the app', () => {
+	test.use({ userAgent: `Mozilla/5.0 (Linux; Android 14) Mobile ${'OntoplanoApp'}/0.1.0` });
+
+	test('asks Android, turns on, and can send a test', async ({ page }) => {
+		await page.addInitScript(() => {
+			const state = { display: 'prompt', booked: [] as unknown[] };
+			(window as never as Record<string, unknown>).__notifs = state;
+			(window as never as Record<string, unknown>).Capacitor = {
+				Plugins: {
+					LocalNotifications: {
+						checkPermissions: async () => ({ display: state.display }),
+						requestPermissions: async () => ((state.display = 'granted'), { display: 'granted' }),
+						getPending: async () => ({ notifications: [] }),
+						cancel: async () => undefined,
+						schedule: async (what: { notifications: unknown[] }) => {
+							state.booked.push(...what.notifications);
+						}
+					}
+				}
+			};
+		});
+		await register(page, `android-notify-${Date.now()}@test.invalid`);
+		await visit(page, '/settings/preferences');
+
+		const section = page.locator('section', { hasText: 'Notifications on this device' });
+		// The app's words, not the browser's refusal.
+		await expect(section.getByText('This browser cannot do it.')).toHaveCount(0);
+		await expect(section.getByText("Android's own alarms")).toBeVisible();
+
+		await section.getByRole('button', { name: 'Turn on' }).click();
+		await expect(section.getByText('On for this phone.')).toBeVisible();
+
+		await section.getByRole('button', { name: 'Send a test' }).click();
+		await expect(section.getByText(/it arrives in a few seconds/)).toBeVisible();
+		const booked = await page.evaluate(
+			() => (window as never as Record<string, { booked: unknown[] }>).__notifs.booked.length
+		);
+		expect(booked).toBeGreaterThan(0);
+	});
+});

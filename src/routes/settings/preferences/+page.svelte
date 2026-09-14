@@ -3,6 +3,12 @@
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { page } from '$app/state';
 	import { disablePush, enablePush, pushEnabled, pushSupported } from '$lib/push';
+	import { inPhoneApp } from '$lib/instance-choice';
+	import {
+		askPhoneToNotify,
+		phoneWillNotify,
+		testPhoneNotification
+	} from '$lib/phone-notifications';
 	import { settingsForm } from '$lib/actions/settings-form';
 	import { isCurrency } from '$lib/money';
 	import TimezonePicker from '$lib/components/TimezonePicker.svelte';
@@ -148,7 +154,24 @@
 	 */
 	let notifications = $state<'off' | 'on' | 'denied' | 'unsupported'>('off');
 
+	/*
+	 * Inside the phone app the question is Android's, not the browser's.
+	 *
+	 * The web view has no Push API, so asking it says "unsupported" — about an
+	 * app whose reminders arrive through Android's own alarms. In the app this
+	 * section talks to that instead: permission checked with the notifications
+	 * plugin, asked for with it, and tested by booking one a few seconds out.
+	 * `$state` set in an effect rather than read at init, so the server render
+	 * and the first client render agree.
+	 */
+	let inApp = $state(false);
+
 	$effect(() => {
+		if (inPhoneApp()) {
+			inApp = true;
+			void phoneWillNotify().then((on) => (notifications = on ? 'on' : 'off'));
+			return;
+		}
 		if (!pushSupported()) {
 			notifications = 'unsupported';
 			return;
@@ -159,6 +182,18 @@
 		}
 		void pushEnabled().then((on) => (notifications = on ? 'on' : 'off'));
 	});
+
+	async function turnOnPhone() {
+		notifications = (await askPhoneToNotify()) ? 'on' : 'denied';
+	}
+
+	/** Book a notification a few seconds out, and say so. */
+	let phoneTested = $state('');
+	async function sendPhoneTest() {
+		phoneTested = (await testPhoneNotification())
+			? 'Booked — it arrives in a few seconds, lock the phone if you want to see it land outside.'
+			: 'Android would not take it. Check the app is allowed notifications in the phone settings.';
+	}
 
 	async function turnOn() {
 		const result = await enablePush(page.data.pushKey ?? null);
@@ -365,16 +400,36 @@
 		lying on one of them. Absent entirely on an instance with no keys, rather
 		than shown and broken.
 	-->
-	{#if page.data.pushKey}
+	{#if page.data.pushKey || inApp}
 		<section class="space-y-4 border border-gray-200 bg-white p-6 shadow-card">
 			<div>
 				<h2 class="text-sm font-semibold text-gray-900">Notifications on this device</h2>
 				<p class="mt-1 text-sm text-gray-500">
-					Reminders arrive with the app closed. Asked for once per browser.
+					{#if inApp}
+						Reminders arrive with the app closed, through Android's own alarms. Asked for once.
+					{:else}
+						Reminders arrive with the app closed. Asked for once per browser.
+					{/if}
 				</p>
 			</div>
 
-			{#if notifications === 'unsupported'}
+			{#if inApp}
+				{#if notifications === 'on'}
+					<div class="flex flex-wrap items-center gap-3">
+						<span class="text-sm text-gray-700">On for this phone.</span>
+						<button class="btn btn-sm" onclick={sendPhoneTest}>Send a test</button>
+					</div>
+					{#if phoneTested}
+						<p class="mt-2 text-sm text-gray-600">{phoneTested}</p>
+					{/if}
+				{:else if notifications === 'denied'}
+					<p class="text-sm text-gray-500">
+						Android said no. Allowing it again lives in the phone's settings, under this app.
+					</p>
+				{:else}
+					<button class="btn btn-primary" onclick={turnOnPhone}>Turn on</button>
+				{/if}
+			{:else if notifications === 'unsupported'}
 				<p class="text-sm text-gray-500">This browser cannot do it.</p>
 			{:else if notifications === 'denied'}
 				<p class="text-sm text-gray-500">

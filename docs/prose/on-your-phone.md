@@ -74,5 +74,5 @@ icon at the right of the address bar if you want a window of its own; Firefox
 and Safari work in a tab.
 
 A self-hosted instance on plain HTTP works in any tab, but browsers only
-*install* from HTTPS — that is their rule. The Android app has no such rule:
+_install_ from HTTPS — that is their rule. The Android app has no such rule:
 point it at your box and it works over HTTP too.

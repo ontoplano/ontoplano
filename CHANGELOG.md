@@ -18,6 +18,21 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.173.5 — 2026-09-14
+
+- **The phone can actually say yes to notifications now.** Reminders are
+  booked with Android only once it grants the permission — and nothing in the
+  app ever asked, so a fresh install never notified. The notifications
+  section under Preferences asks now, inside the app: Turn on asks Android,
+  a test books one four seconds out, and the section no longer answers
+  "This browser cannot do it" about a phone whose reminders never went
+  through a browser. It also shows on an instance with no push keys, the
+  on-device one included — alarms need none.
+- **The phone bar's mark spins in place while it waits.** The turn was
+  stacking a second centring translate on top of the one that holds the
+  button in the middle, so the mark wandered across the bar instead of
+  rotating.
+
 ## 0.173.4 — 2026-09-14
 
 - **The docs' phone page is about the app now.** It was written for the
