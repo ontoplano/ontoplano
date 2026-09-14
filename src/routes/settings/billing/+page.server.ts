@@ -84,6 +84,14 @@ export const load: PageServerLoad = async ({ locals }) => {
 		 * subscription with more seats on it.
 		 */
 		tier: (seats > 1 ? 'family' : 'solo') as 'solo' | 'family',
+		/*
+		 * Inside the installed app, money must not move through the provider:
+		 * Google pulls apps that open an outside checkout, and the app's web
+		 * view has no Play sheet to offer instead unless the page detects one.
+		 * The flag is the server's word that the app is drawing this page; the
+		 * page pairs it with its own Play detection before hiding anything.
+		 */
+		inApp: Boolean(locals.nativeApp),
 		// A fresh portal session per look: the links carry a short-lived token
 		// and the provider says not to store them.
 		portal: standing ? await portalUrl(ctx.userId) : null

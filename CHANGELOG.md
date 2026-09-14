@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.173.2 — 2026-09-14
+
+- **Inside the installed app, nothing opens an outside checkout.** Google
+  pulls apps that sell around Play Billing, and the app's web view cannot
+  open Play's own sheet either — so the billing and card pages, drawn inside
+  the app, keep their status and lose their buy buttons, the cycle switch and
+  the payment portal. One sentence stands where they were. In a browser
+  nothing changes, and a copy that can open Play's sheet still buys through
+  it.
+
 ## 0.173.1 — 2026-09-14
 
 - **A phone app that has fallen behind its instance says so.** The installed

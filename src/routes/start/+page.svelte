@@ -1,4 +1,13 @@
 <script lang="ts">
+	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
+	import { resolve } from '$app/paths';
+	import Banner from '$lib/components/Banner.svelte';
+	import Icon from '$lib/components/Icon.svelte';
+	import { describeYearly, formatPrice, tierPricing, type Pricing } from '$lib/plans';
+	import type { PageServerData, ActionData } from './$types';
+
+	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 	/**
 	 * Which way money goes. Only the copy installed from Google Play has the
 	 * Digital Goods API; when it is there, the checkout action routes to Play
@@ -9,15 +18,9 @@
 	$effect(() => {
 		if ('getDigitalGoodsService' in window) payChannel = 'play';
 	});
-	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
-	import { resolve } from '$app/paths';
-	import Banner from '$lib/components/Banner.svelte';
-	import Icon from '$lib/components/Icon.svelte';
-	import { describeYearly, formatPrice, tierPricing, type Pricing } from '$lib/plans';
-	import type { PageServerData, ActionData } from './$types';
-
-	let { data, form }: { data: PageServerData; form: ActionData } = $props();
+	/** The billing page's rule, on the other page that charges: inside the
+	 * installed app with no Play sheet, nothing here may open a checkout. */
+	const moneyStays = $derived(data.inApp && payChannel !== 'play');
 
 	/*
 	 * Which plan is being bought, here on the page where it is bought.
@@ -171,35 +174,39 @@
 			</div>
 		{/if}
 
-		<!-- Full page post on purpose: the answer is a redirect into checkout. -->
-		<form method="post" action="?/checkout" class="mt-3 space-y-2">
-			<input type="hidden" name="tier" value={familyOffered ? tier : 'solo'} />
-			<input type="hidden" name="channel" value={payChannel} />
-			{#if data.yearly && prices.yearlyCents > 0}
-				<button
-					name="interval"
-					value="yearly"
-					class="w-full bg-gray-900 px-4 py-3 text-left text-white transition hover:bg-gray-800"
-				>
-					<span class="block text-sm font-semibold">Yearly — {yearlyLine}</span>
-				</button>
-				<button
-					name="interval"
-					value="monthly"
-					class="w-full border border-gray-300 px-4 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-50"
-				>
-					Monthly — {formatPrice(prices.monthlyCents, prices.currency)} a month
-				</button>
-			{:else}
-				<button
-					name="interval"
-					value="monthly"
-					class="w-full bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800"
-				>
-					Start — {formatPrice(prices.monthlyCents, prices.currency)} a month
-				</button>
-			{/if}
-		</form>
+		{#if moneyStays}
+			<p class="mt-3 text-sm text-gray-600">A subscription cannot be started from this app.</p>
+		{:else}
+			<!-- Full page post on purpose: the answer is a redirect into checkout. -->
+			<form method="post" action="?/checkout" class="mt-3 space-y-2">
+				<input type="hidden" name="tier" value={familyOffered ? tier : 'solo'} />
+				<input type="hidden" name="channel" value={payChannel} />
+				{#if data.yearly && prices.yearlyCents > 0}
+					<button
+						name="interval"
+						value="yearly"
+						class="w-full bg-gray-900 px-4 py-3 text-left text-white transition hover:bg-gray-800"
+					>
+						<span class="block text-sm font-semibold">Yearly — {yearlyLine}</span>
+					</button>
+					<button
+						name="interval"
+						value="monthly"
+						class="w-full border border-gray-300 px-4 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-50"
+					>
+						Monthly — {formatPrice(prices.monthlyCents, prices.currency)} a month
+					</button>
+				{:else}
+					<button
+						name="interval"
+						value="monthly"
+						class="w-full bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800"
+					>
+						Start — {formatPrice(prices.monthlyCents, prices.currency)} a month
+					</button>
+				{/if}
+			</form>
+		{/if}
 
 		{#if familyOffered}
 			<!-- Always in the layout, shown only for the family plan: picking a

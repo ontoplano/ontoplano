@@ -33,6 +33,10 @@ export const load: PageServerLoad = async ({ locals, cookies }) => {
 	// left of it — usually nothing, in which case renewing bills today.
 	const trialDaysAhead = checkoutTrialDays(locals.user.id);
 	return {
+		// The same rule the billing page follows: inside the installed app the
+		// provider's checkout must not open, and the server is the one that
+		// knows the app is asking.
+		inApp: Boolean(locals.nativeApp),
 		// 'billing' is the card step of registration; 'expired' is the wall a
 		// lapsed account meets — data kept, renew or take it with you.
 		mode: hold,

@@ -1,9 +1,4 @@
 <script lang="ts">
-	/** Only the Play-installed copy has the Digital Goods API — see /start. */
-	let payChannel = $state('');
-	$effect(() => {
-		if ('getDigitalGoodsService' in window) payChannel = 'play';
-	});
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
@@ -16,6 +11,22 @@
 	import type { ActionData, PageServerData } from './$types';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
+	/** Only the Play-installed copy has the Digital Goods API — see /start. */
+	let payChannel = $state('');
+	$effect(() => {
+		if ('getDigitalGoodsService' in window) payChannel = 'play';
+	});
+	/**
+	 * Whether money may move from this page.
+	 *
+	 * Inside the installed app the provider's checkout must not open — Google
+	 * pulls apps that sell around Play Billing — and the app's web view has no
+	 * Play sheet unless the Digital Goods API is actually there. So the page
+	 * that is both inside the app and without the API offers nothing that
+	 * charges: no subscribe, no cycle switch, no payment portal. Status,
+	 * seats and cancellation stay; none of them move money.
+	 */
+	const moneyStays = $derived(data.inApp && payChannel !== 'play');
 
 	function when(iso: string | null): string {
 		if (!iso) return '';
@@ -104,7 +115,7 @@
 					: current.blurb}
 	>
 		{#snippet actions()}
-			{#if data.portal}
+			{#if data.portal && !moneyStays}
 				<a href={data.portal} class="btn btn-sm" rel="external">Manage payment</a>
 			{/if}
 		{/snippet}
@@ -152,7 +163,13 @@
 			</div>
 		{/if}
 
-		{#if data.hasProviderSub && data.yearly && data.interval === 'month'}
+		{#if moneyStays}
+			{#if data.hasProviderSub || data.canCheckout}
+				<p class="mt-4 text-sm text-gray-600">
+					A subscription cannot be started or changed from this app.
+				</p>
+			{/if}
+		{:else if data.hasProviderSub && data.yearly && data.interval === 'month'}
 			<!-- The one honest upgrade: same subscription, better cycle. -->
 			<form method="post" action="?/switchInterval" use:enhance class="mt-4">
 				<button name="interval" value="yearly" class="btn btn-primary">
@@ -192,7 +209,7 @@
 			     never meets the limit reads about it. -->
 		{/if}
 
-		{#if data.canCheckout}
+		{#if data.canCheckout && !moneyStays}
 			<div class="mt-4">
 				{#if data.configured}
 					{@const trialFirst = data.pricing.trialRequiresCard && data.trialDaysAhead > 0}
