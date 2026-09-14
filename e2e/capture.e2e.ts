@@ -48,6 +48,27 @@ async function pieCentre(page: Page) {
 	return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 }
 
+/**
+ * Point at each wedge until the HUD announces the name, then click it.
+ *
+ * The wedges say their icon alone; the name is said once, large, at the top
+ * of the screen — so a test finds a wedge the way a person does. The HUD sets
+ * the letters in capitals; the comparison folds case rather than matching
+ * style. Returns whether the name was ever announced.
+ */
+async function pickWedge(page: Page, name: string): Promise<boolean> {
+	const wedges = page.locator('.pie [role=menuitem]');
+	const count = await wedges.count();
+	for (let i = 0; i < count; i++) {
+		await wedges.nth(i).hover();
+		if ((await page.locator('.pie-hud').innerText()).trim().toLowerCase() === name.toLowerCase()) {
+			await wedges.nth(i).click();
+			return true;
+		}
+	}
+	return false;
+}
+
 test('click the trigger, then pick a wedge', async ({ page }) => {
 	await register(page, `pie-click-${Date.now()}@test.invalid`);
 	await visit(page, '/goals');
@@ -59,7 +80,7 @@ test('click the trigger, then pick a wedge', async ({ page }) => {
 	await page.mouse.up();
 
 	await expect(page.locator('.pie-hole')).toBeVisible();
-	await page.getByText('Idea', { exact: true }).click();
+	expect(await pickWedge(page, 'Idea'), 'no wedge announced itself as Idea').toBe(true);
 
 	await expect(page.getByRole('heading', { name: /new idea/i })).toBeVisible();
 });
@@ -166,17 +187,23 @@ test('the section pie lands you in the room', async ({ page }) => {
 	await page.mouse.down();
 	await page.mouse.up();
 
-	// Every place the navigation bar offers. No People or Recipes wedge: they
-	// are tabs inside Notebooks and Health now, not rooms of their own. No
-	// Home either — the bar carries that as a plain button, so no wedge is
-	// spent on it.
+	// Every place the navigation bar offers, each announcing itself through
+	// the HUD when pointed at. No People or Recipes wedge: they are tabs
+	// inside Notebooks and Health now, not rooms of their own. No Home either
+	// — the bar carries that as a plain button, so no wedge is spent on it.
 	await expect(page.locator('.pie-hole')).toBeVisible();
-	for (const room of ['Tasks', 'Goals', 'Notebooks', 'Health', 'Finance', 'Inventory']) {
-		await expect(page.locator('.pie').getByText(room, { exact: true })).toBeVisible();
+	const wedges = page.locator('.pie [role=menuitem]');
+	const announced: string[] = [];
+	for (let i = 0; i < (await wedges.count()); i++) {
+		await wedges.nth(i).hover();
+		announced.push((await page.locator('.pie-hud').innerText()).trim().toLowerCase());
 	}
-	await expect(page.locator('.pie').getByText('Home', { exact: true })).toHaveCount(0);
+	for (const room of ['Tasks', 'Goals', 'Notebooks', 'Health', 'Finance', 'Inventory']) {
+		expect(announced).toContain(room.toLowerCase());
+	}
+	expect(announced).not.toContain('home');
 
-	await page.locator('.pie').getByText('Inventory', { exact: true }).click();
+	expect(await pickWedge(page, 'Inventory')).toBe(true);
 	await page.waitForURL(/\/inventory/);
 });
 

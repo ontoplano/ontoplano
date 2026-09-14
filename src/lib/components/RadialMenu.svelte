@@ -558,9 +558,9 @@
 							<path
 								d={wedgePath(i)}
 								fill={item.color}
-								fill-opacity={on ? 0.95 : 0.16}
+								fill-opacity={on ? 0.32 : 0.16}
 								stroke={item.color}
-								stroke-opacity={on ? 1 : 0.35}
+								stroke-opacity={on ? 0.7 : 0.35}
 								stroke-width="1.5"
 							/>
 							<!--
@@ -574,36 +574,12 @@
 							survives of the colour is enough to tell the eight apart.
 						-->
 							<g
-								style="color: {on
-									? '#fff'
-									: `color-mix(in srgb, var(--color-black) ${GLYPH_INK}%, ${item.color})`}"
+								style="color: color-mix(in srgb, var(--color-black) {GLYPH_INK}%, {item.color})"
 								transform="translate({p.x} {p.y})"
 							>
-								<!--
-								Lifted by 20 to leave room for the name under it. Where the
-								name is not drawn — a touch screen, see the style block —
-								the icon sits in the middle of its wedge instead of high in
-								it, which is the whole slice it has to itself.
-							-->
-								<g class="wedge-icon" transform="translate(-11 -20)">
+								<g transform="translate(-12 -12)">
 									<Icon name={item.icon} size={24} />
 								</g>
-								<!--
-								11px, because the wedge is as wide as it is: at 13 the longest
-								name in the ring — Notebooks — ran past its own slice and into
-								the one beside it, and Shopping was touching the edge. The ring
-								is sized for eight names, so the type is sized for the longest
-								of them rather than the average.
-							-->
-								<text
-									x="0"
-									y="17"
-									text-anchor="middle"
-									fill="currentColor"
-									class="wedge-label text-[11px] font-semibold"
-								>
-									{item.label}
-								</text>
 							</g>
 						</g>
 					{/each}
@@ -713,7 +689,12 @@
 							<path d={sectorPath(active)} />
 						</clipPath>
 					</defs>
-					<g clip-path="url(#{clipId}-lit)">
+					<g
+						clip-path="url(#{clipId}-lit)"
+						style="filter: drop-shadow(0 0 10px {items[active]
+							.color}) drop-shadow(0 0 28px color-mix(in srgb, {items[active]
+							.color} 55%, transparent))"
+					>
 						{#each [...rim, ...innerRim] as band, i (i)}
 							<polygon
 								points={band}
@@ -740,43 +721,27 @@
 
 <style>
 	/*
-	 * The name of what is under the thumb, at the top of the screen.
+	 * The name of what is chosen, big, at the top of the screen — everywhere.
 	 *
-	 * Hidden where a pointer is fine: a mouse cursor covers nothing, the wedge
-	 * label is right there, and a second copy of it across the screen is noise.
-	 * On a touch screen the wedge label is under the finger making the gesture,
-	 * so it moves here and the wedge keeps its icon alone.
+	 * On a touch screen the finger covers the wedge, so the name has to be
+	 * said somewhere else. On a desktop it used to live in the wedges as
+	 * eleven-pixel labels — a ring of small words to squint at. One reading
+	 * now: the wedges say their icon, and the name is said once, large.
 	 */
 	.pie-hud {
-		display: none;
+		position: fixed;
+		/* A fifth of the way down: clear of the status bar and the app's own
+			   header, and well above the ring, which sits under the thumb. */
+		top: 22%;
+		left: 0;
+		right: 0;
+		display: flex;
+		justify-content: center;
+		/* Above the scrim and the wheel; it is the label for both. */
+		z-index: 1;
 	}
 
 	/*
-	 * Where the phone bar is, whatever the pointer is.
-	 *
-	 * This was `(pointer: coarse)` and it should have been the width: a desktop
-	 * window narrowed past `lg` gets the phone's bar and the phone's wheel, with
-	 * a mouse — and got the old wedge labels with them, because the pointer was
-	 * still fine. The two have to agree, or the same control is two controls.
-	 *
-	 * `1023px` is one below Tailwind's `lg`, which is where the bottom bar takes
-	 * over from the header.
-	 */
-	@media (pointer: coarse), (max-width: 1023px) {
-		.pie-hud {
-			position: fixed;
-			/* A fifth of the way down: clear of the status bar and the app's own
-			   header, and well above the ring, which sits under the thumb. */
-			top: 22%;
-			left: 0;
-			right: 0;
-			display: flex;
-			justify-content: center;
-			/* Above the scrim and the wheel; it is the label for both. */
-			z-index: 1;
-		}
-
-		/*
 		 * Outlined letters over the page, with no card behind them.
 		 *
 		 * A panel would be a second surface floating over a dimmed page, and the
@@ -788,41 +753,30 @@
 		 * `paint-order` puts the stroke behind the fill; without it the stroke is
 		 * drawn centred on the glyph and eats half the letter.
 		 */
-		.pie-hud-inner {
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			gap: 0.5rem;
-			font-size: 2.5rem;
-			font-weight: 800;
-			letter-spacing: 0.08em;
-			/* The tracking above pushes the last letter off centre by its own
+	.pie-hud-inner {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 2.5rem;
+		font-weight: 800;
+		letter-spacing: 0.08em;
+		/* The tracking above pushes the last letter off centre by its own
 			   width; this takes it back. */
-			text-indent: 0.08em;
-			line-height: 1.05;
-			text-transform: uppercase;
-			paint-order: stroke fill;
-			-webkit-text-stroke: 5px var(--color-white);
-			stroke: var(--color-white);
-			stroke-width: 5px;
-		}
+		text-indent: 0.08em;
+		line-height: 1.05;
+		text-transform: uppercase;
+		paint-order: stroke fill;
+		-webkit-text-stroke: 5px var(--color-white);
+		stroke: var(--color-white);
+		stroke-width: 5px;
+	}
 
-		/* The icon is a line drawing already, so it takes the same treatment the
+	/* The icon is a line drawing already, so it takes the same treatment the
 		   letters do: its own stroke widened, drawn under itself. */
-		.pie-hud-icon :global(svg) {
-			stroke-width: 2.25;
-			filter: drop-shadow(0 0 10px var(--color-white)) drop-shadow(0 0 20px var(--color-white));
-		}
-
-		/* The wedge keeps the icon, which is what the muscle memory is for —
-		   centred now, with no name under it to make room for. */
-		.wedge-label {
-			display: none;
-		}
-
-		.wedge-icon {
-			transform: translate(-12px, -12px);
-		}
+	.pie-hud-icon :global(svg) {
+		stroke-width: 2.25;
+		filter: drop-shadow(0 0 10px var(--color-white)) drop-shadow(0 0 20px var(--color-white));
 	}
 
 	/* Grows out of the point it was summoned from, so the gesture and the menu

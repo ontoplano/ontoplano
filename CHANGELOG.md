@@ -18,6 +18,17 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.173.11 — 2026-09-14
+
+- **The wheel says its names once, large — on every screen.** The desktop
+  kept eleven-pixel labels inside the wedges while the phone already said
+  the chosen room big at the top; now the wedges carry their icon alone and
+  the name is announced the same way everywhere.
+- **The highlight lives on the edges.** Pointing at a room no longer floods
+  its wedge with colour: the wedge lifts a shade, and its two black edges —
+  the outer rim and the inner ring — take the room's colour with a soft
+  glow that fades to nothing.
+
 ## 0.173.10 — 2026-09-14
 
 - **A mouse gets no movement again.** The landing that replays a late
