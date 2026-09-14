@@ -33,7 +33,6 @@ let ctxFor: (id: string) => { userId: string };
 /** A write, recorded as the MCP layer records one. */
 function wrote(userId: string, tool: string) {
 	log.recordAssistantCall(ctxFor(userId) as never, {
-		tokenId: null,
 		tool,
 		args: {},
 		before: null,

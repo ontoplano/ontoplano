@@ -2446,6 +2446,24 @@ html .ec {
 }
 
 /*
+ * Held down, said from the app's own state rather than from `:active`.
+ *
+ * On a laptop the mark pressed in and on a phone it did not, which is the same
+ * control behaving two ways. `:active` is the browser's opinion, and a handle
+ * that takes the pointer — `touch-action: none`, then a capture, then a wheel
+ * drawn over the top of it — is a handle a touch browser stops considering
+ * active almost immediately. The app knows perfectly well that the wheel is
+ * open and which handle opened it, so it says so.
+ *
+ * The same 0.92 as `.tap-shape:active`, and for the same reason: the wheel now
+ * grows out of this button, so the button giving way under the press is the
+ * first frame of that movement rather than a flourish of its own.
+ */
+.pie-handle-held {
+	transform: scale(0.92);
+}
+
+/*
  * Keyboard hints are noise without a keyboard. Keyed on the pointer being
  * coarse rather than on width: a small window on a laptop still has a keyboard,
  * and a large tablet does not.

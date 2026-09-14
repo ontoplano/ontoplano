@@ -18,6 +18,18 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.171.0 — 2026-09-14
+
+- **The section wheel is the shape of the mark.** An octagon with the same
+  edge as the logo, the rooms as trapezoids around it, and the mark itself in
+  the middle — which is the way out, the same button you pressed to get there.
+- **It grows out of that button.** The wheel comes out of the mark at the mark's
+  own size, so the thing under your finger stays put and the rooms bloom around
+  it. On a phone that means it travels up from the bar as it grows.
+- **A pressed handle looks pressed on a phone too.** It gave way under a mouse
+  and not under a finger, because that was the browser's opinion of what is
+  active rather than the app's.
+
 ## 0.170.0 — 2026-09-14
 
 - **Your phone tells you what an assistant did.** After it stops writing, one

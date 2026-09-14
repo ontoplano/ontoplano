@@ -1,4 +1,6 @@
 <script lang="ts">
+	import Logo from '$lib/components/Logo.svelte';
+	import { markPoints } from '$lib/logo/mark-shape';
 	import Icon, { type IconName } from '$lib/components/Icon.svelte';
 	import { wedgeAt, wedgeCentre, wedgeEdges, wedgeStep } from '$lib/radial';
 
@@ -53,6 +55,15 @@
 
 	// A tenth wider than it first shipped: at 132 the slices were tight enough
 	// that a name and its glyph fought for the same band.
+	/**
+	 * An id of this instance's own, for the clip path.
+	 *
+	 * Two of these are on the page at once — the rooms and the capture wheel —
+	 * and an `id` is global to the document: with a literal, whichever mounted
+	 * second would be cutting both of them to its own shape.
+	 */
+	const clipId = `pie-mark-${Math.random().toString(36).slice(2, 8)}`;
+
 	const OUTER = 145;
 	const INNER = 57;
 	/** Room for the ring plus the shadow it casts. */
@@ -98,6 +109,21 @@
 		};
 		held = dragging;
 		travelled = 0;
+	});
+
+	/**
+	 * Where the wheel grows from, inside its own box.
+	 *
+	 * The press is a point on the screen and the box has just been placed
+	 * around it — usually centred on it, but pushed in when the press was near
+	 * an edge, which is exactly when the difference shows. Measuring it here
+	 * rather than assuming the middle is what keeps the mark still: press the
+	 * button in the corner of the phone bar and the wheel still comes out of
+	 * the button rather than sliding in from where it would rather be.
+	 */
+	const grewFrom = $derived.by(() => {
+		const at = anchor ?? origin;
+		return { x: at.x - (centre.x - size / 2), y: at.y - (centre.y - size / 2) };
 	});
 
 	/**
@@ -321,81 +347,109 @@
 		<div
 			class="pie pointer-events-none absolute"
 			style="left: {centre.x - size / 2}px; top: {centre.y -
-				size / 2}px; width: {size}px; height: {size}px"
+				size / 2}px; width: {size}px; height: {size}px; --pie-from: {grewFrom.x}px {grewFrom.y}px"
 		>
 			<svg viewBox="{-size / 2} {-size / 2} {size} {size}" class="h-full w-full overflow-visible">
 				<!--
-					An opaque disc under the wedges.
+					The wheel is the shape of the mark.
+					
+					An octagon rather than a circle, and not an octagon of its own: the
+					points come from the outline measured off `mark.png`, so the ring
+					the rooms sit in has the same edge as the button that opened it and
+					the icon in the middle of it. One shape, three sizes.
+				-->
+				<defs>
+					<clipPath id={clipId}>
+						<polygon points={markPoints(OUTER)} />
+					</clipPath>
+				</defs>
+				<!--
+					An opaque ground under the wedges.
 					A tint at 15% over a dimmed page is a stain rather than a menu: the
 					page shows through it and the colour that is supposed to become
 					muscle memory never registers. On its own surface the same tint
 					reads as the section it stands for.
 				-->
-				<circle
-					r={OUTER}
+				<polygon
+					points={markPoints(OUTER)}
 					fill="var(--color-white)"
 					stroke="var(--color-gray-200)"
 					stroke-width="1"
 				/>
 
-				{#each items as item, i (item.key)}
-					{@const on = active === i}
-					{@const p = labelAt(i)}
-					<!-- The keyboard path is the arrow keys and Enter, on the window
+				<!--
+					Cut to the octagon, which is what makes each wedge a trapezoid.
+					
+					The paths are still drawn as segments of a circle at the octagon's
+					own radius — every corner of the shape is exactly `OUTER` from the
+					middle — so clipping trims each one back to the flat edge it sits
+					behind. With the eight rooms the app ships, a wedge is one side of
+					the octagon and two straight cuts. With fewer, because somebody
+					hid a room, the shape still fills the octagon rather than leaving a
+					circle inside it.
+				-->
+				<g clip-path="url(#{clipId})">
+					{#each items as item, i (item.key)}
+						{@const on = active === i}
+						{@const p = labelAt(i)}
+						<!-- The keyboard path is the arrow keys and Enter, on the window
 					     above: a wedge is a shape, not a control, and focusing four of
 					     them one at a time is a worse menu than the list in ⌘K. -->
-					<!-- svelte-ignore a11y_click_events_have_key_events -->
-					<g
-						class="pointer-events-auto cursor-pointer transition-opacity"
-						style="opacity: {active === -1 || on ? 1 : 0.45}"
-						onpointerenter={() => (active = i)}
-						onclick={() => afterOpening(() => onselect(item.key))}
-						role="menuitem"
-						tabindex="-1"
-					>
-						<path
-							d={wedgePath(i)}
-							fill={item.color}
-							fill-opacity={on ? 0.95 : 0.16}
-							stroke={item.color}
-							stroke-opacity={on ? 1 : 0.35}
-							stroke-width="1.5"
-						/>
-						<g style="color: {on ? '#fff' : item.color}" transform="translate({p.x} {p.y})">
-							<!--
+						<!-- svelte-ignore a11y_click_events_have_key_events -->
+						<g
+							class="pointer-events-auto cursor-pointer transition-opacity"
+							style="opacity: {active === -1 || on ? 1 : 0.45}"
+							onpointerenter={() => (active = i)}
+							onclick={() => afterOpening(() => onselect(item.key))}
+							role="menuitem"
+							tabindex="-1"
+						>
+							<path
+								d={wedgePath(i)}
+								fill={item.color}
+								fill-opacity={on ? 0.95 : 0.16}
+								stroke={item.color}
+								stroke-opacity={on ? 1 : 0.35}
+								stroke-width="1.5"
+							/>
+							<g style="color: {on ? '#fff' : item.color}" transform="translate({p.x} {p.y})">
+								<!--
 								Lifted by 20 to leave room for the name under it. Where the
 								name is not drawn — a touch screen, see the style block —
 								the icon sits in the middle of its wedge instead of high in
 								it, which is the whole slice it has to itself.
 							-->
-							<g class="wedge-icon" transform="translate(-11 -20)">
-								<Icon name={item.icon} size={24} />
-							</g>
-							<!--
+								<g class="wedge-icon" transform="translate(-11 -20)">
+									<Icon name={item.icon} size={24} />
+								</g>
+								<!--
 								11px, because the wedge is as wide as it is: at 13 the longest
 								name in the ring — Notebooks — ran past its own slice and into
 								the one beside it, and Shopping was touching the edge. The ring
 								is sized for eight names, so the type is sized for the longest
 								of them rather than the average.
 							-->
-							<text
-								x="0"
-								y="17"
-								text-anchor="middle"
-								fill="currentColor"
-								class="wedge-label text-[11px] font-semibold"
-							>
-								{item.label}
-							</text>
+								<text
+									x="0"
+									y="17"
+									text-anchor="middle"
+									fill="currentColor"
+									class="wedge-label text-[11px] font-semibold"
+								>
+									{item.label}
+								</text>
+							</g>
 						</g>
-					</g>
-				{/each}
+					{/each}
+				</g>
 
 				<!-- The hole. Let go here and nothing happens, which is what makes
 				     the gesture safe to start. Escape does the same from the keyboard,
-				     handled on the window above. -->
-				<circle
-					r={INNER - 2}
+				     handled on the window above. The mark is drawn over it below —
+				     an element, not a shape, so it is the same picture as everywhere
+				     else rather than a copy of it in paths. -->
+				<polygon
+					points={markPoints(INNER - 2)}
 					class="fill-white stroke-gray-300"
 					stroke-width="1.5"
 					style="pointer-events: auto"
@@ -403,13 +457,22 @@
 					onclick={() => afterOpening(onclose)}
 					role="presentation"
 				/>
-				<text
-					y="4"
-					text-anchor="middle"
-					class="fill-gray-500 text-[11px]"
-					style="pointer-events: none">cancel</text
-				>
 			</svg>
+
+			<!--
+				The mark in the hole, which is the way out.
+				
+				It is the thing that was pressed to get here: the wheel grows out of
+				it and it stays in the middle, so letting go on it is letting go of
+				where you started. Nothing under the pointer moves when the wheel
+				opens, which is the whole reason the gesture is safe.
+			-->
+			<span
+				class="pie-mark pointer-events-none absolute"
+				style="width: {(INNER - 2) * 2}px; height: {(INNER - 2) * 2}px"
+			>
+				<Logo fill />
+			</span>
 		</div>
 	</div>
 {/if}
@@ -518,14 +581,33 @@
 	}
 
 	.pie {
-		animation: bloom 140ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+		animation: bloom 190ms cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
 		filter: drop-shadow(0 8px 24px rgb(0 0 0 / 0.35));
+		/* Set on the element: where the press happened, so the wheel comes out
+		   of the button rather than out of the middle of the screen. */
+		transform-origin: var(--pie-from, 50% 50%);
 	}
 
+	.pie-mark {
+		left: 50%;
+		top: 50%;
+		transform: translate(-50%, -50%);
+	}
+
+	/*
+	 * It grows out of the button, at the size of the button.
+	 *
+	 * `0.28` is not a taste: the mark in the middle of the wheel is
+	 * `(INNER - 2) * 2` across — 110px — and the mark on the button is 32, so a
+	 * wheel at 0.29 of itself has a centre exactly the size of the thing that
+	 * was pressed. Start there, with the origin at the press, and the one
+	 * picture on screen never changes size or place: it stays put while the
+	 * rooms bloom out around it.
+	 */
 	@keyframes bloom {
 		from {
 			opacity: 0;
-			transform: scale(0.7);
+			transform: scale(0.29);
 		}
 		to {
 			opacity: 1;

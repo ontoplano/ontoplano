@@ -729,7 +729,9 @@
 						     the mark rather than drawn as a circle holding it. -->
 						<button
 							onpointerdown={(e) => rooms?.summon(e)}
-							class="pie-handle flex h-8 w-8 items-center justify-center transition hover:brightness-125"
+							class="pie-handle flex h-8 w-8 items-center justify-center transition hover:brightness-125 {roomsOpen
+								? 'pie-handle-held'
+								: ''}"
 							aria-label="Jump to a section"
 							title="Jump to a section"
 							data-tour="rooms"
@@ -818,7 +820,9 @@
 					     having decided where you are going. -->
 					<button
 						onpointerdown={(e) => pie?.summon(e)}
-						class="pie-handle flex h-8 w-8 items-center justify-center border border-chrome-line bg-chrome-raised text-chrome-muted shadow-sm transition hover:text-chrome-ink hover:brightness-125"
+						class="pie-handle flex h-8 w-8 items-center justify-center border border-chrome-line bg-chrome-raised text-chrome-muted shadow-sm transition hover:text-chrome-ink hover:brightness-125 {pieOpen
+							? 'pie-handle-held'
+							: ''}"
 						aria-label="Write something down"
 						title="Write something down"
 						data-tour="capture"
@@ -1109,7 +1113,7 @@
 						onpointerdown={(e) => rooms?.summon(e)}
 						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-rise)); height: var(--bar-mark); width: var(--bar-mark)"
 						class="tap tap-shape pie-handle absolute left-1/2 flex -translate-x-1/2 items-center justify-center {roomsOpen
-							? 'text-chrome-ink'
+							? 'pie-handle-held text-chrome-ink'
 							: 'text-chrome-muted'}"
 						aria-label="Go to a section"
 						title="Go to a section"
@@ -1126,7 +1130,7 @@
 				<button
 					onpointerdown={(e) => pie?.summon(e)}
 					class="tap pie-handle flex flex-1 items-center justify-center {pieOpen
-						? 'text-chrome-ink'
+						? 'pie-handle-held text-chrome-ink'
 						: 'text-chrome-muted'}"
 					aria-label="Write something down"
 					title="Write something down"
