@@ -21,6 +21,7 @@ import {
 	listCategories,
 	setCategoryFood,
 	listItems,
+	shoppingRun,
 	recordPaid,
 	restockItem,
 	setItemAttributes,
@@ -35,6 +36,8 @@ export const load = async ({ locals }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
 	return {
 		items: listItems(ctx),
+		// What a trip to the shop actually looks like: see `shoppingRun`.
+		run: shoppingRun(ctx),
 		// The other axis the same rows are read on: where each thing lives.
 		locationTree: locationTree(ctx),
 		locations: listLocations(ctx),

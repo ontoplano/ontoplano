@@ -4074,11 +4074,14 @@ the read was stale. Everything outside the page itself asks for a state.
 
 What is still to buy, for the dashboard card.
 
+#### `shoppingRun(ctx)`
+
 ### Types
 
 - `ItemType`
 - `ItemInput`
 - `PricePoint`
+- `ShoppingRun` — The list you take to the shop: what has run low, how much of it, and what that is likely to cost.
 
 ## slots
 

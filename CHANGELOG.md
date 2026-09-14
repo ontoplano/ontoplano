@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.175.0 — 2026-09-14
+
+- **A shopping list you can take to the shop.** One button in Inventory opens
+  it: everything that has run low, how many to buy — the shortfall, not the
+  whole shelf — what each line costs at its last known price, and the total
+  at the foot. It says how many lines have no price yet rather than counting
+  those as free. The wishlist follows under the total instead of inside it:
+  what you would buy if the trip goes well. A sheet on a phone, a modal on a
+  desktop.
+
 ## 0.174.1 — 2026-09-14
 
 - **The phone has a header again, in the room's own colour.** It was a flat

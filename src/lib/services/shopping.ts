@@ -735,3 +735,67 @@ export function listToBuy(ctx: Ctx) {
 		.orderBy(desc(shoppingItems.createdAt))
 		.all();
 }
+
+/**
+ * The list you take to the shop: what has run low, how much of it, and what
+ * that is likely to cost.
+ *
+ * Derived rather than stored, because it is a reading of the cupboard and not
+ * a thing anybody maintains: a replenish item is on it when there is less of
+ * it than you keep, and it is off it the moment the quantity is put right.
+ * Snoozed items stay off — that is what snoozing is — and a thing already
+ * ticked as bought is not needed again this trip.
+ *
+ * `priceCents` is a *last known* price and the UI says "about"; the total is
+ * a guess by the same token, and it says how much of the list it could not
+ * price rather than quietly counting those as free.
+ */
+export type ShoppingRun = {
+	lines: {
+		id: number;
+		name: string;
+		category: string | null;
+		/** How many to buy: what you keep, less what is there. */
+		needed: number;
+		priceCents: number | null;
+		/** `needed * priceCents`, or null when nobody has said what it costs. */
+		lineCents: number | null;
+	}[];
+	/** What the priced lines add up to. */
+	totalCents: number;
+	/** How many lines carry no price, so the total is honest about itself. */
+	unpriced: number;
+	/** The someday list, which is not part of the total. */
+	wishlist: { id: number; name: string; priceCents: number | null; notes: string }[];
+};
+
+export function shoppingRun(ctx: Ctx): ShoppingRun {
+	const items = listItems(ctx);
+
+	const lines = items
+		.filter((i) => i.type === 'replenish' && !i.snoozed && !i.bought)
+		.map((i) => ({
+			id: i.id,
+			name: i.name,
+			category: i.shoppingCategoryName,
+			needed: Math.max(0, i.idealQty - i.qty),
+			priceCents: i.priceCents,
+			lineCents: i.priceCents === null ? null : i.priceCents * Math.max(0, i.idealQty - i.qty)
+		}))
+		.filter((line) => line.needed > 0)
+		// By category, then by name: the order a shop is walked in, near enough,
+		// and the one that puts the same things together every trip.
+		.sort(
+			(a, b) => (a.category ?? '￿').localeCompare(b.category ?? '￿') || a.name.localeCompare(b.name)
+		);
+
+	return {
+		lines,
+		totalCents: lines.reduce((sum, line) => sum + (line.lineCents ?? 0), 0),
+		unpriced: lines.filter((line) => line.lineCents === null).length,
+		wishlist: items
+			.filter((i) => i.type === 'someday' && !i.bought)
+			.map((i) => ({ id: i.id, name: i.name, priceCents: i.priceCents, notes: i.notes ?? '' }))
+			.sort((a, b) => a.name.localeCompare(b.name))
+	};
+}
