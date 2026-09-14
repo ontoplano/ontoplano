@@ -28,10 +28,13 @@ test('the header mark turns while a navigation drags, then finishes its turn upr
 	});
 	await visit(page, '/tasks/todo');
 
-	const mark = page.locator('header [data-tour=rooms]');
+	const mark = page.locator('header [data-tour=rooms] .mark-turn');
 	await expect(mark).toBeVisible();
 
-	const angle = () => mark.evaluate((el) => (el.style.rotate ? parseFloat(el.style.rotate) : null));
+	const angle = () =>
+		mark.evaluate((el) =>
+			(el as HTMLElement).style.rotate ? parseFloat((el as HTMLElement).style.rotate) : null
+		);
 
 	// Nothing in flight: the mark stands still, wearing no rotation at all.
 	expect(await angle()).toBeNull();
@@ -60,29 +63,25 @@ test('the header mark turns while a navigation drags, then finishes its turn upr
 test.describe('on a phone', () => {
 	test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-	test('the raised mark in the bar turns in place', async ({ page }) => {
+	test('only the medallion turns in the bar; the button stands still', async ({ page }) => {
 		await register(page, `bar-turn-${Date.now()}@test.invalid`);
 		await visit(page, '/tasks/todo');
 
-		const mark = page.locator('nav [data-tour=rooms]');
-		await expect(mark).toBeVisible();
-
-		/*
-		 * The rotation is applied directly: on a phone the way between rooms is
-		 * the wheel, and driving a full gesture buys nothing over the property
-		 * this guards — `rotate` composes after the `translate` that centres
-		 * the button, so a turned mark is exactly where the resting one is. A
-		 * turn written into `transform` instead stacked a second centring
-		 * translate and sent the mark wandering across the bar.
-		 */
-		const before = await mark.boundingBox();
-		await mark.evaluate((el) => (el.style.rotate = '137deg'));
-		const during = await mark.boundingBox();
-		expect(Math.abs(during!.x + during!.width / 2 - (before!.x + before!.width / 2))).toBeLessThan(
-			2
+		const button = page.locator('nav [data-tour=rooms]');
+		await expect(button).toBeVisible();
+		const medallion = button.locator('.mark-turn');
+		await expect(medallion).toHaveCount(1);
+		// A disc: the one shape that turns without clipping or revealing.
+		expect(await medallion.evaluate((el) => (el as HTMLElement).style.clipPath)).toContain(
+			'circle'
 		);
-		expect(
-			Math.abs(during!.y + during!.height / 2 - (before!.y + before!.height / 2))
-		).toBeLessThan(2);
+
+		// Turning the medallion moves nothing: not itself off-centre, and not
+		// the button around it.
+		const before = await button.boundingBox();
+		await medallion.evaluate((el) => ((el as HTMLElement).style.rotate = '137deg'));
+		const during = await button.boundingBox();
+		expect(Math.abs(during!.x - before!.x)).toBeLessThan(1);
+		expect(Math.abs(during!.y - before!.y)).toBeLessThan(1);
 	});
 });

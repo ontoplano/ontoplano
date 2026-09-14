@@ -12,6 +12,22 @@
 	 */
 	import mark from '$lib/logo/mark.png';
 	import { BRAND_GROUND } from '$lib/logo/brand';
+	import { MARK_TURN_RADIUS } from '$lib/logo/mark-geometry';
+
+	/*
+	 * The medallion, as its own layer over the whole mark.
+	 *
+	 * A second copy of the same picture, clipped to a disc just past the
+	 * medallion's measured edge — identical pixels over identical pixels, so
+	 * nothing changes to look at. What it buys is a part that can turn while
+	 * the rim stands still: a disc turns in place, and everything inside this
+	 * one past the medallion is the flat dark field, the same at any angle.
+	 * `$lib/mark-spin` turns it while a navigation drags.
+	 *
+	 * The radius is a fraction of the half width; circle() percentages resolve
+	 * against the side, hence the halving.
+	 */
+	const TURN_CLIP = `circle(${((MARK_TURN_RADIUS / 2) * 100).toFixed(2)}%)`;
 
 	let {
 		size = 24,
@@ -43,7 +59,7 @@
 </script>
 
 <span
-	class="ontoplano-logo inline-flex shrink-0 items-center justify-center {fill
+	class="ontoplano-logo relative inline-flex shrink-0 items-center justify-center {fill
 		? 'h-full w-full'
 		: ''} {klass}"
 	style="{fill ? '' : `width: ${size}px; height: ${size}px;`} {background
@@ -54,6 +70,7 @@
 	aria-hidden={label ? undefined : 'true'}
 >
 	<img src={mark} alt="" width={fill ? undefined : size} height={fill ? undefined : size} />
+	<img class="mark-turn" src={mark} alt="" aria-hidden="true" style="clip-path: {TURN_CLIP}" />
 </span>
 
 <style>
@@ -62,5 +79,10 @@
 		height: 100%;
 		display: block;
 		object-fit: contain;
+	}
+
+	.ontoplano-logo :global(.mark-turn) {
+		position: absolute;
+		inset: 0;
 	}
 </style>

@@ -18,6 +18,12 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.173.8 — 2026-09-14
+
+- **Only the medallion turns.** While the app waits, the mark's middle spins
+  and the rim stands still — the turning layer is a disc cut just past the
+  medallion's measured edge, so nothing clips and nothing shows a seam.
+
 ## 0.173.7 — 2026-09-14
 
 - **A screen that loads slower than the slide still arrives.** The room on

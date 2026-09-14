@@ -71,7 +71,11 @@ export function startMarkSpin(marks: (HTMLElement | null | undefined)[]): void {
 	if (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)
 		return;
 
-	els = marks.filter((el): el is HTMLElement => Boolean(el));
+	// Only the medallion turns — the rim of the mark stands still. The layer
+	// is the Logo's own (`.mark-turn`); a root without one turns whole.
+	els = marks
+		.filter((el): el is HTMLElement => Boolean(el))
+		.map((el) => el.querySelector<HTMLElement>('.mark-turn') ?? el);
 	// The turn writes `rotate` every frame; a utility transition covering the
 	// rotate property would smear each step into the next.
 	for (const el of els) el.style.transition = 'none';
