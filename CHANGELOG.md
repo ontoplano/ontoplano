@@ -20,6 +20,12 @@ releases mattered.
 
 ## 0.176.1 — 2026-09-14
 
+- **Both wheels fly their middle up from the bar.** The rooms wheel never
+  did: it is anchored at its own drawn position on any screen narrower than a
+  laptop, and the flight was measured from that anchor rather than from the
+  button under the finger — so the vector was zero and only the capture
+  wheel, which has no anchor, appeared to move. Same journey, same speed, for
+  both now.
 - **The capture wheel has a big plus in its middle.** It was flying the app's
   own mark up out of the `+` button — the wrong answer to a wheel that has
   nothing to do with the brand. Same journey, its own symbol.

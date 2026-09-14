@@ -16,7 +16,7 @@
 import { SLIDE_MS, WAIT_MARK_AT } from './slide';
 
 /** One full turn, in milliseconds, at full speed. */
-export const TURN_MS = 1100;
+export const TURN_MS = 300;
 
 /**
  * It does not start at full speed, and it does not stop at it either.
@@ -31,8 +31,8 @@ export const TURN_MS = 1100;
  * `SLOWEST` make the wind-up more pronounced; bigger `DECEL_DEGREES` makes it
  * coast further before it settles.
  */
-const SPIN_UP_MS = 1400;
-const SLOWEST = 0.1;
+const SPIN_UP_MS = 500;
+const SLOWEST = 0.5;
 const DECEL_DEGREES = 540;
 
 /** Ease-out: quick at first, gentler as it approaches the top. */

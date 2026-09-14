@@ -274,6 +274,21 @@
 	 * agreeing by being typed out twice.
 	 */
 	const BLOOM_MS = 190;
+
+	/*
+	 * The flight of the thing in the middle.
+	 *
+	 * The wheel blooms out of the button, which already carries its middle
+	 * most of the way — so a flight that only spanned button-to-centre was a
+	 * few dozen pixels and over before the eye found it. `FLY_REACH` starts it
+	 * further down that same line, so the rise is a movement of its own.
+	 *
+	 * Both wheels fly at the same speed: they are the same gesture from the
+	 * same bar, and a logo that took longer than the plus read as a different
+	 * animation rather than the same one.
+	 */
+	const FLY_REACH = 1.9;
+	const FLY_MS = BLOOM_MS * 1.3;
 	let blooming = $state(false);
 
 	/** Hovering a wedge chooses it, once the wheel has stopped moving. */
@@ -414,6 +429,20 @@
 	}
 
 	const size = (OUTER + PAD) * 2;
+
+	/*
+	 * Where the middle of the wheel flies in from: the press itself.
+	 *
+	 * Not `grewFrom`, which takes the anchor when there is one — and the rooms
+	 * wheel is anchored at its own drawn position on any screen narrower than
+	 * a laptop, so that vector is zero and the logo had nowhere to come from.
+	 * Only the capture wheel, which has no anchor, appeared to fly. The finger
+	 * was on the bar either way; that is where it comes from.
+	 */
+	const flyFrom = $derived({
+		x: origin.x - (centre.x - size / 2),
+		y: origin.y - (centre.y - size / 2)
+	});
 	/**
 	 * Says on the document that a menu is open, for the things that float.
 	 *
@@ -650,8 +679,9 @@
 				-->
 				<g
 					class="pie-mark"
-					style="--mark-from-x: {grewFrom.x - size / 2}px; --mark-from-y: {grewFrom.y -
-						size / 2}px; --pie-bloom: {BLOOM_MS}ms"
+					style="--mark-from-x: {(flyFrom.x - size / 2) * FLY_REACH}px; --mark-from-y: {(flyFrom.y -
+						size / 2) *
+						FLY_REACH}px; --mark-fly: {Math.round(FLY_MS)}ms"
 				>
 					<!--
 						The whole mark, not its middle.
@@ -862,8 +892,7 @@
 		 * with it — at the bloom's own pace the whole journey was over inside a
 		 * fifth of a second, which is not something an eye catches.
 		 */
-		animation: mark-arrives calc(var(--pie-bloom, 190ms) * 2.6) cubic-bezier(0.16, 0.7, 0.22, 1.06)
-			both;
+		animation: mark-arrives var(--mark-fly, 500ms) cubic-bezier(0.16, 0.7, 0.22, 1.06) both;
 	}
 
 	@keyframes mark-arrives {
