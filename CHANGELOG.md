@@ -18,6 +18,20 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.173.13 — 2026-09-14
+
+- **The glow stays inside its wedge.** The black edges are the limits of the
+  selection and light does not cross them: the chosen room glows in its own
+  colour, brightening away from the centre, and the glow ends exactly at its
+  borders instead of washing into the neighbours. The edges themselves stay
+  black, chosen or not.
+
+## 0.173.12 — 2026-09-14
+
+- **The medallion turns the way the screens are going.** Screens sweeping
+  right spin it clockwise, screens sweeping left spin it the other way — it
+  always turned clockwise, whichever way the rooms moved.
+
 ## 0.173.11 — 2026-09-14
 
 - **The wheel says its names once, large — on every screen.** The desktop

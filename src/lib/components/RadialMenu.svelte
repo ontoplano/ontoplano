@@ -391,24 +391,6 @@
 		].join(' ');
 	}
 
-	/**
-	 * The same wedge as a slice from the centre, for cutting the lit ring to.
-	 *
-	 * `wedgePath` starts just inside the hole, because that is where a wedge is
-	 * painted from. The ring around the hole reaches further in than that, so
-	 * clipping it to a wedge left the innermost few pixels of the band outside
-	 * the clip — a black sliver along the inside edge of whichever wedge was
-	 * chosen, inside its own border. A slice with no hole in it has nothing to
-	 * leave out.
-	 */
-	function sectorPath(i: number): string {
-		const { from, to } = wedgeEdges(i, items.length);
-		const big = wedgeStep(items.length) > Math.PI ? 1 : 0;
-		const at = (r: number, a: number) =>
-			`${(r * Math.cos(a)).toFixed(2)} ${(r * Math.sin(a)).toFixed(2)}`;
-		return `M 0 0 L ${at(OUTER, from)} A ${OUTER} ${OUTER} 0 ${big} 0 ${at(OUTER, to)} Z`;
-	}
-
 	/** Where a wedge's label sits: upright, never rotated. Rotated text at a
 	 *  glance is unreadable, and glance is the whole point. */
 	function labelAt(i: number): { x: number; y: number } {
@@ -684,25 +666,35 @@
 					mapping.
 				-->
 				{#if active >= 0}
+					{@const lit = items[active].color}
+					<!--
+						The glow of the chosen wedge, and nothing but the wedge.
+
+						The black edges do not change: they are the limits of the
+						selection, and light must not cross them into a neighbour. So
+						the glow is not a shadow cast outward — it is a radial wash in
+						the room's own colour, brightening away from the centre, drawn
+						inside the wedge's own shape and cut to the ring like every
+						wedge is. Contained is the point: the light ends exactly at
+						the borders, which is what lets it burn brighter inside them.
+						A gradient rather than a blur, so the falloff is smooth and
+						owes nothing to a filter radius.
+					-->
 					<defs>
-						<clipPath id="{clipId}-lit">
-							<path d={sectorPath(active)} />
-						</clipPath>
+						<radialGradient
+							id="{clipId}-glow"
+							gradientUnits="userSpaceOnUse"
+							cx="0"
+							cy="0"
+							r={OUTER}
+						>
+							<stop offset="35%" stop-color={lit} stop-opacity="0" />
+							<stop offset="72%" stop-color={lit} stop-opacity="0.45" />
+							<stop offset="100%" stop-color={lit} stop-opacity="0.92" />
+						</radialGradient>
 					</defs>
-					<g
-						clip-path="url(#{clipId}-lit)"
-						style="filter: drop-shadow(0 0 10px {items[active]
-							.color}) drop-shadow(0 0 28px color-mix(in srgb, {items[active]
-							.color} 55%, transparent))"
-					>
-						{#each [...rim, ...innerRim] as band, i (i)}
-							<polygon
-								points={band}
-								fill="color-mix(in srgb, {items[active].color} 62%, #000)"
-								class="pie-edge"
-								style="pointer-events: none"
-							/>
-						{/each}
+					<g clip-path="url(#{clipId})" style="pointer-events: none">
+						<path d={wedgePath(active)} fill="url(#{clipId}-glow)" />
 					</g>
 				{/if}
 			</svg>
