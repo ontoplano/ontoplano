@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { askAgainOnThisPhone, inPhoneApp } from '$lib/instance-choice';
+	import { CHOOSE_PATH, askAgainOnThisPhone, inPhoneApp } from '$lib/instance-choice';
+	import type { SubmitFunction } from '@sveltejs/kit';
 	import { getAction } from '$lib/shortcuts';
 	import { invalidateAll } from '$app/navigation';
 	import { enhance } from '$app/forms';
@@ -18,6 +19,42 @@
 	import type { PageServerData, ActionData } from './$types';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
+
+	/**
+	 * Whether this instance is the device it is running on.
+	 *
+	 * Then most of this page is about something that does not exist: there is
+	 * no address to sign in with, no password, no sessions it opened, and no
+	 * mail. What is left is what somebody comes to an account page for when
+	 * something has gone wrong — the data out, the data in, and the end of it.
+	 * One flag rather than a test per absent thing, so a card added later shows
+	 * here until somebody decides it should not.
+	 */
+	const onDevice = $derived('onDevice' in data && data.onDevice === true);
+
+	/**
+	 * What happens after the delete on a device: the file, then the way out.
+	 *
+	 * The action deleted the rows, and it ran inside the worker that owns the
+	 * database — so it could not also throw that database away, which is the
+	 * other half of unmaking an instance that is a phone. This asks the worker
+	 * to empty its own storage and then leaves for the screen that chooses
+	 * where your ontoplano lives, where making a new one is a press away.
+	 *
+	 * On a server this is the ordinary enhance: the action redirects and there
+	 * is nothing else to do.
+	 */
+	const deleting: SubmitFunction =
+		() =>
+		async ({ result, update }) => {
+			const gone =
+				onDevice && result.type === 'failure' && (result.data as { gone?: boolean })?.gone === true;
+			if (!gone) return update();
+
+			const { ask } = await import('$lib/isolated/client');
+			await ask('db.destroy');
+			location.href = CHOOSE_PATH;
+		};
 
 	let editing = $state<'email' | 'password' | null>(null);
 	let confirming = $state(false);
@@ -174,252 +211,263 @@
 		<Banner kind="success" message={notice} />
 	{/if}
 
-	<Card title="Email address">
-		{#snippet actions()}
-			{#if data.emailChangeAllowed}
-				<button onclick={() => (editing = 'email')} class="btn btn-sm">
+	<!--
+		Everything that needs a server behind it.
+		
+		An address to sign in with, the password for it, the mail this instance
+		sends and the sessions it has opened — a device that is its own instance
+		has none of them, and a card about each one saying so would be a page of
+		apologies. What is below the fold is the part that is the same either
+		way: your data, and the end of it.
+	-->
+	{#if !onDevice}
+		<Card title="Email address">
+			{#snippet actions()}
+				{#if data.emailChangeAllowed}
+					<button onclick={() => (editing = 'email')} class="btn btn-sm">
+						<Icon name="edit" /> Change
+					</button>
+				{/if}
+			{/snippet}
+			<p class="text-sm text-gray-500">
+				You sign in with <span class="font-medium text-gray-900">{data.email}</span>.
+				{#if data.emailChangeAllowed}
+					A new address has to be confirmed by a link before it takes over.
+				{:else}
+					<!-- Says who to ask, rather than pretending the option is missing
+					     because nobody thought of it. -->
+					Changing it is turned off on this instance; whoever runs it can allow it.
+				{/if}
+				{#if !data.emailVerified}
+					<span class="block">This one has not been confirmed yet.</span>
+				{/if}
+			</p>
+		</Card>
+
+		<Card title="Weekly review">
+			{#snippet actions()}
+				<form method="post" action="?/setWeeklyReviewMail" use:enhance>
+					<input type="hidden" name="on" value={data.weeklyReviewMail ? 'false' : 'true'} />
+					<button type="submit" class="btn btn-sm">
+						{data.weeklyReviewMail ? 'Turn off' : 'Turn on'}
+					</button>
+				</form>
+			{/snippet}
+			<p class="text-sm text-gray-500">
+				{#if data.weeklyReviewMail}
+					One message on a Monday at {data.weeklyReviewHour} with what last week was — planned against
+					done, and what is still loose. Nothing is sent about a week you did not plan, and every message
+					has a link that stops them.
+				{:else}
+					<!-- Off is the default: mail nobody asked for is spam however useful
+					     it is. What it would be is said here, not after it arrives. -->
+					Off. Turn it on and you get one message on a Monday at {data.weeklyReviewHour} with what last
+					week was — planned against done, and what is still loose.
+				{/if}
+				{#if !data.emailConfigured}
+					<span class="block"
+						>This instance has no mail transport, so nothing is sent either way.</span
+					>
+				{/if}
+			</p>
+		</Card>
+
+		<Modal
+			open={editing === 'email' && data.emailChangeAllowed}
+			error={form?.message}
+			onclose={() => (editing = null)}
+			title="Change your email address"
+			description="Nothing changes until the link in the confirmation mail is followed."
+			size="sm"
+		>
+			{#if !data.emailConfigured}
+				<p class="mb-4 border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
+					This server has no mail configured, so the confirmation link is written to its log.
+				</p>
+			{/if}
+			<form
+				id="email-form"
+				method="post"
+				action="?/changeEmail"
+				use:enhance={() =>
+					async ({ update, result }) => {
+						if (result.type === 'success') editing = null;
+						await update({ reset: result.type === 'success' });
+					}}
+			>
+				<FormGrid>
+					<Field label="New address" span={12} required>
+						<input name="newEmail" type="email" required autocomplete="email" class="input" />
+					</Field>
+					<Field label="Your password" span={12} required>
+						<input
+							name="password"
+							type="password"
+							required
+							autocomplete="current-password"
+							class="input"
+						/>
+					</Field>
+				</FormGrid>
+			</form>
+
+			{#snippet footer()}
+				<button type="button" class="btn" onclick={() => (editing = null)}>Cancel</button>
+				<button type="submit" form="email-form" class="btn btn-primary">Send confirmation</button>
+			{/snippet}
+		</Modal>
+
+		<Card title="Password">
+			{#snippet actions()}
+				<button onclick={() => (editing = 'password')} class="btn btn-sm">
 					<Icon name="edit" /> Change
 				</button>
-			{/if}
-		{/snippet}
-		<p class="text-sm text-gray-500">
-			You sign in with <span class="font-medium text-gray-900">{data.email}</span>.
-			{#if data.emailChangeAllowed}
-				A new address has to be confirmed by a link before it takes over.
-			{:else}
-				<!-- Says who to ask, rather than pretending the option is missing
-				     because nobody thought of it. -->
-				Changing it is turned off on this instance; whoever runs it can allow it.
-			{/if}
-			{#if !data.emailVerified}
-				<span class="block">This one has not been confirmed yet.</span>
-			{/if}
-		</p>
-	</Card>
-
-	<Card title="Weekly review">
-		{#snippet actions()}
-			<form method="post" action="?/setWeeklyReviewMail" use:enhance>
-				<input type="hidden" name="on" value={data.weeklyReviewMail ? 'false' : 'true'} />
-				<button type="submit" class="btn btn-sm">
-					{data.weeklyReviewMail ? 'Turn off' : 'Turn on'}
-				</button>
-			</form>
-		{/snippet}
-		<p class="text-sm text-gray-500">
-			{#if data.weeklyReviewMail}
-				One message on a Monday at {data.weeklyReviewHour} with what last week was — planned against done,
-				and what is still loose. Nothing is sent about a week you did not plan, and every message has
-				a link that stops them.
-			{:else}
-				<!-- Off is the default: mail nobody asked for is spam however useful
-				     it is. What it would be is said here, not after it arrives. -->
-				Off. Turn it on and you get one message on a Monday at {data.weeklyReviewHour} with what last
-				week was — planned against done, and what is still loose.
-			{/if}
-			{#if !data.emailConfigured}
-				<span class="block"
-					>This instance has no mail transport, so nothing is sent either way.</span
-				>
-			{/if}
-		</p>
-	</Card>
-
-	<Modal
-		open={editing === 'email' && data.emailChangeAllowed}
-		error={form?.message}
-		onclose={() => (editing = null)}
-		title="Change your email address"
-		description="Nothing changes until the link in the confirmation mail is followed."
-		size="sm"
-	>
-		{#if !data.emailConfigured}
-			<p class="mb-4 border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
-				This server has no mail configured, so the confirmation link is written to its log.
+			{/snippet}
+			<p class="text-sm text-gray-500">
+				Changing it signs out every other device you are logged in on.
 			</p>
-		{/if}
-		<form
-			id="email-form"
-			method="post"
-			action="?/changeEmail"
-			use:enhance={() =>
-				async ({ update, result }) => {
-					if (result.type === 'success') editing = null;
-					await update({ reset: result.type === 'success' });
-				}}
+		</Card>
+
+		<Modal
+			open={editing === 'password'}
+			error={form?.message}
+			onclose={() => (editing = null)}
+			title="Change your password"
+			description="Every other signed-in device is signed out."
+			size="sm"
 		>
-			<FormGrid>
-				<Field label="New address" span={12} required>
-					<input name="newEmail" type="email" required autocomplete="email" class="input" />
-				</Field>
-				<Field label="Your password" span={12} required>
-					<input
-						name="password"
-						type="password"
-						required
-						autocomplete="current-password"
-						class="input"
-					/>
-				</Field>
-			</FormGrid>
-		</form>
-
-		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (editing = null)}>Cancel</button>
-			<button type="submit" form="email-form" class="btn btn-primary">Send confirmation</button>
-		{/snippet}
-	</Modal>
-
-	<Card title="Password">
-		{#snippet actions()}
-			<button onclick={() => (editing = 'password')} class="btn btn-sm">
-				<Icon name="edit" /> Change
-			</button>
-		{/snippet}
-		<p class="text-sm text-gray-500">
-			Changing it signs out every other device you are logged in on.
-		</p>
-	</Card>
-
-	<Modal
-		open={editing === 'password'}
-		error={form?.message}
-		onclose={() => (editing = null)}
-		title="Change your password"
-		description="Every other signed-in device is signed out."
-		size="sm"
-	>
-		<form
-			id="password-form"
-			method="post"
-			action="?/changePassword"
-			use:enhance={() =>
-				async ({ update, result }) => {
-					if (result.type === 'success') editing = null;
-					await update({ reset: result.type === 'success' });
-				}}
-		>
-			<FormGrid>
-				<Field label="Current password" span={12} required>
-					<input
-						name="currentPassword"
-						type="password"
-						required
-						autocomplete="current-password"
-						class="input"
-					/>
-				</Field>
-				<Field label="New password" span={12} required>
-					<input
-						name="newPassword"
-						type="password"
-						required
-						minlength="8"
-						autocomplete="new-password"
-						class="input"
-					/>
-				</Field>
-				<Field label="New password again" span={12} required>
-					<input
-						name="confirmPassword"
-						type="password"
-						required
-						minlength="8"
-						autocomplete="new-password"
-						class="input"
-					/>
-				</Field>
-			</FormGrid>
-		</form>
-
-		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (editing = null)}>Cancel</button>
-			<button type="submit" form="password-form" class="btn btn-primary">Change password</button>
-		{/snippet}
-	</Modal>
-
-	<Card
-		title="Where you are signed in"
-		description="One line per sign-in. Anything you do not recognise, sign out."
-		flush
-	>
-		{#snippet actions()}
-			{#if data.sessions.length > 1 && !confirmSignOutAll}
-				<button onclick={() => (confirmSignOutAll = true)} class="btn btn-sm"
-					>Sign out everywhere</button
-				>
-			{/if}
-		{/snippet}
-
-		{#if confirmSignOutAll}
 			<form
+				id="password-form"
 				method="post"
-				action="?/signOutEverywhere"
-				use:enhance
-				class="mx-4 mt-4 mb-2 flex items-center gap-2 border border-gray-200 bg-gray-50 px-3 py-2"
+				action="?/changePassword"
+				use:enhance={() =>
+					async ({ update, result }) => {
+						if (result.type === 'success') editing = null;
+						await update({ reset: result.type === 'success' });
+					}}
 			>
-				<span class="flex-1 text-sm text-gray-700">
-					This signs out every device, including this one.
-				</span>
-				<button
-					class="border border-red-200 bg-white px-3 py-1 text-sm text-red-600 hover:bg-red-50"
-					use:armed
-				>
-					Confirm?
-				</button>
-				<button
-					type="button"
-					onclick={() => (confirmSignOutAll = false)}
-					class="text-sm text-gray-500 hover:text-gray-900">Cancel</button
-				>
+				<FormGrid>
+					<Field label="Current password" span={12} required>
+						<input
+							name="currentPassword"
+							type="password"
+							required
+							autocomplete="current-password"
+							class="input"
+						/>
+					</Field>
+					<Field label="New password" span={12} required>
+						<input
+							name="newPassword"
+							type="password"
+							required
+							minlength="8"
+							autocomplete="new-password"
+							class="input"
+						/>
+					</Field>
+					<Field label="New password again" span={12} required>
+						<input
+							name="confirmPassword"
+							type="password"
+							required
+							minlength="8"
+							autocomplete="new-password"
+							class="input"
+						/>
+					</Field>
+				</FormGrid>
 			</form>
-		{/if}
 
-		<div class="divide-y divide-gray-200 border-t border-gray-200" data-tour="account-sessions">
-			{#each data.sessions as s, i (s.id)}
-				<div class="flex items-center gap-4 px-4 py-3 {selected === i ? 'kbd-cursor' : ''}">
-					<div class="min-w-0 flex-1">
-						<p class="text-sm font-medium text-gray-900">
-							{s.device}
-							{#if s.current}
-								<span class="eyebrow ml-2 text-gray-500">this device</span>
-							{/if}
-						</p>
-						<p class="tabular text-xs text-gray-500">
-							Last seen {when(s.lastSeen)} &middot; signed in {when(s.createdAt)}
-							{#if s.ipAddress}&middot; {s.ipAddress}{/if}
-						</p>
-					</div>
-					{#if !s.current}
-						{#if confirmRevoke === s.id}
-							<form
-								method="post"
-								action="?/revokeSession"
-								use:enhance={() =>
-									async ({ update }) => {
-										confirmRevoke = null;
-										await update();
-									}}
-								class="flex items-center gap-2"
-							>
-								<input type="hidden" name="id" value={s.id} />
-								<button class="btn btn-danger btn-sm" use:armed>Confirm?</button>
-								<button
-									type="button"
-									onclick={() => (confirmRevoke = null)}
-									class="text-xs text-gray-500 hover:text-gray-900">Cancel</button
+			{#snippet footer()}
+				<button type="button" class="btn" onclick={() => (editing = null)}>Cancel</button>
+				<button type="submit" form="password-form" class="btn btn-primary">Change password</button>
+			{/snippet}
+		</Modal>
+
+		<Card
+			title="Where you are signed in"
+			description="One line per sign-in. Anything you do not recognise, sign out."
+			flush
+		>
+			{#snippet actions()}
+				{#if data.sessions.length > 1 && !confirmSignOutAll}
+					<button onclick={() => (confirmSignOutAll = true)} class="btn btn-sm"
+						>Sign out everywhere</button
+					>
+				{/if}
+			{/snippet}
+
+			{#if confirmSignOutAll}
+				<form
+					method="post"
+					action="?/signOutEverywhere"
+					use:enhance
+					class="mx-4 mt-4 mb-2 flex items-center gap-2 border border-gray-200 bg-gray-50 px-3 py-2"
+				>
+					<span class="flex-1 text-sm text-gray-700">
+						This signs out every device, including this one.
+					</span>
+					<button
+						class="border border-red-200 bg-white px-3 py-1 text-sm text-red-600 hover:bg-red-50"
+						use:armed
+					>
+						Confirm?
+					</button>
+					<button
+						type="button"
+						onclick={() => (confirmSignOutAll = false)}
+						class="text-sm text-gray-500 hover:text-gray-900">Cancel</button
+					>
+				</form>
+			{/if}
+
+			<div class="divide-y divide-gray-200 border-t border-gray-200" data-tour="account-sessions">
+				{#each data.sessions as s, i (s.id)}
+					<div class="flex items-center gap-4 px-4 py-3 {selected === i ? 'kbd-cursor' : ''}">
+						<div class="min-w-0 flex-1">
+							<p class="text-sm font-medium text-gray-900">
+								{s.device}
+								{#if s.current}
+									<span class="eyebrow ml-2 text-gray-500">this device</span>
+								{/if}
+							</p>
+							<p class="tabular text-xs text-gray-500">
+								Last seen {when(s.lastSeen)} &middot; signed in {when(s.createdAt)}
+								{#if s.ipAddress}&middot; {s.ipAddress}{/if}
+							</p>
+						</div>
+						{#if !s.current}
+							{#if confirmRevoke === s.id}
+								<form
+									method="post"
+									action="?/revokeSession"
+									use:enhance={() =>
+										async ({ update }) => {
+											confirmRevoke = null;
+											await update();
+										}}
+									class="flex items-center gap-2"
 								>
-							</form>
-						{:else}
-							<button onclick={() => (confirmRevoke = s.id)} class="btn btn-sm">Sign out</button>
+									<input type="hidden" name="id" value={s.id} />
+									<button class="btn btn-danger btn-sm" use:armed>Confirm?</button>
+									<button
+										type="button"
+										onclick={() => (confirmRevoke = null)}
+										class="text-xs text-gray-500 hover:text-gray-900">Cancel</button
+									>
+								</form>
+							{:else}
+								<button onclick={() => (confirmRevoke = s.id)} class="btn btn-sm">Sign out</button>
+							{/if}
 						{/if}
-					{/if}
-				</div>
-			{:else}
-				<p class="px-4 py-3 text-sm text-gray-500">No other sessions.</p>
-			{/each}
-		</div>
-	</Card>
+					</div>
+				{:else}
+					<p class="px-4 py-3 text-sm text-gray-500">No other sessions.</p>
+				{/each}
+			</div>
+		</Card>
+	{/if}
 
 	<!--
 		Which ontoplano this app is looking at.
@@ -496,6 +544,9 @@
 		-->
 		{#if exportError}
 			<p class="mt-2 text-sm text-red-600">{exportError}</p>
+		{:else if onDevice}
+			<!-- Nothing to ration: this is the device asking itself for a copy of
+			     what is already on it. -->
 		{:else if data.exports.remaining <= 0}
 			<p class="mt-2 text-sm text-red-600">
 				No exports left today — this plan allows {data.exports.allowed} a day. The next one unlocks
@@ -521,14 +572,23 @@
 		happens once, and it had grown into two long forms sitting between the
 		sessions list and the delete button.
 	-->
-	<Card title="Bring things in">
-		{#snippet actions()}
-			<a href={resolve('/settings/account/import')} class="btn btn-sm">Import</a>
-		{/snippet}
-		<p class="text-sm text-gray-500">
-			A list from Todoist, Google Tasks or Google Keep, or an export from another instance.
-		</p>
-	</Card>
+	<!--
+		Not on a device yet, and it says nothing rather than offering a page that
+		refuses. Restoring an export writes a copy of what it is about to replace
+		beside the database first, and hashes the picture bytes it carries on the
+		way in — a file system and a synchronous hash, neither of which a browser
+		worker has. Exporting works here, so nothing is trapped meanwhile.
+	-->
+	{#if !onDevice}
+		<Card title="Bring things in">
+			{#snippet actions()}
+				<a href={resolve('/settings/account/import')} class="btn btn-sm">Import</a>
+			{/snippet}
+			<p class="text-sm text-gray-500">
+				A list from Todoist, Google Tasks or Google Keep, or an export from another instance.
+			</p>
+		</Card>
+	{/if}
 
 	{#if data.nativeApp}
 		<!--
@@ -555,35 +615,37 @@
 		</Card>
 	{/if}
 
-	<!--
-		The phone's only door out. The desktop has Sign out in the header menu;
-		the bottom bar carries no menu, so this page — where the account's other
-		session controls already live — is where a finger finds it.
-	-->
-	<Card title="Sign out">
-		{#snippet actions()}
-			<form method="post" action="/login?/signOut" use:enhance>
-				<button type="submit" class="btn btn-sm">Sign out</button>
-			</form>
-		{/snippet}
-		<p class="text-sm text-gray-500">This device only. The sessions above list the others.</p>
+	{#if !onDevice}
 		<!--
-			And the other reason somebody opens this card in the app: not to leave
-			the account, but to leave the instance. Signing out lands on that
-			instance's sign-in screen, which is the wrong place to discover you
-			wanted a different ontoplano.
+			The phone's only door out. The desktop has Sign out in the header menu;
+			the bottom bar carries no menu, so this page — where the account's other
+			session controls already live — is where a finger finds it.
 		-->
-		{#if inPhoneApp()}
-			<p class="mt-2 text-sm">
-				<!-- Another origin entirely — the copy of the app on the phone —
-				     which is not a route this app can resolve. -->
-				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-				<a href={askAgainOnThisPhone()} class="font-medium text-gray-900 underline">
-					Use a different ontoplano
-				</a>
-			</p>
-		{/if}
-	</Card>
+		<Card title="Sign out">
+			{#snippet actions()}
+				<form method="post" action="/login?/signOut" use:enhance>
+					<button type="submit" class="btn btn-sm">Sign out</button>
+				</form>
+			{/snippet}
+			<p class="text-sm text-gray-500">This device only. The sessions above list the others.</p>
+			<!--
+				And the other reason somebody opens this card in the app: not to leave
+				the account, but to leave the instance. Signing out lands on that
+				instance's sign-in screen, which is the wrong place to discover you
+				wanted a different ontoplano.
+			-->
+			{#if inPhoneApp()}
+				<p class="mt-2 text-sm">
+					<!-- Another origin entirely — the copy of the app on the phone —
+					     which is not a route this app can resolve. -->
+					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+					<a href={askAgainOnThisPhone()} class="font-medium text-gray-900 underline">
+						Use a different ontoplano
+					</a>
+				</p>
+			{/if}
+		</Card>
+	{/if}
 
 	<!--
 		The two irreversible things, together, at the bottom, on red.
@@ -596,29 +658,46 @@
 	<section class="danger-zone">
 		<h2 class="danger-zone-title">Danger zone</h2>
 
-		<div class="danger-zone-row">
-			<div class="min-w-0">
-				<h3 class="text-sm font-semibold text-red-700">Delete everything in this account</h3>
-				<p class="mt-1 max-w-2xl text-sm text-gray-600">
-					Every task, note, habit, goal, picture and record goes. The account stays: same address,
-					same password, same plan, an app with nothing in it. Download an export first if you might
-					want any of it back.
-				</p>
+		<!--
+			Two of these on a server, one on a device.
+
+			Emptying an account and ending it differ by the address you sign in
+			with afterwards, and a device has none: what follows the hard one
+			here is the screen that chooses where your ontoplano lives, where
+			making a new empty one is a press away. So the soft one would reach
+			the same state by a longer road, and offering both would be offering
+			a choice that is not one.
+		-->
+		{#if !onDevice}
+			<div class="danger-zone-row">
+				<div class="min-w-0">
+					<h3 class="text-sm font-semibold text-red-700">Delete everything in this account</h3>
+					<p class="mt-1 max-w-2xl text-sm text-gray-600">
+						Every task, note, habit, goal, picture and record goes. The account stays: same address,
+						same password, same plan, an app with nothing in it. Download an export first if you
+						might want any of it back.
+					</p>
+				</div>
+				<button onclick={() => (emptying = true)} class="btn btn-danger btn-sm shrink-0">
+					<Icon name="trash" /> Delete everything
+				</button>
 			</div>
-			<button onclick={() => (emptying = true)} class="btn btn-danger btn-sm shrink-0">
-				<Icon name="trash" /> Delete everything
-			</button>
-		</div>
+		{/if}
 
 		<div class="danger-zone-row">
 			<div class="min-w-0">
-				<h3 class="text-sm font-semibold text-red-700">Delete this account</h3>
+				<h3 class="text-sm font-semibold text-red-700">
+					{onDevice ? 'Delete this instance' : 'Delete this account'}
+				</h3>
 				<p class="mt-1 max-w-2xl text-sm text-gray-600">
-					The data and the account both, and you are signed out for good. This cannot be undone.
+					{onDevice
+						? 'Everything on this device, and the database it is in. The app stays; what is inside it does not. Download an export first if you might want any of it back.'
+						: 'The data and the account both, and you are signed out for good. This cannot be undone.'}
 				</p>
 			</div>
 			<button onclick={() => (confirming = true)} class="btn btn-danger btn-sm shrink-0">
-				<Icon name="trash" /> Delete account
+				<Icon name="trash" />
+				{onDevice ? 'Delete instance' : 'Delete account'}
 			</button>
 		</div>
 	</section>
@@ -671,24 +750,38 @@
 		open={confirming}
 		error={form?.message}
 		onclose={() => (confirming = false)}
-		title="Delete your account"
+		title={onDevice ? 'Delete this instance' : 'Delete your account'}
 		description="Every row belonging to you goes with it. This cannot be undone."
 		size="sm"
 	>
-		<form id="delete-form" method="post" action="?/delete" use:enhance>
+		<form id="delete-form" method="post" action="?/delete" use:enhance={deleting}>
 			<FormGrid>
-				<Field label="Type {data.email} to confirm" span={12} required>
-					<input name="email" autocomplete="off" required class="input" />
+				<!--
+					A device has no address to type back and no password to give.
+					The word stands for both: it is the same thing the other
+					dialog asks for, and it is the only proof available here that
+					somebody meant it.
+				-->
+				<Field
+					label={onDevice
+						? `Type ${EMPTY_CONFIRMATION} to confirm`
+						: `Type ${data.email} to confirm`}
+					span={12}
+					required
+				>
+					<input name={onDevice ? 'confirm' : 'email'} autocomplete="off" required class="input" />
 				</Field>
-				<Field label="Your password" span={12} required>
-					<input
-						name="password"
-						type="password"
-						autocomplete="current-password"
-						required
-						class="input"
-					/>
-				</Field>
+				{#if !onDevice}
+					<Field label="Your password" span={12} required>
+						<input
+							name="password"
+							type="password"
+							autocomplete="current-password"
+							required
+							class="input"
+						/>
+					</Field>
+				{/if}
 			</FormGrid>
 		</form>
 

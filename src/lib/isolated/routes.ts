@@ -92,6 +92,23 @@ const pages = import.meta.glob(
 ) as Record<string, PageModule>;
 
 /*
+ * The pages a device answers differently, rather than not at all.
+ *
+ * The same idea as `layout.isolated.ts` and for the same reason: a page whose
+ * question is the same either way has one file, and the handful whose question
+ * changes get a twin beside it. Account is the shape that needed it — on a
+ * server it is sessions, a password and an address, and on a device it is your
+ * data going out, coming in, and being destroyed — and so is Instance, which
+ * is a deployment on one and a build on the other.
+ *
+ * A twin wins over both the route's own server file and its place in the list
+ * below, so a route named in `notHere` still comes if it has one.
+ */
+const pageTwins = import.meta.glob('/src/routes/**/page.isolated.ts', {
+	eager: true
+}) as Record<string, PageModule>;
+
+/*
  * The ones that stayed behind, by name only.
  *
  * `?url` so their code is never pulled into this bundle — only the fact that
@@ -139,6 +156,16 @@ type EndpointModule = Partial<
 		(event: IsolatedEvent) => Response | Promise<Response>
 	>
 >;
+/**
+ * And the endpoints a device answers differently, on the same principle as
+ * `page.isolated.ts`: the export is the account's rows as a file either way,
+ * but on a server it counts against the day's allowance and writes an audit
+ * line, and here there is no plan to count against and nobody to audit to.
+ */
+const endpointTwins = import.meta.glob('/src/routes/**/server.isolated.ts', {
+	eager: true
+}) as Record<string, EndpointModule>;
+
 const endpoints = import.meta.glob(
 	[
 		'/src/routes/api/capture-options/+server.ts',
@@ -195,13 +222,16 @@ type Matcher = { dir: string; pattern: RegExp; names: string[]; module: PageModu
 /** `/src/routes/x/+page.svelte` -> `/src/routes/x/+page.server.ts`. */
 const serverFileFor = (screen: string) => screen.replace(/\+page\.svelte$/, '+page.server.ts');
 
+/** `/src/routes/x/+page.svelte` -> `/src/routes/x/page.isolated.ts`. */
+const twinFileFor = (screen: string) => screen.replace(/\+page\.svelte$/, 'page.isolated.ts');
+
 const matchers: Matcher[] = Object.keys(screens)
-	.filter((key) => !(serverFileFor(key) in notHere))
+	.filter((key) => twinFileFor(key) in pageTwins || !(serverFileFor(key) in notHere))
 	.map((key) => {
 		const dir = dirOf(key, '/+page.svelte');
-		// The route's own server file when it came, and nothing when the screen
-		// needs nothing loaded.
-		const module: PageModule = pages[serverFileFor(key)] ?? {};
+		// The device's own answer where there is one, then the route's own
+		// server file, then nothing at all for a screen that loads nothing.
+		const module: PageModule = pageTwins[twinFileFor(key)] ?? pages[serverFileFor(key)] ?? {};
 		const names: string[] = [];
 		const pattern = new RegExp(
 			'^' +
@@ -331,7 +361,9 @@ export async function runIsolatedEndpoint(
 	form?: [string, FormDataEntryValue][]
 ): Promise<EndpointReply | null> {
 	const clean = pathname !== '/' && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname;
-	const module = endpoints[`${PREFIX}${clean}/+server.ts`];
+	const module =
+		endpointTwins[`${PREFIX}${clean}/server.isolated.ts`] ??
+		endpoints[`${PREFIX}${clean}/+server.ts`];
 	const handler = module?.[method as 'GET'];
 	if (!handler) return null;
 

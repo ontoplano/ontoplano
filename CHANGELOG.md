@@ -18,6 +18,25 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.176.3 — 2026-09-14
+
+- **The account and instance tabs work on a device.** An instance that is the
+  phone itself had neither: the person button went to the instance chooser and
+  the menu offered an account page that refuses. Both are there now, showing
+  the half of each that is true — your data out as a file, and the end of the
+  instance, which on a device is one act rather than two; and the build that is
+  running with the file the data is kept in. What needs a server is absent
+  rather than blank. Bringing an export back in is still server-only: the
+  restore writes a copy of what it is about to replace beside the database and
+  hashes the picture bytes it carries, and neither has a device answer yet.
+- **The five small things are a flower now.** Account in the middle, bigger,
+  just above the thumb, with the rest in a quarter turn of arc above it —
+  rather than scattered around it in a ring, which read as a clump.
+- **The capture wheel is two-thirds the size of the rooms wheel.** Four small
+  things written down in passing did not need the whole screen, and its plus
+  is drawn on its own dark ground: it was the chrome's white ink over a
+  transparent hole, which on a light page was nothing at all.
+
 ## 0.176.2 — 2026-09-14
 
 - **The `?` in the corner of the phone is gone.** It was a square parked over

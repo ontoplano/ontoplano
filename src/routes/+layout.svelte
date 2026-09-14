@@ -1306,8 +1306,9 @@
 				</button>
 
 				<!--
-					Not a link any more: the press fans the five small things out
-					above the thumb, the account among them. On a device that is
+					Not a link any more: the press opens the flower of small things
+					above the thumb, with the account at its middle — this icon,
+					flown up and grown, which is why it leaves while that is up. On a device that is
 					its own instance there is no account to open — no address, no
 					sessions, nothing anybody else can see — and that petal goes
 					to the preferences, which it does have.
@@ -1315,11 +1316,11 @@
 				<button
 					type="button"
 					onpointerdown={summonFan}
-					class="tap flex flex-1 items-center justify-center {fanOpen ||
-					page.url.pathname.startsWith('/settings') ||
-					page.url.pathname === '/instance'
-						? 'text-chrome-ink'
-						: 'text-chrome-muted'}"
+					class="tap pie-handle flex flex-1 items-center justify-center {fanOpen
+						? 'pie-handle-held text-chrome-ink'
+						: page.url.pathname.startsWith('/settings') || page.url.pathname === '/instance'
+							? 'text-chrome-ink'
+							: 'text-chrome-muted'}"
 					aria-haspopup="menu"
 					aria-expanded={fanOpen}
 					aria-label="Account and help"

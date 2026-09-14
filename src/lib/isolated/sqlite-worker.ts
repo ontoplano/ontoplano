@@ -15,6 +15,7 @@ import { installBufferStandIn } from './buffer-stand-in.js';
 import { bindDb } from '$lib/db/index.js';
 import { buildCtx } from '$lib/services/ctx.js';
 import { createTodo, listTodos } from '$lib/services/todos.js';
+import { deleteAccount } from '$lib/services/account-data.js';
 import { read as readPicture } from '$lib/services/media.js';
 import { wasmClient, type Oo1Db } from './wasm-client.js';
 import { migrateDevice } from './device-migrations.js';
@@ -37,6 +38,16 @@ type Reply = { id: number; ok: true; result: unknown } | { id: number; ok: false
 
 let tables = 0;
 
+/**
+ * The pool of files this instance lives in, kept so it can be emptied.
+ *
+ * Deleting an account on a server leaves the server; deleting one here has to
+ * leave nothing at all, and the rows are only half of that — the file they
+ * were in is the other half. See `destroy` below.
+ */
+let pool: { OpfsSAHPoolDb: new (path: string) => Oo1Db; wipeFiles: () => Promise<void> } | null =
+	null;
+
 async function open(): Promise<Oo1Db> {
 	// Said out loud before anything is attempted: a WebView too old for
 	// private file storage would otherwise fail somewhere deep in SQLite's
@@ -58,10 +69,11 @@ async function open(): Promise<Oo1Db> {
 	// cross-origin isolated, and those headers break the checkout overlay.
 	const oo1 = (sqlite3 as unknown as { oo1: { DB: new (path: string) => Oo1Db } }).oo1;
 
-	const pool = await (
+	pool = await (
 		sqlite3 as unknown as {
 			installOpfsSAHPoolVfs: (o: { name: string }) => Promise<{
 				OpfsSAHPoolDb: new (path: string) => Oo1Db;
+				wipeFiles: () => Promise<void>;
 			}>;
 		}
 	).installOpfsSAHPoolVfs({ name: POOL_NAME });
@@ -119,6 +131,20 @@ const ctx = () => buildCtx(ISOLATED_USER_ID);
  */
 const ops: Record<string, (args: never) => unknown> = {
 	status: () => ({ vfs: `opfs-sahpool, ${tables} tables`, tables }),
+	/**
+	 * Unmake this instance: the rows, then the file they were in.
+	 *
+	 * The account page's own action deletes the rows, which is the honest walk
+	 * over every table holding user data and the same one a server does. This
+	 * is what a device has in addition — there is no server to go on existing
+	 * afterwards, so the storage goes too and what is left is a phone with the
+	 * app on it and no instance inside.
+	 */
+	'db.destroy': async () => {
+		deleteAccount(ISOLATED_USER_ID);
+		await pool?.wipeFiles();
+		return { gone: true };
+	},
 	'todos.list': () => listTodos(ctx()),
 	'todos.create': (args: { title: unknown }) => createTodo(ctx(), { title: args.title }),
 	// The dispatcher: the fetch bridge hands over the app's own data and

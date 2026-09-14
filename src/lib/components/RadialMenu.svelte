@@ -35,6 +35,16 @@
 		 * thing entirely.
 		 */
 		middle = 'mark',
+		/**
+		 * How big the wheel is drawn, against the rooms wheel's own size.
+		 *
+		 * The rooms are eight places and a whole screen of wheel is right for
+		 * them. Capture is four small things written down in passing, and at
+		 * the same size it was a bigger interruption than what it was for.
+		 * Everything below is in these units, so one number moves the whole
+		 * drawing — the hit test with it.
+		 */
+		scale = 1,
 		items,
 		open = false,
 		/** Where the gesture began, in viewport coordinates. */
@@ -61,6 +71,7 @@
 		onvisible
 	}: {
 		middle?: 'mark' | 'plus';
+		scale?: number;
 		items: Wedge[];
 		open?: boolean;
 		origin?: { x: number; y: number };
@@ -83,7 +94,7 @@
 	 */
 	const clipId = `pie-mark-${Math.random().toString(36).slice(2, 8)}`;
 
-	const OUTER = 145;
+	const OUTER = $derived(145 * scale);
 
 	/**
 	 * How thick the rim is, and how big the hole is.
@@ -94,7 +105,7 @@
 	 * the size it would be if the wheel simply were the logo — which is the
 	 * idea.
 	 */
-	const RIM = 8;
+	const RIM = $derived(8 * scale);
 
 	/**
 	 * How much of the hole the mark in the middle takes.
@@ -153,8 +164,8 @@
 
 	const rim = $derived(bands(OUTER, RIM));
 
-	const INNER = 57;
-	const HOLE = INNER - 2;
+	const INNER = $derived(57 * scale);
+	const HOLE = $derived(INNER - 2 * scale);
 
 	/** Inside the ring that the inner band draws, which is where the mark goes. */
 	/**
@@ -166,7 +177,7 @@
 	 * it the wedges reach the mark and the mark reaches them, which is what
 	 * the drawing does.
 	 */
-	const MEDALLION = HOLE * MIDDLE_INSET;
+	const MEDALLION = $derived(HOLE * MIDDLE_INSET);
 
 	/**
 	 * Where a wedge starts, which is inside the hole rather than at its edge.
@@ -176,9 +187,9 @@
 	 * distance to the middle of a side — puts the whole of the hole's outline
 	 * inside painted wedge, and the clip cuts it back to exactly that outline.
 	 */
-	const WEDGE_INNER = HOLE * Math.cos(Math.PI / 8) - 1;
+	const WEDGE_INNER = $derived(HOLE * Math.cos(Math.PI / 8) - scale);
 	/** Room for the ring plus the shadow it casts. */
-	const PAD = 13;
+	const PAD = $derived(13 * scale);
 
 	let active = $state(-1);
 	let centre = $state({ x: 0, y: 0 });
@@ -457,7 +468,7 @@
 		return { x: r * Math.cos(a), y: r * Math.sin(a) };
 	}
 
-	const size = (OUTER + PAD) * 2;
+	const size = $derived((OUTER + PAD) * 2);
 
 	/*
 	 * Where the middle of the wheel flies in from: the press itself.
@@ -631,8 +642,8 @@
 								style="color: color-mix(in srgb, var(--color-black) {GLYPH_INK}%, {item.color})"
 								transform="translate({p.x} {p.y})"
 							>
-								<g transform="translate(-12 -12)">
-									<Icon name={item.icon} size={24} />
+								<g transform="translate({-12 * scale} {-12 * scale})">
+									<Icon name={item.icon} size={24 * scale} />
 								</g>
 							</g>
 						</g>
@@ -726,6 +737,18 @@
 						     the middle of the wheel, and a glyph scaled that far is a
 						     glyph with the wrong weight. -->
 						<g style="pointer-events: none">
+							<!--
+								A ground for it, in the mark's own dark.
+
+								The hole is transparent — it is the wheel's way of saying
+								"let go here and nothing happens" — and the plus is drawn
+								in the chrome's ink, which is white. On a light page that
+								was white on white: the middle of the capture wheel was
+								empty. The logo brings its own dark field to this same
+								hole; this is that field, in the same outline, so the two
+								wheels have the same middle made of different things.
+							-->
+							<polygon points={markPoints(HOLE)} fill={EDGE_DARK} />
 							<path
 								d="M 0 {-MEDALLION * 0.52} V {MEDALLION * 0.52} M {-MEDALLION *
 									0.52} 0 H {MEDALLION * 0.52}"

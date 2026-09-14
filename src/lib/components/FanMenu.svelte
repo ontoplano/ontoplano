@@ -2,20 +2,27 @@
 	import Icon, { type IconName } from '$lib/components/Icon.svelte';
 
 	/**
-	 * A handful of choices, fanned above the thumb.
+	 * A flower of small choices, opened above the thumb.
 	 *
 	 * The wheel is for the eight rooms — a whole screen of it, because that is
-	 * a place you go. This is for the five small things that are not places:
-	 * your account, a tour of this screen, telling the operator something is
-	 * wrong, the documentation, and paying for any of it. On the phone they
-	 * used to be a square `?` parked in the corner of every screen, on top of
-	 * whatever was under it.
+	 * a place you go. This is for the small things that are not places: your
+	 * account in the middle, and around it a tour of this screen, telling the
+	 * operator something is wrong, the documentation, and paying for any of it.
+	 * On the phone they used to be a square `?` parked in the corner of every
+	 * screen, on top of whatever was under it.
 	 *
 	 * It works the way the wheel does, because it is the same hand: press the
-	 * button and the arc flies up *above* the finger, so the finger is not
+	 * button and the flower flies up *above* the finger, so the finger is not
 	 * covering it and nothing is under it to choose by accident. From there,
-	 * either drag onto a petal and let go, or lift and tap one. The press that
-	 * opened it never chooses anything.
+	 * either drag onto one and let go, or lift and tap. The press that opened
+	 * it never chooses anything.
+	 *
+	 * The first item is the middle — the account, which is also the button that
+	 * opens this, drawn bigger because it is the one most people came for. The
+	 * rest are the petals, and they sit in a quarter turn of arc above it
+	 * rather than in a ring around it: the hand is below, so below is where
+	 * nothing can be, and that empty half is the way out of the gesture. Drag
+	 * up, think better of it, come back down, let go, nothing happens.
 	 */
 	export type Petal = { key: string; label: string; icon: IconName };
 
@@ -38,41 +45,41 @@
 	} = $props();
 
 	/**
-	 * The shape of the fan, in pixels and degrees.
+	 * The shape of the flower, in pixels and degrees.
 	 *
-	 * `RADIUS` is how far the petals sit from the centre of the arc and
-	 * `PETAL` how big each one is, so the whole thing is `2 × RADIUS + PETAL`
-	 * across — a little over two hundred, which fits the narrowest phone with
-	 * room on both sides. `RISE` is how far above the finger the arc's centre
-	 * sits: enough that the hand is below the whole fan rather than in it.
+	 * `RADIUS` is the arc the petals sit on and `PETAL` how big each one is.
+	 * `MIDDLE` is the disc they sit above, half again as big as a petal,
+	 * because it is the account and that is what most people came for. `RISE`
+	 * is how far the middle floats off the press — a thumb's width, no more: it
+	 * is the button that was pressed, and it should still read as that button.
 	 *
-	 * `SPAN` is how much of the circle the petals are laid along, centred on
-	 * straight up — which is -90°, the way the screen measures angles.
-	 *
-	 * The two of them are not independent: five petals along `SPAN` sit
-	 * `2 × RADIUS × sin(SPAN / 8)` apart, and at 112° over a radius of 92 that
-	 * was 44px between the middles of circles 52px across — they overlapped,
-	 * and the fan read as a clump rather than as five directions. These leave
-	 * a finger's width of air between neighbours.
+	 * `SPAN` is how much of the circle the petals are laid along — a quarter
+	 * turn, above the middle rather than around it. It is not independent of
+	 * the other two: `n` petals across `SPAN` sit
+	 * `2 × RADIUS × sin(SPAN / 2(n - 1))` apart, which has to be more than
+	 * `PETAL` or they overlap and the flower reads as a clump.
 	 */
-	const RADIUS = 96;
-	const PETAL = 48;
-	const RISE = 112;
-	const SPAN = 150;
+	const RADIUS = 100;
+	const PETAL = 44;
+	const MIDDLE = 68;
+	const RISE = 64;
+	const SPAN = 90;
 	/** Clear of the screen's edges, and of anything notched into the top. */
 	const MARGIN = 12;
 
 	/**
-	 * How far below its own horizontal the arc may be turned.
+	 * Where the name of the lit choice sits: above the arc.
 	 *
-	 * The turn below is what keeps the fan on the screen, and left to itself it
-	 * would keep turning until the first petal was down beside the hand again —
-	 * on the bar, under the thumb, which is the one place a menu may not be.
+	 * Under the middle is where the hand is, and on a phone that is the bar
+	 * itself — the name was printed across it. Above the flower there is
+	 * nothing but page.
 	 */
-	const DIP = 8;
+	const LABEL_RISE = RADIUS + PETAL / 2 + 26;
 
-	/** How far under the arc's middle the name of the lit petal sits. */
-	const LABEL_DROP = PETAL / 2 + 24;
+	/** The middle, and the ones above it. */
+	const heart = $derived(items[0]);
+	const petals = $derived(items.slice(1));
+	const STEP = $derived(petals.length > 1 ? SPAN / (petals.length - 1) : 0);
 
 	/**
 	 * How wide the screen is for something pinned to it.
@@ -86,81 +93,56 @@
 		return document.documentElement.getBoundingClientRect().width;
 	}
 
-	/** The angle petal `i` sits at, in screen degrees, before the arc is turned. */
-	const FROM = -90 - SPAN / 2;
-	const STEP = $derived(items.length > 1 ? SPAN / (items.length - 1) : 0);
+	/** Half of how wide the whole flower is, edge to edge. */
+	const REACH_X = RADIUS * Math.sin((SPAN / 2) * (Math.PI / 180)) + PETAL / 2;
 
 	/**
-	 * How far round the arc turns to stay on the screen.
+	 * Where the middle is drawn: just above the press, slid only as far as it
+	 * must be.
 	 *
-	 * The button that opens this is the last one in the phone's bar, so the
-	 * press is always near the right-hand edge and an arc drawn square above it
-	 * would put two petals past it. Turning it — opening up and to the left,
-	 * where a right thumb has room anyway — keeps it over the finger that
-	 * opened it, which sliding the whole fan along would not.
+	 * Close to the finger on purpose — it is the button that was pressed, flown
+	 * up and grown. Its petals go above it rather than around it, so nothing
+	 * sits beside the hand and nothing comes back down onto the bar.
 	 *
-	 * Bounded by `DIP`, because a turn far enough to fit a fan beside the
-	 * screen's edge is a turn that brings the first petal back down to the bar.
-	 * What the turn cannot buy, `centre` pays for by sliding.
+	 * Sideways it moves off the press only by however much of the arc would
+	 * otherwise hang past an edge, which on a phone it does: the button that
+	 * opens this is the last one in the bar.
 	 */
-	const tilt = $derived.by(() => {
-		if (typeof window === 'undefined') return 0;
-		const reach = PETAL / 2 + MARGIN;
-		const right = (layoutWidth() - reach - origin.x) / RADIUS;
-		if (right >= 1) return 0;
-		const wanted = -(Math.acos(Math.min(Math.max(right, -1), 1)) * 180) / Math.PI - (FROM + SPAN);
-		return Math.max(Math.min(wanted, 0), -180 - DIP - FROM);
+	const centre = $derived.by(() => {
+		const up = origin.y - RISE;
+		if (typeof window === 'undefined') return { x: origin.x, y: up };
+		return {
+			x: Math.min(Math.max(origin.x, REACH_X + MARGIN), layoutWidth() - REACH_X - MARGIN),
+			y: Math.max(up, RADIUS + PETAL / 2 + MARGIN)
+		};
 	});
 
-	/** The angle petal `i` sits at, in screen degrees. */
+	/**
+	 * The angle petal `i` sits at, in screen degrees.
+	 *
+	 * A quarter turn of arc centred on straight up — which is -90°, the way the
+	 * screen measures angles. Fixed rather than turned to face the hand: a menu
+	 * chosen by muscle memory needs its things in the same place every time,
+	 * and up is the direction there is always room in.
+	 */
 	function angleOf(i: number): number {
-		return FROM + STEP * i + tilt;
+		return -90 - SPAN / 2 + STEP * i;
 	}
 
-	/** Where petal `i` sits, relative to the centre of the arc. */
+	/** Where petal `i` sits, relative to the middle of the flower. */
 	function petalAt(i: number): { x: number; y: number } {
 		const angle = (angleOf(i) * Math.PI) / 180;
 		return { x: Math.cos(angle) * RADIUS, y: Math.sin(angle) * RADIUS };
 	}
 
-	/**
-	 * Where the arc is drawn: above the press, slid only as far as it must be.
-	 *
-	 * The fan belongs to the finger that opened it, so this starts directly
-	 * above the press and moves off it only by however much of the arc is still
-	 * hanging past an edge once it has turned as far as it is allowed to.
-	 */
-	const centre = $derived.by(() => {
-		const up = origin.y - RISE;
-		if (typeof window === 'undefined') return { x: origin.x, y: up };
-
-		const spread = items.map((_, i) => petalAt(i));
-		const left = Math.min(...spread.map((p) => p.x)) - PETAL / 2;
-		const right = Math.max(...spread.map((p) => p.x)) + PETAL / 2;
-		const top = Math.min(...spread.map((p) => p.y)) - PETAL / 2;
-		const width = layoutWidth();
-
-		return {
-			x: Math.min(Math.max(origin.x, MARGIN - left), width - MARGIN - right),
-			y: Math.max(up, MARGIN - top)
-		};
-	});
-
-	/**
-	 * How far from the centre a point has to be to mean a petal.
-	 *
-	 * Nearer than this is the fan's own dead middle: drag up, think better of
-	 * it, come back down, let go, nothing happens — the same escape the
-	 * wheel's hole gives. It is also where the finger is when the fan opens,
-	 * which is why the opening press cannot choose.
-	 */
-	const DEAD_ZONE = RADIUS * 0.45;
+	/** How far out from the middle the flower still counts. */
+	const REACH = RADIUS + PETAL;
 
 	/** A press that never went anywhere is a tap, not a gesture. */
 	const DRAG_THRESHOLD = 16;
 
 	/**
-	 * How long the fan takes to arrive, and how much later each petal does.
+	 * How long the flower takes to open, and how much later each petal does.
 	 *
 	 * Nothing is chosen while it is still flying: for those frames the petals
 	 * are somewhere between the finger and where they will end up, and a
@@ -181,39 +163,36 @@
 	let mounted = false;
 
 	/**
-	 * Which petal a point falls on, or -1 for none.
+	 * Which choice a point falls on, or -1 for none.
 	 *
-	 * By angle rather than by distance, so the target is the whole wedge of
-	 * screen a petal points into and not the circle drawn on it — the same
-	 * reason the wheel's slices reach the edge. Anything below the arc's
-	 * horizontal, or inside the dead zone, is nobody's.
+	 * 0 is the middle, then the petals in order. Everything past the arc, and
+	 * everything below the flower, is nobody's — which is what lets a gesture
+	 * end in nothing: drag up, think better of it, come back down to the hand,
+	 * let go.
 	 */
-	function petalIndexAt(x: number, y: number): number {
+	function indexAt(x: number, y: number): number {
 		const dx = x - centre.x;
 		const dy = y - centre.y;
-		if (Math.hypot(dx, dy) < DEAD_ZONE) return -1;
+		const away = Math.hypot(dx, dy);
+		if (away <= MIDDLE / 2 + 6) return 0;
+		if (away > REACH || petals.length === 0) return -1;
 
-		let degrees = (Math.atan2(dy, dx) * 180) / Math.PI;
-		// atan2 gives -180…180, and the arc can be turned past the first of
-		// those — so bring the angle onto the same side of the circle the fan
-		// is drawn on before comparing.
-		if (degrees > 90) degrees -= 360;
-		// Past either end of the arc by more than one whole step is nobody's:
-		// that is beside the fan or below it, where the hand is.
-		if (degrees > angleOf(items.length - 1) + STEP) return -1;
-		if (degrees < angleOf(0) - STEP) return -1;
+		const degrees = (Math.atan2(dy, dx) * 180) / Math.PI;
+		if (STEP === 0) return Math.abs(degrees - angleOf(0)) <= SPAN ? 1 : -1;
 
-		// Rounded rather than bounded, so each petal owns the whole wedge of
-		// screen it points into and the two at the ends own everything past
-		// them — the same reason the wheel's slices reach the edge.
-		const i = STEP === 0 ? 0 : Math.round((degrees - angleOf(0)) / STEP);
-		return Math.min(Math.max(i, 0), items.length - 1);
+		// Rounded rather than bounded, so each petal owns the wedge of screen it
+		// points into and the two at the ends own a little past themselves — the
+		// same reason the wheel's slices reach the edge. A whole step past the
+		// arc is beside the flower or below it, where the hand is.
+		const i = Math.round((degrees - angleOf(0)) / STEP);
+		if (i < 0 || i > petals.length - 1) return -1;
+		return Math.abs(degrees - angleOf(i)) > STEP ? -1 : i + 1;
 	}
 
 	function onmove(e: PointerEvent) {
 		if (!open) return;
 		travelled = Math.max(travelled, Math.hypot(e.clientX - origin.x, e.clientY - origin.y));
-		if (!blooming) active = petalIndexAt(e.clientX, e.clientY);
+		if (!blooming) active = indexAt(e.clientX, e.clientY);
 	}
 
 	function onup(e: PointerEvent) {
@@ -222,8 +201,9 @@
 		if (held) {
 			const moved = Math.max(travelled, Math.hypot(e.clientX - origin.x, e.clientY - origin.y));
 			held = false;
-			// A tap is not a gesture. The fan stays open and waits for a second
-			// one, which is what somebody meeting it for the first time will do.
+			// A tap is not a gesture. The flower stays open and waits for a
+			// second one, which is what somebody meeting it for the first time
+			// will do.
 			if (moved < DRAG_THRESHOLD) {
 				active = -1;
 				swallowClick = true;
@@ -231,7 +211,7 @@
 			}
 		}
 
-		const chosen = petalIndexAt(e.clientX, e.clientY);
+		const chosen = indexAt(e.clientX, e.clientY);
 		if (chosen >= 0) onselect(items[chosen].key);
 		else onclose();
 	}
@@ -239,9 +219,9 @@
 	/**
 	 * A finger that never got to let go.
 	 *
-	 * A long press on a touch screen can be taken over by the browser, and
-	 * then `pointerup` never arrives — leaving the fan open with a petal lit
-	 * and nothing happening on release.
+	 * A long press on a touch screen can be taken over by the browser, and then
+	 * `pointerup` never arrives — leaving the flower open with a petal lit and
+	 * nothing happening on release.
 	 */
 	function oncancel() {
 		if (!open) return;
@@ -281,7 +261,7 @@
 		}
 	}
 
-	/** The tap that opened the fan is followed by a click; it chooses nothing. */
+	/** The tap that opened the flower is followed by a click; it chooses nothing. */
 	function afterOpening(fn: () => void): void {
 		if (swallowClick) {
 			swallowClick = false;
@@ -297,9 +277,9 @@
 			held = false;
 			blooming = false;
 
-			// Back down the way they came, into the press that fanned them out.
-			// A menu that simply stopped being there left the eye wondering
-			// where it went.
+			// Back down the way it came, into the press that opened it. A menu
+			// that simply stopped being there left the eye wondering where it
+			// went.
 			if (!mounted) return;
 			mounted = false;
 			leaving = true;
@@ -308,7 +288,7 @@
 					shown = false;
 					leaving = false;
 				},
-				BLOOM_MS + STAGGER_MS * Math.max(items.length - 1, 0)
+				BLOOM_MS + STAGGER_MS * Math.max(petals.length, 0)
 			);
 			return () => clearTimeout(gone);
 		}
@@ -321,7 +301,7 @@
 		blooming = true;
 		const until = setTimeout(
 			() => (blooming = false),
-			BLOOM_MS + STAGGER_MS * Math.max(items.length - 1, 0)
+			BLOOM_MS + STAGGER_MS * Math.max(petals.length, 0)
 		);
 		return () => clearTimeout(until);
 	});
@@ -335,7 +315,7 @@
 />
 
 {#if shown}
-	<!-- Everything else stops taking presses while the fan is up. Dimmed only
+	<!-- Everything else stops taking presses while the flower is up. Dimmed only
 	     faintly: this is a handful of small choices, not a room change. -->
 	<div
 		class="fan-scrim {leaving ? 'is-leaving' : ''}"
@@ -348,19 +328,19 @@
 		class="fan {leaving ? 'is-leaving' : ''}"
 		style="left: {centre.x}px; top: {centre.y}px"
 		role="menu"
-		aria-label="Help and account"
+		aria-label="Account and help"
 		tabindex="-1"
 	>
-		{#each items as item, i (item.key)}
+		{#each petals as item, i (item.key)}
 			{@const at = petalAt(i)}
 			<button
 				type="button"
 				role="menuitem"
-				class="petal {active === i ? 'is-active' : ''}"
-				style="--to-x: {at.x}px; --to-y: {at.y}px; --delay: {i *
-					STAGGER_MS}ms; --leave-delay: {(items.length - 1 - i) *
+				class="petal {active === i + 1 ? 'is-active' : ''}"
+				style="--to-x: {at.x}px; --to-y: {at.y}px; --delay: {(i + 1) *
+					STAGGER_MS}ms; --leave-delay: {(petals.length - i) *
 					STAGGER_MS}ms; --bloom: {BLOOM_MS}ms; --size: {PETAL}px"
-				onpointerenter={() => !blooming && (active = i)}
+				onpointerenter={() => !blooming && (active = i + 1)}
 				onclick={() => afterOpening(() => onselect(item.key))}
 				aria-label={item.label}
 			>
@@ -368,12 +348,28 @@
 			</button>
 		{/each}
 
-		<!-- What the lit petal is. It sits below the arc, where the hand is not,
-		     and says nothing at all until something is lit. -->
+		<!-- The middle. It is the button in the bar, flown up and grown: the
+		     account is what most people press this for, and a ring of equals
+		     with no centre is not a flower. -->
+		<button
+			type="button"
+			role="menuitem"
+			class="petal heart {active === 0 ? 'is-active' : ''}"
+			style="--to-x: 0px; --to-y: 0px; --delay: 0ms; --leave-delay: 0ms; --bloom: {BLOOM_MS}ms; --size: {MIDDLE}px"
+			onpointerenter={() => !blooming && (active = 0)}
+			onclick={() => afterOpening(() => onselect(heart.key))}
+			aria-label={heart.label}
+		>
+			<Icon name={heart.icon} size={30} />
+		</button>
+
+		<!-- What the lit one is. Centred on the screen rather than on the flower,
+		     which sits over the last button in the bar — a name hung under its
+		     middle ran off the right-hand edge, and onto the bar. -->
 		<div
 			class="fan-label"
 			class:is-shown={active >= 0}
-			style="top: {centre.y + LABEL_DROP}px"
+			style="top: {Math.max(centre.y - LABEL_RISE, MARGIN)}px"
 			aria-live="polite"
 		>
 			<span>{active >= 0 ? items[active].label : ''}</span>
@@ -428,6 +424,11 @@
 			color 120ms ease-out;
 	}
 
+	/* The middle sits over the petals: they grow out from under it. */
+	.heart {
+		z-index: 1;
+	}
+
 	@keyframes petal-arrives {
 		from {
 			transform: translate(0, 0) scale(0.4);
@@ -442,7 +443,7 @@
 	/*
 	 * Lit: bigger, inverted, and lifted.
 	 *
-	 * The fan is chosen without looking at it once it is known, so the only
+	 * The flower is chosen without looking at it once it is known, so the only
 	 * job of the highlight is to be unmistakable at the edge of vision while
 	 * the finger is on the way — hence all three at once rather than a tint.
 	 */
@@ -453,13 +454,6 @@
 		border-color: transparent;
 	}
 
-	/*
-	 * Centred on the screen rather than on the fan.
-	 *
-	 * The fan sits over the last button in the bar, so a name hung under its
-	 * middle ran off the right-hand edge — "Tell the operat". The arc is where
-	 * the choosing happens; the word only has to be readable.
-	 */
 	.fan-label {
 		position: fixed;
 		left: 0;
@@ -488,9 +482,9 @@
 	/*
 	 * And the same flight backwards, on the way out.
 	 *
-	 * The stagger reverses with it — the petal that arrived last leaves first —
-	 * so the fan closes the way a hand of cards does. Nothing takes a press
-	 * while it happens: the menu is already closed, this is how it leaves.
+	 * The stagger reverses with it — the petal that arrived last leaves first,
+	 * and the middle goes home last of all. Nothing takes a press while it
+	 * happens: the menu is already closed, this is how it leaves.
 	 */
 	.fan.is-leaving {
 		pointer-events: none;

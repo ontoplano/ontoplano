@@ -6,6 +6,15 @@
 	import RadialMenu from '$lib/components/RadialMenu.svelte';
 
 	/**
+	 * How big this wheel is against the rooms wheel.
+	 *
+	 * Capture is four small things written down in passing — a note, a task, a
+	 * thing to buy — and at the rooms wheel's size it took the whole screen to
+	 * ask a question that small.
+	 */
+	const CAPTURE_SCALE = 0.61;
+
+	/**
 	 * Capture, from anywhere.
 	 *
 	 * The four tiles only ever existed on the dashboard, which is fine for
@@ -87,6 +96,7 @@
 <RadialMenu
 	items={wedges}
 	middle="plus"
+	scale={CAPTURE_SCALE}
 	{open}
 	{origin}
 	{dragging}
