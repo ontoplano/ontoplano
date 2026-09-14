@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**56 pages, 223 actions.**
+**56 pages, 224 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -60,7 +60,7 @@ write surface for everything else; both end up calling the same
 | `/settings/family`                   | `addSeat`, `withdrawInvite`, `removeSeat`                                                                                                                                                                                                                                                                                                                                           |
 | `/settings/instance`                 | `exportSubscribers`, `setRegistration`, `setEmailChange`, `setClientErrors`, `createInvite`, `revokeInvite`                                                                                                                                                                                                                                                                         |
 | `/settings/integrations`             | `createKey`, `putBack`                                                                                                                                                                                                                                                                                                                                                              |
-| `/settings/integrations/connections` | `createToken`, `calendarLink`, `putBack`, `revokeToken`, `updateStream`, `deleteStream`, `createWebhook`, `deleteWebhook`, `reviveWebhook`                                                                                                                                                                                                                                          |
+| `/settings/integrations/connections` | `createToken`, `calendarLink`, `notifyAssistant`, `putBack`, `revokeToken`, `updateStream`, `deleteStream`, `createWebhook`, `deleteWebhook`, `reviveWebhook`                                                                                                                                                                                                                       |
 | `/settings/integrations/widget`      | `connect`                                                                                                                                                                                                                                                                                                                                                                           |
 | `/settings/preferences`              | `setErrorReports`, `saveCurrency`, `saveGridHours`, `saveMenu`, `resetMenu`, `setLayout`, `resetLayout`, `addQuote`, `importQuotes`, `deleteQuote`, `setStyle`, `setTheme`, `saveWeek`                                                                                                                                                                                              |
 | `/start`                             | `checkout`                                                                                                                                                                                                                                                                                                                                                                          |
@@ -473,9 +473,13 @@ first. Each is revoked on its own, in the list below, which is what makes
 "I pasted that one somewhere I should not have" recoverable without
 breaking the calendars that are fine.
 
-**`putBack`**
+**`notifyAssistant`**
 
-Recreate what a deleting call removed, from the before it recorded.
+Whether a burst of assistant writes buzzes the phone.
+
+Turning it on starts the counter at the newest call rather than at zero:
+otherwise the first sweep after switching it on summarises everything an
+assistant has ever done, which is a notification about last month.
 
 ### `/settings/integrations/widget`
 

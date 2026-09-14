@@ -22,6 +22,7 @@ shows up here on the next build.
 | [`activities`](#activities)                     | Categories are the areas of a life; activities are the named recurring things inside them. Both are referenced by planner slots and by history, so neither can be deleted while something still points at it — history that loses its category stops being readable. |
 | [`admin`](#admin)                               | Administration: looking at somebody else's account.                                                                                                                                                                                                                  |
 | [`assistant-log`](#assistant-log)               | What an assistant did to an account, and the way back.                                                                                                                                                                                                               |
+| [`assistant-notify`](#assistant-notify)         | Telling somebody what an assistant just did to their account.                                                                                                                                                                                                        |
 | [`audit`](#audit)                               | What happened to an account.                                                                                                                                                                                                                                         |
 | [`backlinks`](#backlinks)                       | Which goal a thing belongs to.                                                                                                                                                                                                                                       |
 | [`billing`](#billing)                           | Billing, as the rest of the app sees it.                                                                                                                                                                                                                             |
@@ -461,6 +462,74 @@ editing belongs in the app where the current state is on screen.
 ### Types
 
 - `AssistantCall`
+
+## assistant-notify
+
+Telling somebody what an assistant just did to their account.
+
+The log under Settings → Integrations is the record — one row per write,
+with the state it replaced and a way back. This is the part that reaches
+somebody who is not looking at it: a notification, after the assistant has
+stopped, saying what changed and pointing at the list.
+
+## One per burst, not one per call
+
+"Reschedule my week" is twenty tool calls. Twenty notifications for one
+instruction is the version that gets switched off in a day, so a burst is
+collected and said once — and the burst is considered over when the writes
+stop rather than after a fixed interval, so a long run of them is still one
+line.
+
+## What it is allowed to cost
+
+The sweep runs inside the minute that already runs for reminders. No new
+timer, no new unit on anybody's box, and a cadence that matches the quiet
+window exactly: a burst that went quiet a minute ago is a burst this minute
+will find.
+
+### Functions
+
+#### `phraseFor(tool)`
+
+What a tool did, as a verb and a noun.
+
+Returns `null` for a name this cannot read, and the caller counts those
+under "things" rather than guessing — a wrong sentence about somebody's data
+is worse than a vague one.
+
+#### `nounFor(noun, count)`
+
+`data_point` → `data point`, and plural when there is more than one.
+
+#### `summarise(tools, token)`
+
+A burst of calls, as the line a person reads.
+
+Grouped by what was done to what, because that is the shape of the answer
+somebody wants: "3 todos added, 8 blocks changed" rather than eleven lines.
+The largest group leads, since with one group it is the whole sentence and
+with several it is the one worth seeing first.
+
+#### `notifyAssistantBursts(now)`
+
+Say what the assistants did, to whoever is not watching.
+
+Called from the minute that already runs. Never throws: a notification that
+can break the reminder sweep beside it is worse than a notification that
+does not arrive, which is the same rule the log itself follows.
+
+#### `catchUp(userId)`
+
+Start somebody's counter at the newest call there is.
+
+For an account that has never had one of these: without it, switching the
+notifications on would send a summary of everything an assistant has ever
+done. Used when the preference is turned on.
+
+### Types
+
+- `Phrase`
+- `SweepResult`
 
 ## audit
 

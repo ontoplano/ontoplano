@@ -560,6 +560,21 @@ Token: ${token}`;
 			description="The last writes made over the API, newest first. A deleted thing can be put back."
 			flush
 		>
+			{#snippet actions()}
+				<!--
+					The switch beside the list it is about, rather than on the
+					preferences page: this is the account saying whether it wants
+					telling, and the thing it would be told about is right here.
+					Turning it off is not turning off the log — the writes are still
+					recorded and still shown, nobody is buzzed about them.
+				-->
+				<form method="post" action="?/notifyAssistant" use:enhance>
+					<input type="hidden" name="on" value={data.notifyAssistant ? 'false' : 'true'} />
+					<button type="submit" class="btn btn-sm">
+						{data.notifyAssistant ? 'Stop telling me' : 'Tell me when this happens'}
+					</button>
+				</form>
+			{/snippet}
 			<!-- The pressed row itself turns into "Put back" — that is the
 			     confirmation, in place, moving nothing. Failures land in the
 			     page's own FormError like every other action's. -->

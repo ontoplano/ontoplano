@@ -21,6 +21,8 @@ import {
 	revokeToken
 } from '$lib/server/services/tokens';
 import { listAssistantCalls, putBack } from '$lib/server/services/assistant-log';
+import { ASSISTANT_PUSH_KEY, catchUp } from '$lib/server/services/assistant-notify';
+import { getUserSetting, setUserSetting } from '$lib/server/settings';
 import {
 	WEBHOOK_EVENTS,
 	WEBHOOK_EVENT_LABELS,
@@ -93,6 +95,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		webhookEvents: WEBHOOK_EVENTS.map((key) => ({ key, label: WEBHOOK_EVENT_LABELS[key] })),
 		/** What the tokens did lately, newest first, with the way back. */
 		assistantCalls: listAssistantCalls(ctx, { limit: 30 }),
+		// Absent means on: the point of the thing is knowing.
+		notifyAssistant: (getUserSetting(ctx.userId, ASSISTANT_PUSH_KEY) ?? 'on') !== 'off',
 		origin: url.origin
 	};
 };
@@ -145,6 +149,21 @@ export const actions: Actions = {
 	},
 
 	/** Recreate what a deleting call removed, from the before it recorded. */
+	/**
+	 * Whether a burst of assistant writes buzzes the phone.
+	 *
+	 * Turning it on starts the counter at the newest call rather than at zero:
+	 * otherwise the first sweep after switching it on summarises everything an
+	 * assistant has ever done, which is a notification about last month.
+	 */
+	notifyAssistant: async ({ request, locals }) => {
+		const ctx = buildCtx(locals.user!.id);
+		const on = (await request.formData()).get('on') === 'true';
+		if (on) catchUp(ctx.userId);
+		setUserSetting(ctx.userId, ASSISTANT_PUSH_KEY, on ? 'on' : 'off');
+		return { success: true, message: on ? 'You will be told.' : 'You will not be told.' };
+	},
+
 	putBack: async ({ request, locals }) => {
 		const ctx = buildCtx(locals.user!.id);
 		const formData = await request.formData();

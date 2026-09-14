@@ -18,6 +18,15 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.170.0 — 2026-09-14
+
+- **Your phone tells you what an assistant did.** After it stops writing, one
+  notification: "Claude added 3 todos", or "Claude changed 12 things" with the
+  breakdown under it. One per burst rather than one per call, so a
+  twenty-call instruction is one line. It points at the list under Settings →
+  Integrations, which has held the same writes all along — and there is a
+  switch beside that list to stop being told without stopping the record.
+
 ## 0.169.0 — 2026-09-14
 
 - **A danger zone at the bottom of the account page**, on red, with the two

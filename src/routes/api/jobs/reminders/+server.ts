@@ -2,6 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { tokenMatches } from '$lib/server/services/health';
 import { deliverDueReminders } from '$lib/server/services/reminder-delivery';
+import { notifyAssistantBursts } from '$lib/server/services/assistant-notify';
 import { markJobRan } from '$lib/server/services/companions';
 
 /**
@@ -33,5 +34,23 @@ export const POST: RequestHandler = async ({ request, url }) => {
 	markJobRan('reminders');
 
 	const result = await deliverDueReminders();
-	return json({ ok: true, ...result });
+
+	/*
+	 * And what the assistants did, in the same minute.
+	 *
+	 * Its own concern, not its own timer: the quiet window a burst has to
+	 * clear is a minute, which is exactly this cadence, and a second unit on
+	 * the box would be a second thing to provision, watch and forget. It
+	 * cannot fail the reminders — the reminders have already been sent by the
+	 * line above, and this answers with what it did rather than throwing.
+	 */
+	const assistants = await notifyAssistantBursts().catch((error) => ({
+		waiting: 0,
+		pushed: 0,
+		busy: 0,
+		muted: 0,
+		failed: String(error)
+	}));
+
+	return json({ ok: true, ...result, assistants });
 };
