@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.176.4 — 2026-09-14
+
+- **A device can take an export back in.** It was left out of the last release
+  and explained as something a browser cannot do, which was wrong: the restore
+  is the same walk over every table either way. What it needed was the app's
+  own portable digest instead of Node's, a base64 decode that does not go
+  through `Buffer`, and somewhere for the copy it keeps before replacing —
+  which on a device is a download to the person rather than a file beside a
+  database nobody can reach. The restore will not run if that copy fails.
+
 ## 0.176.3 — 2026-09-14
 
 - **The account and instance tabs work on a device.** An instance that is the

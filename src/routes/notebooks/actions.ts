@@ -4,7 +4,7 @@ import { buildCtx } from '$lib/services/ctx';
 import { archiveEntry, createEntry, deleteEntry, updateEntry } from '$lib/services/diary';
 import { setEntryPeople } from '$lib/services/people';
 import { toActionFailure } from '$lib/http-errors';
-import { importVaultAction } from '$lib/server/import-vault-action';
+import { importVaultAction } from '$lib/import-vault-action';
 import { todoHandlers } from '$lib/server/todo-actions';
 import {
 	createNotebook,
@@ -185,7 +185,7 @@ export const notebookActions = {
 	 * A folder of markdown, brought in from this page.
 	 *
 	 * The same action the account's import screen runs — see
-	 * `$lib/server/import-vault-action`. It is here because the form is here:
+	 * `$lib/import-vault-action`. It is here because the form is here:
 	 * somebody with a vault is standing on Notebooks when they think of it, and
 	 * sending them to a settings page headed "An Obsidian vault" was a door
 	 * nobody found.

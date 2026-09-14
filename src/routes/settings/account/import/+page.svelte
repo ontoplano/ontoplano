@@ -6,6 +6,7 @@
 	import MarkdownImport from '$lib/components/MarkdownImport.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { settingsForm } from '$lib/actions/settings-form';
+	import { notify } from '$lib/notify.svelte';
 	import type { ActionData, PageData } from './$types';
 	import { IMPORT_KINDS } from '$lib/imports-catalogue';
 	import { tooBigToSend } from '$lib/upload-ceiling';
@@ -14,6 +15,50 @@
 	const fromFiles = IMPORT_KINDS.filter((k) => k.becomes === 'todos');
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	/**
+	 * Whether this instance is the device it is running on.
+	 *
+	 * One thing turns on it: where the copy taken before a restore goes. A
+	 * server writes it beside its database, where an operator can find it later
+	 * without anybody having thought about it. There is no such place here, so
+	 * the page takes the copy itself, as a download, before the form is sent.
+	 */
+	const onDevice = $derived('onDevice' in data && data.onDevice === true);
+
+	/**
+	 * The copy of this instance, taken before the restore replaces it.
+	 *
+	 * Returns false to call the submission off. That is the whole point of it:
+	 * a restore empties the account first, so going ahead when the copy failed
+	 * is exactly the situation the copy exists to prevent. What it returns
+	 * instead, when it worked, is the file's name on the form — so the audit
+	 * line still says a copy was taken and what it is called.
+	 */
+	async function keepACopyFirst(formData: FormData): Promise<boolean> {
+		if (!onDevice) return true;
+
+		try {
+			const res = await fetch(resolve('/settings/account/export'));
+			if (!res.ok) throw new Error(String(res.status));
+
+			const name = `ontoplano-before-import-${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+			const url = URL.createObjectURL(await res.blob());
+			const link = document.createElement('a');
+			link.href = url;
+			link.download = name;
+			link.click();
+			URL.revokeObjectURL(url);
+
+			formData.set('rescue', name);
+			return true;
+		} catch {
+			notify.error(
+				'Could not save a copy of what is here, so nothing was replaced. Try Export your data first.'
+			);
+			return false;
+		}
+	}
 
 	/**
 	 * The chosen files, read here rather than posted.
@@ -232,7 +277,7 @@
 		<form
 			method="post"
 			action="?/importAccount"
-			use:settingsForm={{ notice: 'Restored.' }}
+			use:settingsForm={{ notice: 'Restored.', before: keepACopyFirst }}
 			class="mt-3 space-y-3"
 		>
 			<input type="file" accept=".json,application/json" class="input" onchange={readRestore} />

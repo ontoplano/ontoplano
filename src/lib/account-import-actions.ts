@@ -1,0 +1,135 @@
+/**
+ * The actions behind the import screen, for both instances that have one.
+ *
+ * The screen is one `+page.svelte` and the work is one service; these are the
+ * bodies in between, which were written against a server and then needed again
+ * on a device. Shared rather than copied, for the reason `import-vault-action`
+ * was: two pages posting to the same-named action with different code behind
+ * them drift, and the first anybody hears of it is a message that says
+ * something different on a phone.
+ *
+ * What genuinely differs stays outside: a server keeps its copy of the account
+ * beside the database before a restore, and a device hands it to the person as
+ * a download instead. Hence `rescue`.
+ */
+import { fail } from '@sveltejs/kit';
+
+import { buildCtx } from '$lib/services/ctx';
+import { importTasks } from '$lib/services/imports';
+import { importAccount, previewImport } from '$lib/services/account-import';
+import { toActionFailure } from '$lib/http-errors';
+
+/**
+ * The slice of a request these need: a form, and whose account it is.
+ *
+ * Named out rather than picked off SvelteKit's `RequestEvent`, because the
+ * device's event is not one — it carries a user with an id and nothing else,
+ * there being no session, no address and no verified mail behind it. Asking
+ * for what is used is what lets one body serve both.
+ */
+type Event = {
+	request: Request;
+	locals: { user?: { id: string } | undefined };
+};
+
+export async function importTasksAction(event: Event) {
+	const formData = await event.request.formData();
+
+	try {
+		const result = importTasks(buildCtx(event.locals.user!.id), {
+			text: formData.get('text'),
+			notebook: formData.get('notebook'),
+			includeDone: formData.get('includeDone') === 'on'
+		});
+
+		// Everything it did and everything it did not: counts somebody can
+		// check against the app they came from, and what was left behind.
+		const brought = [
+			result.importedTasks &&
+				`${result.importedTasks} ${result.importedTasks === 1 ? 'task' : 'tasks'}`,
+			result.importedNotes &&
+				`${result.importedNotes} ${result.importedNotes === 1 ? 'note' : 'notes'}`
+		]
+			.filter(Boolean)
+			.join(' and ');
+		const parts = [`Imported ${brought} into “${result.notebook}”.`];
+		if (result.datesDropped > 0) {
+			parts.push(
+				`${result.datesDropped} had a date this does not read — a repeat rule, or "tomorrow".`
+			);
+		}
+		if (result.skipped.length > 0) {
+			parts.push(`Left behind: ${result.skipped.slice(0, 5).join(', ')}.`);
+		}
+
+		return { success: true, action: 'importTasks', message: parts.join(' ') };
+	} catch (e) {
+		return toActionFailure(e);
+	}
+}
+
+/**
+ * What a restore would do, said before it does anything.
+ *
+ * The restore empties the account first, so everything worth knowing about the
+ * file — whose it was, what lands, what is left behind, what the import would
+ * refuse — has to be on the screen before the word REPLACE is typed, not in
+ * the message after. Reads the same text the restore will read and writes
+ * nothing.
+ */
+export async function previewImportAction(event: Event) {
+	const formData = await event.request.formData();
+	try {
+		return { success: true, action: 'previewImport', preview: previewImport(formData.get('text')) };
+	} catch (e) {
+		return toActionFailure(e);
+	}
+}
+
+/**
+ * Put an exported account back — into this one, over what is here.
+ *
+ * Destructive, so it asks for a typed word rather than a click: this empties
+ * the account before it fills it, and the one thing worse than an import that
+ * fails is an import that half-succeeds over a real week. `importAccount` is
+ * one transaction for the same reason.
+ *
+ * `keep` is where a copy of what is about to be destroyed was put, and it is
+ * the one thing the two instances answer differently — a path beside the
+ * database on a server, a file in somebody's downloads on a device.
+ */
+export async function importAccountAction(
+	event: Event,
+	keep: (userId: string, formData: FormData) => string | null
+) {
+	const formData = await event.request.formData();
+
+	if (
+		String(formData.get('confirm') ?? '')
+			.trim()
+			.toUpperCase() !== 'REPLACE'
+	)
+		return fail(400, {
+			message: 'Type REPLACE to confirm — this empties the account first.'
+		});
+
+	try {
+		const result = await importAccount(event.locals.user!.id, formData.get('text'), {
+			// Only meaningful when the preview said some rows would be refused
+			// and the person read that and chose to go on without them.
+			dropUnacceptable: formData.get('dropUnacceptable') === 'on',
+			rescue: keep(event.locals.user!.id, formData)
+		});
+
+		const parts = [
+			`Imported ${result.total} rows${result.from ? ` from ${result.from.email}` : ''}.`
+		];
+		if (result.skipped.length > 0) {
+			parts.push(`Left behind: ${result.skipped.map((s) => `${s.name} (${s.why})`).join('; ')}.`);
+		}
+
+		return { success: true, action: 'importAccount', message: parts.join(' ') };
+	} catch (e) {
+		return toActionFailure(e);
+	}
+}

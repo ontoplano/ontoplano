@@ -175,3 +175,64 @@ test('the instance tab on a device is the build and the storage, and nothing els
 	await expect(page.getByText('Invitations')).toHaveCount(0);
 	await expect(page.getByText('Running since')).toHaveCount(0);
 });
+
+/**
+ * Out of one instance and into the other, which is the point of a file.
+ *
+ * A person using both can move what is on the phone onto a server, or the
+ * other way round, and the only thing that carries it is the export. So this
+ * takes one from the server account and restores it onto the device — the
+ * whole path, through the page, including the copy the device keeps first —
+ * and then checks that the server still has exactly what it had.
+ *
+ * Worth its runtime because the restore empties before it fills: if the wrong
+ * database were bound, this is the test where a server account disappears.
+ */
+test('an export moves from the server onto the device, and the server keeps its own', async ({
+	page
+}) => {
+	test.setTimeout(240_000);
+	await register(page, `two-move-${Date.now()}@test.invalid`);
+
+	await visit(page, '/tasks/todo');
+	await addTodo(page, ON_THE_SERVER);
+
+	// The file, as the page would hand it over.
+	const file = await page.evaluate(async () => {
+		const res = await fetch('/settings/account/export?pictures=no');
+		return res.text();
+	});
+	expect(file).toContain(ON_THE_SERVER);
+
+	const go = await onDevice(page);
+	await go('/tasks/todo');
+	await expect(page.getByRole('button', { name: 'New to-do' })).toBeVisible({ timeout: 60_000 });
+	await addTodo(page, ON_THE_DEVICE);
+
+	await go('/settings/account/import');
+	const restore = page.locator('form[action="?/importAccount"]');
+	await expect(restore).toBeVisible({ timeout: 60_000 });
+	await restore.locator('textarea[name="text"]').fill(file);
+	await restore.locator('[name="confirm"]').fill('REPLACE');
+
+	// The copy the device keeps before replacing is a download, so it has to
+	// actually arrive — the page cancels the restore if it does not.
+	const kept = page.waitForEvent('download', { timeout: 60_000 });
+	await restore.getByRole('button', { name: /restore/i }).click();
+	expect((await kept).suggestedFilename()).toContain('before-import');
+
+	// And wait for it to have happened: the restore is one transaction over
+	// every table, and clicking away mid-way asks the worker for a page while
+	// it is still inside that transaction.
+	await expect(page.getByText(/Imported \d+ rows/).first()).toBeVisible({ timeout: 120_000 });
+
+	// The device now holds the server's week and not its own.
+	await go('/tasks/todo');
+	await expect(page.getByText(ON_THE_SERVER).first()).toBeVisible({ timeout: 60_000 });
+	await expect(page.getByText(ON_THE_DEVICE)).toHaveCount(0);
+
+	// And the server is exactly where it was: one to-do, its own.
+	await visit(page, '/tasks/todo');
+	await expect(page.getByText(ON_THE_SERVER).first()).toBeVisible();
+	await expect(page.getByText(ON_THE_DEVICE)).toHaveCount(0);
+});

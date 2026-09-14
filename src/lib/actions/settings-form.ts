@@ -22,27 +22,48 @@ import { notify } from '$lib/notify.svelte';
  * `use:enhance` stays correct for a form that creates something, where clearing
  * the fields is the point.
  */
-export function settingsForm(node: HTMLFormElement, options: { notice?: string } = {}) {
-	return enhance(node, () => async ({ result, update }) => {
-		await update({ reset: false });
+export function settingsForm(
+	node: HTMLFormElement,
+	options: {
+		notice?: string;
+		/**
+		 * Something that must happen, and succeed, before the form is sent.
+		 *
+		 * It may add to the form data on the way. Returning false calls the
+		 * submission off — for the one case that wanted this, a device taking a
+		 * copy of the account before a restore destroys it, going ahead without
+		 * the copy is the outcome the copy exists to prevent.
+		 */
+		before?: (formData: FormData) => boolean | Promise<boolean>;
+	} = {}
+) {
+	return enhance(node, async ({ formData, cancel }) => {
+		if (options.before && (await options.before(formData)) === false) {
+			cancel();
+			return;
+		}
 
-		// Said here rather than at the top of the page. A settings page is long,
-		// and a confirmation drawn above the first card is invisible to somebody
-		// who scrolled to the last one to press the button — which is exactly
-		// how the Sections card reported success on a phone.
-		if (result.type === 'success' && options.notice) {
-			// The action's own sentence when it wrote one — "Imported 3 tasks and
-			// 2 notes…" says more than the caller's generic word can.
-			const said = (result.data as { message?: unknown } | undefined)?.message;
-			notify.success(typeof said === 'string' && said ? said : options.notice);
-		}
-		if (result.type === 'failure') {
-			const data = result.data as { message?: unknown; refused?: unknown } | undefined;
-			// A refusal from a hook is announced by the root layout, for every form
-			// in the app at once. Saying it here as well is the same sentence twice.
-			if (data?.refused === true) return;
-			const said = data?.message;
-			notify.error(typeof said === 'string' && said ? said : 'That did not save.');
-		}
+		return async ({ result, update }) => {
+			await update({ reset: false });
+
+			// Said here rather than at the top of the page. A settings page is long,
+			// and a confirmation drawn above the first card is invisible to somebody
+			// who scrolled to the last one to press the button — which is exactly
+			// how the Sections card reported success on a phone.
+			if (result.type === 'success' && options.notice) {
+				// The action's own sentence when it wrote one — "Imported 3 tasks and
+				// 2 notes…" says more than the caller's generic word can.
+				const said = (result.data as { message?: unknown } | undefined)?.message;
+				notify.success(typeof said === 'string' && said ? said : options.notice);
+			}
+			if (result.type === 'failure') {
+				const data = result.data as { message?: unknown; refused?: unknown } | undefined;
+				// A refusal from a hook is announced by the root layout, for every form
+				// in the app at once. Saying it here as well is the same sentence twice.
+				if (data?.refused === true) return;
+				const said = data?.message;
+				notify.error(typeof said === 'string' && said ? said : 'That did not save.');
+			}
+		};
 	});
 }

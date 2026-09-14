@@ -14,7 +14,7 @@ const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
 
-let vault: typeof import('../src/lib/server/services/import-vault');
+let vault: typeof import('../src/lib/services/import-vault');
 let diary: typeof import('../src/lib/services/diary');
 
 /** `listEntries` is the loose pile; an import lands in a notebook. */
@@ -23,7 +23,7 @@ const entryCount = () =>
 let ctx: { userId: string; now: Date; tz: string };
 
 beforeAll(async () => {
-	vault = await import('../src/lib/server/services/import-vault');
+	vault = await import('../src/lib/services/import-vault');
 	diary = await import('../src/lib/services/diary');
 	ctx = { userId: OWNER, now: new Date('2026-09-03T12:00:00'), tz: 'UTC' };
 });

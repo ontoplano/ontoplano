@@ -1,9 +1,8 @@
 import { fail } from '@sveltejs/kit';
-import type { RequestEvent } from '@sveltejs/kit';
 
 import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/http-errors';
-import { importVault } from '$lib/server/services/import-vault';
+import { importVault } from '$lib/services/import-vault';
 
 /**
  * A folder of markdown, turned into a notebook.
@@ -14,7 +13,13 @@ import { importVault } from '$lib/server/services/import-vault';
  * with the same form need the same action behind it, or they drift into
  * disagreeing about what a bad file is.
  */
-export async function importVaultAction(event: Pick<RequestEvent, 'request' | 'locals'>) {
+/** What it needs, and no more — so a device's event satisfies it too. */
+type Event = {
+	request: Request;
+	locals: { user?: { id: string } | undefined };
+};
+
+export async function importVaultAction(event: Event) {
 	const formData = await event.request.formData();
 
 	let files: { path: string; text: string }[];

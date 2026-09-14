@@ -572,23 +572,14 @@
 		happens once, and it had grown into two long forms sitting between the
 		sessions list and the delete button.
 	-->
-	<!--
-		Not on a device yet, and it says nothing rather than offering a page that
-		refuses. Restoring an export writes a copy of what it is about to replace
-		beside the database first, and hashes the picture bytes it carries on the
-		way in — a file system and a synchronous hash, neither of which a browser
-		worker has. Exporting works here, so nothing is trapped meanwhile.
-	-->
-	{#if !onDevice}
-		<Card title="Bring things in">
-			{#snippet actions()}
-				<a href={resolve('/settings/account/import')} class="btn btn-sm">Import</a>
-			{/snippet}
-			<p class="text-sm text-gray-500">
-				A list from Todoist, Google Tasks or Google Keep, or an export from another instance.
-			</p>
-		</Card>
-	{/if}
+	<Card title="Bring things in">
+		{#snippet actions()}
+			<a href={resolve('/settings/account/import')} class="btn btn-sm">Import</a>
+		{/snippet}
+		<p class="text-sm text-gray-500">
+			A list from Todoist, Google Tasks or Google Keep, or an export from another instance.
+		</p>
+	</Card>
 
 	{#if data.nativeApp}
 		<!--

@@ -1,10 +1,11 @@
-import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { buildCtx } from '$lib/services/ctx';
-import { importTasks } from '$lib/services/imports';
-import { importAccount, previewImport, NOT_PORTABLE } from '$lib/server/services/account-import';
-import { toActionFailure } from '$lib/http-errors';
-import { importVaultAction } from '$lib/server/import-vault-action';
+import { NOT_PORTABLE, keepBeforeImport } from '$lib/server/services/account-import';
+import { importVaultAction } from '$lib/import-vault-action';
+import {
+	importAccountAction,
+	importTasksAction,
+	previewImportAction
+} from '$lib/account-import-actions';
 import { ENVELOPE, parseByteSize } from '$lib/server/body-limit';
 
 /**
@@ -54,41 +55,7 @@ export const actions: Actions = {
 	 * imported is visible before the button is pressed, and no file is ever
 	 * uploaded.
 	 */
-	importTasks: async ({ request, locals }) => {
-		const formData = await request.formData();
-
-		try {
-			const result = importTasks(buildCtx(locals.user!.id), {
-				text: formData.get('text'),
-				notebook: formData.get('notebook'),
-				includeDone: formData.get('includeDone') === 'on'
-			});
-
-			// Everything it did and everything it did not: counts somebody can
-			// check against the app they came from, and what was left behind.
-			const brought = [
-				result.importedTasks &&
-					`${result.importedTasks} ${result.importedTasks === 1 ? 'task' : 'tasks'}`,
-				result.importedNotes &&
-					`${result.importedNotes} ${result.importedNotes === 1 ? 'note' : 'notes'}`
-			]
-				.filter(Boolean)
-				.join(' and ');
-			const parts = [`Imported ${brought} into \u201c${result.notebook}\u201d.`];
-			if (result.datesDropped > 0) {
-				parts.push(
-					`${result.datesDropped} had a date this does not read \u2014 a repeat rule, or "tomorrow".`
-				);
-			}
-			if (result.skipped.length > 0) {
-				parts.push(`Left behind: ${result.skipped.slice(0, 5).join(', ')}.`);
-			}
-
-			return { success: true, action: 'importTasks', message: parts.join(' ') };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	importTasks: importTasksAction,
 
 	/**
 	 * A vault of markdown becomes notebook entries.
@@ -101,66 +68,16 @@ export const actions: Actions = {
 	 */
 	importVault: importVaultAction,
 
-	/**
-	 * What a restore would do, said before it does anything.
-	 *
-	 * The restore empties the account first, so everything worth knowing about
-	 * the file \u2014 whose it was, what lands, what is left behind, what the
-	 * import would refuse \u2014 has to be on the screen before the word REPLACE
-	 * is typed, not in the message after. Reads the same text the restore will
-	 * read and writes nothing.
-	 */
-	previewImport: async ({ request, locals }) => {
-		void locals;
-		const formData = await request.formData();
-		try {
-			return {
-				success: true,
-				action: 'previewImport',
-				preview: previewImport(formData.get('text'))
-			};
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	previewImport: previewImportAction,
 
 	/**
-	 * Put an exported account back \u2014 into this one, over what is here.
+	 * And the restore, with this server's own safety copy taken first.
 	 *
-	 * Destructive, so it asks for a typed word rather than a click: this
-	 * empties the account before it fills it, and the one thing worse than an
-	 * import that fails is an import that half-succeeds over a real week.
-	 * `importAccount` is one transaction for the same reason.
+	 * Written beside the database rather than handed to the browser: it is a
+	 * net for an operator asked "can you put Ana back", it has to exist whether
+	 * or not anybody is still looking at the page, and the path lands on the
+	 * audit line the import writes. A device cannot do that and does something
+	 * else — see its `page.isolated.ts`.
 	 */
-	importAccount: async ({ request, locals }) => {
-		const formData = await request.formData();
-
-		if (
-			String(formData.get('confirm') ?? '')
-				.trim()
-				.toUpperCase() !== 'REPLACE'
-		)
-			return fail(400, {
-				message: 'Type REPLACE to confirm \u2014 this empties the account first.'
-			});
-
-		try {
-			const result = importAccount(locals.user!.id, formData.get('text'), {
-				// Only meaningful when the preview said some rows would be refused
-				// and the person read that and chose to go on without them.
-				dropUnacceptable: formData.get('dropUnacceptable') === 'on'
-			});
-
-			const parts = [
-				`Imported ${result.total} rows${result.from ? ` from ${result.from.email}` : ''}.`
-			];
-			if (result.skipped.length > 0) {
-				parts.push(`Left behind: ${result.skipped.map((s) => `${s.name} (${s.why})`).join('; ')}.`);
-			}
-
-			return { success: true, action: 'importAccount', message: parts.join(' ') };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	}
+	importAccount: (event) => importAccountAction(event, (userId) => keepBeforeImport(userId))
 };

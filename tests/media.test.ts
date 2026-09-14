@@ -342,7 +342,7 @@ describe('leaving with them', () => {
 		expect(row, 'the picture is in the export').toBeTruthy();
 		expect(typeof row!.bytes, 'as a string, not as an object of byte numbers').toBe('string');
 
-		accountImport.importAccount(STRANGER, onDisk);
+		await accountImport.importAccount(STRANGER, onDisk);
 
 		const theirs = media.list(other()).find((p) => p.filename === 'leaving.png');
 		expect(theirs, 'the picture arrived').toBeTruthy();

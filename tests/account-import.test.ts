@@ -58,15 +58,15 @@ describe('a round trip', () => {
 		file = account.exportAccount(OWNER, now);
 	});
 
-	test('lands everything in the other account', () => {
-		const result = accountImport.importAccount(STRANGER, file);
+	test('lands everything in the other account', async () => {
+		const result = await accountImport.importAccount(STRANGER, file);
 
 		expect(result.total).toBeGreaterThan(0);
 		expect(activities.listCategories(stranger()).map((c) => c.name)).toContain('garden');
 		expect(todos.listUnscheduled(stranger()).map((t) => t.title)).toContain('buy compost');
 	});
 
-	test('and the references point at the imported rows, not the old ids', () => {
+	test('and the references point at the imported rows, not the old ids', async () => {
 		// The failure this catches: keeping the old number. It would still be a
 		// valid id — somebody else's — so nothing errors and the activity comes
 		// back under the wrong category.
@@ -81,7 +81,7 @@ describe('a round trip', () => {
 		expect(compost?.categoryId).toBe(garden!.id);
 	});
 
-	test('every row belongs to the account that imported it', () => {
+	test('every row belongs to the account that imported it', async () => {
 		// The one mistake that would be a security bug rather than a nuisance.
 		const theirs = account.exportAccount(STRANGER, new Date(now.getTime() + 1000));
 		for (const rows of Object.values(theirs.data)) {
@@ -91,19 +91,19 @@ describe('a round trip', () => {
 		}
 	});
 
-	test('replaces rather than merges: importing twice is not two copies', () => {
-		accountImport.importAccount(STRANGER, file);
+	test('replaces rather than merges: importing twice is not two copies', async () => {
+		await accountImport.importAccount(STRANGER, file);
 		const gardens = activities.listCategories(stranger()).filter((c) => c.name === 'garden');
 		expect(gardens).toHaveLength(1);
 	});
 
-	test('and the account it came from still has everything', () => {
+	test('and the account it came from still has everything', async () => {
 		expect(activities.listCategories(owner()).map((c) => c.name)).toContain('garden');
 	});
 });
 
 describe('what does not travel', () => {
-	test('billing is dropped, and said so', () => {
+	test('billing is dropped, and said so', async () => {
 		const file = {
 			exportedAt: now.toISOString(),
 			account: { id: 'x', name: 'x', email: 'someone@example.test' },
@@ -113,7 +113,7 @@ describe('what does not travel', () => {
 			}
 		};
 
-		const result = accountImport.importAccount(STRANGER, file);
+		const result = await accountImport.importAccount(STRANGER, file);
 		const names = result.skipped.map((s) => s.name);
 		expect(names).toContain('subscriptions');
 		expect(names).toContain('apiTokens');
@@ -163,7 +163,7 @@ describe('what does not travel', () => {
 			.run();
 
 		// A perfectly ordinary export from somewhere else, carrying neither.
-		accountImport.importAccount(OWNER, {
+		await accountImport.importAccount(OWNER, {
 			exportedAt: now.toISOString(),
 			account: { id: 'elsewhere', name: 'Elsewhere', email: 'elsewhere@example.test' },
 			data: { todoTasks: [{ id: 1, userId: 'elsewhere', title: 'from the file' }] }
@@ -197,7 +197,7 @@ describe('what does not travel', () => {
 
 		todos.createTodo(owner(), { title: 'about to be destroyed' });
 
-		accountImport.importAccount(OWNER, {
+		await accountImport.importAccount(OWNER, {
 			exportedAt: now.toISOString(),
 			account: { id: 'elsewhere', name: 'Elsewhere', email: 'elsewhere@example.test' },
 			data: { todoTasks: [{ id: 1, userId: 'elsewhere', title: 'the replacement' }] }
@@ -218,8 +218,8 @@ describe('what does not travel', () => {
 		).toBe(true);
 	});
 
-	test('a table this version has never heard of is reported, not refused', () => {
-		const result = accountImport.importAccount(STRANGER, {
+	test('a table this version has never heard of is reported, not refused', async () => {
+		const result = await accountImport.importAccount(STRANGER, {
 			exportedAt: now.toISOString(),
 			account: { id: 'x', name: 'x', email: 'a@b.test' },
 			data: { beliefs: [{ id: 1, userId: 'x' }] }
@@ -230,7 +230,7 @@ describe('what does not travel', () => {
 });
 
 describe('a file that is not an export', () => {
-	test('is refused with a sentence, not a stack trace', () => {
+	test('is refused with a sentence, not a stack trace', async () => {
 		expect(() => accountImport.parseExport('not json at all {')).toThrow(/not JSON/i);
 		expect(() => accountImport.parseExport('[]')).toThrow(/not an ontoplano export/i);
 		expect(() => accountImport.parseExport('{}')).toThrow(/no account data/i);
@@ -246,17 +246,17 @@ describe('a file that is not an export', () => {
 	 * the ceilings are the interesting part: not what a real export contains,
 	 * but what a made-up one is stopped from costing.
 	 */
-	test("is refused when it is too big to be anybody's data", () => {
+	test("is refused when it is too big to be anybody's data", async () => {
 		const huge = `{"data":{"todoTasks":[${'{},'.repeat(200_001).slice(0, -1)}]}}`;
 		expect(() => accountImport.parseExport(huge)).toThrow(/most one restore may carry/i);
 
 		expect(() => accountImport.parseExport('x'.repeat(20_000_001))).toThrow(/too big/i);
 	});
 
-	test('drops a value no column can hold rather than failing mid-restore', () => {
+	test('drops a value no column can hold rather than failing mid-restore', async () => {
 		const before = todos.listUnscheduled(stranger()).length;
 
-		accountImport.importAccount(STRANGER, {
+		await accountImport.importAccount(STRANGER, {
 			exportedAt: '2026-09-01',
 			account: { id: OWNER, name: 'x', email: 'x@test.invalid' },
 			data: {
@@ -297,9 +297,9 @@ describe('a file cannot lie about the type of its bytes', () => {
 		data: { media: [{ id: 1, userId: 'x', byteSize: 1, sha256: 'lied', ...row }] }
 	});
 
-	test('an HTML "picture" is refused, whole import and all', () => {
+	test('an HTML "picture" is refused, whole import and all', async () => {
 		const doc = Buffer.from('<script>fetch("/api/v1/export")</script>');
-		expect(() =>
+		await expect(
 			accountImport.importAccount(STRANGER, {
 				exportedAt: now.toISOString(),
 				account: { id: 'x', name: 'x', email: 'someone@example.test' },
@@ -317,11 +317,11 @@ describe('a file cannot lie about the type of its bytes', () => {
 					]
 				}
 			})
-		).toThrow(/not a format this app accepts/);
+		).rejects.toThrow(/not a format this app accepts/);
 	});
 
-	test('a real picture claiming a document type is stored under what its bytes say', () => {
-		accountImport.importAccount(
+	test('a real picture claiming a document type is stored under what its bytes say', async () => {
+		await accountImport.importAccount(
 			STRANGER,
 			withMedia({ mime: 'text/html', filename: 'photo.html', bytes: PNG.toString('base64') })
 		);
@@ -335,8 +335,8 @@ describe('a file cannot lie about the type of its bytes', () => {
 		expect(rows[0].sha256).not.toBe('lied');
 	});
 
-	test('a "sound" with a document type is refused the same way', () => {
-		expect(() =>
+	test('a "sound" with a document type is refused the same way', async () => {
+		await expect(
 			accountImport.importAccount(STRANGER, {
 				exportedAt: now.toISOString(),
 				account: { id: 'x', name: 'x', email: 'someone@example.test' },
@@ -353,7 +353,7 @@ describe('a file cannot lie about the type of its bytes', () => {
 					]
 				}
 			})
-		).toThrow(/not a format this app accepts/);
+		).rejects.toThrow(/not a format this app accepts/);
 	});
 });
 
@@ -393,7 +393,7 @@ describe('the preview, and the way through it offers', () => {
 		}
 	};
 
-	test('says whose file it is, what lands, what is left and what would be refused', () => {
+	test('says whose file it is, what lands, what is left and what would be refused', async () => {
 		const seen = accountImport.previewImport(file);
 
 		expect(seen.from).toEqual({ email: 'mover@example.test', exportedAt: now.toISOString() });
@@ -408,21 +408,21 @@ describe('the preview, and the way through it offers', () => {
 		]);
 	});
 
-	test('writes nothing at all', () => {
+	test('writes nothing at all', async () => {
 		// Read through the services, the way every other case here does.
 		const before = ideasService.listIdeas(ctx.buildCtx(STRANGER)).length;
 		accountImport.previewImport(file);
 		expect(ideasService.listIdeas(ctx.buildCtx(STRANGER)).length).toBe(before);
 	});
 
-	test('the refusal still stands by default', () => {
-		expect(() => accountImport.importAccount(STRANGER, file)).toThrow(
+	test('the refusal still stands by default', async () => {
+		await expect(accountImport.importAccount(STRANGER, file)).rejects.toThrow(
 			/not a format this app accepts/
 		);
 	});
 
-	test('dropUnacceptable brings in the rest and says what it left', () => {
-		const result = accountImport.importAccount(STRANGER, file, { dropUnacceptable: true });
+	test('dropUnacceptable brings in the rest and says what it left', async () => {
+		const result = await accountImport.importAccount(STRANGER, file, { dropUnacceptable: true });
 
 		// The good picture and the idea landed; the crafted one did not.
 		expect(result.tables).toContainEqual({ name: 'media', rows: 1 });

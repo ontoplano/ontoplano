@@ -59,18 +59,18 @@ beforeAll(async () => {
 	const file = account.exportAccount(OWNER, new Date('2026-09-01T09:00:00Z'));
 	before = counts(file.data);
 
-	accountImport.importAccount(STRANGER, file);
+	await accountImport.importAccount(STRANGER, file);
 	after = counts(account.exportAccount(STRANGER, new Date('2026-09-01T09:00:01Z')).data);
 }, 120_000);
 
 describe('every table is accounted for', () => {
-	test('nothing in the schema is missing from the export list', () => {
+	test('nothing in the schema is missing from the export list', async () => {
 		// A table with a `user_id` that `USER_TABLES` does not name is a table
 		// the export misses and the deletion leaves behind.
 		expect(account.unaccountedTables()).toEqual([]);
 	});
 
-	test('and the seed actually filled a great many of them', () => {
+	test('and the seed actually filled a great many of them', async () => {
 		// Otherwise the round trip below proves nothing: comparing two empty
 		// tables passes whatever the importer does.
 		const filled = Object.entries(before).filter(([, n]) => n > 0);
@@ -80,7 +80,7 @@ describe('every table is accounted for', () => {
 });
 
 describe('a round trip loses nothing', () => {
-	test('every portable table comes back with the same number of rows', () => {
+	test('every portable table comes back with the same number of rows', async () => {
 		const lost: string[] = [];
 
 		for (const [name, count] of Object.entries(before)) {
@@ -94,7 +94,7 @@ describe('a round trip loses nothing', () => {
 		expect(lost).toEqual([]);
 	});
 
-	test('and what does not travel is named, not silently dropped', () => {
+	test('and what does not travel is named, not silently dropped', async () => {
 		// A table that stops travelling has to say so out loud. Silence here is
 		// how somebody loses their data and finds out a year later.
 		for (const [name, why] of Object.entries(accountImport.NOT_PORTABLE)) {
@@ -117,25 +117,25 @@ describe('a round trip loses nothing', () => {
 const PICTURE_TABLES = ['media', 'albumMedia', 'mediaTags', 'recipeImages'];
 
 describe('the file says what wrote it', () => {
-	test('an export carries the version', () => {
+	test('an export carries the version', async () => {
 		const file = account.exportAccount(OWNER, new Date('2026-09-01T09:00:05Z'));
 		// Nothing reads it yet. It is here so that the files people already have
 		// say what made them, by the time anything wants to know.
 		expect(file.version).toMatch(/^\d+\.\d+\.\d+$/);
 	});
 
-	test('and a file written before that still imports', () => {
+	test('and a file written before that still imports', async () => {
 		const file = account.exportAccount(OWNER, new Date('2026-09-01T09:00:06Z'));
 		const old = JSON.parse(JSON.stringify(file));
 		delete old.version;
 		const parsed = accountImport.parseExport(old);
 		expect(parsed.version).toBe('');
-		expect(() => accountImport.importAccount(STRANGER, parsed)).not.toThrow();
+		await expect(accountImport.importAccount(STRANGER, parsed)).resolves.toBeDefined();
 	});
 });
 
 describe('an export without pictures', () => {
-	test('is the same account minus exactly the picture tables', () => {
+	test('is the same account minus exactly the picture tables', async () => {
 		const slim = account.exportAccount(OWNER, new Date('2026-09-01T09:00:02Z'), {
 			withoutPictures: true
 		});
@@ -173,7 +173,7 @@ describe('an export without pictures', () => {
 		expect(shed).toBeGreaterThan(pictureBytes * 0.9);
 
 		// The round trip: it restores without a word of complaint.
-		const result = accountImport.importAccount(STRANGER, slim);
+		const result = await accountImport.importAccount(STRANGER, slim);
 		expect(result.total).toBeGreaterThan(0);
 		expect(result.skipped.filter((skip) => skip.why.includes('format'))).toEqual([]);
 	});
