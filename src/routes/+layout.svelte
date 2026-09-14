@@ -32,6 +32,7 @@
 	import NavPie from '$lib/components/NavPie.svelte';
 	import FanMenu, { type Petal } from '$lib/components/FanMenu.svelte';
 	import ReportDialog from '$lib/components/ReportDialog.svelte';
+	import Tooltips from '$lib/components/Tooltips.svelte';
 	import { hasTutorial } from '$lib/tutorials';
 	import Logo from '$lib/components/Logo.svelte';
 	import Reminders from '$lib/components/Reminders.svelte';
@@ -1381,6 +1382,9 @@
 			order={data.navOrder}
 			colors={data.sectionColors}
 		/>
+		<!-- Every `title` in the app, drawn by the app rather than by the
+		     browser. One listener; nothing else changes. -->
+		<Tooltips />
 		<Reminders />
 		<UndoToast />
 		<Notifications />

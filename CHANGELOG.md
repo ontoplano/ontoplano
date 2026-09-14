@@ -18,6 +18,18 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.176.6 — 2026-09-14
+
+- **The app draws its own tooltips now.** Every `title` in it — three hundred
+  of them — was being rendered by the browser, in a system font with a system
+  delay, which made the one thing that appears when somebody is unsure look
+  like a different program. Nothing was swept: one listener takes the attribute
+  off whatever the pointer is resting on, draws the label in the app's own
+  chrome, and puts the attribute back when the pointer leaves, because a title
+  is also an accessible name where there is no label beside it. Keyboard focus
+  brings it up too, Escape dismisses it, and a phone is unchanged — it never
+  showed these at all.
+
 ## 0.176.5 — 2026-09-14
 
 - **Fixed: every settings form stopped saving.** A hook added for the device's
