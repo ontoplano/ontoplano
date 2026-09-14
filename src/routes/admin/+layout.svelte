@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
-	import SettingsTabs from '$lib/components/SettingsTabs.svelte';
+	import TabbedRoom from '$lib/components/TabbedRoom.svelte';
+	import { settingsTabs } from '$lib/settings-tabs';
 	import type { Snippet } from 'svelte';
 	import type { LayoutServerData } from './$types';
 
@@ -17,15 +18,7 @@
 	replace the tab bar with nothing, so the way back to Account was the main
 	menu. Same tabs, same place, and the trip is no longer one-way.
 -->
-<div class="space-y-4">
-	<h1 class="text-lg font-bold text-gray-900">Settings</h1>
-
-	<SettingsTabs
-		billable={data.billable}
-		canEditInstance={data.canEditInstance}
-		canAdminister={data.canAdminister}
-	/>
-
+<TabbedRoom title="Settings" tabs={settingsTabs(data)} label="Settings sections">
 	<!--
 		No heading on the list itself: the active tab already says Administration,
 		and a page that names itself twice reads as two pages. One account's page
@@ -41,4 +34,4 @@
 	{/if}
 
 	{@render children()}
-</div>
+</TabbedRoom>
