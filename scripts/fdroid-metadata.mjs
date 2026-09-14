@@ -49,10 +49,23 @@ const OUT = flag('--out') ?? join(ROOT, 'fdroid-out');
 const FROM = flag('--from');
 
 const version = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).version;
-const [major, minor, patch] = version.split('.').map(Number);
 
-/** The same arithmetic `android-flavours.mjs` does: 0.110.0 is 11000. */
-const versionCode = major * 100000 + minor * 100 + patch;
+/*
+ * Read from the committed Gradle project, not derived again here: the number
+ * F-Droid's builder produces is whatever `capacitor/android/app/build.gradle`
+ * says, and a second copy of the arithmetic (`android-flavours.mjs` writes
+ * that file) is a number that drifts.
+ */
+const gradle = readFileSync(join(ROOT, 'capacitor/android/app/build.gradle'), 'utf8');
+const versionCode = Number(/versionCode (\d+)/.exec(gradle)?.[1]);
+const gradleVersion = /versionName "([^"]+)"/.exec(gradle)?.[1];
+if (!versionCode || gradleVersion !== version) {
+	console.error(
+		`package.json says ${version} but capacitor/android/app/build.gradle says ` +
+			`${gradleVersion ?? 'nothing'} (${versionCode || '?'}). Regenerate it: make android-project`
+	);
+	process.exit(1);
+}
 const tag = `v${version}`;
 
 /* ── The tag has to exist ─────────────────────────────────────────────────── */
@@ -75,12 +88,40 @@ try {
 
 /* ── The recipe ───────────────────────────────────────────────────────────── */
 
+/*
+ * The build entry, and every line of it is a fact about this repository:
+ *
+ * - `gradle: - official`: the project has flavours (official, dev, staging —
+ *   one per instance a developer talks to) and F-Droid builds the official
+ *   one. `yes` would ask for a flavourless project this is not.
+ * - The web app the shell carries is NOT committed (`assets/public` is
+ *   ignored), so the builder makes it from source: the root yarn workspace,
+ *   the isolated build (`ONTOPLANO_ISOLATED_BUILD=1`, the same thing `make
+ *   android` runs), and `cap sync` to put it into the project. Node 20 in
+ *   their image is too old for the toolchain, hence the pinned tarball.
+ *
+ * REHEARSE THIS before every submission — `fdroid build` in their server
+ * image, see ontoplano-marketing/store/FDROID-RELEASE.md — because a recipe
+ * that fails in their builder costs a review round trip measured in weeks.
+ */
+const NODE_BUILD = 'v22.14.0';
 const buildEntry = `  - versionName: ${version}
     versionCode: ${versionCode}
     commit: ${tag}
     subdir: capacitor/android/app
+    sudo:
+      - curl -Lo /tmp/node.tar.xz https://nodejs.org/dist/${NODE_BUILD}/node-${NODE_BUILD}-linux-x64.tar.xz
+      - tar -xJf /tmp/node.tar.xz -C /opt
+      - for b in node npm npx corepack; do ln -sf /opt/node-${NODE_BUILD}-linux-x64/bin/$b /usr/local/bin/$b; done
+      - npm install -g yarn
+    init:
+      - cd ../../.. && yarn install --frozen-lockfile
+      - cd ../.. && npm ci --no-audit --no-fund
+    prebuild:
+      - cd ../../.. && NODE_OPTIONS=--max-old-space-size=4096 ONTOPLANO_ISOLATED_BUILD=1
+        PUBLIC_ONTOPLANO_ISOLATED=true yarn build && cd capacitor && npx cap sync android
     gradle:
-      - yes
+      - official
 `;
 
 /**
@@ -92,7 +133,7 @@ const buildEntry = `  - versionName: ${version}
 function freshRecipe() {
 	return `Categories:
   - Time
-License: AGPL-3.0-only
+License: AGPL-3.0-or-later
 AuthorName: Estevão Lobo
 SourceCode: ${SOURCE}
 IssueTracker: ${SOURCE}/issues
@@ -185,32 +226,32 @@ writeFileSync(
 
 **Package:** \`${PACKAGE}\`
 **Source:** ${SOURCE}
-**Licence:** AGPL-3.0-only
+**Licence:** AGPL-3.0-or-later
 **Category:** Time
 
 ontoplano is a life management tool: the week as blocks you draw on a grid,
-plus todos, goals, habits, a diary and notebooks, bills, a shopping list,
+plus todos, goals, habits, a diary and notebooks, finances, a shopping list,
 recipes and a home inventory. It is one app instead of eight, and it is meant
 to be self-hosted — the server is the same AGPL repository linked above.
 
-The Android app is a Trusted Web Activity over that site, with home-screen
-widgets, push notifications and app shortcuts as native code. On first run it
-asks which instance to use — the one I host, or an address you type — so it is
-a client for ontoplano and not for my copy of it. The Play build carries Play
-Billing; the build in \`capacitor/android/\` in the repository does not, and has no
-proprietary dependencies: it links only \`androidx\` and
-\`com.google.androidbrowserhelper\`, both Apache-2.0.
+The Android app carries the whole of ontoplano inside it (a Capacitor shell
+around the same code). On first launch it asks where your ontoplano lives:
+an instance you host, the one I host, or this phone by itself — no account,
+no server, nothing leaves the device. So it is a client for ontoplano, not
+for my copy of it, and it is complete without any network at all.
 
-There is a paid plan on the instance I host. Payment happens on the web, not in
-the app: there is no in-app purchase code in this build at all.
+Native pieces: three home-screen widgets in plain Java, reminders booked with
+Android's own alarms, and links that leave ontoplano open outside the app.
+Dependencies are androidx and Capacitor with three of its plugins (app,
+browser, local-notifications) — no Play services, no billing library, nothing
+proprietary in the committed project.
 
-The Gradle project is committed at \`capacitor/android/\`, so a build needs no network
-beyond Gradle's own dependency fetch:
+There is a paid plan on the instance I host. Payment happens on the web, not
+in the app: there is no in-app purchase code in this build at all.
 
-    git clone --depth 1 ${SOURCE}.git
-    cd ontoplano/android && ./gradlew assembleRelease
-
-I have a recipe ready and will open a merge request against fdroiddata.
+The Gradle project is committed at \`capacitor/android/\`; the web app it
+carries is built from the same repository (see the recipe in the merge
+request I will open against fdroiddata).
 `
 );
 
@@ -224,43 +265,37 @@ Adds \`${PACKAGE}\` — ontoplano, an AGPL life management tool, and its listing
 **Source:** ${SOURCE}
 **Builds:** \`${tag}\`, versionCode \`${versionCode}\`
 
-The Gradle project is committed at \`capacitor/android/\` in the app repository, so the
-build is \`subdir: capacitor/android/app\` with no prebuilt anything and no init step.
+**Shape.** A Capacitor shell carrying the whole app: the Gradle project is
+committed at \`capacitor/android/\` and the web app inside it is NOT a
+committed blob — the recipe builds it from the same tag (node toolchain in
+\`sudo:\`, the isolated build in \`prebuild:\`, then \`cap sync\`).
+\`gradle: official\` names the flavour to build; the dev and staging
+flavours exist for development against other instances.
 
-**Native features.** The policy asks for them when an app wraps a website, so:
+**Not a wrapper.** On first launch the app asks where your ontoplano lives:
+an instance you host, the official one, or this phone by itself — the last
+one runs the entire app on the device with no account and no network, so the
+app is complete without any service, mine included. The address the build
+suggests is a default, not a target; I don't believe \`NonFreeNet\` applies,
+say so if you read it differently.
+
+**Native features**, since the policy asks when an app carries a web view:
 three home-screen widgets drawing to bitmaps (\`TodayWidgetProvider\` and
-friends, plain Java against the app's API), push notifications through the
-service worker, and app shortcuts. It is not a browser bookmark.
+friends, plain Java), reminders booked with Android's own alarms
+(\`@capacitor/local-notifications\`), links that leave ontoplano opening
+outside the app, and the back gesture walking the app's own history.
 
-**On the shape of it.** This is a Trusted Web Activity, so two questions come
-up and both have answers:
+**Nothing proprietary.** Dependencies are androidx, Capacitor and three of
+its plugins (app, browser, local-notifications). No Play services and no
+billing library anywhere in this project: there is a paid plan on the
+instance I host, paid on the web — the app contains no purchase code, and
+pages drawn inside it do not offer a checkout.
 
-- *Is the service free software?* Yes, and the app is not tethered to mine. The
-  server is this repository, AGPL, and the app asks on first launch which
-  instance to talk to — the launcher icon starts a chooser, not the web view,
-  and "Switch instance" on its long-press menu changes it later. The origin the
-  build names is the default offered, not a fixed target, so I don't believe
-  \`NonFreeNet\` applies; say so if you read it differently.
-- *Does it need a proprietary browser?* It needs a browser that supports TWAs,
-  which is any Chromium-based one — Bromite, Cromite, Vanadium, Chrome. Not
-  Play Services, and not Chrome specifically.
+**Permissions**: \`INTERNET\`, plus what the notifications plugin declares
+for reminders (\`POST_NOTIFICATIONS\`, exact alarms).
 
-**No Play Billing.** The Play Store build links
-\`com.google.androidbrowserhelper:billing\`, which pulls the proprietary
-\`com.android.billingclient\`. The committed project does not: \`make
-android-project\` generates it with billing off precisely so this build is
-free. \`aapt2 dump badging\` on the result declares only \`INTERNET\` and
-\`POST_NOTIFICATIONS\`.
-
-**Signing, and the URL bar.** A TWA drops its address bar only when the site's
-\`/.well-known/assetlinks.json\` names the signing certificate. F-Droid signs
-with its own key, so I need that fingerprint to add alongside the Play one
-(and to document, so self-hosters can serve it from their own instances) —
-the site already serves a list, so it is a configuration change and not a code
-one. Tell me the fingerprint and I will add it; without it the app works and
-shows an address bar, which I would rather it did not.
-
-Not reproducible for now — happy to work on reproducible builds once this is in.
+Not reproducible for now — happy to work on reproducible builds once this is
+in.
 `
 );
 
