@@ -61,36 +61,38 @@ test('the header mark turns while a navigation drags, and stops when it lands', 
 test.describe('on a phone', () => {
 	test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
-	test('the turn belongs to the raised mark in the bar, translate intact', async ({ page }) => {
+	test('the turn belongs to the raised mark in the bar, and it turns in place', async ({
+		page
+	}) => {
 		await register(page, `bar-turn-${Date.now()}@test.invalid`);
 		await visit(page, '/tasks/todo');
 
 		const mark = page.locator('nav [data-tour=rooms]');
 		await expect(mark).toBeVisible();
-		await expect(mark).not.toHaveClass(/bar-mark-waiting/);
+		await expect(mark).not.toHaveClass(/mark-waiting/);
 
 		/*
-		 * The animation is checked with the class applied directly: on a phone
-		 * the way between rooms is the wheel, and driving a full gesture to hold
-		 * a navigation open buys nothing over asking whether the CSS the class
-		 * names still exists and still carries the centring translate — losing
-		 * that translate is the failure this guards (the button walks off to
-		 * the right while it spins).
+		 * The class is applied directly: on a phone the way between rooms is the
+		 * wheel, and driving a full gesture buys nothing over asking whether the
+		 * CSS the class names still exists and still spins the button where it
+		 * stands. The failure this guards is real: keyframes that drove
+		 * `transform` stacked a second centring translate on top of the
+		 * `translate` property and sent the mark wandering across the bar.
 		 */
-		const spun = await mark.evaluate((el) => {
-			el.classList.add('bar-mark-waiting');
-			const style = getComputedStyle(el);
-			return { animation: style.animationName, transform: style.transform };
-		});
-		expect(spun.animation).toContain('bar-mark-turn');
+		const before = await mark.boundingBox();
+		await mark.evaluate((el) => el.classList.add('mark-waiting'));
+		await expect
+			.poll(() => mark.evaluate((el) => getComputedStyle(el).animationName))
+			.toContain('mark-turn');
 
-		const still = await page.evaluate(() => {
-			const el = document.querySelector('nav [data-tour=rooms]')!;
-			el.classList.remove('bar-mark-waiting');
-			return getComputedStyle(el).transform;
-		});
-		// With and without the animation, the button is centred by the same
-		// translate: half its own width to the left.
-		expect(still).toBe(spun.transform);
+		// Sampled mid-spin, more than the delay in: the centre has not moved.
+		await page.waitForTimeout(600);
+		const during = await mark.boundingBox();
+		expect(Math.abs(during!.x + during!.width / 2 - (before!.x + before!.width / 2))).toBeLessThan(
+			2
+		);
+		expect(
+			Math.abs(during!.y + during!.height / 2 - (before!.y + before!.height / 2))
+		).toBeLessThan(2);
 	});
 });

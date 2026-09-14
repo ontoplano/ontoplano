@@ -1166,7 +1166,7 @@
 						)}ms"
 						class="tap tap-shape pie-handle absolute left-1/2 flex -translate-x-1/2 items-center justify-center {roomsOpen
 							? 'pie-handle-held text-chrome-ink'
-							: 'text-chrome-muted'} {waiting ? 'bar-mark-waiting' : ''}"
+							: 'text-chrome-muted'} {waiting ? 'mark-waiting' : ''}"
 						aria-label="Go to a section"
 						title="Go to a section"
 						data-tour="rooms"
