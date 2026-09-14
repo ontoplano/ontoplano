@@ -18,6 +18,17 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.172.0 — 2026-09-14
+
+- **The seeded finances belong to somebody in particular** — somebody who
+  gardens, works wood, buys a vegetable box from a smallholding, keeps two
+  cats, plays five-a-side and climbs. A statement of supermarket and streaming
+  has nothing to sort; the sorting rules only mean something over a life the
+  defaults do not describe.
+- **The phone page says the app can be its own instance.** It described two
+  ways in and there are three: the browser, the package, and the phone itself
+  with no account and no server.
+
 ## 0.171.0 — 2026-09-14
 
 - **The wheel's edges are black until you point at something**, and then the

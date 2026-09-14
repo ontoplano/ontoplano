@@ -4,15 +4,14 @@
 # On your phone
 
 Ontoplano is a **progressive web app**, which means the app on your home screen
-is this app — the same one, installed. There is nothing to buy and no store to
-go through, and it works the same on the hosted instance or on one you run
-yourself.
+is this app — the same one, installed. It works the same against the hosted
+instance, against one you run yourself, or against nothing at all.
 
-## Two ways in
+## Three ways in
 
 **From the browser.** Two taps, no download, and it updates itself the moment
-the instance does. This is the right answer for almost everybody, and the rest
-of this page is about it.
+the instance does. This is the right answer for almost everybody, and most of
+this page is about it.
 
 **The Android package.** A signed `.apk` you download once. Same app, plus the
 things Android reserves for real apps: the **home-screen widget**, and
@@ -20,6 +19,16 @@ things Android reserves for real apps: the **home-screen widget**, and
 not update itself — the app inside is always current, the wrapper you replace
 when a release says to. [The package, and how to install
 it](#the-android-package-and-what-it-adds) is at the bottom.
+
+**On the phone itself, with no instance at all.** The Android app can be its
+own: the whole thing runs on the device, against a database on the device, with
+no account and nothing to sign into. [What that costs and what it
+buys](#on-device) is the next section.
+
+Where the app points is a screen inside it, not a build or a download. It asks
+on first launch and you can change the answer later, so trying the hosted
+instance and then moving to your own — or to the phone — is a choice, not a
+reinstall.
 
 Answer the three questions and the steps below narrow to yours. Nothing is
 sent anywhere — the answers stay in this page.
@@ -51,6 +60,29 @@ sent anywhere — the answers stay in this page.
   Showing the steps for your answers. Everything else on this page is still
   here — scroll on if you want to read the rest.
 </p>
+
+## On device
+
+The app can be the instance. Choose **On device** on the screen that asks where
+your Ontoplano lives, and it starts one on the phone: the same app, the same
+rooms, the same data model, against a database in the phone's own storage.
+Nothing is signed into because there is nothing to sign into.
+
+It is the right answer if you want to try the whole thing without an account,
+or if you would rather your week never left your hand.
+
+What it costs, in the app's own words on that screen:
+
+- **Fully offline.** No network, ever, for anything.
+- **Cannot be reached from another device.** No laptop, no second phone, no
+  browser on your desk — this copy is this phone's.
+- **No AI assistants.** The MCP server is a server; there is not one.
+- **No backups.** Nothing is copied anywhere, so a lost phone is lost data.
+  Export from **Settings → Account** and keep the file somewhere.
+
+The way out is the way in: export the file, choose a different instance on that
+same screen, and import it there. Your data is one JSON file whichever of the
+three you are running.
 
 ## Where you are installing from
 
@@ -247,18 +279,21 @@ that is the browser's rule, not this app's.
 On iOS, check you are in Safari. The Share menu in Chrome for iOS has no _Add to
 Home Screen_, because on iOS no browser but Safari may install a web app.
 
-## Is it in the Play Store?
+## Store, browser, or neither
 
-No, and it would be the same thing if it were: the store build is this app in a
-thin wrapper. Installing from the browser costs nothing and stays current by
-itself.
+The store build is this app in the same thin wrapper as the `.apk` — one
+package per store rather than one per instance, because which instance it talks
+to is a screen inside it. Installing from the browser costs nothing and stays
+current by itself; the package is for the widget, the notifications, and being
+able to run without an instance at all.
 
 ## The Android package, and what it adds
 
 A signed `.apk`, on the releases page:
-**<https://github.com/ontoplano/ontoplano/releases/latest>**. It is built for
-app.ontoplano.com; running your own instance, build your own with
-`make android`.
+**<https://github.com/ontoplano/ontoplano/releases/latest>**. One package,
+whichever instance you use: it asks where to point on first launch — the hosted
+one, an address of your own, or the phone itself — and that answer can be
+changed later under **Settings → Account**.
 
 Same app, plus what Android reserves for installed apps:
 
@@ -266,6 +301,8 @@ Same app, plus what Android reserves for installed apps:
   anything.
 - **Notifications arrive as Ontoplano** — its icon and its name, instead of a
   reminder dressed as your browser.
+- **It can be its own instance**, which a browser tab cannot: see [On
+  device](#on-device).
 
 The app inside is the live one, so its features are always current; you only
 download a new `.apk` when a release says the wrapper itself changed.
