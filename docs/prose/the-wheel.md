@@ -3,21 +3,13 @@
 
 # The wheel
 
-Hold the button in the middle of the bar — the round one with the mark on it —
-and a ring of rooms opens above your thumb. Slide onto one and let go. On a
-mouse it is the same gesture from the same button, and it also opens on a
-click, so you can point at a wedge instead of dragging to it.
-
-It exists for muscle memory. After a week you are not reading "Ideas", you are
-flicking to the purple one, and that only works if a room is always in the same
-place — which is why the order is a setting rather than something that
-rearranges itself.
+Hold the mark in the bar and a ring of rooms opens under your thumb; slide
+onto one and let go. With a mouse, a click on the same button opens it too.
 
 ## Which way round it goes
 
-**The first room is at the bottom right, and the order runs anti-clockwise from
-there** — up the right-hand side, over the top, down the left, back to the
-bottom.
+**The first room is at the bottom right, and the order runs anti-clockwise
+from there** — up the right-hand side, over the top, down the left.
 
 <svg viewBox="0 0 300 300" role="img" aria-label="The wheel, numbered from the bottom right and running anti-clockwise" style="display:block;width:100%;max-width:19rem;margin:1.25rem 0">
   <g transform="translate(150,150)">
@@ -53,38 +45,16 @@ bottom.
   </g>
 </svg>
 
-That is where a right thumb already is. The wheel opens above the button in the
-middle of the bar, and the shortest, surest movement from there is up and
-slightly right — so the room you reach for most should be the one that movement
-lands on, and the order carries on the way the hand naturally sweeps.
-
 ## Changing the order
 
-**Settings → Preferences → The menu.** The list there is the order round the
-wheel: the top of the list is number 1 above, then 2, and so on. It is also the
-order of the tabs along the bar on a wide screen, left to right — the bar and
-the wheel are two renderings of one list, and they are never allowed to
-disagree about where something is.
-
-Home is not on the wheel. The bar carries it as a plain button on every screen,
-and a wedge spent on "go back to the start" is a wedge a real room could have
-had.
-
-A section you have turned off under **Sections** is not on the wheel either,
-and turning it back on puts it back where it was in your order.
+**Settings → Preferences → The menu.** The list there is the wheel, top of the
+list at number 1 — and it is also the bar's tabs on a wide screen, left to
+right, so the two never disagree about where a room is. Home is not on the
+wheel; the bar always carries it. A section turned off under **Sections**
+leaves the wheel, and comes back where it was.
 
 ## Changing the colours
 
-**Settings → Preferences → Colours.** Each section has one, and it is the same
-colour in three places: its wedge here, the tab you are on in the bar, and the
-rule along the top of that section's cards.
-
-One colour per _section_, not per room — People and Notebooks live in the Diary
-and wear its colour. Giving each room its own would let one section arrive on
-screen in three different hues, which is the thing the colours exist to prevent.
-
-Pick dark ones. The labels on the wheel are white, and a pale wedge makes them
-unreadable; the ones the app ships with are chosen so white clears the contrast
-requirement on every one of them. Nothing in the app uses colour as the only
-signal — every wedge is labelled in words as well — but a label you cannot read
-is not a label.
+**Settings → Preferences → Colours.** One colour per section, worn by its
+wedge, its tab and its cards alike. Pick dark ones — the labels on the wheel
+are white.

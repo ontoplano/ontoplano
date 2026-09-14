@@ -15,7 +15,7 @@ How the pieces fit, and why.
 - [Architecture](architecture.md) — how a request travels, and where each kind of rule is allowed to live
 - [Deleting your data](deleting-your-data.md) — the two ways to erase what is here, what each one leaves behind, and why neither can be taken back
 - [The family plan](family-plan.md) — one subscription, up to five accounts, and the one form that sets it up
-- [On your phone](on-your-phone.md) — the two ways to install it, the steps for your phone and browser, and what works offline
+- [On your phone](on-your-phone.md) — the Android app, the on-device instance, and the ways in for iPhone and desktop
 - [Permissions](permissions.md) — the one scope system every way in shares — what each grant hands over, and which tools sit behind it
 - [Running it yourself](running-it.md) — what it needs, three ways to start it, and where your data lives
 - [Tasks](the-plan.md) — the three tables a task can live in, and how one becomes another

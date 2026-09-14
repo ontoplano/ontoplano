@@ -18,6 +18,15 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.173.4 — 2026-09-14
+
+- **The docs' phone page is about the app now.** It was written for the
+  browser-install era: a three-question wizard, browser menus drawn in SVG,
+  a list of what you get once there is no address bar, and instructions for
+  making the wheel gesture. It leads with the package now, keeps the
+  on-device and widget halves, and gives an iPhone and a computer two lines
+  each. The wheel's own page lost its essays too.
+
 ## 0.173.3 — 2026-09-14
 
 - **The wait is the menu, turning.** While a screen is loading, the mark that
