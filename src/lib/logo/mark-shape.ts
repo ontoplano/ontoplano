@@ -29,3 +29,10 @@ export const MARK_EDGE_COLOURS = [
 	'#6746ab',
 	'#c43587'
 ] as const;
+
+/**
+ * The dark field between the middle and the ring — the ground the mark
+ * carries inside itself. The phone bar wears it, so the mark's field
+ * flows into the bar instead of ending at an edge.
+ */
+export const MARK_FIELD = '#20282f';

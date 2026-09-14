@@ -18,6 +18,13 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.173.9 — 2026-09-14
+
+- **The phone bar wears the mark's own field.** The dark ground between the
+  medallion and the ring — measured off the artwork like the rest of the
+  mark — is the bar's colour now, so the mark's inside flows into the bar
+  instead of ending at an outline and a hairline.
+
 ## 0.173.8 — 2026-09-14
 
 - **Only the medallion turns.** While the app waits, the mark's middle spins

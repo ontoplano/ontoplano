@@ -454,7 +454,31 @@ function markParts(polygon) {
 		return `#${[p.r, p.g, p.b].map((n) => n.toString(16).padStart(2, '0')).join('')}`;
 	});
 
-	return { middle: Number(middle.toFixed(4)), edges };
+	/*
+	 * The colour of the field between the middle and the ring — the mark's own
+	 * dark ground. Sampled halfway out along eight directions and averaged, so
+	 * one anti-aliased pixel cannot tint it.
+	 */
+	let fr = 0;
+	let fg = 0;
+	let fb = 0;
+	for (let k = 0; k < 8; k++) {
+		const angle = ((k + 0.5) / 8) * Math.PI * 2;
+		const r = ((middle + 0.79) / 2) * cx;
+		const p = at(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
+		fr += p.r;
+		fg += p.g;
+		fb += p.b;
+	}
+	const field = `#${[fr, fg, fb]
+		.map((n) =>
+			Math.round(n / 8)
+				.toString(16)
+				.padStart(2, '0')
+		)
+		.join('')}`;
+
+	return { middle: Number(middle.toFixed(4)), edges, field };
 }
 
 const polygon = outlinePolygon();
@@ -484,6 +508,13 @@ if (polygon) {
 			`export const MARK_MIDDLE = ${parts ? parts.middle : 0.48};`,
 			'',
 			`export const MARK_EDGE_COLOURS = [\n${(parts?.edges ?? []).map((c) => `\t'${c}'`).join(',\n')}\n] as const;`,
+			'',
+			`${'/'}**`,
+			' * The dark field between the middle and the ring — the ground the mark',
+			" * carries inside itself. The phone bar wears it, so the mark's field",
+			' * flows into the bar instead of ending at an edge.',
+			' */',
+			`export const MARK_FIELD = '${parts?.field ?? '#202830'}';`,
 			''
 		].join('\n')
 	);

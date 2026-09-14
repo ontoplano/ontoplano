@@ -21,7 +21,7 @@
 		slidesHere,
 		stopHiding
 	} from '$lib/slide';
-	import { MARK_CLIP_PATH } from '$lib/logo/mark-shape';
+	import { MARK_CLIP_PATH, MARK_FIELD } from '$lib/logo/mark-shape';
 	import { CHOOSE_PATH, inPhoneApp, storedChoice } from '$lib/instance-choice';
 	import { THEMES } from '$lib/theme.js';
 	import type { SectionKey } from '$lib/colors.js';
@@ -1093,9 +1093,15 @@
 			it off the bottom or clipped it away entirely. A fixed element cannot
 			be pushed by any of that; the main area pads its bottom to match.
 		-->
+		<!--
+			The bar wears the mark's own field — the dark ground between the
+			medallion and the ring, measured off the artwork — so the mark's
+			inside flows into the bar instead of ending at an edge. No hairline
+			on top: the edge IS the change of colour.
+		-->
 		<nav
-			class="fixed inset-x-0 bottom-0 z-40 border-t border-chrome-line bg-chrome lg:hidden"
-			style="padding-bottom: var(--safe-bottom)"
+			class="fixed inset-x-0 bottom-0 z-40 lg:hidden"
+			style="padding-bottom: var(--safe-bottom); background: {MARK_FIELD}"
 			aria-label="Primary"
 			data-tour="mobile-bar"
 		>
@@ -1167,8 +1173,8 @@
 					-->
 					<span
 						aria-hidden="true"
-						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-ground-rise)); height: var(--bar-mark-ground); width: var(--bar-mark-ground)"
-						class="pointer-events-none absolute left-1/2 -translate-x-1/2 bg-chrome"
+						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-ground-rise)); height: var(--bar-mark-ground); width: var(--bar-mark-ground); background: {MARK_FIELD}"
+						class="pointer-events-none absolute left-1/2 -translate-x-1/2"
 					></span>
 					<button
 						bind:this={barMark}
