@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { OWNER, makeDatabase, seedAccounts } from './helpers/db';
 

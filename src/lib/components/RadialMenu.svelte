@@ -1,6 +1,6 @@
 <script lang="ts">
 	import mark from '$lib/logo/mark.png';
-	import { MARK_FIELD, MARK_MIDDLE } from '$lib/logo/mark-shape';
+	import { MARK_FIELD } from '$lib/logo/mark-shape';
 	import { markCorners, markPath, markPoints } from '$lib/logo/mark-geometry';
 	import Icon, { type IconName } from '$lib/components/Icon.svelte';
 	import { wedgeAt, wedgeCentre, wedgeEdges, wedgeStep } from '$lib/radial';
@@ -52,7 +52,13 @@
 		/** Screen the pie must stay clear of — a fixed navigation bar, usually. */
 		bottomInset = 0,
 		onselect,
-		onclose
+		onclose,
+		/**
+		 * Whether the wheel is on screen at all — which outlasts `open`, because
+		 * the middle takes a moment to fly home. The bar keeps the socket it
+		 * came out of empty until it lands.
+		 */
+		onvisible
 	}: {
 		middle?: 'mark' | 'plus';
 		items: Wedge[];
@@ -63,6 +69,7 @@
 		bottomInset?: number;
 		onselect: (key: string) => void;
 		onclose: () => void;
+		onvisible?: (visible: boolean) => void;
 	} = $props();
 
 	// A tenth wider than it first shipped: at 132 the slices were tight enough
@@ -204,8 +211,23 @@
 			swallowClick = false;
 			travelled = 0;
 			blooming = false;
-			return;
+
+			// Down the way it came. The wheel keeps its place for the length of
+			// one flight while its middle travels back to the button, because a
+			// thing that vanished and a thing that went home are different
+			// animations and only one of them is true.
+			if (!mounted) return;
+			mounted = false;
+			leaving = true;
+			const gone = setTimeout(() => {
+				shown = false;
+				leaving = false;
+			}, FLY_MS);
+			return () => clearTimeout(gone);
 		}
+		mounted = true;
+		shown = true;
+		leaving = false;
 		const margin = OUTER + PAD;
 		const at = anchor ?? origin;
 		centre = {
@@ -290,6 +312,13 @@
 	const FLY_REACH = 1.9;
 	const FLY_MS = BLOOM_MS * 1.3;
 	let blooming = $state(false);
+	/** On screen, which is `open` plus the flight home. */
+	let shown = $state(false);
+	let leaving = $state(false);
+	/** The same fact, untracked, so the effect can guard on it without looping. */
+	let mounted = false;
+
+	$effect(() => onvisible?.(shown));
 
 	/** Hovering a wedge chooses it, once the wheel has stopped moving. */
 	function hover(i: number) {
@@ -469,7 +498,7 @@
 	onkeydown={onkey}
 />
 
-{#if open}
+{#if shown}
 	<!--
 		A plain fixed layer rather than a <dialog>: the pie is opened by a
 		pointerdown that must keep flowing to the window handlers above, and
@@ -477,7 +506,7 @@
 		a dialog, and the backdrop below catches every stray click.
 	-->
 	<div
-		class="pie-layer fixed inset-0 z-[60]"
+		class="pie-layer fixed inset-0 z-[60] {leaving ? 'is-leaving' : ''}"
 		role="presentation"
 		oncontextmenu={(e) => e.preventDefault()}
 	>
@@ -519,7 +548,7 @@
 			class="pie pointer-events-none absolute"
 			style="left: {centre.x - size / 2}px; top: {centre.y -
 				size /
-					2}px; width: {size}px; height: {size}px; --pie-from: {grewFrom.x}px {grewFrom.y}px; --pie-bloom: {BLOOM_MS}ms"
+					2}px; width: {size}px; height: {size}px; --pie-from: {grewFrom.x}px {grewFrom.y}px; --pie-to: {flyFrom.x}px {flyFrom.y}px; --pie-bloom: {BLOOM_MS}ms"
 		>
 			<svg viewBox="{-size / 2} {-size / 2} {size} {size}" class="h-full w-full overflow-visible">
 				<!--
@@ -922,6 +951,78 @@
 		to {
 			opacity: 1;
 			transform: none;
+		}
+	}
+
+	/*
+	 * And the whole thing in reverse, on the way out.
+	 *
+	 * The same two keyframes played backwards rather than a second pair: the
+	 * wheel shrinks back into the button it grew from and the mark rides back
+	 * down to it, which is the only honest ending for an animation that said
+	 * the button's own mark had flown up. While it happens nothing on the
+	 * layer takes a press — the menu is already closed, this is just the way
+	 * it leaves.
+	 */
+	.pie-layer.is-leaving {
+		pointer-events: none;
+	}
+
+	/* Their own names, not `animation-direction: reverse` on the arrivals: a
+	   finished animation does not restart when one of its properties changes,
+	   so reversing it in place snapped straight to the far keyframe. */
+	/*
+	 * Back into the button, not into its own middle.
+	 *
+	 * `--pie-from` is where the wheel grew from, which on a phone is the place
+	 * it is drawn — above the hand, so the eight rooms are not under it. Going
+	 * out that way it collapsed on itself two hundred pixels up, and the mark
+	 * riding inside it reached a fraction of the way home: the shrinking parent
+	 * scales its own journey down with it. `--pie-to` is the press instead, so
+	 * everything converges on the button the way the capture wheel already did.
+	 */
+	.pie-layer.is-leaving .pie {
+		/* The flight's length, not the bloom's: the wheel and the thing in its
+		   middle have to land together, and at the bloom's pace the wheel was
+		   gone a frame or two before the socket in the bar filled again. */
+		animation: bloom-away var(--mark-fly, 500ms) cubic-bezier(0.4, 0, 0.7, 0.2) both;
+		transform-origin: var(--pie-to, 50% 50%);
+	}
+
+	/* And its own hop on top of the wheel's, the same one it made coming up. */
+	.pie-layer.is-leaving .pie-mark {
+		animation: mark-departs var(--mark-fly, 500ms) cubic-bezier(0.4, 0, 0.7, 0.2) both;
+	}
+
+	/* Opaque nearly the whole way, so what the eye follows down is the mark
+	   rather than a wheel dissolving in mid-air. */
+	@keyframes bloom-away {
+		0% {
+			opacity: 1;
+			transform: none;
+		}
+		65% {
+			opacity: 1;
+		}
+		100% {
+			opacity: 0;
+			transform: scale(0.29);
+		}
+	}
+
+	@keyframes mark-departs {
+		to {
+			transform: translate(var(--mark-from-x, 0), var(--mark-from-y, 0)) scale(0.32);
+		}
+	}
+
+	.pie-layer.is-leaving :global(.bg-scrim) {
+		animation: scrim-fades var(--pie-bloom, 190ms) ease-in both;
+	}
+
+	@keyframes scrim-fades {
+		to {
+			opacity: 0;
 		}
 	}
 

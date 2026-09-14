@@ -2,7 +2,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { CLOSING_STEP, TUTORIALS, screensNeedingTutorials, tutorialFor } from './tutorials';
+import { CLOSING_STEPS, TUTORIALS, screensNeedingTutorials, tutorialFor } from './tutorials';
 
 /**
  * The tours, and the two ways they rot.
@@ -48,7 +48,7 @@ describe('the guided tours', () => {
 	});
 
 	it('points every step at an anchor that exists in the markup', () => {
-		const steps = [...Object.values(TUTORIALS).flatMap((t) => t.steps), CLOSING_STEP];
+		const steps = [...Object.values(TUTORIALS).flatMap((t) => t.steps), ...CLOSING_STEPS];
 		const dangling: string[] = [];
 
 		for (const step of steps) {
@@ -110,7 +110,7 @@ describe('the guided tours', () => {
 	 * The corner is the closing step's, and nobody else's.
 	 *
 	 * The dashboard's tour used to end on a step pointing at the help cluster,
-	 * and `CLOSING_STEP` — which is appended to every tour — then pointed at a
+	 * and the closing step — which is appended to every tour — then pointed at a
 	 * button inside that same cluster and said the same thing. Two cards in a
 	 * row about the same corner, and the second one read as the tour failing to
 	 * notice it had already finished.
@@ -126,7 +126,11 @@ describe('the guided tours', () => {
 
 		expect(offenders, 'a tour saying what the closing step already says').toEqual([]);
 		// And the closing step is still the one that does say it.
-		expect(cluster).toContain(CLOSING_STEP.target);
+		// The dock's. The phone's closing step points at the bar's account
+		// button, which is the account menu on a laptop and a legitimate thing
+		// for a tour to point at there — `Tutorial.svelte` is what keeps the two
+		// from landing in one tour.
+		expect(cluster).toContain(CLOSING_STEPS[0].target);
 	});
 
 	it('resolves a detail page to the tour of the list it came from', () => {

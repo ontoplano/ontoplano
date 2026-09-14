@@ -18,6 +18,7 @@ import { needsFirstRun } from '$lib/services/onboarding';
 import { listCategories } from '$lib/services/activities';
 import { buildCtx } from '$lib/services/ctx';
 import { loadConfig } from '$lib/server/config';
+import { outwardLinks } from '$lib/links';
 import { mediaLimits } from '$lib/services/media';
 import { publicKey } from '$lib/server/services/push';
 import { build } from '$lib/server/services/version';
@@ -190,6 +191,14 @@ export const load: LayoutServerLoad = async (event) => {
 		pushKey: event.locals.user ? publicKey() : null,
 		// The week is the user's, not the instance's.
 		config: { week },
+		/*
+		 * Where the shell's outward links go.
+		 *
+		 * An instance somebody else runs has its own documentation and its own
+		 * front page, so the two addresses come from `config.toml` rather than
+		 * being typed into the components that link to them.
+		 */
+		links: outwardLinks(loadConfig().instance.docsUrl, loadConfig().instance.siteUrl),
 		// How long a delete waits before it happens. The instance's call.
 		undoSeconds: loadConfig().ui.undoSeconds,
 		/*

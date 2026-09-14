@@ -2495,8 +2495,25 @@ html .ec {
  * grows out of this button, so the button giving way under the press is the
  * first frame of that movement rather than a flourish of its own.
  */
+/*
+ * The handle, while its menu is up.
+ *
+ * There is one mark and one plus, not two: what the wheel does is take the
+ * thing out of the bar and fly it to the middle of the screen, so while it is
+ * up there the socket it came out of is empty. It used to keep drawing its own
+ * copy, and the animation read as a second mark appearing rather than as this
+ * one moving.
+ *
+ * Instant rather than faded: an object that is somewhere else is not half
+ * here. The button itself stays — it is still what a press lands on, and the
+ * shape it leaves behind is where the thing will come back to.
+ */
 .pie-handle-held {
 	transform: scale(0.92);
+}
+
+.pie-handle-held :is(img, svg, span) {
+	visibility: hidden;
 }
 
 /*

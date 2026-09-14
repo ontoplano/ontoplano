@@ -114,7 +114,9 @@ test('the tour follows the phone into the bottom bar', async ({ page }) => {
 	}
 
 	expect(seenBar, 'the phone never met the step about its own bar').toBe(true);
-	await expect(tour.getByText('Click here if you ever need this help')).toBeVisible();
+	// The phone's own closing step: the corner dock the laptop's points at is a
+	// wide screen's affordance now, and down here help is the bar's fan.
+	await expect(tour.getByText('Press here if you ever need this help')).toBeVisible();
 	await tour.getByRole('button', { name: 'Okay, dismiss!' }).click();
 	await expect(tour).toBeHidden();
 });

@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { MAX_REPORT_LENGTH } from '$lib/report';
 	import { page } from '$app/state';
 	import Icon from '$lib/components/Icon.svelte';
-	import Modal from '$lib/components/Modal.svelte';
+	import ReportDialog from '$lib/components/ReportDialog.svelte';
 	import { GLOBAL_SHORTCUTS, PAGE_SHORTCUTS, getDisplayShortcuts } from '$lib/shortcuts';
 	import { hasTutorial } from '$lib/tutorials';
 
@@ -39,73 +38,8 @@
 	 * the same control both ways rather than an expand with no collapse.
 	 */
 	let open = $state(false);
-	/** The message being written, or null. */
+	/** Whether the form for telling the operator something is up. */
 	let reporting = $state(false);
-	let reportText = $state('');
-	let reportState = $state<'idle' | 'sending' | 'sent' | 'failed'>('idle');
-	/** What the server said when it refused, when it said anything. */
-	let reportProblem = $state('');
-
-	/*
-	 * A problem and an idea arrive through the same door.
-	 *
-	 * Somebody who has just noticed something does not want to hunt for the
-	 * right form, and an app with a bug button and no suggestion button says
-	 * it only wants to hear about failures. One dialog, one press to say
-	 * which — and the answer travels, because "the board scrolls wrong" and
-	 * "the board should scroll the other way" want reading together and
-	 * sorting apart.
-	 */
-	const KINDS = [
-		{
-			key: 'report' as const,
-			label: 'Something is wrong',
-			hint: 'What you did, and what happened instead.'
-		},
-		{
-			key: 'suggestion' as const,
-			label: 'I have an idea',
-			hint: 'What you wanted to do, and how this could let you.'
-		}
-	];
-	let reportKind = $state<'report' | 'suggestion'>('report');
-	const kindHint = $derived(KINDS.find((k) => k.key === reportKind)!.hint);
-
-	async function sendReport() {
-		if (!reportText.trim()) return;
-		reportState = 'sending';
-		try {
-			const res = await fetch('/api/report', {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({
-					message: reportText.trim(),
-					url: page.url.pathname,
-					kind: reportKind
-				})
-			});
-			reportState = res.ok ? 'sent' : 'failed';
-			if (res.ok) {
-				reportText = '';
-				reportProblem = '';
-			} else {
-				// The server's own sentence when it has one — "that is a lot of
-				// reports at once" is worth reading, and "try again in a moment"
-				// in its place is a lie.
-				reportProblem = await res
-					.json()
-					.then((body: { message?: string }) => body.message ?? '')
-					.catch(() => '');
-			}
-		} catch {
-			reportState = 'failed';
-		}
-	}
-
-	function closeReport() {
-		reporting = false;
-		reportState = 'idle';
-	}
 
 	let currentPath = $derived(page.url.pathname);
 	let pageDisplay = $derived(getDisplayShortcuts(currentPath));
@@ -257,11 +191,7 @@
 		<!-- Something here is wrong. Beside the answers, because it is what you
 		     reach for when none of them helped. -->
 		<button
-			onclick={() => {
-				reporting = true;
-				reportState = 'idle';
-				reportKind = 'report';
-			}}
+			onclick={() => (reporting = true)}
 			class="dock-btn dock-more {open ? 'is-open' : ''}"
 			title="Report a problem, or suggest something"
 			aria-label="Report a problem, or suggest something"
@@ -271,64 +201,7 @@
 	</div>
 </div>
 
-<Modal
-	open={reporting}
-	onclose={closeReport}
-	title="Tell the operator"
-	description={`It goes to whoever runs this instance, carrying your account, information about the browser you're using, and the fact it came from ${page.url.pathname}. None of your personal data goes with it.`}
-	size="sm"
->
-	{#if reportState === 'sent'}
-		<p class="text-sm text-gray-700">Sent. Thank you — it is on the operator's list.</p>
-	{:else}
-		<div class="seg mb-3" role="group" aria-label="What this is">
-			{#each KINDS as kind (kind.key)}
-				<button
-					type="button"
-					onclick={() => (reportKind = kind.key)}
-					aria-pressed={reportKind === kind.key}
-				>
-					{kind.label}
-				</button>
-			{/each}
-		</div>
-
-		<label class="block">
-			<span class="eyebrow text-gray-600">
-				{reportKind === 'suggestion' ? 'Your idea' : 'What happened'}
-			</span>
-			<textarea
-				bind:value={reportText}
-				rows="4"
-				maxlength={MAX_REPORT_LENGTH}
-				placeholder={kindHint}
-				class="textarea mt-1"
-			></textarea>
-		</label>
-
-		{#if reportState === 'failed'}
-			<p class="mt-2 text-xs text-red-700">
-				{reportProblem || 'That did not send. Try again in a moment.'}
-			</p>
-		{/if}
-	{/if}
-
-	{#snippet footer()}
-		{#if reportState === 'sent'}
-			<button type="button" class="btn btn-primary" onclick={closeReport}>Close</button>
-		{:else}
-			<button type="button" class="btn" onclick={closeReport}>Cancel</button>
-			<button
-				type="button"
-				class="btn btn-primary"
-				disabled={reportState === 'sending' || !reportText.trim()}
-				onclick={sendReport}
-			>
-				{reportState === 'sending' ? 'Sending…' : 'Send'}
-			</button>
-		{/if}
-	{/snippet}
-</Modal>
+<ReportDialog open={reporting} onclose={() => (reporting = false)} />
 
 <style>
 	.dock {

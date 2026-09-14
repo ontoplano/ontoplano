@@ -18,6 +18,26 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.176.2 — 2026-09-14
+
+- **The `?` in the corner of the phone is gone.** It was a square parked over
+  every screen, on top of whatever was under it. Pressing the account button in
+  the bar fans the five small things out above the thumb instead — your
+  account, the tour of this screen, telling the operator something is wrong,
+  the documentation, and supporting ontoplano. Chosen the way the wheel is:
+  drag onto one and let go, or lift and tap. The press that opens it never
+  chooses anything, which is why it flies up clear of the finger. The corner
+  dock stays on a wide screen, where a corner is a corner.
+- **The wheel takes the mark with it, and brings it back.** The bar kept
+  drawing its own copy while the wheel was up, so the flight read as a second
+  mark appearing rather than as that one moving. The socket it came out of is
+  empty while it is away, and both wheels now fly home into the button when
+  they close rather than simply ceasing to be there.
+- **An isolated instance stops offering an account it does not have.** The
+  person button went to the instance chooser and the menu offered an Account
+  page that refuses; it lands on the settings that do exist there, and choosing
+  a different instance is one of them.
+
 ## 0.176.1 — 2026-09-14
 
 - **Both wheels fly their middle up from the bar.** The rooms wheel never

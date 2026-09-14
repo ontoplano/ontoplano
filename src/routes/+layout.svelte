@@ -30,6 +30,9 @@
 	import Tutorial from '$lib/components/Tutorial.svelte';
 	import CapturePie from '$lib/components/CapturePie.svelte';
 	import NavPie from '$lib/components/NavPie.svelte';
+	import FanMenu, { type Petal } from '$lib/components/FanMenu.svelte';
+	import ReportDialog from '$lib/components/ReportDialog.svelte';
+	import { hasTutorial } from '$lib/tutorials';
 	import Logo from '$lib/components/Logo.svelte';
 	import Reminders from '$lib/components/Reminders.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
@@ -102,6 +105,74 @@
 	let menuOpen = $state(false);
 	let pie = $state<CapturePie | undefined>();
 	let rooms = $state<NavPie | undefined>();
+
+	/*
+	 * The five small things, fanned above the thumb.
+	 *
+	 * They were a square `?` docked in the corner of every phone screen, over
+	 * whatever was underneath it, plus an account button beside it in the bar.
+	 * Both are now one press on the account button: the fan flies up above the
+	 * finger and is chosen the way the wheel is — drag onto one and let go, or
+	 * lift and tap. The dock stays on a wide screen, where a corner is a corner
+	 * and not a third of the room.
+	 */
+	let fanOpen = $state(false);
+	let fanOrigin = $state({ x: 0, y: 0 });
+	let fanDragging = $state(false);
+	let reporting = $state(false);
+
+	const fanItems = $derived.by(() => {
+		const items: Petal[] = [
+			{
+				key: 'account',
+				// A device that is its own instance has no account — what the same
+				// press is for there is the preferences, which it does have.
+				label: onDevice ? 'Settings' : 'Account',
+				icon: 'user'
+			},
+			{
+				key: 'tutorial',
+				label: hasTutorial(page.url.pathname) ? 'Show me around' : 'No tour for this screen',
+				icon: 'help'
+			}
+		];
+		// Nobody to tell on a device that is its own instance: there is no
+		// operator behind it and nowhere for the message to go.
+		if (!onDevice) items.push({ key: 'report', label: 'Tell the operator', icon: 'bug' });
+		items.push({ key: 'docs', label: 'Documentation', icon: 'book' });
+		items.push({ key: 'support', label: 'Support ontoplano', icon: 'heart' });
+		return items;
+	});
+
+	function summonFan(e: PointerEvent) {
+		// Take the gesture before the browser can, the way the wheel does: a
+		// press-and-hold that becomes a text selection never sends the release
+		// that would have chosen a petal.
+		e.preventDefault();
+		(e.currentTarget as Element | null)?.setPointerCapture?.(e.pointerId);
+		fanOrigin = { x: e.clientX, y: e.clientY };
+		fanDragging = e.pointerType !== 'mouse' || e.button === 0;
+		fanOpen = true;
+	}
+
+	function chooseFan(key: string) {
+		fanOpen = false;
+		if (key === 'account') {
+			goto(resolve(onDevice ? '/settings/preferences' : '/settings/account'));
+			return;
+		}
+		if (key === 'tutorial') {
+			tour?.start(true);
+			return;
+		}
+		if (key === 'report') {
+			reporting = true;
+			return;
+		}
+		// The two that leave the app, in a tab of their own.
+		const away = key === 'docs' ? data.links.docs : data.links.support;
+		window.open(away, '_blank', 'noopener');
+	}
 	let pieOpen = $state(false);
 	let roomsOpen = $state(false);
 
@@ -972,13 +1043,17 @@
 									{/each}
 								</form>
 							</div>
-							<a
-								href={resolve('/settings/account')}
-								onclick={() => (menuOpen = false)}
-								class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
-							>
-								Account
-							</a>
+							<!-- No account on a device that is its own instance, so no
+							     entry for one: the page behind it refuses. -->
+							{#if !onDevice}
+								<a
+									href={resolve('/settings/account')}
+									onclick={() => (menuOpen = false)}
+									class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
+								>
+									Account
+								</a>
+							{/if}
 							<a
 								href={resolve('/settings/preferences')}
 								onclick={() => (menuOpen = false)}
@@ -1000,7 +1075,21 @@
 								endpoint refuses too; this is so nobody is offered the button
 								in the first place.
 							-->
-							{#if data.demo}
+							{#if onDevice}
+								<!--
+									There is no session here to end — what leaving means on a
+									device is pointing the app at another ontoplano. It stands
+									where Sign out does everywhere else, because that is where
+									somebody looks for the way out.
+								-->
+								<a
+									href={resolve('/instance')}
+									onclick={() => (menuOpen = false)}
+									class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
+								>
+									Where this lives
+								</a>
+							{:else if data.demo}
 								<!--
 									Where Sign out would be, on a demo that has no way back in.
 									Somebody who has made a mess of the fixtures wants a clean
@@ -1217,24 +1306,28 @@
 				</button>
 
 				<!--
-					On a device that is its own instance there is no account to
-					open — no address, no sessions, nothing anybody else can see.
-					What the same press is for there is leaving: the screen that
-					chooses where your ontoplano lives.
+					Not a link any more: the press fans the five small things out
+					above the thumb, the account among them. On a device that is
+					its own instance there is no account to open — no address, no
+					sessions, nothing anybody else can see — and that petal goes
+					to the preferences, which it does have.
 				-->
-				<a
-					href={resolve(onDevice ? '/instance' : '/settings/account')}
-					class="tap flex flex-1 items-center justify-center {page.url.pathname.startsWith(
-						'/settings'
-					) || page.url.pathname === '/instance'
+				<button
+					type="button"
+					onpointerdown={summonFan}
+					class="tap flex flex-1 items-center justify-center {fanOpen ||
+					page.url.pathname.startsWith('/settings') ||
+					page.url.pathname === '/instance'
 						? 'text-chrome-ink'
 						: 'text-chrome-muted'}"
-					aria-label={onDevice ? 'Where this lives' : 'Account'}
-					title={onDevice ? 'Where this lives' : 'Account'}
+					aria-haspopup="menu"
+					aria-expanded={fanOpen}
+					aria-label="Account and help"
+					title="Account and help"
 					data-tour="menu"
 				>
 					<Icon name="user" size={22} />
-				</a>
+				</button>
 			</div>
 		</nav>
 
@@ -1263,7 +1356,20 @@
 			</div>
 		{/if}
 
-		<HelpDock demo={data.demo} onstart={() => tour?.start(true)} />
+		<!-- The dock is a wide screen's affordance now: on a phone its square
+		     sat over the corner of every page, and the fan replaced it. -->
+		<div class="hidden lg:contents">
+			<HelpDock demo={data.demo} onstart={() => tour?.start(true)} />
+		</div>
+		<FanMenu
+			items={fanItems}
+			open={fanOpen}
+			origin={fanOrigin}
+			dragging={fanDragging}
+			onselect={chooseFan}
+			onclose={() => (fanOpen = false)}
+		/>
+		<ReportDialog open={reporting} onclose={() => (reporting = false)} />
 		<Tutorial bind:this={tour} accent={section.accent} ondismiss={tourDismissed} />
 		<CommandPalette hidden={data.hiddenSections} />
 		<CapturePie bind:this={pie} onopenchange={(v) => (pieOpen = v)} hidden={data.hiddenSections} />

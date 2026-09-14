@@ -31,9 +31,9 @@ export const TURN_MS = 300;
  * `SLOWEST` make the wind-up more pronounced; bigger `DECEL_DEGREES` makes it
  * coast further before it settles.
  */
-const SPIN_UP_MS = 500;
+const SPIN_UP_MS = 1000;
 const SLOWEST = 0.5;
-const DECEL_DEGREES = 540;
+const DECEL_DEGREES = 90;
 
 /** Ease-out: quick at first, gentler as it approaches the top. */
 const eased = (t: number) => 1 - (1 - t) * (1 - t);

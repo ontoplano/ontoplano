@@ -64,12 +64,25 @@ export type Tutorial = {
  * dashboard's used to, and the tour then said the same thing twice in a row —
  * a card pointing at the help cluster, and then this card pointing at a button
  * inside it. `tutorials.test.ts` fails on a step that targets either.
+ *
+ * Two of them, because help is not in the same place on the two shapes of
+ * screen: the corner dock on a laptop, and on a phone the button in the bar
+ * that fans out account, tour, documentation and the way to say something is
+ * wrong. `Tutorial.svelte` takes the first whose target is actually on screen,
+ * and drops any earlier step pointing at the same thing.
  */
-export const CLOSING_STEP: TutorialStep = {
-	target: '[data-tour="tutorial"]',
-	title: 'Click here if you ever need this help',
-	body: 'It opens the tour for whatever screen you are on. The keyboard beside it lists that screen’s keys, and the book is the full documentation.'
-};
+export const CLOSING_STEPS: TutorialStep[] = [
+	{
+		target: '[data-tour="tutorial"]',
+		title: 'Click here if you ever need this help',
+		body: 'It opens the tour for whatever screen you are on. The keyboard beside it lists that screen’s keys, and the book is the full documentation.'
+	},
+	{
+		target: '[data-tour="menu"]',
+		title: 'Press here if you ever need this help',
+		body: 'It fans out your account and settings, the tour for whatever screen you are on, the documentation, and the way to tell the operator something is wrong.'
+	}
+];
 
 export const TUTORIALS: Record<string, Tutorial> = {
 	/*

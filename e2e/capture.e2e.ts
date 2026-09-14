@@ -280,10 +280,11 @@ test.describe('with a finger', () => {
 			expect(named, `${room} was never named while it was aimed at`).toContain(room);
 		}
 
-		// Settings and search are not wedges — they are destinations, and they sit
-		// in the bar beside the two pies rather than hanging off one.
+		// The account and search are not wedges — they sit in the bar beside the
+		// two pies rather than hanging off one. The account's is a button rather
+		// than a link: it fans out the five small things, `fan.e2e.ts`.
 		await page.keyboard.press('Escape');
-		await expect(page.getByRole('link', { name: 'Account' })).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Account and help' })).toBeVisible();
 		await expect(page.getByRole('button', { name: 'Search' })).toBeVisible();
 	});
 });

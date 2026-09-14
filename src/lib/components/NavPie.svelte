@@ -109,8 +109,6 @@
 		open = true;
 	}
 
-	$effect(() => onopenchange?.(open));
-
 	function enter(key: string) {
 		open = false;
 		const room = roomFor(key);
@@ -127,6 +125,7 @@
 	{anchor}
 	{dragging}
 	bottomInset={inset}
+	onvisible={(v) => onopenchange?.(v)}
 	onselect={enter}
 	onclose={() => (open = false)}
 />

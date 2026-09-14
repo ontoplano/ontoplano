@@ -78,8 +78,6 @@
 		return window.innerWidth >= 1024 ? 0 : px('--mobile-nav-height') + px('--safe-bottom') + 24;
 	}
 
-	$effect(() => onopenchange?.(open));
-
 	function choose(key: string) {
 		open = false;
 		writing = CAPTURES.find((c) => c.key === key) ?? null;
@@ -93,6 +91,7 @@
 	{origin}
 	{dragging}
 	bottomInset={inset}
+	onvisible={(v) => onopenchange?.(v)}
 	onselect={choose}
 	onclose={() => (open = false)}
 />

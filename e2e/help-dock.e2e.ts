@@ -5,25 +5,20 @@ import { visit } from './helpers/visit';
 /**
  * The corner where help lives, and the button for when none of it helped.
  *
- * On a phone the row was four squares across the bottom right of every screen,
- * over whatever was under it. Folded it is one, and it says which one it is.
+ * A wide screen's corner only. On a phone the row was four squares across the
+ * bottom right of every screen, over whatever was under it — it is the fan
+ * under the bar's account button now, and `fan.e2e.ts` is that.
  */
 test.describe('on a phone', () => {
 	test.use({ viewport: { width: 390, height: 844 } });
 
-	test('the dock is one button until it is opened, and folds again', async ({ page }) => {
+	test('there is no dock at all — the bar fans it out instead', async ({ page }) => {
 		await register(page, `dock-${Date.now()}@test.invalid`);
 		await visit(page, '/');
 
-		const fold = page.getByRole('button', { name: 'Help', exact: true });
-		await expect(fold).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Help', exact: true })).toBeHidden();
 		await expect(page.getByRole('link', { name: 'The documentation' })).toBeHidden();
-
-		await fold.click();
-		await expect(page.getByRole('link', { name: 'The documentation' })).toBeVisible();
-
-		await page.getByRole('button', { name: 'Hide help' }).click();
-		await expect(page.getByRole('link', { name: 'The documentation' })).toBeHidden();
+		await expect(page.getByRole('button', { name: 'Account and help' })).toBeVisible();
 	});
 });
 

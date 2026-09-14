@@ -2,8 +2,10 @@
 	import { enhance } from '$app/forms';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { page } from '$app/state';
+	import { resolve } from '$app/paths';
 	import { disablePush, enablePush, pushEnabled, pushSupported } from '$lib/push';
 	import { inPhoneApp } from '$lib/instance-choice';
+	import { isIsolatedBuild } from '$lib/isolated/mode';
 	import {
 		askPhoneToNotify,
 		phoneWillNotify,
@@ -20,6 +22,15 @@
 	import type { DashboardCardId } from '$lib/dashboard.js';
 
 	let { data }: { data: PageServerData } = $props();
+
+	/**
+	 * Whether this copy is the device's own instance.
+	 *
+	 * It decides one thing on this page: an isolated instance has no account
+	 * page, so the screen that points the app at a different ontoplano — which
+	 * lives there everywhere else — has to be reachable from here instead.
+	 */
+	const onDevice = $derived(isIsolatedBuild());
 
 	/**
 	 * The currency, chosen from the shortlist or typed.
@@ -890,6 +901,21 @@
 					</button>
 				{/each}
 			</form>
+		</section>
+	{/if}
+
+	{#if onDevice}
+		<section class="border border-gray-200 bg-white p-5 shadow-card">
+			<div class="flex items-start justify-between gap-4">
+				<div>
+					<h2 class="text-sm font-semibold text-gray-900">Where this ontoplano lives</h2>
+					<p class="mt-1 text-sm text-gray-500">
+						Everything is on this device and stays here. The same app can open the official instance
+						or one running on a computer of your own.
+					</p>
+				</div>
+				<a href={resolve('/instance')} class="btn btn-sm shrink-0">Change instance</a>
+			</div>
 		</section>
 	{/if}
 </div>

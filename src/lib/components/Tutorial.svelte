@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import Icon from '$lib/components/Icon.svelte';
-	import { CLOSING_STEP, tutorialFor, type TutorialStep } from '$lib/tutorials';
+	import { CLOSING_STEPS, tutorialFor, type TutorialStep } from '$lib/tutorials';
 
 	/**
 	 * The guided tour: the screen goes dark, and one thing at a time does not.
@@ -74,7 +74,15 @@
 		const tutorial = tutorialFor(path);
 		if (!tutorial) return null;
 		const usable = tutorial.steps.filter((s) => !s.target || firstVisible(s.target));
-		return closing ? [...usable, CLOSING_STEP] : usable;
+		if (!closing) return usable;
+
+		// Whichever of the two is on this screen: the corner dock on a laptop,
+		// the bar's fan on a phone.
+		const last = CLOSING_STEPS.find((s) => s.target && firstVisible(s.target)) ?? CLOSING_STEPS[0];
+		// And it owns what it points at. On a phone the fan is also where the
+		// settings are, so the dashboard's own step about that button and this
+		// one are two cards in a row about the same thing.
+		return [...usable.filter((s) => s.target !== last.target), last];
 	}
 
 	/**

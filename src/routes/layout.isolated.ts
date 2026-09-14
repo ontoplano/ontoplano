@@ -23,6 +23,7 @@ import {
 	hasSeenTutorial
 } from '$lib/services/settings';
 import { DEFAULT_PICTURE_KILOBYTES, DEFAULT_UNDO_SECONDS } from '$lib/instance-defaults';
+import { outwardLinks } from '$lib/links';
 
 export async function load(event: IsolatedEvent): Promise<LayoutServerData> {
 	const user = profileOf(event.locals.user!.id);
@@ -55,6 +56,9 @@ export async function load(event: IsolatedEvent): Promise<LayoutServerData> {
 		// Push arrives through the device, not through a push service.
 		pushKey: null,
 		config: { week: getWeekSettings(user.id) },
+		// The documentation and the front page are on the web whether or not
+		// this copy of the app ever reaches it.
+		links: outwardLinks(),
 		undoSeconds: DEFAULT_UNDO_SECONDS,
 		maxPictureKilobytes: DEFAULT_PICTURE_KILOBYTES,
 		// An isolated instance has nowhere to send an error report.
