@@ -219,7 +219,7 @@ export function slideAway(
 }
 
 /** And bring the one that arrived on from the other side. */
-export function slideOn(pane: HTMLElement, direction: number, arc = false): void {
+export function slideOn(pane: HTMLElement, direction: number, arc = false): Animation {
 	if (arc) pane.style.transformOrigin = hub(pane);
 
 	// Explicit rather than `none`: an animation whose last keyframe is `none`
@@ -258,4 +258,31 @@ export function slideOn(pane: HTMLElement, direction: number, arc = false): void
 		pane.style.transform = '';
 		pane.style.willChange = '';
 	});
+
+	return arriving;
+}
+
+/**
+ * Show what the navigation delivered — arriving, never appearing.
+ *
+ * The empty panel set off at the press. If it is still on its way when the
+ * data lands, the content is revealed inside it and rides the rest of the
+ * movement, which is the fast-load case and the one nobody notices. If the
+ * load outlived the slide, the panel has already settled — empty, with
+ * nothing to see — and revealing the content there is a screen appearing out
+ * of nowhere after its neighbour left in style. So the arrival plays again,
+ * this time with the screen in it: putting an empty panel back at its
+ * starting edge costs nothing to see.
+ */
+export function landOn(
+	pane: HTMLElement | undefined,
+	body: HTMLElement | undefined,
+	arriving: Animation | null,
+	direction: number,
+	arc = false
+): void {
+	stopHiding(body);
+	if (!pane || !direction) return;
+	if (arriving && arriving.playState === 'running') return;
+	slideOn(pane, direction, arc);
 }

@@ -18,6 +18,14 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.173.7 — 2026-09-14
+
+- **A screen that loads slower than the slide still arrives.** The room on
+  its way out left in an arc, and — when the data outlived the movement —
+  the next one was revealed standing in place, out of nowhere. The arrival
+  now plays again with the screen finally in it, from the side it was always
+  coming from. Tabs the same.
+
 ## 0.173.6 — 2026-09-14
 
 - **The turning mark lands on its feet.** When the page arrived mid-turn it

@@ -518,3 +518,51 @@ test.describe('with a mouse', () => {
 		).toHaveAttribute('aria-current', 'page');
 	});
 });
+
+/**
+ * A screen that loads slower than the slide still ARRIVES.
+ *
+ * Both halves of the movement run at the press: the old room's copy leaves,
+ * and the empty panel comes in behind it. When the data outlives that slide,
+ * the room used to be revealed in place — a screen appearing out of nowhere
+ * after its neighbour left in an arc. `landOn` plays the arrival again with
+ * the room finally in it, and this holds a navigation open past the slide to
+ * see that it does.
+ */
+test('a room that arrives after the slide still slides in', async ({ page }) => {
+	await register(page, `late-arrival-${Date.now()}@test.invalid`);
+	await visit(page, '/tasks/todo');
+
+	// Requests the app's service worker makes cannot be held by interception.
+	await page.evaluate(async () => {
+		const registrations = await navigator.serviceWorker.getRegistrations();
+		await Promise.all(registrations.map((r) => r.unregister()));
+	});
+	await visit(page, '/tasks/todo');
+
+	let release: () => void = () => {};
+	const held = new Promise<void>((resolve) => (release = resolve));
+	await page.route('**/goals**', async (route) => {
+		await held;
+		await route.continue();
+	});
+
+	const pane = page.locator('.slide-frame > div').first();
+
+	await page.getByRole('link', { name: 'Goals' }).click();
+	// Let the empty panel's own arrival finish: the slide is over, the data
+	// is not, and the old content is hidden where it stands.
+	await page.waitForTimeout(700);
+	expect(await pane.evaluate((el) => getComputedStyle(el).transform)).toBe('none');
+
+	release();
+	// The landing plays the arrival again: the pane leaves its resting place
+	// for the far side and travels back — never a reveal in place.
+	await expect
+		.poll(async () => pane.evaluate((el) => el.style.transform), { timeout: 2000 })
+		.toMatch(/rotate/);
+	// And it settles: transform handed back, the room standing where it landed.
+	await expect
+		.poll(async () => pane.evaluate((el) => el.style.transform), { timeout: 2000 })
+		.toBe('');
+});

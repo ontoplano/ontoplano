@@ -14,6 +14,7 @@
 	import { provideSwipeSurface } from '$lib/swipe-surface';
 	import {
 		holdHeight,
+		landOn,
 		releaseHeight,
 		slideAway,
 		slideOn,
@@ -317,6 +318,8 @@
 	/** Where the copy of the outgoing room is put. Svelte never fills it. */
 	let roomStage = $state<HTMLElement>();
 	let changedRoom = 0;
+	/** The empty panel's arrival, so landing can ask whether it is still going. */
+	let roomArriving: Animation | null = null;
 
 	/*
 	 * `beforeNavigate`, and it has to be: `onNavigate` runs *after* the load.
@@ -368,15 +371,17 @@
 		 */
 		holdHeight(roomFrame, pageBody);
 		slideAway(roomStage, pageBody, changedRoom, true);
-		slideOn(page$, changedRoom, true);
+		roomArriving = slideOn(page$, changedRoom, true);
 	});
 
 	afterNavigate(() => {
-		// In place: the panel arrived while the data was loading, so the room
-		// appears where it already is rather than sliding in a second time.
-		stopHiding(pageBody);
+		// Joining the panel mid-flight when the load was quick, or arriving
+		// again — with the room finally in it — when the load outlived the
+		// slide. Never appearing in place: see `landOn`.
+		landOn(page$, pageBody, roomArriving, changedRoom, true);
 		releaseHeight(roomFrame);
 		changedRoom = 0;
+		roomArriving = null;
 	});
 
 	/*

@@ -8,6 +8,7 @@
 	import {
 		holdHeight,
 		releaseHeight,
+		landOn,
 		slideAway,
 		slideOn,
 		slidesHere,
@@ -79,6 +80,8 @@
 
 	/** Which way the last tab change went: 1 rightwards, -1 leftwards, 0 not one. */
 	let went = 0;
+	/** The empty panel's arrival, so landing can ask whether it is still going. */
+	let arriving: Animation | null = null;
 
 	function step(by: number) {
 		const to = tabs[at + by];
@@ -144,15 +147,17 @@
 		 */
 		holdHeight(frame, body);
 		slideAway(stage, body, went);
-		slideOn(pane, went);
+		arriving = slideOn(pane, went);
 	});
 
 	afterNavigate(() => {
-		// In place: the panel arrived while the data was loading, so the content
-		// appears where it already is rather than sliding in a second time.
-		stopHiding(body);
+		// Joining the panel mid-flight when the load was quick, or arriving
+		// again — with the content finally in it — when the load outlived the
+		// slide. Never appearing in place: see `landOn`.
+		landOn(pane, body, arriving, went);
 		releaseHeight(frame);
 		went = 0;
+		arriving = null;
 	});
 
 	/*
