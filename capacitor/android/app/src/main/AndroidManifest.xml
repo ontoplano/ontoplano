@@ -25,6 +25,24 @@
 
         </activity>
 
+        <!--
+            The thing that rings for an instance that cannot wake this phone.
+
+            `exported="false"` because nothing outside this app has any business
+            starting it: the alarms are set by the app itself, and the boot
+            broadcast reaches a receiver that is not exported. See Ringer.java
+            for why a web page cannot do this job.
+        -->
+        <receiver
+            android:name=".RingerReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+            </intent-filter>
+        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"

@@ -4,13 +4,20 @@ import android.content.Intent;
 import android.net.Uri;
 import android.provider.Settings;
 
+import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 /**
- * The one door out of a permission Android will not ask about twice.
+ * The small things the shell can do and a web page cannot.
+ *
+ * Two of them, and both exist because the web view runs out of reach of the
+ * phone: the settings screen Android will not open for a page, and the alarm
+ * clock that rings for an instance which has no way to wake this device.
+ *
+ * ## The door out of a permission Android will not ask about twice
  *
  * On Android 13 and up, a person who has refused notifications twice is never
  * shown the dialog again: requestPermissions() returns "denied" immediately
@@ -25,6 +32,57 @@ import com.getcapacitor.annotation.CapacitorPlugin;
  */
 @CapacitorPlugin(name = "OntoplanoSettings")
 public class OntoplanoSettings extends Plugin {
+
+    /**
+     * Ring on this phone for the instance at `origin`, using `token`.
+     *
+     * Handed over by the copy of the app the phone carries — the only page with
+     * a bridge to this class — after the instance itself has minted a key that
+     * can read its reminders and nothing else. Saved natively, because the
+     * point is to work when no page is open at all.
+     */
+    @PluginMethod
+    public void ringFor(PluginCall call) {
+        String origin = call.getString("origin", "");
+        String token = call.getString("token", "");
+
+        if (origin == null || origin.isEmpty() || token == null || token.isEmpty()) {
+            call.reject("An instance and a key, both.");
+            return;
+        }
+
+        Ringer.remember(getContext(), origin, token);
+        Ringer.sync(getContext());
+        call.resolve();
+    }
+
+    /** Stop ringing for it, and drop the key. */
+    @PluginMethod
+    public void stopRinging(PluginCall call) {
+        Ringer.forget(getContext());
+        call.resolve();
+    }
+
+    /** Which instance this phone rings for, or an empty string for none. */
+    @PluginMethod
+    public void ringingFor(PluginCall call) {
+        JSObject answer = new JSObject();
+        answer.put("origin", Ringer.origin(getContext()));
+        call.resolve(answer);
+    }
+
+    /**
+     * Ask the instance now, rather than waiting for the standing refresh.
+     *
+     * What the app calls when it opens: somebody who has just written a
+     * reminder and closed the app expects that one to ring, and six hours is a
+     * long time to be wrong about it.
+     */
+    @PluginMethod
+    public void syncReminders(PluginCall call) {
+        Ringer.sync(getContext());
+        call.resolve();
+    }
 
     @PluginMethod
     public void openNotificationSettings(PluginCall call) {
