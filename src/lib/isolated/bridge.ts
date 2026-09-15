@@ -27,6 +27,9 @@ function isAsset(pathname: string): boolean {
 	);
 }
 
+/** The statuses whose whole meaning is that there is no body. */
+const EMPTY_STATUSES = new Set([204, 205, 304]);
+
 function json(body: string, status = 200): Response {
 	return new Response(body, {
 		status,
@@ -138,10 +141,24 @@ export function installIsolatedBridge(): void {
 					form: isForm ? [...(await request.clone().formData()).entries()] : undefined
 				});
 				if (reply)
-					return new Response(reply.text, {
-						status: reply.status,
-						headers: reply.contentType ? { 'content-type': reply.contentType } : undefined
-					});
+					return new Response(
+						/*
+						 * Nothing at all for the statuses that forbid a body.
+						 *
+						 * 204, 205 and 304 are "there is no content" — the Response
+						 * constructor throws outright if given one, even the empty
+						 * string the worker sends back for a handler that returned
+						 * `new Response(null, …)`. It is not theoretical: dismissing
+						 * the tour posts to `/api/tutorial`, which answers 204, and
+						 * on the device that threw inside `fetch` rather than
+						 * recording anything.
+						 */
+						EMPTY_STATUSES.has(reply.status) ? null : reply.text,
+						{
+							status: reply.status,
+							headers: reply.contentType ? { 'content-type': reply.contentType } : undefined
+						}
+					);
 			}
 		}
 

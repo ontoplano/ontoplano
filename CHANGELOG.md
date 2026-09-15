@@ -18,6 +18,15 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.177.1 — 2026-09-15
+
+- **Fixed: dismissing the tour in the phone app did nothing.** Its "I have been
+  shown around" answers 204, which means there is no content — and the phone
+  app's own request layer handed that back with a body, which the browser
+  refuses outright. So the press threw instead of being recorded, and the tour
+  came back on the next screen. Every answer of that kind was affected, not
+  only this one.
+
 ## 0.177.0 — 2026-09-15
 
 - **Asking to be told when something ships works on the first press.** It used

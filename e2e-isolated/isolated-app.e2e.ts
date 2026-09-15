@@ -309,19 +309,25 @@ test('the phone can leave the instance it is', async ({ page }) => {
 	await expect(page.getByText("TODAY'S TASKS")).toBeVisible({ timeout: 60_000 });
 
 	/*
-	 * The tour, if this is the first open here.
+	 * Shown around already, said before anything is pressed.
 	 *
-	 * Its dismissal is remembered by the device, so whether it is up depends on
-	 * whether a test before this one has already been shown around — which is
-	 * not something this test should care about. It covers the bar, so a press
-	 * on the bar cannot land until it is gone.
+	 * The tour covers the bar, so nothing here can be pressed while it is up —
+	 * and looking for it and dismissing it does not work: the shell starts it
+	 * half a second after the page mounts, so on a loaded machine the check
+	 * runs first, finds nothing, and the tour then opens over the flower. This
+	 * is the same thing the tour's own dismissal posts, which makes "already
+	 * seen" true before there is anything to dismiss.
 	 */
-	const tour = page.getByRole('dialog', { name: 'Tutorial' });
-	if (await tour.isVisible()) {
-		await tour.getByRole('button', { name: 'Dismiss' }).click();
-		await tour.getByRole('button', { name: 'Okay, dismiss!' }).click();
-		await expect(tour).toBeHidden();
-	}
+	await page.evaluate(() =>
+		fetch('/api/tutorial', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ seen: true })
+		})
+	);
+	await page.reload({ waitUntil: 'load' });
+	await expect(page.getByText("TODAY'S TASKS")).toBeVisible({ timeout: 60_000 });
+	await expect(page.getByRole('dialog', { name: 'Tutorial' })).toBeHidden();
 
 	/*
 	 * Through the account, which a device has now.
@@ -380,4 +386,30 @@ test('settings offers nothing that needs somebody else to connect', async ({ pag
 	expect(tabs).toContain('Account');
 	expect(tabs).toContain('Preferences');
 	expect(tabs.join(' ')).not.toMatch(/Integrations|Billing|Family|Administration/);
+});
+
+/**
+ * An endpoint that answers "nothing to say" does not throw.
+ *
+ * 204, 205 and 304 forbid a body, and the `Response` constructor refuses one —
+ * so the bridge handing back what the worker sent threw inside `fetch` rather
+ * than answering. Dismissing the tour is exactly that shape: it posts to
+ * `/api/tutorial`, which answers 204, and on the device that meant the
+ * dismissal was never recorded and the tour came back on the next screen.
+ */
+test('an endpoint that answers with no content is answered, not thrown', async ({ page }) => {
+	test.setTimeout(120_000);
+	await page.goto('/');
+	await expect(page.getByText("TODAY'S TASKS")).toBeVisible({ timeout: 60_000 });
+
+	const answered = await page.evaluate(async () => {
+		const res = await fetch('/api/tutorial', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ seen: true })
+		});
+		return { status: res.status, body: await res.text() };
+	});
+
+	expect(answered).toEqual({ status: 204, body: '' });
 });
