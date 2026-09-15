@@ -18,6 +18,23 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.3 — 2026-09-15
+
+- **Reaching for a tab that is off the screen no longer changes tab.** Dragging
+  the strip along until the last one appears ends with it against its end,
+  which the swipe read as "this is finished, the gesture is mine" — so one drag
+  did two things and the second was not asked for. A strip the finger moved
+  keeps the whole gesture now; swiping across one that was already at its end
+  still goes to the next section.
+- **Making somebody an administrator takes a deliberate second press.** It was
+  one ordinary button in a row of small ones, and what it grants is every power
+  that page has, including deleting every other account. It says whose account
+  and what they will be able to do, the confirm ignores a reflex double-click,
+  and Cancel sits where the button was.
+- **The bar at the top of a phone screen has square corners again.** It reaches
+  both edges, so its rounded ones had nothing to sit against and left slivers
+  of the page showing through at all four.
+
 ## 0.178.2 — 2026-09-15
 
 - **Handing the app to an assistant now sticks.** Each snippet on
