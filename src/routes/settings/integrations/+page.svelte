@@ -117,19 +117,19 @@ Key: ${shown}`
 			id: 'claude-code',
 			name: 'Claude Code (by hand)',
 			wrap: false,
-			note: 'Run this in a terminal. It writes the setting for you.',
-			text: `claude mcp add --transport http ontoplano ${data.origin}/api/mcp \\\n  --header "Authorization: Bearer ${shown}"`
+			note: 'Run this in a terminal. It writes the setting for you, for every project — that is what --scope user is doing there.',
+			text: `claude mcp add --scope user --transport http ontoplano ${data.origin}/api/mcp \\\n  --header "Authorization: Bearer ${shown}"`
 		},
 		{
 			id: 'codex',
 			name: 'Codex',
 			wrap: false,
-			note: 'Add this to ~/.codex/config.toml, and export the key in the shell you start Codex from.',
+			note: 'Add this to ~/.codex/config.toml, and put the key in your shell profile so it is there every time.',
 			text: `[mcp_servers.ontoplano]
 url = "${data.origin}/api/mcp"
 bearer_token_env_var = "ONTOPLANO_KEY"
 
-# then, in your shell:
+# then, once, in your shell profile (~/.bashrc — zsh: ~/.zshrc):
 # export ONTOPLANO_KEY=${shown}`
 		},
 		{
@@ -501,6 +501,20 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 							with the key already in it.
 						</p>
 					{/if}
+
+					<!--
+					The way to the full instructions, said on the page rather than
+					assumed: each snippet here is the shortest correct version, and
+					what makes each client keep it — a scope, a shell profile, a
+					restart — is a page of its own in the docs.
+				-->
+					<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">
+						<a
+							href="{data.links.docs}/ai-agents#setting-it-up-properly"
+							rel="external"
+							class="underline underline-offset-2">How to set each one up permanently — the docs</a
+						>.
+					</p>
 				</div>
 			</div>
 		</div>

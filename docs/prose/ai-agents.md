@@ -75,9 +75,13 @@ your own instance with no change.
 **Claude Code, by hand** — one command, and it writes the config for you:
 
 ```sh
-claude mcp add --transport http ontoplano https://app.ontoplano.com/api/mcp \
+claude mcp add --scope user --transport http ontoplano https://app.ontoplano.com/api/mcp \
   --header "Authorization: Bearer onto_YOUR_KEY_HERE"
 ```
+
+`--scope user` is what makes it permanent everywhere: without it the server is
+written into the project you happen to be standing in, and every other
+directory starts over.
 
 **Codex CLI** — `~/.codex/config.toml`. It reads the key out of the
 environment rather than out of the file, so export it in the shell that starts
@@ -91,6 +95,13 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 
 ```sh
 export ONTOPLANO_KEY=onto_YOUR_KEY_HERE
+```
+
+An export lasts as long as the shell it was typed into. To keep it, put the
+same line in the file your shell starts from:
+
+```sh
+echo 'export ONTOPLANO_KEY=onto_YOUR_KEY_HERE' >> ~/.bashrc   # zsh: ~/.zshrc
 ```
 
 `codex mcp list` says whether it connected.

@@ -87,4 +87,25 @@ test('a key made on the AI tab arrives inside the words you paste', async ({ pag
 			.innerText();
 		expect(snippet, `${client} snippet`).toContain(shown);
 	}
+
+	/*
+	 * The snippets are the permanent versions, and the page says where the
+	 * whole story is. "Give once and have it work forever" is the promise:
+	 * a scope that covers every project, a key that outlives the shell it
+	 * was typed into, and a link to the docs page that shows each client's
+	 * own way of keeping it.
+	 */
+	await page.getByRole('button', { name: 'Claude Code (by hand)', exact: true }).click();
+	expect(await page.locator('pre', { hasText: 'claude mcp add' }).first().innerText()).toContain(
+		'--scope user'
+	);
+
+	await page.getByRole('button', { name: 'Codex', exact: true }).click();
+	expect(
+		await page.locator('pre', { hasText: 'mcp_servers.ontoplano' }).first().innerText()
+	).toContain('shell profile');
+
+	const how = page.getByRole('link', { name: /set each one up permanently/ });
+	await expect(how).toBeVisible();
+	await expect(how).toHaveAttribute('href', /\/ai-agents#setting-it-up-properly$/);
 });

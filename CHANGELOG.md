@@ -18,6 +18,14 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.2 — 2026-09-15
+
+- **Handing the app to an assistant now sticks.** Each snippet on
+  AI & Integrations is the version that lasts: Claude Code's command keeps the
+  server for every project rather than the directory it was typed in, and
+  Codex's key goes in the shell profile instead of one shell. The page links
+  the docs page that shows the whole of it, assistant by assistant.
+
 ## 0.178.1 — 2026-09-15
 
 - **The to-do list can be ordered by what you just finished.** The order button
