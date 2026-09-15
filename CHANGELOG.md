@@ -18,6 +18,19 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.177.8 — 2026-09-15
+
+- **Two people building the same commit now write the same launcher icons.**
+  They were resized by whatever ImageMagick was installed, so every build
+  rewrote forty-five files with one machine's bytes and the next build put the
+  other machine's back. They are drawn by the rasteriser this project pins now,
+  which is also what makes them checkable by anybody reproducing an F-Droid
+  build.
+- **The two builds stopped tripping over each other.** The app and the copy
+  that runs on a device compiled through the same working directory, so running
+  them at once — which the test suite does, every run — could leave one build's
+  files in the other's output. A directory each.
+
 ## 0.177.7 — 2026-09-15
 
 - **The device's main menu is drained of colour when it is shut, too.** Only

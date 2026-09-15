@@ -128,3 +128,4 @@ scripts/demo-media/birds/
 # ontoplano-development; this is the link to it from here.
 .ORDERS.md
 .ORDERS.md
+.svelte-kit-isolated/

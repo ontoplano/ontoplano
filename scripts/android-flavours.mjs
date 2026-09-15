@@ -20,6 +20,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { squareIcon } from './android-icons.mjs';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -189,25 +190,17 @@ const LAUNCHER = { mdpi: 48, hdpi: 72, xhdpi: 96, xxhdpi: 144, xxxhdpi: 192 };
 const FOREGROUND = { mdpi: 108, hdpi: 162, xhdpi: 216, xxhdpi: 324, xxxhdpi: 432 };
 
 /*
- * The same source at the same size gives the same bytes, every time.
+ * The same source at the same size gives the same bytes — on every machine.
  *
- * ImageMagick stamps a PNG with the moment it wrote it and whatever else it
- * knows, so re-running this rewrote every icon with different bytes and left
- * eighty modified files in the tree after a build. `-strip` and excluding the
- * date chunks make the output a function of the input, which is what lets
- * these be committed — F-Droid builds from the committed project and cannot
- * run an image toolchain to make them.
+ * These are committed, because F-Droid builds the project as committed and
+ * cannot run an image toolchain to make them. That only works if two people
+ * building the same commit write the same files, and with ImageMagick they did
+ * not: each `magick` produced its own bytes, so forty-five icons flipped back
+ * and forth between whoever built last. They are drawn by the rasteriser the
+ * project pins now — see `scripts/android-icons.mjs`.
  */
 function resize(source, out, size) {
-	execFileSync('magick', [
-		source,
-		'-resize',
-		`${size}x${size}`,
-		'-strip',
-		'-define',
-		'png:exclude-chunk=date,time,tIME',
-		out
-	]);
+	writeFileSync(out, squareIcon({ source, size }));
 }
 
 /**
@@ -221,22 +214,7 @@ function resize(source, out, size) {
  * and no margin of its own, so the only margin here is the one this asks for.
  */
 function foreground(source, out, size) {
-	const inner = Math.round(size * ADAPTIVE_FOREGROUND_SCALE);
-	execFileSync('magick', [
-		source,
-		'-resize',
-		`${inner}x${inner}`,
-		'-background',
-		'none',
-		'-gravity',
-		'center',
-		'-extent',
-		`${size}x${size}`,
-		'-strip',
-		'-define',
-		'png:exclude-chunk=date,time,tIME',
-		out
-	]);
+	writeFileSync(out, squareIcon({ source, size, scale: ADAPTIVE_FOREGROUND_SCALE }));
 }
 
 if (!existsSync(APP)) {

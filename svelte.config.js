@@ -16,6 +16,22 @@ const config = {
 		}
 	},
 	kit: {
+		/*
+		 * A working directory per build, not one shared by both.
+		 *
+		 * The two builds — adapter-node into `build/`, adapter-static into
+		 * `build-isolated/` — compile through `.svelte-kit/output` before their
+		 * adapters copy out of it. Sharing that directory means they cannot run
+		 * at the same time, and Playwright starts both web servers at once: one
+		 * build's chunks landed in the other's `build/`, and the server died
+		 * mid-suite on a hashed file that no longer existed. Forty-two tests
+		 * failed for it, all of them `ERR_CONNECTION_REFUSED`, none of them
+		 * about the thing they were testing.
+		 *
+		 * A directory each is the whole fix, and it is also what lets `make
+		 * build` and `make isolated` run in parallel during a release.
+		 */
+		outDir: process.env.ONTOPLANO_ISOLATED_BUILD === '1' ? '.svelte-kit-isolated' : '.svelte-kit',
 		// All CSS inlined into the HTML: a first, cold visit was rendering the
 		// page before the stylesheet arrived — a giant unstyled section glyph
 		// and a bare link, then the real page. An app this size is one person's

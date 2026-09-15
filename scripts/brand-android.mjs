@@ -9,9 +9,9 @@
  *
  * There is one ontoplano app. It is not labelled by how it was built.
  */
-import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { squareIcon } from './android-icons.mjs';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -49,25 +49,18 @@ const LAUNCHER = { mdpi: 48, hdpi: 72, xhdpi: 96, xxhdpi: 144, xxxhdpi: 192 };
 const FOREGROUND = { mdpi: 108, hdpi: 162, xhdpi: 216, xxhdpi: 324, xxxhdpi: 432 };
 
 /*
- * The same source at the same size gives the same bytes, every time.
+ * The same source at the same size gives the same bytes — on every machine.
  *
- * ImageMagick stamps a PNG with the moment it wrote it and whatever else it
- * knows, so re-running this rewrote every icon with different bytes and left
- * eighty modified files in the tree after a build. `-strip` and excluding the
- * date chunks make the output a function of the input, which is what lets
- * these be committed — F-Droid builds from the committed project and cannot
- * run an image toolchain to make them.
+ * This was an ImageMagick resize, stripped of its metadata so that re-running
+ * it did not rewrite every icon. That much worked; what it could not do is
+ * agree with somebody else's ImageMagick, so two people building the same
+ * commit produced two different sets and the files flip-flopped between them
+ * with every build. `scripts/android-icons.mjs` draws them with the rasteriser
+ * the project pins, which makes the bytes a function of the picture and the
+ * lockfile.
  */
 function resize(source, out, size) {
-	execFileSync('magick', [
-		source,
-		'-resize',
-		`${size}x${size}`,
-		'-strip',
-		'-define',
-		'png:exclude-chunk=date,time,tIME',
-		out
-	]);
+	writeFileSync(out, squareIcon({ source, size }));
 }
 
 if (!existsSync(RES)) {
