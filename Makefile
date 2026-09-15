@@ -435,7 +435,9 @@ isolated:
 		*) opts="$$opts --max-old-space-size=$(ISOLATED_HEAP_MB)"; \
 		   echo "node heap: $(ISOLATED_HEAP_MB)MB" ;; \
 	esac; \
-	NODE_OPTIONS="$$opts" ONTOPLANO_ISOLATED_BUILD=1 PUBLIC_ONTOPLANO_ISOLATED=true yarn build
+	start=$$(date +%s); \
+	NODE_OPTIONS="$$opts" ONTOPLANO_ISOLATED_BUILD=1 PUBLIC_ONTOPLANO_ISOLATED=true yarn build; \
+	printf '  \033[2m%s — %ss\033[0m\n' "the web build" "$$(( $$(date +%s) - start ))"
 
 ## serve the isolated build, the way its shell would
 isolated-preview:
@@ -469,22 +471,24 @@ android-all: _a-real-workstation isolated
 	@# Installed, and up to date with what the shell now asks for: adding a
 	@# plugin changes package.json, and a node_modules that merely exists is how
 	@# a build ships without the plugin it was supposed to gain.
-	@[ -d capacitor/node_modules ] && [ capacitor/node_modules -nt capacitor/package.json ] \
-		|| (cd capacitor && npm install --no-audit --no-fund)
-	@node scripts/brand-android.mjs
-	cd capacitor && npx cap sync android
+	$(call timed,[ -d capacitor/node_modules ] && [ capacitor/node_modules -nt capacitor/package.json ] \
+		|| (cd capacitor && npm install --no-audit --no-fund),the shell's dependencies)
+	$(call timed,node scripts/brand-android.mjs,the icons)
+	$(call timed,cd capacitor && npx cap sync android >/dev/null,capacitor sync)
 	@# The DEV app's address comes from the environment or from defaults.env,
 	@# which local.mk includes — a build in a container cannot work out which
 	@# address on the wifi is this laptop's.
-	@ONTOPLANO_DEV_ORIGIN="$(ONTOPLANO_DEV_ORIGIN)" node scripts/android-flavours.mjs
+	$(call timed,ONTOPLANO_DEV_ORIGIN="$(ONTOPLANO_DEV_ORIGIN)" node scripts/android-flavours.mjs,the three flavours)
 	@sdk=$$(node scripts/android-sdk.mjs) || { \
 		echo "No Android SDK here. It is looked for in ANDROID_HOME, ANDROID_SDK_ROOT,"; \
 		echo "~/.bubblewrap/config.json, ~/android-sdk, ~/Android/Sdk and beside adb."; \
 		echo "  make $@ ANDROID_HOME=/path/to/sdk"; \
 		exit 1; \
 	}; \
+	start=$$(date +%s); \
 	cd capacitor/android && ANDROID_HOME="$$sdk" ./gradlew -q \
-		assembleOfficialDebug assembleDevDebug assembleStagingDebug
+		assembleOfficialDebug assembleDevDebug assembleStagingDebug; \
+	printf '  \033[2m%s — %ss\033[0m\n' "gradle, three APKs" "$$(( $$(date +%s) - start ))"
 	@echo "Built all three. Put them on the phone with: make android-install-all"
 
 ## install all three over adb
@@ -750,6 +754,18 @@ test:
 # Printing, defined here rather than borrowed. `local.mk` has its own set, and
 # a public checkout has no local.mk at all — a target that only prints properly
 # on one person's machine is a target that fails on everybody else's.
+# How long a step took, printed after it.
+#
+# `make android-all` is five things in a coat — a web build, a dependency
+# check, the icons, Capacitor's sync and three APKs — and `-q` everywhere means
+# a slow one is a cursor sitting still. When somebody says the Android build
+# takes a quarter of an hour, the only useful question is which part did, and
+# this is what answers it without them having to instrument anything.
+define timed
+@start=$$(date +%s); $(1); \
+	printf '  \033[2m%s — %ss\033[0m\n' "$(2)" "$$(( $$(date +%s) - start ))"
+endef
+
 OK   = printf '  \033[34m✓ %s\033[0m\n'
 NO   = printf '  \033[1;31m✗ %s\033[0m\n'
 LOUD = printf '\033[1m%s\033[0m\n'

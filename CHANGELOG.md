@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.178.0 — 2026-09-15
 
+- **The phone is set up to ring by opening it**, rather than by pressing
+  anything. The first time the app opens an instance it has no key for, it asks
+  for one and keeps it. What is left on the screen is the two things somebody
+  might actually want: to stop, and to try again when it has not worked.
+
 - **Reminders arrive with the app closed, whichever ontoplano you use.** Until
   now that was true only of the instance the app carries on the device: a
   server cannot wake the app — Android's web view has no push — and a page

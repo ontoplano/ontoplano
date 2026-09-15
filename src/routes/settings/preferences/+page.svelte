@@ -471,63 +471,59 @@
 						nothing.
 					-->
 					<p class="text-sm text-gray-500">
-						This is <strong class="text-gray-700">{page.url.host}</strong> shown inside the app, which
-						cannot wake a phone: there is no push here and no alarm clock on this page. What can be done
-						is the other way round — the phone asks this instance what is coming, and rings for it.
+						Reminders from <strong class="text-gray-700">{page.url.host}</strong> ring on this phone.
+						It asks this instance what is coming and sets Android's own alarms, because an instance cannot
+						wake a phone — there is no push in here.
 					</p>
 
 					<!--
-						The handshake, in one press.
+						Set up at launch, not by pressing this.
 
-						The key is made by the page that makes every other key — posting
-						across to `/settings/integrations`, because the isolated build
-						compiles this page's server file into its worker and must not
-						compile the token service with it — and stored by the copy of
-						ontoplano the phone carries, which is the only thing with a bridge to
-						the shell. They are two origins, so the key travels in an address
-						inside the app's own web view for exactly one frame — see `/ring`. It
-						reads the alarms about to go off and nothing else, and it is revocable
-						like any key, under AI & Integrations.
+						The app asks for a key the first time it opens an instance it has
+						none for, and stores it in the shell — see `ringer-handshake.ts`.
+						Nobody should have to arrange to be reminded by their own ontoplano
+						on their own phone. What is left here is the two things somebody
+						might actually want: to stop, and to try again when it has not
+						worked.
 					-->
-					<form
-						method="post"
-						action="/settings/integrations?/ringOnThisPhone"
-						use:enhance={() => {
-							ringing = 'asking';
-							return async ({ result }) => {
-								const key =
-									result.type === 'success' ? (result.data as { key?: string })?.key : undefined;
-								if (!key) {
-									ringing = 'failed';
-									return;
-								}
-								location.href = `${DEVICE_ORIGIN}/ring?at=${encodeURIComponent(
-									page.url.origin
-								)}&key=${encodeURIComponent(key)}`;
-							};
-						}}
-						class="mt-3 flex flex-wrap items-center gap-3"
-					>
-						<button class="btn btn-primary btn-sm" disabled={ringing === 'asking'}>
-							{ringing === 'asking' ? 'Setting it up…' : 'Let this phone ring for these'}
-						</button>
-						<!-- The way back out, in the same place as the way in: it is the
-						     phone that has to forget, so this goes to the phone too. -->
+					<div class="mt-3 flex flex-wrap items-center gap-3">
 						<!-- eslint-disable svelte/no-navigation-without-resolve -- another origin -->
 						<a
 							href="{DEVICE_ORIGIN}/ring?off=1&at={encodeURIComponent(page.url.origin)}"
-							class="btn btn-sm btn-quiet">Stop it ringing</a
+							class="btn btn-sm">Stop ringing on this phone</a
 						>
 						<!-- eslint-enable svelte/no-navigation-without-resolve -->
-					</form>
+						<form
+							method="post"
+							action="/settings/integrations?/ringOnThisPhone"
+							use:enhance={() => {
+								ringing = 'asking';
+								return async ({ result }) => {
+									const key =
+										result.type === 'success' ? (result.data as { key?: string })?.key : undefined;
+									if (!key) {
+										ringing = 'failed';
+										return;
+									}
+									location.href = `${DEVICE_ORIGIN}/ring?at=${encodeURIComponent(
+										page.url.origin
+									)}&key=${encodeURIComponent(key)}`;
+								};
+							}}
+						>
+							<button class="btn btn-sm btn-quiet" disabled={ringing === 'asking'}>
+								{ringing === 'asking' ? 'Setting it up…' : 'Set it up again'}
+							</button>
+						</form>
+					</div>
 					{#if ringing === 'failed'}
 						<p class="mt-2 text-sm text-gray-600">
 							This instance would not make a key. Try again, or make one under AI & Integrations.
 						</p>
 					{/if}
 					<p class="mt-2 text-xs leading-relaxed text-gray-500">
-						The phone books Android's own alarms from it, asks again every few hours, and does it
-						again after a restart. Reminders you write anywhere else ring here too.
+						It asks again every few hours, and after the phone restarts. Reminders you write
+						anywhere else ring here too.
 					</p>
 				{:else if notifications === 'on'}
 					<div class="flex flex-wrap items-center gap-3">
