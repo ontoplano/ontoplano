@@ -93,6 +93,25 @@ export const APPLE_SCALE = 0.86;
 export const SOLID_SCALE = 0.82;
 
 /**
+ * How much colour is left in a mark that has been drained of it.
+ *
+ * The same mark, nearly black and white — recognisably this app and
+ * unmistakably not the ordinary copy of it. The dev and staging icons have
+ * worn it since there were two builds on one phone, and the instance that runs
+ * on the device itself wears it in the app for the same reason: somebody can
+ * have both open, and two identical marks is a bad way to find out which week
+ * you have been writing into.
+ *
+ * Not zero. A flat grey mark reads as a disabled one; a trace of colour left in
+ * reads as the mark with the lights off.
+ *
+ * One number, because two worlds have to agree on it: `scripts/build-icons.mjs`
+ * bakes it into the icons as an SVG colour matrix, and the app applies it in
+ * CSS. They mean the same thing and nothing would catch them drifting.
+ */
+export const MARK_DRAINED = 0.15;
+
+/**
  * How much of an Android adaptive icon's foreground layer the mark fills.
  *
  * Stricter than the web's maskable, and a different asset for that reason: the

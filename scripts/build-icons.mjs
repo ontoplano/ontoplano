@@ -43,6 +43,8 @@ const constant = (name) => {
 	return JSON.parse(m[1].trim().replace(/'/g, '"'));
 };
 const GROUND = constant('BRAND_GROUND');
+/** How much colour a marked-as-not-real icon keeps. The app uses the same. */
+const DRAINED = constant('MARK_DRAINED');
 
 /**
  * The mark's own dark, read from where the app reads it.
@@ -122,7 +124,7 @@ function bandedIcon(colour, scale, ground, top = 0.82) {
 	return `${header}
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}">
   <defs>
-    <filter id="drained"><feColorMatrix type="saturate" values="0.15"/></filter>
+    <filter id="drained"><feColorMatrix type="saturate" values="${DRAINED}"/></filter>
   </defs>
   ${ground ? `<rect width="${SIZE}" height="${SIZE}" fill="${ground}"/>` : ''}
   <image x="${at}" y="${at}" width="${side}" height="${side}" preserveAspectRatio="xMidYMid meet"

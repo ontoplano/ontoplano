@@ -413,3 +413,35 @@ test('an endpoint that answers with no content is answered, not thrown', async (
 
 	expect(answered).toEqual({ status: 204, body: '' });
 });
+
+/**
+ * The main menu says which of the two you are in.
+ *
+ * Somebody can be running both — the instance on this device and one on a
+ * server — and they are the same app to look at, which is a bad way to find
+ * out which week you have just written into. The mark in the middle of the
+ * wheel is drained of its colour here, the way the dev and staging icons have
+ * said "not the ordinary copy" since there were two builds on one phone.
+ *
+ * The filter and nothing else: the mark is the artwork with its colour turned
+ * down, not a second drawing that would drift from it the day the logo is
+ * replaced.
+ */
+test('the wheel’s mark is drained of colour on the device', async ({ page }) => {
+	test.setTimeout(120_000);
+	await page.goto('/tasks/todo');
+
+	const handle = page.locator('.pie-handle').first();
+	await expect(handle).toBeVisible({ timeout: 60_000 });
+
+	const box = await handle.boundingBox();
+	if (!box) throw new Error('the menu has no handle to press');
+	await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+	await page.mouse.down();
+
+	const mark = page.locator('.pie-mark image').first();
+	await expect(mark).toBeVisible();
+	await expect.poll(() => mark.evaluate((el) => getComputedStyle(el).filter)).toMatch(/saturate/);
+
+	await page.mouse.up();
+});

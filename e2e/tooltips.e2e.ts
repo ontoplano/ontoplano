@@ -2,7 +2,8 @@ import { expect, test } from '@playwright/test';
 import { register } from './helpers/account';
 import { visit } from './helpers/visit';
 
-const SHOTS = '/tmp/claude-1000/-workspace/55780a3e-12df-496e-8516-01c0fd79f52a/scratchpad/shots';
+/** Where a run's own pictures go, beside everything else Playwright writes. */
+const SHOTS = 'test-results/tooltips';
 
 /**
  * The app draws its own tooltips, everywhere, without anything being swept.

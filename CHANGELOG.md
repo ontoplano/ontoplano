@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.177.6 — 2026-09-15
+
+- **The instance on your device says so in its main menu.** Somebody can be
+  running both — this device's own instance and one behind a server — and the
+  two are the same app to look at, which is a bad way to find out which week
+  you have just written into. The mark in the middle of the wheel is drained of
+  its colour on the device, the way the dev and staging icons have said "not
+  the ordinary copy" since there were two builds on one phone. The served app
+  is untouched.
+
 ## 0.177.5 — 2026-09-15
 
 - **Fixed: a phone that had refused notifications could not be talked round.**

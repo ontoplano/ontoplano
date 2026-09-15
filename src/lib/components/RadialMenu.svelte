@@ -1,7 +1,9 @@
 <script lang="ts">
 	import mark from '$lib/logo/mark.png';
 	import { MARK_FIELD } from '$lib/logo/mark-shape';
+	import { MARK_DRAINED } from '$lib/logo/brand';
 	import { markPath, markPoints } from '$lib/logo/mark-geometry';
+	import { isIsolatedBuild } from '$lib/isolated/mode';
 	import Icon, { type IconName } from '$lib/components/Icon.svelte';
 	import { wedgeAt, wedgeCentre, wedgeEdges, wedgeStep } from '$lib/radial';
 
@@ -165,6 +167,18 @@
 	 * the drawing does.
 	 */
 	const MEDALLION = $derived(HOLE * MIDDLE_INSET);
+
+	/*
+	 * On the device, the mark in the middle is drained of its colour.
+	 *
+	 * Somebody can be running both at once — the instance on this phone and the
+	 * one on a server — and the two are the same app to look at, which is a bad
+	 * way to find out which week you have just written into. The main menu is
+	 * where that question gets asked, so it is where the answer is: the same
+	 * mark, nearly black and white, the way the dev and staging icons have said
+	 * "not the ordinary copy" since there were two builds on one phone.
+	 */
+	const drained = $derived(isIsolatedBuild() ? `saturate(${MARK_DRAINED})` : 'none');
 
 	/**
 	 * Where a wedge starts, which is inside the hole rather than at its edge.
@@ -761,7 +775,7 @@
 							y={-MEDALLION}
 							width={MEDALLION * 2}
 							height={MEDALLION * 2}
-							style="pointer-events: none"
+							style="pointer-events: none; filter: {drained}"
 						/>
 					{/if}
 				</g>
