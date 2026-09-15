@@ -14,7 +14,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-// @ts-expect-error an .mjs script without a declaration file
 import { versionCode } from '../scripts/version-code.mjs';
 
 const { version } = JSON.parse(readFileSync('package.json', 'utf8')) as { version: string };

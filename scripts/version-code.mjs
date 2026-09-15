@@ -14,6 +14,9 @@
  * release. When a part genuinely needs to pass its ceiling, bump the part
  * above it; if the numbering itself has to be rethought, decouple the code
  * into a counter of its own first (see AGENTS.md on renumbering).
+ *
+ * @param {string} version
+ * @returns {number}
  */
 export function versionCode(version) {
 	const parts = /^(\d+)\.(\d+)\.(\d+)$/.exec(version);
