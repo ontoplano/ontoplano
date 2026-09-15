@@ -162,7 +162,73 @@ export async function phonePermission(): Promise<PhonePermission> {
 }
 
 /** The shell's own plugin — see `OntoplanoSettings.java`. */
-type Settings = { openNotificationSettings(): Promise<void> };
+type Settings = {
+	openNotificationSettings(): Promise<void>;
+	ringFor(what: { origin: string; token: string }): Promise<void>;
+	stopRinging(): Promise<void>;
+	ringingFor(): Promise<{ origin: string }>;
+	syncReminders(): Promise<void>;
+};
+
+function shell(): Settings | null {
+	if (!inPhoneApp()) return null;
+	const capacitor = (globalThis as { Capacitor?: { Plugins?: Record<string, unknown> } }).Capacitor;
+	const found = capacitor?.Plugins?.OntoplanoSettings;
+	return found ? (found as Settings) : null;
+}
+
+/**
+ * Tell the phone to ring for an instance, with a key that instance made.
+ *
+ * The shell keeps both and does the rest on its own clock — see `Ringer.java`.
+ * That is the whole point: a page cannot be relied on to be open, and this
+ * arrangement does not need one.
+ */
+export async function ringFor(origin: string, token: string): Promise<boolean> {
+	const settings = shell();
+	if (!settings) return false;
+	try {
+		await settings.ringFor({ origin, token });
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/** Stop, and drop the key with it. */
+export async function stopRinging(): Promise<boolean> {
+	const settings = shell();
+	if (!settings) return false;
+	try {
+		await settings.stopRinging();
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/** Which instance this phone rings for, or '' for none. */
+export async function ringingFor(): Promise<string> {
+	const settings = shell();
+	if (!settings) return '';
+	try {
+		return (await settings.ringingFor()).origin ?? '';
+	} catch {
+		return '';
+	}
+}
+
+/**
+ * Ask the instance now rather than at the next standing refresh.
+ *
+ * Called when the app opens: somebody who wrote a reminder minutes ago and
+ * closed the app expects that one to ring, and the refresh is hours apart.
+ */
+export async function syncRinger(): Promise<void> {
+	await shell()
+		?.syncReminders()
+		.catch(() => undefined);
+}
 
 /**
  * Open this app's notification settings on the phone.
@@ -173,9 +239,7 @@ type Settings = { openNotificationSettings(): Promise<void> };
  * whole path exists to undo.
  */
 export async function openPhoneNotificationSettings(): Promise<boolean> {
-	if (!inPhoneApp()) return false;
-	const capacitor = (globalThis as { Capacitor?: { Plugins?: Record<string, unknown> } }).Capacitor;
-	const settings = capacitor?.Plugins?.OntoplanoSettings as Settings | undefined;
+	const settings = shell();
 	if (!settings) return false;
 
 	try {

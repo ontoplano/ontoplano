@@ -6,7 +6,13 @@ import { ASSISTANT_SCOPES } from '$lib/server/mcp/tools';
 import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/http-errors';
 import { listAssistantCalls, putBack } from '$lib/server/services/assistant-log';
-import { SCOPES, createToken, isCalendarLink, listTokens } from '$lib/server/services/tokens';
+import {
+	SCOPES,
+	createToken,
+	isCalendarLink,
+	listTokens,
+	revokeToken
+} from '$lib/server/services/tokens';
 import { capabilities } from '$lib/server/settings';
 import { confinementChoices, describeConfinement } from '$lib/server/mcp/confinement';
 
@@ -119,7 +125,44 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	};
 };
 
+/** The name the phone's own key wears, so making a second one replaces it. */
+const RINGER_TOKEN = 'This phone’s reminders';
+
 export const actions: Actions = {
+	/*
+	 * A key for a phone to ring with.
+	 *
+	 * The app cannot be woken by an instance it is pointed at: Android's web
+	 * view has no Push API, and the shell's plugins reach the copy of ontoplano
+	 * it carries and no further. So the phone asks instead — and to ask, it
+	 * needs a key of this instance's making.
+	 *
+	 * Here rather than beside the button that presses it, which is on
+	 * Preferences. Two reasons, and the second is the hard one: keys are made in
+	 * this file and nowhere else, and the isolated build compiles every page's
+	 * server file into its database worker except the ones named in
+	 * `isolated/routes.ts` — of which this is one. Minting a key from Preferences
+	 * pulled the whole token graph, and `node:os` with it, into a bundle meant
+	 * for a browser, and the build said so.
+	 *
+	 * It is the narrowest key this app issues: it reads the alarms that are
+	 * about to go off, not the calendar they hang from. Making it twice replaces
+	 * it rather than piling up, so somebody setting this up again does not leave
+	 * a working key on a phone they no longer have.
+	 */
+	ringOnThisPhone: async ({ locals }) => {
+		const ctx = buildCtx(locals.user!.id);
+		try {
+			for (const held of listTokens(ctx)) {
+				if (held.name === RINGER_TOKEN) revokeToken(ctx, held.id);
+			}
+			const made = createToken(ctx, { name: RINGER_TOKEN, scopes: ['reminders:read'] });
+			return { success: true, action: 'ringOnThisPhone', key: made.plaintext };
+		} catch (error) {
+			return toActionFailure(error);
+		}
+	},
+
 	/*
 	 * A key for an assistant, and nothing else.
 	 *

@@ -18,6 +18,22 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.0 — 2026-09-15
+
+- **Reminders arrive with the app closed, whichever ontoplano you use.** Until
+  now that was true only of the instance the app carries on the device: a
+  server cannot wake the app — Android's web view has no push — and a page
+  served by that server cannot reach the phone's alarm clock. So the phone asks
+  instead. One press on Preferences hands it a key that reads the alarms about
+  to go off and nothing else; from then on it books Android's own alarms, asks
+  again every few hours, and does it again after a restart. No Google services
+  anywhere in it, and it works the same for an instance you host yourself.
+- **The key is the narrowest one the app issues.** `reminders:read` sees what
+  you asked to be reminded of — not the calendar it hangs from — and it is
+  revocable like any other under AI & Integrations. Setting it up again
+  replaces it, so a phone you no longer have stops working rather than keeping
+  a key.
+
 ## 0.177.10 — 2026-09-15
 
 - **Fixed: the app blamed Android for something Android had allowed.** An

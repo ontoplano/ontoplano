@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { scheduleDeviceReminders } from '$lib/phone-notifications';
+	import { scheduleDeviceReminders, syncRinger } from '$lib/phone-notifications';
 	import { browser } from '$app/environment';
 	import { enablePush, pushSupported } from '$lib/push';
 	import { page } from '$app/state';
@@ -155,6 +155,16 @@
 		// screen that is open now — see the note in `hooks.client.ts`.
 		try {
 			scheduleDeviceReminders().catch(() => undefined);
+			/*
+			 * …and, on the copy the phone carries, nudge the shell to ask
+			 * whichever instance it rings for.
+			 *
+			 * It asks every few hours on its own, which is right for keeping up
+			 * and wrong for the reminder somebody wrote a minute ago on a laptop.
+			 * Costs one call into the shell, which does the network on a thread
+			 * of its own and answers immediately.
+			 */
+			syncRinger().catch(() => undefined);
 		} catch {
 			/* no such plugin here, which is every instance with a server */
 		}
