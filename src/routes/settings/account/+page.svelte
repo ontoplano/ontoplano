@@ -581,7 +581,7 @@
 		</p>
 	</Card>
 
-	{#if inPhoneApp()}
+	{#if data.nativeApp || inPhoneApp()}
 		<!--
 			The way out of the instance, not out of the account.
 
@@ -598,11 +598,14 @@
 			page; there is no such scheme registered and the web view answered
 			with "unknown url scheme".
 
-			`inPhoneApp()` rather than the cookie the server sets: the copy that
-			runs on the device sets no such cookie, and leaving *it* — to try a
-			server, or to come back to one — is the same act from the same place.
-			There used to be a second link saying this under Sign out, which is
-			where it lived while this one was broken.
+			Either signal, because neither covers the other. The cookie is set from
+			`?app=android` at launch and is the only thing that sees a Trusted Web
+			Activity, which is Chrome and answers every browser question as Chrome
+			does. The user agent is what a page still sees once the app has sent it
+			to a server — and it is the only one the copy on the device has, since
+			that copy sets no cookie. Leaving *it*, to try a server, is the same act
+			from the same place. There used to be a second link saying this under
+			Sign out, which is where it lived while this one was broken.
 		-->
 		<Card title="This instance">
 			{#snippet actions()}
