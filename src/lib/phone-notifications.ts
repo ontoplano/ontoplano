@@ -127,18 +127,29 @@ export async function scheduleDeviceReminders(): Promise<number> {
 }
 
 /**
- * What Android has already answered about notifications.
+ * What Android has already answered about notifications — or that we cannot ask.
  *
- * Three answers, and the middle one is why this exists: **denied** on Android
- * 13 and up means the dialog will never be shown again, so a button that asks
- * a second time does nothing at all and looks broken. That case needs the
- * settings screen instead, which is what `openPhoneNotificationSettings` is
- * for. `prompt` is somebody who has not been asked yet, and is the only state
- * where asking is the right move.
+ * Four answers, and two of them are the interesting ones.
+ *
+ * **denied** on Android 13 and up means the dialog will never be shown again,
+ * so a button that asks a second time does nothing at all and looks broken.
+ * That case needs the settings screen instead, which is what
+ * `openPhoneNotificationSettings` is for.
+ *
+ * **unreachable** is the app showing somebody else's instance. The shell
+ * injects its bridge into its own origin and no further — that is why
+ * `APP_USER_AGENT` exists at all — so a page served by a server is inside the
+ * app and cannot see a single plugin. This used to come back as "denied",
+ * which put "Android said no, and will not ask again" in front of somebody
+ * whose phone says Allowed, under a button that could not open anything.
+ * Nothing about the permission is knowable from here, and nothing about it is
+ * the problem.
  */
-export async function phonePermission(): Promise<'granted' | 'denied' | 'prompt'> {
+export type PhonePermission = 'granted' | 'denied' | 'prompt' | 'unreachable';
+
+export async function phonePermission(): Promise<PhonePermission> {
 	const notifications = phoneNotifications();
-	if (!notifications) return 'denied';
+	if (!notifications) return 'unreachable';
 	try {
 		const { display } = await notifications.checkPermissions();
 		if (display === 'granted') return 'granted';

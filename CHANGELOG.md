@@ -18,6 +18,17 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.177.10 — 2026-09-15
+
+- **Fixed: the app blamed Android for something Android had allowed.** An
+  instance shown inside the app is served by that instance, and the app's
+  plugins reach only the copy it carries — so the notification setting could
+  not ask the phone anything, and read that silence as "Android said no, and
+  will not ask again". It says what is actually true now: the alarms belong to
+  the copy of ontoplano on the phone, and reminders from a server instance
+  arrive while the app is open. The buttons that could not work are gone from
+  that screen and from the reminders page.
+
 ## 0.177.9 — 2026-09-15
 
 - **Fixed: "Switch instance" in the phone app opened nothing.** It pointed at

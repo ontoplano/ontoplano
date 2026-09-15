@@ -184,3 +184,40 @@ test.describe('notifications inside the app', () => {
 		await expect(page.getByRole('button', { name: "Open the phone's settings" })).toBeVisible();
 	});
 });
+
+/**
+ * The app, looking at somebody else's instance.
+ *
+ * The shell injects its plugins into its own origin and no further — which is
+ * why `APP_USER_AGENT` exists: the user agent is the one thing a page can
+ * still see about its shell once it has been sent to a server. So this page is
+ * inside the app and cannot see a single plugin, and everything the section
+ * above does is unavailable to it.
+ *
+ * It used to read that as a refusal: "Android said no, and will not ask
+ * again", in front of somebody whose phone settings say Allowed, over a button
+ * that opened nothing. Nothing about the permission is knowable from here, and
+ * nothing about it is what is in the way.
+ */
+test.describe('an instance shown inside the app', () => {
+	test.use({ userAgent: `Mozilla/5.0 (Linux; Android 14) Mobile ${'OntoplanoApp'}/0.1.0` });
+
+	test('does not blame Android for what it cannot ask', async ({ page }) => {
+		// No `window.Capacitor` at all: that is the whole of this situation.
+		await register(page, `android-remote-${Date.now()}@test.invalid`);
+		await visit(page, '/settings/preferences');
+
+		const section = page.locator('section', { hasText: 'Notifications on this device' });
+		await expect(section.getByText(/shown inside the app/)).toBeVisible();
+
+		await expect(section.getByText(/Android said no/)).toHaveCount(0);
+		await expect(section.getByRole('button', { name: 'Turn on' })).toHaveCount(0);
+		await expect(section.getByRole('button', { name: "Open the phone's settings" })).toHaveCount(0);
+
+		// And the reminders page says the same thing, rather than offering a
+		// button that cannot reach anything.
+		await visit(page, '/reminders');
+		await expect(page.getByRole('button', { name: 'Allow notifications' })).toHaveCount(0);
+		await expect(page.getByRole('button', { name: "Open the phone's settings" })).toHaveCount(0);
+	});
+});

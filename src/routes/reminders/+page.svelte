@@ -95,6 +95,16 @@
 	let refused = $state(false);
 
 	/**
+	 * …and whether this page can talk to the phone at all.
+	 *
+	 * The shell injects its plugins into its own origin and no further, so an
+	 * instance shown inside the app cannot ask Android anything. Offering
+	 * "Allow notifications" there is offering a button that cannot work, and
+	 * saying Android refused is saying something nobody knows.
+	 */
+	let unreachable = $state(false);
+
+	/**
 	 * Permission and a push subscription are two different things, and both are
 	 * asked for at once. Granting permission alone raises notifications while the
 	 * app is open and nothing whatsoever once it is closed, which is the state
@@ -184,6 +194,7 @@
 			phonePermission().then((answer) => {
 				allowed = answer === 'granted';
 				refused = answer === 'denied';
+				unreachable = answer === 'unreachable';
 			});
 		else allowed = typeof Notification !== 'undefined' && Notification.permission === 'granted';
 	});
@@ -306,7 +317,11 @@
 		<Banner kind="warning">
 			<div class="flex flex-wrap items-center gap-3">
 				<span>
-					{#if refused}
+					{#if unreachable}
+						This instance is shown inside the app, and the app's alarms belong to the copy of
+						ontoplano on the phone itself — so reminders from here arrive only while ontoplano is
+						open.
+					{:else if refused}
 						Android has refused notifications and will not ask again, so reminders arrive only while
 						ontoplano is open.
 					{:else if inPhoneApp()}
@@ -317,7 +332,10 @@
 						page is open.
 					{/if}
 				</span>
-				{#if refused}
+				{#if unreachable}
+					<!-- Nothing to press: this page is on the instance's origin, where
+					     the app's own plugins do not reach. -->
+				{:else if refused}
 					<button type="button" class="btn btn-primary" onclick={openPhoneNotificationSettings}>
 						Open the phone's settings
 					</button>

@@ -161,7 +161,13 @@
 	 * cleared site data, a rotated endpoint — and the question on this page is
 	 * "will this device be told", which only the device can answer.
 	 */
-	let notifications = $state<'off' | 'on' | 'denied' | 'unsupported'>('off');
+	/*
+	 * `unsupported` is a browser with no push; `unreachable` is the app looking
+	 * at somebody else's instance, where the shell's plugins do not reach. They
+	 * are different sentences because they are different situations, and the
+	 * second one used to be drawn as a refusal by Android.
+	 */
+	let notifications = $state<'off' | 'on' | 'denied' | 'unsupported' | 'unreachable'>('off');
 
 	/*
 	 * Inside the phone app the question is Android's, not the browser's.
@@ -188,7 +194,14 @@
 			 * settings screen rather than another ask.
 			 */
 			void phonePermission().then((answer) => {
-				notifications = answer === 'granted' ? 'on' : answer === 'denied' ? 'denied' : 'off';
+				notifications =
+					answer === 'granted'
+						? 'on'
+						: answer === 'denied'
+							? 'denied'
+							: answer === 'unreachable'
+								? 'unreachable'
+								: 'off';
 			});
 			return;
 		}
@@ -431,7 +444,9 @@
 			<div>
 				<h2 class="text-sm font-semibold text-gray-900">Notifications on this device</h2>
 				<p class="mt-1 text-sm text-gray-500">
-					{#if inApp}
+					{#if inApp && notifications === 'unreachable'}
+						Reminders arrive while ontoplano is open.
+					{:else if inApp}
 						Reminders arrive with the app closed, through Android's own alarms. Asked for once.
 					{:else}
 						Reminders arrive with the app closed. Asked for once per browser.
@@ -440,7 +455,23 @@
 			</div>
 
 			{#if inApp}
-				{#if notifications === 'on'}
+				{#if notifications === 'unreachable'}
+					<!--
+						The app, showing an instance that is not the copy it carries.
+
+						The shell's plugins reach its own origin and no further, so this
+						page — served by a server — cannot ask Android anything, book an
+						alarm, or open a settings screen. Saying so is the whole of what
+						can be done here: it said "Android said no" instead, to somebody
+						whose phone says Allowed, and offered a button that opened
+						nothing.
+					-->
+					<p class="text-sm text-gray-500">
+						This is <strong class="text-gray-700">{page.url.host}</strong> shown inside the app, and the
+						app's alarms belong to the copy of ontoplano on the phone itself. Nothing on this screen can
+						change that; the phone's own permission is not what is in the way.
+					</p>
+				{:else if notifications === 'on'}
 					<div class="flex flex-wrap items-center gap-3">
 						<span class="text-sm text-gray-700">On for this phone.</span>
 						<button class="btn btn-sm" onclick={sendPhoneTest}>Send a test</button>
