@@ -1233,6 +1233,17 @@ The journal: free text, free-form tags, one running number per account.
 
 ### Functions
 
+#### `listEveryEntry(ctx)`
+
+Every piece of writing this account owns, journal and notebook alike.
+
+`listEntries` is the journal and deliberately leaves out anything filed
+against a notebook, which is right for the diary page and wrong for the one
+question the MCP layer asks before it touches a note: is this note mine? So
+this is the whole reach in one query — ids and where each note lives, which
+is all a reference needs, and all a token confined to one notebook needs to
+be narrowed by.
+
 #### `listEntries(ctx)`
 
 The journal, and only the journal.

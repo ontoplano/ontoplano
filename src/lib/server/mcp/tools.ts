@@ -22,6 +22,7 @@
  */
 import { localDateOf, type Ctx } from '$lib/services/ctx.js';
 import type { Scope } from '../services/tokens.js';
+import type { Ref } from './refs.js';
 
 import { archiveEntry, createEntry, listEntries } from '$lib/services/diary.js';
 import { createActivity, listActivities, updateActivity } from '$lib/services/activities.js';
@@ -215,6 +216,20 @@ export type Tool = {
 	 */
 	deprecated?: string;
 	input: Shape;
+	/**
+	 * Which arguments name a thing, and what kind of thing.
+	 *
+	 * An id in an argument is a reach into a table, and what has kept those
+	 * reaches inside one account is that each service filters by `user_id`
+	 * itself, in every query it writes. Declaring the reach instead moves that
+	 * from a habit to a mechanism: the dispatcher resolves the id among the
+	 * rows this caller can already list, so a number belonging to somebody else
+	 * never arrives at `run` at all. See `refs.ts` for the kinds.
+	 *
+	 * It is also what makes a token confined to one notebook possible: narrow
+	 * the kind's list once and every tool naming that kind narrows with it.
+	 */
+	refs?: Ref[];
 	/**
 	 * The row this call is about, as it stands — read before and after every
 	 * write, so the answer carries `before` and `after` and a bad call is
@@ -413,19 +428,12 @@ function habitByName(ctx: Ctx, wanted: unknown): { id: number; name: string } {
  * Finders for the mutation answers.
  *
  * Every writing tool's result carries `before` and `after` — the subject as it
- * was and as it is — assembled by the protocol layer from the tool's `subject`
- * reader. These are those readers: each fetches one row through the same
- * service the reading tools use, so ownership and shape are the service's and
- * a subject can never see a row its token could not list. Null when the id
- * names nothing, which is itself the honest answer.
+ * was and as it is — so a wrong call is reversible from the transcript. Nearly
+ * every one of those subjects is just the thing the call names, which `refs`
+ * already resolves, so the protocol layer reads it from there and there is
+ * nothing to declare. What is left here are the few subjects that are more
+ * than one row: a bill with its payments, a habit's tick on a given day.
  */
-const idOf = (args: Record<string, unknown>) => Number(args.id);
-const oneOf = <T extends { id: number }>(rows: T[], id: number): T | null =>
-	rows.find((row) => row.id === id) ?? null;
-
-const todoById = (ctx: Ctx, args: Record<string, unknown>) => oneOf(listTodos(ctx), idOf(args));
-const goalById = (ctx: Ctx, args: Record<string, unknown>) =>
-	oneOf(listGoals(ctx, { includeClosed: true }), Number(args.goalId ?? args.id));
 
 /**
  * The measures a caller wrote out, in the shape the service takes.
@@ -497,37 +505,11 @@ const targetsParam = {
 	description:
 		'Everything the goal is measured by, replacing what it has: `[{ "value": 3, "unit": "gigs" }, { "value": 5, "unit": "songs" }]`. A goal met by doing one thing can say `targetValue` and `unit` instead.'
 } as const;
-const ideaById = (ctx: Ctx, args: Record<string, unknown>) => oneOf(listIdeas(ctx), idOf(args));
-const notebookById = (ctx: Ctx, args: Record<string, unknown>) =>
-	oneOf(listNotebooks(ctx), idOf(args));
-const shoppingItemById = (ctx: Ctx, args: Record<string, unknown>) =>
-	oneOf(listShoppingItems(ctx) as { id: number }[], idOf(args));
-const shoppingCategoryById = (ctx: Ctx, args: Record<string, unknown>) =>
-	oneOf(listShoppingCategories(ctx) as { id: number }[], idOf(args));
-const slotById = (ctx: Ctx, args: Record<string, unknown>) =>
-	oneOf(listWeeklySlots(ctx) as { id: number }[], idOf(args));
-const sortRuleById = (ctx: Ctx, args: Record<string, unknown>) =>
-	oneOf(listRules(ctx) as { id: number }[], idOf(args));
-const habitById = (ctx: Ctx, args: Record<string, unknown>) =>
-	oneOf(listHabits(ctx) as { id: number }[], idOf(args));
-const reminderById = (ctx: Ctx, args: Record<string, unknown>) =>
-	oneOf(listReminders(ctx, { includePast: true }), idOf(args));
-const personById = (ctx: Ctx, args: Record<string, unknown>) => oneOf(listPeople(ctx), idOf(args));
-const activityById = (ctx: Ctx, args: Record<string, unknown>) =>
-	oneOf(listActivities(ctx) as { id: number }[], idOf(args));
-const workoutCategoryById = (ctx: Ctx, args: Record<string, unknown>) =>
-	oneOf(listWorkoutCategories(ctx) as { id: number }[], idOf(args));
-// These four getters throw on a bad id; the protocol layer reads that as null.
-const locationById = (ctx: Ctx, args: Record<string, unknown>) => getLocation(ctx, idOf(args));
-const recipeById = (ctx: Ctx, args: Record<string, unknown>) => getRecipe(ctx, idOf(args));
-const workoutSessionById = (ctx: Ctx, args: Record<string, unknown>) => getSession(ctx, idOf(args));
-const workoutById = (ctx: Ctx, args: Record<string, unknown>) => getWorkout(ctx, idOf(args));
-const billById = (ctx: Ctx, args: Record<string, unknown>) => getBill(ctx, idOf(args));
-const billWithPayments = (ctx: Ctx, args: Record<string, unknown>) => ({
-	bill: getBill(ctx, idOf(args)),
-	payments: listPayments(ctx, idOf(args))
-});
-const blockOccurrence = (ctx: Ctx, args: Record<string, unknown>) => occurrenceRow(ctx, args.id);
+/** A bill is not only its row: what was paid against it is half the answer. */
+const billWithPayments = (ctx: Ctx, args: Record<string, unknown>) => {
+	const id = Number(args.id);
+	return { bill: getBill(ctx, id), payments: listPayments(ctx, id) };
+};
 /** The tick itself: null before an occurrence exists is what "unticked" is. */
 const habitTick = (ctx: Ctx, args: Record<string, unknown>) => {
 	const habitId = args.id ? Number(args.id) : habitByName(ctx, args.name).id;
@@ -661,6 +643,7 @@ export const TOOLS: Tool[] = [
 			'Tick a habit for a day: for something being built, the tick means it was done; for something being avoided, it means it happened. Name it or give the id `habits` gave; a name that matches two habits is refused rather than guessed. Ticking twice is not an error; the second call takes it back, which is how the app\u2019s own tick behaves.',
 		scope: 'habits:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'habit' }],
 		input: object({
 			id: { type: 'integer', description: 'The habit\u2019s id, as `habits` gave it.' },
 			name: text('The habit by name, when the id is not to hand — "stretching".'),
@@ -690,6 +673,7 @@ export const TOOLS: Tool[] = [
 			'Answer for one block on the day: it happened, or it did not. Takes the id `today` gives for that block. Skipping is a real answer — say skipped when the person says they did not do it. It is NOT a way to clear something off the day: a skip goes into the week\u2019s record and the review asks about it. To move a block use `change_block`; to take one off because it was never happening use `cancel_block`. `todo` takes an answer back, for one ticked by mistake.',
 		scope: 'schedule:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'block' }],
 		input: object(
 			{
 				id: text('The block’s id, exactly as `today` gave it — it looks like `slot:42`.'),
@@ -701,7 +685,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id', 'status']
 		),
-		subject: blockOccurrence,
 		run: (ctx, args) => {
 			setOccurrenceStatus(ctx, args.id, args.status);
 			return { ok: true };
@@ -775,6 +758,7 @@ export const TOOLS: Tool[] = [
 			'Change one block on one day: its time, its day, how long it runs, or what it is called. This is "push the study block to four", "make it two hours", "that was actually client work". Takes the id `today` or `upcoming` gives. Only the fields you pass change. It affects that day only — moving this Thursday\u2019s gym does not move gym — and it never edits the repeating week. Renaming keeps which part of life it belongs to and stops it being the named activity it was, because that is what saying it was something else means.',
 		scope: 'schedule:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'block' }],
 		input: object(
 			{
 				id: text('The block\u2019s id, exactly as the day gave it — like `slot:42`.'),
@@ -788,7 +772,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: blockOccurrence,
 		run: (ctx, args) =>
 			changeOccurrence(ctx, args.id, {
 				date: args.date,
@@ -807,6 +790,7 @@ export const TOOLS: Tool[] = [
 			'Remove a block from a day because it is not happening — the meeting moved, the class was called off, it was put on the wrong day. This is NOT the same as marking it skipped: skipped means it was meant to happen and did not, which is a fact the weekly review asks about, and cancelled means it was never going to. Use `finish_block` with "skipped" for the first and this for the second. A repeating block is only removed from that one day.',
 		scope: 'schedule:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'block' }],
 		/*
 		 * Cancelling removes the row — `cancelOccurrence` deletes the one-off
 		 * or the instance — so it is a delete however gently it is described,
@@ -817,7 +801,6 @@ export const TOOLS: Tool[] = [
 			{ id: text('The block\u2019s id, exactly as the day gave it — like `slot:42`.') },
 			['id']
 		),
-		subject: blockOccurrence,
 		run: (ctx, args) => cancelOccurrence(ctx, args.id)
 	},
 	{
@@ -888,6 +871,7 @@ export const TOOLS: Tool[] = [
 			'Tasks with no date on them yet. A todo gains a date by being put on a day, which promotes it onto the week. Pass `notebookId` when the question is about one subject \u2014 reading the whole list to find four tasks about the kitchen is somebody\u2019s entire todo list going past for no reason.',
 		scope: 'tasks:read',
 		writes: false,
+		refs: [{ arg: 'notebookId', kind: 'notebook' }],
 		input: object({
 			limit: count('How many to return.', 50),
 			notebookId: {
@@ -920,6 +904,10 @@ export const TOOLS: Tool[] = [
 			'Put a task on the todo list. Leave the date off unless the person said when — a todo with no date is the normal case here, not an unfinished one.',
 		scope: 'tasks:write',
 		writes: true,
+		refs: [
+			{ arg: 'notebookId', kind: 'notebook' },
+			{ arg: 'goalId', kind: 'goal' }
+		],
 		input: object(
 			{
 				title: text('What the task is, in the person’s own words.'),
@@ -963,8 +951,8 @@ export const TOOLS: Tool[] = [
 			'Mark a todo done, which is what "I did that" means here — it is not deleted, it moves to done and stays in the record. Ask `todos` first for the id.',
 		scope: 'tasks:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'todo' }],
 		input: object({ id: { type: 'integer', description: 'The todo’s id.' } }, ['id']),
-		subject: todoById,
 		run: (ctx, args) => {
 			setTodoStatus(ctx, Number(args.id), 'done');
 			return { ok: true };
@@ -977,9 +965,9 @@ export const TOOLS: Tool[] = [
 			'Remove a todo entirely, because it is not going to happen and is not worth a record — "bin that one", "forget it". Different from `finish_todo`, which keeps it as something that was done. Gone for good; prefer finishing it when it actually happened.',
 		scope: 'tasks:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'todo' }],
 		destroys: true,
 		input: object({ id: { type: 'integer', description: 'The todo\u2019s id.' } }, ['id']),
-		subject: todoById,
 		run: (ctx, args) => {
 			deleteTodo(ctx, Number(args.id));
 			return { ok: true };
@@ -999,8 +987,8 @@ export const TOOLS: Tool[] = [
 			'Undo a finish or a drop: the todo goes back to not-done. Use it when something was ticked by mistake, or when a dropped thing turns out to matter after all. It keeps its notes, its day and everything linked to it.',
 		scope: 'tasks:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'todo' }],
 		input: object({ id: { type: 'integer', description: 'The todo\u2019s id.' } }, ['id']),
-		subject: todoById,
 		run: (ctx, args) => {
 			setTodoStatus(ctx, Number(args.id), 'todo');
 			return { ok: true };
@@ -1022,8 +1010,8 @@ export const TOOLS: Tool[] = [
 			'Put a todo out of the way without finishing it or dropping it — for something that matters but not this month. It keeps its notes, its notebook and its state, and comes back with `unarchive_todo`. Prefer this to dropping when somebody says "not now" rather than "not going to".',
 		scope: 'tasks:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'todo' }],
 		input: object({ id: { type: 'integer', description: 'The todo\u2019s id.' } }, ['id']),
-		subject: todoById,
 		run: (ctx, args) => {
 			archiveTodo(ctx, Number(args.id), true);
 			return { ok: true };
@@ -1036,8 +1024,8 @@ export const TOOLS: Tool[] = [
 			'Bring back a todo that was put away, so it shows on the list again. It returns in whatever state it left in. `todos` says which ones are archived.',
 		scope: 'tasks:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'todo' }],
 		input: object({ id: { type: 'integer', description: 'The todo\u2019s id.' } }, ['id']),
-		subject: todoById,
 		run: (ctx, args) => {
 			archiveTodo(ctx, Number(args.id), false);
 			return { ok: true };
@@ -1050,6 +1038,10 @@ export const TOOLS: Tool[] = [
 			'Rewrite a todo\u2019s title or notes. Only the fields given change. Moving it on or off a day is `schedule_todo`; done and not-done are `finish_todo` and `reopen_todo`.',
 		scope: 'tasks:write',
 		writes: true,
+		refs: [
+			{ arg: 'id', kind: 'todo' },
+			{ arg: 'notebookId', kind: 'notebook' }
+		],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The todo\u2019s id, as `todos` gives it.' },
@@ -1064,7 +1056,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: todoById,
 		run: (ctx, args) => {
 			const current = listTodos(ctx).find((t) => t.id === Number(args.id));
 			if (!current) throw new NotFoundError('todo');
@@ -1100,6 +1091,7 @@ export const TOOLS: Tool[] = [
 			'Give a todo a date, which moves it onto that day’s board. This is what "do it on Thursday" means here.',
 		scope: 'tasks:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'todo' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The todo’s id.' },
@@ -1107,7 +1099,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id', 'date']
 		),
-		subject: todoById,
 		run: (ctx, args) => {
 			scheduleTodo(ctx, Number(args.id), day(args.date, 'date'));
 			return { ok: true };
@@ -1120,8 +1111,8 @@ export const TOOLS: Tool[] = [
 			'Take the date off a todo, which moves it back to the list of things with no time yet. This is "not today after all" — the todo is kept, it just stops being on a day.',
 		scope: 'tasks:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'todo' }],
 		input: object({ id: { type: 'integer', description: 'The todo\u2019s id.' } }, ['id']),
-		subject: todoById,
 		run: (ctx, args) => {
 			scheduleTodo(ctx, Number(args.id), null);
 			return { ok: true };
@@ -1150,6 +1141,7 @@ export const TOOLS: Tool[] = [
 			'Close a goal: achieved, missed, or abandoned. Missed and abandoned are different — missed is a deadline that passed, abandoned is a decision to stop — and both are worth recording honestly rather than being rounded to one. Takes the id `goals` gives. There is no tool that opens a goal; that is the person\u2019s to make.',
 		scope: 'tasks:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'goal' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The goal\u2019s id.' },
@@ -1162,7 +1154,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id', 'status']
 		),
-		subject: goalById,
 		run: (ctx, args) => {
 			closeGoal(ctx, Number(args.id), { status: args.status, outcome: args.note });
 			return { ok: true };
@@ -1193,6 +1184,11 @@ export const TOOLS: Tool[] = [
 			'Attach todos or repeating blocks to a goal, so finishing them moves its progress. Adds to what is already linked; nothing is replaced. `goals` gives the goal id and what it already has on it.',
 		scope: 'tasks:write',
 		writes: true,
+		refs: [
+			{ arg: 'goalId', kind: 'goal', subject: true },
+			{ arg: 'todoIds', kind: 'todo' },
+			{ arg: 'slotIds', kind: 'repeatingBlock' }
+		],
 		input: object(
 			{
 				goalId: { type: 'integer', description: 'The goal’s id, as `goals` gave it.' },
@@ -1209,7 +1205,6 @@ export const TOOLS: Tool[] = [
 			},
 			['goalId']
 		),
-		subject: goalById,
 		run: (ctx, args) =>
 			addGoalLinks(ctx, Number(args.goalId), {
 				todoIds: (args.todoIds as unknown[]) ?? [],
@@ -1223,6 +1218,11 @@ export const TOOLS: Tool[] = [
 			'Detach todos or blocks from a goal. Only the ones named; everything else it counts stays.',
 		scope: 'tasks:write',
 		writes: true,
+		refs: [
+			{ arg: 'goalId', kind: 'goal', subject: true },
+			{ arg: 'todoIds', kind: 'todo' },
+			{ arg: 'slotIds', kind: 'repeatingBlock' }
+		],
 		input: object(
 			{
 				goalId: { type: 'integer', description: 'The goal’s id.' },
@@ -1235,7 +1235,6 @@ export const TOOLS: Tool[] = [
 			},
 			['goalId']
 		),
-		subject: goalById,
 		run: (ctx, args) =>
 			removeGoalLinks(ctx, Number(args.goalId), {
 				todoIds: (args.todoIds as unknown[]) ?? [],
@@ -1249,8 +1248,8 @@ export const TOOLS: Tool[] = [
 			'Put a closed goal back to open. Its outcome note is cleared and the date it was closed on goes with it, so a reopened goal does not read as having been finished at some point in the past.',
 		scope: 'tasks:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'goal' }],
 		input: object({ id: { type: 'integer', description: 'The goal\u2019s id.' } }, ['id']),
-		subject: goalById,
 		run: (ctx, args) => {
 			closeGoal(ctx, Number(args.id), { status: 'open' });
 			return { ok: true };
@@ -1268,6 +1267,7 @@ export const TOOLS: Tool[] = [
 			'Rename a goal, or change its notes, horizon, start date, or what it is measured by. Only the fields given change; `targets` replaces every measure at once, so read `goals` first. Adding one without disturbing the rest is `add_goal_target`. Saying how it ended is `close_goal`, not this.',
 		scope: 'tasks:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'goal' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The goal\u2019s id, as `goals` gives it.' },
@@ -1284,7 +1284,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: goalById,
 		run: (ctx, args) => {
 			const current = listGoals(ctx, { includeClosed: true }).find((g) => g.id === Number(args.id));
 			if (!current) throw new NotFoundError('goal');
@@ -1331,6 +1330,7 @@ export const TOOLS: Tool[] = [
 			'Add an entry. Markdown. Writing one when asked is the point of this tool — keep their words and their voice where you have them, and do not invent an entry nobody asked for. Put it in a notebook when it is about one subject; leave the notebook off for an ordinary day.',
 		scope: 'notes:write',
 		writes: true,
+		refs: [{ arg: 'notebookId', kind: 'notebook' }],
 		input: object(
 			{
 				content: text('The entry, as Markdown.'),
@@ -1359,6 +1359,7 @@ export const TOOLS: Tool[] = [
 			'What has been written against one subject, newest first, with the id of each note. `diary` deliberately shows only entries outside a notebook, so this is the way to read one \u2014 and the way to find the id `archive_note` wants.',
 		scope: 'notes:read',
 		writes: false,
+		refs: [{ arg: 'id', kind: 'notebook' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The notebook\u2019s id, as `notebooks` gives it.' },
@@ -1388,6 +1389,7 @@ export const TOOLS: Tool[] = [
 			'Hide a note without deleting it \u2014 for one that has stopped being current and is not something to throw out: the trip is over, the flat is rented. It stays in its notebook and comes back with `unarchive_note`. Notes are never deleted through a tool.',
 		scope: 'notes:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'note' }],
 		input: object(
 			{ id: { type: 'integer', description: 'The note\u2019s id, as `notebook_notes` gives it.' } },
 			['id']
@@ -1404,6 +1406,7 @@ export const TOOLS: Tool[] = [
 			'Bring back a note that was put away, so it shows in its notebook again. `notebook_notes` with `includeArchived` says which ones are away.',
 		scope: 'notes:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'note' }],
 		input: object({ id: { type: 'integer', description: 'The note\u2019s id.' } }, ['id']),
 		run: (ctx, args) => {
 			archiveEntry(ctx, Number(args.id), false);
@@ -1454,12 +1457,12 @@ export const TOOLS: Tool[] = [
 			'Delete a notebook that holds nothing — no notes, no tasks, no goals. One with anything in it is refused with what it holds: somebody\u2019s writing is deleted by them in the app, never through a tool. For a notebook made by mistake.',
 		scope: 'notes:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'notebook' }],
 		destroys: true,
 		input: object(
 			{ id: { type: 'integer', description: 'The notebook\u2019s id, as `notebooks` gives it.' } },
 			['id']
 		),
-		subject: notebookById,
 		run: (ctx, args) => {
 			const held = contentsOf(ctx, Number(args.id));
 			const entries = held.entries.length;
@@ -1480,6 +1483,7 @@ export const TOOLS: Tool[] = [
 			'Share one of the person\u2019s notebooks with everybody on their family plan — they read it and write their own entries into it — or stop sharing with `shared: false`. Only its owner\u2019s to flip, and only when they asked.',
 		scope: 'notes:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'notebook' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The notebook\u2019s id, as `notebooks` gives it.' },
@@ -1487,7 +1491,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: notebookById,
 		run: (ctx, args) => {
 			setNotebookShared(
 				ctx,
@@ -1531,9 +1534,9 @@ export const TOOLS: Tool[] = [
 			'Delete an idea — for one added by mistake, or one that has been dealt with. It is gone, not archived, so prefer leaving it alone unless the person asked.',
 		scope: 'ideas:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'idea' }],
 		destroys: true,
 		input: object({ id: { type: 'integer', description: 'The idea\u2019s id.' } }, ['id']),
-		subject: ideaById,
 		run: (ctx, args) => {
 			deleteIdea(ctx, Number(args.id));
 			return { ok: true };
@@ -1546,6 +1549,7 @@ export const TOOLS: Tool[] = [
 			'Rewrite an idea, or retag it. Only the fields given change — this is for a misheard word or a better tag, not for turning it into something else.',
 		scope: 'ideas:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'idea' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The idea\u2019s id, as `ideas` gives it.' },
@@ -1554,7 +1558,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: ideaById,
 		run: (ctx, args) => {
 			const current = listIdeas(ctx).find((i) => i.id === Number(args.id));
 			if (!current) throw new NotFoundError('idea');
@@ -1637,8 +1640,8 @@ export const TOOLS: Tool[] = [
 			'Mark an item bought, which moves it out of "to buy" and into the cupboard. The row stays: the same thing is bought again the next time it runs out.',
 		scope: 'shopping:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'item' }],
 		input: object({ id: { type: 'integer', description: 'The item’s id.' } }, ['id']),
-		subject: shoppingItemById,
 		run: (ctx, args) => setBought(ctx, Number(args.id), true)
 	},
 	{
@@ -1659,8 +1662,8 @@ export const TOOLS: Tool[] = [
 			'Undo a tick: the item comes out of the cupboard and back onto "to buy". Use it when something was marked bought by mistake, or when it has run out again. Nothing is lost either way — the row, its category and its price history are the same row.',
 		scope: 'shopping:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'item' }],
 		input: object({ id: { type: 'integer', description: 'The item\u2019s id.' } }, ['id']),
-		subject: shoppingItemById,
 		run: (ctx, args) => setBought(ctx, Number(args.id), false)
 	},
 	{
@@ -1674,8 +1677,8 @@ export const TOOLS: Tool[] = [
 			'Put an item away without deleting it — for something not wanted this week. It keeps everything about itself and comes back with `unarchive_item`. Prefer this to removing when somebody says "not now" rather than "never".',
 		scope: 'shopping:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'item' }],
 		input: object({ id: { type: 'integer', description: 'The item\u2019s id.' } }, ['id']),
-		subject: shoppingItemById,
 		run: (ctx, args) => setSnoozed(ctx, Number(args.id), true)
 	},
 	{
@@ -1685,8 +1688,8 @@ export const TOOLS: Tool[] = [
 			'Bring back an item that was put away, so it shows on the list again. `shopping_list` says which items are archived.',
 		scope: 'shopping:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'item' }],
 		input: object({ id: { type: 'integer', description: 'The item\u2019s id.' } }, ['id']),
-		subject: shoppingItemById,
 		run: (ctx, args) => setSnoozed(ctx, Number(args.id), false)
 	},
 	{
@@ -1696,9 +1699,9 @@ export const TOOLS: Tool[] = [
 			'Remove an item because it is not wanted — "take milk off", "we already have that". Not the same as `tick_bought`, which records that it *was* bought and keeps it in the history and the price record. Takes the id `shopping_list` gives.',
 		scope: 'shopping:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'item' }],
 		destroys: true,
 		input: object({ id: { type: 'integer', description: 'The item\u2019s id.' } }, ['id']),
-		subject: shoppingItemById,
 		run: (ctx, args) => {
 			deleteItem(ctx, Number(args.id));
 			return { ok: true };
@@ -1711,6 +1714,7 @@ export const TOOLS: Tool[] = [
 			'Every recipe, with its ingredients. An ingredient here is a shopping item with an amount, which is what lets a meal on a day fill the shopping list.',
 		scope: 'kitchen:read',
 		writes: false,
+		refs: [{ arg: 'id', kind: 'recipe' }],
 		input: object({ id: { type: 'integer', description: 'One recipe, in full.' } }),
 		run: (ctx, args) => {
 			if (!args.id) return listRecipes(ctx);
@@ -1765,6 +1769,7 @@ export const TOOLS: Tool[] = [
 			'Change a recipe\u2019s title, method, servings, time or source, and add ingredients — one per line, quantity first. Only the fields given change, and existing ingredients stay.',
 		scope: 'kitchen:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'recipe' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The recipe\u2019s id, as `recipes` gives it.' },
@@ -1777,7 +1782,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: recipeById,
 		run: (ctx, args) => {
 			const id = Number(args.id);
 			const current = getRecipe(ctx, id);
@@ -1800,6 +1804,7 @@ export const TOOLS: Tool[] = [
 			'Record that a meal was made — `recipes` shows when each was last cooked, and this is what sets it. Name the ingredient ids that ran out and they land back on the shopping list, which is the loop the kitchen exists to close.',
 		scope: 'kitchen:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'recipe' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The recipe\u2019s id, as `recipes` gives it.' },
@@ -1812,7 +1817,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: recipeById,
 		run: (ctx, args) => {
 			cooked(ctx, Number(args.id), ((args.ranOutOf as unknown[]) ?? []).map(Number));
 			return { ok: true };
@@ -1825,6 +1829,7 @@ export const TOOLS: Tool[] = [
 			'Archive a recipe — out of the everyday list, not deleted — or bring one back with `archived: false`. For the dish nobody makes any more that somebody may yet ask for.',
 		scope: 'kitchen:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'recipe' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The recipe\u2019s id.' },
@@ -1836,7 +1841,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: recipeById,
 		run: (ctx, args) => {
 			setArchived(
 				ctx,
@@ -1853,6 +1857,7 @@ export const TOOLS: Tool[] = [
 			'Move a shopping item into a section — "put the milk under Dairy". Takes the item\u2019s id from `shopping_list` and the section by name from `shopping_categories`; an empty section name unfiles it. A name matching no section is refused with the ones that exist.',
 		scope: 'shopping:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'item' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The item\u2019s id, as `shopping_list` gives it.' },
@@ -1860,7 +1865,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: shoppingItemById,
 		run: (ctx, args) => {
 			const said = typeof args.section === 'string' ? args.section.trim().toLowerCase() : '';
 			let categoryId: number | null = null;
@@ -1917,6 +1921,7 @@ export const TOOLS: Tool[] = [
 			'Rename a section, or change whether it holds food. Only the fields given change; the items filed under it stay exactly where they are.',
 		scope: 'shopping:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'shoppingCategory' }],
 		input: object(
 			{
 				id: {
@@ -1933,7 +1938,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: shoppingCategoryById,
 		run: (ctx, args) => {
 			if (args.name !== undefined && args.name !== null && args.name !== '')
 				renameCategory(ctx, Number(args.id), args.name);
@@ -1951,9 +1955,9 @@ export const TOOLS: Tool[] = [
 			'Delete a section. Its items are not touched — they stay on the list, just unfiled. A section is a shelf label, and removing the label must not empty the shelf.',
 		scope: 'shopping:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'shoppingCategory' }],
 		destroys: true,
 		input: object({ id: { type: 'integer', description: 'The section\u2019s id.' } }, ['id']),
-		subject: shoppingCategoryById,
 		run: (ctx, args) => {
 			deleteShoppingCategory(ctx, Number(args.id));
 			return { ok: true };
@@ -1966,6 +1970,7 @@ export const TOOLS: Tool[] = [
 			'Write down what was paid for a shopping item — "milk was 6,50 today". The list keeps a small price history per item, which is how it can notice drift. Takes the id `shopping_list` gives, and the price as the person said it.',
 		scope: 'shopping:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'item' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The item\u2019s id.' },
@@ -1973,7 +1978,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id', 'price']
 		),
-		subject: shoppingItemById,
 		run: (ctx, args) => {
 			recordPaid(ctx, Number(args.id), args.price);
 			return { ok: true };
@@ -2005,10 +2009,16 @@ export const TOOLS: Tool[] = [
 					type: 'number',
 					description: 'The number it aims at, when it counts one thing.'
 				},
-				unit: text('What that number counts — applications, km, pages.')
+				unit: text('What that number counts — applications, km, pages.'),
+				notebookId: {
+					type: 'integer',
+					description:
+						'The notebook it belongs to, as `notebooks` gives it — a goal that is part of one subject rather than the year in general.'
+				}
 			},
 			['title', 'horizon']
 		),
+		refs: [{ arg: 'notebookId', kind: 'notebook' }],
 		run: (ctx, args) => {
 			let areaId: number | undefined;
 			if (args.area !== undefined && args.area !== null && args.area !== '') {
@@ -2027,6 +2037,7 @@ export const TOOLS: Tool[] = [
 				notes: args.notes,
 				startDate: args.startDate,
 				areaId,
+				notebookId: args.notebookId,
 				targets: targetsFrom(args)
 			});
 			return { id };
@@ -2045,6 +2056,7 @@ export const TOOLS: Tool[] = [
 			'Record progress on a goal that counts something: pass `value` to set where it stands, or `delta` to add what just happened — "I sent three more CVs" is `delta: 3`. Exactly one of the two. A goal measured by several things also needs `unit`, to say which of them moved; `goals` shows them and where each stands.',
 		scope: 'tasks:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'goal' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The goal\u2019s id.' },
@@ -2054,7 +2066,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: goalById,
 		run: (ctx, args) => {
 			const gaveValue = args.value !== undefined && args.value !== null;
 			const gaveDelta = args.delta !== undefined && args.delta !== null;
@@ -2083,6 +2094,7 @@ export const TOOLS: Tool[] = [
 			'Give a goal another measure — "and fifty kilometres run". Leaves the measures already on it alone, and starts at zero. `goals` shows what it is measured by.',
 		scope: 'tasks:write',
 		writes: true,
+		refs: [{ arg: 'goalId', kind: 'goal', subject: true }],
 		input: object(
 			{
 				goalId: { type: 'integer', description: 'The goal\u2019s id, as `goals` gives it.' },
@@ -2091,7 +2103,6 @@ export const TOOLS: Tool[] = [
 			},
 			['goalId', 'value']
 		),
-		subject: goalById,
 		run: (ctx, args) => ({
 			id: addGoalTarget(ctx, Number(args.goalId), { value: args.value, unit: args.unit })
 		})
@@ -2103,6 +2114,7 @@ export const TOOLS: Tool[] = [
 			'Drop one of the things a goal is measured by, by its unit. The goal and its other measures stay. For a measure that was a mistake — one that simply did not happen is what `close_goal` is for.',
 		scope: 'tasks:write',
 		writes: true,
+		refs: [{ arg: 'goalId', kind: 'goal', subject: true }],
 		destroys: true,
 		input: object(
 			{
@@ -2113,7 +2125,6 @@ export const TOOLS: Tool[] = [
 			},
 			['goalId']
 		),
-		subject: goalById,
 		run: (ctx, args) => {
 			const goal = listGoals(ctx, { includeClosed: true }).find(
 				(g) => g.id === Number(args.goalId)
@@ -2200,6 +2211,7 @@ export const TOOLS: Tool[] = [
 			'Rename a habit or change its type, description or days. Only the fields given change; its history of kept days stays exactly as it was.',
 		scope: 'habits:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'habit' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The habit\u2019s id, as `all_habits` gives it.' },
@@ -2210,7 +2222,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: habitById,
 		run: (ctx, args) => {
 			const current = listHabits(ctx).find((h) => h.id === Number(args.id));
 			if (!current) throw new NotFoundError('habit');
@@ -2281,9 +2292,9 @@ export const TOOLS: Tool[] = [
 			'Remove a reminder outright — the one `set_alarm` made, or any other. `dismiss_reminder` waves one off and leaves the row; this deletes it. Takes the id `reminders` gives.',
 		scope: 'schedule:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'reminder' }],
 		destroys: true,
 		input: object({ id: { type: 'integer', description: 'The reminder\u2019s id.' } }, ['id']),
-		subject: reminderById,
 		run: (ctx, args) => ({ ok: deleteReminder(ctx, Number(args.id)) })
 	},
 	{
@@ -2293,6 +2304,7 @@ export const TOOLS: Tool[] = [
 			'Be told some minutes before a block starts — it reaches the phone even with the app closed. A reminder belongs to a block: for "remind me at three to call the dentist", first `add_block` the call at three, then set the reminder on it. Takes the id the day gives, like `slot:42`.',
 		scope: 'schedule:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'block' }],
 		input: object(
 			{
 				id: text('The block\u2019s id, exactly as the day gave it.'),
@@ -2319,8 +2331,8 @@ export const TOOLS: Tool[] = [
 			'Wave one reminder off so it does not fire — for "no need to remind me about that any more". Takes the id `reminders` gives; the block it sat on is untouched.',
 		scope: 'schedule:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'reminder' }],
 		input: object({ id: { type: 'integer', description: 'The reminder\u2019s id.' } }, ['id']),
-		subject: reminderById,
 		run: (ctx, args) => {
 			dismissReminder(ctx, Number(args.id));
 			return { ok: true };
@@ -2396,6 +2408,7 @@ export const TOOLS: Tool[] = [
 			'Change every future occurrence of a repeating block: its weekday, time, length, how often it comes back, the text on it, its category or its reminder. This is "move gym to Wednesdays" or "make it every other week"; `change_block` is "move this Wednesday\u2019s gym". Only the fields given change. Takes the id `repeating_week` gives.',
 		scope: 'schedule:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'repeatingBlock' }],
 		input: object(
 			{
 				id: {
@@ -2417,7 +2430,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: slotById,
 		run: (ctx, args) => {
 			const current = listWeeklySlots(ctx).find((w) => w.id === Number(args.id));
 			if (!current) throw new NotFoundError('block');
@@ -2456,11 +2468,11 @@ export const TOOLS: Tool[] = [
 			'Remove a repeating block from every week to come. Its past occurrences and their record stay. For one day only, use `cancel_block` instead — this is the whole pattern.',
 		scope: 'schedule:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'repeatingBlock' }],
 		destroys: true,
 		input: object({ id: { type: 'integer', description: 'The repeating block\u2019s id.' } }, [
 			'id'
 		]),
-		subject: slotById,
 		run: (ctx, args) => {
 			deleteSlots(ctx, [Number(args.id)]);
 			return { ok: true };
@@ -2523,6 +2535,7 @@ export const TOOLS: Tool[] = [
 			'Change an activity: its name, the line describing it, or which category it belongs to. Takes the id `activities` gives. Only the fields you pass change. Blocks that name it follow the change; nothing on any day is moved.',
 		scope: 'schedule:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'activity' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The activity\u2019s id, as `activities` gave it.' },
@@ -2532,7 +2545,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: activityById,
 		run: (ctx, args) => {
 			const current = (
 				listActivities(ctx) as {
@@ -2646,6 +2658,7 @@ export const TOOLS: Tool[] = [
 			'Correct or extend what is recorded about somebody — a birthday learnt, a number changed. Only the fields given change. Takes the id `people` gives.',
 		scope: 'people:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'person' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The person\u2019s id.' },
@@ -2666,7 +2679,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: personById,
 		run: (ctx, args) => {
 			const current = listPeople(ctx).find((one) => one.id === Number(args.id));
 			if (!current) throw new NotFoundError('person');
@@ -2819,6 +2831,7 @@ export const TOOLS: Tool[] = [
 			'Say an idea was acted on, with a note about what came of it — or take that back by calling it again. Applied is not deleted: the idea stays, wearing what happened.',
 		scope: 'ideas:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'idea' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The idea\u2019s id, as `ideas` gives it.' },
@@ -2826,7 +2839,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: ideaById,
 		run: (ctx, args) => {
 			toggleApplied(ctx, Number(args.id), args.note);
 			return { ok: true };
@@ -2839,8 +2851,8 @@ export const TOOLS: Tool[] = [
 			'Star an idea, or unstar it by calling this again. A star is the person\u2019s to ask for — never decorate their inbox on your own judgement.',
 		scope: 'ideas:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'idea' }],
 		input: object({ id: { type: 'integer', description: 'The idea\u2019s id.' } }, ['id']),
-		subject: ideaById,
 		run: (ctx, args) => {
 			toggleFavorite(ctx, Number(args.id));
 			return { ok: true };
@@ -2919,6 +2931,7 @@ export const TOOLS: Tool[] = [
 			'Rename a location, or move it under a different parent (no parent_id moves it to the top level). It refuses to be put inside itself.',
 		scope: 'inventory:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'location' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The location\u2019s id.' },
@@ -2927,7 +2940,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: locationById,
 		run: (ctx, args) => {
 			const current = getLocation(ctx, Number(args.id));
 			updateLocation(ctx, current.id, {
@@ -2949,9 +2961,9 @@ export const TOOLS: Tool[] = [
 			'Remove a location. Locations inside it rise to where it was; things in it stay, just without an address.',
 		scope: 'inventory:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'location' }],
 		destroys: true,
 		input: object({ id: { type: 'integer', description: 'The location\u2019s id.' } }, ['id']),
-		subject: locationById,
 		run: (ctx, args) => {
 			deleteLocation(ctx, Number(args.id));
 			return { ok: true };
@@ -2964,6 +2976,7 @@ export const TOOLS: Tool[] = [
 			'Put a shopping/inventory item in a location, or take its address away by leaving location_id out. The item itself is untouched.',
 		scope: 'inventory:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'item' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The item\u2019s id, as `shopping_list` gives it.' },
@@ -2974,7 +2987,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: shoppingItemById,
 		run: (ctx, args) => {
 			setItemLocation(
 				ctx,
@@ -2991,6 +3003,7 @@ export const TOOLS: Tool[] = [
 			'Replace an item\u2019s free fields wholesale — { "length": "5m", "plug": "USB-C" }. Not every thing shares a shape; these are this thing\u2019s. Send the full set: removing a field is writing the rest.',
 		scope: 'inventory:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'item' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The item\u2019s id.' },
@@ -3002,7 +3015,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id', 'fields']
 		),
-		subject: shoppingItemById,
 		run: (ctx, args) => {
 			setItemAttributes(ctx, Number(args.id), (args.fields ?? {}) as Record<string, string>);
 			return { ok: true };
@@ -3036,6 +3048,7 @@ export const TOOLS: Tool[] = [
 			'Declare what a workout is measured by \u2014 a run by kilometres and a pace, a push day by what was benched and for how many reps. Names and units only; no amounts. Replaces the list it has, so send all of them. A session may still measure anything: this decides what its form opens on.',
 		scope: 'workouts:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'workout' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The workout, from `workouts`.' },
@@ -3043,7 +3056,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id', 'measures']
 		),
-		subject: workoutById,
 		run: (ctx, args) => {
 			setWorkoutMeasures(ctx, Number(args.id), args.measures);
 			return { ok: true };
@@ -3120,6 +3132,7 @@ export const TOOLS: Tool[] = [
 			'Rewrite a session that was written down wrong. The lines are replaced by the ones given, so send them all; leaving `measures` off keeps the ones it has.',
 		scope: 'workouts:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'workoutSession' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The session’s id, from `workout_sessions`.' },
@@ -3141,7 +3154,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: workoutSessionById,
 		run: (ctx, args) => {
 			const current = getSession(ctx, Number(args.id));
 			updateSession(ctx, current.id, {
@@ -3167,12 +3179,12 @@ export const TOOLS: Tool[] = [
 			'Delete a session that was logged by accident. Its lines go with it; the workout itself stays. For correcting one rather than removing it, use `change_workout_session`.',
 		scope: 'workouts:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'workoutSession' }],
 		destroys: true,
 		input: object(
 			{ id: { type: 'integer', description: 'The session’s id, from `workout_sessions`.' } },
 			['id']
 		),
-		subject: workoutSessionById,
 		run: (ctx, args) => {
 			deleteSession(ctx, Number(args.id));
 			return { ok: true };
@@ -3247,9 +3259,9 @@ export const TOOLS: Tool[] = [
 			'Take a category off the list. Workouts filed under it keep existing, without one.',
 		scope: 'workouts:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'workoutCategory' }],
 		destroys: true,
 		input: object({ id: { type: 'integer', description: 'From `workout_categories`.' } }, ['id']),
-		subject: workoutCategoryById,
 		run: (ctx, args) => {
 			deleteWorkoutCategory(ctx, Number(args.id));
 			return { ok: true };
@@ -3291,6 +3303,7 @@ export const TOOLS: Tool[] = [
 			'Rewrite a workout. Only the fields given change — for a misheard word or a better plan, not to turn it into a different session.',
 		scope: 'workouts:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'workout' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The workout\u2019s id, as `workouts` gives it.' },
@@ -3302,7 +3315,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: workoutById,
 		run: (ctx, args) => {
 			const current = getWorkout(ctx, Number(args.id));
 			updateWorkout(ctx, current.id, {
@@ -3324,6 +3336,7 @@ export const TOOLS: Tool[] = [
 			'Take a workout out of the working list, or restore it. Nothing is lost either way — its history stays.',
 		scope: 'workouts:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'workout' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The workout\u2019s id.' },
@@ -3334,7 +3347,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: workoutById,
 		run: (ctx, args) => {
 			setWorkoutArchived(
 				ctx,
@@ -3351,8 +3363,8 @@ export const TOOLS: Tool[] = [
 			'Record that a workout happened just now — the gym\u2019s version of marking a recipe cooked. It stamps the last-done time.',
 		scope: 'workouts:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'workout' }],
 		input: object({ id: { type: 'integer', description: 'The workout\u2019s id.' } }, ['id']),
-		subject: workoutById,
 		run: (ctx, args) => {
 			workoutDone(ctx, Number(args.id));
 			return { ok: true };
@@ -3463,6 +3475,7 @@ export const TOOLS: Tool[] = [
 			'Rewrite a rule\u2019s name, pattern or colour. Only the fields given change, and the change re-sorts every line at once, past ones included.',
 		scope: 'statements:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'sortRule' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The rule, as `sort_rules` lists it.' },
@@ -3524,6 +3537,7 @@ export const TOOLS: Tool[] = [
 		description: 'The rule goes; the lines it sorted stay, now sorted by the rules that remain.',
 		scope: 'statements:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'sortRule' }],
 		/*
 		 * It is a delete, so it needs the grant that says so.
 		 *
@@ -3535,7 +3549,6 @@ export const TOOLS: Tool[] = [
 		 * statement history.
 		 */
 		destroys: true,
-		subject: sortRuleById,
 		input: object({ id: { type: 'integer', description: 'The rule, as listed by sort_rules.' } }, [
 			'id'
 		]),
@@ -3581,6 +3594,7 @@ export const TOOLS: Tool[] = [
 			'Every period a bill has been paid for, with the expected amount and what was actually paid. Amounts in minor units (cents).',
 		scope: 'bills:read',
 		writes: false,
+		refs: [{ arg: 'id', kind: 'bill' }],
 		input: object({ id: { type: 'integer', description: 'The bill\u2019s id.' } }, ['id']),
 		run: (ctx, args) => ({ payments: listPayments(ctx, Number(args.id)) })
 	},
@@ -3670,6 +3684,7 @@ export const TOOLS: Tool[] = [
 			'Rewrite a bill. Only the fields given change. Editing the expected amount does not rewrite what past payments recorded — those are snapshots of the day they were paid.',
 		scope: 'bills:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'bill' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The bill\u2019s id, as `bills` gives it.' },
@@ -3693,7 +3708,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: billById,
 		run: (ctx, args) => {
 			const current = getBill(ctx, Number(args.id));
 			updateBill(ctx, current.id, {
@@ -3724,6 +3738,7 @@ export const TOOLS: Tool[] = [
 			'Take a bill out of the active list (it stopped being paid), or restore it. Its payment history stays either way.',
 		scope: 'bills:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'bill' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The bill\u2019s id.' },
@@ -3734,7 +3749,6 @@ export const TOOLS: Tool[] = [
 			},
 			['id']
 		),
-		subject: billById,
 		run: (ctx, args) => {
 			setBillArchived(ctx, Number(args.id), args.archived === undefined ? true : !!args.archived);
 			return { ok: true };
@@ -3747,6 +3761,7 @@ export const TOOLS: Tool[] = [
 			'Record a bill paid for a period. The amount defaults to the expected one; give amount_paid in minor units (cents) when it differed. The period defaults to the current one for the bill\u2019s rhythm. Paying the same period again corrects it, never doubles it.',
 		scope: 'bills:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'bill' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The bill\u2019s id.' },
@@ -3777,6 +3792,7 @@ export const TOOLS: Tool[] = [
 			'Remove the payment recorded for a period — it was not actually paid, or was recorded by mistake. The inverse of pay_bill.',
 		scope: 'bills:write',
 		writes: true,
+		refs: [{ arg: 'id', kind: 'bill' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The bill\u2019s id.' },

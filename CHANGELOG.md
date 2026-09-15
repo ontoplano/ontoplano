@@ -18,6 +18,19 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.177.2 — 2026-09-15
+
+- **An assistant can no longer be handed a number that is not yours.** Seventy
+  of the assistant's tools take an id, and what kept each of those inside your
+  account was every service filtering by account itself, in every query it
+  writes — one forgotten line away from somebody else's week. Each tool now
+  says which of its arguments name a thing and what kind of thing, and the id
+  is looked for among the rows the key can already list. An id belonging to
+  somebody else and an id belonging to nobody are refused in the same words, so
+  the refusal cannot be used to ask what exists.
+- **A goal can be filed under a notebook by an assistant**, which the app has
+  always allowed and the tools did not.
+
 ## 0.177.1 — 2026-09-15
 
 - **Fixed: dismissing the tour in the phone app did nothing.** Its "I have been

@@ -115,6 +115,10 @@
 				"type": "string",
 				"required": true
 			},
+			"notebookId": {
+				"type": "integer",
+				"required": false
+			},
 			"notes": {
 				"type": "string",
 				"required": false

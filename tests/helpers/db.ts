@@ -42,6 +42,8 @@ export type TestDatabase = {
 	 * service call that sees it. Reading the table is the honest way to ask.
 	 */
 	get: (sql: string, ...args: unknown[]) => unknown;
+	/** Every row a statement answers with, for a test that compares a whole table. */
+	all: (sql: string, ...args: unknown[]) => unknown[];
 };
 
 export function makeDatabase(): TestDatabase {
@@ -82,6 +84,14 @@ export function makeDatabase(): TestDatabase {
 			const row = db.prepare(sql).get(...args);
 			db.close();
 			return row;
+		},
+		all: (sql, ...args) => {
+			// eslint-disable-next-line @typescript-eslint/no-require-imports
+			const Database = require('better-sqlite3');
+			const db = new Database(path);
+			const rows = db.prepare(sql).all(...args);
+			db.close();
+			return rows;
 		}
 	};
 }

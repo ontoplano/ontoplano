@@ -1800,10 +1800,15 @@ describe('the before and the after', () => {
 	});
 
 	it('every deleting tool can answer with the row it removes', () => {
+		// Either a `subject` of its own, or — the usual case — a declared
+		// reference to the thing it deletes, which is what the protocol layer
+		// reads when a tool declares no subject. A delete with neither answers
+		// with nothing, and a row nobody wrote down is a row nobody can put back.
 		for (const t of TOOLS.filter((t) => t.destroys)) {
+			const fromRefs = (t.refs ?? []).some((ref) => ref.subject || ref.arg === 'id');
 			expect(
-				t.subject,
-				`${t.name} has no subject, so its delete answers with nothing`
+				t.subject ?? (fromRefs || undefined),
+				`${t.name} has no subject and names nothing, so its delete answers with nothing`
 			).toBeDefined();
 		}
 	});

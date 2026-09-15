@@ -27,6 +27,24 @@ export const MAX_TAGS_LENGTH = 500;
 export const WINS_TAG = '3w';
 
 /**
+ * Every piece of writing this account owns, journal and notebook alike.
+ *
+ * `listEntries` is the journal and deliberately leaves out anything filed
+ * against a notebook, which is right for the diary page and wrong for the one
+ * question the MCP layer asks before it touches a note: is this note mine? So
+ * this is the whole reach in one query — ids and where each note lives, which
+ * is all a reference needs, and all a token confined to one notebook needs to
+ * be narrowed by.
+ */
+export function listEveryEntry(ctx: Ctx): { id: number; notebookId: number | null }[] {
+	return db
+		.select({ id: diaryEntries.id, notebookId: diaryEntries.notebookId })
+		.from(diaryEntries)
+		.where(eq(diaryEntries.userId, ctx.userId))
+		.all();
+}
+
+/**
  * The journal, and only the journal.
  *
  * A note written against a notebook is stored in this table — one kind of

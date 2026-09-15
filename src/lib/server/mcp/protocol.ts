@@ -18,6 +18,7 @@ import type { Ctx } from '$lib/services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 import { ForbiddenError, ServiceError } from '$lib/services/errors.js';
 import { TOOLS, TOOLS_BY_NAME, type Tool } from './tools.js';
+import { assertRefs, resolveRef, type Ref } from './refs.js';
 import { changed, type Room } from '../live.js';
 import { spendCallBudget } from '../api/auth.js';
 import { recordAssistantCall } from '../services/assistant-log.js';
@@ -173,21 +174,36 @@ function toolResult(value: unknown, mutation?: { before: unknown; after: unknown
 }
 
 /**
- * The state of the thing a write is about, read through the tool's own
- * `subject` — or null when the tool has none (a create: there was nothing
- * there) or the read itself refuses (a bad id: also nothing there).
+ * The state of the thing a write is about.
  *
- * Nothing a peek does may fail the call: this is bookkeeping around the write,
- * and bookkeeping that breaks a write is worse than a gap in the books.
+ * A tool's own `subject` where it has one — a few are richer than a single
+ * row: a bill with its payments, a habit's tick for a particular day.
+ * Otherwise the thing the call is about, which the tool has already declared
+ * in `refs` and the dispatcher has already resolved. That is the argument
+ * marked `subject`, or the one plainly called `id` — a create files its
+ * reference under where the new thing goes (`notebookId`, `goalId`), and has
+ * no before to read.
+ *
+ * Null when there is nothing to read: a create had no subject to begin with,
+ * and a delete has none afterwards. Nothing a peek does may fail the call —
+ * this is bookkeeping around the write, and bookkeeping that breaks a write is
+ * worse than a gap in the books.
  */
 function peek(tool: Tool, ctx: Ctx, args: Record<string, unknown>): unknown {
-	if (!tool.subject) return null;
+	const about = tool.refs?.find((ref) => ref.subject) ?? tool.refs?.find((ref) => ref.arg === 'id');
+	const read = tool.subject ?? (about ? subjectOfRef(about) : null);
+	if (!read) return null;
 	try {
-		return tool.subject(ctx, args) ?? null;
+		return read(ctx, args) ?? null;
 	} catch {
 		return null;
 	}
 }
+
+const subjectOfRef =
+	(ref: Ref) =>
+	(ctx: Ctx, args: Record<string, unknown>): unknown =>
+		resolveRef(ctx, ref, args);
 
 /**
  * …and a tool's failure, which is a *result* rather than a protocol error.
@@ -266,6 +282,19 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 			const args = (params.arguments ?? {}) as Record<string, unknown>;
 			try {
 				assertAllowed(caller, tool);
+
+				/*
+				 * Every id it was handed belongs to whoever is calling.
+				 *
+				 * Each tool declares which of its arguments name a thing and what
+				 * kind of thing — and a kind is defined once, in `refs.ts`, as the
+				 * rows this caller can already list. Resolving here means a number
+				 * belonging to somebody else never reaches `run` at all, rather
+				 * than reaching it and being caught by whatever `where` clause the
+				 * service happened to write. Done at the one point every call goes
+				 * through, so no tool can be written that skips it.
+				 */
+				assertRefs(caller.ctx, tool.refs, args);
 				/*
 				 * The same budget a plugin spends on the REST API: reads are cheap
 				 * and writes grow the database, so "make a thousand goals" is told
