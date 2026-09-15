@@ -22,6 +22,7 @@ import {
 	choseThisPhone,
 	chooseOnThisPhone,
 	forgetInstance,
+	launchAddress,
 	rememberInstance,
 	storedChoice,
 	storedInstance
@@ -92,5 +93,24 @@ describe('knowing it is inside the app', () => {
 		// changes, that one changes with it.
 		expect(APP_USER_AGENT).toBeTruthy();
 		expect(`Mozilla/5.0 (Linux; Android 14) ${APP_USER_AGENT}`).toContain(APP_USER_AGENT);
+	});
+});
+
+describe('the launch address', () => {
+	test('wears the app mark, and only says ring when asked to', () => {
+		const url = new URL(launchAddress('http://192.168.1.10:1493/'));
+		expect(url.searchParams.get('app')).toBe('android');
+		expect(url.searchParams.has('ring')).toBe(false);
+	});
+
+	test('says ring when the phone has no key for where it is going', () => {
+		const url = new URL(launchAddress('http://192.168.1.10:1493/', { ring: true }));
+		// '1', not 'true': the instance side reads exactly this value — see
+		// handOverRingerKey — and the two are compiled from the same constant.
+		expect(url.searchParams.get('ring')).toBe('1');
+	});
+
+	test('hands back an address it cannot parse rather than dressing it', () => {
+		expect(launchAddress('not an address')).toBe('not an address');
 	});
 });

@@ -124,6 +124,84 @@ test('it answers with what has not gone off yet, in the shape an alarm takes', a
 	await request.dispose();
 });
 
+/**
+ * The key the phone actually holds, made the way the phone makes it.
+ *
+ * `ringOnThisPhone` is the action behind the launch handshake and the one
+ * press on Preferences. Two promises hang off it and both are the kind that
+ * only breaks in production: the key is the narrowest one the app issues, and
+ * setting a phone up again replaces the key rather than adding one — so a
+ * phone somebody no longer has stops working instead of keeping a way in.
+ */
+async function mintRingerKey(request: APIRequestContext, cookie: string): Promise<string> {
+	const res = await request.post('/settings/integrations?/ringOnThisPhone', {
+		headers: {
+			Origin: ORIGIN,
+			Cookie: cookie,
+			'x-sveltekit-action': 'true',
+			'content-type': 'application/x-www-form-urlencoded'
+		},
+		// The action takes nothing: which phone is asking is not something a
+		// request can be trusted to say, and the session says whose alarms.
+		data: ''
+	});
+	expect(res.ok(), await res.text()).toBeTruthy();
+	const key = /onto_[A-Za-z0-9_-]+/.exec(await res.text())?.[0];
+	expect(key, 'no key in the action’s answer').toBeTruthy();
+	return key!;
+}
+
+test('setting the phone up again replaces the key, and the old one stops working', async ({
+	playwright
+}) => {
+	const { request, cookie } = await account(playwright);
+
+	const first = await mintRingerKey(request, cookie);
+	const heard = await request.get('/api/v1/reminders/upcoming', {
+		headers: { Authorization: `Bearer ${first}`, Cookie: '' }
+	});
+	expect(heard.status()).toBe(200);
+
+	// The same phone, set up again — or a new phone, after the old one was
+	// lost. Either way the first key has to die with the second's making.
+	const second = await mintRingerKey(request, cookie);
+	expect(second).not.toBe(first);
+
+	const lostPhone = await request.get('/api/v1/reminders/upcoming', {
+		headers: { Authorization: `Bearer ${first}`, Cookie: '' }
+	});
+	expect(lostPhone.status()).toBe(401);
+
+	const thisPhone = await request.get('/api/v1/reminders/upcoming', {
+		headers: { Authorization: `Bearer ${second}`, Cookie: '' }
+	});
+	expect(thisPhone.status()).toBe(200);
+
+	await request.dispose();
+});
+
+test('the phone’s key reads the alarms and not the calendar they hang from', async ({
+	playwright
+}) => {
+	const { request, cookie } = await account(playwright);
+	const key = await mintRingerKey(request, cookie);
+
+	// The claim on the tin: `reminders:read` and nothing else. A phone that
+	// can ring must not thereby hold a copy of the week — the other half of
+	// the scope test above, from the key the phone actually gets.
+	const week = await request.get('/api/v1/schedule/upcoming', {
+		headers: { Authorization: `Bearer ${key}`, Cookie: '' }
+	});
+	expect(week.status()).toBe(403);
+
+	const alarms = await request.get('/api/v1/reminders/upcoming', {
+		headers: { Authorization: `Bearer ${key}`, Cookie: '' }
+	});
+	expect(alarms.status()).toBe(200);
+
+	await request.dispose();
+});
+
 test("one account's alarms are never another's", async ({ playwright }) => {
 	const mine = await account(playwright);
 	const theirs = await account(playwright);
