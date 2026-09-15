@@ -143,22 +143,29 @@
 	 */
 	const alreadyHere = phoneInstanceExists();
 
-	const chosen = $derived(
-		(kind as Kind) === 'phone' && alreadyHere
-			? {
-					...CHOICES.phone,
-					says: [
-						{
-							has: true,
-							glyph: 'phone' as const,
-							line: 'This phone already has one, with whatever you put in it.'
-						},
-						...CHOICES.phone.says
-					],
-					proceed: 'Go to isolated instance'
-				}
-			: CHOICES[kind]
-	);
+	/**
+	 * What one answer says — asked per option rather than only for the chosen
+	 * one, so the page can lay BOTH out and reserve the taller.
+	 */
+	function saying(option: Kind) {
+		if (option === 'phone' && alreadyHere) {
+			return {
+				...CHOICES.phone,
+				says: [
+					{
+						has: true,
+						glyph: 'phone' as const,
+						line: 'This phone already has one, with whatever you put in it.'
+					},
+					...CHOICES.phone.says
+				],
+				proceed: 'Go to isolated instance'
+			};
+		}
+		return CHOICES[option];
+	}
+
+	const chosen = $derived(saying(kind));
 
 	/**
 	 * Whether this phone can be the instance.
@@ -235,50 +242,79 @@
 		four lines is an argument, and this screen is not making one. Absence is
 		absence, and a greyed row says it without shouting.
 	-->
-	<h2 class="mt-4 text-sm font-semibold text-gray-900">{chosen.heading}</h2>
-	<ul class="mt-2 min-h-36 space-y-1.5 text-sm">
-		{#each chosen.says as said (said.line)}
-			<li class="flex items-start gap-2.5 {said.has ? '' : 'opacity-45'}">
-				<span class="mt-0.5 shrink-0 text-gray-500" aria-hidden="true">
-					<Icon name={said.glyph} size={16} />
-				</span>
-				<span class="text-gray-700">{said.line}</span>
-			</li>
-		{/each}
-	</ul>
-
 	<!--
-		The two answers' own field, in space kept for whichever is taller.
+		Both answers, laid one on top of the other in a single grid cell.
 
-		The address field is two lines and a box; the sentence in its place is
-		two lines; empty is neither — so without a floor here, choosing moved
-		the button you were about to press, and the mark under it with them.
+		This is what keeps the mark at the foot of the page from moving when
+		the answer changes, and it is deliberately not a min-height: a floor in
+		rem is a number somebody has to remember to raise the next time a line
+		of copy grows, and the first person to find out it was too small is
+		whoever watches the page jump. Here the cell is as tall as the taller
+		of the two REAL blocks, measured by the browser, whatever either of
+		them comes to say. Only one is visible; the other is `invisible` —
+		still laid out, so it still counts toward the height — and hidden from
+		a screen reader, which would otherwise read the answer nobody chose.
 	-->
-	<div class="mt-2 min-h-24">
-		{#if kind === 'connected'}
-			<label class="block text-sm">
-				<!-- Without the scheme: the field below already holds the whole
-			     address, and saying it twice in full reads as a mistake. -->
-				<span class="text-gray-600">
-					Enter any instance URL — official instance is {OFFICIAL_INSTANCE.replace(
-						/^https?:\/\//,
-						''
-					)}
-				</span>
-				<OneLine
-					name="instance"
-					bind:value={address}
-					oninput={() => (untouched = false)}
-					class="input mt-1 w-full"
-					placeholder={OFFICIAL_INSTANCE}
-				/>
-			</label>
-		{:else if !canRunHere}
-			<p class="text-sm text-amber-800">
-				This copy of the app cannot hold an instance itself — the one that can is the app built for
-				it.
-			</p>
-		{/if}
+	<div class="mt-4 grid">
+		{#each ['connected', 'phone'] as const as option (option)}
+			{@const said = saying(option)}
+			<div
+				class="col-start-1 row-start-1"
+				class:invisible={kind !== option}
+				aria-hidden={kind !== option}
+			>
+				<h2 class="text-sm font-semibold text-gray-900">{said.heading}</h2>
+				<!--
+					A glyph for the thing itself — a link for reachable, a box for
+					backed up, a plug for plugins — and the same glyph on both sides,
+					so the two columns are read against each other line by line. What
+					the phone does not have is dimmed rather than crossed out: a red
+					cross against three of four lines is an argument, and this screen
+					is not making one.
+				-->
+				<ul class="mt-2 space-y-1.5 text-sm">
+					{#each said.says as line (line.line)}
+						<li class="flex items-start gap-2.5 {line.has ? '' : 'opacity-45'}">
+							<span class="mt-0.5 shrink-0 text-gray-500" aria-hidden="true">
+								<Icon name={line.glyph} size={16} />
+							</span>
+							<span class="text-gray-700">{line.line}</span>
+						</li>
+					{/each}
+				</ul>
+
+				<!-- The answer's own field, in the same stacked cell for the same
+				     reason: the address box and the sentence that replaces it are
+				     different heights, and neither may move what is under them. -->
+				<div class="mt-3">
+					{#if option === 'connected'}
+						<label class="block text-sm">
+							<!-- Without the scheme: the field below already holds the whole
+							     address, and saying it twice in full reads as a mistake. -->
+							<span class="text-gray-600">
+								Enter any instance URL — official instance is {OFFICIAL_INSTANCE.replace(
+									/^https?:\/\//,
+									''
+								)}
+							</span>
+							<OneLine
+								name="instance"
+								bind:value={address}
+								oninput={() => (untouched = false)}
+								class="input mt-1 w-full"
+								placeholder={OFFICIAL_INSTANCE}
+								disabled={kind !== option}
+							/>
+						</label>
+					{:else if !canRunHere}
+						<p class="text-sm text-amber-800">
+							This copy of the app cannot hold an instance itself — the one that can is the app
+							built for it.
+						</p>
+					{/if}
+				</div>
+			</div>
+		{/each}
 	</div>
 
 	<button
@@ -303,6 +339,7 @@
 		<Logo
 			size={72}
 			drained={kind === 'phone'}
+			hollow
 			label={kind === 'phone' ? 'The instance on this device' : 'An instance behind a server'}
 		/>
 	</div>
