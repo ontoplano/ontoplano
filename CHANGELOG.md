@@ -18,6 +18,22 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.4 — 2026-09-15
+
+- **Claude is one choice again when you hand the app to an assistant.** It was
+  three of the six — the plugin, the command line, the desktop app — which made
+  a row of choices out of what is one answer to "which assistant?", and put
+  Codex and Cursor at the end of it. The three ways in are labelled blocks under
+  one tab now.
+- **The instance chooser keeps perfectly still.** Both answers are laid out in
+  the same place and the taller decides the height, so choosing between them
+  moves nothing — and it stays true the next time either one gains a line,
+  which a fixed height would not have.
+- **And the mark on that screen is a window.** The dark field between the ring
+  and the middle is knocked out, so the ring is a ring of colour with the page
+  showing through it. It is derived from the logo itself, so replacing the logo
+  cannot leave a stale second one behind.
+
 ## 0.178.3 — 2026-09-15
 
 - **Reaching for a tab that is off the screen no longer changes tab.** Dragging
