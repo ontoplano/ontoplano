@@ -53,13 +53,13 @@ test('the danger zone empties this account and nothing else', async ({ page, bro
 	// The wrong word is refused, with the password right.
 	await zone.getByRole('button', { name: 'Delete everything' }).click();
 	const sheet = page.getByRole('dialog');
-	await sheet.getByLabel(`Type ${EMPTY} to confirm`).fill('delete');
+	await sheet.getByLabel(`Type “${EMPTY}” to confirm`).fill('delete');
 	await sheet.getByLabel('Your password').fill(PASSWORD);
 	await sheet.getByRole('button', { name: 'Delete everything' }).click();
 	await expect(sheet.getByText(/Type DELETE EVERYTHING exactly/)).toBeVisible();
 
 	// The wrong password is refused, with the word right.
-	await sheet.getByLabel(`Type ${EMPTY} to confirm`).fill(EMPTY);
+	await sheet.getByLabel(`Type “${EMPTY}” to confirm`).fill(EMPTY);
 	await sheet.getByLabel('Your password').fill('not-the-password');
 	await sheet.getByRole('button', { name: 'Delete everything' }).click();
 	await expect(sheet.getByText(/not your password/)).toBeVisible();
@@ -73,7 +73,7 @@ test('the danger zone empties this account and nothing else', async ({ page, bro
 	await visit(page, '/settings/account');
 	await page.locator('.danger-zone').getByRole('button', { name: 'Delete everything' }).click();
 	const go = page.getByRole('dialog');
-	await go.getByLabel(`Type ${EMPTY} to confirm`).fill(EMPTY);
+	await go.getByLabel(`Type “${EMPTY}” to confirm`).fill(EMPTY);
 	await go.getByLabel('Your password').fill(PASSWORD);
 	await go.getByRole('button', { name: 'Delete everything' }).click();
 	await expect(page.getByText(/has been deleted/).first()).toBeVisible();

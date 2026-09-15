@@ -1,6 +1,13 @@
 import { expect, test } from '@playwright/test';
 import { deflateSync } from 'node:zlib';
 
+/** Wait until nothing on the flower is still moving. */
+async function settled(page: import('@playwright/test').Page): Promise<void> {
+	await page
+		.locator('.fan')
+		.evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)));
+}
+
 /** A real PNG, built here so the test needs no fixtures on disk. */
 function png(colour: [number, number, number]): { name: string; mimeType: string; buffer: Buffer } {
 	const table = Array.from({ length: 256 }, (_, n) => {
@@ -325,6 +332,10 @@ test('the phone can leave the instance it is', async ({ page }) => {
 	 * of the things on it, exactly where a server instance keeps it.
 	 */
 	await page.getByRole('button', { name: 'Account and help' }).click();
+	// The flower flies its petals out; clicking one mid-flight is asking for
+	// an element that is still moving, which on a loaded machine never settles
+	// inside the timeout. Wait for the movement rather than for a guess at it.
+	await settled(page);
 	await page.getByRole('menuitem', { name: 'Account' }).click();
 	await page.getByRole('link', { name: 'Change instance' }).click();
 	await expect(page.getByRole('heading', { name: /Where your Ontoplano lives/ })).toBeVisible({

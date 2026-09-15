@@ -2,6 +2,13 @@ import { expect, test } from '@playwright/test';
 import { register } from './helpers/account';
 import { visit } from './helpers/visit';
 
+/** Wait until nothing on the flower is still moving. */
+async function settled(page: import('@playwright/test').Page): Promise<void> {
+	await page
+		.locator('.fan')
+		.evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)));
+}
+
 /**
  * Changing tab, on a phone: a swipe does it, and it moves.
  *
@@ -560,6 +567,7 @@ test.describe('on a phone, through the pie', () => {
 		// The account is not a link in the bar any more: the last button opens
 		// the flower of small things, and the account is the one in its middle.
 		await page.locator('nav').last().getByRole('button', { name: 'Account and help' }).click();
+		await settled(page);
 		await page.getByRole('menuitem', { name: 'Account' }).click();
 		await page.waitForTimeout(700);
 
