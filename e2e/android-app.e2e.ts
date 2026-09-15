@@ -246,35 +246,39 @@ test.describe('an instance shown inside the app', () => {
 test.describe('the ring hand-over page', () => {
 	test.use({ userAgent: `Mozilla/5.0 (Linux; Android 14) Mobile ${'OntoplanoApp'}/0.1.0` });
 
-	/** The shell, remembering what it was told. */
-	function withShell(page: import('@playwright/test').Page) {
-		return page.addInitScript(() => {
-			const state = { rangFor: [] as unknown[], stopped: 0 };
-			(window as never as Record<string, unknown>).__ringer = state;
+	/**
+	 * The shell, remembering what it was told — on this side of the browser.
+	 *
+	 * The page under test replaces itself the moment it has done its job, and
+	 * a navigation wipes anything the stub kept in the page: the first version
+	 * of this suite polled a `window` object that a re-run init script had
+	 * just reset. An exposed function survives every navigation, so what the
+	 * shell heard is recorded where the page cannot lose it.
+	 */
+	async function withShell(page: import('@playwright/test').Page) {
+		const heard = { rangFor: [] as unknown[], stopped: 0 };
+		await page.exposeFunction('__ringerHeard', (what: unknown) => {
+			if (what === 'stop') heard.stopped += 1;
+			else heard.rangFor.push(what);
+		});
+		await page.addInitScript(() => {
+			const record = (window as never as Record<string, (what: unknown) => Promise<void>>)
+				.__ringerHeard;
 			(window as never as Record<string, unknown>).Capacitor = {
 				Plugins: {
 					OntoplanoSettings: {
-						ringFor: async (what: unknown) => {
-							state.rangFor.push(what);
-						},
-						stopRinging: async () => {
-							state.stopped += 1;
-						},
+						ringFor: (what: unknown) => record(what),
+						stopRinging: () => record('stop'),
 						ringingFor: async () => ({ origin: '' })
 					}
 				}
 			};
 		});
-	}
-
-	function ringer(page: import('@playwright/test').Page) {
-		return page.evaluate(
-			() => (window as never as Record<string, { rangFor: unknown[]; stopped: number }>).__ringer
-		);
+		return heard;
 	}
 
 	test('hands the key to the shell and goes back to the instance', async ({ page }) => {
-		await withShell(page);
+		const heard = await withShell(page);
 		await register(page, `ring-hand-${Date.now()}@test.invalid`);
 
 		const at = 'http://localhost:4173';
@@ -282,8 +286,8 @@ test.describe('the ring hand-over page', () => {
 			waitUntil: 'load'
 		});
 
-		await expect.poll(async () => (await ringer(page)).rangFor.length).toBe(1);
-		expect((await ringer(page)).rangFor[0]).toEqual({ origin: at, token: 'onto_e2e_test_key' });
+		await expect.poll(() => heard.rangFor.length).toBe(1);
+		expect(heard.rangFor[0]).toEqual({ origin: at, token: 'onto_e2e_test_key' });
 
 		// And nobody is left holding the address the key rode in on: the page
 		// replaces itself with the instance, launch mark and all — which the
@@ -293,27 +297,26 @@ test.describe('the ring hand-over page', () => {
 	});
 
 	test('off stops the ringing and still goes back', async ({ page }) => {
-		await withShell(page);
+		const heard = await withShell(page);
 		await register(page, `ring-off-${Date.now()}@test.invalid`);
 
 		await page.goto(`/ring?off=1&at=${encodeURIComponent('http://localhost:4173')}`, {
 			waitUntil: 'load'
 		});
 
-		await expect.poll(async () => (await ringer(page)).stopped).toBe(1);
-		expect((await ringer(page)).rangFor).toHaveLength(0);
+		await expect.poll(() => heard.stopped).toBe(1);
+		expect(heard.rangFor).toHaveLength(0);
 		await page.waitForURL((url) => url.pathname !== '/ring');
 	});
 
 	test('with nothing to set it opens the app and sets nothing', async ({ page }) => {
-		await withShell(page);
+		const heard = await withShell(page);
 		await register(page, `ring-none-${Date.now()}@test.invalid`);
 
 		await page.goto('/ring', { waitUntil: 'load' });
 
 		await page.waitForURL((url) => url.pathname !== '/ring');
-		const state = await ringer(page);
-		expect(state.rangFor).toHaveLength(0);
-		expect(state.stopped).toBe(0);
+		expect(heard.rangFor).toHaveLength(0);
+		expect(heard.stopped).toBe(0);
 	});
 });
