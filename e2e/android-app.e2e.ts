@@ -13,8 +13,14 @@ import { visit } from './helpers/visit';
  * launch (`?app=android`, from `Instance.launchUrl`) and the server keeps it.
  *
  * What hangs off the answer is the only thing the app can do and a browser
- * cannot: leave this instance for another one, which is a native screen behind
- * `ontoplano://instance`.
+ * cannot: leave this instance for another one.
+ *
+ * That used to be `ontoplano://instance`, a native screen from before the
+ * chooser was a page — and this test asserted that address, so it went on
+ * passing for months while the link opened nothing but "unknown url scheme".
+ * It is the chooser on the copy of the app the phone carries now, which is
+ * deliberately not `/instance` on the instance being left: that instance may
+ * be old enough not to have the screen.
  */
 test('the launch mark is kept and taken back off the address', async ({ page }) => {
 	await register(page, `android-app-${Date.now()}@test.invalid`);
@@ -27,7 +33,7 @@ test('the launch mark is kept and taken back off the address', async ({ page }) 
 	await visit(page, '/settings/account');
 	const leave = page.getByRole('link', { name: 'Switch instance' });
 	await expect(leave).toBeVisible();
-	await expect(leave).toHaveAttribute('href', 'ontoplano://instance');
+	await expect(leave).toHaveAttribute('href', 'https://localhost/instance?ask=1');
 
 	// And it names the instance rather than describing one.
 	await expect(page.getByText('This app is open on')).toContainText(new URL(page.url()).host);
