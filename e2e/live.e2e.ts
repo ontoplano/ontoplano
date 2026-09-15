@@ -111,3 +111,60 @@ test('a stream is refused to somebody who is not signed in', async ({ playwright
 	expect(answer.status()).toBe(401);
 	await request.dispose();
 });
+
+/**
+ * …and on a notebook, which is where somebody watches an assistant work.
+ *
+ * The to-do room above proves the stream: this proves the screen. A notebook
+ * is the one place where somebody sits and watches while an assistant writes —
+ * it is where a project's notes and tasks are — and a page that has to be
+ * reloaded to show them is a page that looks stale rather than live.
+ */
+test('a note written by an assistant turns up on its notebook', async ({ page, playwright }) => {
+	await page.setViewportSize({ width: 1280, height: 1000 });
+	await register(page, `live-book-${Date.now()}@test.invalid`);
+
+	const cookie = (await page.context().cookies()).map((c) => `${c.name}=${c.value}`).join('; ');
+	const request = await playwright.request.newContext({ baseURL: ORIGIN });
+	const token = await mint(request, cookie, ['notes:write', 'notes:read']);
+
+	const made = await page.request.post('/notebooks?/create', {
+		headers: { 'x-sveltekit-action': 'true', Origin: ORIGIN },
+		form: { heading: 'Watched' }
+	});
+	expect(made.ok(), await made.text()).toBeTruthy();
+
+	await visit(page, '/notebooks');
+	// The room picks a notebook with `?notebook=`, which is the screen somebody
+	// actually watches — the one with the notebook's own colour on the header.
+	const href = await page.locator('a[href*="notebook="]').first().getAttribute('href');
+	const notebookId = Number(new URL(href ?? '', ORIGIN).searchParams.get('notebook'));
+	expect(notebookId, 'no notebook to watch').toBeTruthy();
+
+	// The stream, before anything is written: an event emitted into a page that
+	// is not listening yet is an event nobody hears, and there is no replay.
+	const streaming = page.waitForResponse((r) => r.url().includes('/api/live'), { timeout: 20000 });
+	await visit(page, `/notebooks?notebook=${notebookId}`);
+	await streaming;
+
+	const title = `written while watching ${Date.now()}`;
+	await expect(page.getByText(title)).toHaveCount(0);
+
+	const wrote = await request.post('/api/mcp', {
+		headers: { Authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+		data: {
+			jsonrpc: '2.0',
+			id: 1,
+			method: 'tools/call',
+			params: {
+				name: 'write_entry',
+				arguments: { title, content: 'from an assistant', notebookId }
+			}
+		}
+	});
+	expect(wrote.ok(), await wrote.text()).toBe(true);
+
+	await expect(page.getByText(title)).toBeVisible({ timeout: 30000 });
+
+	await request.dispose();
+});
