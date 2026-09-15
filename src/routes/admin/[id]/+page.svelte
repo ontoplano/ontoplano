@@ -6,6 +6,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import { armed } from '$lib/actions/armed';
 	import type { PageServerData, ActionData } from './$types';
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
@@ -22,6 +23,13 @@
 	let deleting = $state(false);
 	let typed = $state('');
 	const matches = $derived(typed.trim().toLowerCase() === data.account.email.toLowerCase());
+
+	/*
+	 * And so is a role change, for the same reason in the other direction:
+	 * granting admin hands somebody the power to delete every account here.
+	 */
+	let changingRole = $state(false);
+	const nextRole = $derived(data.account.role === 'admin' ? 'member' : 'admin');
 
 	function when(iso: string): string {
 		return new Date(iso).toLocaleString(undefined, {
@@ -121,16 +129,48 @@
 			{/if}
 
 			{#if !data.self}
-				<form method="post" action="?/setRole" use:enhance>
-					<input
-						type="hidden"
-						name="role"
-						value={data.account.role === 'admin' ? 'member' : 'admin'}
-					/>
-					<button class="btn btn-sm">
+				<!--
+					A role change is two steps, like deleting is.
+
+					It sat in this row as one ordinary small button between "Start a
+					trial" and "Resend confirmation", so a slipped click handed
+					somebody every power this page has — including deleting every
+					other account. The confirm is armed, so the second half of a
+					double-click lands on nothing, and Cancel takes the place the
+					trigger was in.
+				-->
+				{#if changingRole}
+					<form
+						method="post"
+						action="?/setRole"
+						use:enhance={() => {
+							changingRole = false;
+							return ({ update }) => update();
+						}}
+						class="flex flex-wrap items-center gap-2"
+					>
+						<input type="hidden" name="role" value={nextRole} />
+						<button type="button" class="btn btn-sm" onclick={() => (changingRole = false)}>
+							Cancel
+						</button>
+						<span class="text-sm text-gray-700">
+							{#if nextRole === 'admin'}
+								<strong class="font-semibold text-gray-900">{data.account.email}</strong> will be able
+								to read, change and delete every account.
+							{:else}
+								<strong class="font-semibold text-gray-900">{data.account.email}</strong> keeps the account
+								and loses every admin power.
+							{/if}
+						</span>
+						<button class="btn btn-danger btn-sm" use:armed>
+							{nextRole === 'admin' ? 'Make admin' : 'Remove admin'}
+						</button>
+					</form>
+				{:else}
+					<button class="btn btn-sm" onclick={() => (changingRole = true)}>
 						{data.account.role === 'admin' ? 'Remove admin' : 'Make admin'}
 					</button>
-				</form>
+				{/if}
 			{/if}
 		</div>
 

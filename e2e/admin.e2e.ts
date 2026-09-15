@@ -135,6 +135,73 @@ test('deleting an account asks for its address, and means it', async ({ page }) 
 });
 
 /**
+ * Admin is not one click away.
+ *
+ * "Make admin" was an ordinary small button in the row with "Start a trial"
+ * and "Resend confirmation", and what it grants is every power on this page —
+ * including deleting every other account. A slipped click did it, silently.
+ * It is two steps now, and the confirm is armed: the second half of a
+ * double-click lands on nothing.
+ */
+test('granting admin takes a deliberate second press', async ({ page }) => {
+	await signInAsOwner(page);
+
+	const email = `to-promote-${Date.now()}@test.invalid`;
+	const made = await page.request.post('/api/auth/sign-up/email', {
+		headers: { Origin: ORIGIN, 'x-forwarded-for': '10.33.0.1' },
+		data: { email, password: 'smoke-test-password', name: 'Hopeful' }
+	});
+	expect(made.ok(), 'the account to promote was created').toBe(true);
+
+	await page.request.post('/api/auth/sign-out', { headers: { Origin: ORIGIN } });
+	await signInAsOwner(page);
+
+	await page.goto('/admin');
+	await page.fill('[name="q"]', email);
+	await page.keyboard.press('Enter');
+	await page
+		.getByRole('link', { name: new RegExp(email, 'i') })
+		.first()
+		.click();
+
+	/*
+	 * A double-click on the trigger, which is what a slipped click looks like:
+	 * the first press opens the confirmation and the second lands on Cancel,
+	 * which is deliberately where the trigger was. Nothing comes of it. Were
+	 * the confirm to sit there instead, `use:armed` swallows the press for
+	 * 450ms — two guards, and this asserts the outcome both exist for.
+	 */
+	await page.getByRole('button', { name: 'Make admin' }).dblclick();
+	await page.reload();
+	// The confirmation is a handler, so it does nothing until the page is
+	// running — wait for that, or the click below lands on dead markup.
+	await page.waitForSelector('html[data-ready]');
+	await expect(page.getByRole('button', { name: 'Make admin' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Remove admin' })).toHaveCount(0);
+
+	/*
+	 * What the confirmation says is what is at stake, named.
+	 *
+	 * Matched within one line of the markup: Playwright normalizes whitespace
+	 * for a string but NOT for a regex, so a pattern reaching across the
+	 * wrap prettier put in the sentence matches nothing at all.
+	 */
+	await page.getByRole('button', { name: 'Make admin' }).click();
+	await expect(page.getByText(/change and delete every account/)).toBeVisible();
+
+	// Backing out leaves the account where it was.
+	await page.getByRole('button', { name: 'Cancel' }).click();
+	await expect(page.getByRole('button', { name: 'Cancel' })).toHaveCount(0);
+
+	// And the deliberate version, after the arming delay, does the thing.
+	await page.getByRole('button', { name: 'Make admin' }).click();
+	const confirm = page.getByRole('button', { name: 'Make admin' });
+	await page.waitForTimeout(600);
+	await confirm.click();
+	await expect(page.getByRole('button', { name: 'Remove admin' })).toBeVisible();
+});
+
+/**
  * Nobody signs in as anybody.
  *
  * The button is gone from the account page, and the plugin endpoints behind
