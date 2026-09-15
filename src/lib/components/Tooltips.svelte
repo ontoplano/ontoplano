@@ -57,9 +57,18 @@
 	let timer: ReturnType<typeof setTimeout> | null = null;
 	let frame = 0;
 
-	/** Give the title back. Always safe to call. */
+	/** Marks a label we put on, so only ours is taken off again. */
+	const BORROWED = 'data-tip-named';
+
+	/** Give the title back, and take back the name we lent. */
 	function release() {
-		if (holding && held) holding.setAttribute('title', held);
+		if (holding && held) {
+			holding.setAttribute('title', held);
+			if (holding.hasAttribute(BORROWED)) {
+				holding.removeAttribute('aria-label');
+				holding.removeAttribute(BORROWED);
+			}
+		}
 		holding = null;
 		held = '';
 	}
@@ -126,6 +135,21 @@
 		held = title;
 		// Off the element, so the browser has nothing of its own to draw.
 		owner.removeAttribute('title');
+
+		/*
+		 * And the name it was carrying, kept.
+		 *
+		 * On an icon button with no text and no `aria-label`, the `title` IS the
+		 * accessible name — so taking it away leaves the button nameless for as
+		 * long as the pointer rests on it, which is the moment a screen reader
+		 * is most likely to be reading it. Lending the same words back as an
+		 * `aria-label` keeps the name identical throughout; the marker is so
+		 * only the one we lent is taken away again.
+		 */
+		if (!owner.hasAttribute('aria-label') && !owner.textContent?.trim()) {
+			owner.setAttribute('aria-label', title);
+			owner.setAttribute(BORROWED, '');
+		}
 
 		timer = setTimeout(() => {
 			timer = null;

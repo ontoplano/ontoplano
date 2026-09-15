@@ -18,6 +18,18 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.176.8 — 2026-09-15
+
+- **Fixed: the phone app threw on every navigation.** Yesterday's fix for
+  keeping your place read something a device's own instance does not have. It
+  broke nothing you could see and it should not have shipped; the device build
+  now runs clean.
+- **Fixed: the account button on a device went to Preferences.** A device grew
+  a real account page — your data out, your data in, and the end of the
+  instance — and the button that should open it was still pointing at the old
+  answer. Which mattered more than it sounds: moving to another instance lives
+  on that page, and on a phone-only instance it is the only door there is.
+
 ## 0.176.7 — 2026-09-14
 
 - **Fixed: changing how far ahead Reminders looks threw you back to the top.**

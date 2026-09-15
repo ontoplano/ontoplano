@@ -126,9 +126,7 @@
 		const items: Petal[] = [
 			{
 				key: 'account',
-				// A device that is its own instance has no account — what the same
-				// press is for there is the preferences, which it does have.
-				label: onDevice ? 'Settings' : 'Account',
+				label: 'Account',
 				icon: 'user'
 			},
 			{
@@ -159,7 +157,10 @@
 	function chooseFan(key: string) {
 		fanOpen = false;
 		if (key === 'account') {
-			goto(resolve(onDevice ? '/settings/preferences' : '/settings/account'));
+			// The same screen either way. A device has one now — its data out, its
+			// data in, and the end of the instance — and leaving for another
+			// instance is on it, which on a phone is the only door there is.
+			goto(resolve('/settings/account'));
 			return;
 		}
 		if (key === 'tutorial') {
@@ -491,7 +492,7 @@
 	 * that ends on the same screen it started on is not an arrival.
 	 */
 	afterNavigate(({ from, to }) => {
-		if (from && to && from.url.pathname === to.url.pathname) return;
+		if (from?.url && to?.url && from.url.pathname === to.url.pathname) return;
 		scroller?.scrollTo({ top: 0 });
 	});
 
