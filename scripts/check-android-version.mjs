@@ -28,6 +28,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { versionCode } from './version-code.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const GRADLE = join(ROOT, 'capacitor', 'android', 'app', 'build.gradle');
@@ -43,13 +44,7 @@ const gradle = readFileSync(GRADLE, 'utf8');
 const name = /versionName\s+"([^"]+)"/.exec(gradle)?.[1];
 const code = Number(/versionCode\s+(\d+)/.exec(gradle)?.[1]);
 
-/**
- * The same arithmetic `build-twa.mjs` does: 0.110.0 is 11000, 1.2.3 is 100203.
- * Duplicated on purpose — importing the builder would pull in Bubblewrap and
- * the SDK checks, which is a great deal of machinery for reading two numbers.
- */
-const [major, minor, patch] = version.split('.').map(Number);
-const expected = major * 100000 + minor * 100 + patch;
+const expected = versionCode(version);
 
 const wrong = [];
 if (name !== version) wrong.push(`versionName is "${name}", package.json says "${version}"`);

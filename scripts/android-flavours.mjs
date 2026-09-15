@@ -21,6 +21,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { squareIcon } from './android-icons.mjs';
+import { versionCode as codeOf } from './version-code.mjs';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -59,13 +60,12 @@ const ADAPTIVE_FOREGROUND_SCALE = (() => {
 /*
  * The app's own version, so a phone can say which build it is holding.
  *
- * `versionCode` is the same arithmetic `make android` uses for the store
- * build — 0.145.0 becomes 14500 — so the three apps and the store one are
- * always talking about the same release.
+ * The arithmetic lives in `version-code.mjs`, shared with the check that
+ * keeps the committed project honest — so the three apps, the store build
+ * and the check are always talking about the same number.
  */
 const { version } = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
-const [major, minor, patch] = version.split('.').map(Number);
-const versionCode = major * 10000 + minor * 100 + patch;
+const versionCode = codeOf(version);
 
 /**
  * Where each app points, and what it is called.
