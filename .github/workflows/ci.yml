@@ -65,7 +65,11 @@ jobs:
       # Every changelog line sits under the version this branch ships.
       - run: node scripts/check-changelog.mjs
 
-      - run: yarn check
+      # `yarn run check`, not `yarn check`: the second is yarn's own built-in
+      # dependency-integrity command, which wins over a script of the same name
+      # and passes without ever looking at the types. This step read as a type
+      # check for as long as it has existed and was not one.
+      - run: yarn run check
 
       # A plain build, in an environment with nothing configured — which is what
       # a fresh clone is, and what the Docker image build is. The image failed
