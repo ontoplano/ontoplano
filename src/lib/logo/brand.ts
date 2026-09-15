@@ -81,6 +81,18 @@ export const MASKABLE_SCALE = 0.9;
 export const APPLE_SCALE = 0.86;
 
 /**
+ * The opaque icon a store wants, with room around the mark.
+ *
+ * Nothing crops this one — a listing draws it as given, sometimes rounded,
+ * sometimes square — so the margin has to be in the picture rather than
+ * borrowed from a mask. At `ICON_SCALE` the ring ran off all four edges, which
+ * reads as a crop of a bigger drawing rather than as a mark on a tile. This is
+ * a little tighter than the apple-touch icon, because that one is rounded by
+ * iOS and this one may not be rounded at all.
+ */
+export const SOLID_SCALE = 0.82;
+
+/**
  * How much of an Android adaptive icon's foreground layer the mark fills.
  *
  * Stricter than the web's maskable, and a different asset for that reason: the

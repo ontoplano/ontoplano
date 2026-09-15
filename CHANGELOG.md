@@ -30,6 +30,8 @@ releases mattered.
   the refusal cannot be used to ask what exists.
 - **A goal can be filed under a notebook by an assistant**, which the app has
   always allowed and the tools did not.
+- **The opaque icon keeps a margin from the edge**, so it reads as a mark on a
+  tile rather than as a crop of a bigger drawing.
 
 ## 0.177.1 — 2026-09-15
 

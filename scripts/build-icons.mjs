@@ -63,6 +63,7 @@ const FIELD = (() => {
 const ICON_SCALE = constant('ICON_SCALE');
 const MASKABLE = constant('MASKABLE_SCALE');
 const APPLE = constant('APPLE_SCALE');
+const SOLID = constant('SOLID_SCALE');
 
 /** Every icon is 512 square whatever size the source happens to be. */
 const SIZE = 512;
@@ -140,8 +141,11 @@ const plain = icon(ICON_SCALE, null);
  * listing above all, where an icon with an alpha channel is rejected on
  * upload. On the mark's own dark the ring reads as running off the edge rather
  * than as a shape pasted onto a square.
+ *
+ * It keeps a margin of its own: nothing crops this one, so the room around the
+ * mark has to be drawn rather than left to a mask.
  */
-const solid = icon(ICON_SCALE, FIELD);
+const solid = icon(SOLID, FIELD);
 const maskable = icon(MASKABLE, GROUND);
 const apple = icon(APPLE, GROUND);
 
