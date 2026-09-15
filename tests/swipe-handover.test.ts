@@ -53,13 +53,13 @@ function drag(
 	tabs.dispatchEvent(up);
 }
 
-let next: ReturnType<typeof vi.fn>;
-let back: ReturnType<typeof vi.fn>;
+let next: ReturnType<typeof vi.fn<() => void>>;
+let back: ReturnType<typeof vi.fn<() => void>>;
 
 beforeEach(() => {
 	document.body.innerHTML = '';
-	next = vi.fn();
-	back = vi.fn();
+	next = vi.fn<() => void>();
+	back = vi.fn<() => void>();
 });
 
 describe('a drag that scrolled the tab strip', () => {

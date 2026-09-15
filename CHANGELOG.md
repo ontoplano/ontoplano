@@ -31,6 +31,10 @@ releases mattered.
   that page has, including deleting every other account. It says whose account
   and what they will be able to do, the confirm ignores a reflex double-click,
   and Cancel sits where the button was.
+- **The instance chooser shows the mark of the instance you are choosing** — in
+  full colour for one behind a server, drained of it for the copy this phone
+  would carry, which is what that copy's own menu and launcher icon already
+  say. Choosing between them moves nothing on the screen any more either.
 - **The bar at the top of a phone screen has square corners again.** It reaches
   both edges, so its rounded ones had nothing to sit against and left slivers
   of the page showing through at all four.
