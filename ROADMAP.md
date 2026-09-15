@@ -104,8 +104,15 @@ an `/inventory` that keeps the list as its consumable half.
 
 Every string is written into its page in English.
 
+**The app only.** `app.ontoplano.com` is what gets translated — and the tutorial
+with it, because a tour written in a language somebody does not read is worse
+than no tour. The marketing site stays English, the docs stay English; both can
+follow later, and neither is what somebody uses every day.
+
 - Strings into a keyed catalogue; the build fails on a key that is gone.
-- Locale per account in `user_settings`, browser first, instance as fallback.
+- Locale per account in `user_settings`, browser first, instance as fallback —
+  and changeable under Settings, not inferred and left at that.
+- The tour's steps come out of the same catalogue as the rest of the app.
 - Dates and numbers through `Intl` — several places still hardcode `en-US`.
 
 - Portuguese, Russian, Chinese would probably be the priorities
