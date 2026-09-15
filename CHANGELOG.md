@@ -18,6 +18,14 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.1 — 2026-09-15
+
+- **The to-do list can be ordered by what you just finished.** The order button
+  has a third setting: finished work first, newest at the top, with everything
+  unfinished keeping the order you put it in. It is a real record of when
+  something was done rather than when it was last touched — renaming a task no
+  longer counts as doing it.
+
 ## 0.178.0 — 2026-09-15
 
 - **The phone is set up to ring by opening it**, rather than by pressing

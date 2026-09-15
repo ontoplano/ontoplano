@@ -73,7 +73,7 @@ exist.
 | [`suppressed_slots`](#suppressed_slots)           | 5       | yes               |
 | [`tags`](#tags)                                   | 3       | yes               |
 | [`task_records`](#task_records)                   | 15      | yes               |
-| [`todo_tasks`](#todo_tasks)                       | 16      | yes               |
+| [`todo_tasks`](#todo_tasks)                       | 17      | yes               |
 | [`user`](#user)                                   | 11      | —                 |
 | [`user_settings`](#user_settings)                 | 4       | yes               |
 | [`verification`](#verification)                   | 6       | —                 |
@@ -1342,6 +1342,7 @@ Checks — enforced by the database, not only by the service layer:
 | `title`          | text    | not null | —                     | —                 |
 | `notes`          | text    | null     | `''`                  | —                 |
 | `completed`      | integer | not null | `false`               | —                 |
+| `completed_at`   | text    | null     | —                     | —                 |
 | `category_id`    | integer | null     | —                     | → `categories.id` |
 | `notebook_id`    | integer | null     | —                     | → `notebooks.id`  |
 | `scheduled_date` | text    | null     | —                     | —                 |

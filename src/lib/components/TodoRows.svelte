@@ -122,23 +122,65 @@
 	 * Kept in this browser: it is a way of looking at a list rather than a fact
 	 * about the account, and flipping it on a phone says nothing about a laptop.
 	 */
-	let newestFirst = $state(true);
+	/*
+	 * Three questions, one button.
+	 *
+	 * Newest and oldest are about when something was written down. "Last done"
+	 * is the other question a to-do list gets asked — *what have I just
+	 * finished* — and it is not the same as either: `updatedAt` moves for a
+	 * renamed title, so a completion is what `completedAt` records and what
+	 * this orders by. Finished work first, newest at the top; everything
+	 * unfinished keeps its own order underneath, because throwing that away is
+	 * throwing away the order somebody arranged by hand.
+	 */
+	const ORDERS = ['newest', 'oldest', 'done'] as const;
+	type Order = (typeof ORDERS)[number];
+
+	const ORDER_LABELS: Record<Order, { short: string; long: string; why: string }> = {
+		newest: {
+			short: 'Newest',
+			long: 'Newest first',
+			why: 'Newest at the top — press for the oldest'
+		},
+		oldest: {
+			short: 'Oldest',
+			long: 'Oldest first',
+			why: 'Oldest at the top — press for what you just did'
+		},
+		done: {
+			short: 'Done',
+			long: 'Last done first',
+			why: 'What you finished most recently — press for the newest'
+		}
+	};
+
+	let order = $state<Order>('newest');
 	$effect(() => {
 		try {
-			const held = localStorage.getItem('ontoplano:todos-newest');
-			if (held !== null) newestFirst = held === '1';
+			const held = localStorage.getItem('ontoplano:todos-order');
+			if (held && (ORDERS as readonly string[]).includes(held)) order = held as Order;
+			// What the older setting said, so nobody's list flips on an update.
+			else if (localStorage.getItem('ontoplano:todos-newest') === '0') order = 'oldest';
 		} catch {
 			// A private window, or storage refused. The default stands.
 		}
 	});
 
 	function flipOrder() {
-		newestFirst = !newestFirst;
+		order = ORDERS[(ORDERS.indexOf(order) + 1) % ORDERS.length];
 		try {
-			localStorage.setItem('ontoplano:todos-newest', newestFirst ? '1' : '0');
+			localStorage.setItem('ontoplano:todos-order', order);
 		} catch {
 			// It still flips for this visit; only the memory is lost.
 		}
+	}
+
+	/** Finished first, newest of them at the top; the rest as they were. */
+	function byLastDone(a: Todo, b: Todo): number {
+		if (!a.completedAt && !b.completedAt) return 0;
+		if (!a.completedAt) return 1;
+		if (!b.completedAt) return -1;
+		return b.completedAt.localeCompare(a.completedAt);
 	}
 
 	let visibleTodos = $derived.by(() => {
@@ -154,8 +196,12 @@
 		else if (notebookFilter !== '')
 			shown = shown.filter((t: Todo) => String(t.notebookId) === notebookFilter);
 
+		if (order === 'done') return [...shown].sort(byLastDone);
+
 		return [...shown].sort((a: Todo, b: Todo) =>
-			newestFirst ? b.createdAt.localeCompare(a.createdAt) : a.createdAt.localeCompare(b.createdAt)
+			order === 'newest'
+				? b.createdAt.localeCompare(a.createdAt)
+				: a.createdAt.localeCompare(b.createdAt)
 		);
 	});
 
@@ -370,16 +416,12 @@
 					</select>
 				</label>
 			{/if}
-			<button
-				onclick={flipOrder}
-				class="btn btn-sm shrink-0"
-				title={newestFirst
-					? 'Newest at the top — press for the oldest'
-					: 'Oldest at the top — press for the newest'}
-			>
-				<Icon name={newestFirst ? 'chevron-down' : 'chevron-up'} />
-				<span class="sm:hidden">{newestFirst ? 'Newest' : 'Oldest'}</span>
-				<span class="hidden sm:inline">{newestFirst ? 'Newest first' : 'Oldest first'}</span>
+			<!-- Three orders on one button, saying which one it is on rather than
+			     what pressing it would do: the list underneath is the evidence. -->
+			<button onclick={flipOrder} class="btn btn-sm shrink-0" title={ORDER_LABELS[order].why}>
+				<Icon name={order === 'oldest' ? 'chevron-up' : 'chevron-down'} />
+				<span class="sm:hidden">{ORDER_LABELS[order].short}</span>
+				<span class="hidden sm:inline">{ORDER_LABELS[order].long}</span>
 			</button>
 		{/snippet}
 	</RoomToolbar>

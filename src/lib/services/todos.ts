@@ -42,6 +42,8 @@ export type Todo = {
 	notebookTitle: string | null;
 	/** When it was put away, or null. Put away is not the same as finished. */
 	archivedAt: string | null;
+	/** When it was last finished, or null. Cleared when it is reopened. */
+	completedAt: string | null;
 	ratings: RatingValues;
 	createdAt: string;
 	updatedAt: string;
@@ -52,6 +54,7 @@ const SELECTION = {
 	title: todoTasks.title,
 	notes: todoTasks.notes,
 	status: todoTasks.status,
+	completedAt: todoTasks.completedAt,
 	scheduledDate: todoTasks.scheduledDate,
 	sortOrder: todoTasks.sortOrder,
 	categoryId: todoTasks.categoryId,
@@ -81,6 +84,7 @@ function shape(r: Record<string, unknown>): Todo {
 		notebookId: (r.notebookId as number) ?? null,
 		notebookTitle: (r.notebookTitle as string) ?? null,
 		archivedAt: (r.archivedAt as string) ?? null,
+		completedAt: (r.completedAt as string) ?? null,
 		ratings: {
 			urgency: (r.urgency as number) ?? null,
 			interest: (r.interest as number) ?? null,
@@ -453,6 +457,12 @@ export function setTodoStatus(ctx: Ctx, id: number, status: unknown): void {
 			// `completed` is kept in step for anything still reading it, and so
 			// existing data stays meaningful either way round.
 			completed: status === 'done',
+			/*
+			 * And when it happened, so a list can be ordered by what was just
+			 * finished. Cleared on the way back out: something reopened is not
+			 * recently done, it is not done.
+			 */
+			completedAt: status === 'done' ? stamp(ctx) : null,
 			updatedAt: stamp(ctx)
 		})
 		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))

@@ -1,0 +1,1 @@
+ALTER TABLE `todo_tasks` ADD `completed_at` text;

@@ -589,6 +589,18 @@ export const todoTasks = sqliteTable(
 		title: text('title').notNull(),
 		notes: text('notes').default(''),
 		completed: integer('completed', { mode: 'boolean' }).notNull().default(false),
+		/*
+		 * When it was last finished, which is not when it was last touched.
+		 *
+		 * `updatedAt` moves for a renamed title or a changed category, so a list
+		 * ordered by "what have I just done" built out of it puts an edit above
+		 * a completion. This is written the moment a task becomes done and
+		 * cleared the moment it stops being one, so reopening something does not
+		 * leave it sitting at the top of the finished work.
+		 *
+		 * Null for everything never done, which is most of them.
+		 */
+		completedAt: text('completed_at'),
 		categoryId: integer('category_id').references(() => categories.id),
 		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
 		// A todo is a task without a date yet. Setting this is what "drag it onto

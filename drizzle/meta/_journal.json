@@ -547,6 +547,13 @@
       "when": 1789452548702,
       "tag": "0077_token_confinement",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "6",
+      "when": 1789491473361,
+      "tag": "0078_todo_completed_at",
+      "breakpoints": true
     }
   ]
 }
