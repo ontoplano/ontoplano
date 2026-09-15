@@ -18,6 +18,18 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.177.4 — 2026-09-15
+
+- **Urgency, interest and energy are sliders.** Five numbered buttons each was
+  fifteen targets for three answers, and "none of them" was a second press on
+  whichever one was already lit — which nobody guesses. Off is the left end of
+  the track now, so setting a scale and clearing it are the same drag.
+- **A key tied to a notebook can still hang a task on that notebook's goal.**
+  Judged on every id it could take, the tool that links them reaches outside a
+  notebook and was refused outright; judged on what it actually requires, it is
+  a goal tool with an optional list — and an id from outside is still refused
+  when one is passed.
+
 ## 0.177.3 — 2026-09-15
 
 - **A key for an assistant can be tied to one notebook.** Permissions used to

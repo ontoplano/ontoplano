@@ -151,6 +151,30 @@ describe('what it cannot do', () => {
 	});
 });
 
+describe('a tool that also takes ids from outside', () => {
+	/*
+	 * `link_to_goal` hangs to-dos and repeating blocks on a goal. A notebook
+	 * holds to-dos and not repeating blocks, so the tool is offered — its goal
+	 * is required and its lists are not — and the half that reaches outside is
+	 * refused at the id rather than at the door.
+	 */
+	it('is offered, and works for the part that is inside', () => {
+		expect(failed(call('link_to_goal', { goalId: inside.goal, todoIds: [inside.todo] }))).toBe(
+			false
+		);
+	});
+
+	it('refuses a to-do from another notebook in the same call', () => {
+		expect(
+			failed(call('link_to_goal', { goalId: inside.goal, todoIds: [outside.notebookTodo] }))
+		).toBe(true);
+	});
+
+	it('refuses a repeating block, which a notebook has none of', () => {
+		expect(failed(call('link_to_goal', { goalId: inside.goal, slotIds: [1] }))).toBe(true);
+	});
+});
+
 describe('asking about another notebook', () => {
 	/*
 	 * Answered about its own, rather than refused.

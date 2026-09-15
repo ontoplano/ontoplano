@@ -102,13 +102,28 @@ export function reachOf(confinement: Confinement) {
  */
 export function withinConfinement(
 	confinement: Confinement,
-	tool: { refs?: readonly Ref[] }
+	tool: { refs?: readonly Ref[]; input?: { required?: readonly string[] } }
 ): boolean {
 	const table = CONFINEMENTS[confinement.kind];
 	if (!table) return false;
 
 	const named = tool.refs ?? [];
-	return named.length > 0 && named.every((ref) => Boolean(table.contains[ref.kind]));
+	if (!named.some((ref) => table.contains[ref.kind])) return false;
+
+	/*
+	 * An optional argument of a kind the confinement does not hold is allowed
+	 * to exist, and is refused if it is actually used.
+	 *
+	 * `link_to_goal` hangs things on a goal: to-dos, which live in a notebook,
+	 * and repeating blocks, which do not. Judged on every reference it could
+	 * take, it would be refused outright — and a key made to work on a project
+	 * could not put a task against that project's goal, which is most of what
+	 * working on a project is. Judged on what it *requires*, it is a goal tool
+	 * that takes an optional list this key has none of: usable, and the id of a
+	 * block still resolves against an empty reach and is refused.
+	 */
+	const required = new Set(tool.input?.required ?? []);
+	return named.every((ref) => !required.has(ref.arg) || Boolean(table.contains[ref.kind]));
 }
 
 /**
@@ -121,22 +136,18 @@ export function withinConfinement(
 export function confine(
 	confinement: Confinement,
 	refs: readonly Ref[] | undefined,
+	input: { required?: readonly string[] } | undefined,
 	args: Record<string, unknown>
 ): void {
 	const table = CONFINEMENTS[confinement.kind];
 	if (!table) throw new ForbiddenError('This key is confined to something that no longer exists.');
 
-	const named = refs ?? [];
-	if (named.length === 0)
+	if (!withinConfinement(confinement, { refs, input }))
 		throw new ForbiddenError(
-			`This key can only work on ${table.label}, and that asks about the whole account.`
+			`This key can only work on ${table.label}, and that is not something it can reach.`
 		);
 
-	for (const ref of named) {
-		if (!table.contains[ref.kind])
-			throw new ForbiddenError(`This key can only work on ${table.label}.`);
-		if (ref.kind === table.kind) args[ref.arg] = confinement.id;
-	}
+	for (const ref of refs ?? []) if (ref.kind === table.kind) args[ref.arg] = confinement.id;
 }
 
 /**

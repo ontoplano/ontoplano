@@ -46,6 +46,13 @@
 		tiedTo ? (data.reach.find((choice) => choice.kind === tiedTo)?.scopes ?? []) : null
 	);
 	const reaches = (scope: string | null) => !scope || !reachable || reachable.includes(scope);
+
+	/** The name of the thing it is tied to, which is the name the key wants. */
+	const tiedName = $derived(
+		data.reach
+			.find((choice) => choice.kind === tiedTo)
+			?.things.find((thing) => String(thing.id) === tiedId)?.label ?? ''
+	);
 	/*
 	 * The key, if one was just made, and a placeholder otherwise.
 	 *
@@ -244,9 +251,12 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 							class="mt-2 flex flex-wrap items-center gap-2"
 						>
 							<div class="flex w-full flex-wrap items-center gap-2">
+								<!-- Named after what it is tied to, when it is tied to
+								     something: a list of keys called "AI assistant" is a list
+								     nobody can revoke the right one from. -->
 								<OneLine
 									name="label"
-									placeholder="AI assistant"
+									placeholder={tiedName || 'AI assistant'}
 									class="input w-auto flex-1 sm:max-w-64"
 									ariaLabel="What to call this key"
 								/>

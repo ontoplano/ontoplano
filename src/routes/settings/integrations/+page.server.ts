@@ -155,8 +155,19 @@ export const actions: Actions = {
 		}
 
 		try {
+			/*
+			 * Named after what it is tied to, when it is tied to something.
+			 *
+			 * The field is a placeholder, and a placeholder is not a value: a
+			 * list of five keys all called "AI assistant" is a list nobody can
+			 * revoke the right one from.
+			 */
+			const tied = confinementChoices(ctx)
+				.find((choice) => choice.kind === form.get('confinedKind'))
+				?.things.find((thing) => String(thing.id) === String(form.get('confinedId')));
+
 			const token = createToken(ctx, {
-				name: String(form.get('label') ?? '').trim() || 'AI assistant',
+				name: String(form.get('label') ?? '').trim() || tied?.label || 'AI assistant',
 				scopes,
 				// Checked against the table in `mcp/confinement.ts` and against
 				// what this account can list — never trusted as posted.

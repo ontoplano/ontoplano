@@ -73,9 +73,18 @@ test('a key made on the AI tab arrives inside the words you paste', async ({ pag
 	 * Claude Code and nothing else; a snippet that still says YOUR_KEY after a
 	 * key exists is the same failure wearing a different name.
 	 */
-	for (const client of ['Claude Code', 'Codex', 'Cursor', 'Claude Desktop']) {
+	for (const client of [
+		'Claude Code (plugin)',
+		'Claude Code (by hand)',
+		'Codex',
+		'Cursor',
+		'Claude Desktop'
+	]) {
 		await page.getByRole('button', { name: client, exact: true }).click();
-		const snippet = await page.locator('pre', { hasText: '/api/mcp' }).first().innerText();
+		const snippet = await page
+			.locator('pre', { hasText: /\/api\/mcp|\/plugin install/ })
+			.first()
+			.innerText();
 		expect(snippet, `${client} snippet`).toContain(shown);
 	}
 });

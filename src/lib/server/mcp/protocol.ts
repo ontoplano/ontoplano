@@ -306,7 +306,7 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 				 * than refused, and there is no way to ask which other notebooks
 				 * exist by watching the refusals.
 				 */
-				if (caller.confinement) confine(caller.confinement, tool.refs, args);
+				if (caller.confinement) confine(caller.confinement, tool.refs, tool.input, args);
 
 				/*
 				 * Every id it was handed belongs to whoever is calling.
