@@ -49,6 +49,20 @@ export const SCOPES = {
 		'Put blocks on your week — one-off and repeating — move and rename them, take them off a day, set reminders on them, and mark them done or skipped',
 	'today:read': "See today's plan — the blocks and the tasks on it",
 	/*
+	 * Reminders, on their own, because of where the token lives.
+	 *
+	 * The phone books Android's alarms from this: it holds a key for whichever
+	 * instance you chose and asks it what is coming. That key sits on a device
+	 * somebody can lose, so what it can do is exactly one thing — read the
+	 * alarms that are about to go off — and not the calendar those alarms hang
+	 * from. `schedule:read` would have done the job and would have made a lost
+	 * phone a copy of the week.
+	 *
+	 * Read only. Nothing on the phone needs to make or dismiss a reminder over
+	 * the API; the app does that in the ordinary way, signed in.
+	 */
+	'reminders:read': 'See the reminders you have coming, so this device can ring for them',
+	/*
 	 * Habits, on their own, because they are not the plan.
 	 *
 	 * They used to arrive inside `today:read`, which meant the phone widget's

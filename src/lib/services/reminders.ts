@@ -104,6 +104,45 @@ export function startOfDay(userId: string): string {
 	return `${String(getGridHours(userId).start).padStart(2, '0')}:00`;
 }
 
+/**
+ * How much of what is coming a phone is handed, and why it is a number.
+ *
+ * Android holds a limited number of pending alarms per app, and the list is
+ * re-booked from scratch each time anything refreshes it, so there is no value
+ * in booking a year of them: what matters is that whatever is coming up soon
+ * fires with the app shut. Named here rather than at each caller because every
+ * consumer of this — the copy of the app on the device, and the native side
+ * reading a server over the API — has to agree about it.
+ */
+export const AHEAD = 64;
+export const AHEAD_DAYS = 30;
+
+/**
+ * What has not gone off yet and is close enough to be worth an alarm.
+ *
+ * One definition, used by the page that books alarms for the instance it is
+ * part of and by `/api/v1/reminders/upcoming`, which hands the same list to a
+ * phone pointed at a server. Two copies of this filter would be two answers to
+ * "will my phone ring", and the difference would only ever show up as silence.
+ */
+export function upcomingReminders(
+	ctx: Ctx,
+	now: Date = new Date()
+): { id: number; remindAt: string; message: string; audible: boolean }[] {
+	const from = now.toISOString();
+	const until = new Date(now.getTime() + AHEAD_DAYS * 24 * 60 * 60 * 1000).toISOString();
+
+	return listReminders(ctx)
+		.filter((r) => r.deliveredAt === null && r.remindAt > from && r.remindAt <= until)
+		.slice(0, AHEAD)
+		.map((r) => ({
+			id: r.id,
+			remindAt: r.remindAt,
+			message: r.message,
+			audible: r.audible
+		}));
+}
+
 export function listReminders(
 	ctx: Ctx,
 	options: { includePast?: boolean } = {}

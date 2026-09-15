@@ -3494,6 +3494,15 @@ The hour the account's day opens on, as `HH:MM`.
 Exported because the form has to say it: a field somebody may leave empty
 has to name what leaving it empty means.
 
+#### `upcomingReminders(ctx, now)`
+
+What has not gone off yet and is close enough to be worth an alarm.
+
+One definition, used by the page that books alarms for the instance it is
+part of and by `/api/v1/reminders/upcoming`, which hands the same list to a
+phone pointed at a server. Two copies of this filter would be two answers to
+"will my phone ring", and the difference would only ever show up as silence.
+
 #### `listReminders(ctx, options)`
 
 #### `dueReminders(ctx)`

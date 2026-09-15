@@ -21,6 +21,7 @@ than a permission bit: a grant given to a string of jargon is not informed.
 | `schedule:read`    | Read everything on your calendar for the days ahead, today included                                                                               |
 | `schedule:write`   | Put blocks on your week — one-off and repeating — move and rename them, take them off a day, set reminders on them, and mark them done or skipped |
 | `today:read`       | See today's plan — the blocks and the tasks on it                                                                                                 |
+| `reminders:read`   | See the reminders you have coming, so this device can ring for them                                                                               |
 | `habits:read`      | See your habits, which are due today, and whether you kept them                                                                                   |
 | `habits:write`     | Mark a habit kept, or unmark one                                                                                                                  |
 | `plugin:declare`   | Name and describe itself on your integrations page                                                                                                |

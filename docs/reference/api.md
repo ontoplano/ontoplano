@@ -19,6 +19,7 @@ sentence somebody agrees to when they grant it.
 | `schedule:read`    | Read everything on your calendar for the days ahead, today included                                                                               |
 | `schedule:write`   | Put blocks on your week — one-off and repeating — move and rename them, take them off a day, set reminders on them, and mark them done or skipped |
 | `today:read`       | See today's plan — the blocks and the tasks on it                                                                                                 |
+| `reminders:read`   | See the reminders you have coming, so this device can ring for them                                                                               |
 | `habits:read`      | See your habits, which are due today, and whether you kept them                                                                                   |
 | `habits:write`     | Mark a habit kept, or unmark one                                                                                                                  |
 | `plugin:declare`   | Name and describe itself on your integrations page                                                                                                |
@@ -79,6 +80,7 @@ sentence somebody agrees to when they grant it.
 | `/api/v1/plugin`                             | GET    | `plugin:declare`  |
 | `/api/v1/plugin`                             | PUT    | `plugin:declare`  |
 | `/api/v1/plugin`                             | DELETE | `plugin:declare`  |
+| `/api/v1/reminders/upcoming`                 | GET    | `reminders:read`  |
 | `/api/v1/schedule/upcoming`                  | GET    | `schedule:read`   |
 | `/api/v1/shopping`                           | GET    | `shopping:read`   |
 | `/api/v1/shopping/items`                     | POST   | `shopping:write`  |
@@ -469,6 +471,30 @@ can call it at every startup and the newest version's vocabulary wins.
 **DELETE** — requires `plugin:declare`
 
 Withdraw a manifest. The metadata keys keep working; they just lose their label.
+
+### `/api/v1/reminders/upcoming`
+
+What is about to go off, for a device that will ring for it.
+
+A phone pointed at an instance cannot be woken by it. The web view inside
+the app has no Push API — Android's does not implement one — and the shell's
+plugins reach the copy of the app it carries and no further, so a page
+served by a server can neither receive a push nor book an alarm. The way a
+phone rings for a server's reminders is that the phone asks, and books
+Android's own alarms with the answer.
+
+Which makes this the alarm clock's half of the arrangement: the list of
+reminders that have not gone off yet and are near enough to be worth
+booking, in the shape the booking side already takes. `upcomingReminders`
+decides what "near enough" means, once, for this and for the copy of the app
+that books alarms for the instance it is part of.
+
+Separate from `/schedule/upcoming`, which answers "what is planned" for
+something that decides for itself what deserves an alarm. This answers "what
+did they ask to be reminded of", which is already that decision — and it is
+a narrower grant, because the token that reads it lives on a phone.
+
+**GET** — requires `reminders:read`
 
 ### `/api/v1/schedule/upcoming`
 
