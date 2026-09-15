@@ -24,6 +24,8 @@ export const load: LayoutServerLoad = async ({ locals }) => {
 			!isSelfHosted() && (seatsFor(locals.user!.id) > 1 || seatOwnerOf(locals.user!.id) !== null),
 		// There is an account here, and a server behind it. The device's own
 		// instance says otherwise — see `layout.isolated.ts`.
-		hasAccount: true
+		hasAccount: true,
+		// And it is on a network, so other software can be pointed at it.
+		reachable: true
 	};
 };

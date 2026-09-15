@@ -24,8 +24,20 @@ export function settingsTabs(who: {
 	 * worse than no tab.
 	 */
 	hasAccount?: boolean;
+	/**
+	 * Whether other software can be pointed at this instance.
+	 *
+	 * Separate from `hasAccount`, and the two came apart the moment a device
+	 * got an account page: an assistant, a calendar subscription, a webhook and
+	 * a data stream are all something reaching this instance over a network,
+	 * and a phone-only instance is not reachable over anything. It has an
+	 * account — your data out, your data in, the end of it — and nothing for
+	 * anybody else to connect to.
+	 */
+	reachable?: boolean;
 }): SettingsTab[] {
 	const account = who.hasAccount !== false;
+	const reachable = who.reachable !== false;
 	return [
 		...(account ? [{ href: '/settings/account', label: 'Account' }] : []),
 		{ href: '/settings/preferences', label: 'Preferences' },
@@ -33,7 +45,9 @@ export function settingsTabs(who: {
 		...(who.family ? [{ href: '/settings/family', label: 'Family' }] : []),
 		// Named for the half people come here for. The tab strip inside splits
 		// assistants from the calendar link, the webhooks and the data streams.
-		...(account ? [{ href: '/settings/integrations', label: 'AI & Integrations' }] : []),
+		...(account && reachable
+			? [{ href: '/settings/integrations', label: 'AI & Integrations' }]
+			: []),
 		...(who.canEditInstance ? [{ href: '/settings/instance', label: 'Instance' }] : []),
 		...(who.canAdminister ? [{ href: '/admin', label: 'Administration' }] : [])
 	];

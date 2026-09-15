@@ -34,6 +34,23 @@ export default defineConfig({
 		 */
 		environment: 'node',
 		globals: false,
+
+		/*
+		 * Ten seconds, not vitest's five.
+		 *
+		 * Almost every test here finishes in milliseconds; what the limit has to
+		 * survive is the slow part, which is importing. A file that pulls in the
+		 * services pulls in drizzle, the schema and a real SQLite database, and
+		 * `demo-mode.test.ts` spends the better part of six seconds doing it —
+		 * so on a machine that is busy, the timeout fires on the import rather
+		 * than on anything the test does. A green suite that goes red because
+		 * the machine is loaded teaches people to re-run rather than to read.
+		 *
+		 * Raised rather than pushed onto the handful of files that trip it:
+		 * which file is slowest changes as the app grows, and a limit somebody
+		 * has to remember to override is one more thing to get wrong.
+		 */
+		testTimeout: 10_000,
 		// A self-hosted instance has no plan ceilings, which is what a test wants:
 		// otherwise the fourth notebook in a fixture fails on billing rather than
 		// on the thing being tested.

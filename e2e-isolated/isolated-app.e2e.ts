@@ -351,3 +351,22 @@ test('the phone can leave the instance it is', async ({ page }) => {
 	await expect(page.getByText('Fully offline')).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Start isolated instance' })).toBeEnabled();
 });
+
+/**
+ * The settings a device has, and the one it must not offer.
+ *
+ * `AI & Integrations` is every way other software reaches this instance — an
+ * assistant, a calendar subscription, a webhook, a data stream — and a
+ * phone-only instance is not on a network at all. It appeared the day a device
+ * got an account page, because one flag was gating both.
+ */
+test('settings offers nothing that needs somebody else to connect', async ({ page }) => {
+	test.setTimeout(120_000);
+	await page.goto('/settings/preferences');
+	await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible({ timeout: 60_000 });
+
+	const tabs = await page.locator('nav[aria-label="Settings sections"] a').allInnerTexts();
+	expect(tabs).toContain('Account');
+	expect(tabs).toContain('Preferences');
+	expect(tabs.join(' ')).not.toMatch(/Integrations|Billing|Family|Administration/);
+});

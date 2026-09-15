@@ -24,6 +24,10 @@ export async function load(): Promise<LayoutServerData> {
 		family: false,
 		// There is an account page here now: the data out, and the end of the
 		// instance. What it does not have is an address, a password or sessions.
-		hasAccount: true
+		hasAccount: true,
+		// And nothing can be pointed at it: an assistant, a calendar link, a
+		// webhook and a data stream all need somewhere to send a request, and
+		// this instance is not on a network at all.
+		reachable: false
 	};
 }

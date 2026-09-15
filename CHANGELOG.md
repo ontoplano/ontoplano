@@ -18,6 +18,18 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.176.10 — 2026-09-15
+
+- **Fixed: a phone-only instance offered AI & Integrations.** Every part of
+  that tab is something reaching this instance over a network — an assistant, a
+  calendar subscription, a webhook, a data stream — and a copy that lives on
+  one phone is not on a network at all. It appeared the day a device got an
+  account page, because one flag was answering two different questions.
+- **The unit suite waits ten seconds rather than five.** What the limit has to
+  survive is importing the services, not the tests themselves, and a green
+  suite that goes red because the machine is busy teaches people to re-run
+  instead of to read.
+
 ## 0.176.9 — 2026-09-15
 
 - **Both wheels are round on the outside.** Only the outer edge: the hole
