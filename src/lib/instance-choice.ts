@@ -37,6 +37,13 @@ export const DEVICE_ORIGIN = 'https://localhost';
 /** Where the question is asked. Also where leaving an instance lands. */
 export const CHOOSE_PATH = '/instance';
 
+/**
+ * What a launch says when the phone has no key for the instance it is opening.
+ *
+ * Read on the instance's side, where there is a session to mint one with.
+ */
+export const RING_PARAM = 'ring';
+
 /** The mark saying the answer is this phone. */
 export const ARRIVING_HOME = 'here';
 
@@ -121,12 +128,24 @@ export async function suggestedInstance(): Promise<string | null> {
  * launch passes through; the server keeps both in cookies and takes the
  * parameters straight back off the address.
  */
-export function launchAddress(instance: string): string {
+export function launchAddress(instance: string, opts: { ring?: boolean } = {}): string {
 	try {
 		const url = new URL(instance);
 		url.searchParams.set(APP_LAUNCH_PARAM, APP_LAUNCH_VALUE);
 		if (typeof __APP_VERSION__ === 'string')
 			url.searchParams.set(APP_VERSION_PARAM, __APP_VERSION__);
+		/*
+		 * …and, when this phone is not yet ringing for it, a word saying so.
+		 *
+		 * An instance cannot wake a phone and a phone cannot be told to ring by
+		 * a page on the instance's origin — the two halves are on two origins,
+		 * and only the copy of the app the phone carries can talk to the shell.
+		 * So the phone says what it needs on the way out, and the instance
+		 * answers by minting the key and sending it back here. Nobody presses
+		 * anything: being signed in to an instance in the app is the whole of
+		 * what somebody should have to do to be reminded by it.
+		 */
+		if (opts.ring) url.searchParams.set(RING_PARAM, '1');
 		return url.toString();
 	} catch {
 		// Whatever this address is, it is not one to decorate — let the

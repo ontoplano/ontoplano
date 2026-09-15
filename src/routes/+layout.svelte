@@ -23,6 +23,7 @@
 	} from '$lib/slide';
 	import { MARK_CLIP_PATH, MARK_FIELD } from '$lib/logo/mark-shape';
 	import { CHOOSE_PATH, inPhoneApp, storedChoice } from '$lib/instance-choice';
+	import { handOverRingerKey } from '$lib/ringer-handshake';
 	import { THEMES } from '$lib/theme.js';
 	import type { SectionKey } from '$lib/colors.js';
 	import SectionPattern from '$lib/components/SectionPattern.svelte';
@@ -94,6 +95,18 @@
 		if (!onDevice || !inPhoneApp() || storedChoice()) return;
 		if (page.url.pathname.startsWith(CHOOSE_PATH)) return;
 		goto(resolve(CHOOSE_PATH as '/instance'));
+	});
+
+	/*
+	 * A phone that opened this instance and cannot ring for it yet.
+	 *
+	 * The launch asked; this answers, once, and only where there is a session
+	 * to answer with. See `$lib/ringer-handshake` for why it has to happen on
+	 * this side and end up on the other.
+	 */
+	$effect(() => {
+		if (!data.user) return;
+		void handOverRingerKey(page.url);
 	});
 
 	// Autofill is opt-in: see $lib/autofill. Once, for every form the app ever mounts.

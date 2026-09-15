@@ -10,6 +10,7 @@
 import { isIsolated, isIsolatedBuild } from '$lib/isolated/mode';
 import { sendOutsideLinksToTheBrowser } from '$lib/outside-links';
 import { backGestureGoesBack } from '$lib/phone-back';
+import { ringingFor } from '$lib/phone-notifications';
 import { installIsolatedBridge } from '$lib/isolated/bridge';
 import { servePicturesToServiceWorker } from '$lib/isolated/pictures';
 import {
@@ -55,7 +56,7 @@ if (inPhoneApp() && isIsolatedBuild()) {
 	} else if (carried.get(ARRIVING_AT)) {
 		const instance = carried.get(ARRIVING_AT)!;
 		rememberInstance(instance);
-		location.replace(launchAddress(instance));
+		void openInstance(instance);
 	} else {
 		/*
 		 * An address is a real navigation — it leaves this origin.
@@ -68,9 +69,39 @@ if (inPhoneApp() && isIsolatedBuild()) {
 		 * router, in the root layout, where it is one line of `goto`.
 		 */
 		const going = storedInstance();
-		if (going) location.replace(launchAddress(going));
+		if (going) void openInstance(going);
 	}
 }
+
+/**
+ * Go there — and say on the way whether this phone can ring for it yet.
+ *
+ * The shell knows, because the key lives natively; the instance can mint one,
+ * because that is where the session is; and neither can ask the other, because
+ * they are two origins and only this one has a bridge. So the question is
+ * carried in the address on the way out and the answer comes back through
+ * `/ring`. Once per phone, per instance, with nobody pressing anything.
+ *
+ * Asking the shell costs a round trip to native code that answers immediately,
+ * and it is behind a short wait: a launch must not hang on it. If it takes too
+ * long the app opens as it always did and the next launch asks again.
+ */
+async function openInstance(instance: string): Promise<void> {
+	let ring = false;
+	try {
+		const already = await Promise.race([
+			ringingFor(),
+			new Promise<string>((resolve) => setTimeout(() => resolve(instance), RINGER_ASK_MS))
+		]);
+		ring = already !== instance;
+	} catch {
+		// No shell, or it refused: open the instance and say nothing.
+	}
+	location.replace(launchAddress(instance, { ring }));
+}
+
+/** Long enough for a native call, short enough not to be a launch somebody notices. */
+const RINGER_ASK_MS = 400;
 
 if (isIsolated()) {
 	installIsolatedBridge();
