@@ -57,4 +57,14 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!--
+        What the Ringer needs, declared by the app that ships it. Both also
+        arrive through @capacitor/local-notifications' manifest merge, but the
+        RingerReceiver is this app's own code: dropping that plugin one day
+        must not silently stop alarms surviving a reboot or notifications
+        being shown at all.
+    -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>
