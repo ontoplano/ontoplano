@@ -295,6 +295,14 @@ html[data-style='playful'] header,
 html[data-style='playful'] header > div,
 html[data-style='playful'] .bg-chrome,
 html[data-style='playful'] .edge-to-edge,
+/*
+ * The room's own bar, which on a phone is the app's chrome: it bleeds past
+ * the gutter to both screen edges and paints the section's colour, so its
+ * corners had nothing to sit against — the page showed through at all four
+ * as small enclosed slivers, which reads as a rendering fault. Square, like
+ * every other bar that touches an edge.
+ */
+html[data-style='playful'] .room-bar,
 html[data-style='playful'] nav > a,
 html[data-style='playful'] .divide-y > *,
 html[data-style='playful'] dialog > div > header,
