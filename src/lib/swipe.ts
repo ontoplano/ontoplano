@@ -32,6 +32,8 @@ export function onSwipe(
 ): () => void {
 	let from: { x: number; y: number } | null = null;
 	let inside: HTMLElement | null = null;
+	/** Where the scroller under the finger stood when the finger landed. */
+	let scrolledFrom = 0;
 
 	/**
 	 * The nearest thing under the finger that scrolls sideways, if any.
@@ -62,6 +64,7 @@ export function onSwipe(
 		const touch = event.touches[0];
 		from = { x: touch.clientX, y: touch.clientY };
 		inside = sidewaysScrollerAt(event.target);
+		scrolledFrom = inside ? inside.scrollLeft : 0;
 	}
 
 	function up(event: TouchEvent) {
@@ -79,11 +82,20 @@ export function onSwipe(
 		if (Math.abs(dx) < Math.abs(dy) * SWIPE_RATIO) return;
 
 		/*
-		 * A scroller under the finger keeps the gesture while it can still go
-		 * that way. At its end it hands it over, which is what makes a tab strip
-		 * scrolled to its last tab still swipe on to the next section.
+		 * A scroller the finger actually moved keeps the whole gesture.
+		 *
+		 * It used to hand the rest over the moment it ran out of room, which
+		 * made the ordinary way of reaching a tab that is off-screen — drag the
+		 * strip along until the last tab appears — ALSO change tab, because that
+		 * drag ends with the strip against its end. One gesture did two things,
+		 * and the second was not asked for.
+		 *
+		 * So the handover is only for a gesture that moved it nowhere: a strip
+		 * already at its end when the finger landed is not what the finger is
+		 * for, and swiping across it goes on to the next section as before.
 		 */
 		if (inside) {
+			if (Math.abs(inside.scrollLeft - scrolledFrom) > 1) return;
 			const room =
 				dx < 0
 					? inside.scrollWidth - inside.clientWidth - inside.scrollLeft > 1
