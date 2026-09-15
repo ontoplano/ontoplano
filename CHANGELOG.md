@@ -18,6 +18,19 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.177.5 — 2026-09-15
+
+- **Fixed: a phone that had refused notifications could not be talked round.**
+  Android stops showing the permission dialog after two refusals, so the app's
+  "Turn on" button did nothing at all and the screen could only describe where
+  in the phone's settings to go. There is a button now, on the notifications
+  setting and on the reminders page, and it opens that screen. The two states —
+  never asked, and refused for good — are no longer drawn as one.
+- **Reminders arrive wearing the mark.** Android keeps only the shape of a
+  status-bar icon and throws its colours away, so the launcher icon turned up
+  as a white blob. It is the mark's own silhouette now — one octagon inside the
+  other — drawn as a vector, so it is sharp on every screen.
+
 ## 0.177.4 — 2026-09-15
 
 - **Urgency, interest and energy are sliders.** Five numbered buttons each was

@@ -127,4 +127,60 @@ test.describe('notifications inside the app', () => {
 		);
 		expect(booked).toBeGreaterThan(0);
 	});
+
+	/**
+	 * The state a phone gets stuck in, and the way out of it.
+	 *
+	 * Android stops showing the permission dialog after two refusals:
+	 * `requestPermissions` answers "denied" with nothing on screen. So a Turn on
+	 * button there is a button that does nothing, which is what somebody who
+	 * wants reminders actually met — along with a sentence telling them where in
+	 * the phone's settings to go. The settings screen is a button now, and this
+	 * is the pair that has to keep working: the right button, and a press that
+	 * reaches the shell.
+	 */
+	test('offers the settings screen once Android has refused for good', async ({ page }) => {
+		await page.addInitScript(() => {
+			const state = { opened: 0 };
+			(window as never as Record<string, unknown>).__settings = state;
+			(window as never as Record<string, unknown>).Capacitor = {
+				Plugins: {
+					LocalNotifications: {
+						checkPermissions: async () => ({ display: 'denied' }),
+						requestPermissions: async () => ({ display: 'denied' }),
+						getPending: async () => ({ notifications: [] }),
+						cancel: async () => undefined,
+						schedule: async () => undefined
+					},
+					OntoplanoSettings: {
+						openNotificationSettings: async () => {
+							state.opened += 1;
+						}
+					}
+				}
+			};
+		});
+		await register(page, `android-denied-${Date.now()}@test.invalid`);
+		await visit(page, '/settings/preferences');
+
+		const section = page.locator('section', { hasText: 'Notifications on this device' });
+
+		// Not an ask it cannot make: the dialog is gone, and so is the button.
+		await expect(section.getByRole('button', { name: 'Turn on' })).toHaveCount(0);
+
+		await section.getByRole('button', { name: "Open the phone's settings" }).click();
+		await expect
+			.poll(() =>
+				page.evaluate(
+					() => (window as never as Record<string, { opened: number }>).__settings.opened
+				)
+			)
+			.toBe(1);
+
+		// And the reminders page says the same thing, since that is where
+		// somebody notices reminders are not arriving.
+		await visit(page, '/reminders');
+		await expect(page.getByText(/will not ask again/)).toBeVisible();
+		await expect(page.getByRole('button', { name: "Open the phone's settings" })).toBeVisible();
+	});
 });

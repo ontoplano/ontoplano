@@ -50,6 +50,17 @@ type Notifications = {
 };
 
 /**
+ * The mark, drawn as the one flat shape a status bar can show.
+ *
+ * Android takes the alpha channel of a small icon and throws the colours away,
+ * so the launcher icon arrived in the status bar as a white blob. This is the
+ * silhouette version — one octagon inside another — written into the project
+ * by `scripts/brand-android.mjs` from the same outline everything else is
+ * derived from.
+ */
+const NOTIFICATION_ICON = 'ic_stat_ontoplano';
+
+/**
  * Android's notification ids are 32-bit signed, and ours are row ids that
  * start at 1 — so they map straight across, and the id is what lets a
  * reminder's alarm be found and cancelled later.
@@ -106,7 +117,7 @@ export async function scheduleDeviceReminders(): Promise<number> {
 				// Silent ones are still worth showing; what `audible` decides is
 				// whether the phone makes a noise about it.
 				sound: reminder.audible ? undefined : null,
-				smallIcon: 'ic_launcher_foreground'
+				smallIcon: NOTIFICATION_ICON
 			}))
 		});
 		return wanted.length;
@@ -115,12 +126,50 @@ export async function scheduleDeviceReminders(): Promise<number> {
 	}
 }
 
-/** Whether this phone will show a reminder with the app closed. */
-export async function phoneWillNotify(): Promise<boolean> {
+/**
+ * What Android has already answered about notifications.
+ *
+ * Three answers, and the middle one is why this exists: **denied** on Android
+ * 13 and up means the dialog will never be shown again, so a button that asks
+ * a second time does nothing at all and looks broken. That case needs the
+ * settings screen instead, which is what `openPhoneNotificationSettings` is
+ * for. `prompt` is somebody who has not been asked yet, and is the only state
+ * where asking is the right move.
+ */
+export async function phonePermission(): Promise<'granted' | 'denied' | 'prompt'> {
 	const notifications = phoneNotifications();
-	if (!notifications) return false;
+	if (!notifications) return 'denied';
 	try {
-		return (await notifications.checkPermissions()).display === 'granted';
+		const { display } = await notifications.checkPermissions();
+		if (display === 'granted') return 'granted';
+		// Capacitor answers 'prompt' and 'prompt-with-rationale' for "not asked
+		// yet"; everything else is a refusal.
+		return display.startsWith('prompt') ? 'prompt' : 'denied';
+	} catch {
+		return 'denied';
+	}
+}
+
+/** The shell's own plugin — see `OntoplanoSettings.java`. */
+type Settings = { openNotificationSettings(): Promise<void> };
+
+/**
+ * Open this app's notification settings on the phone.
+ *
+ * The way back from a permission Android will not ask about again. Answers
+ * whether the screen was actually opened, so the page can say something rather
+ * than leaving a button that appears to do nothing — which is the failure this
+ * whole path exists to undo.
+ */
+export async function openPhoneNotificationSettings(): Promise<boolean> {
+	if (!inPhoneApp()) return false;
+	const capacitor = (globalThis as { Capacitor?: { Plugins?: Record<string, unknown> } }).Capacitor;
+	const settings = capacitor?.Plugins?.OntoplanoSettings as Settings | undefined;
+	if (!settings) return false;
+
+	try {
+		await settings.openNotificationSettings();
+		return true;
 	} catch {
 		return false;
 	}
@@ -150,7 +199,7 @@ export async function testPhoneNotification(): Promise<boolean> {
 					title: 'ontoplano',
 					body: 'A test — reminders will look like this.',
 					schedule: { at: new Date(Date.now() + TEST_DELAY_MS), allowWhileIdle: true },
-					smallIcon: 'ic_launcher_foreground'
+					smallIcon: NOTIFICATION_ICON
 				}
 			]
 		});

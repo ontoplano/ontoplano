@@ -6,7 +6,8 @@
 	import { inPhoneApp } from '$lib/instance-choice';
 	import {
 		askPhoneToNotify,
-		phoneWillNotify,
+		openPhoneNotificationSettings,
+		phonePermission,
 		testPhoneNotification
 	} from '$lib/phone-notifications';
 	import { settingsForm } from '$lib/actions/settings-form';
@@ -177,7 +178,18 @@
 	$effect(() => {
 		if (inPhoneApp()) {
 			inApp = true;
-			void phoneWillNotify().then((on) => (notifications = on ? 'on' : 'off'));
+			/*
+			 * Three states, not two.
+			 *
+			 * This asked "will it notify?" and drew a Turn on button for anything
+			 * that was not yes — including a phone that has already refused twice,
+			 * where Android never shows the dialog again and the button therefore
+			 * did nothing at all. A refusal is its own state, and its answer is the
+			 * settings screen rather than another ask.
+			 */
+			void phonePermission().then((answer) => {
+				notifications = answer === 'granted' ? 'on' : answer === 'denied' ? 'denied' : 'off';
+			});
 			return;
 		}
 		if (!pushSupported()) {
@@ -193,6 +205,12 @@
 
 	async function turnOnPhone() {
 		notifications = (await askPhoneToNotify()) ? 'on' : 'denied';
+	}
+
+	/** Whether the phone's own settings screen opened, so a dead button says so. */
+	let settingsFailed = $state(false);
+	async function openPhoneSettings() {
+		settingsFailed = !(await openPhoneNotificationSettings());
 	}
 
 	/** Book a notification a few seconds out, and say so. */
@@ -431,9 +449,25 @@
 						<p class="mt-2 text-sm text-gray-600">{phoneTested}</p>
 					{/if}
 				{:else if notifications === 'denied'}
-					<p class="text-sm text-gray-500">
-						Android said no. Allowing it again lives in the phone's settings, under this app.
-					</p>
+					<!--
+						A refusal Android will not revisit, and the door out of it.
+
+						After two noes the permission dialog never appears again, so the
+						only way back is the system's own screen — and this said so in
+						prose, which leaves somebody who wants reminders following
+						directions instead of pressing a button.
+					-->
+					<div class="flex flex-wrap items-center gap-3">
+						<span class="text-sm text-gray-700"> Android said no, and will not ask again. </span>
+						<button class="btn btn-primary btn-sm" onclick={openPhoneSettings}>
+							Open the phone's settings
+						</button>
+					</div>
+					{#if settingsFailed}
+						<p class="mt-2 text-sm text-gray-600">
+							This phone would not open it. Settings → Apps → Ontoplano → Notifications.
+						</p>
+					{/if}
 				{:else}
 					<button class="btn btn-primary" onclick={turnOnPhone}>Turn on</button>
 				{/if}

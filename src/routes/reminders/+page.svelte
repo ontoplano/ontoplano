@@ -4,7 +4,11 @@
 	import { enhance } from '$app/forms';
 	import Banner from '$lib/components/Banner.svelte';
 	import { inPhoneApp } from '$lib/instance-choice';
-	import { askPhoneToNotify, phoneWillNotify } from '$lib/phone-notifications';
+	import {
+		askPhoneToNotify,
+		openPhoneNotificationSettings,
+		phonePermission
+	} from '$lib/phone-notifications';
 	import Card from '$lib/components/Card.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -81,6 +85,16 @@
 	let asking = $state(false);
 
 	/**
+	 * Whether Android has refused for good, which is a different button.
+	 *
+	 * After two noes the permission dialog is never shown again: asking a third
+	 * time returns "denied" without anything appearing on screen, so an "Allow
+	 * notifications" button there is a button that does nothing. That state gets
+	 * the settings screen instead.
+	 */
+	let refused = $state(false);
+
+	/**
 	 * Permission and a push subscription are two different things, and both are
 	 * asked for at once. Granting permission alone raises notifications while the
 	 * app is open and nothing whatsoever once it is closed, which is the state
@@ -92,8 +106,10 @@
 			// In the phone app it is Android being asked, not the browser: this
 			// web view has no Push API to subscribe to, and the alarms are booked
 			// with the system instead.
-			if (inPhoneApp()) allowed = await askPhoneToNotify();
-			else await enablePush(page.data.pushKey ?? null);
+			if (inPhoneApp()) {
+				allowed = await askPhoneToNotify();
+				refused = !allowed;
+			} else await enablePush(page.data.pushKey ?? null);
 		} finally {
 			asking = false;
 			if (!inPhoneApp())
@@ -164,7 +180,11 @@
 	onMount(() => {
 		insecure = !window.isSecureContext;
 		origin = `${location.protocol}//${location.host}`;
-		if (inPhoneApp()) phoneWillNotify().then((yes) => (allowed = yes));
+		if (inPhoneApp())
+			phonePermission().then((answer) => {
+				allowed = answer === 'granted';
+				refused = answer === 'denied';
+			});
 		else allowed = typeof Notification !== 'undefined' && Notification.permission === 'granted';
 	});
 
@@ -286,13 +306,26 @@
 		<Banner kind="warning">
 			<div class="flex flex-wrap items-center gap-3">
 				<span>
-					{inPhoneApp()
-						? 'This phone has not been allowed to notify you, so reminders arrive only while ontoplano is open.'
-						: 'This browser has not been allowed to notify you, so reminders arrive only while this page is open.'}
+					{#if refused}
+						Android has refused notifications and will not ask again, so reminders arrive only while
+						ontoplano is open.
+					{:else if inPhoneApp()}
+						This phone has not been allowed to notify you, so reminders arrive only while ontoplano
+						is open.
+					{:else}
+						This browser has not been allowed to notify you, so reminders arrive only while this
+						page is open.
+					{/if}
 				</span>
-				<button type="button" class="btn btn-primary" onclick={allow} disabled={asking}>
-					{asking ? 'Asking…' : 'Allow notifications'}
-				</button>
+				{#if refused}
+					<button type="button" class="btn btn-primary" onclick={openPhoneNotificationSettings}>
+						Open the phone's settings
+					</button>
+				{:else}
+					<button type="button" class="btn btn-primary" onclick={allow} disabled={asking}>
+						{asking ? 'Asking…' : 'Allow notifications'}
+					</button>
+				{/if}
 			</div>
 			<!--
 				And the sentence about push, which is not the phone app's problem.
