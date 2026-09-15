@@ -495,13 +495,6 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 						<CopyBlock text={chosen.text} wrap={chosen.wrap} label="Copy this" />
 					</div>
 
-					{#if !key}
-						<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">
-							It says <code class="font-mono">YOUR_KEY</code> until you make one above — then it comes
-							with the key already in it.
-						</p>
-					{/if}
-
 					<!--
 					The way to the full instructions, said on the page rather than
 					assumed: each snippet here is the shortest correct version, and
