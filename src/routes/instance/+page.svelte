@@ -334,10 +334,17 @@
 		what the device's own bar and its launcher icon already say, so somebody
 		meets the distinction here and recognises it later. Nothing moves when
 		the choice changes; only the colour does.
+
+		And it is in the place the app's own bar mark will be
+		(`--bar-mark-bottom`, measured from the four numbers that put it there),
+		so choosing an instance draws the bar under a mark that has not moved.
+		The space it would have taken is still reserved below, or the page would
+		end under a mark standing over it.
 	-->
-	<div class="mt-10 flex justify-center">
+	<div class="mt-10 flex h-20 justify-center">
 		<Logo
-			size={72}
+			class="mark-where-the-bar-will-be"
+			fill
 			drained={kind === 'phone'}
 			hollow
 			label={kind === 'phone' ? 'The instance on this device' : 'An instance behind a server'}

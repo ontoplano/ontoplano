@@ -2362,6 +2362,42 @@ option {
 	/* How far it stands proud of the bar. */
 	--bar-mark-rise: calc(var(--bar-mark) * 0.27);
 	--bar-mark-ground-rise: calc(var(--bar-mark-rise) + 0.15rem);
+	/*
+	 * Where that mark's own box sits, measured from the bottom of the screen.
+	 *
+	 * Named here because a second screen has to land on it exactly: the
+	 * instance chooser draws the mark too, and choosing an instance should put
+	 * the app's bar mark in the place the chooser's already was — one object
+	 * that stays put while everything around it changes, rather than two that
+	 * happen to look alike. Derived from the four numbers above, so moving the
+	 * bar moves both.
+	 */
+	--bar-mark-bottom: calc(
+		var(--safe-bottom) + var(--mobile-nav-height) + var(--bar-mark-rise) - var(--bar-mark)
+	);
+}
+
+/*
+ * The mark on a screen that has no bar yet, in the place the bar's will be.
+ *
+ * The chooser is the one screen shown before there is an app around it. Its
+ * mark is the same drawing at the same size in the same spot, so choosing an
+ * instance draws the bar UNDER a mark that has not moved — see
+ * `--bar-mark-bottom`. Above `lg` there is no bottom bar to match, so it
+ * stays where the page put it.
+ */
+.mark-where-the-bar-will-be {
+	width: var(--bar-mark);
+	height: var(--bar-mark);
+}
+
+@media (max-width: 63.999rem) {
+	.mark-where-the-bar-will-be {
+		position: fixed;
+		left: 50%;
+		bottom: var(--bar-mark-bottom);
+		translate: -50% 0;
+	}
 }
 
 /*

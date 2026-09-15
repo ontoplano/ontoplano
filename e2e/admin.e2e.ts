@@ -224,6 +224,16 @@ test('an administrator cannot become somebody else', async ({ page }) => {
 	// remove-user skips the typed-email confirmation and the audit line, and
 	// create-user mints accounts around registration mode. The whole prefix
 	// is shut.
+	/*
+	 * An address of its own per request, or the rate limiter answers first.
+	 *
+	 * Seven credential posts in a row from one client is exactly what the
+	 * limiter exists to stop, so it started returning 429 — and a 429 is not a
+	 * 404: the assertion that these doors do not exist was being answered by
+	 * something that had not looked at whether they do. It failed only when
+	 * this file's earlier tests had already spent some of the budget, which is
+	 * why it came and went. Each request now arrives from somewhere new.
+	 */
 	for (const path of [
 		'/api/auth/admin/impersonate-user',
 		'/api/auth/admin/stop-impersonating',
@@ -233,7 +243,7 @@ test('an administrator cannot become somebody else', async ({ page }) => {
 		'/api/auth/admin/list-users'
 	]) {
 		const res = await page.request.post(path, {
-			headers: { Origin: ORIGIN },
+			headers: { Origin: ORIGIN, 'x-forwarded-for': clientAddress() },
 			data: { userId: 'anybody', newPassword: PASSWORD }
 		});
 		expect(res.status(), `${path} is not a door`).toBe(404);
@@ -242,7 +252,7 @@ test('an administrator cannot become somebody else', async ({ page }) => {
 	// And the raw change-email endpoint, which would skip the settings form's
 	// password check and the instance's allowEmailChange switch.
 	const changed = await page.request.post('/api/auth/change-email', {
-		headers: { Origin: ORIGIN },
+		headers: { Origin: ORIGIN, 'x-forwarded-for': clientAddress() },
 		data: { newEmail: 'moved@ontoplano.test' }
 	});
 	expect(changed.status(), 'change-email is the form, not an endpoint').toBe(404);

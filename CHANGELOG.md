@@ -18,6 +18,13 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.5 — 2026-09-15
+
+- **The mark does not move when you choose an instance.** It is drawn on the
+  chooser in exactly the place the app's own bar will draw it, from the same
+  measurements — so the app arrives around a logo that has not shifted rather
+  than replacing one screen's with another's.
+
 ## 0.178.4 — 2026-09-15
 
 - **Claude is one choice again when you hand the app to an assistant.** It was
