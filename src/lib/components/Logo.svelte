@@ -11,6 +11,7 @@
 	 * any size still lands where it is asked to.
 	 */
 	import mark from '$lib/logo/mark.png';
+	import hollowMark from '$lib/logo/mark-hollow.png';
 	import { BRAND_GROUND, MARK_DRAINED } from '$lib/logo/brand';
 	import { MARK_TURN_RADIUS } from '$lib/logo/mark-geometry';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
@@ -59,6 +60,17 @@
 		 * build, with nothing about it moving as the answer changes.
 		 */
 		drained: saysDrained = undefined,
+		/**
+		 * Let whatever is behind show through the mark's own field.
+		 *
+		 * The drawing carries a dark field between the ring and the medallion,
+		 * which is right nearly everywhere — it is what lets the mark sit on a
+		 * white card and on the app's dark bar without a halo. `hollow` is the
+		 * same drawing with that field knocked out (`yarn icons` derives it),
+		 * for the one place the mark is meant to be a window rather than a
+		 * badge: the ring becomes a ring, and the page is what is inside it.
+		 */
+		hollow = false,
 		label = '',
 		class: klass = ''
 	}: {
@@ -66,6 +78,7 @@
 		fill?: boolean;
 		background?: boolean;
 		drained?: boolean;
+		hollow?: boolean;
 		label?: string;
 		class?: string;
 	} = $props();
@@ -98,7 +111,7 @@
 	aria-hidden={label ? undefined : 'true'}
 >
 	<img
-		src={mark}
+		src={hollow ? hollowMark : mark}
 		alt=""
 		width={fill ? undefined : size}
 		height={fill ? undefined : size}
@@ -106,7 +119,7 @@
 	/>
 	<img
 		class="mark-turn"
-		src={mark}
+		src={hollow ? hollowMark : mark}
 		alt=""
 		aria-hidden="true"
 		style="clip-path: {TURN_CLIP}; filter: {drained}"

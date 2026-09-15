@@ -21,6 +21,7 @@
  * wrong.
  */
 import { execFileSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
@@ -420,6 +421,62 @@ if (rasteriser) {
 	stale += pngs.length;
 }
 
+/** How far a pixel may be from the field's colour and still count as the
+ *  field. Wide enough for the drawing's own anti-aliasing, narrow enough to
+ *  leave the ring's darkest colours alone. */
+const FIELD_TOLERANCE = 45;
+
+/** Where the medallion ends, read from the same file the app reads. Measured
+ *  by this script on an earlier run, so it is already correct for this mark. */
+function middleOfMark() {
+	const m = shape.match(/export const MARK_MIDDLE = ([\d.]+)/);
+	if (!m) throw new Error('src/lib/logo/mark-shape.ts no longer exports MARK_MIDDLE');
+	return Number(m[1]);
+}
+
+/*
+ * The mark with its field knocked out, for a ground of somebody else's choosing.
+ *
+ * The drawing carries its own dark field between the ring and the medallion.
+ * That is right nearly everywhere — it is what lets the mark sit on a white
+ * card and on the app's dark bar without a halo — and wrong in the one place
+ * the mark is meant to be a window: the instance chooser, where the ring
+ * should be a ring of colour with the page showing through it.
+ *
+ * Derived rather than drawn, so replacing `mark.png` cannot leave a stale
+ * second logo behind: every pixel outside the medallion that is within a
+ * hair of the field's colour loses its alpha, and nothing else is touched. The
+ * medallion is left alone even where it is dark, or the shading inside it
+ * would come out full of holes.
+ */
+function hollowMark() {
+	let PNG;
+	try {
+		({ PNG } = createRequire(import.meta.url)('pngjs'));
+	} catch {
+		return null;
+	}
+
+	const target = [1, 3, 5].map((i) => parseInt(FIELD.slice(i, i + 2), 16));
+	const png = PNG.sync.read(mark);
+	const { width, height, data } = png;
+	const half = width / 2;
+
+	for (let y = 0; y < height; y += 1) {
+		for (let x = 0; x < width; x += 1) {
+			const i = (y * width + x) << 2;
+			if (data[i + 3] === 0) continue;
+			if (Math.hypot(x - half, y - height / 2) / half < middleOfMark()) continue;
+			const off =
+				Math.abs(data[i] - target[0]) +
+				Math.abs(data[i + 1] - target[1]) +
+				Math.abs(data[i + 2] - target[2]);
+			if (off <= FIELD_TOLERANCE) data[i + 3] = 0;
+		}
+	}
+	return PNG.sync.write(png);
+}
+
 /**
  * Where the mark's ring ends and its middle begins, as a fraction of the half
  * width — and the colour of each of the ring's sides.
@@ -563,3 +620,9 @@ if (CHECK && stale) {
 	process.exit(1);
 }
 console.log(stale ? `\n${stale} icon(s) redrawn.` : '\nEverything was already up to date.');
+
+/* Last, because it reads constants declared alongside the helpers above and a
+   call before those are initialised is a reference error, not a hoist. */
+const hollow = hollowMark();
+if (hollow) write('src/lib/logo/mark-hollow.png', hollow);
+else console.log('  no pngjs — src/lib/logo/mark-hollow.png was left alone');
