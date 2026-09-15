@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -40,7 +40,7 @@ async function addLocation(page: import('@playwright/test').Page, name: string, 
 }
 
 test('a thing is dragged into a drawer, and the page narrows to it', async ({ page }) => {
-	await register(page, `inv-drag-${Date.now()}@test.invalid`);
+	await register(page, testEmail('inv-drag'));
 	await visit(page, '/inventory');
 	await foodCategory(page);
 
@@ -85,7 +85,7 @@ test('a thing is dragged into a drawer, and the page narrows to it', async ({ pa
 });
 
 test('the whole list still works, filed or not', async ({ page }) => {
-	await register(page, `inv-full-${Date.now()}@test.invalid`);
+	await register(page, testEmail('inv-full'));
 	await visit(page, '/inventory');
 	await foodCategory(page);
 	await visit(page, '/inventory');
@@ -109,7 +109,7 @@ test('the whole list still works, filed or not', async ({ page }) => {
 });
 
 test('the find box narrows to one thing', async ({ page }) => {
-	await register(page, `inv-find-${Date.now()}@test.invalid`);
+	await register(page, testEmail('inv-find'));
 	await visit(page, '/inventory');
 	await foodCategory(page);
 	await visit(page, '/inventory');
@@ -123,7 +123,7 @@ test('the find box narrows to one thing', async ({ page }) => {
 
 /** Both old addresses, which are in bookmarks and in the installed shell. */
 test('every old address lands on the one page', async ({ page }) => {
-	await register(page, `inv-urls-${Date.now()}@test.invalid`);
+	await register(page, testEmail('inv-urls'));
 	for (const old of ['/shopping', '/inventory/list', '/inventory/things']) {
 		await visit(page, old);
 		await expect(page).toHaveURL(/\/inventory$/);
@@ -134,7 +134,7 @@ test.describe('on a phone', () => {
 	test.use({ viewport: { width: 390, height: 844 } });
 
 	test('the panel and the list both fit, and nothing runs off the side', async ({ page }) => {
-		await register(page, `inv-phone-${Date.now()}@test.invalid`);
+		await register(page, testEmail('inv-phone'));
 		await visit(page, '/inventory');
 		await addLocation(page, 'Kitchen');
 
@@ -154,7 +154,7 @@ test.describe('on a phone', () => {
  * of category cards with no idea of place in it at all.
  */
 test('the lists are grouped by where things are, then by category', async ({ page }) => {
-	await register(page, `inv-places-${Date.now()}@test.invalid`);
+	await register(page, testEmail('inv-places'));
 	await visit(page, '/inventory');
 	await foodCategory(page);
 	await visit(page, '/inventory');
@@ -203,7 +203,7 @@ test('the lists are grouped by where things are, then by category', async ({ pag
  * the edit form and are saved by the same button as everything else.
  */
 test('a thing carries its own fields, and one can be taken off again', async ({ page }) => {
-	await register(page, `inv-fields-${Date.now()}@test.invalid`);
+	await register(page, testEmail('inv-fields'));
 	await visit(page, '/inventory');
 	await foodCategory(page);
 	await visit(page, '/inventory');
@@ -238,7 +238,7 @@ test('a thing carries its own fields, and one can be taken off again', async ({ 
  * is on the item's own form.
  */
 test('a thing is counted, and the list is what you are short of', async ({ page }) => {
-	await register(page, `inv-qty-${Date.now()}@test.invalid`);
+	await register(page, testEmail('inv-qty'));
 	await visit(page, '/inventory');
 	await foodCategory(page);
 	await visit(page, '/inventory');
@@ -277,7 +277,7 @@ test('a thing is counted, and the list is what you are short of', async ({ page 
 
 /** Having more than you keep is a fact, not an error. */
 test('the count has no ceiling', async ({ page }) => {
-	await register(page, `inv-over-${Date.now()}@test.invalid`);
+	await register(page, testEmail('inv-over'));
 	await visit(page, '/inventory');
 	await foodCategory(page);
 	await visit(page, '/inventory');
@@ -308,7 +308,7 @@ test.describe('a row on a phone', () => {
 	 * name keeps its width.
 	 */
 	test('keeps its name on one line after the count changes', async ({ page }) => {
-		await register(page, `inv-narrow-${Date.now()}@test.invalid`);
+		await register(page, testEmail('inv-narrow'));
 		await visit(page, '/inventory');
 		await foodCategory(page);
 		await visit(page, '/inventory');
@@ -348,7 +348,7 @@ test.describe('a row on a phone', () => {
 	 * reserved whether or not anything is in it.
 	 */
 	test('nor when a thing is given its first field', async ({ page }) => {
-		await register(page, `inv-fixed-${Date.now()}@test.invalid`);
+		await register(page, testEmail('inv-fixed'));
 		await visit(page, '/inventory');
 		await foodCategory(page);
 		await visit(page, '/inventory');
@@ -376,7 +376,7 @@ test.describe('a row on a phone', () => {
 	});
 
 	test('and nothing below it moves when the count goes up', async ({ page }) => {
-		await register(page, `inv-still-${Date.now()}@test.invalid`);
+		await register(page, testEmail('inv-still'));
 		await visit(page, '/inventory');
 		await foodCategory(page);
 		await visit(page, '/inventory');
@@ -425,7 +425,7 @@ test.describe('what the filters are hiding', () => {
 	}
 
 	test('a location counts what you would see if you opened it', async ({ page }) => {
-		await register(page, `inv-counts-${Date.now()}@test.invalid`);
+		await register(page, testEmail('inv-counts'));
 		await visit(page, '/inventory');
 		await aHouse(page);
 
@@ -456,7 +456,7 @@ test.describe('what the filters are hiding', () => {
 	});
 
 	test('the page says how many it is not showing, and never moves to say it', async ({ page }) => {
-		await register(page, `inv-hidden-${Date.now()}@test.invalid`);
+		await register(page, testEmail('inv-hidden'));
 		await visit(page, '/inventory');
 		await aHouse(page);
 
@@ -485,7 +485,7 @@ test.describe('what the filters are hiding', () => {
 	test('a location folds away what is inside it, keeping itself and its number', async ({
 		page
 	}) => {
-		await register(page, `inv-fold-${Date.now()}@test.invalid`);
+		await register(page, testEmail('inv-fold'));
 		await visit(page, '/inventory');
 		await aHouse(page);
 

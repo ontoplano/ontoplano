@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { deflateSync } from 'node:zlib';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -85,7 +85,7 @@ async function newRecipe(page: Page, title: string) {
 
 test('a recipe takes a picture the moment one is chosen', async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 1000 });
-	await register(page, `pics-${Date.now()}@test.invalid`);
+	await register(page, testEmail('pics'));
 	await newRecipe(page, 'Photographed');
 
 	const gallery = page.locator('[data-tour="recipe-pictures"]');
@@ -101,7 +101,7 @@ test('a recipe takes a picture the moment one is chosen', async ({ page }) => {
 
 test('an over-large picture is refused in words, and the page survives', async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 1000 });
-	await register(page, `huge-${Date.now()}@test.invalid`);
+	await register(page, testEmail('huge'));
 	await newRecipe(page, 'Too big');
 
 	const gallery = page.locator('[data-tour="recipe-pictures"]');
@@ -119,7 +119,7 @@ test('an over-large picture is refused in words, and the page survives', async (
 
 test('a note takes one too, and says why when it will not', async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 1000 });
-	await register(page, `note-pics-${Date.now()}@test.invalid`);
+	await register(page, testEmail('note-pics'));
 
 	await visit(page, '/notebooks/diary');
 	await page
@@ -143,7 +143,7 @@ test('a note takes one too, and says why when it will not', async ({ page }) => 
 
 test('a person gets one face, and it shows in the list', async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 1000 });
-	await register(page, `face-${Date.now()}@test.invalid`);
+	await register(page, testEmail('face'));
 
 	await visit(page, '/notebooks/people');
 	await page
@@ -167,7 +167,7 @@ test('a note written in a notebook takes one too', async ({ page }) => {
 	// was on the diary's note form and nowhere else, so pictures looked like a
 	// property of one screen rather than of notes.
 	await page.setViewportSize({ width: 1280, height: 1000 });
-	await register(page, `nb-pics-${Date.now()}@test.invalid`);
+	await register(page, testEmail('nb-pics'));
 
 	await visit(page, '/notebooks');
 	await page
@@ -192,7 +192,7 @@ test('a person’s face is the way in to their picture', async ({ page }) => {
 	// The control only existed inside the edit form, which nobody opens to add a
 	// picture. The face is where somebody looks when they want to change it.
 	await page.setViewportSize({ width: 1280, height: 1000 });
-	await register(page, `face-open-${Date.now()}@test.invalid`);
+	await register(page, testEmail('face-open'));
 
 	await visit(page, '/notebooks/people');
 	await page

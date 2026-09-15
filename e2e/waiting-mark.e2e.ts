@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -19,7 +19,7 @@ import { visit } from './helpers/visit';
 test('the header mark turns while a navigation drags, then finishes its turn upright', async ({
 	page
 }) => {
-	await register(page, `menu-turn-${Date.now()}@test.invalid`);
+	await register(page, testEmail('menu-turn'));
 	await visit(page, '/tasks/todo');
 
 	await page.evaluate(async () => {
@@ -64,7 +64,7 @@ test.describe('on a phone', () => {
 	test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
 	test('only the medallion turns in the bar; the button stands still', async ({ page }) => {
-		await register(page, `bar-turn-${Date.now()}@test.invalid`);
+		await register(page, testEmail('bar-turn'));
 		await visit(page, '/tasks/todo');
 
 		const button = page.locator('nav [data-tour=rooms]');

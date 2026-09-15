@@ -3,7 +3,7 @@ import Database from 'better-sqlite3';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { PASSWORD, clientAddress } from './helpers/account';
+import { PASSWORD, clientAddress, testEmail } from './helpers/account';
 
 /**
  * The family plan, from the payer's chair and from the seat's.
@@ -26,7 +26,7 @@ function openDb() {
 /** A signed-up account: its id, cookie, and request context. */
 async function account(playwright: PlaywrightWorkerArgs['playwright'], tag: string) {
 	const request = await playwright.request.newContext({ baseURL: ORIGIN });
-	const email = `${tag}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.test`;
+	const email = testEmail(tag);
 
 	const signUp = await request.post('/api/auth/sign-up/email', {
 		headers: { Origin: ORIGIN, 'x-forwarded-for': clientAddress() },
@@ -61,7 +61,7 @@ test('adding somebody by mail leaves the payer signed in as themselves', async (
 	const payer = await account(playwright, 'payer');
 	makePayer(payer.id);
 
-	const invited = `seatmail-${Date.now()}@example.test`;
+	const invited = testEmail('seatmail');
 	const res = await payer.request.post('/settings/family?/addSeat', {
 		headers: { Origin: ORIGIN, Cookie: payer.cookie, 'x-sveltekit-action': 'true' },
 		form: { who: invited }

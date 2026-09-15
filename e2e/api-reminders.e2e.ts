@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type PlaywrightWorkerArgs } from '@playwright/test';
-import { PASSWORD, clientAddress } from './helpers/account';
+import { PASSWORD, clientAddress, testEmail } from './helpers/account';
 
 /**
  * What a phone reads to ring for an instance it is not part of.
@@ -19,7 +19,7 @@ const ORIGIN = 'http://localhost:4173';
 
 async function account(playwright: PlaywrightWorkerArgs['playwright']) {
 	const request = await playwright.request.newContext({ baseURL: ORIGIN });
-	const email = `alarm-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.test`;
+	const email = testEmail('alarm');
 
 	const signUp = await request.post('/api/auth/sign-up/email', {
 		headers: { Origin: ORIGIN, 'x-forwarded-for': clientAddress() },

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -11,7 +11,7 @@ import { visit } from './helpers/visit';
  * is the promise: nothing here is a one-way door.
  */
 test('a bill can be added, paid for a real amount, and unpaid', async ({ page }) => {
-	await register(page, `bills-${Date.now()}@example.test`);
+	await register(page, testEmail('bills'));
 
 	await visit(page, '/finance/bills');
 	await expect(page.getByRole('heading', { name: 'Finance' })).toBeVisible();
@@ -65,7 +65,7 @@ test('a bill can be added, paid for a real amount, and unpaid', async ({ page })
 });
 
 test('a weekly bill settles into its week', async ({ page }) => {
-	await register(page, `bills-weekly-${Date.now()}@example.test`);
+	await register(page, testEmail('bills-weekly'));
 	await visit(page, '/finance/bills');
 
 	await page.getByRole('button', { name: /New bill/ }).click();
@@ -90,7 +90,7 @@ test('a weekly bill settles into its week', async ({ page }) => {
 });
 
 test('an archived bill can be deleted, behind a confirmation', async ({ page }) => {
-	await register(page, `bills-del-${Date.now()}@example.test`);
+	await register(page, testEmail('bills-del'));
 	await visit(page, '/finance/bills');
 
 	await page.getByRole('button', { name: /New bill/ }).click();
@@ -131,7 +131,7 @@ test('an archived bill can be deleted, behind a confirmation', async ({ page }) 
  * gesture rather than a second chore somebody has to remember.
  */
 test('a bill with a lead lands on the week, and ticking it there pays it', async ({ page }) => {
-	await register(page, `bills-week-${Date.now()}@example.test`);
+	await register(page, testEmail('bills-week'));
 	await visit(page, '/finance/bills');
 
 	// Due the 15th, wanted three days earlier.
@@ -161,7 +161,7 @@ test('a bill with a lead lands on the week, and ticking it there pays it', async
 });
 
 test('an archived bill can still be corrected', async ({ page }) => {
-	await register(page, `bills-arch-edit-${Date.now()}@example.test`);
+	await register(page, testEmail('bills-arch-edit'));
 	await visit(page, '/finance/bills');
 
 	await page.getByRole('button', { name: /New bill/ }).click();

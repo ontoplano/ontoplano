@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -74,7 +74,7 @@ test('what is written on the device stays there, and the server never shows thro
 	page
 }) => {
 	test.setTimeout(180_000);
-	await register(page, `two-${Date.now()}@test.invalid`);
+	await register(page, testEmail('two'));
 
 	// One on the server, the ordinary way.
 	await visit(page, '/tasks/todo');
@@ -118,7 +118,7 @@ test('deleting the instance on the device leaves the server account untouched', 
 	page
 }) => {
 	test.setTimeout(180_000);
-	await register(page, `two-del-${Date.now()}@test.invalid`);
+	await register(page, testEmail('two-del'));
 
 	await visit(page, '/tasks/todo');
 	await addTodo(page, ON_THE_SERVER);
@@ -161,7 +161,7 @@ test('the instance tab on a device is the build and the storage, and nothing els
 	page
 }) => {
 	test.setTimeout(120_000);
-	await register(page, `two-inst-${Date.now()}@test.invalid`);
+	await register(page, testEmail('two-inst'));
 
 	await (
 		await onDevice(page)
@@ -192,7 +192,7 @@ test('an export moves from the server onto the device, and the server keeps its 
 	page
 }) => {
 	test.setTimeout(240_000);
-	await register(page, `two-move-${Date.now()}@test.invalid`);
+	await register(page, testEmail('two-move'));
 
 	await visit(page, '/tasks/todo');
 	await addTodo(page, ON_THE_SERVER);

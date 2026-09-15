@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -20,7 +20,7 @@ const tourOf = (page: import('@playwright/test').Page) =>
 
 test('a new account is shown around, and dismisses it in two', async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 900 });
-	await register(page, `tour-${Date.now()}@test.invalid`, 'Smoke Test', true);
+	await register(page, testEmail('tour'), 'Smoke Test', true);
 
 	const tour = tourOf(page);
 	await expect(tour).toBeVisible();
@@ -50,7 +50,7 @@ test('a new account is shown around, and dismisses it in two', async ({ page }) 
 
 test('the button in the corner opens the tour for the screen you are on', async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 900 });
-	await register(page, `tour-corner-${Date.now()}@test.invalid`);
+	await register(page, testEmail('tour-corner'));
 
 	await visit(page, '/notebooks/ideas');
 	await page.getByRole('button', { name: 'Show me around this screen' }).click();
@@ -76,7 +76,7 @@ test('the button in the corner opens the tour for the screen you are on', async 
 
 test('a screen with no tour says so instead of opening nothing', async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 900 });
-	await register(page, `tour-missing-${Date.now()}@test.invalid`);
+	await register(page, testEmail('tour-missing'));
 
 	// Preferences is toured; the instance page deliberately is not — it is read,
 	// not learned — so it is what the red button looks like. (A visitor who is
@@ -92,7 +92,7 @@ test('a screen with no tour says so instead of opening nothing', async ({ page }
 
 test('the tour follows the phone into the bottom bar', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
-	await register(page, `tour-phone-${Date.now()}@test.invalid`, 'Smoke Test', true);
+	await register(page, testEmail('tour-phone'), 'Smoke Test', true);
 
 	const tour = tourOf(page);
 	await expect(tour).toBeVisible();

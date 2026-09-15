@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -29,7 +29,7 @@ async function openTheScales(page: import('@playwright/test').Page, title: strin
 }
 
 test('a rating set by the slider is the rating the card keeps', async ({ page }) => {
-	await register(page, `rating-${Date.now()}@example.test`);
+	await register(page, testEmail('rating'));
 	const title = 'A card with a number on it';
 	await openTheScales(page, title);
 
@@ -50,7 +50,7 @@ test('a rating set by the slider is the rating the card keeps', async ({ page })
 });
 
 test('dragging it back to the dot leaves the card unrated', async ({ page }) => {
-	await register(page, `rating-off-${Date.now()}@example.test`);
+	await register(page, testEmail('rating-off'));
 	const title = 'A card with nothing on it';
 	await openTheScales(page, title);
 

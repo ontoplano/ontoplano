@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -12,7 +12,7 @@ import { visit } from './helpers/visit';
  * notices until somebody pastes a prompt with `YOUR_KEY` still in it.
  */
 test('a key made on the AI tab arrives inside the words you paste', async ({ page }) => {
-	await register(page, `assistant-key-${Date.now()}@test.invalid`);
+	await register(page, testEmail('assistant-key'));
 	await visit(page, '/settings/integrations');
 
 	// The button exists before the page has hydrated enough to obey it.

@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type PlaywrightWorkerArgs } from '@playwright/test';
-import { PASSWORD, clientAddress } from './helpers/account';
+import { PASSWORD, clientAddress, testEmail } from './helpers/account';
 
 /**
  * Somebody else's id, at every door of the REST API that takes one.
@@ -26,7 +26,7 @@ async function account(
 	who: string
 ): Promise<Account> {
 	const request = await playwright.request.newContext({ baseURL: ORIGIN });
-	const email = `${who}-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.test`;
+	const email = testEmail(who);
 
 	const signUp = await request.post('/api/auth/sign-up/email', {
 		headers: { Origin: ORIGIN, 'x-forwarded-for': clientAddress() },

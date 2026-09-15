@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -12,7 +12,7 @@ import { visit } from './helpers/visit';
  * fell from "1 of 6" to "0 of 6" with no explanation on screen.
  */
 test('re-saving the choosing modal keeps the done todo linked', async ({ page }) => {
-	await register(page, `goals-${Date.now()}@example.test`);
+	await register(page, testEmail('goals'));
 
 	// Two todos, through the page's own form. The open-then-fill is retried
 	// because the button exists before the page has hydrated enough to obey it.
@@ -159,7 +159,7 @@ test('a goal can be measured by several things, and each keeps its own number', 
 	page
 }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
-	await register(page, `measures-${Date.now()}@example.test`);
+	await register(page, testEmail('measures'));
 
 	await visit(page, '/goals');
 	const heading = page.locator('[name="heading"]');

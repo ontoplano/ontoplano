@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -13,7 +13,7 @@ import { visit } from './helpers/visit';
  * nothing — and that the key which comes out says what it is tied to.
  */
 test('the key form offers to tie a key to one notebook', async ({ page }) => {
-	await register(page, `confined-key-${Date.now()}@test.invalid`);
+	await register(page, testEmail('confined-key'));
 
 	// A notebook to tie it to. The choice is not offered to an account with
 	// nothing to point at, which is the honest thing to do and also means this

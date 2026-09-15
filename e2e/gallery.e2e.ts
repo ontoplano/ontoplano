@@ -3,7 +3,7 @@ import { deflateSync } from 'node:zlib';
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -47,7 +47,7 @@ function png(colour: [number, number, number]): { name: string; mimeType: string
 }
 
 test('a picture lives once, however many albums hold it', async ({ page }) => {
-	await register(page, `gallery-${Date.now()}@test.invalid`);
+	await register(page, testEmail('gallery'));
 
 	// Two albums.
 	await visit(page, '/gallery');
@@ -135,7 +135,7 @@ function folder(): string {
 }
 
 test('a folder is looked at before any of it is sent', async ({ page }) => {
-	await register(page, `folder-${Date.now()}@test.invalid`);
+	await register(page, testEmail('folder'));
 	await visit(page, '/gallery');
 
 	// The directory picker is its own: the album's own picker takes files.

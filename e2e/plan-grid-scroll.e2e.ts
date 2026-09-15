@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -20,7 +20,7 @@ import { visit } from './helpers/visit';
  * scrolled to.
  */
 test('a day ending at midnight can be scrolled to midnight', async ({ page }) => {
-	await register(page, `grid-scroll-${Date.now()}@test.invalid`);
+	await register(page, testEmail('grid-scroll'));
 
 	// The hours somebody actually sets when they work late.
 	await visit(page, '/settings/preferences');
@@ -72,7 +72,7 @@ test('a day ending at midnight can be scrolled to midnight', async ({ page }) =>
  * happens to be stored.
  */
 test('zooming keeps the part of the day you were looking at', async ({ page }) => {
-	await register(page, `grid-zoom-${Date.now()}@test.invalid`);
+	await register(page, testEmail('grid-zoom'));
 
 	await visit(page, '/tasks/plan');
 	const main = page.locator('.ec-main');
@@ -122,7 +122,7 @@ test('zooming keeps the part of the day you were looking at', async ({ page }) =
  * same line and read as one bundled string. Both lines are pinned as one now.
  */
 test('a half-scrolled block does not fold its time into its title', async ({ page }) => {
-	await register(page, `grid-sticky-${Date.now()}@test.invalid`);
+	await register(page, testEmail('grid-sticky'));
 
 	// Something long enough to still be on screen once its top is not. Posted
 	// to the action rather than driven through the form: this test is about
@@ -181,7 +181,7 @@ test('a half-scrolled block does not fold its time into its title', async ({ pag
  * actually look like — was the one it could not answer.
  */
 test('the plan can be walked into last week', async ({ page }) => {
-	await register(page, `grid-back-${Date.now()}@test.invalid`);
+	await register(page, testEmail('grid-back'));
 	await visit(page, '/tasks/plan?view=week');
 
 	const back = page.getByRole('button', { name: 'Back one week' });
@@ -210,7 +210,7 @@ test('the plan can be walked into last week', async ({ page }) => {
  * itself — and the grid answers with the tick in the block's corner.
  */
 test('a block can be marked done from the plan, and undone', async ({ page }) => {
-	await register(page, `grid-tick-${Date.now()}@test.invalid`);
+	await register(page, testEmail('grid-tick'));
 	await visit(page, '/tasks/plan?view=day');
 
 	const options = await page.request.get('/api/capture-options');
@@ -251,7 +251,7 @@ test('a block can be marked done from the plan, and undone', async ({ page }) =>
  * History's tab is gone; its bookmarks are not.
  */
 test('an old history link lands on the plan, a week back', async ({ page }) => {
-	await register(page, `grid-hist-${Date.now()}@test.invalid`);
+	await register(page, testEmail('grid-hist'));
 
 	await page.goto('/tasks/history?week=2026-08-24');
 	await expect(page).toHaveURL(/tasks\/plan\?view=week&from=2026-08-24/);

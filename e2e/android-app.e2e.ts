@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -23,7 +23,7 @@ import { visit } from './helpers/visit';
  * be old enough not to have the screen.
  */
 test('the launch mark is kept and taken back off the address', async ({ page }) => {
-	await register(page, `android-app-${Date.now()}@test.invalid`);
+	await register(page, testEmail('android-app'));
 
 	await visit(page, '/?app=android');
 	// Off the address again: a link somebody copies out of the app should not
@@ -40,7 +40,7 @@ test('the launch mark is kept and taken back off the address', async ({ page }) 
 });
 
 test('a browser is offered nothing to switch', async ({ page }) => {
-	await register(page, `android-none-${Date.now()}@test.invalid`);
+	await register(page, testEmail('android-none'));
 	await visit(page, '/settings/account');
 
 	await expect(page.getByRole('link', { name: 'Switch instance' })).toHaveCount(0);
@@ -56,7 +56,7 @@ test('a browser is offered nothing to switch', async ({ page }) => {
  * different warning about a different gap.
  */
 test('an app a minor behind is told to update, and can say not now', async ({ page }) => {
-	await register(page, `android-behind-${Date.now()}@test.invalid`);
+	await register(page, testEmail('android-behind'));
 
 	// The launch, as hooks.client.ts sends it: mark and version on the address.
 	await visit(page, '/tasks/todo?app=android&app_version=0.1.0');
@@ -77,7 +77,7 @@ test('an app a minor behind is told to update, and can say not now', async ({ pa
 });
 
 test('a browser is never told to update', async ({ page }) => {
-	await register(page, `android-fresh-${Date.now()}@test.invalid`);
+	await register(page, testEmail('android-fresh'));
 	await visit(page, '/tasks/todo');
 	await expect(page.getByText('Update the app.')).toHaveCount(0);
 });
@@ -115,7 +115,7 @@ test.describe('notifications inside the app', () => {
 				}
 			};
 		});
-		await register(page, `android-notify-${Date.now()}@test.invalid`);
+		await register(page, testEmail('android-notify'));
 		await visit(page, '/settings/preferences');
 
 		const section = page.locator('section', { hasText: 'Notifications on this device' });
@@ -166,7 +166,7 @@ test.describe('notifications inside the app', () => {
 				}
 			};
 		});
-		await register(page, `android-denied-${Date.now()}@test.invalid`);
+		await register(page, testEmail('android-denied'));
 		await visit(page, '/settings/preferences');
 
 		const section = page.locator('section', { hasText: 'Notifications on this device' });
@@ -210,7 +210,7 @@ test.describe('an instance shown inside the app', () => {
 
 	test('does not blame Android for what it cannot ask', async ({ page }) => {
 		// No `window.Capacitor` at all: that is the whole of this situation.
-		await register(page, `android-remote-${Date.now()}@test.invalid`);
+		await register(page, testEmail('android-remote'));
 		await visit(page, '/settings/preferences');
 
 		const section = page.locator('section', { hasText: 'Notifications on this device' });
@@ -279,7 +279,7 @@ test.describe('the ring hand-over page', () => {
 
 	test('hands the key to the shell and goes back to the instance', async ({ page }) => {
 		const heard = await withShell(page);
-		await register(page, `ring-hand-${Date.now()}@test.invalid`);
+		await register(page, testEmail('ring-hand'));
 
 		const at = 'http://localhost:4173';
 		await page.goto(`/ring?at=${encodeURIComponent(at)}&key=onto_e2e_test_key`, {
@@ -298,7 +298,7 @@ test.describe('the ring hand-over page', () => {
 
 	test('off stops the ringing and still goes back', async ({ page }) => {
 		const heard = await withShell(page);
-		await register(page, `ring-off-${Date.now()}@test.invalid`);
+		await register(page, testEmail('ring-off'));
 
 		await page.goto(`/ring?off=1&at=${encodeURIComponent('http://localhost:4173')}`, {
 			waitUntil: 'load'
@@ -311,7 +311,7 @@ test.describe('the ring hand-over page', () => {
 
 	test('with nothing to set it opens the app and sets nothing', async ({ page }) => {
 		const heard = await withShell(page);
-		await register(page, `ring-none-${Date.now()}@test.invalid`);
+		await register(page, testEmail('ring-none'));
 
 		await page.goto('/ring', { waitUntil: 'load' });
 

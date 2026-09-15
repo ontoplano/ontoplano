@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -11,7 +11,7 @@ import { visit } from './helpers/visit';
  * can see it, rather than quietly attempted.
  */
 test('an address pointing at this machine is refused, and says so', async ({ page }) => {
-	await register(page, `ical-${Date.now()}@test.invalid`);
+	await register(page, testEmail('ical'));
 	await visit(page, '/tasks/plan');
 
 	await page.getByRole('button', { name: /schemes/i }).click();

@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -13,7 +13,7 @@ import { visit } from './helpers/visit';
  * about *when* the page learns what the server already knows.
  */
 test('the allowance updates the moment an export lands', async ({ page }) => {
-	await register(page, `export-${Date.now()}@test.invalid`);
+	await register(page, testEmail('export'));
 	await visit(page, '/settings/account');
 
 	const download = page.getByRole('button', { name: /download/i });
@@ -43,7 +43,7 @@ test('the allowance updates the moment an export lands', async ({ page }) => {
  * is recognised as itself.
  */
 test('a Google Keep export lands as todos and notes in a notebook of its own', async ({ page }) => {
-	await register(page, `import-keep-${Date.now()}@test.invalid`);
+	await register(page, testEmail('import-keep'));
 
 	// Reached from the account page rather than by knowing the address.
 	await visit(page, '/settings/account');
@@ -83,7 +83,7 @@ test('a Google Keep export lands as todos and notes in a notebook of its own', a
  * quietly lost.
  */
 test('an Obsidian vault lands as entries in a notebook of its own', async ({ page }) => {
-	await register(page, `import-vault-${Date.now()}@test.invalid`);
+	await register(page, testEmail('import-vault'));
 	await visit(page, '/settings/account/import');
 
 	const vault = mkdtempSync(join(tmpdir(), 'vault-'));
@@ -121,7 +121,7 @@ test('an Obsidian vault lands as entries in a notebook of its own', async ({ pag
  */
 test('restoring shows a preview first, and a bad row offers a way through', async ({ page }) => {
 	test.setTimeout(120_000);
-	await register(page, `preview-${Date.now()}@test.invalid`);
+	await register(page, testEmail('preview'));
 	await page.goto('/settings/account/import');
 
 	// A file with one good row and one picture the import will refuse: the

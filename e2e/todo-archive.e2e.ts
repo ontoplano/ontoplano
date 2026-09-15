@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -20,7 +20,7 @@ async function addTodo(page: import('@playwright/test').Page, title: string) {
 
 test('a todo can be put away and taken back out', async ({ page }) => {
 	test.setTimeout(120_000);
-	await register(page, `arch-${Date.now()}@test.invalid`);
+	await register(page, testEmail('arch'));
 	await visit(page, '/tasks/todo');
 	await addTodo(page, 'the tax thing');
 
@@ -41,7 +41,7 @@ test('a todo can be put away and taken back out', async ({ page }) => {
 
 test('the notebook filter has an answer for the unfiled', async ({ page }) => {
 	test.setTimeout(120_000);
-	await register(page, `arch-book-${Date.now()}@test.invalid`);
+	await register(page, testEmail('arch-book'));
 
 	const origin = new URL(page.url()).origin;
 	const action = { Origin: origin, 'x-sveltekit-action': 'true' };

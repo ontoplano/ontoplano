@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -15,7 +15,7 @@ const CONTA_CORRENTE = [
 
 test('a ledger, its statement, the rules and the plots', async ({ page }) => {
 	test.setTimeout(120_000);
-	await register(page, `finance-${Date.now()}@test.invalid`);
+	await register(page, testEmail('finance'));
 
 	// The finance door opens on Ledgers.
 	await visit(page, '/finance');

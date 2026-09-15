@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { PASSWORD, clientAddress } from './helpers/account';
+import { PASSWORD, clientAddress, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -21,7 +21,7 @@ async function fresh(page: import('@playwright/test').Page) {
 	const register = page.getByRole('button', { name: 'Register' });
 	if (await register.count()) await register.click();
 
-	const email = `welcome-${Date.now()}-${Math.floor(Math.random() * 1e6)}@test.invalid`;
+	const email = testEmail('welcome');
 	for (const [name, value] of [
 		['name', 'Welcome Test'],
 		['email', email],

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -21,7 +21,7 @@ async function makeNotebook(page: import('@playwright/test').Page, title: string
 
 test('a notebook’s tasks are operated on where they are', async ({ page }) => {
 	test.setTimeout(120_000);
-	await register(page, `nb-tasks-${Date.now()}@test.invalid`);
+	await register(page, testEmail('nb-tasks'));
 	await makeNotebook(page, 'Kitchen');
 	await visit(page, '/notebooks');
 
@@ -47,7 +47,7 @@ test('a notebook’s tasks are operated on where they are', async ({ page }) => 
 
 test('a note can be put away and taken back out', async ({ page }) => {
 	test.setTimeout(120_000);
-	await register(page, `nb-notes-${Date.now()}@test.invalid`);
+	await register(page, testEmail('nb-notes'));
 	await makeNotebook(page, 'Lisbon');
 	await visit(page, '/notebooks');
 

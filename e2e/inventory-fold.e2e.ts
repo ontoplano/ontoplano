@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -34,7 +34,7 @@ async function addItem(page: import('@playwright/test').Page, name: string, wher
 
 test('a place folds away on the list, and takes what is under it', async ({ page }) => {
 	test.setTimeout(180_000);
-	await register(page, `fold-${Date.now()}@test.invalid`);
+	await register(page, testEmail('fold'));
 	await visit(page, '/inventory');
 
 	// A kitchen with a drawer inside it, something in each, and something

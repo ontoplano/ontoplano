@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -13,7 +13,7 @@ test.describe('on a phone', () => {
 	test.use({ viewport: { width: 390, height: 844 } });
 
 	test('there is no dock at all — the bar fans it out instead', async ({ page }) => {
-		await register(page, `dock-${Date.now()}@test.invalid`);
+		await register(page, testEmail('dock'));
 		await visit(page, '/');
 
 		await expect(page.getByRole('button', { name: 'Help', exact: true })).toBeHidden();
@@ -23,7 +23,7 @@ test.describe('on a phone', () => {
 });
 
 test('on a wide screen the row is simply there, with no fold to press', async ({ page }) => {
-	await register(page, `dock-wide-${Date.now()}@test.invalid`);
+	await register(page, testEmail('dock-wide'));
 	await visit(page, '/');
 
 	await expect(page.getByRole('link', { name: 'The documentation' })).toBeVisible();
@@ -38,7 +38,7 @@ test('on a wide screen the row is simply there, with no fold to press', async ({
  */
 test('a reported problem reaches the admin page', async ({ page }) => {
 	const mark = `the plan draws nothing ${Date.now()}`;
-	await register(page, `dock-report-${Date.now()}@test.invalid`);
+	await register(page, testEmail('dock-report'));
 	await visit(page, '/tasks/plan');
 
 	await page.getByRole('button', { name: 'Report a problem, or suggest something' }).click();

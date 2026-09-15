@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { PASSWORD, clientAddress } from './helpers/account';
+import { PASSWORD, clientAddress, testEmail } from './helpers/account';
 
 /**
  * Billing, on an instance that sells nothing.
@@ -29,7 +29,7 @@ test('a self-hosted instance has no payment provider to talk to', async ({ playw
 
 test('a self-hosted instance has no billing page at all', async ({ playwright }) => {
 	const request = await playwright.request.newContext({ baseURL: ORIGIN });
-	const email = `bill-${Date.now()}@example.test`;
+	const email = testEmail('bill');
 
 	const signUp = await request.post('/api/auth/sign-up/email', {
 		headers: { Origin: ORIGIN, 'x-forwarded-for': clientAddress() },

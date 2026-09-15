@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -17,7 +17,7 @@ import { visit } from './helpers/visit';
  * worse bug than the one it fixes.
  */
 test('a quick form still saves on Enter, with a textarea for a title', async ({ page }) => {
-	await register(page, `one-line-${Date.now()}@test.invalid`);
+	await register(page, testEmail('one-line'));
 	await visit(page, '/tasks/todo');
 
 	await page.getByRole('button', { name: 'New to-do' }).click();

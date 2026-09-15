@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -10,7 +10,7 @@ import { visit } from './helpers/visit';
  * or rand could not record what they spend.
  */
 test('the timezone is chosen, not typed', async ({ page }) => {
-	await register(page, `tz-${Date.now()}@test.invalid`);
+	await register(page, testEmail('tz'));
 	await visit(page, '/settings/preferences');
 
 	const picker = page.locator('select[name="timezone"]');
@@ -41,7 +41,7 @@ test('the timezone is chosen, not typed', async ({ page }) => {
  * of them says it.
  */
 test('the timezones run west to east, by offset', async ({ page }) => {
-	await register(page, `tz-order-${Date.now()}@test.invalid`);
+	await register(page, testEmail('tz-order'));
 	await visit(page, '/settings/preferences');
 
 	const headings = await page
@@ -62,7 +62,7 @@ test('the timezones run west to east, by offset', async ({ page }) => {
 });
 
 test('a currency outside the shortlist is accepted, and a made-up one is not', async ({ page }) => {
-	await register(page, `cur-${Date.now()}@test.invalid`);
+	await register(page, testEmail('cur'));
 	await visit(page, '/settings/preferences');
 
 	const form = page.locator('form[action="?/saveCurrency"]');

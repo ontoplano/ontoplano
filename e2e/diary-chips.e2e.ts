@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -11,7 +11,7 @@ import { visit } from './helpers/visit';
  * One character each, and the row is legible to somebody who knows neither.
  */
 test('people wear an @ and tags wear a #', async ({ page }) => {
-	await register(page, `chips-${Date.now()}@test.invalid`);
+	await register(page, testEmail('chips'));
 	await visit(page, '/notebooks/diary');
 
 	// The form is a modal; the page's own button opens it.
@@ -48,7 +48,7 @@ test('people wear an @ and tags wear a #', async ({ page }) => {
  * screen it was typed into. Both forms are the same two fields now.
  */
 test('a note written in a notebook takes tags and people too', async ({ page }) => {
-	await register(page, `nbchips-${Date.now()}@test.invalid`);
+	await register(page, testEmail('nbchips'));
 	await visit(page, '/notebooks');
 
 	await page

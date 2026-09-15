@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -70,7 +70,7 @@ async function pickWedge(page: Page, name: string): Promise<boolean> {
 }
 
 test('click the trigger, then pick a wedge', async ({ page }) => {
-	await register(page, `pie-click-${Date.now()}@test.invalid`);
+	await register(page, testEmail('pie-click'));
 	await visit(page, '/goals');
 
 	// A tap is not a gesture: the pie stays open and waits to be clicked.
@@ -86,7 +86,7 @@ test('click the trigger, then pick a wedge', async ({ page }) => {
 });
 
 test('press, flick and release writes the thing', async ({ page }) => {
-	await register(page, `pie-drag-${Date.now()}@test.invalid`);
+	await register(page, testEmail('pie-drag'));
 
 	// Deliberately not the dashboard: the pie's whole point is being reachable
 	// from wherever you already are, posting to a route you are not on.
@@ -116,7 +116,7 @@ test('press, flick and release writes the thing', async ({ page }) => {
 });
 
 test('the arrow keys reach every wedge, and escape leaves', async ({ page }) => {
-	await register(page, `pie-keys-${Date.now()}@test.invalid`);
+	await register(page, testEmail('pie-keys'));
 	await visit(page, '/');
 
 	const at = await centreOf(page);
@@ -140,7 +140,7 @@ test('the arrow keys reach every wedge, and escape leaves', async ({ page }) => 
 });
 
 test('letting go in the hole does nothing at all', async ({ page }) => {
-	await register(page, `pie-cancel-${Date.now()}@test.invalid`);
+	await register(page, testEmail('pie-cancel'));
 	await visit(page, '/');
 
 	const at = await centreOf(page);
@@ -159,7 +159,7 @@ test('letting go in the hole does nothing at all', async ({ page }) => {
 });
 
 test('the thumb trigger is for thumbs, and the header one is for cursors', async ({ page }) => {
-	await register(page, `pie-where-${Date.now()}@test.invalid`);
+	await register(page, testEmail('pie-where'));
 	await visit(page, '/');
 
 	const triggers = page.getByRole('button', { name: /write something down/i });
@@ -178,7 +178,7 @@ test('the thumb trigger is for thumbs, and the header one is for cursors', async
 });
 
 test('the section pie lands you in the room', async ({ page }) => {
-	await register(page, `nav-pie-${Date.now()}@test.invalid`);
+	await register(page, testEmail('nav-pie'));
 	await visit(page, '/');
 
 	const jump = page.getByRole('button', { name: /jump to a section/i });
@@ -211,7 +211,7 @@ test.describe('with a finger', () => {
 	test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
 
 	test('a tap opens the pie and it stays open', async ({ page }) => {
-		await register(page, `touch-tap-${Date.now()}@test.invalid`);
+		await register(page, testEmail('touch-tap'));
 		await visit(page, '/');
 
 		/**
@@ -229,7 +229,7 @@ test.describe('with a finger', () => {
 	});
 
 	test('the pie is not text you can select', async ({ page }) => {
-		await register(page, `touch-select-${Date.now()}@test.invalid`);
+		await register(page, testEmail('touch-select'));
 		await visit(page, '/');
 
 		const box = (await (await trigger(page)).boundingBox())!;
@@ -247,7 +247,7 @@ test.describe('with a finger', () => {
 	});
 
 	test('the section pie is on the phone, where it was asked for', async ({ page }) => {
-		await register(page, `touch-nav-${Date.now()}@test.invalid`);
+		await register(page, testEmail('touch-nav'));
 		await visit(page, '/');
 
 		const jump = page.getByRole('button', { name: /go to a section/i });
@@ -298,7 +298,7 @@ test.describe('with a finger', () => {
  * only symptom is that nothing was added.
  */
 test('the Buy capture actually puts something on the shopping list', async ({ page }) => {
-	await register(page, `capture-buy-${Date.now()}@test.invalid`);
+	await register(page, testEmail('capture-buy'));
 	await visit(page, '/');
 
 	await page.getByRole('button', { name: /^Buy/ }).first().click();

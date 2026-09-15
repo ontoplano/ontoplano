@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -53,7 +53,7 @@ async function makeNotebook(page: import('@playwright/test').Page, title: string
 }
 
 test('maximizing takes the screen and puts everything back', async ({ page }) => {
-	await register(page, `nb-max-${Date.now()}@test.invalid`);
+	await register(page, testEmail('nb-max'));
 	await makeNotebook(page, 'Kitchen renovation');
 
 	const composer = page.getByPlaceholder('Write a note about Kitchen renovation');
@@ -82,7 +82,7 @@ test('maximizing takes the screen and puts everything back', async ({ page }) =>
 });
 
 test('the type control scales in steps, and the device remembers the choice', async ({ page }) => {
-	await register(page, `nb-type-${Date.now()}@test.invalid`);
+	await register(page, testEmail('nb-type'));
 	await makeNotebook(page, 'Reading list');
 
 	const composer = page.getByPlaceholder('Write a note about Reading list');

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -15,7 +15,7 @@ import { visit } from './helpers/visit';
 test('a workout can be added, done, edited and archived, and its history protects it', async ({
 	page
 }) => {
-	await register(page, `workouts-${Date.now()}@example.test`);
+	await register(page, testEmail('workouts'));
 
 	await visit(page, '/health/workouts');
 	await expect(page.getByRole('link', { name: 'Workouts' })).toBeVisible();
@@ -79,7 +79,7 @@ test('a workout can be added, done, edited and archived, and its history protect
 
 /** One made by mistake, never done, is still deleted outright. */
 test('a workout that was never done is deleted outright', async ({ page }) => {
-	await register(page, `workouts-fresh-${Date.now()}@example.test`);
+	await register(page, testEmail('workouts-fresh'));
 	await visit(page, '/health/workouts');
 
 	await page.getByRole('button', { name: /New workout/ }).click();
@@ -108,7 +108,7 @@ test('a workout that was never done is deleted outright', async ({ page }) => {
 test('a workout can be planned onto a day, and finishing it there finishes the workout', async ({
 	page
 }) => {
-	await register(page, `workout-plan-${Date.now()}@example.test`);
+	await register(page, testEmail('workout-plan'));
 
 	await visit(page, '/health/workouts');
 	await page.getByRole('button', { name: /New workout/ }).click();
@@ -157,7 +157,7 @@ test('a workout can be planned onto a day, and finishing it there finishes the w
  * since that path writes a label too.
  */
 test('a workout planned from the week is named after the workout', async ({ page }) => {
-	await register(page, `workout-from-plan-${Date.now()}@example.test`);
+	await register(page, testEmail('workout-from-plan'));
 
 	await visit(page, '/health/workouts');
 	await page.getByRole('button', { name: /New workout/ }).click();
@@ -185,7 +185,7 @@ test('a workout planned from the week is named after the workout', async ({ page
 
 /** The old address, which is in bookmarks and in installed app shells. */
 test('the trainings address lands on the workouts', async ({ page }) => {
-	await register(page, `workouts-moved-${Date.now()}@example.test`);
+	await register(page, testEmail('workouts-moved'));
 	await visit(page, '/health/trainings');
 	await expect(page).toHaveURL(/\/health\/workouts/);
 });
@@ -198,7 +198,7 @@ test('the trainings address lands on the workouts', async ({ page }) => {
  * did not fit. Every account starts with the five it had and may say otherwise.
  */
 test('a category can be added, renamed and removed, and a workout uses it', async ({ page }) => {
-	await register(page, `categories-${Date.now()}@example.test`);
+	await register(page, testEmail('categories'));
 	await visit(page, '/health/workouts');
 
 	await page.getByRole('button', { name: 'Categories' }).click();

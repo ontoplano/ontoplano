@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { TEST_CONFIG_DIR } from '../playwright.config';
-import { PASSWORD } from './helpers/account';
+import { PASSWORD, testEmail } from './helpers/account';
 
 /**
  * Who may create an account here.
@@ -39,7 +39,7 @@ function setMode(mode: 'open' | 'invite' | 'closed') {
 let client = 0;
 
 function signUp(request: APIRequestContext, invite?: string) {
-	const email = `reg-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.test`;
+	const email = testEmail('reg');
 	client += 1;
 	return request.post('/api/auth/sign-up/email', {
 		headers: { Origin: ORIGIN, 'x-forwarded-for': `10.9.0.${client}` },
@@ -156,7 +156,7 @@ test('there is no second door onto a closed instance', async ({ playwright }) =>
 	const request = await playwright.request.newContext({ baseURL: ORIGIN });
 	setMode('closed');
 
-	const email = `side-${Date.now()}@example.test`;
+	const email = testEmail('side');
 	const password = PASSWORD;
 
 	for (const path of ['/demo/better-auth/login?/signUpEmail', '/demo/better-auth/login']) {

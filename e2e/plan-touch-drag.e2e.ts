@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -27,7 +27,7 @@ import { visit } from './helpers/visit';
 test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 800 } });
 
 test('a block does not take the scroll gesture away from the page', async ({ page }) => {
-	await register(page, `touch-${Date.now()}@test.invalid`);
+	await register(page, testEmail('touch'));
 	await visit(page, '/tasks/plan');
 
 	const block = page.locator('.ec-event.ec-draggable').first();

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -19,7 +19,7 @@ import { visit } from './helpers/visit';
 test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
 test('the mark is centred in the phone bar, pressed or not', async ({ page }) => {
-	await register(page, `phone-bar-${Date.now()}@test.invalid`);
+	await register(page, testEmail('phone-bar'));
 	await visit(page, '/');
 
 	const mark = page.locator('[aria-label="Go to a section"]');

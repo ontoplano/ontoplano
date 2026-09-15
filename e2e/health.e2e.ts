@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 
 /**
  * The box saying it is alive.
@@ -23,7 +23,7 @@ test('/healthz answers without a session and touches the database', async ({ req
 test('an error page says what happened and offers a way back', async ({ page }) => {
 	// Signed out, an unknown path is sent to the sign-in page rather than to a
 	// 404 — so the error page needs a session to be reached at all.
-	await register(page, `error-page-${Date.now()}@test.invalid`);
+	await register(page, testEmail('error-page'));
 
 	const res = await page.goto('/this-route-does-not-exist');
 	expect(res?.status()).toBe(404);

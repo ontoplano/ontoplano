@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -56,7 +56,7 @@ async function countIn(page: Page, url: string, label: string): Promise<number> 
 
 test('a block that comes back every two days lands on every second day', async ({ page }) => {
 	test.setTimeout(180_000);
-	await register(page, `rec-days-${Date.now()}@test.invalid`);
+	await register(page, testEmail('rec-days'));
 
 	const start = monday();
 	const anchor = dayAfter(start, 0);
@@ -93,7 +93,7 @@ test('a block that comes back every two days lands on every second day', async (
 
 test('a fortnightly block skips the week between', async ({ page }) => {
 	test.setTimeout(180_000);
-	await register(page, `rec-weeks-${Date.now()}@test.invalid`);
+	await register(page, testEmail('rec-weeks'));
 
 	const start = monday();
 	// Built on the Thursday on purpose: a week view that only ever asked about
@@ -125,7 +125,7 @@ test('a fortnightly block skips the week between', async ({ page }) => {
 
 test('a monthly block lands on its date and nowhere else', async ({ page }) => {
 	test.setTimeout(180_000);
-	await register(page, `rec-month-${Date.now()}@test.invalid`);
+	await register(page, testEmail('rec-month'));
 
 	const start = monday();
 	await visit(page, `/tasks/plan?from=${dayAfter(start, 0)}`);
@@ -159,7 +159,7 @@ test('a monthly block lands on its date and nowhere else', async ({ page }) => {
 
 test('skipping one occurrence leaves the block’s other days alone', async ({ page }) => {
 	test.setTimeout(180_000);
-	await register(page, `rec-skip-${Date.now()}@test.invalid`);
+	await register(page, testEmail('rec-skip'));
 
 	const start = monday();
 	const anchor = dayAfter(start, 0);
@@ -210,7 +210,7 @@ test('skipping one occurrence leaves the block’s other days alone', async ({ p
 
 test('editing a block does not quietly shift the rhythm it already had', async ({ page }) => {
 	test.setTimeout(180_000);
-	await register(page, `rec-edit-${Date.now()}@test.invalid`);
+	await register(page, testEmail('rec-edit'));
 
 	const start = monday();
 	const anchor = dayAfter(start, 0);
@@ -258,7 +258,7 @@ test('editing a block does not quietly shift the rhythm it already had', async (
  */
 test('a block dragged out on the grid is drawn as a block, not a sliver', async ({ page }) => {
 	test.setTimeout(180_000);
-	await register(page, `drag-create-${Date.now()}@test.invalid`);
+	await register(page, testEmail('drag-create'));
 
 	await visit(page, '/tasks/plan');
 	await expect(page.locator('.ec-main')).toBeVisible();
@@ -323,7 +323,7 @@ test('a block dragged out on the grid is drawn as a block, not a sliver', async 
  */
 test('a shift-drag leaves no ghost behind either', async ({ page }) => {
 	test.setTimeout(180_000);
-	await register(page, `drag-shift-${Date.now()}@test.invalid`);
+	await register(page, testEmail('drag-shift'));
 
 	await visit(page, '/tasks/plan');
 	await expect(page.locator('.ec-main')).toBeVisible();
@@ -367,7 +367,7 @@ test('a shift-drag leaves no ghost behind either', async ({ page }) => {
 test.describe('the preview on the grid', () => {
 	test('follows the rhythm being chosen, on the dates on screen', async ({ page }) => {
 		test.setTimeout(180_000);
-		await register(page, `preview-${Date.now()}@test.invalid`);
+		await register(page, testEmail('preview'));
 		await visit(page, '/tasks/plan');
 		await expect(page.locator('.ec-main')).toBeVisible();
 		await page.waitForTimeout(600);
@@ -412,7 +412,7 @@ test.describe('the preview on the grid', () => {
 
 	test('stands in for the block being edited, rather than beside it', async ({ page }) => {
 		test.setTimeout(180_000);
-		await register(page, `preview-edit-${Date.now()}@test.invalid`);
+		await register(page, testEmail('preview-edit'));
 		await visit(page, '/tasks/plan');
 		await expect(page.locator('.ec-main')).toBeVisible();
 
@@ -444,7 +444,7 @@ test.describe('the preview on the grid', () => {
 
 	test('a one-off is previewed on its own date, whatever weekday that is', async ({ page }) => {
 		test.setTimeout(180_000);
-		await register(page, `preview-once-${Date.now()}@test.invalid`);
+		await register(page, testEmail('preview-once'));
 
 		// A Thursday, chosen because it is not the weekday a block defaults to.
 		// The next one, not this week's: a one-off in the past cannot be saved.
@@ -478,7 +478,7 @@ test.describe('the preview on the grid', () => {
 
 	test('is brought into view when it is at an hour the grid is not showing', async ({ page }) => {
 		test.setTimeout(180_000);
-		await register(page, `preview-scroll-${Date.now()}@test.invalid`);
+		await register(page, testEmail('preview-scroll'));
 		await visit(page, '/tasks/plan');
 		await expect(page.locator('.ec-main')).toBeVisible();
 		await page.waitForTimeout(600);
@@ -525,7 +525,7 @@ test.describe('dragging out an hour', () => {
 
 	test('shows an outline while the pointer is down, and nothing after', async ({ page }) => {
 		test.setTimeout(180_000);
-		await register(page, `dragout-${Date.now()}@test.invalid`);
+		await register(page, testEmail('dragout'));
 		await visit(page, '/tasks/plan');
 		await expect(page.locator('.ec-main')).toBeVisible();
 		await page.waitForTimeout(600);
@@ -543,7 +543,7 @@ test.describe('dragging out an hour', () => {
 
 	test('a shift-drag gets the rectangle and no block at all', async ({ page }) => {
 		test.setTimeout(180_000);
-		await register(page, `dragout-shift-${Date.now()}@test.invalid`);
+		await register(page, testEmail('dragout-shift'));
 		await visit(page, '/tasks/plan');
 		await expect(page.locator('.ec-main')).toBeVisible();
 		await page.waitForTimeout(600);
@@ -565,7 +565,7 @@ test.describe('dragging out an hour', () => {
 
 		test('a press and a pull down is how long the thing is', async ({ page }) => {
 			test.setTimeout(180_000);
-			await register(page, `dragout-touch-${Date.now()}@test.invalid`);
+			await register(page, testEmail('dragout-touch'));
 			await visit(page, '/tasks/plan?view=day');
 			await expect(page.locator('.ec-main')).toBeVisible();
 			await page.waitForTimeout(900);
@@ -617,7 +617,7 @@ test.describe('dragging out an hour', () => {
 test.describe('closing a week', () => {
 	test('answers stack up on the right and nothing happens until you save', async ({ page }) => {
 		test.setTimeout(180_000);
-		await register(page, `settle-${Date.now()}@test.invalid`);
+		await register(page, testEmail('settle'));
 		await visit(page, '/tasks/review');
 		await expect(page.locator('main')).toBeVisible();
 		await page.waitForTimeout(600);
@@ -671,7 +671,7 @@ test.describe('closing a week', () => {
  */
 test('a weekly block does not fill in the weeks before it existed', async ({ page }) => {
 	test.setTimeout(180_000);
-	await register(page, `rec-past-${Date.now()}@test.invalid`);
+	await register(page, testEmail('rec-past'));
 
 	const start = monday();
 	const thisThursday = dayAfter(start, 3);

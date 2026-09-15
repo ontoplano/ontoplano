@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -13,7 +13,7 @@ import { visit } from './helpers/visit';
  * seven of them in a column are taller than the phone.
  */
 async function aHabitWithItsGridOpen(page: import('@playwright/test').Page) {
-	await register(page, `heat-${Date.now()}-${Math.random()}@test.invalid`);
+	await register(page, testEmail('heat'));
 	await visit(page, '/health/habits');
 	await page.request.post('/health/habits?/create', {
 		headers: { Origin: new URL(page.url()).origin, 'x-sveltekit-action': 'true' },

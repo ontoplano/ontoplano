@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -21,7 +21,7 @@ async function addWorkout(page: import('@playwright/test').Page, title: string) 
 
 test('a session is written down, read back, corrected and removed', async ({ page }) => {
 	test.setTimeout(120_000);
-	await register(page, `register-${Date.now()}@example.test`);
+	await register(page, testEmail('register'));
 	await visit(page, '/health/workouts');
 	await addWorkout(page, 'Pull day');
 
@@ -62,7 +62,7 @@ test('a session is written down, read back, corrected and removed', async ({ pag
 
 test('a workout with history is archived rather than deleted', async ({ page }) => {
 	test.setTimeout(120_000);
-	await register(page, `register-keep-${Date.now()}@example.test`);
+	await register(page, testEmail('register-keep'));
 	await visit(page, '/health/workouts');
 	await addWorkout(page, 'Easy 5k');
 
@@ -87,7 +87,7 @@ test('a workout with history is archived rather than deleted', async ({ page }) 
  */
 test('a workout declares what it measures, and the log form opens on it', async ({ page }) => {
 	test.setTimeout(120_000);
-	await register(page, `declared-${Date.now()}@example.test`);
+	await register(page, testEmail('declared'));
 	await visit(page, '/health/workouts');
 
 	await page.getByRole('button', { name: /New workout/ }).click();

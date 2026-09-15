@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -23,7 +23,7 @@ async function handle(page: import('@playwright/test').Page) {
 test('the press that opens it chooses nothing, and the petals are above the hand', async ({
 	page
 }) => {
-	await register(page, `fan-tap-${Date.now()}@test.invalid`);
+	await register(page, testEmail('fan-tap'));
 	await visit(page, '/');
 
 	const at = await handle(page);
@@ -48,7 +48,7 @@ test('the press that opens it chooses nothing, and the petals are above the hand
 });
 
 test('dragging onto one and letting go goes there', async ({ page }) => {
-	await register(page, `fan-drag-${Date.now()}@test.invalid`);
+	await register(page, testEmail('fan-drag'));
 	await visit(page, '/');
 
 	const at = await handle(page);
@@ -68,7 +68,7 @@ test('dragging onto one and letting go goes there', async ({ page }) => {
 });
 
 test('escape closes it and nothing is chosen', async ({ page }) => {
-	await register(page, `fan-esc-${Date.now()}@test.invalid`);
+	await register(page, testEmail('fan-esc'));
 	await visit(page, '/');
 
 	const at = await handle(page);
@@ -84,7 +84,7 @@ test('escape closes it and nothing is chosen', async ({ page }) => {
 });
 
 test('the operator hears about a problem from the fan', async ({ page }) => {
-	await register(page, `fan-report-${Date.now()}@test.invalid`);
+	await register(page, testEmail('fan-report'));
 	await visit(page, '/');
 
 	const at = await handle(page);

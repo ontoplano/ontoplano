@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type PlaywrightWorkerArgs } from '@playwright/test';
-import { PASSWORD, clientAddress } from './helpers/account';
+import { PASSWORD, clientAddress, testEmail } from './helpers/account';
 
 /**
  * Nothing unbounded reaches the database.
@@ -65,7 +65,7 @@ async function signedIn(playwright: PlaywrightWorkerArgs['playwright']): Promise
 	cookie: string;
 }> {
 	const request = await playwright.request.newContext({ baseURL: ORIGIN });
-	const email = `caps-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.test`;
+	const email = testEmail('caps');
 
 	const signUp = await request.post('/api/auth/sign-up/email', {
 		headers: { Origin: ORIGIN, 'x-forwarded-for': clientAddress() },

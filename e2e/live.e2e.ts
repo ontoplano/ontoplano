@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -51,7 +51,7 @@ test.describe.configure({ retries: 2 });
 
 test('a todo added by an assistant turns up without a reload', async ({ page, playwright }) => {
 	await page.setViewportSize({ width: 1280, height: 1000 });
-	await register(page, `live-${Date.now()}@test.invalid`);
+	await register(page, testEmail('live'));
 
 	// The token, made the way the integrations page makes one.
 	const cookie = (await page.context().cookies()).map((c) => `${c.name}=${c.value}`).join('; ');
@@ -122,7 +122,7 @@ test('a stream is refused to somebody who is not signed in', async ({ playwright
  */
 test('a note written by an assistant turns up on its notebook', async ({ page, playwright }) => {
 	await page.setViewportSize({ width: 1280, height: 1000 });
-	await register(page, `live-book-${Date.now()}@test.invalid`);
+	await register(page, testEmail('live-book'));
 
 	const cookie = (await page.context().cookies()).map((c) => `${c.name}=${c.value}`).join('; ');
 	const request = await playwright.request.newContext({ baseURL: ORIGIN });

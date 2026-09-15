@@ -43,6 +43,31 @@ const SALT = Math.floor(Math.random() * 200);
  * testing the rate limiter. It is also nearer the truth — nine people do not
  * sign up from one machine in four seconds.
  */
+/**
+ * An address no other test can ask for.
+ *
+ * Every fixture used to build one from `Date.now()`, which is unique only if
+ * no two of them run in the same millisecond — and they do: the suite runs
+ * four workers, and `--repeat-each` runs the same line twice in a row. The
+ * failure it produced is "User already exists", surfacing wherever the loser
+ * of the race happened to be, which is why the suite failed on a different
+ * spec every run and every one of them passed on its own.
+ *
+ * Three parts, and each is there for a reason the others do not cover: the
+ * worker index, because workers are separate processes that share a clock; a
+ * salt per process, because a worker respawned after a failure starts its
+ * counter again; and a counter, because one process makes several accounts
+ * inside a millisecond. The clock is not one of them — it never was the thing
+ * making these unique.
+ */
+let minted = 0;
+const MINT_SALT = Math.floor(Math.random() * 1e9).toString(36);
+
+export function testEmail(prefix: string): string {
+	minted += 1;
+	return `${prefix}-w${WORKER}-${MINT_SALT}-${minted}@test.invalid`;
+}
+
 export function clientAddress(): string {
 	clients += 1;
 	return `10.${42 + WORKER}.${SALT + Math.floor(clients / 250)}.${(clients % 250) + 1}`;

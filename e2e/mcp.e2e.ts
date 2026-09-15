@@ -1,5 +1,5 @@
 import { expect, test, type APIRequestContext, type PlaywrightWorkerArgs } from '@playwright/test';
-import { PASSWORD, clientAddress, register } from './helpers/account';
+import { PASSWORD, clientAddress, register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -15,7 +15,7 @@ const ORIGIN = 'http://localhost:4173';
 
 async function account(playwright: PlaywrightWorkerArgs['playwright']) {
 	const request = await playwright.request.newContext({ baseURL: ORIGIN });
-	const email = `mcp-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.test`;
+	const email = testEmail('mcp');
 
 	const signUp = await request.post('/api/auth/sign-up/email', {
 		headers: { Origin: ORIGIN, 'x-forwarded-for': clientAddress() },
@@ -200,7 +200,7 @@ test('the address says nothing to somebody without a token', async ({ playwright
  * day a tool is added with a scope the preset does not cover.
  */
 test('the preset ticks exactly the scopes an AI assistant needs', async ({ page }) => {
-	await register(page, `preset-${Date.now()}@test.invalid`);
+	await register(page, testEmail('preset'));
 	await visit(page, '/settings/integrations/connections');
 
 	await page

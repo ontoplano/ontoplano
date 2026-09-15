@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -35,7 +35,7 @@ async function focusCard(page: import('@playwright/test').Page, title: string) {
 
 test.describe('the board deletes by keyboard', () => {
 	test('x asks, and does not delete on its own', async ({ page }) => {
-		await register(page, `board-x-${Date.now()}@example.test`);
+		await register(page, testEmail('board-x'));
 		const title = 'A card to be asked about';
 		await newCard(page, title);
 		await focusCard(page, title);
@@ -54,7 +54,7 @@ test.describe('the board deletes by keyboard', () => {
 	});
 
 	test('Escape backs out of the question', async ({ page }) => {
-		await register(page, `board-esc-${Date.now()}@example.test`);
+		await register(page, testEmail('board-esc'));
 		const title = 'A card that survives';
 		await newCard(page, title);
 		await focusCard(page, title);
@@ -68,7 +68,7 @@ test.describe('the board deletes by keyboard', () => {
 	});
 
 	test('answering the question deletes the card', async ({ page }) => {
-		await register(page, `board-del-${Date.now()}@example.test`);
+		await register(page, testEmail('board-del'));
 		const title = 'A card that goes';
 		await newCard(page, title);
 		await focusCard(page, title);
@@ -100,7 +100,7 @@ test.describe('the board deletes by keyboard', () => {
  */
 test.describe('the todo rail', () => {
 	test('drops a todo once it is done', async ({ page }) => {
-		await register(page, `board-rail-${Date.now()}@example.test`);
+		await register(page, testEmail('board-rail'));
 		const title = 'A rail todo that gets finished';
 		const rail = page.getByRole('complementary', { name: 'To-do list' });
 		const todoTab = page.getByRole('button', { name: 'To-do', exact: true });
@@ -141,7 +141,7 @@ test.describe('the todo rail', () => {
  */
 test.describe('undo on a card ticked off', () => {
 	test('offers Undo, and Undo means the write never happens', async ({ page }) => {
-		await register(page, `board-undo-${Date.now()}@example.test`);
+		await register(page, testEmail('board-undo'));
 		const title = 'A card ticked off by mistake';
 		await newCard(page, title);
 
@@ -159,7 +159,7 @@ test.describe('undo on a card ticked off', () => {
 	});
 
 	test('lets the window run out and the card is done', async ({ page }) => {
-		await register(page, `board-done-${Date.now()}@example.test`);
+		await register(page, testEmail('board-done'));
 		const title = 'A card that really is done';
 		await newCard(page, title);
 
@@ -190,7 +190,7 @@ test.describe('the board on a phone', () => {
 	test.use({ viewport: { width: 390, height: 844 } });
 
 	test('slides sideways, and the names jump to a column', async ({ page }) => {
-		await register(page, `board-phone-${Date.now()}@example.test`);
+		await register(page, testEmail('board-phone'));
 		const title = 'A card to find under Done';
 		await newCard(page, title);
 
@@ -230,7 +230,7 @@ test.describe('dropping on the column switcher', () => {
 	test.use({ viewport: { width: 390, height: 844 } });
 
 	test('moves the card there and follows it', async ({ page }) => {
-		await register(page, `board-switch-${Date.now()}@example.test`);
+		await register(page, testEmail('board-switch'));
 		const title = 'A card that should end up Doing';
 		await newCard(page, title);
 
@@ -271,7 +271,7 @@ function makeDataTransfer(page: import('@playwright/test').Page) {
  * needs no form to open.
  */
 test('n opens a new card and g switches the tab, from the keyboard', async ({ page }) => {
-	await register(page, `board-keys-${Date.now()}@test.invalid`);
+	await register(page, testEmail('board-keys'));
 	await visit(page, '/tasks/board');
 
 	await page.keyboard.press('g');

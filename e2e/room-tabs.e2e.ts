@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /** Wait until nothing on the flower is still moving. */
@@ -63,7 +63,7 @@ test.describe('on a phone', () => {
 
 	test('a sideways swipe walks the tabs, both ways', async ({ page }) => {
 		test.setTimeout(180_000);
-		await register(page, `tabs-${Date.now()}@test.invalid`);
+		await register(page, testEmail('tabs'));
 		await visit(page, '/finance/ledgers');
 
 		await swipe(page, 320, 100);
@@ -86,7 +86,7 @@ test.describe('on a phone', () => {
 	 */
 	test('a swipe below the content is still a swipe', async ({ page }) => {
 		test.setTimeout(180_000);
-		await register(page, `tabs-low-${Date.now()}@test.invalid`);
+		await register(page, testEmail('tabs-low'));
 		await visit(page, '/finance/ledgers');
 
 		/*
@@ -118,7 +118,7 @@ test.describe('on a phone', () => {
 
 	test('a short or diagonal gesture is a scroll, not a tab change', async ({ page }) => {
 		test.setTimeout(180_000);
-		await register(page, `tabs-scroll-${Date.now()}@test.invalid`);
+		await register(page, testEmail('tabs-scroll'));
 		await visit(page, '/finance/ledgers');
 
 		// Too short to mean anything.
@@ -137,7 +137,7 @@ test.describe('on a phone', () => {
 	 */
 	test('the tab frame does not eat the card bleed', async ({ page }) => {
 		test.setTimeout(180_000);
-		await register(page, `tabs-bleed-${Date.now()}@test.invalid`);
+		await register(page, testEmail('tabs-bleed'));
 		const origin = new URL(page.url()).origin;
 		await page.request.post('/notebooks?/create', {
 			headers: { Origin: origin, 'x-sveltekit-action': 'true' },
@@ -163,7 +163,7 @@ test.describe('the strip itself', () => {
 
 	test('exactly one tab is lit, on a page that is under one of them', async ({ page }) => {
 		test.setTimeout(180_000);
-		await register(page, `tabs-lit-${Date.now()}@test.invalid`);
+		await register(page, testEmail('tabs-lit'));
 
 		// Notebooks' first tab is the room's own root, so every page in the room
 		// starts with its path — and the strip used to underline both it and the
@@ -191,7 +191,7 @@ test.describe('the strip itself', () => {
 	 */
 	test('the end of the row fades, and there is nothing painted over it', async ({ page }) => {
 		test.setTimeout(180_000);
-		await register(page, `tabs-fade-${Date.now()}@test.invalid`);
+		await register(page, testEmail('tabs-fade'));
 		await visit(page, '/notebooks/ideas');
 
 		const strip = page.getByRole('navigation', { name: 'Notebooks sections' });
@@ -222,7 +222,7 @@ test.describe('between rooms', () => {
 
 	test('the screen leaving goes one way and the one arriving comes the other', async ({ page }) => {
 		test.setTimeout(180_000);
-		await register(page, `rooms-${Date.now()}@test.invalid`);
+		await register(page, testEmail('rooms'));
 		await visit(page, '/tasks/plan');
 
 		/*
@@ -313,7 +313,7 @@ test.describe('between rooms', () => {
 
 	test('changing tab inside a room does not also slide the room', async ({ page }) => {
 		test.setTimeout(180_000);
-		await register(page, `rooms-tab-${Date.now()}@test.invalid`);
+		await register(page, testEmail('rooms-tab'));
 		await visit(page, '/finance/ledgers');
 
 		await page
@@ -346,7 +346,7 @@ test.describe('on a phone, through the pie', () => {
 
 	test('picking a room off the pie turns the wheel', async ({ page }) => {
 		test.setTimeout(180_000);
-		await register(page, `pie-arc-${Date.now()}@test.invalid`);
+		await register(page, testEmail('pie-arc'));
 		await visit(page, '/');
 
 		await page.evaluate(() => {
@@ -400,7 +400,7 @@ test.describe('on a phone, through the pie', () => {
 	 */
 	test('the screen that left is off the screen before it is taken away', async ({ page }) => {
 		test.setTimeout(180_000);
-		await register(page, `pie-clear-${Date.now()}@test.invalid`);
+		await register(page, testEmail('pie-clear'));
 		await visit(page, '/');
 
 		/*
@@ -543,7 +543,7 @@ test.describe('on a phone, through the pie', () => {
 	 */
 	test('the dashboard and the screens beside the wheel are places too', async ({ page }) => {
 		test.setTimeout(180_000);
-		await register(page, `bar-arc-${Date.now()}@test.invalid`);
+		await register(page, testEmail('bar-arc'));
 		await visit(page, '/');
 
 		await page.evaluate(() => {
@@ -583,7 +583,7 @@ test.describe('with a mouse', () => {
 
 	test('the tabs are still links, and the room still says which one', async ({ page }) => {
 		test.setTimeout(120_000);
-		await register(page, `tabs-desk-${Date.now()}@test.invalid`);
+		await register(page, testEmail('tabs-desk'));
 		await visit(page, '/finance/ledgers');
 
 		const strip = page.getByRole('navigation', { name: 'Finance sections' });
@@ -602,7 +602,7 @@ test.describe('with a mouse', () => {
 	/** An open notebook is still under Notebooks, which is not an exact match. */
 	test('a page inside a tab keeps that tab lit', async ({ page }) => {
 		test.setTimeout(120_000);
-		await register(page, `tabs-deep-${Date.now()}@test.invalid`);
+		await register(page, testEmail('tabs-deep'));
 		const origin = new URL(page.url()).origin;
 		await page.request.post('/notebooks?/create', {
 			headers: { Origin: origin, 'x-sveltekit-action': 'true' },
@@ -633,7 +633,7 @@ test.describe('with a coarse pointer on a wide screen', () => {
 	test.use({ hasTouch: true });
 
 	test('a room that arrives after the slide still slides in', async ({ page }) => {
-		await register(page, `late-arrival-${Date.now()}@test.invalid`);
+		await register(page, testEmail('late-arrival'));
 		await visit(page, '/tasks/todo');
 
 		// Requests the app's service worker makes cannot be held by interception.
@@ -680,7 +680,7 @@ test.describe('with a coarse pointer on a wide screen', () => {
  * that never slid.
  */
 test('a mouse gets no movement, however slow the load', async ({ page }) => {
-	await register(page, `no-slide-${Date.now()}@test.invalid`);
+	await register(page, testEmail('no-slide'));
 	await visit(page, '/tasks/todo');
 	await page.evaluate(async () => {
 		const registrations = await navigator.serviceWorker.getRegistrations();

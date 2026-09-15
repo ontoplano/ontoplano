@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -26,7 +26,7 @@ test('the services run on the device and their writes survive a reload', async (
 		if (m.type() === 'error') console.log('CONSOLE ' + m.text().slice(0, 200));
 	});
 
-	await register(page, `localdb-${Date.now()}@test.invalid`);
+	await register(page, testEmail('localdb'));
 	await visit(page, '/demo/isolated-db');
 	await expect(page.getByTestId('todos')).not.toHaveText('-1', { timeout: 30_000 });
 

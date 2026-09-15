@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { LOCATION_PANEL_WIDTH } from '../src/lib/services/settings';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -27,7 +27,7 @@ test.describe('where things live', () => {
 
 	test('a name too long for the column is readable, and the column can grow', async ({ page }) => {
 		test.setTimeout(120_000);
-		await register(page, `locpanel-${Date.now()}@test.invalid`);
+		await register(page, testEmail('locpanel'));
 		await visit(page, '/inventory');
 		await addLocation(page, 'adsfasd sdaf');
 		await addLocation(page, LONG, 'adsfasd sdaf');
@@ -59,7 +59,7 @@ test.describe('where things live', () => {
 
 	test('the handle refuses to squeeze the list out of existence', async ({ page }) => {
 		test.setTimeout(120_000);
-		await register(page, `locpanel-max-${Date.now()}@test.invalid`);
+		await register(page, testEmail('locpanel-max'));
 		await visit(page, '/inventory');
 
 		const handle = page.getByRole('separator', { name: /locations panel/ });
@@ -88,7 +88,7 @@ test.describe('on a phone', () => {
 
 	test('there is no divider to drag', async ({ page }) => {
 		test.setTimeout(120_000);
-		await register(page, `locpanel-phone-${Date.now()}@test.invalid`);
+		await register(page, testEmail('locpanel-phone'));
 		await visit(page, '/inventory');
 		await expect(page.getByRole('separator', { name: /locations panel/ })).toBeHidden();
 	});

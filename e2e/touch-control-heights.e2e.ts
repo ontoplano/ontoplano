@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -26,7 +26,7 @@ import { visit } from './helpers/visit';
 test.use({ viewport: { width: 360, height: 800 }, hasTouch: true, isMobile: true });
 
 test('a goal’s progress field and the button beside it are the same height', async ({ page }) => {
-	await register(page, `touch-${Date.now()}@test.invalid`);
+	await register(page, testEmail('touch'));
 
 	// A goal with a target, which is what puts the self-reported progress form
 	// on the card. Opening the form is retried: the button exists before the
@@ -74,7 +74,7 @@ test('a goal’s progress field and the button beside it are the same height', a
 });
 
 test('the goal card’s controls sit on one row inside the card', async ({ page }) => {
-	await register(page, `touch-rail-${Date.now()}@test.invalid`);
+	await register(page, testEmail('touch-rail'));
 
 	await visit(page, '/goals');
 	const heading = page.locator('[name="heading"]');

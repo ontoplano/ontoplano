@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /** Where a run's own pictures go, beside everything else Playwright writes. */
@@ -13,7 +13,7 @@ const SHOTS = 'test-results/tooltips';
  * looked like the rest, appearing at the moment somebody is unsure.
  */
 test('a title becomes ours, and goes back when the pointer leaves', async ({ page }) => {
-	await register(page, `tip-${Date.now()}@test.invalid`);
+	await register(page, testEmail('tip'));
 	await visit(page, '/');
 
 	const wheel = page.getByRole('button', { name: 'Jump to a section' });
@@ -36,7 +36,7 @@ test('a title becomes ours, and goes back when the pointer leaves', async ({ pag
 });
 
 test('it stays on screen at the edges', async ({ page }) => {
-	await register(page, `tip-edge-${Date.now()}@test.invalid`);
+	await register(page, testEmail('tip-edge'));
 	await visit(page, '/');
 
 	/*
@@ -77,7 +77,7 @@ test('it stays on screen at the edges', async ({ page }) => {
  * lookup by name, intermittently, for as long as the pointer was on it.
  */
 test('a button named only by its title keeps that name while ours is up', async ({ page }) => {
-	await register(page, `tip-name-${Date.now()}@test.invalid`);
+	await register(page, testEmail('tip-name'));
 	await visit(page, '/');
 
 	const wheel = page.getByRole('button', { name: 'Jump to a section' });

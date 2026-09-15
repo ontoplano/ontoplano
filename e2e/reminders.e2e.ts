@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -11,7 +11,7 @@ import { visit } from './helpers/visit';
  * because it is a sentence about now and not an appointment.
  */
 test('a birthday shows up before it happens, without anything being run', async ({ page }) => {
-	await register(page, `rem-birthday-${Date.now()}@test.invalid`);
+	await register(page, testEmail('rem-birthday'));
 
 	// A fortnight out, so it is ahead of today whatever day this runs on.
 	const soon = new Date();
@@ -35,7 +35,7 @@ test('a birthday shows up before it happens, without anything being run', async 
 });
 
 test('the weekly-review nag is sent but is not an appointment', async ({ page }) => {
-	await register(page, `rem-review-${Date.now()}@test.invalid`);
+	await register(page, testEmail('rem-review'));
 	await visit(page, '/reminders');
 	await expect(page.locator('main')).toBeVisible();
 	// It belongs on a phone at seven in the morning, not in a list of things
@@ -44,7 +44,7 @@ test('the weekly-review nag is sent but is not an appointment', async ({ page })
 });
 
 test('an alarm is a day and a time, not one box with six segments', async ({ page }) => {
-	await register(page, `rem-alarm-${Date.now()}@test.invalid`);
+	await register(page, testEmail('rem-alarm'));
 	await visit(page, '/reminders');
 
 	const tomorrow = new Date();
@@ -82,7 +82,7 @@ test('an alarm is a day and a time, not one box with six segments', async ({ pag
  * day starts, and the field says which hour that is.
  */
 test('an alarm with no time goes off when the day starts', async ({ page }) => {
-	await register(page, `rem-noclock-${Date.now()}@test.invalid`);
+	await register(page, testEmail('rem-noclock'));
 	await visit(page, '/reminders');
 
 	const tomorrow = new Date();
@@ -112,7 +112,7 @@ test('an alarm with no time goes off when the day starts', async ({ page }) => {
  * answered with an alarm four months out.
  */
 test('what is coming stops where the window does', async ({ page }) => {
-	await register(page, `rem-ceiling-${Date.now()}@test.invalid`);
+	await register(page, testEmail('rem-ceiling'));
 	await visit(page, '/reminders');
 
 	const far = new Date();
@@ -132,7 +132,7 @@ test('what is coming stops where the window does', async ({ page }) => {
 });
 
 test('the window can be widened, and stops at a year', async ({ page }) => {
-	await register(page, `rem-window-${Date.now()}@test.invalid`);
+	await register(page, testEmail('rem-window'));
 
 	// A birthday four months out: outside the default two months, inside a year.
 	const far = new Date();
@@ -166,7 +166,7 @@ test.describe('on a phone', () => {
 	test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
 
 	test('changing how far ahead does not throw you back to the top', async ({ page }) => {
-		await register(page, `rem-scroll-${Date.now()}@test.invalid`);
+		await register(page, testEmail('rem-scroll'));
 		await visit(page, '/reminders');
 		await expect(page.locator('main')).toBeVisible();
 		await page.waitForTimeout(500);
@@ -196,7 +196,7 @@ test.describe('on a phone', () => {
 });
 
 test('an alarm that will make a noise says so before it does', async ({ page }) => {
-	await register(page, `rem-sound-${Date.now()}@test.invalid`);
+	await register(page, testEmail('rem-sound'));
 	await visit(page, '/reminders');
 
 	const tomorrow = new Date();
@@ -235,7 +235,7 @@ test('an alarm that will make a noise says so before it does', async ({ page }) 
  * time, which is the only part of it this app owns.
  */
 test('the time is a plain time field, and the form takes what it gives', async ({ page }) => {
-	await register(page, `rem-time-${Date.now()}@test.invalid`);
+	await register(page, testEmail('rem-time'));
 	await visit(page, '/reminders');
 	await expect(page.locator('main')).toBeVisible();
 
@@ -249,7 +249,7 @@ test('the time is a plain time field, and the form takes what it gives', async (
 });
 
 test('a reminder that has already been is not "coming up"', async ({ page }) => {
-	await register(page, `rem-past-${Date.now()}@test.invalid`);
+	await register(page, testEmail('rem-past'));
 
 	// Written straight in, because the form will not take a time that has been.
 	await page.request.post('/reminders?/create', {
@@ -280,7 +280,7 @@ test('a reminder that has already been is not "coming up"', async ({ page }) => 
  * be answered. The window looks either way now.
  */
 test('a reminder that has been is still there to look at', async ({ page }) => {
-	await register(page, `rem-past-${Date.now()}@test.invalid`);
+	await register(page, testEmail('rem-past'));
 
 	// Yesterday, not a decade ago: "the last seven days" means seven days, and
 	// a fixture outside the window would be testing the window rather than the

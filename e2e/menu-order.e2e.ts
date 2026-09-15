@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -12,7 +12,7 @@ import { visit } from './helpers/visit';
  */
 test.describe('the menu order', () => {
 	test('moves the bar and the wheel together', async ({ page }) => {
-		await register(page, `order-${Date.now()}@test.invalid`);
+		await register(page, testEmail('order'));
 
 		await visit(page, '/settings/preferences');
 		const menu = page.locator('form[action="?/saveMenu"]');
@@ -42,7 +42,7 @@ test.describe('the menu order', () => {
 		// The case that breaks quietly: an order saved before a room existed must
 		// not hide that room. Written straight through the action, because there
 		// is no way to save a stale order through the form.
-		await register(page, `order-new-${Date.now()}@test.invalid`);
+		await register(page, testEmail('order-new'));
 
 		await visit(page, '/settings/preferences');
 		await page.evaluate(async () => {
@@ -69,7 +69,7 @@ test.describe('the menu order', () => {
 
 test.describe('the section colours', () => {
 	test('are the account’s, and reach the page', async ({ page }) => {
-		await register(page, `colour-${Date.now()}@test.invalid`);
+		await register(page, testEmail('colour'));
 
 		await visit(page, '/settings/preferences');
 		const form = page.locator('form[action="?/saveMenu"]');
@@ -91,7 +91,7 @@ test.describe('the section colours', () => {
 		// A colour goes straight into a `style` attribute — one of very few
 		// settings that does — so it is checked on the way in and again on the
 		// way out. This is the second check.
-		await register(page, `colour-bad-${Date.now()}@test.invalid`);
+		await register(page, testEmail('colour-bad'));
 
 		await visit(page, '/settings/preferences');
 		await page.evaluate(async () => {
@@ -124,7 +124,7 @@ test.describe('the section colours', () => {
  */
 test.describe('the one menu list', () => {
 	test('puts a hidden room at the end, and out of the menus', async ({ page }) => {
-		await register(page, `menu-hide-${Date.now()}@test.invalid`);
+		await register(page, testEmail('menu-hide'));
 
 		await visit(page, '/settings/preferences');
 		const menu = page.locator('form[action="?/saveMenu"]');
@@ -152,7 +152,7 @@ test.describe('the one menu list', () => {
 	});
 
 	test('never lists Home', async ({ page }) => {
-		await register(page, `menu-home-${Date.now()}@test.invalid`);
+		await register(page, testEmail('menu-home'));
 		await visit(page, '/settings/preferences');
 
 		const menu = page.locator('form[action="?/saveMenu"]');

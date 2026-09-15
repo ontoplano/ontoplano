@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -16,7 +16,7 @@ import { visit } from './helpers/visit';
 test('hiding a section empties the menus but not the URL', async ({ page }) => {
 	// The tab row only exists at desktop width.
 	await page.setViewportSize({ width: 1280, height: 800 });
-	await register(page, `sections-${Date.now()}@test.invalid`);
+	await register(page, testEmail('sections'));
 
 	// Visible before: the tab, and the room itself.
 	await visit(page, '/');
@@ -76,7 +76,7 @@ test('hiding a section empties the menus but not the URL', async ({ page }) => {
  */
 test('saving the menu does not empty the list', async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 800 });
-	await register(page, `sections-keep-${Date.now()}@test.invalid`);
+	await register(page, testEmail('sections-keep'));
 	await visit(page, '/settings/preferences');
 
 	const menu = page.locator('form[action="?/saveMenu"]');

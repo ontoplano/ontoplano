@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -39,7 +39,7 @@ test.use({ viewport: { width: 390, height: 844 } });
 test('the phone bar carries home and the raised pie; nothing pulls to refresh', async ({
 	page
 }) => {
-	await register(page, `shell-${Date.now()}@test.invalid`);
+	await register(page, testEmail('shell'));
 	await visit(page, '/');
 
 	const bar = page.locator('nav[aria-label="Primary"]');
@@ -79,7 +79,7 @@ test('the phone bar carries home and the raised pie; nothing pulls to refresh', 
 });
 
 test('a dialog on the phone is a screen with a back arrow', async ({ page }) => {
-	await register(page, `sheet-${Date.now()}@test.invalid`);
+	await register(page, testEmail('sheet'));
 	await visit(page, '/');
 
 	/*
@@ -119,7 +119,7 @@ test('a dialog on the phone is a screen with a back arrow', async ({ page }) => 
  * move that most says "this is a website".
  */
 test('the system back gesture closes the screen, not the app', async ({ page }) => {
-	await register(page, `back-${Date.now()}@test.invalid`);
+	await register(page, testEmail('back'));
 	await visit(page, '/notebooks');
 
 	// `.first()`: an account with no notebooks yet offers the button twice —
@@ -149,7 +149,7 @@ test('the system back gesture closes the screen, not the app', async ({ page }) 
  * 390px screen spends its width on the list, not on white space either side.
  */
 test('a card takes the whole width of the phone', async ({ page }) => {
-	await register(page, `bleed-${Date.now()}@test.invalid`);
+	await register(page, testEmail('bleed'));
 	await visit(page, '/notebooks');
 
 	const card = page.locator('main .shadow-card').first();
@@ -167,7 +167,7 @@ test('a card takes the whole width of the phone', async ({ page }) => {
 });
 
 test('the phone carries the room at the top and the app at the bottom', async ({ page }) => {
-	await register(page, `topbar-${Date.now()}@test.invalid`);
+	await register(page, testEmail('topbar'));
 	await visit(page, '/tasks/plan');
 
 	// The wordmark header is desktop-only: on a phone it spent a strip of a
@@ -208,7 +208,7 @@ test('the phone carries the room at the top and the app at the bottom', async ({
  * now, above the delete card.
  */
 test('the account page signs a phone out', async ({ page }) => {
-	await register(page, `phone-out-${Date.now()}@example.test`);
+	await register(page, testEmail('phone-out'));
 	await page.setViewportSize({ width: 390, height: 800 });
 	await visit(page, '/settings/account');
 

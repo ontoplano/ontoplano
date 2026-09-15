@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { PASSWORD, register } from './helpers/account';
+import { PASSWORD, register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -37,11 +37,11 @@ test('the danger zone empties this account and nothing else', async ({ page, bro
 	// Somebody else, with their own thing in it, signed in the whole time.
 	const other = await browser.newContext();
 	const theirs = await other.newPage();
-	const theirEmail = `danger-other-${Date.now()}@test.invalid`;
+	const theirEmail = testEmail('danger-other');
 	await register(theirs, theirEmail);
 	await leaveSomething(theirs, 'Their untouched todo');
 
-	const mine = `danger-mine-${Date.now()}@test.invalid`;
+	const mine = testEmail('danger-mine');
 	await register(page, mine);
 	await leaveSomething(page, 'My todo');
 
@@ -99,7 +99,7 @@ test('a signed-out post, and one from another account, empty nothing', async ({
 }) => {
 	test.setTimeout(180_000);
 
-	const victim = `danger-victim-${Date.now()}@test.invalid`;
+	const victim = testEmail('danger-victim');
 	await register(page, victim);
 	await leaveSomething(page, 'Still here afterwards');
 	const origin = new URL(page.url()).origin;
@@ -129,7 +129,7 @@ test('a signed-out post, and one from another account, empty nothing', async ({
 	 */
 	const attacker = await browser.newContext();
 	const theirs = await attacker.newPage();
-	await register(theirs, `danger-attacker-${Date.now()}@test.invalid`);
+	await register(theirs, testEmail('danger-attacker'));
 	const reply = await theirs.request.post(`${origin}/settings/account?/empty`, {
 		headers: { Origin: origin, 'x-sveltekit-action': 'true' },
 		form: { confirm: EMPTY, password: PASSWORD, email: victim, userId: victim }

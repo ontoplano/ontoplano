@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -12,7 +12,7 @@ import { visit } from './helpers/visit';
  * provider notices before a person complains.
  */
 test('the weekly review is off until it is asked for', async ({ page }) => {
-	await register(page, `review-mail-${Date.now()}@test.invalid`);
+	await register(page, testEmail('review-mail'));
 	await visit(page, '/settings/account');
 
 	// Scoped by the form rather than by the card's markup: the card is a
@@ -53,7 +53,7 @@ test('an unsigned unsubscribe link is a 404, not a way in', async ({ page }) => 
  * and what opens is what is stored.
  */
 test('a week note is written once, then read', async ({ page }) => {
-	await register(page, `note-${Date.now()}@test.invalid`);
+	await register(page, testEmail('note'));
 	await visit(page, '/tasks/review');
 
 	const note = page.locator('[name="note"]');

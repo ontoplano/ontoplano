@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -26,7 +26,7 @@ test('the todo page runs against the device, and the server never hears of it', 
 		if (m.type() === 'error') console.log('CONSOLE ' + m.text().slice(0, 300));
 	});
 
-	await register(page, `localmode-${Date.now()}@test.invalid`);
+	await register(page, testEmail('localmode'));
 	await visit(page, '/tasks/todo?isolated=1');
 
 	// Create through the page's own form. The bridge answers the POST from

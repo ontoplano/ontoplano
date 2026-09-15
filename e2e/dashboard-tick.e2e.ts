@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -33,7 +33,7 @@ async function firstTask(page: import('@playwright/test').Page): Promise<string>
 }
 
 test('ticking one off can be undone, and then it never happened', async ({ page }) => {
-	await register(page, `dash-undo-${Date.now()}@test.invalid`);
+	await register(page, testEmail('dash-undo'));
 	await visit(page, '/');
 
 	const title = await firstTask(page);
@@ -57,7 +57,7 @@ test('ticking one off can be undone, and then it never happened', async ({ page 
 });
 
 test('pressing it twice is the same as pressing Undo', async ({ page }) => {
-	await register(page, `dash-twice-${Date.now()}@test.invalid`);
+	await register(page, testEmail('dash-twice'));
 	await visit(page, '/');
 
 	const card = page
@@ -92,7 +92,7 @@ test('pressing it twice is the same as pressing Undo', async ({ page }) => {
 });
 
 test('ticking one off moves nothing on the card', async ({ page }) => {
-	await register(page, `dash-still-${Date.now()}@test.invalid`);
+	await register(page, testEmail('dash-still'));
 	await visit(page, '/');
 
 	const card = page
@@ -126,7 +126,7 @@ test('ticking one off moves nothing on the card', async ({ page }) => {
  * measuring while it is still held.
  */
 test('answering the block at the top moves nothing under it', async ({ page }) => {
-	await register(page, `dash-now-${Date.now()}@test.invalid`);
+	await register(page, testEmail('dash-now'));
 	await visit(page, '/');
 
 	const card = page
@@ -177,7 +177,7 @@ test('answering the block at the top moves nothing under it', async ({ page }) =
 });
 
 test('letting the window run out really does finish it', async ({ page }) => {
-	await register(page, `dash-done-${Date.now()}@test.invalid`);
+	await register(page, testEmail('dash-done'));
 	await visit(page, '/');
 
 	const title = await firstTask(page);

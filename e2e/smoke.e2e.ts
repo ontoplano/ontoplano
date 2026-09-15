@@ -1,5 +1,5 @@
 import { expect, test, type ConsoleMessage, type Page } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -93,7 +93,7 @@ for (const shape of ['desktop', 'mobile'] as const) {
 
 		test(`every page renders and says nothing alarming (${shape})`, async ({ page }) => {
 			const watcher = watch(page);
-			await register(page, `smoke-${shape}-${Date.now()}@test.invalid`);
+			await register(page, testEmail(`smoke-${shape}`));
 
 			for (const route of ROUTES) {
 				const response = await page.goto(route, { waitUntil: 'load' });
@@ -116,13 +116,13 @@ test('a new account gets the playful style, not the sober one', async ({ page })
 	// The default used to be `sober`, which is the style the app was built in —
 	// a reason about the past rather than about the person arriving. What a new
 	// account should see is the version the front page promised.
-	await register(page, `style-${Date.now()}@example.test`);
+	await register(page, testEmail('style'));
 	await expect(page.locator('html')).toHaveAttribute('data-style', 'playful');
 });
 
 test('a long unbroken name does not push its controls off the screen', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 });
-	await register(page, `longword-${Date.now()}@test.invalid`);
+	await register(page, testEmail('longword'));
 
 	await visit(page, '/notebooks');
 	await page.getByRole('button', { name: 'New notebook' }).first().click();
@@ -151,7 +151,7 @@ test('a long unbroken name does not push its controls off the screen', async ({ 
 });
 
 test('a page title is never squeezed into one word per line', async ({ page }) => {
-	await register(page, `titles-${Date.now()}@test.invalid`);
+	await register(page, testEmail('titles'));
 	await page.setViewportSize({ width: 390, height: 844 });
 
 	/**

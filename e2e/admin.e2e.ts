@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { PASSWORD, clientAddress } from './helpers/account';
+import { PASSWORD, clientAddress, testEmail } from './helpers/account';
 import Database from 'better-sqlite3';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -93,7 +93,7 @@ test('deleting an account asks for its address, and means it', async ({ page }) 
 
 	// Somebody to delete, made through the front door so it is a real account
 	// with real rows behind it.
-	const email = `to-delete-${Date.now()}@test.invalid`;
+	const email = testEmail('to-delete');
 	const made = await page.request.post('/api/auth/sign-up/email', {
 		headers: { Origin: ORIGIN, 'x-forwarded-for': '10.32.0.1' },
 		data: { email, password: 'smoke-test-password', name: 'Doomed' }
@@ -146,7 +146,7 @@ test('deleting an account asks for its address, and means it', async ({ page }) 
 test('granting admin takes a deliberate second press', async ({ page }) => {
 	await signInAsOwner(page);
 
-	const email = `to-promote-${Date.now()}@test.invalid`;
+	const email = testEmail('to-promote');
 	const made = await page.request.post('/api/auth/sign-up/email', {
 		headers: { Origin: ORIGIN, 'x-forwarded-for': '10.33.0.1' },
 		data: { email, password: 'smoke-test-password', name: 'Hopeful' }
@@ -260,7 +260,7 @@ test('an administrator cannot become somebody else', async ({ page }) => {
  */
 test('admin actions refuse a non-admin, page load or no page load', async ({ page }) => {
 	const address = clientAddress();
-	const email = `not-an-admin-${Date.now()}@ontoplano.test`;
+	const email = testEmail('not-an-admin');
 	const res = await page.request.post('/api/auth/sign-up/email', {
 		headers: { Origin: ORIGIN, 'x-forwarded-for': address },
 		data: { email, password: PASSWORD, name: 'Nobody' }

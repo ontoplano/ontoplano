@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -18,7 +18,7 @@ test.describe('with a finger', () => {
 	test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
 	test('press and hold on the grid opens a new block there', async ({ page }) => {
-		await register(page, `plan-hold-${Date.now()}@test.invalid`);
+		await register(page, testEmail('plan-hold'));
 		await visit(page, '/tasks/plan');
 
 		const body = page.locator('.ec-body').first();
@@ -45,7 +45,7 @@ test.describe('with a finger', () => {
 	});
 
 	test('a swipe over the grid is a scroll, not a new block', async ({ page }) => {
-		await register(page, `plan-swipe-${Date.now()}@test.invalid`);
+		await register(page, testEmail('plan-swipe'));
 		await visit(page, '/tasks/plan');
 
 		const body = page.locator('.ec-body').first();
@@ -88,7 +88,7 @@ test.describe('tapping a block', () => {
 	 * including after the editor that same tap opened had been cancelled.
 	 */
 	test('tapping a block leaves no hover card behind', async ({ page }) => {
-		await register(page, `plan-hover-${Date.now()}@test.invalid`);
+		await register(page, testEmail('plan-hover'));
 		await visit(page, '/tasks/plan');
 
 		const block = page.locator('.ec-event.ec-draggable').first();
@@ -113,7 +113,7 @@ test.describe('saving a block', () => {
 	test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
 	test('the fields keep their values until the form is gone', async ({ page }) => {
-		await register(page, `plan-save-${Date.now()}@test.invalid`);
+		await register(page, testEmail('plan-save'));
 		await visit(page, '/tasks/plan');
 
 		const block = page.locator('.ec-event').first();

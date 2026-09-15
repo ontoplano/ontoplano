@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -12,7 +12,7 @@ import { visit } from './helpers/visit';
  * consequence, three screens away.
  */
 test('a new category is created, and can hold food', async ({ page }) => {
-	await register(page, `categories-${Date.now()}@test.invalid`);
+	await register(page, testEmail('categories'));
 	await visit(page, '/inventory');
 
 	await page.getByRole('button', { name: 'Categories' }).click();
@@ -37,7 +37,7 @@ test('a new category is created, and can hold food', async ({ page }) => {
 });
 
 test('a category that holds food makes ingredients possible', async ({ page }) => {
-	await register(page, `food-${Date.now()}@test.invalid`);
+	await register(page, testEmail('food'));
 
 	// Before: the recipes page says so rather than letting every field fail.
 	await visit(page, '/health/recipes');
@@ -70,7 +70,7 @@ test('a category that holds food makes ingredients possible', async ({ page }) =
  * price poisoned it permanently with nothing in the app able to correct it.
  */
 test('a price is set where the rest of the item is, and shows on the row', async ({ page }) => {
-	await register(page, `prices-${Date.now()}@test.invalid`);
+	await register(page, testEmail('prices'));
 	await visit(page, '/inventory');
 
 	await page.getByRole('button', { name: /add item/i }).click();

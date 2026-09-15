@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { COLOUR_TOOLS } from './helpers/colour';
 import { visit } from './helpers/visit';
 
@@ -51,7 +51,7 @@ async function paint(page: Page, theme: string, style: string): Promise<void> {
 }
 
 test('the tick on a ticked box can be seen', async ({ page }) => {
-	await register(page, `tick-${Date.now()}@test.invalid`);
+	await register(page, testEmail('tick'));
 	await visit(page, '/tasks/board');
 
 	const box = page.locator('input[type=checkbox]').first();
@@ -81,7 +81,7 @@ test('the tick on a ticked box can be seen', async ({ page }) => {
 });
 
 test('a checkbox is a square, in every style', async ({ page }) => {
-	await register(page, `shapes-${Date.now()}@test.invalid`);
+	await register(page, testEmail('shapes'));
 	await visit(page, '/tasks/board');
 
 	const box = page.locator('input[type=checkbox]').first();
@@ -103,7 +103,7 @@ test('a checkbox is a square, in every style', async ({ page }) => {
 });
 
 test('an unticked box is not the same colour as the page', async ({ page }) => {
-	await register(page, `empty-${Date.now()}@test.invalid`);
+	await register(page, testEmail('empty'));
 	await visit(page, '/tasks/board');
 
 	const box = page.locator('input[type=checkbox]').first();
@@ -125,7 +125,7 @@ test('an unticked box is not the same colour as the page', async ({ page }) => {
 });
 
 test('text stands off its background, on every theme', async ({ page }) => {
-	await register(page, `contrast-${Date.now()}@test.invalid`);
+	await register(page, testEmail('contrast'));
 
 	// Collected across every route and combination, then asserted once. Failing
 	// on the first offender would mean fixing these one browser run at a time.
@@ -189,7 +189,7 @@ test('text stands off its background, on every theme', async ({ page }) => {
 });
 
 test('a button you cannot press does not look like one you can', async ({ page }) => {
-	await register(page, `disabled-${Date.now()}@test.invalid`);
+	await register(page, testEmail('disabled'));
 
 	/*
 	 * The inventory's "one fewer", which is disabled at nothing.
@@ -242,7 +242,7 @@ test('a button you cannot press does not look like one you can', async ({ page }
  * broken in the first place.
  */
 test('a button keeps its label under the pointer', async ({ page }) => {
-	await register(page, `hover-${Date.now()}@test.invalid`);
+	await register(page, testEmail('hover'));
 	await visit(page, '/goals');
 
 	const VARIANTS = [
@@ -312,7 +312,7 @@ test('a button keeps its label under the pointer', async ({ page }) => {
  * rule is only worth having if it survives the specificity of everything else.
  */
 test('every button on a page offers a pointer', async ({ page }) => {
-	await register(page, `cursor-${Date.now()}@test.invalid`);
+	await register(page, testEmail('cursor'));
 	await visit(page, '/tasks/board');
 
 	const wrong = await page.evaluate(() => {

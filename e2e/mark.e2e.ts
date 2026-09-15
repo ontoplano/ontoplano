@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -12,7 +12,7 @@ import { visit } from './helpers/visit';
  * one" signal that also appears on the usual one says nothing at all.
  */
 test('the main menu’s mark keeps its colours in the served app', async ({ page }) => {
-	await register(page, `mark-${Date.now()}@test.invalid`);
+	await register(page, testEmail('mark'));
 	await visit(page, '/');
 
 	const handle = page.getByRole('button', { name: 'Jump to a section' });

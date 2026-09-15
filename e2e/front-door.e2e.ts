@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { DEFAULT_TAGLINE } from '../src/lib/server/config';
 import { visit } from './helpers/visit';
 
@@ -40,7 +40,7 @@ test("and it sells nothing — most instances are somebody else's to run", async
 });
 
 test('and the dashboard the moment somebody is signed in', async ({ page }) => {
-	await register(page, `front-door-${Date.now()}@test.invalid`);
+	await register(page, testEmail('front-door'));
 	await visit(page, '/');
 
 	await expect(page.getByText(DEFAULT_TAGLINE)).toHaveCount(0);

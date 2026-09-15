@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -11,7 +11,7 @@ import { visit } from './helpers/visit';
  * at and reported as having no import form on it. Same form, opened in place.
  */
 test('import markdown opens on the notebooks page, not another one', async ({ page }) => {
-	await register(page, `nb-import-${Date.now()}@test.invalid`);
+	await register(page, testEmail('nb-import'));
 
 	await visit(page, '/notebooks');
 	const before = page.url();

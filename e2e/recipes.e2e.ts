@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -37,7 +37,7 @@ async function makeRecipe(page: import('@playwright/test').Page, title: string):
 }
 
 test('cook mode covers the page and gives it back', async ({ page }) => {
-	await register(page, `cook-${Date.now()}@test.invalid`);
+	await register(page, testEmail('cook'));
 	await makeRecipe(page, 'Tomato pasta');
 
 	// Something to read across a counter.
@@ -77,7 +77,7 @@ test('cook mode covers the page and gives it back', async ({ page }) => {
 });
 
 test('a pasted list becomes the ingredients', async ({ page }) => {
-	await register(page, `paste-${Date.now()}@test.invalid`);
+	await register(page, testEmail('paste'));
 	await makeRecipe(page, 'Pearl barley stew');
 
 	await page.getByRole('button', { name: /paste a list/i }).click();
@@ -134,7 +134,7 @@ test.describe('importing a recipe from a pasted page', () => {
 	})}</script></head><body></body></html>`;
 
 	test('reads the recipe, its ingredients and its timing', async ({ page }) => {
-		await register(page, `recipe-paste-${Date.now()}@test.invalid`);
+		await register(page, testEmail('recipe-paste'));
 		await visit(page, '/health/recipes');
 
 		await page.getByRole('button', { name: 'New recipe' }).first().click();
@@ -155,7 +155,7 @@ test.describe('importing a recipe from a pasted page', () => {
 	});
 
 	test('says so plainly when there is no recipe in the paste', async ({ page }) => {
-		await register(page, `recipe-none-${Date.now()}@test.invalid`);
+		await register(page, testEmail('recipe-none'));
 		await visit(page, '/health/recipes');
 
 		const result = await page.evaluate(async () => {
@@ -191,7 +191,7 @@ test.describe('importing a recipe from a pasted page', () => {
  * can quietly stop being true while every page still looks right.
  */
 test('a recipe put on a day turns into shopping', async ({ page }) => {
-	await register(page, `seam-${Date.now()}@test.invalid`);
+	await register(page, testEmail('seam'));
 
 	// A food category, because an ingredient is a shopping item and a shopping
 	// item lives in one.
@@ -291,7 +291,7 @@ test('a recipe put on a day turns into shopping', async ({ page }) => {
  * that tab drew is the plan, which draws meals beside everything else.
  */
 test('the calendar button on a recipe puts it on a day', async ({ page }) => {
-	await register(page, `plan-recipe-${Date.now()}@test.invalid`);
+	await register(page, testEmail('plan-recipe'));
 
 	await visit(page, '/health/recipes');
 	await page
@@ -317,7 +317,7 @@ test('the calendar button on a recipe puts it on a day', async ({ page }) => {
 
 /** The tab is gone, and its address goes where the act lives. */
 test('the old meals address lands on the recipes', async ({ page }) => {
-	await register(page, `meals-gone-${Date.now()}@test.invalid`);
+	await register(page, testEmail('meals-gone'));
 	await visit(page, '/health/meals');
 	await expect(page).toHaveURL(/\/health\/recipes/);
 });

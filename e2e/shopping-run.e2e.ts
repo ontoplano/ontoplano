@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { register } from './helpers/account';
+import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
@@ -12,7 +12,7 @@ import { visit } from './helpers/visit';
 test('the shopping list adds up what has run low, and keeps the wishlist out of the total', async ({
 	page
 }) => {
-	await register(page, `shop-run-${Date.now()}@test.invalid`);
+	await register(page, testEmail('shop-run'));
 	await visit(page, '/inventory');
 
 	// Something you keep four of and have none of, at a known price.
