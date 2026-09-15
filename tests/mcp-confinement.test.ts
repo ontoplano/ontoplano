@@ -216,6 +216,46 @@ describe('asking about another notebook', () => {
 	});
 });
 
+describe('when the notebook is gone', () => {
+	/*
+	 * A key outlives the thing it was made for, and what it must not do then is
+	 * widen. The reach is "the rows inside notebook 4"; with no notebook 4 that
+	 * is no rows, so every id fails to resolve and the key is inert rather than
+	 * loose in the account.
+	 */
+	it('the key stops working rather than falling back to the account', async () => {
+		const { deleteNotebook } = await import('../src/lib/services/notebooks');
+		const gone = (() => {
+			const made = call('add_todo', { title: 'before it went' });
+			return made;
+		})();
+		expect(failed(gone)).toBe(false);
+
+		deleteNotebook(ctx(), mine);
+
+		expect(failed(call('todos', {}))).toBe(true);
+		expect(failed(call('add_todo', { title: 'after it went' }))).toBe(true);
+	});
+});
+
+describe('a key tied to a kind this build no longer knows', () => {
+	it('is refused everything, rather than treated as untied', () => {
+		const caller = {
+			ctx: ctx(),
+			scopes: Object.keys(SCOPES),
+			confinement: { kind: 'album', id: 1 }
+		};
+		const answer = handleBody(caller as never, {
+			jsonrpc: '2.0',
+			id: 1,
+			method: 'tools/call',
+			params: { name: 'todos', arguments: {} }
+		}) as { error?: unknown; result?: { isError?: boolean } };
+
+		expect(Boolean(answer.error) || Boolean(answer.result?.isError)).toBe(true);
+	});
+});
+
 describe('a key that is not confined', () => {
 	it('still reaches the whole account', () => {
 		const answer = call('todos', {}, false);
