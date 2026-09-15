@@ -92,17 +92,37 @@
 					oninput={slide}
 					aria-label={RATING_LABELS[rating]}
 					aria-valuetext={value === null ? 'not set' : `${value} of ${RATING_MAX}`}
-					title={value === null ? `${RATING_LABELS[rating]}: not set` : ''}
+					title={value === null
+						? `${RATING_LABELS[rating]}: not answered`
+						: `${RATING_LABELS[rating]}: ${value} of ${RATING_MAX} — drag to the dot to leave it unanswered`}
 					class="rating-slide relative w-full"
 					style="--filled: {filled}%"
 				/>
 			</div>
 
-			<!-- The number, in a box that is the same width whatever is in it, so
-			     nothing beside it moves as the thumb does. -->
+			<!--
+			The number, and the way out of answering.
+
+			Dragging to the dot clears it and always did, and a gesture nobody can
+			see is not an answer to "how do I leave this one blank" — so the way out
+			is also a button, labelled, reachable by tab and big enough for a thumb.
+			Both the number and the button keep their place whether or not there is
+			a value, so nothing on the row moves as the slider does.
+		-->
 			<span class="tabular w-3 shrink-0 text-right text-xs text-gray-700">
 				{value ?? '–'}
 			</span>
+
+			<button
+				type="button"
+				onclick={() => (value = null)}
+				disabled={value === null}
+				title="Leave {RATING_LABELS[rating].toLowerCase()} unanswered"
+				aria-label="Leave {RATING_LABELS[rating].toLowerCase()} unanswered"
+				class="-my-1 shrink-0 px-1.5 py-1 text-sm leading-none text-gray-400 hover:text-gray-900 disabled:invisible"
+			>
+				×
+			</button>
 		</div>
 
 		{#if !compact}

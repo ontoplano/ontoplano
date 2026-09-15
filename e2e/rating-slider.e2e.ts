@@ -58,8 +58,27 @@ test('dragging it back to the dot leaves the card unrated', async ({ page }) => 
 	await energy.fill('3');
 	await expect(page.locator('#card-form input[name="energy"]')).toHaveValue('3');
 
+	/*
+	 * And the button beside it does the same thing, which is the point of it
+	 * being there: dragging to the dot works and cannot be seen, so "how do I
+	 * leave this one blank" needs an answer somebody can look at.
+	 */
+	await page.getByRole('button', { name: 'Leave energy unanswered' }).click();
+	await expect(page.locator('#card-form input[name="energy"]')).toHaveValue('');
+
+	/*
+	 * With nothing to clear it keeps its place and stops being a control: not
+	 * removed, so the row does not move as values come and go, and not offered
+	 * to a screen reader either — `visibility: hidden` takes it out of the
+	 * accessibility tree, which is why this has to find it by selector.
+	 */
+	await expect(
+		page.locator('#card-form button[aria-label="Leave energy unanswered"]')
+	).toBeDisabled();
+
 	// All the way down is not "1". It is the answer somebody gives by not
 	// answering, and it has to post an empty field rather than a number.
+	await energy.fill('3');
 	await energy.fill('0');
 	await expect(page.locator('#card-form input[name="energy"]')).toHaveValue('');
 	await expect(energy).toHaveAttribute('aria-valuetext', 'not set');
