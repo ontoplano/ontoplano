@@ -320,3 +320,44 @@ test.describe('the ring hand-over page', () => {
 		expect(heard.stopped).toBe(0);
 	});
 });
+
+/**
+ * The mark on the instance chooser, which is one object across two screens.
+ *
+ * It is drawn in the place the app's own bar draws it, so choosing an instance
+ * puts the bar UNDER a logo that has not moved rather than replacing one
+ * screen's with another's. And choosing is otherwise invisible — the two
+ * answers are the same length, the button keeps its place — so the mark takes
+ * the press: it swells once and settles.
+ */
+test.describe('the mark on the chooser', () => {
+	test('swells when an answer is chosen, every time, and moves nothing', async ({ page }) => {
+		await register(page, testEmail('chooser-mark'));
+		await page.setViewportSize({ width: 390, height: 844 });
+		await visit(page, '/instance');
+
+		const mark = page.locator('.mark-where-the-bar-will-be');
+		await expect(mark).toBeVisible();
+		const before = await mark.boundingBox();
+
+		/*
+		 * Asked of the browser's own animation list rather than of a class: the
+		 * swell is started with `animate()` precisely because a class could not
+		 * be made to restart, and a test that asserted the class would pass
+		 * against the version that only ever played once.
+		 */
+		const playing = () => mark.evaluate((el) => el.getAnimations().length);
+
+		for (const answer of [/On device/i, /Cloud instance/i, /On device/i]) {
+			await page.getByRole('radio', { name: answer }).click();
+			await expect.poll(playing, { timeout: 2000 }).toBeGreaterThan(0);
+			// And it ends: an animation left running is a mark that never settles.
+			await expect.poll(playing, { timeout: 4000 }).toBe(0);
+		}
+
+		// The swell is a scale, so nothing around it is pushed anywhere.
+		const after = await mark.boundingBox();
+		expect(Math.abs((after?.x ?? 0) - (before?.x ?? 0))).toBeLessThan(0.5);
+		expect(Math.abs((after?.y ?? 0) - (before?.y ?? 0))).toBeLessThan(0.5);
+	});
+});

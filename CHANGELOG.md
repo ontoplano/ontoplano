@@ -18,6 +18,13 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.6 — 2026-09-15
+
+- **The mark answers the press on the instance chooser.** Choosing between the
+  two is otherwise invisible — the answers are the same length and the button
+  keeps its place — so the mark swells once and settles, in the place it will
+  still be standing after the app arrives around it.
+
 ## 0.178.5 — 2026-09-15
 
 - **The mark does not move when you choose an instance.** It is drawn on the

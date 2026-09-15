@@ -72,6 +72,14 @@
 		 */
 		hollow = false,
 		label = '',
+		/**
+		 * The mark's own element, for a caller that has to animate it.
+		 *
+		 * The instance chooser swells it when an answer is chosen, and a CSS
+		 * animation cannot be restarted reliably from state — so it needs the
+		 * node itself to call `animate()` on.
+		 */
+		element = $bindable(),
 		class: klass = ''
 	}: {
 		size?: number;
@@ -80,6 +88,7 @@
 		drained?: boolean;
 		hollow?: boolean;
 		label?: string;
+		element?: HTMLElement;
 		class?: string;
 	} = $props();
 
@@ -100,6 +109,7 @@
 </script>
 
 <span
+	bind:this={element}
 	class="ontoplano-logo relative inline-flex shrink-0 items-center justify-center {fill
 		? 'h-full w-full'
 		: ''} {klass}"

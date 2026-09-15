@@ -241,6 +241,11 @@ dev-docs:
 # The marketing site, which is a separate repository. Absent from most
 # checkouts, and that is not an error — it is a different audience and a
 # different repo, so this says so and stops.
+#
+# Its `dev`, not its `preview`: preview serves whatever the last build wrote
+# and watches nothing, so every change to the site's copy or to the backdrop's
+# knobs meant stopping this and starting it again. `dev` rebuilds on a change
+# and reloads the page, keeping the scroll position.
 ## the marketing site, from its own checkout
 dev-site:
 	@if [ ! -d "$(SITE_SRC_LOCAL)" ]; then \
@@ -249,7 +254,7 @@ dev-site:
 		echo "If you have it elsewhere:  make dev-site SITE_SRC_LOCAL=../elsewhere"; \
 		exit 1; \
 	fi
-	@$(MAKE) -s -C $(SITE_SRC_LOCAL) preview PREVIEW_PORT=$(SITE_PORT)
+	@$(MAKE) -s -C $(SITE_SRC_LOCAL) dev PREVIEW_PORT=$(SITE_PORT)
 
 # All of them, for a change that shows up in more than one. The app is a user
 # service and returns; the other two each hold a terminal, so they run in the

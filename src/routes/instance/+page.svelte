@@ -30,7 +30,48 @@
 	 * should make by accident.
 	 */
 	type Kind = 'connected' | 'phone';
+	/** How far the mark swells when an instance is chosen, and for how long. */
+	const MARK_SWELL = 1.14;
+	const MARK_SWELL_MS = 420;
+
 	let kind: Kind = $state('connected');
+
+	/*
+	 * The mark answers the press.
+	 *
+	 * Choosing is the one thing on this screen that changes nothing you can
+	 * see — the two lists are the same length, the button keeps its place, and
+	 * the mark only changes colour. So the mark takes the press: it swells and
+	 * settles, once, which is the whole of the feedback.
+	 *
+	 * Asked of the element rather than done with a class. A CSS animation
+	 * restarts only when its `animation-name` changes, so driving this from
+	 * state means alternating two identical keyframes and trusting that both
+	 * class changes reach the DOM as separate paints — they do not: the second
+	 * choice never played. `animate()` starts a new animation every time it is
+	 * called, which is what "again" has to mean here.
+	 *
+	 * `scale`, not a transform: the mark is centred with `translate`, and a
+	 * transform would have to carry that translation too — one of the two
+	 * would eventually be written without the other.
+	 */
+	let mark = $state<HTMLElement | undefined>();
+
+	let settled = false;
+	$effect(() => {
+		// Read it, so this runs when the answer changes.
+		void kind;
+		// …but not on the way in: nothing has been chosen yet.
+		if (!settled) {
+			settled = true;
+			return;
+		}
+		if (!mark || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		mark.animate([{ scale: 1 }, { scale: MARK_SWELL, offset: 0.38 }, { scale: 1 }], {
+			duration: MARK_SWELL_MS,
+			easing: 'ease-out'
+		});
+	});
 	/*
 	 * The address to edit is the one you are on.
 	 *
@@ -344,6 +385,7 @@
 	<div class="mt-10 flex h-20 justify-center">
 		<Logo
 			class="mark-where-the-bar-will-be"
+			bind:element={mark}
 			fill
 			drained={kind === 'phone'}
 			hollow
