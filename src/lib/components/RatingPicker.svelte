@@ -38,8 +38,12 @@
 		compact?: boolean;
 	} = $props();
 
-	/** Zero is the dot: a real answer, and the one the slider starts on. */
-	const OFF = 0;
+	/**
+	 * The stop below the scale, which is the dot — a real answer, and the one
+	 * the slider starts on. Taken from the scale rather than written as 0, so an
+	 * off always sits immediately to the left of wherever the scale begins.
+	 */
+	const OFF = RATING_MIN - 1;
 
 	const ends = $derived(RATING_SCALE_ENDS[rating]);
 	const shown = $derived(value ?? OFF);
