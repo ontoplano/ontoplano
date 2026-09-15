@@ -33,15 +33,29 @@
 	/** Longer than this and it is not a tooltip; it is a paragraph. */
 	const MAX_LENGTH = 160;
 
+	/*
+	 * What is on screen, and what wants to be.
+	 *
+	 * The split matters. These listeners are on the document, and a `focusin`
+	 * can fire in the middle of Svelte's own render — an autofocused input on
+	 * the page being drawn is exactly that — and writing `$state` from inside a
+	 * render is `state_unsafe_mutation`, which throws. So the bookkeeping is
+	 * plain variables, which anybody may write at any time, and the three
+	 * things the template reads are only ever written from inside an animation
+	 * frame, which never runs while a render is in progress.
+	 */
 	let label = $state('');
 	let at = $state({ x: 0, y: 0, below: false });
 	let shown = $state(false);
+	let bubble = $state<HTMLDivElement | null>(null);
 
 	/** The element whose title we are holding, and the title we took. */
 	let holding: Element | null = null;
 	let held = '';
+	/** What the bubble should be showing, or null for nothing. */
+	let wanted: { text: string; owner: Element } | null = null;
 	let timer: ReturnType<typeof setTimeout> | null = null;
-	let bubble = $state<HTMLDivElement | null>(null);
+	let frame = 0;
 
 	/** Give the title back. Always safe to call. */
 	function release() {
@@ -50,12 +64,30 @@
 		held = '';
 	}
 
+	/** Bring what is drawn into line with what is wanted, next frame. */
+	function paint() {
+		if (frame) return;
+		frame = requestAnimationFrame(() => {
+			frame = 0;
+			if (!wanted) {
+				shown = false;
+				label = '';
+				return;
+			}
+			label = wanted.text;
+			shown = true;
+			// And placed after the frame that gives it a size.
+			const owner = wanted.owner;
+			requestAnimationFrame(() => owner.isConnected && place(owner));
+		});
+	}
+
 	function hide() {
 		if (timer) clearTimeout(timer);
 		timer = null;
-		shown = false;
-		label = '';
+		wanted = null;
 		release();
+		paint();
 	}
 
 	/**
@@ -96,11 +128,10 @@
 		owner.removeAttribute('title');
 
 		timer = setTimeout(() => {
+			timer = null;
 			if (holding !== owner || !owner.isConnected) return hide();
-			label = title;
-			shown = true;
-			// After the paint that gives it a size.
-			requestAnimationFrame(() => place(owner));
+			wanted = { text: title, owner };
+			paint();
 		}, DELAY_MS);
 	}
 
@@ -136,6 +167,7 @@
 		window.addEventListener('resize', away);
 
 		return () => {
+			if (frame) cancelAnimationFrame(frame);
 			hide();
 			document.removeEventListener('pointerover', over, true);
 			document.removeEventListener('pointerout', out, true);

@@ -477,7 +477,23 @@
 		}
 	});
 
-	afterNavigate(() => scroller?.scrollTo({ top: 0 }));
+	/**
+	 * Arriving somewhere puts you at the top of it. Staying does not.
+	 *
+	 * `noScroll` is SvelteKit's way of saying "the address changed and nothing
+	 * else did", and it governs the window — but on a phone the box that
+	 * scrolls is this `main`, and scrolling it to the top regardless undid
+	 * exactly what that flag was asking for. Reminders is where it showed:
+	 * pressing "30" to look a month ahead threw you back to the top, away from
+	 * the control under your thumb.
+	 *
+	 * The rule is the honest one rather than a flag passed down: a navigation
+	 * that ends on the same screen it started on is not an arrival.
+	 */
+	afterNavigate(({ from, to }) => {
+		if (from && to && from.url.pathname === to.url.pathname) return;
+		scroller?.scrollTo({ top: 0 });
+	});
 
 	/**
 	 * A write refused before it reached its action, said once, anywhere.

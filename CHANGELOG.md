@@ -18,6 +18,21 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.176.7 — 2026-09-14
+
+- **Fixed: changing how far ahead Reminders looks threw you back to the top.**
+  The shell scrolled its own box to the top on every navigation, which
+  overrode the "the address changed and nothing else did" the page was asking
+  for — that flag governs the window, and on a phone the box that scrolls is
+  the page area. Pressing "30" now leaves you where you were, under the control
+  you pressed. A navigation that ends on the screen it started on is not an
+  arrival.
+- **Fixed: the new tooltips threw in the console.** A focus can land in the
+  middle of the page being drawn — an autofocused field is exactly that — and
+  the tooltip wrote to the page's state from inside that, which Svelte refuses.
+  Nothing visible was broken; it is silent now, and the bookkeeping never
+  touches the drawing.
+
 ## 0.176.6 — 2026-09-14
 
 - **The app draws its own tooltips now.** Every `title` in it — three hundred
