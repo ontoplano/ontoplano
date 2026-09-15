@@ -16,7 +16,15 @@ export const MAIL_KINDS = {
 	'family-offer': 'Family plan offer',
 	'trial-notice': 'Trial notice',
 	'weekly-review': 'Weekly review',
-	'newsletter-confirm': 'Newsletter confirmation',
+	'newsletter-issue': 'Newsletter',
+	/*
+	 * Retired, and kept because rows outlive code.
+	 *
+	 * Subscribing no longer asks anybody to confirm — pressing the button is
+	 * the answer — but any instance that sent one of these still has the row,
+	 * and a log line whose kind has no name reads as a bug in the log.
+	 */
+	'newsletter-confirm': 'Newsletter confirmation (retired)',
 	feedback: 'Report or suggestion'
 } as const;
 

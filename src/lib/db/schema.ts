@@ -2133,6 +2133,33 @@ export const subscribers = sqliteTable(
 	(table) => [index('subscribers_confirmed_idx').on(table.confirmedAt)]
 );
 
+/**
+ * What has been sent to that list, so nothing is sent twice.
+ *
+ * One row per issue, keyed by the version it announced. The release runs from
+ * a make target that can be re-run — a publish that failed at step six is
+ * meant to be started again — and the one step nobody wants repeated is the
+ * one that puts mail in two hundred inboxes. This is what makes "already sent"
+ * a fact the second run can read.
+ *
+ * It keeps the subject and the count rather than the body: the body is the
+ * release notes, which are in the repository under that version anyway, and
+ * storing a copy would be a second answer to what was said.
+ */
+export const newsletterIssues = sqliteTable('newsletter_issues', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	/** The release this announced — `0.176.10`, matching package.json. */
+	version: text('version').notNull().unique(),
+	subject: text('subject').notNull(),
+	/** How many addresses it actually reached. */
+	sent: integer('sent').notNull().default(0),
+	/** How many refused, so a partial send is visible rather than implied. */
+	failed: integer('failed').notNull().default(0),
+	sentAt: text('sent_at')
+		.notNull()
+		.default(sql`(CURRENT_TIMESTAMP)`)
+});
+
 // --- Finance: Bills ---
 //
 // A bill is money expected to go out on a rhythm — rent, a subscription, the

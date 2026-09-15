@@ -4,17 +4,21 @@ import { makeDatabase } from './helpers/db';
 /**
  * The mailing list: what it refuses, and what it never says.
  *
+ * Pressing the button is the answer — there is no confirming click, and
+ * nothing is sent when somebody subscribes. That is a deliberate trade: it
+ * gives up the guarantee that an address belongs to whoever typed it, and what
+ * stands in its place is a rate limit in front of the form and an unsubscribe
+ * link in every message.
+ *
  * Two properties matter more than the happy path.
  *
- * **Nothing reaches an address that did not answer.** A form on a public page
- * that sends a mail to whatever is typed into it is a way to send mail to
- * strangers, so a row is created unconfirmed and the only thing ever sent to it
- * is the one confirmation. An address that is already confirmed gets nothing at
- * all — otherwise the form is a button that mails somebody repeatedly.
+ * **Subscribing sends nothing.** A form on a public page that mails whatever
+ * is typed into it is a way to send mail to strangers. This one writes a row
+ * and says nothing to anybody.
  *
  * **The form is not a way to ask who is on the list.** Subscribing answers the
- * same thing whether the address is new, confirmed, or previously unsubscribed.
- * The moment those answers differ, anybody can check anybody.
+ * same thing whether the address is new, already there, or previously
+ * unsubscribed. The moment those answers differ, anybody can check anybody.
  */
 
 const database = makeDatabase();
@@ -56,143 +60,136 @@ beforeEach(() => {
 	database.exec('delete from subscribers');
 });
 
-/** The token out of the confirmation link, the way a person gets it. */
-function tokenFrom(mail: Mail): string {
-	return mail.text.match(/confirm\?t=([\w-]+)/)![1];
+/** The token that would be in a message's unsubscribe link. */
+function tokenOf(email: string): string {
+	const row = database.get('select token from subscribers where email = ?', email) as {
+		token: string;
+	};
+	return row.token;
 }
 
 describe('subscribing', () => {
-	test('sends one confirmation and puts nobody on the list yet', async () => {
-		await list.subscribe('Reader@Example.test');
-
-		expect(sendEmail).toHaveBeenCalledTimes(1);
-		// Lower-cased on the way in, so one address cannot become two rows.
-		expect(sendEmail.mock.calls[0][0].to).toBe('reader@example.test');
-		expect(list.counts()).toEqual({ confirmed: 0, pending: 1 });
-		expect(list.confirmedAddresses()).toEqual([]);
-	});
-
-	test('the same address twice is one row and one more chance to confirm', async () => {
-		await list.subscribe('reader@example.test');
+	test('puts the address on the list at once, and sends nothing', async () => {
 		await list.subscribe('reader@example.test');
 
-		expect(list.counts()).toEqual({ confirmed: 0, pending: 1 });
-		// Two mails, because the first may never have arrived — but the token is
-		// the same one, so the first link still works.
-		const tokens = sendEmail.mock.calls.map((c) => tokenFrom(c[0]));
-		expect(new Set(tokens).size).toBe(1);
-	});
-
-	test('an address already on the list is sent nothing', async () => {
-		await list.subscribe('reader@example.test');
-		list.confirm(tokenFrom(sendEmail.mock.calls[0][0]));
-		sendEmail.mockClear();
-
-		await list.subscribe('reader@example.test');
-
-		// The whole point: the form must not be a button that mails a stranger
-		// as many times as somebody presses it.
 		expect(sendEmail).not.toHaveBeenCalled();
-		expect(list.counts()).toEqual({ confirmed: 1, pending: 0 });
-	});
-
-	test('refuses something that is not an address', async () => {
-		for (const bad of ['', 'not-an-address', 'a@b', '  ', 'a@b.c '.repeat(60)]) {
-			await expect(list.subscribe(bad)).rejects.toBeInstanceOf(errors.ValidationError);
-		}
-		expect(sendEmail).not.toHaveBeenCalled();
-	});
-
-	test('refuses everything when the instance keeps no list', async () => {
-		enabled = false;
-		await expect(list.subscribe('reader@example.test')).rejects.toBeInstanceOf(
-			errors.ValidationError
-		);
-		expect(sendEmail).not.toHaveBeenCalled();
-	});
-});
-
-describe('confirming', () => {
-	test('the link is what puts an address on the list', async () => {
-		await list.subscribe('reader@example.test');
-		const token = tokenFrom(sendEmail.mock.calls[0][0]);
-
-		expect(list.confirm(token)).toBe('reader@example.test');
 		expect(list.counts()).toEqual({ confirmed: 1, pending: 0 });
 		expect(list.confirmedAddresses()).toEqual(['reader@example.test']);
 	});
 
-	test('following it twice is following it once', async () => {
+	test('the same address twice is one row and still no mail', async () => {
 		await list.subscribe('reader@example.test');
-		const token = tokenFrom(sendEmail.mock.calls[0][0]);
+		await list.subscribe('reader@example.test');
 
-		list.confirm(token);
-		// A mail client that prefetches links, or a second click.
-		expect(list.confirm(token)).toBe('reader@example.test');
+		expect(sendEmail).not.toHaveBeenCalled();
 		expect(list.counts()).toEqual({ confirmed: 1, pending: 0 });
 	});
 
-	test('a token that is not one confirms nothing', async () => {
-		await list.subscribe('reader@example.test');
+	test('an address is normalised, so one person is one row', async () => {
+		await list.subscribe('Reader@Example.test');
+		await list.subscribe('  reader@example.test ');
 
-		expect(list.confirm('made-up')).toBeNull();
-		expect(list.confirm('')).toBeNull();
-		expect(list.counts()).toEqual({ confirmed: 0, pending: 1 });
+		expect(list.counts()).toEqual({ confirmed: 1, pending: 0 });
+	});
+
+	test('refuses when the instance has no newsletter', async () => {
+		enabled = false;
+		await expect(list.subscribe('reader@example.test')).rejects.toBeInstanceOf(
+			errors.ValidationError
+		);
+		expect(list.counts()).toEqual({ confirmed: 0, pending: 0 });
 	});
 });
 
 describe('unsubscribing', () => {
-	test('one click, with the token from the same link', async () => {
+	test('takes the address off the list, and the token still works', async () => {
 		await list.subscribe('reader@example.test');
-		const token = tokenFrom(sendEmail.mock.calls[0][0]);
-		list.confirm(token);
+		const token = tokenOf('reader@example.test');
 
 		expect(list.unsubscribe(token)).toBe('reader@example.test');
 		expect(list.counts()).toEqual({ confirmed: 0, pending: 0 });
 		expect(list.confirmedAddresses()).toEqual([]);
 	});
 
-	test('coming back means confirming again', async () => {
+	test('coming back subscribes again', async () => {
 		await list.subscribe('reader@example.test');
-		const token = tokenFrom(sendEmail.mock.calls[0][0]);
-		list.confirm(token);
-		list.unsubscribe(token);
-		sendEmail.mockClear();
+		list.unsubscribe(tokenOf('reader@example.test'));
 
-		// The earlier consent was withdrawn, so it is asked for again rather
-		// than quietly resumed.
 		await list.subscribe('reader@example.test');
-		expect(sendEmail).toHaveBeenCalledTimes(1);
-		expect(list.counts()).toEqual({ confirmed: 0, pending: 1 });
-
-		list.confirm(token);
-		expect(list.counts()).toEqual({ confirmed: 1, pending: 0 });
+		expect(list.confirmedAddresses()).toEqual(['reader@example.test']);
 	});
 
-	test('the same link twice says the same thing', async () => {
+	test('a token that is not one takes nobody off', async () => {
 		await list.subscribe('reader@example.test');
-		const token = tokenFrom(sendEmail.mock.calls[0][0]);
-		list.confirm(token);
 
-		expect(list.unsubscribe(token)).toBe('reader@example.test');
-		expect(list.unsubscribe(token)).toBe('reader@example.test');
+		expect(list.unsubscribe('made-up')).toBeNull();
+		expect(list.unsubscribe('')).toBeNull();
+		expect(list.confirmedAddresses()).toEqual(['reader@example.test']);
 	});
 });
 
-describe('the export', () => {
-	test('carries only the people who confirmed and stayed', async () => {
-		const tokens: string[] = [];
-		for (const email of ['a@example.test', 'b@example.test', 'c@example.test']) {
-			sendEmail.mockClear();
-			await list.subscribe(email);
-			tokens.push(tokenFrom(sendEmail.mock.calls[0][0]));
-		}
+/**
+ * Telling the list, which is the only thing it exists for.
+ *
+ * The property that matters here is that it cannot happen twice: the release
+ * it runs from is re-runnable by design, and the step nobody wants repeated is
+ * the one that reaches every inbox.
+ */
+describe('announcing a release', () => {
+	const issue = { version: '1.2.3', subject: 'Ontoplano 1.2.3', lines: ['Something shipped.'] };
 
-		list.confirm(tokens[0]);
-		list.confirm(tokens[1]);
-		list.unsubscribe(tokens[1]);
-		// tokens[2] never confirmed.
+	beforeEach(() => {
+		database.exec('delete from newsletter_issues');
+	});
 
-		expect(list.confirmedAddresses()).toEqual(['a@example.test']);
+	test('reaches everybody on the list, one message each', async () => {
+		await list.subscribe('one@example.test');
+		await list.subscribe('two@example.test');
+
+		expect(await list.announce(issue)).toEqual({ sent: 2, failed: 0 });
+		expect(sendEmail).toHaveBeenCalledTimes(2);
+		// One message each, never one message naming everybody: a single mail
+		// with the whole list on it discloses it to all of them.
+		const to = sendEmail.mock.calls.map(([mail]) => mail.to);
+		expect(to.sort()).toEqual(['one@example.test', 'two@example.test']);
+	});
+
+	test('every message carries that person’s own way off the list', async () => {
+		await list.subscribe('reader@example.test');
+		await list.announce(issue);
+
+		expect(sendEmail.mock.calls[0][0].text).toContain(tokenOf('reader@example.test'));
+	});
+
+	test('refuses to send the same version twice', async () => {
+		await list.subscribe('reader@example.test');
+		await list.announce(issue);
+		sendEmail.mockClear();
+
+		await expect(list.announce(issue)).rejects.toBeInstanceOf(errors.ValidationError);
+		expect(sendEmail).not.toHaveBeenCalled();
+	});
+
+	test('says whether a version has gone out, so a re-run can ask', async () => {
+		expect(list.announced('1.2.3')).toBe(false);
+		await list.subscribe('reader@example.test');
+		await list.announce(issue);
+		expect(list.announced('1.2.3')).toBe(true);
+	});
+
+	test('one address that fails does not stop the rest', async () => {
+		await list.subscribe('good@example.test');
+		await list.subscribe('bad@example.test');
+		sendEmail.mockImplementation(async (mail) => {
+			if (mail.to === 'bad@example.test') throw new Error('mailbox full');
+			return { delivered: true };
+		});
+
+		expect(await list.announce(issue)).toEqual({ sent: 1, failed: 1 });
+	});
+
+	test('refuses when the instance has no newsletter', async () => {
+		enabled = false;
+		await expect(list.announce(issue)).rejects.toBeInstanceOf(errors.ValidationError);
 	});
 });

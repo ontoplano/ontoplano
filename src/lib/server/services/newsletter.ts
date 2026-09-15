@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { eq, isNotNull, isNull, and } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
-import { subscribers } from '$lib/db/schema.js';
+import { newsletterIssues, subscribers } from '$lib/db/schema.js';
 import { renderEmail } from '../email-template.js';
 import { loadConfig } from '../config.js';
 import { sendLogged } from './mail-log.js';
@@ -98,68 +98,40 @@ export async function subscribe(rawEmail: unknown, source = 'site'): Promise<voi
 	const email = normalise(rawEmail);
 	const existing = db.select().from(subscribers).where(eq(subscribers.email, email)).get();
 
-	// Already confirmed and still on the list: nothing to do, and above all no
-	// second mail. Somebody hammering the form must not be able to use it to
-	// send mail to an address that did not ask for any.
+	// Already on the list: nothing to do, and above all no mail. Somebody
+	// hammering the form must not be able to use it to send anything to an
+	// address that did not ask.
 	if (existing?.confirmedAt && !existing.unsubscribedAt) return;
 
-	let token: string;
+	/*
+	 * On the list at once, rather than after a confirming click.
+	 *
+	 * Double opt-in is the safer arrangement and this deliberately is not it:
+	 * somebody who typed an address and pressed the button has said what they
+	 * want, and a second step to prove it loses the people who do not go back
+	 * to their mail. What that costs is the guarantee that the address belongs
+	 * to whoever typed it — so what stands in its place is the part that
+	 * actually protects a domain: a hard rate limit in front of this, and an
+	 * unsubscribe link in every single message, which is one click and needs
+	 * nobody to be signed in to anything.
+	 */
+	const now = new Date().toISOString();
 	if (existing) {
-		token = existing.token;
-		// Coming back after unsubscribing is subscribing again, which means
-		// confirming again — the earlier consent was withdrawn.
 		db.update(subscribers)
-			.set({ unsubscribedAt: null, confirmedAt: null })
+			.set({ unsubscribedAt: null, confirmedAt: now })
 			.where(eq(subscribers.id, existing.id))
 			.run();
-	} else {
-		token = randomBytes(TOKEN_BYTES).toString('base64url');
-		db.insert(subscribers).values({ email, token, source }).run();
+		return;
 	}
 
-	const confirm = origin() ? `${origin()}/newsletter/confirm?t=${token}` : '';
-
-	await sendLogged(
-		'newsletter-confirm',
-		{
-			to: email,
-			...renderEmail({
-				subject: 'Confirm your ontoplano subscription',
-				lines: [
-					'Somebody asked to be told when ontoplano changes, using this address.',
-					'If that was you, confirm it below. Nothing is sent until you do.'
-				],
-				action: confirm ? { label: 'Yes, tell me', url: confirm } : undefined,
-				small: [
-					"If it wasn't you, ignore this message — the address is not on any list " +
-						'until this link is followed, and you will hear nothing more.'
-				]
-			})
-		},
-		// Worth retrying from /admin: unlike a password reset, this link does not
-		// expire, so the same mail is still the right mail tomorrow.
-		{ retryable: true }
-	);
-}
-
-/** Follow the link. Answers the address, or null if the token is not one. */
-export function confirm(token: unknown): string | null {
-	const value = String(token ?? '');
-	if (!value) return null;
-
-	const row = db.select().from(subscribers).where(eq(subscribers.token, value)).get();
-	if (!row) return null;
-
-	// Idempotent: a link followed twice, or prefetched by a mail client and
-	// then clicked, must not undo itself.
-	if (!row.confirmedAt || row.unsubscribedAt) {
-		db.update(subscribers)
-			.set({ confirmedAt: new Date().toISOString(), unsubscribedAt: null })
-			.where(eq(subscribers.id, row.id))
-			.run();
-	}
-
-	return row.email;
+	db.insert(subscribers)
+		.values({
+			email,
+			token: randomBytes(TOKEN_BYTES).toString('base64url'),
+			source,
+			confirmedAt: now
+		})
+		.run();
 }
 
 /**
@@ -217,4 +189,89 @@ export function confirmedAddresses(): string[] {
 		.where(and(isNotNull(subscribers.confirmedAt), isNull(subscribers.unsubscribedAt)))
 		.all()
 		.map((row) => row.email);
+}
+
+/**
+ * Whether this version has already been announced.
+ *
+ * The release runs from a make target that is meant to be re-runnable — a
+ * publish that died at step six is started again — and the one step nobody
+ * wants repeated is the one that reaches two hundred inboxes.
+ */
+export function announced(version: string): boolean {
+	return !!db
+		.select({ id: newsletterIssues.id })
+		.from(newsletterIssues)
+		.where(eq(newsletterIssues.version, version))
+		.get();
+}
+
+export type Issue = { version: string; subject: string; lines: string[] };
+
+/**
+ * Tell the list that something shipped.
+ *
+ * One message per address, each carrying that person's own unsubscribe link —
+ * which is the whole of what keeps this from being the thing mailbox providers
+ * exist to stop. Sent one at a time rather than as one message to everybody,
+ * because a single mail with two hundred addresses on it discloses the list to
+ * every one of them.
+ *
+ * A failure is counted and the rest go on: an address that bounces is that
+ * address's problem, and stopping the run at the first one would mean the
+ * hundred after it never hear. The failures are retryable from /admin, the
+ * same as every other mail this app sends, and the count is written down so a
+ * partial send is a visible fact rather than something to infer.
+ *
+ * Refuses to send twice. Say so rather than silently doing nothing, because
+ * "it did not send" and "it had already sent" are different things to the
+ * person running it.
+ */
+export async function announce(issue: Issue): Promise<{ sent: number; failed: number }> {
+	if (!newsletterEnabled()) throw new ValidationError('The newsletter is off on this instance.');
+	if (announced(issue.version))
+		throw new ValidationError(`${issue.version} has already gone out to the list.`);
+
+	const where = origin();
+	let sent = 0;
+	let failed = 0;
+
+	for (const email of confirmedAddresses()) {
+		const stop = where ? `${where}/newsletter/off?t=${tokenFor(email)}` : '';
+		try {
+			await sendLogged(
+				'newsletter-issue',
+				{
+					to: email,
+					...renderEmail({
+						subject: issue.subject,
+						lines: issue.lines,
+						action: where ? { label: 'See what changed', url: where } : undefined,
+						small: stop ? [`Stop these: ${stop}`] : []
+					})
+				},
+				{ retryable: true }
+			);
+			sent += 1;
+		} catch {
+			failed += 1;
+		}
+	}
+
+	db.insert(newsletterIssues)
+		.values({ version: issue.version, subject: issue.subject, sent, failed })
+		.run();
+
+	return { sent, failed };
+}
+
+/** The token that is this address's way off the list. */
+function tokenFor(email: string): string {
+	return (
+		db
+			.select({ token: subscribers.token })
+			.from(subscribers)
+			.where(eq(subscribers.email, email))
+			.get()?.token ?? ''
+	);
 }

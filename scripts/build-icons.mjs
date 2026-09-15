@@ -43,6 +43,23 @@ const constant = (name) => {
 	return JSON.parse(m[1].trim().replace(/'/g, '"'));
 };
 const GROUND = constant('BRAND_GROUND');
+
+/**
+ * The mark's own dark, read from where the app reads it.
+ *
+ * `mark-shape.ts` holds it because the wheel and the phone bar are painted in
+ * it too — it is the colour inside the drawing, sampled off the artwork, not a
+ * background somebody chose. An icon that has to be opaque wants exactly that
+ * one: the outermost ring of the mark then continues into the corners instead
+ * of ending at a square edge somebody picked a colour for.
+ */
+const shapeFile = join(ROOT, 'src/lib/logo/mark-shape.ts');
+const shape = readFileSync(shapeFile, 'utf8');
+const FIELD = (() => {
+	const m = shape.match(/export const MARK_FIELD = '([^']+)'/);
+	if (!m) throw new Error(`${relative(ROOT, shapeFile)} no longer exports MARK_FIELD`);
+	return m[1];
+})();
 const ICON_SCALE = constant('ICON_SCALE');
 const MASKABLE = constant('MASKABLE_SCALE');
 const APPLE = constant('APPLE_SCALE');
@@ -115,6 +132,16 @@ function bandedIcon(colour, scale, ground, top = 0.82) {
 }
 
 const plain = icon(ICON_SCALE, null);
+/*
+ * The same icon with nothing transparent about it.
+ *
+ * Every other icon here leaves the corners empty, which is right for a tile a
+ * launcher masks and wrong everywhere transparency is refused — a store
+ * listing above all, where an icon with an alpha channel is rejected on
+ * upload. On the mark's own dark the ring reads as running off the edge rather
+ * than as a shape pasted onto a square.
+ */
+const solid = icon(ICON_SCALE, FIELD);
 const maskable = icon(MASKABLE, GROUND);
 const apple = icon(APPLE, GROUND);
 
@@ -132,6 +159,7 @@ const svgs = [
 	['static/favicon.svg', plain],
 	['static/icons/icon.svg', plain],
 	['static/icons/icon-maskable.svg', maskable],
+	['static/icons/icon-solid.svg', solid],
 	['static/favicon-staging.svg', plainStaging],
 	['static/icons/icon-staging.svg', plainStaging],
 	['static/icons/icon-maskable-staging.svg', maskableStaging],
@@ -145,6 +173,8 @@ const pngs = [
 	['static/icons/icon-512.png', plain, 512],
 	['static/icons/icon-maskable-192.png', maskable, 192],
 	['static/icons/icon-maskable-512.png', maskable, 512],
+	// The one with no alpha at all, for anywhere that refuses it.
+	['static/icons/icon-512-solid.png', solid, 512],
 	// iOS ignores the manifest and reads this one; it is never masked, so it
 	// is the mark at almost full size on the ground, at the size Apple asks for.
 	['static/icons/apple-touch-icon.png', apple, 180],

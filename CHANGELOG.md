@@ -18,6 +18,24 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.177.0 — 2026-09-15
+
+- **Asking to be told when something ships works on the first press.** It used
+  to write the address down and wait for a confirming click in a mail, and the
+  people who never went back to their mail were never on the list. Pressing the
+  button is the answer now. What that gives up is the proof that an address
+  belongs to whoever typed it; what stands in its place is a hard limit on the
+  form and a way off the list in every message.
+- **And there is something to be told.** The release notes go to the list as
+  one message per person, each carrying that person's own unsubscribe link —
+  never one mail naming everybody, which would hand the list to all of them.
+  A version that has already gone out cannot go out again.
+- **The pages those links land on are pages, not the app.** Following "stop
+  these" out of a message drew the bar, the wheel and the rooms around a single
+  sentence, offering a way into something the reader may have no account for.
+- **A 512 icon with nothing transparent about it**, on the mark's own dark, for
+  the places that refuse an alpha channel.
+
 ## 0.176.10 — 2026-09-15
 
 - **Fixed: a phone-only instance offered AI & Integrations.** Every part of

@@ -20,12 +20,12 @@ test('an instance with no list does not advertise one', async ({ request }) => {
 	expect(preflight.status()).toBe(404);
 });
 
-test('the confirm and unsubscribe pages are not a way past the login', async ({ page }) => {
-	for (const path of ['/newsletter/confirm?t=made-up', '/newsletter/off?t=made-up']) {
-		const response = await page.goto(path);
-		expect(response?.status()).toBe(404);
-		// A 404, not a redirect: these routes sit outside the session gate on
-		// purpose, and a redirect here would mean the gate had swallowed them.
-		expect(new URL(page.url()).pathname).not.toBe('/login');
-	}
+test('the unsubscribe page is not a way past the login', async ({ page }) => {
+	// There is no confirm page any longer: pressing the button subscribes, so
+	// the only link a message carries is the way back out.
+	const response = await page.goto('/newsletter/off?t=made-up');
+	expect(response?.status()).toBe(404);
+	// A 404, not a redirect: this route sits outside the session gate on
+	// purpose, and a redirect here would mean the gate had swallowed it.
+	expect(new URL(page.url()).pathname).not.toBe('/login');
 });

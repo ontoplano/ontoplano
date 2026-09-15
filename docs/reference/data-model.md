@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**72 tables.**
+**73 tables.**
 
 | Table                                             | Columns | Belongs to a user |
 | ------------------------------------------------- | ------- | ----------------- |
@@ -48,6 +48,7 @@ exist.
 | [`mail_failures`](#mail_failures)                 | 11      | —                 |
 | [`media`](#media)                                 | 9       | yes               |
 | [`media_tags`](#media_tags)                       | 4       | yes               |
+| [`newsletter_issues`](#newsletter_issues)         | 6       | —                 |
 | [`notebooks`](#notebooks)                         | 8       | yes               |
 | [`people`](#people)                               | 12      | yes               |
 | [`plan_members`](#plan_members)                   | 5       | —                 |
@@ -815,6 +816,21 @@ Indexes:
 - `media_tags_media_idx` on `media_id`
 - `media_tags_tag_idx` on `tag_id`
 - `media_tags_media_tag_unique` on `media_id`, `tag_id` — unique
+
+## newsletter_issues
+
+| Column    | Type    | Null     | Default               | Notes             |
+| --------- | ------- | -------- | --------------------- | ----------------- |
+| `id`      | integer | not null | —                     | primary key, auto |
+| `version` | text    | not null | —                     | —                 |
+| `subject` | text    | not null | —                     | —                 |
+| `sent`    | integer | not null | `0`                   | —                 |
+| `failed`  | integer | not null | `0`                   | —                 |
+| `sent_at` | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `newsletter_issues_version_unique` on `version` — unique
 
 ## notebooks
 

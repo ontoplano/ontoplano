@@ -2496,10 +2496,6 @@ disclose. A send that fails is a mail-log row like any other; the person is
 told the same thing either way, because "check your inbox" is true and
 "our SMTP is down" is not their problem to act on.
 
-#### `confirm(token)`
-
-Follow the link. Answers the address, or null if the token is not one.
-
 #### `unsubscribe(token)`
 
 Come off the list.
@@ -2520,9 +2516,38 @@ Confirmed and not unsubscribed, and nothing else — the point of an export is
 that it can be pasted into whatever sends the issue, and a list that included
 people who never confirmed would be the thing that gets that sender banned.
 
+#### `announced(version)`
+
+Whether this version has already been announced.
+
+The release runs from a make target that is meant to be re-runnable — a
+publish that died at step six is started again — and the one step nobody
+wants repeated is the one that reaches two hundred inboxes.
+
+#### `announce(issue)`
+
+Tell the list that something shipped.
+
+One message per address, each carrying that person's own unsubscribe link —
+which is the whole of what keeps this from being the thing mailbox providers
+exist to stop. Sent one at a time rather than as one message to everybody,
+because a single mail with two hundred addresses on it discloses the list to
+every one of them.
+
+A failure is counted and the rest go on: an address that bounces is that
+address's problem, and stopping the run at the first one would mean the
+hundred after it never hear. The failures are retryable from /admin, the
+same as every other mail this app sends, and the count is written down so a
+partial send is a visible fact rather than something to infer.
+
+Refuses to send twice. Say so rather than silently doing nothing, because
+"it did not send" and "it had already sent" are different things to the
+person running it.
+
 ### Types
 
 - `Subscriber`
+- `Issue`
 
 ## notebook-media
 

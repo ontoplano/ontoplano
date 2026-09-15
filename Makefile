@@ -39,7 +39,7 @@ print-%:
 	@echo '$($*)'
 
 
-.PHONY: _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons icon deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-strangers db-dry-run db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local _a-real-workstation android android-all android-store android-install android-install-all _adb-install _apks-are-fresh android-uninstall isolated isolated-preview test-isolated
+.PHONY: announce _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons icon deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-strangers db-dry-run db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local _a-real-workstation android android-all android-store android-install android-install-all _adb-install _apks-are-fresh android-uninstall isolated isolated-preview test-isolated
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -586,6 +586,20 @@ db-push:
 ## synthetic data for the dev account
 db-seed:
 	npx tsx src/lib/server/db/seed.ts
+
+# The mailing list hears about a release.
+#
+# Its own target and not a step of `publish`, deliberately: a publish that
+# fails at step six is meant to be run again, and the one thing that must not
+# happen twice is the one that reaches every inbox. The send refuses a version
+# it has already sent, so a second run is safe — but a person deciding to send
+# is better than a pipeline deciding for them.
+#
+# Run where the list is, which is the instance's own database.
+## tell the mailing list what this release changed
+#: DRY=1  print the message and the count, send nothing
+announce:
+	@npx tsx scripts/announce.ts $(if $(DRY),--dry,)
 
 ## write a migration from the schema diff
 db-generate:

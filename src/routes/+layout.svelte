@@ -231,7 +231,17 @@
 	const bareScreen = $derived(
 		['/login/verify', '/start', '/buy', CHOOSE_PATH].includes(page.url.pathname) ||
 			page.url.pathname.startsWith('/welcome') ||
-			page.url.pathname.startsWith('/legal')
+			page.url.pathname.startsWith('/legal') ||
+			/*
+			 * Anything the newsletter's own links land on.
+			 *
+			 * Somebody following "stop these" out of a message is not a person
+			 * using the app — they may have no account at all — and drawing the
+			 * bar, the wheel and the rooms around a single sentence offers them
+			 * a way into something they never asked for. One page, one thing
+			 * said, and a door out if they want one.
+			 */
+			page.url.pathname.startsWith('/newsletter')
 	);
 
 	/** The section being viewed. Its accent fills the active nav tab. */

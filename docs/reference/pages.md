@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**56 pages, 224 actions.**
+**55 pages, 224 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -43,7 +43,6 @@ write surface for everything else; both end up calling the same
 | `/login/reset`                       | `reset`                                                                                                                                                                                                                                                                                                                                                                             |
 | `/login/verify`                      | `resend`                                                                                                                                                                                                                                                                                                                                                                            |
 | `/mail/weekly-review/off`            | —                                                                                                                                                                                                                                                                                                                                                                                   |
-| `/newsletter/confirm`                | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/newsletter/off`                    | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/notebooks`                         | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/notebooks/[id]`                    | —                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -278,16 +277,6 @@ would be a way to turn off anybody's mail by guessing an id.
 It turns off one thing and says so. It cannot turn anything on, so a link
 that leaks does no more harm than the click it was already for, and there is
 nothing here worth replaying.
-
-### `/newsletter/confirm`
-
-The second half of the double opt-in, and the only thing that puts an
-address on the list.
-
-Signed out by definition: the person following it has no account here and
-may never have one. A 404 for a token that is not one, rather than a
-message — the difference between "wrong token" and "no such token" is the
-only thing an enumerator would learn.
 
 ### `/newsletter/off`
 
