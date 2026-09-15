@@ -396,27 +396,116 @@ test.describe('on a phone, through the pie', () => {
 		await register(page, `pie-clear-${Date.now()}@test.invalid`);
 		await visit(page, '/');
 
-		// The worst overlap in the last third of the movement, when the copy is
-		// as far as it is going to get.
+		/*
+		 * The copy is caught the moment it appears, held still, and walked
+		 * through the end of its movement by hand.
+		 *
+		 * This used to sample the copy's position frame by frame while it moved,
+		 * and that cannot be made reliable: the movement is a Web Animation,
+		 * which the browser runs on the compositor, while `getBoundingClientRect`
+		 * reports what the main thread last worked out. On a loaded machine the
+		 * two come apart — the animation's own clock says two thirds through
+		 * while the rect still describes the opening frames — and the test fails
+		 * for a reason that has nothing to do with the app. Neither a longer wait
+		 * nor a better gate helps, because the number read is stale rather than
+		 * early.
+		 *
+		 * Paused, there is one definite position, `getBoundingClientRect` forces
+		 * the style that produces it, and the answer is the same on any machine
+		 * at any load.
+		 */
 		await page.evaluate(() => {
-			const seen = { worst: 0, samples: 0 };
+			const seen = { worst: -Infinity, samples: 0 };
 			(window as unknown as { __clear: typeof seen }).__clear = seen;
-			let started = 0;
-			const watch = () => {
+
+			const grab = () => {
 				const clone = document.querySelector('main .slide-stage > div');
-				if (clone) {
-					if (!started) started = performance.now();
-					if (performance.now() - started > 180) {
-						const r = clone.getBoundingClientRect();
-						// How much of it is still inside the window, sideways.
-						const inside = Math.min(r.right, window.innerWidth) - Math.max(r.left, 0);
-						if (inside > seen.worst) seen.worst = inside;
+				const move = clone?.getAnimations?.()[0];
+				const span = Number(move?.effect?.getComputedTiming().duration ?? 0);
+
+				const frame = document.querySelector('main .slide-frame');
+
+				if (clone && move && span && frame) {
+					move.pause();
+					// From where the movement should have cleared the screen
+					// through to the end of it, which is when the copy is taken
+					// away.
+					for (const part of [2 / 3, 0.8, 0.9, 1]) {
+						move.currentTime = span * part;
+
+						/*
+						 * How much of the old screen is still on the screen.
+						 *
+						 * Two things make this harder than a rectangle overlap, and
+						 * getting either wrong reads as a failure that has nothing
+						 * to do with the app.
+						 *
+						 * The movement is a rotation, so what `getBoundingClientRect`
+						 * gives back is the upright box the tilted page fits inside.
+						 * Its right edge is a real corner — but on a page two
+						 * thousand pixels long that corner is far below the window,
+						 * swung out to the right by the tilt and visible to nobody.
+						 * Measuring it sideways alone therefore fails on a full room
+						 * and passes on an empty one.
+						 *
+						 * So the four corners are worked out from the transform and
+						 * clipped against the window, both axes. What survives is
+						 * what a person could actually see of the screen they left.
+						 */
+						const size = { w: clone.offsetWidth, h: clone.offsetHeight };
+						const where = (clone.parentElement as HTMLElement).getBoundingClientRect();
+						const style = getComputedStyle(clone);
+						const m = new DOMMatrix(style.transform === 'none' ? undefined : style.transform);
+						const [ox, oy] = style.transformOrigin.split(' ').map(parseFloat);
+
+						const corners = [
+							[0, 0],
+							[size.w, 0],
+							[size.w, size.h],
+							[0, size.h]
+						].map(([x, y]) => {
+							const p = m.transformPoint(new DOMPoint(x - ox, y - oy));
+							return { x: p.x + ox + where.left, y: p.y + oy + where.top };
+						});
+
+						// Sutherland–Hodgman, against the four sides of the window.
+						const sides: [(p: { x: number; y: number }) => boolean, 'x' | 'y', number][] = [
+							[(p) => p.x >= 0, 'x', 0],
+							[(p) => p.x <= window.innerWidth, 'x', window.innerWidth],
+							[(p) => p.y >= 0, 'y', 0],
+							[(p) => p.y <= window.innerHeight, 'y', window.innerHeight]
+						];
+						let shape = corners;
+						for (const [inside, axis, edge] of sides) {
+							const kept: { x: number; y: number }[] = [];
+							for (let i = 0; i < shape.length; i += 1) {
+								const a = shape[i];
+								const b = shape[(i + 1) % shape.length];
+								const aIn = inside(a);
+								const bIn = inside(b);
+								if (aIn) kept.push(a);
+								if (aIn !== bIn) {
+									const t = (edge - a[axis]) / (b[axis] - a[axis]);
+									kept.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+								}
+							}
+							shape = kept;
+							if (!shape.length) break;
+						}
+
+						const seenWide = shape.length
+							? Math.max(...shape.map((p) => p.x)) - Math.min(...shape.map((p) => p.x))
+							: 0;
+						if (seenWide > seen.worst) seen.worst = seenWide;
 						seen.samples += 1;
 					}
+					// And on its way, so it is retired like any other.
+					move.play();
+					return;
 				}
-				requestAnimationFrame(watch);
+				requestAnimationFrame(grab);
 			};
-			requestAnimationFrame(watch);
+			requestAnimationFrame(grab);
 		});
 
 		await page
@@ -468,7 +557,10 @@ test.describe('on a phone, through the pie', () => {
 
 		// Through the bar, which is a client navigation — `visit` reloads the
 		// page, and a reload is not a move along anything.
-		await page.locator('nav').last().getByRole('link', { name: 'Account' }).click();
+		// The account is not a link in the bar any more: the last button opens
+		// the flower of small things, and the account is the one in its middle.
+		await page.locator('nav').last().getByRole('button', { name: 'Account and help' }).click();
+		await page.getByRole('menuitem', { name: 'Account' }).click();
 		await page.waitForTimeout(700);
 
 		const moved = await page.evaluate(

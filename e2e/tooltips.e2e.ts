@@ -38,11 +38,26 @@ test('it stays on screen at the edges', async ({ page }) => {
 	await register(page, `tip-edge-${Date.now()}@test.invalid`);
 	await visit(page, '/');
 
-	// The last button in the header, whose label would hang off the right.
-	const last = page.locator('header [title]').last();
-	await last.hover();
+	/*
+	 * Whichever titled control sits nearest the right-hand edge, because that
+	 * is the one whose label would hang off it.
+	 *
+	 * Chosen by measuring rather than by taking the last one in the markup:
+	 * source order is not screen order, and a header that gains a control ought
+	 * not to quietly change what this test is about.
+	 */
+	const titled = page.locator('header [title]:visible');
+	const boxes = await titled.evaluateAll((els) =>
+		els.map((el, i) => ({ i, right: el.getBoundingClientRect().right }))
+	);
+	const rightmost = boxes.sort((a, b) => b.right - a.right)[0];
+	expect(rightmost, 'the header has nothing with a title on it').toBeTruthy();
+
+	await titled.nth(rightmost.i).hover();
 	const tip = page.getByRole('tooltip');
-	await expect(tip).toBeVisible({ timeout: 5000 });
+	// Generous: the tooltip waits before it appears, on purpose, and a loaded
+	// machine is slow to give it the frame it is placed in.
+	await expect(tip).toBeVisible({ timeout: 20_000 });
 
 	const box = (await tip.boundingBox())!;
 	expect(box.x).toBeGreaterThanOrEqual(0);
