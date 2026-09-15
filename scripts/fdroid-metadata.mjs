@@ -30,7 +30,7 @@
  * Output goes to `fdroid-out/`, which is ignored. Nothing here is committed.
  */
 import { execFileSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -207,15 +207,52 @@ if (FROM) {
 	note = 'a fresh recipe, for the first submission';
 }
 
-/* The listing, which lives in the marketing repository because a person
- * cloning this one to fix a bug does not want two megabytes of store
- * furniture. F-Droid reads it from `fdroiddata` when the app's own repository
- * has none, which is exactly our arrangement. */
-const listing = join(ROOT, 'ontoplano-marketing', 'store', 'fastlane', 'metadata', 'android');
+/*
+ * The listing, assembled into the layout F-Droid reads.
+ *
+ * It lives in the marketing repository because a person cloning this one to
+ * fix a bug does not want two megabytes of store furniture, and F-Droid reads
+ * it from `fdroiddata` when the app's own repository has none — which is
+ * exactly our arrangement.
+ *
+ * `metadata/android/<lang>/images/…` is five folders deep and is nobody's idea
+ * of a place to browse, so it is not kept that way: the marketing repository
+ * holds `store/text/` for the words, `store/fdroid/` for the screenshots
+ * without captions, and `store/play/` for the banner and the icon the two
+ * stores share. This is where those become the tree to copy into a
+ * `fdroiddata` fork — a generated thing, so there is no fourth copy for
+ * somebody to update and forget.
+ */
+const STORE = join(ROOT, 'ontoplano-marketing', 'store');
 const listingOut = join(OUT, 'metadata', PACKAGE);
 let listed = false;
-if (existsSync(listing)) {
-	cpSync(listing, listingOut, { recursive: true });
+
+if (existsSync(join(STORE, 'text'))) {
+	// Written fresh every run: a listing assembled on top of the last one keeps
+	// a screenshot that has since been dropped, and nobody would notice.
+	rmSync(listingOut, { recursive: true, force: true });
+
+	// The words, one directory per language, exactly as they are written.
+	cpSync(join(STORE, 'text'), listingOut, { recursive: true });
+
+	/*
+	 * And the pictures, into the language F-Droid shows by default.
+	 *
+	 * Only en-US carries images: a Portuguese listing with the same English
+	 * screenshots under it is a second copy of two megabytes to say nothing
+	 * new, and F-Droid falls back to the default language's for any locale
+	 * that has none.
+	 */
+	const images = join(listingOut, 'en-US', 'images');
+	for (const size of ['phoneScreenshots', 'sevenInchScreenshots', 'tenInchScreenshots']) {
+		const from = join(STORE, 'fdroid', size);
+		if (existsSync(from)) cpSync(from, join(images, size), { recursive: true });
+	}
+	for (const file of ['featureGraphic.png', 'icon.png']) {
+		const from = join(STORE, 'play', file);
+		if (existsSync(from)) cpSync(from, join(images, file));
+	}
+
 	listed = true;
 }
 
