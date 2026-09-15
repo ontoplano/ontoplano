@@ -30,15 +30,15 @@ starts on boot, and upgrades through the package manager you already use.
 **Debian, Ubuntu, Mint, Pop!\_OS, Raspberry Pi OS**
 
 ```sh
-curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.176.10/ontoplano_0.176.10_amd64.deb
-sudo apt install ./ontoplano_0.176.10_amd64.deb
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.177.6/ontoplano_0.177.6_amd64.deb
+sudo apt install ./ontoplano_0.177.6_amd64.deb
 ```
 
 **Fedora, RHEL and its rebuilds, openSUSE**
 
 ```sh
-curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.176.10/ontoplano-0.176.10-1.x86_64.rpm
-sudo dnf install ./ontoplano-0.176.10-1.x86_64.rpm     # or: sudo zypper install ./ontoplano-0.176.10-1.x86_64.rpm
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.177.6/ontoplano-0.177.6-1.x86_64.rpm
+sudo dnf install ./ontoplano-0.177.6-1.x86_64.rpm     # or: sudo zypper install ./ontoplano-0.177.6-1.x86_64.rpm
 ```
 
 **Arch, Manjaro, EndeavourOS** — from the AUR, built on your machine:
@@ -53,7 +53,7 @@ Every release carries a `SHA256SUMS` covering each file attached to it. In the
 directory you downloaded into:
 
 ```sh
-curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.176.10/SHA256SUMS
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.177.6/SHA256SUMS
 sha256sum --ignore-missing -c SHA256SUMS
 ```
 
