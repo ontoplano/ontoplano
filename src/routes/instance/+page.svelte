@@ -37,19 +37,19 @@
 	let kind: Kind = $state('connected');
 
 	/*
-	 * The mark answers the press.
+	 * The mark answers the answer — once, on the way out.
 	 *
-	 * Choosing is the one thing on this screen that changes nothing you can
-	 * see — the two lists are the same length, the button keeps its place, and
-	 * the mark only changes colour. So the mark takes the press: it swells and
-	 * settles, once, which is the whole of the feedback.
+	 * Not when the two tiles are toggled: that is somebody reading the
+	 * difference between them, and a logo pulsing at every glance is noise.
+	 * This is the press that commits, and the mark is the one thing on screen
+	 * that survives it — the app draws it again in this exact place — so the
+	 * swell is the handover rather than a flourish on a button.
 	 *
 	 * Asked of the element rather than done with a class. A CSS animation
 	 * restarts only when its `animation-name` changes, so driving this from
 	 * state means alternating two identical keyframes and trusting that both
-	 * class changes reach the DOM as separate paints — they do not: the second
-	 * choice never played. `animate()` starts a new animation every time it is
-	 * called, which is what "again" has to mean here.
+	 * class changes reach the DOM as separate paints — they do not: a second
+	 * press never played. `animate()` starts a new animation every time.
 	 *
 	 * `scale`, not a transform: the mark is centred with `translate`, and a
 	 * transform would have to carry that translation too — one of the two
@@ -57,21 +57,23 @@
 	 */
 	let mark = $state<HTMLElement | undefined>();
 
-	let settled = false;
-	$effect(() => {
-		// Read it, so this runs when the answer changes.
-		void kind;
-		// …but not on the way in: nothing has been chosen yet.
-		if (!settled) {
-			settled = true;
-			return;
-		}
+	async function swell(): Promise<void> {
 		if (!mark || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-		mark.animate([{ scale: 1 }, { scale: MARK_SWELL, offset: 0.38 }, { scale: 1 }], {
-			duration: MARK_SWELL_MS,
-			easing: 'ease-out'
-		});
-	});
+		const playing = mark.animate(
+			[{ scale: 1 }, { scale: MARK_SWELL, offset: 0.38 }, { scale: 1 }],
+			{ duration: MARK_SWELL_MS, easing: 'ease-out' }
+		);
+		/*
+		 * Wait for it, but never on it. Leaving is the thing that was asked
+		 * for; the animation is how the leaving looks. A browser that refuses
+		 * to animate — or one that never resolves the promise — must not be
+		 * the reason somebody sits on this screen.
+		 */
+		await Promise.race([
+			playing.finished.catch(() => undefined),
+			new Promise((resolve) => setTimeout(resolve, MARK_SWELL_MS + 80))
+		]);
+	}
 	/*
 	 * The address to edit is the one you are on.
 	 *
@@ -218,9 +220,12 @@
 	 */
 	const canRunHere = $derived(isIsolatedBuild() || inPhoneApp());
 
-	function go() {
+	async function go() {
 		const url = kind === 'phone' ? null : address.trim().replace(/\/+$/, '');
 		if (url !== null && !/^https?:\/\/.+/.test(url)) return;
+
+		// The mark swells, and the app arrives around it where it stands.
+		await swell();
 
 		/*
 		 * A page an instance served cannot answer this question itself.

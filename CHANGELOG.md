@@ -28,10 +28,10 @@ releases mattered.
 
 ## 0.178.6 — 2026-09-15
 
-- **The mark answers the press on the instance chooser.** Choosing between the
-  two is otherwise invisible — the answers are the same length and the button
-  keeps its place — so the mark swells once and settles, in the place it will
-  still be standing after the app arrives around it.
+- **The mark answers the press that opens the app.** Choosing an instance
+  swells it once, in the place it will still be standing when the app draws it
+  again — so the logo is what carries you across rather than something one
+  screen has and the next replaces.
 
 ## 0.178.5 — 2026-09-15
 
