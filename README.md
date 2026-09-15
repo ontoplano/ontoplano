@@ -4,7 +4,7 @@
 
 # Ontoplano
 
-**Managing life, one week at a time.**
+**One life, one app.**
 
 [![checks](https://github.com/ontoplano/ontoplano/actions/workflows/ci.yml/badge.svg)](https://github.com/ontoplano/ontoplano/actions/workflows/ci.yml)
 [![release](.github/badges/release.svg)](https://github.com/ontoplano/ontoplano/releases/latest)

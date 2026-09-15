@@ -39,7 +39,7 @@ print-%:
 	@echo '$($*)'
 
 
-.PHONY: announce _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons icon deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-strangers db-dry-run db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local _a-real-workstation android android-all android-store android-install android-install-all _adb-install _apks-are-fresh android-uninstall isolated isolated-preview test-isolated
+.PHONY: hooks announce _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons icon deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-strangers db-dry-run db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local _a-real-workstation android android-all android-store android-install android-install-all _adb-install _apks-are-fresh android-uninstall isolated isolated-preview test-isolated
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -133,6 +133,9 @@ _dev-deps:
 		echo "Installing dependencies — first run, or yarn.lock moved."; \
 		yarn install; \
 	fi
+	@# And the hooks, quietly, every time: a checkout that has never run this
+	@# is a checkout that can push a red pipeline.
+	@git config core.hooksPath githooks 2>/dev/null || true
 
 # A database behind the code.
 #
@@ -224,6 +227,16 @@ SITE_PORT ?= 1495
 # Where the marketing site's checkout is, if it is here at all.
 #: SITE_SRC_LOCAL=ontoplano-site  where the marketing site is checked out
 SITE_SRC_LOCAL ?= ontoplano-site
+
+# What CI checks, wired to the push that would fail it.
+#
+# `core.hooksPath` rather than copying a file into `.git/hooks`: the hook stays
+# in the repo, under review like everything else, and updating it updates it
+# for everybody rather than for whoever remembers to copy it again.
+## install the git hooks (pre-push runs lint and the unit suite)
+hooks:
+	@git config core.hooksPath githooks
+	@echo "hooks: pre-push will run lint and the unit suite (git push --no-verify skips it)"
 
 # `dev` is the app; this is the name to type when you mean it by contrast.
 ## the app alone (what `dev` runs)

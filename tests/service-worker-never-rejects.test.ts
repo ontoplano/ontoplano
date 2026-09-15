@@ -58,9 +58,10 @@ describe('every answer the service worker gives', () => {
 
 	it('ends in a catch, so a request abandoned mid-flight is not an error', () => {
 		for (const [i, answer] of given.entries()) {
-			expect(answer, `respondWith #${i + 1} has no .catch:\n${answer.trim().slice(0, 200)}`).toMatch(
-				/\.catch\(/
-			);
+			expect(
+				answer,
+				`respondWith #${i + 1} has no .catch:\n${answer.trim().slice(0, 200)}`
+			).toMatch(/\.catch\(/);
 		}
 	});
 

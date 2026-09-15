@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+# What CI runs, before the push rather than after it.
+#
+# A red pipeline is found minutes later, by somebody who has moved on to the
+# next thing, and the commit that broke it is already on the branch. This
+# catches the cheap half here: formatting, lint, the generated-file checks and
+# the unit suite. It is what `make lint` and `yarn test:unit` do, so nothing
+# about it is a second definition of "correct".
+#
+# NOT the browser suite: it builds the app and drives a browser over it, which
+# is minutes, and a hook nobody can afford to wait for is a hook everybody
+# passes `--no-verify` to. The pipeline is still the thing that says a push is
+# good; this only stops the mistakes that were never going to pass.
+#
+# Skip it deliberately when you mean to:  git push --no-verify
+#
+# Installed by `make hooks`, which `make dev` runs — see the Makefile.
+set -e
+
+echo "pre-push: what CI checks, on the cheap half"
+yarn -s lint
+yarn -s test:unit

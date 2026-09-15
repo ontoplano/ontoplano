@@ -18,6 +18,11 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.8 — 2026-09-15
+
+- **The instance says "One life, one app."** — the same sentence the site opens
+  with, rather than a different one about weeks.
+
 ## 0.178.7 — 2026-09-15
 
 - **Fixed: moving quickly between pages could log a network error.** The part

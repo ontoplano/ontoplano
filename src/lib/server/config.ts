@@ -115,7 +115,7 @@ enabled = "false"
 origin = ""
 
 [instance]
-tagline = "Managing life, one week at a time"
+tagline = "One life, one app."
 
 # The workbenches under /dev — not screens of the app, and off unless the
 # person running this wants them. There are none at the moment.
@@ -375,7 +375,7 @@ export interface OntoplanoConfig {
 }
 
 /** What the front page says when the instance has not said anything else. */
-export const DEFAULT_TAGLINE = 'Managing life, one week at a time';
+export const DEFAULT_TAGLINE = 'One life, one app.';
 
 export function ensureDirectories(): void {
 	mkdirSync(configDir(), { recursive: true });
