@@ -197,12 +197,23 @@ test('a goal can be measured by several things, and each keeps its own number', 
 	 * press is the whole gesture — the button carries the new number and
 	 * submits — which is why there is no save afterwards.
 	 */
-	for (let played = 0; played < 3; played += 1) {
+	/*
+	 * One press at a time, each waited for by what it changes.
+	 *
+	 * Every press is a form submission and the card redraws from the answer.
+	 * Waiting a fixed half-second instead meant that on a loaded machine the
+	 * next press could land while the card was still the old one and be
+	 * swallowed — three presses, two counted, 33% where the test wanted 50%,
+	 * and a failure that says nothing about the app. The percentage beside
+	 * "2 measures" is what each press moves, so that is what is waited on.
+	 */
+	const summary = page.getByText(/\d+ measures · \d+%/);
+	for (const reached of ['17%', '33%', '50%']) {
 		await rows
 			.first()
 			.getByRole('button', { name: /One more/ })
 			.click();
-		await page.waitForTimeout(500);
+		await expect(summary).toHaveText(new RegExp(`· ${reached}$`), { timeout: 15_000 });
 	}
 	await expect(page.getByText('50%')).toBeVisible();
 

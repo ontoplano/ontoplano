@@ -65,3 +65,32 @@ test('it stays on screen at the edges', async ({ page }) => {
 	// Below the bar rather than above the top of the window.
 	expect(box.y).toBeGreaterThanOrEqual(0);
 });
+
+/**
+ * An icon button keeps its name while its title is borrowed.
+ *
+ * On a button with no text and no `aria-label`, the `title` is the accessible
+ * name — so taking it away to draw our own leaves the control nameless exactly
+ * while somebody is pointing at it. It cost a suite failure before it cost
+ * anybody their screen reader: a goal's "One more" button went missing from a
+ * lookup by name, intermittently, for as long as the pointer was on it.
+ */
+test('a button named only by its title keeps that name while ours is up', async ({ page }) => {
+	await register(page, `tip-name-${Date.now()}@test.invalid`);
+	await visit(page, '/');
+
+	const wheel = page.getByRole('button', { name: 'Jump to a section' });
+	await wheel.hover();
+	await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 20_000 });
+
+	// Still findable by the same name, with the attribute borrowed.
+	await expect(page.getByRole('button', { name: 'Jump to a section' })).toBeVisible();
+
+	await page.mouse.move(2, 2);
+	await expect(page.getByRole('tooltip')).toHaveCount(0);
+	// The title back, and no borrowed label left on it. This control carries an
+	// `aria-label` of its own, so none was lent — the marker is what says
+	// whether one was, and it must never outlive the tooltip either way.
+	await expect(wheel).toHaveAttribute('title', /section/i);
+	await expect(wheel).not.toHaveAttribute('data-tip-named', /.*/);
+});

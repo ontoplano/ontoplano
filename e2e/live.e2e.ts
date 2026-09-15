@@ -71,7 +71,16 @@ test('a todo added by an assistant turns up without a reload', async ({ page, pl
 	 * page loads is genuinely missed, and this test is about what happens once
 	 * somebody is listening.
 	 */
-	const streaming = page.waitForRequest((r) => r.url().includes('/api/live'), { timeout: 20000 });
+	/*
+	 * The response, not the request.
+	 *
+	 * A request is resolved the moment the browser sends it, which says nothing
+	 * about the server having subscribed anybody — and an event emitted in that
+	 * gap is an event nobody is listening for. The stream answers with its
+	 * headers as soon as the listener is registered, so that is the signal that
+	 * somebody is actually on the other end.
+	 */
+	const streaming = page.waitForResponse((r) => r.url().includes('/api/live'), { timeout: 20000 });
 	await visit(page, '/tasks/todo');
 	await streaming;
 

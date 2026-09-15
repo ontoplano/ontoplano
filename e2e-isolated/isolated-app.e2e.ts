@@ -273,8 +273,11 @@ test('a screen with no twin says it needs a server', async ({ page }) => {
 	await page.goto('/');
 	await expect(page.getByText("TODAY'S TASKS")).toBeVisible({ timeout: 60_000 });
 
+	// Billing, because it is about a subscription to something somebody else
+	// runs. Account used to stand here and no longer can: a device has one now
+	// — its data out, its data in, and the end of the instance.
 	const answer = await page.evaluate(async () => {
-		const res = await fetch('/settings/account/__data.json');
+		const res = await fetch('/settings/billing/__data.json');
 		return { status: res.status, body: await res.text() };
 	});
 	expect(answer.status).toBe(501);
@@ -313,7 +316,17 @@ test('the phone can leave the instance it is', async ({ page }) => {
 		await expect(tour).toBeHidden();
 	}
 
-	await page.getByRole('link', { name: 'Where this lives' }).click();
+	/*
+	 * Through the account, which a device has now.
+	 *
+	 * The bar's last button used to be this link. It opens the flower of small
+	 * things instead, and the account in its middle is a real screen here — the
+	 * data out, the data in, and the end of the instance — with leaving as one
+	 * of the things on it, exactly where a server instance keeps it.
+	 */
+	await page.getByRole('button', { name: 'Account and help' }).click();
+	await page.getByRole('menuitem', { name: 'Account' }).click();
+	await page.getByRole('link', { name: 'Change instance' }).click();
 	await expect(page.getByRole('heading', { name: /Where your Ontoplano lives/ })).toBeVisible({
 		timeout: 30_000
 	});
