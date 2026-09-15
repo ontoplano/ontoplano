@@ -73,19 +73,28 @@ test('a key made on the AI tab arrives inside the words you paste', async ({ pag
 	 * Claude Code and nothing else; a snippet that still says YOUR_KEY after a
 	 * key exists is the same failure wearing a different name.
 	 */
-	for (const client of [
-		'Claude Code (plugin)',
-		'Claude Code (by hand)',
-		'Codex',
-		'Cursor',
-		'Claude Desktop'
-	]) {
+	for (const client of ['Claude', 'Codex', 'Cursor']) {
 		await page.getByRole('button', { name: client, exact: true }).click();
-		const snippet = await page
+		for (const snippet of await page
 			.locator('pre', { hasText: /\/api\/mcp|\/plugin install/ })
-			.first()
-			.innerText();
-		expect(snippet, `${client} snippet`).toContain(shown);
+			.allInnerTexts()) {
+			expect(snippet, `${client} snippet`).toContain(shown);
+		}
+	}
+
+	/*
+	 * And Claude is ONE tab carrying its three ways in, not three tabs.
+	 *
+	 * It was three of the six — plugin, command line, desktop — which turned
+	 * "which assistant do you use?" into a row mostly about installing one of
+	 * them, with Codex and Cursor at the end of it.
+	 */
+	await page.getByRole('button', { name: 'Claude', exact: true }).click();
+	for (const way of ['The plugin', 'The command line', 'The desktop app']) {
+		await expect(page.getByRole('heading', { name: way })).toBeVisible();
+	}
+	for (const gone of ['Claude Code (plugin)', 'Claude Code (by hand)', 'Claude Desktop']) {
+		await expect(page.getByRole('button', { name: gone, exact: true })).toHaveCount(0);
 	}
 
 	/*
@@ -95,7 +104,7 @@ test('a key made on the AI tab arrives inside the words you paste', async ({ pag
 	 * was typed into, and a link to the docs page that shows each client's
 	 * own way of keeping it.
 	 */
-	await page.getByRole('button', { name: 'Claude Code (by hand)', exact: true }).click();
+	await page.getByRole('button', { name: 'Claude', exact: true }).click();
 	expect(await page.locator('pre', { hasText: 'claude mcp add' }).first().innerText()).toContain(
 		'--scope user'
 	);

@@ -64,7 +64,7 @@
 	const shown = $derived(key ?? 'YOUR_KEY');
 
 	/*
-	 * One snippet per assistant, and a picker over them.
+	 * One tab per assistant, and what that assistant needs under it.
 	 *
 	 * There used to be one block and a sentence claiming a `claude mcp add`
 	 * command covered "Claude Code, Codex, or anything else with a shell". It
@@ -73,6 +73,14 @@
 	 * shape, with a different way of carrying the key. Naming the thing you use
 	 * and being handed the right text is the only version of this that is not a
 	 * small lie.
+	 *
+	 * **A tab is a product, not a way of installing one.** Claude was three of
+	 * the six tabs — plugin, command line, desktop — which made a row of
+	 * choices out of what is one answer to "which assistant?", and buried Codex
+	 * and Cursor at the end of it. Claude is one tab now, and the three ways in
+	 * are three labelled blocks inside it: the plugin first, because it is the
+	 * shortest, then the command line, then the desktop app, which is the
+	 * awkward one and says so.
 	 *
 	 * "Just tell it" is first and is the default, because it is the one that
 	 * needs nothing explained: an assistant with a terminal reads this and sets
@@ -98,27 +106,49 @@ anything in my account until I ask you to.
 Key: ${shown}`
 		},
 		{
+			id: 'claude',
+			name: 'Claude',
 			/*
-			 * The plugin, first among the Claude Code answers.
+			 * Three ways in, in the order somebody should try them.
 			 *
-			 * It asks for the address and the key when it installs and keeps the
-			 * key where that program keeps secrets — the system keychain, rather
-			 * than a header written into a configuration file. It also brings the
-			 * standing instructions an assistant otherwise needs told every
-			 * conversation: read before writing, never invent a goal.
+			 * The plugin asks for the address and the key when it installs and
+			 * keeps the key where that program keeps secrets — the system
+			 * keychain, rather than a header written into a configuration file.
+			 * It also brings the standing instructions an assistant otherwise
+			 * needs told every conversation: read before writing, never invent
+			 * a goal. So it is first, and the other two are for somebody who
+			 * cannot use it.
 			 */
-			id: 'claude-plugin',
-			name: 'Claude Code (plugin)',
-			wrap: false,
-			note: 'Two lines inside Claude Code. It asks for this address and your key, and keeps the key in the system keychain.',
-			text: `/plugin marketplace add ontoplano/ontoplano\n/plugin install ontoplano@ontoplano\n\n# it will ask for:\n#   Your ontoplano:  ${data.origin}\n#   Key:             ${shown}`
-		},
-		{
-			id: 'claude-code',
-			name: 'Claude Code (by hand)',
-			wrap: false,
-			note: 'Run this in a terminal. It writes the setting for you, for every project — that is what --scope user is doing there.',
-			text: `claude mcp add --scope user --transport http ontoplano ${data.origin}/api/mcp \\\n  --header "Authorization: Bearer ${shown}"`
+			ways: [
+				{
+					name: 'The plugin',
+					note: 'Two lines inside Claude Code. It asks for this address and your key, and keeps the key in the system keychain.',
+					wrap: false,
+					text: `/plugin marketplace add ontoplano/ontoplano\n/plugin install ontoplano@ontoplano\n\n# it will ask for:\n#   Your ontoplano:  ${data.origin}\n#   Key:             ${shown}`
+				},
+				{
+					name: 'The command line',
+					note: 'Run this in a terminal. It writes the setting for you, for every project — that is what --scope user is doing there.',
+					wrap: false,
+					text: `claude mcp add --scope user --transport http ontoplano ${data.origin}/api/mcp \\\n  --header "Authorization: Bearer ${shown}"`
+				},
+				{
+					name: 'The desktop app',
+					note: 'Its connector screen has nowhere to put a key, so this goes through mcp-remote. No space after the colon — Desktop cuts the header in half if you leave one.',
+					wrap: false,
+					text: `{
+  "mcpServers": {
+    "ontoplano": {
+      "command": "npx",
+      "args": [
+        "-y", "mcp-remote", "${data.origin}/api/mcp",
+        "--header", "Authorization:Bearer ${shown}"
+      ]
+    }
+  }
+}`
+				}
+			]
 		},
 		{
 			id: 'codex',
@@ -142,23 +172,6 @@ bearer_token_env_var = "ONTOPLANO_KEY"
     "ontoplano": {
       "url": "${data.origin}/api/mcp",
       "headers": { "Authorization": "Bearer ${shown}" }
-    }
-  }
-}`
-		},
-		{
-			id: 'claude-desktop',
-			name: 'Claude Desktop',
-			wrap: false,
-			note: 'Its connector screen has nowhere to put a key, so this goes through mcp-remote. No space after the colon — Desktop cuts the header in half if you leave one.',
-			text: `{
-  "mcpServers": {
-    "ontoplano": {
-      "command": "npx",
-      "args": [
-        "-y", "mcp-remote", "${data.origin}/api/mcp",
-        "--header", "Authorization:Bearer ${shown}"
-      ]
     }
   }
 }`
@@ -489,11 +502,33 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 						{/each}
 					</div>
 
-					<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">{chosen.note}</p>
+					<!--
+						One assistant's answer: a snippet, or several labelled ways in.
 
-					<div class="mt-2 max-w-3xl">
-						<CopyBlock text={chosen.text} wrap={chosen.wrap} label="Copy this" />
-					</div>
+						Claude has three — the plugin, the command line, the desktop app
+						— and they are blocks under one tab rather than three tabs,
+						because which of them you use is a detail of installing Claude
+						and not an answer to "which assistant do you use".
+					-->
+					{#if chosen.ways}
+						<div class="mt-3 max-w-3xl space-y-5">
+							{#each chosen.ways as way (way.name)}
+								<div>
+									<h4 class="eyebrow text-gray-600">{way.name}</h4>
+									<p class="mt-1 max-w-2xl text-sm leading-relaxed text-gray-500">{way.note}</p>
+									<div class="mt-2">
+										<CopyBlock text={way.text} wrap={way.wrap} label="Copy this" />
+									</div>
+								</div>
+							{/each}
+						</div>
+					{:else}
+						<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">{chosen.note}</p>
+
+						<div class="mt-2 max-w-3xl">
+							<CopyBlock text={chosen.text} wrap={chosen.wrap} label="Copy this" />
+						</div>
+					{/if}
 
 					<!--
 					The way to the full instructions, said on the page rather than
