@@ -53,9 +53,14 @@
 	 * is how far the middle floats off the press — a thumb's width, no more: it
 	 * is the button that was pressed, and it should still read as that button.
 	 *
-	 * `SPAN` is how much of the circle the petals are laid along — a quarter
-	 * turn, above the middle rather than around it. It is not independent of
-	 * the other two: `n` petals across `SPAN` sit
+	 * `SPAN` is how much of the circle the petals are laid along, and `TILT` is
+	 * where the middle of that arc points. Laid symmetrically above the account
+	 * — `TILT` of straight up — the four petals came out as a row across the
+	 * top, which reads as a toolbar that happens to be curved. Pointed up and
+	 * to the left instead, they read as what they are: a fan opening away from
+	 * the thumb, on the diagonal a thumb actually travels.
+	 *
+	 * `SPAN` is not independent of the other two: `n` petals across `SPAN` sit
 	 * `2 × RADIUS × sin(SPAN / 2(n - 1))` apart, which has to be more than
 	 * `PETAL` or they overlap and the flower reads as a clump.
 	 */
@@ -63,7 +68,9 @@
 	const PETAL = 44;
 	const MIDDLE = 68;
 	const RISE = 64;
-	const SPAN = 90;
+	const SPAN = 84;
+	/** Up and to the left: −90° is straight up, −180° is level to the left. */
+	const TILT = -135;
 	/** Clear of the screen's edges, and of anything notched into the top. */
 	const MARGIN = 12;
 
@@ -93,8 +100,28 @@
 		return document.documentElement.getBoundingClientRect().width;
 	}
 
-	/** Half of how wide the whole flower is, edge to edge. */
-	const REACH_X = RADIUS * Math.sin((SPAN / 2) * (Math.PI / 180)) + PETAL / 2;
+	/**
+	 * How far the flower reaches either side of its middle.
+	 *
+	 * Not the same both ways any more. Tilted up and to the left, every petal
+	 * is to the left of the account: it needs a petal's worth of room that
+	 * side and almost none on the other, so a symmetric figure would hold the
+	 * middle further from the right edge than it has any reason to be — and
+	 * the account button belongs near the thumb that pressed it.
+	 *
+	 * Measured off the angles rather than assumed, so changing `TILT` or
+	 * `SPAN` cannot leave the clamp describing the old shape.
+	 */
+	const reach = $derived.by(() => {
+		const xs = petals.map((_, i) => RADIUS * Math.cos((angleOf(i) * Math.PI) / 180));
+		const ys = petals.map((_, i) => RADIUS * Math.sin((angleOf(i) * Math.PI) / 180));
+		const half = PETAL / 2;
+		return {
+			left: Math.max(MIDDLE / 2, -Math.min(0, ...xs) + half),
+			right: Math.max(MIDDLE / 2, Math.max(0, ...xs) + half),
+			top: Math.max(MIDDLE / 2, -Math.min(0, ...ys) + half)
+		};
+	});
 
 	/**
 	 * Where the middle is drawn: just above the press, slid only as far as it
@@ -112,8 +139,8 @@
 		const up = origin.y - RISE;
 		if (typeof window === 'undefined') return { x: origin.x, y: up };
 		return {
-			x: Math.min(Math.max(origin.x, REACH_X + MARGIN), layoutWidth() - REACH_X - MARGIN),
-			y: Math.max(up, RADIUS + PETAL / 2 + MARGIN)
+			x: Math.min(Math.max(origin.x, reach.left + MARGIN), layoutWidth() - reach.right - MARGIN),
+			y: Math.max(up, reach.top + MARGIN)
 		};
 	});
 
@@ -126,7 +153,7 @@
 	 * and up is the direction there is always room in.
 	 */
 	function angleOf(i: number): number {
-		return -90 - SPAN / 2 + STEP * i;
+		return TILT - SPAN / 2 + STEP * i;
 	}
 
 	/** Where petal `i` sits, relative to the middle of the flower. */
@@ -355,7 +382,8 @@
 			type="button"
 			role="menuitem"
 			class="petal heart {active === 0 ? 'is-active' : ''}"
-			style="--to-x: 0px; --to-y: 0px; --delay: 0ms; --leave-delay: 0ms; --bloom: {BLOOM_MS}ms; --size: {MIDDLE}px"
+			style="--to-x: 0px; --to-y: 0px; --home-x: {origin.x - centre.x}px; --home-y: {origin.y -
+				centre.y}px; --delay: 0ms; --leave-delay: 0ms; --bloom: {BLOOM_MS}ms; --size: {MIDDLE}px"
 			onpointerenter={() => !blooming && (active = 0)}
 			onclick={() => afterOpening(() => onselect(heart.key))}
 			aria-label={heart.label}
@@ -504,6 +532,30 @@
 		}
 		to {
 			transform: translate(0, 0) scale(0.4);
+			opacity: 0;
+		}
+	}
+
+	/*
+	 * The middle goes back to the button, not to the middle of the flower.
+	 *
+	 * The flower floats a thumb's width above the press, so collapsing to its
+	 * own centre left the account hanging in the air over the bar — and the
+	 * real button reappearing underneath read as the thing dropping the last
+	 * inch by itself. `--home` is where the button actually is, measured from
+	 * the flower's centre.
+	 */
+	.fan.is-leaving .heart {
+		animation: heart-goes-home var(--bloom) cubic-bezier(0.4, 0, 0.7, 0.2) both;
+	}
+
+	@keyframes heart-goes-home {
+		from {
+			transform: translate(0, 0) scale(1);
+			opacity: 1;
+		}
+		to {
+			transform: translate(var(--home-x), var(--home-y)) scale(0.45);
 			opacity: 0;
 		}
 	}

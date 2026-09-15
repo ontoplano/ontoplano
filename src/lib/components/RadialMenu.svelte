@@ -731,7 +731,8 @@
 					class="pie-mark"
 					style="--mark-from-x: {(flyFrom.x - size / 2) * FLY_REACH}px; --mark-from-y: {(flyFrom.y -
 						size / 2) *
-						FLY_REACH}px; --mark-fly: {Math.round(FLY_MS)}ms"
+						FLY_REACH}px; --mark-home-x: {flyFrom.x - size / 2}px; --mark-home-y: {flyFrom.y -
+						size / 2}px; --mark-fly: {Math.round(FLY_MS)}ms"
 				>
 					<!--
 						The whole mark, not its middle.
@@ -1046,9 +1047,18 @@
 		}
 	}
 
+	/*
+	 * Home is the button, not the runway it took off down.
+	 *
+	 * `FLY_REACH` starts the rise further down the same line so that the flight
+	 * up is long enough to read as movement. Landing there is a different
+	 * matter: it is past the button, off the bottom of the bar, so the mark
+	 * dropped below where it belonged and the bar's own button reappearing read
+	 * as it bouncing back up. Going home means going to the button.
+	 */
 	@keyframes mark-departs {
 		to {
-			transform: translate(var(--mark-from-x, 0), var(--mark-from-y, 0)) scale(0.32);
+			transform: translate(var(--mark-home-x, 0), var(--mark-home-y, 0)) scale(0.32);
 		}
 	}
 

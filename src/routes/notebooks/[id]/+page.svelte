@@ -119,9 +119,17 @@
 
 	<FormError message={form?.message} />
 
-	<!-- The whole width, which is the point of being here rather than on the index. -->
+	<!--
+		The whole width, which is the point of being here rather than on the index.
+
+		`min-w-0` because it is a flex column: without it every child may be as
+		wide as its widest unbreakable thing, and one `/api/v1/…` in a note made
+		the whole card wider than the phone. The page clips rather than scrolls,
+		so what that looked like was ordinary sentences with their right-hand
+		ends missing.
+	-->
 	<section
-		class="card-accent flex flex-col border border-gray-200 bg-white shadow-card"
+		class="card-accent flex min-w-0 flex-col border border-gray-200 bg-white shadow-card"
 		style="--card-accent: {SECTION_COLORS.diary}"
 	>
 		<NotebookDetail

@@ -1891,6 +1891,39 @@ html[data-style='playful'] .card-accent {
 	padding: 0 0.2rem;
 	font-family: var(--font-mono);
 	font-size: 0.85em;
+	/*
+	 * A long one wraps rather than widening everything around it.
+	 *
+	 * `/api/v1/reminders?upcoming=1` in a sentence has nowhere to break, so it
+	 * sets the smallest width the paragraph can be — and on a phone that is
+	 * wider than the phone. The whole note then laid itself out at that width
+	 * and the screen clipped it: every line of ordinary prose ran off the right
+	 * edge because of one word in the middle of it. `anywhere` is the only
+	 * value that lowers the intrinsic minimum, which is what the enclosing
+	 * columns measure themselves against; `break-word` looks identical here and
+	 * leaves the overflow exactly where it was.
+	 */
+	overflow-wrap: anywhere;
+}
+
+/*
+ * …and the same for an address, which is the other thing with no spaces in it.
+ * A `pre` is deliberately not included: a code block scrolls itself, because
+ * broken lines of code are worse than a sideways nudge.
+ */
+.md a {
+	overflow-wrap: anywhere;
+}
+
+/*
+ * And the block itself may be narrower than its contents want to be.
+ *
+ * Without this a `.md` inside a flex or grid column refuses to shrink below
+ * its widest unbreakable thing — the default `min-width: auto` — which is the
+ * other half of the same overflow.
+ */
+.md {
+	min-width: 0;
 }
 
 .md pre {
