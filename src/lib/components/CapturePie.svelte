@@ -10,9 +10,10 @@
 	 *
 	 * Capture is four small things written down in passing — a note, a task, a
 	 * thing to buy — and at the rooms wheel's size it took the whole screen to
-	 * ask a question that small.
+	 * ask a question that small. Two thirds was too far the other way: four
+	 * wedges under a thumb want to be four targets, not a badge.
 	 */
-	const CAPTURE_SCALE = 0.61;
+	const CAPTURE_SCALE = 0.79;
 
 	/**
 	 * Capture, from anywhere.

@@ -41,6 +41,42 @@ function phoneApp(): PhoneApp | null {
 }
 
 /**
+ * Close whatever is on top, and say whether there was anything to close.
+ *
+ * The back gesture used to ask one question — is there history behind me —
+ * and a form open over the page is not history. So pressing back with the
+ * quick capture up did whatever the page underneath would have done, which at
+ * the first screen of a session is leaving the app: you opened a to-do, went
+ * back to dismiss it, and ontoplano disappeared.
+ *
+ * A dialog first, because that is what every form on a phone is drawn as, and
+ * closing it fires the `close` event the component is already listening for —
+ * so the history entry it claimed is released the same way the arrow or Escape
+ * would release it. Then the wheels, which are not dialogs but do answer
+ * Escape, so the gesture says Escape to them.
+ *
+ * What is deliberately not here is a registry somebody has to remember to add
+ * to. The question "is something open over the page" is answerable from the
+ * page itself.
+ */
+export function closeTopOverlay(): boolean {
+	if (typeof document === 'undefined') return false;
+
+	const open = document.querySelector('dialog[open]');
+	if (open instanceof HTMLDialogElement) {
+		open.close();
+		return true;
+	}
+
+	if (document.querySelector('.pie-layer, .fan')) {
+		window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+		return true;
+	}
+
+	return false;
+}
+
+/**
  * Where the session started, so "nothing behind" is a fact rather than a guess.
  *
  * `history.length` counts the whole tab's history, which in a web view that
@@ -63,6 +99,9 @@ export function backGestureGoesBack(): () => void {
 	// this does not care which half of Capacitor's API it is holding.
 	Promise.resolve(
 		app.addListener('backButton', () => {
+			// What is on top of the page goes first: a form, a wheel. Only when
+			// there is nothing over it does the gesture mean "the page behind".
+			if (closeTopOverlay()) return;
 			if (window.history.length > startedAt) window.history.back();
 			else Promise.resolve(app.minimizeApp()).catch(() => undefined);
 		})

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import mark from '$lib/logo/mark.png';
 	import { MARK_FIELD } from '$lib/logo/mark-shape';
-	import { markCorners, markPath, markPoints } from '$lib/logo/mark-geometry';
+	import { markPath, markPoints } from '$lib/logo/mark-geometry';
 	import Icon, { type IconName } from '$lib/components/Icon.svelte';
 	import { wedgeAt, wedgeCentre, wedgeEdges, wedgeStep } from '$lib/radial';
 
@@ -141,28 +141,15 @@
 	const EDGE_DARK = MARK_FIELD;
 
 	/**
-	 * The rim, as one filled band per side.
+	 * A circle, as a path, for a clip that also holds the mark's outline.
 	 *
-	 * The inner edge is the same outline scaled toward the middle. How far is
-	 * arithmetic rather than taste: moving every side of a polygon inward by
-	 * `RIM` moves its corners inward by `RIM / cos(π/n)`, so the scale that
-	 * gives a band of an even thickness all the way round follows from the
-	 * number of sides the mark happens to have.
+	 * `<clipPath>` takes one shape per child and `clip-rule="evenodd"` needs
+	 * both rings in a single `d` — so the outer one cannot be a `<circle>`
+	 * element. Two half-turn arcs are the same circle written as a path.
 	 */
-	/** One band per side, between an outline and the same outline scaled in. */
-	function bands(radius: number, thickness: number): string[] {
-		const outer = markCorners(radius);
-		const n = outer.length;
-		const inner = markCorners(radius * (1 - thickness / (radius * Math.cos(Math.PI / n))));
-		return outer.map((corner, i) => {
-			const next = (i + 1) % n;
-			return [corner, outer[next], inner[next], inner[i]]
-				.map(({ x, y }) => `${x.toFixed(2)},${y.toFixed(2)}`)
-				.join(' ');
-		});
+	function circlePath(r: number): string {
+		return `M ${r} 0 A ${r} ${r} 0 1 0 ${-r} 0 A ${r} ${r} 0 1 0 ${r} 0 Z`;
 	}
-
-	const rim = $derived(bands(OUTER, RIM));
 
 	const INNER = $derived(57 * scale);
 	const HOLE = $derived(INNER - 2 * scale);
@@ -580,8 +567,17 @@
 					rather than cut from it.
 				-->
 				<defs>
+					<!--
+						Round outside, the mark's own shape inside.
+						
+						The outer edge used to be the mark's octagon too, scaled up —
+						eight corners around something the thumb sweeps in an arc, and
+						at this size the flats read as a crudely drawn circle rather
+						than as the logo. The hole keeps the outline, because the hole
+						is the mark and the mark has corners.
+					-->
 					<clipPath id={clipId} clip-rule="evenodd">
-						<path d="{markPath(OUTER)} {markPath(HOLE)}" clip-rule="evenodd" />
+						<path d="{circlePath(OUTER)} {markPath(HOLE)}" clip-rule="evenodd" />
 					</clipPath>
 				</defs>
 				<!--
@@ -591,7 +587,7 @@
 					muscle memory never registers. On its own surface the same tint
 					reads as the section it stands for.
 				-->
-				<polygon points={markPoints(OUTER)} fill="var(--color-white)" />
+				<circle r={OUTER} fill="var(--color-white)" />
 
 				<!--
 					Cut to the octagon, which is what makes each wedge a trapezoid.
@@ -790,18 +786,16 @@
 				<!--
 					The ring, on the outside where it belongs.
 					
-					One band per side, each the colour that side is painted in the mark
-					— sampled off the picture by `yarn icons`, like the outline itself.
-					Drawn last so the wedges end under it rather than beside it: the rim
-					is the edge of the whole thing, not a border around each piece.
+					One stroked circle. It used to be eight mitred bands following the
+					mark's outline, which is what the ring in the picture is — but the
+					outer edge is round now, and a circle has no corners for two bands
+					to meet badly at. Drawn last so the wedges end under it rather than
+					beside it: the rim is the edge of the whole thing, not a border
+					around each piece.
 					
-					Filled quadrilaterals rather than eight stroked lines. A stroke is
-					centred on its path and its ends are square, so at every corner two
-					of them overlapped at an angle and left a notch sticking out past
-					the outline — eight little spikes, one per vertex. A band between
-					the outline and the same outline scaled inward meets its neighbour
-					on the bisector, which is a mitre, which is what the ring in the
-					picture has.
+					Inset by half its width, because a stroke is centred on its path:
+					on the radius itself, half of it would hang outside the shape the
+					clip allows and come back cut in half.
 				-->
 				<!--
 					Both edges, black, until something is chosen.
@@ -812,9 +806,14 @@
 					between the pieces, which is what it is until one of them is
 					being pointed at.
 				-->
-				{#each rim as band, i (i)}
-					<polygon points={band} fill={EDGE_DARK} class="pie-edge" style="pointer-events: none" />
-				{/each}
+				<circle
+					r={OUTER - RIM / 2}
+					fill="none"
+					stroke={EDGE_DARK}
+					stroke-width={RIM}
+					class="pie-edge"
+					style="pointer-events: none"
+				/>
 
 				<!--
 					And then the chosen room's colour, on the two edges that are its

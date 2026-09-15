@@ -8,7 +8,7 @@
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { resolve } from '$app/paths';
-	import { EMPTY_CONFIRMATION } from '$lib/danger';
+	import { EMPTY_CONFIRMATION, ERASE_CONFIRMATION } from '$lib/danger';
 	import { notify } from '$lib/notify.svelte';
 	import { page } from '$app/state';
 	import Card from '$lib/components/Card.svelte';
@@ -716,7 +716,7 @@
 				}}
 		>
 			<FormGrid>
-				<Field label="Type {EMPTY_CONFIRMATION} to confirm" span={12} required>
+				<Field label={`Type “${EMPTY_CONFIRMATION}” to confirm`} span={12} required>
 					<input name="confirm" autocomplete="off" required class="input" />
 				</Field>
 				<Field label="Your password" span={12} required>
@@ -755,8 +755,8 @@
 				-->
 				<Field
 					label={onDevice
-						? `Type ${EMPTY_CONFIRMATION} to confirm`
-						: `Type ${data.email} to confirm`}
+						? `Type “${ERASE_CONFIRMATION}” to confirm`
+						: `Type “${data.email}” to confirm`}
 					span={12}
 					required
 				>

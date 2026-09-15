@@ -137,7 +137,7 @@ test('deleting the instance on the device leaves the server account untouched', 
 	await expect(page.getByText('Email address')).toHaveCount(0);
 
 	await end.click();
-	await page.locator('[name="confirm"]').fill('DELETE EVERYTHING');
+	await page.locator('[name="confirm"]').fill('ERASE ONTOPLANO');
 	await page.getByRole('button', { name: 'Delete permanently' }).click();
 
 	// It leaves for the screen that chooses where your ontoplano lives.

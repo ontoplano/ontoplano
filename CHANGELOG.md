@@ -18,6 +18,22 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.176.9 — 2026-09-15
+
+- **Both wheels are round on the outside.** Only the outer edge: the hole
+  keeps the mark's own outline, because the hole is the mark. The rim was
+  eight mitred bands following an octagon and is one circle now.
+- **The capture wheel is a third bigger.** Four wedges under a thumb should be
+  four targets rather than a badge.
+- **The back gesture closes what is open before it leaves the page.** Pressing
+  back with a quick to-do on screen did whatever the page underneath would
+  have done — which on the first screen of a session is leaving the app. A
+  form, or a wheel, now goes first.
+- **Unmaking a phone-only instance asks you to type “ERASE ONTOPLANO”.** It
+  borrowed the wording of a different button on a different screen, unquoted,
+  which is how somebody types a phrase from muscle memory without reading
+  which screen they are on. It names the thing being destroyed now.
+
 ## 0.176.8 — 2026-09-15
 
 - **Fixed: the phone app threw on every navigation.** Yesterday's fix for

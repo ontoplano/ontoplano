@@ -10,3 +10,17 @@
  * is definitely this account's and not the one above it in the muscle memory.
  */
 export const EMPTY_CONFIRMATION = 'DELETE EVERYTHING';
+
+/**
+ * And what unmaking a device's own instance asks for.
+ *
+ * Its own words, not the account's: this one is not "empty the account and
+ * keep it" — there is no account and no server, and what goes is the whole
+ * instance and the file it lives in. Asking for the same phrase as the softer
+ * button on a different screen is how somebody types the thing they have typed
+ * before without reading which screen they are on.
+ *
+ * It names the thing being destroyed, because the one word that is definitely
+ * about this and not about something else is its own name.
+ */
+export const ERASE_CONFIRMATION = 'ERASE ONTOPLANO';

@@ -40,64 +40,86 @@ export const TEST_CONFIG_DIR =
 	process.env.PLAYWRIGHT_CONFIG_DIR ?? join(tmpdir(), 'ontoplano-e2e-config');
 
 export default defineConfig({
-	webServer: {
-		/*
-		 * The server production runs, not the one Vite lends you.
-		 *
-		 * This was `vite preview`, which is a different server from the
-		 * adapter-node build the box starts — so `BODY_SIZE_LIMIT`, the header
-		 * handling and the shutdown path were all being exercised in something
-		 * that never ships. It also closed idle keep-alive sockets after Node's
-		 * default five seconds while Playwright's request context pooled them,
-		 * and a call landing in that window read ECONNRESET: three unrelated
-		 * specs failed that way in one afternoon, each passing on its own.
-		 * `KEEP_ALIVE_TIMEOUT` below is longer than any gap in the suite.
-		 */
-		// The preparation is part of the command on purpose: `globalSetup` runs
-		// after the server, which meant the server opened the database that was
-		// about to be deleted. See `e2e/prepare.mjs`.
-		command: 'node e2e/prepare.mjs && npm run build && node build',
-		port: 4173,
-		reuseExistingServer: !process.env.CI,
-		env: {
-			DATABASE_URL: TEST_DB,
-			// adapter-node listens where it is told; vite preview picked this.
-			PORT: '4173',
-			HOST: '127.0.0.1',
-			// Seconds. Longer than the longest pause between two requests on one
-			// pooled connection, so the server never closes a socket a client is
-			// about to write to.
-			KEEP_ALIVE_TIMEOUT: '120',
-			ORIGIN: 'http://localhost:4173',
-			BETTER_AUTH_SECRET: 'playwright-secret-playwright-secret',
-			// Lets a test flip one page into local mode with `?isolated`, so the
-			// suite can drive the device instance and the server through one
-			// build. Dead in any build that does not opt in.
-			PUBLIC_ONTOPLANO_ISOLATED_OPT_IN: 'true',
-			// Keep the tests off whatever the developer's own config says.
-			ONTOPLANO_CONFIG_DIR: TEST_CONFIG_DIR,
-			// The instance-owner pages only exist on a self-hosted instance, and
-			// they are part of what the suite checks.
-			ONTOPLANO_SELF_HOST: 'true',
-			// adapter-node's default is smaller than the pictures this app
-			// accepts, and the app refuses to start when the two disagree — the
-			// suite runs the real built server, so it needs the real setting.
-			BODY_SIZE_LIMIT: '12M',
-			// So a test can present itself as a distinct client and not spend the
-			// whole suite's share of the sign-in rate limit.
-			ONTOPLANO_TRUST_PROXY: 'true',
-			// `/healthz` only discloses disk and memory to a probe that knows this.
-			ONTOPLANO_HEALTH_TOKEN: 'playwright-health-token',
-			XDG_CONFIG_HOME: join(homedir(), '.config'),
-			// The administration page reads fail2ban's log; `e2e/prepare.mjs`
-			// writes this one, so the test does not need the real thing.
-			ONTOPLANO_FAIL2BAN_LOG: join(tmpdir(), 'ontoplano-e2e-fail2ban.log'),
-			// The server runs in UTC for the same reason the unit suite does:
-			// otherwise "today" is a different day here and on a laptop three
-			// hours west, and a failure means the machine rather than the code.
-			TZ: 'UTC'
+	/*
+	 * Two servers, because there are two builds to test.
+	 *
+	 * The first is the one production runs. The second is the artefact a phone
+	 * actually gets: static files with `PUBLIC_ONTOPLANO_ISOLATED` baked in,
+	 * served by nothing smarter than a file server with an SPA fallback, which
+	 * is the contract Capacitor honours. It used to live in a config of its own
+	 * that only `make test-isolated` invoked — so the build that ships to the
+	 * stores was the one build no push ever tested, and three bugs in it
+	 * survived a green pipeline.
+	 */
+	webServer: [
+		{
+			/*
+			 * The server production runs, not the one Vite lends you.
+			 *
+			 * This was `vite preview`, which is a different server from the
+			 * adapter-node build the box starts — so `BODY_SIZE_LIMIT`, the header
+			 * handling and the shutdown path were all being exercised in something
+			 * that never ships. It also closed idle keep-alive sockets after Node's
+			 * default five seconds while Playwright's request context pooled them,
+			 * and a call landing in that window read ECONNRESET: three unrelated
+			 * specs failed that way in one afternoon, each passing on its own.
+			 * `KEEP_ALIVE_TIMEOUT` below is longer than any gap in the suite.
+			 */
+			// The preparation is part of the command on purpose: `globalSetup` runs
+			// after the server, which meant the server opened the database that was
+			// about to be deleted. See `e2e/prepare.mjs`.
+			command: 'node e2e/prepare.mjs && npm run build && node build',
+			port: 4173,
+			reuseExistingServer: !process.env.CI,
+			env: {
+				DATABASE_URL: TEST_DB,
+				// adapter-node listens where it is told; vite preview picked this.
+				PORT: '4173',
+				HOST: '127.0.0.1',
+				// Seconds. Longer than the longest pause between two requests on one
+				// pooled connection, so the server never closes a socket a client is
+				// about to write to.
+				KEEP_ALIVE_TIMEOUT: '120',
+				ORIGIN: 'http://localhost:4173',
+				BETTER_AUTH_SECRET: 'playwright-secret-playwright-secret',
+				// Lets a test flip one page into local mode with `?isolated`, so the
+				// suite can drive the device instance and the server through one
+				// build. Dead in any build that does not opt in.
+				PUBLIC_ONTOPLANO_ISOLATED_OPT_IN: 'true',
+				// Keep the tests off whatever the developer's own config says.
+				ONTOPLANO_CONFIG_DIR: TEST_CONFIG_DIR,
+				// The instance-owner pages only exist on a self-hosted instance, and
+				// they are part of what the suite checks.
+				ONTOPLANO_SELF_HOST: 'true',
+				// adapter-node's default is smaller than the pictures this app
+				// accepts, and the app refuses to start when the two disagree — the
+				// suite runs the real built server, so it needs the real setting.
+				BODY_SIZE_LIMIT: '12M',
+				// So a test can present itself as a distinct client and not spend the
+				// whole suite's share of the sign-in rate limit.
+				ONTOPLANO_TRUST_PROXY: 'true',
+				// `/healthz` only discloses disk and memory to a probe that knows this.
+				ONTOPLANO_HEALTH_TOKEN: 'playwright-health-token',
+				XDG_CONFIG_HOME: join(homedir(), '.config'),
+				// The administration page reads fail2ban's log; `e2e/prepare.mjs`
+				// writes this one, so the test does not need the real thing.
+				ONTOPLANO_FAIL2BAN_LOG: join(tmpdir(), 'ontoplano-e2e-fail2ban.log'),
+				// The server runs in UTC for the same reason the unit suite does:
+				// otherwise "today" is a different day here and on a laptop three
+				// hours west, and a failure means the machine rather than the code.
+				TZ: 'UTC'
+			}
+		},
+		{
+			// The phone's copy. `make isolated` compiles every route a second
+			// time into the database worker, which is why this is slow to start
+			// and why it is worth having: none of that path is exercised above.
+			command: 'make -s isolated && node scripts/serve-isolated.mjs',
+			port: 4180,
+			reuseExistingServer: !process.env.CI,
+			timeout: 300_000
 		}
-	},
+	],
 	// The browser keeps the server's clock, for the same reason the server is
 	// pinned to UTC above. Left on the machine's own timezone, a browser three
 	// hours west computes a "today" the server calls yesterday, and anything
@@ -107,7 +129,7 @@ export default defineConfig({
 	testMatch: '**/*.e2e.{ts,js}',
 	// Worktrees are whole copies of the repo; without this every spec would
 	// run once per open worktree.
-	testIgnore: ['**/{.worktrees,.claude}/**', '**/e2e-isolated/**', ...otherCheckouts],
+	testIgnore: ['**/{.worktrees,.claude}/**', ...otherCheckouts],
 
 	/*
 	 * The registration tests go last, on their own.
@@ -140,6 +162,25 @@ export default defineConfig({
 		 * runs, and signing in as it races.
 		 */
 		{ name: 'admin', testMatch: '**/admin.e2e.ts', dependencies: ['app'] },
-		{ name: 'registration', testMatch: '**/registration.e2e.ts', dependencies: ['app', 'admin'] }
+		{ name: 'registration', testMatch: '**/registration.e2e.ts', dependencies: ['app', 'admin'] },
+		/*
+		 * The build that ships to the stores.
+		 *
+		 * Its own server, its own address, and no accounts anywhere — there is
+		 * no server to hold one. Everything above reaches isolated mode through
+		 * the `?isolated` switch, which is a hybrid: the shell is still rendered
+		 * by a server. This is the artefact itself.
+		 *
+		 * A project rather than a config of its own, because a suite somebody
+		 * has to remember to run separately is a suite that does not run. The
+		 * separate one never did on a push, and the app in the store was the
+		 * only build nothing tested.
+		 */
+		{
+			name: 'device',
+			testDir: 'e2e-isolated',
+			testIgnore: ['**/{.worktrees,.claude}/**', ...otherCheckouts],
+			use: { baseURL: 'http://localhost:4180' }
+		}
 	]
 });

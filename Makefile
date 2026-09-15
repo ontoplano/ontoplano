@@ -441,8 +441,8 @@ isolated:
 isolated-preview:
 	node scripts/serve-isolated.mjs
 
-## the isolated e2e, against the static build
-test-isolated:
+## the tests for the build that ships to the stores
+test-isolated: isolated
 	yarn playwright test -c playwright.isolated.config.ts
 
 # Onto the phone over adb.

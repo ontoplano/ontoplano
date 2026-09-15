@@ -14,6 +14,7 @@
  */
 import { fail } from '@sveltejs/kit';
 import { deleteAccount } from '$lib/services/account-data.js';
+import { ERASE_CONFIRMATION } from '$lib/danger.js';
 import { toActionFailure } from '$lib/http-errors.js';
 import type { IsolatedEvent } from '$lib/isolated/routes.js';
 
@@ -62,7 +63,15 @@ export const actions = {
 	 * ask for: what stands in its place is the word the dialog already makes
 	 * somebody type.
 	 */
-	async delete({ locals }: IsolatedEvent) {
+	async delete({ request, locals }: IsolatedEvent) {
+		const formData = await request.formData();
+		if (
+			String(formData.get('confirm') ?? '')
+				.trim()
+				.toUpperCase() !== ERASE_CONFIRMATION
+		)
+			return fail(400, { message: `Type “${ERASE_CONFIRMATION}” exactly to confirm` });
+
 		try {
 			deleteAccount(locals.user!.id);
 		} catch (e) {
