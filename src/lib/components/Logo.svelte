@@ -48,12 +48,24 @@
 		 * has to sit on a surface whose colour is somebody else's to choose.
 		 */
 		background = false,
+		/**
+		 * Say which copy this mark stands for, rather than which build drew it.
+		 *
+		 * Left alone it answers for the build it is in, which is right
+		 * everywhere the mark IS this app. The instance chooser is the one
+		 * place it is not: there the mark stands for the instance being
+		 * offered, and the page has to be able to drain it for the phone's own
+		 * copy and leave it in colour for one behind a server — in a single
+		 * build, with nothing about it moving as the answer changes.
+		 */
+		drained: saysDrained = undefined,
 		label = '',
 		class: klass = ''
 	}: {
 		size?: number;
 		fill?: boolean;
 		background?: boolean;
+		drained?: boolean;
 		label?: string;
 		class?: string;
 	} = $props();
@@ -69,7 +81,9 @@
 	 * somebody running both can tell at a glance which one they are writing
 	 * into.
 	 */
-	const drained = $derived(isIsolatedBuild() ? `saturate(${MARK_DRAINED})` : 'none');
+	const drained = $derived(
+		(saysDrained ?? isIsolatedBuild()) ? `saturate(${MARK_DRAINED})` : 'none'
+	);
 </script>
 
 <span
@@ -105,6 +119,14 @@
 		height: 100%;
 		display: block;
 		object-fit: contain;
+	}
+
+	/* The colour goes and comes back rather than cutting, for the one place
+	   the answer changes under the reader — the instance chooser. */
+	@media (prefers-reduced-motion: no-preference) {
+		.ontoplano-logo :global(img) {
+			transition: filter 200ms ease;
+		}
 	}
 
 	.ontoplano-logo :global(.mark-turn) {

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Icon from '$lib/components/Icon.svelte';
+	import Logo from '$lib/components/Logo.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
 	import {
@@ -246,37 +247,63 @@
 		{/each}
 	</ul>
 
-	{#if kind === 'connected'}
-		<label class="mt-2 block text-sm">
-			<!-- Without the scheme: the field below already holds the whole
+	<!--
+		The two answers' own field, in space kept for whichever is taller.
+
+		The address field is two lines and a box; the sentence in its place is
+		two lines; empty is neither — so without a floor here, choosing moved
+		the button you were about to press, and the mark under it with them.
+	-->
+	<div class="mt-2 min-h-24">
+		{#if kind === 'connected'}
+			<label class="block text-sm">
+				<!-- Without the scheme: the field below already holds the whole
 			     address, and saying it twice in full reads as a mistake. -->
-			<span class="text-gray-600">
-				Enter any instance URL — official instance is {OFFICIAL_INSTANCE.replace(
-					/^https?:\/\//,
-					''
-				)}
-			</span>
-			<OneLine
-				name="instance"
-				bind:value={address}
-				oninput={() => (untouched = false)}
-				class="input mt-1 w-full"
-				placeholder={OFFICIAL_INSTANCE}
-			/>
-		</label>
-	{:else if !canRunHere}
-		<p class="mt-2 text-sm text-amber-800">
-			This copy of the app cannot hold an instance itself — the one that can is the app built for
-			it.
-		</p>
-	{/if}
+				<span class="text-gray-600">
+					Enter any instance URL — official instance is {OFFICIAL_INSTANCE.replace(
+						/^https?:\/\//,
+						''
+					)}
+				</span>
+				<OneLine
+					name="instance"
+					bind:value={address}
+					oninput={() => (untouched = false)}
+					class="input mt-1 w-full"
+					placeholder={OFFICIAL_INSTANCE}
+				/>
+			</label>
+		{:else if !canRunHere}
+			<p class="text-sm text-amber-800">
+				This copy of the app cannot hold an instance itself — the one that can is the app built for
+				it.
+			</p>
+		{/if}
+	</div>
 
 	<button
-		class="btn btn-primary mt-5 w-full"
+		class="btn btn-primary mt-3 w-full"
 		type="button"
 		disabled={kind === 'phone' && !canRunHere}
 		onclick={go}
 	>
 		{chosen.proceed}
 	</button>
+
+	<!--
+		The mark, standing for whichever instance is being chosen.
+
+		The same drawing either way, and the colour is the answer: full for one
+		behind a server, drained for the copy this phone would carry — which is
+		what the device's own bar and its launcher icon already say, so somebody
+		meets the distinction here and recognises it later. Nothing moves when
+		the choice changes; only the colour does.
+	-->
+	<div class="mt-10 flex justify-center">
+		<Logo
+			size={72}
+			drained={kind === 'phone'}
+			label={kind === 'phone' ? 'The instance on this device' : 'An instance behind a server'}
+		/>
+	</div>
 </div>
