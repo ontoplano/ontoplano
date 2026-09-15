@@ -427,12 +427,28 @@ test('an endpoint that answers with no content is answered, not thrown', async (
  * down, not a second drawing that would drift from it the day the logo is
  * replaced.
  */
-test('the wheel’s mark is drained of colour on the device', async ({ page }) => {
+test('the main menu’s mark is drained of colour on the device', async ({ page }) => {
 	test.setTimeout(120_000);
 	await page.goto('/tasks/todo');
 
 	const handle = page.locator('.pie-handle').first();
 	await expect(handle).toBeVisible({ timeout: 60_000 });
+
+	/*
+	 * The handle first, because that is the menu when it is shut.
+	 *
+	 * Draining only the open wheel left the bar in full colour, so the app
+	 * looked like the ordinary one until you pressed and held it — and the mark
+	 * changed colour on its way up, which makes one object look like two.
+	 */
+	await expect
+		.poll(() =>
+			handle
+				.locator('img')
+				.first()
+				.evaluate((el) => getComputedStyle(el).filter)
+		)
+		.toMatch(/saturate/);
 
 	const box = await handle.boundingBox();
 	if (!box) throw new Error('the menu has no handle to press');
@@ -444,4 +460,23 @@ test('the wheel’s mark is drained of colour on the device', async ({ page }) =
 	await expect.poll(() => mark.evaluate((el) => getComputedStyle(el).filter)).toMatch(/saturate/);
 
 	await page.mouse.up();
+});
+
+/**
+ * And the screen that answers "what am I looking at" answers it.
+ *
+ * The drained mark is a glance; this is the sentence behind it. Somebody can
+ * be running this copy and one behind a server at the same time, so the
+ * Instance tab names which of the two this is before it says anything about
+ * versions.
+ */
+test('the Instance tab says this one is isolated', async ({ page }) => {
+	test.setTimeout(120_000);
+	await page.goto('/settings/instance');
+
+	await expect(page.getByText('What is running')).toBeVisible({ timeout: 60_000 });
+	// The word and the sentence under it are one `dd`, so this asks the row
+	// rather than the words: `exact` would want a node holding only "Isolated".
+	await expect(page.getByText(/^Isolated/)).toBeVisible();
+	await expect(page.getByText(/This device, on its own/)).toBeVisible();
 });

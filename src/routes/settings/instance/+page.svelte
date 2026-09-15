@@ -141,9 +141,32 @@
 
 	<Card
 		title="What is running"
-		description="Whether the last deploy is the thing answering right now."
+		description={onDevice
+			? 'Which ontoplano this is, and what it is running.'
+			: 'Whether the last deploy is the thing answering right now.'}
 	>
 		<dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+			<!--
+				Which of the two this is, said before anything else on the page.
+
+				Somebody can be running this copy and one behind a server at the
+				same time, and the two are the same app to look at — so the screen
+				that answers "what am I looking at" has to answer that part first.
+				The main menu's mark is drained here for the same reason; this is
+				the sentence behind it.
+			-->
+			{#if onDevice}
+				<div>
+					<dt class="text-sm text-gray-500">Instance</dt>
+					<dd class="text-sm font-semibold text-gray-900">
+						Isolated
+						<span class="block font-normal text-gray-500">
+							This device, on its own. No server, and nothing leaves it.
+						</span>
+					</dd>
+				</div>
+			{/if}
+
 			<div>
 				<dt class="text-sm text-gray-500">Version</dt>
 				<dd class="tabular text-lg font-semibold text-gray-900" data-testid="app-version">

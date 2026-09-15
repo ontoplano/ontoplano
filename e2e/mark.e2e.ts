@@ -11,11 +11,18 @@ import { visit } from './helpers/visit';
  * the one nearly everybody has — is untouched by it. A "this is the unusual
  * one" signal that also appears on the usual one says nothing at all.
  */
-test('the wheel’s mark keeps its colours in the served app', async ({ page }) => {
+test('the main menu’s mark keeps its colours in the served app', async ({ page }) => {
 	await register(page, `mark-${Date.now()}@test.invalid`);
 	await visit(page, '/');
 
 	const handle = page.getByRole('button', { name: 'Jump to a section' });
+	expect(
+		await handle
+			.locator('img')
+			.first()
+			.evaluate((el) => getComputedStyle(el).filter)
+	).toBe('none');
+
 	const box = await handle.boundingBox();
 	if (!box) throw new Error('the menu has no handle to press');
 

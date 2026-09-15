@@ -11,8 +11,9 @@
 	 * any size still lands where it is asked to.
 	 */
 	import mark from '$lib/logo/mark.png';
-	import { BRAND_GROUND } from '$lib/logo/brand';
+	import { BRAND_GROUND, MARK_DRAINED } from '$lib/logo/brand';
 	import { MARK_TURN_RADIUS } from '$lib/logo/mark-geometry';
+	import { isIsolatedBuild } from '$lib/isolated/mode';
 
 	/*
 	 * The medallion, as its own layer over the whole mark.
@@ -56,6 +57,19 @@
 		label?: string;
 		class?: string;
 	} = $props();
+
+	/*
+	 * Drained of colour on the device, in full colour everywhere else.
+	 *
+	 * The mark in the bar is the handle of the main menu and the mark in the
+	 * middle of the wheel is the same drawing: it rises out of one and lands in
+	 * the other, so colour on the button and none in the wheel is one object
+	 * changing colour in flight. Both are drained, and only in the build that
+	 * runs on the device — a copy behind a server is untouched by this, so
+	 * somebody running both can tell at a glance which one they are writing
+	 * into.
+	 */
+	const drained = $derived(isIsolatedBuild() ? `saturate(${MARK_DRAINED})` : 'none');
 </script>
 
 <span
@@ -69,8 +83,20 @@
 	aria-label={label || undefined}
 	aria-hidden={label ? undefined : 'true'}
 >
-	<img src={mark} alt="" width={fill ? undefined : size} height={fill ? undefined : size} />
-	<img class="mark-turn" src={mark} alt="" aria-hidden="true" style="clip-path: {TURN_CLIP}" />
+	<img
+		src={mark}
+		alt=""
+		width={fill ? undefined : size}
+		height={fill ? undefined : size}
+		style="filter: {drained}"
+	/>
+	<img
+		class="mark-turn"
+		src={mark}
+		alt=""
+		aria-hidden="true"
+		style="clip-path: {TURN_CLIP}; filter: {drained}"
+	/>
 </span>
 
 <style>

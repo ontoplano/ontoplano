@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.177.7 — 2026-09-15
+
+- **The device's main menu is drained of colour when it is shut, too.** Only
+  the open wheel had lost its colours, so the bar looked like the ordinary app
+  until you pressed and held it — and the mark changed colour on its way up,
+  which makes one object look like two.
+- **Settings → Instance says which one this is.** "Isolated — this device, on
+  its own. No server, and nothing leaves it," above the version. The mark is
+  the glance; this is the sentence behind it.
+
 ## 0.177.6 — 2026-09-15
 
 - **The instance on your device says so in its main menu.** Somebody can be
