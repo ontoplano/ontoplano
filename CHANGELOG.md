@@ -18,6 +18,14 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.7 — 2026-09-15
+
+- **Fixed: moving quickly between pages could log a network error.** The part
+  of the app that serves files while offline answered a request that had
+  already been abandoned by failing outright, rather than by saying the file
+  did not arrive. Nothing was broken on screen, but it was a real error in the
+  browser's log, and on a device it could do the same to a picture.
+
 ## 0.178.6 — 2026-09-15
 
 - **The mark answers the press on the instance chooser.** Choosing between the

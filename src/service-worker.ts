@@ -166,7 +166,16 @@ sw.addEventListener('fetch', (event) => {
 	// A picture on the device comes out of the device's own database.
 	const picture = __ISOLATED_BUILD__ && PICTURE_PATH.exec(url.pathname);
 	if (picture) {
-		event.respondWith(pictureFromAPage(Number(picture[1])));
+		/*
+		 * Asking a page for bytes can fail in ways this cannot foresee — the
+		 * page going away mid-answer, a channel that never replies — and a
+		 * rejected `respondWith` is a console error about a picture rather
+		 * than a picture that did not load. A 404 is the honest answer: the
+		 * bytes were not to be had.
+		 */
+		event.respondWith(
+			pictureFromAPage(Number(picture[1])).catch(() => new Response('Not found', { status: 404 }))
+		);
 		return;
 	}
 
@@ -196,7 +205,31 @@ sw.addEventListener('fetch', (event) => {
 	}
 
 	if (isAsset(url)) {
-		event.respondWith(caches.match(request).then((hit) => hit ?? fetch(request)));
+		/*
+		 * An asset: the cache, then the network — and never a rejection.
+		 *
+		 * `respondWith` takes a promise, and if that promise rejects the
+		 * browser calls the request a network error and logs one to the page's
+		 * console. A navigation aborts whatever was in flight, so walking
+		 * quickly between pages produced exactly that: "TypeError: Failed to
+		 * fetch", from a request nobody was waiting for any more. Every other
+		 * branch here already ends in a catch; this one did not, and it was
+		 * the only one that could be hit by a request the page had abandoned.
+		 *
+		 * A 504 rather than a rethrow: a fetch that never finished is not an
+		 * asset that is missing, and something asking for it later should see
+		 * a failure it can retry rather than a page-level error.
+		 */
+		event.respondWith(
+			caches
+				.match(request)
+				.then((hit) => hit ?? fetch(request))
+				.catch(
+					async () =>
+						(await caches.match(request)) ??
+						new Response('', { status: 504, statusText: 'Gone before it arrived' })
+				)
+		);
 		return;
 	}
 
