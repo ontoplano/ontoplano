@@ -8,6 +8,7 @@
 	import FormError from '$lib/components/FormError.svelte';
 	import type { ActionData, PageData } from './$types';
 	import Banner from '$lib/components/Banner.svelte';
+	import KeyReach from '$lib/components/KeyReach.svelte';
 	import { whyNot } from '$lib/capabilities';
 
 	/**
@@ -28,6 +29,23 @@
 	const assistantsWhyNot = $derived(whyNot(data.capabilities, 'assistants'));
 
 	let naming = $state(false);
+
+	/*
+	 * What the key being made is tied to, if anything.
+	 *
+	 * Held here rather than inside the control because the permissions below it
+	 * depend on the answer: a key tied to one notebook can only work on that
+	 * notebook's tasks, goals and notes, so every other row is a box that would
+	 * grant nothing. `reachable` is the set of grants still worth offering, and
+	 * it comes from the tool table by way of the server — nothing on this page
+	 * decides which rooms a confinement contains.
+	 */
+	let tiedTo = $state('');
+	let tiedId = $state('');
+	const reachable = $derived(
+		tiedTo ? (data.reach.find((choice) => choice.kind === tiedTo)?.scopes ?? []) : null
+	);
+	const reaches = (scope: string | null) => !scope || !reachable || reachable.includes(scope);
 	/*
 	 * The key, if one was just made, and a placeholder otherwise.
 	 *
@@ -73,8 +91,24 @@ anything in my account until I ask you to.
 Key: ${shown}`
 		},
 		{
+			/*
+			 * The plugin, first among the Claude Code answers.
+			 *
+			 * It asks for the address and the key when it installs and keeps the
+			 * key where that program keeps secrets — the system keychain, rather
+			 * than a header written into a configuration file. It also brings the
+			 * standing instructions an assistant otherwise needs told every
+			 * conversation: read before writing, never invent a goal.
+			 */
+			id: 'claude-plugin',
+			name: 'Claude Code (plugin)',
+			wrap: false,
+			note: 'Two lines inside Claude Code. It asks for this address and your key, and keeps the key in the system keychain.',
+			text: `/plugin marketplace add ontoplano/ontoplano\n/plugin install ontoplano@ontoplano\n\n# it will ask for:\n#   Your ontoplano:  ${data.origin}\n#   Key:             ${shown}`
+		},
+		{
 			id: 'claude-code',
-			name: 'Claude Code',
+			name: 'Claude Code (by hand)',
 			wrap: false,
 			note: 'Run this in a terminal. It writes the setting for you.',
 			text: `claude mcp add --transport http ontoplano ${data.origin}/api/mcp \\\n  --header "Authorization: Bearer ${shown}"`
@@ -236,6 +270,17 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 							this list, and nor is deleting. The Integrations tab has the form
 							with all of them.
 						-->
+							<!--
+							What it may work on, before what it may do.
+
+							The narrower answer is the one people actually want — "work on
+							this project with me" — and it is asked first because it decides
+							which of the boxes below mean anything at all.
+						-->
+							<div class="w-full max-w-md">
+								<KeyReach choices={data.reach} bind:kind={tiedTo} bind:id={tiedId} />
+							</div>
+
 							<fieldset class="w-full">
 								<legend class="eyebrow text-gray-600">What it may do</legend>
 								<p class="mt-1 mb-3 max-w-2xl text-xs leading-relaxed text-gray-500">
@@ -264,7 +309,15 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 										</thead>
 										<tbody class="divide-y divide-gray-200">
 											{#each data.permissions as row (row.subject)}
-												<tr>
+												<!--
+												A row a confinement cannot reach is drawn faint, not removed.
+
+												Taking it off the table would make the list jump about as
+												somebody changes their mind, and would hide the fact that the
+												narrowing is what put it out of reach. Faint and unticked says
+												the same thing and stays in place.
+											-->
+												<tr class={reaches(row.read ?? row.write) ? '' : 'opacity-40'}>
 													<td class="py-1.5 text-gray-700" title={row.says.join('\n')}
 														>{row.label}</td
 													>
@@ -276,13 +329,21 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 															question "can it write to this?" deserves the answer
 															"no, never" rather than no answer.
 														-->
-															{#if scope}
+															{#if scope && reaches(scope)}
 																<input
 																	type="checkbox"
 																	name="scopes"
 																	value={scope}
 																	checked
 																	aria-label="{row.label}: {i === 0 ? 'read' : 'write'}"
+																/>
+															{:else if scope}
+																<input
+																	type="checkbox"
+																	disabled
+																	aria-label="{row.label}: {i === 0
+																		? 'read'
+																		: 'write'} — outside what this key is tied to"
 																/>
 															{:else}
 																<input
@@ -343,7 +404,9 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 						{#if data.assistants.length > 0}
 							<p class="mt-3 max-w-2xl text-sm leading-relaxed text-gray-500">
 								You already have {data.assistants.length === 1
-									? `one, “${data.assistants[0].name}”`
+									? `one, “${data.assistants[0].name}”${
+											data.assistants[0].tiedTo ? `, tied to one ${data.assistants[0].tiedTo}` : ''
+										}`
 									: data.assistants.length}.
 								<a
 									href={resolve('/settings/integrations/connections')}

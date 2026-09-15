@@ -1390,6 +1390,18 @@ export const apiTokens = sqliteTable(
 		 */
 		plaintext: text('plaintext'),
 		scopes: text('scopes').notNull().default(''),
+		/*
+		 * The one thing this key may work on, where it is pinned to one.
+		 *
+		 * Scopes say what a key may do to the account; these two say which row
+		 * it may do it to — "this notebook, its tasks, its goals and its notes".
+		 * Null for an ordinary key, which reaches the whole account within its
+		 * scopes. The kind is a name from the table in `mcp/confinement.ts` and
+		 * never a string off a request; the id is resolved against what the
+		 * owner could list at the moment they made the key.
+		 */
+		confinedKind: text('confined_kind'),
+		confinedId: integer('confined_id'),
 		lastUsedAt: text('last_used_at'),
 		expiresAt: text('expires_at'),
 		revokedAt: text('revoked_at'),

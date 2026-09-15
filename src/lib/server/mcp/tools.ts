@@ -165,7 +165,6 @@ import { createExceptional } from '$lib/services/slots.js';
 import {
 	cancelOccurrence,
 	changeOccurrence,
-	occurrenceRow,
 	recordIdOf,
 	setOccurrenceStatus
 } from '$lib/services/instances.js';

@@ -21,6 +21,26 @@ data, and the picker shows the sentence.
 Grant the narrowest set that works. A token lives on a phone, in a config
 file, in somebody else's service — what it cannot read cannot leak.
 
+## Tying a key to one thing
+
+A scope is about the account: `tasks:write` is every to-do there is. The thing
+people usually want to hand an assistant is narrower than that — work on _this_
+project with me — so a key can also be tied to a single notebook. Such a key
+sees that notebook, the tasks and goals filed under it, and the notes written
+in it. Everything else in the account is not refused to it; it is not there.
+
+The narrowing is not a filter the tools apply. Each tool declares which of its
+arguments name a thing and what kind, and the id is resolved against the rows
+that key can list — which for a tied key is the contents of its one notebook.
+So a tool that would be about the account rather than a thing, `diary` or
+`goals`, is not offered to it at all, and the permissions it can still be
+granted are only the rooms its notebook reaches. Asking it about a different
+notebook is answered about its own: a refusal that depended on the other
+notebook existing would be a way to ask what the account has, one number at a
+time.
+
+Choose it where the key is made, above the permissions: **What it may work on**.
+
 One thing to know before granting a `:write` on its own: writing does **not**
 imply reading, and most changes name the thing they change by the id the
 matching read handed out. `tasks:write` alone can add a todo and cannot find

@@ -540,6 +540,13 @@
       "when": 1789444676252,
       "tag": "0076_newsletter_issues",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "6",
+      "when": 1789452548702,
+      "tag": "0077_token_confinement",
+      "breakpoints": true
     }
   ]
 }

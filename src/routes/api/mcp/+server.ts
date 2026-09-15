@@ -42,7 +42,9 @@ export const POST: RequestHandler = async (event) => {
 			ctx: buildCtx(token.userId),
 			scopes: token.scopes,
 			// The same call budget the REST API spends, keyed to this token.
-			tokenId: token.tokenId
+			tokenId: token.tokenId,
+			// And the one thing it may work on, where the key was made for one.
+			confinement: token.confinement ?? undefined
 		};
 
 		let body: unknown;

@@ -129,6 +129,15 @@ export type RefKind = keyof typeof KINDS;
  */
 export type Ref = { arg: string; kind: RefKind; subject?: boolean };
 
+/**
+ * Where to look for a thing of a given kind.
+ *
+ * The whole account by default. A key confined to one notebook passes a
+ * narrower one — see `confinement.ts` — and answers null for a kind that has
+ * no meaning inside it, which refuses rather than narrows.
+ */
+export type Reach = (kind: RefKind, ctx: Ctx) => { id: number }[] | null;
+
 /** Absent is not the same as wrong: an optional argument left out is fine. */
 function given(raw: unknown): boolean {
 	return raw !== undefined && raw !== null && raw !== '';
@@ -142,15 +151,22 @@ function given(raw: unknown): boolean {
  * way to ask whether a number exists, one number at a time, which is the
  * question the whole arrangement exists to refuse.
  */
-export function resolveRef(ctx: Ctx, ref: Ref, args: Record<string, unknown>): unknown | null {
+export function resolveRef(
+	ctx: Ctx,
+	ref: Ref,
+	args: Record<string, unknown>,
+	reach?: Reach
+): unknown | null {
 	const raw = args[ref.arg];
 	if (!given(raw)) return null;
 
 	const kind = KINDS[ref.kind];
 
 	// A block's id is a string with its kind on the front; every other kind
-	// counts, and a number that is not a whole number names nothing.
-	if (kind.find) {
+	// counts, and a number that is not a whole number names nothing. The
+	// dedicated finders are only ever reached by an unconfined caller: a
+	// confinement that does not contain the kind has already refused the call.
+	if (kind.find && !reach) {
 		const id = Number(raw);
 		try {
 			return kind.find(ctx, Number.isInteger(id) ? id : (raw as number)) ?? null;
@@ -162,7 +178,9 @@ export function resolveRef(ctx: Ctx, ref: Ref, args: Record<string, unknown>): u
 
 	const id = Number(raw);
 	if (!Number.isInteger(id)) return null;
-	return kind.rows(ctx).find((row) => row.id === id) ?? null;
+
+	const rows = reach ? reach(ref.kind, ctx) : kind.rows(ctx);
+	return rows?.find((row) => row.id === id) ?? null;
 }
 
 /**
@@ -175,7 +193,8 @@ export function resolveRef(ctx: Ctx, ref: Ref, args: Record<string, unknown>): u
 export function assertRefs(
 	ctx: Ctx,
 	refs: readonly Ref[] | undefined,
-	args: Record<string, unknown>
+	args: Record<string, unknown>,
+	reach?: Reach
 ): void {
 	for (const ref of refs ?? []) {
 		const raw = args[ref.arg];
@@ -186,7 +205,7 @@ export function assertRefs(
 		// is precisely the call that would otherwise go unnoticed.
 		const each = Array.isArray(raw) ? raw : [raw];
 		for (const one of each)
-			if (given(one) && resolveRef(ctx, ref, { [ref.arg]: one }) === null)
+			if (given(one) && resolveRef(ctx, ref, { [ref.arg]: one }, reach) === null)
 				throw new NotFoundError(KINDS[ref.kind].label);
 	}
 }

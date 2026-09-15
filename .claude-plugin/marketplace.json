@@ -1,0 +1,21 @@
+{
+	"name": "ontoplano",
+	"owner": {
+		"name": "Ontoplano",
+		"url": "https://ontoplano.com"
+	},
+	"plugins": [
+		{
+			"name": "ontoplano",
+			"displayName": "Ontoplano",
+			"description": "Your week, your to-dos, your goals, your notes and your shopping list, in the assistant you already use.",
+			"category": "Productivity",
+			"version": "0.1.0",
+			"source": "./plugin",
+			"keywords": ["planner", "todo", "notes", "habits", "life-management"],
+			"author": { "name": "Ontoplano", "url": "https://ontoplano.com" },
+			"docs": "https://ontoplano.com/docs/assistants",
+			"repository": "https://github.com/ontoplano/ontoplano"
+		}
+	]
+}

@@ -18,6 +18,22 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.177.3 — 2026-09-15
+
+- **A key for an assistant can be tied to one notebook.** Permissions used to
+  be about the whole account — "your to-do list" meant every to-do there is —
+  and the thing most people want to hand an assistant is narrower: work on this
+  project with me. A key made for one notebook reaches that notebook, the tasks
+  and goals filed under it and the notes written in it, and nothing else in the
+  account exists to it. The permissions it cannot use are greyed out as you
+  choose, because a box that grants nothing is worse than no box.
+- **The assistant is a plugin now, for Claude Code.** Two lines to install, and
+  it asks for the address and the key rather than having a header pasted into a
+  configuration file — the key goes to the system keychain. It brings `/today`,
+  `/week` and `/capture`, and the standing instructions that otherwise have to
+  be repeated every conversation: read before writing, never write down a goal
+  somebody did not commit to.
+
 ## 0.177.2 — 2026-09-15
 
 - **An assistant can no longer be handed a number that is not yours.** Seventy

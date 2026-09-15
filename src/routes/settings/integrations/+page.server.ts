@@ -8,6 +8,7 @@ import { toActionFailure } from '$lib/http-errors';
 import { listAssistantCalls, putBack } from '$lib/server/services/assistant-log';
 import { SCOPES, createToken, isCalendarLink, listTokens } from '$lib/server/services/tokens';
 import { capabilities } from '$lib/server/settings';
+import { confinementChoices, describeConfinement } from '$lib/server/mcp/confinement';
 
 /** What each family of permissions is called, in the words the app uses. */
 const SUBJECT_LABELS: Record<string, string> = {
@@ -82,7 +83,12 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		 * and an instance living on a phone is not somewhere anything can reach.
 		 */
 		capabilities: capabilities(),
-		assistants: assistants.map((t) => ({ id: t.id, name: t.name, createdAt: t.createdAt })),
+		assistants: assistants.map((t) => ({
+			id: t.id,
+			name: t.name,
+			createdAt: t.createdAt,
+			tiedTo: describeConfinement(ctx, t.confinement)
+		})),
 		/*
 		 * What an assistant may do, as a grid rather than a column of sentences.
 		 *
@@ -99,6 +105,16 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		 * the one mistake this screen must not make.
 		 */
 		permissions: assistantGrid(),
+		/*
+		 * The things a key can be tied to, and what each still grants.
+		 *
+		 * A key confined to one notebook can only call the tools that name
+		 * something inside it, so the rooms it cannot reach are boxes that would
+		 * grant nothing. The page dims them rather than silently accepting them:
+		 * a permission screen that offers a grant with no effect teaches people
+		 * the screen is decoration.
+		 */
+		reach: confinementChoices(ctx),
 		assistantCalls: listAssistantCalls(ctx, { limit: 20 })
 	};
 };
@@ -141,7 +157,11 @@ export const actions: Actions = {
 		try {
 			const token = createToken(ctx, {
 				name: String(form.get('label') ?? '').trim() || 'AI assistant',
-				scopes
+				scopes,
+				// Checked against the table in `mcp/confinement.ts` and against
+				// what this account can list — never trusted as posted.
+				confinedKind: form.get('confinedKind'),
+				confinedId: form.get('confinedId')
 			});
 			// The secret is returned exactly once, here. It is not stored and
 			// cannot be shown again.

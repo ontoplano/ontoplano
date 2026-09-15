@@ -18,7 +18,8 @@ import type { Ctx } from '$lib/services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 import { ForbiddenError, ServiceError } from '$lib/services/errors.js';
 import { TOOLS, TOOLS_BY_NAME, type Tool } from './tools.js';
-import { assertRefs, resolveRef, type Ref } from './refs.js';
+import { assertRefs, resolveRef, type Reach, type Ref } from './refs.js';
+import { confine, reachOf, withinConfinement, type Confinement } from './confinement.js';
 import { changed, type Room } from '../live.js';
 import { spendCallBudget } from '../api/auth.js';
 import { recordAssistantCall } from '../services/assistant-log.js';
@@ -86,6 +87,15 @@ export type Caller = {
 	 * Absent in unit tests, which are not the thing the budget is about.
 	 */
 	tokenId?: number;
+	/**
+	 * The one thing this key may work on, where it has one.
+	 *
+	 * A confined key sees a smaller surface and a smaller account: tools that
+	 * are about the whole of it are not offered and are refused if called
+	 * anyway, and the rows a kind resolves against are the ones inside the
+	 * confinement. See `confinement.ts`.
+	 */
+	confinement?: Confinement;
 };
 
 function assertScope(caller: Caller, scope: Scope): void {
@@ -108,6 +118,9 @@ function assertAllowed(caller: Caller, tool: Tool): void {
 function offered(caller: Caller, tool: Tool): boolean {
 	if (!caller.scopes.includes(tool.scope)) return false;
 	if (tool.destroys && !caller.scopes.includes('destructive')) return false;
+	// A confined key is not shown what it cannot call. A model offered a tool
+	// that always refuses spends its turn discovering that.
+	if (caller.confinement && !withinConfinement(caller.confinement, tool)) return false;
 	return true;
 }
 
@@ -189,9 +202,9 @@ function toolResult(value: unknown, mutation?: { before: unknown; after: unknown
  * this is bookkeeping around the write, and bookkeeping that breaks a write is
  * worse than a gap in the books.
  */
-function peek(tool: Tool, ctx: Ctx, args: Record<string, unknown>): unknown {
+function peek(tool: Tool, ctx: Ctx, args: Record<string, unknown>, reach?: Reach): unknown {
 	const about = tool.refs?.find((ref) => ref.subject) ?? tool.refs?.find((ref) => ref.arg === 'id');
-	const read = tool.subject ?? (about ? subjectOfRef(about) : null);
+	const read = tool.subject ?? (about ? subjectOfRef(about, reach) : null);
 	if (!read) return null;
 	try {
 		return read(ctx, args) ?? null;
@@ -201,9 +214,9 @@ function peek(tool: Tool, ctx: Ctx, args: Record<string, unknown>): unknown {
 }
 
 const subjectOfRef =
-	(ref: Ref) =>
+	(ref: Ref, reach?: Reach) =>
 	(ctx: Ctx, args: Record<string, unknown>): unknown =>
-		resolveRef(ctx, ref, args);
+		resolveRef(ctx, ref, args, reach);
 
 /**
  * …and a tool's failure, which is a *result* rather than a protocol error.
@@ -280,8 +293,20 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 			if (!tool) return fail(id, INVALID_PARAMS, `No tool called \`${name}\`.`);
 
 			const args = (params.arguments ?? {}) as Record<string, unknown>;
+			const reach = caller.confinement ? reachOf(caller.confinement) : undefined;
 			try {
 				assertAllowed(caller, tool);
+
+				/*
+				 * A key confined to one thing works on that thing.
+				 *
+				 * Refuses a tool that is about the account rather than a thing,
+				 * and pins the argument naming the confinement — so a call that
+				 * asks for another notebook is answered about this one rather
+				 * than refused, and there is no way to ask which other notebooks
+				 * exist by watching the refusals.
+				 */
+				if (caller.confinement) confine(caller.confinement, tool.refs, args);
 
 				/*
 				 * Every id it was handed belongs to whoever is calling.
@@ -294,7 +319,7 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 				 * service happened to write. Done at the one point every call goes
 				 * through, so no tool can be written that skips it.
 				 */
-				assertRefs(caller.ctx, tool.refs, args);
+				assertRefs(caller.ctx, tool.refs, args, reach);
 				/*
 				 * The same budget a plugin spends on the REST API: reads are cheap
 				 * and writes grow the database, so "make a thousand goals" is told
@@ -314,11 +339,11 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 				 * A create has no before and a delete no after; both read as null,
 				 * which is the honest answer.
 				 */
-				const before = tool.writes ? peek(tool, caller.ctx, args) : undefined;
+				const before = tool.writes ? peek(tool, caller.ctx, args, reach) : undefined;
 				const value = tool.run(caller.ctx, args);
 				const answer = toolResult(
 					value,
-					tool.writes ? { before, after: peek(tool, caller.ctx, args) } : undefined
+					tool.writes ? { before, after: peek(tool, caller.ctx, args, reach) } : undefined
 				);
 
 				/*

@@ -1,0 +1,26 @@
+{
+	"name": "ontoplano",
+	"displayName": "Ontoplano",
+	"description": "Your week, your to-dos, your goals, your notes and your shopping list, in the assistant you already use.",
+	"version": "0.1.0",
+	"homepage": "https://ontoplano.com",
+	"repository": "https://github.com/ontoplano/ontoplano",
+	"license": "AGPL-3.0-or-later",
+	"keywords": ["planner", "todo", "notes", "habits", "life-management"],
+	"userConfig": {
+		"url": {
+			"type": "string",
+			"title": "Your ontoplano",
+			"description": "The address you sign in at. https://app.ontoplano.com unless you run your own.",
+			"default": "https://app.ontoplano.com",
+			"required": true
+		},
+		"key": {
+			"type": "string",
+			"title": "Key",
+			"description": "Settings → Integrations → AI assistant → Make a key. It is shown once.",
+			"sensitive": true,
+			"required": true
+		}
+	}
+}

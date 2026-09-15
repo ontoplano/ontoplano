@@ -15,7 +15,7 @@ exist.
 | [`activities`](#activities)                       | 9       | yes               |
 | [`album_media`](#album_media)                     | 6       | yes               |
 | [`albums`](#albums)                               | 6       | yes               |
-| [`api_tokens`](#api_tokens)                       | 12      | yes               |
+| [`api_tokens`](#api_tokens)                       | 14      | yes               |
 | [`assistant_calls`](#assistant_calls)             | 9       | yes               |
 | [`audit_events`](#audit_events)                   | 7       | yes               |
 | [`bill_payments`](#bill_payments)                 | 11      | yes               |
@@ -162,20 +162,22 @@ Indexes:
 
 ## api_tokens
 
-| Column         | Type    | Null     | Default | Notes             |
-| -------------- | ------- | -------- | ------- | ----------------- |
-| `id`           | integer | not null | —       | primary key, auto |
-| `user_id`      | text    | not null | —       | → `user.id`       |
-| `name`         | text    | not null | —       | —                 |
-| `token_hash`   | text    | not null | —       | —                 |
-| `prefix`       | text    | not null | —       | —                 |
-| `plaintext`    | text    | null     | —       | —                 |
-| `scopes`       | text    | not null | `''`    | —                 |
-| `last_used_at` | text    | null     | —       | —                 |
-| `expires_at`   | text    | null     | —       | —                 |
-| `revoked_at`   | text    | null     | —       | —                 |
-| `created_at`   | text    | not null | —       | —                 |
-| `updated_at`   | text    | not null | —       | —                 |
+| Column          | Type    | Null     | Default | Notes             |
+| --------------- | ------- | -------- | ------- | ----------------- |
+| `id`            | integer | not null | —       | primary key, auto |
+| `user_id`       | text    | not null | —       | → `user.id`       |
+| `name`          | text    | not null | —       | —                 |
+| `token_hash`    | text    | not null | —       | —                 |
+| `prefix`        | text    | not null | —       | —                 |
+| `plaintext`     | text    | null     | —       | —                 |
+| `scopes`        | text    | not null | `''`    | —                 |
+| `confined_kind` | text    | null     | —       | —                 |
+| `confined_id`   | integer | null     | —       | —                 |
+| `last_used_at`  | text    | null     | —       | —                 |
+| `expires_at`    | text    | null     | —       | —                 |
+| `revoked_at`    | text    | null     | —       | —                 |
+| `created_at`    | text    | not null | —       | —                 |
+| `updated_at`    | text    | not null | —       | —                 |
 
 Indexes:
 

@@ -247,7 +247,7 @@ describe("somebody else's id", () => {
 		for (const tool of naming) {
 			const before = snapshot();
 
-			let answered = '';
+			let answered: string;
 			try {
 				answered = JSON.stringify(await callAsOwner(tool.name, argsFor(tool)));
 			} catch (e) {

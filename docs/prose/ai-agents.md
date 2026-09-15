@@ -51,7 +51,28 @@ key sits in that file rather than in a transcript you might later share.
 Each client keeps its configuration somewhere different, and in a different
 shape.
 
-**Claude Code** — one command, and it writes the config for you:
+**Claude Code, as a plugin** — the shortest path, and the one that brings more
+than a connection:
+
+```sh
+/plugin marketplace add ontoplano/ontoplano
+/plugin install ontoplano@ontoplano
+```
+
+It asks for two things when it installs: the address of your ontoplano and a
+key. The key is stored the way Claude Code stores secrets — the system keychain
+where there is one — rather than written into a file in a repository. After
+that there is no `--header` to remember and nothing to paste again.
+
+What it adds beyond the server itself: `/today`, `/week` and `/capture`, and a
+short set of standing instructions — read before writing, never invent a goal
+somebody did not commit to, say what you changed. Those are the things that
+otherwise have to be said in every conversation.
+
+Self-hosting: the plugin's address field is yours to set, so it works against
+your own instance with no change.
+
+**Claude Code, by hand** — one command, and it writes the config for you:
 
 ```sh
 claude mcp add --transport http ontoplano https://app.ontoplano.com/api/mcp \

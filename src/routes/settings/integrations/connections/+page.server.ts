@@ -21,6 +21,7 @@ import {
 	revokeToken
 } from '$lib/server/services/tokens';
 import { listAssistantCalls, putBack } from '$lib/server/services/assistant-log';
+import { confinementChoices, describeConfinement } from '$lib/server/mcp/confinement';
 import { ASSISTANT_PUSH_KEY, catchUp } from '$lib/server/services/assistant-notify';
 import { getUserSetting, setUserSetting } from '$lib/server/settings';
 import {
@@ -51,6 +52,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		 */
 		tokens: tokens.map((t) => ({
 			...t,
+			/** The one thing it may work on, named — or null for the account. */
+			tiedTo: describeConfinement(ctx, t.confinement),
 			// Assembled here rather than in the page: only the server knows the
 			// origin this instance answers on.
 			feedUrl: t.plaintext ? `${url.origin}/calendar/${t.plaintext}` : null
@@ -103,6 +106,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		assistantCalls: listAssistantCalls(ctx, { limit: 30 }),
 		// Absent means on: the point of the thing is knowing.
 		notifyAssistant: (getUserSetting(ctx.userId, ASSISTANT_PUSH_KEY) ?? 'on') !== 'off',
+		/** What a token can be tied to, same as the assistant page offers. */
+		reach: confinementChoices(ctx),
 		origin: url.origin
 	};
 };
@@ -116,7 +121,11 @@ export const actions: Actions = {
 			const token = createToken(ctx, {
 				name: formData.get('label'),
 				scopes: formData.getAll('scopes'),
-				expiresInDays: formData.get('expiresInDays')
+				expiresInDays: formData.get('expiresInDays'),
+				// Checked against the confinement table and against what this
+				// account can list — never trusted as posted.
+				confinedKind: formData.get('confinedKind'),
+				confinedId: formData.get('confinedId')
 			});
 			// The plaintext is returned exactly once, here. It is not stored and
 			// cannot be shown again.

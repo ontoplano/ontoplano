@@ -5,7 +5,14 @@ import { db } from '$lib/db/index.js';
 import { apiTokens } from '$lib/db/schema.js';
 import type { Ctx } from '$lib/services/ctx.js';
 import { stamps } from '$lib/services/time.js';
-import { ForbiddenError, NotFoundError, UnauthorizedError } from '$lib/services/errors.js';
+import {
+	ForbiddenError,
+	NotFoundError,
+	UnauthorizedError,
+	ValidationError
+} from '$lib/services/errors.js';
+import { CONFINEMENTS, isConfinementKind, type Confinement } from '$lib/server/mcp/confinement.js';
+import { KINDS } from '$lib/server/mcp/refs.js';
 import { assertWithinLimit } from './subscriptions.js';
 import { num, str } from '$lib/services/validate.js';
 
@@ -173,6 +180,8 @@ export interface CreatedToken {
 	plaintext: string;
 	prefix: string;
 	scopes: Scope[];
+	/** The one thing it may work on, or null for the whole account. */
+	confinement: Confinement | null;
 }
 
 /**
@@ -193,7 +202,13 @@ export function isCalendarLink(scopes: readonly string[]): boolean {
 
 export function createToken(
 	ctx: Ctx,
-	input: { name: unknown; scopes: unknown; expiresInDays?: unknown }
+	input: {
+		name: unknown;
+		scopes: unknown;
+		expiresInDays?: unknown;
+		confinedKind?: unknown;
+		confinedId?: unknown;
+	}
 ): CreatedToken {
 	assertWithinLimit(ctx, 'apiTokens');
 
@@ -247,6 +262,8 @@ export function createToken(
 		expiresAt = new Date(ctx.now.getTime() + days * 86400_000).toISOString();
 	}
 
+	const confinement = confinementFrom(ctx, input);
+
 	const plaintext = TOKEN_PREFIX + randomBytes(32).toString('base64url');
 	const nowIso = ctx.now.toISOString();
 
@@ -263,6 +280,8 @@ export function createToken(
 			plaintext: isCalendarLink(scopes) ? plaintext : null,
 			prefix: plaintext.slice(0, PREFIX_DISPLAY_LENGTH),
 			scopes: scopes.join(','),
+			confinedKind: confinement?.kind ?? null,
+			confinedId: confinement?.id ?? null,
 			expiresAt,
 			createdAt: nowIso,
 			updatedAt: nowIso
@@ -270,7 +289,33 @@ export function createToken(
 		.returning({ id: apiTokens.id, prefix: apiTokens.prefix })
 		.get();
 
-	return { id: row.id, name, plaintext, prefix: row.prefix, scopes };
+	return { id: row.id, name, plaintext, prefix: row.prefix, scopes, confinement };
+}
+
+/**
+ * The one thing a key may work on, if the form asked for one.
+ *
+ * Two things are checked and neither is taken on trust. The kind has to name a
+ * row in the confinement table — a string off a request never becomes a kind,
+ * which is what stops a crafted form from inventing a reach. And the id has to
+ * be one this account can list *now*, resolved through the same function the
+ * assistant will resolve it through later, so a key cannot be minted against
+ * somebody else's notebook.
+ */
+function confinementFrom(
+	ctx: Ctx,
+	input: { confinedKind?: unknown; confinedId?: unknown }
+): Confinement | null {
+	const kind = input.confinedKind;
+	if (kind === undefined || kind === null || kind === '') return null;
+	if (!isConfinementKind(kind))
+		throw new ValidationError('That is not something a key can be tied to.');
+
+	const id = num(input.confinedId, 'Which one', { int: true, min: 1 });
+	const rows = KINDS[CONFINEMENTS[kind].kind].rows(ctx);
+	if (!rows.some((row) => row.id === id)) throw new NotFoundError(CONFINEMENTS[kind].kind);
+
+	return { kind, id };
 }
 
 export interface TokenSummary {
@@ -280,6 +325,8 @@ export interface TokenSummary {
 	scopes: Scope[];
 	/** The whole token, for a calendar link and for nothing else. */
 	plaintext: string | null;
+	/** The one thing it may work on, or null for the whole account. */
+	confinement: Confinement | null;
 	lastUsedAt: string | null;
 	expiresAt: string | null;
 	createdAt: string;
@@ -298,6 +345,7 @@ export function listTokens(ctx: Ctx): TokenSummary[] {
 			prefix: t.prefix,
 			scopes: t.scopes.split(',').filter(Boolean) as Scope[],
 			plaintext: t.plaintext,
+			confinement: confinementOf(t.confinedKind, t.confinedId),
 			lastUsedAt: t.lastUsedAt,
 			expiresAt: t.expiresAt,
 			createdAt: t.createdAt
@@ -317,6 +365,22 @@ export interface AuthenticatedToken {
 	userId: string;
 	tokenId: number;
 	scopes: Scope[];
+	/** The one thing this key may work on, or null for the whole account. */
+	confinement: Confinement | null;
+}
+
+/**
+ * A stored confinement, read back as one — or null.
+ *
+ * Null when either half is missing and null when the kind is no longer a kind,
+ * which is the safe direction only because the caller treats "confined" as the
+ * narrower case: a key that was tied to something is refused everything the
+ * table no longer describes, rather than quietly widening to the account. See
+ * `confine`, which throws on a kind it does not recognise.
+ */
+function confinementOf(kind: string | null, id: number | null): Confinement | null {
+	if (!kind || id === null) return null;
+	return { kind, id };
 }
 
 /**
@@ -356,7 +420,8 @@ export function authenticateToken(plaintext: string, now: Date): AuthenticatedTo
 	return {
 		userId: row.userId,
 		tokenId: row.id,
-		scopes: row.scopes.split(',').filter(Boolean) as Scope[]
+		scopes: row.scopes.split(',').filter(Boolean) as Scope[],
+		confinement: confinementOf(row.confinedKind, row.confinedId)
 	};
 }
 

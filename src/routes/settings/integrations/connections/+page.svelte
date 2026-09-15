@@ -9,6 +9,7 @@
 	import Card from '$lib/components/Card.svelte';
 	import { resolve } from '$app/paths';
 	import Field from '$lib/components/Field.svelte';
+	import KeyReach from '$lib/components/KeyReach.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
@@ -372,6 +373,12 @@ Token: ${token}`;
 						/>
 					</Field>
 
+					<!-- What it may work on, before what it may do: the narrower answer
+					     is the one that decides whether the boxes below mean anything. -->
+					<div class="col-span-12">
+						<KeyReach choices={data.reach} />
+					</div>
+
 					<fieldset class="col-span-12">
 						<legend class="eyebrow text-gray-600">What this token may do</legend>
 						<p class="mt-1 mb-2 text-xs text-gray-500">
@@ -508,6 +515,14 @@ Token: ${token}`;
 								</p>
 							{:else}
 								<p class="mt-0.5 font-mono text-xs text-gray-500">{token.prefix}…</p>
+							{/if}
+							{#if token.tiedTo}
+								<!-- A tied key is the interesting case in this list: it says
+								     less about what the key does than about how little of the
+								     account it can see. -->
+								<p class="mt-1 text-xs text-gray-700">
+									Tied to one <strong class="font-semibold">{token.tiedTo}</strong>
+								</p>
 							{/if}
 							<p class="mt-1 text-xs text-gray-500">
 								{token.scopes.map(scopeSentence).join(' · ') || 'no scopes'}

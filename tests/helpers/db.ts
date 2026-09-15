@@ -10,7 +10,7 @@
  * this is called at the top of a test file and the services are imported after.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import Database from 'better-sqlite3';
@@ -56,6 +56,19 @@ export function makeDatabase(): TestDatabase {
 	});
 
 	process.env.DATABASE_URL = path;
+
+	/*
+	 * And a config directory of this file's own.
+	 *
+	 * `config.toml` is one file for the whole instance, and several tests write
+	 * to it — registration mode above all. Vitest runs files in parallel, so a
+	 * single directory for the run meant one file's `setRegistrationMode('open')`
+	 * could be overwritten by another file's between two lines of the same test,
+	 * which is a failure that looks like the code and is the harness. One
+	 * directory per file makes the config as private as the database already is.
+	 */
+	process.env.ONTOPLANO_CONFIG_DIR = join(dir, 'config');
+	mkdirSync(process.env.ONTOPLANO_CONFIG_DIR, { recursive: true });
 
 	// The services read the portable binding in $lib/db, not the environment,
 	// so give them this file directly — the same move the isolated instance's
