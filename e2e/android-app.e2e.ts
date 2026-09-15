@@ -218,7 +218,7 @@ test.describe('an instance shown inside the app', () => {
 		// What it says is what is true: the phone asks this instance and rings
 		// for it, because an instance cannot wake a phone.
 		await expect(section.getByText(/ring on this phone/)).toBeVisible();
-		await expect(section.getByText(/cannot wake a phone/)).toBeVisible();
+		await expect(section.getByText(/no push in here/)).toBeVisible();
 
 		// And not a word about a permission it is in no position to ask about.
 		await expect(section.getByText(/Android said no/)).toHaveCount(0);
