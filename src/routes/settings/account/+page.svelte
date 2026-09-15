@@ -581,7 +581,7 @@
 		</p>
 	</Card>
 
-	{#if data.nativeApp}
+	{#if inPhoneApp()}
 		<!--
 			The way out of the instance, not out of the account.
 
@@ -590,18 +590,34 @@
 			icon's long-press menu — an affordance nobody has ever gone looking
 			for. It lands here, beside sign-out, because leaving a server and
 			leaving an account are the two things somebody comes to this page to
-			do. Only in the app: `ontoplano://instance` is a native screen, and in
-			a browser the link opens nothing at all.
+			do. Only in the app, where there is another instance to go to.
+
+			It goes to the copy of the app on the phone, never to `/instance` on
+			the server being left — see `askAgainOnThisPhone`. This used to be
+			`ontoplano://instance`, a native screen from before the chooser was a
+			page; there is no such scheme registered and the web view answered
+			with "unknown url scheme".
+
+			`inPhoneApp()` rather than the cookie the server sets: the copy that
+			runs on the device sets no such cookie, and leaving *it* — to try a
+			server, or to come back to one — is the same act from the same place.
+			There used to be a second link saying this under Sign out, which is
+			where it lived while this one was broken.
 		-->
 		<Card title="This instance">
 			{#snippet actions()}
-				<!-- eslint-disable svelte/no-navigation-without-resolve -- an app scheme, not a route -->
-				<a href="ontoplano://instance" class="btn btn-sm">Switch instance</a>
+				<!-- eslint-disable svelte/no-navigation-without-resolve -- another origin, not a route -->
+				<a href={askAgainOnThisPhone()} class="btn btn-sm">Switch instance</a>
 				<!-- eslint-enable svelte/no-navigation-without-resolve -->
 			{/snippet}
 			<p class="text-sm text-gray-500">
-				This app is open on <strong class="text-gray-700">{data.host}</strong>. Switching points it
-				at another one.
+				{#if onDevice}
+					This app is open on <strong class="text-gray-700">its own copy on this device</strong>.
+					Switching points it at a server instead.
+				{:else}
+					This app is open on <strong class="text-gray-700">{data.host}</strong>. Switching points
+					it at another one.
+				{/if}
 			</p>
 		</Card>
 	{/if}
@@ -619,22 +635,6 @@
 				</form>
 			{/snippet}
 			<p class="text-sm text-gray-500">This device only. The sessions above list the others.</p>
-			<!--
-				And the other reason somebody opens this card in the app: not to leave
-				the account, but to leave the instance. Signing out lands on that
-				instance's sign-in screen, which is the wrong place to discover you
-				wanted a different ontoplano.
-			-->
-			{#if inPhoneApp()}
-				<p class="mt-2 text-sm">
-					<!-- Another origin entirely — the copy of the app on the phone —
-					     which is not a route this app can resolve. -->
-					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-					<a href={askAgainOnThisPhone()} class="font-medium text-gray-900 underline">
-						Use a different ontoplano
-					</a>
-				</p>
-			{/if}
 		</Card>
 	{/if}
 

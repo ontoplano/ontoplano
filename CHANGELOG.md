@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.177.9 — 2026-09-15
+
+- **Fixed: "Switch instance" in the phone app opened nothing.** It pointed at
+  `ontoplano://instance`, a native screen from before the chooser was a page,
+  and the web view answered "unknown url scheme". It goes to the chooser on the
+  copy of the app the phone carries — and it is one link now, not two saying
+  the same thing in two places on the same screen.
+- **It is offered on the device's own instance too**, where switching means
+  going to a server rather than coming back from one.
+
 ## 0.177.8 — 2026-09-15
 
 - **Two people building the same commit now write the same launcher icons.**
