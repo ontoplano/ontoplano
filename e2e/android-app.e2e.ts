@@ -375,3 +375,46 @@ test.describe('the mark on the chooser', () => {
 		expect(Date.now() - at, 'it left before the mark had swelled').toBeGreaterThan(300);
 	});
 });
+
+/**
+ * What the reminders page says to a phone that is already ringing.
+ *
+ * The instance cannot ask the phone anything — the shell's plugins reach its
+ * own origin and no further — so the page said, to every phone, that reminders
+ * from here "arrive only while ontoplano is open". That was true before the
+ * phone could ring for a served instance at all, and a flat contradiction of
+ * the Preferences screen ever since: somebody set it up there, came here, and
+ * was told it does not work.
+ *
+ * The instance minted the key, so the instance knows. This is that answer.
+ */
+test.describe('reminders, inside the app', () => {
+	test.use({ userAgent: `Mozilla/5.0 (Linux; Android 14) Mobile ${'OntoplanoApp'}/0.1.0` });
+
+	test('says they ring with the app closed once this phone has a key', async ({ page }) => {
+		await register(page, testEmail('rings-here'));
+
+		// Nothing set up yet: it must not promise what is not arranged, and the
+		// way to arrange it is a press rather than a paragraph.
+		await visit(page, '/reminders');
+		await expect(page.getByText(/not set up to ring for reminders from here/)).toBeVisible();
+		await expect(page.getByRole('link', { name: 'Set it up' })).toBeVisible();
+		await expect(page.getByText(/arrive only while ontoplano is open/)).toHaveCount(0);
+
+		// The key the phone's handshake asks for, made the way it makes it.
+		const made = await page.request.post('/settings/integrations?/ringOnThisPhone', {
+			headers: {
+				Origin: 'http://localhost:4173',
+				'x-sveltekit-action': 'true',
+				'content-type': 'application/x-www-form-urlencoded'
+			},
+			data: ''
+		});
+		expect(made.ok(), await made.text()).toBeTruthy();
+
+		// Now it is true, and the page says the true thing rather than warning.
+		await visit(page, '/reminders');
+		await expect(page.getByText(/ring on this phone, with ontoplano closed/)).toBeVisible();
+		await expect(page.getByText(/not set up to ring/)).toHaveCount(0);
+	});
+});

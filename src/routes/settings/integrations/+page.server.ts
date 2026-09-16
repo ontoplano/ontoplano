@@ -7,6 +7,7 @@ import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/http-errors';
 import { listAssistantCalls, putBack } from '$lib/server/services/assistant-log';
 import {
+	RINGER_TOKEN_NAME,
 	SCOPES,
 	createToken,
 	isCalendarLink,
@@ -125,8 +126,10 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	};
 };
 
-/** The name the phone's own key wears, so making a second one replaces it. */
-const RINGER_TOKEN = 'This phone’s reminders';
+/** The name the phone's own key wears, so making a second one replaces it.
+ *  Shared with the reminders page, which reads it to know whether this phone
+ *  is set up to ring at all — see `services/tokens.ts`. */
+const RINGER_TOKEN = RINGER_TOKEN_NAME;
 
 export const actions: Actions = {
 	/*

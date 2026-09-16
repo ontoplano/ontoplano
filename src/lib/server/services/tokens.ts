@@ -28,6 +28,17 @@ import { num, str } from '$lib/services/validate.js';
  * to a string of jargon is not informed; the key is for the developer and the
  * docs, the sentence is for the owner of the data.
  */
+/**
+ * The name the phone's own ringing key wears.
+ *
+ * Two pages need it and neither owns it: Integrations mints one under this
+ * name (and revokes the last, so a phone somebody no longer has stops
+ * working), and the reminders page asks whether one exists to know whether
+ * this phone is ringing at all. It was a `const` in the minting page, which
+ * made "is it set up?" answerable only by the page that set it up.
+ */
+export const RINGER_TOKEN_NAME = 'This phone\u2019s reminders';
+
 export const SCOPES = {
 	'streams:write': 'Send readings into your data streams, and create new streams',
 	'streams:read': 'Read everything your data streams have ever recorded',

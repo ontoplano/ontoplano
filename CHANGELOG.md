@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.9 — 2026-09-16
+
+- **Fixed: the reminders page said your reminders only arrive while the app is
+  open.** They ring with it closed, and have since the phone learned to set
+  Android's alarms for an instance — Preferences said so on the same phone, at
+  the same moment. The page could not ask the phone anything, so it assumed the
+  worst; it asks the instance instead, which is what handed the phone its key,
+  and says what is actually true. A phone that has not been set up is offered
+  the one press that does it rather than a warning.
+
 ## 0.178.8 — 2026-09-15
 
 - **The instance says "One life, one app."** — the same sentence the site opens

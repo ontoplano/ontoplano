@@ -13,6 +13,7 @@ import { servedMediaLimits } from './media-limits.js';
 import { loadConfig } from './config.js';
 import { docsUrl, siteUrl } from './settings.js';
 import { instanceIsEmpty, registrationMode } from './services/registration.js';
+import { RINGER_TOKEN_NAME, listTokens } from './services/tokens.js';
 import { clientErrorState, setClientErrorConsent } from './services/client-errors.js';
 import { wake } from './services/reminder-clock.js';
 import { assertPublicUrl, fetchPublic } from './outbound.js';
@@ -45,6 +46,8 @@ export function bindServerHost(): void {
 			siteUrl: siteUrl(),
 			docsUrl: docsUrl()
 		}),
+		/* The instance knows, because the instance is what minted the key. */
+		ringsOnAPhone: (ctx) => listTokens(ctx).some((t) => t.name === RINGER_TOKEN_NAME),
 		clientErrorReports: clientErrorState,
 		setClientErrorReports: setClientErrorConsent
 	});

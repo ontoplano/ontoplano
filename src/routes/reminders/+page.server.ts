@@ -9,6 +9,7 @@ import {
 	windowEnd
 } from '$lib/services/reminder-sources';
 import { toActionFailure } from '$lib/http-errors';
+import { host } from '$lib/services/host';
 import {
 	createFreeReminder,
 	localNow,
@@ -77,6 +78,16 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 	ensureBirthdayReminders(ctx.userId, ctx.now, ctx.tz);
 
 	return {
+		/*
+		 * Whether this phone has been given a key to ring with.
+		 *
+		 * The page cannot ask the phone: it is served by the instance, and the
+		 * app's plugins reach only the copy it carries. But the instance minted
+		 * the key, so it knows one exists — which is the difference between
+		 * "reminders ring here with the app closed" and "they do not", and the
+		 * page was asserting the second long after the first became true.
+		 */
+		ringsOnAPhone: host.ringsOnAPhone(ctx),
 		/** Today in the account's own zone, so the day field opens on it. */
 		today: localDateOf(ctx.now, ctx.tz),
 		/** What an empty time means, so the field can say so. */

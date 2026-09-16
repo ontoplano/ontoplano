@@ -76,6 +76,17 @@ export interface Host {
 	clientErrorReports(userId: string): ClientErrorState;
 	/** Record the answer to that question. Nothing to record where it is `off`. */
 	setClientErrorReports(ctx: Ctx, decision: unknown): void;
+	/**
+	 * Whether a phone holds a key to ring for this instance.
+	 *
+	 * A phone showing an instance cannot be asked anything by that instance's
+	 * pages — the app's plugins reach the copy it carries and no further — so
+	 * the reminders page cannot know whether reminders arrive with the app
+	 * closed. The instance minted the key, though, so it can answer from the
+	 * account. `false` on a device, where the question does not arise: the
+	 * copy on the phone IS the phone, and its alarms are its own.
+	 */
+	ringsOnAPhone(ctx: Ctx): boolean;
 }
 
 const localInstance: Host = {
@@ -84,6 +95,7 @@ const localInstance: Host = {
 		return [userId];
 	},
 	assertWithinLimit() {},
+	ringsOnAPhone: () => false,
 	mediaLimits: () => DEVICE_MEDIA_LIMITS,
 	assertEntryWithinLimit() {},
 	reminderScheduleChanged() {},

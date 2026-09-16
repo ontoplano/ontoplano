@@ -313,14 +313,35 @@
 		that would do half the job. It disappears once granted, since permission
 		is permanent and a settled question does not need a row.
 	-->
-	{#if !insecure && !allowed}
+	<!--
+		The app, showing an instance that is not the copy it carries.
+
+		This page cannot ask the phone anything — the shell's plugins reach its
+		own origin and no further — but the INSTANCE knows, because the instance
+		is what minted the key the phone rings with. So it is answered from the
+		account rather than asserted: a phone that has been set up is told its
+		reminders arrive with the app closed, which they do, and one that has
+		not is sent to the screen that arranges it.
+
+		It used to say, to every phone, that reminders "arrive only while
+		ontoplano is open" — true before the phone could ring for a served
+		instance at all, and a flat contradiction of the Preferences screen ever
+		since.
+	-->
+	{#if !insecure && unreachable && data.ringsOnAPhone}
+		<p class="mb-4 max-w-2xl text-sm leading-relaxed text-gray-500">
+			Reminders from here ring on this phone, with ontoplano closed — it books Android's own alarms,
+			because an instance cannot wake a phone.
+			<a href={resolve('/settings/preferences')} class="underline underline-offset-2">Preferences</a
+			> stops that, or sets it up again.
+		</p>
+	{:else if !insecure && (!allowed || unreachable)}
 		<Banner kind="warning">
 			<div class="flex flex-wrap items-center gap-3">
 				<span>
 					{#if unreachable}
-						This instance is shown inside the app, and the app's alarms belong to the copy of
-						ontoplano on the phone itself — so reminders from here arrive only while ontoplano is
-						open.
+						This phone is not set up to ring for reminders from here — it can be, in one press on
+						Preferences, and then they arrive with ontoplano closed.
 					{:else if refused}
 						Android has refused notifications and will not ask again, so reminders arrive only while
 						ontoplano is open.
@@ -333,8 +354,10 @@
 					{/if}
 				</span>
 				{#if unreachable}
-					<!-- Nothing to press: this page is on the instance's origin, where
-					     the app's own plugins do not reach. -->
+					<!-- The one press that arranges it is on Preferences: this page is
+					     on the instance's origin, where the app's own plugins do not
+					     reach, and the handshake needs the copy the phone carries. -->
+					<a href={resolve('/settings/preferences')} class="btn btn-primary">Set it up</a>
 				{:else if refused}
 					<button type="button" class="btn btn-primary" onclick={openPhoneNotificationSettings}>
 						Open the phone's settings
