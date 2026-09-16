@@ -29,27 +29,33 @@ body:
     validations:
       required: true
 
+  # Four answers because there are four, and they fail differently: the hosted
+  # instance and the demo are one deployment we can look at, a self-hosted one
+  # is a machine we cannot, and an isolated instance is the app talking to the
+  # database on the phone with no server in it at all — where a bug about
+  # syncing, mail or an assistant is a different bug, or none.
   - type: dropdown
     id: instance
     attributes:
-      label: Whose instance
+      label: Which instance
       options:
-        - app.ontoplano.com
+        - app.ontoplano.com — the hosted instance
         - One I run myself
+        - The phone itself — an isolated instance in the Android app
         - The demo
     validations:
       required: true
 
   # After the instance, and optional: app.ontoplano.com and the demo run one
-  # version and we know which. Only somebody running their own copy can be on
-  # anything else. (Issue forms cannot show a field conditionally, so the
-  # description carries the condition instead.)
+  # version and we know which. An instance somebody runs — on their own machine
+  # or on their phone — can be on anything. (Issue forms cannot show a field
+  # conditionally, so the description carries the condition instead.)
   - type: input
     id: version
     attributes:
-      label: Version — only if you run your own instance
+      label: Version — only if you run it yourself, on a machine or on the phone
       description: Settings → Instance shows it, beside the commit and the build time.
-      placeholder: 0.70.0
+      placeholder: 0.178.15
 
   - type: input
     id: where
