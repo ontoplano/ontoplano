@@ -1,6 +1,7 @@
 <script lang="ts">
 	import mark from '$lib/logo/mark.png';
-	import { MARK_FIELD } from '$lib/logo/mark-shape';
+	import liftedMark from '$lib/logo/mark-lifted.png';
+	import { MARK_FIELD, MARK_FIELD_LIFTED } from '$lib/logo/mark-shape';
 	import { MARK_DRAINED } from '$lib/logo/brand';
 	import { markPath, markPoints } from '$lib/logo/mark-geometry';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
@@ -140,7 +141,7 @@
 	 * outline in the dark one — a second bright shape competing with the mark
 	 * in the middle.
 	 */
-	const EDGE_DARK = MARK_FIELD;
+	const EDGE_DARK = $derived(isIsolatedBuild() ? MARK_FIELD_LIFTED : MARK_FIELD);
 
 	/**
 	 * A circle, as a path, for a clip that also holds the mark's outline.
@@ -179,6 +180,18 @@
 	 * "not the ordinary copy" since there were two builds on one phone.
 	 */
 	const drained = $derived(isIsolatedBuild() ? `saturate(${MARK_DRAINED})` : 'none');
+
+	/*
+	 * And the same drawing with its dark lifted, for the same reason.
+	 *
+	 * Draining takes the colour out of the ring and leaves the field as dark as
+	 * it was, which closes the middle of the wheel into a near-black disc. The
+	 * lifted copy is the mark with that field a little nearer white, so the
+	 * wheel on the device reads as the mark with the lights off rather than as
+	 * a hole. The wheel's own dark follows it, or the hole and the mark in it
+	 * would be two different darks.
+	 */
+	const artwork = $derived(isIsolatedBuild() ? liftedMark : mark);
 
 	/**
 	 * Where a wedge starts, which is inside the hole rather than at its edge.
@@ -771,7 +784,7 @@
 						</g>
 					{:else}
 						<image
-							href={mark}
+							href={artwork}
 							x={-MEDALLION}
 							y={-MEDALLION}
 							width={MEDALLION * 2}

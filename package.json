@@ -1,6 +1,6 @@
 {
 	"name": "ontoplano",
-	"version": "0.178.19",
+	"version": "0.178.20",
 	"homepage": "https://ontoplano.com",
 	"repository": {
 		"type": "git",
@@ -75,6 +75,7 @@
 		"jpeg-js": "^0.4.4",
 		"marked": "^18.0.11",
 		"mdsvex": "^0.12.6",
+		"pngjs": "^6.0.0",
 		"prettier": "^3.8.1",
 		"prettier-plugin-svelte": "^3.4.1",
 		"prettier-plugin-tailwindcss": "^0.7.2",

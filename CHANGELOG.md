@@ -18,6 +18,20 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.20 — 2026-09-16
+
+- **Fixed: while the app waited, the middle of the mark turned a circular hole
+  in itself.** The layer that spins was cut to the medallion the logo used to
+  have in its middle, plus a margin — a disc that lands inside the artwork of
+  a mark that carries a drawing there instead. It is cut to the ring's inner
+  edge now, measured off the picture like everything else about it, so
+  whatever the mark holds turns whole.
+- **The mark reads as a drawing wherever it says "not the ordinary copy".**
+  The dev and staging icons, the wheel in an instance that runs on the device,
+  and the phone bar under it all drained the mark's colour and left its own
+  dark exactly as dark — which at the size a launcher draws is a black disc
+  with a grey edge. Those now wear the mark with its dark lifted a little.
+
 ## 0.178.19 — 2026-09-16
 
 - **Fixed: on a phone that is its own instance, no reminder was ever booked

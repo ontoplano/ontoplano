@@ -36,3 +36,24 @@ export const MARK_EDGE_COLOURS = [
  * flows into the bar instead of ending at an edge.
  */
 export const MARK_FIELD = '#232c32';
+
+/**
+ * The same dark, lifted — what the mark wears where it stands for a copy
+ * that is not the ordinary one.
+ *
+ * `MARK_FIELD_LIFT` in brand.ts is how far; this is the answer for this
+ * artwork, so the app and the icons paint the same colour. Anywhere the
+ * field is painted beside a drained mark wants this one instead.
+ */
+export const MARK_FIELD_LIFTED = '#3d454b';
+
+/**
+ * Where the ring's inner edge is, as a fraction of the half width — the
+ * largest disc inside the mark that is nothing but field.
+ *
+ * The layer that turns while the app waits is cut to it: everything the
+ * mark carries inside is whole within this circle, and the circle itself
+ * falls where the drawing is the same at any angle, so the cut cannot be
+ * seen however far it has turned.
+ */
+export const MARK_INNER = 0.7344;

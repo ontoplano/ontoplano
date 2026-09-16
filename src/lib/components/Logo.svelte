@@ -12,19 +12,19 @@
 	 */
 	import mark from '$lib/logo/mark.png';
 	import hollowMark from '$lib/logo/mark-hollow.png';
+	import liftedMark from '$lib/logo/mark-lifted.png';
 	import { BRAND_GROUND, MARK_DRAINED } from '$lib/logo/brand';
 	import { MARK_TURN_RADIUS } from '$lib/logo/mark-geometry';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
 
 	/*
-	 * The medallion, as its own layer over the whole mark.
+	 * What the mark carries inside, as its own layer over the whole mark.
 	 *
-	 * A second copy of the same picture, clipped to a disc just past the
-	 * medallion's measured edge — identical pixels over identical pixels, so
-	 * nothing changes to look at. What it buys is a part that can turn while
-	 * the rim stands still: a disc turns in place, and everything inside this
-	 * one past the medallion is the flat dark field, the same at any angle.
-	 * `$lib/mark-spin` turns it while a navigation drags.
+	 * A second copy of the same picture, clipped to a disc inside the ring —
+	 * identical pixels over identical pixels, so nothing changes to look at.
+	 * What it buys is a part that can turn while the rim stands still: a disc
+	 * turns in place, and the circle it is cut on is flat dark field, the same
+	 * at any angle. `$lib/mark-spin` turns it while a navigation drags.
 	 *
 	 * The radius is a fraction of the half width; circle() percentages resolve
 	 * against the side, hence the halving.
@@ -103,9 +103,20 @@
 	 * somebody running both can tell at a glance which one they are writing
 	 * into.
 	 */
-	const drained = $derived(
-		(saysDrained ?? isIsolatedBuild()) ? `saturate(${MARK_DRAINED})` : 'none'
-	);
+	const secondary = $derived(saysDrained ?? isIsolatedBuild());
+	const drained = $derived(secondary ? `saturate(${MARK_DRAINED})` : 'none');
+
+	/*
+	 * And on the lifted artwork while it is at it.
+	 *
+	 * Draining alone leaves the mark's own dark exactly as dark as it was, which
+	 * turns a mark whose middle is mostly field into a near-black disc with a
+	 * grey edge — at the size the bar and a launcher draw it, unreadable. The
+	 * lifted copy (`yarn icons` derives it) is the same drawing with that field
+	 * a little nearer white. The hollow copy has no field to lift: there the
+	 * page is what shows through, which is the point of it.
+	 */
+	const artwork = $derived(hollow ? hollowMark : secondary ? liftedMark : mark);
 </script>
 
 <span
@@ -121,7 +132,7 @@
 	aria-hidden={label ? undefined : 'true'}
 >
 	<img
-		src={hollow ? hollowMark : mark}
+		src={artwork}
 		alt=""
 		width={fill ? undefined : size}
 		height={fill ? undefined : size}
@@ -129,7 +140,7 @@
 	/>
 	<img
 		class="mark-turn"
-		src={hollow ? hollowMark : mark}
+		src={artwork}
 		alt=""
 		aria-hidden="true"
 		style="clip-path: {TURN_CLIP}; filter: {drained}"

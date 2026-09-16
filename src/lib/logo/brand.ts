@@ -112,6 +112,28 @@ export const SOLID_SCALE = 0.82;
 export const MARK_DRAINED = 0.15;
 
 /**
+ * How far the mark's own dark is lifted for that same copy.
+ *
+ * Draining takes the colour out of the ring and leaves the field exactly as
+ * dark as it was, which is fine for a mark whose middle is a bright medallion
+ * and poor for one whose middle is mostly field: at the forty-eight pixels a
+ * launcher draws, the drained icon reads as a black disc with a grey edge. So
+ * the field is lifted towards white by this much wherever the mark is drained
+ * — the dev and staging icons, the wheel in the instance that runs on the
+ * device, the chooser — and the drawing stays legible instead of closing up.
+ *
+ * A fraction of the way to white rather than a second hex, so it follows the
+ * artwork: `yarn icons` measures the field off `mark.png`, applies this, and
+ * writes the answer into `mark-shape.ts` as `MARK_FIELD_LIFTED`. One number to
+ * turn, and the icons and the app cannot disagree about it.
+ *
+ * Slight on purpose. Far enough that the middle stops reading as a hole, near
+ * enough that it is still the same mark with the lights off rather than a
+ * second colourway.
+ */
+export const MARK_FIELD_LIFT = 0.12;
+
+/**
  * The colour Android tints a notification with, and the drained version of it.
  *
  * Android throws the colours away from a notification's small icon and keeps

@@ -21,7 +21,7 @@
 		slidesHere,
 		stopHiding
 	} from '$lib/slide';
-	import { MARK_CLIP_PATH, MARK_FIELD } from '$lib/logo/mark-shape';
+	import { MARK_CLIP_PATH, MARK_FIELD, MARK_FIELD_LIFTED } from '$lib/logo/mark-shape';
 	import { CHOOSE_PATH, inPhoneApp, storedChoice } from '$lib/instance-choice';
 	import { handOverRingerKey } from '$lib/ringer-handshake';
 	import { THEMES } from '$lib/theme.js';
@@ -116,6 +116,8 @@
 	$effect(() => smartNumberFields(document));
 	/** This app is its own instance: no account, and leaving means choosing another. */
 	const onDevice = $derived(isIsolatedBuild());
+	/** The bar's colour: the mark's own dark, lifted to match a lifted mark. */
+	const barField = $derived(onDevice ? MARK_FIELD_LIFTED : MARK_FIELD);
 	let menuOpen = $state(false);
 	let pie = $state<CapturePie | undefined>();
 	let rooms = $state<NavPie | undefined>();
@@ -1266,10 +1268,15 @@
 			medallion and the ring, measured off the artwork — so the mark's
 			inside flows into the bar instead of ending at an edge. No hairline
 			on top: the edge IS the change of colour.
+
+			On the device it wears the lifted one, because the mark above it is
+			the lifted mark: the two are a single surface, and one of them
+			changing colour without the other would draw exactly the disc the
+			flowing-in is there to avoid.
 		-->
 		<nav
 			class="fixed inset-x-0 bottom-0 z-40 lg:hidden"
-			style="padding-bottom: var(--safe-bottom); background: {MARK_FIELD}"
+			style="padding-bottom: var(--safe-bottom); background: {barField}"
 			aria-label="Primary"
 			data-tour="mobile-bar"
 		>
@@ -1341,7 +1348,7 @@
 					-->
 					<span
 						aria-hidden="true"
-						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-ground-rise)); height: var(--bar-mark-ground); width: var(--bar-mark-ground); background: {MARK_FIELD}"
+						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-ground-rise)); height: var(--bar-mark-ground); width: var(--bar-mark-ground); background: {barField}"
 						class="pointer-events-none absolute left-1/2 -translate-x-1/2"
 					></span>
 					<!-- `data-mark` names it for code that runs before this component

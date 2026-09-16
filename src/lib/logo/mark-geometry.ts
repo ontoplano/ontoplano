@@ -1,4 +1,4 @@
-import { MARK_CLIP_PATH, MARK_MIDDLE } from './mark-shape.js';
+import { MARK_CLIP_PATH, MARK_INNER } from './mark-shape.js';
 
 /**
  * The mark's outline as numbers, for the places that draw it rather than clip
@@ -32,12 +32,27 @@ export function markPath(radius: number): string {
 }
 
 /**
+ * How far inside the ring's inner edge the turning layer is cut.
+ *
+ * `MARK_INNER` is the largest circle on which every pixel measured as field,
+ * so a cut exactly there sits on the last of it and picks up the artwork's
+ * anti-aliasing as it comes round. A couple of per cent inside is still field
+ * everywhere and still outside anything the mark carries.
+ */
+const TURN_INSET = 0.02;
+
+/**
  * The part of the mark that turns, as a fraction of its half width.
  *
- * While the app waits, the medallion in the middle spins and the rim stands
+ * While the app waits, what the mark carries inside spins and the rim stands
  * still. The turning layer is a disc — a disc turns in place with nothing to
- * clip or reveal — cut just past the medallion's measured edge, well short of
- * the rim: everything in between is the flat dark field, which reads the same
- * at any angle, so the cut is invisible.
+ * clip or reveal — cut inside the ring, where the drawing is flat dark field
+ * and therefore the same at any angle, so the cut is invisible.
+ *
+ * Cut to the ring rather than to the middle. It used to be the measured
+ * medallion plus a margin, which holds only while the middle of the mark IS a
+ * medallion: give the app a logo whose middle is a drawing and that disc lands
+ * inside the drawing, turning a circular hole in it. The ring's inner edge is
+ * the general answer — a medallion is inside it too.
  */
-export const MARK_TURN_RADIUS = MARK_MIDDLE + 0.08;
+export const MARK_TURN_RADIUS = MARK_INNER - TURN_INSET;
