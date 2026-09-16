@@ -13,6 +13,19 @@
  */
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
+/*
+ * The build's own declared settings, which there are none of here.
+ *
+ * `$env/dynamic/public` is a virtual module SvelteKit fills in: in the browser
+ * it reads what the server stamped onto the page, and in a bare happy-dom
+ * document there is no such stamp — importing it throws before a single test
+ * runs. This file reaches it through `isIsolated`, which decides whether a
+ * notification goes out in ontoplano's blue or in the drained version the copy
+ * on the device wears. Empty is the honest answer for a test: no build flags,
+ * so not the isolated build.
+ */
+vi.mock('$env/dynamic/public', () => ({ env: {} }));
+
 import { APP_USER_AGENT } from '../src/lib/instance-choice';
 import {
 	phonePermission,
