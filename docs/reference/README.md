@@ -11,13 +11,13 @@ repository, and these pages describe what you would be running.
 
 How the pieces fit, and why.
 
-- [Using it with AI agents](ai-agents.md) — pointing Claude, or any other AI agent that speaks MCP, at your own instance
+- [Using it with AI agents](ai-agents.md) — pointing Claude, Codex or anything else that speaks MCP at your own instance
 - [Architecture](architecture.md) — how a request travels, and where each kind of rule is allowed to live
 - [Deleting your data](deleting-your-data.md) — the two ways to erase what is here, what each one leaves behind, and why neither can be taken back
 - [The family plan](family-plan.md) — one subscription, up to five accounts, and the one form that sets it up
 - [On your phone](on-your-phone.md) — the Android app, the on-device instance, and the ways in for iPhone and desktop
 - [Permissions](permissions.md) — the one scope system every way in shares — what each grant hands over, and which tools sit behind it
-- [Running it yourself](running-it.md) — what it needs, three ways to start it, and where your data lives
+- [Running it yourself](running-it.md) — what it needs, four ways to start it, and where your data lives
 - [Tasks](the-plan.md) — the three tables a task can live in, and how one becomes another
 - [The wheel](the-wheel.md) — the gesture that opens the rooms, which way round it goes, and how to reorder it
 - [Ways in](ways-in.md) — tokens, scopes, streams, webhooks and the calendar link — the whole outside surface

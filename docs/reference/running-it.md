@@ -3,29 +3,36 @@
 
 # Running it yourself
 
-Ontoplano is one Node process and one SQLite file. There is no database server
-to run, no queue, no cache, and nothing that phones anywhere. A $5 VPS is
-oversized for one person.
+Ontoplano is a Node process and a SQLite file. There is no database server, no
+queue and no cache to run beside it.
 
-**Self-hosting is the whole app.** Every feature, no ceilings, no licence key,
-permanently. What the hosted instance sells is somebody else doing the
-upgrades and the backups.
+It reaches the network in three places, and you decide on all three: SMTP, if
+you want confirmation and password-reset mail; the browser vendor's push
+service, which is how a reminder arrives on a phone with the app closed; and
+whatever calendar feed or webhook address you type into it yourself. There is
+no telemetry, no licence check and no update ping.
 
 ## What it needs
 
-- **A machine running systemd**, which every distribution below does. From a
-  package, that is all: the runtime comes with it.
-- **Node 20 or newer**, and `yarn`, to build it yourself.
-- A machine that can build it once. `vite build` wants more than a gigabyte of
-  memory — on a small VPS, build somewhere else and copy the output over.
-- Optionally: a reverse proxy for TLS, and an SMTP account if you want
-  confirmation and password-reset mail. Without one those links are written to
-  the log instead, which is fine for one person.
+| Route          | What has to be there                                              |
+| -------------- | ----------------------------------------------------------------- |
+| `.deb`, `.rpm` | Linux with systemd. The Node runtime is inside the package.       |
+| AUR            | Linux with systemd, and the distribution's `nodejs`, 20 or newer. |
+| Docker         | Docker. Nothing else — no systemd, no Node on the host.           |
+| From source    | Node 22 and yarn.                                                 |
+
+Optional on any of them: a reverse proxy, which is where TLS belongs, and an
+SMTP account. Without SMTP, confirmation and password-reset links are written
+to the log instead.
+
+Building it yourself wants memory — `make build` gives Node a 2GB heap, and
+`vite build` uses most of it. On a VPS with less, build on another machine and
+copy `build/` across.
 
 ## The quickest start: a package
 
-For a machine you keep, this is the shortest route: one command, a service that
-starts on boot, and upgrades through the package manager you already use.
+One command, a service that starts on boot, and upgrades through the package
+manager you already use.
 
 **Debian, Ubuntu, Mint, Pop!\_OS, Raspberry Pi OS**
 
@@ -57,18 +64,16 @@ curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.178.14/SHA2
 sha256sum --ignore-missing -c SHA256SUMS
 ```
 
-`--ignore-missing` checks the files you actually took rather than complaining
-about the ones you did not.
+`--ignore-missing` checks the files you took rather than complaining about the
+ones you did not.
 
-The AUR route needs nothing done by hand. The recipe names the release's own
+The AUR route needs nothing done by hand: the recipe names the release's own
 source tarball and carries its checksum, so `makepkg` refuses to build if what
 it downloads is not that file.
 
 A checksum served from the same page as the download proves the file arrived
-whole. It is not a signature and does not pretend to be one.
-
-The Android package is a different promise and a stronger one: it is signed,
-and Android itself refuses an update signed by a different key.
+whole. It is not a signature. The Android package is signed, and Android
+itself refuses an update signed by a different key.
 
 Then, on any of them:
 
@@ -77,9 +82,9 @@ sudo ontoplano config                        # set ORIGIN to the address you wil
 sudo systemctl enable --now ontoplano
 ```
 
-That is the whole installation. It listens on `127.0.0.1:1493` and is not
-reachable from anywhere else until you put a reverse proxy in front of it —
-which is where TLS belongs.
+That is the whole installation. It listens on `127.0.0.1:1493`, so nothing off
+the machine reaches it until you put a reverse proxy in front, which is where
+TLS belongs.
 
 ### What the package sets up
 
@@ -91,44 +96,44 @@ which is where TLS belongs.
 | `/var/lib/ontoplano/ontoplano.db` | the database. **This file is your data.**                                 |
 | `ontoplano.service`               | a system unit, enabled by you, restarted on failure                       |
 
-A **system** service rather than a user one, deliberately. A user service only
-runs while that user is logged in unless lingering is enabled for them, cannot
-be enabled by a package on anybody's behalf, and gives the app the run of your
-home directory. The service account here owns exactly one directory and can
-reach nothing else on the machine — `systemctl cat ontoplano` shows what it is
-allowed to do. A user unit is still the right answer for a machine you develop
-on, which is what `make install-service` sets up.
+It is a system service rather than a user one because a user service stops at
+logout unless lingering is enabled, and a package cannot enable one on
+anybody's behalf. The service account reaches `/var/lib/ontoplano` and nothing
+else on the machine; `systemctl cat ontoplano` shows the restrictions. On a
+machine you develop on, a user unit is the right answer, and that is what
+`make install-service` sets up.
 
 Upgrading is `apt install ./ontoplano_amd64.deb` again, or `yay -Syu`. The
 database is migrated before the new version starts, your settings file is left
-exactly as you edited it, and the session secret is never regenerated —
-everybody stays signed in.
+as you edited it, and the session secret is not regenerated, so everybody stays
+signed in.
 
-Removing the package leaves `/var/lib/ontoplano` behind. It is your data, not
-the package's; `apt purge ontoplano` is the word that means take it too.
+Removing the package leaves `/var/lib/ontoplano` behind, because it is your
+data rather than the package's. `apt purge ontoplano` takes it too.
 
 ### The commands it installs
 
 ```sh
-ontoplano status        # is it running, and since when
-ontoplano logs          # follow the journal
-sudo ontoplano config   # open the settings file
-sudo ontoplano migrate  # bring the database up to the installed version
+ontoplano status                # is it running, and since when
+ontoplano start|stop|restart
+ontoplano logs                  # follow the journal
+sudo ontoplano config           # open the settings file
+sudo ontoplano migrate          # bring the database up to the installed version
 ontoplano version
 ```
 
-### Why the .deb and the .rpm are 45MB
+### Why the .deb and the .rpm are large
 
-They carry their own Node. The database driver is a native module compiled
-against one Node ABI, and these distributions ship four different Node versions
-between them — a package built against one of them would install cleanly
-everywhere and start nowhere. The Arch package does not bundle anything,
+They carry their own Node, which is most of their size. The database driver is
+a native module compiled against one Node ABI, and these distributions ship
+several Node versions between them — a package built against one of them would
+install cleanly everywhere and start nowhere. The Arch package bundles nothing,
 because it is built on the machine that will run it.
 
 ## Or with Docker
 
-One container, one volume, no database server. Migrations run when it starts,
-so there is no first-run step.
+One container, one volume. Migrations run at startup, so there is no first-run
+step.
 
 ```sh
 docker run -d --name ontoplano -p 1493:1493 \
@@ -138,7 +143,7 @@ docker run -d --name ontoplano -p 1493:1493 \
   ontoplano/ontoplano:latest
 ```
 
-Or with compose, which is the same thing written down:
+Or with compose:
 
 ```sh
 curl -O https://raw.githubusercontent.com/ontoplano/ontoplano/master/docker-compose.yml
@@ -147,29 +152,20 @@ curl -o .env https://raw.githubusercontent.com/ontoplano/ontoplano/master/.env.e
 docker compose up -d
 ```
 
-Register at `/login`. The first account is always allowed and owns the
-instance; the first screen asks for your timezone and which day your week
-starts, and offers a starter week to argue with.
-
 [docs/DOCKER.md](https://github.com/ontoplano/ontoplano/blob/master/docs/DOCKER.md)
 has the reverse proxy, upgrading and backups.
 
 ## On Windows
 
-**There is no Windows installer yet.** Windows is the one platform here with
-nothing to point at: no MSI, no winget package, no service wrapper.
+There is no Windows installer yet: no MSI, no winget package, no service
+wrapper. Docker Desktop works, and so does WSL2 — inside WSL the `.deb` above
+installs as it does on Ubuntu, which is the shortest route from Windows today.
 
-Docker Desktop works today, and so does WSL2 — inside WSL the `.deb` above
-installs exactly as it does on Ubuntu, which is the shortest route if you are on
-Windows right now.
-
-A proper installer is a good first contribution, and an unusually
-isolated one: the app itself is one Node process and one SQLite file, so
-what is missing is the packaging around it — an MSI or a winget manifest, a
-service registration, and somewhere sensible to put the database. If you want to
-build it, [CONTRIBUTING.md](https://github.com/ontoplano/ontoplano/blob/master/CONTRIBUTING.md)
-says how the repository works and how to send it, and opening an issue first is
-welcome so nobody does the same work twice.
+An installer is a self-contained piece of work if you want to write one: the
+app is a Node process and a SQLite file, so what is missing is the packaging
+around it.
+[CONTRIBUTING.md](https://github.com/ontoplano/ontoplano/blob/master/CONTRIBUTING.md)
+says how the repository works.
 
 ## From the source
 
@@ -182,8 +178,6 @@ yarn db:migrate           # create the database
 yarn dev                  # http://localhost:1493
 ```
 
-## As a service
-
 For a box you keep, without Docker:
 
 ```sh
@@ -191,8 +185,21 @@ make install-service      # build, migrate, install and start a systemd user uni
 make deploy-local         # after changes: rebuild, migrate, redeploy, restart
 ```
 
-The unit runs as your own user, keeps running after logout, and snapshots the
+That unit runs as your own user, keeps running after logout, and snapshots the
 database before every migration.
+
+## The first account
+
+Register at `/login`. The first account is allowed whatever the registration
+setting says, and it owns the instance. The first screen asks for your timezone
+and which day your week starts on, and offers a starter week.
+
+## Who may register
+
+**Closed by default.** After the first account, `/settings/instance` decides:
+closed, by invitation, or open. An invitation is a code that works once, and
+that page makes and revokes them. Keep it closed or on invitation for an
+instance reachable from the internet.
 
 ## Where your data lives
 
@@ -208,56 +215,35 @@ Installed from a package, the same three live under the system paths instead —
 `/var/lib/ontoplano/ontoplano.db`, and `/etc/ontoplano/` for both config files.
 Docker puts all of them in the volume mounted at `/data`.
 
-Back up the first one and you have backed up everything. `sqlite3 … .backup` or
-a file copy while the process is stopped both work; there is a Litestream setup
-in `docs/BACKUP.md` for continuous replication.
+Back up the first one and you have backed up everything. `sqlite3 … .backup`
+works on a running instance, a file copy works while it is stopped, and
+`docs/BACKUP.md` has a Litestream setup for continuous replication.
 
-## Who may register
+## The two jobs
 
-**Closed by default.** The first account is always allowed — it is the one that
-owns the instance — and after that `/settings/instance` decides: closed, by
-invitation, or open. An invitation is a code that works once, and that page
-makes and revokes them.
+Settings → Instance lists both and when each last ran.
 
-An instance on the open internet with sign-up left open is one that somebody
-else will use.
+**Reminders.** The app keeps its own timer, so a reminder fires on the second
+with nothing else installed. The packages and `make install-service` also
+install a minute timer that asks `/api/jobs/reminders`; it covers the case
+where the app was restarted across the moment a reminder fell due. The Docker
+image makes the same request from inside the container.
 
-## The weekly review, by mail
+**The weekly review mail.** On Monday, one message saying how much of last week
+you planned and did, linking to `/tasks/review`. It goes to accounts with a
+confirmed address, and every message carries a link that turns it off without
+signing in. It needs SMTP, so it is not installed by default: from source,
+`make install-mail-service`; on a packaged install, your own timer or cron
+line, with `systemd/ontoplano-weekly-review.service` as the template. The
+Docker image asks for it already.
 
-On Monday morning ontoplano can send one message saying what last week was:
-how much of what you planned you did and where most of it went. It links to
-`/tasks/review`, which is where you do something about a week.
-
-There are two versions of it. A week with blocks nobody has answered for is
-**"Review your week"**, which names what is still waiting. A week already
-answered for is **"Your week"**: the same numbers, and nothing to press.
-
-It is on for an account whose address has been confirmed, and every message
-carries a link that turns it off in one click with nothing to sign in to.
-Nobody is written to about a week they did not plan, and nobody is written to
-twice — the week last written about is remembered per account.
-
-Nothing is sent unless the instance has SMTP configured, so a self-hosted
-install with no mail transport is simply an install with no Monday mail.
-
-**It needs SMTP, and its own switch.** Reminders come installed everywhere —
-the packages and `make install-service` bring the timer, the Docker image
-runs the clock itself. The weekly mail is opt-in, because it can send
-nothing without SMTP configured: from source, `make install-mail-service`;
-on a packaged install, a systemd timer that POSTs
-`/api/jobs/weekly-reviews` hourly with the health token (the from-source
-unit in `systemd/ontoplano-weekly-review.service` is the template). The
-Docker image asks the endpoint regardless — harmless without SMTP.
-Settings → Instance shows the jobs and when they last ran.
-
-Anything else that can make an hourly HTTP request works too — the timers are
-only asking the app's own endpoint:
+Anything that can make an hourly HTTP request will do — the timers only ask the
+app's own endpoint:
 
 ```
 5 * * * * curl -fsS -m 30 -X POST -H "x-health-token: $ONTOPLANO_HEALTH_TOKEN" http://127.0.0.1:1493/api/jobs/weekly-reviews
 ```
 
-Hourly rather than daily because the hour belongs to the account: seven in the
-morning is a different instant for everybody, and each account is checked
-against its own timezone. Twenty-three of those runs do nothing, and running it
-twice is safe.
+Hourly rather than daily because each account is checked against its own
+timezone, and seven in the morning is a different instant for each of them.
+Asking twice in an hour is safe.

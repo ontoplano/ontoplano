@@ -210,6 +210,32 @@ blockquote { margin: 1rem 0; padding-left: 1rem; border-left: 3px solid var(--li
 kbd { font-family: var(--mono); font-size: 0.8em; border: 1px solid var(--line);
       background: var(--soft); padding: 0.05em 0.35em; }
 /*
+ * One question, a row of answers, and only the answer under it.
+ *
+ * The same shape as the app's integrations screen, because it is the same
+ * question asked twice: a page that lists five clients one after another makes
+ * everybody read four setups that are not theirs. The buttons press in rather
+ * than claiming the ARIA tab pattern, which promises arrow-key navigation this
+ * does not implement.
+ *
+ * Without JavaScript the row is not drawn at all and every panel is on the page
+ * under its own heading — which is what the markdown in the repository is.
+ */
+.tabrow { display: none; }
+.tabs[data-on] .tabrow { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 1rem 0; }
+.tabrow button { padding: 0.35rem 0.8rem; border: 1px solid var(--line); border-radius: 999px;
+                 background: var(--bg); color: var(--ink); font: inherit; font-size: 0.9rem;
+                 cursor: pointer; }
+.tabrow button:hover { border-color: var(--muted); }
+.tabrow button[aria-pressed='true'] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.tabrow button:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+/* The button says which panel this is, so the heading would say it twice. It
+   stays in the document for the anchor it carries and for a screen reader. */
+.tabs[data-on] .tabpanel > h3 { position: absolute; width: 1px; height: 1px;
+  margin: -1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.tabs[data-on] .tabpanel > :first-child + * { margin-top: 0; }
+
+/*
  * The install page's wizard: three questions, then only the steps that answer
  * them. Without JavaScript every branch is on the page under its own heading,
  * which is what these styles have to look right as too.
@@ -510,8 +536,90 @@ if (box) {
 }
 `;
 
+/**
+ * Tabs, written as headings.
+ *
+ * A `<!-- tabs -->` line makes every `###` after it, up to the next `##`, one
+ * answer to one question — the arrangement the app's integrations screen uses
+ * for the same question. The markdown stays markdown: in the repository, and
+ * with JavaScript off, it is a run of subsections in the order they are
+ * written.
+ */
+const TAB_MARK = '<!-- tabs -->';
+const TAB_END = '<!-- /tabs -->';
+
+function tabGroup(markdown, id) {
+	const panels = [];
+	const lead = [];
+	for (const line of markdown.split('\n')) {
+		const heading = /^###\s+(.+)$/.exec(line);
+		if (heading) panels.push({ name: heading[1].trim(), body: [] });
+		else (panels.length ? panels[panels.length - 1].body : lead).push(line);
+	}
+
+	// Nothing to tab between: one heading is a heading.
+	if (panels.length < 2) return marked.parse(markdown, { async: false });
+
+	const buttons = panels
+		.map(
+			(panel, i) =>
+				`<button type="button" data-for="${id}-${i}" aria-pressed="${i === 0}">` +
+				`${escape(panel.name)}</button>`
+		)
+		.join('\n        ');
+
+	const bodies = panels
+		.map((panel, i) => {
+			const inside = marked.parse([`### ${panel.name}`, ...panel.body].join('\n'), {
+				async: false
+			});
+			return `<div class="tabpanel" id="${id}-${i}">\n${inside}</div>`;
+		})
+		.join('\n');
+
+	return [
+		marked.parse(lead.join('\n'), { async: false }),
+		`<div class="tabs">`,
+		`      <div class="tabrow" role="group">\n        ${buttons}\n      </div>`,
+		bodies,
+		`</div>`
+	].join('\n');
+}
+
+/** The page's markdown as HTML, with any tab groups in it assembled. */
+function toHtml(markdown) {
+	const lines = markdown.split('\n');
+	const out = [];
+	let plain = [];
+	let groups = 0;
+
+	for (let at = 0; at < lines.length; at++) {
+		if (lines[at].trim() !== TAB_MARK) {
+			plain.push(lines[at]);
+			continue;
+		}
+		out.push(marked.parse(plain.join('\n'), { async: false }));
+		plain = [];
+
+		// To the next `##`, or to a `<!-- /tabs -->` where the answers stop
+		// before the section does.
+		const group = [];
+		while (at + 1 < lines.length && !/^##\s/.test(lines[at + 1])) {
+			if (lines[at + 1].trim() === TAB_END) {
+				at++;
+				break;
+			}
+			group.push(lines[++at]);
+		}
+		out.push(tabGroup(group.join('\n'), `tabs-${++groups}`));
+	}
+
+	out.push(marked.parse(plain.join('\n'), { async: false }));
+	return out.join('\n');
+}
+
 function render(page) {
-	const body = rewriteLinks(marked.parse(page.markdown, { async: false }))
+	const body = rewriteLinks(toHtml(page.markdown))
 		// Every table gets its own scroll container, so a wide data model does
 		// not make the whole page scroll sideways on a phone.
 		.replace(/<table>/g, '<div class="table"><table>')
@@ -573,10 +681,48 @@ ${body}
   </div>
 <script>${SEARCH_SCRIPT.replace('__INDEX__', JSON.stringify(searchIndex()))}</script>
 <script>${COPY_SCRIPT}</script>
+<script>${TABS_SCRIPT}</script>
 </body>
 </html>
 `;
 }
+
+/*
+ * The row of answers, and the one panel under it.
+ *
+ * Added by the page rather than written into the markdown for the same reason
+ * the copy buttons are: the markdown is the file in the repository, and it
+ * should stay prose and fenced code. A link to a heading inside a panel — from
+ * the search box, or from the app — opens the panel that heading is in, which
+ * is otherwise a link that scrolls to something hidden.
+ */
+const TABS_SCRIPT = `
+for (const tabs of document.querySelectorAll('.tabs')) {
+  const buttons = Array.from(tabs.querySelectorAll('.tabrow button'));
+  const panels = Array.from(tabs.querySelectorAll('.tabpanel'));
+  if (!buttons.length) continue;
+
+  const show = (id) => {
+    for (const button of buttons) button.setAttribute('aria-pressed', String(button.dataset.for === id));
+    for (const panel of panels) panel.hidden = panel.id !== id;
+  };
+
+  for (const button of buttons) button.addEventListener('click', () => show(button.dataset.for));
+
+  let wanted = null;
+  if (location.hash.length > 1) {
+    try {
+      const target = tabs.querySelector(location.hash);
+      wanted = target && target.closest('.tabpanel');
+    } catch (e) {
+      wanted = null;
+    }
+  }
+
+  tabs.setAttribute('data-on', '');
+  show(wanted ? wanted.id : panels[0].id);
+}
+`;
 
 /*
  * The copy button on every snippet, added here rather than written into the

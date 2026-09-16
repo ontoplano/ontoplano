@@ -4,16 +4,37 @@
 # Using it with AI agents
 
 `POST /api/mcp` is a [Model Context Protocol](https://modelcontextprotocol.io)
-server: the same API tokens, the same scopes, and a set of tools a model can
-call. It is what "put that on my to-do list" means when the thing being asked is
-an AI agent rather than the app.
+server: the same keys and the same permissions as the API, and a set of tools a
+model can call. It is what "put that on my to-do list" means when the thing
+being asked is an assistant rather than the app.
 
-## The short version
+The examples below use `https://app.ontoplano.com`. Your own instance answers at
+`https://your-host/api/mcp` — the address you type into the browser, with
+`/api/mcp` after it.
 
-Make a key: **Settings → AI & Integrations → AI → Make a key**. It is shown
-once, so keep the tab open while you do the rest.
+## Make a key
 
-Then paste this to the assistant, with your key in place of the last line:
+**Settings → AI & Integrations → AI → Make a key.** It is shown once, so keep
+the tab open while you set the assistant up.
+
+Every permission the tools use is ticked to begin with: reading and writing,
+never deleting. Untick what you would rather it did not see — a tool whose
+permission was not granted is not offered to the assistant at all, so a
+read-only key does not know that `add_todo` exists.
+
+Deleting is not on that form. The **Integrations** tab beside it has the full
+one, including `destructive`, for a key meant to run a script rather than an
+assistant. Keys are revoked there too, and a revoked key stops working on the
+next request.
+
+## Connect it
+
+<!-- tabs -->
+
+### Just tell it
+
+Any assistant with a terminal can set itself up. Paste this, with your key in
+place of the last line:
 
 ```text
 I use ontoplano — a life management app my assistant can connect to.
@@ -30,98 +51,35 @@ anything in my account until I ask you to.
 Key: onto_YOUR_KEY_HERE
 ```
 
-Your own instance answers at `https://your-host/api/mcp` — the address you type
-into the browser, with `/api/mcp` after it.
+It names what the app is for, so the assistant reaches for it instead of asking
+you to repeat yourself, and it says not to write anything yet.
 
-Two things the prompt does on purpose. It names what the app is _for_, so the
-assistant reaches for it instead of asking you to repeat yourself; and it says
-not to write anything yet, so the first thing it does is show you what it can
-see rather than what it has done.
+### Claude
 
-## Setting it up properly
-
-Pasting the prompt works when the assistant can set itself up — it has a
-terminal, so it writes its own configuration. A chat window cannot, and neither
-can most editors: those want a line in a configuration file.
-
-It is also the better answer when you mean to keep it. A server named in a
-config file is there in every conversation without pasting anything, and the
-key sits in that file rather than in a transcript you might later share.
-
-Each client keeps its configuration somewhere different, and in a different
-shape.
-
-**Claude Code, as a plugin** — the shortest path, and the one that brings more
-than a connection:
+**The plugin.** Two lines inside Claude Code, and the shortest route:
 
 ```sh
 /plugin marketplace add ontoplano/ontoplano
 /plugin install ontoplano@ontoplano
 ```
 
-It asks for two things when it installs: the address of your ontoplano and a
-key. The key is stored the way Claude Code stores secrets — the system keychain
-where there is one — rather than written into a file in a repository. After
-that there is no `--header` to remember and nothing to paste again.
+It asks for the address of your ontoplano and a key when it installs, and keeps
+the key in the system keychain rather than in a file. It also brings `/today`,
+`/week` and `/capture`, and the standing instructions an assistant otherwise
+needs told every conversation: read before writing, say what you changed.
 
-What it adds beyond the server itself: `/today`, `/week` and `/capture`, and a
-short set of standing instructions — read before writing, never invent a goal
-somebody did not commit to, say what you changed. Those are the things that
-otherwise have to be said in every conversation.
-
-Self-hosting: the plugin's address field is yours to set, so it works against
-your own instance with no change.
-
-**Claude Code, by hand** — one command, and it writes the config for you:
+**The command line.** One command, and it writes the configuration:
 
 ```sh
 claude mcp add --scope user --transport http ontoplano https://app.ontoplano.com/api/mcp \
   --header "Authorization: Bearer onto_YOUR_KEY_HERE"
 ```
 
-`--scope user` is what makes it permanent everywhere: without it the server is
-written into the project you happen to be standing in, and every other
-directory starts over.
+`--scope user` is what makes it permanent everywhere. Without it the server is
+written into whichever project you were standing in.
 
-**Codex CLI** — `~/.codex/config.toml`. It reads the key out of the
-environment rather than out of the file, so export it in the shell that starts
-Codex:
-
-```toml
-[mcp_servers.ontoplano]
-url = "https://app.ontoplano.com/api/mcp"
-bearer_token_env_var = "ONTOPLANO_KEY"
-```
-
-```sh
-export ONTOPLANO_KEY=onto_YOUR_KEY_HERE
-```
-
-An export lasts as long as the shell it was typed into. To keep it, put the
-same line in the file your shell starts from:
-
-```sh
-echo 'export ONTOPLANO_KEY=onto_YOUR_KEY_HERE' >> ~/.bashrc   # zsh: ~/.zshrc
-```
-
-`codex mcp list` says whether it connected.
-
-**Cursor** — `~/.cursor/mcp.json`, where the header is written out in full:
-
-```json
-{
-	"mcpServers": {
-		"ontoplano": {
-			"url": "https://app.ontoplano.com/api/mcp",
-			"headers": { "Authorization": "Bearer onto_YOUR_KEY_HERE" }
-		}
-	}
-}
-```
-
-**Claude Desktop** — the awkward one. Its custom-connector screen asks for an
-OAuth client id and secret and has nowhere to put a key, so a bearer key needs
-`mcp-remote` in between, which speaks to the app for it:
+**Claude Desktop.** Its connector screen asks for an OAuth client id and has
+nowhere to put a key, so this goes through `mcp-remote`:
 
 ```json
 {
@@ -140,123 +98,97 @@ OAuth client id and secret and has nowhere to put a key, so a bearer key needs
 }
 ```
 
-No space after the colon in that last line — Claude Desktop does not escape
-spaces inside an argument, and the header arrives cut in half if you leave one.
+No space after that colon: Desktop does not escape spaces inside an argument,
+and the header arrives cut in half if you leave one.
+
+### Codex
+
+`~/.codex/config.toml`. It reads the key out of the environment rather than out
+of the file:
+
+```toml
+[mcp_servers.ontoplano]
+url = "https://app.ontoplano.com/api/mcp"
+bearer_token_env_var = "ONTOPLANO_KEY"
+```
+
+An export lasts as long as the shell it was typed into, so put it in the file
+your shell starts from:
+
+```sh
+echo 'export ONTOPLANO_KEY=onto_YOUR_KEY_HERE' >> ~/.bashrc   # zsh: ~/.zshrc
+```
+
+`codex mcp list` says whether it connected.
+
+### Cursor
+
+`~/.cursor/mcp.json`, where the header is written out in full:
+
+```json
+{
+	"mcpServers": {
+		"ontoplano": {
+			"url": "https://app.ontoplano.com/api/mcp",
+			"headers": { "Authorization": "Bearer onto_YOUR_KEY_HERE" }
+		}
+	}
+}
+```
+
+<!-- /tabs -->
 
 Restart the client after editing its file. If it lists ontoplano's tools, it
 worked.
 
 ## Blocks and to-dos are different things
 
-Worth knowing before you ask for anything, because it is the one distinction an
-assistant gets wrong: a **to-do** is something to do with no hour attached, and a
-**block** is an hour. "Ring the dentist" is a to-do; "deep work from 9 to 11" is
-a block.
+A **to-do** is something to do with no hour attached; a **block** is an hour.
+"Ring the dentist" is a to-do, "deep work from 9 to 11" is a block. An assistant
+that only has `add_todo` answers the second by writing the time into the title,
+and your day still looks empty.
 
-An assistant that only has `add_todo` answers the second by writing the time
-into the title — `deep work 09:00–11:00` — and your day still looks empty. With
-`schedule:write` it puts a real block on the day, and it can answer for the ones
-already there:
+With `schedule:write` it puts a real block on the day and can answer for the
+ones already there. `finish_block` takes both answers, and **skipped is a real
+answer** — a week that can only be told about the parts that went well starts
+lying by the second one.
 
-> Skip the gym and the stretching today, and put deep work on from 9 to 11.
+`change_block` moves and renames; `cancel_block` takes something off a day.
+**Cancelled is not skipped**: skipped means you meant to do it and did not, and
+the weekly review asks about it; cancelled means the plan was wrong. An
+assistant with only one of them uses the wrong one when it moves something.
 
-`finish_block` takes both answers. **Skipped is a real answer**, not a failure to
-record one — a week that can only be told about the parts that went well is a
-week that starts lying by the second one.
-
-It can also change what is there, which matters more than it sounds:
-
-> Push the study block to four, and put down that I was actually organizing
-> my bird pictures for the last hour and a half.
-
-`change_block` moves and renames; `cancel_block` takes something off a day
-because it is not happening. **Cancelled is not skipped.** Skipped means you
-meant to do it and did not, and the weekly review asks about it; cancelled means
-the plan was wrong — the meeting moved, the class was called off. Without both,
-an assistant asked to move something has only one way to clear the old one off
-the grid, and it will use the wrong one: this is not hypothetical, it is what
-happened, and the day ended up holding a duplicate block and a skip that never
-took place.
-
-Everything here is **that day only**. Moving this Thursday's gym never moves gym:
-the occurrence is detached and the weekly plan is left alone, which is the same
-thing alt-dragging it in the app does.
+All of it is that day only. Moving this Thursday's gym never moves gym, which
+is what alt-dragging it in the app does too.
 
 ## How it behaves
 
-Six things are worth knowing before you grant a token:
+- **It offers only what the key holds.** `tools/list` is filtered by permission,
+  and the permission is checked again on every call.
+- **Nothing in it is new behaviour.** Every tool calls the same function the web
+  page calls, so the same limits, validation and ownership checks apply.
+- **It is stateless.** No session and no event stream: every request carries its
+  own key, and a `GET` answers 405.
+- **A refusal is an answer.** "That is not a date" comes back as tool content the
+  model can read and act on, not as a protocol error.
+- **Deleting is its own permission.** Tools that remove a row for good need the
+  `destructive` grant, and without it they are not offered at all.
+- **Every write answers with what it replaced** — `before` and `after`, and for a
+  delete the whole removed row — so a bad call can be put back from the
+  conversation itself.
 
-**It offers only what the token holds.** `tools/list` is filtered by scope, so a
-token with `today:read` and nothing else is offered one tool. The scope is
-checked again on every call, because a client that was never offered a tool can
-still name one.
-
-**Nothing in it is new behaviour.** Every tool calls the same service function
-the web page calls, so the ceilings, the validation and the ownership checks are
-the ones that already exist. A tool cannot be a way around a rule.
-
-**It is stateless.** No session, no event stream, no state between calls — every
-request carries its own token and is answered on its own. A `GET` answers 405,
-because there is no server-initiated stream to open.
-
-**A refusal is an answer.** A service saying "that is not a date" comes back as
-tool content the model can read and act on, not as a protocol error it can only
-give up on.
-
-**Deleting is its own grant.** A write scope lets a token add and change; the
-tools that remove a row for good also demand the `destructive` grant, one tick
-on the token form. A wrong write is data that is wrong, a wrong delete is data
-that is gone, and they are not the same thing to hand an assistant. Without the
-grant those tools are not offered at all.
-
-**Every mutation answers with what it replaced.** The result of a write carries
-`before` and `after` — the thing as it was and as it is, and for a delete the
-whole removed row. A bad call is reversible from the conversation itself: the
-model, or you reading over its shoulder, can see exactly what to put back.
-
-The tools are declared in one file — `src/lib/server/mcp/tools.ts` — and each
-carries the sentence a model reads to decide whether it is the thing it wants.
-[The tools](#the-tools) below lists every one, generated from that file, with
-the scope each needs.
-
-## Making the key
-
-Settings → AI & Integrations → AI → **Make a key**. Every permission the tools
-use is ticked to begin with — reading and writing, never deleting. Untick what
-you would rather it did not see: a tool whose permission was not granted is not
-offered to the assistant at all, so one holding a read-only key does not know
-that `add_todo` exists.
-
-Deleting is not on that form. The **Integrations** tab beside it has the full
-one, with every permission including `destructive`, for a key meant to run a
-script rather than an assistant.
-
-A key is shown once, on the screen where you made it. It is revoked from the
-Integrations tab, and revoking takes effect on the next request — there is no
-session to expire.
-
-## What an upgrade will not break
-
-The tool surface is **additive within a major version**: a tool or a parameter
-is never removed, a parameter never becomes required, and an enum never loses
-a value without a release in between that marked it deprecated — the
-deprecated shape keeps working for that release, and its description names the
-replacement. So a saved prompt or a wrapper script written against one version
-survives the next; what worked keeps working, and new things appear beside it.
-
-This is enforced, not promised: the surface is snapshotted in
-`src/lib/server/mcp/manifest.json` and the test suite refuses any change that
-would break an existing caller. The server names its own app version in the
-`initialize` handshake, so "it broke when I upgraded" can always say from what
-to what.
+The surface is additive within a major version: a tool or a parameter is not
+removed, a parameter does not become required, and an enum does not lose a value
+without a release in between that marks it deprecated. That is enforced by
+`src/lib/server/mcp/manifest.json` and a test that refuses any change breaking an
+existing caller.
 
 ## The tools
 
 Every tool the server offers, with the exact description a model is handed —
-published from the same array that serves them, so the two cannot drift. A
-token is only offered the tools its scopes reach: a tool missing from
-`tools/list` is a permission not granted, not a feature that does not exist.
-The scopes themselves are on [the permissions page](permissions.md).
+published from the same array that serves them, so the two cannot drift. A key
+is only offered the tools its permissions reach. The permissions themselves are
+on [the permissions page](permissions.md).
 
 ### `today` — Today's plan
 

@@ -18,6 +18,21 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.15 — 2026-09-16
+
+- **"Running it yourself" says what is true.** It claimed nothing ever leaves
+  the machine — it does: SMTP, the browser's push service, and whatever
+  calendar feed or webhook address you type in — and that systemd is needed
+  whatever route you take, which Docker does not. What each of the four routes
+  needs is a table now, `ontoplano start|stop|restart` is in the command list
+  where it was missing, and the background jobs are one section instead of an
+  essay.
+- **The AI agents page asks which assistant you use.** The four setups were
+  printed one after another, so most of the page was somebody else's client.
+  They are a row of answers now, the same shape as Settings → AI &
+  Integrations, and a link to one of them opens the one it names. With
+  JavaScript off every setup is still on the page under its own heading.
+
 ## 0.178.14 — 2026-09-16
 
 - **Fixed: on a phone that is the instance, the reminders about to go off were

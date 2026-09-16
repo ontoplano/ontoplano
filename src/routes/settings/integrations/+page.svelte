@@ -538,7 +538,7 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 				-->
 					<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">
 						<a
-							href="{data.links.docs}/ai-agents#setting-it-up-properly"
+							href="{data.links.docs}/ai-agents#connect-it"
 							rel="external"
 							class="underline underline-offset-2">How to set each one up permanently — the docs</a
 						>.

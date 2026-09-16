@@ -1290,18 +1290,16 @@ const FRAGMENTS = {
 			`sha256sum --ignore-missing -c ${names.sums}`,
 			'```',
 			'',
-			'`--ignore-missing` checks the files you actually took rather than complaining',
-			'about the ones you did not.',
+			'`--ignore-missing` checks the files you took rather than complaining about the',
+			'ones you did not.',
 			'',
-			"The AUR route needs nothing done by hand. The recipe names the release's own",
+			"The AUR route needs nothing done by hand: the recipe names the release's own",
 			'source tarball and carries its checksum, so `makepkg` refuses to build if what',
 			'it downloads is not that file.',
 			'',
 			'A checksum served from the same page as the download proves the file arrived',
-			'whole. It is not a signature and does not pretend to be one.',
-			'',
-			'The Android package is a different promise and a stronger one: it is signed,',
-			'and Android itself refuses an update signed by a different key.'
+			'whole. It is not a signature. The Android package is signed, and Android',
+			'itself refuses an update signed by a different key.'
 		].join('\n');
 	},
 

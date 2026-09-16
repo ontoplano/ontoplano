@@ -116,5 +116,5 @@ test('a key made on the AI tab arrives inside the words you paste', async ({ pag
 
 	const how = page.getByRole('link', { name: /set each one up permanently/ });
 	await expect(how).toBeVisible();
-	await expect(how).toHaveAttribute('href', /\/ai-agents#setting-it-up-properly$/);
+	await expect(how).toHaveAttribute('href', /\/ai-agents#connect-it$/);
 });
