@@ -1,0 +1,45 @@
+#!/bin/sh
+#
+# Formatting is not a thing to be told about. It is a thing to be done.
+#
+# Prettier has one answer for every file, and it can write that answer as
+# easily as it can complain about it — so being stopped at a push, running the
+# writer by hand, and making a second commit that says "formatting" is three
+# steps of ceremony around a decision nobody made. This formats what is being
+# committed and stages the result, so the commit is correct as it is written
+# and a push never fails for it.
+#
+# Only the staged files, and only the parts of them that are staged: a file
+# half-staged on purpose stays half-staged. That is why this re-stages exactly
+# the paths it formatted rather than running `git add -A`, which would sweep in
+# whatever else is in the tree.
+#
+#   git commit --no-verify     commit without this
+#
+# Installed by `make hooks`, which `make dev` runs — see the Makefile.
+set -e
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(ts|js|mjs|cjs|svelte|css|json|md|html|svx)$' || true)
+[ -n "$staged" ] || exit 0
+
+# A file staged and then deleted from the tree is in that list and not on disk.
+present=""
+for file in $staged; do
+	[ -f "$file" ] && present="$present $file"
+done
+[ -n "$present" ] || exit 0
+
+before=$(git diff --cached --name-only --diff-filter=ACMR | wc -l | tr -d ' ')
+yarn -s prettier --write --log-level warn $present
+
+changed=""
+for file in $present; do
+	git diff --quiet -- "$file" || changed="$changed $file"
+done
+
+if [ -n "$changed" ]; then
+	# shellcheck disable=SC2086
+	git add $changed
+	count=$(printf '%s\n' $changed | wc -l | tr -d ' ')
+	echo "pre-commit: formatted $count of $before staged file(s), and staged the result"
+fi

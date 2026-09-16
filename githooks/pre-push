@@ -1,10 +1,17 @@
 #!/bin/sh
 #
-# The check that is cheap enough to be in the way: the files being pushed.
+# The last look before it leaves: the files in this push.
 #
 # A red pipeline is found minutes later, by somebody who has moved on to the
 # next thing, and the commit that broke it is already on the branch.
-# Formatting is the half of CI that needs no decision, so it runs here.
+#
+# **Formatting is fixed here, not reported.** Prettier has one answer per file
+# and can write it, so this writes it. A push carries the commits it started
+# with and cannot be made to carry a new one, so the fix becomes a commit of
+# its own and the push stops with one line saying to push again. The ordinary
+# case never reaches this: `pre-commit` formats what is committed, so by the
+# time anything is pushed there is nothing left to fix. This is for commits
+# made before the hooks existed, or with `--no-verify`.
 #
 # **Only the files in the push.** `yarn lint` reads the whole repository, which
 # is a minute — and a hook that costs a minute on every push is a hook that
@@ -64,7 +71,30 @@ else
 	else
 		count=$(printf '%s\n' $present | wc -l | tr -d ' ')
 		echo "pre-push: checking $count file(s) in this push (PREPUSH_ALL=1 for everything)"
-		yarn -s prettier --check $present
+
+		if ! yarn -s prettier --check --log-level warn $present >/dev/null 2>&1; then
+			# What the tree already had uncommitted, so this can tell its own
+			# work from yours and never commit yours by accident.
+			yours=$(git status --porcelain -- $present | wc -l | tr -d ' ')
+			yarn -s prettier --write --log-level warn $present >/dev/null
+			mine=$(git status --porcelain -- $present | wc -l | tr -d ' ')
+
+			if [ "$yours" -gt 0 ]; then
+				echo "pre-push: formatting was wrong. It is written to disk — but these files"
+				echo "  also have uncommitted work in them, so committing it is yours to do."
+				exit 1
+			fi
+
+			if [ "$mine" -gt 0 ]; then
+				# shellcheck disable=SC2086
+				git add $present
+				git commit -q -m "style: prettier"
+				echo "pre-push: formatting was wrong; fixed and committed as \"style: prettier\"."
+				echo "  A push carries the commits it started with — so: git push again."
+				exit 1
+			fi
+		fi
+
 		yarn -s eslint $present
 	fi
 fi

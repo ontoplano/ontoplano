@@ -58,7 +58,7 @@ const packageOf = (spec) =>
  * a package called `I swapped today` — out of a sentence about swapping a gym
  * slot for a run. Naive on purpose: it only has to be right about import
  * lines, and an import specifier never contains a comment.
-  *
+ *
  * @param {string} source
  */
 function withoutComments(source) {
@@ -74,7 +74,7 @@ function withoutComments(source) {
  * `$app/environment` inside a try, precisely so that a script without Vite gets
  * a "no" rather than a crash. So dynamic imports are followed and never
  * complained about — the author has already handled the answer.
-  *
+ *
  * @param {string} source
  */
 export function importsIn(source) {
@@ -105,7 +105,7 @@ export function importsIn(source) {
  * Type-only imports are erased before anything is resolved, so a `import type`
  * of a dev package is not a runtime dependency. Read literally, per line,
  * because that is exactly how much of TypeScript this needs to understand.
-  *
+ *
  * @param {string} source
  */
 function runtimeImports(source) {

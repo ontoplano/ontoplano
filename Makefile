@@ -233,10 +233,11 @@ SITE_SRC_LOCAL ?= ontoplano-site
 # `core.hooksPath` rather than copying a file into `.git/hooks`: the hook stays
 # in the repo, under review like everything else, and updating it updates it
 # for everybody rather than for whoever remembers to copy it again.
-## install the git hooks (pre-push runs lint)
+## install the git hooks (format on commit, lint on push)
 hooks:
 	@git config core.hooksPath githooks
-	@echo "hooks: pre-push runs lint (PREPUSH_TESTS=1 adds the unit suite, --no-verify skips it)"
+	@echo "hooks: pre-commit formats what you commit; pre-push lints what you push"
+	@echo "       (PREPUSH_TESTS=1 adds the unit suite, --no-verify skips either)"
 
 # `dev` is the app; this is the name to type when you mean it by contrast.
 ## the app alone (what `dev` runs)
