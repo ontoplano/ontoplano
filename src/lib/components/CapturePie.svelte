@@ -1,8 +1,6 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
 	import { CAPTURES, visibleCaptures, type Capture } from '$lib/capture';
-	import Modal from '$lib/components/Modal.svelte';
-	import CaptureForm from '$lib/components/CaptureForm.svelte';
+	import CaptureDialog from '$lib/components/CaptureDialog.svelte';
 	import RadialMenu from '$lib/components/RadialMenu.svelte';
 
 	/**
@@ -107,31 +105,4 @@
 	onclose={() => (open = false)}
 />
 
-<Modal
-	open={writing !== null}
-	onclose={() => (writing = null)}
-	title={writing ? `New ${writing.label.toLowerCase()}` : ''}
-	size="sm"
->
-	{#if writing}
-		{@const capture = writing}
-		<form
-			id="pie-capture-form"
-			method="post"
-			action={capture.action}
-			use:enhance={() =>
-				async ({ update, result }) => {
-					// It closes on success and is destroyed; resetting only makes the
-					// fields blank for a frame first. On a failure it keeps what was typed.
-					await update({ reset: false });
-					if (result.type === 'success') writing = null;
-				}}
-		>
-			<CaptureForm {capture} />
-		</form>
-	{/if}
-
-	{#snippet footer()}
-		<button type="submit" form="pie-capture-form" class="btn btn-primary">Save</button>
-	{/snippet}
-</Modal>
+<CaptureDialog capture={writing} onclose={() => (writing = null)} />

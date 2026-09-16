@@ -1,8 +1,6 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
-	import CaptureForm from '$lib/components/CaptureForm.svelte';
+	import CaptureDialog from '$lib/components/CaptureDialog.svelte';
 	import Icon from '$lib/components/Icon.svelte';
-	import Modal from '$lib/components/Modal.svelte';
 	import { captureByShortcut, visibleCaptures, type Capture } from '$lib/capture';
 
 	/**
@@ -88,43 +86,4 @@
 	</div>
 {/if}
 
-<Modal
-	open={open !== null}
-	onclose={() => (open = null)}
-	title={open ? `New ${open.label.toLowerCase()}` : ''}
-	size="sm"
-	{error}
->
-	{#if open}
-		{@const capture = open}
-		<form
-			id="capture-form"
-			method="post"
-			action={open.action}
-			use:enhance={() =>
-				async ({ update, result }) => {
-					/*
-					 * `reset: false`, because this form is about to disappear.
-					 *
-					 * `update()` empties the form element before the dialog closes,
-					 * and on a phone the round trip is long enough to watch it
-					 * happen: every field blanks, and then the screen closes over
-					 * the empty form it just made. The form is destroyed on close,
-					 * so nothing wanted the reset — and on a failure it has to keep
-					 * what was typed rather than throw it away.
-					 */
-					await update({ reset: false });
-					if (result.type === 'success') open = null;
-				}}
-		>
-			<CaptureForm {capture} />
-		</form>
-	{/if}
-
-	{#snippet footer()}
-		<button type="button" class="btn" onclick={() => (open = null)}>Cancel</button>
-		<button type="submit" form="capture-form" class="btn btn-primary">
-			<Icon name="plus" /> Save
-		</button>
-	{/snippet}
-</Modal>
+<CaptureDialog capture={open} {error} onclose={() => (open = null)} />

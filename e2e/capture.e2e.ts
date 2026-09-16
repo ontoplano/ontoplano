@@ -314,3 +314,54 @@ test('the Buy capture actually puts something on the shopping list', async ({ pa
 	// parallel run the two are not instantaneous.
 	await expect(page.getByText('oat milk')).toBeVisible({ timeout: 15_000 });
 });
+
+/**
+ * A receipt, because nothing on the screen you are looking at changed.
+ *
+ * Capture exists so you can write something down without going to the room it
+ * belongs in. So the dialog closing is the whole of what happens, and on the
+ * dashboard — or on whatever page the pie was opened from — nothing moved.
+ * That reads as nothing having happened, and the only way to find out was to
+ * go and look, which is the work capture was avoiding.
+ */
+test('a quick add says where the thing went, and quotes it', async ({ page }) => {
+	await register(page, testEmail('capture-toast'));
+	await visit(page, '/');
+
+	await page.getByRole('button', { name: /^Idea/ }).first().click();
+	await page
+		.locator('#capture-form input:not([type=hidden]), #capture-form textarea')
+		.first()
+		.fill('a lathe for the shed');
+	await page.getByRole('button', { name: 'Save' }).click();
+
+	// The room it went to, which is the part that cannot be seen from here, and
+	// the thing itself, so it is recognisable as the one just written.
+	await expect(page.getByText(/Added to your ideas: a lathe for the shed/)).toBeVisible({
+		timeout: 15_000
+	});
+});
+
+/**
+ * And the same receipt from the pie, which is a different component.
+ *
+ * It was a different dialog too, with its own form and its own `enhance` — two
+ * copies of one thing, which is how the pie's copy came to have no error
+ * banner at all. One dialog now; this is what holds that.
+ */
+test('the pie says it too, from a page that is not the dashboard', async ({ page }) => {
+	await register(page, testEmail('capture-toast-pie'));
+	await visit(page, '/tasks/plan');
+
+	await (await trigger(page)).click();
+	// The way a person finds a wedge: point at each until the HUD says its name.
+	expect(await pickWedge(page, 'To-do'), 'no wedge announced itself as To-do').toBe(true);
+
+	await expect(page.getByRole('heading', { name: /new to-do/i })).toBeVisible();
+	await page.locator('[name=heading]').fill('ring the dentist');
+	await page.getByRole('button', { name: 'Save' }).click();
+
+	await expect(page.getByText(/Added to your to-dos: ring the dentist/)).toBeVisible({
+		timeout: 15_000
+	});
+});

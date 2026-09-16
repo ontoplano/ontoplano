@@ -19,6 +19,23 @@ export type Capture = {
 	/** Its colour in the pie: the section the thing ends up in. */
 	color: string;
 	action: string;
+	/**
+	 * The field carrying the thing itself, so a receipt can quote it.
+	 *
+	 * Capture writes somewhere you are not looking — that is the whole point of
+	 * it — so "saved" on its own leaves you to go and check. The four forms name
+	 * their lead field differently, and this is where that is known rather than
+	 * in whatever component happens to be reading the form.
+	 */
+	lead: string;
+	/**
+	 * Where it ended up, as the end of the sentence "Added to …".
+	 *
+	 * Not the label: the label names the thing you are writing ("Idea"), and
+	 * this names the place it went ("your ideas"), which is the part somebody
+	 * who is on the dashboard cannot see for themselves.
+	 */
+	into: string;
 	/** The section this writes into. A hidden section takes its wedge with it. */
 	hide?: HideableSection;
 };
@@ -30,6 +47,8 @@ export const CAPTURES: Capture[] = [
 		label: 'Idea',
 		icon: 'ideas',
 		color: SECTION_COLORS.ideas,
+		lead: 'content',
+		into: 'your ideas',
 		action: '/notebooks/ideas?/create',
 		hide: 'ideas'
 	},
@@ -39,6 +58,8 @@ export const CAPTURES: Capture[] = [
 		label: 'To-do',
 		icon: 'check',
 		color: SECTION_COLORS.planner,
+		lead: 'heading',
+		into: 'your to-dos',
 		action: '/tasks/todo?/create'
 	},
 	{
@@ -47,6 +68,8 @@ export const CAPTURES: Capture[] = [
 		label: 'Note',
 		icon: 'diary',
 		color: SECTION_COLORS.diary,
+		lead: 'content',
+		into: 'the diary',
 		action: '/notebooks/diary?/create',
 		hide: 'diary'
 	},
@@ -56,6 +79,8 @@ export const CAPTURES: Capture[] = [
 		label: 'Buy',
 		icon: 'shopping',
 		color: SECTION_COLORS.inventory,
+		lead: 'label',
+		into: 'the shopping list',
 		action: '/inventory?/create',
 		hide: 'inventory'
 	}

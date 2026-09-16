@@ -18,6 +18,15 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.18 — 2026-09-16
+
+- **Writing something down says where it went.** The quick adds — Idea, To-do,
+  Note and Buy — close their dialogue and that was all: on the screen you are
+  looking at nothing changed, which reads as nothing having happened. They say
+  which room took it and quote what you wrote, on the phone and on a desktop.
+- **A quick add that fails says so.** From the capture wheel it said nothing at
+  all: the dialogue simply appeared to ignore the button.
+
 ## 0.178.17 — 2026-09-16
 
 - **The Android build targets API 36**, which is what Google Play will accept.
