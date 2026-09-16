@@ -3,8 +3,11 @@
 
 # Running it yourself
 
-Ontoplano is a Node process and a SQLite file. There is no database server, no
-queue and no cache to run beside it.
+Ontoplano is a SvelteKit server over one SQLite file, with two small timers
+beside it: one asks the app to deliver reminders that have fallen due, the
+other to send the weekly review mail. The timers hold no data and no logic —
+each is one POST to the app's own job endpoint — and which of them a route
+installs is under [the two jobs](#the-two-jobs).
 
 It reaches the network in three places, and you decide on all three: SMTP, if
 you want confirmation and password-reset mail; the browser vendor's push
@@ -17,7 +20,7 @@ no telemetry, no licence check and no update ping.
 | Route          | What has to be there                                              |
 | -------------- | ----------------------------------------------------------------- |
 | `.deb`, `.rpm` | Linux with systemd. The Node runtime is inside the package.       |
-| AUR            | Linux with systemd, and the distribution's `nodejs`, 20 or newer. |
+| Arch recipe    | Linux with systemd, and the distribution's `nodejs`, 20 or newer. |
 | Docker         | Docker. Nothing else — no systemd, no Node on the host.           |
 | From source    | Node 22 and yarn.                                                 |
 
@@ -48,10 +51,14 @@ curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.178.14/onto
 sudo dnf install ./ontoplano-0.178.14-1.x86_64.rpm     # or: sudo zypper install ./ontoplano-0.178.14-1.x86_64.rpm
 ```
 
-**Arch, Manjaro, EndeavourOS** — from the AUR, built on your machine:
+**Arch, Manjaro, EndeavourOS** — a recipe, built on your machine. It is not
+on the AUR yet, so the two files it needs come from the release itself:
 
 ```sh
-yay -S ontoplano       # or: paru -S ontoplano
+mkdir ontoplano && cd ontoplano
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.178.14/PKGBUILD
+curl -LO https://github.com/ontoplano/ontoplano/releases/download/v0.178.14/ontoplano.install
+makepkg -si
 ```
 
 ### Checking what you downloaded
@@ -67,9 +74,9 @@ sha256sum --ignore-missing -c SHA256SUMS
 `--ignore-missing` checks the files you took rather than complaining about the
 ones you did not.
 
-The AUR route needs nothing done by hand: the recipe names the release's own
-source tarball and carries its checksum, so `makepkg` refuses to build if what
-it downloads is not that file.
+The recipe is covered twice over: `SHA256SUMS` covers the `PKGBUILD` you
+downloaded, and that file names the release's own source tarball and carries its
+checksum, so `makepkg` refuses to build anything else.
 
 A checksum served from the same page as the download proves the file arrived
 whole. It is not a signature. The Android package is signed, and Android
@@ -103,7 +110,9 @@ else on the machine; `systemctl cat ontoplano` shows the restrictions. On a
 machine you develop on, a user unit is the right answer, and that is what
 `make install-service` sets up.
 
-Upgrading is `apt install ./ontoplano_amd64.deb` again, or `yay -Syu`. The
+Upgrading is the same command over the newer file — `apt install
+./ontoplano_*_amd64.deb`, `dnf install ./ontoplano-*.x86_64.rpm`, or `makepkg
+-si` from the new release's recipe. The
 database is migrated before the new version starts, your settings file is left
 as you edited it, and the session secret is not regenerated, so everybody stays
 signed in.
@@ -162,7 +171,7 @@ wrapper. Docker Desktop works, and so does WSL2 — inside WSL the `.deb` above
 installs as it does on Ubuntu, which is the shortest route from Windows today.
 
 An installer is a self-contained piece of work if you want to write one: the
-app is a Node process and a SQLite file, so what is missing is the packaging
+app is a Node server over one SQLite file, so what is missing is the packaging
 around it.
 [CONTRIBUTING.md](https://github.com/ontoplano/ontoplano/blob/master/CONTRIBUTING.md)
 says how the repository works.

@@ -32,6 +32,8 @@ export function assetNames(version) {
 		deb: `ontoplano_${version}_amd64.deb`,
 		rpm: `ontoplano-${version}-1.x86_64.rpm`,
 		tarball: `ontoplano-${version}.tar.gz`,
+		pkgbuild: 'PKGBUILD',
+		install: 'ontoplano.install',
 		sums: 'SHA256SUMS'
 	};
 }

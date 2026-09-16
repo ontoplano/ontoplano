@@ -27,6 +27,17 @@ releases mattered.
   needs is a table now, `ontoplano start|stop|restart` is in the command list
   where it was missing, and the background jobs are one section instead of an
   essay.
+- **The Arch instructions were for a package that does not exist.** The docs
+  said `yay -S ontoplano`; ontoplano is not on the AUR, which has suspended new
+  accounts, and the README has said so since the release. Every page now walks
+  through the `PKGBUILD` and `ontoplano.install` the release attaches, and
+  `makepkg -si`. The `.deb` and `.rpm` upgrade lines named files with no
+  version in them, which is a 404.
+- **What is actually running is described honestly.** "One Node process and one
+  SQLite file, no queue and no cache" was not true of any install: two timers
+  are installed beside the app, and the Docker image runs them inside the
+  container. The README also offered two ways to run it when there are three —
+  the Android app can be its own instance.
 - **The AI agents page asks which assistant you use.** The four setups were
   printed one after another, so most of the page was somebody else's client.
   They are a row of answers now, the same shape as Settings → AI &

@@ -1,8 +1,9 @@
 # Running ontoplano in Docker
 
-One container, one volume, no database server. There is nothing else to run:
-ontoplano is a Node process and a SQLite file, and everything it keeps lives
-under `/data`.
+One container, one volume. The image runs the app and, beside it, the loop that
+asks the app for due reminders every minute and for the weekly review mail every
+hour — on a bare install those two are systemd timers, and a container has no
+systemd. Everything it keeps lives under `/data`.
 
 ## The short version
 

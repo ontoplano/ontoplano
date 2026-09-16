@@ -15,7 +15,7 @@
 
 [ontoplano.com](https://ontoplano.com) · [official instance](https://app.ontoplano.com) · [documentation](https://docs.ontoplano.com)
 
-`.deb` · `.rpm` · AUR · Docker · Android
+`.deb` · `.rpm` · Arch · Docker · Android
 
 </div>
 
@@ -36,8 +36,10 @@ ideas, the people in your life, recipes and the shopping list.
 capabilities can read your day and change it, with a scoped token you can revoke.
 Nothing in the app calls a model; you bring your own assistant.
 
-**Two ways to run it.** Self-host it or on [app.ontoplano.com](https://app.ontoplano.com), the same software on a box I
-keep.
+**Three ways to run it.** On a machine you keep, on
+[app.ontoplano.com](https://app.ontoplano.com) — the same software on a box I
+keep — or on the phone itself: the Android app can be its own instance, with
+nothing behind it.
 
 ## Running it
 
@@ -45,12 +47,12 @@ A service that starts on boot, upgraded by the package manager you use:
 
 ```sh
 # Debian, Ubuntu, Mint, Pop!_OS
-sudo apt install ./ontoplano_amd64.deb
+sudo apt install ./ontoplano_*_amd64.deb
 
 # Fedora, RHEL, openSUSE
-sudo dnf install ./ontoplano.x86_64.rpm
+sudo dnf install ./ontoplano-*.x86_64.rpm
 
-# Arch, Manjaro (not on the AUR yet, they have supended new accounts for the time being)
+# Arch, Manjaro (not on the AUR yet — it has suspended new accounts)
 mkdir ontoplano && cd ontoplano
 curl -LO https://github.com/ontoplano/ontoplano/releases/latest/download/PKGBUILD
 curl -LO https://github.com/ontoplano/ontoplano/releases/latest/download/ontoplano.install
@@ -77,7 +79,7 @@ docker run -d --name ontoplano -p 1493:1493 \
 Register at `/login` — **the first account owns the instance**, and after it
 registration is closed until changed at `/settings/instance`.
 
-Reminders service come installed. The optional Monday review mail does not — it needs
+The reminders timer comes installed. The Monday review mail does not — it needs
 SMTP; [the docs](https://docs.ontoplano.com/running-it) set it up.
 
 ## Developing it
