@@ -324,7 +324,16 @@ function civilDate(ctx: Ctx, value: unknown): string {
 	return str(s, 'date', { max: 10, pattern: /^\d{4}-\d{2}-\d{2}$/ });
 }
 
-/** The most recent entry, for the dashboard card. */
+/**
+ * The most recent entry, for the dashboard card.
+ *
+ * The diary's own, which is not the same as the most recent row: notes written
+ * inside a notebook live in this table too, and the only thing telling them
+ * apart is a notebook id. Without that condition the card headed "Diary" showed
+ * whatever had been typed last anywhere in the app — a line from a project
+ * notebook, under the diary's heading, with the diary's own last entry nowhere.
+ * `listEntries` above has always said `isNull(notebookId)`; this did not.
+ */
 export function latestEntry(ctx: Ctx) {
 	const entry = db
 		.select({
@@ -333,7 +342,13 @@ export function latestEntry(ctx: Ctx) {
 			createdAt: diaryEntries.createdAt
 		})
 		.from(diaryEntries)
-		.where(eq(diaryEntries.userId, ctx.userId))
+		.where(
+			and(
+				eq(diaryEntries.userId, ctx.userId),
+				isNull(diaryEntries.notebookId),
+				isNull(diaryEntries.notebookSeq)
+			)
+		)
 		// The id breaks the tie. Two entries written in the same second — which
 		// is a normal afternoon, not a rare race — otherwise made "the latest
 		// one" whichever the database happened to return first.

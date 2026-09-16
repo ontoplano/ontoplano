@@ -18,6 +18,15 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.10 — 2026-09-16
+
+- **Fixed: the dashboard's Diary card showed notes from your notebooks.** Both
+  kinds of writing live in one place, and the card asked for the most recent of
+  anything — so a line from a project notebook turned up under the diary's
+  heading, with the diary's own last entry nowhere. It asks for the diary now.
+- **The mark keeps turning until the instance opens**, rather than turning once
+  and going quiet while the wait carries on.
+
 ## 0.178.9 — 2026-09-16
 
 - **Fixed: the reminders page said your reminders only arrive while the app is

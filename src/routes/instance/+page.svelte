@@ -56,38 +56,31 @@
 	let mark = $state<HTMLElement | undefined>();
 
 	/**
-	 * One turn, landing upright, and then we leave.
+	 * It turns until the instance arrives — and if it never does, it lands.
 	 *
 	 * `atOnce`, because the delay the app's wait normally keeps is there so a
-	 * room that loads quickly leaves no trace — and the copy on this phone
-	 * loads quicker than the delay, so the press looked ignored. Here the turn
-	 * IS the answer to the press; there is nothing for it to be discreet about.
+	 * room that loads quickly leaves no trace, and the copy on this phone loads
+	 * quicker than that delay: the press looked ignored.
 	 *
-	 * Then stop at once and wait for the landing rather than for a clock: the
-	 * turn finishes the revolution it is in and eases to upright, which is what
-	 * every other wait in the app does. Leaving mid-turn would cut it off — the
-	 * snap `mark-spin` exists to avoid — and leaving before it starts was the
-	 * version that did nothing at all.
+	 * Nothing stops it. The turn's end is this document being replaced by the
+	 * instance, which is the only moment that means "loaded" — so the mark
+	 * turns for exactly as long as the wait lasts, whether that is a blink or
+	 * a slow network. One turn and a landing was wrong the same way the swell
+	 * was: it finished, and then the screen sat there with a mark that had
+	 * already said everything.
 	 *
-	 * Capped, because nothing on this screen may depend on an animation: a
-	 * browser that refuses to run one, or a tab in the background where frames
-	 * stop arriving, must not be the reason somebody sits here.
+	 * The one case where nothing replaces the page is an address that answers
+	 * nothing, and there the turn would go on for ever. So it winds down after
+	 * `GIVE_UP_MS` — finishing its revolution and resting upright, the way
+	 * every other wait in the app ends — and somebody is left looking at the
+	 * screen they pressed on rather than at a logo spinning at nothing.
 	 */
-	const LANDING_CAP_MS = 1200;
+	const GIVE_UP_MS = 12000;
 
-	async function turnOnce(): Promise<void> {
+	function turnUntilItArrives(): void {
 		if (!mark) return;
 		startMarkSpin([mark], 0, true);
-		/*
-		 * Stopped straight away, which is what makes it exactly one turn: the
-		 * wind-down finishes the revolution it is in and eases to upright. The
-		 * delay is zero here, so there is nothing for `stopMarkSpin` to treat
-		 * as "never started".
-		 */
-		await Promise.race([
-			stopMarkSpin(),
-			new Promise((resolve) => setTimeout(resolve, LANDING_CAP_MS))
-		]);
+		setTimeout(() => void stopMarkSpin(), GIVE_UP_MS);
 	}
 
 	/*
@@ -236,11 +229,14 @@
 	 */
 	const canRunHere = $derived(isIsolatedBuild() || inPhoneApp());
 
-	async function go() {
+	function go() {
 		const url = kind === 'phone' ? null : address.trim().replace(/\/+$/, '');
 		if (url !== null && !/^https?:\/\/.+/.test(url)) return;
 
-		await turnOnce();
+		// The mark starts turning and the instance starts loading, in that
+		// order and in the same tick. Nothing is awaited: the turn is how the
+		// wait looks, so it must not become part of the wait.
+		turnUntilItArrives();
 
 		/*
 		 * A page an instance served cannot answer this question itself.

@@ -361,56 +361,29 @@ test.describe('the mark on the chooser', () => {
 		expect(Math.abs((after?.y ?? 0) - (before?.y ?? 0))).toBeLessThan(0.5);
 
 		/*
-		 * And the press that commits: the mark turns once and lands upright,
-		 * and the instance opens when it has.
+		 * And the press that commits: the turn starts, and the load starts with
+		 * it.
 		 *
-		 * Two things went wrong here before, in opposite directions, and both
-		 * are asserted now. A swell that the navigation waited for finished
-		 * moving and then left the page sitting — an animation saying "done"
-		 * while nothing had happened. Leaving immediately instead cut the turn
-		 * off mid-revolution, which is the snap `mark-spin` exists to avoid —
-		 * and on the device, where the copy loads faster than the turn's own
-		 * delay, the mark never moved at all.
+		 * Three versions of this were wrong in three directions. A swell the
+		 * navigation waited for put a pause between the press and the load. A
+		 * turn that stopped after one revolution went quiet while the instance
+		 * was still opening. And with the app's usual delay in front of it, the
+		 * mark never moved at all on the device, whose copy loads faster than
+		 * the delay. The turn ends when this document is replaced — the only
+		 * moment that means "loaded" — so the press must not be held up by it.
 		 *
-		 * So: it turns, and the press is neither instant nor a long wait.
+		 * How long it turns for is not assertable here: against a warm server
+		 * on localhost that is a handful of frames, and asserting a duration
+		 * would be asserting the speed of this machine. `tests/mark-spin.test.ts`
+		 * holds the turn's own behaviour, frame by frame, on a clock it owns.
 		 */
 		// `[name=…]`, not `input[name=…]`: the address field is a one-line
 		// textarea, because an input raises the phone's autofill bar.
 		await page.locator('[name="instance"]').fill('http://localhost:4173');
-
-		// Recorded in the page: the turn is over before the navigation, so
-		// sampling from out here would be a race with it.
-		await page.evaluate(() => {
-			(window as unknown as { __turn: string[] }).__turn = [];
-			const tick = () => {
-				const el = document.querySelector('.mark-where-the-bar-will-be .mark-turn');
-				const seen = (window as unknown as { __turn: string[] }).__turn;
-				if (el) seen.push(getComputedStyle(el).rotate);
-				if (seen.length < 90) requestAnimationFrame(tick);
-			};
-			requestAnimationFrame(tick);
-		});
-
 		const at = Date.now();
 		await page.getByRole('button', { name: 'Connect' }).click();
-		// Partway through the turn: `click()` resolves when the press is
-		// dispatched, and the turn is half a second of frames after that. Read
-		// before the navigation takes the page — and therefore the record.
-		await page.waitForTimeout(250);
-		const turned = await page.evaluate(
-			() =>
-				(window as unknown as { __turn?: string[] }).__turn?.filter(
-					(r) => r && r !== 'none' && r !== '0deg'
-				) ?? []
-		);
-		expect(turned.length, 'the mark never turned').toBeGreaterThan(3);
-		// A real turn, not a twitch: most of a revolution before it lands.
-		expect(Math.max(...turned.map((r) => Math.abs(parseFloat(r))))).toBeGreaterThan(90);
-
 		await page.waitForURL((url) => !url.pathname.startsWith('/instance'), { timeout: 15000 });
-		const left = Date.now() - at;
-		expect(left, 'it left before the turn had landed').toBeGreaterThan(250);
-		expect(left, 'the turn kept somebody waiting').toBeLessThan(2500);
+		expect(Date.now() - at, 'the press waited on an animation').toBeLessThan(2000);
 	});
 });
 

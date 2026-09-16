@@ -19,6 +19,7 @@ let instances: typeof import('../src/lib/services/instances');
 let slots: typeof import('../src/lib/services/slots');
 let schedule: typeof import('../src/lib/services/schedule');
 let activities: typeof import('../src/lib/services/activities');
+let notebooks: typeof import('../src/lib/services/notebooks');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 let work: number;
@@ -29,6 +30,7 @@ beforeAll(async () => {
 	slots = await import('../src/lib/services/slots');
 	schedule = await import('../src/lib/services/schedule');
 	activities = await import('../src/lib/services/activities');
+	notebooks = await import('../src/lib/services/notebooks');
 	ctx = { userId: OWNER, now: new Date('2026-08-17T09:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 	work = activities.createCategory(ctx, { name: 'Work', color: '#1d4ed8' });
@@ -83,6 +85,25 @@ describe('the journal', () => {
 	test('knows the most recent one', () => {
 		const id = diary.createEntry(ctx, { content: 'the latest thing' });
 		expect(diary.latestEntry(ctx)?.id).toBe(id);
+	});
+
+	/**
+	 * The dashboard's Diary card asks for this, and a note is not a diary entry.
+	 *
+	 * Both live in one table — one kind of writing, one place to keep it — and
+	 * the only thing telling them apart is a notebook id. So the card headed
+	 * "Diary" showed whatever had been typed last anywhere in the app: a line
+	 * from a project notebook, under the diary's heading, with the diary's own
+	 * last entry nowhere to be seen.
+	 */
+	test('and a note written in a notebook is not it', () => {
+		const mine = diary.createEntry(ctx, { content: 'what I did today' });
+		const book = notebooks.createNotebook(ctx, { title: 'The kitchen' });
+		diary.createEntry(ctx, { content: 'the tiles arrive on Thursday', notebookId: book });
+
+		const latest = diary.latestEntry(ctx);
+		expect(latest?.id, 'a notebook note was served as the diary').toBe(mine);
+		expect(latest?.content).toBe('what I did today');
 	});
 
 	test("is not another account's to change", () => {
