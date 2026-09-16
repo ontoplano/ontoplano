@@ -580,22 +580,34 @@ test.describe('booking with Android', () => {
 		}
 
 		/*
-		 * Two days out, at a fixed hour.
+		 * Two days out, at nine in the morning, in UTC on both sides.
 		 *
-		 * "Three hours from now" is a time in *this* machine's zone, and the
-		 * form refuses a time that has been according to the *account's* — so a
-		 * few hours of difference between the two turned this into a test of
-		 * timezones, which it is not about. Two days is ahead of now in every
-		 * zone there is.
+		 * Three separate versions of this test have been about timezones rather
+		 * than about reminders. "Three hours from now" is a time in *this*
+		 * machine's zone and the form judges it in the *account's*. Then the
+		 * hour was built with `setHours`, which is local to the test process —
+		 * and the browser is pinned to UTC, so a shell that happened to export
+		 * TZ moved the expectation three hours and not the app.
+		 *
+		 * The browser's zone is fixed by the config, so both ends are built in
+		 * it: the day, the hour typed into the form, and the instant expected
+		 * back. Two days ahead so it is in the future whatever else is true.
 		 */
 		const soon = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
-		soon.setHours(9, 0, 0, 0);
 		const pad = (n: number) => String(n).padStart(2, '0');
+		const expected = Date.UTC(
+			soon.getUTCFullYear(),
+			soon.getUTCMonth(),
+			soon.getUTCDate(),
+			9,
+			0,
+			0
+		);
 		await page.goto('/reminders');
 		await expect(page.locator('[name="day"]')).toBeVisible({ timeout: 30_000 });
 		await page
 			.locator('[name="day"]')
-			.fill(`${soon.getFullYear()}-${pad(soon.getMonth() + 1)}-${pad(soon.getDate())}`);
+			.fill(`${soon.getUTCFullYear()}-${pad(soon.getUTCMonth() + 1)}-${pad(soon.getUTCDate())}`);
 		await page.locator('[name="time"]').fill('09:00');
 		await page.locator('[name="label"]').first().fill('booked with android');
 		await page.getByRole('button', { name: 'Set it' }).click();
@@ -619,10 +631,10 @@ test.describe('booking with Android', () => {
 
 		// The right minute, and on the channel that makes a sound — a booking on
 		// the plugin's default channel is a notification that arrives in silence.
-		const mine = booked.find((b) => Math.abs(Date.parse(b.at) - soon.getTime()) < 60_000);
+		const mine = booked.find((b) => Math.abs(Date.parse(b.at) - expected) < 60_000);
 		expect(
 			mine,
-			`nothing was booked near ${soon.toISOString()}: ${JSON.stringify(booked)}`
+			`nothing was booked near ${new Date(expected).toISOString()}: ${JSON.stringify(booked)}`
 		).toBeTruthy();
 		expect(mine!.channelId).toBe('ontoplano-reminders');
 	});

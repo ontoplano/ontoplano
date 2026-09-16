@@ -16,6 +16,17 @@ export default defineConfig({
 	retries: process.env.CI ? 2 : 0,
 	use: {
 		baseURL: 'http://localhost:4180',
+		/*
+		 * The same clock the other suite pins, and for a sharper reason here.
+		 *
+		 * On a device instance there is no server: the account's timezone is
+		 * whatever the browser reports, so an unpinned zone means the app
+		 * writes wall-clock times in the machine's zone and a test computing
+		 * instants in another gets a different answer on every laptop. The main
+		 * config has always pinned this; this one did not, so the same test
+		 * passed under one and failed under the other.
+		 */
+		timezoneId: 'UTC',
 		trace: 'retain-on-failure'
 	},
 	webServer: {
