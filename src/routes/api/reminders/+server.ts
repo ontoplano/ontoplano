@@ -7,7 +7,7 @@ import {
 	markDelivered,
 	upcomingReminders
 } from '$lib/services/reminders';
-import { ensureBirthdayReminders } from '$lib/services/birthdays';
+import { ensureOwnReminders } from '$lib/services/reminder-sources';
 
 /**
  * What should have gone off by now.
@@ -31,23 +31,23 @@ export const GET = async ({ locals, url }: IsolatedEvent) => {
 	 * Android before it is closed. It needs the ones that have not gone off
 	 * yet rather than the ones that have.
 	 */
+	/*
+	 * Everything the app knows and you do not, written before it is read.
+	 *
+	 * An instance with no push keys runs no delivery job, so without this a
+	 * birthday, a bill, a week left open or a block starting would exist only
+	 * for accounts that had set push up — and on a phone that *is* the
+	 * instance, for nobody at all. Idempotent per account per day, so the job
+	 * and this cannot make two of anything.
+	 */
+	ensureOwnReminders(ctx, ctx.now, ctx.tz);
+
 	if (url.searchParams.has('upcoming')) {
 		// The same list `/api/v1/reminders/upcoming` hands a phone pointed at a
 		// server: one definition, so the two cannot answer differently about
 		// whether something will ring.
 		return json({ upcoming: upcomingReminders(ctx) });
 	}
-	/*
-	 * Today's birthdays are written here as well as by the delivery job.
-	 *
-	 * The job is what wakes a phone, and an instance with no push keys does not
-	 * run one — so a birthday would exist only for people who had set push up.
-	 * Writing them on the poll too costs one indexed query a minute and means
-	 * the address book behaves the same everywhere. Idempotent by date, so the
-	 * two writers cannot produce two rows.
-	 */
-	ensureBirthdayReminders(ctx.userId, ctx.now, ctx.tz);
-
 	return json({ due: dueReminders(ctx) });
 };
 

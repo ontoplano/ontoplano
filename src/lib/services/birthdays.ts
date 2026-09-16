@@ -3,6 +3,7 @@ import { and, eq, isNotNull, like, sql } from 'drizzle-orm';
 import { db } from '$lib/db/index.js';
 import { people, reminders } from '$lib/db/schema.js';
 import { getGridHours } from './settings.js';
+import { notifies } from './notifications.js';
 import { localOfInstant } from './time.js';
 
 /**
@@ -70,6 +71,8 @@ export function birthdayMessage(name: string, birthday: string, onDate: string):
  * that is about to read reminders: one indexed query over an address book.
  */
 export function ensureBirthdayReminders(userId: string, now: Date, tz: string): number {
+	if (!notifies(userId, 'birthdays')) return 0;
+
 	const local = localOfInstant(now, tz);
 	const today = dayOf(local);
 	const at = `${today}T${String(getGridHours(userId).start).padStart(2, '0')}:00:00`;

@@ -59,6 +59,7 @@ shows up here on the next build.
 | [`newsletter`](#newsletter)                      | The one channel nobody else can take away.                                                                                                                                                                                                                           |
 | [`notebook-media`](#notebook-media)              | Every picture that is in a notebook, as a gallery album.                                                                                                                                                                                                             |
 | [`notebooks`](#notebooks)                        | Notebooks: a subject you write against, with no deadline.                                                                                                                                                                                                            |
+| [`notifications`](#notifications)                | Everything the app will tell you about, in one list.                                                                                                                                                                                                                 |
 | [`onboarding-templates`](#onboarding-templates)  | The starter weeks, as data.                                                                                                                                                                                                                                          |
 | [`onboarding`](#onboarding)                      | First run.                                                                                                                                                                                                                                                           |
 | [`people`](#people)                              | The people in your life, and where they turn up.                                                                                                                                                                                                                     |
@@ -2699,6 +2700,49 @@ Share a notebook with the family, or stop. The owner's switch alone.
 - `Notebook`
 - `NotebookNode`
 
+## notifications
+
+Everything the app will tell you about, in one list.
+
+These grew one at a time and each one decided for itself whether to happen:
+the weekly review nag always did, bills always did, birthdays always did,
+the Monday mail was a checkbox on a different page, and a block could only
+notify you if you gave that block a lead time by hand. So there was no
+screen anywhere that answered "what will this app interrupt me for", which
+is the first thing somebody wants to know and the only thing they can act
+on.
+
+One list, then, and the settings screen is drawn from it rather than being a
+hand-written row per notification — a new one appears there by being added
+here, which is the only way a list like this stays complete.
+
+Off or on is an account's business and lives in `user_settings`. It is not
+the same question as _sound_, which is per device and per kind and belongs
+to the reminders page: this decides whether the thing is said at all.
+
+### Functions
+
+#### `notifies(userId, id)`
+
+Whether one of these is on for an account.
+
+Stored as the same two words the mail setting has always used, so the one
+key that predates this reads the same way as the rest.
+
+#### `notifyAt(userId, id)`
+
+The time one of the timed ones goes off, as `HH:MM`.
+
+#### `notificationSettings(ctx)`
+
+#### `setNotification(ctx, id, choice)`
+
+### Types
+
+- `Notification` — A notification somebody can turn off, as the settings screen draws it.
+- `NotificationId`
+- `NotificationRow` — What the settings screen draws: every notification, with this account's answers already in it.
+
 ## onboarding-templates
 
 The starter weeks, as data.
@@ -3440,6 +3484,54 @@ situations, and one of them is an emergency:
 
 Only for bills that are actually unpaid, and only inside a fortnight, so a
 year's worth of yearly bills is not written into the table in advance.
+
+#### `ensureBlockReminders(ctx, now, tz)`
+
+Every block on the plan says so as it starts.
+
+A reminder about a block used to need a lead time set on that block, one
+block at a time — which is right for "ten minutes before gym" and useless as
+the answer to "tell me when things start". This is the account-wide version:
+on, and every occurrence left today gets a nudge at its own time.
+
+Through `createReminder` rather than by writing rows, so it is the same kind
+of reminder a lead produces, carries the block's own name, and is deduped on
+(block, minute) the way regenerating a week already is — a block that has a
+lead of zero, or that has already been given one for this minute, does not
+get a second.
+
+Only what is still ahead. A block at nine, with the app opened at eleven, is
+not something to be told about: the row would be due the moment it existed
+and would fire as though it were news.
+
+#### `ensureEndOfDayReminder(ctx, now, tz)`
+
+What the day turned out to be, at the hour it ends.
+
+The one reminder that is about a day rather than about a thing in it, which
+is why it is its own kind. It says the count and nothing else: a day that
+went badly does not need a paragraph about it, and a line somebody reads in
+a second is a line they keep letting through.
+
+Written ahead of its time like everything else here — the row has to exist
+before the clock looks for it, and on a phone it has to exist before the app
+is closed, which is hours earlier.
+
+#### `ensureOwnReminders(ctx, now, tz)`
+
+Every reminder nobody types, written for one account.
+
+Five sources, one call, because the list of them is a thing that grows and
+every caller was keeping its own copy of it: the delivery job wrote the
+review nag and the bills, and the two places a page reads reminders wrote
+only the birthdays. So an instance that runs on the device — which has no
+delivery job at all, because there is no server to run one — got birthdays
+and nothing else, and the difference was invisible: a reminder that is never
+written is indistinguishable from a day with nothing on it.
+
+Every one of them is idempotent per account per day, keyed on the exact row
+it would write, so being called from a page poll, a job and a phone waking
+up cannot say a thing twice.
 
 #### `upcomingWindow(raw)`
 

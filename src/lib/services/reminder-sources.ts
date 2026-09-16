@@ -1,13 +1,17 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNull, like, ne } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
 import { reminders } from '$lib/db/schema.js';
 import { billsDueBetween } from '$lib/services/bills.js';
 import type { Ctx } from '$lib/services/ctx.js';
 import { reviewPending } from '$lib/services/review.js';
+import { ensureBirthdayReminders } from '$lib/services/birthdays.js';
 import { listPeople } from '$lib/services/people.js';
 import type { ReminderKind } from '$lib/services/reminders.js';
 import { getCurrency, getGridHours } from './settings.js';
+import { notifies, notifyAt } from './notifications.js';
+import { listForDate } from './instances.js';
+import { createReminder } from './reminders.js';
 import { formatMoney } from '../money.js';
 import { localOfInstant } from '$lib/services/time.js';
 
@@ -62,7 +66,7 @@ function addDays(day: string, n: number): string {
  */
 function writeOnce(
 	userId: string,
-	kind: 'review' | 'bill',
+	kind: 'review' | 'bill' | 'day',
 	subjectId: number | null,
 	at: string,
 	message: string
@@ -105,6 +109,8 @@ function writeOnce(
  * in it will have changed and so will the sentence.
  */
 export function ensureReviewReminder(ctx: Ctx, now: Date, tz: string): number {
+	if (!notifies(ctx.userId, 'review')) return 0;
+
 	const pending = reviewPending(ctx);
 	if (!pending) return 0;
 
@@ -137,6 +143,8 @@ export function ensureReviewReminder(ctx: Ctx, now: Date, tz: string): number {
  * year's worth of yearly bills is not written into the table in advance.
  */
 export function ensureBillReminders(ctx: Ctx, now: Date, tz: string): number {
+	if (!notifies(ctx.userId, 'bills')) return 0;
+
 	const today = dayOf(localOfInstant(now, tz));
 	const hour = String(getGridHours(ctx.userId).start).padStart(2, '0');
 
@@ -196,6 +204,137 @@ export function ensureBillReminders(ctx: Ctx, now: Date, tz: string): number {
 	}
 
 	return written;
+}
+
+/**
+ * Every block on the plan says so as it starts.
+ *
+ * A reminder about a block used to need a lead time set on that block, one
+ * block at a time — which is right for "ten minutes before gym" and useless as
+ * the answer to "tell me when things start". This is the account-wide version:
+ * on, and every occurrence left today gets a nudge at its own time.
+ *
+ * Through `createReminder` rather than by writing rows, so it is the same kind
+ * of reminder a lead produces, carries the block's own name, and is deduped on
+ * (block, minute) the way regenerating a week already is — a block that has a
+ * lead of zero, or that has already been given one for this minute, does not
+ * get a second.
+ *
+ * Only what is still ahead. A block at nine, with the app opened at eleven, is
+ * not something to be told about: the row would be due the moment it existed
+ * and would fire as though it were news.
+ */
+export function ensureBlockReminders(ctx: Ctx, now: Date, tz: string): number {
+	if (!notifies(ctx.userId, 'blocks')) return 0;
+
+	const local = localOfInstant(now, tz);
+	const today = dayOf(local);
+	let written = 0;
+
+	for (const block of listForDate(ctx, new Date(`${today}T00:00:00`))) {
+		// Done, skipped or already gone by: none of those want announcing.
+		if (block.status !== 'todo' && block.status !== 'doing') continue;
+		if (`${block.date}T${block.startTime}:00` <= local) continue;
+
+		const before = db
+			.select({ id: reminders.id })
+			.from(reminders)
+			.where(
+				and(
+					eq(reminders.userId, ctx.userId),
+					eq(reminders.subjectKind, 'instance'),
+					eq(reminders.subjectId, block.id)
+				)
+			)
+			.get();
+		// A block somebody gave a lead time to has already said what it wants.
+		if (before) continue;
+
+		// No message: `createReminder` names it after the block, which is the
+		// same name the grid and the board show.
+		createReminder(ctx, { subjectId: block.id, at: 0 });
+		written += 1;
+	}
+
+	return written;
+}
+
+/**
+ * What the day turned out to be, at the hour it ends.
+ *
+ * The one reminder that is about a day rather than about a thing in it, which
+ * is why it is its own kind. It says the count and nothing else: a day that
+ * went badly does not need a paragraph about it, and a line somebody reads in
+ * a second is a line they keep letting through.
+ *
+ * Written ahead of its time like everything else here — the row has to exist
+ * before the clock looks for it, and on a phone it has to exist before the app
+ * is closed, which is hours earlier.
+ */
+export function ensureEndOfDayReminder(ctx: Ctx, now: Date, tz: string): number {
+	if (!notifies(ctx.userId, 'endOfDay')) return 0;
+
+	const local = localOfInstant(now, tz);
+	const today = dayOf(local);
+	const at = `${today}T${notifyAt(ctx.userId, 'endOfDay')}:00`;
+	if (at <= local) return 0;
+
+	const blocks = listForDate(ctx, new Date(`${today}T00:00:00`));
+	if (blocks.length === 0) return 0;
+
+	/*
+	 * Yesterday's answer to today's question, thrown away.
+	 *
+	 * The row is written hours ahead, so moving the time — or a block being
+	 * ticked after it was written — leaves a row that is about to say
+	 * something out of date at an hour nobody asked for any more. Only the
+	 * ones that have not gone off: what was already said is history.
+	 */
+	db.delete(reminders)
+		.where(
+			and(
+				eq(reminders.userId, ctx.userId),
+				eq(reminders.subjectKind, 'day'),
+				isNull(reminders.deliveredAt),
+				like(reminders.remindAt, `${today}%`),
+				ne(reminders.remindAt, at)
+			)
+		)
+		.run();
+
+	const done = blocks.filter((b) => b.status === 'done').length;
+	const left = blocks.filter((b) => b.status === 'todo' || b.status === 'doing').length;
+	const message =
+		left === 0
+			? `That was today — all ${blocks.length} ${blocks.length === 1 ? 'block' : 'blocks'} answered for.`
+			: `That was today — ${done} of ${blocks.length} done, ${left} still to say.`;
+
+	return writeOnce(ctx.userId, 'day', null, at, message) ? 1 : 0;
+}
+
+/**
+ * Every reminder nobody types, written for one account.
+ *
+ * Five sources, one call, because the list of them is a thing that grows and
+ * every caller was keeping its own copy of it: the delivery job wrote the
+ * review nag and the bills, and the two places a page reads reminders wrote
+ * only the birthdays. So an instance that runs on the device — which has no
+ * delivery job at all, because there is no server to run one — got birthdays
+ * and nothing else, and the difference was invisible: a reminder that is never
+ * written is indistinguishable from a day with nothing on it.
+ *
+ * Every one of them is idempotent per account per day, keyed on the exact row
+ * it would write, so being called from a page poll, a job and a phone waking
+ * up cannot say a thing twice.
+ */
+export function ensureOwnReminders(ctx: Ctx, now: Date, tz: string): number {
+	return (
+		ensureBirthdayReminders(ctx.userId, now, tz) +
+		ensureReviewReminder(ctx, now, tz) +
+		ensureBillReminders(ctx, now, tz) +
+		ensureBlockReminders(ctx, now, tz) +
+		ensureEndOfDayReminder(ctx, now, tz)
+	);
 }
 
 /**

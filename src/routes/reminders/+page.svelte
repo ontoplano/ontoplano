@@ -47,7 +47,8 @@
 		free: { label: 'Alarms', icon: 'clock' },
 		review: { label: 'The weekly review', icon: 'book' },
 		bill: { label: 'Bills', icon: 'wallet' },
-		person: { label: 'Birthdays', icon: 'cake' }
+		person: { label: 'Birthdays', icon: 'cake' },
+		day: { label: 'The end of the day', icon: 'moon' }
 	};
 
 	const kindOf = (key: string) => KINDS[key] ?? { label: key, icon: 'clock' as IconName };

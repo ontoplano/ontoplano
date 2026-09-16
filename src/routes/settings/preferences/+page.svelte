@@ -12,6 +12,7 @@
 		testPhoneNotification
 	} from '$lib/phone-notifications';
 	import { settingsForm } from '$lib/actions/settings-form';
+	import { resolve } from '$app/paths';
 	import { isCurrency } from '$lib/money';
 	import TimezonePicker from '$lib/components/TimezonePicker.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -433,6 +434,92 @@
 		</div>
 		<button class="btn btn-primary">Save</button>
 	</form>
+
+	<!--
+		What the app will interrupt you for — an account's answer, not a device's.
+
+		The section under this one is about permission, which belongs to the
+		browser on the machine it was given on. This is the other half and the
+		one nobody could answer before: each of these decided for itself whether
+		to happen — the review nag always did, bills always did, the Monday mail
+		was a checkbox on a different page, and a block could only say anything
+		if you gave that block a lead time by hand.
+
+		Drawn from the list in `services/notifications.ts` rather than written
+		out row by row, so a notification the app gains appears here by existing.
+		Each row saves itself: a section-wide Save button over six independent
+		switches is a button somebody presses hoping it kept all of them.
+	-->
+	<section class="space-y-4 border border-gray-200 bg-white p-6 shadow-card">
+		<div>
+			<h2 class="text-sm font-semibold text-gray-900">What you are told about</h2>
+			<p class="mt-1 text-sm text-gray-500">
+				Everything the app will say without being asked. Whether each one makes a sound is a
+				separate question, on
+				<a href={resolve('/reminders')} class="underline underline-offset-2">Reminders</a>.
+			</p>
+		</div>
+
+		<ul class="divide-y divide-gray-200 border-t border-gray-200">
+			{#each data.notifications as what (what.id)}
+				<!--
+					Stacked on a phone, side by side where there is room.
+
+					`flex-wrap` alone put the controls beside the sentence and let
+					the sentence wrap around them, which on a narrow screen gave
+					"The end of the day" three lines of title and five of
+					description in a column an inch wide. The row is a column until
+					there is width for two things on a line.
+				-->
+				<li class="flex flex-col items-stretch gap-2 py-3 sm:flex-row sm:items-start sm:gap-4">
+					<div class="min-w-0 flex-1">
+						<p class="text-sm font-medium text-gray-900">{what.label}</p>
+						<p class="mt-0.5 text-sm leading-relaxed text-gray-500">{what.description}</p>
+					</div>
+
+					<form
+						method="post"
+						action="?/setNotification"
+						use:settingsForm={{ notice: 'Saved.' }}
+						class="flex shrink-0 items-center gap-2"
+					>
+						<input type="hidden" name="id" value={what.id} />
+						<!--
+							The hour comes with the switch, so turning it on and choosing
+							when are one act. Submitted on change rather than behind a
+							button of its own: a time field with a Save beside it is two
+							controls for one answer.
+						-->
+						{#if what.at !== null}
+							<label class="flex items-center gap-2 text-sm text-gray-700">
+								<span class="sr-only">When</span>
+								<input
+									type="time"
+									name="at"
+									value={what.at}
+									autocomplete="off"
+									class="input w-32"
+									onchange={(e) => e.currentTarget.form?.requestSubmit()}
+								/>
+							</label>
+						{/if}
+						{#each [['on', 'On'], ['off', 'Off']] as [value, label] (value)}
+							<button
+								type="submit"
+								name="on"
+								{value}
+								class="border px-3 py-1.5 text-sm shadow-sm {(what.on ? 'on' : 'off') === value
+									? 'border-gray-900 bg-gray-900 font-semibold text-white'
+									: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
+							>
+								{label}
+							</button>
+						{/each}
+					</form>
+				</li>
+			{/each}
+		</ul>
+	</section>
 
 	<!--
 		Notifications, which are per device and cannot be otherwise.

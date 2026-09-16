@@ -18,6 +18,28 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.16 — 2026-09-16
+
+- **One screen for everything the app tells you about.** Under Settings →
+  Preferences: the blocks on your plan, the end of the day, the weekly review,
+  the weekly review by email, bills and birthdays, each with a switch. Until
+  now every one of them decided for itself — the review nag always happened,
+  bills always happened, the Monday mail was a checkbox on another page, and a
+  block could only say anything if you had given that block a lead time by
+  hand. Nothing changes by the screen appearing: what always happened still
+  does, what never did still does not.
+- **Every block on the plan can say so as it starts**, without setting a lead
+  time on each one. Off by default; on, it nudges for whatever is still ahead
+  today, with the block's own name.
+- **The end of the day**, at an hour you choose — "that was today, four of six
+  done, two still to say". It opens on the hour your planner closes, because
+  that is where you have already said your day ends.
+- **Fixed: an instance running on the device wrote almost none of these.**
+  Bills, a week left open and today's birthdays were written by the delivery
+  job, which needs a server — so on a phone that is the instance only the
+  birthdays existed, and a reminder that is never written looks exactly like a
+  day with nothing on it.
+
 ## 0.178.15 — 2026-09-16
 
 - **"Running it yourself" says what is true.** It claimed nothing ever leaves

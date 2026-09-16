@@ -2,7 +2,7 @@ import { db } from '$lib/db/index.js';
 import { pushSubscriptions, user } from '$lib/db/schema.js';
 import { buildCtx } from '$lib/services/ctx.js';
 import { ensureBirthdayReminders } from '$lib/services/birthdays.js';
-import { ensureBillReminders, ensureReviewReminder } from '$lib/services/reminder-sources.js';
+import { ensureOwnReminders } from '$lib/services/reminder-sources.js';
 import { markPushed, pushableReminders } from '$lib/services/reminders.js';
 import { pushConfigured, pushToUser } from './push.js';
 import { soundFor } from '$lib/services/ringtones.js';
@@ -61,12 +61,12 @@ export async function deliverDueReminders(now = new Date()): Promise<{
 		if (account.banned) continue;
 		const ctx = buildCtx(account.id, { now });
 		birthdays += ensureBirthdayReminders(account.id, now, ctx.tz);
-		// The reminders nobody types: a week left open, and money with a date on
-		// it. Written here for the same reason birthdays are — the row has to
-		// exist before the minute it is due, and nobody is looking at six in the
-		// morning, which is the whole point.
-		written += ensureReviewReminder(ctx, now, ctx.tz);
-		written += ensureBillReminders(ctx, now, ctx.tz);
+		// And everything else nobody types: a week left open, money with a date
+		// on it, the blocks about to start, the end of the day. Written here for
+		// the same reason birthdays are — the row has to exist before the minute
+		// it is due, and nobody is looking at six in the morning, which is the
+		// whole point. One call, because the list grows.
+		written += ensureOwnReminders(ctx, now, ctx.tz);
 	}
 
 	const devices = db.select({ id: pushSubscriptions.id }).from(pushSubscriptions).all().length;

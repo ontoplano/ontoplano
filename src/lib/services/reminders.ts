@@ -54,7 +54,15 @@ import { getGridHours } from './settings.js';
 export const MAX_MESSAGE_LENGTH = 300;
 
 /** Everything a reminder can be about, and the order the page groups them in. */
-export const REMINDER_KINDS = ['instance', 'todo', 'free', 'review', 'bill', 'person'] as const;
+export const REMINDER_KINDS = [
+	'instance',
+	'todo',
+	'free',
+	'review',
+	'bill',
+	'person',
+	'day'
+] as const;
 export type ReminderKind = (typeof REMINDER_KINDS)[number];
 
 export type Reminder = {

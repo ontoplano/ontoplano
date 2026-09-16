@@ -1,7 +1,7 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx, localDateOf } from '$lib/services/ctx';
 import { localOfInstant } from '$lib/services/time';
-import { ensureBirthdayReminders } from '$lib/services/birthdays';
+import { ensureOwnReminders } from '$lib/services/reminder-sources';
 import {
 	MAX_UPCOMING_DAYS,
 	upcomingDerived,
@@ -73,10 +73,11 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 	 * Today's birthdays are written here as well as by the delivery pass.
 	 *
 	 * Same reason `/api/reminders` does it: an instance with no push keys runs
-	 * no delivery, so a birthday would exist only for accounts that had set
-	 * push up. Idempotent by date, so the writers cannot make two.
+	 * no delivery, so a birthday, a bill or a block starting would exist only
+	 * for accounts that had set push up. Idempotent per day, so the writers
+	 * cannot make two.
 	 */
-	ensureBirthdayReminders(ctx.userId, ctx.now, ctx.tz);
+	ensureOwnReminders(ctx, ctx.now, ctx.tz);
 
 	return {
 		/*

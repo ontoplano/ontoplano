@@ -1,5 +1,6 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { host } from '$lib/services/host';
+import { notificationSettings, setNotification } from '$lib/services/notifications';
 import { STYLES, STYLE_HINTS, STYLE_LABELS } from '$lib/style';
 import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/http-errors';
@@ -67,6 +68,16 @@ export const load = async ({ locals }: IsolatedEvent) => {
 		 * to. The instance does know: ringing needs a key, and a key is a row.
 		 */
 		ringsOnAPhone: host.ringsOnAPhone(ctx),
+		/*
+		 * Everything the app will interrupt you for, and this account's answers.
+		 *
+		 * Read from one list rather than named here, so a notification that is
+		 * added to the app appears on this screen by existing — see
+		 * `services/notifications.ts`. The screen was the reason for that list:
+		 * each of these decided for itself whether to happen, and there was
+		 * nowhere to answer "what will this app tell me about".
+		 */
+		notifications: notificationSettings(ctx),
 		sections: HIDEABLE_SECTIONS,
 		hiddenSections,
 		week: getWeekSettings(ctx.userId),
@@ -151,6 +162,22 @@ export const load = async ({ locals }: IsolatedEvent) => {
 };
 
 export const actions = {
+	/** One row of the notifications list: whether it happens, and when. */
+	setNotification: async ({ request, locals }: IsolatedEvent) => {
+		const form = await request.formData();
+		try {
+			setNotification(buildCtx(locals.user!.id), form.get('id'), {
+				on: form.get('on') === 'on',
+				// Only the timed ones post this; the rest leave it alone rather
+				// than writing an empty string over an hour somebody chose.
+				at: form.get('at') ?? undefined
+			});
+			return { success: true, action: 'setNotification' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
 	setErrorReports: async ({ request, locals }: IsolatedEvent) => {
 		const formData = await request.formData();
 		try {

@@ -6,6 +6,7 @@ import { db } from '$lib/db/index.js';
 import { user } from '$lib/db/schema.js';
 import { renderEmail } from '../email-template.js';
 import { getGridHours, getUserSetting, setUserSetting } from '../settings.js';
+import { REVIEW_MAIL_KEY, notifies } from '$lib/services/notifications.js';
 import { addDays } from '$lib/services/week-generator.js';
 import { buildCtx, localDateOf, type Ctx } from '$lib/services/ctx.js';
 import { sendLogged } from './mail-log.js';
@@ -61,8 +62,16 @@ import { readWeek, weekStartOf } from '$lib/services/review.js';
  * rather than a number in this file — see `REVIEW_MAIL_OFFSET_HOURS`.
  */
 
-/** Set to `on` to get them. Absent means off: nobody is mailed unasked. */
-export const REVIEW_MAIL_KEY = 'mail.weekly-review';
+/**
+ * Set to `on` to get them. Absent means off: nobody is mailed unasked.
+ *
+ * Re-exported rather than declared: this is one row of the list of everything
+ * the app will tell somebody about, and the switch for it is on the same
+ * screen as the rest — see `services/notifications.ts`. The key keeps the name
+ * it had before that list existed, because accounts have already answered it
+ * and a rename would quietly unsubscribe every one of them.
+ */
+export { REVIEW_MAIL_KEY };
 
 /** The Monday of the week last written about, so it is written about once. */
 const LAST_SENT_KEY = 'mail.weekly-review.last';
@@ -81,7 +90,7 @@ export function reviewMailOffsetHours(): number {
 
 /** Off unless the account said otherwise. Nobody is mailed unasked. */
 export function weeklyReviewMailEnabled(userId: string): boolean {
-	return getUserSetting(userId, REVIEW_MAIL_KEY) === 'on';
+	return notifies(userId, 'reviewMail');
 }
 
 /**

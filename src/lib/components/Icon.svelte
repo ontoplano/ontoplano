@@ -73,6 +73,9 @@
 		// things
 		calendar: 'M4 6h16v15H4zM4 10h16M8 3v4M16 3v4',
 		clock: 'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 8v4l3 2',
+		// A crescent: the end of the day, which is the one reminder that is
+		// about a day rather than about a thing in it.
+		moon: 'M20 14.5A8.5 8.5 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z',
 		tag: 'M4 4h8l8 8-8 8-8-8z M8 8h.01',
 		star: 'M12 4l2.4 5 5.6.7-4 3.9 1 5.4-5-2.7-5 2.7 1-5.4-4-3.9 5.6-.7z',
 		key: 'M14 7a4 4 0 1 1-3.5 5.9L4 19v-3h3v-3h3l.5-.6A4 4 0 0 1 14 7z',

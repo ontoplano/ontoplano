@@ -1788,7 +1788,7 @@ export const reminders = sqliteTable(
 			.references(() => user.id),
 		/** What it is about. `free` is a reminder that is only itself. */
 		subjectKind: text('subject_kind', {
-			enum: ['instance', 'todo', 'free', 'person', 'review', 'bill']
+			enum: ['instance', 'todo', 'free', 'person', 'review', 'bill', 'day']
 		})
 			.notNull()
 			.default('free'),
