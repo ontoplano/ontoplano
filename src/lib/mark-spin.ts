@@ -8,12 +8,15 @@
  * modular arithmetic in `stopMarkSpin`) and rests upright, which reads as
  * "done" instead of "interrupted".
  *
- * The delay is the same fraction of the movement the spawned mark used to
- * wait: a navigation that finishes inside the slide never visibly spins.
- * While the wait is inside that delay, stopping costs nothing and shows
- * nothing.
+ * And it always goes round at least once. It used to wait out a fraction of
+ * the room slide before moving, on the theory that a navigation finishing
+ * inside the movement should leave no trace — which is true of a *warning*
+ * and wrong of an answer to a press. On a desktop, where most navigations
+ * land inside that fraction, the mark never moved at all: the thing that
+ * tells you the app heard you was invisible exactly when the app was
+ * quickest. So the turn starts on the press and `stopMarkSpin` carries it to
+ * the next upright, which is a whole turn from a standing start.
  */
-import { SLIDE_MS, WAIT_MARK_AT } from './slide';
 
 /** One full turn, in milliseconds, at full speed. */
 export const TURN_MS = 300;
@@ -37,19 +40,6 @@ const DECEL_DEGREES = 90;
 
 /** Ease-out: quick at first, gentler as it approaches the top. */
 const eased = (t: number) => 1 - (1 - t) * (1 - t);
-
-const DELAY_MS = Math.round(SLIDE_MS * WAIT_MARK_AT);
-
-/**
- * The delay, for this turn only.
- *
- * Nothing is shown inside it, which is right when the turn is a *warning* that
- * a room is taking its time: a navigation that finishes first should leave no
- * trace. It is wrong when the turn is the answer to a press — the instance
- * chooser opens a copy on the same phone, which is faster than the delay, so
- * the mark never moved at all and the press looked ignored.
- */
-let delayMs = DELAY_MS;
 
 /** Everybody waiting for the turn to land. See `stopMarkSpin`. */
 let landed: (() => void)[] = [];
@@ -91,7 +81,6 @@ function rest(): void {
 		el.style.removeProperty('transition');
 	}
 	els = [];
-	delayMs = DELAY_MS;
 	// Whoever was waiting for it to come to rest — the chooser leaves when it
 	// has, so that the turn is finished rather than cut off by a navigation.
 	const waiting = landed;
@@ -104,12 +93,6 @@ function frame(now: number): void {
 	const dt = now - last;
 	last = now;
 
-	// Inside the delay nothing has moved yet; a stop here is free.
-	if (!windingDown && now - startedAt < delayMs) {
-		raf = requestAnimationFrame(frame);
-		return;
-	}
-
 	/*
 	 * How fast it is turning this frame.
 	 *
@@ -118,7 +101,7 @@ function frame(now: number): void {
 	 * upright it is aiming at. Never all the way to nothing, or it would
 	 * approach the resting place without ever arriving.
 	 */
-	const wound = eased(Math.min(1, (now - startedAt - delayMs) / SPIN_UP_MS));
+	const wound = eased(Math.min(1, (now - startedAt) / SPIN_UP_MS));
 	const left = Math.abs(restAt - angle);
 	const landing = windingDown ? Math.min(1, left / DECEL_DEGREES) : 1;
 	const rate = SLOWEST + (1 - SLOWEST) * Math.min(wound, landing);
@@ -141,9 +124,7 @@ function frame(now: number): void {
  */
 export function startMarkSpin(
 	marks: (HTMLElement | null | undefined)[],
-	direction: number = 0,
-	/** Skip the delay: the turn is the answer to a press, not a warning. */
-	atOnce = false
+	direction: number = 0
 ): void {
 	if (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)
 		return;
@@ -170,13 +151,18 @@ export function startMarkSpin(
 	angle = 0;
 	last = 0;
 	windingDown = false;
-	delayMs = atOnce ? 0 : DELAY_MS;
 	startedAt = performance.now();
 	raf = requestAnimationFrame(frame);
 }
 
 /**
  * The wait is over: finish the turn in progress, then rest upright.
+ *
+ * "Finish" is the whole of it. A navigation that lands in forty milliseconds
+ * asks for this while the mark has barely moved, and the answer is not to stop
+ * — it is to carry on to the next upright, which from a standing start is one
+ * full turn. So the quickest navigation and the slowest one both leave a mark
+ * that went round and came to rest, and only the number of turns differs.
  *
  * Answers when it has actually come to rest, for the one caller that has to
  * wait for the landing rather than merely ask for it: the instance chooser
@@ -186,20 +172,6 @@ export function startMarkSpin(
 export function stopMarkSpin(): Promise<void> {
 	if (!raf) return Promise.resolve();
 	const settled = new Promise<void>((resolve) => landed.push(resolve));
-	/*
-	 * Still inside the delay: nothing was drawn, so there is nothing to land.
-	 *
-	 * This asked whether the angle was zero, which is the same thing only if a
-	 * frame has moved it — and the first frame never does: it has no previous
-	 * timestamp, so its `dt` is zero and the angle stays put. A caller that
-	 * starts a turn and asks it to stop straight away therefore always took
-	 * this branch and never turned at all, which is what the instance chooser
-	 * did. The delay is what the shortcut is actually about.
-	 */
-	if (performance.now() - startedAt < delayMs) {
-		rest();
-		return settled;
-	}
 	windingDown = true;
 	/*
 	 * The next upright far enough away to slow down into.

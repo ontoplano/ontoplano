@@ -18,6 +18,14 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.17 — 2026-09-16
+
+- **The mark goes round at least once on every route change.** It used to sit
+  still for a fraction of the room slide before moving, so that a navigation
+  finishing inside the movement left no trace — which on a desktop is most of
+  them. The one thing on screen saying the app heard you was missing exactly
+  when the app was quickest.
+
 ## 0.178.16 — 2026-09-16
 
 - **One screen for everything the app tells you about.** Under Settings →

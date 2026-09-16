@@ -16,9 +16,24 @@ import { join } from 'node:path';
  * this working tree, whatever it is called. That covers the sibling
  * repositories too, which is right for the same reason.
  */
-const otherCheckouts = readdirSync('.', { withFileTypes: true })
-	.filter((entry) => entry.isDirectory() && existsSync(join(entry.name, '.git')))
-	.map((entry) => `**/${entry.name}/**`);
+/*
+ * Anchored to this file, not to `**`.
+ *
+ * `**\/.worktrees/**` reads as "anywhere called .worktrees" and Playwright
+ * matches it against absolute paths — so running the suite from *inside*
+ * `/workspace/.worktrees/something` ignored every spec in it and reported "no
+ * tests found", which is a confusing way to say "you are in the wrong
+ * directory". Rooted at the config's own directory it means what it says:
+ * checkouts nested below this one.
+ */
+const here = import.meta.dirname;
+
+const otherCheckouts = readdirSync(here, { withFileTypes: true })
+	.filter((entry) => entry.isDirectory() && existsSync(join(here, entry.name, '.git')))
+	.map((entry) => `${here}/${entry.name}/**`);
+
+/** The two by name, for the same reason and in the same shape. */
+const nestedCopies = [`${here}/.worktrees/**`, `${here}/.claude/**`];
 
 /**
  * The tests get their own database.
@@ -129,7 +144,7 @@ export default defineConfig({
 	testMatch: '**/*.e2e.{ts,js}',
 	// Worktrees are whole copies of the repo; without this every spec would
 	// run once per open worktree.
-	testIgnore: ['**/{.worktrees,.claude}/**', ...otherCheckouts],
+	testIgnore: [...nestedCopies, ...otherCheckouts],
 
 	/*
 	 * The registration tests go last, on their own.
@@ -148,7 +163,7 @@ export default defineConfig({
 			// keep the top-level list.
 			testIgnore: [
 				'**/{registration,admin}.e2e.ts',
-				'**/{.worktrees,.claude}/**',
+				...nestedCopies,
 				'**/e2e-isolated/**',
 				...otherCheckouts
 			]

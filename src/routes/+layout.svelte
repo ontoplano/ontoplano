@@ -452,10 +452,30 @@
 		// Zeroed when the movement is skipped, or the landing in afterNavigate
 		// would play an arrival on a screen that never slid — which is how the
 		// desktop briefly caught a transition it was never meant to have.
-		if (!changedRoom || !page$ || !pageBody || !roomStage || !slidesHere()) {
-			changedRoom = 0;
-			return;
-		}
+		const slides = Boolean(changedRoom && page$ && pageBody && roomStage && slidesHere());
+		if (!slides) changedRoom = 0;
+
+		/*
+		 * The mark answers the press, on every navigation and not only the slow
+		 * ones.
+		 *
+		 * This used to hang off `navigating`, which is a store that is set and
+		 * cleared again — so a navigation quick enough to be over inside one
+		 * flush was never observed as a wait at all, and the mark did not move.
+		 * On a desktop that is most of them: the thing that tells you the app
+		 * heard you was missing exactly when the app was quickest. Here it is a
+		 * press rather than a wait, and `stopMarkSpin` in `afterNavigate`
+		 * carries it round to the next upright however early it is asked —
+		 * which from a standing start is one whole turn.
+		 *
+		 * `-changedRoom`, so the medallion turns the way the rooms are sweeping;
+		 * zero where nothing slid, which spins it the one way it always did.
+		 */
+		if (navigation.to && !navigation.willUnload) startMarkSpin([deskMark, barMark], -changedRoom);
+
+		// Named again rather than left to `slides`: the same test, in the shape
+		// that tells the compiler these three are really here.
+		if (!changedRoom || !page$ || !pageBody || !roomStage) return;
 
 		/*
 		 * Both halves at the press, rather than one at the press and one when
@@ -477,6 +497,9 @@
 	});
 
 	afterNavigate(() => {
+		// Asked to stop as soon as the room is here; it finishes its turn on the
+		// way, so the quickest navigation still leaves a mark that went round.
+		stopMarkSpin();
 		// Joining the panel mid-flight when the load was quick, or arriving
 		// again — with the room finally in it — when the load outlived the
 		// slide. Never appearing in place: see `landOn`.
@@ -613,25 +636,30 @@
 	 */
 	let givenUp = $state(false);
 	/*
-	 * While the wait is on, the menu itself turns.
+	 * While the navigation is on, the menu itself turns.
 	 *
 	 * There used to be a mark spawned behind the departing screen for this;
 	 * spinning a thing that appeared for the occasion. The mark that opens the
 	 * rooms is already on every screen — the corner of the header, the raised
-	 * button in the phone bar — so that is the one that turns. Its delay comes
-	 * off SLIDE_MS, so a navigation that finishes inside the movement never
-	 * visibly spins at all.
+	 * button in the phone bar — so that is the one that turns.
+	 *
+	 * Started and stopped by `beforeNavigate` and `afterNavigate` above rather
+	 * than by watching `navigating`: that store is set and cleared again, and a
+	 * navigation quick enough to be over inside one flush was never seen as a
+	 * wait — which on a desktop is most of them.
 	 */
-	const waiting = $derived(Boolean(navigating.to) && !givenUp);
 	/* The two marks the spin turns: the header's and the phone bar's. */
 	let deskMark = $state<HTMLElement>();
 	let barMark = $state<HTMLElement>();
+	/*
+	 * The turn is started and stopped by the navigation itself — see
+	 * `beforeNavigate` and `afterNavigate` above. This is only the giving up:
+	 * a navigation that never arrives would otherwise turn the mark for the
+	 * rest of the session, and past twenty seconds the honest thing is to stop
+	 * saying "working".
+	 */
 	$effect(() => {
-		// The medallion turns the way the rooms are sweeping: the leaving
-		// screen rotates by -changedRoom around the hub, so that is the turn.
-		// A navigation with no room movement spins the one way it always did.
-		if (waiting) startMarkSpin([deskMark, barMark], -changedRoom);
-		else stopMarkSpin();
+		if (givenUp) stopMarkSpin();
 	});
 	$effect(() => {
 		if (!navigating.to) {
