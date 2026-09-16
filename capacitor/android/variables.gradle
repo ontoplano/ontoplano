@@ -1,7 +1,12 @@
 ext {
     minSdkVersion = 23
-    compileSdkVersion = 35
-    targetSdkVersion = 35
+    // Play refuses a bundle that targets less than 36: "esse nível precisa ser
+    // de pelo menos 36 para que o app use as APIs mais recentes". Compiling
+    // against the same level is Gradle's own rule — targetSdk may not exceed
+    // compileSdk — so the two move together. `tests/android-target.test.ts`
+    // holds the floor.
+    compileSdkVersion = 36
+    targetSdkVersion = 36
     androidxActivityVersion = '1.9.2'
     androidxAppCompatVersion = '1.7.0'
     androidxCoordinatorLayoutVersion = '1.2.0'

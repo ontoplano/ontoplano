@@ -20,6 +20,10 @@ releases mattered.
 
 ## 0.178.17 — 2026-09-16
 
+- **The Android build targets API 36**, which is what Google Play will accept.
+  A bundle behind that is refused on upload — after the build, the signing and
+  the wait — so the level is now held by a test rather than discovered by a
+  rejection.
 - **The mark goes round at least once on every route change.** It used to sit
   still for a fraction of the room slide before moving, so that a navigation
   finishing inside the movement left no trace — which on a desktop is most of

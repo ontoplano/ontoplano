@@ -7,7 +7,10 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.7.2'
+        // 8.9 is the first that knows API 36; older ones refuse to compile
+        // against a platform they have never heard of. Gradle 8.11.1 in the
+        // wrapper is exactly its minimum, so the wrapper stays where it is.
+        classpath 'com.android.tools.build:gradle:8.9.2'
         classpath 'com.google.gms:google-services:4.4.2'
 
         // NOTE: Do not place your application dependencies here; they belong
