@@ -63,7 +63,7 @@
 		is not.
 	-->
 	<header
-		class="section-tint flex flex-wrap items-start justify-between gap-x-4 gap-y-2 border-b border-gray-200 px-4 py-3"
+		class="section-tint card-header flex flex-wrap items-start justify-between gap-x-4 gap-y-2 border-b border-gray-200"
 		hidden={!title && !description && !actions}
 	>
 		<div class="min-w-0 flex-1">

@@ -101,36 +101,48 @@
 	}
 
 	/**
-	 * Moving a card without a mouse.
+	 * Moving a card, by the handle, with whatever is doing the moving.
 	 *
-	 * Arrange mode was HTML5 drag-and-drop, which does not exist on a touch
-	 * screen at all — so on a phone the mode opened, said "drag the cards to
-	 * reorder them", and then could not be used. Two buttons work with a thumb,
-	 * with a keyboard, and with a screen reader, and for eight cards they are
-	 * quicker than dragging anyway.
+	 * This was HTML5 drag-and-drop, which does not exist on a touch screen at
+	 * all: the mode opened on a phone, said "drag the cards", and then could not
+	 * be used — which is why there were arrows beside the handle. Pointer events
+	 * are the same three events for a mouse, a finger and a pen, so there is one
+	 * gesture now and the arrows are gone with the duplication.
+	 *
+	 * Only the handle starts it. Arming the whole card would take the gesture
+	 * the moment a finger landed anywhere on it, and on a phone that gesture is
+	 * the page scrolling — the handle is a control whose only purpose is this,
+	 * so it may answer immediately.
+	 *
+	 * The card under the pointer is asked for by hit test rather than by
+	 * listening on every card: the thing being dragged holds the pointer
+	 * capture, so no other element hears a thing until it is let go.
 	 */
-	function move(id: DashboardCardId, delta: number) {
-		const from = order.indexOf(id);
-		const to = from + delta;
-		if (from === -1 || to < 0 || to >= order.length) return;
-
-		const next = [...order];
-		next.splice(to, 0, ...next.splice(from, 1));
-		order = next;
-	}
-
-	function onDragStart(id: DashboardCardId, e: DragEvent) {
-		dragging = id;
-		if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
-	}
-
-	function onDragOver(id: DashboardCardId, e: DragEvent) {
+	function grab(id: DashboardCardId, e: PointerEvent) {
 		e.preventDefault();
+		dragging = id;
 		dragOver = id;
-		if (!dragging || dragging === id) return;
+		(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+	}
+
+	function dragTo(e: PointerEvent) {
+		if (!dragging) return;
+		e.preventDefault();
+
+		const under = document
+			.elementFromPoint(e.clientX, e.clientY)
+			?.closest<HTMLElement>('[data-card]')?.dataset.card as DashboardCardId | undefined;
+		if (!under || under === dragging || !order.includes(under)) return;
+
+		dragOver = under;
 		const next = order.filter((x) => x !== dragging);
-		next.splice(next.indexOf(id), 0, dragging);
+		next.splice(next.indexOf(under), 0, dragging);
 		order = next;
+	}
+
+	function letGo() {
+		dragging = null;
+		dragOver = null;
 	}
 
 	async function saveOrder() {
@@ -1130,18 +1142,10 @@
 					<div
 						class="relative {card.width === 'half'
 							? 'md:col-span-1'
-							: 'md:col-span-2 2xl:col-span-3'} {arranging
-							? 'being-arranged cursor-grab'
-							: ''} {dragging === id ? 'opacity-40' : ''} {arranging && dragOver === id
-							? 'outline-2 outline-gray-900'
-							: ''}"
-						draggable={arranging}
-						ondragstart={(e) => onDragStart(id, e)}
-						ondragend={() => {
-							dragging = null;
-							dragOver = null;
-						}}
-						ondragover={(e) => onDragOver(id, e)}
+							: 'md:col-span-2 2xl:col-span-3'} {arranging ? 'being-arranged' : ''} {dragging === id
+							? 'opacity-40'
+							: ''} {arranging && dragOver === id ? 'outline-2 outline-gray-900' : ''}"
+						data-card={id}
 						role={arranging ? 'listitem' : undefined}
 					>
 						{#if arranging}
@@ -1156,41 +1160,42 @@
 								header, and while these are being moved it holds these
 								instead of the way in. `.card-actions` is hidden by the
 								rule at the bottom of this file.
+
+								Padded from the same two numbers the header is
+								(`--card-pad-*`), so it lands on the button it replaces
+								rather than near it — written separately, it sat high and
+								inset, which on a phone read as a row of controls hanging
+								off the bottom of the title.
+
+								Two controls, and the handle is the last of them: it is
+								what the card is grabbed by, so it belongs at the outside
+								edge, under the thumb that reaches for it. The arrows are
+								gone — dragging is the way these move, and a pair of
+								chevrons beside the handle was a second answer to the same
+								question taking up the width of the first.
 							-->
-							<div class="absolute top-2.5 right-3 z-10 flex items-center gap-1">
-								<span
-									class="cursor-grab px-1 text-gray-500"
-									title="Drag {card.label} to move it"
-									aria-hidden="true"
-								>
-									<Icon name="drag" size={14} />
-								</span>
-								<button
-									onclick={() => move(id, -1)}
-									disabled={order.indexOf(id) === 0}
-									class="p-1 text-gray-600 hover:text-gray-900"
-									title="Move up"
-									aria-label="Move {card.label} up"
-								>
-									<Icon name="chevron-up" size={16} />
-								</button>
-								<button
-									onclick={() => move(id, 1)}
-									disabled={order.indexOf(id) === order.length - 1}
-									class="p-1 text-gray-600 hover:text-gray-900"
-									title="Move down"
-									aria-label="Move {card.label} down"
-								>
-									<Icon name="chevron-down" size={16} />
-								</button>
+							<div
+								class="card-header pointer-events-none absolute top-px right-0 z-10 flex items-start gap-1"
+							>
 								<button
 									onclick={() => hideCard(id)}
-									class="p-1 text-gray-500 hover:text-gray-900"
+									class="pointer-events-auto text-gray-500 hover:text-gray-900"
 									title="Hide this card"
 									aria-label="Hide {card.label}"
 								>
 									<Icon name="close" size={16} />
 								</button>
+								<span
+									class="pointer-events-auto cursor-grab touch-none text-gray-500"
+									title="Drag {card.label} to move it"
+									aria-hidden="true"
+									onpointerdown={(e) => grab(id, e)}
+									onpointermove={dragTo}
+									onpointerup={letGo}
+									onpointercancel={letGo}
+								>
+									<Icon name="drag" size={16} />
+								</span>
 							</div>
 						{/if}
 						{#if id === 'todayTasks'}{@render card_todayTasks()}
@@ -1215,9 +1220,7 @@
 			<div
 				class="flex flex-wrap items-center gap-2 border border-gray-200 bg-white p-3 shadow-card"
 			>
-				<span class="text-xs text-gray-500">
-					Move the cards with the arrows<span class="kbd-hint">, or drag them</span>.
-				</span>
+				<span class="text-xs text-gray-500"> Drag the cards by the handle in their corner. </span>
 				{#each data.cards.filter((c) => !order.includes(c.id)) as card (card.id)}
 					<button
 						onclick={() => (order = [...order, card.id])}

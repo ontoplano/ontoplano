@@ -345,6 +345,11 @@ html[data-style='playful'] svg {
  * stay honestly square and the corner is the card's business.
  */
 
+/* Where a card's header and anything standing in for it are padded from. */
+.card-header {
+	padding: var(--card-pad-y) var(--card-pad-x);
+}
+
 /* A section's own colour, at the strength chrome can carry. */
 html[data-style='playful'] .section-tint {
 	background-color: color-mix(in srgb, var(--section-accent) 10%, transparent);
@@ -2340,6 +2345,19 @@ option {
  * wants: recognisable, not themed.
  */
 :root {
+	/*
+	 * A card header's padding, named because two things have to agree on it.
+	 *
+	 * The header holds the card's own actions, and while the dashboard is being
+	 * rearranged an overlay takes that corner over — a different element, in a
+	 * different part of the tree, that has to land exactly where those actions
+	 * were. Written twice, it drifted: the handle sat a few pixels high and a
+	 * few pixels in from the button it replaced, which on a phone reads as a
+	 * row of controls hanging off the bottom of the title.
+	 */
+	--card-pad-x: 1rem;
+	--card-pad-y: 0.75rem;
+
 	--control-on: #1d4ed8;
 	/* Ink on a filled control. Dark themes override it; see the dark block. */
 	--ink-on-fill: #ffffff;

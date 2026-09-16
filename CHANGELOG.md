@@ -18,6 +18,20 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.13 — 2026-09-16
+
+- **A reminder cannot be set for a time that has already been.** One made in
+  the past is due the instant it exists — it fires immediately, or it lands in
+  "already been" as something you were never told. The form said so and the
+  server did not, so anything that was not the form could still write one. The
+  day field stops at today, the button says why it is dead, and an assistant
+  that reads the wrong year is told.
+- **Arranging the dashboard: two controls, on the title's line.** The handle
+  sits at the outside edge where a thumb reaches for it, hide is beside it, and
+  the arrows are gone — dragging works with a finger now, which is what they
+  were standing in for. Both line up with the button they replace rather than
+  hanging below the title.
+
 ## 0.178.12 — 2026-09-16
 
 - **A reminder that is already set can be changed.** Moving one half an hour,

@@ -91,6 +91,16 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 		ringsOnAPhone: host.ringsOnAPhone(ctx),
 		/** Today in the account's own zone, so the day field opens on it. */
 		today: localDateOf(ctx.now, ctx.tz),
+		/*
+		 * And now, to the minute, so the form can refuse a time that has been.
+		 *
+		 * The service refuses it either way — a reminder set for a time that has
+		 * passed is due the moment it is made — but a form that lets somebody
+		 * fill in three fields and then hands back an error about the first is a
+		 * form that wasted their typing. The account's own zone, because that is
+		 * what the column holds.
+		 */
+		now: now.slice(0, 16),
 		/** What an empty time means, so the field can say so. */
 		dayStart: startOfDay(ctx.userId),
 		/*

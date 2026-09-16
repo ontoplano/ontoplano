@@ -248,18 +248,34 @@ test('the time is a plain time field, and the form takes what it gives', async (
 	await expect(time).toHaveValue('15:30');
 });
 
+/**
+ * A few seconds ahead, and then behind.
+ *
+ * A reminder cannot be *set* for a time that has been — the form refuses it and
+ * so does the service, because one made in the past is due the instant it
+ * exists. So a past reminder is made the only way there is one: by waiting for
+ * it. Seconds are part of the time a reminder can carry, which is what makes
+ * that a wait somebody can sit through rather than a minute.
+ */
+async function aboutToHaveBeen(page: import('@playwright/test').Page, label: string) {
+	const soon = new Date(Date.now() + 2000);
+	const pad = (n: number) => String(n).padStart(2, '0');
+	const day = `${soon.getUTCFullYear()}-${pad(soon.getUTCMonth() + 1)}-${pad(soon.getUTCDate())}`;
+	const at = `${pad(soon.getUTCHours())}:${pad(soon.getUTCMinutes())}:${pad(soon.getUTCSeconds())}`;
+
+	const made = await page.request.post('/reminders?/create', {
+		headers: { origin: new URL(page.url()).origin },
+		form: { day, time: at, label }
+	});
+	expect(made.ok()).toBe(true);
+	// Past it, and by enough that a slow machine is still past it.
+	await page.waitForTimeout(3000);
+}
+
 test('a reminder that has already been is not "coming up"', async ({ page }) => {
 	await register(page, testEmail('rem-past'));
 
-	// Written straight in, because the form will not take a time that has been.
-	await page.request.post('/reminders?/create', {
-		headers: { origin: new URL(page.url()).origin },
-		form: {
-			day: '2020-01-01',
-			time: '09:00',
-			label: 'long gone'
-		}
-	});
+	await aboutToHaveBeen(page, 'long gone');
 
 	await visit(page, '/reminders');
 	await expect(page.locator('main')).toBeVisible();
@@ -282,21 +298,11 @@ test('a reminder that has already been is not "coming up"', async ({ page }) => 
 test('a reminder that has been is still there to look at', async ({ page }) => {
 	await register(page, testEmail('rem-past'));
 
-	// Yesterday, not a decade ago: "the last seven days" means seven days, and
-	// a fixture outside the window would be testing the window rather than the
-	// direction. The past view is deliberately bounded the same way the
+	// Moments ago rather than a decade: "the last seven days" means seven days,
+	// and a fixture outside the window would be testing the window rather than
+	// the direction. The past view is deliberately bounded the same way the
 	// forward one is.
-	const yesterday = new Date();
-	yesterday.setDate(yesterday.getDate() - 1);
-
-	await page.request.post('/reminders?/create', {
-		headers: { origin: new URL(page.url()).origin },
-		form: {
-			day: yesterday.toISOString().slice(0, 10),
-			time: '09:00',
-			label: 'long gone'
-		}
-	});
+	await aboutToHaveBeen(page, 'long gone');
 
 	await visit(page, '/reminders?days=7&past=1');
 	await expect(page.locator('main')).toBeVisible();

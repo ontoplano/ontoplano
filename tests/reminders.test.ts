@@ -243,13 +243,13 @@ describe('dismissing', () => {
 describe('changing a reminder', () => {
 	test('moves it, rewords it, and leaves out what was not asked about', () => {
 		const id = s.reminders.createFreeReminder(ctx, {
-			at: '2024-05-02T09:00',
+			at: '2026-09-02T09:00',
 			message: 'take the bread out'
 		});
 
-		expect(s.reminders.editReminder(ctx, id, { at: '2024-05-02T09:30' })).toBe(true);
+		expect(s.reminders.editReminder(ctx, id, { at: '2026-09-02T09:30' })).toBe(true);
 		const moved = s.reminders.listReminders(ctx).find((r) => r.id === id)!;
-		expect(moved.remindAt).toBe('2024-05-02T09:30:00');
+		expect(moved.remindAt).toBe('2026-09-02T09:30:00');
 		// Untouched by a change that was only about the time.
 		expect(moved.message).toBe('take the bread out');
 
@@ -258,19 +258,19 @@ describe('changing a reminder', () => {
 			'take the loaf out'
 		);
 		expect(s.reminders.listReminders(ctx).find((r) => r.id === id)!.remindAt).toBe(
-			'2024-05-02T09:30:00'
+			'2026-09-02T09:30:00'
 		);
 	});
 
 	test('a day on its own means the hour the day starts, same as making one', () => {
 		const id = s.reminders.createFreeReminder(ctx, {
-			at: '2024-05-02T09:00',
+			at: '2026-09-02T09:00',
 			message: 'ring mum'
 		});
-		s.reminders.editReminder(ctx, id, { at: '2024-06-01' });
+		s.reminders.editReminder(ctx, id, { at: '2026-10-01' });
 		const at = s.reminders.listReminders(ctx).find((r) => r.id === id)!.remindAt;
-		expect(at.startsWith('2024-06-01T')).toBe(true);
-		expect(at).not.toBe('2024-06-01');
+		expect(at.startsWith('2026-10-01T')).toBe(true);
+		expect(at).not.toBe('2026-10-01');
 	});
 
 	test('silence is a third answer, not the absence of one', () => {
@@ -278,7 +278,7 @@ describe('changing a reminder', () => {
 		// saying "not this one". A boolean alone cannot tell them apart, and the
 		// editor has to be able to put either back.
 		const id = s.reminders.createFreeReminder(ctx, {
-			at: '2024-05-02T09:00',
+			at: '2026-09-02T09:00',
 			message: 'quietly',
 			audible: true
 		});
@@ -294,7 +294,7 @@ describe('changing a reminder', () => {
 
 	test('a sound that is not yours is no sound', () => {
 		const id = s.reminders.createFreeReminder(ctx, {
-			at: '2024-05-02T09:00',
+			at: '2026-09-02T09:00',
 			message: 'whose sound'
 		});
 		// No such ringtone on this account, so it lands as the default rather
@@ -305,7 +305,7 @@ describe('changing a reminder', () => {
 
 	test('a stranger can change nothing', () => {
 		const id = s.reminders.createFreeReminder(ctx, {
-			at: '2024-05-02T09:00',
+			at: '2026-09-02T09:00',
 			message: 'mine alone'
 		});
 		expect(() => s.reminders.editReminder(theirs, id, { message: 'theirs now' })).toThrow();
@@ -314,12 +314,66 @@ describe('changing a reminder', () => {
 
 	test('a time nobody could mean is refused, and nothing changes', () => {
 		const id = s.reminders.createFreeReminder(ctx, {
-			at: '2024-05-02T09:00',
+			at: '2026-09-02T09:00',
 			message: 'still here'
 		});
 		expect(() => s.reminders.editReminder(ctx, id, { at: 'sometime' })).toThrow();
 		expect(s.reminders.listReminders(ctx).find((r) => r.id === id)!.remindAt).toBe(
-			'2024-05-02T09:00:00'
+			'2026-09-02T09:00:00'
 		);
+	});
+});
+
+/**
+ * A reminder is about something that has not happened yet.
+ *
+ * One set for a time that has been is due the instant it exists: it fires
+ * immediately, or it goes straight into "already been" as something that was
+ * never given. The date field said so and the service did not, so anything
+ * that was not the form — an assistant reading a year off a sentence, a stale
+ * page posted twice — could still write one.
+ */
+describe('a time that has already been', () => {
+	test('cannot be set, and cannot be moved to', () => {
+		expect(() =>
+			s.reminders.createFreeReminder(ctx, { at: '2026-08-17T07:59', message: 'a minute ago' })
+		).toThrow();
+		expect(() =>
+			s.reminders.createFreeReminder(ctx, { at: '2020-01-01T09:00', message: 'years ago' })
+		).toThrow();
+
+		const id = s.reminders.createFreeReminder(ctx, {
+			at: '2026-08-17T09:00',
+			message: 'in an hour'
+		});
+		expect(() => s.reminders.editReminder(ctx, id, { at: '2026-08-17T07:00' })).toThrow();
+		// And the reminder is where it was, rather than half-changed.
+		expect(s.reminders.listReminders(ctx).find((r) => r.id === id)!.remindAt).toBe(
+			'2026-08-17T09:00:00'
+		);
+	});
+
+	test('a day whose opening hour has been is refused, not quietly moved', () => {
+		// A bare day means the hour the account's day starts. Asked for today at
+		// eight in the morning, with a day that opens at six, that hour has gone
+		// — and silently firing it now, or tomorrow, are both answers nobody
+		// asked for.
+		expect(() =>
+			s.reminders.createFreeReminder(ctx, { at: '2026-08-17', message: 'today, sometime' })
+		).toThrow();
+
+		// Tomorrow is a whole sentence and still works.
+		expect(
+			s.reminders.createFreeReminder(ctx, { at: '2026-08-18', message: 'tomorrow' })
+		).toBeGreaterThan(0);
+	});
+
+	test('the minute it is due is still ahead; the minute after is not', () => {
+		expect(() =>
+			s.reminders.createFreeReminder(ctx, { at: '2026-08-17T08:00', message: 'exactly now' })
+		).toThrow();
+		expect(
+			s.reminders.createFreeReminder(ctx, { at: '2026-08-17T08:01', message: 'a minute out' })
+		).toBeGreaterThan(0);
 	});
 });

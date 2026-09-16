@@ -2266,7 +2266,7 @@ export const TOOLS: Tool[] = [
 		input: object(
 			{
 				at: text(
-					'When, as YYYY-MM-DDTHH:MM in the person\u2019s own timezone. Seconds allowed and honoured. A bare YYYY-MM-DD means the hour their day starts.'
+					'When, as YYYY-MM-DDTHH:MM in the person\u2019s own timezone. Seconds allowed and honoured. A bare YYYY-MM-DD means the hour their day starts. It has to be ahead of now — check the year, which is the one people leave out.'
 				),
 				message: text('What it should say, in their words.'),
 				sound: {
@@ -2305,7 +2305,7 @@ export const TOOLS: Tool[] = [
 			{
 				id: { type: 'integer', description: 'The reminder\u2019s id.' },
 				at: text(
-					'A new time, as YYYY-MM-DDTHH:MM in the person\u2019s own timezone. A bare YYYY-MM-DD means the hour their day starts.'
+					'A new time, as YYYY-MM-DDTHH:MM in the person\u2019s own timezone. A bare YYYY-MM-DD means the hour their day starts. It has to be ahead of now.'
 				),
 				message: text('What it should say instead, in their words.'),
 				sound: {

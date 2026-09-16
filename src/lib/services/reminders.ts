@@ -256,6 +256,18 @@ export function dueReminders(ctx: Ctx): (Reminder & { sound: string | null })[] 
  * for it means picking a number that means nothing — so a bare `YYYY-MM-DD`
  * fires at the hour the planner grid opens on, which is the same hour a
  * birthday and a bill already use for exactly this reason.
+ *
+ * It has to be ahead of now. A reminder is a thing that is going to happen,
+ * and one set for a time that has been is already due the moment it is made:
+ * it fires immediately, or it sits in "already been" as something that was
+ * never given. The date field said so and the server did not, so anything that
+ * was not the form — an assistant reading a year off a sentence, a stale page
+ * posted twice — could still write one.
+ *
+ * Compared as wall-clock strings in the account's own zone, which is what the
+ * column holds: "at ten to nine" means ten to nine where somebody is, and
+ * turning both sides into instants to compare them would import the bug that
+ * storing wall-clock avoids.
  */
 function remindAtFrom(ctx: Ctx, given: unknown): string {
 	const at = String(given ?? '').trim();
@@ -263,7 +275,16 @@ function remindAtFrom(ctx: Ctx, given: unknown): string {
 	if (!dayOnly && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(at)) {
 		throw new ValidationError('That is not a day, or a day and a time.');
 	}
-	return dayOnly ? `${at}T${startOfDay(ctx.userId)}:00` : at.length === 16 ? `${at}:00` : at;
+	const when = dayOnly ? `${at}T${startOfDay(ctx.userId)}:00` : at.length === 16 ? `${at}:00` : at;
+
+	if (when <= localNow(ctx)) {
+		throw new ValidationError(
+			dayOnly
+				? `A day on its own goes off at ${startOfDay(ctx.userId)}, which has been today. Give it a time, or another day.`
+				: 'That time has already been.'
+		);
+	}
+	return when;
 }
 
 /**

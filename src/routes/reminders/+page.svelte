@@ -134,7 +134,23 @@
 	let audible = $state(false);
 	// The time is not part of it: an empty one means the hour the day starts,
 	// which is a real answer rather than a missing one.
-	const ready = $derived(Boolean(day && say.trim()));
+	const ready = $derived(Boolean(day && say.trim() && !hasBeen(day, time)));
+
+	/**
+	 * Whether a day and a time have already gone by.
+	 *
+	 * `data.now` is the account's own wall clock to the minute, in the same
+	 * shape a reminder's time is stored in, so the two compare as strings. An
+	 * empty time means the hour the day starts — which can itself be behind:
+	 * "today", left alone, at three in the afternoon.
+	 *
+	 * From the page it stops a form being filled in and handed back; the
+	 * service refuses it as well, because a page's clock is a page's clock.
+	 */
+	function hasBeen(when: string, at: string): boolean {
+		if (!when) return false;
+		return `${when}T${at || data.dayStart}` <= data.now;
+	}
 
 	/**
 	 * Open the browser's own picker rather than the text field behind it.
@@ -317,6 +333,23 @@
 	}
 </script>
 
+<!--
+	Why the button is dead, said where the fields are.
+
+	A disabled control with the reason only in its tooltip is a control that
+	looks broken on a phone, which has no tooltips — and the commonest way to
+	land here is the form's own default: today, no time, opened in the
+	afternoon, when the hour the day starts has been for hours.
+-->
+{#snippet alreadyBeen(when: string, at: string)}
+	{#if hasBeen(when, at)}
+		<p class="text-sm text-gray-600">
+			{at ? 'That time has already been.' : `${data.dayStart} has already been today.`} Give it a later
+			one.
+		</p>
+	{/if}
+{/snippet}
+
 <svelte:head><title>Reminders · Ontoplano</title></svelte:head>
 
 <audio bind:this={audio} class="hidden"></audio>
@@ -473,6 +506,7 @@
 							name="day"
 							type="date"
 							required
+							min={data.today}
 							autocomplete="off"
 							bind:value={day}
 							onfocus={pick}
@@ -516,6 +550,8 @@
 					</Field>
 				</FormGrid>
 
+				{@render alreadyBeen(day, time)}
+
 				<div class="flex flex-wrap items-center gap-4">
 					<label
 						class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
@@ -548,7 +584,11 @@
 						type="submit"
 						disabled={!ready}
 						class="btn btn-primary btn-sm ml-auto"
-						title={ready ? 'Set this reminder' : 'A day and something to say first'}
+						title={ready
+							? 'Set this reminder'
+							: hasBeen(day, time)
+								? 'That time has already been'
+								: 'A day and something to say first'}
 					>
 						Set it
 					</button>
@@ -731,6 +771,7 @@
 											name="day"
 											type="date"
 											required
+											min={data.today}
 											autocomplete="off"
 											bind:value={editDay}
 											onfocus={pick}
@@ -751,6 +792,8 @@
 										<OneLine name="label" required bind:value={editSay} class="input" />
 									</Field>
 								</FormGrid>
+
+								{@render alreadyBeen(editDay, editTime)}
 
 								<div class="flex flex-wrap items-center gap-4">
 									<label
@@ -793,7 +836,16 @@
 										<button type="button" onclick={() => (editing = null)} class="btn btn-sm">
 											Cancel
 										</button>
-										<button type="submit" class="btn btn-primary btn-sm">Save</button>
+										<button
+											type="submit"
+											disabled={hasBeen(editDay, editTime)}
+											class="btn btn-primary btn-sm"
+											title={hasBeen(editDay, editTime)
+												? 'That time has already been'
+												: 'Save this reminder'}
+										>
+											Save
+										</button>
 									</div>
 								</div>
 							</form>
