@@ -106,7 +106,7 @@
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
 	setRoomAction(() => ({
-		label: 'New activity',
+		label: t('tasks.activities.newActivity'),
 		open: showForm,
 		run: () => {
 			showForm = !showForm;

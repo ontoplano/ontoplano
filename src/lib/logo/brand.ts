@@ -13,25 +13,27 @@
  * twice.
  */
 
-/**
- * The ground under the mark on an icon that needs one.
+/*
+ * There is no separate ground colour for an icon.
  *
- * Only the masked shapes do: a launcher crops a maskable icon to whatever
+ * The masked shapes need one — a launcher crops a maskable icon to whatever
  * outline it likes, and iOS puts the apple-touch icon on an opaque tile
- * regardless. Everywhere else the mark is drawn on whatever is behind it, which
- * it is designed for — it carries its own dark field inside a bright rim, so it
- * holds up on a light page and on the app's dark bar without help.
+ * regardless — and it is the mark's own field, `MARK_FIELD`, measured off the
+ * artwork by `yarn icons`. It used to be a cream of its own, which put the
+ * ring's colours on nothing and made the app's tile the one white thing on a
+ * home screen. `build-icons.mjs` and `brand-android.mjs` both read the measured
+ * value; nothing here declares a second answer to "what is the dark behind the
+ * mark".
  */
-export const BRAND_GROUND = '#f7f5f1';
 
 /**
  * The app's own chrome, and the colour a phone paints around the PWA.
  *
- * Deliberately NOT `BRAND_GROUND`: they were one value when the mark was a flat
- * shape on a dark tile, and they are two things — one is the ground under a
- * launcher icon, the other is the colour of the app's bar. `manifest.webmanifest`
- * and the `<meta name="theme-color">` in `app.html` carry this by hand, because
- * a JSON file and an HTML file cannot import it. If you change it, change those.
+ * Deliberately not the mark's field: one is the dark inside the drawing, the
+ * other is the colour of the app's bar, and they are two decisions that happen
+ * to look alike. `manifest.webmanifest` and the `<meta name="theme-color">` in
+ * `app.html` carry this by hand, because a JSON file and an HTML file cannot
+ * import it. If you change it, change those.
  */
 export const CHROME_GROUND = '#111827';
 

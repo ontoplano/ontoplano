@@ -652,7 +652,7 @@
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
 	setRoomAction(() => ({
-		label: 'Add item',
+		label: t('inventory.addItem'),
 		open: showForm,
 		tour: 'shopping-new',
 		kbd: keyFor('/inventory', 'new'),

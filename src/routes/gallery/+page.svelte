@@ -187,7 +187,7 @@
 	let confirmingDelete: (typeof data.albums)[number] | null = $state(null);
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
-	setRoomAction(() => ({ label: 'New album', run: () => (showNew = true) }));
+	setRoomAction(() => ({ label: t('gallery.newAlbum'), run: () => (showNew = true) }));
 </script>
 
 <!--

@@ -38,6 +38,17 @@ const MARK_MIDDLE = (() => {
 	return Number(found[1]);
 })();
 
+/**
+ * How much of the foreground layer the mark fills, read from brand.ts rather
+ * than repeated — the arithmetic behind the number is written out there.
+ */
+const ADAPTIVE_SCALE = (() => {
+	const brand = readFileSync(join(ROOT, 'src/lib/logo/brand.ts'), 'utf8');
+	const found = brand.match(/export const ADAPTIVE_FOREGROUND_SCALE = ([\d.]+)/);
+	if (!found) throw new Error('src/lib/logo/brand.ts no longer exports ADAPTIVE_FOREGROUND_SCALE');
+	return Number(found[1]);
+})();
+
 /** The app's one name, everywhere it is written. */
 const APP_NAME = 'ontoplano';
 
@@ -130,17 +141,50 @@ for (const [density, size] of Object.entries(LAUNCHER)) {
 	mkdirSync(dir, { recursive: true });
 	resize(square, join(dir, 'ic_launcher.png'), size);
 	resize(square, join(dir, 'ic_launcher_round.png'), size);
-	resize(maskable, join(dir, 'ic_launcher_foreground.png'), FOREGROUND[density]);
+	/*
+	 * The foreground layer is the mark and nothing else.
+	 *
+	 * An adaptive icon is a transparent foreground over a colour, and it used to
+	 * be handed the web's maskable icon — which carries an opaque ground of its
+	 * own and therefore painted over the colour entirely. The plain icon has no
+	 * ground, so the background resource below is what a launcher actually
+	 * shows, whatever shape it cuts.
+	 *
+	 * And at Android's own scale rather than the web's: the foreground is 108dp
+	 * of which only 66 are guaranteed, which is what `ADAPTIVE_FOREGROUND_SCALE`
+	 * is measured against.
+	 */
+	writeFileSync(
+		join(dir, 'ic_launcher_foreground.png'),
+		squareIcon({ source: square, size: FOREGROUND[density], scale: ADAPTIVE_SCALE })
+	);
 }
 
-// The adaptive icon's background: the mark's own field rather than a stock
-// green, so the rounded, squircle and circle masks all cut ontoplano.
+/*
+ * The adaptive icon's background: the mark's own field.
+ *
+ * Whatever a launcher masks the icon into — a circle, a squircle, a rounded
+ * square — what it cuts is the mark on its own dark, which is what the mark is
+ * drawn to sit on. It said this all along and wrote white anyway, so a phone
+ * showed the mark on a white tile with the ring's colours floating on nothing.
+ *
+ * Read from `mark-shape.ts`, where `yarn icons` measures it off the artwork, so
+ * a new logo brings its own dark with it rather than leaving a hex here that
+ * was right for the last one.
+ */
+const FIELD = (() => {
+	const shape = readFileSync(join(ROOT, 'src/lib/logo/mark-shape.ts'), 'utf8');
+	const found = shape.match(/export const MARK_FIELD = '([^']+)'/);
+	if (!found) throw new Error('src/lib/logo/mark-shape.ts no longer exports MARK_FIELD');
+	return found[1].toUpperCase();
+})();
+
 mkdirSync(join(RES, 'values'), { recursive: true });
 writeFileSync(
 	join(RES, 'values/ic_launcher_background.xml'),
 	`<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#FFFFFF</color>
+    <color name="ic_launcher_background">${FIELD}</color>
 </resources>
 `
 );

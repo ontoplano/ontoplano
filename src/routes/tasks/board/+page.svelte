@@ -523,7 +523,7 @@
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
 	setRoomAction(() => ({
-		label: 'New card',
+		label: t('home.newCard'),
 		run: openForm,
 		kbd: keyFor('/tasks/board', 'new')
 	}));

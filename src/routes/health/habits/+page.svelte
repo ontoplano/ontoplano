@@ -295,7 +295,7 @@
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
 	setRoomAction(() => ({
-		label: 'New habit',
+		label: t('health.habits.newHabit'),
 		open: showForm,
 		tour: 'habit-new',
 		run: () => {

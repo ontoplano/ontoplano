@@ -52,7 +52,7 @@
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
 	setRoomAction(() => ({
-		label: 'New recipe',
+		label: t('health.recipes.newRecipe'),
 		tour: 'recipe-new',
 		kbd: keyFor('/health/recipes', 'new'),
 		run: () => (showForm = true)

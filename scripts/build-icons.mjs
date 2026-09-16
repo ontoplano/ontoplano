@@ -43,7 +43,6 @@ const constant = (name) => {
 	if (!m) throw new Error(`${relative(ROOT, brandFile)} no longer exports ${name}`);
 	return JSON.parse(m[1].trim().replace(/'/g, '"'));
 };
-const GROUND = constant('BRAND_GROUND');
 /** How much colour a marked-as-not-real icon keeps. The app uses the same. */
 const DRAINED = constant('MARK_DRAINED');
 
@@ -192,18 +191,18 @@ const plain = icon(ICON_SCALE, null);
  * mark has to be drawn rather than left to a mask.
  */
 const solid = icon(SOLID, FIELD);
-const maskable = icon(MASKABLE, GROUND);
-const apple = icon(APPLE, GROUND);
+const maskable = icon(MASKABLE, FIELD);
+const apple = icon(APPLE, FIELD);
 
 const stagingIcon = (scale, ground, top) => bandedIcon(STAGING_BAND, scale, ground, top);
 const devIcon = (scale, ground, top) => bandedIcon(DEV_BAND, scale, ground, top);
 
 const plainStaging = stagingIcon(ICON_SCALE, null);
-const maskableStaging = stagingIcon(MASKABLE, GROUND, 0.62);
-const appleStaging = stagingIcon(APPLE, GROUND, 0.78);
+const maskableStaging = stagingIcon(MASKABLE, FIELD, 0.62);
+const appleStaging = stagingIcon(APPLE, FIELD, 0.78);
 const plainDev = devIcon(ICON_SCALE, null);
-const maskableDev = devIcon(MASKABLE, GROUND, 0.62);
-const appleDev = devIcon(APPLE, GROUND, 0.78);
+const maskableDev = devIcon(MASKABLE, FIELD, 0.62);
+const appleDev = devIcon(APPLE, FIELD, 0.78);
 
 const svgs = [
 	['static/favicon.svg', plain],

@@ -182,7 +182,7 @@
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
 	setRoomAction(() => ({
-		label: 'New entry',
+		label: t('notebooks.diary.newEntry'),
 		open: showForm,
 		tour: 'diary-new',
 		run: () => {

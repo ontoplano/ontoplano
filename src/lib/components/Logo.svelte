@@ -13,8 +13,9 @@
 	import mark from '$lib/logo/mark.png';
 	import hollowMark from '$lib/logo/mark-hollow.png';
 	import liftedMark from '$lib/logo/mark-lifted.png';
-	import { BRAND_GROUND, MARK_DRAINED } from '$lib/logo/brand';
+	import { MARK_DRAINED } from '$lib/logo/brand';
 	import { MARK_TURN_RADIUS } from '$lib/logo/mark-geometry';
+	import { MARK_FIELD } from '$lib/logo/mark-shape';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
 
 	/*
@@ -125,7 +126,7 @@
 		? 'h-full w-full'
 		: ''} {klass}"
 	style="{fill ? '' : `width: ${size}px; height: ${size}px;`} {background
-		? `background: ${BRAND_GROUND}`
+		? `background: ${MARK_FIELD}`
 		: ''}"
 	role={label ? 'img' : 'presentation'}
 	aria-label={label || undefined}

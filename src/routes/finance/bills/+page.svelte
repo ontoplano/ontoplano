@@ -124,7 +124,7 @@
 	}
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
-	setRoomAction(() => ({ label: 'New bill', run: openNew }));
+	setRoomAction(() => ({ label: t('finance.bills.newBill'), run: openNew }));
 </script>
 
 <div class="space-y-5">

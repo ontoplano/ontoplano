@@ -3,6 +3,9 @@
 	import { NAV_PLACES } from '$lib/sections-nav';
 	import { page } from '$app/state';
 	import { roomAction } from '$lib/room-action.svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * A room's name, its tabs, and the way back — in one place for every room.
@@ -104,7 +107,7 @@
 						data-tour={room.tour || undefined}
 					>
 						{#if !room.open}<Icon name="plus" />{/if}
-						{room.open ? 'Cancel' : room.label}
+						{room.open ? t('ui.cancel') : room.label}
 						{#if room.kbd && !room.open}
 							<!-- The chip reads against the button it sits on: the quiet
 							     `.btn`, not the filled one it used to ride. Grey-100 on

@@ -226,7 +226,7 @@
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
 	setRoomAction(() => ({
-		label: 'New goal',
+		label: t('goals.newGoal'),
 		tour: 'goal-new',
 		kbd: keyFor('/goals', 'new'),
 		run: openCreate

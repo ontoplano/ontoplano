@@ -233,7 +233,7 @@
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
 	setRoomAction(() => ({
-		label: 'New workout',
+		label: t('health.workouts.newWorkout'),
 		run: openNew
 	}));
 </script>

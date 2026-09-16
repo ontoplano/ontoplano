@@ -100,7 +100,7 @@
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
 	setRoomAction(() => ({
-		label: 'New person',
+		label: t('notebooks.people.newPerson'),
 		tour: 'people-new',
 		kbd: keyFor('/notebooks/people', 'new'),
 		run: openCreate

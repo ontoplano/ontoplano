@@ -121,6 +121,7 @@ export type MessageKey =
 	| 'buy.backToBilling'
 	| 'buy.openingTheSecurePaymentWindow'
 	| 'capture.diaryNote'
+	| 'capture.newThing'
 	| 'clientErrorPrompt.never'
 	| 'clientErrorPrompt.sendErrorDetails'
 	| 'clientErrorPrompt.sendNowAndNextTime'
@@ -187,6 +188,7 @@ export type MessageKey =
 	| 'finance.bills.keepIt'
 	| 'finance.bills.markPaid'
 	| 'finance.bills.markPaid2'
+	| 'finance.bills.newBill'
 	| 'finance.bills.noBillsYet'
 	| 'finance.bills.nothingInTheLastFew'
 	| 'finance.bills.paid'
@@ -521,6 +523,7 @@ export type MessageKey =
 	| 'health.workouts.moveDown'
 	| 'health.workouts.moveUp'
 	| 'health.workouts.newCategory'
+	| 'health.workouts.newWorkout'
 	| 'health.workouts.noCategory'
 	| 'health.workouts.noPlanWrittenYet'
 	| 'health.workouts.noWorkoutsYet'
@@ -600,6 +603,7 @@ export type MessageKey =
 	| 'home.more'
 	| 'home.more2'
 	| 'home.more3'
+	| 'home.newCard'
 	| 'home.noMeasure'
 	| 'home.noQuotesYetAddSome'
 	| 'home.noThanks'
@@ -652,6 +656,7 @@ export type MessageKey =
 	| 'instance.whereYourOntoplanoLives'
 	| 'instance.youCanChangeThisLater'
 	| 'inventory.about'
+	| 'inventory.addItem'
 	| 'inventory.addTheCategory'
 	| 'inventory.archived'
 	| 'inventory.bought'
@@ -1518,6 +1523,7 @@ export type MessageKey =
 	| 'tasks.plan.mode'
 	| 'tasks.plan.newActivity'
 	| 'tasks.plan.newActivity2'
+	| 'tasks.plan.newBlock'
 	| 'tasks.plan.next7Days'
 	| 'tasks.plan.noCalendarsSubscribedYet'
 	| 'tasks.plan.noSchemesSavedYet'
@@ -1874,6 +1880,7 @@ export interface MessageValuesFor {
 		attempts2: string | number;
 		lastAttemptAt: string | number;
 	};
+	'capture.newThing': { thing: string | number };
 	'data.slug.fromPoints': { length: string | number; source: string | number };
 	'demo.theDemoHandsOutAn': {
 		demoAccountsPerAddress: string | number;

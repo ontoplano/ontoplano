@@ -18,6 +18,17 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.22 — 2026-09-16
+
+- **The app's icon sits on its own dark again, not on white.** The tile behind
+  the mark was a cream of its own, so on a home screen the ring's colours
+  floated on nothing and ontoplano was the one white square in the row. Every
+  masked icon — the Android launcher on all three flavours, the PWA's maskable
+  one, the icon iOS reads — now uses the dark measured out of the mark itself.
+  On Android the foreground layer is the mark alone, which is what an adaptive
+  icon is supposed to be; it was being handed the web icon, ground and all,
+  which painted over the background colour entirely.
+
 ## 0.178.21 — 2026-09-16
 
 - **The app can be read in another language.** Settings → Preferences has a

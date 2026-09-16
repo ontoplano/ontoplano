@@ -56,7 +56,7 @@
 <Modal
 	open={capture !== null}
 	{onclose}
-	title={capture ? `New ${capture.label.toLowerCase()}` : ''}
+	title={capture ? t('capture.newThing', { thing: t(capture.label).toLowerCase() }) : ''}
 	size="sm"
 	{error}
 >

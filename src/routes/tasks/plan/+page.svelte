@@ -2297,7 +2297,7 @@
 	 * open it at their own setting.
 	 */
 	setRoomAction(() => ({
-		label: 'New block',
+		label: t('tasks.plan.newBlock'),
 		open: showForm,
 		run: () => (showForm ? closeForm() : startNew('weekly'))
 	}));

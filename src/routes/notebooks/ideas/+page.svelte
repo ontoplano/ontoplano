@@ -167,7 +167,7 @@
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
 	setRoomAction(() => ({
-		label: 'New idea',
+		label: t('notebooks.ideas.newIdea'),
 		open: showForm,
 		tour: 'idea-new',
 		run: () => (showForm ? closeForms() : openIdeaForm())

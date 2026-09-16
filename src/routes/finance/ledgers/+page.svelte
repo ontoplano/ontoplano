@@ -147,7 +147,10 @@
 	const today = new Date().toISOString().slice(0, 10);
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
-	setRoomAction(() => ({ label: 'New ledger', run: () => (showNewLedger = true) }));
+	setRoomAction(() => ({
+		label: t('finance.ledgers.newLedger'),
+		run: () => (showNewLedger = true)
+	}));
 </script>
 
 <div class="space-y-4">
