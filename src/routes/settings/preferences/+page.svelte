@@ -1,5 +1,9 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { invalidateAll } from '$app/navigation';
+	import { isIsolatedBuild } from '$lib/isolated/mode';
+	import { isLocale, useT } from '$lib/i18n';
+	import { rememberLocaleOnThisDevice } from '$lib/i18n/device';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { page } from '$app/state';
 	import { disablePush, enablePush, pushEnabled, pushSupported } from '$lib/push';
@@ -23,6 +27,8 @@
 	import type { DashboardCardId } from '$lib/dashboard.js';
 
 	let { data }: { data: PageServerData } = $props();
+
+	const t = useT();
 
 	/**
 	 * The currency, chosen from the shortlist or typed.
@@ -1053,6 +1059,68 @@
 				>
 					<span class="block text-sm font-semibold text-gray-900">{option.label}</span>
 					<span class="mt-1 block text-xs text-gray-500">{option.hint}</span>
+				</button>
+			{/each}
+		</form>
+	</section>
+
+	<!--
+		The language, above Appearance because it changes every other word on
+		the page and somebody who cannot read the page is looking for this one.
+	-->
+	<section class="border border-gray-200 bg-white p-6 shadow-card">
+		<div class="mb-4">
+			<h2 class="text-sm font-semibold text-gray-900">{t('settings.language.heading')}</h2>
+			<p class="mt-1 text-sm text-gray-500">{t('settings.language.hint')}</p>
+		</div>
+
+		<form
+			method="post"
+			action="?/setLanguage"
+			use:enhance={({ formData }) => {
+				/*
+				 * The device's own copy remembers too.
+				 *
+				 * An instance running on the device has no server to ask on the
+				 * next first paint, so the choice is written where the shell can
+				 * read it before the database has opened. See `+layout.ts`.
+				 */
+				const chosen = formData.get('language')?.toString();
+				if (isLocale(chosen)) {
+					// <html> is outside the component tree, and it is what a screen
+					// reader picks its voice from — the same reason the theme is
+					// stamped here rather than waited for.
+					document.documentElement.lang = chosen;
+					if (isIsolatedBuild()) rememberLocaleOnThisDevice(chosen);
+				}
+				// Every word on every screen changes, including the ones the shell
+				// drew — so this one reloads rather than patching the page.
+				return async () => invalidateAll();
+			}}
+			class="flex flex-wrap gap-2"
+		>
+			{#each data.languages as language (language.tag)}
+				<button
+					type="submit"
+					name="language"
+					value={language.tag}
+					lang={language.tag}
+					class="border px-4 py-2 text-left text-sm shadow-sm {t.locale === language.tag
+						? 'border-gray-900 bg-gray-900 font-semibold text-white'
+						: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
+				>
+					{language.name}
+					{#if language.untranslated > 0}
+						<!-- Said on the button rather than under the section: it is a
+						     fact about one language, not about the choice. -->
+						<span
+							class="mt-0.5 block text-xs font-normal {t.locale === language.tag
+								? 'text-gray-300'
+								: 'text-gray-500'}"
+						>
+							{t('settings.language.untranslated', { count: language.untranslated })}
+						</span>
+					{/if}
 				</button>
 			{/each}
 		</form>

@@ -24,6 +24,7 @@ import { publicKey } from '$lib/server/services/push';
 import { build } from '$lib/server/services/version';
 import { appBehindInstance } from '$lib/platform';
 import { invitationFor } from '$lib/server/services/subscriptions';
+import { SOURCE_LOCALE } from '$lib/i18n/locales';
 
 export const load: LayoutServerLoad = async (event) => {
 	// Anything under /login, not just /login itself — /login/reset is where a
@@ -150,6 +151,14 @@ export const load: LayoutServerLoad = async (event) => {
 		familyOffer,
 		categories: userCategories,
 		theme,
+		/*
+		 * The language this page is in.
+		 *
+		 * Resolved by the hook that stamps it into `<html lang>`, so the
+		 * document's own declaration and the words in it cannot disagree. The
+		 * universal load beside this one turns it into a catalogue.
+		 */
+		locale: event.locals.locale ?? SOURCE_LOCALE,
 		// Sections this account has put away: out of every menu the shell
 		// renders, still answering at their URLs.
 		hiddenSections,

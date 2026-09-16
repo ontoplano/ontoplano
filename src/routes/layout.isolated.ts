@@ -16,12 +16,14 @@ import { listCategories } from '$lib/services/activities';
 import { buildCtx } from '$lib/services/ctx';
 import {
 	getHiddenSections,
+	getLocale,
 	getNavOrder,
 	getSectionColors,
 	getTheme,
 	getWeekSettings,
 	hasSeenTutorial
 } from '$lib/services/settings';
+import { SOURCE_LOCALE } from '$lib/i18n/locales';
 import { DEFAULT_PICTURE_KILOBYTES, DEFAULT_UNDO_SECONDS } from '$lib/instance-defaults';
 import { outwardLinks } from '$lib/links';
 
@@ -34,6 +36,14 @@ export async function load(event: IsolatedEvent): Promise<LayoutServerData> {
 	const ctx = buildCtx(user.id);
 	return {
 		user,
+		/*
+		 * The language, which on a device is the account's own or nothing.
+		 *
+		 * There is no request to read a header off and no operator to have set
+		 * an instance default — this *is* the instance. When nobody has chosen,
+		 * the shell asks the device itself; see `+layout.ts`.
+		 */
+		locale: getLocale(user.id) ?? SOURCE_LOCALE,
 		// The device's shell and its pages are one build — there is no version
 		// for either to fall behind.
 		appUpdate: null,

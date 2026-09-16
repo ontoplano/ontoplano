@@ -187,6 +187,7 @@ self-hosted instance wants even with the list turned on.
 | `docsUrl`  | `string`  | Where this instance's documentation and project pages are.        |
 | `siteUrl`  | `string`  | —                                                                 |
 | `tagline`  | `string`  | The one line under the name on the signed-out front page.         |
+| `language` | `Locale`  | The language this instance falls back to.                         |
 
 **`devTools`**
 
@@ -215,6 +216,17 @@ Here rather than in the component because it is the operator's
 sentence, not the app's: somebody running this for a household or a
 team should be able to say what their instance is without editing
 Svelte. Empty falls back to the line below.
+
+**`language`**
+
+The language this instance falls back to.
+
+Not "the language of the app" — every account picks its own, and a
+browser that asks for one this app has gets it. This is the answer
+when neither of those applies: a stranger whose browser asked for
+something untranslated, and the address on an email to somebody who
+never said. An instance run for a Brazilian household should say
+`pt-BR` here and never think about it again.
 
 ## Environment
 
@@ -246,6 +258,7 @@ kind of thing that stays in a deployment script for years.
 | `ONTOPLANO_ISOLATED`                   | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_ISOLATED_BUILD`             | `scripts/build-error-page.mjs`                                                                                                                             |
 | `ONTOPLANO_JURISDICTION`               | `src/lib/server/config.ts`                                                                                                                                 |
+| `ONTOPLANO_LANGUAGE`                   | `src/lib/server/config.ts`                                                                                                                                 |
 | `ONTOPLANO_MAIL_FROM`                  | `src/lib/server/services/push.ts`                                                                                                                          |
 | `ONTOPLANO_OPERATOR`                   | `src/lib/server/config.ts`                                                                                                                                 |
 | `ONTOPLANO_ORIGIN`                     | `scripts/android-flavours.mjs`                                                                                                                             |

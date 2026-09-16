@@ -1,0 +1,9 @@
+{
+	"settings.language.heading": "Idioma",
+	"settings.language.hint": "Em que idioma esta conta lê o aplicativo. Os e-mails enviados a você seguem a mesma escolha.",
+	"settings.language.saved": "Salvo.",
+	"settings.language.untranslated": {
+		"one": "{count} mensagem ainda não foi escrita neste idioma e aparece em inglês.",
+		"other": "{count} mensagens ainda não foram escritas neste idioma e aparecem em inglês."
+	}
+}

@@ -6,7 +6,7 @@ import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/http-errors';
 import { createQuote, deleteQuote, importQuotes, listQuotes } from '$lib/services/quotes';
 import { CURRENCIES, normaliseCurrency } from '$lib/money';
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 import {
 	DASHBOARD_LAYOUT_KEY,
 	defaultLayout,
@@ -40,9 +40,12 @@ import {
 import {
 	saveGridHours,
 	saveWeekPreferences,
+	setUserLanguage,
 	setUserStyle,
 	setUserTheme
 } from '$lib/services/preferences';
+import { LOCALES, LOCALE_NAMES } from '$lib/i18n/locales';
+import { untranslatedCount } from '$lib/i18n/coverage';
 
 /** Everything on this page belongs to the account, never to the instance (I9). */
 export const load = async ({ locals }: IsolatedEvent) => {
@@ -89,6 +92,23 @@ export const load = async ({ locals }: IsolatedEvent) => {
 		// the offsets are today's, which the server already knows.
 		zones: zoneGroups(),
 		theme: getTheme(ctx.userId),
+		/*
+		 * The languages, and how far behind each is.
+		 *
+		 * The count is the honest part: a language part way through being written
+		 * shows the rest in English, and saying so on the page that offers the
+		 * choice beats letting somebody find it a screen at a time. Zero for a
+		 * finished language, and the section says nothing then.
+		 *
+		 * Which one is *chosen* is not here — the shell already resolved it and
+		 * every page has it. Answering it a second time is how two parts of one
+		 * screen come to disagree.
+		 */
+		languages: LOCALES.map((locale) => ({
+			tag: locale,
+			name: LOCALE_NAMES[locale],
+			untranslated: untranslatedCount(locale)
+		})),
 		style: getStyle(ctx.userId),
 		// A hidden section's card is not offered here either — one toggle, one
 		// truth. The stored layout keeps the card, so unhiding restores it.
@@ -323,6 +343,28 @@ export const actions = {
 		} catch (e) {
 			return toActionFailure(e);
 		}
+	},
+
+	/*
+	 * Choosing a language is the one setting whose own answer is stale by the
+	 * time it is saved.
+	 *
+	 * The hook that resolves the language runs at the start of the request, so
+	 * a POST that changes it renders its reply in the language that was in
+	 * force when it arrived — every word on the page still the old one, which
+	 * reads as the button not having worked. Redirecting sends the browser back
+	 * for a fresh GET, and that one resolves the language that was just chosen.
+	 */
+	setLanguage: async ({ request, locals, url }: IsolatedEvent) => {
+		const formData = await request.formData();
+
+		try {
+			setUserLanguage(buildCtx(locals.user!.id), formData.get('language'));
+		} catch (e) {
+			return toActionFailure(e);
+		}
+
+		redirect(303, url.pathname);
 	},
 
 	setTheme: async ({ request, locals }: IsolatedEvent) => {

@@ -13,6 +13,7 @@ import {
 	isStaging,
 	siteCookieDomain
 } from '$lib/server/settings';
+import { localeForRequest } from '$lib/server/locale';
 import {
 	createDemoAccount,
 	DEMO_ACCOUNTS_PER_ADDRESS,
@@ -300,13 +301,17 @@ const handleSiteHint: Handle = async ({ event, resolve }) => {
 };
 
 /**
- * Stamp the user's theme into <html> before anything renders.
+ * Stamp the user's theme and language into <html> before anything renders.
  *
  * Runs after the auth handle in the sequence, so `locals.user` is already set.
  * Doing this on the client instead would paint the wrong theme first and then
- * snap to the right one.
+ * snap to the right one — and `lang` cannot be done on the client at all: it
+ * is what a screen reader picks its voice from and what the browser hyphenates
+ * by, both decided before any script of ours runs.
  */
 const handleTheme: Handle = ({ event, resolve }) => {
+	const locale = localeForRequest(event);
+	event.locals.locale = locale;
 	const theme = event.locals.user ? getTheme(event.locals.user.id) : DEFAULT_THEME;
 	/*
 	 * A stranger gets the playful one.
@@ -335,6 +340,7 @@ const handleTheme: Handle = ({ event, resolve }) => {
 	return resolve(event, {
 		transformPageChunk: ({ html }) =>
 			html
+				.replace('%ontoplano.lang%', locale)
 				.replace('%ontoplano.theme%', theme)
 				.replace('%ontoplano.style%', style)
 				.replaceAll('%ontoplano.mark%', mark)

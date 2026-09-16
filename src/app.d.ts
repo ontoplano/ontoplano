@@ -23,6 +23,14 @@ declare global {
 			/** Request id: stamped by the logging hook, echoed by the error page. */
 			rid?: string;
 			/**
+			 * The language this request is answered in.
+			 *
+			 * Resolved once per request by the hook that stamps `<html lang>`,
+			 * so a load function and an action downstream cannot come to two
+			 * different answers about the same visitor.
+			 */
+			locale?: import('$lib/i18n/locales').Locale;
+			/**
 			 * Whether the Android app is drawing this page rather than a browser.
 			 *
 			 * The app says so on every launch and the answer is kept in a cookie;

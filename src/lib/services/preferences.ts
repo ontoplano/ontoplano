@@ -1,12 +1,14 @@
 import {
 	isTheme,
 	setGridHours,
+	setLocale,
 	setTheme,
 	setStyle,
 	setTimezone,
 	setWeekSettings
 } from './settings.js';
 import { isStyle } from '../style.js';
+import { isLocale } from '../i18n/locales.js';
 import type { Ctx } from './ctx.js';
 import { ValidationError } from './errors.js';
 import { num, str } from './validate.js';
@@ -27,6 +29,12 @@ export function setUserTheme(ctx: Ctx, value: unknown): void {
 	const theme = String(value ?? '');
 	if (!isTheme(theme)) throw new ValidationError('Unknown theme');
 	setTheme(ctx.userId, theme);
+}
+
+export function setUserLanguage(ctx: Ctx, value: unknown): void {
+	const locale = String(value ?? '');
+	if (!isLocale(locale)) throw new ValidationError('Unknown language');
+	setLocale(ctx.userId, locale);
 }
 
 export function setUserStyle(ctx: Ctx, value: unknown): void {

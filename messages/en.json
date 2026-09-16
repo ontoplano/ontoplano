@@ -1,0 +1,9 @@
+{
+	"settings.language.heading": "Language",
+	"settings.language.hint": "What this account reads the app in. Mail you are sent follows it too.",
+	"settings.language.saved": "Saved.",
+	"settings.language.untranslated": {
+		"one": "{count} message is not written in this language yet, and shows in English.",
+		"other": "{count} messages are not written in this language yet, and show in English."
+	}
+}

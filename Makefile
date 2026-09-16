@@ -39,7 +39,7 @@ print-%:
 	@echo '$($*)'
 
 
-.PHONY: hooks dev-site-fg dev-site-logs dev-site-stop _site-checkout announce _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons icon deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-strangers db-dry-run db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local _a-real-workstation android android-all android-store android-install android-install-all _adb-install _apks-are-fresh android-uninstall isolated isolated-preview test-isolated
+.PHONY: messages hooks dev-site-fg dev-site-logs dev-site-stop _site-checkout announce _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons icon deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-strangers db-dry-run db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local _a-real-workstation android android-all android-store android-install android-install-all _adb-install _apks-are-fresh android-uninstall isolated isolated-preview test-isolated
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -456,6 +456,14 @@ build: _billing-provider
 	fi
 	@$(MAKE) -s _billing-in-build
 
+# Every word the app says lives in messages/<language>.json. This turns those
+# into the typed modules the app imports — so a key that does not exist is a
+# compile error, and a language that is behind is a number the settings page
+# says out loud rather than a surprise on a screen.
+## rewrite the message catalogues the app imports, from messages/
+messages:
+	@yarn -s messages
+
 # The logo lives in exactly one file, src/lib/logo/mark.png. This is what turns
 # it into the favicon, the four PWA icons and the one iOS reads — so changing
 # the logo is changing a file, not finding eight copies of it.
@@ -769,6 +777,7 @@ lint:
 	@$(MAKE) -s docs-check
 	@yarn -s changelog:check
 	@yarn -s badges:check
+	@yarn -s messages:check
 	@node scripts/check-no-secrets.mjs
 	@node scripts/check-android-version.mjs
 	@node scripts/check-plugin.mjs

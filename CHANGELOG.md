@@ -18,6 +18,15 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.21 — 2026-09-16
+
+- **The app can be read in another language.** Settings → Preferences has a
+  language, and choosing it changes the app, what the document declares itself
+  to be for a screen reader, and the language mail is sent to you in. Brazilian
+  Portuguese is the second language; English is the one the app is written in.
+  The screens themselves are still being moved over, and the settings page says
+  how many messages a language is still showing in English.
+
 ## 0.178.20 — 2026-09-16
 
 - **Fixed: while the app waited, the middle of the mark turned a circular hole

@@ -2924,6 +2924,8 @@ a list, a range, or a timezone the platform recognises.
 
 #### `setUserTheme(ctx, value)`
 
+#### `setUserLanguage(ctx, value)`
+
 #### `setUserStyle(ctx, value)`
 
 #### `saveWeekPreferences(ctx, raw)`
@@ -4057,6 +4059,21 @@ server has no way to know what the device is set to, and guessing would make
 the first paint wrong for half of visitors.
 
 #### `setTheme(userId, theme)`
+
+#### `getLocale(userId)`
+
+The language this account reads the app in.
+
+Null rather than a default when nothing has been chosen, because "no answer"
+and "English" are different states and only the caller knows which fallback
+belongs where: a page falls back to what the browser asked for, an email
+falls back to the instance's own language, and neither can be decided here.
+
+An unknown tag reads as no answer. A language that is removed from the app
+therefore lets everyone who chose it fall back cleanly instead of rendering
+a screen of keys.
+
+#### `setLocale(userId, locale)`
 
 #### `getHiddenSections(userId)`
 

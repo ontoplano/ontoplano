@@ -62,6 +62,12 @@ jobs:
       # where the generated files were edited by hand after the fact.
       - run: yarn docs:check
 
+      # Every language has every message, every message means the same thing in
+      # each of them, and the generated catalogues match what is in messages/.
+      # A branch that adds an English string and no key for the others fails
+      # here rather than shipping a screen half in one language.
+      - run: yarn messages:check
+
       # Every changelog line sits under the version this branch ships.
       - run: node scripts/check-changelog.mjs
 

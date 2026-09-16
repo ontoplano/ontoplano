@@ -1,6 +1,6 @@
 {
 	"name": "ontoplano",
-	"version": "0.178.20",
+	"version": "0.178.21",
 	"homepage": "https://ontoplano.com",
 	"repository": {
 		"type": "git",
@@ -30,6 +30,8 @@
 		"test:packaging": "bash tests/packaging.sh",
 		"demo-media": "node scripts/build-demo-media.mjs",
 		"icons": "node scripts/build-icons.mjs",
+		"messages": "node scripts/build-messages.mjs",
+		"messages:check": "node scripts/build-messages.mjs --check",
 		"errorpage": "node scripts/build-error-page.mjs",
 		"badges": "node scripts/build-badges.mjs",
 		"badges:check": "node scripts/build-badges.mjs --check",
@@ -62,6 +64,7 @@
 		"@types/better-sqlite3": "^7.6.13",
 		"@types/node": "^22",
 		"@types/nodemailer": "^8.0.1",
+		"@types/pngjs": "^6.0.5",
 		"@types/web-push": "^3.6.4",
 		"@vitest/coverage-v8": "^4.1.11",
 		"better-auth": "~1.4.21",

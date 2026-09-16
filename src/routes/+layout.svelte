@@ -7,7 +7,8 @@
 	import { live } from '$lib/live';
 	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
-	import type { LayoutServerData } from './$types';
+	import { provideT, translator } from '$lib/i18n';
+	import type { LayoutData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
 	import { NAV_PLACES } from '$lib/sections-nav';
 	import { accentsWith, placesFor } from '$lib/nav-order';
@@ -51,7 +52,7 @@
 	import { smartNumberFields } from '$lib/number-fields';
 	import type { Snippet } from 'svelte';
 
-	let { children, data }: { children: Snippet; data: LayoutServerData } = $props();
+	let { children, data }: { children: Snippet; data: LayoutData } = $props();
 
 	/*
 	 * The update warning can be put away, per instance version: "not now" said
@@ -114,6 +115,17 @@
 	// And once for every number box: clicking one selects what is in it, so
 	// typing 2 into a field showing 0 gives 2 rather than 02.
 	$effect(() => smartNumberFields(document));
+	/*
+	 * Every word under this point, in the language this page is in.
+	 *
+	 * Set once for the whole tree rather than passed down, and from the load's
+	 * answer rather than from module state — a server renders for several
+	 * people at a time and a module-level "current language" is one visitor's
+	 * answer leaking into another's page.
+	 */
+	const t = $derived(translator(data.locale, data.catalogue));
+	provideT(() => t);
+
 	/** This app is its own instance: no account, and leaving means choosing another. */
 	const onDevice = $derived(isIsolatedBuild());
 	/** The bar's colour: the mark's own dark, lifted to match a lifted mark. */

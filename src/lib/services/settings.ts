@@ -14,6 +14,7 @@ import { STYLES, isStyle, type Style } from '../style.js';
 import { THEMES, type Theme } from '../theme.js';
 import { DEFAULT_CURRENCY, isCurrency, type Currency } from '../money.js';
 import { isHideableSection, type HideableSection } from '../sections.js';
+import { isLocale, type Locale } from '../i18n/locales.js';
 import { SECTIONS } from '../colors.js';
 import { isHexColor } from '../nav-order.js';
 
@@ -70,6 +71,31 @@ export function getTheme(userId: string): Theme {
 
 export function setTheme(userId: string, theme: Theme): void {
 	setUserSetting(userId, THEME_KEY, theme);
+}
+
+// --- Language -----------------------------------------------------------------
+
+export const LOCALE_KEY = 'ui.locale';
+
+/**
+ * The language this account reads the app in.
+ *
+ * Null rather than a default when nothing has been chosen, because "no answer"
+ * and "English" are different states and only the caller knows which fallback
+ * belongs where: a page falls back to what the browser asked for, an email
+ * falls back to the instance's own language, and neither can be decided here.
+ *
+ * An unknown tag reads as no answer. A language that is removed from the app
+ * therefore lets everyone who chose it fall back cleanly instead of rendering
+ * a screen of keys.
+ */
+export function getLocale(userId: string): Locale | null {
+	const stored = getUserSetting(userId, LOCALE_KEY);
+	return isLocale(stored) ? stored : null;
+}
+
+export function setLocale(userId: string, locale: Locale): void {
+	setUserSetting(userId, LOCALE_KEY, locale);
 }
 
 // --- Hidden sections ----------------------------------------------------------

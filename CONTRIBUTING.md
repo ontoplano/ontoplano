@@ -12,6 +12,8 @@ fix and pull request genuinely helps it.
 - **Improve the docs** — most of it is generated from the code; to avoid
   having to keep up with it, but there are handwritten parts, living
   in `docs/prose/`, to improve.
+- **Translate it** — every word the app says lives in `messages/`, one JSON
+  file per language. See below.
 - **Package it** — there is no Windows installer yet.
 
 No CLA. You keep the copyright to what you write; it goes in under AGPL-3.0.
@@ -103,6 +105,38 @@ Also write **the test that would have caught it**, failing on the old code.
 
 A security problem is the one thing that does not go in an issue: use a
 [private advisory](https://github.com/ontoplano/ontoplano/security/advisories/new).
+
+## Translating
+
+Every string the app shows comes from `messages/<language>.json`. `en.json` is
+the one they are written in; the others are translations of it.
+
+To translate, find the keys whose value is `null` in your language's file and
+replace them with the sentence. A `null` is a message nobody has written yet:
+it ships as the English, so the screen stays readable, and it is counted — the
+number beside each language in Settings → Preferences is how many are still
+English, and `yarn messages` prints the same number.
+
+    yarn messages          rewrite the modules the app imports
+    yarn messages --check  what CI runs
+
+Three rules, all enforced by that check:
+
+- Every language has every key. Adding an English string means adding the key
+  to every other file, as `null` if you do not speak it.
+- A message keeps its placeholders. `{count}` in English has to be `{count}` in
+  Portuguese — a translation that drops one renders a sentence with a hole in
+  it, and nothing else would notice.
+- A counted message has the forms your language actually has. English and
+  Portuguese both have `one` and `other`; Brazilian Portuguese puts zero in the
+  singular and English does not, which is decided by `Intl` rather than by
+  anybody writing `count === 1`.
+
+To add a language: put its tag in `LOCALES` in `src/lib/i18n/locales.ts`, add
+the name it calls itself to `LOCALE_NAMES`, create `messages/<tag>.json` with
+every key set to `null`, and translate from there. Nothing else needs changing
+— the picker, the `<html lang>`, the plural rules and the Android resource
+folders all read that one list.
 
 ## Code style
 

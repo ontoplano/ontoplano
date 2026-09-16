@@ -1,5 +1,6 @@
 import { DEFAULT_PICTURE_KILOBYTES, DEFAULT_UNDO_SECONDS } from '$lib/instance-defaults.js';
 import { DEFAULT_PRICING } from '$lib/plans.js';
+import { SOURCE_LOCALE, isLocale, type Locale } from '$lib/i18n/locales.js';
 import { readFileSync, mkdirSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
@@ -116,6 +117,12 @@ origin = ""
 
 [instance]
 tagline = "One life, one app."
+
+# The language this instance answers in when it has nothing better to go on —
+# a signed-out page from a browser that asked for a language this app does not
+# have, and mail to somebody who never chose one. A person who has chosen
+# always wins over this.
+language = "en"
 
 # The workbenches under /dev — not screens of the app, and off unless the
 # person running this wants them. There are none at the moment.
@@ -371,6 +378,17 @@ export interface OntoplanoConfig {
 		 * Svelte. Empty falls back to the line below.
 		 */
 		tagline: string;
+		/**
+		 * The language this instance falls back to.
+		 *
+		 * Not "the language of the app" — every account picks its own, and a
+		 * browser that asks for one this app has gets it. This is the answer
+		 * when neither of those applies: a stranger whose browser asked for
+		 * something untranslated, and the address on an email to somebody who
+		 * never said. An instance run for a Brazilian household should say
+		 * `pt-BR` here and never think about it again.
+		 */
+		language: Locale;
 	};
 }
 
@@ -466,6 +484,7 @@ origin = ${q(config.newsletter.origin)}
 
 [instance]
 tagline = ${q(config.instance.tagline)}
+language = ${q(config.instance.language)}
 dev_tools = ${q(config.instance.devTools)}
 self_host = ${q(config.instance.selfHost)}
 docs_url = ${q(config.instance.docsUrl)}
@@ -684,6 +703,10 @@ export function loadConfig(): OntoplanoConfig {
 		},
 		instance: {
 			tagline: (instance.tagline || '').trim() || DEFAULT_TAGLINE,
+			language: (() => {
+				const said = was(instance.language, 'ONTOPLANO_LANGUAGE');
+				return isLocale(said) ? said : SOURCE_LOCALE;
+			})(),
 			devTools: instance.dev_tools === 'true',
 			selfHost: was(instance.self_host, 'ONTOPLANO_SELF_HOST') === 'true',
 			docsUrl: (
