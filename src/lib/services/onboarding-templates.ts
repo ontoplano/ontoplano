@@ -49,7 +49,7 @@ const WEEKDAYS = [0, 1, 2, 3, 4];
  */
 const BASE_CATEGORIES = [
 	{ name: 'work', color: '#1d4ed8', colorLight: '#dbeafe' },
-	{ name: 'health', color: '#0f766e', colorLight: '#ccfbf1' },
+	{ name: 'study', color: '#0f766e', colorLight: '#ccfbf1' },
 	{ name: 'personal', color: '#b45309', colorLight: '#fef3c7' }
 ];
 
@@ -61,8 +61,8 @@ export const TEMPLATES: Template[] = [
 		categories: BASE_CATEGORIES,
 		activities: [
 			{ name: 'Lectures', category: 'work' },
-			{ name: 'Study block', category: 'work' },
-			{ name: 'Exercise', category: 'health' },
+			{ name: 'Study block', category: 'study' },
+			{ name: 'Exercise', category: 'personal' },
 			{ name: 'Reading', category: 'personal' }
 		],
 		blocks: [
@@ -95,7 +95,7 @@ export const TEMPLATES: Template[] = [
 		activities: [
 			{ name: 'Deep work', category: 'work' },
 			{ name: 'Admin', category: 'work' },
-			{ name: 'Walk', category: 'health' },
+			{ name: 'Walk', category: 'personal' },
 			{ name: 'Cook', category: 'personal' }
 		],
 		blocks: [

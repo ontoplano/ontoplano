@@ -91,8 +91,7 @@ export function demoAccountCount(): number {
  * hook that signs a returning visitor in, and the waiting room that makes the
  * account for a new one.
  */
-export const DEMO_ACCOUNTS_PER_ADDRESS = 5;
-export const DEMO_WINDOW_MS = 60 * 60 * 1000;
+export { DEMO_ACCOUNTS_PER_ADDRESS, DEMO_WINDOW_MS } from '$lib/demo-limits';
 
 export async function createDemoAccount(host: string): Promise<DemoAccount | null> {
 	if (demoAccountCount() >= demoMaxAccounts()) return null;

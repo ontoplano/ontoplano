@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, test } from 'vitest';
 import { TEMPLATES, TEMPLATE_KEYS } from './onboarding-templates.js';
 
 /**
@@ -58,6 +58,42 @@ describe('the starter weeks', () => {
 				expect(b.weekday, `${t.key}`).toBeLessThanOrEqual(6);
 				expect(b.startTime, `${t.key} ${b.activity}`).toMatch(/^([01]\d|2[0-3]):[0-5]\d$/);
 				expect(b.durationMinutes, `${t.key} ${b.activity}`).toBeGreaterThan(0);
+			}
+		}
+	});
+});
+
+/**
+ * Three categories, whichever week somebody starts from.
+ *
+ * A new account with no categories is a planner where the first block cannot
+ * be made without inventing a taxonomy first — and the three offered have to
+ * be words a stranger recognises rather than the author's own ontology.
+ */
+describe('what a new account starts with', () => {
+	test('is work, study and personal, in every template', () => {
+		for (const template of TEMPLATES) {
+			expect(template.categories.map((c) => c.name)).toEqual(['work', 'study', 'personal']);
+		}
+	});
+
+	test('and every activity belongs to one of them', () => {
+		// A template naming a category it does not create leaves an activity
+		// hanging off nothing, which is a first run that silently makes half a
+		// week. The mapping is by name, so a rename is exactly how it breaks.
+		for (const template of TEMPLATES) {
+			const made = new Set(template.categories.map((c) => c.name));
+			for (const activity of template.activities) {
+				expect(made.has(activity.category), `${template.key}: ${activity.name}`).toBe(true);
+			}
+		}
+	});
+
+	test('and every block belongs to an activity the template makes', () => {
+		for (const template of TEMPLATES) {
+			const made = new Set(template.activities.map((a) => a.name));
+			for (const block of template.blocks) {
+				expect(made.has(block.activity), `${template.key}: ${block.activity}`).toBe(true);
 			}
 		}
 	});

@@ -28,10 +28,19 @@
 		const instance = carried.get('at') ?? storedInstance();
 		const key = carried.get('key');
 
-		const done = (where: string | null) => location.replace(where ? launchAddress(where) : '/');
+		/*
+		 * Back where it came from, carrying what happened.
+		 *
+		 * This page is a flicker: from the outside, pressing "set it up" went
+		 * somewhere and came straight back to the screen you were on, which
+		 * looks exactly like a button that does nothing. The word on the
+		 * address is what lets the app say otherwise — see `hooks.client.ts`.
+		 */
+		const done = (where: string | null, rang?: 'on' | 'off' | 'failed') =>
+			location.replace(where ? launchAddress(where, rang ? { rang } : {}) : '/');
 
 		if (carried.has('off')) {
-			stopRinging().then(() => done(instance));
+			stopRinging().then(() => done(instance, 'off'));
 			return;
 		}
 
@@ -45,7 +54,7 @@
 			said = ok ? 'Done. Opening ontoplano…' : 'This phone could not take it.';
 			// Even when it failed: standing on a blank page holding a key in the
 			// address is worse than going on without alarms.
-			done(instance);
+			done(instance, ok ? 'on' : 'failed');
 		});
 	});
 </script>

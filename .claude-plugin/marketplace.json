@@ -8,7 +8,7 @@
 		{
 			"name": "ontoplano",
 			"displayName": "Ontoplano",
-			"description": "Your week, your to-dos, your goals, your notes and your shopping list, in the assistant you already use.",
+			"description": "Your week, tasks, to-dos, goals, notes, shopping list, and more.",
 			"category": "Productivity",
 			"version": "0.1.0",
 			"source": "./plugin",

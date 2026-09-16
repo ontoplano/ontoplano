@@ -18,6 +18,33 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.19 — 2026-09-16
+
+- **Fixed: on a phone that is its own instance, no reminder was ever booked
+  with Android.** It asked for an exact alarm, which needs a permission this
+  app deliberately does not request, and the refusal was swallowed — so
+  nothing was scheduled and nothing said why. It books an inexact one instead
+  now, the way the app's other half always has: late rather than silent.
+- **A reminder makes its sound when it arrives, not when you open the app.**
+  Android takes the sound from a notification's channel, and the alarms the
+  phone books for itself were landing on a default one that posts silently.
+- **The notifications screen no longer offers what this instance cannot do.**
+  An instance that lives on the phone cannot send Monday's review mail, and
+  the row said so instead of showing a switch that was a promise.
+- **"Notifications on this device" says one thing instead of three.** It had a
+  headline, a paragraph restating it, and a third about how often the phone
+  asks.
+- **Setting this phone up to ring says whether it worked.** It goes out to the
+  copy on the device and straight back, which looked exactly like a button
+  that did nothing.
+- **On a phone, what the app tells you appears above the tab bar** rather than
+  over the header of the screen you are on.
+- **New accounts start with work, study and personal** rather than work,
+  health and personal.
+- **Fixed: the demo said it was full when it was you it was throttling.** Five
+  copies an hour from one address is what stops a script taking them all; it
+  says that, and when the next one is free, instead of blaming the server.
+
 ## 0.178.18 — 2026-09-16
 
 - **Writing something down says where it went.** The quick adds — Idea, To-do,

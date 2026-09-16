@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import { DEMO_ACCOUNTS_PER_ADDRESS } from '$lib/demo-limits';
 	import { onMount } from 'svelte';
 	import type { ActionData, PageServerData } from './$types';
 
@@ -36,7 +37,27 @@
 </svelte:head>
 
 <div class="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center gap-6 px-4">
-	{#if form?.full}
+	{#if form?.busy}
+		<!--
+			Your own limit, not the server's.
+
+			Five copies an hour from one address is generous for somebody opening
+			the demo, closing it and opening it again, and useless to a script.
+			But it used to be reported as "the demo is full" — which blames the
+			server for something waiting will not fix, and is the first thing
+			anybody testing their own demo runs into.
+		-->
+		<div class="w-full border border-gray-200 bg-white p-6 text-center shadow-card">
+			<p class="text-sm text-gray-900">That is a lot of copies from one place.</p>
+			<p class="mt-2 text-sm text-gray-600">
+				The demo hands out {DEMO_ACCOUNTS_PER_ADDRESS} an hour per address, which is what stops a script
+				taking them all. Another one in about
+				{form.minutes}
+				{form.minutes === 1 ? 'minute' : 'minutes'}.
+			</p>
+			<a href={resolve('/demo')} class="btn btn-primary mt-4">Try again</a>
+		</div>
+	{:else if form?.full}
 		<div class="w-full border border-gray-200 bg-white p-6 text-center shadow-card">
 			<p class="text-sm text-gray-900">The demo is full right now.</p>
 			<p class="mt-2 text-sm text-gray-600">

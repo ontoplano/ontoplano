@@ -15,6 +15,7 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts } from './helpers/db';
+import { FULL } from '../src/lib/capabilities';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -38,7 +39,7 @@ beforeAll(async () => {
 
 describe('the list itself', () => {
 	test('every id in it is a row the screen can draw', () => {
-		const drawn = s.notifications.notificationSettings(ctx);
+		const drawn = s.notifications.notificationSettings(ctx, FULL);
 		expect(drawn.map((n) => n.id).sort()).toEqual([...s.notifications.NOTIFICATION_IDS].sort());
 		for (const row of drawn) {
 			expect(row.label.length).toBeGreaterThan(0);
@@ -50,9 +51,32 @@ describe('the list itself', () => {
 		const timed = new Set(
 			s.notifications.NOTIFICATIONS.filter((n) => n.time).map((n) => n.id as string)
 		);
-		for (const row of s.notifications.notificationSettings(ctx)) {
+		for (const row of s.notifications.notificationSettings(ctx, FULL)) {
 			if (timed.has(row.id)) expect(row.at).toMatch(/^([01]\d|2[0-3]):[0-5]\d$/);
 			else expect(row.at).toBe(null);
+		}
+	});
+
+	test('an instance that cannot send mail says so instead of offering a switch', () => {
+		// A phone that is its own instance books Android's alarms, so everything
+		// here works on it — except the Monday mail, which goes out from a
+		// machine that has to be running on a Monday morning. A switch for that
+		// is not a setting, it is a promise.
+		const phone = { reachable: false, awake: false };
+		const rows = s.notifications.notificationSettings(ctx, phone);
+
+		const mail = rows.find((r) => r.id === 'reviewMail')!;
+		expect(mail.whyNot).toMatch(/only runs while the app is open/);
+
+		// And nothing else is walled off: the alarms arrive with the app shut.
+		for (const row of rows.filter((r) => r.id !== 'reviewMail')) {
+			expect(row.whyNot, `${row.id} was walled off`).toBe(null);
+		}
+	});
+
+	test('and on an instance with a server, nothing is', () => {
+		for (const row of s.notifications.notificationSettings(ctx, FULL)) {
+			expect(row.whyNot).toBe(null);
 		}
 	});
 
@@ -60,7 +84,7 @@ describe('the list itself', () => {
 		// The rows cross the wire from a load, and one function anywhere in them
 		// fails the whole page with "cannot stringify a function" — which is how
 		// the settings screen 500'd the first time it was opened.
-		for (const row of s.notifications.notificationSettings(ctx)) {
+		for (const row of s.notifications.notificationSettings(ctx, FULL)) {
 			expect(JSON.parse(JSON.stringify(row))).toEqual(row);
 		}
 	});

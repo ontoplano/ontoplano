@@ -57,6 +57,18 @@ export const RING_PARAM = 'ring';
  */
 export const SPINNING_PARAM = 'spinning';
 
+/**
+ * What a trip through `/ring` did, said on the way back.
+ *
+ * Setting this phone up to ring is a round trip to the device's own origin and
+ * straight back — the key is minted where the session is and stored where the
+ * shell is, and those are two origins. From the outside it is a flicker and
+ * then the page you were already on, which is indistinguishable from a button
+ * that does nothing. So the trip says what it did, and the app that lands says
+ * it out loud.
+ */
+export const RANG_PARAM = 'rang';
+
 /** The mark saying the answer is this phone. */
 export const ARRIVING_HOME = 'here';
 
@@ -146,7 +158,7 @@ export async function suggestedInstance(): Promise<string | null> {
  */
 export function launchAddress(
 	instance: string,
-	opts: { ring?: boolean; spinning?: boolean } = {}
+	opts: { ring?: boolean; spinning?: boolean; rang?: 'on' | 'off' | 'failed' } = {}
 ): string {
 	try {
 		const url = new URL(instance);
@@ -167,6 +179,8 @@ export function launchAddress(
 		if (opts.ring) url.searchParams.set(RING_PARAM, '1');
 		// …and that a turn is already going round, for the app to finish.
 		if (opts.spinning) url.searchParams.set(SPINNING_PARAM, '1');
+		// …and what the trip through `/ring` just did, for the app to say.
+		if (opts.rang) url.searchParams.set(RANG_PARAM, opts.rang);
 		return url.toString();
 	} catch {
 		// Whatever this address is, it is not one to decorate — let the

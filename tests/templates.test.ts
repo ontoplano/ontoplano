@@ -37,9 +37,12 @@ describe('applying a starter week', () => {
 	test('brings its categories, activities and blocks', () => {
 		s.onboarding.applyTemplate(ctx, 'student', { replacePlan: true });
 
+		// The three a new account starts with, whichever week it starts from —
+		// see `onboarding-templates.test.ts`, which is where the list is pinned.
 		const names = s.activities.listCategories(ctx).map((c) => c.name);
 		expect(names).toContain('work');
-		expect(names).toContain('health');
+		expect(names).toContain('study');
+		expect(names).toContain('personal');
 		expect(s.activities.listActivities(ctx).map((a) => a.name)).toContain('Study block');
 		expect(s.slots.listActiveWeeklySlots(ctx).length).toBeGreaterThan(0);
 	});

@@ -93,6 +93,7 @@ shows up here on the next build.
 | [`tags`](#tags)                                  | Tags, and the rows that join them to what they tag.                                                                                                                                                                                                                  |
 | [`time`](#time)                                  | Time, in the two shapes this app actually has.                                                                                                                                                                                                                       |
 | [`today`](#today)                                | One day, in one request.                                                                                                                                                                                                                                             |
+| [`todo-actions`](#todo-actions)                  | Everything that can be done to a todo, wherever the row is on screen.                                                                                                                                                                                                |
 | [`todos`](#todos)                                | Todos: tasks that have no date yet.                                                                                                                                                                                                                                  |
 | [`tokens`](#tokens)                              | Scopes an API token can hold.                                                                                                                                                                                                                                        |
 | [`validate`](#validate)                          | Small hand-rolled validators.                                                                                                                                                                                                                                        |
@@ -2733,7 +2734,7 @@ key that predates this reads the same way as the rest.
 
 The time one of the timed ones goes off, as `HH:MM`.
 
-#### `notificationSettings(ctx)`
+#### `notificationSettings(ctx, instance)`
 
 #### `setNotification(ctx, id, choice)`
 
@@ -4880,6 +4881,27 @@ thinking.
 - `TodayTask`
 - `TodayBoard`
 - `TodayScope` — What a caller is allowed to see of a day.
+
+## todo-actions
+
+Everything that can be done to a todo, wherever the row is on screen.
+
+In `services` rather than `server`, where it used to be: nothing here needs
+a server. It is form handlers over the todo service, and the to-do room is
+one of the rooms a phone-only instance carries — so a file under
+`$lib/server` was a route compiled into the device's worker importing from a
+directory that must never reach it. It happened to work because this file
+touches no Node API; the next thing added to it would not have.
+
+The to-do room shows every todo; a notebook shows the ones filed under it,
+and operating on one there has to mean the same thing — tick it off, put it
+on a day, edit it, put it away, delete it. The handlers live here so the two
+screens run the same code rather than two copies that drift.
+
+They are mounted under different names on the two routes: a notebook page
+already has a `delete` and an `update` of its own, so there they are
+`todoDelete` and `todoUpdate`. `TODO_ACTIONS` below names them for the
+markup, so a form never spells an action out.
 
 ## todos
 

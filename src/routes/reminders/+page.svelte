@@ -154,6 +154,68 @@
 	}
 
 	/**
+	 * How far ahead the form suggests, when today's opening hour has gone.
+	 *
+	 * A quarter of an hour: long enough to still be ahead by the time somebody
+	 * has finished typing, short enough to mean "shortly".
+	 */
+	const SOONEST_MINUTES = 15;
+
+	/**
+	 * The next quarter hour, as this account's own clock reads it.
+	 *
+	 * Rounded up rather than added to the minute, because a suggestion that
+	 * says 15:07 is a number somebody has to think about; 15:15 is one they
+	 * accept or replace.
+	 */
+	function soonest(): string {
+		const [hour, minute] = data.now.slice(11, 16).split(':').map(Number);
+		const at = hour * 60 + minute + SOONEST_MINUTES;
+		const rounded = Math.ceil(at / SOONEST_MINUTES) * SOONEST_MINUTES;
+		// The far end of the day rather than tomorrow: the day field says which
+		// day, and moving it from under somebody is worse than a tight time.
+		if (rounded >= 24 * 60) return '23:59';
+		const pad = (n: number) => String(n).padStart(2, '0');
+		return `${pad(Math.floor(rounded / 60))}:${pad(rounded % 60)}`;
+	}
+
+	/**
+	 * The time this page filled in, as opposed to one somebody typed.
+	 *
+	 * The difference is the whole of the rule below: a suggestion follows the
+	 * day it was made for, and an answer never moves.
+	 */
+	let suggested = $state('');
+
+	/*
+	 * A form that opens dead is a form that looks broken.
+	 *
+	 * The day starts as today and the time starts empty, and empty means the
+	 * hour the planner opens on — which by the afternoon has been. So the page
+	 * offered a filled-in day, a disabled button and a line explaining why, to
+	 * somebody who had not typed anything yet.
+	 *
+	 * It suggests a time instead, and only when it has to: leaving it empty is
+	 * still what "the hour my day starts" means for every day that has not
+	 * begun. And the suggestion is withdrawn when the day moves to one where
+	 * empty is a real answer again — otherwise choosing today, then tomorrow,
+	 * leaves this afternoon's guess behind as tomorrow's answer.
+	 */
+	$effect(() => {
+		if (!day) return;
+		if (hasBeen(day, '')) {
+			if (time && time !== suggested) return;
+			suggested = soonest();
+			time = suggested;
+			return;
+		}
+		if (time && time === suggested) {
+			time = '';
+			suggested = '';
+		}
+	});
+
+	/**
 	 * Open the browser's own picker rather than the text field behind it.
 	 *
 	 * A date or time input is a row of typeable segments with a small icon

@@ -15,6 +15,13 @@ import type { RequestEvent } from '@sveltejs/kit';
 /**
  * Everything that can be done to a todo, wherever the row is on screen.
  *
+ * In `services` rather than `server`, where it used to be: nothing here needs
+ * a server. It is form handlers over the todo service, and the to-do room is
+ * one of the rooms a phone-only instance carries — so a file under
+ * `$lib/server` was a route compiled into the device's worker importing from a
+ * directory that must never reach it. It happened to work because this file
+ * touches no Node API; the next thing added to it would not have.
+ *
  * The to-do room shows every todo; a notebook shows the ones filed under it,
  * and operating on one there has to mean the same thing — tick it off, put it
  * on a day, edit it, put it away, delete it. The handlers live here so the two

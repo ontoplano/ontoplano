@@ -11,7 +11,7 @@ import { assertWithinLimit, familyUserIds } from './services/subscriptions.js';
 import { assertEntryWithinLimit } from '$lib/services/media.js';
 import { servedMediaLimits } from './media-limits.js';
 import { loadConfig } from './config.js';
-import { docsUrl, siteUrl } from './settings.js';
+import { capabilities, docsUrl, siteUrl } from './settings.js';
 import { instanceIsEmpty, registrationMode } from './services/registration.js';
 import { RINGER_TOKEN_NAME, listTokens } from './services/tokens.js';
 import { clientErrorState, setClientErrorConsent } from './services/client-errors.js';
@@ -48,6 +48,8 @@ export function bindServerHost(): void {
 		}),
 		/* The instance knows, because the instance is what minted the key. */
 		ringsOnAPhone: (ctx) => listTokens(ctx).some((t) => t.name === RINGER_TOKEN_NAME),
+		/* What this deployment can do — reachable and awake, unless it is a phone. */
+		capabilities,
 		clientErrorReports: clientErrorState,
 		setClientErrorReports: setClientErrorConsent
 	});

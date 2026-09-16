@@ -12,12 +12,14 @@ import { sendOutsideLinksToTheBrowser } from '$lib/outside-links';
 import { backGestureGoesBack } from '$lib/phone-back';
 import { ringingFor } from '$lib/phone-notifications';
 import { startMarkSpin } from '$lib/mark-spin';
+import { notify } from '$lib/notify.svelte';
 import { installIsolatedBridge } from '$lib/isolated/bridge';
 import { servePicturesToServiceWorker } from '$lib/isolated/pictures';
 import {
 	ARRIVING_AT,
 	ARRIVING_HOME,
 	ARRIVING_TO_ASK,
+	RANG_PARAM,
 	SPINNING_PARAM,
 	forgetInstance,
 	inPhoneApp,
@@ -106,6 +108,26 @@ async function openInstance(instance: string, spinning = false): Promise<void> {
 
 /** Long enough for a native call, short enough not to be a launch somebody notices. */
 const RINGER_ASK_MS = 400;
+
+/*
+ * What the trip to `/ring` did, said where somebody can see it.
+ *
+ * Setting this phone up to ring goes to the device's own origin and comes
+ * straight back, because the key is minted where the session is and stored
+ * where the shell is. From the outside that is a flicker and then the same
+ * screen — a button that appears to do nothing. It says what it did now.
+ */
+{
+	const url = new URL(location.href);
+	const rang = url.searchParams.get(RANG_PARAM);
+	if (rang) {
+		url.searchParams.delete(RANG_PARAM);
+		history.replaceState(history.state, '', url);
+		if (rang === 'on') notify.success('This phone will ring for your reminders.');
+		else if (rang === 'off') notify.success('This phone has stopped ringing for reminders.');
+		else notify.error('This phone would not take it. Try again from Preferences.');
+	}
+}
 
 /*
  * A turn started on the screen you came from, carried on here.

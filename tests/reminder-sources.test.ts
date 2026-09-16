@@ -8,6 +8,7 @@
  * has to be safe to run twice, because the pass that writes them is woken
  * rather than scheduled.
  */
+import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts } from './helpers/db';
 
@@ -287,5 +288,175 @@ describe('the end of the day', () => {
 	test('and not at all once its hour has gone', () => {
 		const ctx = ctxAt('2026-09-07T22:00:00Z');
 		expect(s.sources.ensureEndOfDayReminder(ctx, ctx.now, 'UTC')).toBe(0);
+	});
+});
+
+/**
+ * The whole way from "tell me when blocks start" to what a phone books.
+ *
+ * Every step of this passes on its own and the chain is what matters: the pass
+ * has to write the row, and `upcomingReminders` has to hand that row to the
+ * phone. Read in a zone that is not UTC, because that is where the last break
+ * in this chain lived — the two ends compared wall-clock against an instant,
+ * which happens to agree in UTC and nowhere else.
+ */
+describe('a block starting later today, end to end', () => {
+	let s3: {
+		notifications: typeof import('../src/lib/services/notifications');
+		activities: typeof import('../src/lib/services/activities');
+		slots: typeof import('../src/lib/services/slots');
+		instances: typeof import('../src/lib/services/instances');
+	};
+
+	/** The same account, read three hours west of UTC. */
+	const west = (iso: string) => ({
+		userId: OWNER,
+		now: new Date(iso),
+		tz: 'America/Sao_Paulo'
+	});
+
+	beforeAll(async () => {
+		s3 = {
+			notifications: await import('../src/lib/services/notifications'),
+			activities: await import('../src/lib/services/activities'),
+			slots: await import('../src/lib/services/slots'),
+			instances: await import('../src/lib/services/instances')
+		};
+
+		// Tuesday 2026-09-15 local, a block at 18:00.
+		const ctx = west('2026-09-15T12:00:00Z');
+		const cat = s3.activities.createCategory(ctx, { name: 'Evening', color: '#b45309' });
+		s3.slots.createSlot(ctx, {
+			weekday: 1,
+			startTime: '18:00',
+			durationMinutes: 60,
+			mode: 'category',
+			categoryId: cat,
+			label: 'Cook'
+		});
+		s3.instances.generateInstances(
+			ctx,
+			new Date('2026-09-15T00:00:00'),
+			new Date('2026-09-16T00:00:00')
+		);
+	});
+
+	test('is written as a reminder, and handed to the phone to book', () => {
+		// 12:00Z is 09:00 in São Paulo: the block is nine hours off.
+		const ctx = west('2026-09-15T12:00:00Z');
+		s3.notifications.setNotification(ctx, 'blocks', { on: true });
+
+		expect(s.sources.ensureOwnReminders(ctx, ctx.now, ctx.tz)).toBeGreaterThan(0);
+
+		const written = s.reminders
+			.listReminders(ctx)
+			.find((r) => r.subjectKind === 'instance' && r.message === 'Cook');
+		expect(written, 'no reminder was written for the block').toBeTruthy();
+		expect(written!.remindAt).toBe('2026-09-15T18:00:00');
+
+		// And this is the list `/api/reminders?upcoming=1` hands the phone.
+		const upcoming = s.reminders.upcomingReminders(ctx);
+		expect(
+			upcoming.some((r) => r.id === written!.id),
+			'the phone was never given it to book'
+		).toBe(true);
+	});
+
+	test('and once its hour has gone, it is not written again', () => {
+		// 23:00Z is 20:00 local — two hours after the block. Nothing to announce.
+		const ctx = west('2026-09-15T23:00:00Z');
+		const before = s.reminders
+			.listReminders(ctx, { includePast: true })
+			.filter((r) => r.subjectKind === 'instance').length;
+		s.sources.ensureOwnReminders(ctx, ctx.now, ctx.tz);
+		expect(
+			s.reminders
+				.listReminders(ctx, { includePast: true })
+				.filter((r) => r.subjectKind === 'instance').length
+		).toBe(before);
+	});
+});
+
+/**
+ * Every switch on the notifications screen actually stops its source.
+ *
+ * The screen is a list of switches and the sources are five separate
+ * functions, and "on" was the only state any of them had ever been in: three
+ * of them — the review nag, bills, birthdays — always happened, and the gate
+ * was added to them long after they were written. A gate nobody has seen
+ * closed is a gate that might be reading the wrong key, or a key nobody
+ * writes, and the symptom is a notification arriving after you turned it off,
+ * which is the one kind nobody forgives.
+ *
+ * Driven through `ensureOwnReminders`, because that is the call every caller
+ * actually makes — a gate that works when the source is called directly and
+ * not through the pass would be no gate at all.
+ */
+describe('a switch that is off', () => {
+	let notifications: typeof import('../src/lib/services/notifications');
+
+	const kinds = (ctx: ReturnType<typeof ctxAt>, kind: string) =>
+		s.reminders.listReminders(ctx, { includePast: true }).filter((r) => r.subjectKind === kind)
+			.length;
+
+	beforeAll(async () => {
+		notifications = await import('../src/lib/services/notifications');
+	});
+
+	test('stops bills being written, and turning it back on resumes them', () => {
+		// A day the Rent bill wants paying, in a month nothing else has touched.
+		const ctx = ctxAt('2026-11-07T06:00:00Z');
+
+		notifications.setNotification(ctx, 'bills', { on: false });
+		const before = kinds(ctx, 'bill');
+		s.sources.ensureOwnReminders(ctx, ctx.now, 'UTC');
+		expect(kinds(ctx, 'bill'), 'a bill was written with bills off').toBe(before);
+
+		notifications.setNotification(ctx, 'bills', { on: true });
+		s.sources.ensureOwnReminders(ctx, ctx.now, 'UTC');
+		expect(kinds(ctx, 'bill'), 'nothing was written with bills on').toBeGreaterThan(before);
+	});
+
+	test('stops birthdays being written, and turning it back on resumes them', () => {
+		const ctx = ctxAt('2026-09-16T06:00:00Z');
+		s.people.createPerson(ctx, {
+			name: 'Switched',
+			birthday: '--09-17',
+			remindOnBirthday: true
+		});
+		const tomorrow = ctxAt('2026-09-17T06:00:00Z');
+
+		notifications.setNotification(tomorrow, 'birthdays', { on: false });
+		const before = kinds(tomorrow, 'person');
+		s.sources.ensureOwnReminders(tomorrow, tomorrow.now, 'UTC');
+		expect(kinds(tomorrow, 'person'), 'a birthday was written with birthdays off').toBe(before);
+
+		notifications.setNotification(tomorrow, 'birthdays', { on: true });
+		s.sources.ensureOwnReminders(tomorrow, tomorrow.now, 'UTC');
+		expect(kinds(tomorrow, 'person'), 'nothing was written with birthdays on').toBeGreaterThan(
+			before
+		);
+	});
+
+	/**
+	 * And the structural half: every source asks before it writes.
+	 *
+	 * The three tests above each need a state the source would otherwise write
+	 * in, which is why the review nag is not among them — a pending week is a
+	 * fixture of its own. This catches the case those cannot: a source added
+	 * later, or one whose gate is deleted, with nothing on the screen to show
+	 * for it.
+	 */
+	test('and every source in the file asks before it writes', () => {
+		const source = readFileSync('src/lib/services/reminder-sources.ts', 'utf8');
+		const ensures = [...source.matchAll(/export function (ensure\w+)\(([\s\S]*?)\n}/g)];
+		// `ensureOwnReminders` is the pass itself: it calls the others, which do
+		// the asking. Everything else is a source and has to.
+		const sources = ensures.filter(([, name]) => name !== 'ensureOwnReminders');
+		expect(sources.length, 'no sources were found — has the file moved?').toBeGreaterThan(2);
+
+		for (const [, name, body] of sources) {
+			expect(body.includes('notifies('), `${name} writes without asking`).toBe(true);
+		}
 	});
 });

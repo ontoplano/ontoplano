@@ -3,7 +3,7 @@ import { listActivities, listCategories } from '$lib/services/activities';
 import { goalBacklinks } from '$lib/services/backlinks';
 import { buildCtx } from '$lib/services/ctx';
 import { pickableNotebooks } from '$lib/services/notebooks';
-import { todoHandlers } from '$lib/server/todo-actions';
+import { todoHandlers } from '$lib/services/todo-actions';
 import { listTodos } from '$lib/services/todos';
 
 export const load = async ({ locals }: IsolatedEvent) => {
@@ -27,7 +27,7 @@ export const load = async ({ locals }: IsolatedEvent) => {
  * block, and the block's editor takes the reminder. See `services/reminders.ts`.
  *
  * The handlers themselves are shared with the notebook pages, which show the
- * same rows for one subject — see `$lib/server/todo-actions`.
+ * same rows for one subject — see `$lib/services/todo-actions`.
  */
 export const actions = {
 	create: todoHandlers.create,

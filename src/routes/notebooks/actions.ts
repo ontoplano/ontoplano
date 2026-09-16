@@ -5,7 +5,7 @@ import { archiveEntry, createEntry, deleteEntry, updateEntry } from '$lib/servic
 import { setEntryPeople } from '$lib/services/people';
 import { toActionFailure } from '$lib/http-errors';
 import { importVaultAction } from '$lib/import-vault-action';
-import { todoHandlers } from '$lib/server/todo-actions';
+import { todoHandlers } from '$lib/services/todo-actions';
 import {
 	createNotebook,
 	deleteNotebook,
@@ -198,7 +198,7 @@ export const notebookActions = {
 	 * A notebook's Tasks tab is the to-do room looking at one subject, so it
 	 * runs the room's own handlers rather than a second implementation of them.
 	 * Prefixed because the plain names above already belong to the notebook —
-	 * see `$lib/todo-actions` for the names the markup posts to.
+	 * see `$lib/services/todo-actions` for the names the markup posts to.
 	 */
 	todoCreate: todoHandlers.create,
 	todoUpdate: todoHandlers.update,

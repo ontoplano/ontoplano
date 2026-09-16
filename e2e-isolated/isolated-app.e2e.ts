@@ -480,3 +480,143 @@ test('the Instance tab says this one is isolated', async ({ page }) => {
 	await expect(page.getByText(/^Isolated/)).toBeVisible();
 	await expect(page.getByText(/This device, on its own/)).toBeVisible();
 });
+
+/**
+ * A block starting later today reaches Android's alarm clock.
+ *
+ * This is the whole of how a reminder arrives on an instance that runs on the
+ * phone: there is no server to wake it, so the app hands the next few weeks to
+ * the system while it is open and the system fires them on its own clock. Four
+ * things have to hold in a row, every one of them silent when it fails:
+ *
+ *   the setting is on → the pass writes a row for the block → the row comes
+ *   back from `/api/reminders?upcoming=1` → the plugin is asked to book it.
+ *
+ * "No notification arrived" is what all four look like, which is why the test
+ * goes the whole way rather than stopping at the row. The shell is stubbed,
+ * because the one thing a browser cannot do is be Android — what is checked is
+ * that the app asked it the right question.
+ */
+test.describe('booking with Android', () => {
+	/*
+	 * As the app, not as a browser.
+	 *
+	 * `phoneNotifications()` asks the user agent before it looks for a plugin —
+	 * the shell is the only thing that can book an alarm, and a browser that
+	 * happens to have a `Capacitor` object on `window` is not it. Without this
+	 * the stub below is never reached and the test fails for a reason that has
+	 * nothing to do with reminders.
+	 */
+	test.use({ userAgent: `Mozilla/5.0 (Linux; Android 14) Mobile OntoplanoApp/0.1.0` });
+
+	test('a block that is still to come is booked with Android', async ({ page }) => {
+		test.setTimeout(180_000);
+
+		/*
+		 * The shell, recording what it was asked to book.
+		 *
+		 * An exposed function rather than something on `window`: the page reloads
+		 * in the middle of this, and anything kept in the page is lost with it.
+		 */
+		const booked: { id: number; at: string; channelId?: string }[] = [];
+		await page.exposeFunction(
+			'__booked',
+			(what: { id: number; at: string; channelId?: string }[]) => {
+				booked.push(...what);
+			}
+		);
+		await page.addInitScript(() => {
+			const record = (window as never as Record<string, (what: unknown) => Promise<void>>).__booked;
+			(window as never as Record<string, unknown>).Capacitor = {
+				Plugins: {
+					LocalNotifications: {
+						checkPermissions: async () => ({ display: 'granted' }),
+						requestPermissions: async () => ({ display: 'granted' }),
+						getPending: async () => ({ notifications: [] }),
+						cancel: async () => {},
+						createChannel: async () => {},
+						schedule: async (what: {
+							notifications: { id: number; schedule: { at: Date }; channelId?: string }[];
+						}) => {
+							await record(
+								what.notifications.map((n) => ({
+									id: n.id,
+									at: new Date(n.schedule.at).toISOString(),
+									channelId: n.channelId
+								}))
+							);
+						}
+					}
+				}
+			};
+		});
+
+		/*
+		 * Already asked, and the answer was this phone.
+		 *
+		 * As the app, a launch with nothing written down goes to the instance
+		 * screen rather than the dashboard — which is right, and is not what
+		 * this test is about. Written where the app writes it, so the launch
+		 * behaves like somebody's second one.
+		 */
+		await page.addInitScript(() => {
+			try {
+				localStorage.setItem('ontoplano:instance', 'phone');
+			} catch {
+				// A profile that refuses storage: the chooser below handles it.
+			}
+		});
+
+		await page.goto('/');
+		// Either the dashboard, or the chooser if the line above did not take.
+		const chooser = page.getByRole('button', { name: /Use this phone|Start here/i });
+		if (await chooser.isVisible({ timeout: 10_000 }).catch(() => false)) await chooser.click();
+
+		await expect(page.getByText("TODAY'S TASKS")).toBeVisible({ timeout: 60_000 });
+		const tour = page.getByRole('dialog', { name: 'Tutorial' });
+		if (await tour.isVisible().catch(() => false)) {
+			await tour.getByRole('button', { name: 'Dismiss' }).click();
+			await tour.getByRole('button', { name: 'Okay, dismiss!' }).click();
+		}
+
+		// A reminder of its own, far enough ahead to still be ahead when the page
+		// has finished reloading. The block path and this one write the same kind
+		// of row and are read by the same query; this one can be made in a form.
+		const soon = new Date(Date.now() + 3 * 60 * 60 * 1000);
+		const pad = (n: number) => String(n).padStart(2, '0');
+		await page.goto('/reminders');
+		await expect(page.locator('[name="day"]')).toBeVisible({ timeout: 30_000 });
+		await page
+			.locator('[name="day"]')
+			.fill(`${soon.getFullYear()}-${pad(soon.getMonth() + 1)}-${pad(soon.getDate())}`);
+		await page.locator('[name="time"]').fill(`${pad(soon.getHours())}:${pad(soon.getMinutes())}`);
+		await page.locator('[name="label"]').first().fill('booked with android');
+		await page.getByRole('button', { name: 'Set it' }).click();
+		await expect(page.getByText('booked with android')).toBeVisible({ timeout: 30_000 });
+
+		/*
+		 * And now the part that was never checked: opening the app hands what is
+		 * coming to the system. It happens on mount, so this is a reload rather
+		 * than a click.
+		 */
+		booked.length = 0;
+		await page.reload();
+		await expect(page.locator('html[data-ready]')).toBeAttached({ timeout: 60_000 });
+
+		await expect
+			.poll(() => booked.length, {
+				message: 'the app never asked Android to book anything',
+				timeout: 30_000
+			})
+			.toBeGreaterThan(0);
+
+		// The right minute, and on the channel that makes a sound — a booking on
+		// the plugin's default channel is a notification that arrives in silence.
+		const mine = booked.find((b) => Math.abs(Date.parse(b.at) - soon.getTime()) < 60_000);
+		expect(
+			mine,
+			`nothing was booked near ${soon.toISOString()}: ${JSON.stringify(booked)}`
+		).toBeTruthy();
+		expect(mine!.channelId).toBe('ontoplano-reminders');
+	});
+});

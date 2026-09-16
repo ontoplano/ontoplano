@@ -2,6 +2,7 @@ import type { Ctx } from './ctx.js';
 import { getGridHours, getUserSetting, setUserSetting } from './settings.js';
 import { ValidationError } from './errors.js';
 import { TIME_PATTERN } from './validate.js';
+import { whyNot, type Capabilities, type FeatureKey } from '../capabilities.js';
 
 /**
  * Everything the app will tell you about, in one list.
@@ -46,6 +47,16 @@ export type Notification = {
 	 * "the end of the day" is a different hour for a baker and a night shift.
 	 */
 	time?: { key: string; of: (userId: string) => string };
+	/**
+	 * What this instance has to be able to do for the notification to happen.
+	 *
+	 * Most of these need nothing: a phone that is its own instance books
+	 * Android's alarms and they arrive with the app shut. Mail is the exception
+	 * — it goes out on a Monday morning, from a machine that has to be running
+	 * then — and an instance on a phone is not. A switch for something that
+	 * cannot happen is worse than no switch: it is a promise.
+	 */
+	needs?: FeatureKey;
 };
 
 export const NOTIFICATION_IDS = [
@@ -112,7 +123,8 @@ export const NOTIFICATIONS: Notification[] = [
 		description:
 			'Monday morning: what last week actually was, with the page that closes it one press away.',
 		key: REVIEW_MAIL_KEY,
-		on: false
+		on: false,
+		needs: 'reviewMail'
 	},
 	{
 		id: 'bills',
@@ -171,15 +183,24 @@ export type NotificationRow = {
 	on: boolean;
 	/** The hour it goes off, or null for the ones tied to an event. */
 	at: string | null;
+	/**
+	 * Why this instance cannot do it, or null when it can.
+	 *
+	 * Said rather than hidden, the way every other wall in the app is said:
+	 * somebody who has just met one deserves to know it exists and what would
+	 * take it down. See `capabilities.ts`.
+	 */
+	whyNot: string | null;
 };
 
-export function notificationSettings(ctx: Ctx): NotificationRow[] {
+export function notificationSettings(ctx: Ctx, instance: Capabilities): NotificationRow[] {
 	return NOTIFICATIONS.map((what) => ({
 		id: what.id,
 		label: what.label,
 		description: what.description,
 		on: notifies(ctx.userId, what.id),
-		at: what.time ? notifyAt(ctx.userId, what.id) : null
+		at: what.time ? notifyAt(ctx.userId, what.id) : null,
+		whyNot: what.needs ? whyNot(instance, what.needs) : null
 	}));
 }
 

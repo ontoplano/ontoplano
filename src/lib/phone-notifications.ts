@@ -49,7 +49,57 @@ type Notifications = {
 	getPending(): Promise<{ notifications: { id: number }[] }>;
 	cancel(what: { notifications: { id: number }[] }): Promise<void>;
 	schedule(what: { notifications: unknown[] }): Promise<unknown>;
+	createChannel(what: {
+		id: string;
+		name: string;
+		importance: number;
+		description?: string;
+	}): Promise<void>;
 };
+
+/**
+ * The channel a reminder arrives on, and why it is named here as well as in
+ * the shell.
+ *
+ * Android decides whether a notification makes a noise from its *channel*, not
+ * from the notification: a channel made at the default importance posts
+ * silently however loudly the notification asks. The shell's own ringer — the
+ * half that fires for an instance with a server — makes this one at
+ * `IMPORTANCE_HIGH`, so those ring. The half that books the alarms for an
+ * instance on the phone said nothing about a channel at all, so it landed on
+ * the plugin's default one and arrived in silence: the notification appeared,
+ * and the sound only played later, out of the page, when the app was opened.
+ *
+ * One channel for both halves, so it rings either way and so somebody
+ * silencing reminders silences reminders rather than half of them.
+ * `Ringer.java` holds the same string; `tests/reminder-channel.test.ts` is
+ * what stops the two drifting.
+ */
+export const REMINDER_CHANNEL = 'ontoplano-reminders';
+
+/** Android's `IMPORTANCE_HIGH`: it makes a sound and it can peek. */
+const CHANNEL_IMPORTANCE = 5;
+
+/**
+ * Make sure the channel exists before anything is booked onto it.
+ *
+ * A notification posted to a channel that does not exist is one Android drops
+ * without a word. Creating one that is already there changes nothing — the
+ * system ignores every field after the first time, which is also why the
+ * importance cannot be raised later by editing this.
+ */
+async function ensureChannel(notifications: Notifications): Promise<void> {
+	try {
+		await notifications.createChannel({
+			id: REMINDER_CHANNEL,
+			name: 'Reminders',
+			importance: CHANNEL_IMPORTANCE,
+			description: 'Reminders you set in ontoplano.'
+		});
+	} catch {
+		// An older shell without the call, or a platform with no channels.
+	}
+}
 
 /**
  * The mark, drawn as the one flat shape a status bar can show.
@@ -94,6 +144,36 @@ export function phoneNotifications(): Notifications | null {
 }
 
 /**
+ * Book them, exactly if Android allows it and late if it does not.
+ *
+ * An exact alarm needs `SCHEDULE_EXACT_ALARM` from Android 12 on, and this app
+ * deliberately does not ask for it — asking is a promise about what the app is
+ * for, and that belongs to whoever ships it. So the request throws, and the
+ * shell's own ringer has always caught that and booked an inexact alarm
+ * instead: late rather than silent.
+ *
+ * This half did not. It asked for `allowWhileIdle`, the plugin threw, the
+ * catch around the whole thing swallowed it and answered "nothing to book" —
+ * so on a phone that is its own instance, *no reminder ever arrived* and
+ * nothing anywhere said why. The same fallback, in the same words.
+ *
+ * @param what the notifications, with `at` instead of a `schedule`
+ */
+async function book(
+	notifications: Notifications,
+	what: ({ at: Date } & Record<string, unknown>)[]
+): Promise<void> {
+	const withSchedule = (allowWhileIdle: boolean) =>
+		what.map(({ at, ...rest }) => ({ ...rest, schedule: { at, allowWhileIdle } }));
+
+	try {
+		await notifications.schedule({ notifications: withSchedule(true) });
+	} catch {
+		await notifications.schedule({ notifications: withSchedule(false) });
+	}
+}
+
+/**
  * Hand the next few weeks of reminders to the system.
  *
  * Quiet about every failure: a phone that refuses the permission, a browser
@@ -112,6 +192,8 @@ export async function scheduleDeviceReminders(): Promise<number> {
 		const allowed = await notifications.checkPermissions();
 		if (allowed.display !== 'granted') return 0;
 
+		await ensureChannel(notifications);
+
 		// Everything this app booked before, so a reminder that has since been
 		// dismissed or moved does not ring at its old time.
 		const pending = await notifications.getPending();
@@ -126,19 +208,21 @@ export async function scheduleDeviceReminders(): Promise<number> {
 		);
 		if (wanted.length === 0) return 0;
 
-		await notifications.schedule({
-			notifications: wanted.map((reminder) => ({
+		await book(
+			notifications,
+			wanted.map((reminder) => ({
 				id: reminder.id,
 				title: 'ontoplano',
 				body: reminder.message,
-				schedule: { at: new Date(reminder.remindAt), allowWhileIdle: true },
+				at: new Date(reminder.remindAt),
 				// Silent ones are still worth showing; what `audible` decides is
 				// whether the phone makes a noise about it.
 				sound: reminder.audible ? undefined : null,
 				smallIcon: NOTIFICATION_ICON,
-				iconColor: accent()
+				iconColor: accent(),
+				channelId: REMINDER_CHANNEL
 			}))
-		});
+		);
 		return wanted.length;
 	} catch {
 		return 0;
@@ -286,19 +370,20 @@ export async function testPhoneNotification(): Promise<boolean> {
 	const notifications = phoneNotifications();
 	if (!notifications) return false;
 	try {
-		await notifications.schedule({
-			notifications: [
-				{
-					id: TEST_ID,
-					title: 'ontoplano',
-					body: 'A test — reminders will look like this.',
-					schedule: { at: new Date(Date.now() + TEST_DELAY_MS), allowWhileIdle: true },
-					smallIcon: NOTIFICATION_ICON,
-					// A test is only worth pressing if it looks like the real thing.
-					iconColor: accent()
-				}
-			]
-		});
+		await ensureChannel(notifications);
+		await book(notifications, [
+			{
+				id: TEST_ID,
+				title: 'ontoplano',
+				body: 'A test — reminders will look like this.',
+				at: new Date(Date.now() + TEST_DELAY_MS),
+				smallIcon: NOTIFICATION_ICON,
+				// A test is only worth pressing if it looks — and sounds — like
+				// the real thing, and is booked the way a real one is.
+				iconColor: accent(),
+				channelId: REMINDER_CHANNEL
+			}
+		]);
 		return true;
 	} catch {
 		return false;

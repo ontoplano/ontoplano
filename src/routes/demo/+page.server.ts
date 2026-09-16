@@ -56,7 +56,19 @@ export const actions: Actions = {
 			DEMO_ACCOUNTS_PER_ADDRESS,
 			DEMO_WINDOW_MS
 		);
-		if (!budget.allowed) return { full: true };
+		/*
+		 * Two different answers, which were the same answer.
+		 *
+		 * "You have opened five of these in an hour" and "every copy is in use"
+		 * are not the same situation, and both said the second one. So somebody
+		 * testing the demo — opening it, looking, closing it, opening it again
+		 * — was told the server was full, which is not true, not their fault as
+		 * far as the sentence goes, and not something waiting for a free seat
+		 * will fix. It says whose limit it is now, and when it lifts.
+		 */
+		if (!budget.allowed) {
+			return { busy: true, minutes: Math.max(1, Math.ceil(budget.retryAfterSeconds / 60)) };
+		}
 
 		const account = await createDemoAccount(event.url.hostname);
 		if (!account) {

@@ -477,45 +477,59 @@
 						<p class="mt-0.5 text-sm leading-relaxed text-gray-500">{what.description}</p>
 					</div>
 
-					<form
-						method="post"
-						action="?/setNotification"
-						use:settingsForm={{ notice: 'Saved.' }}
-						class="flex shrink-0 items-center gap-2"
-					>
-						<input type="hidden" name="id" value={what.id} />
-						<!--
+					<!--
+						A wall, said rather than hidden.
+
+						An instance that runs on the phone itself books Android's alarms,
+						so every one of these arrives with the app shut — except the
+						Monday mail, which goes out from a machine that has to be running
+						on a Monday morning. A switch for that is not a setting, it is a
+						promise. Said the way every other wall in the app is said, with
+						both ways round it: see `capabilities.ts`.
+					-->
+					{#if what.whyNot}
+						<p class="shrink-0 text-sm text-gray-500 sm:max-w-xs">{what.whyNot}</p>
+					{:else}
+						<form
+							method="post"
+							action="?/setNotification"
+							use:settingsForm={{ notice: 'Saved.' }}
+							class="flex shrink-0 items-center gap-2"
+						>
+							<input type="hidden" name="id" value={what.id} />
+							<!--
 							The hour comes with the switch, so turning it on and choosing
 							when are one act. Submitted on change rather than behind a
 							button of its own: a time field with a Save beside it is two
 							controls for one answer.
 						-->
-						{#if what.at !== null}
-							<label class="flex items-center gap-2 text-sm text-gray-700">
-								<span class="sr-only">When</span>
-								<input
-									type="time"
-									name="at"
-									value={what.at}
-									autocomplete="off"
-									class="input w-32"
-									onchange={(e) => e.currentTarget.form?.requestSubmit()}
-								/>
-							</label>
-						{/if}
-						{#each [['on', 'On'], ['off', 'Off']] as [value, label] (value)}
-							<button
-								type="submit"
-								name="on"
-								{value}
-								class="border px-3 py-1.5 text-sm shadow-sm {(what.on ? 'on' : 'off') === value
-									? 'border-gray-900 bg-gray-900 font-semibold text-white'
-									: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
-							>
-								{label}
-							</button>
-						{/each}
-					</form>
+							{#if what.at !== null}
+								<label class="flex items-center gap-2 text-sm text-gray-700">
+									<span class="sr-only">When</span>
+									<input
+										type="time"
+										name="at"
+										value={what.at}
+										autocomplete="off"
+										class="input w-32"
+										onchange={(e) => e.currentTarget.form?.requestSubmit()}
+									/>
+								</label>
+							{/if}
+							{#each [['on', 'On'], ['off', 'Off']] as [value, label] (value)}
+								<button
+									type="submit"
+									name="on"
+									{value}
+									class="border px-3 py-1.5 text-sm shadow-sm {(what.on ? 'on' : 'off') === value
+										? 'border-gray-900 bg-gray-900 font-semibold text-white'
+										: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
+								>
+									{label}
+								</button>
+							{/each}
+						</form>
+					{/if}
 				</li>
 			{/each}
 		</ul>
@@ -534,14 +548,21 @@
 		<section class="space-y-4 border border-gray-200 bg-white p-6 shadow-card">
 			<div>
 				<h2 class="text-sm font-semibold text-gray-900">Notifications on this device</h2>
+				<!--
+					One sentence. It said the same thing three times — a headline, a
+					paragraph restating it with the mechanism, and a third about how
+					often the phone asks — to somebody who wanted to know whether their
+					reminders ring and which button turns that off.
+				-->
 				<p class="mt-1 text-sm text-gray-500">
 					{#if inApp && notifications === 'unreachable' && data.ringsOnAPhone}
-						Reminders arrive with the app closed, through Android's own alarms.
+						Reminders from <strong class="text-gray-700">{page.url.host}</strong> ring here with the app
+						closed.
 					{:else if inApp && notifications === 'unreachable'}
-						Reminders can arrive with the app closed, through Android's own alarms — this phone is
-						not set up for it yet.
+						Reminders from <strong class="text-gray-700">{page.url.host}</strong> can ring here with the
+						app closed. Not set up yet.
 					{:else if inApp}
-						Reminders arrive with the app closed, through Android's own alarms. Asked for once.
+						Reminders arrive with the app closed, through Android's own alarms.
 					{:else}
 						Reminders arrive with the app closed. Asked for once per browser.
 					{/if}
@@ -560,19 +581,6 @@
 						whose phone says Allowed, and offered a button that opened
 						nothing.
 					-->
-					<p class="text-sm text-gray-500">
-						{#if data.ringsOnAPhone}
-							Reminders from <strong class="text-gray-700">{page.url.host}</strong> ring on this phone
-							with the app closed. It asks this instance what is coming and sets Android's own alarms,
-							because an instance cannot wake a phone — there is no push in here.
-						{:else}
-							This phone does not yet ring for <strong class="text-gray-700">{page.url.host}</strong
-							>. Set it up and it asks this instance what is coming and books Android's own alarms,
-							so reminders arrive with the app closed — an instance cannot wake a phone, because
-							there is no push in here.
-						{/if}
-					</p>
-
 					<!--
 						Set up at launch, not by pressing this.
 
@@ -627,14 +635,6 @@
 							This instance would not make a key. Try again, or make one under AI & Integrations.
 						</p>
 					{/if}
-					<p class="mt-2 text-xs leading-relaxed text-gray-500">
-						{#if data.ringsOnAPhone}
-							It asks again every few hours, and after the phone restarts. Reminders you write
-							anywhere else ring here too.
-						{:else}
-							Once set up it asks again every few hours, and after the phone restarts.
-						{/if}
-					</p>
 				{:else if notifications === 'on'}
 					<div class="flex flex-wrap items-center gap-3">
 						<span class="text-sm text-gray-700">On for this phone.</span>

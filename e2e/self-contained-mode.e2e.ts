@@ -73,31 +73,42 @@ test('the todo page runs against the device, and the server never hears of it', 
 		await expect(page.locator('body')).not.toContainText('Internal Error');
 	}
 
-	// Reminders are the device's own business: set through the isolated page,
-	// found due by the layout's poll of /api/reminders — which the bridge
-	// answers from the worker — and marked delivered back into OPFS.
-	const yesterday = new Date();
-	yesterday.setDate(yesterday.getDate() - 1);
+	/*
+	 * Reminders are the device's own business: written through the isolated
+	 * page, which the bridge answers from the worker, and read back from OPFS.
+	 *
+	 * Tomorrow, not yesterday. A reminder cannot be set for a time that has
+	 * been — the form refuses it and so does the service — so the row this
+	 * makes is one that is coming, and what it proves is the same: the write
+	 * went to the device and the list that draws it came back through the
+	 * bridge.
+	 */
+	const tomorrow = new Date();
+	tomorrow.setDate(tomorrow.getDate() + 1);
 	await visit(page, '/reminders?isolated=1');
-	await page.locator('[name="day"]').fill(yesterday.toISOString().slice(0, 10));
+	await page.locator('[name="day"]').fill(tomorrow.toISOString().slice(0, 10));
 	await page.locator('[name="time"]').fill('09:00');
 	await page.locator('[name="label"]').first().fill('set on the device');
 	await page.getByRole('button', { name: 'Set it' }).click();
+	await expect(page.getByText('set on the device')).toBeVisible({ timeout: 30_000 });
+
 	// Flipping to the past view is a client-side navigation, so the list it
 	// draws comes through the bridge. (A full reload here would be the
-	// server's render — the hybrid caveat from the top of this file.)
+	// server's render — the hybrid caveat from the top of this file.) And what
+	// it draws is nothing: a reminder that has not been is not "already been".
 	await expect(async () => {
 		await page.getByRole('button', { name: 'Past', exact: true }).click();
 		await page.waitForURL((u) => u.searchParams.get('past') === '1', { timeout: 5000 });
 	}).toPass({ timeout: 60_000 });
-	await expect(page.getByText('set on the device')).toBeVisible({ timeout: 30_000 });
+	await expect(page.locator('main')).toBeVisible();
+	await expect(page.getByText('set on the device')).toHaveCount(0);
 
 	// The server's own render of the same page has never seen the row. This
 	// is the whole claim: isolated mode did not leak a single write.
 	await visit(page, '/tasks/todo');
 	await expect(page.getByRole('button', { name: /New to-do/ }).first()).toBeVisible();
 	await expect(page.getByText(title)).toHaveCount(0);
-	await visit(page, '/reminders?days=7&past=1');
+	await visit(page, '/reminders');
 	await expect(page.locator('main')).toBeVisible();
 	await expect(page.getByText('set on the device')).toHaveCount(0);
 });

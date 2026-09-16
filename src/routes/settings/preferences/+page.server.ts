@@ -77,7 +77,7 @@ export const load = async ({ locals }: IsolatedEvent) => {
 		 * each of these decided for itself whether to happen, and there was
 		 * nowhere to answer "what will this app tell me about".
 		 */
-		notifications: notificationSettings(ctx),
+		notifications: notificationSettings(ctx, host.capabilities()),
 		sections: HIDEABLE_SECTIONS,
 		hiddenSections,
 		week: getWeekSettings(ctx.userId),

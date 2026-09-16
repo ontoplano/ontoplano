@@ -15,6 +15,7 @@
  * than forget where its data is.
  */
 import type { Ctx } from './ctx.js';
+import type { Capabilities } from '../capabilities.js';
 import { ValidationError } from './errors.js';
 import type { LimitKey } from '../plans.js';
 import { DEVICE_MEDIA_LIMITS, type MediaLimits } from './media-limits.js';
@@ -87,6 +88,19 @@ export interface Host {
 	 * copy on the phone IS the phone, and its alarms are its own.
 	 */
 	ringsOnAPhone(ctx: Ctx): boolean;
+
+	/**
+	 * What this deployment can do at all — see `capabilities.ts`.
+	 *
+	 * Through the seam rather than read from the server's own settings,
+	 * because the pages that ask are compiled into the device's worker as
+	 * well: one `import` of `$lib/server/*` from a route's server file pulls
+	 * `node:os` into a browser bundle and the whole isolated build stops
+	 * compiling. A device answers for itself — nothing reaches it and it is
+	 * not running when the app is shut — which is the honest answer and not a
+	 * placeholder.
+	 */
+	capabilities(): Capabilities;
 }
 
 const localInstance: Host = {
@@ -96,6 +110,8 @@ const localInstance: Host = {
 	},
 	assertWithinLimit() {},
 	ringsOnAPhone: () => false,
+	// Nothing can reach a phone, and it is not running when the app is closed.
+	capabilities: () => ({ reachable: false, awake: false }),
 	mediaLimits: () => DEVICE_MEDIA_LIMITS,
 	assertEntryWithinLimit() {},
 	reminderScheduleChanged() {},

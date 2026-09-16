@@ -28,11 +28,13 @@ vi.mock('$env/dynamic/public', () => ({ env: {} }));
 
 import { APP_USER_AGENT } from '../src/lib/instance-choice';
 import {
+	REMINDER_CHANNEL,
 	phonePermission,
 	ringFor,
 	ringingFor,
 	scheduleDeviceReminders,
-	stopRinging
+	stopRinging,
+	testPhoneNotification
 } from '../src/lib/phone-notifications';
 
 /** Pretend to be inside the phone app, with whatever plugins are given. */
@@ -48,7 +50,13 @@ function inTheApp(plugins: Record<string, unknown>) {
 function notificationPlugin(display = 'granted', pending: { id: number }[] = []) {
 	const state = {
 		cancelled: [] as { id: number }[],
-		booked: [] as { id: number; sound?: string | null; schedule: { at: Date } }[]
+		booked: [] as {
+			id: number;
+			sound?: string | null;
+			channelId?: string;
+			schedule: { at: Date };
+		}[],
+		channels: [] as { id: string; importance: number }[]
 	};
 	const plugin = {
 		checkPermissions: async () => ({ display }),
@@ -59,6 +67,9 @@ function notificationPlugin(display = 'granted', pending: { id: number }[] = [])
 		},
 		schedule: async (what: { notifications: (typeof state.booked)[number][] }) => {
 			state.booked.push(...what.notifications);
+		},
+		createChannel: async (what: { id: string; importance: number }) => {
+			state.channels.push(what);
 		}
 	};
 	return { plugin, state };
@@ -168,5 +179,97 @@ describe('the shell that is not there', () => {
 
 	test('ringingFor answers nobody', async () => {
 		expect(await ringingFor()).toBe('');
+	});
+});
+
+/**
+ * The part that decides whether anything is heard.
+ *
+ * Android takes the sound from a notification's *channel*, not from the
+ * notification: one made at the default importance posts silently however
+ * loudly the notification asks. The shell's own ringer made
+ * `ontoplano-reminders` at IMPORTANCE_HIGH and rang; this half named no
+ * channel at all, landed on the plugin's default, and arrived in silence — the
+ * notification appeared, and the sound only played later, out of the page,
+ * when the app was opened.
+ */
+describe('the channel a reminder lands on', () => {
+	test('is made before anything is booked, and every booking names it', async () => {
+		const { plugin, state } = notificationPlugin();
+		inTheApp({ LocalNotifications: plugin });
+		upcoming([{ id: 1, remindAt: soon(), message: 'stretch', audible: true }]);
+
+		await scheduleDeviceReminders();
+
+		expect(state.channels.map((c) => c.id)).toContain(REMINDER_CHANNEL);
+		// 5 is IMPORTANCE_HIGH: it makes a sound. 3 (DEFAULT) does not peek and
+		// 2 (LOW) is silent — a channel made at either is the bug this pins.
+		expect(state.channels.find((c) => c.id === REMINDER_CHANNEL)?.importance).toBe(5);
+
+		expect(state.booked).toHaveLength(1);
+		expect(state.booked[0].channelId).toBe(REMINDER_CHANNEL);
+	});
+
+	test('a test notification lands on the same one, so it sounds like the real thing', async () => {
+		const { plugin, state } = notificationPlugin();
+		inTheApp({ LocalNotifications: plugin });
+
+		expect(await testPhoneNotification()).toBe(true);
+		expect(state.channels.map((c) => c.id)).toContain(REMINDER_CHANNEL);
+		expect(state.booked[0].channelId).toBe(REMINDER_CHANNEL);
+	});
+});
+
+/**
+ * The permission this app does not ask for, and what happens without it.
+ *
+ * An exact alarm needs `SCHEDULE_EXACT_ALARM` from Android 12 on. Ontoplano
+ * deliberately does not request it — asking is a promise about what the app is
+ * for, and that belongs to whoever ships it — so the request throws, and the
+ * shell's own ringer has always caught that and booked an inexact alarm
+ * instead: late rather than silent.
+ *
+ * This half asked for `allowWhileIdle`, let the throw reach the catch around
+ * everything, and answered "nothing to book". On a phone that is its own
+ * instance that meant *no reminder ever arrived*, with nothing anywhere saying
+ * why — which is precisely how it was reported: "no notification arrived".
+ */
+describe('a phone that will not take an exact alarm', () => {
+	/** Like the real plugin: exact alarms throw, inexact ones are accepted. */
+	function refusesExactAlarms() {
+		const { plugin, state } = notificationPlugin();
+		const asked: boolean[] = [];
+		const strict = {
+			...plugin,
+			schedule: async (what: { notifications: { schedule: { allowWhileIdle: boolean } }[] }) => {
+				const exact = what.notifications.some((n) => n.schedule.allowWhileIdle);
+				asked.push(exact);
+				if (exact) throw new Error('SecurityException: SCHEDULE_EXACT_ALARM');
+				return plugin.schedule(what as never);
+			}
+		};
+		return { plugin: strict, state, asked };
+	}
+
+	test('is given an inexact one rather than nothing at all', async () => {
+		const { plugin, state, asked } = refusesExactAlarms();
+		inTheApp({ LocalNotifications: plugin });
+		upcoming([{ id: 1, remindAt: soon(), message: 'stretch', audible: true }]);
+
+		const booked = await scheduleDeviceReminders();
+
+		// Exact first, because exact is what a reminder wants.
+		expect(asked).toEqual([true, false]);
+		expect(booked, 'it reported booking nothing').toBe(1);
+		expect(state.booked.map((n) => n.id)).toEqual([1]);
+	});
+
+	test('and the test notification degrades the same way', async () => {
+		const { plugin, state, asked } = refusesExactAlarms();
+		inTheApp({ LocalNotifications: plugin });
+
+		expect(await testPhoneNotification()).toBe(true);
+		expect(asked).toEqual([true, false]);
+		expect(state.booked).toHaveLength(1);
 	});
 });

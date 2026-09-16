@@ -357,7 +357,11 @@ test('the pie says it too, from a page that is not the dashboard', async ({ page
 	// The way a person finds a wedge: point at each until the HUD says its name.
 	expect(await pickWedge(page, 'To-do'), 'no wedge announced itself as To-do').toBe(true);
 
-	await expect(page.getByRole('heading', { name: /new to-do/i })).toBeVisible();
+	// Generous: the wheel closes, the dialogue mounts and the options behind it
+	// are fetched, and under a full parallel run that is not instant.
+	await expect(page.getByRole('heading', { name: /new to-do/i })).toBeVisible({
+		timeout: 15_000
+	});
 	await page.locator('[name=heading]').fill('ring the dentist');
 	await page.getByRole('button', { name: 'Save' }).click();
 

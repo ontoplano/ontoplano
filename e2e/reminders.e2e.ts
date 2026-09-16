@@ -64,9 +64,11 @@ test('an alarm is a day and a time, not one box with six segments', async ({ pag
 	await expect(page.getByText('take the bread out')).toBeVisible({ timeout: 15_000 });
 
 	// The day goes back to today rather than to nothing: a form that forgets
-	// what day it is asks for the date again every single time.
+	// what day it is asks for the date again every single time. The time lets
+	// go of what was just used — it is either empty, which means the hour the
+	// day starts, or the suggestion the page makes when that hour has been.
 	await expect(page.locator('[name="day"]')).not.toHaveValue('');
-	await expect(page.locator('[name="time"]')).toHaveValue('');
+	await expect(page.locator('[name="time"]')).not.toHaveValue('07:30');
 
 	// And the way back out, because setting one is half of it.
 	await page.getByRole('button', { name: /^Remove take the bread out$/ }).click();
@@ -92,6 +94,15 @@ test('an alarm with no time goes off when the day starts', async ({ page }) => {
 	await page.locator('[name="label"]').first().fill('call the vet');
 	// A day and something to say is the whole of it.
 	await expect(page.getByRole('button', { name: 'Set it' })).toBeEnabled();
+	/*
+	 * And the time is empty for it.
+	 *
+	 * The page suggests one when the chosen day is today and the hour it opens
+	 * on has been — but that suggestion belongs to today, and moving the day
+	 * takes it back. Left behind, this afternoon's guess would quietly become
+	 * tomorrow's answer and this test would be about the wrong hour.
+	 */
+	await expect(page.locator('[name="time"]')).toHaveValue('');
 
 	// The field names the hour rather than describing it, so the row can be
 	// checked against what the form promised.
@@ -258,18 +269,35 @@ test('the time is a plain time field, and the form takes what it gives', async (
  * that a wait somebody can sit through rather than a minute.
  */
 async function aboutToHaveBeen(page: import('@playwright/test').Page, label: string) {
-	const soon = new Date(Date.now() + 2000);
+	/*
+	 * Far enough ahead that the request itself cannot outlive it.
+	 *
+	 * Two seconds worked alone and failed in a full parallel run: the POST took
+	 * longer than the margin, so by the time the service read the clock the
+	 * time had been, it refused the write, and the test went looking for a
+	 * reminder that was never made.
+	 */
+	const AHEAD_MS = 10_000;
+	const at = new Date(Date.now() + AHEAD_MS);
 	const pad = (n: number) => String(n).padStart(2, '0');
-	const day = `${soon.getUTCFullYear()}-${pad(soon.getUTCMonth() + 1)}-${pad(soon.getUTCDate())}`;
-	const at = `${pad(soon.getUTCHours())}:${pad(soon.getUTCMinutes())}:${pad(soon.getUTCSeconds())}`;
+	const day = `${at.getUTCFullYear()}-${pad(at.getUTCMonth() + 1)}-${pad(at.getUTCDate())}`;
+	const clock = `${pad(at.getUTCHours())}:${pad(at.getUTCMinutes())}:${pad(at.getUTCSeconds())}`;
 
 	const made = await page.request.post('/reminders?/create', {
 		headers: { origin: new URL(page.url()).origin },
-		form: { day, time: at, label }
+		form: { day, time: clock, label }
 	});
-	expect(made.ok()).toBe(true);
-	// Past it, and by enough that a slow machine is still past it.
-	await page.waitForTimeout(3000);
+	/*
+	 * A form action answers 200 whether it wrote or refused, so `ok()` says
+	 * nothing. The failure is in the body, and reading it is the difference
+	 * between this test failing where the problem is and failing four lines
+	 * later looking for a row.
+	 */
+	const said = await made.text();
+	expect(said, 'the reminder was refused').not.toContain('has already been');
+
+	// Then the wait, measured from the moment rather than guessed at.
+	await page.waitForTimeout(Math.max(0, at.getTime() - Date.now()) + 1500);
 }
 
 test('a reminder that has already been is not "coming up"', async ({ page }) => {

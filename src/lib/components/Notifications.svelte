@@ -13,8 +13,14 @@
 	 * being missed.
 	 *
 	 * Below the header on a wide screen, because the header is fixed too and a
-	 * message under it is a message nobody reads. On a phone there is no top
-	 * bar, so it sits at the top of the screen.
+	 * message under it is a message nobody reads.
+	 *
+	 * On a phone it is at the bottom, above the tab bar. It used to be at the
+	 * top "because a phone has no top bar" — which stopped being true when the
+	 * room bar arrived: a sticky header in the room's own colour, with the
+	 * screen's title in it, which the message then covered. The bottom is the
+	 * one edge nothing else claims, it is where a phone puts this kind of
+	 * message anyway, and it is under the thumb that dismisses it.
 	 *
 	 * The look is `Banner`'s, unchanged — this is where a message appears, not
 	 * a second design for what one looks like.
@@ -58,11 +64,15 @@
 <style>
 	.notices {
 		position: fixed;
-		top: 0.75rem;
+		/* Above the bar the rooms are on, and above whatever the phone itself
+		   keeps down there. The same two numbers the bar is built from. */
+		bottom: calc(var(--safe-bottom) + var(--mobile-nav-height) + 0.75rem);
 		left: 0.75rem;
 		z-index: 60;
 		display: flex;
-		flex-direction: column;
+		/* Newest nearest the thumb, so the one that just arrived is the one in
+		   reach — the opposite of a column that grows downward from a corner. */
+		flex-direction: column-reverse;
 		gap: 0.5rem;
 		width: min(26rem, calc(100vw - 1.5rem));
 		pointer-events: none;
@@ -72,7 +82,9 @@
 	@media (width >= 64rem) {
 		.notices {
 			top: 4.75rem;
+			bottom: auto;
 			left: 1.25rem;
+			flex-direction: column;
 		}
 	}
 
