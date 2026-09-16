@@ -132,3 +132,7 @@ scripts/demo-media/birds/
 
 # The detached site watcher writes here (make dev-site).
 /.dev-site.log
+
+# What the icon scripts last drew from, so an unchanged logo is not redrawn.
+.icons-from
+.flavours-from

@@ -12,6 +12,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { squareIcon } from './android-icons.mjs';
+import { alreadyDone, remember } from './lib/unchanged.mjs';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -70,6 +71,41 @@ if (!existsSync(RES)) {
 
 const square = join(ROOT, 'static/icons/icon-512.png');
 const maskable = join(ROOT, 'static/icons/icon-maskable-512.png');
+
+/*
+ * Nothing to do when nothing it reads has moved.
+ *
+ * Rasterising the launcher icons is the slow part of an Android build and it
+ * ran on every one of them, drawing forty-five files from a logo that had not
+ * changed since the last release. Refusing to *write* identical bytes — which
+ * this already did — saves the disk and not the minute: by then the drawing
+ * has happened.
+ *
+ * The inputs are the two source icons, the shape and brand files the sizes and
+ * the field colour come out of, and this script itself, so changing how any of
+ * it is drawn draws it again. `FORCE=1` ignores the lot.
+ */
+const STAMP = join(RES, '.icons-from');
+const OUTPUTS = Object.keys(LAUNCHER).map((density) =>
+	join(RES, `mipmap-${density}`, 'ic_launcher.png')
+);
+const work = alreadyDone({
+	stamp: STAMP,
+	inputs: [
+		square,
+		maskable,
+		join(ROOT, 'src/lib/logo/mark-shape.ts'),
+		join(ROOT, 'src/lib/logo/brand.ts'),
+		fileURLToPath(import.meta.url),
+		{ value: APP_NAME }
+	],
+	outputs: OUTPUTS
+});
+
+if (work.done) {
+	console.log('brand: the icons are already drawn from this logo');
+	process.exit(0);
+}
 
 for (const [density, size] of Object.entries(LAUNCHER)) {
 	const dir = join(RES, `mipmap-${density}`);
@@ -196,3 +232,5 @@ const after = before
 if (after !== before) writeFileSync(strings, after);
 
 console.log(`brand: ${APP_NAME}, icons from src/lib/logo/mark.png`);
+
+remember(STAMP, work.mark);

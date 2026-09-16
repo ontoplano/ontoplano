@@ -22,6 +22,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { squareIcon } from './android-icons.mjs';
 import { versionCode as codeOf } from './version-code.mjs';
+import { alreadyDone, remember } from './lib/unchanged.mjs';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -219,6 +220,41 @@ function foreground(source, out, size) {
 
 if (!existsSync(APP)) {
 	console.log('flavours: no capacitor android project yet — nothing to write');
+	process.exit(0);
+}
+
+/*
+ * And the same again for the three flavours' own icons.
+ *
+ * Forty-five files, drawn on every Android build from logos that change a few
+ * times a year. The inputs are each flavour's source icons, the version (the
+ * gradle file carries it), the addresses the flavours point at, and this
+ * script. `FORCE=1` draws them anyway.
+ */
+const STAMP = join(APP, '.flavours-from');
+const ICON_OUTPUTS = FLAVOURS.flatMap((flavour) =>
+	Object.keys(LAUNCHER).map((density) =>
+		join(APP, 'src', flavour.key, `res/mipmap-${density}`, 'ic_launcher.png')
+	)
+);
+const work = alreadyDone({
+	stamp: STAMP,
+	inputs: [
+		...FLAVOURS.flatMap((flavour) => [
+			join(ROOT, `static/icons/icon-512${flavour.icons}.png`),
+			join(ROOT, `static/icons/icon-maskable-512${flavour.icons}.png`)
+		]),
+		join(ROOT, 'src/lib/logo/brand.ts'),
+		join(ROOT, 'src/lib/instance-choice.ts'),
+		fileURLToPath(import.meta.url),
+		{ value: version },
+		{ value: FLAVOURS.map((f) => `${f.key}:${f.id}:${f.label}:${f.suggests}`).join('|') }
+	],
+	outputs: ICON_OUTPUTS
+});
+
+if (work.done) {
+	console.log('flavours: already written from these icons and this version');
 	process.exit(0);
 }
 
@@ -428,3 +464,5 @@ if (gradle.includes(START)) {
 writeFileSync(BUILD, gradle);
 
 console.log(`flavours: ${FLAVOURS.map((f) => `${f.label} (${f.id})`).join(', ')}`);
+
+remember(STAMP, work.mark);
