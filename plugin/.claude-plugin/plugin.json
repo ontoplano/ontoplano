@@ -11,9 +11,9 @@
 		"url": {
 			"type": "string",
 			"title": "Your ontoplano",
-			"description": "The address you sign in at, with no trailing slash — https://app.ontoplano.com unless you run your own.",
+			"description": "Leave it as it is unless you run your own — the address you sign in at, with no trailing slash.",
 			"default": "https://app.ontoplano.com",
-			"required": true
+			"required": false
 		},
 		"key": {
 			"type": "string",
