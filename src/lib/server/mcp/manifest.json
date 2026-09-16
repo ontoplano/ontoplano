@@ -986,6 +986,29 @@
 			}
 		}
 	},
+	"change_reminder": {
+		"scope": "schedule:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"at": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"message": {
+				"type": "string",
+				"required": false
+			},
+			"sound": {
+				"type": "boolean",
+				"required": false
+			}
+		}
+	},
 	"change_repeating_block": {
 		"scope": "schedule:write",
 		"writes": true,

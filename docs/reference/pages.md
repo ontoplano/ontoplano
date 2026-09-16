@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**56 pages, 225 actions.**
+**56 pages, 226 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -51,7 +51,7 @@ write surface for everything else; both end up calling the same
 | `/notebooks/people`                  | `create`, `update`, `setPicture`, `removePicture`, `delete`                                                                                                                                                                                                                                                                                                                         |
 | `/notebooks/weekly`                  | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/offline`                           | —                                                                                                                                                                                                                                                                                                                                                                                   |
-| `/reminders`                         | `create`, `dismiss`, `remove`, `addSound`, `removeSound`, `setSound`                                                                                                                                                                                                                                                                                                                |
+| `/reminders`                         | `create`, `edit`, `dismiss`, `remove`, `addSound`, `removeSound`, `setSound`                                                                                                                                                                                                                                                                                                        |
 | `/ring`                              | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/search`                            | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/settings/account`                  | `setWeeklyReviewMail`, `changeEmail`, `changePassword`, `revokeSession`, `signOutEverywhere`, `empty`, `delete`                                                                                                                                                                                                                                                                     |
@@ -323,6 +323,15 @@ Reminders were scattered: a block carried one, a birthday made one, and the
 only way to see what was coming was to wait for it. This is the list — and
 the place to set one that is about nothing at all, which is what an alarm
 clock is.
+
+**`edit`**
+
+The same four questions the form above asked, asked again about a row.
+
+`audible` arrives as a word rather than a checkbox: a row can say "make a
+noise", "stay silent", or neither — and neither is what a nudge before a
+block says before anybody overrides it, meaning "whatever this kind of
+reminder does". A checkbox has no way to say the third thing.
 
 ### `/settings/account`
 

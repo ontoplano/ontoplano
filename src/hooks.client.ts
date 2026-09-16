@@ -11,12 +11,14 @@ import { isIsolated, isIsolatedBuild } from '$lib/isolated/mode';
 import { sendOutsideLinksToTheBrowser } from '$lib/outside-links';
 import { backGestureGoesBack } from '$lib/phone-back';
 import { ringingFor } from '$lib/phone-notifications';
+import { startMarkSpin } from '$lib/mark-spin';
 import { installIsolatedBridge } from '$lib/isolated/bridge';
 import { servePicturesToServiceWorker } from '$lib/isolated/pictures';
 import {
 	ARRIVING_AT,
 	ARRIVING_HOME,
 	ARRIVING_TO_ASK,
+	SPINNING_PARAM,
 	forgetInstance,
 	inPhoneApp,
 	launchAddress,
@@ -52,11 +54,13 @@ if (inPhoneApp() && isIsolatedBuild()) {
 		forgetInstance();
 	} else if (carried.has(ARRIVING_HOME)) {
 		rememberInstance(null);
-		location.replace('/');
+		location.replace(carried.get(SPINNING_PARAM) === '1' ? `/?${SPINNING_PARAM}=1` : '/');
 	} else if (carried.get(ARRIVING_AT)) {
 		const instance = carried.get(ARRIVING_AT)!;
 		rememberInstance(instance);
-		void openInstance(instance);
+		// A turn the chooser started is still going round; the word travels with
+		// the launch so the instance can be the one to land it.
+		void openInstance(instance, carried.get(SPINNING_PARAM) === '1');
 	} else {
 		/*
 		 * An address is a real navigation — it leaves this origin.
@@ -86,7 +90,7 @@ if (inPhoneApp() && isIsolatedBuild()) {
  * and it is behind a short wait: a launch must not hang on it. If it takes too
  * long the app opens as it always did and the next launch asks again.
  */
-async function openInstance(instance: string): Promise<void> {
+async function openInstance(instance: string, spinning = false): Promise<void> {
 	let ring = false;
 	try {
 		const already = await Promise.race([
@@ -97,11 +101,42 @@ async function openInstance(instance: string): Promise<void> {
 	} catch {
 		// No shell, or it refused: open the instance and say nothing.
 	}
-	location.replace(launchAddress(instance, { ring }));
+	location.replace(launchAddress(instance, { ring, spinning }));
 }
 
 /** Long enough for a native call, short enough not to be a launch somebody notices. */
 const RINGER_ASK_MS = 400;
+
+/*
+ * A turn started on the screen you came from, carried on here.
+ *
+ * Choosing an instance is the one wait in this app that spans two documents.
+ * The screen that starts the turn is destroyed by the navigation it is about,
+ * and the load somebody is actually waiting for — the HTML, the bundle, the
+ * hydration — all happens afterwards, in this document. Anything the chooser
+ * did on its own was therefore a guess: it turned once and stopped, and only
+ * then did the page begin to load, with a mark sitting still through the part
+ * of the wait that was real.
+ *
+ * So it hands the turn over on the address, and this picks it up. Here rather
+ * than in the layout because this module is evaluated before the router
+ * starts, on a mark the server already rendered — the layout's own effects run
+ * at hydration, which is the moment the turn should be *ending*. It ends
+ * there: the layout stops the turn as soon as it is not waiting for anything,
+ * and `stopMarkSpin` finishes the circle rather than cutting it.
+ *
+ * The word comes off the address straight away. It describes one arrival, and
+ * a reload should not turn the mark for a load that already happened.
+ */
+{
+	const url = new URL(location.href);
+	if (url.searchParams.get(SPINNING_PARAM) === '1') {
+		url.searchParams.delete(SPINNING_PARAM);
+		history.replaceState(history.state, '', url);
+		const marks = [...document.querySelectorAll<HTMLElement>('[data-mark]')];
+		if (marks.length > 0) startMarkSpin(marks, 0, true);
+	}
+}
 
 if (isIsolated()) {
 	installIsolatedBridge();

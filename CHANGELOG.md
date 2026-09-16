@@ -18,6 +18,34 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.12 — 2026-09-16
+
+- **A reminder that is already set can be changed.** Moving one half an hour,
+  rewording it, or giving a silent one a sound meant deleting it and typing it
+  out again — it could be made and unmade and nothing in between. The pencil on
+  its row opens the same four questions the form asks, and an assistant has
+  `change_reminder` for the same job.
+- **A reminder can be silent, loud, or neither.** "Neither" is what a nudge
+  before a block says when it has no opinion and follows whatever that kind of
+  reminder is set to, and the editor can put it back to that.
+- **Fixed: Preferences told you reminders only arrive while ontoplano is
+  open** — directly above the paragraph explaining that this phone books
+  Android's own alarms for them, which is what actually happens. It says which
+  of the two is true for the phone you are holding, and a phone that is not set
+  up yet gets the one press that does it instead of a promise.
+- **The mark keeps turning while the instance loads, and lands when it is
+  ready.** It used to finish its turn on the screen you pressed and then go
+  still for the whole of the wait, which is exactly backwards: the page you are
+  waiting for loads after that screen is gone. The turn is handed to the
+  instance now and comes to rest when the app is actually there.
+- **Import a folder of markdown from inside New notebook**, rather than from a
+  card of its own further down the page.
+- **Notes in a notebook read oldest first**, the order they were written in.
+- **The notebook's tabs fit a phone**, instead of running off the side of it.
+- **Arranging the dashboard is quieter.** The handle sits where each card's
+  Open button was, the buttons that do nothing while you are dragging are out
+  of the way, and Done is where Arrange was rather than in a bar of its own.
+
 ## 0.178.11 — 2026-09-16
 
 - **Choosing an instance turns the mark once, properly.** It twitched on the

@@ -929,6 +929,7 @@
 						     the mark rather than drawn as a circle holding it. -->
 						<button
 							bind:this={deskMark}
+							data-mark
 							onpointerdown={(e) => rooms?.summon(e)}
 							class="pie-handle flex h-8 w-8 items-center justify-center transition hover:brightness-125 {roomsOpen
 								? 'pie-handle-held'
@@ -1315,8 +1316,13 @@
 						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-ground-rise)); height: var(--bar-mark-ground); width: var(--bar-mark-ground); background: {MARK_FIELD}"
 						class="pointer-events-none absolute left-1/2 -translate-x-1/2"
 					></span>
+					<!-- `data-mark` names it for code that runs before this component
+					     exists: a turn started on the screen you came from is picked up
+					     here, off the server-rendered mark, before anything hydrates.
+					     See `hooks.client.ts`. -->
 					<button
 						bind:this={barMark}
+						data-mark
 						onpointerdown={(e) => rooms?.summon(e)}
 						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-rise)); height: var(--bar-mark); width: var(--bar-mark)"
 						class="tap tap-shape pie-handle absolute left-1/2 flex -translate-x-1/2 items-center justify-center {roomsOpen

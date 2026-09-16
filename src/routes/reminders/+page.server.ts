@@ -12,6 +12,7 @@ import { toActionFailure } from '$lib/http-errors';
 import { host } from '$lib/services/host';
 import {
 	createFreeReminder,
+	editReminder,
 	localNow,
 	deleteReminder,
 	dismissReminder,
@@ -145,6 +146,32 @@ export const actions = {
 				at: day && time ? `${day}T${time}` : day,
 				message: form.get('label'),
 				audible: form.get('audible') === 'on',
+				ringtoneId: form.get('ringtoneId')
+			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
+	 * The same four questions the form above asked, asked again about a row.
+	 *
+	 * `audible` arrives as a word rather than a checkbox: a row can say "make a
+	 * noise", "stay silent", or neither — and neither is what a nudge before a
+	 * block says before anybody overrides it, meaning "whatever this kind of
+	 * reminder does". A checkbox has no way to say the third thing.
+	 */
+	edit: async ({ request, locals }: IsolatedEvent) => {
+		const form = await request.formData();
+		try {
+			const day = String(form.get('day') ?? '').trim();
+			const time = String(form.get('time') ?? '').trim();
+			const sound = String(form.get('sound') ?? 'kind');
+			editReminder(buildCtx(locals.user!.id), Number(form.get('id')), {
+				at: day && time ? `${day}T${time}` : day,
+				message: form.get('label'),
+				audible: sound === 'kind' ? null : sound === 'on',
 				ringtoneId: form.get('ringtoneId')
 			});
 			return { success: true };

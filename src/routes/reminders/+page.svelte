@@ -216,6 +216,14 @@
 		shown: boolean;
 		/** Whether it will make a noise, which is worth seeing before it does. */
 		audible: boolean;
+		/**
+		 * What the row itself says about sound, which is not the same question.
+		 *
+		 * Null is "whatever this kind does", and an editor has to be able to
+		 * show that and put it back — a resolved boolean cannot tell a reminder
+		 * that was silenced from one that is silent because bills are.
+		 */
+		chosen: { audible: boolean | null; ringtoneId: number | null };
 	};
 
 	const upcoming = $derived<Listed[]>(
@@ -231,7 +239,8 @@
 					remindAt: r.remindAt,
 					subjectKind: r.subjectKind,
 					shown: Boolean(r.deliveredAt),
-					audible: r.audible
+					audible: r.audible,
+					chosen: r.chosen
 				})),
 			...data.upcoming.map((u, i) => ({
 				key: `soon:${i}`,
@@ -242,7 +251,8 @@
 				shown: false,
 				// Not a row yet, so it carries nothing of its own — what it will
 				// sound like is whatever its kind is set to on the day.
-				audible: data.sounds.find((c) => c.kind === u.kind)?.audible ?? false
+				audible: data.sounds.find((c) => c.kind === u.kind)?.audible ?? false,
+				chosen: { audible: null, ringtoneId: null }
 			}))
 		].sort((a, b) =>
 			// Looking back, the one you want is the last one that fired.
@@ -262,6 +272,39 @@
 	}
 
 	let confirmingDelete = $state<number | null>(null);
+
+	/**
+	 * The one being changed, and the answers it started with.
+	 *
+	 * A reminder used to be a thing you could make and unmake and nothing in
+	 * between, so moving an alarm five minutes or giving a silent one a sound
+	 * meant deleting it and typing it out again. The editor is the same four
+	 * questions the form above asks, opened on the row itself: it is one
+	 * reminder being changed, and a form somewhere else on the page would leave
+	 * somebody wondering which one it was about.
+	 *
+	 * Held here rather than in each row so that opening one closes the last —
+	 * two open editors are two answers to "what am I changing".
+	 */
+	let editing = $state<number | null>(null);
+	let editDay = $state('');
+	let editTime = $state('');
+	let editSay = $state('');
+	/** "kind" is the row saying nothing and following its kind's setting. */
+	let editSound = $state<'kind' | 'on' | 'off'>('kind');
+	let editTone = $state('');
+
+	function edit(reminder: Listed) {
+		if (reminder.id === null) return;
+		confirmingDelete = null;
+		editing = reminder.id;
+		editDay = reminder.remindAt.slice(0, 10);
+		editTime = reminder.remindAt.slice(11, 16);
+		editSay = reminder.message;
+		editSound =
+			reminder.chosen.audible === null ? 'kind' : reminder.chosen.audible === true ? 'on' : 'off';
+		editTone = reminder.chosen.ringtoneId === null ? '' : String(reminder.chosen.ringtoneId);
+	}
 	/** Playing one, so choosing a sound does not mean setting an alarm to hear it. */
 	let audio: HTMLAudioElement | undefined = $state();
 
@@ -601,48 +644,159 @@
 		{:else}
 			<ul class="divide-y divide-gray-200">
 				{#each upcoming as reminder (reminder.key)}
-					<li class="flex items-center gap-3 px-4 py-2">
-						<span class="shrink-0 text-gray-400" title={kindOf(reminder.subjectKind).label}>
-							<Icon name={kindOf(reminder.subjectKind).icon} size={14} />
-						</span>
-						<span class="min-w-0 flex-1">
-							<span class="block truncate text-sm text-gray-900">{reminder.message}</span>
-							<span class="flex items-center gap-1.5 text-xs text-gray-500">
-								{kindOf(reminder.subjectKind).label}
-								{#if reminder.shown}· already shown{/if}
-								<!-- The one thing about a reminder you want to know before it
-								     happens rather than after. -->
-								{#if reminder.audible}
-									<span class="text-blue-600" title="This one makes a sound">
-										<Icon name="sound" size={12} />
-									</span>
-								{/if}
+					<li class="px-4 py-2">
+						<div class="flex items-center gap-3">
+							<span class="shrink-0 text-gray-400" title={kindOf(reminder.subjectKind).label}>
+								<Icon name={kindOf(reminder.subjectKind).icon} size={14} />
 							</span>
-						</span>
-						<span class="tabular shrink-0 text-xs text-gray-500">{when(reminder.remindAt)}</span>
+							<span class="min-w-0 flex-1">
+								<span class="block truncate text-sm text-gray-900">{reminder.message}</span>
+								<span class="flex items-center gap-1.5 text-xs text-gray-500">
+									{kindOf(reminder.subjectKind).label}
+									{#if reminder.shown}· already shown{/if}
+									<!-- The one thing about a reminder you want to know before it
+								     happens rather than after. -->
+									{#if reminder.audible}
+										<span class="text-blue-600" title="This one makes a sound">
+											<Icon name="sound" size={12} />
+										</span>
+									{/if}
+								</span>
+							</span>
+							<span class="tabular shrink-0 text-xs text-gray-500">{when(reminder.remindAt)}</span>
 
-						{#if reminder.id === null}
-							<!-- Nothing to remove: it is not a row, it is a date in the
-							     address book or on a bill. -->
-							<span class="w-7 shrink-0"></span>
-						{:else if confirmingDelete === reminder.id}
-							<form method="post" action="?/remove" use:enhance class="flex shrink-0 gap-1">
-								<input type="hidden" name="id" value={reminder.id} />
-								<button type="submit" class="btn btn-sm btn-danger" use:armed>Confirm?</button>
-								<button type="button" onclick={() => (confirmingDelete = null)} class="btn btn-sm">
-									Cancel
+							{#if reminder.id === null}
+								<!-- Nothing to change or remove: it is not a row, it is a date
+							     in the address book or on a bill. -->
+								<span class="w-14 shrink-0"></span>
+							{:else if confirmingDelete === reminder.id}
+								<form method="post" action="?/remove" use:enhance class="flex shrink-0 gap-1">
+									<input type="hidden" name="id" value={reminder.id} />
+									<button type="submit" class="btn btn-sm btn-danger" use:armed>Confirm?</button>
+									<button
+										type="button"
+										onclick={() => (confirmingDelete = null)}
+										class="btn btn-sm"
+									>
+										Cancel
+									</button>
+								</form>
+							{:else}
+								<button
+									type="button"
+									onclick={() => (editing === reminder.id ? (editing = null) : edit(reminder))}
+									class="icon-btn shrink-0"
+									title="Change this reminder"
+									aria-label="Change {reminder.message}"
+									aria-expanded={editing === reminder.id}
+								>
+									<Icon name="edit" />
 								</button>
-							</form>
-						{:else}
-							<button
-								type="button"
-								onclick={() => (confirmingDelete = reminder.id)}
-								class="icon-btn icon-btn-danger shrink-0"
-								title="Remove this reminder"
-								aria-label="Remove {reminder.message}"
+								<button
+									type="button"
+									onclick={() => (confirmingDelete = reminder.id)}
+									class="icon-btn icon-btn-danger shrink-0"
+									title="Remove this reminder"
+									aria-label="Remove {reminder.message}"
+								>
+									<Icon name="trash" />
+								</button>
+							{/if}
+						</div>
+
+						<!--
+							The same four questions, opened on the row itself.
+
+							Behind a press rather than always drawn: a list of twenty
+							reminders is a list, not twenty forms. What it must not do is
+							move anything above it, which is why it grows downward inside
+							its own row.
+						-->
+						{#if editing === reminder.id}
+							<form
+								method="post"
+								action="?/edit"
+								use:enhance={() => {
+									return async ({ result, update }) => {
+										await update({ reset: false });
+										if (result.type === 'success') editing = null;
+									};
+								}}
+								class="mt-3 space-y-3 border-t border-gray-200 pt-3"
 							>
-								<Icon name="trash" />
-							</button>
+								<input type="hidden" name="id" value={reminder.id} />
+								<FormGrid>
+									<Field label="Day" span={6} required>
+										<input
+											name="day"
+											type="date"
+											required
+											autocomplete="off"
+											bind:value={editDay}
+											onfocus={pick}
+											onclick={pick}
+											class="input"
+										/>
+									</Field>
+									<Field label="Time" span={6} hint="Empty means {data.dayStart}.">
+										<input
+											name="time"
+											type="time"
+											autocomplete="off"
+											bind:value={editTime}
+											class="input"
+										/>
+									</Field>
+									<Field label="What to say" span={12} required>
+										<OneLine name="label" required bind:value={editSay} class="input" />
+									</Field>
+								</FormGrid>
+
+								<div class="flex flex-wrap items-center gap-4">
+									<label
+										class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
+										title="Whether this one makes a noise, whatever its kind does"
+									>
+										Sound
+										<!--
+											Three answers, because a row has three.
+
+											A checkbox can only say yes or no, and the commonest state
+											of a nudge before a block is neither: it says nothing and
+											does whatever that kind of reminder is set to. Ticking a
+											box would quietly turn that into an answer of its own.
+										-->
+										<select name="sound" bind:value={editSound} class="select w-36">
+											<option value="kind">Follow the kind</option>
+											<option value="on">Make a sound</option>
+											<option value="off">Silent</option>
+										</select>
+									</label>
+									<label
+										class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
+										title="Which sound this one plays"
+									>
+										Which
+										<select
+											name="ringtoneId"
+											bind:value={editTone}
+											disabled={editSound !== 'on'}
+											class="select w-40"
+										>
+											<option value="">Default</option>
+											{#each data.ringtones as tone (tone.id)}
+												<option value={String(tone.id)}>{tone.name}</option>
+											{/each}
+										</select>
+									</label>
+									<div class="ml-auto flex gap-2">
+										<button type="button" onclick={() => (editing = null)} class="btn btn-sm">
+											Cancel
+										</button>
+										<button type="submit" class="btn btn-primary btn-sm">Save</button>
+									</div>
+								</div>
+							</form>
 						{/if}
 					</li>
 				{/each}

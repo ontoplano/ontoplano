@@ -29,6 +29,7 @@ import { createActivity, listActivities, updateActivity } from '$lib/services/ac
 import { createHabit, listHabits, updateHabit, HABIT_TYPES } from '$lib/services/habits.js';
 import {
 	createFreeReminder,
+	editReminder,
 	createReminder,
 	deleteReminder,
 	dismissReminder,
@@ -2281,6 +2282,45 @@ export const TOOLS: Tool[] = [
 				at: args.at,
 				message: args.message,
 				audible: args.sound === true
+			})
+		})
+	},
+	{
+		/*
+		 * The middle of the verb set, which was missing.
+		 *
+		 * A reminder could be made and unmade and nothing in between, so "make
+		 * that one half an hour later" meant cancelling it and setting another
+		 * — a different id, a lost dismissal, and a round trip for something
+		 * that is one field.
+		 */
+		name: 'change_reminder',
+		title: 'Change a reminder that is already set',
+		description:
+			'Move a reminder, reword it, or change whether it makes a noise — the one `set_alarm` made, or a nudge before a block. Send only what changes; anything left out stays as it is. Takes the id `reminders` gives.',
+		scope: 'schedule:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'reminder' }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The reminder\u2019s id.' },
+				at: text(
+					'A new time, as YYYY-MM-DDTHH:MM in the person\u2019s own timezone. A bare YYYY-MM-DD means the hour their day starts.'
+				),
+				message: text('What it should say instead, in their words.'),
+				sound: {
+					type: 'boolean',
+					description:
+						'Whether it should make a noise. Leave it out to keep what it does now; do not turn this on unless they said so.'
+				}
+			},
+			['id']
+		),
+		run: (ctx, args) => ({
+			ok: editReminder(ctx, Number(args.id), {
+				at: args.at,
+				message: args.message,
+				audible: args.sound
 			})
 		})
 	},

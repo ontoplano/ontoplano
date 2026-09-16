@@ -217,7 +217,6 @@ test.describe('an instance shown inside the app', () => {
 
 		// What it says is what is true: the phone asks this instance and rings
 		// for it, because an instance cannot wake a phone.
-		await expect(section.getByText(/ring on this phone/)).toBeVisible();
 		await expect(section.getByText(/no push in here/)).toBeVisible();
 
 		// And not a word about a permission it is in no position to ask about.
@@ -230,6 +229,55 @@ test.describe('an instance shown inside the app', () => {
 		await visit(page, '/reminders');
 		await expect(page.getByRole('button', { name: 'Allow notifications' })).toHaveCount(0);
 		await expect(page.getByRole('button', { name: "Open the phone's settings" })).toHaveCount(0);
+	});
+
+	/**
+	 * The one sentence that decides whether any of this was worth building.
+	 *
+	 * The top of the section is the line somebody reads before anything else,
+	 * and it said "Reminders arrive while ontoplano is open" — to a phone that
+	 * was, at that very moment, booking Android's alarms for exactly these
+	 * reminders, above a paragraph explaining so. Read on its own it says the
+	 * app cannot remind you of anything unless you are already looking at it,
+	 * which is the app being useless.
+	 *
+	 * The instance can answer this: ringing needs a key, and a key is a row it
+	 * issued. So the section says one of two true things, and this pins both
+	 * of them — the wrong one is invisible from inside the branch that used to
+	 * print it unconditionally.
+	 */
+	test('says whether this phone actually rings, and never that it cannot', async ({ page }) => {
+		await register(page, testEmail('android-rings'));
+		await visit(page, '/settings/preferences');
+
+		const section = page.locator('section', { hasText: 'Notifications on this device' });
+
+		// Nothing has been set up yet, and it says so rather than promising.
+		await expect(section.getByText(/not set up for it yet/)).toBeVisible();
+		await expect(section.getByRole('button', { name: 'Ring on this phone' })).toBeVisible();
+		// Nothing to stop, so nothing offering to.
+		await expect(section.getByRole('link', { name: 'Stop ringing on this phone' })).toHaveCount(0);
+
+		/*
+		 * The key, minted the way the app mints it.
+		 *
+		 * Pressing the button would send the browser to the device's own origin,
+		 * which exists only inside the app; the action behind it is the whole of
+		 * what the instance contributes, and it is what leaves the row this
+		 * section reads.
+		 */
+		const minted = await page.request.post('/settings/integrations?/ringOnThisPhone', {
+			headers: { origin: new URL(page.url()).origin },
+			form: {}
+		});
+		expect(minted.ok()).toBe(true);
+
+		await visit(page, '/settings/preferences');
+		await expect(section.getByText(/with the app closed/).first()).toBeVisible();
+		await expect(section.getByRole('link', { name: 'Stop ringing on this phone' })).toBeVisible();
+
+		// And not, anywhere in it, the claim this is all here to make false.
+		await expect(section.getByText(/while ontoplano is open/)).toHaveCount(0);
 	});
 });
 

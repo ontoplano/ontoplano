@@ -3522,17 +3522,30 @@ arrives the next time it opens, rather than being silently skipped.
 
 #### `createFreeReminder(ctx, raw)`
 
-A reminder that is only itself — an alarm.
-
-No block, no todo, no birthday: a time and a sentence. `remind_at` carries
-seconds here where a block's reminder carries minutes, because "seven in the
-morning" is a moment and the clock can hit it exactly.
-
 #### `createReminder(ctx, raw)`
 
 #### `markDelivered(ctx, ids)`
 
 Stamped by whoever showed it, so nothing announces the same thing twice.
+
+#### `editReminder(ctx, id, raw)`
+
+Change one that is already set.
+
+Everything the form that made it asked for: when, what it says, whether it
+makes a noise and which noise. Without this, a reminder was a thing you could
+make and unmake and nothing in between — so wanting an alarm five minutes
+later, or wanting the one you set silently to actually wake you, meant
+deleting it and typing it again.
+
+Any row, not only the ones somebody typed. A nudge before a block is a real
+row with a real time on it, and "not this one, ten minutes earlier" is the
+commonest thing anybody wants to say about one; what it must not do is
+change the block, which is why only these four fields are here.
+
+Absent fields are left alone, so a caller that only cares about the sound
+sends the sound. `audible: null` is a real answer — it means "whatever this
+kind of reminder does", which is what a row says before anybody overrides it.
 
 #### `dismissReminder(ctx, id)`
 

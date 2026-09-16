@@ -666,6 +666,12 @@ A time and a sentence, reaching the phone even with the app closed — "take the
 
 _Needs `schedule:write`; writes._
 
+### `change_reminder` — Change a reminder that is already set
+
+Move a reminder, reword it, or change whether it makes a noise — the one `set_alarm` made, or a nudge before a block. Send only what changes; anything left out stays as it is. Takes the id `reminders` gives.
+
+_Needs `schedule:write`; writes._
+
 ### `cancel_alarm` — Take a reminder back
 
 Remove a reminder outright — the one `set_alarm` made, or any other. `dismiss_reminder` waves one off and leaves the row; this deletes it. Takes the id `reminders` gives.

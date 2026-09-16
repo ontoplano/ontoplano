@@ -231,3 +231,95 @@ describe('dismissing', () => {
 		expect(s.reminders.listReminders(theirs).some((r) => mine.has(r.id))).toBe(false);
 	});
 });
+
+/**
+ * Changing one that is already set.
+ *
+ * A reminder could be made and unmade and nothing in between, so moving an
+ * alarm five minutes or giving a silent one a sound meant deleting it and
+ * typing it out again — a different row, a different id, and the dismissal
+ * history gone with it.
+ */
+describe('changing a reminder', () => {
+	test('moves it, rewords it, and leaves out what was not asked about', () => {
+		const id = s.reminders.createFreeReminder(ctx, {
+			at: '2024-05-02T09:00',
+			message: 'take the bread out'
+		});
+
+		expect(s.reminders.editReminder(ctx, id, { at: '2024-05-02T09:30' })).toBe(true);
+		const moved = s.reminders.listReminders(ctx).find((r) => r.id === id)!;
+		expect(moved.remindAt).toBe('2024-05-02T09:30:00');
+		// Untouched by a change that was only about the time.
+		expect(moved.message).toBe('take the bread out');
+
+		s.reminders.editReminder(ctx, id, { message: 'take the loaf out' });
+		expect(s.reminders.listReminders(ctx).find((r) => r.id === id)!.message).toBe(
+			'take the loaf out'
+		);
+		expect(s.reminders.listReminders(ctx).find((r) => r.id === id)!.remindAt).toBe(
+			'2024-05-02T09:30:00'
+		);
+	});
+
+	test('a day on its own means the hour the day starts, same as making one', () => {
+		const id = s.reminders.createFreeReminder(ctx, {
+			at: '2024-05-02T09:00',
+			message: 'ring mum'
+		});
+		s.reminders.editReminder(ctx, id, { at: '2024-06-01' });
+		const at = s.reminders.listReminders(ctx).find((r) => r.id === id)!.remindAt;
+		expect(at.startsWith('2024-06-01T')).toBe(true);
+		expect(at).not.toBe('2024-06-01');
+	});
+
+	test('silence is a third answer, not the absence of one', () => {
+		// Null is the row saying nothing and following its kind; false is the row
+		// saying "not this one". A boolean alone cannot tell them apart, and the
+		// editor has to be able to put either back.
+		const id = s.reminders.createFreeReminder(ctx, {
+			at: '2024-05-02T09:00',
+			message: 'quietly',
+			audible: true
+		});
+		const chosen = () => s.reminders.listReminders(ctx).find((r) => r.id === id)!.chosen;
+		expect(chosen().audible).toBe(true);
+
+		s.reminders.editReminder(ctx, id, { audible: false });
+		expect(chosen().audible).toBe(false);
+
+		s.reminders.editReminder(ctx, id, { audible: null });
+		expect(chosen().audible).toBe(null);
+	});
+
+	test('a sound that is not yours is no sound', () => {
+		const id = s.reminders.createFreeReminder(ctx, {
+			at: '2024-05-02T09:00',
+			message: 'whose sound'
+		});
+		// No such ringtone on this account, so it lands as the default rather
+		// than reaching for somebody else's row (I1).
+		s.reminders.editReminder(ctx, id, { ringtoneId: 9999 });
+		expect(s.reminders.listReminders(ctx).find((r) => r.id === id)!.chosen.ringtoneId).toBe(null);
+	});
+
+	test('a stranger can change nothing', () => {
+		const id = s.reminders.createFreeReminder(ctx, {
+			at: '2024-05-02T09:00',
+			message: 'mine alone'
+		});
+		expect(() => s.reminders.editReminder(theirs, id, { message: 'theirs now' })).toThrow();
+		expect(s.reminders.listReminders(ctx).find((r) => r.id === id)!.message).toBe('mine alone');
+	});
+
+	test('a time nobody could mean is refused, and nothing changes', () => {
+		const id = s.reminders.createFreeReminder(ctx, {
+			at: '2024-05-02T09:00',
+			message: 'still here'
+		});
+		expect(() => s.reminders.editReminder(ctx, id, { at: 'sometime' })).toThrow();
+		expect(s.reminders.listReminders(ctx).find((r) => r.id === id)!.remindAt).toBe(
+			'2024-05-02T09:00:00'
+		);
+	});
+});

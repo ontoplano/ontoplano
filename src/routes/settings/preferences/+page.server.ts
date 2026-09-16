@@ -57,6 +57,16 @@ export const load = async ({ locals }: IsolatedEvent) => {
 		 * which is also what hides the row.
 		 */
 		errorReports: host.clientErrorReports(ctx.userId),
+		/*
+		 * Whether a phone is booking Android alarms for this account.
+		 *
+		 * The app cannot answer this on a page a server rendered — the shell's
+		 * plugins reach its own origin and no further — and the section used to
+		 * guess, which is how the top of it came to say "reminders arrive while
+		 * ontoplano is open" above a paragraph explaining that they do not have
+		 * to. The instance does know: ringing needs a key, and a key is a row.
+		 */
+		ringsOnAPhone: host.ringsOnAPhone(ctx),
 		sections: HIDEABLE_SECTIONS,
 		hiddenSections,
 		week: getWeekSettings(ctx.userId),

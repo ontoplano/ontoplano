@@ -25,7 +25,6 @@
 	type Notebook = PageServerData['notebooks'][number];
 
 	/** Whether the markdown importer is open. Closed until asked for. */
-	let importing = $state(false);
 
 	let showForm = $state(false);
 	let editingId = $state<number | null>(null);
@@ -106,24 +105,7 @@
 <div class="space-y-4">
 	<!-- The heading is the layout's — Notes, with this tab lit. -->
 	<RoomToolbar>
-		{#snippet tools()}
-			<!--
-				The importer used to be a link to a settings page, which is a page
-				nobody goes looking for and which is headed "An Obsidian vault" —
-				the right form under a name nobody was looking for. It opens here
-				instead, because somebody with a folder of markdown is standing on
-				this page when they think of it.
-			-->
-			<button
-				type="button"
-				onclick={() => (importing = !importing)}
-				class="btn btn-sm"
-				aria-expanded={importing}
-				title="Bring in a folder of markdown files as notes"
-			>
-				Import markdown
-			</button>
-		{/snippet}
+		{#snippet tools()}{/snippet}
 	</RoomToolbar>
 	<p class="page-intro">
 		A subject you write against with no deadline — a book you are reading, a trip, a renovation.
@@ -131,37 +113,6 @@
 	</p>
 
 	<FormError message={form?.message} />
-
-	<!--
-		The importer, opened by the button above rather than on another page.
-
-		Its own card so it takes the width and does not squeeze the list beside
-		it, and it closes itself once the import lands — the notebook it made is
-		in the list behind it, which is the answer to "did that work".
-	-->
-	{#if importing}
-		<Card title="Import markdown">
-			<p class="text-sm text-gray-500">
-				Choose a folder of <code class="text-xs">.md</code> files. Each becomes a note in one
-				notebook, keeping its text and its tags — from
-				<code class="text-xs">#tags</code> and from the frontmatter — with the folder it was in as a tag
-				too. Nothing is uploaded as a file; the notes are read here. Deleting the notebook undoes it.
-			</p>
-			<div class="mt-3">
-				<MarkdownImport
-					compact
-					enhancer={(node) =>
-						enhance(node, () => async ({ update, result }) => {
-							// Not reset: the card is about to close, and blanking a form
-							// on its way out is a flash of empty fields nobody asked to
-							// see. `forms-do-not-blank.test.ts` is what noticed.
-							await update({ reset: false });
-							if (result.type === 'success') importing = false;
-						})}
-				/>
-			</div>
-		</Card>
-	{/if}
 
 	<div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.8fr)]">
 		<Card accent={SECTION_COLORS.diary} flush>
@@ -384,6 +335,44 @@
 			</Field>
 		</FormGrid>
 	</form>
+
+	<!--
+		The other way to make one: bring a folder of markdown in.
+		
+		It was a button on the room's toolbar and a card of its own that pushed
+		the list down the page — a second, permanent thing to read on a screen
+		whose first job is the notebooks somebody already has. It belongs here:
+		this is the dialogue for "a new notebook", and importing is one, made
+		out of files instead of typed.
+		
+		Not while editing: there is nothing to import into an existing one.
+	-->
+	{#if !editingId}
+		<details class="mt-4 border-t border-gray-200 pt-3">
+			<summary class="cursor-pointer text-sm text-gray-600 hover:text-gray-900">
+				…or import a folder of markdown
+			</summary>
+			<p class="mt-2 text-sm leading-relaxed text-gray-500">
+				Each <code class="text-xs">.md</code> file becomes a note in one notebook, keeping its text
+				and its tags — from <code class="text-xs">#tags</code> and from the frontmatter — with the folder
+				it was in as a tag too. Nothing is uploaded as a file; the notes are read here. Deleting the notebook
+				undoes it.
+			</p>
+			<div class="mt-3">
+				<MarkdownImport
+					compact
+					enhancer={(node) =>
+						enhance(node, () => async ({ update, result }) => {
+							// Not reset: the dialogue is about to close, and blanking a
+							// form on its way out is a flash of empty fields nobody asked
+							// to see. `forms-do-not-blank.test.ts` is what noticed.
+							await update({ reset: false });
+							if (result.type === 'success') showForm = false;
+						})}
+				/>
+			</div>
+		</details>
+	{/if}
 
 	{#snippet footer()}
 		<button type="button" class="btn" onclick={() => (showForm = false)}>Cancel</button>

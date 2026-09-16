@@ -448,8 +448,11 @@
 			<div>
 				<h2 class="text-sm font-semibold text-gray-900">Notifications on this device</h2>
 				<p class="mt-1 text-sm text-gray-500">
-					{#if inApp && notifications === 'unreachable'}
-						Reminders arrive while ontoplano is open.
+					{#if inApp && notifications === 'unreachable' && data.ringsOnAPhone}
+						Reminders arrive with the app closed, through Android's own alarms.
+					{:else if inApp && notifications === 'unreachable'}
+						Reminders can arrive with the app closed, through Android's own alarms — this phone is
+						not set up for it yet.
 					{:else if inApp}
 						Reminders arrive with the app closed, through Android's own alarms. Asked for once.
 					{:else}
@@ -471,9 +474,16 @@
 						nothing.
 					-->
 					<p class="text-sm text-gray-500">
-						Reminders from <strong class="text-gray-700">{page.url.host}</strong> ring on this phone.
-						It asks this instance what is coming and sets Android's own alarms, because an instance cannot
-						wake a phone — there is no push in here.
+						{#if data.ringsOnAPhone}
+							Reminders from <strong class="text-gray-700">{page.url.host}</strong> ring on this phone
+							with the app closed. It asks this instance what is coming and sets Android's own alarms,
+							because an instance cannot wake a phone — there is no push in here.
+						{:else}
+							This phone does not yet ring for <strong class="text-gray-700">{page.url.host}</strong
+							>. Set it up and it asks this instance what is coming and books Android's own alarms,
+							so reminders arrive with the app closed — an instance cannot wake a phone, because
+							there is no push in here.
+						{/if}
 					</p>
 
 					<!--
@@ -487,12 +497,14 @@
 						worked.
 					-->
 					<div class="mt-3 flex flex-wrap items-center gap-3">
-						<!-- eslint-disable svelte/no-navigation-without-resolve -- another origin -->
-						<a
-							href="{DEVICE_ORIGIN}/ring?off=1&at={encodeURIComponent(page.url.origin)}"
-							class="btn btn-sm">Stop ringing on this phone</a
-						>
-						<!-- eslint-enable svelte/no-navigation-without-resolve -->
+						{#if data.ringsOnAPhone}
+							<!-- eslint-disable svelte/no-navigation-without-resolve -- another origin -->
+							<a
+								href="{DEVICE_ORIGIN}/ring?off=1&at={encodeURIComponent(page.url.origin)}"
+								class="btn btn-sm">Stop ringing on this phone</a
+							>
+							<!-- eslint-enable svelte/no-navigation-without-resolve -->
+						{/if}
 						<form
 							method="post"
 							action="/settings/integrations?/ringOnThisPhone"
@@ -511,8 +523,15 @@
 								};
 							}}
 						>
-							<button class="btn btn-sm btn-quiet" disabled={ringing === 'asking'}>
-								{ringing === 'asking' ? 'Setting it up…' : 'Set it up again'}
+							<button
+								class="btn btn-sm {data.ringsOnAPhone ? 'btn-quiet' : 'btn-primary'}"
+								disabled={ringing === 'asking'}
+							>
+								{ringing === 'asking'
+									? 'Setting it up…'
+									: data.ringsOnAPhone
+										? 'Set it up again'
+										: 'Ring on this phone'}
 							</button>
 						</form>
 					</div>
@@ -522,8 +541,12 @@
 						</p>
 					{/if}
 					<p class="mt-2 text-xs leading-relaxed text-gray-500">
-						It asks again every few hours, and after the phone restarts. Reminders you write
-						anywhere else ring here too.
+						{#if data.ringsOnAPhone}
+							It asks again every few hours, and after the phone restarts. Reminders you write
+							anywhere else ring here too.
+						{:else}
+							Once set up it asks again every few hours, and after the phone restarts.
+						{/if}
 					</p>
 				{:else if notifications === 'on'}
 					<div class="flex flex-wrap items-center gap-3">

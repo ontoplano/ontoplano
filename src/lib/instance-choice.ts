@@ -44,6 +44,19 @@ export const CHOOSE_PATH = '/instance';
  */
 export const RING_PARAM = 'ring';
 
+/**
+ * What a launch says when a turn is already going round.
+ *
+ * Choosing an instance starts the mark turning, and the instance is a new
+ * document: the page that started it is gone before the load it is about has
+ * finished, so it cannot be the page that lands it. This is how the turn
+ * crosses — the arriving app sees the word on its address, picks the turn up
+ * on its own mark at first paint, and lands it when it is actually ready.
+ * Nothing else can carry it: the two are different origins, so there is no
+ * storage and no message between them, only the address.
+ */
+export const SPINNING_PARAM = 'spinning';
+
 /** The mark saying the answer is this phone. */
 export const ARRIVING_HOME = 'here';
 
@@ -80,9 +93,12 @@ export const askAgainOnThisPhone = (): string =>
  * belongs to the origin. So the answer travels as an address instead: nothing
  * for this phone, or the instance to open from now on.
  */
-export const chooseOnThisPhone = (instance: string | null): string => {
+export const chooseOnThisPhone = (instance: string | null, spinning = false): string => {
 	const answer = instance ? `${ARRIVING_AT}=${encodeURIComponent(instance)}` : `${ARRIVING_HOME}=1`;
-	return `${DEVICE_ORIGIN}${CHOOSE_PATH}?${answer}`;
+	// The turn carries across this hop too — the device's own copy is the next
+	// document, and it hands the word on again when it forwards.
+	const also = spinning ? `&${SPINNING_PARAM}=1` : '';
+	return `${DEVICE_ORIGIN}${CHOOSE_PATH}?${answer}${also}`;
 };
 
 /**
@@ -128,7 +144,10 @@ export async function suggestedInstance(): Promise<string | null> {
  * launch passes through; the server keeps both in cookies and takes the
  * parameters straight back off the address.
  */
-export function launchAddress(instance: string, opts: { ring?: boolean } = {}): string {
+export function launchAddress(
+	instance: string,
+	opts: { ring?: boolean; spinning?: boolean } = {}
+): string {
 	try {
 		const url = new URL(instance);
 		url.searchParams.set(APP_LAUNCH_PARAM, APP_LAUNCH_VALUE);
@@ -146,6 +165,8 @@ export function launchAddress(instance: string, opts: { ring?: boolean } = {}): 
 		 * what somebody should have to do to be reminded by it.
 		 */
 		if (opts.ring) url.searchParams.set(RING_PARAM, '1');
+		// …and that a turn is already going round, for the app to finish.
+		if (opts.spinning) url.searchParams.set(SPINNING_PARAM, '1');
 		return url.toString();
 	} catch {
 		// Whatever this address is, it is not one to decorate — let the

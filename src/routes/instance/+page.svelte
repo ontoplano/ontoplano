@@ -1,13 +1,14 @@
 <script lang="ts">
 	import Icon from '$lib/components/Icon.svelte';
 	import Logo from '$lib/components/Logo.svelte';
-	import { startMarkSpin, stopMarkSpin } from '$lib/mark-spin';
+	import { startMarkSpin } from '$lib/mark-spin';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
 	import {
 		ARRIVING_AT,
 		ARRIVING_HOME,
 		OFFICIAL_INSTANCE,
+		SPINNING_PARAM,
 		chooseOnThisPhone,
 		inPhoneApp,
 		launchAddress,
@@ -56,43 +57,25 @@
 	let mark = $state<HTMLElement | undefined>();
 
 	/**
-	 * The turn and the load, started together and ended in that order.
+	 * The turn starts here and is finished by whatever arrives.
 	 *
-	 * The shape everywhere else in the app: `$lib/mark-spin` turns while a
-	 * navigation is in flight and is told to stop when it lands, and stopping
-	 * is a request — it finishes the revolution it is in and eases upright.
-	 * Two earlier versions of this screen got it wrong in both directions. One
-	 * turned once and then began loading, so the wheel had said everything it
-	 * had to say before anything happened. One navigated at once and was cut
-	 * off mid-turn when the document was replaced.
+	 * Everywhere else in the app a navigation is one document: the page that
+	 * starts the turn is the page that lands it, when the wait is genuinely
+	 * over. Choosing an instance is not — the document is replaced, and the
+	 * load somebody is waiting for happens in the NEXT one. Anything this page
+	 * does on its own is therefore guesswork about a wait it cannot see:
+	 * landing before leaving turns a full circle and only then begins loading,
+	 * and asking the server first (which this did) measures the connection
+	 * rather than the app.
 	 *
-	 * The obstacle looked fundamental: `location.href` replaces the document,
-	 * so the page that starts the turn cannot see the load finish. It is not
-	 * fundamental — it is a consequence of letting the browser do the loading.
-	 * Asking for the instance here first is something this page CAN watch: an
-	 * opaque `no-cors` request settles when that server has answered, which is
-	 * the wait somebody is actually sitting through, and it warms the cache the
-	 * navigation is about to use.
-	 *
-	 * So: the turn starts, the request goes out in the same tick, and when the
-	 * instance has answered the turn is asked to stop — landing upright at the
-	 * next whole revolution — and only then is the document replaced.
-	 *
-	 * Every wait is capped, because nothing here may depend on a network or an
-	 * animation: an instance that never answers still opens (the browser will
-	 * show its own failure, which is the honest one), and a browser that will
-	 * not animate still leaves.
+	 * So the turn is handed over. This page starts it and goes at once; the
+	 * address carries `spinning=1`; and the arriving app picks the turn up on
+	 * its own mark — in the same place, at the same size — and lands it when it
+	 * is ready, which is the moment somebody was actually waiting for. See
+	 * `+layout.svelte`.
 	 */
-	const REACHED_CAP_MS = 8000;
-	const LANDING_CAP_MS = 1200;
-
-	/** Ask the instance for its front page, only to know that it answered. */
-	function knock(where: string): Promise<unknown> {
-		return fetch(where, { mode: 'no-cors', redirect: 'follow' }).catch(() => undefined);
-	}
-
-	function capped(ms: number): Promise<unknown> {
-		return new Promise((resolve) => setTimeout(resolve, ms));
+	function startTheTurn(): void {
+		if (mark) startMarkSpin([mark], 0, true);
 	}
 
 	/*
@@ -241,13 +224,13 @@
 	 */
 	const canRunHere = $derived(isIsolatedBuild() || inPhoneApp());
 
-	async function go() {
+	function go() {
 		const url = kind === 'phone' ? null : address.trim().replace(/\/+$/, '');
 		if (url !== null && !/^https?:\/\/.+/.test(url)) return;
 
+		startTheTurn();
+
 		/*
-		 * Where this is going, worked out before anything moves.
-		 *
 		 * A page an instance served cannot answer "which instance is this
 		 * phone's" itself: storage belongs to an origin, and the app reads its
 		 * answer out of the origin its own copy is served from — so from
@@ -255,21 +238,12 @@
 		 * arrival. In a browser there is nowhere to arrive at and the choice is
 		 * simply where to go.
 		 */
-		const goingTo =
-			inPhoneApp() && !isIsolatedBuild() ? chooseOnThisPhone(url) : (url ?? '/') || '/';
-		if (!(inPhoneApp() && !isIsolatedBuild())) rememberInstance(url);
-
-		// Together: the turn starts and the instance is asked for, in one tick.
-		const turning = mark ? (startMarkSpin([mark], 0, true), true) : false;
-		const reached = knock(goingTo);
-
-		// Then the wait somebody is actually sitting through.
-		await Promise.race([reached, capped(REACHED_CAP_MS)]);
-
-		// And only once it has answered does the turn come to rest.
-		if (turning) await Promise.race([stopMarkSpin(), capped(LANDING_CAP_MS)]);
-
-		location.href = goingTo;
+		if (inPhoneApp() && !isIsolatedBuild()) {
+			location.href = chooseOnThisPhone(url, true);
+			return;
+		}
+		rememberInstance(url);
+		location.href = url ? launchAddress(url, { spinning: true }) : `/?${SPINNING_PARAM}=1`;
 	}
 </script>
 

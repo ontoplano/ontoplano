@@ -313,6 +313,23 @@
 						<Icon name="drag" />
 					</button>
 				</div>
+			{:else}
+				<!--
+					And the way out is where the way in was.
+					
+					Done sat at the bottom of the card list, past however many cards
+					there are — so on a phone, finishing meant scrolling back down
+					through everything that had just been rearranged to find it. The
+					press that starts this is here; the press that ends it is here too.
+				-->
+				<div class="flex items-center gap-2">
+					<button
+						onclick={() => (arranging = false)}
+						class="btn btn-sm"
+						title="Leave the cards as they were">Cancel</button
+					>
+					<button onclick={saveOrder} class="btn btn-primary btn-sm">Done</button>
+				</div>
 			{/if}
 		</div>
 
@@ -1111,11 +1128,13 @@
 				{#if card}
 					<!-- Half-width cards pair up on wide screens; full-width ones take the row. -->
 					<div
-						class="{card.width === 'half'
+						class="relative {card.width === 'half'
 							? 'md:col-span-1'
-							: 'md:col-span-2 2xl:col-span-3'} {arranging ? 'cursor-grab' : ''} {dragging === id
-							? 'opacity-40'
-							: ''} {arranging && dragOver === id ? 'outline-2 outline-gray-900' : ''}"
+							: 'md:col-span-2 2xl:col-span-3'} {arranging
+							? 'being-arranged cursor-grab'
+							: ''} {dragging === id ? 'opacity-40' : ''} {arranging && dragOver === id
+							? 'outline-2 outline-gray-900'
+							: ''}"
 						draggable={arranging}
 						ondragstart={(e) => onDragStart(id, e)}
 						ondragend={() => {
@@ -1127,48 +1146,51 @@
 					>
 						{#if arranging}
 							<!--
-								The handle sits ON the card, not above it.
-
-								It used to be a separate bordered bar with a gap under it,
-								repeating the card's own title — which read as a collapsed card
-								with a duplicate of itself underneath rather than as a control
-								belonging to the card below. Flush, borderless along the bottom
-								and with no title of its own: the card says its name once.
+								The handle takes the card's own corner, where "Open →" was.
+								
+								It was a bar of its own above each card: a bordered strip
+								with a drag handle and three buttons, and the card's real
+								header underneath it. On a phone that read as a stack of
+								empty boxes with the dashboard showing through the gaps —
+								two headers per card, one of them blank. A card has one
+								header, and while these are being moved it holds these
+								instead of the way in. `.card-actions` is hidden by the
+								rule at the bottom of this file.
 							-->
-							<div
-								class="flex items-center justify-between gap-2 border border-b-0 border-gray-300 bg-gray-100 px-2 py-1"
-							>
-								<span class="text-gray-500" title="Drag {card.label} to move it" aria-hidden="true">
+							<div class="absolute top-2.5 right-3 z-10 flex items-center gap-1">
+								<span
+									class="cursor-grab px-1 text-gray-500"
+									title="Drag {card.label} to move it"
+									aria-hidden="true"
+								>
 									<Icon name="drag" size={14} />
 								</span>
-								<div class="flex shrink-0 items-center gap-1">
-									<button
-										onclick={() => move(id, -1)}
-										disabled={order.indexOf(id) === 0}
-										class="p-1 text-gray-600 hover:text-gray-900"
-										title="Move up"
-										aria-label="Move {card.label} up"
-									>
-										<Icon name="chevron-up" size={16} />
-									</button>
-									<button
-										onclick={() => move(id, 1)}
-										disabled={order.indexOf(id) === order.length - 1}
-										class="p-1 text-gray-600 hover:text-gray-900"
-										title="Move down"
-										aria-label="Move {card.label} down"
-									>
-										<Icon name="chevron-down" size={16} />
-									</button>
-									<button
-										onclick={() => hideCard(id)}
-										class="p-1 text-gray-500 hover:text-gray-900"
-										title="Hide this card"
-										aria-label="Hide {card.label}"
-									>
-										<Icon name="close" size={16} />
-									</button>
-								</div>
+								<button
+									onclick={() => move(id, -1)}
+									disabled={order.indexOf(id) === 0}
+									class="p-1 text-gray-600 hover:text-gray-900"
+									title="Move up"
+									aria-label="Move {card.label} up"
+								>
+									<Icon name="chevron-up" size={16} />
+								</button>
+								<button
+									onclick={() => move(id, 1)}
+									disabled={order.indexOf(id) === order.length - 1}
+									class="p-1 text-gray-600 hover:text-gray-900"
+									title="Move down"
+									aria-label="Move {card.label} down"
+								>
+									<Icon name="chevron-down" size={16} />
+								</button>
+								<button
+									onclick={() => hideCard(id)}
+									class="p-1 text-gray-500 hover:text-gray-900"
+									title="Hide this card"
+									aria-label="Hide {card.label}"
+								>
+									<Icon name="close" size={16} />
+								</button>
 							</div>
 						{/if}
 						{#if id === 'todayTasks'}{@render card_todayTasks()}
@@ -1205,19 +1227,23 @@
 						+ {card.label}
 					</button>
 				{/each}
-				<button
-					onclick={saveOrder}
-					class="ml-auto bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-800"
-					>Done</button
-				>
-				<button
-					onclick={() => (arranging = false)}
-					class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
-					>Cancel</button
-				>
 			</div>
 		{/if}
 
 		<FormError message={form?.message} />
 	</div>
 {/if}
+
+<style>
+	/*
+	 * While a card is being moved, its own corner belongs to the moving.
+	 *
+	 * The handle and the three buttons sit where "Open →" was, so the way in
+	 * steps aside for the length of the rearranging — hidden rather than
+	 * removed, since removing it would change the header's height and move
+	 * every card under it at the moment somebody is trying to aim at one.
+	 */
+	.being-arranged :global(.card-actions) {
+		visibility: hidden;
+	}
+</style>

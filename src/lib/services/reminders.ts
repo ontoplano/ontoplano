@@ -146,7 +146,18 @@ export function upcomingReminders(
 export function listReminders(
 	ctx: Ctx,
 	options: { includePast?: boolean } = {}
-): (Reminder & { audible: boolean })[] {
+): (Reminder & {
+	/** Whether it will actually make a noise, kind and ringtone resolved. */
+	audible: boolean;
+	/**
+	 * What this row itself says, before any of that.
+	 *
+	 * `audible: null` means it says nothing and follows its kind, which is what
+	 * an editor has to be able to show and set back — the resolved boolean
+	 * above cannot tell "silent" from "silent because bills are".
+	 */
+	chosen: { audible: boolean | null; ringtoneId: number | null };
+})[] {
 	const rows = db
 		.select({
 			id: reminders.id,
@@ -171,7 +182,11 @@ export function listReminders(
 	// that may have been deleted, which is three tables the page cannot see.
 	return wanted.map((row) => {
 		const { audible, ringtoneId, ...rest } = row;
-		return { ...rest, audible: soundFor(ctx, { ...rest, audible, ringtoneId }) !== null };
+		return {
+			...rest,
+			audible: soundFor(ctx, { ...rest, audible, ringtoneId }) !== null,
+			chosen: { audible, ringtoneId }
+		};
 	});
 }
 
@@ -234,44 +249,50 @@ export function dueReminders(ctx: Ctx): (Reminder & { sound: string | null })[] 
  * seconds here where a block's reminder carries minutes, because "seven in the
  * morning" is a moment and the clock can hit it exactly.
  */
-export function createFreeReminder(
-	ctx: Ctx,
-	raw: { at?: unknown; message?: unknown; audible?: unknown; ringtoneId?: unknown }
-): number {
-	const at = String(raw.at ?? '').trim();
-	/*
-	 * A day on its own is a day, and it starts when the account says it does.
-	 *
-	 * "Remind me on the third" is a whole sentence, and demanding a clock
-	 * reading for it means picking a number that means nothing — so a bare
-	 * `YYYY-MM-DD` fires at the hour the planner grid opens on, which is the
-	 * same hour a birthday and a bill already use for exactly this reason.
-	 */
+/**
+ * A day, or a day and a time, as the wall-clock string a row holds.
+ *
+ * "Remind me on the third" is a whole sentence, and demanding a clock reading
+ * for it means picking a number that means nothing — so a bare `YYYY-MM-DD`
+ * fires at the hour the planner grid opens on, which is the same hour a
+ * birthday and a bill already use for exactly this reason.
+ */
+function remindAtFrom(ctx: Ctx, given: unknown): string {
+	const at = String(given ?? '').trim();
 	const dayOnly = /^\d{4}-\d{2}-\d{2}$/.test(at);
 	if (!dayOnly && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(at)) {
 		throw new ValidationError('That is not a day, or a day and a time.');
 	}
-	const remindAt = dayOnly
-		? `${at}T${startOfDay(ctx.userId)}:00`
-		: at.length === 16
-			? `${at}:00`
-			: at;
+	return dayOnly ? `${at}T${startOfDay(ctx.userId)}:00` : at.length === 16 ? `${at}:00` : at;
+}
 
+/**
+ * Yours or none, same as `setSoundChoice`.
+ *
+ * The id arrives from a form, and a sound belonging to somebody else is not a
+ * sound (I1). Silently none rather than an error: the one way to reach this is
+ * a stale page listing a sound that has since been deleted, and refusing to
+ * save the reminder over it would lose the reminder.
+ */
+function ownedRingtone(ctx: Ctx, given: unknown): number | null {
+	if (given === undefined || given === null || given === '') return null;
+	const wanted = num(given, 'sound', { int: true, min: 1 });
+	return (
+		db
+			.select({ id: ringtones.id })
+			.from(ringtones)
+			.where(and(eq(ringtones.id, wanted), eq(ringtones.userId, ctx.userId)))
+			.get()?.id ?? null
+	);
+}
+
+export function createFreeReminder(
+	ctx: Ctx,
+	raw: { at?: unknown; message?: unknown; audible?: unknown; ringtoneId?: unknown }
+): number {
+	const remindAt = remindAtFrom(ctx, raw.at);
 	const message = str(raw.message, 'message', { max: MAX_MESSAGE_LENGTH });
-	// Yours or none, same as `setSoundChoice`: the id arrives from a form,
-	// and a sound belonging to somebody else is not a sound (I1).
-	const wantedRingtone =
-		raw.ringtoneId === undefined || raw.ringtoneId === null || raw.ringtoneId === ''
-			? null
-			: num(raw.ringtoneId, 'sound', { int: true, min: 1 });
-	const ringtoneId =
-		wantedRingtone === null
-			? null
-			: (db
-					.select({ id: ringtones.id })
-					.from(ringtones)
-					.where(and(eq(ringtones.id, wantedRingtone), eq(ringtones.userId, ctx.userId)))
-					.get()?.id ?? null);
+	const ringtoneId = ownedRingtone(ctx, raw.ringtoneId);
 
 	const inserted = db
 		.insert(reminders)
@@ -352,6 +373,59 @@ export function markDelivered(ctx: Ctx, ids: number[]): number {
 			.run().changes;
 	}
 	return changed;
+}
+
+/**
+ * Change one that is already set.
+ *
+ * Everything the form that made it asked for: when, what it says, whether it
+ * makes a noise and which noise. Without this, a reminder was a thing you could
+ * make and unmake and nothing in between — so wanting an alarm five minutes
+ * later, or wanting the one you set silently to actually wake you, meant
+ * deleting it and typing it again.
+ *
+ * Any row, not only the ones somebody typed. A nudge before a block is a real
+ * row with a real time on it, and "not this one, ten minutes earlier" is the
+ * commonest thing anybody wants to say about one; what it must not do is
+ * change the block, which is why only these four fields are here.
+ *
+ * Absent fields are left alone, so a caller that only cares about the sound
+ * sends the sound. `audible: null` is a real answer — it means "whatever this
+ * kind of reminder does", which is what a row says before anybody overrides it.
+ */
+export function editReminder(
+	ctx: Ctx,
+	id: number,
+	raw: { at?: unknown; message?: unknown; audible?: unknown; ringtoneId?: unknown }
+): boolean {
+	const which = num(id, 'reminder', { int: true, min: 1 });
+	const change: {
+		remindAt?: string;
+		message?: string;
+		audible?: boolean | null;
+		ringtoneId?: number | null;
+	} = {};
+
+	if (raw.at !== undefined) change.remindAt = remindAtFrom(ctx, raw.at);
+	if (raw.message !== undefined)
+		change.message = str(raw.message, 'message', { max: MAX_MESSAGE_LENGTH });
+	if (raw.audible !== undefined)
+		change.audible = raw.audible === null ? null : Boolean(raw.audible);
+	if (raw.ringtoneId !== undefined) change.ringtoneId = ownedRingtone(ctx, raw.ringtoneId);
+
+	if (Object.keys(change).length === 0) return false;
+
+	const changed =
+		db
+			.update(reminders)
+			.set(change)
+			.where(and(eq(reminders.id, which), eq(reminders.userId, ctx.userId)))
+			.run().changes > 0;
+	if (!changed) throw new NotFoundError('No such reminder');
+
+	// Moving one is as much a change to the clock's next wake-up as adding one.
+	host.reminderScheduleChanged();
+	return true;
 }
 
 export function dismissReminder(ctx: Ctx, id: number): boolean {

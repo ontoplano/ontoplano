@@ -1,4 +1,4 @@
-import { and, inArray, or, count, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import { and, asc, inArray, or, count, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
 import { user } from '$lib/db/auth.schema.js';
@@ -316,7 +316,16 @@ export function contentsOf(ctx: Ctx, id: number) {
 				.from(diaryEntries)
 				.innerJoin(user, eq(diaryEntries.userId, user.id))
 				.where(and(eq(diaryEntries.notebookId, id), inArray(diaryEntries.userId, circle)))
-				.orderBy(desc(diaryEntries.createdAt))
+				/*
+				 * Oldest first, which is not what a list of writing usually wants.
+				 *
+				 * The diary is a log and reads newest first: what happened today is
+				 * the thing to see. A notebook is not a log — it is a subject being
+				 * worked through, and its notes are read in the order they were
+				 * written, the way the pages of a real one are. Newest first put
+				 * the end of the renovation above its beginning.
+				 */
+				.orderBy(asc(diaryEntries.createdAt), asc(diaryEntries.id))
 				.all()
 				.map(({ ownerId, authorName, ...entry }) => ({
 					...entry,

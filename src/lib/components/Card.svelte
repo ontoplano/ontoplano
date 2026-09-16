@@ -82,7 +82,10 @@
 			{/if}
 		</div>
 		{#if actions}
-			<div class="flex flex-wrap items-center gap-2">
+			<!-- Named, because the dashboard takes this corner over while cards are
+			     being rearranged: the handle goes where "Open →" was rather than in
+			     a bar of its own. -->
+			<div class="card-actions flex flex-wrap items-center gap-2">
 				{@render actions()}
 			</div>
 		{/if}

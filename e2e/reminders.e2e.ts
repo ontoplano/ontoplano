@@ -309,3 +309,62 @@ test('a reminder that has been is still there to look at', async ({ page }) => {
 	const comingUp = page.locator('section', { hasText: 'Coming up' }).first();
 	await expect(comingUp.getByText('long gone')).toHaveCount(0);
 });
+
+/**
+ * The middle of the verb set.
+ *
+ * A reminder could be made and unmade and nothing in between, so wanting the
+ * alarm half an hour later — or wanting the silent one to actually wake you —
+ * meant deleting it and typing it out again. The editor is the same questions
+ * the form asks, opened on the row itself.
+ */
+test('a reminder that is already set can be moved, reworded and given a sound', async ({
+	page
+}) => {
+	await register(page, testEmail('rem-edit'));
+	await visit(page, '/reminders');
+
+	const tomorrow = new Date();
+	tomorrow.setDate(tomorrow.getDate() + 1);
+	const day = tomorrow.toISOString().slice(0, 10);
+
+	await page.locator('[name="day"]').fill(day);
+	await page.locator('[name="time"]').fill('07:30');
+	await page.locator('[name="label"]').first().fill('take the bread out');
+	await page.getByRole('button', { name: 'Set it' }).click();
+	await expect(page.getByText('take the bread out')).toBeVisible({ timeout: 15_000 });
+
+	// Silent as it was made, so nothing is claiming otherwise yet.
+	const row = page.locator('li', { hasText: 'take the bread out' });
+	await expect(row.getByTitle('This one makes a sound')).toHaveCount(0);
+
+	await page.getByRole('button', { name: /^Change take the bread out$/ }).click();
+
+	const editor = page.locator('form[action="?/edit"]');
+	await expect(editor).toBeVisible();
+	// Opened on what it already says, rather than on an empty form.
+	await expect(editor.locator('[name="time"]')).toHaveValue('07:30');
+	await expect(editor.locator('[name="label"]')).toHaveValue('take the bread out');
+
+	await editor.locator('[name="time"]').fill('08:15');
+	await editor.locator('[name="label"]').fill('take the loaf out');
+	await editor.locator('[name="sound"]').selectOption('on');
+	await editor.getByRole('button', { name: 'Save' }).click();
+
+	await expect(page.getByText('take the loaf out')).toBeVisible({ timeout: 15_000 });
+	await expect(page.getByText('take the bread out')).toHaveCount(0);
+	await expect(page.getByText('08:15')).toBeVisible();
+
+	// And the sound it was just given is visible before it goes off.
+	const changed = page.locator('li', { hasText: 'take the loaf out' });
+	await expect(changed.getByTitle('This one makes a sound')).toBeVisible();
+
+	// Silencing it again is the way back, and it is a different answer from
+	// "whatever this kind of reminder does".
+	await page.getByRole('button', { name: /^Change take the loaf out$/ }).click();
+	const again = page.locator('form[action="?/edit"]');
+	await expect(again.locator('[name="sound"]')).toHaveValue('on');
+	await again.locator('[name="sound"]').selectOption('off');
+	await again.getByRole('button', { name: 'Save' }).click();
+	await expect(changed.getByTitle('This one makes a sound')).toHaveCount(0, { timeout: 15_000 });
+});
