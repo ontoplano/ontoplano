@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { formatMoney, type Currency } from '$lib/money';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * Twelve months of money in against money out, drawn as paired bars with
@@ -101,6 +104,6 @@
 			<span class="inline-block h-2 w-2 rounded-sm bg-red-500"></span>
 			{outLabel}
 		</span>
-		<span class="ml-auto">net under each month</span>
+		<span class="ml-auto">{t('finance.monthlyBars.caption')}</span>
 	</div>
 </div>

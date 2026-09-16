@@ -32,6 +32,7 @@
 		"icons": "node scripts/build-icons.mjs",
 		"messages": "node scripts/build-messages.mjs",
 		"messages:check": "node scripts/build-messages.mjs --check",
+		"copy:check": "node scripts/check-copy.mjs --check",
 		"errorpage": "node scripts/build-error-page.mjs",
 		"badges": "node scripts/build-badges.mjs",
 		"badges:check": "node scripts/build-badges.mjs --check",

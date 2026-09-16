@@ -7,6 +7,9 @@
 	import { isIsolatedBuild } from '$lib/isolated/mode';
 	import Icon, { type IconName } from '$lib/components/Icon.svelte';
 	import { wedgeAt, wedgeCentre, wedgeEdges, wedgeStep } from '$lib/radial';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * A pie of choices, under the thumb.
@@ -543,7 +546,7 @@
 		<button
 			type="button"
 			class="absolute inset-0 h-full w-full bg-scrim"
-			aria-label="Close"
+			aria-label={t('ui.close')}
 			onclick={() => afterOpening(onclose)}
 		></button>
 
@@ -808,7 +811,7 @@
 					     and it is what the tests press. Not `role="button"`: the way in
 					     from a keyboard is Escape and the arrow keys, on the window, the
 					     same as it is for the wedges. -->
-					<title>Cancel</title>
+					<title>{t('ui.cancel')}</title>
 				</polygon>
 
 				<!--

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import TabbedRoom from '$lib/components/TabbedRoom.svelte';
 	import { settingsTabs } from '$lib/settings-tabs';
+	import { useT } from '$lib/i18n';
 	import type { Snippet } from 'svelte';
 	import type { LayoutServerData } from './$types';
 
@@ -16,9 +17,10 @@
 	 */
 	let { children, data }: { children: Snippet; data: LayoutServerData } = $props();
 
-	const tabs = $derived(settingsTabs(data));
+	const t = useT();
+	const tabs = $derived(settingsTabs(t, data));
 </script>
 
-<TabbedRoom title="Settings" {tabs} label="Settings sections">
+<TabbedRoom title={t('rooms.settings.title')} {tabs} label={t('rooms.settings.sections')}>
 	{@render children()}
 </TabbedRoom>

@@ -8,11 +8,7 @@ from what the app actually shows.
 
 ### Tasks
 
-- **Plan** — `/tasks/plan`
-- **Board** — `/tasks/board`
-- **To-do** — `/tasks/todo`
-- **Activities** — `/tasks/activities`
-- **Review** — `/tasks/review`
+- `/tasks/plan` — one page, no tabs
 
 ### Goals
 
@@ -22,28 +18,19 @@ Can be put away in Preferences (`goals`), which takes it out of the bar, the whe
 
 ### Notebooks
 
-- **Notebooks** — `/notebooks`
-- **Diary** — `/notebooks/diary`
-- **Ideas** — `/notebooks/ideas`
-- **Weekly notes** — `/notebooks/weekly`
-- **People** — `/notebooks/people`
+- `/notebooks` — one page, no tabs
 
 Can be put away in Preferences (`diary`), which takes it out of the bar, the wheel and the dashboard.
 
 ### Health
 
-- **Habits** — `/health/habits`
-- **Workouts** — `/health/workouts`
-- **Recipes** — `/health/recipes`
+- `/health/habits` — one page, no tabs
 
 Can be put away in Preferences (`health`), which takes it out of the bar, the wheel and the dashboard.
 
 ### Finance
 
-- **Ledgers** — `/finance/ledgers`
-- **Bills** — `/finance/bills`
-- **Rules** — `/finance/rules`
-- **Insights** — `/finance/insights`
+- `/finance/ledgers` — one page, no tabs
 
 Can be put away in Preferences (`finance`), which takes it out of the bar, the wheel and the dashboard.
 

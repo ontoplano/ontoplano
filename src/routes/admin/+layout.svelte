@@ -3,11 +3,13 @@
 	import { resolve } from '$app/paths';
 	import TabbedRoom from '$lib/components/TabbedRoom.svelte';
 	import { settingsTabs } from '$lib/settings-tabs';
+	import { useT } from '$lib/i18n';
 	import type { Snippet } from 'svelte';
 	import type { LayoutServerData } from './$types';
 
 	let { children, data }: { children: Snippet; data: LayoutServerData } = $props();
 
+	const t = useT();
 	const onAccount = $derived(page.url.pathname !== '/admin');
 </script>
 
@@ -18,7 +20,11 @@
 	replace the tab bar with nothing, so the way back to Account was the main
 	menu. Same tabs, same place, and the trip is no longer one-way.
 -->
-<TabbedRoom title="Settings" tabs={settingsTabs(data)} label="Settings sections">
+<TabbedRoom
+	title={t('rooms.settings.title')}
+	tabs={settingsTabs(t, data)}
+	label={t('rooms.settings.sections')}
+>
 	<!--
 		No heading on the list itself: the active tab already says Administration,
 		and a page that names itself twice reads as two pages. One account's page
@@ -26,9 +32,11 @@
 	-->
 	{#if onAccount}
 		<div class="flex items-center gap-3">
-			<h2 class="text-base font-semibold text-gray-900">Administration</h2>
+			<h2 class="text-base font-semibold text-gray-900">
+				{t('rooms.settings.tabs.administration')}
+			</h2>
 			<a href={resolve('/admin')} class="text-sm text-gray-500 hover:text-gray-900"
-				>← all accounts</a
+				>{t('admin.allAccounts')}</a
 			>
 		</div>
 	{/if}

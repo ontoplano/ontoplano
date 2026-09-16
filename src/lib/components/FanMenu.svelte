@@ -1,5 +1,8 @@
 <script lang="ts">
 	import Icon, { type IconName } from '$lib/components/Icon.svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * A flower of small choices, opened above the thumb.
@@ -375,7 +378,7 @@
 		class="fan {leaving ? 'is-leaving' : ''}"
 		style="left: {centre.x}px; top: {centre.y}px"
 		role="menu"
-		aria-label="Account and help"
+		aria-label={t('fan.accountAndHelp')}
 		tabindex="-1"
 	>
 		{#each petals as item, i (item.key)}

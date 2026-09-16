@@ -1,5 +1,8 @@
 <script lang="ts">
 	import Field from './Field.svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * The one control that says what subject a thing belongs to.
@@ -23,9 +26,9 @@
 </script>
 
 {#if notebooks.length > 0}
-	<Field label="Notebook" {span}>
+	<Field label={t('ui.notebook')} {span}>
 		<select {name} class="select">
-			<option value="">— none —</option>
+			<option value="">{t('ui.none')}</option>
 			{#each notebooks as notebook (notebook.id)}
 				<option value={notebook.id} selected={value === notebook.id}>{notebook.title}</option>
 			{/each}

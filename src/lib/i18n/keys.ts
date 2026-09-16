@@ -2,10 +2,84 @@
 
 /** Every message this app has. A key not in here does not exist. */
 export type MessageKey =
+	| 'admin.allAccounts'
+	| 'capture.diaryNote'
+	| 'cook.leave'
+	| 'cook.noMethod'
+	| 'fan.accountAndHelp'
+	| 'fields.idea.heading'
+	| 'fields.idea.tagsExample'
+	| 'fields.note.tagsExample'
+	| 'finance.donut.empty'
+	| 'finance.donut.heading'
+	| 'finance.donut.out'
+	| 'finance.monthlyBars.caption'
+	| 'finance.stackedMonths.caption'
+	| 'keys.reach.everything'
+	| 'keys.reach.heading'
+	| 'keys.reach.justOne'
+	| 'keys.reach.summary'
+	| 'keys.reach.which'
+	| 'pictures.add'
+	| 'pictures.dropAnywhere'
+	| 'pictures.hint'
+	| 'pictures.uploading'
+	| 'rooms.finance.sections'
+	| 'rooms.finance.tabs.bills'
+	| 'rooms.finance.tabs.insights'
+	| 'rooms.finance.tabs.ledgers'
+	| 'rooms.finance.tabs.rules'
+	| 'rooms.finance.title'
+	| 'rooms.health.sections'
+	| 'rooms.health.tabs.habits'
+	| 'rooms.health.tabs.recipes'
+	| 'rooms.health.tabs.workouts'
+	| 'rooms.health.title'
+	| 'rooms.integrations.sections'
+	| 'rooms.integrations.tabs.ai'
+	| 'rooms.integrations.tabs.connections'
+	| 'rooms.integrations.title'
+	| 'rooms.notebooks.sections'
+	| 'rooms.notebooks.tabs.diary'
+	| 'rooms.notebooks.tabs.ideas'
+	| 'rooms.notebooks.tabs.notebooks'
+	| 'rooms.notebooks.tabs.people'
+	| 'rooms.notebooks.tabs.weekly'
+	| 'rooms.notebooks.title'
+	| 'rooms.settings.sections'
+	| 'rooms.settings.tabs.account'
+	| 'rooms.settings.tabs.administration'
+	| 'rooms.settings.tabs.billing'
+	| 'rooms.settings.tabs.family'
+	| 'rooms.settings.tabs.instance'
+	| 'rooms.settings.tabs.integrations'
+	| 'rooms.settings.tabs.preferences'
+	| 'rooms.settings.title'
+	| 'rooms.tasks.sections'
+	| 'rooms.tasks.tabs.activities'
+	| 'rooms.tasks.tabs.board'
+	| 'rooms.tasks.tabs.plan'
+	| 'rooms.tasks.tabs.review'
+	| 'rooms.tasks.tabs.todo'
+	| 'rooms.tasks.title'
 	| 'settings.language.heading'
 	| 'settings.language.hint'
 	| 'settings.language.saved'
-	| 'settings.language.untranslated';
+	| 'settings.language.untranslated'
+	| 'settings.timezone.unchanged'
+	| 'staging.body'
+	| 'staging.heading'
+	| 'ui.back'
+	| 'ui.cancel'
+	| 'ui.close'
+	| 'ui.copied'
+	| 'ui.dismiss'
+	| 'ui.less'
+	| 'ui.more'
+	| 'ui.none'
+	| 'ui.notebook'
+	| 'ui.tags'
+	| 'ui.undo';
 
 /**
  * The keys that take values, and which values.
@@ -15,7 +89,12 @@ export type MessageKey =
  * rather than a sentence with a brace in it.
  */
 export interface MessageValuesFor {
+	'keys.reach.justOne': { noun: string | number };
+	'keys.reach.summary': { what: string | number };
+	'keys.reach.which': { noun: string | number };
+	'pictures.hint': { kilobytes: string | number };
 	'settings.language.untranslated': { count: number };
+	'settings.timezone.unchanged': { zone: string | number };
 }
 
 /** A message that takes values — it may not be called without them. */

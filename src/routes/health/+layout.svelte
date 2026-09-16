@@ -3,6 +3,9 @@
 	import { isHidden } from '$lib/sections';
 	import { resolve } from '$app/paths';
 	import type { Snippet } from 'svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let {
 		children,
@@ -33,17 +36,17 @@
 	const tabs = $derived([
 		...(isHidden(data.hiddenSections, 'habits')
 			? []
-			: [{ href: resolve('/health/habits'), label: 'Habits' }]),
+			: [{ href: resolve('/health/habits'), label: t('rooms.health.tabs.habits') }]),
 		...(isHidden(data.hiddenSections, 'workouts')
 			? []
-			: [{ href: resolve('/health/workouts'), label: 'Workouts' }]),
+			: [{ href: resolve('/health/workouts'), label: t('rooms.health.tabs.workouts') }]),
 		...(isHidden(data.hiddenSections, 'recipes')
 			? []
-			: [{ href: resolve('/health/recipes'), label: 'Recipes' }]),
+			: [{ href: resolve('/health/recipes'), label: t('rooms.health.tabs.recipes') }]),
 		...data.streams.map((s) => ({ href: resolve('/data/[slug]', { slug: s.slug }), label: s.name }))
 	]);
 </script>
 
-<TabbedRoom title="Health" {tabs} label="Health sections">
+<TabbedRoom title={t('rooms.health.title')} {tabs} label={t('rooms.health.sections')}>
 	{@render children()}
 </TabbedRoom>

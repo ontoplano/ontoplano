@@ -2,6 +2,9 @@
 	import { beforeNavigate } from '$app/navigation';
 	import Icon from '$lib/components/Icon.svelte';
 	import { flushNow, takeBack, undoable } from '$lib/undo.svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * What just happened, and the way back.
@@ -46,7 +49,8 @@
 					onclick={() => takeBack(item.id)}
 					class="shrink-0 font-medium text-white underline underline-offset-2"
 				>
-					<Icon name="undo" /> Undo
+					<Icon name="undo" />
+					{t('ui.undo')}
 				</button>
 			</div>
 		{/each}

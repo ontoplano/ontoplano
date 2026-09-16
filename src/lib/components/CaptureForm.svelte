@@ -6,6 +6,9 @@
 	import TodoFields from '$lib/components/fields/TodoFields.svelte';
 	import type { Capture } from '$lib/capture';
 	import type { Rating } from '$lib/ratings';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * The body of a capture dialog — the same form the section's own dialog uses.
@@ -66,7 +69,7 @@
 		<IdeaFields compact />
 	{:else if capture.key === 'note'}
 		<!-- A diary note, so no notebook picker: see NoteFields. -->
-		<NoteFields compact label="Diary note" notebook={false} />
+		<NoteFields compact label={t('capture.diaryNote')} notebook={false} />
 	{:else if capture.key === 'todo'}
 		<TodoFields
 			compact

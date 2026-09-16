@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { formatMoney, type Currency } from '$lib/money';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * Where the money went, as one ring.
@@ -36,14 +39,14 @@
 </script>
 
 {#if slices.length === 0}
-	<p class="text-sm text-gray-500">Nothing spent in this window yet.</p>
+	<p class="text-sm text-gray-500">{t('finance.donut.empty')}</p>
 {:else}
 	<div class="flex flex-wrap items-center gap-6">
 		<svg
 			viewBox="0 0 160 160"
 			class="h-40 w-40 shrink-0"
 			role="img"
-			aria-label="Spending by category"
+			aria-label={t('finance.donut.heading')}
 		>
 			<g transform="translate(80 80) rotate(-90)">
 				{#each arcs as arc (arc.slice.name)}
@@ -68,7 +71,9 @@
 			>
 				{formatMoney(sum, currency)}
 			</text>
-			<text x="80" y="94" text-anchor="middle" class="fill-gray-500 text-[9px]">out</text>
+			<text x="80" y="94" text-anchor="middle" class="fill-gray-500 text-[9px]"
+				>{t('finance.donut.out')}</text
+			>
 		</svg>
 
 		<ul class="min-w-0 flex-1 space-y-1">

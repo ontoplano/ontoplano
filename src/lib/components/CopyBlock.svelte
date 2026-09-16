@@ -1,5 +1,8 @@
 <script lang="ts">
 	import Icon from '$lib/components/Icon.svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * Something to copy, with the copying inside it.
@@ -73,7 +76,7 @@
 	{#if copied}
 		<span
 			class="pointer-events-none absolute top-1.5 right-1.5 flex h-9 items-center border border-gray-300 bg-gray-100 px-2 text-xs font-medium text-gray-900"
-			aria-live="polite">Copied!</span
+			aria-live="polite">{t('ui.copied')}</span
 		>
 	{/if}
 </div>

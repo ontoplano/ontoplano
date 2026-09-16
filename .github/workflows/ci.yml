@@ -68,6 +68,11 @@ jobs:
       # here rather than shipping a screen half in one language.
       - run: yarn messages:check
 
+      # And no screen gained a sentence that cannot be translated. A floor, not
+      # a clean sheet: the app is part way through being moved into messages/,
+      # and this is what stops that going backwards while it happens.
+      - run: yarn copy:check
+
       # Every changelog line sits under the version this branch ships.
       - run: node scripts/check-changelog.mjs
 

@@ -4,6 +4,9 @@
 	import Banner from '$lib/components/Banner.svelte';
 	import { isPhone } from '$lib/breakpoints';
 	import { panelHeight, readViewport } from '$lib/keyboard';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * A modal dialog.
@@ -219,7 +222,7 @@
 				<button
 					type="button"
 					onclick={handleClose}
-					aria-label="Back"
+					aria-label={t('ui.back')}
 					class="-ml-1 flex h-9 w-9 shrink-0 items-center justify-center text-gray-700"
 				>
 					<svg
@@ -254,7 +257,7 @@
 				<button
 					type="button"
 					onclick={handleClose}
-					aria-label="Close"
+					aria-label={t('ui.close')}
 					class="btn btn-quiet btn-sm -mt-1 -mr-2"
 				>
 					&times;

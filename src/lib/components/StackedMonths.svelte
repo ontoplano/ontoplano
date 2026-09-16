@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { formatMoney, type Currency } from '$lib/money';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * A month is a column, and each category is a band in it.
@@ -44,7 +47,7 @@
 		class="w-full min-w-140"
 		style="max-height: 230px"
 		role="img"
-		aria-label="Spending by category, by month"
+		aria-label={t('finance.stackedMonths.caption')}
 	>
 		{#each [0.25, 0.5, 0.75, 1] as line (line)}
 			<line

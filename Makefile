@@ -778,6 +778,7 @@ lint:
 	@yarn -s changelog:check
 	@yarn -s badges:check
 	@yarn -s messages:check
+	@yarn -s copy:check
 	@node scripts/check-no-secrets.mjs
 	@node scripts/check-android-version.mjs
 	@node scripts/check-plugin.mjs

@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { zoneLabel, type Zone } from '$lib/timezones';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * Where you are, chosen rather than typed.
@@ -48,7 +51,7 @@
 
 <select {name} {id} {required} bind:value aria-label={label} class="select mt-1">
 	{#if value && !known}
-		<option {value}>{value} (kept as it is)</option>
+		<option {value}>{t('settings.timezone.unchanged', { zone: value })}</option>
 	{/if}
 	{#each groups as group (group.label)}
 		<optgroup label={group.label}>

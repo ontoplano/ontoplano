@@ -2,6 +2,9 @@
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/Icon.svelte';
 	import type { GoalBacklink } from '$lib/services/backlinks';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * What this thing belongs to.
@@ -30,7 +33,7 @@
 			<a
 				href={resolve('/notebooks/[id]', { id: String(notebook.id) })}
 				class="inline-flex items-center gap-1 hover:text-gray-900 hover:underline"
-				title="Notebook"
+				title={t('ui.notebook')}
 			>
 				<Icon name="notebook" size={12} />
 				{notebook.title}

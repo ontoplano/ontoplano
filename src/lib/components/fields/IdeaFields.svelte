@@ -2,6 +2,9 @@
 	import Field from '$lib/components/Field.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * What an idea is made of.
@@ -22,18 +25,18 @@
 	}: { content?: string; tags?: string; compact?: boolean } = $props();
 </script>
 
-<Field label="Idea" span={12} required>
+<Field label={t('fields.idea.heading')} span={12} required>
 	<textarea name="content" required rows={compact ? 4 : 5} class="textarea">{content}</textarea>
 </Field>
 
 {#snippet rest()}
-	<Field label="Tags" span={12} hint="Separate with commas or spaces. A leading # is fine.">
-		<OneLine name="tags" placeholder="project, app, music" value={tags} class="input" />
+	<Field label={t('ui.tags')} span={12} hint="Separate with commas or spaces. A leading # is fine.">
+		<OneLine name="tags" placeholder={t('fields.idea.tagsExample')} value={tags} class="input" />
 	</Field>
 {/snippet}
 
 {#if compact}
-	<MoreOptions label="Tags" count={tags ? 1 : 0}>{@render rest()}</MoreOptions>
+	<MoreOptions label={t('ui.tags')} count={tags ? 1 : 0}>{@render rest()}</MoreOptions>
 {:else}
 	{@render rest()}
 {/if}

@@ -2,6 +2,9 @@
 	import Banner from '$lib/components/Banner.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { dismiss, notices } from '$lib/notify.svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * The app's answers, stacked in the corner.
@@ -50,7 +53,7 @@
 							type="button"
 							class="close"
 							onclick={() => dismiss(notice.id)}
-							aria-label="Dismiss"
+							aria-label={t('ui.dismiss')}
 						>
 							<Icon name="close" size={14} />
 						</button>

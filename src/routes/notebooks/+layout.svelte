@@ -3,6 +3,9 @@
 	import { resolve } from '$app/paths';
 	import type { Snippet } from 'svelte';
 	import type { LayoutData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { children, data }: { children: Snippet; data: LayoutData } = $props();
 
@@ -19,21 +22,21 @@
 	const tabs = $derived([
 		...(data.hiddenSections.includes('notebooks')
 			? []
-			: [{ href: resolve('/notebooks'), label: 'Notebooks' }]),
-		{ href: resolve('/notebooks/diary'), label: 'Diary' },
+			: [{ href: resolve('/notebooks'), label: t('rooms.notebooks.tabs.notebooks') }]),
+		{ href: resolve('/notebooks/diary'), label: t('rooms.notebooks.tabs.diary') },
 		// Ideas is writing too — a line you jot and come back to — and a room of
 		// its own in the bar for something that small was a room nobody entered.
 		// It can still be put away, like every other part of the app.
 		...(data.hiddenSections.includes('ideas')
 			? []
-			: [{ href: resolve('/notebooks/ideas'), label: 'Ideas' }]),
+			: [{ href: resolve('/notebooks/ideas'), label: t('rooms.notebooks.tabs.ideas') }]),
 		// What the weekly review writes. It is writing, and it was reachable only
 		// from the week it belonged to — which is a thing nobody navigates to.
-		{ href: resolve('/notebooks/weekly'), label: 'Weekly notes' },
-		{ href: resolve('/notebooks/people'), label: 'People' }
+		{ href: resolve('/notebooks/weekly'), label: t('rooms.notebooks.tabs.weekly') },
+		{ href: resolve('/notebooks/people'), label: t('rooms.notebooks.tabs.people') }
 	]);
 </script>
 
-<TabbedRoom title="Notebooks" {tabs} label="Notebooks sections">
+<TabbedRoom title={t('rooms.notebooks.title')} {tabs} label={t('rooms.notebooks.sections')}>
 	{@render children()}
 </TabbedRoom>

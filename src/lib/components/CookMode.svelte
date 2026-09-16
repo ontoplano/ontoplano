@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * The recipe, at arm's length.
@@ -127,8 +130,8 @@
 			<button
 				onclick={onclose}
 				class="btn btn-sm"
-				title="Leave cook mode"
-				aria-label="Leave cook mode"
+				title={t('cook.leave')}
+				aria-label={t('cook.leave')}
 			>
 				<Icon name="close" size={18} />
 			</button>
@@ -167,7 +170,7 @@
 						{@html methodHtml}
 					</div>
 				{:else}
-					<p class="text-lg text-gray-500">No method written for this one yet.</p>
+					<p class="text-lg text-gray-500">{t('cook.noMethod')}</p>
 				{/if}
 			</div>
 		</div>

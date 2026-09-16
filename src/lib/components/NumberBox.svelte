@@ -28,6 +28,9 @@
 	 */
 	import Icon from '$lib/components/Icon.svelte';
 	import type { HTMLInputAttributes } from 'svelte/elements';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * How long a press has to be held before it starts repeating, and how fast
@@ -137,7 +140,7 @@
 		<button
 			type="button"
 			tabindex="-1"
-			aria-label="More"
+			aria-label={t('ui.more')}
 			disabled={locked}
 			onpointerdown={(event) => press(event, 1)}
 			onpointerleave={stop}
@@ -147,7 +150,7 @@
 		<button
 			type="button"
 			tabindex="-1"
-			aria-label="Less"
+			aria-label={t('ui.less')}
 			disabled={locked}
 			onpointerdown={(event) => press(event, -1)}
 			onpointerleave={stop}

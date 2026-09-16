@@ -20,6 +20,9 @@
 	 * in: a name that came off a form never becomes a reach.
 	 */
 	import Field from './Field.svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	type Choice = {
 		kind: string;
@@ -42,23 +45,24 @@
 	// been unpicked must not leave last time's id posted behind it.
 	$effect(() => {
 		if (!chosen) id = '';
-		else if (!chosen.things.some((t) => String(t.id) === id)) id = String(chosen.things[0].id);
+		else if (!chosen.things.some((thing) => String(thing.id) === id))
+			id = String(chosen.things[0].id);
 	});
 </script>
 
 {#if choices.length}
 	<div class="grid grid-cols-12 gap-3">
-		<Field label="What it may work on" span={6}>
+		<Field label={t('keys.reach.heading')} span={6}>
 			<select name="confinedKind" bind:value={kind} class="input">
-				<option value="">Everything in this account</option>
+				<option value="">{t('keys.reach.everything')}</option>
 				{#each choices as choice (choice.kind)}
-					<option value={choice.kind}>Just one {choice.noun}</option>
+					<option value={choice.kind}>{t('keys.reach.justOne', { noun: choice.noun })}</option>
 				{/each}
 			</select>
 		</Field>
 
 		{#if chosen}
-			<Field label="Which {chosen.noun}" span={6}>
+			<Field label={t('keys.reach.which', { noun: chosen.noun })} span={6}>
 				<select name="confinedId" bind:value={id} class="input">
 					{#each chosen.things as thing (thing.id)}
 						<option value={String(thing.id)}>{thing.label}</option>
@@ -67,7 +71,7 @@
 			</Field>
 
 			<p class="col-span-12 -mt-1 mb-1 text-xs leading-relaxed text-gray-500">
-				It reaches {chosen.label}.
+				{t('keys.reach.summary', { what: chosen.label })}
 			</p>
 		{/if}
 	</div>

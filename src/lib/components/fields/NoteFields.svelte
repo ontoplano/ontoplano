@@ -5,6 +5,9 @@
 	import NotebookField from '$lib/components/NotebookField.svelte';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
 	import { autogrow } from '$lib/actions/autogrow';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * What a note is made of. See IdeaFields for why this is a component.
@@ -74,8 +77,8 @@
 		<NotebookField {notebooks} value={notebookId} span={12} />
 	{/if}
 
-	<Field label="Tags" span={12} hint="Separate with commas or spaces. A leading # is fine.">
-		<OneLine name="tags" placeholder="work, health" value={tags} class="input" />
+	<Field label={t('ui.tags')} span={12} hint="Separate with commas or spaces. A leading # is fine.">
+		<OneLine name="tags" placeholder={t('fields.note.tagsExample')} value={tags} class="input" />
 	</Field>
 {/snippet}
 

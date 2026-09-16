@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Banner from '$lib/components/Banner.svelte';
+	import { useT } from '$lib/i18n';
 
 	/**
 	 * This is not the real instance.
@@ -14,11 +15,13 @@
 	 * The band is the label, and the label is the whole of what staging is.
 	 */
 	let { detail = '' }: { detail?: string } = $props();
+
+	const t = useT();
 </script>
 
 <Banner kind="warning">
-	<strong>Staging.</strong> A copy of Ontoplano for trying things on. Nothing here is promised to
-	survive.
+	<strong>{t('staging.heading')}</strong>
+	{t('staging.body')}
 	{#if detail}<span class="detail">{detail}</span>{/if}
 </Banner>
 

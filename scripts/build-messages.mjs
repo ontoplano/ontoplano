@@ -117,7 +117,9 @@ function placeholders(message) {
 
 // A stray file in messages/ is a language somebody started and never declared.
 for (const file of existsSync(SOURCE) ? readdirSync(SOURCE) : []) {
-	if (!file.endsWith('.json')) continue;
+	// A dotfile here is bookkeeping, not a language — the copy ratchet keeps
+	// its floor beside the catalogues it is counting against.
+	if (!file.endsWith('.json') || file.startsWith('.')) continue;
 	const locale = file.slice(0, -'.json'.length);
 	if (!LOCALES.includes(locale)) {
 		problems.push(

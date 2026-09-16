@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import Icon from '$lib/components/Icon.svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * Putting a picture into a piece of writing, the way it works everywhere else.
@@ -185,15 +188,16 @@
 		}}
 	/>
 	<button type="button" class="btn btn-sm btn-quiet" onclick={() => input?.click()}>
-		<Icon name="image" /> Add a picture
+		<Icon name="image" />
+		{t('pictures.add')}
 	</button>
 	<span class="text-gray-500">
 		{#if busy > 0}
-			uploading…
+			{t('pictures.uploading')}
 		{:else if dragging}
-			drop it anywhere in the box
+			{t('pictures.dropAnywhere')}
 		{:else}
-			…or paste one, or drop one in — up to {maxKilobytes}KB
+			{t('pictures.hint', { kilobytes: maxKilobytes })}
 		{/if}
 	</span>
 </div>
