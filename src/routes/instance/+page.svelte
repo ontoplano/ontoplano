@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Icon from '$lib/components/Icon.svelte';
 	import Logo from '$lib/components/Logo.svelte';
+	import { startMarkSpin } from '$lib/mark-spin';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
 	import {
@@ -30,50 +31,30 @@
 	 * should make by accident.
 	 */
 	type Kind = 'connected' | 'phone';
-	/** How far the mark swells when an instance is chosen, and for how long. */
-	const MARK_SWELL = 1.14;
-	const MARK_SWELL_MS = 420;
-
 	let kind: Kind = $state('connected');
 
 	/*
-	 * The mark answers the answer — once, on the way out.
+	 * The mark answers the press, and keeps answering until the app arrives.
 	 *
 	 * Not when the two tiles are toggled: that is somebody reading the
-	 * difference between them, and a logo pulsing at every glance is noise.
+	 * difference between them, and a logo moving at every glance is noise.
 	 * This is the press that commits, and the mark is the one thing on screen
-	 * that survives it — the app draws it again in this exact place — so the
-	 * swell is the handover rather than a flourish on a button.
+	 * that survives it — the app draws it again in this exact place.
 	 *
-	 * Asked of the element rather than done with a class. A CSS animation
-	 * restarts only when its `animation-name` changes, so driving this from
-	 * state means alternating two identical keyframes and trusting that both
-	 * class changes reach the DOM as separate paints — they do not: a second
-	 * press never played. `animate()` starts a new animation every time.
+	 * It is the app's own wait (`$lib/mark-spin`): the same turn the mark makes
+	 * while a room loads, with the same wind-up, the same delay before anything
+	 * shows, and the same landing upright. One animation for "working", tuned
+	 * in one place, rather than this screen having a movement of its own.
 	 *
-	 * `scale`, not a transform: the mark is centred with `translate`, and a
-	 * transform would have to carry that translation too — one of the two
-	 * would eventually be written without the other.
+	 * It swelled once instead, and that was wrong in a way only a real load
+	 * showed: it grew, shrank, finished — and then the page sat there for
+	 * however long the instance took, with a mark that had already said
+	 * everything it had to say. An animation that ends before the thing it is
+	 * about reads as "done" while nothing has happened. A turn with no end of
+	 * its own cannot: the navigation is its end.
 	 */
 	let mark = $state<HTMLElement | undefined>();
 
-	async function swell(): Promise<void> {
-		if (!mark || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-		const playing = mark.animate(
-			[{ scale: 1 }, { scale: MARK_SWELL, offset: 0.38 }, { scale: 1 }],
-			{ duration: MARK_SWELL_MS, easing: 'ease-out' }
-		);
-		/*
-		 * Wait for it, but never on it. Leaving is the thing that was asked
-		 * for; the animation is how the leaving looks. A browser that refuses
-		 * to animate — or one that never resolves the promise — must not be
-		 * the reason somebody sits on this screen.
-		 */
-		await Promise.race([
-			playing.finished.catch(() => undefined),
-			new Promise((resolve) => setTimeout(resolve, MARK_SWELL_MS + 80))
-		]);
-	}
 	/*
 	 * The address to edit is the one you are on.
 	 *
@@ -220,12 +201,17 @@
 	 */
 	const canRunHere = $derived(isIsolatedBuild() || inPhoneApp());
 
-	async function go() {
+	function go() {
 		const url = kind === 'phone' ? null : address.trim().replace(/\/+$/, '');
 		if (url !== null && !/^https?:\/\/.+/.test(url)) return;
 
-		// The mark swells, and the app arrives around it where it stands.
-		await swell();
+		/*
+		 * The mark starts turning and the instance starts loading, in that
+		 * order and in the same tick. Nothing is awaited: waiting on the
+		 * animation is what put a pause between the press and the load, and
+		 * the turn's end is this document being replaced.
+		 */
+		startMarkSpin([mark]);
 
 		/*
 		 * A page an instance served cannot answer this question itself.

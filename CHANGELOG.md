@@ -43,10 +43,12 @@ releases mattered.
 
 ## 0.178.6 — 2026-09-15
 
-- **The mark answers the press that opens the app.** Choosing an instance
-  swells it once, in the place it will still be standing when the app draws it
-  again — so the logo is what carries you across rather than something one
-  screen has and the next replaces.
+- **The mark turns while the instance opens.** It is the same turn the app
+  makes while a room loads, in the place the app's own bar will draw it — so
+  the logo is what carries you across rather than something one screen has and
+  the next replaces. It keeps turning for as long as the wait lasts, which a
+  movement with an end of its own could not do: that one finished, and then the
+  screen sat there.
 
 ## 0.178.5 — 2026-09-15
 

@@ -326,11 +326,11 @@ test.describe('the ring hand-over page', () => {
  *
  * It is drawn in the place the app's own bar draws it, so choosing an instance
  * puts the bar UNDER a logo that has not moved rather than replacing one
- * screen's with another's. The swell is the handover: it plays on the press
- * that commits, and the app is not opened until it has.
+ * screen's with another's. And it turns while the instance loads — the app's
+ * own wait, which ends when the screen does.
  */
 test.describe('the mark on the chooser', () => {
-	test('swells on the way out, and not while reading the two answers', async ({ page }) => {
+	test('turns on the way out, and stays still while reading the two answers', async ({ page }) => {
 		await register(page, testEmail('chooser-mark'));
 		await page.setViewportSize({ width: 390, height: 844 });
 		await visit(page, '/instance');
@@ -348,7 +348,7 @@ test.describe('the mark on the chooser', () => {
 		const playing = () => mark.evaluate((el) => el.getAnimations().length);
 
 		// Reading the difference between the two answers is not a commitment,
-		// and a mark that pulses at every glance is noise.
+		// and a mark that moves at every glance is noise.
 		for (const answer of [/On device/i, /Cloud instance/i]) {
 			await page.getByRole('radio', { name: answer }).click();
 			await page.waitForTimeout(120);
@@ -361,18 +361,23 @@ test.describe('the mark on the chooser', () => {
 		expect(Math.abs((after?.y ?? 0) - (before?.y ?? 0))).toBeLessThan(0.5);
 
 		/*
-		 * And the press that commits. The address is this server, so the test
-		 * goes somewhere real; what is asserted is that the app is not opened
-		 * until the mark has swelled — the animation IS the handover, so
-		 * leaving before it has played is the bug.
+		 * And the press that commits: the mark turns, and the load starts at
+		 * once.
+		 *
+		 * Both halves matter and the first version had them the wrong way
+		 * round. It swelled and the navigation waited for it, so the mark
+		 * finished moving and then the page sat there for as long as the
+		 * instance took — an animation that says "done" while nothing has
+		 * happened. So: the turn has started, AND the press was not held up by
+		 * it. A turn with no end of its own is the honest shape for a wait.
 		 */
 		// `[name=…]`, not `input[name=…]`: the address field is a one-line
 		// textarea, because an input raises the phone's autofill bar.
 		await page.locator('[name="instance"]').fill('http://localhost:4173');
 		const at = Date.now();
 		await page.getByRole('button', { name: 'Connect' }).click();
+		expect(Date.now() - at, 'the press waited on an animation').toBeLessThan(250);
 		await page.waitForURL((url) => !url.pathname.startsWith('/instance'), { timeout: 15000 });
-		expect(Date.now() - at, 'it left before the mark had swelled').toBeGreaterThan(300);
 	});
 });
 
