@@ -56,31 +56,44 @@
 	let mark = $state<HTMLElement | undefined>();
 
 	/**
-	 * It turns until the instance arrives — and if it never does, it lands.
+	 * The same wait the app makes, finished the same way.
 	 *
-	 * `atOnce`, because the delay the app's wait normally keeps is there so a
-	 * room that loads quickly leaves no trace, and the copy on this phone loads
-	 * quicker than that delay: the press looked ignored.
+	 * Everywhere else, `$lib/mark-spin` turns while a navigation is in flight
+	 * and is told to stop when it lands — the shell's effect does exactly that
+	 * (`+layout.svelte`), and stopping is a request: the turn finishes the
+	 * revolution it is in and eases to upright. That landing is the whole feel
+	 * of it.
 	 *
-	 * Nothing stops it. The turn's end is this document being replaced by the
-	 * instance, which is the only moment that means "loaded" — so the mark
-	 * turns for exactly as long as the wait lasts, whether that is a blink or
-	 * a slow network. One turn and a landing was wrong the same way the swell
-	 * was: it finished, and then the screen sat there with a mark that had
-	 * already said everything.
+	 * This screen cannot be driven the same way, and the reason is worth
+	 * writing down because it is the reason for everything below. A room change
+	 * is one document: the page that starts the turn is the page that lands it.
+	 * Choosing an instance REPLACES the document — another origin, or a fresh
+	 * load of this one — so the moment the wait ends is the moment this page
+	 * stops existing. Nothing here can land a turn after that; whatever is
+	 * mid-rotation is simply gone, which is the flick.
 	 *
-	 * The one case where nothing replaces the page is an address that answers
-	 * nothing, and there the turn would go on for ever. So it winds down after
-	 * `GIVE_UP_MS` — finishing its revolution and resting upright, the way
-	 * every other wait in the app ends — and somebody is left looking at the
-	 * screen they pressed on rather than at a logo spinning at nothing.
+	 * So the turn happens first and the leaving happens after it: start it,
+	 * ask it to stop at once — which makes it exactly one revolution, wound up
+	 * and eased down — and go when it has landed. A wait that lasts as long as
+	 * the load would be better if this page survived the load. It does not.
+	 *
+	 * `atOnce`, because the delay the spin normally keeps in front of it exists
+	 * so a room that loads quickly leaves no trace, and here the turn IS the
+	 * answer to the press.
+	 *
+	 * Capped: nothing on this screen may depend on an animation finishing. A
+	 * browser that refuses to run one, or a tab in the background where frames
+	 * stop arriving, must not be the reason somebody sits here.
 	 */
-	const GIVE_UP_MS = 12000;
+	const LANDING_CAP_MS = 1200;
 
-	function turnUntilItArrives(): void {
+	async function turnAndLand(): Promise<void> {
 		if (!mark) return;
 		startMarkSpin([mark], 0, true);
-		setTimeout(() => void stopMarkSpin(), GIVE_UP_MS);
+		await Promise.race([
+			stopMarkSpin(),
+			new Promise((resolve) => setTimeout(resolve, LANDING_CAP_MS))
+		]);
 	}
 
 	/*
@@ -229,14 +242,13 @@
 	 */
 	const canRunHere = $derived(isIsolatedBuild() || inPhoneApp());
 
-	function go() {
+	async function go() {
 		const url = kind === 'phone' ? null : address.trim().replace(/\/+$/, '');
 		if (url !== null && !/^https?:\/\/.+/.test(url)) return;
 
-		// The mark starts turning and the instance starts loading, in that
-		// order and in the same tick. Nothing is awaited: the turn is how the
-		// wait looks, so it must not become part of the wait.
-		turnUntilItArrives();
+		// One turn, landed, and then the instance — see above for why it is
+		// this way round on this screen and no other.
+		await turnAndLand();
 
 		/*
 		 * A page an instance served cannot answer this question itself.

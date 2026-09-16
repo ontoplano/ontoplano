@@ -41,8 +41,7 @@ keep.
 
 ## Running it
 
-On a machine you keep — a service that starts on boot, upgraded by the package
-manager you already use:
+A service that starts on boot, upgraded by the package manager you use:
 
 ```sh
 # Debian, Ubuntu, Mint, Pop!_OS

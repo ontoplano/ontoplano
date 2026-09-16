@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.11 — 2026-09-16
+
+- **Choosing an instance turns the mark once, properly.** It twitched on the
+  copy this phone carries and cut itself off halfway on a server, because the
+  page that starts the turn is replaced by the instance before it can finish
+  one. It goes round and lands upright first, the way every other wait in the
+  app ends, and then the instance opens.
+- **The menu that fans out of the account button opens higher and further
+  left**, out from under the thumb that opened it.
+
 ## 0.178.10 — 2026-09-16
 
 - **Fixed: the dashboard's Diary card showed notes from your notebooks.** Both

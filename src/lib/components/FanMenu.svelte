@@ -69,6 +69,23 @@
 	const MIDDLE = 68;
 	const RISE = 64;
 	const SPAN = 84;
+
+	/**
+	 * And then the whole flower, shifted off the button it grew from.
+	 *
+	 * `RISE` is how far the middle flies up from the press, and it was the only
+	 * thing moving it — so the fan sat squarely over the thumb that opened it,
+	 * which is the one place a hand cannot see. These move it up and to the
+	 * left of that, into the part of the screen a right thumb is not covering.
+	 *
+	 * In CSS pixels, from what they are on a phone: this screen is about five
+	 * of them to the millimetre, so 36 is a little under three-quarters of a
+	 * centimetre up and 25 is half a centimetre left. They are a nudge to the
+	 * whole thing — the petals, the labels and the middle move together,
+	 * because they are all placed from this one point.
+	 */
+	const SHIFT_UP = 36;
+	const SHIFT_LEFT = 25;
 	/** Up and to the left: −90° is straight up, −180° is level to the left. */
 	const TILT = -135;
 	/** Clear of the screen's edges, and of anything notched into the top. */
@@ -136,10 +153,13 @@
 	 * opens this is the last one in the bar.
 	 */
 	const centre = $derived.by(() => {
-		const up = origin.y - RISE;
-		if (typeof window === 'undefined') return { x: origin.x, y: up };
+		const up = origin.y - RISE - SHIFT_UP;
+		const across = origin.x - SHIFT_LEFT;
+		if (typeof window === 'undefined') return { x: across, y: up };
 		return {
-			x: Math.min(Math.max(origin.x, reach.left + MARGIN), layoutWidth() - reach.right - MARGIN),
+			// Still kept inside the screen: the shift moves where it would like
+			// to be, and these two decide where it can be.
+			x: Math.min(Math.max(across, reach.left + MARGIN), layoutWidth() - reach.right - MARGIN),
 			y: Math.max(up, reach.top + MARGIN)
 		};
 	});
