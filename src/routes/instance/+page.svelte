@@ -1,7 +1,7 @@
 <script lang="ts">
 	import Icon from '$lib/components/Icon.svelte';
 	import Logo from '$lib/components/Logo.svelte';
-	import { startMarkSpin } from '$lib/mark-spin';
+	import { startMarkSpin, stopMarkSpin } from '$lib/mark-spin';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
 	import {
@@ -54,6 +54,41 @@
 	 * its own cannot: the navigation is its end.
 	 */
 	let mark = $state<HTMLElement | undefined>();
+
+	/**
+	 * One turn, landing upright, and then we leave.
+	 *
+	 * `atOnce`, because the delay the app's wait normally keeps is there so a
+	 * room that loads quickly leaves no trace — and the copy on this phone
+	 * loads quicker than the delay, so the press looked ignored. Here the turn
+	 * IS the answer to the press; there is nothing for it to be discreet about.
+	 *
+	 * Then stop at once and wait for the landing rather than for a clock: the
+	 * turn finishes the revolution it is in and eases to upright, which is what
+	 * every other wait in the app does. Leaving mid-turn would cut it off — the
+	 * snap `mark-spin` exists to avoid — and leaving before it starts was the
+	 * version that did nothing at all.
+	 *
+	 * Capped, because nothing on this screen may depend on an animation: a
+	 * browser that refuses to run one, or a tab in the background where frames
+	 * stop arriving, must not be the reason somebody sits here.
+	 */
+	const LANDING_CAP_MS = 1200;
+
+	async function turnOnce(): Promise<void> {
+		if (!mark) return;
+		startMarkSpin([mark], 0, true);
+		/*
+		 * Stopped straight away, which is what makes it exactly one turn: the
+		 * wind-down finishes the revolution it is in and eases to upright. The
+		 * delay is zero here, so there is nothing for `stopMarkSpin` to treat
+		 * as "never started".
+		 */
+		await Promise.race([
+			stopMarkSpin(),
+			new Promise((resolve) => setTimeout(resolve, LANDING_CAP_MS))
+		]);
+	}
 
 	/*
 	 * The address to edit is the one you are on.
@@ -201,17 +236,11 @@
 	 */
 	const canRunHere = $derived(isIsolatedBuild() || inPhoneApp());
 
-	function go() {
+	async function go() {
 		const url = kind === 'phone' ? null : address.trim().replace(/\/+$/, '');
 		if (url !== null && !/^https?:\/\/.+/.test(url)) return;
 
-		/*
-		 * The mark starts turning and the instance starts loading, in that
-		 * order and in the same tick. Nothing is awaited: waiting on the
-		 * animation is what put a pause between the press and the load, and
-		 * the turn's end is this document being replaced.
-		 */
-		startMarkSpin([mark]);
+		await turnOnce();
 
 		/*
 		 * A page an instance served cannot answer this question itself.

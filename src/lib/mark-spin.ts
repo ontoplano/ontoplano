@@ -40,6 +40,20 @@ const eased = (t: number) => 1 - (1 - t) * (1 - t);
 
 const DELAY_MS = Math.round(SLIDE_MS * WAIT_MARK_AT);
 
+/**
+ * The delay, for this turn only.
+ *
+ * Nothing is shown inside it, which is right when the turn is a *warning* that
+ * a room is taking its time: a navigation that finishes first should leave no
+ * trace. It is wrong when the turn is the answer to a press — the instance
+ * chooser opens a copy on the same phone, which is faster than the delay, so
+ * the mark never moved at all and the press looked ignored.
+ */
+let delayMs = DELAY_MS;
+
+/** Everybody waiting for the turn to land. See `stopMarkSpin`. */
+let landed: (() => void)[] = [];
+
 let els: HTMLElement[] = [];
 let raf = 0;
 let angle = 0;
@@ -77,6 +91,12 @@ function rest(): void {
 		el.style.removeProperty('transition');
 	}
 	els = [];
+	delayMs = DELAY_MS;
+	// Whoever was waiting for it to come to rest — the chooser leaves when it
+	// has, so that the turn is finished rather than cut off by a navigation.
+	const waiting = landed;
+	landed = [];
+	for (const done of waiting) done();
 }
 
 function frame(now: number): void {
@@ -85,7 +105,7 @@ function frame(now: number): void {
 	last = now;
 
 	// Inside the delay nothing has moved yet; a stop here is free.
-	if (!windingDown && now - startedAt < DELAY_MS) {
+	if (!windingDown && now - startedAt < delayMs) {
 		raf = requestAnimationFrame(frame);
 		return;
 	}
@@ -98,7 +118,7 @@ function frame(now: number): void {
 	 * upright it is aiming at. Never all the way to nothing, or it would
 	 * approach the resting place without ever arriving.
 	 */
-	const wound = eased(Math.min(1, (now - startedAt - DELAY_MS) / SPIN_UP_MS));
+	const wound = eased(Math.min(1, (now - startedAt - delayMs) / SPIN_UP_MS));
 	const left = Math.abs(restAt - angle);
 	const landing = windingDown ? Math.min(1, left / DECEL_DEGREES) : 1;
 	const rate = SLOWEST + (1 - SLOWEST) * Math.min(wound, landing);
@@ -121,7 +141,9 @@ function frame(now: number): void {
  */
 export function startMarkSpin(
 	marks: (HTMLElement | null | undefined)[],
-	direction: number = 0
+	direction: number = 0,
+	/** Skip the delay: the turn is the answer to a press, not a warning. */
+	atOnce = false
 ): void {
 	if (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)
 		return;
@@ -148,17 +170,35 @@ export function startMarkSpin(
 	angle = 0;
 	last = 0;
 	windingDown = false;
+	delayMs = atOnce ? 0 : DELAY_MS;
 	startedAt = performance.now();
 	raf = requestAnimationFrame(frame);
 }
 
-/** The wait is over: finish the turn in progress, then rest upright. */
-export function stopMarkSpin(): void {
-	if (!raf) return;
-	if (angle === 0) {
-		// Never left the delay — nothing was shown, so there is nothing to land.
+/**
+ * The wait is over: finish the turn in progress, then rest upright.
+ *
+ * Answers when it has actually come to rest, for the one caller that has to
+ * wait for the landing rather than merely ask for it: the instance chooser
+ * leaves the page when the turn is finished, and leaving mid-turn is the snap
+ * this whole file exists to avoid.
+ */
+export function stopMarkSpin(): Promise<void> {
+	if (!raf) return Promise.resolve();
+	const settled = new Promise<void>((resolve) => landed.push(resolve));
+	/*
+	 * Still inside the delay: nothing was drawn, so there is nothing to land.
+	 *
+	 * This asked whether the angle was zero, which is the same thing only if a
+	 * frame has moved it — and the first frame never does: it has no previous
+	 * timestamp, so its `dt` is zero and the angle stays put. A caller that
+	 * starts a turn and asks it to stop straight away therefore always took
+	 * this branch and never turned at all, which is what the instance chooser
+	 * did. The delay is what the shortcut is actually about.
+	 */
+	if (performance.now() - startedAt < delayMs) {
 		rest();
-		return;
+		return settled;
 	}
 	windingDown = true;
 	/*
@@ -170,4 +210,5 @@ export function stopMarkSpin(): void {
 	 */
 	const next = (spin > 0 ? Math.ceil(angle / 360) : Math.floor(angle / 360)) * 360;
 	restAt = Math.abs(next - angle) < DECEL_DEGREES * 0.5 ? next + spin * 360 : next;
+	return settled;
 }
