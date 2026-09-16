@@ -56,44 +56,43 @@
 	let mark = $state<HTMLElement | undefined>();
 
 	/**
-	 * The same wait the app makes, finished the same way.
+	 * The turn and the load, started together and ended in that order.
 	 *
-	 * Everywhere else, `$lib/mark-spin` turns while a navigation is in flight
-	 * and is told to stop when it lands — the shell's effect does exactly that
-	 * (`+layout.svelte`), and stopping is a request: the turn finishes the
-	 * revolution it is in and eases to upright. That landing is the whole feel
-	 * of it.
+	 * The shape everywhere else in the app: `$lib/mark-spin` turns while a
+	 * navigation is in flight and is told to stop when it lands, and stopping
+	 * is a request — it finishes the revolution it is in and eases upright.
+	 * Two earlier versions of this screen got it wrong in both directions. One
+	 * turned once and then began loading, so the wheel had said everything it
+	 * had to say before anything happened. One navigated at once and was cut
+	 * off mid-turn when the document was replaced.
 	 *
-	 * This screen cannot be driven the same way, and the reason is worth
-	 * writing down because it is the reason for everything below. A room change
-	 * is one document: the page that starts the turn is the page that lands it.
-	 * Choosing an instance REPLACES the document — another origin, or a fresh
-	 * load of this one — so the moment the wait ends is the moment this page
-	 * stops existing. Nothing here can land a turn after that; whatever is
-	 * mid-rotation is simply gone, which is the flick.
+	 * The obstacle looked fundamental: `location.href` replaces the document,
+	 * so the page that starts the turn cannot see the load finish. It is not
+	 * fundamental — it is a consequence of letting the browser do the loading.
+	 * Asking for the instance here first is something this page CAN watch: an
+	 * opaque `no-cors` request settles when that server has answered, which is
+	 * the wait somebody is actually sitting through, and it warms the cache the
+	 * navigation is about to use.
 	 *
-	 * So the turn happens first and the leaving happens after it: start it,
-	 * ask it to stop at once — which makes it exactly one revolution, wound up
-	 * and eased down — and go when it has landed. A wait that lasts as long as
-	 * the load would be better if this page survived the load. It does not.
+	 * So: the turn starts, the request goes out in the same tick, and when the
+	 * instance has answered the turn is asked to stop — landing upright at the
+	 * next whole revolution — and only then is the document replaced.
 	 *
-	 * `atOnce`, because the delay the spin normally keeps in front of it exists
-	 * so a room that loads quickly leaves no trace, and here the turn IS the
-	 * answer to the press.
-	 *
-	 * Capped: nothing on this screen may depend on an animation finishing. A
-	 * browser that refuses to run one, or a tab in the background where frames
-	 * stop arriving, must not be the reason somebody sits here.
+	 * Every wait is capped, because nothing here may depend on a network or an
+	 * animation: an instance that never answers still opens (the browser will
+	 * show its own failure, which is the honest one), and a browser that will
+	 * not animate still leaves.
 	 */
+	const REACHED_CAP_MS = 8000;
 	const LANDING_CAP_MS = 1200;
 
-	async function turnAndLand(): Promise<void> {
-		if (!mark) return;
-		startMarkSpin([mark], 0, true);
-		await Promise.race([
-			stopMarkSpin(),
-			new Promise((resolve) => setTimeout(resolve, LANDING_CAP_MS))
-		]);
+	/** Ask the instance for its front page, only to know that it answered. */
+	function knock(where: string): Promise<unknown> {
+		return fetch(where, { mode: 'no-cors', redirect: 'follow' }).catch(() => undefined);
+	}
+
+	function capped(ms: number): Promise<unknown> {
+		return new Promise((resolve) => setTimeout(resolve, ms));
 	}
 
 	/*
@@ -246,24 +245,31 @@
 		const url = kind === 'phone' ? null : address.trim().replace(/\/+$/, '');
 		if (url !== null && !/^https?:\/\/.+/.test(url)) return;
 
-		// One turn, landed, and then the instance — see above for why it is
-		// this way round on this screen and no other.
-		await turnAndLand();
-
 		/*
-		 * A page an instance served cannot answer this question itself.
+		 * Where this is going, worked out before anything moves.
 		 *
-		 * Storage belongs to an origin, and the app reads its answer out of the
-		 * origin its own copy is served from — so from anywhere else the answer
-		 * travels as an address and is recorded on arrival. In a browser there is
-		 * nowhere to arrive at and the choice is simply where to go.
+		 * A page an instance served cannot answer "which instance is this
+		 * phone's" itself: storage belongs to an origin, and the app reads its
+		 * answer out of the origin its own copy is served from — so from
+		 * anywhere else the answer travels as an address and is recorded on
+		 * arrival. In a browser there is nowhere to arrive at and the choice is
+		 * simply where to go.
 		 */
-		if (inPhoneApp() && !isIsolatedBuild()) {
-			location.href = chooseOnThisPhone(url);
-			return;
-		}
-		rememberInstance(url);
-		location.href = url || '/';
+		const goingTo =
+			inPhoneApp() && !isIsolatedBuild() ? chooseOnThisPhone(url) : (url ?? '/') || '/';
+		if (!(inPhoneApp() && !isIsolatedBuild())) rememberInstance(url);
+
+		// Together: the turn starts and the instance is asked for, in one tick.
+		const turning = mark ? (startMarkSpin([mark], 0, true), true) : false;
+		const reached = knock(goingTo);
+
+		// Then the wait somebody is actually sitting through.
+		await Promise.race([reached, capped(REACHED_CAP_MS)]);
+
+		// And only once it has answered does the turn come to rest.
+		if (turning) await Promise.race([stopMarkSpin(), capped(LANDING_CAP_MS)]);
+
+		location.href = goingTo;
 	}
 </script>
 
