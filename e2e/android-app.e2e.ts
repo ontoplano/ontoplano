@@ -215,9 +215,15 @@ test.describe('an instance shown inside the app', () => {
 
 		const section = page.locator('section', { hasText: 'Notifications on this device' });
 
-		// What it says is what is true: the phone asks this instance and rings
-		// for it, because an instance cannot wake a phone.
-		await expect(section.getByText(/no push in here/)).toBeVisible();
+		/*
+		 * What it says is what is true: reminders from this instance ring here.
+		 * One sentence — it used to say the same thing three times over.
+		 *
+		 * Matched inside one source line. Prettier wraps these paragraphs and
+		 * `getByText` does not normalise whitespace, so a pattern spanning the
+		 * wrap finds nothing — which reads as "the copy is wrong" and is not.
+		 */
+		await expect(section.getByText(/can ring here with the/)).toBeVisible();
 
 		// And not a word about a permission it is in no position to ask about.
 		await expect(section.getByText(/Android said no/)).toHaveCount(0);
@@ -253,7 +259,7 @@ test.describe('an instance shown inside the app', () => {
 		const section = page.locator('section', { hasText: 'Notifications on this device' });
 
 		// Nothing has been set up yet, and it says so rather than promising.
-		await expect(section.getByText(/not set up for it yet/)).toBeVisible();
+		await expect(section.getByText(/Not set up yet/)).toBeVisible();
 		await expect(section.getByRole('button', { name: 'Ring on this phone' })).toBeVisible();
 		// Nothing to stop, so nothing offering to.
 		await expect(section.getByRole('link', { name: 'Stop ringing on this phone' })).toHaveCount(0);
@@ -273,7 +279,7 @@ test.describe('an instance shown inside the app', () => {
 		expect(minted.ok()).toBe(true);
 
 		await visit(page, '/settings/preferences');
-		await expect(section.getByText(/with the app closed/).first()).toBeVisible();
+		await expect(section.getByText(/ring here with the/).first()).toBeVisible();
 		await expect(section.getByRole('link', { name: 'Stop ringing on this phone' })).toBeVisible();
 
 		// And not, anywhere in it, the claim this is all here to make false.

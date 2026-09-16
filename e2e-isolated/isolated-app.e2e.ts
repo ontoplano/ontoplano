@@ -579,17 +579,24 @@ test.describe('booking with Android', () => {
 			await tour.getByRole('button', { name: 'Okay, dismiss!' }).click();
 		}
 
-		// A reminder of its own, far enough ahead to still be ahead when the page
-		// has finished reloading. The block path and this one write the same kind
-		// of row and are read by the same query; this one can be made in a form.
-		const soon = new Date(Date.now() + 3 * 60 * 60 * 1000);
+		/*
+		 * Two days out, at a fixed hour.
+		 *
+		 * "Three hours from now" is a time in *this* machine's zone, and the
+		 * form refuses a time that has been according to the *account's* — so a
+		 * few hours of difference between the two turned this into a test of
+		 * timezones, which it is not about. Two days is ahead of now in every
+		 * zone there is.
+		 */
+		const soon = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+		soon.setHours(9, 0, 0, 0);
 		const pad = (n: number) => String(n).padStart(2, '0');
 		await page.goto('/reminders');
 		await expect(page.locator('[name="day"]')).toBeVisible({ timeout: 30_000 });
 		await page
 			.locator('[name="day"]')
 			.fill(`${soon.getFullYear()}-${pad(soon.getMonth() + 1)}-${pad(soon.getDate())}`);
-		await page.locator('[name="time"]').fill(`${pad(soon.getHours())}:${pad(soon.getMinutes())}`);
+		await page.locator('[name="time"]').fill('09:00');
 		await page.locator('[name="label"]').first().fill('booked with android');
 		await page.getByRole('button', { name: 'Set it' }).click();
 		await expect(page.getByText('booked with android')).toBeVisible({ timeout: 30_000 });

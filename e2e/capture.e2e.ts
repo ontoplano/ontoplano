@@ -58,10 +58,33 @@ async function pieCentre(page: Page) {
  */
 async function pickWedge(page: Page, name: string): Promise<boolean> {
 	const wedges = page.locator('.pie [role=menuitem]');
+	const hud = page.locator('.pie-hud');
+	const said = async () => (await hud.innerText()).trim().toLowerCase();
+
 	const count = await wedges.count();
+	let before = await said();
+
 	for (let i = 0; i < count; i++) {
 		await wedges.nth(i).hover();
-		if ((await page.locator('.pie-hud').innerText()).trim().toLowerCase() === name.toLowerCase()) {
+		/*
+		 * Wait for the HUD to answer this wedge rather than reading it flat.
+		 *
+		 * The name is drawn by the pointer move, so a read in the same tick can
+		 * still hold the *previous* wedge's name — and under a loaded parallel
+		 * run it usually does. That does not fail here: it fails four lines
+		 * later, having clicked a wedge that never announced itself, with the
+		 * wrong dialogue open and a message about a heading. Waiting for the
+		 * text to change is what makes "point at it, then read it" true.
+		 */
+		const from = before;
+		try {
+			await expect.poll(said, { timeout: 3000 }).not.toBe(from);
+		} catch {
+			// It never answered: not this wedge, or not this pointer. Move on.
+			continue;
+		}
+		before = await said();
+		if (before === name.toLowerCase()) {
 			await wedges.nth(i).click();
 			return true;
 		}
@@ -360,7 +383,7 @@ test('the pie says it too, from a page that is not the dashboard', async ({ page
 	// Generous: the wheel closes, the dialogue mounts and the options behind it
 	// are fetched, and under a full parallel run that is not instant.
 	await expect(page.getByRole('heading', { name: /new to-do/i })).toBeVisible({
-		timeout: 15_000
+		timeout: 30_000
 	});
 	await page.locator('[name=heading]').fill('ring the dentist');
 	await page.getByRole('button', { name: 'Save' }).click();
