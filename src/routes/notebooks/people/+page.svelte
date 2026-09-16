@@ -183,9 +183,12 @@
 											{person.name.trim().charAt(0).toUpperCase()}
 										</span>
 									{/if}
-									<span class="sr-only">
-										{person.pictureId ? 'Change' : 'Add'} a picture of {person.name}
-									</span>
+									<span class="sr-only"
+										>{t('notebooks.people.aPictureOf', {
+											add: person.pictureId ? 'Change' : 'Add',
+											name: person.name
+										})}</span
+									>
 								</button>
 
 								<a
@@ -287,7 +290,7 @@
 				{:else if data.entries.length === 0}
 					<EmptyState
 						icon="diary"
-						title="Nothing written about {selectedPerson.name} yet"
+						title={t('notebooks.people.nothingWrittenAboutYet', { name: selectedPerson.name })}
 						description="Mention them in a diary entry and it will show up here."
 					/>
 				{:else}

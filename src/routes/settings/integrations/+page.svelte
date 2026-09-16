@@ -379,17 +379,19 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 																<input
 																	type="checkbox"
 																	disabled
-																	aria-label="{row.label}: {i === 0
-																		? 'read'
-																		: 'write'} — outside what this key is tied to"
+																	aria-label={t('settings.integrations.outsideWhat', {
+																		label: row.label,
+																		write: i === 0 ? 'read' : 'write'
+																	})}
 																/>
 															{:else}
 																<input
 																	type="checkbox"
 																	disabled
-																	aria-label="{row.label}: {i === 0
-																		? 'read'
-																		: 'write'} — not something this can do"
+																	aria-label={t('settings.integrations.notSomething', {
+																		label: row.label,
+																		write: i === 0 ? 'read' : 'write'
+																	})}
 																/>
 															{/if}
 														</td>
@@ -450,8 +452,9 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 								<a
 									href={resolve('/settings/integrations/connections')}
 									class="underline underline-offset-2"
-									>See {data.assistants.length === 1 ? 'it' : 'them'}
-									here</a
+									>{t('settings.integrations.seeHere', {
+										them: data.assistants.length === 1 ? 'it' : 'them'
+									})}</a
 								>.
 							</p>
 						{/if}

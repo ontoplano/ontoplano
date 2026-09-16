@@ -90,8 +90,10 @@
 		<p class="text-sm text-red-700">{problem}</p>
 	{:else if files.length > 0}
 		<p class="text-sm text-gray-700">
-			{files.length}
-			{files.length === 1 ? 'note' : 'notes'} ready.
+			{t('markdownImport.ready', {
+				length: files.length,
+				notes: files.length === 1 ? 'note' : 'notes'
+			})}
 		</p>
 	{/if}
 

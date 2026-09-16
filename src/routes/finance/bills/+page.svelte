@@ -174,7 +174,7 @@
 								<button
 									class="icon-btn"
 									title={t('finance.bills.undoThisPeriodSPayment')}
-									aria-label="Undo the payment for {bill.name}"
+									aria-label={t('finance.bills.undoThePaymentFor', { name: bill.name })}
 								>
 									<Icon name="undo" />
 								</button>
@@ -208,7 +208,7 @@
 							<button
 								class="icon-btn"
 								title={t('finance.bills.markPaid')}
-								aria-label="Mark {bill.name} paid"
+								aria-label={t('finance.bills.markPaid2', { name: bill.name })}
 								onclick={() => (paying = bill.id)}
 							>
 								<Icon name="check" />
@@ -225,14 +225,18 @@
 							<button
 								class="icon-btn"
 								title={t('finance.bills.attachThePayment')}
-								aria-label="Attach a transaction to {bill.name}"
+								aria-label={t('finance.bills.attachATransactionTo', { name: bill.name })}
 								onclick={() => (attaching = bill.id)}
 							>
 								<Icon name="link" />
 							</button>
 						{/if}
 
-						<button class="icon-btn" aria-label="Edit {bill.name}" onclick={() => openEdit(bill)}>
+						<button
+							class="icon-btn"
+							aria-label={t('finance.bills.edit', { name: bill.name })}
+							onclick={() => openEdit(bill)}
+						>
 							<Icon name="edit" />
 						</button>
 
@@ -244,7 +248,7 @@
 						>
 							<input type="hidden" name="id" value={bill.id} />
 							<input type="hidden" name="archived" value="true" />
-							<button class="icon-btn" aria-label="Archive {bill.name}">
+							<button class="icon-btn" aria-label={t('finance.bills.archive', { name: bill.name })}>
 								<Icon name="archive" />
 							</button>
 						</form>
@@ -260,8 +264,11 @@
 				class="text-sm text-gray-500 hover:text-gray-700"
 				onclick={() => (showArchived = !showArchived)}
 			>
-				<Icon name={showArchived ? 'chevron-down' : 'chevron-right'} /> Archived ({archived.length})
-			</button>
+				<Icon name={showArchived ? 'chevron-down' : 'chevron-right'} />{t(
+					'finance.bills.archived',
+					{ length: archived.length }
+				)}</button
+			>
 			{#if showArchived}
 				<ul class="mt-2 divide-y divide-gray-100 rounded border border-gray-200">
 					{#each archived as bill (bill.id)}
@@ -275,12 +282,16 @@
 							</form>
 							<!-- An archived bill is still a bill: correcting its amount or its
 							     name should not need restoring it first. -->
-							<button class="icon-btn" aria-label="Edit {bill.name}" onclick={() => openEdit(bill)}>
+							<button
+								class="icon-btn"
+								aria-label={t('finance.bills.edit', { name: bill.name })}
+								onclick={() => openEdit(bill)}
+							>
 								<Icon name="edit" />
 							</button>
 							<button
 								class="icon-btn"
-								aria-label="Delete {bill.name}"
+								aria-label={t('finance.bills.delete', { name: bill.name })}
 								onclick={() => (confirmingDelete = bill)}
 							>
 								<Icon name="trash" />

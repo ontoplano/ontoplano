@@ -53,7 +53,7 @@
 				{/if}
 				{#if !data.notebook.mine}
 					<span class="eyebrow ml-2 align-middle text-gray-500"
-						>shared by {data.notebook.sharedBy}</span
+						>{t('notebooks.id.sharedBy', { sharedBy: data.notebook.sharedBy ?? '' })}</span
 					>
 				{:else if data.notebook.sharedWithFamily}
 					<span class="eyebrow ml-2 align-middle text-gray-500"

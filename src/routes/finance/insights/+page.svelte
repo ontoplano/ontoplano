@@ -63,7 +63,8 @@
 			value={data.months}
 			onchange={(e) => filter({ months: Number((e.currentTarget as HTMLSelectElement).value) })}
 		>
-			{#each WINDOWS as w (w)}<option value={w}>last {w} months</option>{/each}
+			{#each WINDOWS as w (w)}<option value={w}>{t('finance.insights.lastMonths', { w: w })}</option
+				>{/each}
 		</select>
 		{#if data.totals.length > 0}
 			<span class="text-xs text-gray-500">
@@ -87,7 +88,10 @@
 					{money(monthsWithSpending ? Math.round(spent / monthsWithSpending) : 0)}
 				</div>
 				<div class="text-xs text-gray-500">
-					over {monthsWithSpending} month{monthsWithSpending === 1 ? '' : 's'} with any
+					{t('finance.insights.overMonthWithAny', {
+						monthsWithSpending: monthsWithSpending,
+						s: monthsWithSpending === 1 ? '' : 's'
+					})}
 				</div>
 			</div>
 			<div class="rounded border border-gray-200 p-3">
@@ -169,9 +173,12 @@
 			{:else}
 				{@const series = data.tagSeries}
 				<p class="mb-3 text-xs text-gray-500">
-					{money(series.totalCents)} in total, {money(series.averageCents)} a month across the
-					{series.activeMonths} month{series.activeMonths === 1 ? '' : 's'} it appeared in. One tag at
-					a time — tags overlap, so adding them up would count a line twice.
+					{t('finance.insights.inTotalAMonth', {
+						totalCents: money(series.totalCents),
+						averageCents: money(series.averageCents),
+						activeMonths: series.activeMonths,
+						s: series.activeMonths === 1 ? '' : 's'
+					})}
 				</p>
 				{@const peak = Math.max(1, ...series.byMonth)}
 				<!-- The average, drawn across, so a month reads as above or below it. -->
@@ -181,7 +188,7 @@
 						viewBox="0 0 680 170"
 						class="w-full min-w-140"
 						role="img"
-						aria-label="Monthly cost of #{series.name}"
+						aria-label={t('finance.insights.monthlyCostOf', { name: series.name })}
 					>
 						<line
 							x1="10"
@@ -192,9 +199,9 @@
 							stroke-dasharray="4 4"
 							opacity="0.5"
 						/>
-						<text x="668" y={avgY - 4} text-anchor="end" class="fill-gray-500 text-[9px]">
-							average {money(series.averageCents)}
-						</text>
+						<text x="668" y={avgY - 4} text-anchor="end" class="fill-gray-500 text-[9px]"
+							>{t('finance.insights.average', { averageCents: money(series.averageCents) })}</text
+						>
 						{#each series.months as month, i (month)}
 							{@const slot = 660 / series.months.length}
 							{@const cx = 10 + slot * i + slot / 2}

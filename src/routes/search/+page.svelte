@@ -53,11 +53,10 @@
 			description="Notes, diary entries, todos, blocks, goals, ideas, people, shopping and activities — all of it at once, or one kind at a time."
 		/>
 	{:else if total === 0}
-		<EmptyState icon="tag" title="Nothing matches “{data.q}”" />
+		<EmptyState icon="tag" title={t('search.nothingMatches', { q: data.q })} />
 	{:else}
 		<p class="text-xs text-gray-500">
-			{total}
-			{total === 1 ? 'result' : 'results'} for “{data.q}”
+			{t('search.for', { total: total, results: total === 1 ? 'result' : 'results', q: data.q })}
 		</p>
 
 		<div class="gap-4 lg:columns-2 2xl:columns-3">

@@ -223,7 +223,9 @@ at a time, and show me what you will write before writing it.`
 							></button>
 						</li>
 					{/each}
-					<li class="ml-2 text-xs text-gray-500">Step {step + 1} of {STEPS.length}</li>
+					<li class="ml-2 text-xs text-gray-500">
+						{t('welcome.stepOf', { step: step + 1, length: STEPS.length })}
+					</li>
 				</ol>
 			{/if}
 
@@ -345,7 +347,10 @@ at a time, and show me what you will write before writing it.`
 											{described ? sectionBlurb(t, described.id) : ''}
 										</p>
 										<p class="mt-3 text-xs text-gray-500">
-											{wanted.size} of {data.rooms.length} on. The planner and your week are always here.
+											{t('welcome.ofOnThePlanner', {
+												size: wanted.size,
+												length: data.rooms.length
+											})}
 										</p>
 									</aside>
 								</div>

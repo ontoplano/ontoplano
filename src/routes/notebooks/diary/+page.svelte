@@ -277,7 +277,7 @@
 			{#each { length: winInputCount }, i (i)}
 				<OneLine
 					name="win_{i}"
-					placeholder="Win {i + 1}"
+					placeholder={t('notebooks.diary.win', { i: i + 1 })}
 					class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
 			{/each}
@@ -386,7 +386,10 @@
 	{#if filteredEntries().length === 0}
 		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
 			{#if filterTag}
-				<EmptyState icon="diary" title="No entries with #{filterTag}" />
+				<EmptyState
+					icon="diary"
+					title={t('notebooks.diary.noEntriesWith', { filterTag: filterTag })}
+				/>
 			{:else}
 				<EmptyState
 					icon="diary"
@@ -445,10 +448,14 @@
 						<span class="tabular text-xs font-medium text-gray-900">#{entry.seq}</span>
 						<span class="text-xs text-gray-500">{formatDate(entry.createdAt)}</span>
 						{#if entry.forDate}
-							<span class="text-xs font-medium text-amber-600">for {entry.forDate}</span>
+							<span class="text-xs font-medium text-amber-600"
+								>{t('notebooks.diary.for', { forDate: entry.forDate })}</span
+							>
 						{/if}
 						{#if entry.updatedAt !== entry.createdAt}
-							<span class="text-xs text-gray-500">· edited {formatDate(entry.updatedAt)}</span>
+							<span class="text-xs text-gray-500"
+								>{t('notebooks.diary.edited', { updatedAt: formatDate(entry.updatedAt) })}</span
+							>
 						{/if}
 						<!--
 							`@` in front of a person, the way `#` goes in front of a tag.

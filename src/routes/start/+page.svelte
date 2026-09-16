@@ -110,10 +110,9 @@
 				{t('start.nothingIsChargedToday')}
 			</h1>
 			<p class="text-sm text-gray-700">
-				<strong class="text-gray-900">
-					Your {data.trialDaysAhead} free days are yours even if you cancel right away.
-				</strong>
-				The first charge is on {when(data.firstChargeOn)}, and a mail warns you two days before.
+				<strong class="text-gray-900"
+					>{t('start.yourFreeDaysAreYours', { trialDaysAhead: data.trialDaysAhead })}</strong
+				>{t('start.theFirstChargeIsOn', { firstChargeOn: when(data.firstChargeOn) })}
 			</p>
 		{:else}
 			<h1 class="mb-4 text-xl font-bold tracking-tight text-gray-900">{t('start.subscribe')}</h1>
@@ -172,7 +171,9 @@
 						<Icon name="home" size={36} />
 					</span>
 					<span class="text-lg font-bold text-gray-900">{t('start.family')}</span>
-					<span class="text-xs text-gray-500">{data.pricing.familySeats} accounts</span>
+					<span class="text-xs text-gray-500"
+						>{t('start.accounts', { familySeats: data.pricing.familySeats })}</span
+					>
 					<span class="text-sm font-medium text-gray-700">{familyFrom}</span>
 				</button>
 			</div>
@@ -191,23 +192,27 @@
 						value="yearly"
 						class="w-full bg-gray-900 px-4 py-3 text-left text-white transition hover:bg-gray-800"
 					>
-						<span class="block text-sm font-semibold">Yearly — {yearlyLine}</span>
+						<span class="block text-sm font-semibold"
+							>{t('start.yearly', { yearlyLine: yearlyLine ?? '' })}</span
+						>
 					</button>
 					<button
 						name="interval"
 						value="monthly"
 						class="w-full border border-gray-300 px-4 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-50"
+						>{t('start.monthlyAMonth', {
+							currency: formatPrice(prices.monthlyCents, prices.currency)
+						})}</button
 					>
-						Monthly — {formatPrice(prices.monthlyCents, prices.currency)} a month
-					</button>
 				{:else}
 					<button
 						name="interval"
 						value="monthly"
 						class="w-full bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800"
+						>{t('start.startAMonth', {
+							currency: formatPrice(prices.monthlyCents, prices.currency)
+						})}</button
 					>
-						Start — {formatPrice(prices.monthlyCents, prices.currency)} a month
-					</button>
 				{/if}
 			</form>
 		{/if}
@@ -219,8 +224,7 @@
 				class="mt-2 text-xs text-gray-500 {tier === 'family' ? '' : 'invisible'}"
 				aria-hidden={tier !== 'family'}
 			>
-				One invoice covers {data.pricing.familySeats} accounts, yours included. You invite the others
-				once you are in.
+				{t('start.oneInvoiceCoversAccountsYours', { familySeats: data.pricing.familySeats })}
 			</p>
 		{/if}
 

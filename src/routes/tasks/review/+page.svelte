@@ -155,7 +155,7 @@
 			goto(`${resolve('/tasks/review')}?week=${data.week.next}`)}
 	>
 		<h2 class="text-base font-semibold text-gray-900">
-			Week {data.week.number}, {data.week.year}
+			{t('tasks.review.week', { number: data.week.number, year: data.week.year })}
 		</h2>
 		<p class="truncate text-sm text-gray-500">
 			{pretty(data.reading.weekStart)} — {pretty(data.reading.weekEnd)}
@@ -180,9 +180,12 @@
 				<div class="space-y-3">
 					<div class="flex items-baseline gap-2">
 						<span class="tabular text-3xl font-bold text-gray-900">{data.reading.done}</span>
-						<span class="text-sm text-gray-500">
-							of {data.reading.planned} blocks · {Math.round(rate * 100)}%
-						</span>
+						<span class="text-sm text-gray-500"
+							>{t('tasks.review.ofBlocks', {
+								planned: data.reading.planned,
+								rate: Math.round(rate * 100)
+							})}</span
+						>
 					</div>
 
 					<div class="h-1.5 w-full bg-gray-200">
@@ -288,10 +291,11 @@
 						document
 							.getElementById('review-decided')
 							?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+					>{t('tasks.review.toCommit', {
+						length: decided.length,
+						answers: decided.length === 1 ? 'answer' : 'answers'
+					})}</button
 				>
-					{decided.length}
-					{decided.length === 1 ? 'answer' : 'answers'} to commit
-				</button>
 			{/snippet}
 			{#if data.loose.length === 0}
 				<EmptyState icon="check" title={t('tasks.review.everythingYouPlannedYouDid')} />
@@ -330,7 +334,7 @@
 												onclick={() => decide(item.id, 'done')}
 												class="icon-btn"
 												title={t('tasks.review.itHappenedAfterAll')}
-												aria-label="{item.title}: it happened after all"
+												aria-label={t('tasks.review.itHappenedAfter', { title: item.title })}
 											>
 												<Icon name="check" />
 											</button>
@@ -339,7 +343,7 @@
 												onclick={() => decide(item.id, 'skipped')}
 												class="icon-btn"
 												title={t('tasks.review.itDidNotHappen')}
-												aria-label="{item.title}: skipped"
+												aria-label={t('tasks.review.skipped', { title: item.title })}
 											>
 												<Icon name="skip" />
 											</button>
@@ -348,7 +352,7 @@
 												onclick={() => decide(item.id, 'todo')}
 												class="icon-btn"
 												title={t('tasks.review.itStillNeedsDoing')}
-												aria-label="{item.title}: onto the todo list"
+												aria-label={t('tasks.review.ontoTheTodo', { title: item.title })}
 											>
 												<Icon name="archive" />
 											</button>
@@ -357,7 +361,7 @@
 												onclick={() => (givingADay = { id: item.id, title: item.title })}
 												class="icon-btn"
 												title={t('tasks.review.itStillNeedsDoing2')}
-												aria-label="{item.title}: give it a day"
+												aria-label={t('tasks.review.giveItA', { title: item.title })}
 											>
 												<Icon name="calendar" />
 											</button>
@@ -426,7 +430,7 @@
 											onclick={() => undecide(item.id)}
 											class="icon-btn shrink-0"
 											title={t('tasks.review.putItBackNothing')}
-											aria-label="Undo the answer for {item.title}"
+											aria-label={t('tasks.review.undoTheAnswerFor', { title: item.title })}
 										>
 											<Icon name="undo" />
 										</button>
@@ -437,10 +441,12 @@
 							<div
 								class="flex items-center justify-between gap-3 border-t border-gray-200 px-4 py-3"
 							>
-								<span class="text-xs text-gray-500">
-									{decided.length}
-									{decided.length === 1 ? 'answer' : 'answers'}, none of them written yet.
-								</span>
+								<span class="text-xs text-gray-500"
+									>{t('tasks.review.noneOfThem', {
+										length: decided.length,
+										answers: decided.length === 1 ? 'answer' : 'answers'
+									})}</span
+								>
 								<button
 									type="submit"
 									class="btn btn-primary btn-sm"
@@ -455,7 +461,7 @@
 
 				{#if form?.settled}
 					<p class="border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
-						{form.settled} settled.
+						{t('tasks.review.settled', { settled: form.settled })}
 					</p>
 				{/if}
 			{/if}
@@ -535,7 +541,7 @@
 									class="btn btn-sm shrink-0"
 									onclick={() => (dropping = uid)}
 									title={t('tasks.review.letItGo')}
-									aria-label="Let {thing.title} go"
+									aria-label={t('tasks.review.letGo', { title: thing.title })}
 								>
 									<Icon name="trash" size={14} />
 								</button>

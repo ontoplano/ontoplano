@@ -89,10 +89,18 @@
 			>
 			<h1 class="mt-1 text-lg font-bold text-gray-900">{data.recipe.title}</h1>
 			<p class="mt-1 flex flex-wrap items-center gap-3 text-sm text-gray-500">
-				{#if data.recipe.minutes}<span class="tabular">{data.recipe.minutes} min</span>{/if}
-				{#if data.recipe.servings}<span class="tabular">serves {data.recipe.servings}</span>{/if}
+				{#if data.recipe.minutes}<span class="tabular"
+						>{t('health.recipes.id.min', { minutes: data.recipe.minutes })}</span
+					>{/if}
+				{#if data.recipe.servings}<span class="tabular"
+						>{t('health.recipes.id.serves2', { servings: data.recipe.servings })}</span
+					>{/if}
 				{#if data.recipe.lastCookedAt}
-					<span>last cooked {data.recipe.lastCookedAt.slice(0, 10)}</span>
+					<span
+						>{t('health.recipes.id.lastCooked', {
+							slice: data.recipe.lastCookedAt.slice(0, 10)
+						})}</span
+					>
 				{/if}
 			</p>
 		</div>
@@ -138,7 +146,9 @@
 			<header class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
 				<h2 class="eyebrow text-gray-600">{t('health.recipes.id.ingredients')}</h2>
 				{#if missing.length > 0}
-					<span class="text-xs text-amber-700">{missing.length} not in the cupboard</span>
+					<span class="text-xs text-amber-700"
+						>{t('health.recipes.id.notInTheCupboard', { length: missing.length })}</span
+					>
 				{/if}
 			</header>
 
@@ -163,8 +173,8 @@
 							<a
 								href={resolve('/inventory')}
 								class="shrink-0 text-gray-500 hover:text-gray-900"
-								title="Find {ingredient.name} on the shopping list"
-								aria-label="Find {ingredient.name} on the shopping list"
+								title={t('health.recipes.id.findOnTheShoppingList', { name: ingredient.name })}
+								aria-label={t('health.recipes.id.findOnTheShoppingList', { name: ingredient.name })}
 							>
 								<Icon name="shopping" size={14} />
 							</a>
@@ -298,7 +308,9 @@
 				{/if}
 
 				{#if form?.added}
-					<p class="mt-2 text-xs text-gray-600">Added {form.added} of them.</p>
+					<p class="mt-2 text-xs text-gray-600">
+						{t('health.recipes.id.addedOfThem', { added: form.added })}
+					</p>
 				{/if}
 			</div>
 		</section>
@@ -325,7 +337,7 @@
 
 				{#if data.recipe.source}
 					<p class="mt-4 border-t border-gray-200 pt-3 text-xs text-gray-500">
-						From {data.recipe.source}
+						{t('health.recipes.id.from', { source: data.recipe.source })}
 					</p>
 				{/if}
 			</div>
@@ -344,10 +356,13 @@
 				class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 px-4 py-3"
 			>
 				<h2 class="eyebrow shrink-0 text-gray-600">{t('health.recipes.id.pictures')}</h2>
-				<span class="text-xs text-gray-500">
-					{data.pictures.length} of {data.pictureLimits.most}, up to {data.pictureLimits
-						.kilobytes}KB each
-				</span>
+				<span class="text-xs text-gray-500"
+					>{t('health.recipes.id.ofUpTo', {
+						length: data.pictures.length,
+						most: data.pictureLimits.most,
+						kilobytes: data.pictureLimits.kilobytes
+					})}</span
+				>
 			</header>
 
 			<div class="p-4">
@@ -488,9 +503,9 @@
 						{#if uploading}
 							<span class="text-xs text-gray-500">{t('health.recipes.id.uploading')}</span>
 						{:else}
-							<span class="text-xs text-gray-500">
-								up to {data.pictureLimits.kilobytes}KB
-							</span>
+							<span class="text-xs text-gray-500"
+								>{t('health.recipes.id.upToKb', { kilobytes: data.pictureLimits.kilobytes })}</span
+							>
 						{/if}
 					</form>
 					{#if pictureProblem}
@@ -583,9 +598,11 @@
 				{#each data.ingredients as ingredient (ingredient.id)}
 					<li>
 						<label class="flex items-center gap-2 text-sm text-gray-900">
-							<input type="checkbox" name="ranOut" value={ingredient.itemId} />
-							Ran out of {ingredient.name}
-						</label>
+							<input type="checkbox" name="ranOut" value={ingredient.itemId} />{t(
+								'health.recipes.id.ranOutOf',
+								{ name: ingredient.name }
+							)}</label
+						>
 					</li>
 				{/each}
 			</ul>

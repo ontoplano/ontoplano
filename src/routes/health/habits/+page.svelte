@@ -514,7 +514,9 @@
 											: `${habit.streak} day streak`}
 									</span>
 								{/if}
-								<span class="text-xs text-gray-500">{occ.length} total</span>
+								<span class="text-xs text-gray-500"
+									>{t('health.habits.total', { length: occ.length })}</span
+								>
 							</div>
 							{#if habit.description}
 								<p class="truncate text-xs text-gray-500">{habit.description}</p>
@@ -813,7 +815,7 @@
 								</div>
 								{#if occ.length > 5}
 									<p class="pt-1 text-xs text-gray-500">
-										{occ.length} in all — scroll the list.
+										{t('health.habits.inAllScroll', { length: occ.length })}
 									</p>
 								{/if}
 							{/if}

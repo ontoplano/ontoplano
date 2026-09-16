@@ -579,7 +579,7 @@
 						</ul>
 						{#if todoRows.length > TODO_PREVIEW}
 							<p class="mt-1 text-xs text-gray-500">
-								+{todoRows.length - TODO_PREVIEW} more
+								{t('home.more', { todoPreview: todoRows.length - TODO_PREVIEW })}
 							</p>
 						{/if}
 					{/if}
@@ -592,13 +592,13 @@
 					-->
 					<div class="mt-3 flex min-h-4 flex-wrap gap-3 text-xs text-gray-500">
 						{#if data.taskSummary.done > 0}
-							<span>{data.taskSummary.done} done</span>
+							<span>{t('home.done', { done: data.taskSummary.done })}</span>
 						{/if}
 						{#if data.taskSummary.doing > 0}
-							<span>{data.taskSummary.doing} in progress</span>
+							<span>{t('home.inProgress', { doing: data.taskSummary.doing })}</span>
 						{/if}
 						{#if data.taskSummary.skipped > 0}
-							<span>{data.taskSummary.skipped} skipped</span>
+							<span>{t('home.skipped2', { skipped: data.taskSummary.skipped })}</span>
 						{/if}
 					</div>
 				{/if}
@@ -649,7 +649,7 @@
 					</ul>
 					{#if data.activeGoals.length > GOAL_PREVIEW}
 						<p class="mt-2 text-xs text-gray-500">
-							+{data.activeGoals.length - GOAL_PREVIEW} more
+							{t('home.more2', { goalPreview: data.activeGoals.length - GOAL_PREVIEW })}
 						</p>
 					{/if}
 				{/if}
@@ -931,9 +931,8 @@
 							}}
 							class="text-xs text-gray-500 hover:text-gray-900"
 							title={todosNewestFirst ? 'Showing newest first' : 'Showing oldest first'}
+							>{t('home.first', { oldest: todosNewestFirst ? 'Newest' : 'Oldest' })}</button
 						>
-							{todosNewestFirst ? 'Newest' : 'Oldest'} first
-						</button>
 						<a href={resolve('/tasks/todo')} class="text-xs text-gray-500 hover:text-gray-900"
 							>{t('home.open')}</a
 						>
@@ -956,7 +955,9 @@
 							</div>
 						{/each}
 						{#if sortedTodos.length > 6}
-							<span class="text-xs text-gray-500">+{sortedTodos.length - 6} more</span>
+							<span class="text-xs text-gray-500"
+								>{t('home.more3', { length: sortedTodos.length - 6 })}</span
+							>
 						{/if}
 					</div>
 				{/if}
@@ -982,7 +983,9 @@
 							<p class="truncate text-sm text-gray-700">{idea.content}</p>
 						{/each}
 						{#if (data.latestIdeas ?? []).length > 5}
-							<span class="text-xs text-gray-500">+{(data.latestIdeas ?? []).length - 5} more</span>
+							<span class="text-xs text-gray-500"
+								>{t('home.more3', { length: (data.latestIdeas ?? []).length - 5 })}</span
+							>
 						{/if}
 					</div>
 				{/if}
@@ -1005,8 +1008,10 @@
 				{:else}
 					<div class="space-y-2">
 						<div class="text-sm text-gray-700">
-							{formatMoney(data.billsCard.summary.paid, data.billsCard.currency)} paid of
-							{formatMoney(data.billsCard.summary.expected, data.billsCard.currency)} expected
+							{t('home.paidOfExpected', {
+								currency: formatMoney(data.billsCard.summary.paid, data.billsCard.currency),
+								currency2: formatMoney(data.billsCard.summary.expected, data.billsCard.currency)
+							})}
 						</div>
 						{#if data.billsCard.open.length === 0}
 							<span class="text-xs text-gray-500">{t('home.everythingPaidThisMonth')}</span>
@@ -1022,7 +1027,9 @@
 									</div>
 								{/each}
 								{#if data.billsCard.open.length > 5}
-									<span class="text-xs text-gray-500">+{data.billsCard.open.length - 5} more</span>
+									<span class="text-xs text-gray-500"
+										>{t('home.more3', { length: data.billsCard.open.length - 5 })}</span
+									>
 								{/if}
 							</div>
 						{/if}
@@ -1087,7 +1094,9 @@
 							</div>
 						{/each}
 						{#if data.shoppingToBuy.length > 8}
-							<span class="text-xs text-gray-500">+{data.shoppingToBuy.length - 8} more</span>
+							<span class="text-xs text-gray-500"
+								>{t('home.more3', { length: data.shoppingToBuy.length - 8 })}</span
+							>
 						{/if}
 					</div>
 				{/if}
@@ -1104,10 +1113,12 @@
 				{/snippet}
 				{#if data.quote}
 					<blockquote class="text-sm text-gray-900 italic">
-						&ldquo;{data.quote.text}&rdquo;
+						{t('home.ldquoRdquo', { text: data.quote.text })}
 					</blockquote>
 					{#if data.quote.author}
-						<p class="mt-1 text-xs text-gray-500">&mdash; {data.quote.author}</p>
+						<p class="mt-1 text-xs text-gray-500">
+							{t('home.mdash', { author: data.quote.author })}
+						</p>
 					{/if}
 				{:else}
 					<p class="text-sm text-gray-500">{t('home.noQuotesYetAddSome')}</p>

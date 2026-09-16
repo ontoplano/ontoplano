@@ -131,7 +131,7 @@
 							onclick={() => (fields = fields.filter((_, at) => at !== i))}
 							class="icon-btn icon-btn-danger shrink-0 {pair[0] || pair[1] ? '' : 'invisible'}"
 							title={t('fields.buy.removeThisField')}
-							aria-label="Remove the field {pair[0] || 'being written'}"
+							aria-label={t('fields.buy.removeTheField', { written: pair[0] || 'being written' })}
 						>
 							<Icon name="close" />
 						</button>

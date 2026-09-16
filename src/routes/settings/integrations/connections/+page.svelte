@@ -191,7 +191,9 @@ Token: ${token}`;
 				</button>
 			</div>
 			<p class="mt-2 text-xs text-blue-800">
-				It may: {newToken.scopes.map(scopeSentence).join(' · ')}
+				{t('settings.integrations.connections.itMay', {
+					join: newToken.scopes.map(scopeSentence).join(' · ')
+				})}
 			</p>
 			<!--
 				The one thing somebody is about to go looking for.
@@ -320,9 +322,11 @@ Token: ${token}`;
 				{t('settings.integrations.connections.createACalendarLink')}
 			</button>
 			{#if data.calendarLinks.length >= data.calendarLinkLimit}
-				<span class="text-xs text-gray-500">
-					{data.calendarLinkLimit} is the most. Revoke one to make another.
-				</span>
+				<span class="text-xs text-gray-500"
+					>{t('settings.integrations.connections.isTheMostRevoke', {
+						calendarLinkLimit: data.calendarLinkLimit
+					})}</span
+				>
 			{/if}
 		</form>
 	</Card>
@@ -672,7 +676,7 @@ Token: ${token}`;
 				<p class="text-xs">
 					{t('settings.integrations.connections.anAppDeclaresAStream')}
 					<code class="border border-gray-200 bg-gray-50 px-1 font-mono text-xs"
-						>{data.origin}/api/v1/streams</code
+						>{t('settings.integrations.connections.apiV1Streams', { origin: data.origin })}</code
 					>
 					{t('settings.integrations.connections.withATokenThatHas')}
 					<code class="font-mono">{t('settings.integrations.connections.streamsWrite')}</code>
@@ -744,9 +748,10 @@ Token: ${token}`;
 										type="submit"
 										class="border border-red-200 px-3 py-1 text-xs text-red-600 shadow-sm hover:bg-red-50"
 										use:armed
+										>{t('settings.integrations.connections.confirmThisDeletesPoints', {
+											count: stream.stats.count
+										})}</button
 									>
-										Confirm? This deletes {stream.stats.count} points.
-									</button>
 								</form>
 							{:else}
 								<button

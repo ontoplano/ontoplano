@@ -349,12 +349,11 @@
 						<label class="block text-sm">
 							<!-- Without the scheme: the field below already holds the whole
 							     address, and saying it twice in full reads as a mistake. -->
-							<span class="text-gray-600">
-								Enter any instance URL — official instance is {OFFICIAL_INSTANCE.replace(
-									/^https?:\/\//,
-									''
-								)}
-							</span>
+							<span class="text-gray-600"
+								>{t('instance.enterAnyInstanceUrl', {
+									https: OFFICIAL_INSTANCE.replace(/^https?:\/\//, '')
+								})}</span
+							>
 							<OneLine
 								name="instance"
 								bind:value={address}

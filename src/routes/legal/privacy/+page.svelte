@@ -10,7 +10,7 @@
 <svelte:head><title>{t('legal.privacy.privacyOntoplano')}</title></svelte:head>
 
 <h1>{t('legal.privacy.privacy')}</h1>
-<p class="updated">Last updated {data.updated}.</p>
+<p class="updated">{t('legal.privacy.lastUpdated', { updated: data.updated })}</p>
 
 <p>
 	{t('legal.privacy.ontoplanoHoldsADiaryYour')}
@@ -60,9 +60,9 @@
 		{t('legal.privacy.confirmationAndPasswordResetMessagesGo')}
 	</li>
 	<li>
-		<strong>{t('legal.privacy.payment')}</strong> If you subscribe, {data.provider} handles the transaction
-		as merchant of record. They see your billing details; this instance never does, and stores only the
-		identifiers it needs to know your subscription is alive.
+		<strong>{t('legal.privacy.payment')}</strong>{t('legal.privacy.ifYouSubscribeHandlesThe', {
+			provider: data.provider
+		})}
 	</li>
 	<li>
 		<strong>{t('legal.privacy.plugins')}</strong>

@@ -134,13 +134,15 @@
 						: `${formatPrice(mine.monthlyCents, mine.currency)} a month`}
 				</span>
 			{:else if current.id === 'pro'}
-				<span class="text-sm text-gray-500">
-					{formatPrice(mine.monthlyCents, mine.currency)} a month
-				</span>
+				<span class="text-sm text-gray-500"
+					>{t('settings.billing.aMonth', {
+						currency: formatPrice(mine.monthlyCents, mine.currency)
+					})}</span
+				>
 			{/if}
 
 			{#if data.tier === 'family'}
-				<span class="chip">Family — {data.seats} accounts</span>
+				<span class="chip">{t('settings.billing.familyAccounts', { seats: data.seats })}</span>
 				<a class="text-sm underline" href={resolve('/settings/family')}
 					>{t('settings.billing.whoIsOnIt')}</a
 				>
@@ -180,18 +182,20 @@
 			<!-- The one honest upgrade: same subscription, better cycle. -->
 			<form method="post" action="?/switchInterval" use:enhance class="mt-4">
 				<button name="interval" value="yearly" class="btn btn-primary">
-					<Icon name="arrow-right" /> Switch to yearly — {yearlyLine}
-				</button>
+					<Icon name="arrow-right" />{t('settings.billing.switchToYearly', {
+						yearlyLine: yearlyLine ?? ''
+					})}</button
+				>
 			</form>
 		{:else if data.hasProviderSub && data.interval === 'year'}
 			{#if confirmMonthly}
 				<div class="mt-4 flex flex-wrap items-center gap-2">
-					<span class="text-sm text-gray-700">
-						Monthly is {formatPrice(mine.monthlyCents * 12, mine.currency)} over a year — {formatPrice(
-							mine.monthlyCents * 12 - mine.yearlyCents,
-							mine.currency
-						)} more for the same thing.
-					</span>
+					<span class="text-sm text-gray-700"
+						>{t('settings.billing.monthlyIsOverAYear', {
+							currency: formatPrice(mine.monthlyCents * 12, mine.currency),
+							currency2: formatPrice(mine.monthlyCents * 12 - mine.yearlyCents, mine.currency)
+						})}</span
+					>
 					<form method="post" action="?/switchInterval" use:enhance>
 						<button name="interval" value="monthly" class="btn btn-sm btn-danger">
 							{t('settings.billing.switchAnyway')}
@@ -231,9 +235,11 @@
 								<Icon name="arrow-right" />
 								{trialFirst ? `Start your free ${data.trialDaysAhead} days` : 'Subscribe'} — yearly
 							</button>
-							<button class="btn" name="interval" value="monthly">
-								{formatPrice(data.pricing.monthlyCents, data.pricing.currency)} monthly
-							</button>
+							<button class="btn" name="interval" value="monthly"
+								>{t('settings.billing.monthly', {
+									currency: formatPrice(data.pricing.monthlyCents, data.pricing.currency)
+								})}</button
+							>
 						{:else}
 							<button class="btn btn-primary" name="interval" value="monthly">
 								<Icon name="arrow-right" />
@@ -256,26 +262,35 @@
 						>
 							<input type="hidden" name="tier" value="family" />
 							<input type="hidden" name="channel" value={payChannel} />
-							<span class="text-sm text-gray-600">
-								For up to {data.pricing.familySeats} accounts on one invoice:
-							</span>
+							<span class="text-sm text-gray-600"
+								>{t('settings.billing.forUpToAccountsOn', {
+									familySeats: data.pricing.familySeats
+								})}</span
+							>
 							{#if data.yearly}
-								<button class="btn btn-sm" name="interval" value="yearly">
-									{formatPrice(data.pricing.familyYearlyCents, data.pricing.currency)} yearly
-								</button>
+								<button class="btn btn-sm" name="interval" value="yearly"
+									>{t('settings.billing.yearly', {
+										currency: formatPrice(data.pricing.familyYearlyCents, data.pricing.currency)
+									})}</button
+								>
 							{/if}
-							<button class="btn btn-sm" name="interval" value="monthly">
-								{formatPrice(data.pricing.familyMonthlyCents, data.pricing.currency)} monthly
-							</button>
+							<button class="btn btn-sm" name="interval" value="monthly"
+								>{t('settings.billing.monthly', {
+									currency: formatPrice(data.pricing.familyMonthlyCents, data.pricing.currency)
+								})}</button
+							>
 						</form>
 					{/if}
 					{#if data.yearly && yearlyLine}
-						<p class="mt-2 text-xs text-gray-500">Yearly is {yearlyLine}.</p>
+						<p class="mt-2 text-xs text-gray-500">
+							{t('settings.billing.yearlyIs', { yearlyLine: yearlyLine ?? '' })}
+						</p>
 					{/if}
 					{#if trialFirst}
 						<p class="mt-1 text-xs text-gray-500">
-							Card now, nothing charged today. The first charge comes after the
-							{data.pricing.trialDays} days, and a mail warns you two days before.
+							{t('settings.billing.cardNowNothingChargedToday', {
+								trialDays: data.pricing.trialDays
+							})}
 						</p>
 					{/if}
 				{:else}

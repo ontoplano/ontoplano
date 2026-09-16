@@ -129,7 +129,10 @@
 					{#if node.children.length > 0}
 						<button
 							class="icon-btn"
-							aria-label="{opened.has(node.id) ? 'Hide' : 'Show'} what is inside {node.name}"
+							aria-label={t('gallery.id.whatIsInside', {
+								show: opened.has(node.id) ? 'Hide' : 'Show',
+								name: node.name
+							})}
 							aria-expanded={opened.has(node.id)}
 							onclick={() => toggle(node.id)}
 						>

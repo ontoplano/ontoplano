@@ -2413,7 +2413,7 @@
 					<button
 						onclick={() => setView(mode as PlanView)}
 						aria-pressed={(pendingView ?? effectiveView) === mode}
-						title="{label} view (g cycles)">{label}</button
+						title={t('tasks.plan.viewGCycles', { label: label })}>{label}</button
 					>
 				{/each}
 			</div>
@@ -2598,7 +2598,7 @@
 											</button>
 											<button
 												title={t('ui.delete')}
-												aria-label="Delete {scheme.name}"
+												aria-label={t('tasks.plan.delete', { name: scheme.name })}
 												type="button"
 												onclick={() => {
 													confirmingDeleteSchemeId = scheme.id;
@@ -2664,11 +2664,13 @@
 											<p class="truncate text-sm text-gray-900">{feed.name}</p>
 											{#if feed.lastError}
 												<p class="truncate text-xs text-amber-700">
-													Last fetch failed: {feed.lastError}
+													{t('tasks.plan.lastFetchFailed', { lastError: feed.lastError })}
 												</p>
 											{:else if feed.fetchedAt}
 												<p class="text-xs text-gray-500">
-													Read {feed.fetchedAt.slice(0, 16).replace('T', ' ')}
+													{t('tasks.plan.read', {
+														t: feed.fetchedAt.slice(0, 16).replace('T', ' ')
+													})}
 												</p>
 											{/if}
 										</div>
@@ -2677,7 +2679,7 @@
 											<button
 												class="btn btn-danger btn-sm"
 												title={t('tasks.plan.stopSubscribing')}
-												aria-label="Stop subscribing to {feed.name}"
+												aria-label={t('tasks.plan.stopSubscribingTo', { name: feed.name })}
 												use:armed
 											>
 												<Icon name="trash" size={14} />
@@ -2866,7 +2868,9 @@
 	{#if multiselect && selectedIds.size > 0}
 		<div class="fixed right-0 bottom-0 left-0 z-50 border-t border-blue-200 bg-blue-50 px-4 py-2">
 			<div class="mx-auto flex w-full max-w-page items-center justify-between">
-				<span class="text-sm font-medium text-blue-900">{selectedIds.size} selected</span>
+				<span class="text-sm font-medium text-blue-900"
+					>{t('tasks.plan.selected', { size: selectedIds.size })}</span
+				>
 				<div class="flex gap-2">
 					<form
 						id="bulk-delete-form"
@@ -3351,9 +3355,11 @@
 								class="border px-3 py-2 text-sm transition {skipped
 									? 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
 									: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
+								>{t('tasks.plan.on', {
+									skip: skipped ? 'Restore' : 'Skip',
+									selectedDateStr: formatWeekDate(selectedDateStr())
+								})}</button
 							>
-								{skipped ? 'Restore' : 'Skip'} on {formatWeekDate(selectedDateStr())}
-							</button>
 						</form>
 					{/if}
 
@@ -3547,9 +3553,9 @@
 					</button>
 				{/each}
 				{#if placingTodo}
-					<span class="text-xs text-gray-600">
-						now tap a time for “{placingTodo.title}”
-					</span>
+					<span class="text-xs text-gray-600"
+						>{t('tasks.plan.nowTapATimeFor', { title: placingTodo.title })}</span
+					>
 					<button
 						type="button"
 						class="text-xs text-gray-500 underline"
@@ -3617,7 +3623,7 @@
 			<div
 				class="pointer-events-none absolute bottom-2 left-2 z-30 border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-card"
 			>
-				{selectedEventIds.size} selected · drag one to move them · Esc to clear
+				{t('tasks.plan.selectedDragOne', { size: selectedEventIds.size })}
 			</div>
 		{/if}
 
@@ -3727,7 +3733,7 @@
 				<p class="text-xs text-gray-500">{hovered.categoryName}</p>
 			{/if}
 			{#if hovered.label}
-				<p class="text-xs text-gray-500">Label: {hovered.label}</p>
+				<p class="text-xs text-gray-500">{t('tasks.plan.label', { label: hovered.label })}</p>
 			{/if}
 			{#if hovered.repeats}
 				<p class="text-xs text-gray-500">{hovered.repeats}</p>

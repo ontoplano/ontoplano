@@ -47,7 +47,9 @@
 	);
 </script>
 
-<svelte:head><title>{data.title} — pictures</title></svelte:head>
+<svelte:head
+	><title>{t('gallery.notebooks.path.pictures', { title: data.title })}</title></svelte:head
+>
 
 <div class="space-y-4">
 	<RoomBar title={data.title} back={upTo} backLabel="Back">

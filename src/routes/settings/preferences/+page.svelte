@@ -397,7 +397,9 @@
 					>{#if preview.name}&nbsp;— {preview.name}{/if}.
 				{:else if otherCurrency.trim().length === 3}
 					<span class="text-red-700"
-						>{otherCurrency.trim().toUpperCase()} is not a currency code this browser knows.</span
+						>{t('settings.preferences.isNotACurrency', {
+							toUpperCase: otherCurrency.trim().toUpperCase()
+						})}</span
 					>
 				{:else}
 					Three letters — the ISO code, like PLN or ZAR.
@@ -962,9 +964,13 @@
 				{#each data.quotes as quote (quote.id)}
 					<div class="flex items-start gap-3 px-3 py-2">
 						<div class="min-w-0 flex-1">
-							<p class="text-sm text-gray-900 italic">&ldquo;{quote.text}&rdquo;</p>
+							<p class="text-sm text-gray-900 italic">
+								{t('settings.preferences.ldquoRdquo', { text: quote.text })}
+							</p>
 							{#if quote.author}
-								<p class="text-xs text-gray-500">&mdash; {quote.author}</p>
+								<p class="text-xs text-gray-500">
+									{t('settings.preferences.mdash', { author: quote.author })}
+								</p>
 							{/if}
 						</div>
 						{#if confirmRemove === quote.id}

@@ -609,7 +609,7 @@
 							type="time"
 							autocomplete="off"
 							bind:value={time}
-							title="What time it should go off. Empty means {data.dayStart}."
+							title={t('reminders.whatTimeItShouldGo', { dayStart: data.dayStart })}
 							class="input"
 						/>
 					</Field>
@@ -742,7 +742,7 @@
 					max={data.maxDays}
 					bind:value={howFar}
 					autocomplete="off"
-					title="How many days to cover, up to {data.maxDays}"
+					title={t('reminders.howManyDaysToCover', { maxDays: data.maxDays })}
 					class="w-20"
 				/>
 				<span class="text-xs whitespace-nowrap text-gray-500">{t('reminders.days')}</span>
@@ -807,7 +807,7 @@
 									onclick={() => (editing === reminder.id ? (editing = null) : edit(reminder))}
 									class="icon-btn shrink-0"
 									title={t('reminders.changeThisReminder')}
-									aria-label="Change {reminder.message}"
+									aria-label={t('reminders.change', { message: reminder.message })}
 									aria-expanded={editing === reminder.id}
 								>
 									<Icon name="edit" />
@@ -817,7 +817,7 @@
 									onclick={() => (confirmingDelete = reminder.id)}
 									class="icon-btn icon-btn-danger shrink-0"
 									title={t('reminders.removeThisReminder')}
-									aria-label="Remove {reminder.message}"
+									aria-label={t('reminders.remove', { message: reminder.message })}
 								>
 									<Icon name="trash" />
 								</button>
@@ -1004,15 +1004,15 @@
 				{#each data.ringtones as tone (tone.id)}
 					<li class="flex items-center gap-3 px-4 py-2">
 						<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{tone.name}</span>
-						<span class="tabular shrink-0 text-xs text-gray-500">
-							{Math.round(tone.bytes / 1024)} KB
-						</span>
+						<span class="tabular shrink-0 text-xs text-gray-500"
+							>{t('reminders.kb', { bytes: Math.round(tone.bytes / 1024) })}</span
+						>
 						<button
 							type="button"
 							onclick={() => preview(`/api/ringtones/${tone.id}`)}
 							class="icon-btn shrink-0"
 							title={t('reminders.hearIt')}
-							aria-label="Hear {tone.name}"
+							aria-label={t('reminders.hear', { name: tone.name })}
 						>
 							<Icon name="play" />
 						</button>
@@ -1022,7 +1022,7 @@
 								type="submit"
 								class="icon-btn icon-btn-danger"
 								title={t('ui.remove')}
-								aria-label="Remove {tone.name}"
+								aria-label={t('reminders.remove2', { name: tone.name })}
 								use:armed
 							>
 								<Icon name="trash" />

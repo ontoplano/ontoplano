@@ -597,7 +597,9 @@
 											{#if goal.parentId}
 												{@const parent = data.goals.find((g) => g.id === goal.parentId)}
 												{#if parent}
-													<span class="text-xs text-gray-500">part of “{parent.title}”</span>
+													<span class="text-xs text-gray-500"
+														>{t('goals.partOf2', { title: parent.title })}</span
+													>
 												{/if}
 											{/if}
 											{#if goal.status !== 'open'}
@@ -723,11 +725,12 @@
 											onclick={() => (openTasksId = openTasksId === goal.id ? null : goal.id)}
 											class="btn btn-sm btn-quiet mt-2"
 											title={t('goals.whatCountsTowardsThisGoal')}
-										>
-											Tasks ({goal.linkedSlotIds.length +
-												goal.linkedTodoIds.length +
-												goal.linkedActivityIds.length})
-											<Icon
+											>{t('goals.tasks', {
+												length:
+													goal.linkedSlotIds.length +
+													goal.linkedTodoIds.length +
+													goal.linkedActivityIds.length
+											})}<Icon
 												name={openTasksId === goal.id ? 'chevron-up' : 'chevron-down'}
 												size={12}
 											/>
@@ -848,13 +851,14 @@
 
 									{#each data.slots.filter( (sl) => goal.linkedSlotIds.includes(sl.id) ) as sl (sl.id)}
 										<p class="py-1 text-xs text-gray-500">
-											<span class="tabular">{sl.startTime}</span>
-											{sl.name} — every week; its occurrences count as they are done
+											<span class="tabular">{sl.startTime}</span>{t('goals.everyWeekIts', {
+												name: sl.name
+											})}
 										</p>
 									{/each}
 									{#each data.activities.filter( (a) => goal.linkedActivityIds.includes(a.id) ) as a (a.id)}
 										<p class="py-1 text-xs text-gray-500">
-											{a.name} — every block of it counts as it is done
+											{t('goals.everyBlockOf', { name: a.name })}
 										</p>
 									{/each}
 

@@ -150,7 +150,10 @@
 						{#if node.children.length > 0}
 							<button
 								class="icon-btn -ml-1 shrink-0"
-								aria-label="{opened.has(node.id) ? 'Hide' : 'Show'} what is inside {node.title}"
+								aria-label={t('notebooks.whatIsInside', {
+									show: opened.has(node.id) ? 'Hide' : 'Show',
+									title: node.title
+								})}
 								aria-expanded={opened.has(node.id)}
 								onclick={() => toggle(node.id)}
 							>
@@ -181,7 +184,11 @@
 							<span class="block truncate text-xs text-gray-500">{tally(node)}</span>
 						</a>
 
-						<button onclick={() => openEdit(node)} class="icon-btn" aria-label="Edit {node.title}">
+						<button
+							onclick={() => openEdit(node)}
+							class="icon-btn"
+							aria-label={t('notebooks.edit', { title: node.title })}
+						>
 							<Icon name="edit" />
 						</button>
 
@@ -234,10 +241,12 @@
 								: ''}"
 						>
 							<span class="text-gray-900">{t('notebooks.notesWithoutANotebook')}</span>
-							<span class="block truncate text-xs text-gray-500">
-								{orphaned.length}
-								{orphaned.length === 1 ? 'note' : 'notes'} · their notebook was deleted
-							</span>
+							<span class="block truncate text-xs text-gray-500"
+								>{t('notebooks.theirNotebookWas', {
+									length: orphaned.length,
+									notes: orphaned.length === 1 ? 'note' : 'notes'
+								})}</span
+							>
 						</a>
 					{/if}
 				</div>

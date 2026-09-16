@@ -457,7 +457,7 @@
 							rows="2"
 							required
 							use:autogrow
-							placeholder="Write a note about {notebook.title}"
+							placeholder={t('notebookDetail.writeANoteAbout', { title: notebook.title })}
 							class="textarea"
 						></textarea>
 						<!-- A note written here takes a picture the same way a note written in

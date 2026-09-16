@@ -384,7 +384,11 @@
 										>
 									{/if}
 									{#if idea.updatedAt !== idea.createdAt}
-										<span class="text-xs text-gray-500">· edited {formatDate(idea.updatedAt)}</span>
+										<span class="text-xs text-gray-500"
+											>{t('notebooks.ideas.edited', {
+												updatedAt: formatDate(idea.updatedAt)
+											})}</span
+										>
 									{/if}
 									{#if idea.tags.length > 0}
 										<div class="flex flex-wrap gap-1">

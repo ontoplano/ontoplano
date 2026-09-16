@@ -70,7 +70,7 @@
 	});
 </script>
 
-<svelte:head><title>{page.status} · ontoplano</title></svelte:head>
+<svelte:head><title>{t('home.ontoplano', { status: page.status })}</title></svelte:head>
 
 <!--
 	Centred in what is left of the screen, at a size somebody can read.

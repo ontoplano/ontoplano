@@ -851,13 +851,14 @@
 						(editingLocation = { id: node.id, name: node.name, parentId: node.parentId })}
 					class="icon-btn"
 					title={t('inventory.renameOrMove')}
-					aria-label="Rename or move {node.name}"><Icon name="edit" /></button
+					aria-label={t('inventory.renameOrMove2', { name: node.name })}
+					><Icon name="edit" /></button
 				>
 				<button
 					onclick={() => (confirmDeleteLocation = node.id)}
 					class="icon-btn icon-btn-danger"
 					title={t('ui.remove')}
-					aria-label="Remove {node.name}"><Icon name="trash" /></button
+					aria-label={t('inventory.remove', { name: node.name })}><Icon name="trash" /></button
 				>
 			</div>
 		</div>
@@ -892,7 +893,7 @@
 				type="submit"
 				class="icon-btn h-5 w-9 text-base"
 				title={t('inventory.oneMore')}
-				aria-label="One more {item.name}">+</button
+				aria-label={t('inventory.oneMore2', { name: item.name })}>+</button
 			>
 		</form>
 		<!--
@@ -905,7 +906,7 @@
 			Math.max(item.idealQty, 1)
 				? 'text-blue-700'
 				: 'text-gray-900'}"
-			title="{item.name}: {item.qty} here, and you keep {item.idealQty}"
+			title={t('inventory.hereAndYou', { name: item.name, qty: item.qty, idealQty: item.idealQty })}
 		>
 			{item.qty}{#if item.idealQty > 1}<span class="text-xs text-gray-500">/{item.idealQty}</span
 				>{/if}
@@ -918,7 +919,7 @@
 				disabled={item.qty <= 0}
 				class="icon-btn h-5 w-9 text-base disabled:opacity-25"
 				title={t('inventory.oneFewer')}
-				aria-label="One fewer {item.name}">−</button
+				aria-label={t('inventory.oneFewer2', { name: item.name })}>−</button
 			>
 		</form>
 	</div>
@@ -995,9 +996,9 @@
 			>
 			for what is still to buy
 			{#if pricedCount < needed.length}
-				<span class="text-xs text-gray-500">
-					· {needed.length - pricedCount} of them have no price yet
-				</span>
+				<span class="text-xs text-gray-500"
+					>{t('inventory.ofThemHaveNo', { pricedCount: needed.length - pricedCount })}</span
+				>
 			{/if}
 		</p>
 	{/if}
@@ -1056,8 +1057,10 @@
 			</p>
 			{#if data.run.unpriced > 0}
 				<p class="text-xs text-gray-500">
-					{data.run.unpriced}
-					{data.run.unpriced === 1 ? 'line has' : 'lines have'} no price yet, so the real total is higher.
+					{t('inventory.noPriceYetSo', {
+						unpriced: data.run.unpriced,
+						have: data.run.unpriced === 1 ? 'line has' : 'lines have'
+					})}
 				</p>
 			{/if}
 		{/if}
@@ -1185,13 +1188,13 @@
 				<button
 					onclick={() => (filterType = filterType === 'replenish' ? 'all' : 'replenish')}
 					aria-pressed={filterType === 'replenish'}
-					title="Restock ({keyFor('/inventory', 'filter-replenish')})"
+					title={t('inventory.restock2', { replenish: keyFor('/inventory', 'filter-replenish') })}
 					>{t('inventory.restock')}</button
 				>
 				<button
 					onclick={() => (filterType = filterType === 'someday' ? 'all' : 'someday')}
 					aria-pressed={filterType === 'someday'}
-					title="Wishlist ({keyFor('/inventory', 'filter-someday')})"
+					title={t('inventory.wishlist2', { someday: keyFor('/inventory', 'filter-someday') })}
 					>{t('inventory.wishlist')}</button
 				>
 				<button
@@ -1207,18 +1210,18 @@
 					onclick={() => (showBought = !showBought)}
 					aria-pressed={showBought}
 					class="btn btn-sm btn-quiet"
-					title="Show what you already have ({keyFor('/inventory', 'toggle-show-bought')})"
+					title={t('inventory.showWhatYouAlreadyHave', {
+						bought: keyFor('/inventory', 'toggle-show-bought')
+					})}>{t('inventory.bought', { show: showBought ? 'Hide' : 'Show' })}</button
 				>
-					{showBought ? 'Hide' : 'Show'} bought
-				</button>
 				<button
 					onclick={() => (showSnoozed = !showSnoozed)}
 					aria-pressed={showSnoozed}
 					class="btn btn-sm btn-quiet"
-					title="Show what you put away ({keyFor('/inventory', 'toggle-show-snoozed')})"
+					title={t('inventory.showWhatYouPutAway', {
+						snoozed: keyFor('/inventory', 'toggle-show-snoozed')
+					})}>{t('inventory.archived', { show: showSnoozed ? 'Hide' : 'Show' })}</button
 				>
-					{showSnoozed ? 'Hide' : 'Show'} archived
-				</button>
 				<label class="sr-only" for="inventory-find">{t('inventory.find2')}</label>
 				<OneLine
 					id="inventory-find"
@@ -1242,8 +1245,10 @@
 				class="text-xs text-gray-500 {notShowing > 0 ? '' : 'invisible'}"
 				aria-hidden={notShowing > 0 ? undefined : 'true'}
 			>
-				Not showing {notShowing}
-				{notShowing === 1 ? 'item' : 'items'}
+				{t('inventory.notShowing', {
+					notShowing: notShowing,
+					items: notShowing === 1 ? 'item' : 'items'
+				})}
 			</p>
 		</div>
 
@@ -1443,7 +1448,8 @@
 															onclick={() => startEdit(item)}
 															class="icon-btn"
 															title={t('ui.edit')}
-															aria-label="Edit {item.name}"><Icon name="edit" /></button
+															aria-label={t('inventory.edit', { name: item.name })}
+															><Icon name="edit" /></button
 														>
 														{#if confirmingDelete === item.id}
 															<form
@@ -1473,7 +1479,8 @@
 																}}
 																class="icon-btn icon-btn-danger"
 																title={t('ui.delete')}
-																aria-label="Delete {item.name}"><Icon name="trash" /></button
+																aria-label={t('inventory.delete', { name: item.name })}
+																><Icon name="trash" /></button
 															>
 														{/if}
 													</div>
@@ -1572,7 +1579,8 @@
 											onclick={() => startEdit(item)}
 											class="icon-btn"
 											title={t('ui.edit')}
-											aria-label="Edit {item.name}"><Icon name="edit" /></button
+											aria-label={t('inventory.edit', { name: item.name })}
+											><Icon name="edit" /></button
 										>
 										{#if confirmingDelete === item.id}
 											<form
@@ -1602,7 +1610,8 @@
 												}}
 												class="icon-btn icon-btn-danger"
 												title={t('ui.delete')}
-												aria-label="Delete {item.name}"><Icon name="trash" /></button
+												aria-label={t('inventory.delete', { name: item.name })}
+												><Icon name="trash" /></button
 											>
 										{/if}
 									</div>
@@ -1775,7 +1784,7 @@
 							type="button"
 							class="btn btn-sm shrink-0"
 							title={t('ui.rename')}
-							aria-label="Rename {category.name}"
+							aria-label={t('inventory.rename', { name: category.name })}
 							onclick={() => (editingCategory = category.id)}
 						>
 							<Icon name="edit" size={14} />
@@ -1784,7 +1793,7 @@
 							type="button"
 							class="btn btn-sm shrink-0"
 							title={t('ui.delete')}
-							aria-label="Delete {category.name}"
+							aria-label={t('inventory.delete', { name: category.name })}
 							onclick={() => (confirmDeleteCategory = category.id)}
 						>
 							<Icon name="trash" size={14} />

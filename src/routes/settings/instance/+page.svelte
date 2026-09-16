@@ -205,8 +205,9 @@
 						{data.effectiveRegistration}
 						{#if data.effectiveRegistration !== data.config.registration.mode}
 							<span class="text-amber-700"
-								>· the environment overrides the setting below ({data.config.registration
-									.mode})</span
+								>{t('settings.instance.theEnvironmentOverridesThe', {
+									mode: data.config.registration.mode
+								})}</span
 							>
 						{/if}
 					</dd>
@@ -216,7 +217,9 @@
 					<dt class="text-sm text-gray-500">{t('settings.instance.whereTheDataIs')}</dt>
 					<dd class="text-sm text-gray-900">
 						<span class="tabular">{storage.path}</span>
-						<span class="text-gray-500">· {storage.tables} tables</span>
+						<span class="text-gray-500"
+							>{t('settings.instance.tables', { tables: storage.tables })}</span
+						>
 					</dd>
 				</div>
 			{/if}
@@ -495,7 +498,9 @@
 				: 'A code somebody types when they create their account. It works once.'}
 		>
 			{#snippet actions()}
-				<span class="eyebrow text-gray-600">{open.length} open</span>
+				<span class="eyebrow text-gray-600"
+					>{t('settings.instance.open', { length: open.length })}</span
+				>
 			{/snippet}
 
 			{#if fresh}

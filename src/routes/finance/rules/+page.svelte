@@ -61,15 +61,15 @@
 				value={data.months}
 				onchange={(e) => filter({ months: Number((e.currentTarget as HTMLSelectElement).value) })}
 			>
-				{#each WINDOWS as w (w)}<option value={w}>last {w} months</option>{/each}
+				{#each WINDOWS as w (w)}<option value={w}>{t('finance.rules.lastMonths', { w: w })}</option
+					>{/each}
 			</select>
 			{#if data.unsorted > 0}
 				<a
 					href={resolve('/finance/ledgers')}
 					class="ml-auto rounded bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800"
+					>{t('finance.rules.uncategorized', { unsorted: data.unsorted })}</a
 				>
-					{data.unsorted} uncategorized →
-				</a>
 			{:else}
 				<span class="ml-auto text-xs text-gray-500">{t('finance.rules.everyOutgoingLineHasA')}</span
 				>
@@ -115,7 +115,7 @@
 											name="color"
 											value={rule.color}
 											class="h-8 w-10 shrink-0 cursor-pointer border border-gray-200"
-											aria-label="Colour for {rule.name}"
+											aria-label={t('finance.rules.colourFor', { name: rule.name })}
 										/>
 										<OneLine name="heading" value={rule.name} class="input flex-1" required />
 									</div>
@@ -171,7 +171,7 @@
 										<input type="hidden" name="delta" value="-1" />
 										<button
 											class="icon-btn"
-											aria-label="Move {rule.name} up"
+											aria-label={t('finance.rules.moveUp', { name: rule.name })}
 											disabled={index === 0}
 										>
 											<Icon name="chevron-up" />
@@ -182,7 +182,7 @@
 										<input type="hidden" name="delta" value="1" />
 										<button
 											class="icon-btn"
-											aria-label="Move {rule.name} down"
+											aria-label={t('finance.rules.moveDown', { name: rule.name })}
 											disabled={index === group.rules.length - 1}
 										>
 											<Icon name="chevron-down" />
@@ -190,14 +190,14 @@
 									</form>
 									<button
 										class="icon-btn"
-										aria-label="Edit {rule.name}"
+										aria-label={t('finance.rules.edit', { name: rule.name })}
 										onclick={() => (editingId = rule.id)}
 									>
 										<Icon name="edit" />
 									</button>
 									<button
 										class="icon-btn"
-										aria-label="Delete {rule.name}"
+										aria-label={t('finance.rules.delete', { name: rule.name })}
 										onclick={() => (deleting = rule)}
 									>
 										<Icon name="trash" />
@@ -312,10 +312,10 @@
 >
 	{#if deleting}
 		<p class="text-sm text-gray-600">
-			<strong>{deleting.name}</strong> stops claiming the {deleting.matches} line{deleting.matches ===
-			1
-				? ''
-				: 's'} it matches. The lines themselves stay; they are the bank's.
+			<strong>{deleting.name}</strong>{t('finance.rules.stopsClaimingTheLineIt', {
+				matches: deleting.matches,
+				s: deleting.matches === 1 ? '' : 's'
+			})}
 		</p>
 	{/if}
 	{#snippet footer()}

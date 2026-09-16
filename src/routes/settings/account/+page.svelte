@@ -560,8 +560,10 @@
 			     what is already on it. -->
 		{:else if data.exports.remaining <= 0}
 			<p class="mt-2 text-sm text-red-600">
-				No exports left today — this plan allows {data.exports.allowed} a day. The next one unlocks
-				{data.exports.unlocksIn}.
+				{t('settings.account.noExportsLeftToday', {
+					allowed: data.exports.allowed,
+					unlocksIn: data.exports.unlocksIn ?? ''
+				})}
 			</p>
 		{:else}
 			<p class="mt-2 text-sm {data.exports.remaining === 1 ? 'text-amber-700' : 'text-gray-500'}">

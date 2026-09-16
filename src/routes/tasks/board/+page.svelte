@@ -750,7 +750,9 @@
 							<button
 								class="chip flex items-center gap-1 text-gray-700"
 								title={t('tasks.board.removeThisReminder')}
-								aria-label="Remove the reminder at {reminder.remindAt.slice(11, 16)}"
+								aria-label={t('tasks.board.removeTheReminderAt', {
+									slice: reminder.remindAt.slice(11, 16)
+								})}
 							>
 								<Icon name="clock" size={12} />
 								<span class="tabular">{reminder.remindAt.slice(11, 16)}</span>
@@ -1073,7 +1075,7 @@
 														openEditor(card);
 													}}
 													class="shrink-0 self-start text-gray-500 transition hover:text-gray-900"
-													aria-label="Edit {card.title}"
+													aria-label={t('tasks.board.edit', { title: card.title })}
 												>
 													<Icon name="edit" size={14} />
 												</button>

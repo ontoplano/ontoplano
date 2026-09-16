@@ -145,7 +145,7 @@
 								minutes: recipe.minutes ?? null
 							})}
 						title={t('health.recipes.putItOnADay')}
-						aria-label="Put {recipe.title} on a day"
+						aria-label={t('health.recipes.putOnADay', { title: recipe.title })}
 						class="btn btn-sm absolute top-2 right-2 z-10"
 					>
 						<Icon name="calendar" />
@@ -182,9 +182,15 @@
 							<span class="block text-sm font-medium text-gray-900">{recipe.title}</span>
 
 							<span class="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-								{#if recipe.minutes}<span class="tabular">{recipe.minutes} min</span>{/if}
-								{#if recipe.servings}<span class="tabular">serves {recipe.servings}</span>{/if}
-								<span class="tabular">{recipe.ingredients} ingredients</span>
+								{#if recipe.minutes}<span class="tabular"
+										>{t('health.recipes.min', { minutes: recipe.minutes })}</span
+									>{/if}
+								{#if recipe.servings}<span class="tabular"
+										>{t('health.recipes.serves2', { servings: recipe.servings })}</span
+									>{/if}
+								<span class="tabular"
+									>{t('health.recipes.ingredients', { ingredients: recipe.ingredients })}</span
+								>
 							</span>
 
 							<span class="mt-2 block text-xs">
@@ -193,10 +199,12 @@
 								{:else if recipe.missing === 0}
 									<span class="text-teal-700">{t('health.recipes.youHaveEverything')}</span>
 								{:else}
-									<span class="text-amber-700">
-										missing {recipe.missing}
-										{recipe.missing === 1 ? 'ingredient' : 'ingredients'}
-									</span>
+									<span class="text-amber-700"
+										>{t('health.recipes.missing', {
+											missing: recipe.missing,
+											ingredients: recipe.missing === 1 ? 'ingredient' : 'ingredients'
+										})}</span
+									>
 								{/if}
 							</span>
 						</span></a

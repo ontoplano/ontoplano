@@ -816,7 +816,8 @@
 					</strong>
 				</span>
 				{#if data.demoHost}
-					<span class="font-normal">Open {data.demoHost} on your phone to see it there too.</span>
+					<span class="font-normal">{t('home.openOnYourPhoneTo', { demoHost: data.demoHost })}</span
+					>
 				{/if}
 			</div>
 		{/if}
@@ -925,10 +926,11 @@
 				style="padding-top: calc(var(--safe-top, 0px) + 0.5rem)"
 			>
 				<span>
-					<strong>{t('home.updateTheApp')}</strong>
-					It is {data.appUpdate.app} and this instance runs {data.appUpdate.instance} — some things may
-					not work until it catches up.
-				</span>
+					<strong>{t('home.updateTheApp')}</strong>{t('home.itIsAndThisInstance', {
+						app: data.appUpdate.app,
+						instance: data.appUpdate.instance
+					})}</span
+				>
 				<button
 					class="shrink-0 border border-amber-700 px-2 py-1 text-xs font-semibold hover:bg-amber-400"
 					onclick={hushUpdate}

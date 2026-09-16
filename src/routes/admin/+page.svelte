@@ -199,10 +199,11 @@
 								</p>
 								<p class="mt-0.5 truncate text-xs text-red-600">{failure.error}</p>
 								<p class="mt-0.5 text-xs text-gray-500">
-									{failure.attempts}
-									{failure.attempts === 1 ? 'attempt' : 'attempts'} · last {ago(
-										failure.lastAttemptAt
-									)}
+									{t('admin.last', {
+										attempts: failure.attempts,
+										attempts2: failure.attempts === 1 ? 'attempt' : 'attempts',
+										lastAttemptAt: ago(failure.lastAttemptAt)
+									})}
 								</p>
 							</div>
 							<div class="flex shrink-0 items-center gap-1">
@@ -386,8 +387,10 @@
 					</p>
 				{/if}
 				<p class="border-b border-gray-200 px-4 py-2 text-xs text-gray-500">
-					{data.protection.lastDay}
-					{data.protection.lastDay === 1 ? 'address' : 'addresses'} blocked in the last 24 hours
+					{t('admin.blockedInTheLast', {
+						lastDay: data.protection.lastDay,
+						addresses: data.protection.lastDay === 1 ? 'address' : 'addresses'
+					})}
 				</p>
 				<div class="divide-y divide-gray-200">
 					{#each data.protection.recent as ban (ban.at + ban.address)}
@@ -413,7 +416,9 @@
 										without this a repeat offender reads as a first-timer.
 									-->
 									{#if ban.times > 1}
-										· <strong class="font-medium">{ban.times}× in this log</strong>
+										· <strong class="font-medium"
+											>{t('admin.inThisLog', { times: ban.times })}</strong
+										>
 									{/if}
 								</span>
 							</span>

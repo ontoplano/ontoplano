@@ -16,8 +16,10 @@
 		<div>
 			<h1 class="text-lg font-bold text-gray-900">{data.stream.name}</h1>
 			<p class="mt-0.5 text-sm text-gray-500">
-				<code class="font-mono text-xs">{data.stream.slug}</code>
-				· from {data.stream.source} · {data.points.length} points
+				<code class="font-mono text-xs">{data.stream.slug}</code>{t('data.slug.fromPoints', {
+					source: data.stream.source,
+					length: data.points.length
+				})}
 			</p>
 		</div>
 		<nav class="flex gap-1">

@@ -10,20 +10,18 @@
 <svelte:head><title>{t('legal.terms.termsOntoplano')}</title></svelte:head>
 
 <h1>{t('legal.terms.terms')}</h1>
-<p class="updated">Last updated {data.updated}.</p>
+<p class="updated">{t('legal.terms.lastUpdated', { updated: data.updated })}</p>
 
-<p>
-	These are the terms for using this instance of ontoplano, run by {data.operator}. Using it means
-	agreeing to them. They are short because there is not much to say.
-</p>
+<p>{t('legal.terms.theseAreTheTermsFor', { operator: data.operator })}</p>
 
 <h2>{t('legal.terms.theAccountIsYours')}</h2>
 <p>
 	{t('legal.terms.whatYouWriteHereBelongs')}
 </p>
 <p>
-	Keep your password to yourself, and tell {data.contactEmail ?? 'whoever runs this instance'} if you
-	think somebody else has it.
+	{t('legal.terms.keepYourPasswordToYourself', {
+		instance: data.contactEmail ?? 'whoever runs this instance'
+	})}
 </p>
 
 <h2>{t('legal.terms.whatYouMayNotDo')}</h2>
@@ -55,7 +53,9 @@
 	{t('legal.terms.everythingYouWroteStaysWhere')}
 </p>
 <p>
-	If a charge was wrong, write to {data.contactEmail ?? 'whoever runs this instance'} and it will be refunded.
+	{t('legal.terms.ifAChargeWasWrong', {
+		instance: data.contactEmail ?? 'whoever runs this instance'
+	})}
 </p>
 
 <h2>{t('legal.terms.whatIsPromisedAboutIt')}</h2>
@@ -84,8 +84,4 @@
 </p>
 
 <h2>{t('legal.terms.theBoringPart')}</h2>
-<p>
-	The software is provided as it is, without warranty. Liability, where it cannot be excluded, is
-	limited to what you paid in the last twelve months. Disputes go to the courts of
-	{data.jurisdiction}.
-</p>
+<p>{t('legal.terms.theSoftwareIsProvidedAs', { jurisdiction: data.jurisdiction })}</p>

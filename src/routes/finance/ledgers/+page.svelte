@@ -185,9 +185,11 @@
 				<button
 					class="text-xs text-gray-500 hover:text-gray-700"
 					onclick={() => (showArchived = !showArchived)}
+					>{t('finance.ledgers.archived', {
+						show: showArchived ? 'Hide' : 'Show',
+						length: archived.length
+					})}</button
 				>
-					{showArchived ? 'Hide' : 'Show'} archived ({archived.length})
-				</button>
 			{/if}
 		{/snippet}
 	</RoomToolbar>
@@ -197,7 +199,9 @@
 			{#each archived as ledger (ledger.id)}
 				<li class="flex items-center gap-3 px-3 py-2 text-sm">
 					<span class="min-w-0 flex-1 truncate text-gray-600">{ledger.name}</span>
-					<span class="text-xs text-gray-400 tabular-nums">{ledger.count} lines</span>
+					<span class="text-xs text-gray-400 tabular-nums"
+						>{t('finance.ledgers.lines', { count: ledger.count })}</span
+					>
 					<form method="post" action="?/archiveLedger" use:enhance>
 						<input type="hidden" name="id" value={ledger.id} />
 						<input type="hidden" name="archived" value="false" />
@@ -205,7 +209,7 @@
 					</form>
 					<button
 						class="icon-btn"
-						aria-label="Delete {ledger.name}"
+						aria-label={t('finance.ledgers.delete', { name: ledger.name })}
 						onclick={() => (deletingLedger = ledger)}
 					>
 						<Icon name="trash" />
@@ -247,9 +251,8 @@
 					<a
 						href={resolve('/finance/rules')}
 						class="rounded bg-amber-50 px-1.5 py-0.5 text-xs font-medium text-amber-800"
+						>{t('finance.ledgers.uncategorized', { unsorted: data.unsorted })}</a
 					>
-						{data.unsorted} uncategorized →
-					</a>
 				{/if}
 				<!-- On a phone these are the row, not an afterthought pushed right. -->
 				<span class="flex w-full items-center gap-1 sm:ml-auto sm:w-auto">
@@ -272,7 +275,7 @@
 					</button>
 					<button
 						class="icon-btn"
-						aria-label="Edit {current.name}"
+						aria-label={t('finance.ledgers.edit', { name: current.name })}
 						onclick={() => (editingLedger = current)}
 					>
 						<Icon name="edit" />
@@ -280,14 +283,20 @@
 					<form method="post" action="?/moveLedger" use:enhance>
 						<input type="hidden" name="id" value={current.id} />
 						<input type="hidden" name="delta" value="-1" />
-						<button class="icon-btn" aria-label="Move {current.name} earlier">
+						<button
+							class="icon-btn"
+							aria-label={t('finance.ledgers.moveEarlier', { name: current.name })}
+						>
 							<Icon name="chevron-up" />
 						</button>
 					</form>
 					<form method="post" action="?/moveLedger" use:enhance>
 						<input type="hidden" name="id" value={current.id} />
 						<input type="hidden" name="delta" value="1" />
-						<button class="icon-btn" aria-label="Move {current.name} later">
+						<button
+							class="icon-btn"
+							aria-label={t('finance.ledgers.moveLater', { name: current.name })}
+						>
 							<Icon name="chevron-down" />
 						</button>
 					</form>
@@ -296,7 +305,7 @@
 						<input type="hidden" name="archived" value="true" />
 						<button
 							class="icon-btn"
-							aria-label="Archive {current.name}"
+							aria-label={t('finance.ledgers.archive', { name: current.name })}
 							title={t('finance.ledgers.putItAway')}
 						>
 							<Icon name="archive" />
@@ -304,7 +313,7 @@
 					</form>
 					<button
 						class="icon-btn"
-						aria-label="Delete {current.name}"
+						aria-label={t('finance.ledgers.delete', { name: current.name })}
 						onclick={() => (deletingLedger = current)}
 					>
 						<Icon name="trash" />
@@ -344,9 +353,9 @@
 						>{t('finance.ledgers.clear')}</button
 					>
 				{/if}
-				<span class="ml-auto text-xs text-gray-500 tabular-nums">
-					{data.movements.length} shown
-				</span>
+				<span class="ml-auto text-xs text-gray-500 tabular-nums"
+					>{t('finance.ledgers.shown', { length: data.movements.length })}</span
+				>
 			</div>
 
 			{#if data.movements.length === 0}
@@ -656,8 +665,9 @@
 >
 	{#if deletingLedger}
 		<p class="text-sm text-gray-600">
-			<strong>{deletingLedger.name}</strong> and its {deletingLedger.count} lines go for good. To keep
-			the history, archive it instead.
+			<strong>{deletingLedger.name}</strong>{t('finance.ledgers.andItsLinesGoFor', {
+				count: deletingLedger.count
+			})}
 		</p>
 	{/if}
 	{#snippet footer()}
@@ -826,9 +836,12 @@
 					<button class="btn btn-primary btn-sm" type="submit">{t('finance.ledgers.import')}</button
 					>
 					{#if form && 'added' in form && form.success}
-						<span class="ml-2 text-sm text-gray-600">
-							{form.added} added, {form.skipped} already here.
-						</span>
+						<span class="ml-2 text-sm text-gray-600"
+							>{t('finance.ledgers.addedAlreadyHere', {
+								added: form.added ?? 0,
+								skipped: form.skipped ?? 0
+							})}</span
+						>
 					{/if}
 				</div>
 			</div>

@@ -299,14 +299,14 @@
 		<span class="absolute top-1.5 right-1.5 flex gap-1">
 			<button
 				class="icon-btn bg-white/80"
-				aria-label="Rename {node.name}"
+				aria-label={t('gallery.rename', { name: node.name })}
 				onclick={() => (renaming = node)}
 			>
 				<Icon name="edit" />
 			</button>
 			<button
 				class="icon-btn bg-white/80"
-				aria-label="Delete {node.name}"
+				aria-label={t('gallery.delete', { name: node.name })}
 				onclick={() => (confirmingDelete = node)}
 			>
 				<Icon name="trash" />
@@ -320,10 +320,11 @@
 				class="flex w-full items-center gap-1 border-t border-gray-200 px-2.5 py-1.5 text-xs text-gray-500 hover:text-gray-700"
 				onclick={() => choose(node.id)}
 			>
-				<Icon name="chevron-right" size={14} />
-				{node.children.length}
-				{node.children.length === 1 ? 'album' : 'albums'} inside
-			</button>
+				<Icon name="chevron-right" size={14} />{t('gallery.inside', {
+					length: node.children.length,
+					albums: node.children.length === 1 ? 'album' : 'albums'
+				})}</button
+			>
 		{/if}
 	</li>
 {/snippet}
@@ -362,14 +363,18 @@
 	{#if plan}
 		<div class="rounded border border-gray-200">
 			<div class="flex flex-wrap items-baseline gap-2 border-b border-gray-200 px-4 py-3">
-				<span class="text-sm font-medium text-gray-900">
-					{plan.willImport} picture{plan.willImport === 1 ? '' : 's'} into {plan.albums.length}
-					album{plan.albums.length === 1 ? '' : 's'}
-				</span>
+				<span class="text-sm font-medium text-gray-900"
+					>{t('gallery.pictureIntoAlbum', {
+						willImport: plan.willImport,
+						s: plan.willImport === 1 ? '' : 's',
+						length: plan.albums.length,
+						s2: plan.albums.length === 1 ? '' : 's'
+					})}</span
+				>
 				{#if plan.willRefuse > 0}
-					<span class="text-sm text-red-700">
-						{plan.willRefuse} refused
-					</span>
+					<span class="text-sm text-red-700"
+						>{t('gallery.refused', { willRefuse: plan.willRefuse })}</span
+					>
 				{/if}
 				<span class="ml-auto flex items-center gap-2">
 					<button class="btn btn-sm" type="button" onclick={() => (chosen = [])}
@@ -502,7 +507,10 @@
 				{:else if standingIn && level.length === 0}
 					<!-- A folder with no folders in it. Its pictures are the thing to
 					     offer: an empty grid with nothing to press is a dead end. -->
-					<EmptyState icon="image" title="No albums inside {leafAlbumName(standingIn.name)}">
+					<EmptyState
+						icon="image"
+						title={t('gallery.noAlbumsInside', { name: leafAlbumName(standingIn.name) })}
+					>
 						{#snippet action()}
 							<a class="btn btn-primary" href="{resolve('/gallery')}/{standingIn?.id}">
 								{t('gallery.openTheAlbum')}
@@ -622,8 +630,9 @@
 >
 	{#if confirmingDelete}
 		<p class="text-sm text-gray-600">
-			<strong>{confirmingDelete.name}</strong> lets go of its {confirmingDelete.count} pictures. A picture
-			that also lives in another album stays there; one that lived only here is deleted with it.
+			<strong>{confirmingDelete.name}</strong>{t('gallery.letsGoOfItsPictures', {
+				count: confirmingDelete.count
+			})}
 		</p>
 	{/if}
 	{#snippet footer()}

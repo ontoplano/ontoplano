@@ -260,7 +260,7 @@
 				<li class="list-row">
 					<button
 						class="list-row-main text-left"
-						aria-label="Show the plan for {workout.title}"
+						aria-label={t('health.workouts.showThePlanFor', { title: workout.title })}
 						aria-expanded={expanded === workout.id}
 						onclick={() => (expanded = expanded === workout.id ? null : workout.id)}
 					>
@@ -280,7 +280,7 @@
 							<button
 								class="icon-btn"
 								title={t('health.workouts.doneJustNow')}
-								aria-label="Mark {workout.title} done"
+								aria-label={t('health.workouts.markDone', { title: workout.title })}
 							>
 								<Icon name="check" />
 							</button>
@@ -290,7 +290,7 @@
 						<button
 							class="icon-btn"
 							title={t('health.workouts.writeDownWhatYouDid')}
-							aria-label="Write down what you did for {workout.title}"
+							aria-label={t('health.workouts.writeDownWhatYouDid2', { title: workout.title })}
 							onclick={() => startLog(workout)}
 						>
 							<Icon name="note" />
@@ -299,7 +299,7 @@
 						<button
 							class="icon-btn"
 							title={t('health.workouts.putItOnADay')}
-							aria-label="Plan {workout.title} onto a day"
+							aria-label={t('health.workouts.planOntoADay', { title: workout.title })}
 							onclick={() => (scheduling = workout)}
 						>
 							<Icon name="calendar" />
@@ -307,7 +307,7 @@
 
 						<button
 							class="icon-btn"
-							aria-label="Edit {workout.title}"
+							aria-label={t('health.workouts.edit', { title: workout.title })}
 							onclick={() => openEdit(workout)}
 						>
 							<Icon name="edit" />
@@ -321,7 +321,10 @@
 						>
 							<input type="hidden" name="id" value={workout.id} />
 							<input type="hidden" name="archived" value="true" />
-							<button class="icon-btn" aria-label="Archive {workout.title}">
+							<button
+								class="icon-btn"
+								aria-label={t('health.workouts.archive', { title: workout.title })}
+							>
 								<Icon name="archive" />
 							</button>
 						</form>
@@ -403,7 +406,9 @@
 													<button
 														class="icon-btn"
 														title={t('health.workouts.correctThis')}
-														aria-label="Correct the session on {session.doneOn}"
+														aria-label={t('health.workouts.correctTheSessionOn', {
+															doneOn: session.doneOn
+														})}
 														onclick={() => startEditSession(workout, session)}
 													>
 														<Icon name="edit" />
@@ -411,7 +416,9 @@
 													<button
 														class="icon-btn icon-btn-danger"
 														title={t('health.workouts.removeThis')}
-														aria-label="Remove the session on {session.doneOn}"
+														aria-label={t('health.workouts.removeTheSessionOn', {
+															doneOn: session.doneOn
+														})}
 														onclick={() => (confirmDeleteSession = session)}
 													>
 														<Icon name="trash" />
@@ -435,8 +442,11 @@
 				class="text-sm text-gray-500 hover:text-gray-700"
 				onclick={() => (showArchived = !showArchived)}
 			>
-				<Icon name={showArchived ? 'chevron-down' : 'chevron-right'} /> Archived ({archived.length})
-			</button>
+				<Icon name={showArchived ? 'chevron-down' : 'chevron-right'} />{t(
+					'health.workouts.archived',
+					{ length: archived.length }
+				)}</button
+			>
 			{#if showArchived}
 				<ul class="mt-2 divide-y divide-gray-100 rounded border border-gray-200">
 					{#each archived as workout (workout.id)}
@@ -450,7 +460,7 @@
 							</form>
 							<button
 								class="icon-btn"
-								aria-label="Delete {workout.title}"
+								aria-label={t('health.workouts.delete', { title: workout.title })}
 								onclick={() => (confirmingDelete = workout)}
 							>
 								<Icon name="trash" />
@@ -569,7 +579,7 @@
 								class="icon-btn"
 								disabled={index === 0}
 								title={t('health.workouts.askForThisOneEarlier')}
-								aria-label="Move {measure.activity || 'this'} up"
+								aria-label={t('health.workouts.moveUp', { activity: measure.activity || 'this' })}
 								onclick={() => moveDeclared(index, -1)}
 							>
 								<Icon name="chevron-up" />
@@ -579,7 +589,7 @@
 								class="icon-btn"
 								disabled={index === declared.length - 1}
 								title={t('health.workouts.askForThisOneLater')}
-								aria-label="Move {measure.activity || 'this'} down"
+								aria-label={t('health.workouts.moveDown', { activity: measure.activity || 'this' })}
 								onclick={() => moveDeclared(index, 1)}
 							>
 								<Icon name="chevron-down" />
@@ -588,7 +598,9 @@
 								type="button"
 								class="icon-btn icon-btn-danger"
 								title={t('health.workouts.takeThisOneOut')}
-								aria-label="Stop measuring {measure.activity || 'this'}"
+								aria-label={t('health.workouts.stopMeasuring', {
+									activity: measure.activity || 'this'
+								})}
 								onclick={() => removeDeclared(index)}
 							>
 								<Icon name="minus" />
@@ -770,7 +782,9 @@
 							type="button"
 							class="icon-btn icon-btn-danger"
 							title={t('health.workouts.takeThisLineOut')}
-							aria-label="Take out the line for {line.activity || 'this row'}"
+							aria-label={t('health.workouts.takeOutTheLineFor', {
+								row: line.activity || 'this row'
+							})}
 							onclick={() => removeLine(index)}
 						>
 							<Icon name="minus" />
@@ -921,7 +935,8 @@
 						onclick={() => (editingCategory = category.id)}
 						class="icon-btn"
 						title={t('ui.rename')}
-						aria-label="Rename {category.name}"><Icon name="edit" /></button
+						aria-label={t('health.workouts.rename', { name: category.name })}
+						><Icon name="edit" /></button
 					>
 					{#if confirmDeleteCategory === category.id}
 						<form
@@ -949,7 +964,8 @@
 							onclick={() => (confirmDeleteCategory = category.id)}
 							class="icon-btn icon-btn-danger"
 							title={t('ui.remove')}
-							aria-label="Remove {category.name}"><Icon name="trash" /></button
+							aria-label={t('health.workouts.remove', { name: category.name })}
+							><Icon name="trash" /></button
 						>
 					{/if}
 				{/if}

@@ -53,10 +53,11 @@
 		<div class="w-full border border-gray-200 bg-white p-6 text-center shadow-card">
 			<p class="text-sm text-gray-900">{t('demo.thatIsALotOf')}</p>
 			<p class="mt-2 text-sm text-gray-600">
-				The demo hands out {DEMO_ACCOUNTS_PER_ADDRESS} an hour per address, which is what stops a script
-				taking them all. Another one in about
-				{form.minutes}
-				{form.minutes === 1 ? 'minute' : 'minutes'}.
+				{t('demo.theDemoHandsOutAn', {
+					demoAccountsPerAddress: DEMO_ACCOUNTS_PER_ADDRESS,
+					minutes: form.minutes,
+					minutes2: form.minutes === 1 ? 'minute' : 'minutes'
+				})}
 			</p>
 			<a href={resolve('/demo')} class="btn btn-primary mt-4">{t('demo.tryAgain')}</a>
 		</div>
