@@ -228,16 +228,23 @@ SITE_PORT ?= 1495
 #: SITE_SRC_LOCAL=ontoplano-site  where the marketing site is checked out
 SITE_SRC_LOCAL ?= ontoplano-site
 
-# What CI checks, wired to the push that would fail it.
+# What CI checks and a machine can settle, wired to the commit that would
+# otherwise fail it.
+#
+# One hook, on commit, because that is where a fix can still be part of the
+# thing being made: formatting and the generated docs are written and staged,
+# and eslint runs over what is staged. There was a pre-push hook as well, doing
+# the same work a second time — pointless once the commit is already correct,
+# and a minute of everybody's day.
 #
 # `core.hooksPath` rather than copying a file into `.git/hooks`: the hook stays
 # in the repo, under review like everything else, and updating it updates it
 # for everybody rather than for whoever remembers to copy it again.
-## install the git hooks (format on commit, lint on push)
+## install the git hooks (format, regenerate the docs and lint, on commit)
 hooks:
 	@git config core.hooksPath githooks
-	@echo "hooks: pre-commit formats what you commit; pre-push lints what you push"
-	@echo "       (PREPUSH_TESTS=1 adds the unit suite, --no-verify skips either)"
+	@echo "hooks: pre-commit formats what you commit, regenerates the docs, and lints"
+	@echo "       (git commit --no-verify skips it)"
 
 # `dev` is the app; this is the name to type when you mean it by contrast.
 ## the app alone (what `dev` runs)

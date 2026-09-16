@@ -1,45 +1,76 @@
 #!/bin/sh
 #
-# Formatting is not a thing to be told about. It is a thing to be done.
+# What a commit owes, done rather than reported.
 #
-# Prettier has one answer for every file, and it can write that answer as
-# easily as it can complain about it — so being stopped at a push, running the
-# writer by hand, and making a second commit that says "formatting" is three
-# steps of ceremony around a decision nobody made. This formats what is being
-# committed and stages the result, so the commit is correct as it is written
-# and a push never fails for it.
+# Two of the things CI checks need no decision from anybody: how the code is
+# formatted, and whether the generated documentation matches the code it is
+# generated from. Both have exactly one right answer and a command that writes
+# it. Being told about them later — by a red pipeline, minutes after moving on
+# — costs a context switch, a second commit and a second push, for something a
+# machine could have done while the commit was being made.
+#
+# So this writes both, stages what it wrote, and the commit is correct as it is
+# written. What is left for the pipeline is the half that cannot be fixed
+# automatically: the lint rules and the tests.
 #
 # Only the staged files, and only the parts of them that are staged: a file
 # half-staged on purpose stays half-staged. That is why this re-stages exactly
-# the paths it formatted rather than running `git add -A`, which would sweep in
-# whatever else is in the tree.
+# the paths it touched rather than `git add -A`, which would sweep in whatever
+# else is in the tree.
 #
-#   git commit --no-verify     commit without this
+#   git commit --no-verify     commit without any of this
 #
 # Installed by `make hooks`, which `make dev` runs — see the Makefile.
 set -e
 
-staged=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(ts|js|mjs|cjs|svelte|css|json|md|html|svx)$' || true)
-[ -n "$staged" ] || exit 0
+staged() {
+	git diff --cached --name-only --diff-filter=ACMR
+}
 
-# A file staged and then deleted from the tree is in that list and not on disk.
+# ── formatting ───────────────────────────────────────────────────────────────
+
+code=$(staged | grep -E '\.(ts|js|mjs|cjs|svelte|css|json|md|html|svx)$' || true)
+
 present=""
-for file in $staged; do
+for file in $code; do
+	# Staged and then deleted from the tree: in the list, not on disk.
 	[ -f "$file" ] && present="$present $file"
 done
-[ -n "$present" ] || exit 0
 
-before=$(git diff --cached --name-only --diff-filter=ACMR | wc -l | tr -d ' ')
-yarn -s prettier --write --log-level warn $present
+if [ -n "$present" ]; then
+	yarn -s prettier --write --log-level warn $present
 
-changed=""
-for file in $present; do
-	git diff --quiet -- "$file" || changed="$changed $file"
-done
+	formatted=""
+	for file in $present; do
+		git diff --quiet -- "$file" || formatted="$formatted $file"
+	done
 
-if [ -n "$changed" ]; then
+	if [ -n "$formatted" ]; then
+		# shellcheck disable=SC2086
+		git add $formatted
+		count=$(printf '%s\n' $formatted | wc -l | tr -d ' ')
+		echo "pre-commit: formatted $count file(s), and staged the result"
+	fi
+
+	# The rules a writer cannot settle. Cheap over a handful of files, and the
+	# thing that would otherwise fail the pipeline after the push.
 	# shellcheck disable=SC2086
-	git add $changed
-	count=$(printf '%s\n' $changed | wc -l | tr -d ' ')
-	echo "pre-commit: formatted $count of $before staged file(s), and staged the result"
+	yarn -s eslint $present
+fi
+
+# ── the generated documentation ──────────────────────────────────────────────
+#
+# `docs/reference/` is written from the source — the services, the MCP tools,
+# the schema — so a change to any of them makes the committed copy stale, and
+# `yarn docs:check` fails the build with "run yarn docs and commit the result".
+# Which is to say: the pipeline knows the answer and asks somebody else to type
+# it. Anything under `src/` or `drizzle/` could be a source, and guessing a
+# narrower list is how this comes back.
+
+if staged | grep -qE '^(src|drizzle)/'; then
+	yarn -s docs >/dev/null
+	if ! git diff --quiet -- docs/reference; then
+		git add docs/reference
+		echo "pre-commit: the docs were regenerated from the source, and staged"
+	fi
 fi

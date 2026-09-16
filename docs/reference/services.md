@@ -1292,6 +1292,13 @@ number, its tags and its people, and comes back exactly as it was.
 
 The most recent entry, for the dashboard card.
 
+The diary's own, which is not the same as the most recent row: notes written
+inside a notebook live in this table too, and the only thing telling them
+apart is a notebook id. Without that condition the card headed "Diary" showed
+whatever had been typed last anywhere in the app — a line from a project
+notebook, under the diary's heading, with the diary's own last entry nowhere.
+`listEntries` above has always said `isNull(notebookId)`; this did not.
+
 ### Types
 
 - `Tag`
