@@ -96,22 +96,31 @@ afterEach(() => {
 });
 
 describe('the turn that answers a press', () => {
-	test('starts painting at once, rather than after the delay', () => {
-		startMarkSpin([mark], 0, true);
+	test('starts painting at once, rather than after a delay', () => {
+		startMarkSpin([mark], 0);
 		frames(4);
 		expect(angleOf(mark), 'nothing was drawn').toBeGreaterThan(0);
 	});
 
-	test('and without `atOnce` it waits, so a quick wait leaves no trace', () => {
+	/**
+	 * There is no quiet version any more.
+	 *
+	 * The turn used to sit still for a fraction of the room slide, so that a
+	 * navigation finishing inside the movement left no trace. That is right for
+	 * a *warning* that something is slow and wrong for an answer to a press: on
+	 * a desktop most navigations land inside that fraction, so the one thing
+	 * saying "heard you" was invisible exactly when the app was quickest.
+	 */
+	test('every turn moves, however the caller asked for it', () => {
 		startMarkSpin([mark]);
 		frames(4);
-		expect(angleOf(mark)).toBe(0);
+		expect(angleOf(mark)).toBeGreaterThan(0);
 	});
 });
 
 describe('a turn nobody has stopped', () => {
 	test('keeps going past a full revolution, for as long as the wait lasts', () => {
-		startMarkSpin([mark], 0, true);
+		startMarkSpin([mark], 0);
 		frames(120);
 		// Several revolutions in, and still turning: the wait is what ends it.
 		expect(angleOf(mark)).toBeGreaterThan(720);
@@ -123,7 +132,7 @@ describe('a turn nobody has stopped', () => {
 
 describe('a turn that has been asked to stop', () => {
 	test('finishes its revolution and rests upright', async () => {
-		startMarkSpin([mark], 0, true);
+		startMarkSpin([mark], 0);
 		frames(20);
 		const caught = angleOf(mark);
 		expect(caught).toBeGreaterThan(0);
@@ -139,18 +148,35 @@ describe('a turn that has been asked to stop', () => {
 		expect(angleOf(mark)).toBeGreaterThan(caught + 90);
 	});
 
-	test('does not take the shortcut meant for a wait that never showed', async () => {
+	test('goes round once even when it is stopped in the same tick', async () => {
 		/*
-		 * Start and stop in the same tick — what the chooser does. Before, the
-		 * angle was zero (no frame had run), the shortcut read that as "nothing
-		 * was drawn" and rested immediately, and the mark never moved.
+		 * The navigation that is over before it began — a desktop route change,
+		 * and what the instance chooser does. The mark has not moved when the
+		 * stop arrives, and the answer is not to rest where it stands: it
+		 * carries on to the next upright, which from a standing start is one
+		 * whole turn.
 		 */
-		startMarkSpin([mark], 0, true);
+		startMarkSpin([mark], 0);
 		const landed = stopMarkSpin();
 		frames(20);
 		expect(angleOf(mark), 'it rested without turning').toBeGreaterThan(0);
 
-		frames(200);
+		/*
+		 * A whole one, read frame by frame: resting takes the property off, so
+		 * the finished mark is indistinguishable from one that never moved.
+		 *
+		 * The last painted angle is a few degrees short of 360 because the
+		 * wind-down never slows to nothing — it crosses its resting place and
+		 * stops there, upright. What matters is that the resting place was a
+		 * whole turn away and not the nearest one.
+		 */
+		let furthest = 0;
+		for (let i = 0; i < 200; i += 1) {
+			frames(1);
+			furthest = Math.max(furthest, angleOf(mark));
+		}
+		expect(furthest, 'it stopped short of a full turn').toBeGreaterThan(340);
+
 		await expect(landed).resolves.toBeUndefined();
 		expect(stillTurning(), 'it is still asking for frames').toBe(false);
 	});

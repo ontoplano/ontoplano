@@ -134,7 +134,7 @@ const RINGER_ASK_MS = 400;
 		url.searchParams.delete(SPINNING_PARAM);
 		history.replaceState(history.state, '', url);
 		const marks = [...document.querySelectorAll<HTMLElement>('[data-mark]')];
-		if (marks.length > 0) startMarkSpin(marks, 0, true);
+		if (marks.length > 0) startMarkSpin(marks, 0);
 	}
 }
 

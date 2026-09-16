@@ -75,7 +75,7 @@
 	 * `+layout.svelte`.
 	 */
 	function startTheTurn(): void {
-		if (mark) startMarkSpin([mark], 0, true);
+		if (mark) startMarkSpin([mark], 0);
 	}
 
 	/*
