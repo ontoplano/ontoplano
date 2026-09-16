@@ -12,6 +12,9 @@
 	import { renderMarkdown } from '$lib/markdown';
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 	import { armed } from '$lib/actions/armed';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -166,14 +169,14 @@
 		<div class="border border-gray-200 bg-white shadow-card">
 			<EmptyState
 				icon="calendar"
-				title="Nothing was planned that week"
+				title={t('tasks.review.nothingWasPlannedThatWeek')}
 				description="A review needs a week with something in it. Try the week before, or plan this one."
 			/>
 		</div>
 	{:else}
 		<div class="grid gap-4 lg:grid-cols-3">
 			<!-- What you planned against what you did. -->
-			<Card title="The week" accent="var(--section-accent)">
+			<Card title={t('tasks.review.theWeek')} accent="var(--section-accent)">
 				<div class="space-y-3">
 					<div class="flex items-baseline gap-2">
 						<span class="tabular text-3xl font-bold text-gray-900">{data.reading.done}</span>
@@ -206,14 +209,14 @@
 					-->
 					{#if data.week.isCurrent}
 						<p class="text-sm text-gray-500">
-							This week is still running — these fill in as you tick things off.
+							{t('tasks.review.thisWeekIsStillRunning')}
 						</p>
 					{/if}
 				</div>
 			</Card>
 
 			<!-- Where the time went, by category. -->
-			<Card title="Where it went" accent="var(--section-accent)">
+			<Card title={t('tasks.review.whereItWent')} accent="var(--section-accent)">
 				<ul class="space-y-2">
 					{#each data.reading.byCategory as cat (cat.id ?? 'none')}
 						<li class="flex items-center gap-2 text-sm">
@@ -229,7 +232,7 @@
 
 			<!-- Goals that moved. Which is not the same as goals that progressed —
 			     a goal's value has no history, so this can only say it was touched. -->
-			<Card title="Goals you touched" accent="var(--section-accent)">
+			<Card title={t('tasks.review.goalsYouTouched')} accent="var(--section-accent)">
 				{#if data.goals.length === 0}
 					<EmptyState
 						icon="goals"
@@ -261,7 +264,7 @@
 
 		<!-- What did not happen, and whether it still needs to. -->
 		<Card
-			title="What did not happen"
+			title={t('tasks.review.whatDidNotHappen')}
 			description="Say what happened to each. Whichever answer you give, it leaves this list — next week generates its own blocks."
 			accent="var(--section-accent)"
 			flush
@@ -291,7 +294,7 @@
 				</button>
 			{/snippet}
 			{#if data.loose.length === 0}
-				<EmptyState icon="check" title="Everything you planned, you did" />
+				<EmptyState icon="check" title={t('tasks.review.everythingYouPlannedYouDid')} />
 			{:else}
 				<!--
 					Two columns: what is left, and what you have decided about.
@@ -306,7 +309,7 @@
 					<div class="min-w-0" data-tour="review-loose">
 						{#if undecided.length === 0}
 							<p class="px-4 py-6 text-center text-sm text-gray-500">
-								Every one of them has an answer. Save it below.
+								{t('tasks.review.everyOneOfThemHas')}
 							</p>
 						{/if}
 						{#each looseByDay as day (day.date)}
@@ -326,7 +329,7 @@
 												type="button"
 												onclick={() => decide(item.id, 'done')}
 												class="icon-btn"
-												title="It happened after all"
+												title={t('tasks.review.itHappenedAfterAll')}
 												aria-label="{item.title}: it happened after all"
 											>
 												<Icon name="check" />
@@ -335,7 +338,7 @@
 												type="button"
 												onclick={() => decide(item.id, 'skipped')}
 												class="icon-btn"
-												title="It did not happen"
+												title={t('tasks.review.itDidNotHappen')}
 												aria-label="{item.title}: skipped"
 											>
 												<Icon name="skip" />
@@ -344,7 +347,7 @@
 												type="button"
 												onclick={() => decide(item.id, 'todo')}
 												class="icon-btn"
-												title="It still needs doing — put it on the todo list"
+												title={t('tasks.review.itStillNeedsDoing')}
 												aria-label="{item.title}: onto the todo list"
 											>
 												<Icon name="archive" />
@@ -353,7 +356,7 @@
 												type="button"
 												onclick={() => (givingADay = { id: item.id, title: item.title })}
 												class="icon-btn"
-												title="It still needs doing — give it a day"
+												title={t('tasks.review.itStillNeedsDoing2')}
 												aria-label="{item.title}: give it a day"
 											>
 												<Icon name="calendar" />
@@ -394,15 +397,15 @@
 							class="section-tint border-y border-gray-200 px-4 py-3"
 							style="border-top: 2px solid var(--section-accent)"
 						>
-							<h3 class="eyebrow text-gray-600">What you have decided</h3>
+							<h3 class="eyebrow text-gray-600">{t('tasks.review.whatYouHaveDecided')}</h3>
 							<p class="mt-1 text-sm text-gray-500">
-								Nothing here has happened yet. Save to write all of it at once.
+								{t('tasks.review.nothingHereHasHappenedYet')}
 							</p>
 						</div>
 
 						{#if decided.length === 0}
 							<p class="px-4 py-6 text-center text-sm text-gray-500">
-								Answer one and it moves over here.
+								{t('tasks.review.answerOneAndItMoves')}
 							</p>
 						{:else}
 							<ul class="divide-y divide-gray-200">
@@ -422,7 +425,7 @@
 											type="button"
 											onclick={() => undecide(item.id)}
 											class="icon-btn shrink-0"
-											title="Put it back — nothing has happened yet"
+											title={t('tasks.review.putItBackNothing')}
 											aria-label="Undo the answer for {item.title}"
 										>
 											<Icon name="undo" />
@@ -438,8 +441,12 @@
 									{decided.length}
 									{decided.length === 1 ? 'answer' : 'answers'}, none of them written yet.
 								</span>
-								<button type="submit" class="btn btn-primary btn-sm" title="Apply every answer">
-									Save
+								<button
+									type="submit"
+									class="btn btn-primary btn-sm"
+									title={t('tasks.review.applyEveryAnswer')}
+								>
+									{t('ui.save')}
 								</button>
 							</div>
 						{/if}
@@ -464,7 +471,7 @@
 		-->
 		{#if data.stale.length > 0}
 			<Card
-				title="Still here"
+				title={t('tasks.review.stillHere')}
 				description="Nobody has touched these in {data.staleMonths} months. Are they real?"
 				accent="var(--section-accent)"
 				flush
@@ -484,7 +491,8 @@
 									<input type="hidden" name="sort" value={thing.sort} />
 									<input type="hidden" name="id" value={thing.id} />
 									<button type="submit" class="btn btn-sm">
-										<Icon name="check" size={14} /> Done
+										<Icon name="check" size={14} />
+										{t('ui.done')}
 									</button>
 								</form>
 							{/if}
@@ -492,7 +500,7 @@
 							<form method="post" action="?/keepStale" use:enhance class="shrink-0">
 								<input type="hidden" name="sort" value={thing.sort} />
 								<input type="hidden" name="id" value={thing.id} />
-								<button type="submit" class="btn btn-sm">Still real</button>
+								<button type="submit" class="btn btn-sm">{t('tasks.review.stillReal')}</button>
 							</form>
 
 							<!-- Two presses, and the second one is not where the first was:
@@ -515,10 +523,10 @@
 									     was on the bin. `armed` covers the rest: the confirm is
 									     inert until it has been on screen long enough to read. -->
 									<button type="button" class="btn btn-sm" onclick={() => (dropping = null)}>
-										Keep
+										{t('tasks.review.keep')}
 									</button>
 									<button type="submit" class="btn btn-danger btn-sm" use:armed>
-										Delete it?
+										{t('tasks.review.deleteIt')}
 									</button>
 								</form>
 							{:else}
@@ -526,7 +534,7 @@
 									type="button"
 									class="btn btn-sm shrink-0"
 									onclick={() => (dropping = uid)}
-									title="Let it go"
+									title={t('tasks.review.letItGo')}
 									aria-label="Let {thing.title} go"
 								>
 									<Icon name="trash" size={14} />
@@ -540,7 +548,7 @@
 
 		<!-- The part worth reading in a year. -->
 		<Card
-			title="Notes about the week"
+			title={t('tasks.review.notesAboutTheWeek')}
 			description="Write something about how this week went."
 			accent="var(--section-accent)"
 		>
@@ -553,7 +561,9 @@
 				and one line pointing at it is the whole job.
 			-->
 			{#snippet actions()}
-				<a href={resolve('/notebooks/weekly')} class="btn btn-sm">See what I wrote before</a>
+				<a href={resolve('/notebooks/weekly')} class="btn btn-sm"
+					>{t('tasks.review.seeWhatIWroteBefore')}</a
+				>
 			{/snippet}
 			<!--
 				One box, not three.
@@ -586,8 +596,8 @@
 					</div>
 					<button
 						class="icon-btn shrink-0"
-						title="Edit the note"
-						aria-label="Edit the note"
+						title={t('tasks.review.editTheNote')}
+						aria-label={t('tasks.review.editTheNote')}
 						onclick={() => {
 							noteDraft = data.note;
 							editingNote = true;
@@ -610,7 +620,7 @@
 				>
 					<input type="hidden" name="weekStart" value={data.reading.weekStart} />
 
-					<label class="sr-only" for="week-note">Notes about the week</label>
+					<label class="sr-only" for="week-note">{t('tasks.review.notesAboutTheWeek')}</label>
 					<!--
 						Bound, not printed into the markup: a textarea whose value is its
 						child text keeps the browser's copy after a save, and what is
@@ -621,7 +631,7 @@
 						name="note"
 						rows="6"
 						autocomplete="off"
-						placeholder="What went well, what did not, what you will do different…"
+						placeholder={t('tasks.review.whatWentWellWhatDid')}
 						class="input w-full resize-y"
 						maxlength={8000}
 						bind:value={noteDraft}
@@ -629,7 +639,7 @@
 
 					<div class="flex items-center justify-end gap-3">
 						{#if form?.saved}
-							<span class="text-xs text-gray-500">Saved.</span>
+							<span class="text-xs text-gray-500">{t('tasks.review.saved')}</span>
 						{/if}
 						{#if data.note}
 							<button
@@ -640,10 +650,15 @@
 									editingNote = false;
 								}}
 							>
-								Cancel
+								{t('ui.cancel')}
 							</button>
 						{/if}
-						<button type="submit" class="btn btn-primary btn-sm" title="Save" aria-label="Save">
+						<button
+							type="submit"
+							class="btn btn-primary btn-sm"
+							title={t('ui.save')}
+							aria-label={t('ui.save')}
+						>
 							<Icon name="check" size={16} />
 						</button>
 					</div>
@@ -662,7 +677,7 @@
 	-->
 	<Modal
 		open={givingADay !== null}
-		title="Give it a day"
+		title={t('tasks.review.giveItADay')}
 		description={givingADay?.title ?? ''}
 		size="sm"
 		onclose={() => {
@@ -679,19 +694,25 @@
 			}}
 			class="space-y-3"
 		>
-			<label class="block text-sm text-gray-700" for="give-a-day">On which day?</label>
+			<label class="block text-sm text-gray-700" for="give-a-day"
+				>{t('tasks.review.onWhichDay')}</label
+			>
 			<input
 				id="give-a-day"
 				type="date"
 				required
 				autocomplete="off"
 				bind:value={chosenDay}
-				title="The day it should be done"
+				title={t('tasks.review.theDayItShouldBe')}
 				class="input w-full"
 			/>
 			<div class="flex justify-end">
-				<button type="submit" class="btn btn-primary btn-sm" title="Put it on that day">
-					Put it on that day
+				<button
+					type="submit"
+					class="btn btn-primary btn-sm"
+					title={t('tasks.review.putItOnThatDay')}
+				>
+					{t('tasks.review.putItOnThatDay')}
 				</button>
 			</div>
 		</form>

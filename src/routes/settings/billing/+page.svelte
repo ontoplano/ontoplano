@@ -9,6 +9,9 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { LIMIT_LABELS, describeYearly, formatPrice, tierPricing } from '$lib/plans';
 	import type { ActionData, PageServerData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 	/** Only the Play-installed copy has the Digital Goods API — see /start. */
@@ -102,7 +105,7 @@
 	{/if}
 
 	<Card
-		title="Your plan"
+		title={t('settings.billing.yourPlan')}
 		description={data.entitlement.status === 'trialing' || data.entitlement.source === 'trial'
 			? `Your trial runs until ${when(data.entitlement.until)}.`
 			: data.entitlement.source === 'lapsed'
@@ -116,7 +119,9 @@
 	>
 		{#snippet actions()}
 			{#if data.portal && !moneyStays}
-				<a href={data.portal} class="btn btn-sm" rel="external">Manage payment</a>
+				<a href={data.portal} class="btn btn-sm" rel="external"
+					>{t('settings.billing.managePayment')}</a
+				>
 			{/if}
 		{/snippet}
 
@@ -136,7 +141,9 @@
 
 			{#if data.tier === 'family'}
 				<span class="chip">Family — {data.seats} accounts</span>
-				<a class="text-sm underline" href={resolve('/settings/family')}>Who is on it</a>
+				<a class="text-sm underline" href={resolve('/settings/family')}
+					>{t('settings.billing.whoIsOnIt')}</a
+				>
 			{/if}
 
 			{#if data.entitlement.until}
@@ -166,7 +173,7 @@
 		{#if moneyStays}
 			{#if data.hasProviderSub || data.canCheckout}
 				<p class="mt-4 text-sm text-gray-600">
-					A subscription cannot be started or changed from this app.
+					{t('settings.billing.aSubscriptionCannotBeStarted')}
 				</p>
 			{/if}
 		{:else if data.hasProviderSub && data.yearly && data.interval === 'month'}
@@ -187,11 +194,11 @@
 					</span>
 					<form method="post" action="?/switchInterval" use:enhance>
 						<button name="interval" value="monthly" class="btn btn-sm btn-danger">
-							Switch anyway
+							{t('settings.billing.switchAnyway')}
 						</button>
 					</form>
 					<button type="button" class="btn btn-sm" onclick={() => (confirmMonthly = false)}>
-						Keep yearly
+						{t('settings.billing.keepYearly')}
 					</button>
 				</div>
 			{:else}
@@ -200,7 +207,7 @@
 					class="btn btn-sm btn-quiet mt-4"
 					onclick={() => (confirmMonthly = true)}
 				>
-					Switch to monthly
+					{t('settings.billing.switchToMonthly')}
 				</button>
 			{/if}
 
@@ -273,7 +280,7 @@
 					{/if}
 				{:else}
 					<p class="mt-2 text-xs text-gray-500">
-						This instance has no payment provider configured yet, so there is nothing to buy.
+						{t('settings.billing.thisInstanceHasNoPayment')}
 					</p>
 				{/if}
 
@@ -288,26 +295,25 @@
 						class="btn btn-sm btn-quiet mt-4"
 						onclick={() => (onSomebodyElses = true)}
 					>
-						Somebody else's plan should cover me
+						{t('settings.billing.somebodyElseSPlanShouldCover')}
 					</button>
 				{:else}
 					<div class="mt-4 border border-gray-200 bg-gray-50 p-3">
 						<p class="text-sm text-gray-700">
-							Ask them to add you. On their account: Settings → Family → your email address → Add to
-							my plan.
+							{t('settings.billing.askThemToAddYou')}
 						</p>
 						<img
 							src="{base}/help/family-seat.png"
-							alt="The Family tab, with a field for an email address and an Add to my plan button"
+							alt={t('settings.billing.theFamilyTabWithA')}
 							class="mt-3 w-full max-w-2xl border border-gray-200"
 							loading="lazy"
 						/>
 						<p class="mt-2 text-xs text-gray-500">
-							A band appears at the top of your app asking whether to accept. Say yes and this page
-							goes quiet.
+							{t('settings.billing.aBandAppearsAtThe')}
 						</p>
 						<button type="button" class="btn btn-sm mt-3" onclick={() => (onSomebodyElses = false)}>
-							<Icon name="arrow-left" /> Back
+							<Icon name="arrow-left" />
+							{t('ui.back')}
 						</button>
 					</div>
 				{/if}
@@ -315,7 +321,10 @@
 		{/if}
 	</Card>
 
-	<Card title="What you are using" description="Against the ceilings on your plan.">
+	<Card
+		title={t('settings.billing.whatYouAreUsing')}
+		description="Against the ceilings on your plan."
+	>
 		<div class="space-y-3">
 			{#each data.limitKeys as key (key)}
 				{@const limit = current.limits[key]}
@@ -330,7 +339,7 @@
 					{#if limit === null}
 						<!-- No bar: a full one against no ceiling reads as "you are at
 							     the limit", which is the opposite of what it means. -->
-						<p class="mt-0.5 text-xs text-gray-500">no limit on this plan</p>
+						<p class="mt-0.5 text-xs text-gray-500">{t('settings.billing.noLimitOnThisPlan')}</p>
 					{:else}
 						<div class="mt-1 h-1.5 w-full bg-gray-200">
 							<div

@@ -3,18 +3,23 @@
 	import Banner from '$lib/components/Banner.svelte';
 	import { MIN_PASSWORD_LENGTH, PASSWORD_RULE } from '$lib/passwords';
 	import type { ActionData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { form }: { form: ActionData } = $props();
 </script>
 
 <svelte:head>
-	<title>Choose a password — Ontoplano</title>
+	<title>{t('welcome.password.chooseAPasswordOntoplano')}</title>
 </svelte:head>
 
 <div class="solo-screen bg-gray-100">
 	<div class="solo-card sm:max-w-md">
-		<h1 class="mb-2 text-xl font-bold tracking-tight text-gray-900">Choose your password</h1>
-		<p class="mb-6 text-sm text-gray-700">Your account is ready — this is how you get back in.</p>
+		<h1 class="mb-2 text-xl font-bold tracking-tight text-gray-900">
+			{t('welcome.password.chooseYourPassword')}
+		</h1>
+		<p class="mb-6 text-sm text-gray-700">{t('welcome.password.yourAccountIsReady')}</p>
 
 		{#if form?.message}
 			<div class="mb-4"><Banner kind="error" message={form.message} /></div>
@@ -22,7 +27,7 @@
 
 		<form method="post" use:enhance>
 			<label class="mb-4 block">
-				<span class="text-sm font-medium text-gray-700">Password</span>
+				<span class="text-sm font-medium text-gray-700">{t('welcome.password.password')}</span>
 				<input
 					name="password"
 					type="password"
@@ -35,7 +40,9 @@
 			</label>
 
 			<label class="mb-6 block">
-				<span class="text-sm font-medium text-gray-700">Confirm password</span>
+				<span class="text-sm font-medium text-gray-700"
+					>{t('welcome.password.confirmPassword')}</span
+				>
 				<input
 					name="confirm"
 					type="password"
@@ -46,7 +53,7 @@
 				/>
 			</label>
 
-			<button class="btn btn-primary w-full">Continue</button>
+			<button class="btn btn-primary w-full">{t('welcome.password.continue')}</button>
 		</form>
 	</div>
 </div>

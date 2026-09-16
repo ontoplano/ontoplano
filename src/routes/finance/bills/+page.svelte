@@ -10,6 +10,9 @@
 	import { autofocus } from '$lib/actions/autofocus';
 	import { formatMoney, type Currency } from '$lib/money';
 	import type { PageServerData, ActionData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -128,15 +131,15 @@
 	<!-- The month at a glance. -->
 	<div class="flex flex-wrap items-baseline gap-x-6 gap-y-1 rounded border border-gray-200 p-4">
 		<div>
-			<div class="text-xs text-gray-500">Expected this month</div>
+			<div class="text-xs text-gray-500">{t('finance.bills.expectedThisMonth')}</div>
 			<div class="text-lg font-semibold text-gray-900">{money(data.summary.expected)}</div>
 		</div>
 		<div>
-			<div class="text-xs text-gray-500">Paid so far</div>
+			<div class="text-xs text-gray-500">{t('finance.bills.paidSoFar')}</div>
 			<div class="text-lg font-semibold text-gray-900">{money(data.summary.paid)}</div>
 		</div>
 		<div>
-			<div class="text-xs text-gray-500">Difference</div>
+			<div class="text-xs text-gray-500">{t('finance.bills.difference')}</div>
 			<div class="text-lg font-semibold text-gray-900">{gapText(data.summary.difference)}</div>
 		</div>
 	</div>
@@ -144,7 +147,7 @@
 	{#if active.length === 0}
 		<EmptyState
 			icon="wallet"
-			title="No bills yet"
+			title={t('finance.bills.noBillsYet')}
 			description="The bills you expect to pay live here. Mark one paid and it records what you actually paid."
 		/>
 	{:else}
@@ -156,7 +159,7 @@
 							<span class="font-medium break-words text-gray-900">{bill.name}</span>
 							{#if bill.paidThisPeriod}
 								<span class="rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-700">
-									paid
+									{t('finance.bills.paid')}
 								</span>
 							{/if}
 						</div>
@@ -170,7 +173,7 @@
 								<input type="hidden" name="period" value={bill.period} />
 								<button
 									class="icon-btn"
-									title="Undo this period's payment"
+									title={t('finance.bills.undoThisPeriodSPayment')}
 									aria-label="Undo the payment for {bill.name}"
 								>
 									<Icon name="undo" />
@@ -196,13 +199,15 @@
 									class="input w-24"
 									placeholder={asDecimal(bill.amountExpected)}
 								/>
-								<button class="btn btn-primary btn-sm" type="submit">Paid</button>
+								<button class="btn btn-primary btn-sm" type="submit"
+									>{t('finance.bills.paid2')}</button
+								>
 								<button class="btn btn-sm" type="button" onclick={() => (paying = null)}>×</button>
 							</form>
 						{:else}
 							<button
 								class="icon-btn"
-								title="Mark paid"
+								title={t('finance.bills.markPaid')}
 								aria-label="Mark {bill.name} paid"
 								onclick={() => (paying = bill.id)}
 							>
@@ -219,7 +224,7 @@
 							-->
 							<button
 								class="icon-btn"
-								title="Attach the payment"
+								title={t('finance.bills.attachThePayment')}
 								aria-label="Attach a transaction to {bill.name}"
 								onclick={() => (attaching = bill.id)}
 							>
@@ -235,7 +240,7 @@
 							method="post"
 							action="?/archive"
 							use:enhance
-							title="Put this bill away — its history stays"
+							title={t('finance.bills.putThisBillAway')}
 						>
 							<input type="hidden" name="id" value={bill.id} />
 							<input type="hidden" name="archived" value="true" />
@@ -266,7 +271,7 @@
 							<form method="post" action="?/archive" use:enhance>
 								<input type="hidden" name="id" value={bill.id} />
 								<input type="hidden" name="archived" value="false" />
-								<button class="btn btn-sm" type="submit">Restore</button>
+								<button class="btn btn-sm" type="submit">{t('finance.bills.restore')}</button>
 							</form>
 							<!-- An archived bill is still a bill: correcting its amount or its
 							     name should not need restoring it first. -->
@@ -309,10 +314,10 @@
 		{#if editing}<input type="hidden" name="id" value={editing.id} />{/if}
 		<div class="grid gap-3 sm:grid-cols-2">
 			<label class="block text-sm">
-				<span class="text-gray-600">Name</span>
+				<span class="text-gray-600">{t('ui.name')}</span>
 				<OneLine
 					name="heading"
-					placeholder="Rent"
+					placeholder={t('finance.bills.rent')}
 					value={editing?.name ?? ''}
 					class="input mt-1 w-full"
 					required
@@ -320,7 +325,7 @@
 				/>
 			</label>
 			<label class="block text-sm">
-				<span class="text-gray-600">Expected amount</span>
+				<span class="text-gray-600">{t('finance.bills.expectedAmount')}</span>
 				<input
 					name="amount"
 					inputmode="decimal"
@@ -330,7 +335,7 @@
 				/>
 			</label>
 			<label class="block text-sm">
-				<span class="text-gray-600">Rhythm</span>
+				<span class="text-gray-600">{t('finance.bills.rhythm')}</span>
 				<select
 					name="rhythm"
 					class="select mt-1 w-full"
@@ -344,21 +349,21 @@
 			     on a weekday, a yearly one on a date, a monthly one on a day. -->
 			{#if formRhythm === 'weekly'}
 				<label class="block text-sm">
-					<span class="text-gray-600">Due on</span>
+					<span class="text-gray-600">{t('finance.bills.dueOn')}</span>
 					<select name="dueDay" class="select mt-1 w-full" value={editing?.dueDay ?? 5}>
 						{#each WEEKDAYS as d (d.value)}<option value={d.value}>{d.label}</option>{/each}
 					</select>
-					<span class="mt-1 block text-xs text-gray-500">The last day it can be paid.</span>
+					<span class="mt-1 block text-xs text-gray-500">{t('finance.bills.theLastDayItCan')}</span>
 				</label>
 			{:else if formRhythm === 'yearly'}
 				<label class="block text-sm">
-					<span class="text-gray-600">Due month</span>
+					<span class="text-gray-600">{t('finance.bills.dueMonth')}</span>
 					<select name="dueMonth" class="select mt-1 w-full" value={editing?.dueMonth ?? 1}>
 						{#each MONTHS as m, i (m)}<option value={i + 1}>{m}</option>{/each}
 					</select>
 				</label>
 				<label class="block text-sm">
-					<span class="text-gray-600">Due day of that month</span>
+					<span class="text-gray-600">{t('finance.bills.dueDayOfThatMonth')}</span>
 					<NumberBox
 						name="dueDay"
 						min="1"
@@ -367,11 +372,11 @@
 						class="mt-1 w-full"
 						placeholder="15"
 					/>
-					<span class="mt-1 block text-xs text-gray-500">The last day it can be paid.</span>
+					<span class="mt-1 block text-xs text-gray-500">{t('finance.bills.theLastDayItCan')}</span>
 				</label>
 			{:else}
 				<label class="block text-sm">
-					<span class="text-gray-600">Due day of the month</span>
+					<span class="text-gray-600">{t('finance.bills.dueDayOfTheMonth')}</span>
 					<NumberBox
 						name="dueDay"
 						min="1"
@@ -380,11 +385,11 @@
 						class="mt-1 w-full"
 						placeholder="5"
 					/>
-					<span class="mt-1 block text-xs text-gray-500">The last day it can be paid.</span>
+					<span class="mt-1 block text-xs text-gray-500">{t('finance.bills.theLastDayItCan')}</span>
 				</label>
 			{/if}
 			<label class="block text-sm">
-				<span class="text-gray-600">Pay it this many days before</span>
+				<span class="text-gray-600">{t('finance.bills.payItThisManyDays')}</span>
 				<NumberBox
 					name="payLeadDays"
 					min="0"
@@ -394,13 +399,13 @@
 					placeholder="0"
 				/>
 				<span class="mt-1 block text-xs text-gray-500">
-					When it turns up on your week. 0 is the due day itself.
+					{t('finance.bills.whenItTurnsUpOn')}
 				</span>
 			</label>
 		</div>
 	</form>
 	{#snippet footer()}
-		<button class="btn" type="button" onclick={() => (showForm = false)}>Cancel</button>
+		<button class="btn" type="button" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 		<button class="btn btn-primary" type="submit" form="bill-form">
 			{editing ? 'Save' : 'Add'}
 		</button>
@@ -411,18 +416,20 @@
      the confirm button is never where the delete button was. -->
 <Modal
 	open={confirmingDelete !== null}
-	title="Delete this bill?"
+	title={t('finance.bills.deleteThisBill')}
 	onclose={() => (confirmingDelete = null)}
 	size="sm"
 >
 	{#if confirmingDelete}
 		<p class="text-sm text-gray-600">
-			<strong>{confirmingDelete.name}</strong> and its whole payment history are deleted for good. To
-			keep the history, leave it archived instead.
+			<strong>{confirmingDelete.name}</strong>
+			{t('finance.bills.andItsWholePaymentHistory')}
 		</p>
 	{/if}
 	{#snippet footer()}
-		<button class="btn" type="button" onclick={() => (confirmingDelete = null)}>Keep it</button>
+		<button class="btn" type="button" onclick={() => (confirmingDelete = null)}
+			>{t('finance.bills.keepIt')}</button
+		>
 		<form
 			method="post"
 			action="?/delete"
@@ -433,7 +440,7 @@
 				}}
 		>
 			<input type="hidden" name="id" value={confirmingDelete?.id} />
-			<button class="btn btn-danger" type="submit" use:armed>Delete</button>
+			<button class="btn btn-danger" type="submit" use:armed>{t('ui.delete')}</button>
 		</form>
 	{/snippet}
 </Modal>
@@ -459,14 +466,13 @@
 		<OneLine
 			name="movementSearch"
 			bind:value={movementQuery}
-			placeholder="Filter by description"
+			placeholder={t('finance.bills.filterByDescription')}
 			class="input w-full"
 		/>
 
 		{#if movementChoices.length === 0}
 			<p class="mt-3 text-sm text-gray-500">
-				Nothing in the last few weeks matches. A bill paid from an account this instance does not
-				import can still be ticked by hand.
+				{t('finance.bills.nothingInTheLastFew')}
 			</p>
 		{:else}
 			<ul class="mt-3 max-h-80 divide-y divide-gray-200 overflow-y-auto border border-gray-200">
@@ -514,7 +520,7 @@
 				movementQuery = '';
 			}}
 		>
-			Cancel
+			{t('ui.cancel')}
 		</button>
 	{/snippet}
 </Modal>

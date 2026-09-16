@@ -17,6 +17,9 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -221,16 +224,18 @@
 		way: your data, and the end of it.
 	-->
 	{#if !onDevice}
-		<Card title="Email address">
+		<Card title={t('settings.account.emailAddress')}>
 			{#snippet actions()}
 				{#if data.emailChangeAllowed}
 					<button onclick={() => (editing = 'email')} class="btn btn-sm">
-						<Icon name="edit" /> Change
+						<Icon name="edit" />
+						{t('settings.account.change')}
 					</button>
 				{/if}
 			{/snippet}
 			<p class="text-sm text-gray-500">
-				You sign in with <span class="font-medium text-gray-900">{data.email}</span>.
+				{t('settings.account.youSignInWith')}
+				<span class="font-medium text-gray-900">{data.email}</span>.
 				{#if data.emailChangeAllowed}
 					A new address has to be confirmed by a link before it takes over.
 				{:else}
@@ -239,12 +244,12 @@
 					Changing it is turned off on this instance; whoever runs it can allow it.
 				{/if}
 				{#if !data.emailVerified}
-					<span class="block">This one has not been confirmed yet.</span>
+					<span class="block">{t('settings.account.thisOneHasNotBeen')}</span>
 				{/if}
 			</p>
 		</Card>
 
-		<Card title="Weekly review">
+		<Card title={t('settings.account.weeklyReview')}>
 			{#snippet actions()}
 				<form method="post" action="?/setWeeklyReviewMail" use:enhance>
 					<input type="hidden" name="on" value={data.weeklyReviewMail ? 'false' : 'true'} />
@@ -265,9 +270,7 @@
 					week was — planned against done, and what is still loose.
 				{/if}
 				{#if !data.emailConfigured}
-					<span class="block"
-						>This instance has no mail transport, so nothing is sent either way.</span
-					>
+					<span class="block">{t('settings.account.thisInstanceHasNoMail')}</span>
 				{/if}
 			</p>
 		</Card>
@@ -276,13 +279,13 @@
 			open={editing === 'email' && data.emailChangeAllowed}
 			error={form?.message}
 			onclose={() => (editing = null)}
-			title="Change your email address"
+			title={t('settings.account.changeYourEmailAddress')}
 			description="Nothing changes until the link in the confirmation mail is followed."
 			size="sm"
 		>
 			{#if !data.emailConfigured}
 				<p class="mb-4 border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
-					This server has no mail configured, so the confirmation link is written to its log.
+					{t('settings.account.thisServerHasNoMail')}
 				</p>
 			{/if}
 			<form
@@ -296,10 +299,10 @@
 					}}
 			>
 				<FormGrid>
-					<Field label="New address" span={12} required>
+					<Field label={t('settings.account.newAddress')} span={12} required>
 						<input name="newEmail" type="email" required autocomplete="email" class="input" />
 					</Field>
-					<Field label="Your password" span={12} required>
+					<Field label={t('settings.account.yourPassword')} span={12} required>
 						<input
 							name="password"
 							type="password"
@@ -312,19 +315,22 @@
 			</form>
 
 			{#snippet footer()}
-				<button type="button" class="btn" onclick={() => (editing = null)}>Cancel</button>
-				<button type="submit" form="email-form" class="btn btn-primary">Send confirmation</button>
+				<button type="button" class="btn" onclick={() => (editing = null)}>{t('ui.cancel')}</button>
+				<button type="submit" form="email-form" class="btn btn-primary"
+					>{t('settings.account.sendConfirmation')}</button
+				>
 			{/snippet}
 		</Modal>
 
-		<Card title="Password">
+		<Card title={t('settings.account.password')}>
 			{#snippet actions()}
 				<button onclick={() => (editing = 'password')} class="btn btn-sm">
-					<Icon name="edit" /> Change
+					<Icon name="edit" />
+					{t('settings.account.change')}
 				</button>
 			{/snippet}
 			<p class="text-sm text-gray-500">
-				Changing it signs out every other device you are logged in on.
+				{t('settings.account.changingItSignsOutEvery')}
 			</p>
 		</Card>
 
@@ -332,7 +338,7 @@
 			open={editing === 'password'}
 			error={form?.message}
 			onclose={() => (editing = null)}
-			title="Change your password"
+			title={t('settings.account.changeYourPassword')}
 			description="Every other signed-in device is signed out."
 			size="sm"
 		>
@@ -347,7 +353,7 @@
 					}}
 			>
 				<FormGrid>
-					<Field label="Current password" span={12} required>
+					<Field label={t('settings.account.currentPassword')} span={12} required>
 						<input
 							name="currentPassword"
 							type="password"
@@ -356,7 +362,7 @@
 							class="input"
 						/>
 					</Field>
-					<Field label="New password" span={12} required>
+					<Field label={t('settings.account.newPassword')} span={12} required>
 						<input
 							name="newPassword"
 							type="password"
@@ -366,7 +372,7 @@
 							class="input"
 						/>
 					</Field>
-					<Field label="New password again" span={12} required>
+					<Field label={t('settings.account.newPasswordAgain')} span={12} required>
 						<input
 							name="confirmPassword"
 							type="password"
@@ -380,20 +386,22 @@
 			</form>
 
 			{#snippet footer()}
-				<button type="button" class="btn" onclick={() => (editing = null)}>Cancel</button>
-				<button type="submit" form="password-form" class="btn btn-primary">Change password</button>
+				<button type="button" class="btn" onclick={() => (editing = null)}>{t('ui.cancel')}</button>
+				<button type="submit" form="password-form" class="btn btn-primary"
+					>{t('settings.account.changePassword')}</button
+				>
 			{/snippet}
 		</Modal>
 
 		<Card
-			title="Where you are signed in"
+			title={t('settings.account.whereYouAreSignedIn')}
 			description="One line per sign-in. Anything you do not recognise, sign out."
 			flush
 		>
 			{#snippet actions()}
 				{#if data.sessions.length > 1 && !confirmSignOutAll}
 					<button onclick={() => (confirmSignOutAll = true)} class="btn btn-sm"
-						>Sign out everywhere</button
+						>{t('settings.account.signOutEverywhere')}</button
 					>
 				{/if}
 			{/snippet}
@@ -406,18 +414,18 @@
 					class="mx-4 mt-4 mb-2 flex items-center gap-2 border border-gray-200 bg-gray-50 px-3 py-2"
 				>
 					<span class="flex-1 text-sm text-gray-700">
-						This signs out every device, including this one.
+						{t('settings.account.thisSignsOutEveryDevice')}
 					</span>
 					<button
 						class="border border-red-200 bg-white px-3 py-1 text-sm text-red-600 hover:bg-red-50"
 						use:armed
 					>
-						Confirm?
+						{t('settings.account.confirm')}
 					</button>
 					<button
 						type="button"
 						onclick={() => (confirmSignOutAll = false)}
-						class="text-sm text-gray-500 hover:text-gray-900">Cancel</button
+						class="text-sm text-gray-500 hover:text-gray-900">{t('ui.cancel')}</button
 					>
 				</form>
 			{/if}
@@ -429,7 +437,7 @@
 							<p class="text-sm font-medium text-gray-900">
 								{s.device}
 								{#if s.current}
-									<span class="eyebrow ml-2 text-gray-500">this device</span>
+									<span class="eyebrow ml-2 text-gray-500">{t('settings.account.thisDevice')}</span>
 								{/if}
 							</p>
 							<p class="tabular text-xs text-gray-500">
@@ -450,20 +458,24 @@
 									class="flex items-center gap-2"
 								>
 									<input type="hidden" name="id" value={s.id} />
-									<button class="btn btn-danger btn-sm" use:armed>Confirm?</button>
+									<button class="btn btn-danger btn-sm" use:armed
+										>{t('settings.account.confirm')}</button
+									>
 									<button
 										type="button"
 										onclick={() => (confirmRevoke = null)}
-										class="text-xs text-gray-500 hover:text-gray-900">Cancel</button
+										class="text-xs text-gray-500 hover:text-gray-900">{t('ui.cancel')}</button
 									>
 								</form>
 							{:else}
-								<button onclick={() => (confirmRevoke = s.id)} class="btn btn-sm">Sign out</button>
+								<button onclick={() => (confirmRevoke = s.id)} class="btn btn-sm"
+									>{t('settings.account.signOut')}</button
+								>
 							{/if}
 						{/if}
 					</div>
 				{:else}
-					<p class="px-4 py-3 text-sm text-gray-500">No other sessions.</p>
+					<p class="px-4 py-3 text-sm text-gray-500">{t('settings.account.noOtherSessions')}</p>
 				{/each}
 			</div>
 		</Card>
@@ -479,18 +491,19 @@
 		currently showing.
 	-->
 	<Card
-		title="Where this ontoplano lives"
+		title={t('settings.account.whereThisOntoplanoLives')}
 		description="This app can open the official instance, one you run yourself, or nothing at all — everything on the phone."
 	>
 		{#snippet actions()}
-			<a href={resolve('/instance')} class="btn btn-sm">Change instance</a>
+			<a href={resolve('/instance')} class="btn btn-sm">{t('settings.account.changeInstance')}</a>
 		{/snippet}
 		<p class="text-sm text-gray-500">
-			You are looking at <span class="font-medium text-gray-900">{page.url.origin}</span>.
+			{t('settings.account.youAreLookingAt')}
+			<span class="font-medium text-gray-900">{page.url.origin}</span>.
 		</p>
 	</Card>
 
-	<Card title="Export your data">
+	<Card title={t('settings.account.exportYourData')}>
 		{#snippet actions()}
 			<!--
 				Fetched rather than linked.
@@ -513,8 +526,7 @@
 			</button>
 		{/snippet}
 		<p class="text-sm text-gray-500">
-			Everything this account owns, as JSON: plans, tasks, diary, habits, goals, shopping, ideas and
-			settings. The raw rows, so it is complete rather than pretty.
+			{t('settings.account.everythingThisAccountOwnsAs')}
 		</p>
 
 		<!--
@@ -527,10 +539,9 @@
 		<label class="mt-3 flex cursor-pointer items-start gap-2 text-sm">
 			<input type="checkbox" bind:checked={withPictures} class="mt-0.5" />
 			<span>
-				<span class="text-gray-900">Include pictures</span>
+				<span class="text-gray-900">{t('settings.account.includePictures')}</span>
 				<span class="block text-gray-500">
-					They are most of the file's size. Leave them out for a file that moves to another
-					instance; keep them for a backup.
+					{t('settings.account.theyAreMostOfThe')}
 				</span>
 			</span>
 		</label>
@@ -572,12 +583,14 @@
 		happens once, and it had grown into two long forms sitting between the
 		sessions list and the delete button.
 	-->
-	<Card title="Bring things in">
+	<Card title={t('settings.account.bringThingsIn')}>
 		{#snippet actions()}
-			<a href={resolve('/settings/account/import')} class="btn btn-sm">Import</a>
+			<a href={resolve('/settings/account/import')} class="btn btn-sm"
+				>{t('settings.account.import')}</a
+			>
 		{/snippet}
 		<p class="text-sm text-gray-500">
-			A list from Todoist, Google Tasks or Google Keep, or an export from another instance.
+			{t('settings.account.aListFromTodoistGoogle')}
 		</p>
 	</Card>
 
@@ -607,16 +620,18 @@
 			from the same place. There used to be a second link saying this under
 			Sign out, which is where it lived while this one was broken.
 		-->
-		<Card title="This instance">
+		<Card title={t('settings.account.thisInstance')}>
 			{#snippet actions()}
 				<!-- eslint-disable svelte/no-navigation-without-resolve -- another origin, not a route -->
-				<a href={askAgainOnThisPhone()} class="btn btn-sm">Switch instance</a>
+				<a href={askAgainOnThisPhone()} class="btn btn-sm">{t('settings.account.switchInstance')}</a
+				>
 				<!-- eslint-enable svelte/no-navigation-without-resolve -->
 			{/snippet}
 			<p class="text-sm text-gray-500">
 				{#if onDevice}
-					This app is open on <strong class="text-gray-700">its own copy on this device</strong>.
-					Switching points it at a server instead.
+					This app is open on <strong class="text-gray-700"
+						>{t('settings.account.itsOwnCopyOnThis')}</strong
+					>. Switching points it at a server instead.
 				{:else}
 					This app is open on <strong class="text-gray-700">{data.host}</strong>. Switching points
 					it at another one.
@@ -631,13 +646,13 @@
 			the bottom bar carries no menu, so this page — where the account's other
 			session controls already live — is where a finger finds it.
 		-->
-		<Card title="Sign out">
+		<Card title={t('settings.account.signOut')}>
 			{#snippet actions()}
 				<form method="post" action="/login?/signOut" use:enhance>
-					<button type="submit" class="btn btn-sm">Sign out</button>
+					<button type="submit" class="btn btn-sm">{t('settings.account.signOut')}</button>
 				</form>
 			{/snippet}
-			<p class="text-sm text-gray-500">This device only. The sessions above list the others.</p>
+			<p class="text-sm text-gray-500">{t('settings.account.thisDeviceOnlyTheSessions')}</p>
 		</Card>
 	{/if}
 
@@ -650,7 +665,7 @@
 		read as the part of the page you have to mean.
 	-->
 	<section class="danger-zone">
-		<h2 class="danger-zone-title">Danger zone</h2>
+		<h2 class="danger-zone-title">{t('settings.account.dangerZone')}</h2>
 
 		<!--
 			Two of these on a server, one on a device.
@@ -665,15 +680,16 @@
 		{#if !onDevice}
 			<div class="danger-zone-row">
 				<div class="min-w-0">
-					<h3 class="text-sm font-semibold text-red-700">Delete everything in this account</h3>
+					<h3 class="text-sm font-semibold text-red-700">
+						{t('settings.account.deleteEverythingInThisAccount')}
+					</h3>
 					<p class="mt-1 max-w-2xl text-sm text-gray-600">
-						Every task, note, habit, goal, picture and record goes. The account stays: same address,
-						same password, same plan, an app with nothing in it. Download an export first if you
-						might want any of it back.
+						{t('settings.account.everyTaskNoteHabitGoal')}
 					</p>
 				</div>
 				<button onclick={() => (emptying = true)} class="btn btn-danger btn-sm shrink-0">
-					<Icon name="trash" /> Delete everything
+					<Icon name="trash" />
+					{t('settings.account.deleteEverything')}
 				</button>
 			</div>
 		{/if}
@@ -700,7 +716,7 @@
 		open={emptying}
 		error={form?.success ? undefined : form?.message}
 		onclose={() => (emptying = false)}
-		title="Delete everything in this account"
+		title={t('settings.account.deleteEverythingInThisAccount')}
 		description="Every row you have made goes. The account itself stays. This cannot be undone."
 		size="sm"
 	>
@@ -722,7 +738,7 @@
 				<Field label={`Type “${EMPTY_CONFIRMATION}” to confirm`} span={12} required>
 					<input name="confirm" autocomplete="off" required class="input" />
 				</Field>
-				<Field label="Your password" span={12} required>
+				<Field label={t('settings.account.yourPassword')} span={12} required>
 					<input
 						name="password"
 						type="password"
@@ -735,8 +751,10 @@
 		</form>
 
 		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (emptying = false)}>Cancel</button>
-			<button type="submit" form="empty-form" class="btn btn-danger">Delete everything</button>
+			<button type="button" class="btn" onclick={() => (emptying = false)}>{t('ui.cancel')}</button>
+			<button type="submit" form="empty-form" class="btn btn-danger"
+				>{t('settings.account.deleteEverything')}</button
+			>
 		{/snippet}
 	</Modal>
 
@@ -766,7 +784,7 @@
 					<input name={onDevice ? 'confirm' : 'email'} autocomplete="off" required class="input" />
 				</Field>
 				{#if !onDevice}
-					<Field label="Your password" span={12} required>
+					<Field label={t('settings.account.yourPassword')} span={12} required>
 						<input
 							name="password"
 							type="password"
@@ -780,8 +798,12 @@
 		</form>
 
 		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (confirming = false)}>Cancel</button>
-			<button type="submit" form="delete-form" class="btn btn-danger">Delete permanently</button>
+			<button type="button" class="btn" onclick={() => (confirming = false)}
+				>{t('ui.cancel')}</button
+			>
+			<button type="submit" form="delete-form" class="btn btn-danger"
+				>{t('settings.account.deletePermanently')}</button
+			>
 		{/snippet}
 	</Modal>
 </div>

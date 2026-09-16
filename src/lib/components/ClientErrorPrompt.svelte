@@ -1,5 +1,8 @@
 <script lang="ts">
 	import Icon from '$lib/components/Icon.svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * The ask, and the sending, for client-side errors.
@@ -82,13 +85,12 @@
 		<div
 			class="w-full max-w-sm border border-gray-700 bg-gray-900 px-4 py-3 text-sm text-white shadow-overlay"
 			role="alertdialog"
-			aria-label="Send error details?"
+			aria-label={t('clientErrorPrompt.sendErrorDetails')}
 		>
 			<p class="flex items-start gap-2">
 				<Icon name="error" size={16} />
 				<span>
-					Something went wrong on this page. Send the technical details here, so it can be fixed?
-					Only what broke is sent — never what you wrote. Changeable any time in Preferences.
+					{t('clientErrorPrompt.somethingWentWrongOnThis')}
 				</span>
 			</p>
 			<div class="mt-3 flex justify-end gap-3">
@@ -96,13 +98,13 @@
 					onclick={() => choose('no')}
 					class="font-medium text-gray-300 underline underline-offset-2"
 				>
-					Never
+					{t('clientErrorPrompt.never')}
 				</button>
 				<button
 					onclick={() => choose('yes')}
 					class="font-medium text-white underline underline-offset-2"
 				>
-					Send, now and next time
+					{t('clientErrorPrompt.sendNowAndNextTime')}
 				</button>
 			</div>
 		</div>

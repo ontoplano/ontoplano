@@ -2,6 +2,9 @@
 	import { MAX_REPORT_LENGTH } from '$lib/report';
 	import { page } from '$app/state';
 	import Modal from '$lib/components/Modal.svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * Telling whoever runs this instance that something is wrong.
@@ -93,14 +96,14 @@
 <Modal
 	{open}
 	onclose={close}
-	title="Tell the operator"
+	title={t('reportDialog.tellTheOperator')}
 	description={`It goes to whoever runs this instance, carrying your account, information about the browser you're using, and the fact it came from ${page.url.pathname}. None of your personal data goes with it.`}
 	size="sm"
 >
 	{#if phase === 'sent'}
-		<p class="text-sm text-gray-700">Sent. Thank you — it is on the operator's list.</p>
+		<p class="text-sm text-gray-700">{t('reportDialog.sentThankYouIt')}</p>
 	{:else}
-		<div class="seg mb-3" role="group" aria-label="What this is">
+		<div class="seg mb-3" role="group" aria-label={t('reportDialog.whatThisIs')}>
 			{#each KINDS as k (k.key)}
 				<button type="button" onclick={() => (kind = k.key)} aria-pressed={kind === k.key}>
 					{k.label}
@@ -130,9 +133,9 @@
 
 	{#snippet footer()}
 		{#if phase === 'sent'}
-			<button type="button" class="btn btn-primary" onclick={close}>Close</button>
+			<button type="button" class="btn btn-primary" onclick={close}>{t('ui.close')}</button>
 		{:else}
-			<button type="button" class="btn" onclick={close}>Cancel</button>
+			<button type="button" class="btn" onclick={close}>{t('ui.cancel')}</button>
 			<button
 				type="button"
 				class="btn btn-primary"

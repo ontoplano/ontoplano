@@ -14,6 +14,9 @@
 	 */
 	import { mergeSuggestions, type MetaKeySuggestion } from '$lib/meta-keys';
 	import OneLine from '$lib/components/OneLine.svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let {
 		initial = {},
@@ -70,7 +73,7 @@
 			{/if}
 		</button>
 		{#if expanded}
-			<span class="text-xs text-gray-500">Read by plugins — e.g. alarms</span>
+			<span class="text-xs text-gray-500">{t('metaEditor.readByPluginsEG')}</span>
 		{/if}
 	</div>
 
@@ -83,20 +86,20 @@
 						type="text"
 						bind:value={pair.key}
 						list="meta-key-suggestions"
-						placeholder="key"
+						placeholder={t('metaEditor.key')}
 						autocomplete="off"
 						class="w-44 border border-gray-300 px-2 py-1.5 font-mono text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					/>
 					<OneLine
 						name="metaValue"
-						placeholder="value"
+						placeholder={t('metaEditor.value')}
 						bind:value={pair.value}
 						class="flex-1 border border-gray-300 px-2 py-1.5 text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					/>
 					<button
 						type="button"
 						onclick={() => removePair(i)}
-						aria-label="Remove option"
+						aria-label={t('metaEditor.removeOption')}
 						class="border border-red-200 px-2 py-1.5 text-xs text-red-600 shadow-sm hover:bg-red-50"
 					>
 						×
@@ -118,7 +121,7 @@
 					onclick={() => addPair()}
 					class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm hover:bg-gray-50"
 				>
-					+ Add option
+					{t('metaEditor.addOption')}
 				</button>
 				{#each suggestions as s (s.key)}
 					{#if !usedKeys.has(s.key)}

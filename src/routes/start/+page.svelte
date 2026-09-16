@@ -6,6 +6,9 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { describeYearly, formatPrice, tierPricing, type Pricing } from '$lib/plans';
 	import type { PageServerData, ActionData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 	/**
@@ -93,16 +96,19 @@
 <div class="solo-screen bg-gray-100">
 	<div class="solo-card sm:max-w-md">
 		{#if data.mode === 'expired'}
-			<h1 class="mb-4 text-xl font-bold tracking-tight text-gray-900">Your subscription ended</h1>
+			<h1 class="mb-4 text-xl font-bold tracking-tight text-gray-900">
+				{t('start.yourSubscriptionEnded')}
+			</h1>
 			<p class="text-sm text-gray-700">
-				Everything you wrote is kept — nothing was deleted. Renew to pick up where you left off, or
-				take your data with you.
+				{t('start.everythingYouWroteIsKept')}
 			</p>
 		{:else if data.trialDaysAhead > 0}
 			<!-- The promise is the heading. "Your 14 free days" named the offer;
 			     what the person at a card form wants said first is that pressing
 			     a button here costs nothing. -->
-			<h1 class="mb-4 text-2xl font-bold tracking-tight text-gray-900">Nothing is charged today</h1>
+			<h1 class="mb-4 text-2xl font-bold tracking-tight text-gray-900">
+				{t('start.nothingIsChargedToday')}
+			</h1>
 			<p class="text-sm text-gray-700">
 				<strong class="text-gray-900">
 					Your {data.trialDaysAhead} free days are yours even if you cancel right away.
@@ -110,15 +116,13 @@
 				The first charge is on {when(data.firstChargeOn)}, and a mail warns you two days before.
 			</p>
 		{:else}
-			<h1 class="mb-4 text-xl font-bold tracking-tight text-gray-900">Subscribe</h1>
-			<p class="text-sm text-gray-700">Billed today — the trial was already used.</p>
+			<h1 class="mb-4 text-xl font-bold tracking-tight text-gray-900">{t('start.subscribe')}</h1>
+			<p class="text-sm text-gray-700">{t('start.billedTodayTheTrial')}</p>
 		{/if}
 
 		<!-- What the money is actually for — said before it is asked for. -->
 		<p class="mt-3 text-sm text-gray-500">
-			Ontoplano is free and open source: self-host it and every feature is yours at no cost. Paying
-			is for this instance — hosted, backed up and kept up to date for you — and it funds the
-			development.
+			{t('start.ontoplanoIsFreeAndOpen')}
 		</p>
 
 		{#if form && 'message' in form && form.message}
@@ -136,7 +140,7 @@
 				width so choosing one moves nothing (a selection must not reflow
 				the page) — it only rewrites the prices under it.
 			-->
-			<div class="mt-6 grid grid-cols-2 gap-3" role="radiogroup" aria-label="Plan">
+			<div class="mt-6 grid grid-cols-2 gap-3" role="radiogroup" aria-label={t('start.plan')}>
 				<button
 					type="button"
 					role="radio"
@@ -150,8 +154,8 @@
 					<span class={tier === 'solo' ? 'text-gray-900' : 'text-gray-400'}>
 						<Icon name="user" size={36} />
 					</span>
-					<span class="text-lg font-bold text-gray-900">Just me</span>
-					<span class="text-xs text-gray-500">1 account</span>
+					<span class="text-lg font-bold text-gray-900">{t('start.justMe')}</span>
+					<span class="text-xs text-gray-500">{t('start.1Account')}</span>
 					<span class="text-sm font-medium text-gray-700">{soloFrom}</span>
 				</button>
 				<button
@@ -167,7 +171,7 @@
 					<span class={tier === 'family' ? 'text-gray-900' : 'text-gray-400'}>
 						<Icon name="home" size={36} />
 					</span>
-					<span class="text-lg font-bold text-gray-900">Family</span>
+					<span class="text-lg font-bold text-gray-900">{t('start.family')}</span>
 					<span class="text-xs text-gray-500">{data.pricing.familySeats} accounts</span>
 					<span class="text-sm font-medium text-gray-700">{familyFrom}</span>
 				</button>
@@ -175,7 +179,7 @@
 		{/if}
 
 		{#if moneyStays}
-			<p class="mt-3 text-sm text-gray-600">A subscription cannot be started from this app.</p>
+			<p class="mt-3 text-sm text-gray-600">{t('start.aSubscriptionCannotBeStarted')}</p>
 		{:else}
 			<!-- Full page post on purpose: the answer is a redirect into checkout. -->
 			<form method="post" action="?/checkout" class="mt-3 space-y-2">
@@ -239,7 +243,7 @@
 				</form>
 			{:else}
 				<p class="mt-3 text-xs text-gray-500">
-					Both of today's exports are used — the next unlocks tomorrow.
+					{t('start.bothOfTodaySExportsAre')}
 				</p>
 			{/if}
 		{/if}
@@ -265,7 +269,7 @@
 				rel="noopener"
 				class="mt-5 block text-center text-sm font-medium text-gray-700 underline underline-offset-4 transition hover:text-gray-900"
 			>
-				Let me see the demo first
+				{t('start.letMeSeeTheDemo')}
 			</a>
 			<!-- eslint-enable svelte/no-navigation-without-resolve -->
 		{/if}
@@ -279,12 +283,12 @@
 					rel="noopener"
 					class="underline hover:text-gray-900"
 				>
-					I want to host my own instance
+					{t('start.iWantToHostMy')}
 				</a>
 			</p>
 			<!-- eslint-enable svelte/no-navigation-without-resolve -->
 			<form method="post" action="/login?/signOut" use:enhance>
-				<button type="submit" class="underline">Sign out</button>
+				<button type="submit" class="underline">{t('start.signOut')}</button>
 			</form>
 		</div>
 	</div>

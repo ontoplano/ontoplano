@@ -1,5 +1,8 @@
 <script lang="ts">
 	import OneLine from '$lib/components/OneLine.svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * A folder of `.md` files, read here and posted as text.
@@ -93,16 +96,22 @@
 	{/if}
 
 	<label class="block text-sm text-gray-700">
-		Name for the notebook they land in
-		<OneLine name="notebook" placeholder="Obsidian" class="input mt-1" maxlength={80} />
+		{t('markdownImport.nameForTheNotebookThey')}
+		<OneLine
+			name="notebook"
+			placeholder={t('markdownImport.obsidian')}
+			class="input mt-1"
+			maxlength={80}
+		/>
 	</label>
 
 	{#if !compact}
 		<p class="text-xs text-gray-500">
-			Nothing is uploaded as a file — the notes are read here. Attachments, canvases and plugin data
-			stay in the vault. Deleting the notebook undoes the import.
+			{t('markdownImport.nothingIsUploadedAsA')}
 		</p>
 	{/if}
 
-	<button type="submit" class="btn btn-sm" disabled={files.length === 0}>Import</button>
+	<button type="submit" class="btn btn-sm" disabled={files.length === 0}
+		>{t('markdownImport.import')}</button
+	>
 </form>

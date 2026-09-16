@@ -4,6 +4,9 @@
 	import ReportDialog from '$lib/components/ReportDialog.svelte';
 	import { GLOBAL_SHORTCUTS, PAGE_SHORTCUTS, getDisplayShortcuts } from '$lib/shortcuts';
 	import { hasTutorial } from '$lib/tutorials';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * Where help lives: one corner, three answers.
@@ -90,9 +93,9 @@
 			style="border-radius: var(--radius-md, 0)"
 		>
 			<div class="mb-3 flex items-center justify-between">
-				<h3 class="text-sm font-bold text-gray-900">Keyboard shortcuts</h3>
+				<h3 class="text-sm font-bold text-gray-900">{t('helpDock.keyboardShortcuts')}</h3>
 				<button onclick={() => (show = false)} class="text-xs text-gray-500 hover:text-gray-600">
-					close
+					{t('helpDock.close')}
 				</button>
 			</div>
 
@@ -113,7 +116,7 @@
 			{/if}
 
 			<div>
-				<h4 class="mb-1 text-xs font-medium text-gray-500">Global</h4>
+				<h4 class="mb-1 text-xs font-medium text-gray-500">{t('helpDock.global')}</h4>
 				<div class="space-y-0.5">
 					{#each GLOBAL_SHORTCUTS as s (s.key)}
 						<div class="flex items-center justify-between text-xs">
@@ -157,8 +160,8 @@
 			target="_blank"
 			rel="noreferrer"
 			class="dock-btn dock-more {open ? 'is-open' : ''}"
-			title="The documentation"
-			aria-label="The documentation"
+			title={t('helpDock.theDocumentation')}
+			aria-label={t('helpDock.theDocumentation')}
 		>
 			<Icon name="book" size={15} />
 		</a>
@@ -182,8 +185,8 @@
 		<button
 			onclick={() => (show = !show)}
 			class="dock-btn dock-more kbd-hint {open ? 'is-open' : ''}"
-			title="Keyboard shortcuts (?)"
-			aria-label="Keyboard shortcuts"
+			title={t('helpDock.keyboardShortcuts2')}
+			aria-label={t('helpDock.keyboardShortcuts')}
 		>
 			<Icon name="keyboard" size={15} />
 		</button>
@@ -193,8 +196,8 @@
 		<button
 			onclick={() => (reporting = true)}
 			class="dock-btn dock-more {open ? 'is-open' : ''}"
-			title="Report a problem, or suggest something"
-			aria-label="Report a problem, or suggest something"
+			title={t('helpDock.reportAProblemOrSuggest')}
+			aria-label={t('helpDock.reportAProblemOrSuggest')}
 		>
 			<Icon name="bug" size={15} />
 		</button>

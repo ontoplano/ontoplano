@@ -15,6 +15,9 @@
 	import type { PageServerData, ActionData } from './$types';
 	import { getAction } from '$lib/shortcuts';
 	import { keepInView } from '$lib/actions/keep-in-view';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -194,7 +197,7 @@
 				aria-expanded={tagsOpen}
 			>
 				<Icon name={tagsOpen ? 'chevron-down' : 'chevron-right'} size={14} />
-				Tags
+				{t('ui.tags')}
 				<span class="text-gray-400">({data.allTags.length})</span>
 			</button>
 
@@ -208,7 +211,7 @@
 						}}
 						class="border border-gray-200 bg-white px-2 py-0.5 text-xs text-gray-500 transition hover:text-gray-600"
 					>
-						clear
+						{t('notebooks.ideas.clear')}
 					</button>
 				</div>
 			{/if}
@@ -238,7 +241,7 @@
 					}}
 					class="border border-gray-200 bg-white px-2 py-0.5 text-xs text-gray-500 transition hover:text-gray-600"
 				>
-					clear
+					{t('notebooks.ideas.clear')}
 				</button>
 			{/if}
 		</div>
@@ -249,7 +252,7 @@
 		<RoomToolbar>
 			{#snippet filters()}
 				<FilterChips
-					label="Applied"
+					label={t('notebooks.ideas.applied')}
 					bind:value={filterApplied}
 					onchange={() => (selectedIndex = 0)}
 					options={[
@@ -259,7 +262,7 @@
 					]}
 				/>
 				<FilterChips
-					label="Favourite"
+					label={t('notebooks.ideas.favourite')}
 					bind:value={filterFavorite}
 					onchange={() => (selectedIndex = 0)}
 					options={[
@@ -304,7 +307,7 @@
 		</form>
 
 		{#snippet footer()}
-			<button type="button" class="btn" onclick={closeForms}>Cancel</button>
+			<button type="button" class="btn" onclick={closeForms}>{t('ui.cancel')}</button>
 			<button type="submit" form="idea-form" class="btn btn-primary">
 				{editingId ? 'Save' : 'Save idea'}
 			</button>
@@ -314,16 +317,17 @@
 	{#if filteredIdeas.length === 0}
 		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
 			{#if filterTag || filterApplied !== 'all' || filterFavorite !== 'all'}
-				<EmptyState icon="ideas" title="No ideas match the current filters" />
+				<EmptyState icon="ideas" title={t('notebooks.ideas.noIdeasMatchTheCurrent')} />
 			{:else}
 				<EmptyState
 					icon="ideas"
-					title="Nothing captured yet"
+					title={t('notebooks.ideas.nothingCapturedYet')}
 					description="Ideas are the things you would otherwise forget by the time you sat down."
 				>
 					{#snippet action()}
 						<button onclick={() => (showForm = true)} class="btn btn-primary">
-							<Icon name="plus" /> New idea
+							<Icon name="plus" />
+							{t('notebooks.ideas.newIdea')}
 						</button>
 					{/snippet}
 				</EmptyState>
@@ -375,7 +379,9 @@
 								<div class="flex flex-wrap items-center gap-2">
 									<span class="text-xs text-gray-500">{formatDate(idea.createdAt)}</span>
 									{#if idea.isApplied}
-										<span class="text-xs font-medium text-blue-700">applied</span>
+										<span class="text-xs font-medium text-blue-700"
+											>{t('notebooks.ideas.applied2')}</span
+										>
 									{/if}
 									{#if idea.updatedAt !== idea.createdAt}
 										<span class="text-xs text-gray-500">· edited {formatDate(idea.updatedAt)}</span>
@@ -405,7 +411,7 @@
 									<div class="flex items-start justify-between gap-3">
 										<div class="min-w-0 flex-1">
 											<div class="text-xs font-medium tracking-wide text-blue-700 uppercase">
-												Applied note
+												{t('notebooks.ideas.appliedNote')}
 											</div>
 											{#if editingAppliedNoteId === idea.id}
 												<form
@@ -423,7 +429,7 @@
 													<input type="hidden" name="id" value={idea.id} />
 													<OneLine
 														name="appliedNote"
-														placeholder="What did you apply?"
+														placeholder={t('notebooks.ideas.whatDidYouApply')}
 														bind:value={appliedNoteDraft}
 														class="min-w-0 flex-1 border border-blue-300 bg-white px-2 py-1 text-sm shadow-sm focus:border-blue-700 focus:ring-1 focus:ring-blue-700 focus:outline-none"
 														autofocus
@@ -431,7 +437,7 @@
 													<button
 														type="submit"
 														class="bg-gray-900 px-2 py-1 text-xs text-white hover:bg-gray-800"
-														>Save</button
+														>{t('ui.save')}</button
 													>
 													<button
 														type="button"
@@ -441,7 +447,7 @@
 														}}
 														class="btn btn-sm"
 													>
-														Cancel
+														{t('ui.cancel')}
 													</button>
 												</form>
 											{:else}
@@ -489,7 +495,7 @@
 										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
 										use:armed
 									>
-										Confirm?
+										{t('notebooks.ideas.confirm')}
 									</button>
 								</form>
 								<button
@@ -499,12 +505,12 @@
 									}}
 									class="btn btn-sm"
 								>
-									Cancel
+									{t('ui.cancel')}
 								</button>
 							{:else}
 								<button
-									title="Edit"
-									aria-label="Edit"
+									title={t('ui.edit')}
+									aria-label={t('ui.edit')}
 									onclick={() => openIdeaForm(idea.id)}
 									class="icon-btn"
 								>
@@ -538,8 +544,8 @@
 								</form>
 
 								<button
-									title="Delete"
-									aria-label="Delete"
+									title={t('ui.delete')}
+									aria-label={t('ui.delete')}
 									type="button"
 									onclick={() => {
 										confirmingDeleteId = idea.id;

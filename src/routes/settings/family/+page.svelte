@@ -6,6 +6,9 @@
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import type { ActionData, PageServerData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -23,10 +26,10 @@
 		<Card title="You are on {data.seatOwner.name}'s plan" accent="var(--section-accent)" />
 	{:else}
 		<Card
-			title="Who is on your plan"
+			title={t('settings.family.whoIsOnYourPlan')}
 			description="Your plan covers {data.seats} accounts — yours and {data.seats - 1} more."
 		>
-			<p class="text-sm text-gray-600">Everybody keeps their own week; you just pay for it.</p>
+			<p class="text-sm text-gray-600">{t('settings.family.everybodyKeepsTheirOwnWeek')}</p>
 
 			<div class="mt-3"><FormError message={form?.message} /></div>
 
@@ -72,16 +75,18 @@
 								>
 									<input type="hidden" name="member" value={member.id} />
 									<button type="button" onclick={() => (confirmRemove = null)} class="btn btn-sm">
-										Keep them
+										{t('settings.family.keepThem')}
 									</button>
-									<button class="btn btn-danger btn-sm" use:armed>Take them off the plan</button>
+									<button class="btn btn-danger btn-sm" use:armed
+										>{t('settings.family.takeThemOffThePlan')}</button
+									>
 								</form>
 							{:else}
 								<button
 									type="button"
 									onclick={() => (confirmRemove = member.id)}
 									class="btn btn-sm"
-									title="Take them off this plan"
+									title={t('settings.family.takeThemOffThisPlan')}
 								>
 									<Icon name="close" size={14} />
 								</button>
@@ -97,19 +102,19 @@
 					rather than moved, so these sit apart from the seats that are
 					actually in use — and each one can be taken back.
 				-->
-				<p class="eyebrow mt-4 text-gray-500">Waiting for an answer</p>
+				<p class="eyebrow mt-4 text-gray-500">{t('settings.family.waitingForAnAnswer')}</p>
 				<ul class="mt-1 divide-y divide-gray-200 border-y border-gray-200">
 					{#each data.invited as person (person.id)}
 						<li class="flex items-center justify-between gap-3 py-2">
 							<span class="min-w-0">
 								<span class="block truncate text-sm text-gray-900">{person.email}</span>
 								<span class="block truncate text-xs text-gray-500">
-									asked — the seat is held until they answer
+									{t('settings.family.askedTheSeatIs')}
 								</span>
 							</span>
 							<form method="post" action="?/withdrawInvite" use:enhance class="shrink-0">
 								<input type="hidden" name="member" value={person.id} />
-								<button class="btn btn-sm">Withdraw</button>
+								<button class="btn btn-sm">{t('settings.family.withdraw')}</button>
 							</form>
 						</li>
 					{/each}
@@ -122,19 +127,19 @@
 						name="who"
 						type="email"
 						required
-						placeholder="their email address"
+						placeholder={t('settings.family.theirEmailAddress')}
 						class="input flex-1"
 					/>
 					<button class="btn btn-sm btn-primary">
-						<Icon name="plus" size={14} /> Add to my plan
+						<Icon name="plus" size={14} />
+						{t('settings.family.addToMyPlan')}
 					</button>
 				</form>
 				<p class="mt-2 text-xs text-gray-500">
-					With an account here, they are asked first and the seat is theirs once they accept.
-					Without one, they get an email that opens an account already made for them.
+					{t('settings.family.withAnAccountHereThey')}
 				</p>
 			{:else}
-				<p class="mt-3 text-xs text-gray-500">Every seat is taken.</p>
+				<p class="mt-3 text-xs text-gray-500">{t('settings.family.everySeatIsTaken')}</p>
 			{/if}
 		</Card>
 	{/if}

@@ -8,6 +8,9 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import type { PageServerData, ActionData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -68,23 +71,23 @@
 	<Card title={data.account.email} description={data.account.name}>
 		<dl class="space-y-2 text-sm">
 			<div class="flex justify-between gap-4">
-				<dt class="text-gray-500">Joined</dt>
+				<dt class="text-gray-500">{t('admin.id.joined')}</dt>
 				<dd class="tabular text-gray-900">{when(data.account.createdAt)}</dd>
 			</div>
 			<div class="flex justify-between gap-4">
-				<dt class="text-gray-500">Address confirmed</dt>
+				<dt class="text-gray-500">{t('admin.id.addressConfirmed')}</dt>
 				<dd class="text-gray-900">{data.account.emailVerified ? 'yes' : 'no'}</dd>
 			</div>
 			<div class="flex justify-between gap-4">
-				<dt class="text-gray-500">Role</dt>
+				<dt class="text-gray-500">{t('admin.id.role')}</dt>
 				<dd class="text-gray-900">{data.account.role}</dd>
 			</div>
 			<div class="flex justify-between gap-4">
-				<dt class="text-gray-500">Signed-in devices</dt>
+				<dt class="text-gray-500">{t('admin.id.signedInDevices')}</dt>
 				<dd class="tabular text-gray-900">{data.account.sessions}</dd>
 			</div>
 			<div class="flex justify-between gap-4">
-				<dt class="text-gray-500">Plan</dt>
+				<dt class="text-gray-500">{t('admin.id.plan')}</dt>
 				<dd class="text-gray-900">{data.account.plan ?? 'free'}</dd>
 			</div>
 		</dl>
@@ -96,7 +99,8 @@
 				     a discount, and discounts belong to the payment provider. -->
 				<form method="post" action="?/grantTrial" use:enhance>
 					<button class="btn btn-sm">
-						<Icon name="calendar" /> Start a trial
+						<Icon name="calendar" />
+						{t('admin.id.startATrial')}
 					</button>
 				</form>
 			{/if}
@@ -114,7 +118,8 @@
 						class="input input-sm"
 					/>
 					<button class="btn btn-sm shrink-0 whitespace-nowrap">
-						<Icon name="clock" /> End plan then
+						<Icon name="clock" />
+						{t('admin.id.endPlanThen')}
 					</button>
 				</form>
 			{/if}
@@ -151,7 +156,7 @@
 					>
 						<input type="hidden" name="role" value={nextRole} />
 						<button type="button" class="btn btn-sm" onclick={() => (changingRole = false)}>
-							Cancel
+							{t('ui.cancel')}
 						</button>
 						<span class="text-sm text-gray-700">
 							{#if nextRole === 'admin'}
@@ -176,27 +181,26 @@
 
 		{#if !data.emailConfigured}
 			<p class="mt-3 text-xs text-gray-500">
-				This instance has no mail server, so nothing can be emailed. Asking for a confirmation shows
-				you the link to pass on yourself.
+				{t('admin.id.thisInstanceHasNoMail')}
 			</p>
 		{/if}
 	</Card>
 
 	{#if !data.self && !data.account.isOwner}
 		<Card
-			title="Delete this account"
+			title={t('admin.id.deleteThisAccount')}
 			description="Everything in it goes, in one transaction, with nothing to restore it from."
 		>
 			{#if !deleting}
 				<button class="btn btn-danger btn-sm" onclick={() => ((deleting = true), (typed = ''))}>
-					<Icon name="trash" /> Delete this account
+					<Icon name="trash" />
+					{t('admin.id.deleteThisAccount')}
 				</button>
 			{:else}
 				<form method="post" action="?/deleteAccount" use:enhance class="space-y-3">
 					<p class="text-sm text-gray-700">
-						Type <strong class="text-gray-900">{data.account.email}</strong> to confirm. Every block,
-						entry, note, goal and picture this account owns is deleted, and the export it could have taken
-						with it goes too.
+						{t('ui.type')} <strong class="text-gray-900">{data.account.email}</strong>
+						{t('admin.id.toConfirmEveryBlockEntry')}
 					</p>
 					<div class="flex flex-wrap items-center gap-2">
 						<!--
@@ -212,9 +216,11 @@
 							ariaLabel="The address of the account being deleted"
 							autocapitalize="none"
 						/>
-						<button class="btn btn-danger btn-sm" disabled={!matches}>Delete for good</button>
+						<button class="btn btn-danger btn-sm" disabled={!matches}
+							>{t('admin.id.deleteForGood')}</button
+						>
 						<button type="button" class="btn btn-sm" onclick={() => (deleting = false)}>
-							Cancel
+							{t('ui.cancel')}
 						</button>
 					</div>
 				</form>
@@ -222,9 +228,13 @@
 		</Card>
 	{/if}
 
-	<Card title="History" description="What this account did, and what was done to it." flush>
+	<Card
+		title={t('admin.id.history')}
+		description="What this account did, and what was done to it."
+		flush
+	>
 		{#if data.events.length === 0}
-			<EmptyState icon="clock" title="Nothing recorded yet" />
+			<EmptyState icon="clock" title={t('admin.id.nothingRecordedYet')} />
 		{:else}
 			<div class="divide-y divide-gray-200">
 				{#each data.events as event (event.id)}
@@ -232,7 +242,7 @@
 						<span class="min-w-0 flex-1">
 							<span class="text-gray-900">{event.event.replaceAll('_', ' ')}</span>
 							{#if event.actorId}
-								<span class="text-xs text-amber-700"> · by an administrator</span>
+								<span class="text-xs text-amber-700"> {t('admin.id.byAnAdministrator')}</span>
 							{/if}
 							{#if describe(event.detail)}
 								<span class="block text-xs text-gray-500">{describe(event.detail)}</span>

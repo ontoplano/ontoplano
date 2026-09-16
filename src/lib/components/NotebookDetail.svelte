@@ -20,6 +20,9 @@
 	import { NOTEBOOK_TODO_ACTIONS } from '$lib/todo-actions';
 	import type { Todo } from '$lib/services/todos';
 	import { renderMarkdown } from '$lib/markdown';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * One notebook: what is in it, and what can be done to it.
@@ -280,7 +283,7 @@
 			<button
 				type="button"
 				onclick={leaveMaximized}
-				aria-label="Back"
+				aria-label={t('ui.back')}
 				class="-ml-1 flex h-9 w-9 shrink-0 items-center justify-center text-gray-700 sm:hidden"
 			>
 				<svg
@@ -308,8 +311,8 @@
 				onclick={() => setTypeStep(typeStep - 1)}
 				disabled={typeStep === 0}
 				class="icon-btn"
-				title="Smaller type"
-				aria-label="Smaller type"
+				title={t('notebookDetail.smallerType')}
+				aria-label={t('notebookDetail.smallerType')}
 			>
 				<span class="text-xs font-semibold">A</span>
 			</button>
@@ -318,15 +321,15 @@
 				onclick={() => setTypeStep(typeStep + 1)}
 				disabled={typeStep === TYPE_STEPS.length - 1}
 				class="icon-btn"
-				title="Bigger type"
-				aria-label="Bigger type"
+				title={t('notebookDetail.biggerType')}
+				aria-label={t('notebookDetail.biggerType')}
 			>
 				<span class="text-lg font-semibold">A</span>
 			</button>
 			<button
 				type="button"
 				onclick={leaveMaximized}
-				aria-label="Close"
+				aria-label={t('ui.close')}
 				class="btn btn-quiet btn-sm hidden sm:flex"
 			>
 				&times;
@@ -338,7 +341,7 @@
 		{#if showingOrphans}
 			{@render noteList(shownNotes, null)}
 		{:else if !notebook || !contents}
-			<EmptyState icon="notebook" title="Nothing chosen" />
+			<EmptyState icon="notebook" title={t('notebookDetail.nothingChosen')} />
 		{:else}
 			<!-- Everything about this notebook, one kind at a time. -->
 			<!--
@@ -355,18 +358,20 @@
 				class="flex flex-col items-stretch border-b border-gray-200 sm:flex-row sm:items-center sm:pr-2"
 			>
 				<div class="snap-strip min-w-0 flex-1 gap-1 px-2 md:flex">
-					{#each tabs as t (t.key)}
+					{#each tabs as option (option.key)}
 						<button
-							onclick={() => (tab = t.key)}
+							onclick={() => (tab = option.key)}
 							class="tab-link px-3 py-2 text-sm font-medium whitespace-nowrap transition {tab ===
-							t.key
+							option.key
 								? 'border-b-2 text-gray-900'
 								: 'text-gray-500 hover:text-gray-700'}"
-							style={tab === t.key ? `border-color: ${SECTION_COLORS.diary}` : ''}
+							style={tab === option.key ? `border-color: ${SECTION_COLORS.diary}` : ''}
 						>
-							{t.label}
+							{option.label}
 							<span class="tabular ml-1 text-xs text-gray-500">
-								{t.done !== undefined && t.count > 0 ? `${t.done}/${t.count}` : t.count}
+								{option.done !== undefined && option.count > 0
+									? `${option.done}/${option.count}`
+									: option.count}
 							</span>
 						</button>
 					{/each}
@@ -441,7 +446,11 @@
 						form asking what to call it, and one without a name is listed by
 						its first line.
 					-->
-						<OneLine name="heading" placeholder="Title" class="input mb-2 w-full font-medium" />
+						<OneLine
+							name="heading"
+							placeholder={t('ui.title')}
+							class="input mb-2 w-full font-medium"
+						/>
 						<textarea
 							bind:this={addBox}
 							name="content"
@@ -468,12 +477,14 @@
 				box, reading as one column rather than as two half-aligned rows.
 			-->
 						<div class="mt-1 pl-2.5">
-							<MoreOptions label="Tags, people" count={0} divided={false}>
+							<MoreOptions label={t('notebookDetail.tagsPeople')} count={0} divided={false}>
 								{@render tagsAndPeople('', '')}
 							</MoreOptions>
 						</div>
 						<div class="mt-2 flex justify-end">
-							<button class="btn btn-primary btn-sm"><Icon name="plus" /> Add note</button>
+							<button class="btn btn-primary btn-sm"
+								><Icon name="plus" /> {t('notebookDetail.addNote')}</button
+							>
 						</div>
 					</form>
 				{/if}
@@ -520,7 +531,7 @@
 				{/if}
 			{:else if contents.goals.length === 0}
 				<p class="px-4 py-3 text-sm text-gray-500">
-					No goal points at this notebook. It does not need one.
+					{t('notebookDetail.noGoalPointsAtThis')}
 				</p>
 			{:else}
 				<ul class="divide-y divide-gray-200">
@@ -555,17 +566,17 @@
 	names typed inline, not a picker opened.
 -->
 {#snippet tagsAndPeople(tags: string, people: string)}
-	<Field label="Tags" span={6} hint="Separate with commas or spaces. A leading # is fine.">
-		<OneLine name="tags" placeholder="work, health" value={tags} class="input" />
+	<Field label={t('ui.tags')} span={6} hint="Separate with commas or spaces. A leading # is fine.">
+		<OneLine name="tags" placeholder={t('notebookDetail.workHealth')} value={tags} class="input" />
 	</Field>
-	<Field label="People" span={6} hint="Anyone this note is about.">
+	<Field label={t('notebookDetail.people')} span={6} hint="Anyone this note is about.">
 		<input
 			name="people"
 			type="text"
 			autocomplete="off"
 			list="notebook-known-people"
 			value={people}
-			placeholder="Ana, João"
+			placeholder={t('notebookDetail.anaJoão')}
 			class="input"
 		/>
 		<datalist id="notebook-known-people">
@@ -578,7 +589,7 @@
 
 {#snippet noteList(entries: Entry[], notebookId: number | null)}
 	{#if entries.length === 0}
-		<p class="px-4 py-3 text-sm text-gray-500">Nothing written here yet.</p>
+		<p class="px-4 py-3 text-sm text-gray-500">{t('notebookDetail.nothingWrittenHereYet')}</p>
 	{:else}
 		<div class="divide-y divide-gray-200">
 			{#each entries as entry (entry.id)}
@@ -603,7 +614,7 @@
 							<OneLine
 								name="heading"
 								value={entry.title ?? ''}
-								placeholder="Title"
+								placeholder={t('ui.title')}
 								class="input mb-2 w-full font-medium"
 							/>
 							<textarea
@@ -625,9 +636,9 @@
 							</div>
 							<div class="mt-2 flex justify-end gap-2">
 								<button type="button" class="btn btn-sm" onclick={() => (editingNoteId = null)}
-									>Cancel</button
+									>{t('ui.cancel')}</button
 								>
-								<button class="btn btn-primary btn-sm">Save</button>
+								<button class="btn btn-primary btn-sm">{t('ui.save')}</button>
 							</div>
 						</form>
 					{:else}
@@ -689,8 +700,8 @@
 								<button
 									onclick={() => (editingNoteId = entry.id)}
 									class="icon-btn"
-									title="Edit this note"
-									aria-label="Edit this note"><Icon name="edit" /></button
+									title={t('notebookDetail.editThisNote')}
+									aria-label={t('notebookDetail.editThisNote')}><Icon name="edit" /></button
 								>
 								<!--
 									Away, and back. No confirmation: this is the reversible one
@@ -724,16 +735,18 @@
 										<button
 											type="button"
 											class="btn btn-sm"
-											onclick={() => (confirmDeleteNote = null)}>Cancel</button
+											onclick={() => (confirmDeleteNote = null)}>{t('ui.cancel')}</button
 										>
-										<button class="btn btn-danger btn-sm" use:armed>Yes, delete</button>
+										<button class="btn btn-danger btn-sm" use:armed
+											>{t('notebookDetail.yesDelete')}</button
+										>
 									</form>
 								{:else}
 									<button
 										onclick={() => (confirmDeleteNote = entry.id)}
 										class="icon-btn icon-btn-danger"
-										title="Delete this note"
-										aria-label="Delete this note"><Icon name="trash" /></button
+										title={t('notebookDetail.deleteThisNote')}
+										aria-label={t('notebookDetail.deleteThisNote')}><Icon name="trash" /></button
 									>
 								{/if}
 							</div>

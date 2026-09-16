@@ -333,7 +333,6 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { dev } from '$app/environment';
 	import { commandKey } from '$lib/platform';
-
 	function handleGlobalKeydown(e: KeyboardEvent) {
 		if (
 			e.target instanceof HTMLInputElement ||
@@ -811,9 +810,9 @@
 					Red on the amber band, and it says wiped rather than disappears.
 				-->
 				<span>
-					<strong>This is a demo version of ontoplano.</strong>
+					<strong>{t('home.thisIsADemoVersion')}</strong>
 					<strong class="text-red-900">
-						Do not put your real data here — this account is wiped once you stop using it.
+						{t('home.doNotPutYourReal')}
 					</strong>
 				</span>
 				{#if data.demoHost}
@@ -840,8 +839,9 @@
 				class="relative z-50 hidden flex-wrap items-center justify-between gap-2 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950 lg:flex"
 			>
 				<span>
-					<strong>Staging.</strong> A copy of Ontoplano for trying things on.
-					<strong class="text-red-900">Nothing here is promised to survive.</strong>
+					<strong>{t('home.staging')}</strong>
+					{t('home.aCopyOfOntoplanoFor')}
+					<strong class="text-red-900">{t('home.nothingHereIsPromisedTo')}</strong>
 				</span>
 			</div>
 
@@ -859,9 +859,9 @@
 				class="fixed inset-x-0 z-30 flex items-center justify-between bg-amber-500 px-3 text-[11px] leading-none font-medium text-amber-950 lg:hidden"
 				style="bottom: calc(var(--mobile-nav-height) + var(--safe-bottom)); height: 1.95rem"
 			>
-				<span><strong>Staging</strong></span>
+				<span><strong>{t('home.staging2')}</strong></span>
 				<!-- Clear of the help dock, which floats over this corner. -->
-				<span class="pe-10">nothing survives</span>
+				<span class="pe-10">{t('home.nothingSurvives')}</span>
 			</div>
 		{/if}
 
@@ -891,7 +891,7 @@
 						<button
 							class="border border-blue-200 px-2 py-1 text-xs font-semibold hover:bg-blue-500"
 						>
-							No thanks
+							{t('home.noThanks')}
 						</button>
 					</form>
 					{#if !data.familyOffer.ownPlanEnds}
@@ -899,7 +899,7 @@
 							<button
 								class="border border-white bg-white px-2 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50"
 							>
-								Accept
+								{t('home.accept')}
 							</button>
 						</form>
 					{/if}
@@ -925,7 +925,7 @@
 				style="padding-top: calc(var(--safe-top, 0px) + 0.5rem)"
 			>
 				<span>
-					<strong>Update the app.</strong>
+					<strong>{t('home.updateTheApp')}</strong>
 					It is {data.appUpdate.app} and this instance runs {data.appUpdate.instance} — some things may
 					not work until it catches up.
 				</span>
@@ -933,7 +933,7 @@
 					class="shrink-0 border border-amber-700 px-2 py-1 text-xs font-semibold hover:bg-amber-400"
 					onclick={hushUpdate}
 				>
-					Not now
+					{t('home.notNow')}
 				</button>
 			</div>
 		{/if}
@@ -976,8 +976,8 @@
 							class="pie-handle flex h-8 w-8 items-center justify-center transition hover:brightness-125 {roomsOpen
 								? 'pie-handle-held'
 								: ''}"
-							aria-label="Jump to a section"
-							title="Jump to a section"
+							aria-label={t('home.jumpToASection')}
+							title={t('home.jumpToASection')}
 							data-tour="rooms"
 						>
 							<Logo size={32} />
@@ -1054,7 +1054,7 @@
 						data-tour="search"
 					>
 						<Icon name="search" size={14} />
-						Search
+						{t('ui.search')}
 						<kbd
 							class="kbd-hint ml-auto hidden border border-chrome-line px-1 text-xs min-[1460px]:inline-block"
 							>{key} K</kbd
@@ -1067,8 +1067,8 @@
 						class="pie-handle flex h-8 w-8 items-center justify-center border border-chrome-line bg-chrome-raised text-chrome-muted shadow-sm transition hover:text-chrome-ink hover:brightness-125 {pieOpen
 							? 'pie-handle-held'
 							: ''}"
-						aria-label="Write something down"
-						title="Write something down"
+						aria-label={t('home.writeSomethingDown')}
+						title={t('home.writeSomethingDown')}
 						data-tour="capture"
 					>
 						<Icon name="plus" size={16} />
@@ -1077,7 +1077,7 @@
 					<button
 						onclick={() => (menuOpen = !menuOpen)}
 						class="flex h-8 w-8 items-center justify-center border border-chrome-line bg-chrome-raised text-chrome-muted shadow-sm transition hover:text-chrome-ink hover:brightness-125"
-						aria-label="Menu"
+						aria-label={t('home.menu')}
 						data-tour="menu"
 					>
 						<!-- A fifth larger than the icons beside it: it is the way into
@@ -1097,7 +1097,7 @@
 							class="rise absolute top-full right-0 z-50 mt-1 w-44 border border-gray-200 bg-white shadow-overlay"
 						>
 							<div class="border-b border-gray-200 px-4 py-2">
-								<span class="eyebrow text-gray-600">Theme</span>
+								<span class="eyebrow text-gray-600">{t('home.theme')}</span>
 								<form
 									method="post"
 									action="/settings/preferences?/setTheme"
@@ -1135,7 +1135,7 @@
 									onclick={() => (menuOpen = false)}
 									class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
 								>
-									Account
+									{t('home.account')}
 								</a>
 							{/if}
 							<a
@@ -1143,14 +1143,14 @@
 								onclick={() => (menuOpen = false)}
 								class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
 							>
-								Preferences
+								{t('home.preferences')}
 							</a>
 							<a
 								href={resolve('/settings/integrations')}
 								onclick={() => (menuOpen = false)}
 								class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
 							>
-								AI &amp; Integrations
+								{t('home.aiAmpIntegrations')}
 							</a>
 							<!--
 								Not on the demo. The account was handed over by a cookie and
@@ -1171,7 +1171,7 @@
 									onclick={() => (menuOpen = false)}
 									class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
 								>
-									Where this lives
+									{t('home.whereThisLives')}
 								</a>
 							{:else if data.demo}
 								<!--
@@ -1204,7 +1204,7 @@
 										type="submit"
 										class="w-full px-4 py-2 text-left text-sm {NAV_DROPDOWN_ITEM} transition"
 									>
-										Reset demo account
+										{t('home.resetDemoAccount')}
 									</button>
 								</form>
 							{:else}
@@ -1213,7 +1213,7 @@
 										type="submit"
 										class="w-full px-4 py-2 text-left text-sm {NAV_DROPDOWN_ITEM} transition"
 									>
-										Sign out
+										{t('home.signOut')}
 									</button>
 								</form>
 							{/if}
@@ -1240,7 +1240,7 @@
 			than a slow one.
 		-->
 		{#if navigating.to && !givenUp}
-			<div class="nav-progress" role="status" aria-label="Loading"></div>
+			<div class="nav-progress" role="status" aria-label={t('home.loading')}></div>
 		{/if}
 
 		<main
@@ -1289,7 +1289,7 @@
 		<nav
 			class="fixed inset-x-0 bottom-0 z-40 lg:hidden"
 			style="padding-bottom: var(--safe-bottom); background: {barField}"
-			aria-label="Primary"
+			aria-label={t('home.primary')}
 			data-tour="mobile-bar"
 		>
 			<div class="flex" style="height: var(--mobile-nav-height)">
@@ -1312,8 +1312,8 @@
 					class="tap flex flex-1 items-center justify-center {page.url.pathname === '/'
 						? 'text-chrome-ink'
 						: 'text-chrome-muted'}"
-					aria-label="Home"
-					title="Home"
+					aria-label={t('home.home')}
+					title={t('home.home')}
 				>
 					<Icon name="home" size={22} />
 				</a>
@@ -1322,8 +1322,8 @@
 					type="button"
 					onclick={() => (palette.open = true)}
 					class="tap flex flex-1 items-center justify-center text-chrome-muted"
-					aria-label="Search"
-					title="Search"
+					aria-label={t('ui.search')}
+					title={t('ui.search')}
 					data-tour="search"
 				>
 					<Icon name="search" size={22} />
@@ -1375,8 +1375,8 @@
 						class="tap tap-shape pie-handle absolute left-1/2 flex -translate-x-1/2 items-center justify-center {roomsOpen
 							? 'pie-handle-held text-chrome-ink'
 							: 'text-chrome-muted'}"
-						aria-label="Go to a section"
-						title="Go to a section"
+						aria-label={t('home.goToASection')}
+						title={t('home.goToASection')}
 						data-tour="rooms"
 					>
 						<!-- Edge to edge: the button's own outline is the mark's, so any
@@ -1392,8 +1392,8 @@
 					class="tap pie-handle flex flex-1 items-center justify-center {pieOpen
 						? 'pie-handle-held text-chrome-ink'
 						: 'text-chrome-muted'}"
-					aria-label="Write something down"
-					title="Write something down"
+					aria-label={t('home.writeSomethingDown')}
+					title={t('home.writeSomethingDown')}
 					data-tour="capture"
 				>
 					<Icon name="plus" size={24} />
@@ -1417,8 +1417,8 @@
 							: 'text-chrome-muted'}"
 					aria-haspopup="menu"
 					aria-expanded={fanOpen}
-					aria-label="Account and help"
-					title="Account and help"
+					aria-label={t('home.accountAndHelp')}
+					title={t('home.accountAndHelp')}
 					data-tour="menu"
 				>
 					<Icon name="user" size={22} />
@@ -1445,9 +1445,9 @@
 				<!-- Two words, split around the pie button that sits in the middle of
 				     this strip. Anything longer was cut off by the menu button and
 				     read as "one shared a—", which says less than nothing. -->
-				<span><strong>Demo version</strong></span>
+				<span><strong>{t('home.demoVersion')}</strong></span>
 				<!-- Clear of the help dock, which floats over this corner. -->
-				<span class="pe-10">yours, and temporary</span>
+				<span class="pe-10">{t('home.yoursAndTemporary')}</span>
 			</div>
 		{/if}
 

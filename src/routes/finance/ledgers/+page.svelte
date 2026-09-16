@@ -15,6 +15,9 @@
 	import { formatMoney, type Currency } from '$lib/money';
 	import { LEDGER_KIND_LABELS, LEDGER_KINDS } from '$lib/services/ledgers';
 	import type { PageServerData, ActionData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -198,7 +201,7 @@
 					<form method="post" action="?/archiveLedger" use:enhance>
 						<input type="hidden" name="id" value={ledger.id} />
 						<input type="hidden" name="archived" value="false" />
-						<button class="btn btn-sm" type="submit">Restore</button>
+						<button class="btn btn-sm" type="submit">{t('finance.ledgers.restore')}</button>
 					</form>
 					<button
 						class="icon-btn"
@@ -217,7 +220,7 @@
 	{#if !data.current}
 		<EmptyState
 			icon="wallet"
-			title="No ledgers yet"
+			title={t('finance.ledgers.noLedgersYet')}
 			description="A ledger is one place money moves through — a current account, a credit card. Make one, then import its statement or write a line by hand."
 		/>
 	{:else}
@@ -260,10 +263,12 @@
 							showImport = true;
 						}}
 					>
-						<Icon name="download" /> Import
+						<Icon name="download" />
+						{t('finance.ledgers.import')}
 					</button>
 					<button class="btn btn-sm" onclick={() => (showNewMovement = true)}>
-						<Icon name="plus" /> Line
+						<Icon name="plus" />
+						{t('finance.ledgers.line')}
 					</button>
 					<button
 						class="icon-btn"
@@ -289,7 +294,11 @@
 					<form method="post" action="?/archiveLedger" use:enhance>
 						<input type="hidden" name="id" value={current.id} />
 						<input type="hidden" name="archived" value="true" />
-						<button class="icon-btn" aria-label="Archive {current.name}" title="Put it away">
+						<button
+							class="icon-btn"
+							aria-label="Archive {current.name}"
+							title={t('finance.ledgers.putItAway')}
+						>
 							<Icon name="archive" />
 						</button>
 					</form>
@@ -307,7 +316,7 @@
 			<div class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-3 py-2">
 				<input
 					value={data.query}
-					placeholder="Search descriptions"
+					placeholder={t('finance.ledgers.searchDescriptions')}
 					class="input w-56"
 					oninput={(e) => filter({ q: (e.currentTarget as HTMLInputElement).value })}
 				/>
@@ -321,17 +330,19 @@
 				-->
 				<select
 					class="select w-auto"
-					aria-label="Month"
+					aria-label={t('finance.ledgers.month')}
 					value={data.month}
 					onchange={(e) => filter({ month: (e.currentTarget as HTMLSelectElement).value })}
 				>
-					<option value="">Every month</option>
+					<option value="">{t('finance.ledgers.everyMonth')}</option>
 					{#each data.months as m (m)}
 						<option value={m}>{monthName(m)}</option>
 					{/each}
 				</select>
 				{#if data.query || data.month}
-					<button class="btn btn-sm" onclick={() => filter({ q: '', month: '' })}>Clear</button>
+					<button class="btn btn-sm" onclick={() => filter({ q: '', month: '' })}
+						>{t('finance.ledgers.clear')}</button
+					>
 				{/if}
 				<span class="ml-auto text-xs text-gray-500 tabular-nums">
 					{data.movements.length} shown
@@ -341,7 +352,7 @@
 			{#if data.movements.length === 0}
 				<EmptyState
 					icon="wallet"
-					title="Nothing here yet"
+					title={t('finance.ledgers.nothingHereYet')}
 					description="Import this ledger's export, or write a line by hand. Lines already imported are never added twice."
 				/>
 			{:else}
@@ -408,14 +419,14 @@
 								</span>
 								<button
 									class="icon-btn shrink-0"
-									aria-label="Edit this line"
+									aria-label={t('finance.ledgers.editThisLine')}
 									onclick={() => (editingId = m.id)}
 								>
 									<Icon name="edit" />
 								</button>
 								<button
 									class="icon-btn shrink-0"
-									aria-label="Delete this line"
+									aria-label={t('finance.ledgers.deleteThisLine')}
 									onclick={() => (deletingMovement = m)}
 								>
 									<Icon name="trash" />
@@ -429,12 +440,12 @@
 					<table class="statement w-full text-sm">
 						<thead class="sticky top-0 bg-white">
 							<tr class="border-b border-gray-200 text-left text-xs text-gray-500">
-								<th class="px-3 py-2 font-medium">Day</th>
-								<th class="px-3 py-2 font-medium">Description</th>
-								<th class="px-3 py-2 font-medium">Category</th>
-								<th class="px-3 py-2 font-medium">Tags</th>
-								<th class="px-3 py-2 text-right font-medium">Amount</th>
-								<th class="px-3 py-2"><span class="sr-only">Actions</span></th>
+								<th class="px-3 py-2 font-medium">{t('finance.ledgers.day')}</th>
+								<th class="px-3 py-2 font-medium">{t('ui.description')}</th>
+								<th class="px-3 py-2 font-medium">{t('ui.category')}</th>
+								<th class="px-3 py-2 font-medium">{t('ui.tags')}</th>
+								<th class="px-3 py-2 text-right font-medium">{t('ui.amount')}</th>
+								<th class="px-3 py-2"><span class="sr-only">{t('ui.actions')}</span></th>
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-gray-100">
@@ -495,14 +506,14 @@
 									<td class="px-3 py-2 text-right whitespace-nowrap">
 										<button
 											class="icon-btn"
-											aria-label="Edit this line"
+											aria-label={t('finance.ledgers.editThisLine')}
 											onclick={() => (editingId = m.id)}
 										>
 											<Icon name="edit" />
 										</button>
 										<button
 											class="icon-btn"
-											aria-label="Delete this line"
+											aria-label={t('finance.ledgers.deleteThisLine')}
 											onclick={() => (deletingMovement = m)}
 										>
 											<Icon name="trash" />
@@ -518,13 +529,20 @@
 	{/if}
 
 	<p class="text-xs text-gray-500">
-		Money you expect rather than money that moved — rent, a subscription — is a
-		<a href={resolve('/finance/bills')} class="underline">bill</a>, and bills turn up on your week.
+		{t('finance.ledgers.moneyYouExpectRatherThan')}
+		<a href={resolve('/finance/bills')} class="underline">{t('finance.ledgers.bill')}</a>{t(
+			'finance.ledgers.andBillsTurnUp'
+		)}
 	</p>
 </div>
 
 <!-- New ledger. -->
-<Modal bind:open={showNewLedger} error={form?.message} title="New ledger" size="sm">
+<Modal
+	bind:open={showNewLedger}
+	error={form?.message}
+	title={t('finance.ledgers.newLedger')}
+	size="sm"
+>
 	<form
 		id="ledger-form"
 		method="post"
@@ -537,17 +555,17 @@
 	>
 		<div class="grid gap-3">
 			<label class="block text-sm">
-				<span class="text-gray-600">Name</span>
+				<span class="text-gray-600">{t('ui.name')}</span>
 				<OneLine
 					name="heading"
-					placeholder="Current account"
+					placeholder={t('finance.ledgers.currentAccount')}
 					class="input mt-1 w-full"
 					required
 					autofocus
 				/>
 			</label>
 			<label class="block text-sm">
-				<span class="text-gray-600">What it is</span>
+				<span class="text-gray-600">{t('finance.ledgers.whatItIs')}</span>
 				<select name="kind" class="select mt-1 w-full">
 					{#each LEDGER_KINDS as kind (kind)}
 						<option value={kind}>{LEDGER_KIND_LABELS[kind]}</option>
@@ -555,20 +573,22 @@
 				</select>
 			</label>
 			<label class="block text-sm">
-				<span class="text-gray-600">Usual export</span>
+				<span class="text-gray-600">{t('finance.ledgers.usualExport')}</span>
 				<select name="defaultParser" class="select mt-1 w-full">
-					<option value="">Ask every time</option>
+					<option value="">{t('finance.ledgers.askEveryTime')}</option>
 					{#each data.parsers as p (p.key)}<option value={p.key}>{p.name}</option>{/each}
 				</select>
 				<span class="mt-1 block text-xs text-gray-500">
-					Preselected when importing into this ledger. Changeable at import.
+					{t('finance.ledgers.preselectedWhenImportingIntoThis')}
 				</span>
 			</label>
 		</div>
 	</form>
 	{#snippet footer()}
-		<button class="btn" type="button" onclick={() => (showNewLedger = false)}>Cancel</button>
-		<button class="btn btn-primary" type="submit" form="ledger-form">Create</button>
+		<button class="btn" type="button" onclick={() => (showNewLedger = false)}
+			>{t('ui.cancel')}</button
+		>
+		<button class="btn btn-primary" type="submit" form="ledger-form">{t('ui.create')}</button>
 	{/snippet}
 </Modal>
 
@@ -576,7 +596,7 @@
 <Modal
 	open={editingLedger !== null}
 	error={form?.message}
-	title="Edit ledger"
+	title={t('finance.ledgers.editLedger')}
 	onclose={() => (editingLedger = null)}
 	size="sm"
 >
@@ -594,11 +614,11 @@
 			<input type="hidden" name="id" value={editingLedger.id} />
 			<div class="grid gap-3">
 				<label class="block text-sm">
-					<span class="text-gray-600">Name</span>
+					<span class="text-gray-600">{t('ui.name')}</span>
 					<OneLine name="heading" value={editingLedger.name} class="input mt-1 w-full" required />
 				</label>
 				<label class="block text-sm">
-					<span class="text-gray-600">What it is</span>
+					<span class="text-gray-600">{t('finance.ledgers.whatItIs')}</span>
 					<select name="kind" class="select mt-1 w-full" value={editingLedger.kind}>
 						{#each LEDGER_KINDS as kind (kind)}
 							<option value={kind}>{LEDGER_KIND_LABELS[kind]}</option>
@@ -606,13 +626,13 @@
 					</select>
 				</label>
 				<label class="block text-sm">
-					<span class="text-gray-600">Usual export</span>
+					<span class="text-gray-600">{t('finance.ledgers.usualExport')}</span>
 					<select
 						name="defaultParser"
 						class="select mt-1 w-full"
 						value={editingLedger.defaultParser ?? ''}
 					>
-						<option value="">Ask every time</option>
+						<option value="">{t('finance.ledgers.askEveryTime')}</option>
 						{#each data.parsers as p (p.key)}<option value={p.key}>{p.name}</option>{/each}
 					</select>
 				</label>
@@ -620,15 +640,17 @@
 		</form>
 	{/if}
 	{#snippet footer()}
-		<button class="btn" type="button" onclick={() => (editingLedger = null)}>Cancel</button>
-		<button class="btn btn-primary" type="submit" form="ledger-edit">Save</button>
+		<button class="btn" type="button" onclick={() => (editingLedger = null)}
+			>{t('ui.cancel')}</button
+		>
+		<button class="btn btn-primary" type="submit" form="ledger-edit">{t('ui.save')}</button>
 	{/snippet}
 </Modal>
 
 <!-- Delete ledger. -->
 <Modal
 	open={deletingLedger !== null}
-	title="Delete this ledger?"
+	title={t('finance.ledgers.deleteThisLedger')}
 	onclose={() => (deletingLedger = null)}
 	size="sm"
 >
@@ -639,7 +661,9 @@
 		</p>
 	{/if}
 	{#snippet footer()}
-		<button class="btn" type="button" onclick={() => (deletingLedger = null)}>Keep it</button>
+		<button class="btn" type="button" onclick={() => (deletingLedger = null)}
+			>{t('finance.ledgers.keepIt')}</button
+		>
 		<form
 			method="post"
 			action="?/deleteLedger"
@@ -650,13 +674,13 @@
 				}}
 		>
 			<input type="hidden" name="id" value={deletingLedger?.id} />
-			<button class="btn btn-danger" type="submit" use:armed>Delete</button>
+			<button class="btn btn-danger" type="submit" use:armed>{t('ui.delete')}</button>
 		</form>
 	{/snippet}
 </Modal>
 
 <!-- Import into this ledger. -->
-<Modal bind:open={showImport} error={form?.message} title="Import a statement">
+<Modal bind:open={showImport} error={form?.message} title={t('finance.ledgers.importAStatement')}>
 	{#if data.current}
 		<form
 			method="post"
@@ -671,7 +695,7 @@
 			<input type="hidden" name="ledgerId" value={data.current.id} />
 			<div class="grid gap-3">
 				<label class="block text-sm">
-					<span class="text-gray-600">Export</span>
+					<span class="text-gray-600">{t('finance.ledgers.export')}</span>
 					<select name="source" class="select mt-1 w-full" bind:value={source}>
 						{#each data.parsers as p (p.key)}<option value={p.key}>{p.name}</option>{/each}
 					</select>
@@ -696,60 +720,60 @@
 						</p>
 						<div class="grid gap-2 sm:grid-cols-2">
 							<label class="block text-sm">
-								<span class="text-gray-600">Date</span>
+								<span class="text-gray-600">{t('ui.date')}</span>
 								<select class="select mt-1 w-full" bind:value={mapping.date}>
 									{#each headers as h (h)}<option value={h}>{h}</option>{/each}
 								</select>
 							</label>
 							<label class="block text-sm">
-								<span class="text-gray-600">Description</span>
+								<span class="text-gray-600">{t('ui.description')}</span>
 								<select class="select mt-1 w-full" bind:value={mapping.description}>
 									{#each headers as h (h)}<option value={h}>{h}</option>{/each}
 								</select>
 							</label>
 							<label class="block text-sm">
-								<span class="text-gray-600">Amount</span>
+								<span class="text-gray-600">{t('ui.amount')}</span>
 								<select
 									class="select mt-1 w-full"
 									value={mapping.amount ?? ''}
 									onchange={(e) => nameColumn('amount', e.currentTarget.value)}
 								>
-									<option value="">— two columns instead —</option>
+									<option value="">{t('finance.ledgers.twoColumnsInstead')}</option>
 									{#each headers as h (h)}<option value={h}>{h}</option>{/each}
 								</select>
 							</label>
 							{#if !mapping.amount}
 								<label class="block text-sm">
-									<span class="text-gray-600">Money in</span>
+									<span class="text-gray-600">{t('finance.ledgers.moneyIn')}</span>
 									<select
 										class="select mt-1 w-full"
 										value={mapping.moneyIn ?? ''}
 										onchange={(e) => nameColumn('moneyIn', e.currentTarget.value)}
 									>
-										<option value="">— none —</option>
+										<option value="">{t('finance.ledgers.none')}</option>
 										{#each headers as h (h)}<option value={h}>{h}</option>{/each}
 									</select>
 								</label>
 								<label class="block text-sm">
-									<span class="text-gray-600">Money out</span>
+									<span class="text-gray-600">{t('finance.ledgers.moneyOut')}</span>
 									<select
 										class="select mt-1 w-full"
 										value={mapping.moneyOut ?? ''}
 										onchange={(e) => nameColumn('moneyOut', e.currentTarget.value)}
 									>
-										<option value="">— none —</option>
+										<option value="">{t('finance.ledgers.none')}</option>
 										{#each headers as h (h)}<option value={h}>{h}</option>{/each}
 									</select>
 								</label>
 							{/if}
 							<label class="block text-sm">
-								<span class="text-gray-600">The bank's own id</span>
+								<span class="text-gray-600">{t('finance.ledgers.theBankSOwnId')}</span>
 								<select
 									class="select mt-1 w-full"
 									value={mapping.id ?? ''}
 									onchange={(e) => nameColumn('id', e.currentTarget.value)}
 								>
-									<option value="">— none —</option>
+									<option value="">{t('finance.ledgers.none')}</option>
 									{#each headers as h (h)}<option value={h}>{h}</option>{/each}
 								</select>
 							</label>
@@ -765,23 +789,23 @@
 							so that the guess can be seen and undone.
 						-->
 						<p class="text-xs text-gray-500">
-							Leave the id as none unless the file really carries the bank's own reference per line.
-							Without one, a line is matched on its date, amount and description instead.
+							{t('finance.ledgers.leaveTheIdAsNone')}
 						</p>
 						<label class="flex items-center gap-2 text-sm text-gray-700">
 							<input type="checkbox" bind:checked={mapping.dayFirst} />
-							Dates are day first — 02/03 is the second of March
+							{t('finance.ledgers.datesAreDayFirst')}
 						</label>
 						<input type="hidden" name="mapping" value={JSON.stringify(mapping)} />
 					</div>
 				{/if}
 				<label class="flex items-center gap-2 text-sm text-gray-700">
 					<input type="checkbox" name="flip" />
-					Flip amounts — for an export whose signs mean the opposite
+					{t('finance.ledgers.flipAmountsForAn')}
 				</label>
 				<div class="flex flex-wrap items-center gap-2">
 					<label class="btn btn-sm cursor-pointer">
-						<Icon name="plus" /> Choose the file
+						<Icon name="plus" />
+						{t('finance.ledgers.chooseTheFile')}
 						<input
 							type="file"
 							accept=".csv,text/csv,text/plain"
@@ -789,17 +813,18 @@
 							onchange={fileChosen}
 						/>
 					</label>
-					<span class="text-xs text-gray-500">or paste it below</span>
+					<span class="text-xs text-gray-500">{t('finance.ledgers.orPasteItBelow')}</span>
 				</div>
 				<textarea
 					name="text"
 					bind:value={statementText}
 					rows="7"
 					class="input w-full font-mono text-xs"
-					placeholder="Data,Valor,Identificador,Descrição"
+					placeholder={t('finance.ledgers.dataValorIdentificadorDescrição')}
 				></textarea>
 				<div>
-					<button class="btn btn-primary btn-sm" type="submit">Import</button>
+					<button class="btn btn-primary btn-sm" type="submit">{t('finance.ledgers.import')}</button
+					>
 					{#if form && 'added' in form && form.success}
 						<span class="ml-2 text-sm text-gray-600">
 							{form.added} added, {form.skipped} already here.
@@ -810,12 +835,17 @@
 		</form>
 	{/if}
 	{#snippet footer()}
-		<button class="btn" type="button" onclick={() => (showImport = false)}>Done</button>
+		<button class="btn" type="button" onclick={() => (showImport = false)}>{t('ui.done')}</button>
 	{/snippet}
 </Modal>
 
 <!-- A line by hand. -->
-<Modal bind:open={showNewMovement} error={form?.message} title="New line" size="sm">
+<Modal
+	bind:open={showNewMovement}
+	error={form?.message}
+	title={t('finance.ledgers.newLine')}
+	size="sm"
+>
 	{#if data.current}
 		<form
 			id="movement-form"
@@ -830,36 +860,38 @@
 			<input type="hidden" name="ledgerId" value={data.current.id} />
 			<div class="grid gap-3 sm:grid-cols-2">
 				<label class="block text-sm sm:col-span-2">
-					<span class="text-gray-600">Description</span>
+					<span class="text-gray-600">{t('ui.description')}</span>
 					<OneLine
 						name="heading"
-						placeholder="Coffee"
+						placeholder={t('finance.ledgers.coffee')}
 						class="input mt-1 w-full"
 						required
 						autofocus
 					/>
 				</label>
 				<label class="block text-sm">
-					<span class="text-gray-600">Day</span>
+					<span class="text-gray-600">{t('finance.ledgers.day')}</span>
 					<input type="date" name="occurredOn" value={today} class="input mt-1 w-full" required />
 				</label>
 				<label class="block text-sm">
-					<span class="text-gray-600">Amount</span>
+					<span class="text-gray-600">{t('ui.amount')}</span>
 					<input name="amount" inputmode="decimal" placeholder="0,00" class="input mt-1 w-full" />
 				</label>
 				<label class="block text-sm sm:col-span-2">
-					<span class="text-gray-600">Direction</span>
+					<span class="text-gray-600">{t('finance.ledgers.direction')}</span>
 					<select name="direction" class="select mt-1 w-full">
-						<option value="out">Money out</option>
-						<option value="in">Money in</option>
+						<option value="out">{t('finance.ledgers.moneyOut')}</option>
+						<option value="in">{t('finance.ledgers.moneyIn')}</option>
 					</select>
 				</label>
 			</div>
 		</form>
 	{/if}
 	{#snippet footer()}
-		<button class="btn" type="button" onclick={() => (showNewMovement = false)}>Cancel</button>
-		<button class="btn btn-primary" type="submit" form="movement-form">Add</button>
+		<button class="btn" type="button" onclick={() => (showNewMovement = false)}
+			>{t('ui.cancel')}</button
+		>
+		<button class="btn btn-primary" type="submit" form="movement-form">{t('ui.add')}</button>
 	{/snippet}
 </Modal>
 
@@ -867,7 +899,7 @@
 <Modal
 	open={editing !== null}
 	error={form?.message}
-	title="Edit line"
+	title={t('finance.ledgers.editLine')}
 	onclose={() => (editingId = null)}
 	size="sm"
 >
@@ -885,14 +917,14 @@
 			<input type="hidden" name="id" value={editing.id} />
 			<div class="grid gap-3 sm:grid-cols-2">
 				<label class="block text-sm sm:col-span-2">
-					<span class="text-gray-600">Description</span>
+					<span class="text-gray-600">{t('ui.description')}</span>
 					<OneLine name="heading" value={editing.description} class="input mt-1 w-full" required />
 					<span class="mt-1 block text-xs text-gray-500">
-						The rules read this, so rewriting it re-sorts the line.
+						{t('finance.ledgers.theRulesReadThisSo')}
 					</span>
 				</label>
 				<label class="block text-sm">
-					<span class="text-gray-600">Day</span>
+					<span class="text-gray-600">{t('finance.ledgers.day')}</span>
 					<input
 						type="date"
 						name="occurredOn"
@@ -901,7 +933,7 @@
 					/>
 				</label>
 				<label class="block text-sm">
-					<span class="text-gray-600">Amount</span>
+					<span class="text-gray-600">{t('ui.amount')}</span>
 					<input
 						name="amount"
 						inputmode="decimal"
@@ -910,18 +942,18 @@
 					/>
 				</label>
 				<label class="block text-sm">
-					<span class="text-gray-600">Direction</span>
+					<span class="text-gray-600">{t('finance.ledgers.direction')}</span>
 					<select
 						name="direction"
 						class="select mt-1 w-full"
 						value={editing.amountCents >= 0 ? 'in' : 'out'}
 					>
-						<option value="out">Money out</option>
-						<option value="in">Money in</option>
+						<option value="out">{t('finance.ledgers.moneyOut')}</option>
+						<option value="in">{t('finance.ledgers.moneyIn')}</option>
 					</select>
 				</label>
 				<label class="block text-sm">
-					<span class="text-gray-600">Ledger</span>
+					<span class="text-gray-600">{t('finance.ledgers.ledger')}</span>
 					<select name="ledgerId" class="select mt-1 w-full" value={editing.ledgerId ?? ''}>
 						{#each data.ledgers as l (l.id)}<option value={l.id}>{l.name}</option>{/each}
 					</select>
@@ -930,26 +962,28 @@
 		</form>
 	{/if}
 	{#snippet footer()}
-		<button class="btn" type="button" onclick={() => (editingId = null)}>Cancel</button>
-		<button class="btn btn-primary" type="submit" form="movement-edit">Save</button>
+		<button class="btn" type="button" onclick={() => (editingId = null)}>{t('ui.cancel')}</button>
+		<button class="btn btn-primary" type="submit" form="movement-edit">{t('ui.save')}</button>
 	{/snippet}
 </Modal>
 
 <!-- Delete a line. -->
 <Modal
 	open={deletingMovement !== null}
-	title="Delete this line?"
+	title={t('finance.ledgers.deleteThisLine2')}
 	onclose={() => (deletingMovement = null)}
 	size="sm"
 >
 	{#if deletingMovement}
 		<p class="text-sm text-gray-600">
-			<strong>{deletingMovement.description}</strong> goes. Importing the same statement again brings
-			it back, since it is the bank's line rather than yours.
+			<strong>{deletingMovement.description}</strong>
+			{t('finance.ledgers.goesImportingTheSameStatement')}
 		</p>
 	{/if}
 	{#snippet footer()}
-		<button class="btn" type="button" onclick={() => (deletingMovement = null)}>Keep it</button>
+		<button class="btn" type="button" onclick={() => (deletingMovement = null)}
+			>{t('finance.ledgers.keepIt')}</button
+		>
 		<form
 			method="post"
 			action="?/deleteMovement"
@@ -960,7 +994,7 @@
 				}}
 		>
 			<input type="hidden" name="id" value={deletingMovement?.id} />
-			<button class="btn btn-danger" type="submit" use:armed>Delete</button>
+			<button class="btn btn-danger" type="submit" use:armed>{t('ui.delete')}</button>
 		</form>
 	{/snippet}
 </Modal>

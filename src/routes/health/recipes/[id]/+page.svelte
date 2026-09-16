@@ -15,6 +15,9 @@
 	import CookMode from '$lib/components/CookMode.svelte';
 	import { renderMarkdown } from '$lib/markdown';
 	import type { PageServerData, ActionData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -81,7 +84,8 @@
 		<div class="min-w-0">
 			<a
 				href={resolve('/health/recipes')}
-				class="text-xs text-gray-500 hover:text-gray-900 hover:underline">&larr; All recipes</a
+				class="text-xs text-gray-500 hover:text-gray-900 hover:underline"
+				>{t('health.recipes.id.larrAllRecipes')}</a
 			>
 			<h1 class="mt-1 text-lg font-bold text-gray-900">{data.recipe.title}</h1>
 			<p class="mt-1 flex flex-wrap items-center gap-3 text-sm text-gray-500">
@@ -94,23 +98,35 @@
 		</div>
 
 		<div class="flex flex-wrap items-center gap-2">
-			<button onclick={() => (cookMode = true)} class="btn btn-sm" title="Cook it now">
-				<Icon name="flame" /> Cook
+			<button
+				onclick={() => (cookMode = true)}
+				class="btn btn-sm"
+				title={t('health.recipes.id.cookItNow')}
+			>
+				<Icon name="flame" />
+				{t('health.recipes.id.cook')}
 			</button>
 			<button onclick={() => (scheduling = true)} class="btn btn-sm">
-				<Icon name="calendar" /> Put it on a day
+				<Icon name="calendar" />
+				{t('health.recipes.id.putItOnADay')}
 			</button>
 			<button onclick={() => (cooking = true)} class="btn btn-primary btn-sm">
-				<Icon name="check" /> Cooked it
+				<Icon name="check" />
+				{t('health.recipes.id.cookedIt')}
 			</button>
-			<button onclick={() => (editing = true)} class="btn btn-sm" title="Edit" aria-label="Edit">
+			<button
+				onclick={() => (editing = true)}
+				class="btn btn-sm"
+				title={t('ui.edit')}
+				aria-label={t('ui.edit')}
+			>
 				<Icon name="edit" />
 			</button>
 			<button
 				onclick={() => (confirmingDelete = true)}
 				class="btn btn-danger btn-sm"
-				title="Delete"
-				aria-label="Delete"><Icon name="trash" /></button
+				title={t('ui.delete')}
+				aria-label={t('ui.delete')}><Icon name="trash" /></button
 			>
 		</div>
 	</div>
@@ -120,7 +136,7 @@
 	<div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
 		<section class="flex flex-col border border-gray-200 bg-white shadow-card">
 			<header class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-				<h2 class="eyebrow text-gray-600">Ingredients</h2>
+				<h2 class="eyebrow text-gray-600">{t('health.recipes.id.ingredients')}</h2>
 				{#if missing.length > 0}
 					<span class="text-xs text-amber-700">{missing.length} not in the cupboard</span>
 				{/if}
@@ -140,7 +156,7 @@
 								{/if}
 							</span>
 							{#if !ingredient.inStock}
-								<span class="chip text-amber-700">to buy</span>
+								<span class="chip text-amber-700">{t('health.recipes.id.toBuy')}</span>
 							{/if}
 							<!-- Every ingredient is a shopping item; this is the way to it,
 							     for when you want to check the price or tick it off. -->
@@ -156,8 +172,8 @@
 								<input type="hidden" name="id" value={ingredient.id} />
 								<button
 									class="text-xs text-gray-500 hover:text-red-600"
-									title="Remove"
-									aria-label="Remove">&times;</button
+									title={t('ui.remove')}
+									aria-label={t('ui.remove')}>&times;</button
 								>
 							</form>
 						</li>
@@ -193,14 +209,14 @@
 						min="0"
 						placeholder="2"
 						class="w-20"
-						aria-label="Amount"
+						aria-label={t('ui.amount')}
 					/>
 					<input
 						name="unit"
-						placeholder="tbsp"
+						placeholder={t('health.recipes.id.tbsp')}
 						autocomplete="off"
 						class="input w-20"
-						aria-label="Unit"
+						aria-label={t('ui.unit')}
 					/>
 					<input
 						name="label"
@@ -208,20 +224,20 @@
 						bind:value={ingredientName}
 						list="pantry"
 						required
-						placeholder="olive oil"
+						placeholder={t('health.recipes.id.oliveOil')}
 						autocomplete="off"
 						class="input min-w-0 flex-1"
-						aria-label="Ingredient"
+						aria-label={t('health.recipes.id.ingredient')}
 					/>
 					<datalist id="pantry">
 						{#each data.pantry as item (item.id)}
 							<option value={item.name}></option>
 						{/each}
 					</datalist>
-					<button class="btn btn-sm"><Icon name="plus" /> Add</button>
+					<button class="btn btn-sm"><Icon name="plus" /> {t('ui.add')}</button>
 				</div>
 				<p class="mt-2 text-xs text-gray-500">
-					Anything new goes onto the shopping list as something you do not have.
+					{t('health.recipes.id.anythingNewGoesOntoThe')}
 				</p>
 			</form>
 
@@ -236,7 +252,8 @@
 			<div class="border-t border-gray-200 px-4 py-3">
 				{#if !pasting}
 					<button onclick={() => (pasting = true)} class="btn btn-sm">
-						<Icon name="copy" /> Paste a list
+						<Icon name="copy" />
+						{t('health.recipes.id.pasteAList')}
 					</button>
 				{:else}
 					<form
@@ -252,7 +269,8 @@
 					>
 						<input type="hidden" name="recipeId" value={data.recipe.id} />
 						<label class="block">
-							<span class="eyebrow text-gray-600">Paste the ingredients</span>
+							<span class="eyebrow text-gray-600">{t('health.recipes.id.pasteTheIngredients')}</span
+							>
 							<textarea
 								name="list"
 								rows="6"
@@ -262,14 +280,17 @@
 							></textarea>
 						</label>
 						<p class="mt-2 text-xs text-gray-500">
-							One per line. Bullets, numbers and headings are ignored; anything after a comma
-							becomes a note.
+							{t('health.recipes.id.onePerLineBulletsNumbers')}
 						</p>
 						<div class="mt-2 flex items-center justify-end gap-2">
 							<button type="button" class="btn btn-sm" onclick={() => (pasting = false)}>
-								Cancel
+								{t('ui.cancel')}
 							</button>
-							<button class="btn btn-primary btn-sm" title="Add them" aria-label="Add them">
+							<button
+								class="btn btn-primary btn-sm"
+								title={t('health.recipes.id.addThem')}
+								aria-label={t('health.recipes.id.addThem')}
+							>
 								<Icon name="plus" />
 							</button>
 						</div>
@@ -284,7 +305,7 @@
 
 		<section class="border border-gray-200 bg-white shadow-card">
 			<header class="border-b border-gray-200 px-4 py-3">
-				<h2 class="eyebrow text-gray-600">Method</h2>
+				<h2 class="eyebrow text-gray-600">{t('health.recipes.id.method')}</h2>
 			</header>
 			<div class="p-4">
 				{#if data.recipe.method}
@@ -295,9 +316,9 @@
 					</div>
 				{:else}
 					<p class="text-sm text-gray-500">
-						Nothing written yet. <button
-							onclick={() => (editing = true)}
-							class="underline hover:text-gray-600">Write it</button
+						{t('health.recipes.id.nothingWrittenYet')}
+						<button onclick={() => (editing = true)} class="underline hover:text-gray-600"
+							>{t('health.recipes.id.writeIt')}</button
 						>.
 					</p>
 				{/if}
@@ -322,7 +343,7 @@
 			<header
 				class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 px-4 py-3"
 			>
-				<h2 class="eyebrow shrink-0 text-gray-600">Pictures</h2>
+				<h2 class="eyebrow shrink-0 text-gray-600">{t('health.recipes.id.pictures')}</h2>
 				<span class="text-xs text-gray-500">
 					{data.pictures.length} of {data.pictureLimits.most}, up to {data.pictureLimits
 						.kilobytes}KB each
@@ -345,7 +366,8 @@
 									<span
 										class="absolute top-1 left-1 flex items-center gap-1 rounded bg-gray-900/80 px-1.5 py-0.5 text-[0.65rem] font-medium text-white"
 									>
-										<Icon name="star" /> Main
+										<Icon name="star" />
+										{t('health.recipes.id.main')}
 									</span>
 								{/if}
 
@@ -356,8 +378,9 @@
 											<input type="hidden" name="mediaId" value={picture.id} />
 											<button
 												class="btn btn-sm btn-quiet"
-												title="Make this the main picture"
-												aria-label="Make this the main picture"><Icon name="star" /></button
+												title={t('health.recipes.id.makeThisTheMainPicture')}
+												aria-label={t('health.recipes.id.makeThisTheMainPicture')}
+												><Icon name="star" /></button
 											>
 										</form>
 									{:else}
@@ -376,8 +399,8 @@
 												type="button"
 												class="btn btn-sm btn-quiet"
 												onclick={() => (confirmingPicture = null)}
-												title="Keep it"
-												aria-label="Keep it"><Icon name="close" /></button
+												title={t('health.recipes.id.keepIt')}
+												aria-label={t('health.recipes.id.keepIt')}><Icon name="close" /></button
 											>
 											<form method="post" action="?/removePicture" use:enhance>
 												<input type="hidden" name="recipeId" value={data.recipe.id} />
@@ -385,8 +408,8 @@
 												<button
 													class="btn btn-sm btn-danger"
 													use:armed
-													title="Remove it"
-													aria-label="Remove it">Remove</button
+													title={t('health.recipes.id.removeIt')}
+													aria-label={t('health.recipes.id.removeIt')}>{t('ui.remove')}</button
 												>
 											</form>
 										</span>
@@ -395,8 +418,9 @@
 											type="button"
 											class="btn btn-sm btn-quiet"
 											onclick={() => (confirmingPicture = picture.id)}
-											title="Remove this picture"
-											aria-label="Remove this picture"><Icon name="trash" /></button
+											title={t('health.recipes.id.removeThisPicture')}
+											aria-label={t('health.recipes.id.removeThisPicture')}
+											><Icon name="trash" /></button
 										>
 									{/if}
 								</div>
@@ -405,7 +429,7 @@
 					</ul>
 				{:else}
 					<p class="text-sm text-gray-500">
-						No pictures yet — the first one you add becomes the one the list shows.
+						{t('health.recipes.id.noPicturesYetThe')}
 					</p>
 				{/if}
 
@@ -438,7 +462,8 @@
 					>
 						<input type="hidden" name="recipeId" value={data.recipe.id} />
 						<label class="btn btn-sm">
-							<Icon name="image" /> Add a picture
+							<Icon name="image" />
+							{t('health.recipes.id.addAPicture')}
 							<input
 								type="file"
 								name="file"
@@ -461,7 +486,7 @@
 							/>
 						</label>
 						{#if uploading}
-							<span class="text-xs text-gray-500">uploading…</span>
+							<span class="text-xs text-gray-500">{t('health.recipes.id.uploading')}</span>
 						{:else}
 							<span class="text-xs text-gray-500">
 								up to {data.pictureLimits.kilobytes}KB
@@ -473,7 +498,7 @@
 					{/if}
 				{:else}
 					<p class="mt-3 text-xs text-gray-500">
-						That is as many as this instance allows. Remove one to add another.
+						{t('health.recipes.id.thatIsAsManyAs')}
 					</p>
 				{/if}
 			</div>
@@ -481,7 +506,7 @@
 	</div>
 </div>
 
-<Modal bind:open={editing} error={form?.message} title="Edit recipe">
+<Modal bind:open={editing} error={form?.message} title={t('health.recipes.id.editRecipe')}>
 	<form
 		id="edit-form"
 		method="post"
@@ -494,32 +519,36 @@
 	>
 		<input type="hidden" name="id" value={data.recipe.id} />
 		<FormGrid>
-			<Field label="What it is" span={12} required>
+			<Field label={t('health.recipes.id.whatItIs')} span={12} required>
 				<OneLine name="heading" value={data.recipe.title} class="input" required />
 			</Field>
-			<Field label="Serves" span={4}>
+			<Field label={t('health.recipes.id.serves')} span={4}>
 				<NumberBox autocomplete="off" name="servings" min="1" value={data.recipe.servings ?? ''} />
 			</Field>
-			<Field label="Minutes" span={4}>
+			<Field label={t('health.recipes.id.minutes')} span={4}>
 				<NumberBox autocomplete="off" name="minutes" min="1" value={data.recipe.minutes ?? ''} />
 			</Field>
-			<Field label="Where it came from" span={4}>
+			<Field label={t('health.recipes.id.whereItCameFrom')} span={4}>
 				<OneLine name="source" value={data.recipe.source} class="input" />
 			</Field>
-			<Field label="Method" span={12} hint="Markdown: headings, lists, numbers.">
+			<Field
+				label={t('health.recipes.id.method')}
+				span={12}
+				hint="Markdown: headings, lists, numbers."
+			>
 				<textarea name="method" rows="10" use:autogrow class="textarea"
 					>{data.recipe.method}</textarea
 				>
 			</Field>
-			<Field label="Notes" span={12}>
+			<Field label={t('ui.notes')} span={12}>
 				<textarea name="notes" rows="2" class="textarea">{data.recipe.notes}</textarea>
 			</Field>
 		</FormGrid>
 	</form>
 
 	{#snippet footer()}
-		<button type="button" class="btn" onclick={() => (editing = false)}>Cancel</button>
-		<button type="submit" form="edit-form" class="btn btn-primary">Save</button>
+		<button type="button" class="btn" onclick={() => (editing = false)}>{t('ui.cancel')}</button>
+		<button type="submit" form="edit-form" class="btn btn-primary">{t('ui.save')}</button>
 	{/snippet}
 </Modal>
 
@@ -532,7 +561,7 @@
 -->
 <Modal
 	bind:open={cooking}
-	title="Cooked it"
+	title={t('health.recipes.id.cookedIt')}
 	description="Anything you finished off goes back on the shopping list."
 	size="sm"
 >
@@ -548,7 +577,7 @@
 	>
 		<input type="hidden" name="id" value={data.recipe.id} />
 		{#if data.ingredients.length === 0}
-			<p class="text-sm text-gray-500">Nothing in it yet.</p>
+			<p class="text-sm text-gray-500">{t('health.recipes.id.nothingInItYet')}</p>
 		{:else}
 			<ul class="space-y-1">
 				{#each data.ingredients as ingredient (ingredient.id)}
@@ -564,26 +593,28 @@
 	</form>
 
 	{#snippet footer()}
-		<button type="button" class="btn" onclick={() => (cooking = false)}>Cancel</button>
-		<button type="submit" form="cooked-form" class="btn btn-primary">Done</button>
+		<button type="button" class="btn" onclick={() => (cooking = false)}>{t('ui.cancel')}</button>
+		<button type="submit" form="cooked-form" class="btn btn-primary">{t('ui.done')}</button>
 	{/snippet}
 </Modal>
 
 <Modal
 	bind:open={confirmingDelete}
-	title="Delete this recipe?"
+	title={t('health.recipes.id.deleteThisRecipe')}
 	description="“{data.recipe.title}” will be gone."
 	size="sm"
 >
 	<p class="text-sm text-gray-600">
-		Its ingredients stay on the shopping list — they are things you buy, not parts of the recipe.
+		{t('health.recipes.id.itsIngredientsStayOnThe')}
 	</p>
 
 	{#snippet footer()}
-		<button type="button" class="btn" onclick={() => (confirmingDelete = false)}>Cancel</button>
+		<button type="button" class="btn" onclick={() => (confirmingDelete = false)}
+			>{t('ui.cancel')}</button
+		>
 		<form method="post" action="?/delete" use:enhance>
 			<input type="hidden" name="id" value={data.recipe.id} />
-			<button class="btn btn-danger" use:armed>Delete the recipe</button>
+			<button class="btn btn-danger" use:armed>{t('health.recipes.id.deleteTheRecipe')}</button>
 		</form>
 	{/snippet}
 </Modal>
@@ -596,7 +627,7 @@
 <Modal
 	bind:open={scheduling}
 	error={form?.message}
-	title="Put it on a day"
+	title={t('health.recipes.id.putItOnADay')}
 	description="It becomes a block on the plan, like anything else you give time to."
 	size="sm"
 >
@@ -613,7 +644,7 @@
 		<input type="hidden" name="recipeId" value={data.recipe.id} />
 		<input type="hidden" name="label" value={data.recipe.title} />
 		<FormGrid>
-			<Field label="Day" span={6} required>
+			<Field label={t('health.recipes.id.day')} span={6} required>
 				<input
 					autocomplete="off"
 					name="date"
@@ -623,7 +654,7 @@
 					class="input"
 				/>
 			</Field>
-			<Field label="At" span={6} required>
+			<Field label={t('health.recipes.id.at')} span={6} required>
 				<input
 					autocomplete="off"
 					name="startTime"
@@ -633,7 +664,7 @@
 					class="input"
 				/>
 			</Field>
-			<Field label="For" span={6} hint="Minutes.">
+			<Field label={t('health.recipes.id.for')} span={6} hint="Minutes.">
 				<NumberBox
 					autocomplete="off"
 					name="durationMinutes"
@@ -642,7 +673,7 @@
 					value={data.recipe.minutes ?? 45}
 				/>
 			</Field>
-			<Field label="Counts as" span={6}>
+			<Field label={t('health.recipes.id.countsAs')} span={6}>
 				<select name="categoryId" class="select">
 					{#each data.categories as category (category.id)}
 						<option value={category.id}>{category.name}</option>
@@ -653,7 +684,9 @@
 	</form>
 
 	{#snippet footer()}
-		<button type="button" class="btn" onclick={() => (scheduling = false)}>Cancel</button>
-		<button type="submit" form="schedule-form" class="btn btn-primary">Put it on the plan</button>
+		<button type="button" class="btn" onclick={() => (scheduling = false)}>{t('ui.cancel')}</button>
+		<button type="submit" form="schedule-form" class="btn btn-primary"
+			>{t('health.recipes.id.putItOnThePlan')}</button
+		>
 	{/snippet}
 </Modal>

@@ -5,6 +5,9 @@
 	import { findDestinations, type Destination } from '$lib/destinations';
 	import { KIND_LABELS, MIN_QUERY, type Hit } from '$lib/search';
 	import { palette } from '$lib/palette.svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * One box that goes anywhere.
@@ -151,8 +154,8 @@
 				enterkeyhint="go"
 				bind:this={input}
 				bind:value={query}
-				placeholder="Go anywhere, or find anything"
-				aria-label="Command palette"
+				placeholder={t('commandPalette.goAnywhereOrFindAnything')}
+				aria-label={t('commandPalette.commandPalette')}
 				class="w-full border-b border-gray-200 px-4 py-3 text-sm text-gray-900 outline-none"
 			/>
 
@@ -192,16 +195,30 @@
 			<div
 				class="kbd-hint flex items-center gap-3 border-t border-gray-200 px-4 py-2 text-xs text-gray-500"
 			>
-				<span><kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">↑↓</kbd> move</span>
-				<span><kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">↵</kbd> open</span>
 				<span
-					><kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">esc</kbd> close</span
+					><kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">↑↓</kbd>
+					{t('commandPalette.move')}</span
+				>
+				<span
+					><kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">↵</kbd>
+					{t('commandPalette.open')}</span
+				>
+				<span
+					><kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+						>{t('commandPalette.esc')}</kbd
+					>
+					{t('commandPalette.close')}</span
 				>
 				<!-- The same syntax the search page teaches, where somebody typing is
 				     most likely to want it. -->
 				<span class="ml-auto"
-					><kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">todo:</kbd>
-					<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">in:</kbd> narrow</span
+					><kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+						>{t('commandPalette.todo')}</kbd
+					>
+					<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+						>{t('commandPalette.in')}</kbd
+					>
+					{t('commandPalette.narrow')}</span
 				>
 			</div>
 		</div>

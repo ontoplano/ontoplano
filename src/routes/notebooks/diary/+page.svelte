@@ -17,6 +17,9 @@
 	import type { PageServerData, ActionData } from './$types';
 	import { getAction } from '$lib/shortcuts';
 	import { keepInView } from '$lib/actions/keep-in-view';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -240,7 +243,7 @@
 					}}
 					class="chip text-gray-500 hover:text-gray-600"
 				>
-					clear
+					{t('notebooks.diary.clear')}
 				</button>
 			{/if}
 		</div>
@@ -262,7 +265,7 @@
 			class="lift space-y-3 border border-gray-200 bg-white p-4 shadow-card"
 		>
 			<div class="flex items-center justify-between">
-				<span class="text-sm font-medium text-gray-700">Wins</span>
+				<span class="text-sm font-medium text-gray-700">{t('notebooks.diary.wins')}</span>
 				<input
 					autocomplete="off"
 					name="forDate"
@@ -284,19 +287,19 @@
 					onclick={() => (winInputCount += 1)}
 					class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 transition hover:bg-gray-50"
 				>
-					+ Add another
+					{t('notebooks.diary.addAnother')}
 				</button>
 			</div>
 			<label class="block">
-				<span class="text-sm font-medium text-gray-700">Tags</span>
+				<span class="text-sm font-medium text-gray-700">{t('ui.tags')}</span>
 				<OneLine
 					name="tags"
-					placeholder="tags, commas or spaces"
+					placeholder={t('notebooks.diary.tagsCommasOrSpaces')}
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
 			</label>
 			<div class="flex items-center gap-2">
-				<button type="submit" class="btn btn-primary"> Save Wins </button>
+				<button type="submit" class="btn btn-primary"> {t('notebooks.diary.saveWins')} </button>
 				<button
 					type="button"
 					onclick={() => {
@@ -305,7 +308,7 @@
 					}}
 					class="btn"
 				>
-					Cancel
+					{t('ui.cancel')}
 				</button>
 			</div>
 		</form>
@@ -346,14 +349,14 @@
 					notebooks={data.notebooks}
 				/>
 
-				<Field label="People" span={6} hint="Anyone this was about.">
+				<Field label={t('notebooks.diary.people')} span={6} hint="Anyone this was about.">
 					<input
 						autocomplete="off"
 						name="people"
 						type="text"
 						list="known-people"
 						value={editingId ? editingPeopleString() : ''}
-						placeholder="Ana, João"
+						placeholder={t('notebooks.diary.anaJoão')}
 						class="input"
 					/>
 					<datalist id="known-people">
@@ -372,7 +375,7 @@
 				onclick={() => {
 					showForm = false;
 					editingId = null;
-				}}>Cancel</button
+				}}>{t('ui.cancel')}</button
 			>
 			<button type="submit" form="entry-form" class="btn btn-primary">
 				{editingId ? 'Save' : 'Post entry'}
@@ -387,12 +390,13 @@
 			{:else}
 				<EmptyState
 					icon="diary"
-					title="The journal is empty"
+					title={t('notebooks.diary.theJournalIsEmpty')}
 					description="Whatever happened today, in as many or as few words as you like."
 				>
 					{#snippet action()}
 						<button onclick={() => (showForm = true)} class="btn btn-primary">
-							<Icon name="plus" /> New entry
+							<Icon name="plus" />
+							{t('notebooks.diary.newEntry')}
 						</button>
 					{/snippet}
 				</EmptyState>
@@ -490,7 +494,7 @@
 										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
 										use:armed
 									>
-										Confirm?
+										{t('notebooks.diary.confirm')}
 									</button>
 								</form>
 								<button
@@ -500,12 +504,12 @@
 									}}
 									class="btn btn-sm"
 								>
-									Cancel
+									{t('ui.cancel')}
 								</button>
 							{:else}
 								<button
-									title="Edit"
-									aria-label="Edit"
+									title={t('ui.edit')}
+									aria-label={t('ui.edit')}
 									onclick={() => {
 										editingId = entry.id;
 										showForm = true;
@@ -521,8 +525,8 @@
 									<Icon name="edit" />
 								</button>
 								<button
-									title="Delete"
-									aria-label="Delete"
+									title={t('ui.delete')}
+									aria-label={t('ui.delete')}
 									type="button"
 									onclick={() => {
 										confirmingDeleteId = entry.id;

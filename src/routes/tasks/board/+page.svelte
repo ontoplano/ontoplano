@@ -27,6 +27,9 @@
 	import { CLOSED_STATUSES, STATUSES, STATUS_LABELS, type Status } from '$lib/task-status.js';
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
 	import { cancelFor, changeNow, isPending } from '$lib/undo.svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -567,7 +570,12 @@
 			<!-- Today against To-do is a choice of shape, exactly as Day/Week/
 			     Month is on the plan — so it is the same control, and it shares
 			     the row rather than spending one of its own. -->
-			<div class="seg ml-auto" role="group" aria-label="What to show" data-tour="board-tabs">
+			<div
+				class="seg ml-auto"
+				role="group"
+				aria-label={t('tasks.board.whatToShow')}
+				data-tour="board-tabs"
+			>
 				{#each [{ v: 'today', l: 'Today' }, { v: 'general', l: 'To-do' }] as t (t.v)}
 					<button
 						onclick={() => {
@@ -587,7 +595,7 @@
 				data-tour="board-ratings"
 			>
 				<div class="flex items-center gap-1">
-					<span class="eyebrow text-gray-600">Sort</span>
+					<span class="eyebrow text-gray-600">{t('tasks.board.sort')}</span>
 					{#each [{ v: 'default', l: 'Default' }, { v: 'urgency', l: 'Urgency' }, { v: 'interest', l: 'Interest' }, { v: 'energy', l: 'Energy' }] as opt (opt.v)}
 						<button
 							onclick={() => (sortBy = opt.v as typeof sortBy)}
@@ -599,7 +607,7 @@
 				</div>
 
 				<div class="flex items-center gap-1">
-					<span class="eyebrow text-gray-600">Energy up to</span>
+					<span class="eyebrow text-gray-600">{t('tasks.board.energyUpTo')}</span>
 					{#each [1, 2, 3, 4, 5] as n (n)}
 						<button
 							onclick={() => (maxEnergy = maxEnergy === n ? null : n)}
@@ -612,18 +620,19 @@
 
 				<label class="flex items-center gap-1 text-gray-600">
 					<input type="checkbox" bind:checked={showDone} class="h-3 w-3" />
-					Show skipped
+					{t('tasks.board.showSkipped')}
 				</label>
 
 				<span class="kbd-hint text-gray-500">
-					Number keys set <strong class="font-semibold text-gray-600">{ratingKey}</strong> — u / i / y
-					to switch
+					{t('tasks.board.numberKeysSet')}
+					<strong class="font-semibold text-gray-600">{ratingKey}</strong>
+					{t('tasks.board.uI')}
 				</span>
 			</div>
 		{/snippet}
 	</RoomToolbar>
 
-	<Modal bind:open={showForm} error={form?.message} title="New card" size="sm">
+	<Modal bind:open={showForm} error={form?.message} title={t('tasks.board.newCard')} size="sm">
 		<form
 			id="card-form"
 			method="post"
@@ -658,8 +667,10 @@
 		</form>
 
 		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (showForm = false)}>Cancel</button>
-			<button type="submit" form="card-form" class="btn btn-primary">Add card</button>
+			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
+			<button type="submit" form="card-form" class="btn btn-primary"
+				>{t('tasks.board.addCard')}</button
+			>
 		{/snippet}
 	</Modal>
 
@@ -694,7 +705,7 @@
 				where there is no drag.
 			-->
 			<div class="mb-3 flex flex-wrap items-center gap-2 border-b border-gray-200 pb-3">
-				<span class="eyebrow shrink-0 text-gray-600">Status</span>
+				<span class="eyebrow shrink-0 text-gray-600">{t('ui.status')}</span>
 				<div class="seg">
 					{#each STATUSES as status (status)}
 						<button
@@ -722,7 +733,7 @@
 			{#if card.kind === 'instance' && card.startTime}
 				{@const set = data.reminders[card.id] ?? []}
 				<div class="mb-3 flex flex-wrap items-center gap-2 border-b border-gray-200 pb-3">
-					<span class="eyebrow shrink-0 text-gray-600">Remind me</span>
+					<span class="eyebrow shrink-0 text-gray-600">{t('tasks.board.remindMe')}</span>
 					{#each [5, 10, 30, 60] as minutes (minutes)}
 						<form method="post" action="?/remind" use:enhance>
 							<input type="hidden" name="id" value={card.id} />
@@ -738,7 +749,7 @@
 							<input type="hidden" name="reminderId" value={reminder.id} />
 							<button
 								class="chip flex items-center gap-1 text-gray-700"
-								title="Remove this reminder"
+								title={t('tasks.board.removeThisReminder')}
 								aria-label="Remove the reminder at {reminder.remindAt.slice(11, 16)}"
 							>
 								<Icon name="clock" size={12} />
@@ -773,7 +784,7 @@
 				<FormGrid>
 					{#if card.kind === 'instance'}
 						<Field
-							label="Called"
+							label={t('tasks.board.called')}
 							span={12}
 							hint="This occurrence only. Empty keeps the block's own name."
 						>
@@ -785,7 +796,7 @@
 							/>
 						</Field>
 
-						<Field label="Starts" span={6}>
+						<Field label={t('tasks.board.starts')} span={6}>
 							<input
 								autocomplete="off"
 								name="startTime"
@@ -795,7 +806,7 @@
 							/>
 						</Field>
 
-						<Field label="Minutes" span={6}>
+						<Field label={t('tasks.board.minutes')} span={6}>
 							<NumberBox
 								autocomplete="off"
 								name="durationMinutes"
@@ -808,12 +819,12 @@
 
 						{#if card.mode === 'category'}
 							<Field
-								label="What it was"
+								label={t('tasks.board.whatItWas')}
 								span={12}
 								hint="This block names a category. Say which activity it turned out to be."
 							>
 								<select name="activityId" class="select">
-									<option value="">— not said —</option>
+									<option value="">{t('tasks.board.notSaid')}</option>
 									{#each data.activities as activity (activity.id)}
 										<option value={activity.id} selected={card.activityId === activity.id}>
 											{activity.categoryName} · {activity.name}
@@ -824,7 +835,7 @@
 						{/if}
 					{/if}
 
-					<MoreOptions label="Urgency, interest, energy" count={editRatingsSet}>
+					<MoreOptions label={t('tasks.board.urgencyInterestEnergy')} count={editRatingsSet}>
 						{#each RATINGS as r (r)}
 							<div class="col-span-12">
 								<RatingPicker rating={r} bind:value={editRatings[r]} />
@@ -851,12 +862,13 @@
 					<input type="hidden" name="id" value={card.id} />
 					<input type="hidden" name="kind" value={card.kind} />
 					<button class="btn btn-danger btn-sm" use:armed>
-						<Icon name="trash" /> Delete
+						<Icon name="trash" />
+						{t('ui.delete')}
 					</button>
 				</form>
 			{/if}
-			<button type="button" class="btn" onclick={() => (editing = null)}>Cancel</button>
-			<button type="submit" form="edit-form" class="btn btn-primary">Save</button>
+			<button type="button" class="btn" onclick={() => (editing = null)}>{t('ui.cancel')}</button>
+			<button type="submit" form="edit-form" class="btn btn-primary">{t('ui.save')}</button>
 		{/snippet}
 	</Modal>
 
@@ -1077,11 +1089,13 @@
 															}}
 															class="border border-amber-300 bg-amber-50 px-1 text-[10px] text-amber-700"
 														>
-															which activity?
+															{t('tasks.board.whichActivity')}
 														</button>
 													{/if}
 													{#if card.kind === 'todo' && card.scheduledDate && card.scheduledDate < data.date}
-														<span class="text-[10px] text-gray-500">carried over</span>
+														<span class="text-[10px] text-gray-500"
+															>{t('tasks.board.carriedOver')}</span
+														>
 													{/if}
 													<RatingBadges values={card.ratings} />
 													<!--
@@ -1123,14 +1137,14 @@
 										>
 											<input type="hidden" name="id" value={card.id} />
 											<input type="hidden" name="kind" value={card.kind} />
-											<span class="text-[11px] text-gray-600">Delete this?</span>
+											<span class="text-[11px] text-gray-600">{t('tasks.board.deleteThis')}</span>
 											<button
 												class="btn btn-danger btn-sm ml-auto"
 												use:armed
 												use:focusHere
 												onclick={(e) => e.stopPropagation()}
 											>
-												Delete
+												{t('ui.delete')}
 											</button>
 											<button
 												type="button"
@@ -1140,7 +1154,7 @@
 													confirmingDelete = null;
 												}}
 											>
-												Cancel
+												{t('ui.cancel')}
 											</button>
 										</form>
 									{/if}
@@ -1162,7 +1176,7 @@
 			<!-- The todo list stays visible beside Today so the two can actually
 			     interact: drag one across and it becomes a scheduled task. -->
 			<aside
-				aria-label="To-do list"
+				aria-label={t('tasks.board.toDoList')}
 				class="w-full shrink-0 border bg-gray-50 md:w-64 lg:w-72 xl:w-80 {railOver
 					? 'border-gray-900'
 					: 'border-gray-200'}"
@@ -1178,7 +1192,7 @@
 				>
 					<!-- Todo, like the tab and the plan's rail. The status column beside
 					     it is "Pending", which is what stops the two reading as one word. -->
-					<span class="eyebrow text-gray-600">To-do</span>
+					<span class="eyebrow text-gray-600">{t('tasks.board.toDo')}</span>
 					<span class="tabular text-xs text-gray-500">{railCards.length}</span>
 				</header>
 				<div class="space-y-2 p-2">
@@ -1230,29 +1244,31 @@
 		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
 			>{keyFor('/tasks/board', 'next-column')}</kbd
 		>
-		move ·
+		{t('tasks.board.move')}
 		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
 			>{keyFor('/tasks/board', 'carry-left')}</kbd
 		>
 		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
 			>{keyFor('/tasks/board', 'carry-right')}</kbd
 		>
-		carry card ·
+		{t('tasks.board.carryCard')}
 		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
 			>{keyFor('/tasks/board', 'toggle-done')}</kbd
 		>
-		done ·
+		{t('tasks.board.done')}
 		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
 			>{keyFor('/tasks/board', 'toggle-today')}</kbd
 		>
-		today ·
+		{t('tasks.board.today')}
 		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
 			>{keyFor('/tasks/board', 'switch-tab')}</kbd
 		>
-		switch tab ·
-		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">1-5</kbd> rate ·
+		{t('tasks.board.switchTab')}
+		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">1-5</kbd>
+		{t('tasks.board.rate')}
 		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
 			>{keyFor('/tasks/board', 'delete')}</kbd
-		> delete
+		>
+		{t('tasks.board.delete')}
 	</p>
 </div>

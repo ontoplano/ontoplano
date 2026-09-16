@@ -8,6 +8,9 @@
 	import StackedMonths from '$lib/components/StackedMonths.svelte';
 	import { formatMoney, type Currency } from '$lib/money';
 	import type { PageServerData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data }: { data: PageServerData } = $props();
 
@@ -52,7 +55,7 @@
 			value={data.ledgerId}
 			onchange={(e) => filter({ ledger: Number((e.currentTarget as HTMLSelectElement).value) })}
 		>
-			<option value={0}>Every ledger</option>
+			<option value={0}>{t('finance.insights.everyLedger')}</option>
 			{#each data.ledgers as l (l.id)}<option value={l.id}>{l.name}</option>{/each}
 		</select>
 		<select
@@ -72,14 +75,14 @@
 	{#if !anything}
 		<EmptyState
 			icon="wallet"
-			title="Nothing to read yet"
+			title={t('finance.insights.nothingToReadYet')}
 			description="Import a statement into a ledger and these come alive: what each month cost, where it went, and what any one tag adds up to."
 		/>
 	{:else}
 		<!-- The three numbers worth knowing before any chart. -->
 		<div class="grid gap-3 sm:grid-cols-3">
 			<div class="rounded border border-gray-200 p-3">
-				<div class="text-xs text-gray-500">Spent, per month on average</div>
+				<div class="text-xs text-gray-500">{t('finance.insights.spentPerMonthOnAverage')}</div>
 				<div class="text-lg font-semibold text-gray-900 tabular-nums">
 					{money(monthsWithSpending ? Math.round(spent / monthsWithSpending) : 0)}
 				</div>
@@ -88,14 +91,14 @@
 				</div>
 			</div>
 			<div class="rounded border border-gray-200 p-3">
-				<div class="text-xs text-gray-500">Dearest month</div>
+				<div class="text-xs text-gray-500">{t('finance.insights.dearestMonth')}</div>
 				<div class="text-lg font-semibold text-gray-900 tabular-nums">
 					{dearest ? money(dearest.outCents) : '—'}
 				</div>
 				<div class="text-xs text-gray-500">{dearest ? monthName(dearest.month) : ''}</div>
 			</div>
 			<div class="rounded border border-gray-200 p-3">
-				<div class="text-xs text-gray-500">Biggest category</div>
+				<div class="text-xs text-gray-500">{t('finance.insights.biggestCategory')}</div>
 				<div class="text-lg font-semibold tabular-nums" style="color: {biggest?.color ?? '#111'}">
 					{biggest ? money(biggest.totalCents) : '—'}
 				</div>
@@ -104,17 +107,19 @@
 		</div>
 
 		<section class="rounded border border-gray-200 p-4">
-			<h2 class="mb-1 text-sm font-semibold text-gray-900">In and out</h2>
+			<h2 class="mb-1 text-sm font-semibold text-gray-900">{t('finance.insights.inAndOut')}</h2>
 			<p class="mb-3 text-xs text-gray-500">
-				What arrived against what left, with the net under each month.
+				{t('finance.insights.whatArrivedAgainstWhatLeft')}
 			</p>
 			<MonthlyBars rows={data.totals} inLabel="In" outLabel="Out" {currency} />
 		</section>
 
 		<section class="rounded border border-gray-200 p-4">
-			<h2 class="mb-1 text-sm font-semibold text-gray-900">What each month was made of</h2>
+			<h2 class="mb-1 text-sm font-semibold text-gray-900">
+				{t('finance.insights.whatEachMonthWasMade')}
+			</h2>
 			<p class="mb-3 text-xs text-gray-500">
-				Spending stacked by category — every outgoing line is in exactly one band.
+				{t('finance.insights.spendingStackedByCategory')}
 			</p>
 			<StackedMonths
 				months={data.byCategory.months}
@@ -133,8 +138,10 @@
 		</section>
 
 		<section class="rounded border border-gray-200 p-4">
-			<h2 class="mb-1 text-sm font-semibold text-gray-900">The whole window, by category</h2>
-			<p class="mb-3 text-xs text-gray-500">The same money, without the months.</p>
+			<h2 class="mb-1 text-sm font-semibold text-gray-900">
+				{t('finance.insights.theWholeWindowByCategory')}
+			</h2>
+			<p class="mb-3 text-xs text-gray-500">{t('finance.insights.theSameMoneyWithoutThe')}</p>
 			<CategoryDonut slices={data.slices} {currency} />
 		</section>
 
@@ -142,21 +149,22 @@
 		     same chart would count a line that carries both of them twice. -->
 		<section class="rounded border border-gray-200 p-4">
 			<div class="mb-1 flex flex-wrap items-center gap-2">
-				<h2 class="text-sm font-semibold text-gray-900">What one tag costs</h2>
+				<h2 class="text-sm font-semibold text-gray-900">{t('finance.insights.whatOneTagCosts')}</h2>
 				{#if data.tags.length > 0}
 					<select
 						class="select select-sm w-auto"
 						value={data.tag}
 						onchange={(e) => filter({ tag: (e.currentTarget as HTMLSelectElement).value })}
 					>
-						{#each data.tags as t (t.name)}<option value={t.name}>#{t.name}</option>{/each}
+						{#each data.tags as tag (tag.name)}<option value={tag.name}>#{tag.name}</option>{/each}
 					</select>
 				{/if}
 			</div>
 
 			{#if !data.tagSeries}
 				<p class="text-sm text-gray-500">
-					No tags yet. <a href={resolve('/finance/rules')} class="underline">Write one →</a>
+					{t('finance.insights.noTagsYet')}
+					<a href={resolve('/finance/rules')} class="underline">{t('finance.insights.writeOne')}</a>
 				</p>
 			{:else}
 				{@const series = data.tagSeries}

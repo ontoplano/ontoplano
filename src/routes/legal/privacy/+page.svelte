@@ -1,36 +1,35 @@
 <script lang="ts">
 	import type { PageServerData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data }: { data: PageServerData } = $props();
 </script>
 
-<svelte:head><title>Privacy · ontoplano</title></svelte:head>
+<svelte:head><title>{t('legal.privacy.privacyOntoplano')}</title></svelte:head>
 
-<h1>Privacy</h1>
+<h1>{t('legal.privacy.privacy')}</h1>
 <p class="updated">Last updated {data.updated}.</p>
 
 <p>
-	ontoplano holds a diary, your notes, your goals and the record of your days. That is why this page
-	is specific rather than a template: what you keep here is the sort of thing you would not want
-	read.
+	{t('legal.privacy.ontoplanoHoldsADiaryYour')}
 </p>
 
-<h2>What is stored</h2>
+<h2>{t('legal.privacy.whatIsStored')}</h2>
 <ul>
-	<li>Your email address and name, because an account needs a way to be signed in to.</li>
-	<li>A hash of your password. Not the password.</li>
+	<li>{t('legal.privacy.yourEmailAddressAndName')}</li>
+	<li>{t('legal.privacy.aHashOfYourPassword')}</li>
 	<li>
-		Everything you write: blocks, tasks, goals, diary entries, notebooks, people, habits, ideas,
-		shopping, quotes, and the numbers any plugin you connect pushes in.
+		{t('legal.privacy.everythingYouWriteBlocksTasks')}
 	</li>
 	<li>
-		A short history of what happened to your account — signing in, changing a password, exporting, a
-		plan change. You can see the same list an administrator can.
+		{t('legal.privacy.aShortHistoryOfWhat')}
 	</li>
-	<li>The address you connected from, alongside those events, for as long as they are kept.</li>
+	<li>{t('legal.privacy.theAddressYouConnectedFrom')}</li>
 </ul>
 
-<h2>Where it is stored</h2>
+<h2>{t('legal.privacy.whereItIsStored')}</h2>
 <p>
 	In one SQLite database on {data.hosted
 		? 'the server that runs this instance'
@@ -42,7 +41,7 @@
 	{/if}
 </p>
 
-<h2>Who can see it</h2>
+<h2>{t('legal.privacy.whoCanSeeIt')}</h2>
 <p>
 	{#if data.hosted}
 		The person running this instance can, technically — it is their database. There is no way to
@@ -52,30 +51,28 @@
 		Whoever administers the machine, which is you.
 	{/if}
 </p>
-<p>There is no analytics, no advertising, no third-party script, and nothing is sold to anyone.</p>
+<p>{t('legal.privacy.thereIsNoAnalyticsNo')}</p>
 
-<h2>Who else is involved</h2>
+<h2>{t('legal.privacy.whoElseIsInvolved')}</h2>
 <ul>
 	<li>
-		<strong>Mail.</strong> Confirmation and password-reset messages go out through an SMTP server this
-		instance is configured with. It sees your address and the text of those messages.
+		<strong>{t('legal.privacy.mail')}</strong>
+		{t('legal.privacy.confirmationAndPasswordResetMessagesGo')}
 	</li>
 	<li>
-		<strong>Payment.</strong> If you subscribe, {data.provider} handles the transaction as merchant of
-		record. They see your billing details; this instance never does, and stores only the identifiers it
-		needs to know your subscription is alive.
+		<strong>{t('legal.privacy.payment')}</strong> If you subscribe, {data.provider} handles the transaction
+		as merchant of record. They see your billing details; this instance never does, and stores only the
+		identifiers it needs to know your subscription is alive.
 	</li>
 	<li>
-		<strong>Plugins.</strong> Anything you connect with an API token sees exactly the scopes you gave
-		that token, and nothing else. You can revoke one at any time from Settings → Integrations.
+		<strong>{t('legal.privacy.plugins')}</strong>
+		{t('legal.privacy.anythingYouConnectWithAn')}
 	</li>
 </ul>
 
-<h2>Taking it with you, and getting rid of it</h2>
+<h2>{t('legal.privacy.takingItWithYouAnd')}</h2>
 <p>
-	Settings → Account exports everything as one JSON file, and deletes the account. Deletion is
-	immediate and complete: every row belonging to the account, including its history, in one
-	transaction. There is no thirty-day grace period during which it is still there.
+	{t('legal.privacy.settingsAccountExportsEverything')}
 </p>
 <p>
 	Backups are the exception, and the honest caveat: a snapshot taken before you deleted still
@@ -83,18 +80,20 @@
 		{data.backupRetentionDays} days{/if}.
 </p>
 
-<h2>Cookies</h2>
+<h2>{t('legal.privacy.cookies')}</h2>
 <p>
-	One, called <code>better-auth.session_token</code>, which is what keeps you signed in. It is not
-	shared, not read by anyone else, and there is nothing to consent to because there is nothing else
-	being done with it. No tracking cookies means no cookie banner.
+	{t('legal.privacy.oneCalled')} <code>{t('legal.privacy.betterAuthSessionToken')}</code>{t(
+		'legal.privacy.whichIsWhatKeeps'
+	)}
 </p>
 
-<h2>Asking about any of this</h2>
+<h2>{t('legal.privacy.askingAboutAnyOfThis')}</h2>
 {#if data.contactEmail}
 	<p>
-		Write to <a href="mailto:{data.contactEmail}">{data.contactEmail}</a>. It is read by a person.
+		{t('legal.privacy.writeTo')} <a href="mailto:{data.contactEmail}">{data.contactEmail}</a>{t(
+			'legal.privacy.itIsReadBy'
+		)}
 	</p>
 {:else}
-	<p>Ask whoever runs this instance.</p>
+	<p>{t('legal.privacy.askWhoeverRunsThisInstance')}</p>
 {/if}

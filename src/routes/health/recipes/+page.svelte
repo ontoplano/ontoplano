@@ -15,6 +15,9 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -79,27 +82,32 @@
 		<!-- Without one, every ingredient field would refuse everything typed
 		     into it, which is a worse first impression than a sentence. -->
 		<Banner kind="warning">
-			No food category yet.
-			<a href={resolve('/inventory')} class="underline">Tick one on the shopping list.</a>
+			{t('health.recipes.noFoodCategoryYet')}
+			<a href={resolve('/inventory')} class="underline"
+				>{t('health.recipes.tickOneOnTheShopping')}</a
+			>
 		</Banner>
 	{/if}
 
 	{#if data.recipes.length === 0}
 		<EmptyState
 			icon="utensils"
-			title="No recipes yet"
+			title={t('health.recipes.noRecipesYet')}
 			description="Write one, put it on a day, and the shopping list fills itself with what it needs."
 		>
 			{#snippet action()}
 				<button onclick={() => (showForm = true)} class="btn btn-primary">
-					<Icon name="plus" /> New recipe
+					<Icon name="plus" />
+					{t('health.recipes.newRecipe')}
 				</button>
 			{/snippet}
 		</EmptyState>
 	{:else if visible.length === 0}
-		<EmptyState icon="utensils" title="Nothing you can make right now">
+		<EmptyState icon="utensils" title={t('health.recipes.nothingYouCanMakeRight')}>
 			{#snippet action()}
-				<button onclick={() => (onlyMakeable = false)} class="btn">Show all recipes</button>
+				<button onclick={() => (onlyMakeable = false)} class="btn"
+					>{t('health.recipes.showAllRecipes')}</button
+				>
 			{/snippet}
 		</EmptyState>
 	{:else}
@@ -136,7 +144,7 @@
 								title: recipe.title,
 								minutes: recipe.minutes ?? null
 							})}
-						title="Put it on a day"
+						title={t('health.recipes.putItOnADay')}
 						aria-label="Put {recipe.title} on a day"
 						class="btn btn-sm absolute top-2 right-2 z-10"
 					>
@@ -181,9 +189,9 @@
 
 							<span class="mt-2 block text-xs">
 								{#if recipe.ingredients === 0}
-									<span class="text-gray-500">nothing in it yet</span>
+									<span class="text-gray-500">{t('health.recipes.nothingInItYet')}</span>
 								{:else if recipe.missing === 0}
-									<span class="text-teal-700">you have everything</span>
+									<span class="text-teal-700">{t('health.recipes.youHaveEverything')}</span>
 								{:else}
 									<span class="text-amber-700">
 										missing {recipe.missing}
@@ -199,7 +207,7 @@
 	{/if}
 </div>
 
-<Modal bind:open={showForm} error={form?.message} title="New recipe">
+<Modal bind:open={showForm} error={form?.message} title={t('health.recipes.newRecipe')}>
 	<!--
 		The paste first, because it is the shortest path.
 
@@ -222,21 +230,21 @@
 		}}
 	>
 		<Field
-			label="From a page"
+			label={t('health.recipes.fromAPage')}
 			span={12}
 			hint="On the recipe page: select all, copy, paste here. Its ingredients and method come with it."
 		>
 			<textarea
 				name="page"
 				rows="3"
-				placeholder="Paste the page here"
+				placeholder={t('health.recipes.pasteThePageHere')}
 				class="textarea font-mono text-xs"
 			></textarea>
 		</Field>
 		<div class="mt-2 flex flex-wrap items-center gap-2">
 			<OneLine
 				name="source"
-				placeholder="Where it came from (optional)"
+				placeholder={t('health.recipes.whereItCameFromOptional')}
 				class="input min-w-0 flex-1"
 			/>
 			<button class="btn shrink-0" disabled={importing}>
@@ -249,34 +257,34 @@
 	     immediately press Edit to write the recipe is two steps for one act. -->
 	<form id="recipe-form" method="post" action="?/create" use:enhance>
 		<FormGrid>
-			<Field label="What it is" span={12} required>
+			<Field label={t('health.recipes.whatItIs')} span={12} required>
 				<OneLine name="heading" class="input" required />
 			</Field>
-			<Field label="Serves" span={4}>
+			<Field label={t('health.recipes.serves')} span={4}>
 				<NumberBox autocomplete="off" name="servings" min="1" />
 			</Field>
-			<Field label="Minutes" span={4}>
+			<Field label={t('health.recipes.minutes')} span={4}>
 				<NumberBox autocomplete="off" name="minutes" min="1" />
 			</Field>
-			<Field label="Where it came from" span={4}>
+			<Field label={t('health.recipes.whereItCameFrom')} span={4}>
 				<OneLine name="source" class="input" />
 			</Field>
 			<Field
-				label="Method"
+				label={t('health.recipes.method')}
 				span={12}
 				hint="Markdown: headings, lists, numbers. Ingredients come after."
 			>
 				<textarea name="method" rows="8" use:autogrow class="textarea"></textarea>
 			</Field>
-			<Field label="Notes" span={12}>
+			<Field label={t('ui.notes')} span={12}>
 				<textarea name="notes" rows="2" class="textarea"></textarea>
 			</Field>
 		</FormGrid>
 	</form>
 
 	{#snippet footer()}
-		<button type="button" class="btn" onclick={() => (showForm = false)}>Cancel</button>
-		<button type="submit" form="recipe-form" class="btn btn-primary">Create</button>
+		<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
+		<button type="submit" form="recipe-form" class="btn btn-primary">{t('ui.create')}</button>
 	{/snippet}
 </Modal>
 
@@ -291,7 +299,7 @@
 	open={planning !== null}
 	onclose={() => (planning = null)}
 	error={form?.message}
-	title="Put it on a day"
+	title={t('health.recipes.putItOnADay')}
 	description="It becomes a block on the plan, like anything else you give time to."
 	size="sm"
 >
@@ -309,7 +317,7 @@
 			<input type="hidden" name="recipeId" value={planning.id} />
 			<input type="hidden" name="label" value={planning.title} />
 			<FormGrid>
-				<Field label="Day" span={6} required>
+				<Field label={t('health.recipes.day')} span={6} required>
 					<input
 						autocomplete="off"
 						name="date"
@@ -319,7 +327,7 @@
 						class="input"
 					/>
 				</Field>
-				<Field label="At" span={6} required>
+				<Field label={t('health.recipes.at')} span={6} required>
 					<input
 						autocomplete="off"
 						name="startTime"
@@ -329,7 +337,7 @@
 						class="input"
 					/>
 				</Field>
-				<Field label="For" span={6} hint="Minutes.">
+				<Field label={t('health.recipes.for')} span={6} hint="Minutes.">
 					<NumberBox
 						autocomplete="off"
 						name="durationMinutes"
@@ -338,7 +346,7 @@
 						value={planning.minutes ?? 45}
 					/>
 				</Field>
-				<Field label="Counts as" span={6}>
+				<Field label={t('health.recipes.countsAs')} span={6}>
 					<select name="categoryId" class="select">
 						{#each data.categories as category (category.id)}
 							<option value={category.id}>{category.name}</option>
@@ -350,9 +358,9 @@
 	{/if}
 
 	{#snippet footer()}
-		<button type="button" class="btn" onclick={() => (planning = null)}>Cancel</button>
+		<button type="button" class="btn" onclick={() => (planning = null)}>{t('ui.cancel')}</button>
 		<button type="submit" form="plan-recipe-form" class="btn btn-primary">
-			Put it on the plan
+			{t('health.recipes.putItOnThePlan')}
 		</button>
 	{/snippet}
 </Modal>

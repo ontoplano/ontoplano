@@ -19,6 +19,9 @@
 	import NotebookDetail from '$lib/components/NotebookDetail.svelte';
 	import { SECTION_COLORS } from '$lib/colors';
 	import type { PageServerData, ActionData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -108,8 +111,7 @@
 		{#snippet tools()}{/snippet}
 	</RoomToolbar>
 	<p class="page-intro">
-		A subject you write against with no deadline — a book you are reading, a trip, a renovation.
-		Notes, tasks and goals can belong to one, and everything about it collects here.
+		{t('notebooks.aSubjectYouWriteAgainst')}
 	</p>
 
 	<FormError message={form?.message} />
@@ -119,12 +121,13 @@
 			{#if data.notebooks.length === 0}
 				<EmptyState
 					icon="notebook"
-					title="No notebooks yet"
+					title={t('notebooks.noNotebooksYet')}
 					description="Start one for something you will keep coming back to, and point notes, tasks and goals at it."
 				>
 					{#snippet action()}
 						<button onclick={openCreate} class="btn btn-primary">
-							<Icon name="plus" /> New notebook
+							<Icon name="plus" />
+							{t('notebooks.newNotebook')}
 						</button>
 					{/snippet}
 				</EmptyState>
@@ -170,10 +173,10 @@
 							{#if !node.mine}
 								<span class="eyebrow ml-1 text-gray-500">{node.sharedBy}’s</span>
 							{:else if node.sharedWithFamily}
-								<span class="eyebrow ml-1 text-gray-500">family</span>
+								<span class="eyebrow ml-1 text-gray-500">{t('notebooks.family')}</span>
 							{/if}
 							{#if node.closedAt}
-								<span class="eyebrow ml-2 text-gray-500">closed</span>
+								<span class="eyebrow ml-2 text-gray-500">{t('notebooks.closed')}</span>
 							{/if}
 							<span class="block truncate text-xs text-gray-500">{tally(node)}</span>
 						</a>
@@ -230,7 +233,7 @@
 								? 'bg-gray-100'
 								: ''}"
 						>
-							<span class="text-gray-900">Notes without a notebook</span>
+							<span class="text-gray-900">{t('notebooks.notesWithoutANotebook')}</span>
 							<span class="block truncate text-xs text-gray-500">
 								{orphaned.length}
 								{orphaned.length === 1 ? 'note' : 'notes'} · their notebook was deleted
@@ -263,13 +266,15 @@
 						<!-- The way to the notebook's own page, from the column that is
 					     showing it. The list on the left chooses what appears here. -->
 						<a href={resolve('/notebooks/[id]', { id: String(selected.id) })} class="btn btn-sm">
-							Open <Icon name="arrow-right" />
+							{t('ui.open')}
+							<Icon name="arrow-right" />
 						</a>
 						<!-- The confirmation is a dialog, not a second button in the same
 					     place: a two-step delete that puts "Yes" where "Delete" was is a
 					     double-click away from destroying something. -->
 						<button onclick={() => (confirmingDelete = true)} class="btn btn-danger btn-sm">
-							<Icon name="trash" /> Delete
+							<Icon name="trash" />
+							{t('ui.delete')}
 						</button>
 					{/if}
 				{/snippet}
@@ -314,21 +319,21 @@
 
 		<FormGrid>
 			<Field
-				label="Title"
+				label={t('ui.title')}
 				span={12}
 				required
 				hint="An em dash makes a folder: “Renovation — Kitchen” sits inside “Renovation”."
 			>
 				<OneLine
 					name="heading"
-					placeholder="Kitchen renovation"
+					placeholder={t('notebooks.kitchenRenovation')}
 					value={editing?.title ?? ''}
 					class="input"
 					required
 				/>
 			</Field>
 
-			<Field label="What it is for" span={12}>
+			<Field label={t('notebooks.whatItIsFor')} span={12}>
 				<textarea name="description" rows="3" class="textarea"
 					>{editing?.description ?? ''}</textarea
 				>
@@ -350,13 +355,12 @@
 	{#if !editingId}
 		<details class="mt-4 border-t border-gray-200 pt-3">
 			<summary class="cursor-pointer text-sm text-gray-600 hover:text-gray-900">
-				…or import a folder of markdown
+				{t('notebooks.orImportAFolderOf')}
 			</summary>
 			<p class="mt-2 text-sm leading-relaxed text-gray-500">
-				Each <code class="text-xs">.md</code> file becomes a note in one notebook, keeping its text
-				and its tags — from <code class="text-xs">#tags</code> and from the frontmatter — with the folder
-				it was in as a tag too. Nothing is uploaded as a file; the notes are read here. Deleting the notebook
-				undoes it.
+				{t('notebooks.each')} <code class="text-xs">{t('notebooks.md')}</code>
+				{t('notebooks.fileBecomesANoteIn')} <code class="text-xs">{t('notebooks.tags')}</code>
+				{t('notebooks.andFromTheFrontmatter')}
 			</p>
 			<div class="mt-3">
 				<MarkdownImport
@@ -375,7 +379,7 @@
 	{/if}
 
 	{#snippet footer()}
-		<button type="button" class="btn" onclick={() => (showForm = false)}>Cancel</button>
+		<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 		<button type="submit" form="notebook-form" class="btn btn-primary">
 			{editingId ? 'Save' : 'Create notebook'}
 		</button>
@@ -392,19 +396,21 @@
 -->
 <Modal
 	bind:open={confirmingDelete}
-	title="Delete this notebook?"
+	title={t('notebooks.deleteThisNotebook')}
 	description={selected ? `“${selected.title}” will be gone.` : ''}
 	size="sm"
 >
 	<p class="text-sm text-gray-600">
-		Its notes, tasks and goals will not be deleted. The tasks and goals stay where they are, in the
-		planner and in Goals; the notes move to <strong class="font-medium text-gray-900"
-			>Notes without a notebook</strong
-		>, at the bottom of the list.
+		{t('notebooks.itsNotesTasksAndGoals')}
+		<strong class="font-medium text-gray-900">{t('notebooks.notesWithoutANotebook')}</strong>{t(
+			'notebooks.atTheBottomOf'
+		)}
 	</p>
 
 	{#snippet footer()}
-		<button type="button" class="btn" onclick={() => (confirmingDelete = false)}>Cancel</button>
+		<button type="button" class="btn" onclick={() => (confirmingDelete = false)}
+			>{t('ui.cancel')}</button
+		>
 		<form
 			method="post"
 			action="?/delete"
@@ -415,7 +421,7 @@
 				}}
 		>
 			<input type="hidden" name="id" value={selected?.id} />
-			<button class="btn btn-danger" use:armed>Delete the notebook</button>
+			<button class="btn btn-danger" use:armed>{t('notebooks.deleteTheNotebook')}</button>
 		</form>
 	{/snippet}
 </Modal>

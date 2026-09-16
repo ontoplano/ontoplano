@@ -4,6 +4,9 @@
 	import { DEMO_ACCOUNTS_PER_ADDRESS } from '$lib/demo-limits';
 	import { onMount } from 'svelte';
 	import type { ActionData, PageServerData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -33,7 +36,7 @@
 </script>
 
 <svelte:head>
-	<title>Opening the demo · ontoplano</title>
+	<title>{t('demo.openingTheDemoOntoplano')}</title>
 </svelte:head>
 
 <div class="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center gap-6 px-4">
@@ -48,29 +51,28 @@
 			anybody testing their own demo runs into.
 		-->
 		<div class="w-full border border-gray-200 bg-white p-6 text-center shadow-card">
-			<p class="text-sm text-gray-900">That is a lot of copies from one place.</p>
+			<p class="text-sm text-gray-900">{t('demo.thatIsALotOf')}</p>
 			<p class="mt-2 text-sm text-gray-600">
 				The demo hands out {DEMO_ACCOUNTS_PER_ADDRESS} an hour per address, which is what stops a script
 				taking them all. Another one in about
 				{form.minutes}
 				{form.minutes === 1 ? 'minute' : 'minutes'}.
 			</p>
-			<a href={resolve('/demo')} class="btn btn-primary mt-4">Try again</a>
+			<a href={resolve('/demo')} class="btn btn-primary mt-4">{t('demo.tryAgain')}</a>
 		</div>
 	{:else if form?.full}
 		<div class="w-full border border-gray-200 bg-white p-6 text-center shadow-card">
-			<p class="text-sm text-gray-900">The demo is full right now.</p>
+			<p class="text-sm text-gray-900">{t('demo.theDemoIsFullRight')}</p>
 			<p class="mt-2 text-sm text-gray-600">
-				Every copy is in use. They are handed back a few minutes after somebody stops looking, so
-				this clears on its own.
+				{t('demo.everyCopyIsInUse')}
 			</p>
-			<a href={resolve('/demo')} class="btn btn-primary mt-4">Try again</a>
+			<a href={resolve('/demo')} class="btn btn-primary mt-4">{t('demo.tryAgain')}</a>
 		</div>
 	{:else}
 		<div class="w-full border border-gray-200 bg-white p-6 shadow-card">
-			<p class="text-sm font-semibold text-gray-900">Setting up a copy for you</p>
+			<p class="text-sm font-semibold text-gray-900">{t('demo.settingUpACopyFor')}</p>
 			<p class="mt-1 text-sm text-gray-600">
-				Nobody else can see it, and it is deleted a few hours after you close the tab.
+				{t('demo.nobodyElseCanSeeIt')}
 			</p>
 
 			<ul class="mt-4 space-y-2">
@@ -109,7 +111,7 @@
 		}}
 	>
 		<input type="hidden" name="next" value={data.next} />
-		<button class="btn btn-primary {started ? 'sr-only' : ''}">Open the demo</button>
+		<button class="btn btn-primary {started ? 'sr-only' : ''}">{t('demo.openTheDemo')}</button>
 	</form>
 </div>
 

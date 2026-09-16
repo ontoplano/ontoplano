@@ -1,12 +1,15 @@
 <script lang="ts">
 	import type { PageServerData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data }: { data: PageServerData } = $props();
 </script>
 
-<svelte:head><title>Terms · ontoplano</title></svelte:head>
+<svelte:head><title>{t('legal.terms.termsOntoplano')}</title></svelte:head>
 
-<h1>Terms</h1>
+<h1>{t('legal.terms.terms')}</h1>
 <p class="updated">Last updated {data.updated}.</p>
 
 <p>
@@ -14,28 +17,26 @@
 	agreeing to them. They are short because there is not much to say.
 </p>
 
-<h2>The account is yours</h2>
+<h2>{t('legal.terms.theAccountIsYours')}</h2>
 <p>
-	What you write here belongs to you. Nothing in these terms gives anyone a licence to use your
-	content for anything; it is stored so it can be shown back to you.
+	{t('legal.terms.whatYouWriteHereBelongs')}
 </p>
 <p>
 	Keep your password to yourself, and tell {data.contactEmail ?? 'whoever runs this instance'} if you
 	think somebody else has it.
 </p>
 
-<h2>What you may not do with it</h2>
+<h2>{t('legal.terms.whatYouMayNotDo')}</h2>
 <ul>
-	<li>Store anything illegal where this instance is operated.</li>
-	<li>Use it to attack the server it runs on, or anyone else's.</li>
-	<li>Resell access to somebody else's account.</li>
+	<li>{t('legal.terms.storeAnythingIllegalWhereThis')}</li>
+	<li>{t('legal.terms.useItToAttackThe')}</li>
+	<li>{t('legal.terms.resellAccessToSomebodyElseS')}</li>
 </ul>
 <p>
-	An account doing one of those can be suspended. If that happens you will be told why, and your
-	export still works.
+	{t('legal.terms.anAccountDoingOneOf')}
 </p>
 
-<h2>Paying</h2>
+<h2>{t('legal.terms.paying')}</h2>
 <p>
 	A new account gets {data.trialDays} days free{data.trialRequiresCard
 		? ', and is asked for a card at the start so the subscription can begin when the trial ends'
@@ -45,21 +46,19 @@
 </p>
 {#if data.trialRequiresCard}
 	<p>
-		You will be emailed two days before the first charge, and you can cancel in one click from
-		inside the app up to the moment it happens.
+		{t('legal.terms.youWillBeEmailedTwo')}
 	</p>
 {/if}
 <p>
-	Cancel any time; the subscription runs to the end of the period you paid for.
-	<strong>Nothing is deleted when it ends.</strong> Everything you wrote stays where it is, stays readable
-	and stays exportable — you simply cannot add more until you subscribe again. And because the source
-	is open, you can always run your own copy instead and take the export with you.
+	{t('legal.terms.cancelAnyTimeTheSubscription')}
+	<strong>{t('legal.terms.nothingIsDeletedWhenIt')}</strong>
+	{t('legal.terms.everythingYouWroteStaysWhere')}
 </p>
 <p>
 	If a charge was wrong, write to {data.contactEmail ?? 'whoever runs this instance'} and it will be refunded.
 </p>
 
-<h2>What is promised about it working</h2>
+<h2>{t('legal.terms.whatIsPromisedAboutIt')}</h2>
 <p>
 	{#if data.hosted}
 		This is run by one person on ordinary infrastructure. It is not a bank. Expect it to be up
@@ -74,20 +73,17 @@
 	{/if}
 </p>
 
-<h2>Ending it</h2>
+<h2>{t('legal.terms.endingIt')}</h2>
 <p>
-	Delete the account from Settings → Account whenever you like. No notice, no email exchange, no
-	retention period.
+	{t('legal.terms.deleteTheAccountFromSettings')}
 </p>
 
-<h2>The software</h2>
+<h2>{t('legal.terms.theSoftware')}</h2>
 <p>
-	Ontoplano is open source under the AGPL-3.0, and you are welcome to run your own copy — that is
-	what it is for. The licence covers the code rather than the project's name, so a fork goes out
-	under a name of its own.
+	{t('legal.terms.ontoplanoIsOpenSourceUnder')}
 </p>
 
-<h2>The boring part</h2>
+<h2>{t('legal.terms.theBoringPart')}</h2>
 <p>
 	The software is provided as it is, without warranty. Liability, where it cannot be excluded, is
 	limited to what you paid in the last twelve months. Disputes go to the courts of

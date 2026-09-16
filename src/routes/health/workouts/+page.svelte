@@ -9,11 +9,14 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import { armed } from '$lib/actions/armed';
 	import type { PageServerData, ActionData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
-	const active = $derived(data.workouts.filter((t) => !t.archived));
-	const archived = $derived(data.workouts.filter((t) => t.archived));
+	const active = $derived(data.workouts.filter((w) => !w.archived));
+	const archived = $derived(data.workouts.filter((w) => w.archived));
 
 	// One form for new and edit, so the two cannot drift.
 	let showForm = $state(false);
@@ -81,9 +84,9 @@
 		declared = [blankDeclared()];
 		showForm = true;
 	}
-	function openEdit(t: (typeof data.workouts)[number]) {
-		editing = t;
-		declared = [...t.measures.map((m) => ({ ...m })), blankDeclared()];
+	function openEdit(chosen: (typeof data.workouts)[number]) {
+		editing = chosen;
+		declared = [...chosen.measures.map((m) => ({ ...m })), blankDeclared()];
 		showForm = true;
 	}
 
@@ -239,42 +242,46 @@
 	<RoomToolbar>
 		{#snippet tools()}
 			<button class="btn btn-sm btn-quiet" onclick={() => (showCategories = true)}
-				>Categories</button
+				>{t('health.workouts.categories')}</button
 			>
-			<p class="text-sm text-gray-500">Workouts you can drop onto the week like a meal.</p>
+			<p class="text-sm text-gray-500">{t('health.workouts.workoutsYouCanDropOnto')}</p>
 		{/snippet}
 	</RoomToolbar>
 
 	{#if active.length === 0}
 		<EmptyState
 			icon="health"
-			title="No workouts yet"
+			title={t('health.workouts.noWorkoutsYet')}
 			description="Write a workout down — a plan and how long it takes — and it is ready to put on a day."
 		/>
 	{:else}
 		<ul class="divide-y divide-gray-100 rounded border border-gray-200">
-			{#each active as t (t.id)}
+			{#each active as workout (workout.id)}
 				<li class="list-row">
 					<button
 						class="list-row-main text-left"
-						aria-label="Show the plan for {t.title}"
-						aria-expanded={expanded === t.id}
-						onclick={() => (expanded = expanded === t.id ? null : t.id)}
+						aria-label="Show the plan for {workout.title}"
+						aria-expanded={expanded === workout.id}
+						onclick={() => (expanded = expanded === workout.id ? null : workout.id)}
 					>
 						<span class="font-medium text-gray-900">
-							<Icon name={expanded === t.id ? 'chevron-down' : 'chevron-right'} />
-							{t.title}
+							<Icon name={expanded === workout.id ? 'chevron-down' : 'chevron-right'} />
+							{workout.title}
 						</span>
 						<span class="block text-xs text-gray-500">
-							{t.categoryName ?? 'No category'}{#if t.minutes}, ~{t.minutes} min{/if}{#if t.lastDoneAt}
-								&nbsp;· last done {t.lastDoneAt.slice(0, 10)}{/if}
+							{workout.categoryName ?? 'No category'}{#if workout.minutes}, ~{workout.minutes} min{/if}{#if workout.lastDoneAt}
+								&nbsp;· last done {workout.lastDoneAt.slice(0, 10)}{/if}
 						</span>
 					</button>
 
 					<div class="list-row-actions">
 						<form method="post" action="?/done" use:enhance>
-							<input type="hidden" name="id" value={t.id} />
-							<button class="icon-btn" title="Done just now" aria-label="Mark {t.title} done">
+							<input type="hidden" name="id" value={workout.id} />
+							<button
+								class="icon-btn"
+								title={t('health.workouts.doneJustNow')}
+								aria-label="Mark {workout.title} done"
+							>
 								<Icon name="check" />
 							</button>
 						</form>
@@ -282,23 +289,27 @@
 						<!-- The tick says it happened; this says how much of what. -->
 						<button
 							class="icon-btn"
-							title="Write down what you did"
-							aria-label="Write down what you did for {t.title}"
-							onclick={() => startLog(t)}
+							title={t('health.workouts.writeDownWhatYouDid')}
+							aria-label="Write down what you did for {workout.title}"
+							onclick={() => startLog(workout)}
 						>
 							<Icon name="note" />
 						</button>
 
 						<button
 							class="icon-btn"
-							title="Put it on a day"
-							aria-label="Plan {t.title} onto a day"
-							onclick={() => (scheduling = t)}
+							title={t('health.workouts.putItOnADay')}
+							aria-label="Plan {workout.title} onto a day"
+							onclick={() => (scheduling = workout)}
 						>
 							<Icon name="calendar" />
 						</button>
 
-						<button class="icon-btn" aria-label="Edit {t.title}" onclick={() => openEdit(t)}>
+						<button
+							class="icon-btn"
+							aria-label="Edit {workout.title}"
+							onclick={() => openEdit(workout)}
+						>
 							<Icon name="edit" />
 						</button>
 
@@ -306,22 +317,22 @@
 							method="post"
 							action="?/archive"
 							use:enhance
-							title="Put this workout away — its history stays"
+							title={t('health.workouts.putThisWorkoutAway')}
 						>
-							<input type="hidden" name="id" value={t.id} />
+							<input type="hidden" name="id" value={workout.id} />
 							<input type="hidden" name="archived" value="true" />
-							<button class="icon-btn" aria-label="Archive {t.title}">
+							<button class="icon-btn" aria-label="Archive {workout.title}">
 								<Icon name="archive" />
 							</button>
 						</form>
 					</div>
 
-					{#if expanded === t.id}
-						{@const history = sessionsOf(t.id)}
+					{#if expanded === workout.id}
+						{@const history = sessionsOf(workout.id)}
 						<div class="w-full space-y-3 border-t border-gray-100 pt-3">
 							<div class="text-sm whitespace-pre-wrap text-gray-700">
-								{#if t.plan}{t.plan}{:else}<span class="text-gray-400"
-										>No plan written yet — Edit adds one.</span
+								{#if workout.plan}{workout.plan}{:else}<span class="text-gray-400"
+										>{t('health.workouts.noPlanWrittenYet')}</span
 									>{/if}
 							</div>
 
@@ -335,17 +346,17 @@
 							<div class="border-t border-gray-100 pt-3">
 								<div class="mb-2 flex items-center justify-between">
 									<h3 class="text-xs font-semibold tracking-wide text-gray-500 uppercase">
-										What you did
+										{t('health.workouts.whatYouDid')}
 									</h3>
-									<button class="btn btn-sm" onclick={() => startLog(t)}>
-										<Icon name="plus" /> Write one down
+									<button class="btn btn-sm" onclick={() => startLog(workout)}>
+										<Icon name="plus" />
+										{t('health.workouts.writeOneDown')}
 									</button>
 								</div>
 
 								{#if history.length === 0}
 									<p class="text-sm text-gray-500">
-										Nothing written down yet. Record what you did and how much of it, and it becomes
-										something you can look back over.
+										{t('health.workouts.nothingWrittenDownYetRecord')}
 									</p>
 								{:else}
 									<ul class="divide-y divide-gray-100 border-t border-gray-100">
@@ -356,7 +367,7 @@
 												>
 												<div class="min-w-0 flex-1">
 													{#if session.measures.length === 0}
-														<span class="text-gray-400">Done</span>
+														<span class="text-gray-400">{t('ui.done')}</span>
 													{:else}
 														<!--
 															Each measure as three parts rather than one sentence.
@@ -391,15 +402,15 @@
 												<div class="flex shrink-0 items-center gap-1">
 													<button
 														class="icon-btn"
-														title="Correct this"
+														title={t('health.workouts.correctThis')}
 														aria-label="Correct the session on {session.doneOn}"
-														onclick={() => startEditSession(t, session)}
+														onclick={() => startEditSession(workout, session)}
 													>
 														<Icon name="edit" />
 													</button>
 													<button
 														class="icon-btn icon-btn-danger"
-														title="Remove this"
+														title={t('health.workouts.removeThis')}
 														aria-label="Remove the session on {session.doneOn}"
 														onclick={() => (confirmDeleteSession = session)}
 													>
@@ -428,19 +439,19 @@
 			</button>
 			{#if showArchived}
 				<ul class="mt-2 divide-y divide-gray-100 rounded border border-gray-200">
-					{#each archived as t (t.id)}
+					{#each archived as workout (workout.id)}
 						<li class="flex items-center gap-3 px-4 py-2 text-sm">
-							<span class="min-w-0 flex-1 text-gray-600">{t.title}</span>
-							<span class="text-xs text-gray-400">{t.categoryName ?? 'No category'}</span>
+							<span class="min-w-0 flex-1 text-gray-600">{workout.title}</span>
+							<span class="text-xs text-gray-400">{workout.categoryName ?? 'No category'}</span>
 							<form method="post" action="?/archive" use:enhance>
-								<input type="hidden" name="id" value={t.id} />
+								<input type="hidden" name="id" value={workout.id} />
 								<input type="hidden" name="archived" value="false" />
-								<button class="btn btn-sm" type="submit">Restore</button>
+								<button class="btn btn-sm" type="submit">{t('health.workouts.restore')}</button>
 							</form>
 							<button
 								class="icon-btn"
-								aria-label="Delete {t.title}"
-								onclick={() => (confirmingDelete = t)}
+								aria-label="Delete {workout.title}"
+								onclick={() => (confirmingDelete = workout)}
 							>
 								<Icon name="trash" />
 							</button>
@@ -474,10 +485,10 @@
 		<div class="space-y-3">
 			<div class="grid gap-3 sm:grid-cols-2">
 				<label class="block text-sm">
-					<span class="text-gray-600">Name</span>
+					<span class="text-gray-600">{t('ui.name')}</span>
 					<OneLine
 						name="heading"
-						placeholder="Push day"
+						placeholder={t('health.workouts.pushDay')}
 						value={editing?.title ?? ''}
 						class="input mt-1 w-full"
 						required
@@ -485,14 +496,14 @@
 					/>
 				</label>
 				<label class="block text-sm">
-					<span class="text-gray-600">Category</span>
+					<span class="text-gray-600">{t('ui.category')}</span>
 					<select name="categoryId" class="select mt-1 w-full" value={editing?.categoryId ?? ''}>
-						<option value="">— no category —</option>
+						<option value="">{t('health.workouts.noCategory')}</option>
 						{#each data.categories as c (c.id)}<option value={c.id}>{c.name}</option>{/each}
 					</select>
 				</label>
 				<label class="block text-sm">
-					<span class="text-gray-600">About how long (min)</span>
+					<span class="text-gray-600">{t('health.workouts.aboutHowLongMin')}</span>
 					<NumberBox
 						name="minutes"
 						min="1"
@@ -503,12 +514,12 @@
 				</label>
 			</div>
 			<label class="block text-sm">
-				<span class="text-gray-600">Plan</span>
+				<span class="text-gray-600">{t('health.workouts.plan')}</span>
 				<textarea
 					name="plan"
 					rows="4"
 					class="input mt-1 w-full"
-					placeholder="Bench, rows, dips. 4×8.">{editing?.plan ?? ''}</textarea
+					placeholder={t('health.workouts.benchRowsDips48')}>{editing?.plan ?? ''}</textarea
 				>
 			</label>
 
@@ -522,14 +533,13 @@
 				on screen.
 			-->
 			<div>
-				<span class="text-sm text-gray-600">What it measures</span>
+				<span class="text-sm text-gray-600">{t('health.workouts.whatItMeasures')}</span>
 				<p class="mb-2 text-xs text-gray-500">
-					Suggested when you write a session down. A run measures kilometres; a push day measures
-					what you benched and for how many reps.
+					{t('health.workouts.suggestedWhenYouWriteA')}
 				</p>
 				<div class="mb-1 grid grid-cols-[1fr_6rem_auto] gap-2 text-xs text-gray-500">
-					<span>What</span>
-					<span>Unit</span>
+					<span>{t('health.workouts.what')}</span>
+					<span>{t('ui.unit')}</span>
 					<span></span>
 				</div>
 				{#each declared as measure, index (index)}
@@ -541,19 +551,24 @@
 							type="text"
 							name="planActivity"
 							list="workout-activities"
-							placeholder="ran"
+							placeholder={t('health.workouts.ran')}
 							autocomplete="off"
 							bind:value={measure.activity}
 							oninput={() => declaredTyped(index)}
 							class="input"
 						/>
-						<OneLine name="planUnit" placeholder="km" bind:value={measure.unit} class="input" />
+						<OneLine
+							name="planUnit"
+							placeholder={t('health.workouts.km')}
+							bind:value={measure.unit}
+							class="input"
+						/>
 						<div class="flex items-center">
 							<button
 								type="button"
 								class="icon-btn"
 								disabled={index === 0}
-								title="Ask for this one earlier"
+								title={t('health.workouts.askForThisOneEarlier')}
 								aria-label="Move {measure.activity || 'this'} up"
 								onclick={() => moveDeclared(index, -1)}
 							>
@@ -563,7 +578,7 @@
 								type="button"
 								class="icon-btn"
 								disabled={index === declared.length - 1}
-								title="Ask for this one later"
+								title={t('health.workouts.askForThisOneLater')}
 								aria-label="Move {measure.activity || 'this'} down"
 								onclick={() => moveDeclared(index, 1)}
 							>
@@ -572,7 +587,7 @@
 							<button
 								type="button"
 								class="icon-btn icon-btn-danger"
-								title="Take this one out"
+								title={t('health.workouts.takeThisOneOut')}
 								aria-label="Stop measuring {measure.activity || 'this'}"
 								onclick={() => removeDeclared(index)}
 							>
@@ -582,13 +597,14 @@
 					</div>
 				{/each}
 				<button type="button" class="btn btn-sm" onclick={() => declared.push(blankDeclared())}>
-					<Icon name="plus" /> Measure something else
+					<Icon name="plus" />
+					{t('health.workouts.measureSomethingElse')}
 				</button>
 			</div>
 		</div>
 	</form>
 	{#snippet footer()}
-		<button class="btn" type="button" onclick={() => (showForm = false)}>Cancel</button>
+		<button class="btn" type="button" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 		<button class="btn btn-primary" type="submit" form="workout-form">
 			{editing ? 'Save' : 'Add'}
 		</button>
@@ -600,7 +616,7 @@
 <Modal
 	open={scheduling !== null}
 	error={form?.message}
-	title="Put it on a day"
+	title={t('health.workouts.putItOnADay')}
 	description="It gains a time on the plan. Finishing it there finishes the workout."
 	onclose={() => (scheduling = null)}
 	size="sm"
@@ -620,7 +636,7 @@
 			<p class="mb-3 text-sm font-medium text-gray-900">{scheduling.title}</p>
 			<div class="grid gap-3 sm:grid-cols-2">
 				<label class="block text-sm">
-					<span class="text-gray-600">Date</span>
+					<span class="text-gray-600">{t('ui.date')}</span>
 					<input
 						name="date"
 						type="date"
@@ -631,7 +647,7 @@
 					/>
 				</label>
 				<label class="block text-sm">
-					<span class="text-gray-600">Time</span>
+					<span class="text-gray-600">{t('health.workouts.time')}</span>
 					<input
 						name="startTime"
 						type="time"
@@ -642,7 +658,7 @@
 					/>
 				</label>
 				<label class="block text-sm">
-					<span class="text-gray-600">Minutes</span>
+					<span class="text-gray-600">{t('health.workouts.minutes')}</span>
 					<NumberBox
 						name="durationMinutes"
 						min="5"
@@ -654,8 +670,10 @@
 		</form>
 	{/if}
 	{#snippet footer()}
-		<button class="btn" type="button" onclick={() => (scheduling = null)}>Cancel</button>
-		<button class="btn btn-primary" type="submit" form="schedule-form">Put on the day</button>
+		<button class="btn" type="button" onclick={() => (scheduling = null)}>{t('ui.cancel')}</button>
+		<button class="btn btn-primary" type="submit" form="schedule-form"
+			>{t('health.workouts.putOnTheDay')}</button
+		>
 	{/snippet}
 </Modal>
 
@@ -694,7 +712,7 @@
 
 			<div class="grid gap-3 sm:grid-cols-2">
 				<label class="block text-sm">
-					<span class="text-gray-600">Day</span>
+					<span class="text-gray-600">{t('health.workouts.day')}</span>
 					<input
 						name="doneOn"
 						type="date"
@@ -713,9 +731,9 @@
 			-->
 			<div class="mt-4">
 				<div class="mb-1 grid grid-cols-[1fr_5rem_5rem_2rem] gap-2 text-xs text-gray-500">
-					<span>What you did</span>
-					<span>How much</span>
-					<span>Unit</span>
+					<span>{t('health.workouts.whatYouDid')}</span>
+					<span>{t('health.workouts.howMuch')}</span>
+					<span>{t('ui.unit')}</span>
 					<span></span>
 				</div>
 				{#each lines as line, index (index)}
@@ -728,7 +746,7 @@
 							type="text"
 							name="measureActivity"
 							list="workout-activities"
-							placeholder="ran"
+							placeholder={t('health.workouts.ran')}
 							autocomplete="off"
 							bind:value={line.activity}
 							oninput={() => lineTyped(index)}
@@ -742,11 +760,16 @@
 							bind:value={line.amount}
 							class="tabular"
 						/>
-						<OneLine name="measureUnit" placeholder="km" bind:value={line.unit} class="input" />
+						<OneLine
+							name="measureUnit"
+							placeholder={t('health.workouts.km')}
+							bind:value={line.unit}
+							class="input"
+						/>
 						<button
 							type="button"
 							class="icon-btn icon-btn-danger"
-							title="Take this line out"
+							title={t('health.workouts.takeThisLineOut')}
 							aria-label="Take out the line for {line.activity || 'this row'}"
 							onclick={() => removeLine(index)}
 						>
@@ -756,24 +779,25 @@
 				{/each}
 
 				<button type="button" class="btn btn-sm" onclick={() => lines.push(blankLine())}>
-					<Icon name="plus" /> Add a line
+					<Icon name="plus" />
+					{t('health.workouts.addALine')}
 				</button>
 			</div>
 
 			<label class="mt-4 block text-sm">
-				<span class="text-gray-600">Anything worth saying</span>
+				<span class="text-gray-600">{t('health.workouts.anythingWorthSaying')}</span>
 				<textarea
 					name="notes"
 					rows="2"
 					bind:value={logNotes}
 					class="input mt-1 w-full"
-					placeholder="Felt heavy. Right knee complained on the last set."
+					placeholder={t('health.workouts.feltHeavyRightKneeComplained')}
 				></textarea>
 			</label>
 		</form>
 	{/if}
 	{#snippet footer()}
-		<button class="btn" type="button" onclick={closeLog}>Cancel</button>
+		<button class="btn" type="button" onclick={closeLog}>{t('ui.cancel')}</button>
 		<button class="btn btn-primary" type="submit" form="log-form">
 			{editingSession ? 'Save' : 'Write it down'}
 		</button>
@@ -783,18 +807,20 @@
 <!-- A session logged by accident. Its lines go with it, and nothing else does. -->
 <Modal
 	open={confirmDeleteSession !== null}
-	title="Remove this session?"
+	title={t('health.workouts.removeThisSession')}
 	onclose={() => (confirmDeleteSession = null)}
 	size="sm"
 >
 	{#if confirmDeleteSession}
 		<p class="text-sm text-gray-600">
-			What you recorded on <strong>{confirmDeleteSession.doneOn}</strong> is removed for good. The workout
-			itself stays.
+			{t('health.workouts.whatYouRecordedOn')} <strong>{confirmDeleteSession.doneOn}</strong>
+			{t('health.workouts.isRemovedForGoodThe')}
 		</p>
 	{/if}
 	{#snippet footer()}
-		<button class="btn" type="button" onclick={() => (confirmDeleteSession = null)}>Keep it</button>
+		<button class="btn" type="button" onclick={() => (confirmDeleteSession = null)}
+			>{t('health.workouts.keepIt')}</button
+		>
 		<form
 			method="post"
 			action="?/deleteSession"
@@ -805,7 +831,7 @@
 				}}
 		>
 			<input type="hidden" name="sessionId" value={confirmDeleteSession?.id} />
-			<button class="btn btn-danger" type="submit" use:armed>Remove</button>
+			<button class="btn btn-danger" type="submit" use:armed>{t('ui.remove')}</button>
 		</form>
 	{/snippet}
 </Modal>
@@ -814,21 +840,23 @@
 <Modal
 	open={confirmingDelete !== null}
 	error={form?.message}
-	title="Delete this workout?"
+	title={t('health.workouts.deleteThisWorkout')}
 	onclose={() => (confirmingDelete = null)}
 	size="sm"
 >
 	{#if confirmingDelete}
 		<p class="text-sm text-gray-600">
-			<strong>{confirmingDelete.title}</strong> is deleted for good, and comes off any day it was planned
-			on. To keep it, leave it archived instead.
+			<strong>{confirmingDelete.title}</strong>
+			{t('health.workouts.isDeletedForGoodAnd')}
 		</p>
 		<!-- One that has been done is refused, and the dialog stays open to say
 		     so: the sessions behind it are the record of what somebody actually
 		     did, and deleting the plan would take them with it. -->
 	{/if}
 	{#snippet footer()}
-		<button class="btn" type="button" onclick={() => (confirmingDelete = null)}>Keep it</button>
+		<button class="btn" type="button" onclick={() => (confirmingDelete = null)}
+			>{t('health.workouts.keepIt')}</button
+		>
 		<form
 			method="post"
 			action="?/delete"
@@ -839,7 +867,7 @@
 				}}
 		>
 			<input type="hidden" name="id" value={confirmingDelete?.id} />
-			<button class="btn btn-danger" type="submit" use:armed>Delete</button>
+			<button class="btn btn-danger" type="submit" use:armed>{t('ui.delete')}</button>
 		</form>
 	{/snippet}
 </Modal>
@@ -856,7 +884,7 @@
 <Modal
 	bind:open={showCategories}
 	error={form?.message}
-	title="Categories of workout"
+	title={t('health.workouts.categoriesOfWorkout')}
 	description="Yours to name. A workout keeps existing if you remove the category it was filed under."
 	size="sm"
 >
@@ -876,11 +904,15 @@
 					>
 						<input type="hidden" name="id" value={category.id} />
 						<OneLine name="name" value={category.name} required autofocus class="input flex-1" />
-						<button class="btn btn-sm btn-primary" title="Save" aria-label="Save the name">
+						<button
+							class="btn btn-sm btn-primary"
+							title={t('ui.save')}
+							aria-label={t('health.workouts.saveTheName')}
+						>
 							<Icon name="check" />
 						</button>
 						<button type="button" class="btn btn-sm" onclick={() => (editingCategory = null)}>
-							Cancel
+							{t('ui.cancel')}
 						</button>
 					</form>
 				{:else}
@@ -888,7 +920,7 @@
 					<button
 						onclick={() => (editingCategory = category.id)}
 						class="icon-btn"
-						title="Rename"
+						title={t('ui.rename')}
 						aria-label="Rename {category.name}"><Icon name="edit" /></button
 					>
 					{#if confirmDeleteCategory === category.id}
@@ -908,15 +940,15 @@
 								class="btn btn-sm"
 								onclick={() => (confirmDeleteCategory = null)}
 							>
-								Cancel
+								{t('ui.cancel')}
 							</button>
-							<button class="btn btn-danger btn-sm" use:armed>Remove</button>
+							<button class="btn btn-danger btn-sm" use:armed>{t('ui.remove')}</button>
 						</form>
 					{:else}
 						<button
 							onclick={() => (confirmDeleteCategory = category.id)}
 							class="icon-btn icon-btn-danger"
-							title="Remove"
+							title={t('ui.remove')}
 							aria-label="Remove {category.name}"><Icon name="trash" /></button
 						>
 					{/if}
@@ -936,23 +968,34 @@
 				}}
 			class="mt-3 flex items-center gap-2"
 		>
-			<OneLine name="label" placeholder="Swimming" required autofocus class="input flex-1" />
-			<button class="btn btn-sm btn-primary" title="Add" aria-label="Add the category">
+			<OneLine
+				name="label"
+				placeholder={t('health.workouts.swimming')}
+				required
+				autofocus
+				class="input flex-1"
+			/>
+			<button
+				class="btn btn-sm btn-primary"
+				title={t('ui.add')}
+				aria-label={t('health.workouts.addTheCategory')}
+			>
 				<Icon name="plus" />
 			</button>
 			<button type="button" class="btn btn-sm" onclick={() => (addingCategory = false)}
-				>Cancel</button
+				>{t('ui.cancel')}</button
 			>
 		</form>
 	{:else}
 		<button onclick={() => (addingCategory = true)} class="btn btn-sm mt-3">
-			<Icon name="plus" /> New category
+			<Icon name="plus" />
+			{t('health.workouts.newCategory')}
 		</button>
 	{/if}
 
 	{#snippet footer()}
 		<button type="button" class="btn btn-primary" onclick={() => (showCategories = false)}
-			>Done</button
+			>{t('ui.done')}</button
 		>
 	{/snippet}
 </Modal>

@@ -37,6 +37,9 @@
 	import { getAction } from '$lib/shortcuts';
 	import { Calendar, DayGrid, TimeGrid, Interaction } from '@event-calendar/core';
 	import '@event-calendar/core/index.css';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 	import {
 		baseGridOptions,
 		addDaysStr,
@@ -2318,16 +2321,19 @@
 			class="rise flex items-start justify-between gap-4 border border-gray-200 bg-white p-4 shadow-card"
 		>
 			<div>
-				<h2 class="text-sm font-semibold text-gray-900">This is your week</h2>
+				<h2 class="text-sm font-semibold text-gray-900">{t('tasks.plan.thisIsYourWeek')}</h2>
 				<ul class="mt-2 space-y-1 text-sm text-gray-600">
-					<li>Drag across an empty stretch of a day to make a block.</li>
+					<li>{t('tasks.plan.dragAcrossAnEmptyStretch')}</li>
 					<li>
-						Press <kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">?</kbd> for everything
-						the keyboard can do.
+						{t('tasks.plan.press')}
+						<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">?</kbd>
+						{t('tasks.plan.forEverythingTheKeyboardCan')}
 					</li>
 				</ul>
 			</div>
-			<button type="button" class="btn btn-sm" onclick={() => (showWelcome = false)}>Got it</button>
+			<button type="button" class="btn btn-sm" onclick={() => (showWelcome = false)}
+				>{t('tasks.plan.gotIt')}</button
+			>
 		</div>
 	{/if}
 
@@ -2367,11 +2373,11 @@
 					<!-- One day is one date. "Sep 1 — Sep 1" is a range with nothing
 					     in it, and it read as a bug every time. -->
 					{formatWeekDate(data.range.from)}
-					{#if data.range.isCurrent}<span class="text-gray-500"> · today</span>{/if}
+					{#if data.range.isCurrent}<span class="text-gray-500"> {t('tasks.plan.today')}</span>{/if}
 				{:else}
 					{formatWeekDate(data.range.from)} &mdash; {formatWeekDate(data.range.last)}
 					{#if data.range.isCurrent}
-						<span class="hidden text-gray-500 sm:inline"> · next 7 days</span>
+						<span class="hidden text-gray-500 sm:inline"> {t('tasks.plan.next7Days')}</span>
 					{/if}
 				{/if}
 			</span>
@@ -2397,12 +2403,12 @@
 				aria-expanded={schemesExpanded}
 				aria-controls="plan-schemes-panel"
 				class="btn btn-sm shrink-0"
-				title="Saved shapes of a week"
+				title={t('tasks.plan.savedShapesOfAWeek')}
 			>
-				Schemes
+				{t('tasks.plan.schemes')}
 			</button>
 
-			<div class="seg" role="group" aria-label="How much to show">
+			<div class="seg" role="group" aria-label={t('tasks.plan.howMuchToShow')}>
 				{#each [['day', 'Day'], ['week', 'Week'], ['month', 'Month']] as [mode, label] (mode)}
 					<button
 						onclick={() => setView(mode as PlanView)}
@@ -2451,33 +2457,34 @@
 					}}
 					class="space-y-2"
 				>
-					<div class="text-sm font-medium text-gray-900">Save current plan as scheme</div>
+					<div class="text-sm font-medium text-gray-900">
+						{t('tasks.plan.saveCurrentPlanAsScheme')}
+					</div>
 					<!-- What a scheme is, once, where it is made. Saying it here is
 					     what makes the Load button's warning short enough to read. -->
 					<p class="text-xs text-gray-500">
-						A scheme is your repeating week — the blocks that come back every week. Anything you put
-						on one day only is not part of it, and loading a scheme leaves those where they are.
+						{t('tasks.plan.aSchemeIsYourRepeating')}
 					</p>
 					<div class="flex gap-2">
 						<OneLine
 							name="label"
-							placeholder="Scheme name"
+							placeholder={t('tasks.plan.schemeName')}
 							bind:value={newSchemeName}
 							class="flex-1 border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 							required
 							autofocus
 						/>
-						<button type="submit" class="btn btn-primary"> Save </button>
+						<button type="submit" class="btn btn-primary"> {t('ui.save')} </button>
 					</div>
 				</form>
 
 				<div class="border border-gray-200 bg-white shadow-card">
 					<div class="eyebrow border-b border-gray-200 px-4 py-2.5 text-gray-500">
-						Saved schemes
+						{t('tasks.plan.savedSchemes')}
 					</div>
 					{#if data.schemes.length === 0}
 						<div class="px-3">
-							<EmptyState icon="calendar" title="No schemes saved yet" compact />
+							<EmptyState icon="calendar" title={t('tasks.plan.noSchemesSavedYet')} compact />
 						</div>
 					{:else}
 						<div class="divide-y divide-gray-200">
@@ -2503,7 +2510,7 @@
 												required
 												ariaLabel="Name of this scheme"
 											/>
-											<button type="submit" class="btn shrink-0"> Rename </button>
+											<button type="submit" class="btn shrink-0"> {t('ui.rename')} </button>
 										</div>
 									</form>
 
@@ -2518,7 +2525,7 @@
 										-->
 										<div class="min-w-0 sm:shrink-0">
 											<p class="mb-1.5 text-xs text-gray-500">
-												Replaces your repeating week. One-off blocks stay.
+												{t('tasks.plan.replacesYourRepeatingWeekOneOff')}
 											</p>
 											<div class="flex gap-2">
 												<form
@@ -2536,7 +2543,7 @@
 														type="submit"
 														class="btn border-blue-200 text-blue-600 hover:bg-blue-50"
 													>
-														Load it
+														{t('tasks.plan.loadIt')}
 													</button>
 												</form>
 												<button
@@ -2544,7 +2551,7 @@
 													onclick={() => (confirmingLoadSchemeId = null)}
 													class="btn"
 												>
-													Cancel
+													{t('ui.cancel')}
 												</button>
 											</div>
 										</div>
@@ -2566,7 +2573,7 @@
 													class="border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 shadow-sm transition hover:bg-red-100"
 													use:armed
 												>
-													Delete it?
+													{t('tasks.plan.deleteIt')}
 												</button>
 											</form>
 											<button
@@ -2574,7 +2581,7 @@
 												onclick={() => (confirmingDeleteSchemeId = null)}
 												class="btn"
 											>
-												Cancel
+												{t('ui.cancel')}
 											</button>
 										</div>
 									{:else}
@@ -2587,10 +2594,10 @@
 												}}
 												class="btn"
 											>
-												Load
+												{t('tasks.plan.load')}
 											</button>
 											<button
-												title="Delete"
+												title={t('ui.delete')}
 												aria-label="Delete {scheme.name}"
 												type="button"
 												onclick={() => {
@@ -2642,7 +2649,11 @@
 					{#if calendarsOpen}
 						{#if data.feeds.length === 0}
 							<div class="px-3">
-								<EmptyState icon="calendar" title="No calendars subscribed yet" compact />
+								<EmptyState
+									icon="calendar"
+									title={t('tasks.plan.noCalendarsSubscribedYet')}
+									compact
+								/>
 							</div>
 						{:else}
 							<ul class="divide-y divide-gray-200">
@@ -2665,7 +2676,7 @@
 											<input type="hidden" name="id" value={feed.id} />
 											<button
 												class="btn btn-danger btn-sm"
-												title="Stop subscribing"
+												title={t('tasks.plan.stopSubscribing')}
 												aria-label="Stop subscribing to {feed.name}"
 												use:armed
 											>
@@ -2695,14 +2706,14 @@
 									autocomplete="off"
 									name="url"
 									type="url"
-									placeholder="https://calendar.google.com/calendar/ical/…/basic.ics"
+									placeholder={t('tasks.plan.httpsCalendarGoogleComCalendarIcalBasicI')}
 									required
 									class="input w-full min-w-0 sm:order-2 sm:w-auto sm:flex-1"
-									aria-label="The calendar's iCal address"
+									aria-label={t('tasks.plan.theCalendarSIcalAddress')}
 								/>
 								<OneLine
 									name="label"
-									placeholder="Work"
+									placeholder={t('tasks.plan.work')}
 									class="input w-32 sm:order-1"
 									required
 									ariaLabel="What to call it"
@@ -2712,15 +2723,18 @@
 									type="color"
 									value="#6b7280"
 									class="h-10 w-12 border border-gray-300 sm:order-3"
-									aria-label="Colour"
+									aria-label={t('ui.colour')}
 								/>
-								<button class="btn btn-primary sm:order-4" title="Subscribe" aria-label="Subscribe">
+								<button
+									class="btn btn-primary sm:order-4"
+									title={t('tasks.plan.subscribe')}
+									aria-label={t('tasks.plan.subscribe')}
+								>
 									<Icon name="plus" />
 								</button>
 							</div>
 							<p class="mt-2 text-xs text-gray-500">
-								In Google Calendar: Settings → the calendar → “Secret address in iCal format”.
-								Ontoplano only reads that calendar; nothing you do here changes it.
+								{t('tasks.plan.inGoogleCalendarSettings')}
 							</p>
 						</form>
 					{/if}
@@ -2736,7 +2750,7 @@
 				-->
 				<div class="border border-gray-200 bg-white shadow-card">
 					<div class="eyebrow border-b border-gray-200 px-4 py-2.5 text-gray-500">
-						Start from a template
+						{t('tasks.plan.startFromATemplate')}
 					</div>
 					<div class="divide-y divide-gray-200">
 						{#each data.templates as template (template.key)}
@@ -2759,7 +2773,7 @@
 									<input type="hidden" name="key" value={template.key} />
 									{#if confirmingTemplate === template.key}
 										<button type="submit" class="btn btn-danger" use:armed>
-											This replaces your plan. Continue?
+											{t('tasks.plan.thisReplacesYourPlanContinue')}
 										</button>
 									{:else}
 										<button
@@ -2771,7 +2785,7 @@
 											}}
 											class="btn"
 										>
-											Use
+											{t('tasks.plan.use')}
 										</button>
 									{/if}
 								</form>
@@ -2785,7 +2799,7 @@
 
 	{#if showCopyPanel}
 		<div class="border border-gray-200 bg-white p-4 shadow-sm">
-			<h3 class="mb-3 text-sm font-medium text-gray-900">Copy to days</h3>
+			<h3 class="mb-3 text-sm font-medium text-gray-900">{t('tasks.plan.copyToDays')}</h3>
 			<form
 				method="post"
 				action="?/copyToWeekdays"
@@ -2835,14 +2849,14 @@
 						class="bg-gray-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:opacity-50"
 						disabled={copyTargetDays.size === 0}
 					>
-						Copy
+						{t('ui.copy')}
 					</button>
 					<button
 						type="button"
 						onclick={() => (showCopyPanel = false)}
 						class="border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 transition hover:bg-gray-50"
 					>
-						Cancel
+						{t('ui.cancel')}
 					</button>
 				</div>
 			</form>
@@ -2873,7 +2887,7 @@
 								type="submit"
 								class="border border-red-300 bg-red-50 px-3 py-1 text-sm font-medium text-red-700 transition hover:bg-red-100"
 							>
-								Confirm delete?
+								{t('tasks.plan.confirmDelete')}
 							</button>
 						{:else}
 							<button
@@ -2883,7 +2897,7 @@
 								}}
 								class="border border-red-200 bg-white px-3 py-1 text-sm text-red-600 transition hover:bg-red-50"
 							>
-								Delete selected
+								{t('tasks.plan.deleteSelected')}
 							</button>
 						{/if}
 					</form>
@@ -2891,7 +2905,7 @@
 						onclick={() => (showCopyPanel = true)}
 						class="border border-gray-300 bg-white px-3 py-1 text-sm text-gray-700 transition hover:bg-gray-50"
 					>
-						Copy to...
+						{t('tasks.plan.copyTo')}
 					</button>
 				</div>
 			</div>
@@ -2936,7 +2950,7 @@
 				{/if}
 
 				<div class="flex items-center gap-3">
-					<span class="text-sm font-medium text-gray-700">Repeats</span>
+					<span class="text-sm font-medium text-gray-700">{t('tasks.plan.repeats')}</span>
 					{#if editingKind}
 						<span class="text-sm text-gray-500">
 							{editingKind === 'slot' ? 'Comes back' : 'Once only'}
@@ -2968,7 +2982,7 @@
 							{/each}
 						</div>
 						{#if repeat === 'once'}
-							<span class="text-xs text-gray-500">Won't come back next week.</span>
+							<span class="text-xs text-gray-500">{t('tasks.plan.wonTComeBackNextWeek')}</span>
 						{/if}
 					{/if}
 				</div>
@@ -2977,7 +2991,7 @@
 				     first of the month, a stretch routine is every third day. -->
 				{#if repeat === 'weekly'}
 					<div class="flex flex-wrap items-center gap-3 border border-gray-200 bg-gray-50 p-3">
-						<span class="eyebrow shrink-0 text-gray-500">How often</span>
+						<span class="eyebrow shrink-0 text-gray-500">{t('tasks.plan.howOften')}</span>
 						<input type="hidden" name="recurrenceKind" value={recurrenceKind} />
 
 						<div class="flex">
@@ -2996,7 +3010,7 @@
 
 						{#if recurrenceKind === 'weeks' || recurrenceKind === 'days'}
 							<label class="flex items-center gap-2 text-sm text-gray-700">
-								Every
+								{t('tasks.plan.every')}
 								<NumberBox
 									autocomplete="off"
 									name="recurrenceInterval"
@@ -3009,7 +3023,7 @@
 							</label>
 						{:else if recurrenceKind === 'monthly'}
 							<label class="flex items-center gap-2 text-sm text-gray-700">
-								Day
+								{t('tasks.plan.day')}
 								<NumberBox
 									autocomplete="off"
 									name="recurrenceMonthDay"
@@ -3018,11 +3032,11 @@
 									bind:value={recurrenceMonthDay}
 									class="w-20"
 								/>
-								of each month
+								{t('tasks.plan.ofEachMonth')}
 							</label>
 							{#if recurrenceMonthDay > 28}
 								<span class="text-xs text-gray-500">
-									Falls on the last day in shorter months.
+									{t('tasks.plan.fallsOnTheLastDay')}
 								</span>
 							{/if}
 						{/if}
@@ -3035,7 +3049,7 @@
 							generated a routine invented in September onto days in August.
 						-->
 						<label class="flex items-center gap-2 text-sm text-gray-700">
-							counting from
+							{t('tasks.plan.countingFrom')}
 							<input
 								autocomplete="off"
 								name="recurrenceAnchor"
@@ -3069,7 +3083,7 @@
 						what the rule falls back to if somebody switches to weekly.
 					-->
 					{#if repeat === 'weekly' && (recurrenceKind === 'weekly' || recurrenceKind === 'weeks')}
-						<Field label="Day" span={4} required>
+						<Field label={t('tasks.plan.day')} span={4} required>
 							<select name="weekday" required bind:value={formWeekday} class="select">
 								{#each data.weekdays as day, i (i)}
 									<option value={i}>{day}</option>
@@ -3088,7 +3102,7 @@
 						-->
 						<input type="hidden" name="weekday" value={formWeekday} />
 					{:else}
-						<Field label="Date" span={4} required>
+						<Field label={t('ui.date')} span={4} required>
 							<input
 								autocomplete="off"
 								name="date"
@@ -3100,7 +3114,7 @@
 							/>
 						</Field>
 					{/if}
-					<Field label="Time" span={4} required>
+					<Field label={t('tasks.plan.time')} span={4} required>
 						<input
 							autocomplete="off"
 							bind:this={timeInput}
@@ -3111,7 +3125,7 @@
 							class="input"
 						/>
 					</Field>
-					<Field label="Duration" span={4} hint="minutes">
+					<Field label={t('tasks.plan.duration')} span={4} hint="minutes">
 						<NumberBox
 							autocomplete="off"
 							name="durationMinutes"
@@ -3123,19 +3137,19 @@
 				</FormGrid>
 
 				<FormGrid>
-					<Field label="Mode" span={6} required>
+					<Field label={t('tasks.plan.mode')} span={6} required>
 						<select name="mode" required bind:value={slotMode} class="select">
-							<option value="activity">Activity</option>
-							<option value="category">Category</option>
+							<option value="activity">{t('tasks.plan.activity')}</option>
+							<option value="category">{t('ui.category')}</option>
 							<!-- Only where there is a workout to pick: a mode that lands on
 							     an empty list is a dead end. -->
 							{#if data.workouts.length > 0}
-								<option value="workout">Workout</option>
+								<option value="workout">{t('tasks.plan.workout')}</option>
 							{/if}
 						</select>
 					</Field>
 					{#if slotMode === 'category'}
-						<Field label="Category" span={6} required>
+						<Field label={t('ui.category')} span={6} required>
 							<select name="categoryId" required bind:value={formCategoryId} class="select">
 								{#each data.categories as cat (cat.id)}
 									<option value={cat.id}>{cat.name}</option>
@@ -3143,20 +3157,20 @@
 							</select>
 						</Field>
 					{:else if slotMode === 'workout'}
-						<Field label="Workout" span={6} required>
+						<Field label={t('tasks.plan.workout')} span={6} required>
 							<select name="workoutId" required bind:value={formWorkoutId} class="select">
-								{#each data.workouts as t (t.id)}
-									<option value={t.id}>{t.title}</option>
+								{#each data.workouts as workout (workout.id)}
+									<option value={workout.id}>{workout.title}</option>
 								{/each}
 							</select>
 						</Field>
 					{:else}
-						<Field label="Activity" span={6} required>
+						<Field label={t('tasks.plan.activity')} span={6} required>
 							<select name="activityId" required bind:value={activityChoice} class="select">
 								{#each data.activities as act (act.id)}
 									<option value={String(act.id)}>{act.name}</option>
 								{/each}
-								<option value={NEW_ACTIVITY}>+ New activity...</option>
+								<option value={NEW_ACTIVITY}>{t('tasks.plan.newActivity2')}</option>
 							</select>
 						</Field>
 					{/if}
@@ -3165,16 +3179,16 @@
 				{#if slotMode === 'activity' && activityChoice === NEW_ACTIVITY}
 					<div class="border border-gray-200 bg-gray-50 p-3">
 						<FormGrid>
-							<Field label="New activity" span={8} required>
+							<Field label={t('tasks.plan.newActivity')} span={8} required>
 								<OneLine
 									name="newActivityName"
-									placeholder="e.g. learn russian"
+									placeholder={t('tasks.plan.eGLearnRussian')}
 									class="input"
 									required
 									autofocus
 								/>
 							</Field>
-							<Field label="Its category" span={4} required>
+							<Field label={t('tasks.plan.itsCategory')} span={4} required>
 								<select name="newActivityCategoryId" required class="select">
 									{#each data.categories as cat (cat.id)}
 										<option value={cat.id}>{cat.name}</option>
@@ -3187,7 +3201,7 @@
 
 				<FormGrid>
 					<Field
-						label="Notes"
+						label={t('ui.notes')}
 						span={12}
 						hint={slotMode === 'category' ? 'the first line is what the block says' : 'optional'}
 						required={slotMode === 'category'}
@@ -3225,7 +3239,7 @@
 						occurrence gets its own nudge as it appears.
 					-->
 					<Field
-						label="Remind me"
+						label={t('tasks.plan.remindMe')}
 						span={12}
 						hint="Minutes before it starts. Every time it comes round. Empty or 0 is not at all."
 					>
@@ -3249,7 +3263,7 @@
 								bind:value={remindLead}
 								placeholder="0"
 								class="w-28"
-								aria-label="Minutes before it starts"
+								aria-label={t('tasks.plan.minutesBeforeItStarts')}
 							/>
 							<div class="flex flex-wrap gap-1">
 								{#each [0, 5, 10, 30, 60, 1440] as minutes (minutes)}
@@ -3267,7 +3281,7 @@
 					</Field>
 				</FormGrid>
 
-				<MoreOptions label="Urgency, interest, energy" count={ratingsSet}>
+				<MoreOptions label={t('tasks.plan.urgencyInterestEnergy')} count={ratingsSet}>
 					{#each RATINGS as r (r)}
 						<div class="col-span-12 sm:col-span-4">
 							<RatingPicker rating={r} bind:value={formRatings[r]} />
@@ -3361,8 +3375,8 @@
 							}}
 						>
 							<input type="hidden" name="id" value={editingBlockId} />
-							<button type="submit" class="btn btn-sm" title="Take it off the day, keep the task">
-								Back to to-do
+							<button type="submit" class="btn btn-sm" title={t('tasks.plan.takeItOffTheDay')}>
+								{t('tasks.plan.backToToDo')}
 							</button>
 						</form>
 					{/if}
@@ -3390,8 +3404,8 @@
 								</form>
 							{:else}
 								<button
-									title="Delete"
-									aria-label="Delete"
+									title={t('ui.delete')}
+									aria-label={t('ui.delete')}
 									type="button"
 									onclick={() => (confirmingFormDelete = true)}
 									class="btn btn-danger btn-sm"
@@ -3406,7 +3420,7 @@
 		</div>
 
 		{#snippet footer()}
-			<button type="button" class="btn" onclick={closeForm}>Cancel</button>
+			<button type="button" class="btn" onclick={closeForm}>{t('ui.cancel')}</button>
 			<button type="submit" form="block-form" class="btn btn-primary">
 				{editingKind ? 'Save block' : repeat === 'once' ? 'Add one-off' : 'Add repeating block'}
 			</button>
@@ -3422,7 +3436,7 @@
 		day; this is for a range that has several.
 	-->
 	{#if effectiveView === 'day' && data.range.days.length > 1}
-		<div class="seg flex w-full" role="group" aria-label="Which day">
+		<div class="seg flex w-full" role="group" aria-label={t('tasks.plan.whichDay')}>
 			{#each data.range.days as day, i (day.date)}
 				<button
 					onclick={() => (selectedOffset = i)}
@@ -3457,14 +3471,14 @@
 				class="flex cursor-pointer list-none items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
 			>
 				<span class="text-xs text-gray-500">{todosOpen ? '▾' : '▸'}</span>
-				<span class="eyebrow text-gray-600">To-do</span>
+				<span class="eyebrow text-gray-600">{t('tasks.plan.toDo')}</span>
 				<span
 					class="tabular border border-gray-300 bg-gray-50 px-1 text-xs text-gray-600 text-gray-700"
 				>
 					{data.todos.length}
 				</span>
 				{#if draggingBlock}
-					<span class="text-xs text-gray-700">drop here to take it off the day</span>
+					<span class="text-xs text-gray-700">{t('tasks.plan.dropHereToTakeIt')}</span>
 				{:else if !todosOpen}
 					<!-- What these are, not how to move them: a chip beside a grid is
 					     something you drag, and nobody needed to be told. -->
@@ -3510,7 +3524,7 @@
 								: 'border-gray-200 bg-white text-gray-700'} {dragTodoId === todo.id
 							? 'opacity-40'
 							: ''}"
-						title="Drag onto the grid, or tap and then tap a time"
+						title={t('tasks.plan.dragOntoTheGridOr')}
 					>
 						{#if todo.categoryColor}
 							<Swatch color={todo.categoryColor} />
@@ -3522,9 +3536,13 @@
 							tint alone says it to some people and not others.
 						-->
 						{#if todo.due === 'today'}
-							<span class="ml-1 text-[0.65rem] tracking-wide text-gray-500 uppercase">today</span>
+							<span class="ml-1 text-[0.65rem] tracking-wide text-gray-500 uppercase"
+								>{t('tasks.plan.today2')}</span
+							>
 						{:else if todo.due === 'overdue'}
-							<span class="ml-1 text-[0.65rem] tracking-wide text-gray-500 uppercase">owed</span>
+							<span class="ml-1 text-[0.65rem] tracking-wide text-gray-500 uppercase"
+								>{t('tasks.plan.owed')}</span
+							>
 						{/if}
 					</button>
 				{/each}
@@ -3535,13 +3553,13 @@
 					<button
 						type="button"
 						class="text-xs text-gray-500 underline"
-						onclick={() => (placingTodoId = null)}>cancel</button
+						onclick={() => (placingTodoId = null)}>{t('tasks.plan.cancel')}</button
 					>
 				{:else}
 					<span class="hidden text-xs text-gray-500 sm:inline">
-						drag onto the grid to give it a time, or back here to take it off
+						{t('tasks.plan.dragOntoTheGridTo')}
 					</span>
-					<span class="text-xs text-gray-500 sm:hidden">tap one, then tap a time</span>
+					<span class="text-xs text-gray-500 sm:hidden">{t('tasks.plan.tapOneThenTapA')}</span>
 				{/if}
 			</div>
 		</details>
@@ -3638,27 +3656,28 @@
 		     line below is hidden on a coarse pointer, and used to be the only
 		     place the grid explained how to make a block. -->
 		<p class="hidden text-xs text-gray-500 [@media(pointer:coarse)]:block">
-			Press and hold on the grid to add a block there.
+			{t('tasks.plan.pressAndHoldOnThe')}
 		</p>
 		<p class="kbd-hint min-w-0 flex-1 text-xs text-gray-500">
-			Drag to create · drag a block to move · click it to edit, skip or delete · hold <kbd
-				class="border border-gray-300 bg-gray-50 px-1 text-gray-700">Ctrl</kbd
+			{t('tasks.plan.dragToCreateDrag')}
+			<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">{t('tasks.plan.ctrl')}</kbd>
+			{t('tasks.plan.whileDraggingToDuplicateOr')}
+			<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">{t('tasks.plan.alt')}</kbd>
+			{t('tasks.plan.toMoveOrResizeJust')}
+			<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">{t('tasks.plan.shift')}</kbd
 			>
-			while dragging to duplicate, or
-			<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">Alt</kbd>
-			to move or resize just this day's occurrence ·
-			<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">Shift</kbd>
-			drag to select several, then drag one to move them all ·
-			<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">Ctrl</kbd>+<kbd
-				class="border border-gray-300 bg-gray-50 px-1 text-gray-700">Z</kbd
-			> undoes · snaps to 15min
+			{t('tasks.plan.dragToSelectSeveralThen')}
+			<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">{t('tasks.plan.ctrl')}</kbd
+			>+<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">Z</kbd>
+			{t('tasks.plan.undoesSnapsTo15min')}
 		</p>
 		<div class="flex shrink-0 items-center gap-1">
 			<span class="mr-1 text-xs whitespace-nowrap text-gray-500">
-				Zoom
+				{t('tasks.plan.zoom')}
 				<span class="kbd-hint"
-					>(<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700">Ctrl</kbd
-					>+scroll)</span
+					>(<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"
+						>{t('tasks.plan.ctrl')}</kbd
+					>{t('tasks.plan.scroll')}</span
 				>
 			</span>
 			<!--
@@ -3671,14 +3690,14 @@
 				type="button"
 				onclick={() => setZoom(zoomIndex - 1)}
 				disabled={zoomIndex === 0}
-				title="Zoom out (-)"
-				aria-label="Zoom out"
+				title={t('tasks.plan.zoomOut2')}
+				aria-label={t('tasks.plan.zoomOut')}
 				class="icon-btn disabled:cursor-not-allowed disabled:opacity-30">&minus;</button
 			>
 			<button
 				type="button"
 				onclick={() => setZoom(GRID_DEFAULT_ZOOM_INDEX)}
-				title="Reset zoom (0)"
+				title={t('tasks.plan.resetZoom0')}
 				class="btn btn-sm tabular"
 				>{Math.round((slotHeight / GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX]) * 100)}%</button
 			>
@@ -3686,8 +3705,8 @@
 				type="button"
 				onclick={() => setZoom(zoomIndex + 1)}
 				disabled={zoomIndex === GRID_ZOOM_LEVELS.length - 1}
-				title="Zoom in (+)"
-				aria-label="Zoom in"
+				title={t('tasks.plan.zoomIn2')}
+				aria-label={t('tasks.plan.zoomIn')}
 				class="icon-btn disabled:cursor-not-allowed disabled:opacity-30">+</button
 			>
 		</div>
@@ -3725,7 +3744,7 @@
 			onclick={() => (showCsvImport = !showCsvImport)}
 			class="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
 		>
-			Import CSV
+			{t('tasks.plan.importCsv')}
 			<span class="text-xs text-gray-500">{showCsvImport ? '▲' : '▼'}</span>
 		</button>
 		{#if showCsvImport}
@@ -3740,8 +3759,7 @@
 				class="space-y-3 border-t border-gray-200 px-4 py-4"
 			>
 				<p class="text-xs text-gray-500">
-					Format: h (time), d (duration in min), then Mon-Sun activity names. Time: 610 = 06:10,
-					1810 = 18:10.
+					{t('tasks.plan.formatHTimeDDuration')}
 				</p>
 				<textarea
 					name="csv"
@@ -3752,14 +3770,14 @@
 				<div class="flex items-center gap-4">
 					<label class="flex items-center gap-2 text-sm text-gray-700">
 						<input type="checkbox" name="clearExisting" class="border-gray-300" />
-						Clear existing plan
+						{t('tasks.plan.clearExistingPlan')}
 					</label>
 				</div>
 				<button
 					type="submit"
 					class="bg-gray-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800"
 				>
-					Import
+					{t('tasks.plan.import')}
 				</button>
 			</form>
 		{/if}

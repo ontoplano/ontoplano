@@ -2,6 +2,9 @@
 	import { resolve } from '$app/paths';
 	import StreamChart from '$lib/components/StreamChart.svelte';
 	import type { PageServerData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data }: { data: PageServerData } = $props();
 
@@ -36,9 +39,9 @@
 	</div>
 
 	<p class="text-xs text-gray-500">
-		Change how this is displayed in
+		{t('data.slug.changeHowThisIsDisplayed')}
 		<a href={resolve('/settings/integrations/connections')} class="underline underline-offset-2"
-			>Integrations</a
+			>{t('data.slug.integrations')}</a
 		>.
 	</p>
 </div>

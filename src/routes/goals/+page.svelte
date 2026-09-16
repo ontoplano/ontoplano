@@ -30,6 +30,9 @@
 		type Horizon
 	} from '$lib/goals.js';
 	import { SECTION_COLORS } from '$lib/colors.js';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -233,7 +236,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<RoomBar title="Goals" />
+	<RoomBar title={t('goals.goals')} />
 	<RoomToolbar>
 		{#snippet tools()}
 			<!-- Managing areas is not filtering by them, so it stands with the
@@ -241,7 +244,7 @@
 			     an account with no goals. -->
 			{#if data.goals.length > 0}
 				<button onclick={() => (showAreas = true)} class="btn btn-sm" data-tour="goal-areas">
-					Areas
+					{t('goals.areas')}
 				</button>
 			{/if}
 		{/snippet}
@@ -252,7 +255,7 @@
 	<Modal
 		bind:open={showAreas}
 		error={form?.message}
-		title="Areas"
+		title={t('goals.areas')}
 		description="Fitness, study, money — whatever you track."
 		size="sm"
 	>
@@ -264,13 +267,13 @@
 						<span class="flex-1 text-sm text-gray-900">{area.name}</span>
 						<form method="post" action="?/deleteArea" use:enhance>
 							<input type="hidden" name="id" value={area.id} />
-							<button class="btn btn-quiet btn-sm"><Icon name="trash" /> Remove</button>
+							<button class="btn btn-quiet btn-sm"><Icon name="trash" /> {t('ui.remove')}</button>
 						</form>
 					</div>
 				{/each}
 			</div>
 		{:else}
-			<EmptyState icon="tag" title="No areas yet" compact />
+			<EmptyState icon="tag" title={t('goals.noAreasYet')} compact />
 		{/if}
 
 		<form
@@ -283,18 +286,18 @@
 			class="mt-4"
 		>
 			<FormGrid>
-				<Field label="New area" span={8}>
-					<OneLine name="label" placeholder="e.g. fitness" class="input" required />
+				<Field label={t('goals.newArea')} span={8}>
+					<OneLine name="label" placeholder={t('goals.eGFitness')} class="input" required />
 				</Field>
-				<Field label="Colour" span={4}>
+				<Field label={t('ui.colour')} span={4}>
 					<input name="color" type="color" value="#6b7280" class="input h-9 p-1" />
 				</Field>
 			</FormGrid>
 		</form>
 
 		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (showAreas = false)}>Done</button>
-			<button type="submit" form="area-form" class="btn btn-primary">Add area</button>
+			<button type="button" class="btn" onclick={() => (showAreas = false)}>{t('ui.done')}</button>
+			<button type="submit" form="area-form" class="btn btn-primary">{t('goals.addArea')}</button>
 		{/snippet}
 	</Modal>
 
@@ -309,14 +312,14 @@
 	{#if data.areas.length > 0 || data.goals.length > 0}
 		<div class="flex flex-wrap items-center gap-1 text-xs">
 			{#if data.areas.length > 0}
-				<span class="eyebrow mr-1 text-gray-500">Area</span>
+				<span class="eyebrow mr-1 text-gray-500">{t('goals.area')}</span>
 			{/if}
 			{#if data.areas.length > 0}
 				<button
 					onclick={() => (areaFilter = null)}
 					class="border px-2 py-0.5 {areaFilter === null
 						? 'border-gray-900 bg-gray-900 font-semibold text-white'
-						: 'border-gray-300 bg-white text-gray-600 hover:text-gray-900'}">All</button
+						: 'border-gray-300 bg-white text-gray-600 hover:text-gray-900'}">{t('ui.all')}</button
 				>
 			{/if}
 			{#each data.areas as area (area.id)}
@@ -369,10 +372,10 @@
 			{/if}
 
 			<FormGrid>
-				<Field label="Goal" span={12} required>
+				<Field label={t('goals.goal')} span={12} required>
 					<OneLine
 						name="heading"
-						placeholder="e.g. train three times a week"
+						placeholder={t('goals.eGTrainThreeTimesA')}
 						value={editing?.title ?? ''}
 						class="input"
 						required
@@ -380,7 +383,7 @@
 					/>
 				</Field>
 
-				<Field label="Horizon" span={4}>
+				<Field label={t('goals.horizon')} span={4}>
 					<select name="horizon" bind:value={formHorizon} class="select">
 						{#each HORIZONS as h (h)}
 							<option value={h}>{HORIZON_LABELS[h]}</option>
@@ -388,7 +391,11 @@
 					</select>
 				</Field>
 
-				<Field label="Starts" span={4} hint={formPeriod ? `Counts for ${formPeriod}` : ''}>
+				<Field
+					label={t('goals.starts')}
+					span={4}
+					hint={formPeriod ? `Counts for ${formPeriod}` : ''}
+				>
 					<input
 						autocomplete="off"
 						name="startDate"
@@ -398,9 +405,9 @@
 					/>
 				</Field>
 
-				<Field label="Area" span={4}>
+				<Field label={t('goals.area')} span={4}>
 					<select name="areaId" class="select">
-						<option value="">— none —</option>
+						<option value="">{t('goals.none')}</option>
 						{#each data.areas as area (area.id)}
 							<option value={area.id} selected={editing?.areaId === area.id}>{area.name}</option>
 						{/each}
@@ -415,7 +422,7 @@
 					recorded — and each keeps its own number.
 				-->
 				<div class="col-span-12">
-					<span class="eyebrow text-gray-600">Measured by</span>
+					<span class="eyebrow text-gray-600">{t('goals.measuredBy')}</span>
 					<div class="mt-1 space-y-2">
 						{#each formTargets as target, i (i)}
 							<div class="flex items-center gap-2">
@@ -428,7 +435,7 @@
 									being decided rather than somewhere in a settings screen.
 								-->
 								<label class="shrink-0">
-									<span class="sr-only">What kind of number</span>
+									<span class="sr-only">{t('goals.whatKindOfNumber')}</span>
 									<select
 										name="targetWhole"
 										bind:value={target.whole}
@@ -454,15 +461,15 @@
 									autocomplete="off"
 									name="targetUnit"
 									list="goal-units"
-									placeholder="books, km, gigs"
+									placeholder={t('goals.booksKmGigs')}
 									bind:value={target.unit}
 									class="input min-w-0 flex-1"
 								/>
 								<button
 									type="button"
 									class="icon-btn icon-btn-danger"
-									title="Remove measure"
-									aria-label="Remove measure"
+									title={t('goals.removeMeasure')}
+									aria-label={t('goals.removeMeasure')}
 									onclick={() => (formTargets = formTargets.filter((_, at) => at !== i))}
 								>
 									<Icon name="trash" />
@@ -480,17 +487,18 @@
 						class="btn btn-sm mt-2"
 						onclick={() => (formTargets = [...formTargets, blankTarget()])}
 					>
-						<Icon name="plus" /> Add measure
+						<Icon name="plus" />
+						{t('goals.addMeasure')}
 					</button>
 					<span class="mt-1 block text-xs text-gray-500">
-						Optional. Leave it empty for a goal that is simply done or not.
+						{t('goals.optionalLeaveItEmptyFor')}
 					</span>
 				</div>
 
 				{#if !editingId}
-					<Field label="Part of" span={4}>
+					<Field label={t('goals.partOf')} span={4}>
 						<select name="parentId" class="select">
-							<option value="">— standalone —</option>
+							<option value="">{t('goals.standalone')}</option>
 							{#each parentOptions as g (g.id)}
 								<option value={g.id}>{HORIZON_LABELS[g.horizon]}: {g.title}</option>
 							{/each}
@@ -498,14 +506,14 @@
 					</Field>
 				{/if}
 
-				<Field label="Notes" span={12}>
+				<Field label={t('ui.notes')} span={12}>
 					<textarea name="notes" rows="3" class="textarea" value={editing?.notes ?? ''}></textarea>
 				</Field>
 			</FormGrid>
 		</form>
 
 		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (showForm = false)}>Cancel</button>
+			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 			<button type="submit" form="goal-form" class="btn btn-primary">
 				{editingId ? 'Save' : 'Create goal'}
 			</button>
@@ -517,19 +525,22 @@
 			{#if data.goals.length === 0}
 				<EmptyState
 					icon="goals"
-					title="No goals yet"
+					title={t('goals.noGoalsYet')}
 					description="A goal is a commitment with a deadline attached. Start with a week — you can promote it later."
 				>
 					{#snippet action()}
 						<button onclick={openCreate} class="btn btn-primary">
-							<Icon name="plus" /> New goal
+							<Icon name="plus" />
+							{t('goals.newGoal')}
 						</button>
 					{/snippet}
 				</EmptyState>
 			{:else}
-				<EmptyState icon="goals" title="No goals in this area">
+				<EmptyState icon="goals" title={t('goals.noGoalsInThisArea')}>
 					{#snippet action()}
-						<button onclick={() => (areaFilter = null)} class="btn">Show every area</button>
+						<button onclick={() => (areaFilter = null)} class="btn"
+							>{t('goals.showEveryArea')}</button
+						>
 					{/snippet}
 				</EmptyState>
 			{/if}
@@ -650,7 +661,7 @@
 																name="currentValue"
 																value={Math.max(0, target.currentValue - COUNT_STEP)}
 																disabled={target.currentValue <= 0}
-																title="One fewer"
+																title={t('goals.oneFewer')}
 																aria-label={`One fewer ${target.unit || 'towards this'}`.trim()}
 															>
 																<Icon name="minus" />
@@ -662,7 +673,7 @@
 																class="icon-btn"
 																name="currentValue"
 																value={target.currentValue + COUNT_STEP}
-																title="One more"
+																title={t('goals.oneMore')}
 																aria-label={`One more ${target.unit || 'towards this'}`.trim()}
 															>
 																<Icon name="plus" />
@@ -692,8 +703,8 @@
 														{#if !target.whole}
 															<button
 																class="icon-btn"
-																title="Save progress"
-																aria-label="Save progress"
+																title={t('goals.saveProgress')}
+																aria-label={t('goals.saveProgress')}
 															>
 																<Icon name="check" />
 															</button>
@@ -711,7 +722,7 @@
 										<button
 											onclick={() => (openTasksId = openTasksId === goal.id ? null : goal.id)}
 											class="btn btn-sm btn-quiet mt-2"
-											title="What counts towards this goal"
+											title={t('goals.whatCountsTowardsThisGoal')}
 										>
 											Tasks ({goal.linkedSlotIds.length +
 												goal.linkedTodoIds.length +
@@ -761,41 +772,41 @@
 										<button
 											type="button"
 											class="btn btn-sm"
-											title="Close it as done"
+											title={t('goals.closeItAsDone')}
 											onclick={() => closeLater(goal, 'achieved')}
 										>
-											Achieved
+											{t('goals.achieved')}
 										</button>
 										<button
 											type="button"
 											class="btn btn-sm btn-quiet"
-											title="Close it as not done"
+											title={t('goals.closeItAsNotDone')}
 											onclick={() => closeLater(goal, 'missed')}
 										>
-											Missed
+											{t('goals.missed')}
 										</button>
 									{:else}
 										<form method="post" action="?/close" use:enhance>
 											<input type="hidden" name="id" value={goal.id} />
 											<input type="hidden" name="status" value="open" />
-											<button class="btn btn-sm">Reopen</button>
+											<button class="btn btn-sm">{t('goals.reopen')}</button>
 										</form>
 									{/if}
 									<button
-										title="Edit"
-										aria-label="Edit"
+										title={t('ui.edit')}
+										aria-label={t('ui.edit')}
 										onclick={() => openEdit(goal)}
 										class="icon-btn ml-auto"><Icon name="edit" /></button
 									>
 									{#if confirmingDelete === goal.id}
 										<form method="post" action="?/remove" use:enhance>
 											<input type="hidden" name="id" value={goal.id} />
-											<button class="btn btn-sm btn-danger" use:armed>Confirm?</button>
+											<button class="btn btn-sm btn-danger" use:armed>{t('goals.confirm')}</button>
 										</form>
 									{:else}
 										<button
-											title="Delete"
-											aria-label="Delete"
+											title={t('ui.delete')}
+											aria-label={t('ui.delete')}
 											onclick={() => (confirmingDelete = goal.id)}
 											class="icon-btn icon-btn-danger"><Icon name="trash" /></button
 										>
@@ -849,7 +860,7 @@
 
 									{#if goal.linkedTodoIds.length + goal.linkedSlotIds.length + goal.linkedActivityIds.length === 0}
 										<p class="py-1 text-xs text-gray-500">
-											Nothing linked yet — progress is the number you type in.
+											{t('goals.nothingLinkedYetProgress')}
 										</p>
 									{/if}
 
@@ -861,7 +872,7 @@
 											linkingId = goal.id;
 										}}
 									>
-										Choose tasks
+										{t('goals.chooseTasks')}
 									</button>
 								</div>
 							{/if}
@@ -869,7 +880,7 @@
 					{/each}
 
 					{#if column.goals.length === 0}
-						<p class="py-3 text-xs text-gray-500">Nothing at this horizon.</p>
+						<p class="py-3 text-xs text-gray-500">{t('goals.nothingAtThisHorizon')}</p>
 					{/if}
 				</div>
 			</section>
@@ -880,7 +891,7 @@
 		open={linkingId !== null}
 		error={form?.message}
 		onclose={() => (linkingId = null)}
-		title="Linked tasks"
+		title={t('goals.linkedTasks')}
 		description="Linked tasks make progress countable — how many of these actually got done inside the period, instead of a number you type in."
 		size="lg"
 	>
@@ -899,7 +910,7 @@
 
 				<div class="grid gap-4 sm:grid-cols-3">
 					<div>
-						<span class="eyebrow text-gray-600">Activities</span>
+						<span class="eyebrow text-gray-600">{t('goals.activities')}</span>
 						<div class="mt-2 max-h-64 space-y-1 overflow-y-auto">
 							{#each data.activities as a (a.id)}
 								<label class="flex items-center gap-2 text-sm text-gray-700">
@@ -913,12 +924,12 @@
 									{a.name}
 								</label>
 							{:else}
-								<EmptyState icon="planner" title="No activities yet" compact />
+								<EmptyState icon="planner" title={t('goals.noActivitiesYet')} compact />
 							{/each}
 						</div>
 					</div>
 					<div>
-						<span class="eyebrow text-gray-600">Weekly blocks</span>
+						<span class="eyebrow text-gray-600">{t('goals.weeklyBlocks')}</span>
 						<div class="mt-2 max-h-64 space-y-1 overflow-y-auto">
 							{#each data.slots as sl (sl.id)}
 								<label class="flex items-center gap-2 text-sm text-gray-700">
@@ -933,12 +944,12 @@
 									{sl.name}
 								</label>
 							{:else}
-								<EmptyState icon="calendar" title="No weekly blocks yet" compact />
+								<EmptyState icon="calendar" title={t('goals.noWeeklyBlocksYet')} compact />
 							{/each}
 						</div>
 					</div>
 					<div>
-						<span class="eyebrow text-gray-600">To-dos</span>
+						<span class="eyebrow text-gray-600">{t('goals.toDos')}</span>
 						<div class="mt-2 max-h-64 space-y-1 overflow-y-auto">
 							<!--
 								Open to-dos, plus any DONE one this goal already counts.
@@ -966,7 +977,7 @@
 									>
 								</label>
 							{:else}
-								<p class="text-xs text-gray-500">No open todos.</p>
+								<p class="text-xs text-gray-500">{t('goals.noOpenTodos')}</p>
 							{/each}
 						</div>
 						{#if !showDoneTodos}
@@ -975,7 +986,7 @@
 								class="btn btn-sm btn-quiet mt-2"
 								onclick={() => (showDoneTodos = true)}
 							>
-								Show completed to-dos
+								{t('goals.showCompletedToDos')}
 							</button>
 						{/if}
 					</div>
@@ -984,8 +995,9 @@
 		{/if}
 
 		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (linkingId = null)}>Cancel</button>
-			<button type="submit" form="links-form" class="btn btn-primary">Save links</button>
+			<button type="button" class="btn" onclick={() => (linkingId = null)}>{t('ui.cancel')}</button>
+			<button type="submit" form="links-form" class="btn btn-primary">{t('goals.saveLinks')}</button
+			>
 		{/snippet}
 	</Modal>
 </div>

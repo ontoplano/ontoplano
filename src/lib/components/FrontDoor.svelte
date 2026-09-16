@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import Logo from '$lib/components/Logo.svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * What `/` is when nobody is signed in.
@@ -51,9 +54,11 @@
 
 	<div class="mt-8 flex flex-wrap items-center justify-center gap-3">
 		{#if canRegister}
-			<a href="{resolve('/login')}?register" class="btn btn-primary">Create an account</a>
+			<a href="{resolve('/login')}?register" class="btn btn-primary"
+				>{t('frontDoor.createAnAccount')}</a
+			>
 		{/if}
-		<a href={resolve('/login')} class="btn">Sign in</a>
+		<a href={resolve('/login')} class="btn">{t('frontDoor.signIn')}</a>
 	</div>
 
 	{#if !canRegister}
@@ -65,17 +70,17 @@
 			arrives at one should learn that, not wonder where the button went.
 		-->
 		<p class="mt-4 text-sm text-gray-500">
-			This instance is not taking new accounts. Its owner can invite you.
+			{t('frontDoor.thisInstanceIsNotTaking')}
 		</p>
 	{/if}
 
 	<p class="mt-10 text-sm text-gray-500">
 		<a class="underline underline-offset-2 hover:text-gray-900" href={siteUrl} rel="external"
-			>What ontoplano is</a
+			>{t('frontDoor.whatOntoplanoIs')}</a
 		>
 		·
 		<a class="underline underline-offset-2 hover:text-gray-900" href={docsUrl} rel="external"
-			>How it works</a
+			>{t('frontDoor.howItWorks')}</a
 		>
 	</p>
 </div>

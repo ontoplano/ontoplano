@@ -10,6 +10,9 @@
 	import Banner from '$lib/components/Banner.svelte';
 	import KeyReach from '$lib/components/KeyReach.svelte';
 	import { whyNot } from '$lib/capabilities';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * Letting an assistant use this account, for somebody who has never heard
@@ -207,7 +210,7 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 		somebody who does know it will look for it.
 	-->
 	<Card
-		title="Let an AI assistant use this app"
+		title={t('settings.integrations.letAnAiAssistantUse')}
 		description="Your week, to-do list, diary, shopping list or whatever you want, reachable by an assistant you already talk to."
 	>
 		<!--
@@ -237,13 +240,17 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 			<div class="space-y-8">
 				<!-- Step one. -->
 				<div>
-					<h3 class="text-base font-semibold text-gray-900">1 · Make a key</h3>
+					<h3 class="text-base font-semibold text-gray-900">
+						{t('settings.integrations.1MakeAKey')}
+					</h3>
 					<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">
-						A key is the password you hand to the assistant. It is shown once, when you make it.
+						{t('settings.integrations.aKeyIsThePassword')}
 						<!-- Its own line, not the tail of the one above: a warning broken across
 					     a wrap reads as an afterthought, and this one is the point. -->
 						<br />
-						<strong class="font-semibold text-red-600">Do not share it with anyone.</strong>
+						<strong class="font-semibold text-red-600"
+							>{t('settings.integrations.doNotShareItWith')}</strong
+						>
 					</p>
 
 					<!--
@@ -273,9 +280,11 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 									class="input w-auto flex-1 sm:max-w-64"
 									ariaLabel="What to call this key"
 								/>
-								<button class="btn btn-primary btn-sm" type="submit">Make it</button>
+								<button class="btn btn-primary btn-sm" type="submit"
+									>{t('settings.integrations.makeIt')}</button
+								>
 								<button type="button" class="btn btn-sm btn-quiet" onclick={() => (naming = false)}>
-									Cancel
+									{t('ui.cancel')}
 								</button>
 							</div>
 
@@ -305,9 +314,11 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 							</div>
 
 							<fieldset class="w-full">
-								<legend class="eyebrow text-gray-600">What it may do</legend>
+								<legend class="eyebrow text-gray-600"
+									>{t('settings.integrations.whatItMayDo')}</legend
+								>
 								<p class="mt-1 mb-3 max-w-2xl text-xs leading-relaxed text-gray-500">
-									All of it, unless you say otherwise. Anything unticked stays out of reach.
+									{t('settings.integrations.allOfItUnlessYou')}
 								</p>
 
 								<!--
@@ -326,8 +337,12 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 										<thead>
 											<tr class="border-b border-gray-200">
 												<th class="py-1 text-left font-normal text-gray-500"></th>
-												<th class="eyebrow w-16 py-1 text-center text-gray-600">Read</th>
-												<th class="eyebrow w-16 py-1 text-center text-gray-600">Write</th>
+												<th class="eyebrow w-16 py-1 text-center text-gray-600"
+													>{t('settings.integrations.read')}</th
+												>
+												<th class="eyebrow w-16 py-1 text-center text-gray-600"
+													>{t('settings.integrations.write')}</th
+												>
 											</tr>
 										</thead>
 										<tbody class="divide-y divide-gray-200">
@@ -399,10 +414,11 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 								>
 									<input type="checkbox" name="scopes" value="destructive" class="mt-0.5" />
 									<span>
-										<strong class="font-semibold text-red-600">…and let it delete things</strong>
+										<strong class="font-semibold text-red-600"
+											>{t('settings.integrations.andLetItDeleteThings')}</strong
+										>
 										<span class="mt-0.5 block text-xs leading-relaxed text-gray-500">
-											Removing is permanent. Without this, an assistant can add and change things
-											but never take them away.
+											{t('settings.integrations.removingIsPermanentWithoutThis')}
 										</span>
 									</span>
 								</label>
@@ -414,7 +430,7 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 							class="btn btn-primary btn-sm mt-2"
 							onclick={() => (naming = true)}
 						>
-							Make a key
+							{t('settings.integrations.makeAKey')}
 						</button>
 						<!--
 						The count and the way to them, and nothing else.
@@ -448,14 +464,17 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 						needs nothing copied from here at all.
 					-->
 						<div class="mt-3 border border-gray-300 bg-gray-50 p-3">
-							<span class="eyebrow block text-gray-600">Your new key</span>
+							<span class="eyebrow block text-gray-600"
+								>{t('settings.integrations.yourNewKey')}</span
+							>
 							<div class="mt-1">
-								<CopyBlock text={key} label="Copy the key" />
+								<CopyBlock text={key} label={t('settings.integrations.copyTheKey')} />
 							</div>
 							<p class="mt-2 text-xs leading-relaxed text-gray-500">
 								<strong class="font-semibold text-gray-900"
-									>This secret will only be shown once.</strong
-								> It is already in the text below.
+									>{t('settings.integrations.thisSecretWillOnlyBe')}</strong
+								>
+								{t('settings.integrations.itIsAlreadyInThe')}
 							</p>
 						</div>
 					{/if}
@@ -473,9 +492,11 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 				docs.
 			-->
 				<div>
-					<h3 class="text-base font-semibold text-gray-900">2 · Hand it to your assistant</h3>
+					<h3 class="text-base font-semibold text-gray-900">
+						{t('settings.integrations.2HandItTo')}
+					</h3>
 					<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">
-						Which one are you using?
+						{t('settings.integrations.whichOneAreYouUsing')}
 					</p>
 
 					<!--
@@ -517,7 +538,11 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 									<h4 class="eyebrow text-gray-600">{way.name}</h4>
 									<p class="mt-1 max-w-2xl text-sm leading-relaxed text-gray-500">{way.note}</p>
 									<div class="mt-2">
-										<CopyBlock text={way.text} wrap={way.wrap} label="Copy this" />
+										<CopyBlock
+											text={way.text}
+											wrap={way.wrap}
+											label={t('settings.integrations.copyThis')}
+										/>
 									</div>
 								</div>
 							{/each}
@@ -526,7 +551,11 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 						<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">{chosen.note}</p>
 
 						<div class="mt-2 max-w-3xl">
-							<CopyBlock text={chosen.text} wrap={chosen.wrap} label="Copy this" />
+							<CopyBlock
+								text={chosen.text}
+								wrap={chosen.wrap}
+								label={t('settings.integrations.copyThis')}
+							/>
 						</div>
 					{/if}
 
@@ -540,7 +569,7 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 						<a
 							href="{data.links.docs}/ai-agents#connect-it"
 							rel="external"
-							class="underline underline-offset-2">How to set each one up permanently — the docs</a
+							class="underline underline-offset-2">{t('settings.integrations.howToSetEachOne')}</a
 						>.
 					</p>
 				</div>
@@ -561,16 +590,12 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 		together.
 	-->
 	<Card
-		title="What your assistants did"
+		title={t('settings.integrations.whatYourAssistantsDid')}
 		description="Everything an assistant has changed, newest first. Anything it removed can be put back."
 		flush={data.assistantCalls.length > 0}
 	>
 		{#if data.assistantCalls.length === 0}
-			<EmptyState
-				icon="plug"
-				title="Nothing yet — everything an assistant changes is listed here"
-				compact
-			/>
+			<EmptyState icon="plug" title={t('settings.integrations.nothingYetEverythingAn')} compact />
 		{:else}
 			<!-- The pressed row itself turns into "Put back" — that is the
 			     confirmation, in place, moving nothing. -->
@@ -589,11 +614,15 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 						</span>
 						{#if one.destroyed}
 							{#if one.restoredAt}
-								<span class="shrink-0 text-xs text-gray-500">Put back</span>
+								<span class="shrink-0 text-xs text-gray-500"
+									>{t('settings.integrations.putBack')}</span
+								>
 							{:else}
 								<form method="post" action="?/putBack" use:enhance class="shrink-0">
 									<input type="hidden" name="id" value={one.id} />
-									<button type="submit" class="btn btn-sm">Put it back</button>
+									<button type="submit" class="btn btn-sm"
+										>{t('settings.integrations.putItBack')}</button
+									>
 								</form>
 							{/if}
 						{/if}
@@ -604,9 +633,10 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 	</Card>
 
 	<p class="max-w-2xl text-sm leading-relaxed text-gray-500">
-		Wiring up a script, a widget or a calendar instead?
+		{t('settings.integrations.wiringUpAScriptA')}
 		<a href={resolve('/settings/integrations/connections')} class="underline underline-offset-2"
-			>Integrations</a
-		> has the full form, with every permission and an expiry.
+			>{t('settings.integrations.integrations')}</a
+		>
+		{t('settings.integrations.hasTheFullFormWith')}
 	</p>
 </div>

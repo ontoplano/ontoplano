@@ -11,6 +11,9 @@
 	import { armed } from '$lib/actions/armed';
 	import { mailKindLabel } from '$lib/mail-kinds';
 	import type { PageServerData, ActionData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -81,21 +84,29 @@
 	<div class="mb-4">
 		<Banner kind="error" message={data.billingBroken} />
 		<p class="mt-2 text-sm text-gray-600">
-			Nobody can register until this is fixed. Existing accounts are untouched, and you can still
-			start a trial by hand from an account's page.
+			{t('admin.nobodyCanRegisterUntilThis')}
 		</p>
 	</div>
 {/if}
 
 <div class="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-	<Card title="Accounts" description="Search by name or address. Newest first when empty." flush>
+	<Card
+		title={t('admin.accounts')}
+		description="Search by name or address. Newest first when empty."
+		flush
+	>
 		<form method="get" class="flex gap-2 border-b border-gray-200 p-3">
-			<OneLine name="q" placeholder="somebody@example.com" value={data.query} class="input" />
-			<button class="btn btn-sm"><Icon name="search" /> Search</button>
+			<OneLine
+				name="q"
+				placeholder={t('admin.somebodyExampleCom')}
+				value={data.query}
+				class="input"
+			/>
+			<button class="btn btn-sm"><Icon name="search" /> {t('ui.search')}</button>
 		</form>
 
 		{#if data.accounts.length === 0}
-			<EmptyState icon="user" title="Nobody matches that" />
+			<EmptyState icon="user" title={t('admin.nobodyMatchesThat')} />
 		{:else}
 			<div class="divide-y divide-gray-200">
 				{#each data.accounts as account (account.id)}
@@ -121,9 +132,9 @@
 						</a>
 
 						{#if account.isOwner}
-							<span class="badge-role badge-owner shrink-0">owner</span>
+							<span class="badge-role badge-owner shrink-0">{t('admin.owner')}</span>
 						{:else if account.role === 'admin'}
-							<span class="badge-role badge-admin shrink-0">admin</span>
+							<span class="badge-role badge-admin shrink-0">{t('admin.admin')}</span>
 						{:else}
 							<span class="eyebrow shrink-0 text-gray-500">{account.role}</span>
 						{/if}
@@ -131,9 +142,9 @@
 						{#if account.id === data.me}
 							<!-- Your own keys are not yours to take: an instance whose last
 							     administrator demoted themselves has nobody who can undo it. -->
-							<span class="shrink-0 text-xs text-gray-500">you</span>
+							<span class="shrink-0 text-xs text-gray-500">{t('admin.you')}</span>
 						{:else if account.isOwner}
-							<span class="shrink-0 text-xs text-gray-500">always an admin</span>
+							<span class="shrink-0 text-xs text-gray-500">{t('admin.alwaysAnAdmin')}</span>
 						{:else if changing === account.id}
 							<form
 								method="post"
@@ -151,7 +162,7 @@
 									{account.role === 'member' ? 'Yes, make admin' : 'Yes, remove admin'}
 								</button>
 								<button type="button" class="btn btn-sm" onclick={() => (changing = null)}>
-									Cancel
+									{t('ui.cancel')}
 								</button>
 							</form>
 						{:else}
@@ -174,7 +185,10 @@
 			<!-- Only rendered when something is wrong: an empty "all mail fine"
 			     card would train the eye to skip this spot. The same open rows
 			     make /healthz warn, which is what the watchers alert on. -->
-			<Card title="Mail that did not go out" description="The watchers are told; this is the fix.">
+			<Card
+				title={t('admin.mailThatDidNotGo')}
+				description="The watchers are told; this is the fix."
+			>
 				<div class="divide-y divide-gray-200">
 					{#each data.mailFailures as failure (failure.id)}
 						<div class="flex items-center gap-2 py-2 text-sm">
@@ -195,7 +209,7 @@
 								{#if failure.retryable}
 									<form method="post" action="?/retryMail" use:enhance>
 										<input type="hidden" name="id" value={failure.id} />
-										<button class="btn btn-sm btn-quiet" title="Send it again, as it was">
+										<button class="btn btn-sm btn-quiet" title={t('admin.sendItAgainAsIt')}>
 											<Icon name="undo" />
 										</button>
 									</form>
@@ -203,7 +217,7 @@
 								{#if dismissing === failure.id}
 									<form method="post" action="?/dismissMail" use:enhance={confirmedDismiss}>
 										<input type="hidden" name="id" value={failure.id} />
-										<button class="btn btn-sm btn-danger" use:armed>Confirm?</button>
+										<button class="btn btn-sm btn-danger" use:armed>{t('admin.confirm')}</button>
 									</form>
 								{:else}
 									<button
@@ -223,14 +237,19 @@
 			</Card>
 		{/if}
 
-		<Card title="Lately" description="Every account's history in one column, newest first." flush>
+		<Card
+			title={t('admin.lately')}
+			description="Every account's history in one column, newest first."
+			flush
+		>
 			{#snippet actions()}
 				<button type="button" class="btn btn-sm" onclick={() => invalidateAll()}>
-					<Icon name="undo" /> Refresh
+					<Icon name="undo" />
+					{t('admin.refresh')}
 				</button>
 			{/snippet}
 			{#if data.events.length === 0}
-				<EmptyState icon="clock" title="Nothing recorded yet" />
+				<EmptyState icon="clock" title={t('admin.nothingRecordedYet')} />
 			{:else}
 				<!--
 					Contained and scrollable rather than however long the history
@@ -259,7 +278,7 @@
 								: ''}"
 							class="block px-4 py-3 text-center text-xs text-gray-600 hover:bg-gray-50 hover:text-gray-900"
 						>
-							Show older
+							{t('admin.showOlder')}
 						</a>
 					{/if}
 				</div>
@@ -276,12 +295,12 @@
 			was to be told in person.
 		-->
 		<Card
-			title="What people sent in"
+			title={t('admin.whatPeopleSentIn')}
 			description="Problems somebody reported, ideas they suggested, and crashes they chose to send. Dismiss one once it is dealt with."
 			flush
 		>
 			{#if data.clientErrors.length === 0}
-				<EmptyState icon="info" title="Nothing reported" />
+				<EmptyState icon="info" title={t('admin.nothingReported')} />
 			{:else}
 				<div class="max-h-96 divide-y divide-gray-200 overflow-y-auto">
 					{#each data.clientErrors as report (report.id)}
@@ -290,10 +309,10 @@
 								<!-- Somebody sat down and wrote this one, so it reads differently
 								     from a stack trace the app noticed on its own. -->
 								{#if report.kind === 'report'}
-									<span class="chip mr-2 align-middle">reported</span>
+									<span class="chip mr-2 align-middle">{t('admin.reported')}</span>
 								{:else if report.kind === 'suggestion'}
 									<span class="chip mr-2 border-blue-300 bg-blue-50 align-middle text-blue-800">
-										suggested
+										{t('admin.suggested')}
 									</span>
 								{/if}
 								<span class="text-gray-900">{report.message}</span>
@@ -314,7 +333,7 @@
 							{/if}
 							<form method="post" action="?/dismissReport" use:enhance class="mt-2">
 								<input type="hidden" name="id" value={report.id} />
-								<button class="btn btn-sm">Dismiss</button>
+								<button class="btn btn-sm">{t('ui.dismiss')}</button>
 							</form>
 						</details>
 					{/each}
@@ -327,36 +346,34 @@
 			"is anything happening". Everything else on this page is something the
 			app did; this is what never reached it.
 		-->
-		<Card title="Blocked" description="What fail2ban has turned away." flush>
+		<Card title={t('admin.blocked')} description="What fail2ban has turned away." flush>
 			{#if data.demo}
 				<!--
 					The addresses a box turned away are real people's, and the demo is
 					public. The card stays so the feature is visible; the list does not.
 				-->
 				<div class="px-4 py-3 text-sm text-gray-500">
-					<p class="text-gray-900">Hidden on the demo.</p>
+					<p class="text-gray-900">{t('admin.hiddenOnTheDemo')}</p>
 					<p class="mt-1">
-						On your own instance this lists the addresses fail2ban has turned away, why, and whether
-						they are still out.
+						{t('admin.onYourOwnInstanceThis')}
 					</p>
 				</div>
 			{:else if !data.protection.readable}
 				<div class="px-4 py-3 text-sm text-gray-500">
-					<p class="text-gray-900">Nothing to read here yet.</p>
+					<p class="text-gray-900">{t('admin.nothingToReadHereYet')}</p>
 					<p class="mt-1">
-						This instance cannot see <code class="text-xs">{data.protection.path}</code>. On Debian
-						and Ubuntu that file belongs to the <code class="text-xs">adm</code> group:
+						{t('admin.thisInstanceCannotSee')}
+						<code class="text-xs">{data.protection.path}</code>{t('admin.onDebianAndUbuntu')}
+						<code class="text-xs">{t('admin.adm')}</code>
+						{t('admin.group')}
 					</p>
-					<pre class="mt-2 overflow-x-auto text-xs">sudo usermod -aG adm $(whoami)
-sudo systemctl restart user@$(id -u)</pre>
+					<pre class="mt-2 overflow-x-auto text-xs">{t('admin.sudoUsermodAgAdmWhoami')}</pre>
 					<p class="mt-1">
-						The second command matters even after the first is long done: the user manager that
-						spawns this app keeps the groups it started with — and with lingering on, it never
-						restarts on its own. Restarting only the app is not enough.
+						{t('admin.theSecondCommandMattersEven')}
 					</p>
 				</div>
 			{:else if data.protection.recent.length === 0}
-				<EmptyState icon="shield" title="Nobody has been turned away" />
+				<EmptyState icon="shield" title={t('admin.nobodyHasBeenTurnedAway')} />
 			{:else}
 				{#if !data.canControlBans}
 					<!--
@@ -365,7 +382,7 @@ sudo systemctl restart user@$(id -u)</pre>
 						not the place to explain somebody's server to them.
 					-->
 					<p class="border-b border-gray-200 px-4 py-2 text-xs text-gray-500">
-						Read-only: this instance cannot unban or block an address. These are a record.
+						{t('admin.readOnlyThisInstanceCannotUnban')}
 					</p>
 				{/if}
 				<p class="border-b border-gray-200 px-4 py-2 text-xs text-gray-500">
@@ -415,16 +432,16 @@ sudo systemctl restart user@$(id -u)</pre>
 										<form method="post" action="?/unban" use:enhance>
 											<input type="hidden" name="jail" value={ban.jail} />
 											<input type="hidden" name="address" value={ban.address} />
-											<button class="btn btn-sm" title="Let this address back in now">
-												Unban
+											<button class="btn btn-sm" title={t('admin.letThisAddressBackIn')}>
+												{t('admin.unban')}
 											</button>
 										</form>
 									{/if}
 									{#if forever}
 										<form method="post" action="?/unblockForever" use:enhance>
 											<input type="hidden" name="address" value={ban.address} />
-											<button class="btn btn-sm" title="Lift the permanent block">
-												Lift block
+											<button class="btn btn-sm" title={t('admin.liftThePermanentBlock')}>
+												{t('admin.liftBlock')}
 											</button>
 										</form>
 									{:else}
@@ -433,9 +450,9 @@ sudo systemctl restart user@$(id -u)</pre>
 											<button
 												class="btn btn-sm btn-danger"
 												use:armed
-												title="Out for good — survives fail2ban restarts and jail expiry"
+												title={t('admin.outForGoodSurvives')}
 											>
-												Block for good
+												{t('admin.blockForGood')}
 											</button>
 										</form>
 									{/if}

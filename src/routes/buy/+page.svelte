@@ -2,6 +2,9 @@
 	import { onMount } from 'svelte';
 	import { resolve } from '$app/paths';
 	import type { PageServerData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data }: { data: PageServerData } = $props();
 
@@ -105,10 +108,10 @@
 					'The payment window could not load — an ad blocker sometimes takes it down. Allow this page, or try another browser.'}
 			</p>
 		{:else}
-			<p class="text-sm text-gray-500">Opening the secure payment window…</p>
+			<p class="text-sm text-gray-500">{t('buy.openingTheSecurePaymentWindow')}</p>
 		{/if}
 		<p class="mt-6 text-xs text-gray-500">
-			<a href={resolve('/settings/billing')} class="underline">Back to billing</a>
+			<a href={resolve('/settings/billing')} class="underline">{t('buy.backToBilling')}</a>
 		</p>
 	</div>
 </div>

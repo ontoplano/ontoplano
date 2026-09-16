@@ -4,13 +4,18 @@
 	import type { PageServerData, ActionData } from './$types';
 	import Banner from '$lib/components/Banner.svelte';
 	import { autofocus } from '$lib/actions/autofocus.js';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 </script>
 
 <div class="solo-screen bg-gray-100">
 	<div class="solo-card sm:max-w-sm">
-		<h1 class="mb-6 text-xl font-bold tracking-tight text-gray-900">Choose a new password</h1>
+		<h1 class="mb-6 text-xl font-bold tracking-tight text-gray-900">
+			{t('login.reset.chooseANewPassword')}
+		</h1>
 
 		{#if form?.message}
 			<div class="mb-4"><Banner kind="error" message={form.message} /></div>
@@ -18,14 +23,14 @@
 
 		{#if data.invalid}
 			<p class="text-sm text-gray-600">
-				This link has no token in it. Reset links work once — request a fresh one from the
-				<a href={resolve('/login')} class="underline">sign-in page</a>.
+				{t('login.reset.thisLinkHasNoToken')}
+				<a href={resolve('/login')} class="underline">{t('login.reset.signInPage')}</a>.
 			</p>
 		{:else}
 			<form method="post" action="?/reset" use:enhance>
 				<input type="hidden" name="token" value={data.token} />
 				<label class="mb-3 block">
-					<span class="eyebrow text-gray-600">New password</span>
+					<span class="eyebrow text-gray-600">{t('login.reset.newPassword')}</span>
 					<input
 						name="password"
 						type="password"
@@ -37,7 +42,7 @@
 					/>
 				</label>
 				<label class="mb-4 block">
-					<span class="eyebrow text-gray-600">Confirm</span>
+					<span class="eyebrow text-gray-600">{t('login.reset.confirm')}</span>
 					<input
 						name="confirm"
 						type="password"
@@ -51,7 +56,7 @@
 					type="submit"
 					class="w-full bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
 				>
-					Set password
+					{t('login.reset.setPassword')}
 				</button>
 			</form>
 		{/if}

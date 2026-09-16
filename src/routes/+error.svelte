@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * When something breaks.
@@ -86,21 +89,21 @@
 
 	{#if page.status === 404}
 		<p class="mt-2 max-w-sm text-base text-gray-500">
-			That page is not here. It may have been renamed, or never existed.
+			{t('home.thatPageIsNotHere')}
 		</p>
 	{/if}
 
 	{#if offerReport}
 		<div class="mt-6 max-w-sm">
 			{#if sent}
-				<p class="text-sm text-gray-500">Sent. Only what broke went — never what you wrote.</p>
+				<p class="text-sm text-gray-500">{t('home.sentOnlyWhatBrokeWent')}</p>
 			{:else if failed}
-				<p class="text-sm text-gray-500">That could not be sent either.</p>
+				<p class="text-sm text-gray-500">{t('home.thatCouldNotBeSent')}</p>
 			{:else}
 				<!-- A button, not an underlined phrase inside a sentence: this is the
 				     one thing to do on this page and a thumb has to find it. -->
-				<button type="button" class="btn" onclick={send}>Report this error</button>
-				<p class="mt-2 text-sm text-gray-500">Only what broke is sent, never what you wrote.</p>
+				<button type="button" class="btn" onclick={send}>{t('home.reportThisError')}</button>
+				<p class="mt-2 text-sm text-gray-500">{t('home.onlyWhatBrokeIsSent')}</p>
 			{/if}
 		</div>
 	{/if}
@@ -110,5 +113,5 @@
 		read as a date — the day you were looking at — on a page reached from
 		somewhere that has days on it.
 	-->
-	<a href={resolve('/')} class="btn btn-primary mt-8 inline-flex">Back to the dashboard</a>
+	<a href={resolve('/')} class="btn btn-primary mt-8 inline-flex">{t('home.backToTheDashboard')}</a>
 </div>

@@ -7,6 +7,9 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { isStandalone } from '$lib/platform';
 	import type { ActionData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { form }: { form: ActionData } = $props();
 
@@ -63,7 +66,7 @@
 {/if}
 
 <Card
-	title="Home-screen widget"
+	title={t('settings.integrations.widget.homeScreenWidget')}
 	description="The widget on this phone gets its own key. It can read today's plan and nothing else."
 >
 	{#if handoff && form?.token}
@@ -86,7 +89,9 @@
 				the way that cannot fail — the widget's setup screen has a box for it.
 			-->
 			<div>
-				<p class="eyebrow mb-1 text-gray-600">The key for this widget</p>
+				<p class="eyebrow mb-1 text-gray-600">
+					{t('settings.integrations.widget.theKeyForThisWidget')}
+				</p>
 				<div class="flex items-center gap-2">
 					<code
 						class="tabular flex-1 border border-gray-300 bg-gray-50 px-3 py-2 text-xs break-all"
@@ -99,15 +104,19 @@
 					</button>
 				</div>
 				<p class="mt-1 text-xs text-gray-500">
-					Paste it into <strong>Or paste the key</strong> on the widget's setup screen. It is shown once.
+					{t('settings.integrations.widget.pasteItInto')}
+					<strong>{t('settings.integrations.widget.orPasteTheKey')}</strong>
+					{t('settings.integrations.widget.onTheWidgetSSetupScreen')}
 				</p>
 			</div>
 
 			{#if !trapped}
 				<!-- eslint-disable svelte/no-navigation-without-resolve -- an app scheme, not a route -->
 				<p class="text-sm text-gray-500">
-					If nothing happens,
-					<a href={handoff} class="font-medium text-gray-900 underline">finish in the app</a>.
+					{t('settings.integrations.widget.ifNothingHappens')}
+					<a href={handoff} class="font-medium text-gray-900 underline"
+						>{t('settings.integrations.widget.finishInTheApp')}</a
+					>.
 				</p>
 				<!-- eslint-enable svelte/no-navigation-without-resolve -->
 			{/if}
@@ -123,16 +132,17 @@
 		{/if}
 
 		<form method="post" action="?/connect" use:enhance>
-			<button class="btn btn-primary">Connect this phone's widget</button>
+			<button class="btn btn-primary"
+				>{t('settings.integrations.widget.connectThisPhoneSWidget')}</button
+			>
 		</form>
 		<p class="mt-3 text-sm text-gray-500">
-			The widget comes with the Android app. A shortcut added from the browser cannot provide one —
-			Android only lets an installed app do that.
+			{t('settings.integrations.widget.theWidgetComesWithThe')}
 		</p>
 		<p class="mt-2 text-sm text-gray-500">
-			You can disconnect it any time by revoking its key under
+			{t('settings.integrations.widget.youCanDisconnectItAny')}
 			<a href={resolve('/settings/integrations')} class="font-medium text-gray-900 underline"
-				>Integrations</a
+				>{t('settings.integrations.widget.integrations')}</a
 			>.
 		</p>
 	{/if}

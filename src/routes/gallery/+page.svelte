@@ -13,6 +13,9 @@
 	import { armed } from '$lib/actions/armed';
 	import { ALBUM_SEPARATOR, leafAlbumName } from '$lib/album-path';
 	import type { PageServerData, ActionData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -326,7 +329,7 @@
 {/snippet}
 
 <div class="space-y-4">
-	<RoomBar title="Gallery" />
+	<RoomBar title={t('gallery.gallery')} />
 	<RoomToolbar>
 		{#snippet tools()}
 			<!-- A folder of pictures, with its subfolders as albums. -->
@@ -334,7 +337,8 @@
 			<form method="post" action="?/planFolder" bind:this={planForm} use:enhance>
 				<input type="hidden" name="files" />
 				<label class="btn btn-sm cursor-pointer">
-					<Icon name="download" /> Import a folder
+					<Icon name="download" />
+					{t('gallery.importAFolder')}
 					<input
 						type="file"
 						accept="image/png,image/jpeg,image/gif,image/webp"
@@ -368,7 +372,9 @@
 					</span>
 				{/if}
 				<span class="ml-auto flex items-center gap-2">
-					<button class="btn btn-sm" type="button" onclick={() => (chosen = [])}>Cancel</button>
+					<button class="btn btn-sm" type="button" onclick={() => (chosen = [])}
+						>{t('ui.cancel')}</button
+					>
 					<button
 						class="btn btn-primary btn-sm"
 						type="button"
@@ -444,7 +450,7 @@
 				aria-hidden={standingIn ? undefined : 'true'}
 				tabindex={standingIn ? undefined : -1}
 			>
-				Open
+				{t('ui.open')}
 			</a>
 		</div>
 
@@ -453,7 +459,9 @@
 			style="--folders: {PANEL_REM}rem"
 		>
 			<section class="border-b border-gray-200 lg:border-r lg:border-b-0">
-				<h2 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-600">Folders</h2>
+				<h2 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-600">
+					{t('gallery.folders')}
+				</h2>
 
 				<!-- Capped on a phone, where the panel sits above the tiles rather
 				     than beside them: an import of forty subfolders would otherwise
@@ -472,7 +480,7 @@
 							<!-- Where a foldable row keeps its chevron, so a folder gaining
 							     children never shifts any name sideways. -->
 							<span class="invisible size-4 shrink-0"><Icon name="chevron-down" /></span>
-							<span class="truncate">All albums</span>
+							<span class="truncate">{t('gallery.allAlbums')}</span>
 							<span class="ml-auto shrink-0 text-xs text-gray-500 tabular-nums">
 								{data.albums.length}
 							</span>
@@ -488,7 +496,7 @@
 				{#if data.albums.length === 0}
 					<EmptyState
 						icon="image"
-						title="No albums yet"
+						title={t('gallery.noAlbumsYet')}
 						description="An album is where pictures live. Make one, and putting the same picture in a second album never copies it — a picture lives once, however many albums hold it."
 					/>
 				{:else if standingIn && level.length === 0}
@@ -497,7 +505,7 @@
 					<EmptyState icon="image" title="No albums inside {leafAlbumName(standingIn.name)}">
 						{#snippet action()}
 							<a class="btn btn-primary" href="{resolve('/gallery')}/{standingIn?.id}">
-								Open the album
+								{t('gallery.openTheAlbum')}
 							</a>
 						{/snippet}
 					</EmptyState>
@@ -536,7 +544,7 @@
 								</span>
 								<span class="flex items-baseline gap-2 px-3 py-2">
 									<span class="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">
-										Notebooks
+										{t('gallery.notebooks')}
 									</span>
 									<span class="text-xs text-gray-400 tabular-nums">{data.notebookPictures}</span>
 								</span>
@@ -549,7 +557,7 @@
 	</div>
 </div>
 
-<Modal bind:open={showNew} error={form?.message} title="New album" size="sm">
+<Modal bind:open={showNew} error={form?.message} title={t('gallery.newAlbum')} size="sm">
 	<form
 		id="album-form"
 		method="post"
@@ -561,20 +569,26 @@
 			}}
 	>
 		<label class="block text-sm">
-			<span class="text-gray-600">Name</span>
-			<OneLine name="heading" placeholder="Trips" class="input mt-1 w-full" required autofocus />
+			<span class="text-gray-600">{t('ui.name')}</span>
+			<OneLine
+				name="heading"
+				placeholder={t('gallery.trips')}
+				class="input mt-1 w-full"
+				required
+				autofocus
+			/>
 		</label>
 	</form>
 	{#snippet footer()}
-		<button class="btn" type="button" onclick={() => (showNew = false)}>Cancel</button>
-		<button class="btn btn-primary" type="submit" form="album-form">Create</button>
+		<button class="btn" type="button" onclick={() => (showNew = false)}>{t('ui.cancel')}</button>
+		<button class="btn btn-primary" type="submit" form="album-form">{t('ui.create')}</button>
 	{/snippet}
 </Modal>
 
 <Modal
 	open={renaming !== null}
 	error={form?.message}
-	title="Rename album"
+	title={t('gallery.renameAlbum')}
 	onclose={() => (renaming = null)}
 	size="sm"
 >
@@ -590,19 +604,19 @@
 	>
 		<input type="hidden" name="id" value={renaming?.id} />
 		<label class="block text-sm">
-			<span class="text-gray-600">Name</span>
+			<span class="text-gray-600">{t('ui.name')}</span>
 			<OneLine name="heading" value={renaming?.name ?? ''} class="input mt-1 w-full" required />
 		</label>
 	</form>
 	{#snippet footer()}
-		<button class="btn" type="button" onclick={() => (renaming = null)}>Cancel</button>
-		<button class="btn btn-primary" type="submit" form="rename-form">Save</button>
+		<button class="btn" type="button" onclick={() => (renaming = null)}>{t('ui.cancel')}</button>
+		<button class="btn btn-primary" type="submit" form="rename-form">{t('ui.save')}</button>
 	{/snippet}
 </Modal>
 
 <Modal
 	open={confirmingDelete !== null}
-	title="Delete this album?"
+	title={t('gallery.deleteThisAlbum')}
 	onclose={() => (confirmingDelete = null)}
 	size="sm"
 >
@@ -613,7 +627,9 @@
 		</p>
 	{/if}
 	{#snippet footer()}
-		<button class="btn" type="button" onclick={() => (confirmingDelete = null)}>Keep it</button>
+		<button class="btn" type="button" onclick={() => (confirmingDelete = null)}
+			>{t('gallery.keepIt')}</button
+		>
 		<form
 			method="post"
 			action="?/delete"
@@ -624,7 +640,7 @@
 				}}
 		>
 			<input type="hidden" name="id" value={confirmingDelete?.id} />
-			<button class="btn btn-danger" type="submit" use:armed>Delete</button>
+			<button class="btn btn-danger" type="submit" use:armed>{t('ui.delete')}</button>
 		</form>
 	{/snippet}
 </Modal>

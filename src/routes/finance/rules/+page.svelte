@@ -12,6 +12,9 @@
 	import { armed } from '$lib/actions/armed';
 	import { formatMoney, type Currency } from '$lib/money';
 	import type { PageServerData, ActionData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -43,14 +46,14 @@
 
 <div class="space-y-5">
 	<!-- What the rules add up to, and what is still unsorted. -->
-	<Card title="Where it went" accent="var(--section-accent)">
+	<Card title={t('finance.rules.whereItWent')} accent="var(--section-accent)">
 		<div class="mb-3 flex flex-wrap items-center gap-2">
 			<select
 				class="select select-sm w-auto"
 				value={data.ledgerId}
 				onchange={(e) => filter({ ledger: Number((e.currentTarget as HTMLSelectElement).value) })}
 			>
-				<option value={0}>Every ledger</option>
+				<option value={0}>{t('finance.rules.everyLedger')}</option>
 				{#each data.ledgers as l (l.id)}<option value={l.id}>{l.name}</option>{/each}
 			</select>
 			<select
@@ -68,7 +71,8 @@
 					{data.unsorted} uncategorized →
 				</a>
 			{:else}
-				<span class="ml-auto text-xs text-gray-500">Every outgoing line has a category.</span>
+				<span class="ml-auto text-xs text-gray-500">{t('finance.rules.everyOutgoingLineHasA')}</span
+				>
 			{/if}
 		</div>
 		<CategoryDonut slices={data.slices} {currency} />
@@ -122,9 +126,9 @@
 										required
 									/>
 									<div class="flex gap-2">
-										<button class="btn btn-primary btn-sm" type="submit">Save</button>
+										<button class="btn btn-primary btn-sm" type="submit">{t('ui.save')}</button>
 										<button class="btn btn-sm" type="button" onclick={() => (editingId = null)}>
-											Cancel
+											{t('ui.cancel')}
 										</button>
 									</div>
 								</form>
@@ -137,7 +141,7 @@
 									</code>
 									{#if rule.problem}
 										<span class="shrink-0 text-xs font-medium text-red-700" title={rule.problem}>
-											not running
+											{t('finance.rules.notRunning')}
 										</span>
 									{:else}
 										<!--
@@ -152,7 +156,7 @@
 											String(rule.id)
 												? 'bg-gray-900 text-white'
 												: 'text-gray-400 hover:text-gray-700'}"
-											title="Which lines this claims"
+											title={t('finance.rules.whichLinesThisClaims')}
 											aria-pressed={data.showing === String(rule.id)}
 											onclick={() =>
 												filter({
@@ -203,7 +207,9 @@
 						</li>
 					{/each}
 					{#if group.rules.length === 0}
-						<li class="px-4 py-6 text-center text-sm text-gray-500">None yet.</li>
+						<li class="px-4 py-6 text-center text-sm text-gray-500">
+							{t('finance.rules.noneYet')}
+						</li>
 					{/if}
 				</ul>
 
@@ -224,7 +230,7 @@
 							class="input flex-1 font-mono text-xs"
 							required
 						/>
-						<button class="btn btn-sm" type="submit">Add</button>
+						<button class="btn btn-sm" type="submit">{t('ui.add')}</button>
 					</div>
 				</form>
 			</Card>
@@ -241,10 +247,10 @@
 	{#if data.showing}
 		<Card title={data.showingLabel} accent="var(--section-accent)" flush>
 			{#snippet actions()}
-				<button class="btn btn-sm" onclick={() => filter({ showing: '' })}>Close</button>
+				<button class="btn btn-sm" onclick={() => filter({ showing: '' })}>{t('ui.close')}</button>
 			{/snippet}
 			{#if data.lines.length === 0}
-				<p class="px-4 py-6 text-center text-sm text-gray-500">Nothing here.</p>
+				<p class="px-4 py-6 text-center text-sm text-gray-500">{t('finance.rules.nothingHere')}</p>
 			{:else}
 				<ul class="divide-y divide-gray-200">
 					{#each data.lines as line (line.id)}
@@ -277,22 +283,30 @@
 		a `\d` or a lookbehind.
 	-->
 	<p class="text-xs text-gray-500">
-		Patterns are <strong>JavaScript regular expressions</strong> (ECMAScript), matched
-		case-insensitively and unanchored — <code>mercado</code> finds it anywhere in the line.
-		<code>|</code> is or, <code>^</code> and <code>$</code> anchor, <code>\d</code> is a digit, and
-		a literal <code>*</code> or <code>.</code> needs a backslash.
+		{t('finance.rules.patternsAre')}
+		<strong>{t('finance.rules.javascriptRegularExpressions')}</strong>
+		{t('finance.rules.ecmascriptMatchedCaseInsensitivelyAndUna')}
+		<code>{t('finance.rules.mercado')}</code>
+		{t('finance.rules.findsItAnywhereInThe')}
+		<code>|</code>
+		{t('finance.rules.isOr')} <code>^</code>
+		{t('finance.rules.and')} <code>$</code>
+		{t('finance.rules.anchor')} <code>\d</code>
+		{t('finance.rules.isADigitAndA')} <code>*</code>
+		{t('finance.rules.or')} <code>.</code>
+		{t('finance.rules.needsABackslash')}
 		<a
 			href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions/Cheatsheet"
 			target="_blank"
 			rel="noreferrer"
-			class="underline">The full syntax →</a
+			class="underline">{t('finance.rules.theFullSyntax')}</a
 		>
 	</p>
 </div>
 
 <Modal
 	open={deleting !== null}
-	title="Delete this rule?"
+	title={t('finance.rules.deleteThisRule')}
 	onclose={() => (deleting = null)}
 	size="sm"
 >
@@ -305,7 +319,9 @@
 		</p>
 	{/if}
 	{#snippet footer()}
-		<button class="btn" type="button" onclick={() => (deleting = null)}>Keep it</button>
+		<button class="btn" type="button" onclick={() => (deleting = null)}
+			>{t('finance.rules.keepIt')}</button
+		>
 		<form
 			method="post"
 			action="?/delete"
@@ -316,7 +332,7 @@
 				}}
 		>
 			<input type="hidden" name="id" value={deleting?.id} />
-			<button class="btn btn-danger" type="submit" use:armed>Delete</button>
+			<button class="btn btn-danger" type="submit" use:armed>{t('ui.delete')}</button>
 		</form>
 	{/snippet}
 </Modal>

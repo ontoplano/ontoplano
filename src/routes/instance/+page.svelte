@@ -4,6 +4,9 @@
 	import { startMarkSpin } from '$lib/mark-spin';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 	import {
 		ARRIVING_AT,
 		ARRIVING_HOME,
@@ -247,18 +250,24 @@
 	}
 </script>
 
-<svelte:head><title>Where your Ontoplano lives</title></svelte:head>
+<svelte:head><title>{t('instance.whereYourOntoplanoLives')}</title></svelte:head>
 
 <div class="mx-auto w-full max-w-xl px-4 py-8">
-	<h1 class="text-2xl font-bold tracking-tight text-gray-900">Where your Ontoplano lives</h1>
-	<p class="mt-1 text-sm text-gray-500">You can change this later.</p>
+	<h1 class="text-2xl font-bold tracking-tight text-gray-900">
+		{t('instance.whereYourOntoplanoLives')}
+	</h1>
+	<p class="mt-1 text-sm text-gray-500">{t('instance.youCanChangeThisLater')}</p>
 
 	<!--
 		Two squares, side by side, and choosing one moves nothing on the page:
 		the border width is constant and the paragraph under them is a fixed
 		block whichever is chosen.
 	-->
-	<div class="mt-6 grid grid-cols-2 gap-3" role="radiogroup" aria-label="Where it lives">
+	<div
+		class="mt-6 grid grid-cols-2 gap-3"
+		role="radiogroup"
+		aria-label={t('instance.whereItLives')}
+	>
 		{#each ['connected', 'phone'] as const as option (option)}
 			<button
 				type="button"
@@ -357,8 +366,7 @@
 						</label>
 					{:else if !canRunHere}
 						<p class="text-sm text-amber-800">
-							This copy of the app cannot hold an instance itself — the one that can is the app
-							built for it.
+							{t('instance.thisCopyOfTheApp')}
 						</p>
 					{/if}
 				</div>

@@ -6,6 +6,9 @@
 	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { NOTEBOOK_SEPARATOR } from '$lib/notebook-path';
 	import type { PageServerData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * Every picture that is in a notebook, arranged the way the notebooks are.
@@ -54,7 +57,7 @@
 	</RoomBar>
 
 	<p class="text-xs text-gray-500">
-		The pictures in your notebooks. Each one lives in the note that mentions it.
+		{t('gallery.notebooks.path.thePicturesInYourNotebooks')}
 	</p>
 
 	{#if data.folders.length > 0}
@@ -100,7 +103,7 @@
 	{#if data.pictures.length === 0 && data.folders.length === 0}
 		<EmptyState
 			icon="notebook"
-			title="No pictures in your notebooks"
+			title={t('gallery.notebooks.path.noPicturesInYourNotebooks')}
 			description="Put a picture in a note and it turns up here, in a folder named after its notebook."
 		/>
 	{:else if data.pictures.length > 0}
@@ -141,6 +144,6 @@
 		{/if}
 	{/if}
 	{#snippet footer()}
-		<button class="btn" type="button" onclick={() => (viewingId = null)}>Close</button>
+		<button class="btn" type="button" onclick={() => (viewingId = null)}>{t('ui.close')}</button>
 	{/snippet}
 </Modal>

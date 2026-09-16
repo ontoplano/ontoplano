@@ -11,6 +11,9 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import { armed } from '$lib/actions/armed';
 	import type { PageServerData, ActionData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -102,7 +105,8 @@
 				use:enhance
 			>
 				<label class="btn btn-primary btn-sm cursor-pointer">
-					<Icon name="plus" /> Add pictures
+					<Icon name="plus" />
+					{t('gallery.id.addPictures')}
 					<input
 						type="file"
 						name="file"
@@ -166,7 +170,7 @@
 	-->
 	{#if others.length > 0 && data.pictures.length > 0}
 		<div class="mouse-only text-xs text-gray-500">
-			<p class="mb-1">Drag a picture onto an album to move it — hold Ctrl to put it in both.</p>
+			<p class="mb-1">{t('gallery.id.dragAPictureOntoAn')}</p>
 			<div class="flex flex-col gap-1">
 				{@render targets(data.tree, 0)}
 			</div>
@@ -234,7 +238,7 @@
 	{#if data.pictures.length === 0 && data.folders.length === 0}
 		<EmptyState
 			icon="image"
-			title="Nothing here yet"
+			title={t('gallery.id.nothingHereYet')}
 			description="Add pictures and they appear in a grid. Up to {data.pictureKilobytes}KB each on this instance."
 		/>
 	{:else}
@@ -292,20 +296,20 @@
 			<form method="post" action="?/rename" class="grid gap-2" use:enhance>
 				<input type="hidden" name="mediaId" value={viewing.id} />
 				<label class="block text-sm">
-					<span class="text-gray-600">Name</span>
+					<span class="text-gray-600">{t('ui.name')}</span>
 					<OneLine name="heading" value={viewing.filename} class="input mt-1 w-full" required />
 				</label>
 				<div class="flex items-end gap-2">
 					<label class="block flex-1 text-sm">
-						<span class="text-gray-600">Description</span>
+						<span class="text-gray-600">{t('ui.description')}</span>
 						<OneLine
 							name="alt"
 							value={viewing.alt}
 							class="input mt-1 w-full"
-							placeholder="what is in the picture"
+							placeholder={t('gallery.id.whatIsInThePicture')}
 						/>
 					</label>
-					<button class="btn btn-sm" type="submit">Save</button>
+					<button class="btn btn-sm" type="submit">{t('ui.save')}</button>
 				</div>
 			</form>
 			{#if viewing.tags.length > 0}
@@ -326,28 +330,28 @@
 			<form method="post" action="?/tag" class="flex items-end gap-2" use:enhance>
 				<input type="hidden" name="mediaId" value={viewing.id} />
 				<label class="block flex-1 text-sm">
-					<span class="text-gray-600">Tags</span>
+					<span class="text-gray-600">{t('ui.tags')}</span>
 					<OneLine
 						name="tags"
 						value={viewing.tags.join(' ')}
 						class="input mt-1 w-full"
-						placeholder="tags, commas or spaces"
+						placeholder={t('gallery.id.tagsCommasOrSpaces')}
 					/>
 				</label>
-				<button class="btn btn-sm" type="submit">Save tags</button>
+				<button class="btn btn-sm" type="submit">{t('gallery.id.saveTags')}</button>
 			</form>
 			{#if others.length > 0}
 				<form method="post" action="?/addTo" class="flex items-end gap-2" use:enhance>
 					<input type="hidden" name="mediaId" value={viewing.id} />
 					<label class="block text-sm">
-						<span class="text-gray-600">Also put it in</span>
+						<span class="text-gray-600">{t('gallery.id.alsoPutItIn')}</span>
 						<select name="albumId" class="select mt-1 block">
 							{#each others as album (album.id)}
 								<option value={album.id}>{album.name}</option>
 							{/each}
 						</select>
 					</label>
-					<button class="btn btn-sm" type="submit">Add</button>
+					<button class="btn btn-sm" type="submit">{t('ui.add')}</button>
 				</form>
 			{/if}
 			{#if viewing.albums.length > 1}
@@ -369,15 +373,15 @@
 				viewingId = null;
 			}}
 		>
-			Remove from this album
+			{t('gallery.id.removeFromThisAlbum')}
 		</button>
-		<button class="btn" type="button" onclick={() => (viewingId = null)}>Close</button>
+		<button class="btn" type="button" onclick={() => (viewingId = null)}>{t('ui.close')}</button>
 	{/snippet}
 </Modal>
 
 <Modal
 	open={confirmingRemove !== null}
-	title="Remove this picture?"
+	title={t('gallery.id.removeThisPicture')}
 	onclose={() => (confirmingRemoveId = null)}
 	size="sm"
 >
@@ -394,7 +398,9 @@
 		</p>
 	{/if}
 	{#snippet footer()}
-		<button class="btn" type="button" onclick={() => (confirmingRemoveId = null)}>Keep it</button>
+		<button class="btn" type="button" onclick={() => (confirmingRemoveId = null)}
+			>{t('gallery.id.keepIt')}</button
+		>
 		<form
 			method="post"
 			action="?/remove"
@@ -405,7 +411,7 @@
 				}}
 		>
 			<input type="hidden" name="mediaId" value={confirmingRemove?.id} />
-			<button class="btn btn-danger" type="submit" use:armed>Remove</button>
+			<button class="btn btn-danger" type="submit" use:armed>{t('ui.remove')}</button>
 		</form>
 	{/snippet}
 </Modal>

@@ -6,6 +6,9 @@
 	import Banner from '$lib/components/Banner.svelte';
 	import StagingBand from '$lib/components/StagingBand.svelte';
 	import type { PageServerData, ActionData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 	// Null means "whatever this instance opens on": the first account lands on
@@ -46,7 +49,7 @@
 			should see that choice survived the click.
 		-->
 		{#if mode === 'register' && data.wantedPlan === 'family'}
-			<p class="mb-5 text-sm text-gray-600">Family plan.</p>
+			<p class="mb-5 text-sm text-gray-600">{t('login.familyPlan')}</p>
 		{/if}
 
 		{#if mode === 'register' && data.needsInvite}
@@ -73,7 +76,7 @@
 		>
 			{#if mode === 'register' && (data.needsInvite || showInvite)}
 				<label class="mb-3 block">
-					<span class="text-sm font-medium text-gray-700">Invitation code</span>
+					<span class="text-sm font-medium text-gray-700">{t('login.invitationCode')}</span>
 					<input
 						name="invite"
 						type="text"
@@ -89,12 +92,12 @@
 					onclick={() => (showInvite = true)}
 					class="mb-3 text-sm text-gray-500 underline underline-offset-2 hover:text-gray-900"
 				>
-					I have an invitation code
+					{t('login.iHaveAnInvitationCode')}
 				</button>
 			{/if}
 			{#if mode === 'register'}
 				<label class="mb-3 block">
-					<span class="text-sm font-medium text-gray-700">Name</span>
+					<span class="text-sm font-medium text-gray-700">{t('ui.name')}</span>
 					<input
 						name="name"
 						type="text"
@@ -105,7 +108,7 @@
 				</label>
 			{/if}
 			<label class="mb-3 block">
-				<span class="text-sm font-medium text-gray-700">Email</span>
+				<span class="text-sm font-medium text-gray-700">{t('login.email')}</span>
 				<input
 					name="email"
 					type="email"
@@ -116,7 +119,7 @@
 			</label>
 			{#if mode !== 'forgot'}
 				<label class="mb-4 block">
-					<span class="text-sm font-medium text-gray-700">Password</span>
+					<span class="text-sm font-medium text-gray-700">{t('login.password')}</span>
 					<input
 						name="password"
 						type="password"
@@ -134,7 +137,7 @@
 			{/if}
 			{#if mode === 'register'}
 				<label class="mb-4 block">
-					<span class="text-sm font-medium text-gray-700">Confirm password</span>
+					<span class="text-sm font-medium text-gray-700">{t('login.confirmPassword')}</span>
 					<input
 						name="confirm"
 						type="password"
@@ -168,24 +171,24 @@
 				{#if data.canRegister}
 					No account?
 					<button class="font-medium text-gray-900 underline" onclick={() => (mode = 'register')}>
-						Register
+						{t('login.register')}
 					</button>
 					&middot;
 				{/if}
 				<button class="font-medium text-gray-900 underline" onclick={() => (mode = 'forgot')}>
-					Forgot password
+					{t('login.forgotPassword')}
 				</button>
 			{:else}
 				Have an account?
 				<button class="font-medium text-gray-900 underline" onclick={() => (mode = 'login')}>
-					Sign in
+					{t('login.signIn')}
 				</button>
 			{/if}
 		</p>
 
 		{#if mode === 'register' && data.isFirstAccount}
 			<p class="mt-3 text-center text-xs text-gray-500">
-				This is the first account on this instance, so it owns it.
+				{t('login.thisIsTheFirstAccount')}
 			</p>
 		{/if}
 
@@ -204,22 +207,22 @@
 				     which is not a route this app can resolve. -->
 				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 				<a href={askAgainOnThisPhone()} class="font-medium text-gray-900 underline">
-					Use a different ontoplano
+					{t('login.useADifferentOntoplano')}
 				</a>
 			</p>
 		{/if}
 
 		<p class="mt-6 border-t border-gray-100 pt-4 text-center text-xs text-gray-500">
-			<a href={resolve('/legal/privacy')} class="hover:text-gray-600">Privacy</a>
+			<a href={resolve('/legal/privacy')} class="hover:text-gray-600">{t('login.privacy')}</a>
 			·
-			<a href={resolve('/legal/terms')} class="hover:text-gray-600">Terms</a>
+			<a href={resolve('/legal/terms')} class="hover:text-gray-600">{t('login.terms')}</a>
 			·
-			<a href={resolve('/legal/refunds')} class="hover:text-gray-600">Refunds</a>
+			<a href={resolve('/legal/refunds')} class="hover:text-gray-600">{t('login.refunds')}</a>
 		</p>
 
 		{#if mode === 'forgot' && !data.emailConfigured}
 			<p class="mt-3 text-center text-xs text-gray-500">
-				This server has no mail configured, so the link will be written to its log rather than sent.
+				{t('login.thisServerHasNoMail')}
 			</p>
 		{/if}
 	</div>

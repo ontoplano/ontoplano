@@ -23,6 +23,9 @@
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import type { ActionData, PageServerData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -413,12 +416,12 @@
 	{/if}
 {/snippet}
 
-<svelte:head><title>Reminders · Ontoplano</title></svelte:head>
+<svelte:head><title>{t('reminders.remindersOntoplano')}</title></svelte:head>
 
 <audio bind:this={audio} class="hidden"></audio>
 
 <div class="space-y-4">
-	<RoomBar title="Reminders" />
+	<RoomBar title={t('reminders.reminders')} />
 
 	<FormError message={form?.message} />
 
@@ -434,13 +437,12 @@
 	-->
 	{#if insecure}
 		<Banner kind="warning">
-			Nothing can reach this browser: notifications need HTTPS and this page is on
-			<span class="tabular">{origin}</span>. On the machine running it,
-			<span class="tabular">localhost</span> counts as secure; from another device it does not.
-			<span class="tabular">make https-local</span> serves it over HTTPS with a certificate this machine
-			signs — nothing leaves the network, and the phone is told once to trust it. A real certificate on
-			a domain you own does the same with nothing to install. Either turns on reminders, installing it
-			as an app, and offline, all at once.
+			{t('reminders.nothingCanReachThisBrowser')}
+			<span class="tabular">{origin}</span>{t('reminders.onTheMachineRunning')}
+			<span class="tabular">{t('reminders.localhost')}</span>
+			{t('reminders.countsAsSecureFromAnother')}
+			<span class="tabular">{t('reminders.makeHttpsLocal')}</span>
+			{t('reminders.servesItOverHttpsWith')}
 		</Banner>
 	{/if}
 
@@ -469,10 +471,11 @@
 	-->
 	{#if !insecure && unreachable && data.ringsOnAPhone}
 		<p class="mb-4 max-w-2xl text-sm leading-relaxed text-gray-500">
-			Reminders from here ring on this phone, with ontoplano closed — it books Android's own alarms,
-			because an instance cannot wake a phone.
-			<a href={resolve('/settings/preferences')} class="underline underline-offset-2">Preferences</a
-			> stops that, or sets it up again.
+			{t('reminders.remindersFromHereRingOn')}
+			<a href={resolve('/settings/preferences')} class="underline underline-offset-2"
+				>{t('reminders.preferences')}</a
+			>
+			{t('reminders.stopsThatOrSetsIt')}
 		</p>
 	{:else if !insecure && (!allowed || unreachable)}
 		<Banner kind="warning">
@@ -496,10 +499,12 @@
 					<!-- The one press that arranges it is on Preferences: this page is
 					     on the instance's origin, where the app's own plugins do not
 					     reach, and the handshake needs the copy the phone carries. -->
-					<a href={resolve('/settings/preferences')} class="btn btn-primary">Set it up</a>
+					<a href={resolve('/settings/preferences')} class="btn btn-primary"
+						>{t('reminders.setItUp')}</a
+					>
 				{:else if refused}
 					<button type="button" class="btn btn-primary" onclick={openPhoneNotificationSettings}>
-						Open the phone's settings
+						{t('reminders.openThePhoneSSettings')}
 					</button>
 				{:else}
 					<button type="button" class="btn btn-primary" onclick={allow} disabled={asking}>
@@ -518,8 +523,7 @@
 			-->
 			{#if !pushSupported() && !inPhoneApp()}
 				<p class="mt-2 text-sm">
-					This browser has no push support, so reminders will only arrive while ontoplano is open.
-					Installing it as an app usually fixes that.
+					{t('reminders.thisBrowserHasNoPush')}
 				</p>
 			{/if}
 		</Banner>
@@ -534,7 +538,10 @@
 		off for good.
 	-->
 	<div data-tour="set-alarm">
-		<Card title="Set one" description="A day and what to say. It is about nothing else.">
+		<Card
+			title={t('reminders.setOne')}
+			description="A day and what to say. It is about nothing else."
+		>
 			<!--
 				A day and a time, not one field with six segments in it.
 
@@ -564,7 +571,7 @@
 				class="space-y-3"
 			>
 				<FormGrid>
-					<Field label="Day" span={6} required>
+					<Field label={t('reminders.day')} span={6} required>
 						<input
 							name="day"
 							type="date"
@@ -574,11 +581,15 @@
 							bind:value={day}
 							onfocus={pick}
 							onclick={pick}
-							title="Which day it should go off"
+							title={t('reminders.whichDayItShouldGo')}
 							class="input"
 						/>
 					</Field>
-					<Field label="Time" span={6} hint="Empty means {data.dayStart}, when your day starts.">
+					<Field
+						label={t('reminders.time')}
+						span={6}
+						hint="Empty means {data.dayStart}, when your day starts."
+					>
 						<!--
 							The browser's own time field, whatever it draws.
 
@@ -602,12 +613,12 @@
 							class="input"
 						/>
 					</Field>
-					<Field label="What to say" span={12} required>
+					<Field label={t('reminders.whatToSay')} span={12} required>
 						<OneLine
 							name="label"
 							required
 							bind:value={say}
-							placeholder="e.g. take the bread out"
+							placeholder={t('reminders.eGTakeTheBreadOut')}
 							class="input"
 						/>
 					</Field>
@@ -618,18 +629,18 @@
 				<div class="flex flex-wrap items-center gap-4">
 					<label
 						class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
-						title="Play a sound as well as showing it. Off means it only shows."
+						title={t('reminders.playASoundAsWell')}
 					>
 						<input type="checkbox" name="audible" bind:checked={audible} class="size-4" />
-						Make a sound
+						{t('reminders.makeASound')}
 					</label>
 					<label
 						class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
-						title="Which sound this one plays"
+						title={t('reminders.whichSoundThisOnePlays')}
 					>
-						Sound
+						{t('reminders.sound')}
 						<select name="ringtoneId" class="select w-44">
-							<option value="">Default</option>
+							<option value="">{t('reminders.default')}</option>
 							{#each data.ringtones as tone (tone.id)}
 								<option value={tone.id}>{tone.name}</option>
 							{/each}
@@ -653,7 +664,7 @@
 								? 'That time has already been'
 								: 'A day and something to say first'}
 					>
-						Set it
+						{t('reminders.setIt')}
 					</button>
 				</div>
 			</form>
@@ -684,25 +695,25 @@
 				The same number of days, forwards or backwards. It sits first
 				because it changes what every other control in this row means.
 			-->
-			<div class="seg" role="group" aria-label="Which way to look">
+			<div class="seg" role="group" aria-label={t('reminders.whichWayToLook')}>
 				<button
 					type="button"
 					onclick={() => look(data.days, false)}
 					aria-pressed={!data.past}
-					title="What is still to come"
+					title={t('reminders.whatIsStillToCome')}
 				>
-					Ahead
+					{t('reminders.ahead')}
 				</button>
 				<button
 					type="button"
 					onclick={() => look(data.days, true)}
 					aria-pressed={data.past}
-					title="What has already gone off"
+					title={t('reminders.whatHasAlreadyGoneOff')}
 				>
-					Past
+					{t('reminders.past')}
 				</button>
 			</div>
-			<div class="seg" role="group" aria-label="How far">
+			<div class="seg" role="group" aria-label={t('reminders.howFar')}>
 				{#each WINDOWS as window (window)}
 					<button
 						type="button"
@@ -721,7 +732,9 @@
 				}}
 				class="flex items-center gap-2"
 			>
-				<label class="text-xs whitespace-nowrap text-gray-500" for="how-far">or</label>
+				<label class="text-xs whitespace-nowrap text-gray-500" for="how-far"
+					>{t('reminders.or')}</label
+				>
 				<NumberBox
 					id="how-far"
 					name="days"
@@ -732,8 +745,10 @@
 					title="How many days to cover, up to {data.maxDays}"
 					class="w-20"
 				/>
-				<span class="text-xs whitespace-nowrap text-gray-500">days</span>
-				<button type="submit" class="btn btn-sm" title="Look that far">Go</button>
+				<span class="text-xs whitespace-nowrap text-gray-500">{t('reminders.days')}</span>
+				<button type="submit" class="btn btn-sm" title={t('reminders.lookThatFar')}
+					>{t('reminders.go')}</button
+				>
 			</form>
 		</div>
 		{#if upcoming.length === 0}
@@ -760,7 +775,7 @@
 									<!-- The one thing about a reminder you want to know before it
 								     happens rather than after. -->
 									{#if reminder.audible}
-										<span class="text-blue-600" title="This one makes a sound">
+										<span class="text-blue-600" title={t('reminders.thisOneMakesASound')}>
 											<Icon name="sound" size={12} />
 										</span>
 									{/if}
@@ -775,13 +790,15 @@
 							{:else if confirmingDelete === reminder.id}
 								<form method="post" action="?/remove" use:enhance class="flex shrink-0 gap-1">
 									<input type="hidden" name="id" value={reminder.id} />
-									<button type="submit" class="btn btn-sm btn-danger" use:armed>Confirm?</button>
+									<button type="submit" class="btn btn-sm btn-danger" use:armed
+										>{t('reminders.confirm')}</button
+									>
 									<button
 										type="button"
 										onclick={() => (confirmingDelete = null)}
 										class="btn btn-sm"
 									>
-										Cancel
+										{t('ui.cancel')}
 									</button>
 								</form>
 							{:else}
@@ -789,7 +806,7 @@
 									type="button"
 									onclick={() => (editing === reminder.id ? (editing = null) : edit(reminder))}
 									class="icon-btn shrink-0"
-									title="Change this reminder"
+									title={t('reminders.changeThisReminder')}
 									aria-label="Change {reminder.message}"
 									aria-expanded={editing === reminder.id}
 								>
@@ -799,7 +816,7 @@
 									type="button"
 									onclick={() => (confirmingDelete = reminder.id)}
 									class="icon-btn icon-btn-danger shrink-0"
-									title="Remove this reminder"
+									title={t('reminders.removeThisReminder')}
 									aria-label="Remove {reminder.message}"
 								>
 									<Icon name="trash" />
@@ -829,7 +846,7 @@
 							>
 								<input type="hidden" name="id" value={reminder.id} />
 								<FormGrid>
-									<Field label="Day" span={6} required>
+									<Field label={t('reminders.day')} span={6} required>
 										<input
 											name="day"
 											type="date"
@@ -842,7 +859,7 @@
 											class="input"
 										/>
 									</Field>
-									<Field label="Time" span={6} hint="Empty means {data.dayStart}.">
+									<Field label={t('reminders.time')} span={6} hint="Empty means {data.dayStart}.">
 										<input
 											name="time"
 											type="time"
@@ -851,7 +868,7 @@
 											class="input"
 										/>
 									</Field>
-									<Field label="What to say" span={12} required>
+									<Field label={t('reminders.whatToSay')} span={12} required>
 										<OneLine name="label" required bind:value={editSay} class="input" />
 									</Field>
 								</FormGrid>
@@ -861,9 +878,9 @@
 								<div class="flex flex-wrap items-center gap-4">
 									<label
 										class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
-										title="Whether this one makes a noise, whatever its kind does"
+										title={t('reminders.whetherThisOneMakesA')}
 									>
-										Sound
+										{t('reminders.sound')}
 										<!--
 											Three answers, because a row has three.
 
@@ -873,23 +890,23 @@
 											box would quietly turn that into an answer of its own.
 										-->
 										<select name="sound" bind:value={editSound} class="select w-36">
-											<option value="kind">Follow the kind</option>
-											<option value="on">Make a sound</option>
-											<option value="off">Silent</option>
+											<option value="kind">{t('reminders.followTheKind')}</option>
+											<option value="on">{t('reminders.makeASound')}</option>
+											<option value="off">{t('reminders.silent')}</option>
 										</select>
 									</label>
 									<label
 										class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
-										title="Which sound this one plays"
+										title={t('reminders.whichSoundThisOnePlays')}
 									>
-										Which
+										{t('reminders.which')}
 										<select
 											name="ringtoneId"
 											bind:value={editTone}
 											disabled={editSound !== 'on'}
 											class="select w-40"
 										>
-											<option value="">Default</option>
+											<option value="">{t('reminders.default')}</option>
 											{#each data.ringtones as tone (tone.id)}
 												<option value={String(tone.id)}>{tone.name}</option>
 											{/each}
@@ -897,7 +914,7 @@
 									</label>
 									<div class="ml-auto flex gap-2">
 										<button type="button" onclick={() => (editing = null)} class="btn btn-sm">
-											Cancel
+											{t('ui.cancel')}
 										</button>
 										<button
 											type="submit"
@@ -907,7 +924,7 @@
 												? 'That time has already been'
 												: 'Save this reminder'}
 										>
-											Save
+											{t('ui.save')}
 										</button>
 									</div>
 								</div>
@@ -927,7 +944,11 @@
 		make for you.
 	-->
 	<div data-tour="reminder-sounds">
-		<Card title="What makes a sound" description="Everything shows. Only these are heard." flush>
+		<Card
+			title={t('reminders.whatMakesASound')}
+			description="Everything shows. Only these are heard."
+			flush
+		>
 			<ul class="divide-y divide-gray-200">
 				{#each data.sounds as choice (choice.kind)}
 					<li class="px-4 py-2">
@@ -946,18 +967,24 @@
 							</span>
 							<label class="flex items-center gap-2 text-sm text-gray-700">
 								<input type="checkbox" name="audible" checked={choice.audible} class="size-4" />
-								Sound
+								{t('reminders.sound')}
 							</label>
 							<select name="ringtoneId" class="select w-56 shrink-0">
-								<option value="" selected={choice.ringtoneId === null}> Default </option>
+								<option value="" selected={choice.ringtoneId === null}>
+									{t('reminders.default')}
+								</option>
 								{#each data.ringtones as tone (tone.id)}
 									<option value={tone.id} selected={choice.ringtoneId === tone.id}
 										>{tone.name}</option
 									>
 								{/each}
 							</select>
-							<button type="submit" class="btn btn-sm" title="Save what this kind sounds like">
-								Save
+							<button
+								type="submit"
+								class="btn btn-sm"
+								title={t('reminders.saveWhatThisKindSounds')}
+							>
+								{t('ui.save')}
 							</button>
 						</form>
 					</li>
@@ -968,7 +995,7 @@
 
 	<!-- The sounds themselves. -->
 	<Card
-		title="Your sounds"
+		title={t('reminders.yourSounds')}
 		description="Up to {data.limits.ringtones}, {data.limits.kilobytes} KB each. MP3, OGG or WAV."
 		flush
 	>
@@ -984,7 +1011,7 @@
 							type="button"
 							onclick={() => preview(`/api/ringtones/${tone.id}`)}
 							class="icon-btn shrink-0"
-							title="Hear it"
+							title={t('reminders.hearIt')}
 							aria-label="Hear {tone.name}"
 						>
 							<Icon name="play" />
@@ -994,7 +1021,7 @@
 							<button
 								type="submit"
 								class="icon-btn icon-btn-danger"
-								title="Remove"
+								title={t('ui.remove')}
 								aria-label="Remove {tone.name}"
 								use:armed
 							>
@@ -1015,7 +1042,7 @@
 				class="flex flex-wrap items-end gap-3"
 			>
 				<label class="flex flex-col gap-1 text-sm text-gray-700">
-					A sound file
+					{t('reminders.aSoundFile')}
 					<!-- Choosing the file is the submit: a second button to press after
 					     picking one is a step nobody needs. -->
 					<!--
@@ -1039,12 +1066,12 @@
 					/>
 				</label>
 				<label class="flex flex-col gap-1 text-sm text-gray-700">
-					Call it
-					<OneLine name="label" placeholder="optional" class="input" />
+					{t('reminders.callIt')}
+					<OneLine name="label" placeholder={t('reminders.optional')} class="input" />
 				</label>
 			</form>
 			<p class="mt-2 text-xs text-gray-500">
-				Leave the name empty and the file's own name is used.
+				{t('reminders.leaveTheNameEmptyAnd')}
 			</p>
 		</div>
 	</Card>

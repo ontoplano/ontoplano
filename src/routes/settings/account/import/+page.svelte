@@ -10,6 +10,9 @@
 	import type { ActionData, PageData } from './$types';
 	import { IMPORT_KINDS } from '$lib/imports-catalogue';
 	import { tooBigToSend } from '$lib/upload-ceiling';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/** The ones this card takes: a file, worked out by what is in it. */
 	const fromFiles = IMPORT_KINDS.filter((k) => k.becomes === 'todos');
@@ -166,10 +169,12 @@
 
 <div class="space-y-4">
 	<p class="text-sm text-gray-500">
-		<a href={resolve('/settings/account')} class="link"><Icon name="arrow-left" /> Account</a>
+		<a href={resolve('/settings/account')} class="link"
+			><Icon name="arrow-left" /> {t('settings.account.import.account')}</a
+		>
 	</p>
 
-	<Card title="From another app">
+	<Card title={t('settings.account.import.fromAnotherApp')}>
 		<!--
 			Named from `$lib/imports-catalogue`, which is also what `/api/imports`
 			answers with and what ontoplano.com's FAQ is built from. Three places
@@ -207,7 +212,7 @@
 				name="text"
 				bind:value={importText}
 				rows="4"
-				placeholder="…or paste the file here"
+				placeholder={t('settings.account.import.orPasteTheFileHere')}
 				class="input font-mono text-xs"
 			></textarea>
 
@@ -217,20 +222,25 @@
 
 			<label class="flex items-center gap-2 text-sm text-gray-700">
 				<input type="checkbox" name="includeDone" />
-				<span>Bring finished tasks too</span>
+				<span>{t('settings.account.import.bringFinishedTasksToo')}</span>
 			</label>
 
 			<label class="block text-sm text-gray-700">
-				Name for the notebook they land in
-				<OneLine name="notebook" placeholder="Todoist" class="input mt-1" maxlength={80} />
+				{t('settings.account.import.nameForTheNotebookThey')}
+				<OneLine
+					name="notebook"
+					placeholder={t('settings.account.import.todoist')}
+					class="input mt-1"
+					maxlength={80}
+				/>
 			</label>
 
 			<!-- The undo, said before the button rather than after the regret. -->
 			<p class="text-xs text-gray-500">
-				Everything arrives as todos in one notebook. Deleting that notebook undoes the import.
+				{t('settings.account.import.everythingArrivesAsTodosIn')}
 			</p>
 
-			<button type="submit" class="btn btn-sm">Import</button>
+			<button type="submit" class="btn btn-sm">{t('settings.account.import.import')}</button>
 		</form>
 
 		{#if form?.success && form.action === 'importTasks'}
@@ -245,11 +255,11 @@
 		hand over a list and become todos, and this hands over notes and becomes
 		entries. Same button, different thing arriving.
 	-->
-	<Card title="An Obsidian vault">
+	<Card title={t('settings.account.import.anObsidianVault')}>
 		<p class="text-sm text-gray-500">
-			Choose the vault's folder. Every note becomes an entry in one notebook, keeping its text and
-			its tags — from <code class="text-xs">#tags</code> and from the frontmatter — with the folder it
-			was in as a tag too.
+			{t('settings.account.import.chooseTheVaultSFolderEvery')}
+			<code class="text-xs">{t('settings.account.import.tags')}</code>
+			{t('settings.account.import.andFromTheFrontmatter')}
 		</p>
 
 		<div class="mt-3">
@@ -268,10 +278,12 @@
 		are opposite in consequence: one adds a notebook, the other overwrites
 		everything here.
 	-->
-	<Card title="Restore an export" accent="#b45309">
+	<Card title={t('settings.account.import.restoreAnExport')} accent="#b45309">
 		<p class="text-sm text-gray-500">
-			A file downloaded from <strong>Export your data</strong>, on this instance or another one.
-			Moving to your own server, or off it, is this and nothing else.
+			{t('settings.account.import.aFileDownloadedFrom')}
+			<strong>{t('settings.account.import.exportYourData')}</strong>{t(
+				'settings.account.import.onThisInstanceOr'
+			)}
 		</p>
 
 		<form
@@ -287,7 +299,7 @@
 				bind:value={restoreText}
 				oninput={previewSoon}
 				rows="3"
-				placeholder="…or paste the export here"
+				placeholder={t('settings.account.import.orPasteTheExportHere')}
 				class="input font-mono text-xs"
 			></textarea>
 
@@ -311,7 +323,8 @@
 							<strong>{preview.from.email}</strong>'s account, exported
 							{preview.from.exportedAt.slice(0, 10)}:
 						{/if}
-						<strong>{preview.total}</strong> rows will land.
+						<strong>{preview.total}</strong>
+						{t('settings.account.import.rowsWillLand')}
 					</p>
 					{#if preview.tables.length > 0}
 						<p class="text-gray-600">
@@ -345,7 +358,7 @@
 									bind:checked={dropBad}
 									class="mt-0.5"
 								/>
-								<span>Leave those out and bring in everything else</span>
+								<span>{t('settings.account.import.leaveThoseOutAndBring')}</span>
 							</label>
 						</div>
 					{/if}
@@ -361,19 +374,21 @@
 			-->
 			<div class="border border-amber-300 bg-amber-50 p-3">
 				<p class="text-sm text-amber-900">
-					This <strong>replaces everything in this account</strong> with what is in the file. What is
-					here now is gone, and nothing merges.
+					{t('settings.account.import.this')}
+					<strong>{t('settings.account.import.replacesEverythingInThisAccount')}</strong>
+					{t('settings.account.import.withWhatIsInThe')}
 				</p>
 				<label class="mt-2 block text-sm text-amber-900">
-					Type <code class="text-xs">REPLACE</code> to confirm
+					{t('ui.type')} <code class="text-xs">{t('settings.account.import.rEPLACE')}</code>
+					{t('settings.account.import.toConfirm')}
 					<OneLine name="confirm" class="input mt-1 max-w-[12rem]" />
 				</label>
 			</div>
 
 			<p class="text-xs text-gray-500">
-				Data related to billing, API tokens, calendar feed addresses, audit logs, or other things
-				specific to the instance that issued them will <strong>not</strong> be imported. Whatever you
-				wrote will.
+				{t('settings.account.import.dataRelatedToBillingApi')}
+				<strong>{t('settings.account.import.not')}</strong>
+				{t('settings.account.import.beImportedWhateverYouWrote')}
 			</p>
 
 			<!-- Not pressable while the thing in the box cannot be sent: the server
@@ -388,7 +403,7 @@
 				disabled={restoreTooBig !== null ||
 					(preview != null && preview.unacceptable.length > 0 && !dropBad)}
 			>
-				Restore
+				{t('settings.account.import.restore')}
 			</button>
 		</form>
 

@@ -16,6 +16,9 @@
 	import { invalidateAll } from '$app/navigation';
 	import { cancelFor, changeNow, isPending } from '$lib/undo.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/** Keep the card a card: the tracker is one click away for the full list. */
 	const TODO_PREVIEW = 5;
@@ -319,8 +322,8 @@
 					<button
 						onclick={startArranging}
 						class="icon-btn"
-						title="Rearrange the cards"
-						aria-label="Rearrange the cards"
+						title={t('home.rearrangeTheCards')}
+						aria-label={t('home.rearrangeTheCards')}
 					>
 						<Icon name="drag" />
 					</button>
@@ -338,9 +341,9 @@
 					<button
 						onclick={() => (arranging = false)}
 						class="btn btn-sm"
-						title="Leave the cards as they were">Cancel</button
+						title={t('home.leaveTheCardsAsThey')}>{t('ui.cancel')}</button
 					>
-					<button onclick={saveOrder} class="btn btn-primary btn-sm">Done</button>
+					<button onclick={saveOrder} class="btn btn-primary btn-sm">{t('ui.done')}</button>
 				</div>
 			{/if}
 		</div>
@@ -399,7 +402,7 @@
 						Last week is still open — {blocks(data.pendingReview.unanswered)} with no answer.
 					{/if}
 				</span>
-				<span class="shrink-0 text-xs text-gray-500">Review it</span>
+				<span class="shrink-0 text-xs text-gray-500">{t('home.reviewIt')}</span>
 				<Icon name="chevron-right" size={14} />
 			</a>
 		{/if}
@@ -438,9 +441,9 @@
 						</p>
 					{:else}
 						<!-- The same card, with the day answered in it. -->
-						<span class="eyebrow text-gray-600">Next</span>
-						<p class="mt-1 text-xl font-bold text-gray-900">Nothing else today</p>
-						<p class="mt-1 text-sm text-gray-500">Every block on today's plan has an answer.</p>
+						<span class="eyebrow text-gray-600">{t('ui.next')}</span>
+						<p class="mt-1 text-xl font-bold text-gray-900">{t('home.nothingElseToday')}</p>
+						<p class="mt-1 text-sm text-gray-500">{t('home.everyBlockOnTodaySPlan')}</p>
 					{/if}
 				</div>
 
@@ -472,7 +475,8 @@
 						disabled={!now}
 						onclick={() => now && answerLater(now.task, 'done')}
 					>
-						<Icon name="check" /> Done
+						<Icon name="check" />
+						{t('ui.done')}
 					</button>
 					<button
 						type="button"
@@ -480,17 +484,18 @@
 						disabled={!now}
 						onclick={() => now && answerLater(now.task, 'skipped')}
 					>
-						<Icon name="skip" /> Skipped
+						<Icon name="skip" />
+						{t('home.skipped')}
 					</button>
 				</div>
 			</section>
 		{/if}
 
 		{#snippet card_todayTasks()}
-			<Card title="Today's Tasks" accent={SECTION_COLORS.planner}>
+			<Card title={t('home.todaySTasks')} accent={SECTION_COLORS.planner}>
 				{#snippet actions()}
 					<a href={resolve('/tasks/board')} class="text-xs text-gray-500 hover:text-gray-900">
-						Open →
+						{t('home.open')}
 					</a>
 				{/snippet}
 				{#if data.taskSummary.total === 0}
@@ -562,7 +567,7 @@
 										<span
 											class="ml-auto shrink-0 text-[10px] tracking-wide text-blue-600 uppercase"
 										>
-											one-off
+											{t('home.oneOff')}
 										</span>
 									{/if}
 								</li>
@@ -597,10 +602,10 @@
 		{/snippet}
 
 		{#snippet card_goals()}
-			<Card title="Goals" accent={SECTION_COLORS.goals}>
+			<Card title={t('home.goals')} accent={SECTION_COLORS.goals}>
 				{#snippet actions()}
 					<a href={resolve('/goals')} class="text-xs text-gray-500 hover:text-gray-900"
-						>Open &rarr;</a
+						>{t('home.openRarr')}</a
 					>
 				{/snippet}
 				{#if data.activeGoals.length === 0}
@@ -633,7 +638,7 @@
 									</span>
 									<span class="tabular w-10 shrink-0 text-right text-xs text-gray-500">{pct}%</span>
 								{:else}
-									<span class="shrink-0 text-xs text-gray-500">no measure</span>
+									<span class="shrink-0 text-xs text-gray-500">{t('home.noMeasure')}</span>
 								{/if}
 							</li>
 						{/each}
@@ -648,10 +653,10 @@
 		{/snippet}
 
 		{#snippet card_habits()}
-			<Card title="Habits" accent={SECTION_COLORS.health}>
+			<Card title={t('home.habits')} accent={SECTION_COLORS.health}>
 				{#snippet actions()}
 					<a href={resolve('/health/habits')} class="text-xs text-gray-500 hover:text-gray-900">
-						Open →
+						{t('home.open')}
 					</a>
 				{/snippet}
 				{#if data.habitStreaks.length === 0}
@@ -694,10 +699,10 @@
 			{@const timeSlots = [
 				...new Set(data.weekSlots.map((s: { startTime: string }) => s.startTime))
 			].sort()}
-			<Card title="Week Plan" accent={SECTION_COLORS.planner}>
+			<Card title={t('home.weekPlan')} accent={SECTION_COLORS.planner}>
 				{#snippet actions()}
 					<a href={resolve('/tasks/plan')} class="text-xs text-gray-500 hover:text-gray-900"
-						>Edit →</a
+						>{t('home.edit')}</a
 					>
 				{/snippet}
 				<div class="overflow-x-auto">
@@ -757,11 +762,11 @@
 		{/snippet}
 
 		{#snippet card_diary()}
-			<Card title="Diary" accent={SECTION_COLORS.diary}>
+			<Card title={t('home.diary')} accent={SECTION_COLORS.diary}>
 				{#snippet actions()}
 					<div class="flex items-center gap-3">
 						<a href={resolve('/notebooks/diary')} class="text-xs text-gray-500 hover:text-gray-900">
-							All entries →
+							{t('home.allEntries')}
 						</a>
 						{#if winsEnabled}
 							<button
@@ -811,19 +816,19 @@
 							name="content"
 							required
 							rows="3"
-							placeholder="What's on your mind?"
+							placeholder={t('home.whatSOnYourMind')}
 							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						></textarea>
 						<OneLine
 							name="tags"
-							placeholder="Tags (comma-separated)"
+							placeholder={t('home.tagsCommaSeparated')}
 							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						/>
 						<button
 							type="submit"
 							class="bg-gray-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800"
 						>
-							Save
+							{t('ui.save')}
 						</button>
 					</form>
 				{/if}
@@ -841,7 +846,7 @@
 						class="mb-4 space-y-3 border border-gray-100 bg-gray-50 p-3"
 					>
 						<div class="flex items-center justify-between">
-							<span class="text-sm font-medium text-gray-700">3 Wins</span>
+							<span class="text-sm font-medium text-gray-700">{t('home.3Wins')}</span>
 							<input
 								autocomplete="off"
 								name="forDate"
@@ -852,24 +857,24 @@
 						</div>
 						<OneLine
 							name="win_0"
-							placeholder="Win 1"
+							placeholder={t('home.win1')}
 							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						/>
 						<OneLine
 							name="win_1"
-							placeholder="Win 2"
+							placeholder={t('home.win2')}
 							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						/>
 						<OneLine
 							name="win_2"
-							placeholder="Win 3"
+							placeholder={t('home.win3')}
 							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						/>
 						<button
 							type="submit"
 							class="bg-gray-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800"
 						>
-							Save Wins
+							{t('home.saveWins')}
 						</button>
 					</form>
 				{/if}
@@ -899,7 +904,7 @@
 		{/snippet}
 
 		{#snippet card_latestTodos()}
-			<Card title="Latest to-dos" accent={SECTION_COLORS.planner}>
+			<Card title={t('home.latestToDos')} accent={SECTION_COLORS.planner}>
 				{#snippet actions()}
 					<div class="flex items-center gap-2">
 						<!--
@@ -926,7 +931,7 @@
 							{todosNewestFirst ? 'Newest' : 'Oldest'} first
 						</button>
 						<a href={resolve('/tasks/todo')} class="text-xs text-gray-500 hover:text-gray-900"
-							>Open →</a
+							>{t('home.open')}</a
 						>
 					</div>
 				{/snippet}
@@ -955,10 +960,10 @@
 		{/snippet}
 
 		{#snippet card_ideas()}
-			<Card title="Ideas" accent={SECTION_COLORS.ideas}>
+			<Card title={t('home.ideas')} accent={SECTION_COLORS.ideas}>
 				{#snippet actions()}
 					<a href={resolve('/notebooks/ideas')} class="text-xs text-gray-500 hover:text-gray-900"
-						>Open →</a
+						>{t('home.open')}</a
 					>
 				{/snippet}
 				{#if (data.latestIdeas ?? []).length === 0}
@@ -981,10 +986,10 @@
 		{/snippet}
 
 		{#snippet card_bills()}
-			<Card title="Bills" accent={SECTION_COLORS.finance}>
+			<Card title={t('home.bills')} accent={SECTION_COLORS.finance}>
 				{#snippet actions()}
 					<a href={resolve('/finance/bills')} class="text-xs text-gray-500 hover:text-gray-900"
-						>Open →</a
+						>{t('home.open')}</a
 					>
 				{/snippet}
 				{#if data.billsCard.summary.billCount === 0}
@@ -1000,7 +1005,7 @@
 							{formatMoney(data.billsCard.summary.expected, data.billsCard.currency)} expected
 						</div>
 						{#if data.billsCard.open.length === 0}
-							<span class="text-xs text-gray-500">Everything paid this month.</span>
+							<span class="text-xs text-gray-500">{t('home.everythingPaidThisMonth')}</span>
 						{:else}
 							<div class="space-y-1">
 								{#each data.billsCard.open.slice(0, 5) as bill (bill.id)}
@@ -1023,10 +1028,10 @@
 		{/snippet}
 
 		{#snippet card_workouts()}
-			<Card title="Workouts" accent={SECTION_COLORS.health}>
+			<Card title={t('home.workouts')} accent={SECTION_COLORS.health}>
 				{#snippet actions()}
 					<a href={resolve('/health/workouts')} class="text-xs text-gray-500 hover:text-gray-900"
-						>Open →</a
+						>{t('home.open')}</a
 					>
 				{/snippet}
 				{#if data.workoutsCard.length === 0}
@@ -1037,11 +1042,11 @@
 					)}
 				{:else}
 					<div class="space-y-1">
-						{#each data.workoutsCard.slice(0, 5) as t (t.id)}
+						{#each data.workoutsCard.slice(0, 5) as workout (workout.id)}
 							<div class="flex items-center justify-between gap-2 text-sm">
-								<span class="text-gray-700">{t.title}</span>
+								<span class="text-gray-700">{workout.title}</span>
 								<span class="text-xs text-gray-500">
-									{t.lastDoneAt ? `last ${t.lastDoneAt.slice(0, 10)}` : 'never yet'}
+									{workout.lastDoneAt ? `last ${workout.lastDoneAt.slice(0, 10)}` : 'never yet'}
 								</span>
 							</div>
 						{/each}
@@ -1051,10 +1056,10 @@
 		{/snippet}
 
 		{#snippet card_shopping()}
-			<Card title="Shopping" accent={SECTION_COLORS.inventory}>
+			<Card title={t('home.shopping')} accent={SECTION_COLORS.inventory}>
 				{#snippet actions()}
 					<a href={resolve('/inventory')} class="text-xs text-gray-500 hover:text-gray-900"
-						>Open →</a
+						>{t('home.open')}</a
 					>
 				{/snippet}
 				{#if data.shoppingToBuy.length === 0}
@@ -1086,11 +1091,11 @@
 		{/snippet}
 
 		{#snippet card_quote()}
-			<Card title="Today" accent={SECTION_COLORS.home}>
+			<Card title={t('ui.today')} accent={SECTION_COLORS.home}>
 				{#snippet actions()}
 					<a
 						href={resolve('/settings/preferences')}
-						class="text-xs text-gray-500 hover:text-gray-900">Edit &rarr;</a
+						class="text-xs text-gray-500 hover:text-gray-900">{t('home.editRarr')}</a
 					>
 				{/snippet}
 				{#if data.quote}
@@ -1101,15 +1106,15 @@
 						<p class="mt-1 text-xs text-gray-500">&mdash; {data.quote.author}</p>
 					{/if}
 				{:else}
-					<p class="text-sm text-gray-500">No quotes yet. Add some in config.</p>
+					<p class="text-sm text-gray-500">{t('home.noQuotesYetAddSome')}</p>
 				{/if}
 			</Card>
 		{/snippet}
 
 		{#snippet card_threeWins()}
-			<Card title="Three wins" accent={SECTION_COLORS.diary}>
+			<Card title={t('home.threeWins')} accent={SECTION_COLORS.diary}>
 				{#snippet actions()}
-					<span class="text-xs text-gray-500">What went well today</span>
+					<span class="text-xs text-gray-500">{t('home.whatWentWellToday')}</span>
 				{/snippet}
 				<!-- Rows of their own rather than diary prose, so they can be counted later. -->
 				<form method="post" action="?/saveWins" use:enhance class="space-y-2">
@@ -1121,7 +1126,7 @@
 							focus:ring-gray-900 focus:outline-none" />
 						</div>
 					{/each}
-					<button class="btn btn-primary btn-sm"> Save </button>
+					<button class="btn btn-primary btn-sm"> {t('ui.save')} </button>
 				</form>
 			</Card>
 		{/snippet}
@@ -1180,7 +1185,7 @@
 								<button
 									onclick={() => hideCard(id)}
 									class="pointer-events-auto text-gray-500 hover:text-gray-900"
-									title="Hide this card"
+									title={t('home.hideThisCard')}
 									aria-label="Hide {card.label}"
 								>
 									<Icon name="close" size={16} />
@@ -1220,7 +1225,7 @@
 			<div
 				class="flex flex-wrap items-center gap-2 border border-gray-200 bg-white p-3 shadow-card"
 			>
-				<span class="text-xs text-gray-500"> Drag the cards by the handle in their corner. </span>
+				<span class="text-xs text-gray-500"> {t('home.dragTheCardsByThe')} </span>
 				{#each data.cards.filter((c) => !order.includes(c.id)) as card (card.id)}
 					<button
 						onclick={() => (order = [...order, card.id])}

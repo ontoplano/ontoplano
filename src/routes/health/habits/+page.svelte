@@ -30,6 +30,9 @@
 	} from '$lib/colors.js';
 	import { getAction } from '$lib/shortcuts';
 	import { keepInView } from '$lib/actions/keep-in-view';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	interface Habit {
 		id: number;
@@ -322,7 +325,7 @@
 	<RoomToolbar>
 		{#snippet filters()}
 			<FilterChips
-				label="Kind"
+				label={t('health.habits.kind')}
 				bind:value={typeFilter}
 				onchange={() => (selectedHabitIndex = 0)}
 				options={[
@@ -365,7 +368,7 @@
 			<input type="hidden" name="scheduledDays" value={getScheduledDaysString()} />
 
 			<FormGrid>
-				<Field label="Name" span={12} required>
+				<Field label={t('ui.name')} span={12} required>
 					<OneLine
 						name="label"
 						placeholder={newHabitType === 'bad'
@@ -379,7 +382,11 @@
 					/>
 				</Field>
 
-				<Field label="Kind" span={12} hint="A bad habit counts days since the last slip.">
+				<Field
+					label={t('health.habits.kind')}
+					span={12}
+					hint="A bad habit counts days since the last slip."
+				>
 					<div class="flex gap-2">
 						{#each [['bad', 'Bad'], ['good', 'Good'], ['neutral', 'Neutral']] as [value, label] (value)}
 							<label
@@ -402,12 +409,16 @@
 					</div>
 				</Field>
 
-				<Field label="Description" span={12}>
+				<Field label={t('ui.description')} span={12}>
 					<OneLine name="description" value={editHabit?.description ?? ''} class="input" />
 				</Field>
 
 				{#if newHabitType === 'good' || newHabitType === 'neutral'}
-					<Field label="On which days" span={12} hint="None selected means every day.">
+					<Field
+						label={t('health.habits.onWhichDays')}
+						span={12}
+						hint="None selected means every day."
+					>
 						<div class="flex flex-wrap gap-1">
 							{#each FULL_DAY_LABELS as label, i (label)}
 								<label
@@ -433,7 +444,7 @@
 		</form>
 
 		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (showForm = false)}>Cancel</button>
+			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 			<button type="submit" form="habit-form" class="btn btn-primary">
 				{editingId ? 'Save' : 'Create habit'}
 			</button>
@@ -445,19 +456,22 @@
 			{#if typeFilter === 'all'}
 				<EmptyState
 					icon="health"
-					title="Nothing tracked yet"
+					title={t('health.habits.nothingTrackedYet')}
 					description="A habit is something you want more of, or less of. Log it once a day and the streak does the rest."
 				>
 					{#snippet action()}
 						<button onclick={openNewHabit} class="btn btn-primary">
-							<Icon name="plus" /> New habit
+							<Icon name="plus" />
+							{t('health.habits.newHabit')}
 						</button>
 					{/snippet}
 				</EmptyState>
 			{:else}
-				<EmptyState icon="health" title="Nothing tracked in this filter">
+				<EmptyState icon="health" title={t('health.habits.nothingTrackedInThisFilter')}>
 					{#snippet action()}
-						<button onclick={() => (typeFilter = 'all')} class="btn">Show all habits</button>
+						<button onclick={() => (typeFilter = 'all')} class="btn"
+							>{t('health.habits.showAllHabits')}</button
+						>
 					{/snippet}
 				</EmptyState>
 			{/if}
@@ -528,7 +542,7 @@
 									<div class="flex items-center gap-1">
 										<OneLine
 											name="notes"
-											placeholder="note"
+											placeholder={t('health.habits.note')}
 											class="w-20 border border-gray-200 px-1.5 py-1 text-xs focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 										/>
 										<button
@@ -547,8 +561,8 @@
 								</form>
 							{/if}
 							<button
-								title="Edit"
-								aria-label="Edit"
+								title={t('ui.edit')}
+								aria-label={t('ui.edit')}
 								onclick={() => startEdit(habit)}
 								class="icon-btn"
 							>
@@ -573,13 +587,13 @@
 										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
 										use:armed
 									>
-										Confirm?
+										{t('health.habits.confirm')}
 									</button>
 								</form>
 							{:else}
 								<button
-									title="Delete"
-									aria-label="Delete"
+									title={t('ui.delete')}
+									aria-label={t('ui.delete')}
 									onclick={() => {
 										confirmingDeleteId = habit.id;
 									}}
@@ -644,7 +658,7 @@
 								</div>
 							</div>
 							<div class="mt-2 flex items-center gap-2 text-xs text-gray-500">
-								<span>Less</span>
+								<span>{t('ui.less')}</span>
 								<div class="flex gap-px">
 									<div
 										class="h-2.5 w-2.5 {isBad
@@ -675,11 +689,13 @@
 												: HEATMAP_GOOD[3]}"
 									></div>
 								</div>
-								<span>More</span>
+								<span>{t('ui.more')}</span>
 							</div>
 
 							<div class="mt-3 flex items-center gap-2">
-								<span class="text-xs font-medium text-gray-500">Log past entry:</span>
+								<span class="text-xs font-medium text-gray-500"
+									>{t('health.habits.logPastEntry')}</span
+								>
 								<input
 									autocomplete="off"
 									type="date"
@@ -702,7 +718,7 @@
 									<div class="flex items-center gap-1">
 										<OneLine
 											name="notes"
-											placeholder="note"
+											placeholder={t('health.habits.note')}
 											class="w-20 border border-gray-200 px-1.5 py-1 text-xs focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 										/>
 										<button
@@ -710,7 +726,7 @@
 											disabled={!backdateInput}
 											class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50 disabled:opacity-50"
 										>
-											Log
+											{t('health.habits.log')}
 										</button>
 									</div>
 								</form>
@@ -740,7 +756,7 @@
 													<input type="hidden" name="id" value={occurrence.id} />
 													<OneLine
 														name="notes"
-														placeholder="add note…"
+														placeholder={t('health.habits.addNote')}
 														value={occurrence.notes ?? ''}
 														class="w-32 border border-transparent px-1 py-0.5 text-xs text-gray-500 hover:border-gray-200 focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 													/>
@@ -769,7 +785,7 @@
 														class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
 														use:armed
 													>
-														Confirm?
+														{t('health.habits.confirm')}
 													</button>
 												</form>
 												<button
@@ -779,7 +795,7 @@
 													}}
 													class="btn btn-sm"
 												>
-													Cancel
+													{t('ui.cancel')}
 												</button>
 											{:else}
 												<button

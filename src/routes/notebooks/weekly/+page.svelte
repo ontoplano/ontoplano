@@ -2,6 +2,9 @@
 	import { resolve } from '$app/paths';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import type { PageServerData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data }: { data: PageServerData } = $props();
 
@@ -24,7 +27,7 @@
 	}
 </script>
 
-<svelte:head><title>Weekly notes · Ontoplano</title></svelte:head>
+<svelte:head><title>{t('notebooks.weekly.weeklyNotesOntoplano')}</title></svelte:head>
 
 <!--
 	No second heading: the room's name is above and the Weekly notes tab is
@@ -35,7 +38,7 @@
 		<div class="border border-gray-200 bg-white shadow-sm">
 			<EmptyState
 				icon="note"
-				title="Nothing written yet"
+				title={t('notebooks.weekly.nothingWrittenYet')}
 				description="Every week you write about in the review shows up here."
 			/>
 		</div>
@@ -65,7 +68,7 @@
 							href="{resolve('/tasks/review')}?week={week.weekStart}"
 							class="text-xs text-gray-500 hover:text-gray-900 hover:underline"
 						>
-							Open that week
+							{t('notebooks.weekly.openThatWeek')}
 						</a>
 					</div>
 				</article>

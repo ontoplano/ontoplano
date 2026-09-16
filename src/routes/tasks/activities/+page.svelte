@@ -17,6 +17,9 @@
 	import { CATEGORY_FALLBACK_COLOR, CATEGORY_DEFAULT_NEW } from '$lib/colors.js';
 	import { getAction } from '$lib/shortcuts';
 	import { keepInView } from '$lib/actions/keep-in-view';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -139,7 +142,12 @@
 		{/snippet}
 	</RoomToolbar>
 
-	<Modal bind:open={showCategoryForm} error={form?.message} title="Categories" size="sm">
+	<Modal
+		bind:open={showCategoryForm}
+		error={form?.message}
+		title={t('tasks.activities.categories')}
+		size="sm"
+	>
 		<div class="space-y-3">
 			<div class="divide-y divide-gray-100">
 				{#each data.categories as cat (cat.id)}
@@ -173,18 +181,18 @@
 									type="submit"
 									class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm hover:bg-gray-50"
 								>
-									Save
+									{t('ui.save')}
 								</button>
 								<button type="button" onclick={() => (editingCategoryId = null)} class="btn btn-sm">
-									Cancel
+									{t('ui.cancel')}
 								</button>
 							</form>
 						{:else}
 							<Swatch color={cat.color} shape="tall" />
 							<span class="flex-1 text-sm text-gray-900">{cat.name}</span>
 							<button
-								title="Edit"
-								aria-label="Edit"
+								title={t('ui.edit')}
+								aria-label={t('ui.edit')}
 								onclick={() => (editingCategoryId = cat.id)}
 								class="btn btn-sm"
 							>
@@ -207,7 +215,7 @@
 										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
 										use:armed
 									>
-										Confirm?
+										{t('tasks.activities.confirm')}
 									</button>
 								</form>
 								<button
@@ -217,12 +225,12 @@
 									}}
 									class="btn btn-sm"
 								>
-									Cancel
+									{t('ui.cancel')}
 								</button>
 							{:else}
 								<button
-									title="Delete"
-									aria-label="Delete"
+									title={t('ui.delete')}
+									aria-label={t('ui.delete')}
 									type="button"
 									onclick={() => {
 										confirmingDelete = `cat-${cat.id}`;
@@ -255,16 +263,18 @@
 				/>
 				<OneLine
 					name="label"
-					placeholder="New category name"
+					placeholder={t('tasks.activities.newCategoryName')}
 					class="flex-1 border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					required
 				/>
-				<button type="submit" class="btn btn-primary btn-sm">Add</button>
+				<button type="submit" class="btn btn-primary btn-sm">{t('ui.add')}</button>
 			</form>
 		</div>
 
 		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (showCategoryForm = false)}>Done</button>
+			<button type="button" class="btn" onclick={() => (showCategoryForm = false)}
+				>{t('ui.done')}</button
+			>
 		{/snippet}
 	</Modal>
 
@@ -288,7 +298,7 @@
 				}}
 				class="btn btn-sm"
 			>
-				clear
+				{t('tasks.activities.clear')}
 			</button>
 		{/if}
 	</div>
@@ -322,11 +332,11 @@
 			{/if}
 
 			<FormGrid>
-				<Field label="Name" span={12} required>
+				<Field label={t('ui.name')} span={12} required>
 					<OneLine name="label" value={editing?.name ?? ''} class="input" required />
 				</Field>
 
-				<Field label="Category" span={12} required>
+				<Field label={t('ui.category')} span={12} required>
 					<select name="categoryId" required class="select">
 						{#each data.categories as cat (cat.id)}
 							<option value={cat.id} selected={editing?.categoryId === cat.id}>{cat.name}</option>
@@ -334,14 +344,14 @@
 					</select>
 				</Field>
 
-				<Field label="Description" span={12}>
+				<Field label={t('ui.description')} span={12}>
 					<OneLine name="description" value={editing?.description ?? ''} class="input" />
 				</Field>
 			</FormGrid>
 		</form>
 
 		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (showForm = false)}>Cancel</button>
+			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 			<button type="submit" form="activity-form" class="btn btn-primary">
 				{editingId ? 'Save' : 'Create activity'}
 			</button>
@@ -355,12 +365,13 @@
 			{:else}
 				<EmptyState
 					icon="planner"
-					title="No activities yet"
+					title={t('tasks.activities.noActivitiesYet')}
 					description="An activity is a named thing you do — gym, Russian, deep work. Blocks on the grid point at these."
 				>
 					{#snippet action()}
 						<button onclick={() => (showForm = true)} class="btn btn-primary">
-							<Icon name="plus" /> New activity
+							<Icon name="plus" />
+							{t('tasks.activities.newActivity')}
 						</button>
 					{/snippet}
 				</EmptyState>
@@ -402,8 +413,8 @@
 
 					<div class="flex flex-wrap items-center gap-2 sm:shrink-0">
 						<button
-							title="Edit"
-							aria-label="Edit"
+							title={t('ui.edit')}
+							aria-label={t('ui.edit')}
 							onclick={() => {
 								editingId = activity.id;
 								showForm = true;
@@ -440,7 +451,7 @@
 									class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
 									use:armed
 								>
-									Confirm?
+									{t('tasks.activities.confirm')}
 								</button>
 							</form>
 							<button
@@ -450,11 +461,11 @@
 								}}
 								class="btn btn-sm"
 							>
-								Cancel
+								{t('ui.cancel')}
 							</button>
 						{:else}
 							<button
-								aria-label="Delete"
+								aria-label={t('ui.delete')}
 								type="button"
 								onclick={() => {
 									if (!activity.hasReferences) confirmingDelete = `act-${activity.id}`;

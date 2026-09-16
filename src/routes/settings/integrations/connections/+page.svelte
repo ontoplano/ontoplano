@@ -14,6 +14,9 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { keepInView } from '$lib/actions/keep-in-view';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -166,8 +169,9 @@ Token: ${token}`;
 
 <div class="space-y-6">
 	<p class="page-intro">
-		Connect external apps. They push data in as <em>streams</em> and can read your upcoming schedule —
-		without shipping any code into ontoplano.
+		{t('settings.integrations.connections.connectExternalAppsTheyPush')}
+		<em>{t('settings.integrations.connections.streams')}</em>
+		{t('settings.integrations.connections.andCanReadYourUpcoming')}
 	</p>
 
 	<FormError message={form?.message} />
@@ -175,7 +179,7 @@ Token: ${token}`;
 	{#if newToken}
 		<div class="border border-blue-200 bg-blue-50 p-4">
 			<p class="text-sm font-semibold text-blue-900">
-				Token created — copy it now, it won't be shown again.
+				{t('settings.integrations.connections.tokenCreatedCopyIt')}
 			</p>
 			<div class="mt-2 flex items-center gap-2">
 				<code
@@ -209,10 +213,12 @@ Token: ${token}`;
 			-->
 			<details class="mt-3 border-t border-blue-200 pt-2">
 				<summary class="cursor-pointer text-xs font-medium text-blue-900">
-					Connect an AI assistant with it
+					{t('settings.integrations.connections.connectAnAiAssistantWith')}
 				</summary>
 
-				<p class="mt-2 text-xs text-blue-900">One command, if it has a shell:</p>
+				<p class="mt-2 text-xs text-blue-900">
+					{t('settings.integrations.connections.oneCommandIfItHas')}
+				</p>
 				<div class="mt-1 flex items-start gap-2">
 					<code
 						class="flex-1 overflow-x-auto border border-blue-200 bg-white px-3 py-2 font-mono text-[11px] whitespace-pre text-gray-900"
@@ -221,13 +227,12 @@ Token: ${token}`;
 					<button
 						type="button"
 						onclick={() => copyToken(mcpCommand(newToken.plaintext))}
-						class="btn shrink-0">Copy</button
+						class="btn shrink-0">{t('ui.copy')}</button
 					>
 				</div>
 
 				<p class="mt-3 text-xs text-blue-900">
-					Or paste this to it in words — it says what the app is for, so the assistant reaches for
-					it instead of asking you to repeat yourself:
+					{t('settings.integrations.connections.orPasteThisToIt')}
 				</p>
 				<div class="mt-1 flex items-start gap-2">
 					<pre
@@ -237,7 +242,7 @@ Token: ${token}`;
 					<button
 						type="button"
 						onclick={() => copyToken(mcpPrompt(newToken.plaintext))}
-						class="btn shrink-0">Copy</button
+						class="btn shrink-0">{t('ui.copy')}</button
 					>
 				</div>
 			</details>
@@ -249,7 +254,7 @@ Token: ${token}`;
 					rel="noreferrer"
 					class="text-blue-800 underline decoration-blue-300 underline-offset-2 hover:text-blue-900"
 				>
-					How Ontoplano’s MCP server works, tool by tool →
+					{t('settings.integrations.connections.howOntoplanoSMcpServerWorks')}
 				</a>
 			</p>
 		</div>
@@ -263,12 +268,14 @@ Token: ${token}`;
 		up there, with no app to install and nothing of ours in the way.
 	-->
 	<Card
-		title="Calendar link"
+		title={t('settings.integrations.connections.calendarLink')}
 		description="Paste the address into Google Calendar, Apple Calendar or Thunderbird and your plan appears there, keeping itself current. Those apps only read it — nothing they do can change your plan."
 	>
 		{#if newFeedUrl}
 			<div class="border border-blue-200 bg-blue-50 p-4">
-				<p class="text-sm font-semibold text-blue-900">Your new calendar address</p>
+				<p class="text-sm font-semibold text-blue-900">
+					{t('settings.integrations.connections.yourNewCalendarAddress')}
+				</p>
 				<div class="mt-2 flex items-center gap-2">
 					<code
 						class="flex-1 overflow-x-auto border border-blue-200 bg-white px-3 py-2 font-mono text-xs break-all text-gray-900"
@@ -289,22 +296,28 @@ Token: ${token}`;
 			machine.
 		-->
 		<p class="mt-3 text-sm text-gray-500">
-			Anyone with the address can read your plan, so treat it like a password. Each one is listed
-			below and can be revoked on its own.
+			{t('settings.integrations.connections.anyoneWithTheAddressCan')}
 		</p>
 
 		<form method="post" action="?/calendarLink" use:enhance class="mt-3 flex items-end gap-2">
 			<!-- Named, because five identical rows called "Calendar link" are five
 			     rows nobody can revoke with any confidence. -->
 			<label class="text-xs text-gray-500">
-				<span class="eyebrow block text-gray-600">Where it is going</span>
-				<OneLine name="label" placeholder="my phone" class="input mt-1 w-48" maxlength={60} />
+				<span class="eyebrow block text-gray-600"
+					>{t('settings.integrations.connections.whereItIsGoing')}</span
+				>
+				<OneLine
+					name="label"
+					placeholder={t('settings.integrations.connections.myPhone')}
+					class="input mt-1 w-48"
+					maxlength={60}
+				/>
 			</label>
 			<button
 				class="btn btn-sm btn-primary"
 				disabled={data.calendarLinks.length >= data.calendarLinkLimit}
 			>
-				Create a calendar link
+				{t('settings.integrations.connections.createACalendarLink')}
 			</button>
 			{#if data.calendarLinks.length >= data.calendarLinkLimit}
 				<span class="text-xs text-gray-500">
@@ -315,13 +328,13 @@ Token: ${token}`;
 	</Card>
 
 	<!-- API tokens -->
-	<Card title="API tokens" flush>
+	<Card title={t('settings.integrations.connections.apiTokens')} flush>
 		{#snippet actions()}
 			{#if data.tokens.length === 0}
 				<!-- Beside the button it points at, small, and gone with the first
 				     token: connecting an assistant is what a first visit is for. -->
 				<span class="mr-2 border border-blue-200 bg-blue-50 px-2 py-1 text-xs text-blue-900">
-					Create a token to connect an AI assistant →
+					{t('settings.integrations.connections.createATokenToConnect')}
 				</span>
 			{/if}
 			<button
@@ -330,7 +343,8 @@ Token: ${token}`;
 				class="btn btn-sm"
 				data-tour="integrations-tokens"
 			>
-				New token <kbd class="ml-1 border border-gray-300 bg-gray-50 px-1 text-gray-700"
+				{t('settings.integrations.connections.newToken')}
+				<kbd class="ml-1 border border-gray-300 bg-gray-50 px-1 text-gray-700"
 					>{keyFor('/settings/integrations/connections', 'new')}</kbd
 				>
 			</button>
@@ -339,7 +353,7 @@ Token: ${token}`;
 		<Modal
 			bind:open={showTokenForm}
 			error={form?.message}
-			title="New API token"
+			title={t('settings.integrations.connections.newApiToken')}
 			description="Shown once, at creation. It cannot be recovered afterwards."
 		>
 			<form
@@ -353,23 +367,27 @@ Token: ${token}`;
 					}}
 			>
 				<FormGrid>
-					<Field label="Name" span={8} required>
+					<Field label={t('ui.name')} span={8} required>
 						<OneLine
 							name="label"
-							placeholder="the app on my phone"
+							placeholder={t('settings.integrations.connections.theAppOnMyPhone')}
 							class="input"
 							required
 							maxlength={60}
 						/>
 					</Field>
 
-					<Field label="Expires in" span={4} hint="Days. Empty means never.">
+					<Field
+						label={t('settings.integrations.connections.expiresIn')}
+						span={4}
+						hint="Days. Empty means never."
+					>
 						<NumberBox
 							autocomplete="off"
 							name="expiresInDays"
 							min="1"
 							max="3650"
-							placeholder="never"
+							placeholder={t('settings.integrations.connections.never')}
 						/>
 					</Field>
 
@@ -380,9 +398,11 @@ Token: ${token}`;
 					</div>
 
 					<fieldset class="col-span-12">
-						<legend class="eyebrow text-gray-600">What this token may do</legend>
+						<legend class="eyebrow text-gray-600"
+							>{t('settings.integrations.connections.whatThisTokenMayDo')}</legend
+						>
 						<p class="mt-1 mb-2 text-xs text-gray-500">
-							Grant only what the app needs. Anything unticked stays out of reach.
+							{t('settings.integrations.connections.grantOnlyWhatTheApp')}
 						</p>
 						<!--
 							Eighteen checkboxes is a form somebody ticks wrong, and both wrong
@@ -402,17 +422,17 @@ Token: ${token}`;
 								class="btn btn-sm border-blue-200 bg-blue-50 text-blue-900 hover:bg-blue-100"
 								onclick={() => tick(data.assistantScopes)}
 							>
-								An AI assistant (MCP)
+								{t('settings.integrations.connections.anAiAssistantMcp')}
 							</button>
 							<button
 								type="button"
 								class="btn btn-sm btn-quiet"
 								onclick={() => tick(data.assistantScopesDestructive)}
 							>
-								…and let it delete things
+								{t('settings.integrations.connections.andLetItDeleteThings')}
 							</button>
 							<button type="button" class="btn btn-sm btn-quiet" onclick={() => tick([])}>
-								Clear
+								{t('settings.integrations.connections.clear')}
 							</button>
 						</p>
 						<div class="space-y-1" bind:this={scopeBox} onchange={syncCautions}>
@@ -438,10 +458,9 @@ Token: ${token}`;
 											<span
 												class="mt-1 mb-0.5 block border-l-2 border-blue-600 pl-2 text-xs font-medium text-blue-700"
 											>
-												Without <code class="font-mono">{scope.key.replace(':write', ':read')}</code
-												>
-												it can write but not look: most changes name a thing by the id the matching read
-												gives.
+												{t('settings.integrations.connections.without')}
+												<code class="font-mono">{scope.key.replace(':write', ':read')}</code>
+												{t('settings.integrations.connections.itCanWriteButNot')}
 											</span>
 										{/if}
 										{#if scope.caution && cautionsArmed[scope.key]}
@@ -462,14 +481,22 @@ Token: ${token}`;
 			</form>
 
 			{#snippet footer()}
-				<button type="button" class="btn" onclick={() => (showTokenForm = false)}>Cancel</button>
-				<button type="submit" form="token-form" class="btn btn-primary">Create token</button>
+				<button type="button" class="btn" onclick={() => (showTokenForm = false)}
+					>{t('ui.cancel')}</button
+				>
+				<button type="submit" form="token-form" class="btn btn-primary"
+					>{t('settings.integrations.connections.createToken')}</button
+				>
 			{/snippet}
 		</Modal>
 
 		{#if data.tokens.length === 0}
 			<div class="px-3">
-				<EmptyState icon="key" title="No tokens yet — create one to let another app in" compact />
+				<EmptyState
+					icon="key"
+					title={t('settings.integrations.connections.noTokensYetCreate')}
+					compact
+				/>
 			</div>
 		{:else}
 			<ul class="divide-y divide-gray-200">
@@ -510,8 +537,7 @@ Token: ${token}`;
 								     that looks broken next to the ones above it. -->
 								<p class="mt-0.5 font-mono text-xs text-gray-500">{token.prefix}…</p>
 								<p class="mt-0.5 text-xs text-gray-500">
-									This address was not kept and cannot be shown again. Make a new link to have one
-									you can copy.
+									{t('settings.integrations.connections.thisAddressWasNotKept')}
 								</p>
 							{:else}
 								<p class="mt-0.5 font-mono text-xs text-gray-500">{token.prefix}…</p>
@@ -521,7 +547,8 @@ Token: ${token}`;
 								     less about what the key does than about how little of the
 								     account it can see. -->
 								<p class="mt-1 text-xs text-gray-700">
-									Tied to one <strong class="font-semibold">{token.tiedTo}</strong>
+									{t('settings.integrations.connections.tiedToOne')}
+									<strong class="font-semibold">{token.tiedTo}</strong>
 								</p>
 							{/if}
 							<p class="mt-1 text-xs text-gray-500">
@@ -545,7 +572,7 @@ Token: ${token}`;
 										class="border border-red-200 px-3 py-1.5 text-sm text-red-600 shadow-sm hover:bg-red-50"
 										use:armed
 									>
-										Confirm?
+										{t('settings.integrations.connections.confirm')}
 									</button>
 								</form>
 							{:else}
@@ -554,7 +581,7 @@ Token: ${token}`;
 									onclick={() => (confirmRevoke = token.id)}
 									class="border border-red-200 px-3 py-1.5 text-sm text-red-600 shadow-sm hover:bg-red-50"
 								>
-									Revoke
+									{t('settings.integrations.connections.revoke')}
 								</button>
 							{/if}
 						</div>
@@ -574,7 +601,7 @@ Token: ${token}`;
 	-->
 	{#if data.assistantCalls.length > 0}
 		<Card
-			title="What your assistants did"
+			title={t('settings.integrations.connections.whatYourAssistantsDid')}
 			description="The last writes made over the API, newest first. A deleted thing can be put back."
 			flush
 		>
@@ -611,11 +638,15 @@ Token: ${token}`;
 						</span>
 						{#if one.destroyed}
 							{#if one.restoredAt}
-								<span class="shrink-0 text-xs text-gray-500">Put back</span>
+								<span class="shrink-0 text-xs text-gray-500"
+									>{t('settings.integrations.connections.putBack')}</span
+								>
 							{:else}
 								<form method="post" action="?/putBack" use:enhance class="shrink-0">
 									<input type="hidden" name="id" value={one.id} />
-									<button type="submit" class="btn btn-sm">Put it back</button>
+									<button type="submit" class="btn btn-sm"
+										>{t('settings.integrations.connections.putItBack')}</button
+									>
 								</form>
 							{/if}
 						{/if}
@@ -627,19 +658,25 @@ Token: ${token}`;
 
 	<!-- Data streams -->
 	<Card
-		title="Data streams"
+		title={t('settings.integrations.connections.dataStreams')}
 		description="Created automatically when an external app declares one. You choose how each is displayed."
 		flush
 	>
 		{#if data.streams.length === 0}
 			<div class="space-y-2 px-4 py-6 text-sm text-gray-500" data-tour="integrations-streams">
-				<EmptyState icon="plug" title="No streams yet" compact />
+				<EmptyState
+					icon="plug"
+					title={t('settings.integrations.connections.noStreamsYet')}
+					compact
+				/>
 				<p class="text-xs">
-					An app declares a stream by POSTing to
+					{t('settings.integrations.connections.anAppDeclaresAStream')}
 					<code class="border border-gray-200 bg-gray-50 px-1 font-mono text-xs"
 						>{data.origin}/api/v1/streams</code
 					>
-					with a token that has the <code class="font-mono">streams:write</code> scope.
+					{t('settings.integrations.connections.withATokenThatHas')}
+					<code class="font-mono">{t('settings.integrations.connections.streamsWrite')}</code>
+					{t('settings.integrations.connections.scope')}
 				</p>
 			</div>
 		{:else}
@@ -681,13 +718,13 @@ Token: ${token}`;
 							</select>
 							<label class="flex items-center gap-1.5 text-sm text-gray-700">
 								<input type="checkbox" name="showOnDashboard" checked={stream.showOnDashboard} />
-								Dashboard
+								{t('settings.integrations.connections.dashboard')}
 							</label>
 							<label
 								class="flex items-center gap-1.5 text-sm text-gray-700"
-								title="Points older than this are deleted, nightly. Leave empty to keep everything."
+								title={t('settings.integrations.connections.pointsOlderThanThisAre')}
 							>
-								Keep
+								{t('settings.integrations.connections.keep')}
 								<NumberBox
 									name="retentionDays"
 									min="1"
@@ -695,9 +732,9 @@ Token: ${token}`;
 									value={stream.retentionDays ?? ''}
 									class="w-20"
 								/>
-								days
+								{t('settings.integrations.connections.days')}
 							</label>
-							<button type="submit" class="btn btn-sm"> Save </button>
+							<button type="submit" class="btn btn-sm"> {t('ui.save')} </button>
 						</form>
 						<div class="mt-2">
 							{#if confirmDeleteStream === stream.id}
@@ -717,7 +754,7 @@ Token: ${token}`;
 									onclick={() => (confirmDeleteStream = stream.id)}
 									class="border border-red-200 px-3 py-1 text-xs text-red-600 shadow-sm hover:bg-red-50"
 								>
-									Delete stream
+									{t('settings.integrations.connections.deleteStream')}
 								</button>
 							{/if}
 						</div>
@@ -729,21 +766,21 @@ Token: ${token}`;
 
 	<!-- Webhooks -->
 	<Card
-		title="Webhooks"
+		title={t('settings.integrations.connections.webhooks')}
 		description="A URL of yours that is told when things happen here — new todos, ticks, ideas.
 Streams push data in, webhooks let your programs listen."
 		flush
 	>
 		{#snippet actions()}
 			<button type="button" onclick={() => (showWebhookForm = true)} class="btn btn-sm">
-				New webhook
+				{t('settings.integrations.connections.newWebhook')}
 			</button>
 		{/snippet}
 
 		<Modal
 			bind:open={showWebhookForm}
 			error={form?.message}
-			title="New webhook"
+			title={t('settings.integrations.connections.newWebhook')}
 			description="Each delivery is signed with a secret, shown once when the hook is made, so your receiver can check it is really this server."
 		>
 			{#if newWebhookSecret}
@@ -752,7 +789,7 @@ Streams push data in, webhooks let your programs listen."
 			     and made again. -->
 				<div class="mb-4 border border-blue-200 bg-blue-50 p-4">
 					<p class="text-sm font-semibold text-blue-900">
-						Hook created — copy its secret now, it won't be shown again.
+						{t('settings.integrations.connections.hookCreatedCopyIts')}
 					</p>
 					<code
 						class="mt-2 block overflow-x-auto border border-blue-200 bg-white px-3 py-2 font-mono text-xs text-gray-900"
@@ -771,20 +808,22 @@ Streams push data in, webhooks let your programs listen."
 					}}
 			>
 				<FormGrid>
-					<Field label="Address" span={12} required>
+					<Field label={t('settings.integrations.connections.address')} span={12} required>
 						<input
 							autocomplete="off"
 							name="url"
 							type="url"
 							required
 							maxlength="300"
-							placeholder="https://example.com/ontoplano-hook"
+							placeholder={t('settings.integrations.connections.httpsExampleComOntoplanoHook')}
 							class="input"
 						/>
 					</Field>
 
 					<fieldset class="col-span-12">
-						<legend class="eyebrow text-gray-600">Tell it when</legend>
+						<legend class="eyebrow text-gray-600"
+							>{t('settings.integrations.connections.tellItWhen')}</legend
+						>
 						<div class="mt-1 space-y-1">
 							{#each data.webhookEvents as event (event.key)}
 								<label class="flex items-start gap-2 text-sm text-gray-700">
@@ -801,8 +840,12 @@ Streams push data in, webhooks let your programs listen."
 			</form>
 
 			{#snippet footer()}
-				<button type="button" class="btn" onclick={() => (showWebhookForm = false)}>Cancel</button>
-				<button type="submit" form="webhook-form" class="btn btn-primary">Create webhook</button>
+				<button type="button" class="btn" onclick={() => (showWebhookForm = false)}
+					>{t('ui.cancel')}</button
+				>
+				<button type="submit" form="webhook-form" class="btn btn-primary"
+					>{t('settings.integrations.connections.createWebhook')}</button
+				>
 			{/snippet}
 		</Modal>
 
@@ -810,7 +853,7 @@ Streams push data in, webhooks let your programs listen."
 			<div class="px-3">
 				<EmptyState
 					icon="plug"
-					title="No webhooks yet — add an address to be told when things happen"
+					title={t('settings.integrations.connections.noWebhooksYetAdd')}
 					compact
 				/>
 			</div>
@@ -824,7 +867,9 @@ Streams push data in, webhooks let your programs listen."
 								<p class="mt-1 text-xs text-gray-500">
 									When {hook.events.map(eventLabel).join(', or ')}
 									{#if hook.disabled}
-										· <span class="font-medium">gave up after repeated failures</span>
+										· <span class="font-medium"
+											>{t('settings.integrations.connections.gaveUpAfterRepeatedFailures')}</span
+										>
 									{:else if hook.lastDeliveryAt}
 										· last delivery {hook.lastDeliveryAt.slice(0, 16).replace('T', ' ')}
 										{hook.lastStatus ? `(${hook.lastStatus})` : '(unreachable)'}
@@ -836,14 +881,17 @@ Streams push data in, webhooks let your programs listen."
 								     sign with: the whole one is shown once, when the hook
 								     is made. -->
 								<p class="mt-1 text-xs text-gray-500">
-									Secret: <code class="font-mono">{hook.secretHint}</code>
+									{t('settings.integrations.connections.secret')}
+									<code class="font-mono">{hook.secretHint}</code>
 								</p>
 							</div>
 							<div class="flex shrink-0 items-center gap-2">
 								{#if hook.disabled}
 									<form method="post" action="?/reviveWebhook" use:enhance>
 										<input type="hidden" name="id" value={hook.id} />
-										<button type="submit" class="btn btn-sm">Try again</button>
+										<button type="submit" class="btn btn-sm"
+											>{t('settings.integrations.connections.tryAgain')}</button
+										>
 									</form>
 								{/if}
 								{#if confirmDeleteWebhook === hook.id}
@@ -854,7 +902,7 @@ Streams push data in, webhooks let your programs listen."
 											class="border border-red-200 px-3 py-1.5 text-sm text-red-600 shadow-sm hover:bg-red-50"
 											use:armed
 										>
-											Confirm?
+											{t('settings.integrations.connections.confirm')}
 										</button>
 									</form>
 								{:else}
@@ -863,7 +911,7 @@ Streams push data in, webhooks let your programs listen."
 										onclick={() => (confirmDeleteWebhook = hook.id)}
 										class="border border-red-200 px-3 py-1.5 text-sm text-red-600 shadow-sm hover:bg-red-50"
 									>
-										Delete
+										{t('ui.delete')}
 									</button>
 								{/if}
 							</div>
@@ -876,20 +924,18 @@ Streams push data in, webhooks let your programs listen."
 
 	<div class="space-y-1 text-xs text-gray-500">
 		<p>
-			The limits: a token may make 240 reads and 60 writes a minute, and all your tokens together
-			share 600 and 150 — more tokens is not more budget. Stored data points count against your
-			plan, and a stream with retention set keeps only those days.
+			{t('settings.integrations.connections.theLimitsATokenMay')}
 		</p>
 		<p>
-			Writing a plugin? See
+			{t('settings.integrations.connections.writingAPluginSee')}
 			<a
 				href="https://github.com/ontoplano/ontoplano/blob/master/docs/PLUGINS.md"
 				rel="external"
 				class="underline underline-offset-2 hover:text-gray-900"
 			>
-				docs/PLUGINS.md
+				{t('settings.integrations.connections.docsPluginsMd')}
 			</a>
-			on GitHub.
+			{t('settings.integrations.connections.onGithub')}
 		</p>
 	</div>
 </div>

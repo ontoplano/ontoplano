@@ -11,6 +11,9 @@
 	import NotebookDetail from '$lib/components/NotebookDetail.svelte';
 	import { SECTION_COLORS } from '$lib/colors';
 	import type { PageServerData, ActionData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -41,19 +44,21 @@
 				href={resolve('/notebooks')}
 				class="text-xs text-gray-500 hover:text-gray-900 hover:underline"
 			>
-				&larr; All notebooks
+				{t('notebooks.id.larrAllNotebooks')}
 			</a>
 			<h1 class="mt-1 text-lg font-bold text-gray-900">
 				{data.notebook.title}
 				{#if data.notebook.closedAt}
-					<span class="eyebrow ml-2 align-middle text-gray-500">closed</span>
+					<span class="eyebrow ml-2 align-middle text-gray-500">{t('notebooks.id.closed')}</span>
 				{/if}
 				{#if !data.notebook.mine}
 					<span class="eyebrow ml-2 align-middle text-gray-500"
 						>shared by {data.notebook.sharedBy}</span
 					>
 				{:else if data.notebook.sharedWithFamily}
-					<span class="eyebrow ml-2 align-middle text-gray-500">shared with family</span>
+					<span class="eyebrow ml-2 align-middle text-gray-500"
+						>{t('notebooks.id.sharedWithFamily')}</span
+					>
 				{/if}
 			</h1>
 			{#if data.notebook.description}
@@ -89,8 +94,8 @@
 				<button
 					onclick={() => (editing = true)}
 					class="btn btn-sm"
-					title="Rename"
-					aria-label="Rename"><Icon name="edit" /></button
+					title={t('ui.rename')}
+					aria-label={t('ui.rename')}><Icon name="edit" /></button
 				>
 				<form
 					method="post"
@@ -111,7 +116,8 @@
 					</button>
 				</form>
 				<button onclick={() => (confirmingDelete = true)} class="btn btn-danger btn-sm">
-					<Icon name="trash" /> Delete
+					<Icon name="trash" />
+					{t('ui.delete')}
 				</button>
 			{/if}
 		</div>
@@ -142,7 +148,7 @@
 	</section>
 </div>
 
-<Modal bind:open={editing} error={form?.message} title="Edit notebook" size="sm">
+<Modal bind:open={editing} error={form?.message} title={t('notebooks.id.editNotebook')} size="sm">
 	<form
 		id="notebook-form"
 		method="post"
@@ -155,10 +161,10 @@
 	>
 		<input type="hidden" name="id" value={data.notebook.id} />
 		<FormGrid>
-			<Field label="Title" span={12} required>
+			<Field label={t('ui.title')} span={12} required>
 				<OneLine name="heading" value={data.notebook.title} class="input" required />
 			</Field>
-			<Field label="What it is for" span={12}>
+			<Field label={t('notebooks.id.whatItIsFor')} span={12}>
 				<textarea name="description" rows="2" class="textarea">{data.notebook.description}</textarea
 				>
 			</Field>
@@ -166,30 +172,32 @@
 	</form>
 
 	{#snippet footer()}
-		<button type="button" class="btn" onclick={() => (editing = false)}>Cancel</button>
-		<button type="submit" form="notebook-form" class="btn btn-primary">Save</button>
+		<button type="button" class="btn" onclick={() => (editing = false)}>{t('ui.cancel')}</button>
+		<button type="submit" form="notebook-form" class="btn btn-primary">{t('ui.save')}</button>
 	{/snippet}
 </Modal>
 
 <!-- The same dialog as the index: a confirmation somewhere the cursor is not. -->
 <Modal
 	bind:open={confirmingDelete}
-	title="Delete this notebook?"
+	title={t('notebooks.id.deleteThisNotebook')}
 	description="“{data.notebook.title}” will be gone."
 	size="sm"
 >
 	<p class="text-sm text-gray-600">
-		Its notes, tasks and goals will not be deleted. The tasks and goals stay where they are, in the
-		planner and in Goals; the notes move to <strong class="font-medium text-gray-900"
-			>Notes without a notebook</strong
-		>, at the bottom of the list.
+		{t('notebooks.id.itsNotesTasksAndGoals')}
+		<strong class="font-medium text-gray-900">{t('notebooks.id.notesWithoutANotebook')}</strong>{t(
+			'notebooks.id.atTheBottomOf'
+		)}
 	</p>
 
 	{#snippet footer()}
-		<button type="button" class="btn" onclick={() => (confirmingDelete = false)}>Cancel</button>
+		<button type="button" class="btn" onclick={() => (confirmingDelete = false)}
+			>{t('ui.cancel')}</button
+		>
 		<form method="post" action="?/delete" use:enhance>
 			<input type="hidden" name="id" value={data.notebook.id} />
-			<button class="btn btn-danger" use:armed>Delete the notebook</button>
+			<button class="btn btn-danger" use:armed>{t('notebooks.id.deleteTheNotebook')}</button>
 		</form>
 	{/snippet}
 </Modal>

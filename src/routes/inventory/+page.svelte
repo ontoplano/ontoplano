@@ -26,6 +26,9 @@
 	import { browser } from '$app/environment';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { LOCATION_PANEL_WIDTH } from '$lib/services/settings';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -847,13 +850,13 @@
 					onclick={() =>
 						(editingLocation = { id: node.id, name: node.name, parentId: node.parentId })}
 					class="icon-btn"
-					title="Rename or move"
+					title={t('inventory.renameOrMove')}
 					aria-label="Rename or move {node.name}"><Icon name="edit" /></button
 				>
 				<button
 					onclick={() => (confirmDeleteLocation = node.id)}
 					class="icon-btn icon-btn-danger"
-					title="Remove"
+					title={t('ui.remove')}
 					aria-label="Remove {node.name}"><Icon name="trash" /></button
 				>
 			</div>
@@ -888,7 +891,7 @@
 			<button
 				type="submit"
 				class="icon-btn h-5 w-9 text-base"
-				title="One more"
+				title={t('inventory.oneMore')}
 				aria-label="One more {item.name}">+</button
 			>
 		</form>
@@ -914,7 +917,7 @@
 				type="submit"
 				disabled={item.qty <= 0}
 				class="icon-btn h-5 w-9 text-base disabled:opacity-25"
-				title="One fewer"
+				title={t('inventory.oneFewer')}
 				aria-label="One fewer {item.name}">−</button
 			>
 		</form>
@@ -950,7 +953,7 @@
 		are in and what it hides are a row along the top of the panel they
 		filter, which can wrap in peace.
 	-->
-	<RoomBar title="Inventory" />
+	<RoomBar title={t('inventory.inventory')} />
 
 	<!--
 		The list you actually take to the shop.
@@ -987,8 +990,8 @@
 
 	{#if totalCents > 0}
 		<p class="text-sm text-gray-500">
-			About <span class="tabular font-medium text-gray-900"
-				>{formatMoney(totalCents, data.currency)}</span
+			{t('inventory.about')}
+			<span class="tabular font-medium text-gray-900">{formatMoney(totalCents, data.currency)}</span
 			>
 			for what is still to buy
 			{#if pricedCount < needed.length}
@@ -1014,11 +1017,11 @@
 		`Modal` already is down there — this is a thing you hold up in a shop,
 		so it takes the whole screen where the screen is small.
 	-->
-	<Modal bind:open={showRun} title="Shopping list" size="md">
+	<Modal bind:open={showRun} title={t('inventory.shoppingList')} size="md">
 		{#if data.run.lines.length === 0}
 			<EmptyState
 				icon="shopping"
-				title="Nothing has run low"
+				title={t('inventory.nothingHasRunLow')}
 				description="An item joins this list when there is less of it than you keep."
 				compact
 			/>
@@ -1036,7 +1039,7 @@
 						<!-- "about", because a last known price is not a price. -->
 						<span class="tabular shrink-0 text-right text-gray-600">
 							{#if line.lineCents === null}
-								<span class="text-xs text-gray-400">no price yet</span>
+								<span class="text-xs text-gray-400">{t('inventory.noPriceYet')}</span>
 							{:else}
 								{formatMoney(line.lineCents, data.currency)}
 							{/if}
@@ -1046,7 +1049,7 @@
 			</ul>
 
 			<p class="mt-3 flex items-baseline justify-between gap-3 text-sm">
-				<span class="font-semibold text-gray-900">About</span>
+				<span class="font-semibold text-gray-900">{t('inventory.about')}</span>
 				<span class="tabular text-lg font-bold text-gray-900"
 					>{formatMoney(data.run.totalCents, data.currency)}</span
 				>
@@ -1065,7 +1068,7 @@
 		-->
 		{#if data.run.wishlist.length > 0}
 			<section class="mt-6 border-t border-gray-200 pt-4">
-				<h3 class="eyebrow mb-2 text-gray-500">If the trip goes well</h3>
+				<h3 class="eyebrow mb-2 text-gray-500">{t('inventory.ifTheTripGoesWell')}</h3>
 				<ul class="divide-y divide-gray-100">
 					{#each data.run.wishlist as want (want.id)}
 						<li class="flex items-baseline gap-3 py-1.5 text-sm">
@@ -1133,7 +1136,7 @@
 		</form>
 
 		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (showForm = false)}>Cancel</button>
+			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 			<button type="submit" form="item-form" class="btn btn-primary">
 				{editingId ? 'Save' : 'Add item'}
 			</button>
@@ -1173,27 +1176,29 @@
 			to search it. The one thing you came to do is in the bar above.
 		-->
 		<div class="space-y-2 border-b border-gray-200 p-4">
-			<div class="seg w-full" role="group" aria-label="Which list">
+			<div class="seg w-full" role="group" aria-label={t('inventory.whichList')}>
 				<button
 					onclick={() => (filterType = 'all')}
 					aria-pressed={filterType === 'all'}
-					title="Everything, both lists">All</button
+					title={t('inventory.everythingBothLists')}>{t('ui.all')}</button
 				>
 				<button
 					onclick={() => (filterType = filterType === 'replenish' ? 'all' : 'replenish')}
 					aria-pressed={filterType === 'replenish'}
-					title="Restock ({keyFor('/inventory', 'filter-replenish')})">Restock</button
+					title="Restock ({keyFor('/inventory', 'filter-replenish')})"
+					>{t('inventory.restock')}</button
 				>
 				<button
 					onclick={() => (filterType = filterType === 'someday' ? 'all' : 'someday')}
 					aria-pressed={filterType === 'someday'}
-					title="Wishlist ({keyFor('/inventory', 'filter-someday')})">Wishlist</button
+					title="Wishlist ({keyFor('/inventory', 'filter-someday')})"
+					>{t('inventory.wishlist')}</button
 				>
 				<button
 					onclick={() => (filterType = filterType === 'short' ? 'all' : 'short')}
 					aria-pressed={filterType === 'short'}
 					class="seg-alarm"
-					title="Only what you have fewer of than you keep">Short</button
+					title={t('inventory.onlyWhatYouHaveFewer')}>{t('inventory.short')}</button
 				>
 			</div>
 
@@ -1214,16 +1219,16 @@
 				>
 					{showSnoozed ? 'Hide' : 'Show'} archived
 				</button>
-				<label class="sr-only" for="inventory-find">Find</label>
+				<label class="sr-only" for="inventory-find">{t('inventory.find2')}</label>
 				<OneLine
 					id="inventory-find"
 					name="find"
 					bind:value={find}
-					placeholder="Find…"
+					placeholder={t('inventory.find')}
 					class="input min-w-32 flex-1 py-1 text-sm"
 				/>
 				<button onclick={() => (showCategories = true)} class="btn btn-sm btn-quiet"
-					>Categories</button
+					>{t('inventory.categories')}</button
 				>
 			</div>
 
@@ -1250,12 +1255,12 @@
 				<header
 					class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 px-4 py-2"
 				>
-					<h2 class="eyebrow text-gray-600">Where things live</h2>
+					<h2 class="eyebrow text-gray-600">{t('inventory.whereThingsLive')}</h2>
 					<button
 						onclick={() => (addingLocation = true)}
 						class="icon-btn"
-						title="New location"
-						aria-label="New location"><Icon name="plus" /></button
+						title={t('inventory.newLocation')}
+						aria-label={t('inventory.newLocation')}><Icon name="plus" /></button
 					>
 				</header>
 
@@ -1275,7 +1280,7 @@
 				</ul>
 
 				<p class="border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
-					Drag a thing onto a location to say where it lives.
+					{t('inventory.dragAThingOntoA')}
 				</p>
 			</section>
 
@@ -1287,7 +1292,7 @@
 			<div
 				role="separator"
 				aria-orientation="vertical"
-				aria-label="Widen or narrow the locations panel"
+				aria-label={t('inventory.widenOrNarrowTheLocations')}
 				class="mouse-only hidden w-2 cursor-col-resize touch-none border-x border-gray-200 transition-colors lg:block {draggingPanel
 					? 'bg-gray-300'
 					: 'bg-gray-100 hover:bg-gray-200'}"
@@ -1309,7 +1314,7 @@
 					<div data-tour="shopping-list">
 						<!-- "Inventory" was this heading's name before the room took it. These
 			     are the things you restock; the room is both halves. -->
-						<h2 class="mb-2 text-sm font-bold text-gray-500">To restock</h2>
+						<h2 class="mb-2 text-sm font-bold text-gray-500">{t('inventory.toRestock')}</h2>
 						<!--
 				One category per card, flowing into columns.
 
@@ -1437,7 +1442,7 @@
 														<button
 															onclick={() => startEdit(item)}
 															class="icon-btn"
-															title="Edit"
+															title={t('ui.edit')}
 															aria-label="Edit {item.name}"><Icon name="edit" /></button
 														>
 														{#if confirmingDelete === item.id}
@@ -1448,7 +1453,7 @@
 															>
 																<input type="hidden" name="id" value={item.id} />
 																<button type="submit" class="btn btn-sm btn-danger" use:armed>
-																	Confirm?
+																	{t('inventory.confirm')}
 																</button>
 															</form>
 															<button
@@ -1458,7 +1463,7 @@
 																}}
 																class="btn btn-sm"
 															>
-																Cancel
+																{t('ui.cancel')}
 															</button>
 														{:else}
 															<button
@@ -1467,7 +1472,7 @@
 																	confirmingDelete = item.id;
 																}}
 																class="icon-btn icon-btn-danger"
-																title="Delete"
+																title={t('ui.delete')}
 																aria-label="Delete {item.name}"><Icon name="trash" /></button
 															>
 														{/if}
@@ -1484,7 +1489,7 @@
 
 				{#if somedayItems.length > 0}
 					<div data-tour="shopping-list">
-						<h2 class="mb-2 text-sm font-bold text-gray-500">Wishlist</h2>
+						<h2 class="mb-2 text-sm font-bold text-gray-500">{t('inventory.wishlist')}</h2>
 						<!-- The same column width as a category, so the two halves of the page
 			     line up instead of one running the full width of the screen. -->
 						<div
@@ -1566,7 +1571,7 @@
 										<button
 											onclick={() => startEdit(item)}
 											class="icon-btn"
-											title="Edit"
+											title={t('ui.edit')}
 											aria-label="Edit {item.name}"><Icon name="edit" /></button
 										>
 										{#if confirmingDelete === item.id}
@@ -1577,7 +1582,7 @@
 											>
 												<input type="hidden" name="id" value={item.id} />
 												<button type="submit" class="btn btn-sm btn-danger" use:armed>
-													Confirm?
+													{t('inventory.confirm')}
 												</button>
 											</form>
 											<button
@@ -1587,7 +1592,7 @@
 												}}
 												class="btn btn-sm"
 											>
-												Cancel
+												{t('ui.cancel')}
 											</button>
 										{:else}
 											<button
@@ -1596,7 +1601,7 @@
 													confirmingDelete = item.id;
 												}}
 												class="icon-btn icon-btn-danger"
-												title="Delete"
+												title={t('ui.delete')}
 												aria-label="Delete {item.name}"><Icon name="trash" /></button
 											>
 										{/if}
@@ -1612,12 +1617,13 @@
 						{#if items.length === 0}
 							<EmptyState
 								icon="shopping"
-								title="The list is empty"
+								title={t('inventory.theListIsEmpty')}
 								description="Inventory is what you keep stocked; the wishlist is what you might buy one day."
 							>
 								{#snippet action()}
 									<button onclick={() => (showForm = true)} class="btn btn-primary">
-										<Icon name="plus" /> New item
+										<Icon name="plus" />
+										{t('inventory.newItem')}
 									</button>
 								{/snippet}
 							</EmptyState>
@@ -1643,7 +1649,7 @@
 <Modal
 	bind:open={showCategories}
 	error={form?.message}
-	title="Categories"
+	title={t('inventory.categories')}
 	description="Tick the ones that hold food. Only those can be ingredients in a recipe."
 	size="sm"
 >
@@ -1665,14 +1671,18 @@
 					>
 						<input type="hidden" name="id" value={category.id} />
 						<OneLine name="name" value={category.name} class="input flex-1" required autofocus />
-						<button class="btn btn-sm" title="Save the name" aria-label="Save the name">
+						<button
+							class="btn btn-sm"
+							title={t('inventory.saveTheName')}
+							aria-label={t('inventory.saveTheName')}
+						>
 							<Icon name="check" size={14} />
 						</button>
 						<button
 							type="button"
 							class="btn btn-sm"
-							title="Keep the old name"
-							aria-label="Keep the old name"
+							title={t('inventory.keepTheOldName')}
+							aria-label={t('inventory.keepTheOldName')}
 							onclick={() => (editingCategory = null)}
 						>
 							<Icon name="close" size={14} />
@@ -1683,7 +1693,7 @@
 					     switches belong to whoever owns it. The chip sits where the
 					     buttons sit on your own rows, so the columns line up. -->
 					<span class="flex-1">{category.name}</span>
-					<span class="eyebrow shrink-0 text-gray-500">family</span>
+					<span class="eyebrow shrink-0 text-gray-500">{t('inventory.family')}</span>
 				{:else}
 					<form
 						method="post"
@@ -1727,14 +1737,14 @@
 							/>
 							<label
 								class="flex shrink-0 items-center gap-1 text-xs text-gray-500"
-								title="Everybody on your family plan sees this section and can fill it"
+								title={t('inventory.everybodyOnYourFamilyPlan')}
 							>
 								<input
 									type="checkbox"
 									checked={category.sharedWithFamily}
 									onchange={(e) => e.currentTarget.form?.requestSubmit()}
 								/>
-								Family
+								{t('inventory.family2')}
 							</label>
 						</form>
 					{/if}
@@ -1755,16 +1765,16 @@
 								class="btn btn-sm"
 								onclick={() => (confirmDeleteCategory = null)}
 							>
-								Keep
+								{t('inventory.keep')}
 							</button>
 							<!-- Its items stay, unfiled — the shelf label goes, not the shelf. -->
-							<button class="btn btn-danger btn-sm" use:armed>Delete</button>
+							<button class="btn btn-danger btn-sm" use:armed>{t('ui.delete')}</button>
 						</form>
 					{:else}
 						<button
 							type="button"
 							class="btn btn-sm shrink-0"
-							title="Rename"
+							title={t('ui.rename')}
 							aria-label="Rename {category.name}"
 							onclick={() => (editingCategory = category.id)}
 						>
@@ -1773,7 +1783,7 @@
 						<button
 							type="button"
 							class="btn btn-sm shrink-0"
-							title="Delete"
+							title={t('ui.delete')}
 							aria-label="Delete {category.name}"
 							onclick={() => (confirmDeleteCategory = category.id)}
 						>
@@ -1791,7 +1801,8 @@
 	<div class="mt-4 border-t border-gray-200 pt-4">
 		{#if !addingCategory}
 			<button onclick={() => (addingCategory = true)} class="btn btn-sm">
-				<Icon name="plus" /> New category
+				<Icon name="plus" />
+				{t('inventory.newCategory')}
 			</button>
 		{/if}
 	</div>
@@ -1808,19 +1819,23 @@
 			class="mt-2"
 		>
 			<label class="block">
-				<span class="eyebrow text-gray-600">New category</span>
-				<OneLine name="label" placeholder="Frozen" class="input mt-1" required />
+				<span class="eyebrow text-gray-600">{t('inventory.newCategory')}</span>
+				<OneLine name="label" placeholder={t('inventory.frozen')} class="input mt-1" required />
 			</label>
 			<div class="mt-2 flex flex-wrap items-center justify-between gap-2">
 				<label class="flex items-center gap-2 text-sm text-gray-600">
 					<input type="checkbox" name="isFood" value="true" />
-					It holds food
+					{t('inventory.itHoldsFood')}
 				</label>
 				<div class="flex items-center gap-2">
 					<button type="button" class="btn btn-sm" onclick={() => (addingCategory = false)}>
-						Cancel
+						{t('ui.cancel')}
 					</button>
-					<button class="btn btn-primary btn-sm" title="Add" aria-label="Add the category">
+					<button
+						class="btn btn-primary btn-sm"
+						title={t('ui.add')}
+						aria-label={t('inventory.addTheCategory')}
+					>
 						<Icon name="plus" />
 					</button>
 				</div>
@@ -1829,7 +1844,9 @@
 	{/if}
 
 	{#snippet footer()}
-		<button type="button" class="btn" onclick={() => (showCategories = false)}>Close</button>
+		<button type="button" class="btn" onclick={() => (showCategories = false)}
+			>{t('ui.close')}</button
+		>
 	{/snippet}
 </Modal>
 
@@ -1862,17 +1879,17 @@
 			<input type="hidden" name="id" value={editingLocation.id} />
 		{/if}
 		<FormGrid>
-			<Field label="Name" span={12} required>
+			<Field label={t('ui.name')} span={12} required>
 				<OneLine
 					name="heading"
 					required
 					value={editingLocation?.name ?? ''}
-					placeholder="White chest"
+					placeholder={t('inventory.whiteChest')}
 				/>
 			</Field>
-			<Field label="Inside" span={12} hint="Leave empty for a room or a building.">
+			<Field label={t('inventory.inside')} span={12} hint="Leave empty for a room or a building.">
 				<select name="parentId" class="select">
-					<option value="">— nothing, it is top level —</option>
+					<option value="">{t('inventory.nothingItIsTop')}</option>
 					{#each data.locations as one (one.id)}
 						{#if one.id !== editingLocation?.id}
 							<option value={one.id} selected={editingLocation?.parentId === one.id}>
@@ -1892,7 +1909,7 @@
 			onclick={() => {
 				addingLocation = false;
 				editingLocation = null;
-			}}>Cancel</button
+			}}>{t('ui.cancel')}</button
 		>
 		<button type="submit" form="location-form" class="btn btn-primary">
 			{editingLocation ? 'Save' : 'Add'}
@@ -1910,16 +1927,18 @@
 <Modal
 	open={confirmDeleteLocation !== null}
 	onclose={() => (confirmDeleteLocation = null)}
-	title="Remove this location?"
+	title={t('inventory.removeThisLocation')}
 	description="Whatever is inside it moves up a level, and the things filed here keep existing — they just lose their address."
 	size="sm"
 >
 	<p class="text-sm text-gray-500">
-		Nothing is thrown away. This only takes the shelf out of the tree.
+		{t('inventory.nothingIsThrownAwayThis')}
 	</p>
 
 	{#snippet footer()}
-		<button type="button" class="btn" onclick={() => (confirmDeleteLocation = null)}>Cancel</button>
+		<button type="button" class="btn" onclick={() => (confirmDeleteLocation = null)}
+			>{t('ui.cancel')}</button
+		>
 		<form
 			method="post"
 			action="?/deleteLocation"
@@ -1930,7 +1949,7 @@
 				}}
 		>
 			<input type="hidden" name="id" value={confirmDeleteLocation} />
-			<button class="btn btn-danger" use:armed>Yes, remove it</button>
+			<button class="btn btn-danger" use:armed>{t('inventory.yesRemoveIt')}</button>
 		</form>
 	{/snippet}
 </Modal>

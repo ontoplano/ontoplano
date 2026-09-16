@@ -14,6 +14,9 @@
 	import { REGISTRATION_MODES } from '$lib/registration';
 	import StagingBand from '$lib/components/StagingBand.svelte';
 	import type { PageServerData, ActionData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -140,7 +143,7 @@
 	{/if}
 
 	<Card
-		title="What is running"
+		title={t('settings.instance.whatIsRunning')}
 		description={onDevice
 			? 'Which ontoplano this is, and what it is running.'
 			: 'Whether the last deploy is the thing answering right now.'}
@@ -157,18 +160,18 @@
 			-->
 			{#if onDevice}
 				<div>
-					<dt class="text-sm text-gray-500">Instance</dt>
+					<dt class="text-sm text-gray-500">{t('settings.instance.instance')}</dt>
 					<dd class="text-sm font-semibold text-gray-900">
-						Isolated
+						{t('settings.instance.isolated')}
 						<span class="block font-normal text-gray-500">
-							This device, on its own. No server, and nothing leaves it.
+							{t('settings.instance.thisDeviceOnItsOwn')}
 						</span>
 					</dd>
 				</div>
 			{/if}
 
 			<div>
-				<dt class="text-sm text-gray-500">Version</dt>
+				<dt class="text-sm text-gray-500">{t('settings.instance.version')}</dt>
 				<dd class="tabular text-lg font-semibold text-gray-900" data-testid="app-version">
 					{data.build.version}
 					<span class="text-sm font-normal text-gray-500">({data.build.commit})</span>
@@ -176,7 +179,7 @@
 			</div>
 
 			<div>
-				<dt class="text-sm text-gray-500">Built</dt>
+				<dt class="text-sm text-gray-500">{t('settings.instance.built')}</dt>
 				<dd class="text-sm text-gray-900">
 					{ago(data.build.builtAt)}
 					<span class="text-gray-500">· {exactly(data.build.builtAt)}</span>
@@ -187,7 +190,7 @@
 			     are looking at is the build. -->
 			{#if !onDevice}
 				<div>
-					<dt class="text-sm text-gray-500">Running since</dt>
+					<dt class="text-sm text-gray-500">{t('settings.instance.runningSince')}</dt>
 					<dd class="text-sm text-gray-900">
 						{ago(data.build.startedAt)}
 						<span class="text-gray-500">· {exactly(data.build.startedAt)}</span>
@@ -197,7 +200,7 @@
 
 			{#if !onDevice}
 				<div>
-					<dt class="text-sm text-gray-500">Registration, in force</dt>
+					<dt class="text-sm text-gray-500">{t('settings.instance.registrationInForce')}</dt>
 					<dd class="text-sm text-gray-900">
 						{data.effectiveRegistration}
 						{#if data.effectiveRegistration !== data.config.registration.mode}
@@ -210,7 +213,7 @@
 				</div>
 			{:else if storage}
 				<div>
-					<dt class="text-sm text-gray-500">Where the data is</dt>
+					<dt class="text-sm text-gray-500">{t('settings.instance.whereTheDataIs')}</dt>
 					<dd class="text-sm text-gray-900">
 						<span class="tabular">{storage.path}</span>
 						<span class="text-gray-500">· {storage.tables} tables</span>
@@ -222,9 +225,8 @@
 		{#if !onDevice && !restartedIntoThisBuild}
 			<div class="mt-4">
 				<Banner kind="warning">
-					This process is older than the build it is reporting, which means the last deploy copied
-					the files and never restarted the service. Nothing new is running.
-					<code class="tabular">make restart-server</code>
+					{t('settings.instance.thisProcessIsOlderThan')}
+					<code class="tabular">{t('settings.instance.makeRestartServer')}</code>
 				</Banner>
 			</div>
 		{/if}
@@ -255,7 +257,7 @@
 				the meaning either way.
 			-->
 			<Card
-				title="The services beside the app"
+				title={t('settings.instance.theServicesBesideTheApp')}
 				description="The app answers requests; these are the timers that make the rest happen."
 			>
 				<ul class="divide-y divide-gray-200">
@@ -298,24 +300,30 @@
 				administrator account. The cards stay, because what this page is for is
 				part of what the demo shows.
 			-->
-			<Card title="Deployment" description="Where the server listens. Set in config.toml.">
+			<Card
+				title={t('settings.instance.deployment')}
+				description="Where the server listens. Set in config.toml."
+			>
 				<p
 					class="tabular border border-gray-200 bg-gray-50 px-3 py-2 text-sm break-all text-gray-700"
 				>
 					{#if data.demo}
-						<span class="text-gray-500">Hidden on the demo.</span>
+						<span class="text-gray-500">{t('settings.instance.hiddenOnTheDemo')}</span>
 					{:else}
 						{data.config.server.host}:{data.config.server.port}
 					{/if}
 				</p>
 			</Card>
 
-			<Card title="Database" description="Where your data is stored. Change it in config.toml.">
+			<Card
+				title={t('settings.instance.database')}
+				description="Where your data is stored. Change it in config.toml."
+			>
 				<p
 					class="tabular border border-gray-200 bg-gray-50 px-3 py-2 text-sm break-all text-gray-700"
 				>
 					{#if data.demo}
-						<span class="text-gray-500">Hidden on the demo.</span>
+						<span class="text-gray-500">{t('settings.instance.hiddenOnTheDemo')}</span>
 					{:else}
 						{data.config.database.path}
 					{/if}
@@ -324,7 +332,7 @@
 		</div>
 
 		<Card
-			title="Who can register"
+			title={t('settings.instance.whoCanRegister')}
 			description="An instance on the open internet with sign-up left open is one that somebody else will use."
 		>
 			{#if data.effectiveRegistration !== data.config.registration.mode}
@@ -336,9 +344,8 @@
 				-->
 				<div class="mb-4">
 					<Banner kind="warning">
-						<strong>{data.effectiveRegistration}</strong> right now, set in the server's environment —
-						ONTOPLANO_REGISTRATION overrides what is chosen here. These buttons are what will apply once
-						it is unset.
+						<strong>{data.effectiveRegistration}</strong>
+						{t('settings.instance.rightNowSetInThe')}
 					</Banner>
 				</div>
 			{/if}
@@ -365,20 +372,21 @@
 					</label>
 				{/each}
 
-				<button class="btn btn-primary">Save</button>
+				<button class="btn btn-primary">{t('ui.save')}</button>
 			</form>
 		</Card>
 
 		{#if data.newsletter}
 			{@const list = data.newsletter}
 			<Card
-				title="The mailing list"
+				title={t('settings.instance.theMailingList')}
 				description="People who asked to be told when this changes. Turned on in config.toml."
 			>
 				{#snippet actions()}
 					<form method="post" action="?/exportSubscribers" use:enhance={exportList}>
 						<button class="btn btn-sm" disabled={list.confirmed === 0}>
-							<Icon name="download" /> Export
+							<Icon name="download" />
+							{t('settings.instance.export')}
 						</button>
 					</form>
 				{/snippet}
@@ -393,7 +401,7 @@
 		{/if}
 
 		<Card
-			title="What an account may change"
+			title={t('settings.instance.whatAnAccountMayChange')}
 			description="An address is what an account is here — it signs in and it receives the reset link."
 		>
 			<form
@@ -412,20 +420,20 @@
 					/>
 					<span>
 						<span class="block text-sm font-medium text-gray-900">
-							Let people move their account to another address
+							{t('settings.instance.letPeopleMoveTheirAccount')}
 						</span>
 						<span class="block text-sm text-gray-500">
-							Off by default. The change is still confirmed by a link before it takes effect.
+							{t('settings.instance.offByDefaultTheChange')}
 						</span>
 					</span>
 				</label>
 
-				<button class="btn btn-primary">Save</button>
+				<button class="btn btn-primary">{t('ui.save')}</button>
 			</form>
 		</Card>
 
 		<Card
-			title="Reports and suggestions"
+			title={t('settings.instance.reportsAndSuggestions')}
 			description="When a page breaks in somebody's browser, the server normally never hears about it."
 		>
 			<form
@@ -444,29 +452,30 @@
 					/>
 					<span>
 						<span class="block text-sm font-medium text-gray-900">
-							Offer to send what broke to this server's log
+							{t('settings.instance.offerToSendWhatBroke')}
 						</span>
 						<span class="block text-sm text-gray-500">
-							Off by default. Each person is asked once, in the page, and can say never; nothing is
-							sent without their yes. What is sent is what broke — never what they wrote.
+							{t('settings.instance.offByDefaultEachPerson')}
 						</span>
 					</span>
 				</label>
 
 				<label class="block text-sm">
-					<span class="block font-medium text-gray-900">Send reports and suggestions to</span>
+					<span class="block font-medium text-gray-900"
+						>{t('settings.instance.sendReportsAndSuggestionsTo')}</span
+					>
 					<span class="block text-gray-500">
-						Leave it empty and they only appear in the admin screen.
+						{t('settings.instance.leaveItEmptyAndThey')}
 					</span>
 					<OneLine
 						name="feedbackEmail"
 						value={data.config.reports.feedbackEmail}
 						class="input mt-1 w-full sm:max-w-sm"
-						placeholder="you@example.com"
+						placeholder={t('settings.instance.youExampleCom')}
 					/>
 				</label>
 
-				<button class="btn btn-primary">Save</button>
+				<button class="btn btn-primary">{t('ui.save')}</button>
 			</form>
 		</Card>
 
@@ -480,7 +489,7 @@
 			in where the instance is closed; that is the smaller half of its job.
 		-->
 		<Card
-			title="Invitations"
+			title={t('settings.instance.invitations')}
 			description={data.sellsAnything
 				? 'A code somebody types when they create their account. It works once, and it hands them the app until the date you set.'
 				: 'A code somebody types when they create their account. It works once.'}
@@ -492,7 +501,7 @@
 			{#if fresh}
 				<div class="mb-4 border border-blue-200 bg-blue-50 p-3">
 					<p class="text-sm text-blue-900">
-						Hand this over now — it is not shown again, though it can be revoked.
+						{t('settings.instance.handThisOverNow')}
 					</p>
 					<div class="mt-2 flex items-center gap-2">
 						<code
@@ -526,11 +535,19 @@
 
 			<form method="post" action="?/createInvite" use:enhance>
 				<FormGrid>
-					<Field label="Who is it for" span={12} hint="For your own memory; they never see it.">
-						<OneLine name="note" placeholder="my brother" class="input" />
+					<Field
+						label={t('settings.instance.whoIsItFor')}
+						span={12}
+						hint="For your own memory; they never see it."
+					>
+						<OneLine name="note" placeholder={t('settings.instance.myBrother')} class="input" />
 					</Field>
 
-					<Field label="Code expires in" span={6} hint="Days. Leave empty for no expiry.">
+					<Field
+						label={t('settings.instance.codeExpiresIn')}
+						span={6}
+						hint="Days. Leave empty for no expiry."
+					>
 						<NumberBox autocomplete="off" name="expiresInDays" min="1" max="365" />
 					</Field>
 
@@ -541,7 +558,7 @@
 							it hands over lasts.
 						-->
 						<Field
-							label="Free until"
+							label={t('settings.instance.freeUntil')}
 							span={6}
 							hint="A full account, on the house — no card, no trial days spent. Empty means no end date."
 						>
@@ -557,7 +574,9 @@
 				</FormGrid>
 
 				<div class="mt-4">
-					<button class="btn btn-primary"><Icon name="plus" /> New invitation</button>
+					<button class="btn btn-primary"
+						><Icon name="plus" /> {t('settings.instance.newInvitation')}</button
+					>
 				</div>
 			</form>
 
@@ -565,7 +584,7 @@
 				<div class="mt-4 border-t border-gray-200 pt-4">
 					<EmptyState
 						icon="key"
-						title="No invitations yet"
+						title={t('settings.instance.noInvitationsYet')}
 						description="Make one when somebody needs an account here."
 					/>
 				</div>
@@ -591,7 +610,7 @@
 							</span>
 
 							{#if invite.usedAt}
-								<span class="eyebrow shrink-0 text-gray-500">used</span>
+								<span class="eyebrow shrink-0 text-gray-500">{t('settings.instance.used')}</span>
 							{:else if confirmRevoke === invite.id}
 								<form
 									method="post"
@@ -605,16 +624,19 @@
 								>
 									<input type="hidden" name="id" value={invite.id} />
 									<button type="button" onclick={() => (confirmRevoke = null)} class="btn btn-sm">
-										Cancel
+										{t('ui.cancel')}
 									</button>
-									<button class="btn btn-danger btn-sm" use:armed>Yes, revoke</button>
+									<button class="btn btn-danger btn-sm" use:armed
+										>{t('settings.instance.yesRevoke')}</button
+									>
 								</form>
 							{:else}
 								<button
 									onclick={() => (confirmRevoke = invite.id)}
 									class="btn btn-danger btn-sm shrink-0"
 								>
-									<Icon name="trash" /> Revoke
+									<Icon name="trash" />
+									{t('settings.instance.revoke')}
 								</button>
 							{/if}
 						</div>

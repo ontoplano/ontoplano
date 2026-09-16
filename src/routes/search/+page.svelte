@@ -4,23 +4,26 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import { MIN_QUERY } from '$lib/search';
 	import type { PageServerData } from './$types';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data }: { data: PageServerData } = $props();
 
 	const total = $derived(data.groups.reduce((n, g) => n + g.hits.length, 0));
 </script>
 
-<svelte:head><title>Search · ontoplano</title></svelte:head>
+<svelte:head><title>{t('search.searchOntoplano')}</title></svelte:head>
 
 <div class="space-y-4">
-	<h1 class="text-lg font-bold text-gray-900">Search</h1>
+	<h1 class="text-lg font-bold text-gray-900">{t('ui.search')}</h1>
 
 	<!-- A plain GET form: the URL is the state, so a search can be linked to and
 	     gone back to, and it works before any JavaScript has run. -->
 	<form method="get" action={resolve('/search')}>
 		<OneLine
 			name="q"
-			placeholder="Anything you have written down"
+			placeholder={t('search.anythingYouHaveWrittenDown')}
 			value={data.q}
 			class="input"
 			autofocus
@@ -34,17 +37,19 @@
 			Two examples cost one line and teach the whole thing.
 		-->
 		<p class="mt-1.5 text-xs text-gray-500">
-			Narrow it: <code class="rounded bg-gray-100 px-1">todo:</code>,
-			<code class="rounded bg-gray-100 px-1">goal:</code>,
-			<code class="rounded bg-gray-100 px-1">note:</code> — or
-			<code class="rounded bg-gray-100 px-1">in:kitchen</code> for one notebook.
+			{t('search.narrowIt')} <code class="rounded bg-gray-100 px-1">{t('search.todo')}</code>,
+			<code class="rounded bg-gray-100 px-1">{t('search.goal')}</code>,
+			<code class="rounded bg-gray-100 px-1">{t('search.note')}</code>
+			{t('search.or')}
+			<code class="rounded bg-gray-100 px-1">{t('search.inKitchen')}</code>
+			{t('search.forOneNotebook')}
 		</p>
 	</form>
 
 	{#if data.q.trim().length < MIN_QUERY}
 		<EmptyState
 			icon="tag"
-			title="What are you looking for?"
+			title={t('search.whatAreYouLookingFor')}
 			description="Notes, diary entries, todos, blocks, goals, ideas, people, shopping and activities — all of it at once, or one kind at a time."
 		/>
 	{:else if total === 0}

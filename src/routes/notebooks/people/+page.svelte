@@ -16,6 +16,9 @@
 	import { SECTION_COLORS } from '$lib/colors';
 	import type { PageServerData, ActionData } from './$types';
 	import { keepInView } from '$lib/actions/keep-in-view';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -119,12 +122,13 @@
 			{#if data.people.length === 0}
 				<EmptyState
 					icon="user"
-					title="Nobody yet"
+					title={t('notebooks.people.nobodyYet')}
 					description="Add the people who turn up in what you write, and every mention of them collects here."
 				>
 					{#snippet action()}
 						<button onclick={openCreate} class="btn btn-primary">
-							<Icon name="plus" /> New person
+							<Icon name="plus" />
+							{t('notebooks.people.newPerson')}
 						</button>
 					{/snippet}
 				</EmptyState>
@@ -220,8 +224,8 @@
 							     three. Two icons need exactly two icons of room. -->
 							<div class="list-row-actions flex-none">
 								<button
-									title="Edit"
-									aria-label="Edit"
+									title={t('ui.edit')}
+									aria-label={t('ui.edit')}
 									onclick={() => openEdit(person)}
 									class="icon-btn"
 								>
@@ -241,14 +245,16 @@
 									>
 										<input type="hidden" name="id" value={person.id} />
 										<button type="button" onclick={() => (confirmDelete = null)} class="btn btn-sm"
-											>Cancel</button
+											>{t('ui.cancel')}</button
 										>
-										<button class="btn btn-danger btn-sm" use:armed>Yes, delete</button>
+										<button class="btn btn-danger btn-sm" use:armed
+											>{t('notebooks.people.yesDelete')}</button
+										>
 									</form>
 								{:else}
 									<button
-										title="Delete"
-										aria-label="Delete"
+										title={t('ui.delete')}
+										aria-label={t('ui.delete')}
 										onclick={() => (confirmDelete = person.id)}
 										class="icon-btn icon-btn-danger"
 									>
@@ -277,7 +283,7 @@
 				flush
 			>
 				{#if !selectedPerson}
-					<EmptyState icon="diary" title="Nobody selected" />
+					<EmptyState icon="diary" title={t('notebooks.people.nobodySelected')} />
 				{:else if data.entries.length === 0}
 					<EmptyState
 						icon="diary"
@@ -331,11 +337,11 @@
 				onto a second line in the narrow column, which pushed its select a
 				line below the name box beside it.
 			-->
-			<Field label="Name" span={6} required>
+			<Field label={t('ui.name')} span={6} required>
 				<OneLine name="label" value={editing?.name ?? ''} class="input" required />
 			</Field>
 
-			<Field label="How you know them" span={6}>
+			<Field label={t('notebooks.people.howYouKnowThem')} span={6}>
 				<select name="relationship" class="select">
 					{#each RELATIONSHIPS as value (value)}
 						<option {value} selected={(editing?.relationship ?? 'other') === value}>
@@ -357,7 +363,11 @@
 				else's. tests/autofill-field-names.test.ts is the rule, and it
 				reads the markup literally — including comments.
 			-->
-			<Field label="Birthday" span={4} hint="1990-03-14, or --03-14 without the year">
+			<Field
+				label={t('notebooks.people.birthday')}
+				span={4}
+				hint="1990-03-14, or --03-14 without the year"
+			>
 				<input
 					name="bornOn"
 					autocomplete="off"
@@ -374,15 +384,15 @@
 				the form is saved.
 			-->
 			{#if bornOn.trim()}
-				<Field label="On the day" span={4}>
+				<Field label={t('notebooks.people.onTheDay')} span={4}>
 					<label class="flex items-center gap-2 py-2 text-sm text-gray-700">
 						<input type="checkbox" name="tellMe" checked={tellMe} />
-						Tell me that morning
+						{t('notebooks.people.tellMeThatMorning')}
 					</label>
 				</Field>
 			{/if}
 
-			<Field label="Phone" span={4}>
+			<Field label={t('notebooks.people.phone')} span={4}>
 				<input
 					name="theirPhone"
 					type="tel"
@@ -392,7 +402,7 @@
 				/>
 			</Field>
 
-			<Field label="Email" span={4}>
+			<Field label={t('notebooks.people.email')} span={4}>
 				<input
 					name="theirEmail"
 					type="email"
@@ -402,7 +412,7 @@
 				/>
 			</Field>
 
-			<Field label="Notes" span={12}>
+			<Field label={t('ui.notes')} span={12}>
 				<textarea name="notes" rows="3" class="textarea">{editing?.notes ?? ''}</textarea>
 			</Field>
 		</FormGrid>
@@ -475,8 +485,9 @@
 			{#if editing?.pictureId}
 				<form method="post" action="?/removePicture" use:enhance>
 					<input type="hidden" name="id" value={editingId} />
-					<button class="btn btn-sm btn-quiet" title="Remove the picture">
-						<Icon name="trash" /> Remove
+					<button class="btn btn-sm btn-quiet" title={t('notebooks.people.removeThePicture')}>
+						<Icon name="trash" />
+						{t('ui.remove')}
 					</button>
 				</form>
 			{/if}
@@ -491,7 +502,7 @@
 	{/if}
 
 	{#snippet footer()}
-		<button type="button" class="btn" onclick={() => (showForm = false)}>Cancel</button>
+		<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 		<button type="submit" form="person-form" class="btn btn-primary">
 			{editingId ? 'Save' : 'Add person'}
 		</button>

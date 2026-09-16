@@ -2,6 +2,9 @@
 	import { page } from '$app/state';
 	import Icon from '$lib/components/Icon.svelte';
 	import { CLOSING_STEPS, tutorialFor, type TutorialStep } from '$lib/tutorials';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * The guided tour: the screen goes dark, and one thing at a time does not.
@@ -323,7 +326,7 @@
 	bind:this={dialog}
 	oncancel={(e) => e.preventDefault()}
 	onclose={() => (open = false)}
-	aria-label="Tutorial"
+	aria-label={t('tutorial.tutorial')}
 	style="--tour-accent: {accent}"
 >
 	{#if open && step}
@@ -381,19 +384,22 @@
 							></span>
 						{/each}
 					</div>
-					<button type="button" class="btn btn-sm btn-quiet" onclick={dismiss}>Dismiss</button>
+					<button type="button" class="btn btn-sm btn-quiet" onclick={dismiss}
+						>{t('ui.dismiss')}</button
+					>
 					{#if index > 0}
-						<button type="button" class="btn btn-sm" onclick={back} aria-label="Back">
+						<button type="button" class="btn btn-sm" onclick={back} aria-label={t('ui.back')}>
 							<Icon name="chevron-left" size={16} />
 						</button>
 					{/if}
 					<button type="button" class="btn btn-sm btn-primary" onclick={next}>
-						Next <Icon name="chevron-right" size={16} />
+						{t('ui.next')}
+						<Icon name="chevron-right" size={16} />
 					</button>
 				{:else}
 					<div class="flex-1"></div>
 					<button type="button" class="btn btn-sm btn-primary" onclick={close}>
-						Okay, dismiss!
+						{t('tutorial.okayDismiss')}
 					</button>
 				{/if}
 			</div>

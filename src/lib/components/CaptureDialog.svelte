@@ -5,6 +5,9 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import { notify } from '$lib/notify.svelte';
 	import type { Capture } from '$lib/capture';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * Writing one thing down, wherever the press came from.
@@ -104,9 +107,10 @@
 	{/if}
 
 	{#snippet footer()}
-		<button type="button" class="btn" onclick={onclose}>Cancel</button>
+		<button type="button" class="btn" onclick={onclose}>{t('ui.cancel')}</button>
 		<button type="submit" form="capture-form" class="btn btn-primary">
-			<Icon name="plus" /> Save
+			<Icon name="plus" />
+			{t('ui.save')}
 		</button>
 	{/snippet}
 </Modal>

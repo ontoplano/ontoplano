@@ -181,7 +181,7 @@ at a time, and show me what you will write before writing it.`
 
 <div class="mx-auto w-full max-w-3xl space-y-6 px-4 py-10">
 	<div>
-		<h1 class="text-lg font-bold text-gray-900">Welcome to ontoplano</h1>
+		<h1 class="text-lg font-bold text-gray-900">{t('welcome.welcomeToOntoplano')}</h1>
 		<p class="mt-1 text-sm text-gray-500">
 			{#if stepping}
 				{STEPS.length} quick steps. All of it is editable later.
@@ -205,7 +205,7 @@ at a time, and show me what you will write before writing it.`
 			see, and a bar that fills is a promise about how long the rest takes.
 		-->
 			{#if stepping}
-				<ol class="flex items-center gap-2" aria-label="Progress">
+				<ol class="flex items-center gap-2" aria-label={t('welcome.progress')}>
 					{#each STEPS as s, i (s.key)}
 						<li>
 							<button
@@ -237,8 +237,7 @@ at a time, and show me what you will write before writing it.`
 							{#if s.key === 'assistant'}
 								{#if assistantToken}
 									<p class="text-sm text-gray-700">
-										Paste this to Claude — or anything that speaks MCP. The key is shown only now;
-										revoke it any time under Settings → Integrations.
+										{t('welcome.pasteThisToClaude')}
 									</p>
 									<div class="mt-3 flex items-start gap-2">
 										<code
@@ -251,26 +250,23 @@ at a time, and show me what you will write before writing it.`
 										</button>
 									</div>
 									<p class="mt-2 text-xs text-gray-500">
-										This token gives the AI most permissions to edit your account. Create a new
-										token later to restrict its
+										{t('welcome.thisTokenGivesTheAi')}
 										<a
 											href="https://docs.ontoplano.com/permissions"
 											target="_blank"
 											rel="noreferrer"
-											class="underline">permissions</a
+											class="underline">{t('welcome.permissions')}</a
 										>.
 									</p>
 								{:else}
 									<p class="text-sm text-gray-700">
-										Claude — or anything that speaks MCP — can read your week and write to it, with
-										a key you can revoke. It will ask about your routine and set the week up for
-										you.
+										{t('welcome.claudeOrAnythingThat')}
 									</p>
 									<button form="assistant-token" class="btn mt-3">
-										Create the key and the prompt
+										{t('welcome.createTheKeyAndThe')}
 									</button>
 									<p class="mt-2 text-xs text-gray-500">
-										Or press Next — Settings → Integrations has this whenever you want it.
+										{t('welcome.orPressNextSettings')}
 									</p>
 								{/if}
 							{:else if s.key === 'where'}
@@ -279,7 +275,7 @@ at a time, and show me what you will write before writing it.`
 										groups={data.zones}
 										bind:value={timezone}
 										required
-										label="Your timezone"
+										label={t('welcome.yourTimezone')}
 									/>
 								</div>
 							{:else if s.key === 'week'}
@@ -376,24 +372,24 @@ at a time, and show me what you will write before writing it.`
 								<input type="hidden" name="theme" value={theme} />
 							{:else if s.key === 'start'}
 								<div class="grid gap-3 sm:grid-cols-3">
-									{#each data.templates as t (t.key)}
+									{#each data.templates as option (option.key)}
 										<label
-											class="lift cursor-pointer rounded-md border p-4 {template === t.key
+											class="lift cursor-pointer rounded-md border p-4 {template === option.key
 												? 'border-gray-900 bg-gray-50 shadow-raised'
 												: 'border-gray-200 bg-white hover:bg-gray-50'}"
 										>
 											<input
 												type="radio"
 												name="template"
-												value={t.key}
-												checked={template === t.key}
-												onchange={() => (template = t.key)}
+												value={option.key}
+												checked={template === option.key}
+												onchange={() => (template = option.key)}
 												class="sr-only"
 											/>
-											<span class="block text-sm font-semibold text-gray-900">{t.label}</span>
-											<span class="mt-1 block text-xs text-gray-500">{t.description}</span>
+											<span class="block text-sm font-semibold text-gray-900">{option.label}</span>
+											<span class="mt-1 block text-xs text-gray-500">{option.description}</span>
 											<span class="tabular mt-2 block text-xs text-gray-500">
-												{t.blocks === 0 ? 'No blocks' : `${t.blocks} blocks`}
+												{option.blocks === 0 ? 'No blocks' : `${option.blocks} blocks`}
 											</span>
 										</label>
 									{/each}
@@ -411,17 +407,19 @@ at a time, and show me what you will write before writing it.`
 		-->
 			<div class="flex flex-wrap items-center justify-between gap-3">
 				<button type="submit" name="skip" value="1" class="btn btn-quiet">
-					Skip — I'll set this up later
+					{t('welcome.skipILlSetThis')}
 				</button>
 
 				<div class="flex items-center gap-2">
 					{#if stepping && step > 0}
-						<button type="button" onclick={() => go(step - 1)} class="btn">Back</button>
+						<button type="button" onclick={() => go(step - 1)} class="btn">{t('ui.back')}</button>
 					{/if}
 					{#if stepping && !last}
-						<button type="button" onclick={() => go(step + 1)} class="btn btn-primary">Next</button>
+						<button type="button" onclick={() => go(step + 1)} class="btn btn-primary"
+							>{t('ui.next')}</button
+						>
 					{:else}
-						<button class="btn btn-primary">Start planning</button>
+						<button class="btn btn-primary">{t('welcome.startPlanning')}</button>
 					{/if}
 				</div>
 			</div>

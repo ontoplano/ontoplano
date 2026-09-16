@@ -4,6 +4,9 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * What a shopping item is made of. See IdeaFields for why this is a
@@ -50,16 +53,16 @@
 	const filled = $derived((notes ? 1 : 0) + (price ? 1 : 0) + (type !== 'replenish' ? 1 : 0));
 </script>
 
-<Field label="Item" span={compact ? 12 : 8} required>
+<Field label={t('fields.buy.item')} span={compact ? 12 : 8} required>
 	<!-- Same reason as the todo's title: see `OneLine.svelte`. -->
 	<OneLine name="label" required bind:value={label} />
 </Field>
 
 {#snippet rest()}
-	<Field label="List" span={compact ? 12 : 4}>
+	<Field label={t('fields.buy.list')} span={compact ? 12 : 4}>
 		<select name="type" required bind:value={type} class="select">
-			<option value="replenish">Restock</option>
-			<option value="someday">Wishlist</option>
+			<option value="replenish">{t('fields.buy.restock')}</option>
+			<option value="someday">{t('fields.buy.wishlist')}</option>
 		</select>
 	</Field>
 
@@ -67,11 +70,15 @@
 		<!-- How many you keep, which is what the list is about: still to buy is
 		     what this is bigger than the count on the row. One, for almost
 		     everything, which is why it is filled in already. -->
-		<Field label="How many you keep" span={6} hint="The count the list compares against.">
+		<Field
+			label={t('fields.buy.howManyYouKeep')}
+			span={6}
+			hint="The count the list compares against."
+		>
 			<NumberBox name="idealQty" min="0" step="1" inputmode="numeric" bind:value={idealQty} />
 		</Field>
 
-		<Field label="Category" span={6}>
+		<Field label={t('ui.category')} span={6}>
 			<select name="shoppingCategoryId" bind:value={shoppingCategoryId} class="select">
 				{#each categories as category (category.id)}
 					<option value={category.id}>{category.name}</option>
@@ -83,9 +90,9 @@
 	{#if askLocation && locations.length > 0}
 		<!-- Where it lives, asked once, while it is being written down. Changing
 		     it afterwards is a drag onto the panel, or the row's own control. -->
-		<Field label="Location" span={12}>
+		<Field label={t('fields.buy.location')} span={12}>
 			<select name="locationId" bind:value={locationId} class="select">
-				<option value={null}>— nowhere in particular —</option>
+				<option value={null}>{t('fields.buy.nowhereInParticular')}</option>
 				{#each locations as one (one.id)}
 					<option value={one.id}>{one.path}</option>
 				{/each}
@@ -94,14 +101,14 @@
 	{/if}
 
 	{#if showFields}
-		<Field label="Its own fields" span={12}>
+		<Field label={t('fields.buy.itsOwnFields')} span={12}>
 			<div class="space-y-2">
 				{#each fields as pair, i (i)}
 					<div class="flex items-center gap-2">
 						<OneLine
 							name="fieldName"
 							bind:value={pair[0]}
-							placeholder="length"
+							placeholder={t('fields.buy.length')}
 							class="input min-w-0 flex-1"
 						/>
 						<OneLine
@@ -123,7 +130,7 @@
 							type="button"
 							onclick={() => (fields = fields.filter((_, at) => at !== i))}
 							class="icon-btn icon-btn-danger shrink-0 {pair[0] || pair[1] ? '' : 'invisible'}"
-							title="Remove this field"
+							title={t('fields.buy.removeThisField')}
 							aria-label="Remove the field {pair[0] || 'being written'}"
 						>
 							<Icon name="close" />
@@ -136,18 +143,18 @@
 				onclick={() => (fields = [...fields, ['', '']])}
 				class="btn btn-sm mt-2"
 			>
-				+ Another
+				{t('fields.buy.another')}
 			</button>
 		</Field>
 	{/if}
 
-	<Field label="Notes" span={8}>
+	<Field label={t('ui.notes')} span={8}>
 		<OneLine name="notes" bind:value={notes} class="input" />
 	</Field>
 
 	<!-- What it costs, roughly. Prices move and shops disagree, which is why
 	     the total says "about" and never claims a receipt. -->
-	<Field label="Price" span={4} hint="What it usually costs.">
+	<Field label={t('fields.buy.price')} span={4} hint="What it usually costs.">
 		<input
 			name="price"
 			type="text"

@@ -300,11 +300,13 @@
 		class="space-y-4 border border-gray-200 bg-white p-6 shadow-card"
 	>
 		<div>
-			<h2 class="text-sm font-semibold text-gray-900">Week and timezone</h2>
+			<h2 class="text-sm font-semibold text-gray-900">
+				{t('settings.preferences.weekAndTimezone')}
+			</h2>
 		</div>
 		<div class="flex gap-4">
 			<label class="flex-1">
-				<span class="eyebrow text-gray-600">First day of week</span>
+				<span class="eyebrow text-gray-600">{t('settings.preferences.firstDayOfWeek')}</span>
 				<select
 					name="firstDay"
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
@@ -315,7 +317,7 @@
 				</select>
 			</label>
 			<label class="flex-1">
-				<span class="eyebrow text-gray-600">Generate tasks on</span>
+				<span class="eyebrow text-gray-600">{t('settings.preferences.generateTasksOn')}</span>
 				<select
 					name="generateDay"
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
@@ -327,10 +329,10 @@
 			</label>
 		</div>
 		<label class="block max-w-xs">
-			<span class="eyebrow text-gray-600">Timezone</span>
+			<span class="eyebrow text-gray-600">{t('settings.preferences.timezone')}</span>
 			<TimezonePicker groups={data.zones} value={data.timezone} />
 		</label>
-		<button class="btn btn-primary">Save</button>
+		<button class="btn btn-primary">{t('ui.save')}</button>
 	</form>
 
 	<!-- One currency per account: a shopping list in three is a spreadsheet. -->
@@ -341,8 +343,8 @@
 		class="space-y-4 border border-gray-200 bg-white p-6 shadow-card"
 	>
 		<div>
-			<h2 class="text-sm font-semibold text-gray-900">Money</h2>
-			<p class="mt-1 text-sm text-gray-500">What prices on the shopping list are in.</p>
+			<h2 class="text-sm font-semibold text-gray-900">{t('settings.preferences.money')}</h2>
+			<p class="mt-1 text-sm text-gray-500">{t('settings.preferences.whatPricesOnTheShopping')}</p>
 		</div>
 		<!--
 			Eight in a list, and a field for the rest.
@@ -356,25 +358,29 @@
 		-->
 		<div class="flex flex-wrap items-end gap-3">
 			<label class="block w-[12rem]">
-				<span class="eyebrow text-gray-600">Currency</span>
-				<select bind:value={currencyChoice} aria-label="Currency" class="select mt-1">
+				<span class="eyebrow text-gray-600">{t('settings.preferences.currency')}</span>
+				<select
+					bind:value={currencyChoice}
+					aria-label={t('settings.preferences.currency')}
+					class="select mt-1"
+				>
 					{#each data.currencies as code (code)}
 						<option value={code}>{code}</option>
 					{/each}
-					<option value={OTHER}>Another…</option>
+					<option value={OTHER}>{t('settings.preferences.another')}</option>
 				</select>
 			</label>
 
 			{#if currencyChoice === OTHER}
 				<label class="block max-w-[9rem]">
-					<span class="eyebrow text-gray-600">Its code</span>
+					<span class="eyebrow text-gray-600">{t('settings.preferences.itsCode')}</span>
 					<input
 						bind:value={otherCurrency}
 						maxlength="3"
 						autocomplete="off"
 						spellcheck="false"
-						placeholder="PLN"
-						aria-label="Currency code"
+						placeholder={t('settings.preferences.pLN')}
+						aria-label={t('settings.preferences.currencyCode')}
 						class="input mt-1 uppercase"
 					/>
 				</label>
@@ -399,7 +405,9 @@
 			</p>
 		{/if}
 
-		<button class="btn btn-primary" disabled={currencyChoice === OTHER && !preview}>Save</button>
+		<button class="btn btn-primary" disabled={currencyChoice === OTHER && !preview}
+			>{t('ui.save')}</button
+		>
 	</form>
 
 	<!--
@@ -415,15 +423,14 @@
 		class="space-y-4 border border-gray-200 bg-white p-6 shadow-card"
 	>
 		<div>
-			<h2 class="text-sm font-semibold text-gray-900">Planner hours</h2>
+			<h2 class="text-sm font-semibold text-gray-900">{t('settings.preferences.plannerHours')}</h2>
 			<p class="mt-1 text-sm text-gray-500">
-				The stretch of the day the day and week grids show. Anything outside it is still there — it
-				just is not drawn.
+				{t('settings.preferences.theStretchOfTheDay')}
 			</p>
 		</div>
 		<div class="flex gap-4">
 			<label class="flex-1 sm:max-w-[10rem]">
-				<span class="eyebrow text-gray-600">Day starts at</span>
+				<span class="eyebrow text-gray-600">{t('settings.preferences.dayStartsAt')}</span>
 				<select name="start" class="select mt-1">
 					{#each Array.from({ length: 24 }, (_, h) => h) as h (h)}
 						<option value={h} selected={data.gridHours.start === h}>{hourLabel(h)}</option>
@@ -431,7 +438,7 @@
 				</select>
 			</label>
 			<label class="flex-1 sm:max-w-[10rem]">
-				<span class="eyebrow text-gray-600">Day ends at</span>
+				<span class="eyebrow text-gray-600">{t('settings.preferences.dayEndsAt')}</span>
 				<select name="end" class="select mt-1">
 					{#each Array.from({ length: 24 }, (_, h) => h + 1) as h (h)}
 						<option value={h} selected={data.gridHours.end === h}>{hourLabel(h)}</option>
@@ -439,7 +446,7 @@
 				</select>
 			</label>
 		</div>
-		<button class="btn btn-primary">Save</button>
+		<button class="btn btn-primary">{t('ui.save')}</button>
 	</form>
 
 	<!--
@@ -459,11 +466,14 @@
 	-->
 	<section class="space-y-4 border border-gray-200 bg-white p-6 shadow-card">
 		<div>
-			<h2 class="text-sm font-semibold text-gray-900">What you are told about</h2>
+			<h2 class="text-sm font-semibold text-gray-900">
+				{t('settings.preferences.whatYouAreToldAbout')}
+			</h2>
 			<p class="mt-1 text-sm text-gray-500">
-				Everything the app will say without being asked. Whether each one makes a sound is a
-				separate question, on
-				<a href={resolve('/reminders')} class="underline underline-offset-2">Reminders</a>.
+				{t('settings.preferences.everythingTheAppWillSay')}
+				<a href={resolve('/reminders')} class="underline underline-offset-2"
+					>{t('settings.preferences.reminders')}</a
+				>.
 			</p>
 		</div>
 
@@ -512,7 +522,7 @@
 						-->
 							{#if what.at !== null}
 								<label class="flex items-center gap-2 text-sm text-gray-700">
-									<span class="sr-only">When</span>
+									<span class="sr-only">{t('settings.preferences.when')}</span>
 									<input
 										type="time"
 										name="at"
@@ -554,7 +564,9 @@
 	{#if page.data.pushKey || inApp}
 		<section class="space-y-4 border border-gray-200 bg-white p-6 shadow-card">
 			<div>
-				<h2 class="text-sm font-semibold text-gray-900">Notifications on this device</h2>
+				<h2 class="text-sm font-semibold text-gray-900">
+					{t('settings.preferences.notificationsOnThisDevice')}
+				</h2>
 				<!--
 					One sentence. It said the same thing three times — a headline, a
 					paragraph restating it with the mechanism, and a third about how
@@ -603,7 +615,7 @@
 							<!-- eslint-disable svelte/no-navigation-without-resolve -- another origin -->
 							<a
 								href="{DEVICE_ORIGIN}/ring?off=1&at={encodeURIComponent(page.url.origin)}"
-								class="btn btn-sm">Stop ringing on this phone</a
+								class="btn btn-sm">{t('settings.preferences.stopRingingOnThisPhone')}</a
 							>
 							<!-- eslint-enable svelte/no-navigation-without-resolve -->
 						{/if}
@@ -639,13 +651,15 @@
 					</div>
 					{#if ringing === 'failed'}
 						<p class="mt-2 text-sm text-gray-600">
-							This instance would not make a key. Try again, or make one under AI & Integrations.
+							{t('settings.preferences.thisInstanceWouldNotMake')}
 						</p>
 					{/if}
 				{:else if notifications === 'on'}
 					<div class="flex flex-wrap items-center gap-3">
-						<span class="text-sm text-gray-700">On for this phone.</span>
-						<button class="btn btn-sm" onclick={sendPhoneTest}>Send a test</button>
+						<span class="text-sm text-gray-700">{t('settings.preferences.onForThisPhone')}</span>
+						<button class="btn btn-sm" onclick={sendPhoneTest}
+							>{t('settings.preferences.sendATest')}</button
+						>
 					</div>
 					{#if phoneTested}
 						<p class="mt-2 text-sm text-gray-600">{phoneTested}</p>
@@ -660,28 +674,32 @@
 						directions instead of pressing a button.
 					-->
 					<div class="flex flex-wrap items-center gap-3">
-						<span class="text-sm text-gray-700"> Android said no, and will not ask again. </span>
+						<span class="text-sm text-gray-700">
+							{t('settings.preferences.androidSaidNoAndWill')}
+						</span>
 						<button class="btn btn-primary btn-sm" onclick={openPhoneSettings}>
-							Open the phone's settings
+							{t('settings.preferences.openThePhoneSSettings')}
 						</button>
 					</div>
 					{#if settingsFailed}
 						<p class="mt-2 text-sm text-gray-600">
-							This phone would not open it. Settings → Apps → Ontoplano → Notifications.
+							{t('settings.preferences.thisPhoneWouldNotOpen')}
 						</p>
 					{/if}
 				{:else}
-					<button class="btn btn-primary" onclick={turnOnPhone}>Turn on</button>
+					<button class="btn btn-primary" onclick={turnOnPhone}
+						>{t('settings.preferences.turnOn')}</button
+					>
 				{/if}
 			{:else if notifications === 'unsupported'}
-				<p class="text-sm text-gray-500">This browser cannot do it.</p>
+				<p class="text-sm text-gray-500">{t('settings.preferences.thisBrowserCannotDoIt')}</p>
 			{:else if notifications === 'denied'}
 				<p class="text-sm text-gray-500">
-					Blocked for this site. Its permission has to be changed in the browser.
+					{t('settings.preferences.blockedForThisSiteIts')}
 				</p>
 			{:else if notifications === 'on'}
 				<div class="flex flex-wrap items-center gap-3">
-					<span class="text-sm text-gray-700">On for this device.</span>
+					<span class="text-sm text-gray-700">{t('settings.preferences.onForThisDevice')}</span>
 					<!--
 						Six links between "allow" and a phone buzzing, and when nothing
 						arrives every one of them is a candidate. This walks the whole
@@ -692,13 +710,13 @@
 					<button class="btn btn-sm" onclick={sendTest} disabled={testing}>
 						{testing ? 'Sending…' : 'Send a test'}
 					</button>
-					<button class="btn btn-sm" onclick={turnOff}>Turn off</button>
+					<button class="btn btn-sm" onclick={turnOff}>{t('settings.preferences.turnOff')}</button>
 				</div>
 				{#if tested}
 					<p class="mt-2 text-sm text-gray-600">{tested}</p>
 				{/if}
 			{:else}
-				<button class="btn btn-primary" onclick={turnOn}>Turn on</button>
+				<button class="btn btn-primary" onclick={turnOn}>{t('settings.preferences.turnOn')}</button>
 			{/if}
 		</section>
 	{/if}
@@ -718,17 +736,14 @@
 	-->
 	<section class="border border-gray-200 bg-white p-6 shadow-card">
 		<div class="mb-4">
-			<h2 class="text-sm font-semibold text-gray-900">The menu</h2>
+			<h2 class="text-sm font-semibold text-gray-900">{t('settings.preferences.theMenu')}</h2>
 			<p class="mt-1 text-sm text-gray-500">
-				The rooms, in the order they appear — along the bar, and round the wheel. First in the list
-				is first along the bar and first under your thumb: the wheel starts at the bottom right and
-				goes anti-clockwise.
+				{t('settings.preferences.theRoomsInTheOrder')}
 				<a
 					href="https://docs.ontoplano.com/the-wheel"
 					class="font-medium text-gray-900 underline"
-					rel="external">How the wheel is laid out</a
-				>. A room you put away leaves every menu and keeps everything in it — its pages still open
-				from a link.
+					rel="external">{t('settings.preferences.howTheWheelIsLaid')}</a
+				>{t('settings.preferences.aRoomYouPut')}
 			</p>
 		</div>
 
@@ -790,7 +805,7 @@
 							onclick={() => shiftRoom(room.key, -1)}
 							disabled={i === 0}
 							class="p-1 text-gray-500 hover:text-gray-900 disabled:opacity-30"
-							title="Move up"
+							title={t('settings.preferences.moveUp')}
 							aria-label={t('settings.menu.moveUp', { what: t(room.name) })}
 						>
 							<Icon name="chevron-up" size={16} />
@@ -800,7 +815,7 @@
 							onclick={() => shiftRoom(room.key, 1)}
 							disabled={i === lastShownIndex}
 							class="p-1 text-gray-500 hover:text-gray-900 disabled:opacity-30"
-							title="Move down"
+							title={t('settings.preferences.moveDown')}
 							aria-label={t('settings.menu.moveDown', { what: t(room.name) })}
 						>
 							<Icon name="chevron-down" size={16} />
@@ -817,7 +832,7 @@
 							{room.hidden ? 'Show' : 'Hide'}
 						</button>
 					{:else}
-						<span class="eyebrow shrink-0 text-gray-500">always on</span>
+						<span class="eyebrow shrink-0 text-gray-500">{t('settings.preferences.alwaysOn')}</span>
 					{/if}
 				</div>
 
@@ -840,7 +855,9 @@
 							>{sectionLabel(t, leaf.id)}</span
 						>
 						{#if room.hidden}
-							<span class="eyebrow shrink-0 text-gray-400">with the room</span>
+							<span class="eyebrow shrink-0 text-gray-400"
+								>{t('settings.preferences.withTheRoom')}</span
+							>
 						{:else}
 							<button
 								type="button"
@@ -856,21 +873,23 @@
 			{/each}
 
 			<div class="flex flex-wrap items-center gap-2 pt-2">
-				<button class="btn btn-primary">Save menu</button>
+				<button class="btn btn-primary">{t('settings.preferences.saveMenu')}</button>
 				{#if !data.menuIsDefault}
-					<button formaction="?/resetMenu" class="btn btn-sm">Back to the defaults</button>
+					<button formaction="?/resetMenu" class="btn btn-sm"
+						>{t('settings.preferences.backToTheDefaults')}</button
+					>
 				{/if}
 			</div>
 			<p class="text-xs text-gray-500">
-				Pick dark colours: the labels on the wheel are white. The planner is always on.
+				{t('settings.preferences.pickDarkColoursTheLabels')}
 			</p>
 		</form>
 	</section>
 
 	<section class="border border-gray-200 bg-white p-6 shadow-card">
 		<div class="mb-4">
-			<h2 class="text-sm font-semibold text-gray-900">Dashboard</h2>
-			<p class="mt-1 text-sm text-gray-500">Which cards appear, and in what order.</p>
+			<h2 class="text-sm font-semibold text-gray-900">{t('settings.preferences.dashboard')}</h2>
+			<p class="mt-1 text-sm text-gray-500">{t('settings.preferences.whichCardsAppearAndIn')}</p>
 		</div>
 
 		<form
@@ -902,7 +921,9 @@
 							<span class="text-sm font-medium text-gray-900">{card.label}</span>
 							<p class="text-xs text-gray-500">{card.description}</p>
 						</div>
-						<button type="button" onclick={() => toggle(id)} class="btn btn-sm">Hide</button>
+						<button type="button" onclick={() => toggle(id)} class="btn btn-sm"
+							>{t('settings.preferences.hide')}</button
+						>
 					</div>
 				{/if}
 			{/each}
@@ -915,21 +936,25 @@
 						<span class="text-sm font-medium text-gray-900">{card.label}</span>
 						<p class="text-xs text-gray-500">{card.description}</p>
 					</div>
-					<button type="button" onclick={() => toggle(card.id)} class="btn btn-sm">Show</button>
+					<button type="button" onclick={() => toggle(card.id)} class="btn btn-sm"
+						>{t('settings.preferences.show')}</button
+					>
 				</div>
 			{/each}
 
 			<div class="flex gap-2 pt-1">
-				<button class="btn btn-primary">Save layout</button>
-				<button formaction="?/resetLayout" class="btn">Reset to defaults</button>
+				<button class="btn btn-primary">{t('settings.preferences.saveLayout')}</button>
+				<button formaction="?/resetLayout" class="btn"
+					>{t('settings.preferences.resetToDefaults')}</button
+				>
 			</div>
 		</form>
 	</section>
 
 	<section class="border border-gray-200 bg-white p-6 shadow-card">
 		<div class="mb-4">
-			<h2 class="text-sm font-semibold text-gray-900">Quotes</h2>
-			<p class="mt-1 text-sm text-gray-500">One is shown per day on the dashboard.</p>
+			<h2 class="text-sm font-semibold text-gray-900">{t('settings.preferences.quotes')}</h2>
+			<p class="mt-1 text-sm text-gray-500">{t('settings.preferences.oneIsShownPerDay')}</p>
 		</div>
 
 		{#if data.quotes.length > 0}
@@ -954,11 +979,13 @@
 								class="flex items-center gap-2"
 							>
 								<input type="hidden" name="id" value={quote.id} />
-								<button class="btn btn-danger btn-sm" use:armed>Confirm?</button>
+								<button class="btn btn-danger btn-sm" use:armed
+									>{t('settings.preferences.confirm')}</button
+								>
 								<button
 									type="button"
 									onclick={() => (confirmRemove = null)}
-									class="text-xs text-gray-500 hover:text-gray-900">Cancel</button
+									class="text-xs text-gray-500 hover:text-gray-900">{t('ui.cancel')}</button
 								>
 							</form>
 						{:else}
@@ -966,14 +993,14 @@
 								type="button"
 								onclick={() => (confirmRemove = quote.id)}
 								class="text-xs text-gray-500 hover:text-red-600"
-								><Icon name="trash" /> Remove</button
+								><Icon name="trash" /> {t('ui.remove')}</button
 							>
 						{/if}
 					</div>
 				{/each}
 			</div>
 		{:else}
-			<EmptyState icon="note" title="No quotes yet" compact />
+			<EmptyState icon="note" title={t('settings.preferences.noQuotesYet')} compact />
 		{/if}
 
 		<form
@@ -985,7 +1012,7 @@
 			class="flex flex-wrap items-end gap-2"
 		>
 			<label class="min-w-64 flex-1">
-				<span class="eyebrow text-gray-600">Quote</span>
+				<span class="eyebrow text-gray-600">{t('settings.preferences.quote')}</span>
 				<OneLine
 					name="text"
 					placeholder={'\u201cPlans are worthless, but planning is everything.\u201d'}
@@ -994,19 +1021,20 @@
 				/>
 			</label>
 			<label class="w-44">
-				<span class="eyebrow text-gray-600">Author</span>
+				<span class="eyebrow text-gray-600">{t('settings.preferences.author')}</span>
 				<OneLine
 					name="author"
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
 			</label>
-			<button class="btn btn-primary"><Icon name="plus" /> Add</button>
+			<button class="btn btn-primary"><Icon name="plus" /> {t('ui.add')}</button>
 		</form>
 
 		<!-- One at a time is fine for one; nobody types a collection in that way. -->
 		<details class="mt-4 border-t border-gray-200 pt-4">
 			<summary class="cursor-pointer list-none text-sm text-gray-600 hover:text-gray-900">
-				<span class="text-xs text-gray-500">▸</span> Paste a list
+				<span class="text-xs text-gray-500">▸</span>
+				{t('settings.preferences.pasteAList')}
 			</summary>
 
 			<form
@@ -1018,7 +1046,7 @@
 				class="mt-3 space-y-2"
 			>
 				<label class="block">
-					<span class="eyebrow text-gray-600">One per line</span>
+					<span class="eyebrow text-gray-600">{t('settings.preferences.onePerLine')}</span>
 					<textarea
 						name="quotes"
 						rows="6"
@@ -1027,17 +1055,19 @@
 					></textarea>
 				</label>
 				<p class="text-xs text-gray-500">
-					One quote per line. Whatever follows the last dash is the author.
+					{t('settings.preferences.oneQuotePerLineWhatever')}
 				</p>
-				<button class="btn btn-primary"><Icon name="plus" /> Import</button>
+				<button class="btn btn-primary"
+					><Icon name="plus" /> {t('settings.preferences.import')}</button
+				>
 			</form>
 		</details>
 	</section>
 
 	<section class="border border-gray-200 bg-white p-6 shadow-card">
 		<div class="mb-4">
-			<h2 class="text-sm font-semibold text-gray-900">Style</h2>
-			<p class="mt-1 text-sm text-gray-500">The shape of things, apart from light and dark.</p>
+			<h2 class="text-sm font-semibold text-gray-900">{t('settings.preferences.style')}</h2>
+			<p class="mt-1 text-sm text-gray-500">{t('settings.preferences.theShapeOfThingsApart')}</p>
 		</div>
 
 		<form
@@ -1131,9 +1161,9 @@
 
 	<section class="border border-gray-200 bg-white p-6 shadow-card">
 		<div class="mb-4">
-			<h2 class="text-sm font-semibold text-gray-900">Appearance</h2>
+			<h2 class="text-sm font-semibold text-gray-900">{t('settings.preferences.appearance')}</h2>
 			<p class="mt-1 text-sm text-gray-500">
-				&ldquo;System&rdquo; uses whatever your device is set to.
+				{t('settings.preferences.ldquoSystemRdquoUsesWhateverYourDevice')}
 			</p>
 		</div>
 
@@ -1166,10 +1196,9 @@
 
 	{#if data.errorReports !== 'off'}
 		<section class="border border-gray-200 bg-white p-5 shadow-card">
-			<h2 class="text-sm font-semibold text-gray-900">Error reports</h2>
+			<h2 class="text-sm font-semibold text-gray-900">{t('settings.preferences.errorReports')}</h2>
 			<p class="mt-1 text-sm text-gray-500">
-				When a page breaks, send the technical details to this server's log. Only what broke — never
-				what you wrote.
+				{t('settings.preferences.whenAPageBreaksSend')}
 			</p>
 			<form
 				method="post"

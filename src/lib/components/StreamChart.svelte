@@ -1,5 +1,8 @@
 <script lang="ts">
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * Generic renderers for data streams.
@@ -154,14 +157,14 @@
 {#if points.length === 0}
 	<EmptyState
 		icon="plug"
-		title="No data yet"
+		title={t('streamChart.noDataYet')}
 		description="Once the app producing this stream pushes points, they appear here."
 	/>
 {:else if display === 'line_chart'}
 	{#if numeric.length === 0}
 		<EmptyState
 			icon="plug"
-			title="Nothing here can be charted"
+			title={t('streamChart.nothingHereCanBeCharted')}
 			description="This stream has no numeric values in it."
 		/>
 	{:else}
@@ -206,7 +209,7 @@
 				{/if}
 			</p>
 		{:else}
-			<p class="text-sm text-gray-500">No numeric value recorded.</p>
+			<p class="text-sm text-gray-500">{t('streamChart.noNumericValueRecorded')}</p>
 		{/if}
 	</div>
 {:else if display === 'calendar_heatmap'}
@@ -225,11 +228,11 @@
 			{/each}
 		</div>
 		<div class="mt-3 flex items-center gap-2 text-xs text-gray-500">
-			<span>Less</span>
+			<span>{t('ui.less')}</span>
 			{#each [0, 1, 2, 3, 4] as level (level)}
 				<div class="h-3 w-3" style="background-color: {heatColor(level)}"></div>
 			{/each}
-			<span>More</span>
+			<span>{t('ui.more')}</span>
 		</div>
 	</div>
 {:else if display === 'bar_chart'}

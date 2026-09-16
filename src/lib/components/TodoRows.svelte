@@ -21,6 +21,9 @@
 	import type { GoalBacklink } from '$lib/services/backlinks';
 	import type { Todo } from '$lib/services/todos';
 	import type { TodoActionNames } from '$lib/todo-actions';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * A list of todos and everything you can do to one.
@@ -389,7 +392,7 @@
 				aria-pressed={showCompleted}
 				class="btn btn-sm shrink-0"
 			>
-				<span class="sm:hidden">Completed</span>
+				<span class="sm:hidden">{t('todoRows.completed')}</span>
 				<span class="hidden sm:inline">{showCompleted ? 'Hide completed' : 'Show completed'}</span>
 			</button>
 			<!-- Named with its number so a put-away task is never quietly gone:
@@ -406,10 +409,10 @@
 				<!-- "Not in one" is an answer, not the absence of a filter: a task
 				     nobody has placed is the thing people go looking for. -->
 				<label class="min-w-0 flex-1 text-sm sm:flex-none">
-					<span class="sr-only">Notebook</span>
+					<span class="sr-only">{t('ui.notebook')}</span>
 					<select bind:value={notebookFilter} class="select w-full">
-						<option value="">Every notebook</option>
-						<option value="none">Not in one</option>
+						<option value="">{t('todoRows.everyNotebook')}</option>
+						<option value="none">{t('todoRows.notInOne')}</option>
 						{#each notebooks as book (book.id)}
 							<option value={String(book.id)}>{book.title}</option>
 						{/each}
@@ -465,7 +468,7 @@
 		</form>
 
 		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (showForm = false)}>Cancel</button>
+			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 			<button type="submit" form="todo-form" class="btn btn-primary">
 				{editingId ? 'Save' : 'Create todo'}
 			</button>
@@ -476,7 +479,7 @@
 		open={delegatingId !== null}
 		{error}
 		onclose={() => (delegatingId = null)}
-		title="Put it on a day"
+		title={t('todoRows.putItOnADay')}
 		description="It keeps its place in the list and gains a time on the plan."
 		size="sm"
 	>
@@ -499,7 +502,7 @@
 				<p class="mb-3 text-sm font-medium text-gray-900">{todo.title}</p>
 
 				<FormGrid>
-					<Field label="Date" span={6} required>
+					<Field label={t('ui.date')} span={6} required>
 						<input
 							autocomplete="off"
 							name="date"
@@ -509,7 +512,7 @@
 							class="input"
 						/>
 					</Field>
-					<Field label="Time" span={3} required>
+					<Field label={t('todoRows.time')} span={3} required>
 						<input
 							autocomplete="off"
 							name="startTime"
@@ -519,10 +522,10 @@
 							class="input tabular"
 						/>
 					</Field>
-					<Field label="Minutes" span={3}>
+					<Field label={t('todoRows.minutes')} span={3}>
 						<NumberBox autocomplete="off" name="durationMinutes" min="15" step="15" value="60" />
 					</Field>
-					<Field label="Category" span={12} required>
+					<Field label={t('ui.category')} span={12} required>
 						<select name="categoryId" required class="select">
 							{#each categories as cat (cat.id)}
 								<option value={cat.id}>{cat.name}</option>
@@ -534,8 +537,12 @@
 		{/if}
 
 		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (delegatingId = null)}>Cancel</button>
-			<button type="submit" form="delegate-form" class="btn btn-primary">Put on the day</button>
+			<button type="button" class="btn" onclick={() => (delegatingId = null)}
+				>{t('ui.cancel')}</button
+			>
+			<button type="submit" form="delegate-form" class="btn btn-primary"
+				>{t('todoRows.putOnTheDay')}</button
+			>
 		{/snippet}
 	</Modal>
 
@@ -623,7 +630,7 @@
 								{#if todo.scheduledDate}
 									<span
 										class="tabular border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
-										title="Pulled onto this day"
+										title={t('todoRows.pulledOntoThisDay')}
 									>
 										{todo.scheduledDate}
 									</span>
@@ -631,9 +638,9 @@
 								{#if todo.archivedAt}
 									<span
 										class="border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
-										title="Put away"
+										title={t('todoRows.putAway')}
 									>
-										Archived
+										{t('todoRows.archived')}
 									</span>
 								{/if}
 							</div>
@@ -679,15 +686,15 @@
 								<button
 									onclick={() => startDelegate(todo)}
 									class="icon-btn"
-									title="Delegate to a day"
-									aria-label="Delegate to a day"
+									title={t('todoRows.delegateToADay')}
+									aria-label={t('todoRows.delegateToADay')}
 								>
 									<Icon name="calendar" />
 								</button>
 							{/if}
 							<button
-								title="Edit"
-								aria-label="Edit"
+								title={t('ui.edit')}
+								aria-label={t('ui.edit')}
 								onclick={() => startEdit(todo)}
 								class="icon-btn"
 							>
@@ -725,7 +732,9 @@
 									}}
 								>
 									<input type="hidden" name="id" value={todo.id} />
-									<button type="submit" class="btn btn-sm btn-danger" use:armed> Confirm? </button>
+									<button type="submit" class="btn btn-sm btn-danger" use:armed>
+										{t('todoRows.confirm')}
+									</button>
 								</form>
 								<button
 									type="button"
@@ -734,12 +743,12 @@
 									}}
 									class="btn btn-sm"
 								>
-									Cancel
+									{t('ui.cancel')}
 								</button>
 							{:else}
 								<button
-									title="Delete"
-									aria-label="Delete"
+									title={t('ui.delete')}
+									aria-label={t('ui.delete')}
 									type="button"
 									onclick={() => {
 										confirmingDelete = todo.id;

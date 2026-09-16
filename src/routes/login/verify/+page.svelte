@@ -2,6 +2,9 @@
 	import { enhance } from '$app/forms';
 	import type { PageServerData, ActionData } from './$types';
 	import Banner from '$lib/components/Banner.svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -39,7 +42,9 @@
 
 <div class="solo-screen bg-gray-100">
 	<div class="solo-card sm:max-w-sm">
-		<h1 class="mb-6 text-xl font-bold tracking-tight text-gray-900">Confirm your address</h1>
+		<h1 class="mb-6 text-xl font-bold tracking-tight text-gray-900">
+			{t('login.verify.confirmYourAddress')}
+		</h1>
 
 		{#if form && 'message' in form && form.message}
 			<div class="mb-4"><Banner kind="error" message={form.message} /></div>
@@ -51,8 +56,8 @@
 		{/if}
 
 		<p class="text-sm text-gray-700">
-			A confirmation mail went to <strong class="text-gray-900">{data.email}</strong>. Click on its
-			link to sign in.
+			{t('login.verify.aConfirmationMailWentTo')}
+			<strong class="text-gray-900">{data.email}</strong>{t('login.verify.clickOnItsLink')}
 		</p>
 
 		<form method="post" action="?/resend" use:enhance class="mt-6">
@@ -76,7 +81,8 @@
 			past this signs out, or the operator turns the requirement off.
 		-->
 		<form method="post" action="/login?/signOut" use:enhance class="mt-4 text-xs text-gray-500">
-			Wrong address? <button type="submit" class="underline">Sign out</button>.
+			{t('login.verify.wrongAddress')}
+			<button type="submit" class="underline">{t('login.verify.signOut')}</button>.
 		</form>
 	</div>
 </div>
