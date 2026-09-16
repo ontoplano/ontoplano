@@ -175,7 +175,9 @@ test('a note written in a notebook takes one too', async ({ page }) => {
 		.first()
 		.click();
 	await page.locator('[name="heading"]').first().fill('Kitchen');
-	await page.locator('button[type="submit"]').first().click();
+	// By name: the dialogue carries the importer's own submit too, and "the
+	// first submit button on the page" stopped meaning this one.
+	await page.getByRole('button', { name: 'Create notebook' }).click();
 	// The composer stands behind a button now, on every screen: a form open
 	// above the notes took the top of the notebook whether or not anybody was
 	// writing.
