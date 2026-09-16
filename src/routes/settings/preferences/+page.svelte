@@ -3,6 +3,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
 	import { isLocale, useT } from '$lib/i18n';
+	import { sectionLabel } from '$lib/sections';
 	import { rememberLocaleOnThisDevice } from '$lib/i18n/device';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { page } from '$app/state';
@@ -762,7 +763,7 @@
 							name="color.{room.section}"
 							value={room.accent}
 							class="h-6 w-8 shrink-0 cursor-pointer border border-gray-300 bg-white p-0.5"
-							aria-label="The colour for {room.label}"
+							aria-label={t('settings.menu.colourFor', { room: t(room.name) })}
 						/>
 					{:else}
 						<!-- Shown, not editable: this room wears another's colour, and
@@ -770,14 +771,16 @@
 						<span
 							class="h-6 w-8 shrink-0 border border-gray-200"
 							style="background-color: {room.accent}"
-							title="Follows {room.colorFrom}"
+							title={room.colorFrom ? t('settings.menu.follows', { room: t(room.colorFrom) }) : ''}
 						></span>
 					{/if}
 
 					<span class="min-w-0 flex-1 truncate text-sm {shown ? 'text-gray-900' : 'text-gray-500'}">
-						{room.label}
-						{#if !room.ownsColor}
-							<span class="text-xs text-gray-500">· {room.colorFrom}'s colour</span>
+						{t(room.name)}
+						{#if room.colorFrom}
+							<span class="text-xs text-gray-500"
+								>{t('settings.menu.followsShort', { room: t(room.colorFrom) })}</span
+							>
 						{/if}
 					</span>
 
@@ -788,7 +791,7 @@
 							disabled={i === 0}
 							class="p-1 text-gray-500 hover:text-gray-900 disabled:opacity-30"
 							title="Move up"
-							aria-label="Move {room.label} up"
+							aria-label={t('settings.menu.moveUp', { what: t(room.name) })}
 						>
 							<Icon name="chevron-up" size={16} />
 						</button>
@@ -798,7 +801,7 @@
 							disabled={i === lastShownIndex}
 							class="p-1 text-gray-500 hover:text-gray-900 disabled:opacity-30"
 							title="Move down"
-							aria-label="Move {room.label} down"
+							aria-label={t('settings.menu.moveDown', { what: t(room.name) })}
 						>
 							<Icon name="chevron-down" size={16} />
 						</button>
@@ -834,7 +837,7 @@
 							<input type="hidden" name="hidden" value={leaf.id} />
 						{/if}
 						<span class="min-w-0 flex-1 truncate {room.hidden ? 'text-gray-400' : 'text-gray-700'}"
-							>{leaf.label}</span
+							>{sectionLabel(t, leaf.id)}</span
 						>
 						{#if room.hidden}
 							<span class="eyebrow shrink-0 text-gray-400">with the room</span>
@@ -886,13 +889,13 @@
 								type="button"
 								onclick={() => shift(id, -1)}
 								class="text-xs leading-none text-gray-500 hover:text-gray-900"
-								aria-label="Move {card.label} up">&uarr;</button
+								aria-label={t('settings.menu.moveUp', { what: card.label })}>&uarr;</button
 							>
 							<button
 								type="button"
 								onclick={() => shift(id, 1)}
 								class="text-xs leading-none text-gray-500 hover:text-gray-900"
-								aria-label="Move {card.label} down">&darr;</button
+								aria-label={t('settings.menu.moveDown', { what: card.label })}>&darr;</button
 							>
 						</div>
 						<div class="min-w-0 flex-1">

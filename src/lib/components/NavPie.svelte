@@ -3,6 +3,9 @@
 	import { NAV_PLACES, roomFor } from '$lib/sections-nav';
 	import { placesFor } from '$lib/nav-order';
 	import RadialMenu from '$lib/components/RadialMenu.svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * The eight rooms, under the cursor.
@@ -89,7 +92,7 @@
 	const wedges = $derived(
 		placesFor(NAV_PLACES, { order, colors })
 			.filter((r) => !(r.hide && hidden.includes(r.hide)))
-			.map((r) => ({ key: r.key, label: r.label, icon: r.icon, color: r.accent }))
+			.map((r) => ({ key: r.key, label: t(r.name), icon: r.icon, color: r.accent }))
 	);
 
 	export function summon(e: PointerEvent) {

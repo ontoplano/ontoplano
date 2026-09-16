@@ -1014,7 +1014,7 @@
 							     neutral so the fill is the thing that reads. -->
 							<a
 								href={item.href}
-								title={item.label}
+								title={t(item.name)}
 								class="tab-link flex shrink-0 items-center gap-1 border-b-2 px-3 py-4 text-sm whitespace-nowrap transition-colors min-[1460px]:gap-1.5 min-[1460px]:px-3 xl:px-1.5 [&>svg]:h-5 [&>svg]:w-5 xl:[&>svg]:h-4 xl:[&>svg]:w-4 {active
 									? 'font-semibold text-chrome-ink'
 									: 'border-transparent font-medium text-chrome-muted hover:border-chrome-line hover:text-chrome-ink'}"
@@ -1035,7 +1035,7 @@
 									16px icons at 1.5 units of padding is a row of things that
 									are hard to hit and hard to tell apart.
 								-->
-								<span class="hidden xl:inline">{item.label}</span>
+								<span class="hidden xl:inline">{t(item.name)}</span>
 							</a>
 						{/each}
 						<!-- eslint-enable svelte/no-navigation-without-resolve -->

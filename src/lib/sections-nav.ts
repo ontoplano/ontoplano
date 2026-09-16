@@ -1,4 +1,5 @@
 import { SECTIONS, type SectionKey } from '$lib/colors';
+import type { PlainKey } from './i18n/keys.js';
 import type { HideableSection } from '$lib/sections';
 import type { IconName } from '$lib/components/Icon.svelte';
 
@@ -15,7 +16,17 @@ import type { IconName } from '$lib/components/Icon.svelte';
  */
 export type Room = {
 	key: string;
-	label: string;
+	/**
+	 * What it is called, as a message key rather than a word.
+	 *
+	 * This list is drawn by the bar, the pie, the palette and the preferences
+	 * page, and none of them is a good place for a language to be decided. They
+	 * each have a translator; this says which message to ask it for.
+	 *
+	 * `PlainKey` and not any key: a room's name is a name, and a message that
+	 * needs a value handed to it is not one.
+	 */
+	name: PlainKey;
 	icon: IconName;
 	color: string;
 	/** The section's front door. */
@@ -47,7 +58,8 @@ export type Room = {
  */
 export type NavPlace = {
 	key: string;
-	label: string;
+	/** What it is called — a message key; see `Room`. */
+	name: PlainKey;
 	/** The section it belongs to — its colour, and the wash behind its pages. */
 	section: SectionKey;
 	icon: IconName;
@@ -57,11 +69,24 @@ export type NavPlace = {
 };
 
 export const NAV_PLACES: NavPlace[] = [
-	{ key: 'planner', label: 'Tasks', section: 'planner', icon: 'planner', href: '/tasks/plan' },
-	{ key: 'goals', label: 'Goals', section: 'goals', icon: 'goals', href: '/goals', hide: 'goals' },
+	{
+		key: 'planner',
+		name: 'sections.tasks.label',
+		section: 'planner',
+		icon: 'planner',
+		href: '/tasks/plan'
+	},
+	{
+		key: 'goals',
+		name: 'sections.goals.label',
+		section: 'goals',
+		icon: 'goals',
+		href: '/goals',
+		hide: 'goals'
+	},
 	{
 		key: 'diary',
-		label: 'Notebooks',
+		name: 'sections.notebooks.label',
 		section: 'diary',
 		icon: 'diary',
 		href: '/notebooks',
@@ -69,7 +94,7 @@ export const NAV_PLACES: NavPlace[] = [
 	},
 	{
 		key: 'health',
-		label: 'Health',
+		name: 'sections.health.label',
 		section: 'health',
 		icon: 'health',
 		href: '/health/habits',
@@ -77,7 +102,7 @@ export const NAV_PLACES: NavPlace[] = [
 	},
 	{
 		key: 'finance',
-		label: 'Finance',
+		name: 'sections.finance.label',
 		section: 'finance',
 		icon: 'wallet',
 		href: '/finance/ledgers',
@@ -85,7 +110,7 @@ export const NAV_PLACES: NavPlace[] = [
 	},
 	{
 		key: 'gallery',
-		label: 'Gallery',
+		name: 'sections.gallery.label',
 		section: 'gallery',
 		icon: 'image',
 		href: '/gallery',
@@ -93,7 +118,7 @@ export const NAV_PLACES: NavPlace[] = [
 	},
 	{
 		key: 'inventory',
-		label: 'Inventory',
+		name: 'sections.inventory.label',
 		section: 'inventory',
 		icon: 'shopping',
 		href: '/inventory',
@@ -104,7 +129,7 @@ export const NAV_PLACES: NavPlace[] = [
 	// planner's, which is where most of them come from.
 	{
 		key: 'reminders',
-		label: 'Reminders',
+		name: 'sections.reminders.label',
 		section: 'planner',
 		icon: 'clock',
 		href: '/reminders'
@@ -113,7 +138,7 @@ export const NAV_PLACES: NavPlace[] = [
 
 export const ROOMS: Room[] = NAV_PLACES.map((place) => ({
 	key: place.key,
-	label: place.label,
+	name: place.name,
 	icon: place.icon,
 	color: SECTIONS[place.section].accent,
 	href: place.href,

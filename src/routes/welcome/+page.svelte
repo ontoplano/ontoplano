@@ -7,6 +7,10 @@
 	import TimezonePicker from '$lib/components/TimezonePicker.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import type { Theme } from '$lib/theme';
+	import { useT } from '$lib/i18n';
+	import { sectionBlurb, sectionLabel } from '$lib/sections';
+
+	const t = useT();
 
 	/**
 	 * First run: one question at a time.
@@ -318,7 +322,7 @@ at a time, and show me what you will write before writing it.`
 														? 'border-gray-900 bg-gray-50 font-medium text-gray-900'
 														: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'}"
 												>
-													<span class="flex-1">{room.label}</span>
+													<span class="flex-1">{sectionLabel(t, room.id)}</span>
 													{#if wanted.has(room.id)}
 														<Icon name="check" />
 													{/if}
@@ -338,8 +342,12 @@ at a time, and show me what you will write before writing it.`
 										aria-live="polite"
 										class="min-h-[15rem] rounded-md border border-gray-200 bg-gray-50 p-3 text-sm"
 									>
-										<p class="font-medium text-gray-900">{described?.label}</p>
-										<p class="mt-1 text-gray-500">{described?.blurb}</p>
+										<p class="font-medium text-gray-900">
+											{described ? sectionLabel(t, described.id) : ''}
+										</p>
+										<p class="mt-1 text-gray-500">
+											{described ? sectionBlurb(t, described.id) : ''}
+										</p>
 										<p class="mt-3 text-xs text-gray-500">
 											{wanted.size} of {data.rooms.length} on. The planner and your week are always here.
 										</p>

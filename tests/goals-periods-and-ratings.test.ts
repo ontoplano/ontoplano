@@ -13,6 +13,8 @@
  * on the way past.
  */
 import { describe, expect, test } from 'vitest';
+import { messages as english } from '../src/lib/i18n/catalogues/en';
+import { messages as portuguese } from '../src/lib/i18n/catalogues/pt-BR';
 import {
 	canNestUnder,
 	describePeriod,
@@ -200,8 +202,16 @@ describe('the sections a person can put away', () => {
 		expect(isHideableSection('not-a-section')).toBe(false);
 	});
 
-	test('and each has a label to show in the settings list', () => {
-		for (const section of HIDEABLE_SECTIONS) expect(section.label).toBeTruthy();
+	test('and each has a name and a sentence, in every language', () => {
+		// The words moved into `messages/`; what this has to hold is that every
+		// section still has both in each language, which is the thing that would
+		// otherwise be noticed as a blank in a settings list.
+		for (const section of HIDEABLE_SECTIONS) {
+			for (const catalogue of [english, portuguese]) {
+				expect(catalogue[`sections.${section.id}.label`]).toBeTruthy();
+				expect(catalogue[`sections.${section.id}.blurb`]).toBeTruthy();
+			}
+		}
 	});
 });
 

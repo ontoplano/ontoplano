@@ -62,10 +62,42 @@ export type MessageKey =
 	| 'rooms.tasks.tabs.review'
 	| 'rooms.tasks.tabs.todo'
 	| 'rooms.tasks.title'
+	| 'sections.diary.blurb'
+	| 'sections.diary.label'
+	| 'sections.finance.blurb'
+	| 'sections.finance.label'
+	| 'sections.gallery.blurb'
+	| 'sections.gallery.label'
+	| 'sections.goals.blurb'
+	| 'sections.goals.label'
+	| 'sections.habits.blurb'
+	| 'sections.habits.label'
+	| 'sections.health.blurb'
+	| 'sections.health.label'
+	| 'sections.home.label'
+	| 'sections.ideas.blurb'
+	| 'sections.ideas.label'
+	| 'sections.inventory.blurb'
+	| 'sections.inventory.label'
+	| 'sections.notebooks.blurb'
+	| 'sections.notebooks.label'
+	| 'sections.people.blurb'
+	| 'sections.people.label'
+	| 'sections.recipes.blurb'
+	| 'sections.recipes.label'
+	| 'sections.reminders.label'
+	| 'sections.tasks.label'
+	| 'sections.workouts.blurb'
+	| 'sections.workouts.label'
 	| 'settings.language.heading'
 	| 'settings.language.hint'
 	| 'settings.language.saved'
 	| 'settings.language.untranslated'
+	| 'settings.menu.colourFor'
+	| 'settings.menu.follows'
+	| 'settings.menu.followsShort'
+	| 'settings.menu.moveDown'
+	| 'settings.menu.moveUp'
 	| 'settings.timezone.unchanged'
 	| 'staging.body'
 	| 'staging.heading'
@@ -94,6 +126,11 @@ export interface MessageValuesFor {
 	'keys.reach.which': { noun: string | number };
 	'pictures.hint': { kilobytes: string | number };
 	'settings.language.untranslated': { count: number };
+	'settings.menu.colourFor': { room: string | number };
+	'settings.menu.follows': { room: string | number };
+	'settings.menu.followsShort': { room: string | number };
+	'settings.menu.moveDown': { what: string | number };
+	'settings.menu.moveUp': { what: string | number };
 	'settings.timezone.unchanged': { zone: string | number };
 }
 

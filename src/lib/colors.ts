@@ -1,3 +1,5 @@
+import type { PlainKey } from './i18n/keys.js';
+
 /**
  * Centralized color definitions for the entire app.
  * Edit this file to change colors across all routes.
@@ -49,16 +51,16 @@ export type SectionKey =
 	| 'inventory'
 	| 'gallery';
 
-export const SECTIONS: Record<SectionKey, { accent: string; label: string }> = {
-	home: { accent: '#475569', label: 'Home' },
-	planner: { accent: '#1d4ed8', label: 'Tasks' },
-	goals: { accent: '#7c2d12', label: 'Goals' },
-	diary: { accent: '#b45309', label: 'Notebooks' },
-	ideas: { accent: '#6d28d9', label: 'Ideas' },
-	health: { accent: '#0f766e', label: 'Health' },
-	finance: { accent: '#155e63', label: 'Finance' },
-	inventory: { accent: '#9d174d', label: 'Inventory' },
-	gallery: { accent: '#86198f', label: 'Gallery' }
+export const SECTIONS: Record<SectionKey, { accent: string; name: PlainKey }> = {
+	home: { accent: '#475569', name: 'sections.home.label' },
+	planner: { accent: '#1d4ed8', name: 'sections.tasks.label' },
+	goals: { accent: '#7c2d12', name: 'sections.goals.label' },
+	diary: { accent: '#b45309', name: 'sections.notebooks.label' },
+	ideas: { accent: '#6d28d9', name: 'sections.ideas.label' },
+	health: { accent: '#0f766e', name: 'sections.health.label' },
+	finance: { accent: '#155e63', name: 'sections.finance.label' },
+	inventory: { accent: '#9d174d', name: 'sections.inventory.label' },
+	gallery: { accent: '#86198f', name: 'sections.gallery.label' }
 };
 
 /** Which section a pathname belongs to. */

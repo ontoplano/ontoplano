@@ -143,12 +143,12 @@ export const load = async ({ locals }: IsolatedEvent) => {
 				seen.add(p.section);
 				return {
 					key: p.key,
-					label: p.label,
+					name: p.name,
 					section: p.section,
 					accent: p.accent,
 					ownsColor,
 					/** Whose colour this row follows, when it is not its own. */
-					colorFrom: ownsColor ? null : SECTIONS[p.section].label,
+					colorFrom: ownsColor ? null : SECTIONS[p.section].name,
 					/**
 					 * The preference that puts this room away, if it has one.
 					 * Not the same as its key — Recipes is the Kitchen section's
@@ -164,9 +164,9 @@ export const load = async ({ locals }: IsolatedEvent) => {
 					 * flat list could not say — it listed Recipes beside Health
 					 * as though they were the same kind of thing.
 					 */
-					leaves: leavesOf(p.hide ?? p.key).map((leaf) => ({
-						...leaf,
-						hidden: hidden.includes(leaf.id)
+					leaves: leavesOf(p.hide ?? p.key).map((id) => ({
+						id,
+						hidden: hidden.includes(id)
 					}))
 				};
 			});

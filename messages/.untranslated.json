@@ -1,8 +1,7 @@
 {
-	"total": 2552,
+	"total": 2510,
 	"files": {
 		"src/lib/capture.ts": 4,
-		"src/lib/colors.ts": 9,
 		"src/lib/components/CaptureDialog.svelte": 21,
 		"src/lib/components/ClientErrorPrompt.svelte": 5,
 		"src/lib/components/CommandPalette.svelte": 9,
@@ -26,8 +25,6 @@
 		"src/lib/planner-grid.ts": 1,
 		"src/lib/plans.ts": 4,
 		"src/lib/registration.ts": 6,
-		"src/lib/sections-nav.ts": 8,
-		"src/lib/sections.ts": 24,
 		"src/lib/server/auth.ts": 3,
 		"src/lib/server/billing/providers/paddle.ts": 1,
 		"src/lib/server/services/companions.ts": 4,
@@ -86,7 +83,7 @@
 		"src/routes/settings/integrations/+page.svelte": 36,
 		"src/routes/settings/integrations/connections/+page.svelte": 94,
 		"src/routes/settings/integrations/widget/+page.svelte": 12,
-		"src/routes/settings/preferences/+page.svelte": 98,
+		"src/routes/settings/preferences/+page.svelte": 97,
 		"src/routes/start/+page.svelte": 26,
 		"src/routes/tasks/activities/+page.svelte": 40,
 		"src/routes/tasks/board/+page.svelte": 41,

@@ -63,6 +63,43 @@ export const messages: Catalogue = {
 	'rooms.tasks.tabs.review': 'Review',
 	'rooms.tasks.tabs.todo': 'To-do',
 	'rooms.tasks.title': 'Tasks',
+	'sections.diary.blurb':
+		'What happened, in your own words, with tags you invent as you go. Numbered, so one entry can refer to another.',
+	'sections.diary.label': 'Diary',
+	'sections.finance.blurb':
+		'The bills you expect to pay, and what you actually paid. Not accounting — the handful of payments that land on a month, and the gap between planned and real.',
+	'sections.finance.label': 'Finance',
+	'sections.gallery.blurb':
+		'Your pictures, kept in albums. A picture lives once however many albums hold it, and a tag cuts across all of them.',
+	'sections.gallery.label': 'Gallery',
+	'sections.goals.blurb':
+		'What you are working towards, by horizon. A block of your week can belong to a goal, so the goal knows which work actually moved it.',
+	'sections.goals.label': 'Goals',
+	'sections.habits.blurb': 'The daily things, with a year of them at a glance.',
+	'sections.habits.label': 'Habits',
+	'sections.health.blurb':
+		'Habits with streaks, and anything with a number — weight, sleep, whatever your gadgets already measure — arriving from the apps you trust.',
+	'sections.health.label': 'Health',
+	'sections.home.label': 'Home',
+	'sections.ideas.blurb':
+		'The cheapest thing to write down: caught before it evaporates, judged later. Nobody has committed to doing any of it.',
+	'sections.ideas.label': 'Ideas',
+	'sections.inventory.blurb':
+		'What to buy, and where the things you already own live — the same rows seen twice. Ticking things off works with no signal at all, which is what a supermarket basement is.',
+	'sections.inventory.label': 'Inventory',
+	'sections.notebooks.blurb':
+		'A subject you write against with no deadline — a trip, a renovation, a book. Notes gather under it and are numbered within it.',
+	'sections.notebooks.label': 'Notebooks',
+	'sections.people.blurb':
+		'The people in your life, and every entry that mentions one. A person is not a tag: "everything about Ana" is a page.',
+	'sections.people.label': 'People',
+	'sections.recipes.blurb':
+		'A recipe is a list of shopping items with amounts. Put one on a day and its ingredients land on the list — only what you have run out of.',
+	'sections.recipes.label': 'Recipes',
+	'sections.reminders.label': 'Reminders',
+	'sections.tasks.label': 'Tasks',
+	'sections.workouts.blurb': 'What you planned to do and what you actually did, in your own units.',
+	'sections.workouts.label': 'Workouts',
 	'settings.language.heading': 'Language',
 	'settings.language.hint': 'What this account reads the app in. Mail you are sent follows it too.',
 	'settings.language.saved': 'Saved.',
@@ -70,6 +107,11 @@ export const messages: Catalogue = {
 		one: '{count} message is not written in this language yet, and shows in English.',
 		other: '{count} messages are not written in this language yet, and show in English.'
 	},
+	'settings.menu.colourFor': 'The colour for {room}',
+	'settings.menu.follows': 'Follows {room}',
+	'settings.menu.followsShort': "· {room}'s colour",
+	'settings.menu.moveDown': 'Move {what} down',
+	'settings.menu.moveUp': 'Move {what} up',
 	'settings.timezone.unchanged': '{zone} (kept as it is)',
 	'staging.body': 'A copy of Ontoplano for trying things on. Nothing here is promised to survive.',
 	'staging.heading': 'Staging.',

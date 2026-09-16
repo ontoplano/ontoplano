@@ -63,6 +63,44 @@ export const messages: Catalogue = {
 	'rooms.tasks.tabs.review': 'Revisão',
 	'rooms.tasks.tabs.todo': 'A fazer',
 	'rooms.tasks.title': 'Tarefas',
+	'sections.diary.blurb':
+		'O que aconteceu, com suas palavras e etiquetas que você inventa no caminho. Numerado, para que uma entrada possa citar outra.',
+	'sections.diary.label': 'Diário',
+	'sections.finance.blurb':
+		'As contas que você espera pagar e o que de fato pagou. Não é contabilidade — é o punhado de pagamentos que cai num mês e a diferença entre o planejado e o real.',
+	'sections.finance.label': 'Finanças',
+	'sections.gallery.blurb':
+		'Suas fotos, guardadas em álbuns. Uma foto existe uma vez só, por mais álbuns que a contenham, e uma etiqueta atravessa todos eles.',
+	'sections.gallery.label': 'Galeria',
+	'sections.goals.blurb':
+		'O que você está buscando, por horizonte. Um bloco da sua semana pode pertencer a uma meta, e assim a meta sabe qual trabalho de fato a moveu.',
+	'sections.goals.label': 'Metas',
+	'sections.habits.blurb': 'As coisas do dia a dia, com um ano delas de relance.',
+	'sections.habits.label': 'Hábitos',
+	'sections.health.blurb':
+		'Hábitos com sequências, e tudo que tem número — peso, sono, o que seus aparelhos já medem — vindo dos aplicativos em que você confia.',
+	'sections.health.label': 'Saúde',
+	'sections.home.label': 'Início',
+	'sections.ideas.blurb':
+		'A coisa mais barata de anotar: capturada antes de evaporar, avaliada depois. Ninguém se comprometeu a fazer nada disso.',
+	'sections.ideas.label': 'Ideias',
+	'sections.inventory.blurb':
+		'O que comprar e onde moram as coisas que você já tem — as mesmas linhas vistas de dois jeitos. Marcar itens funciona sem sinal nenhum, que é o que o subsolo de um supermercado é.',
+	'sections.inventory.label': 'Inventário',
+	'sections.notebooks.blurb':
+		'Um assunto sobre o qual você escreve sem prazo — uma viagem, uma reforma, um livro. As notas se juntam nele e são numeradas dentro dele.',
+	'sections.notebooks.label': 'Cadernos',
+	'sections.people.blurb':
+		'As pessoas da sua vida e cada entrada que menciona alguma. Uma pessoa não é uma etiqueta: "tudo sobre a Ana" é uma página.',
+	'sections.people.label': 'Pessoas',
+	'sections.recipes.blurb':
+		'Uma receita é uma lista de itens de compra com quantidades. Coloque uma num dia e os ingredientes caem na lista — só o que acabou.',
+	'sections.recipes.label': 'Receitas',
+	'sections.reminders.label': 'Lembretes',
+	'sections.tasks.label': 'Tarefas',
+	'sections.workouts.blurb':
+		'O que você planejou fazer e o que de fato fez, nas suas próprias unidades.',
+	'sections.workouts.label': 'Treinos',
 	'settings.language.heading': 'Idioma',
 	'settings.language.hint':
 		'Em que idioma esta conta lê o aplicativo. Os e-mails enviados a você seguem a mesma escolha.',
@@ -71,6 +109,11 @@ export const messages: Catalogue = {
 		one: '{count} mensagem ainda não foi escrita neste idioma e aparece em inglês.',
 		other: '{count} mensagens ainda não foram escritas neste idioma e aparecem em inglês.'
 	},
+	'settings.menu.colourFor': 'A cor de {room}',
+	'settings.menu.follows': 'Segue {room}',
+	'settings.menu.followsShort': '· a cor de {room}',
+	'settings.menu.moveDown': 'Mover {what} para baixo',
+	'settings.menu.moveUp': 'Mover {what} para cima',
 	'settings.timezone.unchanged': '{zone} (mantido como está)',
 	'staging.body': 'Uma cópia do Ontoplano para experimentar. Nada aqui tem garantia de sobreviver.',
 	'staging.heading': 'Homologação.',
