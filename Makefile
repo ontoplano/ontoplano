@@ -39,7 +39,7 @@ print-%:
 	@echo '$($*)'
 
 
-.PHONY: hooks announce _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons icon deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-strangers db-dry-run db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local _a-real-workstation android android-all android-store android-install android-install-all _adb-install _apks-are-fresh android-uninstall isolated isolated-preview test-isolated
+.PHONY: hooks dev-site-fg dev-site-logs dev-site-stop _site-checkout announce _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons icon deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-strangers db-dry-run db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local _a-real-workstation android android-all android-store android-install android-install-all _adb-install _apks-are-fresh android-uninstall isolated isolated-preview test-isolated
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -233,10 +233,10 @@ SITE_SRC_LOCAL ?= ontoplano-site
 # `core.hooksPath` rather than copying a file into `.git/hooks`: the hook stays
 # in the repo, under review like everything else, and updating it updates it
 # for everybody rather than for whoever remembers to copy it again.
-## install the git hooks (pre-push runs lint and the unit suite)
+## install the git hooks (pre-push runs lint)
 hooks:
 	@git config core.hooksPath githooks
-	@echo "hooks: pre-push will run lint and the unit suite (git push --no-verify skips it)"
+	@echo "hooks: pre-push runs lint (PREPUSH_TESTS=1 adds the unit suite, --no-verify skips it)"
 
 # `dev` is the app; this is the name to type when you mean it by contrast.
 ## the app alone (what `dev` runs)
@@ -259,15 +259,69 @@ dev-docs:
 # and watches nothing, so every change to the site's copy or to the backdrop's
 # knobs meant stopping this and starting it again. `dev` rebuilds on a change
 # and reloads the page, keeping the scroll position.
-## the marketing site, from its own checkout
-dev-site:
+#
+# And detached, like `make dev` is. Editing the site means editing files and
+# looking at the page; a watcher holding the terminal it was started from
+# means a second terminal for everything else, which is the thing `make dev`
+# stopped doing years ago. `make dev-site-logs` follows it, `make
+# dev-site-stop` ends it, and `make dev-site-fg` is the old behaviour for
+# anybody who wants to watch it build.
+#: SITE_DEV_LOG=.dev-site.log  where the detached site watcher writes
+SITE_DEV_LOG ?= $(CURDIR)/.dev-site.log
+
+## the marketing site, watched and reloaded, in the background
+dev-site: _site-checkout
+	@if curl -fsS -m 2 -o /dev/null "http://localhost:$(SITE_PORT)/" 2>/dev/null; then \
+		$(GOOD) "already up — http://localhost:$(SITE_PORT)"; \
+		echo "  make dev-site-logs   follow it"; \
+		echo "  make dev-site-stop   stop it"; \
+		exit 0; \
+	fi
+	@: > "$(SITE_DEV_LOG)"
+	@cd $(SITE_SRC_LOCAL) && setsid $(MAKE) -s dev PREVIEW_PORT=$(SITE_PORT) \
+		>> "$(SITE_DEV_LOG)" 2>&1 < /dev/null &
+	@# Wait for it to answer rather than printing an address that is not up
+	@# yet: the first build is a couple of seconds, and a link that 404s for
+	@# two of them is a link somebody presses twice.
+	@for i in $$(seq 40); do \
+		curl -fsS -m 1 -o /dev/null "http://localhost:$(SITE_PORT)/" 2>/dev/null && break; \
+		sleep 0.5; \
+	done
+	@if curl -fsS -m 2 -o /dev/null "http://localhost:$(SITE_PORT)/" 2>/dev/null; then \
+		$(GOOD) "site  ->  http://localhost:$(SITE_PORT)  (watching, reloads on save)"; \
+		echo "  make dev-site-logs   follow it"; \
+		echo "  make dev-site-stop   stop it"; \
+	else \
+		$(BAD) "the site watcher did not come up — $(SITE_DEV_LOG) says why"; \
+		tail -20 "$(SITE_DEV_LOG)" 2>/dev/null | sed 's/^/    /'; \
+		exit 1; \
+	fi
+
+## …in this terminal instead, holding it
+dev-site-fg: _site-checkout
+	@$(MAKE) -s -C $(SITE_SRC_LOCAL) dev PREVIEW_PORT=$(SITE_PORT)
+
+## …follow the background one
+dev-site-logs:
+	@tail -f -n 50 "$(SITE_DEV_LOG)"
+
+## …and stop it
+dev-site-stop:
+	@# By the port it holds rather than by a stored pid: a pid file outlives
+	@# the process that wrote it, and the thing anybody actually knows about
+	@# this server is which port it is on.
+	@pid=$$(ss -lntp 2>/dev/null | sed -n 's/.*:$(SITE_PORT) .*pid=\([0-9]*\).*/\1/p' | head -1); \
+	if [ -z "$$pid" ]; then echo "nothing on $(SITE_PORT)."; exit 0; fi; \
+	kill -- -$$(ps -o pgid= $$pid | tr -d ' ') 2>/dev/null || kill $$pid 2>/dev/null || true; \
+	echo "stopped."
+
+_site-checkout:
 	@if [ ! -d "$(SITE_SRC_LOCAL)" ]; then \
 		echo "No site checkout at $(SITE_SRC_LOCAL)."; \
 		echo "ontoplano.com is a separate repository; this one is the app."; \
 		echo "If you have it elsewhere:  make dev-site SITE_SRC_LOCAL=../elsewhere"; \
 		exit 1; \
 	fi
-	@$(MAKE) -s -C $(SITE_SRC_LOCAL) dev PREVIEW_PORT=$(SITE_PORT)
 
 # All of them, for a change that shows up in more than one. The app is a user
 # service and returns; the other two each hold a terminal, so they run in the
@@ -279,11 +333,9 @@ dev-all: dev
 	@echo "  docs    http://localhost:$(DOCS_PORT)"
 	@if [ -d "$(SITE_SRC_LOCAL)" ]; then echo "  site    http://localhost:$(SITE_PORT)"; fi
 	@echo
-	@echo "Ctrl-C stops the docs and the site; make dev-stop stops the app."
-	@trap 'kill 0' INT TERM; \
-	$(MAKE) -s dev-docs & \
-	if [ -d "$(SITE_SRC_LOCAL)" ]; then $(MAKE) -s dev-site & fi; \
-	wait
+	@echo "Ctrl-C stops the docs; make dev-stop stops the app, make dev-site-stop the site."
+	@if [ -d "$(SITE_SRC_LOCAL)" ]; then $(MAKE) -s dev-site; fi
+	@$(MAKE) -s dev-docs
 
 # The development server on this machine.
 #

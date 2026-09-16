@@ -1,23 +1,75 @@
 #!/bin/sh
 #
-# What CI runs, before the push rather than after it.
+# The check that is cheap enough to be in the way: the files being pushed.
 #
 # A red pipeline is found minutes later, by somebody who has moved on to the
-# next thing, and the commit that broke it is already on the branch. This
-# catches the cheap half here: formatting, lint, the generated-file checks and
-# the unit suite. It is what `make lint` and `yarn test:unit` do, so nothing
-# about it is a second definition of "correct".
+# next thing, and the commit that broke it is already on the branch.
+# Formatting is the half of CI that needs no decision, so it runs here.
 #
-# NOT the browser suite: it builds the app and drives a browser over it, which
-# is minutes, and a hook nobody can afford to wait for is a hook everybody
-# passes `--no-verify` to. The pipeline is still the thing that says a push is
-# good; this only stops the mistakes that were never going to pass.
+# **Only the files in the push.** `yarn lint` reads the whole repository, which
+# is a minute — and a hook that costs a minute on every push is a hook that
+# teaches people to type `--no-verify`, after which it is checking nothing at
+# all. Prettier and ESLint over a handful of changed files are a second or two.
 #
-# Skip it deliberately when you mean to:  git push --no-verify
+# NOT the tests. The unit suite is a minute and the browser suite is several,
+# and the usual shape is to run the suites, get a green, and push what was
+# green — paying for them again at the push is paying twice.
+#
+#   PREPUSH_TESTS=1 git push     run the unit suite here too
+#   PREPUSH_ALL=1 git push       lint the whole repo, as CI does
+#   git push --no-verify         skip this entirely
 #
 # Installed by `make hooks`, which `make dev` runs — see the Makefile.
 set -e
 
-echo "pre-push: what CI checks, on the cheap half"
-yarn -s lint
-yarn -s test:unit
+remote_sha=""
+local_sha=""
+
+# git hands pre-push the refs on stdin: <local ref> <local sha> <remote ref>
+# <remote sha>. The remote sha is what the other end already has, so the range
+# between them is exactly what this push adds.
+while read -r _local_ref this_local _remote_ref this_remote; do
+	[ -n "$this_local" ] || continue
+	case "$this_local" in *[!0]*) ;; *) continue ;; esac
+	local_sha="$this_local"
+	remote_sha="$this_remote"
+done
+
+changed() {
+	# A branch the remote has never seen reports all zeros; compare against the
+	# default branch instead, or the push would lint the repository's history.
+	case "$remote_sha" in
+		'' | *[!0]*) base="$remote_sha" ;;
+		*) base="$(git merge-base HEAD origin/master 2>/dev/null || true)" ;;
+	esac
+	[ -n "$base" ] || base="$(git rev-parse HEAD~1 2>/dev/null || true)"
+	[ -n "$base" ] || return 0
+	git diff --name-only --diff-filter=ACMR "$base" "${local_sha:-HEAD}" --
+}
+
+if [ "$PREPUSH_ALL" = 1 ]; then
+	echo "pre-push: linting everything, as CI does"
+	yarn -s lint
+else
+	files=$(changed | grep -E '\.(ts|js|mjs|cjs|svelte|css|json|md|html|svx)$' || true)
+	# Deleted in a later commit of the same push: the name is in the range and
+	# the file is not on disk, and prettier treats a missing path as an error.
+	present=""
+	for file in $files; do
+		[ -f "$file" ] && present="$present $file"
+	done
+
+	if [ -z "$present" ]; then
+		echo "pre-push: nothing to lint in this push"
+	else
+		count=$(printf '%s\n' $present | wc -l | tr -d ' ')
+		echo "pre-push: checking $count file(s) in this push (PREPUSH_ALL=1 for everything)"
+		yarn -s prettier --check $present
+		yarn -s eslint $present
+	fi
+fi
+
+if [ "$PREPUSH_TESTS" = 1 ]; then
+	echo "pre-push: the unit suite too, as asked"
+	yarn -s test:unit
+fi

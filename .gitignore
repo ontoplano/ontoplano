@@ -129,3 +129,6 @@ scripts/demo-media/birds/
 .ORDERS.md
 .ORDERS.md
 .svelte-kit-isolated/
+
+# The detached site watcher writes here (make dev-site).
+/.dev-site.log
