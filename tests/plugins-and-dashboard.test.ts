@@ -13,6 +13,7 @@
  * still draw a page.
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { messages as english } from '../src/lib/i18n/catalogues/en';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
 
 const database = makeDatabase();
@@ -235,10 +236,22 @@ describe('the refunds page', () => {
 		const source = await import('node:fs').then((fs) =>
 			fs.readFileSync('src/routes/legal/refunds/+page.svelte', 'utf8')
 		);
-		expect(source).toContain('Código de Defesa do Consumidor');
-		expect(source).toContain('seven days');
+		/*
+		 * The words are in `messages/` now, so the page holds the keys and the
+		 * catalogue holds the sentences. Both halves are checked: a key the
+		 * page does not ask for is a page that stopped saying it, and a key
+		 * with no words behind it is a blank on a legal page.
+		 */
+		const says = (phrase: string) => {
+			const key = Object.keys(english).find((k) => String(english[k]).includes(phrase));
+			expect(key, `no message says "${phrase}"`).toBeTruthy();
+			expect(source).toContain(key!);
+		};
+
+		says('Código de Defesa do Consumidor');
+		says('seven days');
 		// And it must not promise deletion of anything: an ended subscription
 		// leaves the writing where it is, which every other page also says.
-		expect(source).toContain('Nothing is deleted');
+		says('Nothing is deleted');
 	});
 });

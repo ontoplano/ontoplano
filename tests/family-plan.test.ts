@@ -529,7 +529,8 @@ describe('the companion services card', () => {
 
 		markJobRan('reminders');
 		const rows = await companions();
-		const reminders = rows.find((r) => r.label === 'Reminders')!;
+		// The row names itself by key now; the words are in the catalogue.
+		const reminders = rows.find((r) => r.label === 'sections.reminders.label')!;
 		expect(reminders.ok).toBe(true);
 		expect(reminders.detail).toContain('last asked this app');
 		expect(reminders.fix).toBe('');

@@ -12,6 +12,9 @@
  * somebody only notices after trusting it.
  */
 import { describe, expect, test } from 'vitest';
+import { UNTITLED_BLOCK } from '../src/lib/planner-grid';
+import { messages as english } from '../src/lib/i18n/catalogues/en';
+import { messages as portuguese } from '../src/lib/i18n/catalogues/pt-BR';
 import {
 	addDaysStr,
 	baseGridOptions,
@@ -380,8 +383,13 @@ describe('reading a block that is too short to show its own title', () => {
 	});
 
 	test('an event with no title of its own still describes something', () => {
+		// The word moved into `messages/`, so what comes back is the key it is
+		// under — and the point of the test is that there IS one, and that the
+		// catalogue has words for it in every language.
 		const nameless = { ...event(30), title: undefined };
-		expect(describeGridEvent(nameless).title).toBe('Slot');
+		expect(describeGridEvent(nameless).title).toBe(UNTITLED_BLOCK);
+		expect(english[UNTITLED_BLOCK]).toBeTruthy();
+		expect(portuguese[UNTITLED_BLOCK]).toBeTruthy();
 	});
 });
 
