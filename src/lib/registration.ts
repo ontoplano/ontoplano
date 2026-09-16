@@ -7,17 +7,17 @@
 export const REGISTRATION_MODES = [
 	{
 		key: 'closed',
-		label: 'Closed',
-		hint: 'Nobody new. The accounts that exist keep working.'
+		label: 'app.closed',
+		hint: 'app.nobodyNewTheAccountsThat'
 	},
 	{
 		key: 'invite',
-		label: 'By invitation',
-		hint: 'Only somebody holding a code you made below.'
+		label: 'app.byInvitation',
+		hint: 'app.onlySomebodyHoldingACode'
 	},
 	{
 		key: 'open',
-		label: 'Open',
-		hint: 'Anybody who finds this address can create an account.'
+		label: 'app.open',
+		hint: 'app.anybodyWhoFindsThisAddress'
 	}
 ] as const;

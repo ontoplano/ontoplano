@@ -1,3 +1,4 @@
+import type { PlainKey } from '$lib/i18n/keys';
 /**
  * Which cards the dashboard can show, and in what order.
  *
@@ -24,7 +25,7 @@ export type DashboardCardId =
 
 export type DashboardCard = {
 	id: DashboardCardId;
-	label: string;
+	label: PlainKey;
 	description: string;
 	/** Whether a brand-new account sees it. */
 	defaultOn: boolean;
@@ -37,14 +38,14 @@ export type DashboardCard = {
 export const DASHBOARD_CARDS: DashboardCard[] = [
 	{
 		id: 'todayTasks',
-		label: "Today's tasks",
+		label: 'app.todaysTasks',
 		description: 'What is still to do today.',
 		defaultOn: true,
 		width: 'half'
 	},
 	{
 		id: 'goals',
-		label: 'Goals',
+		label: 'app.goals',
 		description: 'Goals whose period covers today, with progress.',
 		defaultOn: true,
 		width: 'half',
@@ -52,7 +53,7 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 	},
 	{
 		id: 'habits',
-		label: 'Habits',
+		label: 'app.habits',
 		description: 'Current streaks.',
 		defaultOn: true,
 		width: 'half',
@@ -60,28 +61,28 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 	},
 	{
 		id: 'quote',
-		label: 'Quote',
+		label: 'app.quote',
 		description: 'One of your own quotes, the same one all day.',
 		defaultOn: false,
 		width: 'half'
 	},
 	{
 		id: 'weekPlan',
-		label: 'Week plan',
+		label: 'app.weekPlan',
 		description: 'The week at a glance.',
 		defaultOn: true,
 		width: 'full'
 	},
 	{
 		id: 'threeWins',
-		label: 'Three wins',
+		label: 'app.threeWins',
 		description: 'Three things that went well today.',
 		defaultOn: false,
 		width: 'full'
 	},
 	{
 		id: 'diary',
-		label: 'Diary',
+		label: 'app.diary',
 		description: 'Your most recent entry, and a box to write a new one.',
 		defaultOn: true,
 		width: 'full',
@@ -89,14 +90,14 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 	},
 	{
 		id: 'latestTodos',
-		label: 'Latest to-dos',
+		label: 'app.latestToDos',
 		description: 'The most recent things you wrote down, newest first.',
 		defaultOn: true,
 		width: 'half'
 	},
 	{
 		id: 'ideas',
-		label: 'Ideas',
+		label: 'app.ideas',
 		description: 'The last few ideas you had.',
 		defaultOn: true,
 		width: 'half',
@@ -104,7 +105,7 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 	},
 	{
 		id: 'bills',
-		label: 'Bills',
+		label: 'app.bills',
 		description: 'This month: expected, paid, and which bills are still open.',
 		defaultOn: true,
 		width: 'half',
@@ -112,7 +113,7 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 	},
 	{
 		id: 'workouts',
-		label: 'Workouts',
+		label: 'app.workouts',
 		description: 'Your workouts, and how long since each was last done.',
 		defaultOn: false,
 		width: 'half',
@@ -120,7 +121,7 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 	},
 	{
 		id: 'inventory',
-		label: 'Shopping list',
+		label: 'app.shoppingList',
 		description: 'What is left to buy.',
 		defaultOn: true,
 		width: 'full',

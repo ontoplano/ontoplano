@@ -2,6 +2,7 @@
 	import { page } from '$app/state';
 	import Icon from '$lib/components/Icon.svelte';
 	import { CLOSING_STEPS, tutorialFor, type TutorialStep } from '$lib/tutorials';
+	import type { PlainKey } from '$lib/i18n/keys';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -41,7 +42,7 @@
 	let index = $state(0);
 	/** The steps of the tour actually running, closing step included. */
 	let steps = $state<TutorialStep[]>([]);
-	let label = $state('');
+	let label = $state<PlainKey | null>(null);
 
 	const step = $derived(steps[index]);
 	/** The closing step, when there is one, is not counted as part of the tour. */
@@ -100,7 +101,7 @@
 		const path = page.url.pathname;
 		const resolved = resolveSteps(path, !asked);
 		if (!resolved || resolved.length === 0) return;
-		label = tutorialFor(path)?.label ?? '';
+		label = tutorialFor(path)?.label ?? null;
 		hasClosing = !asked;
 		steps = resolved;
 		index = 0;
@@ -362,15 +363,15 @@
 
 			<div class="flex items-baseline justify-between gap-3">
 				<span class="eyebrow" style="color: var(--tour-accent)">
-					{isClosing ? 'One last thing' : label}
+					{isClosing ? t('tutorial.oneLastThing') : label ? t(label) : ''}
 				</span>
 				{#if !isClosing}
 					<span class="tabular text-xs text-gray-500">{index + 1} / {total}</span>
 				{/if}
 			</div>
 
-			<h2 class="mt-1 text-base font-semibold text-gray-900">{step.title}</h2>
-			<p class="mt-1.5 text-sm text-gray-600">{step.body}</p>
+			<h2 class="mt-1 text-base font-semibold text-gray-900">{t(step.title)}</h2>
+			<p class="mt-1.5 text-sm text-gray-600">{t(step.body)}</p>
 
 			<div class="mt-4 flex items-center gap-3">
 				{#if !isClosing}

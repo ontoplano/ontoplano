@@ -175,7 +175,7 @@
 
 	function formatDate(dateStr: string): string {
 		const d = new Date(dateStr);
-		return d.toLocaleDateString('en-US', {
+		return d.toLocaleDateString(t.locale, {
 			weekday: 'short',
 			month: 'short',
 			day: 'numeric',
@@ -305,7 +305,11 @@
 	<div class="space-y-6">
 		<div class="flex flex-wrap items-center justify-between gap-3">
 			<h1 class="text-lg font-bold text-gray-900">
-				{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+				{new Date().toLocaleDateString(t.locale, {
+					weekday: 'long',
+					month: 'long',
+					day: 'numeric'
+				})}
 			</h1>
 			{#if !arranging}
 				<!-- Arrange is not a fifth thing to write down — it changes what the
@@ -1186,13 +1190,13 @@
 									onclick={() => hideCard(id)}
 									class="pointer-events-auto text-gray-500 hover:text-gray-900"
 									title={t('home.hideThisCard')}
-									aria-label="Hide {card.label}"
+									aria-label={t('home.hideCard', { card: t(card.label) })}
 								>
 									<Icon name="close" size={16} />
 								</button>
 								<span
 									class="pointer-events-auto cursor-grab touch-none text-gray-500"
-									title="Drag {card.label} to move it"
+									title={t('home.dragCard', { card: t(card.label) })}
 									aria-hidden="true"
 									onpointerdown={(e) => grab(id, e)}
 									onpointermove={dragTo}
@@ -1232,7 +1236,7 @@
 						class="border border-dashed border-gray-300 px-2 py-1 text-xs text-gray-600 hover:text-gray-900"
 						title={card.description}
 					>
-						+ {card.label}
+						+ {t(card.label)}
 					</button>
 				{/each}
 			</div>

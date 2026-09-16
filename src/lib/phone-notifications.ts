@@ -212,7 +212,7 @@ export async function scheduleDeviceReminders(): Promise<number> {
 			notifications,
 			wanted.map((reminder) => ({
 				id: reminder.id,
-				title: 'ontoplano',
+				title: 'app.ontoplano2',
 				body: reminder.message,
 				at: new Date(reminder.remindAt),
 				// Silent ones are still worth showing; what `audible` decides is
@@ -374,7 +374,7 @@ export async function testPhoneNotification(): Promise<boolean> {
 		await book(notifications, [
 			{
 				id: TEST_ID,
-				title: 'ontoplano',
+				title: 'app.ontoplano2',
 				body: 'A test — reminders will look like this.',
 				at: new Date(Date.now() + TEST_DELAY_MS),
 				smallIcon: NOTIFICATION_ICON,

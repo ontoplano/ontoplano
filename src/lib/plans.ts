@@ -1,3 +1,4 @@
+import type { PlainKey } from '$lib/i18n/keys';
 /**
  * What a plan is.
  *
@@ -25,8 +26,8 @@ export type LimitKey = (typeof LIMIT_KEYS)[number];
 /** `null` is no limit. */
 export type Plan = {
 	id: PlanId;
-	label: string;
-	blurb: string;
+	label: PlainKey;
+	blurb: PlainKey;
 	limits: Record<LimitKey, number | null>;
 };
 
@@ -38,8 +39,8 @@ export const PLANS: Record<PlanId, Plan> = {
 	 */
 	none: {
 		id: 'none',
-		label: 'Not subscribed',
-		blurb: 'Everything you wrote is still here, and still exportable.',
+		label: 'app.notSubscribed',
+		blurb: 'app.everythingYouWroteIsStill',
 		limits: {
 			apiTokens: 0,
 			dataStreams: 0,
@@ -49,8 +50,8 @@ export const PLANS: Record<PlanId, Plan> = {
 	},
 	pro: {
 		id: 'pro',
-		label: 'Ontoplano',
-		blurb: 'The whole thing, hosted, backed up and kept running.',
+		label: 'app.ontoplano',
+		blurb: 'app.theWholeThingHostedBacked',
 		limits: {
 			apiTokens: 20,
 			dataStreams: 50,

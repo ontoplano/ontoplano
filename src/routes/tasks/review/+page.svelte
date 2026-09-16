@@ -100,7 +100,7 @@
 	}
 
 	function pretty(dateStr: string): string {
-		return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
+		return new Date(dateStr + 'T00:00:00').toLocaleDateString(t.locale, {
 			month: 'short',
 			day: 'numeric'
 		});
@@ -128,7 +128,7 @@
 				(acc, item) => {
 					(acc[item.date] ??= {
 						date: item.date,
-						label: new Date(item.date + 'T00:00:00').toLocaleDateString('en-US', {
+						label: new Date(item.date + 'T00:00:00').toLocaleDateString(t.locale, {
 							weekday: 'long'
 						}),
 						items: []

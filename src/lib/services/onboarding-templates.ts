@@ -1,3 +1,4 @@
+import type { PlainKey } from '$lib/i18n/keys';
 /**
  * The starter weeks, as data.
  *
@@ -19,7 +20,7 @@ export type Block = {
 
 export type Template = {
 	key: TemplateKey;
-	label: string;
+	label: PlainKey;
 	description: string;
 	categories: { name: string; color: string; colorLight: string }[];
 	/** Activity name → the category it belongs to. */
@@ -56,7 +57,7 @@ const BASE_CATEGORIES = [
 export const TEMPLATES: Template[] = [
 	{
 		key: 'student',
-		label: 'Student',
+		label: 'app.student',
 		description: 'Lectures in the morning, study blocks after, exercise in between.',
 		categories: BASE_CATEGORIES,
 		activities: [
@@ -89,7 +90,7 @@ export const TEMPLATES: Template[] = [
 	},
 	{
 		key: 'remote',
-		label: 'Remote worker',
+		label: 'app.remoteWorker',
 		description: 'Deep work before lunch, admin after, a walk to end the day.',
 		categories: BASE_CATEGORIES,
 		activities: [
@@ -123,7 +124,7 @@ export const TEMPLATES: Template[] = [
 	},
 	{
 		key: 'blank',
-		label: 'Blank',
+		label: 'app.blank',
 		description: 'Three categories and an empty week. Fill it yourself.',
 		categories: BASE_CATEGORIES,
 		activities: [],

@@ -1,3 +1,4 @@
+import type { PlainKey } from '$lib/i18n/keys';
 import { NAV_PLACES } from '$lib/sections-nav';
 import { PAGE_SHORTCUTS } from '$lib/shortcuts';
 
@@ -43,13 +44,20 @@ export type TutorialStep = {
 	 * the middle of the screen.
 	 */
 	target?: string;
-	title: string;
-	body: string;
+	/**
+	 * What the step says, as message keys.
+	 *
+	 * A tour is a list of sentences and this module has no language: it is
+	 * imported by the shell, by a test and by the docs generator, none of which
+	 * shares a translator. `Tutorial.svelte` has one and calls it.
+	 */
+	title: PlainKey;
+	body: PlainKey;
 };
 
 export type Tutorial = {
 	/** What this screen is called, shown above the step counter. */
-	label: string;
+	label: PlainKey;
 	steps: TutorialStep[];
 };
 
@@ -74,13 +82,13 @@ export type Tutorial = {
 export const CLOSING_STEPS: TutorialStep[] = [
 	{
 		target: '[data-tour="tutorial"]',
-		title: 'Click here if you ever need this help',
-		body: 'It opens the tour for whatever screen you are on. The keyboard beside it lists that screen’s keys, and the book is the full documentation.'
+		title: 'tour.clickHereIfYouEver',
+		body: 'tour.itOpensTheTourFor'
 	},
 	{
 		target: '[data-tour="menu"]',
-		title: 'Press here if you ever need this help',
-		body: 'It fans out your account and settings, the tour for whatever screen you are on, the documentation, and the way to tell the operator something is wrong.'
+		title: 'tour.pressHereIfYouEver',
+		body: 'tour.itFansOutYourAccount'
 	}
 ];
 
@@ -93,479 +101,479 @@ export const TUTORIALS: Record<string, Tutorial> = {
 	 * the page. Half of these steps point at things that are on every screen.
 	 */
 	'/': {
-		label: 'Ontoplano',
+		label: 'tour.ontoplano',
 		steps: [
 			{
-				title: 'This is ontoplano',
-				body: 'Your week, your goals, and everything else you would otherwise keep across six apps and a piece of paper. Two minutes, and you can stop whenever you like.'
+				title: 'tour.thisIsOntoplano',
+				body: 'tour.yourWeekYourGoalsAnd'
 			},
 			{
 				target: '[data-tour="nav"]',
-				title: 'One room per kind of thing',
-				body: 'Tasks hold your week, Notebooks hold what you write — the diary included — and ideas hold what you thought of on the bus. Preferences reorders the rooms and puts away the ones you do not want.'
+				title: 'tour.oneRoomPerKindOf',
+				body: 'tour.tasksHoldYourWeekNotebooks'
 			},
 			{
 				target: '[data-tour="mobile-bar"]',
-				title: 'The bar',
-				body: 'Your account, search, the rooms, home, and one button for writing something down.'
+				title: 'tour.theBar',
+				body: 'tour.yourAccountSearchTheRooms'
 			},
 			{
 				target: '[data-tour="rooms"]',
-				title: 'Hold this, then let go',
-				body: 'The rooms open around your finger and you release on the one you want. Faster than reading a list of ten words, once your hand knows where they are.'
+				title: 'tour.holdThisThenLetGo',
+				body: 'tour.theRoomsOpenAroundYour'
 			},
 			{
 				target: '[data-tour="capture"]',
-				title: 'Before it evaporates',
-				body: 'The same gesture, for a todo, an idea, a note or something to buy — without deciding where it belongs first.'
+				title: 'tour.beforeItEvaporates',
+				body: 'tour.theSameGestureForA'
 			},
 			{
 				target: '[data-tour="search"]',
-				title: 'Everything you have written',
-				body: 'Entries, goals, people, recipes, ideas. One box over all of it.'
+				title: 'tour.everythingYouHaveWritten',
+				body: 'tour.entriesGoalsPeopleRecipesIdeas'
 			},
 			{
 				target: '[data-tour="dash-cards"]',
-				title: 'What today looks like',
-				body: 'Each card is one room reporting in. Drag them into the order you want — the handle is up beside the date.'
+				title: 'tour.whatTodayLooksLike',
+				body: 'tour.eachCardIsOneRoom'
 			},
 			{
 				target: '[data-tour="menu"]',
-				title: 'Yours to change',
-				body: 'Theme, the day your week starts on, which rooms you keep and what colour they are. Your account and your data live here too.'
+				title: 'tour.yoursToChange',
+				body: 'tour.themeTheDayYourWeek'
 			}
 		]
 	},
 
 	'/tasks/plan': {
-		label: 'Plan',
+		label: 'tour.plan',
 		steps: [
 			{
-				title: 'The shape of a normal week',
-				body: 'Not a calendar of appointments — the blocks you mean to repeat. Everything else in Tasks is built out of this.'
+				title: 'tour.theShapeOfANormal',
+				body: 'tour.notACalendarOfAppointments'
 			},
 			{
 				target: '[data-tour="planner-tabs"]',
-				title: 'Six views of the same week',
-				body: 'Plan is the shape of it, Board is today, To-do is everything with no date yet, History is what actually happened.'
+				title: 'tour.sixViewsOfTheSame',
+				body: 'tour.planIsTheShapeOf'
 			},
 			{
 				target: '[data-tour="plan-grid"]',
-				title: 'Drag to make a block',
-				body: 'Pull down an empty stretch of a day. Hold Alt while dragging one to move that occurrence only and leave the rest of the weeks alone.'
+				title: 'tour.dragToMakeABlock',
+				body: 'tour.pullDownAnEmptyStretch'
 			},
 			{
 				target: '[data-tour="plan-toolbar"]',
-				title: 'Where you are, and what shape',
-				body: 'The week and the arrows that move it on the left; grid or list, and what to add, on the right.'
+				title: 'tour.whereYouAreAndWhat',
+				body: 'tour.theWeekAndTheArrows'
 			},
 			{
 				target: '[data-tour="plan-schemes"]',
-				title: 'A week you can lay down again',
-				body: 'Save the shape you are looking at as a scheme — a term-time week, a holiday week — and apply it to any week later.'
+				title: 'tour.aWeekYouCanLay',
+				body: 'tour.saveTheShapeYouAre'
 			}
 		]
 	},
 
 	'/tasks/board': {
-		label: 'Board',
+		label: 'tour.board',
 		steps: [
 			{
-				title: 'Today, as cards',
-				body: 'The same blocks as the plan, in the one form where you can pick one up and move it.'
+				title: 'tour.todayAsCards',
+				body: 'tour.theSameBlocksAsThe'
 			},
 			{
 				target: '[data-tour="board-tabs"]',
-				title: 'Today, or everything else',
-				body: 'Today is the day in front of you. To-do is everything you have written down without a date; pulling one onto today gives it one.'
+				title: 'tour.todayOrEverythingElse',
+				body: 'tour.todayIsTheDayIn'
 			},
 			{
 				target: '[data-tour="board-columns"]',
-				title: 'Drag a card, or carry it',
-				body: 'h j k l move between cards and columns, H and L carry the selected card with you, and c marks it done.'
+				title: 'tour.dragACardOrCarry',
+				body: 'tour.hJKLMove'
 			},
 			{
 				target: '[data-tour="board-ratings"]',
-				title: 'Urgency, interest, energy',
-				body: 'Three optional numbers on every card, one to five. Sort or filter the board by any of them; the history and the review read them afterwards.'
+				title: 'tour.urgencyInterestEnergy',
+				body: 'tour.threeOptionalNumbersOnEvery'
 			}
 		]
 	},
 
 	'/tasks/todo': {
-		label: 'To-do',
+		label: 'tour.toDo',
 		steps: [
 			{
-				title: 'The things without a day yet',
-				body: 'Anything you wrote down and did not place. It stays here until you give it a date, and then it is a block like any other.'
+				title: 'tour.theThingsWithoutADay',
+				body: 'tour.anythingYouWroteDownAnd'
 			},
 			{
 				target: '[data-tour="todo-new"]',
-				title: 'One line is enough',
-				body: 'A title, and nothing else if that is all you have. Everything after it can be filled in later.'
+				title: 'tour.oneLineIsEnough',
+				body: 'tour.aTitleAndNothingElse'
 			},
 			{
 				target: '[data-tour="todo-list"]',
-				title: 'j and k move, e edits, c finishes',
-				body: 'Hand off a todo with g — it stays on the list, marked as somebody else’s.'
+				title: 'tour.jAndKMoveE',
+				body: 'tour.handOffATodoWith'
 			}
 		]
 	},
 
 	'/tasks/activities': {
-		label: 'Activities',
+		label: 'tour.activities',
 		steps: [
 			{
-				title: 'The named things you keep doing',
-				body: '“Gym”, “Russian”, “Read”. A block on the plan points at one of these, so a year of gym is one thing rather than fifty unrelated blocks.'
+				title: 'tour.theNamedThingsYouKeep',
+				body: 'tour.gymRussianReadABlock'
 			},
 			{
 				target: '[data-tour="activity-categories"]',
-				title: 'Categories are the colours',
-				body: 'Work, health, whatever divides your life. Every block wears its category’s colour, on the grid and on the dashboard.'
+				title: 'tour.categoriesAreTheColours',
+				body: 'tour.workHealthWhateverDividesYour'
 			},
 			{
 				target: '[data-tour="activity-list"]',
-				title: 'Retire one without losing it',
-				body: 'An activity you have stopped goes inactive rather than deleted, and everything you did under it stays in the history.'
+				title: 'tour.retireOneWithoutLosingIt',
+				body: 'tour.anActivityYouHaveStopped'
 			}
 		]
 	},
 
 	'/tasks/review': {
-		label: 'Review',
+		label: 'tour.review',
 		steps: [
 			{
-				title: 'Closing a week',
-				body: 'A few lines about the week that just ended, and a decision about everything it left open.'
+				title: 'tour.closingAWeek',
+				body: 'tour.aFewLinesAboutThe'
 			},
 			{
 				target: '[data-tour="review-lines"]',
-				title: 'Say it in your own words',
-				body: 'What went well, what did not, what you are changing. It is the part you will read next year.'
+				title: 'tour.sayItInYourOwn',
+				body: 'tour.whatWentWellWhatDid'
 			},
 			{
 				target: '[data-tour="review-loose"]',
-				title: 'Nothing carries itself over',
-				body: 'Everything you planned and did not do gets an answer here. Next week generates its own blocks either way, so an unanswered list cannot quietly become the week.'
+				title: 'tour.nothingCarriesItselfOver',
+				body: 'tour.everythingYouPlannedAndDid'
 			}
 		]
 	},
 
 	'/goals': {
-		label: 'Goals',
+		label: 'tour.goals',
 		steps: [
 			{
-				title: 'What the week is for',
-				body: 'A goal has a horizon — this month, this year, the decade — and progress you either count or set by hand.'
+				title: 'tour.whatTheWeekIsFor',
+				body: 'tour.aGoalHasAHorizon'
 			},
 			{
 				target: '[data-tour="goal-areas"]',
-				title: 'Areas group them',
-				body: 'Your own divisions, with your own colours. A goal belongs to one.'
+				title: 'tour.areasGroupThem',
+				body: 'tour.yourOwnDivisionsWithYour'
 			},
 			{
 				target: '[data-tour="goal-new"]',
-				title: 'Give it a number if it has one',
-				body: 'Books, kilos, euros — anything countable. A goal can want several at once: three gigs played and five songs recorded is one goal with two numbers, and it is as far along as they are on average.'
+				title: 'tour.giveItANumberIf',
+				body: 'tour.booksKilosEurosAnything'
 			},
 			{
 				target: '[data-tour="goal-list"]',
-				title: 'Link the work to the goal',
-				body: 'Attach the blocks and todos that count. That is what turns a goal from a wish into a number that moves.'
+				title: 'tour.linkTheWorkToThe',
+				body: 'tour.attachTheBlocksAndTodos'
 			}
 		]
 	},
 
 	'/notebooks/diary': {
-		label: 'Diary',
+		label: 'tour.diary',
 		steps: [
 			{
-				title: 'What happened, in your words',
-				body: 'One entry a day or twenty, as long or short as you like.'
+				title: 'tour.whatHappenedInYourWords',
+				body: 'tour.oneEntryADayOr'
 			},
 			{
 				target: '[data-tour="diary-new"]',
-				title: 'Tags and people, as you write',
-				body: 'Tags are free-form — invent one and it exists. Naming a person links the entry to them.'
+				title: 'tour.tagsAndPeopleAsYou',
+				body: 'tour.tagsAreFreeFormInvent'
 			},
 			{
 				target: '[data-tour="diary-wins"]',
-				title: 'Three wins',
-				body: 'Three good things about the day, in one line each. The shortest entry worth keeping, for the days you will not write more.'
+				title: 'tour.threeWins',
+				body: 'tour.threeGoodThingsAboutThe'
 			},
 			{
 				target: '[data-tour="diary-list"]',
-				title: 'Find it again by tag',
-				body: 'Every tag on an entry is a filter. Search reaches the words inside them.'
+				title: 'tour.findItAgainByTag',
+				body: 'tour.everyTagOnAnEntry'
 			}
 		]
 	},
 
 	'/notebooks/people': {
-		label: 'People',
+		label: 'tour.people',
 		steps: [
 			{
-				title: 'A person is not a tag',
-				body: 'They have a name, a birthday, and a page of their own — so “everything about Ana” is somewhere to go rather than a search you run.'
+				title: 'tour.aPersonIsNotA',
+				body: 'tour.theyHaveANameA'
 			},
 			{
 				target: '[data-tour="people-new"]',
-				title: 'A name is enough to start',
-				body: 'The rest fills in as you write about them.'
+				title: 'tour.aNameIsEnoughTo',
+				body: 'tour.theRestFillsInAs'
 			},
 			{
 				target: '[data-tour="people-list"]',
-				title: 'Every mention, in one place',
-				body: 'Open a person to see each entry that named them, newest first.'
+				title: 'tour.everyMentionInOnePlace',
+				body: 'tour.openAPersonToSee'
 			}
 		]
 	},
 
 	'/notebooks': {
-		label: 'Notebooks',
+		label: 'tour.notebooks',
 		steps: [
 			{
-				title: 'For the things that are not a day',
-				body: 'A renovation, a trip, a piece of research. A notebook holds notes about one subject, and it does not care when you wrote them.'
+				title: 'tour.forTheThingsThatAre',
+				body: 'tour.aRenovationATripA'
 			},
 			{
 				target: '[data-tour="notebook-new"]',
-				title: 'One notebook per subject',
-				body: 'Diary entries are what happened; a notebook is what you are working out.'
+				title: 'tour.oneNotebookPerSubject',
+				body: 'tour.diaryEntriesAreWhatHappened'
 			}
 		]
 	},
 
 	'/notebooks/ideas': {
-		label: 'Ideas',
+		label: 'tour.ideas',
 		steps: [
 			{
-				title: 'Catch it now, judge it later',
-				body: 'Anything you thought of and do not want to lose. No date, no category, no decision required.'
+				title: 'tour.catchItNowJudgeIt',
+				body: 'tour.anythingYouThoughtOfAnd'
 			},
 			{
 				target: '[data-tour="idea-new"]',
-				title: 'A sentence is a complete idea',
-				body: 'Write it and move on. n opens this from anywhere on the page.'
+				title: 'tour.aSentenceIsAComplete',
+				body: 'tour.writeItAndMoveOn'
 			},
 			{
 				target: '[data-tour="idea-list"]',
-				title: 'Star it, or mark it done',
-				body: 'f keeps the good ones at the top. a marks one as applied, with a line about what came of it — which is the part you will want in a year.'
+				title: 'tour.starItOrMarkIt',
+				body: 'tour.fKeepsTheGoodOnes'
 			}
 		]
 	},
 
 	'/health/workouts': {
-		label: 'Workouts',
+		label: 'tour.workouts',
 		steps: [
 			{
-				title: 'Workouts, planned like meals',
-				body: 'A workout is a name, a kind and a plan. Write it once here, then drop it onto a day the way you would a meal.'
+				title: 'tour.workoutsPlannedLikeMeals',
+				body: 'tour.aWorkoutIsAName'
 			},
 			{
-				title: 'Done, and put away',
-				body: 'Mark a session done to stamp it. Archive one you have stopped doing — its history stays; delete is only for one added by mistake.'
+				title: 'tour.doneAndPutAway',
+				body: 'tour.markASessionDoneTo'
 			}
 		]
 	},
 	'/health/habits': {
-		label: 'Habits',
+		label: 'tour.habits',
 		steps: [
 			{
-				title: 'The things you do, and the things you do not',
-				body: 'A habit is either one to keep or one to avoid, and both are logged the same way: one mark a day.'
+				title: 'tour.theThingsYouDoAnd',
+				body: 'tour.aHabitIsEitherOne'
 			},
 			{
 				target: '[data-tour="habit-new"]',
-				title: 'Say which kind it is',
-				body: 'A good habit counts the days you did it. A bad one counts the days you did not.'
+				title: 'tour.sayWhichKindItIs',
+				body: 'tour.aGoodHabitCountsThe'
 			},
 			{
 				target: '[data-tour="habit-list"]',
-				title: 'The calendar is the point',
-				body: 'A year of a habit at a glance. A gap in it says more than any number.'
+				title: 'tour.theCalendarIsThePoint',
+				body: 'tour.aYearOfAHabit'
 			}
 		]
 	},
 
 	'/finance/ledgers': {
-		label: 'Ledgers',
+		label: 'tour.ledgers',
 		steps: [
 			{
-				title: 'One ledger per place money moves',
-				body: 'A current account is one, a credit card another. Keeping them apart is what makes "what did the card cost" a question with an answer.'
+				title: 'tour.oneLedgerPerPlaceMoney',
+				body: 'tour.aCurrentAccountIsOne'
 			},
 			{
-				title: 'The statement is the record',
-				body: 'Import the bank\u2019s own export and the lines land here, deduplicated — the same file twice adds nothing. Anything the bank has not published yet you can write by hand.'
+				title: 'tour.theStatementIsTheRecord',
+				body: 'tour.importTheBankU2019sOwnExport'
 			},
 			{
-				title: 'Rules do the sorting',
-				body: 'Categories wash the row in their colour and every line has exactly one; tags overlap and sit beside it. Both are patterns you write once, on the Rules tab.'
+				title: 'tour.rulesDoTheSorting',
+				body: 'tour.categoriesWashTheRowIn'
 			}
 		]
 	},
 	'/inventory': {
-		label: 'Shopping',
+		label: 'tour.shopping',
 		steps: [
 			{
-				title: 'Two lists, one page',
-				body: 'Inventory is what runs out and has to be replaced. Wishlist is what you might buy one day.'
+				title: 'tour.twoListsOnePage',
+				body: 'tour.inventoryIsWhatRunsOut'
 			},
 			{
 				target: '[data-tour="shopping-new"]',
-				title: 'Which list, and where it lives',
-				body: 'A category — fridge, bathroom, desk — is what makes the list match the walk around the house.'
+				title: 'tour.whichListAndWhereIt',
+				body: 'tour.aCategoryFridgeBathroom'
 			},
 			{
 				target: '[data-tour="shopping-list"]',
-				title: 'Bought, and back again',
-				body: 'Ticking something off inventory starts it running down again. z snoozes what you do not want to think about this month.'
+				title: 'tour.boughtAndBackAgain',
+				body: 'tour.tickingSomethingOffInventoryStarts'
 			}
 		]
 	},
 
 	'/gallery': {
-		label: 'Gallery',
+		label: 'tour.gallery',
 		steps: [
 			{
-				title: 'Albums, not folders',
-				body: 'Pictures live in albums. Putting one in a second album never copies it — one picture, two places.'
+				title: 'tour.albumsNotFolders',
+				body: 'tour.picturesLiveInAlbumsPutting'
 			},
 			{
-				title: 'Moving and sharing',
-				body: 'Drag a picture onto another album to move it there; hold Ctrl while dropping to keep it in both.'
+				title: 'tour.movingAndSharing',
+				body: 'tour.dragAPictureOntoAnother'
 			},
 			{
-				title: 'Tags cut across',
-				body: 'A tag on a picture works across every album. Removing a picture from its last album deletes it, and the confirmation says so.'
+				title: 'tour.tagsCutAcross',
+				body: 'tour.aTagOnAPicture'
 			}
 		]
 	},
 
 	'/reminders': {
-		label: 'Reminders',
+		label: 'tour.reminders',
 		steps: [
 			{
-				title: 'Everything with a time on it',
-				body: 'Blocks you asked to be nudged about, birthdays, bills that want paying, a week left unreviewed — all of it in one list, soonest first.'
+				title: 'tour.everythingWithATimeOn',
+				body: 'tour.blocksYouAskedToBe'
 			},
 			{
 				target: '[data-tour="set-alarm"]',
-				title: 'And one about nothing',
-				body: 'A day and a sentence, and a time if you want one. It reaches your phone with the app shut, the same as the rest.'
+				title: 'tour.andOneAboutNothing',
+				body: 'tour.aDayAndASentence'
 			},
 			{
 				target: '[data-tour="reminder-sounds"]',
-				title: 'What is worth hearing',
-				body: 'Everything shows; nothing makes a noise unless you say so here. Upload your own sounds and give each kind its own.'
+				title: 'tour.whatIsWorthHearing',
+				body: 'tour.everythingShowsNothingMakesA'
 			}
 		]
 	},
 
 	'/health/recipes': {
-		label: 'Recipes',
+		label: 'tour.recipes',
 		steps: [
 			{
-				title: 'Recipes, and what they cost you',
-				body: 'Ingredients, steps, and a cook mode that keeps the screen awake while you follow it.'
+				title: 'tour.recipesAndWhatTheyCost',
+				body: 'tour.ingredientsStepsAndACook'
 			},
 			{
 				target: '[data-tour="recipe-new"]',
-				title: 'Paste the page in',
-				body: 'Copy a recipe from wherever you found it and paste the whole thing. The ingredients and the steps are pulled out of it.'
+				title: 'tour.pasteThePageIn',
+				body: 'tour.copyARecipeFromWherever'
 			},
 			{
 				target: '[data-tour="recipe-pictures"]',
-				title: 'And what it looks like',
-				body: 'Up to six pictures per recipe. Star one and it becomes the one the list shows, so a cookbook is something you recognise by sight rather than by reading forty titles.'
+				title: 'tour.andWhatItLooksLike',
+				body: 'tour.upToSixPicturesPer'
 			},
 			{
 				target: '[data-tour="recipe-list"]',
-				title: 'An ingredient is a shopping item',
-				body: 'Put a recipe on the week and everything it needs turns up on the shopping list, minus what you already have.'
+				title: 'tour.anIngredientIsAShopping',
+				body: 'tour.putARecipeOnThe'
 			},
 			{
 				target: '[data-tour="recipe-list"]',
-				title: 'The calendar button puts it on a day',
-				body: 'It becomes a block on the plan, beside everything else you are doing that day.'
+				title: 'tour.theCalendarButtonPutsIt',
+				body: 'tour.itBecomesABlockOn'
 			}
 		]
 	},
 
 	'/search': {
-		label: 'Search',
+		label: 'tour.search',
 		steps: [
 			{
-				title: 'Everything, in one box',
-				body: 'Entries, notes, ideas, goals, people, recipes, todos. Grouped by what they are.'
+				title: 'tour.everythingInOneBox',
+				body: 'tour.entriesNotesIdeasGoalsPeople'
 			},
 			{
 				target: '[data-tour="search-box"]',
-				title: 'Type a word you remember',
-				body: 'Matching is on the words themselves, so a fragment of a sentence you wrote finds the entry it came from.'
+				title: 'tour.typeAWordYouRemember',
+				body: 'tour.matchingIsOnTheWords'
 			}
 		]
 	},
 
 	'/settings/preferences': {
-		label: 'Preferences',
+		label: 'tour.preferences',
 		steps: [
 			{
-				title: 'The app, arranged your way',
-				body: 'What the week starts on, what it looks like, which rooms you keep, and what is on the dashboard.'
+				title: 'tour.theAppArrangedYourWay',
+				body: 'tour.whatTheWeekStartsOn'
 			},
 			{
 				target: '[data-tour="prefs-menu"]',
-				title: 'Your rooms, your order, your colours',
-				body: 'Drag a room up or down, put one away, or give its section a different colour. The bar, the wheel and the search results all follow.'
+				title: 'tour.yourRoomsYourOrderYour',
+				body: 'tour.dragARoomUpOr'
 			},
 			{
 				target: '[data-tour="prefs-theme"]',
-				title: 'Light, dark, or whatever the device says',
-				body: 'System follows the phone or the laptop, including when it changes at sunset.'
+				title: 'tour.lightDarkOrWhateverThe',
+				body: 'tour.systemFollowsThePhoneOr'
 			}
 		]
 	},
 
 	'/settings/account': {
-		label: 'Account',
+		label: 'tour.account',
 		steps: [
 			{
-				title: 'Your account, and your data',
-				body: 'Email, password, the devices you are signed in on, and the two things that move everything at once.'
+				title: 'tour.yourAccountAndYourData',
+				body: 'tour.emailPasswordTheDevicesYou'
 			},
 			{
 				target: '[data-tour="account-sessions"]',
-				title: 'Every device that is signed in',
-				body: 'Sign one out, or all of them at once if something looks wrong.'
+				title: 'tour.everyDeviceThatIsSigned',
+				body: 'tour.signOneOutOrAll'
 			},
 			{
 				target: '[data-tour="account-export"]',
-				title: 'Take it with you',
-				body: 'Everything you have written, in one file, whenever you want it. Deleting the account removes all of it and cannot be undone.'
+				title: 'tour.takeItWithYou',
+				body: 'tour.everythingYouHaveWrittenIn'
 			}
 		]
 	},
 
 	'/settings/integrations/connections': {
-		label: 'Integrations',
+		label: 'tour.integrations',
 		steps: [
 			{
-				title: 'Letting other things in',
-				body: 'Tokens for programs that read or write on your behalf, a calendar link, and the data other apps push in.'
+				title: 'tour.lettingOtherThingsIn',
+				body: 'tour.tokensForProgramsThatRead'
 			},
 			{
 				target: '[data-tour="integrations-tokens"]',
-				title: 'A token is shown once',
-				body: 'Scoped to what it needs, and revokable from here. Copy it when it appears — it is stored hashed and cannot be shown again.'
+				title: 'tour.aTokenIsShownOnce',
+				body: 'tour.scopedToWhatItNeeds'
 			},
 			{
 				target: '[data-tour="integrations-streams"]',
-				title: 'Numbers from elsewhere',
-				body: 'A stream is a series something else keeps pushing — a weight, a step count — and it gets a page of its own under Health.'
+				title: 'tour.numbersFromElsewhere',
+				body: 'tour.aStreamIsASeries'
 			}
 		]
 	}

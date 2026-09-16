@@ -2,6 +2,9 @@
 	import { CAPTURES, visibleCaptures, type Capture } from '$lib/capture';
 	import CaptureDialog from '$lib/components/CaptureDialog.svelte';
 	import RadialMenu from '$lib/components/RadialMenu.svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * How big this wheel is against the rooms wheel.
@@ -41,7 +44,7 @@
 	const wedges = $derived(
 		visibleCaptures(hidden).map((c) => ({
 			key: c.key,
-			label: c.label,
+			label: t(c.label),
 			icon: c.icon,
 			color: c.color
 		}))

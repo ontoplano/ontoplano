@@ -1,3 +1,4 @@
+import type { PlainKey } from '$lib/i18n/keys';
 export interface ShortcutBinding {
 	key: string;
 	action: string;
@@ -5,7 +6,7 @@ export interface ShortcutBinding {
 }
 
 export interface PageShortcuts {
-	label: string;
+	label: PlainKey;
 	shortcuts: ShortcutBinding[];
 }
 
@@ -18,7 +19,7 @@ export const GLOBAL_SHORTCUTS: ShortcutBinding[] = [
 
 export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 	'/': {
-		label: 'Dashboard',
+		label: 'app.dashboard',
 		shortcuts: [
 			{ key: 'i', action: 'capture-idea', description: 'Capture an idea' },
 			{ key: 't', action: 'capture-todo', description: 'Capture a todo' },
@@ -29,7 +30,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		]
 	},
 	'/goals': {
-		label: 'Goals',
+		label: 'app.goals',
 		shortcuts: [
 			{ key: 'n', action: 'new', description: 'New goal' },
 			{ key: 'j', action: 'next', description: 'Next goal' },
@@ -38,7 +39,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 	},
 
 	'/tasks/board': {
-		label: 'Board',
+		label: 'app.board',
 		shortcuts: [
 			{ key: 'h', action: 'prev-column', description: 'Move between columns' },
 			{ key: 'j', action: 'next-card', description: 'Move between cards' },
@@ -64,7 +65,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 	},
 
 	'/tasks/plan': {
-		label: 'Plan',
+		label: 'app.plan',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'Navigate slots' },
 			{ key: 'k', action: 'navigate-up', description: 'Navigate slots' },
@@ -89,7 +90,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		]
 	},
 	'/tasks/activities': {
-		label: 'Activities',
+		label: 'app.activities',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'Navigate list' },
 			{ key: 'k', action: 'navigate-up', description: 'Navigate list' },
@@ -106,7 +107,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		]
 	},
 	'/tasks/todo': {
-		label: 'To-do',
+		label: 'app.toDo',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'Navigate list' },
 			{ key: 'k', action: 'navigate-up', description: 'Navigate list' },
@@ -118,7 +119,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		]
 	},
 	'/notebooks/diary': {
-		label: 'Diary',
+		label: 'app.diary',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'Navigate entries' },
 			{ key: 'k', action: 'navigate-up', description: 'Navigate entries' },
@@ -127,7 +128,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		]
 	},
 	'/notebooks/ideas': {
-		label: 'Ideas',
+		label: 'app.ideas',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'Navigate ideas' },
 			{ key: 'k', action: 'navigate-up', description: 'Navigate ideas' },
@@ -138,7 +139,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		]
 	},
 	'/inventory': {
-		label: 'To buy',
+		label: 'app.toBuy',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'Navigate items' },
 			{ key: 'k', action: 'navigate-up', description: 'Navigate items' },
@@ -154,7 +155,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		]
 	},
 	'/health/habits': {
-		label: 'Habits',
+		label: 'app.habits',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'Navigate habits' },
 			{ key: 'k', action: 'navigate-up', description: 'Navigate habits' },
@@ -163,11 +164,11 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		]
 	},
 	'/notebooks': {
-		label: 'Notebooks',
+		label: 'app.notebooks',
 		shortcuts: [{ key: 'n', action: 'new', description: 'New notebook' }]
 	},
 	'/notebooks/people': {
-		label: 'People',
+		label: 'app.people',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'Navigate people' },
 			{ key: 'k', action: 'navigate-up', description: 'Navigate people' },
@@ -175,18 +176,18 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		]
 	},
 	'/health/recipes': {
-		label: 'Recipes',
+		label: 'app.recipes',
 		shortcuts: [{ key: 'n', action: 'new', description: 'New recipe' }]
 	},
 	'/settings/account': {
-		label: 'Account',
+		label: 'app.account',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'Navigate sessions' },
 			{ key: 'k', action: 'navigate-up', description: 'Navigate sessions' }
 		]
 	},
 	'/settings/integrations/connections': {
-		label: 'Integrations',
+		label: 'app.integrations',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'Navigate tokens' },
 			{ key: 'k', action: 'navigate-up', description: 'Navigate tokens' },

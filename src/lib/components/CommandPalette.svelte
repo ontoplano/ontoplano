@@ -172,7 +172,7 @@
 					>
 						{#if row.sort === 'place'}
 							<Icon name={row.place.icon} class="shrink-0 text-gray-500" />
-							<span class="text-gray-900">{row.place.label}</span>
+							<span class="text-gray-900">{t(row.place.label)}</span>
 							{#if row.place.group}
 								<span class="text-xs text-gray-500">{row.place.group}</span>
 							{/if}

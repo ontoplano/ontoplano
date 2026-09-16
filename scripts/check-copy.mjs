@@ -91,7 +91,18 @@ const WORDS = /\p{L}{2,}/u;
  * Svelte block keywords survive the tag-stripping below as bare words, and an
  * HTML entity is a character rather than a sentence.
  */
+/**
+ * A message key, not a sentence.
+ *
+ * Once a module's prose has moved, what is left in the field is the key that
+ * replaced it — `tour.thisIsOntoplano`. Dotted, no spaces: prose has spaces and
+ * a key does not, which is enough to tell them apart and cheap enough to be
+ * obviously right.
+ */
+const LOOKS_LIKE_A_KEY = /^[a-z][A-Za-z0-9]*(\.[A-Za-z0-9]+)+$/;
+
 const NOT_COPY = [
+	LOOKS_LIKE_A_KEY,
 	// The app's own name. A brand is the same word in every language, and
 	// leaving it out of the count keeps the number honest.
 	/^Ontoplano$/,
@@ -146,7 +157,7 @@ export function copyIn(source, { markup: hasMarkup = true } = {}) {
 		)
 	)) {
 		const value = match[1].trim();
-		if (value && WORDS.test(value)) found.push(value);
+		if (value && WORDS.test(value) && !LOOKS_LIKE_A_KEY.test(value)) found.push(value);
 	}
 
 	/*

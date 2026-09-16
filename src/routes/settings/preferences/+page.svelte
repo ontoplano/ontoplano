@@ -490,7 +490,7 @@
 				-->
 				<li class="flex flex-col items-stretch gap-2 py-3 sm:flex-row sm:items-start sm:gap-4">
 					<div class="min-w-0 flex-1">
-						<p class="text-sm font-medium text-gray-900">{what.label}</p>
+						<p class="text-sm font-medium text-gray-900">{t(what.label)}</p>
 						<p class="mt-0.5 text-sm leading-relaxed text-gray-500">{what.description}</p>
 					</div>
 
@@ -908,17 +908,17 @@
 								type="button"
 								onclick={() => shift(id, -1)}
 								class="text-xs leading-none text-gray-500 hover:text-gray-900"
-								aria-label={t('settings.menu.moveUp', { what: card.label })}>&uarr;</button
+								aria-label={t('settings.menu.moveUp', { what: t(card.label) })}>&uarr;</button
 							>
 							<button
 								type="button"
 								onclick={() => shift(id, 1)}
 								class="text-xs leading-none text-gray-500 hover:text-gray-900"
-								aria-label={t('settings.menu.moveDown', { what: card.label })}>&darr;</button
+								aria-label={t('settings.menu.moveDown', { what: t(card.label) })}>&darr;</button
 							>
 						</div>
 						<div class="min-w-0 flex-1">
-							<span class="text-sm font-medium text-gray-900">{card.label}</span>
+							<span class="text-sm font-medium text-gray-900">{t(card.label)}</span>
 							<p class="text-xs text-gray-500">{card.description}</p>
 						</div>
 						<button type="button" onclick={() => toggle(id)} class="btn btn-sm"
@@ -933,7 +933,7 @@
 					class="flex items-center gap-3 border border-dashed border-gray-300 px-3 py-2 opacity-60"
 				>
 					<div class="min-w-0 flex-1">
-						<span class="text-sm font-medium text-gray-900">{card.label}</span>
+						<span class="text-sm font-medium text-gray-900">{t(card.label)}</span>
 						<p class="text-xs text-gray-500">{card.description}</p>
 					</div>
 					<button type="button" onclick={() => toggle(card.id)} class="btn btn-sm"

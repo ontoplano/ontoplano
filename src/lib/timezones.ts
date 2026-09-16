@@ -66,14 +66,14 @@ function offsetOf(id: string, at: Date): { label: string; minutes: number } {
 				.formatToParts(at)
 				.find((p) => p.type === 'timeZoneName')?.value ?? 'GMT';
 	} catch {
-		return { label: 'GMT+0', minutes: 0 };
+		return { label: 'app.gmt0', minutes: 0 };
 	}
 
 	// No sign and no number is the zero offset — `shortOffset` writes it as a
 	// bare "GMT", which in a column of GMT−3, GMT−2, …, GMT+1 is the one
 	// heading that does not say where it sits.
 	const match = /GMT([+-])(\d{1,2})(?::(\d{2}))?/.exec(raw);
-	if (!match) return { label: 'GMT+0', minutes: 0 };
+	if (!match) return { label: 'app.gmt0', minutes: 0 };
 
 	const sign = match[1] === '-' ? -1 : 1;
 	const minutes = sign * (Number(match[2]) * 60 + Number(match[3] ?? 0));
@@ -81,7 +81,7 @@ function offsetOf(id: string, at: Date): { label: string; minutes: number } {
 	// Zero reads as a bare "GMT" out of Intl, which in a column of GMT−3, GMT−2,
 	// GMT, GMT+1 is the one heading that does not say where it sits. It is the
 	// middle of the list and it should look like it.
-	if (minutes === 0) return { label: 'GMT+0', minutes };
+	if (minutes === 0) return { label: 'app.gmt0', minutes };
 
 	return { label: raw.replace('-', '−'), minutes };
 }

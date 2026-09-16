@@ -62,6 +62,67 @@ export const messages: Catalogue = {
 	'admin.unban': 'Unban',
 	'admin.whatPeopleSentIn': 'What people sent in',
 	'admin.you': 'you',
+	'app.account': 'Account',
+	'app.activities': 'Activities',
+	'app.anybodyWhoFindsThisAddress': 'Anybody who finds this address can create an account.',
+	'app.approveTheChange': 'Approve the change',
+	'app.bills': 'Bills',
+	'app.birthdays': 'Birthdays',
+	'app.blank': 'Blank',
+	'app.blocksAsTheyStart': 'Blocks, as they start',
+	'app.board': 'Board',
+	'app.buy': 'Buy',
+	'app.byInvitation': 'By invitation',
+	'app.chooseANewPassword': 'Choose a new password',
+	'app.closed': 'Closed',
+	'app.confirmAddress': 'Confirm address',
+	'app.dashboard': 'Dashboard',
+	'app.diary': 'Diary',
+	'app.everythingYouWroteIsStill': 'Everything you wrote is still here, and still exportable.',
+	'app.fractionsMeasuredTypedIn': 'Fractions — measured, typed in',
+	'app.gmt0': 'GMT+0',
+	'app.goals': 'Goals',
+	'app.habits': 'Habits',
+	'app.idea': 'Idea',
+	'app.ideas': 'Ideas',
+	'app.integrations': 'Integrations',
+	'app.inventory': 'Inventory',
+	'app.latestToDos': 'Latest to-dos',
+	'app.lookAtTheOffer': 'Look at the offer',
+	'app.manageYourPlan': 'Manage your plan',
+	'app.nobodyNewTheAccountsThat': 'Nobody new. The accounts that exist keep working.',
+	'app.notSubscribed': 'Not subscribed',
+	'app.note': 'Note',
+	'app.notebooks': 'Notebooks',
+	'app.onlySomebodyHoldingACode': 'Only somebody holding a code you made below.',
+	'app.ontoplano': 'Ontoplano',
+	'app.ontoplano2': 'ontoplano',
+	'app.open': 'Open',
+	'app.openYourAccount': 'Open your account',
+	'app.people': 'People',
+	'app.plan': 'Plan',
+	'app.preferences': 'Preferences',
+	'app.quote': 'Quote',
+	'app.recipes': 'Recipes',
+	'app.reminders': 'Reminders',
+	'app.remoteWorker': 'Remote worker',
+	'app.review': 'Review',
+	'app.seeWhatChanged': 'See what changed',
+	'app.shoppingList': 'Shopping list',
+	'app.student': 'Student',
+	'app.theEndOfTheDay': 'The end of the day',
+	'app.theWeeklyReview': 'The weekly review',
+	'app.theWeeklyReviewByEmail': 'The weekly review, by email',
+	'app.theWholeThingHostedBacked': 'The whole thing, hosted, backed up and kept running.',
+	'app.threeWins': 'Three wins',
+	'app.toBuy': 'To buy',
+	'app.toDo': 'To-do',
+	'app.today': 'Today',
+	'app.todaysTasks': "Today's tasks",
+	'app.weekPlan': 'Week plan',
+	'app.weeklyReviewMail': 'Weekly review mail',
+	'app.wholeNumbersCountedWith': 'Whole numbers — counted, with + and −',
+	'app.workouts': 'Workouts',
 	'buy.backToBilling': 'Back to billing',
 	'buy.openingTheSecurePaymentWindow': 'Opening the secure payment window…',
 	'capture.diaryNote': 'Nota do diário',
@@ -463,6 +524,7 @@ export const messages: Catalogue = {
 	'home.diary': 'Diary',
 	'home.doNotPutYourReal':
 		'Do not put your real data here — this account is wiped once you stop using it.',
+	'home.dragCard': 'Arraste {card} para mover',
 	'home.dragTheCardsByThe': 'Drag the cards by the handle in their corner.',
 	'home.edit': 'Edit →',
 	'home.editRarr': 'Edit &rarr;',
@@ -471,6 +533,7 @@ export const messages: Catalogue = {
 	'home.goToASection': 'Go to a section',
 	'home.goals': 'Goals',
 	'home.habits': 'Habits',
+	'home.hideCard': 'Ocultar {card}',
 	'home.hideThisCard': 'Hide this card',
 	'home.home': 'Home',
 	'home.ideas': 'Ideas',
@@ -896,6 +959,16 @@ export const messages: Catalogue = {
 	'search.forOneNotebook': 'for one notebook.',
 	'search.goal': 'goal:',
 	'search.inKitchen': 'in:kitchen',
+	'search.kind.activity': 'Atividades',
+	'search.kind.block': 'Blocos',
+	'search.kind.entry': 'Diário',
+	'search.kind.goal': 'Metas',
+	'search.kind.idea': 'Ideias',
+	'search.kind.note': 'Notas',
+	'search.kind.notebook': 'Cadernos',
+	'search.kind.person': 'Pessoas',
+	'search.kind.shopping': 'Compras',
+	'search.kind.todo': 'A fazer',
 	'search.narrowIt': 'Narrow it:',
 	'search.note': 'note:',
 	'search.or': '— or',
@@ -1515,7 +1588,255 @@ export const messages: Catalogue = {
 	'todoRows.putItOnADay': 'Put it on a day',
 	'todoRows.putOnTheDay': 'Put on the day',
 	'todoRows.time': 'Time',
+	'tour.aCategoryFridgeBathroom':
+		'A category — fridge, bathroom, desk — is what makes the list match the walk around the house.',
+	'tour.aCurrentAccountIsOne':
+		'A current account is one, a credit card another. Keeping them apart is what makes "what did the card cost" a question with an answer.',
+	'tour.aDayAndASentence':
+		'A day and a sentence, and a time if you want one. It reaches your phone with the app shut, the same as the rest.',
+	'tour.aFewLinesAboutThe':
+		'A few lines about the week that just ended, and a decision about everything it left open.',
+	'tour.aGoalHasAHorizon':
+		'A goal has a horizon — this month, this year, the decade — and progress you either count or set by hand.',
+	'tour.aGoodHabitCountsThe':
+		'A good habit counts the days you did it. A bad one counts the days you did not.',
+	'tour.aHabitIsEitherOne':
+		'A habit is either one to keep or one to avoid, and both are logged the same way: one mark a day.',
+	'tour.aNameIsEnoughTo': 'A name is enough to start',
+	'tour.aPersonIsNotA': 'A person is not a tag',
+	'tour.aRenovationATripA':
+		'A renovation, a trip, a piece of research. A notebook holds notes about one subject, and it does not care when you wrote them.',
+	'tour.aSentenceIsAComplete': 'A sentence is a complete idea',
+	'tour.aStreamIsASeries':
+		'A stream is a series something else keeps pushing — a weight, a step count — and it gets a page of its own under Health.',
+	'tour.aTagOnAPicture':
+		'A tag on a picture works across every album. Removing a picture from its last album deletes it, and the confirmation says so.',
+	'tour.aTitleAndNothingElse':
+		'A title, and nothing else if that is all you have. Everything after it can be filled in later.',
+	'tour.aTokenIsShownOnce': 'A token is shown once',
+	'tour.aWeekYouCanLay': 'A week you can lay down again',
+	'tour.aWorkoutIsAName':
+		'A workout is a name, a kind and a plan. Write it once here, then drop it onto a day the way you would a meal.',
+	'tour.aYearOfAHabit': 'A year of a habit at a glance. A gap in it says more than any number.',
+	'tour.account': 'Account',
+	'tour.activities': 'Activities',
+	'tour.albumsNotFolders': 'Albums, not folders',
+	'tour.anActivityYouHaveStopped':
+		'An activity you have stopped goes inactive rather than deleted, and everything you did under it stays in the history.',
+	'tour.anIngredientIsAShopping': 'An ingredient is a shopping item',
+	'tour.andOneAboutNothing': 'And one about nothing',
+	'tour.andWhatItLooksLike': 'And what it looks like',
+	'tour.anythingYouThoughtOfAnd':
+		'Anything you thought of and do not want to lose. No date, no category, no decision required.',
+	'tour.anythingYouWroteDownAnd':
+		'Anything you wrote down and did not place. It stays here until you give it a date, and then it is a block like any other.',
+	'tour.areasGroupThem': 'Areas group them',
+	'tour.attachTheBlocksAndTodos':
+		'Attach the blocks and todos that count. That is what turns a goal from a wish into a number that moves.',
+	'tour.beforeItEvaporates': 'Before it evaporates',
+	'tour.blocksYouAskedToBe':
+		'Blocks you asked to be nudged about, birthdays, bills that want paying, a week left unreviewed — all of it in one list, soonest first.',
+	'tour.board': 'Board',
+	'tour.booksKilosEurosAnything':
+		'Books, kilos, euros — anything countable. A goal can want several at once: three gigs played and five songs recorded is one goal with two numbers, and it is as far along as they are on average.',
+	'tour.boughtAndBackAgain': 'Bought, and back again',
+	'tour.catchItNowJudgeIt': 'Catch it now, judge it later',
+	'tour.categoriesAreTheColours': 'Categories are the colours',
+	'tour.categoriesWashTheRowIn':
+		'Categories wash the row in their colour and every line has exactly one; tags overlap and sit beside it. Both are patterns you write once, on the Rules tab.',
+	'tour.clickHereIfYouEver': 'Click here if you ever need this help',
+	'tour.closingAWeek': 'Closing a week',
+	'tour.copyARecipeFromWherever':
+		'Copy a recipe from wherever you found it and paste the whole thing. The ingredients and the steps are pulled out of it.',
+	'tour.diary': 'Diary',
+	'tour.diaryEntriesAreWhatHappened':
+		'Diary entries are what happened; a notebook is what you are working out.',
+	'tour.doneAndPutAway': 'Done, and put away',
+	'tour.dragACardOrCarry': 'Drag a card, or carry it',
+	'tour.dragAPictureOntoAnother':
+		'Drag a picture onto another album to move it there; hold Ctrl while dropping to keep it in both.',
+	'tour.dragARoomUpOr':
+		'Drag a room up or down, put one away, or give its section a different colour. The bar, the wheel and the search results all follow.',
+	'tour.dragToMakeABlock': 'Drag to make a block',
+	'tour.eachCardIsOneRoom':
+		'Each card is one room reporting in. Drag them into the order you want — the handle is up beside the date.',
+	'tour.emailPasswordTheDevicesYou':
+		'Email, password, the devices you are signed in on, and the two things that move everything at once.',
+	'tour.entriesGoalsPeopleRecipesIdeas':
+		'Entries, goals, people, recipes, ideas. One box over all of it.',
+	'tour.entriesNotesIdeasGoalsPeople':
+		'Entries, notes, ideas, goals, people, recipes, todos. Grouped by what they are.',
+	'tour.everyDeviceThatIsSigned': 'Every device that is signed in',
+	'tour.everyMentionInOnePlace': 'Every mention, in one place',
+	'tour.everyTagOnAnEntry':
+		'Every tag on an entry is a filter. Search reaches the words inside them.',
+	'tour.everythingInOneBox': 'Everything, in one box',
+	'tour.everythingShowsNothingMakesA':
+		'Everything shows; nothing makes a noise unless you say so here. Upload your own sounds and give each kind its own.',
+	'tour.everythingWithATimeOn': 'Everything with a time on it',
+	'tour.everythingYouHaveWritten': 'Everything you have written',
+	'tour.everythingYouHaveWrittenIn':
+		'Everything you have written, in one file, whenever you want it. Deleting the account removes all of it and cannot be undone.',
+	'tour.everythingYouPlannedAndDid':
+		'Everything you planned and did not do gets an answer here. Next week generates its own blocks either way, so an unanswered list cannot quietly become the week.',
+	'tour.fKeepsTheGoodOnes':
+		'f keeps the good ones at the top. a marks one as applied, with a line about what came of it — which is the part you will want in a year.',
+	'tour.findItAgainByTag': 'Find it again by tag',
+	'tour.forTheThingsThatAre': 'For the things that are not a day',
+	'tour.gallery': 'Gallery',
+	'tour.giveItANumberIf': 'Give it a number if it has one',
+	'tour.goals': 'Goals',
+	'tour.gymRussianReadABlock':
+		'“Gym”, “Russian”, “Read”. A block on the plan points at one of these, so a year of gym is one thing rather than fifty unrelated blocks.',
+	'tour.hJKLMove':
+		'h j k l move between cards and columns, H and L carry the selected card with you, and c marks it done.',
+	'tour.habits': 'Habits',
+	'tour.handOffATodoWith':
+		'Hand off a todo with g — it stays on the list, marked as somebody else’s.',
+	'tour.holdThisThenLetGo': 'Hold this, then let go',
+	'tour.ideas': 'Ideas',
+	'tour.importTheBankU2019sOwnExport':
+		'Import the bank\\u2019s own export and the lines land here, deduplicated — the same file twice adds nothing. Anything the bank has not published yet you can write by hand.',
+	'tour.ingredientsStepsAndACook':
+		'Ingredients, steps, and a cook mode that keeps the screen awake while you follow it.',
+	'tour.integrations': 'Integrations',
+	'tour.inventoryIsWhatRunsOut':
+		'Inventory is what runs out and has to be replaced. Wishlist is what you might buy one day.',
+	'tour.itBecomesABlockOn':
+		'It becomes a block on the plan, beside everything else you are doing that day.',
+	'tour.itFansOutYourAccount':
+		'It fans out your account and settings, the tour for whatever screen you are on, the documentation, and the way to tell the operator something is wrong.',
+	'tour.itOpensTheTourFor':
+		'It opens the tour for whatever screen you are on. The keyboard beside it lists that screen’s keys, and the book is the full documentation.',
+	'tour.jAndKMoveE': 'j and k move, e edits, c finishes',
+	'tour.ledgers': 'Ledgers',
+	'tour.lettingOtherThingsIn': 'Letting other things in',
+	'tour.lightDarkOrWhateverThe': 'Light, dark, or whatever the device says',
+	'tour.linkTheWorkToThe': 'Link the work to the goal',
+	'tour.markASessionDoneTo':
+		'Mark a session done to stamp it. Archive one you have stopped doing — its history stays; delete is only for one added by mistake.',
+	'tour.matchingIsOnTheWords':
+		'Matching is on the words themselves, so a fragment of a sentence you wrote finds the entry it came from.',
+	'tour.movingAndSharing': 'Moving and sharing',
+	'tour.notACalendarOfAppointments':
+		'Not a calendar of appointments — the blocks you mean to repeat. Everything else in Tasks is built out of this.',
+	'tour.notebooks': 'Notebooks',
+	'tour.nothingCarriesItselfOver': 'Nothing carries itself over',
+	'tour.numbersFromElsewhere': 'Numbers from elsewhere',
+	'tour.oneEntryADayOr': 'One entry a day or twenty, as long or short as you like.',
+	'tour.oneLedgerPerPlaceMoney': 'One ledger per place money moves',
+	'tour.oneLineIsEnough': 'One line is enough',
+	'tour.oneNotebookPerSubject': 'One notebook per subject',
+	'tour.oneRoomPerKindOf': 'One room per kind of thing',
+	'tour.ontoplano': 'Ontoplano',
+	'tour.openAPersonToSee': 'Open a person to see each entry that named them, newest first.',
+	'tour.pasteThePageIn': 'Paste the page in',
+	'tour.people': 'People',
+	'tour.picturesLiveInAlbumsPutting':
+		'Pictures live in albums. Putting one in a second album never copies it — one picture, two places.',
+	'tour.plan': 'Plan',
+	'tour.planIsTheShapeOf':
+		'Plan is the shape of it, Board is today, To-do is everything with no date yet, History is what actually happened.',
+	'tour.preferences': 'Preferences',
+	'tour.pressHereIfYouEver': 'Press here if you ever need this help',
+	'tour.pullDownAnEmptyStretch':
+		'Pull down an empty stretch of a day. Hold Alt while dragging one to move that occurrence only and leave the rest of the weeks alone.',
+	'tour.putARecipeOnThe':
+		'Put a recipe on the week and everything it needs turns up on the shopping list, minus what you already have.',
+	'tour.recipes': 'Recipes',
+	'tour.recipesAndWhatTheyCost': 'Recipes, and what they cost you',
+	'tour.reminders': 'Reminders',
+	'tour.retireOneWithoutLosingIt': 'Retire one without losing it',
+	'tour.review': 'Review',
+	'tour.rulesDoTheSorting': 'Rules do the sorting',
+	'tour.saveTheShapeYouAre':
+		'Save the shape you are looking at as a scheme — a term-time week, a holiday week — and apply it to any week later.',
+	'tour.sayItInYourOwn': 'Say it in your own words',
+	'tour.sayWhichKindItIs': 'Say which kind it is',
+	'tour.scopedToWhatItNeeds':
+		'Scoped to what it needs, and revokable from here. Copy it when it appears — it is stored hashed and cannot be shown again.',
+	'tour.search': 'Search',
+	'tour.shopping': 'Shopping',
+	'tour.signOneOutOrAll': 'Sign one out, or all of them at once if something looks wrong.',
+	'tour.sixViewsOfTheSame': 'Six views of the same week',
+	'tour.starItOrMarkIt': 'Star it, or mark it done',
+	'tour.systemFollowsThePhoneOr':
+		'System follows the phone or the laptop, including when it changes at sunset.',
+	'tour.tagsAndPeopleAsYou': 'Tags and people, as you write',
+	'tour.tagsAreFreeFormInvent':
+		'Tags are free-form — invent one and it exists. Naming a person links the entry to them.',
+	'tour.tagsCutAcross': 'Tags cut across',
+	'tour.takeItWithYou': 'Take it with you',
+	'tour.tasksHoldYourWeekNotebooks':
+		'Tasks hold your week, Notebooks hold what you write — the diary included — and ideas hold what you thought of on the bus. Preferences reorders the rooms and puts away the ones you do not want.',
+	'tour.theAppArrangedYourWay': 'The app, arranged your way',
+	'tour.theBar': 'The bar',
+	'tour.theCalendarButtonPutsIt': 'The calendar button puts it on a day',
+	'tour.theCalendarIsThePoint': 'The calendar is the point',
+	'tour.theNamedThingsYouKeep': 'The named things you keep doing',
+	'tour.theRestFillsInAs': 'The rest fills in as you write about them.',
+	'tour.theRoomsOpenAroundYour':
+		'The rooms open around your finger and you release on the one you want. Faster than reading a list of ten words, once your hand knows where they are.',
+	'tour.theSameBlocksAsThe':
+		'The same blocks as the plan, in the one form where you can pick one up and move it.',
+	'tour.theSameGestureForA':
+		'The same gesture, for a todo, an idea, a note or something to buy — without deciding where it belongs first.',
+	'tour.theShapeOfANormal': 'The shape of a normal week',
+	'tour.theStatementIsTheRecord': 'The statement is the record',
+	'tour.theThingsWithoutADay': 'The things without a day yet',
+	'tour.theThingsYouDoAnd': 'The things you do, and the things you do not',
+	'tour.theWeekAndTheArrows':
+		'The week and the arrows that move it on the left; grid or list, and what to add, on the right.',
+	'tour.themeTheDayYourWeek':
+		'Theme, the day your week starts on, which rooms you keep and what colour they are. Your account and your data live here too.',
+	'tour.theyHaveANameA':
+		'They have a name, a birthday, and a page of their own — so “everything about Ana” is somewhere to go rather than a search you run.',
+	'tour.thisIsOntoplano': 'This is ontoplano',
+	'tour.threeGoodThingsAboutThe':
+		'Three good things about the day, in one line each. The shortest entry worth keeping, for the days you will not write more.',
+	'tour.threeOptionalNumbersOnEvery':
+		'Three optional numbers on every card, one to five. Sort or filter the board by any of them; the history and the review read them afterwards.',
+	'tour.threeWins': 'Three wins',
+	'tour.tickingSomethingOffInventoryStarts':
+		'Ticking something off inventory starts it running down again. z snoozes what you do not want to think about this month.',
+	'tour.toDo': 'To-do',
+	'tour.todayAsCards': 'Today, as cards',
+	'tour.todayIsTheDayIn':
+		'Today is the day in front of you. To-do is everything you have written down without a date; pulling one onto today gives it one.',
+	'tour.todayOrEverythingElse': 'Today, or everything else',
+	'tour.tokensForProgramsThatRead':
+		'Tokens for programs that read or write on your behalf, a calendar link, and the data other apps push in.',
+	'tour.twoListsOnePage': 'Two lists, one page',
+	'tour.typeAWordYouRemember': 'Type a word you remember',
+	'tour.upToSixPicturesPer':
+		'Up to six pictures per recipe. Star one and it becomes the one the list shows, so a cookbook is something you recognise by sight rather than by reading forty titles.',
+	'tour.urgencyInterestEnergy': 'Urgency, interest, energy',
+	'tour.whatHappenedInYourWords': 'What happened, in your words',
+	'tour.whatIsWorthHearing': 'What is worth hearing',
+	'tour.whatTheWeekIsFor': 'What the week is for',
+	'tour.whatTheWeekStartsOn':
+		'What the week starts on, what it looks like, which rooms you keep, and what is on the dashboard.',
+	'tour.whatTodayLooksLike': 'What today looks like',
+	'tour.whatWentWellWhatDid':
+		'What went well, what did not, what you are changing. It is the part you will read next year.',
+	'tour.whereYouAreAndWhat': 'Where you are, and what shape',
+	'tour.whichListAndWhereIt': 'Which list, and where it lives',
+	'tour.workHealthWhateverDividesYour':
+		'Work, health, whatever divides your life. Every block wears its category’s colour, on the grid and on the dashboard.',
+	'tour.workouts': 'Workouts',
+	'tour.workoutsPlannedLikeMeals': 'Workouts, planned like meals',
+	'tour.writeItAndMoveOn': 'Write it and move on. n opens this from anywhere on the page.',
+	'tour.yourAccountAndYourData': 'Your account, and your data',
+	'tour.yourAccountSearchTheRooms':
+		'Your account, search, the rooms, home, and one button for writing something down.',
+	'tour.yourOwnDivisionsWithYour':
+		'Your own divisions, with your own colours. A goal belongs to one.',
+	'tour.yourRoomsYourOrderYour': 'Your rooms, your order, your colours',
+	'tour.yourWeekYourGoalsAnd':
+		'Your week, your goals, and everything else you would otherwise keep across six apps and a piece of paper. Two minutes, and you can stop whenever you like.',
+	'tour.yoursToChange': 'Yours to change',
 	'tutorial.okayDismiss': 'Okay, dismiss!',
+	'tutorial.oneLastThing': 'Mais uma coisa',
 	'tutorial.tutorial': 'Tutorial',
 	'ui.actions': 'Actions',
 	'ui.add': 'Add',

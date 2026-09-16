@@ -1,3 +1,4 @@
+import type { PlainKey } from './i18n/keys.js';
 /**
  * What search returns, in a file both sides can import.
  *
@@ -29,17 +30,17 @@ export type Hit = {
 	href: string;
 };
 
-export const KIND_LABELS: Record<SearchKind, string> = {
-	entry: 'Diary',
-	note: 'Notes',
-	notebook: 'Notebooks',
-	todo: 'Todos',
-	block: 'Blocks',
-	goal: 'Goals',
-	idea: 'Ideas',
-	person: 'People',
-	shopping: 'Shopping',
-	activity: 'Activities'
+export const KIND_LABELS: Record<SearchKind, PlainKey> = {
+	entry: 'search.kind.entry',
+	note: 'search.kind.note',
+	notebook: 'search.kind.notebook',
+	todo: 'search.kind.todo',
+	block: 'search.kind.block',
+	goal: 'search.kind.goal',
+	idea: 'search.kind.idea',
+	person: 'search.kind.person',
+	shopping: 'search.kind.shopping',
+	activity: 'search.kind.activity'
 };
 
 /** Enough to be worth a query; a single letter matches everything. */

@@ -14,7 +14,7 @@ works is a key listed here and the reverse.
 | <kbd>Escape</kbd> | Close form           |
 | <kbd>?</kbd>      | Toggle shortcut help |
 
-## Dashboard — `/`
+## app.dashboard — `/`
 
 | Key          | Does                     |
 | ------------ | ------------------------ |
@@ -25,7 +25,7 @@ works is a key listed here and the reverse.
 | <kbd>n</kbd> | New diary entry          |
 | <kbd>w</kbd> | New wins                 |
 
-## Goals — `/goals`
+## app.goals — `/goals`
 
 | Key          | Does          |
 | ------------ | ------------- |
@@ -33,7 +33,7 @@ works is a key listed here and the reverse.
 | <kbd>j</kbd> | Next goal     |
 | <kbd>k</kbd> | Previous goal |
 
-## Habits — `/health/habits`
+## app.habits — `/health/habits`
 
 | Key              | Does            |
 | ---------------- | --------------- |
@@ -42,13 +42,13 @@ works is a key listed here and the reverse.
 | <kbd>n</kbd>     | New habit       |
 | <kbd>Enter</kbd> | Expand/collapse |
 
-## Recipes — `/health/recipes`
+## app.recipes — `/health/recipes`
 
 | Key          | Does       |
 | ------------ | ---------- |
 | <kbd>n</kbd> | New recipe |
 
-## To buy — `/inventory`
+## app.toBuy — `/inventory`
 
 | Key          | Does                    |
 | ------------ | ----------------------- |
@@ -64,13 +64,13 @@ works is a key listed here and the reverse.
 | <kbd>b</kbd> | Toggle show bought      |
 | <kbd>s</kbd> | Toggle show archived    |
 
-## Notebooks — `/notebooks`
+## app.notebooks — `/notebooks`
 
 | Key          | Does         |
 | ------------ | ------------ |
 | <kbd>n</kbd> | New notebook |
 
-## Diary — `/notebooks/diary`
+## app.diary — `/notebooks/diary`
 
 | Key          | Does             |
 | ------------ | ---------------- |
@@ -79,7 +79,7 @@ works is a key listed here and the reverse.
 | <kbd>n</kbd> | New entry        |
 | <kbd>e</kbd> | Edit entry       |
 
-## Ideas — `/notebooks/ideas`
+## app.ideas — `/notebooks/ideas`
 
 | Key          | Does            |
 | ------------ | --------------- |
@@ -90,7 +90,7 @@ works is a key listed here and the reverse.
 | <kbd>f</kbd> | Toggle favorite |
 | <kbd>a</kbd> | Toggle applied  |
 
-## People — `/notebooks/people`
+## app.people — `/notebooks/people`
 
 | Key          | Does            |
 | ------------ | --------------- |
@@ -98,14 +98,14 @@ works is a key listed here and the reverse.
 | <kbd>k</kbd> | Navigate people |
 | <kbd>n</kbd> | New person      |
 
-## Account — `/settings/account`
+## app.account — `/settings/account`
 
 | Key          | Does              |
 | ------------ | ----------------- |
 | <kbd>j</kbd> | Navigate sessions |
 | <kbd>k</kbd> | Navigate sessions |
 
-## Integrations — `/settings/integrations/connections`
+## app.integrations — `/settings/integrations/connections`
 
 | Key          | Does            |
 | ------------ | --------------- |
@@ -113,7 +113,7 @@ works is a key listed here and the reverse.
 | <kbd>k</kbd> | Navigate tokens |
 | <kbd>n</kbd> | New token       |
 
-## Activities — `/tasks/activities`
+## app.activities — `/tasks/activities`
 
 | Key          | Does                   |
 | ------------ | ---------------------- |
@@ -130,7 +130,7 @@ works is a key listed here and the reverse.
 | <kbd>8</kbd> | Toggle category filter |
 | <kbd>9</kbd> | Toggle category filter |
 
-## Board — `/tasks/board`
+## app.board — `/tasks/board`
 
 | Key              | Does                          |
 | ---------------- | ----------------------------- |
@@ -155,7 +155,7 @@ works is a key listed here and the reverse.
 | <kbd>y</kbd>     | Number keys set energy        |
 | <kbd>x</kbd>     | Ask to delete card            |
 
-## Plan — `/tasks/plan`
+## app.plan — `/tasks/plan`
 
 | Key          | Does                          |
 | ------------ | ----------------------------- |
@@ -180,7 +180,7 @@ works is a key listed here and the reverse.
 | <kbd>x</kbd> | Ask to delete selected        |
 | <kbd>p</kbd> | Copy to days (multiselect)    |
 
-## To-do — `/tasks/todo`
+## app.toDo — `/tasks/todo`
 
 | Key          | Does          |
 | ------------ | ------------- |

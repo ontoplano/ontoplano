@@ -1,3 +1,4 @@
+import type { PlainKey } from '$lib/i18n/keys';
 /**
  * Everywhere you can go, as data.
  *
@@ -9,7 +10,7 @@ import type { IconName } from '$lib/components/Icon.svelte';
 import type { HideableSection } from '$lib/sections';
 
 export type Destination = {
-	label: string;
+	label: PlainKey;
 	/** The section it belongs to, shown after the label in a flat list. */
 	group: string;
 	/**
@@ -25,53 +26,59 @@ export type Destination = {
 };
 
 export const DESTINATIONS: Destination[] = [
-	{ label: 'Today', group: '', href: '/', icon: 'home' },
+	{ label: 'app.today', group: '', href: '/', icon: 'home' },
 
-	{ label: 'Plan', group: 'Tasks', href: '/tasks/plan', icon: 'planner' },
-	{ label: 'Board', group: 'Tasks', href: '/tasks/board', icon: 'planner' },
-	{ label: 'To-do', group: 'Tasks', href: '/tasks/todo', icon: 'check' },
-	{ label: 'Activities', group: 'Tasks', href: '/tasks/activities', icon: 'tag' },
-	{ label: 'Review', group: 'Tasks', href: '/tasks/review', icon: 'check' },
+	{ label: 'app.plan', group: 'Tasks', href: '/tasks/plan', icon: 'planner' },
+	{ label: 'app.board', group: 'Tasks', href: '/tasks/board', icon: 'planner' },
+	{ label: 'app.toDo', group: 'Tasks', href: '/tasks/todo', icon: 'check' },
+	{ label: 'app.activities', group: 'Tasks', href: '/tasks/activities', icon: 'tag' },
+	{ label: 'app.review', group: 'Tasks', href: '/tasks/review', icon: 'check' },
 
-	{ label: 'Goals', group: '', href: '/goals', icon: 'goals', hide: 'goals' },
+	{ label: 'app.goals', group: '', href: '/goals', icon: 'goals', hide: 'goals' },
 
 	{
-		label: 'Notebooks',
+		label: 'app.notebooks',
 		group: 'Notebooks',
 		href: '/notebooks',
 		icon: 'notebook',
 		hide: 'notebooks'
 	},
-	{ label: 'Diary', group: 'Notebooks', href: '/notebooks/diary', icon: 'diary', hide: 'diary' },
 	{
-		label: 'People',
+		label: 'app.diary',
+		group: 'Notebooks',
+		href: '/notebooks/diary',
+		icon: 'diary',
+		hide: 'diary'
+	},
+	{
+		label: 'app.people',
 		group: 'Notebooks',
 		href: '/notebooks/people',
 		icon: 'user',
 		hide: 'people'
 	},
-	{ label: 'Ideas', group: 'Writing', href: '/notebooks/ideas', icon: 'ideas', hide: 'ideas' },
+	{ label: 'app.ideas', group: 'Writing', href: '/notebooks/ideas', icon: 'ideas', hide: 'ideas' },
 
-	{ label: 'Habits', group: 'Health', href: '/health/habits', icon: 'health', hide: 'health' },
+	{ label: 'app.habits', group: 'Health', href: '/health/habits', icon: 'health', hide: 'health' },
 
 	{
-		label: 'Inventory',
+		label: 'app.inventory',
 		group: 'Inventory',
 		href: '/inventory',
 		icon: 'shopping',
 		hide: 'inventory'
 	},
 	{
-		label: 'Recipes',
+		label: 'app.recipes',
 		group: 'Health',
 		href: '/health/recipes',
 		icon: 'shopping',
 		hide: 'recipes'
 	},
 
-	{ label: 'Account', group: 'Settings', href: '/settings/account', icon: 'settings' },
-	{ label: 'Preferences', group: 'Settings', href: '/settings/preferences', icon: 'settings' },
-	{ label: 'Integrations', group: 'Settings', href: '/settings/integrations', icon: 'plug' }
+	{ label: 'app.account', group: 'Settings', href: '/settings/account', icon: 'settings' },
+	{ label: 'app.preferences', group: 'Settings', href: '/settings/preferences', icon: 'settings' },
+	{ label: 'app.integrations', group: 'Settings', href: '/settings/integrations', icon: 'plug' }
 ];
 
 /**

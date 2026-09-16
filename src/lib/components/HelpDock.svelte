@@ -47,6 +47,7 @@
 	let currentPath = $derived(page.url.pathname);
 	let pageDisplay = $derived(getDisplayShortcuts(currentPath));
 	let pageLabel = $derived(PAGE_SHORTCUTS[currentPath]?.label);
+	const pageName = $derived(pageLabel ? t(pageLabel) : null);
 
 	/**
 	 * Whether this screen has a tour written for it yet.
@@ -101,7 +102,7 @@
 
 			{#if pageDisplay.length > 0}
 				<div class="mb-3">
-					<h4 class="mb-1 text-xs font-medium text-gray-500">{pageLabel}</h4>
+					<h4 class="mb-1 text-xs font-medium text-gray-500">{pageName}</h4>
 					<div class="space-y-0.5">
 						{#each pageDisplay as s (s.displayKey + s.description)}
 							<div class="flex items-center justify-between text-xs">

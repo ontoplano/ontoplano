@@ -1,3 +1,4 @@
+import type { PlainKey } from '$lib/i18n/keys';
 import type { Ctx } from './ctx.js';
 import { getGridHours, getUserSetting, setUserSetting } from './settings.js';
 import { ValidationError } from './errors.js';
@@ -28,7 +29,7 @@ import { whyNot, type Capabilities, type FeatureKey } from '../capabilities.js';
 export type Notification = {
 	id: NotificationId;
 	/** What it is called on the screen. */
-	label: string;
+	label: PlainKey;
 	/** One sentence: what arrives, and when. */
 	description: string;
 	/** Where the answer is kept. */
@@ -83,7 +84,7 @@ export const REVIEW_MAIL_KEY = 'mail.weekly-review';
 export const NOTIFICATIONS: Notification[] = [
 	{
 		id: 'blocks',
-		label: 'Blocks, as they start',
+		label: 'app.blocksAsTheyStart',
 		description:
 			'Every block on the plan says so when its time comes. Without this only the blocks you gave a lead time to say anything.',
 		key: 'notify.blocks',
@@ -91,7 +92,7 @@ export const NOTIFICATIONS: Notification[] = [
 	},
 	{
 		id: 'endOfDay',
-		label: 'The end of the day',
+		label: 'app.theEndOfTheDay',
 		description: 'What the day turned out to be, at a time you choose.',
 		key: 'notify.end-of-day',
 		on: false,
@@ -112,14 +113,14 @@ export const NOTIFICATIONS: Notification[] = [
 	},
 	{
 		id: 'review',
-		label: 'The weekly review',
+		label: 'app.theWeeklyReview',
 		description: 'On the morning the week turns over, while last week still has blocks unanswered.',
 		key: 'notify.review',
 		on: true
 	},
 	{
 		id: 'reviewMail',
-		label: 'The weekly review, by email',
+		label: 'app.theWeeklyReviewByEmail',
 		description:
 			'Monday morning: what last week actually was, with the page that closes it one press away.',
 		key: REVIEW_MAIL_KEY,
@@ -128,14 +129,14 @@ export const NOTIFICATIONS: Notification[] = [
 	},
 	{
 		id: 'bills',
-		label: 'Bills',
+		label: 'app.bills',
 		description: 'The day one wants paying, every day it stays unpaid, and the day it is due.',
 		key: 'notify.bills',
 		on: true
 	},
 	{
 		id: 'birthdays',
-		label: 'Birthdays',
+		label: 'app.birthdays',
 		description: 'On the morning, for everybody in your address book with a date on them.',
 		key: 'notify.birthdays',
 		on: true
@@ -178,7 +179,7 @@ export function notifyAt(userId: string, id: NotificationId): string {
  */
 export type NotificationRow = {
 	id: NotificationId;
-	label: string;
+	label: PlainKey;
 	description: string;
 	on: boolean;
 	/** The hour it goes off, or null for the ones tied to an event. */

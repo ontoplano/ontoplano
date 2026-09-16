@@ -14,177 +14,177 @@ under the pointer.
 
 **18 of 18 screens have one.**
 
-| Screen                               | Tour         | Steps |
-| ------------------------------------ | ------------ | ----- |
-| `/`                                  | Ontoplano    | 8     |
-| `/finance/ledgers`                   | Ledgers      | 3     |
-| `/gallery`                           | Gallery      | 3     |
-| `/goals`                             | Goals        | 4     |
-| `/health/habits`                     | Habits       | 3     |
-| `/health/recipes`                    | Recipes      | 5     |
-| `/inventory`                         | Shopping     | 3     |
-| `/notebooks`                         | Notebooks    | 2     |
-| `/notebooks/diary`                   | Diary        | 4     |
-| `/notebooks/ideas`                   | Ideas        | 3     |
-| `/notebooks/people`                  | People       | 3     |
-| `/reminders`                         | Reminders    | 3     |
-| `/settings/account`                  | Account      | 3     |
-| `/settings/integrations/connections` | Integrations | 3     |
-| `/tasks/activities`                  | Activities   | 3     |
-| `/tasks/board`                       | Board        | 4     |
-| `/tasks/plan`                        | Plan         | 5     |
-| `/tasks/todo`                        | To-do        | 3     |
+| Screen                               | Tour              | Steps |
+| ------------------------------------ | ----------------- | ----- |
+| `/`                                  | tour.ontoplano    | 8     |
+| `/finance/ledgers`                   | tour.ledgers      | 3     |
+| `/gallery`                           | tour.gallery      | 3     |
+| `/goals`                             | tour.goals        | 4     |
+| `/health/habits`                     | tour.habits       | 3     |
+| `/health/recipes`                    | tour.recipes      | 5     |
+| `/inventory`                         | tour.shopping     | 3     |
+| `/notebooks`                         | tour.notebooks    | 2     |
+| `/notebooks/diary`                   | tour.diary        | 4     |
+| `/notebooks/ideas`                   | tour.ideas        | 3     |
+| `/notebooks/people`                  | tour.people       | 3     |
+| `/reminders`                         | tour.reminders    | 3     |
+| `/settings/account`                  | tour.account      | 3     |
+| `/settings/integrations/connections` | tour.integrations | 3     |
+| `/tasks/activities`                  | tour.activities   | 3     |
+| `/tasks/board`                       | tour.board        | 4     |
+| `/tasks/plan`                        | tour.plan         | 5     |
+| `/tasks/todo`                        | tour.toDo         | 3     |
 
 Toured as well, though nothing obliges them to be — a screen reached from
 a link rather than from the navigation:
 
-- `/health/workouts` — Workouts
-- `/search` — Search
-- `/settings/preferences` — Preferences
-- `/tasks/review` — Review
+- `/health/workouts` — tour.workouts
+- `/search` — tour.search
+- `/settings/preferences` — tour.preferences
+- `/tasks/review` — tour.review
 
 ## What each one says
 
 The steps, in order. Every tour ends on the same closing step, which points
 at the button that reopens it, so it is not listed here.
 
-### `/` — Ontoplano
+### `/` — tour.ontoplano
 
-1. This is ontoplano
-2. One room per kind of thing
-3. The bar
-4. Hold this, then let go
-5. Before it evaporates
-6. Everything you have written
-7. What today looks like
-8. Yours to change
+1. tour.thisIsOntoplano
+2. tour.oneRoomPerKindOf
+3. tour.theBar
+4. tour.holdThisThenLetGo
+5. tour.beforeItEvaporates
+6. tour.everythingYouHaveWritten
+7. tour.whatTodayLooksLike
+8. tour.yoursToChange
 
-### `/finance/ledgers` — Ledgers
+### `/finance/ledgers` — tour.ledgers
 
-1. One ledger per place money moves
-2. The statement is the record
-3. Rules do the sorting
+1. tour.oneLedgerPerPlaceMoney
+2. tour.theStatementIsTheRecord
+3. tour.rulesDoTheSorting
 
-### `/gallery` — Gallery
+### `/gallery` — tour.gallery
 
-1. Albums, not folders
-2. Moving and sharing
-3. Tags cut across
+1. tour.albumsNotFolders
+2. tour.movingAndSharing
+3. tour.tagsCutAcross
 
-### `/goals` — Goals
+### `/goals` — tour.goals
 
-1. What the week is for
-2. Areas group them
-3. Give it a number if it has one
-4. Link the work to the goal
+1. tour.whatTheWeekIsFor
+2. tour.areasGroupThem
+3. tour.giveItANumberIf
+4. tour.linkTheWorkToThe
 
-### `/health/habits` — Habits
+### `/health/habits` — tour.habits
 
-1. The things you do, and the things you do not
-2. Say which kind it is
-3. The calendar is the point
+1. tour.theThingsYouDoAnd
+2. tour.sayWhichKindItIs
+3. tour.theCalendarIsThePoint
 
-### `/health/recipes` — Recipes
+### `/health/recipes` — tour.recipes
 
-1. Recipes, and what they cost you
-2. Paste the page in
-3. And what it looks like
-4. An ingredient is a shopping item
-5. The calendar button puts it on a day
+1. tour.recipesAndWhatTheyCost
+2. tour.pasteThePageIn
+3. tour.andWhatItLooksLike
+4. tour.anIngredientIsAShopping
+5. tour.theCalendarButtonPutsIt
 
-### `/health/workouts` — Workouts
+### `/health/workouts` — tour.workouts
 
-1. Workouts, planned like meals
-2. Done, and put away
+1. tour.workoutsPlannedLikeMeals
+2. tour.doneAndPutAway
 
-### `/inventory` — Shopping
+### `/inventory` — tour.shopping
 
-1. Two lists, one page
-2. Which list, and where it lives
-3. Bought, and back again
+1. tour.twoListsOnePage
+2. tour.whichListAndWhereIt
+3. tour.boughtAndBackAgain
 
-### `/notebooks` — Notebooks
+### `/notebooks` — tour.notebooks
 
-1. For the things that are not a day
-2. One notebook per subject
+1. tour.forTheThingsThatAre
+2. tour.oneNotebookPerSubject
 
-### `/notebooks/diary` — Diary
+### `/notebooks/diary` — tour.diary
 
-1. What happened, in your words
-2. Tags and people, as you write
-3. Three wins
-4. Find it again by tag
+1. tour.whatHappenedInYourWords
+2. tour.tagsAndPeopleAsYou
+3. tour.threeWins
+4. tour.findItAgainByTag
 
-### `/notebooks/ideas` — Ideas
+### `/notebooks/ideas` — tour.ideas
 
-1. Catch it now, judge it later
-2. A sentence is a complete idea
-3. Star it, or mark it done
+1. tour.catchItNowJudgeIt
+2. tour.aSentenceIsAComplete
+3. tour.starItOrMarkIt
 
-### `/notebooks/people` — People
+### `/notebooks/people` — tour.people
 
-1. A person is not a tag
-2. A name is enough to start
-3. Every mention, in one place
+1. tour.aPersonIsNotA
+2. tour.aNameIsEnoughTo
+3. tour.everyMentionInOnePlace
 
-### `/reminders` — Reminders
+### `/reminders` — tour.reminders
 
-1. Everything with a time on it
-2. And one about nothing
-3. What is worth hearing
+1. tour.everythingWithATimeOn
+2. tour.andOneAboutNothing
+3. tour.whatIsWorthHearing
 
-### `/search` — Search
+### `/search` — tour.search
 
-1. Everything, in one box
-2. Type a word you remember
+1. tour.everythingInOneBox
+2. tour.typeAWordYouRemember
 
-### `/settings/account` — Account
+### `/settings/account` — tour.account
 
-1. Your account, and your data
-2. Every device that is signed in
-3. Take it with you
+1. tour.yourAccountAndYourData
+2. tour.everyDeviceThatIsSigned
+3. tour.takeItWithYou
 
-### `/settings/integrations/connections` — Integrations
+### `/settings/integrations/connections` — tour.integrations
 
-1. Letting other things in
-2. A token is shown once
-3. Numbers from elsewhere
+1. tour.lettingOtherThingsIn
+2. tour.aTokenIsShownOnce
+3. tour.numbersFromElsewhere
 
-### `/settings/preferences` — Preferences
+### `/settings/preferences` — tour.preferences
 
-1. The app, arranged your way
-2. Your rooms, your order, your colours
-3. Light, dark, or whatever the device says
+1. tour.theAppArrangedYourWay
+2. tour.yourRoomsYourOrderYour
+3. tour.lightDarkOrWhateverThe
 
-### `/tasks/activities` — Activities
+### `/tasks/activities` — tour.activities
 
-1. The named things you keep doing
-2. Categories are the colours
-3. Retire one without losing it
+1. tour.theNamedThingsYouKeep
+2. tour.categoriesAreTheColours
+3. tour.retireOneWithoutLosingIt
 
-### `/tasks/board` — Board
+### `/tasks/board` — tour.board
 
-1. Today, as cards
-2. Today, or everything else
-3. Drag a card, or carry it
-4. Urgency, interest, energy
+1. tour.todayAsCards
+2. tour.todayOrEverythingElse
+3. tour.dragACardOrCarry
+4. tour.urgencyInterestEnergy
 
-### `/tasks/plan` — Plan
+### `/tasks/plan` — tour.plan
 
-1. The shape of a normal week
-2. Six views of the same week
-3. Drag to make a block
-4. Where you are, and what shape
-5. A week you can lay down again
+1. tour.theShapeOfANormal
+2. tour.sixViewsOfTheSame
+3. tour.dragToMakeABlock
+4. tour.whereYouAreAndWhat
+5. tour.aWeekYouCanLay
 
-### `/tasks/review` — Review
+### `/tasks/review` — tour.review
 
-1. Closing a week
-2. Say it in your own words
-3. Nothing carries itself over
+1. tour.closingAWeek
+2. tour.sayItInYourOwn
+3. tour.nothingCarriesItselfOver
 
-### `/tasks/todo` — To-do
+### `/tasks/todo` — tour.toDo
 
-1. The things without a day yet
-2. One line is enough
-3. j and k move, e edits, c finishes
+1. tour.theThingsWithoutADay
+2. tour.oneLineIsEnough
+3. tour.jAndKMoveE

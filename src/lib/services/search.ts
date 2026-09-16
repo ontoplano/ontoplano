@@ -1,3 +1,4 @@
+import type { PlainKey } from '../i18n/keys.js';
 /**
  * One box over everything the account owns.
  *
@@ -341,7 +342,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 }
 
 /** The same hits, in the order the kinds are listed, for rendering. */
-export function grouped(hits: Hit[]): { kind: SearchKind; label: string; hits: Hit[] }[] {
+export function grouped(hits: Hit[]): { kind: SearchKind; label: PlainKey; hits: Hit[] }[] {
 	return SEARCH_KINDS.map((kind) => ({
 		kind,
 		label: KIND_LABELS[kind],

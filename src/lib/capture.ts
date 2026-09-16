@@ -1,3 +1,4 @@
+import type { PlainKey } from '$lib/i18n/keys';
 import { SECTION_COLORS } from '$lib/colors';
 import type { IconName } from '$lib/components/Icon.svelte';
 import type { HideableSection } from '$lib/sections';
@@ -14,7 +15,7 @@ export type Capture = {
 	key: string;
 	/** The keystroke that opens it, shown in the label where there is a keyboard. */
 	shortcut: string;
-	label: string;
+	label: PlainKey;
 	icon: IconName;
 	/** Its colour in the pie: the section the thing ends up in. */
 	color: string;
@@ -44,7 +45,7 @@ export const CAPTURES: Capture[] = [
 	{
 		key: 'idea',
 		shortcut: 'i',
-		label: 'Idea',
+		label: 'app.idea',
 		icon: 'ideas',
 		color: SECTION_COLORS.ideas,
 		lead: 'content',
@@ -55,7 +56,7 @@ export const CAPTURES: Capture[] = [
 	{
 		key: 'todo',
 		shortcut: 't',
-		label: 'To-do',
+		label: 'app.toDo',
 		icon: 'check',
 		color: SECTION_COLORS.planner,
 		lead: 'heading',
@@ -65,7 +66,7 @@ export const CAPTURES: Capture[] = [
 	{
 		key: 'note',
 		shortcut: 'd',
-		label: 'Note',
+		label: 'app.note',
 		icon: 'diary',
 		color: SECTION_COLORS.diary,
 		lead: 'content',
@@ -76,7 +77,7 @@ export const CAPTURES: Capture[] = [
 	{
 		key: 'buy',
 		shortcut: 'b',
-		label: 'Buy',
+		label: 'app.buy',
 		icon: 'shopping',
 		color: SECTION_COLORS.inventory,
 		lead: 'label',

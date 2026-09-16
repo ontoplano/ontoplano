@@ -73,7 +73,7 @@
 
 	function formatDate(iso: string): string {
 		const d = new Date(iso);
-		return d.toLocaleDateString('en-US', {
+		return d.toLocaleDateString(t.locale, {
 			weekday: 'short',
 			year: 'numeric',
 			month: 'short',

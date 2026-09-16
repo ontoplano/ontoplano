@@ -38,6 +38,14 @@ export function instantOfLocal(local: string, tz: string): Date {
 /** How far ahead of UTC `tz` is at this instant, in milliseconds. */
 export function offsetAt(instant: Date, tz: string): number {
 	const parts = Object.fromEntries(
+		/*
+		 * A fixed locale on purpose, and one of the few places that is right.
+		 *
+		 * This is not a date being shown to anybody: the parts are read back as
+		 * numbers to work out the zone's offset, and a locale that writes them
+		 * differently — or in another calendar — breaks the arithmetic rather
+		 * than translating it. Leave it alone.
+		 */
 		new Intl.DateTimeFormat('en-US', {
 			timeZone: tz,
 			hour12: false,
