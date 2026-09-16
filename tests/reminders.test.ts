@@ -377,3 +377,51 @@ describe('a time that has already been', () => {
 		).toBeGreaterThan(0);
 	});
 });
+
+/**
+ * What a phone is handed to book with Android.
+ *
+ * This is the whole of how a reminder arrives on an instance that runs on the
+ * device: there is no server to wake it, so the app hands the next few weeks to
+ * the system while it is open. The list is therefore the feature — an empty
+ * one is silence, and silence is indistinguishable from "nothing was due".
+ *
+ * It compared wall-clock rows against `new Date().toISOString()`, which is an
+ * instant in UTC with a Z on the end, as strings. In UTC the two line up by
+ * accident; three hours west they do not, and everything due in the next three
+ * hours sorted as already past. The alarms about to go off were exactly the
+ * ones never booked, and only for people who do not live in UTC.
+ */
+describe('what is handed to a phone to book', () => {
+	/** The same account, read from a timezone that is not UTC. */
+	const west = { userId: OWNER, now: new Date('2026-08-17T08:00:00Z'), tz: 'America/Sao_Paulo' };
+
+	test('includes the next few hours, west of UTC', () => {
+		// 05:00 local is 08:00Z: this is set for an hour and a half from now.
+		const id = s.reminders.createFreeReminder(west, {
+			at: '2026-08-17T06:30',
+			message: 'within the hour'
+		});
+
+		const upcoming = s.reminders.upcomingReminders(west);
+		expect(upcoming.some((r) => r.id === id)).toBe(true);
+	});
+
+	test('and still leaves out what has been', () => {
+		const id = s.reminders.createFreeReminder(west, {
+			at: '2026-08-17T06:00',
+			message: 'an hour out'
+		});
+		// An hour later, the same reminder is not something still to come.
+		const after = { ...west, now: new Date('2026-08-17T10:00:00Z') };
+		expect(s.reminders.upcomingReminders(after).some((r) => r.id === id)).toBe(false);
+	});
+
+	test('and stops at the window it promises', () => {
+		const far = s.reminders.createFreeReminder(west, {
+			at: '2026-12-25T09:00',
+			message: 'months away'
+		});
+		expect(s.reminders.upcomingReminders(west).some((r) => r.id === far)).toBe(false);
+	});
+});

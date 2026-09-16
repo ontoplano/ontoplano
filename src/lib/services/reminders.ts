@@ -126,11 +126,22 @@ export const AHEAD_DAYS = 30;
  * "will my phone ring", and the difference would only ever show up as silence.
  */
 export function upcomingReminders(
-	ctx: Ctx,
-	now: Date = new Date()
+	ctx: Ctx
 ): { id: number; remindAt: string; message: string; audible: boolean }[] {
-	const from = now.toISOString();
-	const until = new Date(now.getTime() + AHEAD_DAYS * 24 * 60 * 60 * 1000).toISOString();
+	/*
+	 * Both ends in the account's own wall clock, which is what the rows hold.
+	 *
+	 * This compared them against `new Date().toISOString()` — an instant in
+	 * UTC, with a Z on the end — and the comparison is a string comparison. In
+	 * UTC the two happen to line up and everything worked; three hours west of
+	 * it they do not, and "now" was three hours ahead of the clock the rows are
+	 * written against. Everything due in the next three hours sorted as though
+	 * it had already been, so it was never handed to the phone: the alarms that
+	 * mattered most — the ones about to go off — were exactly the ones missing,
+	 * and only for people who do not live in UTC.
+	 */
+	const from = localNow(ctx);
+	const until = localOfInstant(new Date(ctx.now.getTime() + AHEAD_DAYS * 86_400_000), ctx.tz);
 
 	return listReminders(ctx)
 		.filter((r) => r.deliveredAt === null && r.remindAt > from && r.remindAt <= until)

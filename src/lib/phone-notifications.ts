@@ -21,6 +21,8 @@
  * and booking it again is one call each and cannot drift.
  */
 import { inPhoneApp } from './instance-choice';
+import { isIsolated } from './isolated/mode';
+import { NOTIFICATION_ACCENT, NOTIFICATION_ACCENT_ISOLATED } from './logo/brand';
 
 /** How a reminder comes back from `/api/reminders?upcoming`. */
 type Upcoming = {
@@ -59,6 +61,22 @@ type Notifications = {
  * derived from.
  */
 const NOTIFICATION_ICON = 'ic_stat_ontoplano';
+
+/**
+ * Which ontoplano this came from, said in the only place Android will hear it.
+ *
+ * Both instances can be open on one phone, and a notification that does not
+ * say which one it is about is a notification you have to open to find out.
+ * The obvious answer — a different icon for the copy on the device — is not
+ * available: Android keeps only the alpha channel of a small icon and throws
+ * the colours away, so the mark is a white silhouette either way and a
+ * black-and-white version of it would be the same picture.
+ *
+ * The accent is the one colour the system does take, so it carries the
+ * difference the two already wear on the home screen: the ordinary blue, or
+ * the same blue with the lights off. See `MARK_DRAINED`.
+ */
+const accent = () => (isIsolated() ? NOTIFICATION_ACCENT_ISOLATED : NOTIFICATION_ACCENT);
 
 /**
  * Android's notification ids are 32-bit signed, and ours are row ids that
@@ -117,7 +135,8 @@ export async function scheduleDeviceReminders(): Promise<number> {
 				// Silent ones are still worth showing; what `audible` decides is
 				// whether the phone makes a noise about it.
 				sound: reminder.audible ? undefined : null,
-				smallIcon: NOTIFICATION_ICON
+				smallIcon: NOTIFICATION_ICON,
+				iconColor: accent()
 			}))
 		});
 		return wanted.length;
@@ -274,7 +293,9 @@ export async function testPhoneNotification(): Promise<boolean> {
 					title: 'ontoplano',
 					body: 'A test — reminders will look like this.',
 					schedule: { at: new Date(Date.now() + TEST_DELAY_MS), allowWhileIdle: true },
-					smallIcon: NOTIFICATION_ICON
+					smallIcon: NOTIFICATION_ICON,
+					// A test is only worth pressing if it looks like the real thing.
+					iconColor: accent()
 				}
 			]
 		});

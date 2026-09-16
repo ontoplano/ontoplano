@@ -112,6 +112,42 @@ export const SOLID_SCALE = 0.82;
 export const MARK_DRAINED = 0.15;
 
 /**
+ * The colour Android tints a notification with, and the drained version of it.
+ *
+ * Android throws the colours away from a notification's small icon and keeps
+ * only its alpha, so the mark in the status bar is a white silhouette whatever
+ * it is drawn in — which means a black-and-white icon for the instance that
+ * runs on the device would be identical to the ordinary one. What the system
+ * *does* take a colour for is the accent beside the notification, and that is
+ * where the two can differ, wearing the same difference they already wear on
+ * the home screen: the mark with the lights off.
+ *
+ * Blue because it is what the app's own controls are; drained by the same
+ * `MARK_DRAINED` the icons use, so there is one answer to "how much colour is
+ * left" rather than a second hex nobody would think to keep in step.
+ */
+export const NOTIFICATION_ACCENT = '#1d4ed8';
+
+/**
+ * A colour with most of its colour taken out, the way the icons do it.
+ *
+ * The same arithmetic as an SVG `feColorMatrix type="saturate"`: each channel
+ * moves towards the luminance of the whole by `1 - amount`. Done here rather
+ * than by the browser because the answer has to be a hex — it is handed to
+ * Android, which has no filters.
+ */
+export function drainedHex(hex: string, amount = MARK_DRAINED): string {
+	const channel = (at: number) => parseInt(hex.slice(at, at + 2), 16);
+	const [r, g, b] = [channel(1), channel(3), channel(5)];
+	const grey = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+	const mix = (c: number) => Math.round(grey + (c - grey) * amount);
+	return `#${[mix(r), mix(g), mix(b)].map((c) => c.toString(16).padStart(2, '0')).join('')}`;
+}
+
+/** The accent an instance running on the device itself wears. */
+export const NOTIFICATION_ACCENT_ISOLATED = drainedHex(NOTIFICATION_ACCENT);
+
+/**
  * How much of an Android adaptive icon's foreground layer the mark fills.
  *
  * Stricter than the web's maskable, and a different asset for that reason: the

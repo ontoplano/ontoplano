@@ -3501,7 +3501,7 @@ The hour the account's day opens on, as `HH:MM`.
 Exported because the form has to say it: a field somebody may leave empty
 has to name what leaving it empty means.
 
-#### `upcomingReminders(ctx, now)`
+#### `upcomingReminders(ctx)`
 
 What has not gone off yet and is close enough to be worth an alarm.
 

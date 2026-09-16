@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 
 /**
  * What happens when one of those alarms goes off — and what keeps them coming.
@@ -67,6 +68,13 @@ public class RingerReceiver extends BroadcastReceiver {
         NotificationCompat.Builder note =
                 new NotificationCompat.Builder(context, Ringer.CHANNEL)
                         .setSmallIcon(R.drawable.ic_stat_ontoplano)
+                        // Android keeps only the alpha of a small icon, so the
+                        // mark arrives as a white silhouette whatever it is
+                        // drawn in. The accent is the one colour the system
+                        // takes, and it is generated from the same number the
+                        // app's own notifications use — see
+                        // scripts/brand-android.mjs.
+                        .setColor(ContextCompat.getColor(context, R.color.ontoplano_accent))
                         .setContentTitle(context.getString(R.string.app_name))
                         .setContentText(message)
                         .setStyle(new NotificationCompat.BigTextStyle().bigText(message))

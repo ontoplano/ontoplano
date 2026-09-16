@@ -18,6 +18,21 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.14 — 2026-09-16
+
+- **Fixed: on a phone that is the instance, the reminders about to go off were
+  never booked.** The list handed to Android compared each reminder's
+  wall-clock time against an instant in UTC, which happens to line up in UTC
+  and does not anywhere else — three hours west, everything due in the next
+  three hours sorted as though it had already been. The alarms that mattered
+  most were exactly the ones missing, and only for people who do not live in
+  UTC.
+- **A notification says which ontoplano it came from.** Both instances can be
+  open on one phone. Android keeps only the outline of a notification's icon
+  and throws its colours away, so the two cannot differ there — they differ in
+  the accent beside it, wearing what they already wear on the home screen: the
+  ordinary blue, or the same blue with the lights off.
+
 ## 0.178.13 — 2026-09-16
 
 - **A reminder cannot be set for a time that has already been.** One made in
