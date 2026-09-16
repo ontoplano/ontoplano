@@ -6,11 +6,11 @@
     android:viewportWidth="24"
     android:viewportHeight="24">
     <path
-        android:pathData="M5.07,5.15 L12.00,2.30 L18.89,5.11 L21.70,12.00 L18.89,18.89 L12.00,21.70 L5.07,18.85 L2.30,12.19 Z"
+        android:pathData="M5.11,5.57 L11.96,2.30 L18.74,5.42 L21.63,12.00 L18.93,18.77 L11.96,21.70 L4.88,18.74 L2.37,12.04 Z"
         android:strokeWidth="2"
         android:strokeColor="#FFFFFFFF"
         android:strokeLineJoin="round" />
     <path
-        android:pathData="M8.06,8.10 L12.00,6.48 L15.92,8.08 L17.52,12.00 L15.92,15.92 L12.00,17.52 L8.06,15.90 L6.48,12.11 Z"
+        android:pathData="M10.81,10.89 L11.99,10.33 L13.16,10.86 L13.66,12.00 L13.19,13.17 L11.99,13.67 L10.77,13.16 L10.34,12.01 Z"
         android:fillColor="#FFFFFFFF" />
 </vector>

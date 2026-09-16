@@ -6,7 +6,7 @@
  * with the mark inside it.
  */
 export const MARK_CLIP_PATH =
-	'polygon(14.31% 14.71%, 50.00% 0.00%, 85.49% 14.51%, 100.00% 50.00%, 85.49% 85.49%, 50.00% 100.00%, 14.31% 85.29%, 0.00% 50.98%)';
+	'polygon(14.51% 16.86%, 49.80% 0.00%, 84.71% 16.08%, 99.61% 50.00%, 85.69% 84.90%, 49.80% 100.00%, 13.33% 84.71%, 0.39% 50.20%)';
 
 /**
  * How much of the mark's half width its middle takes, and what colour each
@@ -17,17 +17,17 @@ export const MARK_CLIP_PATH =
  * change your mind. Measured rather than typed, for the same reason the
  * outline is.
  */
-export const MARK_MIDDLE = 0.5156;
+export const MARK_MIDDLE = 0.1563;
 
 export const MARK_EDGE_COLOURS = [
-	'#cc251b',
-	'#e05302',
-	'#e5a204',
-	'#78a637',
-	'#1e9cb8',
-	'#3364c2',
-	'#6746ab',
-	'#c43587'
+	'#e2281e',
+	'#f75c01',
+	'#fdb304',
+	'#84b73d',
+	'#20accb',
+	'#366cd8',
+	'#754ebf',
+	'#d93a96'
 ] as const;
 
 /**
@@ -35,4 +35,4 @@ export const MARK_EDGE_COLOURS = [
  * carries inside itself. The phone bar wears it, so the mark's field
  * flows into the bar instead of ending at an edge.
  */
-export const MARK_FIELD = '#20282f';
+export const MARK_FIELD = '#232c32';
