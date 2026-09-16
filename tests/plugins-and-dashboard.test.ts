@@ -243,7 +243,7 @@ describe('the refunds page', () => {
 		 * with no words behind it is a blank on a legal page.
 		 */
 		const says = (phrase: string) => {
-			const key = Object.keys(english).find((k) => String(english[k]).includes(phrase));
+			const key = Object.entries(english).find(([, said]) => String(said).includes(phrase))?.[0];
 			expect(key, `no message says "${phrase}"`).toBeTruthy();
 			expect(source).toContain(key!);
 		};
