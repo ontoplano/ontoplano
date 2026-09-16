@@ -399,11 +399,15 @@
 					     comforting. The number is the blocks still waiting for an
 					     answer, because those are what closing a week actually is. -->
 					{#if data.pendingReview.weeks > 1}
-						{data.pendingReview.weeks} weeks are still open — the oldest is
-						{weekName(data.pendingReview.weekStart)}, with {blocks(data.pendingReview.unanswered)}
-						unanswered.
+						{data.pendingReview.weeks}
+						{t('home.weeksAreStillOpen')}
+						{weekName(data.pendingReview.weekStart)}{t('home.with')}
+						{blocks(data.pendingReview.unanswered)}
+						{t('home.unanswered')}
 					{:else}
-						Last week is still open — {blocks(data.pendingReview.unanswered)} with no answer.
+						{t('home.lastWeekIsStillOpen')}
+						{blocks(data.pendingReview.unanswered)}
+						{t('home.withNoAnswer')}
 					{/if}
 				</span>
 				<span class="shrink-0 text-xs text-gray-500">{t('home.reviewIt')}</span>
@@ -435,11 +439,12 @@
 							{#if now.task.categoryName}· {now.task.categoryName}{/if}
 							·
 							{#if now.state === 'now'}
-								{now.minutes} {now.minutes === 1 ? 'minute' : 'minutes'} left
+								{now.minutes} {now.minutes === 1 ? 'minute' : 'minutes'} {t('home.left')}
 							{:else if now.minutes < 60}
-								in {now.minutes} {now.minutes === 1 ? 'minute' : 'minutes'}
+								{t('home.in')} {now.minutes} {now.minutes === 1 ? 'minute' : 'minutes'}
 							{:else}
-								in {Math.round(now.minutes / 60)}
+								{t('home.in')}
+								{Math.round(now.minutes / 60)}
 								{Math.round(now.minutes / 60) === 1 ? 'hour' : 'hours'}
 							{/if}
 						</p>
@@ -1022,7 +1027,7 @@
 										<span class="text-gray-700">{bill.name}</span>
 										<span class="text-xs text-gray-500">
 											{formatMoney(bill.amountExpected, data.billsCard.currency)}{#if bill.dueDay}
-												· due the {bill.dueDay}{/if}
+												{t('home.dueThe')} {bill.dueDay}{/if}
 										</span>
 									</div>
 								{/each}
@@ -1136,9 +1141,8 @@
 					{#each [1, 2, 3] as position (position)}
 						<div class="flex items-center gap-2">
 							<span class="tabular w-4 shrink-0 text-xs text-gray-500">{position}</span>
-							<OneLine name="win_{position}" /> w.position === position)?.content ?? ''} class="block
-							w-full border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1
-							focus:ring-gray-900 focus:outline-none" />
+							<OneLine name="win_{position}" />
+							{t('home.wPositionPositionContent')}
 						</div>
 					{/each}
 					<button class="btn btn-primary btn-sm"> {t('ui.save')} </button>

@@ -153,7 +153,7 @@
 		const items: Petal[] = [
 			{
 				key: 'account',
-				label: 'Account',
+				label: 'app.account',
 				icon: 'user'
 			},
 			{
@@ -164,9 +164,9 @@
 		];
 		// Nobody to tell on a device that is its own instance: there is no
 		// operator behind it and nowhere for the message to go.
-		if (!onDevice) items.push({ key: 'report', label: 'Tell the operator', icon: 'bug' });
-		items.push({ key: 'docs', label: 'Documentation', icon: 'book' });
-		items.push({ key: 'support', label: 'Support ontoplano', icon: 'heart' });
+		if (!onDevice) items.push({ key: 'report', label: 'app.tellTheOperator', icon: 'bug' });
+		items.push({ key: 'docs', label: 'app.documentation', icon: 'book' });
+		items.push({ key: 'support', label: 'app.supportOntoplano', icon: 'heart' });
 		return items;
 	});
 
@@ -880,11 +880,12 @@
 				class="relative z-50 flex flex-wrap items-center justify-between gap-2 bg-blue-600 px-4 py-2 text-sm font-medium text-white"
 			>
 				<span>
-					<strong>{data.familyOffer.ownerName}</strong> offers to pay for your account.
+					<strong>{data.familyOffer.ownerName}</strong>
+					{t('home.offersToPayForYour')}
 					{#if data.familyOffer.ownPlanEnds}
-						You pay for it yourself today — cancel your own subscription first, then accept.
+						{t('home.youPayForItYourself')}
 					{:else}
-						Your notes and your week stay yours; they just pay for the account.
+						{t('home.yourNotesAndYourWeek')}
 					{/if}
 				</span>
 				<span class="flex shrink-0 items-center gap-1">

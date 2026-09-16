@@ -169,7 +169,7 @@
 		<p class="mt-4 text-center text-sm text-gray-500">
 			{#if mode === 'login'}
 				{#if data.canRegister}
-					No account?
+					{t('login.noAccount')}
 					<button class="font-medium text-gray-900 underline" onclick={() => (mode = 'register')}>
 						{t('login.register')}
 					</button>
@@ -179,7 +179,7 @@
 					{t('login.forgotPassword')}
 				</button>
 			{:else}
-				Have an account?
+				{t('login.haveAnAccount')}
 				<button class="font-medium text-gray-900 underline" onclick={() => (mode = 'login')}>
 					{t('login.signIn')}
 				</button>

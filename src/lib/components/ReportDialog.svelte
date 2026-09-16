@@ -40,13 +40,13 @@
 	const KINDS = [
 		{
 			key: 'report' as const,
-			label: 'Something is wrong',
-			hint: 'What you did, and what happened instead.'
+			label: 'app.somethingIsWrong',
+			hint: 'app.whatYouDidAndWhat'
 		},
 		{
 			key: 'suggestion' as const,
-			label: 'I have an idea',
-			hint: 'What you wanted to do, and how this could let you.'
+			label: 'app.iHaveAnIdea',
+			hint: 'app.whatYouWantedToDo'
 		}
 	];
 	let kind = $state<'report' | 'suggestion'>('report');

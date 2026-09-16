@@ -527,7 +527,7 @@
 		if (byLocation.has(0)) {
 			groups.push({
 				id: 0,
-				label: 'Not filed anywhere',
+				label: 'app.notFiledAnywhere',
 				folded: false,
 				held: byLocation.get(0)?.length ?? 0,
 				categories: byCategory(byLocation.get(0) ?? [])
@@ -967,7 +967,8 @@
 	<RoomToolbar>
 		{#snippet tools()}
 			<button class="btn btn-primary" onclick={() => (showRun = true)}>
-				<Icon name="shopping" /> Shopping list
+				<Icon name="shopping" />
+				{t('inventory.shoppingList2')}
 				{#if data.run.lines.length > 0}
 					<span class="tabular text-xs opacity-80">{data.run.lines.length}</span>
 				{/if}
@@ -978,13 +979,14 @@
 	{#if !online || ticks.pending.length > 0}
 		<Banner kind="warning">
 			{#if !online}
-				No connection. This is the list as it was when you last had one —
+				{t('inventory.noConnectionThisIsThe')}
 			{/if}
 			{#if ticks.pending.length > 0}
 				{ticks.pending.length}
-				{ticks.pending.length === 1 ? 'change is' : 'changes are'} waiting to be sent.
+				{ticks.pending.length === 1 ? 'change is' : 'changes are'}
+				{t('inventory.waitingToBeSent')}
 			{:else}
-				what you tick will be sent when you are back.
+				{t('inventory.whatYouTickWillBe')}
 			{/if}
 		</Banner>
 	{/if}
@@ -994,7 +996,7 @@
 			{t('inventory.about')}
 			<span class="tabular font-medium text-gray-900">{formatMoney(totalCents, data.currency)}</span
 			>
-			for what is still to buy
+			{t('inventory.forWhatIsStillTo')}
 			{#if pricedCount < needed.length}
 				<span class="text-xs text-gray-500"
 					>{t('inventory.ofThemHaveNo', { pricedCount: needed.length - pricedCount })}</span
@@ -1637,9 +1639,9 @@
 								{/snippet}
 							</EmptyState>
 						{:else if notShowing > 0}
-							Nothing here matches the current filter.
+							{t('inventory.nothingHereMatchesTheCurrent')}
 						{:else}
-							No items match the current filter.
+							{t('inventory.noItemsMatchTheCurrent')}
 						{/if}
 					</div>
 				{/if}

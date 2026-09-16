@@ -359,7 +359,8 @@
 			{/if}
 			{#if viewing.albums.length > 1}
 				<p class="text-xs text-gray-500">
-					Also in: {viewing.albums
+					{t('gallery.id.alsoIn')}
+					{viewing.albums
 						.filter((a) => a.id !== data.album.id)
 						.map((a) => a.name)
 						.join(', ')}
@@ -391,12 +392,13 @@
 	{#if confirmingRemove}
 		<p class="text-sm text-gray-600">
 			{#if confirmingRemove.albums.length > 1}
-				It stays in {confirmingRemove.albums
+				{t('gallery.id.itStaysIn')}
+				{confirmingRemove.albums
 					.filter((a) => a.id !== data.album.id)
 					.map((a) => a.name)
 					.join(', ')}.
 			{:else}
-				This is its only album, so the picture is deleted for good.
+				{t('gallery.id.thisIsItsOnlyAlbum')}
 			{/if}
 		</p>
 	{/if}

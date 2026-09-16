@@ -269,8 +269,9 @@
 							{workout.title}
 						</span>
 						<span class="block text-xs text-gray-500">
-							{workout.categoryName ?? 'No category'}{#if workout.minutes}, ~{workout.minutes} min{/if}{#if workout.lastDoneAt}
-								&nbsp;· last done {workout.lastDoneAt.slice(0, 10)}{/if}
+							{workout.categoryName ?? 'No category'}{#if workout.minutes}, ~{workout.minutes}
+								{t('health.workouts.min')}{/if}{#if workout.lastDoneAt}
+								{t('health.workouts.nbspLastDone')} {workout.lastDoneAt.slice(0, 10)}{/if}
 						</span>
 					</button>
 

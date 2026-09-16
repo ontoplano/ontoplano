@@ -256,9 +256,9 @@
 					bind:value={filterApplied}
 					onchange={() => (selectedIndex = 0)}
 					options={[
-						{ value: 'all', label: 'All' },
-						{ value: 'applied', label: 'Applied' },
-						{ value: 'not-applied', label: 'Not applied' }
+						{ value: 'all', label: 'ui.all' },
+						{ value: 'applied', label: 'notebooks.ideas.applied' },
+						{ value: 'not-applied', label: 'notebooks.ideas.notApplied' }
 					]}
 				/>
 				<FilterChips
@@ -266,9 +266,9 @@
 					bind:value={filterFavorite}
 					onchange={() => (selectedIndex = 0)}
 					options={[
-						{ value: 'all', label: 'All' },
-						{ value: 'favorite', label: 'Favourites' },
-						{ value: 'not-favorite', label: 'Not favourite' }
+						{ value: 'all', label: 'ui.all' },
+						{ value: 'favorite', label: 'notebooks.ideas.favourites' },
+						{ value: 'not-favorite', label: 'notebooks.ideas.notFavourite' }
 					]}
 				/>
 			{/snippet}

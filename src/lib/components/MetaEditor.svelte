@@ -67,7 +67,8 @@
 			onclick={() => (expanded = !expanded)}
 			class="text-sm font-medium text-gray-700 hover:text-gray-900"
 		>
-			{expanded ? '−' : '+'} Options
+			{expanded ? '−' : '+'}
+			{t('metaeditor.options')}
 			{#if pairs.length > 0}
 				<span class="text-gray-500">({pairs.length})</span>
 			{/if}

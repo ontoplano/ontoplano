@@ -130,6 +130,32 @@ const COPY_NAMES = [
 	'hint'
 ];
 
+/**
+ * The markup with every `{…}` taken out, however deeply it nests.
+ *
+ * A regex cannot do this: `use:enhance={async () => { … }}` is three levels of
+ * brace and an arrow body full of them, and a pattern that handles one level
+ * leaves fragments behind — which then read as prose and are counted as copy
+ * nobody can ever translate, because they are code. Matched by counting.
+ */
+function withoutExpressions(markup) {
+	let out = '';
+	let depth = 0;
+	for (const character of markup) {
+		if (character === '{') {
+			depth++;
+			if (depth === 1) out += ' ';
+			continue;
+		}
+		if (character === '}') {
+			if (depth > 0) depth--;
+			continue;
+		}
+		if (depth === 0) out += character;
+	}
+	return out;
+}
+
 /** The script of a component, with its comments gone. */
 function scriptOf(source, hasMarkup = true) {
 	const code = hasMarkup
@@ -182,7 +208,7 @@ export function copyIn(source, { markup: hasMarkup = true } = {}) {
 	 * `{count}` is a value — neither is a sentence somebody has to translate,
 	 * and both would otherwise leave their innards behind as loose words.
 	 */
-	const text = markup.replace(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g, ' ').replace(/<[^>]*>/g, '\n');
+	const text = withoutExpressions(markup).replace(/<[^>]*>/g, '\n');
 
 	for (const line of text.split('\n')) {
 		const run = line.trim();

@@ -38,7 +38,7 @@
 				[{ supportedMethods: 'https://play.google.com/billing', data: { sku } }],
 				// Play draws its own sheet with its own numbers; this total is a
 				// required formality the sheet never shows.
-				{ total: { label: 'Ontoplano', amount: { currency: 'USD', value: '0' } } }
+				{ total: { label: 'app.ontoplano', amount: { currency: 'USD', value: '0' } } }
 			);
 			const response = await request.show();
 			const { purchaseToken } = response.details as { purchaseToken: string };

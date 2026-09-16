@@ -120,14 +120,16 @@
 						>
 							{account.email}
 							<span class="block text-xs text-gray-500">
-								{account.name} · joined {when(account.createdAt)} ·
+								{account.name}
+								{t('admin.joined')}
+								{when(account.createdAt)} ·
 								{account.sessions}
 								{account.sessions === 1 ? 'session' : 'sessions'}
 								<!-- Who pays: a family payer and their riders read differently
 								     from a plain subscriber, and support's first question when a
 								     family's card fails is which four accounts hang off it. -->
 								· {account.plan}
-								{#if !account.emailVerified}· unverified{/if}
+								{#if !account.emailVerified}{t('admin.unverified')}{/if}
 							</span>
 						</a>
 
@@ -405,9 +407,9 @@
 								-->
 								<span class="block text-xs {ban.active ? 'text-gray-600' : 'text-gray-500'}">
 									{#if ban.active}
-										still blocked · {ban.held} so far
+										{t('admin.stillBlocked')} {ban.held} {t('admin.soFar')}
 									{:else}
-										let back in after {ban.held}
+										{t('admin.letBackInAfter')} {ban.held}
 									{/if}
 									<!--
 										One ban is a scanner passing through; the ninth is

@@ -395,10 +395,11 @@
 				{/snippet}
 				<p class="text-sm text-gray-500">
 					<span class="font-medium text-gray-900">{list.confirmed}</span>
-					confirmed{#if list.pending > 0}, and {list.pending} who have not followed the link yet{/if}.
-					<!-- Said here because the export is one click away and the rule is
-					     what makes the list worth having. -->
-					Only confirmed addresses are exported.
+					{t('settings.instance.confirmed')}{#if list.pending > 0}{t('settings.instance.and')}
+						{list.pending}
+						{t('settings.instance.whoHaveNotFollowedThe')}{/if}{t(
+						'settings.instance.onlyConfirmedAddressesAre'
+					)}
 				</p>
 			</Card>
 		{/if}
@@ -600,11 +601,12 @@
 							<span class="min-w-0 flex-1">
 								<span class="text-gray-900">{invite.note || 'No note'}</span>
 								<span class="block text-xs text-gray-500">
-									made {when(invite.createdAt)}
+									{t('settings.instance.made')}
+									{when(invite.createdAt)}
 									{#if invite.usedAt}
-										· used {when(invite.usedAt)}
+										{t('settings.instance.used2')} {when(invite.usedAt)}
 									{:else if invite.expiresAt}
-										· code expires {when(invite.expiresAt)}
+										{t('settings.instance.codeExpires')} {when(invite.expiresAt)}
 									{/if}
 									{#if data.sellsAnything}
 										· {invite.grantsUntil

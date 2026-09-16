@@ -558,12 +558,13 @@ Token: ${token}`;
 							<p class="mt-1 text-xs text-gray-500">
 								{token.scopes.map(scopeSentence).join(' · ') || 'no scopes'}
 								{#if token.lastUsedAt}
-									· last used {token.lastUsedAt.slice(0, 16).replace('T', ' ')}
+									{t('settings.integrations.connections.lastUsed')}
+									{token.lastUsedAt.slice(0, 16).replace('T', ' ')}
 								{:else}
-									· never used
+									{t('settings.integrations.connections.neverUsed')}
 								{/if}
 								{#if token.expiresAt}
-									· expires {token.expiresAt.slice(0, 10)}
+									{t('settings.integrations.connections.expires')} {token.expiresAt.slice(0, 10)}
 								{/if}
 							</p>
 						</div>
@@ -705,9 +706,11 @@ Token: ${token}`;
 								</a>
 								<p class="mt-0.5 font-mono text-xs text-gray-500">{stream.slug}</p>
 								<p class="mt-1 text-xs text-gray-500">
-									{stream.kind}{stream.unit ? ` · ${stream.unit}` : ''} · {stream.stats.count} points
+									{stream.kind}{stream.unit ? ` · ${stream.unit}` : ''} · {stream.stats.count}
+									{t('settings.integrations.connections.points')}
 									{#if stream.stats.latest}
-										· latest {stream.stats.latest.at.slice(0, 10)}
+										{t('settings.integrations.connections.latest')}
+										{stream.stats.latest.at.slice(0, 10)}
 									{/if}
 								</p>
 							</div>
@@ -870,16 +873,18 @@ Streams push data in, webhooks let your programs listen."
 							<div class="min-w-0 flex-1 basis-full sm:basis-0">
 								<p class="text-sm font-medium break-all text-gray-900">{hook.url}</p>
 								<p class="mt-1 text-xs text-gray-500">
-									When {hook.events.map(eventLabel).join(', or ')}
+									{t('settings.integrations.connections.when')}
+									{hook.events.map(eventLabel).join(', or ')}
 									{#if hook.disabled}
 										· <span class="font-medium"
 											>{t('settings.integrations.connections.gaveUpAfterRepeatedFailures')}</span
 										>
 									{:else if hook.lastDeliveryAt}
-										· last delivery {hook.lastDeliveryAt.slice(0, 16).replace('T', ' ')}
+										{t('settings.integrations.connections.lastDelivery')}
+										{hook.lastDeliveryAt.slice(0, 16).replace('T', ' ')}
 										{hook.lastStatus ? `(${hook.lastStatus})` : '(unreachable)'}
 									{:else}
-										· nothing delivered yet
+										{t('settings.integrations.connections.nothingDeliveredYet')}
 									{/if}
 								</p>
 								<!-- Enough to tell which secret this is, never enough to

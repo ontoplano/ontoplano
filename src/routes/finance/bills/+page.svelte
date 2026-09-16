@@ -47,10 +47,10 @@
 	// Monthly first — it is the common bill and the service's own default, so the
 	// select lands on it when nobody changes the dropdown.
 	const RHYTHMS = [
-		{ value: 'monthly', label: 'Monthly' },
-		{ value: 'weekly', label: 'Weekly' },
-		{ value: 'yearly', label: 'Yearly' },
-		{ value: 'once', label: 'One-off' }
+		{ value: 'monthly', label: 'app.monthly' },
+		{ value: 'weekly', label: 'app.weekly' },
+		{ value: 'yearly', label: 'app.yearly' },
+		{ value: 'once', label: 'app.oneOff' }
 	];
 
 	function rhythmLabel(r: string): string {
@@ -61,13 +61,13 @@
 	let formRhythm = $state('monthly');
 
 	const WEEKDAYS = [
-		{ value: 1, label: 'Monday' },
-		{ value: 2, label: 'Tuesday' },
-		{ value: 3, label: 'Wednesday' },
-		{ value: 4, label: 'Thursday' },
-		{ value: 5, label: 'Friday' },
-		{ value: 6, label: 'Saturday' },
-		{ value: 7, label: 'Sunday' }
+		{ value: 1, label: 'app.monday' },
+		{ value: 2, label: 'app.tuesday' },
+		{ value: 3, label: 'app.wednesday' },
+		{ value: 4, label: 'app.thursday' },
+		{ value: 5, label: 'app.friday' },
+		{ value: 6, label: 'app.saturday' },
+		{ value: 7, label: 'app.sunday' }
 	];
 	const MONTHS = [
 		'January',

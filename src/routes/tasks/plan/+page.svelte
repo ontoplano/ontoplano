@@ -2238,7 +2238,7 @@
 
 		// Captured before the write, while `source` still says where it was.
 		pushUndo({
-			label: 'move',
+			label: 'app.move',
 			run: restorePlacement(decoded.kind, source, {
 				weekday: decoded.kind === 'slot' ? (source as Slot).weekday : undefined,
 				date: decoded.kind === 'slot' ? undefined : (source as Exceptional).date,
@@ -2641,7 +2641,7 @@
 						aria-expanded={calendarsOpen}
 					>
 						<Icon name={calendarsOpen ? 'chevron-down' : 'chevron-right'} size={14} />
-						Calendars you subscribe to
+						{t('tasks.plan.calendarsYouSubscribeTo')}
 						{#if data.feeds.length > 0}
 							<span class="text-gray-400">({data.feeds.length})</span>
 						{/if}
@@ -2973,7 +2973,7 @@
 						</button>
 					{:else}
 						<div class="flex">
-							{#each [{ value: 'weekly', label: 'Comes back' }, { value: 'once', label: 'Once only' }] as choice (choice.value)}
+							{#each [{ value: 'weekly', label: 'app.comesBack' }, { value: 'once', label: 'app.onceOnly' }] as choice (choice.value)}
 								<button
 									type="button"
 									onclick={() => (repeat = choice.value as 'weekly' | 'once')}

@@ -361,7 +361,7 @@
 	{#if filteredActivities().length === 0}
 		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
 			{#if activeFilters.size > 0}
-				No activities match the selected filters.
+				{t('tasks.activities.noActivitiesMatchTheSelected')}
 			{:else}
 				<EmptyState
 					icon="planner"

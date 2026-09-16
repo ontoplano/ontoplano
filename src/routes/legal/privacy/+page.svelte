@@ -31,24 +31,21 @@
 
 <h2>{t('legal.privacy.whereItIsStored')}</h2>
 <p>
-	In one SQLite database on {data.hosted
-		? 'the server that runs this instance'
-		: 'the machine you installed it on'}.
+	{t('legal.privacy.inOneSqliteDatabaseOn')}
+	{data.hosted ? 'the server that runs this instance' : 'the machine you installed it on'}.
 	{#if data.hosted}
-		Backups are replicated to object storage.
+		{t('legal.privacy.backupsAreReplicatedToObject')}
 	{:else}
-		Backups are whatever you configured; nobody else has a copy.
+		{t('legal.privacy.backupsAreWhateverYouConfigured')}
 	{/if}
 </p>
 
 <h2>{t('legal.privacy.whoCanSeeIt')}</h2>
 <p>
 	{#if data.hosted}
-		The person running this instance can, technically — it is their database. There is no way to
-		sign in as your account: the administration pages list accounts and coarse events like a
-		registration or a plan change, and nothing of what you wrote. Nobody else has access.
+		{t('legal.privacy.thePersonRunningThisInstance')}
 	{:else}
-		Whoever administers the machine, which is you.
+		{t('legal.privacy.whoeverAdministersTheMachineWhich')}
 	{/if}
 </p>
 <p>{t('legal.privacy.thereIsNoAnalyticsNo')}</p>
@@ -75,9 +72,11 @@
 	{t('legal.privacy.settingsAccountExportsEverything')}
 </p>
 <p>
-	Backups are the exception, and the honest caveat: a snapshot taken before you deleted still
-	contains what you deleted until it rotates out{#if data.hosted}, which happens within
-		{data.backupRetentionDays} days{/if}.
+	{t('legal.privacy.backupsAreTheExceptionAnd')}{#if data.hosted}{t(
+			'legal.privacy.whichHappensWithin'
+		)}
+		{data.backupRetentionDays}
+		{t('legal.privacy.days')}{/if}.
 </p>
 
 <h2>{t('legal.privacy.cookies')}</h2>

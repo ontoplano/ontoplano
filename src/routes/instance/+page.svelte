@@ -158,7 +158,7 @@
 	 */
 	const CHOICES = {
 		connected: {
-			label: 'Cloud instance',
+			label: 'app.cloudInstance',
 			glyph: 'server' as const,
 			heading: 'Connect to an external server',
 			says: [
@@ -170,7 +170,7 @@
 			proceed: 'Connect'
 		},
 		phone: {
-			label: 'On device',
+			label: 'app.onDevice',
 			glyph: 'phone' as const,
 			heading: 'Use Ontoplano on the phone only',
 			says: [

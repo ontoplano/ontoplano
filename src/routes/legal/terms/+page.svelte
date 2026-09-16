@@ -36,11 +36,17 @@
 
 <h2>{t('legal.terms.paying')}</h2>
 <p>
-	A new account gets {data.trialDays} days free{data.trialRequiresCard
+	{t('legal.terms.aNewAccountGets')}
+	{data.trialDays}
+	{t('legal.terms.daysFree')}{data.trialRequiresCard
 		? ', and is asked for a card at the start so the subscription can begin when the trial ends'
-		: ' and is not asked for a card'}. It costs {data.monthly} a month{#if data.yearly}, or {data.yearly}{/if}.
-	Payment is handled by {data.provider} as merchant of record — they take the payment, issue the invoice
-	and handle the tax.
+		: ' and is not asked for a card'}{t('legal.terms.itCosts')}
+	{data.monthly}
+	{t('legal.terms.aMonth')}{#if data.yearly}{t('legal.terms.or')} {data.yearly}{/if}{t(
+		'legal.terms.paymentIsHandledBy'
+	)}
+	{data.provider}
+	{t('legal.terms.asMerchantOfRecord')}
 </p>
 {#if data.trialRequiresCard}
 	<p>
@@ -61,15 +67,9 @@
 <h2>{t('legal.terms.whatIsPromisedAboutIt')}</h2>
 <p>
 	{#if data.hosted}
-		This is run by one person on ordinary infrastructure. It is not a bank. Expect it to be up
-		nearly all the time, expect occasional restarts for updates, and expect no compensation if it is
-		down for an afternoon — there is no uptime guarantee here and it would be dishonest to write
-		one. What is promised instead is that your data is backed up off the machine, that you can
-		export it at any moment without asking, and that if this instance ever shuts down you will be
-		told well beforehand with your export still working.
+		{t('legal.terms.thisIsRunByOne')}
 	{:else}
-		This is a self-hosted instance: it is up when the machine it runs on is up, which is your
-		business rather than anyone else's.
+		{t('legal.terms.thisIsASelfHostedInstance')}
 	{/if}
 </p>
 

@@ -444,7 +444,8 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 					-->
 						{#if data.assistants.length > 0}
 							<p class="mt-3 max-w-2xl text-sm leading-relaxed text-gray-500">
-								You already have {data.assistants.length === 1
+								{t('settings.integrations.youAlreadyHave')}
+								{data.assistants.length === 1
 									? `one, “${data.assistants[0].name}”${
 											data.assistants[0].tiedTo ? `, tied to one ${data.assistants[0].tiedTo}` : ''
 										}`

@@ -2,6 +2,9 @@
 	import CaptureDialog from '$lib/components/CaptureDialog.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { captureByShortcut, visibleCaptures, type Capture } from '$lib/capture';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * Capture, on a phone.
@@ -55,7 +58,7 @@
 		{#each captures as capture (capture.key)}
 			<button type="button" onclick={() => show(capture)} class="btn btn-sm">
 				<span style="color:{capture.color}"><Icon name={capture.icon} /></span>
-				{capture.label}
+				{t(capture.label)}
 				<!--
 					`kbd-hint` so a touch screen wide enough for this row still drops
 					it: a keystroke is noise where there is no keyboard. `gray-600`
@@ -80,7 +83,7 @@
 				<span style="color:{capture.color}"><Icon name={capture.icon} size={18} /></span>
 				<!-- No keystroke here: this is the phone, where there is no keyboard
 				     to press it on. The desktop row above says it instead. -->
-				<span>{capture.label}</span>
+				<span>{t(capture.label)}</span>
 			</button>
 		{/each}
 	</div>

@@ -240,10 +240,10 @@
 	);
 
 	const tabs = $derived<{ key: Tab; label: string; count: number; done?: number }[]>([
-		{ key: 'notes', label: 'Notes', count: shownNotes.length },
+		{ key: 'notes', label: 'app.notes', count: shownNotes.length },
 		{
 			key: 'tasks',
-			label: 'Tasks',
+			label: 'app.tasks',
 			count: (contents?.todos.length ?? 0) + (contents?.blocks.length ?? 0),
 			// A block on the grid is a thing that happens rather than a thing to
 			// finish, so only the todos are counted as done or not.
@@ -251,7 +251,7 @@
 		},
 		{
 			key: 'goals',
-			label: 'Goals',
+			label: 'app.goals',
 			count: contents?.goals.length ?? 0,
 			done: contents?.goals.filter((goal) => goal.status !== 'open').length ?? 0
 		}
@@ -675,7 +675,7 @@
 							<span class="tabular text-xs text-gray-500">
 								{entry.seq === null ? '' : `#${entry.seq} · `}{when(entry.createdAt)}
 								{#if entry.archivedAt}
-									· archived
+									{t('notebookdetail.archived')}
 								{/if}
 								{#if 'author' in entry && entry.author}
 									· {entry.author}

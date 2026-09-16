@@ -1,4 +1,9 @@
 <script lang="ts" generics="T extends string">
+	import { useT } from '$lib/i18n';
+	import type { PlainKey } from '$lib/i18n/keys';
+
+	const t = useT();
+
 	/**
 	 * One row of "show me which of these", the same everywhere.
 	 *
@@ -17,7 +22,8 @@
 	}: {
 		/** What this row filters by: "Applied", "Favourite", "Kind". */
 		label?: string;
-		options: readonly { value: T; label: string }[];
+		/** Each option's name, as a message key — the chips are drawn here. */
+		options: readonly { value: T; label: PlainKey }[];
 		value: T;
 		/** Told after the value changes, for lists that reset their cursor. */
 		onchange?: (value: T) => void;
@@ -40,7 +46,7 @@
 			aria-pressed={value === option.value}
 			class="chip {value === option.value ? 'chip-on' : ''}"
 		>
-			{option.label}
+			{t(option.label)}
 		</button>
 	{/each}
 </div>

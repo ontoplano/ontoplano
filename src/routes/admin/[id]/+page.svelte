@@ -160,11 +160,11 @@
 						</button>
 						<span class="text-sm text-gray-700">
 							{#if nextRole === 'admin'}
-								<strong class="font-semibold text-gray-900">{data.account.email}</strong> will be able
-								to read, change and delete every account.
+								<strong class="font-semibold text-gray-900">{data.account.email}</strong>
+								{t('admin.id.willBeAbleToRead')}
 							{:else}
-								<strong class="font-semibold text-gray-900">{data.account.email}</strong> keeps the account
-								and loses every admin power.
+								<strong class="font-semibold text-gray-900">{data.account.email}</strong>
+								{t('admin.id.keepsTheAccountAndLoses')}
 							{/if}
 						</span>
 						<button class="btn btn-danger btn-sm" use:armed>

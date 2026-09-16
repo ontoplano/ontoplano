@@ -237,11 +237,11 @@
 				{t('settings.account.youSignInWith')}
 				<span class="font-medium text-gray-900">{data.email}</span>.
 				{#if data.emailChangeAllowed}
-					A new address has to be confirmed by a link before it takes over.
+					{t('settings.account.aNewAddressHasTo')}
 				{:else}
 					<!-- Says who to ask, rather than pretending the option is missing
 					     because nobody thought of it. -->
-					Changing it is turned off on this instance; whoever runs it can allow it.
+					{t('settings.account.changingItIsTurnedOff')}
 				{/if}
 				{#if !data.emailVerified}
 					<span class="block">{t('settings.account.thisOneHasNotBeen')}</span>
@@ -260,14 +260,15 @@
 			{/snippet}
 			<p class="text-sm text-gray-500">
 				{#if data.weeklyReviewMail}
-					One message on a Monday at {data.weeklyReviewHour} with what last week was — planned against
-					done, and what is still loose. Nothing is sent about a week you did not plan, and every message
-					has a link that stops them.
+					{t('settings.account.oneMessageOnAMonday')}
+					{data.weeklyReviewHour}
+					{t('settings.account.withWhatLastWeekWas')}
 				{:else}
 					<!-- Off is the default: mail nobody asked for is spam however useful
 					     it is. What it would be is said here, not after it arrives. -->
-					Off. Turn it on and you get one message on a Monday at {data.weeklyReviewHour} with what last
-					week was — planned against done, and what is still loose.
+					{t('settings.account.offTurnItOnAnd')}
+					{data.weeklyReviewHour}
+					{t('settings.account.withWhatLastWeekWas2')}
 				{/if}
 				{#if !data.emailConfigured}
 					<span class="block">{t('settings.account.thisInstanceHasNoMail')}</span>
@@ -441,7 +442,10 @@
 								{/if}
 							</p>
 							<p class="tabular text-xs text-gray-500">
-								Last seen {when(s.lastSeen)} &middot; signed in {when(s.createdAt)}
+								{t('settings.account.lastSeen')}
+								{when(s.lastSeen)}
+								{t('settings.account.middotSignedIn')}
+								{when(s.createdAt)}
 								{#if s.ipAddress}&middot; {s.ipAddress}{/if}
 							</p>
 						</div>
@@ -567,10 +571,13 @@
 			</p>
 		{:else}
 			<p class="mt-2 text-sm {data.exports.remaining === 1 ? 'text-amber-700' : 'text-gray-500'}">
-				{data.exports.remaining} of {data.exports.allowed}
-				{data.exports.allowed === 1 ? 'export' : 'exports'} left today.
+				{data.exports.remaining}
+				{t('settings.account.of')}
+				{data.exports.allowed}
+				{data.exports.allowed === 1 ? 'export' : 'exports'}
+				{t('settings.account.leftToday')}
 				{#if data.exports.unlocksIn}
-					The allowance resets {data.exports.unlocksIn}.
+					{t('settings.account.theAllowanceResets')} {data.exports.unlocksIn}.
 				{/if}
 			</p>
 		{/if}
@@ -631,12 +638,15 @@
 			{/snippet}
 			<p class="text-sm text-gray-500">
 				{#if onDevice}
-					This app is open on <strong class="text-gray-700"
-						>{t('settings.account.itsOwnCopyOnThis')}</strong
-					>. Switching points it at a server instead.
+					{t('settings.account.thisAppIsOpenOn')}
+					<strong class="text-gray-700">{t('settings.account.itsOwnCopyOnThis')}</strong>{t(
+						'settings.account.switchingPointsItAt'
+					)}
 				{:else}
-					This app is open on <strong class="text-gray-700">{data.host}</strong>. Switching points
-					it at another one.
+					{t('settings.account.thisAppIsOpenOn')}
+					<strong class="text-gray-700">{data.host}</strong>{t(
+						'settings.account.switchingPointsItAt2'
+					)}
 				{/if}
 			</p>
 		</Card>

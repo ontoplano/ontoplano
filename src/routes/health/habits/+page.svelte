@@ -329,10 +329,10 @@
 				bind:value={typeFilter}
 				onchange={() => (selectedHabitIndex = 0)}
 				options={[
-					{ value: 'all', label: 'All' },
-					{ value: 'good', label: 'Good' },
-					{ value: 'bad', label: 'Bad' },
-					{ value: 'neutral', label: 'Neutral' }
+					{ value: 'all', label: 'app.all' },
+					{ value: 'good', label: 'app.good' },
+					{ value: 'bad', label: 'app.bad' },
+					{ value: 'neutral', label: 'app.neutral' }
 				]}
 			/>
 		{/snippet}

@@ -160,7 +160,7 @@
 		<p class="truncate text-sm text-gray-500">
 			{pretty(data.reading.weekStart)} — {pretty(data.reading.weekEnd)}
 			{#if data.week.isCurrent}
-				· still running
+				{t('tasks.review.stillRunning')}
 			{/if}
 		</p>
 	</PeriodNav>
@@ -196,9 +196,12 @@
 					</div>
 
 					<p class="text-sm text-gray-600">
-						{hours(data.reading.minutesDone)} of {hours(data.reading.minutesPlanned)} planned.
+						{hours(data.reading.minutesDone)}
+						{t('tasks.review.of')}
+						{hours(data.reading.minutesPlanned)}
+						{t('tasks.review.planned')}
 						{#if data.reading.skipped > 0}
-							{data.reading.skipped} skipped.
+							{data.reading.skipped} {t('tasks.review.skipped2')}
 						{/if}
 					</p>
 

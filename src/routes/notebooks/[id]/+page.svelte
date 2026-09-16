@@ -109,9 +109,9 @@
 					<input type="hidden" name="closed" value={data.notebook.closedAt ? 'false' : 'true'} />
 					<button class="btn btn-sm">
 						{#if data.notebook.closedAt}
-							<Icon name="undo" /> Reopen
+							<Icon name="undo" /> {t('notebooks.id.reopen')}
 						{:else}
-							<Icon name="check" /> Close
+							<Icon name="check" /> {t('notebooks.id.close')}
 						{/if}
 					</button>
 				</form>

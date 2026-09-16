@@ -299,7 +299,8 @@
 							<article class="px-4 py-3">
 								<p class="text-sm whitespace-pre-wrap text-gray-900">{entry.content}</p>
 								<p class="tabular mt-1 text-xs text-gray-500">
-									{when(entry.createdAt)}{#if entry.forDate}&nbsp;· for {entry.forDate}{/if}
+									{when(entry.createdAt)}{#if entry.forDate}{t('notebooks.people.nbspFor')}
+										{entry.forDate}{/if}
 								</p>
 							</article>
 						{/each}
@@ -496,7 +497,8 @@
 			{/if}
 
 			<span class="text-xs text-gray-500">
-				{#if uploadingFace}uploading…{:else}up to {data.pictureKilobytes}KB{/if}
+				{#if uploadingFace}{t('notebooks.people.uploading')}{:else}{t('notebooks.people.upTo')}
+					{data.pictureKilobytes}{t('notebooks.people.kb')}{/if}
 			</span>
 		</div>
 		{#if faceProblem}

@@ -393,8 +393,11 @@
 		{#if currencyChoice === OTHER}
 			<p class="text-sm text-gray-500">
 				{#if preview}
-					Prices will read <span class="font-medium text-gray-900">{preview.price}</span
-					>{#if preview.name}&nbsp;— {preview.name}{/if}.
+					{t('settings.preferences.pricesWillRead')}
+					<span class="font-medium text-gray-900">{preview.price}</span>{#if preview.name}{t(
+							'settings.preferences.nbsp'
+						)}
+						{preview.name}{/if}.
 				{:else if otherCurrency.trim().length === 3}
 					<span class="text-red-700"
 						>{t('settings.preferences.isNotACurrency', {
@@ -402,7 +405,7 @@
 						})}</span
 					>
 				{:else}
-					Three letters — the ISO code, like PLN or ZAR.
+					{t('settings.preferences.threeLettersTheIso')}
 				{/if}
 			</p>
 		{/if}
@@ -577,15 +580,17 @@
 				-->
 				<p class="mt-1 text-sm text-gray-500">
 					{#if inApp && notifications === 'unreachable' && data.ringsOnAPhone}
-						Reminders from <strong class="text-gray-700">{page.url.host}</strong> ring here with the app
-						closed.
+						{t('settings.preferences.remindersFrom')}
+						<strong class="text-gray-700">{page.url.host}</strong>
+						{t('settings.preferences.ringHereWithTheApp')}
 					{:else if inApp && notifications === 'unreachable'}
-						Reminders from <strong class="text-gray-700">{page.url.host}</strong> can ring here with the
-						app closed. Not set up yet.
+						{t('settings.preferences.remindersFrom')}
+						<strong class="text-gray-700">{page.url.host}</strong>
+						{t('settings.preferences.canRingHereWithThe')}
 					{:else if inApp}
-						Reminders arrive with the app closed, through Android's own alarms.
+						{t('settings.preferences.remindersArriveWithTheApp')}
 					{:else}
-						Reminders arrive with the app closed. Asked for once per browser.
+						{t('settings.preferences.remindersArriveWithTheApp2')}
 					{/if}
 				</p>
 			</div>

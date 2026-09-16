@@ -24,6 +24,7 @@
 	import { onMount } from 'svelte';
 	import type { ActionData, PageServerData } from './$types';
 	import { useT } from '$lib/i18n';
+	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
 
@@ -44,14 +45,14 @@
 	 * and "which of these is a bill" is the question somebody scanning it is
 	 * actually asking. A cake is a birthday everywhere; a wallet is money.
 	 */
-	const KINDS: Record<string, { label: string; icon: IconName }> = {
-		instance: { label: 'Blocks', icon: 'planner' },
-		todo: { label: 'Todos', icon: 'check' },
-		free: { label: 'Alarms', icon: 'clock' },
-		review: { label: 'The weekly review', icon: 'book' },
-		bill: { label: 'Bills', icon: 'wallet' },
-		person: { label: 'Birthdays', icon: 'cake' },
-		day: { label: 'The end of the day', icon: 'moon' }
+	const KINDS: Record<string, { label: PlainKey; icon: IconName }> = {
+		instance: { label: 'app.blocks', icon: 'planner' },
+		todo: { label: 'app.todos', icon: 'check' },
+		free: { label: 'app.alarms', icon: 'clock' },
+		review: { label: 'app.theWeeklyReview', icon: 'book' },
+		bill: { label: 'app.bills', icon: 'wallet' },
+		person: { label: 'app.birthdays', icon: 'cake' },
+		day: { label: 'app.theEndOfTheDay', icon: 'moon' }
 	};
 
 	const kindOf = (key: string) => KINDS[key] ?? { label: key, icon: 'clock' as IconName };
@@ -410,8 +411,8 @@
 {#snippet alreadyBeen(when: string, at: string)}
 	{#if hasBeen(when, at)}
 		<p class="text-sm text-gray-600">
-			{at ? 'That time has already been.' : `${data.dayStart} has already been today.`} Give it a later
-			one.
+			{at ? 'That time has already been.' : `${data.dayStart} has already been today.`}
+			{t('reminders.giveItALaterOne')}
 		</p>
 	{/if}
 {/snippet}
@@ -482,17 +483,13 @@
 			<div class="flex flex-wrap items-center gap-3">
 				<span>
 					{#if unreachable}
-						This phone is not set up to ring for reminders from here — it can be, in one press on
-						Preferences, and then they arrive with ontoplano closed.
+						{t('reminders.thisPhoneIsNotSet')}
 					{:else if refused}
-						Android has refused notifications and will not ask again, so reminders arrive only while
-						ontoplano is open.
+						{t('reminders.androidHasRefusedNotificationsAnd')}
 					{:else if inPhoneApp()}
-						This phone has not been allowed to notify you, so reminders arrive only while ontoplano
-						is open.
+						{t('reminders.thisPhoneHasNotBeen')}
 					{:else}
-						This browser has not been allowed to notify you, so reminders arrive only while this
-						page is open.
+						{t('reminders.thisBrowserHasNotBeen')}
 					{/if}
 				</span>
 				{#if unreachable}
@@ -764,14 +761,14 @@
 				{#each upcoming as reminder (reminder.key)}
 					<li class="px-4 py-2">
 						<div class="flex items-center gap-3">
-							<span class="shrink-0 text-gray-400" title={kindOf(reminder.subjectKind).label}>
+							<span class="shrink-0 text-gray-400" title={t(kindOf(reminder.subjectKind).label)}>
 								<Icon name={kindOf(reminder.subjectKind).icon} size={14} />
 							</span>
 							<span class="min-w-0 flex-1">
 								<span class="block truncate text-sm text-gray-900">{reminder.message}</span>
 								<span class="flex items-center gap-1.5 text-xs text-gray-500">
-									{kindOf(reminder.subjectKind).label}
-									{#if reminder.shown}· already shown{/if}
+									{t(kindOf(reminder.subjectKind).label)}
+									{#if reminder.shown}{t('reminders.alreadyShown')}{/if}
 									<!-- The one thing about a reminder you want to know before it
 								     happens rather than after. -->
 									{#if reminder.audible}
@@ -963,7 +960,7 @@
 								<span class="shrink-0 text-gray-400">
 									<Icon name={kindOf(choice.kind).icon} size={14} />
 								</span>
-								{kindOf(choice.kind).label}
+								{t(kindOf(choice.kind).label)}
 							</span>
 							<label class="flex items-center gap-2 text-sm text-gray-700">
 								<input type="checkbox" name="audible" checked={choice.audible} class="size-4" />

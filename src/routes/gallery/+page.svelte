@@ -412,10 +412,13 @@
 
 	{#if outcome}
 		<p class="rounded border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
-			{outcome.pictures} picture{outcome.pictures === 1 ? '' : 's'} into {outcome.albums} album{outcome.albums ===
-			1
-				? ''
-				: 's'}{outcome.skipped ? `, ${outcome.skipped} refused` : ''}.
+			{outcome.pictures}
+			{t('gallery.picture')}{outcome.pictures === 1 ? '' : 's'}
+			{t('gallery.into')}
+			{outcome.albums}
+			{t('gallery.album')}{outcome.albums === 1 ? '' : 's'}{outcome.skipped
+				? `, ${outcome.skipped} refused`
+				: ''}.
 		</p>
 	{/if}
 
@@ -444,9 +447,9 @@
 			<span class="shrink-0 text-xs text-gray-500 tabular-nums">
 				{#if standingIn}
 					{standingIn.totalCount ?? standingIn.count}
-					picture{(standingIn.totalCount ?? standingIn.count) === 1 ? '' : 's'}
+					{t('gallery.picture')}{(standingIn.totalCount ?? standingIn.count) === 1 ? '' : 's'}
 				{:else}
-					{data.albums.length} album{data.albums.length === 1 ? '' : 's'}
+					{data.albums.length} {t('gallery.album')}{data.albums.length === 1 ? '' : 's'}
 				{/if}
 			</span>
 			<a

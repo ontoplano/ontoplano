@@ -89,11 +89,11 @@ at a time, and show me what you will write before writing it.`
 	const LOOKS: { key: Theme; label: string; blurb: string }[] = [
 		{
 			key: 'system',
-			label: 'Match my device',
-			blurb: 'Light by day, dark by night, if that is what your phone does.'
+			label: 'app.matchMyDevice',
+			blurb: 'app.lightByDayDarkBy'
 		},
-		{ key: 'light', label: 'Light', blurb: 'Always light, whatever the device says.' },
-		{ key: 'dark', label: 'Dark', blurb: 'Always dark, whatever the device says.' }
+		{ key: 'light', label: 'app.light', blurb: 'app.alwaysLightWhateverTheDevice' },
+		{ key: 'dark', label: 'app.dark', blurb: 'app.alwaysDarkWhateverTheDevice' }
 	];
 
 	function pickTheme(key: Theme) {
@@ -126,25 +126,25 @@ at a time, and show me what you will write before writing it.`
 	const STEPS = [
 		{
 			key: 'assistant',
-			title: 'Use it with an AI',
-			hint: 'Optional — an assistant can set your week up by asking you about it.'
+			title: 'app.useItWithAnAi',
+			hint: 'app.optionalAnAssistantCan'
 		},
-		{ key: 'where', title: 'Where are you?', hint: 'It decides what counts as today.' },
+		{ key: 'where', title: 'app.whereAreYou', hint: 'app.itDecidesWhatCountsAs' },
 		{
 			key: 'week',
-			title: 'When does your week start?',
-			hint: 'Sunday and Monday are both normal.'
+			title: 'app.whenDoesYourWeekStart',
+			hint: 'app.sundayAndMondayAreBoth'
 		},
 		{
 			key: 'rooms',
-			title: 'Which rooms do you want?',
-			hint: 'Turn off what you will not use. You can turn any of it back on later.'
+			title: 'app.whichRoomsDoYouWant',
+			hint: 'app.turnOffWhatYouWill'
 		},
-		{ key: 'look', title: 'How should it look?', hint: 'It changes as you pick.' },
+		{ key: 'look', title: 'app.howShouldItLook', hint: 'app.itChangesAsYouPick' },
 		{
 			key: 'start',
-			title: 'Start from a week?',
-			hint: 'A week you can drag around beats an empty grid.'
+			title: 'app.startFromAWeek',
+			hint: 'app.aWeekYouCanDrag'
 		}
 	];
 
@@ -184,9 +184,9 @@ at a time, and show me what you will write before writing it.`
 		<h1 class="text-lg font-bold text-gray-900">{t('welcome.welcomeToOntoplano')}</h1>
 		<p class="mt-1 text-sm text-gray-500">
 			{#if stepping}
-				{STEPS.length} quick steps. All of it is editable later.
+				{STEPS.length} {t('welcome.quickStepsAllOfIt')}
 			{:else}
-				A few questions and a week to start from. All of it is editable later.
+				{t('welcome.aFewQuestionsAndA')}
 			{/if}
 		</p>
 	</div>

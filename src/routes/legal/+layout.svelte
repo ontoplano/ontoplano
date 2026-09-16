@@ -7,9 +7,9 @@
 	let { children }: { children: Snippet } = $props();
 
 	const pages = [
-		{ path: '/legal/privacy', label: 'Privacy' },
-		{ path: '/legal/terms', label: 'Terms' },
-		{ path: '/legal/refunds', label: 'Refunds' }
+		{ path: '/legal/privacy', label: 'app.privacy' },
+		{ path: '/legal/terms', label: 'app.terms' },
+		{ path: '/legal/refunds', label: 'app.refunds' }
 	] as const;
 </script>
 

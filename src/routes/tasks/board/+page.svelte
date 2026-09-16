@@ -739,7 +739,8 @@
 							<input type="hidden" name="id" value={card.id} />
 							<input type="hidden" name="minutes" value={minutes} />
 							<button class="btn btn-sm">
-								{minutes < 60 ? `${minutes} min` : '1 hour'} before
+								{minutes < 60 ? `${minutes} min` : '1 hour'}
+								{t('tasks.board.before')}
 							</button>
 						</form>
 					{/each}

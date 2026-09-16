@@ -233,7 +233,8 @@
 						{#if data.yearly}
 							<button class="btn btn-primary" name="interval" value="yearly">
 								<Icon name="arrow-right" />
-								{trialFirst ? `Start your free ${data.trialDaysAhead} days` : 'Subscribe'} — yearly
+								{trialFirst ? `Start your free ${data.trialDaysAhead} days` : 'Subscribe'}
+								{t('settings.billing.yearly2')}
 							</button>
 							<button class="btn" name="interval" value="monthly"
 								>{t('settings.billing.monthly', {

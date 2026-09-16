@@ -363,7 +363,7 @@
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
 	setRoomAction(() => ({
-		label: 'New to-do',
+		label: t('app.newToDo'),
 		run: startNew,
 		tour: newTour ?? '',
 		kbd: shortcutRoom ? keyFor(shortcutRoom, 'new') : ''

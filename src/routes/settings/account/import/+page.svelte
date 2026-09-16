@@ -186,7 +186,7 @@
 					? ', '
 					: i === fromFiles.length - 2
 						? ' or '
-						: '. '}{/each}Which one it is is worked out from the file.
+						: '. '}{/each}{t('settings.account.import.whichOneItIsIs')}
 		</p>
 
 		<form
@@ -320,7 +320,7 @@
 				<div class="space-y-2 border border-gray-200 bg-gray-50 p-3 text-sm">
 					<p class="text-gray-900">
 						{#if preview.from}
-							<strong>{preview.from.email}</strong>'s account, exported
+							<strong>{preview.from.email}</strong>{t('settings.account.import.sAccountExported')}
 							{preview.from.exportedAt.slice(0, 10)}:
 						{/if}
 						<strong>{preview.total}</strong>
@@ -338,15 +338,14 @@
 					{/if}
 					{#if preview.skipped.length > 0}
 						<p class="text-gray-600">
-							Left behind: {preview.skipped
-								.map((skip) => `${skip.rows} ${skip.name} (${skip.why})`)
-								.join('; ')}.
+							{t('settings.account.import.leftBehind')}
+							{preview.skipped.map((skip) => `${skip.rows} ${skip.name} (${skip.why})`).join('; ')}.
 						</p>
 					{/if}
 					{#if preview.unacceptable.length > 0}
 						<div class="border border-red-200 bg-red-50 p-2">
 							<p class="text-sm text-gray-900">
-								The restore would refuse this file:
+								{t('settings.account.import.theRestoreWouldRefuseThis')}
 								{preview.unacceptable
 									.map((bad) => `${bad.rows} ${bad.name} ${bad.why}`)
 									.join('; ')}.
