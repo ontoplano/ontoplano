@@ -205,7 +205,7 @@
 					· <span class={delta === 0 ? 'text-gray-500' : 'text-blue-700'}>
 						{delta > 0 ? '+' : ''}{formatValue(delta)}
 						{unit}
-						{t('streamchart.sincePrevious')}
+						{t('streamChart.sincePrevious')}
 					</span>
 				{/if}
 			</p>

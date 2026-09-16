@@ -216,8 +216,14 @@ const CODEY = /[<>{}$\\]|^[a-z-]+$|^[A-Z_]+$|\//;
  * this app starts with a capital or ends in a full stop; a run of lowercase
  * tokens that all carry a hyphen or a colon is Tailwind.
  */
-const CLASSES = (text) =>
-	!/[A-Z]/.test(text) && text.split(/\s+/).every((token) => /[-:]/.test(token));
+const CLASSES = (text) => {
+	if (/[A-Z]/.test(text)) return false;
+	const tokens = text.split(/\s+/);
+	// Most of them, not all: `flex items-center gap-2` is styling and `flex`
+	// carries no hyphen, while a sentence with one hyphenated word in it is
+	// still a sentence.
+	return tokens.filter((token) => /[-:]/.test(token)).length * 2 > tokens.length;
+};
 
 function prosyLiterals(source) {
 	const found = [];

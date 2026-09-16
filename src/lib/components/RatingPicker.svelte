@@ -64,7 +64,7 @@
      without extra wiring. Empty string means "unrated". -->
 <input type="hidden" {name} value={value ?? ''} />
 
-<div class={compact ? t('ratingPicker.flexItemsCenterGap2') : 'space-y-1'}>
+<div class={compact ? 'flex items-center gap-2' : 'space-y-1'}>
 	{#if compact}
 		<span class="eyebrow w-16 shrink-0 text-gray-600">{RATING_LABELS[rating]}</span>
 	{:else}

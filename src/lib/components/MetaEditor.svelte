@@ -68,7 +68,7 @@
 			class="text-sm font-medium text-gray-700 hover:text-gray-900"
 		>
 			{expanded ? '−' : '+'}
-			{t('metaeditor.options')}
+			{t('metaEditor.options')}
 			{#if pairs.length > 0}
 				<span class="text-gray-500">({pairs.length})</span>
 			{/if}

@@ -683,7 +683,7 @@
 							<span class="tabular text-xs text-gray-500">
 								{entry.seq === null ? '' : `#${entry.seq} · `}{when(entry.createdAt)}
 								{#if entry.archivedAt}
-									{t('notebookdetail.archived')}
+									{t('notebookDetail.archived')}
 								{/if}
 								{#if 'author' in entry && entry.author}
 									· {entry.author}

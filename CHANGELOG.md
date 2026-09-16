@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.23 — 2026-09-16
+
+- **The whole app can be read in Portuguese.** Every word on every screen, and
+  every email the app sends, now comes from a catalogue rather than being
+  written into the code — 2,365 messages. Choosing a language in
+  Settings → Preferences changes the app, the language your mail arrives in,
+  the way dates are written, and the notification channels Android shows in its
+  own settings. Roughly a third of it is written in Portuguese so far; the rest
+  shows in English and the settings page says how many.
+
 ## 0.178.22 — 2026-09-16
 
 - **The app's icon sits on its own dark again, not on white.** The tile behind
