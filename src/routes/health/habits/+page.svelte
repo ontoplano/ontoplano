@@ -343,7 +343,7 @@
 	<Modal
 		bind:open={showForm}
 		error={form?.message}
-		title={editingId ? 'Edit habit' : 'New habit'}
+		title={editingId ? t('health.habits.editHabit') : t('health.habits.newHabit')}
 		onclose={resetForm}
 		size="sm"
 	>
@@ -372,10 +372,10 @@
 					<OneLine
 						name="label"
 						placeholder={newHabitType === 'bad'
-							? 'e.g. smoking, biting nails'
+							? t('health.habits.eGSmokingBitingNails')
 							: newHabitType === 'neutral'
-								? 'e.g. coffee, naps'
-								: 'e.g. gym, reading'}
+								? t('health.habits.eGCoffeeNaps')
+								: t('health.habits.eGGymReading')}
 						value={editHabit?.name ?? ''}
 						class="input"
 						required
@@ -385,7 +385,7 @@
 				<Field
 					label={t('health.habits.kind')}
 					span={12}
-					hint="A bad habit counts days since the last slip."
+					hint={t('health.habits.aBadHabitCountsDays')}
 				>
 					<div class="flex gap-2">
 						{#each [['bad', 'Bad'], ['good', 'Good'], ['neutral', 'Neutral']] as [value, label] (value)}
@@ -417,7 +417,7 @@
 					<Field
 						label={t('health.habits.onWhichDays')}
 						span={12}
-						hint="None selected means every day."
+						hint={t('health.habits.noneSelectedMeansEveryDay')}
 					>
 						<div class="flex flex-wrap gap-1">
 							{#each FULL_DAY_LABELS as label, i (label)}
@@ -446,7 +446,7 @@
 		{#snippet footer()}
 			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 			<button type="submit" form="habit-form" class="btn btn-primary">
-				{editingId ? 'Save' : 'Create habit'}
+				{editingId ? 'Save' : t('health.habits.createHabit')}
 			</button>
 		{/snippet}
 	</Modal>
@@ -457,7 +457,7 @@
 				<EmptyState
 					icon="health"
 					title={t('health.habits.nothingTrackedYet')}
-					description="A habit is something you want more of, or less of. Log it once a day and the streak does the rest."
+					description={t('health.habits.aHabitIsSomethingYou')}
 				>
 					{#snippet action()}
 						<button onclick={openNewHabit} class="btn btn-primary">
@@ -535,7 +535,7 @@
 											? 'border-gray-300 bg-gray-50 text-gray-600'
 											: 'border-blue-200 bg-blue-50 text-blue-600'} px-2 py-1 text-xs font-medium"
 								>
-									{isBad ? 'logged today' : 'done today'}
+									{isBad ? t('health.habits.loggedToday') : t('health.habits.doneToday')}
 								</span>
 							{:else}
 								<form method="post" action="?/logOccurrence" use:enhance>

@@ -82,7 +82,7 @@
 
 	<!-- The rules. Categories partition; tags overlap. -->
 	<div class="grid gap-4 lg:grid-cols-2">
-		{#each [{ kind: 'category' as const, title: 'Categories', rules: categories, blurb: 'A line belongs to the first category that matches, so the order below decides ties and the totals always add up.', placeholder: 'Groceries', pattern: 'mercado|hortifruti' }, { kind: 'tag' as const, title: 'Tags', rules: tags, blurb: 'Every tag that matches applies, so tags overlap freely — a lens rather than a sum.', placeholder: 'healthy', pattern: 'gym|salad' }] as group (group.kind)}
+		{#each [{ kind: 'category' as const, title: 'Categories', rules: categories, blurb: t('finance.rules.aLineBelongsToThe'), placeholder: 'Groceries', pattern: 'mercado|hortifruti' }, { kind: 'tag' as const, title: 'Tags', rules: tags, blurb: t('finance.rules.everyTagThatMatchesApplies'), placeholder: 'healthy', pattern: 'gym|salad' }] as group (group.kind)}
 			<!--
 				A card, like every other list in the app.
 

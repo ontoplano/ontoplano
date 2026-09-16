@@ -122,7 +122,7 @@
 				<EmptyState
 					icon="notebook"
 					title={t('notebooks.noNotebooksYet')}
-					description="Start one for something you will keep coming back to, and point notes, tasks and goals at it."
+					description={t('notebooks.startOneForSomethingYou')}
 				>
 					{#snippet action()}
 						<button onclick={openCreate} class="btn btn-primary">
@@ -204,7 +204,7 @@
 							<input type="hidden" name="closed" value={node.closedAt ? 'false' : 'true'} />
 							<button
 								class="icon-btn"
-								title={node.closedAt ? 'Reopen it' : 'Close it'}
+								title={node.closedAt ? t('notebooks.reopenIt') : t('notebooks.closeIt')}
 								aria-label="{node.closedAt ? 'Reopen' : 'Close'} {node.title}"
 							>
 								{#if node.closedAt}
@@ -261,12 +261,14 @@
 		-->
 		<div class:hidden={!selected && !showingOrphans} class="contents lg:!block">
 			<Card
-				title={showingOrphans ? 'Notes without a notebook' : (selected?.title ?? 'Nothing chosen')}
+				title={showingOrphans
+					? t('notebooks.notesWithoutANotebook')
+					: (selected?.title ?? t('notebookDetail.nothingChosen'))}
 				description={showingOrphans
-					? 'Their notebook was deleted. The writing was kept — it is not part of the journal, so it waits here.'
+					? t('notebooks.theirNotebookWasDeletedThe')
 					: selected
 						? (selected.description ?? '')
-						: 'Pick a notebook to see everything that belongs to it.'}
+						: t('notebooks.pickANotebookToSee')}
 				accent={SECTION_COLORS.diary}
 				flush
 			>
@@ -306,7 +308,7 @@
 	bind:open={showForm}
 	error={form?.message}
 	onclose={() => (editingId = null)}
-	title={editingId ? 'Edit notebook' : 'New notebook'}
+	title={editingId ? t('notebooks.id.editNotebook') : t('notebooks.newNotebook')}
 	size="sm"
 >
 	<form
@@ -327,12 +329,7 @@
 		{/if}
 
 		<FormGrid>
-			<Field
-				label={t('ui.title')}
-				span={12}
-				required
-				hint="An em dash makes a folder: “Renovation — Kitchen” sits inside “Renovation”."
-			>
+			<Field label={t('ui.title')} span={12} required hint={t('notebooks.anEmDashMakesA')}>
 				<OneLine
 					name="heading"
 					placeholder={t('notebooks.kitchenRenovation')}
@@ -390,7 +387,7 @@
 	{#snippet footer()}
 		<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 		<button type="submit" form="notebook-form" class="btn btn-primary">
-			{editingId ? 'Save' : 'Create notebook'}
+			{editingId ? 'Save' : t('notebooks.createNotebook')}
 		</button>
 	{/snippet}
 </Modal>

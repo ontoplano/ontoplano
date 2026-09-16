@@ -276,7 +276,7 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 								     nobody can revoke the right one from. -->
 								<OneLine
 									name="label"
-									placeholder={tiedName || 'AI assistant'}
+									placeholder={tiedName || t('settings.integrations.aiAssistant')}
 									class="input w-auto flex-1 sm:max-w-64"
 									ariaLabel="What to call this key"
 								/>

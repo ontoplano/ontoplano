@@ -728,8 +728,8 @@
 					<div class="grid gap-2 border border-gray-200 bg-gray-50 p-3">
 						<p class="text-xs text-gray-600">
 							{sniffed.headerless
-								? 'No header row, so the columns are numbered. Point at the right ones:'
-								: 'Read from the header. Change anything it got wrong:'}
+								? t('finance.ledgers.noHeaderRowSoThe')
+								: t('finance.ledgers.readFromTheHeaderChange')}
 						</p>
 						<div class="grid gap-2 sm:grid-cols-2">
 							<label class="block text-sm">

@@ -104,8 +104,7 @@
 	<div class="w-full max-w-md p-8 text-center">
 		{#if failed}
 			<p class="text-sm text-red-600">
-				{failure ||
-					'The payment window could not load — an ad blocker sometimes takes it down. Allow this page, or try another browser.'}
+				{failure || t('buy.thePaymentWindowCouldNot')}
 			</p>
 		{:else}
 			<p class="text-sm text-gray-500">{t('buy.openingTheSecurePaymentWindow')}</p>

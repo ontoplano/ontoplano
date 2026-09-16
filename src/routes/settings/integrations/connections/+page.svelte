@@ -271,7 +271,7 @@ Token: ${token}`;
 	-->
 	<Card
 		title={t('settings.integrations.connections.calendarLink')}
-		description="Paste the address into Google Calendar, Apple Calendar or Thunderbird and your plan appears there, keeping itself current. Those apps only read it — nothing they do can change your plan."
+		description={t('settings.integrations.connections.pasteTheAddressIntoGoogle')}
 	>
 		{#if newFeedUrl}
 			<div class="border border-blue-200 bg-blue-50 p-4">
@@ -358,7 +358,7 @@ Token: ${token}`;
 			bind:open={showTokenForm}
 			error={form?.message}
 			title={t('settings.integrations.connections.newApiToken')}
-			description="Shown once, at creation. It cannot be recovered afterwards."
+			description={t('settings.integrations.connections.shownOnceAtCreationIt')}
 		>
 			<form
 				id="token-form"
@@ -384,7 +384,7 @@ Token: ${token}`;
 					<Field
 						label={t('settings.integrations.connections.expiresIn')}
 						span={4}
-						hint="Days. Empty means never."
+						hint={t('settings.integrations.connections.daysEmptyMeansNever')}
 					>
 						<NumberBox
 							autocomplete="off"
@@ -556,7 +556,8 @@ Token: ${token}`;
 								</p>
 							{/if}
 							<p class="mt-1 text-xs text-gray-500">
-								{token.scopes.map(scopeSentence).join(' · ') || 'no scopes'}
+								{token.scopes.map(scopeSentence).join(' · ') ||
+									t('settings.integrations.connections.noScopes')}
 								{#if token.lastUsedAt}
 									{t('settings.integrations.connections.lastUsed')}
 									{token.lastUsedAt.slice(0, 16).replace('T', ' ')}
@@ -607,7 +608,7 @@ Token: ${token}`;
 	{#if data.assistantCalls.length > 0}
 		<Card
 			title={t('settings.integrations.connections.whatYourAssistantsDid')}
-			description="The last writes made over the API, newest first. A deleted thing can be put back."
+			description={t('settings.integrations.connections.theLastWritesMadeOver')}
 			flush
 		>
 			{#snippet actions()}
@@ -621,7 +622,9 @@ Token: ${token}`;
 				<form method="post" action="?/notifyAssistant" use:enhance>
 					<input type="hidden" name="on" value={data.notifyAssistant ? 'false' : 'true'} />
 					<button type="submit" class="btn btn-sm">
-						{data.notifyAssistant ? 'Stop telling me' : 'Tell me when this happens'}
+						{data.notifyAssistant
+							? t('settings.integrations.connections.stopTellingMe')
+							: t('settings.integrations.connections.tellMeWhenThisHappens')}
 					</button>
 				</form>
 			{/snippet}
@@ -664,7 +667,7 @@ Token: ${token}`;
 	<!-- Data streams -->
 	<Card
 		title={t('settings.integrations.connections.dataStreams')}
-		description="Created automatically when an external app declares one. You choose how each is displayed."
+		description={t('settings.integrations.connections.createdAutomaticallyWhenAnExternal')}
 		flush
 	>
 		{#if data.streams.length === 0}
@@ -775,8 +778,7 @@ Token: ${token}`;
 	<!-- Webhooks -->
 	<Card
 		title={t('settings.integrations.connections.webhooks')}
-		description="A URL of yours that is told when things happen here — new todos, ticks, ideas.
-Streams push data in, webhooks let your programs listen."
+		description={t('settings.integrations.connections.aUrlOfYoursThat')}
 		flush
 	>
 		{#snippet actions()}
@@ -789,7 +791,7 @@ Streams push data in, webhooks let your programs listen."
 			bind:open={showWebhookForm}
 			error={form?.message}
 			title={t('settings.integrations.connections.newWebhook')}
-			description="Each delivery is signed with a secret, shown once when the hook is made, so your receiver can check it is really this server."
+			description={t('settings.integrations.connections.eachDeliveryIsSignedWith')}
 		>
 			{#if newWebhookSecret}
 				<!-- Copied now or not at all: nothing stores it back, and there is
@@ -874,7 +876,7 @@ Streams push data in, webhooks let your programs listen."
 								<p class="text-sm font-medium break-all text-gray-900">{hook.url}</p>
 								<p class="mt-1 text-xs text-gray-500">
 									{t('settings.integrations.connections.when')}
-									{hook.events.map(eventLabel).join(', or ')}
+									{hook.events.map(eventLabel).join(t('legal.terms.or'))}
 									{#if hook.disabled}
 										· <span class="font-medium"
 											>{t('settings.integrations.connections.gaveUpAfterRepeatedFailures')}</span

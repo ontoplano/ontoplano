@@ -341,7 +341,7 @@
 					href={data.includeClosed ? resolve('/goals') : resolve('/goals?closed=1')}
 					class="ml-auto border border-gray-300 bg-white px-2 py-0.5 text-gray-600 hover:text-gray-900"
 				>
-					{data.includeClosed ? 'Hide closed' : 'Show closed'}
+					{data.includeClosed ? t('goals.hideClosed') : t('goals.showClosed')}
 				</a>
 				<!-- eslint-enable svelte/no-navigation-without-resolve -->
 			{/if}
@@ -351,7 +351,7 @@
 	<Modal
 		bind:open={showForm}
 		error={form?.message}
-		title={editingId ? 'Edit goal' : 'New goal'}
+		title={editingId ? t('goals.editGoal') : t('goals.newGoal')}
 		onclose={() => (editingId = null)}
 	>
 		<form
@@ -515,7 +515,7 @@
 		{#snippet footer()}
 			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 			<button type="submit" form="goal-form" class="btn btn-primary">
-				{editingId ? 'Save' : 'Create goal'}
+				{editingId ? 'Save' : t('goals.createGoal')}
 			</button>
 		{/snippet}
 	</Modal>
@@ -581,7 +581,7 @@
 									<span
 										class="mt-1 h-4 w-1 shrink-0"
 										style="background-color: {goal.areaColor ?? '#d1d5db'}"
-										title={goal.areaName ?? 'No area'}
+										title={goal.areaName ?? t('goals.noArea')}
 									></span>
 
 									<div class="min-w-0 flex-1">
@@ -664,7 +664,7 @@
 																value={Math.max(0, target.currentValue - COUNT_STEP)}
 																disabled={target.currentValue <= 0}
 																title={t('goals.oneFewer')}
-																aria-label={`One fewer ${target.unit || 'towards this'}`.trim()}
+																aria-label={`One fewer ${target.unit || t('goals.towardsThis')}`.trim()}
 															>
 																<Icon name="minus" />
 															</button>
@@ -676,7 +676,7 @@
 																name="currentValue"
 																value={target.currentValue + COUNT_STEP}
 																title={t('goals.oneMore')}
-																aria-label={`One more ${target.unit || 'towards this'}`.trim()}
+																aria-label={`One more ${target.unit || t('goals.towardsThis')}`.trim()}
 															>
 																<Icon name="plus" />
 															</button>

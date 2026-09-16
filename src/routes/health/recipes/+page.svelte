@@ -70,7 +70,7 @@
 					aria-pressed={onlyMakeable}
 					class="btn btn-sm"
 				>
-					{onlyMakeable ? 'Show all' : 'What I can make now'}
+					{onlyMakeable ? t('health.recipes.showAll') : t('health.recipes.whatICanMakeNow')}
 				</button>
 			{/if}
 		{/snippet}
@@ -93,7 +93,7 @@
 		<EmptyState
 			icon="utensils"
 			title={t('health.recipes.noRecipesYet')}
-			description="Write one, put it on a day, and the shopping list fills itself with what it needs."
+			description={t('health.recipes.writeOnePutItOn')}
 		>
 			{#snippet action()}
 				<button onclick={() => (showForm = true)} class="btn btn-primary">
@@ -240,7 +240,7 @@
 		<Field
 			label={t('health.recipes.fromAPage')}
 			span={12}
-			hint="On the recipe page: select all, copy, paste here. Its ingredients and method come with it."
+			hint={t('health.recipes.onTheRecipePageSelect')}
 		>
 			<textarea
 				name="page"
@@ -256,7 +256,7 @@
 				class="input min-w-0 flex-1"
 			/>
 			<button class="btn shrink-0" disabled={importing}>
-				{importing ? 'Reading…' : 'Read it'}
+				{importing ? 'Reading…' : t('health.recipes.readIt')}
 			</button>
 		</div>
 	</form>
@@ -280,7 +280,7 @@
 			<Field
 				label={t('health.recipes.method')}
 				span={12}
-				hint="Markdown: headings, lists, numbers. Ingredients come after."
+				hint={t('health.recipes.markdownHeadingsListsNumbersIngredients')}
 			>
 				<textarea name="method" rows="8" use:autogrow class="textarea"></textarea>
 			</Field>
@@ -308,7 +308,7 @@
 	onclose={() => (planning = null)}
 	error={form?.message}
 	title={t('health.recipes.putItOnADay')}
-	description="It becomes a block on the plan, like anything else you give time to."
+	description={t('health.recipes.itBecomesABlockOn')}
 	size="sm"
 >
 	{#if planning}
@@ -345,7 +345,7 @@
 						class="input"
 					/>
 				</Field>
-				<Field label={t('health.recipes.for')} span={6} hint="Minutes.">
+				<Field label={t('health.recipes.for')} span={6} hint={t('health.recipes.minutes')}>
 					<NumberBox
 						autocomplete="off"
 						name="durationMinutes"

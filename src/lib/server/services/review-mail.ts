@@ -4,6 +4,8 @@ import { eq } from 'drizzle-orm';
 import { loadConfig } from '../config.js';
 import { db } from '$lib/db/index.js';
 import { user } from '$lib/db/schema.js';
+import { translatorFor, type Translate } from '$lib/i18n';
+import { localeForUser } from '$lib/server/locale';
 import { renderEmail } from '../email-template.js';
 import { getGridHours, getUserSetting, setUserSetting } from '../settings.js';
 import { REVIEW_MAIL_KEY, notifies } from '$lib/services/notifications.js';
@@ -156,6 +158,7 @@ function hours(minutes: number): string {
  * how much of what you meant to do you did.
  */
 export function weeklyReviewMail(
+	t: Translate,
 	ctx: Ctx,
 	weekStart: string
 ): { subject: string; text: string; html: string } {
@@ -174,9 +177,14 @@ export function weeklyReviewMail(
 	const open = loose.length > 0;
 
 	const lines = [
-		`Your week of ${span}: you did ${reading.done} of the ${reading.planned} blocks you ` +
-			`planned — ${rate}% — and ${hours(reading.minutesDone)} of the ` +
-			`${hours(reading.minutesPlanned)} you set aside.`
+		t('mail.review.summary', {
+			span,
+			done: reading.done,
+			planned: reading.planned,
+			rate,
+			hoursDone: hours(reading.minutesDone),
+			hoursPlanned: hours(reading.minutesPlanned)
+		})
 	];
 
 	// The busiest category, when there is one that actually ran. A week where
@@ -184,26 +192,40 @@ export function weeklyReviewMail(
 	// that says nothing is worse than no sentence.
 	const busiest = [...reading.byCategory].sort((a, b) => b.done - a.done)[0];
 	if (busiest && busiest.done > 0) {
-		lines.push(`Most of it was ${busiest.name}: ${busiest.done} of ${busiest.planned}.`);
+		lines.push(
+			t('mail.review.busiest', {
+				category: busiest.name,
+				done: busiest.done,
+				planned: busiest.planned
+			})
+		);
 	}
 
 	if (open) {
 		const titles = loose.slice(0, 3).map((l) => l.title);
 		const rest = loose.length - titles.length;
+		/*
+		 * One message, counted — not a sentence assembled from three.
+		 *
+		 * "block has" and "blocks have" was English grammar decided in
+		 * TypeScript; the plural forms belong to the language, and Portuguese
+		 * does not agree with English about which number takes which.
+		 */
 		lines.push(
-			`${loose.length} ${loose.length === 1 ? 'block has' : 'blocks have'} no answer yet — ` +
-				titles.join(', ') +
-				(rest > 0 ? ` and ${rest} more` : '') +
-				`. Say what became of them, or carry them into this week.`
+			t('mail.review.unanswered', {
+				count: loose.length,
+				titles: titles.join(', '),
+				andMore: rest > 0 ? t('mail.review.andMore', { count: rest }) : ''
+			})
 		);
 	} else {
 		// Said plainly rather than left out: "you have already answered for all of
 		// it" is the difference between this mail and the other one, and it is the
 		// reason there is nothing to press.
-		lines.push('Every block has an answer — nothing is waiting on you.');
+		lines.push(t('mail.review.allAnswered'));
 	}
 
-	lines.push('Three lines about the week is the part worth reading in a year.');
+	lines.push(t('mail.review.threeLines'));
 
 	const link = origin() ? `${origin()}/tasks/review?week=${weekStart}` : '';
 	const off = origin()
@@ -213,11 +235,13 @@ export function weeklyReviewMail(
 
 	return renderEmail({
 		subject: open
-			? `Review your week: ${reading.done} of ${reading.planned}`
-			: `Your week: ${reading.done} of ${reading.planned}`,
+			? t('mail.review.subjectOpen', { done: reading.done, planned: reading.planned })
+			: t('mail.review.subjectClosed', { done: reading.done, planned: reading.planned }),
 		lines,
-		action: link ? { label: open ? 'Close the week' : 'See the week', url: link } : undefined,
-		small: off ? [`Stop these: ${off}`] : []
+		action: link
+			? { label: open ? t('mail.review.close') : t('mail.review.see'), url: link }
+			: undefined,
+		small: off ? [t('mail.review.stop', { url: off })] : []
 	});
 }
 
@@ -309,7 +333,12 @@ export async function sendWeeklyReviews(now = new Date()): Promise<{
 
 		const result = await sendLogged(
 			'weekly-review',
-			{ to: account.email, ...weeklyReviewMail(local, weekStart) },
+			{
+				to: account.email,
+				// In their language, not the instance's — this runs from a job, so
+				// there is no request whose header could be mistaken for theirs.
+				...weeklyReviewMail(await translatorFor(localeForUser(account.id)), local, weekStart)
+			},
 			// Worth retrying by hand from /admin, but a box with no SMTP is a
 			// self-hosted install doing exactly what it means to.
 			{ retryable: true }

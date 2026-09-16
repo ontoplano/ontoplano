@@ -148,8 +148,8 @@
 			onclick={() => (open = !open)}
 			class="dock-btn dock-toggle"
 			aria-expanded={open}
-			title={open ? 'Hide help' : 'Help'}
-			aria-label={open ? 'Hide help' : 'Help'}
+			title={open ? t('helpDock.hideHelp') : 'Help'}
+			aria-label={open ? t('helpDock.hideHelp') : 'Help'}
 		>
 			<!-- A question mark folded, a close mark open. Two question marks in a
 			     row — this one and the tour's — is a row that cannot be read. -->
@@ -176,8 +176,10 @@
 			onclick={() => toured && onstart?.()}
 			aria-disabled={!toured}
 			class="dock-btn dock-more {open ? 'is-open' : ''} {toured ? '' : 'missing'}"
-			title={toured ? 'Show me around this screen' : 'No tutorial for this screen yet'}
-			aria-label={toured ? 'Show me around this screen' : 'No tutorial for this screen yet'}
+			title={toured ? t('helpDock.showMeAroundThisScreen') : t('helpDock.noTutorialForThisScreen')}
+			aria-label={toured
+				? t('helpDock.showMeAroundThisScreen')
+				: t('helpDock.noTutorialForThisScreen')}
 			data-tour="tutorial"
 		>
 			<Icon name="help" size={15} />

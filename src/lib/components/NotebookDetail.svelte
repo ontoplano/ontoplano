@@ -299,7 +299,7 @@
 				</svg>
 			</button>
 			<h2 class="min-w-0 flex-1 truncate text-base font-semibold text-gray-900">
-				{notebook?.title ?? 'Notes without a notebook'}
+				{notebook?.title ?? t('notebooks.notesWithoutANotebook')}
 			</h2>
 			<!--
 				The type control: the same letter at the two sizes it moves between.
@@ -387,7 +387,9 @@
 								onclick={() => (showArchivedNotes = !showArchivedNotes)}
 								class="btn btn-sm shrink-0"
 							>
-								{showArchivedNotes ? 'Hide archived' : `Show archived (${putAwayNotes})`}
+								{showArchivedNotes
+									? t('notebookDetail.hideArchived')
+									: `Show archived (${putAwayNotes})`}
 							</button>
 						{/if}
 						<button
@@ -395,15 +397,17 @@
 							onclick={() => (composing = !composing)}
 							class="btn btn-sm shrink-0"
 						>
-							{composing ? 'Cancel' : 'New note'}
+							{composing ? 'Cancel' : t('notebookDetail.newNote')}
 						</button>
 					{/if}
 					<button
 						type="button"
 						onclick={() => (maximized ? leaveMaximized() : enterMaximized())}
 						class="icon-btn shrink-0"
-						title={maximized ? 'Back to the page' : 'The whole screen'}
-						aria-label={maximized ? 'Back to the page' : 'Maximize'}
+						title={maximized
+							? t('notebookDetail.backToThePage')
+							: t('notebookDetail.theWholeScreen')}
+						aria-label={maximized ? t('notebookDetail.backToThePage') : 'Maximize'}
 					>
 						<Icon name="maximize" />
 					</button>
@@ -566,10 +570,14 @@
 	names typed inline, not a picker opened.
 -->
 {#snippet tagsAndPeople(tags: string, people: string)}
-	<Field label={t('ui.tags')} span={6} hint="Separate with commas or spaces. A leading # is fine.">
+	<Field label={t('ui.tags')} span={6} hint={t('notebookDetail.separateWithCommasOrSpaces')}>
 		<OneLine name="tags" placeholder={t('notebookDetail.workHealth')} value={tags} class="input" />
 	</Field>
-	<Field label={t('notebookDetail.people')} span={6} hint="Anyone this note is about.">
+	<Field
+		label={t('notebookDetail.people')}
+		span={6}
+		hint={t('notebookDetail.anyoneThisNoteIsAbout')}
+	>
 		<input
 			name="people"
 			type="text"
@@ -714,8 +722,12 @@
 									<button
 										type="submit"
 										class="icon-btn"
-										title={entry.archivedAt ? 'Take it back out' : 'Put it away'}
-										aria-label={entry.archivedAt ? 'Take it back out' : 'Put it away'}
+										title={entry.archivedAt
+											? t('notebookDetail.takeItBackOut')
+											: t('finance.ledgers.putItAway')}
+										aria-label={entry.archivedAt
+											? t('notebookDetail.takeItBackOut')
+											: t('finance.ledgers.putItAway')}
 									>
 										<Icon name={entry.archivedAt ? 'undo' : 'archive'} />
 									</button>

@@ -1,3 +1,4 @@
+import type { PlainKey } from './i18n/keys.js';
 import type { Calendar } from '@event-calendar/core';
 import { CATEGORY_FALLBACK_COLOR } from './colors.js';
 import { describeRecurrence, formatDate, occursOn, parseRecurrence } from './recurrence.js';
@@ -556,9 +557,14 @@ export interface GridEventDetail {
 
 // Everything a block knows about itself, for the hover card — the way to read a slot
 // that is too short to render its own title.
+/** What a block with no title of its own is called. */
+export const UNTITLED_BLOCK: PlainKey = 'tasks.plan.untitledBlock';
+
 export function describeGridEvent(event: GridEventLike): GridEventDetail {
 	const props = event.extendedProps ?? {};
-	const title = typeof event.title === 'string' && event.title ? event.title : 'Slot';
+	// A block nobody named. The word is the app's, not the person's, so it is a
+	// key — the caller is a component and has a translator.
+	const title = typeof event.title === 'string' && event.title ? event.title : UNTITLED_BLOCK;
 	const rawLabel = typeof props.label === 'string' ? props.label.trim() : '';
 	const rawCategory = typeof props.categoryName === 'string' ? props.categoryName.trim() : '';
 	const minutes = Math.max(0, Math.round((event.end.getTime() - event.start.getTime()) / 60_000));

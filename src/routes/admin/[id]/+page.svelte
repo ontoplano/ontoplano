@@ -128,7 +128,9 @@
 				<form method="post" action="?/resendVerification" use:enhance>
 					<button class="btn btn-sm">
 						<Icon name="link" />
-						{data.emailConfigured ? 'Resend confirmation' : 'Get confirmation link'}
+						{data.emailConfigured
+							? t('admin.id.resendConfirmation')
+							: t('admin.id.getConfirmationLink')}
 					</button>
 				</form>
 			{/if}
@@ -168,12 +170,12 @@
 							{/if}
 						</span>
 						<button class="btn btn-danger btn-sm" use:armed>
-							{nextRole === 'admin' ? 'Make admin' : 'Remove admin'}
+							{nextRole === 'admin' ? t('admin.id.makeAdmin') : t('admin.id.removeAdmin')}
 						</button>
 					</form>
 				{:else}
 					<button class="btn btn-sm" onclick={() => (changingRole = true)}>
-						{data.account.role === 'admin' ? 'Remove admin' : 'Make admin'}
+						{data.account.role === 'admin' ? t('admin.id.removeAdmin') : t('admin.id.makeAdmin')}
 					</button>
 				{/if}
 			{/if}

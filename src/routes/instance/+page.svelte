@@ -404,7 +404,9 @@
 			fill
 			drained={kind === 'phone'}
 			hollow
-			label={kind === 'phone' ? 'The instance on this device' : 'An instance behind a server'}
+			label={kind === 'phone'
+				? t('instance.theInstanceOnThisDevice')
+				: t('instance.anInstanceBehindAServer')}
 		/>
 	</div>
 </div>

@@ -7,6 +7,8 @@ import { renderEmail } from '../email-template.js';
 import { loadConfig } from '../config.js';
 import { sendLogged } from './mail-log.js';
 import { ValidationError } from '$lib/services/errors.js';
+import { translatorFor } from '$lib/i18n';
+import { localeForAddress } from '$lib/server/locale';
 
 /**
  * The one channel nobody else can take away.
@@ -238,6 +240,9 @@ export async function announce(issue: Issue): Promise<{ sent: number; failed: nu
 
 	for (const email of confirmedAddresses()) {
 		const stop = where ? `${where}/newsletter/off?t=${tokenFor(email)}` : '';
+		// A subscriber may have an account here, and if they do it says which
+		// language they read in. Most do not; those get the instance's.
+		const t = await translatorFor(localeForAddress(email));
 		try {
 			await sendLogged(
 				'newsletter-issue',
@@ -246,8 +251,10 @@ export async function announce(issue: Issue): Promise<{ sent: number; failed: nu
 					...renderEmail({
 						subject: issue.subject,
 						lines: issue.lines,
-						action: where ? { label: 'See what changed', url: where } : undefined,
-						small: stop ? [`Stop these: ${stop}`] : []
+						// The issue is the operator's own words, in whatever language they
+						// wrote it. Only the app's own button around it is translated.
+						action: where ? { label: t('mail.newsletter.action'), url: where } : undefined,
+						small: stop ? [t('mail.stopThese', { url: stop })] : []
 					})
 				},
 				{ retryable: true }

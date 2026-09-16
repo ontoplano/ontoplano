@@ -99,7 +99,7 @@ export async function companions(): Promise<Companion[]> {
 		const minutes = Math.round((Date.now() - asked) / MINUTE);
 		const fresh = Date.now() - asked < 5 * MINUTE;
 		rows.push({
-			label: 'Reminders',
+			label: 'sections.reminders.label',
 			unit: 'ontoplano-reminders.timer',
 			ok: fresh,
 			detail: fresh
@@ -110,7 +110,7 @@ export async function companions(): Promise<Companion[]> {
 	} else {
 		const state = await unitState('ontoplano-reminders.timer');
 		rows.push({
-			label: 'Reminders',
+			label: 'sections.reminders.label',
 			unit: 'ontoplano-reminders.timer',
 			ok: state === 'active',
 			detail:
@@ -134,7 +134,7 @@ export async function companions(): Promise<Companion[]> {
 	const askedReview = lastRanAt('weekly-reviews');
 	if (!mailReady) {
 		rows.push({
-			label: 'Weekly review mail',
+			label: 'app.weeklyReviewMail',
 			unit: 'ontoplano-weekly-review.timer',
 			ok: true,
 			detail: 'needs SMTP to send — none is configured, so nothing goes out',
@@ -144,7 +144,7 @@ export async function companions(): Promise<Companion[]> {
 		const minutes = Math.round((Date.now() - askedReview) / MINUTE);
 		const fresh = Date.now() - askedReview < 3 * 60 * MINUTE;
 		rows.push({
-			label: 'Weekly review mail',
+			label: 'app.weeklyReviewMail',
 			unit: 'ontoplano-weekly-review.timer',
 			ok: fresh,
 			detail: fresh

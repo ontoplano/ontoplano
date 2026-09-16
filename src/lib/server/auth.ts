@@ -10,14 +10,28 @@ import { db } from '$lib/server/db';
 import { MIN_PASSWORD_LENGTH } from '$lib/passwords';
 import { sendLogged } from '$lib/server/services/mail-log';
 import { renderEmail } from '$lib/server/email-template';
+import { translatorFor, type Translate } from '$lib/i18n';
+import { localeForAddress, localeForUser } from '$lib/server/locale';
+
+/** Build a mail in the language of the account it is going to. */
+const mailIn = async <T>(userId: string, write: (t: Translate) => T): Promise<T> =>
+	write(await translatorFor(localeForUser(userId)));
 import { record } from '$lib/services/audit';
 
-const verificationMail = (url: string) =>
+/*
+ * Every mail here is written in the language of the account it is sent to.
+ *
+ * `better-auth` hands each of these the user it is mailing, so the language is
+ * that account's own setting — never the request's header, which on a password
+ * reset belongs to whoever typed the address into the form and may not be the
+ * person who reads the mail at all.
+ */
+const verificationMail = (t: Translate, url: string) =>
 	renderEmail({
-		subject: 'Confirm your ontoplano address',
-		lines: ['Confirm this address belongs to you.'],
-		action: { label: 'Confirm address', url },
-		small: ["If you didn't create an ontoplano account, ignore this message."]
+		subject: t('mail.verify.subject'),
+		lines: [t('mail.verify.line')],
+		action: { label: t('mail.verify.action'), url },
+		small: [t('mail.verify.small')]
 	});
 
 /**
@@ -87,15 +101,14 @@ export const auth = betterAuth({
 		sendResetPassword: async ({ user, url }) => {
 			await sendLogged('password-reset', {
 				to: user.email,
-				...renderEmail({
-					subject: 'Reset your ontoplano password',
-					lines: ['Someone asked to reset the password for this ontoplano account.'],
-					action: { label: 'Choose a new password', url },
-					small: [
-						"The link works once and expires in an hour. If this wasn't you, " +
-							'nothing has changed and you can ignore this message.'
-					]
-				})
+				...(await mailIn(user.id, (t) =>
+					renderEmail({
+						subject: t('mail.reset.subject'),
+						lines: [t('mail.reset.line')],
+						action: { label: t('mail.reset.action'), url },
+						small: [t('mail.reset.small')]
+					})
+				))
 			});
 		}
 	},
@@ -113,16 +126,14 @@ export const auth = betterAuth({
 			sendChangeEmailVerification: async ({ user, newEmail, url }) => {
 				await sendLogged('address-change', {
 					to: user.email,
-					...renderEmail({
-						subject: 'Confirm the new address for your ontoplano account',
-						lines: [`Someone asked to change this account's address to ${newEmail}.`],
-						action: { label: 'Approve the change', url },
-						small: [
-							'Until you follow that link and confirm the new address, nothing ' +
-								'changes and you keep signing in with this one. If this ' +
-								"wasn't you, ignore this message and change your password."
-						]
-					})
+					...(await mailIn(user.id, (t) =>
+						renderEmail({
+							subject: t('mail.addressChange.subject'),
+							lines: [t('mail.addressChange.line', { address: newEmail })],
+							action: { label: t('mail.addressChange.action'), url },
+							small: [t('mail.addressChange.small')]
+						})
+					))
 				});
 			}
 		}
@@ -136,7 +147,7 @@ export const auth = betterAuth({
 		sendVerificationEmail: async ({ user, url }) => {
 			await sendLogged('verification', {
 				to: user.email,
-				...verificationMail(url)
+				...(await mailIn(user.id, (t) => verificationMail(t, url)))
 			});
 		},
 		// The log said "registered" for everybody and nothing more, so an
@@ -198,8 +209,10 @@ export async function sendVerificationFor(email: string): Promise<{
 	const url = `${ctx.baseURL}/verify-email?token=${token}&callbackURL=${encodeURIComponent('/login/verify')}`;
 
 	const { delivered } = await sendLogged('verification', {
+		// By address: this one is reached from the resend button, where the
+		// address is what is in hand and the account behind it may be anybody's.
 		to: email,
-		...verificationMail(url)
+		...verificationMail(await translatorFor(localeForAddress(email)), url)
 	});
 
 	return { delivered, url };

@@ -269,7 +269,7 @@
 							{workout.title}
 						</span>
 						<span class="block text-xs text-gray-500">
-							{workout.categoryName ?? 'No category'}{#if workout.minutes}, ~{workout.minutes}
+							{workout.categoryName ?? t('health.workouts.noCategory2')}{#if workout.minutes}, ~{workout.minutes}
 								{t('health.workouts.min')}{/if}{#if workout.lastDoneAt}
 								{t('health.workouts.nbspLastDone')} {workout.lastDoneAt.slice(0, 10)}{/if}
 						</span>
@@ -453,7 +453,9 @@
 					{#each archived as workout (workout.id)}
 						<li class="flex items-center gap-3 px-4 py-2 text-sm">
 							<span class="min-w-0 flex-1 text-gray-600">{workout.title}</span>
-							<span class="text-xs text-gray-400">{workout.categoryName ?? 'No category'}</span>
+							<span class="text-xs text-gray-400"
+								>{workout.categoryName ?? t('health.workouts.noCategory2')}</span
+							>
 							<form method="post" action="?/archive" use:enhance>
 								<input type="hidden" name="id" value={workout.id} />
 								<input type="hidden" name="archived" value="false" />
@@ -478,7 +480,7 @@
 <Modal
 	bind:open={showForm}
 	error={form?.message}
-	title={editing ? 'Edit workout' : 'New workout'}
+	title={editing ? t('health.workouts.editWorkout') : t('health.workouts.newWorkout')}
 	onclose={() => (editing = null)}
 	size="md"
 >
@@ -702,7 +704,9 @@
 <Modal
 	open={logging !== null}
 	error={form?.message}
-	title={editingSession ? 'Correct what you did' : 'What did you do?'}
+	title={editingSession
+		? t('health.workouts.correctWhatYouDid')
+		: t('health.workouts.whatDidYouDo')}
 	description="Everything here is optional. A session with nothing measured is still a session."
 	onclose={closeLog}
 	size="md"
@@ -784,7 +788,7 @@
 							class="icon-btn icon-btn-danger"
 							title={t('health.workouts.takeThisLineOut')}
 							aria-label={t('health.workouts.takeOutTheLineFor', {
-								row: line.activity || 'this row'
+								row: line.activity || t('health.workouts.thisRow')
 							})}
 							onclick={() => removeLine(index)}
 						>
@@ -814,7 +818,7 @@
 	{#snippet footer()}
 		<button class="btn" type="button" onclick={closeLog}>{t('ui.cancel')}</button>
 		<button class="btn btn-primary" type="submit" form="log-form">
-			{editingSession ? 'Save' : 'Write it down'}
+			{editingSession ? 'Save' : t('health.workouts.writeItDown')}
 		</button>
 	{/snippet}
 </Modal>

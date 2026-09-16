@@ -187,7 +187,9 @@
 
 				{#if rows.length === 0}
 					<p class="px-4 py-6 text-center text-sm text-gray-500">
-						{query.trim().length < MIN_QUERY ? 'Type to search' : 'Nothing matches'}
+						{query.trim().length < MIN_QUERY
+							? t('commandPalette.typeToSearch')
+							: t('commandPalette.nothingMatches')}
 					</p>
 				{/if}
 			</div>

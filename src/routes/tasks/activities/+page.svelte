@@ -137,7 +137,9 @@
 				class="btn btn-sm"
 				data-tour="activity-categories"
 			>
-				{showCategoryForm ? 'Hide categories' : 'Manage categories'}
+				{showCategoryForm
+					? t('tasks.activities.hideCategories')
+					: t('tasks.activities.manageCategories')}
 			</button>
 		{/snippet}
 	</RoomToolbar>
@@ -308,7 +310,7 @@
 	<Modal
 		bind:open={showForm}
 		error={form?.message}
-		title={editingId ? 'Edit activity' : 'New activity'}
+		title={editingId ? t('tasks.activities.editActivity') : t('tasks.plan.newActivity')}
 		onclose={() => (editingId = null)}
 		size="sm"
 	>
@@ -353,7 +355,7 @@
 		{#snippet footer()}
 			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 			<button type="submit" form="activity-form" class="btn btn-primary">
-				{editingId ? 'Save' : 'Create activity'}
+				{editingId ? 'Save' : t('tasks.activities.createActivity')}
 			</button>
 		{/snippet}
 	</Modal>
@@ -475,8 +477,8 @@
 									? 'cursor-not-allowed border-gray-100 text-gray-300'
 									: 'border-red-200 bg-white text-red-600 hover:bg-red-50'}"
 								title={activity.hasReferences
-									? 'Cannot delete: referenced by planner or history'
-									: 'Delete activity'}
+									? t('tasks.activities.cannotDeleteReferencedByPlanner')
+									: t('tasks.activities.deleteActivity')}
 							>
 								<Icon name="trash" />
 							</button>

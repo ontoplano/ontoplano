@@ -153,7 +153,7 @@
 									class="text-left text-lg leading-tight {used.includes(i.id)
 										? 'text-gray-500 line-through'
 										: 'text-gray-900'}"
-									title={used.includes(i.id) ? 'Not used yet' : 'Used'}
+									title={used.includes(i.id) ? t('cookMode.notUsedYet') : 'Used'}
 								>
 									{#if amount(i)}<span class="tabular font-semibold">{amount(i)}</span>{/if}
 									{i.name}

@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 	import {
 		RATING_HINTS,
 		RATING_LABELS,
@@ -61,7 +64,7 @@
      without extra wiring. Empty string means "unrated". -->
 <input type="hidden" {name} value={value ?? ''} />
 
-<div class={compact ? 'flex items-center gap-2' : 'space-y-1'}>
+<div class={compact ? t('ratingPicker.flexItemsCenterGap2') : 'space-y-1'}>
 	{#if compact}
 		<span class="eyebrow w-16 shrink-0 text-gray-600">{RATING_LABELS[rating]}</span>
 	{:else}
@@ -91,7 +94,7 @@
 					value={shown}
 					oninput={slide}
 					aria-label={RATING_LABELS[rating]}
-					aria-valuetext={value === null ? 'not set' : `${value} of ${RATING_MAX}`}
+					aria-valuetext={value === null ? t('ratingPicker.notSet') : `${value} of ${RATING_MAX}`}
 					title={value === null
 						? `${RATING_LABELS[rating]}: not answered`
 						: `${RATING_LABELS[rating]}: ${value} of ${RATING_MAX} — drag to the dot to leave it unanswered`}

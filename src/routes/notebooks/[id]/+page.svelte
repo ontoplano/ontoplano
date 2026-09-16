@@ -86,7 +86,9 @@
 					/>
 					<button class="btn btn-sm">
 						<Icon name="user" />
-						{data.notebook.sharedWithFamily ? 'Stop sharing' : 'Share with family'}
+						{data.notebook.sharedWithFamily
+							? t('notebooks.id.stopSharing')
+							: t('notebooks.id.shareWithFamily')}
 					</button>
 				</form>
 			{/if}

@@ -308,7 +308,7 @@
 <Modal
 	bind:open={showForm}
 	error={form?.message}
-	title={editing ? 'Edit bill' : 'New bill'}
+	title={editing ? t('finance.bills.editBill') : t('finance.bills.newBill')}
 	onclose={() => (editing = null)}
 	size="sm"
 >
@@ -466,7 +466,7 @@
 -->
 <Modal
 	open={attaching !== null}
-	title={attachingBill ? `What paid ${attachingBill.name}?` : 'What paid it?'}
+	title={attachingBill ? `What paid ${attachingBill.name}?` : t('finance.bills.whatPaidIt')}
 	description="The amount comes from the line you pick, not from what the bill expected."
 	onclose={() => {
 		attaching = null;

@@ -250,7 +250,7 @@
 				<li>
 					<button
 						class="block w-full overflow-hidden rounded"
-						aria-label={picture.alt || picture.filename || 'A picture'}
+						aria-label={picture.alt || picture.filename || t('gallery.id.aPicture')}
 						draggable="true"
 						ondragstart={() => (dragging = picture.id)}
 						ondragend={() => {

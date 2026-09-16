@@ -1196,9 +1196,9 @@
 										return async ({ result, update }) => {
 											await update();
 											if (result.type === 'success' || result.type === 'redirect') {
-												notify.success('Fresh demo account — everything is back as it was.');
+												notify.success(t('home.freshDemoAccountEverything'));
 											} else {
-												notify.error('That did not work. Reload and try again.');
+												notify.error(t('home.thatDidNotWorkReload'));
 											}
 										};
 									}}

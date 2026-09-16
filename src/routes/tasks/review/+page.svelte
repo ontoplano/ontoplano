@@ -242,7 +242,9 @@
 				{#if data.goals.length === 0}
 					<EmptyState
 						icon="goals"
-						title={data.week.isCurrent ? 'No goal moved yet' : 'No goal moved that week'}
+						title={data.week.isCurrent
+							? t('tasks.review.noGoalMovedYet')
+							: t('tasks.review.noGoalMovedThatWeek')}
 						compact
 					/>
 				{:else}

@@ -145,8 +145,8 @@
 	<Card
 		title={t('settings.instance.whatIsRunning')}
 		description={onDevice
-			? 'Which ontoplano this is, and what it is running.'
-			: 'Whether the last deploy is the thing answering right now.'}
+			? t('settings.instance.whichOntoplanoThisIsAnd')
+			: t('settings.instance.whetherTheLastDeployIs')}
 	>
 		<dl class="grid gap-x-6 gap-y-3 sm:grid-cols-2">
 			<!--
@@ -261,7 +261,7 @@
 			-->
 			<Card
 				title={t('settings.instance.theServicesBesideTheApp')}
-				description="The app answers requests; these are the timers that make the rest happen."
+				description={t('settings.instance.theAppAnswersRequestsThese')}
 			>
 				<ul class="divide-y divide-gray-200">
 					{#each data.companions as row (row.unit)}
@@ -305,7 +305,7 @@
 			-->
 			<Card
 				title={t('settings.instance.deployment')}
-				description="Where the server listens. Set in config.toml."
+				description={t('settings.instance.whereTheServerListensSet')}
 			>
 				<p
 					class="tabular border border-gray-200 bg-gray-50 px-3 py-2 text-sm break-all text-gray-700"
@@ -320,7 +320,7 @@
 
 			<Card
 				title={t('settings.instance.database')}
-				description="Where your data is stored. Change it in config.toml."
+				description={t('settings.instance.whereYourDataIsStored')}
 			>
 				<p
 					class="tabular border border-gray-200 bg-gray-50 px-3 py-2 text-sm break-all text-gray-700"
@@ -336,7 +336,7 @@
 
 		<Card
 			title={t('settings.instance.whoCanRegister')}
-			description="An instance on the open internet with sign-up left open is one that somebody else will use."
+			description={t('settings.instance.anInstanceOnTheOpen')}
 		>
 			{#if data.effectiveRegistration !== data.config.registration.mode}
 				<!--
@@ -356,7 +356,7 @@
 			<form
 				method="post"
 				action="?/setRegistration"
-				use:settingsForm={{ notice: 'Registration saved.' }}
+				use:settingsForm={{ notice: t('settings.instance.registrationSaved') }}
 				class="space-y-3"
 			>
 				{#each REGISTRATION_MODES as mode (mode.key)}
@@ -383,7 +383,7 @@
 			{@const list = data.newsletter}
 			<Card
 				title={t('settings.instance.theMailingList')}
-				description="People who asked to be told when this changes. Turned on in config.toml."
+				description={t('settings.instance.peopleWhoAskedToBe')}
 			>
 				{#snippet actions()}
 					<form method="post" action="?/exportSubscribers" use:enhance={exportList}>
@@ -406,7 +406,7 @@
 
 		<Card
 			title={t('settings.instance.whatAnAccountMayChange')}
-			description="An address is what an account is here — it signs in and it receives the reset link."
+			description={t('settings.instance.anAddressIsWhatAn')}
 		>
 			<form
 				method="post"
@@ -438,7 +438,7 @@
 
 		<Card
 			title={t('settings.instance.reportsAndSuggestions')}
-			description="When a page breaks in somebody's browser, the server normally never hears about it."
+			description={t('settings.instance.whenAPageBreaksIn')}
 		>
 			<form
 				method="post"
@@ -495,8 +495,8 @@
 		<Card
 			title={t('settings.instance.invitations')}
 			description={data.sellsAnything
-				? 'A code somebody types when they create their account. It works once, and it hands them the app until the date you set.'
-				: 'A code somebody types when they create their account. It works once.'}
+				? t('settings.instance.aCodeSomebodyTypesWhen')
+				: t('settings.instance.aCodeSomebodyTypesWhen2')}
 		>
 			{#snippet actions()}
 				<span class="eyebrow text-gray-600"
@@ -533,7 +533,7 @@
 						</code>
 						<button type="button" onclick={() => copy(inviteLink(fresh))} class="btn btn-sm">
 							<Icon name="link" />
-							{copied === inviteLink(fresh) ? 'Copied' : 'Copy link'}
+							{copied === inviteLink(fresh) ? 'Copied' : t('settings.instance.copyLink')}
 						</button>
 					</div>
 				</div>
@@ -544,7 +544,7 @@
 					<Field
 						label={t('settings.instance.whoIsItFor')}
 						span={12}
-						hint="For your own memory; they never see it."
+						hint={t('settings.instance.forYourOwnMemoryThey')}
 					>
 						<OneLine name="note" placeholder={t('settings.instance.myBrother')} class="input" />
 					</Field>
@@ -552,7 +552,7 @@
 					<Field
 						label={t('settings.instance.codeExpiresIn')}
 						span={6}
-						hint="Days. Leave empty for no expiry."
+						hint={t('settings.instance.daysLeaveEmptyForNo')}
 					>
 						<NumberBox autocomplete="off" name="expiresInDays" min="1" max="365" />
 					</Field>
@@ -566,7 +566,7 @@
 						<Field
 							label={t('settings.instance.freeUntil')}
 							span={6}
-							hint="A full account, on the house — no card, no trial days spent. Empty means no end date."
+							hint={t('settings.instance.aFullAccountOnThe')}
 						>
 							<input
 								autocomplete="off"
@@ -591,7 +591,7 @@
 					<EmptyState
 						icon="key"
 						title={t('settings.instance.noInvitationsYet')}
-						description="Make one when somebody needs an account here."
+						description={t('settings.instance.makeOneWhenSomebodyNeeds')}
 					/>
 				</div>
 			{:else}
@@ -599,7 +599,7 @@
 					{#each [...open, ...used] as invite (invite.id)}
 						<div class="flex items-center gap-3 py-2 text-sm">
 							<span class="min-w-0 flex-1">
-								<span class="text-gray-900">{invite.note || 'No note'}</span>
+								<span class="text-gray-900">{invite.note || t('settings.instance.noNote')}</span>
 								<span class="block text-xs text-gray-500">
 									{t('settings.instance.made')}
 									{when(invite.createdAt)}
@@ -611,7 +611,7 @@
 									{#if data.sellsAnything}
 										· {invite.grantsUntil
 											? `free until ${when(invite.grantsUntil)}`
-											: 'free with no end date'}
+											: t('settings.instance.freeWithNoEndDate')}
 									{/if}
 								</span>
 							</span>

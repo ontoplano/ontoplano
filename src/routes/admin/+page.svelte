@@ -161,7 +161,7 @@
 									value={account.role === 'member' ? 'admin' : 'member'}
 								/>
 								<button class="btn btn-sm btn-danger" use:armed>
-									{account.role === 'member' ? 'Yes, make admin' : 'Yes, remove admin'}
+									{account.role === 'member' ? t('admin.yesMakeAdmin') : t('admin.yesRemoveAdmin')}
 								</button>
 								<button type="button" class="btn btn-sm" onclick={() => (changing = null)}>
 									{t('ui.cancel')}
@@ -172,7 +172,7 @@
 							     account on the instance, and the button sits in a list you
 							     scroll. -->
 							<button class="btn btn-sm shrink-0" onclick={() => (changing = account.id)}>
-								{account.role === 'member' ? 'Make admin' : 'Remove admin'}
+								{account.role === 'member' ? t('admin.makeAdmin') : t('admin.removeAdmin')}
 							</button>
 						{/if}
 					</div>
@@ -226,8 +226,8 @@
 									<button
 										class="btn btn-sm btn-quiet"
 										title={failure.retryable
-											? 'Drop it without sending'
-											: 'Its link has expired — a fresh request is the fix. Drop this record.'}
+											? t('admin.dropItWithoutSending')
+											: t('admin.itsLinkHasExpired')}
 										onclick={() => (dismissing = failure.id)}
 									>
 										<Icon name="close" />
@@ -323,8 +323,9 @@
 									<!-- Three different absences, and they mean different things: nobody
 									     was signed in, the account has since gone, or the report
 									     carried no page. -->
-									{report.email ?? (report.userId ? 'account deleted' : 'not signed in')} ·
-									{report.url ?? 'no page'} · {ago(report.createdAt)}
+									{report.email ??
+										(report.userId ? t('admin.accountDeleted') : t('admin.notSignedIn'))} ·
+									{report.url ?? t('admin.noPage')} · {ago(report.createdAt)}
 								</span>
 							</summary>
 							{#if report.stack}

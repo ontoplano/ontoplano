@@ -97,7 +97,7 @@
 					 */
 					if (result.type === 'failure') {
 						const said = (result.data as { message?: unknown } | undefined)?.message;
-						notify.error(typeof said === 'string' && said ? said : 'That was not written down.');
+						notify.error(typeof said === 'string' ? said : t('captureDialog.notWrittenDown'));
 					}
 				};
 			}}

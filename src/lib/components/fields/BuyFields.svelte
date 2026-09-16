@@ -73,7 +73,7 @@
 		<Field
 			label={t('fields.buy.howManyYouKeep')}
 			span={6}
-			hint="The count the list compares against."
+			hint={t('fields.buy.theCountTheListCompares')}
 		>
 			<NumberBox name="idealQty" min="0" step="1" inputmode="numeric" bind:value={idealQty} />
 		</Field>
@@ -131,7 +131,9 @@
 							onclick={() => (fields = fields.filter((_, at) => at !== i))}
 							class="icon-btn icon-btn-danger shrink-0 {pair[0] || pair[1] ? '' : 'invisible'}"
 							title={t('fields.buy.removeThisField')}
-							aria-label={t('fields.buy.removeTheField', { written: pair[0] || 'being written' })}
+							aria-label={t('fields.buy.removeTheField', {
+								written: pair[0] || t('fields.buy.beingWritten')
+							})}
 						>
 							<Icon name="close" />
 						</button>
@@ -154,7 +156,7 @@
 
 	<!-- What it costs, roughly. Prices move and shops disagree, which is why
 	     the total says "about" and never claims a receipt. -->
-	<Field label={t('fields.buy.price')} span={4} hint="What it usually costs.">
+	<Field label={t('fields.buy.price')} span={4} hint={t('fields.buy.whatItUsuallyCosts')}>
 		<input
 			name="price"
 			type="text"
@@ -169,7 +171,9 @@
 
 {#if compact}
 	<MoreOptions
-		label={askLocation ? 'List, category, location, notes, price' : 'List, category, notes, price'}
+		label={askLocation
+			? t('fields.buy.listCategoryLocationNotesPrice')
+			: t('fields.buy.listCategoryNotesPrice')}
 		count={filled}>{@render rest()}</MoreOptions
 	>
 {:else}

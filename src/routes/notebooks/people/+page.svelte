@@ -123,7 +123,7 @@
 				<EmptyState
 					icon="user"
 					title={t('notebooks.people.nobodyYet')}
-					description="Add the people who turn up in what you write, and every mention of them collects here."
+					description={t('notebooks.people.addThePeopleWhoTurn')}
 				>
 					{#snippet action()}
 						<button onclick={openCreate} class="btn btn-primary">
@@ -281,7 +281,7 @@
 				title={selectedPerson ? selectedPerson.name : 'Mentions'}
 				description={selectedPerson
 					? RELATIONSHIP_LABELS[selectedPerson.relationship]
-					: 'Pick somebody to see everything you wrote about them.'}
+					: t('notebooks.people.pickSomebodyToSeeEverything')}
 				accent={SECTION_COLORS.diary}
 				flush
 			>
@@ -291,7 +291,7 @@
 					<EmptyState
 						icon="diary"
 						title={t('notebooks.people.nothingWrittenAboutYet', { name: selectedPerson.name })}
-						description="Mention them in a diary entry and it will show up here."
+						description={t('notebooks.people.mentionThemInADiary')}
 					/>
 				{:else}
 					<div class="divide-y divide-gray-200">
@@ -315,7 +315,7 @@
 	bind:open={showForm}
 	error={form?.message}
 	onclose={() => (editingId = null)}
-	title={editingId ? 'Edit person' : 'New person'}
+	title={editingId ? t('notebooks.people.editPerson') : t('notebooks.people.newPerson')}
 	size="sm"
 >
 	<form
@@ -370,7 +370,7 @@
 			<Field
 				label={t('notebooks.people.birthday')}
 				span={4}
-				hint="1990-03-14, or --03-14 without the year"
+				hint={t('notebooks.people.19900314Or0314WithoutThe')}
 			>
 				<input
 					name="bornOn"
@@ -463,7 +463,7 @@
 				<input type="hidden" name="name" value={editing?.name ?? ''} />
 				<label class="btn btn-sm">
 					<Icon name="image" />
-					{editing?.pictureId ? 'Replace the picture' : 'Add a picture'}
+					{editing?.pictureId ? t('notebooks.people.replaceThePicture') : t('pictures.add')}
 					<input
 						type="file"
 						name="file"
@@ -509,7 +509,7 @@
 	{#snippet footer()}
 		<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 		<button type="submit" form="person-form" class="btn btn-primary">
-			{editingId ? 'Save' : 'Add person'}
+			{editingId ? 'Save' : t('notebooks.people.addPerson')}
 		</button>
 	{/snippet}
 </Modal>

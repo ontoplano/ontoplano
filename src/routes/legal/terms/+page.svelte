@@ -20,7 +20,7 @@
 </p>
 <p>
 	{t('legal.terms.keepYourPasswordToYourself', {
-		instance: data.contactEmail ?? 'whoever runs this instance'
+		instance: data.contactEmail ?? t('legal.terms.whoeverRunsThisInstance')
 	})}
 </p>
 
@@ -39,8 +39,8 @@
 	{t('legal.terms.aNewAccountGets')}
 	{data.trialDays}
 	{t('legal.terms.daysFree')}{data.trialRequiresCard
-		? ', and is asked for a card at the start so the subscription can begin when the trial ends'
-		: ' and is not asked for a card'}{t('legal.terms.itCosts')}
+		? t('legal.terms.andIsAskedFor')
+		: t('legal.terms.andIsNotAskedFor')}{t('legal.terms.itCosts')}
 	{data.monthly}
 	{t('legal.terms.aMonth')}{#if data.yearly}{t('legal.terms.or')} {data.yearly}{/if}{t(
 		'legal.terms.paymentIsHandledBy'
@@ -60,7 +60,7 @@
 </p>
 <p>
 	{t('legal.terms.ifAChargeWasWrong', {
-		instance: data.contactEmail ?? 'whoever runs this instance'
+		instance: data.contactEmail ?? t('legal.terms.whoeverRunsThisInstance')
 	})}
 </p>
 

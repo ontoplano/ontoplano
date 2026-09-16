@@ -66,7 +66,7 @@
 				disabled={secondsLeft > 0}
 				class="w-full bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
 			>
-				{secondsLeft > 0 ? `Send it again (${secondsLeft}s)` : 'Send it again'}
+				{secondsLeft > 0 ? `Send it again (${secondsLeft}s)` : t('login.verify.sendItAgain')}
 			</button>
 		</form>
 

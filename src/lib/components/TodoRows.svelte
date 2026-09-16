@@ -393,7 +393,9 @@
 				class="btn btn-sm shrink-0"
 			>
 				<span class="sm:hidden">{t('todoRows.completed')}</span>
-				<span class="hidden sm:inline">{showCompleted ? 'Hide completed' : 'Show completed'}</span>
+				<span class="hidden sm:inline"
+					>{showCompleted ? t('todoRows.hideCompleted') : t('todoRows.showCompleted')}</span
+				>
 			</button>
 			<!-- Named with its number so a put-away task is never quietly gone:
 			     nothing is hidden without the list saying how much. -->
@@ -403,7 +405,7 @@
 				class="btn btn-sm"
 				hidden={putAway === 0 && !showArchived}
 			>
-				{showArchived ? 'Hide archived' : `Show archived (${putAway})`}
+				{showArchived ? t('todoRows.hideArchived') : `Show archived (${putAway})`}
 			</button>
 			{#if notebookId === null}
 				<!-- "Not in one" is an answer, not the absence of a filter: a task
@@ -432,7 +434,7 @@
 	<Modal
 		bind:open={showForm}
 		{error}
-		title={editingId ? 'Edit to-do' : 'New to-do'}
+		title={editingId ? t('todoRows.editToDo') : t('app.newToDo')}
 		onclose={() => (editingId = null)}
 	>
 		{@const editing = editingTodo()}
@@ -470,7 +472,7 @@
 		{#snippet footer()}
 			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 			<button type="submit" form="todo-form" class="btn btn-primary">
-				{editingId ? 'Save' : 'Create todo'}
+				{editingId ? 'Save' : t('todoRows.createTodo')}
 			</button>
 		{/snippet}
 	</Modal>
@@ -550,10 +552,10 @@
 		<div class="border border-gray-200 bg-white shadow-sm">
 			<EmptyState
 				icon="check"
-				title={showCompleted ? 'Nothing here yet' : 'Nothing waiting'}
+				title={showCompleted ? t('gallery.id.nothingHereYet') : t('todoRows.nothingWaiting')}
 				description={showCompleted
-					? 'Anything you finish shows up here.'
-					: 'A to-do is a task with no day on it. Put one here and drag it onto the board when it has a home.'}
+					? t('todoRows.anythingYouFinishShowsUp')
+					: t('todoRows.aToDoIsATask')}
 			/>
 		</div>
 	{:else}
@@ -591,7 +593,7 @@
 						<button
 							type="submit"
 							class="-m-1 flex shrink-0 items-center justify-center self-stretch p-1 pointer-coarse:w-11"
-							aria-label={isDone(todo) ? 'Mark incomplete' : 'Mark complete'}
+							aria-label={isDone(todo) ? t('todoRows.markIncomplete') : t('todoRows.markComplete')}
 						>
 							<span
 								class="flex size-7 items-center justify-center border {isDone(todo)
@@ -674,9 +676,11 @@
 										class="icon-btn"
 										aria-pressed={!!todo.scheduledDate}
 										aria-label={todo.scheduledDate
-											? 'Put back on the general list'
-											: 'Pull onto today'}
-										title={todo.scheduledDate ? 'Put back on the general list' : 'Pull onto today'}
+											? t('todoRows.putBackOnTheGeneral')
+											: t('todoRows.pullOntoToday')}
+										title={todo.scheduledDate
+											? t('todoRows.putBackOnTheGeneral')
+											: t('todoRows.pullOntoToday')}
 									>
 										<Icon name={todo.scheduledDate ? 'undo' : 'arrow-down'} />
 									</button>
@@ -713,8 +717,12 @@
 								<button
 									type="submit"
 									class="icon-btn"
-									title={todo.archivedAt ? 'Take it back out' : 'Put it away'}
-									aria-label={todo.archivedAt ? 'Take it back out' : 'Put it away'}
+									title={todo.archivedAt
+										? t('todoRows.takeItBackOut')
+										: t('finance.ledgers.putItAway')}
+									aria-label={todo.archivedAt
+										? t('todoRows.takeItBackOut')
+										: t('finance.ledgers.putItAway')}
 								>
 									<Icon name={todo.archivedAt ? 'undo' : 'archive'} />
 								</button>

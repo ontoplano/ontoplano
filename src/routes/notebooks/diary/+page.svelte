@@ -214,7 +214,7 @@
 					class="btn btn-sm"
 					data-tour="diary-wins"
 				>
-					{showWinsForm ? 'Cancel' : 'New wins'}
+					{showWinsForm ? 'Cancel' : t('notebooks.diary.newWins')}
 				</button>
 			{/if}
 		{/snippet}
@@ -317,7 +317,7 @@
 	<Modal
 		bind:open={showForm}
 		error={form?.message}
-		title={editingId ? 'Edit entry' : 'New entry'}
+		title={editingId ? t('notebooks.diary.editEntry') : t('notebooks.diary.newEntry')}
 		onclose={() => (editingId = null)}
 	>
 		<form
@@ -349,7 +349,11 @@
 					notebooks={data.notebooks}
 				/>
 
-				<Field label={t('notebooks.diary.people')} span={6} hint="Anyone this was about.">
+				<Field
+					label={t('notebooks.diary.people')}
+					span={6}
+					hint={t('notebooks.diary.anyoneThisWasAbout')}
+				>
 					<input
 						autocomplete="off"
 						name="people"
@@ -378,7 +382,7 @@
 				}}>{t('ui.cancel')}</button
 			>
 			<button type="submit" form="entry-form" class="btn btn-primary">
-				{editingId ? 'Save' : 'Post entry'}
+				{editingId ? 'Save' : t('notebooks.diary.postEntry')}
 			</button>
 		{/snippet}
 	</Modal>
@@ -394,7 +398,7 @@
 				<EmptyState
 					icon="diary"
 					title={t('notebooks.diary.theJournalIsEmpty')}
-					description="Whatever happened today, in as many or as few words as you like."
+					description={t('notebooks.diary.whateverHappenedTodayInAs')}
 				>
 					{#snippet action()}
 						<button onclick={() => (showForm = true)} class="btn btn-primary">

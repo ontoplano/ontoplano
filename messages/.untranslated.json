@@ -1,26 +1,4 @@
 {
-	"total": 38,
-	"files": {
-		"src/lib/components/NotebookDetail.svelte": 2,
-		"src/lib/components/fields/BuyFields.svelte": 2,
-		"src/lib/components/fields/IdeaFields.svelte": 1,
-		"src/lib/components/fields/NoteFields.svelte": 1,
-		"src/lib/planner-grid.ts": 1,
-		"src/lib/server/auth.ts": 3,
-		"src/lib/server/services/companions.ts": 4,
-		"src/lib/server/services/family-invite.ts": 2,
-		"src/lib/server/services/newsletter.ts": 1,
-		"src/routes/+layout.svelte": 2,
-		"src/routes/health/habits/+page.svelte": 2,
-		"src/routes/health/recipes/+page.svelte": 3,
-		"src/routes/health/recipes/[id]/+page.svelte": 2,
-		"src/routes/inventory/+page.svelte": 1,
-		"src/routes/notebooks/+page.svelte": 1,
-		"src/routes/notebooks/diary/+page.svelte": 1,
-		"src/routes/notebooks/people/+page.svelte": 1,
-		"src/routes/settings/instance/+page.svelte": 3,
-		"src/routes/settings/integrations/connections/+page.svelte": 1,
-		"src/routes/tasks/board/+page.svelte": 2,
-		"src/routes/tasks/plan/+page.svelte": 2
-	}
+	"total": 0,
+	"files": {}
 }

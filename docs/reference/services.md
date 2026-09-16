@@ -1368,7 +1368,7 @@ Hashed and stored the way better-auth stores every credential, so the next
 sign-in is an ordinary sign-in. Clears the pending flag, which is what lets
 /welcome proceed.
 
-#### `familyOfferMail(url, ownerName)`
+#### `familyOfferMail(t, url, ownerName)`
 
 The mail an account that already exists gets: a question, not news.
 
@@ -1376,7 +1376,7 @@ Nothing has happened to their account when this lands — the seat is an
 offer sitting in the app, and the link goes to the page with the two
 buttons on it.
 
-#### `familyInviteMail(url, ownerName)`
+#### `familyInviteMail(t, url, ownerName)`
 
 #### `inviteToPlan(ownerId, email)`
 
@@ -3758,7 +3758,7 @@ morning of anything.
 
 #### `unsubscribeTokenValid(userId, token)`
 
-#### `weeklyReviewMail(ctx, weekStart)`
+#### `weeklyReviewMail(t, ctx, weekStart)`
 
 A week, in the four sentences worth reading over breakfast.
 

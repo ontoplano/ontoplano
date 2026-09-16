@@ -29,8 +29,8 @@
 		{t('legal.refunds.aNewAccountRunsFor', {
 			trialDays: data.trialDays,
 			for: data.trialRequiresCard
-				? '. A card is asked for at the start so the subscription can begin when the trial ends, and nothing is taken until it does'
-				: ' and no card is asked for'
+				? t('legal.refunds.aCardIsAsked')
+				: t('legal.refunds.andNoCardIsAsked')
 		})}
 	</p>
 
@@ -53,7 +53,7 @@
 	<h2>{t('legal.refunds.howToAsk')}</h2>
 	<p>
 		{t('legal.refunds.writeToFromThe', {
-			instance: data.contactEmail ?? 'whoever runs this instance'
+			instance: data.contactEmail ?? t('legal.refunds.whoeverRunsThisInstance')
 		})}
 	</p>
 	{#if data.provider}

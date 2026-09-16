@@ -3,6 +3,9 @@ import { eq } from 'drizzle-orm';
 import { db } from '$lib/db/index.js';
 import { user } from '$lib/db/auth.schema.js';
 import { planMembers } from '$lib/db/schema.js';
+import type { Translate } from '$lib/i18n';
+import { translatorFor } from '$lib/i18n';
+import { localeForAddress } from '$lib/server/locale';
 import { renderEmail } from '../email-template.js';
 import { checkPassword } from '../../passwords.js';
 import { getUserSetting, setUserSetting } from '../settings.js';
@@ -65,27 +68,21 @@ export async function chooseFirstPassword(userId: string, password: unknown): Pr
  * offer sitting in the app, and the link goes to the page with the two
  * buttons on it.
  */
-export function familyOfferMail(url: string, ownerName: string) {
+export function familyOfferMail(t: Translate, url: string, ownerName: string) {
 	return renderEmail({
-		subject: `${ownerName} offered to pay for your ontoplano account`,
-		lines: [
-			`${ownerName} has a family plan and would like your account on it. Nothing has changed yet: it is yours until you accept.`,
-			'If you accept, they pay and you keep everything — your notes and your week stay your own.'
-		],
-		action: { label: 'Look at the offer', url },
-		small: ['If you were not expecting this, decline it and nothing happens.']
+		subject: t('mail.familyOffer.subject', { owner: ownerName }),
+		lines: [t('mail.familyOffer.line1', { owner: ownerName }), t('mail.familyOffer.line2')],
+		action: { label: t('mail.familyOffer.action'), url },
+		small: [t('mail.familyOffer.small')]
 	});
 }
 
-export function familyInviteMail(url: string, ownerName: string) {
+export function familyInviteMail(t: Translate, url: string, ownerName: string) {
 	return renderEmail({
-		subject: `${ownerName} added you to their ontoplano plan`,
-		lines: [
-			`${ownerName} is paying for an ontoplano account for you. It is already made — the button below opens it and asks you to choose your password.`,
-			'Your notes and your week are your own; they just pay for the account.'
-		],
-		action: { label: 'Open your account', url },
-		small: ['If you were not expecting this, ignore it and nothing happens.']
+		subject: t('mail.familyInvite.subject', { owner: ownerName }),
+		lines: [t('mail.familyInvite.line1', { owner: ownerName }), t('mail.familyInvite.line2')],
+		action: { label: t('mail.familyInvite.action'), url },
+		small: [t('mail.familyInvite.small')]
 	});
 }
 
@@ -118,9 +115,21 @@ export async function inviteToPlan(
 		// without waiting to notice the band in the app.
 		const offered = addToPlan(ownerId, wanted);
 		const payer = db.select({ name: user.name }).from(user).where(eq(user.id, ownerId)).get();
+		/*
+		 * In the language of whoever is being written to.
+		 *
+		 * `wanted` is an address rather than an account here — there may be an
+		 * account behind it, and if there is, its own setting wins. Never the
+		 * language of whoever pressed the button: the payer and the person
+		 * getting the mail are two people by definition.
+		 */
 		await sendLogged('family-offer', {
 			to: wanted,
-			...familyOfferMail(`${process.env.ORIGIN ?? ''}/settings/billing`, payer?.name ?? 'Somebody')
+			...familyOfferMail(
+				await translatorFor(localeForAddress(wanted)),
+				`${process.env.ORIGIN ?? ''}/settings/billing`,
+				payer?.name ?? 'Somebody'
+			)
 		});
 		return { ...offered, invited: false };
 	}
@@ -190,7 +199,11 @@ export async function inviteToPlan(
 	const url = await familyInviteLinkFor(wanted);
 	await sendLogged('family-invite', {
 		to: wanted,
-		...familyInviteMail(url, payer?.name ?? 'Somebody')
+		...familyInviteMail(
+			await translatorFor(localeForAddress(wanted)),
+			url,
+			payer?.name ?? 'Somebody'
+		)
 	});
 
 	return { id: memberId, name: wanted, invited: true };

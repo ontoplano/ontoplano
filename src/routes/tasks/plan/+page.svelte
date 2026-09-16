@@ -2922,10 +2922,10 @@
 		onclose={closeForm}
 		size="md"
 		dock="side"
-		title={editingBlockId !== null ? 'Edit block' : 'New block'}
+		title={editingBlockId !== null ? t('tasks.plan.editBlock') : t('tasks.plan.newBlock')}
 		description={repeat === 'once'
-			? 'Happens once, on one day.'
-			: 'Comes back — as often as you say.'}
+			? t('tasks.plan.happensOnceOnOneDay')
+			: t('tasks.plan.comesBackAsOften')}
 	>
 		<div bind:this={createFormEl} class="space-y-3">
 			<!--
@@ -2957,7 +2957,7 @@
 					<span class="text-sm font-medium text-gray-700">{t('tasks.plan.repeats')}</span>
 					{#if editingKind}
 						<span class="text-sm text-gray-500">
-							{editingKind === 'slot' ? 'Comes back' : 'Once only'}
+							{editingKind === 'slot' ? t('app.comesBack') : t('app.onceOnly')}
 						</span>
 						<!-- The two differ only in which day they name, so changing your
 						     mind should not mean deleting one and retyping the other. -->
@@ -2966,10 +2966,12 @@
 							onclick={convertRepeat}
 							class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm hover:bg-gray-50"
 							title={editingKind === 'slot'
-								? 'Keep only this occurrence and stop repeating'
-								: 'Have it come back — every week, or on whatever rhythm you choose'}
+								? t('tasks.plan.keepOnlyThisOccurrenceAnd')
+								: t('tasks.plan.haveItComeBack')}
 						>
-							{editingKind === 'slot' ? 'Make it once only' : 'Make it recurrent'}
+							{editingKind === 'slot'
+								? t('tasks.plan.makeItOnceOnly')
+								: t('tasks.plan.makeItRecurrent')}
 						</button>
 					{:else}
 						<div class="flex">
@@ -2979,7 +2981,7 @@
 									onclick={() => (repeat = choice.value as 'weekly' | 'once')}
 									class="px-3 py-1 text-sm {repeat === choice.value
 										? 'bg-gray-900 font-medium text-white'
-										: 'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50'}"
+										: t('tasks.plan.borderBorderGray300BgWhiteTextGray700Sha')}"
 								>
 									{choice.label}
 								</button>
@@ -2999,13 +3001,13 @@
 						<input type="hidden" name="recurrenceKind" value={recurrenceKind} />
 
 						<div class="flex">
-							{#each [{ v: 'weekly', l: 'Every week' }, { v: 'weeks', l: 'Every N weeks' }, { v: 'days', l: 'Every N days' }, { v: 'monthly', l: 'Every month' }] as opt (opt.v)}
+							{#each [{ v: 'weekly', l: t('tasks.plan.everyWeek') }, { v: 'weeks', l: t('tasks.plan.everyNWeeks') }, { v: 'days', l: t('tasks.plan.everyNDays') }, { v: 'monthly', l: t('finance.ledgers.everyMonth') }] as opt (opt.v)}
 								<button
 									type="button"
 									onclick={() => (recurrenceKind = opt.v as typeof recurrenceKind)}
 									class="px-3 py-1 text-sm {recurrenceKind === opt.v
 										? 'bg-gray-900 font-medium text-white'
-										: 'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50'}"
+										: t('tasks.plan.borderBorderGray300BgWhiteTextGray700Sha')}"
 								>
 									{opt.l}
 								</button>
@@ -3129,7 +3131,7 @@
 							class="input"
 						/>
 					</Field>
-					<Field label={t('tasks.plan.duration')} span={4} hint="minutes">
+					<Field label={t('tasks.plan.duration')} span={4} hint={t('tasks.plan.minutes')}>
 						<NumberBox
 							autocomplete="off"
 							name="durationMinutes"
@@ -3207,7 +3209,7 @@
 					<Field
 						label={t('ui.notes')}
 						span={12}
-						hint={slotMode === 'category' ? 'the first line is what the block says' : 'optional'}
+						hint={slotMode === 'category' ? t('tasks.plan.theFirstLineIsWhat') : 'optional'}
 						required={slotMode === 'category'}
 					>
 						<!--
@@ -3225,7 +3227,7 @@
 							rows={slotMode === 'category' ? 3 : 2}
 							autocomplete="off"
 							required={slotMode === 'category'}
-							placeholder={slotMode === 'category' ? 'e.g. dentist' : ''}
+							placeholder={slotMode === 'category' ? t('tasks.plan.eGDentist') : ''}
 							bind:value={formLabel}
 							class="input resize-y"
 							maxlength={MAX_BLOCK_NOTES}
@@ -3245,7 +3247,7 @@
 					<Field
 						label={t('tasks.plan.remindMe')}
 						span={12}
-						hint="Minutes before it starts. Every time it comes round. Empty or 0 is not at all."
+						hint={t('tasks.plan.minutesBeforeItStartsEvery')}
 					>
 						<!--
 							A list and a box, not one or the other.
@@ -3323,7 +3325,7 @@
 							<input type="hidden" name="status" value={ticked ? 'todo' : 'done'} />
 							<button
 								type="submit"
-								title={ticked ? 'Put it back to pending' : 'It happened'}
+								title={ticked ? t('tasks.plan.putItBackToPending') : t('tasks.plan.itHappened')}
 								class="border px-3 py-2 text-sm font-medium transition {ticked
 									? 'border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100'
 									: 'border-blue-700 bg-blue-700 text-white hover:bg-blue-800'}"
@@ -3350,8 +3352,8 @@
 							<button
 								type="submit"
 								title={skipped
-									? 'Put this occurrence back'
-									: 'Drop just this one occurrence; the block still repeats'}
+									? t('tasks.plan.putThisOccurrenceBack')
+									: t('tasks.plan.dropJustThisOneOccurrence')}
 								class="border px-3 py-2 text-sm transition {skipped
 									? 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
 									: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
@@ -3405,7 +3407,9 @@
 										type="submit"
 										class="border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100"
 									>
-										{editingKind === 'slot' ? 'Delete every week — confirm?' : 'Delete — confirm?'}
+										{editingKind === 'slot'
+											? t('tasks.plan.deleteEveryWeekConfirm')
+											: t('tasks.plan.deleteConfirm')}
 									</button>
 								</form>
 							{:else}
@@ -3428,7 +3432,11 @@
 		{#snippet footer()}
 			<button type="button" class="btn" onclick={closeForm}>{t('ui.cancel')}</button>
 			<button type="submit" form="block-form" class="btn btn-primary">
-				{editingKind ? 'Save block' : repeat === 'once' ? 'Add one-off' : 'Add repeating block'}
+				{editingKind
+					? t('tasks.plan.saveBlock')
+					: repeat === 'once'
+						? t('tasks.plan.addOneOff')
+						: t('tasks.plan.addRepeatingBlock')}
 			</button>
 		{/snippet}
 	</Modal>
@@ -3469,9 +3477,7 @@
 		<details
 			bind:open={todosOpen}
 			bind:this={trayEl}
-			class="mb-2 {draggingBlock
-				? 'border border-dashed border-gray-400 bg-gray-50 px-2 py-1'
-				: ''}"
+			class="mb-2 {draggingBlock ? t('tasks.plan.borderBorderDashedBorderGray400BgGray50P') : ''}"
 		>
 			<summary
 				class="flex cursor-pointer list-none items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
@@ -3489,7 +3495,7 @@
 					<!-- What these are, not how to move them: a chip beside a grid is
 					     something you drag, and nobody needed to be told. -->
 					<span class="text-xs text-gray-500">
-						{dueToday > 0 ? `${dueToday} for today` : 'still without a time'}
+						{dueToday > 0 ? `${dueToday} for today` : t('tasks.plan.stillWithoutATime')}
 					</span>
 				{/if}
 			</summary>
@@ -3723,7 +3729,9 @@
 			class="pointer-events-none fixed z-50 max-w-[240px] border border-gray-200 bg-white px-3 py-2 shadow-sm"
 			style:top="{hovered.top}px"
 			style:left="{hovered.left}px"
-			style:transform={hovered.flip ? 'translateX(-100%) translateX(-8px)' : 'translateX(8px)'}
+			style:transform={hovered.flip
+				? t('tasks.plan.translatex100Translatex8px')
+				: 'translateX(8px)'}
 		>
 			<p class="text-sm font-medium text-gray-900">{hovered.title}</p>
 			<p class="mt-0.5 text-xs text-gray-600">
@@ -3770,7 +3778,7 @@
 				<textarea
 					name="csv"
 					rows="8"
-					placeholder={'h,d,m,t,w,t,f,s,s\n610,30,Wake up,Wake up,Wake up,Wake up,Wake up,,\n630,60,Stretch,Water the plants,Stretch,Water the plants,Stretch,,'}
+					placeholder={t('tasks.plan.hDMTWTFSSn61030WakeUpWakeUpWakeUpWakeUpW')}
 					class="block w-full border border-gray-300 px-3 py-2 font-mono text-xs shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				></textarea>
 				<div class="flex items-center gap-4">

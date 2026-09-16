@@ -114,7 +114,7 @@
 				<li>
 					<button
 						class="block w-full overflow-hidden rounded"
-						aria-label={picture.alt || picture.filename || 'A picture'}
+						aria-label={picture.alt || picture.filename || t('gallery.notebooks.path.aPicture')}
 						onclick={() => (viewingId = picture.id)}
 					>
 						<img
@@ -132,7 +132,7 @@
 
 <Modal
 	open={viewing !== null}
-	title={viewing?.alt || viewing?.filename || 'A picture'}
+	title={viewing?.alt || viewing?.filename || t('gallery.notebooks.path.aPicture')}
 	onclose={() => (viewingId = null)}
 >
 	{#if viewing}

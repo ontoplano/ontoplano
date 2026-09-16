@@ -84,7 +84,7 @@
 	<p class="tabular text-6xl font-bold text-gray-900">{page.status}</p>
 
 	<p class="mt-4 max-w-sm text-base text-gray-700">
-		{page.error?.message ?? 'Something went wrong.'}
+		{page.error?.message ?? t('home.somethingWentWrong')}
 	</p>
 
 	{#if page.status === 404}

@@ -254,7 +254,9 @@
 				<form method="post" action="?/setWeeklyReviewMail" use:enhance>
 					<input type="hidden" name="on" value={data.weeklyReviewMail ? 'false' : 'true'} />
 					<button type="submit" class="btn btn-sm">
-						{data.weeklyReviewMail ? 'Turn off' : 'Turn on'}
+						{data.weeklyReviewMail
+							? t('settings.preferences.turnOff')
+							: t('settings.preferences.turnOn')}
 					</button>
 				</form>
 			{/snippet}
@@ -709,17 +711,17 @@
 		<div class="danger-zone-row">
 			<div class="min-w-0">
 				<h3 class="text-sm font-semibold text-red-700">
-					{onDevice ? 'Delete this instance' : 'Delete this account'}
+					{onDevice ? t('settings.account.deleteThisInstance') : t('admin.id.deleteThisAccount')}
 				</h3>
 				<p class="mt-1 max-w-2xl text-sm text-gray-600">
 					{onDevice
-						? 'Everything on this device, and the database it is in. The app stays; what is inside it does not. Download an export first if you might want any of it back.'
-						: 'The data and the account both, and you are signed out for good. This cannot be undone.'}
+						? t('settings.account.everythingOnThisDeviceAnd')
+						: t('settings.account.theDataAndTheAccount')}
 				</p>
 			</div>
 			<button onclick={() => (confirming = true)} class="btn btn-danger btn-sm shrink-0">
 				<Icon name="trash" />
-				{onDevice ? 'Delete instance' : 'Delete account'}
+				{onDevice ? t('settings.account.deleteInstance') : t('settings.account.deleteAccount')}
 			</button>
 		</div>
 	</section>
@@ -774,7 +776,9 @@
 		open={confirming}
 		error={form?.message}
 		onclose={() => (confirming = false)}
-		title={onDevice ? 'Delete this instance' : 'Delete your account'}
+		title={onDevice
+			? t('settings.account.deleteThisInstance')
+			: t('settings.account.deleteYourAccount')}
 		description="Every row belonging to you goes with it. This cannot be undone."
 		size="sm"
 	>

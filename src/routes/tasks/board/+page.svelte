@@ -564,7 +564,7 @@
 				aria-pressed={filtersOpen}
 				data-tour="board-ratings"
 			>
-				{filtersOpen ? 'Hide filters' : 'Filters'}
+				{filtersOpen ? t('tasks.board.hideFilters') : 'Filters'}
 			</button>
 
 			<!-- Today against To-do is a choice of shape, exactly as Day/Week/
@@ -739,7 +739,7 @@
 							<input type="hidden" name="id" value={card.id} />
 							<input type="hidden" name="minutes" value={minutes} />
 							<button class="btn btn-sm">
-								{minutes < 60 ? `${minutes} min` : '1 hour'}
+								{minutes < 60 ? `${minutes} min` : t('tasks.board.1Hour')}
 								{t('tasks.board.before')}
 							</button>
 						</form>
@@ -789,7 +789,7 @@
 						<Field
 							label={t('tasks.board.called')}
 							span={12}
-							hint="This occurrence only. Empty keeps the block's own name."
+							hint={t('tasks.board.thisOccurrenceOnlyEmptyKeeps')}
 						>
 							<OneLine
 								name="label"
@@ -824,7 +824,7 @@
 							<Field
 								label={t('tasks.board.whatItWas')}
 								span={12}
-								hint="This block names a category. Say which activity it turned out to be."
+								hint={t('tasks.board.thisBlockNamesACategory')}
 							>
 								<select name="activityId" class="select">
 									<option value="">{t('tasks.board.notSaid')}</option>
@@ -1033,7 +1033,9 @@
 												move(card, shownStatus(card) === 'done' ? 'todo' : 'done');
 											}}
 											class="-m-1 flex shrink-0 items-center justify-center p-1 pointer-coarse:w-11"
-											title={shownStatus(card) === 'done' ? 'Mark not done' : 'Mark done'}
+											title={shownStatus(card) === 'done'
+												? t('tasks.board.markNotDone')
+												: t('tasks.board.markDone')}
 											aria-label={shownStatus(card) === 'done'
 												? `Mark ${card.title} not done`
 												: `Mark ${card.title} done`}
@@ -1053,7 +1055,7 @@
 										<span
 											class="mt-1 h-3 w-1 shrink-0"
 											style="background-color: {card.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
-											title={card.categoryName ?? 'No category'}
+											title={card.categoryName ?? t('tasks.board.noCategory')}
 										></span>
 										<div class="min-w-0 flex-1">
 											<!--
@@ -1166,7 +1168,9 @@
 
 							{#if column.cards.length === 0}
 								<p class="px-1 py-4 text-center text-xs text-gray-500">
-									{dragOverColumn === column.status ? 'Drop here' : 'Nothing here'}
+									{dragOverColumn === column.status
+										? t('tasks.board.dropHere')
+										: t('tasks.board.nothingHere')}
 								</p>
 							{/if}
 						</div>
@@ -1214,7 +1218,7 @@
 								<span
 									class="mt-0.5 h-3 w-1 shrink-0"
 									style="background-color: {card.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
-									title={card.categoryName ?? 'No category'}
+									title={card.categoryName ?? t('tasks.board.noCategory')}
 								></span>
 								<div class="min-w-0 flex-1">
 									<p class="truncate text-sm text-gray-900">{card.title}</p>
@@ -1226,7 +1230,7 @@
 
 					{#if railCards.length === 0}
 						<p class="px-1 py-6 text-center text-xs text-gray-500">
-							{railOver ? 'Drop to send back' : 'Nothing waiting'}
+							{railOver ? t('tasks.board.dropToSendBack') : t('tasks.board.nothingWaiting')}
 						</p>
 					{/if}
 				</div>

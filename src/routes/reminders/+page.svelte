@@ -411,7 +411,7 @@
 {#snippet alreadyBeen(when: string, at: string)}
 	{#if hasBeen(when, at)}
 		<p class="text-sm text-gray-600">
-			{at ? 'That time has already been.' : `${data.dayStart} has already been today.`}
+			{at ? t('reminders.thatTimeHasAlreadyBeen') : `${data.dayStart} has already been today.`}
 			{t('reminders.giveItALaterOne')}
 		</p>
 	{/if}
@@ -505,7 +505,7 @@
 					</button>
 				{:else}
 					<button type="button" class="btn btn-primary" onclick={allow} disabled={asking}>
-						{asking ? 'Asking…' : 'Allow notifications'}
+						{asking ? 'Asking…' : t('reminders.allowNotifications')}
 					</button>
 				{/if}
 			</div>
@@ -656,10 +656,10 @@
 						disabled={!ready}
 						class="btn btn-primary btn-sm ml-auto"
 						title={ready
-							? 'Set this reminder'
+							? t('reminders.setThisReminder')
 							: hasBeen(day, time)
-								? 'That time has already been'
-								: 'A day and something to say first'}
+								? t('reminders.thatTimeHasAlreadyBeen2')
+								: t('reminders.aDayAndSomethingTo')}
 					>
 						{t('reminders.setIt')}
 					</button>
@@ -676,7 +676,7 @@
 		keep, and this way the answer is a link you can send yourself.
 	-->
 	<Card
-		title={data.past ? 'Already been' : 'Coming up'}
+		title={data.past ? t('reminders.alreadyBeen') : t('reminders.comingUp')}
 		description={data.past
 			? `The last ${data.days} ${data.days === 1 ? 'day' : 'days'} — what has already gone off.`
 			: `The next ${data.days} ${data.days === 1 ? 'day' : 'days'} — everything set, whatever set it.`}
@@ -751,10 +751,10 @@
 		{#if upcoming.length === 0}
 			<EmptyState
 				icon="clock"
-				title={data.past ? 'Nothing went off' : 'Nothing waiting'}
+				title={data.past ? t('reminders.nothingWentOff') : t('reminders.nothingWaiting')}
 				description={data.past
-					? 'Reminders that have already fired show up here, dismissed ones included.'
-					: 'Blocks with a reminder, birthdays, bills and anything you set here all show up in this list.'}
+					? t('reminders.remindersThatHaveAlreadyFired')
+					: t('reminders.blocksWithAReminderBirthdays')}
 			/>
 		{:else}
 			<ul class="divide-y divide-gray-200">
@@ -918,8 +918,8 @@
 											disabled={hasBeen(editDay, editTime)}
 											class="btn btn-primary btn-sm"
 											title={hasBeen(editDay, editTime)
-												? 'That time has already been'
-												: 'Save this reminder'}
+												? t('reminders.thatTimeHasAlreadyBeen2')
+												: t('reminders.saveThisReminder')}
 										>
 											{t('ui.save')}
 										</button>

@@ -509,9 +509,9 @@
 				{/snippet}
 				{#if data.taskSummary.total === 0}
 					{@render nothingYet(
-						'Nothing is planned for today. A block is a time you have given to something.',
+						t('home.nothingIsPlannedForToday'),
 						'/tasks/plan',
-						'Open the plan'
+						t('home.openThePlan')
 					)}
 				{:else}
 					<div class="flex items-baseline gap-3">
@@ -521,7 +521,7 @@
 						</span>
 						<span class="text-xs text-gray-500">
 							{data.tasksTodo.length === 0
-								? 'nothing left today'
+								? t('home.nothingLeftToday')
 								: `${data.tasksTodo.length} to go`}
 						</span>
 					</div>
@@ -618,11 +618,7 @@
 					>
 				{/snippet}
 				{#if data.activeGoals.length === 0}
-					{@render nothingYet(
-						'No goals for this period. A goal is a commitment with a date attached.',
-						'/goals',
-						'New goal'
-					)}
+					{@render nothingYet(t('home.noGoalsForThisPeriod'), '/goals', t('goals.newGoal'))}
 				{:else}
 					<ul class="space-y-2">
 						{#each data.activeGoals.slice(0, GOAL_PREVIEW) as goal (goal.id)}
@@ -632,7 +628,7 @@
 								<span
 									class="h-4 w-1 shrink-0"
 									style="background-color: {goal.areaColor ?? CATEGORY_FALLBACK_COLOR}"
-									title={goal.areaName ?? 'No area'}
+									title={goal.areaName ?? t('home.noArea')}
 								></span>
 								<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{goal.title}</span>
 								<!-- Nothing to count, nothing to draw: an empty track reads as
@@ -670,9 +666,9 @@
 				{/snippet}
 				{#if data.habitStreaks.length === 0}
 					{@render nothingYet(
-						'Nothing tracked yet. A habit is something you want to do — or stop doing — most days.',
+						t('home.nothingTrackedYetAHabit'),
 						'/health/habits',
-						'New habit'
+						t('health.habits.newHabit')
 					)}
 				{:else}
 					<div class="space-y-2">
@@ -804,7 +800,7 @@
 							}}
 							class="border border-gray-300 bg-white px-2 py-1 text-xs text-gray-700 shadow-sm transition hover:bg-gray-50"
 						>
-							{showDiaryForm ? 'Cancel' : 'New entry'}
+							{showDiaryForm ? 'Cancel' : t('notebooks.diary.newEntry')}
 						</button>
 					</div>
 				{/snippet}
@@ -904,9 +900,9 @@
 					</div>
 				{:else}
 					{@render nothingYet(
-						'Nothing written yet. Whatever happened today, in as many or as few words as you like.',
+						t('home.nothingWrittenYetWhateverHappened'),
 						'/notebooks/diary',
-						'New entry'
+						t('notebooks.diary.newEntry')
 					)}
 				{/if}
 			</Card>
@@ -935,7 +931,7 @@
 								}
 							}}
 							class="text-xs text-gray-500 hover:text-gray-900"
-							title={todosNewestFirst ? 'Showing newest first' : 'Showing oldest first'}
+							title={todosNewestFirst ? t('home.showingNewestFirst') : t('home.showingOldestFirst')}
 							>{t('home.first', { oldest: todosNewestFirst ? 'Newest' : 'Oldest' })}</button
 						>
 						<a href={resolve('/tasks/todo')} class="text-xs text-gray-500 hover:text-gray-900"
@@ -945,9 +941,9 @@
 				{/snippet}
 				{#if sortedTodos.length === 0}
 					{@render nothingYet(
-						'Nothing on the list. Anything with no day yet lives here.',
+						t('home.nothingOnTheListAnything'),
 						'/tasks/todo',
-						'Add a todo'
+						t('home.addATodo')
 					)}
 				{:else}
 					<div class="space-y-1">
@@ -978,9 +974,9 @@
 				{/snippet}
 				{#if (data.latestIdeas ?? []).length === 0}
 					{@render nothingYet(
-						'No ideas yet. This is the place for the ones with nowhere else to go.',
+						t('home.noIdeasYetThisIs'),
 						'/notebooks/ideas',
-						'Write one down'
+						t('health.workouts.writeOneDown')
 					)}
 				{:else}
 					<div class="space-y-1">
@@ -1005,11 +1001,7 @@
 					>
 				{/snippet}
 				{#if data.billsCard.summary.billCount === 0}
-					{@render nothingYet(
-						'No bills yet. Write down what you expect to pay and the month keeps score.',
-						'/finance/bills',
-						'Add a bill'
-					)}
+					{@render nothingYet(t('home.noBillsYetWriteDown'), '/finance/bills', t('home.addABill'))}
 				{:else}
 					<div class="space-y-2">
 						<div class="text-sm text-gray-700">
@@ -1052,9 +1044,9 @@
 				{/snippet}
 				{#if data.workoutsCard.length === 0}
 					{@render nothingYet(
-						'No workouts yet. Write one down and drop it onto the week like a meal.',
+						t('home.noWorkoutsYetWriteOne'),
 						'/health/workouts',
-						'Add a workout'
+						t('home.addAWorkout')
 					)}
 				{:else}
 					<div class="space-y-1">
@@ -1062,7 +1054,9 @@
 							<div class="flex items-center justify-between gap-2 text-sm">
 								<span class="text-gray-700">{workout.title}</span>
 								<span class="text-xs text-gray-500">
-									{workout.lastDoneAt ? `last ${workout.lastDoneAt.slice(0, 10)}` : 'never yet'}
+									{workout.lastDoneAt
+										? `last ${workout.lastDoneAt.slice(0, 10)}`
+										: t('home.neverYet')}
 								</span>
 							</div>
 						{/each}
@@ -1079,11 +1073,7 @@
 					>
 				{/snippet}
 				{#if data.shoppingToBuy.length === 0}
-					{@render nothingYet(
-						'Nothing to buy. The list keeps what you are out of and what you might want one day.',
-						'/inventory',
-						'Add an item'
-					)}
+					{@render nothingYet(t('home.nothingToBuyTheList'), '/inventory', t('home.addAnItem'))}
 				{:else}
 					<div class="space-y-1">
 						{#each data.shoppingToBuy.slice(0, 8) as item (item.id)}

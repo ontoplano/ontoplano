@@ -296,7 +296,7 @@
 	<form
 		method="post"
 		action="?/saveWeek"
-		use:settingsForm={{ notice: 'Week saved.' }}
+		use:settingsForm={{ notice: t('settings.preferences.weekSaved') }}
 		class="space-y-4 border border-gray-200 bg-white p-6 shadow-card"
 	>
 		<div>
@@ -339,7 +339,7 @@
 	<form
 		method="post"
 		action="?/saveCurrency"
-		use:settingsForm={{ notice: 'Currency saved.' }}
+		use:settingsForm={{ notice: t('settings.preferences.currencySaved') }}
 		class="space-y-4 border border-gray-200 bg-white p-6 shadow-card"
 	>
 		<div>
@@ -424,7 +424,7 @@
 	<form
 		method="post"
 		action="?/saveGridHours"
-		use:settingsForm={{ notice: 'Planner hours saved.' }}
+		use:settingsForm={{ notice: t('settings.preferences.plannerHoursSaved') }}
 		class="space-y-4 border border-gray-200 bg-white p-6 shadow-card"
 	>
 		<div>
@@ -649,10 +649,10 @@
 								disabled={ringing === 'asking'}
 							>
 								{ringing === 'asking'
-									? 'Setting it up…'
+									? t('settings.preferences.settingItUp')
 									: data.ringsOnAPhone
-										? 'Set it up again'
-										: 'Ring on this phone'}
+										? t('settings.preferences.setItUpAgain')
+										: t('settings.preferences.ringOnThisPhone')}
 							</button>
 						</form>
 					</div>
@@ -715,7 +715,7 @@
 						wait a minute to find out.
 					-->
 					<button class="btn btn-sm" onclick={sendTest} disabled={testing}>
-						{testing ? 'Sending…' : 'Send a test'}
+						{testing ? 'Sending…' : t('settings.preferences.sendATest')}
 					</button>
 					<button class="btn btn-sm" onclick={turnOff}>{t('settings.preferences.turnOff')}</button>
 				</div>
@@ -758,7 +758,7 @@
 			method="post"
 			action="?/saveMenu"
 			data-tour="prefs-menu"
-			use:settingsForm={{ notice: 'Menu saved.' }}
+			use:settingsForm={{ notice: t('settings.preferences.menuSaved') }}
 			class="space-y-2"
 		>
 			{#each orderedRooms as room, i (room.key)}
@@ -902,7 +902,7 @@
 		<form
 			method="post"
 			action="?/setLayout"
-			use:settingsForm={{ notice: 'Dashboard layout saved.' }}
+			use:settingsForm={{ notice: t('settings.preferences.dashboardLayoutSaved') }}
 			class="space-y-2"
 		>
 			{#each layout as id (id)}
@@ -1026,7 +1026,7 @@
 				<span class="eyebrow text-gray-600">{t('settings.preferences.quote')}</span>
 				<OneLine
 					name="text"
-					placeholder={'\u201cPlans are worthless, but planning is everything.\u201d'}
+					placeholder={t('settings.preferences.u201cplansAreWorthlessButPlanning')}
 					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					required
 				/>
@@ -1062,7 +1062,7 @@
 						name="quotes"
 						rows="6"
 						class="textarea mt-1"
-						placeholder={'Plans are worthless, but planning is everything. — Eisenhower\nWhat gets measured gets managed — Drucker'}
+						placeholder={t('settings.preferences.plansAreWorthlessButPlanning')}
 					></textarea>
 				</label>
 				<p class="text-xs text-gray-500">

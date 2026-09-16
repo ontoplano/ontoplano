@@ -983,7 +983,7 @@
 			{/if}
 			{#if ticks.pending.length > 0}
 				{ticks.pending.length}
-				{ticks.pending.length === 1 ? 'change is' : 'changes are'}
+				{ticks.pending.length === 1 ? t('inventory.changeIs') : t('inventory.changesAre')}
 				{t('inventory.waitingToBeSent')}
 			{:else}
 				{t('inventory.whatYouTickWillBe')}
@@ -1025,7 +1025,7 @@
 			<EmptyState
 				icon="shopping"
 				title={t('inventory.nothingHasRunLow')}
-				description="An item joins this list when there is less of it than you keep."
+				description={t('inventory.anItemJoinsThisList')}
 				compact
 			/>
 		{:else}
@@ -1061,7 +1061,7 @@
 				<p class="text-xs text-gray-500">
 					{t('inventory.noPriceYetSo', {
 						unpriced: data.run.unpriced,
-						have: data.run.unpriced === 1 ? 'line has' : 'lines have'
+						have: data.run.unpriced === 1 ? t('inventory.lineHas') : t('inventory.linesHave')
 					})}
 				</p>
 			{/if}
@@ -1101,7 +1101,7 @@
 	<Modal
 		bind:open={showForm}
 		error={form?.message}
-		title={editingId ? 'Edit item' : 'New item'}
+		title={editingId ? t('inventory.editItem') : t('inventory.newItem')}
 		onclose={cancelEdit}
 		size="sm"
 	>
@@ -1143,7 +1143,7 @@
 		{#snippet footer()}
 			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 			<button type="submit" form="item-form" class="btn btn-primary">
-				{editingId ? 'Save' : 'Add item'}
+				{editingId ? 'Save' : t('inventory.addItem')}
 			</button>
 		{/snippet}
 	</Modal>
@@ -1282,7 +1282,7 @@
 						{@render branch(root, 0)}
 					{/each}
 					{#if unfiledCount > 0}
-						{@render locationRow(0, 'Not filed anywhere', unfiledCount, 0)}
+						{@render locationRow(0, t('app.notFiledAnywhere'), unfiledCount, 0)}
 					{/if}
 				</ul>
 
@@ -1440,7 +1440,9 @@
 																type="submit"
 																class="icon-btn"
 																aria-pressed={item.snoozed}
-																title={item.snoozed ? 'Put it back on the list' : 'Put it away'}
+																title={item.snoozed
+																	? t('inventory.putItBackOnThe')
+																	: t('finance.ledgers.putItAway')}
 																aria-label="{item.snoozed ? 'Unarchive' : 'Archive'}: {item.name}"
 															>
 																<Icon name={item.snoozed ? 'undo' : 'archive'} />
@@ -1540,8 +1542,10 @@
 											class="flex size-5 items-center justify-center border transition {item.bought
 												? 'border-blue-600 bg-blue-600 text-white'
 												: 'border-gray-400 bg-white text-transparent hover:border-gray-600'}"
-											title={item.bought ? 'Put it back on the list' : 'Got it'}
-											aria-label="{item.bought ? 'Put back on the list' : 'Got it'}: {item.name}"
+											title={item.bought ? t('inventory.putItBackOnThe') : t('tasks.plan.gotIt')}
+											aria-label="{item.bought
+												? t('inventory.putBackOnTheList')
+												: t('tasks.plan.gotIt')}: {item.name}"
 										>
 											<Icon name="check" size={14} />
 										</button>
@@ -1571,7 +1575,9 @@
 												type="submit"
 												class="icon-btn"
 												aria-pressed={item.snoozed}
-												title={item.snoozed ? 'Put it back on the list' : 'Put it away'}
+												title={item.snoozed
+													? t('inventory.putItBackOnThe')
+													: t('finance.ledgers.putItAway')}
 												aria-label="{item.snoozed ? 'Unarchive' : 'Archive'}: {item.name}"
 											>
 												<Icon name={item.snoozed ? 'undo' : 'archive'} />
@@ -1629,7 +1635,7 @@
 							<EmptyState
 								icon="shopping"
 								title={t('inventory.theListIsEmpty')}
-								description="Inventory is what you keep stocked; the wishlist is what you might buy one day."
+								description={t('inventory.inventoryIsWhatYouKeep')}
 							>
 								{#snippet action()}
 									<button onclick={() => (showForm = true)} class="btn btn-primary">
@@ -1661,7 +1667,7 @@
 	bind:open={showCategories}
 	error={form?.message}
 	title={t('inventory.categories')}
-	description="Tick the ones that hold food. Only those can be ingredients in a recipe."
+	description={t('inventory.tickTheOnesThatHold')}
 	size="sm"
 >
 	<!-- Every tick saves as it lands and every row manages itself — there is
@@ -1869,8 +1875,8 @@
 		editingLocation = null;
 	}}
 	error={form?.message}
-	title={editingLocation ? 'Rename or move' : 'New location'}
-	description="A room, a cupboard, a drawer. One can sit inside another."
+	title={editingLocation ? t('inventory.renameOrMove') : t('inventory.newLocation')}
+	description={t('inventory.aRoomACupboardA')}
 	size="sm"
 >
 	<form
@@ -1898,7 +1904,7 @@
 					placeholder={t('inventory.whiteChest')}
 				/>
 			</Field>
-			<Field label={t('inventory.inside')} span={12} hint="Leave empty for a room or a building.">
+			<Field label={t('inventory.inside')} span={12} hint={t('inventory.leaveEmptyForARoom')}>
 				<select name="parentId" class="select">
 					<option value="">{t('inventory.nothingItIsTop')}</option>
 					{#each data.locations as one (one.id)}
@@ -1939,7 +1945,7 @@
 	open={confirmDeleteLocation !== null}
 	onclose={() => (confirmDeleteLocation = null)}
 	title={t('inventory.removeThisLocation')}
-	description="Whatever is inside it moves up a level, and the things filed here keep existing — they just lose their address."
+	description={t('inventory.whateverIsInsideItMoves')}
 	size="sm"
 >
 	<p class="text-sm text-gray-500">

@@ -32,7 +32,9 @@
 <h2>{t('legal.privacy.whereItIsStored')}</h2>
 <p>
 	{t('legal.privacy.inOneSqliteDatabaseOn')}
-	{data.hosted ? 'the server that runs this instance' : 'the machine you installed it on'}.
+	{data.hosted
+		? t('legal.privacy.theServerThatRunsThis')
+		: t('legal.privacy.theMachineYouInstalledIt')}.
 	{#if data.hosted}
 		{t('legal.privacy.backupsAreReplicatedToObject')}
 	{:else}

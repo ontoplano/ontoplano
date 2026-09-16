@@ -242,7 +242,7 @@
 						disabled={exporting}
 						class="w-full border border-gray-300 px-4 py-2.5 text-center text-sm text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
 					>
-						{exporting ? 'Exporting…' : 'Download your data (JSON)'}
+						{exporting ? 'Exporting…' : t('start.downloadYourDataJson')}
 					</button>
 				</form>
 			{:else}

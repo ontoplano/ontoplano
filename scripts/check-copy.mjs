@@ -101,6 +101,9 @@ const WORDS = /\p{L}{2,}/u;
  */
 const LOOKS_LIKE_A_KEY = /^[a-z][A-Za-z0-9]*(\.[A-Za-z0-9]+)+$/;
 
+/** An SVG path: a letter, then numbers, all the way down. */
+const SVG_PATH = /^[MmLlHhVvCcSsQqTtAaZz][\d.\s,-]/;
+
 const NOT_COPY = [
 	LOOKS_LIKE_A_KEY,
 	// The app's own name. A brand is the same word in every language, and
@@ -125,35 +128,66 @@ const COPY_NAMES = [
 	'placeholder',
 	'alt',
 	'label',
-	// This repository's own two words for a sentence under a heading.
+	// This repository's own words for a sentence under a heading, as an
+	// attribute on `<Field>` as well as a property in a list.
 	'blurb',
-	'hint'
+	'hint',
+	'help'
 ];
 
 /**
- * The markup with every `{…}` taken out, however deeply it nests.
+ * The stretches of markup a person actually reads.
  *
- * A regex cannot do this: `use:enhance={async () => { … }}` is three levels of
- * brace and an arrow body full of them, and a pattern that handles one level
- * leaves fragments behind — which then read as prose and are counted as copy
- * nobody can ever translate, because they are code. Matched by counting.
+ * Walked rather than matched. A regex cannot do this: an attribute holds an
+ * expression (`onclick={() => …}`), an expression holds `>` and `<`, and a
+ * class holds `[&>svg]` — so anything that treats the first `>` as the end of a
+ * tag walks out of the tag and reads the rest of it as prose. Braces are
+ * counted wherever they are, being inside a tag is remembered across them, and
+ * a quoted attribute is skipped whole.
  */
-function withoutExpressions(markup) {
-	let out = '';
-	let depth = 0;
-	for (const character of markup) {
-		if (character === '{') {
-			depth++;
-			if (depth === 1) out += ' ';
+function textRuns(markup) {
+	const runs = [];
+	let inTag = false;
+	let braces = 0;
+	let quote = '';
+	let start = -1;
+
+	const close = (at) => {
+		if (start >= 0) runs.push(markup.slice(start, at));
+		start = -1;
+	};
+
+	for (let i = 0; i < markup.length; i++) {
+		const c = markup[i];
+
+		if (braces > 0) {
+			if (c === '{') braces++;
+			else if (c === '}') braces--;
 			continue;
 		}
-		if (character === '}') {
-			if (depth > 0) depth--;
+		if (quote) {
+			if (c === quote) quote = '';
 			continue;
 		}
-		if (depth === 0) out += character;
+		if (c === '{') {
+			if (!inTag) close(i);
+			braces = 1;
+			continue;
+		}
+		if (inTag) {
+			if (c === '"' || c === "'") quote = c;
+			else if (c === '>') inTag = false;
+			continue;
+		}
+		if (c === '<') {
+			close(i);
+			inTag = true;
+			continue;
+		}
+		if (start < 0) start = i;
 	}
-	return out;
+	close(markup.length);
+	return runs;
 }
 
 /** The script of a component, with its comments gone. */
@@ -162,6 +196,77 @@ function scriptOf(source, hasMarkup = true) {
 		? [...source.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)].map((match) => match[1]).join('\n')
 		: source;
 	return code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/[^\n]*$/gm, '');
+}
+
+/**
+ * The quoted words inside an expression in the markup.
+ *
+ * `title={editing ? 'Edit to-do' : 'New to-do'}` is two sentences a person
+ * reads, and everything above is blind to them: they sit inside a `{…}`, which
+ * the walker skips because most of what is in there is code. Sentences are
+ * told from code the only way that works without parsing — a string with a
+ * space in it and no code punctuation is prose.
+ */
+const CODEY = /[<>{}$\\]|^[a-z-]+$|^[A-Z_]+$|\//;
+
+/**
+ * A list of class names, not a sentence.
+ *
+ * `border-gray-400 bg-gray-400` has spaces and words and is styling. Prose in
+ * this app starts with a capital or ends in a full stop; a run of lowercase
+ * tokens that all carry a hyphen or a colon is Tailwind.
+ */
+const CLASSES = (text) =>
+	!/[A-Z]/.test(text) && text.split(/\s+/).every((token) => /[-:]/.test(token));
+
+function prosyLiterals(source) {
+	const found = [];
+	let braces = 0;
+
+	/*
+	 * A `//` comment inside an expression goes first.
+	 *
+	 * An apostrophe in one — `// the browser's own refusal` — opens a string
+	 * that runs to the next real quote, and everything between reads as prose.
+	 * Blanked rather than skipped inline, because a comment can hold anything.
+	 */
+	const markup = source.replace(
+		/(^|[^:])\/\/[^\n]*/g,
+		(m, lead) => lead + ' '.repeat(m.length - lead.length)
+	);
+
+	for (let i = 0; i < markup.length; i++) {
+		const c = markup[i];
+		if (braces === 0) {
+			if (c === '{') braces = 1;
+			continue;
+		}
+		if (c === '{') braces++;
+		else if (c === '}') braces--;
+		if (braces === 0) continue;
+
+		if (c === "'" || c === '"') {
+			const quote = c;
+			const from = i;
+			let j = i + 1;
+			let buffer = '';
+			while (j < markup.length && markup[j] !== quote) {
+				if (markup[j] === '\\') j++;
+				buffer += markup[j];
+				j++;
+			}
+			i = j;
+			const text = buffer.trim();
+			// Prose has a space in it and no punctuation that belongs to code.
+			// A quote that follows a letter ends a string this walk never saw
+			// starting; reading on from it captures code between two strings.
+			const before = markup[from - 1] ?? ' ';
+			if (/[A-Za-z0-9]/.test(before)) continue;
+			if (text.includes(' ') && WORDS.test(text) && !CODEY.test(text) && !CLASSES(text))
+				found.push(text);
+		}
+	}
+	return found;
 }
 
 /** The words between tags, and the attributes and properties a person reads. */
@@ -183,7 +288,11 @@ export function copyIn(source, { markup: hasMarkup = true } = {}) {
 		)
 	)) {
 		const value = match[1].trim();
-		if (value && WORDS.test(value) && !LOOKS_LIKE_A_KEY.test(value)) found.push(value);
+		// `help:` names a sentence in one list and an SVG path in the icon set —
+		// `M12 4a8 8 0 1 0 …` is a drawing instruction, not words.
+		if (!value || !WORDS.test(value)) continue;
+		if (LOOKS_LIKE_A_KEY.test(value) || SVG_PATH.test(value)) continue;
+		found.push(value);
 	}
 
 	/*
@@ -208,9 +317,9 @@ export function copyIn(source, { markup: hasMarkup = true } = {}) {
 	 * `{count}` is a value — neither is a sentence somebody has to translate,
 	 * and both would otherwise leave their innards behind as loose words.
 	 */
-	const text = withoutExpressions(markup).replace(/<[^>]*>/g, '\n');
+	found.push(...prosyLiterals(markup));
 
-	for (const line of text.split('\n')) {
+	for (const line of textRuns(markup)) {
 		const run = line.trim();
 		if (!run || !WORDS.test(run)) continue;
 		if (NOT_COPY.some((pattern) => pattern.test(run))) continue;

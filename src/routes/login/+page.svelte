@@ -150,7 +150,7 @@
 							// The browser's own refusal, at the field, before the round trip.
 							field.setCustomValidity(
 								password && field.value && field.value !== password.value
-									? 'The two passwords are not the same.'
+									? t('login.passwordsDoNotMatch')
 									: ''
 							);
 						}}
@@ -162,7 +162,11 @@
 				type="submit"
 				class="w-full bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
 			>
-				{mode === 'login' ? 'Sign in' : mode === 'register' ? 'Create account' : 'Send reset link'}
+				{mode === 'login'
+					? t('login.signIn')
+					: mode === 'register'
+						? t('login.createAccount')
+						: t('login.sendResetLink')}
 			</button>
 		</form>
 

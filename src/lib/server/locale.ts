@@ -12,6 +12,10 @@ import type { RequestEvent } from '@sveltejs/kit';
 
 import { getLocale } from '$lib/services/settings.js';
 import { matchLocale, type Locale } from '$lib/i18n/locales.js';
+import { eq } from 'drizzle-orm';
+
+import { db } from '$lib/db/index.js';
+import { user } from '$lib/db/schema.js';
 import { loadConfig } from './config.js';
 
 /** What this instance answers in when nothing else has said. */
@@ -45,4 +49,22 @@ export function localeForRequest(event: RequestEvent): Locale {
  */
 export function localeForUser(userId: string): Locale {
 	return getLocale(userId) ?? instanceLocale();
+}
+
+/**
+ * The same, for mail addressed before there is an account to ask.
+ *
+ * An invitation goes to an address, and the person behind it may already have
+ * an account here — in which case their own setting is the answer, and writing
+ * to them in the instance's language instead would be the app forgetting
+ * something it knows. No account, no choice: the instance's.
+ */
+export function localeForAddress(email: string): Locale {
+	const account = db
+		.select({ id: user.id })
+		.from(user)
+		.where(eq(user.email, email.trim().toLowerCase()))
+		.get();
+
+	return account ? localeForUser(account.id) : instanceLocale();
 }

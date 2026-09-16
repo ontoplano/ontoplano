@@ -77,14 +77,14 @@
 		<NotebookField {notebooks} value={notebookId} span={12} />
 	{/if}
 
-	<Field label={t('ui.tags')} span={12} hint="Separate with commas or spaces. A leading # is fine.">
+	<Field label={t('ui.tags')} span={12} hint={t('fields.note.separateWithCommasOrSpaces')}>
 		<OneLine name="tags" placeholder={t('fields.note.tagsExample')} value={tags} class="input" />
 	</Field>
 {/snippet}
 
 {#if compact}
 	<MoreOptions
-		label={notebook ? 'Notebook, tags' : 'Tags'}
+		label={notebook ? t('fields.note.notebookTags') : 'Tags'}
 		count={(tags ? 1 : 0) + (notebook && notebookId ? 1 : 0)}
 	>
 		{@render rest()}

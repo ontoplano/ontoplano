@@ -98,7 +98,7 @@
 			kind="success"
 			message={data.entitlement.source === 'trial' || data.entitlement.status === 'trialing'
 				? `Card saved — your ${data.pricing.trialDays} days are running.`
-				: 'Payment confirmed.'}
+				: t('settings.billing.paymentConfirmed')}
 		/>
 	{:else if confirming}
 		<Banner kind="info" message="Confirming your payment…" />
@@ -109,7 +109,7 @@
 		description={data.entitlement.status === 'trialing' || data.entitlement.source === 'trial'
 			? `Your trial runs until ${when(data.entitlement.until)}.`
 			: data.entitlement.source === 'lapsed'
-				? 'Your subscription has ended. Nothing was deleted — everything you wrote is still here and still exportable.'
+				? t('settings.billing.yourSubscriptionHasEndedNothing')
 				: data.entitlement.source === 'invited' && data.entitlement.until
 					? // An invitation, not a trial: nothing was charged and no card was
 						// asked for. Say when it runs out, because the buttons below are
@@ -166,8 +166,8 @@
 				<Banner
 					kind="success"
 					message={form.switched === 'yearly'
-						? 'Switched to yearly billing.'
-						: 'Switched to monthly billing.'}
+						? t('settings.billing.switchedToYearlyBilling')
+						: t('settings.billing.switchedToMonthlyBilling')}
 				/>
 			</div>
 		{/if}

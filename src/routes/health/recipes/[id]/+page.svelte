@@ -549,7 +549,7 @@
 			<Field
 				label={t('health.recipes.id.method')}
 				span={12}
-				hint="Markdown: headings, lists, numbers."
+				hint={t('health.recipes.id.markdownHeadingsListsNumbers')}
 			>
 				<textarea name="method" rows="10" use:autogrow class="textarea"
 					>{data.recipe.method}</textarea
@@ -577,7 +577,7 @@
 <Modal
 	bind:open={cooking}
 	title={t('health.recipes.id.cookedIt')}
-	description="Anything you finished off goes back on the shopping list."
+	description={t('health.recipes.id.anythingYouFinishedOffGoes')}
 	size="sm"
 >
 	<form
@@ -645,7 +645,7 @@
 	bind:open={scheduling}
 	error={form?.message}
 	title={t('health.recipes.id.putItOnADay')}
-	description="It becomes a block on the plan, like anything else you give time to."
+	description={t('health.recipes.id.itBecomesABlockOn')}
 	size="sm"
 >
 	<form
@@ -681,7 +681,7 @@
 					class="input"
 				/>
 			</Field>
-			<Field label={t('health.recipes.id.for')} span={6} hint="Minutes.">
+			<Field label={t('health.recipes.id.for')} span={6} hint={t('health.recipes.id.minutes')}>
 				<NumberBox
 					autocomplete="off"
 					name="durationMinutes"

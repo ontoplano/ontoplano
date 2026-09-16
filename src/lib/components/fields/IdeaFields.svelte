@@ -30,7 +30,7 @@
 </Field>
 
 {#snippet rest()}
-	<Field label={t('ui.tags')} span={12} hint="Separate with commas or spaces. A leading # is fine.">
+	<Field label={t('ui.tags')} span={12} hint={t('fields.idea.separateWithCommasOrSpaces')}>
 		<OneLine name="tags" placeholder={t('fields.idea.tagsExample')} value={tags} class="input" />
 	</Field>
 {/snippet}

@@ -280,7 +280,7 @@
 	<Modal
 		bind:open={showForm}
 		error={form?.message}
-		title={editingId ? 'Edit idea' : 'New idea'}
+		title={editingId ? t('notebooks.ideas.editIdea') : t('notebooks.ideas.newIdea')}
 		onclose={() => (editingId = null)}
 	>
 		<form
@@ -309,7 +309,7 @@
 		{#snippet footer()}
 			<button type="button" class="btn" onclick={closeForms}>{t('ui.cancel')}</button>
 			<button type="submit" form="idea-form" class="btn btn-primary">
-				{editingId ? 'Save' : 'Save idea'}
+				{editingId ? 'Save' : t('notebooks.ideas.saveIdea')}
 			</button>
 		{/snippet}
 	</Modal>
@@ -364,7 +364,9 @@
 								class="mt-0.5 text-lg leading-none transition {idea.favorite
 									? 'text-amber-600 hover:text-amber-700'
 									: 'text-gray-300 hover:text-amber-600'}"
-								aria-label={idea.favorite ? 'Remove favorite' : 'Mark as favorite'}
+								aria-label={idea.favorite
+									? t('notebooks.ideas.removeFavorite')
+									: t('notebooks.ideas.markAsFavorite')}
 							>
 								{idea.favorite ? '★' : '☆'}
 							</button>
@@ -456,7 +458,7 @@
 												</form>
 											{:else}
 												<p class="mt-1 text-sm whitespace-pre-wrap text-blue-900">
-													{idea.appliedNote || 'No applied note yet.'}
+													{idea.appliedNote || t('notebooks.ideas.noAppliedNoteYet')}
 												</p>
 											{/if}
 										</div>
@@ -467,7 +469,9 @@
 												onclick={() => startAppliedNoteEdit(idea)}
 												class="border border-blue-200 bg-white px-2 py-1 text-xs text-blue-700 hover:bg-blue-100"
 											>
-												{idea.appliedNote ? 'Edit note' : 'Add note'}
+												{idea.appliedNote
+													? t('notebooks.ideas.editNote')
+													: t('notebookDetail.addNote')}
 											</button>
 										{/if}
 									</div>
@@ -538,8 +542,12 @@
 									<input type="hidden" name="id" value={idea.id} />
 									<button
 										type="submit"
-										title={idea.isApplied ? 'Applied — undo' : 'Mark applied'}
-										aria-label={idea.isApplied ? 'Applied — undo' : 'Mark applied'}
+										title={idea.isApplied
+											? t('notebooks.ideas.appliedUndo')
+											: t('notebooks.ideas.markApplied')}
+										aria-label={idea.isApplied
+											? t('notebooks.ideas.appliedUndo')
+											: t('notebooks.ideas.markApplied')}
 										aria-pressed={idea.isApplied}
 										class="icon-btn {idea.isApplied ? 'text-blue-700' : ''}"
 									>
