@@ -517,6 +517,7 @@
 	"gallery.id.thisIsItsOnlyAlbum": "This is its only album, so the picture is deleted for good.",
 	"gallery.id.whatIsInThePicture": "what is in the picture",
 	"gallery.id.whatIsInside": "{show} what is inside {name}",
+	"gallery.import": "Import",
 	"gallery.importAFolder": "Import a folder",
 	"gallery.inside": "{length} {albums} inside",
 	"gallery.into": "into",

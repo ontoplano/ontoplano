@@ -339,7 +339,7 @@
 				<input type="hidden" name="files" />
 				<label class="btn btn-sm cursor-pointer">
 					<Icon name="download" />
-					{t('gallery.importAFolder')}
+					{t('gallery.import')}
 					<input
 						type="file"
 						accept="image/png,image/jpeg,image/gif,image/webp"

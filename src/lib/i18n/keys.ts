@@ -517,6 +517,7 @@ export type MessageKey =
 	| 'gallery.id.thisIsItsOnlyAlbum'
 	| 'gallery.id.whatIsInThePicture'
 	| 'gallery.id.whatIsInside'
+	| 'gallery.import'
 	| 'gallery.importAFolder'
 	| 'gallery.inside'
 	| 'gallery.into'

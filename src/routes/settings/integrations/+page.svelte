@@ -3,6 +3,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
+	import Modal from '$lib/components/Modal.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import CopyBlock from '$lib/components/CopyBlock.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -272,11 +273,29 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 					</p>
 
 					<!--
-					The button and the form occupy the same place: naming a key is one
-					field, and a form that appears below the button it replaced pushes
-					everything under it down the page.
+					Making a key is a question, so it is asked in a dialog.
+
+					It was a form that took the button's place on the page — which
+					meant answering it while the rest of the screen scrolled past
+					underneath, and reaching the button that finishes it by going back
+					up through everything it asks.
 				-->
-					{#if naming}
+					<button
+						type="button"
+						class="btn btn-sm mt-2"
+						aria-haspopup="dialog"
+						onclick={() => (naming = true)}
+					>
+						<Icon name="plus" size={16} />
+						{t('settings.integrations.createAKey')}
+					</button>
+
+					<Modal
+						bind:open={naming}
+						title={t('settings.integrations.createAKey')}
+						description={t('settings.integrations.aKeyIsThePassword')}
+						size="lg"
+					>
 						<form
 							id="new-key"
 							method="post"
@@ -467,26 +486,9 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 								</button>
 							</div>
 						</form>
-					{:else}
-						<!--
-						A disclosure, drawn as one.
+					</Modal>
 
-						It was a filled button, which reads as "this does the thing" — and
-						what it actually does is open a form in the same place. The chevron
-						and `aria-expanded` say so to somebody looking and to somebody
-						listening.
-					-->
-						<button
-							type="button"
-							class="btn btn-sm mt-2"
-							aria-expanded={naming}
-							aria-controls="new-key"
-							onclick={() => (naming = true)}
-						>
-							<Icon name="chevron-down" size={16} />
-							{t('settings.integrations.createAKey')}
-						</button>
-						<!--
+					<!--
 						The count and the way to them, and nothing else.
 
 						It used to carry the warning about a secret being shown once, which
@@ -494,20 +496,19 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 						somebody who has not done anything yet. That warning belongs to the
 						moment a key exists, and it is there.
 					-->
-						{#if data.assistants.length > 0}
-							<!-- The count belongs to the link, not to a sentence in front of
+					{#if data.assistants.length > 0}
+						<!-- The count belongs to the link, not to a sentence in front of
 							     it: "you already have 4" and "see them here" are one thing to
 							     press and were two things to read. -->
-							<p class="mt-3 max-w-2xl text-sm leading-relaxed text-gray-500">
-								<a
-									href={resolve('/settings/integrations/connections')}
-									class="underline underline-offset-2"
-									>{t('settings.integrations.seeYourKeys', {
-										count: data.assistants.length
-									})}</a
-								>
-							</p>
-						{/if}
+						<p class="mt-3 max-w-2xl text-sm leading-relaxed text-gray-500">
+							<a
+								href={resolve('/settings/integrations/connections')}
+								class="underline underline-offset-2"
+								>{t('settings.integrations.seeYourKeys', {
+									count: data.assistants.length
+								})}</a
+							>
+						</p>
 					{/if}
 
 					{#if key}

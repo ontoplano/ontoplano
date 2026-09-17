@@ -574,6 +574,7 @@ export const messages: Catalogue = {
 		'Este es su único álbum, así que la foto se elimina para siempre.',
 	'gallery.id.whatIsInThePicture': 'qué hay en la foto',
 	'gallery.id.whatIsInside': '{show} qué hay dentro de {name}',
+	'gallery.import': 'Import',
 	'gallery.importAFolder': 'Importar una carpeta',
 	'gallery.inside': '{length} {albums} dentro',
 	'gallery.into': 'a',

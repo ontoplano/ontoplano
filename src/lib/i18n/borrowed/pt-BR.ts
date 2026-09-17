@@ -8,4 +8,4 @@
  * a list. Production never asks for this module, so it is never in the
  * bundle a reader downloads.
  */
-export const borrowed: ReadonlySet<string> = new Set(['reminders.newReminder']);
+export const borrowed: ReadonlySet<string> = new Set(['gallery.import', 'reminders.newReminder']);

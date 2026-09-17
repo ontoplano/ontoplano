@@ -576,6 +576,7 @@ export const messages: Catalogue = {
 		'Dies ist sein einziges Album, daher wird das Bild endgültig gelöscht.',
 	'gallery.id.whatIsInThePicture': 'was auf dem Bild ist',
 	'gallery.id.whatIsInside': '{show}, was in {name} enthalten ist',
+	'gallery.import': 'Import',
 	'gallery.importAFolder': 'Einen Ordner importieren',
 	'gallery.inside': '{length} {albums} darin',
 	'gallery.into': 'in',

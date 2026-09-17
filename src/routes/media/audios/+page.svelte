@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
+	import AudioPlayer from '$lib/components/AudioPlayer.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -8,6 +9,7 @@
 	import Recorder from '$lib/components/Recorder.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { armed } from '$lib/actions/armed';
+	import { setRoomAction } from '$lib/room-action.svelte';
 	import { useT } from '$lib/i18n';
 	import type { PageData } from './$types';
 
@@ -25,6 +27,25 @@
 
 	/** Which row's name is being edited, if any. One at a time. */
 	let renaming = $state<number | null>(null);
+
+	/**
+	 * Recording lives where every room's "new something" lives.
+	 *
+	 * It was a Record button inside a card at the top of the list — a second
+	 * place to look for the one thing this tab is for, while the room's own
+	 * action slot beside the title sat empty. The gallery puts New album there;
+	 * this puts Record.
+	 */
+	let recording = $state(false);
+	let started = $state(false);
+
+	setRoomAction(() => ({
+		label: t('audio.record'),
+		run: () => {
+			started = false;
+			recording = true;
+		}
+	}));
 
 	/** The one being deleted, if any. Asked in a dialog like every other. */
 	let doomedId = $state<number | null>(null);
@@ -64,16 +85,6 @@
 			</span>
 		{/snippet}
 	</RoomToolbar>
-
-	<section class="border border-gray-200 bg-white p-4 shadow-card">
-		<Recorder
-			kilobytes={data.limits.audioKilobytes}
-			atMost={data.limits.accountAudios}
-			{full}
-			suggestedName={data.suggestedName}
-			onsave={keep}
-		/>
-	</section>
 
 	{#if data.recordings.length === 0}
 		<EmptyState icon="sound" title={t('audio.none')} />
@@ -119,15 +130,10 @@
 						{/if}
 					</div>
 
-					<!--
-						The player is the browser's own.
-
-						A hand-built transport here would be a second one to keep in
-						step with the recorder's, for a row somebody plays and moves
-						on from. The controls it draws are the platform's.
-					-->
-					<audio class="h-8 w-full sm:w-64" controls preload="none" src="/media/audio/{one.id}"
-					></audio>
+					<!-- The app's own transport rather than the browser's, which
+					     arrives at a fixed size in a grey of its own and reads as a
+					     foreign object in the list. See `AudioPlayer`. -->
+					<AudioPlayer src="/media/audio/{one.id}" label={one.name} class="w-full sm:w-72" />
 
 					<div class="flex shrink-0 items-center gap-2">
 						<button
@@ -148,6 +154,30 @@
 		</ul>
 	{/if}
 </div>
+
+<!-- The same centred stage the wheel raises. Recording is the only thing
+     anybody is doing while it runs. -->
+{#if recording}
+	<div
+		class="recorder-stage {started ? '' : 'invisible'}"
+		role="group"
+		aria-label={t('audio.record')}
+	>
+		<div>
+			<Recorder
+				autostart
+				kilobytes={data.limits.audioKilobytes}
+				atMost={data.limits.accountAudios}
+				{full}
+				suggestedName={data.suggestedName}
+				onsave={keep}
+				onstarted={() => (started = true)}
+				onfail={() => (recording = false)}
+				ondone={() => (recording = false)}
+			/>
+		</div>
+	</div>
+{/if}
 
 <!--
 	Asked before it happens, the way every other deletion in the app is.

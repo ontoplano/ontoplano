@@ -1034,12 +1034,31 @@ label:has(> input[type='radio']:not(:disabled)) {
 		transition: translate 150ms ease;
 	}
 
-	.toggle:checked {
-		border-color: var(--color-gray-900);
-		background-color: var(--color-gray-900);
+	/*
+	 * Blue when on, and no tick.
+	 *
+	 * Two things were drawing on this at once. `@tailwindcss/forms` paints a
+	 * checkmark onto a checked box as a `background-image`, and the app paints
+	 * every checked control `--control-on` from a selector carrying an
+	 * attribute — which outranks a bare class. So the switch came out blue
+	 * with a tick sitting on top of its knob: a toggle wearing a checkbox's
+	 * glyph, which is two controls in one place.
+	 *
+	 * The blue stays, because that is the colour everything switched on wears
+	 * here. The tick goes: a switch says on by being over, and the knob is
+	 * already saying it. Matched on the attribute too, or the rule below this
+	 * one wins again.
+	 */
+	input[type='checkbox'].toggle {
+		background-image: none;
 	}
 
-	.toggle:checked::after {
+	input[type='checkbox'].toggle:checked {
+		border-color: var(--control-on);
+		background-color: var(--control-on);
+	}
+
+	input[type='checkbox'].toggle:checked::after {
 		translate: 0.9375rem -50%;
 	}
 

@@ -573,6 +573,7 @@ export const messages: Catalogue = {
 	'gallery.id.thisIsItsOnlyAlbum': 'Este é o único álbum dela, então a foto é apagada para sempre.',
 	'gallery.id.whatIsInThePicture': 'o que tem na foto',
 	'gallery.id.whatIsInside': '{show} o que tem dentro de {name}',
+	'gallery.import': 'Import',
 	'gallery.importAFolder': 'Importar uma pasta',
 	'gallery.inside': '{length} {albums} dentro',
 	'gallery.into': 'para',

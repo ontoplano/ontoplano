@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AudioPlayer from '$lib/components/AudioPlayer.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { notify } from '$lib/notify.svelte';
@@ -78,11 +79,13 @@
 	let elapsed = $state(0);
 	let ticking: ReturnType<typeof setInterval> | null = null;
 
-	/** How far through the held recording playback is, and how long it is. */
-	let player = $state<HTMLAudioElement | null>(null);
-	let playing = $state(false);
-	let at = $state(0);
-	let duration = $state(0);
+	/*
+	 * Playing what is in hand is `AudioPlayer`'s job, not this component's.
+	 *
+	 * It used to hold its own element, its own position and its own length —
+	 * the same three things the recordings list held, drawn slightly
+	 * differently. One transport, used in both places.
+	 */
 
 	const ceiling = $derived(kilobytes * 1024);
 
@@ -239,10 +242,6 @@
 			 * starts again from the beginning rather than carrying a position
 			 * into a file that did not have it.
 			 */
-			player?.pause();
-			playing = false;
-			at = 0;
-
 			held = new Blob(chunks, { type: chunks[0]?.type || 'audio/webm' });
 			if (heldUrl) URL.revokeObjectURL(heldUrl);
 			heldUrl = URL.createObjectURL(held);
@@ -284,19 +283,15 @@
 		if (heldUrl) URL.revokeObjectURL(heldUrl);
 		held = new Blob(chunks, { type: chunks[0]?.type || 'audio/webm' });
 		heldUrl = URL.createObjectURL(held);
-		at = 0;
-		playing = false;
 	}
 
 	function carryOn() {
 		if (!recorder || stage !== 'paused') return;
 		// The preview is of a recording that is about to grow; playing it while
 		// more arrives is listening to something that no longer exists.
-		player?.pause();
 		if (heldUrl) URL.revokeObjectURL(heldUrl);
 		heldUrl = '';
 		held = null;
-		playing = false;
 		recorder.resume();
 		stage = 'recording';
 	}
@@ -316,24 +311,9 @@
 		held = null;
 		chunks = [];
 		elapsed = 0;
-		at = 0;
-		duration = 0;
-		playing = false;
 		name = '';
 		stage = 'idle';
 		ondone?.();
-	}
-
-	function toggle() {
-		if (!player) return;
-		if (playing) player.pause();
-		else void player.play();
-	}
-
-	function scrub(event: Event) {
-		const to = Number((event.currentTarget as HTMLInputElement).value);
-		if (player && Number.isFinite(to)) player.currentTime = to;
-		at = to;
 	}
 
 	/**
@@ -398,58 +378,18 @@
 	<!--
 		Hearing what is in hand, whether it is finished or not.
 
-		Drawn while paused as well as after Stop, because deciding whether to
-		carry on is exactly when somebody wants to know what they have — and
-		waiting until the recording is over to offer that is offering it after
-		the decision.
+		Drawn while paused as well as once it is over, because deciding whether
+		to carry on is exactly when somebody wants to know what they have — and
+		waiting until the recording is finished to offer that is offering it
+		after the decision.
 
-		`preload="metadata"` so the bar has a length before anything is played,
-		and the bar is a real range: one dragged with a pointer is one a
-		keyboard cannot reach.
+		The same transport the recordings list uses. `keyed` on the URL so that
+		replacing the preview with the finished recording gives it a new
+		element rather than a stale one holding the old length.
 	-->
-	<audio
-		bind:this={player}
-		src={heldUrl}
-		preload="metadata"
-		onplay={() => (playing = true)}
-		onpause={() => (playing = false)}
-		onended={() => {
-			playing = false;
-			at = 0;
-		}}
-		ontimeupdate={(e) => (at = e.currentTarget.currentTime)}
-		onloadedmetadata={(e) => {
-			const seconds = e.currentTarget.duration;
-			// A `MediaRecorder` blob often reports Infinity until it is seeked.
-			duration = Number.isFinite(seconds) ? seconds : elapsed;
-		}}
-	></audio>
-
-	<div class="flex items-center gap-3">
-		<button
-			type="button"
-			class="btn btn-sm"
-			onclick={toggle}
-			aria-label={playing ? t('audio.pausePlayback') : t('audio.play')}
-		>
-			<Icon name={playing ? 'pause' : 'play'} />
-		</button>
-
-		<input
-			type="range"
-			class="h-1.5 flex-1 accent-gray-900"
-			min="0"
-			max={Math.max(duration, 0.1)}
-			step="0.1"
-			value={at}
-			oninput={scrub}
-			aria-label={t('audio.position')}
-		/>
-
-		<span class="shrink-0 text-sm text-gray-500 tabular-nums">
-			{clock(at)} / {clock(duration || elapsed)}
-		</span>
-	</div>
+	{#key heldUrl}
+		<AudioPlayer src={heldUrl} />
+	{/key}
 {/snippet}
 
 <div class="space-y-3">
