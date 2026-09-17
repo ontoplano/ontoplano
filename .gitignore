@@ -126,8 +126,6 @@ scripts/demo-media/birds/
 
 # My queue, for Estevão to read and reorder. The file itself is committed in
 # ontoplano-development; this is the link to it from here.
-.ORDERS.md
-.ORDERS.md
 .svelte-kit-isolated/
 
 # The detached site watcher writes here (make dev-site).
@@ -136,3 +134,13 @@ scripts/demo-media/birds/
 # What the icon scripts last drew from, so an unchanged logo is not redrawn.
 .icons-from
 .flavours-from
+
+# Working files that are mine or Estevão's, never a cloner's. `ORDERS.md` was
+# listed here as `.ORDERS.md` — a name nothing in the tree has — so it was
+# ignored by nobody and sat in the public repo for months.
+ORDERS.md
+.ORDERS.md
+TO-REVIEW.md
+promp
+pr2
+temp/
