@@ -1,4 +1,9 @@
-import { APP_LAUNCH_PARAM, APP_LAUNCH_VALUE, APP_VERSION_PARAM } from '$lib/platform';
+import {
+	APP_LAUNCH_PARAM,
+	APP_LAUNCH_VALUE,
+	APP_USER_AGENT,
+	APP_VERSION_PARAM
+} from '$lib/platform';
 
 /**
  * Which instance this app opens on, when the person has said.
@@ -21,7 +26,13 @@ export const OFFICIAL_INSTANCE = 'https://app.ontoplano.com';
  * `scripts/android-flavours.mjs` reads this string out of this file and puts
  * it in every flavour's Capacitor config, so the two cannot disagree.
  */
-export const APP_USER_AGENT = 'OntoplanoApp';
+/*
+ * One definition, in `$lib/platform` with the rest of what the app announces
+ * about itself — the server has to read the same token, and two spellings of
+ * it is one rename away from a phone the server stops recognising. Re-exported
+ * so everything already asking this module still finds it.
+ */
+export { APP_USER_AGENT } from '$lib/platform';
 
 /**
  * Where the copy of the app on the phone is served from.

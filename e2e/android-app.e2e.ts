@@ -22,64 +22,113 @@ import { visit } from './helpers/visit';
  * deliberately not `/instance` on the instance being left: that instance may
  * be old enough not to have the screen.
  */
-test('the launch mark is kept and taken back off the address', async ({ page }) => {
-	await register(page, testEmail('android-app'));
+/**
+ * On a phone, because that is the only place any of this can be true.
+ *
+ * The launch mark is kept in a cookie, and a cookie travels: a browser signed
+ * into one profile syncs them between a phone and a laptop. So the server now
+ * believes the mark only on an agent that could be an Android web view, and
+ * these have to be one — they were passing on Playwright's desktop agent,
+ * asserting behaviour that is deliberately refused now.
+ */
+const ON_A_PHONE = {
+	userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel) AppleWebKit/537.36 Mobile'
+};
 
-	await visit(page, '/?app=android');
-	// Off the address again: a link somebody copies out of the app should not
-	// carry it, and the answer is in a cookie by now.
-	expect(new URL(page.url()).searchParams.has('app')).toBe(false);
+test.describe('the app announcing itself', () => {
+	test.use(ON_A_PHONE);
 
-	await visit(page, '/settings/account');
-	const leave = page.getByRole('link', { name: 'Switch instance' });
-	await expect(leave).toBeVisible();
-	await expect(leave).toHaveAttribute('href', 'https://localhost/instance?ask=1');
+	test('the launch mark is kept and taken back off the address', async ({ page }) => {
+		await register(page, testEmail('android-app'));
 
-	// And it names the instance rather than describing one.
-	await expect(page.getByText('This app is open on')).toContainText(new URL(page.url()).host);
-});
+		await visit(page, '/?app=android');
+		// Off the address again: a link somebody copies out of the app should not
+		// carry it, and the answer is in a cookie by now.
+		expect(new URL(page.url()).searchParams.has('app')).toBe(false);
 
-test('a browser is offered nothing to switch', async ({ page }) => {
-	await register(page, testEmail('android-none'));
-	await visit(page, '/settings/account');
+		await visit(page, '/settings/account');
+		const leave = page.getByRole('link', { name: 'Switch instance' });
+		await expect(leave).toBeVisible();
+		await expect(leave).toHaveAttribute('href', 'https://localhost/instance?ask=1');
 
-	await expect(page.getByRole('link', { name: 'Switch instance' })).toHaveCount(0);
+		// And it names the instance rather than describing one.
+		await expect(page.getByText('This app is open on')).toContainText(new URL(page.url()).host);
+	});
+
+	test('a browser is offered nothing to switch', async ({ page }) => {
+		await register(page, testEmail('android-none'));
+		await visit(page, '/settings/account');
+
+		await expect(page.getByRole('link', { name: 'Switch instance' })).toHaveCount(0);
+	});
+
+	/**
+	 * A shell behind the instance is told to update, once per instance version.
+	 *
+	 * The launch address wears the shell's version beside the app mark (see
+	 * `launchAddress` in `$lib/instance-choice.ts`); the server keeps it in a
+	 * cookie and compares it to its own. A minor behind draws the band; "Not now"
+	 * puts it away and it stays away — until the instance moves again, which is a
+	 * different warning about a different gap.
+	 */
+	test('an app a minor behind is told to update, and can say not now', async ({ page }) => {
+		await register(page, testEmail('android-behind'));
+
+		// The launch, as hooks.client.ts sends it: mark and version on the address.
+		await visit(page, '/tasks/todo?app=android&app_version=0.1.0');
+		// Both parameters come back off the address, like the mark always has.
+		expect(new URL(page.url()).searchParams.has('app_version')).toBe(false);
+
+		const band = page.getByText('Update the app.');
+		await expect(band).toBeVisible();
+		// Named, not described: the person should see how far behind they are.
+		await expect(page.getByText('It is 0.1.0 and this instance runs')).toBeVisible();
+
+		await page.getByRole('button', { name: 'Not now' }).click();
+		await expect(band).toHaveCount(0);
+
+		// And it stays put away on the next page.
+		await visit(page, '/tasks/todo');
+		await expect(page.getByText('Update the app.')).toHaveCount(0);
+	});
+
+	test('a browser is never told to update', async ({ page }) => {
+		await register(page, testEmail('android-fresh'));
+		await visit(page, '/tasks/todo');
+		await expect(page.getByText('Update the app.')).toHaveCount(0);
+	});
 });
 
 /**
- * A shell behind the instance is told to update, once per instance version.
+ * A laptop carrying the phone's cookie is still a laptop.
  *
- * The launch address wears the shell's version beside the app mark (see
- * `launchAddress` in `$lib/instance-choice.ts`); the server keeps it in a
- * cookie and compares it to its own. A minor behind draws the band; "Not now"
- * puts it away and it stays away — until the instance moves again, which is a
- * different warning about a different gap.
+ * This is the bug the guard exists for, and it is not hypothetical: a synced
+ * browser profile put the app cookie on a desktop, and the desktop spent a
+ * year being told to update an app that was never installed on it. The cookie
+ * said "this is the app" and it was a year old and about another device.
+ *
+ * The launch address is opened exactly as the app opens it, on a desktop
+ * agent. Nothing about the app may follow from it.
  */
-test('an app a minor behind is told to update, and can say not now', async ({ page }) => {
-	await register(page, testEmail('android-behind'));
+test.describe('a desktop wearing the app cookie', () => {
+	test.use({
+		userAgent:
+			'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36'
+	});
 
-	// The launch, as hooks.client.ts sends it: mark and version on the address.
-	await visit(page, '/tasks/todo?app=android&app_version=0.1.0');
-	// Both parameters come back off the address, like the mark always has.
-	expect(new URL(page.url()).searchParams.has('app_version')).toBe(false);
+	test('is not the app, whatever the address said', async ({ page }) => {
+		await register(page, testEmail('android-desktop'));
 
-	const band = page.getByText('Update the app.');
-	await expect(band).toBeVisible();
-	// Named, not described: the person should see how far behind they are.
-	await expect(page.getByText('It is 0.1.0 and this instance runs')).toBeVisible();
+		await visit(page, '/tasks/todo?app=android&app_version=0.1.0');
 
-	await page.getByRole('button', { name: 'Not now' }).click();
-	await expect(band).toHaveCount(0);
+		// No band: the instance is far ahead of 0.1.0, so a phone here would be
+		// told to update. This is not a phone.
+		await expect(page.getByText('Update the app.')).toHaveCount(0);
 
-	// And it stays put away on the next page.
-	await visit(page, '/tasks/todo');
-	await expect(page.getByText('Update the app.')).toHaveCount(0);
-});
-
-test('a browser is never told to update', async ({ page }) => {
-	await register(page, testEmail('android-fresh'));
-	await visit(page, '/tasks/todo');
-	await expect(page.getByText('Update the app.')).toHaveCount(0);
+		// And nothing else that hangs off being the app, either.
+		await visit(page, '/settings/account');
+		await expect(page.getByRole('link', { name: 'Switch instance' })).toHaveCount(0);
+	});
 });
 
 /**

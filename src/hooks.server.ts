@@ -38,7 +38,8 @@ import {
 	APP_LAUNCH_PARAM,
 	APP_LAUNCH_VALUE,
 	APP_VERSION_COOKIE,
-	APP_VERSION_PARAM
+	APP_VERSION_PARAM,
+	couldBeTheApp
 } from '$lib/platform';
 import { refuse } from '$lib/server/refuse';
 import { demoRefusal } from '$lib/server/demo-guard';
@@ -240,7 +241,11 @@ const handleBetterAuth: Handle = async ({ event, resolve }) => {
 const handleNativeApp: Handle = async ({ event, resolve }) => {
 	const declared =
 		event.request.method === 'GET' &&
-		event.url.searchParams.get(APP_LAUNCH_PARAM) === APP_LAUNCH_VALUE;
+		event.url.searchParams.get(APP_LAUNCH_PARAM) === APP_LAUNCH_VALUE &&
+		// A launch address opened on a laptop — pasted, synced, followed from a
+		// note — is not a launch. Writing the cookie anyway is what left one on
+		// a machine that could never have been the app.
+		couldBeTheApp(event.request.headers.get('user-agent'));
 
 	if (declared) {
 		const cookie = {
@@ -268,7 +273,9 @@ const handleNativeApp: Handle = async ({ event, resolve }) => {
 		redirect(302, `${clean.pathname}${clean.search}${clean.hash}`);
 	}
 
-	event.locals.nativeApp = event.cookies.get(APP_COOKIE) === APP_LAUNCH_VALUE;
+	event.locals.nativeApp =
+		event.cookies.get(APP_COOKIE) === APP_LAUNCH_VALUE &&
+		couldBeTheApp(event.request.headers.get('user-agent'));
 	event.locals.nativeAppVersion = event.locals.nativeApp
 		? event.cookies.get(APP_VERSION_COOKIE)
 		: undefined;

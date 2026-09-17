@@ -65,6 +65,9 @@ export function isStandalone(): boolean {
  * the answer for every request on this install — including the ones that come
  * back from a deep link months later.
  */
+/** The token the shell appends to its web view's agent. See `android-flavours.mjs`. */
+export const APP_USER_AGENT = 'OntoplanoApp';
+
 export const APP_LAUNCH_PARAM = 'app';
 export const APP_LAUNCH_VALUE = 'android';
 export const APP_COOKIE = 'ontoplano_app';
@@ -85,6 +88,31 @@ export const APP_COOKIE = 'ontoplano_app';
  */
 export const APP_VERSION_PARAM = 'app_version';
 export const APP_VERSION_COOKIE = 'ontoplano_app_version';
+
+/**
+ * Whether this request could be the Android app at all.
+ *
+ * The note above explains why the app is recognised by a cookie rather than by
+ * its user agent, and that reasoning holds. What it did not account for is
+ * that a cookie outlives the thing it describes and travels further than the
+ * device it was written on: a browser signed into one profile syncs cookies
+ * between a phone and a laptop, and the laptop then spent a year being told to
+ * update an app it has never had. The cookie was a year old and about a
+ * different machine.
+ *
+ * So the cookie still decides, and this decides whether it is allowed to. The
+ * shell appends its own token to the agent (`scripts/android-flavours.mjs`),
+ * which settles it outright; Android on its own is the weaker half, for the
+ * requests the note above says arrive without that token. A desktop is
+ * neither, and a desktop is the one answer that cannot be true.
+ *
+ * Coarse on purpose. It is a veto, not the test — its whole job is to refuse
+ * what is impossible, and anything cleverer would start refusing phones.
+ */
+export function couldBeTheApp(userAgent: string | null | undefined): boolean {
+	const agent = userAgent ?? '';
+	return agent.includes(APP_USER_AGENT) || /android/i.test(agent);
+}
 
 /**
  * Where "not now" is remembered, holding the instance version it was said to.
