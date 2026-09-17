@@ -2153,7 +2153,7 @@ export const messages: Catalogue = {
 	'settings.preferences.turnOff': 'Turn off',
 	'settings.preferences.turnOn': 'Turn on',
 	'settings.preferences.u201cplansAreWorthlessButPlanning':
-		'u201cPlans are worthless, but planning is everything.u201d',
+		'“Planos não valem nada, mas o planejamento é tudo.”',
 	'settings.preferences.weekAndTimezone': 'Week and timezone',
 	'settings.preferences.weekSaved': 'Week saved.',
 	'settings.preferences.whatPricesOnTheShopping': 'What prices on the shopping list are in.',
@@ -2593,7 +2593,7 @@ export const messages: Catalogue = {
 	'tour.holdThisThenLetGo': 'Hold this, then let go',
 	'tour.ideas': 'Ideas',
 	'tour.importTheBankU2019sOwnExport':
-		'Import the bank\\u2019s own export and the lines land here, deduplicated — the same file twice adds nothing. Anything the bank has not published yet you can write by hand.',
+		'Import the bank’s own export and the lines land here, deduplicated — the same file twice adds nothing. Anything the bank has not published yet you can write by hand.',
 	'tour.ingredientsStepsAndACook':
 		'Ingredients, steps, and a cook mode that keeps the screen awake while you follow it.',
 	'tour.integrations': 'Integrations',

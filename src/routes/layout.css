@@ -1149,24 +1149,40 @@ label:has(> input[type='radio']:not(:disabled)) {
 		font-weight: 600;
 	}
 
+	/*
+	 * The main action is a raised surface, not a filled block.
+	 *
+	 * It used to be `--color-gray-900` on `--color-gray-900`, which inverts with
+	 * the palette: in the dark theme that is a white slab, and a row of them is
+	 * the brightest thing on the screen by a distance — every Save shouting over
+	 * the content it belongs to.
+	 *
+	 * So it is the same surface and border as a field, lifted by the same
+	 * shadow, with the weight doing the emphasis. A primary button and the
+	 * select above it now read as the same material, which is what they are:
+	 * things you press or open, sitting on the card.
+	 *
+	 * The fill is not gone from the app — `--section-accent` still fills where a
+	 * colour means something, and money buttons have their own shape. What is
+	 * gone is a neutral fill used to mean "this one matters".
+	 */
 	.btn-primary {
-		--btn-ink: var(--ink-on-fill);
-		--btn-ink-hover: var(--ink-on-fill);
+		--btn-ink: var(--color-gray-900);
+		--btn-ink-hover: var(--color-gray-900);
 
-		border-color: var(--color-gray-900);
-		background-color: var(--color-gray-900);
-		font-weight: 500;
+		border-color: var(--color-gray-300);
+		background-color: var(--color-white);
+		font-weight: 600;
 		box-shadow: var(--shadow-card);
 	}
 
 	.btn-primary:hover:not(:disabled) {
-		background-color: var(--color-gray-800);
-		border-color: var(--color-gray-800);
+		border-color: var(--color-gray-400);
 		box-shadow: var(--shadow-raised);
 	}
 
 	.btn-primary:active {
-		box-shadow: var(--shadow-card);
+		box-shadow: none;
 	}
 
 	/*

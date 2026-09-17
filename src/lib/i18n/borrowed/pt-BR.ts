@@ -1221,7 +1221,6 @@ export const borrowed: ReadonlySet<string> = new Set([
 	'settings.preferences.timezone',
 	'settings.preferences.turnOff',
 	'settings.preferences.turnOn',
-	'settings.preferences.u201cplansAreWorthlessButPlanning',
 	'settings.preferences.weekAndTimezone',
 	'settings.preferences.weekSaved',
 	'settings.preferences.whatPricesOnTheShopping',

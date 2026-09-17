@@ -1888,7 +1888,7 @@
 	"settings.preferences.timezone": null,
 	"settings.preferences.turnOff": null,
 	"settings.preferences.turnOn": null,
-	"settings.preferences.u201cplansAreWorthlessButPlanning": null,
+	"settings.preferences.u201cplansAreWorthlessButPlanning": "“Planos não valem nada, mas o planejamento é tudo.”",
 	"settings.preferences.weekAndTimezone": null,
 	"settings.preferences.weekSaved": null,
 	"settings.preferences.whatPricesOnTheShopping": null,
