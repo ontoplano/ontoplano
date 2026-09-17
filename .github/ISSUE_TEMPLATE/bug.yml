@@ -39,9 +39,9 @@ body:
     attributes:
       label: Which instance
       options:
-        - app.ontoplano.com — the hosted instance
         - One I run myself
-        - The phone itself — an isolated instance in the Android app
+        - app.ontoplano.com — the official instance
+        - An isolated phone instance
         - The demo
     validations:
       required: true
