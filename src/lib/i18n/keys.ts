@@ -1440,6 +1440,7 @@ export type MessageKey =
 	| 'reminders.lookThatFar'
 	| 'reminders.makeASound'
 	| 'reminders.makeHttpsLocal'
+	| 'reminders.newReminder'
 	| 'reminders.nothingCanReachThisBrowser'
 	| 'reminders.nothingWaiting'
 	| 'reminders.nothingWentOff'

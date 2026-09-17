@@ -10,6 +10,7 @@
 		phonePermission
 	} from '$lib/phone-notifications';
 	import Card from '$lib/components/Card.svelte';
+	import Modal from '$lib/components/Modal.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -370,6 +371,9 @@
 	 * two open editors are two answers to "what am I changing".
 	 */
 	let editing = $state<number | null>(null);
+
+	/** Whether the "set one" dialog is open. */
+	let setting = $state(false);
 	let editDay = $state('');
 	let editTime = $state('');
 	let editSay = $state('');
@@ -534,9 +538,27 @@
 		thing that beeps without being asked is a thing whose sound gets turned
 		off for good.
 	-->
-	<div data-tour="set-alarm">
-		<Card title={t('reminders.setOne')} description={t('reminders.aDayAndWhatTo')}>
-			<!--
+	<!--
+		Setting one is a question, so it is asked in a dialog.
+
+		It was a card at the top of the page: a form you had to scroll past
+		every time you came here to look at what was already set, which is the
+		commoner reason to open this screen by far.
+	-->
+	<div data-tour="set-alarm" class="flex justify-end">
+		<button type="button" class="btn btn-primary" onclick={() => (setting = true)}>
+			<Icon name="plus" class="mr-1.5" />
+			{t('reminders.newReminder')}
+		</button>
+	</div>
+
+	<Modal
+		bind:open={setting}
+		title={t('reminders.setOne')}
+		description={t('reminders.aDayAndWhatTo')}
+		size="lg"
+	>
+		<!--
 				A day and a time, not one field with six segments in it.
 
 				`datetime-local` renders as `dd/mm/yyyy, --:--` — one control
@@ -545,46 +567,46 @@
 				phone, and let somebody set a time for today without touching the
 				date at all.
 			-->
-			<form
-				method="post"
-				action="?/create"
-				use:enhance={() => {
-					return async ({ result, update }) => {
-						await update({ reset: false });
-						// Cleared by hand rather than by `reset`, which blanks a date
-						// back to nothing — the default is today, and a form that
-						// forgets what day it is asks for it again every time.
-						if (result.type === 'success') {
-							day = data.today;
-							time = '';
-							say = '';
-							audible = false;
-						}
-					};
-				}}
-				class="space-y-3"
-			>
-				<FormGrid>
-					<Field label={t('reminders.day')} span={6} required>
-						<input
-							name="day"
-							type="date"
-							required
-							min={data.today}
-							autocomplete="off"
-							bind:value={day}
-							onfocus={pick}
-							onclick={pick}
-							title={t('reminders.whichDayItShouldGo')}
-							class="input"
-						/>
-					</Field>
-					<Field
-						label={t('reminders.time')}
-						span={6}
-						hint="Empty means {data.dayStart}, when your day starts."
-					>
-						<!--
+		<form
+			method="post"
+			action="?/create"
+			use:enhance={() => {
+				return async ({ result, update }) => {
+					await update({ reset: false });
+					// Cleared by hand rather than by `reset`, which blanks a date
+					// back to nothing — the default is today, and a form that
+					// forgets what day it is asks for it again every time.
+					if (result.type === 'success') {
+						day = data.today;
+						time = '';
+						say = '';
+						audible = false;
+					}
+				};
+			}}
+			class="space-y-3"
+		>
+			<FormGrid>
+				<Field label={t('reminders.day')} span={6} required>
+					<input
+						name="day"
+						type="date"
+						required
+						min={data.today}
+						autocomplete="off"
+						bind:value={day}
+						onfocus={pick}
+						onclick={pick}
+						title={t('reminders.whichDayItShouldGo')}
+						class="input"
+					/>
+				</Field>
+				<Field
+					label={t('reminders.time')}
+					span={6}
+					hint="Empty means {data.dayStart}, when your day starts."
+				>
+					<!--
 							The browser's own time field, whatever it draws.
 
 							There was a hand-built clock face here for a while, because
@@ -597,50 +619,50 @@
 							real destination is an installed Android app, where this is the
 							good one.
 						-->
-						<input
-							id="reminder-time"
-							name="time"
-							type="time"
-							autocomplete="off"
-							bind:value={time}
-							title={t('reminders.whatTimeItShouldGo', { dayStart: data.dayStart })}
-							class="input"
-						/>
-					</Field>
-					<Field label={t('reminders.whatToSay')} span={12} required>
-						<OneLine
-							name="label"
-							required
-							bind:value={say}
-							placeholder={t('reminders.eGTakeTheBreadOut')}
-							class="input"
-						/>
-					</Field>
-				</FormGrid>
+					<input
+						id="reminder-time"
+						name="time"
+						type="time"
+						autocomplete="off"
+						bind:value={time}
+						title={t('reminders.whatTimeItShouldGo', { dayStart: data.dayStart })}
+						class="input"
+					/>
+				</Field>
+				<Field label={t('reminders.whatToSay')} span={12} required>
+					<OneLine
+						name="label"
+						required
+						bind:value={say}
+						placeholder={t('reminders.eGTakeTheBreadOut')}
+						class="input"
+					/>
+				</Field>
+			</FormGrid>
 
-				{@render alreadyBeen(day, time)}
+			{@render alreadyBeen(day, time)}
 
-				<div class="flex flex-wrap items-center gap-4">
-					<label
-						class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
-						title={t('reminders.playASoundAsWell')}
-					>
-						<input type="checkbox" name="audible" bind:checked={audible} class="size-4" />
-						{t('reminders.makeASound')}
-					</label>
-					<label
-						class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
-						title={t('reminders.whichSoundThisOnePlays')}
-					>
-						{t('reminders.sound')}
-						<select name="ringtoneId" class="select w-44">
-							<option value="">{t('reminders.default')}</option>
-							{#each data.ringtones as tone (tone.id)}
-								<option value={tone.id}>{tone.name}</option>
-							{/each}
-						</select>
-					</label>
-					<!--
+			<div class="flex flex-wrap items-center gap-4">
+				<label
+					class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
+					title={t('reminders.playASoundAsWell')}
+				>
+					<input type="checkbox" name="audible" bind:checked={audible} class="size-4" />
+					{t('reminders.makeASound')}
+				</label>
+				<label
+					class="flex items-center gap-2 text-sm whitespace-nowrap text-gray-700"
+					title={t('reminders.whichSoundThisOnePlays')}
+				>
+					{t('reminders.sound')}
+					<select name="ringtoneId" class="select w-44">
+						<option value="">{t('reminders.default')}</option>
+						{#each data.ringtones as tone (tone.id)}
+							<option value={tone.id}>{tone.name}</option>
+						{/each}
+					</select>
+				</label>
+				<!--
 						Off until there is something to set.
 
 						It looked pressable with the fields empty, so pressing it did
@@ -648,22 +670,21 @@
 						validation message is easy to miss on a phone, and a control
 						that cannot work should not look like one that can.
 					-->
-					<button
-						type="submit"
-						disabled={!ready}
-						class="btn btn-primary btn-sm ml-auto"
-						title={ready
-							? t('reminders.setThisReminder')
-							: hasBeen(day, time)
-								? t('reminders.thatTimeHasAlreadyBeen2')
-								: t('reminders.aDayAndSomethingTo')}
-					>
-						{t('reminders.setIt')}
-					</button>
-				</div>
-			</form>
-		</Card>
-	</div>
+				<button
+					type="submit"
+					disabled={!ready}
+					class="btn btn-primary btn-sm ml-auto"
+					title={ready
+						? t('reminders.setThisReminder')
+						: hasBeen(day, time)
+							? t('reminders.thatTimeHasAlreadyBeen2')
+							: t('reminders.aDayAndSomethingTo')}
+				>
+					{t('reminders.setIt')}
+				</button>
+			</div>
+		</form>
+	</Modal>
 
 	<!--
 		What is coming, and how far ahead you are asking.
@@ -826,7 +847,17 @@
 							move anything above it, which is why it grows downward inside
 							its own row.
 						-->
-						{#if editing === reminder.id}
+						<!--
+							`reminder.id !== null` first, and it is the whole bug.
+
+							A bill's date and a birthday are rows in this list with no
+							reminder behind them yet, so their id is null — and `editing`
+							starts as null too. `editing === reminder.id` was therefore
+							`null === null` for every one of them, which is true: the page
+							opened with an edit form under every derived row it could
+							show. Nothing was being edited; they all just looked like it.
+						-->
+						{#if reminder.id !== null && editing === reminder.id}
 							<form
 								method="post"
 								action="?/edit"

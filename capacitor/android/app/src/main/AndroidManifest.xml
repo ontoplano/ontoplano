@@ -82,4 +82,19 @@
         moment — when they have just pressed Record, rather than at install.
     -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!--
+        And this one, which is the reason saying yes was not enough.
+
+        Capacitor's web view client asks for RECORD_AUDIO *and*
+        MODIFY_AUDIO_SETTINGS together, and grants the page only if every one
+        of them comes back granted. MODIFY_AUDIO_SETTINGS is a normal
+        permission — Android grants it at install and never asks — but only to
+        an app that declares it. Undeclared, it came back denied, so the pair
+        failed however firmly somebody had just said yes to the microphone.
+
+        Which is exactly what it looked like: the Android dialog appeared, "Only
+        this time" was chosen, and the app still said the device would not give
+        it a microphone.
+    -->
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 </manifest>

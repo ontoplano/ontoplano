@@ -1608,6 +1608,7 @@ export const messages: Catalogue = {
 	'reminders.lookThatFar': 'Look that far',
 	'reminders.makeASound': 'Make a sound',
 	'reminders.makeHttpsLocal': 'make https-local',
+	'reminders.newReminder': 'New reminder',
 	'reminders.nothingCanReachThisBrowser':
 		'Nothing can reach this browser: notifications need HTTPS and this page is on',
 	'reminders.nothingWaiting': 'Nothing waiting',

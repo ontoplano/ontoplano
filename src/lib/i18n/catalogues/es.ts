@@ -1635,6 +1635,7 @@ export const messages: Catalogue = {
 	'reminders.lookThatFar': 'Mirar hasta ahí',
 	'reminders.makeASound': 'Hacer un sonido',
 	'reminders.makeHttpsLocal': 'make https-local',
+	'reminders.newReminder': 'New reminder',
 	'reminders.nothingCanReachThisBrowser':
 		'Nada puede llegar a este navegador: las notificaciones necesitan HTTPS y esta página está en',
 	'reminders.nothingWaiting': 'Nada en espera',

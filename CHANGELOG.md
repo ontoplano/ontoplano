@@ -18,6 +18,28 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.179.0 — 2026-09-17
+
+- **A Media room, and you can record in it.** The Gallery is a tab inside it
+  now; the other tab is Recordings. Press the recording wedge on the `+` wheel
+  and it starts recording — hear it back, scrub through it, name it or leave
+  the name alone and it is filed under the moment you made it. Recordings can
+  go into a note or an idea, where they play inline.
+- **The app remembers what it has told you.** Every notification is kept, so
+  "what did it say while I was out" has an answer rather than depending on
+  which device happened to be awake.
+- **Fixed: reminders reached no phone pointed at a server.** The list of
+  alarms gave a wall clock where the shell wanted a moment, so every one of
+  them was read as the epoch and skipped — silently, every time.
+- **Fixed: setting a phone up to ring worked once per account.** The key it
+  makes is named, and the name stayed taken by the key it had just revoked.
+- **Fixed: a second calendar link was refused**, for the same reason.
+- **Fixed: the `+` wheel sat half behind the bar it comes out of**, which made
+  the wedge nearest your thumb the hardest one on the screen to hit.
+- **Notifications each have one switch** instead of a pair of On and Off
+  buttons, and setting the hour no longer turns the notification off.
+- **The status bar shows the bird** rather than an octagon with a dot in it.
+
 ## 0.178.25 — 2026-09-17
 
 - **The AI tab's first step reads like what it is.** "Create a key" is a

@@ -4,6 +4,7 @@
 	import Recorder from '$lib/components/Recorder.svelte';
 	import { ACCOUNT_AUDIOS, AUDIO_KILOBYTES } from '$lib/services/media-limits';
 	import { audioMarkdown } from '$lib/audio-markdown';
+	import { invalidateAll } from '$app/navigation';
 	import { useT } from '$lib/i18n';
 
 	/**
@@ -57,6 +58,9 @@
 
 		write(audioMarkdown(reply.id, reply.name ?? ''));
 		recording = false;
+		// The recordings list may be behind this form; it should not have to be
+		// reloaded by hand to show what was just made.
+		await invalidateAll();
 	}
 
 	async function openChooser() {

@@ -8,6 +8,7 @@
 	import { ACCOUNT_AUDIOS, AUDIO_KILOBYTES } from '$lib/services/media-limits';
 	import { notify } from '$lib/notify.svelte';
 	import { cssVarPx } from '$lib/css-length';
+	import { invalidateAll } from '$app/navigation';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -115,8 +116,10 @@
 		const reply = (await answer.json().catch(() => ({}))) as { message?: string };
 		// Capture writes somewhere you are not looking, which is the point of
 		// it — so it says so rather than leaving you to go and check.
-		if (answer.ok) notify.success(t('media.pictureAdded'));
-		else notify.error(reply.message ?? '');
+		if (answer.ok) {
+			notify.success(t('media.pictureAdded'));
+			await invalidateAll();
+		} else notify.error(reply.message ?? '');
 	}
 
 	async function keepRecording(bytes: Blob, name: string) {
@@ -130,6 +133,14 @@
 		}
 		notify.success(t('media.recordingAdded'));
 		recording = false;
+		/*
+		 * And whatever is on screen catches up.
+		 *
+		 * The wheel reaches every page, including the one that lists
+		 * recordings — where saving one left the list exactly as it was and
+		 * the only way to see it was to reload by hand.
+		 */
+		await invalidateAll();
 	}
 
 	/*

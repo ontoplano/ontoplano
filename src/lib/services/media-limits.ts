@@ -19,6 +19,27 @@
 export const AUDIO_KILOBYTES = 200;
 export const ACCOUNT_AUDIOS = 100;
 
+/**
+ * How hard a recording is squeezed, and therefore how long one can be.
+ *
+ * These two numbers only make sense next to each other. `MediaRecorder` left
+ * to itself encodes at whatever the browser fancies — Chromium's default is
+ * generous enough that 200KB is about a dozen seconds, which is not a voice
+ * note, it is a cough.
+ *
+ * Opus at 16 kbps in one channel is a well-known point on that curve: plainly
+ * intelligible speech, and nothing anybody would call hi-fi. It puts the
+ * ceiling at around a hundred seconds, which is the number that matters —
+ * `AUDIO_SECONDS` below is it, and the recorder counts down against it.
+ *
+ * Louder is not better here. A voice note is a sentence you did not want to
+ * type; the format should be the cheapest one that carries a sentence.
+ */
+export const AUDIO_BITS_PER_SECOND = 16_000;
+
+/** How long a recording can run before it reaches the ceiling, in seconds. */
+export const AUDIO_SECONDS = Math.floor((AUDIO_KILOBYTES * 1024 * 8) / AUDIO_BITS_PER_SECOND);
+
 export type MediaLimits = {
 	/** The biggest single picture, in bytes and in the number people read. */
 	maxBytes: number;

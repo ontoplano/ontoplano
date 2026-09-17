@@ -1461,6 +1461,7 @@
 	"reminders.lookThatFar": "So weit schauen",
 	"reminders.makeASound": "Einen Ton abspielen",
 	"reminders.makeHttpsLocal": "make https-local",
+	"reminders.newReminder": null,
 	"reminders.nothingCanReachThisBrowser": "Nichts kann diesen Browser erreichen: Benachrichtigungen brauchen HTTPS, und diese Seite läuft auf",
 	"reminders.nothingWaiting": "Nichts wartet",
 	"reminders.nothingWentOff": "Nichts ist losgegangen",

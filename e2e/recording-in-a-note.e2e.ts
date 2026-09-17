@@ -29,7 +29,6 @@ test('records into a note, and the note plays it back', async ({ page }) => {
 	await page.getByRole('button', { name: 'Record one' }).click();
 	await page.waitForTimeout(1200);
 	await page.getByRole('button', { name: 'Pause', exact: true }).click();
-	await page.getByRole('button', { name: 'Stop and keep' }).click();
 	await page.getByRole('textbox', { name: 'What to call it' }).fill('said aloud');
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 
@@ -61,7 +60,6 @@ test('an idea takes one too', async ({ page }) => {
 	await page.getByRole('button', { name: 'Record one' }).click();
 	await page.waitForTimeout(1100);
 	await page.getByRole('button', { name: 'Pause', exact: true }).click();
-	await page.getByRole('button', { name: 'Stop and keep' }).click();
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 
 	// Unnamed, so it is filed under the moment — and the line still lands.

@@ -32,18 +32,20 @@ test('records, keeps it under a name, renames it and deletes it', async ({ page 
 
 	await page.getByRole('button', { name: 'Record' }).click();
 
-	// Pausing is what the main button does while recording; Stop only appears
-	// once paused, so the two are never one mis-tap apart mid-sentence.
+	/*
+	 * Pausing gives everything at once.
+	 *
+	 * It used to be three presses to file one sentence — pause, stop and keep,
+	 * save. Pause now hands over the transport, the name and Save together, so
+	 * keeping a recording is the second press and Save closes the recording on
+	 * its way.
+	 */
 	const pause = page.getByRole('button', { name: 'Pause', exact: true });
 	await expect(pause).toBeVisible();
 	await page.waitForTimeout(1500);
 	await pause.click();
 
-	const stop = page.getByRole('button', { name: 'Stop and keep' });
-	await expect(stop).toBeVisible();
-	await stop.click();
-
-	// Now it can be heard before it is kept: a transport and a scrub bar.
+	// Heard before it is kept: a transport and a scrub bar.
 	await expect(page.getByRole('button', { name: 'Play' })).toBeVisible();
 	await expect(page.getByRole('slider', { name: 'Where it is playing from' })).toBeVisible();
 
@@ -97,7 +99,6 @@ test('the recording never leaves the page until it is saved', async ({ page }) =
 	await page.getByRole('button', { name: 'Record' }).click();
 	await page.waitForTimeout(1200);
 	await page.getByRole('button', { name: 'Pause', exact: true }).click();
-	await page.getByRole('button', { name: 'Stop and keep' }).click();
 	await page.getByRole('button', { name: 'Discard' }).click();
 
 	// Back to the start, with nothing kept and nothing sent.
