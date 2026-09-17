@@ -35,19 +35,28 @@ const APP = join(ROOT, 'capacitor/android/app');
  */
 /**
  * The two strings the app and this script have to agree on, read out of the
- * app's own module rather than repeated here: a user agent marker the page
+ * app's own modules rather than repeated here: a user agent marker the page
  * tests for, and the name of the file this writes for it to read.
+ *
+ * Two files, because they live in two: `APP_USER_AGENT` moved to
+ * `$lib/platform` when the server started reading it too — the server has to
+ * recognise the same token, and two spellings of it is one rename away from a
+ * phone the server stops believing.
+ *
+ * It is a text match rather than an import because this runs as plain node
+ * against TypeScript. The failure it produces is the honest one: naming the
+ * file it looked in, so whoever moved the constant is told where to look.
  */
 const { APP_USER_AGENT, INSTANCE_SUGGESTION_FILE } = (() => {
-	const source = readFileSync(join(ROOT, 'src/lib/instance-choice.ts'), 'utf8');
-	const read = (name) => {
+	const read = (where, name) => {
+		const source = readFileSync(join(ROOT, where), 'utf8');
 		const found = source.match(new RegExp(`export const ${name} = '([^']+)';`));
-		if (!found) throw new Error(`src/lib/instance-choice.ts no longer exports ${name}`);
+		if (!found) throw new Error(`${where} no longer exports ${name}`);
 		return found[1];
 	};
 	return {
-		APP_USER_AGENT: read('APP_USER_AGENT'),
-		INSTANCE_SUGGESTION_FILE: read('INSTANCE_SUGGESTION_FILE')
+		APP_USER_AGENT: read('src/lib/platform.ts', 'APP_USER_AGENT'),
+		INSTANCE_SUGGESTION_FILE: read('src/lib/instance-choice.ts', 'INSTANCE_SUGGESTION_FILE')
 	};
 })();
 
