@@ -653,6 +653,7 @@ export const messages: Catalogue = {
 	'goals.toDos': 'To-dos',
 	'goals.towardsThis': 'towards this',
 	'goals.week': 'Week',
+	'goals.weekOfDateYear': 'Week of {date} {year}',
 	'goals.weeklyBlocks': 'Weekly blocks',
 	'goals.whatCountsTowardsThisGoal': 'What counts towards this goal',
 	'goals.whatKindOfNumber': 'What kind of number',
@@ -1649,6 +1650,14 @@ export const messages: Catalogue = {
 	'reminders.stopsThatOrSetsIt': 'stops that, or sets it up again.',
 	'reminders.thatTimeHasAlreadyBeen': 'That time has already been.',
 	'reminders.thatTimeHasAlreadyBeen2': 'That time has already been',
+	'reminders.theLastDays': {
+		one: 'The last {count} day — what has already gone off.',
+		other: 'The last {count} days — what has already gone off.'
+	},
+	'reminders.theNextDays': {
+		one: 'The next {count} day — everything set, whatever set it.',
+		other: 'The next {count} days — everything set, whatever set it.'
+	},
 	'reminders.thisBrowserHasNoPush':
 		'This browser has no push support, so reminders will only arrive while ontoplano is open.\n\t\t\t\t\tInstalling it as an app usually fixes that.',
 	'reminders.thisBrowserHasNotBeen':
@@ -2077,7 +2086,11 @@ export const messages: Catalogue = {
 	'settings.integrations.2HandItTo': '2 · Hand it to your assistant',
 	'settings.integrations.aKeyIsThePassword':
 		'A key is the password you hand to the assistant. It is shown once, when you make it.',
+	'settings.integrations.addThisToCodexConfig':
+		'Add this to ~/.codex/config.toml, and put the key in your shell profile so it is there every time.',
+	'settings.integrations.addThisToCursorConfig': 'Add this to ~/.cursor/mcp.json.',
 	'settings.integrations.aiAssistant': 'AI assistant',
+	'settings.integrations.aiAssistantDefaultName': 'AI assistant',
 	'settings.integrations.allOfItUnlessYou':
 		'All of it, unless you say otherwise. Anything unticked stays out of reach.',
 	'settings.integrations.andLetItDeleteThings': '…and let it delete things',
@@ -2196,14 +2209,20 @@ export const messages: Catalogue = {
 	'settings.integrations.copyThis': 'Copy this',
 	'settings.integrations.createAKey': 'Create a key',
 	'settings.integrations.createIt': 'Create it',
+	'settings.integrations.diaryAndNotebooks': 'Diary and notebooks',
 	'settings.integrations.doNotShareItWith': 'Do not share it with anyone.',
 	'settings.integrations.everythingAnAssistantHasChanged':
 		'Everything an assistant has changed, newest first. Anything it removed can be put back.',
+	'settings.integrations.forAnAssistantWithTerminal':
+		'For an assistant with a terminal. It writes its own setting and picks this up when it next starts.',
 	'settings.integrations.hasTheFullFormWith':
 		'has the full form, with every permission and an expiry.',
 	'settings.integrations.howToSetEachOne': 'How to set each one up permanently — the docs',
 	'settings.integrations.integrations': 'Integrations',
 	'settings.integrations.itIsAlreadyInThe': 'It is already in the text below.',
+	'settings.integrations.itsConnectorScreenHasNowhere':
+		'Its connector screen has nowhere to put a key, so this goes through mcp-remote. No space after the colon — Desktop cuts the header in half if you leave one.',
+	'settings.integrations.justTellIt': 'Just tell it',
 	'settings.integrations.letAnAiAssistantUse': 'Let an AI assistant use this app',
 	'settings.integrations.notSomething': '{label}: {write} — not something this can do',
 	'settings.integrations.nothingYetEverythingAn':
@@ -2214,11 +2233,20 @@ export const messages: Catalogue = {
 	'settings.integrations.read': 'Read',
 	'settings.integrations.removingIsPermanentWithoutThis':
 		'Removing is permanent. Without this, an assistant can add and change things\n\t\t\t\t\t\t\t\t\t\t\tbut never take them away.',
+	'settings.integrations.runThisInATerminal':
+		'Run this in a terminal. It writes the setting for you, for every project — that is what --scope user is doing there.',
 	'settings.integrations.seeYourKeys': {
 		one: 'See your key here ({count})',
 		other: 'See your keys here ({count})'
 	},
+	'settings.integrations.theCommandLine': 'The command line',
+	'settings.integrations.theDesktopApp': 'The desktop app',
+	'settings.integrations.thePlugin': 'The plugin',
 	'settings.integrations.thisSecretWillOnlyBe': 'This secret will only be shown once.',
+	'settings.integrations.tickAtLeastOne': 'Tick at least one thing the assistant may do.',
+	'settings.integrations.todaysPlan': "Today's plan",
+	'settings.integrations.twoLinesInsideClaudeCode':
+		'Two lines inside Claude Code. It asks for this address and your key, and keeps the key in the system keychain.',
 	'settings.integrations.whatItMayDo': 'What it may do',
 	'settings.integrations.whatYourAssistantsDid': 'What your assistants did',
 	'settings.integrations.whichOneAreYouUsing': 'Which one are you using?',
@@ -2247,6 +2275,7 @@ export const messages: Catalogue = {
 	'settings.integrations.wiringUpAScriptA': 'Wiring up a script, a widget or a calendar instead?',
 	'settings.integrations.write': 'Write',
 	'settings.integrations.yourNewKey': 'Your new key',
+	'settings.integrations.yourWeek': 'Your week',
 	'settings.integrations.yourWeekToDoListDiary':
 		'Your week, to-do list, diary, shopping list or whatever you want, reachable by an assistant you already talk to.',
 	'settings.language.heading': 'Language',

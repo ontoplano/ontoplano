@@ -573,7 +573,7 @@ export const messages: Catalogue = {
 	'gallery.id.thisIsItsOnlyAlbum': 'Este é o único álbum dela, então a foto é apagada para sempre.',
 	'gallery.id.whatIsInThePicture': 'o que tem na foto',
 	'gallery.id.whatIsInside': '{show} o que tem dentro de {name}',
-	'gallery.import': 'Import',
+	'gallery.import': 'Importar',
 	'gallery.importAFolder': 'Importar uma pasta',
 	'gallery.inside': '{length} {albums} dentro',
 	'gallery.into': 'para',
@@ -669,6 +669,7 @@ export const messages: Catalogue = {
 	'goals.toDos': 'A fazer',
 	'goals.towardsThis': 'para isto',
 	'goals.week': 'Semana',
+	'goals.weekOfDateYear': 'Semana de {date} {year}',
 	'goals.weeklyBlocks': 'Blocos semanais',
 	'goals.whatCountsTowardsThisGoal': 'O que conta para esta meta',
 	'goals.whatKindOfNumber': 'Que tipo de número',
@@ -1557,12 +1558,12 @@ export const messages: Catalogue = {
 	'notebooks.weekly.weeklyNotesOntoplano': 'Notas semanais · Ontoplano',
 	'notebooks.whatIsInside': '{show} o que há dentro de {title}',
 	'notebooks.whatItIsFor': 'Para que serve',
-	'notifications.markAllRead': 'Mark all read',
-	'notifications.none': 'Nothing yet.',
-	'notifications.open': 'Notifications, {count} unread',
-	'notifications.openNone': 'Notifications',
-	'notifications.title': 'Notifications',
-	'notifications.unread': '{count} unread',
+	'notifications.markAllRead': 'Marcar tudo como lido',
+	'notifications.none': 'Nada ainda.',
+	'notifications.open': 'Notificações, {count} não lidas',
+	'notifications.openNone': 'Notificações',
+	'notifications.title': 'Notificações',
+	'notifications.unread': '{count} não lidas',
 	'notify.everyBlockOnThePlan':
 		'Todo bloco do plano avisa quando chega a hora. Sem isso, só avisam os blocos aos quais você deu uma antecedência.',
 	'notify.mondayMorningWhatLastWeek':
@@ -1635,7 +1636,7 @@ export const messages: Catalogue = {
 	'reminders.lookThatFar': 'Olhar até lá',
 	'reminders.makeASound': 'Fazer um som',
 	'reminders.makeHttpsLocal': 'make https-local',
-	'reminders.newReminder': 'New reminder',
+	'reminders.newReminder': 'Novo lembrete',
 	'reminders.nothingCanReachThisBrowser':
 		'Nada consegue alcançar este navegador: notificações exigem HTTPS e esta página está em',
 	'reminders.nothingWaiting': 'Nada em espera',
@@ -1669,6 +1670,14 @@ export const messages: Catalogue = {
 	'reminders.stopsThatOrSetsIt': 'interrompe isso, ou configura de novo.',
 	'reminders.thatTimeHasAlreadyBeen': 'Esse horário já passou.',
 	'reminders.thatTimeHasAlreadyBeen2': 'Esse horário já passou',
+	'reminders.theLastDays': {
+		one: 'O último {count} dia — o que já disparou.',
+		other: 'Os últimos {count} dias — o que já disparou.'
+	},
+	'reminders.theNextDays': {
+		one: 'O próximo {count} dia — tudo configurado, seja o que for.',
+		other: 'Os próximos {count} dias — tudo configurado, seja o que for.'
+	},
 	'reminders.thisBrowserHasNoPush':
 		'Este navegador não tem suporte a notificações push, então os lembretes só chegam com o ontoplano aberto.\n\t\t\t\t\tInstalar como app geralmente resolve isso.',
 	'reminders.thisBrowserHasNotBeen':
@@ -2099,7 +2108,11 @@ export const messages: Catalogue = {
 	'settings.integrations.2HandItTo': '2 · Entregue ao seu assistente',
 	'settings.integrations.aKeyIsThePassword':
 		'Uma chave é a senha que você entrega ao assistente. Ela é mostrada uma vez, quando você a cria.',
+	'settings.integrations.addThisToCodexConfig':
+		'Adicione isso a ~/.codex/config.toml, e coloque a chave no seu perfil do shell para ela estar lá sempre.',
+	'settings.integrations.addThisToCursorConfig': 'Adicione isso a ~/.cursor/mcp.json.',
 	'settings.integrations.aiAssistant': 'Assistente de IA',
+	'settings.integrations.aiAssistantDefaultName': 'Assistente de IA',
 	'settings.integrations.allOfItUnlessYou':
 		'Tudo, a menos que você diga o contrário. O que estiver desmarcado fica fora de alcance.',
 	'settings.integrations.andLetItDeleteThings': '…e deixar que ele exclua coisas',
@@ -2218,15 +2231,21 @@ export const messages: Catalogue = {
 	'settings.integrations.copyThis': 'Copiar isto',
 	'settings.integrations.createAKey': 'Criar uma chave',
 	'settings.integrations.createIt': 'Criar',
+	'settings.integrations.diaryAndNotebooks': 'Diário e cadernos',
 	'settings.integrations.doNotShareItWith': 'Não compartilhe com ninguém.',
 	'settings.integrations.everythingAnAssistantHasChanged':
 		'Tudo que um assistente mudou, mais recente primeiro. Qualquer coisa que ele removeu pode ser recolocada.',
+	'settings.integrations.forAnAssistantWithTerminal':
+		'Para um assistente com terminal. Ele escreve a própria configuração e usa isso na próxima vez que iniciar.',
 	'settings.integrations.hasTheFullFormWith':
 		'tem o formulário completo, com todas as permissões e uma validade.',
 	'settings.integrations.howToSetEachOne':
 		'Como configurar cada um de forma permanente — a documentação',
 	'settings.integrations.integrations': 'Integrações',
 	'settings.integrations.itIsAlreadyInThe': 'Já está no texto abaixo.',
+	'settings.integrations.itsConnectorScreenHasNowhere':
+		'A tela de conectores dele não tem onde colocar uma chave, então isso passa pelo mcp-remote. Sem espaço depois dos dois-pontos — o Desktop corta o cabeçalho ao meio se você deixar um.',
+	'settings.integrations.justTellIt': 'Só falar com ele',
 	'settings.integrations.letAnAiAssistantUse': 'Deixe um assistente de IA usar este app',
 	'settings.integrations.notSomething': '{label}: {write} — algo que isso não pode fazer',
 	'settings.integrations.nothingYetEverythingAn':
@@ -2237,11 +2256,21 @@ export const messages: Catalogue = {
 	'settings.integrations.read': 'Leitura',
 	'settings.integrations.removingIsPermanentWithoutThis':
 		'Remover é permanente. Sem isso, um assistente pode adicionar e mudar coisas\n\t\t\t\t\t\t\t\t\t\t\tmas nunca tirá-las.',
+	'settings.integrations.runThisInATerminal':
+		'Rode isso num terminal. Ele escreve a configuração para você, em todo projeto — é isso que o --scope user faz ali.',
 	'settings.integrations.seeYourKeys': {
 		one: 'Veja sua chave aqui ({count})',
 		other: 'Veja suas chaves aqui ({count})'
 	},
+	'settings.integrations.theCommandLine': 'A linha de comando',
+	'settings.integrations.theDesktopApp': 'O app de mesa',
+	'settings.integrations.thePlugin': 'O plugin',
 	'settings.integrations.thisSecretWillOnlyBe': 'Este segredo só será mostrado uma vez.',
+	'settings.integrations.tickAtLeastOne':
+		'Marque pelo menos uma coisa que o assistente pode fazer.',
+	'settings.integrations.todaysPlan': 'O plano de hoje',
+	'settings.integrations.twoLinesInsideClaudeCode':
+		'Duas linhas dentro do Claude Code. Ele pede este endereço e sua chave, e guarda a chave no chaveiro do sistema.',
 	'settings.integrations.whatItMayDo': 'O que ele pode fazer',
 	'settings.integrations.whatYourAssistantsDid': 'O que seus assistentes fizeram',
 	'settings.integrations.whichOneAreYouUsing': 'Qual você está usando?',
@@ -2270,6 +2299,7 @@ export const messages: Catalogue = {
 		'Vai conectar um script, um widget ou um calendário em vez disso?',
 	'settings.integrations.write': 'Escrita',
 	'settings.integrations.yourNewKey': 'Sua nova chave',
+	'settings.integrations.yourWeek': 'Sua semana',
 	'settings.integrations.yourWeekToDoListDiary':
 		'Sua semana, lista de tarefas, diário, lista de compras ou o que você quiser, ao alcance de um assistente com quem você já conversa.',
 	'settings.language.heading': 'Idioma',

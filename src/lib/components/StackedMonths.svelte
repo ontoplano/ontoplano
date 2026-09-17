@@ -37,7 +37,7 @@
 	const labelAmounts = $derived(months.length <= 6);
 
 	const label = (key: string) =>
-		new Date(`${key}-15T12:00:00Z`).toLocaleString('en', { month: 'short', timeZone: 'UTC' });
+		new Date(`${key}-15T12:00:00Z`).toLocaleString(t.locale, { month: 'short', timeZone: 'UTC' });
 	const height = (cents: number) => (FLOOR - 6) * (cents / peak);
 </script>
 

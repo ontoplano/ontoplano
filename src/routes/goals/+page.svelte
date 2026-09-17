@@ -90,7 +90,7 @@
 	/** Which period the chosen start date lands in, shown next to the field. */
 	const formPeriod = $derived(
 		formStart
-			? describePeriod(formHorizon, periodStart(formHorizon, new Date(`${formStart}T00:00:00`)))
+			? describePeriod(t, formHorizon, periodStart(formHorizon, new Date(`${formStart}T00:00:00`)))
 			: ''
 	);
 	const linking = $derived(linkingId ? (data.goals.find((g) => g.id === linkingId) ?? null) : null);
@@ -593,7 +593,7 @@
 													: ''}">{goal.title}</span
 											>
 											<span class="tabular text-xs text-gray-500"
-												>{describePeriod(goal.horizon, goal.periodStart)}</span
+												>{describePeriod(t, goal.horizon, goal.periodStart)}</span
 											>
 											{#if goal.parentId}
 												{@const parent = data.goals.find((g) => g.id === goal.parentId)}

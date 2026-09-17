@@ -37,7 +37,7 @@
 	const labelAmounts = $derived(rows.length <= 6);
 
 	const monthLabel = (key: string) =>
-		new Date(`${key}-15T12:00:00Z`).toLocaleString('en', { month: 'short', timeZone: 'UTC' });
+		new Date(`${key}-15T12:00:00Z`).toLocaleString(t.locale, { month: 'short', timeZone: 'UTC' });
 	const y = (cents: number) => (H - 24) * (cents / peak);
 	const money = (cents: number) => formatMoney(cents, currency);
 </script>

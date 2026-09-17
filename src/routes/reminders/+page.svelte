@@ -346,7 +346,7 @@
 
 	function when(at: string): string {
 		const d = new Date(at.length === 16 ? at + ':00' : at);
-		return d.toLocaleString('en-GB', {
+		return d.toLocaleString(t.locale, {
 			weekday: 'short',
 			day: 'numeric',
 			month: 'short',
@@ -696,8 +696,8 @@
 	<Card
 		title={data.past ? t('reminders.alreadyBeen') : t('reminders.comingUp')}
 		description={data.past
-			? `The last ${data.days} ${data.days === 1 ? 'day' : 'days'} — what has already gone off.`
-			: `The next ${data.days} ${data.days === 1 ? 'day' : 'days'} — everything set, whatever set it.`}
+			? t('reminders.theLastDays', { count: data.days })
+			: t('reminders.theNextDays', { count: data.days })}
 		flush
 	>
 		<div

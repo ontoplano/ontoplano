@@ -16,26 +16,31 @@ import {
 } from '$lib/server/services/tokens';
 import { capabilities } from '$lib/server/settings';
 import { confinementChoices, describeConfinement } from '$lib/server/mcp/confinement';
+import { translatorFor, SOURCE_LOCALE } from '$lib/i18n/core';
+import type { Translate } from '$lib/i18n/core';
 
 /** What each family of permissions is called, in the words the app uses. */
-const SUBJECT_LABELS: Record<string, string> = {
-	tasks: 'To-do list',
-	schedule: 'Your week',
-	today: "Today's plan",
-	habits: 'Habits',
-	notes: 'Diary and notebooks',
-	ideas: 'Ideas',
-	shopping: 'Shopping list',
-	inventory: 'Where things live',
-	kitchen: 'Recipes',
-	workouts: 'Workouts',
-	bills: 'Bills',
-	people: 'People',
-	streams: 'Data streams',
-	search: 'Search'
-};
+function subjectLabels(t: Translate): Record<string, string> {
+	return {
+		tasks: t('tasks.board.toDoList'),
+		schedule: t('settings.integrations.yourWeek'),
+		today: t('settings.integrations.todaysPlan'),
+		habits: t('app.habits'),
+		notes: t('settings.integrations.diaryAndNotebooks'),
+		ideas: t('app.ideas'),
+		shopping: t('app.shoppingList'),
+		inventory: t('inventory.whereThingsLive'),
+		kitchen: t('app.recipes'),
+		workouts: t('app.workouts'),
+		bills: t('app.bills'),
+		people: t('app.people'),
+		streams: t('settings.integrations.connections.dataStreams'),
+		search: t('ui.search')
+	};
+}
 
-function assistantGrid() {
+function assistantGrid(t: Translate) {
+	const SUBJECT_LABELS = subjectLabels(t);
 	const rows = new Map<
 		string,
 		{ subject: string; label: string; read: string | null; write: string | null; says: string[] }
@@ -69,6 +74,7 @@ function assistantGrid() {
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const ctx = buildCtx(locals.user!.id);
+	const t = await translatorFor(locals.locale ?? SOURCE_LOCALE);
 
 	/*
 	 * The keys that would already work, so the page can say whether making one
@@ -111,7 +117,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		 * label instead of being dropped: a grant that is granted and not shown is
 		 * the one mistake this screen must not make.
 		 */
-		permissions: assistantGrid(),
+		permissions: assistantGrid(t),
 		/*
 		 * The things a key can be tied to, and what each still grants.
 		 *
@@ -182,6 +188,7 @@ export const actions: Actions = {
 	createKey: async ({ request, locals }) => {
 		const ctx = buildCtx(locals.user!.id);
 		const form = await request.formData();
+		const t = await translatorFor(locals.locale ?? SOURCE_LOCALE);
 
 		/*
 		 * What was ticked, clamped to what this form is for.
@@ -197,7 +204,7 @@ export const actions: Actions = {
 		const offered = [...ASSISTANT_SCOPES, 'destructive'];
 		const scopes = offered.filter((scope) => asked.includes(scope));
 		if (scopes.length === 0) {
-			return fail(400, { message: 'Tick at least one thing the assistant may do.' });
+			return fail(400, { message: t('settings.integrations.tickAtLeastOne') });
 		}
 
 		try {
@@ -213,7 +220,10 @@ export const actions: Actions = {
 				?.things.find((thing) => String(thing.id) === String(form.get('confinedId')));
 
 			const token = createToken(ctx, {
-				name: String(form.get('label') ?? '').trim() || tied?.label || 'AI assistant',
+				name:
+					String(form.get('label') ?? '').trim() ||
+					tied?.label ||
+					t('settings.integrations.aiAssistantDefaultName'),
 				scopes,
 				// Checked against the table in `mcp/confinement.ts` and against
 				// what this account can list — never trusted as posted.

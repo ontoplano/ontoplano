@@ -606,6 +606,7 @@ export type MessageKey =
 	| 'goals.toDos'
 	| 'goals.towardsThis'
 	| 'goals.week'
+	| 'goals.weekOfDateYear'
 	| 'goals.weeklyBlocks'
 	| 'goals.whatCountsTowardsThisGoal'
 	| 'goals.whatKindOfNumber'
@@ -1477,6 +1478,8 @@ export type MessageKey =
 	| 'reminders.stopsThatOrSetsIt'
 	| 'reminders.thatTimeHasAlreadyBeen'
 	| 'reminders.thatTimeHasAlreadyBeen2'
+	| 'reminders.theLastDays'
+	| 'reminders.theNextDays'
 	| 'reminders.thisBrowserHasNoPush'
 	| 'reminders.thisBrowserHasNotBeen'
 	| 'reminders.thisOneMakesASound'
@@ -1827,7 +1830,10 @@ export type MessageKey =
 	| 'settings.integrations.1MakeAKey'
 	| 'settings.integrations.2HandItTo'
 	| 'settings.integrations.aKeyIsThePassword'
+	| 'settings.integrations.addThisToCodexConfig'
+	| 'settings.integrations.addThisToCursorConfig'
 	| 'settings.integrations.aiAssistant'
+	| 'settings.integrations.aiAssistantDefaultName'
 	| 'settings.integrations.allOfItUnlessYou'
 	| 'settings.integrations.andLetItDeleteThings'
 	| 'settings.integrations.connections.aUrlOfYoursThat'
@@ -1919,12 +1925,16 @@ export type MessageKey =
 	| 'settings.integrations.copyThis'
 	| 'settings.integrations.createAKey'
 	| 'settings.integrations.createIt'
+	| 'settings.integrations.diaryAndNotebooks'
 	| 'settings.integrations.doNotShareItWith'
 	| 'settings.integrations.everythingAnAssistantHasChanged'
+	| 'settings.integrations.forAnAssistantWithTerminal'
 	| 'settings.integrations.hasTheFullFormWith'
 	| 'settings.integrations.howToSetEachOne'
 	| 'settings.integrations.integrations'
 	| 'settings.integrations.itIsAlreadyInThe'
+	| 'settings.integrations.itsConnectorScreenHasNowhere'
+	| 'settings.integrations.justTellIt'
 	| 'settings.integrations.letAnAiAssistantUse'
 	| 'settings.integrations.notSomething'
 	| 'settings.integrations.nothingYetEverythingAn'
@@ -1933,8 +1943,15 @@ export type MessageKey =
 	| 'settings.integrations.putItBack'
 	| 'settings.integrations.read'
 	| 'settings.integrations.removingIsPermanentWithoutThis'
+	| 'settings.integrations.runThisInATerminal'
 	| 'settings.integrations.seeYourKeys'
+	| 'settings.integrations.theCommandLine'
+	| 'settings.integrations.theDesktopApp'
+	| 'settings.integrations.thePlugin'
 	| 'settings.integrations.thisSecretWillOnlyBe'
+	| 'settings.integrations.tickAtLeastOne'
+	| 'settings.integrations.todaysPlan'
+	| 'settings.integrations.twoLinesInsideClaudeCode'
 	| 'settings.integrations.whatItMayDo'
 	| 'settings.integrations.whatYourAssistantsDid'
 	| 'settings.integrations.whichOneAreYouUsing'
@@ -1956,6 +1973,7 @@ export type MessageKey =
 	| 'settings.integrations.wiringUpAScriptA'
 	| 'settings.integrations.write'
 	| 'settings.integrations.yourNewKey'
+	| 'settings.integrations.yourWeek'
 	| 'settings.integrations.yourWeekToDoListDiary'
 	| 'settings.language.heading'
 	| 'settings.language.hint'
@@ -2816,6 +2834,7 @@ export interface MessageValuesFor {
 	'goals.partOf2': { title: string | number };
 	'goals.progressTowards': { unit: string | number; value: string | number };
 	'goals.tasks': { length: string | number };
+	'goals.weekOfDateYear': { date: string | number; year: string | number };
 	'health.habits.dayStreak': { count: number };
 	'health.habits.daysClean': { count: number };
 	'health.habits.inAllScroll': { length: string | number };
@@ -2978,6 +2997,8 @@ export interface MessageValuesFor {
 	'reminders.kb': { bytes: string | number };
 	'reminders.remove': { message: string | number };
 	'reminders.remove2': { name: string | number };
+	'reminders.theLastDays': { count: number };
+	'reminders.theNextDays': { count: number };
 	'reminders.upToRingtonesKbEach': { kilobytes: string | number; ringtones: string | number };
 	'reminders.whatTimeItShouldGo': { dayStart: string | number };
 	'search.for': { q: string | number; results: string | number; total: string | number };

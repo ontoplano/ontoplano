@@ -33,7 +33,7 @@
 
 	/** "17 Aug" — a Monday said the way somebody would say it. */
 	function weekName(weekStart: string): string {
-		return new Date(weekStart + 'T00:00:00').toLocaleDateString('en-GB', {
+		return new Date(weekStart + 'T00:00:00').toLocaleDateString(t.locale, {
 			day: 'numeric',
 			month: 'short'
 		});

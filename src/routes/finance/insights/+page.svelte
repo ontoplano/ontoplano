@@ -35,7 +35,7 @@
 
 	/** The months a series covers, as words: "Oct 2025 – Sep 2026". */
 	const monthName = (key: string) =>
-		new Date(`${key}-15T12:00:00Z`).toLocaleString('en', {
+		new Date(`${key}-15T12:00:00Z`).toLocaleString(t.locale, {
 			month: 'short',
 			year: 'numeric',
 			timeZone: 'UTC'
@@ -217,7 +217,7 @@
 								<title>{monthName(month)}: {money(series.byMonth[i])}</title>
 							</rect>
 							<text x={cx} y="154" text-anchor="middle" class="fill-gray-500 text-[10px]">
-								{new Date(`${month}-15T12:00:00Z`).toLocaleString('en', {
+								{new Date(`${month}-15T12:00:00Z`).toLocaleString(t.locale, {
 									month: 'short',
 									timeZone: 'UTC'
 								})}

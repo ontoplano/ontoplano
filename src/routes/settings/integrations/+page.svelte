@@ -94,9 +94,9 @@
 	const clients = $derived([
 		{
 			id: 'words',
-			name: 'Just tell it',
+			name: t('settings.integrations.justTellIt'),
 			wrap: true,
-			note: 'For an assistant with a terminal. It writes its own setting and picks this up when it next starts.',
+			note: t('settings.integrations.forAnAssistantWithTerminal'),
 			/*
 			 * It asks for a command to be run, not for a connection.
 			 *
@@ -149,20 +149,20 @@ Key: ${shown}`
 			 */
 			ways: [
 				{
-					name: 'The plugin',
-					note: 'Two lines inside Claude Code. It asks for this address and your key, and keeps the key in the system keychain.',
+					name: t('settings.integrations.thePlugin'),
+					note: t('settings.integrations.twoLinesInsideClaudeCode'),
 					wrap: false,
 					text: `/plugin marketplace add ontoplano/claude-plugin\n/plugin install ontoplano@ontoplano\n\n# it will ask for:\n#   Your ontoplano:  ${data.origin}\n#   Key:             ${shown}`
 				},
 				{
-					name: 'The command line',
-					note: 'Run this in a terminal. It writes the setting for you, for every project — that is what --scope user is doing there.',
+					name: t('settings.integrations.theCommandLine'),
+					note: t('settings.integrations.runThisInATerminal'),
 					wrap: false,
 					text: `claude mcp add --scope user --transport http ontoplano ${data.origin}/api/mcp \\\n  --header "Authorization: Bearer ${shown}"`
 				},
 				{
-					name: 'The desktop app',
-					note: 'Its connector screen has nowhere to put a key, so this goes through mcp-remote. No space after the colon — Desktop cuts the header in half if you leave one.',
+					name: t('settings.integrations.theDesktopApp'),
+					note: t('settings.integrations.itsConnectorScreenHasNowhere'),
 					wrap: false,
 					text: `{
   "mcpServers": {
@@ -182,7 +182,7 @@ Key: ${shown}`
 			id: 'codex',
 			name: 'Codex',
 			wrap: false,
-			note: 'Add this to ~/.codex/config.toml, and put the key in your shell profile so it is there every time.',
+			note: t('settings.integrations.addThisToCodexConfig'),
 			text: `[mcp_servers.ontoplano]
 url = "${data.origin}/api/mcp"
 bearer_token_env_var = "ONTOPLANO_KEY"
@@ -194,7 +194,7 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 			id: 'cursor',
 			name: 'Cursor',
 			wrap: false,
-			note: 'Add this to ~/.cursor/mcp.json.',
+			note: t('settings.integrations.addThisToCursorConfig'),
 			text: `{
   "mcpServers": {
     "ontoplano": {

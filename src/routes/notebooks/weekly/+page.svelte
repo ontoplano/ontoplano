@@ -22,7 +22,7 @@
 		const monday = new Date(`${weekStart}T00:00:00Z`);
 		const sunday = new Date(monday.getTime() + 6 * 86_400_000);
 		const short = (d: Date) =>
-			d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+			d.toLocaleDateString(t.locale, { day: 'numeric', month: 'short', timeZone: 'UTC' });
 		return `${short(monday)} – ${short(sunday)} ${sunday.getUTCFullYear()}`;
 	}
 </script>

@@ -140,7 +140,15 @@
 		layout = next;
 	}
 
-	const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+	const dayNames = $derived([
+		t('app.monday'),
+		t('app.tuesday'),
+		t('app.wednesday'),
+		t('app.thursday'),
+		t('app.friday'),
+		t('app.saturday'),
+		t('app.sunday')
+	]);
 
 	/** 24-hour, like every other time in the app; 24 is the end of the day. */
 	function hourLabel(h: number): string {
@@ -1188,11 +1196,15 @@
 					type="submit"
 					name="theme"
 					value={option}
-					class="border px-4 py-2 text-sm capitalize shadow-sm {data.theme === option
+					class="border px-4 py-2 text-sm shadow-sm {data.theme === option
 						? 'border-gray-900 bg-gray-900 font-semibold text-white'
 						: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
 				>
-					{option}
+					{option === 'system'
+						? t('app.matchMyDevice')
+						: option === 'light'
+							? t('app.light')
+							: t('app.dark')}
 				</button>
 			{/each}
 		</form>

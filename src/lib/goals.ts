@@ -1,4 +1,5 @@
 import type { PlainKey } from './i18n/keys.js';
+import type { Translate } from './i18n/core.js';
 /**
  * Goal horizons and the periods they live in.
  *
@@ -92,16 +93,19 @@ export function periodEnd(horizon: Horizon, start: string): string {
 }
 
 /** How the period reads to a human: "Q3 2026", "Aug 2026", "week of 17 Aug". */
-export function describePeriod(horizon: Horizon, start: string): string {
+export function describePeriod(t: Translate, horizon: Horizon, start: string): string {
 	const d = new Date(start + 'T00:00:00');
 	const y = d.getFullYear();
 	switch (horizon) {
 		case 'day':
-			return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+			return d.toLocaleDateString(t.locale, { day: 'numeric', month: 'short', year: 'numeric' });
 		case 'week':
-			return `Week of ${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} ${y}`;
+			return t('goals.weekOfDateYear', {
+				date: d.toLocaleDateString(t.locale, { day: 'numeric', month: 'short' }),
+				year: y
+			});
 		case 'month':
-			return d.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+			return d.toLocaleDateString(t.locale, { month: 'long', year: 'numeric' });
 		case 'quarter':
 			return `Q${Math.floor(d.getMonth() / 3) + 1} ${y}`;
 		case 'semester':

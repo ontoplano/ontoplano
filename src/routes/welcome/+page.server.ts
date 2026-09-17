@@ -10,6 +10,7 @@ import { ASSISTANT_SCOPES } from '$lib/server/mcp/tools';
 import { HIDEABLE_ROOMS } from '$lib/sections';
 import { zoneGroups } from '$lib/timezones';
 import { setUserLanguage } from '$lib/services/preferences';
+import { translatorFor, SOURCE_LOCALE } from '$lib/i18n/core';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	// An account minted by a family invitation chooses its password first —
@@ -51,8 +52,9 @@ export const actions: Actions = {
 	 */
 	assistantToken: async ({ locals }) => {
 		try {
+			const t = await translatorFor(locals.locale ?? SOURCE_LOCALE);
 			const token = createToken(buildCtx(locals.user!.id), {
-				name: 'AI assistant',
+				name: t('settings.integrations.aiAssistantDefaultName'),
 				scopes: ASSISTANT_SCOPES
 			});
 			return { success: true, assistantToken: token.plaintext };
