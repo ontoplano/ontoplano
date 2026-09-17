@@ -236,6 +236,23 @@ const svgs = [
 ];
 
 const pngs = [
+	/*
+	 * The tab, which is the one size everybody sees and nobody draws for.
+	 *
+	 * A browser handed a large PNG as its favicon shrinks it itself, with a
+	 * filter chosen for speed rather than for a ring one pixel wide — and at
+	 * 1117 into 16 that is a seventy-to-one reduction, which turns the ring
+	 * into blocks of flat colour and the puffin into a white smear. The
+	 * marketing site was doing exactly that and its tab looked nothing like
+	 * the app's, which serves an SVG the browser draws at the size it wants.
+	 *
+	 * Drawn here at the size it will be shown, by the same rasteriser as
+	 * everything else. Two sizes because a tab is 16 at ordinary density and
+	 * 32 on a retina screen, and browsers pick rather than scale when both are
+	 * offered.
+	 */
+	['static/icons/favicon-16.png', plain, 16],
+	['static/icons/favicon-32.png', plain, 32],
 	['static/icons/icon-192.png', plain, 192],
 	['static/icons/icon-512.png', plain, 512],
 	['static/icons/icon-maskable-192.png', maskable, 192],
@@ -252,6 +269,8 @@ const pngs = [
 	['static/icons/icon-512-staging.png', plainStaging, 512],
 	['static/icons/icon-maskable-192-staging.png', maskableStaging, 192],
 	['static/icons/icon-maskable-512-staging.png', maskableStaging, 512],
+	['static/icons/favicon-16-staging.png', plainStaging, 16],
+	['static/icons/favicon-32-staging.png', plainStaging, 32],
 	['static/icons/apple-touch-icon-staging.png', appleStaging, 180],
 	// …and the dev set, worn by `make dev` so the phone-installed dev PWA and
 	// the real app are never the same tile.
@@ -259,6 +278,8 @@ const pngs = [
 	['static/icons/icon-512-dev.png', plainDev, 512],
 	['static/icons/icon-maskable-192-dev.png', maskableDev, 192],
 	['static/icons/icon-maskable-512-dev.png', maskableDev, 512],
+	['static/icons/favicon-16-dev.png', plainDev, 16],
+	['static/icons/favicon-32-dev.png', plainDev, 32],
 	['static/icons/apple-touch-icon-dev.png', appleDev, 180]
 ];
 
