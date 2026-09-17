@@ -128,6 +128,13 @@ language = "en"
 # person running this wants them. There are none at the moment.
 dev_tools = "false"
 
+# Whether the reminders job will work from a moment it is handed, rather than
+# from the clock. It is how a box that was down for an hour catches up, and
+# how the test suite walks a reminder from the form to the badge without
+# waiting on real time. Off here: a caller holding the health token could
+# otherwise make tomorrow's reminders arrive today.
+job_replay = "false"
+
 # Your own copy, rather than one somebody sells. Off means hosted, which is
 # the answer with fewer consequences for an instance that forgot to say.
 self_host = "false"
