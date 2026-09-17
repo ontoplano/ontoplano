@@ -522,7 +522,7 @@
 						<span class="text-xs text-gray-500">
 							{data.tasksTodo.length === 0
 								? t('home.nothingLeftToday')
-								: `${data.tasksTodo.length} to go`}
+								: t('home.countToGo', { count: data.tasksTodo.length })}
 						</span>
 					</div>
 
@@ -932,7 +932,9 @@
 							}}
 							class="text-xs text-gray-500 hover:text-gray-900"
 							title={todosNewestFirst ? t('home.showingNewestFirst') : t('home.showingOldestFirst')}
-							>{t('home.first', { oldest: todosNewestFirst ? 'Newest' : 'Oldest' })}</button
+							>{t('home.first', {
+								oldest: todosNewestFirst ? t('todoRows.newest') : t('todoRows.oldest')
+							})}</button
 						>
 						<a href={resolve('/tasks/todo')} class="text-xs text-gray-500 hover:text-gray-900"
 							>{t('home.open')}</a

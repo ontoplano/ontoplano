@@ -188,11 +188,13 @@ export const messages: Catalogue = {
 	'app.optionalAnAssistantCan':
 		'Optional — ein Assistent kann Ihre Woche einrichten, indem er Sie dazu befragt.',
 	'app.people': 'Personen',
+	'app.picture': 'Bild',
 	'app.plan': 'Plan',
 	'app.preferences': 'Einstellungen',
 	'app.privacy': 'Datenschutz',
 	'app.quote': 'Zitat',
 	'app.recipes': 'Rezepte',
+	'app.recording': 'Aufnahme',
 	'app.refunds': 'Rückerstattungen',
 	'app.reminders': 'Erinnerungen',
 	'app.remoteWorker': 'Remote-Mitarbeiter',
@@ -882,6 +884,7 @@ export const messages: Catalogue = {
 	'home.allEntries': 'Alle Einträge →',
 	'home.backToTheDashboard': 'Zurück zum Dashboard',
 	'home.bills': 'Rechnungen',
+	'home.countToGo': 'noch {count}',
 	'home.demoVersion': 'Demoversion',
 	'home.diary': 'Tagebuch',
 	'home.doNotPutYourReal':
@@ -1361,6 +1364,10 @@ export const messages: Catalogue = {
 		'Nichts wird als Datei hochgeladen — die Notizen werden hier gelesen. Anhänge, Canvases und Plugin-Daten\n\t\t\tbleiben im Vault. Das Löschen des Notizbuchs macht den Import rückgängig.',
 	'markdownImport.obsidian': 'Obsidian',
 	'markdownImport.ready': '{length} {notes} bereit.',
+	'media.addQuickly': 'Medien hinzufügen',
+	'media.newRecording': 'Neue Aufnahme',
+	'media.pictureAdded': 'Bild hinzugefügt.',
+	'media.recordingAdded': 'Aufnahme hinzugefügt.',
 	'metaEditor.addOption': '+ Option hinzufügen',
 	'metaEditor.key': 'Schlüssel',
 	'metaEditor.options': 'Optionen',
@@ -2534,6 +2541,7 @@ export const messages: Catalogue = {
 	'tasks.plan.confirmDelete': 'Löschen bestätigen?',
 	'tasks.plan.copyTo': 'Kopieren nach …',
 	'tasks.plan.copyToDays': 'Auf Tage kopieren',
+	'tasks.plan.countForToday': '{count} für heute',
 	'tasks.plan.countingFrom': 'gezählt ab',
 	'tasks.plan.ctrl': 'Strg',
 	'tasks.plan.day': 'Tag',
@@ -2595,6 +2603,7 @@ export const messages: Catalogue = {
 	'tasks.plan.minutesBeforeItStartsEvery':
 		'Minuten vor Beginn. Jedes Mal, wenn es wiederkehrt. Leer oder 0 bedeutet nie.',
 	'tasks.plan.mode': 'Modus',
+	'tasks.plan.month': 'Monat',
 	'tasks.plan.newActivity': 'Neue Aktivität',
 	'tasks.plan.newActivity2': '+ Neue Aktivität …',
 	'tasks.plan.newBlock': 'Neuer Block',
@@ -2650,6 +2659,7 @@ export const messages: Catalogue = {
 	'tasks.plan.urgencyInterestEnergy': 'Dringlichkeit, Interesse, Energie',
 	'tasks.plan.use': 'Verwenden',
 	'tasks.plan.viewGCycles': '{label}-Ansicht (g wechselt)',
+	'tasks.plan.week': 'Woche',
 	'tasks.plan.whichDay': 'Welcher Tag',
 	'tasks.plan.whileDraggingToDuplicateOr': 'beim Ziehen, um zu duplizieren, oder',
 	'tasks.plan.wonTComeBackNextWeek': 'Kommt nächste Woche nicht wieder.',
@@ -2769,7 +2779,7 @@ export const messages: Catalogue = {
 	'tour.aHabitIsEitherOne':
 		'Eine Gewohnheit ist entweder eine, die Sie beibehalten, oder eine, die Sie vermeiden wollen, und beide werden gleich erfasst: eine Markierung pro Tag.',
 	'tour.aNameIsEnoughTo': 'Ein Name reicht zum Start',
-	'tour.aNameOrTheMoment': 'A name, or the moment',
+	'tour.aNameOrTheMoment': 'Ein Name, oder der Moment',
 	'tour.aPersonIsNotA': 'Eine Person ist kein Tag',
 	'tour.aRenovationATripA':
 		'Eine Renovierung, eine Reise, eine Recherche. Ein Notizbuch enthält Notizen zu einem Thema, und es ist egal, wann Sie sie geschrieben haben.',
@@ -2861,7 +2871,7 @@ export const messages: Catalogue = {
 	'tour.habits': 'Gewohnheiten',
 	'tour.handOffATodoWith':
 		'Übergeben Sie eine Aufgabe mit g — sie bleibt auf der Liste, markiert als die eines anderen.',
-	'tour.hearItBeforeYouKeep': 'Hear it before you keep it',
+	'tour.hearItBeforeYouKeep': 'Anhören, bevor Sie sie behalten',
 	'tour.holdThisThenLetGo': 'Halten Sie das, und lassen Sie dann los',
 	'tour.ideas': 'Ideen',
 	'tour.importTheBankU2019sOwnExport':
@@ -2878,7 +2888,8 @@ export const messages: Catalogue = {
 	'tour.itOpensTheTourFor':
 		'Es öffnet die Tour für den aktuellen Bildschirm. Die Tastatur daneben listet die Tasten dieses Bildschirms, und das Buch ist die vollständige Dokumentation.',
 	'tour.jAndKMoveE': 'j und k bewegen, e bearbeitet, c schließt ab',
-	'tour.leaveTheNameAloneAnd': 'Leave the name alone and it is filed under the time you made it.',
+	'tour.leaveTheNameAloneAnd':
+		'Lassen Sie den Namen leer, und sie wird unter dem Zeitpunkt abgelegt, zu dem Sie sie gemacht haben.',
 	'tour.ledgers': 'Buchungen',
 	'tour.lettingOtherThingsIn': 'Andere Dinge zulassen',
 	'tour.lightDarkOrWhateverThe': 'Hell, dunkel, oder was das Gerät sagt',
@@ -2909,18 +2920,18 @@ export const messages: Catalogue = {
 	'tour.planIsTheShapeOf':
 		'Plan ist die Form davon, Board ist heute, Aufgaben ist alles ohne Datum, Verlauf ist, was tatsächlich passiert ist.',
 	'tour.playItBackAndScrub':
-		'Play it back and drag along the bar. Discard costs nothing — nothing is sent until you save.',
+		'Hören Sie sie sich an und ziehen Sie an der Leiste entlang. Verwerfen kostet nichts — nichts wird gesendet, bevor Sie speichern.',
 	'tour.preferences': 'Einstellungen',
 	'tour.pressHereIfYouEver': 'Drücken Sie hier, wenn Sie diese Hilfe brauchen',
 	'tour.pressRecordAndTalk':
-		'Press Record and talk. Pause keeps what you have; Stop ends the recording and hands it to you to listen to.',
+		'Drücken Sie Aufnehmen und sprechen Sie. Pause behält, was Sie haben; Stopp beendet die Aufnahme und übergibt sie Ihnen zum Anhören.',
 	'tour.pullDownAnEmptyStretch':
 		'Ziehen Sie einen leeren Abschnitt eines Tages herunter. Halten Sie beim Ziehen Alt gedrückt, um nur dieses Vorkommen zu verschieben und die übrigen Wochen unangetastet zu lassen.',
 	'tour.putARecipeOnThe':
 		'Legen Sie ein Rezept auf die Woche, und alles, was es braucht, taucht auf der Einkaufsliste auf — abzüglich dessen, was Sie schon haben.',
 	'tour.recipes': 'Rezepte',
 	'tour.recipesAndWhatTheyCost': 'Rezepte, und was sie Sie kosten',
-	'tour.recordings': 'Recordings',
+	'tour.recordings': 'Aufnahmen',
 	'tour.reminders': 'Erinnerungen',
 	'tour.retireOneWithoutLosingIt': 'Eine stilllegen, ohne sie zu verlieren',
 	'tour.review': 'Rückblick',
@@ -2928,7 +2939,7 @@ export const messages: Catalogue = {
 	'tour.saveTheShapeYouAre':
 		'Speichern Sie die Form, die Sie gerade sehen, als Schema — eine Schulwoche, eine Ferienwoche — und wenden Sie es später auf jede Woche an.',
 	'tour.sayItInYourOwn': 'Sagen Sie es mit Ihren eigenen Worten',
-	'tour.sayItInsteadOfTyping': 'Say it instead of typing it',
+	'tour.sayItInsteadOfTyping': 'Sprechen Sie es, statt es zu tippen',
 	'tour.sayWhichKindItIs': 'Sagen Sie, um welche Art es sich handelt',
 	'tour.scopedToWhatItNeeds':
 		'Beschränkt auf das, was gebraucht wird, und von hier aus widerrufbar. Kopieren Sie es, sobald es erscheint — es wird gehasht gespeichert und kann nicht erneut angezeigt werden.',

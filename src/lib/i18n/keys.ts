@@ -168,11 +168,13 @@ export type MessageKey =
 	| 'app.openYourAccount'
 	| 'app.optionalAnAssistantCan'
 	| 'app.people'
+	| 'app.picture'
 	| 'app.plan'
 	| 'app.preferences'
 	| 'app.privacy'
 	| 'app.quote'
 	| 'app.recipes'
+	| 'app.recording'
 	| 'app.refunds'
 	| 'app.reminders'
 	| 'app.remoteWorker'
@@ -795,6 +797,7 @@ export type MessageKey =
 	| 'home.allEntries'
 	| 'home.backToTheDashboard'
 	| 'home.bills'
+	| 'home.countToGo'
 	| 'home.demoVersion'
 	| 'home.diary'
 	| 'home.doNotPutYourReal'
@@ -1180,6 +1183,10 @@ export type MessageKey =
 	| 'markdownImport.nothingIsUploadedAsA'
 	| 'markdownImport.obsidian'
 	| 'markdownImport.ready'
+	| 'media.addQuickly'
+	| 'media.newRecording'
+	| 'media.pictureAdded'
+	| 'media.recordingAdded'
 	| 'metaEditor.addOption'
 	| 'metaEditor.key'
 	| 'metaEditor.options'
@@ -2154,6 +2161,7 @@ export type MessageKey =
 	| 'tasks.plan.confirmDelete'
 	| 'tasks.plan.copyTo'
 	| 'tasks.plan.copyToDays'
+	| 'tasks.plan.countForToday'
 	| 'tasks.plan.countingFrom'
 	| 'tasks.plan.ctrl'
 	| 'tasks.plan.day'
@@ -2203,6 +2211,7 @@ export type MessageKey =
 	| 'tasks.plan.minutesBeforeItStarts'
 	| 'tasks.plan.minutesBeforeItStartsEvery'
 	| 'tasks.plan.mode'
+	| 'tasks.plan.month'
 	| 'tasks.plan.newActivity'
 	| 'tasks.plan.newActivity2'
 	| 'tasks.plan.newBlock'
@@ -2254,6 +2263,7 @@ export type MessageKey =
 	| 'tasks.plan.urgencyInterestEnergy'
 	| 'tasks.plan.use'
 	| 'tasks.plan.viewGCycles'
+	| 'tasks.plan.week'
 	| 'tasks.plan.whichDay'
 	| 'tasks.plan.whileDraggingToDuplicateOr'
 	| 'tasks.plan.wonTComeBackNextWeek'
@@ -2726,6 +2736,7 @@ export interface MessageValuesFor {
 	'health.workouts.stopMeasuring': { activity: string | number };
 	'health.workouts.takeOutTheLineFor': { row: string | number };
 	'health.workouts.writeDownWhatYouDid2': { title: string | number };
+	'home.countToGo': { count: number };
 	'home.done': { done: string | number };
 	'home.dragCard': { card: string | number };
 	'home.first': { oldest: string | number };
@@ -2873,6 +2884,7 @@ export interface MessageValuesFor {
 	'start.yourFreeDaysAreYours': { trialDaysAhead: string | number };
 	'tasks.board.edit': { title: string | number };
 	'tasks.board.removeTheReminderAt': { slice: string | number };
+	'tasks.plan.countForToday': { count: number };
 	'tasks.plan.delete': { name: string | number };
 	'tasks.plan.label': { label: string | number };
 	'tasks.plan.lastFetchFailed': { lastError: string | number };

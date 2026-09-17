@@ -188,11 +188,13 @@ export const messages: Catalogue = {
 	'app.optionalAnAssistantCan':
 		'Opcional — um assistente pode montar sua semana perguntando sobre ela.',
 	'app.people': 'Pessoas',
+	'app.picture': 'Foto',
 	'app.plan': 'Plano',
 	'app.preferences': 'Preferências',
 	'app.privacy': 'Privacidade',
 	'app.quote': 'Citação',
 	'app.recipes': 'Receitas',
+	'app.recording': 'Gravação',
 	'app.refunds': 'Reembolsos',
 	'app.reminders': 'Lembretes',
 	'app.remoteWorker': 'Trabalho remoto',
@@ -875,6 +877,7 @@ export const messages: Catalogue = {
 	'home.allEntries': 'Todas as entradas →',
 	'home.backToTheDashboard': 'Voltar para o painel',
 	'home.bills': 'Contas',
+	'home.countToGo': 'faltam {count}',
 	'home.demoVersion': 'Versão de demonstração',
 	'home.diary': 'Diário',
 	'home.doNotPutYourReal':
@@ -1339,6 +1342,10 @@ export const messages: Catalogue = {
 		'Nada é enviado como arquivo — as notas são lidas aqui. Anexos, canvas e dados de plugins ficam no cofre. Apagar o caderno desfaz a importação.',
 	'markdownImport.obsidian': 'Obsidian',
 	'markdownImport.ready': '{length} {notes} prontas.',
+	'media.addQuickly': 'Adicionar mídia',
+	'media.newRecording': 'Nova gravação',
+	'media.pictureAdded': 'Foto adicionada.',
+	'media.recordingAdded': 'Gravação adicionada.',
 	'metaEditor.addOption': '+ Adicionar opção',
 	'metaEditor.key': 'chave',
 	'metaEditor.options': 'Opções',
@@ -2493,6 +2500,7 @@ export const messages: Catalogue = {
 	'tasks.plan.confirmDelete': 'Confirmar exclusão?',
 	'tasks.plan.copyTo': 'Copiar para...',
 	'tasks.plan.copyToDays': 'Copiar para dias',
+	'tasks.plan.countForToday': '{count} para hoje',
 	'tasks.plan.countingFrom': 'contando a partir de',
 	'tasks.plan.ctrl': 'Ctrl',
 	'tasks.plan.day': 'Dia',
@@ -2551,6 +2559,7 @@ export const messages: Catalogue = {
 	'tasks.plan.minutesBeforeItStartsEvery':
 		'Minutos antes de começar. Toda vez que ele voltar. Vazio ou 0 é nunca.',
 	'tasks.plan.mode': 'Modo',
+	'tasks.plan.month': 'Mês',
 	'tasks.plan.newActivity': 'Nova atividade',
 	'tasks.plan.newActivity2': '+ Nova atividade...',
 	'tasks.plan.newBlock': 'Novo bloco',
@@ -2604,6 +2613,7 @@ export const messages: Catalogue = {
 	'tasks.plan.urgencyInterestEnergy': 'Urgência, interesse, energia',
 	'tasks.plan.use': 'Usar',
 	'tasks.plan.viewGCycles': 'Visão {label} (g alterna)',
+	'tasks.plan.week': 'Semana',
 	'tasks.plan.whichDay': 'Qual dia',
 	'tasks.plan.whileDraggingToDuplicateOr': 'enquanto arrasta para duplicar, ou',
 	'tasks.plan.wonTComeBackNextWeek': 'Não vai voltar semana que vem.',
@@ -2725,7 +2735,7 @@ export const messages: Catalogue = {
 	'tour.aHabitIsEitherOne':
 		'Um hábito é algo a manter ou a evitar, e os dois são registrados da mesma forma: uma marca por dia.',
 	'tour.aNameIsEnoughTo': 'Um nome já basta para começar',
-	'tour.aNameOrTheMoment': 'A name, or the moment',
+	'tour.aNameOrTheMoment': 'Um nome, ou o momento',
 	'tour.aPersonIsNotA': 'Uma pessoa não é uma tag',
 	'tour.aRenovationATripA':
 		'Uma reforma, uma viagem, uma pesquisa. Um caderno reúne notas sobre um assunto, e não importa quando você as escreveu.',
@@ -2817,7 +2827,7 @@ export const messages: Catalogue = {
 	'tour.habits': 'Hábitos',
 	'tour.handOffATodoWith':
 		'Repasse uma tarefa com g — ela continua na lista, marcada como de outra pessoa.',
-	'tour.hearItBeforeYouKeep': 'Hear it before you keep it',
+	'tour.hearItBeforeYouKeep': 'Ouça antes de guardar',
 	'tour.holdThisThenLetGo': 'Segure isto, depois solte',
 	'tour.ideas': 'Ideias',
 	'tour.importTheBankU2019sOwnExport':
@@ -2834,7 +2844,8 @@ export const messages: Catalogue = {
 	'tour.itOpensTheTourFor':
 		'Ele abre o tour da tela em que você está. O teclado ao lado lista as teclas daquela tela, e o livro é a documentação completa.',
 	'tour.jAndKMoveE': 'j e k movem, e edita, c finaliza',
-	'tour.leaveTheNameAloneAnd': 'Leave the name alone and it is filed under the time you made it.',
+	'tour.leaveTheNameAloneAnd':
+		'Deixe o nome em branco e ela fica arquivada sob o horário em que você a fez.',
 	'tour.ledgers': 'Lançamentos',
 	'tour.lettingOtherThingsIn': 'Deixando outras coisas entrarem',
 	'tour.lightDarkOrWhateverThe': 'Claro, escuro, ou o que o dispositivo disser',
@@ -2865,18 +2876,18 @@ export const messages: Catalogue = {
 	'tour.planIsTheShapeOf':
 		'Plano é a forma dela, Quadro é hoje, A fazer é tudo o que ainda não tem data, Histórico é o que realmente aconteceu.',
 	'tour.playItBackAndScrub':
-		'Play it back and drag along the bar. Discard costs nothing — nothing is sent until you save.',
+		'Ouça de novo e arraste na barra. Descartar não custa nada — nada é enviado até você salvar.',
 	'tour.preferences': 'Preferências',
 	'tour.pressHereIfYouEver': 'Pressione aqui se precisar desta ajuda',
 	'tour.pressRecordAndTalk':
-		'Press Record and talk. Pause keeps what you have; Stop ends the recording and hands it to you to listen to.',
+		'Aperte Gravar e fale. Pausar mantém o que você já tem; Parar encerra a gravação e devolve ela para você ouvir.',
 	'tour.pullDownAnEmptyStretch':
 		'Puxe para baixo um trecho vazio de um dia. Segure Alt ao arrastar um para mover só aquela ocorrência e deixar o resto das semanas intacto.',
 	'tour.putARecipeOnThe':
 		'Coloque uma receita na semana e tudo o que ela precisa aparece na lista de compras, menos o que você já tem.',
 	'tour.recipes': 'Receitas',
 	'tour.recipesAndWhatTheyCost': 'Receitas, e quanto elas custam',
-	'tour.recordings': 'Recordings',
+	'tour.recordings': 'Gravações',
 	'tour.reminders': 'Lembretes',
 	'tour.retireOneWithoutLosingIt': 'Aposente uma sem perdê-la',
 	'tour.review': 'Revisão',
@@ -2884,7 +2895,7 @@ export const messages: Catalogue = {
 	'tour.saveTheShapeYouAre':
 		'Salve a forma que você está vendo como um esquema — uma semana letiva, uma semana de férias — e aplique-a a qualquer semana depois.',
 	'tour.sayItInYourOwn': 'Diga com suas próprias palavras',
-	'tour.sayItInsteadOfTyping': 'Say it instead of typing it',
+	'tour.sayItInsteadOfTyping': 'Fale em vez de digitar',
 	'tour.sayWhichKindItIs': 'Diga qual é o tipo',
 	'tour.scopedToWhatItNeeds':
 		'Restrito ao que precisa, e revogável a partir daqui. Copie assim que aparecer — ele é armazenado com hash e não pode ser mostrado de novo.',

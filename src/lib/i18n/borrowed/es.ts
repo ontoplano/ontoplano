@@ -8,12 +8,4 @@
  * a list. Production never asks for this module, so it is never in the
  * bundle a reader downloads.
  */
-export const borrowed: ReadonlySet<string> = new Set([
-	'tour.aNameOrTheMoment',
-	'tour.hearItBeforeYouKeep',
-	'tour.leaveTheNameAloneAnd',
-	'tour.playItBackAndScrub',
-	'tour.pressRecordAndTalk',
-	'tour.recordings',
-	'tour.sayItInsteadOfTyping'
-]);
+export const borrowed: ReadonlySet<string> = new Set([]);

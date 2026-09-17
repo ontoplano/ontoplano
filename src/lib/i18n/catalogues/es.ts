@@ -188,11 +188,13 @@ export const messages: Catalogue = {
 	'app.optionalAnAssistantCan':
 		'Opcional — un asistente puede armar tu semana haciéndote preguntas sobre ella.',
 	'app.people': 'Personas',
+	'app.picture': 'Foto',
 	'app.plan': 'Plan',
 	'app.preferences': 'Preferencias',
 	'app.privacy': 'Privacidad',
 	'app.quote': 'Cita',
 	'app.recipes': 'Recetas',
+	'app.recording': 'Grabación',
 	'app.refunds': 'Reembolsos',
 	'app.reminders': 'Recordatorios',
 	'app.remoteWorker': 'Trabajador remoto',
@@ -878,6 +880,7 @@ export const messages: Catalogue = {
 	'home.allEntries': 'Todas las entradas →',
 	'home.backToTheDashboard': 'Volver al panel',
 	'home.bills': 'Facturas',
+	'home.countToGo': 'quedan {count}',
 	'home.demoVersion': 'Versión de demostración',
 	'home.diary': 'Diario',
 	'home.doNotPutYourReal':
@@ -1347,6 +1350,10 @@ export const messages: Catalogue = {
 		'Nada se sube como archivo — las notas se leen aquí. Los adjuntos, los canvas y los datos de plugins\n\t\t\tse quedan en el vault. Eliminar el cuaderno deshace la importación.',
 	'markdownImport.obsidian': 'Obsidian',
 	'markdownImport.ready': '{length} {notes} listas.',
+	'media.addQuickly': 'Agregar contenido',
+	'media.newRecording': 'Nueva grabación',
+	'media.pictureAdded': 'Foto agregada.',
+	'media.recordingAdded': 'Grabación agregada.',
 	'metaEditor.addOption': '+ Agregar opción',
 	'metaEditor.key': 'clave',
 	'metaEditor.options': 'Opciones',
@@ -2508,6 +2515,7 @@ export const messages: Catalogue = {
 	'tasks.plan.confirmDelete': '¿Confirmar eliminación?',
 	'tasks.plan.copyTo': 'Copiar a...',
 	'tasks.plan.copyToDays': 'Copiar a días',
+	'tasks.plan.countForToday': '{count} para hoy',
 	'tasks.plan.countingFrom': 'contando desde',
 	'tasks.plan.ctrl': 'Ctrl',
 	'tasks.plan.day': 'Día',
@@ -2567,6 +2575,7 @@ export const messages: Catalogue = {
 	'tasks.plan.minutesBeforeItStartsEvery':
 		'Minutos antes de que empiece. Cada vez que se repite. Vacío o 0 es nunca.',
 	'tasks.plan.mode': 'Modo',
+	'tasks.plan.month': 'Mes',
 	'tasks.plan.newActivity': 'Nueva actividad',
 	'tasks.plan.newActivity2': '+ Nueva actividad...',
 	'tasks.plan.newBlock': 'Nuevo bloque',
@@ -2621,6 +2630,7 @@ export const messages: Catalogue = {
 	'tasks.plan.urgencyInterestEnergy': 'Urgencia, interés, energía',
 	'tasks.plan.use': 'Usar',
 	'tasks.plan.viewGCycles': 'Vista {label} (recorre con g)',
+	'tasks.plan.week': 'Semana',
 	'tasks.plan.whichDay': 'Qué día',
 	'tasks.plan.whileDraggingToDuplicateOr': 'mientras arrastras para duplicar, o',
 	'tasks.plan.wonTComeBackNextWeek': 'No volverá la próxima semana.',
@@ -2740,7 +2750,7 @@ export const messages: Catalogue = {
 	'tour.aHabitIsEitherOne':
 		'Un hábito es uno que mantener o uno que evitar, y ambos se registran igual: una marca por día.',
 	'tour.aNameIsEnoughTo': 'Un nombre basta para empezar',
-	'tour.aNameOrTheMoment': 'A name, or the moment',
+	'tour.aNameOrTheMoment': 'Un nombre, o el momento',
 	'tour.aPersonIsNotA': 'Una persona no es una etiqueta',
 	'tour.aRenovationATripA':
 		'Una renovación, un viaje, una investigación. Un cuaderno guarda notas sobre un tema, y no le importa cuándo las escribiste.',
@@ -2832,7 +2842,7 @@ export const messages: Catalogue = {
 	'tour.habits': 'Hábitos',
 	'tour.handOffATodoWith':
 		'Entrega una tarea con g — se queda en la lista, marcada como de otra persona.',
-	'tour.hearItBeforeYouKeep': 'Hear it before you keep it',
+	'tour.hearItBeforeYouKeep': 'Escúchala antes de guardarla',
 	'tour.holdThisThenLetGo': 'Sostén esto, luego suelta',
 	'tour.ideas': 'Ideas',
 	'tour.importTheBankU2019sOwnExport':
@@ -2849,7 +2859,8 @@ export const messages: Catalogue = {
 	'tour.itOpensTheTourFor':
 		'Abre el tour de la pantalla en la que estás. El teclado a su lado lista las teclas de esa pantalla, y el libro es la documentación completa.',
 	'tour.jAndKMoveE': 'j y k mueven, e edita, c termina',
-	'tour.leaveTheNameAloneAnd': 'Leave the name alone and it is filed under the time you made it.',
+	'tour.leaveTheNameAloneAnd':
+		'Deja el nombre en blanco y queda archivada bajo el momento en que la hiciste.',
 	'tour.ledgers': 'Movimientos',
 	'tour.lettingOtherThingsIn': 'Dejando entrar otras cosas',
 	'tour.lightDarkOrWhateverThe': 'Claro, oscuro, o lo que diga el dispositivo',
@@ -2880,18 +2891,18 @@ export const messages: Catalogue = {
 	'tour.planIsTheShapeOf':
 		'Plan es la forma de todo eso, Tablero es hoy, Por hacer es todo lo que aún no tiene fecha, Historial es lo que realmente pasó.',
 	'tour.playItBackAndScrub':
-		'Play it back and drag along the bar. Discard costs nothing — nothing is sent until you save.',
+		'Reprodúcela y arrastra en la barra. Descartar no cuesta nada — no se envía nada hasta que guardas.',
 	'tour.preferences': 'Preferencias',
 	'tour.pressHereIfYouEver': 'Presiona aquí si alguna vez necesitas esta ayuda',
 	'tour.pressRecordAndTalk':
-		'Press Record and talk. Pause keeps what you have; Stop ends the recording and hands it to you to listen to.',
+		'Presiona Grabar y habla. Pausar conserva lo que tienes; Detener termina la grabación y te la entrega para escucharla.',
 	'tour.pullDownAnEmptyStretch':
 		'Arrastra hacia abajo un tramo vacío de un día. Mantén Alt mientras arrastras uno para mover solo esa ocurrencia y dejar las demás semanas intactas.',
 	'tour.putARecipeOnThe':
 		'Pon una receta en la semana y todo lo que necesita aparece en la lista de compras, menos lo que ya tienes.',
 	'tour.recipes': 'Recetas',
 	'tour.recipesAndWhatTheyCost': 'Recetas, y lo que te cuestan',
-	'tour.recordings': 'Recordings',
+	'tour.recordings': 'Grabaciones',
 	'tour.reminders': 'Recordatorios',
 	'tour.retireOneWithoutLosingIt': 'Retira uno sin perderlo',
 	'tour.review': 'Revisión',
@@ -2899,7 +2910,7 @@ export const messages: Catalogue = {
 	'tour.saveTheShapeYouAre':
 		'Guarda la forma que estás viendo como un esquema — una semana escolar, una semana de vacaciones — y aplícala a cualquier semana después.',
 	'tour.sayItInYourOwn': 'Dilo con tus propias palabras',
-	'tour.sayItInsteadOfTyping': 'Say it instead of typing it',
+	'tour.sayItInsteadOfTyping': 'Dilo en vez de escribirlo',
 	'tour.sayWhichKindItIs': 'Di qué tipo es',
 	'tour.scopedToWhatItNeeds':
 		'Limitado a lo que necesita, y revocable desde aquí. Cópialo cuando aparezca — se guarda cifrado y no se puede volver a mostrar.',

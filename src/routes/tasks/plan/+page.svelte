@@ -2416,7 +2416,7 @@
 			</button>
 
 			<div class="seg" role="group" aria-label={t('tasks.plan.howMuchToShow')}>
-				{#each [['day', 'Day'], ['week', 'Week'], ['month', 'Month']] as [mode, label] (mode)}
+				{#each [['day', t('tasks.plan.day')], ['week', t('tasks.plan.week')], ['month', t('tasks.plan.month')]] as [mode, label] (mode)}
 					<button
 						onclick={() => setView(mode as PlanView)}
 						aria-pressed={(pendingView ?? effectiveView) === mode}
@@ -3502,7 +3502,9 @@
 					<!-- What these are, not how to move them: a chip beside a grid is
 					     something you drag, and nobody needed to be told. -->
 					<span class="text-xs text-gray-500">
-						{dueToday > 0 ? `${dueToday} for today` : t('tasks.plan.stillWithoutATime')}
+						{dueToday > 0
+							? t('tasks.plan.countForToday', { count: dueToday })
+							: t('tasks.plan.stillWithoutATime')}
 					</span>
 				{/if}
 			</summary>

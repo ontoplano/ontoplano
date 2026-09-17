@@ -1,3 +1,18 @@
+<script lang="ts" module>
+	/**
+	 * The wheel's own drawing, in units of `scale`.
+	 *
+	 * A caller that has to fit one of these somewhere — two side by side, say
+	 * — needs to know how wide it comes out, and the alternative is copying
+	 * two numbers into whatever is doing the fitting. `RADIAL_UNITS` is what a
+	 * wheel measures across at `scale: 1`; divide the room you have by it and
+	 * you have the scale that fills it.
+	 */
+	export const RADIAL_OUTER = 145;
+	export const RADIAL_PAD = 13;
+	export const RADIAL_UNITS = (RADIAL_OUTER + RADIAL_PAD) * 2;
+</script>
+
 <script lang="ts">
 	import mark from '$lib/logo/mark.png';
 	import liftedMark from '$lib/logo/mark-lifted.png';
@@ -63,6 +78,19 @@
 		 * maths (was this a tap or a drag?) still measures from the finger.
 		 */
 		anchor = null,
+		/**
+		 * Whether a point outside the ring belongs to this wheel at all.
+		 *
+		 * The hit test picks a wedge by direction alone, with no outer edge —
+		 * right for one wheel filling the screen, where anywhere you let go is
+		 * an answer. Wrong the moment two are open beside each other: a pointer
+		 * over the left wheel is also *in a direction* from the right one, so
+		 * both would claim it and the release would choose twice.
+		 *
+		 * Bounded, a wheel answers only for points inside its own ring, and the
+		 * gap between two of them is nobody's.
+		 */
+		bounded = false,
 		/** True while a finger or button is still down, so release selects. */
 		dragging = false,
 		/** Screen the pie must stay clear of — a fixed navigation bar, usually. */
@@ -82,6 +110,7 @@
 		open?: boolean;
 		origin?: { x: number; y: number };
 		anchor?: { x: number; y: number } | null;
+		bounded?: boolean;
 		dragging?: boolean;
 		bottomInset?: number;
 		onselect: (key: string) => void;
@@ -100,7 +129,7 @@
 	 */
 	const clipId = `pie-mark-${Math.random().toString(36).slice(2, 8)}`;
 
-	const OUTER = $derived(145 * scale);
+	const OUTER = $derived(RADIAL_OUTER * scale);
 
 	/**
 	 * How thick the rim is, and how big the hole is.
@@ -206,7 +235,7 @@
 	 */
 	const WEDGE_INNER = $derived(HOLE * Math.cos(Math.PI / 8) - scale);
 	/** Room for the ring plus the shadow it casts. */
-	const PAD = $derived(13 * scale);
+	const PAD = $derived(RADIAL_PAD * scale);
 
 	let active = $state(-1);
 	let centre = $state({ x: 0, y: 0 });
@@ -296,7 +325,9 @@
 	function wedgeIndexAt(x: number, y: number): number {
 		const dx = x - centre.x;
 		const dy = y - centre.y;
-		if (Math.hypot(dx, dy) < INNER) return -1;
+		const reach = Math.hypot(dx, dy);
+		if (reach < INNER) return -1;
+		if (bounded && reach > OUTER) return -1;
 		return wedgeAt(dx, dy, items.length);
 	}
 
@@ -645,6 +676,8 @@
 							onclick={() => afterOpening(() => onselect(item.key))}
 							role="menuitem"
 							tabindex="-1"
+							aria-label={item.label}
+							data-wedge={item.key}
 						>
 							<path
 								d={wedgePath(i)}
