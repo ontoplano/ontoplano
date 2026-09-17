@@ -96,3 +96,25 @@ export function stamps(ctx: Ctx): { createdAt: string; updatedAt: string } {
 export function created(ctx: Ctx): { createdAt: string } {
 	return { createdAt: stamp(ctx) };
 }
+
+/**
+ * A day written the way a person says it, in their language and without the year.
+ *
+ * "2026-10-05" is a machine's answer. Somebody reading "Rent — R$1,800.00, due
+ * 2026-10-05" has to parse a date to learn something they already knew, which
+ * is that rent is due next month.
+ *
+ * **No year, deliberately.** These sentences are about things weeks away at
+ * most — a bill due, a birthday coming — and the year in them is always this
+ * one or the next. Printing it spends four characters saying nothing and makes
+ * the line read like a database row. The year is right in a place that shows
+ * history; it is wrong in a place that shows what is about to happen.
+ *
+ * `en-CA` is not a locale here: the format comes from the reader's, which the
+ * translator carries.
+ */
+export function dayInWords(day: string, locale: string): string {
+	const at = new Date(`${day.slice(0, 10)}T12:00:00Z`);
+	if (Number.isNaN(at.getTime())) return day;
+	return at.toLocaleDateString(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' });
+}

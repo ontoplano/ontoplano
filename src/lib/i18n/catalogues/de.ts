@@ -1647,6 +1647,11 @@ export const messages: Catalogue = {
 	'reminders.alreadyShown': '· bereits angezeigt',
 	'reminders.androidHasRefusedNotificationsAnd':
 		'Android hat Benachrichtigungen abgelehnt und fragt nicht erneut, daher kommen Erinnerungen nur an, während Ontoplano geöffnet ist.',
+	'reminders.billDue': '{name} — {money}, fällig am {day}',
+	'reminders.billDueToday': 'Achtung — {name} ist heute fällig. {money}.',
+	'reminders.billStillToPay': '{name} ist noch offen — {money}, fällig am {day}.',
+	'reminders.birthdayOf': 'Geburtstag von {name}',
+	'reminders.birthdayTurns': '{name} wird {age}',
 	'reminders.blocksWithAReminderBirthdays':
 		'Blöcke mit einer Erinnerung, Geburtstage, Rechnungen und alles, was Sie hier einrichten, erscheinen in dieser Liste.',
 	'reminders.callIt': 'Nennen Sie es',
@@ -1657,6 +1662,11 @@ export const messages: Catalogue = {
 	'reminders.confirm': 'Bestätigen?',
 	'reminders.countsAsSecureFromAnother': 'gilt als sicher; von einem anderen Gerät aus nicht.',
 	'reminders.day': 'Tag',
+	'reminders.dayAllAnswered': {
+		one: 'Das war der Tag — der eine Block ist beantwortet.',
+		other: 'Das war der Tag — alle {count} Blöcke beantwortet.'
+	},
+	'reminders.daySomeLeft': 'Das war der Tag — {done} von {total} erledigt, {left} noch offen.',
 	'reminders.days': 'Tage',
 	'reminders.daysCount': { one: '{count} Tag', other: '{count} Tage' },
 	'reminders.default': 'Standard',
@@ -1697,6 +1707,11 @@ export const messages: Catalogue = {
 	'reminders.remove': '{message} entfernen',
 	'reminders.remove2': '{name} entfernen',
 	'reminders.removeThisReminder': 'Diese Erinnerung entfernen',
+	'reminders.reviewBlocks': { one: '{count} Block', other: '{count} Blöcke' },
+	'reminders.reviewPending':
+		'Ihr Wochenrückblick steht aus — {blocks} aus der letzten Woche ohne Antwort.',
+	'reminders.reviewWeeksOpen':
+		'{weeks} Wochen sind noch offen — die älteste hat {blocks} ohne Antwort.',
 	'reminders.saveThisReminder': 'Diese Erinnerung speichern',
 	'reminders.saveWhatThisKindSounds': 'Speichern, wie diese Art klingt',
 	'reminders.servesItOverHttpsWith':
@@ -1741,10 +1756,15 @@ export const messages: Catalogue = {
 	'reminders.whichSoundThisOnePlays': 'Welchen Ton diese hier abspielt',
 	'reminders.whichWayToLook': 'In welche Richtung geschaut werden soll',
 	'reminders.yourSounds': 'Ihre Töne',
+	'reportDialog.send': 'Senden',
+	'reportDialog.sending': 'Wird gesendet…',
 	'reportDialog.sentThankYouIt': 'Gesendet. Danke — es steht auf der Liste des Betreibers.',
 	'reportDialog.tellTheOperator': 'An den Betreiber melden',
+	'reportDialog.thatDidNotSend': 'Das wurde nicht gesendet. Versuchen Sie es gleich noch einmal.',
 	'reportDialog.whatHappened': 'Was passiert ist',
 	'reportDialog.whatThisIs': 'Worum es geht',
+	'reportDialog.whereItGoes':
+		'Es geht an die Person, die diese Instanz betreibt — mit Ihrem Konto, Angaben zu Ihrem Browser und der Seite {where}, von der es kam. Keine Ihrer persönlichen Daten gehen mit.',
 	'reportDialog.yourIdea': 'Ihre Idee',
 	'rooms.finance.sections': 'Finanzen-Bereiche',
 	'rooms.finance.tabs.bills': 'Rechnungen',

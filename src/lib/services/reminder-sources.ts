@@ -13,7 +13,8 @@ import { notifies, notifyAt } from './notifications.js';
 import { listForDate } from './instances.js';
 import { createReminder } from './reminders.js';
 import { formatMoney } from '../money.js';
-import { localOfInstant } from '$lib/services/time.js';
+import { dayInWords, localOfInstant } from '$lib/services/time.js';
+import type { Translate } from '$lib/i18n/core.js';
 
 /**
  * The reminders nobody types.
@@ -108,7 +109,7 @@ function writeOnce(
  * for. Said again the following week if it is still open, because the number
  * in it will have changed and so will the sentence.
  */
-export function ensureReviewReminder(ctx: Ctx, now: Date, tz: string): number {
+export function ensureReviewReminder(ctx: Ctx, now: Date, tz: string, t: Translate): number {
 	if (!notifies(ctx.userId, 'review')) return 0;
 
 	const pending = reviewPending(ctx);
@@ -117,12 +118,11 @@ export function ensureReviewReminder(ctx: Ctx, now: Date, tz: string): number {
 	const today = dayOf(localOfInstant(now, tz));
 	const at = `${today}T${String(getGridHours(ctx.userId).start).padStart(2, '0')}:00:00`;
 
-	const n = pending.unanswered;
-	const blocks = `${n} ${n === 1 ? 'block' : 'blocks'}`;
+	const blocks = t('reminders.reviewBlocks', { count: pending.unanswered });
 	const message =
 		pending.weeks > 1
-			? `${pending.weeks} weeks are still open — the oldest has ${blocks} with no answer.`
-			: `Your weekly review is pending — ${blocks} from last week with no answer.`;
+			? t('reminders.reviewWeeksOpen', { weeks: pending.weeks, blocks })
+			: t('reminders.reviewPending', { blocks });
 
 	return writeOnce(ctx.userId, 'review', null, at, message) ? 1 : 0;
 }
@@ -142,7 +142,7 @@ export function ensureReviewReminder(ctx: Ctx, now: Date, tz: string): number {
  * Only for bills that are actually unpaid, and only inside a fortnight, so a
  * year's worth of yearly bills is not written into the table in advance.
  */
-export function ensureBillReminders(ctx: Ctx, now: Date, tz: string): number {
+export function ensureBillReminders(ctx: Ctx, now: Date, tz: string, t: Translate): number {
 	if (!notifies(ctx.userId, 'bills')) return 0;
 
 	const today = dayOf(localOfInstant(now, tz));
@@ -180,7 +180,7 @@ export function ensureBillReminders(ctx: Ctx, now: Date, tz: string): number {
 				'bill',
 				bill.billId,
 				`${today}T${hour}:00:00`,
-				`Careful — ${bill.name} is due today. ${money}.`
+				t('reminders.billDueToday', { name: bill.name, money })
 			)
 				? 1
 				: 0;
@@ -196,7 +196,11 @@ export function ensureBillReminders(ctx: Ctx, now: Date, tz: string): number {
 				'bill',
 				bill.billId,
 				`${today}T${hour}:00:00`,
-				`You still have to pay ${bill.name} — ${money}, due ${bill.dueDate}.`
+				t('reminders.billStillToPay', {
+					name: bill.name,
+					money,
+					day: dayInWords(bill.dueDate, t.locale)
+				})
 			)
 				? 1
 				: 0;
@@ -271,7 +275,7 @@ export function ensureBlockReminders(ctx: Ctx, now: Date, tz: string): number {
  * before the clock looks for it, and on a phone it has to exist before the app
  * is closed, which is hours earlier.
  */
-export function ensureEndOfDayReminder(ctx: Ctx, now: Date, tz: string): number {
+export function ensureEndOfDayReminder(ctx: Ctx, now: Date, tz: string, t: Translate): number {
 	if (!notifies(ctx.userId, 'endOfDay')) return 0;
 
 	const local = localOfInstant(now, tz);
@@ -306,8 +310,8 @@ export function ensureEndOfDayReminder(ctx: Ctx, now: Date, tz: string): number 
 	const left = blocks.filter((b) => b.status === 'todo' || b.status === 'doing').length;
 	const message =
 		left === 0
-			? `That was today — all ${blocks.length} ${blocks.length === 1 ? 'block' : 'blocks'} answered for.`
-			: `That was today — ${done} of ${blocks.length} done, ${left} still to say.`;
+			? t('reminders.dayAllAnswered', { count: blocks.length })
+			: t('reminders.daySomeLeft', { done, total: blocks.length, left });
 
 	return writeOnce(ctx.userId, 'day', null, at, message) ? 1 : 0;
 }
@@ -327,13 +331,13 @@ export function ensureEndOfDayReminder(ctx: Ctx, now: Date, tz: string): number 
  * it would write, so being called from a page poll, a job and a phone waking
  * up cannot say a thing twice.
  */
-export function ensureOwnReminders(ctx: Ctx, now: Date, tz: string): number {
+export function ensureOwnReminders(ctx: Ctx, now: Date, tz: string, t: Translate): number {
 	return (
 		ensureBirthdayReminders(ctx.userId, now, tz) +
-		ensureReviewReminder(ctx, now, tz) +
-		ensureBillReminders(ctx, now, tz) +
+		ensureReviewReminder(ctx, now, tz, t) +
+		ensureBillReminders(ctx, now, tz, t) +
 		ensureBlockReminders(ctx, now, tz) +
-		ensureEndOfDayReminder(ctx, now, tz)
+		ensureEndOfDayReminder(ctx, now, tz, t)
 	);
 }
 
@@ -386,7 +390,13 @@ export function windowEnd(now: Date, tz: string, days: number): string {
 	return addDays(dayOf(localOfInstant(now, tz)), days);
 }
 
-export function upcomingDerived(ctx: Ctx, now: Date, tz: string, days = UPCOMING_DAYS): Upcoming[] {
+export function upcomingDerived(
+	ctx: Ctx,
+	now: Date,
+	tz: string,
+	t: Translate,
+	days = UPCOMING_DAYS
+): Upcoming[] {
 	const today = dayOf(localOfInstant(now, tz));
 	const hour = String(getGridHours(ctx.userId).start).padStart(2, '0');
 	const out: Upcoming[] = [];
@@ -402,7 +412,7 @@ export function upcomingDerived(ctx: Ctx, now: Date, tz: string, days = UPCOMING
 			// Not `birthdayMessage`, which ends in "today" — true of the reminder
 			// that fires on the morning, and a lie in a list of what is coming.
 			// The row carries the date already, so the sentence does not need one.
-			message: comingBirthday(person.name, person.birthday, day)
+			message: comingBirthday(t, person.name, person.birthday, day)
 		});
 	}
 
@@ -413,7 +423,11 @@ export function upcomingDerived(ctx: Ctx, now: Date, tz: string, days = UPCOMING
 		out.push({
 			kind: 'bill',
 			at: `${bill.date}T${hour}:00:00`,
-			message: `${bill.name} — ${money}, due ${bill.dueDate}`
+			message: t('reminders.billDue', {
+				name: bill.name,
+				money,
+				day: dayInWords(bill.dueDate, t.locale)
+			})
 		});
 	}
 
@@ -428,11 +442,13 @@ export function upcomingDerived(ctx: Ctx, now: Date, tz: string, days = UPCOMING
  * every future birthday claimed to be today's. The age is still worth saying,
  * because it is the part somebody cannot work out at a glance.
  */
-function comingBirthday(name: string, birthday: string, on: string): string {
+function comingBirthday(t: Translate, name: string, birthday: string, on: string): string {
 	const born = Number(birthday.slice(0, 4));
 	const year = Number(on.slice(0, 4));
 	const age = /^\d{4}-/.test(birthday) ? year - born : null;
-	return age !== null && age > 0 && age < 130 ? `${name} turns ${age}` : `${name}'s birthday`;
+	return age !== null && age > 0 && age < 130
+		? t('reminders.birthdayTurns', { name, age })
+		: t('reminders.birthdayOf', { name });
 }
 
 /** The next time a `MM-DD` or `YYYY-MM-DD` birthday comes round, on or after a day. */

@@ -388,7 +388,7 @@ export const messages: Catalogue = {
 	'finance.bills.newBill': 'Nova conta',
 	'finance.bills.noBillsYet': 'Nenhuma conta ainda',
 	'finance.bills.nothingInTheLastFew':
-		'Nada nas últimas semanas corresponde. Uma conta paga a partir de um lançamento que esta instância não\n\t\t\t\timporta ainda pode ser marcada manualmente.',
+		'Nada nas últimas semanas corresponde. Uma conta paga por uma conta que esta instância não\n\t\t\t\timporta ainda pode ser marcada manualmente.',
 	'finance.bills.onPlan': 'conforme planejado',
 	'finance.bills.paid': 'paga',
 	'finance.bills.paid2': 'Paga',
@@ -414,9 +414,9 @@ export const messages: Catalogue = {
 	'finance.insights.average': 'média {averageCents}',
 	'finance.insights.biggestCategory': 'Maior categoria',
 	'finance.insights.dearestMonth': 'Mês mais caro',
-	'finance.insights.everyLedger': 'Todos os lançamentos',
+	'finance.insights.everyLedger': 'Todos os extratos',
 	'finance.insights.importAStatementIntoA':
-		'Importe um extrato para um lançamento e isto ganha vida: quanto cada mês custou, para onde foi, e quanto cada etiqueta soma.',
+		'Importe um extrato bancário e isto ganha vida: quanto cada mês custou, para onde foi, e quanto cada etiqueta soma.',
 	'finance.insights.inAndOut': 'Entradas e saídas',
 	'finance.insights.inTotalAMonth':
 		'{totalCents} no total, {averageCents} por mês nos {activeMonths} mês{s} em que apareceu. Uma etiqueta por vez — etiquetas se sobrepõem, então somá-las contaria uma linha duas vezes.',
@@ -436,7 +436,7 @@ export const messages: Catalogue = {
 	'finance.insights.whatOneTagCosts': 'Quanto uma etiqueta custa',
 	'finance.insights.writeOne': 'Escrever uma →',
 	'finance.ledgers.aLedgerIsOnePlace':
-		'Um lançamento é um lugar por onde o dinheiro passa — uma conta corrente, um cartão de crédito. Crie um, depois importe o extrato dele ou escreva uma linha manualmente.',
+		'Um extrato é um lugar por onde o dinheiro passa — uma conta corrente, um cartão de crédito. Crie um, depois importe o arquivo do banco ou escreva uma linha manualmente.',
 	'finance.ledgers.addedAlreadyHere': '{added} adicionadas, {skipped} já estavam aqui.',
 	'finance.ledgers.andBillsTurnUp': ', e as contas aparecem na sua semana.',
 	'finance.ledgers.andItsLinesGoFor':
@@ -453,12 +453,12 @@ export const messages: Catalogue = {
 	'finance.ledgers.datesAreDayFirst': 'As datas são dia primeiro — 02/03 é dois de março',
 	'finance.ledgers.day': 'Dia',
 	'finance.ledgers.delete': 'Apagar {name}',
-	'finance.ledgers.deleteThisLedger': 'Apagar este lançamento?',
+	'finance.ledgers.deleteThisLedger': 'Apagar este extrato?',
 	'finance.ledgers.deleteThisLine': 'Apagar esta linha',
 	'finance.ledgers.deleteThisLine2': 'Apagar esta linha?',
 	'finance.ledgers.direction': 'Direção',
 	'finance.ledgers.edit': 'Editar {name}',
-	'finance.ledgers.editLedger': 'Editar lançamento',
+	'finance.ledgers.editLedger': 'Editar extrato',
 	'finance.ledgers.editLine': 'Editar linha',
 	'finance.ledgers.editThisLine': 'Editar esta linha',
 	'finance.ledgers.everyMonth': 'Todo mês',
@@ -466,15 +466,15 @@ export const messages: Catalogue = {
 	'finance.ledgers.flipAmountsForAn':
 		'Inverter valores — para uma exportação cujos sinais significam o oposto',
 	'finance.ledgers.goesImportingTheSameStatement':
-		'some. Importar o mesmo extrato de novo traz\n\t\t\tela de volta, já que é a linha do banco, não a sua.',
+		'some. Importar o mesmo arquivo do banco de novo traz\n\t\t\tela de volta, já que é a linha do banco, não a sua.',
 	'finance.ledgers.import': 'Importar',
-	'finance.ledgers.importAStatement': 'Importar um extrato',
+	'finance.ledgers.importAStatement': 'Importar do banco',
 	'finance.ledgers.importThisLedgerSExportOr':
-		'Importe a exportação deste lançamento, ou escreva uma linha manualmente. Linhas já importadas nunca são adicionadas duas vezes.',
+		'Importe a exportação do banco para este extrato, ou escreva uma linha manualmente. Linhas já importadas nunca são adicionadas duas vezes.',
 	'finance.ledgers.keepIt': 'Manter',
 	'finance.ledgers.leaveTheIdAsNone':
 		'Deixe o id como nenhum a menos que o arquivo realmente traga a referência própria do banco por linha.\n\t\t\t\t\t\t\tSem um, uma linha é identificada pela data, valor e descrição.',
-	'finance.ledgers.ledger': 'Lançamento',
+	'finance.ledgers.ledger': 'Extrato',
 	'finance.ledgers.line': 'Linha',
 	'finance.ledgers.lines': '{count} linhas',
 	'finance.ledgers.moneyIn': 'Entradas',
@@ -484,16 +484,16 @@ export const messages: Catalogue = {
 	'finance.ledgers.month': 'Mês',
 	'finance.ledgers.moveEarlier': 'Mover {name} para antes',
 	'finance.ledgers.moveLater': 'Mover {name} para depois',
-	'finance.ledgers.newLedger': 'Novo lançamento',
+	'finance.ledgers.newLedger': 'Novo extrato',
 	'finance.ledgers.newLine': 'Nova linha',
 	'finance.ledgers.noHeaderRowSoThe':
 		'Sem linha de cabeçalho, então as colunas são numeradas. Aponte para as certas:',
-	'finance.ledgers.noLedgersYet': 'Nenhum lançamento ainda',
+	'finance.ledgers.noLedgersYet': 'Nenhum extrato ainda',
 	'finance.ledgers.none': '— nenhum —',
 	'finance.ledgers.nothingHereYet': 'Nada aqui ainda',
 	'finance.ledgers.orPasteItBelow': 'ou cole abaixo',
 	'finance.ledgers.preselectedWhenImportingIntoThis':
-		'Pré-selecionado ao importar para este lançamento. Pode ser mudado na importação.',
+		'Pré-selecionado ao importar para este extrato. Pode ser mudado na importação.',
 	'finance.ledgers.putItAway': 'Guardar',
 	'finance.ledgers.readFromTheHeaderChange': 'Lido do cabeçalho. Corrija o que estiver errado:',
 	'finance.ledgers.restore': 'Restaurar',
@@ -518,7 +518,7 @@ export const messages: Catalogue = {
 	'finance.rules.ecmascriptMatchedCaseInsensitivelyAndUna':
 		'(ECMAScript), comparado\n\t\tsem diferenciar maiúsculas de minúsculas e sem âncora —',
 	'finance.rules.edit': 'Editar {name}',
-	'finance.rules.everyLedger': 'Todos os lançamentos',
+	'finance.rules.everyLedger': 'Todos os extratos',
 	'finance.rules.everyOutgoingLineHasA': 'Toda linha de saída tem uma categoria.',
 	'finance.rules.everyTagThatMatchesApplies':
 		'Toda etiqueta que combina se aplica, então as etiquetas se sobrepõem livremente.',
@@ -1626,6 +1626,11 @@ export const messages: Catalogue = {
 	'reminders.alreadyShown': '· já exibido',
 	'reminders.androidHasRefusedNotificationsAnd':
 		'O Android recusou as notificações e não vai perguntar de novo, então os lembretes só chegam com o ontoplano aberto.',
+	'reminders.billDue': '{name} — {money}, vence em {day}',
+	'reminders.billDueToday': 'Atenção — {name} vence hoje. {money}.',
+	'reminders.billStillToPay': 'Você ainda precisa pagar {name} — {money}, vence em {day}.',
+	'reminders.birthdayOf': 'Aniversário de {name}',
+	'reminders.birthdayTurns': '{name} faz {age}',
 	'reminders.blocksWithAReminderBirthdays':
 		'Blocos com lembrete, aniversários, contas e qualquer coisa que você configurar aqui aparecem nesta lista.',
 	'reminders.callIt': 'Dê um nome',
@@ -1636,6 +1641,11 @@ export const messages: Catalogue = {
 	'reminders.confirm': 'Confirmar?',
 	'reminders.countsAsSecureFromAnother': 'conta como seguro; de outro dispositivo não conta.',
 	'reminders.day': 'Dia',
+	'reminders.dayAllAnswered': {
+		one: 'Esse foi o dia — o único bloco está respondido.',
+		other: 'Esse foi o dia — todos os {count} blocos respondidos.'
+	},
+	'reminders.daySomeLeft': 'Esse foi o dia — {done} de {total} feitos, {left} ainda por responder.',
 	'reminders.days': 'dias',
 	'reminders.daysCount': { one: '{count} dia', other: '{count} dias' },
 	'reminders.default': 'Padrão',
@@ -1675,6 +1685,11 @@ export const messages: Catalogue = {
 	'reminders.remove': 'Remover {message}',
 	'reminders.remove2': 'Remover {name}',
 	'reminders.removeThisReminder': 'Remover este lembrete',
+	'reminders.reviewBlocks': { one: '{count} bloco', other: '{count} blocos' },
+	'reminders.reviewPending':
+		'Sua revisão da semana está pendente — {blocks} da semana passada sem resposta.',
+	'reminders.reviewWeeksOpen':
+		'{weeks} semanas continuam abertas — a mais antiga tem {blocks} sem resposta.',
 	'reminders.saveThisReminder': 'Salvar este lembrete',
 	'reminders.saveWhatThisKindSounds': 'Salvar como esse tipo soa',
 	'reminders.servesItOverHttpsWith':
@@ -1719,15 +1734,20 @@ export const messages: Catalogue = {
 	'reminders.whichSoundThisOnePlays': 'Qual som este toca',
 	'reminders.whichWayToLook': 'Em que direção olhar',
 	'reminders.yourSounds': 'Seus sons',
+	'reportDialog.send': 'Enviar',
+	'reportDialog.sending': 'Enviando…',
 	'reportDialog.sentThankYouIt': 'Enviado. Obrigado — está na lista de quem opera.',
 	'reportDialog.tellTheOperator': 'Avisar quem opera',
+	'reportDialog.thatDidNotSend': 'Isso não foi enviado. Tente de novo daqui a pouco.',
 	'reportDialog.whatHappened': 'O que aconteceu',
 	'reportDialog.whatThisIs': 'O que é isto',
+	'reportDialog.whereItGoes':
+		'Vai para quem opera esta instância, levando sua conta, informações sobre o navegador que você usa, e o fato de ter vindo de {where}. Nenhum dado pessoal seu vai junto.',
 	'reportDialog.yourIdea': 'Sua ideia',
 	'rooms.finance.sections': 'Seções de finanças',
 	'rooms.finance.tabs.bills': 'Contas',
 	'rooms.finance.tabs.insights': 'Panorama',
-	'rooms.finance.tabs.ledgers': 'Lançamentos',
+	'rooms.finance.tabs.ledgers': 'Extratos',
 	'rooms.finance.tabs.rules': 'Regras',
 	'rooms.finance.title': 'Finanças',
 	'rooms.health.sections': 'Seções de saúde',
@@ -3012,7 +3032,7 @@ export const messages: Catalogue = {
 	'tour.jAndKMoveE': 'j e k movem, e edita, c finaliza',
 	'tour.leaveTheNameAloneAnd':
 		'Deixe o nome em branco e ela fica arquivada sob o horário em que você a fez.',
-	'tour.ledgers': 'Lançamentos',
+	'tour.ledgers': 'Extratos',
 	'tour.lettingOtherThingsIn': 'Deixando outras coisas entrarem',
 	'tour.lightDarkOrWhateverThe': 'Claro, escuro, ou o que o dispositivo disser',
 	'tour.linkTheWorkToThe': 'Vincule o trabalho à meta',
@@ -3027,7 +3047,7 @@ export const messages: Catalogue = {
 	'tour.nothingCarriesItselfOver': 'Nada se transfere sozinho',
 	'tour.numbersFromElsewhere': 'Números de outros lugares',
 	'tour.oneEntryADayOr': 'Uma entrada por dia ou vinte, tão longa ou curta quanto você quiser.',
-	'tour.oneLedgerPerPlaceMoney': 'Um lançamento para cada lugar por onde o dinheiro passa',
+	'tour.oneLedgerPerPlaceMoney': 'Um extrato para cada lugar por onde o dinheiro passa',
 	'tour.oneLineIsEnough': 'Uma linha já basta',
 	'tour.oneNotebookPerSubject': 'Um caderno por assunto',
 	'tour.oneRoomPerKindOf': 'Uma seção para cada tipo de coisa',

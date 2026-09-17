@@ -1,4 +1,7 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
+import { translatorFor } from '$lib/i18n/core';
+import { SOURCE_LOCALE } from '$lib/i18n/locales';
+import { getLocale } from '$lib/services/settings';
 import { buildCtx, localDateOf } from '$lib/services/ctx';
 import { localOfInstant } from '$lib/services/time';
 import { ensureOwnReminders } from '$lib/services/reminder-sources';
@@ -77,7 +80,18 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 	 * for accounts that had set push up. Idempotent per day, so the writers
 	 * cannot make two.
 	 */
-	ensureOwnReminders(ctx, ctx.now, ctx.tz);
+	/*
+	 * The language this page is being rendered in, which `hooks.server.ts` has
+	 * already worked out — the account's choice, then the browser's, then the
+	 * instance's. Re-deriving it here would be a second answer to a settled
+	 * question — the fallback is for the isolated instance, which runs these
+	 * routes without those hooks and has exactly one account to ask.
+	 *
+	 * Asked of the settings service rather than of `$lib/server/locale`: these
+	 * routes run on the device too, where there is no server half to import.
+	 */
+	const t = await translatorFor(locals.locale ?? getLocale(locals.user!.id) ?? SOURCE_LOCALE);
+	ensureOwnReminders(ctx, ctx.now, ctx.tz, t);
 
 	return {
 		/*
@@ -133,7 +147,7 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 		 * reminders that were never given — which is not what "previous
 		 * reminders" means.
 		 */
-		upcoming: past ? [] : upcomingDerived(ctx, ctx.now, ctx.tz, days),
+		upcoming: past ? [] : upcomingDerived(ctx, ctx.now, ctx.tz, t, days),
 		past,
 		days,
 		maxDays: MAX_UPCOMING_DAYS,

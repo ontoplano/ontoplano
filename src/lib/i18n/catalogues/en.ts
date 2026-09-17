@@ -1607,6 +1607,11 @@ export const messages: Catalogue = {
 	'reminders.alreadyShown': '· already shown',
 	'reminders.androidHasRefusedNotificationsAnd':
 		'Android has refused notifications and will not ask again, so reminders arrive only while ontoplano is open.',
+	'reminders.billDue': '{name} — {money}, due {day}',
+	'reminders.billDueToday': 'Careful — {name} is due today. {money}.',
+	'reminders.billStillToPay': 'You still have to pay {name} — {money}, due {day}.',
+	'reminders.birthdayOf': "{name}'s birthday",
+	'reminders.birthdayTurns': '{name} turns {age}',
 	'reminders.blocksWithAReminderBirthdays':
 		'Blocks with a reminder, birthdays, bills and anything you set here all show up in this list.',
 	'reminders.callIt': 'Call it',
@@ -1617,6 +1622,11 @@ export const messages: Catalogue = {
 	'reminders.confirm': 'Confirm?',
 	'reminders.countsAsSecureFromAnother': 'counts as secure; from another device it does not.',
 	'reminders.day': 'Day',
+	'reminders.dayAllAnswered': {
+		one: 'That was today — the one block is answered for.',
+		other: 'That was today — all {count} blocks answered for.'
+	},
+	'reminders.daySomeLeft': 'That was today — {done} of {total} done, {left} still to say.',
 	'reminders.days': 'days',
 	'reminders.daysCount': { one: '{count} day', other: '{count} days' },
 	'reminders.default': 'Default',
@@ -1656,6 +1666,11 @@ export const messages: Catalogue = {
 	'reminders.remove': 'Remove {message}',
 	'reminders.remove2': 'Remove {name}',
 	'reminders.removeThisReminder': 'Remove this reminder',
+	'reminders.reviewBlocks': { one: '{count} block', other: '{count} blocks' },
+	'reminders.reviewPending':
+		'Your weekly review is pending — {blocks} from last week with no answer.',
+	'reminders.reviewWeeksOpen':
+		'{weeks} weeks are still open — the oldest has {blocks} with no answer.',
 	'reminders.saveThisReminder': 'Save this reminder',
 	'reminders.saveWhatThisKindSounds': 'Save what this kind sounds like',
 	'reminders.servesItOverHttpsWith':
@@ -1700,10 +1715,15 @@ export const messages: Catalogue = {
 	'reminders.whichSoundThisOnePlays': 'Which sound this one plays',
 	'reminders.whichWayToLook': 'Which way to look',
 	'reminders.yourSounds': 'Your sounds',
+	'reportDialog.send': 'Send',
+	'reportDialog.sending': 'Sending…',
 	'reportDialog.sentThankYouIt': "Sent. Thank you — it is on the operator's list.",
 	'reportDialog.tellTheOperator': 'Tell the operator',
+	'reportDialog.thatDidNotSend': 'That did not send. Try again in a moment.',
 	'reportDialog.whatHappened': 'What happened',
 	'reportDialog.whatThisIs': 'What this is',
+	'reportDialog.whereItGoes':
+		"It goes to whoever runs this instance, carrying your account, information about the browser you're using, and the fact it came from {where}. None of your personal data goes with it.",
 	'reportDialog.yourIdea': 'Your idea',
 	'rooms.finance.sections': 'Finance sections',
 	'rooms.finance.tabs.bills': 'Bills',

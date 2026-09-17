@@ -3563,7 +3563,7 @@ allowed to be woken, so "twice" is the normal case and not the accident.
 
 ### Functions
 
-#### `ensureReviewReminder(ctx, now, tz)`
+#### `ensureReviewReminder(ctx, now, tz, t)`
 
 "Your weekly review is pending."
 
@@ -3573,7 +3573,7 @@ a week nobody planned, and about a week whose blocks have all been answered
 for. Said again the following week if it is still open, because the number
 in it will have changed and so will the sentence.
 
-#### `ensureBillReminders(ctx, now, tz)`
+#### `ensureBillReminders(ctx, now, tz, t)`
 
 The three things worth saying about a bill.
 
@@ -3608,7 +3608,7 @@ Only what is still ahead. A block at nine, with the app opened at eleven, is
 not something to be told about: the row would be due the moment it existed
 and would fire as though it were news.
 
-#### `ensureEndOfDayReminder(ctx, now, tz)`
+#### `ensureEndOfDayReminder(ctx, now, tz, t)`
 
 What the day turned out to be, at the hour it ends.
 
@@ -3621,7 +3621,7 @@ Written ahead of its time like everything else here — the row has to exist
 before the clock looks for it, and on a phone it has to exist before the app
 is closed, which is hours earlier.
 
-#### `ensureOwnReminders(ctx, now, tz)`
+#### `ensureOwnReminders(ctx, now, tz, t)`
 
 Every reminder nobody types, written for one account.
 
@@ -3649,7 +3649,7 @@ The page shows two kinds of row in one list — the ones stored and the ones
 worked out here — and they have to agree about where the list ends, or
 "the next day" answers with something in December.
 
-#### `upcomingDerived(ctx, now, tz, days)`
+#### `upcomingDerived(ctx, now, tz, t, days)`
 
 ### Types
 
@@ -5008,6 +5008,23 @@ there is one shape.
 #### `created(ctx)`
 
 For tables that record when a row appeared and never when it changed.
+
+#### `dayInWords(day, locale)`
+
+A day written the way a person says it, in their language and without the year.
+
+"2026-10-05" is a machine's answer. Somebody reading "Rent — R$1,800.00, due
+2026-10-05" has to parse a date to learn something they already knew, which
+is that rent is due next month.
+
+**No year, deliberately.** These sentences are about things weeks away at
+most — a bill due, a birthday coming — and the year in them is always this
+one or the next. Printing it spends four characters saying nothing and makes
+the line read like a database row. The year is right in a place that shows
+history; it is wrong in a place that shows what is about to happen.
+
+`en-CA` is not a locale here: the format comes from the reader's, which the
+translator carries.
 
 ## today
 

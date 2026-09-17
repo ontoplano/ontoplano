@@ -24,6 +24,14 @@ type Services = {
 };
 
 let s: Services;
+/**
+ * English, because these tests read the sentences.
+ *
+ * The sources take a translator rather than reaching for one: they are called
+ * from a job that writes for somebody asleep and from a page rendered for
+ * whoever is looking, and those are two different languages.
+ */
+let t: import('../src/lib/i18n/core').Translate;
 const ctxAt = (iso: string) => ({ userId: OWNER, now: new Date(iso), tz: 'UTC' });
 
 /** Everything written about bills, as plain sentences. */
@@ -35,6 +43,8 @@ function billSaid(ctx: ReturnType<typeof ctxAt>): string[] {
 }
 
 beforeAll(async () => {
+	const { translatorFor } = await import('../src/lib/i18n/core');
+	t = await translatorFor('en');
 	s = {
 		sources: await import('../src/lib/services/reminder-sources'),
 		reminders: await import('../src/lib/services/reminders'),
@@ -56,27 +66,27 @@ beforeAll(async () => {
 describe('a bill', () => {
 	test('says today is the day, on the day it wants paying', () => {
 		const ctx = ctxAt('2026-09-07T06:00:00Z');
-		s.sources.ensureBillReminders(ctx, ctx.now, 'UTC');
+		s.sources.ensureBillReminders(ctx, ctx.now, 'UTC', t);
 		expect(billSaid(ctx).some((m) => /Today is the day for paying Rent/.test(m))).toBe(true);
 	});
 
 	test('and does not say it twice, however often the pass runs', () => {
 		const ctx = ctxAt('2026-09-07T06:00:00Z');
-		s.sources.ensureBillReminders(ctx, ctx.now, 'UTC');
-		s.sources.ensureBillReminders(ctx, ctx.now, 'UTC');
+		s.sources.ensureBillReminders(ctx, ctx.now, 'UTC', t);
+		s.sources.ensureBillReminders(ctx, ctx.now, 'UTC', t);
 		const said = billSaid(ctx).filter((m) => /Today is the day for paying Rent/.test(m));
 		expect(said).toHaveLength(1);
 	});
 
 	test('keeps asking on the days between, which is the point of it', () => {
 		const ctx = ctxAt('2026-09-08T06:00:00Z');
-		s.sources.ensureBillReminders(ctx, ctx.now, 'UTC');
+		s.sources.ensureBillReminders(ctx, ctx.now, 'UTC', t);
 		expect(billSaid(ctx).some((m) => /You still have to pay Rent/.test(m))).toBe(true);
 	});
 
 	test('and says something sharper on the day it is actually due', () => {
 		const ctx = ctxAt('2026-09-10T06:00:00Z');
-		s.sources.ensureBillReminders(ctx, ctx.now, 'UTC');
+		s.sources.ensureBillReminders(ctx, ctx.now, 'UTC', t);
 		const said = billSaid(ctx);
 		expect(said.some((m) => /Careful — Rent is due today/.test(m))).toBe(true);
 		// Once, and only the sharp sentence: the gentle "you still have to pay"
@@ -89,7 +99,7 @@ describe('a bill', () => {
 		const bill = s.bills.listBills(ctx)[0];
 		s.bills.markPaid(ctx, bill.id, { period: '2026-09' });
 		const before = billSaid(ctx).length;
-		s.sources.ensureBillReminders(ctx, ctx.now, 'UTC');
+		s.sources.ensureBillReminders(ctx, ctx.now, 'UTC', t);
 		expect(billSaid(ctx)).toHaveLength(before);
 	});
 });
@@ -97,7 +107,7 @@ describe('a bill', () => {
 describe('the weekly review', () => {
 	test('says nothing about a week nobody planned', () => {
 		const ctx = ctxAt('2026-09-07T06:00:00Z');
-		expect(s.sources.ensureReviewReminder(ctx, ctx.now, 'UTC')).toBe(0);
+		expect(s.sources.ensureReviewReminder(ctx, ctx.now, 'UTC', t)).toBe(0);
 	});
 });
 
@@ -110,7 +120,7 @@ describe('a birthday that has not happened yet', () => {
 			remindOnBirthday: true
 		});
 
-		const coming = s.sources.upcomingDerived(ctx, ctx.now, 'UTC');
+		const coming = s.sources.upcomingDerived(ctx, ctx.now, 'UTC', t);
 		const ana = coming.find((u) => u.message.includes('Ana'));
 
 		expect(ana?.message).toBe('Ana turns 34');
@@ -123,7 +133,7 @@ describe('a birthday that has not happened yet', () => {
 		const ctx = ctxAt('2026-09-08T06:00:00Z');
 		s.people.createPerson(ctx, { name: 'Rui', birthday: '--09-16', remindOnBirthday: true });
 
-		const coming = s.sources.upcomingDerived(ctx, ctx.now, 'UTC');
+		const coming = s.sources.upcomingDerived(ctx, ctx.now, 'UTC', t);
 		expect(coming.find((u) => u.message.includes('Rui'))?.message).toBe("Rui's birthday");
 	});
 });
@@ -140,7 +150,7 @@ describe('a birthday that has not happened yet', () => {
 describe('what a bill costs', () => {
 	test('is formatted, not printed raw', () => {
 		const ctx = ctxAt('2026-09-07T06:00:00Z');
-		s.sources.ensureBillReminders(ctx, ctx.now, 'UTC');
+		s.sources.ensureBillReminders(ctx, ctx.now, 'UTC', t);
 
 		const said = billSaid(ctx).find((m) => /Rent/.test(m)) ?? '';
 		// 1200 is twelve reais, not one thousand two hundred of anything.
@@ -150,7 +160,7 @@ describe('what a bill costs', () => {
 
 	test('and in the list of what is coming, which is where it was seen', () => {
 		const ctx = ctxAt('2026-09-07T06:00:00Z');
-		const coming = s.sources.upcomingDerived(ctx, ctx.now, 'UTC', 30);
+		const coming = s.sources.upcomingDerived(ctx, ctx.now, 'UTC', t, 30);
 
 		const bill = coming.find((u) => u.kind === 'bill');
 		expect(bill).toBeDefined();
@@ -253,14 +263,14 @@ describe('the end of the day', () => {
 
 	test('says nothing until it is turned on', () => {
 		const ctx = ctxAt('2026-09-07T06:00:00Z');
-		expect(s.sources.ensureEndOfDayReminder(ctx, ctx.now, 'UTC')).toBe(0);
+		expect(s.sources.ensureEndOfDayReminder(ctx, ctx.now, 'UTC', t)).toBe(0);
 	});
 
 	test('writes one, ahead of its hour, about the day it is for', () => {
 		const ctx = ctxAt('2026-09-07T06:00:00Z');
 		notifications.setNotification(ctx, 'endOfDay', { on: true, at: '21:00' });
 
-		expect(s.sources.ensureEndOfDayReminder(ctx, ctx.now, 'UTC')).toBe(1);
+		expect(s.sources.ensureEndOfDayReminder(ctx, ctx.now, 'UTC', t)).toBe(1);
 		const written = daySaid(ctx);
 		expect(written).toHaveLength(1);
 		expect(written[0].remindAt).toBe('2026-09-07T21:00:00');
@@ -269,7 +279,7 @@ describe('the end of the day', () => {
 
 	test('running again writes nothing', () => {
 		const ctx = ctxAt('2026-09-07T07:00:00Z');
-		expect(s.sources.ensureEndOfDayReminder(ctx, ctx.now, 'UTC')).toBe(0);
+		expect(s.sources.ensureEndOfDayReminder(ctx, ctx.now, 'UTC', t)).toBe(0);
 		expect(daySaid(ctx)).toHaveLength(1);
 	});
 
@@ -279,7 +289,7 @@ describe('the end of the day', () => {
 		const ctx = ctxAt('2026-09-07T07:00:00Z');
 		notifications.setNotification(ctx, 'endOfDay', { on: true, at: '19:30' });
 
-		expect(s.sources.ensureEndOfDayReminder(ctx, ctx.now, 'UTC')).toBe(1);
+		expect(s.sources.ensureEndOfDayReminder(ctx, ctx.now, 'UTC', t)).toBe(1);
 		const written = daySaid(ctx);
 		expect(written).toHaveLength(1);
 		expect(written[0].remindAt).toBe('2026-09-07T19:30:00');
@@ -287,7 +297,7 @@ describe('the end of the day', () => {
 
 	test('and not at all once its hour has gone', () => {
 		const ctx = ctxAt('2026-09-07T22:00:00Z');
-		expect(s.sources.ensureEndOfDayReminder(ctx, ctx.now, 'UTC')).toBe(0);
+		expect(s.sources.ensureEndOfDayReminder(ctx, ctx.now, 'UTC', t)).toBe(0);
 	});
 });
 
@@ -346,7 +356,7 @@ describe('a block starting later today, end to end', () => {
 		const ctx = west('2026-09-15T12:00:00Z');
 		s3.notifications.setNotification(ctx, 'blocks', { on: true });
 
-		expect(s.sources.ensureOwnReminders(ctx, ctx.now, ctx.tz)).toBeGreaterThan(0);
+		expect(s.sources.ensureOwnReminders(ctx, ctx.now, ctx.tz, t)).toBeGreaterThan(0);
 
 		const written = s.reminders
 			.listReminders(ctx)
@@ -368,7 +378,7 @@ describe('a block starting later today, end to end', () => {
 		const before = s.reminders
 			.listReminders(ctx, { includePast: true })
 			.filter((r) => r.subjectKind === 'instance').length;
-		s.sources.ensureOwnReminders(ctx, ctx.now, ctx.tz);
+		s.sources.ensureOwnReminders(ctx, ctx.now, ctx.tz, t);
 		expect(
 			s.reminders
 				.listReminders(ctx, { includePast: true })
@@ -409,11 +419,11 @@ describe('a switch that is off', () => {
 
 		notifications.setNotification(ctx, 'bills', { on: false });
 		const before = kinds(ctx, 'bill');
-		s.sources.ensureOwnReminders(ctx, ctx.now, 'UTC');
+		s.sources.ensureOwnReminders(ctx, ctx.now, 'UTC', t);
 		expect(kinds(ctx, 'bill'), 'a bill was written with bills off').toBe(before);
 
 		notifications.setNotification(ctx, 'bills', { on: true });
-		s.sources.ensureOwnReminders(ctx, ctx.now, 'UTC');
+		s.sources.ensureOwnReminders(ctx, ctx.now, 'UTC', t);
 		expect(kinds(ctx, 'bill'), 'nothing was written with bills on').toBeGreaterThan(before);
 	});
 
@@ -428,11 +438,11 @@ describe('a switch that is off', () => {
 
 		notifications.setNotification(tomorrow, 'birthdays', { on: false });
 		const before = kinds(tomorrow, 'person');
-		s.sources.ensureOwnReminders(tomorrow, tomorrow.now, 'UTC');
+		s.sources.ensureOwnReminders(tomorrow, tomorrow.now, 'UTC', t);
 		expect(kinds(tomorrow, 'person'), 'a birthday was written with birthdays off').toBe(before);
 
 		notifications.setNotification(tomorrow, 'birthdays', { on: true });
-		s.sources.ensureOwnReminders(tomorrow, tomorrow.now, 'UTC');
+		s.sources.ensureOwnReminders(tomorrow, tomorrow.now, 'UTC', t);
 		expect(kinds(tomorrow, 'person'), 'nothing was written with birthdays on').toBeGreaterThan(
 			before
 		);
@@ -458,5 +468,35 @@ describe('a switch that is off', () => {
 		for (const [, name, body] of sources) {
 			expect(body.includes('notifies('), `${name} writes without asking`).toBe(true);
 		}
+	});
+});
+
+/**
+ * The sentences are the reader's, in their words and in their calendar.
+ *
+ * These are the one part of the app written by a job rather than by a person,
+ * and they were English with an ISO date in them — "Rent — R$1,800.00, due
+ * 2026-10-05" — in an app whose every other surface was translated. A date in
+ * that shape is a machine's answer to a question nobody asked: these sentences
+ * are about the next few weeks, so the year in them is always this one.
+ */
+describe('the words a reminder is written in', () => {
+	test('names the day the way a person says it, without the year', async () => {
+		const { translatorFor } = await import('../src/lib/i18n/core');
+		const ctx = ctxAt('2026-09-08T06:00:00Z');
+		s.sources.ensureBillReminders(ctx, ctx.now, 'UTC', await translatorFor('en'));
+		const said = billSaid(ctx).find((m) => /You still have to pay Rent/.test(m)) ?? '';
+		expect(said).toMatch(/due \w+ \d+\.?$/);
+		expect(said, 'the year has no business in a sentence about this month').not.toMatch(/20\d\d/);
+	});
+
+	test('is written in the language it was asked for', async () => {
+		const { translatorFor } = await import('../src/lib/i18n/core');
+		const ctx = ctxAt('2026-10-08T06:00:00Z');
+		s.sources.ensureBillReminders(ctx, ctx.now, 'UTC', await translatorFor('pt-BR'));
+		const said = billSaid(ctx).find((m) => /ainda precisa pagar/.test(m)) ?? '';
+		// "vence em 10 de out." — his words, and his month.
+		expect(said).toMatch(/vence em \d+ de \w+/);
+		expect(said).not.toMatch(/20\d\d/);
 	});
 });

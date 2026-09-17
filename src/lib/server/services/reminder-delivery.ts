@@ -7,6 +7,8 @@ import { markPushed, pushableReminders } from '$lib/services/reminders.js';
 import { pushConfigured, pushToUser } from './push.js';
 import { soundFor } from '$lib/services/ringtones.js';
 import { localOfInstant } from '$lib/services/time.js';
+import { translatorFor } from '$lib/i18n/core.js';
+import { localeForUser } from '$lib/server/locale.js';
 
 /**
  * The pass that makes a reminder arrive with the app shut.
@@ -66,7 +68,14 @@ export async function deliverDueReminders(now = new Date()): Promise<{
 		// the same reason birthdays are — the row has to exist before the minute
 		// it is due, and nobody is looking at six in the morning, which is the
 		// whole point. One call, because the list grows.
-		written += ensureOwnReminders(ctx, now, ctx.tz);
+		/*
+		 * In the account's own language, not the job's.
+		 *
+		 * These sentences are stored, and the row is written hours before it is
+		 * read — there is no request in scope and nothing to infer a language
+		 * from but the account itself. Same rule the mail follows.
+		 */
+		written += ensureOwnReminders(ctx, now, ctx.tz, await translatorFor(localeForUser(account.id)));
 	}
 
 	const devices = db.select({ id: pushSubscriptions.id }).from(pushSubscriptions).all().length;

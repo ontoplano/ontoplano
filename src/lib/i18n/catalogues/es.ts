@@ -1634,6 +1634,11 @@ export const messages: Catalogue = {
 	'reminders.alreadyShown': '· ya mostrado',
 	'reminders.androidHasRefusedNotificationsAnd':
 		'Android rechazó las notificaciones y no volverá a preguntar, así que los recordatorios solo llegan mientras ontoplano está abierto.',
+	'reminders.billDue': '{name} — {money}, vence el {day}',
+	'reminders.billDueToday': 'Atención — {name} vence hoy. {money}.',
+	'reminders.billStillToPay': 'Todavía tienes que pagar {name} — {money}, vence el {day}.',
+	'reminders.birthdayOf': 'Cumpleaños de {name}',
+	'reminders.birthdayTurns': '{name} cumple {age}',
 	'reminders.blocksWithAReminderBirthdays':
 		'Los bloques con recordatorio, los cumpleaños, las facturas y todo lo que configures aquí aparecen en esta lista.',
 	'reminders.callIt': 'Llámalo',
@@ -1644,6 +1649,11 @@ export const messages: Catalogue = {
 	'reminders.confirm': '¿Confirmar?',
 	'reminders.countsAsSecureFromAnother': 'cuenta como seguro; desde otro dispositivo no.',
 	'reminders.day': 'Día',
+	'reminders.dayAllAnswered': {
+		one: 'Ese fue el día — el único bloque está respondido.',
+		other: 'Ese fue el día — los {count} bloques respondidos.'
+	},
+	'reminders.daySomeLeft': 'Ese fue el día — {done} de {total} hechos, {left} por responder.',
 	'reminders.days': 'días',
 	'reminders.daysCount': { one: '{count} día', other: '{count} días' },
 	'reminders.default': 'Predeterminado',
@@ -1684,6 +1694,11 @@ export const messages: Catalogue = {
 	'reminders.remove': 'Quitar {message}',
 	'reminders.remove2': 'Quitar {name}',
 	'reminders.removeThisReminder': 'Quitar este recordatorio',
+	'reminders.reviewBlocks': { one: '{count} bloque', other: '{count} bloques' },
+	'reminders.reviewPending':
+		'Tu revisión semanal está pendiente — {blocks} de la semana pasada sin responder.',
+	'reminders.reviewWeeksOpen':
+		'{weeks} semanas siguen abiertas — la más antigua tiene {blocks} sin responder.',
 	'reminders.saveThisReminder': 'Guardar este recordatorio',
 	'reminders.saveWhatThisKindSounds': 'Guardar cómo suena este tipo',
 	'reminders.servesItOverHttpsWith':
@@ -1728,10 +1743,15 @@ export const messages: Catalogue = {
 	'reminders.whichSoundThisOnePlays': 'Qué sonido reproduce este',
 	'reminders.whichWayToLook': 'En qué dirección mirar',
 	'reminders.yourSounds': 'Tus sonidos',
+	'reportDialog.send': 'Enviar',
+	'reportDialog.sending': 'Enviando…',
 	'reportDialog.sentThankYouIt': 'Enviado. Gracias — ya está en la lista del operador.',
 	'reportDialog.tellTheOperator': 'Avisar al operador',
+	'reportDialog.thatDidNotSend': 'Eso no se envió. Inténtalo de nuevo en un momento.',
 	'reportDialog.whatHappened': 'Qué pasó',
 	'reportDialog.whatThisIs': 'Qué es esto',
+	'reportDialog.whereItGoes':
+		'Va a quien opera esta instancia, con tu cuenta, información sobre el navegador que usas, y de qué página vino: {where}. Ninguno de tus datos personales va con ello.',
 	'reportDialog.yourIdea': 'Tu idea',
 	'rooms.finance.sections': 'Secciones de finanzas',
 	'rooms.finance.tabs.bills': 'Facturas',

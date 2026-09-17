@@ -1,3 +1,4 @@
+import type { Locale } from '$lib/i18n/locales.js';
 /**
  * The isolated instance's routing table.
  *
@@ -26,7 +27,19 @@ export interface IsolatedEvent {
 	 * session may be absent. On an isolated instance it is always the one account, so route
 	 * bodies keep the same `locals.user!.id` they were born with.
 	 */
-	locals: { user?: { id: string } | undefined };
+	locals: {
+		user?: { id: string } | undefined;
+		/**
+		 * The language this request is answered in, when something worked it out.
+		 *
+		 * `hooks.server.ts` sets it on every request the server handles — the
+		 * account's choice, then the browser's, then the instance's — so a route
+		 * that has to render a sentence uses the same answer the page around it
+		 * is rendered with. Optional because the isolated bridge does not run
+		 * those hooks; there, fall back to the one account's own setting.
+		 */
+		locale?: Locale;
+	};
 	/**
 	 * The page's own cookies, forwarded by the bridge. Only what client code
 	 * can read — which is all an isolated instance has, and all the view

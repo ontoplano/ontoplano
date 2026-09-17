@@ -1437,6 +1437,11 @@ export type MessageKey =
 	| 'reminders.alreadyBeen'
 	| 'reminders.alreadyShown'
 	| 'reminders.androidHasRefusedNotificationsAnd'
+	| 'reminders.billDue'
+	| 'reminders.billDueToday'
+	| 'reminders.billStillToPay'
+	| 'reminders.birthdayOf'
+	| 'reminders.birthdayTurns'
 	| 'reminders.blocksWithAReminderBirthdays'
 	| 'reminders.callIt'
 	| 'reminders.change'
@@ -1446,6 +1451,8 @@ export type MessageKey =
 	| 'reminders.confirm'
 	| 'reminders.countsAsSecureFromAnother'
 	| 'reminders.day'
+	| 'reminders.dayAllAnswered'
+	| 'reminders.daySomeLeft'
 	| 'reminders.days'
 	| 'reminders.daysCount'
 	| 'reminders.default'
@@ -1482,6 +1489,9 @@ export type MessageKey =
 	| 'reminders.remove'
 	| 'reminders.remove2'
 	| 'reminders.removeThisReminder'
+	| 'reminders.reviewBlocks'
+	| 'reminders.reviewPending'
+	| 'reminders.reviewWeeksOpen'
 	| 'reminders.saveThisReminder'
 	| 'reminders.saveWhatThisKindSounds'
 	| 'reminders.servesItOverHttpsWith'
@@ -1515,10 +1525,14 @@ export type MessageKey =
 	| 'reminders.whichSoundThisOnePlays'
 	| 'reminders.whichWayToLook'
 	| 'reminders.yourSounds'
+	| 'reportDialog.send'
+	| 'reportDialog.sending'
 	| 'reportDialog.sentThankYouIt'
 	| 'reportDialog.tellTheOperator'
+	| 'reportDialog.thatDidNotSend'
 	| 'reportDialog.whatHappened'
 	| 'reportDialog.whatThisIs'
+	| 'reportDialog.whereItGoes'
 	| 'reportDialog.yourIdea'
 	| 'rooms.finance.sections'
 	| 'rooms.finance.tabs.bills'
@@ -3014,17 +3028,32 @@ export interface MessageValuesFor {
 	'pictures.hint': { kilobytes: string | number };
 	'ratingPicker.leaveUnanswered': { rating: string | number };
 	'ratings.labelValueOf5': { label: string | number; value: string | number };
+	'reminders.billDue': { day: string | number; money: string | number; name: string | number };
+	'reminders.billDueToday': { money: string | number; name: string | number };
+	'reminders.billStillToPay': {
+		day: string | number;
+		money: string | number;
+		name: string | number;
+	};
+	'reminders.birthdayOf': { name: string | number };
+	'reminders.birthdayTurns': { age: string | number; name: string | number };
 	'reminders.change': { message: string | number };
+	'reminders.dayAllAnswered': { count: number };
+	'reminders.daySomeLeft': { done: string | number; left: string | number; total: string | number };
 	'reminders.daysCount': { count: number };
 	'reminders.hear': { name: string | number };
 	'reminders.howManyDaysToCover': { maxDays: string | number };
 	'reminders.kb': { bytes: string | number };
 	'reminders.remove': { message: string | number };
 	'reminders.remove2': { name: string | number };
+	'reminders.reviewBlocks': { count: number };
+	'reminders.reviewPending': { blocks: string | number };
+	'reminders.reviewWeeksOpen': { blocks: string | number; weeks: string | number };
 	'reminders.theLastDays': { count: number };
 	'reminders.theNextDays': { count: number };
 	'reminders.upToRingtonesKbEach': { kilobytes: string | number; ringtones: string | number };
 	'reminders.whatTimeItShouldGo': { dayStart: string | number };
+	'reportDialog.whereItGoes': { where: string | number };
 	'search.for': { q: string | number; results: string | number; total: string | number };
 	'search.nothingMatches': { q: string | number };
 	'settings.account.exportsLeft': { count: number; remaining: string | number };

@@ -1,4 +1,7 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
+import { translatorFor } from '$lib/i18n/core';
+import { SOURCE_LOCALE } from '$lib/i18n/locales';
+import { getLocale } from '$lib/services/settings';
 import { json } from '@sveltejs/kit';
 import { buildCtx } from '$lib/services/ctx';
 import {
@@ -40,7 +43,18 @@ export const GET = async ({ locals, url }: IsolatedEvent) => {
 	 * instance, for nobody at all. Idempotent per account per day, so the job
 	 * and this cannot make two of anything.
 	 */
-	ensureOwnReminders(ctx, ctx.now, ctx.tz);
+	/*
+	 * The language this page is being rendered in, which `hooks.server.ts` has
+	 * already worked out — the account's choice, then the browser's, then the
+	 * instance's. Re-deriving it here would be a second answer to a settled
+	 * question — the fallback is for the isolated instance, which runs these
+	 * routes without those hooks and has exactly one account to ask.
+	 *
+	 * Asked of the settings service rather than of `$lib/server/locale`: these
+	 * routes run on the device too, where there is no server half to import.
+	 */
+	const t = await translatorFor(locals.locale ?? getLocale(locals.user!.id) ?? SOURCE_LOCALE);
+	ensureOwnReminders(ctx, ctx.now, ctx.tz, t);
 
 	if (url.searchParams.has('upcoming')) {
 		// The same list `/api/v1/reminders/upcoming` hands a phone pointed at a
