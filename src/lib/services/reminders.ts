@@ -14,7 +14,7 @@ import { blockName } from '../planner-grid.js';
 
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
-import { localOfInstant, stamp } from './time.js';
+import { instantOfLocal, localOfInstant, stamp } from './time.js';
 import { num, str } from './validate.js';
 // The clock recomputes its sleep whenever the set of pending reminders changes;
 // without this a new alarm would wait for the next ceiling tick to be noticed.
@@ -135,7 +135,7 @@ export const AHEAD_DAYS = 30;
  */
 export function upcomingReminders(
 	ctx: Ctx
-): { id: number; remindAt: string; message: string; audible: boolean }[] {
+): { id: number; remindAt: string; at: string; message: string; audible: boolean }[] {
 	/*
 	 * Both ends in the account's own wall clock, which is what the rows hold.
 	 *
@@ -157,6 +157,23 @@ export function upcomingReminders(
 		.map((r) => ({
 			id: r.id,
 			remindAt: r.remindAt,
+			/*
+			 * The same moment, as a moment.
+			 *
+			 * `remindAt` is a wall clock in the account's own zone, with no
+			 * offset on the end, and everything that books an alarm from this
+			 * list has to turn it into an instant. Two of them got it wrong in
+			 * different ways: the shell's ringer requires a trailing `Z` and
+			 * read every one of these as the epoch, so it skipped the lot and
+			 * a phone pointed at a server rang for nothing at all; the copy of
+			 * the app that books its own alarms parsed it as the *device's*
+			 * wall clock, which is right only while the device sits in the
+			 * account's zone and silently hours out when it does not.
+			 *
+			 * An alarm is an instant. This is that instant, so neither side
+			 * has to guess — `remindAt` stays for whoever is showing it.
+			 */
+			at: instantOfLocal(r.remindAt, ctx.tz).toISOString(),
 			message: r.message,
 			audible: r.audible
 		}));

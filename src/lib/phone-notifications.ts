@@ -20,6 +20,7 @@
  * bookkeeping problem with no upside — cancelling everything this app booked
  * and booking it again is one call each and cannot drift.
  */
+import type { Translate } from './i18n/core.js';
 import { inPhoneApp } from './instance-choice';
 import { isIsolated } from './isolated/mode';
 import { NOTIFICATION_ACCENT, NOTIFICATION_ACCENT_ISOLATED } from './logo/brand';
@@ -27,7 +28,10 @@ import { NOTIFICATION_ACCENT, NOTIFICATION_ACCENT_ISOLATED } from './logo/brand'
 /** How a reminder comes back from `/api/reminders?upcoming`. */
 type Upcoming = {
 	id: number;
+	/** A wall clock in the account's zone — for showing, not for booking. */
 	remindAt: string;
+	/** The moment itself, ISO-8601 in UTC. This is what an alarm is set to. */
+	at: string;
 	message: string;
 	audible: boolean;
 };
@@ -88,13 +92,16 @@ const CHANNEL_IMPORTANCE = 5;
  * system ignores every field after the first time, which is also why the
  * importance cannot be raised later by editing this.
  */
-async function ensureChannel(notifications: Notifications): Promise<void> {
+async function ensureChannel(notifications: Notifications, t: Translate): Promise<void> {
 	try {
 		await notifications.createChannel({
 			id: REMINDER_CHANNEL,
-			name: 'Reminders',
+			// The same two the shell's own channel is named with, so the one
+			// channel reads the same whichever half got there first.
+			// `scripts/brand-android.mjs` writes them into `values-*/`.
+			name: t('android.remindersChannel'),
 			importance: CHANNEL_IMPORTANCE,
-			description: 'Reminders you set in ontoplano.'
+			description: t('android.remindersChannelWhat')
 		});
 	} catch {
 		// An older shell without the call, or a platform with no channels.
@@ -182,7 +189,7 @@ async function book(
  * every instance uses — so nothing here is the only thing standing between
  * somebody and their reminder.
  */
-export async function scheduleDeviceReminders(): Promise<number> {
+export async function scheduleDeviceReminders(t: Translate): Promise<number> {
 	const notifications = phoneNotifications();
 	if (!notifications) return 0;
 
@@ -192,7 +199,7 @@ export async function scheduleDeviceReminders(): Promise<number> {
 		const allowed = await notifications.checkPermissions();
 		if (allowed.display !== 'granted') return 0;
 
-		await ensureChannel(notifications);
+		await ensureChannel(notifications, t);
 
 		// Everything this app booked before, so a reminder that has since been
 		// dismissed or moved does not ring at its old time.
@@ -203,8 +210,13 @@ export async function scheduleDeviceReminders(): Promise<number> {
 		if (!answer.ok) return 0;
 		const { upcoming } = (await answer.json()) as { upcoming: Upcoming[] };
 
+		/*
+		 * `at`, not `remindAt`: see the note on `upcomingReminders`. Parsing
+		 * the wall clock here read it in the *device's* zone, which is the
+		 * account's zone only by luck.
+		 */
 		const wanted = upcoming.filter(
-			(r) => r.id > 0 && r.id <= MAX_ID && Date.parse(r.remindAt) > Date.now()
+			(r) => r.id > 0 && r.id <= MAX_ID && Date.parse(r.at) > Date.now()
 		);
 		if (wanted.length === 0) return 0;
 
@@ -212,9 +224,9 @@ export async function scheduleDeviceReminders(): Promise<number> {
 			notifications,
 			wanted.map((reminder) => ({
 				id: reminder.id,
-				title: 'app.ontoplano2',
+				title: t('app.ontoplano2'),
 				body: reminder.message,
-				at: new Date(reminder.remindAt),
+				at: new Date(reminder.at),
 				// Silent ones are still worth showing; what `audible` decides is
 				// whether the phone makes a noise about it.
 				sound: reminder.audible ? undefined : null,
@@ -366,16 +378,16 @@ const TEST_ID = MAX_ID;
  * work — permission, the plugin, Android actually showing it — without
  * setting a reminder and waiting a minute.
  */
-export async function testPhoneNotification(): Promise<boolean> {
+export async function testPhoneNotification(t: Translate): Promise<boolean> {
 	const notifications = phoneNotifications();
 	if (!notifications) return false;
 	try {
-		await ensureChannel(notifications);
+		await ensureChannel(notifications, t);
 		await book(notifications, [
 			{
 				id: TEST_ID,
-				title: 'app.ontoplano2',
-				body: 'A test — reminders will look like this.',
+				title: t('app.ontoplano2'),
+				body: t('phone.aTestRemindersWillLook'),
 				at: new Date(Date.now() + TEST_DELAY_MS),
 				smallIcon: NOTIFICATION_ICON,
 				// A test is only worth pressing if it looks — and sounds — like
@@ -396,13 +408,13 @@ export async function testPhoneNotification(): Promise<boolean> {
  * Returns whether it was granted, so the screen that asked can say what
  * happened rather than leaving somebody looking at an unchanged page.
  */
-export async function askPhoneToNotify(): Promise<boolean> {
+export async function askPhoneToNotify(t: Translate): Promise<boolean> {
 	const notifications = phoneNotifications();
 	if (!notifications) return false;
 	try {
 		const asked = await notifications.requestPermissions();
 		if (asked.display !== 'granted') return false;
-		await scheduleDeviceReminders();
+		await scheduleDeviceReminders(t);
 		return true;
 	} catch {
 		return false;

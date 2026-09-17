@@ -350,7 +350,15 @@ final class Ringer {
 
         for (int i = 0; i < coming.length(); i++) {
             JSONObject one = coming.getJSONObject(i);
-            long at = instant(one.optString("remindAt", ""));
+            /*
+             * `at` is the instant; `remindAt` is a wall clock with no offset
+             * on the end, which this could never read. It tried, got 0 for
+             * every one of them, and skipped the lot — a phone pointed at a
+             * server rang for nothing at all. `remindAt` is still read, for
+             * an instance older than the app pointed at it.
+             */
+            long at = instant(one.optString("at", ""));
+            if (at <= 0) at = wallClock(one.optString("remindAt", ""));
             if (at <= 0) continue;
             out.add(
                     new Reminder(
@@ -363,8 +371,8 @@ final class Ringer {
     }
 
     /**
-     * The app writes instants as ISO-8601 in UTC. Parsed by hand because
-     * `Instant` is API 26 and this runs back to 23.
+     * An instant: ISO-8601 in UTC, with the `Z` on the end. Parsed by hand
+     * because `Instant` is API 26 and this runs back to 23.
      */
     private static long instant(String iso) {
         if (iso.isEmpty()) return 0;
@@ -374,6 +382,31 @@ final class Ringer {
                 SimpleDateFormat format = new SimpleDateFormat(shape, Locale.US);
                 format.setTimeZone(TimeZone.getTimeZone("UTC"));
                 Date at = format.parse(iso);
+                if (at != null) return at.getTime();
+            } catch (ParseException next) {
+                // try the other shape
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * A wall clock with no zone on it, read in this phone's own.
+     *
+     * Only for an instance too old to send `at`. Which zone it meant is not
+     * in the payload, so the phone's is the guess — right for somebody whose
+     * account is set to where they are, and late or early by the difference
+     * for anybody else. Better than the alternative, which was silence.
+     */
+    private static long wallClock(String local) {
+        if (local.isEmpty()) return 0;
+        String[] shapes = {"yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd'T'HH:mm"};
+        for (String shape : shapes) {
+            try {
+                SimpleDateFormat format = new SimpleDateFormat(shape, Locale.US);
+                format.setTimeZone(TimeZone.getDefault());
+                format.setLenient(false);
+                Date at = format.parse(local);
                 if (at != null) return at.getTime();
             } catch (ParseException next) {
                 // try the other shape

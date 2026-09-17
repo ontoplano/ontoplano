@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { scheduleDeviceReminders, syncRinger } from '$lib/phone-notifications';
+	import { useT } from '$lib/i18n';
 	import { browser } from '$app/environment';
 	import { enablePush, pushSupported } from '$lib/push';
 	import { page } from '$app/state';
@@ -32,6 +33,8 @@
 	 * the delivery job — so the two cannot swallow each other.
 	 */
 	type Due = { id: number; message: string; sound: string | null };
+
+	const t = useT();
 
 	const EVERY = 60_000;
 
@@ -154,7 +157,7 @@
 		// Nothing about a reminder arriving later should be able to break the
 		// screen that is open now — see the note in `hooks.client.ts`.
 		try {
-			scheduleDeviceReminders().catch(() => undefined);
+			scheduleDeviceReminders(t).catch(() => undefined);
 			/*
 			 * …and, on the copy the phone carries, nudge the shell to ask
 			 * whichever instance it rings for.

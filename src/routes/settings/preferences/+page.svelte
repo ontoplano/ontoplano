@@ -226,7 +226,7 @@
 	});
 
 	async function turnOnPhone() {
-		notifications = (await askPhoneToNotify()) ? 'on' : 'denied';
+		notifications = (await askPhoneToNotify(t)) ? 'on' : 'denied';
 	}
 
 	/** Whether the phone's own settings screen opened, so a dead button says so. */
@@ -241,7 +241,7 @@
 	/** Book a notification a few seconds out, and say so. */
 	let phoneTested = $state('');
 	async function sendPhoneTest() {
-		phoneTested = (await testPhoneNotification())
+		phoneTested = (await testPhoneNotification(t))
 			? 'Booked — it arrives in a few seconds, lock the phone if you want to see it land outside.'
 			: 'Android would not take it. Check the app is allowed notifications in the phone settings.';
 	}
@@ -496,7 +496,7 @@
 				<li class="flex flex-col items-stretch gap-2 py-3 sm:flex-row sm:items-start sm:gap-4">
 					<div class="min-w-0 flex-1">
 						<p class="text-sm font-medium text-gray-900">{t(what.label)}</p>
-						<p class="mt-0.5 text-sm leading-relaxed text-gray-500">{what.description}</p>
+						<p class="mt-0.5 text-sm leading-relaxed text-gray-500">{t(what.description)}</p>
 					</div>
 
 					<!--
@@ -926,7 +926,7 @@
 						</div>
 						<div class="min-w-0 flex-1">
 							<span class="text-sm font-medium text-gray-900">{t(card.label)}</span>
-							<p class="text-xs text-gray-500">{card.description}</p>
+							<p class="text-xs text-gray-500">{t(card.description)}</p>
 						</div>
 						<button type="button" onclick={() => toggle(id)} class="btn btn-sm"
 							>{t('settings.preferences.hide')}</button
@@ -941,7 +941,7 @@
 				>
 					<div class="min-w-0 flex-1">
 						<span class="text-sm font-medium text-gray-900">{t(card.label)}</span>
-						<p class="text-xs text-gray-500">{card.description}</p>
+						<p class="text-xs text-gray-500">{t(card.description)}</p>
 					</div>
 					<button type="button" onclick={() => toggle(card.id)} class="btn btn-sm"
 						>{t('settings.preferences.show')}</button

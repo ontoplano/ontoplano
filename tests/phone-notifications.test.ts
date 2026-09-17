@@ -11,7 +11,21 @@
  * a row that may no longer exist. None of that is visible in a browser, so
  * this is the place it is held.
  */
-import { afterEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
+import { translatorFor } from '../src/lib/i18n/core.js';
+import type { Translate } from '../src/lib/i18n/core.js';
+
+/*
+ * The real catalogue, not a stub that answers anything.
+ *
+ * What a notification is titled goes through the translator, and a stub that
+ * echoes its argument would pass just as happily on a key nobody ever wrote a
+ * message for — which is the exact bug this is here to catch.
+ */
+let t: Translate;
+beforeAll(async () => {
+	t = await translatorFor('en');
+});
 
 /*
  * The build's own declared settings, which there are none of here.
@@ -52,11 +66,13 @@ function notificationPlugin(display = 'granted', pending: { id: number }[] = [])
 		cancelled: [] as { id: number }[],
 		booked: [] as {
 			id: number;
+			title?: string;
+			body?: string;
 			sound?: string | null;
 			channelId?: string;
 			schedule: { at: Date };
 		}[],
-		channels: [] as { id: string; importance: number }[]
+		channels: [] as { id: string; importance: number; name?: string; description?: string }[]
 	};
 	const plugin = {
 		checkPermissions: async () => ({ display }),
@@ -89,44 +105,84 @@ afterEach(() => {
 	vi.unstubAllGlobals();
 });
 
-const soon = () => new Date(Date.now() + 60 * 60 * 1000).toISOString();
+/*
+ * A row in the shape the wire really has.
+ *
+ * `at` is the instant an alarm is set to; `remindAt` is the account's wall
+ * clock, which is for showing. They are deliberately different here — reading
+ * the wrong one is the bug this shape exists because of, and fixtures where
+ * both say the same thing would not notice it.
+ */
+const due = (at: Date) => ({
+	at: at.toISOString(),
+	remindAt: new Date(at.getTime() - 5 * 60 * 60 * 1000).toISOString().slice(0, 19)
+});
+const soon = () => due(new Date(Date.now() + 60 * 60 * 1000));
 
 describe('what gets booked', () => {
 	test('cancels what it booked before, then books what is still to come', async () => {
 		const { plugin, state } = notificationPlugin('granted', [{ id: 7 }, { id: 9 }]);
 		inTheApp({ LocalNotifications: plugin });
 		upcoming([
-			{ id: 1, remindAt: soon(), message: 'stretch', audible: true },
+			{ id: 1, ...soon(), message: 'stretch', audible: true },
 			// Already gone off: booking it would make the phone ring right now
 			// about something that is over.
 			{
 				id: 2,
-				remindAt: new Date(Date.now() - 60_000).toISOString(),
+				...due(new Date(Date.now() - 60_000)),
 				message: 'past',
 				audible: true
 			},
 			// Android's ids are 32-bit signed; a row id past that wraps into
 			// somebody else's notification.
-			{ id: 2 ** 31, remindAt: soon(), message: 'too big', audible: true },
-			{ id: 3, remindAt: soon(), message: 'quietly', audible: false }
+			{ id: 2 ** 31, ...soon(), message: 'too big', audible: true },
+			{ id: 3, ...soon(), message: 'quietly', audible: false }
 		]);
 
-		const booked = await scheduleDeviceReminders();
+		const booked = await scheduleDeviceReminders(t);
 
 		expect(state.cancelled.map((n) => n.id)).toEqual([7, 9]);
 		expect(booked).toBe(2);
 		expect(state.booked.map((n) => n.id)).toEqual([1, 3]);
 	});
 
+	/*
+	 * A notification's words go out through Android, where nothing renders
+	 * them and nobody can correct them.
+	 *
+	 * This caught the real thing: the sweep that made the app translatable
+	 * turned the title into a message key and left it there, because this
+	 * module is not a component and has no `t` of its own. The phone showed
+	 * `app.ontoplano2` at the top of every reminder. A key is a plausible
+	 * string, so nothing else noticed.
+	 */
+	test('what the phone is shown is words, not message keys', async () => {
+		const { plugin, state } = notificationPlugin();
+		inTheApp({ LocalNotifications: plugin });
+		upcoming([{ id: 1, ...soon(), message: 'buy milk', audible: true }]);
+
+		await scheduleDeviceReminders(t);
+
+		const said = [
+			...state.booked.flatMap((n) => [n.title, n.body]),
+			...state.channels.flatMap((c) => [c.name, c.description])
+		];
+		expect(said.length).toBeGreaterThan(0);
+		for (const words of said) {
+			expect(words).toBeTruthy();
+			expect(words).not.toMatch(/^[a-z][\w-]*(\.[\w-]+)+$/);
+		}
+	});
+
 	test('a silent reminder is shown without a sound, not skipped', async () => {
 		const { plugin, state } = notificationPlugin();
 		inTheApp({ LocalNotifications: plugin });
 		upcoming([
-			{ id: 1, remindAt: soon(), message: 'loud', audible: true },
-			{ id: 2, remindAt: soon(), message: 'quiet', audible: false }
+			{ id: 1, ...soon(), message: 'loud', audible: true },
+			{ id: 2, ...soon(), message: 'quiet', audible: false }
 		]);
 
-		await scheduleDeviceReminders();
+		await scheduleDeviceReminders(t);
 
 		// `sound: null` is the plugin's word for silent; `undefined` leaves the
 		// channel's own sound in charge.
@@ -140,12 +196,12 @@ describe('what gets booked', () => {
 		const fetched = vi.fn();
 		vi.stubGlobal('fetch', fetched);
 
-		expect(await scheduleDeviceReminders()).toBe(0);
+		expect(await scheduleDeviceReminders(t)).toBe(0);
 		expect(fetched).not.toHaveBeenCalled();
 	});
 
 	test('books nothing in a browser', async () => {
-		expect(await scheduleDeviceReminders()).toBe(0);
+		expect(await scheduleDeviceReminders(t)).toBe(0);
 	});
 });
 
@@ -197,9 +253,9 @@ describe('the channel a reminder lands on', () => {
 	test('is made before anything is booked, and every booking names it', async () => {
 		const { plugin, state } = notificationPlugin();
 		inTheApp({ LocalNotifications: plugin });
-		upcoming([{ id: 1, remindAt: soon(), message: 'stretch', audible: true }]);
+		upcoming([{ id: 1, ...soon(), message: 'stretch', audible: true }]);
 
-		await scheduleDeviceReminders();
+		await scheduleDeviceReminders(t);
 
 		expect(state.channels.map((c) => c.id)).toContain(REMINDER_CHANNEL);
 		// 5 is IMPORTANCE_HIGH: it makes a sound. 3 (DEFAULT) does not peek and
@@ -214,7 +270,7 @@ describe('the channel a reminder lands on', () => {
 		const { plugin, state } = notificationPlugin();
 		inTheApp({ LocalNotifications: plugin });
 
-		expect(await testPhoneNotification()).toBe(true);
+		expect(await testPhoneNotification(t)).toBe(true);
 		expect(state.channels.map((c) => c.id)).toContain(REMINDER_CHANNEL);
 		expect(state.booked[0].channelId).toBe(REMINDER_CHANNEL);
 	});
@@ -254,9 +310,9 @@ describe('a phone that will not take an exact alarm', () => {
 	test('is given an inexact one rather than nothing at all', async () => {
 		const { plugin, state, asked } = refusesExactAlarms();
 		inTheApp({ LocalNotifications: plugin });
-		upcoming([{ id: 1, remindAt: soon(), message: 'stretch', audible: true }]);
+		upcoming([{ id: 1, ...soon(), message: 'stretch', audible: true }]);
 
-		const booked = await scheduleDeviceReminders();
+		const booked = await scheduleDeviceReminders(t);
 
 		// Exact first, because exact is what a reminder wants.
 		expect(asked).toEqual([true, false]);
@@ -268,7 +324,7 @@ describe('a phone that will not take an exact alarm', () => {
 		const { plugin, state, asked } = refusesExactAlarms();
 		inTheApp({ LocalNotifications: plugin });
 
-		expect(await testPhoneNotification()).toBe(true);
+		expect(await testPhoneNotification(t)).toBe(true);
 		expect(asked).toEqual([true, false]);
 		expect(state.booked).toHaveLength(1);
 	});

@@ -122,7 +122,7 @@
 			// web view has no Push API to subscribe to, and the alarms are booked
 			// with the system instead.
 			if (inPhoneApp()) {
-				allowed = await askPhoneToNotify();
+				allowed = await askPhoneToNotify(t);
 				refused = !allowed;
 			} else await enablePush(page.data.pushKey ?? null);
 		} finally {
@@ -535,10 +535,7 @@
 		off for good.
 	-->
 	<div data-tour="set-alarm">
-		<Card
-			title={t('reminders.setOne')}
-			description="A day and what to say. It is about nothing else."
-		>
+		<Card title={t('reminders.setOne')} description={t('reminders.aDayAndWhatTo')}>
 			<!--
 				A day and a time, not one field with six segments in it.
 
@@ -943,7 +940,7 @@
 	<div data-tour="reminder-sounds">
 		<Card
 			title={t('reminders.whatMakesASound')}
-			description="Everything shows. Only these are heard."
+			description={t('reminders.everythingShowsOnlyTheseAre')}
 			flush
 		>
 			<ul class="divide-y divide-gray-200">
