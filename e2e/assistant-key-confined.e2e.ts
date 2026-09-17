@@ -29,7 +29,7 @@ test('the key form offers to tie a key to one notebook', async ({ page }) => {
 
 	await visit(page, '/settings/integrations');
 	await expect(async () => {
-		await page.getByRole('button', { name: 'Make a key' }).click();
+		await page.getByRole('button', { name: 'Create a key' }).click();
 		await expect(page.getByRole('textbox', { name: 'What to call this key' })).toBeVisible({
 			timeout: 2000
 		});

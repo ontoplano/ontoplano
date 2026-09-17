@@ -1758,13 +1758,13 @@ export type MessageKey =
 	| 'settings.integrations.connections.yourNewCalendarAddress'
 	| 'settings.integrations.copyTheKey'
 	| 'settings.integrations.copyThis'
+	| 'settings.integrations.createAKey'
 	| 'settings.integrations.doNotShareItWith'
 	| 'settings.integrations.hasTheFullFormWith'
 	| 'settings.integrations.howToSetEachOne'
 	| 'settings.integrations.integrations'
 	| 'settings.integrations.itIsAlreadyInThe'
 	| 'settings.integrations.letAnAiAssistantUse'
-	| 'settings.integrations.makeAKey'
 	| 'settings.integrations.makeIt'
 	| 'settings.integrations.notSomething'
 	| 'settings.integrations.nothingYetEverythingAn'
@@ -1773,7 +1773,7 @@ export type MessageKey =
 	| 'settings.integrations.putItBack'
 	| 'settings.integrations.read'
 	| 'settings.integrations.removingIsPermanentWithoutThis'
-	| 'settings.integrations.seeHere'
+	| 'settings.integrations.seeYourKeys'
 	| 'settings.integrations.thisSecretWillOnlyBe'
 	| 'settings.integrations.whatItMayDo'
 	| 'settings.integrations.whatYourAssistantsDid'
@@ -1791,7 +1791,6 @@ export type MessageKey =
 	| 'settings.integrations.widget.youCanDisconnectItAny'
 	| 'settings.integrations.wiringUpAScriptA'
 	| 'settings.integrations.write'
-	| 'settings.integrations.youAlreadyHave'
 	| 'settings.integrations.yourNewKey'
 	| 'settings.language.heading'
 	| 'settings.language.hint'
@@ -2679,7 +2678,7 @@ export interface MessageValuesFor {
 	'settings.integrations.connections.itMay': { join: string | number };
 	'settings.integrations.notSomething': { label: string | number; write: string | number };
 	'settings.integrations.outsideWhat': { label: string | number; write: string | number };
-	'settings.integrations.seeHere': { them: string | number };
+	'settings.integrations.seeYourKeys': { count: number };
 	'settings.language.untranslated': { count: number };
 	'settings.menu.colourFor': { room: string | number };
 	'settings.menu.follows': { room: string | number };

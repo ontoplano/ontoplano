@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import Icon from '$lib/components/Icon.svelte';
 	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -245,12 +246,6 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 					</h3>
 					<p class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-500">
 						{t('settings.integrations.aKeyIsThePassword')}
-						<!-- Its own line, not the tail of the one above: a warning broken across
-					     a wrap reads as an afterthought, and this one is the point. -->
-						<br />
-						<strong class="font-semibold text-red-600"
-							>{t('settings.integrations.doNotShareItWith')}</strong
-						>
 					</p>
 
 					<!--
@@ -260,6 +255,7 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 				-->
 					{#if naming}
 						<form
+							id="new-key"
 							method="post"
 							action="?/createKey"
 							use:enhance={() => {
@@ -270,6 +266,17 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 							}}
 							class="mt-2 flex flex-wrap items-center gap-2"
 						>
+							<!--
+							The warning, here rather than on the page above.
+
+							It is about a secret that does not exist yet, so it reads as
+							scolding somebody who has not done anything — until the moment
+							they are about to make one, which is this one.
+						-->
+							<p class="w-full text-sm font-semibold text-red-600">
+								{t('settings.integrations.doNotShareItWith')}
+							</p>
+
 							<div class="flex w-full flex-wrap items-center gap-2">
 								<!-- Named after what it is tied to, when it is tied to
 								     something: a list of keys called "AI assistant" is a list
@@ -302,16 +309,6 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 							this list, and nor is deleting. The Integrations tab has the form
 							with all of them.
 						-->
-							<!--
-							What it may work on, before what it may do.
-
-							The narrower answer is the one people actually want — "work on
-							this project with me" — and it is asked first because it decides
-							which of the boxes below mean anything at all.
-						-->
-							<div class="w-full max-w-md">
-								<KeyReach choices={data.reach} bind:kind={tiedTo} bind:id={tiedId} />
-							</div>
 
 							<fieldset class="w-full">
 								<legend class="eyebrow text-gray-600"
@@ -425,14 +422,38 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 									</span>
 								</label>
 							</fieldset>
+							<!--
+							What it may work on, after what it may do.
+
+							It used to be first, on the reasoning that the narrower answer
+							decides what the boxes below mean. In front of somebody it read
+							as a second question before they had answered the first, so it
+							sits under them now: the common case is a key that reaches
+							everything, and that case should not have to scroll past a
+							choice it will not make.
+						-->
+							<div class="w-full max-w-md">
+								<KeyReach choices={data.reach} bind:kind={tiedTo} bind:id={tiedId} />
+							</div>
 						</form>
 					{:else}
+						<!--
+						A disclosure, drawn as one.
+
+						It was a filled button, which reads as "this does the thing" — and
+						what it actually does is open a form in the same place. The chevron
+						and `aria-expanded` say so to somebody looking and to somebody
+						listening.
+					-->
 						<button
 							type="button"
-							class="btn btn-primary btn-sm mt-2"
+							class="btn btn-sm mt-2"
+							aria-expanded={naming}
+							aria-controls="new-key"
 							onclick={() => (naming = true)}
 						>
-							{t('settings.integrations.makeAKey')}
+							<Icon name="chevron-down" size={16} />
+							{t('settings.integrations.createAKey')}
 						</button>
 						<!--
 						The count and the way to them, and nothing else.
@@ -443,20 +464,17 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 						moment a key exists, and it is there.
 					-->
 						{#if data.assistants.length > 0}
+							<!-- The count belongs to the link, not to a sentence in front of
+							     it: "you already have 4" and "see them here" are one thing to
+							     press and were two things to read. -->
 							<p class="mt-3 max-w-2xl text-sm leading-relaxed text-gray-500">
-								{t('settings.integrations.youAlreadyHave')}
-								{data.assistants.length === 1
-									? `one, “${data.assistants[0].name}”${
-											data.assistants[0].tiedTo ? `, tied to one ${data.assistants[0].tiedTo}` : ''
-										}`
-									: data.assistants.length}.
 								<a
 									href={resolve('/settings/integrations/connections')}
 									class="underline underline-offset-2"
-									>{t('settings.integrations.seeHere', {
-										them: data.assistants.length === 1 ? 'it' : 'them'
+									>{t('settings.integrations.seeYourKeys', {
+										count: data.assistants.length
 									})}</a
-								>.
+								>
 							</p>
 						{/if}
 					{/if}

@@ -18,6 +18,17 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.25 — 2026-09-17
+
+- **The AI tab's first step reads like what it is.** "Create a key" is a
+  disclosure with a chevron rather than a filled button that looked like it
+  would do something on its own; the warning about not sharing a key appears
+  when you are about to make one rather than before you have; the count is the
+  link — "See your keys here (4)" instead of a sentence and a link beside it;
+  and what a key may work on is asked after what it may do, since most keys
+  reach everything and that case should not scroll past a choice it will not
+  make.
+
 ## 0.178.24 — 2026-09-17
 
 - **First run asks which language before it asks anything else.** It starts on

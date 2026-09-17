@@ -17,7 +17,7 @@ test('a key made on the AI tab arrives inside the words you paste', async ({ pag
 
 	// The button exists before the page has hydrated enough to obey it.
 	await expect(async () => {
-		await page.getByRole('button', { name: 'Make a key' }).click();
+		await page.getByRole('button', { name: 'Create a key' }).click();
 		// A OneLine (a textarea that behaves like an input), found by its accessible
 		// name so the selector survives whichever element backs it.
 		await expect(page.getByRole('textbox', { name: 'What to call this key' })).toBeVisible({

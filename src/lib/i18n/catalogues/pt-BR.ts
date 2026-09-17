@@ -2010,6 +2010,7 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.yourNewCalendarAddress': 'Your new calendar address',
 	'settings.integrations.copyTheKey': 'Copy the key',
 	'settings.integrations.copyThis': 'Copy this',
+	'settings.integrations.createAKey': 'Criar uma chave',
 	'settings.integrations.doNotShareItWith': 'Do not share it with anyone.',
 	'settings.integrations.hasTheFullFormWith':
 		'has the full form, with every permission and an expiry.',
@@ -2017,7 +2018,6 @@ export const messages: Catalogue = {
 	'settings.integrations.integrations': 'Integrations',
 	'settings.integrations.itIsAlreadyInThe': 'It is already in the text below.',
 	'settings.integrations.letAnAiAssistantUse': 'Let an AI assistant use this app',
-	'settings.integrations.makeAKey': 'Make a key',
 	'settings.integrations.makeIt': 'Make it',
 	'settings.integrations.notSomething': '{label}: {write} — not something this can do',
 	'settings.integrations.nothingYetEverythingAn':
@@ -2028,7 +2028,10 @@ export const messages: Catalogue = {
 	'settings.integrations.read': 'Read',
 	'settings.integrations.removingIsPermanentWithoutThis':
 		'Removing is permanent. Without this, an assistant can add and change things\n\t\t\t\t\t\t\t\t\t\t\tbut never take them away.',
-	'settings.integrations.seeHere': 'See {them} here',
+	'settings.integrations.seeYourKeys': {
+		one: 'Veja sua chave aqui ({count})',
+		other: 'Veja suas chaves aqui ({count})'
+	},
 	'settings.integrations.thisSecretWillOnlyBe': 'This secret will only be shown once.',
 	'settings.integrations.whatItMayDo': 'What it may do',
 	'settings.integrations.whatYourAssistantsDid': 'What your assistants did',
@@ -2049,7 +2052,6 @@ export const messages: Catalogue = {
 		'You can disconnect it any time by revoking its key under',
 	'settings.integrations.wiringUpAScriptA': 'Wiring up a script, a widget or a calendar instead?',
 	'settings.integrations.write': 'Write',
-	'settings.integrations.youAlreadyHave': 'You already have',
 	'settings.integrations.yourNewKey': 'Your new key',
 	'settings.language.heading': 'Idioma',
 	'settings.language.hint':
