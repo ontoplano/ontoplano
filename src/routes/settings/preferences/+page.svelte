@@ -17,7 +17,6 @@
 		testPhoneNotification
 	} from '$lib/phone-notifications';
 	import { settingsForm } from '$lib/actions/settings-form';
-	import { resolve } from '$app/paths';
 	import { isCurrency } from '$lib/money';
 	import TimezonePicker from '$lib/components/TimezonePicker.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -470,17 +469,9 @@
 		switches is a button somebody presses hoping it kept all of them.
 	-->
 	<section class="space-y-4 border border-gray-200 bg-white p-6 shadow-card">
-		<div>
-			<h2 class="text-sm font-semibold text-gray-900">
-				{t('settings.preferences.whatYouAreToldAbout')}
-			</h2>
-			<p class="mt-1 text-sm text-gray-500">
-				{t('settings.preferences.everythingTheAppWillSay')}
-				<a href={resolve('/reminders')} class="underline underline-offset-2"
-					>{t('settings.preferences.reminders')}</a
-				>.
-			</p>
-		</div>
+		<h2 class="text-sm font-semibold text-gray-900">
+			{t('settings.preferences.notifications')}
+		</h2>
 
 		<ul class="divide-y divide-gray-200 border-t border-gray-200">
 			{#each data.notifications as what (what.id)}
@@ -516,15 +507,15 @@
 							method="post"
 							action="?/setNotification"
 							use:settingsForm={{ notice: 'Saved.' }}
-							class="flex shrink-0 items-center gap-2"
+							class="flex shrink-0 items-center justify-end gap-3"
 						>
 							<input type="hidden" name="id" value={what.id} />
 							<!--
-							The hour comes with the switch, so turning it on and choosing
-							when are one act. Submitted on change rather than behind a
-							button of its own: a time field with a Save beside it is two
-							controls for one answer.
-						-->
+								The hour comes with the switch, so turning it on and choosing
+								when are one act. Submitted on change rather than behind a
+								button of its own: a time field with a Save beside it is two
+								controls for one answer.
+							-->
 							{#if what.at !== null}
 								<label class="flex items-center gap-2 text-sm text-gray-700">
 									<span class="sr-only">{t('settings.preferences.when')}</span>
@@ -538,18 +529,24 @@
 									/>
 								</label>
 							{/if}
-							{#each [['on', 'On'], ['off', 'Off']] as [value, label] (value)}
-								<button
-									type="submit"
-									name="on"
-									{value}
-									class="border px-3 py-1.5 text-sm shadow-sm {(what.on ? 'on' : 'off') === value
-										? 'border-gray-900 bg-gray-900 font-semibold text-white'
-										: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
-								>
-									{label}
-								</button>
-							{/each}
+							<!--
+								One control for one answer, and it carries its own state.
+
+								It posts `on` only when it is checked, which is what the
+								action already reads. That also fixes the hour: submitting
+								the form from the time field used to send no `on` at all —
+								no submit button had been pressed — so changing when
+								something arrived turned it off.
+							-->
+							<input
+								type="checkbox"
+								name="on"
+								value="on"
+								class="toggle"
+								checked={what.on}
+								aria-label={t(what.label)}
+								onchange={(e) => e.currentTarget.form?.requestSubmit()}
+							/>
 						</form>
 					{/if}
 				</li>

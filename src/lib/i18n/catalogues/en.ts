@@ -2152,8 +2152,6 @@ export const messages: Catalogue = {
 	'settings.preferences.dayEndsAt': 'Day ends at',
 	'settings.preferences.dayStartsAt': 'Day starts at',
 	'settings.preferences.errorReports': 'Error reports',
-	'settings.preferences.everythingTheAppWillSay':
-		'Everything the app will say without being asked. Whether each one makes a sound is a\n\t\t\t\tseparate question, on',
 	'settings.preferences.firstDayOfWeek': 'First day of week',
 	'settings.preferences.generateTasksOn': 'Generate tasks on',
 	'settings.preferences.hide': 'Hide',
@@ -2171,6 +2169,7 @@ export const messages: Catalogue = {
 	'settings.preferences.moveUp': 'Move up',
 	'settings.preferences.nbsp': ' —',
 	'settings.preferences.noQuotesYet': 'No quotes yet',
+	'settings.preferences.notifications': 'Notifications',
 	'settings.preferences.notificationsOnThisDevice': 'Notifications on this device',
 	'settings.preferences.onForThisDevice': 'On for this device.',
 	'settings.preferences.onForThisPhone': 'On for this phone.',
@@ -2226,7 +2225,6 @@ export const messages: Catalogue = {
 	'settings.preferences.weekAndTimezone': 'Week and timezone',
 	'settings.preferences.weekSaved': 'Week saved.',
 	'settings.preferences.whatPricesOnTheShopping': 'What prices on the shopping list are in.',
-	'settings.preferences.whatYouAreToldAbout': 'What you are told about',
 	'settings.preferences.when': 'When',
 	'settings.preferences.whenAPageBreaksSend':
 		"When a page breaks, send the technical details to this server's log. Only what broke — never\n\t\t\t\twhat you wrote.",

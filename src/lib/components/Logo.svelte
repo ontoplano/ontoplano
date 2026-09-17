@@ -14,23 +14,33 @@
 	import hollowMark from '$lib/logo/mark-hollow.png';
 	import liftedMark from '$lib/logo/mark-lifted.png';
 	import { MARK_DRAINED } from '$lib/logo/brand';
-	import { MARK_TURN_RADIUS } from '$lib/logo/mark-geometry';
+	import { MARK_TURN_HOLE_RADIUS, MARK_TURN_RADIUS } from '$lib/logo/mark-geometry';
 	import { MARK_FIELD } from '$lib/logo/mark-shape';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
 
 	/*
-	 * What the mark carries inside, as its own layer over the whole mark.
+	 * What the mark carries inside, as its own layer, with a hole beneath it.
 	 *
-	 * A second copy of the same picture, clipped to a disc inside the ring —
-	 * identical pixels over identical pixels, so nothing changes to look at.
-	 * What it buys is a part that can turn while the rim stands still: a disc
-	 * turns in place, and the circle it is cut on is flat dark field, the same
-	 * at any angle. `$lib/mark-spin` turns it while a navigation drags.
+	 * The mark is drawn twice: the rim, and a disc cut inside it that can turn
+	 * while the rim stands still. A disc turns in place, and the circle it is
+	 * cut on is flat dark field, the same at any angle, so the seam does not
+	 * show. `$lib/mark-spin` turns it while a navigation drags.
 	 *
-	 * The radius is a fraction of the half width; circle() percentages resolve
-	 * against the side, hence the halving.
+	 * The layer underneath has that same disc taken out of it. It used to be
+	 * the whole picture, on the reasoning that identical pixels over identical
+	 * pixels change nothing to look at — true only while the top layer is at
+	 * rest. The moment it turned there were two puffins, one standing still
+	 * under the other, which is what the instance chooser shows for as long as
+	 * it takes to answer it.
+	 *
+	 * The radius is a fraction of the half width. `circle()` percentages
+	 * resolve against the side, hence the halving; a radial gradient sized to
+	 * `closest-side` resolves against the half, so it takes the fraction
+	 * itself. Both land on the same circle.
 	 */
 	const TURN_CLIP = `circle(${((MARK_TURN_RADIUS / 2) * 100).toFixed(2)}%)`;
+	const HOLE_STOP = `${(MARK_TURN_HOLE_RADIUS * 100).toFixed(2)}%`;
+	const TURN_HOLE = `radial-gradient(circle closest-side, transparent 0 ${HOLE_STOP}, #000 ${HOLE_STOP})`;
 
 	let {
 		size = 24,
@@ -137,7 +147,7 @@
 		alt=""
 		width={fill ? undefined : size}
 		height={fill ? undefined : size}
-		style="filter: {drained}"
+		style="filter: {drained}; -webkit-mask-image: {TURN_HOLE}; mask-image: {TURN_HOLE}"
 	/>
 	<img
 		class="mark-turn"

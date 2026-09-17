@@ -958,6 +958,75 @@ label:has(> input[type='radio']:not(:disabled)) {
 		width: auto;
 	}
 
+	/*
+	 * A switch, which is still a checkbox.
+	 *
+	 * Same bargain as `.select`: the element stays the platform's — it tabs,
+	 * it takes a space, it posts with the form, a screen reader calls it a
+	 * checkbox — and only what it looks like is drawn here. What it replaced
+	 * was a pair of On and Off buttons per row, which is two controls for one
+	 * answer and leaves no way to see the state without reading which of them
+	 * is filled in.
+	 */
+	.toggle {
+		appearance: none;
+		flex: none;
+		width: 2.25rem;
+		height: 1.25rem;
+		border: 1px solid var(--color-gray-300);
+		border-radius: 999px;
+		background-color: var(--color-gray-200);
+		box-shadow: var(--shadow-card);
+		cursor: pointer;
+		position: relative;
+		transition:
+			background-color 150ms ease,
+			border-color 150ms ease;
+	}
+
+	.toggle::after {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 0.125rem;
+		width: 0.875rem;
+		height: 0.875rem;
+		border-radius: 999px;
+		background-color: var(--color-white);
+		box-shadow: var(--shadow-card);
+		translate: 0 -50%;
+		transition: translate 150ms ease;
+	}
+
+	.toggle:checked {
+		border-color: var(--color-gray-900);
+		background-color: var(--color-gray-900);
+	}
+
+	.toggle:checked::after {
+		translate: 0.9375rem -50%;
+	}
+
+	.toggle:focus-visible {
+		outline: none;
+		border-color: var(--color-gray-900);
+		box-shadow: 0 0 0 1px var(--color-gray-900);
+	}
+
+	.toggle:disabled {
+		cursor: not-allowed;
+		opacity: 0.5;
+	}
+
+	/* The knob is the whole animation; a reader who asked for stillness gets
+	   the state without the slide. */
+	@media (prefers-reduced-motion: reduce) {
+		.toggle,
+		.toggle::after {
+			transition: none;
+		}
+	}
+
 	.input:hover:not(:focus),
 	.select:hover:not(:focus),
 	.textarea:hover:not(:focus) {

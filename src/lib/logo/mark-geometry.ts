@@ -56,3 +56,22 @@ const TURN_INSET = 0.02;
  * the general answer — a medallion is inside it too.
  */
 export const MARK_TURN_RADIUS = MARK_INNER - TURN_INSET;
+
+/**
+ * How far the layer underneath reaches in past the turning disc's edge.
+ *
+ * The rim layer has the turning disc cut out of it, so that only one copy of
+ * whatever the mark carries is ever drawn — two of them, one still and one
+ * turning, is what the instance chooser used to show. Cutting the hole on
+ * exactly the same circle the disc is clipped to leaves a hairline of nothing
+ * between them: a mask's edge and a clip path's edge are antialiased
+ * separately and do not add back up to an opaque pixel.
+ *
+ * So the hole is a little smaller than the disc and the two overlap. What the
+ * rim layer draws in that ring is covered by the disc, which is opaque there,
+ * so the overlap cannot show whatever the artwork puts inside.
+ */
+const TURN_UNDERLAP = 0.02;
+
+/** The circle the layer underneath is cut on — inside the turning disc's. */
+export const MARK_TURN_HOLE_RADIUS = MARK_TURN_RADIUS - TURN_UNDERLAP;

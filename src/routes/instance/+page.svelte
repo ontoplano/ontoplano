@@ -17,6 +17,7 @@
 		launchAddress,
 		phoneInstanceExists,
 		rememberInstance,
+		choseThisPhone,
 		storedInstance,
 		suggestedInstance
 	} from '$lib/instance-choice';
@@ -30,12 +31,14 @@
 	 * instance: two squares, the same shape the subscription page uses for the
 	 * same reason, and a paragraph under them that changes as you choose.
 	 *
-	 * The connected one starts selected, because it is what almost everybody
-	 * wants and because the other one is a decision about backups that nobody
-	 * should make by accident.
+	 * It opens on the one you are leaving, so that somebody who came here to
+	 * retype an address is not also told they have changed their mind about
+	 * where their data lives. With nothing answered yet that is the connected
+	 * one, which is what almost everybody wants and which keeps the other from
+	 * being chosen by accident — it is a decision about backups.
 	 */
 	type Kind = 'connected' | 'phone';
-	let kind: Kind = $state('connected');
+	let kind: Kind = $state(choseThisPhone() ? 'phone' : 'connected');
 
 	/*
 	 * The mark answers the press, and keeps answering until the app arrives.

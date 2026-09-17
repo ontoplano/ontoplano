@@ -15,7 +15,9 @@ test('every notification the app sends has a switch, and the answers stick', asy
 	await register(page, testEmail('notify-settings'));
 	await visit(page, '/settings/preferences');
 
-	const section = page.locator('section', { hasText: 'What you are told about' });
+	const section = page
+		.locator('section')
+		.filter({ has: page.getByRole('heading', { name: 'Notifications', exact: true }) });
 	await expect(section).toBeVisible();
 
 	// Drawn from the list rather than written out, so this is really asking
@@ -30,17 +32,15 @@ test('every notification the app sends has a switch, and the answers stick', asy
 	// what never did still does not.
 	const blocks = rows.filter({ hasText: 'Blocks, as they start' });
 	const bills = rows.filter({ hasText: 'Bills' }).first();
-	await expect(blocks.getByRole('button', { name: 'Off' })).toHaveClass(/bg-gray-900/);
-	await expect(bills.getByRole('button', { name: 'On' })).toHaveClass(/bg-gray-900/);
+	await expect(blocks.locator('input.toggle')).not.toBeChecked();
+	await expect(bills.locator('input.toggle')).toBeChecked();
 
 	// Turned on, and still on when the page is opened again.
-	await blocks.getByRole('button', { name: 'On' }).click();
+	await blocks.locator('input.toggle').check();
 	await visit(page, '/settings/preferences');
 	await expect(
-		section.locator('li').filter({ hasText: 'Blocks, as they start' }).getByRole('button', {
-			name: 'On'
-		})
-	).toHaveClass(/bg-gray-900/);
+		section.locator('li').filter({ hasText: 'Blocks, as they start' }).locator('input.toggle')
+	).toBeChecked();
 });
 
 /**
@@ -54,25 +54,33 @@ test('the end of the day is set to an hour, and keeps it', async ({ page }) => {
 	await register(page, testEmail('notify-eod'));
 	await visit(page, '/settings/preferences');
 
-	const row = page
-		.locator('section', { hasText: 'What you are told about' })
-		.locator('li')
-		.filter({ hasText: 'The end of the day' });
+	const notifications = page
+		.locator('section')
+		.filter({ has: page.getByRole('heading', { name: 'Notifications', exact: true }) });
+	const row = notifications.locator('li').filter({ hasText: 'The end of the day' });
 
 	// It opens on the hour this account's planner closes on rather than on
 	// nothing, because an empty time field is a question with no default.
 	const at = row.locator('input[type="time"]');
 	await expect(at).not.toHaveValue('');
 
+	await row.locator('input.toggle').check();
 	await at.fill('21:30');
-	await row.getByRole('button', { name: 'On' }).click();
+	await at.blur();
 
 	await visit(page, '/settings/preferences');
-	await expect(
-		page
-			.locator('section', { hasText: 'What you are told about' })
-			.locator('li')
-			.filter({ hasText: 'The end of the day' })
-			.locator('input[type="time"]')
-	).toHaveValue('21:30');
+	const again = page
+		.locator('section')
+		.filter({ has: page.getByRole('heading', { name: 'Notifications', exact: true }) })
+		.locator('li')
+		.filter({ hasText: 'The end of the day' });
+	await expect(again.locator('input[type="time"]')).toHaveValue('21:30');
+	/*
+	 * And it is still on.
+	 *
+	 * Changing the hour used to submit the form with no `on` in it — no submit
+	 * button had been pressed — so setting when something arrived turned it
+	 * off. The switch carries its own state, so it posts either way.
+	 */
+	await expect(again.locator('input.toggle')).toBeChecked();
 });
