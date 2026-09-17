@@ -18,6 +18,19 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.179.1 — 2026-09-17
+
+- **The tab shows the mark, not a browser's guess at it.** The icon offered to
+  a browser was the full-size drawing, and shrinking it seventy-to-one turned
+  the ring into blocks of colour and the puffin into a smear. It is drawn at
+  the size a tab actually shows now.
+- **Setting up an AI assistant reads in your own language.** The text to hand
+  it was English wherever the rest of the app was not; the commands in it stay
+  as they are, because those are typed rather than read.
+- **Fixed: a new instance's config file was missing a setting** it was
+  supposed to be given, so the file it wrote did not match the file it
+  documented.
+
 ## 0.179.0 — 2026-09-17
 
 - **A Media room, and you can record in it.** The Gallery is a tab inside it
