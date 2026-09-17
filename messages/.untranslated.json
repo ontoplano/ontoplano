@@ -1,5 +1,5 @@
 {
-	"total": 214,
+	"total": 215,
 	"files": {
 		"src/lib/json-body.ts": 4,
 		"src/lib/server/api/auth.ts": 1,
@@ -14,7 +14,7 @@
 		"src/lib/server/services/push.ts": 1,
 		"src/lib/server/services/registration.ts": 8,
 		"src/lib/server/services/subscriptions.ts": 12,
-		"src/lib/server/services/tokens.ts": 8,
+		"src/lib/server/services/tokens.ts": 9,
 		"src/lib/server/services/webhooks.ts": 4,
 		"src/lib/services/account-import.ts": 6,
 		"src/lib/services/activities.ts": 4,

@@ -461,8 +461,7 @@ export const messages: Catalogue = {
 	'frontDoor.createAnAccount': 'Create an account',
 	'frontDoor.howItWorks': 'How it works',
 	'frontDoor.signIn': 'Sign in',
-	'frontDoor.thisInstanceIsNotTaking':
-		'This instance is not taking new accounts. Its owner can invite you.',
+	'frontDoor.thisInstanceIsNotTaking': 'This instance is not taking new accounts.',
 	'frontDoor.whatOntoplanoIs': 'What ontoplano is',
 	'gallery.album': 'album',
 	'gallery.allAlbums': 'All albums',
@@ -1589,7 +1588,7 @@ export const messages: Catalogue = {
 		'What happened, in your own words, with tags you invent as you go. Numbered, so one entry can refer to another.',
 	'sections.diary.label': 'Diary',
 	'sections.finance.blurb':
-		'The bills you expect to pay, and what you actually paid. Not accounting — the handful of payments that land on a month, and the gap between planned and real.',
+		'The bills you expect to pay, and what you actually paid — the handful of payments that land on a month, and the gap between planned and real.',
 	'sections.finance.label': 'Finance',
 	'sections.gallery.blurb':
 		'Your pictures, kept in albums. A picture lives once however many albums hold it, and a tag cuts across all of them.',
@@ -1998,6 +1997,7 @@ export const messages: Catalogue = {
 	'settings.integrations.copyTheKey': 'Copy the key',
 	'settings.integrations.copyThis': 'Copy this',
 	'settings.integrations.createAKey': 'Create a key',
+	'settings.integrations.createIt': 'Create it',
 	'settings.integrations.doNotShareItWith': 'Do not share it with anyone.',
 	'settings.integrations.hasTheFullFormWith':
 		'has the full form, with every permission and an expiry.',
@@ -2005,7 +2005,6 @@ export const messages: Catalogue = {
 	'settings.integrations.integrations': 'Integrations',
 	'settings.integrations.itIsAlreadyInThe': 'It is already in the text below.',
 	'settings.integrations.letAnAiAssistantUse': 'Let an AI assistant use this app',
-	'settings.integrations.makeIt': 'Make it',
 	'settings.integrations.notSomething': '{label}: {write} — not something this can do',
 	'settings.integrations.nothingYetEverythingAn':
 		'Nothing yet — everything an assistant changes is listed here',

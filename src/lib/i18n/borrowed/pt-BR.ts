@@ -1118,7 +1118,6 @@ export const borrowed: ReadonlySet<string> = new Set([
 	'settings.integrations.integrations',
 	'settings.integrations.itIsAlreadyInThe',
 	'settings.integrations.letAnAiAssistantUse',
-	'settings.integrations.makeIt',
 	'settings.integrations.notSomething',
 	'settings.integrations.nothingYetEverythingAn',
 	'settings.integrations.outsideWhat',

@@ -6,6 +6,7 @@ import { apiTokens } from '$lib/db/schema.js';
 import type { Ctx } from '$lib/services/ctx.js';
 import { stamps } from '$lib/services/time.js';
 import {
+	ConflictError,
 	ForbiddenError,
 	NotFoundError,
 	UnauthorizedError,
@@ -238,6 +239,21 @@ export function createToken(
 	assertWithinLimit(ctx, 'apiTokens');
 
 	const name = str(input.name, 'Token name', { max: 60 });
+
+	/*
+	 * One name per account.
+	 *
+	 * A key is shown once and identified afterwards by what it is called, so two
+	 * called "AI assistant" is a list you cannot revoke the right row from —
+	 * which is the one moment the list matters. Scoped to the account: two
+	 * people may both call theirs the same thing.
+	 */
+	const taken = db
+		.select({ id: apiTokens.id })
+		.from(apiTokens)
+		.where(and(eq(apiTokens.userId, ctx.userId), eq(apiTokens.name, name)))
+		.get();
+	if (taken) throw new ConflictError('You already have a key called that.');
 
 	const requested = Array.isArray(input.scopes)
 		? input.scopes

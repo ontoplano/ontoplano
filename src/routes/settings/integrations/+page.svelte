@@ -309,9 +309,10 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 									placeholder={tiedName || t('settings.integrations.aiAssistant')}
 									class="input w-auto flex-1 sm:max-w-64"
 									ariaLabel="What to call this key"
+									required
 								/>
 								<button class="btn btn-primary btn-sm" type="submit"
-									>{t('settings.integrations.makeIt')}</button
+									>{t('settings.integrations.createIt')}</button
 								>
 								<button type="button" class="btn btn-sm btn-quiet" onclick={() => (naming = false)}>
 									{t('ui.cancel')}
@@ -332,6 +333,17 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 							this list, and nor is deleting. The Integrations tab has the form
 							with all of them.
 						-->
+
+							<!--
+							What it may work on, before what it may do.
+
+							The narrower answer is the one people actually want — "work on
+							this project with me" — and it decides which of the boxes below
+							mean anything at all.
+						-->
+							<div class="w-full max-w-md">
+								<KeyReach choices={data.reach} bind:kind={tiedTo} bind:id={tiedId} />
+							</div>
 
 							<fieldset class="w-full">
 								<legend class="eyebrow text-gray-600"
@@ -445,19 +457,6 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 									</span>
 								</label>
 							</fieldset>
-							<!--
-							What it may work on, after what it may do.
-
-							It used to be first, on the reasoning that the narrower answer
-							decides what the boxes below mean. In front of somebody it read
-							as a second question before they had answered the first, so it
-							sits under them now: the common case is a key that reaches
-							everything, and that case should not have to scroll past a
-							choice it will not make.
-						-->
-							<div class="w-full max-w-md">
-								<KeyReach choices={data.reach} bind:kind={tiedTo} bind:id={tiedId} />
-							</div>
 						</form>
 					{:else}
 						<!--

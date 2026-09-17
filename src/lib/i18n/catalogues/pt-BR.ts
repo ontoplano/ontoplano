@@ -252,7 +252,7 @@ export const messages: Catalogue = {
 	'data.slug.fromPoints': '· de {source} · {length} pontos',
 	'data.slug.integrations': 'Integrações',
 	'demo.everyCopyIsInUse':
-		'Todas as cópias estão em uso. Elas voltam alguns minutos depois que alguém para de olhar, então isso se resolve sozinho.',
+		'Todas as cópias estão em uso. Elas voltam alguns minutos depois que alguém sai, então isso se resolve sozinho.',
 	'demo.nobodyElseCanSeeIt':
 		'Mais ninguém consegue ver, e é apagado algumas horas depois que você fecha a aba.',
 	'demo.openTheDemo': 'Abrir a demonstração',
@@ -466,8 +466,7 @@ export const messages: Catalogue = {
 	'frontDoor.createAnAccount': 'Criar uma conta',
 	'frontDoor.howItWorks': 'Como funciona',
 	'frontDoor.signIn': 'Entrar',
-	'frontDoor.thisInstanceIsNotTaking':
-		'Esta instância não está aceitando contas novas. Quem a mantém pode convidar você.',
+	'frontDoor.thisInstanceIsNotTaking': 'Esta instância não está aceitando contas novas.',
 	'frontDoor.whatOntoplanoIs': 'O que é o ontoplano',
 	'gallery.album': 'album',
 	'gallery.allAlbums': 'All albums',
@@ -1259,7 +1258,7 @@ export const messages: Catalogue = {
 	'markdownImport.import': 'Importar',
 	'markdownImport.nameForTheNotebookThey': 'Nome do caderno em que vão cair',
 	'markdownImport.nothingIsUploadedAsA':
-		'Nada é enviado como arquivo — as notas são lidas aqui. Anexos, telas e dados de plugins ficam no cofre. Apagar o caderno desfaz a importação.',
+		'Nada é enviado como arquivo — as notas são lidas aqui. Anexos, canvas e dados de plugins ficam no cofre. Apagar o caderno desfaz a importação.',
 	'markdownImport.obsidian': 'Obsidian',
 	'markdownImport.ready': '{length} {notes} prontas.',
 	'metaEditor.addOption': '+ Adicionar opção',
@@ -1514,7 +1513,7 @@ export const messages: Catalogue = {
 	'reminders.thisPhoneHasNotBeen':
 		'This phone has not been allowed to notify you, so reminders arrive only while ontoplano is open.',
 	'reminders.thisPhoneIsNotSet':
-		'Este telefone não está configurado para tocar os lembretes daqui. Uma tecla em Preferências liga.',
+		'Este telefone não está configurado para tocar os lembretes daqui. Um toque em Preferências liga.',
 	'reminders.time': 'Time',
 	'reminders.whatHasAlreadyGoneOff': 'What has already gone off',
 	'reminders.whatIsStillToCome': 'What is still to come',
@@ -1596,7 +1595,7 @@ export const messages: Catalogue = {
 		'O que aconteceu, com suas palavras e etiquetas que você inventa no caminho. Numerado, para que uma entrada possa citar outra.',
 	'sections.diary.label': 'Diário',
 	'sections.finance.blurb':
-		'As contas que você espera pagar e o que de fato pagou. Não é contabilidade — é o punhado de pagamentos que cai num mês e a diferença entre o planejado e o real.',
+		'As contas que você espera pagar e o que de fato pagou — o punhado de pagamentos que cai num mês, e a diferença entre o planejado e o real.',
 	'sections.finance.label': 'Finanças',
 	'sections.gallery.blurb':
 		'Suas fotos, guardadas em álbuns. Uma foto existe uma vez só, por mais álbuns que a contenham, e uma etiqueta atravessa todos eles.',
@@ -1611,7 +1610,7 @@ export const messages: Catalogue = {
 	'sections.health.label': 'Saúde',
 	'sections.home.label': 'Início',
 	'sections.ideas.blurb':
-		'A coisa mais barata de anotar: capturada antes de evaporar, avaliada depois. Ninguém se comprometeu a fazer nada disso.',
+		'O mais barato de anotar: capturado antes de evaporar, avaliado depois. Ninguém se comprometeu a fazer nada disso.',
 	'sections.ideas.label': 'Ideias',
 	'sections.inventory.blurb':
 		'O que comprar e onde moram as coisas que você já tem — as mesmas linhas vistas de dois jeitos. Marcar itens funciona sem sinal nenhum.',
@@ -1750,7 +1749,7 @@ export const messages: Catalogue = {
 	'settings.account.youAreLookingAt': 'Você está vendo',
 	'settings.account.yourPassword': 'Sua senha',
 	'settings.billing.aBandAppearsAtThe':
-		'Uma faixa aparece no topo do seu aplicativo perguntando se você aceita. Diga sim e esta página se cala.',
+		'Uma faixa aparece no topo do seu aplicativo perguntando se você aceita. Diga sim e esta página some.',
 	'settings.billing.aMonth': '{currency} por mês',
 	'settings.billing.aSubscriptionCannotBeStarted':
 		'Uma assinatura não pode ser iniciada nem alterada por este aplicativo.',
@@ -1806,7 +1805,7 @@ export const messages: Catalogue = {
 	'settings.instance.aFullAccountOnThe':
 		'Uma conta completa, por conta da casa — sem cartão, sem gastar dias de teste. Vazio significa sem data final.',
 	'settings.instance.anAddressIsWhatAn':
-		'Um endereço é o que uma conta é aqui — é com ele que se entra e é nele que chega o link de redefinição.',
+		'Aqui o endereço é a conta: é com ele que você entra e é nele que chega o link de redefinição.',
 	'settings.instance.anInstanceOnTheOpen':
 		'Uma instância na internet aberta com cadastro liberado é uma instância que outra pessoa vai usar.',
 	'settings.instance.and': ', e',
@@ -2007,6 +2006,7 @@ export const messages: Catalogue = {
 	'settings.integrations.copyTheKey': 'Copy the key',
 	'settings.integrations.copyThis': 'Copy this',
 	'settings.integrations.createAKey': 'Criar uma chave',
+	'settings.integrations.createIt': 'Criar',
 	'settings.integrations.doNotShareItWith': 'Do not share it with anyone.',
 	'settings.integrations.hasTheFullFormWith':
 		'has the full form, with every permission and an expiry.',
@@ -2014,7 +2014,6 @@ export const messages: Catalogue = {
 	'settings.integrations.integrations': 'Integrations',
 	'settings.integrations.itIsAlreadyInThe': 'It is already in the text below.',
 	'settings.integrations.letAnAiAssistantUse': 'Let an AI assistant use this app',
-	'settings.integrations.makeIt': 'Make it',
 	'settings.integrations.notSomething': '{label}: {write} — not something this can do',
 	'settings.integrations.nothingYetEverythingAn':
 		'Nothing yet — everything an assistant changes is listed here',
@@ -2050,8 +2049,7 @@ export const messages: Catalogue = {
 	'settings.integrations.write': 'Write',
 	'settings.integrations.yourNewKey': 'Your new key',
 	'settings.language.heading': 'Idioma',
-	'settings.language.hint':
-		'Em que idioma esta conta lê o aplicativo. Os e-mails enviados a você seguem a mesma escolha.',
+	'settings.language.hint': 'Em que idioma esta conta lê o aplicativo. Os e-mails também.',
 	'settings.language.saved': 'Salvo.',
 	'settings.language.untranslated': {
 		one: '{count} mensagem ainda não foi escrita neste idioma e aparece em inglês.',
@@ -2451,7 +2449,7 @@ export const messages: Catalogue = {
 	'tasks.review.whatYouHaveDecided': 'What you have decided',
 	'tasks.review.whereItWent': 'Where it went',
 	'todoRows.aToDoIsATask':
-		'Uma tarefa é algo sem dia marcado. Coloque uma aqui e arraste para o quadro quando ela tiver lugar.',
+		'Uma tarefa é algo sem dia marcado. Coloque uma aqui e arraste para o quadro quando ela tiver um dia.',
 	'todoRows.anythingYouFinishShowsUp': 'Tudo o que você termina aparece aqui.',
 	'todoRows.archived': 'Arquivadas',
 	'todoRows.completed': 'Concluídas',
