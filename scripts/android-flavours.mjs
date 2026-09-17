@@ -51,6 +51,20 @@ const { APP_USER_AGENT, INSTANCE_SUGGESTION_FILE } = (() => {
 	};
 })();
 
+/**
+ * The margin the legacy launcher icon carries, which is the maskable one's.
+ *
+ * Nothing masks `ic_launcher.png`, and the plain icon it is drawn from reaches
+ * the edges of its own file — so without this the mark goes to the very edge
+ * of the launcher's tile. See `MASKABLE_SCALE` in `src/lib/logo/brand.ts`.
+ */
+const LEGACY_LAUNCHER_SCALE = (() => {
+	const brand = readFileSync(join(ROOT, 'src/lib/logo/brand.ts'), 'utf8');
+	const found = brand.match(/export const MASKABLE_SCALE = ([^;]+);/);
+	if (!found) throw new Error('src/lib/logo/brand.ts no longer exports MASKABLE_SCALE');
+	return Number(found[1]);
+})();
+
 const ADAPTIVE_FOREGROUND_SCALE = (() => {
 	const brand = readFileSync(join(ROOT, 'src/lib/logo/brand.ts'), 'utf8');
 	const found = brand.match(/export const ADAPTIVE_FOREGROUND_SCALE = ([^;]+);/);
@@ -201,7 +215,7 @@ const FOREGROUND = { mdpi: 108, hdpi: 162, xhdpi: 216, xxhdpi: 324, xxxhdpi: 432
  * project pins now — see `scripts/android-icons.mjs`.
  */
 function resize(source, out, size) {
-	writeFileSync(out, squareIcon({ source, size }));
+	writeFileSync(out, squareIcon({ source, size, scale: LEGACY_LAUNCHER_SCALE }));
 }
 
 /**

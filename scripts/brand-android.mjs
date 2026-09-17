@@ -42,6 +42,19 @@ const MARK_MIDDLE = (() => {
  * How much of the foreground layer the mark fills, read from brand.ts rather
  * than repeated — the arithmetic behind the number is written out there.
  */
+/**
+ * The legacy launcher icon's margin, which is the maskable one's.
+ *
+ * Both are squares something may round the corners off, and neither gets a
+ * safe zone from anywhere else. `MASKABLE_SCALE` says the rest.
+ */
+const LEGACY_SCALE = (() => {
+	const brand = readFileSync(join(ROOT, 'src/lib/logo/brand.ts'), 'utf8');
+	const found = brand.match(/export const MASKABLE_SCALE = ([\d.]+)/);
+	if (!found) throw new Error('src/lib/logo/brand.ts no longer exports MASKABLE_SCALE');
+	return Number(found[1]);
+})();
+
 const ADAPTIVE_SCALE = (() => {
 	const brand = readFileSync(join(ROOT, 'src/lib/logo/brand.ts'), 'utf8');
 	const found = brand.match(/export const ADAPTIVE_FOREGROUND_SCALE = ([\d.]+)/);
@@ -102,9 +115,10 @@ const NOTIFICATION_ACCENT = (() => {
 })();
 
 /**
- * Launcher sizes, in the densities Android asks for. The square icon is the
- * plain one; the foreground of the adaptive icon is the maskable drawing,
- * which carries the safe-zone padding the OS crops into.
+ * Launcher sizes, in the densities Android asks for. Both layers are drawn
+ * from the plain icon — the maskable one carries an opaque ground of its own,
+ * which would paint over the adaptive background — and each is given the
+ * margin its own job needs.
  */
 const LAUNCHER = { mdpi: 48, hdpi: 72, xhdpi: 96, xxhdpi: 144, xxxhdpi: 192 };
 const FOREGROUND = { mdpi: 108, hdpi: 162, xhdpi: 216, xxhdpi: 324, xxxhdpi: 432 };
@@ -120,8 +134,8 @@ const FOREGROUND = { mdpi: 108, hdpi: 162, xhdpi: 216, xxhdpi: 324, xxxhdpi: 432
  * the project pins, which makes the bytes a function of the picture and the
  * lockfile.
  */
-function resize(source, out, size) {
-	writeFileSync(out, squareIcon({ source, size }));
+function resize(source, out, size, scale) {
+	writeFileSync(out, squareIcon({ source, size, scale }));
 }
 
 if (!existsSync(RES)) {
@@ -173,8 +187,12 @@ if (work.done) {
 for (const [density, size] of Object.entries(LAUNCHER)) {
 	const dir = join(RES, `mipmap-${density}`);
 	mkdirSync(dir, { recursive: true });
-	resize(square, join(dir, 'ic_launcher.png'), size);
-	resize(square, join(dir, 'ic_launcher_round.png'), size);
+	/*
+	 * The legacy icon carries its own margin: nothing masks it, and the plain
+	 * icon reaches the edges of its own file. See `LEGACY_LAUNCHER_SCALE`.
+	 */
+	resize(square, join(dir, 'ic_launcher.png'), size, LEGACY_SCALE);
+	resize(square, join(dir, 'ic_launcher_round.png'), size, LEGACY_SCALE);
 	/*
 	 * The foreground layer is the mark and nothing else.
 	 *

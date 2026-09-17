@@ -63,17 +63,25 @@ export const ICON_SCALE = 1;
  * the circle, landing them on it exactly, and any launcher shape at all leaves
  * the mark whole.
  *
- * **0.9** is what is here, and it is past that deliberately. The squircle is
- * the shape Android actually draws and the one this is drawn for; a launcher
- * set to crop circles takes a bite out of each of the eight corners, which is
- * the price of the ring not being wider than it needs to look.
+ * It sat at 0.9 for a while, which is past that on purpose: the squircle is
+ * the shape Android actually draws, and a thinner ring looked better than one
+ * sized for a circle nobody was cutting. What it actually looked like was an
+ * octagon with its flat edges a few pixels off the edge of the file — so this
+ * is back on the arithmetic, where every launcher shape leaves the mark whole
+ * and the ring is wide enough to read as a ring.
  *
- * There is no second icon for that case to reach for: an adaptive icon is one
- * foreground and the launcher masks it however it likes, so the choice here is
- * a single number for every shape. Above about 0.95 the corners reach the edge
- * of the square and there is no ring left at all.
+ * There is no second icon for the cropped case to reach for: an adaptive icon
+ * is one foreground and the launcher masks it however it likes, so the choice
+ * here is a single number for every shape.
+ *
+ * Android's legacy launcher icon uses this number too. Nothing masks that one
+ * — a launcher older than adaptive icons draws it whole — so it needs a margin
+ * of its own rather than one borrowed from a mask, which is the same job this
+ * does. It was handed the plain icon instead, which by `ICON_SCALE` reaches
+ * the edges of its own file, so the mark went to the very edge of the tile
+ * with nothing around it. See `scripts/brand-android.mjs`.
  */
-export const MASKABLE_SCALE = 0.9;
+export const MASKABLE_SCALE = 0.74;
 
 /**
  * iOS ignores the manifest and the safe zone both: it takes the apple-touch
@@ -175,8 +183,17 @@ export const NOTIFICATION_ACCENT_ISOLATED = drainedHex(NOTIFICATION_ACCENT);
  * How much of an Android adaptive icon's foreground layer the mark fills.
  *
  * Stricter than the web's maskable, and a different asset for that reason: the
- * foreground is 108dp of which the launcher shows 72 and guarantees 66, so the
- * mark's corners have to fall inside a circle of 0.333 of the width. The same
- * 1.082 arithmetic puts the limit at 0.616; this is just under it.
+ * foreground is 108dp of which the launcher shows 72 and guarantees 66.
+ *
+ * Measured against the 72 it shows, the same 1.082 arithmetic allows 0.616,
+ * and 0.6 was just under that — which is why the octagon arrived with its flat
+ * edges against the sides of the squircle. Measured against the 66 it
+ * *guarantees*, the limit is 0.565.
+ *
+ * This is below both, and the difference is not arithmetic: an icon drawn to
+ * the edge of what it is allowed has no margin, and a launcher icon with no
+ * margin reads as a picture of an octagon rather than as an icon. Rendered
+ * through the squircle at 0.60, 0.56, 0.52 and 0.48, this is the one where the
+ * ring around the mark is even and the mark is still the size of the tile.
  */
-export const ADAPTIVE_FOREGROUND_SCALE = 0.6;
+export const ADAPTIVE_FOREGROUND_SCALE = 0.52;
