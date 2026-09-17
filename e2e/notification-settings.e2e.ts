@@ -64,9 +64,21 @@ test('the end of the day is set to an hour, and keeps it', async ({ page }) => {
 	const at = row.locator('input[type="time"]');
 	await expect(at).not.toHaveValue('');
 
-	await row.locator('input.toggle').check();
+	/*
+	 * The hour first, then the switch, and each given time to land.
+	 *
+	 * Both controls submit the same form the moment they are touched, so two
+	 * of them in the same tick is two posts racing — and the loser is whichever
+	 * reply re-renders the row last, carrying the value the other had just
+	 * replaced. That is a test racing itself, not the page misbehaving: a
+	 * person takes longer than a tick.
+	 */
 	await at.fill('21:30');
 	await at.blur();
+	await expect(at).toHaveValue('21:30');
+
+	await row.locator('input.toggle').check();
+	await expect(row.locator('input.toggle')).toBeChecked();
 
 	await visit(page, '/settings/preferences');
 	const again = page

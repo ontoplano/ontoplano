@@ -66,13 +66,14 @@ test('the phone bar carries home and the raised pie; nothing pulls to refresh', 
 		.getByRole('button', { name: 'Go to a section' })
 		.dispatchEvent('pointerdown', { pointerId: 1, clientX: 195, clientY: 780 });
 
-	const wedges = page.locator('[data-pie="capture"] [role="menuitem"]');
+	// "Go to a section" opens the rooms wheel, not the capture one.
+	const wedges = page.locator('[data-pie="rooms"] [role="menuitem"]');
 	await expect(wedges.first()).toBeVisible();
 
 	const named: string[] = [];
 	for (let i = 0; i < (await wedges.count()); i += 1) {
 		await wedges.nth(i).hover();
-		named.push(((await page.locator('[data-pie="capture"] .pie-hud').textContent()) ?? '').trim());
+		named.push(((await page.locator('[data-pie="rooms"] .pie-hud').textContent()) ?? '').trim());
 	}
 	expect(named).toContain('Tasks');
 	expect(named, 'Home is a button in the bar, not a wedge').not.toContain('Home');
