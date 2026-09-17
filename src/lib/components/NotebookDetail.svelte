@@ -21,6 +21,7 @@
 	import type { Todo } from '$lib/services/todos';
 	import { renderMarkdown } from '$lib/markdown';
 	import { useT } from '$lib/i18n';
+	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
 
@@ -239,7 +240,7 @@
 		(contents?.entries ?? orphaned).filter((entry) => entry.archivedAt).length
 	);
 
-	const tabs = $derived<{ key: Tab; label: string; count: number; done?: number }[]>([
+	const tabs = $derived<{ key: Tab; label: PlainKey; count: number; done?: number }[]>([
 		{ key: 'notes', label: 'app.notes', count: shownNotes.length },
 		{
 			key: 'tasks',
@@ -367,7 +368,7 @@
 								: 'text-gray-500 hover:text-gray-700'}"
 							style={tab === option.key ? `border-color: ${SECTION_COLORS.diary}` : ''}
 						>
-							{option.label}
+							{t(option.label)}
 							<span class="tabular ml-1 text-xs text-gray-500">
 								{option.done !== undefined && option.count > 0
 									? `${option.done}/${option.count}`

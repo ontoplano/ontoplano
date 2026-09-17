@@ -95,17 +95,40 @@
 			id: 'words',
 			name: 'Just tell it',
 			wrap: true,
-			note: 'Works with any assistant that can set itself up — one with a terminal.',
-			text: `I use ontoplano — a life management app my assistant can connect to.
-Please connect to it and use it whenever I ask you about my week, my to-do
-list, my diary, my notebooks, my shopping list or my recipes.
+			note: 'For an assistant with a terminal. It writes its own setting and picks this up when it next starts.',
+			/*
+			 * It asks for a command to be run, not for a connection.
+			 *
+			 * This used to open with "Please connect to it", which reads well and
+			 * cannot be done: an MCP server is configured before a session starts,
+			 * so an assistant that is already running has nothing to press. Every
+			 * assistant that was handed this said some version of "I cannot", which
+			 * is the worst first five minutes a product can have — the person did
+			 * exactly what the page said.
+			 *
+			 * So it says what to write and where, gives the one command outright
+			 * for the assistant most people are pasting this into, and says the
+			 * restart out loud rather than leaving somebody to wonder why nothing
+			 * happened.
+			 */
+			text: `I use ontoplano — a life management app you can reach over MCP.
+
+Set yourself up to use it. An MCP server is configured before a session
+starts, so knowing the address is not enough — write it into your own
+configuration, then restart.
 
   Address:    ${data.origin}/api/mcp
-  Protocol:   MCP, over streamable HTTP (stateless — no session, no GET)
-  Key:        send it as an "Authorization: Bearer" header
+  Transport:  streamable HTTP (stateless — no session, no GET)
+  Auth:       an "Authorization: Bearer" header carrying the key below
 
-Once you are connected, tell me what is on my plan today. Do not change
-anything in my account until I ask you to.
+If you are Claude Code, that is one command:
+
+  claude mcp add --scope user --transport http ontoplano ${data.origin}/api/mcp \\
+    --header "Authorization: Bearer ${shown}"
+
+Once you have restarted, use it whenever I ask about my week, my to-do list,
+my diary, my notebooks, my shopping list or my recipes. Do not change anything
+in my account until I ask you to.
 
 Key: ${shown}`
 		},
