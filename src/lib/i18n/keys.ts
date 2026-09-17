@@ -1440,12 +1440,14 @@ export type MessageKey =
 	| 'reminders.blocksWithAReminderBirthdays'
 	| 'reminders.callIt'
 	| 'reminders.change'
+	| 'reminders.changeHowFar'
 	| 'reminders.changeThisReminder'
 	| 'reminders.comingUp'
 	| 'reminders.confirm'
 	| 'reminders.countsAsSecureFromAnother'
 	| 'reminders.day'
 	| 'reminders.days'
+	| 'reminders.daysCount'
 	| 'reminders.default'
 	| 'reminders.eGTakeTheBreadOut'
 	| 'reminders.everythingShowsOnlyTheseAre'
@@ -1488,6 +1490,7 @@ export type MessageKey =
 	| 'reminders.setOne'
 	| 'reminders.setThisReminder'
 	| 'reminders.silent'
+	| 'reminders.somethingElse'
 	| 'reminders.sound'
 	| 'reminders.stopsThatOrSetsIt'
 	| 'reminders.thatTimeHasAlreadyBeen'
@@ -3012,6 +3015,7 @@ export interface MessageValuesFor {
 	'ratingPicker.leaveUnanswered': { rating: string | number };
 	'ratings.labelValueOf5': { label: string | number; value: string | number };
 	'reminders.change': { message: string | number };
+	'reminders.daysCount': { count: number };
 	'reminders.hear': { name: string | number };
 	'reminders.howManyDaysToCover': { maxDays: string | number };
 	'reminders.kb': { bytes: string | number };

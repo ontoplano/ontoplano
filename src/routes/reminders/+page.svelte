@@ -66,7 +66,7 @@
 	 * are the two questions somebody actually opens this page with; a week was
 	 * the shortest answer on offer and it is longer than either of them.
 	 */
-	const WINDOWS = [1, 3, 7, 15, 30, 60];
+	const WINDOWS = [1, 3, 5, 7, 15, 30, 60];
 
 	/**
 	 * Whether this browser can be reached at all.
@@ -240,6 +240,8 @@
 
 	// Seeded from the window in the address and re-seeded when it changes, so
 	// pressing 30 leaves the box saying 30 rather than whatever was typed last.
+	/** Whether the phone's how-far dialog is open. */
+	let ranging = $state(false);
 	let howFar = $state<number>(0);
 	$effect(() => {
 		howFar = data.days;
@@ -427,7 +429,27 @@
 <audio bind:this={audio} class="hidden"></audio>
 
 <div class="space-y-4">
-	<RoomBar title={t('reminders.reminders')} />
+	<RoomBar title={t('reminders.reminders')}>
+		{#snippet actions()}
+			<!--
+				Where every other room keeps the thing that makes one.
+
+				This sat on a row of its own under the bar, right-aligned, which on
+				a phone is a band of empty space above the list somebody came here
+				to read. The bar is the shared component and this is the shared
+				habit; see `RoomBar`.
+			-->
+			<button
+				type="button"
+				class="btn btn-sm btn-primary"
+				data-tour="set-alarm"
+				onclick={() => (setting = true)}
+			>
+				<Icon name="plus" />
+				{t('reminders.newReminder')}
+			</button>
+		{/snippet}
+	</RoomBar>
 
 	<FormError message={form?.message} />
 
@@ -546,13 +568,6 @@
 		every time you came here to look at what was already set, which is the
 		commoner reason to open this screen by far.
 	-->
-	<div data-tour="set-alarm" class="flex justify-end">
-		<button type="button" class="btn btn-primary" onclick={() => (setting = true)}>
-			<Icon name="plus" class="mr-1.5" />
-			{t('reminders.newReminder')}
-		</button>
-	</div>
-
 	<Modal
 		bind:open={setting}
 		title={t('reminders.setOne')}
@@ -732,13 +747,38 @@
 					{t('reminders.past')}
 				</button>
 			</div>
-			<div class="seg" role="group" aria-label={t('reminders.howFar')}>
+
+			<!--
+				On a phone: one button saying how far, and a dialog to change it.
+
+				The seven windows, a number box and a Go button are four controls
+				wrapping onto three lines above a list somebody came here to read —
+				a row of furniture taller than the thing it filters. The button says
+				what the window currently is, which is the only part worth standing
+				space; changing it is a question, and questions are asked in dialogs
+				here.
+			-->
+			<button
+				type="button"
+				class="btn btn-sm sm:hidden"
+				onclick={() => (ranging = true)}
+				aria-haspopup="dialog"
+				title={t('reminders.changeHowFar')}
+			>
+				{t('reminders.daysCount', { count: data.days })}
+				<Icon name="chevron-down" />
+			</button>
+
+			<!-- …and on anything wider, where the row fits, all of them at once. -->
+			<div class="seg hidden sm:flex" role="group" aria-label={t('reminders.howFar')}>
 				{#each WINDOWS as window (window)}
 					<button
 						type="button"
 						onclick={() => look(window)}
 						aria-pressed={data.days === window}
-						title={data.past ? `The last ${window} days` : `The next ${window} days`}
+						title={data.past
+							? t('reminders.theLastDays', { count: window })
+							: t('reminders.theNextDays', { count: window })}
 					>
 						{window}
 					</button>
@@ -749,7 +789,7 @@
 					e.preventDefault();
 					look(Number(howFar));
 				}}
-				class="flex items-center gap-2"
+				class="hidden items-center gap-2 sm:flex"
 			>
 				<label class="text-xs whitespace-nowrap text-gray-500" for="how-far"
 					>{t('reminders.or')}</label
@@ -770,6 +810,57 @@
 				>
 			</form>
 		</div>
+
+		<!--
+			The same windows, stacked, for the phone's button above.
+
+			One column rather than a grid: each row is a whole sentence — "3 days"
+			— and they are read down, not scanned across. The one in force is
+			marked, so opening this says where you are before it asks where to go.
+		-->
+		<Modal bind:open={ranging} title={t('reminders.howFar')} size="sm">
+			<div class="space-y-1">
+				{#each WINDOWS as window (window)}
+					<button
+						type="button"
+						class="block w-full px-3 py-2.5 text-left text-sm {data.days === window
+							? 'bg-gray-100 font-medium text-gray-900'
+							: 'text-gray-700 hover:bg-gray-50'}"
+						aria-pressed={data.days === window}
+						onclick={() => {
+							ranging = false;
+							look(window);
+						}}
+					>
+						{t('reminders.daysCount', { count: window })}
+					</button>
+				{/each}
+
+				<form
+					onsubmit={(e) => {
+						e.preventDefault();
+						ranging = false;
+						look(Number(howFar));
+					}}
+					class="flex items-center gap-2 border-t border-gray-200 pt-3"
+				>
+					<label class="sr-only" for="how-far-phone">{t('reminders.somethingElse')}</label>
+					<NumberBox
+						id="how-far-phone"
+						name="days"
+						min="1"
+						max={data.maxDays}
+						bind:value={howFar}
+						autocomplete="off"
+						title={t('reminders.howManyDaysToCover', { maxDays: data.maxDays })}
+						class="w-24"
+					/>
+					<span class="flex-1 text-xs text-gray-500">{t('reminders.days')}</span>
+					<button type="submit" class="btn btn-sm">{t('reminders.go')}</button>
+				</form>
+			</div>
+		</Modal>
+
 		{#if upcoming.length === 0}
 			<EmptyState
 				icon="clock"
@@ -991,27 +1082,64 @@
 			description={t('reminders.everythingShowsOnlyTheseAre')}
 			flush
 		>
+			<!--
+				A kind, whether it makes a noise, and which noise.
+
+				This was one wrapping row per kind — name, a checkbox, a fixed-width
+				select and a Save button — and on a phone it wrapped into a name with
+				a checkbox stranded at the far right, then a select and a Save button
+				starting from the far left. Four controls on two ragged lines, none
+				of them lining up with the row above or below.
+
+				Now it is a grid: the name and its switch on the first line, the
+				sound it makes on the second, and every row's columns land in the
+				same place. On a wide screen the two lines become one.
+
+				And no Save. The switch and the select each submit themselves, the
+				way every other setting in this app does — a row of controls with a
+				button you also have to remember to press is a row people leave
+				half-set. See `settings/preferences`.
+			-->
 			<ul class="divide-y divide-gray-200">
 				{#each data.sounds as choice (choice.kind)}
-					<li class="px-4 py-2">
+					<li class="px-4 py-3">
 						<form
 							method="post"
 							action="?/setSound"
 							use:enhance
-							class="flex flex-wrap items-center gap-3"
+							class="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 sm:grid-cols-[1fr_14rem_auto]"
 						>
 							<input type="hidden" name="kind" value={choice.kind} />
-							<span class="flex min-w-32 flex-1 items-center gap-2 text-sm text-gray-900">
+
+							<span class="flex min-w-0 items-center gap-2 text-sm text-gray-900">
 								<span class="shrink-0 text-gray-400">
 									<Icon name={kindOf(choice.kind).icon} size={14} />
 								</span>
-								{t(kindOf(choice.kind).label)}
+								<span class="truncate">{t(kindOf(choice.kind).label)}</span>
 							</span>
-							<label class="flex items-center gap-2 text-sm text-gray-700">
-								<input type="checkbox" name="audible" checked={choice.audible} class="size-4" />
-								{t('reminders.sound')}
-							</label>
-							<select name="ringtoneId" class="select w-56 shrink-0">
+
+							<!--
+								The switch sits last on a wide row and first-line-right on a
+								phone, which is why it is ordered rather than placed: it is
+								the answer to the question the name asks, so it stays beside
+								the name at every width.
+							-->
+							<input
+								type="checkbox"
+								name="audible"
+								value="on"
+								class="toggle justify-self-end sm:order-last"
+								checked={choice.audible}
+								aria-label={t('reminders.sound')}
+								onchange={(e) => e.currentTarget.form?.requestSubmit()}
+							/>
+
+							<select
+								name="ringtoneId"
+								class="select col-span-2 w-full sm:col-span-1"
+								aria-label={t('reminders.whatMakesASound')}
+								onchange={(e) => e.currentTarget.form?.requestSubmit()}
+							>
 								<option value="" selected={choice.ringtoneId === null}>
 									{t('reminders.default')}
 								</option>
@@ -1021,13 +1149,6 @@
 									>
 								{/each}
 							</select>
-							<button
-								type="submit"
-								class="btn btn-sm"
-								title={t('reminders.saveWhatThisKindSounds')}
-							>
-								{t('ui.save')}
-							</button>
 						</form>
 					</li>
 				{/each}
