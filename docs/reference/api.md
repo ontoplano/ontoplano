@@ -65,6 +65,7 @@ sentence somebody agrees to when they grant it.
 | `/api/live`                                  | GET    | —                 |
 | `/api/mcp`                                   | POST   | —                 |
 | `/api/mcp`                                   | GET    | —                 |
+| `/api/notifications`                         | POST   | —                 |
 | `/api/pricing`                               | GET    | —                 |
 | `/api/push`                                  | POST   | —                 |
 | `/api/push`                                  | DELETE | —                 |
@@ -307,6 +308,20 @@ What this is, for anybody who opens the address in a browser.
 Not the protocol — a GET is how a client asks for a server-initiated event
 stream, and there is not one. It is a signpost, and it names nothing about
 the instance beyond what it is.
+
+### `/api/notifications`
+
+Marking notifications read.
+
+Two shapes, because there are two ways of seeing one: opening the list sees
+all of them at once, and following one sees that one. A POST rather than a
+form action because the bell is in the shell — it has no page of its own to
+hang an action on, and every page in the app is behind it.
+
+Answers the count back, so the badge is what the database says rather than
+what the browser guessed after pressing something.
+
+**POST**
 
 ### `/api/pricing`
 

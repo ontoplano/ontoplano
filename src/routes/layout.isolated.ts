@@ -24,6 +24,7 @@ import {
 	hasSeenTutorial
 } from '$lib/services/settings';
 import { SOURCE_LOCALE } from '$lib/i18n/locales';
+import { list as listSent, unreadCount as unreadSent } from '$lib/services/sent-notifications';
 import { DEFAULT_PICTURE_KILOBYTES, DEFAULT_UNDO_SECONDS } from '$lib/instance-defaults';
 import { outwardLinks } from '$lib/links';
 
@@ -59,6 +60,17 @@ export async function load(event: IsolatedEvent): Promise<LayoutServerData> {
 		hiddenSections: getHiddenSections(user.id),
 		navOrder: getNavOrder(user.id),
 		sectionColors: getSectionColors(user.id),
+		/*
+		 * What the app has told this person, on a device that told them itself.
+		 *
+		 * There is no push here — the phone books Android's own alarms — so
+		 * nothing writes to this table on a device yet, and the list is empty
+		 * and the badge is zero. Answered anyway, because the shell draws the
+		 * same bell either way and a missing field is a crash rather than an
+		 * empty list.
+		 */
+		notifications: listSent(buildCtx(user.id)),
+		unreadNotifications: unreadSent(buildCtx(user.id)),
 		demo: false,
 		staging: false,
 		tutorialPending: !hasSeenTutorial(user.id),

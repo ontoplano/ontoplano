@@ -1377,6 +1377,12 @@ export type MessageKey =
 	| 'notebooks.weekly.weeklyNotesOntoplano'
 	| 'notebooks.whatIsInside'
 	| 'notebooks.whatItIsFor'
+	| 'notifications.markAllRead'
+	| 'notifications.none'
+	| 'notifications.open'
+	| 'notifications.openNone'
+	| 'notifications.title'
+	| 'notifications.unread'
 	| 'notify.everyBlockOnThePlan'
 	| 'notify.mondayMorningWhatLastWeek'
 	| 'notify.onTheMorningForEverybody'
@@ -2961,6 +2967,8 @@ export interface MessageValuesFor {
 	'notebooks.tasksCount': { count: number };
 	'notebooks.theirNotebookWas': { length: string | number; notes: string | number };
 	'notebooks.whatIsInside': { show: string | number; title: string | number };
+	'notifications.open': { count: number };
+	'notifications.unread': { count: number };
 	'pictures.hint': { kilobytes: string | number };
 	'ratingPicker.leaveUnanswered': { rating: string | number };
 	'ratings.labelValueOf5': { label: string | number; value: string | number };

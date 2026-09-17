@@ -92,19 +92,29 @@ export async function deliverDueReminders(now = new Date()): Promise<{
 	 */
 	const due = pushableReminders(localFor);
 
-	// Nothing below can do anything without keys, but the birthdays above still
-	// had to be written: an instance that does not push still shows them.
-	if (!pushConfigured()) {
-		if (due.length > 0)
-			say(
-				`${due.length} due, but this instance has no push keys — nothing can reach a device (they are still on the planner)`
-			);
-		return { ...summary, pushed: 0, due: 0, configured: false };
+	/*
+	 * No keys is not nothing to do any more.
+	 *
+	 * This used to return here: without keys nothing can reach a device, so
+	 * there was no point walking the list. There is now — the pass is also
+	 * what writes a reminder into the list inside the app, and an instance
+	 * with no push keys is exactly the instance where that list is the only
+	 * way anybody finds out. Most self-hosted copies never set keys at all.
+	 *
+	 * So the pass runs either way. `pushToUser` records and then does nothing
+	 * else, which is the right shape: one place says it, and how far it gets
+	 * depends on what the instance can do.
+	 */
+	const configured = pushConfigured();
+	if (!configured && due.length > 0) {
+		say(
+			`${due.length} due, and this instance has no push keys — no device can be reached, so they are the app's list and the planner`
+		);
 	}
 
-	if (due.length === 0) return { ...summary, pushed: 0, due: 0, configured: true };
+	if (due.length === 0) return { ...summary, pushed: 0, due: 0, configured };
 
-	if (devices === 0) {
+	if (configured && devices === 0) {
 		say(
 			`${due.length} due, and no browser on any account is signed up for notifications — turn them on in Settings, on the device that should ring`
 		);
@@ -156,7 +166,7 @@ export async function deliverDueReminders(now = new Date()): Promise<{
 
 	if (devices > 0) say(`${due.length} reminder(s) due, ${pushed} delivered to at least one device`);
 
-	return { ...summary, pushed, due: due.length, configured: true };
+	return { ...summary, pushed, due: due.length, configured };
 }
 
 /**

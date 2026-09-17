@@ -28,7 +28,20 @@
 	 * nothing can be, and that empty half is the way out of the gesture. Drag
 	 * up, think better of it, come back down, let go, nothing happens.
 	 */
-	export type Petal = { key: string; label: PlainKey; icon: IconName };
+	export type Petal = {
+		key: string;
+		label: PlainKey;
+		icon: IconName;
+		/**
+		 * How many things behind this petal are waiting, or 0 for none.
+		 *
+		 * The bar's own button wears a plain dot when anything at all is
+		 * waiting — there is no room out there for a number, and "something
+		 * happened" is all a bar has to say. The count belongs here, on the
+		 * petal that leads to it, which is the first place with room for it.
+		 */
+		waiting?: number;
+	};
 
 	let {
 		items,
@@ -396,6 +409,11 @@
 				aria-label={t(item.label)}
 			>
 				<Icon name={item.icon} size={22} />
+				{#if item.waiting}
+					<span class="petal-count" data-waiting={item.waiting}>
+						{item.waiting > 99 ? '99+' : item.waiting}
+					</span>
+				{/if}
 			</button>
 		{/each}
 
@@ -453,6 +471,31 @@
 		touch-action: none;
 		user-select: none;
 		-webkit-user-select: none;
+	}
+
+	/*
+	 * How many things are waiting behind a petal.
+	 *
+	 * On the petal rather than on the bar's button, which wears a plain dot:
+	 * out there a number would be smaller than the thing it is counting, and
+	 * "something happened" is all a bar needs to say. This is the first place
+	 * with room to say how much.
+	 */
+	.petal-count {
+		position: absolute;
+		top: -0.25rem;
+		right: -0.25rem;
+		display: grid;
+		place-items: center;
+		min-width: 1.15rem;
+		padding-inline: 0.25rem;
+		border-radius: 999px;
+		background: var(--color-red-600, #dc2626);
+		color: #fff;
+		font-size: 0.65rem;
+		font-weight: 600;
+		line-height: 1.15rem;
+		font-variant-numeric: tabular-nums;
 	}
 
 	.petal {

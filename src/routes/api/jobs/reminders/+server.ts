@@ -33,7 +33,24 @@ export const POST: RequestHandler = async ({ request, url }) => {
 	// honest answer to "are reminders running", whoever is doing the asking.
 	markJobRan('reminders');
 
-	const result = await deliverDueReminders();
+	/*
+	 * The moment to work from, if the caller names one.
+	 *
+	 * Ordinarily the pass uses the clock, and the box calls it every minute.
+	 * `?at=` replays a window that was missed — a box that was down over an
+	 * hour has an hour of reminders sitting unstamped, and "run it as though
+	 * it were then" is the thing an operator actually wants at that point.
+	 *
+	 * Nothing about this widens what the endpoint can do: it is already behind
+	 * the health token, it already sends, and a reminder it stamps is one it
+	 * has delivered. The only difference is which reminders it considers due.
+	 */
+	const asked = url.searchParams.get('at');
+	const at = asked ? new Date(asked) : null;
+	if (asked && (!at || Number.isNaN(at.getTime())))
+		return json({ ok: false, why: 'at is not a date' }, { status: 400 });
+
+	const result = at ? await deliverDueReminders(at) : await deliverDueReminders();
 
 	/*
 	 * And what the assistants did, in the same minute.

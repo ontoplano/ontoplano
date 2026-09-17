@@ -17,6 +17,11 @@ import { clientErrorState } from '$lib/server/services/client-errors';
 import { needsFirstRun } from '$lib/services/onboarding';
 import { listCategories } from '$lib/services/activities';
 import { buildCtx } from '$lib/services/ctx';
+import {
+	list as listSent,
+	unreadCount as unreadSent,
+	type Sent as SentNotification
+} from '$lib/services/sent-notifications';
 import { loadConfig } from '$lib/server/config';
 import { outwardLinks } from '$lib/links';
 import { mediaLimits } from '$lib/services/media';
@@ -94,6 +99,16 @@ export const load: LayoutServerLoad = async (event) => {
 	let navOrder: string[] = [];
 	let sectionColors: Record<string, string> = {};
 	let tutorialPending = false;
+	/*
+	 * What the app has told this account, and how much of it is unread.
+	 *
+	 * In the shell rather than on a page, because the badge is in the shell:
+	 * the bell in the header and the dot on the account button are the same
+	 * number seen from two places, and a page loading it would mean the number
+	 * only being right on the pages that thought to ask.
+	 */
+	let notifications: SentNotification[] = [];
+	let unreadNotifications = 0;
 	if (event.locals.user) {
 		const ctx = buildCtx(event.locals.user.id);
 		userCategories = listCategories(ctx).map((c) => ({
@@ -107,6 +122,8 @@ export const load: LayoutServerLoad = async (event) => {
 		hiddenSections = getHiddenSections(ctx.userId);
 		navOrder = getNavOrder(ctx.userId);
 		sectionColors = getSectionColors(ctx.userId);
+		notifications = listSent(ctx);
+		unreadNotifications = unreadSent(ctx);
 		/*
 		 * The demo is everybody's first visit.
 		 *
@@ -168,6 +185,8 @@ export const load: LayoutServerLoad = async (event) => {
 		// one list and have to agree about it.
 		navOrder,
 		sectionColors,
+		notifications,
+		unreadNotifications,
 		// The public demo says so on every page: a copy of your own, deleted
 		// hourly, so nobody mistakes it for their own instance.
 		demo: isDemoInstance(),

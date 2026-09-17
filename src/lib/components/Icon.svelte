@@ -25,6 +25,8 @@
 		pause: 'M9 5v14M15 5v14',
 		stop: 'M6 6h12v12H6z',
 		mic: 'M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3',
+		/* What the app has said. Square caps, like everything else here. */
+		bell: 'M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6M10 20a2 2 0 0 0 4 0',
 		search: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM16 16l4 4',
 		filter: 'M4 5h16l-6 7v6l-4 2v-8z',
 		download: 'M12 4v10M8 10l4 4 4-4M5 19h14',

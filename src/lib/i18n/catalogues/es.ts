@@ -1564,6 +1564,12 @@ export const messages: Catalogue = {
 	'notebooks.weekly.weeklyNotesOntoplano': 'Notas semanales · Ontoplano',
 	'notebooks.whatIsInside': '{show} lo que hay dentro de {title}',
 	'notebooks.whatItIsFor': 'Para qué sirve',
+	'notifications.markAllRead': 'Mark all read',
+	'notifications.none': 'Nothing yet.',
+	'notifications.open': 'Notifications, {count} unread',
+	'notifications.openNone': 'Notifications',
+	'notifications.title': 'Notifications',
+	'notifications.unread': '{count} unread',
 	'notify.everyBlockOnThePlan':
 		'Cada bloque del plan avisa cuando llega su hora. Sin esto, solo avisan los bloques a los que diste un tiempo de anticipación.',
 	'notify.mondayMorningWhatLastWeek':

@@ -38,6 +38,9 @@
 	import Tooltips from '$lib/components/Tooltips.svelte';
 	import { hasTutorial } from '$lib/tutorials';
 	import Logo from '$lib/components/Logo.svelte';
+	import Modal from '$lib/components/Modal.svelte';
+	import NotificationBell from '$lib/components/NotificationBell.svelte';
+	import NotificationPanel from '$lib/components/NotificationPanel.svelte';
 	import Reminders from '$lib/components/Reminders.svelte';
 	import CommandPalette from '$lib/components/CommandPalette.svelte';
 	import UndoToast from '$lib/components/UndoToast.svelte';
@@ -159,6 +162,8 @@
 	let fanOrigin = $state({ x: 0, y: 0 });
 	let fanDragging = $state(false);
 	let reporting = $state(false);
+	/** Whether the phone is showing the list of what the app has said. */
+	let phoneNotifications = $state(false);
 
 	const fanItems = $derived.by(() => {
 		const items: Petal[] = [
@@ -166,6 +171,19 @@
 				key: 'account',
 				label: 'app.account',
 				icon: 'user'
+			},
+			/*
+			 * What the app has told you, second because it is the one with news.
+			 *
+			 * The bar's own account button wears a plain dot when anything is
+			 * waiting — out there a number is smaller than the thing it counts —
+			 * and the count is here, on the petal that leads to the list.
+			 */
+			{
+				key: 'notifications',
+				label: 'notifications.title',
+				icon: 'bell',
+				waiting: data.unreadNotifications ?? 0
 			},
 			{
 				key: 'tutorial',
@@ -199,6 +217,10 @@
 			// data in, and the end of the instance — and leaving for another
 			// instance is on it, which on a phone is the only door there is.
 			goto(resolve('/settings/account'));
+			return;
+		}
+		if (key === 'notifications') {
+			phoneNotifications = true;
 			return;
 		}
 		if (key === 'tutorial') {
@@ -1087,6 +1109,12 @@
 					>
 						<Icon name="plus" size={16} />
 					</button>
+					<!-- To the right of the plus and left of the name: it belongs with
+					     the things the bar does rather than with who you are. -->
+					<NotificationBell
+						held={data.notifications ?? []}
+						unread={data.unreadNotifications ?? 0}
+					/>
 					<span class="text-sm text-chrome-muted">{data.user.name}</span>
 					<button
 						onclick={() => (menuOpen = !menuOpen)}
@@ -1435,7 +1463,23 @@
 					title={t('home.accountAndHelp')}
 					data-tour="menu"
 				>
-					<Icon name="user" size={22} />
+					<span class="relative inline-flex">
+						<Icon name="user" size={22} />
+						{#if (data.unreadNotifications ?? 0) > 0}
+							<!--
+								A dot, and no number.
+
+								Out here a number would be smaller than the thing it counts,
+								and all a bar has to say is that something happened. The
+								count is one press away, on the petal that leads to it.
+							-->
+							<span
+								class="absolute -top-0.5 -right-1 h-2 w-2 rounded-full bg-red-600"
+								aria-hidden="true"
+								data-unread-dot
+							></span>
+						{/if}
+					</span>
 				</button>
 			</div>
 		</nav>
@@ -1492,6 +1536,20 @@
 		<!-- Every `title` in the app, drawn by the app rather than by the
 		     browser. One listener; nothing else changes. -->
 		<Tooltips />
+		<!--
+			The list, on the phone, opened from the fan.
+
+			A dialog rather than the desktop's dropdown: there is nothing to hang
+			a dropdown off out here — the fan it came from has already closed.
+		-->
+		<Modal bind:open={phoneNotifications} title={t('notifications.title')} size="sm">
+			<NotificationPanel
+				held={data.notifications ?? []}
+				unread={data.unreadNotifications ?? 0}
+				onpick={() => (phoneNotifications = false)}
+			/>
+		</Modal>
+
 		<Reminders />
 		<UndoToast />
 		<Notifications />
