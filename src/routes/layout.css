@@ -1993,6 +1993,14 @@ html[data-style='playful'] .card-accent {
 	background: #ffffff;
 }
 
+/* A recording inside an entry: a block of its own, like a picture. */
+.md audio.md-audio {
+	display: block;
+	margin: 0.6rem 0;
+	width: min(100%, 26rem);
+	height: 2.5rem;
+}
+
 /* A task line reads as a line, not as a bullet with a box after it. */
 .md li.md-task {
 	display: flex;

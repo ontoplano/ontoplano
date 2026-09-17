@@ -48,6 +48,24 @@ function inline(raw: string): string {
 			`<img class="md-image" src="${src}" alt="${alt}" loading="lazy">`
 	);
 
+	/*
+	 * A recording is one of your own too, and it is a player rather than a link.
+	 *
+	 * The same rule the picture above follows and for the same reason: only
+	 * this app's own address, nothing arbitrary. `controls preload="none"` so
+	 * opening an entry with six recordings in it fetches none of them until
+	 * somebody presses one.
+	 *
+	 * Written as an ordinary markdown link on purpose — an export, or anything
+	 * else reading this text, still shows something that works. See
+	 * `$lib/audio-markdown.ts`, which is where the shape is decided.
+	 */
+	html = html.replace(
+		/(?<!!)\[([^\]]*)\]\((\/media\/audio\/\d+)\)/g,
+		(_match, label: string, src: string) =>
+			`<audio class="md-audio" controls preload="none" src="${src}" title="${label}"></audio>`
+	);
+
 	// `(?<!!)` so what is left of a picture — one this file refused to render —
 	// is not turned into a link with a stray exclamation mark in front of it.
 	html = html.replace(/(?<!!)\[([^\]]+)\]\(([^)\s]+)\)/g, (match, label: string, href: string) => {

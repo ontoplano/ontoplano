@@ -4,6 +4,7 @@
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import NotebookField from '$lib/components/NotebookField.svelte';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
+	import RecordingAttach from '$lib/components/RecordingAttach.svelte';
 	import { autogrow } from '$lib/actions/autogrow';
 	import { useT } from '$lib/i18n';
 
@@ -69,6 +70,7 @@
 	>
 	{#if pictures}
 		<PictureAttach target={box} />
+		<RecordingAttach target={box} />
 	{/if}
 </Field>
 

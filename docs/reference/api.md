@@ -69,6 +69,7 @@ sentence somebody agrees to when they grant it.
 | `/api/push`                                  | POST   | —                 |
 | `/api/push`                                  | DELETE | —                 |
 | `/api/push/test`                             | POST   | —                 |
+| `/api/recordings`                            | GET    | —                 |
 | `/api/reminders`                             | GET    | —                 |
 | `/api/reminders`                             | POST   | —                 |
 | `/api/report`                                | POST   | —                 |
@@ -355,6 +356,16 @@ happened rather than with a status code. It is not a debug endpoint that
 bypasses anything — it pushes for real, which is the point.
 
 **POST**
+
+### `/api/recordings`
+
+This account's recordings, for a chooser inside something being written.
+
+A page rather than the API: no scope, no token, just the session — which is
+why it answers the name and the id and nothing else. The bytes are their own
+address and are fetched by the player when somebody presses it.
+
+**GET**
 
 ### `/api/reminders`
 

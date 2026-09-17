@@ -4,6 +4,7 @@ import { buildCtx } from '$lib/services/ctx';
 import { UnauthorizedError } from '$lib/services/errors';
 import { toJsonError } from '$lib/http-errors';
 import { audioLimits, store } from '$lib/services/audio';
+import { audioMarkdown } from '$lib/audio-markdown';
 
 /**
  * A recording, posted as bytes.
@@ -57,7 +58,7 @@ export const POST: RequestHandler = async (event) => {
 			 * markdown link whose target is the row. A note renders it as a
 			 * player rather than a link — see `Markdown.svelte`.
 			 */
-			markdown: `[audio:${held.id}](/media/audio/${held.id})`
+			markdown: audioMarkdown(held.id, held.name)
 		});
 	} catch (e) {
 		return toJsonError(e);

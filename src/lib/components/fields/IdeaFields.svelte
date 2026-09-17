@@ -2,6 +2,7 @@
 	import Field from '$lib/components/Field.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
+	import RecordingAttach from '$lib/components/RecordingAttach.svelte';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -23,10 +24,17 @@
 		tags = '',
 		compact = false
 	}: { content?: string; tags?: string; compact?: boolean } = $props();
+
+	let box = $state<HTMLTextAreaElement>();
 </script>
 
 <Field label={t('fields.idea.heading')} span={12} required>
-	<textarea name="content" required rows={compact ? 4 : 5} class="textarea">{content}</textarea>
+	<textarea bind:this={box} name="content" required rows={compact ? 4 : 5} class="textarea"
+		>{content}</textarea
+	>
+	<!-- An idea said out loud is still an idea. The same attachment the note
+	     form has, for the same reason: some of them are quicker to say. -->
+	<RecordingAttach target={box} />
 </Field>
 
 {#snippet rest()}
