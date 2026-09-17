@@ -626,8 +626,17 @@
 										title={todo.categoryName}
 									></span>
 								{/if}
-								<span class="text-sm font-medium text-gray-900 {isDone(todo) ? 'line-through' : ''}"
-									>{todo.title}</span
+								<!--
+									`min-w-0` because a flex item will not shrink below its own
+									content by default: a long title stopped being able to wrap,
+									widened the row past the card, and took the whole list off
+									the side of the screen with it. `break-words` so a single
+									long word breaks rather than doing the same thing again.
+								-->
+								<span
+									class="min-w-0 text-sm font-medium break-words text-gray-900 {isDone(todo)
+										? 'line-through'
+										: ''}">{todo.title}</span
 								>
 								<RatingBadges values={todo.ratings} />
 								{#if todo.scheduledDate}
