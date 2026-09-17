@@ -7,7 +7,7 @@ import { renderEmail } from '../email-template.js';
 import { loadConfig } from '../config.js';
 import { sendLogged } from './mail-log.js';
 import { ValidationError } from '$lib/services/errors.js';
-import { translatorFor } from '$lib/i18n';
+import { translatorFor } from '$lib/i18n/core';
 import { localeForAddress } from '$lib/server/locale';
 
 /**

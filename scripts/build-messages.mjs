@@ -300,7 +300,7 @@ for (const locale of LOCALES) {
 		[
 			banner(`messages/${locale}.json`),
 			'',
-			"import type { Catalogue } from '../index.js';",
+			"import type { Catalogue } from '../core.js';",
 			'',
 			`export const messages: Catalogue = {`,
 			entries.join(',\n'),
@@ -348,7 +348,7 @@ await write(
 		' * bundler can only split what it can see: an import with a variable in it',
 		' * either fails or drags every language into one chunk.',
 		' */',
-		"import type { Catalogue } from './index.js';",
+		"import type { Catalogue } from './core.js';",
 		"import type { Locale } from './locales.js';",
 		'',
 		'export async function loadCatalogue(locale: Locale): Promise<Catalogue> {',

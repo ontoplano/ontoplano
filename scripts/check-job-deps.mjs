@@ -87,11 +87,17 @@ export function importsIn(source) {
 	 * This matched the bare word anywhere, so a tool with arguments called
 	 * `from` and `to` — `day(args.from, 'from')` — read as an import of
 	 * everything between that quote and the next: the checker reported a
-	 * package named `), day(args.to,` and failed the build over it. What can
-	 * precede a real `from` is a brace, a bracket, a quote's end, whitespace,
-	 * or the start of the source; what cannot is a dot or a quote's opening.
+	 * package named `), day(args.to,` and failed the build over it.
+	 *
+	 * Naming what may precede a `from` was the first answer, and it was not
+	 * enough: a generated catalogue holds `'A file downloaded from'`, where the
+	 * word is preceded by a space and followed by a quote, and the build failed
+	 * over a package named `,\n\t`. So the statement is matched from its start
+	 * instead — a real one begins with `import` or `export`, and the run to the
+	 * `from` cannot cross a quote, which is what keeps it out of prose.
 	 */
-	for (const m of source.matchAll(/(?:^|[\s;}])from\s*['"]([^'"]+)['"]/gm)) statics.push(m[1]);
+	for (const m of source.matchAll(/^\s*(?:import|export)\b[^'"]*?\bfrom\s*['"]([^'"]+)['"]/gm))
+		statics.push(m[1]);
 	for (const m of source.matchAll(/\bimport\s*\(\s*['"]([^'"]+)['"]/g)) dynamics.push(m[1]);
 	// `import 'x'` for its side effects is static too.
 	for (const m of source.matchAll(/^\s*import\s+['"]([^'"]+)['"]/gm)) statics.push(m[1]);

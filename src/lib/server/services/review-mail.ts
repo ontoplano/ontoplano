@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { loadConfig } from '../config.js';
 import { db } from '$lib/db/index.js';
 import { user } from '$lib/db/schema.js';
-import { translatorFor, type Translate } from '$lib/i18n';
+import { translatorFor, type Translate } from '$lib/i18n/core';
 import { localeForUser } from '$lib/server/locale';
 import { renderEmail } from '../email-template.js';
 import { getGridHours, getUserSetting, setUserSetting } from '../settings.js';

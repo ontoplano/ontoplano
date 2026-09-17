@@ -10,7 +10,7 @@ import { db } from '$lib/server/db';
 import { MIN_PASSWORD_LENGTH } from '$lib/passwords';
 import { sendLogged } from '$lib/server/services/mail-log';
 import { renderEmail } from '$lib/server/email-template';
-import { translatorFor, type Translate } from '$lib/i18n';
+import { translatorFor, type Translate } from '$lib/i18n/core';
 import { localeForAddress, localeForUser } from '$lib/server/locale';
 
 /** Build a mail in the language of the account it is going to. */
