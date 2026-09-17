@@ -160,6 +160,33 @@ describe('a token a plugin holds', () => {
 		expect(JSON.stringify(listed)).not.toContain(made.plaintext);
 	});
 
+	/*
+	 * Two live keys may not share a name; a revoked one does not hold it.
+	 *
+	 * A key is identified in the list by what it is called, which is why the
+	 * name has to be unique — and revoking is a soft delete, so without the
+	 * second half a name was taken forever by a key nobody can use. The place
+	 * that broke is the one that mints under a fixed name: "ring on this
+	 * phone" revokes the old key and makes a new one, so it worked once per
+	 * account and refused ever after, with the phone silent and the screen
+	 * saying the instance would not make a key.
+	 */
+	test('will not take a name a live key already has', () => {
+		tokens.createToken(ctx, { name: 'the same name', scopes: 'today:read' });
+		expect(() =>
+			tokens.createToken(ctx, { name: 'the same name', scopes: 'today:read' })
+		).toThrow();
+	});
+
+	test('takes a name back once the key holding it is revoked', () => {
+		const first = tokens.createToken(ctx, { name: 'ring on this phone', scopes: 'today:read' });
+		tokens.revokeToken(ctx, first.id);
+
+		const again = tokens.createToken(ctx, { name: 'ring on this phone', scopes: 'today:read' });
+		expect(again.plaintext).toMatch(/^onto_/);
+		expect(again.id).not.toBe(first.id);
+	});
+
 	/**
 	 * The calendar link is the exception, deliberately.
 	 *

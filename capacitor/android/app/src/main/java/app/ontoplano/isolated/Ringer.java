@@ -56,7 +56,22 @@ final class Ringer {
     private static final String KEY_BOOKED = "booked";
 
     /** The channel Android files these under, so a person can silence them alone. */
-    static final String CHANNEL = "ontoplano-reminders";
+    static final String CHANNEL = "ontoplano-reminders-audible";
+
+    /**
+     * What this app called the channel before, deleted rather than left.
+     *
+     * A channel's importance is fixed when it is made — Android ignores every
+     * field passed after the first time, on purpose, because from then on the
+     * sound is the person's setting and not the app's. Phones that made the
+     * first one before its importance was set right have been posting
+     * reminders silently ever since, and no amount of creating it again
+     * raises it. A new id is the only way to reach them; the old row is
+     * removed so nobody keeps a dead Reminders entry in their settings.
+     *
+     * `src/lib/phone-notifications.ts` holds the same two strings.
+     */
+    private static final String[] RETIRED_CHANNELS = {"ontoplano-reminders"};
 
     private static final int TIMEOUT_MS = 10000;
 
@@ -271,7 +286,15 @@ final class Ringer {
 
         NotificationManager manager =
                 (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        if (manager == null || manager.getNotificationChannel(CHANNEL) != null) return;
+        if (manager == null) return;
+
+        for (String retired : RETIRED_CHANNELS) {
+            if (manager.getNotificationChannel(retired) != null) {
+                manager.deleteNotificationChannel(retired);
+            }
+        }
+
+        if (manager.getNotificationChannel(CHANNEL) != null) return;
 
         NotificationChannel channel =
                 new NotificationChannel(

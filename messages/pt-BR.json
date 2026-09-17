@@ -1934,7 +1934,7 @@
 	"settings.preferences.theShapeOfThingsApart": null,
 	"settings.preferences.theStretchOfTheDay": null,
 	"settings.preferences.thisBrowserCannotDoIt": null,
-	"settings.preferences.thisInstanceWouldNotMake": null,
+	"settings.preferences.thisInstanceWouldNotMake": "Não deu certo. Tente de novo.",
 	"settings.preferences.thisPhoneWouldNotOpen": null,
 	"settings.preferences.threeLettersTheIso": null,
 	"settings.preferences.timezone": null,

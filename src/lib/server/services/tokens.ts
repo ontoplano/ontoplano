@@ -251,7 +251,23 @@ export function createToken(
 	const taken = db
 		.select({ id: apiTokens.id })
 		.from(apiTokens)
-		.where(and(eq(apiTokens.userId, ctx.userId), eq(apiTokens.name, name)))
+		.where(
+			and(
+				eq(apiTokens.userId, ctx.userId),
+				eq(apiTokens.name, name),
+				/*
+				 * Revoked keys do not hold their name.
+				 *
+				 * Revoking is a soft delete — the row stays, so the list can
+				 * still say a key existed — and without this, a name was taken
+				 * forever by a key nobody can use. That broke the one place
+				 * that mints a key under a fixed name: "ring on this phone"
+				 * revokes the old one and makes a new one, so it worked once
+				 * per account and every attempt after it failed.
+				 */
+				isNull(apiTokens.revokedAt)
+			)
+		)
 		.get();
 	if (taken) throw new ConflictError('You already have a key called that.');
 

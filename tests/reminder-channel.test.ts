@@ -14,7 +14,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
-import { REMINDER_CHANNEL } from '../src/lib/phone-notifications';
+import { REMINDER_CHANNEL, RETIRED_CHANNELS } from '../src/lib/phone-notifications';
 
 const RINGER = 'capacitor/android/app/src/main/java/app/ontoplano/isolated/Ringer.java';
 
@@ -24,6 +24,24 @@ describe('the reminders channel', () => {
 		const named = /CHANNEL\s*=\s*"([^"]+)"/.exec(java);
 		expect(named, `no CHANNEL in ${RINGER}`).not.toBe(null);
 		expect(named![1]).toBe(REMINDER_CHANNEL);
+	});
+
+	/*
+	 * Retiring a channel only works if both halves retire the same one.
+	 *
+	 * A channel's importance is fixed at creation, so the only way to fix a
+	 * phone that made its first one too quietly is a new id — and if one half
+	 * moved to the new id while the other kept making the old one, the old row
+	 * would be recreated the moment the other half ran.
+	 */
+	test('retires the same old names the shell does', () => {
+		const java = readFileSync(RINGER, 'utf8');
+		const listed = /RETIRED_CHANNELS = \{([^}]*)\}/.exec(java);
+		expect(listed, `no RETIRED_CHANNELS in ${RINGER}`).not.toBe(null);
+
+		const retired = [...listed![1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+		expect(retired).toEqual(RETIRED_CHANNELS);
+		expect(retired).not.toContain(REMINDER_CHANNEL);
 	});
 
 	test('is made loudly enough to be heard', () => {

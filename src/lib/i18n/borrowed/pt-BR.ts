@@ -1265,7 +1265,6 @@ export const borrowed: ReadonlySet<string> = new Set([
 	'settings.preferences.theShapeOfThingsApart',
 	'settings.preferences.theStretchOfTheDay',
 	'settings.preferences.thisBrowserCannotDoIt',
-	'settings.preferences.thisInstanceWouldNotMake',
 	'settings.preferences.thisPhoneWouldNotOpen',
 	'settings.preferences.threeLettersTheIso',
 	'settings.preferences.timezone',

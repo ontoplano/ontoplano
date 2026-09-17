@@ -59,6 +59,7 @@ type Notifications = {
 		importance: number;
 		description?: string;
 	}): Promise<void>;
+	deleteChannel(what: { id: string }): Promise<void>;
 };
 
 /**
@@ -79,7 +80,25 @@ type Notifications = {
  * `Ringer.java` holds the same string; `tests/reminder-channel.test.ts` is
  * what stops the two drifting.
  */
-export const REMINDER_CHANNEL = 'ontoplano-reminders';
+export const REMINDER_CHANNEL = 'ontoplano-reminders-audible';
+
+/**
+ * Channels this app has used before, to be deleted rather than left behind.
+ *
+ * A channel's importance is fixed when it is made. Android ignores every field
+ * you pass after the first time, deliberately — the sound and whether it may
+ * interrupt are the person's settings from then on, not the app's. So the
+ * first `ontoplano-reminders` a phone ever made is the one it keeps, and the
+ * phones that made theirs before the importance was set right have been
+ * posting reminders silently ever since with no way for this code to raise
+ * them. The reminder arrived; it just never made a sound unless the app
+ * happened to be open, which is the half that plays its own.
+ *
+ * A new id is the only way to hand those phones a channel at the right
+ * importance, and the old one is deleted so nobody is left with two rows
+ * called Reminders in their notification settings, one of them dead.
+ */
+export const RETIRED_CHANNELS = ['ontoplano-reminders'];
 
 /** Android's `IMPORTANCE_HIGH`: it makes a sound and it can peek. */
 const CHANNEL_IMPORTANCE = 5;
@@ -93,6 +112,13 @@ const CHANNEL_IMPORTANCE = 5;
  * importance cannot be raised later by editing this.
  */
 async function ensureChannel(notifications: Notifications, t: Translate): Promise<void> {
+	for (const old of RETIRED_CHANNELS) {
+		try {
+			await notifications.deleteChannel({ id: old });
+		} catch {
+			// Never made one, or a shell without the call.
+		}
+	}
 	try {
 		await notifications.createChannel({
 			id: REMINDER_CHANNEL,

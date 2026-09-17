@@ -2214,8 +2214,7 @@ export const messages: Catalogue = {
 	'settings.preferences.theStretchOfTheDay':
 		'The stretch of the day the day and week grids show. Anything outside it is still there — it\n\t\t\t\tjust is not drawn.',
 	'settings.preferences.thisBrowserCannotDoIt': 'This browser cannot do it.',
-	'settings.preferences.thisInstanceWouldNotMake':
-		'This instance would not make a key. Try again, or make one under AI & Integrations.',
+	'settings.preferences.thisInstanceWouldNotMake': 'That did not work. Try again.',
 	'settings.preferences.thisPhoneWouldNotOpen':
 		'This phone would not open it. Settings → Apps → Ontoplano → Notifications.',
 	'settings.preferences.threeLettersTheIso': 'Three letters — the ISO code, like PLN or ZAR.',
