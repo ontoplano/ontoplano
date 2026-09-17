@@ -50,7 +50,7 @@
 		<EmptyState
 			icon="tag"
 			title={t('search.whatAreYouLookingFor')}
-			description="Notes, diary entries, todos, blocks, goals, ideas, people, shopping and activities — all of it at once, or one kind at a time."
+			description={t('search.notesDiaryEntriesTodosBlocks')}
 		/>
 	{:else if total === 0}
 		<EmptyState icon="tag" title={t('search.nothingMatches', { q: data.q })} />

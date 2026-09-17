@@ -368,7 +368,7 @@
 				<EmptyState
 					icon="planner"
 					title={t('tasks.activities.noActivitiesYet')}
-					description="An activity is a named thing you do — gym, Russian, deep work. Blocks on the grid point at these."
+					description={t('tasks.activities.anActivityIsANamed')}
 				>
 					{#snippet action()}
 						<button onclick={() => (showForm = true)} class="btn btn-primary">

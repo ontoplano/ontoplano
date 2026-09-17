@@ -106,7 +106,7 @@
 		<EmptyState
 			icon="notebook"
 			title={t('gallery.notebooks.path.noPicturesInYourNotebooks')}
-			description="Put a picture in a note and it turns up here, in a folder named after its notebook."
+			description={t('gallery.notebooks.path.putAPictureInA')}
 		/>
 	{:else if data.pictures.length > 0}
 		<ul class="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">

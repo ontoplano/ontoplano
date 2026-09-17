@@ -339,7 +339,7 @@
 
 	<Card
 		title={t('settings.billing.whatYouAreUsing')}
-		description="Against the ceilings on your plan."
+		description={t('settings.billing.againstTheCeilingsOnYour')}
 	>
 		<div class="space-y-3">
 			{#each data.limitKeys as key (key)}

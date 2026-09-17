@@ -2,7 +2,7 @@ import type { PlainKey } from '$lib/i18n/keys';
 export interface ShortcutBinding {
 	key: string;
 	action: string;
-	description: string;
+	description: PlainKey;
 }
 
 export interface PageShortcuts {
@@ -11,187 +11,187 @@ export interface PageShortcuts {
 }
 
 export const GLOBAL_SHORTCUTS: ShortcutBinding[] = [
-	{ key: 'J', action: 'global-next-page', description: 'Next page' },
-	{ key: 'K', action: 'global-prev-page', description: 'Previous page' },
-	{ key: 'Escape', action: 'global-close', description: 'Close form' },
-	{ key: '?', action: 'global-help', description: 'Toggle shortcut help' }
+	{ key: 'J', action: 'global-next-page', description: 'shortcut.nextPage' },
+	{ key: 'K', action: 'global-prev-page', description: 'shortcut.previousPage' },
+	{ key: 'Escape', action: 'global-close', description: 'shortcut.closeForm' },
+	{ key: '?', action: 'global-help', description: 'shortcut.toggleShortcutHelp' }
 ];
 
 export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 	'/': {
 		label: 'app.dashboard',
 		shortcuts: [
-			{ key: 'i', action: 'capture-idea', description: 'Capture an idea' },
-			{ key: 't', action: 'capture-todo', description: 'Capture a todo' },
-			{ key: 'd', action: 'capture-note', description: 'Capture a note' },
-			{ key: 'b', action: 'capture-buy', description: 'Capture something to buy' },
-			{ key: 'n', action: 'new-diary', description: 'New diary entry' },
-			{ key: 'w', action: 'new-wins', description: 'New wins' }
+			{ key: 'i', action: 'capture-idea', description: 'shortcut.captureAnIdea' },
+			{ key: 't', action: 'capture-todo', description: 'shortcut.captureATodo' },
+			{ key: 'd', action: 'capture-note', description: 'shortcut.captureANote' },
+			{ key: 'b', action: 'capture-buy', description: 'shortcut.captureSomethingToBuy' },
+			{ key: 'n', action: 'new-diary', description: 'shortcut.newDiaryEntry' },
+			{ key: 'w', action: 'new-wins', description: 'shortcut.newWins' }
 		]
 	},
 	'/goals': {
 		label: 'app.goals',
 		shortcuts: [
-			{ key: 'n', action: 'new', description: 'New goal' },
-			{ key: 'j', action: 'next', description: 'Next goal' },
-			{ key: 'k', action: 'prev', description: 'Previous goal' }
+			{ key: 'n', action: 'new', description: 'shortcut.newGoal' },
+			{ key: 'j', action: 'next', description: 'shortcut.nextGoal' },
+			{ key: 'k', action: 'prev', description: 'shortcut.previousGoal' }
 		]
 	},
 
 	'/tasks/board': {
 		label: 'app.board',
 		shortcuts: [
-			{ key: 'h', action: 'prev-column', description: 'Move between columns' },
-			{ key: 'j', action: 'next-card', description: 'Move between cards' },
-			{ key: 'k', action: 'prev-card', description: 'Move between cards' },
-			{ key: 'l', action: 'next-column', description: 'Move between columns' },
-			{ key: 'H', action: 'carry-left', description: 'Carry card to previous column' },
-			{ key: 'L', action: 'carry-right', description: 'Carry card to next column' },
-			{ key: 'c', action: 'toggle-done', description: 'Mark done / reopen' },
-			{ key: 't', action: 'toggle-today', description: 'Pull onto today / put back' },
-			{ key: 'g', action: 'switch-tab', description: 'Switch Today / General' },
-			{ key: 'n', action: 'new', description: 'New card' },
-			{ key: 'Enter', action: 'edit', description: 'Open the card' },
-			{ key: '1', action: 'rate', description: 'Set the active rating' },
-			{ key: '2', action: 'rate', description: 'Set the active rating' },
-			{ key: '3', action: 'rate', description: 'Set the active rating' },
-			{ key: '4', action: 'rate', description: 'Set the active rating' },
-			{ key: '5', action: 'rate', description: 'Set the active rating' },
-			{ key: 'u', action: 'rate-urgency', description: 'Number keys set urgency' },
-			{ key: 'i', action: 'rate-interest', description: 'Number keys set interest' },
-			{ key: 'y', action: 'rate-energy', description: 'Number keys set energy' },
-			{ key: 'x', action: 'delete', description: 'Ask to delete card' }
+			{ key: 'h', action: 'prev-column', description: 'shortcut.moveBetweenColumns' },
+			{ key: 'j', action: 'next-card', description: 'shortcut.moveBetweenCards' },
+			{ key: 'k', action: 'prev-card', description: 'shortcut.moveBetweenCards' },
+			{ key: 'l', action: 'next-column', description: 'shortcut.moveBetweenColumns' },
+			{ key: 'H', action: 'carry-left', description: 'shortcut.carryCardToPreviousColumn' },
+			{ key: 'L', action: 'carry-right', description: 'shortcut.carryCardToNextColumn' },
+			{ key: 'c', action: 'toggle-done', description: 'shortcut.markDoneReopen' },
+			{ key: 't', action: 'toggle-today', description: 'shortcut.pullOntoTodayPut' },
+			{ key: 'g', action: 'switch-tab', description: 'shortcut.switchTodayGeneral' },
+			{ key: 'n', action: 'new', description: 'shortcut.newCard' },
+			{ key: 'Enter', action: 'edit', description: 'shortcut.openTheCard' },
+			{ key: '1', action: 'rate', description: 'shortcut.setTheActiveRating' },
+			{ key: '2', action: 'rate', description: 'shortcut.setTheActiveRating' },
+			{ key: '3', action: 'rate', description: 'shortcut.setTheActiveRating' },
+			{ key: '4', action: 'rate', description: 'shortcut.setTheActiveRating' },
+			{ key: '5', action: 'rate', description: 'shortcut.setTheActiveRating' },
+			{ key: 'u', action: 'rate-urgency', description: 'shortcut.numberKeysSetUrgency' },
+			{ key: 'i', action: 'rate-interest', description: 'shortcut.numberKeysSetInterest' },
+			{ key: 'y', action: 'rate-energy', description: 'shortcut.numberKeysSetEnergy' },
+			{ key: 'x', action: 'delete', description: 'shortcut.askToDeleteCard' }
 		]
 	},
 
 	'/tasks/plan': {
 		label: 'app.plan',
 		shortcuts: [
-			{ key: 'j', action: 'navigate-down', description: 'Navigate slots' },
-			{ key: 'k', action: 'navigate-up', description: 'Navigate slots' },
-			{ key: 'g', action: 'toggle-view', description: 'Toggle list/grid view' },
-			{ key: '+', action: 'zoom-in', description: 'Zoom in (grid)' },
-			{ key: '=', action: 'zoom-in', description: 'Zoom in (grid)' },
-			{ key: '-', action: 'zoom-out', description: 'Zoom out (grid)' },
-			{ key: '0', action: 'zoom-reset', description: 'Reset zoom (grid)' },
-			{ key: 'h', action: 'prev-day', description: 'Switch day' },
-			{ key: 'l', action: 'next-day', description: 'Switch day' },
-			{ key: '[', action: 'prev-week', description: 'Switch week' },
-			{ key: ']', action: 'next-week', description: 'Switch week' },
-			{ key: 'n', action: 'new', description: 'New weekly block' },
-			{ key: 'N', action: 'new-exceptional', description: 'New one-off block' },
-			{ key: 'e', action: 'edit', description: 'Edit block' },
-			{ key: 'd', action: 'toggle-active', description: 'Toggle active' },
-			{ key: 'D', action: 'delete', description: 'Delete block' },
-			{ key: 'v', action: 'toggle-multiselect', description: 'Toggle multiselect' },
-			{ key: ' ', action: 'toggle-select', description: 'Select/deselect (multiselect)' },
-			{ key: 'x', action: 'delete-selected', description: 'Ask to delete selected' },
-			{ key: 'p', action: 'copy-to-days', description: 'Copy to days (multiselect)' }
+			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateSlots' },
+			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateSlots' },
+			{ key: 'g', action: 'toggle-view', description: 'shortcut.toggleListGridView' },
+			{ key: '+', action: 'zoom-in', description: 'shortcut.zoomInGrid' },
+			{ key: '=', action: 'zoom-in', description: 'shortcut.zoomInGrid' },
+			{ key: '-', action: 'zoom-out', description: 'shortcut.zoomOutGrid' },
+			{ key: '0', action: 'zoom-reset', description: 'shortcut.resetZoomGrid' },
+			{ key: 'h', action: 'prev-day', description: 'shortcut.switchDay' },
+			{ key: 'l', action: 'next-day', description: 'shortcut.switchDay' },
+			{ key: '[', action: 'prev-week', description: 'shortcut.switchWeek' },
+			{ key: ']', action: 'next-week', description: 'shortcut.switchWeek' },
+			{ key: 'n', action: 'new', description: 'shortcut.newWeeklyBlock' },
+			{ key: 'N', action: 'new-exceptional', description: 'shortcut.newOneOffBlock' },
+			{ key: 'e', action: 'edit', description: 'shortcut.editBlock' },
+			{ key: 'd', action: 'toggle-active', description: 'shortcut.toggleActive' },
+			{ key: 'D', action: 'delete', description: 'shortcut.deleteBlock' },
+			{ key: 'v', action: 'toggle-multiselect', description: 'shortcut.toggleMultiselect' },
+			{ key: ' ', action: 'toggle-select', description: 'shortcut.selectDeselectMultiselect' },
+			{ key: 'x', action: 'delete-selected', description: 'shortcut.askToDeleteSelected' },
+			{ key: 'p', action: 'copy-to-days', description: 'shortcut.copyToDaysMultiselect' }
 		]
 	},
 	'/tasks/activities': {
 		label: 'app.activities',
 		shortcuts: [
-			{ key: 'j', action: 'navigate-down', description: 'Navigate list' },
-			{ key: 'k', action: 'navigate-up', description: 'Navigate list' },
-			{ key: 'n', action: 'new', description: 'New activity' },
-			{ key: '1', action: 'filter-1', description: 'Toggle category filter' },
-			{ key: '2', action: 'filter-2', description: 'Toggle category filter' },
-			{ key: '3', action: 'filter-3', description: 'Toggle category filter' },
-			{ key: '4', action: 'filter-4', description: 'Toggle category filter' },
-			{ key: '5', action: 'filter-5', description: 'Toggle category filter' },
-			{ key: '6', action: 'filter-6', description: 'Toggle category filter' },
-			{ key: '7', action: 'filter-7', description: 'Toggle category filter' },
-			{ key: '8', action: 'filter-8', description: 'Toggle category filter' },
-			{ key: '9', action: 'filter-9', description: 'Toggle category filter' }
+			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateList' },
+			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateList' },
+			{ key: 'n', action: 'new', description: 'shortcut.newActivity' },
+			{ key: '1', action: 'filter-1', description: 'shortcut.toggleCategoryFilter' },
+			{ key: '2', action: 'filter-2', description: 'shortcut.toggleCategoryFilter' },
+			{ key: '3', action: 'filter-3', description: 'shortcut.toggleCategoryFilter' },
+			{ key: '4', action: 'filter-4', description: 'shortcut.toggleCategoryFilter' },
+			{ key: '5', action: 'filter-5', description: 'shortcut.toggleCategoryFilter' },
+			{ key: '6', action: 'filter-6', description: 'shortcut.toggleCategoryFilter' },
+			{ key: '7', action: 'filter-7', description: 'shortcut.toggleCategoryFilter' },
+			{ key: '8', action: 'filter-8', description: 'shortcut.toggleCategoryFilter' },
+			{ key: '9', action: 'filter-9', description: 'shortcut.toggleCategoryFilter' }
 		]
 	},
 	'/tasks/todo': {
 		label: 'app.toDo',
 		shortcuts: [
-			{ key: 'j', action: 'navigate-down', description: 'Navigate list' },
-			{ key: 'k', action: 'navigate-up', description: 'Navigate list' },
-			{ key: 'n', action: 'new', description: 'New todo' },
-			{ key: 'e', action: 'edit', description: 'Edit todo' },
-			{ key: 'c', action: 'toggle-done', description: 'Toggle done' },
-			{ key: 'g', action: 'delegate', description: 'Delegate' },
-			{ key: 'x', action: 'delete', description: 'Ask to delete' }
+			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateList' },
+			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateList' },
+			{ key: 'n', action: 'new', description: 'shortcut.newTodo' },
+			{ key: 'e', action: 'edit', description: 'shortcut.editTodo' },
+			{ key: 'c', action: 'toggle-done', description: 'shortcut.toggleDone' },
+			{ key: 'g', action: 'delegate', description: 'shortcut.delegate' },
+			{ key: 'x', action: 'delete', description: 'shortcut.askToDelete' }
 		]
 	},
 	'/notebooks/diary': {
 		label: 'app.diary',
 		shortcuts: [
-			{ key: 'j', action: 'navigate-down', description: 'Navigate entries' },
-			{ key: 'k', action: 'navigate-up', description: 'Navigate entries' },
-			{ key: 'n', action: 'new', description: 'New entry' },
-			{ key: 'e', action: 'edit', description: 'Edit entry' }
+			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateEntries' },
+			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateEntries' },
+			{ key: 'n', action: 'new', description: 'shortcut.newEntry' },
+			{ key: 'e', action: 'edit', description: 'shortcut.editEntry' }
 		]
 	},
 	'/notebooks/ideas': {
 		label: 'app.ideas',
 		shortcuts: [
-			{ key: 'j', action: 'navigate-down', description: 'Navigate ideas' },
-			{ key: 'k', action: 'navigate-up', description: 'Navigate ideas' },
-			{ key: 'n', action: 'new', description: 'New idea' },
-			{ key: 'e', action: 'edit', description: 'Edit idea' },
-			{ key: 'f', action: 'toggle-favorite', description: 'Toggle favorite' },
-			{ key: 'a', action: 'toggle-applied', description: 'Toggle applied' }
+			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateIdeas' },
+			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateIdeas' },
+			{ key: 'n', action: 'new', description: 'shortcut.newIdea' },
+			{ key: 'e', action: 'edit', description: 'shortcut.editIdea' },
+			{ key: 'f', action: 'toggle-favorite', description: 'shortcut.toggleFavorite' },
+			{ key: 'a', action: 'toggle-applied', description: 'shortcut.toggleApplied' }
 		]
 	},
 	'/inventory': {
 		label: 'app.toBuy',
 		shortcuts: [
-			{ key: 'j', action: 'navigate-down', description: 'Navigate items' },
-			{ key: 'k', action: 'navigate-up', description: 'Navigate items' },
-			{ key: 'n', action: 'new', description: 'New item' },
-			{ key: 'e', action: 'edit', description: 'Edit item' },
-			{ key: 'd', action: 'delete', description: 'Delete item' },
-			{ key: 'D', action: 'toggle-done', description: 'Toggle done' },
-			{ key: 'z', action: 'snooze', description: 'Archive/unarchive' },
-			{ key: '1', action: 'filter-someday', description: 'Toggle someday filter' },
-			{ key: '2', action: 'filter-replenish', description: 'Toggle replenish filter' },
-			{ key: 'b', action: 'toggle-show-bought', description: 'Toggle show bought' },
-			{ key: 's', action: 'toggle-show-snoozed', description: 'Toggle show archived' }
+			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateItems' },
+			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateItems' },
+			{ key: 'n', action: 'new', description: 'shortcut.newItem' },
+			{ key: 'e', action: 'edit', description: 'shortcut.editItem' },
+			{ key: 'd', action: 'delete', description: 'shortcut.deleteItem' },
+			{ key: 'D', action: 'toggle-done', description: 'shortcut.toggleDone' },
+			{ key: 'z', action: 'snooze', description: 'shortcut.archiveUnarchive' },
+			{ key: '1', action: 'filter-someday', description: 'shortcut.toggleSomedayFilter' },
+			{ key: '2', action: 'filter-replenish', description: 'shortcut.toggleReplenishFilter' },
+			{ key: 'b', action: 'toggle-show-bought', description: 'shortcut.toggleShowBought' },
+			{ key: 's', action: 'toggle-show-snoozed', description: 'shortcut.toggleShowArchived' }
 		]
 	},
 	'/health/habits': {
 		label: 'app.habits',
 		shortcuts: [
-			{ key: 'j', action: 'navigate-down', description: 'Navigate habits' },
-			{ key: 'k', action: 'navigate-up', description: 'Navigate habits' },
-			{ key: 'n', action: 'new', description: 'New habit' },
-			{ key: 'Enter', action: 'toggle-expand', description: 'Expand/collapse' }
+			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateHabits' },
+			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateHabits' },
+			{ key: 'n', action: 'new', description: 'shortcut.newHabit' },
+			{ key: 'Enter', action: 'toggle-expand', description: 'shortcut.expandCollapse' }
 		]
 	},
 	'/notebooks': {
 		label: 'app.notebooks',
-		shortcuts: [{ key: 'n', action: 'new', description: 'New notebook' }]
+		shortcuts: [{ key: 'n', action: 'new', description: 'shortcut.newNotebook' }]
 	},
 	'/notebooks/people': {
 		label: 'app.people',
 		shortcuts: [
-			{ key: 'j', action: 'navigate-down', description: 'Navigate people' },
-			{ key: 'k', action: 'navigate-up', description: 'Navigate people' },
-			{ key: 'n', action: 'new', description: 'New person' }
+			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigatePeople' },
+			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigatePeople' },
+			{ key: 'n', action: 'new', description: 'shortcut.newPerson' }
 		]
 	},
 	'/health/recipes': {
 		label: 'app.recipes',
-		shortcuts: [{ key: 'n', action: 'new', description: 'New recipe' }]
+		shortcuts: [{ key: 'n', action: 'new', description: 'shortcut.newRecipe' }]
 	},
 	'/settings/account': {
 		label: 'app.account',
 		shortcuts: [
-			{ key: 'j', action: 'navigate-down', description: 'Navigate sessions' },
-			{ key: 'k', action: 'navigate-up', description: 'Navigate sessions' }
+			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateSessions' },
+			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateSessions' }
 		]
 	},
 	'/settings/integrations/connections': {
 		label: 'app.integrations',
 		shortcuts: [
-			{ key: 'j', action: 'navigate-down', description: 'Navigate tokens' },
-			{ key: 'k', action: 'navigate-up', description: 'Navigate tokens' },
-			{ key: 'n', action: 'new', description: 'New token' }
+			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateTokens' },
+			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateTokens' },
+			{ key: 'n', action: 'new', description: 'shortcut.newToken' }
 		]
 	}
 };
@@ -227,10 +227,10 @@ export function getAction(pagePath: string, key: string): string | null {
  */
 export function getDisplayShortcuts(
 	pagePath: string
-): { displayKey: string; description: string }[] {
+): { displayKey: string; description: PlainKey }[] {
 	const page = PAGE_SHORTCUTS[pagePath];
 	if (!page) return [];
-	const groups: { keys: string[]; description: string }[] = [];
+	const groups: { keys: string[]; description: PlainKey }[] = [];
 	for (const s of page.shortcuts) {
 		const last = groups[groups.length - 1];
 		if (last && last.description === s.description) {

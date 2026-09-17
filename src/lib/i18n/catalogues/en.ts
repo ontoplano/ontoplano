@@ -30,6 +30,7 @@ export const messages: Catalogue = {
 	'admin.blockedInTheLast': '{lastDay} {addresses} blocked in the last 24 hours',
 	'admin.confirm': 'Confirm?',
 	'admin.dropItWithoutSending': 'Drop it without sending',
+	'admin.everyAccountSHistoryInOne': "Every account's history in one column, newest first.",
 	'admin.group': 'group:',
 	'admin.hiddenOnTheDemo': 'Hidden on the demo.',
 	'admin.id.addressConfirmed': 'Address confirmed',
@@ -37,6 +38,8 @@ export const messages: Catalogue = {
 	'admin.id.deleteForGood': 'Delete for good',
 	'admin.id.deleteThisAccount': 'Delete this account',
 	'admin.id.endPlanThen': 'End plan then',
+	'admin.id.everythingInItGoesIn':
+		'Everything in it goes, in one transaction, with nothing to restore it from.',
 	'admin.id.getConfirmationLink': 'Get confirmation link',
 	'admin.id.history': 'History',
 	'admin.id.joined': 'Joined',
@@ -53,6 +56,7 @@ export const messages: Catalogue = {
 		'This instance has no mail server, so nothing can be emailed. Asking for a confirmation shows\n\t\t\t\tyou the link to pass on yourself.',
 	'admin.id.toConfirmEveryBlockEntry':
 		'to confirm. Every block,\n\t\t\t\t\t\tentry, note, goal and picture this account owns is deleted, and the export it could have taken\n\t\t\t\t\t\twith it goes too.',
+	'admin.id.whatThisAccountDidAnd': 'What this account did, and what was done to it.',
 	'admin.id.willBeAbleToRead': 'will be able to read, change and delete every account.',
 	'admin.inThisLog': '{times}× in this log',
 	'admin.itsLinkHasExpired': 'Its link has expired — a fresh request is the fix. Drop this record.',
@@ -79,11 +83,14 @@ export const messages: Catalogue = {
 		'On your own instance this lists the addresses fail2ban has turned away, why, and whether\n\t\t\t\t\t\tthey are still out.',
 	'admin.outForGoodSurvives': 'Out for good — survives fail2ban restarts and jail expiry',
 	'admin.owner': 'owner',
+	'admin.problemsSomebodyReportedIdeasThey':
+		'Problems somebody reported, ideas they suggested, and crashes they chose to send. Dismiss one once it is dealt with.',
 	'admin.readOnlyThisInstanceCannotUnban':
 		'Read-only: this instance cannot unban or block an address. These are a record.',
 	'admin.refresh': 'Refresh',
 	'admin.removeAdmin': 'Remove admin',
 	'admin.reported': 'reported',
+	'admin.searchByNameOrAddress': 'Search by name or address. Newest first when empty.',
 	'admin.sendItAgainAsIt': 'Send it again, as it was',
 	'admin.showOlder': 'Show older',
 	'admin.soFar': 'so far',
@@ -94,9 +101,11 @@ export const messages: Catalogue = {
 	'admin.suggested': 'suggested',
 	'admin.theSecondCommandMattersEven':
 		'The second command matters even after the first is long done: the user manager that\n\t\t\t\t\t\tspawns this app keeps the groups it started with — and with lingering on, it never\n\t\t\t\t\t\trestarts on its own. Restarting only the app is not enough.',
+	'admin.theWatchersAreToldThis': 'The watchers are told; this is the fix.',
 	'admin.thisInstanceCannotSee': 'This instance cannot see',
 	'admin.unban': 'Unban',
 	'admin.unverified': '· unverified',
+	'admin.whatFail2banHasTurnedAway': 'What fail2ban has turned away.',
 	'admin.whatPeopleSentIn': 'What people sent in',
 	'admin.yesMakeAdmin': 'Yes, make admin',
 	'admin.yesRemoveAdmin': 'Yes, remove admin',
@@ -226,6 +235,18 @@ export const messages: Catalogue = {
 	'capture.diaryNote': 'Diary note',
 	'capture.newThing': 'New {thing}',
 	'captureDialog.notWrittenDown': 'That was not written down.',
+	'card.currentStreaks': 'Current streaks.',
+	'card.goalsWhosePeriodCoversToday': 'Goals whose period covers today, with progress.',
+	'card.oneOfYourOwnQuotes': 'One of your own quotes, the same one all day.',
+	'card.theLastFewIdeasYou': 'The last few ideas you had.',
+	'card.theMostRecentThingsYou': 'The most recent things you wrote down, newest first.',
+	'card.theWeekAtAGlance': 'The week at a glance.',
+	'card.thisMonthExpectedPaidAnd': 'This month: expected, paid, and which bills are still open.',
+	'card.threeThingsThatWentWell': 'Three things that went well today.',
+	'card.whatIsLeftToBuy': 'What is left to buy.',
+	'card.whatIsStillToDo': 'What is still to do today.',
+	'card.yourMostRecentEntryAnd': 'Your most recent entry, and a box to write a new one.',
+	'card.yourWorkoutsAndHowLong': 'Your workouts, and how long since each was last done.',
 	'clientErrorPrompt.never': 'Never',
 	'clientErrorPrompt.sendErrorDetails': 'Send error details?',
 	'clientErrorPrompt.sendNowAndNextTime': 'Send, now and next time',
@@ -324,6 +345,10 @@ export const messages: Catalogue = {
 	'finance.bills.rent': 'Rent',
 	'finance.bills.restore': 'Restore',
 	'finance.bills.rhythm': 'Rhythm',
+	'finance.bills.theAmountComesFromThe':
+		'The amount comes from the line you pick, not from what the bill expected.',
+	'finance.bills.theBillsYouExpectTo':
+		'The bills you expect to pay live here. Mark one paid and it records what you actually paid.',
 	'finance.bills.theLastDayItCan': 'The last day it can be paid.',
 	'finance.bills.undoThePaymentFor': 'Undo the payment for {name}',
 	'finance.bills.undoThisPeriodSPayment': "Undo this period's payment",
@@ -336,6 +361,8 @@ export const messages: Catalogue = {
 	'finance.insights.biggestCategory': 'Biggest category',
 	'finance.insights.dearestMonth': 'Dearest month',
 	'finance.insights.everyLedger': 'Every ledger',
+	'finance.insights.importAStatementIntoA':
+		'Import a statement into a ledger and these come alive: what each month cost, where it went, and what any one tag adds up to.',
 	'finance.insights.inAndOut': 'In and out',
 	'finance.insights.inTotalAMonth':
 		'{totalCents} in total, {averageCents} a month across the {activeMonths} month{s} it appeared in. One tag at a time — tags overlap, so adding them up would count a line twice.',
@@ -354,6 +381,8 @@ export const messages: Catalogue = {
 	'finance.insights.whatEachMonthWasMade': 'What each month was made of',
 	'finance.insights.whatOneTagCosts': 'What one tag costs',
 	'finance.insights.writeOne': 'Write one →',
+	'finance.ledgers.aLedgerIsOnePlace':
+		'A ledger is one place money moves through — a current account, a credit card. Make one, then import its statement or write a line by hand.',
 	'finance.ledgers.addedAlreadyHere': '{added} added, {skipped} already here.',
 	'finance.ledgers.andBillsTurnUp': ', and bills turn up on your week.',
 	'finance.ledgers.andItsLinesGoFor':
@@ -385,6 +414,8 @@ export const messages: Catalogue = {
 		"goes. Importing the same statement again brings\n\t\t\tit back, since it is the bank's line rather than yours.",
 	'finance.ledgers.import': 'Import',
 	'finance.ledgers.importAStatement': 'Import a statement',
+	'finance.ledgers.importThisLedgerSExportOr':
+		"Import this ledger's export, or write a line by hand. Lines already imported are never added twice.",
 	'finance.ledgers.keepIt': 'Keep it',
 	'finance.ledgers.leaveTheIdAsNone':
 		"Leave the id as none unless the file really carries the bank's own reference per line.\n\t\t\t\t\t\t\tWithout one, a line is matched on its date, amount and description instead.",
@@ -465,6 +496,8 @@ export const messages: Catalogue = {
 	'frontDoor.whatOntoplanoIs': 'What ontoplano is',
 	'gallery.album': 'album',
 	'gallery.allAlbums': 'All albums',
+	'gallery.anAlbumIsWherePictures':
+		'An album is where pictures live. Make one, and putting the same picture in a second album never copies it — a picture lives once, however many albums hold it.',
 	'gallery.delete': 'Delete {name}',
 	'gallery.deleteThisAlbum': 'Delete this album?',
 	'gallery.folders': 'Folders',
@@ -498,6 +531,8 @@ export const messages: Catalogue = {
 	'gallery.notebooks.path.aPicture': 'A picture',
 	'gallery.notebooks.path.noPicturesInYourNotebooks': 'No pictures in your notebooks',
 	'gallery.notebooks.path.pictures': '{title} — pictures',
+	'gallery.notebooks.path.putAPictureInA':
+		'Put a picture in a note and it turns up here, in a folder named after its notebook.',
 	'gallery.notebooks.path.thePicturesInYourNotebooks':
 		'The pictures in your notebooks. Each one lives in the note that mentions it.',
 	'gallery.openTheAlbum': 'Open the album',
@@ -713,12 +748,16 @@ export const messages: Catalogue = {
 	'health.workouts.doneJustNow': 'Done just now',
 	'health.workouts.edit': 'Edit {title}',
 	'health.workouts.editWorkout': 'Edit workout',
+	'health.workouts.everythingHereIsOptionalA':
+		'Everything here is optional. A session with nothing measured is still a session.',
 	'health.workouts.feltHeavyRightKneeComplained':
 		'Felt heavy. Right knee complained on the last set.',
 	'health.workouts.howMuch': 'How much',
 	'health.workouts.isDeletedForGoodAnd':
 		'is deleted for good, and comes off any day it was planned\n\t\t\ton. To keep it, leave it archived instead.',
 	'health.workouts.isRemovedForGoodThe': 'is removed for good. The workout\n\t\t\titself stays.',
+	'health.workouts.itGainsATimeOn':
+		'It gains a time on the plan. Finishing it there finishes the workout.',
 	'health.workouts.keepIt': 'Keep it',
 	'health.workouts.km': 'km',
 	'health.workouts.lastDone': ' · last done {date}',
@@ -767,10 +806,14 @@ export const messages: Catalogue = {
 	'health.workouts.whatYouDid': 'What you did',
 	'health.workouts.whatYouRecordedOn': 'What you recorded on',
 	'health.workouts.workoutsYouCanDropOnto': 'Workouts you can drop onto the week like a meal.',
+	'health.workouts.writeAWorkoutDown':
+		'Write a workout down — a plan and how long it takes — and it is ready to put on a day.',
 	'health.workouts.writeDownWhatYouDid': 'Write down what you did',
 	'health.workouts.writeDownWhatYouDid2': 'Write down what you did for {title}',
 	'health.workouts.writeItDown': 'Write it down',
 	'health.workouts.writeOneDown': 'Write one down',
+	'health.workouts.yoursToNameAWorkout':
+		'Yours to name. A workout keeps existing if you remove the category it was filed under.',
 	'helpDock.close': 'close',
 	'helpDock.global': 'Global',
 	'helpDock.hideHelp': 'Hide help',
@@ -1351,6 +1394,8 @@ export const messages: Catalogue = {
 	'notebooks.ideas.edited': '· edited {updatedAt}',
 	'notebooks.ideas.favourite': 'Favourite',
 	'notebooks.ideas.favourites': 'Favourites',
+	'notebooks.ideas.ideasAreTheThingsYou':
+		'Ideas are the things you would otherwise forget by the time you sat down.',
 	'notebooks.ideas.markApplied': 'Mark applied',
 	'notebooks.ideas.markAsFavorite': 'Mark as favorite',
 	'notebooks.ideas.newIdea': 'New idea',
@@ -1404,11 +1449,24 @@ export const messages: Catalogue = {
 	'notebooks.theirNotebookWas': '{length} {notes} · their notebook was deleted',
 	'notebooks.theirNotebookWasDeletedThe':
 		'Their notebook was deleted. The writing was kept and waits here.',
+	'notebooks.weekly.everyWeekYouWriteAbout':
+		'Every week you write about in the review shows up here.',
 	'notebooks.weekly.nothingWrittenYet': 'Nothing written yet',
 	'notebooks.weekly.openThatWeek': 'Open that week',
 	'notebooks.weekly.weeklyNotesOntoplano': 'Weekly notes · Ontoplano',
 	'notebooks.whatIsInside': '{show} what is inside {title}',
 	'notebooks.whatItIsFor': 'What it is for',
+	'notify.everyBlockOnThePlan':
+		'Every block on the plan says so when its time comes. Without this only the blocks you gave a lead time to say anything.',
+	'notify.mondayMorningWhatLastWeek':
+		'Monday morning: what last week actually was, with the page that closes it one press away.',
+	'notify.onTheMorningForEverybody':
+		'On the morning, for everybody in your address book with a date on them.',
+	'notify.onTheMorningTheWeek':
+		'On the morning the week turns over, while last week still has blocks unanswered.',
+	'notify.theDayOneWantsPaying':
+		'The day one wants paying, every day it stays unpaid, and the day it is due.',
+	'notify.whatTheDayTurnedOut': 'What the day turned out to be, at a time you choose.',
 	'offline.noConnection': 'No connection',
 	'offline.offlineOntoplano': 'Offline · Ontoplano',
 	'offline.ontoplanoNeedsTheNetworkFor':
@@ -1419,6 +1477,7 @@ export const messages: Catalogue = {
 	'people.friend': 'Friend',
 	'people.other': 'Other',
 	'people.partner': 'Partner',
+	'phone.aTestRemindersWillLook': 'A test — reminders will look like this.',
 	'pictures.add': 'Add a picture',
 	'pictures.dropAnywhere': 'drop it anywhere in the box',
 	'pictures.hint': '…or paste one, or drop one in — up to {kilobytes}KB',
@@ -1433,6 +1492,7 @@ export const messages: Catalogue = {
 	'ratings.interest': 'Interest',
 	'ratings.urgency': 'Urgency',
 	'reminders.aDayAndSomethingTo': 'A day and something to say first',
+	'reminders.aDayAndWhatTo': 'A day and what to say. It is about nothing else.',
 	'reminders.aSoundFile': 'A sound file',
 	'reminders.ahead': 'Ahead',
 	'reminders.allowNotifications': 'Allow notifications',
@@ -1452,6 +1512,7 @@ export const messages: Catalogue = {
 	'reminders.days': 'days',
 	'reminders.default': 'Default',
 	'reminders.eGTakeTheBreadOut': 'e.g. take the bread out',
+	'reminders.everythingShowsOnlyTheseAre': 'Everything shows. Only these are heard.',
 	'reminders.followTheKind': 'Follow the kind',
 	'reminders.giveItALaterOne': 'Give it a later one.',
 	'reminders.go': 'Go',
@@ -1579,6 +1640,8 @@ export const messages: Catalogue = {
 	'search.kind.todo': 'Todos',
 	'search.narrowIt': 'Narrow it:',
 	'search.note': 'note:',
+	'search.notesDiaryEntriesTodosBlocks':
+		'Notes, diary entries, todos, blocks, goals, ideas, people, shopping and activities — all of it at once, or one kind at a time.',
 	'search.nothingMatches': 'Nothing matches “{q}”',
 	'search.or': '— or',
 	'search.searchOntoplano': 'Search · ontoplano',
@@ -1646,6 +1709,11 @@ export const messages: Catalogue = {
 	'settings.account.deleteThisInstance': 'Delete this instance',
 	'settings.account.deleteYourAccount': 'Delete your account',
 	'settings.account.emailAddress': 'Email address',
+	'settings.account.everyOtherSignedInDeviceIs': 'Every other signed-in device is signed out.',
+	'settings.account.everyRowBelongingToYou':
+		'Every row belonging to you goes with it. This cannot be undone.',
+	'settings.account.everyRowYouHaveMade':
+		'Every row you have made goes. The account itself stays. This cannot be undone.',
 	'settings.account.everyTaskNoteHabitGoal':
 		'Every task, note, habit, goal, picture and record goes. The account stays: same address,\n\t\t\t\t\t\tsame password, same plan, an app with nothing in it. Download an export first if you\n\t\t\t\t\t\tmight want any of it back.',
 	'settings.account.everythingOnThisDeviceAnd':
@@ -1708,9 +1776,13 @@ export const messages: Catalogue = {
 	'settings.account.noExportsLeftToday':
 		'No exports left today — this plan allows {allowed} a day. The next one unlocks {unlocksIn}.',
 	'settings.account.noOtherSessions': 'No other sessions.',
+	'settings.account.nothingChangesUntilTheLink':
+		'Nothing changes until the link in the confirmation mail is followed.',
 	'settings.account.of': 'of',
 	'settings.account.offTurnItOnAnd':
 		'Off. Turn it on and you get one message on a Monday at {hour}:00 with what last week was — planned against done, and what is still loose.',
+	'settings.account.oneLinePerSignInAnything':
+		'One line per sign-in. Anything you do not recognise, sign out.',
 	'settings.account.oneMessageOnAMonday':
 		'One message on a Monday at {hour}:00 with what last week was — planned against done, and what is still loose. Every message has a link that stops them.',
 	'settings.account.password': 'Password',
@@ -1725,6 +1797,8 @@ export const messages: Catalogue = {
 		'The data and the account both, and you are signed out for good. This cannot be undone.',
 	'settings.account.theyAreMostOfThe':
 		'They are most of the file. Leave them out to move to another instance; keep them for a backup.',
+	'settings.account.thisAppCanOpenThe':
+		'This app can open the official instance, one you run yourself, or nothing at all — everything on the phone.',
 	'settings.account.thisAppIsOpenOn': 'This app is open on',
 	'settings.account.thisDevice': 'this device',
 	'settings.account.thisDeviceOnlyTheSessions':
@@ -1746,6 +1820,7 @@ export const messages: Catalogue = {
 	'settings.billing.aMonth': '{currency} a month',
 	'settings.billing.aSubscriptionCannotBeStarted':
 		'A subscription cannot be started or changed from this app.',
+	'settings.billing.againstTheCeilingsOnYour': 'Against the ceilings on your plan.',
 	'settings.billing.askThemToAddYou':
 		'Ask them to add you. On their account: Settings → Family → your email address → Add to\n\t\t\t\t\t\t\tmy plan.',
 	'settings.billing.cardNowNothingChargedToday':
@@ -1999,6 +2074,8 @@ export const messages: Catalogue = {
 	'settings.integrations.createAKey': 'Create a key',
 	'settings.integrations.createIt': 'Create it',
 	'settings.integrations.doNotShareItWith': 'Do not share it with anyone.',
+	'settings.integrations.everythingAnAssistantHasChanged':
+		'Everything an assistant has changed, newest first. Anything it removed can be put back.',
 	'settings.integrations.hasTheFullFormWith':
 		'has the full form, with every permission and an expiry.',
 	'settings.integrations.howToSetEachOne': 'How to set each one up permanently — the docs',
@@ -2034,11 +2111,15 @@ export const messages: Catalogue = {
 	'settings.integrations.widget.theKeyForThisWidget': 'The key for this widget',
 	'settings.integrations.widget.theWidgetComesWithThe':
 		'The widget comes with the Android app. A shortcut added from the browser cannot provide one —\n\t\t\tAndroid only lets an installed app do that.',
+	'settings.integrations.widget.theWidgetOnThisPhone':
+		"The widget on this phone gets its own key. It can read today's plan and nothing else.",
 	'settings.integrations.widget.youCanDisconnectItAny':
 		'You can disconnect it any time by revoking its key under',
 	'settings.integrations.wiringUpAScriptA': 'Wiring up a script, a widget or a calendar instead?',
 	'settings.integrations.write': 'Write',
 	'settings.integrations.yourNewKey': 'Your new key',
+	'settings.integrations.yourWeekToDoListDiary':
+		'Your week, to-do list, diary, shopping list or whatever you want, reachable by an assistant you already talk to.',
 	'settings.language.heading': 'Language',
 	'settings.language.hint': 'What this account reads the app in. Mail you are sent follows it too.',
 	'settings.language.saved': 'Saved.',
@@ -2153,6 +2234,84 @@ export const messages: Catalogue = {
 	'settings.preferences.whichCardsAppearAndIn': 'Which cards appear, and in what order.',
 	'settings.preferences.withTheRoom': 'with the room',
 	'settings.timezone.unchanged': '{zone} (kept as it is)',
+	'shortcut.archiveUnarchive': 'Archive/unarchive',
+	'shortcut.askToDelete': 'Ask to delete',
+	'shortcut.askToDeleteCard': 'Ask to delete card',
+	'shortcut.askToDeleteSelected': 'Ask to delete selected',
+	'shortcut.captureANote': 'Capture a note',
+	'shortcut.captureATodo': 'Capture a todo',
+	'shortcut.captureAnIdea': 'Capture an idea',
+	'shortcut.captureSomethingToBuy': 'Capture something to buy',
+	'shortcut.carryCardToNextColumn': 'Carry card to next column',
+	'shortcut.carryCardToPreviousColumn': 'Carry card to previous column',
+	'shortcut.closeForm': 'Close form',
+	'shortcut.copyToDaysMultiselect': 'Copy to days (multiselect)',
+	'shortcut.delegate': 'Delegate',
+	'shortcut.deleteBlock': 'Delete block',
+	'shortcut.deleteItem': 'Delete item',
+	'shortcut.editBlock': 'Edit block',
+	'shortcut.editEntry': 'Edit entry',
+	'shortcut.editIdea': 'Edit idea',
+	'shortcut.editItem': 'Edit item',
+	'shortcut.editTodo': 'Edit todo',
+	'shortcut.expandCollapse': 'Expand/collapse',
+	'shortcut.markDoneReopen': 'Mark done / reopen',
+	'shortcut.moveBetweenCards': 'Move between cards',
+	'shortcut.moveBetweenColumns': 'Move between columns',
+	'shortcut.navigateEntries': 'Navigate entries',
+	'shortcut.navigateHabits': 'Navigate habits',
+	'shortcut.navigateIdeas': 'Navigate ideas',
+	'shortcut.navigateItems': 'Navigate items',
+	'shortcut.navigateList': 'Navigate list',
+	'shortcut.navigatePeople': 'Navigate people',
+	'shortcut.navigateSessions': 'Navigate sessions',
+	'shortcut.navigateSlots': 'Navigate slots',
+	'shortcut.navigateTokens': 'Navigate tokens',
+	'shortcut.newActivity': 'New activity',
+	'shortcut.newCard': 'New card',
+	'shortcut.newDiaryEntry': 'New diary entry',
+	'shortcut.newEntry': 'New entry',
+	'shortcut.newGoal': 'New goal',
+	'shortcut.newHabit': 'New habit',
+	'shortcut.newIdea': 'New idea',
+	'shortcut.newItem': 'New item',
+	'shortcut.newNotebook': 'New notebook',
+	'shortcut.newOneOffBlock': 'New one-off block',
+	'shortcut.newPerson': 'New person',
+	'shortcut.newRecipe': 'New recipe',
+	'shortcut.newTodo': 'New todo',
+	'shortcut.newToken': 'New token',
+	'shortcut.newWeeklyBlock': 'New weekly block',
+	'shortcut.newWins': 'New wins',
+	'shortcut.nextGoal': 'Next goal',
+	'shortcut.nextPage': 'Next page',
+	'shortcut.numberKeysSetEnergy': 'Number keys set energy',
+	'shortcut.numberKeysSetInterest': 'Number keys set interest',
+	'shortcut.numberKeysSetUrgency': 'Number keys set urgency',
+	'shortcut.openTheCard': 'Open the card',
+	'shortcut.previousGoal': 'Previous goal',
+	'shortcut.previousPage': 'Previous page',
+	'shortcut.pullOntoTodayPut': 'Pull onto today / put back',
+	'shortcut.resetZoomGrid': 'Reset zoom (grid)',
+	'shortcut.selectDeselectMultiselect': 'Select/deselect (multiselect)',
+	'shortcut.setTheActiveRating': 'Set the active rating',
+	'shortcut.switchDay': 'Switch day',
+	'shortcut.switchTodayGeneral': 'Switch Today / General',
+	'shortcut.switchWeek': 'Switch week',
+	'shortcut.toggleActive': 'Toggle active',
+	'shortcut.toggleApplied': 'Toggle applied',
+	'shortcut.toggleCategoryFilter': 'Toggle category filter',
+	'shortcut.toggleDone': 'Toggle done',
+	'shortcut.toggleFavorite': 'Toggle favorite',
+	'shortcut.toggleListGridView': 'Toggle list/grid view',
+	'shortcut.toggleMultiselect': 'Toggle multiselect',
+	'shortcut.toggleReplenishFilter': 'Toggle replenish filter',
+	'shortcut.toggleShortcutHelp': 'Toggle shortcut help',
+	'shortcut.toggleShowArchived': 'Toggle show archived',
+	'shortcut.toggleShowBought': 'Toggle show bought',
+	'shortcut.toggleSomedayFilter': 'Toggle someday filter',
+	'shortcut.zoomInGrid': 'Zoom in (grid)',
+	'shortcut.zoomOutGrid': 'Zoom out (grid)',
 	'staging.body': 'A copy of Ontoplano for trying things on. Nothing here is promised to survive.',
 	'staging.heading': 'Staging.',
 	'start.1Account': '1 account',
@@ -2186,13 +2345,18 @@ export const messages: Catalogue = {
 	'streamChart.noDataYet': 'No data yet',
 	'streamChart.noNumericValueRecorded': 'No numeric value recorded.',
 	'streamChart.nothingHereCanBeCharted': 'Nothing here can be charted',
+	'streamChart.onceTheAppProducingThis':
+		'Once the app producing this stream pushes points, they appear here.',
 	'streamChart.sincePrevious': 'since previous',
+	'streamChart.thisStreamHasNoNumeric': 'This stream has no numeric values in it.',
 	'style.playful': 'Playful',
 	'style.playfulHint': 'Rounded, shadowless, and section colour on the chrome.',
 	'style.sober': 'Sober',
 	'style.soberHint': 'Square, flat, quiet. Colour belongs to your categories.',
 	'taskStatus.doing': 'Doing',
 	'taskStatus.pending': 'Pending',
+	'tasks.activities.anActivityIsANamed':
+		'An activity is a named thing you do — gym, Russian, deep work. Blocks on the grid point at these.',
 	'tasks.activities.cannotDeleteReferencedByPlanner':
 		'Cannot delete: referenced by planner or history',
 	'tasks.activities.categories': 'Categories',
@@ -2387,6 +2551,8 @@ export const messages: Catalogue = {
 	'tasks.plan.zoomIn2': 'Zoom in (+)',
 	'tasks.plan.zoomOut': 'Zoom out',
 	'tasks.plan.zoomOut2': 'Zoom out (-)',
+	'tasks.review.aReviewNeedsAWeek':
+		'A review needs a week with something in it. Try the week before, or plan this one.',
 	'tasks.review.answerOneAndItMoves': 'Answer one and it moves over here.',
 	'tasks.review.applyEveryAnswer': 'Apply every answer',
 	'tasks.review.deleteIt': 'Delete it?',
@@ -2420,6 +2586,8 @@ export const messages: Catalogue = {
 	'tasks.review.putItBackNothing': 'Put it back — nothing has happened yet',
 	'tasks.review.putItOnThatDay': 'Put it on that day',
 	'tasks.review.saved': 'Saved.',
+	'tasks.review.sayWhatHappenedToEach':
+		'Say what happened to each. Whichever answer you give, it leaves this list — next week generates its own blocks.',
 	'tasks.review.seeWhatIWroteBefore': 'See what I wrote before',
 	'tasks.review.settled': '{settled} settled.',
 	'tasks.review.skipped': '{title}: skipped',
@@ -2439,6 +2607,7 @@ export const messages: Catalogue = {
 	'tasks.review.whatWentWellWhatDid': 'What went well, what did not, what you will do different…',
 	'tasks.review.whatYouHaveDecided': 'What you have decided',
 	'tasks.review.whereItWent': 'Where it went',
+	'tasks.review.writeSomethingAboutHowThis': 'Write something about how this week went.',
 	'todoRows.aToDoIsATask':
 		'A to-do is a task with no day on it. Put one here and drag it onto the board when it has a home.',
 	'todoRows.anythingYouFinishShowsUp': 'Anything you finish shows up here.',
@@ -2452,6 +2621,7 @@ export const messages: Catalogue = {
 	'todoRows.everyNotebook': 'Every notebook',
 	'todoRows.hideArchived': 'Hide archived',
 	'todoRows.hideCompleted': 'Hide completed',
+	'todoRows.itKeepsItsPlaceIn': 'It keeps its place in the list and gains a time on the plan.',
 	'todoRows.lastDoneFirst': 'Last done first',
 	'todoRows.markComplete': 'Mark complete',
 	'todoRows.markIncomplete': 'Mark incomplete',

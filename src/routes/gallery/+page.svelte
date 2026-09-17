@@ -505,7 +505,7 @@
 					<EmptyState
 						icon="image"
 						title={t('gallery.noAlbumsYet')}
-						description="An album is where pictures live. Make one, and putting the same picture in a second album never copies it — a picture lives once, however many albums hold it."
+						description={t('gallery.anAlbumIsWherePictures')}
 					/>
 				{:else if standingIn && level.length === 0}
 					<!-- A folder with no folders in it. Its pictures are the thing to

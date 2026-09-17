@@ -483,7 +483,7 @@
 		{error}
 		onclose={() => (delegatingId = null)}
 		title={t('todoRows.putItOnADay')}
-		description="It keeps its place in the list and gains a time on the plan."
+		description={t('todoRows.itKeepsItsPlaceIn')}
 		size="sm"
 	>
 		{@const todo = todos.find((t: Todo) => t.id === delegatingId)}

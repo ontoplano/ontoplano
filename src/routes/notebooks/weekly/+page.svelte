@@ -39,7 +39,7 @@
 			<EmptyState
 				icon="note"
 				title={t('notebooks.weekly.nothingWrittenYet')}
-				description="Every week you write about in the review shows up here."
+				description={t('notebooks.weekly.everyWeekYouWriteAbout')}
 			/>
 		</div>
 	{:else}

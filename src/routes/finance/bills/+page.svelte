@@ -152,7 +152,7 @@
 		<EmptyState
 			icon="wallet"
 			title={t('finance.bills.noBillsYet')}
-			description="The bills you expect to pay live here. Mark one paid and it records what you actually paid."
+			description={t('finance.bills.theBillsYouExpectTo')}
 		/>
 	{:else}
 		<ul class="divide-y divide-gray-100 rounded border border-gray-200">
@@ -471,7 +471,7 @@
 <Modal
 	open={attaching !== null}
 	title={attachingBill ? `What paid ${attachingBill.name}?` : t('finance.bills.whatPaidIt')}
-	description="The amount comes from the line you pick, not from what the bill expected."
+	description={t('finance.bills.theAmountComesFromThe')}
 	onclose={() => {
 		attaching = null;
 		movementQuery = '';

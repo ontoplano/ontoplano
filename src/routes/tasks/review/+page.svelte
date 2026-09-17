@@ -171,7 +171,7 @@
 			<EmptyState
 				icon="calendar"
 				title={t('tasks.review.nothingWasPlannedThatWeek')}
-				description="A review needs a week with something in it. Try the week before, or plan this one."
+				description={t('tasks.review.aReviewNeedsAWeek')}
 			/>
 		</div>
 	{:else}
@@ -274,7 +274,7 @@
 		<!-- What did not happen, and whether it still needs to. -->
 		<Card
 			title={t('tasks.review.whatDidNotHappen')}
-			description="Say what happened to each. Whichever answer you give, it leaves this list — next week generates its own blocks."
+			description={t('tasks.review.sayWhatHappenedToEach')}
 			accent="var(--section-accent)"
 			flush
 		>
@@ -561,7 +561,7 @@
 		<!-- The part worth reading in a year. -->
 		<Card
 			title={t('tasks.review.notesAboutTheWeek')}
-			description="Write something about how this week went."
+			description={t('tasks.review.writeSomethingAboutHowThis')}
 			accent="var(--section-accent)"
 		>
 			<!--

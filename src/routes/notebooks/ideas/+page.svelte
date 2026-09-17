@@ -322,7 +322,7 @@
 				<EmptyState
 					icon="ideas"
 					title={t('notebooks.ideas.nothingCapturedYet')}
-					description="Ideas are the things you would otherwise forget by the time you sat down."
+					description={t('notebooks.ideas.ideasAreTheThingsYou')}
 				>
 					{#snippet action()}
 						<button onclick={() => (showForm = true)} class="btn btn-primary">

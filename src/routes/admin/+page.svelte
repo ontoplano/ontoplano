@@ -90,11 +90,7 @@
 {/if}
 
 <div class="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-	<Card
-		title={t('admin.accounts')}
-		description="Search by name or address. Newest first when empty."
-		flush
-	>
+	<Card title={t('admin.accounts')} description={t('admin.searchByNameOrAddress')} flush>
 		<form method="get" class="flex gap-2 border-b border-gray-200 p-3">
 			<OneLine
 				name="q"
@@ -187,10 +183,7 @@
 			<!-- Only rendered when something is wrong: an empty "all mail fine"
 			     card would train the eye to skip this spot. The same open rows
 			     make /healthz warn, which is what the watchers alert on. -->
-			<Card
-				title={t('admin.mailThatDidNotGo')}
-				description="The watchers are told; this is the fix."
-			>
+			<Card title={t('admin.mailThatDidNotGo')} description={t('admin.theWatchersAreToldThis')}>
 				<div class="divide-y divide-gray-200">
 					{#each data.mailFailures as failure (failure.id)}
 						<div class="flex items-center gap-2 py-2 text-sm">
@@ -240,11 +233,7 @@
 			</Card>
 		{/if}
 
-		<Card
-			title={t('admin.lately')}
-			description="Every account's history in one column, newest first."
-			flush
-		>
+		<Card title={t('admin.lately')} description={t('admin.everyAccountSHistoryInOne')} flush>
 			{#snippet actions()}
 				<button type="button" class="btn btn-sm" onclick={() => invalidateAll()}>
 					<Icon name="undo" />
@@ -299,7 +288,7 @@
 		-->
 		<Card
 			title={t('admin.whatPeopleSentIn')}
-			description="Problems somebody reported, ideas they suggested, and crashes they chose to send. Dismiss one once it is dealt with."
+			description={t('admin.problemsSomebodyReportedIdeasThey')}
 			flush
 		>
 			{#if data.clientErrors.length === 0}
@@ -350,7 +339,7 @@
 			"is anything happening". Everything else on this page is something the
 			app did; this is what never reached it.
 		-->
-		<Card title={t('admin.blocked')} description="What fail2ban has turned away." flush>
+		<Card title={t('admin.blocked')} description={t('admin.whatFail2banHasTurnedAway')} flush>
 			{#if data.demo}
 				<!--
 					The addresses a box turned away are real people's, and the demo is

@@ -77,7 +77,7 @@
 		<EmptyState
 			icon="wallet"
 			title={t('finance.insights.nothingToReadYet')}
-			description="Import a statement into a ledger and these come alive: what each month cost, where it went, and what any one tag adds up to."
+			description={t('finance.insights.importAStatementIntoA')}
 		/>
 	{:else}
 		<!-- The three numbers worth knowing before any chart. -->

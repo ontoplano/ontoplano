@@ -109,7 +109,7 @@
 								<kbd class="border border-gray-300 bg-gray-50 px-1 font-mono text-gray-700"
 									>{s.displayKey}</kbd
 								>
-								<span class="text-gray-600">{s.description}</span>
+								<span class="text-gray-600">{t(s.description)}</span>
 							</div>
 						{/each}
 					</div>
@@ -124,7 +124,7 @@
 							<kbd class="border border-gray-300 bg-gray-50 px-1 font-mono text-gray-700"
 								>{s.key === 'Escape' ? 'Esc' : s.key}</kbd
 							>
-							<span class="text-gray-600">{s.description}</span>
+							<span class="text-gray-600">{t(s.description)}</span>
 						</div>
 					{/each}
 				</div>

@@ -26,7 +26,7 @@ export type DashboardCardId =
 export type DashboardCard = {
 	id: DashboardCardId;
 	label: PlainKey;
-	description: string;
+	description: PlainKey;
 	/** Whether a brand-new account sees it. */
 	defaultOn: boolean;
 	/** Half-width cards pair up on wide screens; full-width ones do not. */
@@ -39,14 +39,14 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 	{
 		id: 'todayTasks',
 		label: 'app.todaysTasks',
-		description: 'What is still to do today.',
+		description: 'card.whatIsStillToDo',
 		defaultOn: true,
 		width: 'half'
 	},
 	{
 		id: 'goals',
 		label: 'app.goals',
-		description: 'Goals whose period covers today, with progress.',
+		description: 'card.goalsWhosePeriodCoversToday',
 		defaultOn: true,
 		width: 'half',
 		hide: 'goals'
@@ -54,7 +54,7 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 	{
 		id: 'habits',
 		label: 'app.habits',
-		description: 'Current streaks.',
+		description: 'card.currentStreaks',
 		defaultOn: true,
 		width: 'half',
 		hide: 'health'
@@ -62,28 +62,28 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 	{
 		id: 'quote',
 		label: 'app.quote',
-		description: 'One of your own quotes, the same one all day.',
+		description: 'card.oneOfYourOwnQuotes',
 		defaultOn: false,
 		width: 'half'
 	},
 	{
 		id: 'weekPlan',
 		label: 'app.weekPlan',
-		description: 'The week at a glance.',
+		description: 'card.theWeekAtAGlance',
 		defaultOn: true,
 		width: 'full'
 	},
 	{
 		id: 'threeWins',
 		label: 'app.threeWins',
-		description: 'Three things that went well today.',
+		description: 'card.threeThingsThatWentWell',
 		defaultOn: false,
 		width: 'full'
 	},
 	{
 		id: 'diary',
 		label: 'app.diary',
-		description: 'Your most recent entry, and a box to write a new one.',
+		description: 'card.yourMostRecentEntryAnd',
 		defaultOn: true,
 		width: 'full',
 		hide: 'diary'
@@ -91,14 +91,14 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 	{
 		id: 'latestTodos',
 		label: 'app.latestToDos',
-		description: 'The most recent things you wrote down, newest first.',
+		description: 'card.theMostRecentThingsYou',
 		defaultOn: true,
 		width: 'half'
 	},
 	{
 		id: 'ideas',
 		label: 'app.ideas',
-		description: 'The last few ideas you had.',
+		description: 'card.theLastFewIdeasYou',
 		defaultOn: true,
 		width: 'half',
 		hide: 'ideas'
@@ -106,7 +106,7 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 	{
 		id: 'bills',
 		label: 'app.bills',
-		description: 'This month: expected, paid, and which bills are still open.',
+		description: 'card.thisMonthExpectedPaidAnd',
 		defaultOn: true,
 		width: 'half',
 		hide: 'finance'
@@ -114,7 +114,7 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 	{
 		id: 'workouts',
 		label: 'app.workouts',
-		description: 'Your workouts, and how long since each was last done.',
+		description: 'card.yourWorkoutsAndHowLong',
 		defaultOn: false,
 		width: 'half',
 		hide: 'health'
@@ -122,7 +122,7 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 	{
 		id: 'inventory',
 		label: 'app.shoppingList',
-		description: 'What is left to buy.',
+		description: 'card.whatIsLeftToBuy',
 		defaultOn: true,
 		width: 'full',
 		hide: 'inventory'

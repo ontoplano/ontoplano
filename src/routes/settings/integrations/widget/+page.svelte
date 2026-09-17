@@ -67,7 +67,7 @@
 
 <Card
 	title={t('settings.integrations.widget.homeScreenWidget')}
-	description="The widget on this phone gets its own key. It can read today's plan and nothing else."
+	description={t('settings.integrations.widget.theWidgetOnThisPhone')}
 >
 	{#if handoff && form?.token}
 		<div class="space-y-3">

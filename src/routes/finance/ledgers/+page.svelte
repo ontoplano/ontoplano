@@ -228,7 +228,7 @@
 		<EmptyState
 			icon="wallet"
 			title={t('finance.ledgers.noLedgersYet')}
-			description="A ledger is one place money moves through — a current account, a credit card. Make one, then import its statement or write a line by hand."
+			description={t('finance.ledgers.aLedgerIsOnePlace')}
 		/>
 	{:else}
 		{@const current = data.current}
@@ -365,7 +365,7 @@
 				<EmptyState
 					icon="wallet"
 					title={t('finance.ledgers.nothingHereYet')}
-					description="Import this ledger's export, or write a line by hand. Lines already imported are never added twice."
+					description={t('finance.ledgers.importThisLedgerSExportOr')}
 				/>
 			{:else}
 				<!-- The list scrolls inside itself: a year of a card's statement is

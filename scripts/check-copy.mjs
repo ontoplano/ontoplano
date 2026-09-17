@@ -147,7 +147,9 @@ const COPY_NAMES = [
 	// attribute on `<Field>` as well as a property in a list.
 	'blurb',
 	'hint',
-	'help'
+	'help',
+	// `<Card description=…>` — the sentence under a card's heading.
+	'description'
 ];
 
 /**

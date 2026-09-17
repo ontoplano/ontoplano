@@ -235,7 +235,7 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 	-->
 	<Card
 		title={t('settings.integrations.letAnAiAssistantUse')}
-		description="Your week, to-do list, diary, shopping list or whatever you want, reachable by an assistant you already talk to."
+		description={t('settings.integrations.yourWeekToDoListDiary')}
 	>
 		<!--
 			Said, not hidden.
@@ -635,7 +635,7 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 	-->
 	<Card
 		title={t('settings.integrations.whatYourAssistantsDid')}
-		description="Everything an assistant has changed, newest first. Anything it removed can be put back."
+		description={t('settings.integrations.everythingAnAssistantHasChanged')}
 		flush={data.assistantCalls.length > 0}
 	>
 		{#if data.assistantCalls.length === 0}

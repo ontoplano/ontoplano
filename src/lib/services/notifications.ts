@@ -31,7 +31,7 @@ export type Notification = {
 	/** What it is called on the screen. */
 	label: PlainKey;
 	/** One sentence: what arrives, and when. */
-	description: string;
+	description: PlainKey;
 	/** Where the answer is kept. */
 	key: string;
 	/**
@@ -85,15 +85,14 @@ export const NOTIFICATIONS: Notification[] = [
 	{
 		id: 'blocks',
 		label: 'app.blocksAsTheyStart',
-		description:
-			'Every block on the plan says so when its time comes. Without this only the blocks you gave a lead time to say anything.',
+		description: 'notify.everyBlockOnThePlan',
 		key: 'notify.blocks',
 		on: false
 	},
 	{
 		id: 'endOfDay',
 		label: 'app.theEndOfTheDay',
-		description: 'What the day turned out to be, at a time you choose.',
+		description: 'notify.whatTheDayTurnedOut',
 		key: 'notify.end-of-day',
 		on: false,
 		time: {
@@ -114,15 +113,14 @@ export const NOTIFICATIONS: Notification[] = [
 	{
 		id: 'review',
 		label: 'app.theWeeklyReview',
-		description: 'On the morning the week turns over, while last week still has blocks unanswered.',
+		description: 'notify.onTheMorningTheWeek',
 		key: 'notify.review',
 		on: true
 	},
 	{
 		id: 'reviewMail',
 		label: 'app.theWeeklyReviewByEmail',
-		description:
-			'Monday morning: what last week actually was, with the page that closes it one press away.',
+		description: 'notify.mondayMorningWhatLastWeek',
 		key: REVIEW_MAIL_KEY,
 		on: false,
 		needs: 'reviewMail'
@@ -130,14 +128,14 @@ export const NOTIFICATIONS: Notification[] = [
 	{
 		id: 'bills',
 		label: 'app.bills',
-		description: 'The day one wants paying, every day it stays unpaid, and the day it is due.',
+		description: 'notify.theDayOneWantsPaying',
 		key: 'notify.bills',
 		on: true
 	},
 	{
 		id: 'birthdays',
 		label: 'app.birthdays',
-		description: 'On the morning, for everybody in your address book with a date on them.',
+		description: 'notify.onTheMorningForEverybody',
 		key: 'notify.birthdays',
 		on: true
 	}
@@ -180,7 +178,7 @@ export function notifyAt(userId: string, id: NotificationId): string {
 export type NotificationRow = {
 	id: NotificationId;
 	label: PlainKey;
-	description: string;
+	description: PlainKey;
 	on: boolean;
 	/** The hour it goes off, or null for the ones tied to an event. */
 	at: string | null;

@@ -252,7 +252,7 @@
 		<EmptyState
 			icon="health"
 			title={t('health.workouts.noWorkoutsYet')}
-			description="Write a workout down — a plan and how long it takes — and it is ready to put on a day."
+			description={t('health.workouts.writeAWorkoutDown')}
 		/>
 	{:else}
 		<ul class="divide-y divide-gray-100 rounded border border-gray-200">
@@ -635,7 +635,7 @@
 	open={scheduling !== null}
 	error={form?.message}
 	title={t('health.workouts.putItOnADay')}
-	description="It gains a time on the plan. Finishing it there finishes the workout."
+	description={t('health.workouts.itGainsATimeOn')}
 	onclose={() => (scheduling = null)}
 	size="sm"
 >
@@ -710,7 +710,7 @@
 	title={editingSession
 		? t('health.workouts.correctWhatYouDid')
 		: t('health.workouts.whatDidYouDo')}
-	description="Everything here is optional. A session with nothing measured is still a session."
+	description={t('health.workouts.everythingHereIsOptionalA')}
 	onclose={closeLog}
 	size="md"
 >
@@ -907,7 +907,7 @@
 	bind:open={showCategories}
 	error={form?.message}
 	title={t('health.workouts.categoriesOfWorkout')}
-	description="Yours to name. A workout keeps existing if you remove the category it was filed under."
+	description={t('health.workouts.yoursToNameAWorkout')}
 	size="sm"
 >
 	<ul class="divide-y divide-gray-200 border border-gray-200">

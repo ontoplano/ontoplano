@@ -189,10 +189,7 @@
 	</Card>
 
 	{#if !data.self && !data.account.isOwner}
-		<Card
-			title={t('admin.id.deleteThisAccount')}
-			description="Everything in it goes, in one transaction, with nothing to restore it from."
-		>
+		<Card title={t('admin.id.deleteThisAccount')} description={t('admin.id.everythingInItGoesIn')}>
 			{#if !deleting}
 				<button class="btn btn-danger btn-sm" onclick={() => ((deleting = true), (typed = ''))}>
 					<Icon name="trash" />
@@ -230,11 +227,7 @@
 		</Card>
 	{/if}
 
-	<Card
-		title={t('admin.id.history')}
-		description="What this account did, and what was done to it."
-		flush
-	>
+	<Card title={t('admin.id.history')} description={t('admin.id.whatThisAccountDidAnd')} flush>
 		{#if data.events.length === 0}
 			<EmptyState icon="clock" title={t('admin.id.nothingRecordedYet')} />
 		{:else}

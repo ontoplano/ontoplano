@@ -158,14 +158,14 @@
 	<EmptyState
 		icon="plug"
 		title={t('streamChart.noDataYet')}
-		description="Once the app producing this stream pushes points, they appear here."
+		description={t('streamChart.onceTheAppProducingThis')}
 	/>
 {:else if display === 'line_chart'}
 	{#if numeric.length === 0}
 		<EmptyState
 			icon="plug"
 			title={t('streamChart.nothingHereCanBeCharted')}
-			description="This stream has no numeric values in it."
+			description={t('streamChart.thisStreamHasNoNumeric')}
 		/>
 	{:else}
 		<div class="overflow-x-auto p-4">

@@ -276,7 +276,7 @@
 			error={form?.message}
 			onclose={() => (editing = null)}
 			title={t('settings.account.changeYourEmailAddress')}
-			description="Nothing changes until the link in the confirmation mail is followed."
+			description={t('settings.account.nothingChangesUntilTheLink')}
 			size="sm"
 		>
 			{#if !data.emailConfigured}
@@ -335,7 +335,7 @@
 			error={form?.message}
 			onclose={() => (editing = null)}
 			title={t('settings.account.changeYourPassword')}
-			description="Every other signed-in device is signed out."
+			description={t('settings.account.everyOtherSignedInDeviceIs')}
 			size="sm"
 		>
 			<form
@@ -391,7 +391,7 @@
 
 		<Card
 			title={t('settings.account.whereYouAreSignedIn')}
-			description="One line per sign-in. Anything you do not recognise, sign out."
+			description={t('settings.account.oneLinePerSignInAnything')}
 			flush
 		>
 			{#snippet actions()}
@@ -491,7 +491,7 @@
 	-->
 	<Card
 		title={t('settings.account.whereThisOntoplanoLives')}
-		description="This app can open the official instance, one you run yourself, or nothing at all — everything on the phone."
+		description={t('settings.account.thisAppCanOpenThe')}
 	>
 		{#snippet actions()}
 			<a href={resolve('/instance')} class="btn btn-sm">{t('settings.account.changeInstance')}</a>
@@ -723,7 +723,7 @@
 		error={form?.success ? undefined : form?.message}
 		onclose={() => (emptying = false)}
 		title={t('settings.account.deleteEverythingInThisAccount')}
-		description="Every row you have made goes. The account itself stays. This cannot be undone."
+		description={t('settings.account.everyRowYouHaveMade')}
 		size="sm"
 	>
 		<!--
@@ -771,7 +771,7 @@
 		title={onDevice
 			? t('settings.account.deleteThisInstance')
 			: t('settings.account.deleteYourAccount')}
-		description="Every row belonging to you goes with it. This cannot be undone."
+		description={t('settings.account.everyRowBelongingToYou')}
 		size="sm"
 	>
 		<form id="delete-form" method="post" action="?/delete" use:enhance={deleting}>
