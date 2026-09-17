@@ -137,7 +137,8 @@ test('every room that runs on the device opens on it', async ({ page }) => {
 		'/health/workouts',
 		'/finance/ledgers',
 		'/finance/bills',
-		'/gallery',
+		'/media/audios',
+		'/media/gallery',
 		'/inventory',
 		'/reminders'
 	];
@@ -229,8 +230,11 @@ test('a ledger made on the device appears without a reload', async ({ page }) =>
 test('a picture is stored and drawn with no server anywhere', async ({ page }) => {
 	test.setTimeout(120_000);
 	page.on('pageerror', (e) => console.log('PAGEERROR ' + String(e).slice(0, 300)));
-	await page.goto('/gallery');
-	await expect(page.getByRole('heading', { name: 'Gallery' })).toBeVisible({ timeout: 60_000 });
+	await page.goto('/media/gallery');
+	// The room is Media; Gallery is one of its tabs.
+	await expect(page.getByRole('heading', { name: 'Media' }).first()).toBeVisible({
+		timeout: 60_000
+	});
 
 	const tour = page.getByRole('dialog', { name: 'Tutorial' });
 	if (await tour.isVisible().catch(() => false)) {

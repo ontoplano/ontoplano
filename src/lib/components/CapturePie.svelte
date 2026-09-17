@@ -210,23 +210,11 @@
 	and has no outer edge, so without it a pointer over the left wheel is also
 	*in a direction* from the right one and the release would answer twice.
 -->
-<RadialMenu
-	items={mediaWedges}
-	middle="plus"
-	scale={wheelScale}
-	bounded
-	{open}
-	{origin}
-	{dragging}
-	anchor={{ x: Math.round(width / 2 - spread), y: origin.y }}
-	bottomInset={inset}
-	onselect={addMedia}
-	onclose={() => (open = false)}
-/>
 
 <RadialMenu
 	items={wedges}
 	middle="plus"
+	name="capture"
 	scale={wheelScale}
 	bounded
 	{open}
@@ -236,6 +224,22 @@
 	bottomInset={inset}
 	onvisible={(v) => onopenchange?.(v)}
 	onselect={choose}
+	onclose={() => (open = false)}
+/>
+
+<RadialMenu
+	items={mediaWedges}
+	middle="plus"
+	name="media"
+	scrim={false}
+	scale={wheelScale}
+	bounded
+	{open}
+	{origin}
+	{dragging}
+	anchor={{ x: Math.round(width / 2 - spread), y: origin.y }}
+	bottomInset={inset}
+	onselect={addMedia}
 	onclose={() => (open = false)}
 />
 

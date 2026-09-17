@@ -182,7 +182,19 @@ const endpoints = import.meta.glob(
 		 * "this screen needs an instance with a server", which is untrue: the
 		 * bytes were always going to live on this phone.
 		 */
-		'/src/routes/media/+server.ts'
+		'/src/routes/media/+server.ts',
+		/*
+		 * The same two for a recording, and for the same reason.
+		 *
+		 * A recording is made on the device and stored on it — there is no
+		 * server in either half of that sentence. Without these the recorder
+		 * posts into the file host, which answers "this screen needs an
+		 * instance with a server" about bytes that were never going anywhere.
+		 */
+		'/src/routes/media/audio/+server.ts',
+		'/src/routes/media/audio/[id]/+server.ts',
+		/* The chooser that lists them, for attaching one to a note. */
+		'/src/routes/api/recordings/+server.ts'
 	],
 	{ eager: true }
 ) as Record<string, EndpointModule>;

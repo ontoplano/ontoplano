@@ -41,9 +41,9 @@ async function pieCentre(page: Page) {
 	 * them at a wedge and the test releases on something it meant to avoid.
 	 */
 	await page
-		.locator('.pie')
+		.locator('[data-pie="capture"] .pie')
 		.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
-	const box = await page.locator('.pie').boundingBox();
+	const box = await page.locator('[data-pie="capture"] .pie').boundingBox();
 	if (!box) throw new Error('the pie is not open');
 	return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 }
@@ -56,9 +56,12 @@ async function pieCentre(page: Page) {
  * the letters in capitals; the comparison folds case rather than matching
  * style. Returns whether the name was ever announced.
  */
-async function pickWedge(page: Page, name: string): Promise<boolean> {
-	const wedges = page.locator('.pie [role=menuitem]');
-	const hud = page.locator('.pie-hud');
+async function pickWedge(page: Page, name: string, wheel = 'capture'): Promise<boolean> {
+	// Which wheel: the plus opens two, and the rooms wheel is a third. Each
+	// layer carries its own name, so a helper shared between them has to be
+	// told which one it is pointing at.
+	const wedges = page.locator(`[data-pie="${wheel}"] [role=menuitem]`);
+	const hud = page.locator(`[data-pie="${wheel}"] .pie-hud`);
 	const said = async () => (await hud.innerText()).trim().toLowerCase();
 
 	const count = await wedges.count();
@@ -102,7 +105,7 @@ test('click the trigger, then pick a wedge', async ({ page }) => {
 	await page.mouse.down();
 	await page.mouse.up();
 
-	await expect(page.locator('.pie-hole')).toBeVisible();
+	await expect(page.locator('[data-pie="capture"] .pie-hole')).toBeVisible();
 	expect(await pickWedge(page, 'Idea'), 'no wedge announced itself as Idea').toBe(true);
 
 	await expect(page.getByRole('heading', { name: /new idea/i })).toBeVisible();
@@ -147,9 +150,9 @@ test('the arrow keys reach every wedge, and escape leaves', async ({ page }) => 
 	await page.mouse.down();
 	await page.mouse.up();
 
-	await expect(page.locator('.pie-hole')).toBeVisible();
+	await expect(page.locator('[data-pie="capture"] .pie-hole')).toBeVisible();
 	await page.keyboard.press('Escape');
-	await expect(page.locator('.pie-hole')).toBeHidden();
+	await expect(page.locator('[data-pie="capture"] .pie-hole')).toBeHidden();
 
 	// Open again and walk to the third wedge: Note.
 	await page.mouse.down();
@@ -178,7 +181,7 @@ test('letting go in the hole does nothing at all', async ({ page }) => {
 	await page.mouse.up();
 
 	await expect(page.locator('dialog[open]')).toHaveCount(0);
-	await expect(page.locator('.pie-hole')).toBeHidden();
+	await expect(page.locator('[data-pie="capture"] .pie-hole')).toBeHidden();
 });
 
 test('the thumb trigger is for thumbs, and the header one is for cursors', async ({ page }) => {
@@ -214,19 +217,21 @@ test('the section pie lands you in the room', async ({ page }) => {
 	// the HUD when pointed at. No People or Recipes wedge: they are tabs
 	// inside Notebooks and Health now, not rooms of their own. No Home either
 	// — the bar carries that as a plain button, so no wedge is spent on it.
-	await expect(page.locator('.pie-hole')).toBeVisible();
-	const wedges = page.locator('.pie [role=menuitem]');
+	await expect(page.locator('[data-pie="rooms"] .pie-hole')).toBeVisible();
+	const wedges = page.locator('[data-pie="rooms"] [role=menuitem]');
 	const announced: string[] = [];
 	for (let i = 0; i < (await wedges.count()); i++) {
 		await wedges.nth(i).hover();
-		announced.push((await page.locator('.pie-hud').innerText()).trim().toLowerCase());
+		announced.push(
+			(await page.locator('[data-pie="rooms"] .pie-hud').innerText()).trim().toLowerCase()
+		);
 	}
 	for (const room of ['Tasks', 'Goals', 'Notebooks', 'Health', 'Finance', 'Inventory']) {
 		expect(announced).toContain(room.toLowerCase());
 	}
 	expect(announced).not.toContain('home');
 
-	expect(await pickWedge(page, 'Inventory')).toBe(true);
+	expect(await pickWedge(page, 'Inventory', 'rooms')).toBe(true);
 	await page.waitForURL(/\/inventory/);
 });
 
@@ -246,9 +251,9 @@ test.describe('with a finger', () => {
 		const box = (await (await trigger(page)).boundingBox())!;
 		await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
 
-		await expect(page.locator('.pie-hole')).toBeVisible();
+		await expect(page.locator('[data-pie="capture"] .pie-hole')).toBeVisible();
 		await page.waitForTimeout(400);
-		await expect(page.locator('.pie-hole')).toBeVisible();
+		await expect(page.locator('[data-pie="capture"] .pie-hole')).toBeVisible();
 	});
 
 	test('the pie is not text you can select', async ({ page }) => {
@@ -257,11 +262,11 @@ test.describe('with a finger', () => {
 
 		const box = (await (await trigger(page)).boundingBox())!;
 		await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
-		await expect(page.locator('.pie-hole')).toBeVisible();
+		await expect(page.locator('[data-pie="capture"] .pie-hole')).toBeVisible();
 
 		// A long press over a wedge used to start a text selection, which took the
 		// gesture away and left the release doing nothing.
-		const style = await page.locator('.pie-layer').evaluate((el) => {
+		const style = await page.locator('[data-pie="capture"]').evaluate((el) => {
 			const cs = getComputedStyle(el);
 			return { select: cs.userSelect || cs.webkitUserSelect, touch: cs.touchAction };
 		});
@@ -289,14 +294,14 @@ test.describe('with a finger', () => {
 		 * which asserts the new behaviour without pinning the order, since the
 		 * order is a setting.
 		 */
-		const wedges = page.locator('.pie [role="menuitem"]');
+		const wedges = page.locator('[data-pie="rooms"] [role="menuitem"]');
 		const count = await wedges.count();
 		expect(count).toBeGreaterThan(4);
 
 		const named: string[] = [];
 		for (let i = 0; i < count; i += 1) {
 			await wedges.nth(i).hover();
-			named.push(((await page.locator('.pie-hud').textContent()) ?? '').trim());
+			named.push(((await page.locator('[data-pie="rooms"] .pie-hud').textContent()) ?? '').trim());
 		}
 
 		for (const room of ['Tasks', 'Goals', 'Notebooks', 'Inventory']) {

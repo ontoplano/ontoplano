@@ -66,13 +66,13 @@ test('the phone bar carries home and the raised pie; nothing pulls to refresh', 
 		.getByRole('button', { name: 'Go to a section' })
 		.dispatchEvent('pointerdown', { pointerId: 1, clientX: 195, clientY: 780 });
 
-	const wedges = page.locator('.pie [role="menuitem"]');
+	const wedges = page.locator('[data-pie="capture"] [role="menuitem"]');
 	await expect(wedges.first()).toBeVisible();
 
 	const named: string[] = [];
 	for (let i = 0; i < (await wedges.count()); i += 1) {
 		await wedges.nth(i).hover();
-		named.push(((await page.locator('.pie-hud').textContent()) ?? '').trim());
+		named.push(((await page.locator('[data-pie="capture"] .pie-hud').textContent()) ?? '').trim());
 	}
 	expect(named).toContain('Tasks');
 	expect(named, 'Home is a button in the bar, not a wedge').not.toContain('Home');
@@ -93,7 +93,7 @@ test('a dialog on the phone is a screen with a back arrow', async ({ page }) => 
 	await plus.hover();
 	await page.mouse.down();
 	await page.mouse.up();
-	await page.locator('.pie [role="menuitem"]').first().click();
+	await page.locator('[data-pie="capture"] [role="menuitem"]').first().click();
 	const dialog = page.locator('dialog[open]');
 	await expect(dialog).toBeVisible();
 	// A back arrow where a back arrow belongs, not an × in a corner.

@@ -31,12 +31,21 @@ test('opens two wheels that fill the width and never overlap', async ({ page }) 
 	await visit(page, '/');
 	await openWheels(page);
 
-	const rings = page.locator('.pie');
+	const rings = page.locator('.pie-layer .pie');
 	await expect(rings).toHaveCount(2);
 
 	const left = await rings.nth(0).boundingBox();
 	const right = await rings.nth(1).boundingBox();
 	if (!left || !right) throw new Error('a wheel was not drawn');
+
+	/*
+	 * One backdrop between them, not one each.
+	 *
+	 * Each wheel used to draw its own `fixed inset-0` layer with a full-screen
+	 * button in it. Two of those dims the page twice and puts the wheel
+	 * underneath behind a button covering the whole screen.
+	 */
+	await expect(page.locator('.pie-layer button[aria-label="Close"]')).toHaveCount(1);
 
 	// Round, and the same size as each other.
 	for (const box of [left, right]) expect(Math.abs(box.width - box.height)).toBeLessThan(2);
@@ -72,4 +81,23 @@ test('the left wheel offers a picture and a recording', async ({ page }) => {
 	await expect(page.locator('[data-wedge="todo"]')).toHaveCount(1);
 
 	await page.mouse.up();
+});
+
+test('the left wheel can actually be pressed', async ({ page }) => {
+	/*
+	 * The bug this exists for: each wheel drew a full-screen layer with a
+	 * backdrop button in it, so the second one stacked over the first and the
+	 * wheel underneath was visible and inert. Being *drawn* is not the test.
+	 */
+	await page.setViewportSize({ width: 412, height: 915 });
+	await register(page, testEmail('wheels-press'));
+	await visit(page, '/');
+	await openWheels(page);
+	await page.mouse.up();
+
+	await page.locator('[data-wedge="recording"]').click();
+
+	// The recorder, in a dialog, ready to be talked at.
+	await expect(page.getByRole('dialog')).toContainText('New recording');
+	await expect(page.getByRole('button', { name: 'Record', exact: true })).toBeVisible();
 });

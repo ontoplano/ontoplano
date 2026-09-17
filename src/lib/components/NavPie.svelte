@@ -123,6 +123,7 @@
 
 <RadialMenu
 	items={wedges}
+	name="rooms"
 	{open}
 	{origin}
 	{anchor}

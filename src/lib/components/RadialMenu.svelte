@@ -57,6 +57,29 @@
 		 */
 		middle = 'mark',
 		/**
+		 * Which wheel this is, for anything that has to address one of them.
+		 *
+		 * There used to be exactly one open at a time and `.pie` meant it. The
+		 * plus opens two now, so a selector that names the class names both —
+		 * which is a test choosing by position and a bug waiting for the day
+		 * the order changes.
+		 */
+		name = 'pie',
+		/**
+		 * Whether this wheel owns the dimmed backdrop, and with it the screen.
+		 *
+		 * The layer is `fixed inset-0` with a full-screen button in it that
+		 * catches a stray click and closes — right for one wheel, and wrong for
+		 * two: the second layer stacks on the first, the page is dimmed twice,
+		 * and the wheel underneath is behind a button covering the whole
+		 * screen. It is drawn and it cannot be pressed.
+		 *
+		 * So one of a pair owns the scrim and the other passes pointers through
+		 * to it. The wedges are `pointer-events-auto` either way, which is what
+		 * keeps the passing-through wheel usable.
+		 */
+		scrim = true,
+		/**
 		 * How big the wheel is drawn, against the rooms wheel's own size.
 		 *
 		 * The rooms are eight places and a whole screen of wheel is right for
@@ -105,6 +128,8 @@
 		onvisible
 	}: {
 		middle?: 'mark' | 'plus';
+		name?: string;
+		scrim?: boolean;
 		scale?: number;
 		items: Wedge[];
 		open?: boolean;
@@ -565,7 +590,10 @@
 		a dialog, and the backdrop below catches every stray click.
 	-->
 	<div
-		class="pie-layer fixed inset-0 z-[60] {leaving ? 'is-leaving' : ''}"
+		class="pie-layer fixed inset-0 z-[60] {scrim ? '' : 'pointer-events-none'} {leaving
+			? 'is-leaving'
+			: ''}"
+		data-pie={name}
 		role="presentation"
 		oncontextmenu={(e) => e.preventDefault()}
 	>
@@ -574,12 +602,14 @@
 			dark mode, so that scrim was white at 40% over a dark page — a flashbang
 			on the menu people open most.
 		-->
-		<button
-			type="button"
-			class="absolute inset-0 h-full w-full bg-scrim"
-			aria-label={t('ui.close')}
-			onclick={() => afterOpening(onclose)}
-		></button>
+		{#if scrim}
+			<button
+				type="button"
+				class="absolute inset-0 h-full w-full bg-scrim"
+				aria-label={t('ui.close')}
+				onclick={() => afterOpening(onclose)}
+			></button>
+		{/if}
 
 		<!--
 			What is under the thumb, said where the thumb is not.
