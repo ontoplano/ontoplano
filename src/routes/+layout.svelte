@@ -517,7 +517,8 @@
 		 * `-changedRoom`, so the medallion turns the way the rooms are sweeping;
 		 * zero where nothing slid, which spins it the one way it always did.
 		 */
-		if (navigation.to && !navigation.willUnload) startMarkSpin([deskMark, barMark], -changedRoom);
+		if (navigation.to && !navigation.willUnload)
+			startMarkSpin([deskMark, barMark, barMarkGround], -changedRoom);
 
 		// Named again rather than left to `slides`: the same test, in the shape
 		// that tells the compiler these three are really here.
@@ -697,6 +698,8 @@
 	/* The two marks the spin turns: the header's and the phone bar's. */
 	let deskMark = $state<HTMLElement>();
 	let barMark = $state<HTMLElement>();
+	/** The octagon behind it, which turns with it. See the note by the markup. */
+	let barMarkGround = $state<HTMLElement>();
 	/*
 	 * The turn is started and stopped by the navigation itself — see
 	 * `beforeNavigate` and `afterNavigate` above. This is only the giving up:
@@ -1400,7 +1403,24 @@
 						its rim. This is the bar's colour in the same outline, a hair
 						larger, which gives the mark an edge to end at.
 					-->
+					<!--
+						It turns with the mark, and that is the whole reason it is marked.
+
+						Both shapes are the same octagon, and the ring between them is
+						the difference between the outer one's flats and the inner one's
+						corners. Turn only the inner one and that difference breathes
+						eight times a turn — 3.2px of rim where the corners agree, 0.2px
+						a moment later where a corner points at a flat. Nothing moves off
+						centre; the rim around it thins and thickens, and the eye reads
+						that as a wobble.
+
+						Spinning the ground with it holds the two in step, so the rim is
+						the same width at every angle. It is a flat colour, so turning it
+						is invisible except for the thing it fixes.
+					-->
 					<span
+						bind:this={barMarkGround}
+						data-mark
 						aria-hidden="true"
 						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-ground-rise)); height: var(--bar-mark-ground); width: var(--bar-mark-ground); background: {barField}"
 						class="pointer-events-none absolute left-1/2 -translate-x-1/2"

@@ -2577,7 +2577,22 @@ option {
 	 * when the button stopped being a circle.
 	 */
 	--bar-mark: 4.5rem;
-	/* A hair larger, so the mark has an edge to end at. */
+	/*
+	 * A hair larger, so the mark has an edge to end at.
+	 *
+	 * The rim this leaves is not one width: both shapes are the same octagon,
+	 * and the distance between them is 0.2rem where their corners agree and
+	 * 0.014rem where a corner of the inner one points at a flat of the outer.
+	 * That does not matter while both are still, and it is what made the mark
+	 * look like it was turning off its axis when only the inner one moved —
+	 * the ring around it thinned and thickened eight times a turn. The ground
+	 * turns with it now (see `startMarkSpin` in the layout), so the two stay in
+	 * step and the rim is whatever this says at every angle.
+	 *
+	 * To widen the rim, raise the 0.4rem. To make it a given width `R` at the
+	 * *tightest* angle even without the turning-together — `2 × (2.25 + R) ÷
+	 * cos 22.5°` — which is 5.09rem for 0.1rem of rim, 5.30rem for 0.2rem.
+	 */
 	--bar-mark-ground: calc(var(--bar-mark) + 0.4rem);
 	/* How far it stands proud of the bar. */
 	--bar-mark-rise: calc(var(--bar-mark) * 0.27);
