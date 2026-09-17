@@ -116,7 +116,17 @@
 
 	<FormError message={form?.message} />
 
-	<div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.8fr)]">
+	<!--
+		`minmax(0, 1fr)` at this width too, not only at `lg`.
+		
+		A grid item's default `min-width` is its own content, and below `lg` the
+		panel on the right is a `display: contents` wrapper — so the card itself
+		became the grid item, refused to shrink below the width of its header, and
+		grew to 466px inside a 358px column. The card clips rather than scrolls, so
+		what went past the edge was simply gone: the Delete button, on a phone,
+		with no way to reach it.
+	-->
+	<div class="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.8fr)]">
 		<Card accent={SECTION_COLORS.diary} flush>
 			{#if data.notebooks.length === 0}
 				<EmptyState

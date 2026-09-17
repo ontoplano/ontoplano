@@ -422,9 +422,20 @@
 					</select>
 				</label>
 			{/if}
-			<!-- Three orders on one button, saying which one it is on rather than
-			     what pressing it would do: the list underneath is the evidence. -->
-			<button onclick={flipOrder} class="btn btn-sm shrink-0" title={t(ORDER_LABELS[order].why)}>
+			<!--
+				Three orders on one button, saying which one it is on rather than
+				what pressing it would do: the list underneath is the evidence.
+
+				`ml-auto` so it sits at the right-hand end and what filters the list
+				sits at the left. Two buttons huddled together in the middle of an
+				empty row read as a pair of related things; they are not — one hides
+				rows and the other reorders them.
+			-->
+			<button
+				onclick={flipOrder}
+				class="btn btn-sm ml-auto shrink-0"
+				title={t(ORDER_LABELS[order].why)}
+			>
 				<Icon name={order === 'oldest' ? 'chevron-up' : 'chevron-down'} />
 				<span class="sm:hidden">{t(ORDER_LABELS[order].short)}</span>
 				<span class="hidden sm:inline">{t(ORDER_LABELS[order].long)}</span>

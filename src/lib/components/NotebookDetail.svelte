@@ -346,18 +346,16 @@
 		{:else}
 			<!-- Everything about this notebook, one kind at a time. -->
 			<!--
-				The tabs, and what can be done in them — on two rows where there is
-				no room for one.
+				The tabs and what can be done in them, on one row at every width.
 				
-				On a phone they shared a line: three tabs with their counts, a New
-				note, sometimes a Show archived, and the maximize. The strip
-				scrolls, so the buttons ended up over the last tab — "New note"
-				sitting on top of "Goals 0". Below `sm` the actions get their own
-				row and the strip gets the width; above it, as it was.
+				They were on two below `sm`, because when the buttons lived inside
+				the scrolling strip they ended up drawn over the last tab — "New
+				note" sitting on top of "Goals 0". The fix for that is not a second
+				row: it is that the strip takes the space that is left and scrolls,
+				and the buttons sit beside it and do not shrink. A row holding one
+				icon costs a centimetre of a phone screen to say nothing.
 			-->
-			<div
-				class="flex flex-col items-stretch border-b border-gray-200 sm:flex-row sm:items-center sm:pr-2"
-			>
+			<div class="flex items-center border-b border-gray-200 pr-2">
 				<div class="snap-strip min-w-0 flex-1 gap-1 px-2 md:flex">
 					{#each tabs as option (option.key)}
 						<button
@@ -377,9 +375,7 @@
 						</button>
 					{/each}
 				</div>
-				<div
-					class="flex items-center justify-end gap-2 border-t border-gray-200 px-2 py-1.5 sm:border-t-0 sm:py-0 sm:pr-0"
-				>
+				<div class="flex shrink-0 items-center justify-end gap-2 pl-2">
 					{#if tab === 'notes'}
 						<!-- Nothing is hidden without the strip saying how much. -->
 						{#if putAwayNotes > 0 || showArchivedNotes}
