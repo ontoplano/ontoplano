@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { PlainKey } from '$lib/i18n/keys';
 	import { enhance } from '$app/forms';
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
 	import Swatch from '$lib/components/Swatch.svelte';
@@ -57,10 +58,10 @@
 	// the day it did not happen on.
 	let verdicts = $state<Record<number, { verb: Verb; on?: string }>>({});
 
-	const VERB_LABELS: Record<Verb, string> = {
-		done: 'It happened',
-		skipped: 'Skipped',
-		todo: 'On the todo list'
+	const VERB_LABELS: Record<Verb, PlainKey> = {
+		done: 'tasks.plan.itHappened',
+		skipped: 'home.skipped',
+		todo: 'tasks.review.onTheTodoList'
 	};
 
 	function decide(id: number, verb: Verb, on?: string) {
@@ -109,10 +110,10 @@
 	/** The stale row whose "let it go" has been armed. Nothing deletes on one press. */
 	let dropping = $state<string | null>(null);
 
-	const SORT_LABELS: Record<string, string> = {
-		todo: 'To-do',
-		idea: 'Idea',
-		shopping: 'Someday'
+	const SORT_LABELS: Record<string, PlainKey> = {
+		todo: 'tour.toDo',
+		idea: 'fields.idea.heading',
+		shopping: 'tasks.review.someday'
 	};
 
 	/**
@@ -428,7 +429,7 @@
 										<Swatch color={item.categoryColor ?? CATEGORY_FALLBACK_COLOR} />
 										<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{item.title}</span>
 										<span class="shrink-0 text-xs font-medium text-gray-600">
-											{VERB_LABELS[item.verb]}{item.on ? ` · ${pretty(item.on)}` : ''}
+											{t(VERB_LABELS[item.verb])}{item.on ? ` · ${pretty(item.on)}` : ''}
 										</span>
 										<button
 											type="button"

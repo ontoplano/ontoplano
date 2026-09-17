@@ -1,3 +1,4 @@
+import type { PlainKey } from './i18n/keys.js';
 /**
  * The task vocabulary, shared by server and client.
  *
@@ -17,12 +18,12 @@ export function isStatus(value: unknown): value is Status {
 	return typeof value === 'string' && (STATUSES as readonly string[]).includes(value);
 }
 
-export const STATUS_LABELS: Record<Status, string> = {
+export const STATUS_LABELS: Record<Status, PlainKey> = {
 	// "Pending" rather than "To do": the column beside it is the Todo list, and
 	// two columns a word apart meaning different things is a puzzle. This is the
 	// state a task is in; that is where tasks with no day live.
-	todo: 'Pending',
-	doing: 'Doing',
-	done: 'Done',
-	skipped: 'Skipped'
+	todo: 'taskStatus.pending',
+	doing: 'taskStatus.doing',
+	done: 'ui.done',
+	skipped: 'home.skipped'
 };

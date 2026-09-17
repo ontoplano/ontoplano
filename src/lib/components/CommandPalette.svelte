@@ -179,7 +179,7 @@
 						{:else}
 							<Icon name="tag" class="shrink-0 text-gray-300" />
 							<span class="min-w-0 flex-1 truncate text-gray-900">{row.hit.title}</span>
-							<span class="eyebrow shrink-0 text-gray-500">{KIND_LABELS[row.hit.kind]}</span>
+							<span class="eyebrow shrink-0 text-gray-500">{t(KIND_LABELS[row.hit.kind])}</span>
 						{/if}
 					</a>
 				{/each}

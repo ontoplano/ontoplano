@@ -347,7 +347,7 @@
 				{@const used = data.usage[key]}
 				<div>
 					<div class="flex items-baseline justify-between text-sm">
-						<span class="text-gray-700">{LIMIT_LABELS[key]}</span>
+						<span class="text-gray-700">{t(LIMIT_LABELS[key])}</span>
 						<span class="tabular text-gray-500">
 							{used}{limit === null ? '' : ` / ${limit}`}
 						</span>

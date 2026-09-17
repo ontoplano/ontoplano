@@ -1,3 +1,4 @@
+import type { PlainKey } from './i18n/keys.js';
 /**
  * The three questions a task answers besides "when".
  *
@@ -18,16 +19,16 @@ export const RATING_MAX = 5;
 
 export type RatingValues = Record<Rating, number | null>;
 
-export const RATING_LABELS: Record<Rating, string> = {
-	urgency: 'Urgency',
-	interest: 'Interest',
-	energy: 'Energy'
+export const RATING_LABELS: Record<Rating, PlainKey> = {
+	urgency: 'ratings.urgency',
+	interest: 'ratings.interest',
+	energy: 'ratings.energy'
 };
 
-export const RATING_HINTS: Record<Rating, string> = {
-	urgency: 'How soon this has to happen',
-	interest: 'How much you want to do it',
-	energy: 'How much it will take out of you'
+export const RATING_HINTS: Record<Rating, PlainKey> = {
+	urgency: 'ratings.howSoonThisHasTo',
+	interest: 'ratings.howMuchYouWantTo',
+	energy: 'ratings.howMuchItWillTake'
 };
 
 /** Single letters for the scale ends, for a control too small to hold words. */

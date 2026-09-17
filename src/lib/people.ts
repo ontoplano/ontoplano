@@ -1,3 +1,4 @@
+import type { PlainKey } from './i18n/keys.js';
 /**
  * People, and how you know them.
  *
@@ -8,12 +9,12 @@
 export const RELATIONSHIPS = ['family', 'friend', 'partner', 'professional', 'other'] as const;
 export type Relationship = (typeof RELATIONSHIPS)[number];
 
-export const RELATIONSHIP_LABELS: Record<Relationship, string> = {
-	family: 'Family',
-	friend: 'Friend',
-	partner: 'Partner',
-	professional: 'Work',
-	other: 'Other'
+export const RELATIONSHIP_LABELS: Record<Relationship, PlainKey> = {
+	family: 'start.family',
+	friend: 'people.friend',
+	partner: 'people.partner',
+	professional: 'tasks.plan.work',
+	other: 'people.other'
 };
 
 export function isRelationship(value: unknown): value is Relationship {

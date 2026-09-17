@@ -203,7 +203,7 @@
 									-->
 									<span class="block break-words">{person.name}</span>
 									<span class="flex flex-wrap items-center gap-x-2 text-xs text-gray-500">
-										<span class="eyebrow">{RELATIONSHIP_LABELS[person.relationship]}</span>
+										<span class="eyebrow">{t(RELATIONSHIP_LABELS[person.relationship])}</span>
 										{#if birthdayLabel(person.birthday)}
 											<!-- The one date on the card, so it wears the one glyph. -->
 											<span class="inline-flex items-center gap-1">
@@ -280,7 +280,7 @@
 			<Card
 				title={selectedPerson ? selectedPerson.name : 'Mentions'}
 				description={selectedPerson
-					? RELATIONSHIP_LABELS[selectedPerson.relationship]
+					? t(RELATIONSHIP_LABELS[selectedPerson.relationship])
 					: t('notebooks.people.pickSomebodyToSeeEverything')}
 				accent={SECTION_COLORS.diary}
 				flush
@@ -349,7 +349,7 @@
 				<select name="relationship" class="select">
 					{#each RELATIONSHIPS as value (value)}
 						<option {value} selected={(editing?.relationship ?? 'other') === value}>
-							{RELATIONSHIP_LABELS[value]}
+							{t(RELATIONSHIP_LABELS[value])}
 						</option>
 					{/each}
 				</select>

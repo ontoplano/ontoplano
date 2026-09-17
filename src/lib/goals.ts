@@ -1,3 +1,4 @@
+import type { PlainKey } from './i18n/keys.js';
 /**
  * Goal horizons and the periods they live in.
  *
@@ -9,13 +10,13 @@
 export const HORIZONS = ['day', 'week', 'month', 'quarter', 'semester', 'year'] as const;
 export type Horizon = (typeof HORIZONS)[number];
 
-export const HORIZON_LABELS: Record<Horizon, string> = {
-	day: 'Day',
-	week: 'Week',
-	month: 'Month',
-	quarter: 'Quarter',
-	semester: 'Semester',
-	year: 'Year'
+export const HORIZON_LABELS: Record<Horizon, PlainKey> = {
+	day: 'tasks.plan.day',
+	week: 'goals.week',
+	month: 'finance.ledgers.month',
+	quarter: 'goals.quarter',
+	semester: 'goals.semester',
+	year: 'goals.year'
 };
 
 export const GOAL_STATUSES = ['open', 'achieved', 'missed', 'abandoned'] as const;

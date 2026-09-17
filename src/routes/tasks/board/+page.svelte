@@ -716,7 +716,7 @@
 								editing = null;
 							}}
 						>
-							{STATUS_LABELS[status]}
+							{t(STATUS_LABELS[status])}
 						</button>
 					{/each}
 				</div>
@@ -928,7 +928,7 @@
 							? 'bg-gray-900 text-white'
 							: ''}"
 					>
-						{STATUS_LABELS[column.status]}
+						{t(STATUS_LABELS[column.status])}
 						<span
 							class="tabular text-xs {dragging && dragOverColumn === column.status
 								? 'text-gray-300'
@@ -975,7 +975,7 @@
 							<span
 								class="eyebrow {dragging && dragOverColumn === column.status
 									? 'text-white'
-									: 'text-gray-600'}">{STATUS_LABELS[column.status]}</span
+									: 'text-gray-600'}">{t(STATUS_LABELS[column.status])}</span
 							>
 							<span
 								class="tabular text-xs {dragging && dragOverColumn === column.status

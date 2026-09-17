@@ -549,7 +549,7 @@
 								{goal.title}
 							</a>
 							<span class="tabular shrink-0 text-xs text-gray-500">
-								{HORIZON_LABELS[goal.horizon]} · {goal.periodStart}
+								{t(HORIZON_LABELS[goal.horizon])} · {goal.periodStart}
 							</span>
 						</li>
 					{/each}

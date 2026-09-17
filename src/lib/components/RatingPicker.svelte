@@ -66,11 +66,11 @@
 
 <div class={compact ? 'flex items-center gap-2' : 'space-y-1'}>
 	{#if compact}
-		<span class="eyebrow w-16 shrink-0 text-gray-600">{RATING_LABELS[rating]}</span>
+		<span class="eyebrow w-16 shrink-0 text-gray-600">{t(RATING_LABELS[rating])}</span>
 	{:else}
 		<div>
-			<div class="eyebrow whitespace-nowrap text-gray-600">{RATING_LABELS[rating]}</div>
-			<div class="text-xs leading-tight text-gray-500">{RATING_HINTS[rating]}</div>
+			<div class="eyebrow whitespace-nowrap text-gray-600">{t(RATING_LABELS[rating])}</div>
+			<div class="text-xs leading-tight text-gray-500">{t(RATING_HINTS[rating])}</div>
 		</div>
 	{/if}
 
@@ -93,11 +93,11 @@
 					step="1"
 					value={shown}
 					oninput={slide}
-					aria-label={RATING_LABELS[rating]}
+					aria-label={t(RATING_LABELS[rating])}
 					aria-valuetext={value === null ? t('ratingPicker.notSet') : `${value} of ${RATING_MAX}`}
 					title={value === null
-						? `${RATING_LABELS[rating]}: not answered`
-						: `${RATING_LABELS[rating]}: ${value} of ${RATING_MAX} — drag to the dot to leave it unanswered`}
+						? `${t(RATING_LABELS[rating])}: not answered`
+						: `${t(RATING_LABELS[rating])}: ${value} of ${RATING_MAX} — drag to the dot to leave it unanswered`}
 					class="rating-slide relative w-full"
 					style="--filled: {filled}%"
 				/>
@@ -120,8 +120,8 @@
 				type="button"
 				onclick={() => (value = null)}
 				disabled={value === null}
-				title="Leave {RATING_LABELS[rating].toLowerCase()} unanswered"
-				aria-label="Leave {RATING_LABELS[rating].toLowerCase()} unanswered"
+				title="Leave {t(RATING_LABELS[rating]).toLowerCase()} unanswered"
+				aria-label="Leave {t(RATING_LABELS[rating]).toLowerCase()} unanswered"
 				class="-my-1 shrink-0 px-1.5 py-1 text-sm leading-none text-gray-400 hover:text-gray-900 disabled:invisible"
 			>
 				×

@@ -386,7 +386,7 @@
 				<Field label={t('goals.horizon')} span={4}>
 					<select name="horizon" bind:value={formHorizon} class="select">
 						{#each HORIZONS as h (h)}
-							<option value={h}>{HORIZON_LABELS[h]}</option>
+							<option value={h}>{t(HORIZON_LABELS[h])}</option>
 						{/each}
 					</select>
 				</Field>
@@ -500,7 +500,7 @@
 						<select name="parentId" class="select">
 							<option value="">{t('goals.standalone')}</option>
 							{#each parentOptions as g (g.id)}
-								<option value={g.id}>{HORIZON_LABELS[g.horizon]}: {g.title}</option>
+								<option value={g.id}>{t(HORIZON_LABELS[g.horizon])}: {g.title}</option>
 							{/each}
 						</select>
 					</Field>
@@ -564,7 +564,7 @@
 				<div
 					class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-b border-b-gray-200 px-4 py-2"
 				>
-					<span class="eyebrow text-gray-600">{HORIZON_LABELS[column.horizon]}</span>
+					<span class="eyebrow text-gray-600">{t(HORIZON_LABELS[column.horizon])}</span>
 					<span class="tabular text-xs text-gray-500">{column.goals.length}</span>
 				</div>
 

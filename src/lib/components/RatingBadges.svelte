@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { RATINGS, RATING_LABELS, type RatingValues } from '$lib/ratings.js';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { values, class: className = '' }: { values: Partial<RatingValues>; class?: string } =
 		$props();
@@ -16,7 +19,7 @@
 		{#each shown as r (r)}
 			<span
 				class="border border-gray-200 bg-gray-50 px-1 text-[10px] leading-4 text-gray-600"
-				title="{RATING_LABELS[r]}: {values[r]} of 5"
+				title="{t(RATING_LABELS[r])}: {values[r]} of 5"
 			>
 				{initial[r]}{values[r]}
 			</span>

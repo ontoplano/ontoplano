@@ -172,7 +172,7 @@
 				>
 					<span class="w-full truncate text-sm font-medium text-gray-900">{ledger.name}</span>
 					<span class="flex w-full items-baseline gap-2">
-						<span class="text-xs text-gray-500">{LEDGER_KIND_LABELS[ledger.kind]}</span>
+						<span class="text-xs text-gray-500">{t(LEDGER_KIND_LABELS[ledger.kind])}</span>
 						<span class="text-xs text-gray-400 tabular-nums">{ledger.count}</span>
 						<span
 							class="ml-auto text-xs tabular-nums {ledger.balanceCents < 0
@@ -248,7 +248,7 @@
 			<div class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-3 py-2">
 				<span class="text-sm font-semibold text-gray-900">{current.name}</span>
 				<span class="text-xs text-gray-500">
-					{LEDGER_KIND_LABELS[current.kind]}{current.lastOn ? ` · last ${current.lastOn}` : ''}
+					{t(LEDGER_KIND_LABELS[current.kind])}{current.lastOn ? ` · last ${current.lastOn}` : ''}
 				</span>
 				{#if data.unsorted > 0}
 					<a
@@ -580,7 +580,7 @@
 				<span class="text-gray-600">{t('finance.ledgers.whatItIs')}</span>
 				<select name="kind" class="select mt-1 w-full">
 					{#each LEDGER_KINDS as kind (kind)}
-						<option value={kind}>{LEDGER_KIND_LABELS[kind]}</option>
+						<option value={kind}>{t(LEDGER_KIND_LABELS[kind])}</option>
 					{/each}
 				</select>
 			</label>
@@ -633,7 +633,7 @@
 					<span class="text-gray-600">{t('finance.ledgers.whatItIs')}</span>
 					<select name="kind" class="select mt-1 w-full" value={editingLedger.kind}>
 						{#each LEDGER_KINDS as kind (kind)}
-							<option value={kind}>{LEDGER_KIND_LABELS[kind]}</option>
+							<option value={kind}>{t(LEDGER_KIND_LABELS[kind])}</option>
 						{/each}
 					</select>
 				</label>

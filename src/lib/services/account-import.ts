@@ -1,3 +1,4 @@
+import type { PlainKey } from '../i18n/keys.js';
 /**
  * Putting an exported account back.
  *
@@ -78,28 +79,28 @@ function fromBase64(value: string): Uint8Array {
  * Each one is dropped on the way in, and the reason is the comment beside it.
  * Anything not named here travels.
  */
-export const NOT_PORTABLE: Record<string, string> = {
+export const NOT_PORTABLE: Record<string, PlainKey> = {
 	// What somebody is paying, and to whom. An import must never be a way to
 	// arrive on an instance already subscribed.
-	subscriptions: 'billing belongs to the instance that took the money',
-	billingCheckouts: 'billing belongs to the instance that took the money',
+	subscriptions: 'accountImport.billingBelongsToTheInstance',
+	billingCheckouts: 'accountImport.billingBelongsToTheInstance',
 	// Secrets minted by another instance, stored as hashes. They would be
 	// unusable here and would look like live credentials on the tokens page.
-	apiTokens: 'a token is a secret this instance never issued',
-	pluginManifests: 'a manifest belongs to the token that declared it',
+	apiTokens: 'accountImport.aTokenIsASecret',
+	pluginManifests: 'accountImport.aManifestBelongsToThe',
 	// A feed address handed out by another instance. Importing it would show a
 	// URL that nothing here answers.
-	calendarFeeds: 'a feed address belongs to the instance that serves it',
+	calendarFeeds: 'accountImport.aFeedAddressBelongsTo',
 	// These fire outbound requests. An import is not consent to start doing
 	// that from a new place.
-	webhookSubscriptions: 'a subscription would start posting from here without being asked',
+	webhookSubscriptions: 'accountImport.aSubscriptionWouldStartPosting',
 	// The record of what happened on the old account, on the old instance. The
 	// import writes one event of its own instead.
-	auditEvents: 'the log is a record of an instance, not a possession',
+	auditEvents: 'accountImport.theLogIsARecord',
 	// An address at a push service, tied to one browser and to the key of the
 	// instance it subscribed to. Nothing here could send to it, and permission
 	// given to one site is not permission given to another.
-	pushSubscriptions: 'a device agreed to hear from the instance it subscribed to'
+	pushSubscriptions: 'accountImport.aDeviceAgreedToHear'
 };
 
 export type ImportResult = {

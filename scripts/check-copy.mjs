@@ -54,13 +54,28 @@ const ROOTS = ['src/lib', 'src/routes'];
  * an API rather than a screen. The same goes for what a JSON route says back —
  * the screen that shows it is what a person reads, and the screen is counted.
  */
-const SKIP = ['src/lib/i18n', 'src/lib/server/mcp', 'src/routes/api'];
+const SKIP = [
+	'src/lib/i18n',
+	'src/lib/server/mcp',
+	'src/routes/api',
+	/*
+	 * One exception, written down rather than quietly excluded.
+	 *
+	 * `assistant-notify.ts` builds "added 3 todos" out of a tool's own name —
+	 * verb from a table, noun from the identifier, plural from an `s`. That is
+	 * English grammar in TypeScript over words that are not words, and making
+	 * it translatable is a redesign rather than a sweep. Its header says the
+	 * same thing; this is what stops the counter calling it undone work.
+	 */
+	'src/lib/server/services/assistant-notify.ts'
+];
 
 function walk(dir, found = []) {
 	if (SKIP.some((skip) => dir === skip || dir.startsWith(`${skip}/`))) return found;
 	for (const entry of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
 		const path = `${dir}/${entry.name}`;
 		if (entry.isDirectory()) walk(path, found);
+		else if (SKIP.includes(path)) continue;
 		else if (entry.name.endsWith('.svelte')) found.push(path);
 		// A `.ts` has no markup; only the names below are read out of it.
 		else if (entry.name.endsWith('.ts') && !entry.name.endsWith('.test.ts')) found.push(path);
@@ -275,6 +290,89 @@ function prosyLiterals(source) {
 	return found;
 }
 
+/**
+ * A table of words, keyed by something the app already knows.
+ *
+ * `HORIZON_LABELS: Record<Horizon, string> = { day: 'Day', … }` is a screen's
+ * vocabulary sitting in a shape none of the rules above look at: the property
+ * is `day`, not `label`, so naming the properties that carry copy misses it
+ * entirely. What gives it away is the type — a `Record` of strings is a lookup,
+ * and a lookup of sentences is copy.
+ *
+ * Typed as `Record<X, PlainKey>` once converted, so this stops matching it.
+ */
+function wordTables(source) {
+	const found = [];
+
+	for (const match of source.matchAll(/Record<[^>]*,\s*string>\s*=\s*\{/g)) {
+		// Brace-matched, not matched to the next `};`: a regex that guesses the
+		// end of the object runs past it and reads the rest of the file.
+		let depth = 0;
+		let end = -1;
+		for (let i = match.index + match[0].length - 1; i < source.length; i++) {
+			if (source[i] === '{') depth++;
+			else if (source[i] === '}') {
+				depth--;
+				if (depth === 0) {
+					end = i;
+					break;
+				}
+			}
+		}
+		if (end < 0) continue;
+		const body = source.slice(match.index + match[0].length, end);
+
+		/*
+		 * And only a table of plain entries.
+		 *
+		 * `const params: Record<string, string> = {}` filled in by code is not a
+		 * vocabulary, and neither is one whose values are computed. Every line
+		 * has to be `key: 'words'` or a comment, or this is not what it looks
+		 * like.
+		 */
+		const lines = body
+			.split('\n')
+			.map((l) => l.trim())
+			.filter(Boolean);
+		if (!lines.length) continue;
+		const plain = lines.every(
+			(line) =>
+				/^\/[/*]|^\*/.test(line) || /^'?[A-Za-z_$][\w$]*'?:\s*'(?:[^'\\]|\\.)*',?$/.test(line)
+		);
+		if (!plain) continue;
+
+		for (const value of body.matchAll(/:\s*'((?:[^'\\]|\\.)*)'/g)) {
+			const text = value[1].trim();
+			if (text && WORDS.test(text) && !LOOKS_LIKE_A_KEY.test(text)) found.push(text);
+		}
+	}
+	return found;
+}
+
+/**
+ * The sentence a service refuses with.
+ *
+ * `throw new ValidationError('A day looks like 2026-09-01')` reaches a person:
+ * it is what the form says back when they get it wrong. None of the rules above
+ * see it — it is a bare string in a `.ts`, in no table and under no property
+ * name — and it is copy as much as a heading is.
+ *
+ * Counted rather than converted, for now: a service is synchronous and has no
+ * translator, so making these translatable is a decision about how an error
+ * carries its words rather than a sweep. The number is what keeps that honest.
+ */
+const REFUSALS =
+	/\b(?:Validation|Forbidden|NotFound|Conflict|Unauthorized)Error\(\s*'((?:[^'\\]|\\.){6,}?)'/g;
+
+function refusals(source) {
+	const found = [];
+	for (const match of source.matchAll(REFUSALS)) {
+		const text = match[1].trim();
+		if (text && WORDS.test(text) && text.includes(' ')) found.push(text);
+	}
+	return found;
+}
+
 /** The words between tags, and the attributes and properties a person reads. */
 export function copyIn(source, { markup: hasMarkup = true } = {}) {
 	const markup = hasMarkup ? markupOf(source) : '';
@@ -323,6 +421,8 @@ export function copyIn(source, { markup: hasMarkup = true } = {}) {
 	 * `{count}` is a value — neither is a sentence somebody has to translate,
 	 * and both would otherwise leave their innards behind as loose words.
 	 */
+	found.push(...wordTables(source));
+	found.push(...refusals(source));
 	found.push(...prosyLiterals(markup));
 
 	for (const line of textRuns(markup)) {

@@ -69,11 +69,11 @@ export const PLANS: Record<PlanId, Plan> = {
 	}
 };
 
-export const LIMIT_LABELS: Record<LimitKey, string> = {
-	apiTokens: 'API tokens',
-	dataStreams: 'Data streams',
-	dataPoints: 'Stored data points',
-	exportsPerDay: 'Exports per day'
+export const LIMIT_LABELS: Record<LimitKey, PlainKey> = {
+	apiTokens: 'settings.integrations.connections.apiTokens',
+	dataStreams: 'settings.integrations.connections.dataStreams',
+	dataPoints: 'plans.storedDataPoints',
+	exportsPerDay: 'plans.exportsPerDay'
 };
 
 /** How a subscription is doing, in the provider's vocabulary. */

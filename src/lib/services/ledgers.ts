@@ -1,3 +1,4 @@
+import type { PlainKey } from '../i18n/keys.js';
 /**
  * Ledgers: the places money moves through.
  *
@@ -20,11 +21,11 @@ import { oneOf, str } from './validate.js';
 export const LEDGER_KINDS = ['bank', 'card', 'cash', 'other'] as const;
 export type LedgerKind = (typeof LEDGER_KINDS)[number];
 
-export const LEDGER_KIND_LABELS: Record<LedgerKind, string> = {
-	bank: 'Account',
-	card: 'Card',
-	cash: 'Cash',
-	other: 'Other'
+export const LEDGER_KIND_LABELS: Record<LedgerKind, PlainKey> = {
+	bank: 'tour.account',
+	card: 'ledgers.card',
+	cash: 'ledgers.cash',
+	other: 'people.other'
 };
 
 export const MAX_LEDGER_NAME_LENGTH = 120;
