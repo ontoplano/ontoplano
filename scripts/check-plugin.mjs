@@ -7,18 +7,20 @@
  * machine — so it is exactly the kind of thing that rots quietly and is found
  * broken by a person trying to install it.
  *
- * What this checks is only what can be checked from here: that both manifests
- * parse, that the marketplace points at a plugin that is actually in the tree,
- * that the names agree (the install line is `plugin@marketplace`, and a
- * mismatch makes the documented command wrong), that the MCP server still
- * points at this app's own endpoint through the values the plugin asks the
- * user for, and that every command and skill carries the frontmatter Claude
- * Code needs to show it. Whether the plugin *works* is a question for
- * `claude plugin install`, which is in the docs.
+ * What this checks is only what can be checked from here: that the manifest
+ * parses, that the MCP server still points at this app's own endpoint through
+ * the values the plugin asks the user for, and that every command and skill
+ * carries the frontmatter Claude Code needs to show it. Whether the plugin
+ * *works* is a question for `claude plugin install`, which is in the docs.
+ *
+ * The marketplace that lists this plugin is its own repository now, so the
+ * half of this that checked the two manifests agreed is gone with it — the
+ * names have to match for the `plugin@marketplace` install line to be right,
+ * and nothing here can see the other side of that any more.
  *
  *   node scripts/check-plugin.mjs
  */
-import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -39,25 +41,8 @@ function read(path) {
 	}
 }
 
-const marketplace = read('.claude-plugin/marketplace.json');
 const manifest = read('plugin/.claude-plugin/plugin.json');
 const servers = read('plugin/.mcp.json');
-
-if (marketplace) {
-	if (!marketplace.name) fail('marketplace.json has no name — it is half the install line');
-	if (!marketplace.owner?.name) fail('marketplace.json has no owner.name');
-
-	for (const entry of marketplace.plugins ?? []) {
-		if (typeof entry.source !== 'string' || !entry.source.startsWith('./'))
-			fail(`${entry.name}: source must be a path inside this repo, starting with ./`);
-		else if (!existsSync(join(ROOT, entry.source)))
-			fail(`${entry.name}: source ${entry.source} is not in the tree`);
-
-		if (manifest && entry.name !== manifest.name)
-			fail(`the marketplace calls it ${entry.name}, the plugin calls itself ${manifest.name}`);
-	}
-	if ((marketplace.plugins ?? []).length === 0) fail('the marketplace lists no plugins');
-}
 
 if (manifest) {
 	for (const field of ['name', 'description', 'version'])

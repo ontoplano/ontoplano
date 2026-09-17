@@ -151,7 +151,7 @@ Key: ${shown}`
 					name: 'The plugin',
 					note: 'Two lines inside Claude Code. It asks for this address and your key, and keeps the key in the system keychain.',
 					wrap: false,
-					text: `/plugin marketplace add ontoplano/ontoplano\n/plugin install ontoplano@ontoplano\n\n# it will ask for:\n#   Your ontoplano:  ${data.origin}\n#   Key:             ${shown}`
+					text: `/plugin marketplace add ontoplano/claude-plugin\n/plugin install ontoplano@ontoplano\n\n# it will ask for:\n#   Your ontoplano:  ${data.origin}\n#   Key:             ${shown}`
 				},
 				{
 					name: 'The command line',

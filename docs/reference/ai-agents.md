@@ -59,7 +59,7 @@ you to repeat yourself, and it says not to write anything yet.
 **The plugin.** Two lines inside Claude Code, and the shortest route:
 
 ```sh
-/plugin marketplace add ontoplano/ontoplano
+/plugin marketplace add ontoplano/claude-plugin
 /plugin install ontoplano@ontoplano
 ```
 
