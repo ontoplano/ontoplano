@@ -187,6 +187,31 @@ describe('a token a plugin holds', () => {
 		expect(again.id).not.toBe(first.id);
 	});
 
+	/*
+	 * Several calendar links is the feature, and none of them is named.
+	 *
+	 * One per account meant that wanting the calendar in a second place cost
+	 * you the first, so the limit is five — and they are all minted under the
+	 * same default name. Uniqueness and that default are only compatible if
+	 * the default gets out of its own way, which is what `freeName` is for:
+	 * without it the second link an account asks for is refused, and the
+	 * refusal reads as the feature being broken.
+	 */
+	test('numbers a default name rather than refusing the second one', () => {
+		const names = [1, 2, 3].map(() => {
+			const name = tokens.freeName(ctx, tokens.CALENDAR_LINK_NAME);
+			tokens.createToken(ctx, { name, scopes: 'calendar:read' });
+			return name;
+		});
+
+		expect(names).toEqual([
+			tokens.CALENDAR_LINK_NAME,
+			`${tokens.CALENDAR_LINK_NAME} 2`,
+			`${tokens.CALENDAR_LINK_NAME} 3`
+		]);
+		expect(new Set(names).size).toBe(names.length);
+	});
+
 	/**
 	 * The calendar link is the exception, deliberately.
 	 *

@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { deflateSync } from 'node:zlib';
 
+import { REMINDER_CHANNEL } from '../src/lib/phone-notifications';
+
 /** Wait until nothing on the flower is still moving. */
 async function settled(page: import('@playwright/test').Page): Promise<void> {
 	await page
@@ -636,6 +638,12 @@ test.describe('booking with Android', () => {
 			mine,
 			`nothing was booked near ${new Date(expected).toISOString()}: ${JSON.stringify(booked)}`
 		).toBeTruthy();
-		expect(mine!.channelId).toBe('ontoplano-reminders');
+		/*
+		 * The constant, not a copy of what it said when this was written: the
+		 * id has to change whenever a channel needs different settings, since
+		 * Android fixes a channel's importance the first time it is made and
+		 * ignores every attempt to raise it afterwards.
+		 */
+		expect(mine!.channelId).toBe(REMINDER_CHANNEL);
 	});
 });

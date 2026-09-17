@@ -46,7 +46,12 @@ test('a key made on the AI tab arrives inside the words you paste', async ({ pag
 	await expect(destructive).not.toBeChecked();
 	expect(await page.locator('input[type="checkbox"][disabled]').count()).toBeGreaterThan(0);
 
-	await page.getByRole('button', { name: 'Make it' }).click();
+	// Named, because the field is required — an unnamed key is one you
+	// cannot pick out of the list afterwards, which is the one moment the
+	// list matters.
+	await page.getByRole('textbox', { name: 'What to call this key' }).fill('a key for this test');
+
+	await page.getByRole('button', { name: 'Create it' }).click();
 	await page.waitForTimeout(1200);
 
 	const shown = (

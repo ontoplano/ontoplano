@@ -62,7 +62,14 @@ test('the key form offers to tie a key to one notebook', async ({ page }) => {
 	await expect(shopping).toBeDisabled();
 	await expect(tasks).toBeEnabled();
 
-	await page.getByRole('button', { name: 'Make it' }).click();
+	// Named, because the field is required — an unnamed key is one you
+	// cannot pick out of the list afterwards, which is the one moment the
+	// list matters.
+	await page
+		.getByRole('textbox', { name: 'What to call this key' })
+		.fill('a key tied to one notebook');
+
+	await page.getByRole('button', { name: 'Create it' }).click();
 	await expect(page.getByText(/^onto_/).first()).toBeVisible({ timeout: 10000 });
 
 	// And the account says what it handed over, in the list of keys it has.

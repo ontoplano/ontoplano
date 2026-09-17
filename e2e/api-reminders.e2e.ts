@@ -117,9 +117,20 @@ test('it answers with what has not gone off yet, in the shape an alarm takes', a
 	expect(mine, JSON.stringify(upcoming)).toBeTruthy();
 	// Everything the booking side needs and nothing else: when, what to say,
 	// whether it makes a noise, and the id that lets the alarm be cancelled.
-	expect(Object.keys(mine!).sort()).toEqual(['audible', 'id', 'message', 'remindAt']);
+	expect(Object.keys(mine!).sort()).toEqual(['at', 'audible', 'id', 'message', 'remindAt']);
 	expect(mine!.audible).toBe(true);
-	expect(new Date(mine!.remindAt).getTime()).toBeGreaterThan(Date.now());
+
+	/*
+	 * Two spellings of when, and the difference is the whole point.
+	 *
+	 * `remindAt` is the account's wall clock, for showing. `at` is the moment,
+	 * with an offset on it, because an alarm is set to a moment — the shell's
+	 * ringer read the wall clock as an instant, got nothing it could parse,
+	 * and skipped every reminder a phone was ever handed.
+	 */
+	expect(mine!.remindAt).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/);
+	expect(mine!.at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+	expect(new Date(mine!.at).getTime()).toBeGreaterThan(Date.now());
 
 	await request.dispose();
 });

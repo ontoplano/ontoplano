@@ -13,9 +13,11 @@ import {
 import {
 	ALL_SCOPES,
 	CALENDAR_LINK_LIMIT,
+	CALENDAR_LINK_NAME,
 	SCOPES,
 	SCOPE_CAUTIONS,
 	createToken,
+	freeName,
 	isCalendarLink,
 	listTokens,
 	revokeToken
@@ -150,7 +152,9 @@ export const actions: Actions = {
 
 		try {
 			const token = createToken(ctx, {
-				name: formData.get('label')?.toString()?.trim() || 'Calendar link',
+				// Numbered when it has to be: several of these is the point, and
+				// two live keys may not share a name. See `freeName`.
+				name: formData.get('label')?.toString()?.trim() || freeName(ctx, CALENDAR_LINK_NAME),
 				scopes: ['calendar:read']
 			});
 			return {

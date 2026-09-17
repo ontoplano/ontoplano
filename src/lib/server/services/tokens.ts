@@ -221,6 +221,9 @@ export interface CreatedToken {
  */
 export const CALENDAR_LINK_LIMIT = 5;
 
+/** What a calendar link is called when nobody says. `freeName` numbers it. */
+export const CALENDAR_LINK_NAME = 'Calendar link';
+
 /** A calendar link is exactly this one scope — see the note beside it. */
 export function isCalendarLink(scopes: readonly string[]): boolean {
 	return scopes.length === 1 && scopes[0] === 'calendar:read';
@@ -387,6 +390,27 @@ export interface TokenSummary {
 	lastUsedAt: string | null;
 	expiresAt: string | null;
 	createdAt: string;
+}
+
+/**
+ * `base`, or the first numbered version of it nobody is using.
+ *
+ * For the places that mint a key without asking what to call it. Two live keys
+ * may not share a name — a key is shown once and picked out of the list by
+ * what it is called afterwards — and a calendar link is deliberately something
+ * you can have several of, one per device. So the second one cannot simply be
+ * "Calendar link" again, and refusing it would be refusing the feature.
+ *
+ * A name somebody typed is not touched: they get the error, which tells them
+ * something they can act on.
+ */
+export function freeName(ctx: Ctx, base: string): string {
+	const taken = new Set(listTokens(ctx).map((held) => held.name));
+	if (!taken.has(base)) return base;
+	for (let n = 2; ; n++) {
+		const tried = `${base} ${n}`;
+		if (!taken.has(tried)) return tried;
+	}
 }
 
 export function listTokens(ctx: Ctx): TokenSummary[] {

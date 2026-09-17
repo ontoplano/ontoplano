@@ -5070,6 +5070,19 @@ A calendar link is exactly this one scope — see the note beside it.
 
 #### `createToken(ctx, input)`
 
+#### `freeName(ctx, base)`
+
+`base`, or the first numbered version of it nobody is using.
+
+For the places that mint a key without asking what to call it. Two live keys
+may not share a name — a key is shown once and picked out of the list by
+what it is called afterwards — and a calendar link is deliberately something
+you can have several of, one per device. So the second one cannot simply be
+"Calendar link" again, and refusing it would be refusing the feature.
+
+A name somebody typed is not touched: they get the error, which tells them
+something they can act on.
+
 #### `listTokens(ctx)`
 
 #### `revokeToken(ctx, id)`

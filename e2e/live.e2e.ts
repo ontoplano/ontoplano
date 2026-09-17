@@ -17,9 +17,13 @@ import { visit } from './helpers/visit';
  */
 const ORIGIN = process.env.ORIGIN ?? 'http://localhost:4173';
 
+let minted = 0;
+
 async function mint(request: APIRequestContext, cookie: string, scopes: string[]) {
 	const form = new URLSearchParams();
-	form.set('label', 'live test');
+	// A name of its own each time: two live keys may not share one, and an
+	// account here can outlive the run that made it.
+	form.set('label', `live test ${++minted}`);
 	for (const scope of scopes) form.append('scopes', scope);
 
 	const res = await request.post('/settings/integrations/connections?/createToken', {
