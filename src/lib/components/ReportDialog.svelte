@@ -98,7 +98,7 @@
 	{open}
 	onclose={close}
 	title={t('reportDialog.tellTheOperator')}
-	description={`It goes to whoever runs this instance, carrying your account, information about the browser you're using, and the fact it came from ${page.url.pathname}. None of your personal data goes with it.`}
+	description={t('reportDialog.whereItGoes', { where: page.url.pathname })}
 	size="sm"
 >
 	{#if phase === 'sent'}
@@ -120,14 +120,14 @@
 				bind:value={text}
 				rows="4"
 				maxlength={MAX_REPORT_LENGTH}
-				placeholder={hint}
+				placeholder={t(hint)}
 				class="textarea mt-1"
 			></textarea>
 		</label>
 
 		{#if phase === 'failed'}
 			<p class="mt-2 text-xs text-red-700">
-				{problem || 'That did not send. Try again in a moment.'}
+				{problem || t('reportDialog.thatDidNotSend')}
 			</p>
 		{/if}
 	{/if}
@@ -143,7 +143,7 @@
 				disabled={phase === 'sending' || !text.trim()}
 				onclick={send}
 			>
-				{phase === 'sending' ? 'Sending…' : 'Send'}
+				{phase === 'sending' ? t('reportDialog.sending') : t('reportDialog.send')}
 			</button>
 		{/if}
 	{/snippet}
