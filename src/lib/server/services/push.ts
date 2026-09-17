@@ -8,6 +8,7 @@ import { db } from '$lib/db/index.js';
 import { assertPublicUrl } from '../outbound.js';
 import { pushSubscriptions } from '$lib/db/schema.js';
 import { configDir } from '../config.js';
+import { record } from '$lib/services/sent-notifications.js';
 import { isSelfHosted } from '../settings.js';
 import { str } from '$lib/services/validate.js';
 import { ValidationError } from '$lib/services/errors.js';
@@ -223,6 +224,14 @@ export type Payload = {
 	/** Collapses repeats: two pushes with one tag leave one notification. */
 	tag?: string;
 	/**
+	 * Which switch in Settings this answers to.
+	 *
+	 * Kept with the row so the list inside the app can group them, and so an
+	 * account can one day be shown only the kinds it cares about. Not the tag:
+	 * a tag is per-notification and this is per-kind.
+	 */
+	kind?: string;
+	/**
 	 * Whether the device should make a noise about it.
 	 *
 	 * The kinds somebody switched on in Reminders, and nothing else. A phone
@@ -246,6 +255,26 @@ export type PushOutcome = {
 };
 
 export async function pushToUser(userId: string, payload: Payload): Promise<PushOutcome> {
+	/*
+	 * Written down before it is sent, and whether or not it can be.
+	 *
+	 * This is the one place the app says anything to anybody, so it is the one
+	 * place that has to remember — a kind of notification added later arrives
+	 * in somebody's list without anybody thinking about it.
+	 *
+	 * Before the two early returns on purpose. An instance with no keys, or an
+	 * account with no device subscribed, is an account that gets *no* push —
+	 * which is exactly the account for whom a list inside the app is the only
+	 * way to find out what was said. Whether a device happened to be awake is
+	 * a delivery detail; the app decided to say this either way.
+	 */
+	record(userId, {
+		title: payload.title,
+		body: payload.body,
+		url: payload.url,
+		kind: payload.kind ?? ''
+	});
+
 	const keys = vapidKeys();
 	if (!keys) return { sent: 0, failed: [] };
 

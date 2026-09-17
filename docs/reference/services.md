@@ -84,6 +84,7 @@ shows up here on the next build.
 | [`schedule`](#schedule)                          | Read-only view of what's coming up.                                                                                                                                                                                                                                  |
 | [`schemes`](#schemes)                            | Saved weeks.                                                                                                                                                                                                                                                         |
 | [`search`](#search)                              | One box over everything the account owns.                                                                                                                                                                                                                            |
+| [`sent-notifications`](#sent-notifications)      | What the app has told somebody, kept so they can read it again.                                                                                                                                                                                                      |
 | [`sessions`](#sessions)                          | The sessions an account currently has open.                                                                                                                                                                                                                          |
 | [`settings`](#settings)                          | A person's own settings, kept in their rows.                                                                                                                                                                                                                         |
 | [`shopping`](#shopping)                          | Two lists that share a table: `replenish` is stock you keep, `someday` is a wishlist. The difference is what "bought" means — a replenish item comes back when it runs out, a someday item is done.                                                                  |
@@ -4103,6 +4104,51 @@ becomes an FTS5 table and the shape of this file does not change.
 #### `grouped(hits)`
 
 The same hits, in the order the kinds are listed, for rendering.
+
+## sent-notifications
+
+What the app has told somebody, kept so they can read it again.
+
+A push happens once. It lands on whichever device was awake, somebody
+clears a lock screen, and it is gone — so "what did it tell me while I was
+out" had no answer. This is the answer, and the reason the table exists.
+
+Everything the server sends is written here on its way out, at the one
+function that sends: a new kind of notification is recorded without anybody
+remembering to add it. See `pushToUser`.
+
+### Functions
+
+#### `record(userId, what, now)`
+
+Write one down.
+
+Takes a plain user id rather than a `Ctx`, because the thing that calls it
+is a delivery pass working through a list of accounts and has no context
+for any of them.
+
+#### `list(ctx, limit)`
+
+#### `unreadCount(ctx)`
+
+#### `markRead(ctx, id)`
+
+Mark one read.
+
+Already-read stays as it was: the first time somebody saw a thing is the
+useful fact, and re-reading it does not move that.
+
+#### `markAllRead(ctx)`
+
+Mark every one of them read.
+
+What opening the list means: they have been seen. The count is about "is
+there anything I have not looked at", and looking at them answers it — a
+badge that survives being read is a badge people stop believing.
+
+### Types
+
+- `Sent`
 
 ## sessions
 

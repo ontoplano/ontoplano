@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**73 tables.**
+**74 tables.**
 
 | Table                                             | Columns | Belongs to a user |
 | ------------------------------------------------- | ------- | ----------------- |
@@ -65,6 +65,7 @@ exist.
 | [`reminders`](#reminders)                         | 12      | yes               |
 | [`ringtones`](#ringtones)                         | 7       | yes               |
 | [`scheme_slots`](#scheme_slots)                   | 11      | yes               |
+| [`sent_notifications`](#sent_notifications)       | 8       | yes               |
 | [`session`](#session)                             | 9       | yes               |
 | [`shopping_categories`](#shopping_categories)     | 7       | yes               |
 | [`shopping_items`](#shopping_items)               | 16      | yes               |
@@ -1158,6 +1159,24 @@ Indexes:
 
 - `scheme_slots_user_idx` on `user_id`
 - `scheme_slots_scheme_idx` on `scheme_id`
+
+## sent_notifications
+
+| Column       | Type    | Null     | Default               | Notes             |
+| ------------ | ------- | -------- | --------------------- | ----------------- |
+| `id`         | integer | not null | —                     | primary key, auto |
+| `user_id`    | text    | not null | —                     | → `user.id`       |
+| `title`      | text    | not null | —                     | —                 |
+| `body`       | text    | not null | `''`                  | —                 |
+| `url`        | text    | null     | —                     | —                 |
+| `kind`       | text    | not null | `''`                  | —                 |
+| `read_at`    | text    | null     | —                     | —                 |
+| `created_at` | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `sent_notifications_user_idx` on `user_id`
+- `sent_notifications_unread_idx` on `user_id`, `read_at`
 
 ## session
 

@@ -1956,6 +1956,46 @@ export const pushSubscriptions = sqliteTable(
 );
 
 /**
+ * What the app has said to somebody, kept so they can read it again.
+ *
+ * A push is a thing that happens once. It arrives on whichever device was
+ * awake, it is swiped away by somebody clearing a lock screen, and then it is
+ * gone — so "what did it tell me while I was out" had no answer at all. This
+ * is that answer: every notification the app sends is written here on its way
+ * out, and the app can show them.
+ *
+ * Written at the one place that sends them, so a new kind of notification
+ * arrives here without anybody remembering to add it — see `pushToUser`.
+ *
+ * `read_at` rather than a flag, because when somebody saw a thing is worth
+ * more than whether they did, and "unread" is `read_at is null`.
+ */
+export const sentNotifications = sqliteTable(
+	'sent_notifications',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		title: text('title').notNull(),
+		body: text('body').notNull().default(''),
+		/** Where it goes when opened. Relative, so any host it is read on works. */
+		url: text('url'),
+		/** Which switch in Settings turned it on, for grouping and for filtering. */
+		kind: text('kind').notNull().default(''),
+		readAt: text('read_at'),
+		createdAt: text('created_at')
+			.notNull()
+			.default(sql`(CURRENT_TIMESTAMP)`)
+	},
+	(table) => [
+		index('sent_notifications_user_idx').on(table.userId),
+		// The list is newest first and the unread count reads the same rows.
+		index('sent_notifications_unread_idx').on(table.userId, table.readAt)
+	]
+);
+
+/**
  * What something cost, when you bought it.
  *
  * `shopping_items.price_cents` is a *last known* price — useful for "what will

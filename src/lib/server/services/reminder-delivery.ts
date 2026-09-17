@@ -125,6 +125,7 @@ export async function deliverDueReminders(now = new Date()): Promise<{
 				body: reminder.remindAt.slice(11, 16),
 				url: hrefFor(reminder),
 				tag: `reminder-${reminder.id}`,
+				kind: 'reminder',
 				// Whether this one is worth a noise, decided the same way the open
 				// page decides it. A push cannot carry somebody's own ringtone —
 				// nothing may play arbitrary audio from a service worker — so what
