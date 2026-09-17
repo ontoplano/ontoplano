@@ -11,6 +11,9 @@ export const messages: Catalogue = {
 	'accountImport.aTokenIsASecret': 'a token is a secret this instance never issued',
 	'accountImport.billingBelongsToTheInstance':
 		'billing belongs to the instance that took the money',
+	'accountImport.imported': '{total} linhas importadas.',
+	'accountImport.importedFrom': '{total} linhas importadas de {email}.',
+	'accountImport.leftBehind': 'Ficou para trás: {what}.',
 	'accountImport.notAFormatThisApp':
 		'não é um formato que este aplicativo aceita, deixado de fora a pedido',
 	'accountImport.notAPictureFormat': 'não é um formato de imagem que este aplicativo aceita',

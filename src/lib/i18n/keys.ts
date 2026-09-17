@@ -8,6 +8,9 @@ export type MessageKey =
 	| 'accountImport.aSubscriptionWouldStartPosting'
 	| 'accountImport.aTokenIsASecret'
 	| 'accountImport.billingBelongsToTheInstance'
+	| 'accountImport.imported'
+	| 'accountImport.importedFrom'
+	| 'accountImport.leftBehind'
 	| 'accountImport.notAFormatThisApp'
 	| 'accountImport.notAPictureFormat'
 	| 'accountImport.notASoundFormat'
@@ -2435,6 +2438,9 @@ export type MessageKey =
  * rather than a sentence with a brace in it.
  */
 export interface MessageValuesFor {
+	'accountImport.imported': { total: string | number };
+	'accountImport.importedFrom': { email: string | number; total: string | number };
+	'accountImport.leftBehind': { what: string | number };
 	'admin.blockedInTheLast': { addresses: string | number; lastDay: string | number };
 	'admin.inThisLog': { times: string | number };
 	'admin.last': {

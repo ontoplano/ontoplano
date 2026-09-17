@@ -18,6 +18,9 @@ import { buildCtx } from '$lib/services/ctx';
 import { importTasks } from '$lib/services/imports';
 import { importAccount, previewImport } from '$lib/services/account-import';
 import { toActionFailure } from '$lib/http-errors';
+import { translatorFor } from './i18n/core.js';
+import { SOURCE_LOCALE } from './i18n/locales.js';
+import { getLocale } from './services/settings.js';
 
 /**
  * The slice of a request these need: a form, and whose account it is.
@@ -121,11 +124,31 @@ export async function importAccountAction(
 			rescue: keep(event.locals.user!.id, formData)
 		});
 
+		/*
+		 * In the language the person is reading the page in.
+		 *
+		 * The reasons come back as message keys — a service has no translator —
+		 * so this is where they become words, beside the sentence they go in.
+		 *
+		 * From the account's own setting rather than `localeForUser`, which
+		 * reads the instance's fallback out of `config.toml` and therefore out
+		 * of `node:fs`: this file also runs in the browser, on an instance that
+		 * is its own device. Somebody importing an account is signed in, so
+		 * their setting is the answer whenever there is one.
+		 */
+		const t = await translatorFor(getLocale(event.locals.user!.id) ?? SOURCE_LOCALE);
+
 		const parts = [
-			`Imported ${result.total} rows${result.from ? ` from ${result.from.email}` : ''}.`
+			result.from
+				? t('accountImport.importedFrom', { total: result.total, email: result.from.email })
+				: t('accountImport.imported', { total: result.total })
 		];
 		if (result.skipped.length > 0) {
-			parts.push(`Left behind: ${result.skipped.map((s) => `${s.name} (${s.why})`).join('; ')}.`);
+			parts.push(
+				t('accountImport.leftBehind', {
+					what: result.skipped.map((s) => `${s.name} (${t(s.why)})`).join('; ')
+				})
+			);
 		}
 
 		return { success: true, action: 'importAccount', message: parts.join(' ') };
