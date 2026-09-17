@@ -38,7 +38,9 @@ export const HIDEABLE_SECTIONS = [
 	{ id: 'health' },
 	{ id: 'finance' },
 	{ id: 'inventory' },
-	{ id: 'gallery' },
+	{ id: 'media' },
+	{ id: 'audios', parent: 'media' },
+	{ id: 'gallery', parent: 'media' },
 	{ id: 'recipes', parent: 'health' },
 	{ id: 'habits', parent: 'health' },
 	{ id: 'workouts', parent: 'health' }

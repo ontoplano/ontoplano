@@ -25,7 +25,7 @@
 
 	/** Where a folder's link goes: one segment per level of the notebook. */
 	const linkTo = (name: string) =>
-		`${resolve('/gallery')}/notebooks/${name
+		`${resolve('/media/gallery')}/notebooks/${name
 			.split(NOTEBOOK_SEPARATOR)
 			.map(encodeURIComponent)
 			.join('/')}`;
@@ -37,8 +37,8 @@
 		return parts.length > 0
 			? linkTo(parts.join(NOTEBOOK_SEPARATOR))
 			: data.path
-				? `${resolve('/gallery')}/notebooks`
-				: resolve('/gallery');
+				? `${resolve('/media/gallery')}/notebooks`
+				: resolve('/media/gallery');
 	});
 
 	let viewingId: number | null = $state(null);
@@ -66,7 +66,7 @@
 		<ul class="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
 			{#each data.folders as folder (folder.name)}
 				<li>
-					<!-- `linkTo` starts from resolve('/gallery') and appends the
+					<!-- `linkTo` starts from resolve('/media/gallery') and appends the
 					     notebook's own segments. -->
 					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 					<a href={linkTo(folder.name)} class="block">

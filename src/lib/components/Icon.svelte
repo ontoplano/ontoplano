@@ -21,6 +21,10 @@
 		undo: 'M4 10h10a5 5 0 1 1 0 10H9M4 10l4-4M4 10l4 4',
 		skip: 'M5 5l9 7-9 7zM18 5v14',
 		play: 'M7 4l12 8-12 8z',
+		/* The three a recorder needs. Square caps like everything else here. */
+		pause: 'M9 5v14M15 5v14',
+		stop: 'M6 6h12v12H6z',
+		mic: 'M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM5 11a7 7 0 0 0 14 0M12 18v3',
 		search: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM16 16l4 4',
 		filter: 'M4 5h16l-6 7v6l-4 2v-8z',
 		download: 'M12 4v10M8 10l4 4 4-4M5 19h14',

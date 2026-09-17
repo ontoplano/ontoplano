@@ -104,6 +104,8 @@ sentence somebody agrees to when they grant it.
 | `/manifest.webmanifest`                      | GET    | —                 |
 | `/media`                                     | POST   | —                 |
 | `/media/[id]`                                | GET    | —                 |
+| `/media/audio`                               | POST   | —                 |
+| `/media/audio/[id]`                          | GET    | —                 |
 | `/robots.txt`                                | GET    | —                 |
 | `/settings/account/export`                   | GET    | —                 |
 | `/shopping`                                  | GET    | —                 |
@@ -739,6 +741,39 @@ allowlist has no format that can execute anything.
 Cached hard and privately: a row here never changes — a different picture is
 a different id — so a browser may keep it for as long as it likes, and no
 shared cache may keep it at all.
+
+**GET**
+
+### `/media/audio`
+
+A recording, posted as bytes.
+
+Not a form action, because what a `MediaRecorder` hands back is already
+exactly the bytes to store — wrapping it in a multipart body to unwrap it
+again buys nothing and costs a copy. `multipart/form-data` is still what
+arrives, for the same reason the picture endpoint beside this takes it:
+SvelteKit's origin check covers it exactly as it covers a form, so a page on
+another site cannot post here with somebody's cookie.
+
+Everything the request says about what it is sending is ignored. The name is
+rewritten, the type is read off the bytes, and both ceilings are counted from
+the database. See `services/audio.ts`.
+
+**POST**
+
+### `/media/audio/[id]`
+
+One recording, to the one account it belongs to.
+
+The same bargain the picture endpoint beside this makes. Ownership lives in
+the service's `WHERE`, so a stranger's id and a picture's id are both the
+same 404 — there is no arithmetic anybody can do on these numbers.
+
+The headers are the other half. `nosniff` stops a browser deciding for itself
+that bytes typed as audio are really a document; `attachment` rather than
+`inline` because nothing here needs to be _rendered_ — the page plays it
+through an `<audio>` element pointed at this URL, and a container that lies
+about its insides is then noise rather than a document on this origin.
 
 **GET**
 

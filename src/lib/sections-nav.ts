@@ -109,12 +109,12 @@ export const NAV_PLACES: NavPlace[] = [
 		hide: 'finance'
 	},
 	{
-		key: 'gallery',
-		name: 'sections.gallery.label',
-		section: 'gallery',
+		key: 'media',
+		name: 'sections.media.label',
+		section: 'media',
 		icon: 'image',
-		href: '/gallery',
-		hide: 'gallery'
+		href: '/media/audios',
+		hide: 'media'
 	},
 	{
 		key: 'inventory',

@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**56 pages, 229 actions.**
+**57 pages, 231 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -26,9 +26,6 @@ write surface for everything else; both end up calling the same
 | `/finance/insights`                  | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/finance/ledgers`                   | `createLedger`, `updateLedger`, `moveLedger`, `archiveLedger`, `deleteLedger`, `import`, `addMovement`, `updateMovement`, `deleteMovement`                                                                                                                                                                                                                                          |
 | `/finance/rules`                     | `create`, `update`, `move`, `delete`                                                                                                                                                                                                                                                                                                                                                |
-| `/gallery`                           | `create`, `planFolder`, `importFolder`, `rename`, `delete`                                                                                                                                                                                                                                                                                                                          |
-| `/gallery/[id]`                      | `upload`, `addTo`, `move`, `remove`, `rename`, `tag`                                                                                                                                                                                                                                                                                                                                |
-| `/gallery/notebooks/[...path]`       | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/goals`                             | `setTodoStatus`, `createArea`, `deleteArea`, `create`, `update`, `setProgress`, `close`, `setLinks`, `remove`                                                                                                                                                                                                                                                                       |
 | `/health/habits`                     | `create`, `update`, `delete`, `logOccurrence`, `toggleOccurrence`, `updateOccurrence`, `deleteOccurrence`                                                                                                                                                                                                                                                                           |
 | `/health/recipes`                    | —                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -43,6 +40,10 @@ write surface for everything else; both end up calling the same
 | `/login/reset`                       | `reset`                                                                                                                                                                                                                                                                                                                                                                             |
 | `/login/verify`                      | `resend`                                                                                                                                                                                                                                                                                                                                                                            |
 | `/mail/weekly-review/off`            | —                                                                                                                                                                                                                                                                                                                                                                                   |
+| `/media/audios`                      | `rename`, `remove`                                                                                                                                                                                                                                                                                                                                                                  |
+| `/media/gallery`                     | `create`, `planFolder`, `importFolder`, `rename`, `delete`                                                                                                                                                                                                                                                                                                                          |
+| `/media/gallery/[id]`                | `upload`, `addTo`, `move`, `remove`, `rename`, `tag`                                                                                                                                                                                                                                                                                                                                |
+| `/media/gallery/notebooks/[...path]` | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/newsletter/off`                    | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/notebooks`                         | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/notebooks/[id]`                    | —                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -159,10 +160,6 @@ beside each one and the shape of the whole month's spending next to them:
 writing a pattern and watching the pie move is the loop this screen is
 for.
 
-### `/gallery`
-
-The gallery opens on albums, because that is how anybody actually keeps pictures.
-
 ### `/health/recipes`
 
 Every recipe, with the picture that stands for it.
@@ -278,6 +275,19 @@ would be a way to turn off anybody's mail by guessing an id.
 It turns off one thing and says so. It cannot turn anything on, so a link
 that leaks does no more harm than the click it was already for, and there is
 nothing here worth replaying.
+
+### `/media/audios`
+
+What the recordings tab needs, and the two things it can do without bytes.
+
+The bytes never come through a form action: a `MediaRecorder` hands back a
+blob that is already exactly what should be stored, and wrapping it in a
+multipart body to unwrap it again buys nothing. Recording posts to
+`/media/audio`; renaming and deleting are here, where they have no payload.
+
+### `/media/gallery`
+
+The gallery opens on albums, because that is how anybody actually keeps pictures.
 
 ### `/newsletter/off`
 

@@ -215,6 +215,29 @@ export type MessageKey =
 	| 'app.wholeNumbersCountedWith'
 	| 'app.workouts'
 	| 'app.yearly'
+	| 'audio.delete'
+	| 'audio.deleteAsk'
+	| 'audio.deleteForever'
+	| 'audio.discard'
+	| 'audio.full'
+	| 'audio.held'
+	| 'audio.nameIt'
+	| 'audio.noMicrophone'
+	| 'audio.none'
+	| 'audio.notSupported'
+	| 'audio.pause'
+	| 'audio.pausePlayback'
+	| 'audio.paused'
+	| 'audio.play'
+	| 'audio.position'
+	| 'audio.record'
+	| 'audio.recording'
+	| 'audio.rename'
+	| 'audio.resume'
+	| 'audio.save'
+	| 'audio.saving'
+	| 'audio.stop'
+	| 'audio.tooLong'
 	| 'buy.backToBilling'
 	| 'buy.openingTheSecurePaymentWindow'
 	| 'buy.thePaymentWindowCouldNot'
@@ -1429,6 +1452,10 @@ export type MessageKey =
 	| 'rooms.integrations.tabs.ai'
 	| 'rooms.integrations.tabs.connections'
 	| 'rooms.integrations.title'
+	| 'rooms.media.sections'
+	| 'rooms.media.tabs.audios'
+	| 'rooms.media.tabs.gallery'
+	| 'rooms.media.title'
 	| 'rooms.notebooks.sections'
 	| 'rooms.notebooks.tabs.diary'
 	| 'rooms.notebooks.tabs.ideas'
@@ -1475,6 +1502,8 @@ export type MessageKey =
 	| 'search.searchOntoplano'
 	| 'search.todo'
 	| 'search.whatAreYouLookingFor'
+	| 'sections.audios.blurb'
+	| 'sections.audios.label'
 	| 'sections.diary.blurb'
 	| 'sections.diary.label'
 	| 'sections.finance.blurb'
@@ -1492,6 +1521,8 @@ export type MessageKey =
 	| 'sections.ideas.label'
 	| 'sections.inventory.blurb'
 	| 'sections.inventory.label'
+	| 'sections.media.blurb'
+	| 'sections.media.label'
 	| 'sections.notebooks.blurb'
 	| 'sections.notebooks.label'
 	| 'sections.people.blurb'
@@ -2581,6 +2612,9 @@ export interface MessageValuesFor {
 		attempts2: string | number;
 		lastAttemptAt: string | number;
 	};
+	'audio.full': { count: number };
+	'audio.held': { count: number };
+	'audio.tooLong': { kilobytes: string | number };
 	'capture.newThing': { thing: string | number };
 	'data.slug.fromPoints': { length: string | number; source: string | number };
 	'demo.theDemoHandsOutAn': {

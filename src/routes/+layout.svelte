@@ -296,7 +296,7 @@
 		health: 'health',
 		finance: 'wallet',
 		inventory: 'shopping',
-		gallery: 'image'
+		media: 'image'
 	};
 
 	/**

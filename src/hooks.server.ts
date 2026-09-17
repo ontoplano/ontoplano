@@ -399,7 +399,16 @@ const handleSecurityHeaders: Handle = async ({ event, resolve }) => {
 	if (contentType === 'text/html') {
 		response.headers.set('content-type', 'text/html; charset=utf-8');
 	}
-	response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+	/*
+	 * The microphone, to this origin and nothing else.
+	 *
+	 * All three used to be denied outright, which is the right default and was
+	 * right while nothing here asked for any of them. Recordings ask for one —
+	 * `(self)` is this app's own pages and not a frame it embeds, so an
+	 * embedded third party still cannot reach a microphone through us. The
+	 * camera and geolocation stay shut: nothing here has ever wanted either.
+	 */
+	response.headers.set('Permissions-Policy', 'camera=(), microphone=(self), geolocation=()');
 	// Only meaningful over TLS, and harmful if the deployment is plain HTTP —
 	// so the deployment has to say it terminates TLS.
 	if (process.env.ONTOPLANO_HTTPS === 'true') {

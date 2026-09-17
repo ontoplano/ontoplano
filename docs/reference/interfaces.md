@@ -36,9 +36,9 @@ Can be put away in Preferences (`finance`), which takes it out of the bar, the w
 
 ###
 
-- `/gallery` — one page, no tabs
+- `/media/audios` — one page, no tabs
 
-Can be put away in Preferences (`gallery`), which takes it out of the bar, the wheel and the dashboard.
+Can be put away in Preferences (`media`), which takes it out of the bar, the wheel and the dashboard.
 
 ###
 

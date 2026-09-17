@@ -1,5 +1,4 @@
 <script lang="ts">
-	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { deserialize, enhance } from '$app/forms';
@@ -262,7 +261,7 @@
 -->
 {#snippet albumCard(node: PageServerData['tree'][number])}
 	<li class="group relative overflow-hidden rounded-lg border border-gray-200">
-		<a href="{resolve('/gallery')}/{node.id}" class="block">
+		<a href="{resolve('/media/gallery')}/{node.id}" class="block">
 			<span class="block aspect-square bg-gray-50">
 				{#if node.coverId}
 					<img
@@ -330,7 +329,8 @@
 {/snippet}
 
 <div class="space-y-4">
-	<RoomBar title={t('gallery.gallery')} />
+	<!-- The room's own bar carries the title and the tab strip now; a second
+	     one here would put "Gallery" twice on the same screen. -->
 	<RoomToolbar>
 		{#snippet tools()}
 			<!-- A folder of pictures, with its subfolders as albums. -->
@@ -453,7 +453,7 @@
 				{/if}
 			</span>
 			<a
-				href="{resolve('/gallery')}/{standingIn?.id ?? ''}"
+				href="{resolve('/media/gallery')}/{standingIn?.id ?? ''}"
 				class="btn btn-sm shrink-0 {standingIn ? '' : 'invisible'}"
 				aria-hidden={standingIn ? undefined : 'true'}
 				tabindex={standingIn ? undefined : -1}
@@ -515,7 +515,7 @@
 						title={t('gallery.noAlbumsInside', { name: leafAlbumName(standingIn.name) })}
 					>
 						{#snippet action()}
-							<a class="btn btn-primary" href="{resolve('/gallery')}/{standingIn?.id}">
+							<a class="btn btn-primary" href="{resolve('/media/gallery')}/{standingIn?.id}">
 								{t('gallery.openTheAlbum')}
 							</a>
 						{/snippet}
@@ -547,7 +547,7 @@
 						class="tiles mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
 					>
 						<li class="group relative overflow-hidden rounded-lg border border-gray-200">
-							<a href="{resolve('/gallery')}/notebooks" class="block">
+							<a href="{resolve('/media/gallery')}/notebooks" class="block">
 								<span
 									class="flex aspect-square items-center justify-center bg-gray-50 text-gray-300"
 								>

@@ -435,7 +435,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
-	'/gallery': {
+	'/media/gallery': {
 		label: 'tour.gallery',
 		steps: [
 			{

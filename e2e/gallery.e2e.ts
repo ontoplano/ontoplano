@@ -50,7 +50,7 @@ test('a picture lives once, however many albums hold it', async ({ page }) => {
 	await register(page, testEmail('gallery'));
 
 	// Two albums.
-	await visit(page, '/gallery');
+	await visit(page, '/media/gallery');
 	for (const name of ['Trips', 'Best of']) {
 		await page.getByRole('button', { name: 'New album' }).click();
 		await page.locator('[name="heading"]').fill(name);
@@ -62,7 +62,7 @@ test('a picture lives once, however many albums hold it', async ({ page }) => {
 
 	// A picture into Trips: choosing the file is the submit.
 	await page.getByRole('link', { name: /Trips/ }).click();
-	await page.waitForURL(/\/gallery\/\d+/);
+	await page.waitForURL(/\/media\/gallery\/\d+/);
 	// The album's own screen, not the albums index a beat earlier: the URL
 	// changes before the component mounts, and setting files on the outgoing
 	// page's picker uploads nothing at all.
@@ -94,14 +94,14 @@ test('a picture lives once, however many albums hold it', async ({ page }) => {
 	await page.getByRole('button', { name: '#beach' }).click();
 
 	// Both albums count it.
-	await visit(page, '/gallery');
+	await visit(page, '/media/gallery');
 	const counts = page.locator('ul li a');
 	await expect(counts.filter({ hasText: 'Trips' })).toContainText('1');
 	await expect(counts.filter({ hasText: 'Best of' })).toContainText('1');
 
 	// Out of Best of: the confirmation says it stays in Trips, and it does.
 	await page.getByRole('link', { name: /Best of/ }).click();
-	await page.waitForURL(/\/gallery\/\d+/);
+	await page.waitForURL(/\/media\/gallery\/\d+/);
 	await page.locator('li img').first().click();
 	await page.getByRole('button', { name: 'Remove from this album' }).click();
 	await expect(page.getByText(/It stays in Trips/)).toBeVisible();
@@ -110,12 +110,12 @@ test('a picture lives once, however many albums hold it', async ({ page }) => {
 	await page.getByRole('button', { name: 'Remove', exact: true }).click();
 	await expect(page.locator('li img')).toHaveCount(0);
 
-	await visit(page, '/gallery');
+	await visit(page, '/media/gallery');
 	await expect(counts.filter({ hasText: 'Trips' })).toContainText('1');
 
 	// Out of its last album: the confirmation says gone-for-good this time.
 	await page.getByRole('link', { name: /Trips/ }).click();
-	await page.waitForURL(/\/gallery\/\d+/);
+	await page.waitForURL(/\/media\/gallery\/\d+/);
 	await page.locator('li img').first().click();
 	await page.getByRole('button', { name: 'Remove from this album' }).click();
 	await expect(page.getByText(/deleted for good/)).toBeVisible();
@@ -136,7 +136,7 @@ function folder(): string {
 
 test('a folder is looked at before any of it is sent', async ({ page }) => {
 	await register(page, testEmail('folder'));
-	await visit(page, '/gallery');
+	await visit(page, '/media/gallery');
 
 	// The directory picker is its own: the album's own picker takes files.
 	// Playwright cannot hand over a real directory, so these arrive with bare

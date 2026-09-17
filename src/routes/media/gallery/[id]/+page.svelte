@@ -94,7 +94,7 @@
 		it stays at the top with a surface under it while the grid scrolls, and
 		the arrow where a room shows its glyph goes back to the albums.
 	-->
-	<RoomBar title={data.album.name} back={resolve('/gallery')} backLabel="Back to the albums">
+	<RoomBar title={data.album.name} back={resolve('/media/gallery')} backLabel="Back to the albums">
 		{#snippet actions()}
 			<span class="text-sm text-gray-500 tabular-nums">{data.pictures.length}</span>
 			<form
@@ -211,7 +211,7 @@
 		<ul class="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
 			{#each data.folders as folder (folder.id)}
 				<li>
-					<a href="{resolve('/gallery')}/{folder.id}" class="block">
+					<a href="{resolve('/media/gallery')}/{folder.id}" class="block">
 						<span class="block aspect-square overflow-hidden rounded bg-gray-50">
 							{#if folder.coverId}
 								<img

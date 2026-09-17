@@ -12,17 +12,17 @@ until somebody writes one in `src/lib/tutorials.ts`. The same gap is visible
 in the app: the `?` button goes red on a screen with no tour and says so
 under the pointer.
 
-**18 of 18 screens have one.**
+**17 of 18 screens have one.**
 
 | Screen                               | Tour              | Steps |
 | ------------------------------------ | ----------------- | ----- |
 | `/`                                  | tour.ontoplano    | 8     |
 | `/finance/ledgers`                   | tour.ledgers      | 3     |
-| `/gallery`                           | tour.gallery      | 3     |
 | `/goals`                             | tour.goals        | 4     |
 | `/health/habits`                     | tour.habits       | 3     |
 | `/health/recipes`                    | tour.recipes      | 5     |
 | `/inventory`                         | tour.shopping     | 3     |
+| `/media/audios`                      | **none**          | —     |
 | `/notebooks`                         | tour.notebooks    | 2     |
 | `/notebooks/diary`                   | tour.diary        | 4     |
 | `/notebooks/ideas`                   | tour.ideas        | 3     |
@@ -39,6 +39,7 @@ Toured as well, though nothing obliges them to be — a screen reached from
 a link rather than from the navigation:
 
 - `/health/workouts` — tour.workouts
+- `/media/gallery` — tour.gallery
 - `/search` — tour.search
 - `/settings/preferences` — tour.preferences
 - `/tasks/review` — tour.review
@@ -64,12 +65,6 @@ at the button that reopens it, so it is not listed here.
 1. tour.oneLedgerPerPlaceMoney
 2. tour.theStatementIsTheRecord
 3. tour.rulesDoTheSorting
-
-### `/gallery` — tour.gallery
-
-1. tour.albumsNotFolders
-2. tour.movingAndSharing
-3. tour.tagsCutAcross
 
 ### `/goals` — tour.goals
 
@@ -102,6 +97,12 @@ at the button that reopens it, so it is not listed here.
 1. tour.twoListsOnePage
 2. tour.whichListAndWhereIt
 3. tour.boughtAndBackAgain
+
+### `/media/gallery` — tour.gallery
+
+1. tour.albumsNotFolders
+2. tour.movingAndSharing
+3. tour.tagsCutAcross
 
 ### `/notebooks` — tour.notebooks
 
