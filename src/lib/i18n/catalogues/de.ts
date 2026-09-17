@@ -1642,6 +1642,11 @@ export const messages: Catalogue = {
 	'reminders.aDayAndWhatTo': 'Ein Tag und was gesagt werden soll. Mehr nicht.',
 	'reminders.aSoundFile': 'Eine Audiodatei',
 	'reminders.ahead': 'Voraus',
+	'reminders.alarmsOnThisPhone': {
+		one: '1 Wecker auf diesem Handy gestellt',
+		other: '{count} Wecker auf diesem Handy gestellt'
+	},
+	'reminders.allowExactAlarms': 'Genaue Wecker erlauben',
 	'reminders.allowNotifications': 'Benachrichtigungen erlauben',
 	'reminders.alreadyBeen': 'Bereits vorbei',
 	'reminders.alreadyShown': '· bereits angezeigt',
@@ -1658,8 +1663,14 @@ export const messages: Catalogue = {
 	'reminders.change': '{message} ändern',
 	'reminders.changeHowFar': 'Ändern, wie weit dies reicht',
 	'reminders.changeThisReminder': 'Diese Erinnerung ändern',
+	'reminders.channelSilenced':
+		'Erinnerungen kommen auf diesem Handy lautlos an. Sie erscheinen weiterhin.',
+	'reminders.checkNow': 'Jetzt prüfen',
+	'reminders.checksAgainAt': 'Prüft wieder {when}',
 	'reminders.comingUp': 'Demnächst',
 	'reminders.confirm': 'Bestätigen?',
+	'reminders.couldNotReachInstance':
+		'Die letzte Prüfung erreichte Ihr ontoplano nicht — sie versucht es bald erneut, und was bereits gestellt ist, klingelt weiter.',
 	'reminders.countsAsSecureFromAnother': 'gilt als sicher; von einem anderen Gerät aus nicht.',
 	'reminders.day': 'Tag',
 	'reminders.dayAllAnswered': {
@@ -1672,6 +1683,9 @@ export const messages: Catalogue = {
 	'reminders.default': 'Standard',
 	'reminders.eGTakeTheBreadOut': 'z. B. das Brot herausnehmen',
 	'reminders.everythingShowsOnlyTheseAre': 'Alles wird angezeigt. Nur diese werden gehört.',
+	'reminders.exactAlarmsRefused':
+		'Android lässt diese App keinen minutengenauen Wecker stellen, also kommen Erinnerungen zu spät — so spät, wie das Handy mag.',
+	'reminders.firstOneAt': 'Der erste um {when}',
 	'reminders.followTheKind': 'Folgt der Art',
 	'reminders.giveItALaterOne': 'Setzen Sie eine spätere Zeit.',
 	'reminders.go': 'Los',
@@ -1680,12 +1694,15 @@ export const messages: Catalogue = {
 	'reminders.howFar': 'Wie weit',
 	'reminders.howManyDaysToCover': 'Wie viele Tage abgedeckt werden, bis zu {maxDays}',
 	'reminders.kb': '{bytes} KB',
+	'reminders.lastCheckedAt': 'Zuletzt geprüft {when}',
 	'reminders.leaveTheNameEmptyAnd': 'Lassen Sie den Namen leer, dann wird der Dateiname verwendet.',
 	'reminders.localhost': 'localhost',
 	'reminders.lookThatFar': 'So weit schauen',
 	'reminders.makeASound': 'Einen Ton abspielen',
 	'reminders.makeHttpsLocal': 'make https-local',
+	'reminders.neverChecked': 'Es konnte noch nicht nachsehen',
 	'reminders.newReminder': 'Neue Erinnerung',
+	'reminders.noneBookedYet': 'Auf diesem Handy ist noch nichts gestellt',
 	'reminders.nothingCanReachThisBrowser':
 		'Nichts kann diesen Browser erreichen: Benachrichtigungen brauchen HTTPS, und diese Seite läuft auf',
 	'reminders.nothingWaiting': 'Nichts wartet',
@@ -1748,6 +1765,8 @@ export const messages: Catalogue = {
 	'reminders.whatHasAlreadyGoneOff': 'Was schon losgegangen ist',
 	'reminders.whatIsStillToCome': 'Was noch bevorsteht',
 	'reminders.whatMakesASound': 'Was einen Ton macht',
+	'reminders.whatThePhoneKnows':
+		'Was dieses Handy darüber weiß, Sie bei geschlossener App zu erreichen.',
 	'reminders.whatTimeItShouldGo': 'Um welche Uhrzeit sie losgehen soll. Leer bedeutet {dayStart}.',
 	'reminders.whatToSay': 'Was gesagt werden soll',
 	'reminders.whetherThisOneMakesA': 'Ob diese hier einen Ton macht, egal was ihre Art sonst tut',
@@ -1755,6 +1774,7 @@ export const messages: Catalogue = {
 	'reminders.whichDayItShouldGo': 'An welchem Tag sie losgehen soll',
 	'reminders.whichSoundThisOnePlays': 'Welchen Ton diese hier abspielt',
 	'reminders.whichWayToLook': 'In welche Richtung geschaut werden soll',
+	'reminders.willThisRing': 'Wird das klingeln?',
 	'reminders.yourSounds': 'Ihre Töne',
 	'reportDialog.send': 'Senden',
 	'reportDialog.sending': 'Wird gesendet…',

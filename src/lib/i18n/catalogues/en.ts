@@ -1602,6 +1602,11 @@ export const messages: Catalogue = {
 	'reminders.aDayAndWhatTo': 'A day and what to say. It is about nothing else.',
 	'reminders.aSoundFile': 'A sound file',
 	'reminders.ahead': 'Ahead',
+	'reminders.alarmsOnThisPhone': {
+		one: '1 alarm set on this phone',
+		other: '{count} alarms set on this phone'
+	},
+	'reminders.allowExactAlarms': 'Allow exact alarms',
 	'reminders.allowNotifications': 'Allow notifications',
 	'reminders.alreadyBeen': 'Already been',
 	'reminders.alreadyShown': '· already shown',
@@ -1618,8 +1623,14 @@ export const messages: Catalogue = {
 	'reminders.change': 'Change {message}',
 	'reminders.changeHowFar': 'Change how far this looks',
 	'reminders.changeThisReminder': 'Change this reminder',
+	'reminders.channelSilenced':
+		'Reminders are set to arrive silently on this phone. They will still appear.',
+	'reminders.checkNow': 'Check now',
+	'reminders.checksAgainAt': 'Checks again {when}',
 	'reminders.comingUp': 'Coming up',
 	'reminders.confirm': 'Confirm?',
+	'reminders.couldNotReachInstance':
+		'The last check could not reach your ontoplano — it will try again shortly, and what is already set still rings.',
 	'reminders.countsAsSecureFromAnother': 'counts as secure; from another device it does not.',
 	'reminders.day': 'Day',
 	'reminders.dayAllAnswered': {
@@ -1632,6 +1643,9 @@ export const messages: Catalogue = {
 	'reminders.default': 'Default',
 	'reminders.eGTakeTheBreadOut': 'e.g. take the bread out',
 	'reminders.everythingShowsOnlyTheseAre': 'Everything shows. Only these are heard.',
+	'reminders.exactAlarmsRefused':
+		'Android is not letting this app set an alarm to the minute, so reminders will arrive late — by as much as the phone feels like.',
+	'reminders.firstOneAt': 'The first is at {when}',
 	'reminders.followTheKind': 'Follow the kind',
 	'reminders.giveItALaterOne': 'Give it a later one.',
 	'reminders.go': 'Go',
@@ -1640,12 +1654,15 @@ export const messages: Catalogue = {
 	'reminders.howFar': 'How far',
 	'reminders.howManyDaysToCover': 'How many days to cover, up to {maxDays}',
 	'reminders.kb': '{bytes} KB',
+	'reminders.lastCheckedAt': 'Last checked {when}',
 	'reminders.leaveTheNameEmptyAnd': "Leave the name empty and the file's own name is used.",
 	'reminders.localhost': 'localhost',
 	'reminders.lookThatFar': 'Look that far',
 	'reminders.makeASound': 'Make a sound',
 	'reminders.makeHttpsLocal': 'make https-local',
+	'reminders.neverChecked': 'It has not managed to check yet',
 	'reminders.newReminder': 'New reminder',
+	'reminders.noneBookedYet': 'Nothing is set on this phone yet',
 	'reminders.nothingCanReachThisBrowser':
 		'Nothing can reach this browser: notifications need HTTPS and this page is on',
 	'reminders.nothingWaiting': 'Nothing waiting',
@@ -1707,6 +1724,7 @@ export const messages: Catalogue = {
 	'reminders.whatHasAlreadyGoneOff': 'What has already gone off',
 	'reminders.whatIsStillToCome': 'What is still to come',
 	'reminders.whatMakesASound': 'What makes a sound',
+	'reminders.whatThePhoneKnows': 'What this phone knows about reaching you with the app shut.',
 	'reminders.whatTimeItShouldGo': 'What time it should go off. Empty means {dayStart}.',
 	'reminders.whatToSay': 'What to say',
 	'reminders.whetherThisOneMakesA': 'Whether this one makes a noise, whatever its kind does',
@@ -1714,6 +1732,7 @@ export const messages: Catalogue = {
 	'reminders.whichDayItShouldGo': 'Which day it should go off',
 	'reminders.whichSoundThisOnePlays': 'Which sound this one plays',
 	'reminders.whichWayToLook': 'Which way to look',
+	'reminders.willThisRing': 'Will this ring?',
 	'reminders.yourSounds': 'Your sounds',
 	'reportDialog.send': 'Send',
 	'reportDialog.sending': 'Sending…',

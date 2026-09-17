@@ -333,6 +333,36 @@ type Settings = {
 	stopRinging(): Promise<void>;
 	ringingFor(): Promise<{ origin: string }>;
 	syncReminders(): Promise<void>;
+	ringerStatus(): Promise<Partial<RingerStatus>>;
+	openExactAlarmSettings(): Promise<void>;
+};
+
+/**
+ * What the phone knows about whether it will ring — every link in the chain.
+ *
+ * All of it is read off the shell; see `Ringer.status` for why each one is
+ * worth asking. Millisecond stamps rather than dates because they cross the
+ * bridge as numbers, and 0 for "never" / "nothing".
+ */
+export type RingerStatus = {
+	/** The instance this phone rings for, or '' if it has not been set up. */
+	ringingFor: string;
+	/** When it last asked that instance what was coming. */
+	lastLookAt: number;
+	/** Whether that attempt worked. */
+	lastLookWorked: boolean;
+	/** One word about why it did not, when it did not. */
+	trouble: string;
+	/** When it will ask again — which bounds how stale `booked` can be. */
+	nextLookAt: number;
+	/** How many alarms are on this phone right now. */
+	booked: number;
+	/** When the first of them is due. */
+	nextRingAt: number;
+	/** Whether Android lets this book an alarm at a minute rather than near one. */
+	exactAllowed: boolean;
+	/** Whether the channel they are posted to still makes a sound. */
+	channelAudible: boolean;
 };
 
 function shell(): Settings | null {
@@ -392,6 +422,44 @@ export async function ringingFor(): Promise<string> {
 export async function syncRinger(): Promise<void> {
 	await shell()
 		?.syncReminders()
+		.catch(() => undefined);
+}
+
+/**
+ * Everything the phone will say about whether a reminder will reach it.
+ *
+ * `null` where there is no shell to ask — a browser, or a build older than the
+ * call — which the page shows as nothing rather than as a row of zeroes
+ * claiming nothing is booked.
+ */
+export async function ringerStatus(): Promise<RingerStatus | null> {
+	const settings = shell();
+	if (!settings) return null;
+	try {
+		const said = await settings.ringerStatus();
+		// An older shell answers with an empty object rather than failing, so
+		// the absence of the one field every answer carries is the test.
+		if (typeof said?.ringingFor !== 'string') return null;
+		return {
+			ringingFor: said.ringingFor,
+			lastLookAt: Number(said.lastLookAt ?? 0),
+			lastLookWorked: Boolean(said.lastLookWorked),
+			trouble: String(said.trouble ?? ''),
+			nextLookAt: Number(said.nextLookAt ?? 0),
+			booked: Number(said.booked ?? 0),
+			nextRingAt: Number(said.nextRingAt ?? 0),
+			exactAllowed: said.exactAllowed !== false,
+			channelAudible: said.channelAudible !== false
+		};
+	} catch {
+		return null;
+	}
+}
+
+/** The system screen that grants booking an alarm at a minute. */
+export async function openExactAlarmSettings(): Promise<void> {
+	await shell()
+		?.openExactAlarmSettings()
 		.catch(() => undefined);
 }
 

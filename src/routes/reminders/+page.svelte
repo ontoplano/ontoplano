@@ -1,5 +1,6 @@
 <script lang="ts">
 	import NumberBox from '$lib/components/NumberBox.svelte';
+	import RingerHealth from '$lib/components/RingerHealth.svelte';
 	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { enhance } from '$app/forms';
 	import Banner from '$lib/components/Banner.svelte';
@@ -452,6 +453,16 @@
 	</RoomBar>
 
 	<FormError message={form?.message} />
+
+	<!--
+		Whether this phone will actually ring, before anything about reminders.
+
+		It draws nothing outside the app — there is no shell to ask — so on a
+		browser this row does not exist. Inside the app it is the first thing on
+		the page, because "will this wake me" is the question the rest of the
+		screen assumes the answer to.
+	-->
+	<RingerHealth />
 
 	<!--
 		Why nothing arrives, when nothing can.

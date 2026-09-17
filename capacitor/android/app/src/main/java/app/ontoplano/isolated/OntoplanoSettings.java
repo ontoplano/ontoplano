@@ -84,6 +84,50 @@ public class OntoplanoSettings extends Plugin {
         call.resolve();
     }
 
+    /**
+     * Whether this phone will actually ring, link by link.
+     *
+     * The app's one job with the screen off, and the one thing it could not
+     * answer for itself: the alarms are booked by a receiver with nobody
+     * watching, so "it did not go off" had no follow-up question. See
+     * `Ringer.status` for what each field means.
+     */
+    @PluginMethod
+    public void ringerStatus(PluginCall call) {
+        try {
+            call.resolve(JSObject.fromJSONObject(Ringer.status(getContext())));
+        } catch (org.json.JSONException broken) {
+            // `status` builds this object itself and never puts anything a
+            // JSObject cannot hold; a page that asked deserves an answer
+            // rather than a rejection it would have to handle.
+            call.resolve(new JSObject());
+        }
+    }
+
+    /**
+     * The screen where Android lets an app book alarms at a minute.
+     *
+     * Only reachable from 12 up, and only worth offering when the answer is
+     * currently no — which the page decides from `ringerStatus`.
+     */
+    @PluginMethod
+    public void openExactAlarmSettings(PluginCall call) {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S) {
+            call.resolve();
+            return;
+        }
+        Intent exact = new Intent("android.settings.REQUEST_SCHEDULE_EXACT_ALARM")
+                .setData(Uri.parse("package:" + getContext().getPackageName()))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        if (start(exact)) {
+            call.resolve();
+            return;
+        }
+        // Every Android has the app's own details page, even where that one
+        // screen does not exist.
+        openNotificationSettings(call);
+    }
+
     @PluginMethod
     public void openNotificationSettings(PluginCall call) {
         String app = getContext().getPackageName();

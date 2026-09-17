@@ -1433,6 +1433,8 @@ export type MessageKey =
 	| 'reminders.aDayAndWhatTo'
 	| 'reminders.aSoundFile'
 	| 'reminders.ahead'
+	| 'reminders.alarmsOnThisPhone'
+	| 'reminders.allowExactAlarms'
 	| 'reminders.allowNotifications'
 	| 'reminders.alreadyBeen'
 	| 'reminders.alreadyShown'
@@ -1447,8 +1449,12 @@ export type MessageKey =
 	| 'reminders.change'
 	| 'reminders.changeHowFar'
 	| 'reminders.changeThisReminder'
+	| 'reminders.channelSilenced'
+	| 'reminders.checkNow'
+	| 'reminders.checksAgainAt'
 	| 'reminders.comingUp'
 	| 'reminders.confirm'
+	| 'reminders.couldNotReachInstance'
 	| 'reminders.countsAsSecureFromAnother'
 	| 'reminders.day'
 	| 'reminders.dayAllAnswered'
@@ -1458,6 +1464,8 @@ export type MessageKey =
 	| 'reminders.default'
 	| 'reminders.eGTakeTheBreadOut'
 	| 'reminders.everythingShowsOnlyTheseAre'
+	| 'reminders.exactAlarmsRefused'
+	| 'reminders.firstOneAt'
 	| 'reminders.followTheKind'
 	| 'reminders.giveItALaterOne'
 	| 'reminders.go'
@@ -1466,12 +1474,15 @@ export type MessageKey =
 	| 'reminders.howFar'
 	| 'reminders.howManyDaysToCover'
 	| 'reminders.kb'
+	| 'reminders.lastCheckedAt'
 	| 'reminders.leaveTheNameEmptyAnd'
 	| 'reminders.localhost'
 	| 'reminders.lookThatFar'
 	| 'reminders.makeASound'
 	| 'reminders.makeHttpsLocal'
+	| 'reminders.neverChecked'
 	| 'reminders.newReminder'
+	| 'reminders.noneBookedYet'
 	| 'reminders.nothingCanReachThisBrowser'
 	| 'reminders.nothingWaiting'
 	| 'reminders.nothingWentOff'
@@ -1517,6 +1528,7 @@ export type MessageKey =
 	| 'reminders.whatHasAlreadyGoneOff'
 	| 'reminders.whatIsStillToCome'
 	| 'reminders.whatMakesASound'
+	| 'reminders.whatThePhoneKnows'
 	| 'reminders.whatTimeItShouldGo'
 	| 'reminders.whatToSay'
 	| 'reminders.whetherThisOneMakesA'
@@ -1524,6 +1536,7 @@ export type MessageKey =
 	| 'reminders.whichDayItShouldGo'
 	| 'reminders.whichSoundThisOnePlays'
 	| 'reminders.whichWayToLook'
+	| 'reminders.willThisRing'
 	| 'reminders.yourSounds'
 	| 'reportDialog.send'
 	| 'reportDialog.sending'
@@ -3028,6 +3041,7 @@ export interface MessageValuesFor {
 	'pictures.hint': { kilobytes: string | number };
 	'ratingPicker.leaveUnanswered': { rating: string | number };
 	'ratings.labelValueOf5': { label: string | number; value: string | number };
+	'reminders.alarmsOnThisPhone': { count: number };
 	'reminders.billDue': { day: string | number; money: string | number; name: string | number };
 	'reminders.billDueToday': { money: string | number; name: string | number };
 	'reminders.billStillToPay': {
@@ -3038,12 +3052,15 @@ export interface MessageValuesFor {
 	'reminders.birthdayOf': { name: string | number };
 	'reminders.birthdayTurns': { age: string | number; name: string | number };
 	'reminders.change': { message: string | number };
+	'reminders.checksAgainAt': { when: string | number };
 	'reminders.dayAllAnswered': { count: number };
 	'reminders.daySomeLeft': { done: string | number; left: string | number; total: string | number };
 	'reminders.daysCount': { count: number };
+	'reminders.firstOneAt': { when: string | number };
 	'reminders.hear': { name: string | number };
 	'reminders.howManyDaysToCover': { maxDays: string | number };
 	'reminders.kb': { bytes: string | number };
+	'reminders.lastCheckedAt': { when: string | number };
 	'reminders.remove': { message: string | number };
 	'reminders.remove2': { name: string | number };
 	'reminders.reviewBlocks': { count: number };
