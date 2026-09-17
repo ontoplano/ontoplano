@@ -3,6 +3,7 @@
 	import { NAV_PLACES, roomFor } from '$lib/sections-nav';
 	import { placesFor } from '$lib/nav-order';
 	import RadialMenu from '$lib/components/RadialMenu.svelte';
+	import { cssVarPx } from '$lib/css-length';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -55,8 +56,7 @@
 	function bottomInset(): number {
 		if (typeof window === 'undefined') return 0;
 		if (window.innerWidth >= 1024) return 0;
-		const style = getComputedStyle(document.documentElement);
-		const px = (name: string) => parseFloat(style.getPropertyValue(name)) || 0;
+		const px = cssVarPx;
 		return px('--mobile-nav-height') + px('--safe-bottom') + 16;
 	}
 
@@ -70,8 +70,7 @@
 	 */
 	function phoneOrigin(): { x: number; y: number } | null {
 		if (typeof window === 'undefined' || window.innerWidth >= 1024) return null;
-		const style = getComputedStyle(document.documentElement);
-		const px = (name: string) => parseFloat(style.getPropertyValue(name)) || 0;
+		const px = cssVarPx;
 		const bar = px('--mobile-nav-height') + px('--safe-bottom');
 		// The ring's outer edge plus a thumb's width above the bar.
 		return { x: window.innerWidth / 2, y: window.innerHeight - bar - 200 };

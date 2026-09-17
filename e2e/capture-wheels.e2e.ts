@@ -3,15 +3,14 @@ import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
- * The plus opens two wheels, and they are independent.
+ * The plus opens one wheel, and two of its wedges are not words.
  *
- * One wheel asked what to write down. There are two questions now — what to
- * add, and what to write — and they are separate wheels because they are
- * separate decisions. The arithmetic that sizes them is the interesting part:
- * two rings, a gap either side and one between, filling the width without
- * touching, at whatever width the screen happens to be.
+ * It was two wheels for a while — what to add on the left, what to write on
+ * the right. One gesture asking two questions is one question too many, so
+ * they are one wheel of six, and the work the second wheel was doing is done
+ * by drawing the pair harder than the four beside them.
  */
-async function openWheels(page: import('@playwright/test').Page) {
+async function openWheel(page: import('@playwright/test').Page) {
 	const all = page.locator('[data-tour="capture"]');
 	let box = null;
 	for (let i = 0; i < (await all.count()); i++) {
@@ -25,79 +24,61 @@ async function openWheels(page: import('@playwright/test').Page) {
 	return box;
 }
 
-test('opens two wheels that fill the width and never overlap', async ({ page }) => {
+test('is one wheel, holding what you write and what you add', async ({ page }) => {
 	await page.setViewportSize({ width: 412, height: 915 });
-	await register(page, testEmail('wheels'));
+	await register(page, testEmail('wheel-six'));
 	await visit(page, '/');
-	await openWheels(page);
+	await openWheel(page);
 
-	const rings = page.locator('.pie-layer .pie');
-	await expect(rings).toHaveCount(2);
-
-	const left = await rings.nth(0).boundingBox();
-	const right = await rings.nth(1).boundingBox();
-	if (!left || !right) throw new Error('a wheel was not drawn');
-
-	/*
-	 * One backdrop between them, not one each.
-	 *
-	 * Each wheel used to draw its own `fixed inset-0` layer with a full-screen
-	 * button in it. Two of those dims the page twice and puts the wheel
-	 * underneath behind a button covering the whole screen.
-	 */
+	// One ring and one backdrop, whatever is in it.
+	await expect(page.locator('.pie-layer .pie')).toHaveCount(1);
 	await expect(page.locator('.pie-layer button[aria-label="Close"]')).toHaveCount(1);
 
-	// Round, and the same size as each other.
-	for (const box of [left, right]) expect(Math.abs(box.width - box.height)).toBeLessThan(2);
-	expect(Math.abs(left.width - right.width)).toBeLessThan(2);
-
-	// Side by side with a gap, not overlapping.
-	const [first, second] = left.x <= right.x ? [left, right] : [right, left];
-	expect(first.x + first.width).toBeLessThanOrEqual(second.x + 1);
-
-	// And practically all of the width: everything outside them is padding.
-	const spare = 412 - (first.width + second.width);
-	expect(spare).toBeGreaterThan(0);
-	expect(spare).toBeLessThan(412 * 0.35);
+	// The four you write, and the two you add.
+	for (const key of ['idea', 'todo', 'picture', 'recording']) {
+		await expect(page.locator(`[data-wedge="${key}"]`)).toHaveCount(1);
+	}
 
 	await page.mouse.up();
 });
 
-test('the left wheel offers a picture and a recording', async ({ page }) => {
+test('draws the two media wedges harder than the rest', async ({ page }) => {
 	await page.setViewportSize({ width: 412, height: 915 });
-	await register(page, testEmail('wheels-media'));
+	await register(page, testEmail('wheel-emphasis'));
 	await visit(page, '/');
-	await openWheels(page);
+	await openWheel(page);
 
 	/*
-	 * By key rather than by label: a wedge is an icon and a colour at this
-	 * size — its name is spoken in the middle of the wheel when the pointer
-	 * reaches it, and read by anything listening. `data-wedge` is what it is.
+	 * Six wedges is enough that the eye has to find the pair without reading
+	 * every icon, and that is the whole reason the second wheel could go.
 	 */
-	await expect(page.locator('[data-wedge="picture"]')).toHaveCount(1);
-	await expect(page.locator('[data-wedge="recording"]')).toHaveCount(1);
-	// And the writing wheel is still the writing wheel.
-	await expect(page.locator('[data-wedge="idea"]')).toHaveCount(1);
-	await expect(page.locator('[data-wedge="todo"]')).toHaveCount(1);
+	const fill = async (key: string) =>
+		Number(await page.locator(`[data-wedge="${key}"] path`).first().getAttribute('fill-opacity'));
+
+	const media = await fill('picture');
+	const writing = await fill('idea');
+	expect(media).toBeGreaterThan(writing);
 
 	await page.mouse.up();
 });
 
-test('the left wheel can actually be pressed', async ({ page }) => {
+test('sits clear of the bar it is raised from', async ({ page }) => {
 	/*
-	 * The bug this exists for: each wheel drew a full-screen layer with a
-	 * backdrop button in it, so the second one stacked over the first and the
-	 * wheel underneath was visible and inert. Being *drawn* is not the test.
+	 * The wheel is pushed up by the height of the navigation bar, read from
+	 * `--mobile-nav-height` — which is written in `rem`, and `parseFloat` of
+	 * `3.5rem` is three and a half. The wheel sat fifty pixels too low for
+	 * months, with its bottom wedge half behind the bar.
 	 */
 	await page.setViewportSize({ width: 412, height: 915 });
-	await register(page, testEmail('wheels-press'));
+	await register(page, testEmail('wheel-clear'));
 	await visit(page, '/');
-	await openWheels(page);
+	await openWheel(page);
+
+	const ring = await page.locator('.pie-layer .pie').boundingBox();
+	const bar = await page.locator('[data-tour="capture"]').last().boundingBox();
+	if (!ring || !bar) throw new Error('nothing to measure');
+
+	expect(ring.y + ring.height).toBeLessThanOrEqual(bar.y + 1);
+
 	await page.mouse.up();
-
-	await page.locator('[data-wedge="recording"]').click();
-
-	// The recorder, in a dialog, ready to be talked at.
-	await expect(page.getByRole('dialog')).toContainText('New recording');
-	await expect(page.getByRole('button', { name: 'Record', exact: true })).toBeVisible();
 });

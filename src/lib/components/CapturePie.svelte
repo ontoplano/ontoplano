@@ -8,6 +8,7 @@
 	import { ACCEPTED_TYPES } from '$lib/services/media';
 	import { ACCOUNT_AUDIOS, AUDIO_KILOBYTES } from '$lib/services/media-limits';
 	import { notify } from '$lib/notify.svelte';
+	import { cssVarPx } from '$lib/css-length';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -175,8 +176,7 @@
 	 */
 	function bottomInset(): number {
 		if (typeof window === 'undefined') return 0;
-		const style = getComputedStyle(document.documentElement);
-		const px = (name: string) => parseFloat(style.getPropertyValue(name)) || 0;
+		const px = cssVarPx;
 		return window.innerWidth >= 1024 ? 0 : px('--mobile-nav-height') + px('--safe-bottom') + 24;
 	}
 
