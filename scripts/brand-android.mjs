@@ -30,14 +30,6 @@ const MARK_OUTLINE = (() => {
 	return found[1];
 })();
 
-/** How much of the mark's half width its middle takes — measured, like the outline. */
-const MARK_MIDDLE = (() => {
-	const shape = readFileSync(join(ROOT, 'src/lib/logo/mark-shape.ts'), 'utf8');
-	const found = shape.match(/export const MARK_MIDDLE = ([\d.]+)/);
-	if (!found) throw new Error('src/lib/logo/mark-shape.ts no longer exports MARK_MIDDLE');
-	return Number(found[1]);
-})();
-
 /**
  * How much of the foreground layer the mark fills, read from brand.ts rather
  * than repeated — the arithmetic behind the number is written out there.
@@ -267,6 +259,50 @@ const RING_WIDTH_DP = 2;
 const CORNER_REACH = 1.082;
 
 /** The mark's corners at a radius, around a centre, as a vector path. */
+/**
+ * The mark's own drawing, traced by `yarn icons` into a 24-unit box.
+ *
+ * Read rather than re-derived: `build-icons.mjs` measures the artwork once and
+ * everything else uses its answers, which is the only way the icons and the
+ * app agree about what the logo is.
+ */
+/** The box `build-icons.mjs` writes the traced paths in. */
+const TRACE_VIEWBOX = (() => {
+	const icons = readFileSync(join(ROOT, 'scripts/build-icons.mjs'), 'utf8');
+	const found = icons.match(/const TRACE_VIEWBOX = (\d+)/);
+	if (!found) throw new Error('scripts/build-icons.mjs no longer defines TRACE_VIEWBOX');
+	return Number(found[1]);
+})();
+
+const MARK_DRAWING = (() => {
+	/*
+	 * Every loop goes into one `pathData`, not one path each: even-odd cuts a
+	 * hole where subpaths overlap *within a path*, and the eye as a path of
+	 * its own is a filled dot on the bird's face.
+	 */
+	const shape = readFileSync(join(ROOT, 'src/lib/logo/mark-shape.ts'), 'utf8');
+	const listed = /export const MARK_DRAWING = \[([\s\S]*?)\] as const;/.exec(shape);
+	if (!listed) throw new Error('src/lib/logo/mark-shape.ts no longer exports MARK_DRAWING');
+	return [...listed[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+})();
+
+/**
+ * A traced path, moved and scaled from its own 24-unit box into this icon's.
+ *
+ * The paths are written against the mark's full width; here they have to land
+ * inside a ring that was fitted to the icon's padding and stroke, so they are
+ * scaled by the ratio of the two and re-centred. Numbers only — every command
+ * in them is an M or an L on an absolute point.
+ */
+function inBox(path, radius, centre) {
+	const was = TRACE_VIEWBOX / 2;
+	const k = radius / was;
+	return path.replace(/([ML])([\d.-]+),([\d.-]+)/g, (_, cmd, x, y) => {
+		const at = [centre + (Number(x) - was) * k, centre + (Number(y) - was) * k];
+		return `${cmd}${at[0].toFixed(2)},${at[1].toFixed(2)}`;
+	});
+}
+
 function octagon(radius, centre) {
 	return (MARK_OUTLINE.match(/[\d.]+%\s+[\d.]+%/g) ?? [])
 		.map((pair, i) => {
@@ -284,9 +320,9 @@ function octagon(radius, centre) {
 	// The widest the ring can be drawn and still have its corners — and the
 	// outside of its own stroke — inside the square.
 	const ring = (half - ICON_PADDING_DP - RING_WIDTH_DP / 2) / CORNER_REACH;
-	// The middle is measured against the mark's outer edge, which is the far
+	// The drawing is placed against the mark's outer edge, which is the far
 	// side of the ring, so it stays in proportion however the ring is fitted.
-	const middle = (ring + RING_WIDTH_DP / 2) * MARK_MIDDLE;
+	const outer = ring + RING_WIDTH_DP / 2;
 
 	mkdirSync(join(RES, 'values'), { recursive: true });
 	writeFileSync(
@@ -315,7 +351,8 @@ function octagon(radius, centre) {
         android:strokeColor="#FFFFFFFF"
         android:strokeLineJoin="round" />
     <path
-        android:pathData="${octagon(middle, half)}"
+        android:pathData="${MARK_DRAWING.map((d) => inBox(d, outer, half)).join(' ')}"
+        android:fillType="evenOdd"
         android:fillColor="#FFFFFFFF" />
 </vector>
 `

@@ -57,3 +57,20 @@ export const MARK_FIELD_LIFTED = '#3d454b';
  * seen however far it has turned.
  */
 export const MARK_INNER = 0.7344;
+
+/**
+ * What the mark carries inside its ring, traced into closed outlines.
+ *
+ * In a 24-unit box, which is the size of Android's status bar icon — the
+ * one place that gets the drawing and not the picture, because that bar
+ * keeps a small icon's alpha and throws its colours away. It used to show
+ * the octagon with a dot in the middle: derived from the mark, and not
+ * recognisable as it.
+ *
+ * Even-odd: the loops after the first are the gaps inside the drawing —
+ * the bird's eye — and under that rule they are holes.
+ */
+export const MARK_DRAWING = [
+	'M11.34,6.66 L13.03,6.75 L14.34,7.41 L15.28,8.44 L15.75,9.66 L18.28,11.81 L13.78,15.09 L12.94,15.09 L11.44,14.34 L10.78,13.59 L10.22,12.09 L10.31,10.88 L10.88,9.75 L11.44,9.19 L12.28,8.72 L14.16,8.44 L13.41,8.16 L11.81,8.25 L10.03,9.19 L8.44,11.06 L7.78,12.38 L7.41,14.06 L7.22,13.78 L7.22,11.53 L7.69,10.13 L8.16,9.38 L7.97,9.19 L6.94,9.84 L7.22,9.19 L9.09,7.41 L10.41,6.84 L11.25,6.75 Z',
+	'M13.97,10.03 L14.44,10.22 L14.25,10.69 L13.78,10.59 L13.88,10.13 Z'
+] as const;

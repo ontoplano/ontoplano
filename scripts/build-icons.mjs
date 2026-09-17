@@ -83,6 +83,24 @@ const SAMPLE = 256;
 const FIELD_TOLERANCE = 45;
 
 /*
+ * Tracing the drawing inside the ring: the three numbers that decide what
+ * survives, all of them fractions of the sampled width.
+ *
+ * Fractions rather than pixel counts because `SAMPLE` is free to change and
+ * these were read off a raster twice its size — as counts they quietly meant
+ * something different the moment it did, and what they lost first was the
+ * smallest thing in the drawing, which is the eye.
+ */
+/** The smallest run of boundary pixels worth a loop of its own. */
+const LEAST_OUTLINE = 0.117;
+/** …and for a hole, below which it is the artwork's antialiasing. */
+const LEAST_HOLE = 0.047;
+/** How far a traced outline may stray from the pixels it was read off. */
+const TRACE_TOLERANCE = 0.0049;
+/** The box the paths are written in, which is the drawable's own. */
+const TRACE_VIEWBOX = 24;
+
+/*
  * The drawing is measured before anything is drawn from it.
  *
  * It used to be measured at the end, after the icons had already been
@@ -683,7 +701,156 @@ function markParts(polygon) {
 		}
 	}
 
-	return { middle: Number(middle.toFixed(4)), inner: Number(inner.toFixed(4)), edges, field };
+	/*
+	 * And what the mark carries inside that ring, as outlines.
+	 *
+	 * For Android's status bar, which takes the alpha of a small icon and
+	 * throws the colours away. The icon there used to be the octagon with a
+	 * filled dot in the middle — geometry that is *derived* from the mark
+	 * without looking like it. This traces the drawing itself, so the notch in
+	 * a phone's status bar carries the same bird as the launcher.
+	 *
+	 * Contours rather than the picture: a `<vector>` holds paths, and a path is
+	 * one file for every density instead of five rasters. The gaps inside the
+	 * drawing — the eye — come back as their own loops and are holes under the
+	 * even-odd rule.
+	 */
+	const drawing = innerOutlines({ at, cx, cy, isField, inner });
+
+	return {
+		middle: Number(middle.toFixed(4)),
+		inner: Number(inner.toFixed(4)),
+		edges,
+		field,
+		drawing
+	};
+}
+
+/**
+ * Trace everything inside the ring into closed paths.
+ *
+ * Moore-neighbourhood tracing for the outlines, a flood from the border to
+ * tell an enclosed gap from the space around the drawing, and
+ * Douglas–Peucker to bring a few thousand boundary pixels down to a few dozen
+ * points. Ordinary algorithms, written out because the alternative is a
+ * dependency for forty lines.
+ */
+function innerOutlines({ at, cx, cy, isField, inner }) {
+	const W = Math.round(cx * 2);
+	const H = Math.round(cy * 2);
+	const on = new Uint8Array(W * H);
+	for (let y = 0; y < H; y++) {
+		for (let x = 0; x < W; x++) {
+			const p = at(x, y);
+			const radius = Math.hypot(x - cx, y - cy) / cx;
+			on[y * W + x] = p.a > 128 && !isField(p) && radius < inner ? 1 : 0;
+		}
+	}
+
+	// Whatever a flood from the border never reaches is enclosed by the
+	// drawing rather than outside it, which is what makes the eye a hole.
+	const outside = new Uint8Array(W * H);
+	const stack = [];
+	for (let x = 0; x < W; x++) stack.push([x, 0], [x, H - 1]);
+	for (let y = 0; y < H; y++) stack.push([0, y], [W - 1, y]);
+	while (stack.length) {
+		const [x, y] = stack.pop();
+		if (x < 0 || y < 0 || x >= W || y >= H) continue;
+		const i = y * W + x;
+		if (outside[i] || on[i]) continue;
+		outside[i] = 1;
+		stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+	}
+
+	const solid = (x, y) => (x < 0 || y < 0 || x >= W || y >= H ? 0 : on[y * W + x]);
+	const hollow = (x, y) =>
+		x < 0 || y < 0 || x >= W || y >= H ? 0 : !on[y * W + x] && !outside[y * W + x] ? 1 : 0;
+
+	const DIRS = [
+		[1, 0],
+		[1, 1],
+		[0, 1],
+		[-1, 1],
+		[-1, 0],
+		[-1, -1],
+		[0, -1],
+		[1, -1]
+	];
+	const contours = (inside, least) => {
+		const seen = new Uint8Array(W * H);
+		const found = [];
+		for (let y = 0; y < H; y++) {
+			for (let x = 0; x < W; x++) {
+				if (!inside(x, y) || seen[y * W + x] || inside(x, y - 1)) continue;
+				const loop = [];
+				let px = x;
+				let py = y;
+				let dir = 6;
+				let guard = 0;
+				do {
+					loop.push([px, py]);
+					seen[py * W + px] = 1;
+					let moved = false;
+					for (let k = 0; k < DIRS.length; k++) {
+						const d = (dir + 6 + k) % DIRS.length;
+						if (inside(px + DIRS[d][0], py + DIRS[d][1])) {
+							px += DIRS[d][0];
+							py += DIRS[d][1];
+							dir = d;
+							moved = true;
+							break;
+						}
+					}
+					if (!moved) break;
+				} while ((px !== x || py !== y) && ++guard < W * H);
+				if (loop.length > least) found.push(loop);
+			}
+		}
+		return found;
+	};
+
+	const simplify = (points, tolerance) => {
+		if (points.length < 3) return points;
+		const away = ([x, y], [ax, ay], [bx, by]) => {
+			const dx = bx - ax;
+			const dy = by - ay;
+			const along = dx || dy ? ((x - ax) * dx + (y - ay) * dy) / (dx * dx + dy * dy) : 0;
+			const t = Math.max(0, Math.min(1, along));
+			return (x - (ax + t * dx)) ** 2 + (y - (ay + t * dy)) ** 2;
+		};
+		const keep = new Uint8Array(points.length);
+		keep[0] = 1;
+		keep[points.length - 1] = 1;
+		const todo = [[0, points.length - 1]];
+		while (todo.length) {
+			const [a, b] = todo.pop();
+			let worst = tolerance * tolerance;
+			let far = -1;
+			for (let i = a + 1; i < b; i++) {
+				const d = away(points[i], points[a], points[b]);
+				if (d > worst) {
+					worst = d;
+					far = i;
+				}
+			}
+			if (far > 0) {
+				keep[far] = 1;
+				todo.push([a, far], [far, b]);
+			}
+		}
+		return points.filter((_, i) => keep[i]);
+	};
+
+	const scale = TRACE_VIEWBOX / W;
+	return [...contours(solid, LEAST_OUTLINE * W), ...contours(hollow, LEAST_HOLE * W)]
+		.map((loop) => simplify(loop, TRACE_TOLERANCE * W))
+		.filter((loop) => loop.length > 3)
+		.map(
+			(loop) =>
+				loop
+					.map(([x, y], i) => `${i ? 'L' : 'M'}${(x * scale).toFixed(2)},${(y * scale).toFixed(2)}`)
+					.join(' ') + ' Z'
+		);
 }
 
 if (polygon) {
@@ -739,6 +906,22 @@ if (polygon) {
 			' * seen however far it has turned.',
 			' */',
 			`export const MARK_INNER = ${parts ? parts.inner : 0.78};`,
+			'',
+			`${'/'}**`,
+			' * What the mark carries inside its ring, traced into closed outlines.',
+			' *',
+			" * In a 24-unit box, which is the size of Android's status bar icon — the",
+			' * one place that gets the drawing and not the picture, because that bar',
+			" * keeps a small icon's alpha and throws its colours away. It used to show",
+			' * the octagon with a dot in the middle: derived from the mark, and not',
+			' * recognisable as it.',
+			' *',
+			' * Even-odd: the loops after the first are the gaps inside the drawing —',
+			" * the bird's eye — and under that rule they are holes.",
+			' */',
+			`export const MARK_DRAWING = [\n${(parts?.drawing ?? [])
+				.map((d) => `\t'${d}'`)
+				.join(',\n')}\n] as const;`,
 			''
 		].join('\n')
 	);
