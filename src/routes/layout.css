@@ -1994,35 +1994,56 @@ html[data-style='playful'] .card-accent {
 }
 
 /*
- * The recorder while it is running: a strip above the bar, not a dialog.
+ * The recorder while it is running: the screen, not a strip.
  *
  * Pressing Record in the wheel is already the answer, so what follows is not a
- * question — it is the thing running, with the controls for it. It sits over
- * whatever was on screen because a recording is something made *while* doing
- * something else, and it clears the navigation bar the way everything else
- * that floats there does.
+ * question — it is the thing running. And while it runs it is the only thing
+ * anybody is doing until they discard it or keep it, so it takes the room that
+ * says so: centred, large, over a dimmed page.
+ *
+ * Not the `Modal` component. That draws a screen with a back arrow on a phone
+ * and asks to be dismissed, which is the wrong shape for something that is
+ * already happening — there is nothing to cancel out of except the recording
+ * itself, and its own buttons say that.
  */
-.recorder-sheet {
+.recorder-stage {
 	position: fixed;
 	z-index: 55;
-	right: 0.75rem;
-	left: 0.75rem;
-	bottom: calc(var(--safe-bottom) + var(--mobile-nav-height) + 0.75rem);
-	padding: 0.75rem 1rem;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	padding: 1rem;
+	padding-bottom: calc(var(--safe-bottom) + 1rem);
+	background-color: var(--color-scrim, rgb(15 23 42 / 0.55));
+}
+
+.recorder-stage > * {
+	width: min(42rem, 100%);
+	padding: 1.5rem;
 	border: 1px solid var(--color-gray-200);
 	background-color: var(--color-white);
 	box-shadow:
 		0 1px 2px rgb(15 23 42 / 0.08),
-		0 12px 32px rgb(15 23 42 / 0.22);
+		0 24px 60px rgb(15 23 42 / 0.32);
 }
 
-@media (min-width: 1024px) {
-	.recorder-sheet {
-		right: auto;
-		left: 50%;
-		bottom: 1.5rem;
-		width: min(34rem, calc(100vw - 3rem));
-		translate: -50% 0;
+/*
+ * Bigger, because there is room and because these are the only targets on the
+ * screen. The controls are the app's own; this is the size they take here.
+ */
+.recorder-stage .btn {
+	padding-block: 0.6rem;
+	padding-inline: 1rem;
+	font-size: 1rem;
+}
+
+.recorder-stage input[type='range'] {
+	height: 0.5rem;
+}
+
+@media (min-width: 640px) {
+	.recorder-stage > * {
+		padding: 2rem;
 	}
 }
 

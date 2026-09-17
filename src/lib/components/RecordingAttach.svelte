@@ -100,19 +100,21 @@
      Record inside a screen you opened by pressing Record asks nothing. -->
 {#if recording}
 	<div
-		class="recorder-sheet {started ? '' : 'invisible'}"
+		class="recorder-stage {started ? '' : 'invisible'}"
 		role="group"
 		aria-label={t('attach.recording')}
 	>
-		<Recorder
-			autostart
-			kilobytes={AUDIO_KILOBYTES}
-			atMost={ACCOUNT_AUDIOS}
-			onsave={keep}
-			onstarted={() => (started = true)}
-			onfail={() => (recording = false)}
-			ondone={() => (recording = false)}
-		/>
+		<div>
+			<Recorder
+				autostart
+				kilobytes={AUDIO_KILOBYTES}
+				atMost={ACCOUNT_AUDIOS}
+				onsave={keep}
+				onstarted={() => (started = true)}
+				onfail={() => (recording = false)}
+				ondone={() => (recording = false)}
+			/>
+		</div>
 	</div>
 {/if}
 

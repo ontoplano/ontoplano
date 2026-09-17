@@ -242,19 +242,21 @@
 -->
 {#if recording}
 	<div
-		class="recorder-sheet {started ? '' : 'invisible'}"
+		class="recorder-stage {started ? '' : 'invisible'}"
 		role="group"
 		aria-label={t('media.newRecording')}
 	>
-		<Recorder
-			autostart
-			kilobytes={AUDIO_KILOBYTES}
-			atMost={ACCOUNT_AUDIOS}
-			onsave={keepRecording}
-			onstarted={() => (started = true)}
-			onfail={() => (recording = false)}
-			ondone={() => (recording = false)}
-		/>
+		<div>
+			<Recorder
+				autostart
+				kilobytes={AUDIO_KILOBYTES}
+				atMost={ACCOUNT_AUDIOS}
+				onsave={keepRecording}
+				onstarted={() => (started = true)}
+				onfail={() => (recording = false)}
+				ondone={() => (recording = false)}
+			/>
+		</div>
 	</div>
 {/if}
 

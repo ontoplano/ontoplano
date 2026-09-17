@@ -98,6 +98,22 @@ const config = {
 				// @fontsource inlines some faces as data: URIs.
 				'font-src': ['self', 'data:'],
 				'img-src': ['self', 'data:'],
+				/*
+				 * A recording, before it has been saved anywhere.
+				 *
+				 * `MediaRecorder` hands back a `Blob`, and hearing it before
+				 * deciding whether to keep it means an `<audio>` pointed at a
+				 * `blob:` URL — which `default-src 'self'` refuses. There was no
+				 * `media-src` at all, so the browser fell through to the default
+				 * and the player said "the element has no supported sources"
+				 * about bytes it had just been handed. Nothing in the app said
+				 * so; the button simply did nothing.
+				 *
+				 * `blob:` is this page's own memory — a URL minted by this
+				 * document for bytes it already holds. It cannot name anybody
+				 * else's server.
+				 */
+				'media-src': ['self', 'blob:'],
 				'connect-src': ['self'],
 				'form-action': ['self'],
 				'frame-ancestors': ['none'],

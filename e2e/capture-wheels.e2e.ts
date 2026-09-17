@@ -105,7 +105,7 @@ test('the recording wedge records, with no second press', async ({ page }) => {
 	await page.locator('[data-wedge="recording"]').click();
 
 	// Recording, in a strip rather than a dialog, with no Record button left.
-	await expect(page.locator('.recorder-sheet')).toBeVisible();
+	await expect(page.locator('.recorder-stage')).toBeVisible();
 	await expect(page.getByRole('dialog')).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Record', exact: true })).toHaveCount(0);

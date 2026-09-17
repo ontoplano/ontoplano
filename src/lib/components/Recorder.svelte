@@ -154,6 +154,17 @@
 		};
 
 		recorder.onstop = () => {
+			/*
+			 * The preview may have been playing when Stop was pressed — it is
+			 * offered while paused, and listening is often what decides it. The
+			 * finished recording is a different, longer thing, so the transport
+			 * starts again from the beginning rather than carrying a position
+			 * into a file that did not have it.
+			 */
+			player?.pause();
+			playing = false;
+			at = 0;
+
 			held = new Blob(chunks, { type: chunks[0]?.type || 'audio/webm' });
 			if (heldUrl) URL.revokeObjectURL(heldUrl);
 			heldUrl = URL.createObjectURL(held);
@@ -175,10 +186,39 @@
 		if (!recorder || stage !== 'recording') return;
 		recorder.pause();
 		stage = 'paused';
+		// What has been said so far, playable. See `preview`.
+		preview();
+	}
+
+	/**
+	 * A blob of everything recorded up to now, so a pause can be listened to.
+	 *
+	 * Waiting until Stop meant deciding whether to carry on without being able
+	 * to hear what you had — which is exactly the moment you want to. The
+	 * chunks are already in hand; this is them, assembled early.
+	 *
+	 * A container cut mid-stream often reports no duration, because the index
+	 * that would say so is written at the end. `elapsed` is what the clock
+	 * says instead, and it is the number a person was watching anyway.
+	 */
+	function preview() {
+		if (!chunks.length) return;
+		if (heldUrl) URL.revokeObjectURL(heldUrl);
+		held = new Blob(chunks, { type: chunks[0]?.type || 'audio/webm' });
+		heldUrl = URL.createObjectURL(held);
+		at = 0;
+		playing = false;
 	}
 
 	function carryOn() {
 		if (!recorder || stage !== 'paused') return;
+		// The preview is of a recording that is about to grow; playing it while
+		// more arrives is listening to something that no longer exists.
+		player?.pause();
+		if (heldUrl) URL.revokeObjectURL(heldUrl);
+		heldUrl = '';
+		held = null;
+		playing = false;
 		recorder.resume();
 		stage = 'recording';
 	}
@@ -242,6 +282,64 @@
 	});
 </script>
 
+{#snippet hearing()}
+	<!--
+		Hearing what is in hand, whether it is finished or not.
+
+		Drawn while paused as well as after Stop, because deciding whether to
+		carry on is exactly when somebody wants to know what they have — and
+		waiting until the recording is over to offer that is offering it after
+		the decision.
+
+		`preload="metadata"` so the bar has a length before anything is played,
+		and the bar is a real range: one dragged with a pointer is one a
+		keyboard cannot reach.
+	-->
+	<audio
+		bind:this={player}
+		src={heldUrl}
+		preload="metadata"
+		onplay={() => (playing = true)}
+		onpause={() => (playing = false)}
+		onended={() => {
+			playing = false;
+			at = 0;
+		}}
+		ontimeupdate={(e) => (at = e.currentTarget.currentTime)}
+		onloadedmetadata={(e) => {
+			const seconds = e.currentTarget.duration;
+			// A `MediaRecorder` blob often reports Infinity until it is seeked.
+			duration = Number.isFinite(seconds) ? seconds : elapsed;
+		}}
+	></audio>
+
+	<div class="flex items-center gap-3">
+		<button
+			type="button"
+			class="btn btn-sm"
+			onclick={toggle}
+			aria-label={playing ? t('audio.pausePlayback') : t('audio.play')}
+		>
+			<Icon name={playing ? 'pause' : 'play'} />
+		</button>
+
+		<input
+			type="range"
+			class="h-1.5 flex-1 accent-gray-900"
+			min="0"
+			max={Math.max(duration, 0.1)}
+			step="0.1"
+			value={at}
+			oninput={scrub}
+			aria-label={t('audio.position')}
+		/>
+
+		<span class="shrink-0 text-sm text-gray-500 tabular-nums">
+			{clock(at)} / {clock(duration || elapsed)}
+		</span>
+	</div>
+{/snippet}
+
 <div class="space-y-3">
 	{#if stage === 'idle'}
 		<div class="flex items-center gap-2">
@@ -291,57 +389,14 @@
 				{t('audio.discard')}
 			</button>
 		</div>
+
+		<!-- Paused is a decision point, so what has been said so far is
+		     playable here rather than only once it is over. -->
+		{#if stage === 'paused' && heldUrl}
+			{@render hearing()}
+		{/if}
 	{:else}
-		<!--
-			Hear it before it is kept.
-
-			`preload="metadata"` so the range has a length to scrub along before
-			anything is played, and the range is a real one: a bar somebody drags
-			with a pointer is a bar a keyboard cannot reach.
-		-->
-		<audio
-			bind:this={player}
-			src={heldUrl}
-			preload="metadata"
-			onplay={() => (playing = true)}
-			onpause={() => (playing = false)}
-			onended={() => {
-				playing = false;
-				at = 0;
-			}}
-			ontimeupdate={(e) => (at = e.currentTarget.currentTime)}
-			onloadedmetadata={(e) => {
-				const seconds = e.currentTarget.duration;
-				// A `MediaRecorder` blob often reports Infinity until it is seeked.
-				duration = Number.isFinite(seconds) ? seconds : elapsed;
-			}}
-		></audio>
-
-		<div class="flex items-center gap-3">
-			<button
-				type="button"
-				class="btn btn-sm"
-				onclick={toggle}
-				aria-label={playing ? t('audio.pausePlayback') : t('audio.play')}
-			>
-				<Icon name={playing ? 'pause' : 'play'} />
-			</button>
-
-			<input
-				type="range"
-				class="h-1.5 flex-1 accent-gray-900"
-				min="0"
-				max={Math.max(duration, 0.1)}
-				step="0.1"
-				value={at}
-				oninput={scrub}
-				aria-label={t('audio.position')}
-			/>
-
-			<span class="shrink-0 text-sm text-gray-500 tabular-nums">
-				{clock(at)} / {clock(duration || elapsed)}
-			</span>
-		</div>
+		{@render hearing()}
 
 		<!--
 			The name, and the two ways out.
