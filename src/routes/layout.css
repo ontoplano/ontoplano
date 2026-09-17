@@ -2858,7 +2858,17 @@ html .ec {
 		min-height: 2.75rem;
 	}
 
-	input[type='checkbox'],
+	/*
+	 * `:not(.toggle)`, because a switch is not a tick box.
+	 *
+	 * This rule squares every checkbox, and `input[type='checkbox']` outranks a
+	 * bare `.toggle` — so on every phone in the world the app's switches were
+	 * drawn as 20×20 squares. Not only here: the notification switches in
+	 * Preferences, everywhere. They looked correct on a laptop and became tick
+	 * boxes the moment a finger was involved, which is the one place anybody
+	 * was looking at them.
+	 */
+	input[type='checkbox']:not(.toggle),
 	input[type='radio'] {
 		min-height: 1.25rem;
 		width: 1.25rem;
