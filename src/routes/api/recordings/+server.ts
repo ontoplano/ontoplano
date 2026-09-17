@@ -17,7 +17,12 @@ export const GET: RequestHandler = async (event) => {
 		if (!event.locals.user) throw new UnauthorizedError('Sign in first.');
 		const ctx = buildCtx(event.locals.user.id);
 		return Response.json({
-			recordings: list(ctx).map((one) => ({ id: one.id, name: one.name }))
+			recordings: list(ctx).map((one) => ({
+				id: one.id,
+				name: one.name,
+				// So a transport can draw its bar without decoding the file first.
+				seconds: one.seconds
+			}))
 		});
 	} catch (e) {
 		return toJsonError(e);

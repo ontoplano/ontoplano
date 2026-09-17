@@ -33,7 +33,7 @@ import { sha256Hex } from './digest.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { host } from './host.js';
 import { AUDIO_MIME_PREFIX } from './media-kind.js';
-import type { MediaLimits } from './media-limits.js';
+import { audioSecondsFor, type MediaLimits } from './media-limits.js';
 import { stamp } from './time.js';
 
 /** Do these bytes start with exactly this run of bytes? */
@@ -105,6 +105,8 @@ export type Recording = {
 	mime: string;
 	name: string;
 	byteSize: number;
+	/** How long it plays. Null for anything recorded before it was stored. */
+	seconds: number | null;
 	createdAt: string;
 };
 
@@ -185,7 +187,7 @@ export function countStored(ctx: Ctx): number {
  */
 export async function store(
 	ctx: Ctx,
-	input: { bytes: Uint8Array; name?: string }
+	input: { bytes: Uint8Array; name?: string; seconds?: number }
 ): Promise<Recording> {
 	const limits = audioLimits();
 
@@ -228,6 +230,7 @@ export async function store(
 			filename: name,
 			alt: '',
 			byteSize: input.bytes.length,
+			seconds: tidySeconds(input.seconds),
 			bytes: input.bytes as Buffer,
 			sha256,
 			createdAt: stamp(ctx)
@@ -244,8 +247,26 @@ function toRecording(row: typeof media.$inferSelect): Recording {
 		mime: row.mime,
 		name: row.filename,
 		byteSize: row.byteSize,
+		seconds: row.seconds,
 		createdAt: row.createdAt
 	};
+}
+
+/**
+ * How long the client says it is, believed only within reason.
+ *
+ * It arrives in a form field, which means it arrives from whoever is posting
+ * rather than from anything this server measured. Nothing depends on it being
+ * right — it sets the length of a scrub bar — but a number that is negative,
+ * enormous or not a number at all would be drawn as one, so it is bounded by
+ * the same ceiling the recording itself is: nothing here can play for longer
+ * than the byte limit allows.
+ */
+function tidySeconds(given: number | undefined): number | null {
+	if (typeof given !== 'number' || !Number.isFinite(given)) return null;
+	const whole = Math.round(given);
+	if (whole <= 0) return null;
+	return Math.min(whole, audioSecondsFor(audioLimits().audioKilobytes));
 }
 
 /**

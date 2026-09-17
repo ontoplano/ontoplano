@@ -37,8 +37,17 @@ export const ACCOUNT_AUDIOS = 100;
  */
 export const AUDIO_BITS_PER_SECOND = 16_000;
 
-/** How long a recording can run before it reaches the ceiling, in seconds. */
-export const AUDIO_SECONDS = Math.floor((AUDIO_KILOBYTES * 1024 * 8) / AUDIO_BITS_PER_SECOND);
+/**
+ * How long a recording can run before it reaches the ceiling, in seconds.
+ *
+ * Derived rather than chosen, from the two numbers that decide it: an
+ * instance that allows a bigger recording allows a longer one by the same
+ * arithmetic, and nothing has to be kept in step by hand.
+ */
+export const audioSecondsFor = (kilobytes: number) =>
+	Math.floor((kilobytes * 1024 * 8) / AUDIO_BITS_PER_SECOND);
+
+export const AUDIO_SECONDS = audioSecondsFor(AUDIO_KILOBYTES);
 
 export type MediaLimits = {
 	/** The biggest single picture, in bytes and in the number people read. */

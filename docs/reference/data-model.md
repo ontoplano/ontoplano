@@ -46,7 +46,7 @@ exist.
 | [`ledgers`](#ledgers)                             | 10      | yes               |
 | [`locations`](#locations)                         | 8       | yes               |
 | [`mail_failures`](#mail_failures)                 | 11      | —                 |
-| [`media`](#media)                                 | 9       | yes               |
+| [`media`](#media)                                 | 10      | yes               |
 | [`media_tags`](#media_tags)                       | 4       | yes               |
 | [`newsletter_issues`](#newsletter_issues)         | 6       | —                 |
 | [`notebooks`](#notebooks)                         | 8       | yes               |
@@ -791,6 +791,7 @@ Indexes:
 | `filename`   | text    | not null | `''`                  | —                 |
 | `alt`        | text    | not null | `''`                  | —                 |
 | `byte_size`  | integer | not null | —                     | —                 |
+| `seconds`    | integer | null     | —                     | —                 |
 | `bytes`      | blob    | not null | —                     | —                 |
 | `sha256`     | text    | not null | —                     | —                 |
 | `created_at` | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |

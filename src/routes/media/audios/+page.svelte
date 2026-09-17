@@ -53,11 +53,12 @@
 
 	const full = $derived(data.recordings.length >= data.limits.accountAudios);
 
-	async function keep(bytes: Blob, name: string) {
+	async function keep(bytes: Blob, name: string, seconds: number) {
 		const body = new FormData();
 		// A name only for the multipart part; the service names the row.
 		body.set('file', bytes, 'recording');
 		body.set('label', name);
+		body.set('seconds', String(seconds));
 
 		const answer = await fetch('/media/audio', { method: 'POST', body });
 		if (!answer.ok) {
@@ -133,7 +134,12 @@
 					<!-- The app's own transport rather than the browser's, which
 					     arrives at a fixed size in a grey of its own and reads as a
 					     foreign object in the list. See `AudioPlayer`. -->
-					<AudioPlayer src="/media/audio/{one.id}" label={one.name} class="w-full sm:w-72" />
+					<AudioPlayer
+						src="/media/audio/{one.id}"
+						label={one.name}
+						seconds={one.seconds}
+						class="w-full sm:w-72"
+					/>
 
 					<div class="flex shrink-0 items-center gap-2">
 						<button

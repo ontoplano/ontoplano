@@ -122,10 +122,11 @@
 		} else notify.error(reply.message ?? '');
 	}
 
-	async function keepRecording(bytes: Blob, name: string) {
+	async function keepRecording(bytes: Blob, name: string, seconds: number) {
 		const body = new FormData();
 		body.set('file', bytes, 'recording');
 		body.set('label', name);
+		body.set('seconds', String(seconds));
 		const answer = await fetch('/media/audio', { method: 'POST', body });
 		if (!answer.ok) {
 			const reply = (await answer.json().catch(() => ({}))) as { message?: string };

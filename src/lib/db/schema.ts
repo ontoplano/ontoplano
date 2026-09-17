@@ -813,6 +813,19 @@ export const media = sqliteTable(
 		filename: text('filename').notNull().default(''),
 		alt: text('alt').notNull().default(''),
 		byteSize: integer('byte_size').notNull(),
+		/**
+		 * How long it plays, for the things that play.
+		 *
+		 * Null for a picture, and for a recording made before this column
+		 * existed. It is stored because the containers `MediaRecorder` writes
+		 * carry no duration of their own — the index that would say so is
+		 * written last, and a stream stopped by a person never gets one — so a
+		 * player handed one of these reports `Infinity` and races its head to
+		 * the end of a bar that means nothing. The number is known at the
+		 * moment the recording is made; asking the browser to work it back out
+		 * afterwards, once per row in a list, is the expensive way to be wrong.
+		 */
+		seconds: integer('seconds'),
 		bytes: blob('bytes', { mode: 'buffer' }).notNull(),
 		/** The same picture twice is one row: see `sha256` in `services/media.ts`. */
 		sha256: text('sha256').notNull(),

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import AudioPlayer from '$lib/components/AudioPlayer.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Recorder from '$lib/components/Recorder.svelte';
@@ -18,7 +19,7 @@
 
 	let { target }: { target?: HTMLTextAreaElement } = $props();
 
-	type Held = { id: number; name: string };
+	type Held = { id: number; name: string; seconds: number | null };
 
 	let recording = $state(false);
 	/** Whether the microphone was actually given, so the strip can hold back. */
@@ -43,10 +44,11 @@
 		target.focus();
 	}
 
-	async function keep(bytes: Blob, name: string) {
+	async function keep(bytes: Blob, name: string, seconds: number) {
 		const body = new FormData();
 		body.set('file', bytes, 'recording');
 		body.set('label', name);
+		body.set('seconds', String(seconds));
 
 		const answer = await fetch('/media/audio', { method: 'POST', body });
 		const reply = (await answer.json().catch(() => ({}))) as {
@@ -132,7 +134,12 @@
 			{#each held as one (one.id)}
 				<li class="flex items-center gap-3 py-2">
 					<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{one.name}</span>
-					<audio class="h-8 w-40" controls preload="none" src="/media/audio/{one.id}"></audio>
+					<AudioPlayer
+						src="/media/audio/{one.id}"
+						label={one.name}
+						seconds={one.seconds}
+						class="w-44"
+					/>
 					<button type="button" class="btn btn-sm btn-primary" onclick={() => attach(one)}>
 						{t('attach.attach')}
 					</button>

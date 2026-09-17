@@ -46,13 +46,22 @@ export const POST: RequestHandler = async (event) => {
 
 		const held = await store(buildCtx(event.locals.user.id), {
 			bytes: new Uint8Array(await file.arrayBuffer()),
-			name: String(form.get('label') ?? '')
+			name: String(form.get('label') ?? ''),
+			/*
+			 * How long it plays, measured while it was being made.
+			 *
+			 * The containers a browser records into carry no duration of their
+			 * own, so this is the only chance to know it cheaply. The service
+			 * bounds whatever arrives — it comes from the page, not from here.
+			 */
+			seconds: Number(form.get('seconds')) || undefined
 		});
 
 		return Response.json({
 			id: held.id,
 			name: held.name,
 			byteSize: held.byteSize,
+			seconds: held.seconds,
 			createdAt: held.createdAt,
 			/*
 			 * What to put in a note that carries this recording.

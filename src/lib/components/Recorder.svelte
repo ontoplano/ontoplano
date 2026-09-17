@@ -56,7 +56,7 @@
 		full?: boolean;
 		atMost: number;
 		suggestedName?: string;
-		onsave: (bytes: Blob, name: string) => Promise<void>;
+		onsave: (bytes: Blob, name: string, seconds: number) => Promise<void>;
 		ondone?: () => void;
 		autostart?: boolean;
 		onstarted?: () => void;
@@ -72,6 +72,8 @@
 	let recorder: MediaRecorder | null = null;
 	let track: MediaStream | null = null;
 	let chunks: Blob[] = [];
+	/** Whether a flush is in flight, so `ondataavailable` knows to assemble. */
+	let wantsPreview = false;
 	let held = $state<Blob | null>(null);
 	let heldUrl = $state('');
 
@@ -221,6 +223,12 @@
 			if (!event.data.size) return;
 			chunks.push(event.data);
 
+			// The flush `hold` asked for has landed; now the preview is whole.
+			if (wantsPreview) {
+				wantsPreview = false;
+				preview();
+			}
+
 			/*
 			 * Stop on the way past the ceiling rather than over it.
 			 *
@@ -261,10 +269,23 @@
 
 	function hold() {
 		if (!recorder || stage !== 'recording') return;
+
+		/*
+		 * Ask for what the encoder is still holding, before pausing on it.
+		 *
+		 * `start(1000)` emits a chunk a second, so at the moment somebody
+		 * presses stop there is up to a second of sound encoded and not yet
+		 * handed over — and this used to pause and assemble the preview out of
+		 * the chunks already in hand, which is that second missing. It sounded
+		 * like the recording cut the last word off, because it did.
+		 *
+		 * `requestData` flushes it, but through `ondataavailable` rather than
+		 * by returning it, so the preview is assembled there instead of here.
+		 */
+		wantsPreview = true;
+		recorder.requestData();
 		recorder.pause();
 		stage = 'paused';
-		// What has been said so far, playable. See `preview`.
-		preview();
 	}
 
 	/**
@@ -331,7 +352,9 @@
 		try {
 			const bytes = recorder ? await close() : held;
 			if (!bytes) return;
-			await onsave(bytes, name.trim());
+			// `elapsed` is what the clock in front of them counted, which is the
+			// only cheap measure of how long this is: the container carries none.
+			await onsave(bytes, name.trim(), elapsed);
 			discard();
 		} catch (e) {
 			notify.error(e instanceof Error ? e.message : String(e));
@@ -388,7 +411,12 @@
 		element rather than a stale one holding the old length.
 	-->
 	{#key heldUrl}
-		<AudioPlayer src={heldUrl} />
+		<!--
+			The clock they were just watching is the length: this blob is a stream
+			somebody stopped, so it carries no duration of its own and the browser
+			would report none.
+		-->
+		<AudioPlayer src={heldUrl} seconds={elapsed} />
 	{/key}
 {/snippet}
 
