@@ -24,9 +24,9 @@ test('records into a note, and the note plays it back', async ({ page }) => {
 		.getByRole('button', { name: /new entry/i })
 		.first()
 		.click();
+	// "Record one" is already the answer: it starts recording rather than
+	// opening a screen with a Record button in it.
 	await page.getByRole('button', { name: 'Record one' }).click();
-
-	await page.getByRole('button', { name: 'Record', exact: true }).click();
 	await page.waitForTimeout(1200);
 	await page.getByRole('button', { name: 'Pause', exact: true }).click();
 	await page.getByRole('button', { name: 'Stop and keep' }).click();
@@ -59,7 +59,6 @@ test('an idea takes one too', async ({ page }) => {
 		.click();
 
 	await page.getByRole('button', { name: 'Record one' }).click();
-	await page.getByRole('button', { name: 'Record', exact: true }).click();
 	await page.waitForTimeout(1100);
 	await page.getByRole('button', { name: 'Pause', exact: true }).click();
 	await page.getByRole('button', { name: 'Stop and keep' }).click();

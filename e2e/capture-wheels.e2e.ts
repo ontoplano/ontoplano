@@ -2,6 +2,13 @@ import { expect, test } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
+test.use({
+	launchOptions: {
+		args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream']
+	},
+	permissions: ['microphone']
+});
+
 /**
  * The plus opens one wheel, and two of its wedges are not words.
  *
@@ -81,4 +88,25 @@ test('sits clear of the bar it is raised from', async ({ page }) => {
 	expect(ring.y + ring.height).toBeLessThanOrEqual(bar.y + 1);
 
 	await page.mouse.up();
+});
+
+test('the recording wedge records, with no second press', async ({ page }) => {
+	/*
+	 * It used to open a dialog with a Record button in it — a screen you
+	 * reached by pressing Record, asking you to press Record. The wedge is the
+	 * answer; what appears is the thing already running.
+	 */
+	await page.setViewportSize({ width: 412, height: 915 });
+	await register(page, testEmail('wheel-records'));
+	await visit(page, '/');
+	await openWheel(page);
+	await page.mouse.up();
+
+	await page.locator('[data-wedge="recording"]').click();
+
+	// Recording, in a strip rather than a dialog, with no Record button left.
+	await expect(page.locator('.recorder-sheet')).toBeVisible();
+	await expect(page.getByRole('dialog')).toHaveCount(0);
+	await expect(page.getByRole('button', { name: 'Pause', exact: true })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Record', exact: true })).toHaveCount(0);
 });

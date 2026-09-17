@@ -1993,6 +1993,39 @@ html[data-style='playful'] .card-accent {
 	background: #ffffff;
 }
 
+/*
+ * The recorder while it is running: a strip above the bar, not a dialog.
+ *
+ * Pressing Record in the wheel is already the answer, so what follows is not a
+ * question — it is the thing running, with the controls for it. It sits over
+ * whatever was on screen because a recording is something made *while* doing
+ * something else, and it clears the navigation bar the way everything else
+ * that floats there does.
+ */
+.recorder-sheet {
+	position: fixed;
+	z-index: 55;
+	right: 0.75rem;
+	left: 0.75rem;
+	bottom: calc(var(--safe-bottom) + var(--mobile-nav-height) + 0.75rem);
+	padding: 0.75rem 1rem;
+	border: 1px solid var(--color-gray-200);
+	background-color: var(--color-white);
+	box-shadow:
+		0 1px 2px rgb(15 23 42 / 0.08),
+		0 12px 32px rgb(15 23 42 / 0.22);
+}
+
+@media (min-width: 1024px) {
+	.recorder-sheet {
+		right: auto;
+		left: 50%;
+		bottom: 1.5rem;
+		width: min(34rem, calc(100vw - 3rem));
+		translate: -50% 0;
+	}
+}
+
 /* A recording inside an entry: a block of its own, like a picture. */
 .md audio.md-audio {
 	display: block;

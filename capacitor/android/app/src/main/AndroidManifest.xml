@@ -67,4 +67,19 @@
     -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <!--
+        Recordings.
+
+        Without this the web view's `getUserMedia` cannot succeed and Android
+        never asks: the app does not hold the permission, so there is nothing
+        for it to prompt about. What that looked like was a Record button that
+        answered "this device would not give the app a microphone" on a device
+        with a perfectly good microphone, and no way for anybody to fix it.
+
+        Declared and nothing more: Capacitor's web view client asks the person
+        the first time a page reaches for a microphone, which is the right
+        moment — when they have just pressed Record, rather than at install.
+    -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 </manifest>

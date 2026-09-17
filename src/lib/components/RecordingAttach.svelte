@@ -20,6 +20,8 @@
 	type Held = { id: number; name: string };
 
 	let recording = $state(false);
+	/** Whether the microphone was actually given, so the strip can hold back. */
+	let started = $state(false);
 	let choosing = $state(false);
 	let held = $state<Held[]>([]);
 	let trouble = $state('');
@@ -76,7 +78,15 @@
 </script>
 
 <div class="mt-2 flex flex-wrap items-center gap-2">
-	<button type="button" class="btn btn-sm" onclick={() => (recording = true)}>
+	<button
+		type="button"
+		class="btn btn-sm"
+		onclick={() => {
+			// The button is already the answer; the recorder starts on the way in.
+			started = false;
+			recording = true;
+		}}
+	>
 		<Icon name="mic" class="mr-1.5" />
 		{t('attach.recordOne')}
 	</button>
@@ -86,14 +96,25 @@
 	</button>
 </div>
 
-<Modal open={recording} title={t('attach.recording')} onclose={() => (recording = false)}>
-	<Recorder
-		kilobytes={AUDIO_KILOBYTES}
-		atMost={ACCOUNT_AUDIOS}
-		onsave={keep}
-		ondone={() => (recording = false)}
-	/>
-</Modal>
+<!-- The same strip the wheel raises, and for the same reason: pressing
+     Record inside a screen you opened by pressing Record asks nothing. -->
+{#if recording}
+	<div
+		class="recorder-sheet {started ? '' : 'invisible'}"
+		role="group"
+		aria-label={t('attach.recording')}
+	>
+		<Recorder
+			autostart
+			kilobytes={AUDIO_KILOBYTES}
+			atMost={ACCOUNT_AUDIOS}
+			onsave={keep}
+			onstarted={() => (started = true)}
+			onfail={() => (recording = false)}
+			ondone={() => (recording = false)}
+		/>
+	</div>
+{/if}
 
 <Modal open={choosing} title={t('attach.chooseOne')} onclose={() => (choosing = false)}>
 	{#if trouble}

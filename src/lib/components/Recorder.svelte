@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Icon from '$lib/components/Icon.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
+	import { notify } from '$lib/notify.svelte';
 	import { useT } from '$lib/i18n';
 
 	/**
@@ -34,8 +35,20 @@
 		suggestedName = '',
 		/** Handed the bytes and the name; returns once it is stored. */
 		onsave,
-		/** Called when there is nothing in hand any more, so a modal may close. */
-		ondone
+		/** Called when there is nothing in hand any more, so a sheet may close. */
+		ondone,
+		/**
+		 * Start the moment this appears, rather than waiting to be pressed.
+		 *
+		 * For the places that are *already* an answer to "record something" —
+		 * the wheel's wedge, the note form's button. Pressing Record after
+		 * pressing Record is a click that asks nothing.
+		 */
+		autostart = false,
+		/** It began. The surface around this can show itself now. */
+		onstarted,
+		/** It could not begin, and there is nothing to show. */
+		onfail
 	}: {
 		kilobytes: number;
 		full?: boolean;
@@ -43,12 +56,14 @@
 		suggestedName?: string;
 		onsave: (bytes: Blob, name: string) => Promise<void>;
 		ondone?: () => void;
+		autostart?: boolean;
+		onstarted?: () => void;
+		onfail?: (why: string) => void;
 	} = $props();
 
 	type Stage = 'idle' | 'recording' | 'paused' | 'review';
 
 	let stage = $state<Stage>('idle');
-	let trouble = $state('');
 	let name = $state('');
 	let saving = $state(false);
 
@@ -84,20 +99,37 @@
 		recorder = null;
 	}
 
+	/**
+	 * Say what went wrong where a person will see it, and stand down.
+	 *
+	 * A toast rather than a line inside this component: when the recorder is
+	 * opened already recording, a failure means there is nothing to open — so
+	 * a message drawn *in* it would be a panel that exists only to apologise.
+	 */
+	function giveUp(why: string) {
+		notify.error(why);
+		onfail?.(why);
+	}
+
 	async function begin() {
-		trouble = '';
 		if (typeof MediaRecorder === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-			trouble = t('audio.notSupported');
-			return;
+			return giveUp(t('audio.notSupported'));
 		}
 
 		try {
+			/*
+			 * This is what asks for the microphone.
+			 *
+			 * On a phone the web view's own client puts the Android permission
+			 * question up the first time a page reaches for one — which is the
+			 * right moment, because somebody has just pressed Record. It
+			 * resolves once they answer, and rejects if they say no.
+			 */
 			track = await navigator.mediaDevices.getUserMedia({ audio: true });
 		} catch {
-			// Refused, or no microphone. Either way the app cannot record and
-			// saying which would be guessing at somebody's settings.
-			trouble = t('audio.noMicrophone');
-			return;
+			// Refused, or no microphone at all. Either way the app cannot
+			// record, and saying which would be guessing at their settings.
+			return giveUp(t('audio.noMicrophone'));
 		}
 
 		chunks = [];
@@ -116,7 +148,7 @@
 			 * somebody can use.
 			 */
 			if (chunks.reduce((n, one) => n + one.size, 0) >= ceiling) {
-				trouble = t('audio.tooLong', { kilobytes });
+				notify.info(t('audio.tooLong', { kilobytes }));
 				finish();
 			}
 		};
@@ -133,6 +165,7 @@
 		// reached rather than at the end.
 		recorder.start(1000);
 		stage = 'recording';
+		onstarted?.();
 		ticking = setInterval(() => {
 			if (stage === 'recording') elapsed += 1;
 		}, 1000);
@@ -168,7 +201,6 @@
 		duration = 0;
 		playing = false;
 		name = '';
-		trouble = '';
 		stage = 'idle';
 		ondone?.();
 	}
@@ -188,16 +220,21 @@
 	async function keep() {
 		if (!held || saving) return;
 		saving = true;
-		trouble = '';
 		try {
 			await onsave(held, name.trim());
 			discard();
 		} catch (e) {
-			trouble = e instanceof Error ? e.message : String(e);
+			notify.error(e instanceof Error ? e.message : String(e));
 		} finally {
 			saving = false;
 		}
 	}
+
+	$effect(() => {
+		// Once, on the way in. `begin` is what asks for the microphone, so a
+		// refusal here is a toast and nothing else appears.
+		if (autostart && stage === 'idle') void begin();
+	});
 
 	$effect(() => () => {
 		letGo();
@@ -336,9 +373,5 @@
 
 	{#if full && stage === 'idle'}
 		<p class="text-sm text-gray-500">{t('audio.full', { count: atMost })}</p>
-	{/if}
-
-	{#if trouble}
-		<p class="text-sm text-red-600">{trouble}</p>
 	{/if}
 </div>

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { CAPTURES, visibleCaptures, type Capture } from '$lib/capture';
 	import CaptureDialog from '$lib/components/CaptureDialog.svelte';
-	import Modal from '$lib/components/Modal.svelte';
 	import RadialMenu from '$lib/components/RadialMenu.svelte';
 	import Recorder from '$lib/components/Recorder.svelte';
 	import { SECTION_COLORS } from '$lib/colors';
@@ -51,6 +50,8 @@
 	/** The file input the picture wedge reaches for, and the recorder's dialog. */
 	let picker = $state<HTMLInputElement | null>(null);
 	let recording = $state(false);
+	/** Whether the microphone was actually given, so the panel can hold back. */
+	let started = $state(false);
 
 	/**
 	 * The two things the wheel takes in that are not words.
@@ -87,7 +88,13 @@
 	function addMedia(key: string) {
 		open = false;
 		if (key === 'picture') picker?.click();
-		else recording = true;
+		else {
+			// Pressing Record after pressing Record is a click that asks
+			// nothing: the wedge *is* the answer, so the recorder starts on the
+			// way in and the panel only shows itself once it has.
+			started = false;
+			recording = true;
+		}
 	}
 
 	/**
@@ -221,13 +228,34 @@
 	onchange={tookPicture}
 />
 
-<Modal open={recording} title={t('media.newRecording')} onclose={() => (recording = false)}>
-	<Recorder
-		kilobytes={AUDIO_KILOBYTES}
-		atMost={ACCOUNT_AUDIOS}
-		onsave={keepRecording}
-		ondone={() => (recording = false)}
-	/>
-</Modal>
+<!--
+	The recorder, as a strip along the bottom rather than a dialog.
+
+	A dialog here asked for a second press — Record, inside a screen you opened
+	by pressing Record — and covered the app to do it. This sits above the
+	navigation bar, over whatever you were looking at, because a recording is
+	something you make *while* doing something else.
+
+	`invisible` until it has actually started: the microphone question is
+	answered inside `Recorder`, and a refusal is a toast with nothing to show.
+	Held rather than unmounted, so it does not flash on the way past.
+-->
+{#if recording}
+	<div
+		class="recorder-sheet {started ? '' : 'invisible'}"
+		role="group"
+		aria-label={t('media.newRecording')}
+	>
+		<Recorder
+			autostart
+			kilobytes={AUDIO_KILOBYTES}
+			atMost={ACCOUNT_AUDIOS}
+			onsave={keepRecording}
+			onstarted={() => (started = true)}
+			onfail={() => (recording = false)}
+			ondone={() => (recording = false)}
+		/>
+	</div>
+{/if}
 
 <CaptureDialog capture={writing} onclose={() => (writing = null)} />
