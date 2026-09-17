@@ -101,8 +101,10 @@
 	// A gap the account's way: paid over expected reads one way, under another.
 	// Words, never colour alone — this is a difference, not a good/bad.
 	function gapText(diff: number): string {
-		if (diff === 0) return 'on plan';
-		return diff > 0 ? `${money(diff)} over` : `${money(-diff)} under`;
+		if (diff === 0) return t('finance.bills.onPlan');
+		return diff > 0
+			? t('finance.bills.amountOver', { amount: money(diff) })
+			: t('finance.bills.amountUnder', { amount: money(-diff) });
 	}
 
 	// A cents amount as the decimal the field shows, so editing starts from the

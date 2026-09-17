@@ -640,6 +640,8 @@ export function baseGridOptions(
 		 * it says anything about what was actually done.
 		 */
 		markOf?: (kind: string, refId: number, date: string) => 'done' | 'undone' | null;
+		/** The account's own language, for the day headers a locale changes. */
+		locale?: string;
 	} = {}
 ): Calendar.Options {
 	const slotHeight = opts.slotHeight ?? GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX];
@@ -653,6 +655,7 @@ export function baseGridOptions(
 	const narrow = opts.narrow === true;
 	const today = opts.today ?? '';
 	const markOf = opts.markOf;
+	const locale = opts.locale;
 
 	/** A block's own date, in the same `YYYY-MM-DD` the server speaks. */
 	const dateOf = (start: Date) =>
@@ -803,7 +806,7 @@ export function baseGridOptions(
 				? { weekday: 'long', day: 'numeric', month: 'short' }
 				: narrow
 					? (date: Date) =>
-							`${date.getDate()}\n${date.toLocaleDateString(undefined, { weekday: 'narrow' })}`
+							`${date.getDate()}\n${date.toLocaleDateString(locale, { weekday: 'narrow' })}`
 					: { weekday: 'short', day: 'numeric' }
 	};
 }

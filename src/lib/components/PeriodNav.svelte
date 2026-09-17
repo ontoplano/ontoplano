@@ -20,18 +20,21 @@
 	 */
 	import Icon from '$lib/components/Icon.svelte';
 	import type { Snippet } from 'svelte';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let {
 		onprev,
 		onnext,
 		onnow,
 		/** What the unit is called, for the titles and the labels: "week", "day". */
-		unit = 'week',
+		unit = t('tasks.plan.week'),
 		/** The shortcuts the arrows answer to, printed in their tooltips. */
 		keys = ['[', ']'],
 		/** Whether the way back to now is worth offering. */
 		atNow = true,
-		nowLabel = 'Today',
+		nowLabel = t('ui.today'),
 		prevDisabled = false,
 		children
 	}: {
@@ -53,8 +56,8 @@
 		onclick={onprev}
 		disabled={prevDisabled}
 		class="icon-btn h-11 w-11 shrink-0 disabled:opacity-30"
-		title="Back one {unit} ({keys[0]})"
-		aria-label="Back one {unit}"
+		title={t('tasks.plan.backOneUnit', { unit, key: keys[0] })}
+		aria-label={t('tasks.plan.backOneUnitPlain', { unit })}
 	>
 		<Icon name="arrow-left" size={22} />
 	</button>
@@ -62,7 +65,11 @@
 	<div class="min-w-0 flex-1 text-center sm:flex-none sm:text-left">{@render children()}</div>
 
 	{#if !atNow && onnow}
-		<button onclick={onnow} class="btn btn-sm shrink-0" title="Back to {nowLabel.toLowerCase()}">
+		<button
+			onclick={onnow}
+			class="btn btn-sm shrink-0"
+			title={t('tasks.plan.backToLabel', { label: nowLabel.toLowerCase() })}
+		>
 			{nowLabel}
 		</button>
 	{/if}
@@ -70,8 +77,8 @@
 	<button
 		onclick={onnext}
 		class="icon-btn h-11 w-11 shrink-0"
-		title="Forward one {unit} ({keys[1]})"
-		aria-label="Forward one {unit}"
+		title={t('tasks.plan.forwardOneUnit', { unit, key: keys[1] })}
+		aria-label={t('tasks.plan.forwardOneUnitPlain', { unit })}
 	>
 		<Icon name="arrow-right" size={22} />
 	</button>

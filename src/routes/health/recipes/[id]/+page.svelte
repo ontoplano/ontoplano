@@ -618,7 +618,7 @@
 <Modal
 	bind:open={confirmingDelete}
 	title={t('health.recipes.id.deleteThisRecipe')}
-	description="“{data.recipe.title}” will be gone."
+	description={t('health.recipes.id.titleWillBeGone', { title: data.recipe.title })}
 	size="sm"
 >
 	<p class="text-sm text-gray-600">

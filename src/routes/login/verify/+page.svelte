@@ -51,7 +51,7 @@
 		{/if}
 		{#if form && 'sent' in form && form.sent}
 			<div class="mb-4">
-				<Banner kind="success" message="Sent — check your mailbox." />
+				<Banner kind="success" message={t('login.verify.sentCheckMailbox')} />
 			</div>
 		{/if}
 

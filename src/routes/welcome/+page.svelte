@@ -444,7 +444,9 @@ at a time, and show me what you will write before writing it.`
 											>
 											<span class="mt-1 block text-xs text-gray-500">{option.description}</span>
 											<span class="tabular mt-2 block text-xs text-gray-500">
-												{option.blocks === 0 ? t('welcome.noBlocks') : `${option.blocks} blocks`}
+												{option.blocks === 0
+													? t('welcome.noBlocks')
+													: t('welcome.blocksCount', { count: option.blocks })}
 											</span>
 										</label>
 									{/each}

@@ -91,7 +91,7 @@
 	}
 
 	function when(iso: string): string {
-		return new Date(iso).toLocaleDateString(undefined, {
+		return new Date(iso).toLocaleDateString(t.locale, {
 			day: 'numeric',
 			month: 'short',
 			year: 'numeric'
@@ -164,8 +164,8 @@
 									type="button"
 									onclick={() => openEdit(person)}
 									title={person.pictureId
-										? `Change ${person.name}’s picture`
-										: `Add a picture of ${person.name}`}
+										? t('notebooks.people.changeTheirPicture', { name: person.name })
+										: t('notebooks.people.addAPictureOf', { name: person.name })}
 									class="shrink-0 rounded-full transition hover:opacity-80 focus-visible:ring-2 focus-visible:ring-gray-900 focus-visible:outline-none"
 								>
 									{#if person.pictureId}
@@ -185,7 +185,7 @@
 									{/if}
 									<span class="sr-only"
 										>{t('notebooks.people.aPictureOf', {
-											add: person.pictureId ? 'Change' : 'Add',
+											add: person.pictureId ? t('ui.change') : t('ui.add'),
 											name: person.name
 										})}</span
 									>
@@ -278,7 +278,7 @@
 		-->
 		<div class:hidden={!selectedPerson} class="contents lg:!block">
 			<Card
-				title={selectedPerson ? selectedPerson.name : 'Mentions'}
+				title={selectedPerson ? selectedPerson.name : t('notebooks.people.mentions')}
 				description={selectedPerson
 					? t(RELATIONSHIP_LABELS[selectedPerson.relationship])
 					: t('notebooks.people.pickSomebodyToSeeEverything')}

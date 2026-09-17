@@ -1275,7 +1275,7 @@
 	 * belong to the previous month; the fourth row never does.
 	 */
 	function monthLabel(from: string): string {
-		return new Date(`${addDaysStr(from, 21)}T12:00:00`).toLocaleDateString(undefined, {
+		return new Date(`${addDaysStr(from, 21)}T12:00:00`).toLocaleDateString(t.locale, {
 			month: 'long',
 			year: 'numeric'
 		});
@@ -1515,12 +1515,15 @@
 
 	/** "30 min", "1 h", "Not at all" — the chips, in the fewest words. */
 	function leadLabel(minutes: number): string {
-		if (minutes === 0) return 'Not at all';
-		if (minutes < 60) return `${minutes} min`;
-		if (minutes === 1440) return 'A day';
+		if (minutes === 0) return t('tasks.plan.notAtAll');
+		if (minutes < 60) return t('tasks.plan.leadMinutes', { count: minutes });
+		if (minutes === 1440) return t('tasks.plan.aDay');
 		return minutes % 60 === 0
-			? `${minutes / 60} h`
-			: `${Math.floor(minutes / 60)}h ${minutes % 60}`;
+			? t('tasks.plan.leadHours', { count: minutes / 60 })
+			: t('tasks.plan.leadHoursMinutes', {
+					hours: Math.floor(minutes / 60),
+					minutes: minutes % 60
+				});
 	}
 
 	const editingBlock = $derived.by((): Slot | Exceptional | null => {
@@ -1801,7 +1804,8 @@
 			month: effectiveView === 'month',
 			narrow: narrowScreen,
 			today: data.today,
-			markOf: markOf
+			markOf: markOf,
+			locale: t.locale
 		}),
 		events: gridEvents,
 		editable: true,
@@ -2366,7 +2370,9 @@
 			it belonged to.
 		-->
 		<PeriodNav
-			unit={effectiveView}
+			unit={{ day: t('tasks.plan.day'), week: t('tasks.plan.week'), month: t('tasks.plan.month') }[
+				effectiveView
+			]}
 			atNow={data.range.isCurrent}
 			prevDisabled={!data.range.prev}
 			onprev={goToPrevWeek}
@@ -3365,7 +3371,7 @@
 									? 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
 									: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
 								>{t('tasks.plan.on', {
-									skip: skipped ? 'Restore' : 'Skip',
+									skip: skipped ? t('ui.restore') : t('ui.skip'),
 									selectedDateStr: formatWeekDate(selectedDateStr())
 								})}</button
 							>

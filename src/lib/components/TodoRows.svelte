@@ -252,7 +252,7 @@
 			// stories. Undo puts it back to todo.
 			changeNow(
 				key,
-				`Completed ${todo.title}`,
+				t('todoRows.completedTitle', { title: todo.title }),
 				() => write(String(formData.get('status') ?? 'done')),
 				() => write('todo')
 			);

@@ -818,8 +818,12 @@
 					class="shrink-0 py-2 pl-1 text-gray-400 transition hover:text-gray-700"
 					style="margin-left: {depth * 0.9}rem"
 					aria-expanded={!folded.has(node.id)}
-					title={folded.has(node.id) ? `Show what is in ${node.name}` : `Fold ${node.name}`}
-					aria-label={folded.has(node.id) ? `Show what is in ${node.name}` : `Fold ${node.name}`}
+					title={folded.has(node.id)
+						? t('inventory.showWhatIsIn', { place: node.name })
+						: t('inventory.fold', { place: node.name })}
+					aria-label={folded.has(node.id)
+						? t('inventory.showWhatIsIn', { place: node.name })
+						: t('inventory.fold', { place: node.name })}
 				>
 					<Icon
 						name="chevron-down"
@@ -1226,7 +1230,7 @@
 					class="btn btn-sm btn-quiet"
 					title={t('inventory.showWhatYouAlreadyHave', {
 						bought: keyFor('/inventory', 'toggle-show-bought')
-					})}>{t('inventory.bought', { show: showBought ? 'Hide' : 'Show' })}</button
+					})}>{t('inventory.bought', { show: showBought ? t('ui.hide') : t('ui.show') })}</button
 				>
 				<button
 					onclick={() => (showSnoozed = !showSnoozed)}
@@ -1234,7 +1238,7 @@
 					class="btn btn-sm btn-quiet"
 					title={t('inventory.showWhatYouPutAway', {
 						snoozed: keyFor('/inventory', 'toggle-show-snoozed')
-					})}>{t('inventory.archived', { show: showSnoozed ? 'Hide' : 'Show' })}</button
+					})}>{t('inventory.archived', { show: showSnoozed ? t('ui.hide') : t('ui.show') })}</button
 				>
 				<label class="sr-only" for="inventory-find">{t('inventory.find2')}</label>
 				<OneLine
@@ -1457,7 +1461,9 @@
 																title={item.snoozed
 																	? t('inventory.putItBackOnThe')
 																	: t('finance.ledgers.putItAway')}
-																aria-label="{item.snoozed ? 'Unarchive' : 'Archive'}: {item.name}"
+																aria-label="{item.snoozed
+																	? t('inventory.putItBackOnThe')
+																	: t('finance.ledgers.putItAway')}: {item.name}"
 															>
 																<Icon name={item.snoozed ? 'undo' : 'archive'} />
 															</button>
@@ -1592,7 +1598,9 @@
 												title={item.snoozed
 													? t('inventory.putItBackOnThe')
 													: t('finance.ledgers.putItAway')}
-												aria-label="{item.snoozed ? 'Unarchive' : 'Archive'}: {item.name}"
+												aria-label="{item.snoozed
+													? t('inventory.putItBackOnThe')
+													: t('finance.ledgers.putItAway')}: {item.name}"
 											>
 												<Icon name={item.snoozed ? 'undo' : 'archive'} />
 											</button>

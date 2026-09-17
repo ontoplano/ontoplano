@@ -35,7 +35,7 @@
 
 	/** `2026-02` as somebody would say it. */
 	const monthName = (key: string) =>
-		new Date(`${key}-01T00:00:00`).toLocaleDateString(undefined, {
+		new Date(`${key}-01T00:00:00`).toLocaleDateString(t.locale, {
 			month: 'long',
 			year: 'numeric'
 		});
@@ -189,7 +189,7 @@
 					class="text-xs text-gray-500 hover:text-gray-700"
 					onclick={() => (showArchived = !showArchived)}
 					>{t('finance.ledgers.archived', {
-						show: showArchived ? 'Hide' : 'Show',
+						show: showArchived ? t('ui.hide') : t('ui.show'),
 						length: archived.length
 					})}</button
 				>

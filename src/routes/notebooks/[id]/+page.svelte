@@ -183,7 +183,7 @@
 <Modal
 	bind:open={confirmingDelete}
 	title={t('notebooks.id.deleteThisNotebook')}
-	description="“{data.notebook.title}” will be gone."
+	description={t('notebooks.id.titleWillBeGone', { title: data.notebook.title })}
 	size="sm"
 >
 	<p class="text-sm text-gray-600">

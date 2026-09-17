@@ -112,16 +112,17 @@
 
 	function progressLabel(goal: Goal): string {
 		// The tasks, when there are any: the measures under them say the rest.
-		if (goal.progress.total) return `${goal.progress.done} of ${goal.progress.total} done`;
-		if (goal.progress.total === 0 && goal.targets.length === 0) return 'Nothing counted yet';
+		if (goal.progress.total)
+			return t('goals.doneOfTotal', { done: goal.progress.done ?? 0, total: goal.progress.total });
+		if (goal.progress.total === 0 && goal.targets.length === 0) return t('goals.nothingCountedYet');
 		// One measure reads as itself; several are listed under the bar, so the
 		// line above them says how many rather than repeating the first.
 		if (goal.targets.length === 1) {
 			const t = goal.targets[0];
 			return `${t.currentValue} / ${t.targetValue} ${t.unit}`.trim();
 		}
-		if (goal.targets.length > 1) return `${goal.targets.length} measures`;
-		return 'No measure set';
+		if (goal.targets.length > 1) return t('goals.measuresCount', { count: goal.targets.length });
+		return t('goals.noMeasureSet');
 	}
 
 	function blankTarget() {
@@ -256,7 +257,7 @@
 		bind:open={showAreas}
 		error={form?.message}
 		title={t('goals.areas')}
-		description="Fitness, study, money — whatever you track."
+		description={t('goals.fitnessStudyMoney')}
 		size="sm"
 	>
 		{#if data.areas.length > 0}
@@ -394,7 +395,7 @@
 				<Field
 					label={t('goals.starts')}
 					span={4}
-					hint={formPeriod ? `Counts for ${formPeriod}` : ''}
+					hint={formPeriod ? t('goals.countsFor', { period: formPeriod }) : ''}
 				>
 					<input
 						autocomplete="off"
@@ -526,7 +527,7 @@
 				<EmptyState
 					icon="goals"
 					title={t('goals.noGoalsYet')}
-					description="A goal is a commitment with a deadline attached. Start with a week — you can promote it later."
+					description={t('goals.aGoalIsACommitment')}
 				>
 					{#snippet action()}
 						<button onclick={openCreate} class="btn btn-primary">
@@ -664,7 +665,9 @@
 																value={Math.max(0, target.currentValue - COUNT_STEP)}
 																disabled={target.currentValue <= 0}
 																title={t('goals.oneFewer')}
-																aria-label={`One fewer ${target.unit || t('goals.towardsThis')}`.trim()}
+																aria-label={t('goals.oneFewerUnit', {
+																	unit: target.unit || t('goals.towardsThis')
+																}).trim()}
 															>
 																<Icon name="minus" />
 															</button>
@@ -676,7 +679,9 @@
 																name="currentValue"
 																value={target.currentValue + COUNT_STEP}
 																title={t('goals.oneMore')}
-																aria-label={`One more ${target.unit || t('goals.towardsThis')}`.trim()}
+																aria-label={t('goals.oneMoreUnit', {
+																	unit: target.unit || t('goals.towardsThis')
+																}).trim()}
 															>
 																<Icon name="plus" />
 															</button>
@@ -687,7 +692,10 @@
 																min="0"
 																step="any"
 																value={target.currentValue}
-																aria-label={`Progress towards ${target.targetValue} ${target.unit}`.trim()}
+																aria-label={t('goals.progressTowards', {
+																	value: target.targetValue,
+																	unit: target.unit
+																}).trim()}
 																class="w-20"
 															/>
 														{/if}
@@ -896,7 +904,7 @@
 		error={form?.message}
 		onclose={() => (linkingId = null)}
 		title={t('goals.linkedTasks')}
-		description="Linked tasks make progress countable — how many of these actually got done inside the period, instead of a number you type in."
+		description={t('goals.linkedTasksMakeProgress')}
 		size="lg"
 	>
 		{#if linking}

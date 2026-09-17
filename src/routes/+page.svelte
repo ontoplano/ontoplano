@@ -28,7 +28,7 @@
 
 	/** "1 block", "3 blocks" — because "1 blocks" is how a sentence loses trust. */
 	function blocks(n: number): string {
-		return `${n} ${n === 1 ? 'block' : 'blocks'}`;
+		return t('home.blocksCount', { count: n });
 	}
 
 	/** "17 Aug" — a Monday said the way somebody would say it. */
@@ -1057,7 +1057,7 @@
 								<span class="text-gray-700">{workout.title}</span>
 								<span class="text-xs text-gray-500">
 									{workout.lastDoneAt
-										? `last ${workout.lastDoneAt.slice(0, 10)}`
+										? t('home.lastDone', { date: workout.lastDoneAt.slice(0, 10) })
 										: t('home.neverYet')}
 								</span>
 							</div>

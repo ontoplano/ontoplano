@@ -83,7 +83,11 @@
 					 */
 					await update({ reset: false });
 					if (result.type === 'success') {
-						notify.success(said ? `Added to ${which.into}: ${said}` : `Added to ${which.into}.`);
+						notify.success(
+							said
+								? t('capture.addedToWithContent', { into: which.into, content: said })
+								: t('capture.addedTo', { into: which.into })
+						);
 						onclose();
 						return;
 					}

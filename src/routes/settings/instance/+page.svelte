@@ -89,16 +89,16 @@
 	/** "3 minutes ago", down to the granularity anybody reads at a glance. */
 	function ago(iso: string): string {
 		const seconds = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
-		if (seconds < 90) return `${seconds}s ago`;
+		if (seconds < 90) return t('settings.instance.secondsAgo', { count: seconds });
 		const minutes = Math.round(seconds / 60);
-		if (minutes < 90) return `${minutes} min ago`;
+		if (minutes < 90) return t('settings.instance.minutesAgo', { count: minutes });
 		const hours = Math.round(minutes / 60);
-		if (hours < 36) return `${hours}h ago`;
-		return `${Math.round(hours / 24)} days ago`;
+		if (hours < 36) return t('settings.instance.hoursAgo', { count: hours });
+		return t('settings.instance.daysAgo', { count: Math.round(hours / 24) });
 	}
 
 	function exactly(iso: string): string {
-		return new Date(iso).toLocaleString(undefined, {
+		return new Date(iso).toLocaleString(t.locale, {
 			day: 'numeric',
 			month: 'short',
 			hour: '2-digit',
@@ -125,7 +125,7 @@
 
 	function when(iso: string | null): string {
 		if (!iso) return '';
-		return new Date(iso).toLocaleDateString(undefined, {
+		return new Date(iso).toLocaleDateString(t.locale, {
 			day: 'numeric',
 			month: 'short',
 			year: 'numeric'
@@ -610,7 +610,7 @@
 									{/if}
 									{#if data.sellsAnything}
 										· {invite.grantsUntil
-											? `free until ${when(invite.grantsUntil)}`
+											? t('settings.instance.freeUntilDate', { date: when(invite.grantsUntil) })
 											: t('settings.instance.freeWithNoEndDate')}
 									{/if}
 								</span>

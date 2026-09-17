@@ -54,10 +54,7 @@
 
 		{#if mode === 'register' && data.needsInvite}
 			<div class="mb-5">
-				<Banner
-					kind="info"
-					message="Ontoplano is in a closed alpha — registering takes an invitation code. Accounts made now are real: your data is kept, through the alpha and after it."
-				/>
+				<Banner kind="info" message={t('login.closedAlphaWarning')} />
 			</div>
 		{/if}
 

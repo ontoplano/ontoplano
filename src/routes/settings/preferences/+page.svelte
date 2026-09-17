@@ -59,12 +59,12 @@
 		if (!isCurrency(currency)) return null;
 		let name = '';
 		try {
-			name = new Intl.DisplayNames(undefined, { type: 'currency' }).of(currency) ?? '';
+			name = new Intl.DisplayNames(t.locale, { type: 'currency' }).of(currency) ?? '';
 		} catch {
 			/* a runtime without display names still gets the price */
 		}
 		return {
-			price: new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(12.5),
+			price: new Intl.NumberFormat(t.locale, { style: 'currency', currency }).format(12.5),
 			name: name && name.toUpperCase() !== currency ? name : ''
 		};
 	});

@@ -120,8 +120,12 @@
 				type="button"
 				onclick={() => (value = null)}
 				disabled={value === null}
-				title="Leave {t(RATING_LABELS[rating]).toLowerCase()} unanswered"
-				aria-label="Leave {t(RATING_LABELS[rating]).toLowerCase()} unanswered"
+				title={t('ratingPicker.leaveUnanswered', {
+					rating: t(RATING_LABELS[rating]).toLowerCase()
+				})}
+				aria-label={t('ratingPicker.leaveUnanswered', {
+					rating: t(RATING_LABELS[rating]).toLowerCase()
+				})}
 				class="-my-1 shrink-0 px-1.5 py-1 text-sm leading-none text-gray-400 hover:text-gray-900 disabled:invisible"
 			>
 				×

@@ -130,7 +130,7 @@
 						<button
 							class="icon-btn"
 							aria-label={t('gallery.id.whatIsInside', {
-								show: opened.has(node.id) ? 'Hide' : 'Show',
+								show: opened.has(node.id) ? t('ui.hide') : t('ui.show'),
 								name: node.name
 							})}
 							aria-expanded={opened.has(node.id)}
@@ -242,7 +242,9 @@
 		<EmptyState
 			icon="image"
 			title={t('gallery.id.nothingHereYet')}
-			description="Add pictures and they appear in a grid. Up to {data.pictureKilobytes}KB each on this instance."
+			description={t('media.gallery.id.addPicturesAppearInGrid', {
+				kilobytes: data.pictureKilobytes
+			})}
 		/>
 	{:else}
 		<ul class="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">

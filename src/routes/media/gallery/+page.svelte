@@ -211,11 +211,11 @@
 					style="margin-left: {depth * 0.9}rem"
 					aria-expanded={opened.has(node.id)}
 					title={opened.has(node.id)
-						? `Fold ${leafAlbumName(node.name)}`
-						: `Show what is in ${leafAlbumName(node.name)}`}
+						? t('media.fold', { name: leafAlbumName(node.name) })
+						: t('media.showWhatIsIn', { name: leafAlbumName(node.name) })}
 					aria-label={opened.has(node.id)
-						? `Fold ${leafAlbumName(node.name)}`
-						: `Show what is in ${leafAlbumName(node.name)}`}
+						? t('media.fold', { name: leafAlbumName(node.name) })
+						: t('media.showWhatIsIn', { name: leafAlbumName(node.name) })}
 				>
 					<Icon
 						name="chevron-down"
@@ -386,7 +386,9 @@
 						disabled={plan.willImport === 0 || importing}
 						onclick={sendFolder}
 					>
-						{importing ? `Importing ${progress}/${plan.willImport}…` : `Import ${plan.willImport}`}
+						{importing
+							? t('media.importingProgress', { done: progress, total: plan.willImport })
+							: t('media.importCount', { count: plan.willImport })}
 					</button>
 				</span>
 			</div>

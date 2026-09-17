@@ -74,10 +74,10 @@
 			{#if trapped}
 				<Banner
 					kind="warning"
-					message="This page opened inside the app, so the link back to the widget comes round to here. Copy the key instead and paste it on the widget's setup screen."
+					message={t('settings.integrations.widget.openedInsideAppLinkComes')}
 				/>
 			{:else}
-				<Banner kind="success" message="Connected. Taking you back to the widget…" />
+				<Banner kind="success" message={t('settings.integrations.widget.connectedTakingYouBack')} />
 			{/if}
 
 			<!--
@@ -126,7 +126,7 @@
 			<div class="mb-3">
 				<Banner
 					kind="warning"
-					message="This page opened inside the app rather than in a browser. Connect still works — you will copy the key across by hand at the end."
+					message={t('settings.integrations.widget.openedInsideAppRatherThan')}
 				/>
 			</div>
 		{/if}

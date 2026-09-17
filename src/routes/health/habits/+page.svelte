@@ -510,8 +510,8 @@
 								{#if habit.streak > 0}
 									<span class="text-xs font-medium {isNeutral ? 'text-gray-600' : 'text-blue-600'}">
 										{isBad
-											? `${habit.streak} day${habit.streak === 1 ? '' : 's'} clean`
-											: `${habit.streak} day streak`}
+											? t('health.habits.daysClean', { count: habit.streak })
+											: t('health.habits.dayStreak', { count: habit.streak })}
 									</span>
 								{/if}
 								<span class="text-xs text-gray-500"

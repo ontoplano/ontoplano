@@ -48,7 +48,7 @@
 		class="w-full min-w-120"
 		style="max-height: 210px"
 		role="img"
-		aria-label="{inLabel} against {outLabel}, by month"
+		aria-label={t('streamChart.inAgainstOutByMonth', { inLabel, outLabel })}
 	>
 		{#each [0.25, 0.5, 0.75, 1] as line (line)}
 			<line

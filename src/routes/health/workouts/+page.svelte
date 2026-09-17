@@ -224,7 +224,7 @@
 		const day = new Date(`${iso}T00:00:00`);
 		if (Number.isNaN(day.getTime())) return iso;
 		const thisYear = day.getFullYear() === new Date().getFullYear();
-		return day.toLocaleDateString(undefined, {
+		return day.toLocaleDateString(t.locale, {
 			day: 'numeric',
 			month: 'short',
 			...(thisYear ? {} : { year: 'numeric' })

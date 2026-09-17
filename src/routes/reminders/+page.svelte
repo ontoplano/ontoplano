@@ -990,7 +990,10 @@
 	<!-- The sounds themselves. -->
 	<Card
 		title={t('reminders.yourSounds')}
-		description="Up to {data.limits.ringtones}, {data.limits.kilobytes} KB each. MP3, OGG or WAV."
+		description={t('reminders.upToRingtonesKbEach', {
+			ringtones: data.limits.ringtones,
+			kilobytes: data.limits.kilobytes
+		})}
 		flush
 	>
 		{#if data.ringtones.length > 0}

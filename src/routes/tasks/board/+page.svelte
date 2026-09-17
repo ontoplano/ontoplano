@@ -87,8 +87,10 @@
 	function formatDuration(minutes: number): string {
 		const h = Math.floor(minutes / 60);
 		const m = minutes % 60;
-		if (h === 0) return `${m}m`;
-		return m === 0 ? `${h}h` : `${h}h ${m}m`;
+		if (h === 0) return t('tasks.board.minutesAbbrev', { count: m });
+		return m === 0
+			? t('tasks.board.hoursAbbrev', { count: h })
+			: t('tasks.board.hoursMinutesAbbrev', { hours: h, minutes: m });
 	}
 
 	/**
@@ -540,7 +542,7 @@
 	-->
 	{#if tab === 'today'}
 		<PeriodNav
-			unit="day"
+			unit={t('tasks.plan.day')}
 			atNow={data.date === data.today}
 			onprev={() => shiftDay(-1)}
 			onnext={() => shiftDay(1)}
@@ -739,7 +741,9 @@
 							<input type="hidden" name="id" value={card.id} />
 							<input type="hidden" name="minutes" value={minutes} />
 							<button class="btn btn-sm">
-								{minutes < 60 ? `${minutes} min` : t('tasks.board.1Hour')}
+								{minutes < 60
+									? t('tasks.board.minutesFull', { count: minutes })
+									: t('tasks.board.1Hour')}
 								{t('tasks.board.before')}
 							</button>
 						</form>

@@ -222,7 +222,7 @@
 						<div
 							class="h-3 w-3"
 							style="background-color: {heatColor(day.count)}"
-							title="{day.date}: {day.count} {day.count === 1 ? 'point' : 'points'}"
+							title={t('streamChart.dateCountPoints', { date: day.date, count: day.count })}
 						></div>
 					{/each}
 				</div>

@@ -88,10 +88,10 @@
 	 */
 	function tally(n: Notebook): string {
 		const parts: string[] = [];
-		if (n.entries) parts.push(`${n.entries} ${n.entries === 1 ? 'note' : 'notes'}`);
-		if (n.tasks) parts.push(`${n.tasks} ${n.tasks === 1 ? 'task' : 'tasks'}`);
-		if (n.goals) parts.push(`${n.goals} ${n.goals === 1 ? 'goal' : 'goals'}`);
-		return parts.join(' · ') || 'nothing in it yet';
+		if (n.entries) parts.push(t('notebooks.notesCount', { count: n.entries }));
+		if (n.tasks) parts.push(t('notebooks.tasksCount', { count: n.tasks }));
+		if (n.goals) parts.push(t('notebooks.goalsCount', { count: n.goals }));
+		return parts.join(' · ') || t('notebooks.nothingInItYet');
 	}
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
@@ -151,7 +151,7 @@
 							<button
 								class="icon-btn -ml-1 shrink-0"
 								aria-label={t('notebooks.whatIsInside', {
-									show: opened.has(node.id) ? 'Hide' : 'Show',
+									show: opened.has(node.id) ? t('ui.hide') : t('ui.show'),
 									title: node.title
 								})}
 								aria-expanded={opened.has(node.id)}
@@ -205,7 +205,9 @@
 							<button
 								class="icon-btn"
 								title={node.closedAt ? t('notebooks.reopenIt') : t('notebooks.closeIt')}
-								aria-label="{node.closedAt ? 'Reopen' : 'Close'} {node.title}"
+								aria-label="{node.closedAt
+									? t('notebooks.reopenIt')
+									: t('notebooks.closeIt')} {node.title}"
 							>
 								{#if node.closedAt}
 									<Icon name="undo" />

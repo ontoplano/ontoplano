@@ -8,10 +8,4 @@
  * a list. Production never asks for this module, so it is never in the
  * bundle a reader downloads.
  */
-export const borrowed: ReadonlySet<string> = new Set([
-	'attach.attach',
-	'attach.chooseOne',
-	'attach.noneYet',
-	'attach.recordOne',
-	'attach.recording'
-]);
+export const borrowed: ReadonlySet<string> = new Set([]);

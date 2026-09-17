@@ -95,9 +95,9 @@
 	function hours(minutes: number): string {
 		const h = Math.floor(minutes / 60);
 		const m = minutes % 60;
-		if (h === 0) return `${m}min`;
-		if (m === 0) return `${h}h`;
-		return `${h}h ${m}min`;
+		if (h === 0) return t('tasks.review.minutesAbbrev', { count: m });
+		if (m === 0) return t('tasks.review.hoursAbbrev', { count: h });
+		return t('tasks.review.hoursMinutesAbbrev', { hours: h, minutes: m });
 	}
 
 	function pretty(dateStr: string): string {
@@ -144,8 +144,8 @@
 
 <div class="space-y-4">
 	<PeriodNav
-		unit="week"
-		nowLabel="This week"
+		unit={t('tasks.plan.week')}
+		nowLabel={t('tasks.review.thisWeek')}
 		atNow={data.week.isCurrent}
 		onprev={() =>
 			// The route is resolved; the rule cannot see through the query string.
@@ -484,7 +484,7 @@
 		{#if data.stale.length > 0}
 			<Card
 				title={t('tasks.review.stillHere')}
-				description="Nobody has touched these in {data.staleMonths} months. Are they real?"
+				description={t('tasks.review.nobodyHasTouchedThese', { months: data.staleMonths })}
 				accent="var(--section-accent)"
 				flush
 			>

@@ -33,7 +33,7 @@
 
 	function when(iso: string | null): string {
 		if (!iso) return '';
-		return new Date(iso).toLocaleDateString(undefined, {
+		return new Date(iso).toLocaleDateString(t.locale, {
 			day: 'numeric',
 			month: 'long',
 			year: 'numeric'
@@ -97,24 +97,24 @@
 		<Banner
 			kind="success"
 			message={data.entitlement.source === 'trial' || data.entitlement.status === 'trialing'
-				? `Card saved — your ${data.pricing.trialDays} days are running.`
+				? t('settings.billing.cardSavedTrialRunning', { count: data.pricing.trialDays })
 				: t('settings.billing.paymentConfirmed')}
 		/>
 	{:else if confirming}
-		<Banner kind="info" message="Confirming your payment…" />
+		<Banner kind="info" message={t('settings.billing.confirmingYourPayment')} />
 	{/if}
 
 	<Card
 		title={t('settings.billing.yourPlan')}
 		description={data.entitlement.status === 'trialing' || data.entitlement.source === 'trial'
-			? `Your trial runs until ${when(data.entitlement.until)}.`
+			? t('settings.billing.trialRunsUntil', { date: when(data.entitlement.until) })
 			: data.entitlement.source === 'lapsed'
 				? t('settings.billing.yourSubscriptionHasEndedNothing')
 				: data.entitlement.source === 'invited' && data.entitlement.until
 					? // An invitation, not a trial: nothing was charged and no card was
 						// asked for. Say when it runs out, because the buttons below are
 						// only useful to somebody who knows that it does.
-						`You were invited, and your account runs until ${when(data.entitlement.until)}. No card, and nothing charged.`
+						t('settings.billing.invitedRunsUntil', { date: when(data.entitlement.until) })
 					: current.blurb}
 	>
 		{#snippet actions()}
@@ -130,8 +130,12 @@
 			{#if data.hasProviderSub && data.interval}
 				<span class="text-sm text-gray-500">
 					{data.interval === 'year'
-						? `${formatPrice(mine.yearlyCents, mine.currency)} a year`
-						: `${formatPrice(mine.monthlyCents, mine.currency)} a month`}
+						? t('settings.billing.aYear', {
+								currency: formatPrice(mine.yearlyCents, mine.currency)
+							})
+						: t('settings.billing.aMonth', {
+								currency: formatPrice(mine.monthlyCents, mine.currency)
+							})}
 				</span>
 			{:else if current.id === 'pro'}
 				<span class="text-sm text-gray-500"
@@ -151,10 +155,10 @@
 			{#if data.entitlement.until}
 				<span class="text-sm text-gray-500">
 					{data.entitlement.endingAt
-						? `ends ${when(data.entitlement.endingAt)}`
+						? t('settings.billing.endsOn', { date: when(data.entitlement.endingAt) })
 						: data.entitlement.status === 'trialing' || data.entitlement.source === 'trial'
-							? `first charge ${when(data.entitlement.until)}`
-							: `renews ${when(data.entitlement.until)}`}
+							? t('settings.billing.firstChargeOn', { date: when(data.entitlement.until) })
+							: t('settings.billing.renewsOn', { date: when(data.entitlement.until) })}
 				</span>
 			{/if}
 		</div>

@@ -386,7 +386,7 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 																	name="scopes"
 																	value={scope}
 																	checked
-																	aria-label="{row.label}: {i === 0 ? 'read' : 'write'}"
+																	aria-label="{row.label}: {i === 0 ? t('ui.read') : t('ui.write')}"
 																/>
 															{:else if scope}
 																<input

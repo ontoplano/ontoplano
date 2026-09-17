@@ -46,7 +46,7 @@
 	const kindLabel = mailKindLabel;
 
 	function when(iso: string): string {
-		return new Date(iso).toLocaleDateString(undefined, {
+		return new Date(iso).toLocaleDateString(t.locale, {
 			day: 'numeric',
 			month: 'short',
 			year: 'numeric'
@@ -55,10 +55,10 @@
 
 	function ago(iso: string): string {
 		const minutes = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
-		if (minutes < 1) return 'just now';
-		if (minutes < 60) return `${minutes}m ago`;
+		if (minutes < 1) return t('admin.justNow');
+		if (minutes < 60) return t('admin.minutesAgo', { count: minutes });
 		const hours = Math.round(minutes / 60);
-		if (hours < 24) return `${hours}h ago`;
+		if (hours < 24) return t('admin.hoursAgo', { count: hours });
 		return when(iso);
 	}
 </script>
@@ -74,10 +74,7 @@
 -->
 {#if data.billingSandbox}
 	<div class="mb-4">
-		<Banner
-			kind="error"
-			message="Billing is configured with a SANDBOX key — every charge here is play money. The live key belongs in PADDLE_API_KEY before this instance sells for real."
-		/>
+		<Banner kind="error" message={t('admin.billingSandboxWarning')} />
 	</div>
 {/if}
 {#if data.billingBroken}

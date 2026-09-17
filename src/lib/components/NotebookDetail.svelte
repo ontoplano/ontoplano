@@ -259,7 +259,7 @@
 	]);
 
 	function when(iso: string): string {
-		return new Date(iso).toLocaleDateString(undefined, {
+		return new Date(iso).toLocaleDateString(t.locale, {
 			day: 'numeric',
 			month: 'short',
 			year: 'numeric'

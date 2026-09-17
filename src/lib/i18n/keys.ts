@@ -22,6 +22,7 @@ export type MessageKey =
 	| 'admin.admin'
 	| 'admin.allAccounts'
 	| 'admin.alwaysAnAdmin'
+	| 'admin.billingSandboxWarning'
 	| 'admin.blockForGood'
 	| 'admin.blocked'
 	| 'admin.blockedInTheLast'
@@ -30,6 +31,7 @@ export type MessageKey =
 	| 'admin.everyAccountSHistoryInOne'
 	| 'admin.group'
 	| 'admin.hiddenOnTheDemo'
+	| 'admin.hoursAgo'
 	| 'admin.id.addressConfirmed'
 	| 'admin.id.byAnAdministrator'
 	| 'admin.id.deleteForGood'
@@ -55,6 +57,7 @@ export type MessageKey =
 	| 'admin.inThisLog'
 	| 'admin.itsLinkHasExpired'
 	| 'admin.joined'
+	| 'admin.justNow'
 	| 'admin.last'
 	| 'admin.lately'
 	| 'admin.letBackInAfter'
@@ -63,6 +66,7 @@ export type MessageKey =
 	| 'admin.liftThePermanentBlock'
 	| 'admin.mailThatDidNotGo'
 	| 'admin.makeAdmin'
+	| 'admin.minutesAgo'
 	| 'admin.noPage'
 	| 'admin.nobodyCanRegisterUntilThis'
 	| 'admin.nobodyHasBeenTurnedAway'
@@ -248,6 +252,8 @@ export type MessageKey =
 	| 'buy.backToBilling'
 	| 'buy.openingTheSecurePaymentWindow'
 	| 'buy.thePaymentWindowCouldNot'
+	| 'capture.addedTo'
+	| 'capture.addedToWithContent'
 	| 'capture.diaryNote'
 	| 'capture.newThing'
 	| 'captureDialog.notWrittenDown'
@@ -323,6 +329,8 @@ export type MessageKey =
 	| 'fields.todo.categoryNotebookNotesRatings'
 	| 'fields.todo.none'
 	| 'fields.todo.urgencyInterestEnergy'
+	| 'finance.bills.amountOver'
+	| 'finance.bills.amountUnder'
 	| 'finance.bills.andItsWholePaymentHistory'
 	| 'finance.bills.archive'
 	| 'finance.bills.archived'
@@ -347,6 +355,7 @@ export type MessageKey =
 	| 'finance.bills.newBill'
 	| 'finance.bills.noBillsYet'
 	| 'finance.bills.nothingInTheLastFew'
+	| 'finance.bills.onPlan'
 	| 'finance.bills.paid'
 	| 'finance.bills.paid2'
 	| 'finance.bills.paidSoFar'
@@ -529,6 +538,7 @@ export type MessageKey =
 	| 'gallery.rename'
 	| 'gallery.renameAlbum'
 	| 'gallery.trips'
+	| 'goals.aGoalIsACommitment'
 	| 'goals.achieved'
 	| 'goals.activities'
 	| 'goals.addArea'
@@ -540,18 +550,23 @@ export type MessageKey =
 	| 'goals.closeItAsDone'
 	| 'goals.closeItAsNotDone'
 	| 'goals.confirm'
+	| 'goals.countsFor'
 	| 'goals.createGoal'
+	| 'goals.doneOfTotal'
 	| 'goals.eGFitness'
 	| 'goals.eGTrainThreeTimesA'
 	| 'goals.editGoal'
 	| 'goals.everyBlockOf'
 	| 'goals.everyWeekIts'
+	| 'goals.fitnessStudyMoney'
 	| 'goals.goal'
 	| 'goals.goals'
 	| 'goals.hideClosed'
 	| 'goals.horizon'
 	| 'goals.linkedTasks'
+	| 'goals.linkedTasksMakeProgress'
 	| 'goals.measuredBy'
+	| 'goals.measuresCount'
 	| 'goals.missed'
 	| 'goals.newArea'
 	| 'goals.newGoal'
@@ -560,16 +575,21 @@ export type MessageKey =
 	| 'goals.noAreasYet'
 	| 'goals.noGoalsInThisArea'
 	| 'goals.noGoalsYet'
+	| 'goals.noMeasureSet'
 	| 'goals.noOpenTodos'
 	| 'goals.noWeeklyBlocksYet'
 	| 'goals.none'
 	| 'goals.nothingAtThisHorizon'
+	| 'goals.nothingCountedYet'
 	| 'goals.nothingLinkedYetProgress'
 	| 'goals.oneFewer'
+	| 'goals.oneFewerUnit'
 	| 'goals.oneMore'
+	| 'goals.oneMoreUnit'
 	| 'goals.optionalLeaveItEmptyFor'
 	| 'goals.partOf'
 	| 'goals.partOf2'
+	| 'goals.progressTowards'
 	| 'goals.quarter'
 	| 'goals.removeMeasure'
 	| 'goals.reopen'
@@ -594,6 +614,8 @@ export type MessageKey =
 	| 'health.habits.addNote'
 	| 'health.habits.confirm'
 	| 'health.habits.createHabit'
+	| 'health.habits.dayStreak'
+	| 'health.habits.daysClean'
 	| 'health.habits.doneToday'
 	| 'health.habits.eGCoffeeNaps'
 	| 'health.habits.eGGymReading'
@@ -666,6 +688,7 @@ export type MessageKey =
 	| 'health.recipes.id.serves2'
 	| 'health.recipes.id.tbsp'
 	| 'health.recipes.id.thatIsAsManyAs'
+	| 'health.recipes.id.titleWillBeGone'
 	| 'health.recipes.id.toBuy'
 	| 'health.recipes.id.upToKb'
 	| 'health.recipes.id.uploading'
@@ -802,6 +825,7 @@ export type MessageKey =
 	| 'home.allEntries'
 	| 'home.backToTheDashboard'
 	| 'home.bills'
+	| 'home.blocksCount'
 	| 'home.countToGo'
 	| 'home.demoVersion'
 	| 'home.diary'
@@ -827,6 +851,7 @@ export type MessageKey =
 	| 'home.inProgress'
 	| 'home.itIsAndThisInstance'
 	| 'home.jumpToASection'
+	| 'home.lastDone'
 	| 'home.lastWeekIsStillOpen'
 	| 'home.latestToDos'
 	| 'home.ldquoRdquo'
@@ -1104,6 +1129,7 @@ export type MessageKey =
 	| 'legal.terms.whatYouWriteHereBelongs'
 	| 'legal.terms.whoeverRunsThisInstance'
 	| 'legal.terms.youWillBeEmailedTwo'
+	| 'login.closedAlphaWarning'
 	| 'login.confirmPassword'
 	| 'login.createAccount'
 	| 'login.email'
@@ -1134,6 +1160,7 @@ export type MessageKey =
 	| 'login.verify.clickOnItsLink'
 	| 'login.verify.confirmYourAddress'
 	| 'login.verify.sendItAgain'
+	| 'login.verify.sentCheckMailbox'
 	| 'login.verify.signOut'
 	| 'login.verify.wrongAddress'
 	| 'mail.addressChange.action'
@@ -1189,9 +1216,14 @@ export type MessageKey =
 	| 'markdownImport.obsidian'
 	| 'markdownImport.ready'
 	| 'media.addQuickly'
+	| 'media.fold'
+	| 'media.gallery.id.addPicturesAppearInGrid'
+	| 'media.importCount'
+	| 'media.importingProgress'
 	| 'media.newRecording'
 	| 'media.pictureAdded'
 	| 'media.recordingAdded'
+	| 'media.showWhatIsIn'
 	| 'metaEditor.addOption'
 	| 'metaEditor.key'
 	| 'metaEditor.options'
@@ -1255,6 +1287,7 @@ export type MessageKey =
 	| 'notebooks.edit'
 	| 'notebooks.family'
 	| 'notebooks.fileBecomesANoteIn'
+	| 'notebooks.goalsCount'
 	| 'notebooks.id.atTheBottomOf'
 	| 'notebooks.id.close'
 	| 'notebooks.id.closed'
@@ -1269,6 +1302,7 @@ export type MessageKey =
 	| 'notebooks.id.sharedBy'
 	| 'notebooks.id.sharedWithFamily'
 	| 'notebooks.id.stopSharing'
+	| 'notebooks.id.titleWillBeGone'
 	| 'notebooks.id.whatItIsFor'
 	| 'notebooks.ideas.applied'
 	| 'notebooks.ideas.applied2'
@@ -1298,18 +1332,23 @@ export type MessageKey =
 	| 'notebooks.md'
 	| 'notebooks.newNotebook'
 	| 'notebooks.noNotebooksYet'
+	| 'notebooks.notesCount'
 	| 'notebooks.notesWithoutANotebook'
+	| 'notebooks.nothingInItYet'
 	| 'notebooks.orImportAFolderOf'
 	| 'notebooks.people.19900314Or0314WithoutThe'
 	| 'notebooks.people.aPictureOf'
+	| 'notebooks.people.addAPictureOf'
 	| 'notebooks.people.addPerson'
 	| 'notebooks.people.addThePeopleWhoTurn'
 	| 'notebooks.people.birthday'
+	| 'notebooks.people.changeTheirPicture'
 	| 'notebooks.people.editPerson'
 	| 'notebooks.people.email'
 	| 'notebooks.people.howYouKnowThem'
 	| 'notebooks.people.kb'
 	| 'notebooks.people.mentionThemInADiary'
+	| 'notebooks.people.mentions'
 	| 'notebooks.people.nbspFor'
 	| 'notebooks.people.newPerson'
 	| 'notebooks.people.nobodySelected'
@@ -1328,6 +1367,7 @@ export type MessageKey =
 	| 'notebooks.reopenIt'
 	| 'notebooks.startOneForSomethingYou'
 	| 'notebooks.tags'
+	| 'notebooks.tasksCount'
 	| 'notebooks.theirNotebookWas'
 	| 'notebooks.theirNotebookWasDeletedThe'
 	| 'notebooks.weekly.everyWeekYouWriteAbout'
@@ -1358,12 +1398,14 @@ export type MessageKey =
 	| 'pictures.uploading'
 	| 'plans.exportsPerDay'
 	| 'plans.storedDataPoints'
+	| 'ratingPicker.leaveUnanswered'
 	| 'ratingPicker.notSet'
 	| 'ratings.energy'
 	| 'ratings.howMuchItWillTake'
 	| 'ratings.howMuchYouWantTo'
 	| 'ratings.howSoonThisHasTo'
 	| 'ratings.interest'
+	| 'ratings.labelValueOf5'
 	| 'ratings.urgency'
 	| 'reminders.aDayAndSomethingTo'
 	| 'reminders.aDayAndWhatTo'
@@ -1433,6 +1475,7 @@ export type MessageKey =
 	| 'reminders.thisPhoneHasNotBeen'
 	| 'reminders.thisPhoneIsNotSet'
 	| 'reminders.time'
+	| 'reminders.upToRingtonesKbEach'
 	| 'reminders.whatHasAlreadyGoneOff'
 	| 'reminders.whatIsStillToCome'
 	| 'reminders.whatMakesASound'
@@ -1649,17 +1692,24 @@ export type MessageKey =
 	| 'settings.billing.aBandAppearsAtThe'
 	| 'settings.billing.aMonth'
 	| 'settings.billing.aSubscriptionCannotBeStarted'
+	| 'settings.billing.aYear'
 	| 'settings.billing.againstTheCeilingsOnYour'
 	| 'settings.billing.askThemToAddYou'
 	| 'settings.billing.cardNowNothingChargedToday'
+	| 'settings.billing.cardSavedTrialRunning'
+	| 'settings.billing.confirmingYourPayment'
+	| 'settings.billing.endsOn'
 	| 'settings.billing.familyAccounts'
+	| 'settings.billing.firstChargeOn'
 	| 'settings.billing.forUpToAccountsOn'
+	| 'settings.billing.invitedRunsUntil'
 	| 'settings.billing.keepYearly'
 	| 'settings.billing.managePayment'
 	| 'settings.billing.monthly'
 	| 'settings.billing.monthlyIsOverAYear'
 	| 'settings.billing.noLimitOnThisPlan'
 	| 'settings.billing.paymentConfirmed'
+	| 'settings.billing.renewsOn'
 	| 'settings.billing.somebodyElseSPlanShouldCover'
 	| 'settings.billing.switchAnyway'
 	| 'settings.billing.switchToMonthly'
@@ -1668,6 +1718,7 @@ export type MessageKey =
 	| 'settings.billing.switchedToYearlyBilling'
 	| 'settings.billing.theFamilyTabWithA'
 	| 'settings.billing.thisInstanceHasNoPayment'
+	| 'settings.billing.trialRunsUntil'
 	| 'settings.billing.whatYouAreUsing'
 	| 'settings.billing.whoIsOnIt'
 	| 'settings.billing.yearly'
@@ -1677,9 +1728,13 @@ export type MessageKey =
 	| 'settings.billing.yourSubscriptionHasEndedNothing'
 	| 'settings.family.addToMyPlan'
 	| 'settings.family.askedTheSeatIs'
+	| 'settings.family.askedTheSeatIsTheirs'
 	| 'settings.family.everySeatIsTaken'
 	| 'settings.family.everybodyKeepsTheirOwnWeek'
 	| 'settings.family.keepThem'
+	| 'settings.family.offerIsWithdrawn'
+	| 'settings.family.planCoversAccounts'
+	| 'settings.family.sentEmailToOpenAccount'
 	| 'settings.family.takeThemOffThePlan'
 	| 'settings.family.takeThemOffThisPlan'
 	| 'settings.family.theirEmailAddress'
@@ -1687,6 +1742,7 @@ export type MessageKey =
 	| 'settings.family.whoIsOnYourPlan'
 	| 'settings.family.withAnAccountHereThey'
 	| 'settings.family.withdraw'
+	| 'settings.family.youAreOnTheirPlan'
 	| 'settings.instance.aCodeSomebodyTypesWhen'
 	| 'settings.instance.aCodeSomebodyTypesWhen2'
 	| 'settings.instance.aFullAccountOnThe'
@@ -1699,14 +1755,17 @@ export type MessageKey =
 	| 'settings.instance.confirmed'
 	| 'settings.instance.copyLink'
 	| 'settings.instance.database'
+	| 'settings.instance.daysAgo'
 	| 'settings.instance.daysLeaveEmptyForNo'
 	| 'settings.instance.deployment'
 	| 'settings.instance.export'
 	| 'settings.instance.forYourOwnMemoryThey'
 	| 'settings.instance.freeUntil'
+	| 'settings.instance.freeUntilDate'
 	| 'settings.instance.freeWithNoEndDate'
 	| 'settings.instance.handThisOverNow'
 	| 'settings.instance.hiddenOnTheDemo'
+	| 'settings.instance.hoursAgo'
 	| 'settings.instance.instance'
 	| 'settings.instance.invitations'
 	| 'settings.instance.isolated'
@@ -1715,6 +1774,7 @@ export type MessageKey =
 	| 'settings.instance.made'
 	| 'settings.instance.makeOneWhenSomebodyNeeds'
 	| 'settings.instance.makeRestartServer'
+	| 'settings.instance.minutesAgo'
 	| 'settings.instance.myBrother'
 	| 'settings.instance.newInvitation'
 	| 'settings.instance.noInvitationsYet'
@@ -1731,6 +1791,7 @@ export type MessageKey =
 	| 'settings.instance.revoke'
 	| 'settings.instance.rightNowSetInThe'
 	| 'settings.instance.runningSince'
+	| 'settings.instance.secondsAgo'
 	| 'settings.instance.sendReportsAndSuggestionsTo'
 	| 'settings.instance.tables'
 	| 'settings.instance.theAppAnswersRequestsThese'
@@ -1870,11 +1931,14 @@ export type MessageKey =
 	| 'settings.integrations.whatYourAssistantsDid'
 	| 'settings.integrations.whichOneAreYouUsing'
 	| 'settings.integrations.widget.connectThisPhoneSWidget'
+	| 'settings.integrations.widget.connectedTakingYouBack'
 	| 'settings.integrations.widget.finishInTheApp'
 	| 'settings.integrations.widget.homeScreenWidget'
 	| 'settings.integrations.widget.ifNothingHappens'
 	| 'settings.integrations.widget.integrations'
 	| 'settings.integrations.widget.onTheWidgetSSetupScreen'
+	| 'settings.integrations.widget.openedInsideAppLinkComes'
+	| 'settings.integrations.widget.openedInsideAppRatherThan'
 	| 'settings.integrations.widget.orPasteTheKey'
 	| 'settings.integrations.widget.pasteItInto'
 	| 'settings.integrations.widget.theKeyForThisWidget'
@@ -2083,6 +2147,8 @@ export type MessageKey =
 	| 'start.yearly'
 	| 'start.yourFreeDaysAreYours'
 	| 'start.yourSubscriptionEnded'
+	| 'streamChart.dateCountPoints'
+	| 'streamChart.inAgainstOutByMonth'
 	| 'streamChart.noDataYet'
 	| 'streamChart.noNumericValueRecorded'
 	| 'streamChart.nothingHereCanBeCharted'
@@ -2123,9 +2189,13 @@ export type MessageKey =
 	| 'tasks.board.edit'
 	| 'tasks.board.energyUpTo'
 	| 'tasks.board.hideFilters'
+	| 'tasks.board.hoursAbbrev'
+	| 'tasks.board.hoursMinutesAbbrev'
 	| 'tasks.board.markDone'
 	| 'tasks.board.markNotDone'
 	| 'tasks.board.minutes'
+	| 'tasks.board.minutesAbbrev'
+	| 'tasks.board.minutesFull'
 	| 'tasks.board.move'
 	| 'tasks.board.newCard'
 	| 'tasks.board.noCategory'
@@ -2151,11 +2221,15 @@ export type MessageKey =
 	| 'tasks.board.whatItWas'
 	| 'tasks.board.whatToShow'
 	| 'tasks.board.whichActivity'
+	| 'tasks.plan.aDay'
 	| 'tasks.plan.aSchemeIsYourRepeating'
 	| 'tasks.plan.activity'
 	| 'tasks.plan.addOneOff'
 	| 'tasks.plan.addRepeatingBlock'
 	| 'tasks.plan.alt'
+	| 'tasks.plan.backOneUnit'
+	| 'tasks.plan.backOneUnitPlain'
+	| 'tasks.plan.backToLabel'
 	| 'tasks.plan.backToToDo'
 	| 'tasks.plan.borderBorderDashedBorderGray400BgGray50P'
 	| 'tasks.plan.borderBorderGray300BgWhiteTextGray700Sha'
@@ -2193,6 +2267,8 @@ export type MessageKey =
 	| 'tasks.plan.fallsOnTheLastDay'
 	| 'tasks.plan.forEverythingTheKeyboardCan'
 	| 'tasks.plan.formatHTimeDDuration'
+	| 'tasks.plan.forwardOneUnit'
+	| 'tasks.plan.forwardOneUnitPlain'
 	| 'tasks.plan.gotIt'
 	| 'tasks.plan.hDMTWTFSSn61030WakeUpWakeUpWakeUpWakeUpW'
 	| 'tasks.plan.happensOnceOnOneDay'
@@ -2208,6 +2284,9 @@ export type MessageKey =
 	| 'tasks.plan.keepOnlyThisOccurrenceAnd'
 	| 'tasks.plan.label'
 	| 'tasks.plan.lastFetchFailed'
+	| 'tasks.plan.leadHours'
+	| 'tasks.plan.leadHoursMinutes'
+	| 'tasks.plan.leadMinutes'
 	| 'tasks.plan.load'
 	| 'tasks.plan.loadIt'
 	| 'tasks.plan.makeItOnceOnly'
@@ -2223,6 +2302,7 @@ export type MessageKey =
 	| 'tasks.plan.next7Days'
 	| 'tasks.plan.noCalendarsSubscribedYet'
 	| 'tasks.plan.noSchemesSavedYet'
+	| 'tasks.plan.notAtAll'
 	| 'tasks.plan.nowTapATimeFor'
 	| 'tasks.plan.ofEachMonth'
 	| 'tasks.plan.on'
@@ -2289,6 +2369,8 @@ export type MessageKey =
 	| 'tasks.review.giveItA'
 	| 'tasks.review.giveItADay'
 	| 'tasks.review.goalsYouTouched'
+	| 'tasks.review.hoursAbbrev'
+	| 'tasks.review.hoursMinutesAbbrev'
 	| 'tasks.review.itDidNotHappen'
 	| 'tasks.review.itHappenedAfter'
 	| 'tasks.review.itHappenedAfterAll'
@@ -2297,8 +2379,10 @@ export type MessageKey =
 	| 'tasks.review.keep'
 	| 'tasks.review.letGo'
 	| 'tasks.review.letItGo'
+	| 'tasks.review.minutesAbbrev'
 	| 'tasks.review.noGoalMovedThatWeek'
 	| 'tasks.review.noGoalMovedYet'
+	| 'tasks.review.nobodyHasTouchedThese'
 	| 'tasks.review.noneOfThem'
 	| 'tasks.review.notesAboutTheWeek'
 	| 'tasks.review.nothingHereHasHappenedYet'
@@ -2323,6 +2407,7 @@ export type MessageKey =
 	| 'tasks.review.stillRunning'
 	| 'tasks.review.theDayItShouldBe'
 	| 'tasks.review.theWeek'
+	| 'tasks.review.thisWeek'
 	| 'tasks.review.thisWeekIsStillRunning'
 	| 'tasks.review.toCommit'
 	| 'tasks.review.undoTheAnswerFor'
@@ -2336,6 +2421,7 @@ export type MessageKey =
 	| 'todoRows.anythingYouFinishShowsUp'
 	| 'todoRows.archived'
 	| 'todoRows.completed'
+	| 'todoRows.completedTitle'
 	| 'todoRows.confirm'
 	| 'todoRows.createTodo'
 	| 'todoRows.delegateToADay'
@@ -2560,6 +2646,7 @@ export type MessageKey =
 	| 'ui.back'
 	| 'ui.cancel'
 	| 'ui.category'
+	| 'ui.change'
 	| 'ui.close'
 	| 'ui.colour'
 	| 'ui.copied'
@@ -2571,6 +2658,7 @@ export type MessageKey =
 	| 'ui.dismiss'
 	| 'ui.done'
 	| 'ui.edit'
+	| 'ui.hide'
 	| 'ui.less'
 	| 'ui.more'
 	| 'ui.name'
@@ -2579,10 +2667,14 @@ export type MessageKey =
 	| 'ui.notebook'
 	| 'ui.notes'
 	| 'ui.open'
+	| 'ui.read'
 	| 'ui.remove'
 	| 'ui.rename'
+	| 'ui.restore'
 	| 'ui.save'
 	| 'ui.search'
+	| 'ui.show'
+	| 'ui.skip'
 	| 'ui.status'
 	| 'ui.tags'
 	| 'ui.title'
@@ -2590,7 +2682,9 @@ export type MessageKey =
 	| 'ui.type'
 	| 'ui.undo'
 	| 'ui.unit'
+	| 'ui.write'
 	| 'welcome.aFewQuestionsAndA'
+	| 'welcome.blocksCount'
 	| 'welcome.claudeOrAnythingThat'
 	| 'welcome.createTheKeyAndThe'
 	| 'welcome.noBlocks'
@@ -2628,15 +2722,19 @@ export interface MessageValuesFor {
 	'accountImport.importedFrom': { email: string | number; total: string | number };
 	'accountImport.leftBehind': { what: string | number };
 	'admin.blockedInTheLast': { addresses: string | number; lastDay: string | number };
+	'admin.hoursAgo': { count: number };
 	'admin.inThisLog': { times: string | number };
 	'admin.last': {
 		attempts: string | number;
 		attempts2: string | number;
 		lastAttemptAt: string | number;
 	};
+	'admin.minutesAgo': { count: number };
 	'audio.full': { count: number };
 	'audio.held': { count: number };
 	'audio.tooLong': { kilobytes: string | number };
+	'capture.addedTo': { into: string | number };
+	'capture.addedToWithContent': { content: string | number; into: string | number };
 	'capture.newThing': { thing: string | number };
 	'data.slug.fromPoints': { length: string | number; source: string | number };
 	'demo.theDemoHandsOutAn': {
@@ -2645,6 +2743,8 @@ export interface MessageValuesFor {
 		minutes2: string | number;
 	};
 	'fields.buy.removeTheField': { written: string | number };
+	'finance.bills.amountOver': { amount: string | number };
+	'finance.bills.amountUnder': { amount: string | number };
 	'finance.bills.archive': { name: string | number };
 	'finance.bills.archived': { length: string | number };
 	'finance.bills.attachATransactionTo': { name: string | number };
@@ -2698,10 +2798,18 @@ export interface MessageValuesFor {
 	};
 	'gallery.refused': { willRefuse: string | number };
 	'gallery.rename': { name: string | number };
+	'goals.countsFor': { period: string | number };
+	'goals.doneOfTotal': { done: string | number; total: string | number };
 	'goals.everyBlockOf': { name: string | number };
 	'goals.everyWeekIts': { name: string | number };
+	'goals.measuresCount': { count: number };
+	'goals.oneFewerUnit': { unit: string | number };
+	'goals.oneMoreUnit': { unit: string | number };
 	'goals.partOf2': { title: string | number };
+	'goals.progressTowards': { unit: string | number; value: string | number };
 	'goals.tasks': { length: string | number };
+	'health.habits.dayStreak': { count: number };
+	'health.habits.daysClean': { count: number };
 	'health.habits.inAllScroll': { length: string | number };
 	'health.habits.total': { length: string | number };
 	'health.recipes.id.addedOfThem': { added: string | number };
@@ -2717,6 +2825,7 @@ export interface MessageValuesFor {
 	};
 	'health.recipes.id.ranOutOf': { name: string | number };
 	'health.recipes.id.serves2': { servings: string | number };
+	'health.recipes.id.titleWillBeGone': { title: string | number };
 	'health.recipes.id.upToKb': { kilobytes: string | number };
 	'health.recipes.ingredients': { ingredients: string | number };
 	'health.recipes.min': { minutes: string | number };
@@ -2741,6 +2850,7 @@ export interface MessageValuesFor {
 	'health.workouts.stopMeasuring': { activity: string | number };
 	'health.workouts.takeOutTheLineFor': { row: string | number };
 	'health.workouts.writeDownWhatYouDid2': { title: string | number };
+	'home.blocksCount': { count: number };
 	'home.countToGo': { count: number };
 	'home.done': { done: string | number };
 	'home.dragCard': { card: string | number };
@@ -2748,6 +2858,7 @@ export interface MessageValuesFor {
 	'home.hideCard': { card: string | number };
 	'home.inProgress': { doing: string | number };
 	'home.itIsAndThisInstance': { app: string | number; instance: string | number };
+	'home.lastDone': { date: string | number };
 	'home.ldquoRdquo': { text: string | number };
 	'home.mdash': { author: string | number };
 	'home.more': { todoPreview: string | number };
@@ -2824,6 +2935,11 @@ export interface MessageValuesFor {
 	'mail.trial.manageOn': { where: string | number };
 	'mail.trial.subject': { date: string | number };
 	'markdownImport.ready': { length: string | number; notes: string | number };
+	'media.fold': { name: string | number };
+	'media.gallery.id.addPicturesAppearInGrid': { kilobytes: string | number };
+	'media.importCount': { count: number };
+	'media.importingProgress': { done: string | number; total: string | number };
+	'media.showWhatIsIn': { name: string | number };
 	'newsletter.off.nothingMoreWillBeSent': { email: string | number };
 	'notebookDetail.writeANoteAbout': { title: string | number };
 	'notebooks.diary.edited': { updatedAt: string | number };
@@ -2831,19 +2947,28 @@ export interface MessageValuesFor {
 	'notebooks.diary.noEntriesWith': { filterTag: string | number };
 	'notebooks.diary.win': { i: string | number };
 	'notebooks.edit': { title: string | number };
+	'notebooks.goalsCount': { count: number };
 	'notebooks.id.sharedBy': { sharedBy: string | number };
+	'notebooks.id.titleWillBeGone': { title: string | number };
 	'notebooks.ideas.edited': { updatedAt: string | number };
+	'notebooks.notesCount': { count: number };
 	'notebooks.people.aPictureOf': { add: string | number; name: string | number };
+	'notebooks.people.addAPictureOf': { name: string | number };
+	'notebooks.people.changeTheirPicture': { name: string | number };
 	'notebooks.people.nothingWrittenAboutYet': { name: string | number };
+	'notebooks.tasksCount': { count: number };
 	'notebooks.theirNotebookWas': { length: string | number; notes: string | number };
 	'notebooks.whatIsInside': { show: string | number; title: string | number };
 	'pictures.hint': { kilobytes: string | number };
+	'ratingPicker.leaveUnanswered': { rating: string | number };
+	'ratings.labelValueOf5': { label: string | number; value: string | number };
 	'reminders.change': { message: string | number };
 	'reminders.hear': { name: string | number };
 	'reminders.howManyDaysToCover': { maxDays: string | number };
 	'reminders.kb': { bytes: string | number };
 	'reminders.remove': { message: string | number };
 	'reminders.remove2': { name: string | number };
+	'reminders.upToRingtonesKbEach': { kilobytes: string | number; ringtones: string | number };
 	'reminders.whatTimeItShouldGo': { dayStart: string | number };
 	'search.for': { q: string | number; results: string | number; total: string | number };
 	'search.nothingMatches': { q: string | number };
@@ -2852,15 +2977,29 @@ export interface MessageValuesFor {
 	'settings.account.offTurnItOnAnd': { hour: string | number };
 	'settings.account.oneMessageOnAMonday': { hour: string | number };
 	'settings.billing.aMonth': { currency: string | number };
+	'settings.billing.aYear': { currency: string | number };
 	'settings.billing.cardNowNothingChargedToday': { trialDays: string | number };
+	'settings.billing.cardSavedTrialRunning': { count: number };
+	'settings.billing.endsOn': { date: string | number };
 	'settings.billing.familyAccounts': { seats: string | number };
+	'settings.billing.firstChargeOn': { date: string | number };
 	'settings.billing.forUpToAccountsOn': { familySeats: string | number };
+	'settings.billing.invitedRunsUntil': { date: string | number };
 	'settings.billing.monthly': { currency: string | number };
 	'settings.billing.monthlyIsOverAYear': { currency: string | number; currency2: string | number };
+	'settings.billing.renewsOn': { date: string | number };
 	'settings.billing.switchToYearly': { yearlyLine: string | number };
+	'settings.billing.trialRunsUntil': { date: string | number };
 	'settings.billing.yearly': { currency: string | number };
 	'settings.billing.yearlyIs': { yearlyLine: string | number };
+	'settings.family.planCoversAccounts': { more: string | number; seats: string | number };
+	'settings.family.youAreOnTheirPlan': { name: string | number };
+	'settings.instance.daysAgo': { count: number };
+	'settings.instance.freeUntilDate': { date: string | number };
+	'settings.instance.hoursAgo': { count: number };
+	'settings.instance.minutesAgo': { count: number };
 	'settings.instance.open': { length: string | number };
+	'settings.instance.secondsAgo': { count: number };
 	'settings.instance.tables': { tables: string | number };
 	'settings.instance.theEnvironmentOverridesThe': { mode: string | number };
 	'settings.integrations.connections.apiV1Streams': { origin: string | number };
@@ -2887,12 +3026,26 @@ export interface MessageValuesFor {
 	'start.theFirstChargeIsOn': { firstChargeOn: string | number };
 	'start.yearly': { yearlyLine: string | number };
 	'start.yourFreeDaysAreYours': { trialDaysAhead: string | number };
+	'streamChart.dateCountPoints': { count: number; date: string | number };
+	'streamChart.inAgainstOutByMonth': { inLabel: string | number; outLabel: string | number };
 	'tasks.board.edit': { title: string | number };
+	'tasks.board.hoursAbbrev': { count: number };
+	'tasks.board.hoursMinutesAbbrev': { hours: string | number; minutes: string | number };
+	'tasks.board.minutesAbbrev': { count: number };
+	'tasks.board.minutesFull': { count: number };
 	'tasks.board.removeTheReminderAt': { slice: string | number };
+	'tasks.plan.backOneUnit': { key: string | number; unit: string | number };
+	'tasks.plan.backOneUnitPlain': { unit: string | number };
+	'tasks.plan.backToLabel': { label: string | number };
 	'tasks.plan.countForToday': { count: number };
 	'tasks.plan.delete': { name: string | number };
+	'tasks.plan.forwardOneUnit': { key: string | number; unit: string | number };
+	'tasks.plan.forwardOneUnitPlain': { unit: string | number };
 	'tasks.plan.label': { label: string | number };
 	'tasks.plan.lastFetchFailed': { lastError: string | number };
+	'tasks.plan.leadHours': { count: number };
+	'tasks.plan.leadHoursMinutes': { hours: string | number; minutes: string | number };
+	'tasks.plan.leadMinutes': { count: number };
 	'tasks.plan.nowTapATimeFor': { title: string | number };
 	'tasks.plan.on': { selectedDateStr: string | number; skip: string | number };
 	'tasks.plan.read': { t: string | number };
@@ -2901,8 +3054,12 @@ export interface MessageValuesFor {
 	'tasks.plan.stopSubscribingTo': { name: string | number };
 	'tasks.plan.viewGCycles': { label: string | number };
 	'tasks.review.giveItA': { title: string | number };
+	'tasks.review.hoursAbbrev': { count: number };
+	'tasks.review.hoursMinutesAbbrev': { hours: string | number; minutes: string | number };
 	'tasks.review.itHappenedAfter': { title: string | number };
 	'tasks.review.letGo': { title: string | number };
+	'tasks.review.minutesAbbrev': { count: number };
+	'tasks.review.nobodyHasTouchedThese': { months: string | number };
 	'tasks.review.noneOfThem': { answers: string | number; length: string | number };
 	'tasks.review.ofBlocks': { planned: string | number; rate: string | number };
 	'tasks.review.ontoTheTodo': { title: string | number };
@@ -2911,6 +3068,8 @@ export interface MessageValuesFor {
 	'tasks.review.toCommit': { answers: string | number; length: string | number };
 	'tasks.review.undoTheAnswerFor': { title: string | number };
 	'tasks.review.week': { number: string | number; year: string | number };
+	'todoRows.completedTitle': { title: string | number };
+	'welcome.blocksCount': { count: number };
 	'welcome.ofOnThePlanner': { length: string | number; size: string | number };
 	'welcome.stepNumber': { number: string | number; title: string | number };
 	'welcome.stepOf': { length: string | number; step: string | number };

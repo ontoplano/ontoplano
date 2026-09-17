@@ -35,7 +35,7 @@
 	const nextRole = $derived(data.account.role === 'admin' ? 'member' : 'admin');
 
 	function when(iso: string): string {
-		return new Date(iso).toLocaleString(undefined, {
+		return new Date(iso).toLocaleString(t.locale, {
 			day: 'numeric',
 			month: 'short',
 			year: 'numeric',

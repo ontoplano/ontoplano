@@ -23,11 +23,17 @@
 			state of the plan and no buttons.
 		-->
 		<!-- The title is the whole message. -->
-		<Card title="You are on {data.seatOwner.name}'s plan" accent="var(--section-accent)" />
+		<Card
+			title={t('settings.family.youAreOnTheirPlan', { name: data.seatOwner.name })}
+			accent="var(--section-accent)"
+		/>
 	{:else}
 		<Card
 			title={t('settings.family.whoIsOnYourPlan')}
-			description="Your plan covers {data.seats} accounts — yours and {data.seats - 1} more."
+			description={t('settings.family.planCoversAccounts', {
+				seats: data.seats,
+				more: data.seats - 1
+			})}
 		>
 			<p class="text-sm text-gray-600">{t('settings.family.everybodyKeepsTheirOwnWeek')}</p>
 
@@ -35,20 +41,16 @@
 
 			{#if form && 'invited' in form && form.invited}
 				<div class="mt-3">
-					<Banner
-						kind="success"
-						message="They have been sent an email to open their account and choose a password."
-					/>
+					<Banner kind="success" message={t('settings.family.sentEmailToOpenAccount')} />
 				</div>
 			{:else if form && 'added' in form && form.added}
 				<div class="mt-3">
-					<Banner
-						kind="success"
-						message="Asked — the seat is theirs when they accept. They have an email about it."
-					/>
+					<Banner kind="success" message={t('settings.family.askedTheSeatIsTheirs')} />
 				</div>
 			{:else if form && 'withdrawn' in form && form.withdrawn}
-				<div class="mt-3"><Banner kind="success" message="The offer is withdrawn." /></div>
+				<div class="mt-3">
+					<Banner kind="success" message={t('settings.family.offerIsWithdrawn')} />
+				</div>
 			{/if}
 
 			{#if data.members.length > 0}

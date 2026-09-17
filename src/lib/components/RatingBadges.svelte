@@ -19,7 +19,7 @@
 		{#each shown as r (r)}
 			<span
 				class="border border-gray-200 bg-gray-50 px-1 text-[10px] leading-4 text-gray-600"
-				title="{t(RATING_LABELS[r])}: {values[r]} of 5"
+				title={t('ratings.labelValueOf5', { label: t(RATING_LABELS[r]), value: values[r] ?? 0 })}
 			>
 				{initial[r]}{values[r]}
 			</span>

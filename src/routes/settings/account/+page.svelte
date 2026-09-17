@@ -164,7 +164,7 @@
 	/** Times come from the server as UTC; the browser knows what they mean here. */
 	function when(iso: string): string {
 		const d = new Date(iso);
-		return d.toLocaleString(undefined, {
+		return d.toLocaleString(t.locale, {
 			day: 'numeric',
 			month: 'short',
 			hour: '2-digit',
