@@ -9,7 +9,7 @@
  */
 import { loadConfig } from './config.js';
 import { ENVELOPE, pictureCeiling } from './body-limit.js';
-import type { MediaLimits } from '$lib/services/media-limits.js';
+import { ACCOUNT_AUDIOS, AUDIO_KILOBYTES, type MediaLimits } from '$lib/services/media-limits.js';
 
 /**
  * How much one folder-import request may carry where the operator has turned
@@ -46,6 +46,17 @@ export function servedMediaLimits(): MediaLimits {
 		importBatchBytes:
 			ceiling.limit === 0
 				? UNLIMITED_BATCH_BYTES
-				: Math.max(ceiling.limit - ENVELOPE, maxKilobytes * 1024)
+				: Math.max(ceiling.limit - ENVELOPE, maxKilobytes * 1024),
+		/*
+		 * Not an operator's choice, and not read from the config.
+		 *
+		 * Every other number here scales with the disk somebody decided to
+		 * give this instance. A recording's ceiling is about what a voice note
+		 * is rather than what the disk holds, so both halves answer the same
+		 * thing and there is no setting to get wrong.
+		 */
+		audioBytes: AUDIO_KILOBYTES * 1024,
+		audioKilobytes: AUDIO_KILOBYTES,
+		accountAudios: ACCOUNT_AUDIOS
 	};
 }

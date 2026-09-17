@@ -18,14 +18,18 @@
  * folder and nothing is dragged out of one. There is no such thing as being in
  * one — a note mentions a picture, and that is the only fact there is.
  */
-import { and, eq, inArray, isNotNull } from 'drizzle-orm';
+import { and, eq, inArray, isNotNull, like } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
 import { diaryEntries, media, mediaTags, notebooks, tags } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError } from './errors.js';
 import type { AlbumPicture } from './gallery.js';
+import { IMAGE_MIME_PREFIX } from './media-kind.js';
 import { NOTEBOOK_SEPARATOR } from './notebooks.js';
+
+/** Only rows that are pictures — recordings share this table. */
+const isPicture = like(media.mime, `${IMAGE_MIME_PREFIX}%`);
 
 /**
  * Where this album lives in the gallery.
@@ -108,7 +112,7 @@ export function notebookMediaFolders(ctx: Ctx): NotebookMediaFolder[] {
 		db
 			.select({ id: media.id })
 			.from(media)
-			.where(and(eq(media.userId, ctx.userId), inArray(media.id, mentioned)))
+			.where(and(eq(media.userId, ctx.userId), inArray(media.id, mentioned), isPicture))
 			.all()
 			.map((row) => row.id)
 	);
@@ -198,7 +202,7 @@ function picturesById(ctx: Ctx, ids: number[]): AlbumPicture[] {
 	const rows = db
 		.select({ id: media.id, alt: media.alt, filename: media.filename, createdAt: media.createdAt })
 		.from(media)
-		.where(and(eq(media.userId, ctx.userId), inArray(media.id, ids)))
+		.where(and(eq(media.userId, ctx.userId), inArray(media.id, ids), isPicture))
 		.all();
 
 	const tagRows = db

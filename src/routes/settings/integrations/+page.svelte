@@ -300,25 +300,6 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 								{t('settings.integrations.doNotShareItWith')}
 							</p>
 
-							<div class="flex w-full flex-wrap items-center gap-2">
-								<!-- Named after what it is tied to, when it is tied to
-								     something: a list of keys called "AI assistant" is a list
-								     nobody can revoke the right one from. -->
-								<OneLine
-									name="label"
-									placeholder={tiedName || t('settings.integrations.aiAssistant')}
-									class="input w-auto flex-1 sm:max-w-64"
-									ariaLabel="What to call this key"
-									required
-								/>
-								<button class="btn btn-primary btn-sm" type="submit"
-									>{t('settings.integrations.createIt')}</button
-								>
-								<button type="button" class="btn btn-sm btn-quiet" onclick={() => (naming = false)}>
-									{t('ui.cancel')}
-								</button>
-							</div>
-
 							<!--
 							What it may do, ticked and changeable.
 
@@ -457,6 +438,34 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 									</span>
 								</label>
 							</fieldset>
+
+							<!--
+							Naming it and making it, last.
+
+							These were under the warning at the top, which put the button
+							that submits the form above every question the form asks — so
+							answering them meant scrolling down to read, back up to name it,
+							and down again to check. What a thing is called is the last
+							thing you decide about it anyway.
+						-->
+							<div class="mt-4 flex w-full flex-wrap items-center gap-2">
+								<!-- Named after what it is tied to, when it is tied to
+								     something: a list of keys called "AI assistant" is a list
+								     nobody can revoke the right one from. -->
+								<OneLine
+									name="label"
+									placeholder={tiedName || t('settings.integrations.aiAssistant')}
+									class="input w-auto flex-1 sm:max-w-64"
+									ariaLabel="What to call this key"
+									required
+								/>
+								<button class="btn btn-primary btn-sm" type="submit"
+									>{t('settings.integrations.createIt')}</button
+								>
+								<button type="button" class="btn btn-sm btn-quiet" onclick={() => (naming = false)}>
+									{t('ui.cancel')}
+								</button>
+							</div>
 						</form>
 					{:else}
 						<!--

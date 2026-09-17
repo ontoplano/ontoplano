@@ -12,10 +12,11 @@
  * same database either way, so an instance running on a phone has a gallery
  * for the same reason a served one does.
  */
-import { and, asc, desc, eq, inArray } from 'drizzle-orm';
+import { and, asc, desc, eq, inArray, like } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
 import { albumMedia, albums, media, mediaTags, tags } from '$lib/db/schema.js';
+import { IMAGE_MIME_PREFIX } from './media-kind.js';
 import { parseTags, replaceMediaTags } from './tags.js';
 import type { Ctx } from './ctx.js';
 import { stamp, stamps } from './time.js';
@@ -30,6 +31,9 @@ import {
 	removeIfUnreferenced,
 	store
 } from './media.js';
+
+/** Only rows that are pictures — recordings share this table. */
+const isPicture = like(media.mime, `${IMAGE_MIME_PREFIX}%`);
 
 export const MAX_ALBUM_NAME_LENGTH = 120;
 /** A picture's name, as long as the column that holds it. */
@@ -304,7 +308,7 @@ export function albumPictures(ctx: Ctx, albumId: number): AlbumPicture[] {
 	const pictures = db
 		.select({ id: media.id, alt: media.alt, filename: media.filename })
 		.from(media)
-		.where(and(eq(media.userId, ctx.userId), inArray(media.id, ids)))
+		.where(and(eq(media.userId, ctx.userId), inArray(media.id, ids), isPicture))
 		.all();
 
 	const tagRows = db
@@ -524,7 +528,7 @@ export function addToAlbum(ctx: Ctx, albumId: number, mediaId: number): void {
 	const owned = db
 		.select({ id: media.id })
 		.from(media)
-		.where(and(eq(media.id, mediaId), eq(media.userId, ctx.userId)))
+		.where(and(eq(media.id, mediaId), eq(media.userId, ctx.userId), isPicture))
 		.get();
 	if (!owned) throw new NotFoundError('picture');
 	assertRoom(ctx, albumId);
@@ -599,7 +603,7 @@ export function tagPicture(ctx: Ctx, mediaId: number, raw: unknown): void {
 	const owned = db
 		.select({ id: media.id })
 		.from(media)
-		.where(and(eq(media.id, mediaId), eq(media.userId, ctx.userId)))
+		.where(and(eq(media.id, mediaId), eq(media.userId, ctx.userId), isPicture))
 		.get();
 	if (!owned) throw new NotFoundError('picture');
 	// The same reading the diary gives tags: commas or spaces, #-prefixes

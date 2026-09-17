@@ -36,6 +36,7 @@ import { sha256Hex } from './digest.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { host } from './host.js';
 import type { MediaLimits } from './media-limits.js';
+import { IMAGE_MIME_PREFIX } from './media-kind.js';
 import { stamp } from './time.js';
 
 /**
@@ -109,6 +110,14 @@ export type Picture = {
  * page can read. One effective number, honestly reported: the pages quote it,
  * the browser refuses against it, and the service enforces it.
  */
+/**
+ * Only rows that are pictures.
+ *
+ * Recordings live in this table too — same question, same account storage —
+ * and no surface that draws pictures may see one. See `media-kind.ts`.
+ */
+const isPicture = like(media.mime, `${IMAGE_MIME_PREFIX}%`);
+
 export function mediaLimits(): MediaLimits {
 	return host.mediaLimits();
 }
@@ -240,14 +249,19 @@ export function read(ctx: Ctx, id: number): { mime: string; filename: string; by
 	const row = db
 		.select()
 		.from(media)
-		.where(and(eq(media.id, id), eq(media.userId, ctx.userId)))
+		.where(and(eq(media.id, id), eq(media.userId, ctx.userId), isPicture))
 		.get();
 	if (!row) throw new NotFoundError('No such picture.');
 	return { mime: row.mime, filename: row.filename, bytes: new Uint8Array(row.bytes) };
 }
 
 export function list(ctx: Ctx): Picture[] {
-	return db.select().from(media).where(eq(media.userId, ctx.userId)).all().map(toPicture);
+	return db
+		.select()
+		.from(media)
+		.where(and(eq(media.userId, ctx.userId), isPicture))
+		.all()
+		.map(toPicture);
 }
 
 /**

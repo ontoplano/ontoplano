@@ -9,6 +9,16 @@
  * The type is shared so neither can quietly answer a different question, and
  * the services ask through `host.mediaLimits()` rather than either directly.
  */
+/**
+ * A recording's ceiling, and how many of them an account keeps.
+ *
+ * The same on a phone as on a server, unlike every other number here: the
+ * others scale with the disk somebody chose, and these are about what a voice
+ * note *is*. Named here so both halves read one answer.
+ */
+export const AUDIO_KILOBYTES = 200;
+export const ACCOUNT_AUDIOS = 100;
+
 export type MediaLimits = {
 	/** The biggest single picture, in bytes and in the number people read. */
 	maxBytes: number;
@@ -25,6 +35,18 @@ export type MediaLimits = {
 	/** How many files one folder import carries, and how much one request does. */
 	importFiles: number;
 	importBatchBytes: number;
+	/**
+	 * What a recording may be, and how many an account keeps.
+	 *
+	 * Separate numbers from a picture's, and much smaller ones: a recording is
+	 * made in the app rather than chosen from a disk, it is a voice note
+	 * rather than a document, and Opus at a speech bitrate fits a couple of
+	 * minutes into this. A ceiling somebody meets is a ceiling that tells them
+	 * to record a second one, which is the right shape for a note.
+	 */
+	audioBytes: number;
+	audioKilobytes: number;
+	accountAudios: number;
 };
 
 /**
@@ -46,5 +68,8 @@ export const DEVICE_MEDIA_LIMITS: MediaLimits = {
 	galleryAlbums: 500,
 	albumImages: 2000,
 	importFiles: 2000,
-	importBatchBytes: 64 * 1024 * 1024
+	importBatchBytes: 64 * 1024 * 1024,
+	audioBytes: AUDIO_KILOBYTES * 1024,
+	audioKilobytes: AUDIO_KILOBYTES,
+	accountAudios: ACCOUNT_AUDIOS
 };

@@ -25,6 +25,7 @@ shows up here on the next build.
 | [`admin`](#admin)                                | Administration: looking at somebody else's account.                                                                                                                                                                                                                  |
 | [`assistant-log`](#assistant-log)                | What an assistant did to an account, and the way back.                                                                                                                                                                                                               |
 | [`assistant-notify`](#assistant-notify)          | Telling somebody what an assistant just did to their account.                                                                                                                                                                                                        |
+| [`audio`](#audio)                                | Recordings: what is accepted, where they go, and who may hear one.                                                                                                                                                                                                   |
 | [`audit`](#audit)                                | What happened to an account.                                                                                                                                                                                                                                         |
 | [`backlinks`](#backlinks)                        | Which goal a thing belongs to.                                                                                                                                                                                                                                       |
 | [`billing`](#billing)                            | Billing, as the rest of the app sees it.                                                                                                                                                                                                                             |
@@ -53,6 +54,7 @@ shows up here on the next build.
 | [`legal`](#legal)                                | The facts the policies are written around.                                                                                                                                                                                                                           |
 | [`locations`](#locations)                        | Locations: the tree an inventory hangs on.                                                                                                                                                                                                                           |
 | [`mail-log`](#mail-log)                          | Mail that must not fail silently.                                                                                                                                                                                                                                    |
+| [`media-kind`](#media-kind)                      | Which kind of thing a `media` row is.                                                                                                                                                                                                                                |
 | [`media-limits`](#media-limits)                  | What an instance allows a picture to be.                                                                                                                                                                                                                             |
 | [`media`](#media)                                | Pictures: what is accepted, where they go, and who may see one.                                                                                                                                                                                                      |
 | [`meta`](#meta)                                  | User-defined key/value metadata attached to planner slots.                                                                                                                                                                                                           |
@@ -595,6 +597,86 @@ done. Used when the preference is turned on.
 
 - `Phrase`
 - `SweepResult`
+
+## audio
+
+Recordings: what is accepted, where they go, and who may hear one.
+
+The same three rules `media.ts` states for pictures, for the same reasons —
+the type comes from the bytes, nothing is stored under a name the sender
+chose, and the ceilings are the instance's and are enforced here rather than
+in a form. What differs is the allowlist and the numbers.
+
+**Containers, not codecs.** A browser's `MediaRecorder` hands back WebM or
+MP4 depending on which browser it is, and neither is negotiable from here.
+Both are containers whose first bytes are unmistakable, so the check is the
+same shape as a picture's: read the head, match it, refuse everything else.
+What is _inside_ the container is not inspected and does not need to be —
+the bytes are returned with an `audio/*` content type and a
+`Content-Disposition` that forbids the browser treating them as a document,
+so a file that lies about its insides plays as noise rather than running.
+
+**A recording is not a picture.** It lives in the same table, because it is
+the same question — bytes belonging to an account, with a name and a size —
+but every surface that draws pictures asks for `image/*` and every surface
+that plays recordings asks for `audio/*`. Neither can see the other's rows.
+
+Nothing here is the server's, for the same reason nothing in `media.ts` is:
+the digest is WebCrypto's and the ceilings arrive through `host`, so an
+instance running on a phone stores a recording the same way.
+
+### Functions
+
+#### `audioLimits()`
+
+#### `sniffAudio(bytes)`
+
+#### `defaultAudioName(at, tz)`
+
+What a recording is called when nobody says.
+
+The moment it was made, which is the one thing about an unnamed recording
+that distinguishes it from the others — and the format sorts the same way it
+reads. The placeholder in the form is this exact string, so leaving the
+field alone and typing what it already shows are the same act.
+
+#### `tidyAudioName(raw)`
+
+Tidy a name somebody typed.
+
+Control characters out, whitespace collapsed, length capped. Not a path and
+never used as one — the bytes are served by row id — so the only rules are
+the ones that keep a list readable.
+
+#### `countStored(ctx)`
+
+How many recordings this account already keeps.
+
+#### `store(ctx, input)`
+
+Take a recording in.
+
+Everything a caller sends is a claim: the bytes are checked against the
+allowlist, the name is rewritten rather than trusted, the mime is the one
+the bytes proved rather than the one the request declared, and both ceilings
+are counted from the database rather than from anything sent.
+
+#### `read(ctx, id)`
+
+The bytes, for the one account they belong to.
+
+Scoped in the `WHERE` and by kind, so somebody else's id and a picture's id
+are both a 404: not found, not yours and not a recording are one answer.
+
+#### `list(ctx)`
+
+#### `rename(ctx, id, name)`
+
+#### `remove(ctx, id)`
+
+### Types
+
+- `Recording`
 
 ## audit
 
@@ -2255,6 +2337,32 @@ How many mails are sitting failed — one number, for the health probe.
 
 - `MailFailure`
 
+## media-kind
+
+Which kind of thing a `media` row is.
+
+One table holds both, because it is one question — bytes belonging to an
+account, with a name, a size and a hash — and because an account's storage
+is one number whatever it is spent on. What differs is every surface: a
+gallery draws pictures, a recordings list plays recordings, and neither may
+see the other's rows.
+
+The discriminator is the mime, which is not a claim: it is written from what
+`sniff` proved the bytes to be. So there is nothing to keep in step with a
+separate column, and a row cannot be one kind by its type and another by its
+label.
+
+Named here rather than written as `like(media.mime, 'image/%')` wherever it
+is needed. A filter spelled out at nine call sites is a filter that gets
+forgotten at the tenth, and the tenth is a recordings row rendering as a
+broken picture in somebody's gallery.
+
+### Functions
+
+#### `isImageMime(mime)`
+
+#### `isAudioMime(mime)`
+
 ## media-limits
 
 What an instance allows a picture to be.
@@ -2304,14 +2412,6 @@ digest both worlds have.
 ### Functions
 
 #### `mediaLimits()`
-
-What the operator currently allows. Read per call: the file can change.
-
-The per-picture ceiling is the _smaller_ of what `config.toml` asks for and
-what the server can actually receive — `BODY_SIZE_LIMIT` belongs to the Node
-adapter and rejects a larger body before this app runs, with an answer no
-page can read. One effective number, honestly reported: the pages quote it,
-the browser refuses against it, and the service enforces it.
 
 #### `tidyFilename(raw)`
 
