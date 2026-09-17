@@ -1131,8 +1131,11 @@
 					{#each [1, 2, 3] as position (position)}
 						<div class="flex items-center gap-2">
 							<span class="tabular w-4 shrink-0 text-xs text-gray-500">{position}</span>
-							<OneLine name="win_{position}" />
-							{t('home.wPositionPositionContent')}
+							<OneLine
+								name="win_{position}"
+								value={data.wins.find((w) => w.position === position)?.content ?? ''}
+								class="input flex-1"
+							/>
 						</div>
 					{/each}
 					<button class="btn btn-primary btn-sm"> {t('ui.save')} </button>

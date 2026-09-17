@@ -233,14 +233,11 @@
 					</button>
 				{/if}
 			{/snippet}
-			<p class="text-sm text-gray-500">
-				{t('settings.account.youSignInWith')}
-				<span class="font-medium text-gray-900">{data.email}</span>.
+			<p class="font-medium text-gray-900">{data.email}</p>
+			<p class="mt-1 text-sm text-gray-500">
 				{#if data.emailChangeAllowed}
 					{t('settings.account.aNewAddressHasTo')}
 				{:else}
-					<!-- Says who to ask, rather than pretending the option is missing
-					     because nobody thought of it. -->
 					{t('settings.account.changingItIsTurnedOff')}
 				{/if}
 				{#if !data.emailVerified}

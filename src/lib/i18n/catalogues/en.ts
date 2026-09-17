@@ -257,7 +257,7 @@ export const messages: Catalogue = {
 	'demo.settingUpACopyFor': 'Setting up a copy for you',
 	'demo.thatIsALotOf': 'That is a lot of copies from one place.',
 	'demo.theDemoHandsOutAn':
-		'The demo hands out {demoAccountsPerAddress} an hour per address, which is what stops a script taking them all. Another one in about {minutes} {minutes2}.',
+		'The demo hands out {demoAccountsPerAddress} an hour per address. Another one in about {minutes} {minutes2}.',
 	'demo.theDemoIsFullRight': 'The demo is full right now.',
 	'demo.tryAgain': 'Try again',
 	'fan.accountAndHelp': 'Account and help',
@@ -394,7 +394,7 @@ export const messages: Catalogue = {
 	'finance.ledgers.moneyIn': 'Money in',
 	'finance.ledgers.moneyOut': 'Money out',
 	'finance.ledgers.moneyYouExpectRatherThan':
-		'Money you expect rather than money that moved — rent, a subscription — is a',
+		'Money you expect, not money that moved — rent, a subscription.',
 	'finance.ledgers.month': 'Month',
 	'finance.ledgers.moveEarlier': 'Move {name} earlier',
 	'finance.ledgers.moveLater': 'Move {name} later',
@@ -434,7 +434,7 @@ export const messages: Catalogue = {
 	'finance.rules.everyLedger': 'Every ledger',
 	'finance.rules.everyOutgoingLineHasA': 'Every outgoing line has a category.',
 	'finance.rules.everyTagThatMatchesApplies':
-		'Every tag that matches applies, so tags overlap freely — a lens rather than a sum.',
+		'Every tag that matches applies, so tags overlap freely.',
 	'finance.rules.findsItAnywhereInThe': 'finds it anywhere in the line.',
 	'finance.rules.isADigitAndA': 'is a digit, and\n\t\ta literal',
 	'finance.rules.isOr': 'is or,',
@@ -894,8 +894,6 @@ export const messages: Catalogue = {
 	'home.todaySTasks': "Today's Tasks",
 	'home.unanswered': 'unanswered.',
 	'home.updateTheApp': 'Update the app.',
-	'home.wPositionPositionContent':
-		'w.position === position)?.content ?? \'\'} class="block w-full border border-gray-300 px-3 py-1.5 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none" />',
 	'home.weekPlan': 'Week Plan',
 	'home.weeksAreStillOpen': 'weeks are still open — the oldest is',
 	'home.whatSOnYourMind': "What's on your mind?",
@@ -1183,8 +1181,7 @@ export const messages: Catalogue = {
 	'login.signIn': 'Sign in',
 	'login.terms': 'Terms',
 	'login.thisIsTheFirstAccount': 'This is the first account on this instance, so it owns it.',
-	'login.thisServerHasNoMail':
-		'This server has no mail configured, so the link will be written to its log rather than sent.',
+	'login.thisServerHasNoMail': 'This server has no mail configured, so the link goes to its log.',
 	'login.useADifferentOntoplano': 'Use a different ontoplano',
 	'login.verify.aConfirmationMailWentTo': 'A confirmation mail went to',
 	'login.verify.clickOnItsLink': '. Click on its\n\t\t\tlink to sign in.',
@@ -1407,7 +1404,7 @@ export const messages: Catalogue = {
 	'notebooks.tags': '#tags',
 	'notebooks.theirNotebookWas': '{length} {notes} · their notebook was deleted',
 	'notebooks.theirNotebookWasDeletedThe':
-		'Their notebook was deleted. The writing was kept — it is not part of the journal, so it waits here.',
+		'Their notebook was deleted. The writing was kept and waits here.',
 	'notebooks.weekly.nothingWrittenYet': 'Nothing written yet',
 	'notebooks.weekly.openThatWeek': 'Open that week',
 	'notebooks.weekly.weeklyNotesOntoplano': 'Weekly notes · Ontoplano',
@@ -1482,7 +1479,7 @@ export const messages: Catalogue = {
 	'reminders.preferences': 'Preferences',
 	'reminders.reminders': 'Reminders',
 	'reminders.remindersFromHereRingOn':
-		"Reminders from here ring on this phone, with ontoplano closed — it books Android's own alarms,\n\t\t\tbecause an instance cannot wake a phone.",
+		'Reminders from here ring on this phone, with ontoplano closed.',
 	'reminders.remindersOntoplano': 'Reminders · Ontoplano',
 	'reminders.remindersThatHaveAlreadyFired':
 		'Reminders that have already fired show up here, dismissed ones included.',
@@ -1510,7 +1507,7 @@ export const messages: Catalogue = {
 	'reminders.thisPhoneHasNotBeen':
 		'This phone has not been allowed to notify you, so reminders arrive only while ontoplano is open.',
 	'reminders.thisPhoneIsNotSet':
-		'This phone is not set up to ring for reminders from here — it can be, in one press on Preferences, and then they arrive with ontoplano closed.',
+		'This phone is not set up to ring for reminders from here. One press on Preferences turns it on.',
 	'reminders.time': 'Time',
 	'reminders.whatHasAlreadyGoneOff': 'What has already gone off',
 	'reminders.whatIsStillToCome': 'What is still to come',
@@ -1610,7 +1607,7 @@ export const messages: Catalogue = {
 		'The cheapest thing to write down: caught before it evaporates, judged later. Nobody has committed to doing any of it.',
 	'sections.ideas.label': 'Ideas',
 	'sections.inventory.blurb':
-		'What to buy, and where the things you already own live — the same rows seen twice. Ticking things off works with no signal at all, which is what a supermarket basement is.',
+		'What to buy, and where the things you already own live — the same rows seen twice. Ticking things off works with no signal at all.',
 	'sections.inventory.label': 'Inventory',
 	'sections.notebooks.blurb':
 		'A subject you write against with no deadline — a trip, a renovation, a book. Notes gather under it and are numbered within it.',
@@ -1636,7 +1633,7 @@ export const messages: Catalogue = {
 	'settings.account.changeYourEmailAddress': 'Change your email address',
 	'settings.account.changeYourPassword': 'Change your password',
 	'settings.account.changingItIsTurnedOff':
-		'Changing it is turned off on this instance; whoever runs it can allow it.',
+		'Changing your email address is turned off on this instance.',
 	'settings.account.changingItSignsOutEvery':
 		'Changing it signs out every other device you are logged in on.',
 	'settings.account.confirm': 'Confirm?',
@@ -1655,7 +1652,7 @@ export const messages: Catalogue = {
 	'settings.account.everythingOnThisDeviceAnd':
 		'Everything on this device, and the database it is in. The app stays; what is inside it does not. Download an export first if you might want any of it back.',
 	'settings.account.everythingThisAccountOwnsAs':
-		'Everything this account owns, as JSON: plans, tasks, diary, habits, goals, shopping, ideas and\n\t\t\tsettings. The raw rows, so it is complete rather than pretty.',
+		'Everything this account owns, as JSON: plans, tasks, diary, habits, goals, shopping, ideas and settings.',
 	'settings.account.exportYourData': 'Export your data',
 	'settings.account.exportsLeft': {
 		one: '{remaining} of {count} export left today.',
@@ -1716,7 +1713,7 @@ export const messages: Catalogue = {
 	'settings.account.offTurnItOnAnd':
 		'Off. Turn it on and you get one message on a Monday at {hour}:00 with what last week was — planned against done, and what is still loose.',
 	'settings.account.oneMessageOnAMonday':
-		'One message on a Monday at {hour}:00 with what last week was — planned against done, and what is still loose. Nothing is sent about a week you did not plan, and every message has a link that stops them.',
+		'One message on a Monday at {hour}:00 with what last week was — planned against done, and what is still loose. Every message has a link that stops them.',
 	'settings.account.password': 'Password',
 	'settings.account.sendConfirmation': 'Send confirmation',
 	'settings.account.signOut': 'Sign out',
@@ -1728,7 +1725,7 @@ export const messages: Catalogue = {
 	'settings.account.theDataAndTheAccount':
 		'The data and the account both, and you are signed out for good. This cannot be undone.',
 	'settings.account.theyAreMostOfThe':
-		"They are most of the file's size. Leave them out for a file that moves to another\n\t\t\t\t\tinstance; keep them for a backup.",
+		'They are most of the file. Leave them out to move to another instance; keep them for a backup.',
 	'settings.account.thisAppIsOpenOn': 'This app is open on',
 	'settings.account.thisDevice': 'this device',
 	'settings.account.thisDeviceOnlyTheSessions':
@@ -1744,7 +1741,6 @@ export const messages: Catalogue = {
 	'settings.account.whereThisOntoplanoLives': 'Where this ontoplano lives',
 	'settings.account.whereYouAreSignedIn': 'Where you are signed in',
 	'settings.account.youAreLookingAt': 'You are looking at',
-	'settings.account.youSignInWith': 'You sign in with',
 	'settings.account.yourPassword': 'Your password',
 	'settings.billing.aBandAppearsAtThe':
 		'A band appears at the top of your app asking whether to accept. Say yes and this page\n\t\t\t\t\t\t\tgoes quiet.',
@@ -1819,8 +1815,7 @@ export const messages: Catalogue = {
 	'settings.instance.forYourOwnMemoryThey': 'For your own memory; they never see it.',
 	'settings.instance.freeUntil': 'Free until',
 	'settings.instance.freeWithNoEndDate': 'free with no end date',
-	'settings.instance.handThisOverNow':
-		'Hand this over now — it is not shown again, though it can be revoked.',
+	'settings.instance.handThisOverNow': 'Hand this over now — it is not shown again.',
 	'settings.instance.hiddenOnTheDemo': 'Hidden on the demo.',
 	'settings.instance.instance': 'Instance',
 	'settings.instance.invitations': 'Invitations',
@@ -1862,7 +1857,7 @@ export const messages: Catalogue = {
 	'settings.instance.thisDeviceOnItsOwn':
 		'This device, on its own. No server, and nothing leaves it.',
 	'settings.instance.thisProcessIsOlderThan':
-		'This process is older than the build it is reporting, which means the last deploy copied\n\t\t\t\t\tthe files and never restarted the service. Nothing new is running.',
+		'This process is older than the build it reports: the last deploy copied the files and never restarted the service.',
 	'settings.instance.used': 'used',
 	'settings.instance.used2': '· used',
 	'settings.instance.version': 'Version',
@@ -2514,7 +2509,7 @@ export const messages: Catalogue = {
 	'tour.activities': 'Activities',
 	'tour.albumsNotFolders': 'Albums, not folders',
 	'tour.anActivityYouHaveStopped':
-		'An activity you have stopped goes inactive rather than deleted, and everything you did under it stays in the history.',
+		'An activity you have stopped goes inactive, and everything you did under it stays in the history.',
 	'tour.anIngredientIsAShopping': 'An ingredient is a shopping item',
 	'tour.andOneAboutNothing': 'And one about nothing',
 	'tour.andWhatItLooksLike': 'And what it looks like',
@@ -2579,7 +2574,7 @@ export const messages: Catalogue = {
 	'tour.giveItANumberIf': 'Give it a number if it has one',
 	'tour.goals': 'Goals',
 	'tour.gymRussianReadABlock':
-		'“Gym”, “Russian”, “Read”. A block on the plan points at one of these, so a year of gym is one thing rather than fifty unrelated blocks.',
+		'“Gym”, “Russian”, “Read”. A block on the plan points at one of these, so a year of gym is one thing.',
 	'tour.hJKLMove':
 		'h j k l move between cards and columns, H and L carry the selected card with you, and c marks it done.',
 	'tour.habits': 'Habits',
@@ -2611,7 +2606,7 @@ export const messages: Catalogue = {
 		'Matching is on the words themselves, so a fragment of a sentence you wrote finds the entry it came from.',
 	'tour.movingAndSharing': 'Moving and sharing',
 	'tour.notACalendarOfAppointments':
-		'Not a calendar of appointments — the blocks you mean to repeat. Everything else in Tasks is built out of this.',
+		'The blocks you mean to repeat. Everything else in Tasks is built out of this.',
 	'tour.notebooks': 'Notebooks',
 	'tour.nothingCarriesItselfOver': 'Nothing carries itself over',
 	'tour.numbersFromElsewhere': 'Numbers from elsewhere',
@@ -2682,7 +2677,7 @@ export const messages: Catalogue = {
 	'tour.themeTheDayYourWeek':
 		'Theme, the day your week starts on, which rooms you keep and what colour they are. Your account and your data live here too.',
 	'tour.theyHaveANameA':
-		'They have a name, a birthday, and a page of their own — so “everything about Ana” is somewhere to go rather than a search you run.',
+		'They have a name, a birthday, and a page of their own, so “everything about Ana” is somewhere to go.',
 	'tour.thisIsOntoplano': 'This is ontoplano',
 	'tour.threeGoodThingsAboutThe':
 		'Three good things about the day, in one line each. The shortest entry worth keeping, for the days you will not write more.',
@@ -2701,7 +2696,7 @@ export const messages: Catalogue = {
 	'tour.twoListsOnePage': 'Two lists, one page',
 	'tour.typeAWordYouRemember': 'Type a word you remember',
 	'tour.upToSixPicturesPer':
-		'Up to six pictures per recipe. Star one and it becomes the one the list shows, so a cookbook is something you recognise by sight rather than by reading forty titles.',
+		'Up to six pictures per recipe. Star one and it becomes the one the list shows.',
 	'tour.urgencyInterestEnergy': 'Urgency, interest, energy',
 	'tour.whatHappenedInYourWords': 'What happened, in your words',
 	'tour.whatIsWorthHearing': 'What is worth hearing',

@@ -272,19 +272,17 @@ at a time, and show me what you will write before writing it.`
 
 						<div class="mt-4">
 							{#if s.key === 'language'}
-								<div class="flex flex-wrap gap-2">
+								<!-- The same control the settings page uses, for the same reason:
+								     a language list grows, and a row of buttons does not. -->
+								<select
+									class="select w-auto"
+									value={language}
+									onchange={(e) => pickLanguage(e.currentTarget.value as Locale)}
+								>
 									{#each LOCALES as option (option)}
-										<button
-											type="button"
-											onclick={() => pickLanguage(option)}
-											aria-pressed={language === option}
-											lang={option}
-											class="btn btn-sm {language === option ? 'btn-primary' : ''}"
-										>
-											{LOCALE_NAMES[option]}
-										</button>
+										<option value={option} lang={option}>{LOCALE_NAMES[option]}</option>
 									{/each}
-								</div>
+								</select>
 								<input type="hidden" name="language" value={language} />
 							{:else if s.key === 'assistant'}
 								{#if assistantToken}

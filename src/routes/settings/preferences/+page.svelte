@@ -1141,32 +1141,28 @@
 				// drew — so this one reloads rather than patching the page.
 				return async () => invalidateAll();
 			}}
-			class="flex flex-wrap gap-2"
+			class="flex flex-wrap items-center gap-2"
 		>
-			{#each data.languages as language (language.tag)}
-				<button
-					type="submit"
-					name="language"
-					value={language.tag}
-					lang={language.tag}
-					class="border px-4 py-2 text-left text-sm shadow-sm {t.locale === language.tag
-						? 'border-gray-900 bg-gray-900 font-semibold text-white'
-						: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
-				>
-					{language.name}
-					{#if language.untranslated > 0}
-						<!-- Said on the button rather than under the section: it is a
-						     fact about one language, not about the choice. -->
-						<span
-							class="mt-0.5 block text-xs font-normal {t.locale === language.tag
-								? 'text-gray-300'
-								: 'text-gray-500'}"
-						>
-							{t('settings.language.untranslated', { count: language.untranslated })}
-						</span>
-					{/if}
-				</button>
-			{/each}
+			<!--
+				A select, because a language list is a list: two today, a dozen when
+				people start sending translations, and a row of buttons stops being a
+				row at four. It submits on change — a Save beside a one-field form is
+				a second press for nothing.
+			-->
+			<select
+				name="language"
+				class="select w-auto"
+				value={t.locale}
+				onchange={(e) => e.currentTarget.form?.requestSubmit()}
+			>
+				{#each data.languages as language (language.tag)}
+					<option value={language.tag} lang={language.tag}>
+						{language.name}{language.untranslated > 0
+							? ` — ${t('settings.language.untranslated', { count: language.untranslated })}`
+							: ''}
+					</option>
+				{/each}
+			</select>
 		</form>
 	</section>
 
