@@ -135,12 +135,3 @@ scripts/demo-media/birds/
 .icons-from
 .flavours-from
 
-# Working files that are mine or Estevão's, never a cloner's. `ORDERS.md` was
-# listed here as `.ORDERS.md` — a name nothing in the tree has — so it was
-# ignored by nobody and sat in the public repo for months.
-ORDERS.md
-.ORDERS.md
-TO-REVIEW.md
-promp
-pr2
-temp/
