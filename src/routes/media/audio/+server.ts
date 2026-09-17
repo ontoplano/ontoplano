@@ -5,6 +5,8 @@ import { UnauthorizedError } from '$lib/services/errors';
 import { toJsonError } from '$lib/http-errors';
 import { audioLimits, store } from '$lib/services/audio';
 import { audioMarkdown } from '$lib/audio-markdown';
+import { translatorFor } from '$lib/i18n/core';
+import { SOURCE_LOCALE } from '$lib/i18n/locales';
 
 /**
  * A recording, posted as bytes.
@@ -22,11 +24,12 @@ import { audioMarkdown } from '$lib/audio-markdown';
  */
 export const POST: RequestHandler = async (event) => {
 	try {
-		if (!event.locals.user) throw new UnauthorizedError('Sign in first.');
+		const t = await translatorFor(event.locals.locale ?? SOURCE_LOCALE);
+		if (!event.locals.user) throw new UnauthorizedError(t('media.signInFirst'));
 
 		const form = await event.request.formData();
 		const file = form.get('file');
-		if (!(file instanceof File)) throw new UnauthorizedError('No recording in that request.');
+		if (!(file instanceof File)) throw new UnauthorizedError(t('media.noRecordingInThatRequest'));
 
 		// The ceiling before the bytes: a page that ignored the limit does not
 		// get to spend this process's memory finding out that it did.

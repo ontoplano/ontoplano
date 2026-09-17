@@ -3,6 +3,9 @@ import { fail } from '@sveltejs/kit';
 import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/http-errors';
 import { importVault } from '$lib/services/import-vault';
+import { translatorFor } from '$lib/i18n/core';
+import { SOURCE_LOCALE } from '$lib/i18n/locales';
+import { getLocale } from '$lib/services/settings';
 
 /**
  * A folder of markdown, turned into a notebook.
@@ -34,10 +37,15 @@ export async function importVaultAction(event: Event) {
 	}
 
 	try {
-		const result = importVault(buildCtx(event.locals.user!.id), {
-			files,
-			notebook: formData.get('notebook')
-		});
+		const t = await translatorFor(getLocale(event.locals.user!.id) ?? SOURCE_LOCALE);
+		const result = importVault(
+			buildCtx(event.locals.user!.id),
+			{
+				files,
+				notebook: formData.get('notebook')
+			},
+			t
+		);
 
 		const parts = [`Imported ${result.imported} notes into “${result.notebook}”.`];
 		if (result.tags > 0) parts.push(`${result.tags} tags came with them.`);

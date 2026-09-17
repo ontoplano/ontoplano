@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts } from './helpers/db';
+import { translator } from '../src/lib/i18n';
+import { messages as english } from '../src/lib/i18n/catalogues/en';
 
 /**
  * An Obsidian vault, arriving.
@@ -21,6 +23,7 @@ let diary: typeof import('../src/lib/services/diary');
 const entryCount = () =>
 	(database.get('select count(*) as n from diary_entries') as { n: number }).n;
 let ctx: { userId: string; now: Date; tz: string };
+const t = translator('en', english);
 
 beforeAll(async () => {
 	vault = await import('../src/lib/services/import-vault');
@@ -107,7 +110,7 @@ describe('bringing a vault in', () => {
 	];
 
 	test('one notebook, one entry per note', () => {
-		const result = vault.importVault(ctx, { files: aVault() });
+		const result = vault.importVault(ctx, { files: aVault() }, t);
 
 		expect(result.imported).toBe(3);
 		expect(result.notebook).toBe('Obsidian');
@@ -118,7 +121,7 @@ describe('bringing a vault in', () => {
 	});
 
 	test('the tags arrive with them', () => {
-		vault.importVault(ctx, { files: aVault() });
+		vault.importVault(ctx, { files: aVault() }, t);
 
 		// Lower-cased on the way in, as every tag in the app is.
 		const names = diary.listTags(ctx).map((t: { name: string }) => t.name);
@@ -126,25 +129,25 @@ describe('bringing a vault in', () => {
 	});
 
 	test('a second vault does not collide with the first', () => {
-		expect(vault.importVault(ctx, { files: aVault() }).notebook).toBe('Obsidian');
+		expect(vault.importVault(ctx, { files: aVault() }, t).notebook).toBe('Obsidian');
 		// A duplicate notebook title is refused by `createNotebook`, which is
 		// right when a person types one and wrong here.
-		expect(vault.importVault(ctx, { files: aVault() }).notebook).toBe('Obsidian (2026-09-03)');
+		expect(vault.importVault(ctx, { files: aVault() }, t).notebook).toBe('Obsidian (2026-09-03)');
 	});
 
 	test('a named notebook is used', () => {
-		expect(vault.importVault(ctx, { files: aVault(), notebook: 'My vault' }).notebook).toBe(
+		expect(vault.importVault(ctx, { files: aVault(), notebook: 'My vault' }, t).notebook).toBe(
 			'My vault'
 		);
 	});
 
 	test('nothing markdown in it is refused, and nothing is written', () => {
-		expect(() => vault.importVault(ctx, { files: [note('a.png', 'x')] })).toThrow(/markdown/i);
+		expect(() => vault.importVault(ctx, { files: [note('a.png', 'x')] }, t)).toThrow(/markdown/i);
 		expect(entryCount()).toBe(0);
 	});
 
 	test('a vault of empty notes is refused, and nothing is written', () => {
-		expect(() => vault.importVault(ctx, { files: [note('a.md', '  \n')] })).toThrow(/empty/i);
+		expect(() => vault.importVault(ctx, { files: [note('a.md', '  \n')] }, t)).toThrow(/empty/i);
 		expect(entryCount()).toBe(0);
 	});
 
@@ -159,9 +162,13 @@ describe('bringing a vault in', () => {
 		const tooMany = Array.from({ length: 40 }, (_, i) => `![](/media/${i + 1})`).join('\n');
 
 		expect(() =>
-			vault.importVault(ctx, {
-				files: [note('fine.md', 'Fine.'), note('pictures.md', tooMany)]
-			})
+			vault.importVault(
+				ctx,
+				{
+					files: [note('fine.md', 'Fine.'), note('pictures.md', tooMany)]
+				},
+				t
+			)
 		).toThrow();
 
 		expect(entryCount()).toBe(0);
@@ -201,13 +208,17 @@ describe('a file that is not text', () => {
 	});
 
 	test('it is skipped by name rather than imported as rubbish', () => {
-		const result = vault.importVault(ctx, {
-			files: [
-				{ path: 'Notes/real.md', text: '# Real\n\nsomething' },
-				{ path: 'Notes/photo.md', text: `${nul}binary` }
-			],
-			notebook: 'Mixed'
-		});
+		const result = vault.importVault(
+			ctx,
+			{
+				files: [
+					{ path: 'Notes/real.md', text: '# Real\n\nsomething' },
+					{ path: 'Notes/photo.md', text: `${nul}binary` }
+				],
+				notebook: 'Mixed'
+			},
+			t
+		);
 
 		expect(result.imported).toBe(1);
 		expect(result.skipped.some((s) => s.includes('photo.md') && s.includes('not text'))).toBe(true);
@@ -215,10 +226,14 @@ describe('a file that is not text', () => {
 
 	test('and a vault of nothing but binaries is refused, saying why', () => {
 		expect(() =>
-			vault.importVault(ctx, {
-				files: [{ path: 'a.md', text: `${nul}${nul}` }],
-				notebook: 'None'
-			})
+			vault.importVault(
+				ctx,
+				{
+					files: [{ path: 'a.md', text: `${nul}${nul}` }],
+					notebook: 'None'
+				},
+				t
+			)
 		).toThrow(/does not make something markdown/);
 	});
 });

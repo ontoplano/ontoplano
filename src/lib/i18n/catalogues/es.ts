@@ -268,6 +268,7 @@ export const messages: Catalogue = {
 	'audio.resume': 'Continuar',
 	'audio.save': 'Guardar',
 	'audio.saving': 'Guardando…',
+	'audio.sizeKB': '{size}KB',
 	'audio.stop': 'Detener y guardar',
 	'audio.tooLong':
 		'Eso alcanzó los {kilobytes}KB que puede tener una grabación, así que se detuvo ahí.',
@@ -1382,6 +1383,12 @@ export const messages: Catalogue = {
 		'No más mensajes de los lunes. Tu cuenta y todo lo que hay en ella sigue intacto, y puedes volver a activarlos\n\t\ten Configuración → Cuenta.',
 	'mail.weeklyReview.off.turnedOff': 'Desactivado',
 	'mail.weeklyReview.off.weeklyReviewTurnedOff': 'Revisión semanal desactivada · ontoplano',
+	'manifest.description':
+		'Administra tu vida como un negocio: planes, tareas, metas y el registro de lo que realmente hiciste.',
+	'manifest.goalsAndProgress': 'Metas y progreso',
+	'manifest.newDiaryEntry': 'Nueva entrada de diario',
+	'manifest.todaysColumns': 'Las columnas de hoy',
+	'manifest.writeAnEntry': 'Escribir una entrada',
 	'markdownImport.import': 'Importar',
 	'markdownImport.nameForTheNotebookThey': 'Nombre del cuaderno donde caerán',
 	'markdownImport.nothingIsUploadedAsA':
@@ -1395,15 +1402,19 @@ export const messages: Catalogue = {
 	'media.importCount': 'Importar {count}',
 	'media.importingProgress': 'Importando {done}/{total}…',
 	'media.newRecording': 'Nueva grabación',
+	'media.noRecordingInThatRequest': 'No hay grabación en esa solicitud.',
 	'media.pictureAdded': 'Foto agregada.',
 	'media.recordingAdded': 'Grabación agregada.',
 	'media.showWhatIsIn': 'Mostrar qué hay en {name}',
+	'media.signInFirst': 'Inicia sesión primero.',
 	'metaEditor.addOption': '+ Agregar opción',
 	'metaEditor.key': 'clave',
 	'metaEditor.options': 'Opciones',
 	'metaEditor.readByPluginsEG': 'Leído por plugins — p. ej. alarmas',
 	'metaEditor.removeOption': 'Quitar opción',
 	'metaEditor.value': 'valor',
+	'metaKeys.linkToOpenWithTheBlock': 'Enlace para abrir con el bloque',
+	'metaKeys.whereThisHappens': 'Dónde pasa esto',
 	'newsletter.off.goToOntoplano': 'Ir a ontoplano',
 	'newsletter.off.nothingMoreWillBeSent': 'No se enviará nada más a {email}.',
 	'newsletter.off.unsubscribedOntoplano': 'Dado de baja · ontoplano',
@@ -1509,6 +1520,7 @@ export const messages: Catalogue = {
 	'notebooks.ideas.removeFavorite': 'Quitar de favoritas',
 	'notebooks.ideas.saveIdea': 'Guardar idea',
 	'notebooks.ideas.whatDidYouApply': '¿Qué aplicaste?',
+	'notebooks.importedFromAnObsidianVault': 'Importado de una bóveda de Obsidian.',
 	'notebooks.itsNotesTasksAndGoals':
 		'Sus notas, tareas y metas no se eliminarán. Las tareas y metas se quedan donde están, en el\n\t\tplanificador y en Metas; las notas se mueven a',
 	'notebooks.kitchenRenovation': 'Renovación de la cocina',
@@ -1587,6 +1599,11 @@ export const messages: Catalogue = {
 	'offline.ontoplanoNeedsTheNetworkFor':
 		'Ontoplano necesita conexión para esta página. Todo lo que ya abriste sigue disponible para leer.',
 	'offline.tryAgain': 'Reintentar',
+	'onboarding.blankDescription': 'Tres categorías y una semana vacía. Llénala a tu manera.',
+	'onboarding.remoteWorkerDescription':
+		'Trabajo concentrado antes del almuerzo, tareas administrativas después, una caminata para cerrar el día.',
+	'onboarding.studentDescription':
+		'Clases por la mañana, bloques de estudio después, ejercicio en el medio.',
 	'ops.backups': 'Copias de seguridad',
 	'ops.billingReconciliation': 'Conciliación de facturación',
 	'people.friend': 'Amistad',

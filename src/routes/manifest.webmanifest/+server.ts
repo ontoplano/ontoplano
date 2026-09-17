@@ -2,6 +2,8 @@ import type { RequestHandler } from './$types';
 
 import { dev } from '$app/environment';
 import { isStaging } from '$lib/server/settings';
+import { translatorFor } from '$lib/i18n/core';
+import { SOURCE_LOCALE } from '$lib/i18n/locales';
 
 /**
  * The installed app's own identity, which is not the same on every instance.
@@ -24,31 +26,32 @@ const ICONS = [
 	{ file: 'icon-maskable', sizes: '512x512', purpose: 'maskable' as const, size: 512 }
 ];
 
-const SHORTCUTS = [
-	{
-		name: 'Board',
-		short_name: 'Board',
-		url: '/tasks/board',
-		description: "Today's columns",
-		icon: 'shortcut-board'
-	},
-	{
-		name: 'New diary entry',
-		short_name: 'Diary',
-		url: '/notebooks/diary',
-		description: 'Write an entry',
-		icon: 'shortcut-diary'
-	},
-	{
-		name: 'Goals',
-		short_name: 'Goals',
-		url: '/goals',
-		description: 'Goals and progress',
-		icon: 'shortcut-goals'
-	}
-];
+export const GET: RequestHandler = async ({ locals }) => {
+	const t = await translatorFor(locals.locale ?? SOURCE_LOCALE);
+	const SHORTCUTS = [
+		{
+			name: t('app.board'),
+			short_name: t('app.board'),
+			url: '/tasks/board',
+			description: t('manifest.todaysColumns'),
+			icon: 'shortcut-board'
+		},
+		{
+			name: t('manifest.newDiaryEntry'),
+			short_name: t('app.diary'),
+			url: '/notebooks/diary',
+			description: t('manifest.writeAnEntry'),
+			icon: 'shortcut-diary'
+		},
+		{
+			name: t('app.goals'),
+			short_name: t('app.goals'),
+			url: '/goals',
+			description: t('manifest.goalsAndProgress'),
+			icon: 'shortcut-goals'
+		}
+	];
 
-export const GET: RequestHandler = async () => {
 	const staging = isStaging();
 	// The suffix is the whole difference. `scripts/build-icons.mjs` draws all
 	// three sets from the same logo, so the day the mark changes they all
@@ -59,8 +62,7 @@ export const GET: RequestHandler = async () => {
 	const manifest = {
 		name: staging ? 'Ontoplano staging' : dev ? 'Ontoplano — Dev' : 'Ontoplano',
 		short_name: staging ? 'Staging' : dev ? 'Dev' : 'Ontoplano',
-		description:
-			'Run your life like a business: plans, tasks, goals and the record of what you actually did.',
+		description: t('manifest.description'),
 		// A distinct id, or a browser treats the two as one installed app and
 		// the second install silently replaces the first.
 		id: staging ? '/?staging' : dev ? '/?dev' : '/',

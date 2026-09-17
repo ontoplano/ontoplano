@@ -23,7 +23,9 @@ import {
 	undo,
 	undoable
 } from '../src/lib/undo.svelte';
-import { mergeSuggestions, parseSlotMeta, SUGGESTED_KEYS } from '../src/lib/meta-keys';
+import { mergeSuggestions, parseSlotMeta, suggestedKeys } from '../src/lib/meta-keys';
+import { translator } from '../src/lib/i18n';
+import { messages as english } from '../src/lib/i18n/catalogues/en';
 import { commandKey } from '../src/lib/platform';
 
 afterEach(() => {
@@ -313,13 +315,15 @@ describe('an action whose window has closed but whose write is still in flight',
 });
 
 describe('the keys a block can carry', () => {
+	const t = translator('en', english);
+
 	test('the app suggests a few generic ones', () => {
-		expect(SUGGESTED_KEYS.map((s) => s.key)).toContain('location');
+		expect(suggestedKeys(t).map((s: { key: string }) => s.key)).toContain('location');
 	});
 
 	test("a plugin's own description wins for the key it claims", () => {
 		// It knows what the key does to it; a generic gloss would say less.
-		const merged = mergeSuggestions([
+		const merged = mergeSuggestions(t, [
 			{
 				name: 'scale',
 				metaKeys: [{ key: 'location', description: 'Which room the scale is in', example: 'B12' }]
@@ -332,7 +336,7 @@ describe('the keys a block can carry', () => {
 	});
 
 	test('two plugins claiming one key are both named, not picked between', () => {
-		const merged = mergeSuggestions([
+		const merged = mergeSuggestions(t, [
 			{ name: 'scale', metaKeys: [{ key: 'weight', description: 'kg', example: '80' }] },
 			{ name: 'watch', metaKeys: [{ key: 'weight', description: '', example: '' }] }
 		]);
@@ -344,7 +348,7 @@ describe('the keys a block can carry', () => {
 	});
 
 	test('a plugin key the app never suggested is added', () => {
-		const merged = mergeSuggestions([
+		const merged = mergeSuggestions(t, [
 			{ name: 'scale', metaKeys: [{ key: 'zzz_last', description: 'd', example: 'e' }] }
 		]);
 		expect(merged.map((s) => s.key)).toContain('zzz_last');
@@ -353,8 +357,8 @@ describe('the keys a block can carry', () => {
 	});
 
 	test('and with no plugins the suggestions are just the app’s own', () => {
-		expect(mergeSuggestions([]).map((s) => s.key)).toEqual(
-			[...SUGGESTED_KEYS.map((s) => s.key)].sort()
+		expect(mergeSuggestions(t, []).map((s) => s.key)).toEqual(
+			[...suggestedKeys(t).map((s: { key: string }) => s.key)].sort()
 		);
 	});
 });

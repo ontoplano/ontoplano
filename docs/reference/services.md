@@ -1897,7 +1897,7 @@ way to make somebody regret pressing the button.
 
 #### `looksLikeText(text)`
 
-#### `importVault(ctx, input)`
+#### `importVault(ctx, input, t)`
 
 ### Types
 

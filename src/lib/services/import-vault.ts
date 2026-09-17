@@ -5,6 +5,7 @@ import { createNotebook } from '$lib/services/notebooks.js';
 import { createEntry, MAX_ENTRY_LENGTH } from '$lib/services/diary.js';
 import { MAX_TITLE_LENGTH } from '$lib/services/todos.js';
 import { freeNotebookTitle } from '$lib/services/imports.js';
+import type { Translate } from '$lib/i18n/core.js';
 
 /**
  * A vault of markdown becomes notebook entries.
@@ -187,7 +188,8 @@ export function looksLikeText(text: string): boolean {
 
 export function importVault(
 	ctx: Ctx,
-	input: { files: VaultFile[]; notebook?: unknown }
+	input: { files: VaultFile[]; notebook?: unknown },
+	t: Translate
 ): VaultImportResult {
 	const named = input.files.filter((f) => /\.md$/i.test(f.path));
 	const files = named.filter((f) => looksLikeText(f.text));
@@ -227,7 +229,7 @@ export function importVault(
 	db.transaction(() => {
 		const notebookId = createNotebook(ctx, {
 			title,
-			description: 'Imported from an Obsidian vault.'
+			description: t('notebooks.importedFromAnObsidianVault')
 		});
 
 		for (const note of notes) {

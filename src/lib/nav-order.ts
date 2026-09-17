@@ -30,7 +30,9 @@ import type { NavPlace } from '$lib/sections-nav';
  * The Gallery became a tab inside Media when recordings arrived. Anybody whose
  * order named `gallery` meant the room, and the room is `media`.
  */
-const RENAMED: Record<string, string> = { gallery: 'media' };
+/** A stored key to the room key it now means. Not copy — these are room ids, not words. */
+type RoomIdRedirects = Record<string, string>;
+const RENAMED: RoomIdRedirects = { gallery: 'media' };
 
 /** `#rrggbb`, which is what `<input type="color">` produces and nothing else. */
 export function isHexColor(value: unknown): value is string {

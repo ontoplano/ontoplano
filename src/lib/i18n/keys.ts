@@ -247,6 +247,7 @@ export type MessageKey =
 	| 'audio.resume'
 	| 'audio.save'
 	| 'audio.saving'
+	| 'audio.sizeKB'
 	| 'audio.stop'
 	| 'audio.tooLong'
 	| 'buy.backToBilling'
@@ -1212,6 +1213,11 @@ export type MessageKey =
 	| 'mail.weeklyReview.off.noMoreMondayMessagesYour'
 	| 'mail.weeklyReview.off.turnedOff'
 	| 'mail.weeklyReview.off.weeklyReviewTurnedOff'
+	| 'manifest.description'
+	| 'manifest.goalsAndProgress'
+	| 'manifest.newDiaryEntry'
+	| 'manifest.todaysColumns'
+	| 'manifest.writeAnEntry'
 	| 'markdownImport.import'
 	| 'markdownImport.nameForTheNotebookThey'
 	| 'markdownImport.nothingIsUploadedAsA'
@@ -1223,15 +1229,19 @@ export type MessageKey =
 	| 'media.importCount'
 	| 'media.importingProgress'
 	| 'media.newRecording'
+	| 'media.noRecordingInThatRequest'
 	| 'media.pictureAdded'
 	| 'media.recordingAdded'
 	| 'media.showWhatIsIn'
+	| 'media.signInFirst'
 	| 'metaEditor.addOption'
 	| 'metaEditor.key'
 	| 'metaEditor.options'
 	| 'metaEditor.readByPluginsEG'
 	| 'metaEditor.removeOption'
 	| 'metaEditor.value'
+	| 'metaKeys.linkToOpenWithTheBlock'
+	| 'metaKeys.whereThisHappens'
 	| 'newsletter.off.goToOntoplano'
 	| 'newsletter.off.nothingMoreWillBeSent'
 	| 'newsletter.off.unsubscribedOntoplano'
@@ -1329,6 +1339,7 @@ export type MessageKey =
 	| 'notebooks.ideas.removeFavorite'
 	| 'notebooks.ideas.saveIdea'
 	| 'notebooks.ideas.whatDidYouApply'
+	| 'notebooks.importedFromAnObsidianVault'
 	| 'notebooks.itsNotesTasksAndGoals'
 	| 'notebooks.kitchenRenovation'
 	| 'notebooks.md'
@@ -1394,6 +1405,9 @@ export type MessageKey =
 	| 'offline.offlineOntoplano'
 	| 'offline.ontoplanoNeedsTheNetworkFor'
 	| 'offline.tryAgain'
+	| 'onboarding.blankDescription'
+	| 'onboarding.remoteWorkerDescription'
+	| 'onboarding.studentDescription'
 	| 'ops.backups'
 	| 'ops.billingReconciliation'
 	| 'people.friend'
@@ -2758,6 +2772,7 @@ export interface MessageValuesFor {
 	'admin.minutesAgo': { count: number };
 	'audio.full': { count: number };
 	'audio.held': { count: number };
+	'audio.sizeKB': { size: string | number };
 	'audio.tooLong': { kilobytes: string | number };
 	'capture.addedTo': { into: string | number };
 	'capture.addedToWithContent': { content: string | number; into: string | number };

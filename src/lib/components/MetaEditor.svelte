@@ -27,7 +27,7 @@
 		plugins?: { name: string; metaKeys: { key: string; description: string; example: string }[] }[];
 	} = $props();
 
-	const suggestions: MetaKeySuggestion[] = $derived(mergeSuggestions(plugins));
+	const suggestions: MetaKeySuggestion[] = $derived(mergeSuggestions(t, plugins));
 
 	type Pair = { key: string; value: string };
 

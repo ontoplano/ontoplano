@@ -468,7 +468,9 @@
 					{t('audio.discard')}
 				</button>
 				{#if held}
-					<span class="text-xs text-gray-500">{Math.ceil(size / 1024)}KB</span>
+					<span class="text-xs text-gray-500"
+						>{t('audio.sizeKB', { size: Math.ceil(size / 1024) })}</span
+					>
 				{/if}
 			</div>
 		{:else}

@@ -1,3 +1,5 @@
+import type { Translate } from './i18n/core.js';
+
 export type MetaKeySuggestion = {
 	key: string;
 	description: string;
@@ -17,10 +19,12 @@ export type MetaKeySuggestion = {
  * Only genuinely generic keys belong here. Anything a specific program reads
  * should come from that program's manifest, where it can be labelled.
  */
-export const SUGGESTED_KEYS: MetaKeySuggestion[] = [
-	{ key: 'location', description: 'Where this happens', example: 'gym' },
-	{ key: 'url', description: 'Link to open with the block', example: '' }
-];
+export function suggestedKeys(t: Translate): MetaKeySuggestion[] {
+	return [
+		{ key: 'location', description: t('metaKeys.whereThisHappens'), example: 'gym' },
+		{ key: 'url', description: t('metaKeys.linkToOpenWithTheBlock'), example: '' }
+	];
+}
 
 /**
  * Combine ontoplano's own suggestions with what plugins have declared.
@@ -30,10 +34,11 @@ export const SUGGESTED_KEYS: MetaKeySuggestion[] = [
  * reads it.
  */
 export function mergeSuggestions(
+	t: Translate,
 	declared: { name: string; metaKeys: { key: string; description: string; example: string }[] }[]
 ): MetaKeySuggestion[] {
 	const byKey = new Map<string, MetaKeySuggestion>();
-	for (const s of SUGGESTED_KEYS) byKey.set(s.key, s);
+	for (const s of suggestedKeys(t)) byKey.set(s.key, s);
 
 	for (const plugin of declared) {
 		for (const entry of plugin.metaKeys) {

@@ -21,7 +21,7 @@ export type Block = {
 export type Template = {
 	key: TemplateKey;
 	label: PlainKey;
-	description: string;
+	description: PlainKey;
 	categories: { name: string; color: string; colorLight: string }[];
 	/** Activity name → the category it belongs to. */
 	activities: { name: string; category: string }[];
@@ -58,7 +58,7 @@ export const TEMPLATES: Template[] = [
 	{
 		key: 'student',
 		label: 'app.student',
-		description: 'Lectures in the morning, study blocks after, exercise in between.',
+		description: 'onboarding.studentDescription',
 		categories: BASE_CATEGORIES,
 		activities: [
 			{ name: 'Lectures', category: 'work' },
@@ -91,7 +91,7 @@ export const TEMPLATES: Template[] = [
 	{
 		key: 'remote',
 		label: 'app.remoteWorker',
-		description: 'Deep work before lunch, admin after, a walk to end the day.',
+		description: 'onboarding.remoteWorkerDescription',
 		categories: BASE_CATEGORIES,
 		activities: [
 			{ name: 'Deep work', category: 'work' },
@@ -125,7 +125,7 @@ export const TEMPLATES: Template[] = [
 	{
 		key: 'blank',
 		label: 'app.blank',
-		description: 'Three categories and an empty week. Fill it yourself.',
+		description: 'onboarding.blankDescription',
 		categories: BASE_CATEGORIES,
 		activities: [],
 		blocks: []
