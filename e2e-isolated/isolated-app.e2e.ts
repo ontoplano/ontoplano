@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { deflateSync } from 'node:zlib';
 
-import { REMINDER_CHANNEL } from '../src/lib/phone-notifications';
+import { REMINDER_CHANNEL } from '../src/lib/reminder-channel';
 
 /** Wait until nothing on the flower is still moving. */
 async function settled(page: import('@playwright/test').Page): Promise<void> {

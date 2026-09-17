@@ -14,7 +14,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { describe, expect, test } from 'vitest';
-import { REMINDER_CHANNEL, RETIRED_CHANNELS } from '../src/lib/phone-notifications';
+import { REMINDER_CHANNEL, RETIRED_CHANNELS } from '../src/lib/reminder-channel';
 
 const RINGER = 'capacitor/android/app/src/main/java/app/ontoplano/isolated/Ringer.java';
 

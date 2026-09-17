@@ -21,6 +21,7 @@
  * and booking it again is one call each and cannot drift.
  */
 import type { Translate } from './i18n/core.js';
+import { REMINDER_CHANNEL, RETIRED_CHANNELS } from './reminder-channel.js';
 import { inPhoneApp } from './instance-choice';
 import { isIsolated } from './isolated/mode';
 import { NOTIFICATION_ACCENT, NOTIFICATION_ACCENT_ISOLATED } from './logo/brand';
@@ -62,43 +63,11 @@ type Notifications = {
 	deleteChannel(what: { id: string }): Promise<void>;
 };
 
-/**
- * The channel a reminder arrives on, and why it is named here as well as in
- * the shell.
- *
- * Android decides whether a notification makes a noise from its *channel*, not
- * from the notification: a channel made at the default importance posts
- * silently however loudly the notification asks. The shell's own ringer — the
- * half that fires for an instance with a server — makes this one at
- * `IMPORTANCE_HIGH`, so those ring. The half that books the alarms for an
- * instance on the phone said nothing about a channel at all, so it landed on
- * the plugin's default one and arrived in silence: the notification appeared,
- * and the sound only played later, out of the page, when the app was opened.
- *
- * One channel for both halves, so it rings either way and so somebody
- * silencing reminders silences reminders rather than half of them.
- * `Ringer.java` holds the same string; `tests/reminder-channel.test.ts` is
- * what stops the two drifting.
+/*
+ * Re-exported, so that everything already reaching for these through this
+ * module still finds them — the shell's half, and the tests.
  */
-export const REMINDER_CHANNEL = 'ontoplano-reminders-audible';
-
-/**
- * Channels this app has used before, to be deleted rather than left behind.
- *
- * A channel's importance is fixed when it is made. Android ignores every field
- * you pass after the first time, deliberately — the sound and whether it may
- * interrupt are the person's settings from then on, not the app's. So the
- * first `ontoplano-reminders` a phone ever made is the one it keeps, and the
- * phones that made theirs before the importance was set right have been
- * posting reminders silently ever since with no way for this code to raise
- * them. The reminder arrived; it just never made a sound unless the app
- * happened to be open, which is the half that plays its own.
- *
- * A new id is the only way to hand those phones a channel at the right
- * importance, and the old one is deleted so nobody is left with two rows
- * called Reminders in their notification settings, one of them dead.
- */
-export const RETIRED_CHANNELS = ['ontoplano-reminders'];
+export { REMINDER_CHANNEL, RETIRED_CHANNELS };
 
 /** Android's `IMPORTANCE_HIGH`: it makes a sound and it can peek. */
 const CHANNEL_IMPORTANCE = 5;
