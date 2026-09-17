@@ -34,7 +34,10 @@ writeFileSync(
 		'[registration]\nmode = "open"\n\n' +
 		// The workbenches under /dev are part of what the suite checks, and they
 		// exist only where an instance says so. This is that instance saying so.
-		'[instance]\ndev_tools = "true"\n'
+		'[instance]\ndev_tools = "true"\n' +
+		// And the reminders job may be told which moment to work from: the suite
+		// walks a reminder from the form to the badge without waiting on a clock.
+		'job_replay = "true"\n'
 );
 
 /*

@@ -179,6 +179,12 @@ export const USER_TABLES: OwnedTable[] = [
 	// the same reason the subscription does: it is the paper trail for money
 	// they spent, and deleting the account must not leave it behind.
 	owned('billingCheckouts', schema.billingCheckouts as never),
+	// What the app has told this account. Nothing points at it, so it can sit
+	// anywhere — here, beside the other things that are a record rather than a
+	// subject. It leaves with the export because it is a record of what was
+	// said to somebody, and it goes with the deletion because there is nobody
+	// left for it to have been said to.
+	owned('sentNotifications', schema.sentNotifications as never),
 	// The bytes, after everything that could still be naming one. A picture is
 	// as much somebody's own as the diary is: it leaves with the export and it
 	// goes with the deletion.

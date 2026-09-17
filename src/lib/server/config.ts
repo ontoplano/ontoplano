@@ -360,6 +360,21 @@ export interface OntoplanoConfig {
 		 */
 		devTools: boolean;
 		/**
+		 * Whether the reminders job will work from a moment it is given.
+		 *
+		 * Ordinarily the pass uses the clock. With this on, `/api/jobs/reminders`
+		 * accepts `?at=` and considers due whatever was due *then* — which is how
+		 * a box that was down for an hour catches up, and how the suite walks a
+		 * reminder from the form to the badge without waiting on a clock.
+		 *
+		 * Off here, because it is a capability rather than a fix: a caller
+		 * holding the health token could otherwise make tomorrow's reminders
+		 * arrive today. Bounded — the query that finds candidates still uses the
+		 * real clock and looks no more than a day ahead — but not nothing, and
+		 * not something a production instance has any use for.
+		 */
+		jobReplay: boolean;
+		/**
 		 * Whether this is somebody's own copy rather than one that is sold.
 		 *
 		 * Off by default, which treats an instance as hosted — the answer with
@@ -486,6 +501,11 @@ origin = ${q(config.newsletter.origin)}
 tagline = ${q(config.instance.tagline)}
 language = ${q(config.instance.language)}
 dev_tools = ${q(config.instance.devTools)}
+
+# Whether the reminders job may be told which moment to work from. On for a
+# staging copy and a developer's own machine; off here, where the clock is the
+# only moment that should matter.
+job_replay = ${q(config.instance.jobReplay)}
 self_host = ${q(config.instance.selfHost)}
 docs_url = ${q(config.instance.docsUrl)}
 site_url = ${q(config.instance.siteUrl)}
@@ -708,6 +728,7 @@ export function loadConfig(): OntoplanoConfig {
 				return isLocale(said) ? said : SOURCE_LOCALE;
 			})(),
 			devTools: instance.dev_tools === 'true',
+			jobReplay: instance.job_replay === 'true',
 			selfHost: was(instance.self_host, 'ONTOPLANO_SELF_HOST') === 'true',
 			docsUrl: (
 				was(instance.docs_url, 'ONTOPLANO_DOCS_URL') || 'https://docs.ontoplano.com'

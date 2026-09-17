@@ -1,5 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
+import { loadConfig } from '$lib/server/config';
 import { tokenMatches } from '$lib/server/services/health';
 import { deliverDueReminders } from '$lib/server/services/reminder-delivery';
 import { notifyAssistantBursts } from '$lib/server/services/assistant-notify';
@@ -34,18 +35,27 @@ export const POST: RequestHandler = async ({ request, url }) => {
 	markJobRan('reminders');
 
 	/*
-	 * The moment to work from, if the caller names one.
+	 * The moment to work from, if the caller names one and the instance allows
+	 * it.
 	 *
 	 * Ordinarily the pass uses the clock, and the box calls it every minute.
-	 * `?at=` replays a window that was missed — a box that was down over an
-	 * hour has an hour of reminders sitting unstamped, and "run it as though
-	 * it were then" is the thing an operator actually wants at that point.
+	 * `?at=` replays a window that was missed — a box down for an hour has an
+	 * hour of reminders sitting unstamped, and "run it as though it were then"
+	 * is what an operator wants at that point.
 	 *
-	 * Nothing about this widens what the endpoint can do: it is already behind
-	 * the health token, it already sends, and a reminder it stamps is one it
-	 * has delivered. The only difference is which reminders it considers due.
+	 * Behind `[instance] job_replay` because it *is* a widening, even though
+	 * the token is the same: somebody holding it could otherwise make
+	 * tomorrow's reminders arrive today. Bounded — the query that finds
+	 * candidates uses the real clock and looks no more than a day ahead — but
+	 * a production instance has no use for it, so production does not have it.
+	 *
+	 * Refused rather than ignored: silently using the wrong clock is how an
+	 * operator concludes the replay worked and the reminders were lost.
 	 */
 	const asked = url.searchParams.get('at');
+	if (asked && !loadConfig().instance.jobReplay)
+		return json({ ok: false, why: 'job_replay is off on this instance' }, { status: 403 });
+
 	const at = asked ? new Date(asked) : null;
 	if (asked && (!at || Number.isNaN(at.getTime())))
 		return json({ ok: false, why: 'at is not a date' }, { status: 400 });

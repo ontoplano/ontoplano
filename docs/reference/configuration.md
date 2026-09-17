@@ -180,14 +180,15 @@ self-hosted instance wants even with the list turned on.
 
 ### `[instance]`
 
-| Key        | Type      | Means                                                             |
-| ---------- | --------- | ----------------------------------------------------------------- |
-| `devTools` | `boolean` | Whether this instance carries the workbenches under `/dev`.       |
-| `selfHost` | `boolean` | Whether this is somebody's own copy rather than one that is sold. |
-| `docsUrl`  | `string`  | Where this instance's documentation and project pages are.        |
-| `siteUrl`  | `string`  | —                                                                 |
-| `tagline`  | `string`  | The one line under the name on the signed-out front page.         |
-| `language` | `Locale`  | The language this instance falls back to.                         |
+| Key         | Type      | Means                                                             |
+| ----------- | --------- | ----------------------------------------------------------------- |
+| `devTools`  | `boolean` | Whether this instance carries the workbenches under `/dev`.       |
+| `jobReplay` | `boolean` | Whether the reminders job will work from a moment it is given.    |
+| `selfHost`  | `boolean` | Whether this is somebody's own copy rather than one that is sold. |
+| `docsUrl`   | `string`  | Where this instance's documentation and project pages are.        |
+| `siteUrl`   | `string`  | —                                                                 |
+| `tagline`   | `string`  | The one line under the name on the signed-out front page.         |
+| `language`  | `Locale`  | The language this instance falls back to.                         |
 
 **`devTools`**
 
@@ -200,6 +201,21 @@ them or to know they exist. There are none at the moment.
 Here rather than in an environment variable because this is a thing
 the instance allows, and everything an instance allows is in this
 one file.
+
+**`jobReplay`**
+
+Whether the reminders job will work from a moment it is given.
+
+Ordinarily the pass uses the clock. With this on, `/api/jobs/reminders`
+accepts `?at=` and considers due whatever was due _then_ — which is how
+a box that was down for an hour catches up, and how the suite walks a
+reminder from the form to the badge without waiting on a clock.
+
+Off here, because it is a capability rather than a fix: a caller
+holding the health token could otherwise make tomorrow's reminders
+arrive today. Bounded — the query that finds candidates still uses the
+real clock and looks no more than a day ahead — but not nothing, and
+not something a production instance has any use for.
 
 **`selfHost`**
 
