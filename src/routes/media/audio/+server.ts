@@ -42,7 +42,7 @@ export const POST: RequestHandler = async (event) => {
 
 		const held = await store(buildCtx(event.locals.user.id), {
 			bytes: new Uint8Array(await file.arrayBuffer()),
-			name: String(form.get('name') ?? '')
+			name: String(form.get('label') ?? '')
 		});
 
 		return Response.json({

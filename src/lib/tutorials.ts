@@ -435,6 +435,24 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
+	'/media/audios': {
+		label: 'tour.recordings',
+		steps: [
+			{
+				title: 'tour.sayItInsteadOfTyping',
+				body: 'tour.pressRecordAndTalk'
+			},
+			{
+				title: 'tour.hearItBeforeYouKeep',
+				body: 'tour.playItBackAndScrub'
+			},
+			{
+				title: 'tour.aNameOrTheMoment',
+				body: 'tour.leaveTheNameAloneAnd'
+			}
+		]
+	},
+
 	'/media/gallery': {
 		label: 'tour.gallery',
 		steps: [

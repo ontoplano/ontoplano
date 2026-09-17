@@ -1190,20 +1190,28 @@
 								gone — dragging is the way these move, and a pair of
 								chevrons beside the handle was a second answer to the same
 								question taking up the width of the first.
+
+								They are round targets rather than bare glyphs, centred on
+								the title's own line, and there is a real gap between them.
+								As two 16px icons four pixels apart they were a pair of
+								marks floating under the title — off its baseline, and with
+								the one that removes the card close enough to the one you
+								grab it by that reaching for the handle could take the card
+								away instead. The gap is the whole point of the number.
 							-->
 							<div
-								class="card-header pointer-events-none absolute top-px right-0 z-10 flex items-start gap-1"
+								class="card-header pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-end gap-3"
 							>
 								<button
 									onclick={() => hideCard(id)}
-									class="pointer-events-auto text-gray-500 hover:text-gray-900"
+									class="card-control pointer-events-auto hover:text-red-600"
 									title={t('home.hideThisCard')}
 									aria-label={t('home.hideCard', { card: t(card.label) })}
 								>
 									<Icon name="close" size={16} />
 								</button>
 								<span
-									class="pointer-events-auto cursor-grab touch-none text-gray-500"
+									class="card-control pointer-events-auto cursor-grab touch-none"
 									title={t('home.dragCard', { card: t(card.label) })}
 									aria-hidden="true"
 									onpointerdown={(e) => grab(id, e)}

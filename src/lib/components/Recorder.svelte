@@ -316,7 +316,7 @@
 		-->
 		<div class="flex flex-wrap items-center gap-2">
 			<OneLine
-				name="name"
+				name="label"
 				bind:value={name}
 				placeholder={suggestedName}
 				class="input w-auto flex-1 sm:max-w-72"

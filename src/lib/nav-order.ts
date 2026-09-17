@@ -18,6 +18,20 @@
 import { SECTIONS, type SectionKey } from '$lib/colors';
 import type { NavPlace } from '$lib/sections-nav';
 
+/**
+ * Keys that have been renamed, and what they are called now.
+ *
+ * A stored order is a list of keys somebody arranged, sometimes years ago, and
+ * dropping a key it no longer recognises is the right rule for a room that was
+ * *removed*. A room that was renamed is not removed — reading the old name as
+ * "gone" silently takes the room out of the menu of everybody who had ever
+ * arranged one, which is a preference being lost rather than honoured.
+ *
+ * The Gallery became a tab inside Media when recordings arrived. Anybody whose
+ * order named `gallery` meant the room, and the room is `media`.
+ */
+const RENAMED: Record<string, string> = { gallery: 'media' };
+
 /** `#rrggbb`, which is what `<input type="color">` produces and nothing else. */
 export function isHexColor(value: unknown): value is string {
 	return typeof value === 'string' && /^#[0-9a-f]{6}$/i.test(value);
@@ -38,7 +52,8 @@ export function applyOrder<T extends { key: string }>(places: T[], order: readon
 
 	// Deduped as it goes: what is stored is whatever was written last, and a
 	// list naming one room twice would otherwise draw it twice.
-	for (const key of order) {
+	for (const stored of order) {
+		const key = RENAMED[stored] ?? stored;
 		const place = byKey.get(key);
 		if (!place || seen.has(key)) continue;
 		seen.add(key);
@@ -62,7 +77,10 @@ export function accentsWith(
 		Object.entries(SECTIONS).map(([key, s]) => [key, s.accent])
 	) as Record<SectionKey, string>;
 
-	for (const [key, value] of Object.entries(overrides ?? {})) {
+	for (const [stored, value] of Object.entries(overrides ?? {})) {
+		// Renamed the same way an order's keys are: a colour somebody chose for
+		// the Gallery is the colour they chose for the room it became.
+		const key = RENAMED[stored] ?? stored;
 		if (key in accents && isHexColor(value)) accents[key as SectionKey] = value;
 	}
 

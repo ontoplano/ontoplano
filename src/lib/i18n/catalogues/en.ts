@@ -2689,6 +2689,7 @@ export const messages: Catalogue = {
 	'tour.aHabitIsEitherOne':
 		'A habit is either one to keep or one to avoid, and both are logged the same way: one mark a day.',
 	'tour.aNameIsEnoughTo': 'A name is enough to start',
+	'tour.aNameOrTheMoment': 'A name, or the moment',
 	'tour.aPersonIsNotA': 'A person is not a tag',
 	'tour.aRenovationATripA':
 		'A renovation, a trip, a piece of research. A notebook holds notes about one subject, and it does not care when you wrote them.',
@@ -2779,6 +2780,7 @@ export const messages: Catalogue = {
 	'tour.habits': 'Habits',
 	'tour.handOffATodoWith':
 		'Hand off a todo with g — it stays on the list, marked as somebody else’s.',
+	'tour.hearItBeforeYouKeep': 'Hear it before you keep it',
 	'tour.holdThisThenLetGo': 'Hold this, then let go',
 	'tour.ideas': 'Ideas',
 	'tour.importTheBankU2019sOwnExport':
@@ -2795,6 +2797,7 @@ export const messages: Catalogue = {
 	'tour.itOpensTheTourFor':
 		'It opens the tour for whatever screen you are on. The keyboard beside it lists that screen’s keys, and the book is the full documentation.',
 	'tour.jAndKMoveE': 'j and k move, e edits, c finishes',
+	'tour.leaveTheNameAloneAnd': 'Leave the name alone and it is filed under the time you made it.',
 	'tour.ledgers': 'Ledgers',
 	'tour.lettingOtherThingsIn': 'Letting other things in',
 	'tour.lightDarkOrWhateverThe': 'Light, dark, or whatever the device says',
@@ -2823,14 +2826,19 @@ export const messages: Catalogue = {
 	'tour.plan': 'Plan',
 	'tour.planIsTheShapeOf':
 		'Plan is the shape of it, Board is today, To-do is everything with no date yet, History is what actually happened.',
+	'tour.playItBackAndScrub':
+		'Play it back and drag along the bar. Discard costs nothing — nothing is sent until you save.',
 	'tour.preferences': 'Preferences',
 	'tour.pressHereIfYouEver': 'Press here if you ever need this help',
+	'tour.pressRecordAndTalk':
+		'Press Record and talk. Pause keeps what you have; Stop ends the recording and hands it to you to listen to.',
 	'tour.pullDownAnEmptyStretch':
 		'Pull down an empty stretch of a day. Hold Alt while dragging one to move that occurrence only and leave the rest of the weeks alone.',
 	'tour.putARecipeOnThe':
 		'Put a recipe on the week and everything it needs turns up on the shopping list, minus what you already have.',
 	'tour.recipes': 'Recipes',
 	'tour.recipesAndWhatTheyCost': 'Recipes, and what they cost you',
+	'tour.recordings': 'Recordings',
 	'tour.reminders': 'Reminders',
 	'tour.retireOneWithoutLosingIt': 'Retire one without losing it',
 	'tour.review': 'Review',
@@ -2838,6 +2846,7 @@ export const messages: Catalogue = {
 	'tour.saveTheShapeYouAre':
 		'Save the shape you are looking at as a scheme — a term-time week, a holiday week — and apply it to any week later.',
 	'tour.sayItInYourOwn': 'Say it in your own words',
+	'tour.sayItInsteadOfTyping': 'Say it instead of typing it',
 	'tour.sayWhichKindItIs': 'Say which kind it is',
 	'tour.scopedToWhatItNeeds':
 		'Scoped to what it needs, and revokable from here. Copy it when it appears — it is stored hashed and cannot be shown again.',

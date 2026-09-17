@@ -19,14 +19,14 @@ describe('the order', () => {
 	});
 
 	test('puts the named rooms first, in the order they were named', () => {
-		const out = applyOrder(NAV_PLACES, ['inventory', 'gallery']);
-		expect(keys(out).slice(0, 2)).toEqual(['inventory', 'gallery']);
+		const out = applyOrder(NAV_PLACES, ['inventory', 'media']);
+		expect(keys(out).slice(0, 2)).toEqual(['inventory', 'media']);
 	});
 
 	test('drops a key for a room that no longer exists', () => {
-		const out = applyOrder(NAV_PLACES, ['beliefs', 'gallery']);
+		const out = applyOrder(NAV_PLACES, ['beliefs', 'media']);
 		expect(keys(out)).not.toContain('beliefs');
-		expect(keys(out)[0]).toBe('gallery');
+		expect(keys(out)[0]).toBe('media');
 		expect(out).toHaveLength(NAV_PLACES.length);
 	});
 
@@ -38,8 +38,27 @@ describe('the order', () => {
 		expect(out).toHaveLength(NAV_PLACES.length);
 	});
 
+	/*
+	 * A renamed room keeps its place rather than losing it.
+	 *
+	 * Dropping a key nothing answers to is right for a room that was removed
+	 * and wrong for one that was renamed: the Gallery became a tab inside
+	 * Media, and reading `gallery` as "gone" would quietly take the room out
+	 * of the menu of everybody who had ever arranged one. Nothing would have
+	 * said so — the menu would simply have been in a different order one day.
+	 */
+	test('reads a renamed room by what it is called now', () => {
+		const out = applyOrder(NAV_PLACES, ['gallery', 'inventory']);
+		expect(keys(out).slice(0, 2)).toEqual(['media', 'inventory']);
+	});
+
+	test('takes a renamed room’s colour with it', () => {
+		const out = placesFor(NAV_PLACES, { colors: { gallery: '#010203' } });
+		expect(out.find((p) => p.key === 'media')?.accent).toBe('#010203');
+	});
+
 	test('never loses or duplicates a room, whatever it is given', () => {
-		const nonsense = ['gallery', 'gallery', 'nope', '', 'home'];
+		const nonsense = ['media', 'media', 'nope', '', 'home'];
 		const out = applyOrder(NAV_PLACES, nonsense);
 		expect(out).toHaveLength(NAV_PLACES.length);
 		expect(new Set(keys(out)).size).toBe(NAV_PLACES.length);
@@ -78,8 +97,8 @@ describe('the colours', () => {
 
 describe('what the shell renders', () => {
 	test('is the order and the colours together, one call', () => {
-		const out = placesFor(NAV_PLACES, { order: ['gallery'], colors: { gallery: '#010203' } });
-		expect(out[0].key).toBe('gallery');
+		const out = placesFor(NAV_PLACES, { order: ['media'], colors: { media: '#010203' } });
+		expect(out[0].key).toBe('media');
 		expect(out[0].accent).toBe('#010203');
 	});
 });

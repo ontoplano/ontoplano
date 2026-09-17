@@ -38,7 +38,7 @@ describe('which language a browser asked for', () => {
 	});
 
 	test('says nothing when it has nothing to say', () => {
-		expect(matchLocale('de,fr;q=0.9')).toBeNull();
+		expect(matchLocale('ja,fr;q=0.9')).toBeNull();
 		expect(matchLocale('')).toBeNull();
 		expect(matchLocale(null)).toBeNull();
 	});

@@ -36,7 +36,7 @@
 		const body = new FormData();
 		// A name only for the multipart part; the service names the row.
 		body.set('file', bytes, 'recording');
-		body.set('name', name);
+		body.set('label', name);
 
 		const answer = await fetch('/media/audio', { method: 'POST', body });
 		if (!answer.ok) {
@@ -96,7 +96,7 @@
 							>
 								<input type="hidden" name="id" value={one.id} />
 								<OneLine
-									name="name"
+									name="label"
 									value={one.name}
 									class="input w-auto flex-1 sm:max-w-72"
 									ariaLabel={t('audio.nameIt')}

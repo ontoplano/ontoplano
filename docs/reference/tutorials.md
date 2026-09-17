@@ -12,7 +12,7 @@ until somebody writes one in `src/lib/tutorials.ts`. The same gap is visible
 in the app: the `?` button goes red on a screen with no tour and says so
 under the pointer.
 
-**17 of 18 screens have one.**
+**18 of 18 screens have one.**
 
 | Screen                               | Tour              | Steps |
 | ------------------------------------ | ----------------- | ----- |
@@ -22,7 +22,7 @@ under the pointer.
 | `/health/habits`                     | tour.habits       | 3     |
 | `/health/recipes`                    | tour.recipes      | 5     |
 | `/inventory`                         | tour.shopping     | 3     |
-| `/media/audios`                      | **none**          | —     |
+| `/media/audios`                      | tour.recordings   | 3     |
 | `/notebooks`                         | tour.notebooks    | 2     |
 | `/notebooks/diary`                   | tour.diary        | 4     |
 | `/notebooks/ideas`                   | tour.ideas        | 3     |
@@ -97,6 +97,12 @@ at the button that reopens it, so it is not listed here.
 1. tour.twoListsOnePage
 2. tour.whichListAndWhereIt
 3. tour.boughtAndBackAgain
+
+### `/media/audios` — tour.recordings
+
+1. tour.sayItInsteadOfTyping
+2. tour.hearItBeforeYouKeep
+3. tour.aNameOrTheMoment
 
 ### `/media/gallery` — tour.gallery
 

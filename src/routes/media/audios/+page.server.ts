@@ -36,7 +36,7 @@ export const actions: Actions = {
 	rename: async ({ request, locals }: IsolatedEvent) => {
 		const form = await request.formData();
 		try {
-			rename(buildCtx(locals.user!.id), Number(form.get('id')), form.get('name'));
+			rename(buildCtx(locals.user!.id), Number(form.get('id')), form.get('label'));
 			return { success: true, action: 'rename' };
 		} catch (e) {
 			return toActionFailure(e);

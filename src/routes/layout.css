@@ -350,6 +350,42 @@ html[data-style='playful'] svg {
 	padding: var(--card-pad-y) var(--card-pad-x);
 }
 
+/*
+ * The two controls a card wears while the dashboard is being rearranged.
+ *
+ * Round targets rather than bare glyphs: a 16px × floating under a title is
+ * both hard to hit and hard to read as a control, and the one that removes the
+ * card sat close enough to the one you grab it by that reaching for the handle
+ * could take the card away. They are sized like touch targets and spaced like
+ * two different decisions.
+ *
+ * `-0.375rem` of vertical margin so a 2rem target does not make the header row
+ * taller than the title it is aligned with — the box is big, the line it sits
+ * on is not.
+ */
+.card-control {
+	display: grid;
+	place-items: center;
+	width: 2rem;
+	height: 2rem;
+	margin-block: -0.375rem;
+	border-radius: 999px;
+	color: var(--color-gray-500);
+	transition:
+		background-color 120ms ease,
+		color 120ms ease;
+}
+
+.card-control:hover {
+	background-color: var(--color-gray-100);
+	color: var(--color-gray-900);
+}
+
+.card-control:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 2px var(--color-gray-900);
+}
+
 /* A section's own colour, at the strength chrome can carry. */
 html[data-style='playful'] .section-tint {
 	background-color: color-mix(in srgb, var(--section-accent) 10%, transparent);
