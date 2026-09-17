@@ -388,7 +388,7 @@ export const messages: Catalogue = {
 	'finance.bills.newBill': 'Nova conta',
 	'finance.bills.noBillsYet': 'Nenhuma conta ainda',
 	'finance.bills.nothingInTheLastFew':
-		'Nada nas últimas semanas corresponde. Uma conta paga por uma conta que esta instância não\n\t\t\t\timporta ainda pode ser marcada manualmente.',
+		'Nada nas últimas semanas corresponde. Uma conta paga a partir de um registro que esta instância não\n\t\t\t\timporta ainda pode ser marcada manualmente.',
 	'finance.bills.onPlan': 'conforme planejado',
 	'finance.bills.paid': 'paga',
 	'finance.bills.paid2': 'Paga',
@@ -414,9 +414,9 @@ export const messages: Catalogue = {
 	'finance.insights.average': 'média {averageCents}',
 	'finance.insights.biggestCategory': 'Maior categoria',
 	'finance.insights.dearestMonth': 'Mês mais caro',
-	'finance.insights.everyLedger': 'Todos os extratos',
+	'finance.insights.everyLedger': 'Todos os registros',
 	'finance.insights.importAStatementIntoA':
-		'Importe um extrato bancário e isto ganha vida: quanto cada mês custou, para onde foi, e quanto cada etiqueta soma.',
+		'Importe um extrato para um registro e isto ganha vida: quanto cada mês custou, para onde foi, e quanto cada etiqueta soma.',
 	'finance.insights.inAndOut': 'Entradas e saídas',
 	'finance.insights.inTotalAMonth':
 		'{totalCents} no total, {averageCents} por mês nos {activeMonths} mês{s} em que apareceu. Uma etiqueta por vez — etiquetas se sobrepõem, então somá-las contaria uma linha duas vezes.',
@@ -436,7 +436,7 @@ export const messages: Catalogue = {
 	'finance.insights.whatOneTagCosts': 'Quanto uma etiqueta custa',
 	'finance.insights.writeOne': 'Escrever uma →',
 	'finance.ledgers.aLedgerIsOnePlace':
-		'Um extrato é um lugar por onde o dinheiro passa — uma conta corrente, um cartão de crédito. Crie um, depois importe o arquivo do banco ou escreva uma linha manualmente.',
+		'Um registro é um lugar por onde o dinheiro passa — uma conta corrente, um cartão de crédito. Crie um, depois importe o extrato dele ou escreva uma linha manualmente.',
 	'finance.ledgers.addedAlreadyHere': '{added} adicionadas, {skipped} já estavam aqui.',
 	'finance.ledgers.andBillsTurnUp': ', e as contas aparecem na sua semana.',
 	'finance.ledgers.andItsLinesGoFor':
@@ -453,12 +453,12 @@ export const messages: Catalogue = {
 	'finance.ledgers.datesAreDayFirst': 'As datas são dia primeiro — 02/03 é dois de março',
 	'finance.ledgers.day': 'Dia',
 	'finance.ledgers.delete': 'Apagar {name}',
-	'finance.ledgers.deleteThisLedger': 'Apagar este extrato?',
+	'finance.ledgers.deleteThisLedger': 'Apagar este registro?',
 	'finance.ledgers.deleteThisLine': 'Apagar esta linha',
 	'finance.ledgers.deleteThisLine2': 'Apagar esta linha?',
 	'finance.ledgers.direction': 'Direção',
 	'finance.ledgers.edit': 'Editar {name}',
-	'finance.ledgers.editLedger': 'Editar extrato',
+	'finance.ledgers.editLedger': 'Editar registro',
 	'finance.ledgers.editLine': 'Editar linha',
 	'finance.ledgers.editThisLine': 'Editar esta linha',
 	'finance.ledgers.everyMonth': 'Todo mês',
@@ -466,15 +466,15 @@ export const messages: Catalogue = {
 	'finance.ledgers.flipAmountsForAn':
 		'Inverter valores — para uma exportação cujos sinais significam o oposto',
 	'finance.ledgers.goesImportingTheSameStatement':
-		'some. Importar o mesmo arquivo do banco de novo traz\n\t\t\tela de volta, já que é a linha do banco, não a sua.',
+		'some. Importar o mesmo extrato de novo traz\n\t\t\tela de volta, já que é a linha do banco, não a sua.',
 	'finance.ledgers.import': 'Importar',
-	'finance.ledgers.importAStatement': 'Importar do banco',
+	'finance.ledgers.importAStatement': 'Importar um extrato',
 	'finance.ledgers.importThisLedgerSExportOr':
-		'Importe a exportação do banco para este extrato, ou escreva uma linha manualmente. Linhas já importadas nunca são adicionadas duas vezes.',
+		'Importe a exportação deste registro, ou escreva uma linha manualmente. Linhas já importadas nunca são adicionadas duas vezes.',
 	'finance.ledgers.keepIt': 'Manter',
 	'finance.ledgers.leaveTheIdAsNone':
 		'Deixe o id como nenhum a menos que o arquivo realmente traga a referência própria do banco por linha.\n\t\t\t\t\t\t\tSem um, uma linha é identificada pela data, valor e descrição.',
-	'finance.ledgers.ledger': 'Extrato',
+	'finance.ledgers.ledger': 'Registro',
 	'finance.ledgers.line': 'Linha',
 	'finance.ledgers.lines': '{count} linhas',
 	'finance.ledgers.moneyIn': 'Entradas',
@@ -484,16 +484,16 @@ export const messages: Catalogue = {
 	'finance.ledgers.month': 'Mês',
 	'finance.ledgers.moveEarlier': 'Mover {name} para antes',
 	'finance.ledgers.moveLater': 'Mover {name} para depois',
-	'finance.ledgers.newLedger': 'Novo extrato',
+	'finance.ledgers.newLedger': 'Novo registro',
 	'finance.ledgers.newLine': 'Nova linha',
 	'finance.ledgers.noHeaderRowSoThe':
 		'Sem linha de cabeçalho, então as colunas são numeradas. Aponte para as certas:',
-	'finance.ledgers.noLedgersYet': 'Nenhum extrato ainda',
+	'finance.ledgers.noLedgersYet': 'Nenhum registro ainda',
 	'finance.ledgers.none': '— nenhum —',
 	'finance.ledgers.nothingHereYet': 'Nada aqui ainda',
 	'finance.ledgers.orPasteItBelow': 'ou cole abaixo',
 	'finance.ledgers.preselectedWhenImportingIntoThis':
-		'Pré-selecionado ao importar para este extrato. Pode ser mudado na importação.',
+		'Pré-selecionado ao importar para este registro. Pode ser mudado na importação.',
 	'finance.ledgers.putItAway': 'Guardar',
 	'finance.ledgers.readFromTheHeaderChange': 'Lido do cabeçalho. Corrija o que estiver errado:',
 	'finance.ledgers.restore': 'Restaurar',
@@ -518,7 +518,7 @@ export const messages: Catalogue = {
 	'finance.rules.ecmascriptMatchedCaseInsensitivelyAndUna':
 		'(ECMAScript), comparado\n\t\tsem diferenciar maiúsculas de minúsculas e sem âncora —',
 	'finance.rules.edit': 'Editar {name}',
-	'finance.rules.everyLedger': 'Todos os extratos',
+	'finance.rules.everyLedger': 'Todos os registros',
 	'finance.rules.everyOutgoingLineHasA': 'Toda linha de saída tem uma categoria.',
 	'finance.rules.everyTagThatMatchesApplies':
 		'Toda etiqueta que combina se aplica, então as etiquetas se sobrepõem livremente.',
@@ -1747,7 +1747,7 @@ export const messages: Catalogue = {
 	'rooms.finance.sections': 'Seções de finanças',
 	'rooms.finance.tabs.bills': 'Contas',
 	'rooms.finance.tabs.insights': 'Panorama',
-	'rooms.finance.tabs.ledgers': 'Extratos',
+	'rooms.finance.tabs.ledgers': 'Registros',
 	'rooms.finance.tabs.rules': 'Regras',
 	'rooms.finance.title': 'Finanças',
 	'rooms.health.sections': 'Seções de saúde',
@@ -3032,7 +3032,7 @@ export const messages: Catalogue = {
 	'tour.jAndKMoveE': 'j e k movem, e edita, c finaliza',
 	'tour.leaveTheNameAloneAnd':
 		'Deixe o nome em branco e ela fica arquivada sob o horário em que você a fez.',
-	'tour.ledgers': 'Extratos',
+	'tour.ledgers': 'Registros',
 	'tour.lettingOtherThingsIn': 'Deixando outras coisas entrarem',
 	'tour.lightDarkOrWhateverThe': 'Claro, escuro, ou o que o dispositivo disser',
 	'tour.linkTheWorkToThe': 'Vincule o trabalho à meta',
@@ -3047,7 +3047,7 @@ export const messages: Catalogue = {
 	'tour.nothingCarriesItselfOver': 'Nada se transfere sozinho',
 	'tour.numbersFromElsewhere': 'Números de outros lugares',
 	'tour.oneEntryADayOr': 'Uma entrada por dia ou vinte, tão longa ou curta quanto você quiser.',
-	'tour.oneLedgerPerPlaceMoney': 'Um extrato para cada lugar por onde o dinheiro passa',
+	'tour.oneLedgerPerPlaceMoney': 'Um registro para cada lugar por onde o dinheiro passa',
 	'tour.oneLineIsEnough': 'Uma linha já basta',
 	'tour.oneNotebookPerSubject': 'Um caderno por assunto',
 	'tour.oneRoomPerKindOf': 'Uma seção para cada tipo de coisa',
