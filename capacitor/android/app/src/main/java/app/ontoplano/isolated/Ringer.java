@@ -11,6 +11,7 @@ import android.os.Build;
 import android.util.Log;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
@@ -54,6 +55,18 @@ final class Ringer {
     private static final String KEY_ORIGIN = "origin";
     private static final String KEY_TOKEN = "token";
     private static final String KEY_BOOKED = "booked";
+    /*
+     * What happened last time, so a person can be told rather than reassured.
+     *
+     * "Reminders arrive on this phone" is a promise, and until these existed
+     * the app had no way to say whether it was keeping it: everything here
+     * happens with no page open and nobody to report to. See `status`.
+     */
+    private static final String KEY_LAST_LOOK = "lastLook";
+    private static final String KEY_LAST_OK = "lastOk";
+    private static final String KEY_LAST_TROUBLE = "lastTrouble";
+    private static final String KEY_NEXT_LOOK = "nextLook";
+    private static final String KEY_NEXT_RING = "nextRing";
 
     /** The channel Android files these under, so a person can silence them alone. */
     static final String CHANNEL = "ontoplano-reminders-audible";
@@ -81,10 +94,35 @@ final class Ringer {
      * The answer covers weeks, so this is not about staying current — it is
      * about a reminder made on a laptop this afternoon ringing tonight without
      * the app being opened in between. Inexact on purpose: the refresh does not
-     * need to be punctual, only regular, and an exact alarm every few hours is
-     * a battery complaint waiting to happen. The alarms it *books* are exact.
+     * need to be punctual, only regular. The alarms it *books* are exact.
+     *
+     * It was six hours, which is how long a reminder made anywhere else could
+     * stay invisible to this phone — and how long one that was deleted
+     * elsewhere could keep a ring booked. An hour is the same idea with a
+     * window somebody can live with.
      */
-    private static final long REFRESH_MS = 6 * 60 * 60 * 1000L;
+    private static final long REFRESH_MS = 60 * 60 * 1000L;
+
+    /**
+     * And a last look, shortly before the next thing is due to ring.
+     *
+     * The standing cadence bounds how stale the list can be; this bounds it
+     * where it actually costs something. A reminder moved or deleted on a
+     * laptop at ten to nine should not ring at nine, and one *made* at ten to
+     * nine for nine o'clock is the case the whole feature exists for. Five
+     * minutes is long enough for a request on a bad connection and short
+     * enough that little changes inside it.
+     */
+    private static final long VERIFY_BEFORE_MS = 5 * 60 * 1000L;
+
+    /**
+     * How soon to try again when the instance could not be reached.
+     *
+     * A failed refresh used to wait out the whole cadence, so a phone that was
+     * in a lift at the wrong moment went a full interval on a stale list. This
+     * is short because the common failure is momentary.
+     */
+    private static final long RETRY_MS = 10 * 60 * 1000L;
 
     /**
      * Ids for the alarms this books.
@@ -175,8 +213,15 @@ final class Ringer {
             // Unreachable, refused, or nonsense: leave what is booked alone.
             // The alarms already on the phone are the last good answer, and
             // throwing them away because the wifi is down is how a morning is
-            // missed.
-            scheduleRefresh(context);
+            // missed. Try again soon rather than at the next standing look —
+            // the usual reason for this is a tunnel.
+            prefs(context)
+                    .edit()
+                    .putLong(KEY_LAST_LOOK, System.currentTimeMillis())
+                    .putBoolean(KEY_LAST_OK, false)
+                    .putString(KEY_LAST_TROUBLE, "unreachable")
+                    .apply();
+            scheduleRetry(context);
             return;
         }
 
@@ -186,6 +231,8 @@ final class Ringer {
         AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         List<String> booked = new ArrayList<>();
         long now = System.currentTimeMillis();
+        /** The earliest thing this books, which the next look aims just before. */
+        long soonest = 0L;
 
         for (Reminder one : coming) {
             if (one.at <= now) continue;
@@ -207,10 +254,18 @@ final class Ringer {
 
             exactly(context, alarms, one.at, pending);
             booked.add(String.valueOf(one.id));
+            if (soonest == 0L || one.at < soonest) soonest = one.at;
         }
 
-        prefs(context).edit().putString(KEY_BOOKED, join(booked)).apply();
-        scheduleRefresh(context);
+        prefs(context)
+                .edit()
+                .putString(KEY_BOOKED, join(booked))
+                .putLong(KEY_LAST_LOOK, now)
+                .putBoolean(KEY_LAST_OK, true)
+                .putString(KEY_LAST_TROUBLE, "")
+                .putLong(KEY_NEXT_RING, soonest)
+                .apply();
+        scheduleRefresh(context, soonest);
     }
 
     /**
@@ -255,6 +310,90 @@ final class Ringer {
         }
     }
 
+    /**
+     * Everything this phone knows about whether it will ring — as plain values.
+     *
+     * A reminder that does not arrive is the worst failure this app has, and
+     * until now it failed *silently*: the alarms are booked with no page open,
+     * by a receiver with ten seconds to live and nobody to report to. A person
+     * whose reminder did not go off had no way to find out which link in the
+     * chain was broken, and neither had I.
+     *
+     * So every link says where it stands:
+     *
+     *  - **ringingFor** — whether this phone has an instance and a key at all.
+     *  - **lastLookAt / lastLookWorked / trouble** — whether the last attempt to
+     *    ask that instance succeeded, and when.
+     *  - **booked / nextRingAt** — how many alarms are on the phone right now,
+     *    and when the first of them is due. Zero with reminders in the app is
+     *    the interesting case.
+     *  - **nextLookAt** — when it will ask again, which bounds how stale the
+     *    list above can be.
+     *  - **exactAllowed** — whether Android lets this book an alarm at a
+     *    minute. Without it, everything is late by however long Doze feels
+     *    like, and nothing else here would look wrong.
+     *  - **channelAudible** — whether the channel the rings are posted to still
+     *    makes a sound. Somebody can silence it from the system's own settings
+     *    and the app has no say; it can only say so.
+     *
+     * Read by the page in Settings. It is not a debug screen: it is the answer
+     * to "will this wake me tomorrow", which is a fair thing to ask an alarm.
+     */
+    static JSONObject status(Context context) {
+        SharedPreferences held = prefs(context);
+        JSONObject out = new JSONObject();
+        try {
+            out.put("ringingFor", held.getString(KEY_ORIGIN, ""));
+            out.put("lastLookAt", held.getLong(KEY_LAST_LOOK, 0L));
+            out.put("lastLookWorked", held.getBoolean(KEY_LAST_OK, false));
+            out.put("trouble", held.getString(KEY_LAST_TROUBLE, ""));
+            out.put("nextLookAt", held.getLong(KEY_NEXT_LOOK, 0L));
+            out.put("nextRingAt", held.getLong(KEY_NEXT_RING, 0L));
+            out.put("booked", countBooked(held.getString(KEY_BOOKED, "")));
+            out.put("exactAllowed", exactAllowed(context));
+            out.put("channelAudible", channelAudible(context));
+        } catch (JSONException broken) {
+            Log.w(TAG, "could not describe the ringer", broken);
+        }
+        return out;
+    }
+
+    private static int countBooked(String kept) {
+        if (kept.isEmpty()) return 0;
+        int n = 0;
+        for (String id : kept.split(",")) {
+            if (!id.isEmpty()) n++;
+        }
+        return n;
+    }
+
+    /**
+     * Whether Android will let this book an alarm at a minute rather than near one.
+     *
+     * Below Android 12 there is no such permission and the answer is yes. From
+     * 12 it can be revoked, and from 13 the app holds USE_EXACT_ALARM, which
+     * cannot be — but asking is still the honest way to find out, because what
+     * matters is what this phone will actually allow.
+     */
+    private static boolean exactAllowed(Context context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return true;
+        AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        return alarms != null && alarms.canScheduleExactAlarms();
+    }
+
+    /** Whether the channel the rings go to still makes a noise. */
+    private static boolean channelAudible(Context context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true;
+        NotificationManager manager =
+                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (manager == null) return false;
+        NotificationChannel channel = manager.getNotificationChannel(CHANNEL);
+        // No channel yet is not "silenced" — it is "nothing has been booked on
+        // this phone yet", and the first sync makes it.
+        if (channel == null) return true;
+        return channel.getImportance() >= NotificationManager.IMPORTANCE_DEFAULT;
+    }
+
     /** Where the status bar's alarm icon leads: the app, at the reminders. */
     private static PendingIntent showAlarms(Context context) {
         Intent open = context
@@ -265,14 +404,55 @@ final class Ringer {
                 context, SHOW_ID, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
-    private static void scheduleRefresh(Context context) {
+    /**
+     * Book the next look, and make sure Doze cannot swallow it.
+     *
+     * This was `set(RTC, …)`, and both halves of that were wrong on a phone
+     * that is doing what phones do. `RTC` does not wake the device, so the
+     * refresh waited for something else to wake it; and a plain `set` is
+     * exactly what Doze is allowed to defer, indefinitely, while the screen is
+     * off. So the one alarm whose whole job is to *discover* reminders made
+     * elsewhere was the one alarm the system could starve — overnight, which
+     * is when tomorrow's reminders get made.
+     *
+     * `setAndAllowWhileIdle` is the weakest call that Doze honours. It is
+     * throttled to about one firing every nine minutes per app while idle,
+     * which is far below anything asked for here, and it stays inexact: this
+     * wants to be regular, not punctual.
+     *
+     * `soonest` is the next thing already booked, or 0. The refresh lands at
+     * whichever comes first — the standing hour, or a last look just before
+     * that ring.
+     */
+    private static void scheduleRefresh(Context context, long soonest) {
         AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (alarms == null) return;
 
-        alarms.set(
-                AlarmManager.RTC,
-                System.currentTimeMillis() + REFRESH_MS,
-                refreshIntent(context));
+        long now = System.currentTimeMillis();
+        long at = now + REFRESH_MS;
+
+        long verify = soonest - VERIFY_BEFORE_MS;
+        // Only if that check is still ahead of us, and sooner than the standing
+        // one: a ring due in two minutes has nothing useful to re-check.
+        if (soonest > 0 && verify > now && verify < at) at = verify;
+
+        alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, refreshIntent(context));
+        prefs(context).edit().putLong(KEY_NEXT_LOOK, at).apply();
+    }
+
+    /** The standing cadence, when there is nothing booked to aim at. */
+    private static void scheduleRefresh(Context context) {
+        scheduleRefresh(context, 0L);
+    }
+
+    /** Sooner than that, because the last attempt did not reach the instance. */
+    private static void scheduleRetry(Context context) {
+        AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (alarms == null) return;
+
+        long at = System.currentTimeMillis() + RETRY_MS;
+        alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, refreshIntent(context));
+        prefs(context).edit().putLong(KEY_NEXT_LOOK, at).apply();
     }
 
     private static void cancelRefresh(Context context) {
