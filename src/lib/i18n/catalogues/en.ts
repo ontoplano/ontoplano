@@ -284,6 +284,7 @@ export const messages: Catalogue = {
 	'finance.bills.difference': 'Difference',
 	'finance.bills.dueDayOfThatMonth': 'Due day of that month',
 	'finance.bills.dueDayOfTheMonth': 'Due day of the month',
+	'finance.bills.dueEveryWeekday': ', due {weekday}s',
 	'finance.bills.dueMonth': 'Due month',
 	'finance.bills.dueOn': 'Due on',
 	'finance.bills.edit': 'Edit {name}',
@@ -406,6 +407,7 @@ export const messages: Catalogue = {
 		'A line belongs to the first category that matches, so the order below decides ties and the totals always add up.',
 	'finance.rules.anchor': 'anchor,',
 	'finance.rules.and': 'and',
+	'finance.rules.categories': 'Categories',
 	'finance.rules.colourFor': 'Colour for {name}',
 	'finance.rules.delete': 'Delete {name}',
 	'finance.rules.deleteThisRule': 'Delete this rule?',
@@ -433,6 +435,7 @@ export const messages: Catalogue = {
 	'finance.rules.patternsAre': 'Patterns are',
 	'finance.rules.stopsClaimingTheLineIt':
 		"stops claiming the {matches} line{s} it matches. The lines themselves stay; they are the bank's.",
+	'finance.rules.tags': 'Tags',
 	'finance.rules.theFullSyntax': 'The full syntax →',
 	'finance.rules.uncategorized': '{unsorted} uncategorized →',
 	'finance.rules.whereItWent': 'Where it went',
@@ -1388,6 +1391,8 @@ export const messages: Catalogue = {
 	'offline.ontoplanoNeedsTheNetworkFor':
 		'Ontoplano needs the network for this page. Anything you already opened is still readable.',
 	'offline.tryAgain': 'Try again',
+	'ops.backups': 'Backups',
+	'ops.billingReconciliation': 'Billing reconciliation',
 	'pictures.add': 'Add a picture',
 	'pictures.dropAnywhere': 'drop it anywhere in the box',
 	'pictures.hint': '…or paste one, or drop one in — up to {kilobytes}KB',
@@ -2144,6 +2149,10 @@ export const messages: Catalogue = {
 	'streamChart.noNumericValueRecorded': 'No numeric value recorded.',
 	'streamChart.nothingHereCanBeCharted': 'Nothing here can be charted',
 	'streamChart.sincePrevious': 'since previous',
+	'style.playful': 'Playful',
+	'style.playfulHint': 'Rounded, shadowless, and section colour on the chrome.',
+	'style.sober': 'Sober',
+	'style.soberHint': 'Square, flat, quiet. Colour belongs to your categories.',
 	'tasks.activities.cannotDeleteReferencedByPlanner':
 		'Cannot delete: referenced by planner or history',
 	'tasks.activities.categories': 'Categories',

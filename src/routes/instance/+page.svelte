@@ -282,7 +282,7 @@
 				<span class={kind === option ? 'text-gray-900' : 'text-gray-400'}>
 					<Icon name={CHOICES[option].glyph} size={44} />
 				</span>
-				<span class="text-base font-bold text-gray-900">{CHOICES[option].label}</span>
+				<span class="text-base font-bold text-gray-900">{t(CHOICES[option].label)}</span>
 			</button>
 		{/each}
 	</div>

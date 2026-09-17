@@ -269,6 +269,7 @@ export type MessageKey =
 	| 'finance.bills.difference'
 	| 'finance.bills.dueDayOfThatMonth'
 	| 'finance.bills.dueDayOfTheMonth'
+	| 'finance.bills.dueEveryWeekday'
 	| 'finance.bills.dueMonth'
 	| 'finance.bills.dueOn'
 	| 'finance.bills.edit'
@@ -380,6 +381,7 @@ export type MessageKey =
 	| 'finance.rules.aLineBelongsToThe'
 	| 'finance.rules.anchor'
 	| 'finance.rules.and'
+	| 'finance.rules.categories'
 	| 'finance.rules.colourFor'
 	| 'finance.rules.delete'
 	| 'finance.rules.deleteThisRule'
@@ -404,6 +406,7 @@ export type MessageKey =
 	| 'finance.rules.or'
 	| 'finance.rules.patternsAre'
 	| 'finance.rules.stopsClaimingTheLineIt'
+	| 'finance.rules.tags'
 	| 'finance.rules.theFullSyntax'
 	| 'finance.rules.uncategorized'
 	| 'finance.rules.whereItWent'
@@ -1246,6 +1249,8 @@ export type MessageKey =
 	| 'offline.offlineOntoplano'
 	| 'offline.ontoplanoNeedsTheNetworkFor'
 	| 'offline.tryAgain'
+	| 'ops.backups'
+	| 'ops.billingReconciliation'
 	| 'pictures.add'
 	| 'pictures.dropAnywhere'
 	| 'pictures.hint'
@@ -1876,6 +1881,10 @@ export type MessageKey =
 	| 'streamChart.noNumericValueRecorded'
 	| 'streamChart.nothingHereCanBeCharted'
 	| 'streamChart.sincePrevious'
+	| 'style.playful'
+	| 'style.playfulHint'
+	| 'style.sober'
+	| 'style.soberHint'
 	| 'tasks.activities.cannotDeleteReferencedByPlanner'
 	| 'tasks.activities.categories'
 	| 'tasks.activities.clear'
@@ -2395,6 +2404,7 @@ export interface MessageValuesFor {
 	'finance.bills.archived': { length: string | number };
 	'finance.bills.attachATransactionTo': { name: string | number };
 	'finance.bills.delete': { name: string | number };
+	'finance.bills.dueEveryWeekday': { weekday: string | number };
 	'finance.bills.edit': { name: string | number };
 	'finance.bills.markPaid2': { name: string | number };
 	'finance.bills.undoThePaymentFor': { name: string | number };

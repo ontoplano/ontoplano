@@ -1,3 +1,5 @@
+import type { PlainKey } from './i18n/keys.js';
+
 /**
  * Layout styles: the shape of the interface, independent of light and dark.
  *
@@ -12,14 +14,14 @@
 export const STYLES = ['sober', 'playful'] as const;
 export type Style = (typeof STYLES)[number];
 
-export const STYLE_LABELS: Record<Style, string> = {
-	sober: 'Sober',
-	playful: 'Playful'
+export const STYLE_LABELS: Record<Style, PlainKey> = {
+	sober: 'style.sober',
+	playful: 'style.playful'
 };
 
-export const STYLE_HINTS: Record<Style, string> = {
-	sober: 'Square, flat, quiet. Colour belongs to your categories.',
-	playful: 'Rounded, shadowless, and section colour on the chrome.'
+export const STYLE_HINTS: Record<Style, PlainKey> = {
+	sober: 'style.soberHint',
+	playful: 'style.playfulHint'
 };
 
 export function isStyle(value: unknown): value is Style {

@@ -11,6 +11,7 @@
 	import { formatMoney, type Currency } from '$lib/money';
 	import type { PageServerData, ActionData } from './$types';
 	import { useT } from '$lib/i18n';
+	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
 
@@ -46,21 +47,23 @@
 
 	// Monthly first — it is the common bill and the service's own default, so the
 	// select lands on it when nobody changes the dropdown.
-	const RHYTHMS = [
+	const RHYTHMS: { value: string; label: PlainKey }[] = [
 		{ value: 'monthly', label: 'app.monthly' },
 		{ value: 'weekly', label: 'app.weekly' },
 		{ value: 'yearly', label: 'app.yearly' },
 		{ value: 'once', label: 'app.oneOff' }
 	];
 
+	/** The rhythm's own word, not the key it is under. */
 	function rhythmLabel(r: string): string {
-		return RHYTHMS.find((x) => x.value === r)?.label ?? r;
+		const rhythm = RHYTHMS.find((x) => x.value === r);
+		return rhythm ? t(rhythm.label) : r;
 	}
 
 	/** The rhythm the open form is on, so its due-day field asks the right thing. */
 	let formRhythm = $state('monthly');
 
-	const WEEKDAYS = [
+	const WEEKDAYS: { value: number; label: PlainKey }[] = [
 		{ value: 1, label: 'app.monday' },
 		{ value: 2, label: 'app.tuesday' },
 		{ value: 3, label: 'app.wednesday' },
@@ -111,7 +114,8 @@
 		let line = `${money(bill.amountExpected)} · ${rhythmLabel(bill.rhythm)}`;
 		if (bill.dueDay) {
 			if (bill.rhythm === 'weekly') {
-				line += `, due ${WEEKDAYS.find((d) => d.value === bill.dueDay)?.label ?? ''}s`;
+				const weekday = WEEKDAYS.find((d) => d.value === bill.dueDay);
+				line += t('finance.bills.dueEveryWeekday', { weekday: weekday ? t(weekday.label) : '' });
 			} else if (bill.rhythm === 'yearly') {
 				line += `, due ${MONTHS[(bill.dueMonth ?? 1) - 1]} ${bill.dueDay}`;
 			} else {
@@ -353,7 +357,7 @@
 					value={editing?.rhythm ?? 'monthly'}
 					onchange={(e) => (formRhythm = (e.currentTarget as HTMLSelectElement).value)}
 				>
-					{#each RHYTHMS as r (r.value)}<option value={r.value}>{r.label}</option>{/each}
+					{#each RHYTHMS as r (r.value)}<option value={r.value}>{t(r.label)}</option>{/each}
 				</select>
 			</label>
 			<!-- One question, asked in the rhythm's own terms: a weekly bill falls
@@ -362,7 +366,7 @@
 				<label class="block text-sm">
 					<span class="text-gray-600">{t('finance.bills.dueOn')}</span>
 					<select name="dueDay" class="select mt-1 w-full" value={editing?.dueDay ?? 5}>
-						{#each WEEKDAYS as d (d.value)}<option value={d.value}>{d.label}</option>{/each}
+						{#each WEEKDAYS as d (d.value)}<option value={d.value}>{t(d.label)}</option>{/each}
 					</select>
 					<span class="mt-1 block text-xs text-gray-500">{t('finance.bills.theLastDayItCan')}</span>
 				</label>

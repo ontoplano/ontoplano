@@ -38,8 +38,15 @@
 	import { Calendar, DayGrid, TimeGrid, Interaction } from '@event-calendar/core';
 	import '@event-calendar/core/index.css';
 	import { useT } from '$lib/i18n';
+	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
+
+	/** Whether a block repeats, as the two words the form offers. */
+	const RECURRENCE_CHOICES: { value: string; label: PlainKey }[] = [
+		{ value: 'weekly', label: 'app.comesBack' },
+		{ value: 'once', label: 'app.onceOnly' }
+	];
 	import {
 		baseGridOptions,
 		addDaysStr,
@@ -2975,7 +2982,7 @@
 						</button>
 					{:else}
 						<div class="flex">
-							{#each [{ value: 'weekly', label: 'app.comesBack' }, { value: 'once', label: 'app.onceOnly' }] as choice (choice.value)}
+							{#each RECURRENCE_CHOICES as choice (choice.value)}
 								<button
 									type="button"
 									onclick={() => (repeat = choice.value as 'weekly' | 'once')}
@@ -2983,7 +2990,7 @@
 										? 'bg-gray-900 font-medium text-white'
 										: t('tasks.plan.borderBorderGray300BgWhiteTextGray700Sha')}"
 								>
-									{choice.label}
+									{t(choice.label)}
 								</button>
 							{/each}
 						</div>

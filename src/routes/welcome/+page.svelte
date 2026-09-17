@@ -9,6 +9,7 @@
 	import type { Theme } from '$lib/theme';
 	import { useT } from '$lib/i18n';
 	import { sectionBlurb, sectionLabel } from '$lib/sections';
+	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
 
@@ -86,7 +87,7 @@ at a time, and show me what you will write before writing it.`
 	 * not a choice. `system` follows the device, which is the default.
 	 */
 	let theme = $state<Theme>(data.theme);
-	const LOOKS: { key: Theme; label: string; blurb: string }[] = [
+	const LOOKS: { key: Theme; label: PlainKey; blurb: PlainKey }[] = [
 		{
 			key: 'system',
 			label: 'app.matchMyDevice',
@@ -123,7 +124,7 @@ at a time, and show me what you will write before writing it.`
 
 	// ── The steps ─────────────────────────────────────────────────────────────
 
-	const STEPS = [
+	const STEPS: { key: string; title: PlainKey; hint: PlainKey }[] = [
 		{
 			key: 'assistant',
 			title: 'app.useItWithAnAi',
@@ -233,7 +234,7 @@ at a time, and show me what you will write before writing it.`
 				{#each STEPS as s, i (s.key)}
 					<section hidden={stepping && i !== step} class:mt-8={!stepping && i > 0}>
 						<h2 class="text-base font-semibold text-gray-900">{s.title}</h2>
-						<p class="mt-1 text-sm text-gray-500">{s.hint}</p>
+						<p class="mt-1 text-sm text-gray-500">{t(s.hint)}</p>
 
 						<div class="mt-4">
 							{#if s.key === 'assistant'}
@@ -367,10 +368,10 @@ at a time, and show me what you will write before writing it.`
 											type="button"
 											onclick={() => pickTheme(look.key)}
 											aria-pressed={theme === look.key}
-											title={look.blurb}
+											title={t(look.blurb)}
 											class="btn btn-sm {theme === look.key ? 'btn-primary' : ''}"
 										>
-											{look.label}
+											{t(look.label)}
 										</button>
 									{/each}
 								</div>

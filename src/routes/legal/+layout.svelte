@@ -3,6 +3,9 @@
 	import { resolve } from '$app/paths';
 	import type { Snippet } from 'svelte';
 	import './legal.css';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let { children }: { children: Snippet } = $props();
 
@@ -25,7 +28,7 @@
 							? 'font-semibold text-gray-900'
 							: 'text-gray-500 hover:text-gray-900'}
 					>
-						{item.label}
+						{t(item.label)}
 					</a>
 				{/each}
 			</nav>

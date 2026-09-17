@@ -126,7 +126,7 @@
 		{/snippet}
 
 		<div class="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-			<span class="text-2xl font-bold text-gray-900">{current.label}</span>
+			<span class="text-2xl font-bold text-gray-900">{t(current.label)}</span>
 			{#if data.hasProviderSub && data.interval}
 				<span class="text-sm text-gray-500">
 					{data.interval === 'year'

@@ -272,7 +272,7 @@
 									: 'bg-red-600'}"
 								aria-hidden="true"
 							></span>
-							<span class="text-sm font-medium text-gray-900">{row.label}</span>
+							<span class="text-sm font-medium text-gray-900">{t(row.label)}</span>
 							<span class="text-sm {row.ok ? 'text-gray-600' : 'text-red-700'}">{row.detail}</span>
 							{#if row.fix}
 								<code class="tabular basis-full pl-5 text-xs text-gray-600 sm:basis-auto sm:pl-0"
@@ -369,8 +369,8 @@
 							class="mt-1"
 						/>
 						<span>
-							<span class="block text-sm font-medium text-gray-900">{mode.label}</span>
-							<span class="block text-sm text-gray-500">{mode.hint}</span>
+							<span class="block text-sm font-medium text-gray-900">{t(mode.label)}</span>
+							<span class="block text-sm text-gray-500">{t(mode.hint)}</span>
 						</span>
 					</label>
 				{/each}

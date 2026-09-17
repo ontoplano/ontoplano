@@ -1,3 +1,4 @@
+import type { PlainKey } from '$lib/i18n/keys';
 import { execFile } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { instanceSells } from './billing.js';
@@ -62,7 +63,8 @@ async function unitState(unit: string): Promise<UnitState> {
 }
 
 export type Companion = {
-	label: string;
+	/** What the row is called, as a message key — the page has a translator. */
+	label: PlainKey;
 	unit: string;
 	ok: boolean;
 	/** One sentence of state, already worded. */
@@ -154,14 +156,14 @@ export async function companions(): Promise<Companion[]> {
 		});
 	}
 
-	const timers: [string, string][] = [
+	const timers: [PlainKey, string][] = [
 		...(mailReady && askedReview === null
-			? [['Weekly review mail', 'ontoplano-weekly-review.timer'] as [string, string]]
+			? [['app.weeklyReviewMail', 'ontoplano-weekly-review.timer'] as [PlainKey, string]]
 			: []),
 		...(instanceSells()
-			? [['Billing reconciliation', 'ontoplano-reconcile.timer'] as [string, string]]
+			? [['ops.billingReconciliation', 'ontoplano-reconcile.timer'] as [PlainKey, string]]
 			: []),
-		['Backups', 'ontoplano-backup.timer']
+		['ops.backups', 'ontoplano-backup.timer']
 	];
 	for (const [label, unit] of timers) {
 		const state = await unitState(unit);

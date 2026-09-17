@@ -1101,8 +1101,8 @@
 						? 'border-gray-900 bg-gray-50'
 						: 'border-gray-300 bg-white hover:bg-gray-50'}"
 				>
-					<span class="block text-sm font-semibold text-gray-900">{option.label}</span>
-					<span class="mt-1 block text-xs text-gray-500">{option.hint}</span>
+					<span class="block text-sm font-semibold text-gray-900">{t(option.label)}</span>
+					<span class="mt-1 block text-xs text-gray-500">{t(option.hint)}</span>
 				</button>
 			{/each}
 		</form>
