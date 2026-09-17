@@ -11,7 +11,7 @@
  * a row that may no longer exist. None of that is visible in a browser, so
  * this is the place it is held.
  */
-import { afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 import { translatorFor } from '../src/lib/i18n/core.js';
 import type { Translate } from '../src/lib/i18n/core.js';
 
@@ -46,6 +46,7 @@ import {
 	phonePermission,
 	ringFor,
 	ringingFor,
+	alarmsMayHaveChanged,
 	scheduleDeviceReminders,
 	stopRinging,
 	testPhoneNotification
@@ -94,6 +95,16 @@ function notificationPlugin(display = 'granted', pending: { id: number }[] = [])
 function upcoming(reminders: unknown[]) {
 	vi.stubGlobal('fetch', async () => ({ ok: true, json: async () => ({ upcoming: reminders }) }));
 }
+
+/*
+ * The pass remembers what it last handed to the system, so that an unchanged
+ * list costs nothing. That memory is module-level and would otherwise carry
+ * from one test into the next, where it would silently turn "books these" into
+ * "recognised these" — a test passing because the one before it did the work.
+ */
+beforeEach(() => {
+	alarmsMayHaveChanged();
+});
 
 afterEach(() => {
 	delete (globalThis as { Capacitor?: unknown }).Capacitor;
@@ -172,6 +183,73 @@ describe('what gets booked', () => {
 			expect(words).toBeTruthy();
 			expect(words).not.toMatch(/^[a-z][\w-]*(\.[\w-]+)+$/);
 		}
+	});
+
+	/*
+	 * The pass runs on every poll now, so most of its calls have nothing to do.
+	 *
+	 * It used to run on mount and on `visibilitychange` only, which is why a
+	 * reminder somebody had just written was not handed to Android until they
+	 * left the app and came back — on the copy that *is* the instance, nothing
+	 * else was going to book it, so it simply did not ring. Running it every
+	 * minute is the fix, and this is what stops that costing a cancel-and-
+	 * rebook of every alarm a minute, forever.
+	 */
+	test('does nothing at all when the alarms have not moved', async () => {
+		const { plugin, state } = notificationPlugin();
+		inTheApp({ LocalNotifications: plugin });
+		upcoming([{ id: 1, ...soon(), message: 'once', audible: true }]);
+
+		await scheduleDeviceReminders(t);
+		expect(state.booked).toHaveLength(1);
+
+		state.booked.length = 0;
+		state.cancelled.length = 0;
+		await scheduleDeviceReminders(t);
+
+		// Same list, so nothing was cancelled and nothing was booked again.
+		expect(state.booked).toEqual([]);
+		expect(state.cancelled).toEqual([]);
+	});
+
+	test('books again the moment one of them moves', async () => {
+		const { plugin, state } = notificationPlugin();
+		inTheApp({ LocalNotifications: plugin });
+		upcoming([{ id: 1, ...soon(), message: 'first', audible: true }]);
+		await scheduleDeviceReminders(t);
+
+		state.booked.length = 0;
+		// The same reminder, at a different time: a fingerprint is time as well
+		// as id, or moving one would be invisible.
+		upcoming([
+			{ id: 1, ...due(new Date(Date.now() + 90 * 60 * 1000)), message: 'first', audible: true }
+		]);
+		await scheduleDeviceReminders(t);
+
+		expect(state.booked.map((n) => n.id)).toEqual([1]);
+	});
+
+	test('hands the system no more than it will hold', async () => {
+		/*
+		 * Android takes as many as it is given; iOS keeps sixty-four and drops
+		 * the rest without saying so. The window is bounded here rather than at
+		 * whichever platform complains first, and it is the soonest ones.
+		 */
+		const { plugin, state } = notificationPlugin();
+		inTheApp({ LocalNotifications: plugin });
+		upcoming(
+			Array.from({ length: 200 }, (_, i) => ({
+				id: i + 1,
+				...due(new Date(Date.now() + (i + 1) * 60_000)),
+				message: `one ${i}`,
+				audible: false
+			}))
+		);
+
+		await scheduleDeviceReminders(t);
+		expect(state.booked.length).toBeLessThanOrEqual(64);
+		// The soonest, not an arbitrary sixty of them.
+		expect(state.booked[0].id).toBe(1);
 	});
 
 	test('a silent reminder is shown without a sound, not skipped', async () => {

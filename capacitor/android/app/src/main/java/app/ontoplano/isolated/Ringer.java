@@ -96,6 +96,8 @@ final class Ringer {
     private static final int RING_BASE = 1_000_000;
     /** And one id that is not a reminder: the alarm that asks for the next list. */
     private static final int REFRESH_ID = 999_999;
+    /** And one for "show me this alarm", which the status bar's icon opens. */
+    private static final int SHOW_ID = 999_998;
 
     private Ringer() {}
 
@@ -203,7 +205,7 @@ final class Ringer {
                     ringing,
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-            exactly(alarms, one.at, pending);
+            exactly(context, alarms, one.at, pending);
             booked.add(String.valueOf(one.id));
         }
 
@@ -212,20 +214,55 @@ final class Ringer {
     }
 
     /**
-     * As close to the minute as the phone allows.
+     * At the minute, not near it.
      *
-     * `setExactAndAllowWhileIdle` needs a permission on Android 12 and up that
-     * this app does not ask for, and asking would be a promise about what the
-     * app is for that belongs to whoever ships it. Without it the request
-     * throws, so the fallback is the inexact one — late rather than silent.
+     * Three rungs, and the app comes down them only when the phone refuses the
+     * one above.
+     *
+     * **`setAlarmClock` is the top one** and it is what a reminder actually is.
+     * Android treats it as a user-visible alarm: it survives Doze, it is not
+     * batched with anything, and the system shows the alarm icon in the status
+     * bar — which is also an honest thing for a person to be able to see. It
+     * needs the same permission the exact call does.
+     *
+     * **`setExactAndAllowWhileIdle`** is the fallback for a phone where the
+     * person has revoked that permission on Android 12.
+     *
+     * **`setAndAllowWhileIdle`** is the floor: late rather than silent. It used
+     * to be the *only* rung anybody reached, because the manifest asked for no
+     * permission at all — so every reminder this app has set on a modern phone
+     * has been deferred by Doze, minutes at a time. The manifest asks now.
+     *
+     * The `PendingIntent` handed to `setAlarmClock` as its second argument is
+     * what the system opens if somebody taps the alarm icon; the app's own
+     * launcher intent is the honest answer to "show me this alarm".
      */
-    private static void exactly(AlarmManager alarms, long at, PendingIntent pending) {
+    private static void exactly(
+            Context context, AlarmManager alarms, long at, PendingIntent pending) {
         if (alarms == null) return;
+
+        try {
+            alarms.setAlarmClock(new AlarmManager.AlarmClockInfo(at, showAlarms(context)), pending);
+            return;
+        } catch (SecurityException refused) {
+            // Android 12 with the permission revoked. Down a rung.
+        }
+
         try {
             alarms.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
         } catch (SecurityException refused) {
             alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
         }
+    }
+
+    /** Where the status bar's alarm icon leads: the app, at the reminders. */
+    private static PendingIntent showAlarms(Context context) {
+        Intent open = context
+                .getPackageManager()
+                .getLaunchIntentForPackage(context.getPackageName());
+        if (open == null) open = new Intent(Intent.ACTION_MAIN);
+        return PendingIntent.getActivity(
+                context, SHOW_ID, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
     private static void scheduleRefresh(Context context) {

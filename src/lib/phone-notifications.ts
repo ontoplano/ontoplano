@@ -137,6 +137,38 @@ const accent = () => (isIsolated() ? NOTIFICATION_ACCENT_ISOLATED : NOTIFICATION
  */
 const MAX_ID = 2 ** 31 - 1;
 
+/**
+ * How many alarms are handed to the system at once.
+ *
+ * Android takes as many as it is given. iOS does not — sixty-four pending
+ * local notifications is a hard cap there, and the sixty-fifth silently
+ * replaces one — so the window is bounded here rather than at whichever
+ * platform happens to complain first. The list is the soonest ones, and the
+ * app tops it up every time it is opened, which is the shape both platforms
+ * need anyway.
+ */
+const BOOKABLE_AT_ONCE = 60;
+
+/**
+ * What was last handed to the system, so an unchanged list costs nothing.
+ *
+ * Not persisted: it describes the alarms *this page* booked, and a fresh page
+ * has no idea what the system is holding — so it starts null and the first
+ * pass books, which is the safe direction to be wrong in.
+ */
+let booked: string | null = null;
+
+/**
+ * Say that the alarms may have moved, so the next pass really looks.
+ *
+ * Called by anything that changes a reminder. The pass is cheap when nothing
+ * has changed — it compares a fingerprint — and this is what makes the
+ * comparison ask the server again rather than trust what it last saw.
+ */
+export function alarmsMayHaveChanged(): void {
+	booked = null;
+}
+
 /** The plugin, if this is running inside the shell that carries it. */
 export function phoneNotifications(): Notifications | null {
 	if (!inPhoneApp()) return null;
@@ -196,11 +228,6 @@ export async function scheduleDeviceReminders(t: Translate): Promise<number> {
 
 		await ensureChannel(notifications, t);
 
-		// Everything this app booked before, so a reminder that has since been
-		// dismissed or moved does not ring at its old time.
-		const pending = await notifications.getPending();
-		if (pending.notifications.length > 0) await notifications.cancel(pending);
-
 		const answer = await fetch('/api/reminders?upcoming=1');
 		if (!answer.ok) return 0;
 		const { upcoming } = (await answer.json()) as { upcoming: Upcoming[] };
@@ -210,10 +237,34 @@ export async function scheduleDeviceReminders(t: Translate): Promise<number> {
 		 * the wall clock here read it in the *device's* zone, which is the
 		 * account's zone only by luck.
 		 */
-		const wanted = upcoming.filter(
-			(r) => r.id > 0 && r.id <= MAX_ID && Date.parse(r.at) > Date.now()
-		);
-		if (wanted.length === 0) return 0;
+		const wanted = upcoming
+			.filter((r) => r.id > 0 && r.id <= MAX_ID && Date.parse(r.at) > Date.now())
+			.sort((a, b) => Date.parse(a.at) - Date.parse(b.at))
+			.slice(0, BOOKABLE_AT_ONCE);
+
+		/*
+		 * Nothing to do when nothing has moved.
+		 *
+		 * This runs whenever the app is opened, whenever it comes back, and on
+		 * every poll — so most calls are answering "are these still the right
+		 * alarms?" with "yes". Cancelling and rebooking every one of them to
+		 * find that out is a burst of work against the system's alarm table for
+		 * no change at all, and it used to happen on every one of those.
+		 *
+		 * Booking is otherwise cancel-then-book because there is no partial
+		 * edit: the plugin takes a list, and a reminder that moved has to lose
+		 * its old time before it gains a new one.
+		 */
+		const fingerprint = wanted.map((r) => `${r.id}@${r.at}${r.audible ? '!' : ''}`).join(',');
+		if (fingerprint === booked) return wanted.length;
+
+		const pending = await notifications.getPending();
+		if (pending.notifications.length > 0) await notifications.cancel(pending);
+
+		if (wanted.length === 0) {
+			booked = fingerprint;
+			return 0;
+		}
 
 		await book(
 			notifications,
@@ -230,8 +281,12 @@ export async function scheduleDeviceReminders(t: Translate): Promise<number> {
 				channelId: REMINDER_CHANNEL
 			}))
 		);
+		booked = fingerprint;
 		return wanted.length;
 	} catch {
+		// Whatever went wrong, the next pass should try again rather than
+		// believe the last fingerprint still describes the system's alarms.
+		booked = null;
 		return 0;
 	}
 }

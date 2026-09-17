@@ -11,6 +11,7 @@
 	} from '$lib/phone-notifications';
 	import Card from '$lib/components/Card.svelte';
 	import Modal from '$lib/components/Modal.svelte';
+	import { alarmsChanged } from '$lib/alarms';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -581,6 +582,9 @@
 						time = '';
 						say = '';
 						audible = false;
+						// Booked with the phone now rather than whenever the app
+						// next happens to be reopened.
+						alarmsChanged();
 					}
 				};
 			}}
@@ -803,7 +807,17 @@
 							     in the address book or on a bill. -->
 								<span class="w-14 shrink-0"></span>
 							{:else if confirmingDelete === reminder.id}
-								<form method="post" action="?/remove" use:enhance class="flex shrink-0 gap-1">
+								<form
+									method="post"
+									action="?/remove"
+									use:enhance={() =>
+										async ({ update }) => {
+											await update();
+											// A reminder that is gone must stop being an alarm.
+											alarmsChanged();
+										}}
+									class="flex shrink-0 gap-1"
+								>
 									<input type="hidden" name="id" value={reminder.id} />
 									<button type="submit" class="btn btn-sm btn-danger" use:armed
 										>{t('reminders.confirm')}</button
@@ -864,7 +878,10 @@
 								use:enhance={() => {
 									return async ({ result, update }) => {
 										await update({ reset: false });
-										if (result.type === 'success') editing = null;
+										if (result.type === 'success') {
+											editing = null;
+											alarmsChanged();
+										}
 									};
 								}}
 								class="mt-3 space-y-3 border-t border-gray-200 pt-3"

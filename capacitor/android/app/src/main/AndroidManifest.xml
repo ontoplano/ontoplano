@@ -81,6 +81,29 @@
         the first time a page reaches for a microphone, which is the right
         moment — when they have just pressed Record, rather than at install.
     -->
+    <!--
+        Alarms that go off when they say they will.
+
+        Without these, `setExactAndAllowWhileIdle` throws on Android 12 and up
+        and the code falls back to an inexact alarm — which Doze defers, in
+        practice by minutes and sometimes by a quarter of an hour. Every
+        reminder this app has ever set on a modern phone has been late by
+        design, and the reason written in `Ringer.java` was that asking for the
+        permission is "a promise about what the app is for".
+
+        It is, and the promise is true: this app sets alarms a person asked for,
+        at times they chose, and a reminder told twenty minutes after the fact
+        is not a reminder. USE_EXACT_ALARM is the permission Android added for
+        exactly this kind of app — alarm clocks and calendars — and it is
+        granted at install with no prompt. SCHEDULE_EXACT_ALARM covers Android
+        12, where the newer one does not exist; there it is a permission the
+        person can revoke, which is why the inexact fallback stays.
+    -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission
+        android:name="android.permission.SCHEDULE_EXACT_ALARM"
+        android:maxSdkVersion="32" />
+
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!--
         And this one, which is the reason saying yes was not enough.

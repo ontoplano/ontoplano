@@ -1,5 +1,10 @@
 <script lang="ts">
-	import { scheduleDeviceReminders, syncRinger } from '$lib/phone-notifications';
+	import {
+		alarmsMayHaveChanged,
+		scheduleDeviceReminders,
+		syncRinger
+	} from '$lib/phone-notifications';
+	import { ALARMS_CHANGED } from '$lib/alarms';
 	import { useT } from '$lib/i18n';
 	import { browser } from '$app/environment';
 	import { enablePush, pushSupported } from '$lib/push';
@@ -178,7 +183,21 @@
 
 		poll();
 		reschedule();
-		const timer = setInterval(poll, EVERY);
+		/*
+		 * Both on the same beat, and `reschedule` is nearly free when nothing
+		 * has moved — it asks the server for the coming alarms and compares a
+		 * fingerprint with what it last handed to the system.
+		 *
+		 * It used to run only on mount and on `visibilitychange`, which meant a
+		 * reminder somebody had just written was not handed to Android until
+		 * they left the app and came back. On the copy that *is* the instance
+		 * there is nothing else to book it, so it simply did not ring — which
+		 * is exactly what it looked like.
+		 */
+		const timer = setInterval(() => {
+			poll();
+			reschedule();
+		}, EVERY);
 		// Coming back to the tab is exactly when you want to know what you missed.
 		document.addEventListener('visibilitychange', poll);
 		document.addEventListener('visibilitychange', reschedule);
@@ -188,6 +207,24 @@
 			document.removeEventListener('visibilitychange', poll);
 			document.removeEventListener('visibilitychange', reschedule);
 		};
+	});
+
+	/**
+	 * And immediately, when this page is the one that changed something.
+	 *
+	 * The beat above is the safety net — at worst a minute, and it catches a
+	 * change made anywhere, by anybody, on any device. This is the common case
+	 * made instant: somebody sets a reminder on this phone and it is booked
+	 * with the system before they have put it down.
+	 */
+	$effect(() => {
+		if (!browser) return;
+		const again = () => {
+			alarmsMayHaveChanged();
+			reschedule();
+		};
+		window.addEventListener(ALARMS_CHANGED, again);
+		return () => window.removeEventListener(ALARMS_CHANGED, again);
 	});
 </script>
 
