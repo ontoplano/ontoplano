@@ -18,3 +18,18 @@ export async function loadCatalogue(locale: Locale): Promise<Catalogue> {
 			return (await import('./catalogues/en.js')).messages;
 	}
 }
+
+/**
+ * Which of them are still the source language, for a build that marks them.
+ *
+ * A separate module from the catalogue so production never fetches it: the
+ * only caller is the dev and staging shell.
+ */
+export async function loadBorrowed(locale: Locale): Promise<ReadonlySet<string>> {
+	switch (locale) {
+		case 'pt-BR':
+			return (await import('./borrowed/pt-BR.js')).borrowed;
+		default:
+			return new Set();
+	}
+}

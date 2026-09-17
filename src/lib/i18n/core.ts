@@ -25,13 +25,13 @@
  * argument everywhere else.
  */
 import { format, type Message, type MessageValues } from './format.js';
-import { loadCatalogue } from './load.js';
+import { loadBorrowed, loadCatalogue } from './load.js';
 import type { KeyWithValues, MessageKey, MessageValuesFor, PlainKey } from './keys.js';
 import type { Locale } from './locales.js';
 
 export type { Locale, MessageKey, MessageValues };
 export { LOCALES, LOCALE_NAMES, SOURCE_LOCALE, isLocale, matchLocale } from './locales.js';
-export { loadCatalogue };
+export { loadBorrowed, loadCatalogue };
 
 export type Catalogue = Partial<Record<MessageKey, Message>>;
 
@@ -59,11 +59,32 @@ export interface Translate {
  * thing `yarn messages --check` already refuses to let through. A visible
  * `tasks.title` is a bug report; a silently English sentence is not.
  */
-export function translator(locale: Locale, catalogue: Catalogue): Translate {
+/**
+ * The character that says "this sentence is still the source language".
+ *
+ * Zero width, so it changes nothing about how the text reads, and only a dev or
+ * staging build ever puts one there. `$lib/i18n/untranslated` is what turns it
+ * red — by marking the element it lands in, never by touching the text, which
+ * belongs to Svelte.
+ */
+export const BORROWED_MARK = '\u200b';
+
+export function translator(
+	locale: Locale,
+	catalogue: Catalogue,
+	/**
+	 * The keys this language has not been written in yet.
+	 *
+	 * Given only where somebody is meant to see them — a dev or staging build.
+	 * Empty everywhere else, and then this costs a `Set.has` per message.
+	 */
+	borrowed: ReadonlySet<string> = EMPTY
+): Translate {
 	const translate = ((key: MessageKey, values?: MessageValues) => {
 		const message = catalogue[key];
 		if (message === undefined) return key;
-		return format(message, locale, values);
+		const said = format(message, locale, values);
+		return borrowed.has(key) ? `${BORROWED_MARK}${said}${BORROWED_MARK}` : said;
 	}) as { (key: MessageKey, values?: MessageValues): string; locale: Locale };
 
 	translate.locale = locale;
@@ -71,6 +92,8 @@ export function translator(locale: Locale, catalogue: Catalogue): Translate {
 }
 
 /** The same, for a caller that has a locale and not a catalogue — the server. */
+const EMPTY: ReadonlySet<string> = new Set();
+
 export async function translatorFor(locale: Locale): Promise<Translate> {
 	return translator(locale, await loadCatalogue(locale));
 }

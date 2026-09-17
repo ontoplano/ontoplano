@@ -80,6 +80,7 @@ export const actions: Actions = {
 				generateDay: formData.get('generateDay'),
 				template: skipped ? 'blank' : formData.get('template'),
 				theme: formData.get('theme'),
+				language: formData.get('language'),
 				// Skipping is not a choice about rooms: it leaves every one of them
 				// on, which is what an account that never saw this page gets.
 				rooms: skipped ? undefined : formData.getAll('rooms')

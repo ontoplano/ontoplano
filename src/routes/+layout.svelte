@@ -8,6 +8,7 @@
 	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
 	import { provideT, translator } from '$lib/i18n';
+	import { markUntranslated } from '$lib/i18n/untranslated';
 	import type { LayoutData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
 	import { NAV_PLACES } from '$lib/sections-nav';
@@ -123,8 +124,18 @@
 	 * people at a time and a module-level "current language" is one visitor's
 	 * answer leaking into another's page.
 	 */
-	const t = $derived(translator(data.locale, data.catalogue));
+	const t = $derived(translator(data.locale, data.catalogue, data.borrowed));
 	provideT(() => t);
+
+	/*
+	 * And on a build that is not the real one, the ones still in English are
+	 * marked so they read red. `data.borrowed` is only ever set by dev and
+	 * staging, so this is the whole of the check.
+	 */
+	$effect(() => {
+		if (!data.borrowed?.size) return;
+		return markUntranslated();
+	});
 
 	/** This app is its own instance: no account, and leaving means choosing another. */
 	const onDevice = $derived(isIsolatedBuild());

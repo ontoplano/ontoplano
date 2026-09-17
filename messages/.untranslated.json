@@ -1,9 +1,9 @@
 {
-	"total": 213,
+	"total": 214,
 	"files": {
 		"src/lib/json-body.ts": 4,
 		"src/lib/server/api/auth.ts": 1,
-		"src/lib/server/billing/providers/paddle.ts": 9,
+		"src/lib/server/billing/providers/paddle.ts": 10,
 		"src/lib/server/billing/providers/play.ts": 6,
 		"src/lib/server/services/admin.ts": 11,
 		"src/lib/server/services/assistant-log.ts": 7,

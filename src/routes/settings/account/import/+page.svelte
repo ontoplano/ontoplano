@@ -339,7 +339,9 @@
 					{#if preview.skipped.length > 0}
 						<p class="text-gray-600">
 							{t('settings.account.import.leftBehind')}
-							{preview.skipped.map((skip) => `${skip.rows} ${skip.name} (${skip.why})`).join('; ')}.
+							{preview.skipped
+								.map((skip) => `${skip.rows} ${skip.name} (${t(skip.why)})`)
+								.join('; ')}.
 						</p>
 					{/if}
 					{#if preview.unacceptable.length > 0}
@@ -347,7 +349,7 @@
 							<p class="text-sm text-gray-900">
 								{t('settings.account.import.theRestoreWouldRefuseThis')}
 								{preview.unacceptable
-									.map((bad) => `${bad.rows} ${bad.name} ${bad.why}`)
+									.map((bad) => `${bad.rows} ${bad.name} ${t(bad.why)}`)
 									.join('; ')}.
 							</p>
 							<label class="mt-1 flex cursor-pointer items-start gap-2 text-sm text-gray-900">

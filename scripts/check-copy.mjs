@@ -337,7 +337,11 @@ function wordTables(source) {
 		if (!lines.length) continue;
 		const plain = lines.every(
 			(line) =>
-				/^\/[/*]|^\*/.test(line) || /^'?[A-Za-z_$][\w$]*'?:\s*'(?:[^'\\]|\\.)*',?$/.test(line)
+				/^\/[/*]|^\*/.test(line) ||
+				/^'?[A-Za-z_$][\w$]*'?:\s*'(?:[^'\\]|\\.)*',?$/.test(line) ||
+				// the two lines a nested row adds: `newest: {` and `},`
+				/^'?[A-Za-z_$][\w$]*'?:\s*\{$/.test(line) ||
+				/^\},?$/.test(line)
 		);
 		if (!plain) continue;
 

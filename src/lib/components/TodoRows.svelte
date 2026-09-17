@@ -22,6 +22,7 @@
 	import type { Todo } from '$lib/services/todos';
 	import type { TodoActionNames } from '$lib/todo-actions';
 	import { useT } from '$lib/i18n';
+	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
 
@@ -139,21 +140,21 @@
 	const ORDERS = ['newest', 'oldest', 'done'] as const;
 	type Order = (typeof ORDERS)[number];
 
-	const ORDER_LABELS: Record<Order, { short: string; long: string; why: string }> = {
+	const ORDER_LABELS: Record<Order, { short: PlainKey; long: PlainKey; why: PlainKey }> = {
 		newest: {
-			short: 'Newest',
-			long: 'Newest first',
-			why: 'Newest at the top — press for the oldest'
+			short: 'todoRows.newest',
+			long: 'todoRows.newestFirst',
+			why: 'todoRows.newestAtTheTopPress'
 		},
 		oldest: {
-			short: 'Oldest',
-			long: 'Oldest first',
-			why: 'Oldest at the top — press for what you just did'
+			short: 'todoRows.oldest',
+			long: 'todoRows.oldestFirst',
+			why: 'todoRows.oldestAtTheTopPress'
 		},
 		done: {
-			short: 'Done',
-			long: 'Last done first',
-			why: 'What you finished most recently — press for the newest'
+			short: 'todoRows.done',
+			long: 'todoRows.lastDoneFirst',
+			why: 'todoRows.whatYouFinishedMostRecently'
 		}
 	};
 
@@ -423,10 +424,10 @@
 			{/if}
 			<!-- Three orders on one button, saying which one it is on rather than
 			     what pressing it would do: the list underneath is the evidence. -->
-			<button onclick={flipOrder} class="btn btn-sm shrink-0" title={ORDER_LABELS[order].why}>
+			<button onclick={flipOrder} class="btn btn-sm shrink-0" title={t(ORDER_LABELS[order].why)}>
 				<Icon name={order === 'oldest' ? 'chevron-up' : 'chevron-down'} />
-				<span class="sm:hidden">{ORDER_LABELS[order].short}</span>
-				<span class="hidden sm:inline">{ORDER_LABELS[order].long}</span>
+				<span class="sm:hidden">{t(ORDER_LABELS[order].short)}</span>
+				<span class="hidden sm:inline">{t(ORDER_LABELS[order].long)}</span>
 			</button>
 		{/snippet}
 	</RoomToolbar>

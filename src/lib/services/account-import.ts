@@ -109,7 +109,7 @@ export type ImportResult = {
 	total: number;
 	/** Named in the file, so the page can say whose account this was. */
 	from: { email: string; exportedAt: string } | null;
-	skipped: { name: string; rows: number; why: string }[];
+	skipped: { name: string; rows: number; why: PlainKey }[];
 };
 
 /*
@@ -219,13 +219,13 @@ export type ImportPreview = {
 	tables: { name: string; rows: number }[];
 	total: number;
 	/** What would be left behind, and why. */
-	skipped: { name: string; rows: number; why: string }[];
+	skipped: { name: string; rows: number; why: PlainKey }[];
 	/**
 	 * Rows the import would refuse outright — a picture in no format this app
 	 * accepts, a sound outside the allowlist. One of these fails the whole
 	 * restore unless it is dropped on the way in.
 	 */
-	unacceptable: { name: string; rows: number; why: string }[];
+	unacceptable: { name: string; rows: number; why: PlainKey }[];
 };
 
 /**
@@ -250,7 +250,7 @@ export function previewImport(payload: unknown): ImportPreview {
 		if (byName.has(name) || name in NOT_PORTABLE) continue;
 		const rows = parsed.data[name];
 		if (Array.isArray(rows) && rows.length > 0)
-			skipped.push({ name, rows: rows.length, why: 'this version has no such table' });
+			skipped.push({ name, rows: rows.length, why: 'accountImport.thisVersionHasNoSuch' });
 	}
 
 	const unacceptable: ImportPreview['unacceptable'] = [];
@@ -259,13 +259,13 @@ export function previewImport(payload: unknown): ImportPreview {
 		unacceptable.push({
 			name: 'media',
 			rows: bad.media,
-			why: 'not a picture format this app accepts'
+			why: 'accountImport.notAPictureFormat'
 		});
 	if (bad.ringtones > 0)
 		unacceptable.push({
 			name: 'ringtones',
 			rows: bad.ringtones,
-			why: 'not a sound format this app accepts'
+			why: 'accountImport.notASoundFormat'
 		});
 
 	const tables: ImportPreview['tables'] = [];
@@ -397,7 +397,7 @@ export async function importAccount(
 		if (byName.has(name) || name in NOT_PORTABLE) continue;
 		const rows = parsed.data[name];
 		if (Array.isArray(rows) && rows.length > 0)
-			skipped.push({ name, rows: rows.length, why: 'this version has no such table' });
+			skipped.push({ name, rows: rows.length, why: 'accountImport.thisVersionHasNoSuch' });
 	}
 
 	const counts: { name: string; rows: number }[] = [];
@@ -535,7 +535,7 @@ export async function importAccount(
 				skipped.push({
 					name: table.name,
 					rows: droppedHere,
-					why: 'not a format this app accepts, left out on request'
+					why: 'accountImport.notAFormatThisApp'
 				});
 		}
 	});

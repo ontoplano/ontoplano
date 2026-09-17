@@ -12,6 +12,7 @@
  * comes back attached to the wrong things — which looks like it worked.
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { messages as english } from '../src/lib/i18n/catalogues/en';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
 
 const database = makeDatabase();
@@ -225,7 +226,8 @@ describe('what does not travel', () => {
 			data: { beliefs: [{ id: 1, userId: 'x' }] }
 		});
 
-		expect(result.skipped.find((s) => s.name === 'beliefs')?.why).toMatch(/no such table/);
+		const beliefs = result.skipped.find((s) => s.name === 'beliefs');
+		expect(english[beliefs!.why]).toMatch(/no such table/);
 	});
 });
 
@@ -398,14 +400,19 @@ describe('the preview, and the way through it offers', () => {
 
 		expect(seen.from).toEqual({ email: 'mover@example.test', exportedAt: now.toISOString() });
 		expect(seen.tables).toContainEqual({ name: 'ideas', rows: 1 });
-		expect(seen.skipped).toContainEqual({
-			name: 'apiTokens',
-			rows: 1,
-			why: expect.stringContaining('secret')
-		});
-		expect(seen.unacceptable).toEqual([
-			{ name: 'media', rows: 1, why: expect.stringContaining('not a picture format') }
-		]);
+		/*
+		 * `why` is a message key now, and the catalogue holds the sentence. Both
+		 * halves are checked: the preview names the right reason, and the reason
+		 * still says what it always said.
+		 */
+		const skipped = seen.skipped.find((row) => row.name === 'apiTokens');
+		expect(skipped?.rows).toBe(1);
+		expect(english[skipped!.why]).toContain('secret');
+
+		expect(seen.unacceptable).toHaveLength(1);
+		expect(seen.unacceptable[0].name).toBe('media');
+		expect(seen.unacceptable[0].rows).toBe(1);
+		expect(english[seen.unacceptable[0].why]).toContain('not a picture format');
 	});
 
 	test('writes nothing at all', async () => {
@@ -430,7 +437,7 @@ describe('the preview, and the way through it offers', () => {
 		expect(result.skipped).toContainEqual({
 			name: 'media',
 			rows: 1,
-			why: expect.stringContaining('left out on request')
+			why: 'accountImport.notAFormatThisApp'
 		});
 	});
 });

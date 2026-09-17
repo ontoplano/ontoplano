@@ -3489,3 +3489,20 @@ html[data-pie-open] .float-layer {
 .danger-zone-row + .danger-zone-row {
 	border-top: 1px solid var(--color-red-300);
 }
+
+/*
+ * What is still in the source language, on a build that is not the real one.
+ *
+ * `$lib/i18n/untranslated` puts this attribute on any element holding a message
+ * nobody has written in this language yet. Only a dev or staging build marks
+ * them, so this rule matches nothing in production — it is left in the one
+ * stylesheet rather than injected, because a diagnostic that needs remembering
+ * is a diagnostic that gets forgotten.
+ *
+ * Colour rather than a badge or an outline: it has to survive inside a button,
+ * a heading and a table cell without moving anything, and the whole point is to
+ * be readable at a glance across a screen.
+ */
+[data-untranslated] {
+	color: #dc2626;
+}

@@ -3,9 +3,10 @@
  * every page is client-rendered over the device's own database. Everywhere
  * else this file changes nothing.
  */
+import { dev } from '$app/environment';
 import { env } from '$env/dynamic/public';
 
-import { loadCatalogue } from '$lib/i18n';
+import { loadBorrowed, loadCatalogue } from '$lib/i18n';
 import { SOURCE_LOCALE, isLocale, type Locale } from '$lib/i18n/locales';
 import { localeOfThisDevice, localeOnThisDevice } from '$lib/i18n/device';
 import type { LayoutLoad } from './$types';
@@ -31,5 +32,17 @@ export const load: LayoutLoad = async ({ data }) => {
 
 	// Spread: a universal load's return IS the page's data, so anything the
 	// server load produced has to be carried through rather than replaced.
-	return { ...data, locale, catalogue: await loadCatalogue(locale) };
+	/*
+	 * A build that is not the real one also fetches what is still English, so
+	 * the shell can paint it. `dev` is `make dev`; the staging flag comes from
+	 * the server. Production asks for neither, so neither is in its bundle.
+	 */
+	const marking = dev || data?.staging === true;
+
+	return {
+		...data,
+		locale,
+		catalogue: await loadCatalogue(locale),
+		borrowed: marking ? await loadBorrowed(locale) : undefined
+	};
 };

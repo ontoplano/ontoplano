@@ -278,11 +278,14 @@ await write(
 
 /** How many messages each language is still borrowing from the source. */
 const borrowed = {};
+/** And which they are, for the build that paints them red. */
+const borrowedKeys = {};
 
 for (const locale of LOCALES) {
 	const catalogue = catalogues[locale];
 	const untranslated = keys.filter((key) => catalogue[key] === null || !(key in catalogue));
 	borrowed[locale] = untranslated.length;
+	borrowedKeys[locale] = untranslated;
 
 	/*
 	 * An untranslated message ships as the source language's own words.
@@ -336,7 +339,29 @@ await write(
 	].join('\n')
 );
 
-await write(
+for (const locale of LOCALES) {
+	await write(
+		`src/lib/i18n/borrowed/${locale}.ts`,
+		[
+			banner(`messages/${locale}.json`),
+			'',
+			'/**',
+			' * The messages this language has not been written in yet.',
+			' *',
+			' * Fetched only by a dev or staging build, which paints them red so a',
+			' * screen says what is still English without anybody comparing it against',
+			' * a list. Production never asks for this module, so it is never in the',
+			' * bundle a reader downloads.',
+			' */',
+			`export const borrowed: ReadonlySet<string> = new Set([`,
+			(borrowedKeys[locale] ?? []).map((key) => `\t'${key.replace(/'/g, "\\'")}'`).join(',\n'),
+			']);',
+			''
+		].join('\n')
+	);
+}
+
+write(
 	'src/lib/i18n/load.ts',
 	[
 		banner('the list of languages in locales.ts'),
@@ -359,6 +384,23 @@ await write(
 		]),
 		'\t\tdefault:',
 		`\t\t\treturn (await import('./catalogues/${SOURCE_LOCALE}.js')).messages;`,
+		'\t}',
+		'}',
+		'',
+		'/**',
+		' * Which of them are still the source language, for a build that marks them.',
+		' *',
+		' * A separate module from the catalogue so production never fetches it: the',
+		' * only caller is the dev and staging shell.',
+		' */',
+		'export async function loadBorrowed(locale: Locale): Promise<ReadonlySet<string>> {',
+		'\tswitch (locale) {',
+		...LOCALES.filter((locale) => locale !== SOURCE_LOCALE).flatMap((locale) => [
+			`\t\tcase '${locale}':`,
+			`\t\t\treturn (await import('./borrowed/${locale}.js')).borrowed;`
+		]),
+		'\t\tdefault:',
+		'\t\t\treturn new Set();',
 		'\t}',
 		'}',
 		''

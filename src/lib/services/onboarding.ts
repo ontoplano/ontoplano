@@ -7,6 +7,7 @@ import {
 	isTheme,
 	markOnboarded,
 	setHiddenSections,
+	setLocale,
 	setTheme,
 	setTimezone,
 	setWeekSettings
@@ -18,6 +19,7 @@ import { clearWeeklyPlanIn } from './slots.js';
 import { stamps } from './time.js';
 import { ValidationError } from './errors.js';
 import { num, oneOf } from './validate.js';
+import { isLocale } from '../i18n/locales.js';
 import {
 	TEMPLATE_KEYS,
 	TEMPLATES,
@@ -76,6 +78,15 @@ export type FirstRunInput = {
 	/** Optional: first run is where the account is dressed, so it asks here. */
 	theme?: unknown;
 	/**
+	 * Optional, and the first thing the page asks.
+	 *
+	 * Absent leaves the account with no stored choice, which is not the same as
+	 * English: with nothing stored, every page falls back to what the browser
+	 * asked for. Storing it is what makes the answer survive a different
+	 * browser.
+	 */
+	language?: unknown;
+	/**
 	 * The rooms they want, as ids. Absent means "everything", which is what an
 	 * account made by anything other than this page gets.
 	 */
@@ -101,6 +112,8 @@ export function completeFirstRun(ctx: Ctx, raw: FirstRunInput): TemplateKey {
 	setWeekSettings(ctx.userId, { firstDay, generateDay });
 	// Unknown or absent leaves the default, which follows the device.
 	if (typeof raw.theme === 'string' && isTheme(raw.theme)) setTheme(ctx.userId, raw.theme);
+	if (typeof raw.language === 'string' && isLocale(raw.language))
+		setLocale(ctx.userId, raw.language);
 
 	/*
 	 * The rooms they chose, as the ones they did not.
