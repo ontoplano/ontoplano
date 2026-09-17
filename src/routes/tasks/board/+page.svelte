@@ -215,6 +215,40 @@
 	}
 
 	/**
+	 * …and the other direction: the strip tells the names where it got to.
+	 *
+	 * Pressing a name scrolled the strip, and that was the only thing that ever
+	 * moved `phoneColumn` — so swiping the board, which is how anybody actually
+	 * changes column on a phone, left the strip showing Done while "Pending"
+	 * was still lit above it. A control that lies about what is on screen is
+	 * worse than no control.
+	 *
+	 * Whichever column's left edge is nearest the scroll position wins, rather
+	 * than arithmetic on a column width: the columns are a percentage of the
+	 * screen with a gap between them, and the last one stops short because the
+	 * strip runs out. Measuring where they actually are cannot drift from that.
+	 */
+	function followScroll() {
+		if (!strip) return;
+		const children = [...strip.children] as HTMLElement[];
+		if (children.length === 0) return;
+
+		const from = strip.getBoundingClientRect().left;
+		let closest = 0;
+		let best = Infinity;
+		children.forEach((child, i) => {
+			const off = Math.abs(child.getBoundingClientRect().left - from);
+			if (off < best) {
+				best = off;
+				closest = i;
+			}
+		});
+
+		const status = columns[closest]?.status;
+		if (status && status !== phoneColumn) phoneColumn = status;
+	}
+
+	/**
 	 * A card carried to the edge takes the board with it.
 	 *
 	 * Without this the only way to reach the far column mid-drag is to let go,
@@ -945,6 +979,7 @@
 			<div
 				bind:this={strip}
 				ondragover={scrollAtEdge}
+				onscroll={followScroll}
 				class="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 md:mx-0 md:grid md:auto-cols-fr md:grid-flow-col md:overflow-visible md:px-0"
 				data-tour="board-columns"
 			>
