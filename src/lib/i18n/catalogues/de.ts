@@ -2301,6 +2301,9 @@ export const messages: Catalogue = {
 		'Noch nichts — alles, was ein Assistent ändert, wird hier aufgelistet',
 	'settings.integrations.outsideWhat':
 		'{label}: {write} — außerhalb dessen, woran dieser Schlüssel gebunden ist',
+	'settings.integrations.pluginAsksKey': 'Schlüssel:',
+	'settings.integrations.pluginAsksYourOntoplano': 'Ihr ontoplano:',
+	'settings.integrations.pluginWillAskFor': 'es wird fragen nach:',
 	'settings.integrations.putBack': 'Wiederherstellen',
 	'settings.integrations.putItBack': 'Wiederherstellen',
 	'settings.integrations.read': 'Lesen',
@@ -2312,9 +2315,13 @@ export const messages: Catalogue = {
 		one: 'Ihren Schlüssel hier ansehen ({count})',
 		other: 'Ihre Schlüssel hier ansehen ({count})'
 	},
+	'settings.integrations.tellItPrompt':
+		'Ich benutze ontoplano — eine App zur Lebensorganisation, die über MCP erreichbar ist.\n\nRichten Sie sich ein, um sie zu benutzen. Ein MCP-Server wird konfiguriert,\nbevor eine Sitzung beginnt — die Adresse zu kennen reicht also nicht. Tragen\nSie sie in Ihre eigene Konfiguration ein und starten Sie neu.\n\n  Adresse:    {origin}/api/mcp\n  Transport:  streamable HTTP (stateless — keine Sitzung, kein GET)\n  Auth:       ein "Authorization: Bearer"-Header mit dem Schlüssel unten\n\nFür Claude Code ist das ein einziger Befehl:\n\n  claude mcp add --scope user --transport http ontoplano {origin}/api/mcp \\\n    --header "Authorization: Bearer {key}"\n\nNach dem Neustart benutzen Sie sie, wann immer ich nach meiner Woche, meiner\nAufgabenliste, meinem Tagebuch, meinen Notizbüchern, meiner Einkaufsliste oder\nmeinen Rezepten frage. Ändern Sie nichts in meinem Konto, bis ich darum bitte.\n\nSchlüssel: {key}',
 	'settings.integrations.theCommandLine': 'Die Befehlszeile',
 	'settings.integrations.theDesktopApp': 'Die Desktop-App',
 	'settings.integrations.thePlugin': 'Das Plugin',
+	'settings.integrations.thenOnceInYourShellProfile':
+		'dann, einmalig, in Ihrem Shell-Profil (~/.bashrc — zsh: ~/.zshrc):',
 	'settings.integrations.thisSecretWillOnlyBe': 'Dieses Geheimnis wird nur einmal angezeigt.',
 	'settings.integrations.tickAtLeastOne':
 		'Wählen Sie mindestens eine Sache, die der Assistent tun darf.',

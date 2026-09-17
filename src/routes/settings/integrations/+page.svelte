@@ -112,26 +112,17 @@
 			 * restart out loud rather than leaving somebody to wonder why nothing
 			 * happened.
 			 */
-			text: `I use ontoplano — a life management app you can reach over MCP.
-
-Set yourself up to use it. An MCP server is configured before a session
-starts, so knowing the address is not enough — write it into your own
-configuration, then restart.
-
-  Address:    ${data.origin}/api/mcp
-  Transport:  streamable HTTP (stateless — no session, no GET)
-  Auth:       an "Authorization: Bearer" header carrying the key below
-
-If you are Claude Code, that is one command:
-
-  claude mcp add --scope user --transport http ontoplano ${data.origin}/api/mcp \\
-    --header "Authorization: Bearer ${shown}"
-
-Once you have restarted, use it whenever I ask about my week, my to-do list,
-my diary, my notebooks, my shopping list or my recipes. Do not change anything
-in my account until I ask you to.
-
-Key: ${shown}`
+			/*
+			 * In the reader's language, commands and all.
+			 *
+			 * It is addressed to an assistant, which is the argument for leaving it
+			 * in English — but the person pasting it reads it first and decides
+			 * whether to trust it, and a wall of English in an otherwise German app
+			 * reads as a part that was not finished. The parts that are *code* —
+			 * the address, the flags, the header — are the same in every language,
+			 * because they are what has to be typed, not what has to be understood.
+			 */
+			text: t('settings.integrations.tellItPrompt', { origin: data.origin, key: shown })
 		},
 		{
 			id: 'claude',
@@ -152,7 +143,11 @@ Key: ${shown}`
 					name: t('settings.integrations.thePlugin'),
 					note: t('settings.integrations.twoLinesInsideClaudeCode'),
 					wrap: false,
-					text: `/plugin marketplace add ontoplano/claude-plugin\n/plugin install ontoplano@ontoplano\n\n# it will ask for:\n#   Your ontoplano:  ${data.origin}\n#   Key:             ${shown}`
+					text:
+						`/plugin marketplace add ontoplano/claude-plugin\n/plugin install ontoplano@ontoplano\n\n` +
+						`# ${t('settings.integrations.pluginWillAskFor')}\n` +
+						`#   ${t('settings.integrations.pluginAsksYourOntoplano')}  ${data.origin}\n` +
+						`#   ${t('settings.integrations.pluginAsksKey')}  ${shown}`
 				},
 				{
 					name: t('settings.integrations.theCommandLine'),
@@ -187,7 +182,7 @@ Key: ${shown}`
 url = "${data.origin}/api/mcp"
 bearer_token_env_var = "ONTOPLANO_KEY"
 
-# then, once, in your shell profile (~/.bashrc — zsh: ~/.zshrc):
+# ${t('settings.integrations.thenOnceInYourShellProfile')}
 # export ONTOPLANO_KEY=${shown}`
 		},
 		{

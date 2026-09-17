@@ -1953,15 +1953,20 @@ export type MessageKey =
 	| 'settings.integrations.notSomething'
 	| 'settings.integrations.nothingYetEverythingAn'
 	| 'settings.integrations.outsideWhat'
+	| 'settings.integrations.pluginAsksKey'
+	| 'settings.integrations.pluginAsksYourOntoplano'
+	| 'settings.integrations.pluginWillAskFor'
 	| 'settings.integrations.putBack'
 	| 'settings.integrations.putItBack'
 	| 'settings.integrations.read'
 	| 'settings.integrations.removingIsPermanentWithoutThis'
 	| 'settings.integrations.runThisInATerminal'
 	| 'settings.integrations.seeYourKeys'
+	| 'settings.integrations.tellItPrompt'
 	| 'settings.integrations.theCommandLine'
 	| 'settings.integrations.theDesktopApp'
 	| 'settings.integrations.thePlugin'
+	| 'settings.integrations.thenOnceInYourShellProfile'
 	| 'settings.integrations.thisSecretWillOnlyBe'
 	| 'settings.integrations.tickAtLeastOne'
 	| 'settings.integrations.todaysPlan'
@@ -3055,6 +3060,7 @@ export interface MessageValuesFor {
 	'settings.integrations.notSomething': { label: string | number; write: string | number };
 	'settings.integrations.outsideWhat': { label: string | number; write: string | number };
 	'settings.integrations.seeYourKeys': { count: number };
+	'settings.integrations.tellItPrompt': { key: string | number; origin: string | number };
 	'settings.language.untranslated': { count: number };
 	'settings.menu.colourFor': { room: string | number };
 	'settings.menu.follows': { room: string | number };
