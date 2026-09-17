@@ -2423,6 +2423,8 @@ export type MessageKey =
 	| 'welcome.stepOf'
 	| 'welcome.thisTokenGivesTheAi'
 	| 'welcome.welcomeToOntoplano'
+	| 'welcome.whichLanguage'
+	| 'welcome.whichLanguageHint'
 	| 'welcome.yourTimezone';
 
 /**

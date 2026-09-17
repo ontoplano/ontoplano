@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.178.24 — 2026-09-17
+
+- **First run asks which language before it asks anything else.** It starts on
+  whatever your browser said it wanted, so for most people it is a confirmation
+  rather than a question — and choosing applies it to the rest of the wizard
+  immediately, rather than at the end.
+- **On a dev or staging build, anything still in English reads red.** Nothing
+  changes in the real app: the marks and the code that looks for them are only
+  in those builds.
+
 ## 0.178.23 — 2026-09-16
 
 - **The whole app can be read in Portuguese.** Every word on every screen, and

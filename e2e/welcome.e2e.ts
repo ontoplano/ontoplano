@@ -41,18 +41,27 @@ test('it asks one thing at a time, and the rooms you keep are the rooms you get'
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await fresh(page);
 
-	// One question on screen: the others are in the document and hidden, which
-	// is what keeps their answers in the submission.
-	await expect(page.getByRole('heading', { name: 'Use it with an AI' })).toBeVisible();
+	/*
+	 * One question on screen: the others are in the document and hidden, which
+	 * is what keeps their answers in the submission.
+	 *
+	 * The language is asked first — before the words the rest of the wizard is
+	 * read in, which is the only order that makes sense.
+	 */
+	await expect(page.getByRole('heading', { name: 'Which language?' })).toBeVisible();
 	await expect(page.getByRole('heading', { name: 'Which rooms do you want?' })).toBeHidden();
-	await expect(page.getByText('Step 1 of 6')).toBeVisible();
+	await expect(page.getByText('Step 1 of 7')).toBeVisible();
+
+	await page.getByRole('button', { name: 'Next' }).click();
+	await expect(page.getByRole('heading', { name: 'Use it with an AI' })).toBeVisible();
+	await expect(page.getByText('Step 2 of 7')).toBeVisible();
 
 	// One press mints the key and shows the prompt around it — without moving
 	// the wizard, whose own answers must survive the round trip.
 	await page.getByRole('button', { name: 'Create the key and the prompt' }).click();
 	await expect(page.locator('code', { hasText: '/api/mcp' })).toBeVisible();
 	await expect(page.locator('code', { hasText: 'onto_' })).toBeVisible();
-	await expect(page.getByText('Step 1 of 6')).toBeVisible();
+	await expect(page.getByText('Step 2 of 7')).toBeVisible();
 
 	await page.getByRole('button', { name: 'Next' }).click();
 	await expect(page.getByRole('heading', { name: 'Where are you?' })).toBeVisible();

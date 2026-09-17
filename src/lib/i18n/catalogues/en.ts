@@ -2789,5 +2789,7 @@ export const messages: Catalogue = {
 	'welcome.thisTokenGivesTheAi':
 		'This token gives the AI most permissions to edit your account. Create a new\n\t\t\t\t\t\t\t\t\t\ttoken later to restrict its',
 	'welcome.welcomeToOntoplano': 'Welcome to ontoplano',
+	'welcome.whichLanguage': 'Which language?',
+	'welcome.whichLanguageHint': 'Everything the app says, and the mail it sends you.',
 	'welcome.yourTimezone': 'Your timezone'
 };

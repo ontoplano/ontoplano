@@ -9,6 +9,7 @@ import { createToken } from '$lib/server/services/tokens';
 import { ASSISTANT_SCOPES } from '$lib/server/mcp/tools';
 import { HIDEABLE_ROOMS } from '$lib/sections';
 import { zoneGroups } from '$lib/timezones';
+import { setUserLanguage } from '$lib/services/preferences';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	// An account minted by a family invitation chooses its password first —
@@ -55,6 +56,26 @@ export const actions: Actions = {
 				scopes: ASSISTANT_SCOPES
 			});
 			return { success: true, assistantToken: token.plaintext };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/*
+	 * The language, stored the moment it is chosen rather than at the end.
+	 *
+	 * The rest of the wizard is answered in whatever language it is being read
+	 * in, so the choice has to apply to the page it is made on — and the only
+	 * way the shell re-renders in another language is for the server to resolve
+	 * it, which means it has to be saved. `finish` sends it again, which is
+	 * harmless and covers somebody who never opened this step.
+	 */
+	setLanguage: async ({ request, locals }) => {
+		const formData = await request.formData();
+
+		try {
+			setUserLanguage(buildCtx(locals.user!.id), formData.get('language'));
+			return { success: true, action: 'setLanguage' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

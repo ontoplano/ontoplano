@@ -2432,5 +2432,7 @@
 	"welcome.stepOf": null,
 	"welcome.thisTokenGivesTheAi": null,
 	"welcome.welcomeToOntoplano": null,
+	"welcome.whichLanguage": "Qual idioma?",
+	"welcome.whichLanguageHint": "Tudo o que o aplicativo diz, e os e-mails que ele envia a você.",
 	"welcome.yourTimezone": null
 }

@@ -10,6 +10,9 @@
 	import { useT } from '$lib/i18n';
 	import { sectionBlurb, sectionLabel } from '$lib/sections';
 	import type { PlainKey } from '$lib/i18n/keys';
+	import { invalidateAll } from '$app/navigation';
+	import { LOCALES, LOCALE_NAMES, type Locale } from '$lib/i18n/locales';
+	import { rememberLocaleOnThisDevice } from '$lib/i18n/device';
 
 	const t = useT();
 
@@ -86,6 +89,32 @@ at a time, and show me what you will write before writing it.`
 	 * The look, applied to the page as it is picked: a theme you cannot see is
 	 * not a choice. `system` follows the device, which is the default.
 	 */
+	/*
+	 * The language, asked first and answered before it is asked.
+	 *
+	 * It starts on whatever the browser said it wanted — which is what the app
+	 * was already rendering in, because nothing is stored yet — so the step is
+	 * a confirmation rather than a question for the nine people in ten whose
+	 * browser is set to their own language. Choosing applies it at once, and
+	 * `finish` stores it: with nothing stored, a different browser would guess
+	 * again.
+	 */
+	let language = $state<Locale>(t.locale);
+
+	async function pickLanguage(chosen: Locale) {
+		if (chosen === language) return;
+		language = chosen;
+		// The device's own copy, for an instance with no server to ask.
+		rememberLocaleOnThisDevice(chosen);
+
+		const body = new FormData();
+		body.set('language', chosen);
+		await fetch('?/setLanguage', { method: 'POST', body });
+		// The shell's language is the server's answer, so the page has to ask
+		// again — nothing else re-renders the words around this step.
+		await invalidateAll();
+	}
+
 	let theme = $state<Theme>(data.theme);
 	const LOOKS: { key: Theme; label: PlainKey; blurb: PlainKey }[] = [
 		{
@@ -125,6 +154,11 @@ at a time, and show me what you will write before writing it.`
 	// ── The steps ─────────────────────────────────────────────────────────────
 
 	const STEPS: { key: string; title: PlainKey; hint: PlainKey }[] = [
+		{
+			key: 'language',
+			title: 'welcome.whichLanguage',
+			hint: 'welcome.whichLanguageHint'
+		},
 		{
 			key: 'assistant',
 			title: 'app.useItWithAnAi',
@@ -237,7 +271,22 @@ at a time, and show me what you will write before writing it.`
 						<p class="mt-1 text-sm text-gray-500">{t(s.hint)}</p>
 
 						<div class="mt-4">
-							{#if s.key === 'assistant'}
+							{#if s.key === 'language'}
+								<div class="flex flex-wrap gap-2">
+									{#each LOCALES as option (option)}
+										<button
+											type="button"
+											onclick={() => pickLanguage(option)}
+											aria-pressed={language === option}
+											lang={option}
+											class="btn btn-sm {language === option ? 'btn-primary' : ''}"
+										>
+											{LOCALE_NAMES[option]}
+										</button>
+									{/each}
+								</div>
+								<input type="hidden" name="language" value={language} />
+							{:else if s.key === 'assistant'}
 								{#if assistantToken}
 									<p class="text-sm text-gray-700">
 										{t('welcome.pasteThisToClaude')}
