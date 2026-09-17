@@ -80,12 +80,27 @@
 	 * `SPAN` is not independent of the other two: `n` petals across `SPAN` sit
 	 * `2 × RADIUS × sin(SPAN / 2(n - 1))` apart, which has to be more than
 	 * `PETAL` or they overlap and the flower reads as a clump.
+	 *
+	 * Which is why `SPAN` is no longer a number at all. It was 84°, and at
+	 * `RADIUS` 100 that put four petals 48px apart when a petal is 44px across
+	 * — four pixels of air, which reads as one scalloped blob rather than four
+	 * things and gives a finger no room to be wrong in. Worse, it was *fixed*:
+	 * hiding a section drops a petal and the rest drifted apart, adding one
+	 * squeezed them further, so how crowded the flower looked depended on
+	 * something nobody was thinking about when they set the angle.
+	 *
+	 * So the gap is the constant and the arc is worked out from it. With the
+	 * numbers above that is about 90° for four petals and 122° for five, and
+	 * the flower still clears the screen because `centre` clamps it.
 	 */
-	const RADIUS = 100;
+	const RADIUS = 118;
 	const PETAL = 44;
 	const MIDDLE = 68;
 	const RISE = 64;
-	const SPAN = 84;
+	/** Air between two neighbouring petals, which is the thing worth fixing. */
+	const PETAL_GAP = 18;
+	/** However wide the arc has to get, it stops short of a half-circle. */
+	const WIDEST_SPAN = 150;
 
 	/**
 	 * And then the whole flower, shifted off the button it grew from.
@@ -96,13 +111,17 @@
 	 * left of that, into the part of the screen a right thumb is not covering.
 	 *
 	 * In CSS pixels, from what they are on a phone: this screen is about five
-	 * of them to the millimetre, so 36 is a little under three-quarters of a
-	 * centimetre up and 25 is half a centimetre left. They are a nudge to the
-	 * whole thing — the petals, the labels and the middle move together,
-	 * because they are all placed from this one point.
+	 * of them to the millimetre, so these are around half a centimetre up and a
+	 * third of one left. They are a nudge to the whole thing — the petals, the
+	 * labels and the middle move together, because they are all placed from
+	 * this one point.
+	 *
+	 * Smaller than they were, because the arc grew: a wider flower already
+	 * reaches further from the thumb than a narrow one shifted away from it,
+	 * and the two together pushed it into the top edge.
 	 */
-	const SHIFT_UP = 36;
-	const SHIFT_LEFT = 25;
+	const SHIFT_UP = 28;
+	const SHIFT_LEFT = 16;
 	/** Up and to the left: −90° is straight up, −180° is level to the left. */
 	const TILT = -135;
 	/** Clear of the screen's edges, and of anything notched into the top. */
@@ -120,7 +139,20 @@
 	/** The middle, and the ones above it. */
 	const heart = $derived(items[0]);
 	const petals = $derived(items.slice(1));
-	const STEP = $derived(petals.length > 1 ? SPAN / (petals.length - 1) : 0);
+	/**
+	 * How far apart the petals sit, and therefore how wide the arc is.
+	 *
+	 * Two petals `STEP` apart on a circle of `RADIUS` are
+	 * `2 × RADIUS × sin(STEP / 2)` apart on the screen; this is that read
+	 * backwards, from the distance we want to the angle that gives it.
+	 */
+	const STEP = $derived.by(() => {
+		if (petals.length < 2) return 0;
+		const wanted = (PETAL + PETAL_GAP) / (2 * RADIUS);
+		const step = (Math.asin(Math.min(1, wanted)) * 360) / Math.PI;
+		return Math.min(step, WIDEST_SPAN / (petals.length - 1));
+	});
+	const SPAN = $derived(STEP * (petals.length - 1));
 
 	/**
 	 * How wide the screen is for something pinned to it.
@@ -227,6 +259,22 @@
 	let mounted = false;
 
 	/**
+	 * The short way round, for a difference between two angles.
+	 *
+	 * `atan2` answers in (-180°, 180°], and the first petal sits at -177° — so
+	 * the lower half of its wedge is at -191°, which comes back as +169°. The
+	 * difference from the petal it is sitting on then reads as 355° instead of
+	 * -5°, that petal is decided to be twelve steps away, and the whole bottom
+	 * half of it does nothing. On a phone that is a petal you can only light by
+	 * putting your finger almost on its neighbour, which is what it looked
+	 * like: the bell only answered along its top edge.
+	 *
+	 * Every comparison between a pointer's angle and a petal's goes through
+	 * this. There is no case where the long way round is the right answer.
+	 */
+	const turn = (degrees: number) => ((((degrees + 180) % 360) + 360) % 360) - 180;
+
+	/**
 	 * Which choice a point falls on, or -1 for none.
 	 *
 	 * 0 is the middle, then the petals in order. Everything past the arc, and
@@ -242,15 +290,15 @@
 		if (away > REACH || petals.length === 0) return -1;
 
 		const degrees = (Math.atan2(dy, dx) * 180) / Math.PI;
-		if (STEP === 0) return Math.abs(degrees - angleOf(0)) <= SPAN ? 1 : -1;
+		if (STEP === 0) return Math.abs(turn(degrees - angleOf(0))) <= SPAN ? 1 : -1;
 
 		// Rounded rather than bounded, so each petal owns the wedge of screen it
 		// points into and the two at the ends own a little past themselves — the
 		// same reason the wheel's slices reach the edge. A whole step past the
 		// arc is beside the flower or below it, where the hand is.
-		const i = Math.round((degrees - angleOf(0)) / STEP);
+		const i = Math.round(turn(degrees - angleOf(0)) / STEP);
 		if (i < 0 || i > petals.length - 1) return -1;
-		return Math.abs(degrees - angleOf(i)) > STEP ? -1 : i + 1;
+		return Math.abs(turn(degrees - angleOf(i))) > STEP ? -1 : i + 1;
 	}
 
 	function onmove(e: PointerEvent) {
