@@ -43,7 +43,25 @@
 	 * The hole in the middle is not a target. A gesture menu needs somewhere
 	 * safe to let go: press, think better of it, release, nothing happens.
 	 */
-	export type Wedge = { key: string; label: string; icon: IconName; color: string };
+	export type Wedge = {
+		key: string;
+		label: string;
+		icon: IconName;
+		color: string;
+		/**
+		 * Drawn a little stronger, for a wedge that belongs to a group.
+		 *
+		 * The wheel holds two kinds of thing: four you write and two you add.
+		 * They are one wheel because that is one gesture, and the eye still has
+		 * to be able to find the pair without reading all six — so those are
+		 * filled harder and edged harder, which reads as "these two go
+		 * together" before any of the icons are looked at.
+		 */
+		emphasis?: boolean;
+	};
+
+	/** How much more fill and edge an emphasised wedge carries. */
+	const EMPHASIS = 1.9;
 
 	let {
 		/**
@@ -712,10 +730,10 @@
 							<path
 								d={wedgePath(i)}
 								fill={item.color}
-								fill-opacity={on ? 0.32 : 0.16}
+								fill-opacity={(on ? 0.32 : 0.16) * (item.emphasis ? EMPHASIS : 1)}
 								stroke={item.color}
-								stroke-opacity={on ? 0.7 : 0.35}
-								stroke-width="1.5"
+								stroke-opacity={on ? 0.7 : 0.35 * (item.emphasis ? EMPHASIS : 1)}
+								stroke-width={item.emphasis ? 2 : 1.5}
 							/>
 							<!--
 							The room's colour, pulled most of the way to the ink.
