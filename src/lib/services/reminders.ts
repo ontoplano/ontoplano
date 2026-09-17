@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, isNull, lte, sql } from 'drizzle-orm';
+import { and, asc, eq, gte, inArray, isNull, lte, sql } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
 import {
@@ -581,9 +581,35 @@ function ownedInstance(ctx: Ctx, id: number): { scheduledAt: string; title: stri
  * done in SQL against one clock. The rows are filtered here instead: due, in
  * their own zone, and not yet pushed.
  */
+/**
+ * How far back a pass will still ring something.
+ *
+ * A box that was down for an hour should deliver that hour when it comes back
+ * — a reminder told late is worth far more than one silently dropped, which is
+ * what "not persistent" used to mean and never actually did. A box that was
+ * down for a week should not wake somebody at four in the morning with two
+ * hundred alarms about last Tuesday.
+ *
+ * Twelve hours is the line: long enough to cover a night's outage and an
+ * afternoon's, short enough that nothing rings about a day nobody is still
+ * having. Older ones are not lost — they are on the planner, which is where
+ * they have been all along.
+ */
+export const CATCH_UP_HOURS = 12;
+
 export function pushableReminders(
 	nowByUser: (userId: string) => string,
-	limit = 500
+	/**
+	 * The moment the pass is working from.
+	 *
+	 * Both bounds below are measured from it rather than from the clock. The
+	 * ceiling got away with reading `Date.now()` because it is generous in the
+	 * direction that matters; the floor would not — a pass replaying an hour
+	 * that has gone would have excluded the very reminders it exists to find.
+	 */
+	now: Date = new Date(),
+	limit = 500,
+	lookBackHours = CATCH_UP_HOURS
 ): (Reminder & { userId: string; audible: boolean | null; ringtoneId: number | null })[] {
 	const rows = db
 		.select({
@@ -608,7 +634,22 @@ export function pushableReminders(
 				// A cheap ceiling in SQL before the per-zone comparison below: no
 				// zone is more than a day from any other, so nothing due anywhere
 				// can be past this.
-				lte(reminders.remindAt, new Date(Date.now() + 26 * 3600_000).toISOString().slice(0, 19))
+				lte(reminders.remindAt, new Date(now.getTime() + 26 * 3600_000).toISOString().slice(0, 19)),
+				/*
+				 * And a floor, so a box that was down catches up without shouting.
+				 *
+				 * Everything unpushed used to be a candidate however old, which
+				 * is right for an hour of downtime and wrong for a week of it:
+				 * the machine comes back at four in the morning and rings two
+				 * hundred alarms about times that are long gone. Inside the
+				 * window they still ring — late is the point, and a missed
+				 * reminder is worse than a late one. Outside it they stay on the
+				 * planner, where they have been all along.
+				 */
+				gte(
+					reminders.remindAt,
+					new Date(now.getTime() - lookBackHours * 3600_000).toISOString().slice(0, 19)
+				)
 			)
 		)
 		.orderBy(asc(reminders.remindAt))

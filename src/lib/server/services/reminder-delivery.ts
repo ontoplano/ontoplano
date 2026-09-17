@@ -73,6 +73,24 @@ export async function deliverDueReminders(now = new Date()): Promise<{
 	const summary = { accounts: accounts.length, devices, birthdays, written };
 
 	const zones = new Map<string, string>();
+	/**
+	 * How late this one is, in the fewest words that are still true.
+	 *
+	 * Both sides are the account's own wall clock, so this is a subtraction
+	 * rather than a timezone problem. Minutes below an hour because "78 minutes
+	 * ago" is arithmetic somebody has to do; hours above it because by then the
+	 * exact number has stopped mattering.
+	 */
+	const lateLabel = (was: string, now: string): string => {
+		const minutes = Math.max(
+			1,
+			Math.round((Date.parse(`${now}Z`) - Date.parse(`${was}Z`)) / 60_000)
+		);
+		if (minutes < 60) return `${minutes} min late`;
+		const hours = Math.round(minutes / 60);
+		return `${hours}h late`;
+	};
+
 	const localFor = (userId: string) => {
 		let zone = zones.get(userId);
 		if (!zone) {
@@ -90,7 +108,7 @@ export async function deliverDueReminders(now = new Date()): Promise<{
 	 * runs perfectly, and neither wrote a line anywhere. A pass with nothing
 	 * due still says nothing at all — that is 1,439 minutes of most days.
 	 */
-	const due = pushableReminders(localFor);
+	const due = pushableReminders(localFor, now);
 
 	/*
 	 * No keys is not nothing to do any more.
@@ -130,9 +148,21 @@ export async function deliverDueReminders(now = new Date()): Promise<{
 	let pushed = 0;
 	for (const [userId, items] of byAccount) {
 		for (const reminder of items) {
+			/*
+			 * What time it was for, and whether that has been and gone.
+			 *
+			 * A pass can be late — a box that was down catches up when it comes
+			 * back, which is the point of `CATCH_UP_HOURS` — and a reminder that
+			 * arrives an hour after the fact reading only "14:30" is a reminder
+			 * somebody acts on as though it were now. It says so instead.
+			 */
+			const late = reminder.remindAt < localFor(userId);
+
 			const { sent, failed } = await pushToUser(userId, {
 				title: reminder.message,
-				body: reminder.remindAt.slice(11, 16),
+				body: late
+					? `${reminder.remindAt.slice(11, 16)} — ${lateLabel(reminder.remindAt, localFor(userId))}`
+					: reminder.remindAt.slice(11, 16),
 				url: hrefFor(reminder),
 				tag: `reminder-${reminder.id}`,
 				kind: 'reminder',

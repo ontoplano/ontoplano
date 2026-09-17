@@ -3751,21 +3751,7 @@ kind of reminder does", which is what a row says before anybody overrides it.
 
 The reminders already set on one block, so its editor can show them.
 
-#### `pushableReminders(nowByUser, limit)`
-
-Everything due that no device has been told about, for every account.
-
-The counterpart to `dueReminders`, and deliberately not the same query. That
-one answers "what should this open page show me", is per account, and is
-gated on `delivered_at`. This one answers "whose phone should ring", runs
-from a job with no signed-in user, and is gated on `pushed_at` — the two
-channels have to be able to reach the same reminder, because being at a
-laptop is not a reason for a phone to stay quiet, and having a phone is not a
-reason for the planner to look empty.
-
-Times are wall-clock in each account's own zone, so the comparison cannot be
-done in SQL against one clock. The rows are filtered here instead: due, in
-their own zone, and not yet pushed.
+#### `pushableReminders(nowByUser, now, limit, lookBackHours)`
 
 #### `markPushed(ids)`
 

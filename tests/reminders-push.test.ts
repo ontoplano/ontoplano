@@ -201,6 +201,61 @@ describe('the delivery pass', () => {
 		expect(JSON.parse(sends[0].body).title).toBe('Gym in ten minutes');
 	});
 
+	/*
+	 * A box that was down delivers what it missed when it comes back.
+	 *
+	 * The timer used to say it deliberately did not — "a box that was off for
+	 * an hour should not fire an hour of reminders at once" — and the code
+	 * never agreed with it: the query had no floor, so the next ordinary tick
+	 * delivered everything unpushed however old. The setting was doing nothing
+	 * and the comment was describing a decision nobody had implemented.
+	 *
+	 * It is implemented now, and it errs towards late: a reminder told an hour
+	 * afterwards is worth far more than one silently dropped. What it will not
+	 * do is come back from a week away and ring about last Tuesday.
+	 */
+	test('rings what was missed while the box was down', async () => {
+		push.saveSubscription(ctx(), device('https://push.example/phone'));
+		reminderAt('2026-03-14T03:00:00', 'Six hours ago');
+
+		await delivery.deliverDueReminders(new Date('2026-03-14T09:00:00Z'));
+
+		expect(sends).toHaveLength(1);
+		expect(JSON.parse(sends[0].body).title).toBe('Six hours ago');
+	});
+
+	test('says how late it is, rather than naming a time as though it were now', async () => {
+		push.saveSubscription(ctx(), device('https://push.example/phone'));
+		reminderAt('2026-03-14T07:30:00', 'Take the bread out');
+
+		await delivery.deliverDueReminders(new Date('2026-03-14T09:00:00Z'));
+
+		// The hour it was for, and the fact that it has gone.
+		const said = JSON.parse(sends[0].body);
+		expect(said.title).toBe('Take the bread out');
+		expect(said.body).toContain('07:30');
+		expect(said.body).toMatch(/late/);
+	});
+
+	test('does not ring about a day nobody is still having', async () => {
+		push.saveSubscription(ctx(), device('https://push.example/phone'));
+		// Well outside the catch-up window: on the planner, not in the night.
+		reminderAt('2026-03-12T09:00:00', 'Two days ago');
+
+		await delivery.deliverDueReminders(new Date('2026-03-14T09:00:00Z'));
+
+		expect(sends).toEqual([]);
+	});
+
+	test('and one on time says only the time', async () => {
+		push.saveSubscription(ctx(), device('https://push.example/phone'));
+		reminderAt('2026-03-14T09:00:00', 'Now');
+
+		await delivery.deliverDueReminders(new Date('2026-03-14T09:00:00Z'));
+
+		expect(JSON.parse(sends[0].body).body).toBe('09:00');
+	});
+
 	test('and does not push the same reminder twice', async () => {
 		push.saveSubscription(ctx(), device('https://push.example/phone'));
 		reminderAt('2026-03-14T08:50:00');
