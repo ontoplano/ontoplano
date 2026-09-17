@@ -109,7 +109,6 @@ export type MessageKey =
 	| 'app.everythingYouWroteIsStill'
 	| 'app.fractionsMeasuredTypedIn'
 	| 'app.friday'
-	| 'app.gmt0'
 	| 'app.goals'
 	| 'app.good'
 	| 'app.habits'
@@ -232,6 +231,8 @@ export type MessageKey =
 	| 'demo.theDemoIsFullRight'
 	| 'demo.tryAgain'
 	| 'fan.accountAndHelp'
+	| 'fan.noTourForThisScreen'
+	| 'fan.showMeAround'
 	| 'fields.buy.another'
 	| 'fields.buy.beingWritten'
 	| 'fields.buy.howManyYouKeep'
@@ -627,6 +628,7 @@ export type MessageKey =
 	| 'health.recipes.writeOnePutItOn'
 	| 'health.recipes.youHaveEverything'
 	| 'health.workouts.aboutHowLongMin'
+	| 'health.workouts.aboutMinutes'
 	| 'health.workouts.addALine'
 	| 'health.workouts.addTheCategory'
 	| 'health.workouts.anythingWorthSaying'
@@ -652,6 +654,7 @@ export type MessageKey =
 	| 'health.workouts.isRemovedForGoodThe'
 	| 'health.workouts.keepIt'
 	| 'health.workouts.km'
+	| 'health.workouts.lastDone'
 	| 'health.workouts.markDone'
 	| 'health.workouts.measureSomethingElse'
 	| 'health.workouts.min'
@@ -856,6 +859,7 @@ export type MessageKey =
 	| 'inventory.family2'
 	| 'inventory.find'
 	| 'inventory.find2'
+	| 'inventory.fold'
 	| 'inventory.forWhatIsStillTo'
 	| 'inventory.frozen'
 	| 'inventory.hereAndYou'
@@ -900,6 +904,7 @@ export type MessageKey =
 	| 'inventory.shoppingList'
 	| 'inventory.shoppingList2'
 	| 'inventory.short'
+	| 'inventory.showWhatIsIn'
 	| 'inventory.showWhatYouAlreadyHave'
 	| 'inventory.showWhatYouPutAway'
 	| 'inventory.theListIsEmpty'
@@ -1335,7 +1340,9 @@ export type MessageKey =
 	| 'reminders.yourSounds'
 	| 'reportDialog.sentThankYouIt'
 	| 'reportDialog.tellTheOperator'
+	| 'reportDialog.whatHappened'
 	| 'reportDialog.whatThisIs'
+	| 'reportDialog.yourIdea'
 	| 'rooms.finance.sections'
 	| 'rooms.finance.tabs.bills'
 	| 'rooms.finance.tabs.insights'
@@ -1448,6 +1455,7 @@ export type MessageKey =
 	| 'settings.account.everythingOnThisDeviceAnd'
 	| 'settings.account.everythingThisAccountOwnsAs'
 	| 'settings.account.exportYourData'
+	| 'settings.account.exportsLeft'
 	| 'settings.account.import'
 	| 'settings.account.import.aFileDownloadedFrom'
 	| 'settings.account.import.account'
@@ -1515,8 +1523,6 @@ export type MessageKey =
 	| 'settings.account.weeklyReview'
 	| 'settings.account.whereThisOntoplanoLives'
 	| 'settings.account.whereYouAreSignedIn'
-	| 'settings.account.withWhatLastWeekWas'
-	| 'settings.account.withWhatLastWeekWas2'
 	| 'settings.account.youAreLookingAt'
 	| 'settings.account.youSignInWith'
 	| 'settings.account.yourPassword'
@@ -2372,6 +2378,7 @@ export type MessageKey =
 	| 'welcome.quickStepsAllOfIt'
 	| 'welcome.skipILlSetThis'
 	| 'welcome.startPlanning'
+	| 'welcome.stepNumber'
 	| 'welcome.stepOf'
 	| 'welcome.thisTokenGivesTheAi'
 	| 'welcome.welcomeToOntoplano'
@@ -2438,6 +2445,8 @@ export interface MessageValuesFor {
 	'finance.rules.stopsClaimingTheLineIt': { matches: string | number; s: string | number };
 	'finance.rules.uncategorized': { unsorted: string | number };
 	'gallery.delete': { name: string | number };
+	'gallery.id.alsoIn': { albums: string | number };
+	'gallery.id.itStaysIn': { albums: string | number };
 	'gallery.id.whatIsInside': { name: string | number; show: string | number };
 	'gallery.inside': { albums: string | number; length: string | number };
 	'gallery.letsGoOfItsPictures': { count: number };
@@ -2476,11 +2485,13 @@ export interface MessageValuesFor {
 	'health.recipes.missing': { ingredients: string | number; missing: string | number };
 	'health.recipes.putOnADay': { title: string | number };
 	'health.recipes.serves2': { servings: string | number };
+	'health.workouts.aboutMinutes': { minutes: string | number };
 	'health.workouts.archive': { title: string | number };
 	'health.workouts.archived': { length: string | number };
 	'health.workouts.correctTheSessionOn': { doneOn: string | number };
 	'health.workouts.delete': { title: string | number };
 	'health.workouts.edit': { title: string | number };
+	'health.workouts.lastDone': { date: string | number };
 	'health.workouts.markDone': { title: string | number };
 	'health.workouts.moveDown': { activity: string | number };
 	'health.workouts.moveUp': { activity: string | number };
@@ -2512,6 +2523,7 @@ export interface MessageValuesFor {
 	'inventory.bought': { show: string | number };
 	'inventory.delete': { name: string | number };
 	'inventory.edit': { name: string | number };
+	'inventory.fold': { place: string | number };
 	'inventory.hereAndYou': {
 		idealQty: string | number;
 		name: string | number;
@@ -2526,6 +2538,7 @@ export interface MessageValuesFor {
 	'inventory.rename': { name: string | number };
 	'inventory.renameOrMove2': { name: string | number };
 	'inventory.restock2': { replenish: string | number };
+	'inventory.showWhatIsIn': { place: string | number };
 	'inventory.showWhatYouAlreadyHave': { bought: string | number };
 	'inventory.showWhatYouPutAway': { snoozed: string | number };
 	'inventory.wishlist2': { someday: string | number };
@@ -2595,7 +2608,10 @@ export interface MessageValuesFor {
 	'reminders.whatTimeItShouldGo': { dayStart: string | number };
 	'search.for': { q: string | number; results: string | number; total: string | number };
 	'search.nothingMatches': { q: string | number };
+	'settings.account.exportsLeft': { count: number; remaining: string | number };
 	'settings.account.noExportsLeftToday': { allowed: string | number; unlocksIn: string | number };
+	'settings.account.offTurnItOnAnd': { hour: string | number };
+	'settings.account.oneMessageOnAMonday': { hour: string | number };
 	'settings.billing.aMonth': { currency: string | number };
 	'settings.billing.cardNowNothingChargedToday': { trialDays: string | number };
 	'settings.billing.familyAccounts': { seats: string | number };
@@ -2656,6 +2672,7 @@ export interface MessageValuesFor {
 	'tasks.review.undoTheAnswerFor': { title: string | number };
 	'tasks.review.week': { number: string | number; year: string | number };
 	'welcome.ofOnThePlanner': { length: string | number; size: string | number };
+	'welcome.stepNumber': { number: string | number; title: string | number };
 	'welcome.stepOf': { length: string | number; step: string | number };
 }
 

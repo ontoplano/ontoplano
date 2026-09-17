@@ -516,18 +516,30 @@
 			.map((node) => node.id)
 			.filter((id) => !insideAFold(id))
 			.filter((id) => byLocation.has(id) || (folded.has(id) && held(id) > 0))
-			.map((id) => ({
-				id,
-				label: locationPaths.get(id) ?? 'Somewhere',
-				folded: folded.has(id),
-				held: held(id),
-				categories: folded.has(id) ? [] : byCategory(byLocation.get(id) ?? [])
-			}));
+			.map(
+				(
+					id
+				): {
+					id: number;
+					label: string | null;
+					folded: boolean;
+					held: number;
+					categories: ReturnType<typeof byCategory>;
+				} => ({
+					id,
+					label: locationPaths.get(id) ?? null,
+					folded: folded.has(id),
+					held: held(id),
+					categories: folded.has(id) ? [] : byCategory(byLocation.get(id) ?? [])
+				})
+			);
 
 		if (byLocation.has(0)) {
 			groups.push({
 				id: 0,
-				label: 'app.notFiledAnywhere',
+				// The one group the app names itself; the rest are the person's
+				// own locations, which are never translated.
+				label: null,
 				folded: false,
 				held: byLocation.get(0)?.length ?? 0,
 				categories: byCategory(byLocation.get(0) ?? [])
@@ -1343,15 +1355,17 @@
 								<h3 class="mt-4 mb-2 flex items-center gap-2 text-sm text-gray-700 first:mt-0">
 									{#if place.id === 0}
 										<Icon name="shopping" class="size-4 shrink-0 text-gray-400" />
-										<span class="font-medium">{place.label}</span>
+										<span class="font-medium">{place.label ?? t('app.notFiledAnywhere')}</span>
 									{:else}
 										<button
 											type="button"
 											class="flex items-center gap-2 text-left transition hover:text-gray-900"
 											aria-expanded={!place.folded}
 											title={place.folded
-												? `Show what is in ${place.label}`
-												: `Fold ${place.label}`}
+												? t('inventory.showWhatIsIn', {
+														place: place.label ?? t('app.notFiledAnywhere')
+													})
+												: t('inventory.fold', { place: place.label ?? t('app.notFiledAnywhere') })}
 											onclick={() => toggleFold(place.id)}
 										>
 											<Icon
@@ -1360,7 +1374,7 @@
 													? '-rotate-90'
 													: ''}"
 											/>
-											<span class="font-medium">{place.label}</span>
+											<span class="font-medium">{place.label ?? t('app.notFiledAnywhere')}</span>
 											{#if place.folded}
 												<span class="tabular text-xs text-gray-500">{place.held}</span>
 											{/if}

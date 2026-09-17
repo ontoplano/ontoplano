@@ -359,11 +359,12 @@
 			{/if}
 			{#if viewing.albums.length > 1}
 				<p class="text-xs text-gray-500">
-					{t('gallery.id.alsoIn')}
-					{viewing.albums
-						.filter((a) => a.id !== data.album.id)
-						.map((a) => a.name)
-						.join(', ')}
+					{t('gallery.id.alsoIn', {
+						albums: viewing.albums
+							.filter((a) => a.id !== data.album.id)
+							.map((a) => a.name)
+							.join(', ')
+					})}
 				</p>
 			{/if}
 		</div>
@@ -392,11 +393,12 @@
 	{#if confirmingRemove}
 		<p class="text-sm text-gray-600">
 			{#if confirmingRemove.albums.length > 1}
-				{t('gallery.id.itStaysIn')}
-				{confirmingRemove.albums
-					.filter((a) => a.id !== data.album.id)
-					.map((a) => a.name)
-					.join(', ')}.
+				{t('gallery.id.itStaysIn', {
+					albums: confirmingRemove.albums
+						.filter((a) => a.id !== data.album.id)
+						.map((a) => a.name)
+						.join(', ')
+				})}
 			{:else}
 				{t('gallery.id.thisIsItsOnlyAlbum')}
 			{/if}

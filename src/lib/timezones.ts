@@ -58,6 +58,15 @@ function regionOf(id: string): string {
  * `GMT-3`, which is the answer, and the minus is replaced with a real one
  * because a hyphen beside a number reads as a hyphen.
  */
+/**
+ * The offset a zone on UTC shows.
+ *
+ * Not a message: every other heading in this list is `GMT−3` or `GMT+5:30`,
+ * computed from the zone itself, and the one at zero has to read like the rest
+ * of them. It is the same three letters in every language.
+ */
+const GMT_ZERO = 'GMT+0';
+
 function offsetOf(id: string, at: Date): { label: string; minutes: number } {
 	let raw: string;
 	try {
@@ -66,14 +75,14 @@ function offsetOf(id: string, at: Date): { label: string; minutes: number } {
 				.formatToParts(at)
 				.find((p) => p.type === 'timeZoneName')?.value ?? 'GMT';
 	} catch {
-		return { label: 'app.gmt0', minutes: 0 };
+		return { label: GMT_ZERO, minutes: 0 };
 	}
 
 	// No sign and no number is the zero offset — `shortOffset` writes it as a
 	// bare "GMT", which in a column of GMT−3, GMT−2, …, GMT+1 is the one
 	// heading that does not say where it sits.
 	const match = /GMT([+-])(\d{1,2})(?::(\d{2}))?/.exec(raw);
-	if (!match) return { label: 'app.gmt0', minutes: 0 };
+	if (!match) return { label: GMT_ZERO, minutes: 0 };
 
 	const sign = match[1] === '-' ? -1 : 1;
 	const minutes = sign * (Number(match[2]) * 60 + Number(match[3] ?? 0));
@@ -81,7 +90,7 @@ function offsetOf(id: string, at: Date): { label: string; minutes: number } {
 	// Zero reads as a bare "GMT" out of Intl, which in a column of GMT−3, GMT−2,
 	// GMT, GMT+1 is the one heading that does not say where it sits. It is the
 	// middle of the list and it should look like it.
-	if (minutes === 0) return { label: 'app.gmt0', minutes };
+	if (minutes === 0) return { label: GMT_ZERO, minutes };
 
 	return { label: raw.replace('-', '−'), minutes };
 }

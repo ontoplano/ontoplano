@@ -262,15 +262,11 @@
 			{/snippet}
 			<p class="text-sm text-gray-500">
 				{#if data.weeklyReviewMail}
-					{t('settings.account.oneMessageOnAMonday')}
-					{data.weeklyReviewHour}
-					{t('settings.account.withWhatLastWeekWas')}
+					{t('settings.account.oneMessageOnAMonday', { hour: data.weeklyReviewHour })}
 				{:else}
 					<!-- Off is the default: mail nobody asked for is spam however useful
 					     it is. What it would be is said here, not after it arrives. -->
-					{t('settings.account.offTurnItOnAnd')}
-					{data.weeklyReviewHour}
-					{t('settings.account.withWhatLastWeekWas2')}
+					{t('settings.account.offTurnItOnAnd', { hour: data.weeklyReviewHour })}
 				{/if}
 				{#if !data.emailConfigured}
 					<span class="block">{t('settings.account.thisInstanceHasNoMail')}</span>
@@ -573,11 +569,10 @@
 			</p>
 		{:else}
 			<p class="mt-2 text-sm {data.exports.remaining === 1 ? 'text-amber-700' : 'text-gray-500'}">
-				{data.exports.remaining}
-				{t('settings.account.of')}
-				{data.exports.allowed}
-				{data.exports.allowed === 1 ? 'export' : 'exports'}
-				{t('settings.account.leftToday')}
+				{t('settings.account.exportsLeft', {
+					count: data.exports.allowed,
+					remaining: data.exports.remaining
+				})}
 				{#if data.exports.unlocksIn}
 					{t('settings.account.theAllowanceResets')} {data.exports.unlocksIn}.
 				{/if}

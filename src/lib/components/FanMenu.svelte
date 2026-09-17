@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Icon, { type IconName } from '$lib/components/Icon.svelte';
 	import { useT } from '$lib/i18n';
+	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
 
@@ -27,7 +28,7 @@
 	 * nothing can be, and that empty half is the way out of the gesture. Drag
 	 * up, think better of it, come back down, let go, nothing happens.
 	 */
-	export type Petal = { key: string; label: string; icon: IconName };
+	export type Petal = { key: string; label: PlainKey; icon: IconName };
 
 	let {
 		items,
@@ -392,7 +393,7 @@
 					STAGGER_MS}ms; --bloom: {BLOOM_MS}ms; --size: {PETAL}px"
 				onpointerenter={() => !blooming && (active = i + 1)}
 				onclick={() => afterOpening(() => onselect(item.key))}
-				aria-label={item.label}
+				aria-label={t(item.label)}
 			>
 				<Icon name={item.icon} size={22} />
 			</button>
@@ -409,7 +410,7 @@
 				centre.y}px; --delay: 0ms; --leave-delay: 0ms; --bloom: {BLOOM_MS}ms; --size: {MIDDLE}px"
 			onpointerenter={() => !blooming && (active = 0)}
 			onclick={() => afterOpening(() => onselect(heart.key))}
-			aria-label={heart.label}
+			aria-label={t(heart.label)}
 		>
 			<Icon name={heart.icon} size={30} />
 		</button>
@@ -423,7 +424,7 @@
 			style="top: {Math.max(centre.y - LABEL_RISE, MARGIN)}px"
 			aria-live="polite"
 		>
-			<span>{active >= 0 ? items[active].label : ''}</span>
+			<span>{active >= 0 ? t(items[active].label) : ''}</span>
 		</div>
 	</div>
 {/if}

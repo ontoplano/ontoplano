@@ -158,7 +158,7 @@
 			},
 			{
 				key: 'tutorial',
-				label: hasTutorial(page.url.pathname) ? 'Show me around' : 'No tour for this screen',
+				label: hasTutorial(page.url.pathname) ? 'fan.showMeAround' : 'fan.noTourForThisScreen',
 				icon: 'help'
 			}
 		];

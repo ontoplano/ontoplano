@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import Modal from '$lib/components/Modal.svelte';
 	import { useT } from '$lib/i18n';
+	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
 
@@ -37,7 +38,7 @@
 	 * "the board should scroll the other way" want reading together and
 	 * sorting apart.
 	 */
-	const KINDS = [
+	const KINDS: { key: 'report' | 'suggestion'; label: PlainKey; hint: PlainKey }[] = [
 		{
 			key: 'report' as const,
 			label: 'app.somethingIsWrong',
@@ -106,14 +107,14 @@
 		<div class="seg mb-3" role="group" aria-label={t('reportDialog.whatThisIs')}>
 			{#each KINDS as k (k.key)}
 				<button type="button" onclick={() => (kind = k.key)} aria-pressed={kind === k.key}>
-					{k.label}
+					{t(k.label)}
 				</button>
 			{/each}
 		</div>
 
 		<label class="block">
 			<span class="eyebrow text-gray-600">
-				{kind === 'suggestion' ? 'Your idea' : 'What happened'}
+				{kind === 'suggestion' ? t('reportDialog.yourIdea') : t('reportDialog.whatHappened')}
 			</span>
 			<textarea
 				bind:value={text}

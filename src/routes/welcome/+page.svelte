@@ -214,8 +214,8 @@ at a time, and show me what you will write before writing it.`
 								onclick={() => go(i)}
 								disabled={i > step}
 								aria-current={i === step ? 'step' : undefined}
-								aria-label="{i + 1}. {s.title}"
-								title={s.title}
+								aria-label={t('welcome.stepNumber', { number: i + 1, title: t(s.title) })}
+								title={t(s.title)}
 								class="block h-2 w-8 rounded-full transition-colors {i === step
 									? 'bg-gray-900'
 									: i < step
@@ -233,7 +233,7 @@ at a time, and show me what you will write before writing it.`
 			<div bind:this={panel} class="border border-gray-200 bg-white p-6 shadow-card">
 				{#each STEPS as s, i (s.key)}
 					<section hidden={stepping && i !== step} class:mt-8={!stepping && i > 0}>
-						<h2 class="text-base font-semibold text-gray-900">{s.title}</h2>
+						<h2 class="text-base font-semibold text-gray-900">{t(s.title)}</h2>
 						<p class="mt-1 text-sm text-gray-500">{t(s.hint)}</p>
 
 						<div class="mt-4">

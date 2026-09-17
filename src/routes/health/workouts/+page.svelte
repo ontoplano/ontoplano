@@ -269,9 +269,12 @@
 							{workout.title}
 						</span>
 						<span class="block text-xs text-gray-500">
-							{workout.categoryName ?? t('health.workouts.noCategory2')}{#if workout.minutes}, ~{workout.minutes}
-								{t('health.workouts.min')}{/if}{#if workout.lastDoneAt}
-								{t('health.workouts.nbspLastDone')} {workout.lastDoneAt.slice(0, 10)}{/if}
+							{workout.categoryName ?? t('health.workouts.noCategory2')}{#if workout.minutes}{t(
+									'health.workouts.aboutMinutes',
+									{ minutes: workout.minutes }
+								)}{/if}{#if workout.lastDoneAt}{t('health.workouts.lastDone', {
+									date: workout.lastDoneAt.slice(0, 10)
+								})}{/if}
 						</span>
 					</button>
 
