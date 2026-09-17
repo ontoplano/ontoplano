@@ -30,7 +30,15 @@
  * Output goes to `fdroid-out/`, which is ignored. Nothing here is committed.
  */
 import { execFileSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+	cpSync,
+	existsSync,
+	mkdirSync,
+	readdirSync,
+	readFileSync,
+	rmSync,
+	writeFileSync
+} from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -217,23 +225,47 @@ if (FROM) {
  *
  * `metadata/android/<lang>/images/…` is five folders deep and is nobody's idea
  * of a place to browse, so it is not kept that way: the marketing repository
- * holds `store/text/` for the words, `store/fdroid/` for the screenshots
- * without captions, and `store/play/` for the banner and the icon the two
- * stores share. This is where those become the tree to copy into a
+ * holds `store/play/<lang>/` for the words, `store/fdroid/` for the
+ * screenshots without captions, and `store/play/` for the banner and the icon
+ * the two stores share. This is where those become the tree to copy into a
  * `fdroiddata` fork — a generated thing, so there is no fourth copy for
  * somebody to update and forget.
  */
 const STORE = join(ROOT, 'ontoplano-marketing', 'store');
+const PLAY = join(STORE, 'play');
 const listingOut = join(OUT, 'metadata', PACKAGE);
 let listed = false;
 
-if (existsSync(join(STORE, 'text'))) {
+/*
+ * A language folder under `store/play/` holds words and pictures both, and
+ * only the words belong here.
+ *
+ * Play takes captioned screenshots and F-Droid takes plain ones, so that
+ * folder's `phoneScreenshots/` and the rest are Play's — copying them in
+ * would put a caption in the one listing that explicitly does not want one.
+ * `captions.json` is the words those captions are made of, which is Play's
+ * business too.
+ */
+const WORDS = ['title.txt', 'short_description.txt', 'full_description.txt'];
+
+if (existsSync(PLAY)) {
 	// Written fresh every run: a listing assembled on top of the last one keeps
 	// a screenshot that has since been dropped, and nobody would notice.
 	rmSync(listingOut, { recursive: true, force: true });
 
 	// The words, one directory per language, exactly as they are written.
-	cpSync(join(STORE, 'text'), listingOut, { recursive: true });
+	for (const lang of readdirSync(PLAY, { withFileTypes: true })) {
+		if (!lang.isDirectory()) continue;
+		const from = join(PLAY, lang.name);
+		const to = join(listingOut, lang.name);
+		mkdirSync(to, { recursive: true });
+		for (const file of WORDS) {
+			if (existsSync(join(from, file))) cpSync(join(from, file), join(to, file));
+		}
+		if (existsSync(join(from, 'changelogs'))) {
+			cpSync(join(from, 'changelogs'), join(to, 'changelogs'), { recursive: true });
+		}
+	}
 
 	/*
 	 * And the pictures, into the language F-Droid shows by default.
@@ -249,7 +281,7 @@ if (existsSync(join(STORE, 'text'))) {
 		if (existsSync(from)) cpSync(from, join(images, size), { recursive: true });
 	}
 	for (const file of ['featureGraphic.png', 'icon.png']) {
-		const from = join(STORE, 'play', file);
+		const from = join(PLAY, file);
 		if (existsSync(from)) cpSync(from, join(images, file));
 	}
 
