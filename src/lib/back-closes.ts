@@ -14,9 +14,9 @@ import { page } from '$app/state';
  * Three duties, one owner each:
  *
  *   - `claim()` when the screen opens: push the entry, marked as ours.
- *   - `watch()` from an `$effect`: when the mark has gone from `page.state`,
- *     the back gesture fired — close the screen. Reading `page.state` is what
- *     subscribes the effect.
+ *   - `watch()` from an `$effect`: when the mark has gone from the history
+ *     entry, the back gesture fired — close the screen. Reading `page.state`
+ *     is what subscribes the effect.
  *   - `release()` when the screen closes by its own controls — the back
  *     arrow, Escape, a saved form: take the entry back out with
  *     `history.back()`, so the next real back press leaves the page, not a
@@ -25,6 +25,23 @@ import { page } from '$app/state';
  * Each mark is unique, so two screens in one session can never mistake the
  * other's entry for their own.
  */
+
+/**
+ * Where SvelteKit keeps a history entry's shallow state.
+ *
+ * `page.state` is its copy of that, and the copy is thrown away by things that
+ * are not a way back: every `invalidate` resets it to nothing, which is how
+ * any screen reloads the shell's data. So the entry itself is what gets asked
+ * whether the mark is still there — the browser's history is the authority for
+ * a question about the browser's history.
+ */
+const HISTORY_STATE = 'sveltekit:states';
+
+/** The mark on the entry the browser is actually sitting on, if any. */
+function markInHistory(): number | undefined {
+	const states = (history.state ?? {})[HISTORY_STATE] as App.PageState | undefined;
+	return states?.backCloses;
+}
 
 let nextMark = 0;
 
@@ -49,15 +66,24 @@ export class BackCloses {
 		// subscribe to nothing and the effect would never fire again.
 		const current = page.state.backCloses;
 		if (this.#mark === null) return;
-		if (current !== this.#mark) {
-			this.#mark = null;
-			this.#onback();
-		}
+		if (current === this.#mark) return;
+		/*
+		 * Gone from `page.state` is not gone.
+		 *
+		 * `invalidateAll()` resets that state and moves no history at all. The
+		 * list of notifications marks itself read as it opens, which reloads the
+		 * shell — and that read exactly like a back press, so on a phone the list
+		 * closed itself in the frame it appeared in, every time there was
+		 * something unread in it to open it for.
+		 */
+		if (markInHistory() === this.#mark) return;
+		this.#mark = null;
+		this.#onback();
 	}
 
 	release(): void {
 		if (this.#mark === null) return;
-		const ours = page.state.backCloses === this.#mark;
+		const ours = markInHistory() === this.#mark;
 		this.#mark = null;
 		if (ours) history.back();
 	}
