@@ -23,7 +23,8 @@
 		slidesHere,
 		stopHiding
 	} from '$lib/slide';
-	import { MARK_CLIP_PATH, MARK_FIELD, MARK_FIELD_LIFTED } from '$lib/logo/mark-shape';
+	import { MARK_CLIP_PATH, MARK_FIELD } from '$lib/logo/mark-shape';
+	import { MARK_FIELD_ISOLATED } from '$lib/logo/brand';
 	import { CHOOSE_PATH, inPhoneApp, storedChoice } from '$lib/instance-choice';
 	import { handOverRingerKey } from '$lib/ringer-handshake';
 	import { THEMES } from '$lib/theme.js';
@@ -142,8 +143,8 @@
 
 	/** This app is its own instance: no account, and leaving means choosing another. */
 	const onDevice = $derived(isIsolatedBuild());
-	/** The bar's colour: the mark's own dark, lifted to match a lifted mark. */
-	const barField = $derived(onDevice ? MARK_FIELD_LIFTED : MARK_FIELD);
+	/** The bar's colour: the field the mark is wearing, so the two run together. */
+	const barField = $derived(onDevice ? MARK_FIELD_ISOLATED : MARK_FIELD);
 	let menuOpen = $state(false);
 	let pie = $state<CapturePie | undefined>();
 	let rooms = $state<NavPie | undefined>();

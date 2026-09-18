@@ -15,9 +15,9 @@
 
 <script lang="ts">
 	import mark from '$lib/logo/mark.png';
-	import liftedMark from '$lib/logo/mark-lifted.png';
-	import { MARK_FIELD, MARK_FIELD_LIFTED } from '$lib/logo/mark-shape';
-	import { MARK_DRAINED } from '$lib/logo/brand';
+	import isolatedMark from '$lib/logo/mark-isolated.png';
+	import { MARK_FIELD } from '$lib/logo/mark-shape';
+	import { MARK_FIELD_ISOLATED } from '$lib/logo/brand';
 	import { markPath, markPoints } from '$lib/logo/mark-geometry';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
 	import Icon, { type IconName } from '$lib/components/Icon.svelte';
@@ -216,7 +216,7 @@
 	 * outline in the dark one — a second bright shape competing with the mark
 	 * in the middle.
 	 */
-	const EDGE_DARK = $derived(isIsolatedBuild() ? MARK_FIELD_LIFTED : MARK_FIELD);
+	const EDGE_DARK = $derived(isIsolatedBuild() ? MARK_FIELD_ISOLATED : MARK_FIELD);
 
 	/**
 	 * A circle, as a path, for a clip that also holds the mark's outline.
@@ -245,28 +245,19 @@
 	const MEDALLION = $derived(HOLE * MIDDLE_INSET);
 
 	/*
-	 * On the device, the mark in the middle is drained of its colour.
+	 * On the device, the mark in the middle is blue behind the bird.
 	 *
 	 * Somebody can be running both at once — the instance on this phone and the
 	 * one on a server — and the two are the same app to look at, which is a bad
 	 * way to find out which week you have just written into. The main menu is
 	 * where that question gets asked, so it is where the answer is: the same
-	 * mark, nearly black and white, the way the dev and staging icons have said
-	 * "not the ordinary copy" since there were two builds on one phone.
-	 */
-	const drained = $derived(isIsolatedBuild() ? `saturate(${MARK_DRAINED})` : 'none');
-
-	/*
-	 * And the same drawing with its dark lifted, for the same reason.
+	 * mark in all its colours, with the dark field behind the bird painted
+	 * `MARK_FIELD_ISOLATED`.
 	 *
-	 * Draining takes the colour out of the ring and leaves the field as dark as
-	 * it was, which closes the middle of the wheel into a near-black disc. The
-	 * lifted copy is the mark with that field a little nearer white, so the
-	 * wheel on the device reads as the mark with the lights off rather than as
-	 * a hole. The wheel's own dark follows it, or the hole and the mark in it
-	 * would be two different darks.
+	 * The wheel's own dark follows it above, or the hole and the mark sitting in
+	 * it would be two different darks.
 	 */
-	const artwork = $derived(isIsolatedBuild() ? liftedMark : mark);
+	const artwork = $derived(isIsolatedBuild() ? isolatedMark : mark);
 
 	/**
 	 * Where a wedge starts, which is inside the hole rather than at its edge.
@@ -873,7 +864,7 @@
 							y={-MEDALLION}
 							width={MEDALLION * 2}
 							height={MEDALLION * 2}
-							style="pointer-events: none; filter: {drained}"
+							style="pointer-events: none"
 						/>
 					{/if}
 				</g>

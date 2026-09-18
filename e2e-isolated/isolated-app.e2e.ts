@@ -425,15 +425,15 @@ test('an endpoint that answers with no content is answered, not thrown', async (
  *
  * Somebody can be running both — the instance on this device and one on a
  * server — and they are the same app to look at, which is a bad way to find
- * out which week you have just written into. The mark in the middle of the
- * wheel is drained of its colour here, the way the dev and staging icons have
- * said "not the ordinary copy" since there were two builds on one phone.
+ * out which week you have just written into. The mark keeps all its colour
+ * here and changes the field behind the bird, which `yarn icons` repaints into
+ * `mark-isolated.png`.
  *
- * The filter and nothing else: the mark is the artwork with its colour turned
- * down, not a second drawing that would drift from it the day the logo is
+ * The derived artwork and nothing else: it is the same drawing with one colour
+ * swapped, not a second drawing that would drift from it the day the logo is
  * replaced.
  */
-test('the main menu’s mark is drained of colour on the device', async ({ page }) => {
+test('the main menu’s mark wears the device’s own field', async ({ page }) => {
 	test.setTimeout(120_000);
 	await page.goto('/tasks/todo');
 
@@ -443,18 +443,18 @@ test('the main menu’s mark is drained of colour on the device', async ({ page 
 	/*
 	 * The handle first, because that is the menu when it is shut.
 	 *
-	 * Draining only the open wheel left the bar in full colour, so the app
-	 * looked like the ordinary one until you pressed and held it — and the mark
-	 * changed colour on its way up, which makes one object look like two.
+	 * Marking only the open wheel left the bar as the ordinary one until you
+	 * pressed and held it — and a mark that changes colour on its way up makes
+	 * one object look like two.
 	 */
 	await expect
 		.poll(() =>
 			handle
 				.locator('img')
 				.first()
-				.evaluate((el) => getComputedStyle(el).filter)
+				.evaluate((el) => (el as HTMLImageElement).currentSrc)
 		)
-		.toMatch(/saturate/);
+		.toMatch(/mark-isolated/);
 
 	const box = await handle.boundingBox();
 	if (!box) throw new Error('the menu has no handle to press');
@@ -463,7 +463,9 @@ test('the main menu’s mark is drained of colour on the device', async ({ page 
 
 	const mark = page.locator('.pie-mark image').first();
 	await expect(mark).toBeVisible();
-	await expect.poll(() => mark.evaluate((el) => getComputedStyle(el).filter)).toMatch(/saturate/);
+	await expect
+		.poll(() => mark.evaluate((el) => el.getAttribute('href') ?? el.getAttribute('xlink:href')))
+		.toMatch(/mark-isolated/);
 
 	await page.mouse.up();
 });

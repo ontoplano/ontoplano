@@ -122,6 +122,26 @@ export const SOLID_SCALE = 0.82;
 export const MARK_DRAINED = 0.15;
 
 /**
+ * The field the instance that runs on the device itself wears.
+ *
+ * Two copies of this app can be open at once — the one on a server and the one
+ * that is this phone — and they must not be the same picture, or the wrong week
+ * gets written into. The device's copy used to say so by being drained of its
+ * colour, and that read as the app with its lights off rather than as a
+ * different instance. So it keeps every colour it has and changes the one thing
+ * behind them: the dark field between the medallion and the ring is this blue
+ * instead of the mark's own near-black.
+ *
+ * A colour rather than an operation on the artwork's own, unlike `MARK_DRAINED`
+ * and `MARK_FIELD_LIFT`: it is a decision about what the device's mark looks
+ * like, and no arithmetic on the near-black arrives at it. `yarn icons` repaints
+ * the field with it into `mark-isolated.png`, and the app paints the phone bar
+ * and the wheel's own dark to match, so the mark's field flows into them there
+ * exactly as it does everywhere else.
+ */
+export const MARK_FIELD_ISOLATED = '#1f215d';
+
+/**
  * How far the mark's own dark is lifted for that same copy.
  *
  * Draining takes the colour out of the ring and leaves the field exactly as

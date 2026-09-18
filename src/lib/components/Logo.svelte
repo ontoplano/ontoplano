@@ -12,8 +12,8 @@
 	 */
 	import mark from '$lib/logo/mark.png';
 	import hollowMark from '$lib/logo/mark-hollow.png';
-	import liftedMark from '$lib/logo/mark-lifted.png';
-	import { MARK_DRAINED } from '$lib/logo/brand';
+	import isolatedMark from '$lib/logo/mark-isolated.png';
+	import { MARK_FIELD_ISOLATED } from '$lib/logo/brand';
 	import { MARK_TURN_HOLE_RADIUS, MARK_TURN_RADIUS } from '$lib/logo/mark-geometry';
 	import { MARK_FIELD } from '$lib/logo/mark-shape';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
@@ -66,11 +66,12 @@
 		 * Left alone it answers for the build it is in, which is right
 		 * everywhere the mark IS this app. The instance chooser is the one
 		 * place it is not: there the mark stands for the instance being
-		 * offered, and the page has to be able to drain it for the phone's own
-		 * copy and leave it in colour for one behind a server — in a single
-		 * build, with nothing about it moving as the answer changes.
+		 * offered, and the page has to be able to give it the device's blue
+		 * field for the phone's own copy and the ordinary dark for one behind a
+		 * server — in a single build, with nothing about it moving as the answer
+		 * changes.
 		 */
-		drained: saysDrained = undefined,
+		device: saysDevice = undefined,
 		/**
 		 * Let whatever is behind show through the mark's own field.
 		 *
@@ -96,7 +97,7 @@
 		size?: number;
 		fill?: boolean;
 		background?: boolean;
-		drained?: boolean;
+		device?: boolean;
 		hollow?: boolean;
 		label?: string;
 		element?: HTMLElement;
@@ -104,30 +105,25 @@
 	} = $props();
 
 	/*
-	 * Drained of colour on the device, in full colour everywhere else.
+	 * Blue behind the bird on the device, the mark's own dark everywhere else.
 	 *
 	 * The mark in the bar is the handle of the main menu and the mark in the
 	 * middle of the wheel is the same drawing: it rises out of one and lands in
-	 * the other, so colour on the button and none in the wheel is one object
-	 * changing colour in flight. Both are drained, and only in the build that
-	 * runs on the device — a copy behind a server is untouched by this, so
-	 * somebody running both can tell at a glance which one they are writing
-	 * into.
-	 */
-	const secondary = $derived(saysDrained ?? isIsolatedBuild());
-	const drained = $derived(secondary ? `saturate(${MARK_DRAINED})` : 'none');
-
-	/*
-	 * And on the lifted artwork while it is at it.
+	 * the other, so two different fields between them would read as two objects.
+	 * Both wear it, and only in the build that runs on the device — a copy
+	 * behind a server is untouched, so somebody running both can tell at a
+	 * glance which one they are writing into.
 	 *
-	 * Draining alone leaves the mark's own dark exactly as dark as it was, which
-	 * turns a mark whose middle is mostly field into a near-black disc with a
-	 * grey edge — at the size the bar and a launcher draw it, unreadable. The
-	 * lifted copy (`yarn icons` derives it) is the same drawing with that field
-	 * a little nearer white. The hollow copy has no field to lift: there the
-	 * page is what shows through, which is the point of it.
+	 * It was the drained mark until this, which read as the app with its lights
+	 * off rather than as another instance. `mark-isolated.png` (`yarn icons`
+	 * derives it) is the same drawing in full colour with that field painted
+	 * `MARK_FIELD_ISOLATED`. The hollow copy has no field at all: there the page
+	 * is what shows through, which is the point of it.
 	 */
-	const artwork = $derived(hollow ? hollowMark : secondary ? liftedMark : mark);
+	const secondary = $derived(saysDevice ?? isIsolatedBuild());
+	const artwork = $derived(hollow ? hollowMark : secondary ? isolatedMark : mark);
+	/** The ground behind the mark, which is whichever field it is wearing. */
+	const field = $derived(secondary ? MARK_FIELD_ISOLATED : MARK_FIELD);
 </script>
 
 <span
@@ -136,7 +132,7 @@
 		? 'h-full w-full'
 		: ''} {klass}"
 	style="{fill ? '' : `width: ${size}px; height: ${size}px;`} {background
-		? `background: ${MARK_FIELD}`
+		? `background: ${field}`
 		: ''}"
 	role={label ? 'img' : 'presentation'}
 	aria-label={label || undefined}
@@ -147,15 +143,9 @@
 		alt=""
 		width={fill ? undefined : size}
 		height={fill ? undefined : size}
-		style="filter: {drained}; -webkit-mask-image: {TURN_HOLE}; mask-image: {TURN_HOLE}"
+		style="-webkit-mask-image: {TURN_HOLE}; mask-image: {TURN_HOLE}"
 	/>
-	<img
-		class="mark-turn"
-		src={artwork}
-		alt=""
-		aria-hidden="true"
-		style="clip-path: {TURN_CLIP}; filter: {drained}"
-	/>
+	<img class="mark-turn" src={artwork} alt="" aria-hidden="true" style="clip-path: {TURN_CLIP}" />
 </span>
 
 <style>

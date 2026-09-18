@@ -125,8 +125,11 @@ const NOTIFICATION_ICON = 'ic_stat_ontoplano';
  * black-and-white version of it would be the same picture.
  *
  * The accent is the one colour the system does take, so it carries the
- * difference the two already wear on the home screen: the ordinary blue, or
- * the same blue with the lights off. See `MARK_DRAINED`.
+ * difference: the ordinary blue, or the same blue with the lights off. The
+ * mark inside the app says it another way — the device's copy wears a blue
+ * field, `MARK_FIELD_ISOLATED` — and this stays a version of the accent
+ * rather than that colour, because a navy this dark is nearly black in a
+ * notification shade. See `MARK_DRAINED`.
  */
 const accent = () => (isIsolated() ? NOTIFICATION_ACCENT_ISOLATED : NOTIFICATION_ACCENT);
 

@@ -388,11 +388,11 @@
 	<!--
 		The mark, standing for whichever instance is being chosen.
 
-		The same drawing either way, and the colour is the answer: full for one
-		behind a server, drained for the copy this phone would carry — which is
-		what the device's own bar and its launcher icon already say, so somebody
-		meets the distinction here and recognises it later. Nothing moves when
-		the choice changes; only the colour does.
+		The same drawing either way, and the field behind the bird is the answer:
+		the mark's own dark for one behind a server, blue for the copy this phone
+		would carry — which is what the device's own bar and its wheel already
+		say, so somebody meets the distinction here and recognises it later.
+		Nothing moves when the choice changes; only that colour does.
 
 		And it is in the place the app's own bar mark will be
 		(`--bar-mark-bottom`, measured from the four numbers that put it there),
@@ -405,7 +405,7 @@
 			class="mark-where-the-bar-will-be"
 			bind:element={mark}
 			fill
-			drained={kind === 'phone'}
+			device={kind === 'phone'}
 			hollow
 			label={kind === 'phone'
 				? t('instance.theInstanceOnThisDevice')

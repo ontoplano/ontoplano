@@ -45,6 +45,8 @@ const constant = (name) => {
 };
 /** How much colour a marked-as-not-real icon keeps. The app uses the same. */
 const DRAINED = constant('MARK_DRAINED');
+/** The blue the device's own instance wears where the mark's field is dark. */
+const ISOLATED_FIELD = constant('MARK_FIELD_ISOLATED');
 
 /**
  * The mark's own dark, read from where the app reads it.
@@ -127,7 +129,9 @@ const LIFTED_FIELD = lifted(FIELD, LIFT);
 
 const dataUri = `data:image/png;base64,${mark.toString('base64')}`;
 /** The same drawing with its field lifted, for every icon that is drained. */
-const liftedPng = liftedMark();
+const liftedPng = repaintedMark(LIFTED_FIELD);
+/** And with its field blue, which is what the instance on the device wears. */
+const isolatedPng = repaintedMark(ISOLATED_FIELD);
 const liftedUri = liftedPng
 	? `data:image/png;base64,${Buffer.from(liftedPng).toString('base64')}`
 	: dataUri;
@@ -565,19 +569,21 @@ function hollowMark() {
 }
 
 /*
- * The mark with its field lifted, for the copy that is not the ordinary one.
+ * The mark with its field repainted, for the copies that are not the ordinary
+ * one.
  *
  * The sibling of `hollowMark`, and the same pixels either way: everything
- * outside the middle that is within a hair of the field's colour. One derivation
- * takes the alpha away so the page shows through; this one repaints it a little
- * nearer white, so a drained mark still reads as a drawing at the size a
- * launcher draws it instead of closing up into a dark disc.
+ * outside the middle that is within a hair of the field's colour. That
+ * derivation takes the alpha away so the page shows through; this one gives the
+ * field another colour — a little nearer white for the drained icons, so they
+ * still read as a drawing at the size a launcher draws them instead of closing
+ * up into a dark disc, and the device instance's blue for its own mark.
  *
  * Only the field moves. The ring keeps its colours — draining is what takes
  * those — and anything inside the middle is left alone, or the shading in it
  * would come out blotched.
  */
-function liftedMark() {
+function repaintedMark(to) {
 	let PNG;
 	try {
 		({ PNG } = createRequire(import.meta.url)('pngjs'));
@@ -586,7 +592,7 @@ function liftedMark() {
 	}
 
 	const target = [1, 3, 5].map((i) => parseInt(FIELD.slice(i, i + 2), 16));
-	const to = [1, 3, 5].map((i) => parseInt(LIFTED_FIELD.slice(i, i + 2), 16));
+	const painted = [1, 3, 5].map((i) => parseInt(to.slice(i, i + 2), 16));
 	const png = PNG.sync.read(mark);
 	const { width, height, data } = png;
 	const half = width / 2;
@@ -601,9 +607,9 @@ function liftedMark() {
 				Math.abs(data[i + 1] - target[1]) +
 				Math.abs(data[i + 2] - target[2]);
 			if (off > FIELD_TOLERANCE) continue;
-			data[i] = to[0];
-			data[i + 1] = to[1];
-			data[i + 2] = to[2];
+			data[i] = painted[0];
+			data[i + 1] = painted[1];
+			data[i + 2] = painted[2];
 		}
 	}
 	return PNG.sync.write(png);
@@ -978,6 +984,9 @@ else console.log('  no pngjs — src/lib/logo/mark-hollow.png was left alone');
 
 if (liftedPng) write('src/lib/logo/mark-lifted.png', liftedPng);
 else console.log('  no pngjs — src/lib/logo/mark-lifted.png was left alone');
+
+if (isolatedPng) write('src/lib/logo/mark-isolated.png', isolatedPng);
+else console.log('  no pngjs — src/lib/logo/mark-isolated.png was left alone');
 
 /* After everything, including the two derived rasters — the check used to run
    before them, so a stale `mark-hollow.png` on an otherwise clean tree passed. */

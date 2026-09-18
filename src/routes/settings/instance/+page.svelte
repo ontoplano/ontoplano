@@ -155,8 +155,8 @@
 				Somebody can be running this copy and one behind a server at the
 				same time, and the two are the same app to look at — so the screen
 				that answers "what am I looking at" has to answer that part first.
-				The main menu's mark is drained here for the same reason; this is
-				the sentence behind it.
+				The main menu's mark wears the device's own blue here for the same
+				reason; this is the sentence behind it.
 			-->
 			{#if onDevice}
 				<div>
