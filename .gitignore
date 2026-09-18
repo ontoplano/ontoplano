@@ -45,19 +45,10 @@ android-twa-gapp/
 # tracked anyway. See scripts/check-no-secrets.mjs.
 *.keystore
 *.keystore.pass
+*.pass.*.bak
 *.jks
 *.p12
 *.pfx
-# Signing keys never go in a repository. Play ties an app to its key forever:
-# a leaked key lets someone else ship an update to your users, and a lost one
-# means republishing under a new listing.
-*.keystore
-*.jks
-
-
-# The signing key password lives beside the key; neither belongs in git.
-*.keystore.pass
-*.pass.*.bak
 
 # ── Local only ───────────────────────────────────────────────────────────────
 #
@@ -102,10 +93,6 @@ coverage/
 dist/
 .package-work/
 
-# claude-docker local state (may contain credentials)
-.claude-docker/
-.claude-docker-EMERGENCY-BACKUP-*.tar.gz
-
 # What `make fdroid` writes: the recipe and listing to paste into a fork of
 # fdroiddata, and the two things a person has to post. Regenerated per release,
 # never committed — the copy that matters lives in F-Droid's repository.
@@ -124,8 +111,8 @@ capacitor/node_modules/
 capacitor/android/app/src/*/assets/public/
 scripts/demo-media/birds/
 
-# My queue, for Estevão to read and reorder. The file itself is committed in
-# ontoplano-development; this is the link to it from here.
+# The isolated flavour's SvelteKit output — what /.svelte-kit is to the main
+# build (see svelte.config.js).
 .svelte-kit-isolated/
 
 # The detached site watcher writes here (make dev-site).
@@ -134,5 +121,3 @@ scripts/demo-media/birds/
 # What the icon scripts last drew from, so an unchanged logo is not redrawn.
 .icons-from
 .flavours-from
-
-/claude-plugin/
