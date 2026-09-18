@@ -1585,6 +1585,17 @@
 		"destroys": false,
 		"params": {}
 	},
+	"pin_note": {
+		"scope": "notes:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"put_item": {
 		"scope": "locations:write",
 		"writes": true,
@@ -2084,6 +2095,17 @@
 			},
 			"period": {
 				"type": "string",
+				"required": true
+			}
+		}
+	},
+	"unpin_note": {
+		"scope": "notes:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
 				"required": true
 			}
 		}

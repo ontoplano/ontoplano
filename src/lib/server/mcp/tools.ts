@@ -24,7 +24,7 @@ import { localDateOf, type Ctx } from '$lib/services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 import type { Ref } from './refs.js';
 
-import { archiveEntry, createEntry, listEntries } from '$lib/services/diary.js';
+import { archiveEntry, createEntry, listEntries, pinEntry } from '$lib/services/diary.js';
 import { createActivity, listActivities, updateActivity } from '$lib/services/activities.js';
 import { createHabit, listHabits, updateHabit, HABIT_TYPES } from '$lib/services/habits.js';
 import {
@@ -1373,6 +1373,40 @@ export const TOOLS: Tool[] = [
 		run: (ctx, args) => {
 			const notes = contentsOf(ctx, Number(args.id)).entries;
 			return args.includeArchived ? notes : notes.filter((note) => !note.archivedAt);
+		}
+	},
+	{
+		name: 'pin_note',
+		title: 'Keep a note at the top',
+		description:
+			'Hold a note at the top of its notebook \u2014 the measurements, the account number, the thing the notebook is actually for. As many as the person likes; the most recently pinned leads. `unpin_note` lets one go.',
+		scope: 'notes:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'note' }],
+		input: object(
+			{ id: { type: 'integer', description: 'The note\u2019s id, as `notebook_notes` gives it.' } },
+			['id']
+		),
+		run: (ctx, args) => {
+			pinEntry(ctx, Number(args.id), true);
+			return { ok: true };
+		}
+	},
+	{
+		name: 'unpin_note',
+		title: 'Stop keeping a note at the top',
+		description:
+			'Let a pinned note fall back into its notebook\u2019s own order, where it is read with the rest.',
+		scope: 'notes:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'note' }],
+		input: object(
+			{ id: { type: 'integer', description: 'The note\u2019s id, as `notebook_notes` gives it.' } },
+			['id']
+		),
+		run: (ctx, args) => {
+			pinEntry(ctx, Number(args.id), false);
+			return { ok: true };
 		}
 	},
 	{

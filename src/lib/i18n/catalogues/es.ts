@@ -1432,6 +1432,7 @@ export const messages: Catalogue = {
 	'notebookDetail.deleteThisNote': 'Eliminar esta nota',
 	'notebookDetail.editThisNote': 'Editar esta nota',
 	'notebookDetail.hideArchived': 'Ocultar archivadas',
+	'notebookDetail.keepThisAtTheTop': 'Mantener esta arriba',
 	'notebookDetail.newNote': 'Nueva nota',
 	'notebookDetail.noGoalPointsAtThis': 'Ninguna meta apunta a este cuaderno. No necesita una.',
 	'notebookDetail.nothingChosen': 'Nada elegido',
@@ -1440,6 +1441,7 @@ export const messages: Catalogue = {
 	'notebookDetail.separateWithCommasOrSpaces':
 		'Sepáralos con comas o espacios. Un # al inicio está bien.',
 	'notebookDetail.smallerType': 'Letra más pequeña',
+	'notebookDetail.stopKeepingThisAtThe': 'Dejar de mantenerla arriba',
 	'notebookDetail.tagsPeople': 'Etiquetas, personas',
 	'notebookDetail.takeItBackOut': 'Sacarla de nuevo',
 	'notebookDetail.theWholeScreen': 'Toda la pantalla',

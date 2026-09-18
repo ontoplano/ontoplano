@@ -1406,6 +1406,7 @@ export const messages: Catalogue = {
 	'notebookDetail.deleteThisNote': 'Delete this note',
 	'notebookDetail.editThisNote': 'Edit this note',
 	'notebookDetail.hideArchived': 'Hide archived',
+	'notebookDetail.keepThisAtTheTop': 'Keep this at the top',
 	'notebookDetail.newNote': 'New note',
 	'notebookDetail.noGoalPointsAtThis': 'No goal points at this notebook. It does not need one.',
 	'notebookDetail.nothingChosen': 'Nothing chosen',
@@ -1414,6 +1415,7 @@ export const messages: Catalogue = {
 	'notebookDetail.separateWithCommasOrSpaces':
 		'Separate with commas or spaces. A leading # is fine.',
 	'notebookDetail.smallerType': 'Smaller type',
+	'notebookDetail.stopKeepingThisAtThe': 'Stop keeping this at the top',
 	'notebookDetail.tagsPeople': 'Tags, people',
 	'notebookDetail.takeItBackOut': 'Take it back out',
 	'notebookDetail.theWholeScreen': 'The whole screen',

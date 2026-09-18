@@ -372,6 +372,19 @@ export const diaryEntries = sqliteTable(
 		 * still not things to delete.
 		 */
 		archivedAt: text('archived_at'),
+		/**
+		 * When it was pinned, or null.
+		 *
+		 * A notebook is read oldest first, which is right for a subject being
+		 * worked through and wrong for the two or three notes you come back to
+		 * every time — the measurements, the account number, the thing the
+		 * whole notebook is actually for. Pinned ones sit above the rest.
+		 *
+		 * A moment rather than a flag, so several pinned notes have an order
+		 * among themselves: the most recently pinned leads, which is what
+		 * pinning a fourth one means.
+		 */
+		pinnedAt: text('pinned_at'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),

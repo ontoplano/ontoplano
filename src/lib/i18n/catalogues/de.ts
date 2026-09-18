@@ -1447,6 +1447,7 @@ export const messages: Catalogue = {
 	'notebookDetail.deleteThisNote': 'Diese Notiz löschen',
 	'notebookDetail.editThisNote': 'Diese Notiz bearbeiten',
 	'notebookDetail.hideArchived': 'Archivierte ausblenden',
+	'notebookDetail.keepThisAtTheTop': 'Oben behalten',
 	'notebookDetail.newNote': 'Neue Notiz',
 	'notebookDetail.noGoalPointsAtThis': 'Kein Ziel zeigt auf dieses Notizbuch. Es braucht keines.',
 	'notebookDetail.nothingChosen': 'Nichts ausgewählt',
@@ -1455,6 +1456,7 @@ export const messages: Catalogue = {
 	'notebookDetail.separateWithCommasOrSpaces':
 		'Trennen Sie mit Kommas oder Leerzeichen. Ein vorangestelltes # ist in Ordnung.',
 	'notebookDetail.smallerType': 'Kleinere Schrift',
+	'notebookDetail.stopKeepingThisAtThe': 'Nicht mehr oben behalten',
 	'notebookDetail.tagsPeople': 'Tags, Personen',
 	'notebookDetail.takeItBackOut': 'Wieder herausnehmen',
 	'notebookDetail.theWholeScreen': 'Der ganze Bildschirm',

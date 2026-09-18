@@ -55,6 +55,10 @@ releases mattered.
 - **The block form says which block.** Its header carries the thing's name and
   the category it is in, as a pill in that category's own colour; a category
   block has no name of its own, so that line is a dash.
+- **Notes in a notebook can be kept at the top.** As many as you like: the
+  measurements, the account number, the thing the notebook is actually for.
+  Pinned ones sit above the rest — most recently pinned first — and are marked
+  rather than merely moved. An assistant can pin one too.
 - **A note on a block is optional in every mode**, and the field no longer
   changes shape when you change the mode. A category block with nothing
   written on it draws as its category, which is what it is.

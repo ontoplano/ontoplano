@@ -1326,6 +1326,24 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
+	 * A row that is being held at the top of its list.
+	 *
+	 * Sorting alone stops saying anything once there are three of them above a
+	 * long notebook — they read as the oldest notes, which is what the top of a
+	 * notebook usually means. A wash of the room's accent and a spine down the
+	 * side, the same two marks the app uses everywhere else for "this one".
+	 */
+	.is-pinned {
+		border-left: 3px solid
+			color-mix(in srgb, var(--section-accent, var(--color-gray-400)) 70%, transparent);
+		background-color: color-mix(
+			in srgb,
+			var(--section-accent, var(--color-gray-400)) 7%,
+			transparent
+		);
+	}
+
+	/*
 	 * Filled because it is chosen, in a colour that survives the dark theme.
 	 *
 	 * `bg-gray-900 text-white` was the house way to say "this one is on", and

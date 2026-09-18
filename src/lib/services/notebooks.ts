@@ -309,6 +309,7 @@ export function contentsOf(ctx: Ctx, id: number) {
 					content: diaryEntries.content,
 					forDate: diaryEntries.forDate,
 					archivedAt: diaryEntries.archivedAt,
+					pinnedAt: diaryEntries.pinnedAt,
 					createdAt: diaryEntries.createdAt,
 					ownerId: diaryEntries.userId,
 					authorName: user.name
@@ -324,8 +325,14 @@ export function contentsOf(ctx: Ctx, id: number) {
 				 * worked through, and its notes are read in the order they were
 				 * written, the way the pages of a real one are. Newest first put
 				 * the end of the renovation above its beginning.
+				 *
+				 * Above all of it, whatever has been pinned — the measurements, the
+				 * account number, the thing the notebook is actually for — with the
+				 * most recently pinned leading, which is what pinning another one
+				 * means. `pinned_at DESC` puts nulls last in SQLite, so the
+				 * unpinned majority keeps the order it always had.
 				 */
-				.orderBy(asc(diaryEntries.createdAt), asc(diaryEntries.id))
+				.orderBy(desc(diaryEntries.pinnedAt), asc(diaryEntries.createdAt), asc(diaryEntries.id))
 				.all()
 				.map(({ ownerId, authorName, ...entry }) => ({
 					...entry,

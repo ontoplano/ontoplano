@@ -364,6 +364,18 @@ What has been written against one subject, newest first, with the id of each not
 
 _Needs `notes:read`; read-only._
 
+### `pin_note` — Keep a note at the top
+
+Hold a note at the top of its notebook — the measurements, the account number, the thing the notebook is actually for. As many as the person likes; the most recently pinned leads. `unpin_note` lets one go.
+
+_Needs `notes:write`; writes._
+
+### `unpin_note` — Stop keeping a note at the top
+
+Let a pinned note fall back into its notebook’s own order, where it is read with the rest.
+
+_Needs `notes:write`; writes._
+
 ### `archive_note` — Put a note away
 
 Hide a note without deleting it — for one that has stopped being current and is not something to throw out: the trip is over, the flat is rented. It stays in its notebook and comes back with `unarchive_note`. Notes are never deleted through a tool.

@@ -1380,6 +1380,15 @@ over, the flat is rented, the argument is settled — and a list of forty
 notes where six are current is a list nobody reads. The note keeps its
 number, its tags and its people, and comes back exactly as it was.
 
+#### `pinEntry(ctx, id, pinned)`
+
+Keep a note at the top of its notebook, or stop.
+
+A notebook reads oldest first because it is a subject being worked through,
+and that is exactly wrong for the two or three notes somebody comes back to
+every time they open it. As many as you like: what is worth keeping in front
+of you is not a number anybody else can pick.
+
 #### `deleteEntry(ctx, id)`
 
 #### `latestEntry(ctx)`

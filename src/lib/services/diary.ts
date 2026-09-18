@@ -220,6 +220,25 @@ export function archiveEntry(ctx: Ctx, id: number, away = true): void {
 	if (res.changes === 0) throw new NotFoundError('entry');
 }
 
+/**
+ * Keep a note at the top of its notebook, or stop.
+ *
+ * A notebook reads oldest first because it is a subject being worked through,
+ * and that is exactly wrong for the two or three notes somebody comes back to
+ * every time they open it. As many as you like: what is worth keeping in front
+ * of you is not a number anybody else can pick.
+ */
+export function pinEntry(ctx: Ctx, id: number, pinned = true): void {
+	const now = stamp(ctx);
+	const res = db
+		.update(diaryEntries)
+		.set({ pinnedAt: pinned ? now : null, updatedAt: now })
+		.where(and(eq(diaryEntries.id, id), eq(diaryEntries.userId, ctx.userId)))
+		.run();
+
+	if (res.changes === 0) throw new NotFoundError('entry');
+}
+
 export function deleteEntry(ctx: Ctx, id: number): void {
 	const res = db
 		.delete(diaryEntries)

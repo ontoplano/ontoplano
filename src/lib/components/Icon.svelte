@@ -59,6 +59,8 @@
 		// Put away rather than thrown away: the lid, the box, and the arrow down
 		// into it — the gesture a chat app archives a conversation with.
 		archive: 'M3 5h18v4H3zM5 9v10h14V9M10 13h4',
+		// A drawing pin seen from the side: the head, the collar, the point.
+		pin: 'M9 4h6l-1 5 3 3H7l3-3-1-5zM12 12v8',
 		wallet:
 			'M3 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 9h13a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H3M16 12h.01',
 		// A gear. What was here was a disc with eight rays coming off it, which is

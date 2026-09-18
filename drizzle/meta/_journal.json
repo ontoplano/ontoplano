@@ -575,6 +575,13 @@
       "when": 1789753879828,
       "tag": "0081_rename_shopping_to_inventory",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "6",
+      "when": 1789765447398,
+      "tag": "0082_pinned_notes",
+      "breakpoints": true
     }
   ]
 }

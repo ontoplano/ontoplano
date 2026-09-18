@@ -447,3 +447,50 @@ describe("a notebook's tasks", () => {
 		expect(found[0].ratings).toEqual({ urgency: null, interest: null, energy: null });
 	});
 });
+
+/**
+ * The two or three notes a notebook is actually for.
+ *
+ * A notebook reads oldest first, because it is a subject being worked through
+ * — and that is exactly wrong for the note you come back to every time you
+ * open it: the measurements, the account number. Pinned ones sit above the
+ * rest, as many as somebody likes, newest pin first.
+ */
+describe('a pinned note', () => {
+	let book: number;
+	let first: number;
+	let second: number;
+	let third: number;
+
+	beforeAll(() => {
+		book = notebooks.createNotebook(ctx, { title: 'The kitchen' });
+		first = diary.createEntry(ctx, { content: 'the plumber comes Tuesday', notebookId: book });
+		second = diary.createEntry(ctx, { content: 'worktop is 2.4m', notebookId: book });
+		third = diary.createEntry(ctx, { content: 'the tiles are 15cm', notebookId: book });
+	});
+
+	const order = () => notebooks.contentsOf(ctx, book).entries.map((e) => e.id);
+
+	test('is read oldest first until something is pinned', () => {
+		expect(order()).toEqual([first, second, third]);
+	});
+
+	test('rises to the top, and the newest pin leads', () => {
+		diary.pinEntry(ctx, second);
+		expect(order()).toEqual([second, first, third]);
+
+		// A minute later, because the order among pinned notes is the order they
+		// were pinned in — and a frozen clock pins everything at once.
+		diary.pinEntry({ ...ctx, now: new Date(ctx.now.getTime() + 60_000) }, third);
+		expect(order()).toEqual([third, second, first]);
+	});
+
+	test('and falls back into place when it is let go', () => {
+		diary.pinEntry(ctx, third, false);
+		expect(order()).toEqual([second, first, third]);
+	});
+
+	test('is nobody else’s to pin', () => {
+		expect(() => diary.pinEntry(theirs, first)).toThrow();
+	});
+});

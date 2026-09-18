@@ -598,7 +598,15 @@
 	{:else}
 		<div class="divide-y divide-gray-200">
 			{#each entries as entry (entry.id)}
-				<article class="px-4 py-3">
+				<!--
+					A pinned note is marked, not just moved.
+
+					Sorting alone says nothing once there are three of them at the top
+					of a long notebook: the ones held there have to look held. A wash
+					of the section's own accent and a spine down the side, which is
+					how the app marks a thing everywhere else.
+				-->
+				<article class="px-4 py-3" class:is-pinned={'pinnedAt' in entry && entry.pinnedAt}>
 					{#if editingNoteId === entry.id}
 						<form
 							method="post"
@@ -702,6 +710,34 @@
 								class="ml-auto flex items-center gap-2"
 								hidden={'mine' in entry && entry.mine === false}
 							>
+								<!--
+									Kept at the top, or let go. As many as somebody likes: what
+									is worth having in front of you when you open a notebook is
+									not a number anybody else can pick.
+								-->
+								{#if notebookId !== null}
+									<form method="post" action="?/pinEntry" use:enhance>
+										<input type="hidden" name="id" value={entry.id} />
+										<input
+											type="hidden"
+											name="pinned"
+											value={'pinnedAt' in entry && entry.pinnedAt ? 'false' : 'true'}
+										/>
+										<button
+											type="submit"
+											class="icon-btn"
+											aria-pressed={'pinnedAt' in entry && Boolean(entry.pinnedAt)}
+											title={'pinnedAt' in entry && entry.pinnedAt
+												? t('notebookDetail.stopKeepingThisAtThe')
+												: t('notebookDetail.keepThisAtTheTop')}
+											aria-label={'pinnedAt' in entry && entry.pinnedAt
+												? t('notebookDetail.stopKeepingThisAtThe')
+												: t('notebookDetail.keepThisAtTheTop')}
+										>
+											<Icon name="pin" />
+										</button>
+									</form>
+								{/if}
 								<button
 									onclick={() => (editingNoteId = entry.id)}
 									class="icon-btn"

@@ -1,7 +1,7 @@
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from '@sveltejs/kit';
 import { buildCtx } from '$lib/services/ctx';
-import { archiveEntry, createEntry, deleteEntry, updateEntry } from '$lib/services/diary';
+import { archiveEntry, createEntry, deleteEntry, pinEntry, updateEntry } from '$lib/services/diary';
 import { setEntryPeople } from '$lib/services/people';
 import { toActionFailure } from '$lib/http-errors';
 import { importVaultAction } from '$lib/import-vault-action';
@@ -152,6 +152,26 @@ export const notebookActions = {
 				formData.get('away') !== 'false'
 			);
 			return { success: true, action: 'archiveEntry' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
+	 * Keep a note at the top of its notebook, or stop.
+	 *
+	 * As many as somebody likes: what is worth having in front of you when you
+	 * open a notebook is not a number anybody else can pick for you.
+	 */
+	pinEntry: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			pinEntry(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				formData.get('pinned') !== 'false'
+			);
+			return { success: true, action: 'pinEntry' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

@@ -1424,6 +1424,7 @@ export const messages: Catalogue = {
 	'notebookDetail.deleteThisNote': 'Apagar esta nota',
 	'notebookDetail.editThisNote': 'Editar esta nota',
 	'notebookDetail.hideArchived': 'Esconder arquivadas',
+	'notebookDetail.keepThisAtTheTop': 'Manter esta no topo',
 	'notebookDetail.newNote': 'Nova nota',
 	'notebookDetail.noGoalPointsAtThis':
 		'Nenhuma meta aponta para este caderno. Ele não precisa de uma.',
@@ -1433,6 +1434,7 @@ export const messages: Catalogue = {
 	'notebookDetail.separateWithCommasOrSpaces':
 		'Separe com vírgulas ou espaços. Um # na frente também serve.',
 	'notebookDetail.smallerType': 'Letra menor',
+	'notebookDetail.stopKeepingThisAtThe': 'Não manter mais no topo',
 	'notebookDetail.tagsPeople': 'Etiquetas, pessoas',
 	'notebookDetail.takeItBackOut': 'Tirar de volta',
 	'notebookDetail.theWholeScreen': 'A tela inteira',
