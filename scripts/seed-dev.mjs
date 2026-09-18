@@ -936,15 +936,15 @@ const ana = person('Ana', 'partner', 'anniversary in March', {
 // A birthday whose year nobody knows — the ordinary case in an address book,
 // and the one a plain date field cannot hold.
 const joao = person('João', 'friend', 'the one who runs', { birthday: '--07-02' });
-const marina = person('Marina', 'professional', 'runs the Tuesday standup', {
+const marco = person('Marco', 'professional', 'runs the Tuesday standup', {
 	phone: '+55 11 90000-0002',
-	email: 'marina@example.test'
+	email: 'marco@example.test'
 });
 const mum = person('Mum', 'family');
 
 mention(1, ana);
 mention(2, joao);
-mention(4, marina);
+mention(4, marco);
 
 /*
  * A person is worth opening when there is something under their name.
@@ -974,7 +974,7 @@ diary(
 );
 diary(
 	16,
-	'Marina moved the standup to Tuesdays for good, so the morning block survives.',
+	'Marco moved the standup to Tuesdays for good, so the morning block survives.',
 	['work'],
 	iso(dayOffset(-6))
 );
@@ -988,7 +988,7 @@ diary(
 mention(13, ana);
 mention(14, ana);
 mention(15, ana);
-mention(16, marina);
+mention(16, marco);
 mention(17, joao);
 
 diary(5, 'The plumber says the wall can go, but not before the pipes move.', ['home']);
@@ -1309,7 +1309,7 @@ movement(
 	'Transferência enviada pelo Pix - Racha de Quinta - mensalidade'
 );
 movement(account, '2026-08-12', -16240, 'Pagamento de boleto - Companhia de Energia');
-movement(account, '2026-08-13', 45000, 'Transferência recebida pelo Pix - Marina Duarte');
+movement(account, '2026-08-13', 45000, 'Transferência recebida pelo Pix - Marco Duarte');
 movement(account, '2026-08-15', -27300, 'Compra no débito - Serralheria e Ferramentas Bitencourt');
 movement(
 	account,
@@ -1896,9 +1896,11 @@ const session = (workoutId, days, lines, notes = '') => {
 // binaries is a seed nobody reviews, and the point is a database with a little
 // of everything in it, not a photograph.
 //
-// They are real pictures — three CC0 works from the Metropolitan Museum's Open
-// Access collection, cropped to the shapes this app draws them in by
-// `yarn demo-media`. `scripts/demo-media/SOURCES.md` says which is which.
+// They are real pictures, cropped to the shapes this app draws them in by
+// `yarn demo-media`: generated faces for the people — nobody here is a
+// photograph of a real person — and CC0 works from the Metropolitan Museum's
+// Open Access collection for the rest. `scripts/demo-media/SOURCES.md` says
+// which is which.
 //
 // They used to be squares of one colour, generated here. The bytes were a valid
 // PNG and nothing else about them was a picture: a beige rectangle under a note
@@ -1954,7 +1956,7 @@ const picture = (filename, alt, bytes) => {
 for (const [id, name, file] of [
 	[ana, 'Ana', 'ana.jpg'],
 	[joao, 'João', 'joao.jpg'],
-	[marina, 'Marina', 'marina.jpg'],
+	[marco, 'Marco', 'marco.jpg'],
 	[mum, 'Mum', 'mum.jpg']
 ]) {
 	const face = picture(file, name, demoPicture(file));

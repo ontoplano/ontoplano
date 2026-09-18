@@ -21,11 +21,15 @@
  * unambiguous about it, which matters in a repository other people copy.
  * `SOURCES.md` beside the output records exactly which object each one is.
  *
- * Paintings rather than photographs, deliberately. A stock photograph of a
- * person carries a model release nobody in this repository can check, and the
- * 19th-century portrait photography in these collections is largely of people
- * who did not choose to be photographed — using one as decoration for a made-up
- * contact called Ana is not something to do by accident.
+ * The faces are the exception, and they are generated: nobody here is a
+ * photograph of a real person. A stock photograph carries a model release
+ * nobody in this repository can check, and the 19th-century portrait
+ * photography in these collections is largely of people who did not choose to
+ * be photographed — using either as decoration for a made-up contact called
+ * Ana is not something to do by accident. They were paintings for that reason
+ * until somebody pointed out that a painting on the people page reads as a
+ * museum rather than as an address book. Their originals sit in
+ * `scripts/demo-media-src/`, so a rebuild needs no network for them.
  *
  * ## What this does to them
  *
@@ -61,11 +65,12 @@ const API = 'https://collectionapi.metmuseum.org/public/collection/v1/objects';
 const PICTURES = [
 	{
 		out: 'ana.jpg',
-		object: 436896,
+		file: 'ana.png',
+		credit: 'generated, not a photograph of anybody',
 		what: "the picture on a person's card, drawn in a circle",
 		width: 320,
 		height: 320,
-		crop: { x: 0.12, y: 0.06, w: 0.78, h: 0.5 }
+		crop: { x: 0.16, y: 0.16, w: 0.56, h: 0.56 }
 	},
 	{
 		out: 'kitchen.jpg',
@@ -77,27 +82,30 @@ const PICTURES = [
 	},
 	{
 		out: 'joao.jpg',
-		object: 435581,
+		file: 'joao.png',
+		credit: 'generated, not a photograph of anybody',
 		what: "a friend's picture on the people page",
 		width: 320,
 		height: 320,
-		crop: { x: 0.12, y: 0.05, w: 0.76, h: 0.52 }
+		crop: { x: 0.34, y: 0.1, w: 0.54, h: 0.54 }
 	},
 	{
-		out: 'marina.jpg',
-		object: 436295,
+		out: 'marco.jpg',
+		file: 'marco.png',
+		credit: 'generated, not a photograph of anybody',
 		what: "a colleague's picture on the people page",
 		width: 320,
 		height: 320,
-		crop: { x: 0.16, y: 0.04, w: 0.68, h: 0.46 }
+		crop: { x: 0.22, y: 0.05, w: 0.52, h: 0.52 }
 	},
 	{
 		out: 'mum.jpg',
-		object: 436986,
+		file: 'mum.png',
+		credit: 'generated, not a photograph of anybody',
 		what: "a mother's picture on the people page",
 		width: 320,
 		height: 320,
-		crop: { x: 0.14, y: 0.05, w: 0.72, h: 0.5 }
+		crop: { x: 0.18, y: 0.08, w: 0.46, h: 0.46 }
 	},
 	{
 		out: 'horse.jpg',
@@ -118,6 +126,24 @@ const PICTURES = [
 		crop: { x: 0.14, y: 0.02, w: 0.72, h: 0.96 }
 	}
 ];
+
+/**
+ * How big a source image is, whichever kind it is.
+ *
+ * The museum serves JPEG and the faces beside this script are PNG, and the
+ * crop is a fraction of the source — so the one thing this needs from either
+ * is its width and height.
+ */
+function sizeOf(bytes) {
+	// PNG: the IHDR is the first chunk and its first eight bytes are the size.
+	if (bytes.length > 24 && bytes[0] === 0x89 && bytes[1] === 0x50) {
+		return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+	}
+	return sizeOfJpeg(bytes);
+}
+
+/** The type a data URI has to name for the renderer to decode it. */
+const mimeOf = (bytes) => (bytes[0] === 0x89 && bytes[1] === 0x50 ? 'image/png' : 'image/jpeg');
 
 /** A JPEG's dimensions, from its start-of-frame marker. */
 function sizeOfJpeg(bytes) {
@@ -148,13 +174,13 @@ async function met(object) {
 }
 
 function render(bytes, { width, height, crop }) {
-	const source = sizeOfJpeg(bytes);
+	const source = sizeOf(bytes);
 	// The scale that makes the cropped region exactly as wide as the output.
 	const scale = width / (crop.w * source.width);
 	const svg =
 		`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" ` +
 		`viewBox="0 0 ${width} ${height}">` +
-		`<image href="data:image/jpeg;base64,${bytes.toString('base64')}" ` +
+		`<image href="data:${mimeOf(bytes)};base64,${bytes.toString('base64')}" ` +
 		`x="${-crop.x * source.width * scale}" y="${-crop.y * source.height * scale}" ` +
 		`width="${source.width * scale}" height="${source.height * scale}" />` +
 		`</svg>`;
@@ -197,7 +223,7 @@ for (const picture of PICTURES) {
 
 	rows.push(
 		picture.file
-			? `| \`${picture.out}\` | ${picture.what} | Estevão's own photograph | this project's |`
+			? `| \`${picture.out}\` | ${picture.what} | ${picture.credit ?? "Estevão's own photograph"} | this project's |`
 			: `| \`${picture.out}\` | [${meta.title}](${meta.objectURL}) | ` +
 					`${meta.artistDisplayName || 'Unknown'}, ${meta.objectDate} | CC0 |`
 	);
@@ -209,7 +235,12 @@ writeFileSync(
 	join(OUT, 'SOURCES.md'),
 	`# Where the demo's pictures come from
 
-Every one of these is from the Metropolitan Museum of Art's Open Access
+The faces are generated — nobody in this repository is a photograph of a real
+person, which is the only honest way to put a face on a made-up contact called
+Ana. Their originals are \`scripts/demo-media-src/\`, committed so a rebuild
+needs nothing but this checkout.
+
+Everything else is from the Metropolitan Museum of Art's Open Access
 collection, released under [CC0](https://creativecommons.org/publicdomain/zero/1.0/):
 no attribution is required and nothing is asked of anybody who copies this
 repository. They are listed anyway, because a file whose provenance is not
