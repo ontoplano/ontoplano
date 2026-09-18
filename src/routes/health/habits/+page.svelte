@@ -392,7 +392,7 @@
 							<label
 								class="flex-1 cursor-pointer border px-3 py-2 text-center text-sm {newHabitType ===
 								value
-									? 'border-gray-900 bg-gray-900 font-medium text-white'
+									? 'on-fill font-medium'
 									: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
 							>
 								<input
@@ -423,7 +423,7 @@
 							{#each FULL_DAY_LABELS as label, i (label)}
 								<label
 									class="cursor-pointer border px-2 py-1 text-xs {scheduledDaysState[i]
-										? 'border-gray-900 bg-gray-900 font-medium text-white'
+										? 'on-fill font-medium'
 										: 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'}"
 								>
 									<input

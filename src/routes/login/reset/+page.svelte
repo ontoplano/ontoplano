@@ -52,10 +52,7 @@
 						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 					/>
 				</label>
-				<button
-					type="submit"
-					class="w-full bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
-				>
+				<button type="submit" class="btn btn-primary w-full">
 					{t('login.reset.setPassword')}
 				</button>
 			</form>

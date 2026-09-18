@@ -157,7 +157,8 @@ export const actions = {
 		const formData = await request.formData();
 		try {
 			const name = formData.get('label');
-			const { alreadyHad } = createItem(buildCtx(locals.user!.id), {
+			const ctx = buildCtx(locals.user!.id);
+			const { alreadyHad, id } = createItem(ctx, {
 				name,
 				type: formData.get('type'),
 				notes: formData.get('notes'),
@@ -166,6 +167,16 @@ export const actions = {
 				locationId: formData.get('locationId'),
 				idealQty: formData.get('idealQty')
 			});
+
+			/*
+			 * Attributes, when the form carried any.
+			 *
+			 * Only when something was written: they are replaced wholesale, and
+			 * adding a thing that is already on the list must not wipe what the
+			 * row already says about itself.
+			 */
+			const attributes = fieldsFrom(formData);
+			if (Object.keys(attributes).length > 0) setItemAttributes(ctx, id, attributes);
 
 			return {
 				success: true,

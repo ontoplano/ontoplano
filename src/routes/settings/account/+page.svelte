@@ -10,7 +10,6 @@
 	import { resolve } from '$app/paths';
 	import { EMPTY_CONFIRMATION, ERASE_CONFIRMATION } from '$lib/danger';
 	import { notify } from '$lib/notify.svelte';
-	import { page } from '$app/state';
 	import Card from '$lib/components/Card.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -480,28 +479,6 @@
 		</Card>
 	{/if}
 
-	<!--
-		Which ontoplano this app is looking at.
-		
-		Reachable from every build, not only the one that is its own instance:
-		the app on a phone can be pointed at the official instance, at a laptop
-		on the same wifi, or at a server somebody runs themselves, and the
-		screen that does it has to be findable from inside whichever one it is
-		currently showing.
-	-->
-	<Card
-		title={t('settings.account.whereThisOntoplanoLives')}
-		description={t('settings.account.thisAppCanOpenThe')}
-	>
-		{#snippet actions()}
-			<a href={resolve('/instance')} class="btn btn-sm">{t('settings.account.changeInstance')}</a>
-		{/snippet}
-		<p class="text-sm text-gray-500">
-			{t('settings.account.youAreLookingAt')}
-			<span class="font-medium text-gray-900">{page.url.origin}</span>.
-		</p>
-	</Card>
-
 	<Card title={t('settings.account.exportYourData')}>
 		{#snippet actions()}
 			<!--
@@ -597,54 +574,55 @@
 		</p>
 	</Card>
 
-	{#if data.nativeApp || inPhoneApp()}
-		<!--
-			The way out of the instance, not out of the account.
+	<!--
+		The way out of the instance, not out of the account.
 
-			The app is a window onto whichever ontoplano you pointed it at, and
-			until now the only way to point it somewhere else was the launcher
-			icon's long-press menu — an affordance nobody has ever gone looking
-			for. It lands here, beside sign-out, because leaving a server and
-			leaving an account are the two things somebody comes to this page to
-			do. Only in the app, where there is another instance to go to.
+		One card, because there was no reading of the page on which two were
+		different questions: which ontoplano this is, and how to go to another
+		one. It lands here, beside sign-out, because leaving a server and
+		leaving an account are the two things somebody comes to this page to
+		do.
 
-			It goes to the copy of the app on the phone, never to `/instance` on
-			the server being left — see `askAgainOnThisPhone`. This used to be
-			`ontoplano://instance`, a native screen from before the chooser was a
-			page; there is no such scheme registered and the web view answered
-			with "unknown url scheme".
+		In the app it goes to the copy of the app on the phone, never to
+		`/instance` on the server being left — see `askAgainOnThisPhone`. This
+		used to be `ontoplano://instance`, a native screen from before the
+		chooser was a page; there is no such scheme registered and the web view
+		answered with "unknown url scheme".
 
-			Either signal, because neither covers the other. The cookie is set from
-			`?app=android` at launch and is the only thing that sees a Trusted Web
-			Activity, which is Chrome and answers every browser question as Chrome
-			does. The user agent is what a page still sees once the app has sent it
-			to a server — and it is the only one the copy on the device has, since
-			that copy sets no cookie. Leaving *it*, to try a server, is the same act
-			from the same place. There used to be a second link saying this under
-			Sign out, which is where it lived while this one was broken.
-		-->
-		<Card title={t('settings.account.thisInstance')}>
-			{#snippet actions()}
+		Either signal, because neither covers the other. The cookie is set from
+		`?app=android` at launch and is the only thing that sees a Trusted Web
+		Activity, which is Chrome and answers every browser question as Chrome
+		does. The user agent is what a page still sees once the app has sent it
+		to a server — and it is the only one the copy on the device has, since
+		that copy sets no cookie. Leaving *it*, to try a server, is the same act
+		from the same place. A browser has no copy of the app to hand back to,
+		so it goes to the chooser on this instance instead.
+	-->
+	<Card title={t('settings.account.thisInstance')}>
+		{#snippet actions()}
+			{#if data.nativeApp || inPhoneApp()}
 				<!-- eslint-disable svelte/no-navigation-without-resolve -- another origin, not a route -->
 				<a href={askAgainOnThisPhone()} class="btn btn-sm">{t('settings.account.switchInstance')}</a
 				>
 				<!-- eslint-enable svelte/no-navigation-without-resolve -->
-			{/snippet}
-			<p class="text-sm text-gray-500">
-				{#if onDevice}
-					{t('settings.account.thisAppIsOpenOn')}
-					<strong class="text-gray-700">{t('settings.account.itsOwnCopyOnThis')}</strong>{t(
-						'settings.account.switchingPointsItAt'
-					)}
-				{:else}
-					{t('settings.account.thisAppIsOpenOn')}
-					<strong class="text-gray-700">{data.host}</strong>{t(
-						'settings.account.switchingPointsItAt2'
-					)}
-				{/if}
-			</p>
-		</Card>
-	{/if}
+			{:else}
+				<a href={resolve('/instance')} class="btn btn-sm">{t('settings.account.switchInstance')}</a>
+			{/if}
+		{/snippet}
+		<p class="text-sm text-gray-500">
+			{#if onDevice}
+				{t('settings.account.thisAppIsOpenOn')}
+				<strong class="text-gray-700">{t('settings.account.itsOwnCopyOnThis')}</strong>{t(
+					'settings.account.switchingPointsItAt'
+				)}
+			{:else}
+				{t('settings.account.thisAppIsOpenOn')}
+				<strong class="text-gray-700">{data.host}</strong>{t(
+					'settings.account.switchingPointsItAt2'
+				)}
+			{/if}
+		</p>
+	</Card>
 
 	{#if !onDevice}
 		<!--

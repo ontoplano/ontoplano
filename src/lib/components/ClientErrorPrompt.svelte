@@ -83,7 +83,7 @@
 		class="fixed inset-x-0 bottom-20 z-50 flex flex-col items-center px-4 lg:bottom-6 lg:left-auto lg:items-end lg:px-6"
 	>
 		<div
-			class="w-full max-w-sm border border-gray-700 bg-gray-900 px-4 py-3 text-sm text-white shadow-overlay"
+			class="overlay-face w-full max-w-sm border px-4 py-3 text-sm shadow-overlay"
 			role="alertdialog"
 			aria-label={t('clientErrorPrompt.sendErrorDetails')}
 		>

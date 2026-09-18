@@ -182,7 +182,7 @@ import {
 import {
 	setItemLocation,
 	setItemAttributes,
-	listItems as listShoppingItems
+	listItems as listInventoryItems
 } from '$lib/services/inventory.js';
 import { NotFoundError, ValidationError } from '$lib/services/errors.js';
 
@@ -2927,14 +2927,14 @@ export const TOOLS: Tool[] = [
 				.toLowerCase();
 			if (!wanted) throw new ValidationError('Say what to look for.');
 
-			const hits = listShoppingItems(ctx)
+			const hits = listInventoryItems(ctx)
 				.filter((i) => i.locationId !== null && i.name.toLowerCase().includes(wanted))
 				.slice(0, 10)
 				.map((i) => ({
 					id: i.id,
 					name: i.name,
 					location: i.locationId ? pathOf(ctx, i.locationId).join(' \u203a ') : null,
-					fields: JSON.parse(i.attributes || '{}')
+					attributes: JSON.parse(i.attributes || '{}')
 				}));
 			return { things: hits };
 		}
@@ -3038,26 +3038,26 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
-		name: 'set_item_fields',
-		title: 'Set a thing\u2019s own fields',
+		name: 'set_item_attributes',
+		title: 'Set a thing\u2019s attributes',
 		description:
-			'Replace an item\u2019s free fields wholesale — { "length": "5m", "plug": "USB-C" }. Not every thing shares a shape; these are this thing\u2019s. Send the full set: removing a field is writing the rest.',
-		scope: 'locations:write',
+			'Replace an item\u2019s attributes wholesale — { "length": "5m", "plug": "USB-C" }. Not every thing shares a shape; these are this thing\u2019s. A name with an empty value is a whole attribute: "cable" says as much as "kind": "cable". Send the full set: removing one is writing the rest.',
+		scope: 'inventory:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'item' }],
 		input: object(
 			{
 				id: { type: 'integer', description: 'The item\u2019s id.' },
-				fields: {
+				attributes: {
 					type: 'object',
-					description: 'The fields, string values.',
+					description: 'The attributes, string values. An empty value is allowed.',
 					additionalProperties: { type: 'string' }
 				}
 			},
-			['id', 'fields']
+			['id', 'attributes']
 		),
 		run: (ctx, args) => {
-			setItemAttributes(ctx, Number(args.id), (args.fields ?? {}) as Record<string, string>);
+			setItemAttributes(ctx, Number(args.id), (args.attributes ?? {}) as Record<string, string>);
 			return { ok: true };
 		}
 	},

@@ -379,7 +379,7 @@
 
 								{#if picture.isMain}
 									<span
-										class="absolute top-1 left-1 flex items-center gap-1 rounded bg-gray-900/80 px-1.5 py-0.5 text-[0.65rem] font-medium text-white"
+										class="overlay-face absolute top-1 left-1 flex items-center gap-1 rounded px-1.5 py-0.5 text-[0.65rem] font-medium"
 									>
 										<Icon name="star" />
 										{t('health.recipes.id.main')}

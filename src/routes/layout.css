@@ -1310,6 +1310,81 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
+	 * A thing that floats over the app brings its own dark with it.
+	 *
+	 * A toast was `bg-gray-900` with `text-white`, which is a dark slab in the
+	 * light theme and — because gray-900 inverts — a near-white slab carrying
+	 * white text in the dark one: a message nobody could read, in the one
+	 * place the app uses to say something went wrong. These values are literal
+	 * rather than tokens because the point is that they do not follow the
+	 * palette: an overlay is dark under either.
+	 */
+	.overlay-face {
+		border-color: rgb(255 255 255 / 0.14);
+		background-color: #1c212a;
+		color: #ffffff;
+	}
+
+	/*
+	 * Filled because it is chosen, in a colour that survives the dark theme.
+	 *
+	 * `bg-gray-900 text-white` was the house way to say "this one is on", and
+	 * gray-900 inverts with the palette: in the dark theme the fill is
+	 * near-white and the white label on it disappears entirely. The blue is
+	 * `--control-on`, the same one a checked toggle wears — a colour rather
+	 * than a neutral, so it means the same thing under either ground.
+	 *
+	 * For the hand-drawn ones: a tick box, a chip that has been picked up, the
+	 * label riding a drag. Anything that is a row of choices is a `.seg`.
+	 */
+	.on-fill {
+		border-color: var(--control-on);
+		background-color: var(--control-on);
+		color: #ffffff;
+	}
+
+	/*
+	 * The one button on the page where money moves.
+	 *
+	 * Primary went tonal so a row of Saves would stop shouting, which is right
+	 * everywhere except the two lines on the checkout screen: those are the
+	 * only elements in the app that mean "press this and you are charged", and
+	 * a payment page that does not say which line is the button is a payment
+	 * page nobody presses.
+	 *
+	 * The fill is `--control-on` — the same blue a checked toggle wears — and
+	 * it is a colour rather than a neutral, so it does not invert with the
+	 * palette. That is the whole bug it replaces: the fill used to be gray-900,
+	 * which in the dark theme is near-white, and the yearly line came out as a
+	 * white slab across the card.
+	 */
+	.btn-money {
+		--btn-ink: #ffffff;
+		--btn-ink-hover: #ffffff;
+
+		width: 100%;
+		justify-content: flex-start;
+		border-color: transparent;
+		background-color: var(--control-on);
+		padding: 0.75rem 1rem;
+		font-weight: 600;
+		text-align: left;
+	}
+
+	.btn-money:hover:not(:disabled) {
+		background-color: color-mix(in srgb, var(--control-on) 86%, #000);
+		border-color: transparent;
+	}
+
+	/* The second interval: the same shape, without the fill that asks. */
+	.btn-money-quiet {
+		width: 100%;
+		justify-content: flex-start;
+		padding: 0.625rem 1rem;
+		text-align: left;
+	}
+
+	/*
 	 * The old look, kept for where a border is doing real work: a control sitting
 	 * on the section wash or on a card whose fill is close to the tonal one.
 	 */
@@ -1696,7 +1771,8 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	.seg > button,
-	.seg > a {
+	.seg > a,
+	.seg > label {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -1713,14 +1789,16 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	.seg > button:hover,
-	.seg > a:hover {
+	.seg > a:hover,
+	.seg > label:hover {
 		color: var(--color-gray-900);
 	}
 
 	/* The chosen position is a raised tile, not a filled button. */
 	.seg > [aria-pressed='true'],
 	.seg > [aria-current='page'],
-	.seg > [aria-current='true'] {
+	.seg > [aria-current='true'],
+	.seg > :has(> input:checked) {
 		background-color: var(--color-white);
 		color: var(--color-gray-900);
 		box-shadow: var(--shadow-card);
@@ -1728,7 +1806,8 @@ label:has(> input[type='radio']:not(:disabled)) {
 
 	html[data-style='playful'] .seg > [aria-pressed='true'],
 	html[data-style='playful'] .seg > [aria-current='page'],
-	html[data-style='playful'] .seg > [aria-current='true'] {
+	html[data-style='playful'] .seg > [aria-current='true'],
+	html[data-style='playful'] .seg > :has(> input:checked) {
 		box-shadow: 0 0 0 1px var(--color-gray-200);
 	}
 

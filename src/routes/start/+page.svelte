@@ -111,8 +111,9 @@
 			</h1>
 			<p class="text-sm text-gray-700">
 				<strong class="text-gray-900"
-					>{t('start.yourFreeDaysAreYours', { trialDaysAhead: data.trialDaysAhead })}</strong
-				>{t('start.theFirstChargeIsOn', { firstChargeOn: when(data.firstChargeOn) })}
+					>{t('start.youGetFreeDaysEvenIf', { trialDaysAhead: data.trialDaysAhead })}</strong
+				><br />
+				{t('start.ifNotTheFirstCharge', { firstChargeOn: when(data.firstChargeOn) })}
 			</p>
 		{:else}
 			<h1 class="mb-4 text-xl font-bold tracking-tight text-gray-900">{t('start.subscribe')}</h1>
@@ -187,28 +188,18 @@
 				<input type="hidden" name="tier" value={familyOffered ? tier : 'solo'} />
 				<input type="hidden" name="channel" value={payChannel} />
 				{#if data.yearly && prices.yearlyCents > 0}
-					<button
-						name="interval"
-						value="yearly"
-						class="w-full bg-gray-900 px-4 py-3 text-left text-white transition hover:bg-gray-800"
-					>
+					<button name="interval" value="yearly" class="btn btn-money">
 						<span class="block text-sm font-semibold"
 							>{t('start.yearly', { yearlyLine: yearlyLine ?? '' })}</span
 						>
 					</button>
-					<button
-						name="interval"
-						value="monthly"
-						class="w-full border border-gray-300 px-4 py-2.5 text-left text-sm text-gray-700 transition hover:bg-gray-50"
+					<button name="interval" value="monthly" class="btn btn-outline btn-money-quiet"
 						>{t('start.monthlyAMonth', {
 							currency: formatPrice(prices.monthlyCents, prices.currency)
 						})}</button
 					>
 				{:else}
-					<button
-						name="interval"
-						value="monthly"
-						class="w-full bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800"
+					<button name="interval" value="monthly" class="btn btn-money"
 						>{t('start.startAMonth', {
 							currency: formatPrice(prices.monthlyCents, prices.currency)
 						})}</button

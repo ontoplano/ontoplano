@@ -440,9 +440,7 @@
 														class="min-w-0 flex-1 border border-blue-300 bg-white px-2 py-1 text-sm shadow-sm focus:border-blue-700 focus:ring-1 focus:ring-blue-700 focus:outline-none"
 														autofocus
 													/>
-													<button
-														type="submit"
-														class="bg-gray-900 px-2 py-1 text-xs text-white hover:bg-gray-800"
+													<button type="submit" class="btn btn-primary btn-sm"
 														>{t('ui.save')}</button
 													>
 													<button

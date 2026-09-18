@@ -20,6 +20,25 @@ releases mattered.
 
 ## 0.180.0 — 2026-09-18
 
+- **An item's own fields are called attributes, and one of them can be just a
+  word.** "cable" says as much as "kind: cable", so a name with no value is a
+  whole attribute and the chip reads as the bare word rather than "cable:".
+  The value box says it is optional, and a value typed with no name — which
+  used to be quietly thrown away — is refused with a message while you can
+  still see what you wrote. Attributes can be filled in while a thing is being
+  written down, not only afterwards.
+- **One section in Account for which ontoplano you are looking at**, rather
+  than two saying nearly the same thing. In the app it hands you back to the
+  chooser on the phone; in a browser it opens the chooser here.
+- **The white slab is gone from the last places it was hiding.** Theme and
+  error-report pickers, the plan's repeat choices, the board and goal filters,
+  the habit day picker: all of them wore a fill that inverted with the theme,
+  which in the dark theme was a white block — and on a toast, white text on a
+  white block. The buttons that take a payment now have a shape of their own
+  instead of borrowing it.
+- **Fixed: a drag label and two toasts were unreadable in the dark theme** —
+  white text on what had become a near-white slab.
+
 - **The shopping list is a reading of the inventory, and the data says so
   now.** The two tables behind the room were still called after the list;
   they are the inventory's, and what you keep and where it lives is what they
@@ -33,8 +52,9 @@ releases mattered.
   and `file_shopping_item` are `add_inventory_item`, `remove_inventory_item`
   and `file_inventory_item`; the sections are `inventory_categories`,
   `add_inventory_category`, `change_inventory_category` and
-  `remove_inventory_category`. `shopping_list` keeps its name, because the
-  shopping list is what it answers with.
+  `remove_inventory_category`, and `set_item_fields` is
+  `set_item_attributes` with its argument renamed to match. `shopping_list`
+  keeps its name, because the shopping list is what it answers with.
 - **For a webhook:** `shopping.added` and `shopping.bought` are
   `inventory.added` and `inventory.bought`. Subscriptions were moved across.
 

@@ -14,10 +14,7 @@
 		<p class="mt-2 text-sm text-gray-700">
 			{t('offline.ontoplanoNeedsTheNetworkFor')}
 		</p>
-		<button
-			onclick={() => location.reload()}
-			class="mt-4 bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-		>
+		<button onclick={() => location.reload()} class="btn btn-primary mt-4">
 			{t('offline.tryAgain')}
 		</button>
 	</div>

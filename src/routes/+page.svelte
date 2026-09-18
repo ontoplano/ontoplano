@@ -554,7 +554,7 @@
 									>
 										<span
 											class="flex h-4 w-4 items-center justify-center border {pending
-												? 'border-gray-900 bg-gray-900 text-white'
+												? 'on-fill'
 												: 'border-gray-400 bg-white'}"
 										>
 											{#if pending}<Icon name="check" size={12} />{/if}
@@ -829,10 +829,7 @@
 							placeholder={t('home.tagsCommaSeparated')}
 							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						/>
-						<button
-							type="submit"
-							class="bg-gray-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800"
-						>
+						<button type="submit" class="btn btn-primary btn-sm">
 							{t('ui.save')}
 						</button>
 					</form>
@@ -875,10 +872,7 @@
 							placeholder={t('home.win3')}
 							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						/>
-						<button
-							type="submit"
-							class="bg-gray-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800"
-						>
+						<button type="submit" class="btn btn-primary btn-sm">
 							{t('home.saveWins')}
 						</button>
 					</form>

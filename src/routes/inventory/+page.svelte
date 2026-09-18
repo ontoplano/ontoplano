@@ -563,6 +563,9 @@
 	function openCreateForm() {
 		cancelEdit();
 		editIdealQty = '1';
+		// One blank pair, so a thing can be described as it is written down
+		// rather than added and then opened again to say what it is.
+		editFields = [['', '']];
 		// Standing in a drawer and adding something puts it in that drawer.
 		newLocationId = location !== null && location !== 0 ? location : null;
 		newItemType = filterType === 'someday' ? 'someday' : 'replenish';
@@ -587,7 +590,7 @@
 		showForm = true;
 	}
 
-	/** An item's own fields, as pairs, from the JSON they are stored as. */
+	/** An item's attributes, as pairs, from the JSON they are stored as. */
 	function fieldsOf(raw: string | null | undefined): [string, string][] {
 		try {
 			return Object.entries(JSON.parse(raw || '{}') as Record<string, string>);
@@ -945,15 +948,19 @@
 	What this particular thing is, in its own words.
 
 	A tape is 3m or 5m and a cable is USB-C or not; nothing else in the app has
-	either field, so they are the thing's rather than a column. Shown on the row
-	because a fact you have to open a form to see is a fact nobody reads.
+	either attribute, so they are the thing's rather than a column. Shown on the
+	row because a fact you have to open a form to see is a fact nobody reads.
+
+	A name with no value is drawn as the bare word. "cable:" is a question the
+	chip is not answering, and half the things worth saying about a thing — it
+	is a cable, it is USB-C — have no second half.
 -->
 {#snippet ownFields(item: { attributes?: string | null })}
 	{@const pairs = fieldsOf(item.attributes)}
 	{#if pairs.length > 0}
 		<span class="mt-0.5 flex flex-wrap items-center gap-1">
 			{#each pairs as [key, value] (key)}
-				<span class="chip">{key}: {value}</span>
+				<span class="chip">{value ? `${key}: ${value}` : key}</span>
 			{/each}
 		</span>
 	{/if}
@@ -1151,7 +1158,7 @@
 					categories={data.inventoryCategories}
 					locations={locationChoices}
 					askLocation={true}
-					showFields={editingId !== null}
+					showFields
 				/>
 			</FormGrid>
 		</form>

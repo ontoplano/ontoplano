@@ -1165,16 +1165,15 @@
 											menuOpen = false;
 										};
 									}}
-									class="mt-2 flex"
+									class="seg mt-2 flex w-full"
 								>
 									{#each THEMES as option (option)}
 										<button
 											type="submit"
 											name="theme"
 											value={option}
-											class="flex-1 border px-2 py-1 text-xs capitalize {data.theme === option
-												? 'border-gray-900 bg-gray-900 font-semibold text-white'
-												: 'border-gray-300 bg-white text-gray-600 hover:text-gray-900'}"
+											aria-pressed={data.theme === option}
+											class="flex-1 text-xs capitalize"
 										>
 											{option}
 										</button>

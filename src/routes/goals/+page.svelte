@@ -319,7 +319,7 @@
 				<button
 					onclick={() => (areaFilter = null)}
 					class="border px-2 py-0.5 {areaFilter === null
-						? 'border-gray-900 bg-gray-900 font-semibold text-white'
+						? 'on-fill font-semibold'
 						: 'border-gray-300 bg-white text-gray-600 hover:text-gray-900'}">{t('ui.all')}</button
 				>
 			{/if}
@@ -327,7 +327,7 @@
 				<button
 					onclick={() => (areaFilter = areaFilter === area.id ? null : area.id)}
 					class="border px-2 py-0.5 {areaFilter === area.id
-						? 'border-gray-900 bg-gray-900 font-semibold text-white'
+						? 'on-fill font-semibold'
 						: 'border-gray-300 bg-white text-gray-600 hover:text-gray-900'}"
 				>
 					{area.name}

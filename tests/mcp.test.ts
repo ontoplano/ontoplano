@@ -1584,7 +1584,7 @@ describe('the inventory over MCP', () => {
 		const names = offered.map((t) => t.name);
 
 		expect(names).toContain('shopping_list');
-		for (const tool of ['locations', 'where_is', 'add_location', 'put_item', 'set_item_fields']) {
+		for (const tool of ['locations', 'where_is', 'add_location', 'put_item']) {
 			expect(names, `${tool} needs inventory:*`).not.toContain(tool);
 		}
 	});
@@ -1611,14 +1611,18 @@ describe('the inventory over MCP', () => {
 		const tape = items.find((i) => i.name === 'measuring tape')!;
 
 		rpc(6, 'put_item', { id: tape.id, location_id: drawer }, ['locations:write']);
-		rpc(7, 'set_item_fields', { id: tape.id, fields: { length: '5m', kind: 'tailor' } }, [
-			'locations:write'
-		]);
+		rpc(
+			7,
+			'set_item_attributes',
+			{ id: tape.id, attributes: { length: '5m', kind: 'tailor', cable: '' } },
+			['inventory:write']
+		);
 
 		const found = rpc(8, 'where_is', { name: 'tape' }, ['locations:read']).result.structuredContent
-			.things as { name: string; location: string; fields: Record<string, string> }[];
+			.things as { name: string; location: string; attributes: Record<string, string> }[];
 		expect(found[0].location).toBe('Living room › White chest › First drawer');
-		expect(found[0].fields).toEqual({ length: '5m', kind: 'tailor' });
+		// An attribute with no value is a whole attribute, and survives the round trip.
+		expect(found[0].attributes).toEqual({ length: '5m', kind: 'tailor', cable: '' });
 
 		/*
 		 * Unfiling is the inverse of filing: the thing stops being inventory.

@@ -1874,12 +1874,12 @@
 			}
 		}
 	},
-	"set_item_fields": {
-		"scope": "locations:write",
+	"set_item_attributes": {
+		"scope": "inventory:write",
 		"writes": true,
 		"destroys": false,
 		"params": {
-			"fields": {
+			"attributes": {
 				"type": "object",
 				"required": true
 			},

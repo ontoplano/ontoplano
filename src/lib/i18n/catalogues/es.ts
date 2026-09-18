@@ -333,20 +333,22 @@ export const messages: Catalogue = {
 	'fan.accountAndHelp': 'Cuenta y ayuda',
 	'fan.noTourForThisScreen': 'No hay recorrido para esta pantalla',
 	'fan.showMeAround': 'Muéstrame cómo funciona',
+	'fields.buy.anAttributeNeedsAName': 'Un atributo necesita un nombre.',
 	'fields.buy.another': '+ Otro',
+	'fields.buy.attributes': 'Atributos',
 	'fields.buy.beingWritten': 'escribiendo',
 	'fields.buy.howManyYouKeep': 'Cuántos guardas',
 	'fields.buy.item': 'Artículo',
-	'fields.buy.itsOwnFields': 'Sus propios campos',
 	'fields.buy.length': 'longitud',
 	'fields.buy.list': 'Lista',
 	'fields.buy.listCategoryLocationNotesPrice': 'Lista, categoría, ubicación, notas, precio',
 	'fields.buy.listCategoryNotesPrice': 'Lista, categoría, notas, precio',
 	'fields.buy.location': 'Ubicación',
 	'fields.buy.nowhereInParticular': '— ningún lugar en particular —',
+	'fields.buy.optional': '(opcional)',
 	'fields.buy.price': 'Precio',
-	'fields.buy.removeTheField': 'Eliminar el campo {written}',
-	'fields.buy.removeThisField': 'Eliminar este campo',
+	'fields.buy.removeTheAttribute': 'Eliminar el atributo {written}',
+	'fields.buy.removeThisAttribute': 'Eliminar este atributo',
 	'fields.buy.restock': 'Reponer',
 	'fields.buy.theCountTheListCompares': 'La cantidad con la que la lista compara.',
 	'fields.buy.whatItUsuallyCosts': 'Lo que suele costar.',
@@ -1894,7 +1896,6 @@ export const messages: Catalogue = {
 		'Una dirección nueva debe confirmarse con un enlace antes de tomar efecto.',
 	'settings.account.bringThingsIn': 'Traer cosas',
 	'settings.account.change': 'Cambiar',
-	'settings.account.changeInstance': 'Cambiar de instancia',
 	'settings.account.changePassword': 'Cambiar contraseña',
 	'settings.account.changeYourEmailAddress': 'Cambiar tu dirección de correo electrónico',
 	'settings.account.changeYourPassword': 'Cambiar tu contraseña',
@@ -1924,7 +1925,7 @@ export const messages: Catalogue = {
 	'settings.account.everythingOnThisDeviceAnd':
 		'Todo lo que hay en este dispositivo, y la base de datos donde vive. La app permanece; lo que hay dentro no. Descarga una exportación antes si quieres poder recuperar algo.',
 	'settings.account.everythingThisAccountOwnsAs':
-		'Todo lo que posee esta cuenta, en JSON: planes, tareas, diario, hábitos, metas, compras, ideas y configuración.',
+		'Todo lo que posee esta cuenta, en JSON: planes, tareas, diario, hábitos, metas, inventario, ideas y configuración.',
 	'settings.account.exportYourData': 'Exportar tus datos',
 	'settings.account.exportsLeft': {
 		one: '{remaining} de {count} exportación restante hoy.',
@@ -2007,8 +2008,6 @@ export const messages: Catalogue = {
 		'Tanto los datos como la cuenta, y cierras sesión para siempre. Esto no se puede deshacer.',
 	'settings.account.theyAreMostOfThe':
 		'Son la mayor parte del archivo. Déjalos fuera para moverte a otra instancia; consérvalos para una copia de seguridad.',
-	'settings.account.thisAppCanOpenThe':
-		'Esta app puede abrir la instancia oficial, una que tú mismo gestiones, o ninguna — todo en el teléfono.',
 	'settings.account.thisAppIsOpenOn': 'Esta app está abierta en',
 	'settings.account.thisDevice': 'este dispositivo',
 	'settings.account.thisDeviceOnlyTheSessions':
@@ -2022,9 +2021,7 @@ export const messages: Catalogue = {
 	'settings.account.thisSignsOutEveryDevice':
 		'Esto cierra la sesión en todos los dispositivos, incluido este.',
 	'settings.account.weeklyReview': 'Revisión semanal',
-	'settings.account.whereThisOntoplanoLives': 'Dónde vive este ontoplano',
 	'settings.account.whereYouAreSignedIn': 'Dónde tienes la sesión iniciada',
-	'settings.account.youAreLookingAt': 'Estás viendo',
 	'settings.account.yourPassword': 'Tu contraseña',
 	'settings.billing.aBandAppearsAtThe':
 		'Aparece una franja en la parte superior de tu app preguntando si aceptas. Di que sí y esta página\n\t\t\t\t\t\t\tqueda en silencio.',
@@ -2441,6 +2438,7 @@ export const messages: Catalogue = {
 	'settings.preferences.moveDown': 'Mover hacia abajo',
 	'settings.preferences.moveUp': 'Mover hacia arriba',
 	'settings.preferences.nbsp': ' —',
+	'settings.preferences.never': 'Nunca',
 	'settings.preferences.noQuotesYet': 'Todavía no hay citas',
 	'settings.preferences.notifications': 'Notificaciones',
 	'settings.preferences.notificationsOnThisDevice': 'Notificaciones en este dispositivo',
@@ -2473,6 +2471,7 @@ export const messages: Catalogue = {
 	'settings.preferences.ringOnThisPhone': 'Sonar en este teléfono',
 	'settings.preferences.saveLayout': 'Guardar diseño',
 	'settings.preferences.saveMenu': 'Guardar menú',
+	'settings.preferences.send': 'Enviar',
 	'settings.preferences.sendATest': 'Enviar una prueba',
 	'settings.preferences.setItUpAgain': 'Configurarlo de nuevo',
 	'settings.preferences.settingItUp': 'Configurando…',
@@ -2597,6 +2596,7 @@ export const messages: Catalogue = {
 		'Todo lo que escribiste se conserva — no se eliminó nada. Renueva para seguir donde lo dejaste, o\n\t\t\t\tllévate tus datos.',
 	'start.family': 'Familia',
 	'start.iWantToHostMy': 'Quiero alojar mi propia instancia',
+	'start.ifNotTheFirstCharge': 'Si no, el primer cobro solo llegará el {firstChargeOn}.',
 	'start.justMe': 'Solo yo',
 	'start.letMeSeeTheDemo': 'Quiero ver la demo primero',
 	'start.monthlyAMonth': 'Mensual — {currency} al mes',
@@ -2609,11 +2609,8 @@ export const messages: Catalogue = {
 	'start.signOut': 'Cerrar sesión',
 	'start.startAMonth': 'Empezar — {currency} al mes',
 	'start.subscribe': 'Suscribirse',
-	'start.theFirstChargeIsOn':
-		'El primer cobro es el {firstChargeOn}, y un correo te avisa dos días antes.',
 	'start.yearly': 'Anual — {yearlyLine}',
-	'start.yourFreeDaysAreYours':
-		'Tus {trialDaysAhead} días gratis son tuyos aunque canceles de inmediato.',
+	'start.youGetFreeDaysEvenIf': 'Tienes {trialDaysAhead} días gratis aunque canceles de inmediato.',
 	'start.yourSubscriptionEnded': 'Tu suscripción terminó',
 	'streamChart.dateCountPoints': { one: '{date}: {count} punto', other: '{date}: {count} puntos' },
 	'streamChart.inAgainstOutByMonth': '{inLabel} contra {outLabel}, por mes',

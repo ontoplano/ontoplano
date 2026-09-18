@@ -1189,17 +1189,10 @@
 				if (chosen) document.documentElement.dataset.theme = chosen;
 				return async ({ update }) => update({ reset: false });
 			}}
-			class="flex gap-2"
+			class="seg"
 		>
 			{#each THEMES as option (option)}
-				<button
-					type="submit"
-					name="theme"
-					value={option}
-					class="border px-4 py-2 text-sm shadow-sm {data.theme === option
-						? 'border-gray-900 bg-gray-900 font-semibold text-white'
-						: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
-				>
+				<button type="submit" name="theme" value={option} aria-pressed={data.theme === option}>
 					{option === 'system'
 						? t('app.matchMyDevice')
 						: option === 'light'
@@ -1220,17 +1213,10 @@
 				method="post"
 				action="?/setErrorReports"
 				use:settingsForm={{ notice: 'Saved.' }}
-				class="mt-3 flex gap-2"
+				class="seg mt-3"
 			>
-				{#each [['yes', 'Send'], ['no', 'Never']] as [value, label] (value)}
-					<button
-						type="submit"
-						name="decision"
-						{value}
-						class="border px-4 py-2 text-sm shadow-sm {data.errorReports === value
-							? 'border-gray-900 bg-gray-900 font-semibold text-white'
-							: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
-					>
+				{#each [['yes', t('settings.preferences.send')], ['no', t('settings.preferences.never')]] as [value, label] (value)}
+					<button type="submit" name="decision" {value} aria-pressed={data.errorReports === value}>
 						{label}
 					</button>
 				{/each}

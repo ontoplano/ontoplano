@@ -636,7 +636,7 @@
 						<button
 							onclick={() => (sortBy = opt.v as typeof sortBy)}
 							class="border px-2 py-0.5 {sortBy === opt.v
-								? 'border-gray-900 bg-gray-900 font-semibold text-white'
+								? 'on-fill font-semibold'
 								: 'border-gray-300 bg-white text-gray-600 hover:text-gray-900'}">{opt.l}</button
 						>
 					{/each}
@@ -648,7 +648,7 @@
 						<button
 							onclick={() => (maxEnergy = maxEnergy === n ? null : n)}
 							class="tabular h-6 w-6 border {maxEnergy === n
-								? 'border-gray-900 bg-gray-900 font-semibold text-white'
+								? 'on-fill font-semibold'
 								: 'border-gray-300 bg-white text-gray-500 hover:text-gray-900'}">{n}</button
 						>
 					{/each}
@@ -962,9 +962,7 @@
 							// looking at where it went.
 							if (card) showColumn(column.status);
 						}}
-						class="flex-1 gap-1.5 {dragging && dragOverColumn === column.status
-							? 'bg-gray-900 text-white'
-							: ''}"
+						class="flex-1 gap-1.5 {dragging && dragOverColumn === column.status ? 'on-fill' : ''}"
 					>
 						{t(STATUS_LABELS[column.status])}
 						<span
@@ -1008,7 +1006,7 @@
 						<header
 							class="hidden items-center justify-between border-b px-3 py-2 md:flex {dragging &&
 							dragOverColumn === column.status
-								? 'border-gray-900 bg-gray-900 text-white'
+								? 'on-fill'
 								: 'border-gray-200 bg-white'}"
 						>
 							<span

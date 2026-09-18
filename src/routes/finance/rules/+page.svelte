@@ -154,7 +154,7 @@
 										<button
 											class="shrink-0 rounded px-1.5 text-xs tabular-nums transition {data.showing ===
 											String(rule.id)
-												? 'bg-gray-900 text-white'
+												? 'on-fill'
 												: 'text-gray-400 hover:text-gray-700'}"
 											title={t('finance.rules.whichLinesThisClaims')}
 											aria-pressed={data.showing === String(rule.id)}

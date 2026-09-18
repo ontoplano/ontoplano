@@ -155,10 +155,7 @@
 					/>
 				</label>
 			{/if}
-			<button
-				type="submit"
-				class="w-full bg-gray-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
-			>
+			<button type="submit" class="btn btn-primary w-full">
 				{mode === 'login'
 					? t('login.signIn')
 					: mode === 'register'

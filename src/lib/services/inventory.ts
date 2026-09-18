@@ -261,7 +261,7 @@ export function setCategoryFood(ctx: Ctx, id: number, isFood: boolean): void {
  *
  * Returns whether it was a name already held, so the page can say so.
  */
-export function createItem(ctx: Ctx, raw: ItemInput): { alreadyHad: boolean } {
+export function createItem(ctx: Ctx, raw: ItemInput): { alreadyHad: boolean; id: number } {
 	const values = parseItem(ctx, raw);
 
 	const existing = db
@@ -289,7 +289,7 @@ export function createItem(ctx: Ctx, raw: ItemInput): { alreadyHad: boolean } {
 		// webhook for it would let two synced lists ping-pong forever.
 		if (existing.bought || existing.snoozed)
 			host.emit(ctx, 'inventory.added', { id: existing.id, name: values.name });
-		return { alreadyHad: true };
+		return { alreadyHad: true, id: existing.id };
 	}
 
 	/*
@@ -308,7 +308,7 @@ export function createItem(ctx: Ctx, raw: ItemInput): { alreadyHad: boolean } {
 		.run();
 
 	host.emit(ctx, 'inventory.added', { id: Number(result.lastInsertRowid), name: values.name });
-	return { alreadyHad: false };
+	return { alreadyHad: false, id: Number(result.lastInsertRowid) };
 }
 
 /**

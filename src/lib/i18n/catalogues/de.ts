@@ -336,20 +336,22 @@ export const messages: Catalogue = {
 	'fan.accountAndHelp': 'Konto und Hilfe',
 	'fan.noTourForThisScreen': 'Keine Tour für diesen Bildschirm',
 	'fan.showMeAround': 'Tour starten',
+	'fields.buy.anAttributeNeedsAName': 'Ein Attribut braucht einen Namen.',
 	'fields.buy.another': '+ Weiteres',
+	'fields.buy.attributes': 'Attribute',
 	'fields.buy.beingWritten': 'wird geschrieben',
 	'fields.buy.howManyYouKeep': 'Wie viele Sie behalten',
 	'fields.buy.item': 'Artikel',
-	'fields.buy.itsOwnFields': 'Eigene Felder',
 	'fields.buy.length': 'Länge',
 	'fields.buy.list': 'Liste',
 	'fields.buy.listCategoryLocationNotesPrice': 'Liste, Kategorie, Ort, Notizen, Preis',
 	'fields.buy.listCategoryNotesPrice': 'Liste, Kategorie, Notizen, Preis',
 	'fields.buy.location': 'Ort',
 	'fields.buy.nowhereInParticular': '— kein bestimmter Ort —',
+	'fields.buy.optional': '(optional)',
 	'fields.buy.price': 'Preis',
-	'fields.buy.removeTheField': 'Das Feld {written} entfernen',
-	'fields.buy.removeThisField': 'Dieses Feld entfernen',
+	'fields.buy.removeTheAttribute': 'Attribut {written} entfernen',
+	'fields.buy.removeThisAttribute': 'Dieses Attribut entfernen',
 	'fields.buy.restock': 'Nachfüllen',
 	'fields.buy.theCountTheListCompares': 'Die Anzahl, mit der die Liste vergleicht.',
 	'fields.buy.whatItUsuallyCosts': 'Was es normalerweise kostet.',
@@ -1909,7 +1911,6 @@ export const messages: Catalogue = {
 		'Eine neue Adresse muss erst über einen Link bestätigt werden, bevor sie übernommen wird.',
 	'settings.account.bringThingsIn': 'Dinge importieren',
 	'settings.account.change': 'Ändern',
-	'settings.account.changeInstance': 'Instanz wechseln',
 	'settings.account.changePassword': 'Passwort ändern',
 	'settings.account.changeYourEmailAddress': 'Ihre E-Mail-Adresse ändern',
 	'settings.account.changeYourPassword': 'Ihr Passwort ändern',
@@ -1938,7 +1939,7 @@ export const messages: Catalogue = {
 	'settings.account.everythingOnThisDeviceAnd':
 		'Alles auf diesem Gerät und die Datenbank, in der es liegt. Die App bleibt; ihr Inhalt nicht. Laden Sie zuerst einen Export herunter, falls Sie etwas davon zurückhaben möchten.',
 	'settings.account.everythingThisAccountOwnsAs':
-		'Alles, was diesem Konto gehört, als JSON: Pläne, Aufgaben, Tagebuch, Gewohnheiten, Ziele, Einkaufsliste, Ideen und Einstellungen.',
+		'Alles, was diesem Konto gehört, als JSON: Pläne, Aufgaben, Tagebuch, Gewohnheiten, Ziele, Inventar, Ideen und Einstellungen.',
 	'settings.account.exportYourData': 'Ihre Daten exportieren',
 	'settings.account.exportsLeft': {
 		one: '{remaining} von {count} Export heute übrig.',
@@ -2022,8 +2023,6 @@ export const messages: Catalogue = {
 		'Sowohl die Daten als auch das Konto, und Sie werden endgültig abgemeldet. Das kann nicht rückgängig gemacht werden.',
 	'settings.account.theyAreMostOfThe':
 		'Sie machen den größten Teil der Datei aus. Lassen Sie sie weg, um zu einer anderen Instanz zu wechseln; behalten Sie sie für ein Backup.',
-	'settings.account.thisAppCanOpenThe':
-		'Diese App kann die offizielle Instanz öffnen, eine selbst betriebene, oder gar keine — alles auf dem Telefon.',
 	'settings.account.thisAppIsOpenOn': 'Diese App ist geöffnet auf',
 	'settings.account.thisDevice': 'diesem Gerät',
 	'settings.account.thisDeviceOnlyTheSessions':
@@ -2037,9 +2036,7 @@ export const messages: Catalogue = {
 	'settings.account.thisSignsOutEveryDevice':
 		'Dadurch werden alle Geräte abgemeldet, einschließlich dieses hier.',
 	'settings.account.weeklyReview': 'Wochenrückblick',
-	'settings.account.whereThisOntoplanoLives': 'Wo dieses ontoplano lebt',
 	'settings.account.whereYouAreSignedIn': 'Wo Sie angemeldet sind',
-	'settings.account.youAreLookingAt': 'Sie sehen sich an',
 	'settings.account.yourPassword': 'Ihr Passwort',
 	'settings.billing.aBandAppearsAtThe':
 		'Ein Banner erscheint oben in Ihrer App und fragt, ob Sie zustimmen möchten. Sagen Sie ja, und diese Seite\n\t\t\t\t\t\t\twird still.',
@@ -2466,6 +2463,7 @@ export const messages: Catalogue = {
 	'settings.preferences.moveDown': 'Nach unten verschieben',
 	'settings.preferences.moveUp': 'Nach oben verschieben',
 	'settings.preferences.nbsp': ' —',
+	'settings.preferences.never': 'Nie',
 	'settings.preferences.noQuotesYet': 'Noch keine Zitate',
 	'settings.preferences.notifications': 'Benachrichtigungen',
 	'settings.preferences.notificationsOnThisDevice': 'Benachrichtigungen auf diesem Gerät',
@@ -2498,6 +2496,7 @@ export const messages: Catalogue = {
 	'settings.preferences.ringOnThisPhone': 'Auf diesem Telefon klingeln',
 	'settings.preferences.saveLayout': 'Layout speichern',
 	'settings.preferences.saveMenu': 'Menü speichern',
+	'settings.preferences.send': 'Senden',
 	'settings.preferences.sendATest': 'Test senden',
 	'settings.preferences.setItUpAgain': 'Erneut einrichten',
 	'settings.preferences.settingItUp': 'Wird eingerichtet…',
@@ -2626,6 +2625,7 @@ export const messages: Catalogue = {
 		'Alles, was Sie geschrieben haben, bleibt erhalten — nichts wurde gelöscht. Verlängern Sie, um dort weiterzumachen, wo Sie aufgehört haben, oder\n\t\t\t\tnehmen Sie Ihre Daten mit.',
 	'start.family': 'Familie',
 	'start.iWantToHostMy': 'Ich möchte eine eigene Instanz hosten',
+	'start.ifNotTheFirstCharge': 'Andernfalls erfolgt die erste Abbuchung erst am {firstChargeOn}.',
 	'start.justMe': 'Nur ich',
 	'start.letMeSeeTheDemo': 'Zeigen Sie mir zuerst die Demo',
 	'start.monthlyAMonth': 'Monatlich — {currency} pro Monat',
@@ -2638,11 +2638,9 @@ export const messages: Catalogue = {
 	'start.signOut': 'Abmelden',
 	'start.startAMonth': 'Start — {currency} pro Monat',
 	'start.subscribe': 'Abonnieren',
-	'start.theFirstChargeIsOn':
-		'Die erste Abbuchung erfolgt am {firstChargeOn}, und eine E-Mail warnt Sie zwei Tage vorher.',
 	'start.yearly': 'Jährlich — {yearlyLine}',
-	'start.yourFreeDaysAreYours':
-		'Ihre {trialDaysAhead} kostenlosen Tage gehören Ihnen, auch wenn Sie sofort kündigen.',
+	'start.youGetFreeDaysEvenIf':
+		'Sie erhalten {trialDaysAhead} kostenlose Tage, auch wenn Sie sofort kündigen.',
 	'start.yourSubscriptionEnded': 'Ihr Abonnement ist beendet',
 	'streamChart.dateCountPoints': { one: '{date}: {count} Punkt', other: '{date}: {count} Punkte' },
 	'streamChart.inAgainstOutByMonth': '{inLabel} gegen {outLabel}, nach Monat',

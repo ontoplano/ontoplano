@@ -40,7 +40,7 @@
 		{#each waiting as item (item.id)}
 			{@const left = Math.max(0, Math.ceil((item.until - now) / 1000))}
 			<div
-				class="pointer-events-auto flex w-full max-w-sm items-center gap-3 border border-gray-700 bg-gray-900 px-4 py-3 text-sm text-white shadow-overlay"
+				class="overlay-face pointer-events-auto flex w-full max-w-sm items-center gap-3 border px-4 py-3 text-sm shadow-overlay"
 				role="status"
 			>
 				<span class="min-w-0 flex-1 truncate">{item.message}</span>

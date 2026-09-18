@@ -2850,20 +2850,16 @@
 								class="sr-only"
 							/>
 							<span
-								class="inline-block h-4 w-4 border border-gray-400 {copyTargetDays.has(i)
-									? 'bg-gray-900'
-									: 'bg-white'}"
+								class="inline-block h-4 w-4 border {copyTargetDays.has(i)
+									? 'on-fill'
+									: 'border-gray-400 bg-white'}"
 							></span>
 							{day}
 						</label>
 					{/each}
 				</div>
 				<div class="flex gap-2">
-					<button
-						type="submit"
-						class="bg-gray-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800 disabled:opacity-50"
-						disabled={copyTargetDays.size === 0}
-					>
+					<button type="submit" class="btn btn-primary btn-sm" disabled={copyTargetDays.size === 0}>
 						{t('ui.copy')}
 					</button>
 					<button
@@ -2987,14 +2983,12 @@
 								: t('tasks.plan.makeItRecurrent')}
 						</button>
 					{:else}
-						<div class="flex">
+						<div class="seg">
 							{#each RECURRENCE_CHOICES as choice (choice.value)}
 								<button
 									type="button"
 									onclick={() => (repeat = choice.value as 'weekly' | 'once')}
-									class="px-3 py-1 text-sm {repeat === choice.value
-										? 'bg-gray-900 font-medium text-white'
-										: t('tasks.plan.borderBorderGray300BgWhiteTextGray700Sha')}"
+									aria-pressed={repeat === choice.value}
 								>
 									{t(choice.label)}
 								</button>
@@ -3013,14 +3007,12 @@
 						<span class="eyebrow shrink-0 text-gray-500">{t('tasks.plan.howOften')}</span>
 						<input type="hidden" name="recurrenceKind" value={recurrenceKind} />
 
-						<div class="flex">
+						<div class="seg">
 							{#each [{ v: 'weekly', l: t('tasks.plan.everyWeek') }, { v: 'weeks', l: t('tasks.plan.everyNWeeks') }, { v: 'days', l: t('tasks.plan.everyNDays') }, { v: 'monthly', l: t('finance.ledgers.everyMonth') }] as opt (opt.v)}
 								<button
 									type="button"
 									onclick={() => (recurrenceKind = opt.v as typeof recurrenceKind)}
-									class="px-3 py-1 text-sm {recurrenceKind === opt.v
-										? 'bg-gray-900 font-medium text-white'
-										: t('tasks.plan.borderBorderGray300BgWhiteTextGray700Sha')}"
+									aria-pressed={recurrenceKind === opt.v}
 								>
 									{opt.l}
 								</button>
@@ -3545,7 +3537,7 @@
 							dropPreview = null;
 						}}
 						class="lift cursor-grab border px-2 py-1 text-xs shadow-card {placingTodoId === todo.id
-							? 'border-gray-900 bg-gray-900 text-white'
+							? 'on-fill'
 							: todo.due
 								? 'border-gray-400 bg-white font-medium text-gray-900'
 								: 'border-gray-200 bg-white text-gray-700'} {dragTodoId === todo.id
@@ -3633,9 +3625,7 @@
 		{/if}
 
 		{#if undoNotice}
-			<div
-				class="pointer-events-none absolute top-2 left-2 z-30 border border-gray-900 bg-gray-900 px-2 py-1 text-xs text-white"
-			>
+			<div class="on-fill pointer-events-none absolute top-2 left-2 z-30 border px-2 py-1 text-xs">
 				{undoNotice}
 			</div>
 		{/if}
@@ -3802,10 +3792,7 @@
 						{t('tasks.plan.clearExistingPlan')}
 					</label>
 				</div>
-				<button
-					type="submit"
-					class="bg-gray-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-gray-800"
-				>
+				<button type="submit" class="btn btn-primary btn-sm">
 					{t('tasks.plan.import')}
 				</button>
 			</form>

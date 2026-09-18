@@ -305,20 +305,22 @@ export type MessageKey =
 	| 'fan.accountAndHelp'
 	| 'fan.noTourForThisScreen'
 	| 'fan.showMeAround'
+	| 'fields.buy.anAttributeNeedsAName'
 	| 'fields.buy.another'
+	| 'fields.buy.attributes'
 	| 'fields.buy.beingWritten'
 	| 'fields.buy.howManyYouKeep'
 	| 'fields.buy.item'
-	| 'fields.buy.itsOwnFields'
 	| 'fields.buy.length'
 	| 'fields.buy.list'
 	| 'fields.buy.listCategoryLocationNotesPrice'
 	| 'fields.buy.listCategoryNotesPrice'
 	| 'fields.buy.location'
 	| 'fields.buy.nowhereInParticular'
+	| 'fields.buy.optional'
 	| 'fields.buy.price'
-	| 'fields.buy.removeTheField'
-	| 'fields.buy.removeThisField'
+	| 'fields.buy.removeTheAttribute'
+	| 'fields.buy.removeThisAttribute'
 	| 'fields.buy.restock'
 	| 'fields.buy.theCountTheListCompares'
 	| 'fields.buy.whatItUsuallyCosts'
@@ -1651,7 +1653,6 @@ export type MessageKey =
 	| 'settings.account.aNewAddressHasTo'
 	| 'settings.account.bringThingsIn'
 	| 'settings.account.change'
-	| 'settings.account.changeInstance'
 	| 'settings.account.changePassword'
 	| 'settings.account.changeYourEmailAddress'
 	| 'settings.account.changeYourPassword'
@@ -1736,7 +1737,6 @@ export type MessageKey =
 	| 'settings.account.theAllowanceResets'
 	| 'settings.account.theDataAndTheAccount'
 	| 'settings.account.theyAreMostOfThe'
-	| 'settings.account.thisAppCanOpenThe'
 	| 'settings.account.thisAppIsOpenOn'
 	| 'settings.account.thisDevice'
 	| 'settings.account.thisDeviceOnlyTheSessions'
@@ -1746,9 +1746,7 @@ export type MessageKey =
 	| 'settings.account.thisServerHasNoMail'
 	| 'settings.account.thisSignsOutEveryDevice'
 	| 'settings.account.weeklyReview'
-	| 'settings.account.whereThisOntoplanoLives'
 	| 'settings.account.whereYouAreSignedIn'
-	| 'settings.account.youAreLookingAt'
 	| 'settings.account.yourPassword'
 	| 'settings.billing.aBandAppearsAtThe'
 	| 'settings.billing.aMonth'
@@ -2072,6 +2070,7 @@ export type MessageKey =
 	| 'settings.preferences.moveDown'
 	| 'settings.preferences.moveUp'
 	| 'settings.preferences.nbsp'
+	| 'settings.preferences.never'
 	| 'settings.preferences.noQuotesYet'
 	| 'settings.preferences.notifications'
 	| 'settings.preferences.notificationsOnThisDevice'
@@ -2099,6 +2098,7 @@ export type MessageKey =
 	| 'settings.preferences.ringOnThisPhone'
 	| 'settings.preferences.saveLayout'
 	| 'settings.preferences.saveMenu'
+	| 'settings.preferences.send'
 	| 'settings.preferences.sendATest'
 	| 'settings.preferences.setItUpAgain'
 	| 'settings.preferences.settingItUp'
@@ -2214,6 +2214,7 @@ export type MessageKey =
 	| 'start.everythingYouWroteIsKept'
 	| 'start.family'
 	| 'start.iWantToHostMy'
+	| 'start.ifNotTheFirstCharge'
 	| 'start.justMe'
 	| 'start.letMeSeeTheDemo'
 	| 'start.monthlyAMonth'
@@ -2224,9 +2225,8 @@ export type MessageKey =
 	| 'start.signOut'
 	| 'start.startAMonth'
 	| 'start.subscribe'
-	| 'start.theFirstChargeIsOn'
 	| 'start.yearly'
-	| 'start.yourFreeDaysAreYours'
+	| 'start.youGetFreeDaysEvenIf'
 	| 'start.yourSubscriptionEnded'
 	| 'streamChart.dateCountPoints'
 	| 'streamChart.inAgainstOutByMonth'
@@ -2825,7 +2825,7 @@ export interface MessageValuesFor {
 		minutes: string | number;
 		minutes2: string | number;
 	};
-	'fields.buy.removeTheField': { written: string | number };
+	'fields.buy.removeTheAttribute': { written: string | number };
 	'finance.bills.amountOver': { amount: string | number };
 	'finance.bills.amountUnder': { amount: string | number };
 	'finance.bills.archive': { name: string | number };
@@ -3132,12 +3132,12 @@ export interface MessageValuesFor {
 	'settings.preferences.mdash': { author: string | number };
 	'settings.timezone.unchanged': { zone: string | number };
 	'start.accounts': { familySeats: string | number };
+	'start.ifNotTheFirstCharge': { firstChargeOn: string | number };
 	'start.monthlyAMonth': { currency: string | number };
 	'start.oneInvoiceCoversAccountsYours': { familySeats: string | number };
 	'start.startAMonth': { currency: string | number };
-	'start.theFirstChargeIsOn': { firstChargeOn: string | number };
 	'start.yearly': { yearlyLine: string | number };
-	'start.yourFreeDaysAreYours': { trialDaysAhead: string | number };
+	'start.youGetFreeDaysEvenIf': { trialDaysAhead: string | number };
 	'streamChart.dateCountPoints': { count: number; date: string | number };
 	'streamChart.inAgainstOutByMonth': { inLabel: string | number; outLabel: string | number };
 	'tasks.board.edit': { title: string | number };

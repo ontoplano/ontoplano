@@ -778,11 +778,11 @@ Put a shopping/inventory item in a location, or take its address away by leaving
 
 _Needs `locations:write`; writes._
 
-### `set_item_fields` — Set a thing’s own fields
+### `set_item_attributes` — Set a thing’s attributes
 
-Replace an item’s free fields wholesale — { "length": "5m", "plug": "USB-C" }. Not every thing shares a shape; these are this thing’s. Send the full set: removing a field is writing the rest.
+Replace an item’s attributes wholesale — { "length": "5m", "plug": "USB-C" }. Not every thing shares a shape; these are this thing’s. A name with an empty value is a whole attribute: "cable" says as much as "kind": "cable". Send the full set: removing one is writing the rest.
 
-_Needs `locations:write`; writes._
+_Needs `inventory:write`; writes._
 
 ### `workouts` — Your workouts
 
