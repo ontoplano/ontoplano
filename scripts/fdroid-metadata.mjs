@@ -39,7 +39,7 @@ import {
 	rmSync,
 	writeFileSync
 } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -109,8 +109,8 @@ try {
  *   their image is too old for the toolchain, hence the pinned tarball.
  *
  * REHEARSE THIS before every submission — `fdroid build` in their server
- * image, see ontoplano-marketing/store/FDROID-RELEASE.md — because a recipe
- * that fails in their builder costs a review round trip measured in weeks.
+ * image (the store checkout keeps the walkthrough) — because a recipe that
+ * fails in their builder costs a review round trip measured in weeks.
  */
 const NODE_BUILD = 'v22.14.0';
 const buildEntry = `  - versionName: ${version}
@@ -224,14 +224,17 @@ if (FROM) {
  * exactly our arrangement.
  *
  * `metadata/android/<lang>/images/…` is five folders deep and is nobody's idea
- * of a place to browse, so it is not kept that way: the marketing repository
- * holds `store/play/<lang>/` for the words, `store/fdroid/` for the
- * screenshots without captions, and `store/play/` for the banner and the icon
- * the two stores share. This is where those become the tree to copy into a
- * `fdroiddata` fork — a generated thing, so there is no fourth copy for
- * somebody to update and forget.
+ * of a place to browse, so it is not kept that way: the store directory holds
+ * `play/<lang>/` for the words, `fdroid/` for the screenshots without
+ * captions, and `play/` for the banner and the icon the two stores share.
+ * `FDROID_STORE` points at yours; without one the recipe is still written,
+ * just with no listing beside it. This is where those become the tree to copy
+ * into a `fdroiddata` fork — a generated thing, so there is no fourth copy
+ * for somebody to update and forget.
  */
-const STORE = join(ROOT, 'ontoplano-marketing', 'store');
+const STORE = process.env.FDROID_STORE
+	? resolve(process.env.FDROID_STORE)
+	: join(ROOT, 'ontoplano-marketing', 'store');
 const PLAY = join(STORE, 'play');
 const listingOut = join(OUT, 'metadata', PACKAGE);
 let listed = false;

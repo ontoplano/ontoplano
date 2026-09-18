@@ -39,7 +39,7 @@ print-%:
 	@echo '$($*)'
 
 
-.PHONY: messages hooks dev-site-fg dev-site-logs dev-site-stop _site-checkout announce _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons icon deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-strangers db-dry-run db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local _a-real-workstation android android-all android-store android-install android-install-all _adb-install _apks-are-fresh android-uninstall isolated isolated-preview test-isolated
+.PHONY: messages hooks dev-site-fg dev-site-logs dev-site-stop _site-checkout announce _billing-in-build vars print-% badges android-project fdroid _billing-provider package package-check _dev-port _dev-deps _dev-migrated reset-dev help docs docs-site docs-check icons icon help-shots deploy-local doctor dev dev-app dev-docs dev-site dev-all dev-stop dev-logs dev-fg build preview start stop clean install-service install-mail-service uninstall-service db-push db-strangers db-dry-run db-seed db-generate db-migrate db-snapshot db-import db-studio db bdb backup-install backup-status backup-drill lint format test docker-build docker-image docker-up docker-down _docker-safe _docker-audit logs https-local _a-real-workstation android android-all android-store android-install android-install-all _adb-install _apks-are-fresh android-uninstall isolated isolated-preview test-isolated
 
 # ─── Development ──────────────────────────────────────────────────────────────
 
@@ -470,6 +470,14 @@ messages:
 ## redraw every icon and favicon from the one source PNG
 icons:
 	@yarn -s icons
+
+# The screenshots the app shows in its own help, retaken from the running
+# code. A script rather than a build step because it writes into static/,
+# and a build must never change the tree it builds from — so it runs when a
+# pictured screen changes, not on every build.
+## retake the help screenshots from the real pages
+help-shots:
+	@node scripts/help-shots.mjs
 
 # One picture becomes every icon the app has.
 #
@@ -1127,17 +1135,18 @@ android-project:
 # would be a duplicate that is wrong three releases later, so nothing is
 # committed — the generator is, and this writes the current answer.
 #
-#   make fdroid                              a fresh recipe, first submission
-#   make fdroid FROM=path/to/existing.yml    the same recipe plus this release
+#   make fdroid                                a fresh recipe, first submission
+#   make fdroid RECIPE=path/to/existing.yml    the same recipe plus this release
 #
-# FROM is the file as it stands in your fdroiddata fork; it is edited as text,
-# so reviewers' comments and hand edits survive. It also writes the RFP issue
-# and the merge request description, and fails loudly if the tag this version
-# would build has not been pushed.
+# RECIPE is the file as it stands in your fdroiddata fork; it is edited as
+# text, so reviewers' comments and hand edits survive. It also writes the RFP
+# issue and the merge request description, and fails loudly if the tag this
+# version would build has not been pushed.
 ## F-Droid's recipe and listing for this version
-#: FROM=metadata/app.ontoplano.yml  an existing recipe to add this release to
+#: RECIPE=metadata/app.ontoplano.yml  an existing recipe to add this release to
+#: FDROID_STORE=path/to/store  where the listing's words and screenshots live
 fdroid:
-	@node scripts/fdroid-metadata.mjs $(if $(FROM),--from $(FROM),)
+	@FDROID_STORE="$(FDROID_STORE)" node scripts/fdroid-metadata.mjs $(if $(RECIPE),--from $(RECIPE),)
 
 # The app, built. One artifact, and it is the app: a build carries the whole
 # of ontoplano and asks on first launch where your ontoplano lives, so there
