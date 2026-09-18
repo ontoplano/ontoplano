@@ -303,7 +303,7 @@ describe('choosing the family plan on the front page', () => {
 		const { load } = await import('../src/routes/login/+page.server');
 		const cookies = jar();
 
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		 
 		const data = (await load({
 			locals: {},
 			url: new URL('https://app.example/login?register&plan=family'),
@@ -321,7 +321,7 @@ describe('choosing the family plan on the front page', () => {
 		const { load } = await import('../src/routes/login/+page.server');
 		const cookies = jar();
 
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		 
 		const data = (await load({
 			locals: {},
 			url: new URL('https://app.example/login?register'),
@@ -337,7 +337,7 @@ describe('choosing the family plan on the front page', () => {
 		billing.onboardEntitlement(OWNER, null, now);
 		const { load } = await import('../src/routes/start/+page.server');
 
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		 
 		const data = (await load({
 			locals: { user: { id: OWNER } },
 			cookies: jar({ ontoplano_plan: 'family' })
@@ -354,7 +354,7 @@ describe('choosing the family plan on the front page', () => {
 		billing.onboardEntitlement(OWNER, null, now);
 		const { load } = await import('../src/routes/start/+page.server');
 
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		 
 		const data = (await load({
 			locals: { user: { id: OWNER } },
 			cookies: jar()
