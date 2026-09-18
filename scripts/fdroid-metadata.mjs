@@ -241,13 +241,14 @@ let listed = false;
 
 /*
  * A language folder under `store/play/` holds words and pictures both, and
- * only the words belong here.
+ * only the words and the banner belong here.
  *
  * Play takes captioned screenshots and F-Droid takes plain ones, so that
  * folder's `phoneScreenshots/` and the rest are Play's — copying them in
  * would put a caption in the one listing that explicitly does not want one.
- * `captions.json` is the words those captions are made of, which is Play's
- * business too.
+ * `captions.json` is the words those captions are made of, and `banner.json`
+ * the words on the banner; both are sources the pictures were made from
+ * rather than anything a store reads.
  */
 const WORDS = ['title.txt', 'short_description.txt', 'full_description.txt'];
 
@@ -268,25 +269,34 @@ if (existsSync(PLAY)) {
 		if (existsSync(join(from, 'changelogs'))) {
 			cpSync(join(from, 'changelogs'), join(to, 'changelogs'), { recursive: true });
 		}
+
+		/*
+		 * The banner is words as much as it is a picture — a headline and a
+		 * line under it, written in that language — so every language brings
+		 * its own, at 60KB each.
+		 */
+		const banner = join(from, 'featureGraphic.png');
+		if (existsSync(banner)) cpSync(banner, join(to, 'images', 'featureGraphic.png'));
 	}
 
 	/*
-	 * And the pictures, into the language F-Droid shows by default.
+	 * And the pictures that are not words, into the language F-Droid shows by
+	 * default.
 	 *
-	 * Only en-US carries images: a Portuguese listing with the same English
-	 * screenshots under it is a second copy of two megabytes to say nothing
-	 * new, and F-Droid falls back to the default language's for any locale
-	 * that has none.
+	 * Only en-US carries the screenshots and the icon: a Portuguese listing
+	 * with the same English screenshots under it is a second copy of two
+	 * megabytes to say nothing new, and the client picks a locale for each
+	 * kind of image on its own, falling back to the default listing's for any
+	 * that has none — which is why a language can carry its banner and nothing
+	 * else.
 	 */
 	const images = join(listingOut, 'en-US', 'images');
 	for (const size of ['phoneScreenshots', 'sevenInchScreenshots', 'tenInchScreenshots']) {
 		const from = join(STORE, 'fdroid', size);
 		if (existsSync(from)) cpSync(from, join(images, size), { recursive: true });
 	}
-	for (const file of ['featureGraphic.png', 'icon.png']) {
-		const from = join(PLAY, file);
-		if (existsSync(from)) cpSync(from, join(images, file));
-	}
+	const icon = join(PLAY, 'icon.png');
+	if (existsSync(icon)) cpSync(icon, join(images, 'icon.png'));
 
 	listed = true;
 }
