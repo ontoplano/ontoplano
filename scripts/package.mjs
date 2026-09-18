@@ -278,8 +278,8 @@ function rebuildNative(lib, toolchain) {
  * The `.bin` shims, which point at this machine.
  *
  * yarn writes `node_modules/.bin/*` as absolute symlinks into the tree it
- * installed from, so a copied `node_modules` carries links to `/workspace/...`
- * that are dangling everywhere else. rpmbuild says so out loud; dpkg ships them
+ * installed from, so a copied `node_modules` carries links back into the build
+ * checkout that are dangling everywhere else. rpmbuild says so out loud; dpkg ships them
  * in silence. Nothing at runtime uses them — the unit runs `build/index.js` and
  * the migrator runs a .mjs — so they go rather than being repaired.
  */

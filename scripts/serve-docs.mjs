@@ -4,8 +4,8 @@
  * `python3 -m http.server` used to do this, and every link in the docs 404ed:
  * the pages link to `/interfaces`, the file on disk is `interfaces.html`, and
  * a plain static server has no opinion about the difference. nginx does —
- * `try_files $uri $uri.html $uri/ =404` in `ontoplano-server/bin/docs-setup.sh`
- * — so the preview was showing something nobody would ever be served. This is
+ * `try_files $uri $uri.html $uri/ =404` on the host that serves them — so
+ * the preview was showing something nobody would ever be served. This is
  * that rule, in the runtime the repo already needs, which also takes Python
  * off the list of things a contributor must have.
  */

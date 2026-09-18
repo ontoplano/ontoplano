@@ -13,7 +13,7 @@
  * surface here — at build time, by name — not on the console during a
  * release. When a part genuinely needs to pass its ceiling, bump the part
  * above it; if the numbering itself has to be rethought, decouple the code
- * into a counter of its own first (see AGENTS.md on renumbering).
+ * into a counter of its own first.
  *
  * @param {string} version
  * @returns {number}

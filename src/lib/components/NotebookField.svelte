@@ -7,8 +7,8 @@
 	/**
 	 * The one control that says what subject a thing belongs to.
 	 *
-	 * Entries, todos and goals all point at a notebook, and all three used to be
-	 * a place where I could have written a slightly different select. One
+	 * Entries, todos and goals all point at a notebook, and each was one more
+	 * place a slightly different select could have been written. One
 	 * component means the label, the wording of "no notebook", and the ordering
 	 * are the same wherever you meet it.
 	 */

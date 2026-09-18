@@ -20,8 +20,8 @@ import { join } from 'node:path';
  * Anchored to this file, not to `**`.
  *
  * `**\/.worktrees/**` reads as "anywhere called .worktrees" and Playwright
- * matches it against absolute paths — so running the suite from *inside*
- * `/workspace/.worktrees/something` ignored every spec in it and reported "no
+ * matches it against absolute paths — so running the suite from *inside* a
+ * checkout under `.worktrees/` ignored every spec in it and reported "no
  * tests found", which is a confusing way to say "you are in the wrong
  * directory". Rooted at the config's own directory it means what it says:
  * checkouts nested below this one.

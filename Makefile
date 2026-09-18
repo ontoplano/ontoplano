@@ -1145,8 +1145,8 @@ fdroid:
 # Not on a server.
 #
 # Compiling the app takes a gigabyte of heap and every core it can find. Done
-# on the box that serves ontoplano it is an outage: memory to 94%, load above 3
-# on one core, and the deploy's own build starved beside it. Refused by
+# on the box that serves ontoplano it is an outage: memory pinned, the load
+# past the core count, and the deploy's own build starved beside it. Refused by
 # default on a machine that looks like a server, because nobody has ever meant
 # to do this.
 #: PHONE_BUILD_ANYWHERE=1  build the phone app on this machine whatever it looks like
