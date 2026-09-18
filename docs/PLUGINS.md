@@ -1,8 +1,8 @@
 # Writing an ontoplano plugin
 
-A plugin is **an external app that talks to ontoplano over HTTP**. It doesn't run inside
-ontoplano, doesn't ship any code into it, and can't break it. There's nothing to install
-and no plugin API version to track — you get an API token, and you're a plugin.
+A plugin is **an external app that talks to ontoplano over HTTP**. It does not run
+inside ontoplano, ships no code into it, and cannot break it. There is nothing to
+install and no plugin API version to track: an API token makes your program a plugin.
 
 Plugins do two things:
 
@@ -67,7 +67,7 @@ Namespace your slug with your app name (`yourapp.thing`). Lowercase, dots and da
 | `state`       | current status                                   | optional         |
 
 `display` picks the built-in renderer: `line_chart`, `calendar_heatmap`, `latest_value`,
-`bar_chart`, `list`. The user can change it later; don't fight them for it.
+`bar_chart`, `list`. The user can change it later; do not fight them for it.
 
 `retention_days` (optional, 1–3650) asks the server to keep only that many days of
 points: older ones are deleted, nightly and on push. Omit it to leave the setting
@@ -115,7 +115,7 @@ producers rather than silently degrading.
 
 ### Partial success
 
-One malformed point doesn't fail the batch:
+One malformed point does not fail the batch:
 
 ```json
 {
@@ -125,7 +125,7 @@ One malformed point doesn't fail the batch:
 }
 ```
 
-Rejected points will _never_ succeed — log and drop them. Don't retry them forever.
+Rejected points will _never_ succeed — log and drop them rather than retrying forever.
 
 **The worked example lives in `examples/onto-readings.mjs`**: a CSV of
 measurements becomes one stream per column. Every bathroom scale, sleep
@@ -174,8 +174,8 @@ time in the account's own zone, not an instant it has to convert back.
 
 ### Deciding what to do with an occurrence is _your_ job
 
-Ontoplano reports what's scheduled. It knows nothing about alarms, ringtones, or wifi —
-and it shouldn't, or every consumer's concepts would leak into its schema.
+Ontoplano reports what is scheduled. It knows nothing about alarms, ringtones, or wifi —
+and it should not, or every consumer's concepts would leak into its schema.
 
 So matching rules live in **your** app's config. The alarm app above stores something like:
 
@@ -185,12 +185,12 @@ soft_alarm_when: category == "duty"
 ```
 
 and resolves each occurrence against that at sync time. If you find yourself wanting
-ontoplano to store a field that only your app understands, that's the signal to keep it on
-your side instead.
+ontoplano to store a field that only your app understands, that is the signal to keep it
+on your side instead.
 
 ---
 
-## 3½. Webhooks: hearing about things
+## 4. Webhooks: hearing about things
 
 Streams push data in; webhooks let your program hear about things happening, without
 running any code inside ontoplano. Subscribe an address (scope `webhooks:manage`, or on
@@ -247,60 +247,59 @@ nothing above: scoped tokens, the shopping API, self-managed webhooks.
 
 ---
 
-## 4. Errors
+## 5. Errors
 
 ```json
 { "error": { "code": "not_found", "message": "Stream not found" } }
 ```
 
-| Status | Code               | What to do                                                                            |
-| ------ | ------------------ | ------------------------------------------------------------------------------------- |
-| 401    | `unauthorized`     | token bad/revoked/expired — stop, prompt the user to reconnect                        |
-| 403    | `forbidden`        | token lacks the scope — stop, don't retry                                             |
-| 404    | `not_found`        | stream missing (or not yours) — re-declare once, then retry                           |
-| 409    | `conflict`         | duplicate resource                                                                    |
-| 422    | `validation_error` | malformed — **don't retry**, it will never succeed                                    |
-| 402    | `plan_limit`       | a storage ceiling — surface the message, don't retry. A self-hosted instance has none |
+| Status | Code               | What to do                                                                             |
+| ------ | ------------------ | -------------------------------------------------------------------------------------- |
+| 401    | `unauthorized`     | token bad/revoked/expired — stop, prompt the user to reconnect                         |
+| 403    | `forbidden`        | token lacks the scope — stop, do not retry                                             |
+| 404    | `not_found`        | stream missing (or not yours) — re-declare once, then retry                            |
+| 409    | `conflict`         | duplicate resource                                                                     |
+| 422    | `validation_error` | malformed — **do not retry**, it will never succeed                                    |
+| 402    | `plan_limit`       | a storage ceiling — surface the message, do not retry. A self-hosted instance has none |
 
-A resource belonging to another user returns exactly what a nonexistent one returns. Don't
-read anything into a 404 beyond "not available to you".
+A resource belonging to another user returns exactly what a nonexistent one returns. Read
+nothing into a 404 beyond "not available to you".
 
 Retry 5xx with exponential backoff and jitter; keep the queue durable across restarts.
 
 ---
 
-## 5. Checklist for a well-behaved plugin
+## 6. What a well-behaved plugin does
 
-- [ ] `external_id` derived from the reading, never random
-- [ ] Treats `duplicates` as success
-- [ ] Drops 422s instead of retrying them
-- [ ] Durable queue — survives restart, drains when connectivity returns
-- [ ] Backs off on 5xx/429, honours `Retry-After`
-- [ ] Token in the OS keychain, never in the repo, never logged
-- [ ] Narrowest scopes that work
-- [ ] Base URL configurable (self-hosters exist)
-- [ ] Works standalone with sync disabled — ontoplano is never a hard dependency
-- [ ] Surfaces sync status: last success, pending count, last error
-- [ ] Re-declares its stream at startup
+- Derives `external_id` from the reading, never randomly.
+- Treats `duplicates` as success.
+- Drops 422s instead of retrying them.
+- Keeps a durable queue: it survives a restart and drains when connectivity returns.
+- Backs off on 5xx and 429, and honours `Retry-After`.
+- Keeps the token in the OS keychain — never in a repo, never in a log.
+- Asks for the narrowest scopes that work.
+- Makes the base URL configurable, because self-hosters exist.
+- Works standalone with sync disabled — ontoplano is never a hard dependency.
+- Surfaces its sync status: last success, pending count, last error.
+- Re-declares its stream at startup.
 
 ---
 
-## 6. What plugins deliberately cannot do
+## 7. What plugins deliberately cannot do
 
 No custom UI, no injected JavaScript, no server-side code, no layout control, no access to
 other users' data.
 
-This is a deliberate ceiling, not an oversight. It's what keeps the platform at "an HTTP
-endpoint and five renderers" instead of a sandbox, a permission model, a compatibility
-contract, and a support burden for everyone else's bugs. If you need a bespoke
-visualisation, build it in your own app and push a _summary_ stream here.
+The ceiling is what keeps the surface an HTTP endpoint and a handful of renderers
+rather than a sandbox with a permission model and a compatibility contract. A bespoke
+visualisation belongs in your own app, with a _summary_ stream pushed here.
 
-If you're self-hosting and genuinely need to run code inside ontoplano, you have the
-source — but that's a fork, not a plugin, and you own the merge conflicts.
+If you are self-hosting and genuinely need to run code inside ontoplano, you have the
+source — but that is a fork, not a plugin, with a fork's maintenance.
 
 ---
 
-## 7. Local testing
+## 8. Local testing
 
 ```sh
 TOKEN=onto_xxx
