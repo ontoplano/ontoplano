@@ -55,6 +55,12 @@ releases mattered.
 - **The block form says which block.** Its header carries the thing's name and
   the category it is in, as a pill in that category's own colour; a category
   block has no name of its own, so that line is a dash.
+- **One block can happen on several weekdays.** Monday, Tuesday and Wednesday
+  used to be three blocks — three to edit, three to move, three to delete, and
+  nothing saying they were the same thing. "Some days" under How often takes
+  as many as you like.
+- **Fixed: making a block once-only, or recurrent, left the wrong fields on the
+  form** — the rhythm panel on a one-off, a date asked of something repeating.
 - **A recording in an idea or a note about somebody is a player.** It was the
   markdown link that stores it — a file name sitting in the middle of your own
   writing — and it is a playhead under the words now.

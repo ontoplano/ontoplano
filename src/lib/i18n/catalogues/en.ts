@@ -2768,6 +2768,7 @@ export const messages: Catalogue = {
 	'tasks.plan.selected': '{size} selected',
 	'tasks.plan.selectedDragOne': '{size} selected · drag one to move them · Esc to clear',
 	'tasks.plan.shift': 'Shift',
+	'tasks.plan.someDays': 'Some days',
 	'tasks.plan.startFromATemplate': 'Start from a template',
 	'tasks.plan.stillWithoutATime': 'still without a time',
 	'tasks.plan.stopSubscribing': 'Stop subscribing',

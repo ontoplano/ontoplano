@@ -10,10 +10,20 @@
  * Serialised forms, all anchored so a rhythm has something to count from:
  *
  *   weekly:ANCHOR     — every week on the slot's weekday, from ANCHOR
+ *   weekdays:D,D:A    — every week on each of these weekdays, from ANCHOR
  *   weeks:N:ANCHOR    — every N weeks on the slot's weekday, from ANCHOR
  *   days:N:ANCHOR     — every N days from ANCHOR, ignoring weekday
  *   monthly:D:ANCHOR  — day D of every month from ANCHOR; D of 29-31 clamps to
  *                       month end
+ *
+ * ## Several weekdays
+ *
+ * A thing that happens on Monday, Tuesday and Wednesday was three blocks:
+ * three rows to edit, three to move, three to delete, and nothing saying they
+ * were the same thing. `weekdays` is one block that lands on each of them. The
+ * slot's own `weekday` column stays what it always was — the first of them —
+ * so everything that reads a block's day still gets an answer, and the rule is
+ * what generation actually consults.
  *
  * ANCHOR is YYYY-MM-DD. Anything unrecognised reads as plain weekly, so a bad
  * value degrades to the old behaviour rather than making a slot disappear.
@@ -33,6 +43,7 @@
  */
 export type Recurrence =
 	| { kind: 'weekly'; anchor?: string }
+	| { kind: 'weekdays'; days: number[]; anchor?: string }
 	| { kind: 'weeks'; interval: number; anchor: string }
 	| { kind: 'days'; interval: number; anchor: string }
 	| { kind: 'monthly'; day: number; anchor?: string };
@@ -72,6 +83,26 @@ export function parseRecurrence(raw: string | null | undefined): Recurrence {
 
 	if (parts[0] === 'weekly') return { kind: 'weekly', ...anchorOf(parts[1]) };
 
+	if (parts[0] === 'weekdays') {
+		// Sorted and deduplicated, so "Wednesday, Monday, Monday" is one rule
+		// with two days in it and two rules that mean the same thing compare
+		// equal. Anything unreadable degrades to plain weekly, as every shape
+		// here does.
+		const days = [
+			...new Set(
+				(parts[1] ?? '')
+					.split(',')
+					// `Number('')` is 0, which would read an empty list as Monday.
+					.filter((part) => part.trim() !== '')
+					.map(Number)
+			)
+		]
+			.filter((d) => Number.isInteger(d) && d >= 0 && d <= 6)
+			.sort((a, b) => a - b);
+		if (days.length === 0) return WEEKLY;
+		return { kind: 'weekdays', days, ...anchorOf(parts[2]) };
+	}
+
 	if (parts[0] === 'weeks' || parts[0] === 'days') {
 		const interval = Number(parts[1]);
 		const anchor = parts[2] ?? '';
@@ -93,6 +124,10 @@ export function parseRecurrence(raw: string | null | undefined): Recurrence {
 
 export function serialiseRecurrence(r: Recurrence): string {
 	switch (r.kind) {
+		case 'weekdays': {
+			const days = r.days.join(',');
+			return r.anchor ? `weekdays:${days}:${r.anchor}` : `weekdays:${days}`;
+		}
 		case 'weeks':
 			return `weeks:${r.interval}:${r.anchor}`;
 		case 'days':
@@ -125,6 +160,9 @@ export function occursOn(r: Recurrence, date: Date, weekday: number): boolean {
 	switch (r.kind) {
 		case 'weekly':
 			return dateWeekday === weekday;
+
+		case 'weekdays':
+			return r.days.includes(dateWeekday);
 
 		case 'weeks': {
 			if (dateWeekday !== weekday) return false;
@@ -160,7 +198,8 @@ export function occursOn(r: Recurrence, date: Date, weekday: number): boolean {
 export function reanchor(r: Recurrence, date: Date): Recurrence {
 	switch (r.kind) {
 		case 'weekly':
-			// The weekday carries the move; the start date is when the rhythm began
+		case 'weekdays':
+			// The weekdays carry the move; the start date is when the rhythm began
 			// and dragging one occurrence does not rewrite that.
 			return r;
 		case 'weeks':
@@ -171,11 +210,28 @@ export function reanchor(r: Recurrence, date: Date): Recurrence {
 	}
 }
 
-/** A short human description, for a list row that has no space for a form. */
-export function describeRecurrence(r: Recurrence, weekdayName: string): string {
+/**
+ * A short human description, for a list row that has no space for a form.
+ *
+ * `weekdayNames` is the whole week, Monday first, for the shape that names
+ * several of them; `weekdayName` is the block's own, for the shapes that have
+ * exactly one.
+ */
+export function describeRecurrence(
+	r: Recurrence,
+	weekdayName: string,
+	weekdayNames: readonly string[] = []
+): string {
 	switch (r.kind) {
 		case 'weekly':
 			return `Every ${weekdayName}`;
+
+		case 'weekdays': {
+			const named = r.days.map((d) => weekdayNames[d] ?? String(d));
+			if (named.length === 7) return 'Every day';
+			if (named.length === 1) return `Every ${named[0]}`;
+			return `Every ${named.slice(0, -1).join(', ')} and ${named[named.length - 1]}`;
+		}
 		case 'weeks':
 			return r.interval === 2
 				? `Every other ${weekdayName}`

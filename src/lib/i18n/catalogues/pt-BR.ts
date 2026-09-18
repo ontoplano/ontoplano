@@ -2800,6 +2800,7 @@ export const messages: Catalogue = {
 	'tasks.plan.selectedDragOne':
 		'{size} selecionados · arraste um para mover todos · Esc para limpar',
 	'tasks.plan.shift': 'Shift',
+	'tasks.plan.someDays': 'Alguns dias',
 	'tasks.plan.startFromATemplate': 'Começar a partir de um modelo',
 	'tasks.plan.stillWithoutATime': 'ainda sem horário',
 	'tasks.plan.stopSubscribing': 'Parar de assinar',

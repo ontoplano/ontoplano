@@ -2849,6 +2849,7 @@ export const messages: Catalogue = {
 	'tasks.plan.selectedDragOne':
 		'{size} ausgewählt · eine ziehen, um sie zu verschieben · Esc zum Leeren',
 	'tasks.plan.shift': 'Umschalt',
+	'tasks.plan.someDays': 'Bestimmte Tage',
 	'tasks.plan.startFromATemplate': 'Von einer Vorlage starten',
 	'tasks.plan.stillWithoutATime': 'noch ohne Uhrzeit',
 	'tasks.plan.stopSubscribing': 'Abonnement beenden',

@@ -155,3 +155,42 @@ describe('and so the past stops filling up', () => {
 		expect(days).toEqual(['2026-09-12', '2026-09-19', '2026-09-26']);
 	});
 });
+
+/**
+ * One block on several weekdays.
+ *
+ * Monday, Tuesday and Wednesday used to be three blocks — three to edit, three
+ * to move, three to delete, and nothing saying they were the same thing. The
+ * `weekdays` shape is one block that lands on each of them, and the block's own
+ * `weekday` column is no longer what decides: it stays the first of them so
+ * that everything reading "which day is this on" still has an answer.
+ */
+describe('a rhythm on several weekdays', () => {
+	// 2026-09-14 is a Monday, so 14/15/16 are Mon/Tue/Wed and 17 is a Thursday.
+	const MONDAY = 0;
+
+	test('lands on each day it names and on no other', () => {
+		const r = parseRecurrence('weekdays:0,1,2:2026-09-14');
+
+		expect(occursOn(r, day('2026-09-14'), MONDAY)).toBe(true);
+		expect(occursOn(r, day('2026-09-15'), MONDAY)).toBe(true);
+		expect(occursOn(r, day('2026-09-16'), MONDAY)).toBe(true);
+		expect(occursOn(r, day('2026-09-17'), MONDAY)).toBe(false);
+	});
+
+	test('and not before it started, like every other shape', () => {
+		const r = parseRecurrence('weekdays:0,1,2:2026-09-14');
+		expect(occursOn(r, day('2026-09-09'), MONDAY)).toBe(false);
+	});
+
+	test('reads back as it was written, sorted and without repeats', () => {
+		const r = parseRecurrence('weekdays:2,0,2,1:2026-09-14');
+		expect(serialiseRecurrence(r)).toBe('weekdays:0,1,2:2026-09-14');
+	});
+
+	/** A rule naming no day at all is not a rule; it degrades to plain weekly. */
+	test('an empty set falls back to the block’s own day', () => {
+		expect(parseRecurrence('weekdays::2026-09-14')).toEqual({ kind: 'weekly' });
+		expect(parseRecurrence('weekdays:9,44:2026-09-14')).toEqual({ kind: 'weekly' });
+	});
+});

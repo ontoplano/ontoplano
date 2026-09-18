@@ -979,6 +979,14 @@ export function readRecurrence(formData: FormData, now: Date): string {
 	if (kind === 'monthly') {
 		return serialiseRecurrence(parseRecurrence(`monthly:${monthDay}:${given}`));
 	}
+	if (kind === 'weekdays') {
+		// Every day that was ticked, as the form posted them. The parser sorts,
+		// deduplicates and refuses anything that is not a weekday, and an empty
+		// set comes back as plain weekly — which is the block's own day, and
+		// what "none of them" can only have meant.
+		const days = formData.getAll('recurrenceWeekday').map(String).join(',');
+		return serialiseRecurrence(parseRecurrence(`weekdays:${days}:${given}`));
+	}
 	return serialiseRecurrence(parseRecurrence(`weekly:${given}`));
 }
 

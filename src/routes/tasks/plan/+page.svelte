@@ -326,7 +326,16 @@
 	let formWeekday = $state(0);
 	// The Repeats control extends the weekly/one-off toggle rather than replacing
 	// it: "every week" is still one click, the rest unfold from it.
-	let recurrenceKind: 'weekly' | 'weeks' | 'days' | 'monthly' = $state('weekly');
+	let recurrenceKind: 'weekly' | 'weekdays' | 'weeks' | 'days' | 'monthly' = $state('weekly');
+	/*
+	 * The days a `weekdays` block lands on, Monday-indexed.
+	 *
+	 * A thing that happens on Monday, Tuesday and Wednesday was three blocks —
+	 * three to edit, three to move, three to delete, and nothing saying they
+	 * were the same thing. The block's own `weekday` stays the first of these,
+	 * so everything that reads a block's day still has an answer.
+	 */
+	let recurrenceDays = $state<number[]>([]);
 	let recurrenceInterval = $state(2);
 	let recurrenceMonthDay = $state(1);
 	/**
@@ -521,6 +530,7 @@
 	function startEdit(slot: Slot) {
 		const rec = parseRecurrence(slot.recurrence);
 		recurrenceKind = rec.kind;
+		recurrenceDays = rec.kind === 'weekdays' ? rec.days : [slot.weekday];
 		// A rule written before rhythms had a start date carries none, and editing
 		// one must not quietly give it today's — that would cut off a routine that
 		// has been running for a year.
@@ -576,6 +586,7 @@
 	 */
 	function startNew(mode: 'weekly' | 'once' = 'weekly', anchor: string = selectedDateStr()) {
 		recurrenceKind = 'weekly';
+		recurrenceDays = [selectedWeekday];
 		recurrenceAnchor = anchor;
 		recurrenceInterval = 2;
 		recurrenceMonthDay = 1;
@@ -1712,6 +1723,9 @@
 		}
 		if (recurrenceKind === 'monthly') {
 			return parseRecurrence(`monthly:${recurrenceMonthDay}:${recurrenceAnchor}`);
+		}
+		if (recurrenceKind === 'weekdays') {
+			return parseRecurrence(`weekdays:${recurrenceDays.join(',')}:${recurrenceAnchor}`);
 		}
 		return parseRecurrence(`weekly:${recurrenceAnchor}`);
 	});
@@ -3105,7 +3119,7 @@
 						<input type="hidden" name="recurrenceKind" value={recurrenceKind} />
 
 						<div class="seg">
-							{#each [{ v: 'weekly', l: t('tasks.plan.everyWeek') }, { v: 'weeks', l: t('tasks.plan.everyNWeeks') }, { v: 'days', l: t('tasks.plan.everyNDays') }, { v: 'monthly', l: t('finance.ledgers.everyMonth') }] as opt (opt.v)}
+							{#each [{ v: 'weekly', l: t('tasks.plan.everyWeek') }, { v: 'weekdays', l: t('tasks.plan.someDays') }, { v: 'weeks', l: t('tasks.plan.everyNWeeks') }, { v: 'days', l: t('tasks.plan.everyNDays') }, { v: 'monthly', l: t('finance.ledgers.everyMonth') }] as opt (opt.v)}
 								<button
 									type="button"
 									onclick={() => (recurrenceKind = opt.v as typeof recurrenceKind)}
@@ -3115,6 +3129,34 @@
 								</button>
 							{/each}
 						</div>
+
+						<!--
+							Monday, Tuesday and Wednesday as one block.
+
+							It was three blocks: three to edit, three to move, three to
+							delete, and nothing saying they were the same thing. The block's
+							own weekday stays the first of these, so every reading of "which
+							day is this on" still has an answer.
+						-->
+						{#if recurrenceKind === 'weekdays'}
+							<div class="seg flex-wrap" role="group" aria-label={t('tasks.plan.someDays')}>
+								{#each data.weekdays as day, i (i)}
+									<button
+										type="button"
+										aria-pressed={recurrenceDays.includes(i)}
+										onclick={() =>
+											(recurrenceDays = recurrenceDays.includes(i)
+												? recurrenceDays.filter((d) => d !== i)
+												: [...recurrenceDays, i].sort((a, b) => a - b))}
+									>
+										{day.slice(0, 3)}
+									</button>
+								{/each}
+							</div>
+							{#each recurrenceDays as day (day)}
+								<input type="hidden" name="recurrenceWeekday" value={day} />
+							{/each}
+						{/if}
 
 						{#if recurrenceKind === 'weeks' || recurrenceKind === 'days'}
 							<label class="flex items-center gap-2 text-sm text-gray-700">

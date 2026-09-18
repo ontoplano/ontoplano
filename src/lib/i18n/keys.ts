@@ -2411,6 +2411,7 @@ export type MessageKey =
 	| 'tasks.plan.selected'
 	| 'tasks.plan.selectedDragOne'
 	| 'tasks.plan.shift'
+	| 'tasks.plan.someDays'
 	| 'tasks.plan.startFromATemplate'
 	| 'tasks.plan.stillWithoutATime'
 	| 'tasks.plan.stopSubscribing'
