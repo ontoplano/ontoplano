@@ -349,7 +349,14 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 		billsDue: billsDueBetween(ctx, formatDate(from), formatDate(to)),
 		// The workouts a block can be about. Empty for an account that keeps
 		// none, which is what hides the mode entirely.
-		workouts: listWorkouts(ctx).map((t) => ({ id: t.id, title: t.title, minutes: t.minutes }))
+		// `categoryName` for the block form's header, which says what the block
+		// is and what it is filed under whichever mode is chosen.
+		workouts: listWorkouts(ctx).map((t) => ({
+			id: t.id,
+			title: t.title,
+			minutes: t.minutes,
+			categoryName: t.categoryName ?? null
+		}))
 	};
 };
 

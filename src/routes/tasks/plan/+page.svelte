@@ -309,6 +309,9 @@
 	// server creates the activity as part of the same submission.
 	const NEW_ACTIVITY = '__new__';
 
+	/** What the block form's header shows where there is no name to show. */
+	const DASH = '\u2014';
+
 	// One form creates and edits both kinds of block. A recurring slot and a
 	// one-off differ only in "which day" — weekday versus date — so splitting
 	// them into two forms only ever made the user pick the storage table.
@@ -362,6 +365,54 @@
 	let formLabel = $state('');
 	let formCategoryId = $state<number | null>(null);
 	let formWorkoutId = $state<number | null>(null);
+
+	/*
+	 * What the block form's header says about the block being edited.
+	 *
+	 * Three modes choose the thing three different ways, and the header says the
+	 * same two facts however it was chosen: the thing's own name, and the
+	 * category it belongs to, in that category's colour. A category block has no
+	 * name of its own — the category *is* what it is — so the first line is a
+	 * dash rather than a repetition of the second.
+	 */
+	const blockHeading = $derived.by(() => {
+		const mode: string = slotMode;
+		const category = (id: number | null | undefined) =>
+			id === null || id === undefined ? undefined : data.categories.find((c) => c.id === id);
+		/*
+		 * The pill's two colours, which the category already carries.
+		 *
+		 * `colorLight` is the tint the app derives from every category colour —
+		 * see `lightVariant` — so the pair is a readable one by construction
+		 * rather than by picking white or black off a luminance number, which is
+		 * the thing `blockHue` retired. Both are checked as plain hex before
+		 * going anywhere near an inline style: they come out of a row somebody
+		 * can type into.
+		 */
+		const hex = (value: string | undefined) =>
+			value && /^#[0-9a-f]{3,8}$/i.test(value.trim()) ? value.trim() : '';
+		const pill = (chosen: { name: string; color: string; colorLight: string } | undefined) => ({
+			categoryName: chosen?.name ?? '',
+			ink: hex(chosen?.color),
+			face: hex(chosen?.colorLight)
+		});
+
+		if (mode === 'workout') {
+			const workout = data.workouts.find((w) => w.id === formWorkoutId);
+			return {
+				name: workout?.title ?? DASH,
+				...pill(undefined),
+				categoryName: workout?.categoryName ?? ''
+			};
+		}
+		if (mode === 'category') return { name: DASH, ...pill(category(formCategoryId)) };
+
+		const activity =
+			activityChoice === NEW_ACTIVITY
+				? undefined
+				: data.activities.find((a) => String(a.id) === activityChoice);
+		return { name: activity?.name ?? DASH, ...pill(category(activity?.categoryId)) };
+	});
 	// Offset into the visible window (0 = the day it starts on, i.e. today by
 	// default), not a Monday-indexed weekday. The weekday is derived from it.
 	let selectedOffset: number = $state(0);
@@ -2936,6 +2987,29 @@
 			? t('tasks.plan.happensOnceOnOneDay')
 			: t('tasks.plan.comesBackAsOften')}
 	>
+		{#snippet badge()}
+			<!--
+				What the block is, and what it is filed under.
+
+				The title can only say "Edit block"; this is the corner that says
+				which block. Both lines are always drawn — a dash where there is no
+				name of its own, which is every category block — so choosing
+				something rewrites two lines and moves nothing.
+			-->
+			<p class="truncate text-sm font-medium text-gray-900">{blockHeading.name}</p>
+			{#if blockHeading.categoryName}
+				<span
+					class="chip mt-0.5 max-w-full truncate"
+					style={blockHeading.face && blockHeading.ink
+						? `background-color:${blockHeading.face};color:${blockHeading.ink};border-color:transparent`
+						: ''}
+				>
+					{blockHeading.categoryName}
+				</span>
+			{:else}
+				<p class="truncate text-xs text-gray-500">{DASH}</p>
+			{/if}
+		{/snippet}
 		<div bind:this={createFormEl} class="space-y-3">
 			<!--
 				`reset: false`, because this form is about to disappear.
@@ -3211,12 +3285,18 @@
 				{/if}
 
 				<FormGrid>
-					<Field
-						label={t('ui.notes')}
-						span={12}
-						hint={slotMode === 'category' ? t('tasks.plan.theFirstLineIsWhat') : 'optional'}
-						required={slotMode === 'category'}
-					>
+					<!--
+						Optional in every mode, and the same size in every mode.
+
+						It was required for a category block, on the reasoning that such a
+						block has no name of its own — but it does: `schedule.ts` already
+						falls back to the category's name, so an hour of "health" with
+						nothing written on it draws as "health", which is exactly what it
+						is. What the requirement actually bought was a star, a placeholder
+						and a taller box appearing the moment somebody changed the mode,
+						which is the form moving under a press.
+					-->
+					<Field label={t('ui.notes')} span={12} hint={t('tasks.plan.theFirstLineIsWhat')}>
 						<!--
 							Notes, not a label.
 
@@ -3229,10 +3309,9 @@
 						-->
 						<textarea
 							name="label"
-							rows={slotMode === 'category' ? 3 : 2}
+							rows={3}
 							autocomplete="off"
-							required={slotMode === 'category'}
-							placeholder={slotMode === 'category' ? t('tasks.plan.eGDentist') : ''}
+							placeholder={t('tasks.plan.eGDentist')}
 							bind:value={formLabel}
 							class="input resize-y"
 							maxlength={MAX_BLOCK_NOTES}

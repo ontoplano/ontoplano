@@ -47,6 +47,17 @@ releases mattered.
   list the new one just joined.
 - **The attribute boxes say what goes in them** — "my attribute" and "my value
   (optional)".
+- **Fixed: a reminder set on a block you already had never arrived.** The lead
+  was stored and read when a day is generated, so it reached the days made
+  after it and none of the ones already on your week — which are the ones you
+  set it for. The days that exist are armed as soon as you save, a changed
+  lead moves them, and taking it off takes them away.
+- **The block form says which block.** Its header carries the thing's name and
+  the category it is in, as a pill in that category's own colour; a category
+  block has no name of its own, so that line is a dash.
+- **A note on a block is optional in every mode**, and the field no longer
+  changes shape when you change the mode. A category block with nothing
+  written on it draws as its category, which is what it is.
 
 - **The shopping list is a reading of the inventory, and the data says so
   now.** The two tables behind the room were still called after the list;

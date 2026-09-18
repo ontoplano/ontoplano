@@ -268,3 +268,58 @@ describe('moving one occurrence of a repeating block', () => {
 		).toThrow();
 	});
 });
+
+/**
+ * A reminder set on a block you already have.
+ *
+ * The lead is written on the block and `remindFor` reads it at generation, so
+ * for as long as that was the only path, setting "ten minutes before" on an
+ * existing block did nothing anybody could see: the days were generated days
+ * ago, no row was ever written, and /reminders stayed empty while the form
+ * said it had saved.
+ */
+describe('the lead on a block that already has days', () => {
+	let instances: typeof import('../src/lib/services/instances');
+	let reminders: typeof import('../src/lib/services/reminders');
+	let id: number;
+
+	beforeAll(async () => {
+		instances = await import('../src/lib/services/instances');
+		reminders = await import('../src/lib/services/reminders');
+		// Thursday, three days after `ctx.now` — comfortably outside the lead a
+		// reminder has to be set beyond.
+		id = slots.createSlot(ctx, block({ weekday: 3, startTime: '09:00' }));
+		instances.generateInstances(
+			ctx,
+			new Date('2026-08-17T00:00:00'),
+			new Date('2026-08-24T00:00:00')
+		);
+	});
+
+	const mine = () =>
+		reminders
+			.listReminders(ctx, { includePast: true })
+			.filter((r) => r.subjectKind === 'instance' && r.message === 'Deep work');
+
+	test('arrives on the days that already exist', () => {
+		expect(mine(), 'nothing is armed before a lead is set').toHaveLength(0);
+
+		slots.updateSlot(ctx, id, block({ weekday: 3, startTime: '09:00', remindLeadMinutes: 10 }));
+		const armed = mine();
+		expect(armed).toHaveLength(1);
+		expect(armed[0].remindAt).toBe('2026-08-20T08:50:00');
+	});
+
+	/** A changed lead moves the reminder rather than adding a second one. */
+	test('moves when the lead changes', () => {
+		slots.updateSlot(ctx, id, block({ weekday: 3, startTime: '09:00', remindLeadMinutes: 30 }));
+		const armed = mine();
+		expect(armed).toHaveLength(1);
+		expect(armed[0].remindAt).toBe('2026-08-20T08:30:00');
+	});
+
+	test('and goes when the lead is taken off', () => {
+		slots.updateSlot(ctx, id, block({ weekday: 3, startTime: '09:00', remindLeadMinutes: '' }));
+		expect(mine()).toHaveLength(0);
+	});
+});

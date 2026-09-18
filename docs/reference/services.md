@@ -4487,6 +4487,22 @@ Every weekly block, active or not — the grid draws the inactive ones faded.
 
 #### `updateSlot(ctx, id, raw)`
 
+#### `armGeneratedDays(ctx, link, lead)`
+
+Arm the days that already exist, when the block's lead changes.
+
+`remindFor` runs at generation, so a reminder set on a block reached only
+the occurrences generated after it — and the ones somebody cares about are
+this week's, which were generated days ago. Setting "ten minutes before" on
+a block you already have therefore did nothing at all, silently: the lead
+was stored, the form said saved, and no reminder ever appeared.
+
+So the block's own future occurrences are re-armed here whenever the lead is
+written. Its reminders go first — a changed lead has to move them, not add a
+second one — and only the untouched days are re-armed: an occurrence
+somebody has marked done or skipped is a record of their day, not something
+to ring about. Only from today: arming yesterday is arming nothing.
+
 #### `toggleSlotActive(ctx, id)`
 
 #### `deleteSlots(ctx, ids)`

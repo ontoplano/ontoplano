@@ -20,6 +20,7 @@ import {
 } from '$lib/db/schema.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
+import { createReminder } from './reminders.js';
 import { created, stamp, stamps } from './time.js';
 import { TIME_PATTERN, num, oneOf, optionalStr, str } from './validate.js';
 import { MAX_BLOCK_NOTES } from '../planner-grid.js';
@@ -250,6 +251,67 @@ export function updateSlot(ctx: Ctx, id: number, raw: BlockInput & { weekday: un
 
 	if (res.changes === 0) throw new NotFoundError('slot');
 	if (before) moveGeneratedDays(ctx, id, before, { weekday, startTime: placement.startTime });
+	// The days that already exist do not learn about a new lead on their own —
+	// see `armGeneratedDays`. Only when the form actually carried one.
+	if ('remindLeadMinutes' in placement)
+		armGeneratedDays(ctx, { slotId: id }, placement.remindLeadMinutes);
+}
+
+/**
+ * Arm the days that already exist, when the block's lead changes.
+ *
+ * `remindFor` runs at generation, so a reminder set on a block reached only
+ * the occurrences generated after it — and the ones somebody cares about are
+ * this week's, which were generated days ago. Setting "ten minutes before" on
+ * a block you already have therefore did nothing at all, silently: the lead
+ * was stored, the form said saved, and no reminder ever appeared.
+ *
+ * So the block's own future occurrences are re-armed here whenever the lead is
+ * written. Its reminders go first — a changed lead has to move them, not add a
+ * second one — and only the untouched days are re-armed: an occurrence
+ * somebody has marked done or skipped is a record of their day, not something
+ * to ring about. Only from today: arming yesterday is arming nothing.
+ */
+export function armGeneratedDays(
+	ctx: Ctx,
+	link: { slotId: number } | { exceptionalSlotId: number },
+	lead: number | null | undefined
+): void {
+	const owns =
+		'slotId' in link
+			? eq(taskRecords.slotId, link.slotId)
+			: eq(taskRecords.exceptionalSlotId, link.exceptionalSlotId);
+	const from = `${localDateOf(ctx.now, ctx.tz)}T00:00:00`;
+
+	const days = db
+		.select({ id: taskRecords.id, scheduledAt: taskRecords.scheduledAt })
+		.from(taskRecords)
+		.where(and(eq(taskRecords.userId, ctx.userId), owns, gte(taskRecords.scheduledAt, from)))
+		.all();
+	if (days.length === 0) return;
+
+	db.delete(reminders)
+		.where(
+			and(
+				eq(reminders.userId, ctx.userId),
+				eq(reminders.subjectKind, 'instance'),
+				inArray(
+					reminders.subjectId,
+					days.map((d) => d.id)
+				)
+			)
+		)
+		.run();
+
+	if (lead === null || lead === undefined || !Number.isFinite(lead) || lead < 0) return;
+	for (const day of days) {
+		try {
+			createReminder(ctx, { subjectId: day.id, at: lead });
+		} catch {
+			// A day inside the lead the phone needs, or one whose start will not
+			// parse. The occurrence stands; it simply gets no reminder.
+		}
+	}
 }
 
 /**
@@ -543,6 +605,8 @@ export function updateExceptional(ctx: Ctx, id: number, raw: BlockInput & { date
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('exception');
+	if ('remindLeadMinutes' in placement)
+		armGeneratedDays(ctx, { exceptionalSlotId: id }, placement.remindLeadMinutes);
 }
 
 export function deleteExceptional(ctx: Ctx, id: number): void {

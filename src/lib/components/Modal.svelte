@@ -83,6 +83,14 @@
 		 * a `goto` fired before the pop is simply undone by it.
 		 */
 		onclosed,
+		/**
+		 * What this is about, drawn at the far end of the header.
+		 *
+		 * For a form whose subject is chosen inside it: the block form says which
+		 * thing and which category, where the title can only say "Edit block".
+		 * Its own corner, so choosing something moves nothing in the form.
+		 */
+		badge,
 		children,
 		footer
 	}: {
@@ -94,6 +102,7 @@
 		error?: string | null;
 		onclose?: () => void;
 		onclosed?: () => void;
+		badge?: Snippet;
 		children: Snippet;
 		footer?: Snippet;
 	} = $props();
@@ -268,23 +277,29 @@
 						<path d="M15 5l-7 7 7 7" />
 					</svg>
 				</button>
-				<div class="min-w-0">
+				<div class="min-w-0 flex-1">
 					<h2 class="truncate text-base font-semibold text-gray-900">{title}</h2>
 					{#if description}
 						<p class="truncate text-xs text-gray-500">{description}</p>
 					{/if}
 				</div>
+				{#if badge}
+					<div class="min-w-0 shrink-0 text-right">{@render badge()}</div>
+				{/if}
 			</header>
 
 			<header
 				class="hidden items-start justify-between gap-4 border-b border-gray-200 px-5 py-4 sm:flex"
 			>
-				<div>
+				<div class="min-w-0">
 					<h2 class="text-sm font-semibold text-gray-900">{title}</h2>
 					{#if description}
 						<p class="mt-0.5 text-sm text-gray-500">{description}</p>
 					{/if}
 				</div>
+				{#if badge}
+					<div class="ml-auto min-w-0 text-right">{@render badge()}</div>
+				{/if}
 				<button
 					type="button"
 					onclick={handleClose}
