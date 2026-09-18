@@ -72,6 +72,15 @@ const LIFT = constant('MARK_FIELD_LIFT');
 
 /** Every icon is 512 square whatever size the source happens to be. */
 const SIZE = 512;
+/**
+ * The raster embedded in the favicon SVGs, in pixels.
+ *
+ * The favicons ship the artwork inside them, and a favicon is drawn at tab
+ * size — embedding the full-resolution mark made each one a megabyte that
+ * every visitor downloads to paint 32 pixels. This is comfortably above the
+ * largest size a browser draws a favicon at, and a fiftieth of the weight.
+ */
+const FAVICON_RASTER = 256;
 /** The square the artwork is sampled at to be measured rather than drawn. */
 const SAMPLE = 256;
 
@@ -141,13 +150,13 @@ function lifted(hex, amount) {
  * opaque square. A plain icon and the favicon stay transparent, so they sit on
  * a light page and on a dark tab strip equally well.
  */
-function icon(scale, ground) {
+function icon(scale, ground, uri = dataUri) {
 	const side = SIZE * scale;
 	const at = (SIZE - side) / 2;
 	return `${header}
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}">
   ${ground ? `<rect width="${SIZE}" height="${SIZE}" fill="${ground}"/>` : ''}
-  <image x="${at}" y="${at}" width="${side}" height="${side}" preserveAspectRatio="xMidYMid meet" xlink:href="${dataUri}"/>
+  <image x="${at}" y="${at}" width="${side}" height="${side}" preserveAspectRatio="xMidYMid meet" xlink:href="${uri}"/>
 </svg>
 `;
 }
@@ -178,7 +187,7 @@ const DEV_BAND = '#1d4ed8';
  * never cropped and wears it at the bottom; the maskable one wears it inside
  * the safe area, where a circle, a squircle and a rounded square all keep it.
  */
-function bandedIcon(colour, scale, ground, top = 0.82) {
+function bandedIcon(colour, scale, ground, top = 0.82, uri = liftedUri) {
 	const side = SIZE * scale;
 	const at = (SIZE - side) / 2;
 	const band = SIZE * 0.15;
@@ -189,7 +198,7 @@ function bandedIcon(colour, scale, ground, top = 0.82) {
   </defs>
   ${ground ? `<rect width="${SIZE}" height="${SIZE}" fill="${ground}"/>` : ''}
   <image x="${at}" y="${at}" width="${side}" height="${side}" preserveAspectRatio="xMidYMid meet"
-    filter="url(#drained)" xlink:href="${liftedUri}"/>
+    filter="url(#drained)" xlink:href="${uri}"/>
   <rect x="0" y="${SIZE * top}" width="${SIZE}" height="${band}" fill="${colour}"/>
 </svg>
 `;
@@ -221,19 +230,6 @@ const appleStaging = stagingIcon(APPLE, FIELD, 0.78);
 const plainDev = devIcon(ICON_SCALE, null);
 const maskableDev = devIcon(MASKABLE, FIELD, 0.62);
 const appleDev = devIcon(APPLE, FIELD, 0.78);
-
-const svgs = [
-	['static/favicon.svg', plain],
-	['static/icons/icon.svg', plain],
-	['static/icons/icon-maskable.svg', maskable],
-	['static/icons/icon-solid.svg', solid],
-	['static/favicon-staging.svg', plainStaging],
-	['static/icons/icon-staging.svg', plainStaging],
-	['static/icons/icon-maskable-staging.svg', maskableStaging],
-	['static/favicon-dev.svg', plainDev],
-	['static/icons/icon-dev.svg', plainDev],
-	['static/icons/icon-maskable-dev.svg', maskableDev]
-];
 
 const pngs = [
 	/*
@@ -487,18 +483,42 @@ const write = (path, bytes) => {
 	console.log(`  wrote  ${path}`);
 };
 
+/*
+ * The three favicons are the only SVGs that ship: everything a launcher or a
+ * manifest reads is a PNG below, and an SVG written beside each of those was
+ * megabytes of repository nothing referenced. A favicon carries its raster
+ * inside it, so the mark is shrunk to `FAVICON_RASTER` first — embedding it
+ * full-size made each favicon a megabyte every visitor downloads to paint a
+ * tab. The compositing is untouched: same scale, same margins, same band.
+ */
+const favicons = () => {
+	const small = (uri) => {
+		const wrapped = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}"><image width="${SIZE}" height="${SIZE}" preserveAspectRatio="xMidYMid meet" xlink:href="${uri}"/></svg>`;
+		return `data:image/png;base64,${Buffer.from(rasteriser.run(wrapped, FAVICON_RASTER)).toString('base64')}`;
+	};
+	const markSmall = small(dataUri);
+	const liftedSmall = small(liftedUri);
+	return [
+		['static/favicon.svg', icon(ICON_SCALE, null, markSmall)],
+		['static/favicon-staging.svg', bandedIcon(STAGING_BAND, ICON_SCALE, null, 0.82, liftedSmall)],
+		['static/favicon-dev.svg', bandedIcon(DEV_BAND, ICON_SCALE, null, 0.82, liftedSmall)]
+	];
+};
+
 console.log(
 	`ontoplano icons, from ${relative(ROOT, markFile)} (${createHash('sha256').update(mark).digest('hex').slice(0, 8)})`
 );
-for (const [path, svg] of svgs) write(path, svg);
 
 if (rasteriser) {
-	console.log(`  PNGs drawn by ${rasteriser.name}`);
+	console.log(`  favicons and PNGs drawn by ${rasteriser.name}`);
+	for (const [path, svg] of favicons()) write(path, svg);
 	for (const [path, svg, size] of pngs) write(path, rasteriser.run(svg, size));
 } else {
-	console.log('  no rasteriser (@resvg/resvg-js or rsvg-convert) — the PNGs were left alone');
+	console.log(
+		'  no rasteriser (@resvg/resvg-js or rsvg-convert) — favicons and PNGs were left alone'
+	);
 	console.log('  install one and run this again, or the app icon stays on the old mark');
-	stale += pngs.length;
+	stale += pngs.length + 3;
 }
 
 /*
