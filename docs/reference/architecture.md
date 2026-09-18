@@ -35,7 +35,7 @@ category may be renamed to, what happens to occurrences when a block is
 deleted. Nothing else runs a query.
 
 Every service function takes a `Ctx` — the account, the current time and the
-timezone — as its first argument. That is not ceremony. It is what makes
+timezone — as its first argument. It is what makes
 "which day is today" answerable for somebody in São Paulo while the server is
 in Frankfurt, and it is what makes the whole layer testable without a browser.
 

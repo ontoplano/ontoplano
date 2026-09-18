@@ -62,8 +62,8 @@ files, walked past by every proxy in between, and sometimes shared with a
 household.
 
 Two things keep that bounded. It holds `calendar:read` and nothing else, and
-the feed route accepts a token holding exactly that — a powerful token pasted
-into a feed URL is refused rather than honoured. And because what it can do is
+the feed route accepts a token holding exactly that — a wider-scoped token
+pasted into a feed URL is refused rather than honoured. And because what it can do is
 so small, the address is kept and can be shown again, which is what makes
 adding a second device possible without breaking the first. Up to five, each
 revoked on its own.

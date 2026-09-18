@@ -634,7 +634,7 @@ Which is why the token in the path must hold `calendar:read` and **nothing
 else**. A URL is written into config files, walked past by every proxy in
 between, and sometimes handed to a partner; the one thing that keeps that
 bounded is that the credential it carries cannot do anything but this. A
-powerful token pasted here is refused rather than honoured, so nobody can
+wider-scoped token pasted here is refused rather than honoured, so nobody can
 arrive at a working feed with a key that also writes.
 
 **GET** — requires `calendar:read`
