@@ -154,9 +154,18 @@ test('restoring shows a preview first, and a bad row offers a way through', asyn
 		}
 	});
 
-	const box = page.getByPlaceholder('…or paste the export here');
-	await box.fill(file);
-	await box.dispatchEvent('input');
+	/*
+	 * Chosen as a file, because that is the only way in now.
+	 *
+	 * There was a box to paste into beside the picker and it was taken out —
+	 * an export is not a thing anybody pastes, and the one that prompted it was
+	 * fifteen megabytes of base64. This test went on typing into it.
+	 */
+	await page.locator('input[type="file"][accept=".json,application/json"]').setInputFiles({
+		name: 'export.json',
+		mimeType: 'application/json',
+		buffer: Buffer.from(file)
+	});
 
 	// The preview arrives on its own — nobody pressed anything else.
 	await expect(page.getByText(/mover@example\.test/)).toBeVisible({ timeout: 10_000 });

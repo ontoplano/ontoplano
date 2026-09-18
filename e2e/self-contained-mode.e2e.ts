@@ -86,6 +86,9 @@ test('the todo page runs against the device, and the server never hears of it', 
 	const tomorrow = new Date();
 	tomorrow.setDate(tomorrow.getDate() + 1);
 	await visit(page, '/reminders?isolated=1');
+	// The form is behind "New reminder" in the room's bar.
+	await page.getByRole('button', { name: /New reminder/ }).click();
+	await expect(page.locator('[name="day"]')).toBeVisible();
 	await page.locator('[name="day"]').fill(tomorrow.toISOString().slice(0, 10));
 	await page.locator('[name="time"]').fill('09:00');
 	await page.locator('[name="label"]').first().fill('set on the device');

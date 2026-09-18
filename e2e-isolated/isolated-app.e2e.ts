@@ -612,6 +612,8 @@ test.describe('booking with Android', () => {
 			0
 		);
 		await page.goto('/reminders');
+		// The form is behind "New reminder" in the room's bar.
+		await page.getByRole('button', { name: /New reminder/ }).click();
 		await expect(page.locator('[name="day"]')).toBeVisible({ timeout: 30_000 });
 		await page
 			.locator('[name="day"]')

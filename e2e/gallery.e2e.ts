@@ -143,7 +143,8 @@ test('a folder is looked at before any of it is sent', async ({ page }) => {
 	// names and land in "Imported" — the filing of a tree is proved in
 	// tests/gallery.test.ts. What is proved here is the two presses: the
 	// first says what would happen, the second does it.
-	await expect(page.getByText('Import a folder')).toBeVisible();
+	// The bar's button says "Import"; the folder is what its input takes.
+	await expect(page.getByText('Import', { exact: true })).toBeVisible();
 	await page.locator('input[webkitdirectory]').setInputFiles(folder());
 
 	await expect(page.getByText('2 pictures into 2 albums')).toBeVisible();
