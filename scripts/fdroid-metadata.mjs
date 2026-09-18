@@ -252,6 +252,18 @@ let listed = false;
  */
 const WORDS = ['title.txt', 'short_description.txt', 'full_description.txt'];
 
+/**
+ * The release notes, which are not in a language folder at all.
+ *
+ * `store/play/changelogs/<code>.txt` holds every language at once, wrapped in
+ * `<en-US>…</en-US>` tags — the shape the Play console parses, which is why it
+ * is the shape somebody writes them in. F-Droid wants the other one, a file
+ * per language under `<lang>/changelogs/`, so this reads the blocks back out.
+ * The format is `ontoplano-marketing/scripts/store-notes.mjs`.
+ */
+const NOTES = 'changelogs';
+const BLOCK = /<([A-Za-z]{2}(?:-[A-Za-z0-9]{2,3})?)>\n?([\s\S]*?)\n?<\/\1>/g;
+
 if (existsSync(PLAY)) {
 	// Written fresh every run: a listing assembled on top of the last one keeps
 	// a screenshot that has since been dropped, and nobody would notice.
@@ -259,15 +271,12 @@ if (existsSync(PLAY)) {
 
 	// The words, one directory per language, exactly as they are written.
 	for (const lang of readdirSync(PLAY, { withFileTypes: true })) {
-		if (!lang.isDirectory()) continue;
+		if (!lang.isDirectory() || lang.name === NOTES) continue;
 		const from = join(PLAY, lang.name);
 		const to = join(listingOut, lang.name);
 		mkdirSync(to, { recursive: true });
 		for (const file of WORDS) {
 			if (existsSync(join(from, file))) cpSync(join(from, file), join(to, file));
-		}
-		if (existsSync(join(from, 'changelogs'))) {
-			cpSync(join(from, 'changelogs'), join(to, 'changelogs'), { recursive: true });
 		}
 
 		/*
@@ -277,6 +286,19 @@ if (existsSync(PLAY)) {
 		 */
 		const banner = join(from, 'featureGraphic.png');
 		if (existsSync(banner)) cpSync(banner, join(to, 'images', 'featureGraphic.png'));
+	}
+
+	// And every release's notes, split back into one file per language.
+	const notes = join(PLAY, NOTES);
+	if (existsSync(notes)) {
+		for (const file of readdirSync(notes)) {
+			if (!file.endsWith('.txt')) continue;
+			for (const [, lang, body] of readFileSync(join(notes, file), 'utf8').matchAll(BLOCK)) {
+				const to = join(listingOut, lang, NOTES, file);
+				mkdirSync(dirname(to), { recursive: true });
+				writeFileSync(to, `${body.trim()}\n`);
+			}
+		}
 	}
 
 	/*
