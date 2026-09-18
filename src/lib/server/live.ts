@@ -44,7 +44,7 @@ export type Room =
 	| 'notebooks'
 	| 'ideas'
 	| 'people'
-	| 'shopping'
+	| 'inventory'
 	| 'kitchen'
 	| 'health';
 
@@ -154,7 +154,7 @@ export function roomsForEvent(event: string): Room[] {
 	if (event.startsWith('todo.')) return ['todos', 'planner'];
 	if (event.startsWith('diary.')) return ['diary'];
 	if (event.startsWith('idea.')) return ['ideas'];
-	if (event.startsWith('shopping.')) return ['shopping'];
+	if (event.startsWith('inventory.')) return ['inventory'];
 	if (event.startsWith('recipe.')) return ['kitchen'];
 	if (event.startsWith('habit.') || event.startsWith('weight.')) return ['health'];
 	if (event.startsWith('goal.')) return ['goals'];

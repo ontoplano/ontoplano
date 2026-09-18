@@ -303,7 +303,7 @@ test.describe('one account cannot reach another account by id', () => {
 			// the ownership WHERE is what stands between accounts.
 			name: 'shopping category',
 			page: '/inventory',
-			payloadKey: 'shoppingCategories',
+			payloadKey: 'inventoryCategories',
 			create: { path: '/inventory?/createCategory', form: { label: "alice's shelf" } },
 			attack: (id) => ({ path: '/inventory?/renameCategory', form: { id, name: 'taken' } })
 		}

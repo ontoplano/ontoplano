@@ -158,11 +158,11 @@ describe('put it back', () => {
 	it('a removed shopping item', () => {
 		roundTrip({
 			make: () => {
-				rpc('add_to_shopping_list', { name: 'Hinge oil' });
+				rpc('add_inventory_item', { name: 'Hinge oil' });
 				return rpc('shopping_list', {}).items.find((i: { name: string }) => i.name === 'Hinge oil')
 					.id;
 			},
-			remove: 'remove_from_shopping_list',
+			remove: 'remove_inventory_item',
 			list: 'shopping_list',
 			found: (items) => items.some((i) => i.name === 'Hinge oil')
 		});
@@ -170,9 +170,9 @@ describe('put it back', () => {
 
 	it('a removed shopping section', () => {
 		roundTrip({
-			make: () => rpc('add_shopping_category', { name: 'Hardware' }).id,
-			remove: 'remove_shopping_category',
-			list: 'shopping_categories',
+			make: () => rpc('add_inventory_category', { name: 'Hardware' }).id,
+			remove: 'remove_inventory_category',
+			list: 'inventory_categories',
 			found: (items) => items.some((c) => c.name === 'Hardware')
 		});
 	});

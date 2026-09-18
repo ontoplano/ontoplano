@@ -50,6 +50,7 @@ shows up here on the next build.
 | [`import-vault`](#import-vault)                  | A vault of markdown becomes notebook entries.                                                                                                                                                                                                                        |
 | [`imports`](#imports)                            | Bringing a list in from somewhere else.                                                                                                                                                                                                                              |
 | [`instances`](#instances)                        | The one answer to "what is on, between these dates".                                                                                                                                                                                                                 |
+| [`inventory`](#inventory)                        | Two lists that share a table: `replenish` is stock you keep, `someday` is a wishlist. The difference is what "bought" means — a replenish item comes back when it runs out, a someday item is done.                                                                  |
 | [`ledgers`](#ledgers)                            | Ledgers: the places money moves through.                                                                                                                                                                                                                             |
 | [`legal`](#legal)                                | The facts the policies are written around.                                                                                                                                                                                                                           |
 | [`locations`](#locations)                        | Locations: the tree an inventory hangs on.                                                                                                                                                                                                                           |
@@ -87,7 +88,6 @@ shows up here on the next build.
 | [`sent-notifications`](#sent-notifications)      | What the app has told somebody, kept so they can read it again.                                                                                                                                                                                                      |
 | [`sessions`](#sessions)                          | The sessions an account currently has open.                                                                                                                                                                                                                          |
 | [`settings`](#settings)                          | A person's own settings, kept in their rows.                                                                                                                                                                                                                         |
-| [`shopping`](#shopping)                          | Two lists that share a table: `replenish` is stock you keep, `someday` is a wishlist. The difference is what "bought" means — a replenish item comes back when it runs out, a someday item is done.                                                                  |
 | [`slots`](#slots)                                | The plan itself: blocks that repeat (`recurring_tasks`) and blocks that happen once (`exceptional_tasks`), plus the skips that cancel a single occurrence.                                                                                                           |
 | [`stale`](#stale)                                | Things that never ended.                                                                                                                                                                                                                                             |
 | [`statements`](#statements)                      | What moved through a ledger, and the rules that make sense of it.                                                                                                                                                                                                    |
@@ -223,7 +223,7 @@ somewhere to arrive.
 
 Every app table has an integer autoincrement primary key, and rows point at
 each other with it — a `task_records` row names a `recurring_tasks` id, a
-`shopping_items` row names a `shopping_categories` id. Those numbers mean
+`inventory_items` row names a `inventory_categories` id. Those numbers mean
 nothing in the database being imported into: id 7 over there is somebody
 else's row over here, or nothing at all.
 
@@ -2180,6 +2180,172 @@ that date only, which is reversible in the app and leaves the pattern alone.
 
 - `Occurrence` — A single occurrence, whichever kind of block produced it.
 
+## inventory
+
+Two lists that share a table: `replenish` is stock you keep, `someday` is a
+wishlist. The difference is what "bought" means — a replenish item comes back
+when it runs out, a someday item is done.
+
+### Functions
+
+#### `listItems(ctx)`
+
+#### `listCategories(ctx)`
+
+#### `setCategoryShared(ctx, id, shared)`
+
+Share a section with the family, or stop. The owner's switch alone.
+
+#### `createCategory(ctx, raw)`
+
+#### `renameCategory(ctx, id, raw)`
+
+Whether things in this category can be an ingredient.
+
+One tick per category rather than per item: otherwise every tin of tomatoes
+has to be marked by hand, and the television has to be marked as not.
+
+#### `deleteCategory(ctx, id)`
+
+Deleting a category unfiles its items rather than taking them along: the
+category is organisation, the items are somebody's cupboard, and removing a
+shelf label must not empty the shelf.
+
+#### `setCategoryFood(ctx, id, isFood)`
+
+#### `createItem(ctx, raw)`
+
+Adding something already on the list puts it back on it.
+
+Typing "milk" twice used to give two rows named milk with no hint that one
+was already there, which is never what somebody meant: they either forgot, or
+they bought it last week and need it again. Either way the answer is one row,
+marked as needed.
+
+Returns whether it was a name already held, so the page can say so.
+
+#### `createOwnedThing(ctx, raw)`
+
+Something you already own, filed where it lives.
+
+`createItem` is for a thing to buy: it revives a bought row rather than
+making a second one, and it fires `inventory.added` so a synced list learns
+about it. Neither is right here — a tape that has been in the drawer for ten
+years was never wanted, and putting it on somebody's list would be the
+opposite of what "I have it" means. So it arrives bought, with an address,
+and the to-buy half never shows it.
+
+Returns the new item's id, or the existing one when a thing by that name is
+already known: filing the tape you already listed should move it, not
+duplicate it.
+
+#### `updateItem(ctx, id, raw)`
+
+#### `setItemCategory(ctx, id, categoryId)`
+
+File an item into a section, or out of every one, touching nothing else.
+
+`updateItem` re-parses the whole row, so filing through it means re-sending
+name and type just to move a thing — which is exactly the call an assistant
+gets wrong. One field, one change.
+
+#### `setItemLocation(ctx, id, locationId)`
+
+Say where a thing lives, or that it lives nowhere in particular — the
+inventory half of an item. The location must be the caller's own.
+
+#### `setItemAttributes(ctx, id, attributes)`
+
+The item's own fields, replaced wholesale — { length: '5m', kind: 'tailor' }.
+A string->string map, because an inventory holds things that do not share a
+shape, and a fixed set of columns is exactly the assumption that fails.
+
+#### `deleteItem(ctx, id)`
+
+#### `setQty(ctx, id, wanted, raw)`
+
+How many of a thing you have.
+
+The one place `qty` is written, so `bought` cannot drift from it: having a
+thing is having at least as many as you keep, and where you keep none of it
+on purpose, having any at all. Every reader of `bought` — the recipes'
+"already have", the API, the webhooks, an assistant — goes on asking the
+question it was asking.
+
+#### `toggleBought(ctx, id, raw)`
+
+The tick, which is now a shortcut through the count.
+
+One press in a supermarket aisle still means "that's dealt with" — so it
+fills the thing up to what you keep, and unticking empties it. Somebody who
+wants two of six says so with the arrows.
+
+#### `setBought(ctx, id, bought)`
+
+Set bought to a stated value — the API's verb, where the page's is a toggle.
+
+Idempotent on purpose: a plugin mirroring two lists says "this is bought"
+and must be able to say it twice. Only a transition fires the webhook, so a
+pair of synced lists settles instead of ping-ponging.
+
+#### `ensureCategoryId(ctx, name)`
+
+A category id for a name, creating the category if it is new.
+
+For the API, where a producer says "Dairy" and should not have to make a
+second request to find out what number that is.
+
+#### `recordPaid(ctx, id, raw)`
+
+What you actually paid.
+
+The item's own `priceCents` is a _last known_ price and gets overwritten,
+which answers "what will this shop cost" and nothing over time. A row per
+purchase answers the other question — milk has gone from 1.20 to 1.60 this
+year, which nobody else's app will tell you.
+
+Only written when somebody says a number. A chart built out of guesses is
+worse than no chart.
+
+#### `priceHistory(ctx, id)`
+
+Everything ever paid for one item, oldest first.
+
+#### `priceDrift(ctx, id)`
+
+How a price has moved, in the one sentence worth reading.
+
+Null until there are two prices to compare, because "it cost 1.60" is
+already on the item and saying it twice is not insight.
+
+#### `restockItem(ctx, id)`
+
+Put a replenish item back on the list; a wishlist item has nothing to restock.
+
+#### `toggleSnoozed(ctx, id)`
+
+#### `setSnoozed(ctx, id, snoozed)`
+
+Snoozed, or not, said rather than flipped.
+
+A toggle is the right control under a finger and the wrong one for a caller
+that knows what it wants: "put this back on the list" through a toggle is
+read-then-flip, which is a race and, worse, silently does the opposite when
+the read was stale. Everything outside the page itself asks for a state.
+
+#### `listToBuy(ctx)`
+
+What is still to buy, for the dashboard card.
+
+#### `shoppingRun(ctx)`
+
+### Types
+
+- `ItemType`
+- `ItemInput`
+- `PricePoint`
+- `ShoppingRun` — The list you take to the shop: what has run low, how much of it, and what that is likely to cost.
+
 ## ledgers
 
 Ledgers: the places money moves through.
@@ -3246,7 +3412,7 @@ than a text-matching problem: put a recipe on a day, and the ingredients of
 every meal in the week minus what is already in the cupboard _is_ the
 shopping list.
 
-Which is why an ingredient points at `shopping_items` and never holds a name
+Which is why an ingredient points at `inventory_items` and never holds a name
 of its own, and why writing a recipe creates the items it mentions. The list
 stays current because keeping it current is a side effect of cooking.
 
@@ -4286,172 +4452,6 @@ checked at both ends rather than trusted at either.
 
 - `WeekSettings`
 - `GridHours`
-
-## shopping
-
-Two lists that share a table: `replenish` is stock you keep, `someday` is a
-wishlist. The difference is what "bought" means — a replenish item comes back
-when it runs out, a someday item is done.
-
-### Functions
-
-#### `listItems(ctx)`
-
-#### `listCategories(ctx)`
-
-#### `setCategoryShared(ctx, id, shared)`
-
-Share a section with the family, or stop. The owner's switch alone.
-
-#### `createCategory(ctx, raw)`
-
-#### `renameCategory(ctx, id, raw)`
-
-Whether things in this category can be an ingredient.
-
-One tick per category rather than per item: otherwise every tin of tomatoes
-has to be marked by hand, and the television has to be marked as not.
-
-#### `deleteCategory(ctx, id)`
-
-Deleting a category unfiles its items rather than taking them along: the
-category is organisation, the items are somebody's cupboard, and removing a
-shelf label must not empty the shelf.
-
-#### `setCategoryFood(ctx, id, isFood)`
-
-#### `createItem(ctx, raw)`
-
-Adding something already on the list puts it back on it.
-
-Typing "milk" twice used to give two rows named milk with no hint that one
-was already there, which is never what somebody meant: they either forgot, or
-they bought it last week and need it again. Either way the answer is one row,
-marked as needed.
-
-Returns whether it was a name already held, so the page can say so.
-
-#### `createOwnedThing(ctx, raw)`
-
-Something you already own, filed where it lives.
-
-`createItem` is for a thing to buy: it revives a bought row rather than
-making a second one, and it fires `shopping.added` so a synced list learns
-about it. Neither is right here — a tape that has been in the drawer for ten
-years was never wanted, and putting it on somebody's list would be the
-opposite of what "I have it" means. So it arrives bought, with an address,
-and the to-buy half never shows it.
-
-Returns the new item's id, or the existing one when a thing by that name is
-already known: filing the tape you already listed should move it, not
-duplicate it.
-
-#### `updateItem(ctx, id, raw)`
-
-#### `setItemCategory(ctx, id, categoryId)`
-
-File an item into a section, or out of every one, touching nothing else.
-
-`updateItem` re-parses the whole row, so filing through it means re-sending
-name and type just to move a thing — which is exactly the call an assistant
-gets wrong. One field, one change.
-
-#### `setItemLocation(ctx, id, locationId)`
-
-Say where a thing lives, or that it lives nowhere in particular — the
-inventory half of an item. The location must be the caller's own.
-
-#### `setItemAttributes(ctx, id, attributes)`
-
-The item's own fields, replaced wholesale — { length: '5m', kind: 'tailor' }.
-A string->string map, because an inventory holds things that do not share a
-shape, and a fixed set of columns is exactly the assumption that fails.
-
-#### `deleteItem(ctx, id)`
-
-#### `setQty(ctx, id, wanted, raw)`
-
-How many of a thing you have.
-
-The one place `qty` is written, so `bought` cannot drift from it: having a
-thing is having at least as many as you keep, and where you keep none of it
-on purpose, having any at all. Every reader of `bought` — the recipes'
-"already have", the API, the webhooks, an assistant — goes on asking the
-question it was asking.
-
-#### `toggleBought(ctx, id, raw)`
-
-The tick, which is now a shortcut through the count.
-
-One press in a supermarket aisle still means "that's dealt with" — so it
-fills the thing up to what you keep, and unticking empties it. Somebody who
-wants two of six says so with the arrows.
-
-#### `setBought(ctx, id, bought)`
-
-Set bought to a stated value — the API's verb, where the page's is a toggle.
-
-Idempotent on purpose: a plugin mirroring two lists says "this is bought"
-and must be able to say it twice. Only a transition fires the webhook, so a
-pair of synced lists settles instead of ping-ponging.
-
-#### `ensureCategoryId(ctx, name)`
-
-A category id for a name, creating the category if it is new.
-
-For the API, where a producer says "Dairy" and should not have to make a
-second request to find out what number that is.
-
-#### `recordPaid(ctx, id, raw)`
-
-What you actually paid.
-
-The item's own `priceCents` is a _last known_ price and gets overwritten,
-which answers "what will this shop cost" and nothing over time. A row per
-purchase answers the other question — milk has gone from 1.20 to 1.60 this
-year, which nobody else's app will tell you.
-
-Only written when somebody says a number. A chart built out of guesses is
-worse than no chart.
-
-#### `priceHistory(ctx, id)`
-
-Everything ever paid for one item, oldest first.
-
-#### `priceDrift(ctx, id)`
-
-How a price has moved, in the one sentence worth reading.
-
-Null until there are two prices to compare, because "it cost 1.60" is
-already on the item and saying it twice is not insight.
-
-#### `restockItem(ctx, id)`
-
-Put a replenish item back on the list; a wishlist item has nothing to restock.
-
-#### `toggleSnoozed(ctx, id)`
-
-#### `setSnoozed(ctx, id, snoozed)`
-
-Snoozed, or not, said rather than flipped.
-
-A toggle is the right control under a finger and the wrong one for a caller
-that knows what it wants: "put this back on the list" through a toggle is
-read-then-flip, which is a race and, worse, silently does the opposite when
-the read was stale. Everything outside the page itself asks for a state.
-
-#### `listToBuy(ctx)`
-
-What is still to buy, for the dashboard card.
-
-#### `shoppingRun(ctx)`
-
-### Types
-
-- `ItemType`
-- `ItemInput`
-- `PricePoint`
-- `ShoppingRun` — The list you take to the shop: what has run low, how much of it, and what that is likely to cost.
 
 ## slots
 

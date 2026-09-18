@@ -11,8 +11,8 @@ export const WEBHOOK_EVENTS = [
 	'todo.completed',
 	'idea.created',
 	'diary.created',
-	'shopping.added',
-	'shopping.bought'
+	'inventory.added',
+	'inventory.bought'
 ] as const;
 
 export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];
@@ -23,6 +23,6 @@ export const WEBHOOK_EVENT_LABELS: Record<WebhookEvent, string> = {
 	'todo.completed': 'a todo is finished',
 	'idea.created': 'an idea is captured',
 	'diary.created': 'a diary entry is written',
-	'shopping.added': 'something goes on the shopping list',
-	'shopping.bought': 'something on the list is bought'
+	'inventory.added': 'something goes on the shopping list',
+	'inventory.bought': 'something on the list is bought'
 };

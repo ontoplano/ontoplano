@@ -136,12 +136,12 @@ import {
 import { createLedger, listLedgers } from '$lib/services/ledgers.js';
 import { grouped, search } from '$lib/services/search.js';
 import {
-	createCategory as createShoppingCategory,
+	createCategory as createInventoryCategory,
 	createItem,
 	deleteCategory as deleteShoppingCategory,
 	deleteItem,
 	listItems,
-	listCategories as listShoppingCategories,
+	listCategories as listInventoryCategories,
 	recordPaid,
 	renameCategory,
 	setBought,
@@ -149,7 +149,7 @@ import {
 	setCategoryShared,
 	setSnoozed,
 	setItemCategory
-} from '$lib/services/shopping.js';
+} from '$lib/services/inventory.js';
 import { getTodayBoard } from '$lib/services/today.js';
 import {
 	archiveTodo,
@@ -183,7 +183,7 @@ import {
 	setItemLocation,
 	setItemAttributes,
 	listItems as listShoppingItems
-} from '$lib/services/shopping.js';
+} from '$lib/services/inventory.js';
 import { NotFoundError, ValidationError } from '$lib/services/errors.js';
 
 /** JSON Schema, the subset a tool's arguments actually use. */
@@ -1573,7 +1573,7 @@ export const TOOLS: Tool[] = [
 		title: 'The shopping list',
 		description:
 			'What is to buy and what is already in the cupboard. An item is a thing, not a line: ticking it bought puts it back in the cupboard rather than deleting it. Each carries how many there are and how many are kept, so "what am I short of" is `qty` below `idealQty` — `short: true` asks for exactly those.',
-		scope: 'shopping:read',
+		scope: 'inventory:read',
 		writes: false,
 		input: object({
 			short: {
@@ -1590,11 +1590,11 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
-		name: 'add_to_shopping_list',
+		name: 'add_inventory_item',
 		title: 'Add to the shopping list',
 		description:
 			'Put something on the list. If the cupboard already has it, this says so rather than adding a second one.',
-		scope: 'shopping:write',
+		scope: 'inventory:write',
 		writes: true,
 		input: object(
 			{
@@ -1607,29 +1607,29 @@ export const TOOLS: Tool[] = [
 					default: 'replenish'
 				},
 				notes: text('Anything else about it.'),
-				section: text('The section to file it under, by name — `shopping_categories` lists them.')
+				section: text('The section to file it under, by name — `inventory_categories` lists them.')
 			},
 			['name']
 		),
 		run: (ctx, args) => {
-			let shoppingCategoryId: number | undefined;
+			let inventoryCategoryId: number | undefined;
 			const said = typeof args.section === 'string' ? args.section.trim().toLowerCase() : '';
 			if (said) {
-				const all = listShoppingCategories(ctx) as { id: number; name: string }[];
+				const all = listInventoryCategories(ctx) as { id: number; name: string }[];
 				const hit =
 					all.find((c) => c.name.toLowerCase() === said) ??
 					all.find((c) => c.name.toLowerCase().includes(said));
 				if (!hit)
 					throw new ValidationError(
-						`No section called "${String(args.section)}". Call \`shopping_categories\` for the names.`
+						`No section called "${String(args.section)}". Call \`inventory_categories\` for the names.`
 					);
-				shoppingCategoryId = hit.id;
+				inventoryCategoryId = hit.id;
 			}
 			return createItem(ctx, {
 				name: args.name,
 				type: args.type ?? 'replenish',
 				notes: args.notes ?? '',
-				...(shoppingCategoryId !== undefined ? { shoppingCategoryId } : {})
+				...(inventoryCategoryId !== undefined ? { inventoryCategoryId } : {})
 			});
 		}
 	},
@@ -1638,7 +1638,7 @@ export const TOOLS: Tool[] = [
 		title: 'Tick something bought',
 		description:
 			'Mark an item bought, which moves it out of "to buy" and into the cupboard. The row stays: the same thing is bought again the next time it runs out.',
-		scope: 'shopping:write',
+		scope: 'inventory:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'item' }],
 		input: object({ id: { type: 'integer', description: 'The item’s id.' } }, ['id']),
@@ -1660,7 +1660,7 @@ export const TOOLS: Tool[] = [
 		title: 'Put something back on the list',
 		description:
 			'Undo a tick: the item comes out of the cupboard and back onto "to buy". Use it when something was marked bought by mistake, or when it has run out again. Nothing is lost either way — the row, its category and its price history are the same row.',
-		scope: 'shopping:write',
+		scope: 'inventory:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'item' }],
 		input: object({ id: { type: 'integer', description: 'The item\u2019s id.' } }, ['id']),
@@ -1675,7 +1675,7 @@ export const TOOLS: Tool[] = [
 		title: 'Put something aside for now',
 		description:
 			'Put an item away without deleting it — for something not wanted this week. It keeps everything about itself and comes back with `unarchive_item`. Prefer this to removing when somebody says "not now" rather than "never".',
-		scope: 'shopping:write',
+		scope: 'inventory:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'item' }],
 		input: object({ id: { type: 'integer', description: 'The item\u2019s id.' } }, ['id']),
@@ -1686,18 +1686,18 @@ export const TOOLS: Tool[] = [
 		title: 'Bring something back to the list',
 		description:
 			'Bring back an item that was put away, so it shows on the list again. `shopping_list` says which items are archived.',
-		scope: 'shopping:write',
+		scope: 'inventory:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'item' }],
 		input: object({ id: { type: 'integer', description: 'The item\u2019s id.' } }, ['id']),
 		run: (ctx, args) => setSnoozed(ctx, Number(args.id), false)
 	},
 	{
-		name: 'remove_from_shopping_list',
+		name: 'remove_inventory_item',
 		title: 'Take something off the shopping list',
 		description:
 			'Remove an item because it is not wanted — "take milk off", "we already have that". Not the same as `tick_bought`, which records that it *was* bought and keeps it in the history and the price record. Takes the id `shopping_list` gives.',
-		scope: 'shopping:write',
+		scope: 'inventory:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'item' }],
 		destroys: true,
@@ -1851,11 +1851,11 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
-		name: 'file_shopping_item',
+		name: 'file_inventory_item',
 		title: 'File an item into a section',
 		description:
-			'Move a shopping item into a section — "put the milk under Dairy". Takes the item\u2019s id from `shopping_list` and the section by name from `shopping_categories`; an empty section name unfiles it. A name matching no section is refused with the ones that exist.',
-		scope: 'shopping:write',
+			'Move a shopping item into a section — "put the milk under Dairy". Takes the item\u2019s id from `shopping_list` and the section by name from `inventory_categories`; an empty section name unfiles it. A name matching no section is refused with the ones that exist.',
+		scope: 'inventory:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'item' }],
 		input: object(
@@ -1869,13 +1869,13 @@ export const TOOLS: Tool[] = [
 			const said = typeof args.section === 'string' ? args.section.trim().toLowerCase() : '';
 			let categoryId: number | null = null;
 			if (said) {
-				const all = listShoppingCategories(ctx) as { id: number; name: string }[];
+				const all = listInventoryCategories(ctx) as { id: number; name: string }[];
 				const hit =
 					all.find((c) => c.name.toLowerCase() === said) ??
 					all.find((c) => c.name.toLowerCase().includes(said));
 				if (!hit)
 					throw new ValidationError(
-						`No section called "${String(args.section)}". Call \`shopping_categories\` for the names.`
+						`No section called "${String(args.section)}". Call \`inventory_categories\` for the names.`
 					);
 				categoryId = hit.id;
 			}
@@ -1884,21 +1884,21 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
-		name: 'shopping_categories',
+		name: 'inventory_categories',
 		title: 'The shopping list\u2019s sections',
 		description:
 			'How the shopping list is sectioned — produce, cleaning, whatever the person keeps. Read it before filing an item somewhere.',
-		scope: 'shopping:read',
+		scope: 'inventory:read',
 		writes: false,
 		input: object({}),
-		run: (ctx) => listShoppingCategories(ctx)
+		run: (ctx) => listInventoryCategories(ctx)
 	},
 	{
-		name: 'add_shopping_category',
+		name: 'add_inventory_category',
 		title: 'Add a shopping section',
 		description:
 			'Make a new section for the shopping list — and say whether it holds food, because only food sections can feed recipes as ingredients.',
-		scope: 'shopping:write',
+		scope: 'inventory:write',
 		writes: true,
 		input: object(
 			{
@@ -1911,22 +1911,22 @@ export const TOOLS: Tool[] = [
 			['name']
 		),
 		run: (ctx, args) => ({
-			id: createShoppingCategory(ctx, { name: args.name, isFood: args.holdsFood === true })
+			id: createInventoryCategory(ctx, { name: args.name, isFood: args.holdsFood === true })
 		})
 	},
 	{
-		name: 'change_shopping_category',
+		name: 'change_inventory_category',
 		title: 'Rename a shopping section',
 		description:
 			'Rename a section, or change whether it holds food. Only the fields given change; the items filed under it stay exactly where they are.',
-		scope: 'shopping:write',
+		scope: 'inventory:write',
 		writes: true,
-		refs: [{ arg: 'id', kind: 'shoppingCategory' }],
+		refs: [{ arg: 'id', kind: 'inventoryCategory' }],
 		input: object(
 			{
 				id: {
 					type: 'integer',
-					description: 'The section\u2019s id, as `shopping_categories` gives it.'
+					description: 'The section\u2019s id, as `inventory_categories` gives it.'
 				},
 				name: text('The new name.'),
 				holdsFood: { type: 'boolean', description: 'Whether what is in it is food.' },
@@ -1949,13 +1949,13 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
-		name: 'remove_shopping_category',
+		name: 'remove_inventory_category',
 		title: 'Delete a shopping section',
 		description:
 			'Delete a section. Its items are not touched — they stay on the list, just unfiled. A section is a shelf label, and removing the label must not empty the shelf.',
-		scope: 'shopping:write',
+		scope: 'inventory:write',
 		writes: true,
-		refs: [{ arg: 'id', kind: 'shoppingCategory' }],
+		refs: [{ arg: 'id', kind: 'inventoryCategory' }],
 		destroys: true,
 		input: object({ id: { type: 'integer', description: 'The section\u2019s id.' } }, ['id']),
 		run: (ctx, args) => {
@@ -1968,7 +1968,7 @@ export const TOOLS: Tool[] = [
 		title: 'Record what an item cost',
 		description:
 			'Write down what was paid for a shopping item — "milk was 6,50 today". The list keeps a small price history per item, which is how it can notice drift. Takes the id `shopping_list` gives, and the price as the person said it.',
-		scope: 'shopping:write',
+		scope: 'inventory:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'item' }],
 		input: object(
@@ -2908,7 +2908,7 @@ export const TOOLS: Tool[] = [
 		title: 'Where a thing lives',
 		description:
 			'Find a thing by name and say where it lives — "Living room \u203a White chest \u203a First drawer" — with its fields (a tape\u2019s length, a cable\u2019s plug). The inventory half of the shopping list.',
-		scope: 'inventory:read',
+		scope: 'locations:read',
 		writes: false,
 		input: object({ name: text('The thing, by name or part of it.') }, ['name']),
 		run: (ctx, args) => {
@@ -2917,7 +2917,7 @@ export const TOOLS: Tool[] = [
 			 *
 			 * An empty name matched every row — `''.includes` is always true —
 			 * and the rows include plain shopping-list lines, which have no
-			 * address at all. So a token holding `inventory:read` could read
+			 * address at all. So a token holding `locations:read` could read
 			 * the shopping list ten names at a time, and the two grants are
 			 * separate on purpose: "a widget that wanted the list does not get
 			 * told where the spare keys are kept", and not the reverse either.
@@ -2944,7 +2944,7 @@ export const TOOLS: Tool[] = [
 		title: 'The locations tree',
 		description:
 			'Every location, nested the way the house is — rooms holding furniture holding drawers — each with how many things sit directly in it.',
-		scope: 'inventory:read',
+		scope: 'locations:read',
 		writes: false,
 		input: object({}),
 		run: (ctx) => ({ locations: locationTree(ctx) })
@@ -2954,7 +2954,7 @@ export const TOOLS: Tool[] = [
 		title: 'Add a location',
 		description:
 			'Add a location things can live in — a room, a chest, a drawer — optionally inside another location.',
-		scope: 'inventory:write',
+		scope: 'locations:write',
 		writes: true,
 		input: object(
 			{
@@ -2970,7 +2970,7 @@ export const TOOLS: Tool[] = [
 		title: 'Rename or move a location',
 		description:
 			'Rename a location, or move it under a different parent (no parent_id moves it to the top level). It refuses to be put inside itself.',
-		scope: 'inventory:write',
+		scope: 'locations:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'location' }],
 		input: object(
@@ -3000,7 +3000,7 @@ export const TOOLS: Tool[] = [
 		title: 'Remove a location',
 		description:
 			'Remove a location. Locations inside it rise to where it was; things in it stay, just without an address.',
-		scope: 'inventory:write',
+		scope: 'locations:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'location' }],
 		destroys: true,
@@ -3015,7 +3015,7 @@ export const TOOLS: Tool[] = [
 		title: 'Say where a thing lives',
 		description:
 			'Put a shopping/inventory item in a location, or take its address away by leaving location_id out. The item itself is untouched.',
-		scope: 'inventory:write',
+		scope: 'locations:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'item' }],
 		input: object(
@@ -3042,7 +3042,7 @@ export const TOOLS: Tool[] = [
 		title: 'Set a thing\u2019s own fields',
 		description:
 			'Replace an item\u2019s free fields wholesale — { "length": "5m", "plug": "USB-C" }. Not every thing shares a shape; these are this thing\u2019s. Send the full set: removing a field is writing the rest.',
-		scope: 'inventory:write',
+		scope: 'locations:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'item' }],
 		input: object(

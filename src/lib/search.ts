@@ -15,7 +15,7 @@ export const SEARCH_KINDS = [
 	'goal',
 	'idea',
 	'person',
-	'shopping',
+	'inventory',
 	'activity'
 ] as const;
 
@@ -39,7 +39,7 @@ export const KIND_LABELS: Record<SearchKind, PlainKey> = {
 	goal: 'search.kind.goal',
 	idea: 'search.kind.idea',
 	person: 'search.kind.person',
-	shopping: 'search.kind.shopping',
+	inventory: 'search.kind.inventory',
 	activity: 'search.kind.activity'
 };
 
@@ -88,8 +88,9 @@ const KIND_ALIASES: Record<string, SearchKind[]> = {
 	ideas: ['idea'],
 	person: ['person'],
 	people: ['person'],
-	shopping: ['shopping'],
-	buy: ['shopping'],
+	shopping: ['inventory'],
+	buy: ['inventory'],
+	inventory: ['inventory'],
 	activity: ['activity'],
 	activities: ['activity']
 };

@@ -92,7 +92,7 @@ describe('0055, on an account that already had an inventory', () => {
 	});
 
 	test('a thing keeps the address it had, under the new column', () => {
-		expect(one('select name, location_id from shopping_items where id = 1')).toEqual({
+		expect(one('select name, location_id from inventory_items where id = 1')).toEqual({
 			name: 'Measuring tape',
 			location_id: 2
 		});
@@ -109,7 +109,7 @@ describe('0055, on an account that already had an inventory', () => {
 	 */
 	test('a plain shopping-list line keeps everything and gains a home', () => {
 		const milk = one<{ name: string; bought: number; location_id: number }>(
-			'select name, location_id, bought from shopping_items where id = 2'
+			'select name, location_id, bought from inventory_items where id = 2'
 		);
 		expect(milk.name).toBe('Milk');
 		expect(milk.bought).toBe(0);
@@ -122,22 +122,22 @@ describe('0055, on an account that already had an inventory', () => {
 	test('an account that never made a location gets a Home', () => {
 		after.exec(`
 			insert into user (id, name, email) values ('u2','Them','them@test.invalid');
-			insert into shopping_items (id, user_id, name, type) values (9,'u2','Bread','replenish');
+			insert into inventory_items (id, user_id, name, type) values (9,'u2','Bread','replenish');
 		`);
 		// Re-running the pass is what a fresh account's first migration does.
 		after.exec(`
 			INSERT INTO locations (user_id, name, parent_id, notes, sort_order)
-				SELECT DISTINCT user_id, 'Home', NULL, '', 0 FROM shopping_items
+				SELECT DISTINCT user_id, 'Home', NULL, '', 0 FROM inventory_items
 				WHERE user_id NOT IN (SELECT user_id FROM locations WHERE parent_id IS NULL);
-			UPDATE shopping_items SET location_id = (
+			UPDATE inventory_items SET location_id = (
 				SELECT id FROM locations
-				WHERE locations.user_id = shopping_items.user_id AND parent_id IS NULL
+				WHERE locations.user_id = inventory_items.user_id AND parent_id IS NULL
 				ORDER BY id LIMIT 1
 			) WHERE location_id IS NULL;
 		`);
 		expect(
 			one<{ name: string }>(
-				'select l.name from shopping_items i join locations l on l.id = i.location_id where i.id = 9'
+				'select l.name from inventory_items i join locations l on l.id = i.location_id where i.id = 9'
 			).name
 		).toBe('Home');
 	});
@@ -161,9 +161,15 @@ describe('0055, on an account that already had an inventory', () => {
 		).toBe('{"inventory":"#123456"}');
 	});
 
+	/*
+	 * The names have moved on since: 0081 gave the locations half its own
+	 * `locations:*` and handed `inventory:*` to the things themselves. What
+	 * this asserts is what it always did — the token reaches everything the
+	 * room could do — read under the names those things answer to now.
+	 */
 	test('a token that could reach the whole room still can', () => {
 		expect(one<{ scopes: string }>('select scopes from api_tokens where id = 1').scopes).toBe(
-			'todos:read,shopping:read,shopping:write,inventory:read,inventory:write'
+			'todos:read,inventory:read,inventory:write,locations:read,locations:write'
 		);
 	});
 

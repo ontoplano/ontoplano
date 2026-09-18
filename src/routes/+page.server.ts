@@ -19,7 +19,7 @@ import { generateForDate, listForDate } from '$lib/services/instances';
 import { listIdeas } from '$lib/services/ideas';
 import { listQuotes } from '$lib/services/quotes';
 import { reviewPending } from '$lib/services/review';
-import { listToBuy } from '$lib/services/shopping';
+import { listToBuy } from '$lib/services/inventory';
 import { listBills, listPayments, monthSummary } from '$lib/services/bills';
 import { listWorkouts } from '$lib/services/workouts';
 import { getCurrency } from '$lib/services/settings';

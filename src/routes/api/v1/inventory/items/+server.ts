@@ -2,7 +2,7 @@ import type { RequestHandler } from './$types';
 
 import { authenticateApi, readJson } from '$lib/server/api/auth';
 import { toJsonError } from '$lib/http-errors';
-import { createItem, ensureCategoryId } from '$lib/services/shopping';
+import { createItem, ensureCategoryId } from '$lib/services/inventory';
 
 /**
  * Put something on the list.
@@ -14,14 +14,14 @@ import { createItem, ensureCategoryId } from '$lib/services/shopping';
  */
 export const POST: RequestHandler = async (event) => {
 	try {
-		const { ctx } = authenticateApi(event, 'shopping:write');
+		const { ctx } = authenticateApi(event, 'inventory:write');
 		const body = await readJson(event);
 
 		const { alreadyHad } = createItem(ctx, {
 			name: body.name,
 			type: body.type ?? 'replenish',
 			notes: body.notes,
-			shoppingCategoryId:
+			inventoryCategoryId:
 				body.category === undefined || body.category === null || body.category === ''
 					? undefined
 					: ensureCategoryId(ctx, body.category)

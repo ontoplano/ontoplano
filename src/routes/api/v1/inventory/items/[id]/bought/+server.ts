@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { authenticateApi, readJson } from '$lib/server/api/auth';
 import { ValidationError } from '$lib/services/errors';
 import { toJsonError } from '$lib/http-errors';
-import { setBought } from '$lib/services/shopping';
+import { setBought } from '$lib/services/inventory';
 
 /**
  * State, not a toggle: `{ "bought": true }` twice means bought, not un-bought.
@@ -11,7 +11,7 @@ import { setBought } from '$lib/services/shopping';
  */
 export const POST: RequestHandler = async (event) => {
 	try {
-		const { ctx } = authenticateApi(event, 'shopping:write');
+		const { ctx } = authenticateApi(event, 'inventory:write');
 		const body = await readJson(event);
 		if (typeof body.bought !== 'boolean')
 			throw new ValidationError('bought has to be true or false');

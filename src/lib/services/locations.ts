@@ -13,7 +13,7 @@
 import { and, asc, eq, isNull } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
-import { locations, shoppingItems } from '$lib/db/schema.js';
+import { locations, inventoryItems } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { stamp, stamps } from './time.js';
@@ -82,9 +82,9 @@ export function locationTree(ctx: Ctx): LocationNode[] {
 
 function itemCounts(ctx: Ctx): Map<number, number> {
 	const rows = db
-		.select({ locationId: shoppingItems.locationId })
-		.from(shoppingItems)
-		.where(eq(shoppingItems.userId, ctx.userId))
+		.select({ locationId: inventoryItems.locationId })
+		.from(inventoryItems)
+		.where(eq(inventoryItems.userId, ctx.userId))
 		.all();
 	const counts = new Map<number, number>();
 	for (const r of rows)

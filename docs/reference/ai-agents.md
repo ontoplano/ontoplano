@@ -428,43 +428,43 @@ _Needs `ideas:write`; writes._
 
 What is to buy and what is already in the cupboard. An item is a thing, not a line: ticking it bought puts it back in the cupboard rather than deleting it. Each carries how many there are and how many are kept, so "what am I short of" is `qty` below `idealQty` — `short: true` asks for exactly those.
 
-_Needs `shopping:read`; read-only._
+_Needs `inventory:read`; read-only._
 
-### `add_to_shopping_list` — Add to the shopping list
+### `add_inventory_item` — Add to the shopping list
 
 Put something on the list. If the cupboard already has it, this says so rather than adding a second one.
 
-_Needs `shopping:write`; writes._
+_Needs `inventory:write`; writes._
 
 ### `tick_bought` — Tick something bought
 
 Mark an item bought, which moves it out of "to buy" and into the cupboard. The row stays: the same thing is bought again the next time it runs out.
 
-_Needs `shopping:write`; writes._
+_Needs `inventory:write`; writes._
 
 ### `untick_bought` — Put something back on the list
 
 Undo a tick: the item comes out of the cupboard and back onto "to buy". Use it when something was marked bought by mistake, or when it has run out again. Nothing is lost either way — the row, its category and its price history are the same row.
 
-_Needs `shopping:write`; writes._
+_Needs `inventory:write`; writes._
 
 ### `archive_item` — Put something aside for now
 
 Put an item away without deleting it — for something not wanted this week. It keeps everything about itself and comes back with `unarchive_item`. Prefer this to removing when somebody says "not now" rather than "never".
 
-_Needs `shopping:write`; writes._
+_Needs `inventory:write`; writes._
 
 ### `unarchive_item` — Bring something back to the list
 
 Bring back an item that was put away, so it shows on the list again. `shopping_list` says which items are archived.
 
-_Needs `shopping:write`; writes._
+_Needs `inventory:write`; writes._
 
-### `remove_from_shopping_list` — Take something off the shopping list
+### `remove_inventory_item` — Take something off the shopping list
 
 Remove an item because it is not wanted — "take milk off", "we already have that". Not the same as `tick_bought`, which records that it _was_ bought and keeps it in the history and the price record. Takes the id `shopping_list` gives.
 
-_Needs `shopping:write` and `destructive`; deletes._
+_Needs `inventory:write` and `destructive`; deletes._
 
 ### `recipes` — Recipes
 
@@ -496,41 +496,41 @@ Archive a recipe — out of the everyday list, not deleted — or bring one back
 
 _Needs `kitchen:write`; writes._
 
-### `file_shopping_item` — File an item into a section
+### `file_inventory_item` — File an item into a section
 
-Move a shopping item into a section — "put the milk under Dairy". Takes the item’s id from `shopping_list` and the section by name from `shopping_categories`; an empty section name unfiles it. A name matching no section is refused with the ones that exist.
+Move a shopping item into a section — "put the milk under Dairy". Takes the item’s id from `shopping_list` and the section by name from `inventory_categories`; an empty section name unfiles it. A name matching no section is refused with the ones that exist.
 
-_Needs `shopping:write`; writes._
+_Needs `inventory:write`; writes._
 
-### `shopping_categories` — The shopping list’s sections
+### `inventory_categories` — The shopping list’s sections
 
 How the shopping list is sectioned — produce, cleaning, whatever the person keeps. Read it before filing an item somewhere.
 
-_Needs `shopping:read`; read-only._
+_Needs `inventory:read`; read-only._
 
-### `add_shopping_category` — Add a shopping section
+### `add_inventory_category` — Add a shopping section
 
 Make a new section for the shopping list — and say whether it holds food, because only food sections can feed recipes as ingredients.
 
-_Needs `shopping:write`; writes._
+_Needs `inventory:write`; writes._
 
-### `change_shopping_category` — Rename a shopping section
+### `change_inventory_category` — Rename a shopping section
 
 Rename a section, or change whether it holds food. Only the fields given change; the items filed under it stay exactly where they are.
 
-_Needs `shopping:write`; writes._
+_Needs `inventory:write`; writes._
 
-### `remove_shopping_category` — Delete a shopping section
+### `remove_inventory_category` — Delete a shopping section
 
 Delete a section. Its items are not touched — they stay on the list, just unfiled. A section is a shelf label, and removing the label must not empty the shelf.
 
-_Needs `shopping:write` and `destructive`; deletes._
+_Needs `inventory:write` and `destructive`; deletes._
 
 ### `record_price` — Record what an item cost
 
 Write down what was paid for a shopping item — "milk was 6,50 today". The list keeps a small price history per item, which is how it can notice drift. Takes the id `shopping_list` gives, and the price as the person said it.
 
-_Needs `shopping:write`; writes._
+_Needs `inventory:write`; writes._
 
 ### `add_goal` — Write down a goal they made
 
@@ -746,43 +746,43 @@ _Needs `ideas:write`; writes._
 
 Find a thing by name and say where it lives — "Living room › White chest › First drawer" — with its fields (a tape’s length, a cable’s plug). The inventory half of the shopping list.
 
-_Needs `inventory:read`; read-only._
+_Needs `locations:read`; read-only._
 
 ### `locations` — The locations tree
 
 Every location, nested the way the house is — rooms holding furniture holding drawers — each with how many things sit directly in it.
 
-_Needs `inventory:read`; read-only._
+_Needs `locations:read`; read-only._
 
 ### `add_location` — Add a location
 
 Add a location things can live in — a room, a chest, a drawer — optionally inside another location.
 
-_Needs `inventory:write`; writes._
+_Needs `locations:write`; writes._
 
 ### `change_location` — Rename or move a location
 
 Rename a location, or move it under a different parent (no parent_id moves it to the top level). It refuses to be put inside itself.
 
-_Needs `inventory:write`; writes._
+_Needs `locations:write`; writes._
 
 ### `remove_location` — Remove a location
 
 Remove a location. Locations inside it rise to where it was; things in it stay, just without an address.
 
-_Needs `inventory:write` and `destructive`; deletes._
+_Needs `locations:write` and `destructive`; deletes._
 
 ### `put_item` — Say where a thing lives
 
 Put a shopping/inventory item in a location, or take its address away by leaving location_id out. The item itself is untouched.
 
-_Needs `inventory:write`; writes._
+_Needs `locations:write`; writes._
 
 ### `set_item_fields` — Set a thing’s own fields
 
 Replace an item’s free fields wholesale — { "length": "5m", "plug": "USB-C" }. Not every thing shares a shape; these are this thing’s. Send the full set: removing a field is writing the rest.
 
-_Needs `inventory:write`; writes._
+_Needs `locations:write`; writes._
 
 ### `workouts` — Your workouts
 

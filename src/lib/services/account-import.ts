@@ -11,7 +11,7 @@ import type { PlainKey } from '../i18n/keys.js';
  *
  * Every app table has an integer autoincrement primary key, and rows point at
  * each other with it — a `task_records` row names a `recurring_tasks` id, a
- * `shopping_items` row names a `shopping_categories` id. Those numbers mean
+ * `inventory_items` row names a `inventory_categories` id. Those numbers mean
  * nothing in the database being imported into: id 7 over there is somebody
  * else's row over here, or nothing at all.
  *

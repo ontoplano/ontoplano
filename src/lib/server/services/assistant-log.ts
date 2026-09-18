@@ -8,7 +8,7 @@ import { NotFoundError, ValidationError } from '$lib/services/errors.js';
 import { createTodo } from '$lib/services/todos.js';
 import { createNotebook } from '$lib/services/notebooks.js';
 import { createIdea, toggleApplied, toggleFavorite } from '$lib/services/ideas.js';
-import { createItem, createCategory as createShoppingCategory } from '$lib/services/shopping.js';
+import { createItem, createCategory as createInventoryCategory } from '$lib/services/inventory.js';
 import { createFreeReminder } from '$lib/services/reminders.js';
 import { createSlot } from '$lib/services/slots.js';
 import { createLocation } from '$lib/services/locations.js';
@@ -213,11 +213,11 @@ function recreate(ctx: Ctx, tool: string, before: Record<string, unknown>): stri
 			return `the idea "${String(before.content).slice(0, 60)}"`;
 		}
 
-		case 'remove_from_shopping_list': {
+		case 'remove_inventory_item': {
 			createItem(ctx, {
 				name: before.name,
 				type: before.type,
-				shoppingCategoryId: before.shoppingCategoryId,
+				inventoryCategoryId: before.inventoryCategoryId,
 				notes: before.notes,
 				locationId: before.locationId,
 				idealQty: before.idealQty
@@ -225,8 +225,8 @@ function recreate(ctx: Ctx, tool: string, before: Record<string, unknown>): stri
 			return `"${String(before.name)}" on the shopping list`;
 		}
 
-		case 'remove_shopping_category': {
-			createShoppingCategory(ctx, { name: before.name, isFood: before.isFood });
+		case 'remove_inventory_category': {
+			createInventoryCategory(ctx, { name: before.name, isFood: before.isFood });
 			return `the section "${String(before.name)}"`;
 		}
 

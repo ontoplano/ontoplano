@@ -18,7 +18,7 @@ afterAll(() => database.remove());
 const OUTSIDER = 'not-on-the-plan';
 
 let subscriptions: typeof import('../src/lib/server/services/subscriptions');
-let shopping: typeof import('../src/lib/services/shopping');
+let inventory: typeof import('../src/lib/services/inventory');
 let notebooks: typeof import('../src/lib/services/notebooks');
 let diary: typeof import('../src/lib/services/diary');
 let ctxOf: (id: string) => import('../src/lib/services/ctx').Ctx;
@@ -26,7 +26,7 @@ let ctxOf: (id: string) => import('../src/lib/services/ctx').Ctx;
 beforeAll(async () => {
 	process.env.ONTOPLANO_SELF_HOST = 'false';
 	subscriptions = await import('../src/lib/server/services/subscriptions');
-	shopping = await import('../src/lib/services/shopping');
+	inventory = await import('../src/lib/services/inventory');
 	notebooks = await import('../src/lib/services/notebooks');
 	diary = await import('../src/lib/services/diary');
 	const { buildCtx } = await import('../src/lib/services/ctx');
@@ -74,54 +74,56 @@ describe('a shared shopping section', () => {
 	let sectionId: number;
 
 	test('appears on the family member’s list once shared, and not before', () => {
-		sectionId = shopping.createCategory(ctxOf(OWNER), { name: 'Household', isFood: true });
-		expect(shopping.listCategories(ctxOf(STRANGER)).map((c) => c.id)).not.toContain(sectionId);
+		sectionId = inventory.createCategory(ctxOf(OWNER), { name: 'Household', isFood: true });
+		expect(inventory.listCategories(ctxOf(STRANGER)).map((c) => c.id)).not.toContain(sectionId);
 
-		shopping.setCategoryShared(ctxOf(OWNER), sectionId, true);
-		const seen = shopping.listCategories(ctxOf(STRANGER)).find((c) => c.id === sectionId);
+		inventory.setCategoryShared(ctxOf(OWNER), sectionId, true);
+		const seen = inventory.listCategories(ctxOf(STRANGER)).find((c) => c.id === sectionId);
 		expect(seen).toBeTruthy();
 		expect(seen!.mine).toBe(false);
 
 		// And never on an outsider's.
-		expect(shopping.listCategories(ctxOf(OUTSIDER)).map((c) => c.id)).not.toContain(sectionId);
+		expect(inventory.listCategories(ctxOf(OUTSIDER)).map((c) => c.id)).not.toContain(sectionId);
 	});
 
 	test('lets the member add milk on their phone and tick it on the owner’s', () => {
-		shopping.createItem(ctxOf(STRANGER), {
+		inventory.createItem(ctxOf(STRANGER), {
 			name: 'milk',
 			type: 'replenish',
-			shoppingCategoryId: sectionId
+			inventoryCategoryId: sectionId
 		});
 
-		const onOwners = shopping.listItems(ctxOf(OWNER)).find((i) => i.name === 'milk');
+		const onOwners = inventory.listItems(ctxOf(OWNER)).find((i) => i.name === 'milk');
 		expect(onOwners, 'the member’s milk reaches the owner’s list').toBeTruthy();
 		expect(onOwners!.mine).toBe(false);
 
-		shopping.setBought(ctxOf(OWNER), onOwners!.id, true);
-		const back = shopping.listItems(ctxOf(STRANGER)).find((i) => i.id === onOwners!.id);
+		inventory.setBought(ctxOf(OWNER), onOwners!.id, true);
+		const back = inventory.listItems(ctxOf(STRANGER)).find((i) => i.id === onOwners!.id);
 		expect(back!.bought, 'ticked in the aisle, bought on both').toBe(true);
 	});
 
 	test('keeps every switch the owner’s: rename, food, share, delete', () => {
 		const theirs = ctxOf(STRANGER);
-		expect(() => shopping.renameCategory(theirs, sectionId, 'Hijacked')).toThrow();
-		expect(() => shopping.setCategoryFood(theirs, sectionId, false)).toThrow();
-		expect(() => shopping.setCategoryShared(theirs, sectionId, false)).toThrow();
-		expect(() => shopping.deleteCategory(theirs, sectionId)).toThrow();
+		expect(() => inventory.renameCategory(theirs, sectionId, 'Hijacked')).toThrow();
+		expect(() => inventory.setCategoryFood(theirs, sectionId, false)).toThrow();
+		expect(() => inventory.setCategoryShared(theirs, sectionId, false)).toThrow();
+		expect(() => inventory.deleteCategory(theirs, sectionId)).toThrow();
 	});
 
 	test('shows an outsider nothing, not even by id', () => {
-		const milk = shopping.listItems(ctxOf(OWNER)).find((i) => i.name === 'milk')!;
-		expect(() => shopping.setBought(ctxOf(OUTSIDER), milk.id, false)).toThrow();
+		const milk = inventory.listItems(ctxOf(OWNER)).find((i) => i.name === 'milk')!;
+		expect(() => inventory.setBought(ctxOf(OUTSIDER), milk.id, false)).toThrow();
 	});
 
 	test('goes quiet again when the owner stops sharing — own rows stay your own', () => {
-		shopping.setCategoryShared(ctxOf(OWNER), sectionId, false);
-		expect(shopping.listCategories(ctxOf(STRANGER)).map((c) => c.id)).not.toContain(sectionId);
+		inventory.setCategoryShared(ctxOf(OWNER), sectionId, false);
+		expect(inventory.listCategories(ctxOf(STRANGER)).map((c) => c.id)).not.toContain(sectionId);
 		// The milk row is the member's — their writing stays on their list —
 		// but nothing of the owner's reaches them any more.
-		expect(shopping.listItems(ctxOf(STRANGER)).some((i) => i.name === 'milk' && i.mine)).toBe(true);
-		expect(shopping.listItems(ctxOf(STRANGER)).some((i) => !i.mine)).toBe(false);
+		expect(inventory.listItems(ctxOf(STRANGER)).some((i) => i.name === 'milk' && i.mine)).toBe(
+			true
+		);
+		expect(inventory.listItems(ctxOf(STRANGER)).some((i) => !i.mine)).toBe(false);
 	});
 });
 

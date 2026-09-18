@@ -198,19 +198,19 @@ the integrations page), and matching events are POSTed to it:
 
 ```http
 POST /api/v1/webhooks
-{ "url": "https://example.com/hook", "events": ["shopping.added", "shopping.bought"] }
+{ "url": "https://example.com/hook", "events": ["inventory.added", "inventory.bought"] }
 
 → 201 { "id": 3, "secret": "whsec_…", "events": [...], ... }
 ```
 
-Events: `todo.created` `todo.completed` `idea.created` `diary.created` `shopping.added`
-`shopping.bought`. A delivery looks like:
+Events: `todo.created` `todo.completed` `idea.created` `diary.created` `inventory.added`
+`inventory.bought`. A delivery looks like:
 
 ```http
 POST <your url>
-X-Ontoplano-Event: shopping.added
+X-Ontoplano-Event: inventory.added
 X-Ontoplano-Signature: sha256=<hmac>
-{ "event": "shopping.added", "at": "2026-08-29T12:00:00Z", "data": { "id": 12, "name": "Milk" } }
+{ "event": "inventory.added", "at": "2026-08-29T12:00:00Z", "data": { "id": 12, "name": "Milk" } }
 ```
 
 Verify the signature: HMAC-SHA256 of the raw body with your subscription's `secret`,
@@ -229,9 +229,9 @@ loopback addresses are refused. Self-hosted instances may point anywhere.
 ### The shopping list
 
 ```http
-GET  /api/v1/shopping                          → { "items": [...] }        (shopping:read)
-POST /api/v1/shopping/items                    { "name": "Milk", "category": "Dairy" }
-POST /api/v1/shopping/items/<id>/bought        { "bought": true }
+GET  /api/v1/inventory                          → { "items": [...] }        (shopping:read)
+POST /api/v1/inventory/items                    { "name": "Milk", "category": "Dairy" }
+POST /api/v1/inventory/items/<id>/bought        { "bought": true }
 ```
 
 Adding a held name puts it back on the list instead of duplicating (the

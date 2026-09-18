@@ -74,7 +74,7 @@
 	let selectedIndex = $state(-1);
 	let editingId: number | null = $state(null);
 	let editName = $state('');
-	let editShoppingCategoryId: number | null = $state(null);
+	let editInventoryCategoryId: number | null = $state(null);
 	let editNotes = $state('');
 	let editPrice = $state('');
 	/** Only asked when writing something down; an edit leaves it where it is. */
@@ -245,9 +245,9 @@
 	const totalCents = $derived(needed.reduce((sum, i) => sum + (i.priceCents ?? 0), 0));
 	const pricedCount = $derived(needed.filter((i) => i.priceCents !== null).length);
 
-	let defaultShoppingCategoryId = $derived.by(() => {
-		const otherCategory = data.shoppingCategories.find((category) => category.name === 'Other');
-		return otherCategory?.id ?? data.shoppingCategories[0]?.id ?? null;
+	let defaultInventoryCategoryId = $derived.by(() => {
+		const otherCategory = data.inventoryCategories.find((category) => category.name === 'Other');
+		return otherCategory?.id ?? data.inventoryCategories[0]?.id ?? null;
 	});
 
 	/** Every location as "Living room › White chest", root down. */
@@ -446,17 +446,17 @@
 	let replenishItems = $derived(filteredItems.filter((i) => i.type === 'replenish'));
 	/** Items grouped into category cards, in the order the categories are kept. */
 	function byCategory(list: typeof replenishItems) {
-		const catOrder = new Map(data.shoppingCategories.map((c) => [c.name, c.sortOrder]));
+		const catOrder = new Map(data.inventoryCategories.map((c) => [c.name, c.sortOrder]));
 		const grouped: Record<string, typeof replenishItems> = {};
 		for (const item of list) {
-			const catName = item.shoppingCategoryName ?? 'Other';
+			const catName = item.inventoryCategoryName ?? 'Other';
 			if (!(catName in grouped)) grouped[catName] = [];
 			grouped[catName].push(item);
 		}
 		return Object.entries(grouped)
 			.sort((a, b) => (catOrder.get(a[0]) ?? 999) - (catOrder.get(b[0]) ?? 999))
 			.map(([name, items]) => {
-				const cat = data.shoppingCategories.find((c) => c.name === name);
+				const cat = data.inventoryCategories.find((c) => c.name === name);
 				return { name, id: cat?.id ?? null, items };
 			});
 	}
@@ -566,7 +566,7 @@
 		// Standing in a drawer and adding something puts it in that drawer.
 		newLocationId = location !== null && location !== 0 ? location : null;
 		newItemType = filterType === 'someday' ? 'someday' : 'replenish';
-		editShoppingCategoryId = defaultShoppingCategoryId;
+		editInventoryCategoryId = defaultInventoryCategoryId;
 		showForm = true;
 	}
 
@@ -574,7 +574,7 @@
 		editingId = item.id;
 		editName = item.name;
 		newItemType = item.type;
-		editShoppingCategoryId = item.shoppingCategoryId;
+		editInventoryCategoryId = item.inventoryCategoryId;
 		editNotes = item.notes ?? '';
 		editPrice = item.priceCents === null ? '' : (item.priceCents / 100).toFixed(2);
 		// One blank pair at the end, so adding a field is typing rather than
@@ -599,7 +599,7 @@
 	function cancelEdit() {
 		editingId = null;
 		editName = '';
-		editShoppingCategoryId = null;
+		editInventoryCategoryId = null;
 		editNotes = '';
 		editPrice = '';
 	}
@@ -666,7 +666,7 @@
 	setRoomAction(() => ({
 		label: t('inventory.addItem'),
 		open: showForm,
-		tour: 'shopping-new',
+		tour: 'inventory-new',
 		kbd: keyFor('/inventory', 'new'),
 		run: () => (showForm ? (showForm = false) : openCreateForm())
 	}));
@@ -1144,11 +1144,11 @@
 					bind:notes={editNotes}
 					bind:price={editPrice}
 					bind:type={newItemType}
-					bind:shoppingCategoryId={editShoppingCategoryId}
+					bind:inventoryCategoryId={editInventoryCategoryId}
 					bind:locationId={newLocationId}
 					bind:fields={editFields}
 					bind:idealQty={editIdealQty}
-					categories={data.shoppingCategories}
+					categories={data.inventoryCategories}
 					locations={locationChoices}
 					askLocation={true}
 					showFields={editingId !== null}
@@ -1334,7 +1334,7 @@
 
 			<div class="min-w-0 space-y-4 p-4">
 				{#if replenishItems.length > 0}
-					<div data-tour="shopping-list">
+					<div data-tour="inventory-list">
 						<!-- "Inventory" was this heading's name before the room took it. These
 			     are the things you restock; the room is both halves. -->
 						<h2 class="mb-2 text-sm font-bold text-gray-500">{t('inventory.toRestock')}</h2>
@@ -1519,7 +1519,7 @@
 				{/if}
 
 				{#if somedayItems.length > 0}
-					<div data-tour="shopping-list">
+					<div data-tour="inventory-list">
 						<h2 class="mb-2 text-sm font-bold text-gray-500">{t('inventory.wishlist')}</h2>
 						<!-- The same column width as a category, so the two halves of the page
 			     line up instead of one running the full width of the screen. -->
@@ -1695,7 +1695,7 @@
 	<!-- Every tick saves as it lands and every row manages itself — there is
 	     nothing here a Save button would add, so Close only closes. -->
 	<ul class="space-y-1">
-		{#each data.shoppingCategories as category (category.id)}
+		{#each data.inventoryCategories as category (category.id)}
 			<li class="flex items-center gap-2 text-sm text-gray-900">
 				{#if editingCategory === category.id}
 					<form

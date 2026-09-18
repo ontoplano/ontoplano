@@ -151,7 +151,7 @@ describe('a tool that runs', () => {
 	 * the shopping list, the todos, the notebooks, the ideas.
 	 */
 	it('wraps a list rather than handing back a bare array', () => {
-		const answer = call(['shopping:read'], {
+		const answer = call(['inventory:read'], {
 			jsonrpc: '2.0',
 			id: 1,
 			method: 'tools/call',
@@ -223,7 +223,7 @@ describe('a tool that runs', () => {
 		const pairs: [string, string[]][] = [
 			['tick_bought', ['untick_bought']],
 			['archive_item', ['unarchive_item']],
-			['add_to_shopping_list', ['remove_from_shopping_list']],
+			['add_inventory_item', ['remove_inventory_item']],
 			['finish_todo', ['reopen_todo']],
 			['drop_todo', ['reopen_todo']],
 			['schedule_todo', ['unschedule_todo']],
@@ -739,7 +739,7 @@ describe('the shape of the surface', () => {
 	});
 
 	it('can take something off the shopping list as well as tick it bought', () => {
-		expect(names().has('remove_from_shopping_list')).toBe(true);
+		expect(names().has('remove_inventory_item')).toBe(true);
 	});
 
 	/**
@@ -1059,33 +1059,33 @@ describe('the opened rooms', () => {
 	 * sentence saying what the routine is: activities were read-only here.
 	 */
 	it('files a shopping item into a section, by name', () => {
-		const section = rpc(60, 'add_shopping_category', { name: 'Dairy', holdsFood: true }, [
-			'shopping:write'
+		const section = rpc(60, 'add_inventory_category', { name: 'Dairy', holdsFood: true }, [
+			'inventory:write'
 		]);
 		expect(section.result.isError, section.result.content?.[0]?.text).toBe(false);
 
-		const milk = rpc(61, 'add_to_shopping_list', { name: 'milk', section: 'dairy' }, [
-			'shopping:write'
+		const milk = rpc(61, 'add_inventory_item', { name: 'milk', section: 'dairy' }, [
+			'inventory:write'
 		]);
 		expect(milk.result.isError, milk.result.content?.[0]?.text).toBe(false);
 
-		const list = rpc(62, 'shopping_list', {}, ['shopping:read']);
+		const list = rpc(62, 'shopping_list', {}, ['inventory:read']);
 		const row = list.result.structuredContent.items.find(
 			(i: { name: string }) => i.name === 'milk'
 		);
-		expect(row.shoppingCategoryId).toBe(section.result.structuredContent.id);
+		expect(row.inventoryCategoryId).toBe(section.result.structuredContent.id);
 
 		// And out again: an empty section name unfiles.
-		const out = rpc(63, 'file_shopping_item', { id: row.id, section: '' }, ['shopping:write']);
+		const out = rpc(63, 'file_inventory_item', { id: row.id, section: '' }, ['inventory:write']);
 		expect(out.result.isError).toBe(false);
 
 		// A section nobody has is refused — pointing at the tool that lists
 		// them rather than listing them, since this token cannot read them.
-		const missing = rpc(64, 'file_shopping_item', { id: row.id, section: 'aisle nine' }, [
-			'shopping:write'
+		const missing = rpc(64, 'file_inventory_item', { id: row.id, section: 'aisle nine' }, [
+			'inventory:write'
 		]);
 		expect(missing.result.isError).toBe(true);
-		expect(missing.result.content?.[0]?.text).toContain('shopping_categories');
+		expect(missing.result.content?.[0]?.text).toContain('inventory_categories');
 		expect(missing.result.content?.[0]?.text).not.toContain('Dairy');
 	});
 
@@ -1322,7 +1322,7 @@ describe('the opened rooms', () => {
 		expect(carmen.date).toBe('2026-03-19');
 
 		// people:read does not write, and shopping tokens learn nobody's name.
-		const refused = rpc(18, 'people', {}, ['shopping:read']);
+		const refused = rpc(18, 'people', {}, ['inventory:read']);
 		expect(refused.result.isError).toBe(true);
 		expect(refused.result.content[0].text).toContain('people:read');
 	});
@@ -1412,29 +1412,29 @@ describe('shopping sections', () => {
 		call(scopes, { jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args } });
 
 	it('adds one, renames it, flips its food flag, and deletes it — items unharmed', () => {
-		const made = rpc(1, 'add_shopping_category', { name: 'Frozen', holdsFood: true }, [
-			'shopping:write'
+		const made = rpc(1, 'add_inventory_category', { name: 'Frozen', holdsFood: true }, [
+			'inventory:write'
 		]);
 		expect(made.result.isError, made.result.content?.[0]?.text).toBe(false);
 		const id = made.result.structuredContent.id as number;
 
-		const renamed = rpc(2, 'change_shopping_category', { id, name: 'Freezer', holdsFood: false }, [
-			'shopping:write'
+		const renamed = rpc(2, 'change_inventory_category', { id, name: 'Freezer', holdsFood: false }, [
+			'inventory:write'
 		]);
 		expect(renamed.result.isError, renamed.result.content?.[0]?.text).toBe(false);
 
-		const listed = rpc(3, 'shopping_categories', {}, ['shopping:read']);
+		const listed = rpc(3, 'inventory_categories', {}, ['inventory:read']);
 		const row = listed.result.structuredContent.items.find((c: { id: number }) => c.id === id);
 		expect(row.name).toBe('Freezer');
 		expect(row.isFood).toBe(false);
 
 		// An item filed under it survives the section's deletion, unfiled.
-		const item = rpc(4, 'add_to_shopping_list', { name: 'peas' }, ['shopping:write']);
+		const item = rpc(4, 'add_inventory_item', { name: 'peas' }, ['inventory:write']);
 		expect(item.result.isError, item.result.content?.[0]?.text).toBe(false);
 
-		const gone = rpc(5, 'remove_shopping_category', { id }, ['shopping:write', 'destructive']);
+		const gone = rpc(5, 'remove_inventory_category', { id }, ['inventory:write', 'destructive']);
 		expect(gone.result.isError).toBe(false);
-		const after = rpc(6, 'shopping_list', {}, ['shopping:read']);
+		const after = rpc(6, 'shopping_list', {}, ['inventory:read']);
 		expect(
 			after.result.structuredContent.items.some((i: { name: string }) => i.name === 'peas')
 		).toBe(true);
@@ -1576,7 +1576,7 @@ describe('the inventory over MCP', () => {
 	 * halves share a table and not a permission.
 	 */
 	it('is not offered to a token that only has the shopping list', () => {
-		const offered = call(['shopping:read', 'shopping:write'], {
+		const offered = call(['inventory:read', 'inventory:write'], {
 			jsonrpc: '2.0',
 			id: 1,
 			method: 'tools/list'
@@ -1593,28 +1593,29 @@ describe('the inventory over MCP', () => {
 		call(scopes, { jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args } });
 
 	it('builds the tree, files a thing, and answers "where is it"', () => {
-		const living = rpc(1, 'add_location', { name: 'Living room' }, ['inventory:write']).result
+		const living = rpc(1, 'add_location', { name: 'Living room' }, ['locations:write']).result
 			.structuredContent.id as number;
 		const chest = rpc(2, 'add_location', { name: 'White chest', parent_id: living }, [
-			'inventory:write'
+			'locations:write'
 		]).result.structuredContent.id as number;
 		const drawer = rpc(3, 'add_location', { name: 'First drawer', parent_id: chest }, [
-			'inventory:write'
+			'locations:write'
 		]).result.structuredContent.id as number;
 
-		rpc(4, 'add_to_shopping_list', { name: 'measuring tape' }, ['shopping:write']);
-		const items = rpc(5, 'shopping_list', {}, ['shopping:read']).result.structuredContent.items as {
+		rpc(4, 'add_inventory_item', { name: 'measuring tape' }, ['inventory:write']);
+		const items = rpc(5, 'shopping_list', {}, ['inventory:read']).result.structuredContent
+			.items as {
 			id: number;
 			name: string;
 		}[];
 		const tape = items.find((i) => i.name === 'measuring tape')!;
 
-		rpc(6, 'put_item', { id: tape.id, location_id: drawer }, ['inventory:write']);
+		rpc(6, 'put_item', { id: tape.id, location_id: drawer }, ['locations:write']);
 		rpc(7, 'set_item_fields', { id: tape.id, fields: { length: '5m', kind: 'tailor' } }, [
-			'inventory:write'
+			'locations:write'
 		]);
 
-		const found = rpc(8, 'where_is', { name: 'tape' }, ['inventory:read']).result.structuredContent
+		const found = rpc(8, 'where_is', { name: 'tape' }, ['locations:read']).result.structuredContent
 			.things as { name: string; location: string; fields: Record<string, string> }[];
 		expect(found[0].location).toBe('Living room › White chest › First drawer');
 		expect(found[0].fields).toEqual({ length: '5m', kind: 'tailor' });
@@ -1623,27 +1624,27 @@ describe('the inventory over MCP', () => {
 		 * Unfiling is the inverse of filing: the thing stops being inventory.
 		 *
 		 * It used to come back with `location: null`, which is how a token
-		 * holding `inventory:read` alone could read the shopping list — a row
+		 * holding `locations:read` alone could read the shopping list — a row
 		 * with no address is a shopping line, and the two grants are separate
 		 * on purpose. Gone from this answer is the right answer.
 		 */
-		rpc(9, 'put_item', { id: tape.id }, ['inventory:write']);
-		const unfiled = rpc(10, 'where_is', { name: 'tape' }, ['inventory:read']).result
+		rpc(9, 'put_item', { id: tape.id }, ['locations:write']);
+		const unfiled = rpc(10, 'where_is', { name: 'tape' }, ['locations:read']).result
 			.structuredContent.things as { location: string | null }[];
 		expect(unfiled).toEqual([]);
 	});
 
 	it('a location refuses to be put inside itself, and removal lifts children', () => {
-		const a = rpc(1, 'add_location', { name: 'Garage' }, ['inventory:write']).result
+		const a = rpc(1, 'add_location', { name: 'Garage' }, ['locations:write']).result
 			.structuredContent.id as number;
-		const b = rpc(2, 'add_location', { name: 'Shelf', parent_id: a }, ['inventory:write']).result
+		const b = rpc(2, 'add_location', { name: 'Shelf', parent_id: a }, ['locations:write']).result
 			.structuredContent.id as number;
 
-		const refused = rpc(3, 'change_location', { id: a, parent_id: b }, ['inventory:write']);
+		const refused = rpc(3, 'change_location', { id: a, parent_id: b }, ['locations:write']);
 		expect(refused.result.isError).toBe(true);
 
-		rpc(4, 'remove_location', { id: a }, ['inventory:write', 'destructive']);
-		const tree = rpc(5, 'locations', {}, ['inventory:read']).result.structuredContent.locations as {
+		rpc(4, 'remove_location', { id: a }, ['locations:write', 'destructive']);
+		const tree = rpc(5, 'locations', {}, ['locations:read']).result.structuredContent.locations as {
 			id: number;
 			name: string;
 		}[];

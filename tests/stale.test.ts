@@ -17,7 +17,7 @@ type Services = {
 	stale: typeof import('../src/lib/services/stale');
 	todos: typeof import('../src/lib/services/todos');
 	ideas: typeof import('../src/lib/services/ideas');
-	shopping: typeof import('../src/lib/services/shopping');
+	inventory: typeof import('../src/lib/services/inventory');
 };
 
 let s: Services;
@@ -34,7 +34,7 @@ beforeAll(async () => {
 		stale: await import('../src/lib/services/stale'),
 		todos: await import('../src/lib/services/todos'),
 		ideas: await import('../src/lib/services/ideas'),
-		shopping: await import('../src/lib/services/shopping')
+		inventory: await import('../src/lib/services/inventory')
 	};
 	ctx = { userId: OWNER, now: new Date('2026-08-26T12:00:00'), tz: 'UTC' };
 	old = { ...ctx, now: new Date('2026-01-10T09:00:00') };
@@ -43,12 +43,12 @@ beforeAll(async () => {
 	// Written in January, and not touched since.
 	ancient = s.todos.createTodo(old, { title: 'learn the ukulele' });
 	ancientIdea = s.ideas.createIdea(old, { content: 'a newsletter about bread' });
-	s.shopping.createItem(old, { name: 'a proper chair', type: 'someday' });
+	s.inventory.createItem(old, { name: 'a proper chair', type: 'someday' });
 
 	// And the ones that should never appear.
 	const done = s.todos.createTodo(old, { title: 'renew the passport' });
 	s.todos.setTodoStatus(old, done, 'done');
-	s.shopping.createItem(old, { name: 'olive oil', type: 'replenish' });
+	s.inventory.createItem(old, { name: 'olive oil', type: 'replenish' });
 	s.todos.createTodo(ctx, { title: 'written this week' });
 });
 

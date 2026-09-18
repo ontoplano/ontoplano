@@ -36,10 +36,10 @@
 	type Options = {
 		categories: { id: number; name: string }[];
 		notebooks: { id: number; title: string }[];
-		shoppingCategories: { id: number; name: string }[];
+		inventoryCategories: { id: number; name: string }[];
 	};
 
-	let options = $state<Options>({ categories: [], notebooks: [], shoppingCategories: [] });
+	let options = $state<Options>({ categories: [], notebooks: [], inventoryCategories: [] });
 	let ratings = $state<Record<Rating, number | null>>({
 		urgency: null,
 		interest: null,
@@ -54,7 +54,7 @@
 	});
 
 	$effect(() => {
-		if (options.categories.length || options.shoppingCategories.length) return;
+		if (options.categories.length || options.inventoryCategories.length) return;
 		fetch('/api/capture-options')
 			.then((res) => (res.ok ? res.json() : null))
 			.then((loaded) => {
@@ -78,6 +78,6 @@
 			bind:ratings
 		/>
 	{:else}
-		<BuyFields compact categories={options.shoppingCategories} />
+		<BuyFields compact categories={options.inventoryCategories} />
 	{/if}
 </FormGrid>

@@ -45,7 +45,7 @@ test('the key form offers to tie a key to one notebook', async ({ page }) => {
 	 * not post a grant it is not offering — so a selector on them would report
 	 * "not found" where the interesting answer is "disabled".
 	 */
-	const shopping = page.getByRole('checkbox', { name: /Shopping list: write/ });
+	const shopping = page.getByRole('checkbox', { name: /Inventory: write/ });
 	const tasks = page.getByRole('checkbox', { name: /To-do list: write/ });
 	await expect(shopping).toBeEnabled();
 

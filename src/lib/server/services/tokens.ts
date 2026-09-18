@@ -90,18 +90,18 @@ export const SCOPES = {
 	'plugin:declare': 'Name and describe itself on your integrations page',
 	'webhooks:manage':
 		'Send itself a message when something changes here — a task finished, a block done — to an address it chooses',
-	'shopping:read': 'See everything on your shopping list',
-	'shopping:write': 'Add to your shopping list, tick things bought, and take things off it',
+	'inventory:read': 'See everything you keep and everything on your shopping list',
+	'inventory:write': 'Add things, tick them bought, change how many you keep, and take things off',
 	/*
 	 * The other half of the same room, and its own permission.
 	 *
-	 * A shopping list is what you are going to buy; an inventory is a map of
-	 * your home — which room, which drawer, and what is in it. They share a
-	 * table and they are not the same disclosure, so a widget that wanted the
-	 * list does not get told where the spare keys are kept.
+	 * The things are one disclosure and the map of the home is another — which
+	 * room, which drawer, and what is in it. They share a table and they are
+	 * still not the same thing to hand over, so a widget that wanted the
+	 * shopping list does not get told where the spare keys are kept.
 	 */
-	'inventory:read': 'See where your things live, and what is in each room and drawer',
-	'inventory:write': 'Add and change rooms and drawers, and say where a thing lives',
+	'locations:read': 'See where your things live, and what is in each room and drawer',
+	'locations:write': 'Add and change rooms and drawers, and say where a thing lives',
 	/*
 	 * The calendar feed's own scope, and the reason it has one.
 	 *
@@ -292,7 +292,7 @@ export function createToken(
 	 * A calendar link stands alone, and it is refused rather than trimmed.
 	 *
 	 * The feed route accepts a token holding this scope and nothing else, so a
-	 * token that mixed it with `shopping:write` would be a calendar address that
+	 * token that mixed it with `inventory:write` would be a calendar address that
 	 * does not work as one — and would carry a key that writes into a URL pasted
 	 * into somebody's calendar app. Refusing says which of the two things they
 	 * are making; combining silently makes neither.

@@ -24,7 +24,7 @@ import {
 	notebooks,
 	people,
 	todoTasks,
-	shoppingItems,
+	inventoryItems,
 	recurringTasks
 } from '$lib/db/schema.js';
 import {
@@ -301,18 +301,18 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 		});
 
 	for (const row of db
-		.select({ id: shoppingItems.id, name: shoppingItems.name, notes: shoppingItems.notes })
-		.from(shoppingItems)
+		.select({ id: inventoryItems.id, name: inventoryItems.name, notes: inventoryItems.notes })
+		.from(inventoryItems)
 		.where(
 			and(
-				eq(shoppingItems.userId, ctx.userId),
-				or(matches(shoppingItems.name), matches(shoppingItems.notes ?? sql`''`))
+				eq(inventoryItems.userId, ctx.userId),
+				or(matches(inventoryItems.name), matches(inventoryItems.notes ?? sql`''`))
 			)
 		)
 		.limit(PER_KIND)
 		.all())
 		found({
-			kind: 'shopping',
+			kind: 'inventory',
 			id: row.id,
 			title: row.name,
 			snippet: firstLine(row.notes ?? ''),

@@ -30,7 +30,7 @@ import {
 	toggleBought,
 	toggleSnoozed,
 	updateItem
-} from '$lib/services/shopping';
+} from '$lib/services/inventory';
 
 export const load = async ({ locals }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
@@ -43,7 +43,7 @@ export const load = async ({ locals }: IsolatedEvent) => {
 		locations: listLocations(ctx),
 		/** Which recipes use each item — the other half of the ingredient link. */
 		usedIn: recipesByItem(ctx),
-		shoppingCategories: listCategories(ctx),
+		inventoryCategories: listCategories(ctx),
 		currency: getCurrency(ctx.userId),
 		// Where the handle between the panel and the list was left.
 		locationPanelRem: getLocationPanelWidth(ctx.userId),
@@ -162,7 +162,7 @@ export const actions = {
 				type: formData.get('type'),
 				notes: formData.get('notes'),
 				price: formData.get('price'),
-				shoppingCategoryId: formData.get('shoppingCategoryId'),
+				inventoryCategoryId: formData.get('inventoryCategoryId'),
 				locationId: formData.get('locationId'),
 				idealQty: formData.get('idealQty')
 			});
@@ -189,7 +189,7 @@ export const actions = {
 				type: formData.get('type'),
 				notes: formData.get('notes'),
 				price: formData.get('price'),
-				shoppingCategoryId: formData.get('shoppingCategoryId'),
+				inventoryCategoryId: formData.get('inventoryCategoryId'),
 				idealQty: formData.get('idealQty')
 			});
 			/*

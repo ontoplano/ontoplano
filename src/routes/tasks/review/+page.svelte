@@ -113,7 +113,7 @@
 	const SORT_LABELS: Record<string, PlainKey> = {
 		todo: 'tour.toDo',
 		idea: 'fields.idea.heading',
-		shopping: 'tasks.review.someday'
+		inventory: 'tasks.review.someday'
 	};
 
 	/**

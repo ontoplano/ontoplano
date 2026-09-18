@@ -69,8 +69,8 @@ const WATCHED = [
 	'people',
 	'activities',
 	'reminders',
-	'shopping_items',
-	'shopping_categories',
+	'inventory_items',
+	'inventory_categories',
 	'recipes',
 	'locations',
 	'workouts',
@@ -114,9 +114,9 @@ beforeAll(async () => {
 	const { createSlot } = await import('../src/lib/services/slots');
 	const {
 		createItem,
-		createCategory: createShoppingCategory,
+		createCategory: createInventoryCategory,
 		listItems
-	} = await import('../src/lib/services/shopping');
+	} = await import('../src/lib/services/inventory');
 	const { createRecipe } = await import('../src/lib/services/recipes');
 	const { createLocation } = await import('../src/lib/services/locations');
 	const { createWorkout, createWorkoutCategory, logWorkout } =
@@ -160,7 +160,7 @@ beforeAll(async () => {
 	// A block is an occurrence of one of those, and its id says which.
 	theirs.block = `slot:${theirs.repeatingBlock}`;
 
-	theirs.shoppingCategory = idOf(createShoppingCategory(them, { name: `section ${MARK}` }));
+	theirs.inventoryCategory = idOf(createInventoryCategory(them, { name: `section ${MARK}` }));
 	createItem(them, { name: `item ${MARK}`, type: 'someday' });
 	theirs.item = listItems(them).find((item) => item.name.includes(MARK))!.id;
 

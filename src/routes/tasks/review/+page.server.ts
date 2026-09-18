@@ -58,9 +58,9 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 };
 
 /** Which table a stale row came from. Anything else is not a table. */
-function sortOf(raw: FormDataEntryValue | null): 'todo' | 'idea' | 'shopping' {
+function sortOf(raw: FormDataEntryValue | null): 'todo' | 'idea' | 'inventory' {
 	const v = String(raw ?? '');
-	if (v === 'todo' || v === 'idea' || v === 'shopping') return v;
+	if (v === 'todo' || v === 'idea' || v === 'inventory') return v;
 	throw new ValidationError('Unknown kind');
 }
 

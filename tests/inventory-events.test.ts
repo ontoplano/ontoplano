@@ -11,34 +11,34 @@ const database = makeDatabase();
 seedAccounts(database.path);
 afterAll(() => database.remove());
 
-let shopping: typeof import('../src/lib/services/shopping');
+let inventory: typeof import('../src/lib/services/inventory');
 let webhooks: typeof import('../src/lib/server/services/webhooks');
 
 const ctx = { userId: OWNER, now: new Date('2026-08-29T12:00:00Z'), tz: 'UTC' };
 const fetchMock = vi.fn(async () => new Response(null, { status: 200 }));
 
 beforeAll(async () => {
-	shopping = await import('../src/lib/services/shopping');
+	inventory = await import('../src/lib/services/inventory');
 	webhooks = await import('../src/lib/server/services/webhooks');
 	vi.stubGlobal('fetch', fetchMock);
 	webhooks.createSubscription(ctx, {
 		url: 'https://example.com/hook',
-		events: ['shopping.added', 'shopping.bought']
+		events: ['inventory.added', 'inventory.bought']
 	});
 });
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 10));
-const itemIdOf = (name: string) => shopping.listItems(ctx).find((i) => i.name === name)!.id;
+const itemIdOf = (name: string) => inventory.listItems(ctx).find((i) => i.name === name)!.id;
 
 beforeEach(() => fetchMock.mockClear());
 
 describe('edge-triggered shopping events', () => {
 	test('a new item fires once; re-adding it while it waits fires nothing', async () => {
-		shopping.createItem(ctx, { name: 'Milk', type: 'replenish' });
+		inventory.createItem(ctx, { name: 'Milk', type: 'replenish' });
 		await flush();
 		expect(fetchMock).toHaveBeenCalledTimes(1);
 
-		shopping.createItem(ctx, { name: 'milk', type: 'replenish' });
+		inventory.createItem(ctx, { name: 'milk', type: 'replenish' });
 		await flush();
 		expect(fetchMock).toHaveBeenCalledTimes(1);
 	});
@@ -46,25 +46,25 @@ describe('edge-triggered shopping events', () => {
 	test('setBought fires on the transition and stays quiet on repeats', async () => {
 		const id = itemIdOf('Milk');
 
-		expect(shopping.setBought(ctx, id, true)).toEqual({ changed: true });
+		expect(inventory.setBought(ctx, id, true)).toEqual({ changed: true });
 		await flush();
 		expect(fetchMock).toHaveBeenCalledTimes(1);
 
-		expect(shopping.setBought(ctx, id, true)).toEqual({ changed: false });
+		expect(inventory.setBought(ctx, id, true)).toEqual({ changed: false });
 		await flush();
 		expect(fetchMock).toHaveBeenCalledTimes(1);
 	});
 
 	test('re-adding a bought item puts it back and fires', async () => {
-		shopping.createItem(ctx, { name: 'Milk', type: 'replenish' });
+		inventory.createItem(ctx, { name: 'Milk', type: 'replenish' });
 		await flush();
 		expect(fetchMock).toHaveBeenCalledTimes(1);
-		expect(shopping.listItems(ctx).find((i) => i.name === 'Milk')!.bought).toBe(false);
+		expect(inventory.listItems(ctx).find((i) => i.name === 'Milk')!.bought).toBe(false);
 	});
 
 	test('ensureCategoryId creates once and then finds', () => {
-		const first = shopping.ensureCategoryId(ctx, 'Dairy');
-		const again = shopping.ensureCategoryId(ctx, 'dairy');
+		const first = inventory.ensureCategoryId(ctx, 'Dairy');
+		const again = inventory.ensureCategoryId(ctx, 'dairy');
 		expect(again).toBe(first);
 	});
 });

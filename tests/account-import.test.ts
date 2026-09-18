@@ -23,7 +23,7 @@ let account: typeof import('../src/lib/server/services/account');
 let accountImport: typeof import('../src/lib/server/services/account-import');
 let activities: typeof import('../src/lib/services/activities');
 let todos: typeof import('../src/lib/services/todos');
-let shopping: typeof import('../src/lib/services/shopping');
+let inventory: typeof import('../src/lib/services/inventory');
 let ctx: typeof import('../src/lib/services/ctx');
 let ideasService: typeof import('../src/lib/services/ideas');
 
@@ -34,7 +34,7 @@ beforeAll(async () => {
 	accountImport = await import('../src/lib/server/services/account-import');
 	activities = await import('../src/lib/services/activities');
 	todos = await import('../src/lib/services/todos');
-	shopping = await import('../src/lib/services/shopping');
+	inventory = await import('../src/lib/services/inventory');
 	ctx = await import('../src/lib/services/ctx');
 	ideasService = await import('../src/lib/services/ideas');
 });
@@ -53,8 +53,8 @@ describe('a round trip', () => {
 		activities.createActivity(owner(), { name: 'weeding', categoryId: cat });
 		todos.createTodo(owner(), { title: 'buy compost', categoryId: cat });
 
-		const list = shopping.createCategory(owner(), { name: 'outdoors' });
-		shopping.createItem(owner(), { name: 'twine', shoppingCategoryId: list, type: 'replenish' });
+		const list = inventory.createCategory(owner(), { name: 'outdoors' });
+		inventory.createItem(owner(), { name: 'twine', inventoryCategoryId: list, type: 'replenish' });
 
 		file = account.exportAccount(OWNER, now);
 	});

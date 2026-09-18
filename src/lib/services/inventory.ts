@@ -1,7 +1,7 @@
 import { and, asc, desc, eq, inArray, or, sql } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
-import { locations, pricePoints, shoppingCategories, shoppingItems } from '$lib/db/schema.js';
+import { locations, pricePoints, inventoryCategories, inventoryItems } from '$lib/db/schema.js';
 import { getLocation } from './locations.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
@@ -28,7 +28,7 @@ export type ItemInput = {
 	type: unknown;
 	notes?: unknown;
 	price?: unknown;
-	shoppingCategoryId?: unknown;
+	inventoryCategoryId?: unknown;
 	/** Where it lives, when it is being written down for the first time. */
 	locationId?: unknown;
 	/** How many of it you keep. One unless somebody says otherwise. */
@@ -57,10 +57,13 @@ function sharedCategoryIds(ctx: Ctx): number[] {
 	const circle = host.familyUserIds(ctx.userId);
 	if (circle.length <= 1) return [];
 	return db
-		.select({ id: shoppingCategories.id })
-		.from(shoppingCategories)
+		.select({ id: inventoryCategories.id })
+		.from(inventoryCategories)
 		.where(
-			and(inArray(shoppingCategories.userId, circle), eq(shoppingCategories.sharedWithFamily, true))
+			and(
+				inArray(inventoryCategories.userId, circle),
+				eq(inventoryCategories.sharedWithFamily, true)
+			)
 		)
 		.all()
 		.map((row) => row.id);
@@ -69,15 +72,15 @@ function sharedCategoryIds(ctx: Ctx): number[] {
 /** The condition for an item this account may see and act on. */
 function itemReach(ctx: Ctx) {
 	const shared = sharedCategoryIds(ctx);
-	if (shared.length === 0) return eq(shoppingItems.userId, ctx.userId);
+	if (shared.length === 0) return eq(inventoryItems.userId, ctx.userId);
 	return or(
-		eq(shoppingItems.userId, ctx.userId),
-		inArray(shoppingItems.shoppingCategoryId, shared)
+		eq(inventoryItems.userId, ctx.userId),
+		inArray(inventoryItems.inventoryCategoryId, shared)
 	)!;
 }
 
 function itemWhere(ctx: Ctx, id: number) {
-	return and(eq(shoppingItems.id, id), itemReach(ctx));
+	return and(eq(inventoryItems.id, id), itemReach(ctx));
 }
 
 /** A location that is the caller's own, or a loud refusal. */
@@ -88,27 +91,27 @@ function ownedLocation(ctx: Ctx, locationId: number): void {
 export function listItems(ctx: Ctx) {
 	return db
 		.select({
-			id: shoppingItems.id,
-			name: shoppingItems.name,
-			type: shoppingItems.type,
-			shoppingCategoryId: shoppingItems.shoppingCategoryId,
-			shoppingCategoryName: shoppingCategories.name,
-			notes: shoppingItems.notes,
-			bought: shoppingItems.bought,
-			qty: shoppingItems.qty,
-			idealQty: shoppingItems.idealQty,
-			priceCents: shoppingItems.priceCents,
-			locationId: shoppingItems.locationId,
-			attributes: shoppingItems.attributes,
-			boughtAt: shoppingItems.boughtAt,
-			snoozed: shoppingItems.snoozed,
-			createdAt: shoppingItems.createdAt,
-			ownerId: shoppingItems.userId
+			id: inventoryItems.id,
+			name: inventoryItems.name,
+			type: inventoryItems.type,
+			inventoryCategoryId: inventoryItems.inventoryCategoryId,
+			inventoryCategoryName: inventoryCategories.name,
+			notes: inventoryItems.notes,
+			bought: inventoryItems.bought,
+			qty: inventoryItems.qty,
+			idealQty: inventoryItems.idealQty,
+			priceCents: inventoryItems.priceCents,
+			locationId: inventoryItems.locationId,
+			attributes: inventoryItems.attributes,
+			boughtAt: inventoryItems.boughtAt,
+			snoozed: inventoryItems.snoozed,
+			createdAt: inventoryItems.createdAt,
+			ownerId: inventoryItems.userId
 		})
-		.from(shoppingItems)
-		.leftJoin(shoppingCategories, eq(shoppingItems.shoppingCategoryId, shoppingCategories.id))
+		.from(inventoryItems)
+		.leftJoin(inventoryCategories, eq(inventoryItems.inventoryCategoryId, inventoryCategories.id))
 		.where(itemReach(ctx))
-		.orderBy(shoppingItems.bought, desc(shoppingItems.createdAt))
+		.orderBy(inventoryItems.bought, desc(inventoryItems.createdAt))
 		.all()
 		.map(({ ownerId, ...item }) => ({ ...item, mine: ownerId === ctx.userId }));
 }
@@ -117,26 +120,26 @@ export function listCategories(ctx: Ctx) {
 	const others = host.familyUserIds(ctx.userId).filter((id) => id !== ctx.userId);
 	return db
 		.select({
-			id: shoppingCategories.id,
-			name: shoppingCategories.name,
-			isFood: shoppingCategories.isFood,
-			sortOrder: shoppingCategories.sortOrder,
-			sharedWithFamily: shoppingCategories.sharedWithFamily,
-			ownerId: shoppingCategories.userId
+			id: inventoryCategories.id,
+			name: inventoryCategories.name,
+			isFood: inventoryCategories.isFood,
+			sortOrder: inventoryCategories.sortOrder,
+			sharedWithFamily: inventoryCategories.sharedWithFamily,
+			ownerId: inventoryCategories.userId
 		})
-		.from(shoppingCategories)
+		.from(inventoryCategories)
 		.where(
 			others.length === 0
-				? eq(shoppingCategories.userId, ctx.userId)
+				? eq(inventoryCategories.userId, ctx.userId)
 				: or(
-						eq(shoppingCategories.userId, ctx.userId),
+						eq(inventoryCategories.userId, ctx.userId),
 						and(
-							inArray(shoppingCategories.userId, others),
-							eq(shoppingCategories.sharedWithFamily, true)
+							inArray(inventoryCategories.userId, others),
+							eq(inventoryCategories.sharedWithFamily, true)
 						)
 					)!
 		)
-		.orderBy(shoppingCategories.sortOrder)
+		.orderBy(inventoryCategories.sortOrder)
 		.all()
 		.map(({ ownerId, ...category }) => ({ ...category, mine: ownerId === ctx.userId }));
 }
@@ -144,9 +147,9 @@ export function listCategories(ctx: Ctx) {
 /** Share a section with the family, or stop. The owner's switch alone. */
 export function setCategoryShared(ctx: Ctx, id: number, shared: boolean): void {
 	const res = db
-		.update(shoppingCategories)
+		.update(inventoryCategories)
 		.set({ sharedWithFamily: shared })
-		.where(and(eq(shoppingCategories.id, id), eq(shoppingCategories.userId, ctx.userId)))
+		.where(and(eq(inventoryCategories.id, id), eq(inventoryCategories.userId, ctx.userId)))
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('category');
@@ -156,12 +159,12 @@ export function createCategory(ctx: Ctx, raw: { name: unknown; isFood?: unknown 
 	const name = str(raw.name, 'name', { max: 60 });
 
 	const existing = db
-		.select({ id: shoppingCategories.id })
-		.from(shoppingCategories)
+		.select({ id: inventoryCategories.id })
+		.from(inventoryCategories)
 		.where(
 			and(
-				eq(shoppingCategories.userId, ctx.userId),
-				sql`lower(${shoppingCategories.name}) = lower(${name})`
+				eq(inventoryCategories.userId, ctx.userId),
+				sql`lower(${inventoryCategories.name}) = lower(${name})`
 			)
 		)
 		.get();
@@ -169,20 +172,20 @@ export function createCategory(ctx: Ctx, raw: { name: unknown; isFood?: unknown 
 
 	const last =
 		db
-			.select({ value: sql<number>`max(${shoppingCategories.sortOrder})` })
-			.from(shoppingCategories)
-			.where(eq(shoppingCategories.userId, ctx.userId))
+			.select({ value: sql<number>`max(${inventoryCategories.sortOrder})` })
+			.from(inventoryCategories)
+			.where(eq(inventoryCategories.userId, ctx.userId))
 			.get()?.value ?? 0;
 
 	return db
-		.insert(shoppingCategories)
+		.insert(inventoryCategories)
 		.values({
 			userId: ctx.userId,
 			name,
 			isFood: raw.isFood === true || raw.isFood === 'true',
 			sortOrder: last + 1
 		})
-		.returning({ id: shoppingCategories.id })
+		.returning({ id: inventoryCategories.id })
 		.get().id;
 }
 
@@ -196,12 +199,12 @@ export function renameCategory(ctx: Ctx, id: number, raw: unknown): void {
 	const name = str(raw, 'name', { max: 60 });
 
 	const clash = db
-		.select({ id: shoppingCategories.id })
-		.from(shoppingCategories)
+		.select({ id: inventoryCategories.id })
+		.from(inventoryCategories)
 		.where(
 			and(
-				eq(shoppingCategories.userId, ctx.userId),
-				sql`lower(${shoppingCategories.name}) = lower(${name})`
+				eq(inventoryCategories.userId, ctx.userId),
+				sql`lower(${inventoryCategories.name}) = lower(${name})`
 			)
 		)
 		.get();
@@ -209,9 +212,9 @@ export function renameCategory(ctx: Ctx, id: number, raw: unknown): void {
 		throw new ValidationError('There is already a category with that name');
 
 	const res = db
-		.update(shoppingCategories)
+		.update(inventoryCategories)
 		.set({ name })
-		.where(and(eq(shoppingCategories.id, id), eq(shoppingCategories.userId, ctx.userId)))
+		.where(and(eq(inventoryCategories.id, id), eq(inventoryCategories.userId, ctx.userId)))
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('category');
@@ -224,14 +227,14 @@ export function renameCategory(ctx: Ctx, id: number, raw: unknown): void {
  */
 export function deleteCategory(ctx: Ctx, id: number): void {
 	db.transaction(() => {
-		db.update(shoppingItems)
-			.set({ shoppingCategoryId: null })
-			.where(and(eq(shoppingItems.shoppingCategoryId, id), eq(shoppingItems.userId, ctx.userId)))
+		db.update(inventoryItems)
+			.set({ inventoryCategoryId: null })
+			.where(and(eq(inventoryItems.inventoryCategoryId, id), eq(inventoryItems.userId, ctx.userId)))
 			.run();
 
 		const res = db
-			.delete(shoppingCategories)
-			.where(and(eq(shoppingCategories.id, id), eq(shoppingCategories.userId, ctx.userId)))
+			.delete(inventoryCategories)
+			.where(and(eq(inventoryCategories.id, id), eq(inventoryCategories.userId, ctx.userId)))
 			.run();
 
 		if (res.changes === 0) throw new NotFoundError('category');
@@ -240,9 +243,9 @@ export function deleteCategory(ctx: Ctx, id: number): void {
 
 export function setCategoryFood(ctx: Ctx, id: number, isFood: boolean): void {
 	const res = db
-		.update(shoppingCategories)
+		.update(inventoryCategories)
 		.set({ isFood })
-		.where(and(eq(shoppingCategories.id, id), eq(shoppingCategories.userId, ctx.userId)))
+		.where(and(eq(inventoryCategories.id, id), eq(inventoryCategories.userId, ctx.userId)))
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('category');
@@ -262,26 +265,30 @@ export function createItem(ctx: Ctx, raw: ItemInput): { alreadyHad: boolean } {
 	const values = parseItem(ctx, raw);
 
 	const existing = db
-		.select({ id: shoppingItems.id, bought: shoppingItems.bought, snoozed: shoppingItems.snoozed })
-		.from(shoppingItems)
+		.select({
+			id: inventoryItems.id,
+			bought: inventoryItems.bought,
+			snoozed: inventoryItems.snoozed
+		})
+		.from(inventoryItems)
 		.where(
 			and(
-				eq(shoppingItems.userId, ctx.userId),
-				sql`lower(${shoppingItems.name}) = lower(${values.name})`
+				eq(inventoryItems.userId, ctx.userId),
+				sql`lower(${inventoryItems.name}) = lower(${values.name})`
 			)
 		)
 		.get();
 
 	if (existing) {
-		db.update(shoppingItems)
+		db.update(inventoryItems)
 			.set({ qty: 0, bought: false, boughtAt: null, snoozed: false, updatedAt: stamp(ctx) })
-			.where(and(eq(shoppingItems.id, existing.id), eq(shoppingItems.userId, ctx.userId)))
+			.where(and(eq(inventoryItems.id, existing.id), eq(inventoryItems.userId, ctx.userId)))
 			.run();
 		// The event fires on the edge: only if this actually put the item back on
 		// the list. Re-adding something already waiting changes nothing, and a
 		// webhook for it would let two synced lists ping-pong forever.
 		if (existing.bought || existing.snoozed)
-			host.emit(ctx, 'shopping.added', { id: existing.id, name: values.name });
+			host.emit(ctx, 'inventory.added', { id: existing.id, name: values.name });
 		return { alreadyHad: true };
 	}
 
@@ -296,11 +303,11 @@ export function createItem(ctx: Ctx, raw: ItemInput): { alreadyHad: boolean } {
 	const locationId = parseLocationId(ctx, raw.locationId);
 
 	const result = db
-		.insert(shoppingItems)
+		.insert(inventoryItems)
 		.values({ ...stamps(ctx), userId: ctx.userId, ...values, locationId })
 		.run();
 
-	host.emit(ctx, 'shopping.added', { id: Number(result.lastInsertRowid), name: values.name });
+	host.emit(ctx, 'inventory.added', { id: Number(result.lastInsertRowid), name: values.name });
 	return { alreadyHad: false };
 }
 
@@ -308,7 +315,7 @@ export function createItem(ctx: Ctx, raw: ItemInput): { alreadyHad: boolean } {
  * Something you already own, filed where it lives.
  *
  * `createItem` is for a thing to buy: it revives a bought row rather than
- * making a second one, and it fires `shopping.added` so a synced list learns
+ * making a second one, and it fires `inventory.added` so a synced list learns
  * about it. Neither is right here — a tape that has been in the drawer for ten
  * years was never wanted, and putting it on somebody's list would be the
  * opposite of what "I have it" means. So it arrives bought, with an address,
@@ -326,23 +333,26 @@ export function createOwnedThing(
 	const notes = optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH });
 
 	const existing = db
-		.select({ id: shoppingItems.id })
-		.from(shoppingItems)
+		.select({ id: inventoryItems.id })
+		.from(inventoryItems)
 		.where(
-			and(eq(shoppingItems.userId, ctx.userId), sql`lower(${shoppingItems.name}) = lower(${name})`)
+			and(
+				eq(inventoryItems.userId, ctx.userId),
+				sql`lower(${inventoryItems.name}) = lower(${name})`
+			)
 		)
 		.get();
 
 	if (existing) {
-		db.update(shoppingItems)
+		db.update(inventoryItems)
 			.set({ qty: 1, bought: true, boughtAt: stamp(ctx), snoozed: false, updatedAt: stamp(ctx) })
-			.where(and(eq(shoppingItems.id, existing.id), eq(shoppingItems.userId, ctx.userId)))
+			.where(and(eq(inventoryItems.id, existing.id), eq(inventoryItems.userId, ctx.userId)))
 			.run();
 		return existing.id;
 	}
 
 	const result = db
-		.insert(shoppingItems)
+		.insert(inventoryItems)
 		.values({
 			...stamps(ctx),
 			userId: ctx.userId,
@@ -368,7 +378,7 @@ export function updateItem(ctx: Ctx, id: number, raw: ItemInput): void {
 	const values = parseItem(ctx, raw);
 
 	const res = db
-		.update(shoppingItems)
+		.update(inventoryItems)
 		.set({ ...values, updatedAt: stamp(ctx) })
 		.where(itemWhere(ctx, id))
 		.run();
@@ -389,8 +399,8 @@ export function setItemCategory(ctx: Ctx, id: number, categoryId: number | null)
 	const filed = parseCategoryId(ctx, categoryId);
 
 	const res = db
-		.update(shoppingItems)
-		.set({ shoppingCategoryId: filed, updatedAt: stamp(ctx) })
+		.update(inventoryItems)
+		.set({ inventoryCategoryId: filed, updatedAt: stamp(ctx) })
 		.where(itemWhere(ctx, id))
 		.run();
 
@@ -404,7 +414,7 @@ export function setItemCategory(ctx: Ctx, id: number, categoryId: number | null)
 export function setItemLocation(ctx: Ctx, id: number, locationId: number | null): void {
 	if (locationId !== null) ownedLocation(ctx, locationId);
 	const res = db
-		.update(shoppingItems)
+		.update(inventoryItems)
 		.set({ locationId, updatedAt: stamp(ctx) })
 		.where(itemWhere(ctx, id))
 		.run();
@@ -423,7 +433,7 @@ export function setItemAttributes(ctx: Ctx, id: number, attributes: Record<strin
 		if (key) clean[key] = String(v ?? '').slice(0, 500);
 	}
 	const res = db
-		.update(shoppingItems)
+		.update(inventoryItems)
 		.set({ attributes: JSON.stringify(clean), updatedAt: stamp(ctx) })
 		.where(itemWhere(ctx, id))
 		.run();
@@ -431,7 +441,7 @@ export function setItemAttributes(ctx: Ctx, id: number, attributes: Record<strin
 }
 
 export function deleteItem(ctx: Ctx, id: number): void {
-	const res = db.delete(shoppingItems).where(itemWhere(ctx, id)).run();
+	const res = db.delete(inventoryItems).where(itemWhere(ctx, id)).run();
 
 	if (res.changes === 0) throw new NotFoundError('item');
 }
@@ -454,7 +464,7 @@ export function setQty(ctx: Ctx, id: number, wanted: number, raw: { paid?: unkno
 	const bought = qty >= enough;
 	const now = stamp(ctx);
 
-	db.update(shoppingItems)
+	db.update(inventoryItems)
 		.set({
 			qty,
 			bought,
@@ -472,7 +482,7 @@ export function setQty(ctx: Ctx, id: number, wanted: number, raw: { paid?: unkno
 		recordPaid(ctx, id, raw.paid);
 
 	// Only the crossing, not every step up from two to three.
-	if (bought && !item.bought) host.emit(ctx, 'shopping.bought', { id, name: item.name });
+	if (bought && !item.bought) host.emit(ctx, 'inventory.bought', { id, name: item.name });
 }
 
 /**
@@ -510,12 +520,12 @@ export function setBought(ctx: Ctx, id: number, bought: boolean): { changed: boo
 export function ensureCategoryId(ctx: Ctx, name: unknown): number {
 	const wanted = str(name, 'category', { max: 60 });
 	const existing = db
-		.select({ id: shoppingCategories.id })
-		.from(shoppingCategories)
+		.select({ id: inventoryCategories.id })
+		.from(inventoryCategories)
 		.where(
 			and(
-				eq(shoppingCategories.userId, ctx.userId),
-				sql`lower(${shoppingCategories.name}) = lower(${wanted})`
+				eq(inventoryCategories.userId, ctx.userId),
+				sql`lower(${inventoryCategories.name}) = lower(${wanted})`
 			)
 		)
 		.get();
@@ -550,7 +560,7 @@ export function recordPaid(ctx: Ctx, id: number, raw: unknown): void {
 			.run();
 
 		// A confirmed price is the best "about" there is.
-		tx.update(shoppingItems)
+		tx.update(inventoryItems)
 			.set({ priceCents: paid, updatedAt: stamp(ctx) })
 			.where(itemWhere(ctx, id))
 			.run();
@@ -634,7 +644,7 @@ export function setSnoozed(ctx: Ctx, id: number, snoozed: boolean): { changed: b
 	const item = ownedItem(ctx, id);
 	if (item.snoozed === snoozed) return { changed: false };
 
-	db.update(shoppingItems)
+	db.update(inventoryItems)
 		.set({ snoozed, updatedAt: stamp(ctx) })
 		.where(itemWhere(ctx, id))
 		.run();
@@ -644,16 +654,16 @@ export function setSnoozed(ctx: Ctx, id: number, snoozed: boolean): { changed: b
 function ownedItem(ctx: Ctx, id: number) {
 	const row = db
 		.select({
-			id: shoppingItems.id,
-			name: shoppingItems.name,
-			type: shoppingItems.type,
-			bought: shoppingItems.bought,
-			boughtAt: shoppingItems.boughtAt,
-			qty: shoppingItems.qty,
-			idealQty: shoppingItems.idealQty,
-			snoozed: shoppingItems.snoozed
+			id: inventoryItems.id,
+			name: inventoryItems.name,
+			type: inventoryItems.type,
+			bought: inventoryItems.bought,
+			boughtAt: inventoryItems.boughtAt,
+			qty: inventoryItems.qty,
+			idealQty: inventoryItems.idealQty,
+			snoozed: inventoryItems.snoozed
 		})
-		.from(shoppingItems)
+		.from(inventoryItems)
 		.where(itemWhere(ctx, id))
 		.get();
 
@@ -666,7 +676,7 @@ function parseItem(ctx: Ctx, raw: ItemInput) {
 		name: str(raw.name, 'name', { max: MAX_NAME_LENGTH }),
 		type: oneOf(raw.type, 'type', ITEM_TYPES),
 		notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),
-		shoppingCategoryId: parseCategoryId(ctx, raw.shoppingCategoryId),
+		inventoryCategoryId: parseCategoryId(ctx, raw.inventoryCategoryId),
 		// Typed as money, stored as an integer. A blank field means nobody has
 		// said what it costs, which is different from saying it is free.
 		priceCents: parseMoney(raw.price, getCurrency(ctx.userId)),
@@ -706,16 +716,16 @@ function parseCategoryId(ctx: Ctx, value: unknown): number | null {
 	// Yours, or a family member's shared section — filing into a shared shelf
 	// is the point of it being shared.
 	const reachable = db
-		.select({ id: shoppingCategories.id })
-		.from(shoppingCategories)
+		.select({ id: inventoryCategories.id })
+		.from(inventoryCategories)
 		.where(
 			and(
-				eq(shoppingCategories.id, id),
+				eq(inventoryCategories.id, id),
 				or(
-					eq(shoppingCategories.userId, ctx.userId),
+					eq(inventoryCategories.userId, ctx.userId),
 					and(
-						inArray(shoppingCategories.userId, host.familyUserIds(ctx.userId)),
-						eq(shoppingCategories.sharedWithFamily, true)
+						inArray(inventoryCategories.userId, host.familyUserIds(ctx.userId)),
+						eq(inventoryCategories.sharedWithFamily, true)
 					)
 				)
 			)
@@ -729,10 +739,10 @@ function parseCategoryId(ctx: Ctx, value: unknown): number | null {
 /** What is still to buy, for the dashboard card. */
 export function listToBuy(ctx: Ctx) {
 	return db
-		.select({ id: shoppingItems.id, name: shoppingItems.name, type: shoppingItems.type })
-		.from(shoppingItems)
-		.where(and(itemReach(ctx), eq(shoppingItems.bought, false)))
-		.orderBy(desc(shoppingItems.createdAt))
+		.select({ id: inventoryItems.id, name: inventoryItems.name, type: inventoryItems.type })
+		.from(inventoryItems)
+		.where(and(itemReach(ctx), eq(inventoryItems.bought, false)))
+		.orderBy(desc(inventoryItems.createdAt))
 		.all();
 }
 
@@ -777,7 +787,7 @@ export function shoppingRun(ctx: Ctx): ShoppingRun {
 		.map((i) => ({
 			id: i.id,
 			name: i.name,
-			category: i.shoppingCategoryName,
+			category: i.inventoryCategoryName,
 			needed: Math.max(0, i.idealQty - i.qty),
 			priceCents: i.priceCents,
 			lineCents: i.priceCents === null ? null : i.priceCents * Math.max(0, i.idealQty - i.qty)

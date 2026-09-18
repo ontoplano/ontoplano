@@ -32,7 +32,7 @@ describe('subscribing', () => {
 	test('a subscription is created with a secret and listed', () => {
 		const sub = s.createSubscription(ctx, {
 			url: 'https://example.com/hook',
-			events: ['todo.created', 'shopping.added']
+			events: ['todo.created', 'inventory.added']
 		});
 		expect(sub.secret).toMatch(/^whsec_/);
 		expect(s.listSubscriptions(ctx)).toHaveLength(1);
@@ -99,7 +99,7 @@ describe('delivery', () => {
 		});
 		s.createSubscription(ctx, {
 			url: 'https://example.com/wants-shopping',
-			events: ['shopping.added']
+			events: ['inventory.added']
 		});
 
 		s.emit(ctx, 'todo.created', { id: 1, title: 'buy milk' });

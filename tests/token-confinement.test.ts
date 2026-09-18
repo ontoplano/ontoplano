@@ -133,7 +133,7 @@ describe('the choices the form is given', () => {
 		// shopping list, which would be a box that granted nothing.
 		expect(notebooks?.scopes).toContain('tasks:write');
 		expect(notebooks?.scopes).toContain('notes:read');
-		expect(notebooks?.scopes).not.toContain('shopping:write');
+		expect(notebooks?.scopes).not.toContain('inventory:write');
 		expect(notebooks?.scopes).not.toContain('bills:read');
 	});
 

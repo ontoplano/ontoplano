@@ -14,7 +14,7 @@ import { listNotebooks } from '$lib/services/notebooks.js';
 import { listPeople } from '$lib/services/people.js';
 import { listRecipes } from '$lib/services/recipes.js';
 import { listReminders } from '$lib/services/reminders.js';
-import { listCategories as listShoppingCategories, listItems } from '$lib/services/shopping.js';
+import { listCategories as listInventoryCategories, listItems } from '$lib/services/inventory.js';
 import { listWeeklySlots } from '$lib/services/slots.js';
 import { listRules } from '$lib/services/statements.js';
 import { listTodos } from '$lib/services/todos.js';
@@ -90,7 +90,7 @@ export const KINDS = kinds({
 	},
 
 	item: { label: 'item', rows: (ctx) => listItems(ctx) },
-	shoppingCategory: { label: 'category', rows: (ctx) => listShoppingCategories(ctx) },
+	inventoryCategory: { label: 'category', rows: (ctx) => listInventoryCategories(ctx) },
 	recipe: { label: 'recipe', rows: (ctx) => listRecipes(ctx, { includeArchived: true }) },
 	location: { label: 'place', rows: (ctx) => listLocations(ctx) },
 	workout: { label: 'exercise', rows: (ctx) => listWorkouts(ctx, { includeArchived: true }) },

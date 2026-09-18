@@ -17,7 +17,7 @@
 		notes = $bindable(''),
 		price = $bindable(''),
 		type = $bindable('replenish'),
-		shoppingCategoryId = $bindable<number | null | undefined>(undefined),
+		inventoryCategoryId = $bindable<number | null | undefined>(undefined),
 		categories = [],
 		locations = [],
 		locationId = $bindable(null),
@@ -39,7 +39,7 @@
 		notes?: string;
 		price?: string;
 		type?: string;
-		shoppingCategoryId?: number | null | undefined;
+		inventoryCategoryId?: number | null | undefined;
 		categories?: { id: number; name: string }[];
 		locations?: { id: number; name: string; path: string }[];
 		locationId?: number | null;
@@ -79,7 +79,7 @@
 		</Field>
 
 		<Field label={t('ui.category')} span={6}>
-			<select name="shoppingCategoryId" bind:value={shoppingCategoryId} class="select">
+			<select name="inventoryCategoryId" bind:value={inventoryCategoryId} class="select">
 				{#each categories as category (category.id)}
 					<option value={category.id}>{category.name}</option>
 				{/each}

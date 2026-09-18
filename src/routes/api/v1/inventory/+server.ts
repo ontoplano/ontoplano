@@ -2,18 +2,18 @@ import type { RequestHandler } from './$types';
 
 import { authenticateApi } from '$lib/server/api/auth';
 import { toJsonError } from '$lib/http-errors';
-import { listItems } from '$lib/services/shopping';
+import { listItems } from '$lib/services/inventory';
 
 /** The whole list, bought and waiting alike — the reader decides what matters. */
 export const GET: RequestHandler = async (event) => {
 	try {
-		const { ctx } = authenticateApi(event, 'shopping:read');
+		const { ctx } = authenticateApi(event, 'inventory:read');
 		return Response.json({
 			items: listItems(ctx).map((i) => ({
 				id: i.id,
 				name: i.name,
 				type: i.type,
-				category: i.shoppingCategoryName,
+				category: i.inventoryCategoryName,
 				notes: i.notes,
 				bought: i.bought,
 				bought_at: i.boughtAt,

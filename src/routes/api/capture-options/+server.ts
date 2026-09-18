@@ -2,7 +2,7 @@ import type { IsolatedEvent } from '$lib/isolated/routes';
 import { json } from '@sveltejs/kit';
 import { buildCtx } from '$lib/services/ctx';
 import { listCategories as listPlannerCategories } from '$lib/services/activities';
-import { listCategories as listShoppingCategories } from '$lib/services/shopping';
+import { listCategories as listInventoryCategories } from '$lib/services/inventory';
 import { listNotebooks } from '$lib/services/notebooks';
 
 /**
@@ -14,12 +14,12 @@ import { listNotebooks } from '$lib/services/notebooks';
  * opened, and held for the rest of the session.
  */
 export const GET = async ({ locals }: IsolatedEvent) => {
-	if (!locals.user) return json({ categories: [], notebooks: [], shoppingCategories: [] });
+	if (!locals.user) return json({ categories: [], notebooks: [], inventoryCategories: [] });
 
 	const ctx = buildCtx(locals.user.id);
 	return json({
 		categories: listPlannerCategories(ctx).map((c) => ({ id: c.id, name: c.name })),
 		notebooks: listNotebooks(ctx).map((n) => ({ id: n.id, title: n.title })),
-		shoppingCategories: listShoppingCategories(ctx).map((c) => ({ id: c.id, name: c.name }))
+		inventoryCategories: listInventoryCategories(ctx).map((c) => ({ id: c.id, name: c.name }))
 	});
 };

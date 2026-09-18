@@ -26,10 +26,10 @@ than a permission bit: a grant given to a string of jargon is not informed.
 | `habits:write`     | Mark a habit kept, or unmark one                                                                                                                  |
 | `plugin:declare`   | Name and describe itself on your integrations page                                                                                                |
 | `webhooks:manage`  | Send itself a message when something changes here — a task finished, a block done — to an address it chooses                                      |
-| `shopping:read`    | See everything on your shopping list                                                                                                              |
-| `shopping:write`   | Add to your shopping list, tick things bought, and take things off it                                                                             |
-| `inventory:read`   | See where your things live, and what is in each room and drawer                                                                                   |
-| `inventory:write`  | Add and change rooms and drawers, and say where a thing lives                                                                                     |
+| `inventory:read`   | See everything you keep and everything on your shopping list                                                                                      |
+| `inventory:write`  | Add things, tick them bought, change how many you keep, and take things off                                                                       |
+| `locations:read`   | See where your things live, and what is in each room and drawer                                                                                   |
+| `locations:write`  | Add and change rooms and drawers, and say where a thing lives                                                                                     |
 | `calendar:read`    | Show your plan in a calendar app. It can see the plan and change nothing                                                                          |
 | `notes:read`       | Read your diary and your notebooks                                                                                                                |
 | `notes:write`      | Write in your diary and your notebooks                                                                                                            |

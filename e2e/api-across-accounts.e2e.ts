@@ -70,8 +70,8 @@ async function keyFor(who: Account, scopes: string[]): Promise<string> {
 }
 
 const SCOPES = [
-	'shopping:read',
-	'shopping:write',
+	'inventory:read',
+	'inventory:write',
 	'streams:read',
 	'streams:write',
 	'webhooks:manage'
@@ -87,7 +87,7 @@ test('no account reaches another one through the API', async ({ playwright }) =>
 	const asMe = { Authorization: `Bearer ${myKey}`, Cookie: '' };
 
 	// ── One of each thing that has an id, belonging to the first account ──────
-	const item = await mine.request.post('/api/v1/shopping/items', {
+	const item = await mine.request.post('/api/v1/inventory/items', {
 		headers: { ...asMe, 'content-type': 'application/json' },
 		data: { name: 'a private loaf' }
 	});
@@ -95,7 +95,7 @@ test('no account reaches another one through the API', async ({ playwright }) =>
 
 	// The POST answers whether the list already had one, not an id, so the id
 	// comes from the list — which is also the read this sweep checks later.
-	const listed = await mine.request.get('/api/v1/shopping', { headers: asMe });
+	const listed = await mine.request.get('/api/v1/inventory', { headers: asMe });
 	const items = ((await listed.json()) as { items: { id: number; name: string }[] }).items;
 	const itemId = items.find((one) => one.name === 'a private loaf')?.id;
 	expect(itemId, JSON.stringify(items)).toBeTruthy();
@@ -127,7 +127,7 @@ test('no account reaches another one through the API', async ({ playwright }) =>
 	const attempts: { what: string; res: import('@playwright/test').APIResponse }[] = [
 		{
 			what: 'tick somebody else’s shopping item',
-			res: await theirs.request.post(`/api/v1/shopping/items/${itemId}/bought`, {
+			res: await theirs.request.post(`/api/v1/inventory/items/${itemId}/bought`, {
 				headers: { ...asThem, 'content-type': 'application/json' },
 				data: { bought: true }
 			})
@@ -155,7 +155,7 @@ test('no account reaches another one through the API', async ({ playwright }) =>
 	}
 
 	// ── And the first account's things are exactly as they were ───────────────
-	const shopping = await mine.request.get('/api/v1/shopping', { headers: asMe });
+	const shopping = await mine.request.get('/api/v1/inventory', { headers: asMe });
 	const loaf = ((await shopping.json()) as { items: { id: number; bought: boolean }[] }).items.find(
 		(one) => one.id === itemId
 	);

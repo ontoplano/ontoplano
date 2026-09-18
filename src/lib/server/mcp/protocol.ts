@@ -414,10 +414,10 @@ function roomsOf(tool: { scope: string }): Room[] {
 			return ['diary', 'notebooks'];
 		case 'ideas:write':
 			return ['ideas'];
-		case 'shopping:write':
-			return ['shopping'];
+		case 'inventory:write':
+			return ['inventory'];
 		case 'kitchen:write':
-			return ['kitchen', 'shopping'];
+			return ['kitchen', 'inventory'];
 		case 'people:write':
 			return ['people'];
 		case 'streams:write':

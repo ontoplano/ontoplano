@@ -101,7 +101,7 @@ describe('which room a webhook event belongs to', () => {
 		expect(roomsForEvent('todo.created')).toContain('todos');
 		expect(roomsForEvent('todo.created')).toContain('planner');
 		expect(roomsForEvent('diary.created')).toEqual(['diary']);
-		expect(roomsForEvent('shopping.added')).toEqual(['shopping']);
+		expect(roomsForEvent('inventory.added')).toEqual(['inventory']);
 	});
 
 	/** An event nobody mapped announces nothing, rather than reloading the app. */

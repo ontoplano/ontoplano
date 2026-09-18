@@ -28,7 +28,7 @@ import { TOOLS } from './tools.js';
  *   1. A tool that names nothing is refused. A confined key cannot call
  *      `diary` or `goals`, because those are about the account, not a thing.
  *   2. A tool that names a kind this confinement does not contain is refused
- *      — a shopping item is not inside a notebook.
+ *      — an inventory item is not inside a notebook.
  *   3. Where a tool names the confining kind itself, the argument is *set*
  *      rather than checked. Asking for another notebook does not fail; it is
  *      simply not what the call ends up being about. Nothing here is ever read
@@ -80,7 +80,7 @@ export function isConfinementKind(kind: unknown): kind is ConfinementKind {
  * What this confinement lets a caller see of each kind.
  *
  * Null for a kind it does not contain at all, which is the answer that refuses
- * a tool rather than narrowing it — there is no such thing as "the shopping
+ * a tool rather than narrowing it — there is no such thing as "the inventory
  * items in a notebook", and pretending there are none would make the tool look
  * as if it had simply found nothing.
  */

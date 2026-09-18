@@ -423,12 +423,12 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				body: 'tour.inventoryIsWhatRunsOut'
 			},
 			{
-				target: '[data-tour="shopping-new"]',
+				target: '[data-tour="inventory-new"]',
 				title: 'tour.whichListAndWhereIt',
 				body: 'tour.aCategoryFridgeBathroom'
 			},
 			{
-				target: '[data-tour="shopping-list"]',
+				target: '[data-tour="inventory-list"]',
 				title: 'tour.boughtAndBackAgain',
 				body: 'tour.tickingSomethingOffInventoryStarts'
 			}

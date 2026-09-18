@@ -24,10 +24,10 @@ sentence somebody agrees to when they grant it.
 | `habits:write`     | Mark a habit kept, or unmark one                                                                                                                  |
 | `plugin:declare`   | Name and describe itself on your integrations page                                                                                                |
 | `webhooks:manage`  | Send itself a message when something changes here — a task finished, a block done — to an address it chooses                                      |
-| `shopping:read`    | See everything on your shopping list                                                                                                              |
-| `shopping:write`   | Add to your shopping list, tick things bought, and take things off it                                                                             |
-| `inventory:read`   | See where your things live, and what is in each room and drawer                                                                                   |
-| `inventory:write`  | Add and change rooms and drawers, and say where a thing lives                                                                                     |
+| `inventory:read`   | See everything you keep and everything on your shopping list                                                                                      |
+| `inventory:write`  | Add things, tick them bought, change how many you keep, and take things off                                                                       |
+| `locations:read`   | See where your things live, and what is in each room and drawer                                                                                   |
+| `locations:write`  | Add and change rooms and drawers, and say where a thing lives                                                                                     |
 | `calendar:read`    | Show your plan in a calendar app. It can see the plan and change nothing                                                                          |
 | `notes:read`       | Read your diary and your notebooks                                                                                                                |
 | `notes:write`      | Write in your diary and your notebooks                                                                                                            |
@@ -78,15 +78,15 @@ sentence somebody agrees to when they grant it.
 | `/api/search`                                | GET    | —                 |
 | `/api/subscribe`                             | POST   | —                 |
 | `/api/tutorial`                              | POST   | —                 |
+| `/api/v1/inventory`                          | GET    | `inventory:read`  |
+| `/api/v1/inventory/items`                    | POST   | `inventory:write` |
+| `/api/v1/inventory/items/[id]/bought`        | POST   | `inventory:write` |
 | `/api/v1/me`                                 | GET    | —                 |
 | `/api/v1/plugin`                             | GET    | `plugin:declare`  |
 | `/api/v1/plugin`                             | PUT    | `plugin:declare`  |
 | `/api/v1/plugin`                             | DELETE | `plugin:declare`  |
 | `/api/v1/reminders/upcoming`                 | GET    | `reminders:read`  |
 | `/api/v1/schedule/upcoming`                  | GET    | `schedule:read`   |
-| `/api/v1/shopping`                           | GET    | `shopping:read`   |
-| `/api/v1/shopping/items`                     | POST   | `shopping:write`  |
-| `/api/v1/shopping/items/[id]/bought`         | POST   | `shopping:write`  |
 | `/api/v1/streams`                            | GET    | `streams:read`    |
 | `/api/v1/streams`                            | POST   | `streams:write`   |
 | `/api/v1/streams/[slug]/points`              | POST   | `streams:write`   |
@@ -478,6 +478,30 @@ by the tab and nowhere else.
 
 **POST**
 
+### `/api/v1/inventory`
+
+The whole list, bought and waiting alike — the reader decides what matters.
+
+**GET** — requires `inventory:read`
+
+### `/api/v1/inventory/items`
+
+Put something on the list.
+
+The same semantics as typing it in the app: a name already held is put back
+on the list rather than duplicated, and the response says which happened.
+`category` is a name, created if new — a producer should not need a second
+request to find out what number "Dairy" is.
+
+**POST** — requires `inventory:write`
+
+### `/api/v1/inventory/items/[id]/bought`
+
+State, not a toggle: `{ "bought": true }` twice means bought, not un-bought.
+A plugin mirroring two lists needs to be able to repeat itself.
+
+**POST** — requires `inventory:write`
+
 ### `/api/v1/me`
 
 Token introspection — lets a producer verify its credentials and discover
@@ -534,30 +558,6 @@ and what kind — is the consumer's business, matched on `title`, `category`
 or `label`.
 
 **GET** — requires `schedule:read`
-
-### `/api/v1/shopping`
-
-The whole list, bought and waiting alike — the reader decides what matters.
-
-**GET** — requires `shopping:read`
-
-### `/api/v1/shopping/items`
-
-Put something on the list.
-
-The same semantics as typing it in the app: a name already held is put back
-on the list rather than duplicated, and the response says which happened.
-`category` is a name, created if new — a producer should not need a second
-request to find out what number "Dairy" is.
-
-**POST** — requires `shopping:write`
-
-### `/api/v1/shopping/items/[id]/bought`
-
-State, not a toggle: `{ "bought": true }` twice means bought, not un-bought.
-A plugin mirroring two lists needs to be able to repeat itself.
-
-**POST** — requires `shopping:write`
 
 ### `/api/v1/streams`
 

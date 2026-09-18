@@ -646,10 +646,10 @@ export const todoTasks = sqliteTable(
 	]
 );
 
-// --- Shopping List ---
+// --- Inventory: sections, and the things themselves ---
 
-export const shoppingCategories = sqliteTable(
-	'shopping_categories',
+export const inventoryCategories = sqliteTable(
+	'inventory_categories',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
 		userId: text('user_id')
@@ -676,13 +676,13 @@ export const shoppingCategories = sqliteTable(
 			.default(sql`(CURRENT_TIMESTAMP)`)
 	},
 	(table) => [
-		index('shopping_categories_user_idx').on(table.userId),
-		uniqueIndex('shopping_categories_user_name_unique').on(table.userId, table.name)
+		index('inventory_categories_user_idx').on(table.userId),
+		uniqueIndex('inventory_categories_user_name_unique').on(table.userId, table.name)
 	]
 );
 
-export const shoppingItems = sqliteTable(
-	'shopping_items',
+export const inventoryItems = sqliteTable(
+	'inventory_items',
 	{
 		id: integer('id').primaryKey({ autoIncrement: true }),
 		userId: text('user_id')
@@ -690,7 +690,7 @@ export const shoppingItems = sqliteTable(
 			.references(() => user.id),
 		name: text('name').notNull(),
 		type: text('type', { enum: ['someday', 'replenish'] }).notNull(),
-		shoppingCategoryId: integer('shopping_category_id').references(() => shoppingCategories.id),
+		inventoryCategoryId: integer('inventory_category_id').references(() => inventoryCategories.id),
 		notes: text('notes').default(''),
 		/*
 		 * How many you have, and how many you want to keep.
@@ -734,12 +734,12 @@ export const shoppingItems = sqliteTable(
 			.default(sql`(CURRENT_TIMESTAMP)`)
 	},
 	(table) => [
-		index('shopping_items_user_idx').on(table.userId),
-		index('shopping_items_type_idx').on(table.type),
-		index('shopping_items_bought_idx').on(table.bought),
-		check('shopping_items_qty_positive', sql`${table.qty} >= 0 AND ${table.idealQty} >= 0`),
-		index('shopping_items_snoozed_idx').on(table.snoozed),
-		index('shopping_items_category_idx').on(table.shoppingCategoryId)
+		index('inventory_items_user_idx').on(table.userId),
+		index('inventory_items_type_idx').on(table.type),
+		index('inventory_items_bought_idx').on(table.bought),
+		check('inventory_items_qty_positive', sql`${table.qty} >= 0 AND ${table.idealQty} >= 0`),
+		index('inventory_items_snoozed_idx').on(table.snoozed),
+		index('inventory_items_category_idx').on(table.inventoryCategoryId)
 	]
 );
 
@@ -882,9 +882,9 @@ export const recipeImages = sqliteTable(
 );
 
 /**
- * An ingredient: a shopping item, an amount, and how it is prepared.
+ * An ingredient: an inventory item, an amount, and how it is prepared.
  *
- * It points at `shopping_items` rather than holding a name of its own, which is
+ * It points at `inventory_items` rather than holding a name of its own, which is
  * what makes "what does this week need" a join rather than a text-matching
  * problem. Writing a recipe therefore fills the shopping list as a side effect,
  * which is the only way any of this stays current.
@@ -905,7 +905,7 @@ export const recipeItems = sqliteTable(
 			.references(() => recipes.id, { onDelete: 'cascade' }),
 		itemId: integer('item_id')
 			.notNull()
-			.references(() => shoppingItems.id, { onDelete: 'cascade' }),
+			.references(() => inventoryItems.id, { onDelete: 'cascade' }),
 		quantity: real('quantity'),
 		unit: text('unit').default(''),
 		note: text('note').default(''),
@@ -2011,7 +2011,7 @@ export const sentNotifications = sqliteTable(
 /**
  * What something cost, when you bought it.
  *
- * `shopping_items.price_cents` is a *last known* price — useful for "what will
+ * `inventory_items.price_cents` is a *last known* price — useful for "what will
  * this shop cost" and useless for anything over time, because it is overwritten.
  * A row per purchase is the other question: milk has gone from 1.20 to 1.60
  * this year, and nobody else's app will tell you that.
@@ -2029,7 +2029,7 @@ export const pricePoints = sqliteTable(
 			.references(() => user.id),
 		itemId: integer('item_id')
 			.notNull()
-			.references(() => shoppingItems.id, { onDelete: 'cascade' }),
+			.references(() => inventoryItems.id, { onDelete: 'cascade' }),
 		priceCents: integer('price_cents').notNull(),
 		/** The day it was bought, not the instant it was typed in. */
 		forDate: text('for_date').notNull(),
@@ -2585,7 +2585,7 @@ export const mediaTags = sqliteTable(
 /**
  * The kinds of workout an account keeps.
  *
- * Its own table for the same reason a shopping category is: a fixed enum in
+ * Its own table for the same reason an inventory section is: a fixed enum in
  * the schema is somebody else deciding what your training is made of, and the
  * fifth option being called "other" is the proof. Every account gets the five
  * that used to be hard-coded, and may rename, add to or remove them.
@@ -2623,7 +2623,7 @@ export const workouts = sqliteTable(
 		 * It was a fixed list — strength, cardio, mobility, sport, other — which
 		 * is a taxonomy nobody's body agrees with: somebody swims and lifts and
 		 * does physio, and "other" is where three of those ended up. A row in a
-		 * table the person owns, like a shopping category, seeded with the five
+		 * table the person owns, like an inventory section, seeded with the five
 		 * that were hard-coded so nothing changes for anybody who was happy.
 		 */
 		categoryId: integer('category_id').references(() => workoutCategories.id, {
@@ -2763,14 +2763,14 @@ export const workoutMeasures = sqliteTable(
 	]
 );
 
-// --- Inventory: locations, and the things that live in them ---
+// --- Inventory: where things live ---
 //
 // The shopping list is a flat "to buy". An inventory is the other half — what
 // you already have and *where it lives* — and the difference is classification:
 // a tree of locations (house → room → chest → drawer) and free fields per item
 // (a tape is 3m or 5m, a cable is USB-C or not), because not everything a home
 // holds has the same attributes. So `locations` is that tree, and
-// `shopping_items` grows a location it sits in and a bag of its own fields. The
+// `inventory_items` grows a location it sits in and a bag of its own fields. The
 // list stays the "I need it" view of the same rows; a row in a location with no
 // need is "I have it".
 

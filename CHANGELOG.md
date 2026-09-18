@@ -18,6 +18,26 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.180.0 — 2026-09-18
+
+- **The shopping list is a reading of the inventory, and the data says so
+  now.** The two tables behind the room were still called after the list;
+  they are the inventory's, and what you keep and where it lives is what they
+  hold. Nothing on the screen moved, and nothing in a list was lost.
+- **For anything you have pointed at the API:** the endpoints are
+  `/api/v1/inventory/...` rather than `/api/v1/shopping/...`, the permission
+  to reach them is `inventory:read` / `inventory:write`, and the one for
+  rooms and drawers is `locations:read` / `locations:write`. Keys already
+  made were moved across, so nothing you handed out has to be made again.
+- **For an AI assistant:** `add_to_shopping_list`, `remove_from_shopping_list`
+  and `file_shopping_item` are `add_inventory_item`, `remove_inventory_item`
+  and `file_inventory_item`; the sections are `inventory_categories`,
+  `add_inventory_category`, `change_inventory_category` and
+  `remove_inventory_category`. `shopping_list` keeps its name, because the
+  shopping list is what it answers with.
+- **For a webhook:** `shopping.added` and `shopping.bought` are
+  `inventory.added` and `inventory.bought`. Subscriptions were moved across.
+
 ## 0.179.1 — 2026-09-17
 
 - **The tab shows the mark, not a browser's guess at it.** The icon offered to

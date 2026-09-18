@@ -7,7 +7,7 @@
  * every meal in the week minus what is already in the cupboard *is* the
  * shopping list.
  *
- * Which is why an ingredient points at `shopping_items` and never holds a name
+ * Which is why an ingredient points at `inventory_items` and never holds a name
  * of its own, and why writing a recipe creates the items it mentions. The list
  * stays current because keeping it current is a side effect of cooking.
  */
@@ -19,8 +19,8 @@ import {
 	exceptionalTasks,
 	recipeItems,
 	recipes,
-	shoppingCategories,
-	shoppingItems,
+	inventoryCategories,
+	inventoryItems,
 	recurringTasks
 } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
@@ -64,7 +64,7 @@ export type Recipe = {
  * rice is in the jar is a rabbit hole with no bottom, and a stock number that
  * is always slightly wrong is worse than a plain yes or no.
  */
-const IN_STOCK = sql<boolean>`${shoppingItems.bought} = 1 OR ${shoppingItems.snoozed} = 1`;
+const IN_STOCK = sql<boolean>`${inventoryItems.bought} = 1 OR ${inventoryItems.snoozed} = 1`;
 
 // --- what can be an ingredient -------------------------------------------------
 
@@ -72,25 +72,25 @@ const IN_STOCK = sql<boolean>`${shoppingItems.bought} = 1 OR ${shoppingItems.sno
 export function edibleItems(ctx: Ctx) {
 	return db
 		.select({
-			id: shoppingItems.id,
-			name: shoppingItems.name,
-			categoryName: shoppingCategories.name,
+			id: inventoryItems.id,
+			name: inventoryItems.name,
+			categoryName: inventoryCategories.name,
 			inStock: IN_STOCK
 		})
-		.from(shoppingItems)
-		.innerJoin(shoppingCategories, eq(shoppingItems.shoppingCategoryId, shoppingCategories.id))
-		.where(and(eq(shoppingItems.userId, ctx.userId), eq(shoppingCategories.isFood, true)))
-		.orderBy(asc(shoppingItems.name))
+		.from(inventoryItems)
+		.innerJoin(inventoryCategories, eq(inventoryItems.inventoryCategoryId, inventoryCategories.id))
+		.where(and(eq(inventoryItems.userId, ctx.userId), eq(inventoryCategories.isFood, true)))
+		.orderBy(asc(inventoryItems.name))
 		.all()
 		.map((r) => ({ ...r, inStock: Boolean(r.inStock) }));
 }
 
 export function foodCategories(ctx: Ctx) {
 	return db
-		.select({ id: shoppingCategories.id, name: shoppingCategories.name })
-		.from(shoppingCategories)
-		.where(and(eq(shoppingCategories.userId, ctx.userId), eq(shoppingCategories.isFood, true)))
-		.orderBy(asc(shoppingCategories.sortOrder), asc(shoppingCategories.name))
+		.select({ id: inventoryCategories.id, name: inventoryCategories.name })
+		.from(inventoryCategories)
+		.where(and(eq(inventoryCategories.userId, ctx.userId), eq(inventoryCategories.isFood, true)))
+		.orderBy(asc(inventoryCategories.sortOrder), asc(inventoryCategories.name))
 		.all();
 }
 
@@ -109,17 +109,17 @@ export function foodCategories(ctx: Ctx) {
  */
 function firstFoodCategory(ctx: Ctx): { id: number; name: string } {
 	const any = db
-		.select({ id: shoppingCategories.id })
-		.from(shoppingCategories)
-		.where(eq(shoppingCategories.userId, ctx.userId))
+		.select({ id: inventoryCategories.id })
+		.from(inventoryCategories)
+		.where(eq(inventoryCategories.userId, ctx.userId))
 		.get();
 
 	if (any) throw new ValidationError('No shopping category holds food yet — tick one in settings');
 
 	const id = db
-		.insert(shoppingCategories)
+		.insert(inventoryCategories)
 		.values({ userId: ctx.userId, name: 'Food', isFood: true, sortOrder: 1 })
-		.returning({ id: shoppingCategories.id })
+		.returning({ id: inventoryCategories.id })
 		.get().id;
 
 	return { id, name: 'Food' };
@@ -137,9 +137,9 @@ function itemFor(ctx: Ctx, raw: { itemId?: unknown; name?: unknown }): number {
 	const id = Number(raw.itemId);
 	if (Number.isInteger(id) && id > 0) {
 		const owned = db
-			.select({ id: shoppingItems.id })
-			.from(shoppingItems)
-			.where(and(eq(shoppingItems.id, id), eq(shoppingItems.userId, ctx.userId)))
+			.select({ id: inventoryItems.id })
+			.from(inventoryItems)
+			.where(and(eq(inventoryItems.id, id), eq(inventoryItems.userId, ctx.userId)))
 			.get();
 		if (!owned) throw new NotFoundError('ingredient');
 		return owned.id;
@@ -148,10 +148,13 @@ function itemFor(ctx: Ctx, raw: { itemId?: unknown; name?: unknown }): number {
 	const name = str(raw.name, 'ingredient', { max: 200 });
 
 	const existing = db
-		.select({ id: shoppingItems.id })
-		.from(shoppingItems)
+		.select({ id: inventoryItems.id })
+		.from(inventoryItems)
 		.where(
-			and(eq(shoppingItems.userId, ctx.userId), sql`lower(${shoppingItems.name}) = lower(${name})`)
+			and(
+				eq(inventoryItems.userId, ctx.userId),
+				sql`lower(${inventoryItems.name}) = lower(${name})`
+			)
 		)
 		.get();
 	if (existing) return existing.id;
@@ -159,17 +162,17 @@ function itemFor(ctx: Ctx, raw: { itemId?: unknown; name?: unknown }): number {
 	const category = foodCategories(ctx)[0] ?? firstFoodCategory(ctx);
 
 	return db
-		.insert(shoppingItems)
+		.insert(inventoryItems)
 		.values({
 			...stamps(ctx),
 			userId: ctx.userId,
 			name,
 			type: 'replenish',
-			shoppingCategoryId: category.id,
+			inventoryCategoryId: category.id,
 			// New to the recipe means new to the cupboard: it goes on the list.
 			bought: false
 		})
-		.returning({ id: shoppingItems.id })
+		.returning({ id: inventoryItems.id })
 		.get().id;
 }
 
@@ -226,14 +229,14 @@ export function ingredientsOf(ctx: Ctx, recipeId: number): Ingredient[] {
 		.select({
 			id: recipeItems.id,
 			itemId: recipeItems.itemId,
-			name: shoppingItems.name,
+			name: inventoryItems.name,
 			quantity: recipeItems.quantity,
 			unit: recipeItems.unit,
 			note: recipeItems.note,
 			inStock: IN_STOCK
 		})
 		.from(recipeItems)
-		.innerJoin(shoppingItems, eq(recipeItems.itemId, shoppingItems.id))
+		.innerJoin(inventoryItems, eq(recipeItems.itemId, inventoryItems.id))
 		.where(and(eq(recipeItems.recipeId, recipeId), eq(recipeItems.userId, ctx.userId)))
 		.orderBy(asc(recipeItems.sortOrder), asc(recipeItems.id))
 		.all()
@@ -338,9 +341,9 @@ export function markOutOfStock(ctx: Ctx, itemIds: number[]): number {
 	if (ids.length === 0) return 0;
 
 	return db
-		.update(shoppingItems)
+		.update(inventoryItems)
 		.set({ bought: false, boughtAt: null, snoozed: false, updatedAt: stamp(ctx) })
-		.where(and(eq(shoppingItems.userId, ctx.userId), inArray(shoppingItems.id, ids)))
+		.where(and(eq(inventoryItems.userId, ctx.userId), inArray(inventoryItems.id, ids)))
 		.run().changes;
 }
 
@@ -526,18 +529,18 @@ export function neededBetween(ctx: Ctx, from: string, to: string): Needed[] {
 	const rows = db
 		.select({
 			itemId: recipeItems.itemId,
-			name: shoppingItems.name,
+			name: inventoryItems.name,
 			quantity: recipeItems.quantity,
 			unit: recipeItems.unit,
-			priceCents: shoppingItems.priceCents,
+			priceCents: inventoryItems.priceCents,
 			recipeTitle: recipes.title,
 			inStock: IN_STOCK
 		})
 		.from(recipeItems)
-		.innerJoin(shoppingItems, eq(recipeItems.itemId, shoppingItems.id))
+		.innerJoin(inventoryItems, eq(recipeItems.itemId, inventoryItems.id))
 		.innerJoin(recipes, eq(recipeItems.recipeId, recipes.id))
 		.where(and(eq(recipeItems.userId, ctx.userId), inArray(recipeItems.recipeId, ids)))
-		.orderBy(asc(shoppingItems.name))
+		.orderBy(asc(inventoryItems.name))
 		.all();
 
 	const byItem = new Map<number, Needed>();
@@ -601,7 +604,7 @@ export function withMissingCounts(ctx: Ctx) {
 			missing: sql<number>`sum(case when ${IN_STOCK} then 0 else 1 end)`
 		})
 		.from(recipeItems)
-		.innerJoin(shoppingItems, eq(recipeItems.itemId, shoppingItems.id))
+		.innerJoin(inventoryItems, eq(recipeItems.itemId, inventoryItems.id))
 		.where(eq(recipeItems.userId, ctx.userId))
 		.groupBy(recipeItems.recipeId)
 		.all();

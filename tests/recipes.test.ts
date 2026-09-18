@@ -15,7 +15,7 @@ afterAll(() => database.remove());
 
 type Services = {
 	recipes: typeof import('../src/lib/services/recipes');
-	shopping: typeof import('../src/lib/services/shopping');
+	inventory: typeof import('../src/lib/services/inventory');
 };
 
 let s: Services;
@@ -26,23 +26,23 @@ let pantry: number;
 beforeAll(async () => {
 	s = {
 		recipes: await import('../src/lib/services/recipes'),
-		shopping: await import('../src/lib/services/shopping')
+		inventory: await import('../src/lib/services/inventory')
 	};
 	ctx = { userId: OWNER, now: new Date('2026-08-26T12:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 
-	pantry = s.shopping.createCategory(ctx, { name: 'Pantry', isFood: true });
-	s.shopping.createCategory(ctx, { name: 'Household', isFood: false });
+	pantry = s.inventory.createCategory(ctx, { name: 'Pantry', isFood: true });
+	s.inventory.createCategory(ctx, { name: 'Household', isFood: false });
 });
 
 describe('what can be an ingredient', () => {
 	test('only things in a food category', () => {
-		s.shopping.createItem(ctx, { name: 'rice', type: 'replenish', shoppingCategoryId: pantry });
-		const household = s.shopping.listCategories(ctx).find((c) => !c.isFood)!;
-		s.shopping.createItem(ctx, {
+		s.inventory.createItem(ctx, { name: 'rice', type: 'replenish', inventoryCategoryId: pantry });
+		const household = s.inventory.listCategories(ctx).find((c) => !c.isFood)!;
+		s.inventory.createItem(ctx, {
 			name: 'dish soap',
 			type: 'replenish',
-			shoppingCategoryId: household.id
+			inventoryCategoryId: household.id
 		});
 
 		const names = s.recipes.edibleItems(ctx).map((i) => i.name);
@@ -60,7 +60,7 @@ describe('writing a recipe', () => {
 		const id = s.recipes.createRecipe(ctx, { title: 'Rice and beans' });
 		s.recipes.addIngredient(ctx, id, { name: 'black beans', quantity: 400, unit: 'g' });
 
-		const item = s.shopping.listItems(ctx).find((i) => i.name === 'black beans');
+		const item = s.inventory.listItems(ctx).find((i) => i.name === 'black beans');
 		expect(item).toBeDefined();
 		expect(item!.bought).toBe(false);
 	});
@@ -90,7 +90,7 @@ describe('what the week needs', () => {
 		s.recipes.addIngredient(ctx, second, { name: 'olive oil', quantity: 100, unit: 'ml' });
 
 		// Both on the same day, so both are in the window.
-		const oil = s.shopping.listItems(ctx).find((i) => i.name === 'olive oil')!;
+		const oil = s.inventory.listItems(ctx).find((i) => i.name === 'olive oil')!;
 		expect(oil).toBeDefined();
 	});
 });
@@ -100,32 +100,32 @@ describe('cooking', () => {
 		const id = s.recipes.createRecipe(ctx, { title: 'Pasta' });
 		s.recipes.addIngredient(ctx, id, { name: 'salt', quantity: 1, unit: 'pinch' });
 
-		const salt = s.shopping.listItems(ctx).find((i) => i.name === 'salt')!;
-		s.shopping.toggleBought(ctx, salt.id);
-		expect(s.shopping.listItems(ctx).find((i) => i.id === salt.id)!.bought).toBe(true);
+		const salt = s.inventory.listItems(ctx).find((i) => i.name === 'salt')!;
+		s.inventory.toggleBought(ctx, salt.id);
+		expect(s.inventory.listItems(ctx).find((i) => i.id === salt.id)!.bought).toBe(true);
 
 		s.recipes.cooked(ctx, id);
 		expect(s.recipes.getRecipe(ctx, id).lastCookedAt).not.toBeNull();
 		// Still in the cupboard: nothing was said to have run out.
-		expect(s.shopping.listItems(ctx).find((i) => i.id === salt.id)!.bought).toBe(true);
+		expect(s.inventory.listItems(ctx).find((i) => i.id === salt.id)!.bought).toBe(true);
 	});
 
 	test('what ran out goes back on the list', () => {
 		const id = s.recipes.createRecipe(ctx, { title: 'Omelette' });
 		s.recipes.addIngredient(ctx, id, { name: 'eggs', quantity: 3, unit: '' });
 
-		const eggs = s.shopping.listItems(ctx).find((i) => i.name === 'eggs')!;
-		s.shopping.toggleBought(ctx, eggs.id);
+		const eggs = s.inventory.listItems(ctx).find((i) => i.name === 'eggs')!;
+		s.inventory.toggleBought(ctx, eggs.id);
 
 		s.recipes.cooked(ctx, id, [eggs.id]);
-		expect(s.shopping.listItems(ctx).find((i) => i.id === eggs.id)!.bought).toBe(false);
+		expect(s.inventory.listItems(ctx).find((i) => i.id === eggs.id)!.bought).toBe(false);
 	});
 });
 
 describe('a pasted ingredient list', () => {
 	test('becomes ingredients, and shopping items for anything new', () => {
 		const id = s.recipes.createRecipe(ctx, { title: 'Pasted stew' });
-		const before = s.shopping.listItems(ctx).length;
+		const before = s.inventory.listItems(ctx).length;
 
 		const added = s.recipes.importIngredients(
 			ctx,
@@ -141,7 +141,7 @@ describe('a pasted ingredient list', () => {
 
 		const names = s.recipes.ingredientsOf(ctx, id).map((i) => i.name);
 		expect(names).toEqual(expect.arrayContaining(['pearl barley', 'carrots', 'thyme']));
-		expect(s.shopping.listItems(ctx).length).toBeGreaterThan(before);
+		expect(s.inventory.listItems(ctx).length).toBeGreaterThan(before);
 	});
 
 	test('quantities, units and notes survive the trip', () => {
@@ -186,7 +186,7 @@ describe('a pasted ingredient list', () => {
 describe('nowhere to put food yet', () => {
 	test('makes one, on an account with no categories at all', () => {
 		// STRANGER has never touched the shopping list.
-		expect(s.shopping.listCategories(theirs)).toHaveLength(0);
+		expect(s.inventory.listCategories(theirs)).toHaveLength(0);
 
 		const id = s.recipes.createRecipe(theirs, { title: 'First recipe' });
 		expect(s.recipes.importIngredients(theirs, id, '2 onions\n1 tin tomatoes')).toBe(2);
@@ -198,8 +198,8 @@ describe('nowhere to put food yet', () => {
 
 	test('says so, rather than adding nothing quietly, once the choice is made', () => {
 		const id = s.recipes.createRecipe(theirs, { title: 'Second recipe' });
-		for (const c of s.shopping.listCategories(theirs))
-			s.shopping.setCategoryFood(theirs, c.id, false);
+		for (const c of s.inventory.listCategories(theirs))
+			s.inventory.setCategoryFood(theirs, c.id, false);
 
 		expect(() => s.recipes.importIngredients(theirs, id, '3 screws')).toThrow(/holds food/i);
 	});

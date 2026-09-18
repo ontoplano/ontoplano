@@ -42,6 +42,8 @@ exist.
 | [`habits`](#habits)                               | 7       | yes               |
 | [`idea_tags`](#idea_tags)                         | 4       | yes               |
 | [`ideas`](#ideas)                                 | 8       | yes               |
+| [`inventory_categories`](#inventory_categories)   | 7       | yes               |
+| [`inventory_items`](#inventory_items)             | 16      | yes               |
 | [`invites`](#invites)                             | 9       | —                 |
 | [`ledgers`](#ledgers)                             | 10      | yes               |
 | [`locations`](#locations)                         | 8       | yes               |
@@ -67,8 +69,6 @@ exist.
 | [`scheme_slots`](#scheme_slots)                   | 11      | yes               |
 | [`sent_notifications`](#sent_notifications)       | 8       | yes               |
 | [`session`](#session)                             | 9       | yes               |
-| [`shopping_categories`](#shopping_categories)     | 7       | yes               |
-| [`shopping_items`](#shopping_items)               | 16      | yes               |
 | [`subscribers`](#subscribers)                     | 7       | —                 |
 | [`subscriptions`](#subscriptions)                 | 15      | yes               |
 | [`suppressed_slots`](#suppressed_slots)           | 5       | yes               |
@@ -705,6 +705,56 @@ Indexes:
 - `ideas_user_idx` on `user_id`
 - `ideas_created_idx` on `created_at`
 
+## inventory_categories
+
+| Column               | Type    | Null     | Default               | Notes             |
+| -------------------- | ------- | -------- | --------------------- | ----------------- |
+| `id`                 | integer | not null | —                     | primary key, auto |
+| `user_id`            | text    | not null | —                     | → `user.id`       |
+| `name`               | text    | not null | —                     | —                 |
+| `shared_with_family` | integer | not null | `false`               | —                 |
+| `is_food`            | integer | not null | `false`               | —                 |
+| `sort_order`         | integer | not null | `0`                   | —                 |
+| `created_at`         | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
+
+Indexes:
+
+- `inventory_categories_user_idx` on `user_id`
+- `inventory_categories_user_name_unique` on `user_id`, `name` — unique
+
+## inventory_items
+
+| Column                  | Type    | Null     | Default               | Notes                       |
+| ----------------------- | ------- | -------- | --------------------- | --------------------------- |
+| `id`                    | integer | not null | —                     | primary key, auto           |
+| `user_id`               | text    | not null | —                     | → `user.id`                 |
+| `name`                  | text    | not null | —                     | —                           |
+| `type`                  | text    | not null | —                     | —                           |
+| `inventory_category_id` | integer | null     | —                     | → `inventory_categories.id` |
+| `notes`                 | text    | null     | `''`                  | —                           |
+| `qty`                   | integer | not null | `0`                   | —                           |
+| `ideal_qty`             | integer | not null | `1`                   | —                           |
+| `bought`                | integer | not null | `false`               | —                           |
+| `bought_at`             | text    | null     | —                     | —                           |
+| `price_cents`           | integer | null     | —                     | —                           |
+| `location_id`           | integer | null     | —                     | → `locations.id`            |
+| `attributes`            | text    | not null | `'{}'`                | —                           |
+| `snoozed`               | integer | not null | `false`               | —                           |
+| `created_at`            | text    | not null | `(CURRENT_TIMESTAMP)` | —                           |
+| `updated_at`            | text    | not null | `(CURRENT_TIMESTAMP)` | —                           |
+
+Indexes:
+
+- `inventory_items_user_idx` on `user_id`
+- `inventory_items_type_idx` on `type`
+- `inventory_items_bought_idx` on `bought`
+- `inventory_items_snoozed_idx` on `snoozed`
+- `inventory_items_category_idx` on `inventory_category_id`
+
+Checks — enforced by the database, not only by the service layer:
+
+- `inventory_items_qty_positive`: `"inventory_items"."qty" >= 0 AND "inventory_items"."ideal_qty" >= 0`
+
 ## invites
 
 | Column         | Type    | Null     | Default               | Notes             |
@@ -926,14 +976,14 @@ Indexes:
 
 ## price_points
 
-| Column        | Type    | Null     | Default               | Notes                 |
-| ------------- | ------- | -------- | --------------------- | --------------------- |
-| `id`          | integer | not null | —                     | primary key, auto     |
-| `user_id`     | text    | not null | —                     | → `user.id`           |
-| `item_id`     | integer | not null | —                     | → `shopping_items.id` |
-| `price_cents` | integer | not null | —                     | —                     |
-| `for_date`    | text    | not null | —                     | —                     |
-| `created_at`  | text    | not null | `(CURRENT_TIMESTAMP)` | —                     |
+| Column        | Type    | Null     | Default               | Notes                  |
+| ------------- | ------- | -------- | --------------------- | ---------------------- |
+| `id`          | integer | not null | —                     | primary key, auto      |
+| `user_id`     | text    | not null | —                     | → `user.id`            |
+| `item_id`     | integer | not null | —                     | → `inventory_items.id` |
+| `price_cents` | integer | not null | —                     | —                      |
+| `for_date`    | text    | not null | —                     | —                      |
+| `created_at`  | text    | not null | `(CURRENT_TIMESTAMP)` | —                      |
 
 Indexes:
 
@@ -994,16 +1044,16 @@ Indexes:
 
 ## recipe_items
 
-| Column       | Type    | Null     | Default | Notes                 |
-| ------------ | ------- | -------- | ------- | --------------------- |
-| `id`         | integer | not null | —       | primary key, auto     |
-| `user_id`    | text    | not null | —       | → `user.id`           |
-| `recipe_id`  | integer | not null | —       | → `recipes.id`        |
-| `item_id`    | integer | not null | —       | → `shopping_items.id` |
-| `quantity`   | real    | null     | —       | —                     |
-| `unit`       | text    | null     | `''`    | —                     |
-| `note`       | text    | null     | `''`    | —                     |
-| `sort_order` | integer | not null | `0`     | —                     |
+| Column       | Type    | Null     | Default | Notes                  |
+| ------------ | ------- | -------- | ------- | ---------------------- |
+| `id`         | integer | not null | —       | primary key, auto      |
+| `user_id`    | text    | not null | —       | → `user.id`            |
+| `recipe_id`  | integer | not null | —       | → `recipes.id`         |
+| `item_id`    | integer | not null | —       | → `inventory_items.id` |
+| `quantity`   | real    | null     | —       | —                      |
+| `unit`       | text    | null     | `''`    | —                      |
+| `note`       | text    | null     | `''`    | —                      |
+| `sort_order` | integer | not null | `0`     | —                      |
 
 Indexes:
 
@@ -1197,56 +1247,6 @@ Indexes:
 
 - `session_token_unique` on `token` — unique
 - `session_userId_idx` on `user_id`
-
-## shopping_categories
-
-| Column               | Type    | Null     | Default               | Notes             |
-| -------------------- | ------- | -------- | --------------------- | ----------------- |
-| `id`                 | integer | not null | —                     | primary key, auto |
-| `user_id`            | text    | not null | —                     | → `user.id`       |
-| `name`               | text    | not null | —                     | —                 |
-| `shared_with_family` | integer | not null | `false`               | —                 |
-| `is_food`            | integer | not null | `false`               | —                 |
-| `sort_order`         | integer | not null | `0`                   | —                 |
-| `created_at`         | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
-
-Indexes:
-
-- `shopping_categories_user_idx` on `user_id`
-- `shopping_categories_user_name_unique` on `user_id`, `name` — unique
-
-## shopping_items
-
-| Column                 | Type    | Null     | Default               | Notes                      |
-| ---------------------- | ------- | -------- | --------------------- | -------------------------- |
-| `id`                   | integer | not null | —                     | primary key, auto          |
-| `user_id`              | text    | not null | —                     | → `user.id`                |
-| `name`                 | text    | not null | —                     | —                          |
-| `type`                 | text    | not null | —                     | —                          |
-| `shopping_category_id` | integer | null     | —                     | → `shopping_categories.id` |
-| `notes`                | text    | null     | `''`                  | —                          |
-| `qty`                  | integer | not null | `0`                   | —                          |
-| `ideal_qty`            | integer | not null | `1`                   | —                          |
-| `bought`               | integer | not null | `false`               | —                          |
-| `bought_at`            | text    | null     | —                     | —                          |
-| `price_cents`          | integer | null     | —                     | —                          |
-| `location_id`          | integer | null     | —                     | → `locations.id`           |
-| `attributes`           | text    | not null | `'{}'`                | —                          |
-| `snoozed`              | integer | not null | `false`               | —                          |
-| `created_at`           | text    | not null | `(CURRENT_TIMESTAMP)` | —                          |
-| `updated_at`           | text    | not null | `(CURRENT_TIMESTAMP)` | —                          |
-
-Indexes:
-
-- `shopping_items_user_idx` on `user_id`
-- `shopping_items_type_idx` on `type`
-- `shopping_items_bought_idx` on `bought`
-- `shopping_items_snoozed_idx` on `snoozed`
-- `shopping_items_category_idx` on `shopping_category_id`
-
-Checks — enforced by the database, not only by the service layer:
-
-- `shopping_items_qty_positive`: `"shopping_items"."qty" >= 0 AND "shopping_items"."ideal_qty" >= 0`
 
 ## subscribers
 

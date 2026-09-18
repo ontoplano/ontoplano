@@ -266,7 +266,7 @@ test('the preset ticks exactly the scopes an AI assistant needs', async ({ page 
  */
 test('an assistant can undo everything it can do to a shopping list', async ({ playwright }) => {
 	const { request, cookie } = await account(playwright);
-	const token = await mintToken(request, cookie, ['shopping:read', 'shopping:write']);
+	const token = await mintToken(request, cookie, ['inventory:read', 'inventory:write']);
 
 	const call = async (name: string, args: Record<string, unknown>) => {
 		const res = await rpc(request, token, {
@@ -284,7 +284,7 @@ test('an assistant can undo everything it can do to a shopping list', async ({ p
 	const list = async () => (await call('shopping_list', {})).items as Record<string, unknown>[];
 	const find = async (name: string) => (await list()).find((i) => i.name === name);
 
-	await call('add_to_shopping_list', { name: 'Cebola' });
+	await call('add_inventory_item', { name: 'Cebola' });
 	expect((await find('Cebola'))?.bought, 'a new item starts on the list').toBe(false);
 
 	// Into the cupboard…

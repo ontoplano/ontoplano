@@ -73,7 +73,7 @@ const one = <T>(sql: string) => after.prepare(sql).get() as T;
 
 describe('0058, on a list that was ticks', () => {
 	test('a thing you had has one of it, and still counts as had', () => {
-		expect(one('select qty, ideal_qty, bought from shopping_items where id = 1')).toEqual({
+		expect(one('select qty, ideal_qty, bought from inventory_items where id = 1')).toEqual({
 			qty: 1,
 			ideal_qty: 1,
 			bought: 1
@@ -81,7 +81,7 @@ describe('0058, on a list that was ticks', () => {
 	});
 
 	test('a thing you had not has none, and is still on the list', () => {
-		expect(one('select qty, ideal_qty, bought from shopping_items where id = 2')).toEqual({
+		expect(one('select qty, ideal_qty, bought from inventory_items where id = 2')).toEqual({
 			qty: 0,
 			ideal_qty: 1,
 			bought: 0
@@ -95,14 +95,14 @@ describe('0058, on a list that was ticks', () => {
 	 */
 	test('and "still to buy" means exactly what it meant before', () => {
 		const toBuy = after
-			.prepare('select name from shopping_items where qty < max(ideal_qty, 1) order by id')
+			.prepare('select name from inventory_items where qty < max(ideal_qty, 1) order by id')
 			.all() as { name: string }[];
 		expect(toBuy.map((r) => r.name)).toEqual(['Bread', 'A proper armchair']);
 	});
 
 	test('the date it stopped being something to get is kept', () => {
 		expect(
-			one<{ bought_at: string }>('select bought_at from shopping_items where id = 1').bought_at
+			one<{ bought_at: string }>('select bought_at from inventory_items where id = 1').bought_at
 		).toBe('2026-09-01T10:00:00Z');
 	});
 });

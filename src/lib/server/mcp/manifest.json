@@ -222,6 +222,48 @@
 			}
 		}
 	},
+	"add_inventory_category": {
+		"scope": "inventory:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"holdsFood": {
+				"type": "boolean",
+				"required": false
+			},
+			"name": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
+	"add_inventory_item": {
+		"scope": "inventory:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"name": {
+				"type": "string",
+				"required": true
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			},
+			"section": {
+				"type": "string",
+				"required": false
+			},
+			"type": {
+				"type": "string",
+				"required": false,
+				"enum": [
+					"replenish",
+					"someday"
+				]
+			}
+		}
+	},
 	"add_ledger": {
 		"scope": "statements:write",
 		"writes": true,
@@ -242,7 +284,7 @@
 		}
 	},
 	"add_location": {
-		"scope": "inventory:write",
+		"scope": "locations:write",
 		"writes": true,
 		"destroys": false,
 		"params": {
@@ -405,21 +447,6 @@
 			}
 		}
 	},
-	"add_shopping_category": {
-		"scope": "shopping:write",
-		"writes": true,
-		"destroys": false,
-		"params": {
-			"holdsFood": {
-				"type": "boolean",
-				"required": false
-			},
-			"name": {
-				"type": "string",
-				"required": true
-			}
-		}
-	},
 	"add_sort_rule": {
 		"scope": "statements:write",
 		"writes": true,
@@ -436,33 +463,6 @@
 			"pattern": {
 				"type": "string",
 				"required": true
-			}
-		}
-	},
-	"add_to_shopping_list": {
-		"scope": "shopping:write",
-		"writes": true,
-		"destroys": false,
-		"params": {
-			"name": {
-				"type": "string",
-				"required": true
-			},
-			"notes": {
-				"type": "string",
-				"required": false
-			},
-			"section": {
-				"type": "string",
-				"required": false
-			},
-			"type": {
-				"type": "string",
-				"required": false,
-				"enum": [
-					"replenish",
-					"someday"
-				]
 			}
 		}
 	},
@@ -572,7 +572,7 @@
 		}
 	},
 	"archive_item": {
-		"scope": "shopping:write",
+		"scope": "inventory:write",
 		"writes": true,
 		"destroys": false,
 		"params": {
@@ -886,8 +886,31 @@
 			}
 		}
 	},
-	"change_location": {
+	"change_inventory_category": {
 		"scope": "inventory:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"holdsFood": {
+				"type": "boolean",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"name": {
+				"type": "string",
+				"required": false
+			},
+			"shareWithFamily": {
+				"type": "boolean",
+				"required": false
+			}
+		}
+	},
+	"change_location": {
+		"scope": "locations:write",
 		"writes": true,
 		"destroys": false,
 		"params": {
@@ -1058,29 +1081,6 @@
 			},
 			"weekday": {
 				"type": "integer",
-				"required": false
-			}
-		}
-	},
-	"change_shopping_category": {
-		"scope": "shopping:write",
-		"writes": true,
-		"destroys": false,
-		"params": {
-			"holdsFood": {
-				"type": "boolean",
-				"required": false
-			},
-			"id": {
-				"type": "integer",
-				"required": true
-			},
-			"name": {
-				"type": "string",
-				"required": false
-			},
-			"shareWithFamily": {
-				"type": "boolean",
 				"required": false
 			}
 		}
@@ -1308,8 +1308,8 @@
 			}
 		}
 	},
-	"file_shopping_item": {
-		"scope": "shopping:write",
+	"file_inventory_item": {
+		"scope": "inventory:write",
 		"writes": true,
 		"destroys": false,
 		"params": {
@@ -1388,6 +1388,12 @@
 			}
 		}
 	},
+	"inventory_categories": {
+		"scope": "inventory:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
+	},
 	"ledgers": {
 		"scope": "statements:read",
 		"writes": false,
@@ -1414,7 +1420,7 @@
 		}
 	},
 	"locations": {
-		"scope": "inventory:read",
+		"scope": "locations:read",
 		"writes": false,
 		"destroys": false,
 		"params": {}
@@ -1580,7 +1586,7 @@
 		"params": {}
 	},
 	"put_item": {
-		"scope": "inventory:write",
+		"scope": "locations:write",
 		"writes": true,
 		"destroys": false,
 		"params": {
@@ -1633,7 +1639,7 @@
 		}
 	},
 	"record_price": {
-		"scope": "shopping:write",
+		"scope": "inventory:write",
 		"writes": true,
 		"destroys": false,
 		"params": {
@@ -1692,17 +1698,6 @@
 			}
 		}
 	},
-	"remove_from_shopping_list": {
-		"scope": "shopping:write",
-		"writes": true,
-		"destroys": true,
-		"params": {
-			"id": {
-				"type": "integer",
-				"required": true
-			}
-		}
-	},
 	"remove_goal_target": {
 		"scope": "tasks:write",
 		"writes": true,
@@ -1729,8 +1724,30 @@
 			}
 		}
 	},
-	"remove_location": {
+	"remove_inventory_category": {
 		"scope": "inventory:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"remove_inventory_item": {
+		"scope": "inventory:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"remove_location": {
+		"scope": "locations:write",
 		"writes": true,
 		"destroys": true,
 		"params": {
@@ -1753,17 +1770,6 @@
 	},
 	"remove_repeating_block": {
 		"scope": "schedule:write",
-		"writes": true,
-		"destroys": true,
-		"params": {
-			"id": {
-				"type": "integer",
-				"required": true
-			}
-		}
-	},
-	"remove_shopping_category": {
-		"scope": "shopping:write",
 		"writes": true,
 		"destroys": true,
 		"params": {
@@ -1869,7 +1875,7 @@
 		}
 	},
 	"set_item_fields": {
-		"scope": "inventory:write",
+		"scope": "locations:write",
 		"writes": true,
 		"destroys": false,
 		"params": {
@@ -1913,14 +1919,8 @@
 			}
 		}
 	},
-	"shopping_categories": {
-		"scope": "shopping:read",
-		"writes": false,
-		"destroys": false,
-		"params": {}
-	},
 	"shopping_list": {
-		"scope": "shopping:read",
+		"scope": "inventory:read",
 		"writes": false,
 		"destroys": false,
 		"params": {
@@ -1967,7 +1967,7 @@
 		}
 	},
 	"tick_bought": {
-		"scope": "shopping:write",
+		"scope": "inventory:write",
 		"writes": true,
 		"destroys": false,
 		"params": {
@@ -2022,7 +2022,7 @@
 		}
 	},
 	"unarchive_item": {
-		"scope": "shopping:write",
+		"scope": "inventory:write",
 		"writes": true,
 		"destroys": false,
 		"params": {
@@ -2100,7 +2100,7 @@
 		}
 	},
 	"untick_bought": {
-		"scope": "shopping:write",
+		"scope": "inventory:write",
 		"writes": true,
 		"destroys": false,
 		"params": {
@@ -2144,7 +2144,7 @@
 		}
 	},
 	"where_is": {
-		"scope": "inventory:read",
+		"scope": "locations:read",
 		"writes": false,
 		"destroys": false,
 		"params": {

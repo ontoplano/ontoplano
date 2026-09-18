@@ -15,13 +15,13 @@ seedAccounts(database.path);
 afterAll(() => database.remove());
 
 let locationsSvc: typeof import('../src/lib/services/locations');
-let shopping: typeof import('../src/lib/services/shopping');
+let inventory: typeof import('../src/lib/services/inventory');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 
 beforeAll(async () => {
 	locationsSvc = await import('../src/lib/services/locations');
-	shopping = await import('../src/lib/services/shopping');
+	inventory = await import('../src/lib/services/inventory');
 	ctx = { userId: OWNER, now: new Date('2026-09-06T12:00:00Z'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 });
@@ -65,42 +65,44 @@ describe('the tree', () => {
 describe('things living in locations', () => {
 	test('an item takes a location, and the count shows on the tree', () => {
 		const kitchen = locationsSvc.createLocation(ctx, { name: 'Kitchen' });
-		shopping.createItem(ctx, { name: 'measuring tape', type: 'someday' });
-		const item = shopping.listItems(ctx).find((i) => i.name === 'measuring tape')!;
+		inventory.createItem(ctx, { name: 'measuring tape', type: 'someday' });
+		const item = inventory.listItems(ctx).find((i) => i.name === 'measuring tape')!;
 
-		shopping.setItemLocation(ctx, item.id, kitchen);
-		expect(shopping.listItems(ctx).find((i) => i.id === item.id)!.locationId).toBe(kitchen);
+		inventory.setItemLocation(ctx, item.id, kitchen);
+		expect(inventory.listItems(ctx).find((i) => i.id === item.id)!.locationId).toBe(kitchen);
 		expect(locationsSvc.locationTree(ctx).find((n) => n.name === 'Kitchen')!.itemCount).toBe(1);
 
 		// And out again — the inverse.
-		shopping.setItemLocation(ctx, item.id, null);
-		expect(shopping.listItems(ctx).find((i) => i.id === item.id)!.locationId).toBeNull();
+		inventory.setItemLocation(ctx, item.id, null);
+		expect(inventory.listItems(ctx).find((i) => i.id === item.id)!.locationId).toBeNull();
 	});
 
 	test('a deleted location leaves its items location-less, never deleted', () => {
 		const attic = locationsSvc.createLocation(ctx, { name: 'Attic' });
-		shopping.createItem(ctx, { name: 'old lamp', type: 'someday' });
-		const lamp = shopping.listItems(ctx).find((i) => i.name === 'old lamp')!;
-		shopping.setItemLocation(ctx, lamp.id, attic);
+		inventory.createItem(ctx, { name: 'old lamp', type: 'someday' });
+		const lamp = inventory.listItems(ctx).find((i) => i.name === 'old lamp')!;
+		inventory.setItemLocation(ctx, lamp.id, attic);
 
 		locationsSvc.deleteLocation(ctx, attic);
-		const after = shopping.listItems(ctx).find((i) => i.id === lamp.id)!;
+		const after = inventory.listItems(ctx).find((i) => i.id === lamp.id)!;
 		expect(after.locationId).toBeNull(); // still here, just homeless
 	});
 
 	test('free fields: not every object has the same shape', () => {
-		shopping.createItem(ctx, { name: 'usb cable', type: 'someday' });
-		const cable = shopping.listItems(ctx).find((i) => i.name === 'usb cable')!;
+		inventory.createItem(ctx, { name: 'usb cable', type: 'someday' });
+		const cable = inventory.listItems(ctx).find((i) => i.name === 'usb cable')!;
 
-		shopping.setItemAttributes(ctx, cable.id, { plug: 'USB-C', speed: 'USB3' });
-		const stored = shopping.listItems(ctx).find((i) => i.id === cable.id)!;
+		inventory.setItemAttributes(ctx, cable.id, { plug: 'USB-C', speed: 'USB3' });
+		const stored = inventory.listItems(ctx).find((i) => i.id === cable.id)!;
 		expect(JSON.parse(stored.attributes)).toEqual({ plug: 'USB-C', speed: 'USB3' });
 
 		// Relocationd wholesale — removing a field is writing the rest.
-		shopping.setItemAttributes(ctx, cable.id, { plug: 'USB-C' });
-		expect(JSON.parse(shopping.listItems(ctx).find((i) => i.id === cable.id)!.attributes)).toEqual({
-			plug: 'USB-C'
-		});
+		inventory.setItemAttributes(ctx, cable.id, { plug: 'USB-C' });
+		expect(JSON.parse(inventory.listItems(ctx).find((i) => i.id === cable.id)!.attributes)).toEqual(
+			{
+				plug: 'USB-C'
+			}
+		);
 	});
 });
 

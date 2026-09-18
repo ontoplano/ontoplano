@@ -1,7 +1,7 @@
 import { and, asc, eq, lt, notInArray } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
-import { ideas, todoTasks, shoppingItems } from '$lib/db/schema.js';
+import { ideas, todoTasks, inventoryItems } from '$lib/db/schema.js';
 import { CLOSED_STATUSES } from '../task-status.js';
 import type { Ctx } from './ctx.js';
 import { stamp } from './time.js';
@@ -23,7 +23,7 @@ import { stamp } from './time.js';
 export const STALE_MONTHS = 3;
 
 export type StaleThing = {
-	sort: 'todo' | 'idea' | 'shopping';
+	sort: 'todo' | 'idea' | 'inventory';
 	id: number;
 	title: string;
 	/** When it was last touched, as a date. */
@@ -73,19 +73,19 @@ export function listStale(ctx: Ctx, months = STALE_MONTHS): StaleThing[] {
 	// Only the someday list. A staple you have not bought since May is a staple
 	// you did not need, not a decision waiting to be made.
 	for (const row of db
-		.select({ id: shoppingItems.id, name: shoppingItems.name, at: shoppingItems.updatedAt })
-		.from(shoppingItems)
+		.select({ id: inventoryItems.id, name: inventoryItems.name, at: inventoryItems.updatedAt })
+		.from(inventoryItems)
 		.where(
 			and(
-				eq(shoppingItems.userId, ctx.userId),
-				lt(shoppingItems.updatedAt, before),
-				eq(shoppingItems.type, 'someday'),
-				eq(shoppingItems.bought, false)
+				eq(inventoryItems.userId, ctx.userId),
+				lt(inventoryItems.updatedAt, before),
+				eq(inventoryItems.type, 'someday'),
+				eq(inventoryItems.bought, false)
 			)
 		)
-		.orderBy(asc(shoppingItems.updatedAt))
+		.orderBy(asc(inventoryItems.updatedAt))
 		.all())
-		out.push({ sort: 'shopping', id: row.id, title: row.name, since: row.at.slice(0, 10) });
+		out.push({ sort: 'inventory', id: row.id, title: row.name, since: row.at.slice(0, 10) });
 
 	return out.sort((a, b) => a.since.localeCompare(b.since));
 }
@@ -120,9 +120,9 @@ export function keepStale(ctx: Ctx, sort: StaleThing['sort'], id: number): boole
 
 	return (
 		db
-			.update(shoppingItems)
+			.update(inventoryItems)
 			.set({ updatedAt: now })
-			.where(and(eq(shoppingItems.id, id), eq(shoppingItems.userId, ctx.userId)))
+			.where(and(eq(inventoryItems.id, id), eq(inventoryItems.userId, ctx.userId)))
 			.run().changes > 0
 	);
 }
@@ -174,8 +174,8 @@ export function dropStale(ctx: Ctx, sort: StaleThing['sort'], id: number): boole
 
 	return (
 		db
-			.delete(shoppingItems)
-			.where(and(eq(shoppingItems.id, id), eq(shoppingItems.userId, ctx.userId)))
+			.delete(inventoryItems)
+			.where(and(eq(inventoryItems.id, id), eq(inventoryItems.userId, ctx.userId)))
 			.run().changes > 0
 	);
 }

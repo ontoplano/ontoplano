@@ -11,26 +11,26 @@ afterAll(() => database.remove());
 
 let search: typeof import('../src/lib/services/search');
 let diary: typeof import('../src/lib/services/diary');
-let shopping: typeof import('../src/lib/services/shopping');
+let inventory: typeof import('../src/lib/services/inventory');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
 
 beforeAll(async () => {
 	search = await import('../src/lib/services/search');
 	diary = await import('../src/lib/services/diary');
-	shopping = await import('../src/lib/services/shopping');
+	inventory = await import('../src/lib/services/inventory');
 	ctx = { userId: OWNER, now: new Date('2026-08-26T12:00:00'), tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 
 	diary.createEntry(ctx, { content: 'the tiler comes on the third' });
-	const pantry = shopping.createCategory(ctx, { name: 'Pantry', isFood: true });
-	shopping.createItem(ctx, { name: 'tiles', type: 'replenish', shoppingCategoryId: pantry });
+	const pantry = inventory.createCategory(ctx, { name: 'Pantry', isFood: true });
+	inventory.createItem(ctx, { name: 'tiles', type: 'replenish', inventoryCategoryId: pantry });
 
-	const stranger = shopping.createCategory(theirs, { name: 'Theirs', isFood: true });
-	shopping.createItem(theirs, {
+	const stranger = inventory.createCategory(theirs, { name: 'Theirs', isFood: true });
+	inventory.createItem(theirs, {
 		name: 'tiler secret',
 		type: 'replenish',
-		shoppingCategoryId: stranger
+		inventoryCategoryId: stranger
 	});
 });
 
@@ -38,7 +38,7 @@ describe('finding things', () => {
 	test('across kinds at once', () => {
 		const kinds = new Set(search.search(ctx, 'til').map((h) => h.kind));
 		expect(kinds.has('entry')).toBe(true);
-		expect(kinds.has('shopping')).toBe(true);
+		expect(kinds.has('inventory')).toBe(true);
 	});
 
 	test('a one-letter query is not a search', () => {

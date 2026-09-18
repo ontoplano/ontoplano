@@ -19,7 +19,7 @@ seedAccounts(database.path);
 afterAll(() => database.remove());
 
 let recipes: typeof import('../src/lib/services/recipes');
-let shopping: typeof import('../src/lib/services/shopping');
+let inventory: typeof import('../src/lib/services/inventory');
 let tokens: typeof import('../src/lib/server/services/tokens');
 let ctx: { userId: string; now: Date; tz: string };
 let theirs: { userId: string; now: Date; tz: string };
@@ -27,13 +27,13 @@ const now = new Date('2026-08-17T09:00:00Z');
 
 beforeAll(async () => {
 	recipes = await import('../src/lib/services/recipes');
-	shopping = await import('../src/lib/services/shopping');
+	inventory = await import('../src/lib/services/inventory');
 	tokens = await import('../src/lib/server/services/tokens');
 	ctx = { userId: OWNER, now, tz: 'UTC' };
 	theirs = { ...ctx, userId: STRANGER };
 	// Only a food category can hold ingredients — that is the link between the
 	// two features, and without one an ingredient has nowhere to become an item.
-	shopping.createCategory(ctx, { name: 'Pantry', isFood: true });
+	inventory.createCategory(ctx, { name: 'Pantry', isFood: true });
 });
 
 describe('a recipe', () => {
@@ -85,7 +85,7 @@ describe('what a recipe is made of', () => {
 		expect(ingredient.quantity).toBe(80);
 		// Writing a recipe fills the shopping list as a side effect — that is
 		// the whole point of the link.
-		expect(shopping.listItems(ctx).some((i) => i.name === 'oats')).toBe(true);
+		expect(inventory.listItems(ctx).some((i) => i.name === 'oats')).toBe(true);
 	});
 
 	test('the same item twice in one recipe is a correction, not a second row', () => {
@@ -124,7 +124,7 @@ describe('what a recipe is made of', () => {
 
 	test('and says which recipes use an item, for the other direction', () => {
 		const byItem = recipes.recipesByItem(ctx);
-		const oats = shopping.listItems(ctx).find((i) => i.name === 'oats')!;
+		const oats = inventory.listItems(ctx).find((i) => i.name === 'oats')!;
 		expect(byItem[oats.id].map((r) => r.title)).toContain('Porridge');
 	});
 });
@@ -134,14 +134,14 @@ describe('cooking something', () => {
 		const id = recipes.createRecipe(ctx, { title: 'Soup' });
 		recipes.addIngredient(ctx, id, { name: 'stock', quantity: 1 });
 
-		const stock = shopping.listItems(ctx).find((i) => i.name === 'stock')!;
-		shopping.toggleBought(ctx, stock.id); // in the cupboard
+		const stock = inventory.listItems(ctx).find((i) => i.name === 'stock')!;
+		inventory.toggleBought(ctx, stock.id); // in the cupboard
 
 		recipes.cooked(ctx, id, [stock.id]);
 
 		expect(recipes.getRecipe(ctx, id).lastCookedAt).toBeTruthy();
 		// Out of the cupboard is onto the list — the two are one state.
-		expect(shopping.listItems(ctx).find((i) => i.id === stock.id)!.bought).toBeFalsy();
+		expect(inventory.listItems(ctx).find((i) => i.id === stock.id)!.bought).toBeFalsy();
 	});
 
 	test('cooking something that is not yours is refused', () => {
@@ -241,7 +241,7 @@ describe('a token a plugin holds', () => {
 			// pasted into somebody's calendar app — and it would not work as a
 			// feed either, since the route accepts that one scope alone.
 			expect(() =>
-				tokens.createToken(ctx, { name: 'mixed', scopes: ['calendar:read', 'shopping:write'] })
+				tokens.createToken(ctx, { name: 'mixed', scopes: ['calendar:read', 'inventory:write'] })
 			).toThrow(/cannot be combined/i);
 		});
 
@@ -283,7 +283,7 @@ describe('a token a plugin holds', () => {
 		const authed = tokens.authenticateToken(made.plaintext, now);
 
 		expect(() => tokens.requireScope(authed, 'today:read')).not.toThrow();
-		expect(() => tokens.requireScope(authed, 'shopping:write')).toThrow(/shopping:write/);
+		expect(() => tokens.requireScope(authed, 'inventory:write')).toThrow(/inventory:write/);
 	});
 
 	test('refuses anything that is not one of its tokens', () => {

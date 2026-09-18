@@ -408,13 +408,13 @@ const logHabit = (habitId, date, notes = '') => {
 
 const shoppingCategory = (name, sortOrder) => {
 	const existing = one(
-		'select id from shopping_categories where user_id = ? and name = ?',
+		'select id from inventory_categories where user_id = ? and name = ?',
 		uid,
 		name
 	);
 	if (existing) return existing.id;
 	return run(
-		'insert into shopping_categories (user_id, name, sort_order) values (?, ?, ?)',
+		'insert into inventory_categories (user_id, name, sort_order) values (?, ?, ?)',
 		uid,
 		name,
 		sortOrder
@@ -434,14 +434,14 @@ const shoppingCategory = (name, sortOrder) => {
  * count that agrees with it, which is what they meant: one, and one is enough.
  */
 const shoppingItem = (name, type, extra = {}) => {
-	const existing = one('select id from shopping_items where user_id = ? and name = ?', uid, name);
+	const existing = one('select id from inventory_items where user_id = ? and name = ?', uid, name);
 	if (existing) return existing.id;
 	const ideal = extra.ideal ?? 1;
 	const qty = extra.qty ?? (extra.bought ? Math.max(ideal, 1) : 0);
 	const bought = qty >= Math.max(ideal, 1);
 	return run(
-		`insert into shopping_items
-		 (user_id, name, type, shopping_category_id, notes, qty, ideal_qty, bought, bought_at, snoozed)
+		`insert into inventory_items
+		 (user_id, name, type, inventory_category_id, notes, qty, ideal_qty, bought, bought_at, snoozed)
 		 values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		uid,
 		name,
@@ -1460,16 +1460,16 @@ const bathroom = location('Bathroom');
 const cabinet = location('Cabinet', bathroom);
 
 const filedItem = (name, locationId, attributes = null) => {
-	const existing = one('select id from shopping_items where user_id = ? and name = ?', uid, name);
+	const existing = one('select id from inventory_items where user_id = ? and name = ?', uid, name);
 	const id =
 		existing?.id ??
 		run(
-			"insert into shopping_items (user_id, name, type, bought) values (?, ?, 'someday', 1)",
+			"insert into inventory_items (user_id, name, type, bought) values (?, ?, 'someday', 1)",
 			uid,
 			name
 		);
 	run(
-		'update shopping_items set location_id = ?, attributes = ? where id = ?',
+		'update inventory_items set location_id = ?, attributes = ? where id = ?',
 		locationId,
 		JSON.stringify(attributes ?? {}),
 		id
@@ -1513,7 +1513,7 @@ apiToken('the scale app on my phone', 'schedule:read,streams:write');
 if (!one('select id from webhook_subscriptions where user_id = ?', uid)) {
 	run(
 		`insert into webhook_subscriptions (user_id, url, events, secret, created_at, updated_at)
-		 values (?, 'https://example.com/ontoplano-hook', 'shopping.added,shopping.bought', ?, ?, ?)`,
+		 values (?, 'https://example.com/ontoplano-hook', 'inventory.added,inventory.bought', ?, ?, ?)`,
 		uid,
 		`whsec_${randomBytes(24).toString('hex')}`,
 		stamp(now),
@@ -1648,7 +1648,7 @@ manifest(
 // cupboard is the shopping list.
 
 const shoppingCategoryNamed = (name) =>
-	one('select id from shopping_categories where user_id = ? and name = ?', uid, name);
+	one('select id from inventory_categories where user_id = ? and name = ?', uid, name);
 
 // Pantry and fresh hold food; household does not.
 for (const [name, isFood] of [
@@ -1658,13 +1658,13 @@ for (const [name, isFood] of [
 ]) {
 	const found = shoppingCategoryNamed(name);
 	if (found)
-		db.prepare('update shopping_categories set is_food = ? where id = ?').run(isFood, found.id);
+		db.prepare('update inventory_categories set is_food = ? where id = ?').run(isFood, found.id);
 }
 
 const priced = (name, cents) => {
-	const item = one('select id from shopping_items where user_id = ? and name = ?', uid, name);
+	const item = one('select id from inventory_items where user_id = ? and name = ?', uid, name);
 	if (item)
-		db.prepare('update shopping_items set price_cents = ? where id = ?').run(cents, item.id);
+		db.prepare('update inventory_items set price_cents = ? where id = ?').run(cents, item.id);
 };
 
 priced('coffee beans', 890);
@@ -1691,11 +1691,11 @@ const recipe = (title, extra = {}) => {
 };
 
 const ingredient = (recipeId, itemName, quantity, unit, note = '') => {
-	let item = one('select id from shopping_items where user_id = ? and name = ?', uid, itemName);
+	let item = one('select id from inventory_items where user_id = ? and name = ?', uid, itemName);
 	if (!item) {
 		const pantry = shoppingCategoryNamed('pantry');
 		const id = run(
-			`insert into shopping_items (user_id, name, type, shopping_category_id, bought)
+			`insert into inventory_items (user_id, name, type, inventory_category_id, bought)
 			 values (?, ?, 'replenish', ?, 0)`,
 			uid,
 			itemName,
@@ -2320,7 +2320,7 @@ age(
 	{ column: 'content', value: 'Learn to sail, properly, not just crewing for other people' },
 	monthsAgo(5)
 );
-age('shopping_items', { column: 'name', value: 'a proper armchair' }, monthsAgo(9));
+age('inventory_items', { column: 'name', value: 'a proper armchair' }, monthsAgo(9));
 
 // --- What things have actually cost -----------------------------------------------
 //
@@ -2328,7 +2328,7 @@ age('shopping_items', { column: 'name', value: 'a proper armchair' }, monthsAgo(
 // a drift to show. One point says nothing; the sentence starts at two.
 
 const pricePoint = (itemName, cents, when) => {
-	const item = one('select id from shopping_items where user_id = ? and name = ?', uid, itemName);
+	const item = one('select id from inventory_items where user_id = ? and name = ?', uid, itemName);
 	if (!item) return;
 	const already = one(
 		'select id from price_points where user_id = ? and item_id = ? and for_date = ?',
@@ -2344,7 +2344,7 @@ const pricePoint = (itemName, cents, when) => {
 		cents,
 		when
 	);
-	db.prepare('update shopping_items set price_cents = ? where id = ?').run(cents, item.id);
+	db.prepare('update inventory_items set price_cents = ? where id = ?').run(cents, item.id);
 };
 
 pricePoint('coffee beans', 720, iso(dayOffset(-190)));
