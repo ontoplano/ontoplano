@@ -152,6 +152,11 @@ export const USER_TABLES: OwnedTable[] = [
 	owned('ideas', schema.ideas as never),
 	owned('schemeSlots', schema.schemeSlots as never),
 	owned('planningSchemes', schema.planningSchemes as never),
+	// Before the items, so a restore has the colours in place — they name
+	// attributes by the words rather than by an id, so neither depends on the
+	// other's rows, but the order the tables are listed in is the order they
+	// are written and this reads with the rest of the inventory.
+	owned('inventoryAttributeColors', schema.inventoryAttributeColors as never),
 	owned('inventoryItems', schema.inventoryItems as never),
 	owned('inventoryCategories', schema.inventoryCategories as never),
 	owned('locations', schema.locations as never),
