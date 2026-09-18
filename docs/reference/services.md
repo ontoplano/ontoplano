@@ -25,6 +25,7 @@ shows up here on the next build.
 | [`admin`](#admin)                                | Administration: looking at somebody else's account.                                                                                                                                                                                                                  |
 | [`assistant-log`](#assistant-log)                | What an assistant did to an account, and the way back.                                                                                                                                                                                                               |
 | [`assistant-notify`](#assistant-notify)          | Telling somebody what an assistant just did to their account.                                                                                                                                                                                                        |
+| [`attributes`](#attributes)                      | The attributes an account has actually used, and what they are worth reading.                                                                                                                                                                                        |
 | [`audio`](#audio)                                | Recordings: what is accepted, where they go, and who may hear one.                                                                                                                                                                                                   |
 | [`audit`](#audit)                                | What happened to an account.                                                                                                                                                                                                                                         |
 | [`backlinks`](#backlinks)                        | Which goal a thing belongs to.                                                                                                                                                                                                                                       |
@@ -607,6 +608,66 @@ done. Used when the preference is turned on.
 
 - `Phrase`
 - `SweepResult`
+
+## attributes
+
+The attributes an account has actually used, and what they are worth reading.
+
+An attribute is not a row: it is a name somebody typed into an item's own
+JSON, and the set of them is whatever has been typed so far. That is the
+point — not every thing shares a shape — and it is also why this file
+exists: a set with no table has nowhere to keep a colour, nowhere to be
+renamed from, and no way to answer "what values does `length` take?" without
+reading every item.
+
+So the names and values are derived on demand, and the only thing stored is
+the colour, keyed by the words themselves.
+
+### Functions
+
+#### `listAttributes(ctx)`
+
+What the account's things say about themselves, gathered.
+
+Sorted by how much they are used rather than alphabetically: a list of
+attributes is read to find the one worth filtering by, and the one used
+twelve times is more likely to be it than the one used once.
+
+#### `renameAttribute(ctx, from, to)`
+
+Rename an attribute everywhere it is used.
+
+Renaming is the whole reason this is worth a screen: "Colour", "colour" and
+"color" become three attributes the first time three people — or one person
+on three days — write the same idea down, and nothing else can merge them.
+A rename onto a name that already exists is a merge, deliberately: the
+item's existing value for the destination wins, because that is the one it
+was last given.
+
+#### `renameAttributeValue(ctx, key, from, to)`
+
+Rename one value of an attribute, wherever a thing says it.
+
+#### `removeAttribute(ctx, key)`
+
+Take an attribute off everything that has it.
+
+The things themselves are untouched otherwise — this removes a fact about
+them, not any of them. It is the destructive end of the screen, so the
+caller asks first.
+
+#### `setAttributeColor(ctx, key, value, color, opts)`
+
+Give an attribute, or one of its values, a colour.
+
+An empty `value` colours the attribute itself, which everything of that name
+wears unless its own value says otherwise — so "length" can be grey while
+"colour: red" is red. An empty `color` takes the colour off again.
+
+### Types
+
+- `AttributeValue`
+- `Attribute`
 
 ## audio
 

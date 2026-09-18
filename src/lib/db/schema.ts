@@ -2776,6 +2776,37 @@ export const workoutMeasures = sqliteTable(
 	]
 );
 
+/**
+ * A colour against an attribute, or against one value of it.
+ *
+ * The attributes themselves live in the item's own JSON — they are the thing's
+ * shape, not a table — but a colour is not the thing's, it is the account's
+ * decision about how to read a list of them. So it is here, keyed by the words
+ * rather than by an id: an attribute has no id, it is a name somebody typed,
+ * and renaming one carries its colour along by rewriting these rows with it.
+ *
+ * `value` is empty for a colour on the attribute itself, which everything of
+ * that name wears unless its own value says otherwise. SQLite treats NULLs as
+ * distinct, which would let two rows claim the same attribute, so the general
+ * case is the empty string rather than null.
+ */
+export const inventoryAttributeColors = sqliteTable(
+	'inventory_attribute_colors',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		key: text('key').notNull(),
+		value: text('value').notNull().default(''),
+		color: text('color').notNull()
+	},
+	(table) => [
+		index('inventory_attribute_colors_user_idx').on(table.userId),
+		uniqueIndex('inventory_attribute_colors_unique').on(table.userId, table.key, table.value)
+	]
+);
+
 // --- Inventory: where things live ---
 //
 // The shopping list is a flat "to buy". An inventory is the other half — what

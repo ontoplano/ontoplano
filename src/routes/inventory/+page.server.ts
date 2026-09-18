@@ -4,6 +4,13 @@ import { host } from '$lib/services/host';
 import { toActionFailure } from '$lib/http-errors';
 import { recipesByItem } from '$lib/services/recipes';
 import {
+	listAttributes,
+	removeAttribute,
+	renameAttribute,
+	renameAttributeValue,
+	setAttributeColor
+} from '$lib/services/attributes';
+import {
 	createLocation,
 	deleteLocation,
 	listLocations,
@@ -48,7 +55,10 @@ export const load = async ({ locals }: IsolatedEvent) => {
 		// Where the handle between the panel and the list was left.
 		locationPanelRem: getLocationPanelWidth(ctx.userId),
 		// Whether the share-with-family switch has anybody to share with.
-		onFamilyPlan: host.familyUserIds(ctx.userId).length > 1
+		onFamilyPlan: host.familyUserIds(ctx.userId).length > 1,
+		// What the things say about themselves, for the Attributes screen and for
+		// the filters — both are lists of what has actually been typed.
+		attributes: listAttributes(ctx)
 	};
 };
 
@@ -66,6 +76,60 @@ function fieldsFrom(formData: FormData): Record<string, string> {
 }
 
 export const actions = {
+	/** Rename an attribute everywhere it is used — or merge it into another. */
+	renameAttribute: async ({ request, locals }: IsolatedEvent) => {
+		const formData = await request.formData();
+		try {
+			renameAttribute(buildCtx(locals.user!.id), formData.get('from'), formData.get('to'));
+			return { success: true, action: 'renameAttribute' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** Rename one value of one, wherever a thing says it. */
+	renameAttributeValue: async ({ request, locals }: IsolatedEvent) => {
+		const formData = await request.formData();
+		try {
+			renameAttributeValue(
+				buildCtx(locals.user!.id),
+				formData.get('key'),
+				formData.get('from'),
+				formData.get('to')
+			);
+			return { success: true, action: 'renameAttributeValue' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** Take an attribute off everything that has it. The things stay. */
+	removeAttribute: async ({ request, locals }: IsolatedEvent) => {
+		const formData = await request.formData();
+		try {
+			removeAttribute(buildCtx(locals.user!.id), formData.get('key'));
+			return { success: true, action: 'removeAttribute' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** A colour on an attribute, or on one of its values. Empty takes it off. */
+	setAttributeColor: async ({ request, locals }: IsolatedEvent) => {
+		const formData = await request.formData();
+		try {
+			setAttributeColor(
+				buildCtx(locals.user!.id),
+				formData.get('key'),
+				formData.get('value') ?? '',
+				formData.get('color') ?? ''
+			);
+			return { success: true, action: 'setAttributeColor' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
 	/** Which categories hold food, and therefore what can be an ingredient. */
 	/** One tick, saved as it lands — the modal has no save button any more. */
 	setCategoryFood: async ({ request, locals }: IsolatedEvent) => {

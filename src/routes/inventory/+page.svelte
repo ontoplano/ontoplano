@@ -9,6 +9,7 @@
 	import BuyFields from '$lib/components/fields/BuyFields.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import NumberBox from '$lib/components/NumberBox.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import Field from '$lib/components/Field.svelte';
@@ -140,6 +141,37 @@
 	let dragOver = $state<number | null>(null);
 	let confirmingDelete: number | null = $state(null);
 	let showCategories = $state(false);
+	let showAttributes = $state(false);
+	let editingAttribute = $state<string | null>(null);
+	let editingValue = $state<string | null>(null);
+	let confirmRemoveAttribute = $state<string | null>(null);
+	let showFilters = $state(false);
+	/** Which attribute value the list is narrowed to, as `key\u0000value`. */
+	let attributeFilter = $state<string | null>(null);
+	/** Counts the list is narrowed by: empty means no ceiling and no floor. */
+	let atLeast = $state('');
+	let atMost = $state('');
+
+	/** Whether the filters modal is holding anything back. */
+	const narrowing = $derived(attributeFilter !== null || atLeast !== '' || atMost !== '');
+
+	/** Which attribute a chip should be drawn in, by name and by value. */
+	const attributeColors = $derived.by(() => {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- built, returned and thrown away on each run; nothing mutates it afterwards.
+		const byName = new Map<string, string>();
+		for (const attribute of data.attributes) {
+			if (attribute.color) byName.set(`${attribute.key}\u0000`, attribute.color);
+			for (const value of attribute.values) {
+				if (value.color) byName.set(`${attribute.key}\u0000${value.value}`, value.color);
+			}
+		}
+		return byName;
+	});
+
+	/** A value's own colour, else the attribute's, else none. */
+	function chipColor(key: string, value: string): string | undefined {
+		return attributeColors.get(`${key}\u0000${value}`) ?? attributeColors.get(`${key}\u0000`);
+	}
 	let addingCategory = $state(false);
 	/** The category being renamed in place, and the one waiting on its delete. */
 	let editingCategory = $state<number | null>(null);
@@ -313,6 +345,24 @@
 			const wanted = find.trim().toLowerCase();
 			if (wanted && !`${item.name} ${item.notes ?? ''}`.toLowerCase().includes(wanted))
 				return false;
+
+			/*
+			 * The filters modal: how many there are, and what the thing says
+			 * about itself.
+			 *
+			 * Both are about the thing rather than about which list it is on,
+			 * which is why they live behind a button and not in the row of
+			 * segments — "the cables" is a question you ask once, not a view you
+			 * keep switching between.
+			 */
+			if (atLeast !== '' && item.qty < Number(atLeast)) return false;
+			if (atMost !== '' && item.qty > Number(atMost)) return false;
+			if (attributeFilter !== null) {
+				const [key, value] = attributeFilter.split('\u0000');
+				const fields = fieldsOf(item.attributes);
+				if (!fields.some(([k, v]) => k === key && v === value)) return false;
+			}
+
 			if (filterType === 'all') return true;
 			// Short of it: fewer than you keep, and something you restock at all.
 			if (filterType === 'short') return item.type === 'replenish' && item.qty < item.idealQty;
@@ -960,7 +1010,12 @@
 	{#if pairs.length > 0}
 		<span class="mt-0.5 flex flex-wrap items-center gap-1">
 			{#each pairs as [key, value] (key)}
-				<span class="chip">{value ? `${key}: ${value}` : key}</span>
+				{@const color = chipColor(key, value)}
+				<span
+					class="chip"
+					style={color ? `background-color:${color};color:#fff;border-color:transparent` : ''}
+					>{value ? `${key}: ${value}` : key}</span
+				>
 			{/each}
 		</span>
 	{/if}
@@ -1257,6 +1312,15 @@
 				/>
 				<button onclick={() => (showCategories = true)} class="btn btn-sm btn-quiet"
 					>{t('inventory.categories')}</button
+				>
+				<button onclick={() => (showAttributes = true)} class="btn btn-sm btn-quiet"
+					>{t('inventory.attributes')}</button
+				>
+				<button
+					onclick={() => (showFilters = true)}
+					aria-pressed={narrowing}
+					class="btn btn-sm btn-quiet"
+					>{narrowing ? t('inventory.filtersOn') : t('inventory.filters')}</button
 				>
 			</div>
 
@@ -1692,6 +1756,239 @@
 	that makes recipes work — and it is one tick per category, done once, not a
 	label on every tin of tomatoes.
 -->
+<!--
+	Everything the things say about themselves, in one place.
+
+	An attribute is not a row — it is a name somebody typed into an item — which
+	is the point, and also why this screen has to exist: nothing else can merge
+	"Colour" with "colour", say what values `length` actually takes, or give one
+	of them a colour to read a list by.
+-->
+<Modal
+	bind:open={showAttributes}
+	error={form?.message}
+	title={t('inventory.attributes')}
+	description={t('inventory.whatYourThingsSayAbout')}
+	size="md"
+>
+	{#if data.attributes.length === 0}
+		<EmptyState icon="tag" title={t('inventory.nothingSaysAnythingYet')} compact />
+	{:else}
+		<ul class="space-y-4">
+			{#each data.attributes as attribute (attribute.key)}
+				<li>
+					<div class="flex flex-wrap items-center gap-2">
+						{#if editingAttribute === attribute.key}
+							<form
+								method="post"
+								action="?/renameAttribute"
+								use:enhance={() =>
+									async ({ update, result }) => {
+										await update({ reset: false });
+										if (result.type === 'success') editingAttribute = null;
+									}}
+								class="flex flex-1 items-center gap-2"
+							>
+								<input type="hidden" name="from" value={attribute.key} />
+								<OneLine name="to" value={attribute.key} class="input flex-1" required autofocus />
+								<button class="btn btn-primary btn-sm">{t('ui.save')}</button>
+								<button type="button" class="btn btn-sm" onclick={() => (editingAttribute = null)}
+									>{t('ui.cancel')}</button
+								>
+							</form>
+						{:else}
+							<span
+								class="chip"
+								style={attribute.color
+									? `background-color:${attribute.color};color:#fff;border-color:transparent`
+									: ''}>{attribute.key}</span
+							>
+							<span class="tabular text-xs text-gray-500">{attribute.count}</span>
+
+							<!--
+								A colour, from the browser's own control. It saves as it is
+								let go of rather than behind a button: there is nothing else
+								on this row to save.
+							-->
+							<form
+								method="post"
+								action="?/setAttributeColor"
+								use:enhance
+								class="flex items-center gap-1"
+							>
+								<input type="hidden" name="key" value={attribute.key} />
+								<input type="hidden" name="value" value="" />
+								<input
+									type="color"
+									name="color"
+									value={attribute.color ?? '#6b7280'}
+									class="h-6 w-8 cursor-pointer border border-gray-300 bg-transparent p-0"
+									title={t('inventory.aColourForThisAttribute')}
+									onchange={(e) => e.currentTarget.form?.requestSubmit()}
+								/>
+							</form>
+
+							<div class="ml-auto flex items-center gap-1">
+								<button
+									class="icon-btn"
+									title={t('inventory.renameThisAttribute')}
+									aria-label={t('inventory.renameThisAttribute')}
+									onclick={() => (editingAttribute = attribute.key)}><Icon name="edit" /></button
+								>
+								{#if confirmRemoveAttribute === attribute.key}
+									<form method="post" action="?/removeAttribute" use:enhance>
+										<input type="hidden" name="key" value={attribute.key} />
+										<button class="btn btn-danger btn-sm" use:armed>{t('inventory.confirm')}</button
+										>
+									</form>
+								{:else}
+									<button
+										class="icon-btn icon-btn-danger"
+										title={t('inventory.takeThisAttributeOffEverything')}
+										aria-label={t('inventory.takeThisAttributeOffEverything')}
+										onclick={() => (confirmRemoveAttribute = attribute.key)}
+										><Icon name="trash" /></button
+									>
+								{/if}
+							</div>
+						{/if}
+					</div>
+
+					<!-- What it is actually set to, which is the half a list of names
+					     cannot answer. -->
+					<ul class="mt-2 ml-1 space-y-1 border-l border-gray-200 pl-3">
+						{#each attribute.values as one (one.value)}
+							<li class="flex flex-wrap items-center gap-2 text-sm">
+								{#if editingValue === `${attribute.key}\u0000${one.value}`}
+									<form
+										method="post"
+										action="?/renameAttributeValue"
+										use:enhance={() =>
+											async ({ update, result }) => {
+												await update({ reset: false });
+												if (result.type === 'success') editingValue = null;
+											}}
+										class="flex flex-1 items-center gap-2"
+									>
+										<input type="hidden" name="key" value={attribute.key} />
+										<input type="hidden" name="from" value={one.value} />
+										<OneLine name="to" value={one.value} class="input flex-1" autofocus />
+										<button class="btn btn-primary btn-sm">{t('ui.save')}</button>
+										<button type="button" class="btn btn-sm" onclick={() => (editingValue = null)}
+											>{t('ui.cancel')}</button
+										>
+									</form>
+								{:else}
+									<span
+										class="chip"
+										style={one.color
+											? `background-color:${one.color};color:#fff;border-color:transparent`
+											: ''}>{one.value || t('inventory.noValue')}</span
+									>
+									<span class="tabular text-xs text-gray-500">{one.count}</span>
+									<form
+										method="post"
+										action="?/setAttributeColor"
+										use:enhance
+										class="flex items-center gap-1"
+									>
+										<input type="hidden" name="key" value={attribute.key} />
+										<input type="hidden" name="value" value={one.value} />
+										<input
+											type="color"
+											name="color"
+											value={one.color ?? attribute.color ?? '#6b7280'}
+											class="h-5 w-7 cursor-pointer border border-gray-300 bg-transparent p-0"
+											title={t('inventory.aColourForThisValue')}
+											onchange={(e) => e.currentTarget.form?.requestSubmit()}
+										/>
+									</form>
+									<button
+										class="icon-btn ml-auto"
+										title={t('inventory.renameThisValue')}
+										aria-label={t('inventory.renameThisValue')}
+										onclick={() => (editingValue = `${attribute.key}\u0000${one.value}`)}
+										><Icon name="edit" /></button
+									>
+								{/if}
+							</li>
+						{/each}
+					</ul>
+				</li>
+			{/each}
+		</ul>
+	{/if}
+</Modal>
+
+<!--
+	How many, and what it says about itself.
+
+	Both are questions about the thing rather than about which list it is on,
+	which is why they are here and not in the row of segments: "the USB cables"
+	is something you ask once, not a view you keep switching between.
+-->
+<Modal
+	bind:open={showFilters}
+	title={t('inventory.filters')}
+	description={t('inventory.narrowTheListToWhat')}
+	size="sm"
+>
+	<div class="space-y-4">
+		<div>
+			<span class="eyebrow text-gray-500">{t('inventory.howMany')}</span>
+			<div class="mt-1 flex flex-wrap items-center gap-2 text-sm">
+				<label class="flex items-center gap-2">
+					{t('inventory.atLeast')}
+					<NumberBox name="atLeast" min="0" bind:value={atLeast} class="w-20" />
+				</label>
+				<label class="flex items-center gap-2">
+					{t('inventory.atMost')}
+					<NumberBox name="atMost" min="0" bind:value={atMost} class="w-20" />
+				</label>
+			</div>
+		</div>
+
+		{#if data.attributes.length > 0}
+			<div>
+				<span class="eyebrow text-gray-500">{t('inventory.attributes')}</span>
+				<div class="mt-1 flex flex-wrap gap-1">
+					{#each data.attributes as attribute (attribute.key)}
+						{#each attribute.values as one (one.value)}
+							{@const key = `${attribute.key}\u0000${one.value}`}
+							<button
+								type="button"
+								class="chip"
+								aria-pressed={attributeFilter === key}
+								style={attributeFilter === key
+									? `background-color:${one.color ?? attribute.color ?? 'var(--control-on)'};color:#fff;border-color:transparent`
+									: ''}
+								onclick={() => (attributeFilter = attributeFilter === key ? null : key)}
+							>
+								{attribute.key}{one.value ? `: ${one.value}` : ''}
+							</button>
+						{/each}
+					{/each}
+				</div>
+			</div>
+		{/if}
+	</div>
+
+	{#snippet footer()}
+		<button
+			type="button"
+			class="btn"
+			onclick={() => {
+				attributeFilter = null;
+				atLeast = '';
+				atMost = '';
+			}}>{t('inventory.clearThem')}</button
+		>
+		<button type="button" class="btn btn-primary" onclick={() => (showFilters = false)}
+			>{t('ui.done')}</button
+		>
+	{/snippet}
+</Modal>
+
 <Modal
 	bind:open={showCategories}
 	error={form?.message}

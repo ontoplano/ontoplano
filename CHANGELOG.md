@@ -55,6 +55,15 @@ releases mattered.
 - **The block form says which block.** Its header carries the thing's name and
   the category it is in, as a pill in that category's own colour; a category
   block has no name of its own, so that line is a dash.
+- **Inventory has an Attributes screen.** Everything your things say about
+  themselves, with how often each is said and what values it takes — and the
+  three things a list of names cannot do on its own: rename one everywhere
+  (renaming onto a name that exists merges them, which is how "Colour" and
+  "colour" stop being two things), rename one of its values, and take one off
+  everything. A colour can sit on an attribute or on one of its values, and
+  the chips on the rows wear it.
+- **And a Filters screen**: how many there are, at least and at most, and any
+  attribute value. The button says when something is being held back.
 - **The review says what did happen, not only what did not**, and where the
   week went is a ring with the hours in the middle rather than a column of
   numbers to divide in your head.

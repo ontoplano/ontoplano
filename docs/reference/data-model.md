@@ -7,84 +7,85 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**74 tables.**
+**75 tables.**
 
-| Table                                             | Columns | Belongs to a user |
-| ------------------------------------------------- | ------- | ----------------- |
-| [`account`](#account)                             | 13      | yes               |
-| [`activities`](#activities)                       | 9       | yes               |
-| [`album_media`](#album_media)                     | 6       | yes               |
-| [`albums`](#albums)                               | 6       | yes               |
-| [`api_tokens`](#api_tokens)                       | 14      | yes               |
-| [`assistant_calls`](#assistant_calls)             | 9       | yes               |
-| [`audit_events`](#audit_events)                   | 7       | yes               |
-| [`bill_payments`](#bill_payments)                 | 11      | yes               |
-| [`billing_checkouts`](#billing_checkouts)         | 8       | yes               |
-| [`billing_events`](#billing_events)               | 8       | —                 |
-| [`bills`](#bills)                                 | 17      | yes               |
-| [`calendar_feeds`](#calendar_feeds)               | 9       | yes               |
-| [`categories`](#categories)                       | 5       | yes               |
-| [`client_errors`](#client_errors)                 | 8       | yes               |
-| [`daily_wins`](#daily_wins)                       | 6       | yes               |
-| [`data_points`](#data_points)                     | 10      | yes               |
-| [`data_streams`](#data_streams)                   | 14      | yes               |
-| [`diary_entries`](#diary_entries)                 | 12      | yes               |
-| [`diary_entry_tags`](#diary_entry_tags)           | 4       | yes               |
-| [`entry_people`](#entry_people)                   | 4       | yes               |
-| [`exceptional_tasks`](#exceptional_tasks)         | 19      | yes               |
-| [`finance_rules`](#finance_rules)                 | 8       | yes               |
-| [`finance_transactions`](#finance_transactions)   | 10      | yes               |
-| [`goal_areas`](#goal_areas)                       | 6       | yes               |
-| [`goal_links`](#goal_links)                       | 6       | yes               |
-| [`goal_targets`](#goal_targets)                   | 8       | yes               |
-| [`goals`](#goals)                                 | 14      | yes               |
-| [`habit_occurrences`](#habit_occurrences)         | 6       | yes               |
-| [`habits`](#habits)                               | 7       | yes               |
-| [`idea_tags`](#idea_tags)                         | 4       | yes               |
-| [`ideas`](#ideas)                                 | 8       | yes               |
-| [`inventory_categories`](#inventory_categories)   | 7       | yes               |
-| [`inventory_items`](#inventory_items)             | 16      | yes               |
-| [`invites`](#invites)                             | 9       | —                 |
-| [`ledgers`](#ledgers)                             | 10      | yes               |
-| [`locations`](#locations)                         | 8       | yes               |
-| [`mail_failures`](#mail_failures)                 | 11      | —                 |
-| [`media`](#media)                                 | 10      | yes               |
-| [`media_tags`](#media_tags)                       | 4       | yes               |
-| [`newsletter_issues`](#newsletter_issues)         | 6       | —                 |
-| [`notebooks`](#notebooks)                         | 8       | yes               |
-| [`people`](#people)                               | 12      | yes               |
-| [`plan_members`](#plan_members)                   | 5       | —                 |
-| [`planning_schemes`](#planning_schemes)           | 5       | yes               |
-| [`plugin_manifests`](#plugin_manifests)           | 8       | yes               |
-| [`price_points`](#price_points)                   | 6       | yes               |
-| [`push_subscriptions`](#push_subscriptions)       | 9       | yes               |
-| [`quotes`](#quotes)                               | 5       | yes               |
-| [`recipe_images`](#recipe_images)                 | 7       | yes               |
-| [`recipe_items`](#recipe_items)                   | 8       | yes               |
-| [`recipes`](#recipes)                             | 12      | yes               |
-| [`recurring_tasks`](#recurring_tasks)             | 20      | yes               |
-| [`reminder_sounds`](#reminder_sounds)             | 7       | yes               |
-| [`reminders`](#reminders)                         | 12      | yes               |
-| [`ringtones`](#ringtones)                         | 7       | yes               |
-| [`scheme_slots`](#scheme_slots)                   | 11      | yes               |
-| [`sent_notifications`](#sent_notifications)       | 8       | yes               |
-| [`session`](#session)                             | 9       | yes               |
-| [`subscribers`](#subscribers)                     | 7       | —                 |
-| [`subscriptions`](#subscriptions)                 | 15      | yes               |
-| [`suppressed_slots`](#suppressed_slots)           | 5       | yes               |
-| [`tags`](#tags)                                   | 3       | yes               |
-| [`task_records`](#task_records)                   | 15      | yes               |
-| [`todo_tasks`](#todo_tasks)                       | 17      | yes               |
-| [`user`](#user)                                   | 11      | —                 |
-| [`user_settings`](#user_settings)                 | 4       | yes               |
-| [`verification`](#verification)                   | 6       | —                 |
-| [`webhook_subscriptions`](#webhook_subscriptions) | 11      | yes               |
-| [`weekly_reviews`](#weekly_reviews)               | 7       | yes               |
-| [`workout_categories`](#workout_categories)       | 5       | yes               |
-| [`workout_measures`](#workout_measures)           | 7       | yes               |
-| [`workout_plan_measures`](#workout_plan_measures) | 6       | yes               |
-| [`workout_sessions`](#workout_sessions)           | 7       | yes               |
-| [`workouts`](#workouts)                           | 11      | yes               |
+| Table                                                       | Columns | Belongs to a user |
+| ----------------------------------------------------------- | ------- | ----------------- |
+| [`account`](#account)                                       | 13      | yes               |
+| [`activities`](#activities)                                 | 9       | yes               |
+| [`album_media`](#album_media)                               | 6       | yes               |
+| [`albums`](#albums)                                         | 6       | yes               |
+| [`api_tokens`](#api_tokens)                                 | 14      | yes               |
+| [`assistant_calls`](#assistant_calls)                       | 9       | yes               |
+| [`audit_events`](#audit_events)                             | 7       | yes               |
+| [`bill_payments`](#bill_payments)                           | 11      | yes               |
+| [`billing_checkouts`](#billing_checkouts)                   | 8       | yes               |
+| [`billing_events`](#billing_events)                         | 8       | —                 |
+| [`bills`](#bills)                                           | 17      | yes               |
+| [`calendar_feeds`](#calendar_feeds)                         | 9       | yes               |
+| [`categories`](#categories)                                 | 5       | yes               |
+| [`client_errors`](#client_errors)                           | 8       | yes               |
+| [`daily_wins`](#daily_wins)                                 | 6       | yes               |
+| [`data_points`](#data_points)                               | 10      | yes               |
+| [`data_streams`](#data_streams)                             | 14      | yes               |
+| [`diary_entries`](#diary_entries)                           | 12      | yes               |
+| [`diary_entry_tags`](#diary_entry_tags)                     | 4       | yes               |
+| [`entry_people`](#entry_people)                             | 4       | yes               |
+| [`exceptional_tasks`](#exceptional_tasks)                   | 19      | yes               |
+| [`finance_rules`](#finance_rules)                           | 8       | yes               |
+| [`finance_transactions`](#finance_transactions)             | 10      | yes               |
+| [`goal_areas`](#goal_areas)                                 | 6       | yes               |
+| [`goal_links`](#goal_links)                                 | 6       | yes               |
+| [`goal_targets`](#goal_targets)                             | 8       | yes               |
+| [`goals`](#goals)                                           | 14      | yes               |
+| [`habit_occurrences`](#habit_occurrences)                   | 6       | yes               |
+| [`habits`](#habits)                                         | 7       | yes               |
+| [`idea_tags`](#idea_tags)                                   | 4       | yes               |
+| [`ideas`](#ideas)                                           | 8       | yes               |
+| [`inventory_attribute_colors`](#inventory_attribute_colors) | 5       | yes               |
+| [`inventory_categories`](#inventory_categories)             | 7       | yes               |
+| [`inventory_items`](#inventory_items)                       | 16      | yes               |
+| [`invites`](#invites)                                       | 9       | —                 |
+| [`ledgers`](#ledgers)                                       | 10      | yes               |
+| [`locations`](#locations)                                   | 8       | yes               |
+| [`mail_failures`](#mail_failures)                           | 11      | —                 |
+| [`media`](#media)                                           | 10      | yes               |
+| [`media_tags`](#media_tags)                                 | 4       | yes               |
+| [`newsletter_issues`](#newsletter_issues)                   | 6       | —                 |
+| [`notebooks`](#notebooks)                                   | 8       | yes               |
+| [`people`](#people)                                         | 12      | yes               |
+| [`plan_members`](#plan_members)                             | 5       | —                 |
+| [`planning_schemes`](#planning_schemes)                     | 5       | yes               |
+| [`plugin_manifests`](#plugin_manifests)                     | 8       | yes               |
+| [`price_points`](#price_points)                             | 6       | yes               |
+| [`push_subscriptions`](#push_subscriptions)                 | 9       | yes               |
+| [`quotes`](#quotes)                                         | 5       | yes               |
+| [`recipe_images`](#recipe_images)                           | 7       | yes               |
+| [`recipe_items`](#recipe_items)                             | 8       | yes               |
+| [`recipes`](#recipes)                                       | 12      | yes               |
+| [`recurring_tasks`](#recurring_tasks)                       | 20      | yes               |
+| [`reminder_sounds`](#reminder_sounds)                       | 7       | yes               |
+| [`reminders`](#reminders)                                   | 12      | yes               |
+| [`ringtones`](#ringtones)                                   | 7       | yes               |
+| [`scheme_slots`](#scheme_slots)                             | 11      | yes               |
+| [`sent_notifications`](#sent_notifications)                 | 8       | yes               |
+| [`session`](#session)                                       | 9       | yes               |
+| [`subscribers`](#subscribers)                               | 7       | —                 |
+| [`subscriptions`](#subscriptions)                           | 15      | yes               |
+| [`suppressed_slots`](#suppressed_slots)                     | 5       | yes               |
+| [`tags`](#tags)                                             | 3       | yes               |
+| [`task_records`](#task_records)                             | 15      | yes               |
+| [`todo_tasks`](#todo_tasks)                                 | 17      | yes               |
+| [`user`](#user)                                             | 11      | —                 |
+| [`user_settings`](#user_settings)                           | 4       | yes               |
+| [`verification`](#verification)                             | 6       | —                 |
+| [`webhook_subscriptions`](#webhook_subscriptions)           | 11      | yes               |
+| [`weekly_reviews`](#weekly_reviews)                         | 7       | yes               |
+| [`workout_categories`](#workout_categories)                 | 5       | yes               |
+| [`workout_measures`](#workout_measures)                     | 7       | yes               |
+| [`workout_plan_measures`](#workout_plan_measures)           | 6       | yes               |
+| [`workout_sessions`](#workout_sessions)                     | 7       | yes               |
+| [`workouts`](#workouts)                                     | 11      | yes               |
 
 ## account
 
@@ -705,6 +706,21 @@ Indexes:
 
 - `ideas_user_idx` on `user_id`
 - `ideas_created_idx` on `created_at`
+
+## inventory_attribute_colors
+
+| Column    | Type    | Null     | Default | Notes             |
+| --------- | ------- | -------- | ------- | ----------------- |
+| `id`      | integer | not null | —       | primary key, auto |
+| `user_id` | text    | not null | —       | → `user.id`       |
+| `key`     | text    | not null | —       | —                 |
+| `value`   | text    | not null | `''`    | —                 |
+| `color`   | text    | not null | —       | —                 |
+
+Indexes:
+
+- `inventory_attribute_colors_user_idx` on `user_id`
+- `inventory_attribute_colors_unique` on `user_id`, `key`, `value` — unique
 
 ## inventory_categories
 
