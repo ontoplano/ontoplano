@@ -22,7 +22,9 @@ export default defineConfig({
 	},
 	test: {
 		include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
-		exclude: ['**/node_modules/**', '**/*.e2e.ts', '**/{.worktrees,.claude}/**'],
+		// Hidden directories hold what lives beside the checkout — worktrees,
+		// tool state, another copy of the repo — never this suite's tests.
+		exclude: ['**/node_modules/**', '**/*.e2e.ts', '**/.*/**'],
 		/*
 		 * Node by default; a browser only where a test needs one.
 		 *

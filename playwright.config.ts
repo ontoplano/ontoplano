@@ -32,8 +32,12 @@ const otherCheckouts = readdirSync(here, { withFileTypes: true })
 	.filter((entry) => entry.isDirectory() && existsSync(join(here, entry.name, '.git')))
 	.map((entry) => `${here}/${entry.name}/**`);
 
-/** The two by name, for the same reason and in the same shape. */
-const nestedCopies = [`${here}/.worktrees/**`, `${here}/.claude/**`];
+/**
+ * And every hidden directory, for the same reason and in the same shape: what
+ * sits under one — a worktree, tool state, another copy of the repo — is never
+ * this suite's specs.
+ */
+const nestedCopies = [`${here}/.*/**`];
 
 /**
  * The tests get their own database.
@@ -194,7 +198,7 @@ export default defineConfig({
 		{
 			name: 'device',
 			testDir: 'e2e-isolated',
-			testIgnore: ['**/{.worktrees,.claude}/**', ...otherCheckouts],
+			testIgnore: ['**/.*/**', ...otherCheckouts],
 			use: { baseURL: 'http://localhost:4180' }
 		}
 	]
