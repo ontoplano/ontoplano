@@ -16,6 +16,7 @@ export type MessageKey =
 	| 'accountImport.notASoundFormat'
 	| 'accountImport.theLogIsARecord'
 	| 'accountImport.thisVersionHasNoSuch'
+	| 'accountImport.typeToConfirm'
 	| 'admin.accountDeleted'
 	| 'admin.accounts'
 	| 'admin.adm'
@@ -37,6 +38,7 @@ export type MessageKey =
 	| 'admin.id.deleteForGood'
 	| 'admin.id.deleteThisAccount'
 	| 'admin.id.endPlanThen'
+	| 'admin.id.everyBlockEntryNoteGoal'
 	| 'admin.id.everythingInItGoesIn'
 	| 'admin.id.getConfirmationLink'
 	| 'admin.id.history'
@@ -51,7 +53,7 @@ export type MessageKey =
 	| 'admin.id.signedInDevices'
 	| 'admin.id.startATrial'
 	| 'admin.id.thisInstanceHasNoMail'
-	| 'admin.id.toConfirmEveryBlockEntry'
+	| 'admin.id.typeEmailToConfirm'
 	| 'admin.id.whatThisAccountDidAnd'
 	| 'admin.id.willBeAbleToRead'
 	| 'admin.inThisLog'
@@ -1692,7 +1694,7 @@ export type MessageKey =
 	| 'settings.account.import.nameForTheNotebookThey'
 	| 'settings.account.import.not'
 	| 'settings.account.import.onThisInstanceOr'
-	| 'settings.account.import.orPasteTheExportHere'
+	| 'settings.account.import.orExportAgainWithout'
 	| 'settings.account.import.orPasteTheFileHere'
 	| 'settings.account.import.rEPLACE'
 	| 'settings.account.import.replacesEverythingInThisAccount'
@@ -1701,10 +1703,12 @@ export type MessageKey =
 	| 'settings.account.import.rowsWillLand'
 	| 'settings.account.import.sAccountExported'
 	| 'settings.account.import.tags'
+	| 'settings.account.import.thatFileIsNotJson'
+	| 'settings.account.import.thatIsJsonButNotAnExport'
 	| 'settings.account.import.theRestoreWouldRefuseThis'
 	| 'settings.account.import.this'
-	| 'settings.account.import.toConfirm'
 	| 'settings.account.import.todoist'
+	| 'settings.account.import.typeWordToConfirm'
 	| 'settings.account.import.whichOneItIsIs'
 	| 'settings.account.import.withWhatIsInThe'
 	| 'settings.account.includePictures'
@@ -2756,7 +2760,6 @@ export type MessageKey =
 	| 'ui.tags'
 	| 'ui.title'
 	| 'ui.today'
-	| 'ui.type'
 	| 'ui.undo'
 	| 'ui.unit'
 	| 'ui.write'
@@ -2798,8 +2801,10 @@ export interface MessageValuesFor {
 	'accountImport.imported': { total: string | number };
 	'accountImport.importedFrom': { email: string | number; total: string | number };
 	'accountImport.leftBehind': { what: string | number };
+	'accountImport.typeToConfirm': { word: string | number };
 	'admin.blockedInTheLast': { addresses: string | number; lastDay: string | number };
 	'admin.hoursAgo': { count: number };
+	'admin.id.typeEmailToConfirm': { email: string | number };
 	'admin.inThisLog': { times: string | number };
 	'admin.last': {
 		attempts: string | number;
@@ -3078,6 +3083,7 @@ export interface MessageValuesFor {
 	'search.for': { q: string | number; results: string | number; total: string | number };
 	'search.nothingMatches': { q: string | number };
 	'settings.account.exportsLeft': { count: number; remaining: string | number };
+	'settings.account.import.typeWordToConfirm': { word: string | number };
 	'settings.account.noExportsLeftToday': { allowed: string | number; unlocksIn: string | number };
 	'settings.account.offTurnItOnAnd': { hour: string | number };
 	'settings.account.oneMessageOnAMonday': { hour: string | number };

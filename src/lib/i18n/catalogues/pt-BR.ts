@@ -21,6 +21,7 @@ export const messages: Catalogue = {
 	'accountImport.notASoundFormat': 'não é um formato de som que este aplicativo aceita',
 	'accountImport.theLogIsARecord': 'o log é um registro de uma instância, não uma posse',
 	'accountImport.thisVersionHasNoSuch': 'esta versão não tem essa tabela',
+	'accountImport.typeToConfirm': 'Digite {word} para confirmar — isto esvazia a conta primeiro.',
 	'admin.accountDeleted': 'conta apagada',
 	'admin.accounts': 'Contas',
 	'admin.adm': 'adm',
@@ -44,6 +45,8 @@ export const messages: Catalogue = {
 	'admin.id.deleteForGood': 'Apagar definitivamente',
 	'admin.id.deleteThisAccount': 'Apagar esta conta',
 	'admin.id.endPlanThen': 'Encerrar o plano, então',
+	'admin.id.everyBlockEntryNoteGoal':
+		'Todo bloco, entrada, nota, meta e imagem que esta conta possui é apagado, e a exportação que ela poderia ter levado consigo também.',
 	'admin.id.everythingInItGoesIn':
 		'Tudo o que ela contém é apagado, em uma única transação, sem nada para restaurar depois.',
 	'admin.id.getConfirmationLink': 'Obter link de confirmação',
@@ -60,8 +63,7 @@ export const messages: Catalogue = {
 	'admin.id.startATrial': 'Iniciar um teste',
 	'admin.id.thisInstanceHasNoMail':
 		'Esta instância não tem servidor de e-mail, então nada pode ser enviado. Pedir uma confirmação mostra\n\t\t\t\to link para você repassar por conta própria.',
-	'admin.id.toConfirmEveryBlockEntry':
-		'para confirmar. Todo bloco,\n\t\t\t\t\t\tentrada, nota, meta e imagem que esta conta possui é apagado, e a exportação que ela\n\t\t\t\t\t\tpoderia ter levado consigo também some.',
+	'admin.id.typeEmailToConfirm': 'Digite {email} para confirmar',
 	'admin.id.whatThisAccountDidAnd': 'O que esta conta fez, e o que foi feito a ela.',
 	'admin.id.willBeAbleToRead': 'poderá ler, alterar e apagar qualquer conta.',
 	'admin.inThisLog': '{times}× neste registro',
@@ -1942,7 +1944,8 @@ export const messages: Catalogue = {
 	'settings.account.import.not': 'não',
 	'settings.account.import.onThisInstanceOr':
 		', nesta instância ou em outra. Mudar para o seu próprio servidor, ou sair dele, é isto e nada mais.',
-	'settings.account.import.orPasteTheExportHere': '…ou cole a exportação aqui',
+	'settings.account.import.orExportAgainWithout':
+		'Ou exporte de novo sem as imagens — esse arquivo é uma fração do tamanho e leva tudo o que você escreveu.',
 	'settings.account.import.orPasteTheFileHere': '…ou cole o arquivo aqui',
 	'settings.account.import.rEPLACE': 'SUBSTITUIR',
 	'settings.account.import.replacesEverythingInThisAccount': 'substitui tudo nesta conta',
@@ -1951,10 +1954,13 @@ export const messages: Catalogue = {
 	'settings.account.import.rowsWillLand': 'linhas vão entrar.',
 	'settings.account.import.sAccountExported': ', exportada',
 	'settings.account.import.tags': '#etiquetas',
+	'settings.account.import.thatFileIsNotJson': 'Esse arquivo não é JSON.',
+	'settings.account.import.thatIsJsonButNotAnExport':
+		'Isso é JSON, mas não é uma exportação do ontoplano.',
 	'settings.account.import.theRestoreWouldRefuseThis': 'A restauração recusaria este arquivo:',
 	'settings.account.import.this': 'Isto',
-	'settings.account.import.toConfirm': 'para confirmar',
 	'settings.account.import.todoist': 'Todoist',
+	'settings.account.import.typeWordToConfirm': 'Digite {word} para confirmar',
 	'settings.account.import.whichOneItIsIs': 'Qual deles é, o arquivo mesmo diz.',
 	'settings.account.import.withWhatIsInThe':
 		'pelo que está no arquivo. O que está aqui agora se perde, e nada é mesclado.',
@@ -3231,7 +3237,6 @@ export const messages: Catalogue = {
 	'ui.tags': 'Etiquetas',
 	'ui.title': 'Título',
 	'ui.today': 'Hoje',
-	'ui.type': 'Tipo',
 	'ui.undo': 'Desfazer',
 	'ui.unit': 'Unidade',
 	'ui.write': 'escrita',

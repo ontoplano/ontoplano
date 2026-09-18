@@ -107,13 +107,35 @@ export async function importAccountAction(
 ) {
 	const formData = await event.request.formData();
 
-	if (
-		String(formData.get('confirm') ?? '')
-			.trim()
-			.toUpperCase() !== 'REPLACE'
-	)
+	/*
+	 * The word the screen asked for, in the language the screen was in.
+	 *
+	 * It is a catalogue string — a Portuguese page asks for SUBSTITUIR, a
+	 * German one for ERSETZEN — and this compared what was typed against the
+	 * literal 'REPLACE'. So doing exactly what the page said was refused in
+	 * three of the four languages, in an English sentence, with no way through
+	 * but guessing the English word.
+	 *
+	 * Both are accepted: the word this account's own language asks for, and the
+	 * English one, which is what the docs and anything scripted will say.
+	 *
+	 * The translator serves everything else this answers with too — the import's
+	 * reasons come back as message keys, a service having no translator of its
+	 * own. From the account's own setting rather than `localeForUser`, which
+	 * reads the instance's fallback out of `config.toml` and therefore out of
+	 * `node:fs`: this file also runs in the browser, on an instance that is its
+	 * own device. Somebody importing an account is signed in, so their setting
+	 * is the answer whenever there is one.
+	 */
+	const t = await translatorFor(getLocale(event.locals.user!.id) ?? SOURCE_LOCALE);
+	const asked = t('settings.account.import.rEPLACE').trim().toUpperCase();
+	const typed = String(formData.get('confirm') ?? '')
+		.trim()
+		.toUpperCase();
+
+	if (typed !== asked && typed !== 'REPLACE')
 		return fail(400, {
-			message: 'Type REPLACE to confirm — this empties the account first.'
+			message: t('accountImport.typeToConfirm', { word: t('settings.account.import.rEPLACE') })
 		});
 
 	try {
@@ -123,20 +145,6 @@ export async function importAccountAction(
 			dropUnacceptable: formData.get('dropUnacceptable') === 'on',
 			rescue: keep(event.locals.user!.id, formData)
 		});
-
-		/*
-		 * In the language the person is reading the page in.
-		 *
-		 * The reasons come back as message keys — a service has no translator —
-		 * so this is where they become words, beside the sentence they go in.
-		 *
-		 * From the account's own setting rather than `localeForUser`, which
-		 * reads the instance's fallback out of `config.toml` and therefore out
-		 * of `node:fs`: this file also runs in the browser, on an instance that
-		 * is its own device. Somebody importing an account is signed in, so
-		 * their setting is the answer whenever there is one.
-		 */
-		const t = await translatorFor(getLocale(event.locals.user!.id) ?? SOURCE_LOCALE);
 
 		const parts = [
 			result.from

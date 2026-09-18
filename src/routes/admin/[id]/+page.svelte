@@ -12,6 +12,17 @@
 
 	const t = useT();
 
+	/**
+	 * Where the address goes in the sentence asking for it.
+	 *
+	 * The sentence is one message so a translator sees it whole, and it is split
+	 * here so the address can be drawn in bold wherever that language puts it.
+	 * What goes into the placeholder is the placeholder, which is the one value
+	 * certain not to appear in the words around it.
+	 */
+	const EMAIL_SLOT = '{email}';
+	const askedFor = t('admin.id.typeEmailToConfirm', { email: EMAIL_SLOT }).split(EMAIL_SLOT);
+
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
 	/*
@@ -197,9 +208,13 @@
 				</button>
 			{:else}
 				<form method="post" action="?/deleteAccount" use:enhance class="space-y-3">
+					<!-- The ask is one sentence with the address in it: assembled from
+					     "Type" and "to confirm" around it, the verb came out as the
+					     noun in three languages. -->
 					<p class="text-sm text-gray-700">
-						{t('ui.type')} <strong class="text-gray-900">{data.account.email}</strong>
-						{t('admin.id.toConfirmEveryBlockEntry')}
+						{askedFor[0]}<strong class="text-gray-900">{data.account.email}</strong>{askedFor[1] ??
+							''}.
+						{t('admin.id.everyBlockEntryNoteGoal')}
 					</p>
 					<div class="flex flex-wrap items-center gap-2">
 						<!--
