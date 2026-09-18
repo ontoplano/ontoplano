@@ -1372,13 +1372,9 @@ function indexPage(pages, written) {
 		'Installing it, backing it up, and the parts that live outside the app:',
 		'Docker, backups, plans, plugins and the Android build are in `docs/`',
 		'beside this directory.\n',
-		'## Why these pages are correct\n',
-		'They are generated from the code they describe — the migration snapshot,',
-		'the route files, the scope table, the shortcut map — so a change to the',
-		'logic changes the page, and the build fails when the two disagree. The',
-		'reasoning behind a particular line stays in the comment above that line,',
-		'where it moves with the code; these pages collect what it does rather',
-		'than restating why.'
+		'---\n',
+		'These pages are generated from the code they describe, and the build',
+		'fails when the two disagree — what they say is what the app does.'
 	].join('\n');
 }
 

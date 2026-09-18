@@ -163,7 +163,8 @@ reviewer or a lint rule will stop you on:
   `+page.server.ts` into a worker, so it may not import `$lib/server/*` or
   anything from Node — what only a served instance has goes through the host
   seam, `$lib/services/host.ts`.
-- **Blue is yes, red is no.** I am red/green colorblind.
+- **Blue is yes, red is no.** Every palette must survive red/green
+  colour-blindness, so agreement is never green.
 - **Propagate feature changes throughout all interfaces.** A behaviour change
   on a route reaches mobile, desktop, the API, the MCP server, the docs and
   the tutorial.
