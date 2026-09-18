@@ -617,7 +617,30 @@
 		// thing being changed, and closing on the way past means reopening it to
 		// carry on — which is also how somebody loses what they had typed.
 		await invalidateAll();
-		editingKind = editingKind === 'slot' ? 'exceptional' : 'slot';
+		const nowOneOff = editingKind === 'slot';
+		editingKind = nowOneOff ? 'exceptional' : 'slot';
+
+		/*
+		 * And the form follows it.
+		 *
+		 * `editingKind` is what the server was told; `repeat` is what the form
+		 * draws. Only the first was moved, so a block made once-only kept the
+		 * rhythm panel and the weekday picker it no longer has, and one made
+		 * recurrent was asked for a date and never for a rhythm. Both of those
+		 * are fields that do not exist on the thing being edited.
+		 *
+		 * The day travels with it, in whichever direction: a one-off is on the
+		 * date it was converted on, and a weekly block repeats on that date's
+		 * weekday.
+		 */
+		repeat = nowOneOff ? 'once' : 'weekly';
+		if (nowOneOff) formDate = selectedDateStr();
+		else {
+			const from = formDate || selectedDateStr();
+			// Monday-indexed, which is what `weekday` means everywhere here.
+			formWeekday = (new Date(`${from}T00:00:00`).getDay() + 6) % 7;
+			recurrenceAnchor = from;
+		}
 	}
 
 	/**
