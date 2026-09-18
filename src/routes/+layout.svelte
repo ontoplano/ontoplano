@@ -24,7 +24,6 @@
 		stopHiding
 	} from '$lib/slide';
 	import { MARK_CLIP_PATH, MARK_FIELD } from '$lib/logo/mark-shape';
-	import { MARK_FIELD_ISOLATED } from '$lib/logo/brand';
 	import { CHOOSE_PATH, inPhoneApp, storedChoice } from '$lib/instance-choice';
 	import { handOverRingerKey } from '$lib/ringer-handshake';
 	import { THEMES } from '$lib/theme.js';
@@ -144,16 +143,16 @@
 	/** This app is its own instance: no account, and leaving means choosing another. */
 	const onDevice = $derived(isIsolatedBuild());
 	/**
-	 * The bar's own colour, and the ground the mark rises out of it on.
+	 * The bar's own colour, and the rim the mark sits in — both the mark's dark,
+	 * on either instance.
 	 *
-	 * Two colours rather than one: the bar is the bar on either instance, and
-	 * the only thing the device's copy paints differently is the mark's own
-	 * field — the ground inside the octagon, which is the mark's and not the
-	 * bar's. Painting the whole bar with it turned the phone blue, which is a
-	 * great deal more than "this is the copy on the device".
+	 * Nothing out here is the device's blue. That colour belongs inside the
+	 * drawing: it is the field between the medallion and the ring, and the
+	 * artwork carries it. Painted out here as well it was first a blue bar and
+	 * then a blue rim around the mark, which is the outside of the icon saying
+	 * something only its inside is meant to say.
 	 */
 	const barField = MARK_FIELD;
-	const markField = $derived(onDevice ? MARK_FIELD_ISOLATED : MARK_FIELD);
 	let menuOpen = $state(false);
 	let pie = $state<CapturePie | undefined>();
 	let rooms = $state<NavPie | undefined>();
@@ -1432,7 +1431,7 @@
 						bind:this={barMarkGround}
 						data-mark
 						aria-hidden="true"
-						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-ground-rise)); height: var(--bar-mark-ground); width: var(--bar-mark-ground); background: {markField}"
+						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-ground-rise)); height: var(--bar-mark-ground); width: var(--bar-mark-ground); background: {barField}"
 						class="pointer-events-none absolute left-1/2 -translate-x-1/2"
 					></span>
 					<!-- `data-mark` names it for code that runs before this component
