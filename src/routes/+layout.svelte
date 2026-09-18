@@ -143,8 +143,17 @@
 
 	/** This app is its own instance: no account, and leaving means choosing another. */
 	const onDevice = $derived(isIsolatedBuild());
-	/** The bar's colour: the field the mark is wearing, so the two run together. */
-	const barField = $derived(onDevice ? MARK_FIELD_ISOLATED : MARK_FIELD);
+	/**
+	 * The bar's own colour, and the ground the mark rises out of it on.
+	 *
+	 * Two colours rather than one: the bar is the bar on either instance, and
+	 * the only thing the device's copy paints differently is the mark's own
+	 * field — the ground inside the octagon, which is the mark's and not the
+	 * bar's. Painting the whole bar with it turned the phone blue, which is a
+	 * great deal more than "this is the copy on the device".
+	 */
+	const barField = MARK_FIELD;
+	const markField = $derived(onDevice ? MARK_FIELD_ISOLATED : MARK_FIELD);
 	let menuOpen = $state(false);
 	let pie = $state<CapturePie | undefined>();
 	let rooms = $state<NavPie | undefined>();
@@ -1423,7 +1432,7 @@
 						bind:this={barMarkGround}
 						data-mark
 						aria-hidden="true"
-						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-ground-rise)); height: var(--bar-mark-ground); width: var(--bar-mark-ground); background: {barField}"
+						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-ground-rise)); height: var(--bar-mark-ground); width: var(--bar-mark-ground); background: {markField}"
 						class="pointer-events-none absolute left-1/2 -translate-x-1/2"
 					></span>
 					<!-- `data-mark` names it for code that runs before this component

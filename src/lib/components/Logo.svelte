@@ -13,7 +13,6 @@
 	import mark from '$lib/logo/mark.png';
 	import hollowMark from '$lib/logo/mark-hollow.png';
 	import isolatedMark from '$lib/logo/mark-isolated.png';
-	import { MARK_FIELD_ISOLATED } from '$lib/logo/brand';
 	import { MARK_TURN_HOLE_RADIUS, MARK_TURN_RADIUS } from '$lib/logo/mark-geometry';
 	import { MARK_FIELD } from '$lib/logo/mark-shape';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
@@ -120,10 +119,16 @@
 	 * `MARK_FIELD_ISOLATED`. The hollow copy has no field at all: there the page
 	 * is what shows through, which is the point of it.
 	 */
+	/*
+	 * The device's copy wins over `hollow`, because it is the field that says it.
+	 *
+	 * The hollow drawing has no field at all — the page shows through the ring —
+	 * so a hollow mark standing for the device had nothing left to say it with,
+	 * and the instance chooser offered two identical marks. Where the two meet,
+	 * the blue field is the answer and the window is not.
+	 */
 	const secondary = $derived(saysDevice ?? isIsolatedBuild());
-	const artwork = $derived(hollow ? hollowMark : secondary ? isolatedMark : mark);
-	/** The ground behind the mark, which is whichever field it is wearing. */
-	const field = $derived(secondary ? MARK_FIELD_ISOLATED : MARK_FIELD);
+	const artwork = $derived(secondary ? isolatedMark : hollow ? hollowMark : mark);
 </script>
 
 <span
@@ -132,7 +137,7 @@
 		? 'h-full w-full'
 		: ''} {klass}"
 	style="{fill ? '' : `width: ${size}px; height: ${size}px;`} {background
-		? `background: ${field}`
+		? `background: ${MARK_FIELD}`
 		: ''}"
 	role={label ? 'img' : 'presentation'}
 	aria-label={label || undefined}
