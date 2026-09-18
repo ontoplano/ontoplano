@@ -21,12 +21,10 @@
 
 > [!NOTE]
 > This software was released on September 5th, 2026. It's still maturing, and
-> it may contain bugs. LLMs are used extensively during development,
-> with their output reviewed and tested before being integrated
-> as part of the normal development process.
+> it may contain bugs. LLMs are used extensively during development; their
+> output is reviewed and tested before it lands.
 >
-> Please be patient, and help me improve it by creating issues
-> and pull requests.
+> Help improve it by creating issues and pull requests.
 
 ---
 

@@ -61,7 +61,8 @@ those have no REST equivalent.
   not look like the first.
 - Scopes already exist per entity and per direction; nothing new is needed
   there.
-- We should keep track of how are both doing, and what could one done and the other theoretically not
+- Keep track of how the two surfaces compare — what one can do that the other
+  cannot.
 
 ### OAuth, so a phone can connect to the MCP server
 
@@ -114,8 +115,7 @@ follow later, and neither is what somebody uses every day.
   and changeable under Settings, not inferred and left at that.
 - The tour's steps come out of the same catalogue as the rest of the app.
 - Dates and numbers through `Intl` — several places still hardcode `en-US`.
-
-- Portuguese, Russian, Chinese would probably be the priorities
+- Portuguese, Russian and Chinese first.
 
 ---
 
@@ -134,8 +134,8 @@ follow later, and neither is what somebody uses every day.
 - **An `.ics` importer**, beside the Todoist, Google Tasks, Google Keep,
   org-mode and Obsidian ones. Subscribing to a calendar already works;
   importing one does not.
-  capture kinds are not.
-- **A scheme you can schedule** rather than apply by hand. MCP interface to changing schemes.
+- **A scheme you can schedule** rather than apply by hand, and an MCP tool
+  for changing schemes.
 - **A token's own log** on the page that lists them: a token says when it was
   last used and not what it did.
 - **Filter the plan by kind.** On `/tasks/plan`, show only the recurring
@@ -154,7 +154,8 @@ follow later, and neither is what somebody uses every day.
 
 ## One day, maybe
 
-**More media**: Support annexing pdfs, larger images, etc. That can be done with size limiting, to make sure small servers (like mine) are not overloaded
+**More media**: annexing PDFs and larger images, under a size limit, so small
+servers (like mine) are not overloaded.
 
 ### A business section
 
@@ -169,9 +170,7 @@ of their life.
 Not accounting software: no ledgers, no tax, no invoicing. Reuses `categories`
 and links to `goals` like everything else.
 
-This may be a big task of its own
-
----
+This may be a big task of its own.
 
 ### Instances talking to each other
 
@@ -182,13 +181,15 @@ over an account. What that looks like is open; whether it is a feed, an
 invitation, or something two instances agree on between themselves is part of
 the question.
 
+---
+
 ## Decided against
 
 So they stop coming back:
 
 - **Budget tracking** — huge, crowded, barely touches the week.
 - **Reading lists** — a different app.
-- **An in-process plugin system** — data streams and the API cover it. Too easy to accidentaly create a RCE entry-point.
+- **An in-process plugin system** — data streams and the API cover it. Too easy to accidentally create an RCE entry point.
 - **AI features inside the app.** The interface is MCP: your assistant, your
   token, your machine. Nothing in here calls a model.
 - **Importing a recipe from a URL.** The server would be fetching an address

@@ -7,11 +7,10 @@ fix and pull request genuinely helps it.
 
 - **Report a bug** — with the steps that reproduce it.
 - **Fix a bug** — link the issue it closes.
-- **Build a feature** — open an issue first so we agree on the shape before.
+- **Build a feature** — open an issue first, so we agree on the shape before
   you write much. `ROADMAP.md` lists what is already intended.
-- **Improve the docs** — most of it is generated from the code; to avoid
-  having to keep up with it, but there are handwritten parts, living
-  in `docs/prose/`, to improve.
+- **Improve the docs** — most of them are generated from the code, so they
+  cannot drift; the handwritten parts live in `docs/prose/`.
 - **Translate it** — every word the app says lives in `messages/`, one JSON
   file per language. See below.
 - **Package it** — there is no Windows installer yet.
@@ -64,7 +63,7 @@ make test           # the Playwright e2e suite
   `src/lib/server/services/tokens.ts` — whatever the app lets a person do, an
   assistant can do too. Every verb ships with its way back (`archive` is its
   own inverse; `pay`/`unpay`); deletion has its own machinery, below.
-- **A dashboard card**, basically showcasing it
+- **A dashboard card**, showing the feature at a glance.
 - **Unit and e2e tests** considering the whole thing in a browser at phone
   width and at desktop.
 - **Dev seed data**, so the dev account has a little of everything.
@@ -165,7 +164,8 @@ reviewer or a lint rule will stop you on:
   anything from Node — what only a served instance has goes through the host
   seam, `$lib/services/host.ts`.
 - **Blue is yes, red is no.** I am red/green colorblind.
-- **Propagate feature changes throughout all interfaces** E.g. a behavior change
-  on a route should work well on mobile, desktop, API, MCP server, docs, tutorial...
+- **Propagate feature changes throughout all interfaces.** A behaviour change
+  on a route reaches mobile, desktop, the API, the MCP server, the docs and
+  the tutorial.
 - **No hardcoded strings or numbers.** Anything someone could want to change
   gets a named constant, at the narrowest scope that covers its readers.

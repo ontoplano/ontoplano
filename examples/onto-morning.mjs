@@ -13,7 +13,7 @@
  * to anything that takes a POST.
  *
  * Setup:
- *   1. Settings → Integrations → new API token, with ONLY
+ *   1. Settings → AI & Integrations → Integrations → new API token, with ONLY
  *      "See what today looks like" (`today:read`). That is the whole scope it
  *      needs, and a token that can do no more is a token you can put in a cron
  *      file without thinking about it.

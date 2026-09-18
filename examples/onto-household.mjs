@@ -10,7 +10,7 @@
  * self-hosted one pair fine, which no shared-table design could offer.
  *
  * Setup:
- *   1. Each person creates an API token (Settings → Integrations) with:
+ *   1. Each person creates an API token (Settings → AI & Integrations → Integrations) with:
  *      "See everything on your shopping list", "Add to your shopping list,
  *      and tick things bought", and "Ask to be told when things happen"
  *      (shopping:read, shopping:write, webhooks:manage).
@@ -22,7 +22,7 @@
  *        node onto-household.mjs
  *
  *   It subscribes its own webhooks on both accounts (idempotently), does one
- *   full sync at startup, and then just listens. PORT defaults to 8787.
+ *   full sync at startup, and then listens. PORT defaults to 8787.
  *
  * Loops die on the server's side: events fire only on transitions, so the
  * echo of a mirrored change is a no-op and the pair settles.

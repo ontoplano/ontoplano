@@ -18,7 +18,7 @@
  * is enough.
  *
  * Setup:
- *   1. Settings → Integrations → new API token with "Send readings into your
+ *   1. Settings → AI & Integrations → Integrations → new API token with "Send readings into your
  *      data streams" (`streams:write`). Nothing else — this script never reads
  *      your plan, your diary or anything you wrote.
  *
