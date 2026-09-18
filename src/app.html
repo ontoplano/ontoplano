@@ -12,7 +12,22 @@
 			of colour; these are drawn at the size they are shown. Both marked
 			`sizes`, so the browser picks rather than scales.
 		-->
-		<link rel="icon" href="%sveltekit.assets%/favicon%ontoplano.mark%.svg" />
+		<!--
+			No SVG among them, deliberately.
+
+			The mark is a raster, so `favicon.svg` is a PNG in a wrapper rather
+			than a vector — and a browser offered a scalable icon prefers it over
+			every sized one. So the tab drew a 256px image shrunk by the browser's
+			own fast filter, which turns the ring into a smear and the puffin's
+			eye into a grey smudge, while the sizes below — each drawn at the size
+			it is shown, from the full-resolution artwork — went unused.
+		-->
+		<link
+			rel="icon"
+			type="image/png"
+			sizes="48x48"
+			href="%sveltekit.assets%/icons/favicon-48%ontoplano.mark%.png"
+		/>
 		<link
 			rel="icon"
 			type="image/png"

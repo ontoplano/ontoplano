@@ -228,23 +228,20 @@ SITE_PORT ?= 1495
 #: SITE_SRC_LOCAL=ontoplano-site  where the marketing site is checked out
 SITE_SRC_LOCAL ?= ontoplano-site
 
-# What CI checks and a machine can settle, wired to the commit that would
-# otherwise fail it.
+# There is no commit hook any more.
 #
-# One hook, on commit, because that is where a fix can still be part of the
-# thing being made: formatting and the generated docs are written and staged,
-# and eslint runs over what is staged. There was a pre-push hook as well, doing
-# the same work a second time — pointless once the commit is already correct,
-# and a minute of everybody's day.
+# One formatted, regenerated the docs and linted on every commit — including
+# the fifteen in an afternoon that nobody was about to push — and it put the
+# cost on the wrong event. A commit is a note to yourself; a push to GitHub is
+# the thing with a pipeline behind it and an audience.
 #
-# `core.hooksPath` rather than copying a file into `.git/hooks`: the hook stays
-# in the repo, under review like everything else, and updating it updates it
-# for everybody rather than for whoever remembers to copy it again.
-## install the git hooks (format, regenerate the docs and lint, on commit)
+# The same work runs once now, at `make github-push`, over the whole tree
+# rather than over whatever happened to be staged. This target stays so a
+# checkout that installed the old `core.hooksPath` can take it back off.
+## take the old git hooks off (they run at `make github-push` now)
 hooks:
-	@git config core.hooksPath githooks
-	@echo "hooks: pre-commit formats what you commit, regenerates the docs, and lints"
-	@echo "       (git commit --no-verify skips it)"
+	@git config --unset core.hooksPath 2>/dev/null || true
+	@echo "hooks: none — the formatting, the docs and the lint run at 'make github-push'."
 
 # `dev` is the app; this is the name to type when you mean it by contrast.
 ## the app alone (what `dev` runs)

@@ -66,6 +66,14 @@ releases mattered.
   same tree of attributes — press the attribute itself for everything that has
   one, whatever it says, or one of its values. The button says when something
   is being held back.
+- **The tab icon is the sharp one again.** The app offered browsers an SVG
+  favicon, which is not a vector — the mark is a drawing, so that file is a
+  256-pixel image in a wrapper — and a browser given a scalable icon prefers
+  it over every sized one. So every tab shrank that image with its own fast
+  filter, turning the ring into a smear and the puffin's eye into a grey
+  smudge, while the 16 and 32 drawn carefully at build time went unused. They
+  are what a browser gets now, with a 48 beside them for bookmark bars and
+  pinned shortcuts.
 - **The review is one panel with a toggle**: what you did, and what you did
   not. Both read the same way — under the day they happened on — and a block
   you did can be sent back with "it did not actually happen", which returns it

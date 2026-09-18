@@ -247,12 +247,19 @@ const pngs = [
 	 * the app's, which serves an SVG the browser draws at the size it wants.
 	 *
 	 * Drawn here at the size it will be shown, by the same rasteriser as
-	 * everything else. Two sizes because a tab is 16 at ordinary density and
-	 * 32 on a retina screen, and browsers pick rather than scale when both are
-	 * offered.
+	 * everything else. Three sizes because a tab is 16 at ordinary density and
+	 * 32 on a retina screen, and 48 is what a pinned shortcut and a bookmark
+	 * bar ask for; browsers pick rather than scale when each is offered.
+	 *
+	 * Each is drawn at the size it is shown, by the rasteriser, from the
+	 * full-resolution artwork. That is the whole point of generating them: a
+	 * browser handed one big image shrinks it with a filter chosen for speed,
+	 * which turns the ring into a smear and the puffin's eye into a grey
+	 * smudge. See `favicons()` for why the SVG is no longer offered as one.
 	 */
 	['static/icons/favicon-16.png', plain, 16],
 	['static/icons/favicon-32.png', plain, 32],
+	['static/icons/favicon-48.png', plain, 48],
 	['static/icons/icon-192.png', plain, 192],
 	['static/icons/icon-512.png', plain, 512],
 	['static/icons/icon-maskable-192.png', maskable, 192],
@@ -271,6 +278,7 @@ const pngs = [
 	['static/icons/icon-maskable-512-staging.png', maskableStaging, 512],
 	['static/icons/favicon-16-staging.png', plainStaging, 16],
 	['static/icons/favicon-32-staging.png', plainStaging, 32],
+	['static/icons/favicon-48-staging.png', plainStaging, 48],
 	['static/icons/apple-touch-icon-staging.png', appleStaging, 180],
 	// …and the dev set, worn by `make dev` so the phone-installed dev PWA and
 	// the real app are never the same tile.
@@ -280,6 +288,7 @@ const pngs = [
 	['static/icons/icon-maskable-512-dev.png', maskableDev, 512],
 	['static/icons/favicon-16-dev.png', plainDev, 16],
 	['static/icons/favicon-32-dev.png', plainDev, 32],
+	['static/icons/favicon-48-dev.png', plainDev, 48],
 	['static/icons/apple-touch-icon-dev.png', appleDev, 180]
 ];
 
@@ -502,6 +511,19 @@ const favicons = () => {
 	};
 	const markSmall = small(dataUri);
 	const liftedSmall = small(liftedUri);
+	/*
+	 * Still written, and no longer offered to a browser as the tab icon.
+	 *
+	 * These are not vectors. The artwork is a raster, so an "SVG favicon" here
+	 * is a PNG in a wrapper — it scales exactly as badly as the PNG inside it
+	 * and gives a browser no size to pick from. Browsers prefer a scalable
+	 * icon when one is offered, so offering this one meant every tab drew the
+	 * 256px raster shrunk by the browser's own fast filter, while the 16 and 32
+	 * drawn carefully right here went unused. See `src/app.html`.
+	 *
+	 * The files stay because `/favicon.svg` is an address things fetch without
+	 * being told to, and one that answers is better than a 404.
+	 */
 	return [
 		['static/favicon.svg', icon(ICON_SCALE, null, markSmall)],
 		['static/favicon-staging.svg', bandedIcon(STAGING_BAND, ICON_SCALE, null, 0.82, liftedSmall)],
