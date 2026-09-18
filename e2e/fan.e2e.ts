@@ -3,10 +3,10 @@ import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
- * The five small things, fanned above the thumb.
+ * The small things, fanned above the thumb.
  *
- * Account, the tour of this screen, telling the operator something is wrong,
- * the documentation and supporting the thing. They were a square `?` docked in
+ * Account, what the app has told you, the tour of this screen, telling the
+ * operator something is wrong, the documentation and supporting the thing. They were a square `?` docked in
  * the corner of every phone screen; they are one press on the bar's last
  * button now, chosen the way the wheel is — drag onto one and let go, or lift
  * and tap.
@@ -32,7 +32,9 @@ test('the press that opens it chooses nothing, and the petals are above the hand
 	await page.mouse.up();
 
 	const petals = page.getByRole('menuitem');
-	await expect(petals).toHaveCount(5);
+	// The list is `fanItems` in the layout: six on an instance with an operator
+	// to tell, five on one that is its own device and has nobody to tell.
+	await expect(petals).toHaveCount(6);
 	// Still where it was: a tap opens the menu and does nothing else, which is
 	// the whole reason it flies up clear of the finger.
 	expect(new URL(page.url()).pathname).toBe('/');
@@ -94,4 +96,36 @@ test('the operator hears about a problem from the fan', async ({ page }) => {
 
 	await page.getByRole('menuitem', { name: 'Tell the operator' }).click();
 	await expect(page.getByRole('dialog', { name: 'Tell the operator' })).toBeVisible();
+});
+
+/**
+ * And the same petal under a finger, which is the hand this is for.
+ *
+ * A tap is a press, a release and then a click, and the release is what chooses
+ * — so the click arrives after the screen has already changed underneath it.
+ * For the petal that opens a dialog that landed on the dialog's own backdrop,
+ * which is how it is dismissed: the list appeared and went again inside the
+ * same gesture, and the only way in was to drag onto the petal and let go,
+ * because a drag ends in no click at all.
+ */
+test('tapping the petal that opens a dialog leaves it open', async ({ page }) => {
+	await register(page, testEmail('fan-tap-dialog'));
+	await visit(page, '/');
+
+	const at = await handle(page);
+	await page.touchscreen.tap(at.x, at.y);
+
+	const petal = page.getByRole('menuitem', { name: 'Notifications' });
+	await expect(petal).toBeVisible();
+	// After the flight: a box read mid-bloom is where the petal was passing
+	// through rather than where it lands.
+	await page.waitForTimeout(400);
+	const box = (await petal.boundingBox())!;
+	await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
+
+	const list = page.getByRole('dialog', { name: 'Notifications' });
+	await expect(list).toBeVisible();
+	// And it is still there once every event of that tap has been and gone.
+	await page.waitForTimeout(1000);
+	await expect(list).toBeVisible();
 });

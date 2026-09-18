@@ -180,19 +180,39 @@
 	}
 
 	/**
-	 * Clicking the backdrop closes.
+	 * Clicking the backdrop closes — pressing it and letting go there, both.
 	 *
-	 * The backdrop is not a child element, so a click on it lands on the dialog
-	 * itself; anything inside stops at the panel below.
+	 * The backdrop is not a child element, so a press or a click on it lands on
+	 * the dialog itself; anything inside stops at the panel below.
+	 *
+	 * The press is half of it because a click is the *end* of a gesture, and the
+	 * gesture may have begun somewhere this dialog did not exist. Tapping the
+	 * fan's notifications petal is exactly that: the release chooses the petal,
+	 * the dialog opens under the finger, and the click that follows a quarter of
+	 * a second later lands on the backdrop that has just appeared — so the list
+	 * opened and shut inside one tap, and the only way in was to drag onto the
+	 * petal and let go, a gesture that ends in no click at all.
+	 *
+	 * It is also the right rule for the ordinary case it was already getting
+	 * wrong: selecting text inside the panel and releasing outside it is not a
+	 * request to throw the form away.
 	 */
+	let pressedOnBackdrop = false;
+
+	function handlePointerDown(event: PointerEvent) {
+		pressedOnBackdrop = event.target === dialog;
+	}
+
 	function handleClick(event: MouseEvent) {
-		if (event.target === dialog) handleClose();
+		if (event.target === dialog && pressedOnBackdrop) handleClose();
+		pressedOnBackdrop = false;
 	}
 </script>
 
 <dialog
 	bind:this={dialog}
 	onclose={handleClose}
+	onpointerdown={handlePointerDown}
 	onclick={handleClick}
 	aria-label={title}
 	class:docked={dock === 'side'}
