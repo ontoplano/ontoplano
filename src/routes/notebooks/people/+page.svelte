@@ -16,6 +16,7 @@
 	import { SECTION_COLORS } from '$lib/colors';
 	import type { PageServerData, ActionData } from './$types';
 	import { keepInView } from '$lib/actions/keep-in-view';
+	import Written from '$lib/components/Written.svelte';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -297,7 +298,7 @@
 					<div class="divide-y divide-gray-200">
 						{#each data.entries as entry (entry.id)}
 							<article class="px-4 py-3">
-								<p class="text-sm whitespace-pre-wrap text-gray-900">{entry.content}</p>
+								<Written content={entry.content} />
 								<p class="tabular mt-1 text-xs text-gray-500">
 									{when(entry.createdAt)}{#if entry.forDate}{t('notebooks.people.nbspFor')}
 										{entry.forDate}{/if}

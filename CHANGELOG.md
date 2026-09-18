@@ -55,6 +55,12 @@ releases mattered.
 - **The block form says which block.** Its header carries the thing's name and
   the category it is in, as a pill in that category's own colour; a category
   block has no name of its own, so that line is a dash.
+- **A recording in an idea or a note about somebody is a player.** It was the
+  markdown link that stores it — a file name sitting in the middle of your own
+  writing — and it is a playhead under the words now.
+- **The board's filters fold away on a wide screen too**, and where the day
+  went reads under the columns rather than above them.
+- **Signing in and registering wear the mark**, not the word on its own.
 - **Notes in a notebook can be kept at the top.** As many as you like: the
   measurements, the account number, the thing the notebook is actually for.
   Pinned ones sit above the rest — most recently pinned first — and are marked

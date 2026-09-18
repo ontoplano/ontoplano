@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { audioMarkdown, audioReferencedIn } from '../src/lib/audio-markdown';
+import { audioMarkdown, audioReferencedIn, splitAudio } from '../src/lib/audio-markdown';
 import { renderMarkdown } from '../src/lib/markdown';
 
 /**
@@ -55,5 +55,43 @@ describe('what does not become a player', () => {
 		const html = renderMarkdown('![a photo](/media/12)');
 		expect(html).toContain('<img');
 		expect(html).not.toContain('<audio');
+	});
+});
+
+/**
+ * And where the writing is drawn as writing rather than as markdown.
+ *
+ * An idea and a note about somebody are a sentence, not a document, so they
+ * are printed as typed — which put `[my great idea, in audio](/media/audio/40)`
+ * in the middle of somebody's own words. `splitAudio` takes the link out and
+ * names the recording, to be drawn under the text as a player.
+ */
+describe('a recording taken out of the text it is written in', () => {
+	it('leaves the writing and names the recording', () => {
+		const written = `My greatest idea of all\n${audioMarkdown(40, 'in audio')}`;
+		expect(splitAudio(written)).toEqual({ text: 'My greatest idea of all', audios: [40] });
+	});
+
+	it('closes the hole the line leaves behind', () => {
+		const written = `before\n\n${audioMarkdown(7, 'a recording')}\n\nafter`;
+		expect(splitAudio(written).text).toBe('before\n\nafter');
+	});
+
+	it('names each recording once, in the order they are mentioned', () => {
+		const written = `${audioMarkdown(9, 'second')} ${audioMarkdown(4, 'first')} ${audioMarkdown(9, 'again')}`;
+		expect(splitAudio(written).audios).toEqual([9, 4]);
+	});
+
+	it('leaves writing with no recording in it exactly as it was', () => {
+		expect(splitAudio('nothing to hear here')).toEqual({
+			text: 'nothing to hear here',
+			audios: []
+		});
+	});
+
+	/** Somebody else's address is a link, not a recording — the renderer's rule. */
+	it('leaves a link to somewhere else alone', () => {
+		const written = 'see [the talk](https://example.invalid/media/audio/40)';
+		expect(splitAudio(written)).toEqual({ text: written, audios: [] });
 	});
 });

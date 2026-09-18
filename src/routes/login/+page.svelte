@@ -5,6 +5,7 @@
 	import { askAgainOnThisPhone, inPhoneApp } from '$lib/instance-choice';
 	import Banner from '$lib/components/Banner.svelte';
 	import StagingBand from '$lib/components/StagingBand.svelte';
+	import Logo from '$lib/components/Logo.svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { useT } from '$lib/i18n';
 
@@ -37,7 +38,19 @@
 
 <div class="solo-screen bg-gray-50">
 	<div class="solo-card sm:max-w-sm">
-		<h1 class="wordmark mb-6 text-2xl text-gray-900">Ontoplano</h1>
+		<!--
+			The mark above the name, the way the front door has it.
+
+			This screen is where somebody meets the app, and it was the only one
+			of those wearing the word alone: the icon on their phone, the front
+			door and the instance chooser all show the mark, and the form they
+			sign in on showed a typeface. Same component as everywhere else, so a
+			new drawing lands here too.
+		-->
+		<div class="mb-6 flex items-center gap-3">
+			<Logo size={36} />
+			<h1 class="wordmark text-2xl text-gray-900">Ontoplano</h1>
+		</div>
 
 		{#if data.staging}
 			<div class="mb-5"><StagingBand /></div>

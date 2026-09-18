@@ -132,7 +132,7 @@
 	 */
 	const railCards = $derived(data.generalCards.filter((c) => !CLOSED_STATUSES.includes(c.status)));
 
-	/** Only on a phone; a wide screen shows the filters without asking. */
+	/** Folded until asked for, at every width. */
 	let filtersOpen = $state(false);
 
 	/**
@@ -590,17 +590,18 @@
 
 	<RoomToolbar>
 		{#snippet tools()}
-			<!-- Sort, energy and the rest are three rows on a phone before a
-			     single card. They fold behind one button there and stay open on
-			     a wide screen. -->
+			<!-- Sort, energy and the rest are three rows before a single card on a
+			     phone and a row of furniture above the columns on anything wider.
+			     They fold behind one button at every width: a filter is something
+			     you go and change, not something to look at while you work. -->
 			<button
 				onclick={() => (filtersOpen = !filtersOpen)}
-				class="btn btn-sm sm:hidden"
+				class="btn btn-sm"
 				aria-expanded={filtersOpen}
 				aria-pressed={filtersOpen}
 				data-tour="board-ratings"
 			>
-				{filtersOpen ? t('tasks.board.hideFilters') : 'Filters'}
+				{filtersOpen ? t('tasks.board.hideFilters') : t('tasks.board.filters')}
 			</button>
 
 			<!-- Today against To-do is a choice of shape, exactly as Day/Week/
@@ -625,9 +626,7 @@
 		{/snippet}
 		{#snippet filters()}
 			<div
-				class="{filtersOpen
-					? 'flex'
-					: 'hidden'} flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:flex"
+				class="{filtersOpen ? 'flex' : 'hidden'} flex-wrap items-center gap-x-4 gap-y-2 text-xs"
 				data-tour="board-ratings"
 			>
 				<div class="flex items-center gap-1">
@@ -912,21 +911,6 @@
 			<button type="submit" form="edit-form" class="btn btn-primary">{t('ui.save')}</button>
 		{/snippet}
 	</Modal>
-
-	{#if tab === 'today' && dayTotals.length > 0}
-		<!-- Where the day goes. The one thing a column of cards cannot show. -->
-		<div
-			class="flex flex-wrap items-center gap-x-5 gap-y-2 border border-gray-200 bg-white px-4 py-2"
-		>
-			{#each dayTotals as total (total.name)}
-				<span class="flex items-center gap-2 text-sm">
-					<Swatch color={total.color} />
-					<span class="text-gray-700">{total.name}</span>
-					<span class="tabular text-gray-500">{formatDuration(total.minutes)}</span>
-				</span>
-			{/each}
-		</div>
-	{/if}
 
 	<div class="flex flex-col gap-3 md:flex-row">
 		<div class="min-w-0 flex-1">
@@ -1274,6 +1258,28 @@
 			</aside>
 		{/if}
 	</div>
+
+	{#if tab === 'today' && dayTotals.length > 0}
+		<!--
+			Where the day went, under the day.
+
+			It sat above the columns, which put a summary of the answer between
+			the question and the cards that are the answer — and pushed the first
+			row of every column down a line for it. It is something you read after
+			looking, so it reads after them.
+		-->
+		<div
+			class="flex flex-wrap items-center gap-x-5 gap-y-2 border border-gray-200 bg-white px-4 py-2"
+		>
+			{#each dayTotals as total (total.name)}
+				<span class="flex items-center gap-2 text-sm">
+					<Swatch color={total.color} />
+					<span class="text-gray-700">{total.name}</span>
+					<span class="tabular text-gray-500">{formatDuration(total.minutes)}</span>
+				</span>
+			{/each}
+		</div>
+	{/if}
 
 	<p class="kbd-hint text-xs text-gray-500">
 		<kbd class="border border-gray-300 bg-gray-50 px-1 text-gray-700"

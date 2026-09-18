@@ -2660,6 +2660,7 @@ export const messages: Catalogue = {
 	'tasks.board.dropToSendBack': 'Soltar para devolver',
 	'tasks.board.edit': 'Editar {title}',
 	'tasks.board.energyUpTo': 'Energía hasta',
+	'tasks.board.filters': 'Filtros',
 	'tasks.board.hideFilters': 'Ocultar filtros',
 	'tasks.board.hoursAbbrev': '{count}h',
 	'tasks.board.hoursMinutesAbbrev': '{hours}h {minutes}min',

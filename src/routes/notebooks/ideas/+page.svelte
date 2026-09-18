@@ -8,6 +8,7 @@
 	import FormError from '$lib/components/FormError.svelte';
 	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import Written from '$lib/components/Written.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -373,7 +374,7 @@
 						</form>
 
 						<div class="min-w-0 flex-1">
-							<p class="text-sm whitespace-pre-wrap text-gray-900">{idea.content}</p>
+							<Written content={idea.content} />
 
 							<!-- Date and tags wrap as one row. The buttons are not in here any
 							     more: they are the column up the right-hand edge. -->

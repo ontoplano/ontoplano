@@ -2272,6 +2272,7 @@ export type MessageKey =
 	| 'tasks.board.dropToSendBack'
 	| 'tasks.board.edit'
 	| 'tasks.board.energyUpTo'
+	| 'tasks.board.filters'
 	| 'tasks.board.hideFilters'
 	| 'tasks.board.hoursAbbrev'
 	| 'tasks.board.hoursMinutesAbbrev'

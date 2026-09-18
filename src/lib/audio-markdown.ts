@@ -21,6 +21,33 @@ export function audioMarkdown(id: number, name: string): string {
 	return `[${label || `recording ${id}`}](${AUDIO_HREF}/${id})`;
 }
 
+/**
+ * The writing, and the recordings in it, apart.
+ *
+ * A markdown link is the right thing to *store* — an export, another editor or
+ * a plain renderer all still show something that works — and the wrong thing
+ * to *show*: a line reading `[my great idea, in audio](/media/audio/40)` in the
+ * middle of somebody's writing is the file name of a recording where the
+ * recording should be. So anywhere the text is drawn as text rather than run
+ * through the markdown renderer, this takes the links out and hands back the
+ * ids, to be drawn as players under it.
+ */
+export function splitAudio(content: string): { text: string; audios: number[] } {
+	const audios: number[] = [];
+	const pattern = new RegExp(`\\[[^\\]]*\\]\\(${AUDIO_HREF}/(\\d+)\\)`, 'g');
+	const text = content
+		.replace(pattern, (_, id) => {
+			const found = Number(id);
+			if (!audios.includes(found)) audios.push(found);
+			return '';
+		})
+		// The line the link was on is now an empty one, and two of those in a row
+		// are a gap in the middle of a paragraph.
+		.replace(/\n{3,}/g, '\n\n')
+		.trim();
+	return { text, audios };
+}
+
 /** Every recording a piece of writing refers to, in the order it mentions them. */
 export function audioReferencedIn(content: string): number[] {
 	const found = new Set<number>();
