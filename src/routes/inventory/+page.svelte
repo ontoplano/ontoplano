@@ -1467,10 +1467,10 @@
 																aria-pressed={item.snoozed}
 																title={item.snoozed
 																	? t('inventory.putItBackOnThe')
-																	: t('finance.ledgers.putItAway')}
+																	: t('inventory.archive')}
 																aria-label="{item.snoozed
 																	? t('inventory.putItBackOnThe')
-																	: t('finance.ledgers.putItAway')}: {item.name}"
+																	: t('inventory.archive')}: {item.name}"
 															>
 																<Icon name={item.snoozed ? 'undo' : 'archive'} />
 															</button>
@@ -1604,10 +1604,10 @@
 												aria-pressed={item.snoozed}
 												title={item.snoozed
 													? t('inventory.putItBackOnThe')
-													: t('finance.ledgers.putItAway')}
+													: t('inventory.archive')}
 												aria-label="{item.snoozed
 													? t('inventory.putItBackOnThe')
-													: t('finance.ledgers.putItAway')}: {item.name}"
+													: t('inventory.archive')}: {item.name}"
 											>
 												<Icon name={item.snoozed ? 'undo' : 'archive'} />
 											</button>

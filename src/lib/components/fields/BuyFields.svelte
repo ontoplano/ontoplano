@@ -110,7 +110,7 @@
 						<OneLine
 							name="fieldName"
 							bind:value={pair[0]}
-							placeholder={t('fields.buy.length')}
+							placeholder={t('fields.buy.attributeName')}
 							class="input min-w-0 flex-1"
 						/>
 						<!-- A value may be left out — the name alone is the attribute — and
@@ -119,7 +119,7 @@
 						<OneLine
 							name="fieldValue"
 							bind:value={pair[1]}
-							placeholder={t('fields.buy.optional')}
+							placeholder={t('fields.buy.attributeValue')}
 							class="input min-w-0 flex-1"
 						/>
 						<!--

@@ -20,7 +20,8 @@ import { page } from '$app/state';
  *   - `release()` when the screen closes by its own controls — the back
  *     arrow, Escape, a saved form: take the entry back out with
  *     `history.back()`, so the next real back press leaves the page, not a
- *     ghost of the screen.
+ *     ghost of the screen. It answers with a promise that settles once the
+ *     pop has landed, for a caller that has to navigate afterwards.
  *
  * Each mark is unique, so two screens in one session can never mistake the
  * other's entry for their own.
@@ -81,10 +82,28 @@ export class BackCloses {
 		this.#onback();
 	}
 
-	release(): void {
-		if (this.#mark === null) return;
+	/**
+	 * Take the entry back out, and say when it is actually out.
+	 *
+	 * `history.back()` is asynchronous: the pop lands a frame or two later, as
+	 * a `popstate`. Anything that navigates in the same breath as closing the
+	 * screen is therefore undone by it — the reminders window chosen in the
+	 * phone's dialog replaced the entry this is about to pop, so the choice
+	 * went nowhere and the page looked as if the button did nothing. Awaiting
+	 * this is how such a caller navigates *after* the way back is given up.
+	 */
+	release(): Promise<void> {
+		if (this.#mark === null) return Promise.resolve();
 		const ours = markInHistory() === this.#mark;
 		this.#mark = null;
-		if (ours) history.back();
+		if (!ours) return Promise.resolve();
+		return new Promise((settled) => {
+			const done = () => {
+				window.removeEventListener('popstate', done);
+				settled();
+			};
+			window.addEventListener('popstate', done, { once: true });
+			history.back();
+		});
 	}
 }

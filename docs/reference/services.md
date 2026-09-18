@@ -578,6 +578,15 @@ somebody wants: "3 todos added, 8 blocks changed" rather than eleven lines.
 The largest group leads, since with one group it is the whole sentence and
 with several it is the one worth seeing first.
 
+#### `destinationFor(calls)`
+
+The one thing a burst is about, if it is about one thing.
+
+Two questions, narrowest first: did every write name the same notebook, and
+did every write touch the same room. Anything else — a burst that moved a
+week around and wrote a note — has no single destination, and the log is
+what it always was.
+
 #### `notifyAssistantBursts(now)`
 
 Say what the assistants did, to whoever is not watching.

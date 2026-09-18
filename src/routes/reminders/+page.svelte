@@ -295,6 +295,14 @@
 
 	// Seeded from the window in the address and re-seeded when it changes, so
 	// pressing 30 leaves the box saying 30 rather than whatever was typed last.
+	/**
+	 * The window picked in the phone's dialog, waiting for it to close.
+	 *
+	 * See the dialog's `onclosed`: the screen holds a history entry, and a
+	 * navigation fired before that entry is given back is undone by the pop.
+	 */
+	let chosen = $state<number | null>(null);
+
 	/** Whether the phone's how-far dialog is open. */
 	let ranging = $state(false);
 	let howFar = $state<number>(0);
@@ -677,6 +685,10 @@
 						time = '';
 						say = '';
 						audible = false;
+						// And out of the way: the thing you just set is a row on the
+						// list this dialog is sitting on top of, and a page that looks
+						// unchanged after a save is a page that looks broken.
+						setting = false;
 						// Booked with the phone now rather than whenever the app
 						// next happens to be reopened.
 						alarmsChanged();
@@ -904,7 +916,20 @@
 			— and they are read down, not scanned across. The one in force is
 			marked, so opening this says where you are before it asks where to go.
 		-->
-		<Modal bind:open={ranging} title={t('reminders.howFar')} size="sm">
+		<Modal
+			bind:open={ranging}
+			title={t('reminders.howFar')}
+			size="sm"
+			onclosed={() => {
+				// Chosen here rather than in the button, because on a phone this
+				// dialog holds a history entry and gives it back with
+				// `history.back()` — a navigation fired before that pop lands is
+				// undone by it, which is why picking a window used to do nothing.
+				const wanted = chosen;
+				chosen = null;
+				if (wanted !== null) look(wanted);
+			}}
+		>
 			<div class="space-y-1">
 				{#each WINDOWS as window (window)}
 					<button
@@ -914,8 +939,8 @@
 							: 'text-gray-700 hover:bg-gray-50'}"
 						aria-pressed={data.days === window}
 						onclick={() => {
+							chosen = window;
 							ranging = false;
-							look(window);
 						}}
 					>
 						{t('reminders.daysCount', { count: window })}
@@ -925,8 +950,8 @@
 				<form
 					onsubmit={(e) => {
 						e.preventDefault();
+						chosen = Number(howFar);
 						ranging = false;
-						look(Number(howFar));
 					}}
 					class="flex items-center gap-2 border-t border-gray-200 pt-3"
 				>

@@ -27,7 +27,13 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Everything in one job, on two runner cores: the installs, seven checks, a
+    # build, the unit suite and 351 browser tests. Twenty was enough until the
+    # e2e suite grew past it, and what a job that runs out of time prints is
+    # "Error: The operation was canceled." — which reads as somebody cancelling
+    # it rather than as a check that never finished. Forty-five leaves room and
+    # still catches a hang.
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v4

@@ -1,5 +1,7 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, it, test } from 'vitest';
 import {
+	ASSISTANT_LOG_PATH,
+	destinationFor,
 	nounFor,
 	phraseFor,
 	PHRASE_OVERRIDES,
@@ -90,5 +92,54 @@ describe('the line somebody reads', () => {
 		expect(nounFor('entry', 2)).toBe('entries');
 		expect(nounFor('data_point', 2)).toBe('data points');
 		expect(nounFor('todo', 1)).toBe('todo');
+	});
+});
+
+/**
+ * Where a burst takes you.
+ *
+ * The log is the right answer for a burst that went everywhere and the wrong
+ * one for a burst about one thing: "added 4 todos" wants the todo list, and
+ * four writes into one notebook want that notebook.
+ */
+describe('where a notification points', () => {
+	const call = (tool: string, args: Record<string, unknown> = {}) => ({
+		tool,
+		args: JSON.stringify(args)
+	});
+
+	it('opens the room when every write is about the same kind of thing', () => {
+		expect(destinationFor([call('add_todo'), call('finish_todo'), call('change_todo')])).toBe(
+			'/tasks/todo'
+		);
+	});
+
+	it('opens the notebook when every write names the same one', () => {
+		expect(
+			destinationFor([
+				call('add_todo', { notebookId: 12 }),
+				call('write_entry', { notebookId: 12 })
+			])
+		).toBe('/notebooks/12');
+	});
+
+	it('falls back to the log when the burst went to two rooms', () => {
+		expect(destinationFor([call('add_todo'), call('add_habit')])).toBe(ASSISTANT_LOG_PATH);
+	});
+
+	it('and when a tool is one this cannot read', () => {
+		expect(destinationFor([call('add_todo'), call('something_else_entirely')])).toBe(
+			ASSISTANT_LOG_PATH
+		);
+	});
+
+	/** Two notebooks is not one notebook, so it is the room they share. */
+	it('opens the room when the notebooks differ', () => {
+		expect(
+			destinationFor([
+				call('write_entry', { notebookId: 1 }),
+				call('write_entry', { notebookId: 2 })
+			])
+		).toBe('/notebooks/diary');
 	});
 });

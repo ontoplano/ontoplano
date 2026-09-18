@@ -77,6 +77,12 @@
 		 *  dimmed and inert — an error rendered out there cannot be read. */
 		error = null,
 		onclose,
+		/**
+		 * Same moment, one beat later: after the history entry a phone screen
+		 * holds has been given back. For a caller that navigates on close —
+		 * a `goto` fired before the pop is simply undone by it.
+		 */
+		onclosed,
 		children,
 		footer
 	}: {
@@ -87,6 +93,7 @@
 		dock?: 'centre' | 'side';
 		error?: string | null;
 		onclose?: () => void;
+		onclosed?: () => void;
 		children: Snippet;
 		footer?: Snippet;
 	} = $props();
@@ -156,7 +163,9 @@
 		const field = dialog?.querySelector<HTMLElement>(
 			'input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled])'
 		);
-		field?.focus();
+		// `preventScroll`, because this element is inside the box the app
+		// scrolls and focusing it otherwise drags that box to the top.
+		field?.focus({ preventScroll: true });
 	}
 
 	/**
@@ -176,7 +185,9 @@
 	function handleClose() {
 		open = false;
 		onclose?.();
-		back.release();
+		// `onclosed` waits for the history entry to be given back, because a
+		// caller that navigates on close would otherwise be undone by the pop.
+		void back.release().then(() => onclosed?.());
 	}
 
 	/**

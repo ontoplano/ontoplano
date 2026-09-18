@@ -1,4 +1,7 @@
 import { expect, test } from '@playwright/test';
+import Database from 'better-sqlite3';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
@@ -10,6 +13,17 @@ import { visit } from './helpers/visit';
  * what somebody opens this page to see — and the weekly-review nag does not,
  * because it is a sentence about now and not an appointment.
  */
+/**
+ * The form is behind a button now.
+ *
+ * "New reminder" moved into the room's bar, so the page a test lands on has a
+ * list and no fields — every case that sets one has to open it first.
+ */
+async function openTheForm(page: import('@playwright/test').Page) {
+	await page.getByRole('button', { name: /New reminder/ }).click();
+	await expect(page.locator('[name="day"]')).toBeVisible();
+}
+
 test('a birthday shows up before it happens, without anything being run', async ({ page }) => {
 	await register(page, testEmail('rem-birthday'));
 
@@ -46,6 +60,7 @@ test('the weekly-review nag is sent but is not an appointment', async ({ page })
 test('an alarm is a day and a time, not one box with six segments', async ({ page }) => {
 	await register(page, testEmail('rem-alarm'));
 	await visit(page, '/reminders');
+	await openTheForm(page);
 
 	const tomorrow = new Date();
 	tomorrow.setDate(tomorrow.getDate() + 1);
@@ -67,8 +82,14 @@ test('an alarm is a day and a time, not one box with six segments', async ({ pag
 	// what day it is asks for the date again every single time. The time lets
 	// go of what was just used — it is either empty, which means the hour the
 	// day starts, or the suggestion the page makes when that hour has been.
+	// Read on the next opening, because setting one closes the dialog.
+	await openTheForm(page);
 	await expect(page.locator('[name="day"]')).not.toHaveValue('');
 	await expect(page.locator('[name="time"]')).not.toHaveValue('07:30');
+	await page
+		.getByRole('dialog', { name: 'Set one' })
+		.getByRole('button', { name: 'Close' })
+		.click();
 
 	// And the way back out, because setting one is half of it.
 	await page.getByRole('button', { name: /^Remove take the bread out$/ }).click();
@@ -86,6 +107,7 @@ test('an alarm is a day and a time, not one box with six segments', async ({ pag
 test('an alarm with no time goes off when the day starts', async ({ page }) => {
 	await register(page, testEmail('rem-noclock'));
 	await visit(page, '/reminders');
+	await openTheForm(page);
 
 	const tomorrow = new Date();
 	tomorrow.setDate(tomorrow.getDate() + 1);
@@ -125,6 +147,7 @@ test('an alarm with no time goes off when the day starts', async ({ page }) => {
 test('what is coming stops where the window does', async ({ page }) => {
 	await register(page, testEmail('rem-ceiling'));
 	await visit(page, '/reminders');
+	await openTheForm(page);
 
 	const far = new Date();
 	far.setDate(far.getDate() + 45);
@@ -189,19 +212,25 @@ test.describe('on a phone', () => {
 		 * box actually scrolls is a layout detail and this is not a test about
 		 * layout — it is a test about the thing you pressed still being under
 		 * your thumb.
+		 *
+		 * A phone gets one button saying how far, and a dialog to change it —
+		 * the seven windows in a row were furniture taller than the list they
+		 * filtered. So the thing that must not move is the button, and the
+		 * choosing happens in the dialog it opens.
 		 */
-		const seven = page.getByRole('button', { name: '7', exact: true });
+		const howFar = page.getByTitle('Change how far this looks');
 		await page.mouse.wheel(0, 260);
 		await page.waitForTimeout(400);
-		const before = (await seven.boundingBox())!;
+		const before = (await howFar.boundingBox())!;
 
-		await seven.click();
+		await howFar.click();
+		await page.getByRole('button', { name: '7 days', exact: true }).click();
 		await expect(page.getByText(/The next 7 days/)).toBeVisible({ timeout: 15_000 });
 		await page.waitForTimeout(400);
 
 		// These were links, and a link is a navigation, which puts you back at
 		// the top — so pressing "30" threw you away from the row you pressed.
-		const after = (await seven.boundingBox())!;
+		const after = (await howFar.boundingBox())!;
 		expect(Math.round(after.y)).toBe(Math.round(before.y));
 	});
 });
@@ -209,6 +238,7 @@ test.describe('on a phone', () => {
 test('an alarm that will make a noise says so before it does', async ({ page }) => {
 	await register(page, testEmail('rem-sound'));
 	await visit(page, '/reminders');
+	await openTheForm(page);
 
 	const tomorrow = new Date();
 	tomorrow.setDate(tomorrow.getDate() + 1);
@@ -221,6 +251,7 @@ test('an alarm that will make a noise says so before it does', async ({ page }) 
 	await page.getByRole('button', { name: 'Set it' }).click();
 	await expect(page.getByText('quietly')).toBeVisible({ timeout: 15_000 });
 
+	await openTheForm(page);
 	await page.locator('[name="day"]').fill(day);
 	await page.locator('[name="time"]').fill('09:00');
 	await page.locator('[name="label"]').first().fill('loudly');
@@ -249,6 +280,7 @@ test('the time is a plain time field, and the form takes what it gives', async (
 	await register(page, testEmail('rem-time'));
 	await visit(page, '/reminders');
 	await expect(page.locator('main')).toBeVisible();
+	await openTheForm(page);
 
 	const time = page.locator('input[name="time"]');
 	await expect(time).toHaveAttribute('type', 'time');
@@ -260,28 +292,36 @@ test('the time is a plain time field, and the form takes what it gives', async (
 });
 
 /**
- * A few seconds ahead, and then behind.
+ * An hour ahead, and then behind.
  *
- * A reminder cannot be *set* for a time that has been — the form refuses it and
- * so does the service, because one made in the past is due the instant it
- * exists. So a past reminder is made the only way there is one: by waiting for
- * it. Seconds are part of the time a reminder can carry, which is what makes
- * that a wait somebody can sit through rather than a minute.
+ * A reminder cannot be *set* for a time that has been, nor for one inside the
+ * lead the phone needs to hear about it. So a past one is made the only way
+ * there is one — properly, and then moved.
  */
-async function aboutToHaveBeen(page: import('@playwright/test').Page, label: string) {
+async function aboutToHaveBeen(
+	page: import('@playwright/test').Page,
+	email: string,
+	label: string
+) {
 	/*
-	 * Far enough ahead that the request itself cannot outlive it.
+	 * Made legally, then moved into the past by hand.
 	 *
-	 * Two seconds worked alone and failed in a full parallel run: the POST took
-	 * longer than the margin, so by the time the service read the clock the
-	 * time had been, it refused the write, and the test went looking for a
-	 * reminder that was never made.
+	 * A reminder has to be at least `REMINDER_LEAD_MINUTES` out — a phone that
+	 * cannot be told in time is not going to ring — so there is no longer any
+	 * way to ask the app for one that has already been, and waiting a quarter
+	 * of an hour is not a test. This makes a real one through the real action,
+	 * so the row is shaped the way the app shapes it, and then winds its clock
+	 * back in the test database, which is the one thing a browser cannot do.
+	 *
+	 * The two fixtures this feeds used to set one ten seconds out and wait. The
+	 * lead rule started refusing that, the helper only checked the body for the
+	 * *other* refusal, and both tests went on asserting against a reminder that
+	 * was never made — one of them passing for years of nothing.
 	 */
-	const AHEAD_MS = 10_000;
-	const at = new Date(Date.now() + AHEAD_MS);
+	const at = new Date(Date.now() + 60 * 60 * 1000);
 	const pad = (n: number) => String(n).padStart(2, '0');
 	const day = `${at.getUTCFullYear()}-${pad(at.getUTCMonth() + 1)}-${pad(at.getUTCDate())}`;
-	const clock = `${pad(at.getUTCHours())}:${pad(at.getUTCMinutes())}:${pad(at.getUTCSeconds())}`;
+	const clock = `${pad(at.getUTCHours())}:${pad(at.getUTCMinutes())}`;
 
 	const made = await page.request.post('/reminders?/create', {
 		headers: { origin: new URL(page.url()).origin },
@@ -294,16 +334,38 @@ async function aboutToHaveBeen(page: import('@playwright/test').Page, label: str
 	 * later looking for a row.
 	 */
 	const said = await made.text();
-	expect(said, 'the reminder was refused').not.toContain('has already been');
+	expect(said, 'the reminder was refused').not.toMatch(/already been|at least \d+ minutes/);
 
-	// Then the wait, measured from the moment rather than guessed at.
-	await page.waitForTimeout(Math.max(0, at.getTime() - Date.now()) + 1500);
+	// A minute ago, in the wall clock the column holds. Not read-only: the
+	// server keeps this in WAL mode — see `admin.e2e.ts` for the same note.
+	const gone = new Date(Date.now() - 60 * 1000);
+	const past =
+		`${gone.getUTCFullYear()}-${pad(gone.getUTCMonth() + 1)}-${pad(gone.getUTCDate())}` +
+		`T${pad(gone.getUTCHours())}:${pad(gone.getUTCMinutes())}:${pad(gone.getUTCSeconds())}`;
+	const db = new Database(process.env.PLAYWRIGHT_DB ?? join(tmpdir(), 'ontoplano-e2e.db'));
+	/*
+	 * This account's row, not everybody's.
+	 *
+	 * Both fixtures here use the same words, and the workers run at the same
+	 * time — matching on the message alone wound two accounts' clocks back and
+	 * failed whichever test got there second.
+	 */
+	const moved = db
+		.prepare(
+			'update reminders set remind_at = ? where id = (' +
+				'select r.id from reminders r join user u on u.id = r.user_id ' +
+				'where r.message = ? and u.email = ? order by r.id desc limit 1)'
+		)
+		.run(past, label, email);
+	db.close();
+	expect(moved.changes, 'the reminder was not in the test database').toBe(1);
 }
 
 test('a reminder that has already been is not "coming up"', async ({ page }) => {
-	await register(page, testEmail('rem-past'));
+	const mine = testEmail('rem-past');
+	await register(page, mine);
 
-	await aboutToHaveBeen(page, 'long gone');
+	await aboutToHaveBeen(page, mine, 'long gone');
 
 	await visit(page, '/reminders');
 	await expect(page.locator('main')).toBeVisible();
@@ -324,13 +386,14 @@ test('a reminder that has already been is not "coming up"', async ({ page }) => 
  * be answered. The window looks either way now.
  */
 test('a reminder that has been is still there to look at', async ({ page }) => {
-	await register(page, testEmail('rem-past'));
+	const mine = testEmail('rem-past');
+	await register(page, mine);
 
 	// Moments ago rather than a decade: "the last seven days" means seven days,
 	// and a fixture outside the window would be testing the window rather than
 	// the direction. The past view is deliberately bounded the same way the
 	// forward one is.
-	await aboutToHaveBeen(page, 'long gone');
+	await aboutToHaveBeen(page, mine, 'long gone');
 
 	await visit(page, '/reminders?days=7&past=1');
 	await expect(page.locator('main')).toBeVisible();
@@ -357,6 +420,7 @@ test('a reminder that is already set can be moved, reworded and given a sound', 
 }) => {
 	await register(page, testEmail('rem-edit'));
 	await visit(page, '/reminders');
+	await openTheForm(page);
 
 	const tomorrow = new Date();
 	tomorrow.setDate(tomorrow.getDate() + 1);

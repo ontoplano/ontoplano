@@ -38,6 +38,15 @@ releases mattered.
   instead of borrowing it.
 - **Fixed: a drag label and two toasts were unreadable in the dark theme** —
   white text on what had become a near-white slab.
+- **Fixed: on a phone, choosing how far ahead the reminders list looks did
+  nothing.** The dialog closed and the window never changed.
+- **A notification about what an assistant did opens the thing it did it to.**
+  Four writes into one notebook open that notebook, and a burst of todos opens
+  the todo list; only a burst that went everywhere still opens the log.
+- **Setting a reminder closes the form**, rather than leaving it open over the
+  list the new one just joined.
+- **The attribute boxes say what goes in them** — "my attribute" and "my value
+  (optional)".
 
 - **The shopping list is a reading of the inventory, and the data says so
   now.** The two tables behind the room were still called after the list;

@@ -202,7 +202,7 @@ test('the lists are grouped by where things are, then by category', async ({ pag
  * either field, so the shape is the thing's rather than a column. They live on
  * the edit form and are saved by the same button as everything else.
  */
-test('a thing carries its own fields, and one can be taken off again', async ({ page }) => {
+test('a thing carries its attributes, and one can be taken off again', async ({ page }) => {
 	await register(page, testEmail('inv-fields'));
 	await visit(page, '/inventory');
 	await foodCategory(page);
@@ -223,7 +223,7 @@ test('a thing carries its own fields, and one can be taken off again', async ({ 
 	// clearing the name is what removes it.
 	await page.getByRole('button', { name: /^Edit Measuring tape/ }).click();
 	edit = page.getByRole('dialog', { name: 'Edit item' });
-	await edit.getByRole('button', { name: 'Remove the field length' }).click();
+	await edit.getByRole('button', { name: 'Remove the attribute length' }).click();
 	await edit.getByRole('button', { name: 'Save' }).click();
 	await expect(edit).toBeHidden();
 	await expect(page.getByText('length: 5m')).toHaveCount(0);

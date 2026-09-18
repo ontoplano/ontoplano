@@ -55,11 +55,21 @@ test.describe('the app announcing itself', () => {
 		await expect(page.getByText('This app is open on')).toContainText(new URL(page.url()).host);
 	});
 
-	test('a browser is offered nothing to switch', async ({ page }) => {
+	/*
+	 * A browser switches too — it just does not get the app's way out.
+	 *
+	 * There is one card about which ontoplano this is, and its action is the
+	 * chooser: in the app that is the copy on the phone, at another origin, and
+	 * in a browser it is the chooser on this instance. What must never appear
+	 * outside the app is the hand-back address, because there is no app there
+	 * to hand back to.
+	 */
+	test('a browser is offered the chooser here, not the app\u2019s way out', async ({ page }) => {
 		await register(page, testEmail('android-none'));
 		await visit(page, '/settings/account');
 
-		await expect(page.getByRole('link', { name: 'Switch instance' })).toHaveCount(0);
+		const leave = page.getByRole('link', { name: 'Switch instance' });
+		await expect(leave).toHaveAttribute('href', '/instance');
 	});
 
 	/**
@@ -125,9 +135,13 @@ test.describe('a desktop wearing the app cookie', () => {
 		// told to update. This is not a phone.
 		await expect(page.getByText('Update the app.')).toHaveCount(0);
 
-		// And nothing else that hangs off being the app, either.
+		// And nothing else that hangs off being the app, either: the chooser
+		// here, never the hand-back to a copy of the app that is not running.
 		await visit(page, '/settings/account');
-		await expect(page.getByRole('link', { name: 'Switch instance' })).toHaveCount(0);
+		await expect(page.getByRole('link', { name: 'Switch instance' })).toHaveAttribute(
+			'href',
+			'/instance'
+		);
 	});
 });
 
