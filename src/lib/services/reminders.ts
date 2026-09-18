@@ -15,6 +15,7 @@ import { blockName } from '../planner-grid.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { instantOfLocal, localOfInstant, stamp } from './time.js';
+import { REMINDER_LEAD_MINUTES, REMINDER_LEAD_MS } from '../reminder-window.js';
 import { num, str } from './validate.js';
 // The clock recomputes its sleep whenever the set of pending reminders changes;
 // without this a new alarm would wait for the next ceiling tick to be noticed.
@@ -305,6 +306,29 @@ export function dueReminders(ctx: Ctx): (Reminder & { sound: string | null })[] 
  * turning both sides into instants to compare them would import the bug that
  * storing wall-clock avoids.
  */
+/**
+ * A reminder the phone could not hear about in time is not a reminder.
+ *
+ * See `$lib/reminder-window`: the app pointed at a server learns what is
+ * coming by asking, on its own clock, and anything set inside that window may
+ * simply not be booked before it is due. Refusing is the honest answer —
+ * accepting it would be promising a ring that depends on which device the
+ * person happened to be holding.
+ *
+ * Wall clock on both sides, in the account's own zone, because that is what
+ * the column holds and what `remindAtFrom` already compares — turning them
+ * into instants to add fifteen minutes would import the bug that storing wall
+ * clock avoids.
+ */
+function notTooSoon(ctx: Ctx, when: string): void {
+	const floor = localOfInstant(new Date(ctx.now.getTime() + REMINDER_LEAD_MS), ctx.tz);
+	if (when < floor) {
+		throw new ValidationError(
+			`Reminders have to be at least ${REMINDER_LEAD_MINUTES} minutes from now.`
+		);
+	}
+}
+
 function remindAtFrom(ctx: Ctx, given: unknown): string {
 	const at = String(given ?? '').trim();
 	const dayOnly = /^\d{4}-\d{2}-\d{2}$/.test(at);
@@ -320,6 +344,7 @@ function remindAtFrom(ctx: Ctx, given: unknown): string {
 				: 'That time has already been.'
 		);
 	}
+	notTooSoon(ctx, when);
 	return when;
 }
 
@@ -373,12 +398,31 @@ export function createFreeReminder(
 
 export function createReminder(
 	ctx: Ctx,
-	raw: { at?: unknown; message?: unknown; subjectId?: unknown }
+	raw: { at?: unknown; message?: unknown; subjectId?: unknown },
+	/**
+	 * Whether a person chose this time, or the app worked it out.
+	 *
+	 * The floor is about not *promising* what cannot be kept: somebody typing
+	 * "in five minutes" deserves to be told the phone may not hear in time.
+	 * Nothing the app derives is a promise of that kind — a block starting
+	 * soon gets a reminder because it is on the plan, and refusing to write it
+	 * turns "might be a little late" into "there is none", which is worse.
+	 *
+	 * It also cannot be applied to the derived ones without breaking them:
+	 * `ensureBlockReminders` writes for every block still ahead today,
+	 * including one starting in five minutes, and a throw there takes the
+	 * whole sweep with it — the page, the API and the delivery job all call
+	 * it.
+	 */
+	{ chosen = false }: { chosen?: boolean } = {}
 ): number {
 	const subjectId = num(raw.subjectId, 'block', { int: true, min: 1 });
 	const block = ownedInstance(ctx, subjectId);
 	const lead = num(raw.at, 'minutes', { int: true, min: 0, max: 24 * 60 });
 	const when = minutesBefore(block.scheduledAt, lead);
+	// A block five minutes away with no lead lands inside the window just as a
+	// free reminder set for five minutes' time does.
+	if (chosen) notTooSoon(ctx, when);
 
 	const given = raw.message === undefined || raw.message === null ? '' : String(raw.message).trim();
 	const message = given || block.title;

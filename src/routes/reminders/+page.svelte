@@ -2,6 +2,7 @@
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import RingerHealth from '$lib/components/RingerHealth.svelte';
 	import RoomBar from '$lib/components/RoomBar.svelte';
+	import { browser } from '$app/environment';
 	import { enhance } from '$app/forms';
 	import Banner from '$lib/components/Banner.svelte';
 	import { inPhoneApp } from '$lib/instance-choice';
@@ -139,10 +140,63 @@
 	let day = $state('');
 	let time = $state('');
 	let say = $state('');
+
+	/*
+	 * The earliest time this form may offer, kept honest as the page ages.
+	 *
+	 * The server refuses anything inside the window (`$lib/reminder-window`),
+	 * so the form has to refuse the same — being told "no" after pressing save
+	 * is a worse way to learn a rule than not being able to break it.
+	 *
+	 * Measured from the account's own wall clock rather than the browser's: a
+	 * laptop in one zone setting a reminder for an account in another would
+	 * otherwise be told the wrong floor, in both directions. `data.nowLocal` is
+	 * that clock when the page was rendered, and this ages it forward by how
+	 * long the page has been open.
+	 */
+	const opened = Date.now();
+	let ticking = $state(0);
+	$effect(() => {
+		if (!browser) return;
+		// A minute is the resolution the floor is expressed in; anything finer
+		// would redraw the form for no visible change.
+		const beat = setInterval(() => (ticking = Date.now()), 30_000);
+		return () => clearInterval(beat);
+	});
+
+	const floorAt = $derived.by(() => {
+		// `ticking` is read so this recomputes as the page sits.
+		void ticking;
+		const since = Date.now() - opened;
+		// Arithmetic on the number, not a Date anybody mutates: read as UTC
+		// because `nowLocal` is already the account's wall clock, and the Z is
+		// only there to stop the browser's own zone joining in.
+		const at = Date.parse(`${data.nowLocal}:00Z`) + since + data.leadMinutes * 60_000;
+		return new Date(at).toISOString().slice(0, 16);
+	});
+
+	/** The day part of that, so the date field cannot offer a day already gone. */
+	const earliestDay = $derived(floorAt.slice(0, 10));
+
+	/** Whether what is in the form now is something the server would refuse. */
+	/**
+	 * Whether a day and a time land inside the window the phone cannot cover.
+	 *
+	 * A day with no time means the hour the account's day starts, which is what
+	 * the server fills in — so it is compared the same way rather than waved
+	 * through.
+	 */
+	function isTooSoon(when: string, at: string): boolean {
+		if (!when) return false;
+		return `${when}T${at || data.dayStart}` < floorAt;
+	}
+
 	let audible = $state(false);
 	// The time is not part of it: an empty one means the hour the day starts,
 	// which is a real answer rather than a missing one.
-	const ready = $derived(Boolean(day && say.trim() && !hasBeen(day, time)));
+	const ready = $derived(
+		Boolean(day && say.trim() && !hasBeen(day, time) && !isTooSoon(day, time))
+	);
 
 	/**
 	 * Whether a day and a time have already gone by.
@@ -416,11 +470,26 @@
 	land here is the form's own default: today, no time, opened in the
 	afternoon, when the hour the day starts has been for hours.
 -->
-{#snippet alreadyBeen(when: string, at: string)}
+<!--
+	Why this time will not do — both reasons, in one place.
+
+	A time already gone and a time too close are the same shape of problem from
+	the person's side: they typed something and it will not be taken. The
+	server refuses both (`remindAtFrom` and `notTooSoon`), and being told after
+	pressing save is a worse way to learn a rule than seeing it here first.
+-->
+{#snippet whyNotThisTime(when: string, at: string)}
 	{#if hasBeen(when, at)}
 		<p class="text-sm text-gray-600">
 			{at ? t('reminders.thatTimeHasAlreadyBeen') : `${data.dayStart} has already been today.`}
 			{t('reminders.giveItALaterOne')}
+		</p>
+	{:else if isTooSoon(when, at)}
+		<p class="text-sm text-gray-600">
+			{t('reminders.atLeastMinutesFromNow', { count: data.leadMinutes })}
+			<span class="block text-xs text-gray-500">
+				{t('reminders.whyTheFloor', { count: data.leadMinutes })}
+			</span>
 		</p>
 	{/if}
 {/snippet}
@@ -622,7 +691,7 @@
 						name="day"
 						type="date"
 						required
-						min={data.today}
+						min={earliestDay}
 						autocomplete="off"
 						bind:value={day}
 						onfocus={pick}
@@ -649,12 +718,18 @@
 							real destination is an installed Android app, where this is the
 							good one.
 						-->
+					<!--
+						`min` only on the first day it could be. A time field's `min` is
+						a time of day, not an instant — so on any later day it would
+						forbid the morning for no reason.
+					-->
 					<input
 						id="reminder-time"
 						name="time"
 						type="time"
 						autocomplete="off"
 						bind:value={time}
+						min={day === earliestDay ? floorAt.slice(11, 16) : undefined}
 						title={t('reminders.whatTimeItShouldGo', { dayStart: data.dayStart })}
 						class="input"
 					/>
@@ -670,7 +745,7 @@
 				</Field>
 			</FormGrid>
 
-			{@render alreadyBeen(day, time)}
+			{@render whyNotThisTime(day, time)}
 
 			<div class="flex flex-wrap items-center gap-4">
 				<label
@@ -706,7 +781,7 @@
 					class="btn btn-primary btn-sm ml-auto"
 					title={ready
 						? t('reminders.setThisReminder')
-						: hasBeen(day, time)
+						: hasBeen(day, time) || isTooSoon(day, time)
 							? t('reminders.thatTimeHasAlreadyBeen2')
 							: t('reminders.aDayAndSomethingTo')}
 				>
@@ -1017,7 +1092,7 @@
 									</Field>
 								</FormGrid>
 
-								{@render alreadyBeen(editDay, editTime)}
+								{@render whyNotThisTime(editDay, editTime)}
 
 								<div class="flex flex-wrap items-center gap-4">
 									<label
@@ -1062,7 +1137,7 @@
 										</button>
 										<button
 											type="submit"
-											disabled={hasBeen(editDay, editTime)}
+											disabled={hasBeen(editDay, editTime) || isTooSoon(editDay, editTime)}
 											class="btn btn-primary btn-sm"
 											title={hasBeen(editDay, editTime)
 												? t('reminders.thatTimeHasAlreadyBeen2')

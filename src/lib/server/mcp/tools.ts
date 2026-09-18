@@ -2356,11 +2356,13 @@ export const TOOLS: Tool[] = [
 			['id', 'minutes']
 		),
 		run: (ctx, args) => ({
-			id: createReminder(ctx, {
-				subjectId: recordIdOf(ctx, args.id),
-				at: args.minutes,
-				message: args.message
-			})
+			id: createReminder(
+				ctx,
+				{ subjectId: recordIdOf(ctx, args.id), at: args.minutes, message: args.message },
+				// An assistant asking on somebody's behalf is somebody asking:
+				// the same floor, and the same sentence back if it is too soon.
+				{ chosen: true }
+			)
 		})
 	},
 	{

@@ -3718,7 +3718,7 @@ arrives the next time it opens, rather than being silently skipped.
 
 #### `createFreeReminder(ctx, raw)`
 
-#### `createReminder(ctx, raw)`
+#### `createReminder(ctx, raw, { chosen = false })`
 
 #### `markDelivered(ctx, ids)`
 

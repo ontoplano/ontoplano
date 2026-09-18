@@ -368,13 +368,25 @@ describe('a time that has already been', () => {
 		).toBeGreaterThan(0);
 	});
 
-	test('the minute it is due is still ahead; the minute after is not', () => {
+	/*
+	 * Two refusals, not one, and they are not the same refusal.
+	 *
+	 * This used to read "the minute it is due is still ahead; the minute after
+	 * is not", and prove it by accepting 08:01. A minute out is now refused for
+	 * a different reason — the phone could not be told in time — which hides
+	 * the boundary this test is about behind a nearer one.
+	 *
+	 * So both are asserted by what they say. A time in the past is a mistake
+	 * about the past; a time too close is a promise this cannot keep. Somebody
+	 * typing either deserves to be told which.
+	 */
+	test('is refused for having been, not for being close', () => {
 		expect(() =>
 			s.reminders.createFreeReminder(ctx, { at: '2026-08-17T08:00', message: 'exactly now' })
-		).toThrow();
-		expect(
+		).toThrow(/already been/);
+		expect(() =>
 			s.reminders.createFreeReminder(ctx, { at: '2026-08-17T08:01', message: 'a minute out' })
-		).toBeGreaterThan(0);
+		).toThrow(/15 minutes/);
 	});
 });
 
@@ -423,5 +435,92 @@ describe('what is handed to a phone to book', () => {
 			message: 'months away'
 		});
 		expect(s.reminders.upcomingReminders(west).some((r) => r.id === far)).toBe(false);
+	});
+});
+
+/**
+ * A reminder the phone could not hear about in time is not a reminder.
+ *
+ * The app pointed at a server has no way to be told: the page it shows belongs
+ * to that server, and the shell's bridge reaches only the copy the phone
+ * carries. So the phone finds out by asking, on its own clock, and anything
+ * set inside that window may simply not be booked before it is due.
+ *
+ * The form refuses it too, but the form is not the only way in — an assistant
+ * over MCP, a stale page posted twice, a script. This is the rule holding
+ * where it has to.
+ */
+describe('a time too soon for the phone to hear about', () => {
+	test('is refused, however it is asked for', () => {
+		// now is 08:00; the floor is 08:15.
+		expect(() =>
+			s.reminders.createFreeReminder(ctx, { at: '2026-08-17T08:05', message: 'five minutes' })
+		).toThrow(/15 minutes/);
+		expect(() =>
+			s.reminders.createFreeReminder(ctx, { at: '2026-08-17T08:14', message: 'one minute short' })
+		).toThrow(/15 minutes/);
+	});
+
+	test('and the edge is allowed, because a floor is a floor', () => {
+		const id = s.reminders.createFreeReminder(ctx, {
+			at: '2026-08-17T08:15',
+			message: 'exactly the floor'
+		});
+		expect(id).toBeGreaterThan(0);
+	});
+
+	test('nor can one be moved into the window', () => {
+		const id = s.reminders.createFreeReminder(ctx, {
+			at: '2026-08-17T18:00',
+			message: 'this evening'
+		});
+		expect(() => s.reminders.editReminder(ctx, id, { at: '2026-08-17T08:05' })).toThrow(
+			/15 minutes/
+		);
+		// And it is where it was, rather than half-moved.
+		const still = s.reminders.listReminders(ctx, { includePast: true }).find((r) => r.id === id);
+		expect(still?.remindAt.slice(0, 16)).toBe('2026-08-17T18:00');
+	});
+
+	test('a day on its own is judged by the hour it would fire at', () => {
+		// The account's day starts long before 08:15, so today-with-no-time is
+		// already gone rather than merely too soon — but it must not slip
+		// through as "no time given, nothing to check".
+		expect(() => s.reminders.createFreeReminder(ctx, { at: '2026-08-17' })).toThrow();
+	});
+});
+
+/**
+ * The floor is on what a person asks for, not on what the app works out.
+ *
+ * Somebody typing "in five minutes" is owed the truth: the phone may not hear
+ * in time. A block starting in five minutes is a different thing entirely —
+ * the person scheduled the block, the reminder is a courtesy, and refusing to
+ * write it turns "might be a little late" into "there is none".
+ *
+ * It is also the difference between working and not. `ensureBlockReminders`
+ * writes for every block still ahead today, and a throw in there takes the
+ * whole sweep with it — the reminders page, the API and the delivery job all
+ * call it, so one block starting soon would have stopped birthdays, bills and
+ * the weekly review from being written at all.
+ */
+describe('who is making the promise', () => {
+	test('a derived reminder is written however close it is', () => {
+		// The block is at 09:00 and now is 08:00, so a 50-minute lead lands at
+		// 08:10 — inside the floor.
+		const id = s.reminders.createReminder(ctx, { subjectId: block, at: 50 });
+		expect(id).toBeGreaterThan(0);
+	});
+
+	test('and the same reminder is refused when somebody chose the time', () => {
+		expect(() =>
+			s.reminders.createReminder(ctx, { subjectId: block, at: 51 }, { chosen: true })
+		).toThrow(/15 minutes/);
+	});
+
+	test('the whole sweep survives a block starting inside the window', () => {
+		// The regression this guards: one soon block used to abort everything
+		// nobody types — birthdays, bills, the review, the end of the day.
+		expect(() => s.reminders.createReminder(ctx, { subjectId: block, at: 55 })).not.toThrow();
 	});
 });

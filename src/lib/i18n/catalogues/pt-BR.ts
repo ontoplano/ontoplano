@@ -1631,6 +1631,8 @@ export const messages: Catalogue = {
 	'reminders.alreadyShown': '· já exibido',
 	'reminders.androidHasRefusedNotificationsAnd':
 		'O Android recusou as notificações e não vai perguntar de novo, então os lembretes só chegam com o ontoplano aberto.',
+	'reminders.atLeastMinutesFromNow':
+		'Lembretes têm que ser pelo menos {count} minutos a partir de agora.',
 	'reminders.billDue': '{name} — {money}, vence em {day}',
 	'reminders.billDueToday': 'Atenção — {name} vence hoje. {money}.',
 	'reminders.billStillToPay': 'Você ainda precisa pagar {name} — {money}, vence em {day}.',
@@ -1751,6 +1753,8 @@ export const messages: Catalogue = {
 	'reminders.whichDayItShouldGo': 'Em que dia deve disparar',
 	'reminders.whichSoundThisOnePlays': 'Qual som este toca',
 	'reminders.whichWayToLook': 'Em que direção olhar',
+	'reminders.whyTheFloor':
+		'O app procura lembretes novos a cada {count} minutos, então um marcado antes disso pode não chegar a tempo no seu celular.',
 	'reminders.willThisRing': 'Isto vai tocar?',
 	'reminders.yourSounds': 'Seus sons',
 	'reportDialog.send': 'Enviar',

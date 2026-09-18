@@ -4,6 +4,7 @@ import { SOURCE_LOCALE } from '$lib/i18n/locales';
 import { getLocale } from '$lib/services/settings';
 import { buildCtx, localDateOf } from '$lib/services/ctx';
 import { localOfInstant } from '$lib/services/time';
+import { REMINDER_LEAD_MINUTES } from '$lib/reminder-window';
 import { ensureOwnReminders } from '$lib/services/reminder-sources';
 import {
 	MAX_UPCOMING_DAYS,
@@ -106,6 +107,17 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 		ringsOnAPhone: host.ringsOnAPhone(ctx),
 		/** Today in the account's own zone, so the day field opens on it. */
 		today: localDateOf(ctx.now, ctx.tz),
+		/*
+		 * The account's own wall clock at the moment this was rendered.
+		 *
+		 * The form has to refuse a time the server would refuse, and "now" here
+		 * means now *where the account is* — the browser's clock is the machine's
+		 * zone, which is the account's only by luck. The page ages it forward by
+		 * how long it has been open, so a form left sitting does not keep
+		 * offering a floor from an hour ago.
+		 */
+		nowLocal: localOfInstant(ctx.now, ctx.tz).slice(0, 16),
+		leadMinutes: REMINDER_LEAD_MINUTES,
 		/*
 		 * And now, to the minute, so the form can refuse a time that has been.
 		 *

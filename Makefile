@@ -781,6 +781,9 @@ lint:
 	@yarn -s copy:check
 	@node scripts/check-no-secrets.mjs
 	@node scripts/check-android-version.mjs
+	@# The floor on a reminder and the phone's polling interval are one fact
+	@# written in two languages, with nothing type-checking across the gap.
+	@node scripts/check-reminder-window.mjs
 	@node scripts/check-plugin.mjs
 	@node scripts/check-make-help.mjs
 	@# Every switch a recipe expands is one somebody has to be able to find.

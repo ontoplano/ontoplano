@@ -1439,6 +1439,7 @@ export type MessageKey =
 	| 'reminders.alreadyBeen'
 	| 'reminders.alreadyShown'
 	| 'reminders.androidHasRefusedNotificationsAnd'
+	| 'reminders.atLeastMinutesFromNow'
 	| 'reminders.billDue'
 	| 'reminders.billDueToday'
 	| 'reminders.billStillToPay'
@@ -1536,6 +1537,7 @@ export type MessageKey =
 	| 'reminders.whichDayItShouldGo'
 	| 'reminders.whichSoundThisOnePlays'
 	| 'reminders.whichWayToLook'
+	| 'reminders.whyTheFloor'
 	| 'reminders.willThisRing'
 	| 'reminders.yourSounds'
 	| 'reportDialog.send'
@@ -3042,6 +3044,7 @@ export interface MessageValuesFor {
 	'ratingPicker.leaveUnanswered': { rating: string | number };
 	'ratings.labelValueOf5': { label: string | number; value: string | number };
 	'reminders.alarmsOnThisPhone': { count: number };
+	'reminders.atLeastMinutesFromNow': { count: number };
 	'reminders.billDue': { day: string | number; money: string | number; name: string | number };
 	'reminders.billDueToday': { money: string | number; name: string | number };
 	'reminders.billStillToPay': {
@@ -3070,6 +3073,7 @@ export interface MessageValuesFor {
 	'reminders.theNextDays': { count: number };
 	'reminders.upToRingtonesKbEach': { kilobytes: string | number; ringtones: string | number };
 	'reminders.whatTimeItShouldGo': { dayStart: string | number };
+	'reminders.whyTheFloor': { count: number };
 	'reportDialog.whereItGoes': { where: string | number };
 	'search.for': { q: string | number; results: string | number; total: string | number };
 	'search.nothingMatches': { q: string | number };

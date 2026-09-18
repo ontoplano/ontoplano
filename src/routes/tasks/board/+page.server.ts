@@ -352,10 +352,13 @@ export const actions = {
 	remind: async ({ request, locals }: IsolatedEvent) => {
 		const formData = await request.formData();
 		try {
-			createReminder(buildCtx(locals.user!.id), {
-				subjectId: formData.get('id'),
-				at: formData.get('minutes')
-			});
+			createReminder(
+				buildCtx(locals.user!.id),
+				{ subjectId: formData.get('id'), at: formData.get('minutes') },
+				// Somebody chose this lead, so the floor applies: a reminder the
+				// phone could not hear about in time is not one to promise.
+				{ chosen: true }
+			);
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);
