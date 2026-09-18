@@ -98,10 +98,29 @@ final class Ringer {
      *
      * It was six hours, which is how long a reminder made anywhere else could
      * stay invisible to this phone — and how long one that was deleted
-     * elsewhere could keep a ring booked. An hour is the same idea with a
-     * window somebody can live with.
+     * elsewhere could keep a ring booked.
+     *
+     * Fifteen minutes, because of what the window actually costs. A reminder
+     * made *on this phone* is booked the moment it is saved, and one made
+     * anywhere else but due further out than this is found and then rings to
+     * the minute. The only thing this number bounds is the one case that can
+     * still fail: made on another device, due within the window, and the app
+     * not opened in between. Six hours made that case ordinary; fifteen
+     * minutes makes it rare.
+     *
+     * The alternative was a push channel, and every one of them costs somebody
+     * something: Firebase costs the build its independence — no Play services
+     * is what lets F-Droid ship this — and UnifiedPush costs the person a
+     * second app to install before their reminders work properly. Neither is a
+     * fair price for closing a window this small. Polling asks nothing of
+     * anybody.
+     *
+     * Fifteen is also the platform's own idea of a reasonable cadence: it is
+     * the floor `JobScheduler` allows a periodic job. One small request, and
+     * the radio is awake for a few seconds — about what a mail client on a
+     * fifteen-minute sync costs, and this one sends far less.
      */
-    private static final long REFRESH_MS = 60 * 60 * 1000L;
+    private static final long REFRESH_MS = 15 * 60 * 1000L;
 
     /**
      * And a last look, shortly before the next thing is due to ring.
