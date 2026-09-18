@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**57 pages, 235 actions.**
+**57 pages, 236 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -68,7 +68,7 @@ write surface for everything else; both end up calling the same
 | `/tasks/activities`                  | `create`, `update`, `toggleActive`, `delete`, `createCategory`, `updateCategory`, `deleteCategory`                                                                                                                                                                                                                                                                                                   |
 | `/tasks/board`                       | `setStatus`, `reorder`, `schedule`, `promote`, `demote`, `createTodo`, `setRatings`, `remind`, `unremind`, `editInstance`, `resolveActivity`, `deleteInstance`, `deleteTodo`                                                                                                                                                                                                                         |
 | `/tasks/plan`                        | `create`, `update`, `toggleActive`, `delete`, `bulkDelete`, `copyToWeekdays`, `addCalendar`, `removeCalendar`, `applyTemplate`, `saveScheme`, `loadScheme`, `deleteScheme`, `renameScheme`, `scheduleTodo`, `unscheduleBlock`, `convertRepeat`, `moveOccurrence`, `setStatus`, `suppress`, `unsuppress`, `createExceptional`, `updateExceptional`, `deleteExceptional`, `importCsv`                  |
-| `/tasks/review`                      | `saveNote`, `keepStale`, `completeStale`, `dropStale`, `resolve`, `settle`, `carry`                                                                                                                                                                                                                                                                                                                  |
+| `/tasks/review`                      | `saveNote`, `keepStale`, `completeStale`, `dropStale`, `resolve`, `reopen`, `settle`, `carry`                                                                                                                                                                                                                                                                                                        |
 | `/tasks/todo`                        | `create`, `update`, `archive`, `setStatus`, `schedule`, `delete`, `delegate`                                                                                                                                                                                                                                                                                                                         |
 | `/welcome`                           | `assistantToken`, `setLanguage`, `finish`                                                                                                                                                                                                                                                                                                                                                            |
 | `/welcome/password`                  | `default`                                                                                                                                                                                                                                                                                                                                                                                            |
@@ -618,6 +618,15 @@ when it is still open.
 **`resolve`**
 
 Done, or skipped — the two answers that are not "carry it forward".
+
+**`reopen`**
+
+"I did not actually do that."
+
+A block answered for is not a block answered _correctly_, and the review
+is where somebody notices. Back to open rather than straight to skipped:
+it rejoins the list of open questions, where the four ordinary answers
+are — including the ones that make a todo out of it.
 
 **`settle`**
 

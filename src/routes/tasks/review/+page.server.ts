@@ -14,6 +14,7 @@ import {
 	weekStartOf
 } from '$lib/services/review';
 import { completeStale, dropStale, keepStale, listStale, STALE_MONTHS } from '$lib/services/stale';
+import { setInstanceStatus } from '$lib/services/instances';
 import { addDays, getISOWeekNumber, getISOWeekYear } from '$lib/services/week-generator';
 
 function dateString(d: Date): string {
@@ -135,6 +136,24 @@ export const actions = {
 				raw
 			);
 			return { success: true, resolved };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
+	 * "I did not actually do that."
+	 *
+	 * A block answered for is not a block answered *correctly*, and the review
+	 * is where somebody notices. Back to open rather than straight to skipped:
+	 * it rejoins the list of open questions, where the four ordinary answers
+	 * are — including the ones that make a todo out of it.
+	 */
+	reopen: async ({ request, locals }: IsolatedEvent) => {
+		const formData = await request.formData();
+		try {
+			setInstanceStatus(buildCtx(locals.user!.id), Number(formData.get('instanceId')), 'todo');
+			return { success: true, action: 'reopen' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

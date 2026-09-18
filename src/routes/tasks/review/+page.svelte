@@ -119,29 +119,41 @@
 	};
 
 	/**
-	 * The week's leftovers, under the day they belong to.
+	 * Which half of the week this panel is showing.
+	 *
+	 * Two cards, one above the other, was the first shape and the wrong one:
+	 * the same block appeared in both as you answered for it, and reading "what
+	 * I did" meant scrolling past "what I did not". One panel, one place, and a
+	 * toggle in its header — which is the part that must not move when it is
+	 * pressed.
+	 */
+	let showing = $state<'loose' | 'done'>('loose');
+
+	/**
+	 * Either half of the week, under the day it belongs to.
 	 *
 	 * A flat list with a date on the right is a list you have to read twice to
 	 * see the shape of: three things on Tuesday and nothing on Thursday is the
-	 * useful fact, and it only shows up when the days are headings.
+	 * useful fact, and it only shows up when the days are headings. Both halves
+	 * get it, because they are the same list read two ways.
 	 */
-	const looseByDay = $derived(
-		Object.values(
-			undecided.reduce<Record<string, { date: string; label: string; items: typeof data.loose }>>(
-				(acc, item) => {
-					(acc[item.date] ??= {
-						date: item.date,
-						label: new Date(item.date + 'T00:00:00').toLocaleDateString(t.locale, {
-							weekday: 'long'
-						}),
-						items: []
-					}).items.push(item);
-					return acc;
-				},
-				{}
-			)
-		).sort((a, b) => a.date.localeCompare(b.date))
-	);
+	function byDay<T extends { date: string }>(
+		items: T[]
+	): { date: string; label: string; items: T[] }[] {
+		const days: Record<string, { date: string; label: string; items: T[] }> = {};
+		for (const item of items) {
+			(days[item.date] ??= {
+				date: item.date,
+				label: new Date(item.date + 'T00:00:00').toLocaleDateString(t.locale, { weekday: 'long' }),
+				items: []
+			}).items.push(item);
+		}
+		return Object.values(days).sort((a, b) => a.date.localeCompare(b.date));
+	}
+
+	const doneByDay = $derived(byDay(data.done));
+
+	const looseByDay = $derived(byDay(undecided));
 </script>
 
 <div class="space-y-4">
@@ -263,70 +275,23 @@
 					</ul>
 				</div>
 			</Card>
-
-			<!--
-				And what did happen.
-
-				The review could only ever answer "what did not", which is the half
-				that needs a decision and not the half anybody wants at the end of
-				a week. This is the other half, and it asks for nothing.
-			-->
-			<Card title={t('tasks.review.whatHappened')} accent="var(--section-accent)">
-				{#if data.done.length === 0}
-					<EmptyState icon="check" title={t('tasks.review.nothingIsTickedOffYet')} compact />
-				{:else}
-					<ul class="space-y-2">
-						{#each data.done as block (block.id)}
-							<li class="flex items-center gap-2 text-sm">
-								<Swatch color={block.categoryColor ?? CATEGORY_FALLBACK_COLOR} />
-								<span class="min-w-0 flex-1 truncate text-gray-700">{block.title}</span>
-								<span class="tabular shrink-0 text-xs text-gray-500">
-									{formatDuration(t, block.minutes)}
-								</span>
-							</li>
-						{/each}
-					</ul>
-				{/if}
-			</Card>
-
-			<!-- Goals that moved. Which is not the same as goals that progressed —
-			     a goal's value has no history, so this can only say it was touched. -->
-			<Card title={t('tasks.review.goalsYouTouched')} accent="var(--section-accent)">
-				{#if data.goals.length === 0}
-					<EmptyState
-						icon="goals"
-						title={data.week.isCurrent
-							? t('tasks.review.noGoalMovedYet')
-							: t('tasks.review.noGoalMovedThatWeek')}
-						compact
-					/>
-				{:else}
-					<ul class="space-y-2">
-						{#each data.goals as goal (goal.id)}
-							<li class="flex items-center gap-2 text-sm">
-								<a
-									href="{resolve('/goals')}#goal-{goal.id}"
-									class="min-w-0 flex-1 truncate text-gray-700 hover:text-gray-900 hover:underline"
-								>
-									{goal.title}
-								</a>
-								{#each goal.targets as target (target.unit + target.targetValue)}
-									<span class="tabular shrink-0 text-xs text-gray-500">
-										{target.currentValue}/{target.targetValue}
-										{target.unit}
-									</span>
-								{/each}
-							</li>
-						{/each}
-					</ul>
-				{/if}
-			</Card>
 		</div>
 
-		<!-- What did not happen, and whether it still needs to. -->
+		<!--
+			The week, read either way round.
+
+			One panel rather than two cards: "what I did" and "what I did not" are
+			the same list answered differently, and as you answer a block it moves
+			from one to the other. Two of them meant the same block in both, and
+			reading the good half meant scrolling past the other.
+		-->
 		<Card
-			title={t('tasks.review.whatDidNotHappen')}
-			description={t('tasks.review.sayWhatHappenedToEach')}
+			title={showing === 'loose'
+				? t('tasks.review.whatDidNotHappen')
+				: t('tasks.review.whatHappened')}
+			description={showing === 'loose'
+				? t('tasks.review.sayWhatHappenedToEach')
+				: t('tasks.review.sayIfOneOfThese')}
 			accent="var(--section-accent)"
 			flush
 		>
@@ -340,11 +305,28 @@
 				under the finger about to press it.
 			-->
 			{#snippet actions()}
+				<!--
+					The toggle lives in the header, which is the part that must not
+					move when it is pressed: the lists below differ in length, and
+					anything that travels with them would walk out from under the
+					finger that just chose.
+				-->
+				<div class="seg" role="group" aria-label={t('tasks.review.whichHalf')}>
+					<button
+						type="button"
+						onclick={() => (showing = 'loose')}
+						aria-pressed={showing === 'loose'}
+						>{t('tasks.review.youDidNot', { count: data.loose.length })}</button
+					>
+					<button type="button" onclick={() => (showing = 'done')} aria-pressed={showing === 'done'}
+						>{t('tasks.review.youDid', { count: data.done.length })}</button
+					>
+				</div>
 				<button
 					type="button"
-					class="btn btn-sm {decided.length === 0 ? 'invisible' : ''}"
+					class="btn btn-sm {decided.length === 0 || showing !== 'loose' ? 'invisible' : ''}"
 					aria-hidden={decided.length === 0}
-					tabindex={decided.length === 0 ? -1 : 0}
+					tabindex={decided.length === 0 || showing !== 'loose' ? -1 : 0}
 					onclick={() =>
 						document
 							.getElementById('review-decided')
@@ -355,7 +337,48 @@
 					})}</button
 				>
 			{/snippet}
-			{#if data.loose.length === 0}
+			{#if showing === 'done'}
+				{#if data.done.length === 0}
+					<EmptyState icon="check" title={t('tasks.review.nothingIsTickedOffYet')} />
+				{:else}
+					<!--
+						The same rows as the other half, with the one answer this half
+						needs: it did not actually happen. That sends it back to the open
+						questions rather than straight to skipped, because the four
+						ordinary answers are over there — including the one that makes a
+						todo out of it.
+					-->
+					<div class="min-w-0">
+						{#each doneByDay as day (day.date)}
+							<div class="eyebrow border-y border-gray-200 bg-gray-50 px-4 py-1.5 text-gray-600">
+								{day.label}
+							</div>
+							<ul class="divide-y divide-gray-200">
+								{#each day.items as item (item.id)}
+									<li class="flex items-center gap-3 px-4 py-2 hover:bg-gray-50">
+										<Swatch color={item.categoryColor ?? CATEGORY_FALLBACK_COLOR} />
+										<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{item.title}</span>
+										<span class="tabular shrink-0 text-xs text-gray-500"
+											>{formatDuration(t, item.minutes)}</span
+										>
+										<span class="tabular shrink-0 text-xs text-gray-500">{pretty(item.date)}</span>
+										<form method="post" action="?/reopen" use:enhance class="shrink-0">
+											<input type="hidden" name="instanceId" value={item.id} />
+											<button
+												class="icon-btn"
+												title={t('tasks.review.itDidNotActuallyHappen')}
+												aria-label={t('tasks.review.itDidNotActually', { title: item.title })}
+											>
+												<Icon name="undo" />
+											</button>
+										</form>
+									</li>
+								{/each}
+							</ul>
+						{/each}
+					</div>
+				{/if}
+			{:else if data.loose.length === 0}
 				<EmptyState icon="check" title={t('tasks.review.everythingYouPlannedYouDid')} />
 			{:else}
 				<!--

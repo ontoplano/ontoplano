@@ -2860,6 +2860,8 @@ export const messages: Catalogue = {
 	'tasks.review.goalsYouTouched': 'Metas que você tocou',
 	'tasks.review.hoursAbbrev': '{count}h',
 	'tasks.review.hoursMinutesAbbrev': '{hours}h {minutes}min',
+	'tasks.review.itDidNotActually': '{title} não aconteceu de verdade',
+	'tasks.review.itDidNotActuallyHappen': 'Não aconteceu de verdade',
 	'tasks.review.itDidNotHappen': 'Não aconteceu',
 	'tasks.review.itHappenedAfter': '{title}: aconteceu, afinal',
 	'tasks.review.itHappenedAfterAll': 'Aconteceu, afinal',
@@ -2888,6 +2890,7 @@ export const messages: Catalogue = {
 	'tasks.review.putItBackNothing': 'Devolver — nada aconteceu ainda',
 	'tasks.review.putItOnThatDay': 'Colocar nesse dia',
 	'tasks.review.saved': 'Salvo.',
+	'tasks.review.sayIfOneOfThese': 'Diga se alguma destas não aconteceu de verdade.',
 	'tasks.review.sayWhatHappenedToEach':
 		'Diga o que aconteceu com cada um. Qualquer que seja a resposta, ele sai desta lista — a próxima semana gera seus próprios blocos.',
 	'tasks.review.seeWhatIWroteBefore': 'Ver o que eu escrevi antes',
@@ -2912,7 +2915,10 @@ export const messages: Catalogue = {
 		'O que deu certo, o que não deu, o que você vai fazer diferente…',
 	'tasks.review.whatYouHaveDecided': 'O que você decidiu',
 	'tasks.review.whereItWent': 'Para onde foi',
+	'tasks.review.whichHalf': 'Qual metade da semana',
 	'tasks.review.writeSomethingAboutHowThis': 'Escreva algo sobre como foi esta semana.',
+	'tasks.review.youDid': 'Você fez ({count})',
+	'tasks.review.youDidNot': 'Você não fez ({count})',
 	'todoRows.aToDoIsATask':
 		'Uma tarefa é algo sem dia marcado. Coloque uma aqui e arraste para o quadro quando ela tiver um dia.',
 	'todoRows.anythingYouFinishShowsUp': 'Tudo o que você termina aparece aqui.',

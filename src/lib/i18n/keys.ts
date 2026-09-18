@@ -2470,6 +2470,8 @@ export type MessageKey =
 	| 'tasks.review.goalsYouTouched'
 	| 'tasks.review.hoursAbbrev'
 	| 'tasks.review.hoursMinutesAbbrev'
+	| 'tasks.review.itDidNotActually'
+	| 'tasks.review.itDidNotActuallyHappen'
 	| 'tasks.review.itDidNotHappen'
 	| 'tasks.review.itHappenedAfter'
 	| 'tasks.review.itHappenedAfterAll'
@@ -2496,6 +2498,7 @@ export type MessageKey =
 	| 'tasks.review.putItBackNothing'
 	| 'tasks.review.putItOnThatDay'
 	| 'tasks.review.saved'
+	| 'tasks.review.sayIfOneOfThese'
 	| 'tasks.review.sayWhatHappenedToEach'
 	| 'tasks.review.seeWhatIWroteBefore'
 	| 'tasks.review.settled'
@@ -2517,7 +2520,10 @@ export type MessageKey =
 	| 'tasks.review.whatWentWellWhatDid'
 	| 'tasks.review.whatYouHaveDecided'
 	| 'tasks.review.whereItWent'
+	| 'tasks.review.whichHalf'
 	| 'tasks.review.writeSomethingAboutHowThis'
+	| 'tasks.review.youDid'
+	| 'tasks.review.youDidNot'
 	| 'todoRows.aToDoIsATask'
 	| 'todoRows.anythingYouFinishShowsUp'
 	| 'todoRows.archived'
@@ -3188,6 +3194,7 @@ export interface MessageValuesFor {
 	'tasks.review.giveItA': { title: string | number };
 	'tasks.review.hoursAbbrev': { count: number };
 	'tasks.review.hoursMinutesAbbrev': { hours: string | number; minutes: string | number };
+	'tasks.review.itDidNotActually': { title: string | number };
 	'tasks.review.itHappenedAfter': { title: string | number };
 	'tasks.review.letGo': { title: string | number };
 	'tasks.review.minutesAbbrev': { count: number };
@@ -3200,6 +3207,8 @@ export interface MessageValuesFor {
 	'tasks.review.toCommit': { answers: string | number; length: string | number };
 	'tasks.review.undoTheAnswerFor': { title: string | number };
 	'tasks.review.week': { number: string | number; year: string | number };
+	'tasks.review.youDid': { count: number };
+	'tasks.review.youDidNot': { count: number };
 	'todoRows.completedTitle': { title: string | number };
 	'ui.hoursAbbrev': { count: number };
 	'ui.hoursMinutesAbbrev': { hours: string | number; minutes: string | number };

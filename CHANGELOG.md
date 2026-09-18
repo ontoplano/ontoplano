@@ -62,11 +62,16 @@ releases mattered.
   "colour" stop being two things), rename one of its values, and take one off
   everything. A colour can sit on an attribute or on one of its values, and
   the chips on the rows wear it.
-- **And a Filters screen**: how many there are, at least and at most, and any
-  attribute value. The button says when something is being held back.
-- **The review says what did happen, not only what did not**, and where the
-  week went is a ring with the hours in the middle rather than a column of
-  numbers to divide in your head.
+- **And a Filters screen**: how many there are, at least and at most, and the
+  same tree of attributes — press the attribute itself for everything that has
+  one, whatever it says, or one of its values. The button says when something
+  is being held back.
+- **The review is one panel with a toggle**: what you did, and what you did
+  not. Both read the same way — under the day they happened on — and a block
+  you did can be sent back with "it did not actually happen", which returns it
+  to the open questions where the ordinary answers are. Where the week went is
+  a ring with the hours in the middle rather than a column of numbers to
+  divide in your head.
 - **One block can happen on several weekdays.** Monday, Tuesday and Wednesday
   used to be three blocks — three to edit, three to move, three to delete, and
   nothing saying they were the same thing. "Some days" under How often takes

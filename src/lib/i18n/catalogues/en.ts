@@ -2828,6 +2828,8 @@ export const messages: Catalogue = {
 	'tasks.review.goalsYouTouched': 'Goals you touched',
 	'tasks.review.hoursAbbrev': '{count}h',
 	'tasks.review.hoursMinutesAbbrev': '{hours}h {minutes}min',
+	'tasks.review.itDidNotActually': '{title} did not actually happen',
+	'tasks.review.itDidNotActuallyHappen': 'It did not actually happen',
 	'tasks.review.itDidNotHappen': 'It did not happen',
 	'tasks.review.itHappenedAfter': '{title}: it happened after all',
 	'tasks.review.itHappenedAfterAll': 'It happened after all',
@@ -2856,6 +2858,7 @@ export const messages: Catalogue = {
 	'tasks.review.putItBackNothing': 'Put it back — nothing has happened yet',
 	'tasks.review.putItOnThatDay': 'Put it on that day',
 	'tasks.review.saved': 'Saved.',
+	'tasks.review.sayIfOneOfThese': 'Say if one of these did not actually happen.',
 	'tasks.review.sayWhatHappenedToEach':
 		'Say what happened to each. Whichever answer you give, it leaves this list — next week generates its own blocks.',
 	'tasks.review.seeWhatIWroteBefore': 'See what I wrote before',
@@ -2879,7 +2882,10 @@ export const messages: Catalogue = {
 	'tasks.review.whatWentWellWhatDid': 'What went well, what did not, what you will do different…',
 	'tasks.review.whatYouHaveDecided': 'What you have decided',
 	'tasks.review.whereItWent': 'Where it went',
+	'tasks.review.whichHalf': 'Which half of the week',
 	'tasks.review.writeSomethingAboutHowThis': 'Write something about how this week went.',
+	'tasks.review.youDid': 'You did ({count})',
+	'tasks.review.youDidNot': 'You did not ({count})',
 	'todoRows.aToDoIsATask':
 		'A to-do is a task with no day on it. Put one here and drag it onto the board when it has a home.',
 	'todoRows.anythingYouFinishShowsUp': 'Anything you finish shows up here.',

@@ -2910,6 +2910,8 @@ export const messages: Catalogue = {
 	'tasks.review.goalsYouTouched': 'Ziele, die Sie berührt haben',
 	'tasks.review.hoursAbbrev': '{count}Std',
 	'tasks.review.hoursMinutesAbbrev': '{hours}Std {minutes}Min',
+	'tasks.review.itDidNotActually': '{title} ist doch nicht passiert',
+	'tasks.review.itDidNotActuallyHappen': 'Ist doch nicht passiert',
 	'tasks.review.itDidNotHappen': 'Es ist nicht passiert',
 	'tasks.review.itHappenedAfter': '{title}: ist doch passiert',
 	'tasks.review.itHappenedAfterAll': 'Ist doch passiert',
@@ -2938,6 +2940,7 @@ export const messages: Catalogue = {
 	'tasks.review.putItBackNothing': 'Zurücklegen — es ist noch nichts passiert',
 	'tasks.review.putItOnThatDay': 'Auf diesen Tag legen',
 	'tasks.review.saved': 'Gespeichert.',
+	'tasks.review.sayIfOneOfThese': 'Sagen Sie, wenn etwas davon doch nicht passiert ist.',
 	'tasks.review.sayWhatHappenedToEach':
 		'Sagen Sie, was mit jedem passiert ist. Welche Antwort Sie auch geben, es verlässt diese Liste — die nächste Woche erzeugt ihre eigenen Blöcke.',
 	'tasks.review.seeWhatIWroteBefore': 'Sehen, was ich vorher geschrieben habe',
@@ -2961,7 +2964,10 @@ export const messages: Catalogue = {
 	'tasks.review.whatWentWellWhatDid': 'Was gut lief, was nicht, was Sie anders machen werden…',
 	'tasks.review.whatYouHaveDecided': 'Was Sie entschieden haben',
 	'tasks.review.whereItWent': 'Wo es gelandet ist',
+	'tasks.review.whichHalf': 'Welche Hälfte der Woche',
 	'tasks.review.writeSomethingAboutHowThis': 'Schreiben Sie etwas darüber, wie diese Woche lief.',
+	'tasks.review.youDid': 'Erledigt ({count})',
+	'tasks.review.youDidNot': 'Offen ({count})',
 	'todoRows.aToDoIsATask':
 		'Eine Aufgabe ohne Tag ist etwas zu erledigen. Legen Sie sie hier ab, und ziehen Sie sie aufs Board, sobald sie einen Platz hat.',
 	'todoRows.anythingYouFinishShowsUp': 'Alles, was Sie abschließen, taucht hier auf.',

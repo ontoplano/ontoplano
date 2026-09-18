@@ -357,10 +357,21 @@
 			 */
 			if (atLeast !== '' && item.qty < Number(atLeast)) return false;
 			if (atMost !== '' && item.qty > Number(atMost)) return false;
+			/*
+			 * An attribute on its own means "has this at all", whatever it says.
+			 *
+			 * That is the commonest question — everything with a length, every
+			 * cable — and a list of values cannot ask it: you would have to press
+			 * every value of it and hope none was missed.
+			 */
 			if (attributeFilter !== null) {
-				const [key, value] = attributeFilter.split('\u0000');
 				const fields = fieldsOf(item.attributes);
-				if (!fields.some(([k, v]) => k === key && v === value)) return false;
+				if (attributeFilter.includes('\u0000')) {
+					const [key, value] = attributeFilter.split('\u0000');
+					if (!fields.some(([k, v]) => k === key && v === value)) return false;
+				} else if (!fields.some(([k]) => k === attributeFilter)) {
+					return false;
+				}
 			}
 
 			if (filterType === 'all') return true;
@@ -1951,24 +1962,53 @@
 		{#if data.attributes.length > 0}
 			<div>
 				<span class="eyebrow text-gray-500">{t('inventory.attributes')}</span>
-				<div class="mt-1 flex flex-wrap gap-1">
+				<!--
+					The same tree the Attributes screen draws, because it is the same
+					thing being read.
+
+					A flat row of every name-and-value in the account is unreadable by
+					the time there are thirty of them, and it cannot answer the
+					commonest question at all: "everything that has a length", whatever
+					the length is. So the attribute itself is the first thing you can
+					press, and its values are under it.
+				-->
+				<ul class="mt-1 space-y-2">
 					{#each data.attributes as attribute (attribute.key)}
-						{#each attribute.values as one (one.value)}
-							{@const key = `${attribute.key}\u0000${one.value}`}
+						<li>
 							<button
 								type="button"
 								class="chip"
-								aria-pressed={attributeFilter === key}
-								style={attributeFilter === key
-									? `background-color:${one.color ?? attribute.color ?? 'var(--control-on)'};color:#fff;border-color:transparent`
+								aria-pressed={attributeFilter === attribute.key}
+								style={attributeFilter === attribute.key
+									? `background-color:${attribute.color ?? 'var(--control-on)'};color:#fff;border-color:transparent`
 									: ''}
-								onclick={() => (attributeFilter = attributeFilter === key ? null : key)}
+								onclick={() =>
+									(attributeFilter = attributeFilter === attribute.key ? null : attribute.key)}
 							>
-								{attribute.key}{one.value ? `: ${one.value}` : ''}
+								{attribute.key}
+								<span class="tabular text-xs opacity-70">{attribute.count}</span>
 							</button>
-						{/each}
+
+							<div class="mt-1 ml-1 flex flex-wrap gap-1 border-l border-gray-200 pl-3">
+								{#each attribute.values as one (one.value)}
+									{@const key = `${attribute.key}\u0000${one.value}`}
+									<button
+										type="button"
+										class="chip"
+										aria-pressed={attributeFilter === key}
+										style={attributeFilter === key
+											? `background-color:${one.color ?? attribute.color ?? 'var(--control-on)'};color:#fff;border-color:transparent`
+											: ''}
+										onclick={() => (attributeFilter = attributeFilter === key ? null : key)}
+									>
+										{one.value || t('inventory.noValue')}
+										<span class="tabular text-xs opacity-70">{one.count}</span>
+									</button>
+								{/each}
+							</div>
+						</li>
 					{/each}
-				</div>
+				</ul>
 			</div>
 		{/if}
 	</div>
