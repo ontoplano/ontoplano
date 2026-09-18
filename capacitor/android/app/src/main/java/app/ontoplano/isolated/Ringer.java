@@ -144,6 +144,33 @@ final class Ringer {
     private static final long RETRY_MS = 10 * 60 * 1000L;
 
     /**
+     * How far each phone pulls its own next look earlier, at random.
+     *
+     * Phones do not poll at random times; they poll at whatever time they last
+     * polled, plus an interval. Anything that starts a lot of them together
+     * keeps them together — everyone installing the same update, a power cut
+     * that reboots a building, and worst of all an instance that was down and
+     * comes back, because every phone that failed while it was down is now
+     * counting from the same instant. They then arrive in a clump, every
+     * interval, forever; and the clump after an outage lands exactly when the
+     * server has the least to spare.
+     *
+     * So each look is pulled earlier by a random slice of this. Subtracted
+     * rather than added in both directions, so the interval it promises is
+     * still a ceiling — never later than the cadence says, only sooner.
+     *
+     * It matters most on the retry, which is the one place phones are
+     * genuinely synchronised by a shared cause. A five-minute spread over a
+     * ten-minute retry turns a stampede into a queue.
+     */
+    private static final long SPREAD_MS = 5 * 60 * 1000L;
+
+    /** A slice of `SPREAD_MS`, this phone's own. */
+    private static long spread() {
+        return (long) (Math.random() * SPREAD_MS);
+    }
+
+    /**
      * Ids for the alarms this books.
      *
      * A reminder's own id, offset into a range of its own, so nothing here can
@@ -448,7 +475,9 @@ final class Ringer {
         if (alarms == null) return;
 
         long now = System.currentTimeMillis();
-        long at = now + REFRESH_MS;
+        // Earlier by this phone's own slice, so a thousand of them do not all
+        // ask at the same second. See `SPREAD_MS`.
+        long at = now + REFRESH_MS - spread();
 
         long verify = soonest - VERIFY_BEFORE_MS;
         // Only if that check is still ahead of us, and sooner than the standing
@@ -469,7 +498,11 @@ final class Ringer {
         AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (alarms == null) return;
 
-        long at = System.currentTimeMillis() + RETRY_MS;
+        // The one place phones are genuinely in step: they all failed because
+        // the same instance was down, so they are all counting from the moment
+        // it went away. Spreading them is what stops the recovery being a
+        // second outage.
+        long at = System.currentTimeMillis() + RETRY_MS - spread();
         alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, refreshIntent(context));
         prefs(context).edit().putLong(KEY_NEXT_LOOK, at).apply();
     }
