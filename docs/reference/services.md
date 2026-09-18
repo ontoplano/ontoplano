@@ -4164,6 +4164,7 @@ in that list, so nothing happens and nothing says so (I3).
 ### Types
 
 - `WeekReading`
+- `Done` — A block that actually happened.
 - `Loose` — An unfinished block, in the shape the review offers to carry it.
 - `Verdict` — Settle a week in one go.
 

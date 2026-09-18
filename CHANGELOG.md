@@ -55,6 +55,9 @@ releases mattered.
 - **The block form says which block.** Its header carries the thing's name and
   the category it is in, as a pill in that category's own colour; a category
   block has no name of its own, so that line is a dash.
+- **The review says what did happen, not only what did not**, and where the
+  week went is a ring with the hours in the middle rather than a column of
+  numbers to divide in your head.
 - **One block can happen on several weekdays.** Monday, Tuesday and Wednesday
   used to be three blocks — three to edit, three to move, three to delete, and
   nothing saying they were the same thing. "Some days" under How often takes

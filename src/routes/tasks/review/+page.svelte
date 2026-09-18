@@ -3,6 +3,8 @@
 	import { enhance } from '$app/forms';
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
 	import Swatch from '$lib/components/Swatch.svelte';
+	import Pie from '$lib/components/Pie.svelte';
+	import { formatDuration } from '$lib/duration';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import type { ActionData, PageData } from './$types';
@@ -222,19 +224,69 @@
 				</div>
 			</Card>
 
-			<!-- Where the time went, by category. -->
+			<!--
+				Where the time went, by category — as a ring, with the list as its
+				legend.
+
+				A column of "4/6" per category is a table of two numbers somebody
+				has to divide in their head to get the shape of their week. The
+				ring is the shape; the middle is the hours it adds up to; the list
+				beside it keeps the exact counts, which the ring cannot give.
+
+				Minutes rather than blocks, because the question is where the time
+				went and a ten-minute block is not a two-hour one.
+			-->
 			<Card title={t('tasks.review.whereItWent')} accent="var(--section-accent)">
-				<ul class="space-y-2">
-					{#each data.reading.byCategory as cat (cat.id ?? 'none')}
-						<li class="flex items-center gap-2 text-sm">
-							<Swatch color={cat.color ?? CATEGORY_FALLBACK_COLOR} />
-							<span class="min-w-0 flex-1 truncate text-gray-700">{cat.name}</span>
-							<span class="tabular shrink-0 text-xs text-gray-500">
-								{cat.done}/{cat.planned}
-							</span>
-						</li>
-					{/each}
-				</ul>
+				<div class="flex flex-wrap items-center gap-5">
+					{#if data.reading.minutesDone > 0}
+						<Pie
+							slices={data.reading.byCategory
+								.filter((cat) => cat.minutesDone > 0)
+								.map((cat) => ({
+									name: cat.name,
+									value: cat.minutesDone,
+									color: cat.color ?? CATEGORY_FALLBACK_COLOR
+								}))}
+							label={formatDuration(t, data.reading.minutesDone)}
+						/>
+					{/if}
+					<ul class="min-w-48 flex-1 space-y-2">
+						{#each data.reading.byCategory as cat (cat.id ?? 'none')}
+							<li class="flex items-center gap-2 text-sm">
+								<Swatch color={cat.color ?? CATEGORY_FALLBACK_COLOR} />
+								<span class="min-w-0 flex-1 truncate text-gray-700">{cat.name}</span>
+								<span class="tabular shrink-0 text-xs text-gray-500">
+									{formatDuration(t, cat.minutesDone)} · {cat.done}/{cat.planned}
+								</span>
+							</li>
+						{/each}
+					</ul>
+				</div>
+			</Card>
+
+			<!--
+				And what did happen.
+
+				The review could only ever answer "what did not", which is the half
+				that needs a decision and not the half anybody wants at the end of
+				a week. This is the other half, and it asks for nothing.
+			-->
+			<Card title={t('tasks.review.whatHappened')} accent="var(--section-accent)">
+				{#if data.done.length === 0}
+					<EmptyState icon="check" title={t('tasks.review.nothingIsTickedOffYet')} compact />
+				{:else}
+					<ul class="space-y-2">
+						{#each data.done as block (block.id)}
+							<li class="flex items-center gap-2 text-sm">
+								<Swatch color={block.categoryColor ?? CATEGORY_FALLBACK_COLOR} />
+								<span class="min-w-0 flex-1 truncate text-gray-700">{block.title}</span>
+								<span class="tabular shrink-0 text-xs text-gray-500">
+									{formatDuration(t, block.minutes)}
+								</span>
+							</li>
+						{/each}
+					</ul>
+				{/if}
 			</Card>
 
 			<!-- Goals that moved. Which is not the same as goals that progressed —

@@ -69,7 +69,26 @@ export type WeekReading = {
 		color: string | null;
 		planned: number;
 		done: number;
+		/** Minutes, because "where it went" is a question about time. */
+		minutesPlanned: number;
+		minutesDone: number;
 	}[];
+};
+
+/**
+ * A block that actually happened.
+ *
+ * The review could only ever say what did *not* — which is the half that needs
+ * answering and not the half anybody wants to read at the end of a week. Same
+ * shape as a loose one, minus the status, because there is only one.
+ */
+export type Done = {
+	id: number;
+	title: string;
+	date: string;
+	minutes: number;
+	categoryName: string | null;
+	categoryColor: string | null;
 };
 
 /** An unfinished block, in the shape the review offers to carry it. */
@@ -83,7 +102,10 @@ export type Loose = {
 	categoryColor: string | null;
 };
 
-export function readWeek(ctx: Ctx, weekStart: string): { reading: WeekReading; loose: Loose[] } {
+export function readWeek(
+	ctx: Ctx,
+	weekStart: string
+): { reading: WeekReading; loose: Loose[]; done: Done[] } {
 	const monday = new Date(weekStart + 'T00:00:00');
 	const nextMonday = addDays(monday, 7);
 	const instances = listInstances(ctx, monday, nextMonday);
@@ -102,10 +124,16 @@ export function readWeek(ctx: Ctx, weekStart: string): { reading: WeekReading; l
 			name: i.categoryName ?? 'No category',
 			color: i.categoryColor,
 			planned: 0,
-			done: 0
+			done: 0,
+			minutesPlanned: 0,
+			minutesDone: 0
 		};
 		bucket.planned += 1;
-		if (i.status === 'done') bucket.done += 1;
+		bucket.minutesPlanned += i.durationMinutes;
+		if (i.status === 'done') {
+			bucket.done += 1;
+			bucket.minutesDone += i.durationMinutes;
+		}
 		buckets.set(key, bucket);
 	}
 
@@ -131,7 +159,21 @@ export function readWeek(ctx: Ctx, weekStart: string): { reading: WeekReading; l
 			categoryColor: i.categoryColor
 		}));
 
+	/** And what did happen, newest first: the week read back rather than audited. */
+	const done: Done[] = instances
+		.filter((i) => i.status === 'done')
+		.map((i) => ({
+			id: i.id,
+			title: blockName(i),
+			date: i.scheduledAt.slice(0, 10),
+			minutes: i.durationMinutes,
+			categoryName: i.categoryName,
+			categoryColor: i.categoryColor
+		}))
+		.sort((a, b) => b.date.localeCompare(a.date));
+
 	return {
+		done,
 		reading: {
 			weekStart,
 			weekEnd: dateString(addDays(monday, 6)),

@@ -36,12 +36,13 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 	const weekStart = param ? weekStartOf(param, ctx.now) : weekStartOf(dateString(ctx.now), ctx.now);
 
 	const monday = new Date(weekStart + 'T00:00:00');
-	const { reading, loose } = readWeek(ctx, weekStart);
+	const { reading, loose, done } = readWeek(ctx, weekStart);
 	const isCurrent = weekStart === weekStartOf(dateString(ctx.now), ctx.now);
 
 	return {
 		reading,
 		loose,
+		done,
 		goals: goalsTouched(ctx, weekStart),
 		note: readNote(ctx, weekStart),
 		/** Things nothing has ever asked about. Only offered on a finished week. */

@@ -2274,12 +2274,9 @@ export type MessageKey =
 	| 'tasks.board.energyUpTo'
 	| 'tasks.board.filters'
 	| 'tasks.board.hideFilters'
-	| 'tasks.board.hoursAbbrev'
-	| 'tasks.board.hoursMinutesAbbrev'
 	| 'tasks.board.markDone'
 	| 'tasks.board.markNotDone'
 	| 'tasks.board.minutes'
-	| 'tasks.board.minutesAbbrev'
 	| 'tasks.board.minutesFull'
 	| 'tasks.board.move'
 	| 'tasks.board.newCard'
@@ -2472,6 +2469,7 @@ export type MessageKey =
 	| 'tasks.review.noneOfThem'
 	| 'tasks.review.notesAboutTheWeek'
 	| 'tasks.review.nothingHereHasHappenedYet'
+	| 'tasks.review.nothingIsTickedOffYet'
 	| 'tasks.review.nothingWasPlannedThatWeek'
 	| 'tasks.review.of'
 	| 'tasks.review.ofBlocks'
@@ -2499,6 +2497,7 @@ export type MessageKey =
 	| 'tasks.review.undoTheAnswerFor'
 	| 'tasks.review.week'
 	| 'tasks.review.whatDidNotHappen'
+	| 'tasks.review.whatHappened'
 	| 'tasks.review.whatWentWellWhatDid'
 	| 'tasks.review.whatYouHaveDecided'
 	| 'tasks.review.whereItWent'
@@ -2745,7 +2744,10 @@ export type MessageKey =
 	| 'ui.done'
 	| 'ui.edit'
 	| 'ui.hide'
+	| 'ui.hoursAbbrev'
+	| 'ui.hoursMinutesAbbrev'
 	| 'ui.less'
+	| 'ui.minutesAbbrev'
 	| 'ui.more'
 	| 'ui.name'
 	| 'ui.next'
@@ -3146,9 +3148,6 @@ export interface MessageValuesFor {
 	'streamChart.dateCountPoints': { count: number; date: string | number };
 	'streamChart.inAgainstOutByMonth': { inLabel: string | number; outLabel: string | number };
 	'tasks.board.edit': { title: string | number };
-	'tasks.board.hoursAbbrev': { count: number };
-	'tasks.board.hoursMinutesAbbrev': { hours: string | number; minutes: string | number };
-	'tasks.board.minutesAbbrev': { count: number };
 	'tasks.board.minutesFull': { count: number };
 	'tasks.board.removeTheReminderAt': { slice: string | number };
 	'tasks.plan.backOneUnit': { key: string | number; unit: string | number };
@@ -3186,6 +3185,9 @@ export interface MessageValuesFor {
 	'tasks.review.undoTheAnswerFor': { title: string | number };
 	'tasks.review.week': { number: string | number; year: string | number };
 	'todoRows.completedTitle': { title: string | number };
+	'ui.hoursAbbrev': { count: number };
+	'ui.hoursMinutesAbbrev': { hours: string | number; minutes: string | number };
+	'ui.minutesAbbrev': { count: number };
 	'welcome.blocksCount': { count: number };
 	'welcome.ofOnThePlanner': { length: string | number; size: string | number };
 	'welcome.stepNumber': { number: string | number; title: string | number };

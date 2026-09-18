@@ -21,6 +21,7 @@
 	import Backlinks from '$lib/components/Backlinks.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
+	import { formatDuration } from '$lib/duration';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
 	import { RATINGS, type Rating } from '$lib/ratings.js';
 	import { getAction, keyFor } from '$lib/shortcuts';
@@ -82,15 +83,6 @@
 			card.status === 'done' &&
 			!card.activityId
 		);
-	}
-
-	function formatDuration(minutes: number): string {
-		const h = Math.floor(minutes / 60);
-		const m = minutes % 60;
-		if (h === 0) return t('tasks.board.minutesAbbrev', { count: m });
-		return m === 0
-			? t('tasks.board.hoursAbbrev', { count: h })
-			: t('tasks.board.hoursMinutesAbbrev', { hours: h, minutes: m });
 	}
 
 	/**
@@ -1275,7 +1267,7 @@
 				<span class="flex items-center gap-2 text-sm">
 					<Swatch color={total.color} />
 					<span class="text-gray-700">{total.name}</span>
-					<span class="tabular text-gray-500">{formatDuration(total.minutes)}</span>
+					<span class="tabular text-gray-500">{formatDuration(t, total.minutes)}</span>
 				</span>
 			{/each}
 		</div>
