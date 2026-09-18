@@ -7,6 +7,7 @@ import {
 	previewImportAction
 } from '$lib/account-import-actions';
 import { ENVELOPE, parseByteSize } from '$lib/server/body-limit';
+import { dev } from '$app/environment';
 
 /**
  * Bringing things in, on a page of its own.
@@ -33,7 +34,16 @@ export const load: PageServerLoad = async () => {
 	 * `0` disables the limit outright, which is a deliberate answer and means
 	 * there is no ceiling to warn about.
 	 */
-	const parsed = parseByteSize(process.env.BODY_SIZE_LIMIT);
+	/*
+	 * And in development there is no such server.
+	 *
+	 * `vite dev` serves this, not `adapter-node`, so nothing enforces a body
+	 * size at all — while the default below assumed the adapter's 512K. What
+	 * that meant in practice is that no export with a picture in it could be
+	 * restored on a dev instance: the page refused the file before reading it,
+	 * naming a ceiling that was not there.
+	 */
+	const parsed = dev ? 0 : parseByteSize(process.env.BODY_SIZE_LIMIT);
 	const limit = parsed === 0 ? 0 : (parsed ?? ADAPTER_DEFAULT);
 
 	return {

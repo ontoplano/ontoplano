@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Banner from '$lib/components/Banner.svelte';
@@ -74,7 +75,18 @@
 	 */
 	let importText = $state('');
 	let restoreText = $state('');
-	let fileError = $state<string | null>(null);
+	/**
+	 * What was wrong with the file, said by the card that asked for it.
+	 *
+	 * One `fileError` used to serve both, and it was drawn under the first card
+	 * only — so choosing an export too big for this instance printed the reason
+	 * three cards further up, under somebody else's file input, and the restore
+	 * card simply sat there with an empty box. The next press posted nothing and
+	 * the server answered "That file is not JSON", which was true of the empty
+	 * string and of nothing a person had done.
+	 */
+	let tasksError = $state<string | null>(null);
+	let restoreError = $state<string | null>(null);
 
 	/** A paste beyond this is not a task list, and the server refuses it anyway. */
 	const MAX_TASKS_BYTES = 2_000_000;
@@ -97,16 +109,16 @@
 
 	async function readChosen(
 		event: Event,
-		{ many, ceiling }: { many: boolean; ceiling: number }
+		{ many, ceiling }: { many: boolean; ceiling: number },
+		refuse: (why: string) => void
 	): Promise<string | null> {
-		fileError = null;
 		const files = [...((event.currentTarget as HTMLInputElement).files ?? [])];
 		if (files.length === 0) return null;
 
 		const total = files.reduce((sum, f) => sum + f.size, 0);
 		const refused = tooBigToSend(total, ceiling);
 		if (refused) {
-			fileError = refused;
+			refuse(refused);
 			return null;
 		}
 
@@ -117,38 +129,86 @@
 	}
 
 	async function readTasks(event: Event) {
-		const text = await readChosen(event, { many: true, ceiling: MAX_TASKS_BYTES });
+		tasksError = null;
+		const text = await readChosen(
+			event,
+			{ many: true, ceiling: MAX_TASKS_BYTES },
+			(why) => (tasksError = why)
+		);
 		if (text !== null) importText = text;
 	}
 
+	/**
+	 * The export, read and looked at before anything is offered to the server.
+	 *
+	 * A file, and only a file: a restore is a whole account and the box it used
+	 * to be pasted into held fifteen megabytes of base64 nobody was going to
+	 * read. What it does instead is answer here — too big for this instance,
+	 * not JSON at all, JSON that is not an export — so the reason names the
+	 * file rather than arriving as the server's verdict on an empty string.
+	 */
 	async function readRestore(event: Event) {
-		const text = await readChosen(event, { many: false, ceiling: restoreCeiling });
-		if (text !== null) {
-			restoreText = text;
-			// Choosing the file is the ask: the preview runs now, not behind a
-			// second button somebody has to know about.
-			previewForm?.requestSubmit();
+		restoreError = null;
+		restoreText = '';
+		const input = event.currentTarget as HTMLInputElement;
+		const text = await readChosen(
+			event,
+			{ many: false, ceiling: restoreCeiling },
+			(why) => (restoreError = `${why} ${t('settings.account.import.orExportAgainWithout')}`)
+		);
+		if (text === null) {
+			// Nothing usable is in the box, so nothing usable is in the input
+			// either: a name sitting there under a refusal reads as "this is
+			// loaded", and the next press is the one that finds out it is not.
+			input.value = '';
+			return;
 		}
+
+		let parsed: unknown;
+		try {
+			parsed = JSON.parse(text);
+		} catch {
+			restoreError = t('settings.account.import.thatFileIsNotJson');
+			input.value = '';
+			return;
+		}
+		// The same thing `parseExport` asks of it, so the page and the service
+		// cannot disagree about what an export is: an object with the account's
+		// tables under `data`.
+		if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || !('data' in parsed)) {
+			restoreError = t('settings.account.import.thatIsJsonButNotAnExport');
+			input.value = '';
+			return;
+		}
+
+		restoreText = text;
+		/*
+		 * And only then the preview, one tick later.
+		 *
+		 * The form carries the text in a hidden field, and an assignment does not
+		 * reach the DOM until the next flush — so submitting in the same breath
+		 * posted the field as it was a moment ago, which is empty. What came back
+		 * was the server's verdict on an empty string: "That file is not JSON",
+		 * about a file that is perfectly good JSON.
+		 *
+		 * Choosing the file is the ask, so it still runs itself: the wait is for
+		 * the DOM, not for a second button somebody has to know about.
+		 */
+		await tick();
+		previewForm?.requestSubmit();
 	}
 
 	/**
-	 * The preview, run for whatever is in the box.
+	 * The preview, run for the file that was chosen.
 	 *
 	 * A restore empties the account first, so what the file holds — whose it
 	 * was, what lands, what is left behind, what the import would refuse — has
-	 * to be on the screen before REPLACE is typed. Posted through a form of its
-	 * own so the answer arrives the same way every action's does; debounced for
-	 * a paste, because a paste has no single finished moment the way choosing a
-	 * file does.
+	 * to be on the screen before the word is typed, not in the message after.
+	 * Posted through a form of its own so the answer arrives the same way every
+	 * action's does. Choosing a file is a finished moment, so it runs then and
+	 * needs no debounce.
 	 */
 	let previewForm = $state<HTMLFormElement>();
-	let previewTimer: ReturnType<typeof setTimeout> | undefined;
-
-	function previewSoon() {
-		clearTimeout(previewTimer);
-		if (!restoreText.trim() || restoreTooBig) return;
-		previewTimer = setTimeout(() => previewForm?.requestSubmit(), 600);
-	}
 
 	const preview = $derived(
 		form?.success && form.action === 'previewImport' && form.preview ? form.preview : null
@@ -158,13 +218,22 @@
 	let dropBad = $state(false);
 
 	/**
-	 * And a paste is measured too, on the way out rather than on the way back.
+	 * The word that has to be typed, and the sentence asking for it.
 	 *
-	 * Somebody who pastes sixteen megabytes into the box gets the same sentence
-	 * as somebody who chose the file, instead of a 500 from a server that
-	 * refused the body before this app saw it.
+	 * The word is translated — a Portuguese screen asks for SUBSTITUIR — and the
+	 * action accepts that language's word as well as the English one, so what is
+	 * shown here and what is checked there cannot come apart.
+	 *
+	 * The sentence arrives whole and is split where the word goes, so the word can
+	 * be drawn as code wherever a language happens to put it. What is put in the
+	 * placeholder is the placeholder, which is the one value guaranteed not to
+	 * appear in the sentence around it.
 	 */
-	const restoreTooBig = $derived(tooBigToSend(new Blob([restoreText]).size, restoreCeiling));
+	const WORD_SLOT = '{word}';
+	const confirmWord = $derived(t('settings.account.import.rEPLACE'));
+	const confirmLabel = $derived(
+		t('settings.account.import.typeWordToConfirm', { word: WORD_SLOT }).split(WORD_SLOT)
+	);
 </script>
 
 <div class="space-y-4">
@@ -216,8 +285,8 @@
 				class="input font-mono text-xs"
 			></textarea>
 
-			{#if fileError}
-				<p class="text-sm text-red-700">{fileError}</p>
+			{#if tasksError}
+				<p class="text-sm text-red-700">{tasksError}</p>
 			{/if}
 
 			<label class="flex items-center gap-2 text-sm text-gray-700">
@@ -292,19 +361,19 @@
 			use:settingsForm={{ notice: 'Restored.', before: keepACopyFirst }}
 			class="mt-3 space-y-3"
 		>
+			<!--
+				The file and nothing else.
+
+				There was a box to paste into beside this, and an export is not a
+				thing anybody pastes: the one that prompted taking it out was fifteen
+				megabytes of base64. What it bought was a second way to arrive at the
+				same action with something unchecked in it.
+			-->
 			<input type="file" accept=".json,application/json" class="input" onchange={readRestore} />
+			<input type="hidden" name="text" value={restoreText} />
 
-			<textarea
-				name="text"
-				bind:value={restoreText}
-				oninput={previewSoon}
-				rows="3"
-				placeholder={t('settings.account.import.orPasteTheExportHere')}
-				class="input font-mono text-xs"
-			></textarea>
-
-			{#if restoreTooBig}
-				<Banner kind="error">{restoreTooBig}</Banner>
+			{#if restoreError}
+				<Banner kind="error">{restoreError}</Banner>
 			{/if}
 
 			{#if preview}
@@ -379,9 +448,15 @@
 					<strong>{t('settings.account.import.replacesEverythingInThisAccount')}</strong>
 					{t('settings.account.import.withWhatIsInThe')}
 				</p>
+				<!--
+					One sentence with the word in it, rather than "Type" + the word +
+					"to confirm" as three pieces. Assembled, it came out as "Tipo
+					SUBSTITUIR para confirmar" in Portuguese — "Type" translated as
+					the noun — and a sentence a translator cannot see whole is a
+					sentence they cannot get right.
+				-->
 				<label class="mt-2 block text-sm text-amber-900">
-					{t('ui.type')} <code class="text-xs">{t('settings.account.import.rEPLACE')}</code>
-					{t('settings.account.import.toConfirm')}
+					{confirmLabel[0]}<code class="text-xs">{confirmWord}</code>{confirmLabel[1] ?? ''}
 					<OneLine name="confirm" class="input mt-1 max-w-[12rem]" />
 				</label>
 			</div>
@@ -392,16 +467,15 @@
 				{t('settings.account.import.beImportedWhateverYouWrote')}
 			</p>
 
-			<!-- Not pressable while the thing in the box cannot be sent: the server
-			     refuses a body that size before this app sees it, and what comes
-			     back is a 500 rather than a reason. -->
-			<!-- Not pressable while the thing in the box cannot be sent, or while
-			     the preview has named rows the restore would refuse and nobody has
+			<!-- Not pressable until a file has been read and understood — the
+			     server refuses a body too big for it before this app sees it, and
+			     what comes back is a 500 rather than a reason — nor while the
+			     preview has named rows the restore would refuse and nobody has
 			     answered what to do about them. -->
 			<button
 				type="submit"
 				class="btn btn-sm"
-				disabled={restoreTooBig !== null ||
+				disabled={restoreText === '' ||
 					(preview != null && preview.unacceptable.length > 0 && !dropBad)}
 			>
 				{t('settings.account.import.restore')}

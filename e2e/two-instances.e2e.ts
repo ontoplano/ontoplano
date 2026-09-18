@@ -1,4 +1,7 @@
 import { expect, test } from '@playwright/test';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
@@ -212,7 +215,12 @@ test('an export moves from the server onto the device, and the server keeps its 
 	await go('/settings/account/import');
 	const restore = page.locator('form[action="?/importAccount"]');
 	await expect(restore).toBeVisible({ timeout: 60_000 });
-	await restore.locator('textarea[name="text"]').fill(file);
+	// Chosen as a file, which is the only way in now: an export is not a thing
+	// anybody pastes, and the box that used to be here is gone.
+	const saved = join(mkdtempSync(join(tmpdir(), 'ontoplano-two-')), 'export.json');
+	writeFileSync(saved, file);
+	await restore.locator('input[type="file"]').setInputFiles(saved);
+	await expect(page.getByText(/rows will land/)).toBeVisible({ timeout: 60_000 });
 	await restore.locator('[name="confirm"]').fill('REPLACE');
 
 	// The copy the device keeps before replacing is a download, so it has to
