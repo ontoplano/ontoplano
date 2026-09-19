@@ -218,7 +218,10 @@ export function listOrphanedNotes(ctx: Ctx) {
 			content: diaryEntries.content,
 			forDate: diaryEntries.forDate,
 			archivedAt: diaryEntries.archivedAt,
-			createdAt: diaryEntries.createdAt
+			createdAt: diaryEntries.createdAt,
+			// What the Edited order reads. Sent for the orphans too, because they
+			// are drawn by the same list with the same control above it.
+			updatedAt: diaryEntries.updatedAt
 		})
 		.from(diaryEntries)
 		.where(
@@ -311,6 +314,7 @@ export function contentsOf(ctx: Ctx, id: number) {
 					archivedAt: diaryEntries.archivedAt,
 					pinnedAt: diaryEntries.pinnedAt,
 					createdAt: diaryEntries.createdAt,
+					updatedAt: diaryEntries.updatedAt,
 					ownerId: diaryEntries.userId,
 					authorName: user.name
 				})

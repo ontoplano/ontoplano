@@ -1291,9 +1291,11 @@ export type MessageKey =
 	| 'notebookDetail.anaJoão'
 	| 'notebookDetail.anyoneThisNoteIsAbout'
 	| 'notebookDetail.archived'
+	| 'notebookDetail.ascendingPressForDescending'
 	| 'notebookDetail.backToThePage'
 	| 'notebookDetail.biggerType'
 	| 'notebookDetail.deleteThisNote'
+	| 'notebookDetail.descendingPressForAscending'
 	| 'notebookDetail.editThisNote'
 	| 'notebookDetail.hideArchived'
 	| 'notebookDetail.keepThisAtTheTop'
@@ -1301,8 +1303,13 @@ export type MessageKey =
 	| 'notebookDetail.noGoalPointsAtThis'
 	| 'notebookDetail.nothingChosen'
 	| 'notebookDetail.nothingWrittenHereYet'
+	| 'notebookDetail.orderEdited'
+	| 'notebookDetail.orderNotesBy'
+	| 'notebookDetail.orderTitle'
+	| 'notebookDetail.orderWritten'
 	| 'notebookDetail.people'
 	| 'notebookDetail.separateWithCommasOrSpaces'
+	| 'notebookDetail.showArchived'
 	| 'notebookDetail.smallerType'
 	| 'notebookDetail.stopKeepingThisAtThe'
 	| 'notebookDetail.tagsPeople'
@@ -2563,6 +2570,7 @@ export type MessageKey =
 	| 'todoRows.done'
 	| 'todoRows.editToDo'
 	| 'todoRows.everyNotebook'
+	| 'todoRows.hiddenByTheFilters'
 	| 'todoRows.hideArchived'
 	| 'todoRows.hideCompleted'
 	| 'todoRows.itKeepsItsPlaceIn'
@@ -2574,6 +2582,7 @@ export type MessageKey =
 	| 'todoRows.newestAtTheTopPress'
 	| 'todoRows.newestFirst'
 	| 'todoRows.notInOne'
+	| 'todoRows.nothingToShow'
 	| 'todoRows.nothingWaiting'
 	| 'todoRows.oldest'
 	| 'todoRows.oldestAtTheTopPress'
@@ -2584,7 +2593,9 @@ export type MessageKey =
 	| 'todoRows.putBackOnTheGeneral'
 	| 'todoRows.putItOnADay'
 	| 'todoRows.putOnTheDay'
+	| 'todoRows.showArchivedCount'
 	| 'todoRows.showCompleted'
+	| 'todoRows.showCompletedCount'
 	| 'todoRows.takeItBackOut'
 	| 'todoRows.time'
 	| 'todoRows.whatYouFinishedMostRecently'
@@ -3085,6 +3096,7 @@ export interface MessageValuesFor {
 	'media.importingProgress': { done: string | number; total: string | number };
 	'media.showWhatIsIn': { name: string | number };
 	'newsletter.off.nothingMoreWillBeSent': { email: string | number };
+	'notebookDetail.showArchived': { count: number };
 	'notebookDetail.writeANoteAbout': { title: string | number };
 	'notebooks.diary.edited': { updatedAt: string | number };
 	'notebooks.diary.for': { forDate: string | number };
@@ -3244,6 +3256,9 @@ export interface MessageValuesFor {
 	'tasks.review.youDid': { count: number };
 	'tasks.review.youDidNot': { count: number };
 	'todoRows.completedTitle': { title: string | number };
+	'todoRows.hiddenByTheFilters': { count: number };
+	'todoRows.showArchivedCount': { count: number };
+	'todoRows.showCompletedCount': { count: number };
 	'ui.hoursAbbrev': { count: number };
 	'ui.hoursMinutesAbbrev': { hours: string | number; minutes: string | number };
 	'ui.minutesAbbrev': { count: number };

@@ -11,11 +11,24 @@
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import Select from '$lib/components/Select.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
 	import { SECTION_COLORS } from '$lib/colors';
 	import { HORIZON_LABELS, type Horizon } from '$lib/goals';
 	import { CLOSED_STATUSES } from '$lib/task-status';
+	import {
+		DEFAULT_NOTE_ORDER,
+		NOTE_DIRECTION_KEY,
+		NOTE_ORDERS,
+		NOTE_ORDER_DEFAULT_DIRECTION,
+		NOTE_ORDER_KEY,
+		isNoteDirection,
+		isNoteOrder,
+		orderNotes,
+		type NoteDirection,
+		type NoteOrder
+	} from '$lib/note-order';
 	import TodoRows from '$lib/components/TodoRows.svelte';
 	import { NOTEBOOK_TODO_ACTIONS } from '$lib/todo-actions';
 	import type { Todo } from '$lib/services/todos';
@@ -39,6 +52,14 @@
 		title?: string;
 		content: string;
 		createdAt: string;
+		/**
+		 * When the row last changed, which is what the Edited order reads.
+		 *
+		 * Pinning and archiving touch it too. Neither shows: a pinned note is
+		 * above the order altogether, and an archived one is not on screen
+		 * unless it was asked for.
+		 */
+		updatedAt?: string | null;
 		/** When it was put away, or null. Hidden, not deleted. */
 		archivedAt?: string | null;
 		tags: { id: number; name: string }[];
@@ -52,7 +73,9 @@
 		showingOrphans = false,
 		allPeople = [],
 		categories = [],
-		pickableNotebooks = []
+		pickableNotebooks = [],
+		composing = $bindable(false),
+		newNoteInHeader = false
 	}: {
 		notebook?: { id: number; title: string; description: string } | null;
 		contents?: {
@@ -68,6 +91,17 @@
 		/** What the Tasks tab's editor offers, the same as the to-do room's. */
 		categories?: { id: number; name: string }[];
 		pickableNotebooks?: { id: number; title: string }[];
+		/** Whether the composer is open, so a page can put the button elsewhere. */
+		composing?: boolean;
+		/**
+		 * The page has a New note button of its own, so this one does not draw one.
+		 *
+		 * Two buttons doing the same thing on one screen is worse than either
+		 * place, and the notebooks index wants it up in the card header — where
+		 * Delete used to sit, which is not a thing to keep one press away from
+		 * a list you are browsing.
+		 */
+		newNoteInHeader?: boolean;
 	} = $props();
 
 	let editingNoteId = $state<number | null>(null);
@@ -126,13 +160,12 @@
 	 */
 	let maximized = $state(false);
 
-	/**
-	 * Whether the note composer is open. Closed to begin with, on every screen.
-	 *
-	 * It used to stand open above the notes, which is a form taking the top of
-	 * the page whether or not anybody is writing.
+	/*
+	 * `composing` — whether the note composer is open — is a prop now, so a page
+	 * can put the button that opens it in its own header. Closed to begin with,
+	 * on every screen: it used to stand open above the notes, which is a form
+	 * taking the top of the page whether or not anybody is writing.
 	 */
-	let composing = $state(false);
 	let surface = $state<HTMLDialogElement>();
 
 	/**
@@ -229,10 +262,66 @@
 	 * with nine and none. Notes have no such thing to say, so they keep a plain
 	 * count rather than gaining a denominator that means nothing.
 	 */
-	/** The notes on screen: everything, or everything still out. */
+	/*
+	 * The order the notes are read in, and which way round.
+	 *
+	 * Kept in this browser rather than on the account: it is a way of looking
+	 * at a list, and choosing it on a phone says nothing about a laptop. The
+	 * comparison itself lives in `$lib/note-order.ts`, where it can be tested
+	 * without a page.
+	 */
+	let noteOrder = $state<NoteOrder>(DEFAULT_NOTE_ORDER);
+	let noteDirection = $state<NoteDirection>(NOTE_ORDER_DEFAULT_DIRECTION[DEFAULT_NOTE_ORDER]);
+
+	$effect(() => {
+		try {
+			const order = localStorage.getItem(NOTE_ORDER_KEY);
+			if (isNoteOrder(order)) noteOrder = order;
+			const direction = localStorage.getItem(NOTE_DIRECTION_KEY);
+			if (isNoteDirection(direction)) noteDirection = direction;
+		} catch {
+			// A private window, or storage refused. The defaults stand.
+		}
+	});
+
+	function remember(key: string, value: string) {
+		try {
+			localStorage.setItem(key, value);
+		} catch {
+			// It still holds for this visit; only the memory is lost.
+		}
+	}
+
+	/**
+	 * Choosing a field also chooses the direction somebody meant by it.
+	 *
+	 * "Edited" asked ascending is the note nobody has touched since February,
+	 * which is not the question anybody opens that order to ask. The arrow is
+	 * still right there to turn it round.
+	 */
+	function pickOrder(order: NoteOrder) {
+		noteOrder = order;
+		noteDirection = NOTE_ORDER_DEFAULT_DIRECTION[order];
+		remember(NOTE_ORDER_KEY, order);
+		remember(NOTE_DIRECTION_KEY, noteDirection);
+	}
+
+	function flipDirection() {
+		noteDirection = noteDirection === 'asc' ? 'desc' : 'asc';
+		remember(NOTE_DIRECTION_KEY, noteDirection);
+	}
+
+	const ORDER_LABELS: Record<NoteOrder, PlainKey> = {
+		written: 'notebookDetail.orderWritten',
+		title: 'notebookDetail.orderTitle',
+		edited: 'notebookDetail.orderEdited'
+	};
+
+	/** The notes on screen: everything, or everything still out, in the chosen order. */
 	const shownNotes = $derived.by(() => {
 		const all = contents?.entries ?? orphaned;
-		return showArchivedNotes ? all : all.filter((entry) => !entry.archivedAt);
+		const out = showArchivedNotes ? all : all.filter((entry) => !entry.archivedAt);
+		return orderNotes(out, noteOrder, noteDirection);
 	});
 
 	/** How many are put away, so the button can say what it would bring back. */
@@ -386,16 +475,18 @@
 							>
 								{showArchivedNotes
 									? t('notebookDetail.hideArchived')
-									: `Show archived (${putAwayNotes})`}
+									: t('notebookDetail.showArchived', { count: putAwayNotes })}
 							</button>
 						{/if}
-						<button
-							type="button"
-							onclick={() => (composing = !composing)}
-							class="btn btn-sm shrink-0"
-						>
-							{composing ? 'Cancel' : t('notebookDetail.newNote')}
-						</button>
+						{#if !newNoteInHeader}
+							<button
+								type="button"
+								onclick={() => (composing = !composing)}
+								class="btn btn-sm shrink-0"
+							>
+								{composing ? t('ui.cancel') : t('notebookDetail.newNote')}
+							</button>
+						{/if}
 					{/if}
 					<button
 						type="button"
@@ -404,7 +495,9 @@
 						title={maximized
 							? t('notebookDetail.backToThePage')
 							: t('notebookDetail.theWholeScreen')}
-						aria-label={maximized ? t('notebookDetail.backToThePage') : 'Maximize'}
+						aria-label={maximized
+							? t('notebookDetail.backToThePage')
+							: t('notebookDetail.theWholeScreen')}
 					>
 						<Icon name="maximize" />
 					</button>
@@ -593,6 +686,49 @@
 {/snippet}
 
 {#snippet noteList(entries: Entry[], notebookId: number | null)}
+	<!--
+		What the list is sorted by, and which way.
+
+		Above the list rather than up in the tab strip: it is a control over
+		these notes, not a way of getting somewhere else, and at 390px it was
+		pushing "Goals" off the end of a strip that had already been fixed once
+		for exactly that.
+
+		Two controls rather than one cycling button — three fields and two
+		directions is six presses to get back where you started — and the select
+		is a fixed width, so choosing a longer word does not move the arrow
+		beside it.
+	-->
+	{#if entries.length > 1 || noteOrder !== DEFAULT_NOTE_ORDER}
+		<div class="flex items-center justify-end gap-1 border-b border-gray-200 px-4 py-1.5">
+			<span class="eyebrow mr-1 hidden text-gray-500 sm:inline"
+				>{t('notebookDetail.orderNotesBy')}</span
+			>
+			<Select
+				value={noteOrder}
+				onchange={(e) => pickOrder(e.currentTarget.value as NoteOrder)}
+				class="w-28 py-1 text-xs"
+				aria-label={t('notebookDetail.orderNotesBy')}
+			>
+				{#each NOTE_ORDERS as option (option)}
+					<option value={option}>{t(ORDER_LABELS[option])}</option>
+				{/each}
+			</Select>
+			<button
+				type="button"
+				onclick={flipDirection}
+				class="icon-btn shrink-0"
+				aria-label={noteDirection === 'asc'
+					? t('notebookDetail.ascendingPressForDescending')
+					: t('notebookDetail.descendingPressForAscending')}
+				title={noteDirection === 'asc'
+					? t('notebookDetail.ascendingPressForDescending')
+					: t('notebookDetail.descendingPressForAscending')}
+			>
+				<Icon name={noteDirection === 'asc' ? 'arrow-up' : 'arrow-down'} />
+			</button>
+		</div>
+	{/if}
 	{#if entries.length === 0}
 		<p class="px-4 py-3 text-sm text-gray-500">{t('notebookDetail.nothingWrittenHereYet')}</p>
 	{:else}
@@ -672,7 +808,11 @@
 							<span class="shrink-0 text-gray-400">
 								<Icon name={openNotes.has(entry.id) ? 'chevron-down' : 'chevron-right'} size={14} />
 							</span>
-							<span class="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">
+							<!-- Named for the suite, which asserts the order the list is in. -->
+							<span
+								data-note-title
+								class="min-w-0 flex-1 truncate text-sm font-medium text-gray-900"
+							>
 								{noteName(entry)}
 							</span>
 						</button>

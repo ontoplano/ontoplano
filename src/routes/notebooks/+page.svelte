@@ -7,7 +7,6 @@
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
-	import { armed } from '$lib/actions/armed';
 	import Card from '$lib/components/Card.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Field from '$lib/components/Field.svelte';
@@ -31,7 +30,8 @@
 
 	let showForm = $state(false);
 	let editingId = $state<number | null>(null);
-	let confirmingDelete = $state(false);
+	/** Whether the note composer in the panel is open; the button for it is up here. */
+	let composing = $state(false);
 
 	const editing = $derived(
 		editingId ? (data.notebooks.find((n) => n.id === editingId) ?? null) : null
@@ -71,7 +71,6 @@
 		if (e.key === 'Escape') {
 			showForm = false;
 			editingId = null;
-			confirmingDelete = false;
 			return;
 		}
 		if (getAction('/notebooks', e.key) === 'new') {
@@ -292,12 +291,18 @@
 							{t('ui.open')}
 							<Icon name="arrow-right" />
 						</a>
-						<!-- The confirmation is a dialog, not a second button in the same
-					     place: a two-step delete that puts "Yes" where "Delete" was is a
-					     double-click away from destroying something. -->
-						<button onclick={() => (confirmingDelete = true)} class="btn btn-danger btn-sm">
-							<Icon name="trash" />
-							{t('ui.delete')}
+						<!--
+							Writing, where deleting the whole notebook used to be.
+
+							This is a page for browsing notebooks, and the thing most
+							often wanted from one on screen is another note in it —
+							not destroying it, one press away, beside a list you are
+							moving through. Deleting a notebook is on the notebook's
+							own page, which is a place you go to on purpose.
+						-->
+						<button onclick={() => (composing = !composing)} class="btn btn-sm btn-primary">
+							<Icon name="plus" />
+							{composing ? t('ui.cancel') : t('notebookDetail.newNote')}
 						</button>
 					{/if}
 				{/snippet}
@@ -310,6 +315,8 @@
 					allPeople={data.allPeople}
 					categories={data.categories}
 					pickableNotebooks={data.pickableNotebooks}
+					bind:composing
+					newNoteInHeader={Boolean(selected)}
 				/>
 			</Card>
 		</div>
@@ -399,47 +406,7 @@
 	{#snippet footer()}
 		<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 		<button type="submit" form="notebook-form" class="btn btn-primary">
-			{editingId ? 'Save' : t('notebooks.createNotebook')}
+			{editingId ? t('ui.save') : t('notebooks.createNotebook')}
 		</button>
-	{/snippet}
-</Modal>
-
-<!--
-	Deleting a notebook, at arm's length.
-
-	The old confirmation replaced the Delete button with "Yes, delete" in the
-	same pixels, so a double-click destroyed the notebook. A dialog puts the
-	answer somewhere the cursor is not, and leaves room to say plainly what
-	survives.
--->
-<Modal
-	bind:open={confirmingDelete}
-	title={t('notebooks.deleteThisNotebook')}
-	description={selected ? `“${selected.title}” will be gone.` : ''}
-	size="sm"
->
-	<p class="text-sm text-gray-600">
-		{t('notebooks.itsNotesTasksAndGoals')}
-		<strong class="font-medium text-gray-900">{t('notebooks.notesWithoutANotebook')}</strong>{t(
-			'notebooks.atTheBottomOf'
-		)}
-	</p>
-
-	{#snippet footer()}
-		<button type="button" class="btn" onclick={() => (confirmingDelete = false)}
-			>{t('ui.cancel')}</button
-		>
-		<form
-			method="post"
-			action="?/delete"
-			use:enhance={() =>
-				async ({ update }) => {
-					confirmingDelete = false;
-					await update();
-				}}
-		>
-			<input type="hidden" name="id" value={selected?.id} />
-			<button class="btn btn-danger" use:armed>{t('notebooks.deleteTheNotebook')}</button>
-		</form>
 	{/snippet}
 </Modal>

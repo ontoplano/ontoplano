@@ -20,6 +20,18 @@ releases mattered.
 
 ## 0.180.1 — 2026-09-19
 
+- **A notebook's notes can be put in the order you want them.** They are still
+  read in the order they were written, which is what a notebook is for, but
+  there is now a picker above the list for title or last edited, and an arrow
+  that turns any of them round. A pinned note still leads whatever you choose,
+  and the choice is remembered on the device you made it on.
+- **New note sits where Delete used to, on the notebooks page.** Destroying a
+  notebook was one press away from a list you were only browsing; it now lives
+  on the notebook's own page, and the button beside Open writes a note instead.
+- **A notebook's task list stops looking out of date.** It said "Nothing
+  waiting" while the tab above it said "Tasks 1/1", because the finished task
+  was hidden and nothing said so. It now says how many the buttons above are
+  holding back, and Show completed carries the number.
 - **An assistant reading a long list is told what the list left out.** Asking
   for your todos handed back fifty of them and called that the count, so the
   newest were invisible and the tool looked out of date rather than cut short.

@@ -209,8 +209,34 @@
 		);
 	});
 
+	/** Whatever the notebook picker lets through, before the two toggles. */
+	let inScope = $derived.by(() => {
+		if (notebookFilter === 'none') return todos.filter((t: Todo) => t.notebookId === null);
+		if (notebookFilter !== '')
+			return todos.filter((t: Todo) => String(t.notebookId) === notebookFilter);
+		return todos;
+	});
+
 	/** How many are hidden by the two toggles, so neither is a silent filter. */
-	let putAway = $derived(todos.filter((t: Todo) => t.archivedAt !== null).length);
+	let putAway = $derived(inScope.filter((t: Todo) => t.archivedAt !== null).length);
+
+	/**
+	 * Finished and out of sight, counted.
+	 *
+	 * A notebook's tab says "Tasks 1/1" — one task, one of them done — and the
+	 * panel under it said "Nothing waiting. A to-do is a task with no day on
+	 * it." So the tab claimed there was a task and the list claimed there was
+	 * none, which reads as a list that has stopped being updated rather than
+	 * one that is hiding what it was told to hide. Counted here and said out
+	 * loud, on the button and in the empty state.
+	 */
+	let finished = $derived(
+		inScope.filter((t: Todo) => t.archivedAt === null && CLOSED_STATUSES.includes(shownStatus(t)))
+			.length
+	);
+
+	/** How many the filters are holding back when the list comes out empty. */
+	let hiddenHere = $derived((showCompleted ? 0 : finished) + (showArchived ? 0 : putAway));
 
 	function isDone(todo: Todo): boolean {
 		return shownStatus(todo) === 'done';
@@ -395,7 +421,9 @@
 			>
 				<span class="sm:hidden">{t('todoRows.completed')}</span>
 				<span class="hidden sm:inline"
-					>{showCompleted ? t('todoRows.hideCompleted') : t('todoRows.showCompleted')}</span
+					>{showCompleted
+						? t('todoRows.hideCompleted')
+						: t('todoRows.showCompletedCount', { count: finished })}</span
 				>
 			</button>
 			<!-- Named with its number so a put-away task is never quietly gone:
@@ -406,7 +434,9 @@
 				class="btn btn-sm"
 				hidden={putAway === 0 && !showArchived}
 			>
-				{showArchived ? t('todoRows.hideArchived') : `Show archived (${putAway})`}
+				{showArchived
+					? t('todoRows.hideArchived')
+					: t('todoRows.showArchivedCount', { count: putAway })}
 			</button>
 			{#if notebookId === null}
 				<!-- "Not in one" is an answer, not the absence of a filter: a task
@@ -562,13 +592,26 @@
 
 	{#if visibleTodos.length === 0}
 		<div class="border border-gray-200 bg-white shadow-sm">
-			<EmptyState
-				icon="check"
-				title={showCompleted ? t('gallery.id.nothingHereYet') : t('todoRows.nothingWaiting')}
-				description={showCompleted
-					? t('todoRows.anythingYouFinishShowsUp')
-					: t('todoRows.aToDoIsATask')}
-			/>
+			<!--
+				Empty because there is nothing, or empty because it is all hidden.
+				Saying the first when the second is true is how a list that is
+				doing as it was told reads as a list that is out of date.
+			-->
+			{#if hiddenHere > 0}
+				<EmptyState
+					icon="check"
+					title={t('todoRows.nothingToShow')}
+					description={t('todoRows.hiddenByTheFilters', { count: hiddenHere })}
+				/>
+			{:else}
+				<EmptyState
+					icon="check"
+					title={showCompleted ? t('gallery.id.nothingHereYet') : t('todoRows.nothingWaiting')}
+					description={showCompleted
+						? t('todoRows.anythingYouFinishShowsUp')
+						: t('todoRows.aToDoIsATask')}
+				/>
+			{/if}
 		</div>
 	{:else}
 		<div

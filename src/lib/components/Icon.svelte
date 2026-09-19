@@ -44,6 +44,7 @@
 		'arrow-right': 'M5 12h14M13 6l6 6-6 6',
 		'arrow-left': 'M19 12H5M11 18l-6-6 6-6',
 		'arrow-down': 'M12 5v14M18 13l-6 6-6-6',
+		'arrow-up': 'M12 19V5M6 11l6-6 6 6',
 
 		// the sections
 		home: 'M3 10.5 12 3l9 7.5V21H3z',
