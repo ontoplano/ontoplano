@@ -27,7 +27,7 @@
  * works even if nobody has opened them since the worker took over.
  */
 import { build, files, version } from '$service-worker';
-import { APP_LAUNCH_PARAM, APP_LAUNCH_VALUE } from '$lib/platform';
+import { APP_LAUNCH_PARAM, APP_LAUNCH_VALUE, APP_VERSION_PARAM } from '$lib/platform';
 import { PICTURE_REQUEST, type PictureReply } from '$lib/isolated/picture-protocol';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
@@ -182,24 +182,51 @@ sw.addEventListener('fetch', (event) => {
 	/*
 	 * The Android app's launch, which arrives with a mark on the address.
 	 *
-	 * Every launch opens `?app=android` and the server answers with a redirect
-	 * that takes it back off — so online, the page this ends up caching is the
-	 * plain one, as it always was. Offline there is no server to do that, and a
-	 * lookup keyed on the marked address misses every page we hold: a cold
-	 * launch on a train showed the offline page instead of the dashboard it had
-	 * from yesterday. So the fallback asks for the address without the mark.
+	 * Every launch opens `?app=android&app_version=…`; the server reads them,
+	 * writes them into cookies and answers with a redirect that takes them
+	 * back off. That is how the app is recognised as the app at all, and it is
+	 * why the address a phone reopens — and the address somebody copies out of
+	 * the app to send to a friend — is a plain one.
+	 *
+	 * None of which survived this worker. A navigation answered from inside
+	 * one keeps the address it was *asked* for, whatever the worker fetched to
+	 * answer it: the redirect happened, the cookies were set, and the address
+	 * bar went on saying `?app=android&app_version=0.1.0` for the life of the
+	 * install. Two things were wrong with that at once — the parameters rode
+	 * into every copied link, and the update band never appeared, because the
+	 * version the server compares against was never the one on the address it
+	 * had just answered.
+	 *
+	 * Answering it here differently does not work either. The request a worker
+	 * makes is the worker's, not the page's: it does not carry the app's user
+	 * agent, and the server is right to refuse a launch it cannot believe.
+	 *
+	 * So online this is not the worker's navigation to make. Falling through
+	 * without `respondWith` hands it back to the browser, which is the one
+	 * thing here that can take a redirect and move the address with it.
+	 *
+	 * Offline there is no server to redirect at all, and a lookup keyed on the
+	 * marked address misses every page we hold: a cold launch on a train
+	 * showed the offline page instead of the dashboard it had from yesterday.
+	 * That is the case this keeps, and the only one — `onLine` is false only
+	 * when the device is certain it has no network, and a false "yes" lands on
+	 * the browser's own error page, which is what a launch did before any of
+	 * this existed.
 	 */
 	if (request.mode === 'navigate' && url.searchParams.get(APP_LAUNCH_PARAM) === APP_LAUNCH_VALUE) {
+		if (sw.navigator.onLine) return;
+
 		const plain = new URL(url);
 		plain.searchParams.delete(APP_LAUNCH_PARAM);
+		plain.searchParams.delete(APP_VERSION_PARAM);
 
 		event.respondWith(
-			fetch(request).catch(async () => {
+			(async () => {
 				const cached = await caches.match(plain.href);
 				if (cached) return cached;
 				const offline = await caches.match(OFFLINE_URL);
 				return offline ?? new Response('Offline', { status: 503, statusText: 'Offline' });
-			})
+			})()
 		);
 		return;
 	}

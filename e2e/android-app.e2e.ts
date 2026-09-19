@@ -31,8 +31,26 @@ import { visit } from './helpers/visit';
  * these have to be one — they were passing on Playwright's desktop agent,
  * asserting behaviour that is deliberately refused now.
  */
+const ANDROID_AGENT = 'Mozilla/5.0 (Linux; Android 14; Pixel) AppleWebKit/537.36 Mobile';
+
 const ON_A_PHONE = {
-	userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel) AppleWebKit/537.36 Mobile'
+	userAgent: ANDROID_AGENT,
+	/*
+	 * …and with no service worker standing in the middle of it.
+	 *
+	 * What these are about is a server deciding whether the thing asking is
+	 * the app, and part of what it decides on is the user agent. A worker's
+	 * fetches are not the page's, and Playwright's agent override does not
+	 * reach them — so with a worker installed, every page after the launch is
+	 * fetched by something the server is right to call a desktop browser, and
+	 * the app's own chrome correctly disappears.
+	 *
+	 * No phone has that problem: a real worker shares the browser's agent.
+	 * The worker's own part in a launch — that it must not answer the launch
+	 * address itself — is its own case at the bottom of this file, where the
+	 * worker is left switched on.
+	 */
+	serviceWorkers: 'block' as const
 };
 
 test.describe('the app announcing itself', () => {
@@ -544,5 +562,36 @@ test.describe('reminders, inside the app', () => {
 		await visit(page, '/reminders');
 		await expect(page.getByText(/ring on this phone, with ontoplano closed/)).toBeVisible();
 		await expect(page.getByText(/not set up to ring/)).toHaveCount(0);
+	});
+});
+
+/**
+ * And the worker's own part in a launch: none of it.
+ *
+ * The app opens `?app=android&app_version=…` every time. A navigation
+ * answered from inside a service worker keeps the address it was asked for,
+ * whatever the worker fetched to answer it — so the worker used to swallow
+ * the server's redirect, and the launch parameters stayed on the address for
+ * the life of the install. They rode into every link copied out of the app,
+ * and the version the update band compares against was never the one on the
+ * address the server had just answered.
+ *
+ * The worker is left switched on here, which is the whole point: this is the
+ * case the block above cannot cover.
+ */
+test.describe('a launch with the worker installed', () => {
+	test.use({ userAgent: ANDROID_AGENT });
+
+	test('the mark still comes off the address', async ({ page }) => {
+		await register(page, testEmail('android-worker'));
+
+		// A page first, so the worker is installed and controlling by the time
+		// the launch address is asked for. Without this it is a fresh context
+		// and there is nothing in the way to test.
+		await visit(page, '/tasks/todo');
+		await visit(page, '/tasks/todo?app=android&app_version=0.1.0');
+
+		expect(new URL(page.url()).searchParams.has('app')).toBe(false);
+		expect(new URL(page.url()).searchParams.has('app_version')).toBe(false);
 	});
 });

@@ -221,10 +221,24 @@ test.describe('on a phone', () => {
 		const howFar = page.getByTitle('Change how far this looks');
 		await page.mouse.wheel(0, 260);
 		await page.waitForTimeout(400);
-		const before = (await howFar.boundingBox())!;
 
 		await howFar.click();
-		await page.getByRole('button', { name: '7 days', exact: true }).click();
+		const seven = page.getByRole('button', { name: '7 days', exact: true });
+		await expect(seven).toBeVisible();
+
+		/*
+		 * Read with the dialog already open, not before it.
+		 *
+		 * Reaching a control is the harness's business and it scrolls the page
+		 * to do it — so a reading taken before the press is a reading of
+		 * Playwright rather than of the app, and it was failing on a scroll
+		 * nothing in the app had performed. What this is about starts here:
+		 * between choosing a window and the list coming back, the page behind
+		 * the dialog must not have moved.
+		 */
+		const before = (await howFar.boundingBox())!;
+
+		await seven.click();
 		await expect(page.getByText(/The next 7 days/)).toBeVisible({ timeout: 15_000 });
 		await page.waitForTimeout(400);
 
