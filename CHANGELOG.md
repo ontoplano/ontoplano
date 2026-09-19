@@ -18,6 +18,14 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.180.1 — 2026-09-19
+
+- **An assistant reading a long list is told what the list left out.** Asking
+  for your todos handed back fifty of them and called that the count, so the
+  newest were invisible and the tool looked out of date rather than cut short.
+  Every capped list — todos, the diary, ideas, workout sessions — now says how
+  many there are altogether, how many are left, and where to carry on from.
+
 ## 0.180.0 — 2026-09-18
 
 - **An item's own fields are called attributes, and one of them can be just a

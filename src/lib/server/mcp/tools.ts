@@ -106,6 +106,7 @@ import {
 	deleteSession,
 	getSession,
 	listSessions,
+	countSessions,
 	logWorkout,
 	measureHistory,
 	measuredActivities,
@@ -267,6 +268,60 @@ function limitOf(args: Record<string, unknown>, fallback: number, ceiling = 200)
 	const raw = Number(args.limit ?? fallback);
 	if (!Number.isFinite(raw) || raw < 1) return fallback;
 	return Math.min(Math.floor(raw), ceiling);
+}
+
+function offsetOf(args: Record<string, unknown>): number {
+	const raw = Number(args.offset ?? 0);
+	if (!Number.isFinite(raw) || raw < 1) return 0;
+	return Math.floor(raw);
+}
+
+/** The `offset` every capped list takes, so what the cap left behind is reachable. */
+const from = (what: string) => ({
+	type: 'integer',
+	description: `Skip this many before counting, so the rest of ${what} can be read a page at a time. \`nextOffset\` on the answer is what to pass here next.`,
+	default: 0
+});
+
+/**
+ * A slice of a list, saying what it left behind.
+ *
+ * `count` was the length of the slice and nothing else, so a tool capped at
+ * fifty answered `count: 50` whether the account held fifty rows or five
+ * hundred. A reader has no way to tell those apart, and the one it guesses is
+ * that it has been handed everything — which is how a list that was merely
+ * cut short came to look like a list that had stopped being updated.
+ *
+ * So the answer carries the whole size beside the piece of it: `total` is what
+ * matched, `count` is what is here, and `remaining` and `nextOffset` appear
+ * only when there is more, because a reader that sees neither has been told
+ * there is nothing left.
+ */
+function pageOf<T>(
+	items: T[],
+	total: number,
+	offset: number,
+	key = 'items'
+): Record<string, unknown> {
+	const seen = offset + items.length;
+	const out: Record<string, unknown> = { [key]: items, count: items.length, total };
+	if (offset > 0) out.offset = offset;
+	if (seen < total) {
+		out.remaining = total - seen;
+		out.nextOffset = seen;
+	}
+	return out;
+}
+
+/** The in-memory case: the whole list is already here, so the cap is a slice. */
+function paged<T>(
+	rows: T[],
+	args: Record<string, unknown>,
+	fallback: number
+): Record<string, unknown> {
+	const limit = limitOf(args, fallback);
+	const offset = Math.min(offsetOf(args), rows.length);
+	return pageOf(rows.slice(offset, offset + limit), rows.length, offset);
 }
 
 /**
@@ -874,6 +929,7 @@ export const TOOLS: Tool[] = [
 		refs: [{ arg: 'notebookId', kind: 'notebook' }],
 		input: object({
 			limit: count('How many to return.', 50),
+			offset: from('the list'),
 			notebookId: {
 				type: 'integer',
 				description:
@@ -894,7 +950,7 @@ export const TOOLS: Tool[] = [
 					wanted === 0 ? todo.notebookId === null : todo.notebookId === wanted
 				);
 			}
-			return rows.slice(0, limitOf(args, 50)).map(briefly);
+			return paged(rows.map(briefly), args, 50);
 		}
 	},
 	{
@@ -1320,8 +1376,8 @@ export const TOOLS: Tool[] = [
 			'What has been written lately, newest first. An entry can belong to a notebook or to no notebook at all.',
 		scope: 'notes:read',
 		writes: false,
-		input: object({ limit: count('How many entries.', 20) }),
-		run: (ctx, args) => listEntries(ctx).slice(0, limitOf(args, 20))
+		input: object({ limit: count('How many entries.', 20), offset: from('the diary') }),
+		run: (ctx, args) => paged(listEntries(ctx), args, 20)
 	},
 	{
 		name: 'write_entry',
@@ -1541,8 +1597,8 @@ export const TOOLS: Tool[] = [
 			'Things caught before they evaporated, newest first. An idea is not a task: nobody has committed to doing it, which is what makes it cheap to write down.',
 		scope: 'ideas:read',
 		writes: false,
-		input: object({ limit: count('How many.', 50) }),
-		run: (ctx, args) => listIdeas(ctx).slice(0, limitOf(args, 50))
+		input: object({ limit: count('How many.', 50), offset: from('the ideas') }),
+		run: (ctx, args) => paged(listIdeas(ctx), args, 50)
 	},
 	{
 		name: 'add_idea',
@@ -3153,15 +3209,22 @@ export const TOOLS: Tool[] = [
 		input: object({
 			workout_id: { type: 'integer', description: 'Only this workout’s, from `workouts`.' },
 			since: text('Only sessions on or after this day, as YYYY-MM-DD.'),
-			limit: count('How many sessions.', 50)
+			limit: count('How many sessions.', 50),
+			offset: from('the register')
 		}),
-		run: (ctx, args) => ({
-			sessions: listSessions(ctx, {
+		run: (ctx, args) => {
+			const where = {
 				workoutId: args.workout_id === undefined ? undefined : Number(args.workout_id),
-				since: args.since === undefined ? undefined : day(args.since, 'since'),
-				limit: limitOf(args, 50)
-			})
-		})
+				since: args.since === undefined ? undefined : day(args.since, 'since')
+			};
+			const offset = offsetOf(args);
+			return pageOf(
+				listSessions(ctx, { ...where, limit: limitOf(args, 50), offset }),
+				countSessions(ctx, where),
+				offset,
+				'sessions'
+			);
+		}
 	},
 	{
 		name: 'log_workout',

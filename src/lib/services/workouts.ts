@@ -636,6 +636,35 @@ export function deleteSession(ctx: Ctx, id: number): void {
 	touchLastDone(ctx, existing.workoutId);
 }
 
+type SessionFilter = { workoutId?: number; sessionId?: number; since?: string };
+
+function sessionWhere(ctx: Ctx, opts: SessionFilter) {
+	const where = [eq(workoutSessions.userId, ctx.userId)];
+	if (opts.workoutId !== undefined) where.push(eq(workoutSessions.workoutId, opts.workoutId));
+	if (opts.sessionId !== undefined) where.push(eq(workoutSessions.id, opts.sessionId));
+	if (opts.since !== undefined)
+		where.push(
+			sql`${workoutSessions.doneOn} >= ${str(opts.since, 'since', { max: 10, pattern: DAY_PATTERN })}`
+		);
+	return where;
+}
+
+/**
+ * How many sessions match, ignoring any cap.
+ *
+ * A capped list that cannot say what it capped reads as a list that has
+ * stopped being updated, so anything handing out a page of these hands out
+ * this number beside it.
+ */
+export function countSessions(ctx: Ctx, opts: SessionFilter = {}): number {
+	const row = db
+		.select({ n: sql<number>`count(*)` })
+		.from(workoutSessions)
+		.where(and(...sessionWhere(ctx, opts)))
+		.get();
+	return row?.n ?? 0;
+}
+
 /**
  * Sessions, newest first, with their lines already attached.
  *
@@ -645,15 +674,9 @@ export function deleteSession(ctx: Ctx, id: number): void {
  */
 export function listSessions(
 	ctx: Ctx,
-	opts: { workoutId?: number; sessionId?: number; since?: string; limit?: number } = {}
+	opts: SessionFilter & { limit?: number; offset?: number } = {}
 ): Session[] {
-	const where = [eq(workoutSessions.userId, ctx.userId)];
-	if (opts.workoutId !== undefined) where.push(eq(workoutSessions.workoutId, opts.workoutId));
-	if (opts.sessionId !== undefined) where.push(eq(workoutSessions.id, opts.sessionId));
-	if (opts.since !== undefined)
-		where.push(
-			sql`${workoutSessions.doneOn} >= ${str(opts.since, 'since', { max: 10, pattern: DAY_PATTERN })}`
-		);
+	const where = sessionWhere(ctx, opts);
 
 	let query = db
 		.select({
@@ -670,6 +693,9 @@ export function listSessions(
 		.$dynamic();
 
 	if (opts.limit !== undefined) query = query.limit(opts.limit);
+	// SQLite will not take an offset without a limit, so a bare offset gets the
+	// largest one the engine accepts rather than being silently dropped.
+	if (opts.offset) query = query.limit(opts.limit ?? -1).offset(opts.offset);
 	const sessions = query.all();
 	if (sessions.length === 0) return [];
 
