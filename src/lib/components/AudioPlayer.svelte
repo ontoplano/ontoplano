@@ -104,8 +104,18 @@
 		preload="metadata"
 		onplay={() => (playing = true)}
 		onpause={() => (playing = false)}
-		onended={() => {
+		onended={(e) => {
 			playing = false;
+			/*
+			 * And if nobody ever said how long it was, it has just told us.
+			 *
+			 * The seek-to-the-end trick below is the first attempt and it does
+			 * not always land — a file whose metadata says `Infinity` and which
+			 * somebody pressed play on before the seek settled keeps its length
+			 * a secret. Playing it through is the other way of finding out, and
+			 * it costs nothing: where it stopped IS the length.
+			 */
+			if (!known) measured = e.currentTarget.currentTime || 0;
 			at = 0;
 		}}
 		ontimeupdate={(e) => (at = e.currentTarget.currentTime)}
@@ -127,13 +137,21 @@
 		<Icon name={playing ? 'pause' : 'play'} />
 	</button>
 
+	<!--
+		An unknown length draws no position.
+
+		The head used to sit against the right-hand end from the first tick —
+		four seconds into a nine-second clip, drawn as finished — because the
+		position was being measured against a bar one unit wide. The clock
+		beside it is the honest half while the length is still being found.
+	-->
 	<input
 		type="range"
 		class="h-1.5 min-w-16 flex-1 accent-gray-900"
 		min="0"
 		max={known ? duration : 1}
 		step="0.1"
-		value={at}
+		value={known ? at : 0}
 		disabled={!known}
 		oninput={scrub}
 		aria-label={t('audio.position')}
