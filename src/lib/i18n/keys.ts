@@ -2239,13 +2239,18 @@ export type MessageKey =
 	| 'staging.body'
 	| 'staging.heading'
 	| 'start.1Account'
+	| 'start.aMonthEach'
 	| 'start.aSubscriptionCannotBeStarted'
 	| 'start.accounts'
 	| 'start.billedTodayTheTrial'
 	| 'start.bothOfTodaySExportsAre'
 	| 'start.downloadYourDataJson'
+	| 'start.everyMonth'
+	| 'start.everyYear'
 	| 'start.everythingYouWroteIsKept'
 	| 'start.family'
+	| 'start.fromAMonth'
+	| 'start.howOften'
 	| 'start.iWantToHostMy'
 	| 'start.ifNotTheFirstCharge'
 	| 'start.justMe'
@@ -2254,8 +2259,10 @@ export type MessageKey =
 	| 'start.nothingIsChargedToday'
 	| 'start.oneInvoiceCoversAccountsYours'
 	| 'start.ontoplanoIsFreeAndOpen'
+	| 'start.percentOff'
 	| 'start.plan'
 	| 'start.signOut'
+	| 'start.start'
 	| 'start.startAMonth'
 	| 'start.subscribe'
 	| 'start.yearly'
@@ -3178,10 +3185,13 @@ export interface MessageValuesFor {
 	'settings.preferences.ldquoRdquo': { text: string | number };
 	'settings.preferences.mdash': { author: string | number };
 	'settings.timezone.unchanged': { zone: string | number };
+	'start.aMonthEach': { currency: string | number };
 	'start.accounts': { familySeats: string | number };
+	'start.fromAMonth': { currency: string | number };
 	'start.ifNotTheFirstCharge': { firstChargeOn: string | number };
 	'start.monthlyAMonth': { currency: string | number };
 	'start.oneInvoiceCoversAccountsYours': { familySeats: string | number };
+	'start.percentOff': { saving: string | number };
 	'start.startAMonth': { currency: string | number };
 	'start.yearly': { yearlyLine: string | number };
 	'start.youGetFreeDaysEvenIf': { trialDaysAhead: string | number };

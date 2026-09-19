@@ -2648,6 +2648,7 @@ export const messages: Catalogue = {
 		'Eine Kopie von Ontoplano zum Ausprobieren. Nichts hier bleibt garantiert erhalten.',
 	'staging.heading': 'Staging.',
 	'start.1Account': '1 Konto',
+	'start.aMonthEach': '{currency} pro Monat',
 	'start.aSubscriptionCannotBeStarted':
 		'Ein Abonnement kann nicht über diese App abgeschlossen werden.',
 	'start.accounts': '{familySeats} Konten',
@@ -2655,9 +2656,13 @@ export const messages: Catalogue = {
 	'start.bothOfTodaySExportsAre':
 		'Beide heutigen Exporte sind aufgebraucht — der nächste wird morgen freigeschaltet.',
 	'start.downloadYourDataJson': 'Ihre Daten herunterladen (JSON)',
+	'start.everyMonth': 'Monatlich',
+	'start.everyYear': 'Jährlich',
 	'start.everythingYouWroteIsKept':
 		'Alles, was Sie geschrieben haben, bleibt erhalten — nichts wurde gelöscht. Verlängern Sie, um dort weiterzumachen, wo Sie aufgehört haben, oder\n\t\t\t\tnehmen Sie Ihre Daten mit.',
 	'start.family': 'Familie',
+	'start.fromAMonth': 'ab {currency} pro Monat',
+	'start.howOften': 'Wie oft',
 	'start.iWantToHostMy': 'Ich möchte eine eigene Instanz hosten',
 	'start.ifNotTheFirstCharge': 'Andernfalls erfolgt die erste Abbuchung erst am {firstChargeOn}.',
 	'start.justMe': 'Nur ich',
@@ -2668,8 +2673,10 @@ export const messages: Catalogue = {
 		'Eine Rechnung deckt {familySeats} Konten ab, Ihres eingeschlossen. Sie laden die anderen ein, sobald Sie drin sind.',
 	'start.ontoplanoIsFreeAndOpen':
 		'Ontoplano ist kostenlos und quelloffen: Hosten Sie es selbst, und jede Funktion gehört Ihnen ohne Kosten. Bezahlen\n\t\t\tgilt für diese Instanz — für Sie gehostet, gesichert und aktuell gehalten — und finanziert die\n\t\t\tEntwicklung.',
+	'start.percentOff': '{saving}% günstiger',
 	'start.plan': 'Plan',
 	'start.signOut': 'Abmelden',
+	'start.start': 'Starten',
 	'start.startAMonth': 'Start — {currency} pro Monat',
 	'start.subscribe': 'Abonnieren',
 	'start.yearly': 'Jährlich — {yearlyLine}',

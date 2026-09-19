@@ -189,6 +189,27 @@ export function tierPricing(pricing: Pricing, tier: 'solo' | 'family'): Pricing 
 }
 
 /** "$30.00 a year — $2.50 a month" and the saving, for the one place it is sold. */
+/**
+ * The same three numbers, unwritten.
+ *
+ * `describeYearly` below is a sentence, and a sentence is in a language: it
+ * is right on a receipt and in the pricing API, and wrong on a screen four
+ * languages read. This hands back the parts so the screen can write them out
+ * of its own catalogue.
+ */
+export function yearlyParts(
+	pricing: Pricing
+): { year: string; month: string; saving: number } | null {
+	if (pricing.yearlyCents <= 0 || pricing.monthlyCents <= 0) return null;
+
+	const perMonth = pricing.yearlyCents / 12;
+	return {
+		year: formatPrice(pricing.yearlyCents, pricing.currency),
+		month: formatPrice(Math.round(perMonth), pricing.currency),
+		saving: Math.round((1 - perMonth / pricing.monthlyCents) * 100)
+	};
+}
+
 export function describeYearly(pricing: Pricing): string | null {
 	if (pricing.yearlyCents <= 0 || pricing.monthlyCents <= 0) return null;
 

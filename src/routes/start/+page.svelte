@@ -4,7 +4,7 @@
 	import { resolve } from '$app/paths';
 	import Banner from '$lib/components/Banner.svelte';
 	import Icon from '$lib/components/Icon.svelte';
-	import { describeYearly, formatPrice, tierPricing, type Pricing } from '$lib/plans';
+	import { formatPrice, tierPricing, yearlyParts, type Pricing } from '$lib/plans';
 	import type { PageServerData, ActionData } from './$types';
 	import { useT } from '$lib/i18n';
 
@@ -36,12 +36,25 @@
 	let tier = $state<'solo' | 'family'>(data.wanted);
 	const familyOffered = $derived(data.pricing.familyMonthlyCents > 0);
 	const prices = $derived(tierPricing(data.pricing, familyOffered ? tier : 'solo'));
-	const yearlyLine = $derived(describeYearly(prices));
+	const yearly = $derived(yearlyParts(prices));
+
+	/*
+	 * How often, as a choice rather than as two buttons.
+	 *
+	 * It used to be the two submit buttons themselves — a filled blue slab
+	 * saying "Yearly — …" above a quiet one saying "Monthly — …" — so the
+	 * loudest thing on a page about which plan to have was which billing
+	 * period, and the plan tiles above it read as a preamble. Both questions
+	 * are the same kind of question and they are asked the same way now, and
+	 * the one thing shaped like "money moves when you press this" is the
+	 * single button underneath.
+	 */
+	let interval = $state<'yearly' | 'monthly'>('yearly');
 
 	/** The cheapest way to have a plan, for its tile: the yearly rate if there is one. */
 	function fromMonthly(p: Pricing): string {
 		const cents = p.yearlyCents > 0 ? Math.round(p.yearlyCents / 12) : p.monthlyCents;
-		return `from ${formatPrice(cents, p.currency)} a month`;
+		return t('start.fromAMonth', { currency: formatPrice(cents, p.currency) });
 	}
 	const soloFrom = $derived(fromMonthly(tierPricing(data.pricing, 'solo')));
 	const familyFrom = $derived(fromMonthly(tierPricing(data.pricing, 'family')));
@@ -146,10 +159,7 @@
 					role="radio"
 					onclick={() => (tier = 'solo')}
 					aria-checked={tier === 'solo'}
-					class="flex aspect-square flex-col items-center justify-center gap-1.5 border-2 text-center transition {tier ===
-					'solo'
-						? 'border-gray-900 bg-gray-50'
-						: 'border-gray-200 hover:border-gray-400'}"
+					class="choice-tile"
 				>
 					<span class={tier === 'solo' ? 'text-gray-900' : 'text-gray-400'}>
 						<Icon name="user" size={36} />
@@ -163,10 +173,7 @@
 					role="radio"
 					onclick={() => (tier = 'family')}
 					aria-checked={tier === 'family'}
-					class="flex aspect-square flex-col items-center justify-center gap-1.5 border-2 text-center transition {tier ===
-					'family'
-						? 'border-gray-900 bg-gray-50'
-						: 'border-gray-200 hover:border-gray-400'}"
+					class="choice-tile"
 				>
 					<span class={tier === 'family' ? 'text-gray-900' : 'text-gray-400'}>
 						<Icon name="home" size={36} />
@@ -183,28 +190,69 @@
 		{#if moneyStays}
 			<p class="mt-3 text-sm text-gray-600">{t('start.aSubscriptionCannotBeStarted')}</p>
 		{:else}
-			<!-- Full page post on purpose: the answer is a redirect into checkout. -->
-			<form method="post" action="?/checkout" class="mt-3 space-y-2">
-				<input type="hidden" name="tier" value={familyOffered ? tier : 'solo'} />
-				<input type="hidden" name="channel" value={payChannel} />
-				{#if data.yearly && prices.yearlyCents > 0}
-					<button name="interval" value="yearly" class="btn btn-money">
-						<span class="block text-sm font-semibold"
-							>{t('start.yearly', { yearlyLine: yearlyLine ?? '' })}</span
+			{#if data.yearly && prices.yearlyCents > 0 && yearly}
+				<!--
+					How often, in the same shape as which plan.
+
+					Two squares, and the prices in them are rewritten when the plan
+					above changes — which is why every line in a tile is drawn on
+					every render and the saving keeps its room whether there is one
+					to show or not. A tile that grows a line when you press the one
+					above it moves the button under both.
+				-->
+				<div class="mt-3 grid grid-cols-2 gap-3" role="radiogroup" aria-label={t('start.howOften')}>
+					<button
+						type="button"
+						role="radio"
+						onclick={() => (interval = 'yearly')}
+						aria-checked={interval === 'yearly'}
+						class="choice-tile"
+					>
+						<span class="text-lg font-bold text-gray-900">{t('start.everyYear')}</span>
+						<span class="tabular text-sm font-medium text-gray-700">{yearly.year}</span>
+						<span class="tabular text-xs text-gray-500"
+							>{t('start.aMonthEach', { currency: yearly.month })}</span
+						>
+						<span class="text-xs font-semibold text-gray-900"
+							>{t('start.percentOff', { saving: yearly.saving })}</span
 						>
 					</button>
-					<button name="interval" value="monthly" class="btn btn-outline btn-money-quiet"
-						>{t('start.monthlyAMonth', {
-							currency: formatPrice(prices.monthlyCents, prices.currency)
-						})}</button
+					<button
+						type="button"
+						role="radio"
+						onclick={() => (interval = 'monthly')}
+						aria-checked={interval === 'monthly'}
+						class="choice-tile"
 					>
-				{:else}
-					<button name="interval" value="monthly" class="btn btn-money"
-						>{t('start.startAMonth', {
-							currency: formatPrice(prices.monthlyCents, prices.currency)
-						})}</button
-					>
-				{/if}
+						<span class="text-lg font-bold text-gray-900">{t('start.everyMonth')}</span>
+						<span class="tabular text-sm font-medium text-gray-700"
+							>{formatPrice(prices.monthlyCents, prices.currency)}</span
+						>
+						<span class="tabular text-xs text-gray-500"
+							>{t('start.aMonthEach', {
+								currency: formatPrice(prices.monthlyCents, prices.currency)
+							})}</span
+						>
+						<!-- Drawn and empty, so the two tiles hold the same four lines
+						     and neither is taller than the other. -->
+						<span class="invisible text-xs font-semibold" aria-hidden="true">—</span>
+					</button>
+				</div>
+			{/if}
+
+			<!-- Full page post on purpose: the answer is a redirect into checkout. -->
+			<form method="post" action="?/checkout" class="mt-3">
+				<input type="hidden" name="tier" value={familyOffered ? tier : 'solo'} />
+				<input type="hidden" name="channel" value={payChannel} />
+				<input
+					type="hidden"
+					name="interval"
+					value={data.yearly && prices.yearlyCents > 0 ? interval : 'monthly'}
+				/>
+				<!-- The one thing on the page shaped like money moving. -->
+				<button class="btn btn-primary w-full justify-center py-2.5 font-semibold"
+					>{t('start.start')}</button
+				>
 			</form>
 		{/if}
 
