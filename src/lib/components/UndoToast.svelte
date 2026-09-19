@@ -44,10 +44,12 @@
 				role="status"
 			>
 				<span class="min-w-0 flex-1 truncate">{item.message}</span>
-				<span class="tabular shrink-0 text-xs text-gray-500">{left}s</span>
+				<span class="overlay-face-quiet tabular shrink-0 text-xs">{left}s</span>
+				<!-- No colour of its own: the face sets the ink, and a palette
+				     colour here is the bug `.overlay-face-quiet` exists to stop. -->
 				<button
 					onclick={() => takeBack(item.id)}
-					class="shrink-0 font-medium text-white underline underline-offset-2"
+					class="shrink-0 font-medium underline underline-offset-2"
 				>
 					<Icon name="undo" />
 					{t('ui.undo')}

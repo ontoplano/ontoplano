@@ -1326,6 +1326,21 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
+	 * The quieter ink on that face, and the reason it exists.
+	 *
+	 * Everything *inside* an overlay is in the same bind as the slab was: a
+	 * `text-gray-500` there follows the palette while the face does not, so it
+	 * is a mid grey on near-black in one theme and a pale grey in the other.
+	 * `text-white` is worse — it inverts, so the dark theme drew white text as
+	 * near-black on a dark card, which is the Undo nobody could read. Anything
+	 * on this face takes its ink from the face: full strength by inheriting,
+	 * muted with this.
+	 */
+	.overlay-face-quiet {
+		color: rgb(255 255 255 / 0.66);
+	}
+
+	/*
 	 * A row that is being held at the top of its list.
 	 *
 	 * Sorting alone stops saying anything once there are three of them above a

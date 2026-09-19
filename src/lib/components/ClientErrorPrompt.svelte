@@ -96,14 +96,11 @@
 			<div class="mt-3 flex justify-end gap-3">
 				<button
 					onclick={() => choose('no')}
-					class="font-medium text-gray-300 underline underline-offset-2"
+					class="overlay-face-quiet font-medium underline underline-offset-2"
 				>
 					{t('clientErrorPrompt.never')}
 				</button>
-				<button
-					onclick={() => choose('yes')}
-					class="font-medium text-white underline underline-offset-2"
-				>
+				<button onclick={() => choose('yes')} class="font-medium underline underline-offset-2">
 					{t('clientErrorPrompt.sendNowAndNextTime')}
 				</button>
 			</div>

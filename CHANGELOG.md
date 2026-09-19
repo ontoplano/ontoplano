@@ -28,6 +28,10 @@ releases mattered.
   recording on a task wants the tasks one — so nothing new was granted and a
   file nothing refers to is still reachable by nobody. A key confined to one
   notebook sees that notebook's files and no others.
+- **Undo is readable in the dark.** The button on the toast carried a palette
+  white, which the dark theme inverts — so it drew as near-black on the dark
+  card the toast deliberately is. Anything on that card takes its ink from the
+  card now, and the same mistake is gone from the error prompt beside it.
 - **A to-do's labels can be changed one at a time.** Marking a task no longer
   means sending back every label it already had and hoping none were missed.
 
