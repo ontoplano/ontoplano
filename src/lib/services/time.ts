@@ -129,3 +129,24 @@ export function dayInWords(day: string, locale: string): string {
 export function localDay(d: Date): string {
 	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
+
+/**
+ * An instant, said where the reader is.
+ *
+ * `created_at` and its friends are UTC — see the note at the top of this
+ * file — and two screens were printing them raw: `2026-09-19 05:25` for
+ * something that happened at twenty-five past two in the morning three hours
+ * west, written as a database row rather than as a time. Today's are the
+ * clock alone, because the day is the one you are in; anything older says
+ * which day. The locale decides the order of the parts and what goes between
+ * them, so nothing is joined by hand here.
+ */
+export function instantInWords(iso: string, locale: string, now = new Date()): string {
+	const at = new Date(iso);
+	if (Number.isNaN(at.getTime())) return iso;
+
+	const clock = { hour: '2-digit', minute: '2-digit' } as const;
+	return at.toDateString() === now.toDateString()
+		? at.toLocaleTimeString(locale, clock)
+		: at.toLocaleString(locale, { day: 'numeric', month: 'short', ...clock });
+}

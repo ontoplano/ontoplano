@@ -11,6 +11,7 @@
 	import { armed } from '$lib/actions/armed';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import { useT } from '$lib/i18n';
+	import { instantInWords } from '$lib/services/time';
 	import type { PageData } from './$types';
 
 	/**
@@ -68,10 +69,8 @@
 		await invalidateAll();
 	}
 
-	function when(iso: string): string {
-		// The row's own stamp, which is already the account's wall clock.
-		return iso.replace('T', ' ').slice(0, 16);
-	}
+	/** When it happened, where the reader is. `$lib/services/time.ts` has why. */
+	const when = (iso: string) => instantInWords(iso, t.locale);
 
 	function size(bytes: number): string {
 		return `${Math.max(1, Math.ceil(bytes / 1024))}KB`;

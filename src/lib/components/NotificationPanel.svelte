@@ -14,6 +14,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { useT } from '$lib/i18n';
+	import { instantInWords } from '$lib/services/time';
 
 	/**
 	 * The list of what the app has told you.
@@ -52,8 +53,8 @@
 		if (unread > 0) void tell();
 	});
 
-	/** The row's own stamp, which is already the account's wall clock. */
-	const when = (iso: string) => iso.replace('T', ' ').slice(0, 16);
+	/** When it happened, where the reader is. `$lib/services/time.ts` has why. */
+	const when = (iso: string) => instantInWords(iso, t.locale);
 </script>
 
 {#if held.length === 0}
