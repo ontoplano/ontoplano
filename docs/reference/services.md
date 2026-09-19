@@ -2143,6 +2143,22 @@ different set of tasks than the list beneath them displayed.
 
 #### `generateInstances(ctx, from, to)`
 
+#### `generateOneOffs(ctx, from, to)`
+
+Just the one-offs in a window, without conjuring any recurring history.
+
+The two halves of `generateInstances` are not the same kind of fact. A
+recurring block is a rule about how weeks go, and running it over a week
+long past invents a history nobody lived — it was answered here first by
+generating everything for the week a review asked about, and the review of
+an untouched week in 2020 promptly filled with three blocks a rule written
+this year says should have happened.
+
+A one-off is the opposite: it exists because somebody wrote it on that day,
+deliberately, and often afterwards — doing a thing late and saying so is
+the ordinary case. So a screen that reads the past materialises these and
+only these.
+
 #### `generateForDate(ctx, date)`
 
 Generate for a whole day, the common case for a page that shows "today".
@@ -5129,6 +5145,18 @@ A `Date` as the day it is, where it is — `2026-09-19`.
 `toISOString` is UTC, so a date built from local parts comes back as
 yesterday for anybody west of Greenwich in the evening. Written out of the
 local parts instead, which is what every table keyed by day holds.
+
+#### `instantInWords(iso, locale, now)`
+
+An instant, said where the reader is.
+
+`created_at` and its friends are UTC — see the note at the top of this
+file — and two screens were printing them raw: `2026-09-19 05:25` for
+something that happened at twenty-five past two in the morning three hours
+west, written as a database row rather than as a time. Today's are the
+clock alone, because the day is the one you are in; anything older says
+which day. The locale decides the order of the parts and what goes between
+them, so nothing is joined by hand here.
 
 ## today
 

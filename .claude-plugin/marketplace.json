@@ -1,4 +1,5 @@
-{ "name": "ontoplano",
+{
+	"name": "ontoplano",
 	"owner": {
 		"name": "Ontoplano",
 		"url": "https://ontoplano.com"
@@ -11,13 +12,7 @@
 			"category": "Productivity",
 			"version": "0.1.0",
 			"source": "./plugin",
-			"keywords": [
-				"planner",
-				"todo",
-				"notes",
-				"habits",
-				"life-management"
-			],
+			"keywords": ["planner", "todo", "notes", "habits", "life-management"],
 			"author": {
 				"name": "Ontoplano",
 				"url": "https://ontoplano.com"
