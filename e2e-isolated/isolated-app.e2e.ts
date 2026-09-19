@@ -349,7 +349,10 @@ test('the phone can leave the instance it is', async ({ page }) => {
 	// inside the timeout. Wait for the movement rather than for a guess at it.
 	await settled(page);
 	await page.getByRole('menuitem', { name: 'Account' }).click();
-	await page.getByRole('link', { name: 'Change instance' }).click();
+	// One card about which ontoplano this is, and its action is the chooser —
+	// there were two of them saying nearly the same thing, and the one called
+	// "Change instance" was the half that went.
+	await page.getByRole('link', { name: 'Switch instance' }).click();
 	await expect(page.getByRole('heading', { name: /Where your Ontoplano lives/ })).toBeVisible({
 		timeout: 30_000
 	});
