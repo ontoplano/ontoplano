@@ -16,13 +16,15 @@ import type { SectionKey } from '$lib/colors';
 import type { HideableSection } from '$lib/sections';
 
 export type DashboardCardId =
+	| 'now'
 	| 'nextDays'
 	| 'weekPie'
 	| 'todayTasks'
 	| 'goals'
 	| 'habits'
 	| 'diary'
-	| 'inventory'
+	| 'shoppingList'
+	| 'wishlist'
 	| 'quote'
 	| 'threeWins'
 	| 'latestTodos'
@@ -52,6 +54,14 @@ export type DashboardCard = {
 };
 
 export const DASHBOARD_CARDS: DashboardCard[] = [
+	{
+		id: 'now',
+		label: 'app.whatIsHappeningNow',
+		description: 'card.theBlockYouAreIn',
+		defaultOn: true,
+		width: 'full',
+		section: 'planner'
+	},
 	{
 		id: 'nextDays',
 		label: 'app.nextThreeDays',
@@ -139,11 +149,20 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 		hide: 'finance'
 	},
 	{
-		id: 'inventory',
+		id: 'shoppingList',
 		label: 'app.shoppingList',
-		description: 'card.whatIsLeftToBuy',
+		description: 'card.whatHasRunLowAnd',
 		defaultOn: true,
-		width: 'full',
+		width: 'half',
+		section: 'inventory',
+		hide: 'inventory'
+	},
+	{
+		id: 'wishlist',
+		label: 'app.wishlist',
+		description: 'card.theThingsYouWouldLike',
+		defaultOn: false,
+		width: 'half',
 		section: 'inventory',
 		hide: 'inventory'
 	},
@@ -209,7 +228,13 @@ const ALL_IDS = DASHBOARD_CARDS.map((c) => c.id);
  * like data loss. `weekPlan` was the seven-column timetable that is now the
  * next three days.
  */
-const RENAMED: Record<string, DashboardCardId> = { weekPlan: 'nextDays' };
+const RENAMED: Record<string, DashboardCardId> = {
+	weekPlan: 'nextDays',
+	// One card was the shopping list and the wishlist at once, which is two
+	// questions — what to buy this week, and what you would like one day.
+	// Whoever had it keeps the first; the second is offered.
+	inventory: 'shoppingList'
+};
 
 export function defaultLayout(): DashboardCardId[] {
 	return DASHBOARD_CARDS.filter((c) => c.defaultOn).map((c) => c.id);

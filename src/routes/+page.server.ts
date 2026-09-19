@@ -24,7 +24,7 @@ import { generateForDate, listForDate } from '$lib/services/instances';
 import { listIdeas } from '$lib/services/ideas';
 import { listQuotes } from '$lib/services/quotes';
 import { readWeek, reviewPending, weekStartOf } from '$lib/services/review';
-import { listToBuy } from '$lib/services/inventory';
+import { shoppingRun } from '$lib/services/inventory';
 import { listBills, listPayments, monthSummary } from '$lib/services/bills';
 import { listWorkouts } from '$lib/services/workouts';
 import { getCurrency } from '$lib/services/settings';
@@ -219,7 +219,15 @@ export const load = async ({ locals }: IsolatedEvent) => {
 			type: h.type,
 			streak: h.streak
 		})),
-		shoppingToBuy: listToBuy(ctx),
+		/*
+		 * The shopping list and the wishlist, which are two cards.
+		 *
+		 * `shoppingRun` is what the room itself reads, so the dashboard and the
+		 * list you take to a shop cannot disagree about what has run low — the
+		 * card used to read a flat "not bought yet" query and show the two
+		 * kinds interleaved with a word beside each.
+		 */
+		shoppingCard: shoppingRun(ctx),
 		workoutsCard: listWorkouts(ctx).map((t) => ({
 			id: t.id,
 			title: t.title,

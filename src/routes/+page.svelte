@@ -28,6 +28,8 @@
 	const GOAL_PREVIEW = 4;
 	/** How many blocks a day column shows before it says how many more. */
 	const DAY_PREVIEW = 5;
+	/** How many rows a shopping or wishlist card shows before it says how many more. */
+	const SHOPPING_PREVIEW = 6;
 	/** How many categories the ring names beside it before folding the rest in. */
 	const PIE_LEGEND = 5;
 	const MINUTES_IN_HOUR = 60;
@@ -541,89 +543,95 @@
 		{/if}
 
 		<!--
-		What is happening now, above everything else.
+		What is happening now.
 
 		The dashboard used to open with "0 / 11 · 11 to go" — a score about the
 		past at the top of the screen somebody opens to ask what to do next. The
 		count is still there; it is just no longer the answer.
+
+		Drawn above the grid and outside the layout, it was also the one thing
+		on this page that could not be moved or taken off — on the screen whose
+		whole point is that you arrange it. It is a card like the others now.
 	-->
-		{#if data.now || data.taskSummary.total > 0}
-			{@const now = data.now}
-			<section
-				class="card-accent now-card flex flex-col border border-gray-200 bg-white p-4 shadow-card sm:flex-row sm:items-center sm:gap-6"
-				style="--card-accent: {now?.task.categoryColor ?? SECTION_COLORS.planner}"
-			>
-				<div class="min-w-0 flex-1">
-					{#if now}
-						<span class="eyebrow text-gray-600">
-							{now.state === 'now' ? 'Now' : 'Next'}
-						</span>
-						<p class="mt-1 text-xl font-bold text-gray-900">{now.task.name}</p>
-						<p class="mt-1 text-sm text-gray-500">
-							<span class="tabular">{now.task.startTime}</span>
-							{#if now.task.categoryName}· {now.task.categoryName}{/if}
-							·
-							{#if now.state === 'now'}
-								{now.minutes} {now.minutes === 1 ? 'minute' : 'minutes'} {t('home.left')}
-							{:else if now.minutes < 60}
-								{t('home.in')} {now.minutes} {now.minutes === 1 ? 'minute' : 'minutes'}
-							{:else}
-								{t('home.in')}
-								{Math.round(now.minutes / 60)}
-								{Math.round(now.minutes / 60) === 1 ? 'hour' : 'hours'}
-							{/if}
-						</p>
-					{:else}
-						<!-- The same card, with the day answered in it. -->
-						<span class="eyebrow text-gray-600">{t('ui.next')}</span>
-						<p class="mt-1 text-xl font-bold text-gray-900">{t('home.nothingElseToday')}</p>
-						<p class="mt-1 text-sm text-gray-500">{t('home.everyBlockOnTodaySPlan')}</p>
-					{/if}
-				</div>
-
-				<!--
-					Two answers, because there are two.
-
-					A block you planned and did not do is not a failure the app should
-					make you argue with: some weeks the gym does not happen, and saying
-					so is the honest input. Leaving only "Done" meant the only way to
-					tell the truth was to say nothing, which is how a tracker starts
-					lying.
-
-					Both answers wait a few seconds before they are sent: this is the
-					pair somebody presses without looking — it is the first thing on
-					the screen and it is under a thumb on a phone.
-
-					Drawn whether or not there is a block to answer, and the card keeps
-					its height either way, because answering the last block of the day
-					used to empty this card and jump everything under it — the list
-					the person had just pressed something in — up the screen.
-				-->
-				<div
-					class="mt-3 flex shrink-0 items-center gap-2 sm:mt-0 {now ? '' : 'invisible'}"
-					aria-hidden={now ? undefined : 'true'}
+		{#snippet card_now()}
+			{#if data.now || data.taskSummary.total > 0}
+				{@const now = data.now}
+				<section
+					class="card-accent now-card flex flex-col border border-gray-200 bg-white p-4 shadow-card sm:flex-row sm:items-center sm:gap-6"
+					style="--card-accent: {now?.task.categoryColor ?? SECTION_COLORS.planner}"
 				>
-					<button
-						type="button"
-						class="btn btn-primary"
-						disabled={!now}
-						onclick={() => now && answerLater(now.task, 'done')}
+					<div class="min-w-0 flex-1">
+						{#if now}
+							<span class="eyebrow text-gray-600">
+								{now.state === 'now' ? 'Now' : 'Next'}
+							</span>
+							<p class="mt-1 text-xl font-bold text-gray-900">{now.task.name}</p>
+							<p class="mt-1 text-sm text-gray-500">
+								<span class="tabular">{now.task.startTime}</span>
+								{#if now.task.categoryName}· {now.task.categoryName}{/if}
+								·
+								{#if now.state === 'now'}
+									{now.minutes} {now.minutes === 1 ? 'minute' : 'minutes'} {t('home.left')}
+								{:else if now.minutes < 60}
+									{t('home.in')} {now.minutes} {now.minutes === 1 ? 'minute' : 'minutes'}
+								{:else}
+									{t('home.in')}
+									{Math.round(now.minutes / 60)}
+									{Math.round(now.minutes / 60) === 1 ? 'hour' : 'hours'}
+								{/if}
+							</p>
+						{:else}
+							<!-- The same card, with the day answered in it. -->
+							<span class="eyebrow text-gray-600">{t('ui.next')}</span>
+							<p class="mt-1 text-xl font-bold text-gray-900">{t('home.nothingElseToday')}</p>
+							<p class="mt-1 text-sm text-gray-500">{t('home.everyBlockOnTodaySPlan')}</p>
+						{/if}
+					</div>
+
+					<!--
+						Two answers, because there are two.
+
+						A block you planned and did not do is not a failure the app should
+						make you argue with: some weeks the gym does not happen, and saying
+						so is the honest input. Leaving only "Done" meant the only way to
+						tell the truth was to say nothing, which is how a tracker starts
+						lying.
+
+						Both answers wait a few seconds before they are sent: this is the
+						pair somebody presses without looking — it is the first thing on
+						the screen and it is under a thumb on a phone.
+
+						Drawn whether or not there is a block to answer, and the card keeps
+						its height either way, because answering the last block of the day
+						used to empty this card and jump everything under it — the list
+						the person had just pressed something in — up the screen.
+					-->
+					<div
+						class="mt-3 flex shrink-0 items-center gap-2 sm:mt-0 {now ? '' : 'invisible'}"
+						aria-hidden={now ? undefined : 'true'}
 					>
-						<Icon name="check" />
-						{t('ui.done')}
-					</button>
-					<button
-						type="button"
-						class="btn"
-						disabled={!now}
-						onclick={() => now && answerLater(now.task, 'skipped')}
-					>
-						<Icon name="skip" />
-						{t('home.skipped')}
-					</button>
-				</div>
-			</section>
-		{/if}
+						<button
+							type="button"
+							class="btn btn-primary"
+							disabled={!now}
+							onclick={() => now && answerLater(now.task, 'done')}
+						>
+							<Icon name="check" />
+							{t('ui.done')}
+						</button>
+						<button
+							type="button"
+							class="btn"
+							disabled={!now}
+							onclick={() => now && answerLater(now.task, 'skipped')}
+						>
+							<Icon name="skip" />
+							{t('home.skipped')}
+						</button>
+					</div>
+				</section>
+			{/if}
+		{/snippet}
 
 		{#snippet card_todayTasks()}
 			<Card title={t('home.todaySTasks')} accent={SECTION_COLORS.planner}>
@@ -1238,6 +1246,15 @@
 			</Card>
 		{/snippet}
 
+		<!--
+			What to buy, and what you would like one day: two cards.
+
+			They were one, with a word beside each row saying which kind it was
+			— so the list you take to a shop and the list of things you might
+			want in a year were interleaved, and neither could be read. They are
+			different questions asked at different times; the second is off by
+			default because most people do not keep one.
+		-->
 		{#snippet card_shopping()}
 			<Card title={t('home.shopping')} accent={SECTION_COLORS.inventory}>
 				{#snippet actions()}
@@ -1245,28 +1262,48 @@
 						>{t('home.open')}</a
 					>
 				{/snippet}
-				{#if data.shoppingToBuy.length === 0}
+				{#if data.shoppingCard.lines.length === 0}
 					{@render nothingYet(t('home.nothingToBuyTheList'), '/inventory', t('home.addAnItem'))}
 				{:else}
-					<div class="space-y-1">
-						{#each data.shoppingToBuy.slice(0, 8) as item (item.id)}
-							<div class="flex items-center gap-2">
-								<span class="text-sm text-gray-700">{item.name}</span>
-								<span
-									class="text-[10px] {item.type === 'replenish'
-										? 'text-cyan-600'
-										: 'text-orange-600'}"
-								>
-									{item.type === 'replenish' ? 'inventory' : 'someday'}
-								</span>
-							</div>
+					<ul class="space-y-1">
+						{#each data.shoppingCard.lines.slice(0, SHOPPING_PREVIEW) as line (line.id)}
+							<li class="flex items-baseline gap-2 text-sm">
+								<span class="min-w-0 flex-1 truncate text-gray-700">{line.name}</span>
+								{#if line.needed > 1}
+									<span class="tabular shrink-0 text-xs text-gray-500">×{line.needed}</span>
+								{/if}
+							</li>
 						{/each}
-						{#if data.shoppingToBuy.length > 8}
-							<span class="text-xs text-gray-500"
-								>{t('home.more3', { length: data.shoppingToBuy.length - 8 })}</span
-							>
-						{/if}
-					</div>
+					</ul>
+					{#if data.shoppingCard.lines.length > SHOPPING_PREVIEW}
+						<p class="mt-1 text-xs text-gray-500">
+							{t('home.more3', { length: data.shoppingCard.lines.length - SHOPPING_PREVIEW })}
+						</p>
+					{/if}
+				{/if}
+			</Card>
+		{/snippet}
+
+		{#snippet card_wishlist()}
+			<Card title={t('home.wishlist')} accent={SECTION_COLORS.inventory}>
+				{#snippet actions()}
+					<a href={resolve('/inventory')} class="text-xs text-gray-500 hover:text-gray-900"
+						>{t('home.open')}</a
+					>
+				{/snippet}
+				{#if data.shoppingCard.wishlist.length === 0}
+					{@render nothingYet(t('home.nothingOnTheWishlist'), '/inventory', t('home.addAnItem'))}
+				{:else}
+					<ul class="space-y-1">
+						{#each data.shoppingCard.wishlist.slice(0, SHOPPING_PREVIEW) as item (item.id)}
+							<li class="text-sm text-gray-700"><span class="truncate">{item.name}</span></li>
+						{/each}
+					</ul>
+					{#if data.shoppingCard.wishlist.length > SHOPPING_PREVIEW}
+						<p class="mt-1 text-xs text-gray-500">
+							{t('home.more3', { length: data.shoppingCard.wishlist.length - SHOPPING_PREVIEW })}
+						</p>
+					{/if}
 				{/if}
 			</Card>
 		{/snippet}
@@ -1399,7 +1436,8 @@
 								</span>
 							</div>
 						{/if}
-						{#if id === 'todayTasks'}{@render card_todayTasks()}
+						{#if id === 'now'}{@render card_now()}
+						{:else if id === 'todayTasks'}{@render card_todayTasks()}
 						{:else if id === 'goals'}{@render card_goals()}
 						{:else if id === 'habits'}{@render card_habits()}
 						{:else if id === 'nextDays'}{@render card_nextDays()}
@@ -1407,7 +1445,8 @@
 						{:else if id === 'diary'}{@render card_diary()}
 						{:else if id === 'bills'}{@render card_bills()}
 						{:else if id === 'workouts'}{@render card_workouts()}
-						{:else if id === 'inventory'}{@render card_shopping()}
+						{:else if id === 'shoppingList'}{@render card_shopping()}
+						{:else if id === 'wishlist'}{@render card_wishlist()}
 						{:else if id === 'quote'}{@render card_quote()}
 						{:else if id === 'threeWins'}{@render card_threeWins()}
 						{:else if id === 'latestTodos'}{@render card_latestTodos()}
