@@ -20,10 +20,13 @@ import { host } from '$lib/services/host';
  * through an `<audio>` element pointed at this URL, and a container that lies
  * about its insides is then noise rather than a document on this origin.
  */
+/** One sentence for every way this can refuse: an id tells nobody anything. */
+const NO_SUCH = 'No such recording.';
+
 export const GET: RequestHandler = async (event) => {
 	try {
 		const id = Number(event.params.id);
-		if (!Number.isInteger(id) || id <= 0) throw new NotFoundError('No such recording.');
+		if (!Number.isInteger(id) || id <= 0) throw new NotFoundError(NO_SUCH);
 
 		/*
 		 * The same bargain the picture endpoint makes: a key gets in when what
@@ -37,11 +40,11 @@ export const GET: RequestHandler = async (event) => {
 			try {
 				caller = host.fileCaller(event.request);
 			} catch {
-				throw new NotFoundError('No such recording.');
+				throw new NotFoundError(NO_SUCH);
 			}
-			if (!caller) throw new NotFoundError('No such recording.');
+			if (!caller) throw new NotFoundError(NO_SUCH);
 			if (!caller.mayRead(recordingReferrers(buildCtx(caller.userId), id)))
-				throw new NotFoundError('No such recording.');
+				throw new NotFoundError(NO_SUCH);
 			userId = caller.userId;
 		}
 

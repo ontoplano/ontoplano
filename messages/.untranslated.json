@@ -1,5 +1,5 @@
 {
-	"total": 224,
+	"total": 222,
 	"files": {
 		"src/lib/json-body.ts": 4,
 		"src/lib/server/api/auth.ts": 1,
@@ -54,7 +54,6 @@
 		"src/lib/services/todos.ts": 5,
 		"src/lib/services/workouts.ts": 5,
 		"src/routes/media/+server.ts": 2,
-		"src/routes/media/audio/[id]/+server.ts": 2,
 		"src/routes/settings/instance/+page.server.ts": 1,
 		"src/routes/tasks/review/+page.server.ts": 2,
 		"src/routes/welcome/password/+page.server.ts": 1
