@@ -18,6 +18,8 @@
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
 	let editing = $state(false);
+	/** The New button for whichever tab is showing — see NotebookDetail. */
+	let newAction = $state<{ label: string; run?: () => void; href?: string } | undefined>(undefined);
 	let confirmingDelete = $state(false);
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -67,6 +69,25 @@
 		</div>
 
 		<div class="flex flex-wrap items-center gap-2">
+			<!--
+				The one thing this page is for, and it follows the tab below: New
+				note while notes are showing, New task on Tasks, New goal on Goals.
+				Drawn here rather than in the tab strip so the strip has the room
+				its tabs need at 390px — see NotebookDetail's `newAction`.
+			-->
+			{#if newAction?.href}
+				<!-- Already resolved: NotebookDetail builds this with `resolve()`. -->
+				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+				<a href={newAction.href} class="btn btn-sm btn-primary">
+					<Icon name="plus" />
+					{newAction.label}
+				</a>
+			{:else if newAction}
+				<button onclick={newAction.run} class="btn btn-sm btn-primary">
+					<Icon name="plus" />
+					{newAction.label}
+				</button>
+			{/if}
 			{#if data.notebook.mine && data.onFamilyPlan}
 				<!-- The owner's switch: everybody on the plan reads it and writes
 				     their own entries into it. Entries keep their writers. -->
@@ -146,6 +167,7 @@
 			allPeople={data.allPeople}
 			categories={data.categories}
 			pickableNotebooks={data.pickableNotebooks}
+			bind:newAction
 		/>
 	</section>
 </div>

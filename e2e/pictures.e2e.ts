@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
-import { deflateSync } from 'node:zlib';
 import { register, testEmail } from './helpers/account';
+import { pngOfSize } from './helpers/png';
 import { visit } from './helpers/visit';
 
 /**
@@ -21,56 +21,8 @@ import { visit } from './helpers/visit';
  * refused in the browser before it is sent, and the sentence names the numbers.
  */
 
-/** A real PNG of `size` square, padded to `kilobytes` with incompressible noise. */
-function png(size: number, kilobytes: number): Buffer {
-	const table = Array.from({ length: 256 }, (_, n) => {
-		let c = n;
-		for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-		return c >>> 0;
-	});
-	const crc = (buf: Buffer) => {
-		let c = 0xffffffff;
-		for (const byte of buf) c = table[(c ^ byte) & 0xff] ^ (c >>> 8);
-		return (c ^ 0xffffffff) >>> 0;
-	};
-	const chunk = (type: string, data: Buffer) => {
-		const length = Buffer.alloc(4);
-		length.writeUInt32BE(data.length);
-		const body = Buffer.concat([Buffer.from(type, 'latin1'), data]);
-		const check = Buffer.alloc(4);
-		check.writeUInt32BE(crc(body));
-		return Buffer.concat([length, body, check]);
-	};
-	const ihdr = Buffer.alloc(13);
-	ihdr.writeUInt32BE(size, 0);
-	ihdr.writeUInt32BE(size, 4);
-	ihdr[8] = 8;
-	ihdr[9] = 2;
-	const raw = Buffer.concat(
-		Array.from({ length: size }, () =>
-			Buffer.concat([
-				Buffer.from([0]),
-				Buffer.concat(Array.from({ length: size }, () => Buffer.from([7, 9, 11])))
-			])
-		)
-	);
-	const real = Buffer.concat([
-		Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
-		chunk('IHDR', ihdr),
-		chunk('IDAT', deflateSync(raw)),
-		chunk('IEND', Buffer.alloc(0))
-	]);
-	const wanted = kilobytes * 1024;
-	if (real.length >= wanted) return real;
-	// Padding after IEND: still a PNG a decoder reads, and the size the server
-	// and the browser both count is the file's.
-	const noise = Buffer.alloc(wanted - real.length);
-	for (let i = 0; i < noise.length; i++) noise[i] = (i * 37) % 251;
-	return Buffer.concat([real, noise]);
-}
-
-const SMALL = { name: 'small.png', mimeType: 'image/png', buffer: png(24, 8) };
-const HUGE = { name: 'huge.png', mimeType: 'image/png', buffer: png(24, 1100) };
+const SMALL = { ...pngOfSize(24, 8), name: 'small.png' };
+const HUGE = { ...pngOfSize(24, 1100), name: 'huge.png' };
 
 async function newRecipe(page: Page, title: string) {
 	await visit(page, '/health/recipes');

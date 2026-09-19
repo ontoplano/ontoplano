@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
-import { deflateSync } from 'node:zlib';
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { register, testEmail } from './helpers/account';
+import { png } from './helpers/png';
 import { visit } from './helpers/visit';
 
 /**
@@ -13,38 +13,6 @@ import { visit } from './helpers/visit';
  * deletes it for real, after a confirmation that says which of the two is
  * about to happen.
  */
-function png(colour: [number, number, number]): { name: string; mimeType: string; buffer: Buffer } {
-	const table = Array.from({ length: 256 }, (_, n) => {
-		let c = n;
-		for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-		return c >>> 0;
-	});
-	const crc = (buf: Buffer) => {
-		let c = 0xffffffff;
-		for (const byte of buf) c = table[(c ^ byte) & 0xff] ^ (c >>> 8);
-		return (c ^ 0xffffffff) >>> 0;
-	};
-	const chunk = (type: string, data: Buffer) => {
-		const length = Buffer.alloc(4);
-		length.writeUInt32BE(data.length);
-		const body = Buffer.concat([Buffer.from(type, 'latin1'), data]);
-		const check = Buffer.alloc(4);
-		check.writeUInt32BE(crc(body));
-		return Buffer.concat([length, body, check]);
-	};
-	const ihdr = Buffer.alloc(13);
-	ihdr.writeUInt32BE(1, 0);
-	ihdr.writeUInt32BE(1, 4);
-	ihdr[8] = 8;
-	ihdr[9] = 2;
-	const buffer = Buffer.concat([
-		Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
-		chunk('IHDR', ihdr),
-		chunk('IDAT', deflateSync(Buffer.from([0, ...colour]))),
-		chunk('IEND', Buffer.alloc(0))
-	]);
-	return { name: `dot-${colour.join('-')}.png`, mimeType: 'image/png', buffer };
-}
 
 test('a picture lives once, however many albums hold it', async ({ page }) => {
 	await register(page, testEmail('gallery'));

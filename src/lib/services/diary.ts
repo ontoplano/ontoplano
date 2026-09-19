@@ -198,8 +198,46 @@ export function updateEntry(
 
 	if (res.changes === 0) throw new NotFoundError('entry');
 
-	replaceDiaryTags(id, parseTags(optionalTagInput(raw.tags)), ctx.userId);
-	cleanupOrphanTags(ctx.userId);
+	/*
+	 * And the tags, on the same rule as the title and the notebook above.
+	 *
+	 * This used to run whatever the caller said, so an edit that mentioned no
+	 * tags took every tag off — which no form here noticed, because all of them
+	 * post the field, and which any other caller would walk straight into. An
+	 * empty string still means "none", because that is a form with its tag box
+	 * cleared; `undefined` means "not my business".
+	 */
+	if (raw.tags !== undefined) {
+		replaceDiaryTags(id, parseTags(optionalTagInput(raw.tags)), ctx.userId);
+		cleanupOrphanTags(ctx.userId);
+	}
+}
+
+/**
+ * One piece of writing, whole, for a caller that has to read before it writes.
+ *
+ * `listEveryEntry` gives ids and nothing else, and `listEntries` is the diary
+ * — deliberately blind to anything in a notebook. Editing a note over the API
+ * needs the note itself: what it currently says, so a change to the title does
+ * not have to resend the body, and what notebook it is in, so an edit cannot
+ * quietly move it.
+ */
+export function getEntry(
+	ctx: Ctx,
+	id: number
+): { id: number; title: string; content: string; notebookId: number | null } {
+	const row = db
+		.select({
+			id: diaryEntries.id,
+			title: diaryEntries.title,
+			content: diaryEntries.content,
+			notebookId: diaryEntries.notebookId
+		})
+		.from(diaryEntries)
+		.where(and(eq(diaryEntries.id, id), eq(diaryEntries.userId, ctx.userId)))
+		.get();
+	if (!row) throw new NotFoundError('entry');
+	return row;
 }
 
 /**

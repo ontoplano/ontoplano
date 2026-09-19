@@ -4,6 +4,7 @@
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import NotebookField from '$lib/components/NotebookField.svelte';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
+	import PictureAttach from '$lib/components/PictureAttach.svelte';
 	import RecordingAttach from '$lib/components/RecordingAttach.svelte';
 	import { RATINGS, type Rating } from '$lib/ratings';
 	import { useT } from '$lib/i18n';
@@ -76,9 +77,11 @@
 
 	<Field label={t('ui.notes')} span={12}>
 		<textarea bind:this={box} name="notes" rows="3" class="textarea">{notes}</textarea>
-		<!-- A task said out loud is still a task: the same attachment a note and
-		     an idea have, because "ring the plumber about the thing behind the
-		     boiler" is quicker said than typed. -->
+		<!-- A task said out loud is still a task, and a task is as often a
+		     screenshot: the same two attachments a note and an idea have,
+		     because "ring the plumber about the thing behind the boiler" is
+		     quicker said than typed and "this screen is wrong" is a picture. -->
+		<PictureAttach target={box} />
 		<RecordingAttach target={box} />
 	</Field>
 {/snippet}

@@ -700,10 +700,8 @@
 									<span class="tabular w-12 shrink-0 font-mono text-xs text-gray-500"
 										>{task.startTime}</span
 									>
-									<span
-										class="truncate text-sm {pending
-											? 'text-gray-400 line-through'
-											: 'text-gray-900'}">{task.name}</span
+									<span class="truncate text-sm {pending ? 'text-gray-400' : 'text-gray-900'}"
+										>{task.name}</span
 									>
 									{#if task.kind === 'once'}
 										<span
@@ -879,7 +877,7 @@
 											>
 											<span
 												class="min-w-0 flex-1 truncate {block.status === 'done'
-													? 'text-gray-400 line-through'
+													? 'text-gray-400'
 													: 'text-gray-700'}"
 												title={block.name}>{block.name}</span
 											>

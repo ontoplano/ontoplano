@@ -2,6 +2,7 @@ import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from '@sveltejs/kit';
 import { buildCtx } from '$lib/services/ctx';
 import { archiveEntry, createEntry, deleteEntry, pinEntry, updateEntry } from '$lib/services/diary';
+import { makeTodosFromEntry } from '$lib/services/note-todos';
 import { setEntryPeople } from '$lib/services/people';
 import { toActionFailure } from '$lib/http-errors';
 import { importVaultAction } from '$lib/import-vault-action';
@@ -172,6 +173,32 @@ export const notebookActions = {
 				formData.get('pinned') !== 'false'
 			);
 			return { success: true, action: 'pinEntry' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
+	 * A note that is a checklist, made into the todos it describes.
+	 *
+	 * `only` is the positions the person left ticked in the dialog, so a list
+	 * with three things already done can cross over without them. The note is
+	 * left alone — deleting it is the button beside this one, because "also put
+	 * these on my list" and "move these onto my list" are both real answers.
+	 */
+	entryToTodos: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			const only = formData
+				.getAll('only')
+				.map(Number)
+				.filter((at) => Number.isInteger(at));
+			const made = makeTodosFromEntry(
+				buildCtx(locals.user!.id),
+				Number(formData.get('id')),
+				formData.has('only') ? only : undefined
+			);
+			return { success: true, action: 'entryToTodos', made: made.ids.length };
 		} catch (e) {
 			return toActionFailure(e);
 		}

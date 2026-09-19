@@ -1313,6 +1313,29 @@
 			}
 		}
 	},
+	"edit_entry": {
+		"scope": "notes:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"content": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"tags": {
+				"type": "string",
+				"required": false
+			},
+			"title": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
 	"favorite_idea": {
 		"scope": "ideas:write",
 		"writes": true,
@@ -1536,6 +1559,21 @@
 			},
 			"month": {
 				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"note_to_todos": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"only": {
+				"type": "array",
 				"required": false
 			}
 		}

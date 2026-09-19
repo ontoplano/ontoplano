@@ -18,6 +18,33 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.181.1 — 2026-09-19
+
+- **A note that is a checklist can become the tasks it describes.** Writing a
+  list in a note is the fastest way to get one out of your head, and then it
+  sits in a notebook where nothing can remind you of it. A note with a
+  `- [ ]` in it now offers to make tasks of its checkboxes — each line a
+  title, whatever is written under it that task's notes, a ticked box arriving
+  already done — with a dialog to leave a few behind. The note itself is left
+  alone. `note_to_todos` does the same over MCP.
+- **A task's notes take a picture.** The same attachment a note and an idea
+  have, because a task is as often a screenshot as a sentence, and the row
+  draws the picture rather than printing its address across itself. Ideas
+  gained the button too.
+- **Notes can be rewritten by an assistant.** `edit_entry` changes a note's
+  words, its title or its tags; leaving a field out leaves it untouched. The
+  tools could make a note and put one away and nothing in between.
+- **A finished task is grey, not struck through.** The tick and the colour say
+  it already. Swept across every screen a completed task appears on.
+- **The notebook's New button says what its tab is about.** It read "New note"
+  while the Tasks tab was showing. It is New task there and New goal on Goals,
+  and New goal opens the goal form with the notebook already chosen. The
+  notebook also keeps its own New notebook button while Tasks is showing,
+  which the task list used to take over.
+- **The note order control moved up beside the full-screen button.** One row
+  under the tabs instead of two, and the tab you are on is scrolled back into
+  view when the strip is too narrow to hold all three.
+
 ## 0.181.0 — 2026-09-19
 
 - **An assistant can see the pictures and recordings in what it may read.**

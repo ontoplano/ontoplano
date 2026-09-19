@@ -5,9 +5,8 @@
 	import { enhance } from '$app/forms';
 	import Backlinks from '$lib/components/Backlinks.svelte';
 	import TodoFields from '$lib/components/fields/TodoFields.svelte';
-	import AudioPlayer from '$lib/components/AudioPlayer.svelte';
+	import Written from '$lib/components/Written.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
-	import { AUDIO_HREF, splitAudio } from '$lib/audio-markdown';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { getAction, keyFor } from '$lib/shortcuts';
@@ -63,7 +62,18 @@
 		 */
 		shortcutRoom = null,
 		listTour = null,
-		newTour = null
+		newTour = null,
+		/**
+		 * A way in from outside, for a screen that draws its own New button.
+		 *
+		 * A notebook puts one beside the tab it belongs to rather than in the
+		 * room's bar, and it must open this list's form rather than a second
+		 * one written next to it. Set once, on mount.
+		 */
+		// `$bindable()` is a compiler directive, not an assignment: this one is
+		// only ever written from here, which is what the rule mistakes it for.
+		// eslint-disable-next-line no-useless-assignment
+		openNew = $bindable()
 	}: {
 		todos: Todo[];
 		categories: { id: number; name: string }[];
@@ -75,6 +85,7 @@
 		shortcutRoom?: string | null;
 		listTour?: string | null;
 		newTour?: string | null;
+		openNew?: (() => void) | undefined;
 	} = $props();
 
 	let showForm = $state(false);
@@ -413,13 +424,32 @@
 		}
 	});
 
-	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
-	setRoomAction(() => ({
-		label: t('app.newToDo'),
-		run: startNew,
-		tour: newTour ?? '',
-		kbd: shortcutRoom ? keyFor(shortcutRoom, 'new') : ''
-	}));
+	// Handed up rather than called from up there: the form belongs to this
+	// component, and a screen drawing its own New button opens this one.
+	$effect(() => {
+		openNew = startNew;
+	});
+
+	/*
+	 * This screen's one verb, drawn by the room's bar — see $lib/room-action.
+	 *
+	 * Only when this list *is* the screen. Inside a notebook it is one tab of
+	 * three, and claiming the bar there replaced the page's own "New notebook"
+	 * with "New to-do" the moment somebody looked at the Tasks tab — beside a
+	 * New task button the notebook already draws for itself. Same rule as the
+	 * keyboard above it: a list sitting inside a page does not swallow what
+	 * belongs to the page.
+	 */
+	// Read once, on purpose: which screen this list belongs to is fixed for the
+	// life of the component, and the bar is claimed at init or not at all.
+	// svelte-ignore state_referenced_locally
+	if (shortcutRoom)
+		setRoomAction(() => ({
+			label: t('app.newToDo'),
+			run: startNew,
+			tour: newTour ?? '',
+			kbd: keyFor(shortcutRoom, 'new')
+		}));
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -735,10 +765,13 @@
 									the side of the screen with it. `break-words` so a single
 									long word breaks rather than doing the same thing again.
 								-->
+								<!-- Finished is grey, not struck through: the tick and the
+								     colour say it already, and a line through a title is one
+								     more thing to read past. -->
 								<span
-									class="min-w-0 text-sm font-medium break-words text-gray-900 {isDone(todo)
-										? 'line-through'
-										: ''}">{todo.title}</span
+									class="min-w-0 text-sm font-medium break-words {isDone(todo)
+										? 'text-gray-400'
+										: 'text-gray-900'}">{todo.title}</span
 								>
 								<RatingBadges values={todo.ratings} />
 								{#if todo.scheduledDate}
@@ -759,24 +792,19 @@
 								{/if}
 							</div>
 							<!--
-								A recording is a player, not the address of one.
+								A recording is a player and a picture is a picture, not the
+								address of either.
 
-								Notes are drawn as a line of text, and a recording is stored
-								as an ordinary markdown link — right for the text, wrong on
-								the screen, where it reads as
-								`[ring the plumber](/media/audio/40)` across the row. The
-								link comes out of the line and the recording is drawn under
-								it. It is always there when there is one, so nothing moves
-								when the row is pressed.
+								Notes are drawn as a line of text, and both attachments are
+								stored as ordinary markdown — right for the text, wrong on
+								the screen, where the row reads as
+								`[ring the plumber](/media/audio/40)`. `Written` takes them
+								out of the line and draws them under it, the same way an
+								idea's are drawn. They are always there when there are any,
+								so nothing moves when the row is pressed.
 							-->
 							{#if todo.notes}
-								{@const spoken = splitAudio(todo.notes)}
-								{#if spoken.text}
-									<p class="truncate text-xs text-gray-500">{spoken.text}</p>
-								{/if}
-								{#each spoken.audios as audioId (audioId)}
-									<AudioPlayer src="{AUDIO_HREF}/{audioId}" class="mt-1 max-w-72" />
-								{/each}
+								<Written content={todo.notes} compact />
 							{/if}
 							<!-- Pressing one narrows the list to it, the way an idea's do:
 							     a label is only useful if reading back one of them is a

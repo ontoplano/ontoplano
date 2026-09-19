@@ -382,6 +382,18 @@ Let a pinned note fall back into its notebook’s own order, where it is read wi
 
 _Needs `notes:write`; writes._
 
+### `edit_entry` — Change what a note says
+
+Rewrite a note or a diary entry — its words, its title, its tags. Only the fields given change; the rest of it, and the notebook it lives in, are left alone. `notebook_notes` gives the id. To put one out of the way instead, `archive_note`.
+
+_Needs `notes:write`; writes._
+
+### `note_to_todos` — Make todos out of a checklist note
+
+Turn a note that is really a checklist into the tasks it describes. Every `- [ ]` line becomes a task, and whatever is written under it — until the next `- [ ]` — becomes that task’s notes. A `- [x]` line comes across already done. Each one is filed under the note’s own notebook. The note is left exactly as it was: tidy it with `edit_entry`, or put it away with `archive_note`, once you have checked what was made.
+
+_Needs `tasks:write`; writes._
+
 ### `archive_note` — Put a note away
 
 Hide a note without deleting it — for one that has stopped being current and is not something to throw out: the trip is over, the flat is rented. It stays in its notebook and comes back with `unarchive_note`. Notes are never deleted through a tool.

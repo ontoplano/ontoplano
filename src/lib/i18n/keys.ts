@@ -1296,6 +1296,7 @@ export type MessageKey =
 	| 'newsletter.off.nothingMoreWillBeSent'
 	| 'newsletter.off.unsubscribedOntoplano'
 	| 'notebookDetail.addNote'
+	| 'notebookDetail.alreadyDone'
 	| 'notebookDetail.anaJoão'
 	| 'notebookDetail.anyoneThisNoteIsAbout'
 	| 'notebookDetail.archived'
@@ -1307,7 +1308,13 @@ export type MessageKey =
 	| 'notebookDetail.editThisNote'
 	| 'notebookDetail.hideArchived'
 	| 'notebookDetail.keepThisAtTheTop'
+	| 'notebookDetail.madeTodos'
+	| 'notebookDetail.makeCountTodos'
+	| 'notebookDetail.makeTodosOfTheCheckboxes'
+	| 'notebookDetail.makeTodosOfThisNote'
+	| 'notebookDetail.newGoal'
 	| 'notebookDetail.newNote'
+	| 'notebookDetail.newTask'
 	| 'notebookDetail.noGoalPointsAtThis'
 	| 'notebookDetail.nothingChosen'
 	| 'notebookDetail.nothingWrittenHereYet'
@@ -1323,6 +1330,7 @@ export type MessageKey =
 	| 'notebookDetail.stopKeepingThisAtThe'
 	| 'notebookDetail.tagsPeople'
 	| 'notebookDetail.takeItBackOut'
+	| 'notebookDetail.theNoteStaysAsItIs'
 	| 'notebookDetail.theWholeScreen'
 	| 'notebookDetail.workHealth'
 	| 'notebookDetail.writeANoteAbout'
@@ -3123,6 +3131,8 @@ export interface MessageValuesFor {
 	'media.importingProgress': { done: string | number; total: string | number };
 	'media.showWhatIsIn': { name: string | number };
 	'newsletter.off.nothingMoreWillBeSent': { email: string | number };
+	'notebookDetail.madeTodos': { count: number };
+	'notebookDetail.makeCountTodos': { count: number };
 	'notebookDetail.showArchived': { count: number };
 	'notebookDetail.writeANoteAbout': { title: string | number };
 	'notebooks.diary.edited': { updatedAt: string | number };

@@ -94,8 +94,9 @@ test('a list emptied by its own filters says so rather than saying there is noth
 	await makeNotebook(page, 'Kitchen');
 	await visit(page, '/notebooks');
 
-	await page.getByRole('button', { name: 'Tasks' }).click();
-	await page.getByRole('button', { name: 'New to-do' }).click();
+	await page.getByRole('button', { name: /^Tasks \d/ }).click();
+	// The notebook draws its own New button, and it says what the tab is about.
+	await page.getByRole('button', { name: 'New task', exact: true }).click();
 	await page.locator('#todo-form [name="heading"]').fill('measure the wall');
 	await page.getByRole('button', { name: 'Create todo' }).click();
 	await expect(page.getByText('measure the wall').first()).toBeVisible();

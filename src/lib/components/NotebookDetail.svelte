@@ -7,10 +7,12 @@
 	import { BackCloses } from '$lib/back-closes';
 	import { isPhone } from '$lib/breakpoints';
 	import { autogrow } from '$lib/actions/autogrow';
+	import { keepInView } from '$lib/actions/keep-in-view';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import Modal from '$lib/components/Modal.svelte';
 	import Select from '$lib/components/Select.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
@@ -32,6 +34,7 @@
 	import TodoRows from '$lib/components/TodoRows.svelte';
 	import { NOTEBOOK_TODO_ACTIONS } from '$lib/todo-actions';
 	import type { Todo } from '$lib/services/todos';
+	import { checklistItems } from '$lib/checklist';
 	import { renderMarkdown } from '$lib/markdown';
 	import { say } from '$lib/said.svelte';
 	import { useT } from '$lib/i18n';
@@ -76,7 +79,20 @@
 		categories = [],
 		pickableNotebooks = [],
 		composing = $bindable(false),
-		newNoteInHeader = false
+		/**
+		 * The New button for whichever tab is showing, for the page to draw.
+		 *
+		 * It lives in the page's own header — the card's corner on the index, the
+		 * title row on a notebook's own page — because the strip beside the tabs
+		 * is where this notebook's controls go, and at 390px a button there costs
+		 * the tabs the room they need. What it says and what it does follow the
+		 * tab: New note while notes are showing, New task on Tasks, New goal on
+		 * Goals. It said "New note" on all three, which is what this fixes.
+		 */
+		// `$bindable()` is a compiler directive, not an assignment: this one is
+		// only ever written from here, which is what the rule mistakes it for.
+		// eslint-disable-next-line no-useless-assignment
+		newAction = $bindable()
 	}: {
 		notebook?: { id: number; title: string; description: string } | null;
 		contents?: {
@@ -94,15 +110,7 @@
 		pickableNotebooks?: { id: number; title: string }[];
 		/** Whether the composer is open, so a page can put the button elsewhere. */
 		composing?: boolean;
-		/**
-		 * The page has a New note button of its own, so this one does not draw one.
-		 *
-		 * Two buttons doing the same thing on one screen is worse than either
-		 * place, and the notebooks index wants it up in the card header — where
-		 * Delete used to sit, which is not a thing to keep one press away from
-		 * a list you are browsing.
-		 */
-		newNoteInHeader?: boolean;
+		newAction?: { label: string; run?: () => void; href?: string } | undefined;
 	} = $props();
 
 	let editingNoteId = $state<number | null>(null);
@@ -242,6 +250,25 @@
 	let confirmDeleteNote = $state<number | null>(null);
 
 	/**
+	 * The note being turned into todos, and which of its boxes are coming.
+	 *
+	 * A checklist written in a note is a list nothing can remind anybody of, so
+	 * a note with a `- [ ]` in it offers to become the tasks it describes. The
+	 * dialog is not a confirmation — it is where somebody leaves a few behind,
+	 * because half of these lists have three things on them that were done
+	 * before the note was finished.
+	 */
+	let listifying = $state<Entry | null>(null);
+	let coming = $state(new SvelteSet<number>());
+
+	const listifyingItems = $derived(listifying ? checklistItems(listifying.content) : []);
+
+	function offerTodos(entry: Entry) {
+		listifying = entry;
+		coming = new SvelteSet(checklistItems(entry.content).map((_, at) => at));
+	}
+
+	/**
 	 * Notes, tasks and goals as tabs rather than three stacked lists.
 	 *
 	 * A notebook with a dozen notes pushed its tasks below the fold, so the two
@@ -249,6 +276,38 @@
 	 */
 	type Tab = 'notes' | 'tasks' | 'goals';
 	let tab = $state<Tab>('notes');
+
+	/**
+	 * The Tasks tab's own New, reached from a button the page draws.
+	 *
+	 * The list is `TodoRows`, the same component the to-do room uses, and it
+	 * owns the form. A second form written beside it would be a second set of
+	 * fields to keep in step, so the button opens that one.
+	 */
+	let openNewTodo = $state<(() => void) | undefined>(undefined);
+
+	$effect(() => {
+		if (!notebook) {
+			newAction = undefined;
+			return;
+		}
+		newAction =
+			tab === 'notes'
+				? {
+						label: composing ? t('ui.cancel') : t('notebookDetail.newNote'),
+						run: () => (composing = !composing)
+					}
+				: tab === 'tasks'
+					? { label: t('notebookDetail.newTask'), run: () => openNewTodo?.() }
+					: {
+							// There is no writing a goal from in here: a goal is a goal of
+							// yours that happens to be about this notebook, and it is
+							// written where goals are. The link carries the notebook, so
+							// the form opens with it already chosen.
+							label: t('notebookDetail.newGoal'),
+							href: `${resolve('/goals')}?new=1&notebookId=${notebook.id}`
+						};
+	});
 
 	/*
 	 * Whichever notebook you move to opens on its notes, not on whichever tab
@@ -445,6 +504,11 @@
 
 	<div class="nb-body">
 		{#if showingOrphans}
+			<!-- Notes whose notebook was deleted: no tabs here, so the order
+			     control gets the row the tab strip would have been. -->
+			<div class="flex items-center justify-end gap-1 border-b border-gray-200 px-4 py-1.5">
+				{@render orderControl()}
+			</div>
 			{@render noteList(shownNotes, null)}
 		{:else if !notebook || !contents}
 			<EmptyState icon="notebook" title={t('notebookDetail.nothingChosen')} />
@@ -463,7 +527,14 @@
 			<div class="flex items-center border-b border-gray-200 pr-2">
 				<div class="snap-strip min-w-0 flex-1 gap-1 px-2 md:flex">
 					{#each tabs as option (option.key)}
+						<!--
+							The strip gives up its width to the controls beside it, so on a
+							narrow screen the tab you are on can be the one off the end.
+							This scrolls it back — by the smallest amount that works, and
+							never vertically.
+						-->
 						<button
+							use:keepInView={tab === option.key}
 							onclick={() => (tab = option.key)}
 							class="tab-link px-3 py-2 text-sm font-medium whitespace-nowrap transition {tab ===
 							option.key
@@ -494,15 +565,7 @@
 									: t('notebookDetail.showArchived', { count: putAwayNotes })}
 							</button>
 						{/if}
-						{#if !newNoteInHeader}
-							<button
-								type="button"
-								onclick={() => (composing = !composing)}
-								class="btn btn-sm shrink-0"
-							>
-								{composing ? t('ui.cancel') : t('notebookDetail.newNote')}
-							</button>
-						{/if}
+						{@render orderControl()}
 					{/if}
 					<button
 						type="button"
@@ -617,6 +680,7 @@
 						notebooks={pickableNotebooks}
 						actions={NOTEBOOK_TODO_ACTIONS}
 						notebookId={notebook.id}
+						bind:openNew={openNewTodo}
 					/>
 				</div>
 
@@ -701,50 +765,48 @@
 	</Field>
 {/snippet}
 
-{#snippet noteList(entries: Entry[], notebookId: number | null)}
-	<!--
-		What the list is sorted by, and which way.
+<!--
+	What the list is sorted by, and which way.
 
-		Above the list rather than up in the tab strip: it is a control over
-		these notes, not a way of getting somewhere else, and at 390px it was
-		pushing "Goals" off the end of a strip that had already been fixed once
-		for exactly that.
+	On the tab row, beside the button that takes the notebook full-screen: both
+	are ways of looking at these notes, and a row of its own underneath cost a
+	centimetre of a phone screen to hold one control. It survives 390px because
+	the New button is no longer here — the page draws that, in its header — and
+	because the strip beside it takes the room that is left and scrolls.
 
-		Two controls rather than one cycling button — three fields and two
-		directions is six presses to get back where you started — and the select
-		is a fixed width, so choosing a longer word does not move the arrow
-		beside it.
-	-->
-	{#if entries.length > 1 || noteOrder !== DEFAULT_NOTE_ORDER}
-		<div class="flex items-center justify-end gap-1 border-b border-gray-200 px-4 py-1.5">
-			<span class="eyebrow mr-1 hidden text-gray-500 sm:inline"
-				>{t('notebookDetail.orderNotesBy')}</span
-			>
-			<Select
-				value={noteOrder}
-				onchange={(e) => pickOrder(e.currentTarget.value as NoteOrder)}
-				class="w-28 py-1 text-xs"
-				aria-label={t('notebookDetail.orderNotesBy')}
-			>
-				{#each NOTE_ORDERS as option (option)}
-					<option value={option}>{t(ORDER_LABELS[option])}</option>
-				{/each}
-			</Select>
-			<button
-				type="button"
-				onclick={flipDirection}
-				class="icon-btn shrink-0"
-				aria-label={noteDirection === 'asc'
-					? t('notebookDetail.ascendingPressForDescending')
-					: t('notebookDetail.descendingPressForAscending')}
-				title={noteDirection === 'asc'
-					? t('notebookDetail.ascendingPressForDescending')
-					: t('notebookDetail.descendingPressForAscending')}
-			>
-				<Icon name={noteDirection === 'asc' ? 'arrow-up' : 'arrow-down'} />
-			</button>
-		</div>
+	Two controls rather than one cycling button — three fields and two
+	directions is six presses to get back where you started — and the select is
+	a fixed width, so choosing a longer word does not move the arrow beside it.
+-->
+{#snippet orderControl()}
+	{#if shownNotes.length > 1 || noteOrder !== DEFAULT_NOTE_ORDER}
+		<Select
+			value={noteOrder}
+			onchange={(e) => pickOrder(e.currentTarget.value as NoteOrder)}
+			class="w-24 shrink-0 py-1 text-xs"
+			aria-label={t('notebookDetail.orderNotesBy')}
+		>
+			{#each NOTE_ORDERS as option (option)}
+				<option value={option}>{t(ORDER_LABELS[option])}</option>
+			{/each}
+		</Select>
+		<button
+			type="button"
+			onclick={flipDirection}
+			class="icon-btn shrink-0"
+			aria-label={noteDirection === 'asc'
+				? t('notebookDetail.ascendingPressForDescending')
+				: t('notebookDetail.descendingPressForAscending')}
+			title={noteDirection === 'asc'
+				? t('notebookDetail.ascendingPressForDescending')
+				: t('notebookDetail.descendingPressForAscending')}
+		>
+			<Icon name={noteDirection === 'asc' ? 'arrow-up' : 'arrow-down'} />
+		</button>
 	{/if}
+{/snippet}
+
+{#snippet noteList(entries: Entry[], notebookId: number | null)}
 	{#if entries.length === 0}
 		<p class="px-4 py-3 text-sm text-gray-500">{t('notebookDetail.nothingWrittenHereYet')}</p>
 	{:else}
@@ -919,6 +981,25 @@
 										</button>
 									</form>
 								{/if}
+								<!--
+									Offered by what the note says, not by where the pointer is.
+
+									It is here for as long as the note has a checkbox in it and
+									gone the moment it does not, so the row never changes shape
+									under somebody reaching for the button beside it. The
+									tooltip is what explains it: an icon alone would be a
+									guess.
+								-->
+								{#if checklistItems(entry.content).length > 0}
+									<button
+										type="button"
+										onclick={() => offerTodos(entry)}
+										class="icon-btn"
+										title={t('notebookDetail.makeTodosOfTheCheckboxes')}
+										aria-label={t('notebookDetail.makeTodosOfTheCheckboxes')}
+										><Icon name="check" /></button
+									>
+								{/if}
 								<button
 									onclick={() => {
 										editingNoteId = entry.id;
@@ -986,6 +1067,65 @@
 		</div>
 	{/if}
 {/snippet}
+
+<!--
+	What the note is about to become.
+
+	Shown rather than promised: somebody who wrote a list two months ago should
+	read the titles back before a dozen of them land on their task list, and the
+	notes under each are what tells two similar lines apart.
+-->
+<Modal
+	open={listifying !== null}
+	onclose={() => (listifying = null)}
+	title={t('notebookDetail.makeTodosOfThisNote')}
+	size="md"
+>
+	<form
+		method="post"
+		action="?/entryToTodos"
+		use:enhance={() =>
+			async ({ update }) => {
+				await update({ reset: false });
+				say(t('notebookDetail.madeTodos', { count: coming.size }));
+				listifying = null;
+			}}
+	>
+		<input type="hidden" name="id" value={listifying?.id ?? ''} />
+		<p class="text-sm text-gray-600">{t('notebookDetail.theNoteStaysAsItIs')}</p>
+		<ul class="mt-3 divide-y divide-gray-200 border-y border-gray-200">
+			{#each listifyingItems as item, at (at)}
+				<li class="flex items-start gap-3 py-2">
+					<input
+						type="checkbox"
+						name="only"
+						value={at}
+						checked={coming.has(at)}
+						onchange={(e) => (e.currentTarget.checked ? coming.add(at) : coming.delete(at))}
+						class="mt-0.5"
+						aria-label={item.title}
+					/>
+					<div class="min-w-0 flex-1">
+						<p class="text-sm {item.done ? 'text-gray-400' : 'text-gray-900'}">{item.title}</p>
+						{#if item.notes}
+							<p class="mt-0.5 text-xs whitespace-pre-wrap text-gray-500">{item.notes}</p>
+						{/if}
+					</div>
+					{#if item.done}
+						<span class="chip shrink-0">{t('notebookDetail.alreadyDone')}</span>
+					{/if}
+				</li>
+			{/each}
+		</ul>
+		<div class="mt-4 flex justify-end gap-2">
+			<button type="button" class="btn" onclick={() => (listifying = null)}>{t('ui.cancel')}</button
+			>
+			<button class="btn btn-primary" disabled={coming.size === 0}>
+				{t('notebookDetail.makeCountTodos', { count: coming.size })}
+			</button>
+		</div>
+	</form>
+</Modal>
 
 <style>
 	/*

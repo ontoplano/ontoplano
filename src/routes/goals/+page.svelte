@@ -5,6 +5,7 @@
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { COUNT_STEP, NUMBER_KINDS } from '$lib/number-kinds';
+	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
@@ -136,13 +137,39 @@
 		return { id: null, value: '', unit: '', whole: true, measureActivity: '' };
 	}
 
-	function openCreate() {
+	function openCreate(inNotebook: number | null = null) {
 		editingId = null;
 		formHorizon = 'week';
 		formStart = today();
 		formTargets = [blankTarget()];
+		startingNotebook = inNotebook;
 		showForm = true;
 	}
+
+	/**
+	 * Which notebook a goal being written belongs to, when something else asked.
+	 *
+	 * A notebook's Goals tab offers "New goal", and the goal it means is a goal
+	 * about that notebook — so the link carries it and the form opens with it
+	 * already chosen rather than making somebody find it in the picker after
+	 * being sent here.
+	 */
+	let startingNotebook: number | null = $state(null);
+
+	/*
+	 * `?new=1` opens the form on arrival, with `?notebookId=` already filled in.
+	 * Read once per navigation rather than on every render, so closing the form
+	 * does not reopen it while the query is still in the address bar.
+	 */
+	let openedFor = '';
+	$effect(() => {
+		const url = page.url;
+		if (url.search === openedFor) return;
+		openedFor = url.search;
+		if (url.searchParams.get('new') !== '1') return;
+		const asked = Number(url.searchParams.get('notebookId'));
+		openCreate(Number.isInteger(asked) && asked > 0 ? asked : null);
+	});
 
 	function openEdit(goal: Goal) {
 		editingId = goal.id;
@@ -237,7 +264,7 @@
 		label: t('goals.newGoal'),
 		tour: 'goal-new',
 		kbd: keyFor('/goals', 'new'),
-		run: openCreate
+		run: () => openCreate()
 	}));
 </script>
 
@@ -422,7 +449,11 @@
 					</select>
 				</Field>
 
-				<NotebookField notebooks={data.notebooks} value={editing?.notebookId ?? null} span={4} />
+				<NotebookField
+					notebooks={data.notebooks}
+					value={editing?.notebookId ?? startingNotebook}
+					span={4}
+				/>
 
 				<!--
 					What the goal is measured by, one row per thing. Several of them is
@@ -570,7 +601,7 @@
 					description={t('goals.aGoalIsACommitment')}
 				>
 					{#snippet action()}
-						<button onclick={openCreate} class="btn btn-primary">
+						<button onclick={() => openCreate()} class="btn btn-primary">
 							<Icon name="plus" />
 							{t('goals.newGoal')}
 						</button>
@@ -628,9 +659,9 @@
 									<div class="min-w-0 flex-1">
 										<div class="flex flex-wrap items-baseline gap-2">
 											<span
-												class="text-sm font-medium text-gray-900 {goal.status !== 'open'
-													? 'line-through opacity-60'
-													: ''}">{goal.title}</span
+												class="text-sm font-medium {goal.status !== 'open'
+													? 'text-gray-400'
+													: 'text-gray-900'}">{goal.title}</span
 											>
 											<span class="tabular text-xs text-gray-500"
 												>{describePeriod(t, goal.horizon, goal.periodStart)}</span
@@ -909,10 +940,8 @@
 													onchange={(e) => e.currentTarget.form?.requestSubmit()}
 													class="h-3.5 w-3.5"
 												/>
-												<span
-													class={todo.status === 'done'
-														? 'text-gray-400 line-through'
-														: 'text-gray-800'}>{todo.title}</span
+												<span class={todo.status === 'done' ? 'text-gray-400' : 'text-gray-800'}
+													>{todo.title}</span
 												>
 											</label>
 										</form>
@@ -1044,8 +1073,7 @@
 										checked={linking.linkedTodoIds.includes(t.id)}
 										class="h-3 w-3"
 									/>
-									<span
-										class={'status' in t && t.status === 'done' ? 'text-gray-400 line-through' : ''}
+									<span class={'status' in t && t.status === 'done' ? 'text-gray-400' : ''}
 										>{t.title}</span
 									>
 								</label>

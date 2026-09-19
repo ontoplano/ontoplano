@@ -24,7 +24,15 @@ import { localDateOf, type Ctx } from '$lib/services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 import type { Ref } from './refs.js';
 
-import { archiveEntry, createEntry, listEntries, pinEntry } from '$lib/services/diary.js';
+import {
+	archiveEntry,
+	createEntry,
+	getEntry,
+	listEntries,
+	pinEntry,
+	updateEntry
+} from '$lib/services/diary.js';
+import { makeTodosFromEntry } from '$lib/services/note-todos.js';
 import { createActivity, listActivities, updateActivity } from '$lib/services/activities.js';
 import { createHabit, listHabits, updateHabit, HABIT_TYPES } from '$lib/services/habits.js';
 import {
@@ -209,6 +217,16 @@ export type Tool = {
 	 * `destructive` grant on top of the room's own write scope.
 	 */
 	destroys?: boolean;
+	/**
+	 * A second scope the token must also hold.
+	 *
+	 * For a tool that reaches across two rooms: making todos out of a note
+	 * reads the note and writes to the task list, and holding one of those
+	 * grants is not consent to the other. Without it, a token given only
+	 * `tasks:write` could copy a note it was never allowed to read into a
+	 * todo, and then read the todo.
+	 */
+	alsoNeeds?: Scope;
 	/**
 	 * The version that announced this tool is going away — set one release
 	 * before a removal, never in the same one. The manifest check refuses a
@@ -1536,6 +1554,80 @@ export const TOOLS: Tool[] = [
 		 * out of the way destroys nothing: it stays in its notebook, keeps its
 		 * number, its tags and the people it is about, and comes back unchanged.
 		 */
+		/*
+		 * Editing what is written, which the tools could not do at all.
+		 *
+		 * `write_entry` made one and `archive_note` put one away, so the only
+		 * way to correct a note over the API was to write a second one and hide
+		 * the first. A person asked to turn their own note into todos and then
+		 * tidy it could do neither half.
+		 *
+		 * A field left out keeps what it had, including the notebook: an edit
+		 * that said nothing about where the note lives used to move it out,
+		 * because `undefined` read as "no notebook" rather than as "not my
+		 * business". Deletion is still not offered — a note is deleted by the
+		 * person, in the app.
+		 */
+		name: 'edit_entry',
+		title: 'Change what a note says',
+		description:
+			'Rewrite a note or a diary entry — its words, its title, its tags. Only the fields given change; the rest of it, and the notebook it lives in, are left alone. `notebook_notes` gives the id. To put one out of the way instead, `archive_note`.',
+		scope: 'notes:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'note', subject: true }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The note\u2019s id, as `notebook_notes` gives it.' },
+				content: text('The new words, as Markdown. Left out, the writing is untouched.'),
+				title: text(
+					'What to call it. Left out, the name is untouched; an empty string takes the name off, which is what an ordinary day\u2019s diary entry has.'
+				),
+				tags: text(
+					'The tags it should carry from now on, comma or space separated \u2014 this replaces the ones it has. Left out, they are untouched.'
+				)
+			},
+			['id']
+		),
+		subject: (ctx, args) => getEntry(ctx, Number(args.id)),
+		run: (ctx, args) => {
+			const now = getEntry(ctx, Number(args.id));
+			updateEntry(ctx, now.id, {
+				content: args.content ?? now.content,
+				...(args.title === undefined ? {} : { title: args.title }),
+				...(args.tags === undefined ? {} : { tags: args.tags })
+			});
+			return { ok: true };
+		}
+	},
+	{
+		name: 'note_to_todos',
+		title: 'Make todos out of a checklist note',
+		description:
+			'Turn a note that is really a checklist into the tasks it describes. Every `- [ ]` line becomes a task, and whatever is written under it \u2014 until the next `- [ ]` \u2014 becomes that task\u2019s notes. A `- [x]` line comes across already done. Each one is filed under the note\u2019s own notebook. The note is left exactly as it was: tidy it with `edit_entry`, or put it away with `archive_note`, once you have checked what was made.',
+		scope: 'tasks:write',
+		alsoNeeds: 'notes:read',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'note', subject: true }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The note\u2019s id, as `notebook_notes` gives it.' },
+				only: {
+					type: 'array',
+					items: { type: 'integer' },
+					description:
+						'Which checkboxes to take, counting from 0 down the note. Left out, all of them.'
+				}
+			},
+			['id']
+		),
+		subject: (ctx, args) => getEntry(ctx, Number(args.id)),
+		run: (ctx, args) => {
+			const only = Array.isArray(args.only) ? args.only.map(Number) : undefined;
+			const made = makeTodosFromEntry(ctx, Number(args.id), only);
+			return { ok: true, made: made.ids.length, ids: made.ids };
+		}
+	},
+	{
 		name: 'archive_note',
 		title: 'Put a note away',
 		description:

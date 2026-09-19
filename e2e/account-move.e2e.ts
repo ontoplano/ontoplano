@@ -1,9 +1,9 @@
 import { expect, test } from '@playwright/test';
-import { deflateSync } from 'node:zlib';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { register, testEmail } from './helpers/account';
+import { png } from './helpers/png';
 import { visit } from './helpers/visit';
 
 /**
@@ -21,43 +21,6 @@ import { visit } from './helpers/visit';
  * log: things that belong to the instance that issued them rather than to the
  * person. So the diff has to come out as exactly that list and nothing else.
  */
-
-/** A one-pixel PNG, so the export carries real bytes rather than only rows. */
-function png(colour: [number, number, number]): { name: string; mimeType: string; buffer: Buffer } {
-	const table = Array.from({ length: 256 }, (_, n) => {
-		let c = n;
-		for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
-		return c >>> 0;
-	});
-	const crc = (buf: Buffer) => {
-		let c = 0xffffffff;
-		for (const byte of buf) c = table[(c ^ byte) & 0xff] ^ (c >>> 8);
-		return (c ^ 0xffffffff) >>> 0;
-	};
-	const chunk = (type: string, data: Buffer) => {
-		const length = Buffer.alloc(4);
-		length.writeUInt32BE(data.length);
-		const body = Buffer.concat([Buffer.from(type, 'latin1'), data]);
-		const check = Buffer.alloc(4);
-		check.writeUInt32BE(crc(body));
-		return Buffer.concat([length, body, check]);
-	};
-	const ihdr = Buffer.alloc(13);
-	ihdr.writeUInt32BE(1, 0);
-	ihdr.writeUInt32BE(1, 4);
-	ihdr[8] = 8;
-	ihdr[9] = 2;
-	return {
-		name: `dot-${colour.join('-')}.png`,
-		mimeType: 'image/png',
-		buffer: Buffer.concat([
-			Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
-			chunk('IHDR', ihdr),
-			chunk('IDAT', deflateSync(Buffer.from([0, ...colour]))),
-			chunk('IEND', Buffer.alloc(0))
-		])
-	};
-}
 
 type Export = {
 	exportedAt: string;

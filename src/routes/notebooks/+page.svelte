@@ -32,6 +32,8 @@
 	let editingId = $state<number | null>(null);
 	/** Whether the note composer in the panel is open; the button for it is up here. */
 	let composing = $state(false);
+	/** The New button for whichever tab the panel is showing — see NotebookDetail. */
+	let newAction = $state<{ label: string; run?: () => void; href?: string } | undefined>(undefined);
 
 	const editing = $derived(
 		editingId ? (data.notebooks.find((n) => n.id === editingId) ?? null) : null
@@ -299,11 +301,24 @@
 							not destroying it, one press away, beside a list you are
 							moving through. Deleting a notebook is on the notebook's
 							own page, which is a place you go to on purpose.
+
+							What it says follows the tab below it: it read "New note"
+							while the Tasks tab was showing, which is a button offering
+							the wrong thing about the list under it.
 						-->
-						<button onclick={() => (composing = !composing)} class="btn btn-sm btn-primary">
-							<Icon name="plus" />
-							{composing ? t('ui.cancel') : t('notebookDetail.newNote')}
-						</button>
+						{#if newAction?.href}
+							<!-- Already resolved: NotebookDetail builds this with `resolve()`. -->
+							<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+							<a href={newAction.href} class="btn btn-sm btn-primary">
+								<Icon name="plus" />
+								{newAction.label}
+							</a>
+						{:else if newAction}
+							<button onclick={newAction.run} class="btn btn-sm btn-primary">
+								<Icon name="plus" />
+								{newAction.label}
+							</button>
+						{/if}
 					{/if}
 				{/snippet}
 
@@ -316,7 +331,7 @@
 					categories={data.categories}
 					pickableNotebooks={data.pickableNotebooks}
 					bind:composing
-					newNoteInHeader={Boolean(selected)}
+					bind:newAction
 				/>
 			</Card>
 		</div>

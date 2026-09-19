@@ -112,11 +112,13 @@ function assertScope(caller: Caller, scope: Scope): void {
  */
 function assertAllowed(caller: Caller, tool: Tool): void {
 	assertScope(caller, tool.scope);
+	if (tool.alsoNeeds) assertScope(caller, tool.alsoNeeds);
 	if (tool.destroys) assertScope(caller, 'destructive');
 }
 
 function offered(caller: Caller, tool: Tool): boolean {
 	if (!caller.scopes.includes(tool.scope)) return false;
+	if (tool.alsoNeeds && !caller.scopes.includes(tool.alsoNeeds)) return false;
 	if (tool.destroys && !caller.scopes.includes('destructive')) return false;
 	// A confined key is not shown what it cannot call. A model offered a tool
 	// that always refuses spends its turn discovering that.

@@ -2,6 +2,7 @@
 	import Field from '$lib/components/Field.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
+	import PictureAttach from '$lib/components/PictureAttach.svelte';
 	import RecordingAttach from '$lib/components/RecordingAttach.svelte';
 	import { useT } from '$lib/i18n';
 
@@ -34,6 +35,7 @@
 	>
 	<!-- An idea said out loud is still an idea. The same attachment the note
 	     form has, for the same reason: some of them are quicker to say. -->
+	<PictureAttach target={box} />
 	<RecordingAttach target={box} />
 </Field>
 

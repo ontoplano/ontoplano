@@ -62,6 +62,7 @@ shows up here on the next build.
 | [`media`](#media)                                | Pictures: what is accepted, where they go, and who may see one.                                                                                                                                                                                                      |
 | [`meta`](#meta)                                  | User-defined key/value metadata attached to planner slots.                                                                                                                                                                                                           |
 | [`newsletter`](#newsletter)                      | The one channel nobody else can take away.                                                                                                                                                                                                                           |
+| [`note-todos`](#note-todos)                      | Turning a note that is really a checklist into the todos it describes.                                                                                                                                                                                               |
 | [`notebook-media`](#notebook-media)              | Every picture that is in a notebook, as a gallery album.                                                                                                                                                                                                             |
 | [`notebooks`](#notebooks)                        | Notebooks: a subject you write against, with no deadline.                                                                                                                                                                                                            |
 | [`notifications`](#notifications)                | Everything the app will tell you about, in one list.                                                                                                                                                                                                                 |
@@ -1431,6 +1432,16 @@ The wins arrive as `win_0`, `win_1`, … from a form that can grow a row, so
 the count is whatever was sent rather than a fixed three.
 
 #### `updateEntry(ctx, id, raw)`
+
+#### `getEntry(ctx, id)`
+
+One piece of writing, whole, for a caller that has to read before it writes.
+
+`listEveryEntry` gives ids and nothing else, and `listEntries` is the diary
+— deliberately blind to anything in a notebook. Editing a note over the API
+needs the note itself: what it currently says, so a change to the title does
+not have to resend the body, and what notebook it is in, so an edit cannot
+quietly move it.
 
 #### `archiveEntry(ctx, id, away)`
 
@@ -2982,6 +2993,40 @@ person running it.
 
 - `Subscriber`
 - `Issue`
+
+## note-todos
+
+Turning a note that is really a checklist into the todos it describes.
+
+People write lists in notes because that is the fastest way to get one out of
+their head, and then the list sits somewhere nothing can remind them of it.
+This is the way across: every `- [ ]` line in the note becomes a todo, with
+whatever is written under it as that todo's notes — see `$lib/checklist` for
+the shape being read.
+
+The note is left exactly as it was. Deleting it is a separate press, because
+somebody who meant "also put these on my list" and somebody who meant "move
+these onto my list" both press this button, and only one of them wants the
+note gone.
+
+### Functions
+
+#### `makeTodosFromEntry(ctx, entryId, only)`
+
+Make todos of a note's checkboxes.
+
+`only` names which ones by their position in the note, counting from zero,
+for the screen that lets somebody leave a few behind; left out means all of
+them. A ticked box arrives ticked, so a half-done list crosses over half
+done rather than pretending the finished half never happened.
+
+Each todo is filed under the note's own notebook. That is nearly always what
+was meant — the list was written _about_ something — and a todo in the wrong
+notebook is a great deal easier to notice and move than one in none.
+
+### Types
+
+- `MadeTodos` — What came of it, in the order the note had them.
 
 ## notebook-media
 
