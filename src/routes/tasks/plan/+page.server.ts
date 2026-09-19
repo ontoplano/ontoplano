@@ -10,7 +10,7 @@ import { toActionFailure } from '$lib/http-errors';
 import { metaFromFormData, metaPatchFromFormData } from '$lib/services/meta';
 import { listManifests } from '$lib/services/plugins';
 import { billsDueBetween } from '$lib/services/bills';
-import { listWorkouts } from '$lib/services/workouts';
+import { ensureSession, listWorkouts, updateSession } from '$lib/services/workouts';
 import {
 	addFeed,
 	listFeeds,
@@ -350,12 +350,15 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 		// The workouts a block can be about. Empty for an account that keeps
 		// none, which is what hides the mode entirely.
 		// `categoryName` for the block form's header, which says what the block
-		// is and what it is filed under whichever mode is chosen.
+		// is and what it is filed under whichever mode is chosen; `measures` so
+		// marking a workout done can ask how much of each was actually done,
+		// which is the moment somebody knows.
 		workouts: listWorkouts(ctx).map((t) => ({
 			id: t.id,
 			title: t.title,
 			minutes: t.minutes,
-			categoryName: t.categoryName ?? null
+			categoryName: t.categoryName ?? null,
+			measures: t.measures.map((m) => ({ activity: m.activity, unit: m.unit }))
 		}))
 	};
 };
@@ -616,13 +619,49 @@ export const actions = {
 	setStatus: async ({ request, locals }: IsolatedEvent) => {
 		const formData = await request.formData();
 		try {
+			const ctx = buildCtx(locals.user!.id);
 			setStatusOn(
-				buildCtx(locals.user!.id),
+				ctx,
 				formData.get('kind') === 'exceptional' ? 'exceptional' : 'slot',
 				Number(formData.get('refId')),
 				String(formData.get('date') ?? ''),
 				formData.get('status')
 			);
+
+			/*
+			 * How much of it was actually done, said in the same breath.
+			 *
+			 * Marking a workout block done already opens a session for that day
+			 * — `ensureSession`, through the status change — and the moment
+			 * somebody knows what they lifted is the moment they are ticking it
+			 * off. Asking them to go to Health afterwards is asking twice, and
+			 * the second ask is the one that does not happen.
+			 *
+			 * Only when the form carried lines, so a tick from anywhere else
+			 * leaves a session's existing lines alone rather than wiping them.
+			 */
+			const workoutId = Number(formData.get('workoutId'));
+			if (
+				formData.get('status') === 'done' &&
+				Number.isInteger(workoutId) &&
+				workoutId > 0 &&
+				formData.has('measureActivity')
+			) {
+				const activities = formData.getAll('measureActivity').map(String);
+				const amounts = formData.getAll('measureAmount').map(String);
+				const units = formData.getAll('measureUnit').map(String);
+				const measures = activities
+					.map((activity, i) => ({ activity, amount: amounts[i] ?? '', unit: units[i] ?? '' }))
+					.filter((line) => line.activity.trim() !== '' && line.amount.trim() !== '');
+
+				if (measures.length > 0) {
+					const day = String(formData.get('date') ?? '');
+					updateSession(ctx, ensureSession(ctx, workoutId, day), {
+						doneOn: day,
+						measures
+					});
+				}
+			}
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);

@@ -106,10 +106,18 @@
 	 */
 
 	type Session = (typeof data.sessions)[number];
-	type Line = { activity: string; amount: string; unit: string };
+	/**
+	 * One line of a session, and whether the workout asked for it.
+	 *
+	 * `declared` means the workout names this measure — so the name and the
+	 * unit are its answer to "what is this for", not something to retype every
+	 * session. Those rows read as a label with one box to fill in; a row
+	 * somebody adds themselves is three free fields, because it is theirs.
+	 */
+	type Line = { activity: string; amount: string; unit: string; declared: boolean };
 
 	/** A row nobody has typed in yet. The form always ends with one. */
-	const blankLine = (): Line => ({ activity: '', amount: '', unit: '' });
+	const blankLine = (): Line => ({ activity: '', amount: '', unit: '', declared: false });
 
 	/** The sessions of one workout, newest first, as the loader ordered them. */
 	function sessionsOf(workoutId: number): Session[] {
@@ -152,7 +160,7 @@
 			const key = `${measure.activity} ${measure.unit}`;
 			if (seen.has(key)) continue;
 			seen.add(key);
-			out.push({ activity: measure.activity, amount: '', unit: measure.unit });
+			out.push({ activity: measure.activity, amount: '', unit: measure.unit, declared: true });
 		}
 
 		// Then anything past sessions measured that the workout never named —
@@ -162,7 +170,7 @@
 				const key = `${measure.activity} ${measure.unit}`;
 				if (seen.has(key)) continue;
 				seen.add(key);
-				out.push({ activity: measure.activity, amount: '', unit: measure.unit });
+				out.push({ activity: measure.activity, amount: '', unit: measure.unit, declared: false });
 			}
 		}
 		return out.length > 0 ? [...out, blankLine()] : [blankLine()];
@@ -176,19 +184,51 @@
 		lines = openingLines(workout);
 	}
 
+	/**
+	 * Correcting a session asks the same questions writing one did.
+	 *
+	 * It used to open on the session's own lines alone, which for a session
+	 * that measured nothing is one empty row — so a workout that declares pull
+	 * ups and rows offered neither of them, and the way to record what you
+	 * actually did was to type both names again from memory. The workout's
+	 * measures are the questions; the session is the answers so far.
+	 */
 	function startEditSession(workout: (typeof data.workouts)[number], session: Session) {
 		logging = workout;
 		editingSession = session;
 		logDate = session.doneOn;
 		logNotes = session.notes;
-		lines = [
-			...session.measures.map((measure) => ({
+
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- read and emptied inside this call; nothing renders from it.
+		const answered = new Map(
+			session.measures.map((measure) => [`${measure.activity}\u0000${measure.unit}`, measure])
+		);
+		const out: Line[] = [];
+
+		for (const measure of workout.measures) {
+			const key = `${measure.activity}\u0000${measure.unit}`;
+			const said = answered.get(key);
+			answered.delete(key);
+			out.push({
 				activity: measure.activity,
+				unit: measure.unit,
+				amount: said?.amount === null || said?.amount === undefined ? '' : String(said.amount),
+				declared: true
+			});
+		}
+
+		// And whatever the session measured that the workout never named, which
+		// is somebody's own addition and stays editable.
+		for (const measure of answered.values()) {
+			out.push({
+				activity: measure.activity,
+				unit: measure.unit,
 				amount: measure.amount === null ? '' : String(measure.amount),
-				unit: measure.unit
-			})),
-			blankLine()
-		];
+				declared: false
+			});
+		}
+
+		lines = [...out, blankLine()];
 	}
 
 	function closeLog() {
@@ -758,34 +798,57 @@
 				</div>
 				{#each lines as line, index (index)}
 					<div class="mb-2 grid grid-cols-[1fr_5rem_5rem_2rem] items-center gap-2">
-						<!-- A plain input, not a `OneLine`: it completes from the datalist
-						     below, and a textarea cannot carry one. See
-						     `tests/autofill-field-names.test.ts`, which exempts exactly
-						     this case. -->
-						<input
-							type="text"
-							name="measureActivity"
-							list="workout-activities"
-							placeholder={t('health.workouts.ran')}
-							autocomplete="off"
-							bind:value={line.activity}
-							oninput={() => lineTyped(index)}
-							class="input"
-						/>
-						<NumberBox
-							name="measureAmount"
-							min="0"
-							step="any"
-							placeholder="5"
-							bind:value={line.amount}
-							class="tabular"
-						/>
-						<OneLine
-							name="measureUnit"
-							placeholder={t('health.workouts.km')}
-							bind:value={line.unit}
-							class="input"
-						/>
+						{#if line.declared}
+							<!--
+								The workout already said what this is. Its name and its unit
+								are the question, so they are written rather than offered as
+								two boxes to retype from memory every session — all that is
+								left to say is how much.
+							-->
+							<span class="truncate text-sm text-gray-900" title={line.activity}
+								>{line.activity}</span
+							>
+							<input type="hidden" name="measureActivity" value={line.activity} />
+							<NumberBox
+								name="measureAmount"
+								min="0"
+								step="any"
+								placeholder="5"
+								bind:value={line.amount}
+								class="tabular"
+							/>
+							<span class="truncate text-sm text-gray-500" title={line.unit}>{line.unit}</span>
+							<input type="hidden" name="measureUnit" value={line.unit} />
+						{:else}
+							<!-- A plain input, not a `OneLine`: it completes from the datalist
+							     below, and a textarea cannot carry one. See
+							     `tests/autofill-field-names.test.ts`, which exempts exactly
+							     this case. -->
+							<input
+								type="text"
+								name="measureActivity"
+								list="workout-activities"
+								placeholder={t('health.workouts.ran')}
+								autocomplete="off"
+								bind:value={line.activity}
+								oninput={() => lineTyped(index)}
+								class="input"
+							/>
+							<NumberBox
+								name="measureAmount"
+								min="0"
+								step="any"
+								placeholder="5"
+								bind:value={line.amount}
+								class="tabular"
+							/>
+							<OneLine
+								name="measureUnit"
+								placeholder={t('health.workouts.km')}
+								bind:value={line.unit}
+								class="input"
+							/>
+						{/if}
 						<button
 							type="button"
 							class="icon-btn icon-btn-danger"

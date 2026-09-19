@@ -66,6 +66,12 @@ releases mattered.
   same tree of attributes — press the attribute itself for everything that has
   one, whatever it says, or one of its values. The button says when something
   is being held back.
+- **A workout asks how much you did, where you say you did it.** The measures
+  a workout declares — pull ups, rows — are now listed by name with a box for
+  the amount: on the block you are ticking off, and in the session editor,
+  which used to offer one empty line and expect the names to be typed again
+  from memory. Blank is still fine; a session with nothing measured is still a
+  session.
 - **The tab icon is the sharp one again.** The app offered browsers an SVG
   favicon, which is not a vector — the mark is a drawing, so that file is a
   256-pixel image in a wrapper — and a browser given a scalable icon prefers

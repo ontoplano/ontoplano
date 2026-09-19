@@ -2804,6 +2804,7 @@ export const messages: Catalogue = {
 	'tasks.plan.haveItComeBack':
 		'Lassen Sie es wiederkehren — jede Woche, oder in welchem Rhythmus Sie möchten',
 	'tasks.plan.howMuchToShow': 'Wie viel angezeigt werden soll',
+	'tasks.plan.howMuchYouDid': 'Wie viel Sie geschafft haben',
 	'tasks.plan.howOften': 'Wie oft',
 	'tasks.plan.httpsCalendarGoogleComCalendarIcalBasicI':
 		'https://calendar.google.com/calendar/ical/…/basic.ics',

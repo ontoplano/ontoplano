@@ -312,6 +312,15 @@
 	/** What the block form's header shows where there is no name to show. */
 	const DASH = '\u2014';
 
+	/**
+	 * The workout this block is, when it is one, and what was typed against it.
+	 *
+	 * Kept beside the tick rather than inside the form's own state: it is
+	 * answered once, as the block is marked done, and thrown away with the
+	 * dialog. A workout with nothing declared asks nothing.
+	 */
+	let measureAmounts = $state<string[]>([]);
+
 	// One form creates and edits both kinds of block. A recurring slot and a
 	// one-off differ only in "which day" — weekday versus date — so splitting
 	// them into two forms only ever made the user pick the storage table.
@@ -384,6 +393,14 @@
 	 * name of its own — the category *is* what it is — so the first line is a
 	 * dash rather than a repetition of the second.
 	 */
+	const tickedWorkout = $derived.by(() => {
+		// Through a widened local, because reading `slotMode` narrows it for
+		// everything below in this file — see `blockHeading`.
+		const mode: string = slotMode;
+		if (mode !== 'workout') return undefined;
+		return data.workouts.find((w) => w.id === formWorkoutId);
+	});
+
 	const blockHeading = $derived.by(() => {
 		const mode: string = slotMode;
 		const category = (id: number | null | undefined) =>
@@ -544,6 +561,7 @@
 		};
 		editingKind = 'slot';
 		editingBlockId = slot.id;
+		measureAmounts = [];
 		repeat = 'weekly';
 		formWeekday = slot.weekday;
 		slotMode = slot.mode as 'category' | 'activity' | 'workout';
@@ -565,6 +583,7 @@
 		};
 		editingKind = 'exceptional';
 		editingBlockId = exc.id;
+		measureAmounts = [];
 		repeat = 'once';
 		formDate = exc.date;
 		slotMode = exc.mode as 'category' | 'activity' | 'workout';
@@ -585,6 +604,7 @@
 	 * drawn on is a block that does not appear where it was just drawn.
 	 */
 	function startNew(mode: 'weekly' | 'once' = 'weekly', anchor: string = selectedDateStr()) {
+		measureAmounts = [];
 		recurrenceKind = 'weekly';
 		recurrenceDays = [selectedWeekday];
 		recurrenceAnchor = anchor;
@@ -3472,6 +3492,40 @@
 							<input type="hidden" name="refId" value={editingBlockId} />
 							<input type="hidden" name="date" value={tickDate} />
 							<input type="hidden" name="status" value={ticked ? 'todo' : 'done'} />
+
+							<!--
+								How much of it you actually did, asked where you tick it off.
+								
+								A workout says what it measures — pull ups, rows — and the
+								moment somebody knows what they managed is the moment they
+								are marking it done. Sending them to Health afterwards is
+								asking twice, and the second ask is the one that does not
+								happen. Blank is fine: a session with nothing measured is
+								still a session.
+							-->
+							{#if !ticked && slotMode === 'workout' && tickedWorkout && tickedWorkout.measures.length > 0}
+								<input type="hidden" name="workoutId" value={tickedWorkout.id} />
+								<div class="mb-3 border border-gray-200 bg-gray-50 p-3">
+									<span class="eyebrow text-gray-500">{t('tasks.plan.howMuchYouDid')}</span>
+									<div class="mt-2 space-y-2">
+										{#each tickedWorkout.measures as measure, index (index)}
+											<div class="grid grid-cols-[1fr_5rem_3rem] items-center gap-2">
+												<span class="truncate text-sm text-gray-900">{measure.activity}</span>
+												<input type="hidden" name="measureActivity" value={measure.activity} />
+												<NumberBox
+													name="measureAmount"
+													min="0"
+													step="any"
+													bind:value={measureAmounts[index]}
+													class="tabular"
+												/>
+												<span class="truncate text-sm text-gray-500">{measure.unit}</span>
+												<input type="hidden" name="measureUnit" value={measure.unit} />
+											</div>
+										{/each}
+									</div>
+								</div>
+							{/if}
 							<button
 								type="submit"
 								title={ticked ? t('tasks.plan.putItBackToPending') : t('tasks.plan.itHappened')}

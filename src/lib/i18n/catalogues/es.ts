@@ -2772,6 +2772,7 @@ export const messages: Catalogue = {
 	'tasks.plan.happensOnceOnOneDay': 'Sucede una vez, en un día.',
 	'tasks.plan.haveItComeBack': 'Haz que vuelva — cada semana, o con el ritmo que elijas',
 	'tasks.plan.howMuchToShow': 'Cuánto mostrar',
+	'tasks.plan.howMuchYouDid': 'Cuánto hiciste',
 	'tasks.plan.howOften': 'Con qué frecuencia',
 	'tasks.plan.httpsCalendarGoogleComCalendarIcalBasicI':
 		'https://calendar.google.com/calendar/ical/…/basic.ics',

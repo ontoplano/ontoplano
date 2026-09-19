@@ -2372,6 +2372,7 @@ export type MessageKey =
 	| 'tasks.plan.happensOnceOnOneDay'
 	| 'tasks.plan.haveItComeBack'
 	| 'tasks.plan.howMuchToShow'
+	| 'tasks.plan.howMuchYouDid'
 	| 'tasks.plan.howOften'
 	| 'tasks.plan.httpsCalendarGoogleComCalendarIcalBasicI'
 	| 'tasks.plan.import'
