@@ -238,6 +238,7 @@ export type MessageKey =
 	| 'audio.discard'
 	| 'audio.full'
 	| 'audio.held'
+	| 'audio.justRecorded'
 	| 'audio.keepTheIdea'
 	| 'audio.makeAnIdea'
 	| 'audio.nameIt'
@@ -342,7 +343,6 @@ export type MessageKey =
 	| 'fields.note.notebookTags'
 	| 'fields.note.separateWithCommasOrSpaces'
 	| 'fields.note.tagsExample'
-	| 'fields.todo.categoryNotebookNotesRatings'
 	| 'fields.todo.categoryNotebookTagsNotesRatings'
 	| 'fields.todo.none'
 	| 'fields.todo.separateWithCommasOrSpaces'
@@ -2901,6 +2901,7 @@ export interface MessageValuesFor {
 	'admin.minutesAgo': { count: number };
 	'audio.full': { count: number };
 	'audio.held': { count: number };
+	'audio.justRecorded': { name: string | number };
 	'audio.sizeKB': { size: string | number };
 	'audio.tooLong': { kilobytes: string | number };
 	'capture.addedTo': { into: string | number };

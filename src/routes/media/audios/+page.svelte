@@ -2,6 +2,7 @@
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import AudioPlayer from '$lib/components/AudioPlayer.svelte';
+	import Banner from '$lib/components/Banner.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -31,14 +32,26 @@
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	/**
-	 * The recording somebody is turning into an idea, if any.
+	 * The recording somebody is turning into an idea, if any. Null until asked.
 	 *
-	 * Offered the moment one is finished, because that is when there is still
-	 * something to say about it — going to Ideas afterwards and reaching back
-	 * for the file is three steps between a thought and writing it down. The
-	 * same button is on every row, so an old recording is not a lesser one.
+	 * The composer is a dialog, so it is opened by a press and never by
+	 * finishing a recording: this page is where somebody makes five in a row,
+	 * and a modal that arrives after each one is five dialogs to dismiss —
+	 * standing over the list while they are trying to rename the thing they
+	 * just made. What finishing a recording does is `justMade` below.
 	 */
 	let ideaOf = $state<{ id: number; name: string } | null>(null);
+
+	/**
+	 * The one just recorded, offered rather than demanded.
+	 *
+	 * The moment it is finished is when there is still something to say about
+	 * it — going to Ideas afterwards and reaching back for the file is three
+	 * steps between a thought and writing it down. So the offer is here, in a
+	 * strip above the list that blocks nothing and can be waved away. The same
+	 * button is on every row, so an old recording is not a lesser one.
+	 */
+	let justMade = $state<{ id: number; name: string } | null>(null);
 	const ideaSeed = $derived(ideaOf ? audioMarkdown(ideaOf.id, ideaOf.name) + '\n' : '');
 
 	/** Which row's name is being edited, if any. One at a time. */
@@ -84,8 +97,8 @@
 		};
 		if (!answer.ok) throw new Error(said.message ?? t('audio.notSupported'));
 		await invalidateAll();
-		// Asked once, here, while the thought is still in the room.
-		if (said.id) ideaOf = { id: said.id, name: said.name ?? name };
+		// Offered once, here, while the thought is still in the room.
+		if (said.id) justMade = { id: said.id, name: said.name ?? name };
 	}
 
 	/** When it happened, where the reader is. `$lib/services/time.ts` has why. */
@@ -104,6 +117,42 @@
 			</span>
 		{/snippet}
 	</RoomToolbar>
+
+	<!--
+		Just recorded: the offer, not a demand.
+
+		Reserved nothing and blocks nothing — it appears because the list it sits
+		above has just grown by a row, which is the one kind of movement this app
+		allows. Waved away with the ×, and the row's own button says the same
+		thing for ever afterwards.
+	-->
+	{#if justMade}
+		<Banner kind="info">
+			<div class="flex flex-wrap items-center gap-2">
+				<span class="min-w-0 flex-1">{t('audio.justRecorded', { name: justMade.name })}</span>
+				<button
+					type="button"
+					class="btn btn-sm"
+					onclick={() => {
+						ideaOf = justMade;
+						justMade = null;
+					}}
+				>
+					<Icon name="ideas" class="mr-1.5" />
+					{t('audio.makeAnIdea')}
+				</button>
+				<button
+					type="button"
+					class="icon-btn"
+					title={t('ui.dismiss')}
+					aria-label={t('ui.dismiss')}
+					onclick={() => (justMade = null)}
+				>
+					<Icon name="close" />
+				</button>
+			</div>
+		</Banner>
+	{/if}
 
 	{#if data.recordings.length === 0}
 		<EmptyState icon="sound" title={t('audio.none')} />

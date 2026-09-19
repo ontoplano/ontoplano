@@ -60,7 +60,7 @@ test('maximizing takes the screen and puts everything back', async ({ page }) =>
 	await composer.fill('half a thought, not yet saved');
 	const before = await composer.boundingBox();
 
-	await page.getByRole('button', { name: 'Maximize' }).click();
+	await page.getByRole('button', { name: 'The whole screen' }).click();
 	const surface = page.locator('dialog.nb-surface[open]');
 	await expect(surface).toBeVisible();
 
@@ -91,7 +91,7 @@ test('the type control scales in steps, and the device remembers the choice', as
 	// Inline, the app's own scale; maximized, the chosen step — one up from
 	// the app's `text-sm` by default, because a full screen is for reading.
 	expect(await sizeOf()).toBe('14px');
-	await page.getByRole('button', { name: 'Maximize' }).click();
+	await page.getByRole('button', { name: 'The whole screen' }).click();
 	const surface = page.locator('dialog.nb-surface[open]');
 	await expect(surface).toBeVisible();
 	expect(await sizeOf()).toBe('16px');
@@ -117,7 +117,7 @@ test('the type control scales in steps, and the device remembers the choice', as
 	// A fresh visit: the composer is closed again, as it is on every screen.
 	await page.getByRole('button', { name: 'New note', exact: true }).first().click();
 	await expect(composer).toBeVisible();
-	await page.getByRole('button', { name: 'Maximize' }).click();
+	await page.getByRole('button', { name: 'The whole screen' }).click();
 	await expect(page.locator('dialog.nb-surface[open]')).toBeVisible();
 	expect(await sizeOf()).toBe('24px');
 });

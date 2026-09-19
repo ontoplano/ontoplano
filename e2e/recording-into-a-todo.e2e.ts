@@ -65,7 +65,12 @@ test('a recording just made can become an idea without leaving the page', async 
 	await page.getByRole('textbox', { name: 'What to call it' }).fill('the thought');
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 
-	// Offered straight away, with the recording in the box already.
+	// Offered straight away — as a strip above the list, not a dialog standing
+	// over it: this page is where somebody records five things in a row.
+	await expect(page.getByText('Recorded the thought.')).toBeVisible();
+	await expect(page.locator('#audio-idea-form')).toHaveCount(0);
+
+	await page.getByRole('button', { name: 'Make an idea of it' }).first().click();
 	const box = page.locator('#audio-idea-form textarea[name="content"]');
 	await expect(box).toBeVisible();
 	await expect(box).toHaveValue(/\[the thought\]\(\/media\/audio\/\d+\)/);
@@ -89,14 +94,19 @@ test('an older recording can be made into an idea too', async ({ page }) => {
 	await page.getByRole('button', { name: 'Pause', exact: true }).click();
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 
-	// Dismissed: the recording is kept, the idea is not made.
-	await page.getByRole('button', { name: 'Not now' }).click();
+	// Waved away: the recording is kept, the offer goes, nothing was blocked.
+	await page.getByRole('button', { name: 'Dismiss' }).click();
+	await expect(page.getByText(/^Recorded /)).toHaveCount(0);
 	await expect(page.locator('#audio-idea-form')).toHaveCount(0);
 
-	// And the row offers the same thing later, so an old recording is not a
-	// lesser one than the one that was just made.
+	// And the row offers the same thing afterwards, so an old recording is not
+	// a lesser one than the one that was just made.
 	await page.getByRole('button', { name: 'Make an idea of it' }).first().click();
 	await expect(page.locator('#audio-idea-form textarea[name="content"]')).toHaveValue(
 		/\(\/media\/audio\/\d+\)/
 	);
+
+	// And the composer can be left without making one.
+	await page.getByRole('button', { name: 'Not now' }).click();
+	await expect(page.locator('#audio-idea-form')).toHaveCount(0);
 });

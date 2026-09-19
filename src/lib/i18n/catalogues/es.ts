@@ -259,6 +259,7 @@ export const messages: Catalogue = {
 	'audio.discard': 'Descartar',
 	'audio.full': 'Eso ya son {count} grabaciones. Elimina una para guardar otra.',
 	'audio.held': { one: '{count} grabación', other: '{count} grabaciones' },
+	'audio.justRecorded': 'Grabado: {name}.',
 	'audio.keepTheIdea': 'Guardar la idea',
 	'audio.makeAnIdea': 'Convertir en idea',
 	'audio.nameIt': 'Cómo llamarla',
@@ -374,7 +375,6 @@ export const messages: Catalogue = {
 	'fields.note.separateWithCommasOrSpaces':
 		'Sepáralas con comas o espacios. Un # al inicio está bien.',
 	'fields.note.tagsExample': 'trabajo, salud',
-	'fields.todo.categoryNotebookNotesRatings': 'Categoría, cuaderno, notas, valoraciones',
 	'fields.todo.categoryNotebookTagsNotesRatings':
 		'Categoría, cuaderno, etiquetas, notas, valoraciones',
 	'fields.todo.none': '— ninguno —',

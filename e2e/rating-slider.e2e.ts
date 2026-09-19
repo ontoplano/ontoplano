@@ -22,7 +22,7 @@ async function openTheScales(page: import('@playwright/test').Page, title: strin
 
 	// The scales live behind the same disclosure as the notes and the category.
 	await page
-		.getByText(/Category, notebook, notes, ratings/)
+		.getByText(/Category, notebook, tags, notes, ratings/)
 		.first()
 		.click();
 	await expect(page.locator('input[type="range"]')).toHaveCount(3);

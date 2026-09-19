@@ -262,6 +262,7 @@ export const messages: Catalogue = {
 	'audio.full':
 		'Das sind bereits {count} Aufnahmen. Löschen Sie eine, um eine weitere zu behalten.',
 	'audio.held': { one: '{count} Aufnahme', other: '{count} Aufnahmen' },
+	'audio.justRecorded': 'Aufgenommen: {name}.',
 	'audio.keepTheIdea': 'Idee behalten',
 	'audio.makeAnIdea': 'Zur Idee machen',
 	'audio.nameIt': 'Wie soll sie heißen',
@@ -377,7 +378,6 @@ export const messages: Catalogue = {
 	'fields.note.separateWithCommasOrSpaces':
 		'Mit Kommas oder Leerzeichen trennen. Ein vorangestelltes # ist erlaubt.',
 	'fields.note.tagsExample': 'Arbeit, Gesundheit',
-	'fields.todo.categoryNotebookNotesRatings': 'Kategorie, Notizbuch, Notizen, Bewertungen',
 	'fields.todo.categoryNotebookTagsNotesRatings':
 		'Kategorie, Notizbuch, Schlagwörter, Notizen, Bewertungen',
 	'fields.todo.none': '— keine —',

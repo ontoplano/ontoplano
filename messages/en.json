@@ -238,6 +238,7 @@
 		"one": "{count} recording",
 		"other": "{count} recordings"
 	},
+	"audio.justRecorded": "Recorded {name}.",
 	"audio.keepTheIdea": "Keep the idea",
 	"audio.makeAnIdea": "Make an idea of it",
 	"audio.nameIt": "What to call it",
@@ -342,7 +343,6 @@
 	"fields.note.notebookTags": "Notebook, tags",
 	"fields.note.separateWithCommasOrSpaces": "Separate with commas or spaces. A leading # is fine.",
 	"fields.note.tagsExample": "work, health",
-	"fields.todo.categoryNotebookNotesRatings": "Category, notebook, notes, ratings",
 	"fields.todo.categoryNotebookTagsNotesRatings": "Category, notebook, tags, notes, ratings",
 	"fields.todo.none": "— none —",
 	"fields.todo.separateWithCommasOrSpaces": "Separate with commas or spaces. A leading # is fine.",

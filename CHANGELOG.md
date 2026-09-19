@@ -57,9 +57,10 @@ releases mattered.
   same recorder a note and an idea already had, and the task's row plays it
   back rather than showing the address of a file.
 - **A recording can become an idea the moment it is made.** Finishing one on
-  the recordings page now offers to write an idea around it, with the
-  recording already in the box — and the same button is on every row, so one
-  made last month is no harder to use than one made just now.
+  the recordings page offers to write an idea around it, in a strip above the
+  list that blocks nothing and can be waved away — press it and the composer
+  opens with the recording already in the box. The same button is on every
+  row, so one made last month is no harder to use than one made just now.
 - **A notebook's notes can be put in the order you want them.** They are still
   read in the order they were written, which is what a notebook is for, but
   there is now a picker above the list for title or last edited, and an arrow
