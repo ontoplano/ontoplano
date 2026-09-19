@@ -125,6 +125,15 @@ for (const file of makefiles) {
 	for (const m of text.matchAll(/\[\s+"?\$[({]([A-Z][A-Z0-9_]*)[)}]"?\s+!?=/g)) tested.add(m[1]);
 	for (const m of text.matchAll(/\$\(filter[^,]*,\s*\$[({]([A-Z][A-Z0-9_]*)[)}]/g))
 		tested.add(m[1]);
+	/*
+	 * `ifeq ($(FLAG),1)`, which is the third way a switch gets read and was the
+	 * one this did not know about. A flag documented with `#:` and branched on
+	 * this way was described and then left out of the listing entirely — and a
+	 * derivation with a hole in it is worse than no derivation, because the
+	 * listing reads as complete.
+	 */
+	for (const m of text.matchAll(/^[ \t]*ifn?eq[ \t]*\(\s*\$[({]([A-Za-z_][A-Za-z0-9_]*)[)}]/gm))
+		tested.add(m[1]);
 
 	let target = null;
 	for (const line of text.split('\n')) {
@@ -174,6 +183,23 @@ for (const file of makefiles) {
 			for (const m of prereqs.matchAll(/(?:^|\s)([a-zA-Z_][a-zA-Z0-9_-]*)/g)) {
 				needs.get(target).add(m[1]);
 			}
+			continue;
+		}
+
+		/*
+		 * Make's own conditionals sit at column zero inside a recipe.
+		 *
+		 * `ifeq ($(FLAG),1)` / `else` / `endif` wrap a recipe rather than
+		 * ending it, and reading them as the end of one made every switch
+		 * below them belong to whichever target came next — so a target with a
+		 * conditional in it reported "takes no switches" and handed its own to
+		 * a neighbour.
+		 */
+		if (/^\s*(?:ifn?eq|ifn?def|else|endif)\b/.test(line)) {
+			// And what it branches on is a switch that target takes — it is the
+			// only place some of them are ever named.
+			if (target)
+				for (const m of line.matchAll(/\$[({]([A-Z][A-Z0-9_]*)[)}]/g)) reads.get(target).add(m[1]);
 			continue;
 		}
 

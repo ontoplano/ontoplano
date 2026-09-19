@@ -33,6 +33,7 @@
 	import { NOTEBOOK_TODO_ACTIONS } from '$lib/todo-actions';
 	import type { Todo } from '$lib/services/todos';
 	import { renderMarkdown } from '$lib/markdown';
+	import { say } from '$lib/said.svelte';
 	import { useT } from '$lib/i18n';
 	import type { PlainKey } from '$lib/i18n/keys';
 
@@ -105,6 +106,21 @@
 	} = $props();
 
 	let editingNoteId = $state<number | null>(null);
+
+	/*
+	 * Whether what is on screen is what was last saved.
+	 *
+	 * Saving used to close the editor, so "save and keep reading it" was save,
+	 * find the note again, open it again. It stays open now, and the button
+	 * says which of the two things pressing it will do: Save while there is
+	 * something to save, Close once there is not. The two words are held in one
+	 * fixed-width slot so the button does not change size as you type — that is
+	 * the flicker to avoid, and it is the same rule as everywhere else.
+	 *
+	 * Reset whenever a different note is opened, because it is a fact about the
+	 * editor on screen and not about any note.
+	 */
+	let noteSaved = $state(false);
 
 	/**
 	 * Whether the put-away notes are showing.
@@ -749,12 +765,16 @@
 							action="?/updateEntry"
 							use:enhance={() =>
 								async ({ update, result }) => {
-									// The editor closes on success and is destroyed with its
-									// fields; resetting only blanks them for a frame first, and
-									// on a failure it would throw away what was written.
+									// Never reset: the editor stays open, and blanking its
+									// fields for a frame is a flash of an empty note. On a
+									// failure it would throw away what was written.
 									await update({ reset: false });
-									if (result.type === 'success') editingNoteId = null;
+									if (result.type === 'success') {
+										noteSaved = true;
+										say(t('notebookDetail.saved'));
+									}
 								}}
+							oninput={() => (noteSaved = false)}
 						>
 							<input type="hidden" name="id" value={entry.id} />
 							{#if notebookId !== null}
@@ -787,7 +807,28 @@
 								<button type="button" class="btn btn-sm" onclick={() => (editingNoteId = null)}
 									>{t('ui.cancel')}</button
 								>
-								<button class="btn btn-primary btn-sm">{t('ui.save')}</button>
+								<!--
+									One button, two jobs, one width.
+
+									Saved and unchanged, it closes; changed, it saves. The two
+									words sit in a grid cell the size of the longer one and the
+									unused one is hidden rather than removed, so the button
+									never changes size under the finger.
+								-->
+								<button
+									class="btn btn-primary btn-sm"
+									type={noteSaved ? 'button' : 'submit'}
+									onclick={noteSaved ? () => (editingNoteId = null) : undefined}
+								>
+									<span class="grid">
+										<span class="col-start-1 row-start-1" class:invisible={noteSaved}
+											>{t('ui.save')}</span
+										>
+										<span class="col-start-1 row-start-1" class:invisible={!noteSaved}
+											>{t('ui.close')}</span
+										>
+									</span>
+								</button>
 							</div>
 						</form>
 					{:else}
@@ -879,7 +920,10 @@
 									</form>
 								{/if}
 								<button
-									onclick={() => (editingNoteId = entry.id)}
+									onclick={() => {
+										editingNoteId = entry.id;
+										noteSaved = false;
+									}}
 									class="icon-btn"
 									title={t('notebookDetail.editThisNote')}
 									aria-label={t('notebookDetail.editThisNote')}><Icon name="edit" /></button

@@ -1852,6 +1852,18 @@ label:has(> input[type='radio']:not(:disabled)) {
 			background-color 120ms ease;
 	}
 
+	/*
+	 * The second choice on the page, and a little shorter than the first.
+	 *
+	 * Which plan and how often were the same square, so the page asked two
+	 * questions with identical weight when the first is the one being made —
+	 * how often is a detail of it. Shorter rather than narrower: they still sit
+	 * side by side across the same width, and the four lines inside have room.
+	 */
+	.choice-tile-small {
+		aspect-ratio: 1.25;
+	}
+
 	.choice-tile:hover {
 		border-color: var(--color-gray-400);
 	}

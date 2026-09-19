@@ -1316,6 +1316,7 @@ export type MessageKey =
 	| 'notebookDetail.orderTitle'
 	| 'notebookDetail.orderWritten'
 	| 'notebookDetail.people'
+	| 'notebookDetail.saved'
 	| 'notebookDetail.separateWithCommasOrSpaces'
 	| 'notebookDetail.showArchived'
 	| 'notebookDetail.smallerType'
@@ -2509,7 +2510,10 @@ export type MessageKey =
 	| 'tasks.review.aReviewNeedsAWeek'
 	| 'tasks.review.answerOneAndItMoves'
 	| 'tasks.review.applyEveryAnswer'
+	| 'tasks.review.askAboutItAgain'
+	| 'tasks.review.askAboutTitleAgain'
 	| 'tasks.review.deleteIt'
+	| 'tasks.review.done'
 	| 'tasks.review.editTheNote'
 	| 'tasks.review.everyOneOfThemHas'
 	| 'tasks.review.everythingYouPlannedYouDid'
@@ -2537,6 +2541,7 @@ export type MessageKey =
 	| 'tasks.review.nothingHereHasHappenedYet'
 	| 'tasks.review.nothingIsTickedOffYet'
 	| 'tasks.review.nothingWasPlannedThatWeek'
+	| 'tasks.review.nothingWasSkipped'
 	| 'tasks.review.of'
 	| 'tasks.review.ofBlocks'
 	| 'tasks.review.onTheTodoList'
@@ -2552,26 +2557,28 @@ export type MessageKey =
 	| 'tasks.review.settled'
 	| 'tasks.review.skipped'
 	| 'tasks.review.skipped2'
+	| 'tasks.review.skippedCount'
 	| 'tasks.review.someday'
 	| 'tasks.review.stillHere'
 	| 'tasks.review.stillReal'
 	| 'tasks.review.stillRunning'
 	| 'tasks.review.theDayItShouldBe'
+	| 'tasks.review.theOnesYouSaidNoTo'
 	| 'tasks.review.theWeek'
 	| 'tasks.review.thisWeek'
 	| 'tasks.review.thisWeekIsStillRunning'
 	| 'tasks.review.toCommit'
 	| 'tasks.review.undoTheAnswerFor'
+	| 'tasks.review.untold'
 	| 'tasks.review.week'
 	| 'tasks.review.whatDidNotHappen'
 	| 'tasks.review.whatHappened'
 	| 'tasks.review.whatWentWellWhatDid'
 	| 'tasks.review.whatYouHaveDecided'
+	| 'tasks.review.whatYouSkipped'
 	| 'tasks.review.whereItWent'
 	| 'tasks.review.whichHalf'
 	| 'tasks.review.writeSomethingAboutHowThis'
-	| 'tasks.review.youDid'
-	| 'tasks.review.youDidNot'
 	| 'todoRows.aToDoIsATask'
 	| 'todoRows.anythingYouFinishShowsUp'
 	| 'todoRows.archived'
@@ -3257,6 +3264,8 @@ export interface MessageValuesFor {
 	'tasks.plan.selectedDragOne': { size: string | number };
 	'tasks.plan.stopSubscribingTo': { name: string | number };
 	'tasks.plan.viewGCycles': { label: string | number };
+	'tasks.review.askAboutTitleAgain': { title: string | number };
+	'tasks.review.done': { count: number };
 	'tasks.review.giveItA': { title: string | number };
 	'tasks.review.hoursAbbrev': { count: number };
 	'tasks.review.hoursMinutesAbbrev': { hours: string | number; minutes: string | number };
@@ -3270,11 +3279,11 @@ export interface MessageValuesFor {
 	'tasks.review.ontoTheTodo': { title: string | number };
 	'tasks.review.settled': { settled: string | number };
 	'tasks.review.skipped': { title: string | number };
+	'tasks.review.skippedCount': { count: number };
 	'tasks.review.toCommit': { answers: string | number; length: string | number };
 	'tasks.review.undoTheAnswerFor': { title: string | number };
+	'tasks.review.untold': { count: number };
 	'tasks.review.week': { number: string | number; year: string | number };
-	'tasks.review.youDid': { count: number };
-	'tasks.review.youDidNot': { count: number };
 	'todoRows.completedTitle': { title: string | number };
 	'todoRows.hiddenByTheFilters': { count: number };
 	'todoRows.showArchivedCount': { count: number };

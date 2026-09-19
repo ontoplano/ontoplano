@@ -108,7 +108,7 @@ export type Loose = {
 export function readWeek(
 	ctx: Ctx,
 	weekStart: string
-): { reading: WeekReading; loose: Loose[]; done: Done[] } {
+): { reading: WeekReading; loose: Loose[]; done: Done[]; skipped: Done[] } {
 	const first = new Date(weekStart + 'T00:00:00');
 	const after = addDays(first, 7);
 
@@ -194,8 +194,29 @@ export function readWeek(
 		}))
 		.sort((a, b) => b.date.localeCompare(a.date));
 
+	/*
+	 * And what was skipped, which is an answer rather than a silence.
+	 *
+	 * It used to be readable nowhere: the open list deliberately leaves it out
+	 * — skipping is one of the three answers, so a skipped block has been dealt
+	 * with — and the done list is only what happened. So a week's worth of
+	 * "no, not that one" went in and could never be looked at again.
+	 */
+	const skipped: Done[] = instances
+		.filter((i) => i.status === 'skipped')
+		.map((i) => ({
+			id: i.id,
+			title: blockName(i),
+			date: i.scheduledAt.slice(0, 10),
+			minutes: i.durationMinutes,
+			categoryName: i.categoryName,
+			categoryColor: i.categoryColor
+		}))
+		.sort((a, b) => b.date.localeCompare(a.date));
+
 	return {
 		done,
+		skipped,
 		reading: {
 			weekStart,
 			weekEnd: localDay(addDays(first, 6)),

@@ -44,21 +44,43 @@
 		if (replacing) {
 			const at = target.value.indexOf(replacing);
 			if (at === -1) return;
-			target.value = target.value.slice(0, at) + text + target.value.slice(at + replacing.length);
-			target.setSelectionRange(at + text.length, at + text.length);
-		} else {
-			const start = target.selectionStart ?? target.value.length;
-			const end = target.selectionEnd ?? start;
-			// A picture wants a line of its own; a newline before it when the line
-			// is not already empty is what makes it render as a block.
-			const before = target.value.slice(0, start);
-			const lead = before === '' || before.endsWith('\n') ? '' : '\n';
-			target.value = before + lead + text + '\n' + target.value.slice(end);
-			const to = start + lead.length + text.length + 1;
-			target.setSelectionRange(to, to);
+
+			/*
+			 * This half runs when the upload finishes, which is seconds after
+			 * anybody started it — and by then they are typing somewhere else.
+			 *
+			 * It used to put the caret at the end of the line it had just
+			 * written and take the focus back, so a sentence being typed while
+			 * a screenshot uploaded ended up cut in half with the rest of it
+			 * after the picture. The caret stays where the person put it; all
+			 * that happens is that it moves by however much the text grew or
+			 * shrank, and only if it was after the part that changed.
+			 */
+			const caret = { start: target.selectionStart ?? 0, end: target.selectionEnd ?? 0 };
+			const after = at + replacing.length;
+			const delta = text.length - replacing.length;
+			const moved = (where: number) =>
+				where >= after ? where + delta : where > at ? at + text.length : where;
+
+			target.value = target.value.slice(0, at) + text + target.value.slice(after);
+			target.setSelectionRange(moved(caret.start), moved(caret.end));
+			// Nothing is watching this element's value, and nothing autogrows it
+			// either, so both are told — but the focus is left where it is.
+			target.dispatchEvent(new Event('input', { bubbles: true }));
+			return;
 		}
-		// Svelte is not watching this element's value, and neither is anything
-		// that autogrows it, so both are told.
+		// Inserting, which happens the instant somebody asks for it: the caret
+		// goes after what was written, and the focus comes back to the box.
+		const start = target.selectionStart ?? target.value.length;
+		const end = target.selectionEnd ?? start;
+		// A picture wants a line of its own; a newline before it when the line
+		// is not already empty is what makes it render as a block.
+		const before = target.value.slice(0, start);
+		const lead = before === '' || before.endsWith('\n') ? '' : '\n';
+		target.value = before + lead + text + '\n' + target.value.slice(end);
+		const to = start + lead.length + text.length + 1;
+		target.setSelectionRange(to, to);
+
 		target.dispatchEvent(new Event('input', { bubbles: true }));
 		target.focus();
 	}

@@ -2532,7 +2532,12 @@
 			arrow next to it, and a month has no first day to slide.
 		-->
 		{#if effectiveView === 'week'}
-			<div class="flex shrink-0 items-center gap-1" data-tour="plan-week-start">
+			<!--
+				Centred between where you are and what shape you want it: this is
+				an adjustment rather than a way of getting somewhere, and it reads
+				as one when it sits in the middle rather than crowding the arrows.
+			-->
+			<div class="mx-auto flex shrink-0 items-center gap-1" data-tour="plan-week-start">
 				<span class="eyebrow hidden text-gray-500 lg:inline">{t('tasks.plan.weekStarts')}</span>
 				<button
 					type="button"

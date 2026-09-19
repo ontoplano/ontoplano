@@ -9,12 +9,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { MediaQuery } from 'svelte/reactivity';
-	import {
-		HEATMAP_FULL_YEAR_FROM,
-		HEATMAP_MAX_DAY_REM,
-		HEATMAP_SEASON,
-		HEATMAP_YEAR
-	} from '$lib/colors';
+	import { HEATMAP_FULL_YEAR_FROM, HEATMAP_SEASON, HEATMAP_YEAR } from '$lib/colors';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -613,18 +608,25 @@
 							<div class="mb-2 text-xs font-medium text-gray-500">{heatmapSpan}</div>
 							<!--
 								The weeks share the width rather than each taking ten pixels.
-								
+
 								Ninety days is thirteen columns, and at a fixed cell size that
 								is a third of a phone screen with two thirds of nothing beside
-								it. Each column is a fraction of what there is instead, the
-								days are square, and the whole thing is capped so the same
-								grid on a desktop card is not a wall of tiles.
+								it. Each column is a fraction of what there is instead, and the
+								days are square.
+
+								It used to be capped at a few rem per column so a desktop card
+								was not a wall of tiles; the cap is gone, because what it
+								actually produced was a small grid adrift in an empty card.
+
+								`items-stretch`, not `items-start`, is what lines the weekday
+								labels up with the rows: the label column is seven `1fr` rows
+								of whatever height it is given, so given the squares' own
+								height it divides into exactly their rows. Left to its content
+								it was seven lines of nine-pixel text beside seven squares of
+								some other size, drifting further apart the wider the card got.
 							-->
 							<div class="overflow-x-auto">
-								<div
-									class="flex items-start gap-1"
-									style="max-width: calc({heatmapWeeks.length} * {HEATMAP_MAX_DAY_REM}rem)"
-								>
+								<div class="flex items-stretch gap-1">
 									<div
 										class="grid min-w-0 flex-1 gap-px"
 										style="grid-template-columns: repeat({heatmapWeeks.length}, minmax(0, 1fr))"

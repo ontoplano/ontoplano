@@ -11,13 +11,56 @@
  * modest two lines it was written as.
  */
 export function autogrow(node: HTMLTextAreaElement, maxHeight = 480) {
+	/**
+	 * Everything between this box and the top of the page that can scroll.
+	 *
+	 * Collapsing the box to measure it shortens whatever holds it, and a
+	 * scroller that is suddenly taller than its content has its `scrollTop`
+	 * clamped by the browser — a number it does not give back when the box
+	 * grows again. On a long note that happened on every keystroke, and each
+	 * one walked the line being typed a little further down until it was
+	 * sitting on the bottom edge of the screen.
+	 */
+	const scrollers = () => {
+		const found: { el: Element | Window; top: number }[] = [{ el: window, top: window.scrollY }];
+		for (let p = node.parentElement; p; p = p.parentElement) {
+			const how = getComputedStyle(p).overflowY;
+			if (how === 'auto' || how === 'scroll') found.push({ el: p, top: p.scrollTop });
+		}
+		return found;
+	};
+
+	const restore = (kept: { el: Element | Window; top: number }[]) => {
+		for (const { el, top } of kept) {
+			if (el === window) window.scrollTo({ top });
+			else (el as Element).scrollTop = top;
+		}
+	};
+
 	const resize = () => {
-		// Back to nothing first, or `scrollHeight` only ever reports the height it
-		// already has and the box can grow but never shrink.
+		const content = node.scrollHeight;
+		const current = node.clientHeight;
+
+		/*
+		 * Growing needs no measurement trick: `scrollHeight` is the height of
+		 * what is in the box whether or not the box is that tall, so typing
+		 * forward — which is the whole of the common case — never collapses
+		 * anything and never disturbs a scroller.
+		 */
+		if (content > current) {
+			node.style.height = `${Math.min(content, maxHeight)}px`;
+			node.style.overflowY = content > maxHeight ? 'auto' : 'hidden';
+			return;
+		}
+
+		// Shrinking is the one case that has to ask, because a box taller than
+		// its content reports its own height. Put the scrollers back afterwards.
+		const kept = scrollers();
 		node.style.height = 'auto';
 		const wanted = Math.min(node.scrollHeight, maxHeight);
-		node.style.height = `${wanted}px`;
 		node.style.overflowY = node.scrollHeight > maxHeight ? 'auto' : 'hidden';
+		node.style.height = `${wanted}px`;
+		restore(kept);
 	};
 
 	resize();

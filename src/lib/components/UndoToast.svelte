@@ -2,6 +2,7 @@
 	import { beforeNavigate } from '$app/navigation';
 	import Icon from '$lib/components/Icon.svelte';
 	import { flushNow, takeBack, undoable } from '$lib/undo.svelte';
+	import { said } from '$lib/said.svelte';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -33,10 +34,27 @@
 
 <svelte:window onbeforeunload={flushNow} />
 
-{#if waiting.length > 0}
+<!--
+	One place on the screen where the app speaks.
+
+	Two kinds of message live here: something you can take back, which holds
+	its window open, and something the app is merely confirming. Two float
+	layers would stack on top of each other in the same corner, so they share
+	this one.
+-->
+{#if waiting.length > 0 || said.items.length > 0}
 	<div
 		class="float-layer pointer-events-none fixed inset-x-0 bottom-20 z-50 flex flex-col items-center gap-2 px-4 lg:bottom-6 lg:left-auto lg:items-end lg:px-6"
 	>
+		{#each said.items as item (item.id)}
+			<div
+				class="overlay-face pointer-events-auto flex w-full max-w-sm items-center gap-3 border px-4 py-3 text-sm shadow-overlay"
+				role="status"
+			>
+				<Icon name="check" size={16} />
+				<span class="min-w-0 flex-1">{item.message}</span>
+			</div>
+		{/each}
 		{#each waiting as item (item.id)}
 			{@const left = Math.max(0, Math.ceil((item.until - now) / 1000))}
 			<div

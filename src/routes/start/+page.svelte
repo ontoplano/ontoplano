@@ -206,7 +206,7 @@
 						role="radio"
 						onclick={() => (interval = 'yearly')}
 						aria-checked={interval === 'yearly'}
-						class="choice-tile"
+						class="choice-tile choice-tile-small"
 					>
 						<span class="text-lg font-bold text-gray-900">{t('start.everyYear')}</span>
 						<span class="tabular text-sm font-medium text-gray-700">{yearly.year}</span>
@@ -222,7 +222,7 @@
 						role="radio"
 						onclick={() => (interval = 'monthly')}
 						aria-checked={interval === 'monthly'}
-						class="choice-tile"
+						class="choice-tile choice-tile-small"
 					>
 						<span class="text-lg font-bold text-gray-900">{t('start.everyMonth')}</span>
 						<span class="tabular text-sm font-medium text-gray-700"

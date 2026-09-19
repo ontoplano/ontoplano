@@ -119,15 +119,22 @@
 	};
 
 	/**
-	 * Which half of the week this panel is showing.
+	 * Which third of the week this panel is showing.
 	 *
 	 * Two cards, one above the other, was the first shape and the wrong one:
 	 * the same block appeared in both as you answered for it, and reading "what
 	 * I did" meant scrolling past "what I did not". One panel, one place, and a
 	 * toggle in its header — which is the part that must not move when it is
 	 * pressed.
+	 *
+	 * Three rather than two, because there are three answers and there were
+	 * only ever two lists: a block that was skipped is dealt with, so it leaves
+	 * the open questions, and it never happened, so it is not in what did. A
+	 * week's worth of "no, not that one" went in and could be read back
+	 * nowhere. They are named for the state rather than for the person —
+	 * Untold, Done, Skipped — because "you did not" was two of the three.
 	 */
-	let showing = $state<'loose' | 'done'>('loose');
+	let showing = $state<'untold' | 'done' | 'skipped'>('untold');
 
 	/**
 	 * Either half of the week, under the day it belongs to.
@@ -152,6 +159,8 @@
 	}
 
 	const doneByDay = $derived(byDay(data.done));
+
+	const skippedByDay = $derived(byDay(data.skipped));
 
 	const looseByDay = $derived(byDay(undecided));
 </script>
@@ -286,12 +295,16 @@
 			reading the good half meant scrolling past the other.
 		-->
 		<Card
-			title={showing === 'loose'
-				? t('tasks.review.whatDidNotHappen')
-				: t('tasks.review.whatHappened')}
-			description={showing === 'loose'
-				? t('tasks.review.sayWhatHappenedToEach')
-				: t('tasks.review.sayIfOneOfThese')}
+			title={{
+				untold: t('tasks.review.whatDidNotHappen'),
+				done: t('tasks.review.whatHappened'),
+				skipped: t('tasks.review.whatYouSkipped')
+			}[showing]}
+			description={{
+				untold: t('tasks.review.sayWhatHappenedToEach'),
+				done: t('tasks.review.sayIfOneOfThese'),
+				skipped: t('tasks.review.theOnesYouSaidNoTo')
+			}[showing]}
 			accent="var(--section-accent)"
 			flush
 		>
@@ -314,19 +327,25 @@
 				<div class="seg" role="group" aria-label={t('tasks.review.whichHalf')}>
 					<button
 						type="button"
-						onclick={() => (showing = 'loose')}
-						aria-pressed={showing === 'loose'}
-						>{t('tasks.review.youDidNot', { count: data.loose.length })}</button
+						onclick={() => (showing = 'untold')}
+						aria-pressed={showing === 'untold'}
+						>{t('tasks.review.untold', { count: data.loose.length })}</button
 					>
 					<button type="button" onclick={() => (showing = 'done')} aria-pressed={showing === 'done'}
-						>{t('tasks.review.youDid', { count: data.done.length })}</button
+						>{t('tasks.review.done', { count: data.done.length })}</button
+					>
+					<button
+						type="button"
+						onclick={() => (showing = 'skipped')}
+						aria-pressed={showing === 'skipped'}
+						>{t('tasks.review.skippedCount', { count: data.skipped.length })}</button
 					>
 				</div>
 				<button
 					type="button"
-					class="btn btn-sm {decided.length === 0 || showing !== 'loose' ? 'invisible' : ''}"
+					class="btn btn-sm {decided.length === 0 || showing !== 'untold' ? 'invisible' : ''}"
 					aria-hidden={decided.length === 0}
-					tabindex={decided.length === 0 || showing !== 'loose' ? -1 : 0}
+					tabindex={decided.length === 0 || showing !== 'untold' ? -1 : 0}
 					onclick={() =>
 						document
 							.getElementById('review-decided')
@@ -368,6 +387,43 @@
 												class="icon-btn"
 												title={t('tasks.review.itDidNotActuallyHappen')}
 												aria-label={t('tasks.review.itDidNotActually', { title: item.title })}
+											>
+												<Icon name="undo" />
+											</button>
+										</form>
+									</li>
+								{/each}
+							</ul>
+						{/each}
+					</div>
+				{/if}
+			{:else if showing === 'skipped'}
+				<!--
+					What you said no to, read back. No answer on the row: a skipped
+					block has been answered, and changing your mind about one is the
+					same act as changing your mind about a done one — it goes back to
+					the open questions, where all four answers live.
+				-->
+				{#if data.skipped.length === 0}
+					<EmptyState icon="check" title={t('tasks.review.nothingWasSkipped')} />
+				{:else}
+					<div class="min-w-0">
+						{#each skippedByDay as day (day.date)}
+							<div class="eyebrow border-y border-gray-200 bg-gray-50 px-4 py-1.5 text-gray-600">
+								{day.label}
+							</div>
+							<ul class="divide-y divide-gray-200">
+								{#each day.items as item (item.id)}
+									<li class="flex items-center gap-3 px-4 py-2 hover:bg-gray-50">
+										<Swatch color={item.categoryColor ?? CATEGORY_FALLBACK_COLOR} />
+										<span class="min-w-0 flex-1 truncate text-sm text-gray-900">{item.title}</span>
+										<span class="tabular shrink-0 text-xs text-gray-500">{pretty(item.date)}</span>
+										<form method="post" action="?/reopen" use:enhance class="shrink-0">
+											<input type="hidden" name="instanceId" value={item.id} />
+											<button
+												class="icon-btn"
+												title={t('tasks.review.askAboutItAgain')}
+												aria-label={t('tasks.review.askAboutTitleAgain', { title: item.title })}
 											>
 												<Icon name="undo" />
 											</button>

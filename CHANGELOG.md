@@ -28,6 +28,28 @@ releases mattered.
   recording on a task wants the tasks one — so nothing new was granted and a
   file nothing refers to is still reachable by nobody. A key confined to one
   notebook sees that notebook's files and no others.
+- **The weekly review has three answers, not two.** Untold, Done and Skipped —
+  and the skipped ones are readable at last: they leave the open questions the
+  moment you skip them and were in neither list, so a week of "no, not that
+  one" went in and could never be looked at again. Ask about one again to put
+  it back among the open questions.
+- **The planner's arrows stop moving under your finger.** "next 7 days" is
+  wider than "today", so the date label changed width as you stepped and took
+  the arrow with it; the label and the way-back-to-today button both hold
+  their space now. The day-shift arrows sit centred rather than crowding them.
+- **The habits heatmap spans the card**, and its weekday labels line up with
+  the rows instead of drifting off them.
+- **Saving a note keeps it open**, says so, and the button becomes Close until
+  you type again — so saving and closing is two presses and nothing changes
+  size between them.
+- **A picture pasted into a note no longer steals the cursor.** The upload
+  finishes seconds later, and it used to jump the caret to the end of the link
+  it had just written — cutting whatever was being typed in half.
+- **Typing in a long note stops walking the page down.** The box measured
+  itself by collapsing first, which moved the scroll on every keystroke until
+  the line being written sat on the bottom edge of the screen.
+- **How often you pay is a smaller tile than which plan you are on**, which is
+  the question actually being asked.
 - **Undo is readable in the dark.** The button on the toast carried a palette
   white, which the dark theme inverts — so it drew as near-black on the dark
   card the toast deliberately is. Anything on that card takes its ink from the

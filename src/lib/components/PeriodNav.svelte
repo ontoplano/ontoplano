@@ -62,12 +62,33 @@
 		<Icon name="arrow-left" size={22} />
 	</button>
 
-	<div class="min-w-0 flex-1 text-center sm:flex-none sm:text-left">{@render children()}</div>
+	<!--
+		The label takes a fixed width, and the arrows stop moving.
 
-	{#if !atNow && onnow}
+		"Sep 19 — Sep 25 · next 7 days" is half as wide again as "Sep 18 — Sep
+		24", and on a desktop this block sized itself to whichever it was
+		holding — so stepping the week walked the right-hand arrow out from
+		under the finger that had just pressed it. Reserved instead, which is
+		the app's rule for anything that can change size as a consequence of a
+		press.
+	-->
+	<div class="min-w-0 flex-1 text-center sm:w-72 sm:flex-none sm:text-left">
+		{@render children()}
+	</div>
+
+	<!--
+		The way back to now: drawn always, invisible while you are there.
+
+		It used to be added and removed, which moved the arrow beside it every
+		time you stepped away from today or back to it — the same complaint as
+		the label above, one element along.
+	-->
+	{#if onnow}
 		<button
 			onclick={onnow}
-			class="btn btn-sm shrink-0"
+			class="btn btn-sm shrink-0 {atNow ? 'invisible' : ''}"
+			aria-hidden={atNow}
+			tabindex={atNow ? -1 : 0}
 			title={t('tasks.plan.backToLabel', { label: nowLabel.toLowerCase() })}
 		>
 			{nowLabel}
