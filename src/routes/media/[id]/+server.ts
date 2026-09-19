@@ -3,6 +3,8 @@ import type { RequestHandler } from './$types';
 import { buildCtx } from '$lib/services/ctx';
 import { NotFoundError } from '$lib/services/errors';
 import { read } from '$lib/services/media';
+import { pictureReferrers } from '$lib/services/media-referrers';
+import { host } from '$lib/services/host';
 
 /**
  * One picture, to the one account it belongs to.
@@ -22,13 +24,35 @@ import { read } from '$lib/services/media';
  * shared cache may keep it at all.
  */
 export const GET: RequestHandler = async (event) => {
-	if (!event.locals.user) return new Response('Not found', { status: 404 });
-
 	const id = Number(event.params.id);
 	if (!Number.isInteger(id) || id <= 0) return new Response('Not found', { status: 404 });
 
+	/*
+	 * A key gets in when what the picture is *used for* is something it may
+	 * read: one in a note answers to `notes:read`, a face to `people:read`.
+	 * A picture nothing refers to answers to nobody. See
+	 * `$lib/server/api/media-access.ts` for why this is not a new grant.
+	 */
+	let userId = event.locals.user?.id ?? null;
+	if (!userId) {
+		let caller;
+		try {
+			caller = host.fileCaller(event.request);
+		} catch {
+			// A bearer header that is revoked, expired or nonsense. The same
+			// 404 as everything else here: these ids tell nobody anything.
+			return new Response('Not found', { status: 404 });
+		}
+		if (!caller) return new Response('Not found', { status: 404 });
+
+		const ctx = buildCtx(caller.userId);
+		if (!caller.mayRead(pictureReferrers(ctx, id)))
+			return new Response('Not found', { status: 404 });
+		userId = caller.userId;
+	}
+
 	try {
-		const picture = read(buildCtx(event.locals.user.id), id);
+		const picture = read(buildCtx(userId), id);
 		return new Response(new Uint8Array(picture.bytes), {
 			headers: {
 				'content-type': picture.mime,

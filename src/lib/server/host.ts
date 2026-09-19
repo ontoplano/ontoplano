@@ -24,6 +24,14 @@ export function bindServerHost(): void {
 		familyUserIds,
 		assertWithinLimit,
 		mediaLimits: servedMediaLimits,
+		/*
+		 * Replaced by `hooks.server.ts` with the real answer, which needs the
+		 * token service and cannot be reached from here without a cycle. Null
+		 * until then, which is "no key is asking" — the route falls back to the
+		 * session, and a request that arrives before the hooks module has run
+		 * is one nobody has made.
+		 */
+		fileCaller: () => null,
 		assertEntryWithinLimit,
 		reminderScheduleChanged: wake,
 		assertPublicUrl,

@@ -18,6 +18,19 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.181.0 — 2026-09-19
+
+- **An assistant can see the pictures and recordings in what it may read.**
+  A key granted "read your notebooks" used to fetch the words of a note and
+  get nothing for every picture in it, which made briefing one with
+  screenshots impossible. A file now answers to whatever refers to it — a
+  picture in a note wants the notes grant, a face wants the people one, a
+  recording on a task wants the tasks one — so nothing new was granted and a
+  file nothing refers to is still reachable by nobody. A key confined to one
+  notebook sees that notebook's files and no others.
+- **A to-do's labels can be changed one at a time.** Marking a task no longer
+  means sending back every label it already had and hoping none were missed.
+
 ## 0.180.1 — 2026-09-19
 
 - **A goal can count a workout measure instead of asking you to type it.**

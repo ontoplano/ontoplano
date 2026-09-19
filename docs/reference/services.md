@@ -58,6 +58,7 @@ shows up here on the next build.
 | [`mail-log`](#mail-log)                          | Mail that must not fail silently.                                                                                                                                                                                                                                    |
 | [`media-kind`](#media-kind)                      | Which kind of thing a `media` row is.                                                                                                                                                                                                                                |
 | [`media-limits`](#media-limits)                  | What an instance allows a picture to be.                                                                                                                                                                                                                             |
+| [`media-referrers`](#media-referrers)            | What points at a picture or a recording, and where it lives.                                                                                                                                                                                                         |
 | [`media`](#media)                                | Pictures: what is accepted, where they go, and who may see one.                                                                                                                                                                                                      |
 | [`meta`](#meta)                                  | User-defined key/value metadata attached to planner slots.                                                                                                                                                                                                           |
 | [`newsletter`](#newsletter)                      | The one channel nobody else can take away.                                                                                                                                                                                                                           |
@@ -1888,11 +1889,27 @@ than forget where its data is.
 
 #### `bindHost(instance)`
 
+#### `bindFileCaller(fn)`
+
+The file caller, bound on its own rather than with the rest.
+
+Everything else here is bound by `$lib/server/db/index.ts` the moment the
+database is opened. This one cannot be: answering it needs the token
+service and the payment gate, and those reach back into the database — so
+binding it there makes a cycle, and the first thing that cycle does is run
+the migration check before anybody has said which database to open. It is
+bound from `hooks.server.ts` instead, which is the server's own entry and is
+imported by nothing below it.
+
+Until then the answer is "no key is asking", which is the truth on a device
+and the safe answer everywhere: the route falls back to the session.
+
 ### Types
 
 - `FrontDoor` — The signed-out door's four facts.
 - `ClientErrorState` — Off, or asked-and-answered. The same three words the settings row uses.
 - `Host`
+- `FileCaller` — A caller holding a key rather than a session, and what it is allowed.
 
 ## ideas
 
@@ -2645,6 +2662,36 @@ the services ask through `host.mediaLimits()` rather than either directly.
 ### Types
 
 - `MediaLimits`
+
+## media-referrers
+
+What points at a picture or a recording, and where it lives.
+
+The question `isReferenced` asks — _is anything still using this_ — with the
+answer kept rather than reduced to a yes. It is the same walk, and knowing
+_which_ thing refers to a file is what lets a caller be told the file is
+theirs to read: a picture in a note belongs to the notes, so a key that may
+read the notes may see it.
+
+Nothing here decides anything about permission. It reports where a file is
+used; `$lib/server/api/media-access.ts` turns that into a yes or a no, and
+this file stays portable so the routes that use it still compile into the
+device's worker.
+
+### Functions
+
+#### `pictureReferrers(ctx, id)`
+
+Everything of this account's that points at the picture with this id.
+
+#### `recordingReferrers(ctx, id)`
+
+Everything of this account's that points at the recording with this id.
+
+### Types
+
+- `ReferrerKind` — The kinds of thing that can hold a file, named for the room a person would say it was in rather than for the table it is stored in.
+- `Referrer`
 
 ## media
 
@@ -5318,6 +5365,22 @@ back is still done.
 #### `createTodo(ctx, raw)`
 
 #### `updateTodo(ctx, id, raw)`
+
+#### `tagTodo(ctx, id, change)`
+
+Put labels on a todo, or take them off, without disturbing the rest.
+
+`updateTodo` replaces the whole set, which is right for a form that shows
+every tag it is about to save and wrong for everything else: marking one
+task `done-by-ai` should not need the caller to read its tags first and
+write them all back, and a caller that forgets to is a caller that quietly
+deletes labels somebody else put there.
+
+Both lists are optional and both are applied — adding and removing in one
+call is how "this is not `blocked` any more, it is `done-by-ai`" is said
+once rather than twice. Removing wins a tie, because a caller that names the
+same word in both has said something contradictory and the safer reading of
+it is the one that does not leave a label behind.
 
 #### `setTodoStatus(ctx, id, status)`
 

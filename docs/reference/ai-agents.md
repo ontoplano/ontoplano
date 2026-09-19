@@ -292,6 +292,12 @@ Bring back a todo that was put away, so it shows on the list again. It returns i
 
 _Needs `tasks:write`; writes._
 
+### `tag_todo` — Label a todo
+
+Put labels on a todo or take them off, leaving its other labels alone — this is the one to use for marking a task, and `change_todo` is for replacing every label at once. Several assistants sharing a list mark their own work this way; `todos` takes a `tag` to read back only the ones you marked. Answers with the labels it has afterwards.
+
+_Needs `tasks:write`; writes._
+
 ### `change_todo` — Change a todo
 
 Rewrite a todo’s title or notes. Only the fields given change. Moving it on or off a day is `schedule_todo`; done and not-done are `finish_todo` and `reopen_todo`.

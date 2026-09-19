@@ -155,6 +155,7 @@ import { getTodayBoard } from '$lib/services/today.js';
 import {
 	archiveTodo,
 	createTodo,
+	tagTodo,
 	deleteTodo,
 	listTodos,
 	scheduleTodo,
@@ -1111,6 +1112,38 @@ export const TOOLS: Tool[] = [
 			archiveTodo(ctx, Number(args.id), false);
 			return { ok: true };
 		}
+	},
+	{
+		/*
+		 * Labels, added and removed by name.
+		 *
+		 * `change_todo` takes the whole set and replaces it, which is right for
+		 * a form and wrong for a caller that wants to mark one thing: it would
+		 * have to read the todo, rebuild the list and write it back, and a
+		 * caller that gets that wrong deletes labels somebody else put on.
+		 */
+		name: 'tag_todo',
+		title: 'Label a todo',
+		description:
+			'Put labels on a todo or take them off, leaving its other labels alone — this is the one to use for marking a task, and `change_todo` is for replacing every label at once. Several assistants sharing a list mark their own work this way; `todos` takes a `tag` to read back only the ones you marked. Answers with the labels it has afterwards.',
+		scope: 'tasks:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'todo', subject: true }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The todo\u2019s id, as `todos` gives it.' },
+				add: text(
+					'Labels to put on it, comma or space separated \u2014 "done-by-ai". Lower case, no #; the account\u2019s one vocabulary, the same words a diary entry or an idea is tagged with.'
+				),
+				remove: text(
+					'Labels to take off it, comma or space separated. Ones it does not have are ignored.'
+				)
+			},
+			['id']
+		),
+		run: (ctx, args) => ({
+			tags: tagTodo(ctx, Number(args.id), { add: args.add, remove: args.remove })
+		})
 	},
 	{
 		name: 'change_todo',

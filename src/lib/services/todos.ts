@@ -518,6 +518,52 @@ export function updateTodo(ctx: Ctx, id: number, raw: TodoInput): void {
 	}
 }
 
+/**
+ * Put labels on a todo, or take them off, without disturbing the rest.
+ *
+ * `updateTodo` replaces the whole set, which is right for a form that shows
+ * every tag it is about to save and wrong for everything else: marking one
+ * task `done-by-ai` should not need the caller to read its tags first and
+ * write them all back, and a caller that forgets to is a caller that quietly
+ * deletes labels somebody else put there.
+ *
+ * Both lists are optional and both are applied — adding and removing in one
+ * call is how "this is not `blocked` any more, it is `done-by-ai`" is said
+ * once rather than twice. Removing wins a tie, because a caller that names the
+ * same word in both has said something contradictory and the safer reading of
+ * it is the one that does not leave a label behind.
+ */
+export function tagTodo(
+	ctx: Ctx,
+	id: number,
+	change: { add?: unknown; remove?: unknown }
+): string[] {
+	const owned = db
+		.select({ id: todoTasks.id })
+		.from(todoTasks)
+		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
+		.get();
+	if (!owned) throw new NotFoundError('todo');
+
+	const add = parseTags(optionalTagInput(change.add));
+	const remove = new Set(parseTags(optionalTagInput(change.remove)));
+
+	const now = tagsForTodos(ctx, [id]).get(id) ?? [];
+	const wanted = [...new Set([...now.map((one) => one.name), ...add])].filter(
+		(name) => !remove.has(name)
+	);
+
+	replaceTodoTags(id, wanted, ctx.userId);
+	cleanupOrphanTags(ctx.userId);
+	// The list ticks over for anything watching the todo rather than its tags.
+	db.update(todoTasks)
+		.set({ updatedAt: stamp(ctx) })
+		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
+		.run();
+
+	return wanted.sort((a, b) => a.localeCompare(b));
+}
+
 export function setTodoStatus(ctx: Ctx, id: number, status: unknown): void {
 	if (!isStatus(status)) throw new ValidationError('Invalid status');
 

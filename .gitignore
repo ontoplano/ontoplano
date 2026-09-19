@@ -122,3 +122,7 @@ scripts/demo-media/birds/
 .icons-from
 .flavours-from
 
+
+# claude-docker local state (may contain credentials)
+.claude-docker/
+.claude-docker-EMERGENCY-BACKUP-*.tar.gz

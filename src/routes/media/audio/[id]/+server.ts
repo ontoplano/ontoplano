@@ -4,6 +4,8 @@ import { buildCtx } from '$lib/services/ctx';
 import { NotFoundError } from '$lib/services/errors';
 import { toJsonError } from '$lib/http-errors';
 import { read } from '$lib/services/audio';
+import { recordingReferrers } from '$lib/services/media-referrers';
+import { host } from '$lib/services/host';
 
 /**
  * One recording, to the one account it belongs to.
@@ -20,12 +22,30 @@ import { read } from '$lib/services/audio';
  */
 export const GET: RequestHandler = async (event) => {
 	try {
-		if (!event.locals.user) throw new NotFoundError('No such recording.');
-
 		const id = Number(event.params.id);
 		if (!Number.isInteger(id) || id <= 0) throw new NotFoundError('No such recording.');
 
-		const held = read(buildCtx(event.locals.user.id), id);
+		/*
+		 * The same bargain the picture endpoint makes: a key gets in when what
+		 * the recording is used for is something it may read — one inside a
+		 * note answers to `notes:read`, one on an idea to `ideas:read`, one on
+		 * a task to `tasks:read`.
+		 */
+		let userId = event.locals.user?.id ?? null;
+		if (!userId) {
+			let caller;
+			try {
+				caller = host.fileCaller(event.request);
+			} catch {
+				throw new NotFoundError('No such recording.');
+			}
+			if (!caller) throw new NotFoundError('No such recording.');
+			if (!caller.mayRead(recordingReferrers(buildCtx(caller.userId), id)))
+				throw new NotFoundError('No such recording.');
+			userId = caller.userId;
+		}
+
+		const held = read(buildCtx(userId), id);
 
 		return new Response(held.bytes as unknown as BodyInit, {
 			headers: {

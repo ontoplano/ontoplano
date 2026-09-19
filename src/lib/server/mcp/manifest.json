@@ -1997,6 +1997,25 @@
 			}
 		}
 	},
+	"tag_todo": {
+		"scope": "tasks:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"add": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"remove": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
 	"tick_bought": {
 		"scope": "inventory:write",
 		"writes": true,

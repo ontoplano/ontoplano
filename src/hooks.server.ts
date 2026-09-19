@@ -23,6 +23,8 @@ import {
 	touchDemoAccount
 } from '$lib/server/services/demo';
 import { clientKey, rateLimit, signUpBudget } from '$lib/server/rate-limit';
+import { bindFileCaller } from '$lib/services/host';
+import { fileCaller } from '$lib/server/api/media-access';
 import { checkSignUpAllowed, consumeInvite } from '$lib/server/services/registration';
 import { claimFirstAccount } from '$lib/server/services/admin';
 import {
@@ -43,6 +45,16 @@ import {
 } from '$lib/platform';
 import { refuse } from '$lib/server/refuse';
 import { demoRefusal } from '$lib/server/demo-guard';
+
+/*
+ * Who may fetch a picture or a recording with a key rather than a session.
+ *
+ * Bound here rather than with the rest of the host in `server/db/index.ts`:
+ * answering it needs the token service and the payment gate, which reach back
+ * into the database, and binding it there is a cycle whose first act is to run
+ * the migration check before anything has said which database to open.
+ */
+bindFileCaller(fileCaller);
 
 /**
  * Registration control, at the one door there is.

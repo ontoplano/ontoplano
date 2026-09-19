@@ -120,3 +120,46 @@ describe('a stranger', () => {
 		expect(diary.listTags(theirs).some((one) => one.name === 'secret')).toBe(false);
 	});
 });
+
+describe('labelling one without disturbing the rest', () => {
+	test('adds a label and keeps the ones already there', () => {
+		const id = todos.createTodo(ctx, { title: 'renew the domain', tags: 'a1 blocked' });
+		expect(todos.tagTodo(ctx, id, { add: 'done-by-ai' })).toEqual(['a1', 'blocked', 'done-by-ai']);
+		expect(named(id)).toEqual(['a1', 'blocked', 'done-by-ai']);
+	});
+
+	test('takes one off and leaves the others', () => {
+		const id = todos.createTodo(ctx, { title: 'sand the door', tags: 'a1 blocked wood' });
+		todos.tagTodo(ctx, id, { remove: 'blocked' });
+		expect(named(id)).toEqual(['a1', 'wood']);
+	});
+
+	test('adds and removes in one call', () => {
+		const id = todos.createTodo(ctx, { title: 'book the van', tags: 'blocked' });
+		expect(todos.tagTodo(ctx, id, { add: 'done-by-ai', remove: 'blocked' })).toEqual([
+			'done-by-ai'
+		]);
+	});
+
+	test('a word named in both is removed, which is the safer reading', () => {
+		const id = todos.createTodo(ctx, { title: 'contradiction', tags: 'a1' });
+		expect(todos.tagTodo(ctx, id, { add: 'a1', remove: 'a1' })).toEqual([]);
+	});
+
+	test('adding one it already has changes nothing and does not duplicate it', () => {
+		const id = todos.createTodo(ctx, { title: 'again', tags: 'a1' });
+		todos.tagTodo(ctx, id, { add: '#A1' });
+		expect(named(id)).toEqual(['a1']);
+	});
+
+	test('removing one it does not have is not an error', () => {
+		const id = todos.createTodo(ctx, { title: 'nothing to remove', tags: 'a1' });
+		expect(todos.tagTodo(ctx, id, { remove: 'never-had-it' })).toEqual(['a1']);
+	});
+
+	test('a stranger cannot label somebody else’s task', () => {
+		const id = todos.createTodo(ctx, { title: 'mine', tags: 'a1' });
+		expect(() => todos.tagTodo(theirs, id, { add: 'theirs' })).toThrow();
+		expect(named(id)).toEqual(['a1']);
+	});
+});

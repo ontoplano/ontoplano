@@ -14,6 +14,7 @@
  * in the same breath as its database, so a server can no more forget these
  * than forget where its data is.
  */
+import type { Referrer } from './media-referrers.js';
 import type { Ctx } from './ctx.js';
 import type { Capabilities } from '../capabilities.js';
 import { ValidationError } from './errors.js';
@@ -101,7 +102,40 @@ export interface Host {
 	 * placeholder.
 	 */
 	capabilities(): Capabilities;
+
+	/**
+	 * Who is asking for a file, when it is not the person in their own browser.
+	 *
+	 * A picture or a recording is served from a plain route rather than from
+	 * `/api/v1`, and that route used to take a session and nothing else — so a
+	 * key granted "read your notebooks" fetched the words of a note and got a
+	 * 404 for every picture in it. Writing somebody a note full of screenshots
+	 * is the obvious way to brief an assistant, and it did not work.
+	 *
+	 * The answer is not a new grant. A file belongs to whatever refers to it,
+	 * so the permission it needs is the permission for *that*: a picture in a
+	 * note wants `notes:read`, a face wants `people:read`. This hands the
+	 * route what it needs to ask — who the caller is, and a question it can
+	 * put to them once it knows what the file is used for.
+	 *
+	 * Through the seam because the route compiles into the device's worker,
+	 * where `$lib/server/*` cannot go. A device has no tokens and nobody but
+	 * its owner, so it answers `null` and the route stays session-only.
+	 */
+	fileCaller(request: Request): FileCaller | null;
 }
+
+/**
+ * A caller holding a key rather than a session, and what it is allowed.
+ *
+ * `mayRead` is asked with everything that refers to the file; it answers for
+ * the whole set, because one readable referrer is enough — a picture in a
+ * note you may read is a picture you may see, whatever else it is also in.
+ */
+export type FileCaller = {
+	userId: string;
+	mayRead(referrers: Referrer[]): boolean;
+};
 
 const localInstance: Host = {
 	emit() {},
@@ -130,11 +164,31 @@ const localInstance: Host = {
 	// An isolated instance has nobody to sign in and nobody to report to.
 	frontDoor: () => null,
 	clientErrorReports: () => 'off',
-	setClientErrorReports() {}
+	setClientErrorReports() {},
+	// One person, their own copy, no keys to hand out.
+	fileCaller: () => null
 };
 
 export let host: Host = localInstance;
 
 export function bindHost(instance: Host): void {
 	host = instance;
+}
+
+/**
+ * The file caller, bound on its own rather than with the rest.
+ *
+ * Everything else here is bound by `$lib/server/db/index.ts` the moment the
+ * database is opened. This one cannot be: answering it needs the token
+ * service and the payment gate, and those reach back into the database — so
+ * binding it there makes a cycle, and the first thing that cycle does is run
+ * the migration check before anybody has said which database to open. It is
+ * bound from `hooks.server.ts` instead, which is the server's own entry and is
+ * imported by nothing below it.
+ *
+ * Until then the answer is "no key is asking", which is the truth on a device
+ * and the safe answer everywhere: the route falls back to the session.
+ */
+export function bindFileCaller(fn: Host['fileCaller']): void {
+	host = { ...host, fileCaller: fn };
 }
