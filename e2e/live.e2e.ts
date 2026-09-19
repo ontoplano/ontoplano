@@ -145,11 +145,27 @@ test('a note written by an assistant turns up on its notebook', async ({ page, p
 	const notebookId = Number(new URL(href ?? '', ORIGIN).searchParams.get('notebook'));
 	expect(notebookId, 'no notebook to watch').toBeTruthy();
 
-	// The stream, before anything is written: an event emitted into a page that
-	// is not listening yet is an event nobody hears, and there is no replay.
-	const streaming = page.waitForResponse((r) => r.url().includes('/api/live'), { timeout: 20000 });
+	/*
+	 * The stream *this* page opened, before anything is written.
+	 *
+	 * An event emitted into a page that is not listening yet is an event nobody
+	 * hears — there is no replay — so the write has to wait for the stream. It
+	 * used to wait with a `waitForResponse` armed before the navigation, which
+	 * matched the stream the page being left behind had already opened: the new
+	 * page then got its own stream up whenever it managed to, and a write that
+	 * landed first was lost. That is the one in three this failed.
+	 *
+	 * Counted instead, so it cannot match the wrong one and cannot be armed too
+	 * late either — the layout opens the stream on an idle callback, which is
+	 * after load.
+	 */
+	let streams = 0;
+	page.on('response', (r) => {
+		if (r.url().includes('/api/live')) streams += 1;
+	});
+	const before = streams;
 	await visit(page, `/notebooks?notebook=${notebookId}`);
-	await streaming;
+	await expect.poll(() => streams, { timeout: 20000 }).toBeGreaterThan(before);
 
 	const title = `written while watching ${Date.now()}`;
 	await expect(page.getByText(title)).toHaveCount(0);

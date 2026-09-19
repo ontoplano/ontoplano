@@ -163,6 +163,17 @@ test('granting admin takes a deliberate second press', async ({ page }) => {
 		.getByRole('link', { name: new RegExp(email, 'i') })
 		.first()
 		.click();
+	/*
+	 * Wait for the account's own page before touching anything on it.
+	 *
+	 * Every row on the list carries a "Make admin" of its own, so acting before
+	 * the navigation lands finds as many of them as the instance has accounts —
+	 * a strict-mode violation rather than a click. It was a race the list won
+	 * while the list was short, and the suite registers an account per test, so
+	 * the list grows with the suite: adding tests anywhere lost it.
+	 */
+	await page.waitForURL(/\/admin\/[^/]+$/);
+	await page.waitForSelector('html[data-ready]');
 
 	/*
 	 * A double-click on the trigger, which is what a slipped click looks like:
