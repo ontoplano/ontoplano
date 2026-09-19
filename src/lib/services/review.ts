@@ -5,7 +5,7 @@ import { db } from '$lib/db/index.js';
 import { goals, goalTargets, weeklyReviews } from '$lib/db/schema.js';
 import { addDays, getMonday } from './week-generator.js';
 import type { Ctx } from './ctx.js';
-import { listInstances, setInstanceStatus } from './instances.js';
+import { generateInstances, listInstances, setInstanceStatus } from './instances.js';
 import { createTodo } from './todos.js';
 import { localDay, stamp, stamps } from './time.js';
 import { str } from './validate.js';
@@ -104,6 +104,22 @@ export function readWeek(
 ): { reading: WeekReading; loose: Loose[]; done: Done[] } {
 	const monday = new Date(weekStart + 'T00:00:00');
 	const nextMonday = addDays(monday, 7);
+
+	/*
+	 * Make the week exist before reading it.
+	 *
+	 * A block is a rule until somebody looks at the day it falls on, and then
+	 * it becomes a record. The planner does that when you navigate to a week;
+	 * the review never did, so a week nobody had opened read as empty — and
+	 * so did a week somebody wrote a block into afterwards, which is the
+	 * ordinary case of doing a thing late and saying so. "Nothing was planned
+	 * that week" about a week with something in it is the app calling
+	 * somebody a liar.
+	 *
+	 * Idempotent, and the same call the planner makes: a day already looked at
+	 * gains nothing.
+	 */
+	generateInstances(ctx, monday, nextMonday);
 	const instances = listInstances(ctx, monday, nextMonday);
 
 	const buckets = new Map<string, WeekReading['byCategory'][number]>();
