@@ -767,6 +767,31 @@ export function measureHistory(
 		.all();
 }
 
+/**
+ * How much of one measure was done between two days, inclusive of the first
+ * and exclusive of the last.
+ *
+ * What a goal counting a workout measure reads. A line with no amount — "went
+ * for a swim", recorded without a number — contributes nothing rather than
+ * breaking the sum, which is why the amounts are filtered rather than coerced.
+ */
+export function measureTotal(ctx: Ctx, activity: string, from: string, to: string): number {
+	const row = db
+		.select({ total: sql<number | null>`sum(${workoutMeasures.amount})` })
+		.from(workoutMeasures)
+		.innerJoin(workoutSessions, eq(workoutMeasures.sessionId, workoutSessions.id))
+		.where(
+			and(
+				eq(workoutMeasures.userId, ctx.userId),
+				eq(workoutMeasures.activity, str(activity, 'activity', { max: MAX_ACTIVITY_LENGTH })),
+				sql`${workoutSessions.doneOn} >= ${str(from, 'from', { max: 10, pattern: DAY_PATTERN })}`,
+				sql`${workoutSessions.doneOn} < ${str(to, 'to', { max: 10, pattern: DAY_PATTERN })}`
+			)
+		)
+		.get();
+	return row?.total ?? 0;
+}
+
 /** Everything this account has ever measured, for a picker or a chart's menu. */
 export function measuredActivities(ctx: Ctx): { activity: string; unit: string; times: number }[] {
 	return db

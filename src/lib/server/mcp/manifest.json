@@ -169,6 +169,10 @@
 				"type": "integer",
 				"required": true
 			},
+			"measure": {
+				"type": "string",
+				"required": false
+			},
 			"unit": {
 				"type": "string",
 				"required": false

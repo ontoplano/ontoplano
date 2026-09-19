@@ -503,8 +503,13 @@ function habitByName(ctx: Ctx, wanted: unknown): { id: number; name: string } {
 function targetsFrom(args: Record<string, unknown>, existing?: GoalTarget) {
 	if (Array.isArray(args.targets))
 		return args.targets.map((raw) => {
-			const t = (raw ?? {}) as { id?: unknown; value?: unknown; unit?: unknown };
-			return { id: t.id, value: t.value, unit: t.unit };
+			const t = (raw ?? {}) as {
+				id?: unknown;
+				value?: unknown;
+				unit?: unknown;
+				measure?: unknown;
+			};
+			return { id: t.id, value: t.value, unit: t.unit, measureActivity: t.measure };
 		});
 	if (args.targetValue !== undefined && args.targetValue !== null)
 		return [
@@ -513,7 +518,8 @@ function targetsFrom(args: Record<string, unknown>, existing?: GoalTarget) {
 				// keeps both its unit and the progress against it.
 				id: existing?.id,
 				value: args.targetValue,
-				unit: args.unit ?? existing?.unit
+				unit: args.unit ?? existing?.unit,
+				measureActivity: args.measure ?? existing?.measureActivity ?? undefined
 			}
 		];
 	return undefined;
@@ -556,7 +562,12 @@ const targetsParam = {
 		type: 'object',
 		properties: {
 			value: { type: 'number', description: 'How much of it.' },
-			unit: { type: 'string', description: 'What is being counted — gigs, songs, km.' }
+			unit: { type: 'string', description: 'What is being counted — gigs, songs, km.' },
+			measure: {
+				type: 'string',
+				description:
+					'A workout measure this counts, in the word the sessions use \u2014 "ran", "deadlifted". Set it and the number is the sum of what the register holds for that activity inside the goal\u2019s period, read rather than typed; `workout_sessions` and `workouts` show what has been measured. Leave it off for a number the person keeps themselves.'
+			}
 		},
 		required: ['value']
 	},
@@ -2208,12 +2219,19 @@ export const TOOLS: Tool[] = [
 			{
 				goalId: { type: 'integer', description: 'The goal\u2019s id, as `goals` gives it.' },
 				value: { type: 'number', description: 'How much of it.' },
-				unit: text('What is being counted — gigs, songs, km.')
+				unit: text('What is being counted — gigs, songs, km.'),
+				measure: text(
+					'A workout measure this counts, in the word the sessions use \u2014 "ran", "deadlifted". Set it and the number is the sum of what the register holds for that activity inside the goal\u2019s period, read rather than typed; `workout_sessions` and `workouts` show what has been measured. Leave it off for a number the person keeps themselves.'
+				)
 			},
 			['goalId', 'value']
 		),
 		run: (ctx, args) => ({
-			id: addGoalTarget(ctx, Number(args.goalId), { value: args.value, unit: args.unit })
+			id: addGoalTarget(ctx, Number(args.goalId), {
+				value: args.value,
+				unit: args.unit,
+				measureActivity: args.measure
+			})
 		})
 	},
 	{

@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.180.1 — 2026-09-19
 
+- **A goal can count a workout measure instead of asking you to type it.**
+  Pick one of the words your sessions use — "ran", "deadlifted" — and the
+  goal's number is the sum of what the register holds for it inside the goal's
+  period. It moves as you log, the card says which word it counts, and there
+  is no box to write a total your own sessions contradict.
 - **A reminder opens the thing it is about.** Only a birthday did: the weekly
   review's nag, a bill and a to-do all landed on the day's board instead. The
   review's now opens the week it is nagging about, a bill's opens the bills,

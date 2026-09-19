@@ -521,13 +521,16 @@ const goal = (title, horizon, periodStart, extra = {}) => {
 		// each and both halves of the goal card are on screen.
 		const whole = m.whole ?? (Number.isInteger(m.target) && Number.isInteger(m.current ?? 0));
 		run(
-			'insert into goal_targets (user_id, goal_id, target_value, current_value, unit, whole, sort_order) values (?, ?, ?, ?, ?, ?, ?)',
+			'insert into goal_targets (user_id, goal_id, target_value, current_value, unit, whole, measure_activity, sort_order) values (?, ?, ?, ?, ?, ?, ?, ?)',
 			uid,
 			id,
 			m.target,
 			m.current ?? 0,
 			m.unit ?? '',
 			whole ? 1 : 0,
+			// A measure counted from the workout register rather than typed in,
+			// so the dev database has one of those on screen too.
+			m.countedFrom ?? null,
 			at
 		);
 	});
@@ -919,6 +922,19 @@ goal('run a half marathon', 'quarter', quarterStart, {
 	// the point of the other kind of measure.
 	measures: [{ target: 21.1, current: 14.6, unit: 'km', whole: false }]
 });
+/*
+ * The case where the number is not typed at all.
+ *
+ * Every running session below records `ran` in km, and this adds them up
+ * inside the quarter rather than asking somebody to keep the same total twice.
+ * The goal card shows it as read-only, with the word it counts beside it.
+ */
+goal('run 100km this quarter', 'quarter', quarterStart, {
+	areaId: areaHealth,
+	notes: 'counted from the register, not typed in',
+	measures: [{ target: 100, unit: 'km', whole: false, countedFrom: 'ran' }]
+});
+
 // The multi-measure case: one commitment, three numbers under it.
 goal('get the band playing again', 'year', yearStart, {
 	areaId: areaCraft,

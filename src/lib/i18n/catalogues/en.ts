@@ -616,6 +616,8 @@ export const messages: Catalogue = {
 	'goals.closeItAsDone': 'Close it as done',
 	'goals.closeItAsNotDone': 'Close it as not done',
 	'goals.confirm': 'Confirm?',
+	'goals.countedFrom': 'Counted from',
+	'goals.countedFromYourWorkouts': 'Counted from your workouts',
 	'goals.countsFor': 'Counts for {period}',
 	'goals.createGoal': 'Create goal',
 	'goals.doneOfTotal': '{done} of {total} done',
@@ -629,6 +631,7 @@ export const messages: Catalogue = {
 	'goals.goals': 'Goals',
 	'goals.hideClosed': 'Hide closed',
 	'goals.horizon': 'Horizon',
+	'goals.iKeepThisOneMyself': 'I keep this one myself',
 	'goals.linkedTasks': 'Linked tasks',
 	'goals.linkedTasksMakeProgress':
 		'Linked tasks make progress countable — how many of these actually got done inside the period, instead of a number you type in.',

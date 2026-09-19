@@ -62,9 +62,14 @@
 	 * A row carries the id of the measure it edits so the number already on it
 	 * survives a rename of its unit; a row with no id is a new one.
 	 */
-	let formTargets: { id: number | null; value: string; unit: string; whole: boolean }[] = $state(
-		[]
-	);
+	let formTargets: {
+		id: number | null;
+		value: string;
+		unit: string;
+		whole: boolean;
+		/** A workout measure this one counts, or '' for a number kept by hand. */
+		measureActivity: string;
+	}[] = $state([]);
 	let selectedIndex = $state(0);
 
 	const accent = SECTION_COLORS.home;
@@ -126,8 +131,9 @@
 	}
 
 	function blankTarget() {
-		// Counted by default: most goals are a number of things done.
-		return { id: null, value: '', unit: '', whole: true };
+		// Counted by default: most goals are a number of things done, and kept
+		// by hand, which is what an empty measure means.
+		return { id: null, value: '', unit: '', whole: true, measureActivity: '' };
 	}
 
 	function openCreate() {
@@ -148,7 +154,8 @@
 						id: t.id,
 						value: String(t.targetValue),
 						unit: t.unit,
-						whole: t.whole
+						whole: t.whole,
+						measureActivity: t.measureActivity ?? ''
 					}))
 				: [blankTarget()];
 		showForm = true;
@@ -476,6 +483,39 @@
 									<Icon name="trash" />
 								</button>
 							</div>
+							<!--
+								Counted from the workouts, or kept by hand.
+
+								Only where there is something to count: an account that has
+								never logged a measure gets no picker for one, rather than an
+								empty dropdown saying nothing. Choosing one takes the unit
+								from the register too, because "km" was already typed there
+								and two spellings of one unit are two units.
+							-->
+							{#if data.workoutMeasures.length > 0}
+								<label class="mt-1 flex items-center gap-2 pl-1">
+									<span class="eyebrow shrink-0 text-gray-500">{t('goals.countedFrom')}</span>
+									<select
+										name="targetMeasure"
+										class="select min-w-0 flex-1 py-1 text-xs"
+										bind:value={target.measureActivity}
+										onchange={() => {
+											const found = data.workoutMeasures.find(
+												(m: { activity: string; unit: string }) =>
+													m.activity === target.measureActivity
+											);
+											if (found?.unit) target.unit = found.unit;
+										}}
+									>
+										<option value="">{t('goals.iKeepThisOneMyself')}</option>
+										{#each data.workoutMeasures as measure (measure.activity + measure.unit)}
+											<option value={measure.activity}>
+												{measure.activity}{measure.unit ? ` (${measure.unit})` : ''}
+											</option>
+										{/each}
+									</select>
+								</label>
+							{/if}
 						{/each}
 					</div>
 					<datalist id="goal-units">
@@ -648,17 +688,38 @@
 													>
 														<input type="hidden" name="targetId" value={target.id} />
 														<!--
-															A thing you count moves one at a time.
-															
-															Twelve books is finished a book at a time, and
-															reaching for a keyboard to turn 3 into 4 is absurd —
-															so a counted measure gets a minus and a plus, each of
-															which is the whole gesture: the button carries the new
-															number, so a press is a submit and there is nothing to
-															save afterwards. A measured one keeps its field,
-															because 14.6 is not two presses away from anything.
+															A measure counted from the workouts is read, not typed.
+
+															The number is the sum of what the register holds for
+															that activity inside the goal's period, so there is
+															nothing to press: a box here would let somebody write
+															a total their own sessions contradict, with nothing on
+															screen to say which one is true. The word it counts is
+															shown instead, so the figure is not a mystery.
 														-->
-														{#if target.whole}
+														{#if target.measureActivity}
+															<span
+																class="chip shrink-0"
+																title={t('goals.countedFromYourWorkouts')}
+															>
+																<Icon name="health" size={12} class="mr-1" />
+																{target.measureActivity}
+															</span>
+															<span class="tabular text-xs text-gray-700">
+																{target.currentValue}
+															</span>
+														{:else if target.whole}
+															<!--
+																A thing you count moves one at a time.
+
+																Twelve books is finished a book at a time, and
+																reaching for a keyboard to turn 3 into 4 is absurd —
+																so a counted measure gets a minus and a plus, each of
+																which is the whole gesture: the button carries the new
+																number, so a press is a submit and there is nothing to
+																save afterwards. A measured one keeps its field,
+																because 14.6 is not two presses away from anything.
+															-->
 															<button
 																class="icon-btn"
 																name="currentValue"
@@ -710,7 +771,7 @@
 																	background-color: {goal.areaColor ?? accent}"
 															></div>
 														</div>
-														{#if !target.whole}
+														{#if !target.whole && !target.measureActivity}
 															<button
 																class="icon-btn"
 																title={t('goals.saveProgress')}

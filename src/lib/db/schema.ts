@@ -1696,6 +1696,24 @@ export const goalTargets = sqliteTable(
 		 * exactly 14 is still a distance, and would sprout arrows for a day.
 		 */
 		whole: integer('whole', { mode: 'boolean' }).notNull().default(true),
+		/**
+		 * A workout measure this target counts, or null for one kept by hand.
+		 *
+		 * "Run 100 km this quarter" is a number the register already holds:
+		 * every session that recorded `ran` has an amount against it, and
+		 * adding them up inside the goal's period is the answer. Typing the
+		 * same total into a goal by hand is asking somebody to keep two copies
+		 * of one fact.
+		 *
+		 * The activity's own word, not an id, because that is what a measure
+		 * is: `workout_measures.activity` is free text somebody typed, and the
+		 * whole register is grouped by it. Renaming what you call a thing
+		 * therefore stops the old goal counting — which is the honest outcome,
+		 * since the old sessions still say the old word.
+		 *
+		 * When it is set, `current_value` is not read: the sum is.
+		 */
+		measureActivity: text('measure_activity'),
 		sortOrder: integer('sort_order').notNull().default(0)
 	},
 	(table) => [

@@ -30,6 +30,7 @@ import { periodEnd, periodStart, isGoalStatus, isHorizon, type Horizon } from '.
 import type { Ctx } from './ctx.js';
 import { ConflictError, NotFoundError, ValidationError } from './errors.js';
 import { ownedNotebookId } from './notebooks.js';
+import { measureTotal } from './workouts.js';
 import { created, stamp, stamps } from './time.js';
 import { num, optionalStr, str } from './validate.js';
 import { blockName } from '../planner-grid.js';
@@ -57,6 +58,15 @@ export type GoalTarget = {
 	 * thing you finish one at a time, a field for a thing you measure.
 	 */
 	whole: boolean;
+	/**
+	 * The workout measure this counts, or null for a number kept by hand.
+	 *
+	 * When it is set, `currentValue` is the sum of what the register holds for
+	 * that activity inside the goal's period rather than anything anybody
+	 * typed — so "run 100 km this quarter" moves by itself as sessions are
+	 * logged, and the screen offers no box to overwrite it.
+	 */
+	measureActivity: string | null;
 	/** 0-1, how far this one measure has got. */
 	fraction: number;
 };
@@ -228,18 +238,27 @@ export function listGoals(ctx: Ctx, opts: { includeClosed?: boolean } = {}): Goa
 				.map((l) => l.activityId)
 				.filter((v): v is number => v !== null);
 
+			const from = r.periodStart;
+			const to = periodEnd(r.horizon, r.periodStart);
 			const targets = measures
 				.filter((t) => t.goalId === r.id)
-				.map(
-					(t): GoalTarget => ({
+				.map((t): GoalTarget => {
+					// Counted from the register, or the number somebody typed. Never
+					// both: a goal that could disagree with its own workouts is a
+					// goal nobody can read.
+					const currentValue = t.measureActivity
+						? measureTotal(ctx, t.measureActivity, from, to)
+						: t.currentValue;
+					return {
 						id: t.id,
 						targetValue: t.targetValue,
-						currentValue: t.currentValue,
+						currentValue,
 						unit: t.unit,
 						whole: t.whole,
-						fraction: Math.min(t.currentValue / t.targetValue, 1)
-					})
-				);
+						measureActivity: t.measureActivity,
+						fraction: Math.min(currentValue / t.targetValue, 1)
+					};
+				});
 
 			return {
 				id: r.id,
@@ -395,6 +414,7 @@ export function createGoal(
 					targetValue: t.value,
 					unit: t.unit,
 					whole: t.whole,
+					measureActivity: t.measureActivity,
 					sortOrder: i
 				})
 				.run();
@@ -472,7 +492,13 @@ export function updateGoal(
 			if (t.id !== null && existing.includes(t.id)) {
 				kept.add(t.id);
 				tx.update(goalTargets)
-					.set({ targetValue: t.value, unit: t.unit, whole: t.whole, sortOrder: i })
+					.set({
+						targetValue: t.value,
+						unit: t.unit,
+						whole: t.whole,
+						measureActivity: t.measureActivity,
+						sortOrder: i
+					})
 					.where(and(eq(goalTargets.id, t.id), eq(goalTargets.userId, ctx.userId)))
 					.run();
 				return;
@@ -484,6 +510,7 @@ export function updateGoal(
 					targetValue: t.value,
 					unit: t.unit,
 					whole: t.whole,
+					measureActivity: t.measureActivity,
 					sortOrder: i
 				})
 				.run();
@@ -502,12 +529,14 @@ export function updateGoal(
 export function addGoalTarget(
 	ctx: Ctx,
 	goalId: number,
-	raw: { value: unknown; unit?: unknown }
+	raw: { value: unknown; unit?: unknown; measureActivity?: unknown }
 ): number {
 	assertOwnedGoal(ctx, goalId);
 
 	const value = num(raw.value, 'target', { min: 0.000001 });
 	const unit = optionalStr(raw.unit, 'unit', { max: MAX_UNIT_LENGTH });
+	const measureActivity =
+		optionalStr(raw.measureActivity, 'measure', { max: MAX_UNIT_LENGTH }) || null;
 	const existing = db
 		.select({ id: goalTargets.id })
 		.from(goalTargets)
@@ -524,6 +553,7 @@ export function addGoalTarget(
 			goalId,
 			targetValue: value,
 			unit,
+			measureActivity,
 			sortOrder: existing.length
 		})
 		.run();
@@ -545,10 +575,25 @@ export function removeGoalTarget(ctx: Ctx, targetId: number): void {
 	touchGoal(ctx, goalId);
 }
 
-/** Self-reported progress on one measure — the number somebody types in. */
+/**
+ * Self-reported progress on one measure — the number somebody types in.
+ *
+ * Refused for a measure counted from the workout register: that number is the
+ * sum of what was actually logged, and letting it be overwritten would leave
+ * the goal saying something the register contradicts — with nothing on screen
+ * to say which of the two is the truth.
+ */
 export function setTargetProgress(ctx: Ctx, targetId: number, value: unknown): void {
 	const currentValue = num(value, 'progress', { min: 0 });
 	const goalId = ownedTargetGoal(ctx, targetId);
+
+	const counted = db
+		.select({ measureActivity: goalTargets.measureActivity })
+		.from(goalTargets)
+		.where(and(eq(goalTargets.id, targetId), eq(goalTargets.userId, ctx.userId)))
+		.get();
+	if (counted?.measureActivity)
+		throw new ValidationError('That one is counted from your workouts, not typed in');
 
 	const res = db
 		.update(goalTargets)
@@ -803,23 +848,32 @@ function parseAnchor(value: unknown): Date | null {
  * is dropped rather than refused. A row with a unit and no number is a mistake
  * worth saying out loud: "5 books" and "books" are not the same claim.
  */
-function parseTargets(
-	value: unknown
-): { id: number | null; value: number; unit: string; whole: boolean }[] | null {
+type ParsedTarget = {
+	id: number | null;
+	value: number;
+	unit: string;
+	whole: boolean;
+	measureActivity: string | null;
+};
+
+function parseTargets(value: unknown): ParsedTarget[] | null {
 	if (value === undefined || value === null) return null;
 	if (!Array.isArray(value)) throw new ValidationError('Invalid measures');
 
-	const out: { id: number | null; value: number; unit: string; whole: boolean }[] = [];
+	const out: ParsedTarget[] = [];
 	for (const entry of value) {
 		const row = (entry ?? {}) as {
 			id?: unknown;
 			value?: unknown;
 			unit?: unknown;
 			whole?: unknown;
+			measureActivity?: unknown;
 		};
 		const rawValue = row.value === undefined || row.value === null ? '' : String(row.value).trim();
 		const unit = optionalStr(row.unit, 'unit', { max: MAX_UNIT_LENGTH });
-		if (rawValue === '' && unit === '') continue;
+		const measureActivity =
+			optionalStr(row.measureActivity, 'measure', { max: MAX_UNIT_LENGTH }) || null;
+		if (rawValue === '' && unit === '' && measureActivity === null) continue;
 		out.push({
 			id:
 				row.id === undefined || row.id === null || String(row.id).trim() === ''
@@ -829,7 +883,8 @@ function parseTargets(
 			unit,
 			// A form sends "true"/"false"; anything else and it is counted, which
 			// is what most goals are.
-			whole: String(row.whole ?? 'true') !== 'false'
+			whole: String(row.whole ?? 'true') !== 'false',
+			measureActivity
 		});
 	}
 

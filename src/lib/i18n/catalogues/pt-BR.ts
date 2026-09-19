@@ -634,6 +634,8 @@ export const messages: Catalogue = {
 	'goals.closeItAsDone': 'Encerrar como concluída',
 	'goals.closeItAsNotDone': 'Encerrar como não concluída',
 	'goals.confirm': 'Confirmar?',
+	'goals.countedFrom': 'Contado a partir de',
+	'goals.countedFromYourWorkouts': 'Contado a partir dos seus treinos',
 	'goals.countsFor': 'Conta para {period}',
 	'goals.createGoal': 'Criar meta',
 	'goals.doneOfTotal': '{done} de {total} feitas',
@@ -647,6 +649,7 @@ export const messages: Catalogue = {
 	'goals.goals': 'Metas',
 	'goals.hideClosed': 'Ocultar encerradas',
 	'goals.horizon': 'Horizonte',
+	'goals.iKeepThisOneMyself': 'Eu mesmo acompanho',
 	'goals.linkedTasks': 'Tarefas vinculadas',
 	'goals.linkedTasksMakeProgress':
 		'Tarefas vinculadas tornam o progresso contável — quantas delas realmente foram feitas dentro do período, em vez de um número que você digita.',

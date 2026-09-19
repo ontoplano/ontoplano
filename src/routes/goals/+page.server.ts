@@ -1,3 +1,4 @@
+import { measuredActivities } from '$lib/services/workouts';
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { listActivities } from '$lib/services/activities';
 import { buildCtx } from '$lib/services/ctx';
@@ -37,7 +38,19 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 		 * whether it happened, which needs the finished ones most of all.
 		 */
 		allTodos: listTodos(ctx).map((t) => ({ id: t.id, title: t.title, status: t.status })),
-		activities: listActivities(ctx, { activeOnly: true }).map((a) => ({ id: a.id, name: a.name }))
+		activities: listActivities(ctx, { activeOnly: true }).map((a) => ({ id: a.id, name: a.name })),
+		/*
+		 * What the workouts have ever measured, for a goal that counts one.
+		 *
+		 * The words somebody has actually used — `ran`, `deadlifted` — rather
+		 * than a list of every activity, because a measure is free text on a
+		 * session and a goal counting a word nobody has logged would sit at
+		 * zero for ever with nothing to say why.
+		 */
+		workoutMeasures: measuredActivities(ctx).map((m) => ({
+			activity: m.activity,
+			unit: m.unit
+		}))
 	};
 };
 
@@ -53,7 +66,15 @@ function targetsFrom(formData: FormData) {
 	const values = formData.getAll('targetValue');
 	const units = formData.getAll('targetUnit');
 	const wholes = formData.getAll('targetWhole');
-	return values.map((value, i) => ({ id: ids[i], value, unit: units[i], whole: wholes[i] }));
+	// Empty for a measure kept by hand, which is most of them.
+	const counted = formData.getAll('targetMeasure');
+	return values.map((value, i) => ({
+		id: ids[i],
+		value,
+		unit: units[i],
+		whole: wholes[i],
+		measureActivity: counted[i]
+	}));
 }
 
 export const actions = {

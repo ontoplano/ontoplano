@@ -1,0 +1,1 @@
+ALTER TABLE `goal_targets` ADD `measure_activity` text;
