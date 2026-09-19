@@ -1,12 +1,12 @@
 <script lang="ts">
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
-	import Swatch from '$lib/components/Swatch.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Banner from '$lib/components/Banner.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import Swatch from '$lib/components/Swatch.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { enhance, deserialize } from '$app/forms';
@@ -3734,18 +3734,20 @@
 							dragTodoId = null;
 							dropPreview = null;
 						}}
-						class="lift cursor-grab border px-2 py-1 text-xs shadow-card {placingTodoId === todo.id
+						class="lift cursor-grab px-2 py-1 text-xs shadow-card {placingTodoId === todo.id
 							? 'on-fill'
-							: todo.due
-								? 'border-gray-400 bg-white font-medium text-gray-900'
-								: 'border-gray-200 bg-white text-gray-700'} {dragTodoId === todo.id
+							: todo.categoryColor
+								? 'pill'
+								: todo.due
+									? 'border border-gray-400 bg-white font-medium text-gray-900'
+									: 'border border-gray-200 bg-white text-gray-700'} {dragTodoId === todo.id
 							? 'opacity-40'
 							: ''}"
+						style={todo.categoryColor && placingTodoId !== todo.id
+							? `--pill:${todo.categoryColor}`
+							: ''}
 						title={t('tasks.plan.dragOntoTheGridOr')}
 					>
-						{#if todo.categoryColor}
-							<Swatch color={todo.categoryColor} />
-						{/if}
 						{todo.title}
 						<!--
 							Said in a word rather than a colour: which of these is for
@@ -3753,12 +3755,16 @@
 							tint alone says it to some people and not others.
 						-->
 						{#if todo.due === 'today'}
-							<span class="ml-1 text-[0.65rem] tracking-wide text-gray-500 uppercase"
-								>{t('tasks.plan.today2')}</span
+							<span
+								class="pill-quiet ml-1 text-[0.65rem] tracking-wide uppercase {todo.categoryColor
+									? ''
+									: 'text-gray-500'}">{t('tasks.plan.today2')}</span
 							>
 						{:else if todo.due === 'overdue'}
-							<span class="ml-1 text-[0.65rem] tracking-wide text-gray-500 uppercase"
-								>{t('tasks.plan.owed')}</span
+							<span
+								class="pill-quiet ml-1 text-[0.65rem] tracking-wide uppercase {todo.categoryColor
+									? ''
+									: 'text-gray-500'}">{t('tasks.plan.owed')}</span
 							>
 						{/if}
 					</button>

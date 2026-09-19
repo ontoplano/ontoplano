@@ -1022,9 +1022,9 @@
 		<span class="mt-0.5 flex flex-wrap items-center gap-1">
 			{#each pairs as [key, value] (key)}
 				{@const color = chipColor(key, value)}
-				<span
-					class="chip"
-					style={color ? `background-color:${color};color:#fff;border-color:transparent` : ''}
+				<!-- `.pill` when there is a colour: it computes its own ink, so a
+				     pale tag is readable instead of white on white. -->
+				<span class={color ? 'pill' : 'chip'} style={color ? `--pill:${color}` : ''}
 					>{value ? `${key}: ${value}` : key}</span
 				>
 			{/each}
@@ -1809,10 +1809,8 @@
 							</form>
 						{:else}
 							<span
-								class="chip"
-								style={attribute.color
-									? `background-color:${attribute.color};color:#fff;border-color:transparent`
-									: ''}>{attribute.key}</span
+								class={attribute.color ? 'pill' : 'chip'}
+								style={attribute.color ? `--pill:${attribute.color}` : ''}>{attribute.key}</span
 							>
 							<span class="tabular text-xs text-gray-500">{attribute.count}</span>
 
@@ -1891,10 +1889,9 @@
 									</form>
 								{:else}
 									<span
-										class="chip"
-										style={one.color
-											? `background-color:${one.color};color:#fff;border-color:transparent`
-											: ''}>{one.value || t('inventory.noValue')}</span
+										class={one.color ? 'pill' : 'chip'}
+										style={one.color ? `--pill:${one.color}` : ''}
+										>{one.value || t('inventory.noValue')}</span
 									>
 									<span class="tabular text-xs text-gray-500">{one.count}</span>
 									<form
@@ -1977,16 +1974,16 @@
 						<li>
 							<button
 								type="button"
-								class="chip"
+								class={attributeFilter === attribute.key ? 'pill' : 'chip'}
 								aria-pressed={attributeFilter === attribute.key}
 								style={attributeFilter === attribute.key
-									? `background-color:${attribute.color ?? 'var(--control-on)'};color:#fff;border-color:transparent`
+									? `--pill:${attribute.color ?? 'var(--control-on)'}`
 									: ''}
 								onclick={() =>
 									(attributeFilter = attributeFilter === attribute.key ? null : attribute.key)}
 							>
 								{attribute.key}
-								<span class="tabular text-xs opacity-70">{attribute.count}</span>
+								<span class="tabular pill-quiet text-xs">{attribute.count}</span>
 							</button>
 
 							<div class="mt-1 ml-1 flex flex-wrap gap-1 border-l border-gray-200 pl-3">
@@ -1994,15 +1991,15 @@
 									{@const key = `${attribute.key}\u0000${one.value}`}
 									<button
 										type="button"
-										class="chip"
+										class={attributeFilter === key ? 'pill' : 'chip'}
 										aria-pressed={attributeFilter === key}
 										style={attributeFilter === key
-											? `background-color:${one.color ?? attribute.color ?? 'var(--control-on)'};color:#fff;border-color:transparent`
+											? `--pill:${one.color ?? attribute.color ?? 'var(--control-on)'}`
 											: ''}
 										onclick={() => (attributeFilter = attributeFilter === key ? null : key)}
 									>
 										{one.value || t('inventory.noValue')}
-										<span class="tabular text-xs opacity-70">{one.count}</span>
+										<span class="tabular pill-quiet text-xs">{one.count}</span>
 									</button>
 								{/each}
 							</div>

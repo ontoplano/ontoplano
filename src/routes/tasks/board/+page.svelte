@@ -1022,10 +1022,12 @@
 									onkeydown={() => {}}
 									role="button"
 									tabindex="0"
-									class="cursor-grab border bg-white px-2 py-1.5 shadow-card {focusCol === ci &&
+									class="pill-soft cursor-grab px-2 py-1.5 shadow-card {focusCol === ci &&
 									focusRow === ri
 										? 'kbd-cursor'
-										: ''} {dragging?.uid === card.uid ? 'opacity-40' : ''} border-gray-200"
+										: ''} {dragging?.uid === card.uid ? 'opacity-40' : ''}"
+									style="--pill: {card.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
+									title={card.categoryName ?? t('tasks.board.noCategory')}
 								>
 									<div class="flex items-start gap-2">
 										<!--
@@ -1065,11 +1067,6 @@
 												{/if}
 											</span>
 										</button>
-										<span
-											class="mt-1 h-3 w-1 shrink-0"
-											style="background-color: {card.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
-											title={card.categoryName ?? t('tasks.board.noCategory')}
-										></span>
 										<div class="min-w-0 flex-1">
 											<!--
 												The time belongs beside the title, not under it.
@@ -1222,19 +1219,15 @@
 							ondragstart={(e) => onDragStart(card, e)}
 							ondragend={onDragEnd}
 							ondragover={(e) => e.preventDefault()}
-							class="lift cursor-grab border border-gray-200 bg-white p-2 shadow-card {dragging?.uid ===
-							card.uid
+							class="pill-soft lift cursor-grab p-2 shadow-card {dragging?.uid === card.uid
 								? 'opacity-40'
 								: ''}"
+							style="--pill: {card.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
+							title={card.categoryName ?? t('tasks.board.noCategory')}
 						>
 							<div class="flex items-start gap-2">
-								<span
-									class="mt-0.5 h-3 w-1 shrink-0"
-									style="background-color: {card.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
-									title={card.categoryName ?? t('tasks.board.noCategory')}
-								></span>
 								<div class="min-w-0 flex-1">
-									<p class="truncate text-sm text-gray-900">{card.title}</p>
+									<p class="truncate text-sm">{card.title}</p>
 									<RatingBadges values={card.ratings} class="mt-1" />
 								</div>
 							</div>
