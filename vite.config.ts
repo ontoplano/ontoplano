@@ -1,6 +1,6 @@
 import tailwindcss from '@tailwindcss/vite';
 import { sveltekit } from '@sveltejs/kit/vite';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
@@ -91,6 +91,31 @@ function noBacktickInCss() {
 	};
 }
 
+/**
+ * A change to a server file reloads the page looking at it.
+ *
+ * Vite hot-swaps a component in the browser, which is the whole point of it —
+ * but a `+page.server.ts`, a hook or anything under `$lib/server` only exists
+ * on the server, so editing one updates a module the browser never had and
+ * the tab goes on showing what the old loader returned. The change is live
+ * and invisible, and the habit that grows around that is reloading by hand
+ * after every edit, which is the habit a dev server is for not having.
+ *
+ * Scoped to the server side on purpose: reloading for anything else would
+ * throw away the state hot-swapping exists to keep.
+ */
+function reloadOnServerChange(): Plugin {
+	const serverSide = /(\.server\.(ts|js)$)|(\/src\/hooks\.server\.[tj]s$)|(\/src\/lib\/server\/)/;
+	return {
+		name: 'ontoplano:reload-on-server-change',
+		apply: 'serve',
+		handleHotUpdate({ file, server }) {
+			if (!serverSide.test(file)) return;
+			server.ws.send({ type: 'full-reload' });
+		}
+	};
+}
+
 export default defineConfig({
 	// The dependency pre-bundler rewrites this one's worker and wasm loading
 	// until neither can find the other. Left alone, it works.
@@ -115,7 +140,7 @@ export default defineConfig({
 		 */
 		__ISOLATED_BUILD__: JSON.stringify(process.env.ONTOPLANO_ISOLATED_BUILD === '1')
 	},
-	plugins: [tailwindcss(), sveltekit(), noBacktickInCss(), browserSqlite()],
+	plugins: [tailwindcss(), sveltekit(), noBacktickInCss(), browserSqlite(), reloadOnServerChange()],
 	server: {
 		/**
 		 * Listen on every address, not just `localhost`.

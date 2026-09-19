@@ -57,6 +57,11 @@ YARN_BIN ?= $(shell command -v yarn)
 # stops to ask. `dev-fg` is the old foreground behaviour, for when you want
 # vite's output in the terminal you are sitting at.
 ## the app as a background service — survives closing the terminal
+##
+## It migrates before it starts (and starts the database again from scratch if
+## it cannot, see `_dev-migrated`), and the page in the browser reloads itself
+## on a change — a component is hot-swapped by vite, and a server file reloads
+## the tab outright, which is `reloadOnServerChange` in `vite.config.ts`.
 dev: _dev-port _dev-deps _dev-migrated
 	@[ -n "$(NODE_BIN)" ] || { echo "no node on PATH"; exit 1; }
 	@[ -n "$(YARN_BIN)" ] || { echo "no yarn on PATH"; exit 1; }
@@ -147,9 +152,28 @@ _dev-deps:
 #
 # Migrating here removes the whole shape. `db:migrate` snapshots first and does
 # nothing when there is nothing to do, which is the common case and silent.
+#
+# And when it cannot migrate, it starts again.
+#
+# The other half of the same shape. A database can be *ahead* of the code as
+# well as behind it — a branch tried out and left, migrations renumbered after
+# a rebase — and the migrator rightly refuses that rather than re-creating
+# tables that already exist. On a server that is an emergency; on a dev
+# machine it is a Tuesday, and the answer is always the same three commands
+# typed out of the error message.
+#
+# So they are not typed. `reset-dev` does them, and it is the one that refuses
+# a database holding accounts that are not the dev one — so this cannot eat
+# anybody's real data, and on the machine where it can it costs seconds.
 _dev-migrated:
-	@out=$$(yarn -s db:migrate 2>&1) || { echo "$$out"; exit 1; }; \
-	case "$$out" in *"migration"*) echo "$$out" | grep -v '^Snapshot:' ;; esac
+	@if out=$$(yarn -s db:migrate 2>&1); then \
+		case "$$out" in *"migration"*) echo "$$out" | grep -v '^Snapshot:' ;; esac; \
+	else \
+		echo "$$out"; \
+		echo; \
+		echo "This database cannot take the code's migrations — starting again with a clean one."; \
+		$(MAKE) --no-print-directory reset-dev; \
+	fi
 
 # A clean dev database, every time: nothing kept, nothing carried over.
 #
