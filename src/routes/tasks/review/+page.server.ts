@@ -34,11 +34,11 @@ function dateString(d: Date): string {
 export const load = async ({ locals, url }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
 	const param = url.searchParams.get('week');
-	const weekStart = param ? weekStartOf(param, ctx.now) : weekStartOf(dateString(ctx.now), ctx.now);
+	const weekStart = weekStartOf(ctx, param ?? dateString(ctx.now));
 
 	const monday = new Date(weekStart + 'T00:00:00');
 	const { reading, loose, done } = readWeek(ctx, weekStart);
-	const isCurrent = weekStart === weekStartOf(dateString(ctx.now), ctx.now);
+	const isCurrent = weekStart === weekStartOf(ctx, dateString(ctx.now));
 
 	return {
 		reading,
@@ -129,9 +129,10 @@ export const actions = {
 			const raw = String(formData.get('status') ?? '');
 			if (raw !== 'done' && raw !== 'skipped') throw new ValidationError('Invalid status');
 
+			const ctx = buildCtx(locals.user!.id);
 			const resolved = resolveLoose(
-				buildCtx(locals.user!.id),
-				weekStartOf(formData.get('weekStart'), new Date()),
+				ctx,
+				weekStartOf(ctx, formData.get('weekStart')),
 				formData.getAll('instanceId'),
 				raw
 			);
@@ -178,11 +179,8 @@ export const actions = {
 				verdicts.push({ id: Number(id), verb, ...(date ? { date } : {}) });
 			}
 
-			const settled = settleWeek(
-				buildCtx(locals.user!.id),
-				weekStartOf(formData.get('weekStart'), new Date()),
-				verdicts
-			);
+			const ctx = buildCtx(locals.user!.id);
+			const settled = settleWeek(ctx, weekStartOf(ctx, formData.get('weekStart')), verdicts);
 			return { success: true, settled };
 		} catch (e) {
 			return toActionFailure(e);
@@ -195,9 +193,10 @@ export const actions = {
 			// A date, when the answer was "not then, but on this day". Without one
 			// it lands on the undated pile, which is what carrying always meant.
 			const day = String(formData.get('scheduledDate') ?? '').trim();
+			const ctx = buildCtx(locals.user!.id);
 			const carried = carryIntoTodos(
-				buildCtx(locals.user!.id),
-				weekStartOf(formData.get('weekStart'), new Date()),
+				ctx,
+				weekStartOf(ctx, formData.get('weekStart')),
 				formData.getAll('instanceId'),
 				day || undefined
 			);

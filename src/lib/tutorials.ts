@@ -168,6 +168,11 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				body: 'tour.theWeekAndTheArrows'
 			},
 			{
+				target: '[data-tour="plan-week-start"]',
+				title: 'tour.whereYourWeekBegins',
+				body: 'tour.theArrowsStepAWholeWeek'
+			},
+			{
 				target: '[data-tour="plan-schemes"]',
 				title: 'tour.aWeekYouCanLay',
 				body: 'tour.saveTheShapeYouAre'

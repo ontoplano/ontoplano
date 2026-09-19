@@ -290,6 +290,18 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 				: formatDate(from) === formatDate(today),
 		prev: view === 'month' ? formatDate(prevMonth) : formatDate(prevFrom),
 		next: view === 'month' ? formatDate(nextMonth) : formatDate(to),
+		/*
+		 * The same window, starting a day earlier or a day later.
+		 *
+		 * The arrows step a whole week, which answers "the week before this
+		 * one". They cannot answer the other question a rolling seven days
+		 * gets asked — *where does my week begin* — because moving by seven
+		 * always lands on the same weekday. A plan that starts on Saturday and
+		 * one that starts on Sunday are different weeks to the person living
+		 * them, and this is how you slide between them.
+		 */
+		backOne: formatDate(addDays(from, -1)),
+		forwardOne: formatDate(addDays(from, 1)),
 		days
 	};
 

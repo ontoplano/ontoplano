@@ -162,7 +162,7 @@ export const load = async ({ locals }: IsolatedEvent) => {
 	 * ticked, which is the only version of "how I spent it" that is not a
 	 * plan.
 	 */
-	const week = readWeek(ctx, weekStartOf(null, ctx.now));
+	const week = readWeek(ctx, weekStartOf(ctx));
 	const weekSoFar = {
 		minutesDone: week.reading.minutesDone,
 		minutesPlanned: week.reading.minutesPlanned,

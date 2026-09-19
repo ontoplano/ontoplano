@@ -109,17 +109,40 @@ describe('what the week came to', () => {
 	});
 });
 
-describe('the week is always a Monday', () => {
+describe('the week begins where the account says it does', () => {
 	test('any day inside it snaps to the same review', () => {
 		const now = new Date('2026-08-24T09:00:00');
-		expect(s.review.weekStartOf('2026-08-19', now)).toBe(MONDAY);
-		expect(s.review.weekStartOf('2026-08-23', now)).toBe(MONDAY);
-		expect(s.review.weekStartOf(MONDAY, now)).toBe(MONDAY);
+		expect(s.review.weekStartOf(ctx, '2026-08-19', now)).toBe(MONDAY);
+		expect(s.review.weekStartOf(ctx, '2026-08-23', now)).toBe(MONDAY);
+		expect(s.review.weekStartOf(ctx, MONDAY, now)).toBe(MONDAY);
 	});
 
 	test('rubbish falls back to the week containing now', () => {
-		expect(s.review.weekStartOf('not-a-date', new Date('2026-08-19T09:00:00'))).toBe(MONDAY);
-		expect(s.review.weekStartOf(undefined, new Date('2026-08-19T09:00:00'))).toBe(MONDAY);
+		expect(s.review.weekStartOf(ctx, 'not-a-date', new Date('2026-08-19T09:00:00'))).toBe(MONDAY);
+		expect(s.review.weekStartOf(ctx, undefined, new Date('2026-08-19T09:00:00'))).toBe(MONDAY);
+	});
+
+	/*
+	 * The bug this replaced: a planner starting on Saturday and a review keyed
+	 * on Monday put the same Saturday in two different weeks. Saturday the
+	 * 22nd led the week Sat 22 – Fri 28 on the plan and closed Mon 17 – Sun 23
+	 * in the review, so a block done on it was in one week on one screen and
+	 * the week before on the other.
+	 */
+	test('an account whose week starts on Saturday gets Saturdays', async () => {
+		const settings = await import('../src/lib/services/settings');
+		settings.setWeekSettings(ctx.userId, { firstDay: 5, generateDay: 6 });
+		try {
+			// The Saturday on or before each of these, rather than the Monday.
+			expect(s.review.weekStartOf(ctx, '2026-08-22')).toBe('2026-08-22');
+			expect(s.review.weekStartOf(ctx, '2026-08-24')).toBe('2026-08-22');
+			expect(s.review.weekStartOf(ctx, '2026-08-21')).toBe('2026-08-15');
+
+			// And the week it reads is the seven days from there.
+			expect(s.review.readWeek(ctx, '2026-08-22').reading.weekEnd).toBe('2026-08-28');
+		} finally {
+			settings.setWeekSettings(ctx.userId, { firstDay: 0, generateDay: 6 });
+		}
 	});
 });
 

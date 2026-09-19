@@ -2108,7 +2108,9 @@ export const weeklyReviews = sqliteTable(
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id),
-		weekStart: text('week_start').notNull(), // YYYY-MM-DD, always a Monday
+		// YYYY-MM-DD, the day this account's week begins on — Monday unless it
+		// has said otherwise. `0085` re-keyed the rows that predate that.
+		weekStart: text('week_start').notNull(),
 		position: integer('position').notNull(), // 1-based, so "line 2" stays line 2
 		content: text('content').notNull(),
 		createdAt: text('created_at')

@@ -521,6 +521,16 @@
 	function openForm() {
 		showForm = true;
 		confirmingFormDelete = false;
+		/*
+		 * The hover card goes when the editor arrives.
+		 *
+		 * `eventMouseLeave` never fires once a dialog covers the grid, so the
+		 * card outlived the block it was about: open one, delete it, and the
+		 * card was still standing in the column at the hour the block used to
+		 * be, with nothing underneath it. The editor says everything the card
+		 * does and more, so there is nothing to keep either way.
+		 */
+		hovered = null;
 		tick().then(() => timeInput?.focus());
 	}
 
@@ -529,6 +539,9 @@
 		editingKind = null;
 		editingBlockId = null;
 		confirmingFormDelete = false;
+		// And again on the way out, for a card raised while the dialog was open
+		// — a pointer crossing the grid behind it still reaches the calendar.
+		hovered = null;
 		/*
 		 * The ghost the drag left behind.
 		 *
@@ -2503,6 +2516,43 @@
 				{/if}
 			</span>
 		</PeriodNav>
+
+		<!--
+			Where the week begins, nudged a day at a time.
+
+			The arrows beside the date step a whole week, which always lands on
+			the same weekday — so they can move you through time and never answer
+			*where does my week start*. A plan that begins on Saturday and one
+			that begins on Sunday are different weeks to the person living them.
+			Small, and beside the thing they move, because they are an adjustment
+			rather than a way of getting somewhere.
+
+			Only where seven days are on screen: on a single day this is the
+			arrow next to it, and a month has no first day to slide.
+		-->
+		{#if effectiveView === 'week'}
+			<div class="flex shrink-0 items-center gap-1" data-tour="plan-week-start">
+				<span class="eyebrow hidden text-gray-500 lg:inline">{t('tasks.plan.weekStarts')}</span>
+				<button
+					type="button"
+					onclick={() => goToRange(data.range.backOne)}
+					class="icon-btn"
+					title={t('tasks.plan.startADayEarlier')}
+					aria-label={t('tasks.plan.startADayEarlier')}
+				>
+					<Icon name="chevron-left" />
+				</button>
+				<button
+					type="button"
+					onclick={() => goToRange(data.range.forwardOne)}
+					class="icon-btn"
+					title={t('tasks.plan.startADayLater')}
+					aria-label={t('tasks.plan.startADayLater')}
+				>
+					<Icon name="chevron-right" />
+				</button>
+			</div>
+		{/if}
 
 		<!-- Pinned right on a laptop; on a phone it takes the second line whole, so
 		     the two controls sit at the ends instead of huddling in one corner. -->

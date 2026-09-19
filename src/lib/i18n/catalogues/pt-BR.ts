@@ -2860,6 +2860,8 @@ export const messages: Catalogue = {
 		'{size} selecionados · arraste um para mover todos · Esc para limpar',
 	'tasks.plan.shift': 'Shift',
 	'tasks.plan.someDays': 'Alguns dias',
+	'tasks.plan.startADayEarlier': 'Começar a semana um dia antes',
+	'tasks.plan.startADayLater': 'Começar a semana um dia depois',
 	'tasks.plan.startFromATemplate': 'Começar a partir de um modelo',
 	'tasks.plan.stillWithoutATime': 'ainda sem horário',
 	'tasks.plan.stopSubscribing': 'Parar de assinar',
@@ -2883,6 +2885,7 @@ export const messages: Catalogue = {
 	'tasks.plan.use': 'Usar',
 	'tasks.plan.viewGCycles': 'Visão {label} (g alterna)',
 	'tasks.plan.week': 'Semana',
+	'tasks.plan.weekStarts': 'Semana começa',
 	'tasks.plan.whichDay': 'Qual dia',
 	'tasks.plan.whileDraggingToDuplicateOr': 'enquanto arrasta para duplicar, ou',
 	'tasks.plan.wonTComeBackNextWeek': 'Não vai voltar semana que vem.',
@@ -3205,6 +3208,8 @@ export const messages: Catalogue = {
 	'tour.tasksHoldYourWeekNotebooks':
 		'Tarefas guarda sua semana, Cadernos guarda o que você escreve — o diário incluído — e ideias guarda o que você pensou no ônibus. Preferências reordena as seções e guarda as que você não quer.',
 	'tour.theAppArrangedYourWay': 'O app, do seu jeito',
+	'tour.theArrowsStepAWholeWeek':
+		'As setas andam uma semana inteira e caem sempre no mesmo dia da semana. Estas duas deslocam o primeiro dia de um em um.',
 	'tour.theBar': 'A barra',
 	'tour.theCalendarButtonPutsIt': 'O botão de calendário coloca em um dia',
 	'tour.theCalendarIsThePoint': 'O calendário é o que importa',
@@ -3255,6 +3260,7 @@ export const messages: Catalogue = {
 	'tour.whatWentWellWhatDid':
 		'O que deu certo, o que não deu, o que você vai mudar. É a parte que você vai ler ano que vem.',
 	'tour.whereYouAreAndWhat': 'Onde você está, e qual é a forma',
+	'tour.whereYourWeekBegins': 'Onde sua semana começa',
 	'tour.whichListAndWhereIt': 'Qual lista, e onde ela fica',
 	'tour.workHealthWhateverDividesYour':
 		'Trabalho, saúde, o que for que divide sua vida. Todo bloco usa a cor da sua categoria, na grade e no painel.',

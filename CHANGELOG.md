@@ -20,6 +20,18 @@ releases mattered.
 
 ## 0.180.1 — 2026-09-19
 
+- **The weekly review's week starts where your week starts.** It was keyed on
+  Monday whatever the planner had been told, so if your week begins on a
+  Saturday, a Saturday led one week on the plan and closed the week before it
+  in the review. The reviews you have already written were moved to match, and
+  the weekly mail now arrives on the morning your week begins rather than on a
+  Monday two days into it.
+- **Two buttons on the week grid slide the first day, one at a time.** The
+  arrows beside the date step a whole week and always land on the same
+  weekday, so they could never answer "where does my week begin".
+- **A deleted block no longer leaves its hover card behind.** Opening a block
+  covers the grid, so the card it raised never heard the pointer leave: delete
+  it and the card stayed in the column at the hour the block used to be.
 - **To-dos take tags.** The same words a diary entry or an idea is labelled
   with, not a second set: put them on when you write the task or afterwards,
   press one on a row to see only that one, and pick from the list of the ones

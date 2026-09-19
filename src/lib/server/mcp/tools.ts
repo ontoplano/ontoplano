@@ -584,7 +584,7 @@ const winsOfDay = (ctx: Ctx, args: Record<string, unknown>) => {
 	return { date, wins: listWins(ctx, date) };
 };
 const weekNote = (ctx: Ctx, args: Record<string, unknown>) => {
-	const weekStart = weekStartOf(args.weekStart, ctx.now);
+	const weekStart = weekStartOf(ctx, args.weekStart);
 	return { weekStart, note: readNote(ctx, weekStart) };
 };
 
@@ -2895,10 +2895,12 @@ export const TOOLS: Tool[] = [
 		scope: 'tasks:read',
 		writes: false,
 		input: object({
-			weekStart: text('The Monday the week starts on, as YYYY-MM-DD. This week if left out.')
+			weekStart: text(
+				'The day the week starts on, as YYYY-MM-DD \u2014 the account\u2019s own first day, Monday unless it says otherwise. Any day inside the week works; it snaps. This week if left out.'
+			)
 		}),
 		run: (ctx, args) => {
-			const weekStart = weekStartOf(args.weekStart, ctx.now);
+			const weekStart = weekStartOf(ctx, args.weekStart);
 			const { reading, loose } = readWeek(ctx, weekStart);
 			return { weekStart, reading, loose, note: readNote(ctx, weekStart) };
 		}
@@ -2913,13 +2915,15 @@ export const TOOLS: Tool[] = [
 		input: object(
 			{
 				note: text('The whole note, replacing what was there. Empty removes it.'),
-				weekStart: text('The Monday the week starts on. This week if left out.')
+				weekStart: text(
+					'The day the week starts on \u2014 the account\u2019s own first day. Any day inside the week works; it snaps. This week if left out.'
+				)
 			},
 			['note']
 		),
 		subject: weekNote,
 		run: (ctx, args) => {
-			const weekStart = weekStartOf(args.weekStart, ctx.now);
+			const weekStart = weekStartOf(ctx, args.weekStart);
 			saveNote(ctx, { weekStart, content: args.note });
 			return { ok: true, weekStart };
 		}

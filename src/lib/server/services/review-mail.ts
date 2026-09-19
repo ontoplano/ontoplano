@@ -7,7 +7,7 @@ import { user } from '$lib/db/schema.js';
 import { translatorFor, type Translate } from '$lib/i18n/core';
 import { localeForUser } from '$lib/server/locale';
 import { renderEmail } from '../email-template.js';
-import { getGridHours, getUserSetting, setUserSetting } from '../settings.js';
+import { getGridHours, getUserSetting, getWeekSettings, setUserSetting } from '../settings.js';
 import { REVIEW_MAIL_KEY, notifies } from '$lib/services/notifications.js';
 import { addDays } from '$lib/services/week-generator.js';
 import { buildCtx, localDateOf, type Ctx } from '$lib/services/ctx.js';
@@ -15,7 +15,7 @@ import { sendLogged } from './mail-log.js';
 import { readWeek, weekStartOf } from '$lib/services/review.js';
 
 /**
- * Monday morning: what last week actually was, in the inbox.
+ * The morning a week begins: what last week actually was, in the inbox.
  *
  * The review page has held these numbers since the beginning and nothing ever
  * asked anybody to look at them — the app only helps on the days you remember
@@ -75,7 +75,7 @@ import { readWeek, weekStartOf } from '$lib/services/review.js';
  */
 export { REVIEW_MAIL_KEY };
 
-/** The Monday of the week last written about, so it is written about once. */
+/** The first day of the week last written about, so it is written about once. */
 const LAST_SENT_KEY = 'mail.weekly-review.last';
 
 /**
@@ -245,8 +245,23 @@ export function weeklyReviewMail(
 	});
 }
 
-/** Whether it is their hour, where they are, on the day this goes out. */
-function isSendTime(now: Date, tz: string, hour: number): boolean {
+/**
+ * The day the mail goes out, by this app's index: 0 is Monday, 6 is Sunday.
+ *
+ * `Intl` names the day; the account stores a number. One list, so the two
+ * cannot drift.
+ */
+const SHORT_WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+
+/**
+ * Whether it is their hour, where they are, on the day this goes out.
+ *
+ * The day is the account's own first day rather than Monday. A report on the
+ * morning a week begins is about the seven days that just ended — which for
+ * somebody whose week starts on a Saturday is a Saturday morning, and used to
+ * be a Monday one, two days into a week the mail was not about.
+ */
+function isSendTime(now: Date, tz: string, hour: number, firstDay: number): boolean {
 	const parts = new Intl.DateTimeFormat('en-GB', {
 		timeZone: tz,
 		weekday: 'short',
@@ -257,26 +272,26 @@ function isSendTime(now: Date, tz: string, hour: number): boolean {
 	const weekday = parts.find((p) => p.type === 'weekday')?.value;
 	const local = Number(parts.find((p) => p.type === 'hour')?.value);
 
-	return weekday === 'Mon' && Number.isFinite(local) && local >= hour;
+	return weekday === SHORT_WEEKDAYS[firstDay] && Number.isFinite(local) && local >= hour;
 }
 
 /**
- * The Monday of the week before the one `ctx.now` is in.
+ * The start of the week before the one `ctx.now` is in.
  *
  * A report on Monday morning is about the seven days that just ended, so the
  * week is found from the account's own "now" rather than being handed in.
  */
 function lastWeekOf(ctx: Ctx): string {
-	// `weekStartOf` snaps to the Monday and formats with the same calendar the
-	// rest of the review uses, so the mail and the page cannot name two
-	// different weeks for one seven days.
-	return weekStartOf(undefined, addDays(ctx.now, -7));
+	// `weekStartOf` snaps to the account's own first day and formats with the
+	// same calendar the rest of the review uses, so the mail and the page
+	// cannot name two different weeks for one seven days.
+	return weekStartOf(ctx, undefined, addDays(ctx.now, -7));
 }
 
 /**
  * The account's own idea of "now", so the week is theirs and not the server's.
  *
- * `getMonday` and everything under it read a `Date` with the server's local
+ * `startOfWeek` and everything under it read a `Date` with the server's local
  * calendar, so handing it the raw instant would give somebody in Auckland the
  * week their server is in. Noon on their own calendar day reads back as that
  * day everywhere, whatever either side does about daylight saving.
@@ -310,7 +325,8 @@ export async function sendWeeklyReviews(now = new Date()): Promise<{
 		if (!weeklyReviewMailEnabled(account.id)) continue;
 
 		const ctx = buildCtx(account.id, { now });
-		if (!isSendTime(now, ctx.tz, reviewMailHour(account.id))) continue;
+		if (!isSendTime(now, ctx.tz, reviewMailHour(account.id), getWeekSettings(account.id).firstDay))
+			continue;
 
 		const local = buildCtx(account.id, { tz: ctx.tz, now: localNoon(now, ctx.tz) });
 

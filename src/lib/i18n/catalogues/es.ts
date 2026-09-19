@@ -2876,6 +2876,8 @@ export const messages: Catalogue = {
 		'{size} seleccionados · arrastra uno para moverlos · Esc para limpiar',
 	'tasks.plan.shift': 'Shift',
 	'tasks.plan.someDays': 'Algunos días',
+	'tasks.plan.startADayEarlier': 'Empezar la semana un día antes',
+	'tasks.plan.startADayLater': 'Empezar la semana un día después',
 	'tasks.plan.startFromATemplate': 'Empezar desde una plantilla',
 	'tasks.plan.stillWithoutATime': 'todavía sin hora',
 	'tasks.plan.stopSubscribing': 'Dejar de suscribirse',
@@ -2900,6 +2902,7 @@ export const messages: Catalogue = {
 	'tasks.plan.use': 'Usar',
 	'tasks.plan.viewGCycles': 'Vista {label} (recorre con g)',
 	'tasks.plan.week': 'Semana',
+	'tasks.plan.weekStarts': 'La semana empieza',
 	'tasks.plan.whichDay': 'Qué día',
 	'tasks.plan.whileDraggingToDuplicateOr': 'mientras arrastras para duplicar, o',
 	'tasks.plan.wonTComeBackNextWeek': 'No volverá la próxima semana.',
@@ -3220,6 +3223,8 @@ export const messages: Catalogue = {
 	'tour.tasksHoldYourWeekNotebooks':
 		'Tareas contiene tu semana, Cuadernos contiene lo que escribes — el diario incluido — e Ideas contiene lo que se te ocurrió en el bus. Preferencias reordena las secciones y guarda las que no quieres.',
 	'tour.theAppArrangedYourWay': 'La app, organizada a tu manera',
+	'tour.theArrowsStepAWholeWeek':
+		'Las flechas avanzan una semana entera, así que siempre caen en el mismo día. Estas dos desplazan el primer día de uno en uno.',
 	'tour.theBar': 'La barra',
 	'tour.theCalendarButtonPutsIt': 'El botón del calendario lo pone en un día',
 	'tour.theCalendarIsThePoint': 'El calendario es lo importante',
@@ -3270,6 +3275,7 @@ export const messages: Catalogue = {
 	'tour.whatWentWellWhatDid':
 		'Qué salió bien, qué no, qué estás cambiando. Es la parte que leerás el próximo año.',
 	'tour.whereYouAreAndWhat': 'Dónde estás, y qué forma tiene',
+	'tour.whereYourWeekBegins': 'Dónde empieza tu semana',
 	'tour.whichListAndWhereIt': 'Qué lista, y dónde vive',
 	'tour.workHealthWhateverDividesYour':
 		'Trabajo, salud, lo que sea que divida tu vida. Cada bloque lleva el color de su categoría, en la cuadrícula y en el panel.',

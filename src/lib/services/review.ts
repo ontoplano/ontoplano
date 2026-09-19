@@ -3,7 +3,8 @@ import { and, desc, eq, gte, inArray, lt } from 'drizzle-orm';
 import { blockName } from '../planner-grid.js';
 import { db } from '$lib/db/index.js';
 import { goals, goalTargets, weeklyReviews } from '$lib/db/schema.js';
-import { addDays, getMonday } from './week-generator.js';
+import { addDays, startOfWeek } from './week-generator.js';
+import { getWeekSettings } from './settings.js';
 import type { Ctx } from './ctx.js';
 import { generateOneOffs, listInstances, setInstanceStatus } from './instances.js';
 import { createTodo } from './todos.js';
@@ -39,15 +40,21 @@ export const MAX_NOTE_LENGTH = 8000;
 /**
  * Which week a review is for.
  *
- * Always snapped to its Monday, so "the week of the 14th" and "the week of the
- * 16th" cannot become two different reviews of the same seven days.
+ * Snapped to the day this account's week begins on, so "the week of the 14th"
+ * and "the week of the 16th" cannot become two reviews of the same seven days
+ * — and so the review and the planner name the same seven. It used to snap to
+ * Monday whatever the account had been told, which meant that for anybody
+ * whose week starts on a Saturday, a Saturday block led one week on the plan
+ * and closed the week before it in the review. `0085` re-keyed what was
+ * already stored.
  */
-export function weekStartOf(value: unknown, fallback: Date): string {
+export function weekStartOf(ctx: Ctx, value?: unknown, fallback: Date = ctx.now): string {
+	const { firstDay } = getWeekSettings(ctx.userId);
 	if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
 		const parsed = new Date(value + 'T00:00:00');
-		if (!isNaN(parsed.getTime())) return localDay(getMonday(parsed));
+		if (!isNaN(parsed.getTime())) return localDay(startOfWeek(parsed, firstDay));
 	}
-	return localDay(getMonday(fallback));
+	return localDay(startOfWeek(fallback, firstDay));
 }
 
 export type WeekReading = {
@@ -102,8 +109,8 @@ export function readWeek(
 	ctx: Ctx,
 	weekStart: string
 ): { reading: WeekReading; loose: Loose[]; done: Done[] } {
-	const monday = new Date(weekStart + 'T00:00:00');
-	const nextMonday = addDays(monday, 7);
+	const first = new Date(weekStart + 'T00:00:00');
+	const after = addDays(first, 7);
 
 	/*
 	 * Make the week's one-offs exist before reading it.
@@ -122,8 +129,8 @@ export function readWeek(
 	 * rules could reach. A one-off is the opposite — it is there because
 	 * somebody wrote it on that day.
 	 */
-	generateOneOffs(ctx, monday, nextMonday);
-	const instances = listInstances(ctx, monday, nextMonday);
+	generateOneOffs(ctx, first, after);
+	const instances = listInstances(ctx, first, after);
 
 	const buckets = new Map<string, WeekReading['byCategory'][number]>();
 	let minutesPlanned = 0;
@@ -191,7 +198,7 @@ export function readWeek(
 		done,
 		reading: {
 			weekStart,
-			weekEnd: localDay(addDays(monday, 6)),
+			weekEnd: localDay(addDays(first, 6)),
 			planned: instances.length,
 			done: instances.filter((i) => i.status === 'done').length,
 			skipped: instances.filter((i) => i.status === 'skipped').length,
@@ -213,8 +220,8 @@ export function readWeek(
  * anywhere". Where it stands comes along, one line per measure.
  */
 export function goalsTouched(ctx: Ctx, weekStart: string) {
-	const monday = new Date(weekStart + 'T00:00:00');
-	const nextMonday = addDays(monday, 7);
+	const first = new Date(weekStart + 'T00:00:00');
+	const after = addDays(first, 7);
 
 	const touched = db
 		.select({
@@ -227,7 +234,7 @@ export function goalsTouched(ctx: Ctx, weekStart: string) {
 			and(
 				eq(goals.userId, ctx.userId),
 				gte(goals.updatedAt, weekStart),
-				lt(goals.updatedAt, localDay(nextMonday))
+				lt(goals.updatedAt, localDay(after))
 			)
 		)
 		.orderBy(goals.title)
@@ -268,7 +275,7 @@ export function goalsTouched(ctx: Ctx, weekStart: string) {
  * other two into it, so nothing anybody wrote was lost.
  */
 export function saveNote(ctx: Ctx, raw: { weekStart: unknown; content: unknown }): void {
-	const weekStart = weekStartOf(raw.weekStart, ctx.now);
+	const weekStart = weekStartOf(ctx, raw.weekStart);
 	const content =
 		raw.content === undefined || raw.content === null ? '' : String(raw.content).trim();
 
@@ -439,14 +446,16 @@ export const REVIEW_LOOKBACK_WEEKS = 12;
 export function reviewPending(
 	ctx: Ctx
 ): { weekStart: string; unanswered: number; weeks: number } | null {
-	const lastMonday = getMonday(ctx.now);
+	// This account's own first day, not Monday: the week being asked about has
+	// to be the week the planner drew.
+	const thisWeek = new Date(weekStartOf(ctx) + 'T00:00:00');
 	let oldest: { weekStart: string; unanswered: number } | null = null;
 	let weeks = 0;
 
 	for (let back = 1; back <= REVIEW_LOOKBACK_WEEKS; back++) {
-		const monday = localDay(addDays(lastMonday, -7 * back));
+		const start = localDay(addDays(thisWeek, -7 * back));
 
-		const { reading } = readWeek(ctx, monday);
+		const { reading } = readWeek(ctx, start);
 		// A week nobody planned is not a week anybody owes an answer for, and it
 		// must not stop the walk either: a fortnight away leaves a gap in the
 		// middle that says nothing about the weeks either side of it.
@@ -456,7 +465,7 @@ export function reviewPending(
 		if (reading.unfinished === 0) continue;
 
 		weeks++;
-		oldest = { weekStart: monday, unanswered: reading.unfinished };
+		oldest = { weekStart: start, unanswered: reading.unfinished };
 	}
 
 	return oldest ? { ...oldest, weeks } : null;

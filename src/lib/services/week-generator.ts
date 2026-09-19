@@ -54,6 +54,26 @@ export function getMonday(date: Date): Date {
 	return d;
 }
 
+/**
+ * The first day of the week this date is in, for an account that begins its
+ * week on `firstDay` — 0 for Monday through 6 for Sunday, as `settings.ts`
+ * stores it.
+ *
+ * `getMonday` is this with `firstDay` fixed at 0, and stays because the week
+ * *generator* is about the ISO week whatever anybody's preference is. What
+ * moved is the review: a plan that starts on Saturday and a review keyed on
+ * Monday disagreed about which week a Saturday belonged to.
+ */
+export function startOfWeek(date: Date, firstDay: number): Date {
+	const d = new Date(date);
+	// JS counts from Sunday; this app counts from Monday, like its own pickers.
+	const fromMonday = (d.getDay() + 6) % 7;
+	const back = (fromMonday - firstDay + 7) % 7;
+	d.setDate(d.getDate() - back);
+	d.setHours(0, 0, 0, 0);
+	return d;
+}
+
 export function addDays(date: Date, days: number): Date {
 	const d = new Date(date);
 	d.setDate(d.getDate() + days);

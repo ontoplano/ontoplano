@@ -2909,6 +2909,8 @@ export const messages: Catalogue = {
 		'{size} ausgewählt · eine ziehen, um sie zu verschieben · Esc zum Leeren',
 	'tasks.plan.shift': 'Umschalt',
 	'tasks.plan.someDays': 'Bestimmte Tage',
+	'tasks.plan.startADayEarlier': 'Woche einen Tag früher beginnen',
+	'tasks.plan.startADayLater': 'Woche einen Tag später beginnen',
 	'tasks.plan.startFromATemplate': 'Von einer Vorlage starten',
 	'tasks.plan.stillWithoutATime': 'noch ohne Uhrzeit',
 	'tasks.plan.stopSubscribing': 'Abonnement beenden',
@@ -2933,6 +2935,7 @@ export const messages: Catalogue = {
 	'tasks.plan.use': 'Verwenden',
 	'tasks.plan.viewGCycles': '{label}-Ansicht (g wechselt)',
 	'tasks.plan.week': 'Woche',
+	'tasks.plan.weekStarts': 'Woche beginnt',
 	'tasks.plan.whichDay': 'Welcher Tag',
 	'tasks.plan.whileDraggingToDuplicateOr': 'beim Ziehen, um zu duplizieren, oder',
 	'tasks.plan.wonTComeBackNextWeek': 'Kommt nächste Woche nicht wieder.',
@@ -3254,6 +3257,8 @@ export const messages: Catalogue = {
 	'tour.tasksHoldYourWeekNotebooks':
 		'Aufgaben halten Ihre Woche, Notizbücher halten, was Sie schreiben — das Tagebuch eingeschlossen — und Ideen halten fest, was Ihnen im Bus eingefallen ist. Einstellungen ordnet die Bereiche neu und räumt die weg, die Sie nicht wollen.',
 	'tour.theAppArrangedYourWay': 'Die App, nach Ihren Vorstellungen geordnet',
+	'tour.theArrowsStepAWholeWeek':
+		'Die Pfeile springen eine ganze Woche und landen deshalb immer auf demselben Wochentag. Diese beiden verschieben den ersten Tag um je einen.',
 	'tour.theBar': 'Die Leiste',
 	'tour.theCalendarButtonPutsIt': 'Die Kalender-Schaltfläche legt es auf einen Tag',
 	'tour.theCalendarIsThePoint': 'Darauf kommt es beim Kalender an',
@@ -3304,6 +3309,7 @@ export const messages: Catalogue = {
 	'tour.whatWentWellWhatDid':
 		'Was gut lief, was nicht, was Sie ändern. Das ist der Teil, den Sie nächstes Jahr lesen werden.',
 	'tour.whereYouAreAndWhat': 'Wo Sie sind, und in welcher Form',
+	'tour.whereYourWeekBegins': 'Wo deine Woche beginnt',
 	'tour.whichListAndWhereIt': 'Welche Liste, und wo sie lebt',
 	'tour.workHealthWhateverDividesYour':
 		'Arbeit, Gesundheit, was auch immer Ihr Leben einteilt. Jeder Block trägt die Farbe seiner Kategorie, im Raster und auf dem Dashboard.',
