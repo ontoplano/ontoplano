@@ -118,3 +118,14 @@ export function dayInWords(day: string, locale: string): string {
 	if (Number.isNaN(at.getTime())) return day;
 	return at.toLocaleDateString(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' });
 }
+
+/**
+ * A `Date` as the day it is, where it is — `2026-09-19`.
+ *
+ * `toISOString` is UTC, so a date built from local parts comes back as
+ * yesterday for anybody west of Greenwich in the evening. Written out of the
+ * local parts instead, which is what every table keyed by day holds.
+ */
+export function localDay(d: Date): string {
+	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}

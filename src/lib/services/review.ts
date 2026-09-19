@@ -7,7 +7,7 @@ import { addDays, getMonday } from './week-generator.js';
 import type { Ctx } from './ctx.js';
 import { listInstances, setInstanceStatus } from './instances.js';
 import { createTodo } from './todos.js';
-import { stamp, stamps } from './time.js';
+import { localDay, stamp, stamps } from './time.js';
 import { str } from './validate.js';
 
 /**
@@ -36,10 +36,6 @@ import { str } from './validate.js';
 export const NOTE_POSITION = 1;
 export const MAX_NOTE_LENGTH = 8000;
 
-function dateString(d: Date): string {
-	return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
 /**
  * Which week a review is for.
  *
@@ -49,9 +45,9 @@ function dateString(d: Date): string {
 export function weekStartOf(value: unknown, fallback: Date): string {
 	if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
 		const parsed = new Date(value + 'T00:00:00');
-		if (!isNaN(parsed.getTime())) return dateString(getMonday(parsed));
+		if (!isNaN(parsed.getTime())) return localDay(getMonday(parsed));
 	}
-	return dateString(getMonday(fallback));
+	return localDay(getMonday(fallback));
 }
 
 export type WeekReading = {
@@ -176,7 +172,7 @@ export function readWeek(
 		done,
 		reading: {
 			weekStart,
-			weekEnd: dateString(addDays(monday, 6)),
+			weekEnd: localDay(addDays(monday, 6)),
 			planned: instances.length,
 			done: instances.filter((i) => i.status === 'done').length,
 			skipped: instances.filter((i) => i.status === 'skipped').length,
@@ -212,7 +208,7 @@ export function goalsTouched(ctx: Ctx, weekStart: string) {
 			and(
 				eq(goals.userId, ctx.userId),
 				gte(goals.updatedAt, weekStart),
-				lt(goals.updatedAt, dateString(nextMonday))
+				lt(goals.updatedAt, localDay(nextMonday))
 			)
 		)
 		.orderBy(goals.title)
@@ -429,7 +425,7 @@ export function reviewPending(
 	let weeks = 0;
 
 	for (let back = 1; back <= REVIEW_LOOKBACK_WEEKS; back++) {
-		const monday = dateString(addDays(lastMonday, -7 * back));
+		const monday = localDay(addDays(lastMonday, -7 * back));
 
 		const { reading } = readWeek(ctx, monday);
 		// A week nobody planned is not a week anybody owes an answer for, and it

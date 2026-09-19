@@ -6,6 +6,9 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import FrontDoor from '$lib/components/FrontDoor.svelte';
 	import QuickCapture from '$lib/components/QuickCapture.svelte';
+	import WidgetPicker from '$lib/components/WidgetPicker.svelte';
+	import Pie from '$lib/components/Pie.svelte';
+	import Swatch from '$lib/components/Swatch.svelte';
 	import { enhance } from '$app/forms';
 	import FormError from '$lib/components/FormError.svelte';
 	import { tick } from 'svelte';
@@ -23,8 +26,35 @@
 	/** Keep the card a card: the tracker is one click away for the full list. */
 	const TODO_PREVIEW = 5;
 	const GOAL_PREVIEW = 4;
+	/** How many blocks a day column shows before it says how many more. */
+	const DAY_PREVIEW = 5;
+	/** How many categories the ring names beside it before folding the rest in. */
+	const PIE_LEGEND = 5;
+	const MINUTES_IN_HOUR = 60;
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
+
+	/**
+	 * What a day column is called: Today, Tomorrow, then its own weekday.
+	 *
+	 * Two words rather than three dates. "Today" and "Tomorrow" are how
+	 * somebody refers to those two days, and the day after has no such name in
+	 * any of these languages — so it gets the weekday, from the reader's own
+	 * locale rather than a list of abbreviations written in English.
+	 */
+	function dayHeading(date: string, ahead: number): string {
+		if (ahead === 0) return t('app.today');
+		if (ahead === 1) return t('home.tomorrow');
+		return new Date(date + 'T00:00:00').toLocaleDateString(t.locale, { weekday: 'long' });
+	}
+
+	/** "19 Sep" — the date under the name, so "Tomorrow" is still a date. */
+	function dayNumber(date: string): string {
+		return new Date(date + 'T00:00:00').toLocaleDateString(t.locale, {
+			day: 'numeric',
+			month: 'short'
+		});
+	}
 
 	/** "1 block", "3 blocks" — because "1 blocks" is how a sentence loses trust. */
 	function blocks(n: number): string {
@@ -121,29 +151,90 @@
 	 * listening on every card: the thing being dragged holds the pointer
 	 * capture, so no other element hears a thing until it is let go.
 	 */
+	/*
+	 * Where every card is, measured once.
+	 *
+	 * The first version asked `document.elementFromPoint` on every pointermove.
+	 * A mouse or a trackpad reports far more often than the screen redraws, and
+	 * a hit test is a question the browser cannot answer without first
+	 * finishing any layout it was putting off — so each of those events flushed
+	 * the layout of a page made of twelve cards, and dragging one across the
+	 * dashboard was visibly behind the cursor.
+	 *
+	 * Measured when the drag starts and again after each reorder, which is the
+	 * only time the answer changes: in between, deciding which card the pointer
+	 * is over is arithmetic on numbers already in hand.
+	 */
+	let boxes: { id: DashboardCardId; left: number; top: number; right: number; bottom: number }[] =
+		[];
+
+	function measure() {
+		boxes = [...document.querySelectorAll<HTMLElement>('[data-card]')].map((el) => {
+			const box = el.getBoundingClientRect();
+			return {
+				id: el.dataset.card as DashboardCardId,
+				left: box.left,
+				top: box.top,
+				right: box.right,
+				bottom: box.bottom
+			};
+		});
+	}
+
+	function cardAt(x: number, y: number): DashboardCardId | undefined {
+		return boxes.find((b) => x >= b.left && x <= b.right && y >= b.top && y <= b.bottom)?.id;
+	}
+
+	/** The last place the pointer was, and whether a frame is already booked. */
+	let pointerAt: { x: number; y: number } | null = null;
+	let frame = 0;
+
 	function grab(id: DashboardCardId, e: PointerEvent) {
 		e.preventDefault();
 		dragging = id;
 		dragOver = id;
+		measure();
 		(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
 	}
 
+	/*
+	 * One reorder per frame at most.
+	 *
+	 * Pointer events arrive faster than the screen changes, and every one of
+	 * them that moves a card moves eleven others with it. Booking a frame and
+	 * reading the latest position inside it means the work happens exactly as
+	 * often as it can be seen.
+	 */
 	function dragTo(e: PointerEvent) {
 		if (!dragging) return;
 		e.preventDefault();
+		pointerAt = { x: e.clientX, y: e.clientY };
+		if (frame) return;
+		frame = requestAnimationFrame(() => {
+			frame = 0;
+			settle();
+		});
+	}
 
-		const under = document
-			.elementFromPoint(e.clientX, e.clientY)
-			?.closest<HTMLElement>('[data-card]')?.dataset.card as DashboardCardId | undefined;
+	function settle() {
+		if (!dragging || !pointerAt) return;
+
+		const under = cardAt(pointerAt.x, pointerAt.y);
 		if (!under || under === dragging || !order.includes(under)) return;
 
 		dragOver = under;
 		const next = order.filter((x) => x !== dragging);
 		next.splice(next.indexOf(under), 0, dragging);
 		order = next;
+		// The cards have swapped places, so the measurements are stale — but not
+		// until the browser has drawn them, which is what the tick waits for.
+		tick().then(measure);
 	}
 
 	function letGo() {
+		if (frame) cancelAnimationFrame(frame);
+		frame = 0;
+		pointerAt = null;
 		dragging = null;
 		dragOver = null;
 	}
@@ -163,8 +254,24 @@
 		await invalidateAll();
 	}
 
-	async function hideCard(id: DashboardCardId) {
+	function hideCard(id: DashboardCardId) {
 		order = order.filter((x) => x !== id);
+	}
+
+	/** The picker's one verb: on the dashboard, or not. */
+	function toggleCard(id: DashboardCardId) {
+		order = order.includes(id) ? order.filter((x) => x !== id) : [...order, id];
+	}
+
+	let pickingWidgets = $state(false);
+
+	/** "2 h 30" — the middle of the ring, and the same words the review uses. */
+	function hoursAndMinutes(minutes: number): string {
+		const hours = Math.floor(minutes / MINUTES_IN_HOUR);
+		const rest = minutes % MINUTES_IN_HOUR;
+		if (!hours) return t('home.minutesShort', { minutes: rest });
+		if (!rest) return t('home.hoursShort', { hours });
+		return t('home.hoursAndMinutesShort', { hours, minutes: String(rest).padStart(2, '0') });
 	}
 
 	let showDiaryForm = $state(false);
@@ -311,11 +418,26 @@
 					day: 'numeric'
 				})}
 			</h1>
-			{#if !arranging}
-				<!-- Arrange is not a fifth thing to write down — it changes what the
-				     page is. Set apart by a rule, and the icon alone, so the row reads
-				     as "four things you can write" and then "and you can rearrange". -->
-				<div class="flex items-center gap-2">
+			<!--
+				Both states of this corner, in one cell.
+
+				They used to swap: the capture row and the handle, or Cancel and
+				Done. Those are different widths and different heights, and the
+				header wraps on a phone — so pressing the handle re-wrapped the
+				row, the header grew a line, and the whole dashboard jumped down
+				at the moment somebody was looking at where the cards were. Both
+				are drawn on every render and the one that is not in charge is
+				made invisible, so the row is the size of the larger of the two
+				whatever is happening. `inert` because an invisible button is
+				still a tab stop otherwise.
+
+				And the way out is where the way in was: Done sat at the bottom of
+				the card list, past however many cards there are, so on a phone
+				finishing meant scrolling back down through everything that had
+				just been rearranged to find it.
+			-->
+			<div class="dash-corner">
+				<div class="dash-corner-state" class:is-away={arranging} inert={arranging}>
 					<QuickCapture
 						bind:this={capture}
 						error={form?.message}
@@ -323,25 +445,26 @@
 						inline
 					/>
 					<span class="hidden h-5 w-px bg-gray-300 lg:block"></span>
+					<!-- Arrange is not a fifth thing to write down — it changes what
+					     the page is. Set apart by a rule, and the icon alone, so the
+					     row reads as "four things you can write" and then "and you
+					     can rearrange". The glyph is six dots, which at the size the
+					     rest of the icons are drawn was a smudge: this one is a
+					     target you aim at rather than one you read. -->
 					<button
 						onclick={startArranging}
-						class="icon-btn"
+						class="icon-btn icon-btn-lg"
 						title={t('home.rearrangeTheCards')}
 						aria-label={t('home.rearrangeTheCards')}
 					>
-						<Icon name="drag" />
+						<Icon name="drag" size={26} class="icon-heavy" />
 					</button>
 				</div>
-			{:else}
-				<!--
-					And the way out is where the way in was.
-					
-					Done sat at the bottom of the card list, past however many cards
-					there are — so on a phone, finishing meant scrolling back down
-					through everything that had just been rearranged to find it. The
-					press that starts this is here; the press that ends it is here too.
-				-->
-				<div class="flex items-center gap-2">
+				<div class="dash-corner-state" class:is-away={!arranging} inert={!arranging}>
+					<button onclick={() => (pickingWidgets = true)} class="btn btn-sm">
+						<Icon name="plus" />
+						{t('home.widgets')}
+					</button>
 					<button
 						onclick={() => (arranging = false)}
 						class="btn btn-sm"
@@ -349,7 +472,7 @@
 					>
 					<button onclick={saveOrder} class="btn btn-primary btn-sm">{t('ui.done')}</button>
 				</div>
-			{/if}
+			</div>
 		</div>
 
 		<!--
@@ -697,72 +820,124 @@
 			</Card>
 		{/snippet}
 
-		{#snippet card_weekPlan()}
-			{@const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']}
-			{@const todayDow = new Date().getDay()}
-			{@const todayIndex = todayDow === 0 ? 6 : todayDow - 1}
-			{@const timeSlots = [
-				...new Set(data.weekSlots.map((s: { startTime: string }) => s.startTime))
-			].sort()}
-			<Card title={t('home.weekPlan')} accent={SECTION_COLORS.planner}>
+		<!--
+			Today and the next two days, side by side.
+
+			This was the whole week as a table: seven columns of nine-pixel text
+			with a row per start time, most of it blank, and four of the columns
+			already spent. It answered "what does my timetable look like" — a
+			question the planner answers better on a page built for it — rather
+			than "what is coming", which is what somebody opening the dashboard
+			wants. Three columns leaves room to write the name of the thing.
+
+			A done block is struck through rather than removed: the column is
+			the day, and a day with its morning missing is a lie about the day.
+		-->
+		{#snippet card_nextDays()}
+			<Card title={t('home.nextThreeDays')} accent={SECTION_COLORS.planner}>
 				{#snippet actions()}
 					<a href={resolve('/tasks/plan')} class="text-xs text-gray-500 hover:text-gray-900"
 						>{t('home.edit')}</a
 					>
 				{/snippet}
-				<div class="overflow-x-auto">
-					<table class="w-full text-xs">
-						<thead>
-							<tr>
-								{#each DAYS as day, i (day + i)}
-									<th
-										class="px-1 py-1 text-center font-medium {i === todayIndex
-											? 'bg-gray-100 text-gray-900'
-											: 'text-gray-500'}"
-									>
-										{day}
-									</th>
-								{/each}
-							</tr>
-						</thead>
-						<tbody>
-							{#each timeSlots as time (time)}
-								<tr class="border-t border-gray-100">
-									{#each { length: 7 }, day (day)}
-										{@const slots = data.weekSlots.filter(
-											(s: { weekday: number; startTime: string }) =>
-												s.weekday === day && s.startTime === time
-										)}
-										<td class="px-1 py-0.5 {day === todayIndex ? 'bg-gray-50' : ''}">
-											{#each slots as slot (slot.id ?? slot.startTime)}
-												<!--
-												The category colour is a mark beside the label, not the
-												label's own ink. As text at 12px it was only as readable
-												as the colour happened to be — a pale category was
-												unreadable on a light page and a deep one on a dark page,
-												and it is the user who picks the colour.
-											-->
-												<div
-													class="flex items-center gap-1 leading-tight text-gray-700"
-													title="{time} - {slot.activityName || slot.label || slot.categoryName}"
-												>
-													<span
-														class="h-2.5 w-0.5 shrink-0 rounded-full"
-														style="background-color: {slot.categoryColor || '#6b7280'}"
-													></span>
-													<span class="shrink-0 text-gray-500">{time.slice(0, 5)}</span>
-													<span class="truncate"
-														>{slot.activityName || slot.label || slot.categoryName}</span
-													>
-												</div>
-											{/each}
-										</td>
+				<div class="grid gap-3 sm:grid-cols-3">
+					{#each data.nextDays as day, ahead (day.date)}
+						{@const shown = day.blocks.slice(0, DAY_PREVIEW)}
+						<div class="day-column {ahead === 0 ? 'is-today' : ''}">
+							<!-- The name and the date together, not one at each end: the
+							     columns are half a screen wide on a desktop, and a heading
+							     split across that gap reads as two separate things. -->
+							<div class="flex items-baseline gap-2">
+								<span class="eyebrow text-gray-700">{dayHeading(day.date, ahead)}</span>
+								<span class="tabular text-xs text-gray-500">{dayNumber(day.date)}</span>
+							</div>
+							{#if day.blocks.length === 0}
+								<p class="mt-2 text-xs text-gray-500">{t('home.nothingPlanned')}</p>
+							{:else}
+								<ul class="mt-2 space-y-1.5">
+									{#each shown as block (block.id)}
+										<li class="flex items-baseline gap-2 text-xs leading-tight">
+											<!-- The category's colour as a mark beside the words, never
+											     as the words' own ink: the user picks that colour and a
+											     pale one is unreadable on a light page. -->
+											<span
+												class="mt-1 h-3 w-0.5 shrink-0 rounded-full"
+												style="background-color: {block.categoryColor || CATEGORY_FALLBACK_COLOR}"
+											></span>
+											<span class="tabular shrink-0 text-gray-500"
+												>{block.startTime.slice(0, 5)}</span
+											>
+											<span
+												class="min-w-0 flex-1 truncate {block.status === 'done'
+													? 'text-gray-400 line-through'
+													: 'text-gray-700'}"
+												title={block.name}>{block.name}</span
+											>
+										</li>
 									{/each}
-								</tr>
-							{/each}
-						</tbody>
-					</table>
+								</ul>
+								{#if day.blocks.length > shown.length}
+									<p class="mt-1.5 text-xs text-gray-500">
+										{t('home.more3', { length: day.blocks.length - shown.length })}
+									</p>
+								{/if}
+							{/if}
+						</div>
+					{/each}
 				</div>
+			</Card>
+		{/snippet}
+
+		<!--
+			The week so far, as a shape.
+
+			The same reading Sunday's review draws, on the day it is still worth
+			changing: minutes of blocks actually ticked, by category, with the
+			total in the middle of the ring. A column of figures says the same
+			thing and nobody reads it — which is why the review got the ring
+			first, and why the dashboard should not be the one screen that still
+			answers this question as a table.
+		-->
+		{#snippet card_weekPie()}
+			{@const slices = data.weekSoFar.byCategory}
+			{@const named = slices.slice(0, PIE_LEGEND)}
+			<Card title={t('home.whereTheWeekWent')} accent={SECTION_COLORS.planner}>
+				{#snippet actions()}
+					<a href={resolve('/tasks/review')} class="text-xs text-gray-500 hover:text-gray-900"
+						>{t('home.open')}</a
+					>
+				{/snippet}
+				{#if data.weekSoFar.minutesDone === 0}
+					<p class="text-sm text-gray-500">{t('home.nothingTickedOffThisWeek')}</p>
+				{:else}
+					<div class="flex flex-wrap items-center gap-4">
+						<Pie
+							slices={slices.map((cat) => ({
+								name: cat.name,
+								value: cat.minutesDone,
+								color: cat.color ?? CATEGORY_FALLBACK_COLOR
+							}))}
+							label={hoursAndMinutes(data.weekSoFar.minutesDone)}
+							size={116}
+						/>
+						<ul class="min-w-40 flex-1 space-y-1.5">
+							{#each named as cat (cat.id ?? 'none')}
+								<li class="flex items-center gap-2 text-xs">
+									<Swatch color={cat.color ?? CATEGORY_FALLBACK_COLOR} />
+									<span class="min-w-0 flex-1 truncate text-gray-700">{cat.name}</span>
+									<span class="tabular shrink-0 text-gray-500">
+										{hoursAndMinutes(cat.minutesDone)}
+									</span>
+								</li>
+							{/each}
+							{#if slices.length > named.length}
+								<li class="text-xs text-gray-500">
+									{t('home.more3', { length: slices.length - named.length })}
+								</li>
+							{/if}
+						</ul>
+					</div>
+				{/if}
 			</Card>
 		{/snippet}
 
@@ -1189,6 +1364,9 @@
 
 								They are round targets rather than bare glyphs, centred on
 								the title's own line, and there is a real gap between them.
+								The handle is drawn heavier than the × beside it: it is six
+								dots, so its whole shape is stroke, and at the weight of the
+								text it was a smudge rather than a thing to take hold of.
 								As two 16px icons four pixels apart they were a pair of
 								marks floating under the title — off its baseline, and with
 								the one that removes the card close enough to the one you
@@ -1215,14 +1393,15 @@
 									onpointerup={letGo}
 									onpointercancel={letGo}
 								>
-									<Icon name="drag" size={16} />
+									<Icon name="drag" size={20} class="icon-heavy" />
 								</span>
 							</div>
 						{/if}
 						{#if id === 'todayTasks'}{@render card_todayTasks()}
 						{:else if id === 'goals'}{@render card_goals()}
 						{:else if id === 'habits'}{@render card_habits()}
-						{:else if id === 'weekPlan'}{@render card_weekPlan()}
+						{:else if id === 'nextDays'}{@render card_nextDays()}
+						{:else if id === 'weekPie'}{@render card_weekPie()}
 						{:else if id === 'diary'}{@render card_diary()}
 						{:else if id === 'bills'}{@render card_bills()}
 						{:else if id === 'workouts'}{@render card_workouts()}
@@ -1238,21 +1417,18 @@
 		</div>
 
 		{#if arranging}
-			<div
-				class="flex flex-wrap items-center gap-2 border border-gray-200 bg-white p-3 shadow-card"
-			>
-				<span class="text-xs text-gray-500"> {t('home.dragTheCardsByThe')} </span>
-				{#each data.cards.filter((c) => !order.includes(c.id)) as card (card.id)}
-					<button
-						onclick={() => (order = [...order, card.id])}
-						class="border border-dashed border-gray-300 px-2 py-1 text-xs text-gray-600 hover:text-gray-900"
-						title={card.description}
-					>
-						+ {t(card.label)}
-					</button>
-				{/each}
-			</div>
+			<!-- What the mode is for, once, at the end of the cards it is about.
+			     The row of dashed "+ name" buttons that used to sit here is the
+			     Widgets dialog now — see `WidgetPicker.svelte` for why. -->
+			<p class="text-xs text-gray-500">{t('home.dragTheCardsByThe')}</p>
 		{/if}
+
+		<WidgetPicker
+			bind:open={pickingWidgets}
+			cards={data.cards}
+			layout={order}
+			ontoggle={toggleCard}
+		/>
 
 		<FormError message={form?.message} />
 	</div>
@@ -1269,5 +1445,51 @@
 	 */
 	.being-arranged :global(.card-actions) {
 		visibility: hidden;
+	}
+
+	/*
+	 * The header's right-hand corner, which holds two things at once.
+	 *
+	 * One grid cell with both states in it: the row is as wide and as tall as
+	 * the larger of the two whichever is showing, so entering and leaving
+	 * arrange mode cannot re-wrap the header and shove the cards down the
+	 * page. `visibility` rather than `display`, because a box that is not
+	 * drawn does not reserve anything.
+	 */
+	.dash-corner {
+		display: grid;
+		justify-items: end;
+		/* The header wraps on a phone, and a lone item on the second line of a
+		   `justify-between` row sits at its start. This keeps the corner a
+		   corner at every width. */
+		margin-left: auto;
+	}
+
+	.dash-corner-state {
+		grid-area: 1 / 1;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.dash-corner-state.is-away {
+		visibility: hidden;
+	}
+
+	/*
+	 * A day in the three-day card.
+	 *
+	 * A rule down the left rather than a box around each: three bordered boxes
+	 * inside a bordered card is four frames deep, and the card already says
+	 * where it ends. Today's wears the card's own accent, which is the one
+	 * difference between the three columns that has to be visible at a glance.
+	 */
+	.day-column {
+		padding-left: 0.625rem;
+		border-left: 2px solid var(--color-gray-200);
+	}
+
+	.day-column.is-today {
+		border-left-color: var(--card-accent, var(--color-gray-400));
 	}
 </style>

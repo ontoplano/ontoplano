@@ -1,12 +1,17 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { host } from '$lib/services/host';
 import {
+	DASHBOARD_CARDS,
 	DASHBOARD_LAYOUT_KEY,
+	DASHBOARD_SEEN_KEY,
 	defaultLayout,
+	foldInNewCards,
 	parseLayout,
+	parseSeen,
 	quoteForDate,
 	visibleCards,
 	serialiseLayout,
+	serialiseSeen,
 	type DashboardCardId
 } from '$lib/dashboard';
 import { getHiddenSections, getUserSetting, setUserSetting } from '$lib/services/settings';
@@ -18,15 +23,24 @@ import { listHabits, today as todayOf } from '$lib/services/habits';
 import { generateForDate, listForDate } from '$lib/services/instances';
 import { listIdeas } from '$lib/services/ideas';
 import { listQuotes } from '$lib/services/quotes';
-import { reviewPending } from '$lib/services/review';
+import { readWeek, reviewPending, weekStartOf } from '$lib/services/review';
 import { listToBuy } from '$lib/services/inventory';
 import { listBills, listPayments, monthSummary } from '$lib/services/bills';
 import { listWorkouts } from '$lib/services/workouts';
 import { getCurrency } from '$lib/services/settings';
-import { listActiveWeeklySlots } from '$lib/services/slots';
 import { listTodos } from '$lib/services/todos';
 import { listWins, saveWins } from '$lib/services/wins';
-import { generateCurrentWeek } from '$lib/services/week-generator';
+import { addDays, generateCurrentWeek } from '$lib/services/week-generator';
+import { localDay } from '$lib/services/time';
+
+/**
+ * How far ahead the planner card looks.
+ *
+ * Today and two more. Three columns is what fits side by side on a phone with
+ * the block's own name still legible in them, and past the day after tomorrow
+ * a plan is a guess anyway.
+ */
+const NEXT_DAYS = 3;
 
 /**
  * The dashboard, for whoever is signed in — which on an isolated instance is
@@ -110,19 +124,81 @@ export const load = async ({ locals }: IsolatedEvent) => {
 		// than sitting alongside the states.
 	};
 
+	/*
+	 * Today and the two days after it.
+	 *
+	 * The card this replaces was the whole week as a seven-column table of
+	 * nine-pixel text: everything the week holds, at a size nobody reads, and
+	 * four of the columns were days already gone. Three days is what a glance
+	 * is for, and three columns is wide enough to write the block's own name
+	 * in.
+	 *
+	 * Generated the way opening the board generates a day: a block that
+	 * repeats has no record until somebody looks, and a card that only shows
+	 * the days already looked at shows tomorrow as empty.
+	 */
+	const nextDays = Array.from({ length: NEXT_DAYS }, (_, ahead) => {
+		const day = addDays(ctx.now, ahead);
+		generateForDate(ctx, day);
+		return {
+			date: localDay(day),
+			blocks: listForDate(ctx, day).map((o) => ({
+				id: o.id,
+				startTime: o.startTime,
+				durationMinutes: o.durationMinutes,
+				name: o.title,
+				status: o.status,
+				categoryName: o.categoryName,
+				categoryColor: o.categoryColor
+			}))
+		};
+	});
+
+	/*
+	 * Where this week has gone so far, by category.
+	 *
+	 * The same reading the review draws its ring from, so the dashboard and
+	 * Sunday cannot disagree about the week — minutes of blocks actually
+	 * ticked, which is the only version of "how I spent it" that is not a
+	 * plan.
+	 */
+	const week = readWeek(ctx, weekStartOf(null, ctx.now));
+	const weekSoFar = {
+		minutesDone: week.reading.minutesDone,
+		minutesPlanned: week.reading.minutesPlanned,
+		byCategory: week.reading.byCategory
+			.filter((c) => c.minutesDone > 0)
+			.map((c) => ({ id: c.id, name: c.name, color: c.color, minutesDone: c.minutesDone }))
+	};
+
 	// Hidden sections take their dashboard cards along — filtered on read,
 	// never written back, so turning a section on brings its card straight back.
 	const hiddenSections = getHiddenSections(ctx.userId);
 	const cards = visibleCards(hiddenSections);
+
+	/*
+	 * A card the app has grown since this account last pressed Done.
+	 *
+	 * Stored, not merely shown: the layout is written back with the new card in
+	 * it, and the account is marked as having been offered everything the
+	 * registry holds. Without the second half a card somebody then takes off
+	 * would be folded straight back in on the next load, which is an app
+	 * arguing with its user.
+	 */
+	const stored = parseLayout(getUserSetting(ctx.userId, DASHBOARD_LAYOUT_KEY));
+	const seen = parseSeen(getUserSetting(ctx.userId, DASHBOARD_SEEN_KEY));
+	const withNew = foldInNewCards(stored, seen);
+	if (withNew.length !== stored.length || seen.length !== DASHBOARD_CARDS.length) {
+		setUserSetting(ctx.userId, DASHBOARD_LAYOUT_KEY, serialiseLayout(withNew));
+		setUserSetting(ctx.userId, DASHBOARD_SEEN_KEY, serialiseSeen());
+	}
 
 	return {
 		/** Null here is what tells the page it is the dashboard rather than the door. */
 		frontDoor: null,
 		// A layout the user has never set falls back to the registry defaults, so
 		// a new account meets a sensible dashboard rather than an empty one.
-		layout: parseLayout(getUserSetting(ctx.userId, DASHBOARD_LAYOUT_KEY)).filter((id) =>
-			cards.some((c) => c.id === id)
-		),
+		layout: withNew.filter((id) => cards.some((c) => c.id === id)),
 		cards,
 		hiddenSections,
 		quote: quoteForDate(listQuotes(ctx), today),
@@ -192,7 +268,8 @@ export const load = async ({ locals }: IsolatedEvent) => {
 		latestIdeas: listIdeas(ctx).slice(0, 12),
 		/** Set when last week had blocks in it and nobody has written it up yet. */
 		pendingReview: reviewPending(ctx),
-		weekSlots: listActiveWeeklySlots(ctx),
+		nextDays,
+		weekSoFar,
 		today
 	};
 };

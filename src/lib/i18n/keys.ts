@@ -158,6 +158,7 @@ export type MessageKey =
 	| 'app.move'
 	| 'app.neutral'
 	| 'app.newToDo'
+	| 'app.nextThreeDays'
 	| 'app.nobodyNewTheAccountsThat'
 	| 'app.notFiledAnywhere'
 	| 'app.notSubscribed'
@@ -219,6 +220,7 @@ export type MessageKey =
 	| 'app.whatYouWantedToDo'
 	| 'app.whenDoesYourWeekStart'
 	| 'app.whereAreYou'
+	| 'app.whereTheWeekWent'
 	| 'app.whichRoomsDoYouWant'
 	| 'app.wholeNumbersCountedWith'
 	| 'app.workouts'
@@ -263,11 +265,13 @@ export type MessageKey =
 	| 'card.currentStreaks'
 	| 'card.goalsWhosePeriodCoversToday'
 	| 'card.oneOfYourOwnQuotes'
+	| 'card.theHoursYouHaveTicked'
 	| 'card.theLastFewIdeasYou'
 	| 'card.theMostRecentThingsYou'
 	| 'card.theWeekAtAGlance'
 	| 'card.thisMonthExpectedPaidAnd'
 	| 'card.threeThingsThatWentWell'
+	| 'card.todayAndTheTwoDays'
 	| 'card.whatIsLeftToBuy'
 	| 'card.whatIsStillToDo'
 	| 'card.yourMostRecentEntryAnd'
@@ -845,6 +849,7 @@ export type MessageKey =
 	| 'home.editRarr'
 	| 'home.everyBlockOnTodaySPlan'
 	| 'home.everythingPaidThisMonth'
+	| 'home.everythingTheDashboardCan'
 	| 'home.first'
 	| 'home.freshDemoAccountEverything'
 	| 'home.goToASection'
@@ -853,6 +858,8 @@ export type MessageKey =
 	| 'home.hideCard'
 	| 'home.hideThisCard'
 	| 'home.home'
+	| 'home.hoursAndMinutesShort'
+	| 'home.hoursShort'
 	| 'home.ideas'
 	| 'home.in'
 	| 'home.inProgress'
@@ -867,11 +874,13 @@ export type MessageKey =
 	| 'home.loading'
 	| 'home.mdash'
 	| 'home.menu'
+	| 'home.minutesShort'
 	| 'home.more'
 	| 'home.more2'
 	| 'home.more3'
 	| 'home.neverYet'
 	| 'home.newCard'
+	| 'home.nextThreeDays'
 	| 'home.noArea'
 	| 'home.noBillsYetWriteDown'
 	| 'home.noGoalsForThisPeriod'
@@ -886,7 +895,9 @@ export type MessageKey =
 	| 'home.nothingIsPlannedForToday'
 	| 'home.nothingLeftToday'
 	| 'home.nothingOnTheListAnything'
+	| 'home.nothingPlanned'
 	| 'home.nothingSurvives'
+	| 'home.nothingTickedOffThisWeek'
 	| 'home.nothingToBuyTheList'
 	| 'home.nothingTrackedYetAHabit'
 	| 'home.nothingWrittenYetWhateverHappened'
@@ -924,13 +935,16 @@ export type MessageKey =
 	| 'home.thisIsADemoVersion'
 	| 'home.threeWins'
 	| 'home.todaySTasks'
+	| 'home.tomorrow'
 	| 'home.unanswered'
 	| 'home.updateTheApp'
 	| 'home.weekPlan'
 	| 'home.weeksAreStillOpen'
 	| 'home.whatSOnYourMind'
 	| 'home.whatWentWellToday'
+	| 'home.whereTheWeekWent'
 	| 'home.whereThisLives'
+	| 'home.widgets'
 	| 'home.win1'
 	| 'home.win2'
 	| 'home.win3'
@@ -2970,11 +2984,14 @@ export interface MessageValuesFor {
 	'home.dragCard': { card: string | number };
 	'home.first': { oldest: string | number };
 	'home.hideCard': { card: string | number };
+	'home.hoursAndMinutesShort': { hours: string | number; minutes: string | number };
+	'home.hoursShort': { hours: string | number };
 	'home.inProgress': { doing: string | number };
 	'home.itIsAndThisInstance': { app: string | number; instance: string | number };
 	'home.lastDone': { date: string | number };
 	'home.ldquoRdquo': { text: string | number };
 	'home.mdash': { author: string | number };
+	'home.minutesShort': { minutes: string | number };
 	'home.more': { todoPreview: string | number };
 	'home.more2': { goalPreview: string | number };
 	'home.more3': { length: string | number };

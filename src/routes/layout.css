@@ -1533,6 +1533,31 @@ label:has(> input[type='radio']:not(:disabled)) {
 		gap: 0.25rem;
 	}
 
+	/*
+	 * The same control, at the size of a thing you aim at rather than read.
+	 *
+	 * For an icon that is the only way into a mode — the dashboard's arrange
+	 * handle — where the default 18px glyph in a 36px square reads as a smudge
+	 * and is easy to miss with a thumb.
+	 */
+	.icon-btn-lg {
+		width: 2.75rem;
+		height: 2.75rem;
+	}
+
+	/*
+	 * A heavier stroke for an icon drawn large.
+	 *
+	 * The set is stroked at 1.75 on a 24 grid, which is right beside text and
+	 * thin once the glyph is half again as big — and the drag handle is six
+	 * dots, so its whole shape is stroke width. CSS rather than an attribute
+	 * because a presentation attribute is what `Icon.svelte` sets, and CSS
+	 * outranks it.
+	 */
+	.icon-heavy {
+		stroke-width: 2.75;
+	}
+
 	.icon-btn:hover {
 		background-color: var(--color-gray-200);
 		color: var(--color-gray-900);
