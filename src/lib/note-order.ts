@@ -23,17 +23,18 @@ export const NOTE_ORDER_KEY = 'ontoplano:notes-order';
 export const NOTE_DIRECTION_KEY = 'ontoplano:notes-direction';
 
 /**
- * The direction each field starts in, which is the one somebody means.
+ * The direction a field starts in, which is the one somebody means by it.
  *
  * Ascending is right for the written order and for titles — the beginning of
  * the renovation, and A before B. It is wrong for "edited", where the question
  * is what was touched last, so that one opens the other way round.
+ *
+ * A function rather than a table keyed by field: a `title:` line holding a
+ * string is how this app writes a label, and `check-copy` reads it as one.
  */
-export const NOTE_ORDER_DEFAULT_DIRECTION: Record<NoteOrder, NoteDirection> = {
-	written: 'asc',
-	title: 'asc',
-	edited: 'desc'
-};
+export function defaultDirectionFor(order: NoteOrder): NoteDirection {
+	return order === 'edited' ? 'desc' : 'asc';
+}
 
 export const DEFAULT_NOTE_ORDER: NoteOrder = 'written';
 

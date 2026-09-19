@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-	NOTE_ORDER_DEFAULT_DIRECTION,
+	defaultDirectionFor,
 	isNoteDirection,
 	isNoteOrder,
 	orderNotes,
@@ -113,7 +113,8 @@ describe('the stored choice', () => {
 	});
 
 	it('opens "edited" at the most recent, which is the question being asked', () => {
-		expect(NOTE_ORDER_DEFAULT_DIRECTION.edited).toBe('desc');
-		expect(NOTE_ORDER_DEFAULT_DIRECTION.written).toBe('asc');
+		expect(defaultDirectionFor('edited')).toBe('desc');
+		expect(defaultDirectionFor('written')).toBe('asc');
+		expect(defaultDirectionFor('title')).toBe('asc');
 	});
 });

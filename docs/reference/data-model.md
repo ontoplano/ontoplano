@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**75 tables.**
+**76 tables.**
 
 | Table                                                       | Columns | Belongs to a user |
 | ----------------------------------------------------------- | ------- | ----------------- |
@@ -36,7 +36,7 @@ exist.
 | [`finance_transactions`](#finance_transactions)             | 10      | yes               |
 | [`goal_areas`](#goal_areas)                                 | 6       | yes               |
 | [`goal_links`](#goal_links)                                 | 6       | yes               |
-| [`goal_targets`](#goal_targets)                             | 8       | yes               |
+| [`goal_targets`](#goal_targets)                             | 9       | yes               |
 | [`goals`](#goals)                                           | 14      | yes               |
 | [`habit_occurrences`](#habit_occurrences)                   | 6       | yes               |
 | [`habits`](#habits)                                         | 7       | yes               |
@@ -75,6 +75,7 @@ exist.
 | [`suppressed_slots`](#suppressed_slots)                     | 5       | yes               |
 | [`tags`](#tags)                                             | 3       | yes               |
 | [`task_records`](#task_records)                             | 15      | yes               |
+| [`todo_tags`](#todo_tags)                                   | 4       | yes               |
 | [`todo_tasks`](#todo_tasks)                                 | 17      | yes               |
 | [`user`](#user)                                             | 11      | —                 |
 | [`user_settings`](#user_settings)                           | 4       | yes               |
@@ -594,16 +595,17 @@ Checks — enforced by the database, not only by the service layer:
 
 ## goal_targets
 
-| Column          | Type    | Null     | Default | Notes             |
-| --------------- | ------- | -------- | ------- | ----------------- |
-| `id`            | integer | not null | —       | primary key, auto |
-| `user_id`       | text    | not null | —       | → `user.id`       |
-| `goal_id`       | integer | not null | —       | → `goals.id`      |
-| `target_value`  | real    | not null | —       | —                 |
-| `current_value` | real    | not null | `0`     | —                 |
-| `unit`          | text    | not null | `''`    | —                 |
-| `whole`         | integer | not null | `true`  | —                 |
-| `sort_order`    | integer | not null | `0`     | —                 |
+| Column             | Type    | Null     | Default | Notes             |
+| ------------------ | ------- | -------- | ------- | ----------------- |
+| `id`               | integer | not null | —       | primary key, auto |
+| `user_id`          | text    | not null | —       | → `user.id`       |
+| `goal_id`          | integer | not null | —       | → `goals.id`      |
+| `target_value`     | real    | not null | —       | —                 |
+| `current_value`    | real    | not null | `0`     | —                 |
+| `unit`             | text    | not null | `''`    | —                 |
+| `whole`            | integer | not null | `true`  | —                 |
+| `measure_activity` | text    | null     | —       | —                 |
+| `sort_order`       | integer | not null | `0`     | —                 |
 
 Indexes:
 
@@ -1369,6 +1371,21 @@ Indexes:
 Checks — enforced by the database, not only by the service layer:
 
 - `instance_has_exactly_one_source`: `("task_records"."slot_id" IS NULL) != ("task_records"."exceptional_slot_id" IS NULL)`
+
+## todo_tags
+
+| Column    | Type    | Null     | Default | Notes             |
+| --------- | ------- | -------- | ------- | ----------------- |
+| `id`      | integer | not null | —       | primary key, auto |
+| `user_id` | text    | not null | —       | → `user.id`       |
+| `todo_id` | integer | not null | —       | → `todo_tasks.id` |
+| `tag_id`  | integer | not null | —       | → `tags.id`       |
+
+Indexes:
+
+- `todo_tags_user_idx` on `user_id`
+- `todo_tags_todo_idx` on `todo_id`
+- `todo_tags_tag_idx` on `tag_id`
 
 ## todo_tasks
 

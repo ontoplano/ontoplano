@@ -19,9 +19,9 @@
 	import { CLOSED_STATUSES } from '$lib/task-status';
 	import {
 		DEFAULT_NOTE_ORDER,
+		defaultDirectionFor,
 		NOTE_DIRECTION_KEY,
 		NOTE_ORDERS,
-		NOTE_ORDER_DEFAULT_DIRECTION,
 		NOTE_ORDER_KEY,
 		isNoteDirection,
 		isNoteOrder,
@@ -271,7 +271,7 @@
 	 * without a page.
 	 */
 	let noteOrder = $state<NoteOrder>(DEFAULT_NOTE_ORDER);
-	let noteDirection = $state<NoteDirection>(NOTE_ORDER_DEFAULT_DIRECTION[DEFAULT_NOTE_ORDER]);
+	let noteDirection = $state<NoteDirection>(defaultDirectionFor(DEFAULT_NOTE_ORDER));
 
 	$effect(() => {
 		try {
@@ -301,7 +301,7 @@
 	 */
 	function pickOrder(order: NoteOrder) {
 		noteOrder = order;
-		noteDirection = NOTE_ORDER_DEFAULT_DIRECTION[order];
+		noteDirection = defaultDirectionFor(order);
 		remember(NOTE_ORDER_KEY, order);
 		remember(NOTE_DIRECTION_KEY, noteDirection);
 	}

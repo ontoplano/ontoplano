@@ -80,7 +80,7 @@ shows up here on the next build.
 | [`reminder-delivery`](#reminder-delivery)        | The pass that makes a reminder arrive with the app shut.                                                                                                                                                                                                             |
 | [`reminder-sources`](#reminder-sources)          | The reminders nobody types.                                                                                                                                                                                                                                          |
 | [`reminders`](#reminders)                        | Something that reaches out.                                                                                                                                                                                                                                          |
-| [`review-mail`](#review-mail)                    | Monday morning: what last week actually was, in the inbox.                                                                                                                                                                                                           |
+| [`review-mail`](#review-mail)                    | The morning a week begins: what last week actually was, in the inbox.                                                                                                                                                                                                |
 | [`review`](#review)                              | Closing a week.                                                                                                                                                                                                                                                      |
 | [`ringtones`](#ringtones)                        | The sounds a reminder can make.                                                                                                                                                                                                                                      |
 | [`schedule`](#schedule)                          | Read-only view of what's coming up.                                                                                                                                                                                                                                  |
@@ -1730,6 +1730,11 @@ And the way back off it. The goal and its other measures stay.
 #### `setTargetProgress(ctx, targetId, value)`
 
 Self-reported progress on one measure — the number somebody types in.
+
+Refused for a measure counted from the workout register: that number is the
+sum of what was actually logged, and letting it be overwritten would leave
+the goal saying something the register contradicts — with nothing on screen
+to say which of the two is the truth.
 
 #### `closeGoal(ctx, id, raw)`
 
@@ -4029,7 +4034,7 @@ signed-in user and the ids come from its own query.
 
 ## review-mail
 
-Monday morning: what last week actually was, in the inbox.
+The morning a week begins: what last week actually was, in the inbox.
 
 The review page has held these numbers since the beginning and nothing ever
 asked anybody to look at them — the app only helps on the days you remember
@@ -4138,12 +4143,17 @@ week, which is the part that is actually worth reading in a year.
 
 ### Functions
 
-#### `weekStartOf(value, fallback)`
+#### `weekStartOf(ctx, value, fallback)`
 
 Which week a review is for.
 
-Always snapped to its Monday, so "the week of the 14th" and "the week of the
-16th" cannot become two different reviews of the same seven days.
+Snapped to the day this account's week begins on, so "the week of the 14th"
+and "the week of the 16th" cannot become two reviews of the same seven days
+— and so the review and the planner name the same seven. It used to snap to
+Monday whatever the account had been told, which meant that for anybody
+whose week starts on a Saturday, a Saturday block led one week on the plan
+and closed the week before it in the review. `0085` re-keyed what was
+already stored.
 
 #### `readWeek(ctx, weekStart)`
 
@@ -5050,6 +5060,14 @@ as the caller remembered to check first.
 
 ### Functions
 
+#### `optionalTagInput(value)`
+
+Tag input as it arrives from a form or a tool, checked and nothing else.
+
+Shared rather than written per room: ideas had a private copy of this, and
+the moment todos wanted tags too there would have been two ceilings that
+could drift apart.
+
 #### `parseTags(raw)`
 
 Normalizes raw tag input. Strips leading #, splits on commas/spaces, lowercases, dedupes.
@@ -5067,6 +5085,10 @@ All these produce ["tagfoo", "tagbar"]:
 #### `linkIdeaTags(ideaId, tagIds, userId)`
 
 #### `replaceIdeaTags(ideaId, tagNames, userId)`
+
+#### `linkTodoTags(todoId, tagIds, userId)`
+
+#### `replaceTodoTags(todoId, tagNames, userId)`
 
 #### `linkMediaTags(mediaId, tagIds, userId)`
 
@@ -5213,6 +5235,13 @@ being copied into a second table, so nothing has to be kept in sync.
 
 ### Functions
 
+#### `tagsForTodos(ctx, todoIds)`
+
+The tags on a set of todos, in one query rather than one per row.
+
+The same shape the notebooks use for a note's tags and people: a list comes
+back, its ids go out in a single `IN`, and the rows are handed back by id.
+
 #### `archiveTodo(ctx, id, away)`
 
 Put a todo away, or take it back out.
@@ -5328,6 +5357,7 @@ todo that happens to have a time.
 ### Types
 
 - `Todo`
+- `Tag`
 - `TodoInput`
 
 ## tokens
@@ -5517,6 +5547,17 @@ Get the ISO week year (may differ from calendar year at year boundaries).
 
 #### `getMonday(date)`
 
+#### `startOfWeek(date, firstDay)`
+
+The first day of the week this date is in, for an account that begins its
+week on `firstDay` — 0 for Monday through 6 for Sunday, as `settings.ts`
+stores it.
+
+`getMonday` is this with `firstDay` fixed at 0, and stays because the week
+_generator_ is about the ISO week whatever anybody's preference is. What
+moved is the review: a plan that starts on Saturday and a review keyed on
+Monday disagreed about which week a Saturday belonged to.
+
 #### `addDays(date, days)`
 
 #### `generateWeekInstances(ctx, weekStart)`
@@ -5662,6 +5703,14 @@ Correct one: the day, the note, and every line, in one go.
 
 For a session logged by accident. Its lines go with it.
 
+#### `countSessions(ctx, opts)`
+
+How many sessions match, ignoring any cap.
+
+A capped list that cannot say what it capped reads as a list that has
+stopped being updated, so anything handing out a page of these hands out
+this number beside it.
+
 #### `listSessions(ctx, opts)`
 
 Sessions, newest first, with their lines already attached.
@@ -5678,6 +5727,15 @@ Grouped by the person's own word for it rather than by workout: "ran" is
 one line whether it happened in the morning session or on a Sunday, which
 is what somebody asking "am I running more" means. Oldest first, because
 that is the direction a chart's x-axis runs.
+
+#### `measureTotal(ctx, activity, from, to)`
+
+How much of one measure was done between two days, inclusive of the first
+and exclusive of the last.
+
+What a goal counting a workout measure reads. A line with no amount — "went
+for a swim", recorded without a number — contributes nothing rather than
+breaking the sum, which is why the amounts are filtered rather than coerced.
 
 #### `measuredActivities(ctx)`
 
