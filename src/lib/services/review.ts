@@ -5,7 +5,7 @@ import { db } from '$lib/db/index.js';
 import { goals, goalTargets, weeklyReviews } from '$lib/db/schema.js';
 import { addDays, getMonday } from './week-generator.js';
 import type { Ctx } from './ctx.js';
-import { generateInstances, listInstances, setInstanceStatus } from './instances.js';
+import { generateOneOffs, listInstances, setInstanceStatus } from './instances.js';
 import { createTodo } from './todos.js';
 import { localDay, stamp, stamps } from './time.js';
 import { str } from './validate.js';
@@ -106,20 +106,23 @@ export function readWeek(
 	const nextMonday = addDays(monday, 7);
 
 	/*
-	 * Make the week exist before reading it.
+	 * Make the week's one-offs exist before reading it.
 	 *
-	 * A block is a rule until somebody looks at the day it falls on, and then
-	 * it becomes a record. The planner does that when you navigate to a week;
-	 * the review never did, so a week nobody had opened read as empty — and
-	 * so did a week somebody wrote a block into afterwards, which is the
-	 * ordinary case of doing a thing late and saying so. "Nothing was planned
-	 * that week" about a week with something in it is the app calling
-	 * somebody a liar.
+	 * A block written for a day is a rule until somebody looks at that day,
+	 * and then it becomes a record. The planner does that when you navigate
+	 * to a week; the review never did — so a block written into a week that
+	 * had already gone by was invisible there, and "Nothing was planned that
+	 * week" is the app calling somebody a liar about a thing they did and
+	 * wrote down afterwards, which is the ordinary case rather than a corner.
 	 *
-	 * Idempotent, and the same call the planner makes: a day already looked at
-	 * gains nothing.
+	 * One-offs only, deliberately. Running the recurring rules over a week
+	 * long past invents a history nobody lived: a rule written this year would
+	 * fill the review of an untouched week in 2020 with three blocks, and the
+	 * "last week is still open" banner would then point at the oldest week the
+	 * rules could reach. A one-off is the opposite — it is there because
+	 * somebody wrote it on that day.
 	 */
-	generateInstances(ctx, monday, nextMonday);
+	generateOneOffs(ctx, monday, nextMonday);
 	const instances = listInstances(ctx, monday, nextMonday);
 
 	const buckets = new Map<string, WeekReading['byCategory'][number]>();

@@ -282,6 +282,29 @@ export function generateInstances(ctx: Ctx, from: Date, to: Date): number {
 		}
 	}
 
+	return created + generateOneOffs(ctx, from, to);
+}
+
+/**
+ * Just the one-offs in a window, without conjuring any recurring history.
+ *
+ * The two halves of `generateInstances` are not the same kind of fact. A
+ * recurring block is a rule about how weeks go, and running it over a week
+ * long past invents a history nobody lived — it was answered here first by
+ * generating everything for the week a review asked about, and the review of
+ * an untouched week in 2020 promptly filled with three blocks a rule written
+ * this year says should have happened.
+ *
+ * A one-off is the opposite: it exists because somebody wrote it on that day,
+ * deliberately, and often afterwards — doing a thing late and saying so is
+ * the ordinary case. So a screen that reads the past materialises these and
+ * only these.
+ */
+export function generateOneOffs(ctx: Ctx, from: Date, to: Date): number {
+	const fromDate = formatDate(from);
+	const toDate = formatDate(to);
+	let created = 0;
+
 	// A one-off produces exactly one instance, guaranteed by a unique index on
 	// exceptional_slot_id rather than by hoping every caller checks first.
 	const oneOffs = db
