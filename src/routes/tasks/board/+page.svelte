@@ -1077,7 +1077,10 @@
 											-->
 											<div class="flex items-baseline gap-1.5">
 												{#if card.startTime}
-													<span class="tabular shrink-0 font-mono text-[10px] text-gray-500">
+													<!-- The card's own ink, at full strength: this is ten pixels,
+													     and anything held back from a tinted ground at that size
+													     stops clearing 4.5:1. The size carries the hierarchy. -->
+													<span class="tabular shrink-0 font-mono text-[10px]">
 														{card.startTime}
 													</span>
 												{/if}
@@ -1088,7 +1091,7 @@
 														e.stopPropagation();
 														openEditor(card);
 													}}
-													class="shrink-0 self-start text-gray-500 transition hover:text-gray-900"
+													class="shrink-0 self-start opacity-70 transition hover:opacity-100"
 													aria-label={t('tasks.board.edit', { title: card.title })}
 												>
 													<Icon name="edit" size={14} />
@@ -1109,9 +1112,7 @@
 														</button>
 													{/if}
 													{#if card.kind === 'todo' && card.scheduledDate && card.scheduledDate < data.date}
-														<span class="text-[10px] text-gray-500"
-															>{t('tasks.board.carriedOver')}</span
-														>
+														<span class="text-[10px]">{t('tasks.board.carriedOver')}</span>
 													{/if}
 													<RatingBadges values={card.ratings} />
 													<!--
