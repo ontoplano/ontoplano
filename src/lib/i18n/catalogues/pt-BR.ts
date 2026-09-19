@@ -1664,6 +1664,8 @@ export const messages: Catalogue = {
 	'people.other': 'Outro',
 	'people.partner': 'Parceiro(a)',
 	'phone.aTestRemindersWillLook': 'Um teste — os lembretes chegam assim.',
+	'pickOne.nothingMatches': 'Nada corresponde',
+	'pickOne.typeToNarrow': 'Digite para filtrar',
 	'pictures.add': 'Adicionar uma imagem',
 	'pictures.dropAnywhere': 'solte em qualquer lugar da caixa',
 	'pictures.hint': '…ou cole uma, ou arraste uma — até {kilobytes}KB',

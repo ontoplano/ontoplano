@@ -2,6 +2,7 @@
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import TodoFields from '$lib/components/fields/TodoFields.svelte';
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
+	import PickOne from '$lib/components/PickOne.svelte';
 	import Swatch from '$lib/components/Swatch.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
@@ -856,14 +857,23 @@
 								span={12}
 								hint={t('tasks.board.thisBlockNamesACategory')}
 							>
-								<select name="activityId" class="select">
-									<option value="">{t('tasks.board.notSaid')}</option>
-									{#each data.activities as activity (activity.id)}
-										<option value={activity.id} selected={card.activityId === activity.id}>
-											{activity.categoryName} · {activity.name}
-										</option>
-									{/each}
-								</select>
+								<!-- The same picker the plan's block form has, for the same
+								     reason: a list of forty is hunted through, not read. -->
+								<PickOne
+									name="activityId"
+									value={card.activityId === null ? '' : String(card.activityId)}
+									ariaLabel={t('tasks.board.whatItWas')}
+									placeholder={t('pickOne.typeToNarrow')}
+									options={[
+										{ value: '', label: t('tasks.board.notSaid') },
+										...data.activities.map(
+											(activity: { id: number; name: string; categoryName: string }) => ({
+												value: String(activity.id),
+												label: `${activity.categoryName} \u00b7 ${activity.name}`
+											})
+										)
+									]}
+								/>
 							</Field>
 						{/if}
 					{/if}

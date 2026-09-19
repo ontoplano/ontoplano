@@ -1470,6 +1470,8 @@ export type MessageKey =
 	| 'people.other'
 	| 'people.partner'
 	| 'phone.aTestRemindersWillLook'
+	| 'pickOne.nothingMatches'
+	| 'pickOne.typeToNarrow'
 	| 'pictures.add'
 	| 'pictures.dropAnywhere'
 	| 'pictures.hint'

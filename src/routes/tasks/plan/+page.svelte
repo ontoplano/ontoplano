@@ -1,6 +1,7 @@
 <script lang="ts">
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
+	import PickOne from '$lib/components/PickOne.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -3386,12 +3387,23 @@
 						</Field>
 					{:else}
 						<Field label={t('tasks.plan.activity')} span={6} required>
-							<select name="activityId" required bind:value={activityChoice} class="select">
-								{#each data.activities as act (act.id)}
-									<option value={String(act.id)}>{act.name}</option>
-								{/each}
-								<option value={NEW_ACTIVITY}>{t('tasks.plan.newActivity2')}</option>
-							</select>
+							<!-- Typed at rather than scrolled: an account with forty
+							     activities was a list you hunted through, and "lr" is how
+							     anybody actually finds "learn russian". -->
+							<PickOne
+								name="activityId"
+								required
+								bind:value={activityChoice}
+								ariaLabel={t('tasks.plan.activity')}
+								placeholder={t('pickOne.typeToNarrow')}
+								options={[
+									...data.activities.map((act: { id: number; name: string }) => ({
+										value: String(act.id),
+										label: act.name
+									})),
+									{ value: NEW_ACTIVITY, label: t('tasks.plan.newActivity2') }
+								]}
+							/>
 						</Field>
 					{/if}
 				</FormGrid>

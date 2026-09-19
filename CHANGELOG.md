@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.180.1 — 2026-09-19
 
+- **The activity picker is typed at rather than scrolled through.** It still
+  shows every activity the moment it opens — no typing required to see
+  anything — and now narrows loosely as you type, so "lr" finds "learn
+  russian" and the letters it matched are marked. Arrows and Enter work, and
+  the block board's picker got the same treatment.
 - **The weekly review's week starts where your week starts.** It was keyed on
   Monday whatever the planner had been told, so if your week begins on a
   Saturday, a Saturday led one week on the plan and closed the week before it
