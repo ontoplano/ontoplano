@@ -69,8 +69,22 @@ test('an alarm is a day and a time, not one box with six segments', async ({ pag
 	// Nothing to set yet, so the button says so rather than looking pressable.
 	await expect(page.getByRole('button', { name: 'Set it' })).toBeDisabled();
 
+	/*
+	 * A time the form would not have offered by itself.
+	 *
+	 * What it offers is made from the clock — empty, or the next half hour
+	 * once the day's starting hour has been — so a literal typed here is
+	 * whatever the page already said for anybody running this at that time of
+	 * day, and the assertion further down ("it let go of what was just used")
+	 * then compares a value with itself. It failed at 07:30 UTC and nowhere
+	 * else, which is the worst kind of red. Read what is on offer and pick
+	 * something else.
+	 */
+	const offered = await page.locator('[name="time"]').inputValue();
+	const typed = offered === '23:45' ? '21:15' : '23:45';
+
 	await page.locator('[name="day"]').fill(day);
-	await page.locator('[name="time"]').fill('07:30');
+	await page.locator('[name="time"]').fill(typed);
 	await expect(page.getByRole('button', { name: 'Set it' })).toBeDisabled();
 	await page.locator('[name="label"]').first().fill('take the bread out');
 	await expect(page.getByRole('button', { name: 'Set it' })).toBeEnabled();
@@ -85,7 +99,7 @@ test('an alarm is a day and a time, not one box with six segments', async ({ pag
 	// Read on the next opening, because setting one closes the dialog.
 	await openTheForm(page);
 	await expect(page.locator('[name="day"]')).not.toHaveValue('');
-	await expect(page.locator('[name="time"]')).not.toHaveValue('07:30');
+	await expect(page.locator('[name="time"]')).not.toHaveValue(typed);
 	await page
 		.getByRole('dialog', { name: 'Set one' })
 		.getByRole('button', { name: 'Close' })
