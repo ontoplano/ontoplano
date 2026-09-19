@@ -121,3 +121,7 @@ scripts/demo-media/birds/
 # What the icon scripts last drew from, so an unchanged logo is not redrawn.
 .icons-from
 .flavours-from
+
+# claude-docker local state (may contain credentials)
+.claude-docker/
+.claude-docker-EMERGENCY-BACKUP-*.tar.gz
