@@ -7,6 +7,7 @@ import {
 	cleanupOrphanTags,
 	ensureTagIds,
 	linkDiaryTags,
+	optionalTagInput,
 	parseTags,
 	replaceDiaryTags
 } from './tags.js';
@@ -21,7 +22,8 @@ import { str } from './validate.js';
 
 export const MAX_ENTRY_LENGTH = 20000;
 export const MAX_WIN_LENGTH = 500;
-export const MAX_TAGS_LENGTH = 500;
+// One ceiling for every room that takes tags; `tags.ts` owns it.
+export { MAX_TAGS_LENGTH } from './tags.js';
 
 /** The tag that marks a three-wins entry, so they can be found again. */
 export const WINS_TAG = '3w';
@@ -129,7 +131,7 @@ export function createEntry(
 		noteTitle(raw.title)
 	);
 
-	const tagNames = parseTags(tagInput(raw.tags));
+	const tagNames = parseTags(optionalTagInput(raw.tags));
 	if (tagNames.length > 0) linkDiaryTags(entryId, ensureTagIds(tagNames, ctx.userId), ctx.userId);
 
 	// The id and nothing else: a diary entry's content never leaves the app.
@@ -159,7 +161,7 @@ export function createWins(
 	const content = wins.map((w, i) => `Win ${i + 1}: ${w}`).join('\n');
 	const entryId = insertEntry(ctx, content, forDate, ownedNotebookId(ctx, raw.notebookId));
 
-	const userTags = parseTags(tagInput(raw.tags));
+	const userTags = parseTags(optionalTagInput(raw.tags));
 	const tagIds = ensureTagIds([WINS_TAG, ...userTags.filter((t) => t !== WINS_TAG)], ctx.userId);
 	linkDiaryTags(entryId, tagIds, ctx.userId);
 
@@ -196,7 +198,7 @@ export function updateEntry(
 
 	if (res.changes === 0) throw new NotFoundError('entry');
 
-	replaceDiaryTags(id, parseTags(tagInput(raw.tags)), ctx.userId);
+	replaceDiaryTags(id, parseTags(optionalTagInput(raw.tags)), ctx.userId);
 	cleanupOrphanTags(ctx.userId);
 }
 
@@ -326,14 +328,6 @@ export const MAX_NOTE_TITLE_LENGTH = 120;
 function noteTitle(value: unknown): string {
 	if (value === undefined || value === null) return '';
 	return String(value).trim().slice(0, MAX_NOTE_TITLE_LENGTH);
-}
-
-function tagInput(value: unknown): string {
-	if (value === undefined || value === null) return '';
-	const s = String(value).trim();
-	if (s.length > MAX_TAGS_LENGTH)
-		throw new ValidationError('That is more tags than one entry can carry');
-	return s;
 }
 
 /** A day the user chose, or today where the user is. Never converted to UTC (I5). */

@@ -1023,6 +1023,40 @@ export const ideas = sqliteTable(
 	]
 );
 
+/**
+ * Which tags are on a task.
+ *
+ * The same account-wide vocabulary as everything else that is tagged: `tags`
+ * holds one row per (account, name), and this is the join. A tag named once on
+ * a diary entry is the same tag on a task, which is the whole reason the
+ * vocabulary is not per-room.
+ *
+ * Tasks wanted them for a reason the other rooms did not have: several
+ * assistants working the same list need a way to say which of them touched
+ * what, and a label is how — `a1`, `done`, `blocked` — rather than a second
+ * to-do written to stand for the first.
+ */
+export const todoTags = sqliteTable(
+	'todo_tags',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		todoId: integer('todo_id')
+			.notNull()
+			.references(() => todoTasks.id, { onDelete: 'cascade' }),
+		tagId: integer('tag_id')
+			.notNull()
+			.references(() => tags.id, { onDelete: 'cascade' })
+	},
+	(table) => [
+		index('todo_tags_user_idx').on(table.userId),
+		index('todo_tags_todo_idx').on(table.todoId),
+		index('todo_tags_tag_idx').on(table.tagId)
+	]
+);
+
 export const ideaTags = sqliteTable(
 	'idea_tags',
 	{

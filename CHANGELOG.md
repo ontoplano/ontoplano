@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.180.1 — 2026-09-19
 
+- **To-dos take tags.** The same words a diary entry or an idea is labelled
+  with, not a second set: put them on when you write the task or afterwards,
+  press one on a row to see only that one, and pick from the list of the ones
+  actually in use. An assistant can read and write them too, and filter by
+  one — which is the point, if more than one of them is working your list.
 - **A to-do takes a recording.** "Ring the plumber about the thing behind the
   boiler" is quicker said than typed, so the notes box on a task offers the
   same recorder a note and an idea already had, and the task's row plays it

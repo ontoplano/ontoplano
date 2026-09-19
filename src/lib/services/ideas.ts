@@ -6,6 +6,7 @@ import {
 	cleanupOrphanTags,
 	ensureTagIds,
 	linkIdeaTags,
+	optionalTagInput,
 	parseTags,
 	replaceIdeaTags
 } from './tags.js';
@@ -19,7 +20,8 @@ import { str } from './validate.js';
 
 export const MAX_IDEA_LENGTH = 4000;
 export const MAX_NOTE_LENGTH = 2000;
-export const MAX_TAGS_LENGTH = 500;
+// One ceiling for every room that takes tags; `tags.ts` owns it.
+export { MAX_TAGS_LENGTH } from './tags.js';
 
 export type IdeaTag = { id: number; name: string };
 
@@ -166,14 +168,6 @@ function ownedIdea(ctx: Ctx, id: number) {
 
 	if (!row) throw new NotFoundError('idea');
 	return row;
-}
-
-function optionalTagInput(value: unknown): string {
-	if (value === undefined || value === null) return '';
-	const s = String(value).trim();
-	if (s.length > MAX_TAGS_LENGTH)
-		throw new ValidationError('That is more tags than one idea can carry');
-	return s;
 }
 
 function optionalNote(value: unknown): string | null {

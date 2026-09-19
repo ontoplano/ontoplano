@@ -342,6 +342,9 @@ function briefly(todo: Todo): Record<string, unknown> {
 	if (todo.notebookId !== null) out.notebookId = todo.notebookId;
 	if (todo.notebookTitle) out.notebook = todo.notebookTitle;
 	if (todo.archivedAt) out.archivedAt = todo.archivedAt;
+	// Names, not ids: the id of a tag is of no use to a reader, and the whole
+	// point of a label here is the word.
+	if (todo.tags.length > 0) out.tags = todo.tags.map((one) => one.name);
 	const ratings = Object.fromEntries(
 		Object.entries(todo.ratings).filter(([, value]) => value !== null)
 	);
@@ -939,7 +942,10 @@ export const TOOLS: Tool[] = [
 				type: 'boolean',
 				description:
 					'Include the tasks that have been put away. Off by default, which is what putting away means.'
-			}
+			},
+			tag: text(
+				'Only the tasks carrying this label. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours.'
+			)
 		}),
 		run: (ctx, args) => {
 			let rows = listTodos(ctx);
@@ -949,6 +955,10 @@ export const TOOLS: Tool[] = [
 				rows = rows.filter((todo) =>
 					wanted === 0 ? todo.notebookId === null : todo.notebookId === wanted
 				);
+			}
+			if (args.tag !== undefined) {
+				const wanted = String(args.tag).replace(/^#+/, '').trim().toLowerCase();
+				rows = rows.filter((todo) => todo.tags.some((one) => one.name === wanted));
 			}
 			return paged(rows.map(briefly), args, 50);
 		}
@@ -978,7 +988,10 @@ export const TOOLS: Tool[] = [
 					type: 'integer',
 					description:
 						'A goal to count this towards, as `goals` gives its id. Breaking a goal into tasks is the ordinary reason to make several at once, and a task linked here moves that goal’s progress when it is finished.'
-				}
+				},
+				tags: text(
+					'Labels, comma or space separated — "a1, done". The account’s one vocabulary, the same words a diary entry or an idea is tagged with. Mark your own work with a label of your own where several assistants share a list.'
+				)
 			},
 			['title']
 		),
@@ -987,6 +1000,7 @@ export const TOOLS: Tool[] = [
 				title: args.title,
 				notes: args.notes ?? '',
 				notebookId: args.notebookId ?? null,
+				tags: args.tags,
 				scheduledDate: args.scheduledDate ? day(args.scheduledDate, 'scheduledDate') : null
 			});
 			/*
@@ -1108,6 +1122,9 @@ export const TOOLS: Tool[] = [
 					description:
 						'The notebook to file it under, as `notebooks` gives its id. `0` takes it out of whichever one it is in. `add_todo` can file a task at birth; this is how one already made moves.'
 				},
+				tags: text(
+					'The labels it should carry from now on, comma or space separated — this replaces whatever it had, so include the ones to keep. An empty string takes them all off. Left out, the labels are untouched.'
+				),
 				...ratingArgs
 			},
 			['id']
@@ -1119,6 +1136,8 @@ export const TOOLS: Tool[] = [
 				title: args.title ?? current.title,
 				notes: args.notes ?? current.notes,
 				categoryId: current.categoryId,
+				// Left out means untouched; `''` means take them all off.
+				...(args.tags === undefined ? {} : { tags: args.tags }),
 				// `0` empties it on purpose: "take this out of the notebook" needs
 				// a spelling, and omitting the field already means "leave it be".
 				notebookId:

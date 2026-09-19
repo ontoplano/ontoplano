@@ -20,6 +20,7 @@
 	let {
 		title = '',
 		notes = '',
+		tags = '',
 		categoryId = null,
 		notebookId = null,
 		categories = [],
@@ -29,6 +30,7 @@
 	}: {
 		title?: string;
 		notes?: string;
+		tags?: string;
 		categoryId?: number | null;
 		notebookId?: number | null;
 		categories?: { id: number; name: string }[];
@@ -42,7 +44,7 @@
 
 	const ratingsSet = $derived(RATINGS.filter((r) => ratings[r] !== null).length);
 	const filled = $derived(
-		ratingsSet + (categoryId ? 1 : 0) + (notebookId ? 1 : 0) + (notes ? 1 : 0)
+		ratingsSet + (categoryId ? 1 : 0) + (notebookId ? 1 : 0) + (notes ? 1 : 0) + (tags ? 1 : 0)
 	);
 </script>
 
@@ -66,6 +68,12 @@
 
 	<NotebookField {notebooks} value={notebookId} />
 
+	<Field label={t('ui.tags')} span={12} hint={t('fields.todo.separateWithCommasOrSpaces')}>
+		<!-- The account's one vocabulary, not a second one: a word used on a
+		     diary entry is the same word here. -->
+		<OneLine name="tags" placeholder={t('fields.todo.tagsExample')} value={tags} class="input" />
+	</Field>
+
 	<Field label={t('ui.notes')} span={12}>
 		<textarea bind:this={box} name="notes" rows="3" class="textarea">{notes}</textarea>
 		<!-- A task said out loud is still a task: the same attachment a note and
@@ -84,7 +92,7 @@
 {/snippet}
 
 {#if compact}
-	<MoreOptions label={t('fields.todo.categoryNotebookNotesRatings')} count={filled}>
+	<MoreOptions label={t('fields.todo.categoryNotebookTagsNotesRatings')} count={filled}>
 		{@render details()}
 		{@render scales()}
 	</MoreOptions>

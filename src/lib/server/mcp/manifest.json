@@ -487,6 +487,10 @@
 				"type": "string",
 				"required": false
 			},
+			"tags": {
+				"type": "string",
+				"required": false
+			},
 			"title": {
 				"type": "string",
 				"required": true
@@ -1133,6 +1137,10 @@
 				"type": "string",
 				"required": false
 			},
+			"tags": {
+				"type": "string",
+				"required": false
+			},
 			"title": {
 				"type": "string",
 				"required": false
@@ -1272,6 +1280,10 @@
 			"limit": {
 				"type": "integer",
 				"required": false
+			},
+			"offset": {
+				"type": "integer",
+				"required": false
 			}
 		}
 	},
@@ -1383,6 +1395,10 @@
 		"destroys": false,
 		"params": {
 			"limit": {
+				"type": "integer",
+				"required": false
+			},
+			"offset": {
 				"type": "integer",
 				"required": false
 			}
@@ -2029,6 +2045,14 @@
 			"notebookId": {
 				"type": "integer",
 				"required": false
+			},
+			"offset": {
+				"type": "integer",
+				"required": false
+			},
+			"tag": {
+				"type": "string",
+				"required": false
 			}
 		}
 	},
@@ -2220,6 +2244,10 @@
 		"destroys": false,
 		"params": {
 			"limit": {
+				"type": "integer",
+				"required": false
+			},
+			"offset": {
 				"type": "integer",
 				"required": false
 			},

@@ -1,6 +1,7 @@
 import { db } from '$lib/db/index.js';
-import { tags, diaryEntryTags, ideaTags, mediaTags } from '$lib/db/schema';
+import { tags, diaryEntryTags, ideaTags, mediaTags, todoTags } from '$lib/db/schema';
 import { eq, and, notInArray } from 'drizzle-orm';
+import { ValidationError } from './errors.js';
 
 /**
  * Tags, and the rows that join them to what they tag.
@@ -10,6 +11,24 @@ import { eq, and, notInArray } from 'drizzle-orm';
  * statement scoped by an id that arrived from a form — correct only for as long
  * as the caller remembered to check first.
  */
+
+/** As much tag as any one thing may carry, in characters of raw input. */
+export const MAX_TAGS_LENGTH = 500;
+
+/**
+ * Tag input as it arrives from a form or a tool, checked and nothing else.
+ *
+ * Shared rather than written per room: ideas had a private copy of this, and
+ * the moment todos wanted tags too there would have been two ceilings that
+ * could drift apart.
+ */
+export function optionalTagInput(value: unknown): string {
+	if (value === undefined || value === null) return '';
+	const given = String(value).trim();
+	if (given.length > MAX_TAGS_LENGTH)
+		throw new ValidationError('That is more tags than one thing can carry');
+	return given;
+}
 
 /**
  * Normalizes raw tag input. Strips leading #, splits on commas/spaces, lowercases, dedupes.
@@ -81,7 +100,17 @@ export function cleanupOrphanTags(userId: string): void {
 		.all()
 		.map((r) => r.tagId);
 
-	const referencedIds = [...new Set([...diaryRefIds, ...ideaRefIds, ...mediaRefIds])];
+	const todoRefIds = db
+		.select({ tagId: todoTags.tagId })
+		.from(todoTags)
+		.innerJoin(tags, eq(todoTags.tagId, tags.id))
+		.where(eq(tags.userId, userId))
+		.all()
+		.map((r) => r.tagId);
+
+	const referencedIds = [
+		...new Set([...diaryRefIds, ...ideaRefIds, ...mediaRefIds, ...todoRefIds])
+	];
 
 	if (referencedIds.length === 0) {
 		db.delete(tags).where(eq(tags.userId, userId)).run();
@@ -105,6 +134,22 @@ export function replaceIdeaTags(ideaId: number, tagNames: string[], userId: stri
 
 	if (tagNames.length > 0) {
 		linkIdeaTags(ideaId, ensureTagIds(tagNames, userId), userId);
+	}
+}
+
+export function linkTodoTags(todoId: number, tagIds: number[], userId: string): void {
+	for (const tagId of tagIds) {
+		db.insert(todoTags).values({ userId, todoId, tagId }).run();
+	}
+}
+
+export function replaceTodoTags(todoId: number, tagNames: string[], userId: string): void {
+	db.delete(todoTags)
+		.where(and(eq(todoTags.todoId, todoId), eq(todoTags.userId, userId)))
+		.run();
+
+	if (tagNames.length > 0) {
+		linkTodoTags(todoId, ensureTagIds(tagNames, userId), userId);
 	}
 }
 

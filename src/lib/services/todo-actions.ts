@@ -43,6 +43,9 @@ export const todoHandlers = {
 				notes: formData.get('notes'),
 				categoryId: formData.get('categoryId'),
 				notebookId: formData.get('notebookId'),
+				// `has` rather than `get`: a form with no tags box must leave the
+				// labels alone, and one with an empty box must clear them.
+				...(formData.has('tags') ? { tags: formData.get('tags') } : {}),
 				scheduledDate: formData.get('scheduledDate'),
 				ratings: ratingsFromForm(formData)
 			});
@@ -60,6 +63,7 @@ export const todoHandlers = {
 				notes: formData.get('notes'),
 				categoryId: formData.get('categoryId'),
 				notebookId: formData.get('notebookId'),
+				...(formData.has('tags') ? { tags: formData.get('tags') } : {}),
 				ratings: ratingsFromForm(formData)
 			});
 			return { success: true };

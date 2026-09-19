@@ -91,6 +91,14 @@
 	 * where the answer is already fixed.
 	 */
 	let notebookFilter = $state('');
+	/**
+	 * Which label to show, `''` for all and `'none'` for the ones with none.
+	 *
+	 * A label is what several assistants on one list use to say whose work is
+	 * whose — `a1`, `done` — so being able to read back one of them is the
+	 * point of having them at all.
+	 */
+	let tagFilter = $state('');
 	let selectedIndex = $state(0);
 	let delegatingId: number | null = $state(null);
 	let confirmingDelete: number | null = $state(null);
@@ -202,6 +210,10 @@
 		else if (notebookFilter !== '')
 			shown = shown.filter((t: Todo) => String(t.notebookId) === notebookFilter);
 
+		if (tagFilter === 'none') shown = shown.filter((t: Todo) => t.tags.length === 0);
+		else if (tagFilter !== '')
+			shown = shown.filter((t: Todo) => t.tags.some((one) => one.name === tagFilter));
+
 		if (order === 'done') return [...shown].sort(byLastDone);
 
 		return [...shown].sort((a: Todo, b: Todo) =>
@@ -213,11 +225,22 @@
 
 	/** Whatever the notebook picker lets through, before the two toggles. */
 	let inScope = $derived.by(() => {
-		if (notebookFilter === 'none') return todos.filter((t: Todo) => t.notebookId === null);
-		if (notebookFilter !== '')
-			return todos.filter((t: Todo) => String(t.notebookId) === notebookFilter);
-		return todos;
+		let held = todos;
+		if (notebookFilter === 'none') held = held.filter((t: Todo) => t.notebookId === null);
+		else if (notebookFilter !== '')
+			held = held.filter((t: Todo) => String(t.notebookId) === notebookFilter);
+		if (tagFilter === 'none') held = held.filter((t: Todo) => t.tags.length === 0);
+		else if (tagFilter !== '')
+			held = held.filter((t: Todo) => t.tags.some((one) => one.name === tagFilter));
+		return held;
 	});
+
+	/** Every label on this list, so the picker offers what is actually there. */
+	let tagsInUse = $derived(
+		[...new Set(todos.flatMap((t: Todo) => t.tags.map((one) => one.name)))].sort((a, b) =>
+			a.localeCompare(b)
+		)
+	);
 
 	/** How many are hidden by the two toggles, so neither is a silent filter. */
 	let putAway = $derived(inScope.filter((t: Todo) => t.archivedAt !== null).length);
@@ -443,13 +466,35 @@
 			{#if notebookId === null}
 				<!-- "Not in one" is an answer, not the absence of a filter: a task
 				     nobody has placed is the thing people go looking for. -->
-				<label class="min-w-0 flex-1 text-sm sm:flex-none">
+				<!-- A minimum that fits the word: two pickers both squeezed to
+				     "Ever…" are two controls nobody can tell apart, which is what
+				     giving up width first cost the moment there was a second one.
+				     The row wraps instead. -->
+				<label class="min-w-36 flex-1 text-sm sm:flex-none">
 					<span class="sr-only">{t('ui.notebook')}</span>
 					<select bind:value={notebookFilter} class="select w-full">
 						<option value="">{t('todoRows.everyNotebook')}</option>
 						<option value="none">{t('todoRows.notInOne')}</option>
 						{#each notebooks as book (book.id)}
 							<option value={String(book.id)}>{book.title}</option>
+						{/each}
+					</select>
+				</label>
+			{/if}
+			<!-- Only where there is something to pick: a list nobody has labelled
+			     gets no control for labels. -->
+			{#if tagsInUse.length > 0}
+				<label class="min-w-28 flex-1 text-sm sm:flex-none">
+					<span class="sr-only">{t('todoRows.filterByTag')}</span>
+					<select
+						bind:value={tagFilter}
+						class="select w-full"
+						aria-label={t('todoRows.filterByTag')}
+					>
+						<option value="">{t('todoRows.everyTag')}</option>
+						<option value="none">{t('todoRows.noTag')}</option>
+						{#each tagsInUse as name (name)}
+							<option value={name}>{name}</option>
 						{/each}
 					</select>
 				</label>
@@ -506,6 +551,7 @@
 					notes={editing?.notes ?? ''}
 					categoryId={editing?.categoryId ?? null}
 					notebookId={editing?.notebookId ?? notebookId}
+					tags={editing?.tags.map((one) => one.name).join(', ') ?? ''}
 					{categories}
 					{notebooks}
 					bind:ratings={formRatings}
@@ -516,7 +562,7 @@
 		{#snippet footer()}
 			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 			<button type="submit" form="todo-form" class="btn btn-primary">
-				{editingId ? 'Save' : t('todoRows.createTodo')}
+				{editingId ? t('ui.save') : t('todoRows.createTodo')}
 			</button>
 		{/snippet}
 	</Modal>
@@ -731,6 +777,26 @@
 								{#each spoken.audios as audioId (audioId)}
 									<AudioPlayer src="{AUDIO_HREF}/{audioId}" class="mt-1 max-w-72" />
 								{/each}
+							{/if}
+							<!-- Pressing one narrows the list to it, the way an idea's do:
+							     a label is only useful if reading back one of them is a
+							     press rather than a trip to a filter. -->
+							{#if todo.tags.length > 0}
+								<div class="mt-1 flex flex-wrap gap-1">
+									{#each todo.tags as tag (tag.id)}
+										<button
+											type="button"
+											onclick={() => {
+												tagFilter = tagFilter === tag.name ? '' : tag.name;
+												selectedIndex = 0;
+											}}
+											class="chip"
+											aria-pressed={tagFilter === tag.name}
+										>
+											#{tag.name}
+										</button>
+									{/each}
+								</div>
 							{/if}
 							<Backlinks
 								goals={goalLinks[todo.id]}

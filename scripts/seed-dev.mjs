@@ -198,8 +198,11 @@ const oneOffInCategory = (date, startTime, durationMinutes, categoryId, label) =
 
 const todo = (title, extra = {}) => {
 	const existing = one('select id from todo_tasks where user_id = ? and title = ?', uid, title);
-	if (existing) return existing.id;
-	return run(
+	if (existing) {
+		tagTodo(existing.id, extra.tags ?? []);
+		return existing.id;
+	}
+	const id = run(
 		`insert into todo_tasks
 		 (user_id, title, notes, status, completed, scheduled_date, category_id, urgency, interest, energy, sort_order)
 		 values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -215,6 +218,8 @@ const todo = (title, extra = {}) => {
 		extra.energy ?? null,
 		extra.sortOrder ?? 0
 	);
+	tagTodo(id, extra.tags ?? []);
+	return id;
 };
 
 const notebook = (title, description, closed = false) => {
@@ -293,6 +298,22 @@ const tag = (name) => {
 	const existing = one('select id from tags where user_id = ? and name = ?', uid, name);
 	if (existing) return existing.id;
 	return run('insert into tags (user_id, name) values (?, ?)', uid, name);
+};
+
+/**
+ * Labels on a task, from the account's one vocabulary.
+ *
+ * Seeded so the to-do room has a labelled list to draw and a picker with
+ * something in it — a filter nobody can see working is where the layout bugs
+ * hide. `a1` is here on purpose: it is what an assistant working the list
+ * marks its own work with.
+ */
+const tagTodo = (id, names) => {
+	for (const name of names) {
+		const tagId = tag(name);
+		if (!one('select id from todo_tags where todo_id = ? and tag_id = ?', id, tagId))
+			run('insert into todo_tags (user_id, todo_id, tag_id) values (?, ?, ?)', uid, id, tagId);
+	}
 };
 
 const diary = (seq, content, tags = [], forDate = null) => {
@@ -846,21 +867,34 @@ scheme('holiday week', [
 // --- todos ----------------------------------------------------------------------
 
 todo('call the dentist', {
+	tags: ['health', 'phone'],
 	urgency: 4,
 	interest: 1,
 	energy: 2,
 	categoryId: personal,
 	sortOrder: 1
 });
-todo('buy running shoes', { interest: 4, energy: 2, categoryId: health, sortOrder: 2 });
+todo('buy running shoes', {
+	interest: 4,
+	energy: 2,
+	categoryId: health,
+	sortOrder: 2,
+	tags: ['shopping']
+});
 todo('renew the domain', {
+	tags: ['a1', 'done'],
 	urgency: 5,
 	energy: 1,
 	categoryId: work,
 	scheduledDate: today,
 	sortOrder: 3
 });
-todo('read the Litestream docs', { status: 'doing', categoryId: work, sortOrder: 4 });
+todo('read the Litestream docs', {
+	status: 'doing',
+	categoryId: work,
+	sortOrder: 4,
+	tags: ['a1', 'reading']
+});
 todo('fix the bike light', { status: 'done', categoryId: personal, sortOrder: 5 });
 todo('plan the trip', {
 	notes: 'flights first, then somewhere to stay',

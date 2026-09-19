@@ -160,6 +160,9 @@ export const USER_TABLES: OwnedTable[] = [
 	owned('inventoryItems', schema.inventoryItems as never),
 	owned('inventoryCategories', schema.inventoryCategories as never),
 	owned('locations', schema.locations as never),
+	// Before the tasks, the way `ideaTags` sits before `ideas`: the join goes
+	// out first and comes back in after the rows it points at.
+	owned('todoTags', schema.todoTags as never),
 	owned('todoTasks', schema.todoTasks as never),
 	owned('diaryEntryTags', schema.diaryEntryTags as never),
 	// Mentions first: they point at both entries and people.

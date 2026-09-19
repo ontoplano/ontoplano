@@ -7,7 +7,7 @@
  * dragging a card onto Today does — the same row acquires a day rather than
  * being copied into a second table, so nothing has to be kept in sync.
  */
-import { and, asc, eq, isNull, notInArray, or } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, notInArray, or } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
 import {
@@ -15,6 +15,8 @@ import {
 	categories,
 	exceptionalTasks,
 	notebooks,
+	tags,
+	todoTags,
 	todoTasks,
 	taskRecords,
 	workouts
@@ -24,6 +26,7 @@ import type { RatingValues } from '../ratings.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { ownedNotebookId } from './notebooks.js';
+import { cleanupOrphanTags, optionalTagInput, parseTags, replaceTodoTags } from './tags.js';
 import { created, stamp, stamps } from './time.js';
 import { host } from './host.js';
 import { TIME_PATTERN, num, oneOf, optionalStr, str } from './validate.js';
@@ -45,9 +48,19 @@ export type Todo = {
 	/** When it was last finished, or null. Cleared when it is reopened. */
 	completedAt: string | null;
 	ratings: RatingValues;
+	/**
+	 * The labels on it, from the account's one tag vocabulary.
+	 *
+	 * Not a second vocabulary: a tag named on a diary entry is the same tag
+	 * here. Several assistants working one list need a way to say which of them
+	 * touched what — `a1`, `done`, `blocked` — and a label is how.
+	 */
+	tags: Tag[];
 	createdAt: string;
 	updatedAt: string;
 };
+
+export type Tag = { id: number; name: string };
 
 const SELECTION = {
 	id: todoTasks.id,
@@ -90,9 +103,47 @@ function shape(r: Record<string, unknown>): Todo {
 			interest: (r.interest as number) ?? null,
 			energy: (r.energy as number) ?? null
 		},
+		// Filled in by `withTags`, which reads them for a whole list at once.
+		tags: (r.tags as Tag[]) ?? [],
 		createdAt: r.createdAt as string,
 		updatedAt: r.updatedAt as string
 	};
+}
+
+/**
+ * The tags on a set of todos, in one query rather than one per row.
+ *
+ * The same shape the notebooks use for a note's tags and people: a list comes
+ * back, its ids go out in a single `IN`, and the rows are handed back by id.
+ */
+export function tagsForTodos(ctx: Ctx, todoIds: number[]): Map<number, Tag[]> {
+	const byTodo = new Map<number, Tag[]>();
+	if (todoIds.length === 0) return byTodo;
+
+	const rows = db
+		.select({ todoId: todoTags.todoId, id: tags.id, name: tags.name })
+		.from(todoTags)
+		.innerJoin(tags, eq(todoTags.tagId, tags.id))
+		.where(and(inArray(todoTags.todoId, todoIds), eq(tags.userId, ctx.userId)))
+		.orderBy(tags.name)
+		.all();
+
+	for (const row of rows) {
+		const held = byTodo.get(row.todoId) ?? [];
+		held.push({ id: row.id, name: row.name });
+		byTodo.set(row.todoId, held);
+	}
+	return byTodo;
+}
+
+/** Every list of todos goes out through here, so none of them is missing its labels. */
+function withTags(ctx: Ctx, todos: Todo[]): Todo[] {
+	const byTodo = tagsForTodos(
+		ctx,
+		todos.map((t) => t.id)
+	);
+	for (const todo of todos) todo.tags = byTodo.get(todo.id) ?? [];
+	return todos;
 }
 
 /**
@@ -121,7 +172,7 @@ export function archiveTodo(ctx: Ctx, id: number, away = true): void {
 
 /** Everything, ordered the way the board wants it. */
 export function listTodos(ctx: Ctx): Todo[] {
-	return db
+	const rows = db
 		.select(SELECTION)
 		.from(todoTasks)
 		.leftJoin(categories, eq(todoTasks.categoryId, categories.id))
@@ -130,6 +181,7 @@ export function listTodos(ctx: Ctx): Todo[] {
 		.orderBy(asc(todoTasks.sortOrder), asc(todoTasks.createdAt))
 		.all()
 		.map(shape);
+	return withTags(ctx, rows);
 }
 
 /**
@@ -140,7 +192,7 @@ export function listTodos(ctx: Ctx): Todo[] {
  * than a title and a status.
  */
 export function listTodosIn(ctx: Ctx, notebookId: number): Todo[] {
-	return db
+	const rows = db
 		.select(SELECTION)
 		.from(todoTasks)
 		.leftJoin(categories, eq(todoTasks.categoryId, categories.id))
@@ -149,6 +201,7 @@ export function listTodosIn(ctx: Ctx, notebookId: number): Todo[] {
 		.orderBy(asc(todoTasks.sortOrder), asc(todoTasks.createdAt))
 		.all()
 		.map(shape);
+	return withTags(ctx, rows);
 }
 
 /**
@@ -160,7 +213,7 @@ export function listTodosIn(ctx: Ctx, notebookId: number): Todo[] {
  * they will do a thing they already did is nonsense.
  */
 export function listUnscheduled(ctx: Ctx, options: { openOnly?: boolean } = {}): Todo[] {
-	return db
+	const rows = db
 		.select(SELECTION)
 		.from(todoTasks)
 		.leftJoin(categories, eq(todoTasks.categoryId, categories.id))
@@ -175,6 +228,7 @@ export function listUnscheduled(ctx: Ctx, options: { openOnly?: boolean } = {}):
 		.orderBy(asc(todoTasks.sortOrder), asc(todoTasks.createdAt))
 		.all()
 		.map(shape);
+	return withTags(ctx, rows);
 }
 
 /**
@@ -211,7 +265,7 @@ export function listForDate(ctx: Ctx, date: string): Todo[] {
 		.map(shape)
 		.filter((t) => t.scheduledDate !== null && t.scheduledDate < date);
 
-	return [...overdue, ...rows];
+	return withTags(ctx, [...overdue, ...rows]);
 }
 
 /** Next free slot at the bottom of a column, so a new card lands last. */
@@ -405,6 +459,13 @@ export type TodoInput = {
 	scheduledDate?: unknown;
 	status?: unknown;
 	ratings?: Partial<RatingValues>;
+	/**
+	 * Labels, as typed: "a1, done" or "#a1 #done". Left out means leave alone
+	 * on an update, which matters because not every screen that edits a todo
+	 * offers the field — a form with no tags box must not strip the tags an
+	 * assistant put on.
+	 */
+	tags?: unknown;
 };
 
 export function createTodo(ctx: Ctx, raw: TodoInput): number {
@@ -426,6 +487,8 @@ export function createTodo(ctx: Ctx, raw: TodoInput): number {
 		.run();
 
 	const id = Number(result.lastInsertRowid);
+	if (raw.tags !== undefined)
+		replaceTodoTags(id, parseTags(optionalTagInput(raw.tags)), ctx.userId);
 	host.emit(ctx, 'todo.created', { id, title });
 	return id;
 }
@@ -445,6 +508,14 @@ export function updateTodo(ctx: Ctx, id: number, raw: TodoInput): void {
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('todo');
+
+	// Only when the caller said something about them. `undefined` is "not my
+	// business", not "none" — the board's inline editor has no tags box.
+	if (raw.tags !== undefined) {
+		replaceTodoTags(id, parseTags(optionalTagInput(raw.tags)), ctx.userId);
+		// A word nothing points at any more is not part of the vocabulary.
+		cleanupOrphanTags(ctx.userId);
+	}
 }
 
 export function setTodoStatus(ctx: Ctx, id: number, status: unknown): void {
@@ -495,6 +566,10 @@ export function deleteTodo(ctx: Ctx, id: number): void {
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('todo');
+
+	// The join rows went with it (`on delete cascade`); the words they pointed
+	// at have not, and one nothing refers to is no longer in the vocabulary.
+	cleanupOrphanTags(ctx.userId);
 }
 
 /**
