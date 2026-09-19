@@ -3481,9 +3481,18 @@
 						{@const tickDate = editingKind === 'slot' ? selectedDateStr() : formDate}
 						{@const tickKey = `${editingKind === 'slot' ? 's' : 'x'}${editingBlockId}|${tickDate}`}
 						{@const ticked = data.marks[tickKey] === 'done'}
+						{@const measuring =
+							!ticked &&
+							slotMode === 'workout' &&
+							tickedWorkout &&
+							tickedWorkout.measures.length > 0}
+						<!-- The form takes the whole row when it is carrying the measures,
+						     so the panel is the width of the dialog rather than a column
+						     squeezed against the buttons beside it. -->
 						<form
 							method="post"
 							action="?/setStatus"
+							class={measuring ? 'w-full' : ''}
 							use:enhance={() =>
 								async ({ update }) =>
 									update()}
@@ -3503,25 +3512,37 @@
 								happen. Blank is fine: a session with nothing measured is
 								still a session.
 							-->
-							{#if !ticked && slotMode === 'workout' && tickedWorkout && tickedWorkout.measures.length > 0}
+							{#if measuring && tickedWorkout}
 								<input type="hidden" name="workoutId" value={tickedWorkout.id} />
-								<div class="mb-3 border border-gray-200 bg-gray-50 p-3">
+								<!--
+									Two measures fit side by side on anything but a phone.
+
+									One per line in a box a third of the dialog wide left the
+									rest of the row empty and the labels truncating inside it
+									— a panel of three fields taking six lines of height and a
+									third of the width, beside nothing.
+								-->
+								<div class="mb-3 border border-gray-200 bg-gray-50 px-3 py-2.5">
 									<span class="eyebrow text-gray-500">{t('tasks.plan.howMuchYouDid')}</span>
-									<div class="mt-2 space-y-2">
+									<div class="mt-2 grid gap-x-4 gap-y-2 sm:grid-cols-2">
 										{#each tickedWorkout.measures as measure, index (index)}
-											<div class="grid grid-cols-[1fr_5rem_3rem] items-center gap-2">
-												<span class="truncate text-sm text-gray-900">{measure.activity}</span>
+											<label class="flex items-center gap-2">
+												<span class="min-w-0 flex-1 truncate text-sm text-gray-900"
+													>{measure.activity}</span
+												>
 												<input type="hidden" name="measureActivity" value={measure.activity} />
 												<NumberBox
 													name="measureAmount"
 													min="0"
 													step="any"
 													bind:value={measureAmounts[index]}
-													class="tabular"
+													class="tabular w-20 shrink-0"
 												/>
-												<span class="truncate text-sm text-gray-500">{measure.unit}</span>
+												<span class="w-10 shrink-0 truncate text-sm text-gray-500"
+													>{measure.unit}</span
+												>
 												<input type="hidden" name="measureUnit" value={measure.unit} />
-											</div>
+											</label>
 										{/each}
 									</div>
 								</div>
