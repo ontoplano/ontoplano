@@ -32,8 +32,6 @@
 	const MARGIN = 8;
 	/** Longer than this and it is not a tooltip; it is a paragraph. */
 	const MAX_LENGTH = 160;
-	/** How often a shown label checks that what it describes still exists. */
-	const ORPHAN_CHECK_MS = 250;
 
 	/*
 	 * What is on screen, and what wants to be.
@@ -93,41 +91,10 @@
 		});
 	}
 
-	/**
-	 * …and it goes when the thing it is about does.
-	 *
-	 * A label is hidden by the pointer leaving, and a pointer cannot leave an
-	 * element that is no longer there: delete the row under the cursor, or let
-	 * a live update redraw the list, and the bubble is left pointing at
-	 * nothing with no event coming to take it away. It sits there until
-	 * something else is pressed.
-	 *
-	 * Checked on a timer rather than watched, because what has to be noticed
-	 * is a node leaving the document from anywhere — a re-render inside a
-	 * library's own DOM included — and a `MutationObserver` over the whole
-	 * document is a heavier thing to leave running than one question a
-	 * quarter of a second while a tooltip is on screen.
-	 */
-	let orphanWatch: ReturnType<typeof setInterval> | null = null;
-
-	function watchTheOwner() {
-		if (orphanWatch) return;
-		orphanWatch = setInterval(() => {
-			if (!wanted) return stopWatchingTheOwner();
-			if (!wanted.owner.isConnected) hide();
-		}, ORPHAN_CHECK_MS);
-	}
-
-	function stopWatchingTheOwner() {
-		if (orphanWatch) clearInterval(orphanWatch);
-		orphanWatch = null;
-	}
-
 	function hide() {
 		if (timer) clearTimeout(timer);
 		timer = null;
 		wanted = null;
-		stopWatchingTheOwner();
 		release();
 		paint();
 	}
@@ -189,7 +156,6 @@
 			if (holding !== owner || !owner.isConnected) return hide();
 			wanted = { text: title, owner };
 			paint();
-			watchTheOwner();
 		}, DELAY_MS);
 	}
 
@@ -226,7 +192,6 @@
 
 		return () => {
 			if (frame) cancelAnimationFrame(frame);
-			stopWatchingTheOwner();
 			hide();
 			document.removeEventListener('pointerover', over, true);
 			document.removeEventListener('pointerout', out, true);
