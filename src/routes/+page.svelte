@@ -152,18 +152,17 @@
 	 * capture, so no other element hears a thing until it is let go.
 	 */
 	/*
-	 * Where every card is, measured once.
+	 * Where every card is, measured once at the grab.
 	 *
-	 * The first version asked `document.elementFromPoint` on every pointermove.
-	 * A mouse or a trackpad reports far more often than the screen redraws, and
-	 * a hit test is a question the browser cannot answer without first
-	 * finishing any layout it was putting off — so each of those events flushed
-	 * the layout of a page made of twelve cards, and dragging one across the
-	 * dashboard was visibly behind the cursor.
+	 * The first version asked `document.elementFromPoint` on every
+	 * pointermove. A mouse reports far more often than the screen redraws, and
+	 * a hit test is a question the browser cannot answer without finishing any
+	 * layout it was putting off — so each of those events flushed the layout
+	 * of a page made of twelve cards, and the card lagged behind the cursor.
 	 *
-	 * Measured when the drag starts and again after each reorder, which is the
-	 * only time the answer changes: in between, deciding which card the pointer
-	 * is over is arithmetic on numbers already in hand.
+	 * Measuring once is possible because nothing moves during the drag: see
+	 * `settle` below. The boxes taken at the grab are the boxes for the whole
+	 * of it.
 	 */
 	let boxes: { id: DashboardCardId; left: number; top: number; right: number; bottom: number }[] =
 		[];
@@ -198,12 +197,20 @@
 	}
 
 	/*
-	 * One reorder per frame at most.
+	 * One answer per frame, and the answer is only ever "which card is this
+	 * over" — the cards themselves do not move until it is let go.
 	 *
-	 * Pointer events arrive faster than the screen changes, and every one of
-	 * them that moves a card moves eleven others with it. Booking a frame and
-	 * reading the latest position inside it means the work happens exactly as
-	 * often as it can be seen.
+	 * They used to move under the pointer, which is the obvious thing and the
+	 * wrong one on a grid that packs half-width cards into whatever gap is
+	 * free. Every swap re-laid the whole dashboard out, so the thing under the
+	 * pointer a frame later was not the thing you were aiming at, dragging
+	 * down and back up did not return a card to where it started, and after
+	 * enough of that it stopped doing anything at all.
+	 *
+	 * So the grid holds still and says where the card would land — the target
+	 * wears an outline, the card being carried goes faint — and the move
+	 * happens once, on release. Nothing has moved, so the measurements cannot
+	 * go stale, and letting go where you picked it up is exactly a no-op.
 	 */
 	function dragTo(e: PointerEvent) {
 		if (!dragging) return;
@@ -212,31 +219,26 @@
 		if (frame) return;
 		frame = requestAnimationFrame(() => {
 			frame = 0;
-			settle();
+			if (!dragging || !pointerAt) return;
+			const under = cardAt(pointerAt.x, pointerAt.y);
+			if (under && order.includes(under)) dragOver = under;
 		});
-	}
-
-	function settle() {
-		if (!dragging || !pointerAt) return;
-
-		const under = cardAt(pointerAt.x, pointerAt.y);
-		if (!under || under === dragging || !order.includes(under)) return;
-
-		dragOver = under;
-		const next = order.filter((x) => x !== dragging);
-		next.splice(next.indexOf(under), 0, dragging);
-		order = next;
-		// The cards have swapped places, so the measurements are stale — but not
-		// until the browser has drawn them, which is what the tick waits for.
-		tick().then(measure);
 	}
 
 	function letGo() {
 		if (frame) cancelAnimationFrame(frame);
 		frame = 0;
 		pointerAt = null;
+
+		const moved = dragging;
+		const onto = dragOver;
 		dragging = null;
 		dragOver = null;
+		if (!moved || !onto || moved === onto) return;
+
+		const next = order.filter((x) => x !== moved);
+		next.splice(next.indexOf(onto), 0, moved);
+		order = next;
 	}
 
 	async function saveOrder() {
