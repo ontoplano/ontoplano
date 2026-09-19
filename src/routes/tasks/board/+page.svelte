@@ -582,29 +582,10 @@
 
 	<RoomToolbar>
 		{#snippet tools()}
-			<!-- Sort, energy and the rest are three rows before a single card on a
-			     phone and a row of furniture above the columns on anything wider.
-			     They fold behind one button at every width: a filter is something
-			     you go and change, not something to look at while you work. -->
-			<button
-				onclick={() => (filtersOpen = !filtersOpen)}
-				class="btn btn-sm"
-				aria-expanded={filtersOpen}
-				aria-pressed={filtersOpen}
-				data-tour="board-ratings"
-			>
-				{filtersOpen ? t('tasks.board.hideFilters') : t('tasks.board.filters')}
-			</button>
-
 			<!-- Today against To-do is a choice of shape, exactly as Day/Week/
-			     Month is on the plan — so it is the same control, and it shares
-			     the row rather than spending one of its own. -->
-			<div
-				class="seg ml-auto"
-				role="group"
-				aria-label={t('tasks.board.whatToShow')}
-				data-tour="board-tabs"
-			>
+			     Month is on the plan — so it is the same control, and it sits
+			     under the day it is about rather than across the row from it. -->
+			<div class="seg" role="group" aria-label={t('tasks.board.whatToShow')} data-tour="board-tabs">
 				{#each [{ v: 'today', l: 'Today' }, { v: 'general', l: 'To-do' }] as t (t.v)}
 					<button
 						onclick={() => {
@@ -615,49 +596,69 @@
 					>
 				{/each}
 			</div>
-		{/snippet}
-		{#snippet filters()}
-			<div
-				class="{filtersOpen ? 'flex' : 'hidden'} flex-wrap items-center gap-x-4 gap-y-2 text-xs"
+
+			<!--
+				Sort, energy and the rest, in a dialog rather than in the page.
+
+				They used to unfold into a row above the columns, which pushed the
+				whole board down the moment you pressed the button — and pushed it
+				back up when you were done, so the card you were reaching for was
+				somewhere else both times. A filter is something you go and
+				change; it is not something to look at while you work, and it is
+				not worth a board that moves. The button also keeps one word at
+				both states, because a control that renames itself is a control
+				that changes width under the pointer.
+			-->
+			<button
+				onclick={() => (filtersOpen = true)}
+				class="btn btn-sm ml-auto"
+				aria-haspopup="dialog"
+				aria-expanded={filtersOpen}
 				data-tour="board-ratings"
 			>
-				<div class="flex items-center gap-1">
-					<span class="eyebrow text-gray-600">{t('tasks.board.sort')}</span>
-					{#each [{ v: 'default', l: 'Default' }, { v: 'urgency', l: 'Urgency' }, { v: 'interest', l: 'Interest' }, { v: 'energy', l: 'Energy' }] as opt (opt.v)}
-						<button
-							onclick={() => (sortBy = opt.v as typeof sortBy)}
-							class="border px-2 py-0.5 {sortBy === opt.v
-								? 'on-fill font-semibold'
-								: 'border-gray-300 bg-white text-gray-600 hover:text-gray-900'}">{opt.l}</button
-						>
-					{/each}
-				</div>
-
-				<div class="flex items-center gap-1">
-					<span class="eyebrow text-gray-600">{t('tasks.board.energyUpTo')}</span>
-					{#each [1, 2, 3, 4, 5] as n (n)}
-						<button
-							onclick={() => (maxEnergy = maxEnergy === n ? null : n)}
-							class="tabular h-6 w-6 border {maxEnergy === n
-								? 'on-fill font-semibold'
-								: 'border-gray-300 bg-white text-gray-500 hover:text-gray-900'}">{n}</button
-						>
-					{/each}
-				</div>
-
-				<label class="flex items-center gap-1 text-gray-600">
-					<input type="checkbox" bind:checked={showDone} class="h-3 w-3" />
-					{t('tasks.board.showSkipped')}
-				</label>
-
-				<span class="kbd-hint text-gray-500">
-					{t('tasks.board.numberKeysSet')}
-					<strong class="font-semibold text-gray-600">{ratingKey}</strong>
-					{t('tasks.board.uI')}
-				</span>
-			</div>
+				{t('tasks.board.filters')}
+			</button>
 		{/snippet}
 	</RoomToolbar>
+
+	<Modal bind:open={filtersOpen} title={t('tasks.board.filters')} size="sm">
+		<div class="space-y-4 text-sm">
+			<div class="flex flex-wrap items-center gap-1">
+				<span class="eyebrow mr-1 text-gray-600">{t('tasks.board.sort')}</span>
+				{#each [{ v: 'default', l: 'Default' }, { v: 'urgency', l: 'Urgency' }, { v: 'interest', l: 'Interest' }, { v: 'energy', l: 'Energy' }] as opt (opt.v)}
+					<button
+						onclick={() => (sortBy = opt.v as typeof sortBy)}
+						class="border px-2 py-0.5 text-xs {sortBy === opt.v
+							? 'on-fill font-semibold'
+							: 'border-gray-300 bg-white text-gray-600 hover:text-gray-900'}">{opt.l}</button
+					>
+				{/each}
+			</div>
+
+			<div class="flex flex-wrap items-center gap-1">
+				<span class="eyebrow mr-1 text-gray-600">{t('tasks.board.energyUpTo')}</span>
+				{#each [1, 2, 3, 4, 5] as n (n)}
+					<button
+						onclick={() => (maxEnergy = maxEnergy === n ? null : n)}
+						class="tabular h-6 w-6 border text-xs {maxEnergy === n
+							? 'on-fill font-semibold'
+							: 'border-gray-300 bg-white text-gray-500 hover:text-gray-900'}">{n}</button
+					>
+				{/each}
+			</div>
+
+			<label class="flex items-center gap-2 text-gray-600">
+				<input type="checkbox" bind:checked={showDone} class="h-3 w-3" />
+				{t('tasks.board.showSkipped')}
+			</label>
+
+			<p class="kbd-hint text-xs text-gray-500">
+				{t('tasks.board.numberKeysSet')}
+				<strong class="font-semibold text-gray-600">{ratingKey}</strong>
+				{t('tasks.board.uI')}
+			</p>
+		</div>
+	</Modal>
 
 	<Modal bind:open={showForm} error={form?.message} title={t('tasks.board.newCard')} size="sm">
 		<form

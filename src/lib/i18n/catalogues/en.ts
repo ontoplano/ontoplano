@@ -2655,7 +2655,6 @@ export const messages: Catalogue = {
 	'tasks.board.edit': 'Edit {title}',
 	'tasks.board.energyUpTo': 'Energy up to',
 	'tasks.board.filters': 'Filters',
-	'tasks.board.hideFilters': 'Hide filters',
 	'tasks.board.markDone': 'Mark done',
 	'tasks.board.markNotDone': 'Mark not done',
 	'tasks.board.minutes': 'Minutes',

@@ -2729,7 +2729,6 @@ export const messages: Catalogue = {
 	'tasks.board.edit': '{title} bearbeiten',
 	'tasks.board.energyUpTo': 'Energie bis zu',
 	'tasks.board.filters': 'Filter',
-	'tasks.board.hideFilters': 'Filter ausblenden',
 	'tasks.board.markDone': 'Als erledigt markieren',
 	'tasks.board.markNotDone': 'Als nicht erledigt markieren',
 	'tasks.board.minutes': 'Minuten',

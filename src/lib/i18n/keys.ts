@@ -2310,7 +2310,6 @@ export type MessageKey =
 	| 'tasks.board.edit'
 	| 'tasks.board.energyUpTo'
 	| 'tasks.board.filters'
-	| 'tasks.board.hideFilters'
 	| 'tasks.board.markDone'
 	| 'tasks.board.markNotDone'
 	| 'tasks.board.minutes'
