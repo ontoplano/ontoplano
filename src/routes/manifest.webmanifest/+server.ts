@@ -1,7 +1,7 @@
 import type { RequestHandler } from './$types';
 
 import { dev } from '$app/environment';
-import { isStaging } from '$lib/server/settings';
+import { isDemo, isStaging } from '$lib/server/settings';
 import { translatorFor } from '$lib/i18n/core';
 import { SOURCE_LOCALE } from '$lib/i18n/locales';
 
@@ -53,19 +53,27 @@ export const GET: RequestHandler = async ({ locals }) => {
 	];
 
 	const staging = isStaging();
-	// The suffix is the whole difference. `scripts/build-icons.mjs` draws all
-	// three sets from the same logo, so the day the mark changes they all
-	// change. Dev gets a set too: a dev server saved as a PWA must not wear
-	// the real app's tile.
-	const mark = staging ? '-staging' : dev ? '-dev' : '';
+	const demo = !staging && isDemo();
+	// The suffix is the whole difference. `scripts/build-icons.mjs` draws every
+	// set from the same logo, so the day the mark changes they all change. Dev
+	// gets one because a dev server saved as a PWA must not wear the real app's
+	// tile, and the demo gets one because a sandbox wiped every hour must not
+	// either.
+	const mark = staging ? '-staging' : demo ? '-demo' : dev ? '-dev' : '';
 
 	const manifest = {
-		name: staging ? 'Ontoplano staging' : dev ? 'Ontoplano — Dev' : 'Ontoplano',
-		short_name: staging ? 'Staging' : dev ? 'Dev' : 'Ontoplano',
+		name: staging
+			? 'Ontoplano staging'
+			: demo
+				? 'Ontoplano demo'
+				: dev
+					? 'Ontoplano — Dev'
+					: 'Ontoplano',
+		short_name: staging ? 'Staging' : demo ? 'Demo' : dev ? 'Dev' : 'Ontoplano',
 		description: t('manifest.description'),
 		// A distinct id, or a browser treats the two as one installed app and
 		// the second install silently replaces the first.
-		id: staging ? '/?staging' : dev ? '/?dev' : '/',
+		id: staging ? '/?staging' : demo ? '/?demo' : dev ? '/?dev' : '/',
 		start_url: '/',
 		scope: '/',
 		display: 'standalone',

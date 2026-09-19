@@ -341,8 +341,16 @@ const handleTheme: Handle = ({ event, resolve }) => {
 	 */
 	// Dev wears its own mark for the same reason staging does: `make dev`
 	// saved to a phone's home screen must never be the tile the real app is.
-	const mark = isStaging() ? '-staging' : dev ? '-dev' : '';
-	const appname = isStaging() ? 'Ontoplano staging' : dev ? 'Ontoplano — Dev' : 'Ontoplano';
+	// And the demo for the third time: a tab of somebody's own week and a tab
+	// of a sandbox wiped every hour were the same picture in the same window.
+	const mark = isStaging() ? '-staging' : isDemo() ? '-demo' : dev ? '-dev' : '';
+	const appname = isStaging()
+		? 'Ontoplano staging'
+		: isDemo()
+			? 'Ontoplano demo'
+			: dev
+				? 'Ontoplano — Dev'
+				: 'Ontoplano';
 
 	return resolve(event, {
 		transformPageChunk: ({ html }) =>

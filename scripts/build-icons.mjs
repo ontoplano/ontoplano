@@ -182,6 +182,16 @@ function icon(scale, ground, uri = dataUri) {
 const STAGING_BAND = '#b45309';
 // Dev wears blue where staging wears amber — same band, different answer.
 const DEV_BAND = '#1d4ed8';
+/*
+ * And the demo wears violet.
+ *
+ * It is the third copy of this app somebody can have open, and it was wearing
+ * production's mark — so a tab of somebody's own week and a tab of a sandbox
+ * that is wiped every hour were the same picture. Violet because the other
+ * two are taken and because it means neither broken nor fine, which is what a
+ * demo is.
+ */
+const DEMO_BAND = '#6d28d9';
 
 /**
  * `top` is where the band sits, as a fraction of the height.
@@ -227,12 +237,16 @@ const apple = icon(APPLE, FIELD);
 
 const stagingIcon = (scale, ground, top) => bandedIcon(STAGING_BAND, scale, ground, top);
 const devIcon = (scale, ground, top) => bandedIcon(DEV_BAND, scale, ground, top);
+const demoIcon = (scale, ground, top) => bandedIcon(DEMO_BAND, scale, ground, top);
 
 const plainStaging = stagingIcon(ICON_SCALE, null);
 const maskableStaging = stagingIcon(MASKABLE, FIELD, 0.62);
 const appleStaging = stagingIcon(APPLE, FIELD, 0.78);
 const plainDev = devIcon(ICON_SCALE, null);
 const maskableDev = devIcon(MASKABLE, FIELD, 0.62);
+const plainDemo = demoIcon(ICON_SCALE, null);
+const maskableDemo = demoIcon(MASKABLE, FIELD, 0.62);
+const appleDemo = demoIcon(APPLE, FIELD, 0.78);
 const appleDev = devIcon(APPLE, FIELD, 0.78);
 
 const pngs = [
@@ -289,7 +303,16 @@ const pngs = [
 	['static/icons/favicon-16-dev.png', plainDev, 16],
 	['static/icons/favicon-32-dev.png', plainDev, 32],
 	['static/icons/favicon-48-dev.png', plainDev, 48],
-	['static/icons/apple-touch-icon-dev.png', appleDev, 180]
+	['static/icons/apple-touch-icon-dev.png', appleDev, 180],
+	// …and the demo set, for the copy anybody can open and nobody keeps.
+	['static/icons/icon-192-demo.png', plainDemo, 192],
+	['static/icons/icon-512-demo.png', plainDemo, 512],
+	['static/icons/icon-maskable-192-demo.png', maskableDemo, 192],
+	['static/icons/icon-maskable-512-demo.png', maskableDemo, 512],
+	['static/icons/favicon-16-demo.png', plainDemo, 16],
+	['static/icons/favicon-32-demo.png', plainDemo, 32],
+	['static/icons/favicon-48-demo.png', plainDemo, 48],
+	['static/icons/apple-touch-icon-demo.png', appleDemo, 180]
 ];
 
 // ── Rasterising ──────────────────────────────────────────────────────────────

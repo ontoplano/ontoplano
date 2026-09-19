@@ -220,13 +220,16 @@ sw.addEventListener('fetch', (event) => {
 		plain.searchParams.delete(APP_LAUNCH_PARAM);
 		plain.searchParams.delete(APP_VERSION_PARAM);
 
+		const offlinePage = new Response('Offline', { status: 503, statusText: 'Offline' });
 		event.respondWith(
-			(async () => {
-				const cached = await caches.match(plain.href);
-				if (cached) return cached;
-				const offline = await caches.match(OFFLINE_URL);
-				return offline ?? new Response('Offline', { status: 503, statusText: 'Offline' });
-			})()
+			caches
+				.match(plain.href)
+				.then(async (cached) => cached ?? (await caches.match(OFFLINE_URL)) ?? offlinePage)
+				// Nothing this worker answers may reject: a rejected `respondWith`
+				// is a network error the browser logs about a request nobody was
+				// waiting for. `tests/service-worker-never-rejects.test.ts` counts
+				// these.
+				.catch(() => offlinePage)
 		);
 		return;
 	}
