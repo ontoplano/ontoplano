@@ -5122,6 +5122,14 @@ history; it is wrong in a place that shows what is about to happen.
 `en-CA` is not a locale here: the format comes from the reader's, which the
 translator carries.
 
+#### `localDay(d)`
+
+A `Date` as the day it is, where it is — `2026-09-19`.
+
+`toISOString` is UTC, so a date built from local parts comes back as
+yesterday for anybody west of Greenwich in the evening. Written out of the
+local parts instead, which is what every table keyed by day holds.
+
 ## today
 
 One day, in one request.

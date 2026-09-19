@@ -81,10 +81,11 @@ the rest are named for what they do.
 
 ### `/`
 
-The dashboard, for whoever is signed in — which on an isolated instance is
-whoever is holding the device. The signed-out front door stays in
-+page.server.ts: whether anyone may register is a question about a
-deployment, and an isolated instance has no door.
+How far ahead the planner card looks.
+
+Today and two more. Three columns is what fits side by side on a phone with
+the block's own name still legible in them, and past the day after tomorrow
+a plan is a guess anyway.
 
 ### `/admin`
 
