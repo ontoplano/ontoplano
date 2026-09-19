@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.180.1 — 2026-09-19
 
+- **A reminder opens the thing it is about.** Only a birthday did: the weekly
+  review's nag, a bill and a to-do all landed on the day's board instead. The
+  review's now opens the week it is nagging about, a bill's opens the bills,
+  and a to-do's opens the to-do list. The browser and the delivery job read
+  one answer now rather than a copy each.
 - **The activity picker is typed at rather than scrolled through.** It still
   shows every activity the moment it opens — no typing required to see
   anything — and now narrows loosely as you type, so "lr" finds "learn

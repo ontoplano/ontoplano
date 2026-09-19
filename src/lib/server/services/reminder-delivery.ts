@@ -1,3 +1,4 @@
+import { reminderLink } from '$lib/reminder-links.js';
 import { db } from '$lib/db/index.js';
 import { pushSubscriptions, user } from '$lib/db/schema.js';
 import { buildCtx } from '$lib/services/ctx.js';
@@ -230,13 +231,13 @@ function say(message: string): void {
 /**
  * Where the notification leads.
  *
- * The same answers as `$lib/reminders.ts`, which is the browser's copy of this
- * question — kept apart rather than shared because that one resolves paths
- * through SvelteKit's router, which does not exist in a cron script.
+ * The answer itself is `$lib/reminder-links.ts`, shared with the browser: the
+ * two used to hold a copy each and the copies drifted, which is how the weekly
+ * review's notification came to land somewhere that was not the review. All
+ * this adds is the plain path, because SvelteKit's router does not exist in a
+ * cron script.
  */
 function hrefFor(reminder: { subjectKind: string; subjectId: number | null; remindAt: string }) {
-	if (reminder.subjectKind === 'person' && reminder.subjectId) {
-		return `/notebooks/people?person=${reminder.subjectId}`;
-	}
-	return `/tasks/board?date=${reminder.remindAt.slice(0, 10)}`;
+	const link = reminderLink(reminder);
+	return `${link.route}${link.query}`;
 }
