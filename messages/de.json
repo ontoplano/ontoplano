@@ -238,6 +238,8 @@
 		"one": "{count} Aufnahme",
 		"other": "{count} Aufnahmen"
 	},
+	"audio.keepTheIdea": "Idee behalten",
+	"audio.makeAnIdea": "Zur Idee machen",
 	"audio.nameIt": "Wie soll sie heißen",
 	"audio.noMicrophone": "Dieses Gerät hat der App kein Mikrofon gegeben.",
 	"audio.none": "Noch nichts aufgenommen.",
@@ -2864,6 +2866,7 @@
 	"ui.name": "Name",
 	"ui.next": "Weiter",
 	"ui.none": "— keine —",
+	"ui.notNow": "Jetzt nicht",
 	"ui.notebook": "Notizbuch",
 	"ui.notes": "Notizen",
 	"ui.open": "Öffnen",

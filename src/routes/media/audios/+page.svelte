@@ -12,7 +12,11 @@
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import { useT } from '$lib/i18n';
 	import { instantInWords } from '$lib/services/time';
-	import type { PageData } from './$types';
+	import { audioMarkdown } from '$lib/audio-markdown';
+	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
+	import FormError from '$lib/components/FormError.svelte';
+	import type { ActionData, PageData } from './$types';
 
 	/**
 	 * Recordings: make one, hear it, name it, keep it.
@@ -24,7 +28,18 @@
 	 */
 	const t = useT();
 
-	let { data }: { data: PageData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
+
+	/**
+	 * The recording somebody is turning into an idea, if any.
+	 *
+	 * Offered the moment one is finished, because that is when there is still
+	 * something to say about it — going to Ideas afterwards and reaching back
+	 * for the file is three steps between a thought and writing it down. The
+	 * same button is on every row, so an old recording is not a lesser one.
+	 */
+	let ideaOf = $state<{ id: number; name: string } | null>(null);
+	const ideaSeed = $derived(ideaOf ? audioMarkdown(ideaOf.id, ideaOf.name) + '\n' : '');
 
 	/** Which row's name is being edited, if any. One at a time. */
 	let renaming = $state<number | null>(null);
@@ -62,11 +77,15 @@
 		body.set('seconds', String(seconds));
 
 		const answer = await fetch('/media/audio', { method: 'POST', body });
-		if (!answer.ok) {
-			const said = (await answer.json().catch(() => ({}))) as { message?: string };
-			throw new Error(said.message ?? t('audio.notSupported'));
-		}
+		const said = (await answer.json().catch(() => ({}))) as {
+			id?: number;
+			name?: string;
+			message?: string;
+		};
+		if (!answer.ok) throw new Error(said.message ?? t('audio.notSupported'));
 		await invalidateAll();
+		// Asked once, here, while the thought is still in the room.
+		if (said.id) ideaOf = { id: said.id, name: said.name ?? name };
 	}
 
 	/** When it happened, where the reader is. `$lib/services/time.ts` has why. */
@@ -149,6 +168,14 @@
 							<Icon name="edit" class="mr-1.5" />
 							{t('audio.rename')}
 						</button>
+						<button
+							type="button"
+							class="btn btn-sm"
+							onclick={() => (ideaOf = { id: one.id, name: one.name })}
+						>
+							<Icon name="ideas" class="mr-1.5" />
+							{t('audio.makeAnIdea')}
+						</button>
 						<button type="button" class="btn btn-sm btn-danger" onclick={() => (doomedId = one.id)}>
 							<Icon name="trash" class="mr-1.5" />
 							{t('audio.delete')}
@@ -183,6 +210,50 @@
 		</div>
 	</div>
 {/if}
+
+<!--
+	A recording, as an idea.
+
+	The composer is the ideas room's own fields, not a lesser copy of them, so
+	tags and the rest are here too. The link to the recording is already in the
+	box: it is an ordinary markdown link, which is what the note and idea forms
+	write, so an export or another editor still shows something that works.
+-->
+<Modal
+	open={ideaOf !== null}
+	title={t('audio.makeAnIdea')}
+	description={ideaOf?.name ?? ''}
+	error={form?.message}
+	onclose={() => (ideaOf = null)}
+	size="sm"
+>
+	{#if ideaOf}
+		<AudioPlayer src="/media/audio/{ideaOf.id}" label={ideaOf.name} class="mb-3 w-full" />
+		<form
+			id="audio-idea-form"
+			method="post"
+			action="?/toIdea"
+			use:enhance={() =>
+				async ({ result, update }) => {
+					await update({ reset: false });
+					if (result.type === 'success') ideaOf = null;
+				}}
+		>
+			<FormGrid>
+				<IdeaFields content={ideaSeed} compact />
+			</FormGrid>
+		</form>
+	{/if}
+
+	{#snippet footer()}
+		<button type="button" class="btn" onclick={() => (ideaOf = null)}>{t('ui.notNow')}</button>
+		<button type="submit" form="audio-idea-form" class="btn btn-primary"
+			>{t('audio.keepTheIdea')}</button
+		>
+	{/snippet}
+</Modal>
+
+<FormError message={form?.message} />
 
 <!--
 	Asked before it happens, the way every other deletion in the app is.

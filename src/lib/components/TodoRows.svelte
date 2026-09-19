@@ -5,7 +5,9 @@
 	import { enhance } from '$app/forms';
 	import Backlinks from '$lib/components/Backlinks.svelte';
 	import TodoFields from '$lib/components/fields/TodoFields.svelte';
+	import AudioPlayer from '$lib/components/AudioPlayer.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
+	import { AUDIO_HREF, splitAudio } from '$lib/audio-markdown';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { getAction, keyFor } from '$lib/shortcuts';
@@ -710,8 +712,25 @@
 									</span>
 								{/if}
 							</div>
+							<!--
+								A recording is a player, not the address of one.
+
+								Notes are drawn as a line of text, and a recording is stored
+								as an ordinary markdown link — right for the text, wrong on
+								the screen, where it reads as
+								`[ring the plumber](/media/audio/40)` across the row. The
+								link comes out of the line and the recording is drawn under
+								it. It is always there when there is one, so nothing moves
+								when the row is pressed.
+							-->
 							{#if todo.notes}
-								<p class="truncate text-xs text-gray-500">{todo.notes}</p>
+								{@const spoken = splitAudio(todo.notes)}
+								{#if spoken.text}
+									<p class="truncate text-xs text-gray-500">{spoken.text}</p>
+								{/if}
+								{#each spoken.audios as audioId (audioId)}
+									<AudioPlayer src="{AUDIO_HREF}/{audioId}" class="mt-1 max-w-72" />
+								{/each}
 							{/if}
 							<Backlinks
 								goals={goalLinks[todo.id]}

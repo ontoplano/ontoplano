@@ -262,6 +262,8 @@ export const messages: Catalogue = {
 	'audio.full':
 		'Das sind bereits {count} Aufnahmen. Löschen Sie eine, um eine weitere zu behalten.',
 	'audio.held': { one: '{count} Aufnahme', other: '{count} Aufnahmen' },
+	'audio.keepTheIdea': 'Idee behalten',
+	'audio.makeAnIdea': 'Zur Idee machen',
 	'audio.nameIt': 'Wie soll sie heißen',
 	'audio.noMicrophone': 'Dieses Gerät hat der App kein Mikrofon gegeben.',
 	'audio.none': 'Noch nichts aufgenommen.',
@@ -3341,6 +3343,7 @@ export const messages: Catalogue = {
 	'ui.name': 'Name',
 	'ui.next': 'Weiter',
 	'ui.none': '— keine —',
+	'ui.notNow': 'Jetzt nicht',
 	'ui.notebook': 'Notizbuch',
 	'ui.notes': 'Notizen',
 	'ui.open': 'Öffnen',

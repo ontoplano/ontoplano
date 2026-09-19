@@ -238,6 +238,8 @@
 		"one": "{count} gravação",
 		"other": "{count} gravações"
 	},
+	"audio.keepTheIdea": "Guardar a ideia",
+	"audio.makeAnIdea": "Virar uma ideia",
 	"audio.nameIt": "Como chamar",
 	"audio.noMicrophone": "Este aparelho não liberou um microfone para o aplicativo.",
 	"audio.none": "Nada gravado ainda.",
@@ -2864,6 +2866,7 @@
 	"ui.name": "Nome",
 	"ui.next": "Próximo",
 	"ui.none": "— nenhum —",
+	"ui.notNow": "Agora não",
 	"ui.notebook": "Caderno",
 	"ui.notes": "Notas",
 	"ui.open": "Abrir",

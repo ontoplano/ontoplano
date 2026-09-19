@@ -20,6 +20,14 @@ releases mattered.
 
 ## 0.180.1 — 2026-09-19
 
+- **A to-do takes a recording.** "Ring the plumber about the thing behind the
+  boiler" is quicker said than typed, so the notes box on a task offers the
+  same recorder a note and an idea already had, and the task's row plays it
+  back rather than showing the address of a file.
+- **A recording can become an idea the moment it is made.** Finishing one on
+  the recordings page now offers to write an idea around it, with the
+  recording already in the box — and the same button is on every row, so one
+  made last month is no harder to use than one made just now.
 - **A notebook's notes can be put in the order you want them.** They are still
   read in the order they were written, which is what a notebook is for, but
   there is now a picker above the list for title or last edited, and an arrow

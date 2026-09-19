@@ -4,6 +4,7 @@ import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/http-errors';
 import { audioLimits, defaultAudioName, list, remove, rename } from '$lib/services/audio';
+import { createIdea } from '$lib/services/ideas';
 
 /**
  * What the recordings tab needs, and the two things it can do without bytes.
@@ -48,6 +49,29 @@ export const actions: Actions = {
 		try {
 			remove(buildCtx(locals.user!.id), Number(form.get('id')));
 			return { success: true, action: 'remove' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
+	 * The recording, as an idea.
+	 *
+	 * Saying something into the phone and then having to go to another room,
+	 * open a form and reach back for the file is three steps between having a
+	 * thought and writing it down — which is the whole thing ideas are for. The
+	 * recording is not copied: the idea carries the same markdown link the note
+	 * and idea forms already write, so it is one recording with something
+	 * pointing at it.
+	 */
+	toIdea: async ({ request, locals }: IsolatedEvent) => {
+		const form = await request.formData();
+		try {
+			createIdea(buildCtx(locals.user!.id), {
+				content: form.get('content'),
+				tags: form.get('tags')
+			});
+			return { success: true, action: 'toIdea' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

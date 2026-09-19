@@ -4,6 +4,7 @@
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import NotebookField from '$lib/components/NotebookField.svelte';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
+	import RecordingAttach from '$lib/components/RecordingAttach.svelte';
 	import { RATINGS, type Rating } from '$lib/ratings';
 	import { useT } from '$lib/i18n';
 
@@ -36,6 +37,9 @@
 		compact?: boolean;
 	} = $props();
 
+	/** The notes box, so a recording can be dropped into it where the cursor is. */
+	let box = $state<HTMLTextAreaElement>();
+
 	const ratingsSet = $derived(RATINGS.filter((r) => ratings[r] !== null).length);
 	const filled = $derived(
 		ratingsSet + (categoryId ? 1 : 0) + (notebookId ? 1 : 0) + (notes ? 1 : 0)
@@ -63,7 +67,11 @@
 	<NotebookField {notebooks} value={notebookId} />
 
 	<Field label={t('ui.notes')} span={12}>
-		<textarea name="notes" rows="3" class="textarea">{notes}</textarea>
+		<textarea bind:this={box} name="notes" rows="3" class="textarea">{notes}</textarea>
+		<!-- A task said out loud is still a task: the same attachment a note and
+		     an idea have, because "ring the plumber about the thing behind the
+		     boiler" is quicker said than typed. -->
+		<RecordingAttach target={box} />
 	</Field>
 {/snippet}
 
