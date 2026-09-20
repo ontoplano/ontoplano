@@ -1264,9 +1264,9 @@
 										-->
 										<div class="card-opened mt-1.5 rounded px-2 py-1.5">
 											{#if card.notes}
-												<Written content={card.notes} compact />
+												<Written content={card.notes} compact inheritInk />
 											{:else}
-												<p class="text-xs text-gray-700 italic">
+												<p class="text-xs italic opacity-75">
 													{t('tasks.board.nothingWrittenOnThisOne')}
 												</p>
 											{/if}
@@ -1410,9 +1410,9 @@
 								<!-- The same wash the column cards use. See `.card-opened`. -->
 								<div class="card-opened mt-1.5 rounded px-2 py-1.5">
 									{#if card.notes}
-										<Written content={card.notes} compact />
+										<Written content={card.notes} compact inheritInk />
 									{:else}
-										<p class="text-xs text-gray-700 italic">
+										<p class="text-xs italic opacity-75">
 											{t('tasks.board.nothingWrittenOnThisOne')}
 										</p>
 									{/if}
@@ -1508,7 +1508,15 @@
 	 * it", defined per theme, so it reads on a light card and on a dark one
 	 * without being written twice.
 	 */
+	/*
+	 * A card's ground is its category's colour — brown, teal, blue, or the
+	 * plain one — so no fixed grey is readable on all of them. The wash is a
+	 * shade of whatever is under it and the words take the card's own ink,
+	 * which is already the colour chosen to be read against that ground.
+	 * `text-gray-700` on a pale card was grey on grey.
+	 */
 	.card-opened {
 		background: var(--hover-wash);
+		color: inherit;
 	}
 </style>

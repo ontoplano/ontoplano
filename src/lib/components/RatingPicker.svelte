@@ -83,16 +83,7 @@
 			thumb parked on the dot rather than a second thing to find. Drawn behind
 			the input, which paints its thumb over it.
 		-->
-			<!--
-				Answered or not, said by the control and not only by the number.
-
-				A one is the thumb a fifth of the way along a thin track, which at
-				a glance is the same picture as unanswered — and the two mean
-				opposite things. So an answered slider sits on a wash of its own,
-				and an unanswered one sits on nothing: the state is the size of
-				the control rather than the size of the number beside it.
-			-->
-			<div class="rating-lane relative min-w-0 flex-1" class:is-answered={value !== null}>
+			<div class="relative min-w-0 flex-1">
 				<span aria-hidden="true" class="rating-off"></span>
 
 				<input
@@ -108,6 +99,7 @@
 						? `${t(RATING_LABELS[rating])}: not answered`
 						: `${t(RATING_LABELS[rating])}: ${value} of ${RATING_MAX} — drag to the dot to leave it unanswered`}
 					class="rating-slide relative w-full"
+					class:is-unset={value === null}
 					style="--filled: {filled}%"
 				/>
 			</div>
@@ -151,25 +143,6 @@
 </div>
 
 <style>
-	/*
-	 * The lane an answered slider sits in.
-	 *
-	 * `--hover-wash` is the app's own "slightly different from what is under
-	 * it", defined per theme, so this reads on a light form and a dark one
-	 * without being written twice. Inset so the wash sits under the track
-	 * rather than under the whole row, and rounded to the track's own ends.
-	 */
-	.rating-lane {
-		border-radius: 9999px;
-		padding-inline: 0.375rem;
-		margin-inline: -0.375rem;
-		transition: background-color 120ms ease;
-	}
-
-	.rating-lane.is-answered {
-		background: var(--hover-wash);
-	}
-
 	/*
 	 * A range input, wearing this app's clothes.
 	 *
@@ -239,13 +212,21 @@
 		background: var(--color-gray-900);
 	}
 
-	/* Unanswered: the thumb is hollow, so a slider sitting at the dot does not
-	   read as a deliberate "lowest". */
-	.rating-slide[aria-valuetext='not set']::-webkit-slider-thumb {
+	/*
+	 * Unanswered: the thumb is hollow, so a slider sitting at the dot does not
+	 * read as a deliberate "lowest".
+	 *
+	 * Keyed on a class, not on `aria-valuetext`. That attribute holds the
+	 * *translated* words for "not set", so the selector matched in English and
+	 * in no other language — every Portuguese slider drew a solid thumb and an
+	 * unanswered one was indistinguishable from a one. A word the app
+	 * translates is never a thing the app matches on.
+	 */
+	.rating-slide.is-unset::-webkit-slider-thumb {
 		background: var(--color-gray-100);
 		box-shadow: inset 0 0 0 2px var(--color-gray-400);
 	}
-	.rating-slide[aria-valuetext='not set']::-moz-range-thumb {
+	.rating-slide.is-unset::-moz-range-thumb {
 		background: var(--color-gray-100);
 		box-shadow: inset 0 0 0 2px var(--color-gray-400);
 	}

@@ -821,14 +821,26 @@ export function baseGridOptions(
 		 */
 		locale,
 		dayHeaderFormat: month
-			? { weekday: 'short' }
+			? (date: Date) => weekdayShort(date, locale)
 			: days === 1
 				? { weekday: 'long', day: 'numeric', month: 'short' }
 				: narrow
 					? (date: Date) =>
 							`${date.getDate()}\n${date.toLocaleDateString(locale, { weekday: 'narrow' })}`
-					: { weekday: 'short', day: 'numeric' }
+					: (date: Date) => `${weekdayShort(date, locale)} ${date.getDate()}`
 	};
+}
+
+/**
+ * A weekday's short name, without the full stop some languages put on it.
+ *
+ * `weekday: 'short'` gives "dom." and "seg." in Portuguese — an abbreviation
+ * mark that is correct prose and wrong in a column header, where the width is
+ * three characters and the reader already knows it is short. English has none
+ * of them, which is why this only shows up once the grid speaks anything else.
+ */
+function weekdayShort(date: Date, locale: string | undefined): string {
+	return date.toLocaleDateString(locale, { weekday: 'short' }).replace(/\.+$/, '');
 }
 
 /** A `YYYY-MM-DD` shifted by whole days, staying a civil date. */

@@ -40,13 +40,27 @@
 		compact = false,
 		/** Cut to a single line. What a list shows until somebody asks for more. */
 		oneLine = false,
+		/**
+		 * Take the colour of whatever this sits on, rather than the palette's
+		 * grey. For a ground the palette does not know about — a board card
+		 * wears its category's colour, and grey on teal is grey on teal.
+		 */
+		inheritInk = false,
 		class: klass = ''
-	}: { content: string; compact?: boolean; oneLine?: boolean; class?: string } = $props();
+	}: {
+		content: string;
+		compact?: boolean;
+		oneLine?: boolean;
+		inheritInk?: boolean;
+		class?: string;
+	} = $props();
 
 	const spoken = $derived(splitAudio(content));
 	const shown = $derived(splitPictures(spoken.text));
 	const height = $derived(oneLine ? PICTURE_HEIGHT.compact : PICTURE_HEIGHT.full);
-	const type = $derived(compact ? 'text-xs text-gray-500' : 'text-sm text-gray-900');
+	const size = $derived(compact ? 'text-xs' : 'text-sm');
+	const ink = $derived(inheritInk ? 'opacity-90' : compact ? 'text-gray-500' : 'text-gray-900');
+	const type = $derived(`${size} ${ink}`);
 </script>
 
 {#if shown.text}
