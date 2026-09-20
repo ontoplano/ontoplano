@@ -1048,12 +1048,78 @@ export const todoTags = sqliteTable(
 			.references(() => todoTasks.id, { onDelete: 'cascade' }),
 		tagId: integer('tag_id')
 			.notNull()
-			.references(() => tags.id, { onDelete: 'cascade' })
+			.references(() => tags.id, { onDelete: 'cascade' }),
+		/*
+		 * When this label went on.
+		 *
+		 * A join with no date cannot answer "what has been done since I last
+		 * looked" — the todo's own `updated_at` moves for every edit, including
+		 * one that has nothing to do with its labels. With this, a chip can say
+		 * "3h ago", the list can be ordered by it, and a review queue can be
+		 * read by age rather than by memory.
+		 */
+		taggedAt: text('tagged_at')
 	},
 	(table) => [
 		index('todo_tags_user_idx').on(table.userId),
 		index('todo_tags_todo_idx').on(table.todoId),
 		index('todo_tags_tag_idx').on(table.tagId)
+	]
+);
+
+/**
+ * The same labels, on the two kinds of block.
+ *
+ * A task with no day is a `todo_task`; a thing that happens at a time is a
+ * `recurring_task` or an `exceptional_task`. Labels belonged to the first
+ * only, which made them a property of one shape of task rather than of a task
+ * — so "everything about the move" could not include the three hours booked
+ * for it.
+ *
+ * Both point at the one `tags` table: a word used on a todo is the same word
+ * here, which is the whole reason there is a single vocabulary.
+ */
+export const recurringTaskTags = sqliteTable(
+	'recurring_task_tags',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		taskId: integer('task_id')
+			.notNull()
+			.references(() => recurringTasks.id, { onDelete: 'cascade' }),
+		tagId: integer('tag_id')
+			.notNull()
+			.references(() => tags.id, { onDelete: 'cascade' }),
+		taggedAt: text('tagged_at')
+	},
+	(table) => [
+		index('recurring_task_tags_user_idx').on(table.userId),
+		index('recurring_task_tags_task_idx').on(table.taskId),
+		index('recurring_task_tags_tag_idx').on(table.tagId)
+	]
+);
+
+export const exceptionalTaskTags = sqliteTable(
+	'exceptional_task_tags',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		taskId: integer('task_id')
+			.notNull()
+			.references(() => exceptionalTasks.id, { onDelete: 'cascade' }),
+		tagId: integer('tag_id')
+			.notNull()
+			.references(() => tags.id, { onDelete: 'cascade' }),
+		taggedAt: text('tagged_at')
+	},
+	(table) => [
+		index('exceptional_task_tags_user_idx').on(table.userId),
+		index('exceptional_task_tags_task_idx').on(table.taskId),
+		index('exceptional_task_tags_tag_idx').on(table.tagId)
 	]
 );
 

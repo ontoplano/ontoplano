@@ -174,6 +174,8 @@ export const USER_TABLES: OwnedTable[] = [
 	owned('habits', schema.habits as never),
 	owned('taskRecords', schema.taskRecords as never),
 	owned('suppressedSlots', schema.suppressedSlots as never),
+	// The join before the rows it points at, as with `todoTags`.
+	owned('exceptionalTaskTags', schema.exceptionalTaskTags as never),
 	owned('exceptionalTasks', schema.exceptionalTasks as never),
 	owned('auditEvents', schema.auditEvents as never),
 	// What the assistants did, before/after included — as much the account's
@@ -199,6 +201,7 @@ export const USER_TABLES: OwnedTable[] = [
 	owned('media', schema.media as never),
 	// Last of the subjects: entries, todos, goals and blocks all point at it.
 	owned('notebooks', schema.notebooks as never),
+	owned('recurringTaskTags', schema.recurringTaskTags as never),
 	owned('recurringTasks', schema.recurringTasks as never),
 	owned('activities', schema.activities as never),
 	owned('categories', schema.categories as never),

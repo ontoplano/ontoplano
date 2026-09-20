@@ -1,6 +1,6 @@
 import { db } from '$lib/db/index.js';
 import { tags, diaryEntryTags, ideaTags, mediaTags, todoTags } from '$lib/db/schema';
-import { eq, and, notInArray } from 'drizzle-orm';
+import { eq, and, inArray, notInArray } from 'drizzle-orm';
 import { ValidationError } from './errors.js';
 
 /**
@@ -138,19 +138,39 @@ export function replaceIdeaTags(ideaId: number, tagNames: string[], userId: stri
 }
 
 export function linkTodoTags(todoId: number, tagIds: number[], userId: string): void {
+	const now = new Date().toISOString();
 	for (const tagId of tagIds) {
-		db.insert(todoTags).values({ userId, todoId, tagId }).run();
+		db.insert(todoTags).values({ userId, todoId, tagId, taggedAt: now }).run();
 	}
 }
 
+/**
+ * Set the labels to exactly these, without forgetting when the old ones went on.
+ *
+ * This used to delete every row and write them all back, which is the same
+ * answer and a different history: a label that had been there a week came back
+ * dated today, so "what was tagged since I last looked" was whatever had been
+ * edited since. Now only the difference moves — the ones going away are
+ * dropped, the new ones are dated, and a label that was already there is left
+ * exactly as it was.
+ */
 export function replaceTodoTags(todoId: number, tagNames: string[], userId: string): void {
-	db.delete(todoTags)
-		.where(and(eq(todoTags.todoId, todoId), eq(todoTags.userId, userId)))
-		.run();
+	const wanted = new Set(tagNames.length > 0 ? ensureTagIds(tagNames, userId) : []);
 
-	if (tagNames.length > 0) {
-		linkTodoTags(todoId, ensureTagIds(tagNames, userId), userId);
+	const have = db
+		.select({ id: todoTags.id, tagId: todoTags.tagId })
+		.from(todoTags)
+		.where(and(eq(todoTags.todoId, todoId), eq(todoTags.userId, userId)))
+		.all();
+
+	const dropping = have.filter((row) => !wanted.has(row.tagId)).map((row) => row.id);
+	if (dropping.length > 0) {
+		db.delete(todoTags).where(inArray(todoTags.id, dropping)).run();
 	}
+
+	const already = new Set(have.map((row) => row.tagId));
+	const adding = [...wanted].filter((tagId) => !already.has(tagId));
+	if (adding.length > 0) linkTodoTags(todoId, adding, userId);
 }
 
 export function linkMediaTags(mediaId: number, tagIds: number[], userId: string): void {

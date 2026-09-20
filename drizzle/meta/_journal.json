@@ -610,6 +610,13 @@
       "when": 1789815385298,
       "tag": "0086_goal_targets_count_a_workout_measure",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "6",
+      "when": 1789928485978,
+      "tag": "0087_tags_carry_a_date_and_reach_blocks",
+      "breakpoints": true
     }
   ]
 }
