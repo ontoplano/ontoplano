@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Picker from '$lib/components/Picker.svelte';
 	import { monthOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { enhance } from '$app/forms';
@@ -339,17 +340,15 @@
 					nothing. A list of the months there is something to look at is
 					native everywhere, and shorter.
 				-->
-				<select
-					class="select w-auto"
-					aria-label={t('finance.ledgers.month')}
-					value={data.month}
-					onchange={(e) => filter({ month: (e.currentTarget as HTMLSelectElement).value })}
-				>
-					<option value="">{t('finance.ledgers.everyMonth')}</option>
-					{#each data.months as m (m)}
-						<option value={m}>{monthName(m)}</option>
-					{/each}
-				</select>
+				<Picker
+					value={data.month ?? ''}
+					options={[
+						{ value: '', label: t('finance.ledgers.everyMonth') },
+						...data.months.map((m) => ({ value: m, label: monthName(m) }))
+					]}
+					onpick={(next) => filter({ month: next })}
+					label={t('finance.ledgers.month')}
+				/>
 				{#if data.query || data.month}
 					<button class="btn btn-sm" onclick={() => filter({ q: '', month: '' })}
 						>{t('finance.ledgers.clear')}</button

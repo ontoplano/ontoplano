@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { say } from '$lib/said.svelte';
+	import Picker from '$lib/components/Picker.svelte';
 	import SortControl from '$lib/components/SortControl.svelte';
 	import { agoOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
@@ -327,6 +328,24 @@
 		)
 	);
 
+	/*
+	 * The two filters, as the picker wants them.
+	 *
+	 * "Every" and "not in one" first, because they are answers rather than the
+	 * absence of an answer, and then whatever this account actually has.
+	 */
+	let notebookChoices = $derived([
+		{ value: '', label: t('todoRows.everyNotebook') },
+		{ value: 'none', label: t('todoRows.notInOne') },
+		...notebooks.map((book) => ({ value: String(book.id), label: book.title }))
+	]);
+
+	let tagChoices = $derived([
+		{ value: '', label: t('todoRows.everyTag') },
+		{ value: 'none', label: t('todoRows.noTag') },
+		...tagsInUse.map((name) => ({ value: name, label: name }))
+	]);
+
 	/** How many are hidden by the two toggles, so neither is a silent filter. */
 	let putAway = $derived(inScope.filter((t: Todo) => t.archivedAt !== null).length);
 
@@ -594,39 +613,31 @@
 			</button>
 			{#if notebookId === null}
 				<!-- "Not in one" is an answer, not the absence of a filter: a task
-				     nobody has placed is the thing people go looking for. -->
-				<!-- A minimum that fits the word: two pickers both squeezed to
-				     "Ever…" are two controls nobody can tell apart, which is what
-				     giving up width first cost the moment there was a second one.
-				     The row wraps instead. -->
-				<label class="min-w-36 flex-1 text-sm sm:flex-none">
-					<span class="sr-only">{t('ui.notebook')}</span>
-					<select bind:value={notebookFilter} class="select w-full">
-						<option value="">{t('todoRows.everyNotebook')}</option>
-						<option value="none">{t('todoRows.notInOne')}</option>
-						{#each notebooks as book (book.id)}
-							<option value={String(book.id)}>{book.title}</option>
-						{/each}
-					</select>
-				</label>
+				     nobody has placed is the thing people go looking for.
+
+				     A `Picker` rather than a `<select>`: a form field dropped into
+				     a row of buttons is a form field that wandered in, and these
+				     two narrow what is on screen rather than submitting anything.
+				     Wide enough for the word — two controls both squeezed to
+				     "Ever…" are two controls nobody can tell apart. -->
+				<Picker
+					value={notebookFilter}
+					options={notebookChoices}
+					onpick={(next) => (notebookFilter = next)}
+					label={t('ui.notebook')}
+					class="min-w-36 flex-1 sm:flex-none"
+				/>
 			{/if}
 			<!-- Only where there is something to pick: a list nobody has labelled
 			     gets no control for labels. -->
 			{#if tagsInUse.length > 0}
-				<label class="min-w-28 flex-1 text-sm sm:flex-none">
-					<span class="sr-only">{t('todoRows.filterByTag')}</span>
-					<select
-						bind:value={tagFilter}
-						class="select w-full"
-						aria-label={t('todoRows.filterByTag')}
-					>
-						<option value="">{t('todoRows.everyTag')}</option>
-						<option value="none">{t('todoRows.noTag')}</option>
-						{#each tagsInUse as name (name)}
-							<option value={name}>{name}</option>
-						{/each}
-					</select>
-				</label>
+				<Picker
+					value={tagFilter}
+					options={tagChoices}
+					onpick={(next) => (tagFilter = next)}
+					label={t('todoRows.filterByTag')}
+					class="min-w-28 flex-1 sm:flex-none"
+				/>
 			{/if}
 			<!--
 				Pushed to the right end, but only where there is a right end.

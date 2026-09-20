@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **The filters in a toolbar are the app's own control, not a `<select>`.** The
+  tag and notebook filters on the task list, and the ledger, window, tag and
+  month filters in Finance, are the same button-and-menu the sort control uses.
+- **A menu's chosen row can be read again.** It was marked with a near-white
+  wash under the white ink of the dark overlay face.
 - **A board card puts its time under its title.** The time sat in front of the
   title and cost it five characters on every card that had one, and the badge
   line only existed when there was a badge — so a card wearing one label stood

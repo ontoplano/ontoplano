@@ -49,14 +49,16 @@ test('the notebook filter has an answer for the unfiled', async ({ page }) => {
 	await visit(page, '/tasks/todo');
 	await addTodo(page, 'a task nobody filed');
 
-	const filter = page.getByRole('combobox').first();
-	await expect(filter.getByRole('option', { name: 'Not in one' })).toBeAttached();
-	await expect(filter.getByRole('option', { name: 'Kitchen' })).toBeAttached();
+	const filter = page.getByRole('button', { name: 'Notebook', exact: true });
+	await filter.click();
+	await expect(page.getByRole('option', { name: 'Not in one' })).toBeVisible();
+	await expect(page.getByRole('option', { name: 'Kitchen' })).toBeVisible();
 
 	// Filed under nothing, so "Not in one" keeps it and the notebook drops it.
-	await filter.selectOption('none');
+	await page.getByRole('option', { name: 'Not in one' }).click();
 	await expect(page.getByText('a task nobody filed').first()).toBeVisible();
 
-	await filter.selectOption({ label: 'Kitchen' });
+	await filter.click();
+	await page.getByRole('option', { name: 'Kitchen' }).click();
 	await expect(page.getByText('a task nobody filed')).toHaveCount(0);
 });

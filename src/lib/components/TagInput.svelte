@@ -226,7 +226,7 @@
 						type="button"
 						role="option"
 						aria-selected={i === at}
-						class="block w-full px-3 py-2 text-left text-sm {i === at ? 'bg-gray-100' : ''}"
+						class="block w-full px-3 py-2 text-left text-sm {i === at ? 'overlay-face-on' : ''}"
 						onmousedown={(e) => {
 							e.preventDefault();
 							add(tag);

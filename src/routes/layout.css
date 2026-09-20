@@ -1377,6 +1377,18 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
+	 * The row in force, on that same face.
+	 *
+	 * A menu on the dark face marked its chosen row with `bg-gray-100`, which
+	 * paints near-white under the white ink the face gives everything on it —
+	 * the one row you most need to read was the one you could not. A wash of
+	 * the face's own ink says the same thing and stays readable.
+	 */
+	.overlay-face-on {
+		background-color: rgb(255 255 255 / 0.12);
+	}
+
+	/*
 	 * A row that is being held at the top of its list.
 	 *
 	 * Sorting alone stops saying anything once there are three of them above a

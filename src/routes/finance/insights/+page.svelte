@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Picker from '$lib/components/Picker.svelte';
 	import { monthOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { goto } from '$app/navigation';
@@ -48,22 +49,26 @@
 <div class="space-y-5">
 	<!-- What is being looked at. -->
 	<div class="flex flex-wrap items-center gap-2">
-		<select
-			class="select select-sm w-auto"
-			value={data.ledgerId}
-			onchange={(e) => filter({ ledger: Number((e.currentTarget as HTMLSelectElement).value) })}
-		>
-			<option value={0}>{t('finance.insights.everyLedger')}</option>
-			{#each data.ledgers as l (l.id)}<option value={l.id}>{l.name}</option>{/each}
-		</select>
-		<select
-			class="select select-sm w-auto"
-			value={data.months}
-			onchange={(e) => filter({ months: Number((e.currentTarget as HTMLSelectElement).value) })}
-		>
-			{#each WINDOWS as w (w)}<option value={w}>{t('finance.insights.lastMonths', { w: w })}</option
-				>{/each}
-		</select>
+		<!-- Pickers rather than `<select>`s: these narrow what is on screen and
+		     stand in a row of buttons. See `Picker`. -->
+		<Picker
+			value={String(data.ledgerId)}
+			options={[
+				{ value: '0', label: t('finance.insights.everyLedger') },
+				...data.ledgers.map((l) => ({ value: String(l.id), label: l.name }))
+			]}
+			onpick={(next) => filter({ ledger: Number(next) })}
+			label={t('finance.insights.everyLedger')}
+		/>
+		<Picker
+			value={String(data.months)}
+			options={WINDOWS.map((w) => ({
+				value: String(w),
+				label: t('finance.insights.lastMonths', { w })
+			}))}
+			onpick={(next) => filter({ months: Number(next) })}
+			label={t('finance.insights.lastMonths', { w: data.months })}
+		/>
 		{#if data.totals.length > 0}
 			<span class="text-xs text-gray-500">
 				{monthName(data.totals[0].month)} – {monthName(data.totals[data.totals.length - 1].month)}
@@ -153,13 +158,12 @@
 			<div class="mb-1 flex flex-wrap items-center gap-2">
 				<h2 class="text-sm font-semibold text-gray-900">{t('finance.insights.whatOneTagCosts')}</h2>
 				{#if data.tags.length > 0}
-					<select
-						class="select select-sm w-auto"
-						value={data.tag}
-						onchange={(e) => filter({ tag: (e.currentTarget as HTMLSelectElement).value })}
-					>
-						{#each data.tags as tag (tag.name)}<option value={tag.name}>#{tag.name}</option>{/each}
-					</select>
+					<Picker
+						value={data.tag ?? ''}
+						options={data.tags.map((tag) => ({ value: tag.name, label: `#${tag.name}` }))}
+						onpick={(next) => filter({ tag: next })}
+						label={t('finance.insights.whatOneTagCosts')}
+					/>
 				{/if}
 			</div>
 

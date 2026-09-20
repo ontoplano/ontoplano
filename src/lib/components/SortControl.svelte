@@ -12,9 +12,11 @@
 	 * So: one control with the behaviour of the first and the manners of the
 	 * second. The button says what the order is; pressing it opens the list;
 	 * the arrow beside it flips the direction and says which way it is
-	 * currently going.
+	 * currently going. The menu itself is `Picker`, which the filters beside
+	 * this one use too, so a toolbar has one kind of control in it.
 	 */
 	import Icon from '$lib/components/Icon.svelte';
+	import Picker from '$lib/components/Picker.svelte';
 	import { useT } from '$lib/i18n';
 	import type { PlainKey } from '$lib/i18n/keys';
 
@@ -40,40 +42,12 @@
 
 	const t = useT();
 
-	let open = $state(false);
-	let root = $state<HTMLElement>();
-
-	/*
-	 * Pressing anywhere else closes it. A menu that only closes by choosing
-	 * something makes choosing nothing impossible.
-	 */
-	function elsewhere(event: MouseEvent) {
-		if (!open || !root) return;
-		if (!root.contains(event.target as Node)) open = false;
-	}
-
-	function onKey(event: KeyboardEvent) {
-		if (open && event.key === 'Escape') {
-			event.preventDefault();
-			open = false;
-		}
-	}
+	/* The orders, as the picker wants them: a value and the word for it. */
+	const choices = $derived(options.map((one) => ({ value: one, label: t(labels[one]) })));
 </script>
 
-<svelte:window onclick={elsewhere} onkeydown={onKey} />
-
-<div bind:this={root} class="relative flex shrink-0 items-center gap-1">
-	<button
-		type="button"
-		class="btn btn-sm"
-		aria-haspopup="listbox"
-		aria-expanded={open}
-		aria-label={label}
-		onclick={() => (open = !open)}
-	>
-		{t(labels[value])}
-		<Icon name="chevron-down" size={12} />
-	</button>
+<div class="flex shrink-0 items-center gap-1">
+	<Picker {value} options={choices} {onpick} {label} />
 
 	<!--
 		The direction, beside the order rather than inside it.
@@ -95,36 +69,4 @@
 	>
 		<Icon name={direction === 'asc' ? 'arrow-up' : 'arrow-down'} />
 	</button>
-
-	{#if open}
-		<ul
-			class="overlay-face absolute top-full right-0 z-20 mt-1 min-w-36 overflow-hidden border shadow-overlay"
-			role="listbox"
-			aria-label={label}
-		>
-			{#each options as option (option)}
-				<li role="presentation">
-					<button
-						type="button"
-						role="option"
-						aria-selected={option === value}
-						class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm {option === value
-							? 'bg-gray-100'
-							: ''}"
-						onclick={() => {
-							onpick(option);
-							open = false;
-						}}
-					>
-						<!-- The tick keeps its place, so the row does not shift when the
-						     chosen one changes. -->
-						<span class="w-3 shrink-0">
-							{#if option === value}<Icon name="check" size={12} />{/if}
-						</span>
-						{t(labels[option])}
-					</button>
-				</li>
-			{/each}
-		</ul>
-	{/if}
 </div>

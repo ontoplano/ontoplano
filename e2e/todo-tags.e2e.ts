@@ -46,10 +46,11 @@ test('a task takes labels, and the list narrows to one', async ({ page }) => {
 	await page.getByRole('button', { name: '#a2' }).click();
 	await expect(page.getByText('renew the domain')).toBeVisible();
 
-	// The picker offers what is actually on the list, and nothing else.
-	const picker = page.getByLabel('Filter by tag');
-	await expect(picker.locator('option')).toHaveText(['Every tag', 'Untagged', 'a1', 'a2', 'done']);
-	await picker.selectOption('a1');
+	// The picker offers what is actually on the list, and nothing else. It is
+	// the app's own menu rather than a `<select>` — see `Picker`.
+	await page.getByRole('button', { name: 'Filter by tag' }).click();
+	await expect(page.getByRole('option')).toHaveText(['Every tag', 'Untagged', 'a1', 'a2', 'done']);
+	await page.getByRole('option', { name: 'a1', exact: true }).click();
 	await expect(page.getByText('renew the domain')).toBeVisible();
 	await expect(page.getByText('call the vet')).toHaveCount(0);
 });
