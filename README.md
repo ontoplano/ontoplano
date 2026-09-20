@@ -55,7 +55,7 @@ their own Node, so there is nothing else to install. A packaged install keeps
 its settings in `/etc/ontoplano/` and its database in `/var/lib/ontoplano/`.
 There is no Windows installer yet — [help build one](CONTRIBUTING.md).
 
-### docker
+### Docker
 
 ```sh
 docker run -d --name ontoplano -p 1493:1493 \
@@ -68,8 +68,7 @@ docker run -d --name ontoplano -p 1493:1493 \
 Register at `/login` — **the first account owns the instance**, and after it
 registration is closed until changed at `/settings/instance`.
 
-The reminders timer comes installed. The Monday review mail does not — it needs
-SMTP; [the docs](https://docs.ontoplano.com/running-it) set it up.
+The reminders timer comes installed. 
 
 ## Developing it
 
@@ -109,13 +108,6 @@ phone.
 Signing in is an address and a password.
 Email is optional — without SMTP settings, confirmation and reset links are
 written to the server log instead of sent.
-
-## The name
-
-The code is AGPL-3.0-or-later. The name, the wordmark and the mark are not:
-they are trademarks, and [`TRADEMARK.md`](TRADEMARK.md) says what you may do
-with them — which includes shipping this software unmodified with its name and
-artwork intact, and does not include putting them on a fork.
 
 ## Sponsors
 
