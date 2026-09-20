@@ -2579,6 +2579,7 @@
 	"style.playfulHint": "Rounded, shadowless, and section colour on the chrome.",
 	"style.sober": "Sober",
 	"style.soberHint": "Square, flat, quiet. Colour belongs to your categories.",
+	"tags.removeTag": "Remove {tag}",
 	"taskStatus.doing": "Doing",
 	"taskStatus.pending": "Pending",
 	"tasks.activities.anActivityIsANamed": "An activity is a named thing you do — gym, Russian, deep work. Blocks on the grid point at these.",

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import TagInput from '$lib/components/TagInput.svelte';
+	import { page } from '$app/state';
 	import Field from '$lib/components/Field.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
@@ -72,7 +74,11 @@
 	<Field label={t('ui.tags')} span={12} hint={t('fields.todo.separateWithCommasOrSpaces')}>
 		<!-- The account's one vocabulary, not a second one: a word used on a
 		     diary entry is the same word here. -->
-		<OneLine name="tags" placeholder={t('fields.todo.tagsExample')} value={tags} class="input" />
+		<TagInput
+			value={tags}
+			known={page.data.tagVocabulary ?? []}
+			placeholder={t('fields.todo.tagsExample')}
+		/>
 	</Field>
 
 	<Field label={t('ui.notes')} span={12}>

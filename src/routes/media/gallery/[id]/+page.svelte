@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { page } from '$app/state';
+	import TagInput from '$lib/components/TagInput.svelte';
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -336,10 +338,9 @@
 				<input type="hidden" name="mediaId" value={viewing.id} />
 				<label class="block flex-1 text-sm">
 					<span class="text-gray-600">{t('ui.tags')}</span>
-					<OneLine
-						name="tags"
-						value={viewing.tags.join(' ')}
-						class="input mt-1 w-full"
+					<TagInput
+						value={viewing.tags.join(', ')}
+						known={page.data.tagVocabulary ?? []}
 						placeholder={t('gallery.id.tagsCommasOrSpaces')}
 					/>
 				</label>

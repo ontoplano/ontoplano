@@ -2842,6 +2842,7 @@ export const messages: Catalogue = {
 	'style.playfulHint': 'Abgerundet, schattenlos, mit Bereichsfarbe auf der Oberfläche.',
 	'style.sober': 'Nüchtern',
 	'style.soberHint': 'Eckig, flach, ruhig. Farbe gehört Ihren Kategorien.',
+	'tags.removeTag': '{tag} entfernen',
 	'taskStatus.doing': 'In Arbeit',
 	'taskStatus.pending': 'Ausstehend',
 	'tasks.activities.anActivityIsANamed':

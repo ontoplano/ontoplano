@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { page } from '$app/state';
+	import TagInput from '$lib/components/TagInput.svelte';
 	import { momentOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { enhance } from '$app/forms';
@@ -288,10 +290,9 @@
 			</div>
 			<label class="block">
 				<span class="text-sm font-medium text-gray-700">{t('ui.tags')}</span>
-				<OneLine
-					name="tags"
+				<TagInput
+					known={page.data.tagVocabulary ?? []}
 					placeholder={t('notebooks.diary.tagsCommasOrSpaces')}
-					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
 			</label>
 			<div class="flex items-center gap-2">

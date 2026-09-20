@@ -2766,6 +2766,7 @@ export const messages: Catalogue = {
 	'style.playfulHint': 'Rounded, shadowless, and section colour on the chrome.',
 	'style.sober': 'Sober',
 	'style.soberHint': 'Square, flat, quiet. Colour belongs to your categories.',
+	'tags.removeTag': 'Remove {tag}',
 	'taskStatus.doing': 'Doing',
 	'taskStatus.pending': 'Pending',
 	'tasks.activities.anActivityIsANamed':

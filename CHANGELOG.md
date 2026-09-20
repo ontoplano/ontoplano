@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **Typing a tag suggests the ones you already use.** The box splits on spaces
+  and commas as you type — which is what the server has always done with what
+  it holds, so "work urgent" was two tags and the box was the only thing that
+  did not say so. Settled words are chips, the one being typed offers what it
+  could be, and arrows and Enter pick one. Every place that takes tags.
 - **The app says so when you make, change or delete a task.** Making one
   offers a way straight into it rather than an undo — you asked for it and it
   is there, so the useful next move is saying more about it. Changing one says

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { page } from '$app/state';
+	import TagInput from '$lib/components/TagInput.svelte';
 	import { dayOf, momentOf, weekdayOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { resolve } from '$app/paths';
@@ -994,10 +996,9 @@
 							placeholder={t('home.whatSOnYourMind')}
 							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						></textarea>
-						<OneLine
-							name="tags"
+						<TagInput
+							known={page.data.tagVocabulary ?? []}
 							placeholder={t('home.tagsCommaSeparated')}
-							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						/>
 						<button type="submit" class="btn btn-primary btn-sm">
 							{t('ui.save')}

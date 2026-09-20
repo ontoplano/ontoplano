@@ -2408,6 +2408,7 @@ export type MessageKey =
 	| 'style.playfulHint'
 	| 'style.sober'
 	| 'style.soberHint'
+	| 'tags.removeTag'
 	| 'taskStatus.doing'
 	| 'taskStatus.pending'
 	| 'tasks.activities.anActivityIsANamed'
@@ -3397,6 +3398,7 @@ export interface MessageValuesFor {
 	'start.youGetFreeDaysEvenIf': { trialDaysAhead: string | number };
 	'streamChart.dateCountPoints': { count: number; date: string | number };
 	'streamChart.inAgainstOutByMonth': { inLabel: string | number; outLabel: string | number };
+	'tags.removeTag': { tag: string | number };
 	'tasks.board.edit': { title: string | number };
 	'tasks.board.minutesFull': { count: number };
 	'tasks.board.movingPickAColumn': { title: string | number };

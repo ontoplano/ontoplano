@@ -1,4 +1,6 @@
 <script lang="ts">
+	import TagInput from '$lib/components/TagInput.svelte';
+	import { page } from '$app/state';
 	import Field from '$lib/components/Field.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
@@ -73,7 +75,11 @@
 	{/if}
 
 	<Field label={t('ui.tags')} span={12} hint={t('fields.note.separateWithCommasOrSpaces')}>
-		<OneLine name="tags" placeholder={t('fields.note.tagsExample')} value={tags} class="input" />
+		<TagInput
+			value={tags}
+			known={page.data.tagVocabulary ?? []}
+			placeholder={t('fields.note.tagsExample')}
+		/>
 	</Field>
 {/snippet}
 

@@ -8,6 +8,7 @@
  * the server load's generated data type, so the two cannot drift without the
  * build saying so.
  */
+import { listTags } from '$lib/services/diary';
 import type { LayoutServerData } from './$types';
 import { redirect } from '@sveltejs/kit';
 import type { IsolatedEvent } from '$lib/isolated/routes';
@@ -62,6 +63,7 @@ export async function load(event: IsolatedEvent): Promise<LayoutServerData> {
 		// read off the one account this device has.
 		clock: getClock(user.id),
 		tz: ctx.tz,
+		tagVocabulary: listTags(ctx).map((one) => one.name),
 		hiddenSections: getHiddenSections(user.id),
 		navOrder: getNavOrder(user.id),
 		sectionColors: getSectionColors(user.id),

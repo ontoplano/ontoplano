@@ -2579,6 +2579,7 @@
 	"style.playfulHint": "Redondeado, sin sombras, y color de sección en la interfaz.",
 	"style.sober": "Sobrio",
 	"style.soberHint": "Cuadrado, plano, discreto. El color pertenece a tus categorías.",
+	"tags.removeTag": "Quitar {tag}",
 	"taskStatus.doing": "En curso",
 	"taskStatus.pending": "Pendiente",
 	"tasks.activities.anActivityIsANamed": "Una actividad es algo con nombre que haces — gimnasio, ruso, trabajo profundo. Los bloques de la cuadrícula apuntan a ellas.",

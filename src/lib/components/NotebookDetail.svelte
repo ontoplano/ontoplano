@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { page } from '$app/state';
+	import TagInput from '$lib/components/TagInput.svelte';
 	import { dateOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { untrack } from 'svelte';
@@ -781,7 +783,11 @@
 -->
 {#snippet tagsAndPeople(tags: string, people: string)}
 	<Field label={t('ui.tags')} span={6} hint={t('notebookDetail.separateWithCommasOrSpaces')}>
-		<OneLine name="tags" placeholder={t('notebookDetail.workHealth')} value={tags} class="input" />
+		<TagInput
+			value={tags}
+			known={page.data.tagVocabulary ?? []}
+			placeholder={t('notebookDetail.workHealth')}
+		/>
 	</Field>
 	<Field
 		label={t('notebookDetail.people')}

@@ -2,6 +2,7 @@ import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 import type { Clock } from '$lib/when';
 import { serverTimezone } from '$lib/services/ctx';
+import { listTags } from '$lib/services/diary';
 import {
 	DEFAULT_THEME,
 	DEFAULT_WEEK,
@@ -100,6 +101,8 @@ export const load: LayoutServerLoad = async (event) => {
 	let clock: Clock = 'auto';
 	/* The account's zone, so every screen writes a time in the same one. */
 	let tz = serverTimezone();
+	/* Every tag this account has used — one vocabulary, so the shell carries it. */
+	let tagVocabulary: string[] = [];
 	let week = DEFAULT_WEEK;
 	let hiddenSections: HideableSection[] = [];
 	let navOrder: string[] = [];
@@ -126,6 +129,7 @@ export const load: LayoutServerLoad = async (event) => {
 		theme = getTheme(ctx.userId);
 		clock = getClock(ctx.userId);
 		tz = ctx.tz;
+		tagVocabulary = listTags(ctx).map((one) => one.name);
 		week = getWeekSettings(ctx.userId);
 		hiddenSections = getHiddenSections(ctx.userId);
 		navOrder = getNavOrder(ctx.userId);
@@ -191,6 +195,7 @@ export const load: LayoutServerLoad = async (event) => {
 		 */
 		clock,
 		tz,
+		tagVocabulary,
 		// Sections this account has put away: out of every menu the shell
 		// renders, still answering at their URLs.
 		hiddenSections,

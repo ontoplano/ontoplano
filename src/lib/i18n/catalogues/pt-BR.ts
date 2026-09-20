@@ -2809,6 +2809,7 @@ export const messages: Catalogue = {
 	'style.playfulHint': 'Arredondado, sem sombras, e a cor da seção nos elementos do aplicativo.',
 	'style.sober': 'Sóbrio',
 	'style.soberHint': 'Quadrado, chapado, discreto. A cor pertence às suas categorias.',
+	'tags.removeTag': 'Remover {tag}',
 	'taskStatus.doing': 'Fazendo',
 	'taskStatus.pending': 'Pendente',
 	'tasks.activities.anActivityIsANamed':
