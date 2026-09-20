@@ -133,10 +133,16 @@ test('deleting the instance on the device leaves the server account untouched', 
 
 	// The account page the device has: no address, no password, one way out.
 	await go('/settings/account');
-	const end = page.getByRole('button', { name: 'Delete instance' });
-	await expect(end).toBeVisible({ timeout: 60_000 });
-	// And none of the server's cards, which are about a server.
-	await expect(page.getByRole('button', { name: 'Delete everything' })).toHaveCount(0);
+	// The danger zone is closed until it is opened — it should not draw the eye
+	// on a page people visit for other reasons.
+	const zone = page.locator('details.danger-zone');
+	await expect(zone).toBeVisible({ timeout: 60_000 });
+	await zone.locator('summary').click();
+	const end = zone.getByRole('button', { name: 'Delete instance' });
+	await expect(end).toBeVisible();
+	// And none of the server's cards, which are about a server. Asked of the
+	// zone with it open, so this cannot pass merely by being folded away.
+	await expect(zone.getByRole('button', { name: 'Delete everything' })).toHaveCount(0);
 	await expect(page.getByText('Email address')).toHaveCount(0);
 
 	await end.click();
