@@ -1473,6 +1473,10 @@ export const messages: Catalogue = {
 	'newsletter.off.nothingMoreWillBeSent': 'Nada mais será enviado para {email}.',
 	'newsletter.off.unsubscribedOntoplano': 'Inscrição cancelada · ontoplano',
 	'notebookDetail.addNote': 'Adicionar nota',
+	'notebookDetail.addWithTodos': {
+		one: 'Adicionar com {count} tarefa',
+		other: 'Adicionar com {count} tarefas'
+	},
 	'notebookDetail.alreadyDone': 'feita',
 	'notebookDetail.anaJoão': 'Ana, João',
 	'notebookDetail.anyoneThisNoteIsAbout': 'Qualquer pessoa sobre quem esta nota fala.',

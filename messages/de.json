@@ -1314,6 +1314,10 @@
 	"newsletter.off.nothingMoreWillBeSent": "Es wird nichts mehr an {email} gesendet.",
 	"newsletter.off.unsubscribedOntoplano": "Abgemeldet · ontoplano",
 	"notebookDetail.addNote": "Notiz hinzufügen",
+	"notebookDetail.addWithTodos": {
+		"one": "Mit {count} Aufgabe hinzufügen",
+		"other": "Mit {count} Aufgaben hinzufügen"
+	},
 	"notebookDetail.alreadyDone": "erledigt",
 	"notebookDetail.anaJoão": "Anna, Jonas",
 	"notebookDetail.anyoneThisNoteIsAbout": "Alle, um die es in dieser Notiz geht.",

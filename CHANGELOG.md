@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **A checklist becomes tasks from the composer, as you type it.** The offer
+  was an icon on the finished note's row, found afterwards by somebody who
+  went looking. It appears beside Add the instant a `- [ ]` does, says how
+  many it will make, and makes them with the note in one press. The row holds
+  its height so nothing shifts under the hand about to press Add.
 - **A reminder is in the bell list whether or not the app was open.** One that
   came due while you were looking at a page was raised by the page itself and
   written down nowhere, so the same reminder was in the list or not depending

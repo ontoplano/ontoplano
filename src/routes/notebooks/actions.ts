@@ -103,6 +103,21 @@ export const notebookActions = {
 				notebookId
 			});
 			setEntryPeople(ctx, id, formData.get('people'));
+
+			/*
+			 * A checklist written here becomes the tasks it describes, in one
+			 * press.
+			 *
+			 * The offer used to be an icon on the note's row, found after the
+			 * note was written and only by somebody who went looking. Offering
+			 * it while the checkboxes are being typed is the moment it is
+			 * wanted — so the composer shows it the instant a `- [ ]` appears,
+			 * and this is what that button posts.
+			 */
+			if (formData.get('alsoTodos')) {
+				const made = makeTodosFromEntry(ctx, id);
+				return { success: true, action: 'addEntry', made: made.ids.length };
+			}
 			return { success: true, action: 'addEntry' };
 		} catch (e) {
 			return toActionFailure(e);

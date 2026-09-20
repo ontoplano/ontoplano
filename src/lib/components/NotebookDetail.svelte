@@ -300,6 +300,9 @@
 	let openNewTodo = $state<(() => void) | undefined>(undefined);
 	/* Whether the goal form is open on this notebook. */
 	let composingGoal = $state(false);
+	/* What is in the composer, so the checklist offer can watch it. */
+	let composing_content = $state('');
+	const composingTodoCount = $derived(checklistItems(composing_content).length);
 	let goalHorizon = $state<Horizon>('week');
 	let goalStart = $state('');
 	let goalTargets = $state<FormTarget[]>([]);
@@ -701,6 +704,7 @@
 						/>
 						<textarea
 							bind:this={addBox}
+							bind:value={composing_content}
 							name="content"
 							rows="2"
 							required
@@ -729,7 +733,31 @@
 								{@render tagsAndPeople('', '')}
 							</MoreOptions>
 						</div>
-						<div class="mt-2 flex justify-end">
+						<!--
+							The checklist offer, where the checkboxes are being typed.
+
+							It used to be an icon on the finished note's row, found
+							afterwards by somebody who went looking. The moment it is
+							wanted is while the list is being written, so it appears the
+							instant a `- [ ]` does.
+
+							The row holds its height whether or not the button is in it,
+							so a checkbox typed into the third line does not shift the
+							composer under the hand about to press Add.
+						-->
+						<div class="mt-2 flex min-h-8 items-center justify-end gap-2">
+							{#if composingTodoCount > 0}
+								<button
+									type="submit"
+									name="alsoTodos"
+									value="1"
+									class="btn btn-sm"
+									title={t('notebookDetail.makeTodosOfTheCheckboxes')}
+								>
+									<Icon name="check" />
+									{t('notebookDetail.addWithTodos', { count: composingTodoCount })}
+								</button>
+							{/if}
 							<button class="btn btn-primary btn-sm"
 								><Icon name="plus" /> {t('notebookDetail.addNote')}</button
 							>

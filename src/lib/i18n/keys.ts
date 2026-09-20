@@ -1302,6 +1302,7 @@ export type MessageKey =
 	| 'newsletter.off.nothingMoreWillBeSent'
 	| 'newsletter.off.unsubscribedOntoplano'
 	| 'notebookDetail.addNote'
+	| 'notebookDetail.addWithTodos'
 	| 'notebookDetail.alreadyDone'
 	| 'notebookDetail.anaJoão'
 	| 'notebookDetail.anyoneThisNoteIsAbout'
@@ -3233,6 +3234,7 @@ export interface MessageValuesFor {
 	'media.importingProgress': { done: string | number; total: string | number };
 	'media.showWhatIsIn': { name: string | number };
 	'newsletter.off.nothingMoreWillBeSent': { email: string | number };
+	'notebookDetail.addWithTodos': { count: number };
 	'notebookDetail.madeTodos': { count: number };
 	'notebookDetail.makeCountTodos': { count: number };
 	'notebookDetail.showArchived': { count: number };
