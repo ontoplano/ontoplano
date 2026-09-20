@@ -345,6 +345,8 @@ export type MessageKey =
 	| 'fields.note.separateWithCommasOrSpaces'
 	| 'fields.note.tagsExample'
 	| 'fields.todo.categoryNotebookTagsNotesRatings'
+	| 'fields.todo.day'
+	| 'fields.todo.leaveItForNoDay'
 	| 'fields.todo.none'
 	| 'fields.todo.separateWithCommasOrSpaces'
 	| 'fields.todo.tagsExample'

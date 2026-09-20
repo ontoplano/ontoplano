@@ -29,7 +29,8 @@
 		categories = [],
 		notebooks = [],
 		ratings = $bindable({ urgency: null, interest: null, energy: null }),
-		compact = false
+		compact = false,
+		scheduledDate = ''
 	}: {
 		title?: string;
 		notes?: string;
@@ -40,6 +41,8 @@
 		notebooks?: { id: number; title: string }[];
 		ratings?: Record<Rating, number | null>;
 		compact?: boolean;
+		/** The day it sits on, or '' for a task with no day yet. */
+		scheduledDate?: string;
 	} = $props();
 
 	/** The notes box, so a recording can be dropped into it where the cursor is. */
@@ -47,7 +50,12 @@
 
 	const ratingsSet = $derived(RATINGS.filter((r) => ratings[r] !== null).length);
 	const filled = $derived(
-		ratingsSet + (categoryId ? 1 : 0) + (notebookId ? 1 : 0) + (notes ? 1 : 0) + (tags ? 1 : 0)
+		ratingsSet +
+			(scheduledDate ? 1 : 0) +
+			(categoryId ? 1 : 0) +
+			(notebookId ? 1 : 0) +
+			(notes ? 1 : 0) +
+			(tags ? 1 : 0)
 	);
 </script>
 
@@ -60,6 +68,25 @@
 </Field>
 
 {#snippet details()}
+	<!--
+		A day, optionally.
+		
+		A task with no day sits in the general list; giving it one puts it on
+		that day, which is what the two shapes already mean — `scheduled_date`
+		null is "not yet", and a date is "then". The quick form could write a
+		task and not say when, so "ring the plumber tomorrow" became a task
+		with the word tomorrow in its title and a day that still looked empty.
+	-->
+	<Field label={t('fields.todo.day')} span={6} hint={t('fields.todo.leaveItForNoDay')}>
+		<input
+			autocomplete="off"
+			name="scheduledDate"
+			type="date"
+			value={scheduledDate}
+			class="input"
+		/>
+	</Field>
+
 	<Field label={t('ui.category')} span={6}>
 		<select name="categoryId" class="select">
 			<option value="">{t('fields.todo.none')}</option>

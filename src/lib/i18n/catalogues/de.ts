@@ -381,6 +381,8 @@ export const messages: Catalogue = {
 	'fields.note.tagsExample': 'Arbeit, Gesundheit',
 	'fields.todo.categoryNotebookTagsNotesRatings':
 		'Kategorie, Notizbuch, Schlagwörter, Notizen, Bewertungen',
+	'fields.todo.day': 'Tag',
+	'fields.todo.leaveItForNoDay': 'Leer lassen für eine Aufgabe ohne Tag.',
 	'fields.todo.none': '— keine —',
 	'fields.todo.separateWithCommasOrSpaces':
 		'Mit Kommas oder Leerzeichen trennen. Ein führendes # ist in Ordnung.',

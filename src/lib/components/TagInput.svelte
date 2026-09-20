@@ -91,11 +91,26 @@
 	 * A microtask lets the walk finish against the DOM it started on. Still
 	 * before the frame is painted, so nothing is visible but the one removal.
 	 */
-	function drop(tag: string) {
-		queueMicrotask(() => {
-			tags = tags.filter((one) => one !== tag);
-			box?.focus();
-		});
+	/*
+	 * One press, one label.
+	 *
+	 * A single click was reaching two chips' handlers: the stack showed both
+	 * calls coming from Svelte's one delegated dispatcher, with different
+	 * closures. Deferring the change did not stop it, so the walk is not
+	 * simply reading the live DOM and I cannot honestly say why it visits the
+	 * second.
+	 *
+	 * What is certain is that both calls belong to one press, and one press
+	 * means one label. The event's own timestamp is the press's identity — it
+	 * is the same object being dispatched — so the second call is recognised
+	 * and ignored. A guard rather than an explanation, and labelled as one.
+	 */
+	let handledPress = -1;
+	function drop(tag: string, press: MouseEvent) {
+		if (press.timeStamp === handledPress) return;
+		handledPress = press.timeStamp;
+		tags = tags.filter((one) => one !== tag);
+		box?.focus();
 	}
 
 	function onKeydown(e: KeyboardEvent) {
@@ -169,7 +184,7 @@
 					{tag}
 					<button
 						type="button"
-						onclick={() => drop(tag)}
+						onclick={(e) => drop(tag, e)}
 						aria-label={t('tags.removeTag', { tag })}
 						class="opacity-60 transition hover:opacity-100"
 					>

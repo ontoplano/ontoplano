@@ -596,6 +596,36 @@
 	}));
 </script>
 
+{#snippet opened(card: Card)}
+	<!--
+		What a card says when it is opened, wherever it is sitting.
+
+		This was written out twice — once for a column card and once for the
+		to-do rail — and the two had already drifted: the rail left out the
+		goals, so the same card said different things depending on where you
+		found it. Reading a card ought to be the same act either way.
+
+		A wash rather than a rule: a `border-t` across a card with rounded
+		corners draws a line stopping short of both edges, which reads as
+		something gone wrong. The words take the card's own ink, because its
+		ground is its category's colour and no fixed grey is legible on all of
+		them.
+	-->
+	<div class="card-opened mt-1.5 rounded px-2 py-1.5">
+		{#if card.notes}
+			<Written content={card.notes} compact inheritInk />
+		{:else}
+			<p class="text-xs italic opacity-75">{t('tasks.board.nothingWrittenOnThisOne')}</p>
+		{/if}
+		{#each card.goals as goal (goal.id)}
+			<p class="mt-1 flex items-center gap-1 text-xs opacity-75">
+				<Icon name="goals" size={11} />
+				{goal.title}
+			</p>
+		{/each}
+	</div>
+{/snippet}
+
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
@@ -1262,21 +1292,7 @@
 											mistake rather than as a division. A shade of its own
 											says "this part opened" without drawing anything.
 										-->
-										<div class="card-opened mt-1.5 rounded px-2 py-1.5">
-											{#if card.notes}
-												<Written content={card.notes} compact inheritInk />
-											{:else}
-												<p class="text-xs italic opacity-75">
-													{t('tasks.board.nothingWrittenOnThisOne')}
-												</p>
-											{/if}
-											{#each card.goals as goal (goal.id)}
-												<p class="mt-1 flex items-center gap-1 text-xs text-gray-500">
-													<Icon name="goals" size={11} />
-													{goal.title}
-												</p>
-											{/each}
-										</div>
+										{@render opened(card)}
 									{/if}
 
 									<!--
@@ -1407,16 +1423,7 @@
 								</button>
 							</div>
 							{#if openCards.has(card.uid)}
-								<!-- The same wash the column cards use. See `.card-opened`. -->
-								<div class="card-opened mt-1.5 rounded px-2 py-1.5">
-									{#if card.notes}
-										<Written content={card.notes} compact inheritInk />
-									{:else}
-										<p class="text-xs italic opacity-75">
-											{t('tasks.board.nothingWrittenOnThisOne')}
-										</p>
-									{/if}
-								</div>
+								{@render opened(card)}
 							{/if}
 						</article>
 					{/each}

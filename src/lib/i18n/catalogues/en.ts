@@ -365,6 +365,8 @@ export const messages: Catalogue = {
 	'fields.note.separateWithCommasOrSpaces': 'Separate with commas or spaces. A leading # is fine.',
 	'fields.note.tagsExample': 'work, health',
 	'fields.todo.categoryNotebookTagsNotesRatings': 'Category, notebook, tags, notes, ratings',
+	'fields.todo.day': 'Day',
+	'fields.todo.leaveItForNoDay': 'Leave it empty for a task with no day yet.',
 	'fields.todo.none': '— none —',
 	'fields.todo.separateWithCommasOrSpaces': 'Separate with commas or spaces. A leading # is fine.',
 	'fields.todo.tagsExample': 'kitchen, urgent, a1',

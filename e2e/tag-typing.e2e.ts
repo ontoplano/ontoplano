@@ -83,3 +83,37 @@ test('a word left in the box when the form is saved still counts', async ({ page
 	await expect(filter).toBeVisible({ timeout: 30_000 });
 	await expect(filter.locator('option', { hasText: 'fitness' })).toHaveCount(1);
 });
+
+/**
+ * One press, one label.
+ *
+ * A single click on a chip's × was reaching the next chip's handler too, so
+ * removing one took two off. The keyboard path was unaffected, which is why
+ * the rest of the suite did not see it.
+ */
+test("pressing one chip's remove button takes exactly one off", async ({ page }) => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('chip-remove'));
+	await visit(page, '/tasks/todo');
+
+	await page.getByRole('button', { name: 'New to-do' }).click();
+	await page.locator('[name="heading"]').first().fill('Sand the door');
+
+	const form = page.getByLabel('New to-do');
+	const box = form.locator('input[role="combobox"]').first();
+	await box.fill('a1 wood paint');
+	await box.press(' ');
+	await expect(form.locator('.chip')).toHaveCount(3);
+
+	// The real click, not the keyboard — this is the path that was wrong.
+	await page.getByRole('button', { name: 'Remove wood' }).click();
+	await expect(form.locator('.chip')).toHaveCount(2);
+	await expect(form.locator('.chip').filter({ hasText: 'a1' })).toBeVisible();
+	await expect(form.locator('.chip').filter({ hasText: 'paint' })).toBeVisible();
+
+	// And again, from the middle of what is left.
+	await page.getByRole('button', { name: 'Remove a1' }).click();
+	await expect(form.locator('.chip')).toHaveCount(1);
+	await expect(form.locator('.chip').filter({ hasText: 'paint' })).toBeVisible();
+});

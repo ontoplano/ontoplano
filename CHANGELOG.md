@@ -20,6 +20,14 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **A task can be given a day as it is written.** The form could not say when,
+  so "ring the plumber tomorrow" became a task with the word tomorrow in its
+  title and a day that still looked empty.
+- **Removing one tag chip removes one tag.** A single press was reaching the
+  next chip's handler as well, so two came off.
+- **An opened card says the same thing wherever it is.** The to-do rail left
+  out the goals a card belongs to, because it was a second copy of the same
+  markup.
 - **A permission says that the pictures come with it.** "Read your notebooks"
   always reached the pictures inside them — a file answers to whatever refers
   to it — and the sentence on the key form never said so. It does now, on

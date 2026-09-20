@@ -706,6 +706,7 @@
 					categoryId={editing?.categoryId ?? null}
 					notebookId={editing?.notebookId ?? notebookId}
 					tags={editing?.tags.map((one) => one.name).join(', ') ?? ''}
+					scheduledDate={editing?.scheduledDate ?? ''}
 					{categories}
 					{notebooks}
 					bind:ratings={formRatings}

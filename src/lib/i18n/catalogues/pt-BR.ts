@@ -379,6 +379,8 @@ export const messages: Catalogue = {
 	'fields.note.tagsExample': 'trabalho, saúde',
 	'fields.todo.categoryNotebookTagsNotesRatings':
 		'Categoria, caderno, etiquetas, notas, avaliações',
+	'fields.todo.day': 'Dia',
+	'fields.todo.leaveItForNoDay': 'Deixe vazio para uma tarefa ainda sem dia.',
 	'fields.todo.none': '— nenhum —',
 	'fields.todo.separateWithCommasOrSpaces':
 		'Separe por vírgulas ou espaços. Um # no início não faz mal.',
