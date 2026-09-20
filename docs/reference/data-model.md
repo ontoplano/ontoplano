@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**76 tables.**
+**78 tables.**
 
 | Table                                                       | Columns | Belongs to a user |
 | ----------------------------------------------------------- | ------- | ----------------- |
@@ -31,6 +31,7 @@ exist.
 | [`diary_entries`](#diary_entries)                           | 12      | yes               |
 | [`diary_entry_tags`](#diary_entry_tags)                     | 4       | yes               |
 | [`entry_people`](#entry_people)                             | 4       | yes               |
+| [`exceptional_task_tags`](#exceptional_task_tags)           | 5       | yes               |
 | [`exceptional_tasks`](#exceptional_tasks)                   | 19      | yes               |
 | [`finance_rules`](#finance_rules)                           | 8       | yes               |
 | [`finance_transactions`](#finance_transactions)             | 10      | yes               |
@@ -63,6 +64,7 @@ exist.
 | [`recipe_images`](#recipe_images)                           | 7       | yes               |
 | [`recipe_items`](#recipe_items)                             | 8       | yes               |
 | [`recipes`](#recipes)                                       | 12      | yes               |
+| [`recurring_task_tags`](#recurring_task_tags)               | 5       | yes               |
 | [`recurring_tasks`](#recurring_tasks)                       | 20      | yes               |
 | [`reminder_sounds`](#reminder_sounds)                       | 7       | yes               |
 | [`reminders`](#reminders)                                   | 12      | yes               |
@@ -75,7 +77,7 @@ exist.
 | [`suppressed_slots`](#suppressed_slots)                     | 5       | yes               |
 | [`tags`](#tags)                                             | 3       | yes               |
 | [`task_records`](#task_records)                             | 15      | yes               |
-| [`todo_tags`](#todo_tags)                                   | 4       | yes               |
+| [`todo_tags`](#todo_tags)                                   | 5       | yes               |
 | [`todo_tasks`](#todo_tasks)                                 | 17      | yes               |
 | [`user`](#user)                                             | 11      | —                 |
 | [`user_settings`](#user_settings)                           | 4       | yes               |
@@ -479,6 +481,22 @@ Indexes:
 - `entry_people_entry_idx` on `entry_id`
 - `entry_people_person_idx` on `person_id`
 - `entry_people_unique` on `entry_id`, `person_id` — unique
+
+## exceptional_task_tags
+
+| Column      | Type    | Null     | Default | Notes                    |
+| ----------- | ------- | -------- | ------- | ------------------------ |
+| `id`        | integer | not null | —       | primary key, auto        |
+| `user_id`   | text    | not null | —       | → `user.id`              |
+| `task_id`   | integer | not null | —       | → `exceptional_tasks.id` |
+| `tag_id`    | integer | not null | —       | → `tags.id`              |
+| `tagged_at` | text    | null     | —       | —                        |
+
+Indexes:
+
+- `exceptional_task_tags_user_idx` on `user_id`
+- `exceptional_task_tags_task_idx` on `task_id`
+- `exceptional_task_tags_tag_idx` on `tag_id`
 
 ## exceptional_tasks
 
@@ -1111,6 +1129,22 @@ Checks — enforced by the database, not only by the service layer:
 - `recipes_servings_positive`: `"recipes"."servings" IS NULL OR "recipes"."servings" > 0`
 - `recipes_minutes_positive`: `"recipes"."minutes" IS NULL OR "recipes"."minutes" > 0`
 
+## recurring_task_tags
+
+| Column      | Type    | Null     | Default | Notes                  |
+| ----------- | ------- | -------- | ------- | ---------------------- |
+| `id`        | integer | not null | —       | primary key, auto      |
+| `user_id`   | text    | not null | —       | → `user.id`            |
+| `task_id`   | integer | not null | —       | → `recurring_tasks.id` |
+| `tag_id`    | integer | not null | —       | → `tags.id`            |
+| `tagged_at` | text    | null     | —       | —                      |
+
+Indexes:
+
+- `recurring_task_tags_user_idx` on `user_id`
+- `recurring_task_tags_task_idx` on `task_id`
+- `recurring_task_tags_tag_idx` on `tag_id`
+
 ## recurring_tasks
 
 | Column                | Type    | Null     | Default               | Notes             |
@@ -1374,12 +1408,13 @@ Checks — enforced by the database, not only by the service layer:
 
 ## todo_tags
 
-| Column    | Type    | Null     | Default | Notes             |
-| --------- | ------- | -------- | ------- | ----------------- |
-| `id`      | integer | not null | —       | primary key, auto |
-| `user_id` | text    | not null | —       | → `user.id`       |
-| `todo_id` | integer | not null | —       | → `todo_tasks.id` |
-| `tag_id`  | integer | not null | —       | → `tags.id`       |
+| Column      | Type    | Null     | Default | Notes             |
+| ----------- | ------- | -------- | ------- | ----------------- |
+| `id`        | integer | not null | —       | primary key, auto |
+| `user_id`   | text    | not null | —       | → `user.id`       |
+| `todo_id`   | integer | not null | —       | → `todo_tasks.id` |
+| `tag_id`    | integer | not null | —       | → `tags.id`       |
+| `tagged_at` | text    | null     | —       | —                 |
 
 Indexes:
 

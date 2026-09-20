@@ -730,12 +730,23 @@
 					action={actions.remove}
 					class="mr-auto"
 					use:enhance={(event) => {
-						// The form goes as the row does: leaving it open over a task
-						// that is no longer there is the app arguing with itself.
-						const run = deferDelete(editingId!, editing?.title ?? '');
+						/*
+						 * Run the submit first, then close.
+						 *
+						 * This closed the form before running it, and the form lives
+						 * inside `{#if editingId}` — so clearing that took the form
+						 * out of the DOM while its own submission was still being
+						 * set up, and the press did nothing at all. Closing is
+						 * deferred to after the handler has read the event.
+						 */
+						const outcome = deferDelete(editingId!, editingTodo()?.title ?? '')(event);
+						// The dialog closes now; `editingId` is what keeps this form
+						// mounted, so it is cleared only once the submit has been
+						// read — clearing it here took the form out of the DOM
+						// mid-flight and the press did nothing at all.
 						showForm = false;
-						editingId = null;
-						return run(event);
+						queueMicrotask(() => (editingId = null));
+						return outcome;
 					}}
 				>
 					<input type="hidden" name="id" value={editingId} />

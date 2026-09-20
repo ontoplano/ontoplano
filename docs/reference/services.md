@@ -5228,13 +5228,33 @@ All these produce ["tagfoo", "tagbar"]:
 
 #### `replaceIdeaTags(ideaId, tagNames, userId)`
 
+#### `tagsForBlock(kind, taskId, userId)`
+
+#### `replaceBlockTags(kind, taskId, tagNames, userId)`
+
+Set a block's labels to exactly these, keeping the dates of the survivors.
+
 #### `linkTodoTags(todoId, tagIds, userId)`
 
 #### `replaceTodoTags(todoId, tagNames, userId)`
 
+Set the labels to exactly these, without forgetting when the old ones went on.
+
+This used to delete every row and write them all back, which is the same
+answer and a different history: a label that had been there a week came back
+dated today, so "what was tagged since I last looked" was whatever had been
+edited since. Now only the difference moves — the ones going away are
+dropped, the new ones are dated, and a label that was already there is left
+exactly as it was.
+
 #### `linkMediaTags(mediaId, tagIds, userId)`
 
 #### `replaceMediaTags(mediaId, tagNames, userId)`
+
+### Types
+
+- `BlockKind`
+- `Tag` — A label and when it went on. The same shape a task's labels have.
 
 ## time
 

@@ -89,3 +89,44 @@ test('deleting a task holds the request open, and the way back works', async ({ 
 	// And it comes back, because the request was never sent.
 	await expect(page.getByText('Cancel the gym').first()).toBeVisible({ timeout: 30_000 });
 });
+
+/**
+ * Deleting from the form that edits it.
+ *
+ * This shipped as a button that did nothing: the form is inside
+ * `{#if editingId}`, and clearing that to close the modal took the form out of
+ * the DOM while its own submission was still being set up.
+ */
+test('the edit form can delete the task it is editing', async ({ page }) => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('edit-delete'));
+	await visit(page, '/tasks/todo');
+
+	await page.getByRole('button', { name: 'New to-do' }).click();
+	await page.locator('[name="heading"]').first().fill('Renew the domain');
+	await page.getByRole('button', { name: 'Create todo' }).click();
+	await expect(page.getByText('Renew the domain').first()).toBeVisible({ timeout: 30_000 });
+
+	await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
+	const form = page.locator('#todo-form');
+	await expect(form).toBeVisible({ timeout: 30_000 });
+
+	// Armed for 450ms after it appears, so give it that before pressing.
+	await page.waitForTimeout(600);
+	// In the dialog's footer — a sibling of `#todo-form`, not inside it — and
+	// not the row's icon of the same name out on the page.
+	const dialog = page.getByRole('dialog', { name: /Edit to-do/i });
+	await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
+
+	// The delete is taken: the toast is what is holding it now. That is the
+	// assertion that matters — this shipped as a button that did nothing at
+	// all, and a toast naming the task is proof the press was heard.
+	const toast = page.locator('[role="status"]').filter({ hasText: 'Renew the domain' });
+	await expect(toast).toBeVisible({ timeout: 10_000 });
+	await expect(page.getByRole('link', { name: 'Renew the domain' })).toHaveCount(0);
+
+	// And the way back still works from here.
+	await toast.getByRole('button', { name: 'Undo' }).click();
+	await expect(page.getByText('Renew the domain').first()).toBeVisible({ timeout: 30_000 });
+});
