@@ -53,6 +53,25 @@
 			>
 				<Icon name="check" size={16} />
 				<span class="min-w-0 flex-1">{item.message}</span>
+				{#if item.action}
+					<!--
+						The next move, where there is an obvious one. "Task added"
+						offers Edit rather than Undo: you asked for the task and it
+						is there, so the useful thing is to say more about it. Same
+						shape as the undo button beside it, and the same rule about
+						taking its ink from the face.
+					-->
+					<button
+						onclick={() => {
+							const run = item.action?.run;
+							said.items = said.items.filter((one) => one.id !== item.id);
+							run?.();
+						}}
+						class="shrink-0 font-medium underline underline-offset-2"
+					>
+						{item.action.label}
+					</button>
+				{/if}
 			</div>
 		{/each}
 		{#each waiting as item (item.id)}

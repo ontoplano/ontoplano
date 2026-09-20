@@ -20,6 +20,12 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **The app says so when you make, change or delete a task.** Making one
+  offers a way straight into it rather than an undo — you asked for it and it
+  is there, so the useful next move is saying more about it. Changing one says
+  "Saved" and offers nothing, because the change is on the screen behind it.
+  Deleting one now waits a few seconds with the way back on the toast, the way
+  Inventory already did, instead of asking "are you sure" before the fact.
 - **A picture in a task or an idea can be seen by an assistant that may read
   it.** It was reachable by nobody at all: a file answers to whatever refers
   to it, and tasks and ideas were not counted as referring to a picture — only

@@ -3187,10 +3187,12 @@ export const messages: Catalogue = {
 	'todoRows.putBackOnTheGeneral': 'Zurück auf die allgemeine Liste legen',
 	'todoRows.putItOnADay': 'Auf einen Tag legen',
 	'todoRows.putOnTheDay': 'Auf den Tag legen',
+	'todoRows.saved': 'Gespeichert',
 	'todoRows.showArchivedCount': 'Archivierte zeigen ({count})',
 	'todoRows.showCompleted': 'Abgeschlossene anzeigen',
 	'todoRows.showCompletedCount': 'Erledigte zeigen ({count})',
 	'todoRows.takeItBackOut': 'Wieder herausnehmen',
+	'todoRows.taskAdded': 'Aufgabe erstellt',
 	'todoRows.time': 'Zeit',
 	'todoRows.whatYouFinishedMostRecently':
 		'Was Sie zuletzt erledigt haben — drücken für die neuesten',

@@ -3102,10 +3102,12 @@ export const messages: Catalogue = {
 	'todoRows.putBackOnTheGeneral': 'Put back on the general list',
 	'todoRows.putItOnADay': 'Put it on a day',
 	'todoRows.putOnTheDay': 'Put on the day',
+	'todoRows.saved': 'Saved',
 	'todoRows.showArchivedCount': 'Show archived ({count})',
 	'todoRows.showCompleted': 'Show completed',
 	'todoRows.showCompletedCount': 'Show completed ({count})',
 	'todoRows.takeItBackOut': 'Take it back out',
+	'todoRows.taskAdded': 'Task added',
 	'todoRows.time': 'Time',
 	'todoRows.whatYouFinishedMostRecently': 'What you finished most recently — press for the newest',
 	'tour.aCategoryFridgeBathroom':

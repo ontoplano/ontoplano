@@ -3151,10 +3151,12 @@ export const messages: Catalogue = {
 	'todoRows.putBackOnTheGeneral': 'Devolver para a lista geral',
 	'todoRows.putItOnADay': 'Colocar em um dia',
 	'todoRows.putOnTheDay': 'Colocar no dia',
+	'todoRows.saved': 'Salvo',
 	'todoRows.showArchivedCount': 'Mostrar arquivadas ({count})',
 	'todoRows.showCompleted': 'Mostrar concluídas',
 	'todoRows.showCompletedCount': 'Mostrar concluídas ({count})',
 	'todoRows.takeItBackOut': 'Tirar de volta',
+	'todoRows.taskAdded': 'Tarefa criada',
 	'todoRows.time': 'Hora',
 	'todoRows.whatYouFinishedMostRecently':
 		'O que você terminou mais recentemente — pressione para os mais recentes',

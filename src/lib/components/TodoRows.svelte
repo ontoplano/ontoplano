@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { say } from '$lib/said.svelte';
+	import { deleteLater, isLeaving } from '$lib/undo.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import { setRoomAction } from '$lib/room-action.svelte';
@@ -230,9 +232,12 @@
 	}
 
 	let visibleTodos = $derived.by(() => {
+		// A row whose delete is being held is already gone as far as the person
+		// is concerned — the toast is what is holding it, not the list.
+		const here = todos.filter((t: Todo) => !isLeaving(`todo:${t.id}`));
 		let shown = showCompleted
-			? todos
-			: todos.filter((t: Todo) => !CLOSED_STATUSES.includes(shownStatus(t)));
+			? here
+			: here.filter((t: Todo) => !CLOSED_STATUSES.includes(shownStatus(t)));
 
 		// Away unless asked for. An archived task is one somebody has decided
 		// not to look at, so the list honours that until they say otherwise.
@@ -351,6 +356,31 @@
 		editingId = null;
 		formRatings = { urgency: null, interest: null, energy: null };
 	}
+
+	/**
+	 * Deleting waits, so it can still be called off.
+	 *
+	 * The confirm in place says "are you sure" before the fact, which is the
+	 * wrong moment: you are sure until you are not, and that turns out about
+	 * two seconds later. So the press is taken as meaning it, the row goes,
+	 * and the toast holds the request for a few seconds with the way back on
+	 * it — the same arrangement Inventory has.
+	 */
+	const deferDelete =
+		(id: number, title: string): SubmitFunction =>
+		({ action, formData, cancel }) => {
+			cancel();
+			confirmingDelete = null;
+			deleteLater(`todo:${id}`, title, () => {
+				// The header asks for the action's result rather than a redirect,
+				// which is what `enhance` would have done had it submitted.
+				void fetch(action, {
+					method: 'POST',
+					body: formData,
+					headers: { 'x-sveltekit-action': 'true' }
+				}).then(() => invalidateAll());
+			});
+		};
 
 	function startEdit(todo: Todo) {
 		editingId = todo.id;
@@ -583,12 +613,34 @@
 			method="post"
 			action={editingId ? actions.update : actions.create}
 			use:enhance={() => {
+				const wasEditing = editingId;
 				return async ({ update, result }) => {
 					await update({ reset: false });
-					if (result.type === 'success') {
-						showForm = false;
-						editingId = null;
-					}
+					if (result.type !== 'success') return;
+
+					/*
+					 * The app answers the press.
+					 *
+					 * A task made in a notebook used to appear in a list that had
+					 * just reordered itself, with nothing saying it had worked. A
+					 * new one offers Edit rather than Undo — you asked for it and
+					 * it is there, so the useful next move is saying more about
+					 * it, and taking it back is what delete is for.
+					 */
+					const made = Number(result.data?.id ?? 0);
+					if (wasEditing) say(t('todoRows.saved'));
+					else if (made > 0)
+						say(t('todoRows.taskAdded'), {
+							label: t('ui.edit'),
+							run: () => {
+								const todo = todos.find((one: Todo) => one.id === made);
+								if (todo) startEdit(todo);
+							}
+						});
+					else say(t('todoRows.taskAdded'));
+
+					showForm = false;
+					editingId = null;
 				};
 			}}
 		>
@@ -958,12 +1010,7 @@
 									id="delete-form-{todo.id}"
 									method="post"
 									action={actions.remove}
-									use:enhance={() => {
-										return async ({ update }) => {
-											await update({ reset: false });
-											confirmingDelete = null;
-										};
-									}}
+									use:enhance={deferDelete(todo.id, todo.title)}
 								>
 									<input type="hidden" name="id" value={todo.id} />
 									<button type="submit" class="btn btn-sm btn-danger" use:armed>
