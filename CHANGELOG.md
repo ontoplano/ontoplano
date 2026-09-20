@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **A plan's limit is written the way you write numbers.** It was pinned to
+  American formatting, so a Portuguese account was told its plan allows
+  "5,000 notes" — which in pt-BR reads as five.
 - **Typing a tag suggests the ones you already use.** The box splits on spaces
   and commas as you type — which is what the server has always done with what
   it holds, so "work urgent" was two tags and the box was the only thing that
