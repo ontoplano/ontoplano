@@ -145,11 +145,25 @@
 </div>
 
 <style>
+	/* The grip's dots: how big one is, and how far apart they sit. */
+	.split-handle {
+		--grip-dot: 3px;
+		--grip-gap: 7px;
+	}
+
 	/*
-	 * The grip: a rule down the middle of the handle rather than a filled
-	 * strip, so it reads as something to take hold of in both arrangements —
-	 * against a seam, and in the gap between two cards where there is no seam
-	 * to thicken.
+	 * The grip: dots, not a hairline.
+	 *
+	 * It was a two-pixel rule in `--color-gray-300`, which the dark theme turns
+	 * into a wash — so on a dark ground the gap between the two cards was
+	 * simply empty, and the only thing saying it could be dragged was a cursor
+	 * you had to already be over it to see. Dots are the idiom for a thing you
+	 * take hold of, and `--color-gray-500` is a mid grey rather than a ramp
+	 * end, so it reads against both grounds without being redefined per theme.
+	 *
+	 * The dots are one element with a repeating gradient rather than three, so
+	 * their spacing is a number here instead of three positions to keep in
+	 * agreement.
 	 */
 	.split-handle {
 		position: relative;
@@ -162,17 +176,31 @@
 		position: absolute;
 		top: 50%;
 		left: 50%;
-		width: 2px;
-		height: 2.5rem;
+		width: var(--grip-dot);
+		height: 2.25rem;
 		transform: translate(-50%, -50%);
-		background-color: var(--color-gray-300);
-		transition: background-color 120ms ease;
+		background-image: radial-gradient(
+			circle at center,
+			var(--color-gray-500) calc(var(--grip-dot) / 2),
+			transparent calc(var(--grip-dot) / 2)
+		);
+		background-size: var(--grip-dot) var(--grip-gap);
+		background-repeat: repeat-y;
+		opacity: 0.75;
+		transition: opacity 120ms ease;
 	}
 
 	.split-handle:hover::after,
 	.split-handle:focus-visible::after,
 	.split-handle.is-dragging::after {
-		background-color: var(--color-gray-500);
+		opacity: 1;
+	}
+
+	/* A wash under the whole strip while it is being held, so the thing you are
+	   dragging is visible and not only the dots on it. */
+	.split-handle.is-dragging,
+	.split-handle:hover {
+		background-color: var(--hover-wash);
 	}
 
 	.split-handle:focus-visible {

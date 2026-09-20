@@ -37,6 +37,11 @@ const INK = '#0b1220';
  * clips, so the estimate is deliberately generous.
  */
 const WIDTHS = { narrow: "iljt.,:;!|'’ ", wide: 'mwMW—·' };
+/**
+ * @param {string} text
+ * @param {number} size
+ * @returns {number}
+ */
 function textWidth(text, size) {
 	let units = 0;
 	for (const ch of text) {
@@ -48,6 +53,7 @@ function textWidth(text, size) {
 	return Math.ceil(units * size);
 }
 
+/** @param {string} text @returns {string} */
 function escape(text) {
 	return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
@@ -59,14 +65,19 @@ function escape(text) {
  * shields.io house style, not a law. `big` is the call to action, which is
  * taller, bolder and spaced out so it reads as something to press.
  */
-function badge({ label, value, color = BLUE, big = false }) {
+/**
+ * @param {{ label: string, value?: string, color?: string, big?: boolean }} parts
+ * @returns {string}
+ */
+function badge({ label, value = '', color = BLUE, big = false }) {
 	const size = big ? 13 : 11;
 	const height = big ? 34 : 22;
 	const pad = big ? 20 : 8;
 	const spacing = big ? 1 : 0;
 	const font = 'Verdana,DejaVu Sans,Geneva,sans-serif';
 	const y = height / 2;
-	const width = (t) => Math.ceil(textWidth(t, size) + t.length * spacing + pad * 2);
+	const width = (/** @type {string} */ t) =>
+		Math.ceil(textWidth(t, size) + t.length * spacing + pad * 2);
 
 	/*
 	 * One block, not two.
@@ -164,6 +175,7 @@ mkdirSync(OUT, { recursive: true });
  * clone is. Writing it here would put the badge back to a version that is no
  * longer out, which in a diff looks like an ordinary regeneration.
  */
+/** @param {string} v @returns {number[]} */
 const ordinal = (v) => v.replace(/^v/, '').split('.').map(Number);
 
 /**
@@ -179,12 +191,14 @@ const ordinal = (v) => v.replace(/^v/, '').split('.').map(Number);
  *
  * So: only text nodes, and only with the `v` the badge actually prints.
  */
+/** @param {string} svg @returns {string[]} */
 export function versionsSaid(svg) {
 	return [...svg.matchAll(/>([^<]*)</g)]
 		.flatMap(([, text]) => [...text.matchAll(/\bv([0-9]+(?:\.[0-9]+)+)/g)])
 		.map(([, found]) => found);
 }
 
+/** @param {string} svg @returns {boolean} */
 function namesSomethingNewer(svg) {
 	if (!released) return false;
 	const mine = ordinal(released);

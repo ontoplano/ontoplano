@@ -179,7 +179,7 @@
 			goto(`${resolve('/tasks/review')}?week=${data.week.next}`)}
 	>
 		<h2 class="text-base font-semibold text-gray-900">
-			{t('tasks.review.week', { number: data.week.number, year: data.week.year })}
+			{t('tasks.review.week', { number: String(data.week.number), year: data.week.year })}
 		</h2>
 		<p class="truncate text-sm text-gray-500">
 			{pretty(data.reading.weekStart)} — {pretty(data.reading.weekEnd)}

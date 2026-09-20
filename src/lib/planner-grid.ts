@@ -810,6 +810,16 @@ export function baseGridOptions(
 		 * whole row sat at different heights. The break is decided here and the
 		 * CSS honours it (`white-space: pre-line`).
 		 */
+		/*
+		 * The library formats its own headers, so it needs its own locale.
+		 *
+		 * `dayHeaderFormat` below is an options object, and the calendar hands
+		 * that to `Intl` with whatever locale it was configured with — which
+		 * was none, so every day name came out English while the rest of the
+		 * screen was Portuguese. The narrow case never showed it, because that
+		 * one is a function and was already formatting with ours.
+		 */
+		locale,
 		dayHeaderFormat: month
 			? { weekday: 'short' }
 			: days === 1

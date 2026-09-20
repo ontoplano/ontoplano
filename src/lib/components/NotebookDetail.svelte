@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import TagInput from '$lib/components/TagInput.svelte';
-	import { dateOf } from '$lib/when';
+	import { momentOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
@@ -468,8 +468,14 @@
 		}
 	}));
 
+	/*
+	 * A note's stamp says the time as well as the day.
+	 *
+	 * Two notes written on the same afternoon read as the same note otherwise,
+	 * and which one is the later of them is the thing somebody is looking for.
+	 */
 	function when(iso: string): string {
-		return dateOf(iso, now(), {});
+		return momentOf(iso, now());
 	}
 </script>
 

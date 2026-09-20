@@ -64,6 +64,19 @@ describe('a message with values in it', () => {
 		expect(format('{amount}', 'pt-BR', { amount: 1234.5 })).toBe('1.234,5');
 	});
 
+	test('writes a year as a year, not as a quantity', () => {
+		// "Week of Aug 24 2,026" reads as two thousand and twenty-six of
+		// something. A year names a year; it does not count them.
+		expect(format('Week of {date} {year}', 'en', { date: 'Aug 24', year: 2026 })).toBe(
+			'Week of Aug 24 2026'
+		);
+		expect(format('{year}', 'pt-BR', { year: 2026 })).toBe('2026');
+	});
+
+	test('and still groups anything that really is a quantity', () => {
+		expect(format('{count} notes', 'en', { count: 5000 })).toBe('5,000 notes');
+	});
+
 	test('leaves a placeholder alone rather than writing "undefined"', () => {
 		// A visible `{name}` is a bug somebody reports. The word undefined in
 		// the middle of a sentence is a bug somebody screenshots.

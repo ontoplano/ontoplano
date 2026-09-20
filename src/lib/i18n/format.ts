@@ -50,6 +50,15 @@ function pluralRule(locale: Locale): Intl.PluralRules {
  * to a message is formatted rather than concatenated — which also means a
  * translator never has to think about separators.
  */
+/**
+ * Placeholders that name something rather than count it.
+ *
+ * Everything else that arrives as a number is a quantity and is grouped for
+ * the reader — "5.000 notas". These are labels: they are written out as their
+ * digits, whatever the language does to numbers.
+ */
+const LABELS = new Set(['year']);
+
 const numbers = new Map<Locale, Intl.NumberFormat>();
 
 function numberFormat(locale: Locale): Intl.NumberFormat {
@@ -91,7 +100,15 @@ export function format(message: Message, locale: Locale, values?: MessageValues)
 	return text.replace(PLACEHOLDER, (whole, name: string) => {
 		const value = values[name];
 		if (value === undefined) return whole;
-		return typeof value === 'number' ? numberFormat(locale).format(value) : value;
+		if (typeof value !== 'number') return value;
+		// A year is a name for a year, not a count of them. Grouped like a
+		// quantity it came out as "Week of Aug 24 2,026", which reads as two
+		// thousand and twenty-six of something. Decided by the placeholder's
+		// name rather than left to each caller to remember a `String()`, since
+		// forgetting it looks fine in English-with-small-numbers and wrong
+		// everywhere else.
+		if (LABELS.has(name)) return String(value);
+		return numberFormat(locale).format(value);
 	});
 }
 

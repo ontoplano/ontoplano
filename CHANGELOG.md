@@ -20,6 +20,13 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **The planner's day names follow the app's language.** "Sun 20 / Mon 21" sat
+  under a Portuguese screen in every view. The calendar formats its own
+  headers and was never told which language to do it in.
+- **A year is written as a year.** "Week of Aug 24 2,026" — a year handed to a
+  sentence as a number was grouped like a quantity.
+- **A note's stamp says the time as well as the day.** Two notes written the
+  same afternoon read as the same note otherwise.
 - **A plan's limit is written the way you write numbers.** It was pinned to
   American formatting, so a Portuguese account was told its plan allows
   "5,000 notes" — which in pt-BR reads as five.
