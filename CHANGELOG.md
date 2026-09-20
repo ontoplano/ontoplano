@@ -20,6 +20,10 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **A link that names a part of a page lands on that part.** "OD changed 6
+  things" opened the integrations page at the top: below `lg` the window does
+  not scroll — the page body does — so the browser's own fragment handling
+  moved nothing.
 - **The filters in a toolbar are the app's own control, not a `<select>`.** The
   tag and notebook filters on the task list, and the ledger, window, tag and
   month filters in Finance, are the same button-and-menu the sort control uses.

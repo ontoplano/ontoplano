@@ -59,7 +59,7 @@
 	import { scrollToHash } from '$lib/scroll-to-hash';
 	import { stepThroughRoom } from '$lib/room-tabs.svelte';
 	import { smartNumberFields } from '$lib/number-fields';
-	import type { Snippet } from 'svelte';
+	import { tick, type Snippet } from 'svelte';
 
 	let { children, data }: { children: Snippet; data: LayoutData } = $props();
 
@@ -630,6 +630,23 @@
 	 * that ends on the same screen it started on is not an arrival.
 	 */
 	afterNavigate(({ from, to }) => {
+		/*
+		 * A link that names a part of a page lands on that part.
+		 *
+		 * The browser's own fragment scrolling moves the *window*, and below
+		 * `lg` the window does not scroll here — `main` does. So "OD changed 6
+		 * things" opened the integrations page at the top and left somebody to
+		 * find the activity list themselves. `scrollIntoView` walks up to
+		 * whatever actually scrolls, which is the right answer at both widths;
+		 * the tick is for the page it is landing on to have drawn.
+		 */
+		const hash = to?.url.hash ?? '';
+		if (hash.length > 1) {
+			void tick().then(() => {
+				document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' });
+			});
+			return;
+		}
 		if (from?.url && to?.url && from.url.pathname === to.url.pathname) return;
 		scroller?.scrollTo({ top: 0 });
 	});
