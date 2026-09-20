@@ -20,6 +20,10 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **The row the keyboard is on is shaded, not boxed.** A two-pixel rule above
+  and below it, on rows that sit flush, drew a heavy line between them — and
+  the top one was clipped on the first row, so the first selection never
+  looked like the others. It is a wash and a small lift now.
 - **Shift+H and Shift+L walk the places inside the room you are in.** `h` and
   `l` move between a screen's own tabs and `J`/`K` between the rooms; this is
   the level in between — Board to To-do, the diary to People. Worked out from

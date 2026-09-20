@@ -430,7 +430,7 @@
 				<div
 					use:keepInView={i === selectedIndex}
 					id="diary-{entry.seq}"
-					class="relative p-4 {i === selectedIndex ? 'kb-cursor -outline-offset-2' : ''}"
+					class="relative p-4 {i === selectedIndex ? 'kb-cursor' : ''}"
 				>
 					<div class="md mb-2 text-sm text-gray-900">
 						<!-- `renderMarkdown` escapes every character of the input before it emits a

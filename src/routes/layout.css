@@ -140,6 +140,12 @@
 	 * uses light ink.
 	 */
 	--hover-wash: rgb(15 23 42 / 0.05);
+	/*
+	 * Where the keyboard is standing. A shade darker than the hover wash, so
+	 * the two are telling you different things and you can see which is which
+	 * when the pointer is resting on the row the cursor is on.
+	 */
+	--cursor-wash: rgb(15 23 42 / 0.08);
 
 	/* Flat and close to the surface. Depth separates layers, it does not decorate. */
 	--shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.06);
@@ -1749,12 +1755,20 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
-	 * The keyboard cursor: which card j/k is standing on.
+	 * The keyboard cursor: which row j/k is standing on.
 	 *
-	 * Outside the card, not inside it — an inset ring redrew the card's own
-	 * border and squeezed its content, so selecting a card made it flinch. And
-	 * only where there is a keyboard: on a phone the "cursor" is the finger,
-	 * and a permanently highlighted first card read as meaning something.
+	 * A wash and a small lift, not a rule around it. It was a two-pixel
+	 * outline, which on rows that sit flush against each other drew a heavy
+	 * line above and below the selected one — and the top one was clipped away
+	 * on the first row, so the first selection never looked like the others.
+	 * Boxing a row that has no box of its own was the mistake; saying "this
+	 * one" by shading it needs no edges at all.
+	 *
+	 * Only where there is a keyboard: on a phone the cursor is the finger, and
+	 * a permanently shaded first row reads as meaning something.
+	 *
+	 * `position: relative` so the lift is drawn over the row after it rather
+	 * than under it, which is the difference between a shadow and a smudge.
 	 */
 	.kb-cursor {
 		outline: none;
@@ -1762,8 +1776,10 @@ label:has(> input[type='radio']:not(:disabled)) {
 
 	@media (pointer: fine) {
 		.kb-cursor {
-			outline: 2px solid var(--color-gray-900);
-			outline-offset: 3px;
+			position: relative;
+			z-index: 1;
+			background: var(--cursor-wash);
+			box-shadow: var(--shadow-raised);
 		}
 	}
 
@@ -2671,6 +2687,7 @@ html[data-theme='dark'] {
 	/* Fills, not ramp colours: they darken rather than invert. */
 	--color-scrim: rgb(0 0 0 / 0.66);
 	--hover-wash: rgb(255 255 255 / 0.06);
+	--cursor-wash: rgb(255 255 255 / 0.1);
 
 	/*
 	 * The colored ramps invert like the grays: 50–300 become washes and
@@ -2790,6 +2807,7 @@ html[data-theme='dark'] {
 		/* Fills, not ramp colours: they darken rather than invert. */
 		--color-scrim: rgb(0 0 0 / 0.66);
 		--hover-wash: rgb(255 255 255 / 0.06);
+		--cursor-wash: rgb(255 255 255 / 0.1);
 
 		/*
 		 * The colored ramps invert like the grays: 50–300 become washes and

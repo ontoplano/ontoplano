@@ -350,7 +350,7 @@
 			{#each filteredIdeas as idea, i (idea.id)}
 				<div
 					use:keepInView={i === clampedSelectedIndex}
-					class="relative p-4 {i === clampedSelectedIndex ? 'kb-cursor -outline-offset-2' : ''}"
+					class="relative p-4 {i === clampedSelectedIndex ? 'kb-cursor' : ''}"
 				>
 					<div class="mb-2 flex items-start gap-4">
 						<form
