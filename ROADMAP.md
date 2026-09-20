@@ -1,54 +1,15 @@
 # Roadmap
 
-What Ontoplano does not do yet. `CHANGELOG.md` is what it already does.
-
-Nothing here is scheduled. Want one? Open an issue saying so — the bullets under
-each are the parts already decided; the rest is open.
-
----
-
 ## In scope
 
-### The widget, ten times better
+### Widgets
 
-The Android home-screen widget shows today's habits and tasks, and that is
-the whole of it. It should be worth the screen it sits on. What that means
-is still open — ticking a habit without opening the app, a schedule widget,
-a shopping-list widget are the candidates — but the direction is decided:
-not a small polish, an order of magnitude.
+Redo those that are gone.
 
-### Finance
+### Insights
 
-Money, in the same place as the life it pays for. Opinionated and small, not
-accounting — the existing decision against budget-tracking still holds
-(spreadsheets of every coffee, no connection to the week). This is different:
-it starts from the handful of payments that actually land on a calendar.
+More cool optional dashboard overviews for data
 
-**Bills, the first tab.** A bill is something expected to be paid — a name, an
-amount expected, a rhythm (monthly, usually). Marking one paid records the
-amount actually paid, which may differ from the expected one, and that
-gap is the seed everything else in this section measures from.
-
-Paying a bill can spawn a recurring task — monthly, typically — that shows up
-in the calendar like any task, but is special: ticking it marks the bill paid
-for that period rather than just completing a to-do. So the week already knows
-about the rent the way it knows about a dentist appointment, and the ticking
-is the same gesture, and the money side is a consequence of it rather than a
-second chore.
-
-- Bills reuse `categories` and can link to `goals`, like everything else.
-- The recurring "pay X" task is a task type that carries a bill and an amount,
-  not a free-text to-do that happens to be named after a bill.
-- Actual-vs-expected per bill, per month, is the first real number; later tabs
-  (income, a month's shape) build on the same rows rather than a new store.
-- Nothing here reaches out to a bank or an account. Amounts are entered, the
-  way a shopping-list price is — no server fetching anybody's finances.
-
-### Trips
-
-Notebooks already hold a trip's writing. What is missing is the date range
-with a place and the one page that shows a trip whole — what to pack, what it
-cost, what happened. The work is the linking, not new units.
 
 ### The rest of the REST API
 
@@ -87,35 +48,6 @@ unreachable from a phone.
   restricted, and whether a self-hosted instance exposes this at all or waits
   for the hoster to turn it on.
 
-### A home inventory
-
-Asked for [on the launch
-thread](https://news.ycombinator.com/item?id=49581932#49582260): where things
-live, not what to buy — "where do we keep the measuring tape?". Shopping is a
-flat list; an inventory is a tree with tags and per-item fields (a tape is 3m
-or 5m, a cable is USB-C or not). The likely shape is `/shopping` reworked into
-an `/inventory` that keeps the list as its consumable half.
-
-- Parent-child places: house → room → drawer.
-- Tags, and free fields per item.
-- "I have it / I need it" stays — the shopping list is the "I need it" view.
-- Reachable over MCP, so an assistant can answer "where is the tape".
-
-### Another language
-
-Every string is written into its page in English.
-
-**The app only.** `app.ontoplano.com` is what gets translated — and the tutorial
-with it, because a tour written in a language somebody does not read is worse
-than no tour. The marketing site stays English, the docs stay English; both can
-follow later, and neither is what somebody uses every day.
-
-- Strings into a keyed catalogue; the build fails on a key that is gone.
-- Locale per account in `user_settings`, browser first, instance as fallback —
-  and changeable under Settings, not inferred and left at that.
-- The tour's steps come out of the same catalogue as the rest of the app.
-- Dates and numbers through `Intl` — several places still hardcode `en-US`.
-- Portuguese, Russian and Chinese first.
 
 ---
 
