@@ -106,15 +106,41 @@
 		</button>
 	</div>
 
-	<div class="@2xl:grid @2xl:grid-cols-2 @2xl:items-stretch @2xl:gap-3">
-		<!-- Hidden rather than removed: see the note at the top. -->
-		<div class:hidden={showing !== 'write'} class="@2xl:block">
+	<!--
+		Narrow, the two panes are stacked in one cell rather than swapped.
+		
+		Hiding one with `display: none` made the box the height of whichever
+		was showing, so choosing Preview on a short note pulled the picture
+		row, the tags, the people and the footer up the screen — and choosing
+		Write pushed them back down. Stacked, the cell is as tall as the taller
+		of the two and the press moves nothing, which is the rule everywhere
+		else in the app.
+
+		Wide, the grid puts them side by side and `items-stretch` already made
+		them agree.
+	-->
+	<div class="grid @2xl:grid-cols-2 @2xl:items-stretch @2xl:gap-3">
+		<!--
+			`invisible` rather than `hidden`: the pane keeps its place in the
+			cell, which is what holds the height. It is also taken out of the
+			tab order and off the screen reader, since it is not the one being
+			shown.
+		-->
+		<div
+			class="col-start-1 row-start-1 @2xl:col-start-1 {showing === 'write'
+				? ''
+				: 'invisible @2xl:visible'}"
+			aria-hidden={showing === 'write' ? undefined : 'true'}
+			inert={showing === 'write' ? undefined : true}
+		>
 			<TextBox bind:value bind:element {rows} {...rest} />
 		</div>
 
 		<div
-			class:hidden={showing !== 'preview'}
-			class="md overflow-y-auto rounded border border-gray-200 bg-gray-50 p-3 text-sm text-gray-900 @2xl:block"
+			class="md col-start-1 row-start-1 overflow-y-auto rounded border border-gray-200 bg-gray-50 p-3 text-sm text-gray-900 @2xl:col-start-2 {showing ===
+			'preview'
+				? ''
+				: 'invisible @2xl:visible'}"
 			aria-live="off"
 			aria-label={t('markdown.preview')}
 		>

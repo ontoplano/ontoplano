@@ -111,3 +111,31 @@ test('a screen that already uses those keys keeps them', async ({ page }) => {
 	await page.waitForTimeout(500);
 	await expect(page).toHaveURL(/\/tasks\/board/);
 });
+
+test('switching to the preview moves nothing below it', async ({ page }) => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 1280, height: 1000 });
+	await register(page, testEmail('preview-height'));
+	await visit(page, '/notebooks/diary');
+
+	await page.getByRole('button', { name: 'New entry' }).first().click();
+	const box = page.locator('textarea[name="content"]');
+	await expect(box).toBeVisible({ timeout: 60_000 });
+	await box.fill('# A heading\n\n- one\n- two');
+
+	// Something well below the box, whose position is what a person notices.
+	const below = page.locator('dialog').getByText('Anyone this was about.').first();
+	await expect(below).toBeVisible();
+	const before = await below.boundingBox();
+
+	const previewTab = page.locator('dialog').getByRole('tab', { name: 'Preview' }).first();
+	if (!(await previewTab.isVisible().catch(() => false))) return;
+	await previewTab.click();
+	await page.waitForTimeout(300);
+
+	const after = await below.boundingBox();
+	expect(before).not.toBeNull();
+	expect(after).not.toBeNull();
+	// A pixel or two of rounding is fine; a jump is not.
+	expect(Math.abs((after?.y ?? 0) - (before?.y ?? 0))).toBeLessThanOrEqual(2);
+});

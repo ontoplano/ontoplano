@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **Write and Preview are the same height, so nothing below them moves.**
+  Choosing Preview on a short note used to pull the picture row, the tags and
+  the footer up the screen, and choosing Write pushed them back down.
+- **j and k walk a notebook's tasks and goals, not only its notes.** h and l
+  switched between the three tabs and the other two answered to nothing.
 - **The planner's day names follow the app's language.** "Sun 20 / Mon 21" sat
   under a Portuguese screen in every view. The calendar formats its own
   headers and was never told which language to do it in.

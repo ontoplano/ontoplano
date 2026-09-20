@@ -456,13 +456,25 @@
 	 * Only on the notes tab: Tasks is `TodoRows`, which walks itself, and
 	 * Goals is a list of links to somewhere else.
 	 */
+	/*
+	 * What j/k walks depends on which tab is showing.
+	 *
+	 * It used to be the notes and nothing else — the other two tabs declared
+	 * no items, so the keys did nothing at all on them while h/l went on
+	 * switching between the three. Tasks are the exception: that list is the
+	 * to-do room's own component and takes the keys itself, so this hands them
+	 * over rather than fighting it for them.
+	 */
 	browsable(() => ({
-		items: () => (tab === 'notes' ? shownNotes : []),
+		items: () => (tab === 'notes' ? shownNotes : tab === 'goals' ? (contents?.goals ?? []) : []),
 		cursor: () => cursor,
 		moveTo: (at: number) => (cursor = at),
 		tabs: { of: TAB_KEYS, current: () => tab, go: (key: string) => (tab = key as Tab) },
-		open: (at: number) => toggleNote(shownNotes[at].id),
+		open: (at: number) => {
+			if (tab === 'notes') toggleNote(shownNotes[at].id);
+		},
 		edit: (at: number) => {
+			if (tab !== 'notes') return;
 			editingNoteId = shownNotes[at].id;
 			noteSaved = false;
 		}
@@ -722,12 +734,21 @@
 					and a new one written here lands in this notebook.
 				-->
 				<div class="px-4 py-3">
+					<!--
+						`shortcutRoom` so the rows answer to j/k here as they do in
+						the room. The keys did nothing on this tab: the view above
+						declares its items as the notes and gives back none on any
+						other tab, and the list was never told to take them itself.
+						It reads the to-do room's own bindings, which is the point —
+						the same list behaves the same way wherever it is found.
+					-->
 					<TodoRows
 						todos={contents.todos}
 						{categories}
 						notebooks={pickableNotebooks}
 						actions={NOTEBOOK_TODO_ACTIONS}
 						notebookId={notebook.id}
+						shortcutRoom={tab === 'tasks' ? '/tasks/todo' : null}
 						bind:openNew={openNewTodo}
 					/>
 				</div>
@@ -757,8 +778,12 @@
 				</p>
 			{:else}
 				<ul class="divide-y divide-gray-200">
-					{#each contents.goals as goal (goal.id)}
-						<li class="flex items-center gap-3 px-4 py-2 text-sm">
+					{#each contents.goals as goal, at (goal.id)}
+						<li
+							class="flex items-center gap-3 px-4 py-2 text-sm {tab === 'goals' && cursor === at
+								? 'kb-cursor'
+								: ''}"
+						>
 							<Icon name="goals" class="shrink-0 text-gray-500" />
 							<a
 								href={resolve('/goals')}
