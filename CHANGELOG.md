@@ -20,6 +20,17 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **A board card puts its time under its title.** The time sat in front of the
+  title and cost it five characters on every card that had one, and the badge
+  line only existed when there was a badge — so a card wearing one label stood
+  taller than its neighbours. Both lines are always there now.
+- **A notebook's filters sit under its tabs, the way the Tasks tab already
+  did.** On a phone they took the row and left one letter of "Notes" showing.
+- **The task filters say how many tasks are showing**, not only how many are
+  hidden.
+- **Each setting in Location and time is fenced with the button that saves
+  it.** Several Save buttons down one panel said nothing about which fields
+  each one covered.
 - **A goal filed under a notebook can be worked on there.** The Goals tab was a
   list of titles: no edit, no delete, no way to say a goal was achieved or
   missed, and nothing about what counts towards it. It draws the goals room's

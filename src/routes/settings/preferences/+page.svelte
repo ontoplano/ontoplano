@@ -413,7 +413,7 @@
 			method="post"
 			action="?/saveWeek"
 			use:settingsForm={{ notice: t('settings.preferences.weekSaved') }}
-			class="space-y-4"
+			class="setting-group"
 		>
 			<div>
 				<h2 class="text-sm font-semibold text-gray-900">
@@ -461,7 +461,7 @@
 			method="post"
 			action="?/saveGridHours"
 			use:settingsForm={{ notice: t('settings.preferences.plannerHoursSaved') }}
-			class="space-y-4"
+			class="setting-group"
 		>
 			<div>
 				<h2 class="text-sm font-semibold text-gray-900">

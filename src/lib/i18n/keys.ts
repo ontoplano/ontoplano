@@ -2738,6 +2738,7 @@ export type MessageKey =
 	| 'todoRows.showArchivedCount'
 	| 'todoRows.showCompleted'
 	| 'todoRows.showCompletedCount'
+	| 'todoRows.showingCount'
 	| 'todoRows.taggedAgo'
 	| 'todoRows.takeItBackOut'
 	| 'todoRows.taskAdded'
@@ -3459,6 +3460,7 @@ export interface MessageValuesFor {
 	'todoRows.hiddenByTheFilters': { count: number };
 	'todoRows.showArchivedCount': { count: number };
 	'todoRows.showCompletedCount': { count: number };
+	'todoRows.showingCount': { count: number };
 	'todoRows.taggedAgo': { ago: string | number };
 	'ui.hoursAbbrev': { count: number };
 	'ui.hoursMinutesAbbrev': { hours: string | number; minutes: string | number };

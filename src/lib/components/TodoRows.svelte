@@ -638,7 +638,18 @@
 				away from the filters above that, where the distance says what it
 				is — one of these hides rows, the other reorders them.
 			-->
-			<div class="sm:ml-auto">
+			<!--
+				How many rows are on screen right now.
+
+				The two toggles say how many are hidden — archived, completed —
+				and nothing said how many are left, so a list narrowed by a
+				notebook and a label gave no number at all for the thing you are
+				actually looking at.
+			-->
+			<span class="tabular shrink-0 self-center text-xs text-gray-500 sm:ml-auto">
+				{t('todoRows.showingCount', { count: visibleTodos.length })}
+			</span>
+			<div>
 				<!-- The same control a notebook's notes use. See `SortControl`. -->
 				<SortControl
 					value={order}

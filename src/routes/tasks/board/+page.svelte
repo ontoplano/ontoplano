@@ -1199,14 +1199,6 @@
 												on a laptop. A card with nothing to say is one line now.
 											-->
 											<div class="flex items-baseline gap-1.5">
-												{#if card.startTime}
-													<!-- The card's own ink, at full strength: this is ten pixels,
-													     and anything held back from a tinted ground at that size
-													     stops clearing 4.5:1. The size carries the hierarchy. -->
-													<span class="tabular shrink-0 font-mono text-[10px]">
-														{card.startTime}
-													</span>
-												{/if}
 												<p class="min-w-0 flex-1 truncate text-sm text-gray-900">{card.title}</p>
 												<!-- Pick it up. A drag is a mouse gesture and does not
 												     exist under a finger, so the move a board is for
@@ -1237,8 +1229,28 @@
 													<Icon name="edit" size={14} />
 												</button>
 											</div>
-											{#if badges}
-												<div class="mt-0.5 flex flex-wrap items-center gap-2">
+											<!--
+												The second line, whether or not there is anything on it.
+
+												The time used to sit in front of the title, which cost
+												the title five characters on every card that had one and
+												left the ones without a time reading differently from
+												the ones with. And the line only existed when a card had
+												a badge, so a card wearing one label stood taller than
+												its neighbours. It is always here and always the same
+												height: the titles start at the same place and the cards
+												end at the same place.
+											-->
+											<div class="mt-0.5 flex min-h-4 flex-wrap items-center gap-2 text-gray-500">
+												{#if card.startTime}
+													<!-- Full strength: this is ten pixels, and anything held
+													     back from a tinted ground at that size stops clearing
+													     4.5:1. The size carries the hierarchy. -->
+													<span class="tabular shrink-0 font-mono text-[10px] text-gray-900">
+														{card.startTime}
+													</span>
+												{/if}
+												{#if badges}
 													{#if needsResolution(card)}
 														<button
 															type="button"
@@ -1269,8 +1281,8 @@
 															<Icon name="goals" size={11} />
 														</span>
 													{/if}
-												</div>
-											{/if}
+												{/if}
+											</div>
 										</div>
 									</div>
 

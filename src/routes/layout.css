@@ -962,6 +962,36 @@ label:has(> input[type='radio']:not(:disabled)) {
 		background-color: var(--color-white);
 	}
 
+	/*
+	 * One setting and the button that saves it, fenced together.
+	 *
+	 * A section of several settings drew several Save buttons down one white
+	 * panel with nothing saying which fields each one covered — the answer
+	 * was "the ones immediately above it", which is a rule you learn by
+	 * pressing the button and seeing what happened. Each group is a box now,
+	 * and the button is inside the box it saves.
+	 */
+	.setting-group {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		border: 1px solid var(--color-gray-200);
+		background-color: var(--hover-wash);
+		padding: 1rem;
+	}
+
+	/* The button is its own width; a column stretches its children. */
+	.setting-group > .btn {
+		align-self: flex-start;
+	}
+
+	/* A group whose one field saves itself needs no fence: nothing to mistake. */
+	.setting-group.is-instant {
+		background-color: transparent;
+		border-color: transparent;
+		padding: 0;
+	}
+
 	.input,
 	.select,
 	.textarea {

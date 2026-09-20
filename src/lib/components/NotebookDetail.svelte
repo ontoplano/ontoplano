@@ -655,14 +655,17 @@
 		{:else}
 			<!-- Everything about this notebook, one kind at a time. -->
 			<!--
-				The tabs and what can be done in them, on one row at every width.
+				The tabs, and what is done to what they list.
 				
-				They were on two below `sm`, because when the buttons lived inside
-				the scrolling strip they ended up drawn over the last tab — "New
-				note" sitting on top of "Goals 0". The fix for that is not a second
-				row: it is that the strip takes the space that is left and scrolls,
-				and the buttons sit beside it and do not shrink. A row holding one
-				icon costs a centimetre of a phone screen to say nothing.
+				The controls never go inside the scrolling strip — they were drawn
+				over the last tab when they did, "New note" sitting on top of
+				"Goals 0" — so they sit beside it and do not shrink. Which is
+				exactly what left no tabs at all on a phone: "Show archived (1)"
+				and the order control took the row and the strip shrank to a
+				letter. Below `sm` they drop to a row of their own under the tabs,
+				where there is width for them; the full-screen button stays up
+				here at every size, because one icon costs nothing and it is the
+				control for the panel rather than for what is in it.
 			-->
 			<div class="flex items-center border-b border-gray-200 pr-2">
 				<div class="snap-strip min-w-0 flex-1 gap-1 px-2 md:flex">
@@ -692,21 +695,6 @@
 					{/each}
 				</div>
 				<div class="flex shrink-0 items-center justify-end gap-2 pl-2">
-					{#if tab === 'notes'}
-						<!-- Nothing is hidden without the strip saying how much. -->
-						{#if putAwayNotes > 0 || showArchivedNotes}
-							<button
-								type="button"
-								onclick={() => (showArchivedNotes = !showArchivedNotes)}
-								class="btn btn-sm shrink-0"
-							>
-								{showArchivedNotes
-									? t('notebookDetail.hideArchived')
-									: t('notebookDetail.showArchived', { count: putAwayNotes })}
-							</button>
-						{/if}
-						{@render orderControl()}
-					{/if}
 					<button
 						type="button"
 						onclick={() => (maximized ? leaveMaximized() : enterMaximized())}
@@ -722,6 +710,12 @@
 					</button>
 				</div>
 			</div>
+
+			{#if tab === 'notes'}
+				<div class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-2 py-1.5">
+					{@render noteControls()}
+				</div>
+			{/if}
 
 			{#if tab === 'notes'}
 				<!--
@@ -968,6 +962,28 @@
 	directions is six presses to get back where you started — and the select is
 	a fixed width, so choosing a longer word does not move the arrow beside it.
 -->
+<!--
+	What is done to the list of notes: what it shows, and in what order.
+
+	One snippet, drawn either beside the tabs or on a row below them depending
+	on the width — never twice at once, and never two versions of it.
+-->
+{#snippet noteControls()}
+	<!-- Nothing is hidden without the strip saying how much. -->
+	{#if putAwayNotes > 0 || showArchivedNotes}
+		<button
+			type="button"
+			onclick={() => (showArchivedNotes = !showArchivedNotes)}
+			class="btn btn-sm shrink-0"
+		>
+			{showArchivedNotes
+				? t('notebookDetail.hideArchived')
+				: t('notebookDetail.showArchived', { count: putAwayNotes })}
+		</button>
+	{/if}
+	{@render orderControl()}
+{/snippet}
+
 {#snippet orderControl()}
 	{#if shownNotes.length > 1 || noteOrder !== DEFAULT_NOTE_ORDER}
 		<!-- The same control the task list uses. See `SortControl`. -->
