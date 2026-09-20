@@ -2,26 +2,27 @@
 	/**
 	 * The box where tags are typed, for every place that takes them.
 	 *
-	 * It was a plain text input. The server has always split what it holds on
-	 * commas and spaces, so "work urgent" was two tags the moment it was saved
-	 * — the box was the only thing that did not know, and there was no way to
-	 * see which words the account already used without opening something else
-	 * that had them on it.
+	 * Two things, not one. The **chips** are the tags this thing has. The
+	 * **input** holds only the word being typed, and empties the moment that
+	 * word becomes a chip. What the form posts is assembled from the chips into
+	 * a hidden field, so the server still receives the one comma-separated
+	 * string it always did and nothing on it had to learn anything.
 	 *
-	 * Now the words that are settled are chips, the one being typed suggests
-	 * what it could be, and a space finishes it. The form value is unchanged:
-	 * still one comma-separated string under the same name, so nothing on the
-	 * server had to learn anything.
+	 * The first version made the input and the chips two views of one string,
+	 * which could not work: clearing the input would have deleted the chips, so
+	 * it never cleared — and the word being typed was whatever trailed the last
+	 * separator, which right after a space is nothing, so nothing was ever
+	 * suggested. One mistake, both symptoms.
 	 *
 	 * The rules live in `$lib/tag-typing`, beside the tests that pin them.
 	 */
 	import Icon from '$lib/components/Icon.svelte';
 	import { useT } from '$lib/i18n';
-	import { splitTyping, suggestTags, withTag, withoutTag } from '$lib/tag-typing';
+	import { draftTag, endsTag, suggestTags, tagsFrom, tagsValue } from '$lib/tag-typing';
 
 	let {
 		name = 'tags',
-		value = $bindable(''),
+		value = '',
 		/** The account's whole vocabulary, for suggesting. */
 		known = [],
 		placeholder = ''
@@ -34,55 +35,102 @@
 
 	const t = useT();
 
+	/** The tags this thing has. Seeded from whatever the form arrived with. */
+	let tags = $state<string[]>(tagsFrom(value));
+	/** The word being typed. Nothing else lives in the input. */
+	let draft = $state('');
+
 	let box = $state<HTMLInputElement>();
 	let focused = $state(false);
 	let at = $state(-1);
 
-	const typing = $derived(splitTyping(value));
 	const suggestions = $derived(
-		focused && typing.draft.length > 0 ? suggestTags(known, typing.draft, typing.settled) : []
+		focused && draft.trim() !== '' ? suggestTags(known, draft, tags) : []
 	);
 
-	function choose(tag: string) {
-		value = withTag(value, tag);
+	function add(tag: string | null) {
+		if (tag && !tags.includes(tag)) tags = [...tags, tag];
+		draft = '';
 		at = -1;
+	}
+
+	function drop(tag: string) {
+		tags = tags.filter((one) => one !== tag);
 		box?.focus();
 	}
 
 	function onKeydown(e: KeyboardEvent) {
-		if (suggestions.length === 0) return;
+		// A suggestion picked out takes Enter and Tab before the word does.
+		if (suggestions.length > 0 && at >= 0 && (e.key === 'Enter' || e.key === 'Tab')) {
+			e.preventDefault();
+			add(suggestions[at]);
+			return;
+		}
 
-		if (e.key === 'ArrowDown') {
+		if (endsTag(e.key)) {
+			// Enter would submit the form and Tab would leave the field; both
+			// mean "this word is done" first. A draft of nothing means neither,
+			// so the key keeps whatever it normally does.
+			if (draft.trim() === '') return;
+			e.preventDefault();
+			add(draftTag(draft, tags));
+			return;
+		}
+
+		if (e.key === 'ArrowDown' && suggestions.length > 0) {
 			e.preventDefault();
 			at = (at + 1) % suggestions.length;
-		} else if (e.key === 'ArrowUp') {
+		} else if (e.key === 'ArrowUp' && suggestions.length > 0) {
 			e.preventDefault();
 			at = (at - 1 + suggestions.length) % suggestions.length;
-		} else if (e.key === 'Enter' && at >= 0) {
-			// Only when one is picked out: Enter with nothing highlighted belongs
-			// to the form, and stealing it would stop somebody submitting.
-			e.preventDefault();
-			choose(suggestions[at]);
 		} else if (e.key === 'Escape' && at >= 0) {
 			e.preventDefault();
 			at = -1;
+		} else if (e.key === 'Backspace' && draft === '' && tags.length > 0) {
+			// Backspace at the start of an empty box takes the last chip off,
+			// which is what every box of chips does and what a hand expects.
+			e.preventDefault();
+			tags = tags.slice(0, -1);
 		}
 	}
+
+	function onBlur() {
+		setTimeout(() => (focused = false), 150);
+	}
+
+	/*
+	 * What the form posts: the chips, plus whatever is still being typed.
+	 *
+	 * Typing "urgent" and pressing Save without a space is somebody saying
+	 * urgent, and losing it because they did not press the right key is the box
+	 * being pedantic about its own mechanics.
+	 *
+	 * Counted here rather than turned into a chip when the field is left, which
+	 * is what this did first and was worse than doing nothing: adding a chip on
+	 * blur inserts a row, the row pushes the button down, and the press that
+	 * caused the blur lands on whatever has moved into its place. The press
+	 * that saves the form must not move the form.
+	 */
+	const posted = $derived(
+		(() => {
+			const pending = draftTag(draft, tags);
+			return tagsValue(pending ? [...tags, pending] : tags);
+		})()
+	);
 </script>
 
 <div class="relative">
-	<!--
-		The chips are what is settled. They are not the value — the input is —
-		so there is one source of truth and no way for the two to disagree.
-	-->
-	{#if typing.settled.length > 0}
+	<!-- What the form posts. The chips are the truth; this is their spelling. -->
+	<input type="hidden" {name} value={posted} />
+
+	{#if tags.length > 0}
 		<div class="mb-2 flex flex-wrap gap-1.5">
-			{#each typing.settled as tag (tag)}
+			{#each tags as tag (tag)}
 				<span class="chip inline-flex items-center gap-1">
 					{tag}
 					<button
 						type="button"
-						onclick={() => (value = withoutTag(value, tag))}
+						onclick={() => drop(tag)}
 						aria-label={t('tags.removeTag', { tag })}
 						class="opacity-60 transition hover:opacity-100"
 					>
@@ -95,8 +143,7 @@
 
 	<input
 		bind:this={box}
-		bind:value
-		{name}
+		bind:value={draft}
 		{placeholder}
 		type="text"
 		class="input"
@@ -105,7 +152,7 @@
 		aria-expanded={suggestions.length > 0}
 		aria-controls="{name}-suggestions"
 		onfocus={() => (focused = true)}
-		onblur={() => setTimeout(() => (focused = false), 150)}
+		onblur={onBlur}
 		onkeydown={onKeydown}
 	/>
 
@@ -128,7 +175,7 @@
 						class="block w-full px-3 py-2 text-left text-sm {i === at ? 'bg-gray-100' : ''}"
 						onmousedown={(e) => {
 							e.preventDefault();
-							choose(tag);
+							add(tag);
 						}}
 					>
 						{tag}

@@ -66,6 +66,7 @@ sentence somebody agrees to when they grant it.
 | `/api/mcp`                                   | POST   | —                 |
 | `/api/mcp`                                   | GET    | —                 |
 | `/api/notifications`                         | POST   | —                 |
+| `/api/notifications/raised`                  | POST   | —                 |
 | `/api/pricing`                               | GET    | —                 |
 | `/api/push`                                  | POST   | —                 |
 | `/api/push`                                  | DELETE | —                 |
@@ -320,6 +321,27 @@ hang an action on, and every page in the app is behind it.
 
 Answers the count back, so the badge is what the database says rather than
 what the browser guessed after pressing something.
+
+**POST**
+
+### `/api/notifications/raised`
+
+Something the app told you itself, written down.
+
+Most notifications come from the server, and `pushToUser` records every one
+on its way out. A reminder that comes due while a page is open does not: the
+page raises it (`Reminders.svelte`), and the phone's own alarms do the same.
+Nothing was sent, so nothing was recorded — and the bell list then held a
+reminder or not depending on whether the app happened to be open when it
+fired, which is the one thing that should make no difference.
+
+So the page says so. The row goes in already read: you were looking at the
+screen when it appeared, so it belongs in "what was I told today" and does
+not belong in the count of things waiting on you.
+
+Idempotent by `key` rather than by luck. Push and the page can both raise
+the same reminder — the notification `tag` already stops two appearing on
+screen, and this stops two rows.
 
 **POST**
 

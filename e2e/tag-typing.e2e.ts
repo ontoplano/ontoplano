@@ -5,47 +5,81 @@ import { visit } from './helpers/visit';
 /**
  * Typing tags.
  *
- * The server has always split on commas and spaces, so "work urgent" was two
- * tags the moment it was saved — the box was the only thing that did not know,
- * and it could not say which words the account already used.
+ * The chips are the tags; the input is the word being typed. They were one
+ * string once, and both things wrong with it came from that: the input never
+ * cleared, because clearing it would have deleted the chips, and nothing was
+ * ever suggested, because the "word being typed" was whatever trailed the last
+ * separator — nothing, right after a space.
  */
-test('a space finishes a tag, and what is typed suggests what it could be', async ({ page }) => {
+test('a space makes a chip and empties the box, and typing suggests', async ({ page }) => {
 	test.setTimeout(120_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('tag-typing'));
 	await visit(page, '/tasks/todo');
 
+	// Scoped to the form: the page also has a row of tag-filter chips that
+	// answer to the same class.
+	const form = () => page.getByLabel('New to-do');
+	const tags = () => form().locator('input[role="combobox"]').first();
+	const chips = () => form().locator('.chip');
+
 	// One task, to put two words into the vocabulary.
 	await page.getByRole('button', { name: 'New to-do' }).click();
 	await page.locator('[name="heading"]').first().fill('Ring the plumber');
-	await page.locator('[name="tags"]').first().fill('household urgent');
+	await tags().fill('household');
+	await tags().press(' ');
+
+	// The word became a chip and the box is empty — ready for the next one.
+	await expect(chips().filter({ hasText: 'household' })).toBeVisible();
+	await expect(tags()).toHaveValue('');
+
+	// A comma does the same.
+	await tags().fill('urgent');
+	await tags().press(',');
+	await expect(chips().filter({ hasText: 'urgent' })).toBeVisible();
+	await expect(tags()).toHaveValue('');
+
 	await page.getByRole('button', { name: 'Create todo' }).click();
 	await expect(page.getByText('Ring the plumber').first()).toBeVisible({ timeout: 30_000 });
 
-	// A second task: the words typed into the first are offered back.
+	// A second task: the words from the first are offered back as they are typed.
 	await page.reload();
 	await page.getByRole('button', { name: 'New to-do' }).click();
 	await page.locator('[name="heading"]').first().fill('Book the MOT');
 
-	const tags = page.locator('[name="tags"]').first();
-	await tags.fill('hous');
-	// Scoped to the suggestion list: the page also has a native "Filter by tag"
-	// select, whose options answer to the same role and name.
+	await tags().click();
+	await tags().fill('hous');
 	const suggestions = page.locator('[role="listbox"]');
 	const option = suggestions.getByRole('option', { name: 'household' });
 	await expect(option).toBeVisible({ timeout: 30_000 });
 	await option.click();
 
-	// Choosing one settles it as a chip and leaves the box ready for the next.
-	await expect(tags).toHaveValue('household, ');
+	// Choosing one also leaves the box empty.
+	await expect(chips().filter({ hasText: 'household' })).toBeVisible();
+	await expect(tags()).toHaveValue('');
 
-	// A space finishes a word typed by hand, without leaving the box.
-	await tags.fill('household, urgent ');
-	// Both are settled now, so both are drawn as chips beside the box.
-	const chips = page.locator('.chip');
-	await expect(chips.filter({ hasText: 'household' }).first()).toBeVisible();
-	await expect(chips.filter({ hasText: 'urgent' }).first()).toBeVisible();
+	// Backspace on an empty box takes the last chip off.
+	await tags().press('Backspace');
+	await expect(chips().filter({ hasText: 'household' })).toHaveCount(0);
+});
 
+test('a word left in the box when the form is saved still counts', async ({ page }) => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('tag-unfinished'));
+	await visit(page, '/tasks/todo');
+
+	await page.getByRole('button', { name: 'New to-do' }).click();
+	await page.locator('[name="heading"]').first().fill('Cancel the gym');
+	// Typed and never ended with a space — pressing Save means it anyway.
+	await page.getByLabel('New to-do').locator('input[role="combobox"]').first().fill('fitness');
 	await page.getByRole('button', { name: 'Create todo' }).click();
-	await expect(page.getByText('Book the MOT').first()).toBeVisible({ timeout: 30_000 });
+	await expect(page.getByText('Cancel the gym').first()).toBeVisible({ timeout: 30_000 });
+
+	// It reached the server as a real tag: the account's vocabulary has it, so
+	// the list can be narrowed to it.
+	await page.reload();
+	const filter = page.getByRole('combobox', { name: /Filter by tag/i });
+	await expect(filter).toBeVisible({ timeout: 30_000 });
+	await expect(filter.locator('option', { hasText: 'fitness' })).toHaveCount(1);
 });

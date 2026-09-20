@@ -20,6 +20,12 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **The tag box empties as you type, and suggests as you go.** The chips and
+  the box were two views of one string, so the box could never clear — and
+  nothing was suggested, because the word being typed was whatever trailed the
+  last separator, which right after a space is nothing. They are two things
+  now. Backspace on an empty box takes the last chip off, and a word still
+  being typed when you press Save counts anyway.
 - **An opened card is shaded, not underlined.** A rule across the top of a
   rounded card stopped short of both edges and read as a mistake; the notes
   sit on a shade of their own now, and "nothing written on this one" is

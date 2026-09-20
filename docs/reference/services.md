@@ -43,6 +43,7 @@ shows up here on the next build.
 | [`errors`](#errors)                              | Typed errors thrown by service functions.                                                                                                                                                                                                                            |
 | [`family-invite`](#family-invite)                | Inviting somebody to the plan, and the account that makes for them.                                                                                                                                                                                                  |
 | [`gallery`](#gallery)                            | Albums: lists of references over the one media table.                                                                                                                                                                                                                |
+| [`goal-actions`](#goal-actions)                  | Making a goal, from wherever a goal is made.                                                                                                                                                                                                                         |
 | [`goals`](#goals)                                | Goals, and the progress that makes them more than a wish list.                                                                                                                                                                                                       |
 | [`habits`](#habits)                              | Habits are things to do or to avoid, logged one day at a time.                                                                                                                                                                                                       |
 | [`health`](#health)                              | Can this process actually reach the database?                                                                                                                                                                                                                        |
@@ -1698,6 +1699,25 @@ and the gallery never asked.
 - `AlbumPicture`
 - `AlbumNode`
 - `FolderPlan` — A folder of pictures, as albums.
+
+## goal-actions
+
+Making a goal, from wherever a goal is made.
+
+It used to be one action on the goals page, which is why a notebook's "New
+goal" was a link that took you out of the notebook you were looking at —
+there was nowhere else the form could post to. A task made from the same
+header had always stayed put, so the same press behaved two different ways
+depending on which tab was showing.
+
+The same arrangement `todo-actions.ts` has, and for the same reason: one
+handler, used by every route that offers the verb.
+
+### Functions
+
+#### `targetsFrom(formData)`
+
+The rows of "what this goal is measured by", as the form posts them.
 
 ## goals
 

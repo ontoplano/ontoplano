@@ -2,43 +2,58 @@ import { matchScore } from '$lib/destinations';
 import { parseTags } from '$lib/services/tags';
 
 /**
- * Typing tags into a box, as three small questions.
+ * Typing tags into a box.
  *
- * The server has always split on commas and spaces — `parseTags` — so "work
- * urgent" was two tags the moment it was saved. The box never said so: it
- * looked like one long string right up until it was submitted, and there was
- * no way to find out which words the account already used without opening
- * something else that had them on it.
+ * The first version made the input and the chips two views of one string: the
+ * chips were whatever the string parsed to, and the input held the string. It
+ * could not work. The input never cleared, because clearing it would have
+ * deleted the chips — and nothing was ever suggested, because the "word being
+ * typed" was whatever trailed the last separator, which after a space is
+ * nothing at all. One mistake, both symptoms.
  *
- * So the same rules are answered while the typing happens: what is already
- * settled, what is being typed now, and which existing tags that could be.
- *
- * Kept out of the component and out of the service: a pure function is the
- * only way to pin "urgent" suggests `urgent-ish` but not `gut` without
- * standing a browser up, and it is the same answer the server will reach.
+ * So they are two things. The chips are the tags, kept as a list. The input
+ * holds only the word being typed and is cleared the moment that word becomes
+ * a chip. What the form posts is assembled from the chips, in a hidden field,
+ * so the server still receives the one comma-separated string it always did.
  */
 
 /** How many suggestions to offer. More than a glance is a list to read. */
 export const MAX_SUGGESTIONS = 6;
 
-/** What counts as the end of a tag while somebody is typing. */
-const SEPARATOR = /[,\s]/;
+/**
+ * The tags in a value the form arrived with.
+ *
+ * `parseTags` is the server's own reading of that string, so what is drawn as
+ * chips is exactly what the server would have stored — the box cannot show one
+ * thing and save another.
+ */
+export function tagsFrom(value: string): string[] {
+	return parseTags(value);
+}
+
+/** What the form posts: the chips, as the one string the server expects. */
+export function tagsValue(tags: readonly string[]): string {
+	return tags.join(', ');
+}
 
 /**
- * The tags that are settled, and the part still being typed.
+ * The tag a draft becomes, or null if it is not one yet.
  *
- * A trailing separator means the last word is finished — "work " is one tag
- * and an empty draft, not a draft of "work". That is what lets a space turn
- * the word you just typed into a chip.
+ * Trimmed, lower-cased and stripped of a leading `#` — the same shape
+ * `parseTags` would give it, so a tag typed by hand and a tag chosen from the
+ * list are the same tag. Null for whitespace, and for one already on the box:
+ * pressing space twice is not two tags, and re-typing one you already have is
+ * not a second copy of it.
  */
-export function splitTyping(raw: string): { settled: string[]; draft: string } {
-	const endsOpen = raw.length > 0 && !SEPARATOR.test(raw[raw.length - 1]);
-	if (!endsOpen) return { settled: parseTags(raw), draft: '' };
+export function draftTag(draft: string, already: readonly string[] = []): string | null {
+	const [tag] = parseTags(draft);
+	if (!tag) return null;
+	return already.some((one) => one.toLowerCase() === tag) ? null : tag;
+}
 
-	const cut = Math.max(raw.lastIndexOf(','), raw.lastIndexOf(' '), raw.lastIndexOf('\t'));
-	const head = cut === -1 ? '' : raw.slice(0, cut);
-	const draft = raw.slice(cut + 1).replace(/^#+/, '');
-	return { settled: parseTags(head), draft };
+/** Whether what was just typed ends the word — a space, a comma, a tab. */
+export function endsTag(key: string): boolean {
+	return key === ' ' || key === ',' || key === 'Tab' || key === 'Enter';
 }
 
 /**
@@ -56,7 +71,7 @@ export function suggestTags(
 	chosen: readonly string[] = []
 ): string[] {
 	const taken = new Set(chosen.map((one) => one.toLowerCase()));
-	const wanted = draft.trim().toLowerCase();
+	const wanted = draft.trim().replace(/^#+/, '').toLowerCase();
 
 	return known
 		.filter((name) => !taken.has(name.toLowerCase()))
@@ -65,24 +80,4 @@ export function suggestTags(
 		.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name))
 		.slice(0, MAX_SUGGESTIONS)
 		.map((row) => row.name);
-}
-
-/**
- * The box's text with `tag` put on the end, ready for the next word.
- *
- * Ends with a separator on purpose: choosing a suggestion should leave the
- * caret able to type the next tag straight away rather than inside the one
- * just chosen.
- */
-export function withTag(raw: string, tag: string): string {
-	const { settled } = splitTyping(raw);
-	const already = new Set(settled.map((one) => one.toLowerCase()));
-	if (already.has(tag.toLowerCase())) return `${settled.join(', ')}, `;
-	return `${[...settled, tag].join(', ')}, `;
-}
-
-/** The box's text with `tag` taken off it. */
-export function withoutTag(raw: string, tag: string): string {
-	const kept = parseTags(raw).filter((one) => one.toLowerCase() !== tag.toLowerCase());
-	return kept.length > 0 ? `${kept.join(', ')}, ` : '';
 }
