@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **A reminder is in the bell list whether or not the app was open.** One that
+  came due while you were looking at a page was raised by the page itself and
+  written down nowhere, so the same reminder was in the list or not depending
+  on which device happened to be awake. It goes in either way now — already
+  read when you watched it appear, since a badge for that means nothing.
 - **A goal is written where you are.** "New goal" on a notebook used to throw
   you out to the Goals room, while "New task" beside it stayed put — the same
   press behaving two different ways depending on which tab was showing. It

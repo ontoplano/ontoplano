@@ -55,7 +55,21 @@ const unread = (userId: string) =>
  */
 export function record(
 	userId: string,
-	what: { title: string; body?: string; url?: string | null; kind?: string },
+	what: {
+		title: string;
+		body?: string;
+		url?: string | null;
+		kind?: string;
+		/**
+		 * Already read, for one the person was looking at when it arrived.
+		 *
+		 * A reminder that fires while the app is open is raised by the page
+		 * itself. It still belongs in the list — "what was I told today" has
+		 * to have one answer — but it is not waiting on anybody, and an unread
+		 * count for something you watched appear is a lie.
+		 */
+		seen?: boolean;
+	},
 	now = new Date()
 ): Sent {
 	const row = db
@@ -72,6 +86,7 @@ export function record(
 				.slice(0, MAX_BODY),
 			url: what.url ?? null,
 			kind: String(what.kind ?? ''),
+			readAt: what.seen ? now.toISOString() : null,
 			createdAt: now.toISOString()
 		})
 		.returning()

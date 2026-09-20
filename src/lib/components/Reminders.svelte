@@ -122,11 +122,32 @@
 		for (const item of items) {
 			try {
 				new Notification(item.message, { tag: `ontoplano-reminder-${item.id}`, body: 'ontoplano' });
+				written(item);
 			} catch {
 				// Some browsers refuse one outside a service worker, where push
 				// already raises it. Nothing else to fall back to, and nothing lost.
 			}
 		}
+	}
+
+	/*
+	 * And written into the list, because it happened.
+	 *
+	 * The server records everything it sends; this one was raised here, so
+	 * nothing would have recorded it and the bell would hold a reminder or not
+	 * depending on whether the app was open when it came due. It goes in
+	 * already read: you were looking at the screen.
+	 *
+	 * Fire and forget. A reminder that rang and was not written down is worth
+	 * less than a reminder that did not ring, so nothing here is allowed to
+	 * get in the way of the ringing.
+	 */
+	function written(item: Due) {
+		void fetch('/api/notifications/raised', {
+			method: 'POST',
+			headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ title: item.message, kind: 'reminder' })
+		}).catch(() => {});
 	}
 
 	/**
