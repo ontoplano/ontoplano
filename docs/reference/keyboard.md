@@ -7,12 +7,14 @@ works is a key listed here and the reverse.
 
 ## Everywhere
 
-| Key               | Does                 |
-| ----------------- | -------------------- |
-| <kbd>J</kbd>      | Next page            |
-| <kbd>K</kbd>      | Previous page        |
-| <kbd>Escape</kbd> | Close form           |
-| <kbd>?</kbd>      | Toggle shortcut help |
+| Key               | Does                        |
+| ----------------- | --------------------------- |
+| <kbd>J</kbd>      | Next page                   |
+| <kbd>K</kbd>      | Previous page               |
+| <kbd>L</kbd>      | Next place in this room     |
+| <kbd>H</kbd>      | Previous place in this room |
+| <kbd>Escape</kbd> | Close form                  |
+| <kbd>?</kbd>      | Toggle shortcut help        |
 
 ## Dashboard — `/`
 

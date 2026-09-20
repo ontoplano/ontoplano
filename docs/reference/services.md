@@ -562,24 +562,34 @@ will find.
 
 #### `phraseFor(tool)`
 
-What a tool did, as a verb and a noun.
+What a tool did, as a verb key and a noun.
 
 Returns `null` for a name this cannot read, and the caller counts those
 under "things" rather than guessing — a wrong sentence about somebody's data
 is worse than a vague one.
 
-#### `nounFor(noun, count)`
+#### `nounKey(noun)`
 
-`data_point` → `data point`, and plural when there is more than one.
+`data_point` → `dataPoint`, which is how the catalogue spells its nouns.
 
-#### `summarise(tools, token)`
+#### `summarise(tools, token, t)`
 
-A burst of calls, as the line a person reads.
+A burst of calls, as the line a person reads, in their own language.
 
 Grouped by what was done to what, because that is the shape of the answer
-somebody wants: "3 todos added, 8 blocks changed" rather than eleven lines.
+somebody wants: "changed 3 blocks, wrote 1 entry" rather than eleven lines.
 The largest group leads, since with one group it is the whole sentence and
 with several it is the one worth seeing first.
+
+Active voice, the same way round as the title. "3 blocks changed, 1 entry
+wrote" was the first shape and the last two words are wrong English: a
+passive needs the participle. One form per verb is what somebody would say
+out loud, and it is also the form a translator can work with.
+
+A noun the catalogue has never heard of falls back to the identifier with
+its underscores opened out. That is not a language, but it is a true
+sentence about somebody's data, which is the thing that matters most here —
+and it only happens for a tool added without its noun being added beside it.
 
 #### `destinationFor(calls)`
 
@@ -608,7 +618,7 @@ done. Used when the preference is turned on.
 
 ### Types
 
-- `Phrase`
+- `Phrase` — A verb's catalogue key, and the noun it acts on, as the identifier spells it.
 - `SweepResult`
 
 ## attributes
@@ -3385,6 +3395,14 @@ a list, a range, or a timezone the platform recognises.
 
 #### `setUserLanguage(ctx, value)`
 
+#### `setUserClock(ctx, value)`
+
+Which clock this account reads.
+
+`auto` is a real answer, not the absence of one — it means "whatever my
+language does" and has to survive being chosen deliberately after a person
+has tried 12 and 24 and decided the default was right.
+
 #### `setUserStyle(ctx, value)`
 
 #### `saveWeekPreferences(ctx, raw)`
@@ -4571,6 +4589,18 @@ a screen of keys.
 
 #### `setLocale(userId, locale)`
 
+#### `getClock(userId)`
+
+Whether this account reads a 12- or a 24-hour clock.
+
+`auto` — the default, and what almost everybody should be on — asks the
+language: English says four in the afternoon, Portuguese and German say
+sixteen. It is a setting because the language is a good guess about a person
+and not a statement about them: plenty of people read English and think in
+24, and the app has no business arguing.
+
+#### `setClock(userId, clock)`
+
 #### `getHiddenSections(userId)`
 
 The sections this account has put away — out of every menu, still there at
@@ -5260,7 +5290,7 @@ A `Date` as the day it is, where it is — `2026-09-19`.
 yesterday for anybody west of Greenwich in the evening. Written out of the
 local parts instead, which is what every table keyed by day holds.
 
-#### `instantInWords(iso, locale, now)`
+#### `instantInWords(iso, when, now)`
 
 An instant, said where the reader is.
 

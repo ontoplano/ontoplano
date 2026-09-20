@@ -165,10 +165,30 @@ mkdirSync(OUT, { recursive: true });
  * longer out, which in a diff looks like an ordinary regeneration.
  */
 const ordinal = (v) => v.replace(/^v/, '').split('.').map(Number);
+
+/**
+ * The versions a badge actually *says*, which is not every number in it.
+ *
+ * An SVG is mostly geometry: path data, a viewBox, tick positions. Scanning
+ * the whole file for `v?N.N` read `14.5` in a path as version 14.5, which is
+ * newer than any version this project will ever have — so every badge always
+ * looked like it came from a newer clone, was never rewritten, and
+ * `--check` never said a word. The release badge sat five versions out of date
+ * through as many releases, each one running `make badges` and being told
+ * politely to fetch its tags.
+ *
+ * So: only text nodes, and only with the `v` the badge actually prints.
+ */
+export function versionsSaid(svg) {
+	return [...svg.matchAll(/>([^<]*)</g)]
+		.flatMap(([, text]) => [...text.matchAll(/\bv([0-9]+(?:\.[0-9]+)+)/g)])
+		.map(([, found]) => found);
+}
+
 function namesSomethingNewer(svg) {
 	if (!released) return false;
 	const mine = ordinal(released);
-	return [...svg.matchAll(/v?([0-9]+(?:\.[0-9]+)+)/g)].some(([, found]) => {
+	return versionsSaid(svg).some((found) => {
 		const theirs = ordinal(found);
 		for (let i = 0; i < Math.max(mine.length, theirs.length); i++) {
 			if ((theirs[i] ?? 0) > (mine[i] ?? 0)) return true;
