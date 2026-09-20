@@ -1463,6 +1463,9 @@ export const messages: Catalogue = {
 	'manifest.newDiaryEntry': 'Neuer Tagebucheintrag',
 	'manifest.todaysColumns': 'Die heutigen Spalten',
 	'manifest.writeAnEntry': 'Einen Eintrag schreiben',
+	'markdown.nothingToPreviewYet': 'Noch nichts in der Vorschau',
+	'markdown.preview': 'Vorschau',
+	'markdown.write': 'Schreiben',
 	'markdownImport.import': 'Importieren',
 	'markdownImport.nameForTheNotebookThey': 'Name für das Notizbuch, in dem sie landen',
 	'markdownImport.nothingIsUploadedAsA':

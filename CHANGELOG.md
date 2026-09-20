@@ -20,6 +20,12 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **The help dock stays out of the way until it is wanted.** Four icons sat in
+  the corner of every desktop screen. It is one question mark now, on a phone
+  and a desktop alike, and pressing it opens the row — and closes it again.
+- **A note shows what its markdown will look like, as you type it.** Beside the
+  box where there is room for two columns, behind a Write/Preview pair where
+  there is not. It has nothing to do with saving.
 - **Changing the language says it is working.** Every word on every screen is
   reloaded, which takes a moment, and for that moment the app said nothing at
   all — the bar across the top and the turning mark only ever answered a

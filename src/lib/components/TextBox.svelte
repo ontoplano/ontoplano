@@ -15,12 +15,18 @@
 
 	let {
 		value = $bindable(''),
+		element = $bindable(),
 		rows = 3,
 		grow = true,
 		class: extra = '',
 		...rest
 	}: HTMLTextareaAttributes & {
 		value?: string;
+		/**
+		 * The textarea itself, for the things that write into it — a picture
+		 * dropping its markdown at the caret, a recording doing the same.
+		 */
+		element?: HTMLTextAreaElement;
 		rows?: number;
 		/** Follow what is typed instead of keeping one height. */
 		grow?: boolean;
@@ -29,7 +35,8 @@
 </script>
 
 {#if grow}
-	<textarea bind:value {rows} use:autogrow class="textarea {extra}" {...rest}></textarea>
+	<textarea bind:this={element} bind:value {rows} use:autogrow class="textarea {extra}" {...rest}
+	></textarea>
 {:else}
-	<textarea bind:value {rows} class="textarea {extra}" {...rest}></textarea>
+	<textarea bind:this={element} bind:value {rows} class="textarea {extra}" {...rest}></textarea>
 {/if}

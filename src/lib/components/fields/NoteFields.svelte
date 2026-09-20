@@ -5,7 +5,7 @@
 	import NotebookField from '$lib/components/NotebookField.svelte';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
 	import RecordingAttach from '$lib/components/RecordingAttach.svelte';
-	import { autogrow } from '$lib/actions/autogrow';
+	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -60,14 +60,7 @@
 </script>
 
 <Field {label} span={12} required>
-	<textarea
-		bind:this={box}
-		name="content"
-		required
-		rows={compact ? 4 : 8}
-		use:autogrow
-		class="textarea">{content}</textarea
-	>
+	<MarkdownBox bind:element={box} value={content} name="content" required rows={compact ? 4 : 8} />
 	{#if pictures}
 		<PictureAttach target={box} />
 		<RecordingAttach target={box} />

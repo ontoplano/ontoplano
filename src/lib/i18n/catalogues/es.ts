@@ -1448,6 +1448,9 @@ export const messages: Catalogue = {
 	'manifest.newDiaryEntry': 'Nueva entrada de diario',
 	'manifest.todaysColumns': 'Las columnas de hoy',
 	'manifest.writeAnEntry': 'Escribir una entrada',
+	'markdown.nothingToPreviewYet': 'Nada que previsualizar todavía',
+	'markdown.preview': 'Vista previa',
+	'markdown.write': 'Escribir',
 	'markdownImport.import': 'Importar',
 	'markdownImport.nameForTheNotebookThey': 'Nombre del cuaderno donde caerán',
 	'markdownImport.nothingIsUploadedAsA':

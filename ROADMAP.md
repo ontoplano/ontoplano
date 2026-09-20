@@ -121,21 +121,14 @@ follow later, and neither is what somebody uses every day.
 
 ## Small improvements
 
-- **Recipes belong under a Health section.** Recipes sit on their own today;
-  they read as part of eating well, next to habits and the shopping list, not
-  as a standalone room. The move is navigation and framing, not the data.
-
 - **Sharing beyond shopping and notebooks.** A family plan can share a
   shopping category and a notebook today, opt-in, owner-controlled. Tasks
   and goals that belong to it should be shared too, but only editable by the
   owner (much like the categories and notebooks are).
 
-- **Audio on notes**, by the path images already take.
 - **An `.ics` importer**, beside the Todoist, Google Tasks, Google Keep,
   org-mode and Obsidian ones. Subscribing to a calendar already works;
   importing one does not.
-- **A scheme you can schedule** rather than apply by hand, and an MCP tool
-  for changing schemes.
 - **A token's own log** on the page that lists them: a token says when it was
   last used and not what it did.
 - **Filter the plan by kind.** On `/tasks/plan`, show only the recurring
@@ -154,8 +147,9 @@ follow later, and neither is what somebody uses every day.
 
 ## One day, maybe
 
-**More media**: annexing PDFs and larger images, under a size limit, so small
-servers (like mine) are not overloaded.
+- **More media**: annexing PDFs 
+- **A scheme you can schedule** rather than apply by hand, and an MCP tool
+  for changing schemes.
 
 ### A business section
 
@@ -187,8 +181,6 @@ the question.
 
 So they stop coming back:
 
-- **Budget tracking** — huge, crowded, barely touches the week.
-- **Reading lists** — a different app.
 - **An in-process plugin system** — data streams and the API cover it. Too easy to accidentally create an RCE entry point.
 - **AI features inside the app.** The interface is MCP: your assistant, your
   token, your machine. Nothing in here calls a model.
