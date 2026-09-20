@@ -18,6 +18,17 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.181.3 — 2026-09-20
+
+- **A card can be moved on a phone.** Dragging is a mouse gesture and does not
+  exist under a finger, so the one thing a board is for could not be done on a
+  phone at all. Pressing a card's grip picks it up — the board says what is in
+  your hand and every column says it will take it — and the next press puts it
+  down. It works with a mouse too.
+- **Pressing a card reads it.** Its notes, the pictures and recordings in
+  them, and the goals it belongs to by name. Reading a card no longer means
+  opening the form that edits it and pressing Cancel.
+
 ## 0.181.2 — 2026-09-20
 
 - **Notebooks has a handle between its two columns.** The list of notebooks

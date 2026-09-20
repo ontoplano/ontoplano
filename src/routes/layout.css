@@ -2286,6 +2286,20 @@ html[data-style='playful'] .card-accent {
  * black line art into nothing at all.
  */
 /*
+ * A column while a card is in somebody's hand.
+ *
+ * Arming a card and then looking for where to put it is the moment the board
+ * has to say "here, and here" — a drag says it by lighting the column under
+ * the pointer, and a press has no pointer to follow. So every place that will
+ * take it says so at once.
+ */
+.is-landing {
+	outline: 2px dashed var(--color-gray-400);
+	outline-offset: -2px;
+	cursor: copy;
+}
+
+/*
  * A table in somebody's writing.
  *
  * Its own scroller, because a table of four columns is wider than a phone and

@@ -8,6 +8,8 @@
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
+	import { SvelteSet } from 'svelte/reactivity';
+	import Written from '$lib/components/Written.svelte';
 	import { enhance } from '$app/forms';
 	import { armed } from '$lib/actions/armed';
 	import { focusHere } from '$lib/actions/autofocus';
@@ -274,6 +276,42 @@
 			headers: { 'x-sveltekit-action': 'true' },
 			body
 		});
+	}
+
+	/**
+	 * The same thing as a drag, for a finger.
+	 *
+	 * HTML5 drag-and-drop does not exist on a touch screen, so a phone had no
+	 * way at all to move a card between columns — the one thing this room is
+	 * for. Pressing a card's grip arms it and the next press on a column places
+	 * it, which is the gesture the planner's todo rail already uses. It works
+	 * with a mouse too, which is one behaviour fewer to explain.
+	 */
+	let movingUid: string | null = $state(null);
+	const moving = $derived(
+		columns.flatMap((c) => c.cards).find((card) => card.uid === movingUid) ??
+			railCards.find((card) => card.uid === movingUid) ??
+			null
+	);
+
+	function placeIn(status: Status) {
+		const card = moving;
+		movingUid = null;
+		if (card) void move(card, status);
+	}
+
+	/**
+	 * Which cards are unfolded to show what is written on them.
+	 *
+	 * A card says its title and nothing else, and the only way to read the
+	 * notes under it was to open the form that edits it — on a phone and on a
+	 * desktop alike. Pressing the card reads it; the pencil beside it edits it.
+	 */
+	let openCards = $state(new SvelteSet<string>());
+
+	function readCard(card: Card) {
+		if (openCards.has(card.uid)) openCards.delete(card.uid);
+		else openCards.add(card.uid);
 	}
 
 	async function move(card: Card, status: Status) {
@@ -915,6 +953,28 @@
 		{/snippet}
 	</Modal>
 
+	<!--
+		What is in your hand, and the way to put it back.
+
+		A card armed for a move is a state somebody can walk away from, so it
+		says so — with its name, because two cards in a column look alike — and
+		the way out is a press rather than a guess.
+	-->
+	{#if moving}
+		<div
+			class="mb-3 flex items-center gap-3 border border-gray-900 bg-gray-50 px-3 py-2 text-sm"
+			role="status"
+		>
+			<Icon name="drag" size={14} />
+			<span class="min-w-0 flex-1 truncate"
+				>{t('tasks.board.movingPickAColumn', { title: moving.title })}</span
+			>
+			<button type="button" class="btn btn-sm shrink-0" onclick={() => (movingUid = null)}>
+				{t('ui.cancel')}
+			</button>
+		</div>
+	{/if}
+
 	<div class="flex flex-col gap-3 md:flex-row">
 		<div class="min-w-0 flex-1">
 			<!-- Which column the phone is looking at. Above md every column is on
@@ -929,11 +989,20 @@
 				the only way the gesture makes sense when you cannot see where it
 				landed.
 			-->
-			<div class="seg mb-3 flex w-full md:hidden {dragging ? 'ring-2 ring-gray-900' : ''}">
+			<div
+				class="seg mb-3 flex w-full md:hidden {dragging || movingUid ? 'ring-2 ring-gray-900' : ''}"
+			>
 				{#each columns as column (column.status)}
 					<button
 						type="button"
-						onclick={() => showColumn(column.status)}
+						onclick={() => {
+							// On a phone the column a card should go in is the one that is
+							// not on the screen, so these names are where you put it down
+							// as well as where you go. It follows the card, because a move
+							// you cannot see land is a move you cannot trust.
+							if (movingUid) placeIn(column.status);
+							showColumn(column.status);
+						}}
 						aria-pressed={phoneColumn === column.status}
 						ondragover={(e) => {
 							e.preventDefault();
@@ -982,6 +1051,16 @@
 							if (dragOverColumn === column.status) dragOverColumn = null;
 						}}
 						ondrop={(e) => onDropInColumn(column.status, e)}
+						onclickcapture={(e) => {
+							// Placing beats every other reading of a press on a column:
+							// capture, so a card or a button inside it does not take the
+							// press that was meant to put something down.
+							if (!movingUid) return;
+							e.preventDefault();
+							e.stopPropagation();
+							placeIn(column.status);
+						}}
+						class:is-landing={movingUid !== null}
 					>
 						<!--
 							The switcher above says both of these on a phone.
@@ -1029,14 +1108,18 @@
 									onclick={() => {
 										focusCol = ci;
 										focusRow = ri;
+										readCard(card);
 									}}
 									onkeydown={() => {}}
 									role="button"
 									tabindex="0"
+									aria-expanded={openCards.has(card.uid)}
 									class="pill-soft cursor-grab px-2 py-1.5 shadow-card {focusCol === ci &&
 									focusRow === ri
 										? 'kbd-cursor'
-										: ''} {dragging?.uid === card.uid ? 'opacity-40' : ''}"
+										: ''} {dragging?.uid === card.uid || movingUid === card.uid
+										? 'opacity-40'
+										: ''}"
 									style="--pill: {card.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
 									title={card.categoryName ?? t('tasks.board.noCategory')}
 								>
@@ -1095,6 +1178,23 @@
 													</span>
 												{/if}
 												<p class="min-w-0 flex-1 truncate text-sm text-gray-900">{card.title}</p>
+												<!-- Pick it up. A drag is a mouse gesture and does not
+												     exist under a finger, so the move a board is for
+												     needs a press: this arms the card and the next
+												     press on a column puts it there. -->
+												<button
+													type="button"
+													onclick={(e) => {
+														e.stopPropagation();
+														movingUid = movingUid === card.uid ? null : card.uid;
+													}}
+													aria-pressed={movingUid === card.uid}
+													class="shrink-0 self-start opacity-70 transition hover:opacity-100"
+													title={t('tasks.board.moveThisToAColumn')}
+													aria-label={t('tasks.board.moveThisToAColumn')}
+												>
+													<Icon name="drag" size={14} />
+												</button>
 												<button
 													type="button"
 													onclick={(e) => {
@@ -1143,6 +1243,32 @@
 											{/if}
 										</div>
 									</div>
+
+									<!--
+										What is written on it, for whoever pressed it.
+
+										Its notes, the pictures and recordings in them, and the goals
+										it belongs to by name rather than by the one glyph the folded
+										card has room for. Reading a card should not mean opening the
+										form that edits it and pressing Cancel.
+									-->
+									{#if openCards.has(card.uid)}
+										<div class="mt-1.5 border-t border-gray-200 pt-1.5">
+											{#if card.notes}
+												<Written content={card.notes} compact />
+											{:else}
+												<p class="text-xs text-gray-500">
+													{t('tasks.board.nothingWrittenOnThisOne')}
+												</p>
+											{/if}
+											{#each card.goals as goal (goal.id)}
+												<p class="mt-1 flex items-center gap-1 text-xs text-gray-500">
+													<Icon name="goals" size={11} />
+													{goal.title}
+												</p>
+											{/each}
+										</div>
+									{/if}
 
 									<!--
 										What `x` arms. The key does not delete on its own — a keystroke
@@ -1215,6 +1341,15 @@
 				}}
 				ondragleave={() => (railOver = false)}
 				ondrop={(e) => onDropInRail(e)}
+				onclickcapture={(e) => {
+					// The rail is a place to put one down too: back onto the list,
+					// off the day. Capture, for the same reason a column does.
+					if (!movingUid) return;
+					e.preventDefault();
+					e.stopPropagation();
+					placeIn('todo');
+				}}
+				class:is-landing={movingUid !== null}
 			>
 				<header
 					class="flex items-center justify-between border-b border-gray-200 bg-white px-3 py-2"
@@ -1231,7 +1366,13 @@
 							ondragstart={(e) => onDragStart(card, e)}
 							ondragend={onDragEnd}
 							ondragover={(e) => e.preventDefault()}
-							class="pill-soft lift cursor-grab p-2 shadow-card {dragging?.uid === card.uid
+							onclick={() => readCard(card)}
+							onkeydown={() => {}}
+							role="button"
+							tabindex="0"
+							aria-expanded={openCards.has(card.uid)}
+							class="pill-soft lift cursor-grab p-2 shadow-card {dragging?.uid === card.uid ||
+							movingUid === card.uid
 								? 'opacity-40'
 								: ''}"
 							style="--pill: {card.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
@@ -1242,7 +1383,29 @@
 									<p class="truncate text-sm">{card.title}</p>
 									<RatingBadges values={card.ratings} class="mt-1" />
 								</div>
+								<button
+									type="button"
+									onclick={(e) => {
+										e.stopPropagation();
+										movingUid = movingUid === card.uid ? null : card.uid;
+									}}
+									aria-pressed={movingUid === card.uid}
+									class="shrink-0 self-start opacity-70 transition hover:opacity-100"
+									title={t('tasks.board.moveThisToAColumn')}
+									aria-label={t('tasks.board.moveThisToAColumn')}
+								>
+									<Icon name="drag" size={14} />
+								</button>
 							</div>
+							{#if openCards.has(card.uid)}
+								<div class="mt-1.5 border-t border-gray-200 pt-1.5">
+									{#if card.notes}
+										<Written content={card.notes} compact />
+									{:else}
+										<p class="text-xs text-gray-500">{t('tasks.board.nothingWrittenOnThisOne')}</p>
+									{/if}
+								</div>
+							{/if}
 						</article>
 					{/each}
 

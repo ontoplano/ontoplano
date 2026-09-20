@@ -2355,11 +2355,14 @@ export type MessageKey =
 	| 'tasks.board.minutes'
 	| 'tasks.board.minutesFull'
 	| 'tasks.board.move'
+	| 'tasks.board.moveThisToAColumn'
+	| 'tasks.board.movingPickAColumn'
 	| 'tasks.board.newCard'
 	| 'tasks.board.noCategory'
 	| 'tasks.board.notSaid'
 	| 'tasks.board.nothingHere'
 	| 'tasks.board.nothingWaiting'
+	| 'tasks.board.nothingWrittenOnThisOne'
 	| 'tasks.board.numberKeysSet'
 	| 'tasks.board.rate'
 	| 'tasks.board.remindMe'
@@ -3261,6 +3264,7 @@ export interface MessageValuesFor {
 	'streamChart.inAgainstOutByMonth': { inLabel: string | number; outLabel: string | number };
 	'tasks.board.edit': { title: string | number };
 	'tasks.board.minutesFull': { count: number };
+	'tasks.board.movingPickAColumn': { title: string | number };
 	'tasks.board.removeTheReminderAt': { slice: string | number };
 	'tasks.plan.backOneUnit': { key: string | number; unit: string | number };
 	'tasks.plan.backOneUnitPlain': { unit: string | number };
