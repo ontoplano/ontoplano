@@ -20,6 +20,10 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **An opened card is shaded, not underlined.** A rule across the top of a
+  rounded card stopped short of both edges and read as a mistake; the notes
+  sit on a shade of their own now, and "nothing written on this one" is
+  legible instead of nearly invisible.
 - **A picture opens over the page instead of in a new tab.** Pressing one is
   the app being asked to show it, not a link being followed — so it fills the
   screen on a dark ground and the ground closes it. Every rendered picture in

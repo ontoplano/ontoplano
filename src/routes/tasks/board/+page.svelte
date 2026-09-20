@@ -1253,11 +1253,20 @@
 										form that edits it and pressing Cancel.
 									-->
 									{#if openCards.has(card.uid)}
-										<div class="mt-1.5 border-t border-gray-200 pt-1.5">
+										<!--
+											A wash, not a rule.
+											
+											This was a `border-t` across a card with rounded
+											corners, which drew a straight line stopping short of
+											both edges — a single-sided border that reads as a
+											mistake rather than as a division. A shade of its own
+											says "this part opened" without drawing anything.
+										-->
+										<div class="card-opened mt-1.5 rounded px-2 py-1.5">
 											{#if card.notes}
 												<Written content={card.notes} compact />
 											{:else}
-												<p class="text-xs text-gray-500">
+												<p class="text-xs text-gray-700 italic">
 													{t('tasks.board.nothingWrittenOnThisOne')}
 												</p>
 											{/if}
@@ -1398,11 +1407,14 @@
 								</button>
 							</div>
 							{#if openCards.has(card.uid)}
-								<div class="mt-1.5 border-t border-gray-200 pt-1.5">
+								<!-- The same wash the column cards use. See `.card-opened`. -->
+								<div class="card-opened mt-1.5 rounded px-2 py-1.5">
 									{#if card.notes}
 										<Written content={card.notes} compact />
 									{:else}
-										<p class="text-xs text-gray-500">{t('tasks.board.nothingWrittenOnThisOne')}</p>
+										<p class="text-xs text-gray-700 italic">
+											{t('tasks.board.nothingWrittenOnThisOne')}
+										</p>
 									{/if}
 								</div>
 							{/if}
@@ -1482,3 +1494,21 @@
 		{t('tasks.board.delete')}
 	</p>
 </div>
+
+<style>
+	/*
+	 * The part of a card that opened.
+	 *
+	 * This was a `border-t` across a card with rounded corners, which drew a
+	 * straight line stopping short of both edges — a single-sided border that
+	 * reads as a mistake rather than as a division. A shade of its own says
+	 * "this part opened" and draws nothing.
+	 *
+	 * `--hover-wash` is the app's own "slightly different from what is under
+	 * it", defined per theme, so it reads on a light card and on a dark one
+	 * without being written twice.
+	 */
+	.card-opened {
+		background: var(--hover-wash);
+	}
+</style>
