@@ -30,11 +30,7 @@ describe('the registry', () => {
 	 * Listing them here is what keeps it a decision: a new one fails this test
 	 * until somebody writes down why it is worth it.
 	 */
-	const DELIBERATE_OVERLAP: Record<string, string[]> = {
-		// H and L walk the places inside a room; on the board they carry a card
-		// into the next column, which is the better use of them on a board.
-		'/tasks/board': ['H', 'L']
-	};
+	const DELIBERATE_OVERLAP: Record<string, string[]> = {};
 
 	test('no page shadows a global binding by accident', () => {
 		const globals = new Set(GLOBAL_SHORTCUTS.map((s) => s.key));

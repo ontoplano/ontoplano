@@ -92,14 +92,42 @@ test('shift H and L walk the places inside the room you are in', async ({ page }
 	expect(forward.startsWith('/tasks/')).toBe(true);
 });
 
-test('a screen that already uses those keys keeps them', async ({ page }) => {
+test('H and L walk Media and Finance too, in the strip order', async ({ page }) => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await register(page, testEmail('room-tabs'));
+
+	// Rooms with no entries in the menu at all — they answered to nothing when
+	// this was worked out from `$lib/destinations`.
+	for (const room of ['/media/audios', '/finance/ledgers']) {
+		await visit(page, room);
+		await expect(page).toHaveURL(new RegExp(room.split('/')[1]), { timeout: 60_000 });
+		await page
+			.locator('h1, body')
+			.first()
+			.click({ position: { x: 5, y: 5 } });
+
+		const before = new URL(page.url()).pathname;
+		await page.keyboard.press('Shift+L');
+		await page.waitForTimeout(700);
+		const after = new URL(page.url()).pathname;
+
+		expect(after).not.toBe(before);
+		// Sideways, not out of the room.
+		expect(after.split('/')[1]).toBe(room.split('/')[1]);
+	}
+});
+
+test('the board keeps H and L, and carries a card with the angle brackets', async ({ page }) => {
 	test.setTimeout(120_000);
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await register(page, testEmail('board-keys'));
 
-	// The board binds H and L to carrying a card between columns, which is a
-	// better use of them there. Walking out of the board would take the keys
-	// away from the thing the board is for.
+	/*
+	 * The board used to claim H and L for carrying a card, which made it the
+	 * one room you could not walk out of sideways. A key that means one thing
+	 * on nine screens and another on the tenth is a key nobody trusts.
+	 */
 	await visit(page, '/tasks/board');
 	await expect(page).toHaveURL(/\/tasks\/board/, { timeout: 60_000 });
 	await page
@@ -108,8 +136,7 @@ test('a screen that already uses those keys keeps them', async ({ page }) => {
 		.click({ position: { x: 5, y: 5 } });
 
 	await page.keyboard.press('Shift+L');
-	await page.waitForTimeout(500);
-	await expect(page).toHaveURL(/\/tasks\/board/);
+	await expect(page).toHaveURL(/\/tasks\/(?!board)/, { timeout: 30_000 });
 });
 
 test('switching to the preview moves nothing below it', async ({ page }) => {

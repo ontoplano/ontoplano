@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { setRoomTabs } from '$lib/room-tabs.svelte';
 	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
 	import { navigating, page } from '$app/state';
 	import RoomBar from '$lib/components/RoomBar.svelte';
@@ -43,6 +44,17 @@
 		actions?: import('svelte').Snippet;
 		children: import('svelte').Snippet;
 	} = $props();
+
+	/*
+	 * The strip says what it is drawing, so `H` and `L` can walk the same list
+	 * in the same order. See `$lib/room-tabs` — it was worked out from the
+	 * menu before, which is a different list with a different order and holes
+	 * in it where a room has no menu entries at all.
+	 */
+	$effect(() => {
+		setRoomTabs(tabs);
+		return () => setRoomTabs([]);
+	});
 
 	/**
 	 * Which tab a path is under. One of them, never two.

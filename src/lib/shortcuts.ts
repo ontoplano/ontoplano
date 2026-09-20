@@ -72,8 +72,17 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'j', action: 'next-card', description: 'shortcut.moveBetweenCards' },
 			{ key: 'k', action: 'prev-card', description: 'shortcut.moveBetweenCards' },
 			{ key: 'l', action: 'next-column', description: 'shortcut.moveBetweenColumns' },
-			{ key: 'H', action: 'carry-left', description: 'shortcut.carryCardToPreviousColumn' },
-			{ key: 'L', action: 'carry-right', description: 'shortcut.carryCardToNextColumn' },
+			/*
+			 * `<` and `>`, not `H` and `L`.
+			 *
+			 * Those two walk the places inside a room, everywhere in the app —
+			 * and a key that means one thing on nine screens and something else
+			 * on the tenth is a key nobody trusts. The board used to claim them,
+			 * so the board was the one room you could not walk out of sideways.
+			 * The angle brackets already read as "push it that way".
+			 */
+			{ key: '<', action: 'carry-left', description: 'shortcut.carryCardToPreviousColumn' },
+			{ key: '>', action: 'carry-right', description: 'shortcut.carryCardToNextColumn' },
 			{ key: 'c', action: 'toggle-done', description: 'shortcut.markDoneReopen' },
 			{ key: 't', action: 'toggle-today', description: 'shortcut.pullOntoTodayPut' },
 			{ key: 'g', action: 'switch-tab', description: 'shortcut.switchTodayGeneral' },

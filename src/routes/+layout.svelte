@@ -57,7 +57,7 @@
 	import { busy, whileBusy } from '$lib/busy.svelte';
 	import ImageViewer from '$lib/components/ImageViewer.svelte';
 	import { scrollToHash } from '$lib/scroll-to-hash';
-	import { stepWithinRoom } from '$lib/rooms';
+	import { stepThroughRoom } from '$lib/room-tabs.svelte';
 	import { smartNumberFields } from '$lib/number-fields';
 	import type { Snippet } from 'svelte';
 
@@ -431,12 +431,7 @@
 			 */
 			case 'global-next-place':
 			case 'global-prev-place': {
-				if (getAction(page.url.pathname, e.key)) break;
-				const to = stepWithinRoom(
-					page.url.pathname,
-					action === 'global-next-place' ? 1 : -1,
-					data.hiddenSections
-				);
+				const to = stepThroughRoom(page.url.pathname, action === 'global-next-place' ? 1 : -1);
 				if (!to) break;
 				e.preventDefault();
 				// eslint-disable-next-line svelte/no-navigation-without-resolve

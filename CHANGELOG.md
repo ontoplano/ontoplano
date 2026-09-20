@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **Shift+H and Shift+L walk the room's own tabs, everywhere.** They read the
+  strip the room is drawing rather than the menu's list, so they go in the
+  order you can see, reach places the menu does not list, and work in Media
+  and Finance — which answered to nothing before. The board no longer takes
+  them for itself: it carries a card with `<` and `>`.
 - **One sorting control, in the notes and in the tasks.** A notebook's notes
   used a dropdown beside an arrow; its tasks used a button that cycled through
   the orders, which shows you nothing and cannot go back. Both now say what
