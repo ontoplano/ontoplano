@@ -145,6 +145,40 @@ export function monthOf(key: string, when: When, extra: Intl.DateTimeFormatOptio
 	);
 }
 
+/**
+ * How long ago, in words: "3h ago", "yesterday", "last week".
+ *
+ * For a stamp whose exact time matters less than its distance — when a label
+ * went on, when an assistant last wrote. `Intl.RelativeTimeFormat` knows what
+ * each language does with that, including the languages that have a word for
+ * yesterday and the ones that do not.
+ *
+ * The largest unit that still reads as true: ninety minutes is "1 hour ago"
+ * rather than "90 minutes ago", because the point is the distance and not the
+ * arithmetic.
+ */
+export function agoOf(moment: Moment, when: When, now: Date = new Date()): string {
+	const { at } = parse(moment);
+	if (Number.isNaN(at.getTime())) return '';
+
+	const seconds = Math.round((at.getTime() - now.getTime()) / 1000);
+	const rtf = new Intl.RelativeTimeFormat(when.locale, { numeric: 'auto' });
+
+	const scale: [Intl.RelativeTimeFormatUnit, number][] = [
+		['year', 31_536_000],
+		['month', 2_592_000],
+		['week', 604_800],
+		['day', 86_400],
+		['hour', 3_600],
+		['minute', 60]
+	];
+
+	for (const [unit, size] of scale) {
+		if (Math.abs(seconds) >= size) return rtf.format(Math.round(seconds / size), unit);
+	}
+	return rtf.format(seconds, 'second');
+}
+
 /** The weekday alone, for a planner column or a habit grid. */
 export function weekdayOf(
 	moment: Moment,

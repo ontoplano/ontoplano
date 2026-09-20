@@ -364,6 +364,18 @@ function briefly(todo: Todo): Record<string, unknown> {
 	// Names, not ids: the id of a tag is of no use to a reader, and the whole
 	// point of a label here is the word.
 	if (todo.tags.length > 0) out.tags = todo.tags.map((one) => one.name);
+	/*
+	 * And when each went on, where that is known.
+	 *
+	 * Separate from `tags` so the common reading stays a plain list of words.
+	 * This is what lets a caller answer "what has been marked since this
+	 * morning" without comparing against a list it remembered — the task's own
+	 * `updatedAt` moves for every edit and cannot say.
+	 */
+	const dated = todo.tags.filter((one) => one.taggedAt);
+	if (dated.length > 0) {
+		out.taggedAt = Object.fromEntries(dated.map((one) => [one.name, one.taggedAt]));
+	}
 	const ratings = Object.fromEntries(
 		Object.entries(todo.ratings).filter(([, value]) => value !== null)
 	);

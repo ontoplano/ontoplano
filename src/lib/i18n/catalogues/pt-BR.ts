@@ -3162,6 +3162,7 @@ export const messages: Catalogue = {
 	'todoRows.showArchivedCount': 'Mostrar arquivadas ({count})',
 	'todoRows.showCompleted': 'Mostrar concluídas',
 	'todoRows.showCompletedCount': 'Mostrar concluídas ({count})',
+	'todoRows.taggedAgo': 'Etiquetado {ago}',
 	'todoRows.takeItBackOut': 'Tirar de volta',
 	'todoRows.taskAdded': 'Tarefa criada',
 	'todoRows.time': 'Hora',

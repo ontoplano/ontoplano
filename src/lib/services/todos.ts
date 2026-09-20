@@ -60,7 +60,16 @@ export type Todo = {
 	updatedAt: string;
 };
 
-export type Tag = { id: number; name: string };
+export type Tag = {
+	id: number;
+	name: string;
+	/**
+	 * When this label went on, or null for one put on before the column
+	 * existed. Null rather than a guessed date: "some time before this was
+	 * recorded" is the honest answer and a made-up one would be read as real.
+	 */
+	taggedAt: string | null;
+};
 
 const SELECTION = {
 	id: todoTasks.id,
@@ -121,7 +130,12 @@ export function tagsForTodos(ctx: Ctx, todoIds: number[]): Map<number, Tag[]> {
 	if (todoIds.length === 0) return byTodo;
 
 	const rows = db
-		.select({ todoId: todoTags.todoId, id: tags.id, name: tags.name })
+		.select({
+			todoId: todoTags.todoId,
+			id: tags.id,
+			name: tags.name,
+			taggedAt: todoTags.taggedAt
+		})
 		.from(todoTags)
 		.innerJoin(tags, eq(todoTags.tagId, tags.id))
 		.where(and(inArray(todoTags.todoId, todoIds), eq(tags.userId, ctx.userId)))
@@ -130,7 +144,7 @@ export function tagsForTodos(ctx: Ctx, todoIds: number[]): Map<number, Tag[]> {
 
 	for (const row of rows) {
 		const held = byTodo.get(row.todoId) ?? [];
-		held.push({ id: row.id, name: row.name });
+		held.push({ id: row.id, name: row.name, taggedAt: row.taggedAt });
 		byTodo.set(row.todoId, held);
 	}
 	return byTodo;

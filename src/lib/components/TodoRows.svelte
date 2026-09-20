@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { say } from '$lib/said.svelte';
+	import { agoOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import { deleteLater, isLeaving } from '$lib/undo.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
@@ -29,6 +31,7 @@
 	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
+	const now = useWhen();
 
 	/**
 	 * A list of todos and everything you can do to one.
@@ -928,6 +931,17 @@
 							{#if todo.tags.length > 0}
 								<div class="mt-1 flex flex-wrap gap-1">
 									{#each todo.tags as tag (tag.id)}
+										<!--
+											The chip says when it went on.
+											
+											Which is the whole reason the join carries a date: a
+											list of labels says what is true and says nothing
+											about what is new. Under the pointer rather than
+											beside the word, because the age matters when you go
+											looking for it and would be noise on every row at
+											once. A label from before the column existed simply
+											does not say — an invented date would be read as real.
+										-->
 										<button
 											type="button"
 											onclick={() => {
@@ -936,6 +950,9 @@
 											}}
 											class="chip"
 											aria-pressed={tagFilter === tag.name}
+											title={tag.taggedAt
+												? t('todoRows.taggedAgo', { ago: agoOf(tag.taggedAt, now()) })
+												: undefined}
 										>
 											#{tag.name}
 										</button>

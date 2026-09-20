@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **A label remembers when it went on.** The chip says how long ago under the
+  pointer, and an assistant can ask what has been marked since this morning —
+  neither was answerable before, because a task's own timestamp moves for
+  every edit. Labels also reach a recurring block and a one-off block now, not
+  only a task with no day.
 - **The tag box empties as you type, and suggests as you go.** The chips and
   the box were two views of one string, so the box could never clear — and
   nothing was suggested, because the word being typed was whatever trailed the

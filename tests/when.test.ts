@@ -3,6 +3,7 @@ import {
 	dateOf,
 	dayOf,
 	isClock,
+	agoOf,
 	momentOf,
 	monthOf,
 	timeOf,
@@ -112,6 +113,20 @@ describe('the shapes', () => {
 		expect(monthOf('2026-01', sao())).toMatch(/jan/i);
 		expect(monthOf('2026-12', london())).toMatch(/Dec/);
 		expect(monthOf('nonsense', london())).toBe('');
+	});
+
+	test('how long ago, in the largest unit that is still true', () => {
+		const now = new Date('2026-06-11T12:00:00Z');
+		const ago = (iso: string) => agoOf(iso, london(), now);
+
+		expect(ago('2026-06-11T09:00:00Z')).toMatch(/3 hours ago/);
+		// Ninety minutes is an hour ago: the point is the distance, not the
+		// arithmetic.
+		expect(ago('2026-06-11T10:30:00Z')).toMatch(/1 hour ago/);
+		expect(ago('2026-06-10T12:00:00Z')).toMatch(/yesterday/i);
+		expect(ago('2026-06-11T11:59:30Z')).toMatch(/30 seconds ago/);
+		// And it reads the other way for something still to come.
+		expect(ago('2026-06-11T15:00:00Z')).toMatch(/in 3 hours/);
 	});
 
 	test('something that is not a date at all renders as nothing', () => {

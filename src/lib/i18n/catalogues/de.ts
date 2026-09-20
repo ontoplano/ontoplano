@@ -3198,6 +3198,7 @@ export const messages: Catalogue = {
 	'todoRows.showArchivedCount': 'Archivierte zeigen ({count})',
 	'todoRows.showCompleted': 'Abgeschlossene anzeigen',
 	'todoRows.showCompletedCount': 'Erledigte zeigen ({count})',
+	'todoRows.taggedAgo': 'Beschriftet {ago}',
 	'todoRows.takeItBackOut': 'Wieder herausnehmen',
 	'todoRows.taskAdded': 'Aufgabe erstellt',
 	'todoRows.time': 'Zeit',
