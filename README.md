@@ -28,22 +28,9 @@
 
 ---
 
-Ontoplano is a life management app built around planning your week. Besides planning
-recurring tasks, exceptional stuff you will have to do on a date or random stuff to do
-someday, you can also write notebooks, register goals with measured progress, habits,
-ideas, the people in your life, recipes and the shopping list.
-[Check the demo to get the idea.](https://demo.ontoplano.com).
-
-**MCP built in.** `/api/mcp` is a Model Context Protocol server: any AI with MCP
-capabilities can read your day and change it, with a scoped token you can revoke.
-Nothing in the app calls a model; you bring your own assistant.
-
-**Three ways to run it.** On a machine you keep, on
-[app.ontoplano.com](https://app.ontoplano.com) — the same software on a box I
-keep — or on the phone itself: the Android app can be its own instance, with
-nothing behind it.
-
 ## Running it
+
+### systemd
 
 A service that starts on boot, upgraded by the package manager you use:
 
@@ -68,7 +55,7 @@ their own Node, so there is nothing else to install. A packaged install keeps
 its settings in `/etc/ontoplano/` and its database in `/var/lib/ontoplano/`.
 There is no Windows installer yet — [help build one](CONTRIBUTING.md).
 
-Or with Docker:
+### docker
 
 ```sh
 docker run -d --name ontoplano -p 1493:1493 \
