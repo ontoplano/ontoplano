@@ -2,6 +2,8 @@
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { whileBusy } from '$lib/busy.svelte';
+	import { timeOf, type Clock } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
 	import { isLocale, useT } from '$lib/i18n';
 	import { sectionLabel } from '$lib/sections';
@@ -30,6 +32,19 @@
 	let { data }: { data: PageServerData } = $props();
 
 	const t = useT();
+
+	/*
+	 * What each choice actually looks like, rather than its name.
+	 *
+	 * "24-hour" is a word about a format; `16:00` is the thing you will see on
+	 * every screen afterwards. A person picking between them is picking between
+	 * two appearances, so the menu shows the appearances.
+	 */
+	const when = useWhen();
+	function clockExample(clock: Clock): string {
+		// A time that reads differently either way: 16:00 and 4:00 PM.
+		return timeOf('2026-01-01T16:00', { ...when(), clock });
+	}
 
 	/**
 	 * The currency, chosen from the shortlist or typed.
@@ -1170,6 +1185,35 @@
 							: ''}
 					</option>
 				{/each}
+			</select>
+		</form>
+	</section>
+
+	<!--
+		The clock, under the language because it is a question the language has
+		usually already answered — see `$lib/when`.
+	-->
+	<section class="border border-gray-200 bg-white p-6 shadow-card">
+		<div class="mb-4">
+			<h2 class="text-sm font-semibold text-gray-900">{t('settings.clock.heading')}</h2>
+			<p class="mt-1 text-sm text-gray-500">{t('settings.clock.hint')}</p>
+		</div>
+		<form
+			method="post"
+			action="?/setClock"
+			use:enhance={() => async () => void whileBusy(invalidateAll())}
+			class="flex flex-wrap items-center gap-2"
+		>
+			<select
+				name="clock"
+				class="select w-auto"
+				value={data.clock}
+				onchange={(e) => e.currentTarget.form?.requestSubmit()}
+			>
+				<option value="auto">{t('settings.clock.auto', { example: clockExample('auto') })}</option>
+				<option value="12">{t('settings.clock.twelve', { example: clockExample('12') })}</option>
+				<option value="24">{t('settings.clock.twentyFour', { example: clockExample('24') })}</option
+				>
 			</select>
 		</form>
 	</section>

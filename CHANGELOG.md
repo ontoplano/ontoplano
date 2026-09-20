@@ -20,6 +20,12 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **Times are written the way you read them.** A setting under Preferences —
+  12-hour, 24-hour, or whatever your language does, which is the default and
+  shows you what each one looks like before you choose. Every screen asks the
+  same question of the same answer now, instead of thirty-seven places each
+  deciding for themselves; the planner, the notification panel and the
+  reminder list had disagreed for a while.
 - **The row the keyboard is on is shaded, not boxed.** A two-pixel rule above
   and below it, on rows that sit flush, drew a heavy line between them — and
   the top one was clipped on the first row, so the first selection never

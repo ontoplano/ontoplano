@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { momentOf, timeOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import Banner from '$lib/components/Banner.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import {
@@ -29,6 +31,7 @@
 	 * browser that never books anything.
 	 */
 	const t = useT();
+	const now = useWhen();
 
 	let held = $state<RingerStatus | null>(null);
 	let checking = $state(false);
@@ -61,11 +64,7 @@
 		if (!ms) return '';
 		const at = new Date(ms);
 		const today = new Date().toDateString() === at.toDateString();
-		return at.toLocaleString(t.locale, {
-			hour: '2-digit',
-			minute: '2-digit',
-			...(today ? {} : { day: 'numeric', month: 'short' })
-		});
+		return today ? timeOf(at, now()) : momentOf(at, now(), { year: undefined });
 	}
 
 	/*

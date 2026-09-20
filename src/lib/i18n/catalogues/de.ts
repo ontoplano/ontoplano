@@ -2254,6 +2254,12 @@ export const messages: Catalogue = {
 	'settings.billing.yourPlan': 'Ihr Plan',
 	'settings.billing.yourSubscriptionHasEndedNothing':
 		'Ihr Abonnement ist beendet. Es wurde nichts gelöscht — alles, was Sie geschrieben haben, ist noch da und weiterhin exportierbar.',
+	'settings.clock.auto': 'Was meine Sprache macht — {example}',
+	'settings.clock.heading': 'Uhr',
+	'settings.clock.hint':
+		'Wie Zeiten geschrieben werden. Deine Sprache hat schon eine Antwort; ändere sie, wenn sie nicht deine ist.',
+	'settings.clock.twelve': '12 Stunden — {example}',
+	'settings.clock.twentyFour': '24 Stunden — {example}',
 	'settings.family.addToMyPlan': 'Zum Plan hinzufügen',
 	'settings.family.askedTheSeatIs': 'angefragt — der Platz wird reserviert, bis sie antworten',
 	'settings.family.askedTheSeatIsTheirs':

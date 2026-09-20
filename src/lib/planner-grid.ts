@@ -642,6 +642,15 @@ export function baseGridOptions(
 		markOf?: (kind: string, refId: number, date: string) => 'done' | 'undone' | null;
 		/** The account's own language, for the day headers a locale changes. */
 		locale?: string;
+		/**
+		 * Whether this account reads a 12-hour clock.
+		 *
+		 * FullCalendar takes its own format objects rather than asking `Intl`,
+		 * so the answer has to be handed in — `$lib/when` is where it comes
+		 * from, and passing it keeps the grid agreeing with every other time
+		 * in the app rather than with a literal written here.
+		 */
+		twelveHour?: boolean;
 	} = {}
 ): Calendar.Options {
 	const slotHeight = opts.slotHeight ?? GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX];
@@ -656,6 +665,7 @@ export function baseGridOptions(
 	const today = opts.today ?? '';
 	const markOf = opts.markOf;
 	const locale = opts.locale;
+	const hour12 = opts.twelveHour ?? false;
 
 	/** A block's own date, in the same `YYYY-MM-DD` the server speaks. */
 	const dateOf = (start: Date) =>
@@ -699,7 +709,7 @@ export function baseGridOptions(
 		firstDay: 1,
 		height: '100%',
 		headerToolbar: { start: '', center: '', end: '' },
-		eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+		eventTimeFormat: { hour: hour12 ? 'numeric' : '2-digit', minute: '2-digit', hour12 },
 		// A month cell is one line tall whatever the zoom, so it stacks and then
 		// says "+2 more" instead of measuring.
 		dayMaxEvents: month,
@@ -723,10 +733,10 @@ export function baseGridOptions(
 		 */
 		selectLongPressDelay: 200,
 		nowIndicator: !month,
-		// 24-hour, matching every other time in the app — the board and the
-		// tracker both read 07:00. It is also narrower, which is what lets the
-		// hour gutter shrink on a phone.
-		slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+		// Whatever clock the account reads, matching every other time in the
+		// app. 24-hour is also narrower, which is what lets the hour gutter
+		// shrink on a phone — a 12-hour gutter needs the extra room and gets it.
+		slotLabelFormat: { hour: hour12 ? 'numeric' : '2-digit', minute: '2-digit', hour12 },
 		/*
 		 * A month cell says what, not when.
 		 *

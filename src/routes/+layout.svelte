@@ -8,6 +8,7 @@
 	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
 	import { provideT, translator } from '$lib/i18n';
+	import { provideWhen } from '$lib/when-context.svelte';
 	import { markUntranslated } from '$lib/i18n/untranslated';
 	import type { LayoutData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
@@ -132,6 +133,13 @@
 	 */
 	const t = $derived(translator(data.locale, data.catalogue, data.borrowed));
 	provideT(() => t);
+
+	/*
+	 * The language, the zone and the clock, together, for anything that writes
+	 * a date. See `$lib/when` — the point is that every screen asks the same
+	 * question of the same answer.
+	 */
+	provideWhen(() => ({ locale: t.locale, tz: data.tz, clock: data.clock }));
 
 	/*
 	 * And on a build that is not the real one, the ones still in English are

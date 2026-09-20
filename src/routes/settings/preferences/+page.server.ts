@@ -27,6 +27,7 @@ import {
 	getNavOrder,
 	getSectionColors,
 	getStyle,
+	getClock,
 	getTheme,
 	getTimezone,
 	getUserSetting,
@@ -40,6 +41,7 @@ import {
 import {
 	saveGridHours,
 	saveWeekPreferences,
+	setUserClock,
 	setUserLanguage,
 	setUserStyle,
 	setUserTheme
@@ -92,6 +94,7 @@ export const load = async ({ locals }: IsolatedEvent) => {
 		// the offsets are today's, which the server already knows.
 		zones: zoneGroups(),
 		theme: getTheme(ctx.userId),
+		clock: getClock(ctx.userId),
 		/*
 		 * The languages, and how far behind each is.
 		 *
@@ -360,6 +363,18 @@ export const actions = {
 
 		try {
 			setUserLanguage(buildCtx(locals.user!.id), formData.get('language'));
+		} catch (e) {
+			return toActionFailure(e);
+		}
+
+		redirect(303, url.pathname);
+	},
+
+	setClock: async ({ request, locals, url }: IsolatedEvent) => {
+		const formData = await request.formData();
+
+		try {
+			setUserClock(buildCtx(locals.user!.id), formData.get('clock'));
 		} catch (e) {
 			return toActionFailure(e);
 		}

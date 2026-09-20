@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { momentOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import { enhance } from '$app/forms';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Banner from '$lib/components/Banner.svelte';
@@ -11,6 +13,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	/**
 	 * Where the address goes in the sentence asking for it.
@@ -46,13 +49,7 @@
 	const nextRole = $derived(data.account.role === 'admin' ? 'member' : 'admin');
 
 	function when(iso: string): string {
-		return new Date(iso).toLocaleString(t.locale, {
-			day: 'numeric',
-			month: 'short',
-			year: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
-		});
+		return momentOf(iso, now());
 	}
 
 	function describe(detail: Record<string, unknown>): string {

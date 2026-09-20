@@ -14,6 +14,7 @@ import { STYLES, isStyle, type Style } from '../style.js';
 import { THEMES, type Theme } from '../theme.js';
 import { DEFAULT_CURRENCY, isCurrency, type Currency } from '../money.js';
 import { isHideableSection, type HideableSection } from '../sections.js';
+import { isClock, type Clock } from '../when.js';
 import { isLocale, type Locale } from '../i18n/locales.js';
 import { SECTIONS } from '../colors.js';
 import { isHexColor } from '../nav-order.js';
@@ -96,6 +97,28 @@ export function getLocale(userId: string): Locale | null {
 
 export function setLocale(userId: string, locale: Locale): void {
 	setUserSetting(userId, LOCALE_KEY, locale);
+}
+
+// --- The clock ----------------------------------------------------------------
+
+export const CLOCK_KEY = 'ui.clock';
+
+/**
+ * Whether this account reads a 12- or a 24-hour clock.
+ *
+ * `auto` — the default, and what almost everybody should be on — asks the
+ * language: English says four in the afternoon, Portuguese and German say
+ * sixteen. It is a setting because the language is a good guess about a person
+ * and not a statement about them: plenty of people read English and think in
+ * 24, and the app has no business arguing.
+ */
+export function getClock(userId: string): Clock {
+	const stored = getUserSetting(userId, CLOCK_KEY);
+	return isClock(stored) ? stored : 'auto';
+}
+
+export function setClock(userId: string, clock: Clock): void {
+	setUserSetting(userId, CLOCK_KEY, clock);
 }
 
 // --- Hidden sections ----------------------------------------------------------

@@ -5,9 +5,11 @@ import {
 	setTheme,
 	setStyle,
 	setTimezone,
-	setWeekSettings
+	setWeekSettings,
+	setClock
 } from './settings.js';
 import { isStyle } from '../style.js';
+import { isClock } from '../when.js';
 import { isLocale } from '../i18n/locales.js';
 import type { Ctx } from './ctx.js';
 import { ValidationError } from './errors.js';
@@ -35,6 +37,19 @@ export function setUserLanguage(ctx: Ctx, value: unknown): void {
 	const locale = String(value ?? '');
 	if (!isLocale(locale)) throw new ValidationError('Unknown language');
 	setLocale(ctx.userId, locale);
+}
+
+/**
+ * Which clock this account reads.
+ *
+ * `auto` is a real answer, not the absence of one — it means "whatever my
+ * language does" and has to survive being chosen deliberately after a person
+ * has tried 12 and 24 and decided the default was right.
+ */
+export function setUserClock(ctx: Ctx, value: unknown): void {
+	const clock = String(value ?? '');
+	if (!isClock(clock)) throw new ValidationError('Unknown clock');
+	setClock(ctx.userId, clock);
 }
 
 export function setUserStyle(ctx: Ctx, value: unknown): void {

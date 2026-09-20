@@ -13,6 +13,7 @@
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import { useT } from '$lib/i18n';
 	import { instantInWords } from '$lib/services/time';
+	import { useWhen } from '$lib/when-context.svelte';
 	import { audioMarkdown } from '$lib/audio-markdown';
 	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -102,7 +103,8 @@
 	}
 
 	/** When it happened, where the reader is. `$lib/services/time.ts` has why. */
-	const when = (iso: string) => instantInWords(iso, t.locale);
+	const now = useWhen();
+	const said = (iso: string) => instantInWords(iso, now());
 
 	function size(bytes: number): string {
 		return `${Math.max(1, Math.ceil(bytes / 1024))}KB`;
@@ -193,7 +195,7 @@
 						{:else}
 							<p class="truncate text-sm font-medium text-gray-900">{one.name}</p>
 							<p class="mt-0.5 text-xs text-gray-500">
-								{when(one.createdAt)} · {size(one.byteSize)}
+								{said(one.createdAt)} · {size(one.byteSize)}
 							</p>
 						{/if}
 					</div>

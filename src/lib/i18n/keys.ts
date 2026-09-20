@@ -1936,6 +1936,11 @@ export type MessageKey =
 	| 'settings.billing.yearlyIs'
 	| 'settings.billing.yourPlan'
 	| 'settings.billing.yourSubscriptionHasEndedNothing'
+	| 'settings.clock.auto'
+	| 'settings.clock.heading'
+	| 'settings.clock.hint'
+	| 'settings.clock.twelve'
+	| 'settings.clock.twentyFour'
 	| 'settings.family.addToMyPlan'
 	| 'settings.family.askedTheSeatIs'
 	| 'settings.family.askedTheSeatIsTheirs'
@@ -3347,6 +3352,9 @@ export interface MessageValuesFor {
 	'settings.billing.trialRunsUntil': { date: string | number };
 	'settings.billing.yearly': { currency: string | number };
 	'settings.billing.yearlyIs': { yearlyLine: string | number };
+	'settings.clock.auto': { example: string | number };
+	'settings.clock.twelve': { example: string | number };
+	'settings.clock.twentyFour': { example: string | number };
 	'settings.family.planCoversAccounts': { more: string | number; seats: string | number };
 	'settings.family.youAreOnTheirPlan': { name: string | number };
 	'settings.instance.daysAgo': { count: number };

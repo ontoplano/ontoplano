@@ -1,4 +1,5 @@
 import type { Ctx } from './ctx.js';
+import { momentOf, timeOf, type When } from '../when.js';
 
 /**
  * Time, in the two shapes this app actually has.
@@ -141,12 +142,18 @@ export function localDay(d: Date): string {
  * which day. The locale decides the order of the parts and what goes between
  * them, so nothing is joined by hand here.
  */
-export function instantInWords(iso: string, locale: string, now = new Date()): string {
+export function instantInWords(iso: string, when: When, now = new Date()): string {
 	const at = new Date(iso);
 	if (Number.isNaN(at.getTime())) return iso;
 
-	const clock = { hour: '2-digit', minute: '2-digit' } as const;
-	return at.toDateString() === now.toDateString()
-		? at.toLocaleTimeString(locale, clock)
-		: at.toLocaleString(locale, { day: 'numeric', month: 'short', ...clock });
+	/*
+	 * Whether today is today is asked in the reader's own zone.
+	 *
+	 * `toDateString` is the machine's, which for somebody three hours west of
+	 * the server means everything written after nine in the evening claims to
+	 * be from yesterday — and then says so, with a date nobody needed.
+	 */
+	const sameDay =
+		localOfInstant(at, when.tz).slice(0, 10) === localOfInstant(now, when.tz).slice(0, 10);
+	return sameDay ? timeOf(at, when) : momentOf(at, when, { year: undefined });
 }

@@ -16,6 +16,7 @@ import { listCategories } from '$lib/services/activities';
 import { buildCtx } from '$lib/services/ctx';
 import {
 	getHiddenSections,
+	getClock,
 	getLocale,
 	getNavOrder,
 	getSectionColors,
@@ -57,6 +58,10 @@ export async function load(event: IsolatedEvent): Promise<LayoutServerData> {
 			colorLight: c.colorLight
 		})),
 		theme: getTheme(user.id),
+		// Which clock, and which zone — the same two the server instance sends,
+		// read off the one account this device has.
+		clock: getClock(user.id),
+		tz: ctx.tz,
 		hiddenSections: getHiddenSections(user.id),
 		navOrder: getNavOrder(user.id),
 		sectionColors: getSectionColors(user.id),

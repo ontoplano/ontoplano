@@ -15,6 +15,7 @@
 	import { resolve } from '$app/paths';
 	import { useT } from '$lib/i18n';
 	import { instantInWords } from '$lib/services/time';
+	import { useWhen } from '$lib/when-context.svelte';
 
 	/**
 	 * The list of what the app has told you.
@@ -54,7 +55,8 @@
 	});
 
 	/** When it happened, where the reader is. `$lib/services/time.ts` has why. */
-	const when = (iso: string) => instantInWords(iso, t.locale);
+	const now = useWhen();
+	const said = (iso: string) => instantInWords(iso, now());
 </script>
 
 {#if held.length === 0}
@@ -90,7 +92,7 @@
 							{#if one.body}
 								<span class="mt-0.5 block text-sm leading-relaxed text-gray-600">{one.body}</span>
 							{/if}
-							<span class="mt-0.5 block text-xs text-gray-500">{when(one.createdAt)}</span>
+							<span class="mt-0.5 block text-xs text-gray-500">{said(one.createdAt)}</span>
 						</span>
 					</span>
 				</svelte:element>

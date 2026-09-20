@@ -1,5 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
+import type { Clock } from '$lib/when';
+import { serverTimezone } from '$lib/services/ctx';
 import {
 	DEFAULT_THEME,
 	DEFAULT_WEEK,
@@ -10,7 +12,8 @@ import {
 	getWeekSettings,
 	hasSeenTutorial,
 	isDemo as isDemoInstance,
-	isStaging
+	isStaging,
+	getClock
 } from '$lib/server/settings';
 import type { HideableSection } from '$lib/sections';
 import { clientErrorState } from '$lib/server/services/client-errors';
@@ -94,6 +97,9 @@ export const load: LayoutServerLoad = async (event) => {
 
 	let userCategories: { id: number; name: string; color: string; colorLight: string }[] = [];
 	let theme = DEFAULT_THEME;
+	let clock: Clock = 'auto';
+	/* The account's zone, so every screen writes a time in the same one. */
+	let tz = serverTimezone();
 	let week = DEFAULT_WEEK;
 	let hiddenSections: HideableSection[] = [];
 	let navOrder: string[] = [];
@@ -118,6 +124,8 @@ export const load: LayoutServerLoad = async (event) => {
 			colorLight: c.colorLight
 		}));
 		theme = getTheme(ctx.userId);
+		clock = getClock(ctx.userId);
+		tz = ctx.tz;
 		week = getWeekSettings(ctx.userId);
 		hiddenSections = getHiddenSections(ctx.userId);
 		navOrder = getNavOrder(ctx.userId);
@@ -176,6 +184,13 @@ export const load: LayoutServerLoad = async (event) => {
 		 * universal load beside this one turns it into a catalogue.
 		 */
 		locale: event.locals.locale ?? SOURCE_LOCALE,
+		/*
+		 * Which clock this account reads. On the shell rather than on a page,
+		 * because every room writes a time and they have to agree — see
+		 * `$lib/when`.
+		 */
+		clock,
+		tz,
 		// Sections this account has put away: out of every menu the shell
 		// renders, still answering at their URLs.
 		hiddenSections,

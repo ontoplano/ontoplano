@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { wantsTwelveHour } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
 	import PickOne from '$lib/components/PickOne.svelte';
@@ -42,6 +44,7 @@
 	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
+	const now = useWhen();
 
 	/** Whether a block repeats, as the two words the form offers. */
 	const RECURRENCE_CHOICES: { value: string; label: PlainKey }[] = [
@@ -1927,7 +1930,8 @@
 			narrow: narrowScreen,
 			today: data.today,
 			markOf: markOf,
-			locale: t.locale
+			locale: t.locale,
+			twelveHour: wantsTwelveHour(now())
 		}),
 		events: gridEvents,
 		editable: true,

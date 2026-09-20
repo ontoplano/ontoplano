@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { momentOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import RingerHealth from '$lib/components/RingerHealth.svelte';
 	import RoomBar from '$lib/components/RoomBar.svelte';
@@ -31,6 +33,7 @@
 	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -412,13 +415,7 @@
 
 	function when(at: string): string {
 		const d = new Date(at.length === 16 ? at + ':00' : at);
-		return d.toLocaleString(t.locale, {
-			weekday: 'short',
-			day: 'numeric',
-			month: 'short',
-			hour: '2-digit',
-			minute: '2-digit'
-		});
+		return momentOf(d, now(), { weekday: 'short', year: undefined });
 	}
 
 	let confirmingDelete = $state<number | null>(null);
