@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **The to-do toolbar stops taking three rows on a phone.** The sort control
+  was pushed to the right at every width, so it wrapped onto a line of its
+  own with an empty half beside it.
 - **A task can be given a day as it is written.** The form could not say when,
   so "ring the plumber tomorrow" became a task with the word tomorrow in its
   title and a day that still looked empty.

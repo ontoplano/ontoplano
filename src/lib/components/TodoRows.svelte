@@ -629,15 +629,16 @@
 				</label>
 			{/if}
 			<!--
-				Three orders on one button, saying which one it is on rather than
-				what pressing it would do: the list underneath is the evidence.
+				Pushed to the right end, but only where there is a right end.
 
-				`ml-auto` so it sits at the right-hand end and what filters the list
-				sits at the left. Two buttons huddled together in the middle of an
-				empty row read as a pair of related things; they are not — one hides
-				rows and the other reorders them.
+				`ml-auto` at every width made it wrap onto a line of its own on a
+				phone: three ragged rows, the last one an empty half with one
+				button at the far side of it. Inline below `sm`, where the row is
+				already wrapping and there is nothing to separate it from; pushed
+				away from the filters above that, where the distance says what it
+				is — one of these hides rows, the other reorders them.
 			-->
-			<div class="ml-auto">
+			<div class="sm:ml-auto">
 				<!-- The same control a notebook's notes use. See `SortControl`. -->
 				<SortControl
 					value={order}
