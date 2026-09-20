@@ -1,3 +1,4 @@
+import { optionalTagInput, parseTags, replaceBlockTags } from './tags.js';
 import { and, eq, gte, inArray, isNull, lt, sql } from 'drizzle-orm';
 
 import { ratingsFromForm, type RatingValues } from '../ratings.js';
@@ -70,6 +71,11 @@ export type BlockInput = {
 	newActivityName?: unknown;
 	newActivityCategoryId?: unknown;
 	label?: unknown;
+	/**
+	 * Labels, the same vocabulary a task uses. Undefined leaves what is there
+	 * alone — a drag posts placement only and must not strip them.
+	 */
+	tags?: unknown;
 	ratings?: Partial<RatingValues>;
 	meta?: string;
 	/** Undefined leaves an existing value alone; a drag posts placement only. */
@@ -211,6 +217,9 @@ export function createSlot(ctx: Ctx, raw: BlockInput & { weekday: unknown }): nu
 		.returning({ id: recurringTasks.id })
 		.get();
 
+	if (raw.tags !== undefined) {
+		replaceBlockTags('recurring', inserted.id, parseTags(optionalTagInput(raw.tags)), ctx.userId);
+	}
 	return inserted.id;
 }
 
@@ -255,6 +264,10 @@ export function updateSlot(ctx: Ctx, id: number, raw: BlockInput & { weekday: un
 	// see `armGeneratedDays`. Only when the form actually carried one.
 	if ('remindLeadMinutes' in placement)
 		armGeneratedDays(ctx, { slotId: id }, placement.remindLeadMinutes);
+
+	if (raw.tags !== undefined) {
+		replaceBlockTags('recurring', id, parseTags(optionalTagInput(raw.tags)), ctx.userId);
+	}
 }
 
 /**
@@ -583,6 +596,9 @@ export function createExceptional(
 		.returning({ id: exceptionalTasks.id })
 		.get();
 
+	if (raw.tags !== undefined) {
+		replaceBlockTags('exceptional', inserted.id, parseTags(optionalTagInput(raw.tags)), ctx.userId);
+	}
 	return inserted.id;
 }
 
@@ -607,6 +623,10 @@ export function updateExceptional(ctx: Ctx, id: number, raw: BlockInput & { date
 	if (res.changes === 0) throw new NotFoundError('exception');
 	if ('remindLeadMinutes' in placement)
 		armGeneratedDays(ctx, { exceptionalSlotId: id }, placement.remindLeadMinutes);
+
+	if (raw.tags !== undefined) {
+		replaceBlockTags('exceptional', id, parseTags(optionalTagInput(raw.tags)), ctx.userId);
+	}
 }
 
 export function deleteExceptional(ctx: Ctx, id: number): void {

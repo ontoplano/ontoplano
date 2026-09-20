@@ -1,5 +1,13 @@
 import { db } from '$lib/db/index.js';
-import { tags, diaryEntryTags, ideaTags, mediaTags, todoTags } from '$lib/db/schema';
+import {
+	tags,
+	diaryEntryTags,
+	exceptionalTaskTags,
+	ideaTags,
+	mediaTags,
+	recurringTaskTags,
+	todoTags
+} from '$lib/db/schema';
 import { eq, and, inArray, notInArray } from 'drizzle-orm';
 import { ValidationError } from './errors.js';
 
@@ -134,6 +142,61 @@ export function replaceIdeaTags(ideaId: number, tagNames: string[], userId: stri
 
 	if (tagNames.length > 0) {
 		linkIdeaTags(ideaId, ensureTagIds(tagNames, userId), userId);
+	}
+}
+
+/**
+ * The same three verbs for a block, recurring or one-off.
+ *
+ * A label belonged to the dateless task only, which made it a property of one
+ * shape of task rather than of a task: "everything about the move" could not
+ * include the three hours booked for it. The vocabulary is the one `tags`
+ * table either way — a word used on a task is the same word on a block.
+ */
+function blockJoin(kind: BlockKind) {
+	return kind === 'recurring' ? recurringTaskTags : exceptionalTaskTags;
+}
+
+export type BlockKind = 'recurring' | 'exceptional';
+
+/** A label and when it went on. The same shape a task's labels have. */
+export type Tag = { id: number; name: string; taggedAt: string | null };
+
+export function tagsForBlock(kind: BlockKind, taskId: number, userId: string): Tag[] {
+	const join = blockJoin(kind);
+	return db
+		.select({ id: tags.id, name: tags.name, taggedAt: join.taggedAt })
+		.from(join)
+		.innerJoin(tags, eq(join.tagId, tags.id))
+		.where(and(eq(join.taskId, taskId), eq(join.userId, userId)))
+		.orderBy(tags.name)
+		.all();
+}
+
+/** Set a block's labels to exactly these, keeping the dates of the survivors. */
+export function replaceBlockTags(
+	kind: BlockKind,
+	taskId: number,
+	tagNames: string[],
+	userId: string
+): void {
+	const join = blockJoin(kind);
+	const wanted = new Set(tagNames.length > 0 ? ensureTagIds(tagNames, userId) : []);
+
+	const have = db
+		.select({ id: join.id, tagId: join.tagId })
+		.from(join)
+		.where(and(eq(join.taskId, taskId), eq(join.userId, userId)))
+		.all();
+
+	const dropping = have.filter((row) => !wanted.has(row.tagId)).map((row) => row.id);
+	if (dropping.length > 0) db.delete(join).where(inArray(join.id, dropping)).run();
+
+	const already = new Set(have.map((row) => row.tagId));
+	const now = new Date().toISOString();
+	for (const tagId of wanted) {
+		if (already.has(tagId)) continue;
+		db.insert(join).values({ userId, taskId, tagId, taggedAt: now }).run();
 	}
 }
 

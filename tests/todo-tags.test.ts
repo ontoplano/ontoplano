@@ -177,3 +177,70 @@ describe('labelling one without disturbing the rest', () => {
 		expect(named(id)).toEqual(['a1']);
 	});
 });
+
+/**
+ * A block carries labels too.
+ *
+ * They belonged to the dateless task only, which made a label a property of
+ * one shape of task rather than of a task: "everything about the move" could
+ * not include the three hours booked for it.
+ */
+describe('a block carries labels', () => {
+	test('a recurring one keeps what it was given, from the one vocabulary', async () => {
+		const slots = await import('../src/lib/services/slots');
+		const tagging = await import('../src/lib/services/tags');
+		const activities = await import('../src/lib/services/activities');
+		const home = activities.createCategory(ctx, { name: 'Home', color: '#1d4ed8' });
+
+		const id = slots.createSlot(ctx, {
+			weekday: 1,
+			startTime: '18:00',
+			durationMinutes: 60,
+			mode: 'category',
+			categoryId: home,
+			label: 'gym',
+			tags: 'health move'
+		});
+
+		const on = tagging.tagsForBlock('recurring', id, OWNER).map((one) => one.name);
+		expect(on).toEqual(['health', 'move']);
+
+		// Dated, so "what was labelled since" can be asked of a block as well.
+		expect(tagging.tagsForBlock('recurring', id, OWNER)[0].taggedAt).not.toBeNull();
+	});
+
+	test('a one-off one does the same, and saying nothing leaves them alone', async () => {
+		const slots = await import('../src/lib/services/slots');
+		const tagging = await import('../src/lib/services/tags');
+		const activities = await import('../src/lib/services/activities');
+		const moving = activities.createCategory(ctx, { name: 'Moving', color: '#b45309' });
+
+		const id = slots.createExceptional(ctx, {
+			date: '2026-08-20',
+			startTime: '09:00',
+			durationMinutes: 30,
+			mode: 'category',
+			categoryId: moving,
+			label: 'the surveyor',
+			tags: 'move'
+		});
+		expect(tagging.tagsForBlock('exceptional', id, OWNER).map((o) => o.name)).toEqual(['move']);
+
+		// A drag posts placement only and must not strip what is there.
+		slots.updateExceptional(ctx, id, {
+			date: '2026-08-21',
+			startTime: '10:00',
+			durationMinutes: 30,
+			mode: 'category',
+			categoryId: moving,
+			label: 'the surveyor'
+		});
+		expect(tagging.tagsForBlock('exceptional', id, OWNER).map((o) => o.name)).toEqual(['move']);
+	});
+
+	test('a word used on a block is the same word used on a task', () => {
+		// One vocabulary: the whole reason there is a single `tags` table.
+		const todoId = todos.createTodo(ctx, { title: 'pack the kitchen', tags: 'move' });
+		expect(named(todoId)).toContain('move');
+	});
+});
