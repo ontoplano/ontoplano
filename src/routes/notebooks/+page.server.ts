@@ -9,6 +9,7 @@ import {
 	pickableNotebooks
 } from '$lib/services/notebooks';
 import { listPeople } from '$lib/services/people';
+import { getPanelWidth, NOTEBOOK_PANEL_WIDTH_KEY } from '$lib/services/settings';
 import { notebookActions } from './actions';
 
 /** The query value that stands for the orphaned notes rather than a notebook. */
@@ -47,7 +48,9 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 		categories: listCategories(ctx),
 		pickableNotebooks: pickableNotebooks(ctx),
 		// For the People field on a note, which completes rather than duplicates.
-		allPeople: listPeople(ctx)
+		allPeople: listPeople(ctx),
+		// Where this reader dragged the divider between the list and the panel.
+		listPanelRem: getPanelWidth(ctx.userId, NOTEBOOK_PANEL_WIDTH_KEY)
 	};
 };
 

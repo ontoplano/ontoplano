@@ -26,7 +26,7 @@
 	import { MARK_CLIP_PATH, MARK_FIELD } from '$lib/logo/mark-shape';
 	import { CHOOSE_PATH, inPhoneApp, storedChoice } from '$lib/instance-choice';
 	import { handOverRingerKey } from '$lib/ringer-handshake';
-	import { THEMES } from '$lib/theme.js';
+	import { THEMES, THEME_LABELS } from '$lib/theme.js';
 	import type { SectionKey } from '$lib/colors.js';
 	import SectionPattern from '$lib/components/SectionPattern.svelte';
 	import HelpDock from '$lib/components/HelpDock.svelte';
@@ -1147,8 +1147,11 @@
 						</svg>
 					</button>
 					{#if menuOpen}
+						<!-- `w-52`, not `w-44`: three theme words and their padding did not
+						     fit in the narrower menu, and "Dark" was cut down the middle.
+						     The longest of them is what sets this, in every language. -->
 						<div
-							class="rise absolute top-full right-0 z-50 mt-1 w-44 border border-gray-200 bg-white shadow-overlay"
+							class="rise absolute top-full right-0 z-50 mt-1 w-52 border border-gray-200 bg-white shadow-overlay"
 						>
 							<div class="border-b border-gray-200 px-4 py-2">
 								<span class="eyebrow text-gray-600">{t('home.theme')}</span>
@@ -1168,14 +1171,18 @@
 									class="seg mt-2 flex w-full"
 								>
 									{#each THEMES as option (option)}
+										<!-- `px-1` overrides the segmented control's own padding:
+										     three of these have to share the width of a dropdown,
+										     and the default 0.75rem a side leaves the words no
+										     room. -->
 										<button
 											type="submit"
 											name="theme"
 											value={option}
 											aria-pressed={data.theme === option}
-											class="flex-1 text-xs capitalize"
+											class="flex-1 px-1 text-xs"
 										>
-											{option}
+											{t(THEME_LABELS[option])}
 										</button>
 									{/each}
 								</form>

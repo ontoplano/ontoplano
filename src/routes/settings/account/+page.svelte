@@ -648,8 +648,18 @@
 		Together and last, under a heading that says what the section is, they
 		read as the part of the page you have to mean.
 	-->
-	<section class="danger-zone">
-		<h2 class="danger-zone-title">{t('settings.account.dangerZone')}</h2>
+	<!--
+		Closed until somebody opens it.
+
+		The section is last and framed in red, and it still sat there with two
+		Delete buttons on it every time anybody came to change their password.
+		A thing you have to mean should not be a thing you have to look at.
+	-->
+	<details class="danger-zone">
+		<summary class="danger-zone-title">
+			<Icon name="chevron-right" size={12} class="danger-zone-mark" />
+			{t('settings.account.dangerZone')}
+		</summary>
 
 		<!--
 			Two of these on a server, one on a device.
@@ -694,7 +704,7 @@
 				{onDevice ? t('settings.account.deleteInstance') : t('settings.account.deleteAccount')}
 			</button>
 		</div>
-	</section>
+	</details>
 
 	<Modal
 		open={emptying}

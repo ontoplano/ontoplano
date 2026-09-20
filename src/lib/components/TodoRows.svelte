@@ -1,5 +1,6 @@
 <script lang="ts">
 	import NumberBox from '$lib/components/NumberBox.svelte';
+	import { SvelteSet } from 'svelte/reactivity';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { enhance } from '$app/forms';
@@ -113,6 +114,26 @@
 	let selectedIndex = $state(0);
 	let delegatingId: number | null = $state(null);
 	let confirmingDelete: number | null = $state(null);
+	/**
+	 * Which rows are showing everything written on them.
+	 *
+	 * A task's notes are one truncated line on the row, and the only way to
+	 * read the rest of them was to open the form that edits it — so reading
+	 * what you wrote meant opening a dialog and pressing Cancel. Pressing the
+	 * title unfolds it in place instead. Held per row, and per visit: it is a
+	 * way of looking at a list, not a fact about the list.
+	 */
+	let openNotes = new SvelteSet<number>();
+
+	function toggleNotes(id: number) {
+		if (openNotes.has(id)) openNotes.delete(id);
+		else openNotes.add(id);
+	}
+
+	/** Whether there is anything under the title worth unfolding. */
+	function hasMore(todo: Todo): boolean {
+		return Boolean(todo.notes);
+	}
 	let formRatings: Record<string, number | null> = $state({
 		urgency: null,
 		interest: null,
@@ -768,11 +789,39 @@
 								<!-- Finished is grey, not struck through: the tick and the
 								     colour say it already, and a line through a title is one
 								     more thing to read past. -->
-								<span
-									class="min-w-0 text-sm font-medium break-words {isDone(todo)
-										? 'text-gray-400'
-										: 'text-gray-900'}">{todo.title}</span
-								>
+								<!--
+									Pressing the title reads the task; it does not edit it.
+
+									The chevron's space is kept on every row, drawn only where
+									there is something under the title — so the titles line up
+									and nothing moves sideways as rows gain and lose notes.
+								-->
+								<span class="flex min-w-0 items-baseline gap-1.5">
+									<span class="w-3 shrink-0 text-gray-400">
+										{#if hasMore(todo)}
+											<Icon
+												name={openNotes.has(todo.id) ? 'chevron-down' : 'chevron-right'}
+												size={12}
+											/>
+										{/if}
+									</span>
+									{#if hasMore(todo)}
+										<button
+											type="button"
+											onclick={() => toggleNotes(todo.id)}
+											aria-expanded={openNotes.has(todo.id)}
+											class="min-w-0 text-left text-sm font-medium break-words {isDone(todo)
+												? 'text-gray-400'
+												: 'text-gray-900'}">{todo.title}</button
+										>
+									{:else}
+										<span
+											class="min-w-0 text-sm font-medium break-words {isDone(todo)
+												? 'text-gray-400'
+												: 'text-gray-900'}">{todo.title}</span
+										>
+									{/if}
+								</span>
 								<RatingBadges values={todo.ratings} />
 								{#if todo.scheduledDate}
 									<span
@@ -804,7 +853,7 @@
 								so nothing moves when the row is pressed.
 							-->
 							{#if todo.notes}
-								<Written content={todo.notes} compact />
+								<Written content={todo.notes} compact oneLine={!openNotes.has(todo.id)} />
 							{/if}
 							<!-- Pressing one narrows the list to it, the way an idea's do:
 							     a label is only useful if reading back one of them is a

@@ -4,6 +4,7 @@ import { buildCtx } from '$lib/services/ctx';
 import { archiveEntry, createEntry, deleteEntry, pinEntry, updateEntry } from '$lib/services/diary';
 import { makeTodosFromEntry } from '$lib/services/note-todos';
 import { setEntryPeople } from '$lib/services/people';
+import { NOTEBOOK_PANEL_WIDTH_KEY, setPanelWidth } from '$lib/services/settings';
 import { toActionFailure } from '$lib/http-errors';
 import { importVaultAction } from '$lib/import-vault-action';
 import { todoHandlers } from '$lib/services/todo-actions';
@@ -199,6 +200,26 @@ export const notebookActions = {
 				formData.has('only') ? only : undefined
 			);
 			return { success: true, action: 'entryToTodos', made: made.ids.length };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
+	 * Where the reader dragged the divider between the list and the panel.
+	 *
+	 * Posted once, when they let go — a drag across the screen is two hundred
+	 * pixels and would otherwise be two hundred writes.
+	 */
+	setPanelWidth: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			setPanelWidth(
+				buildCtx(locals.user!.id).userId,
+				NOTEBOOK_PANEL_WIDTH_KEY,
+				Number(formData.get('rem'))
+			);
+			return { success: true, action: 'setPanelWidth' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

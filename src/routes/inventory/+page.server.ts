@@ -17,7 +17,12 @@ import {
 	locationTree,
 	updateLocation
 } from '$lib/services/locations';
-import { getCurrency, getLocationPanelWidth, setLocationPanelWidth } from '$lib/services/settings';
+import {
+	getCurrency,
+	getPanelWidth,
+	setPanelWidth,
+	LOCATION_PANEL_WIDTH_KEY
+} from '$lib/services/settings';
 import {
 	createCategory,
 	deleteCategory,
@@ -53,7 +58,7 @@ export const load = async ({ locals }: IsolatedEvent) => {
 		inventoryCategories: listCategories(ctx),
 		currency: getCurrency(ctx.userId),
 		// Where the handle between the panel and the list was left.
-		locationPanelRem: getLocationPanelWidth(ctx.userId),
+		locationPanelRem: getPanelWidth(ctx.userId, LOCATION_PANEL_WIDTH_KEY),
 		// Whether the share-with-family switch has anybody to share with.
 		onFamilyPlan: host.familyUserIds(ctx.userId).length > 1,
 		// What the things say about themselves, for the Attributes screen and for
@@ -397,7 +402,7 @@ export const actions = {
 	setLocationPanelWidth: async ({ request, locals }: IsolatedEvent) => {
 		const formData = await request.formData();
 		try {
-			setLocationPanelWidth(locals.user!.id, Number(formData.get('rem')));
+			setPanelWidth(locals.user!.id, LOCATION_PANEL_WIDTH_KEY, Number(formData.get('rem')));
 			return { success: true, action: 'setLocationPanelWidth' };
 		} catch (e) {
 			return toActionFailure(e);

@@ -8,6 +8,7 @@
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
+	import SplitColumns from '$lib/components/SplitColumns.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormError from '$lib/components/FormError.svelte';
@@ -32,6 +33,16 @@
 	let editingId = $state<number | null>(null);
 	/** Whether the note composer in the panel is open; the button for it is up here. */
 	let composing = $state(false);
+	/*
+	 * How wide the list of notebooks is. The drag lives in `SplitColumns`; what
+	 * is here is where the width is written down, once, when the handle is let
+	 * go rather than on every pixel of it.
+	 */
+	// The seed, read once; from here the handle owns it and the load only
+	// supplies where it was last left.
+	// svelte-ignore state_referenced_locally
+	let panelRem = $state(data.listPanelRem);
+	let panelForm = $state<HTMLFormElement>();
 	/** The New button for whichever tab the panel is showing — see NotebookDetail. */
 	let newAction = $state<{ label: string; run?: () => void; href?: string } | undefined>(undefined);
 
@@ -111,9 +122,14 @@
 	<RoomToolbar>
 		{#snippet tools()}{/snippet}
 	</RoomToolbar>
-	<p class="page-intro">
-		{t('notebooks.aSubjectYouWriteAgainst')}
-	</p>
+	<!-- What a notebook is, for somebody who has none. Once there are some on
+	     screen they say it better than the sentence does, and it is a paragraph
+	     between the tabs and the thing you came for. -->
+	{#if data.notebooks.length === 0}
+		<p class="page-intro">
+			{t('notebooks.aSubjectYouWriteAgainst')}
+		</p>
+	{/if}
 
 	<FormError message={form?.message} />
 
@@ -127,23 +143,29 @@
 		what went past the edge was simply gone: the Delete button, on a phone,
 		with no way to reach it.
 	-->
-	<div class="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.8fr)]">
-		<Card accent={SECTION_COLORS.diary} flush>
-			{#if data.notebooks.length === 0}
-				<EmptyState
-					icon="notebook"
-					title={t('notebooks.noNotebooksYet')}
-					description={t('notebooks.startOneForSomethingYou')}
-				>
-					{#snippet action()}
-						<button onclick={openCreate} class="btn btn-primary">
-							<Icon name="plus" />
-							{t('notebooks.newNotebook')}
-						</button>
-					{/snippet}
-				</EmptyState>
-			{:else}
-				<!--
+	<SplitColumns
+		bind:rem={panelRem}
+		spaced
+		label={t('notebooks.widenOrNarrowTheList')}
+		onsettle={() => panelForm?.requestSubmit()}
+	>
+		{#snippet left()}
+			<Card accent={SECTION_COLORS.diary} flush>
+				{#if data.notebooks.length === 0}
+					<EmptyState
+						icon="notebook"
+						title={t('notebooks.noNotebooksYet')}
+						description={t('notebooks.startOneForSomethingYou')}
+					>
+						{#snippet action()}
+							<button onclick={openCreate} class="btn btn-primary">
+								<Icon name="plus" />
+								{t('notebooks.newNotebook')}
+							</button>
+						{/snippet}
+					</EmptyState>
+				{:else}
+					<!--
 					Notebooks belong to each other.
 
 					A name with an em dash in it is a place: `Renovation — Kitchen`
@@ -151,120 +173,121 @@
 					album and the same tree inventory draws for a location. Nothing
 					to keep in step and nothing new to learn — renaming one moves it.
 				-->
-				{#snippet notebookRow(node: (typeof data.tree)[number])}
-					<div
-						class="flex items-center gap-3 py-3 pr-4 {node.id === data.selected
-							? 'bg-gray-100'
-							: ''}"
-						style="padding-left: calc(1rem + {node.depth} * 1.6rem)"
-					>
-						{#if node.children.length > 0}
-							<button
-								class="icon-btn -ml-1 shrink-0"
-								aria-label={t('notebooks.whatIsInside', {
-									show: opened.has(node.id) ? t('ui.hide') : t('ui.show'),
-									title: node.title
-								})}
-								aria-expanded={opened.has(node.id)}
-								onclick={() => toggle(node.id)}
-							>
-								<Icon name={opened.has(node.id) ? 'chevron-down' : 'chevron-right'} size={14} />
-							</button>
-						{:else}
-							<span class="size-4 shrink-0"></span>
-						{/if}
+					{#snippet notebookRow(node: (typeof data.tree)[number])}
+						<div
+							class="flex items-center gap-3 py-3 pr-4 {node.id === data.selected
+								? 'bg-gray-100'
+								: ''}"
+							style="padding-left: calc(1rem + {node.depth} * 1.6rem)"
+						>
+							{#if node.children.length > 0}
+								<button
+									class="icon-btn -ml-1 shrink-0"
+									aria-label={t('notebooks.whatIsInside', {
+										show: opened.has(node.id) ? t('ui.hide') : t('ui.show'),
+										title: node.title
+									})}
+									aria-expanded={opened.has(node.id)}
+									onclick={() => toggle(node.id)}
+								>
+									<Icon name={opened.has(node.id) ? 'chevron-down' : 'chevron-right'} size={14} />
+								</button>
+							{:else}
+								<span class="size-4 shrink-0"></span>
+							{/if}
 
-						<!--
+							<!--
 							Picking a notebook fills the column beside it, which is what a
 							two-column page is for. The full page is reached from that
 							column (Open, above), where the thing it opens is.
 						-->
-						<a
-							href="{resolve('/notebooks')}?notebook={node.id}"
-							class="min-w-0 flex-1 text-sm text-gray-900 hover:underline"
-						>
-							<span class:text-gray-500={node.closedAt}>{leafTitle(node.title)}</span>
-							{#if !node.mine}
-								<span class="eyebrow ml-1 text-gray-500">{node.sharedBy}’s</span>
-							{:else if node.sharedWithFamily}
-								<span class="eyebrow ml-1 text-gray-500">{t('notebooks.family')}</span>
-							{/if}
-							{#if node.closedAt}
-								<span class="eyebrow ml-2 text-gray-500">{t('notebooks.closed')}</span>
-							{/if}
-							<span class="block truncate text-xs text-gray-500">{tally(node)}</span>
-						</a>
-
-						<button
-							onclick={() => openEdit(node)}
-							class="icon-btn"
-							aria-label={t('notebooks.edit', { title: node.title })}
-						>
-							<Icon name="edit" />
-						</button>
-
-						<form
-							method="post"
-							action="?/setClosed"
-							use:enhance={() =>
-								async ({ update }) => {
-									await update({ reset: false });
-								}}
-						>
-							<input type="hidden" name="id" value={node.id} />
-							<input type="hidden" name="closed" value={node.closedAt ? 'false' : 'true'} />
-							<button
-								class="icon-btn"
-								title={node.closedAt ? t('notebooks.reopenIt') : t('notebooks.closeIt')}
-								aria-label="{node.closedAt
-									? t('notebooks.reopenIt')
-									: t('notebooks.closeIt')} {node.title}"
+							<a
+								href="{resolve('/notebooks')}?notebook={node.id}"
+								class="min-w-0 flex-1 text-sm text-gray-900 hover:underline"
 							>
-								{#if node.closedAt}
-									<Icon name="undo" />
-								{:else}
-									<Icon name="check" />
+								<span class:text-gray-500={node.closedAt}>{leafTitle(node.title)}</span>
+								{#if !node.mine}
+									<span class="eyebrow ml-1 text-gray-500">{node.sharedBy}’s</span>
+								{:else if node.sharedWithFamily}
+									<span class="eyebrow ml-1 text-gray-500">{t('notebooks.family')}</span>
 								{/if}
+								{#if node.closedAt}
+									<span class="eyebrow ml-2 text-gray-500">{t('notebooks.closed')}</span>
+								{/if}
+								<span class="block truncate text-xs text-gray-500">{tally(node)}</span>
+							</a>
+
+							<button
+								onclick={() => openEdit(node)}
+								class="icon-btn"
+								aria-label={t('notebooks.edit', { title: node.title })}
+							>
+								<Icon name="edit" />
 							</button>
-						</form>
-					</div>
 
-					{#if opened.has(node.id)}
-						{#each node.children as child (child.id)}
-							{@render notebookRow(child)}
+							<form
+								method="post"
+								action="?/setClosed"
+								use:enhance={() =>
+									async ({ update }) => {
+										await update({ reset: false });
+									}}
+							>
+								<input type="hidden" name="id" value={node.id} />
+								<input type="hidden" name="closed" value={node.closedAt ? 'false' : 'true'} />
+								<button
+									class="icon-btn"
+									title={node.closedAt ? t('notebooks.reopenIt') : t('notebooks.closeIt')}
+									aria-label="{node.closedAt
+										? t('notebooks.reopenIt')
+										: t('notebooks.closeIt')} {node.title}"
+								>
+									{#if node.closedAt}
+										<Icon name="undo" />
+									{:else}
+										<Icon name="check" />
+									{/if}
+								</button>
+							</form>
+						</div>
+
+						{#if opened.has(node.id)}
+							{#each node.children as child (child.id)}
+								{@render notebookRow(child)}
+							{/each}
+						{/if}
+					{/snippet}
+
+					<div class="flex h-full flex-col divide-y divide-gray-200">
+						{#each data.tree as node (node.id)}
+							{@render notebookRow(node)}
 						{/each}
-					{/if}
-				{/snippet}
 
-				<div class="flex h-full flex-col divide-y divide-gray-200">
-					{#each data.tree as node (node.id)}
-						{@render notebookRow(node)}
-					{/each}
-
-					<!--
+						<!--
 						A notebook of its own, and only when there is something in it. `mt-auto`
 						pins it to the bottom of the card rather than to the end of the list:
 						it is not one more notebook in the same sequence as the others.
 					-->
-					{#if orphaned.length > 0}
-						<a
-							href="{resolve('/notebooks')}?notebook=orphaned"
-							class="mt-auto block px-4 py-3 text-sm hover:underline {showingOrphans
-								? 'bg-gray-100'
-								: ''}"
-						>
-							<span class="text-gray-900">{t('notebooks.notesWithoutANotebook')}</span>
-							<span class="block truncate text-xs text-gray-500"
-								>{t('notebooks.theirNotebookWas', {
-									length: orphaned.length,
-									notes: orphaned.length === 1 ? 'note' : 'notes'
-								})}</span
+						{#if orphaned.length > 0}
+							<a
+								href="{resolve('/notebooks')}?notebook=orphaned"
+								class="mt-auto block px-4 py-3 text-sm hover:underline {showingOrphans
+									? 'bg-gray-100'
+									: ''}"
 							>
-						</a>
-					{/if}
-				</div>
-			{/if}
-		</Card>
+								<span class="text-gray-900">{t('notebooks.notesWithoutANotebook')}</span>
+								<span class="block truncate text-xs text-gray-500"
+									>{t('notebooks.theirNotebookWas', {
+										length: orphaned.length,
+										notes: orphaned.length === 1 ? 'note' : 'notes'
+									})}</span
+								>
+							</a>
+						{/if}
+					</div>
+				{/if}
+			</Card>
+		{/snippet}
 
 		<!--
 			The second column is the one you picked, and on a phone there is no
@@ -272,28 +295,29 @@
 			nothing in it showed "no notebooks yet" and then, under it, two more
 			panels saying nothing was chosen.
 		-->
-		<div class:hidden={!selected && !showingOrphans} class="contents lg:!block">
-			<Card
-				title={showingOrphans
-					? t('notebooks.notesWithoutANotebook')
-					: (selected?.title ?? t('notebookDetail.nothingChosen'))}
-				description={showingOrphans
-					? t('notebooks.theirNotebookWasDeletedThe')
-					: selected
-						? (selected.description ?? '')
-						: t('notebooks.pickANotebookToSee')}
-				accent={SECTION_COLORS.diary}
-				flush
-			>
-				{#snippet actions()}
-					{#if selected}
-						<!-- The way to the notebook's own page, from the column that is
+		{#snippet right()}
+			<div class:hidden={!selected && !showingOrphans} class="contents lg:!block">
+				<Card
+					title={showingOrphans
+						? t('notebooks.notesWithoutANotebook')
+						: (selected?.title ?? t('notebookDetail.nothingChosen'))}
+					description={showingOrphans
+						? t('notebooks.theirNotebookWasDeletedThe')
+						: selected
+							? (selected.description ?? '')
+							: t('notebooks.pickANotebookToSee')}
+					accent={SECTION_COLORS.diary}
+					flush
+				>
+					{#snippet actions()}
+						{#if selected}
+							<!-- The way to the notebook's own page, from the column that is
 					     showing it. The list on the left chooses what appears here. -->
-						<a href={resolve('/notebooks/[id]', { id: String(selected.id) })} class="btn btn-sm">
-							{t('ui.open')}
-							<Icon name="arrow-right" />
-						</a>
-						<!--
+							<a href={resolve('/notebooks/[id]', { id: String(selected.id) })} class="btn btn-sm">
+								{t('ui.open')}
+								<Icon name="arrow-right" />
+							</a>
+							<!--
 							Writing, where deleting the whole notebook used to be.
 
 							This is a page for browsing notebooks, and the thing most
@@ -306,36 +330,47 @@
 							while the Tasks tab was showing, which is a button offering
 							the wrong thing about the list under it.
 						-->
-						{#if newAction?.href}
-							<!-- Already resolved: NotebookDetail builds this with `resolve()`. -->
-							<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-							<a href={newAction.href} class="btn btn-sm btn-primary">
-								<Icon name="plus" />
-								{newAction.label}
-							</a>
-						{:else if newAction}
-							<button onclick={newAction.run} class="btn btn-sm btn-primary">
-								<Icon name="plus" />
-								{newAction.label}
-							</button>
+							{#if newAction?.href}
+								<!-- Already resolved: NotebookDetail builds this with `resolve()`. -->
+								<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+								<a href={newAction.href} class="btn btn-sm btn-primary">
+									<Icon name="plus" />
+									{newAction.label}
+								</a>
+							{:else if newAction}
+								<button onclick={newAction.run} class="btn btn-sm btn-primary">
+									<Icon name="plus" />
+									{newAction.label}
+								</button>
+							{/if}
 						{/if}
-					{/if}
-				{/snippet}
+					{/snippet}
 
-				<NotebookDetail
-					notebook={selected}
-					contents={data.contents}
-					{orphaned}
-					{showingOrphans}
-					allPeople={data.allPeople}
-					categories={data.categories}
-					pickableNotebooks={data.pickableNotebooks}
-					bind:composing
-					bind:newAction
-				/>
-			</Card>
-		</div>
-	</div>
+					<NotebookDetail
+						notebook={selected}
+						contents={data.contents}
+						{orphaned}
+						{showingOrphans}
+						allPeople={data.allPeople}
+						categories={data.categories}
+						pickableNotebooks={data.pickableNotebooks}
+						bind:composing
+						bind:newAction
+					/>
+				</Card>
+			</div>
+		{/snippet}
+	</SplitColumns>
+
+	<form
+		method="POST"
+		action="?/setPanelWidth"
+		class="hidden"
+		bind:this={panelForm}
+		use:enhance={() => async () => {}}
+	>
+		<input type="hidden" name="rem" value={panelRem} />
+	</form>
 </div>
 
 <Modal

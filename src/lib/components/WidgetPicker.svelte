@@ -44,6 +44,21 @@
 
 	const groups = $derived(cardsBySection(cards));
 	const on = $derived(new Set<string>(layout));
+
+	const allOn = $derived(cards.length > 0 && cards.every((card) => on.has(card.id)));
+	const noneOn = $derived(cards.every((card) => !on.has(card.id)));
+
+	/**
+	 * All of them, or none.
+	 *
+	 * Thirteen tiles is thirteen presses to start from nothing and add back the
+	 * four you want, which is the ordinary way somebody arranges this. Only the
+	 * ones that would change are touched, so the layout keeps the order the
+	 * rest of them were already in.
+	 */
+	function setAll(wanted: boolean) {
+		for (const card of cards) if (on.has(card.id) !== wanted) ontoggle(card.id);
+	}
 </script>
 
 <Modal
@@ -53,6 +68,18 @@
 	size="lg"
 >
 	<div class="space-y-6">
+		<!-- Both spelled out rather than one button that changes its mind: which
+		     of the two it would do is the thing you need to know before pressing,
+		     and a toggle only says that after you have. Each goes quiet when it
+		     would do nothing. -->
+		<div class="flex flex-wrap items-center justify-end gap-2 border-b border-gray-200 pb-3">
+			<button type="button" class="btn btn-sm" disabled={allOn} onclick={() => setAll(true)}>
+				{t('home.selectAll')}
+			</button>
+			<button type="button" class="btn btn-sm" disabled={noneOn} onclick={() => setAll(false)}>
+				{t('home.unselectAll')}
+			</button>
+		</div>
 		{#each groups as group (group.section)}
 			<!-- A `div`, not a `section`: the playful style makes every `section` a
 			     rounded surface that clips its own children, which took the first

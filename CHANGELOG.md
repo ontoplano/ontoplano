@@ -18,6 +18,37 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.181.2 — 2026-09-20
+
+- **Notebooks has a handle between its two columns.** The list of notebooks
+  and the panel beside it can be widened and narrowed by dragging the divider,
+  and where you leave it is where it stays. It is Inventory's handle, now one
+  component rather than two copies — and it takes the keyboard, which the
+  original never did.
+- **A view says what its keys are instead of writing them.** `h` and `l` walk
+  the tabs, `j` and `k` walk what is listed, `Enter` reads the one under the
+  cursor and `e` edits it. Notebooks is the first screen on it; the next one
+  gets the same keys by declaring itself rather than by somebody remembering.
+- **Tables render.** A pipe table in a note came out as a wall of pipes with a
+  horizontal rule through the middle of it. It is a table now, with its own
+  sideways scroll so a wide one does not take the page with it.
+- **What a notebook is, said only while you have none.** Once there are
+  notebooks on screen they explain themselves better than the paragraph above
+  them did.
+- **The theme row fits, and says its words in your language.** "Dark" was cut
+  in half by the edge of the menu, and all three read in English whatever the
+  app was set to.
+- **The danger zone in Account starts closed.** Two Delete buttons should not
+  be on screen every time somebody comes to change a password.
+- **Pressing a task reads it.** Its notes, its pictures and its recordings
+  unfold on the row — reading what you wrote no longer means opening the form
+  that edits it and pressing Cancel.
+- **The widget picker takes all or none.** Thirteen tiles was thirteen presses
+  to start from nothing and add back the four you wanted.
+- **The keyboard page in the docs reads in words.** It was printing the
+  internal name of each description — "shortcut.moveBetweenTabs" — to anybody
+  who opened it.
+
 ## 0.181.1 — 2026-09-19
 
 - **A note that is a checklist can become the tasks it describes.** Writing a

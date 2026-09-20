@@ -379,30 +379,37 @@ export function markOnboarded(userId: string): void {
 	setUserSetting(userId, ONBOARDED_KEY, 'true');
 }
 
-// --- The locations panel's width ------------------------------------------------
+// --- The width of a two-column screen's left panel ------------------------------
 
 /**
- * How wide the "Where things live" panel is, in rem.
+ * How wide the left-hand panel of a split screen is, in rem.
  *
- * A house's names are as long as somebody's names are — "asf 1213 21321 a…"
- * is what a fixed column does to one of them — and no default fits everybody,
- * so the panel takes its width from a handle and remembers where it was left.
- * The space comes off the list beside it, which is the only place it can come
+ * Somebody's own names are as long as they made them — "asf 1213 21321 a…" is
+ * what a fixed column does to one of them — and no default fits everybody, so
+ * the panel takes its width from a handle and remembers where it was left. The
+ * space comes off whatever is beside it, which is the only place it can come
  * from; the bounds keep the panel from swallowing the room or vanishing.
+ *
+ * One set of bounds and one pair of functions for every screen that splits
+ * this way, keyed by the screen: two screens with the same handle should not
+ * disagree about how narrow it may go, and a third added later should not have
+ * to decide.
  */
-export const LOCATION_PANEL_WIDTH_KEY = 'inventory.location_panel_rem';
-export const LOCATION_PANEL_WIDTH = { min: 13, max: 34, fallback: 17 } as const;
+export const PANEL_WIDTH = { min: 13, max: 34, fallback: 17 } as const;
 
-export function getLocationPanelWidth(userId: string): number {
-	const raw = getUserSetting(userId, LOCATION_PANEL_WIDTH_KEY);
-	if (raw === null || raw.trim() === '') return LOCATION_PANEL_WIDTH.fallback;
+export const LOCATION_PANEL_WIDTH_KEY = 'inventory.location_panel_rem';
+export const NOTEBOOK_PANEL_WIDTH_KEY = 'notebooks.list_panel_rem';
+
+export function getPanelWidth(userId: string, key: string): number {
+	const raw = getUserSetting(userId, key);
+	if (raw === null || raw.trim() === '') return PANEL_WIDTH.fallback;
 	const rem = Number(raw);
-	return Number.isFinite(rem) && rem >= LOCATION_PANEL_WIDTH.min && rem <= LOCATION_PANEL_WIDTH.max
+	return Number.isFinite(rem) && rem >= PANEL_WIDTH.min && rem <= PANEL_WIDTH.max
 		? rem
-		: LOCATION_PANEL_WIDTH.fallback;
+		: PANEL_WIDTH.fallback;
 }
 
-export function setLocationPanelWidth(userId: string, rem: number): void {
-	const held = Math.min(LOCATION_PANEL_WIDTH.max, Math.max(LOCATION_PANEL_WIDTH.min, rem));
-	setUserSetting(userId, LOCATION_PANEL_WIDTH_KEY, String(Math.round(held * 10) / 10));
+export function setPanelWidth(userId: string, key: string, rem: number): void {
+	const held = Math.min(PANEL_WIDTH.max, Math.max(PANEL_WIDTH.min, rem));
+	setUserSetting(userId, key, String(Math.round(held * 10) / 10));
 }

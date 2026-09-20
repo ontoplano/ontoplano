@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { LOCATION_PANEL_WIDTH } from '../src/lib/services/settings';
+import { PANEL_WIDTH } from '../src/lib/services/settings';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
@@ -74,7 +74,7 @@ test.describe('where things live', () => {
 			.first()
 			.boundingBox())!;
 		const rem = 16;
-		expect(panel.width).toBeLessThanOrEqual(LOCATION_PANEL_WIDTH.max * rem + 2);
+		expect(panel.width).toBeLessThanOrEqual(PANEL_WIDTH.max * rem + 2);
 	});
 });
 

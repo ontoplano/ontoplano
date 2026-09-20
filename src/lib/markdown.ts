@@ -8,8 +8,9 @@
  * are ones this file writes itself.
  *
  * Supported: headings, horizontal rules, bullet and numbered lists, task
- * lists, block quotes, fenced and inline code, bold, italic, strikethrough,
- * links, pictures you uploaded here, and `#12` as a reference to a diary entry.
+ * lists, block quotes, tables, fenced and inline code, bold, italic,
+ * strikethrough, links, pictures you uploaded here, and `#12` as a reference
+ * to a diary entry.
  */
 
 const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
@@ -91,6 +92,21 @@ function inline(raw: string): string {
 	return html;
 }
 
+/*
+ * A table is a header row, a row of dashes, and the rows under it.
+ *
+ * The pipe table is what everybody writes, and it is what an assistant writes
+ * when asked for four settings and what each does — so a note full of them was
+ * rendering as a wall of pipes. The leading and trailing pipes are optional,
+ * which is how people actually type them.
+ *
+ * `ALIGN` is the dashes row: `:--` left, `--:` right, `:-:` centre, and a bare
+ * run of dashes takes the default. It is what tells a table from two ordinary
+ * lines that happen to contain a pipe.
+ */
+const ROW = /\|/;
+const ALIGN = /^\s*\|?\s*:?-{1,}:?\s*(\|\s*:?-{1,}:?\s*)*\|?\s*$/;
+
 const HEADING = /^(#{1,6})\s+(.*)$/;
 const RULE = /^\s*(?:-{3,}|\*{3,}|_{3,})\s*$/;
 const BULLET = /^\s*[-*+]\s+(.*)$/;
@@ -99,15 +115,58 @@ const TASK = /^\s*[-*+]\s+\[([ xX])\]\s*(.*)$/;
 const QUOTE = /^\s*>\s?(.*)$/;
 const FENCE = /^\s*```/;
 
-function isBlockStart(line: string): boolean {
+/**
+ * Whether the line at `at` ends the paragraph above it.
+ *
+ * Takes the whole text rather than one line because a table announces itself
+ * on its *second* line: without that lookahead a paragraph swallowed the
+ * header row and the dashes under it came out as a horizontal rule.
+ */
+function isBlockStart(lines: string[], at: number): boolean {
+	const line = lines[at];
 	return (
 		HEADING.test(line) ||
 		RULE.test(line) ||
 		BULLET.test(line) ||
 		NUMBER.test(line) ||
 		QUOTE.test(line) ||
-		FENCE.test(line)
+		FENCE.test(line) ||
+		startsTable(lines, at)
 	);
+}
+
+function startsTable(lines: string[], at: number): boolean {
+	return ROW.test(lines[at]) && at + 1 < lines.length && ALIGN.test(lines[at + 1]);
+}
+
+/** The cells of one row, with the optional outer pipes taken off. */
+function cells(line: string): string[] {
+	return line
+		.trim()
+		.replace(/^\||\|$/g, '')
+		.split('|')
+		.map((cell) => cell.trim());
+}
+
+type Align = 'left' | 'right' | 'center' | null;
+
+function alignments(line: string): Align[] {
+	return cells(line).map((cell) => {
+		const left = cell.startsWith(':');
+		const right = cell.endsWith(':');
+		if (left && right) return 'center';
+		if (right) return 'right';
+		if (left) return 'left';
+		return null;
+	});
+}
+
+function row(line: string, align: Align[], tag: 'th' | 'td'): string {
+	const out = cells(line).map((cell, at) => {
+		const how = align[at] ? ` style="text-align: ${align[at]}"` : '';
+		return `<${tag}${how}>${inline(cell)}</${tag}>`;
+	});
+	return `<tr>${out.join('')}</tr>`;
 }
 
 function listItem(line: string): string {
@@ -142,6 +201,31 @@ export function renderMarkdown(text: string): string {
 			while (i < lines.length && !FENCE.test(lines[i])) code.push(lines[i++]);
 			i++; // the closing fence, or the end of the text
 			out.push(`<pre><code>${escape(code.join('\n'))}</code></pre>`);
+			continue;
+		}
+
+		/*
+		 * A table, which takes two lines to recognise.
+		 *
+		 * Before the rule test: `|---|---|` is a table's dashes row and would
+		 * otherwise be read as a horizontal rule, leaving the header above it as
+		 * a stray paragraph of pipes. Two lines have to agree before either is
+		 * treated as a table at all, so a sentence with a pipe in it is a
+		 * sentence.
+		 */
+		if (startsTable(lines, i)) {
+			const align = alignments(lines[i + 1]);
+			const head = row(line, align, 'th');
+			i += 2;
+			const body: string[] = [];
+			while (i < lines.length && lines[i].trim() && ROW.test(lines[i]))
+				body.push(row(lines[i++], align, 'td'));
+			// Its own scroller: a wide table must not take the page sideways with
+			// it, which on a phone is every table of more than two columns.
+			out.push(
+				`<div class="md-table-scroll"><table class="md-table">` +
+					`<thead>${head}</thead><tbody>${body.join('')}</tbody></table></div>`
+			);
 			continue;
 		}
 
@@ -187,7 +271,7 @@ export function renderMarkdown(text: string): string {
 		}
 
 		const paragraph: string[] = [];
-		while (i < lines.length && lines[i].trim() && !isBlockStart(lines[i])) {
+		while (i < lines.length && lines[i].trim() && !isBlockStart(lines, i)) {
 			paragraph.push(inline(lines[i]));
 			i++;
 		}

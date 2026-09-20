@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { SvelteSet } from 'svelte/reactivity';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -34,6 +35,7 @@
 	import TodoRows from '$lib/components/TodoRows.svelte';
 	import { NOTEBOOK_TODO_ACTIONS } from '$lib/todo-actions';
 	import type { Todo } from '$lib/services/todos';
+	import { browsable } from '$lib/browse.svelte';
 	import { checklistItems } from '$lib/checklist';
 	import { renderMarkdown } from '$lib/markdown';
 	import { say } from '$lib/said.svelte';
@@ -274,7 +276,8 @@
 	 * A notebook with a dozen notes pushed its tasks below the fold, so the two
 	 * halves of "everything about this" could not be seen together at all.
 	 */
-	type Tab = 'notes' | 'tasks' | 'goals';
+	const TAB_KEYS = ['notes', 'tasks', 'goals'] as const;
+	type Tab = (typeof TAB_KEYS)[number];
 	let tab = $state<Tab>('notes');
 
 	/**
@@ -421,6 +424,44 @@
 			done: contents?.goals.filter((goal) => goal.status !== 'open').length ?? 0
 		}
 	]);
+
+	/**
+	 * Where the cursor is among the notes, for the keyboard.
+	 *
+	 * -1 is nowhere, which is where it starts: arriving on a notebook should
+	 * not mark a note as chosen when nobody has chosen one.
+	 */
+	let cursor = $state(-1);
+
+	// Back to nowhere when the list underneath changes out from under it — a
+	// cursor on the fourth note of three is a row nobody can see.
+	$effect(() => {
+		const shown = shownNotes.length;
+		void tab;
+		untrack(() => {
+			if (cursor >= shown) cursor = -1;
+		});
+	});
+
+	/*
+	 * The keys this screen answers to, said once — see `$lib/browse`.
+	 *
+	 * `h` and `l` across Notes, Tasks and Goals; `j` and `k` down the notes;
+	 * `Enter` unfolds the one under the cursor and `e` opens it for editing.
+	 * Only on the notes tab: Tasks is `TodoRows`, which walks itself, and
+	 * Goals is a list of links to somewhere else.
+	 */
+	browsable(() => ({
+		items: () => (tab === 'notes' ? shownNotes : []),
+		cursor: () => cursor,
+		moveTo: (at: number) => (cursor = at),
+		tabs: { of: TAB_KEYS, current: () => tab, go: (key: string) => (tab = key as Tab) },
+		open: (at: number) => toggleNote(shownNotes[at].id),
+		edit: (at: number) => {
+			editingNoteId = shownNotes[at].id;
+			noteSaved = false;
+		}
+	}));
 
 	function when(iso: string): string {
 		return new Date(iso).toLocaleDateString(t.locale, {
@@ -811,7 +852,7 @@
 		<p class="px-4 py-3 text-sm text-gray-500">{t('notebookDetail.nothingWrittenHereYet')}</p>
 	{:else}
 		<div class="divide-y divide-gray-200">
-			{#each entries as entry (entry.id)}
+			{#each entries as entry, at (entry.id)}
 				<!--
 					A pinned note is marked, not just moved.
 
@@ -819,8 +860,16 @@
 					of a long notebook: the ones held there have to look held. A wash
 					of the section's own accent and a spine down the side, which is
 					how the app marks a thing everywhere else.
+
+					`kb-cursor` is where the keyboard is, the same mark every other
+					list in the app wears — and `keepInView` keeps it on screen as
+					`j` walks past the bottom of the window.
 				-->
-				<article class="px-4 py-3" class:is-pinned={'pinnedAt' in entry && entry.pinnedAt}>
+				<article
+					use:keepInView={notebookId !== null && cursor === at}
+					class="px-4 py-3 {cursor === at ? 'kb-cursor' : ''}"
+					class:is-pinned={'pinnedAt' in entry && entry.pinnedAt}
+				>
 					{#if editingNoteId === entry.id}
 						<form
 							method="post"

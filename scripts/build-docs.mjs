@@ -635,20 +635,31 @@ function shortcutsPage() {
 	const global = [];
 	const pages = [];
 
+	/*
+	 * Arrays of bindings the file declares by name, so a page that spreads one
+	 * in — `[...BROWSE_SHORTCUTS, …]` — is documented with the keys it
+	 * actually binds. Dropping the spread silently is how this page would come
+	 * to list fewer keys than the app answers to.
+	 */
+	const named = new Map();
+
 	const readBindings = (arr) =>
-		arr.elements.filter(ts.isObjectLiteralExpression).map((el) => {
+		arr.elements.flatMap((el) => {
+			if (ts.isSpreadElement(el)) return named.get(el.expression.getText(source)) ?? [];
+			if (!ts.isObjectLiteralExpression(el)) return [];
 			const get = (key) => {
 				const p = el.properties.find(
 					(pr) => ts.isPropertyAssignment(pr) && pr.name.getText(source) === key
 				);
 				return p && ts.isStringLiteral(p.initializer) ? p.initializer.text : '';
 			};
-			return { key: get('key'), action: get('action'), description: get('description') };
+			return [{ key: get('key'), action: get('action'), description: get('description') }];
 		});
 
 	const visit = (n) => {
 		if (ts.isVariableDeclaration(n) && n.initializer) {
 			const name = n.name.getText(source);
+			if (ts.isArrayLiteralExpression(n.initializer)) named.set(name, readBindings(n.initializer));
 			if (name === 'GLOBAL_SHORTCUTS' && ts.isArrayLiteralExpression(n.initializer)) {
 				global.push(...readBindings(n.initializer));
 			}
@@ -696,13 +707,24 @@ function shortcutsPage() {
 		'| Key | Does |',
 		'| --- | --- |'
 	];
-	for (const s of global) out.push(`| <kbd>${s.key}</kbd> | ${s.description} |`);
+	/*
+	 * The words, not the identifiers.
+	 *
+	 * The table stores message keys, which is right in the app and useless on a
+	 * page a stranger reads: it said "shortcut.moveBetweenTabs" where it meant
+	 * "Move between tabs". The English catalogue is the source of the words,
+	 * the same one the app renders from.
+	 */
+	const words = JSON.parse(readFileSync(join(ROOT, 'messages/en.json'), 'utf8'));
+	const said = (key) => words[key] ?? key;
+
+	for (const s of global) out.push(`| <kbd>${s.key}</kbd> | ${said(s.description)} |`);
 	out.push('');
 
 	for (const p of pages.sort((a, b) => a.path.localeCompare(b.path))) {
-		out.push(`## ${p.label} — \`${p.path}\`\n`);
+		out.push(`## ${said(p.label)} — \`${p.path}\`\n`);
 		out.push('| Key | Does |', '| --- | --- |');
-		for (const s of p.shortcuts) out.push(`| <kbd>${s.key}</kbd> | ${s.description} |`);
+		for (const s of p.shortcuts) out.push(`| <kbd>${s.key}</kbd> | ${said(s.description)} |`);
 		out.push('');
 	}
 

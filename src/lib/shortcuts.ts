@@ -10,6 +10,23 @@ export interface PageShortcuts {
 	shortcuts: ShortcutBinding[];
 }
 
+/**
+ * The four this owns, for a page's entry in `PAGE_SHORTCUTS`.
+ *
+ * Spread into the list so the help dock says what the screen actually does
+ * rather than the two halves disagreeing:
+ *
+ *     shortcuts: [...BROWSE_SHORTCUTS, { key: 'n', action: 'new', … }]
+ */
+export const BROWSE_SHORTCUTS: ShortcutBinding[] = [
+	{ key: 'h', action: 'browse-prev-tab', description: 'shortcut.moveBetweenTabs' },
+	{ key: 'l', action: 'browse-next-tab', description: 'shortcut.moveBetweenTabs' },
+	{ key: 'j', action: 'browse-next', description: 'shortcut.navigateList' },
+	{ key: 'k', action: 'browse-prev', description: 'shortcut.navigateList' },
+	{ key: 'Enter', action: 'browse-open', description: 'shortcut.openTheOneUnderThe' },
+	{ key: 'e', action: 'browse-edit', description: 'shortcut.editTheOneUnderThe' }
+];
+
 export const GLOBAL_SHORTCUTS: ShortcutBinding[] = [
 	{ key: 'J', action: 'global-next-page', description: 'shortcut.nextPage' },
 	{ key: 'K', action: 'global-prev-page', description: 'shortcut.previousPage' },
@@ -165,7 +182,13 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 	},
 	'/notebooks': {
 		label: 'app.notebooks',
-		shortcuts: [{ key: 'n', action: 'new', description: 'shortcut.newNotebook' }]
+		// `BROWSE_SHORTCUTS` is the set `$lib/browse` answers for any screen that
+		// declares itself browsable, spread in here so the help dock says what
+		// the screen actually does rather than the two halves disagreeing.
+		shortcuts: [
+			...BROWSE_SHORTCUTS,
+			{ key: 'n', action: 'new', description: 'shortcut.newNotebook' }
+		]
 	},
 	'/notebooks/people': {
 		label: 'app.people',

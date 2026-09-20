@@ -7,187 +7,193 @@ works is a key listed here and the reverse.
 
 ## Everywhere
 
-| Key               | Does                        |
-| ----------------- | --------------------------- |
-| <kbd>J</kbd>      | shortcut.nextPage           |
-| <kbd>K</kbd>      | shortcut.previousPage       |
-| <kbd>Escape</kbd> | shortcut.closeForm          |
-| <kbd>?</kbd>      | shortcut.toggleShortcutHelp |
+| Key               | Does                 |
+| ----------------- | -------------------- |
+| <kbd>J</kbd>      | Next page            |
+| <kbd>K</kbd>      | Previous page        |
+| <kbd>Escape</kbd> | Close form           |
+| <kbd>?</kbd>      | Toggle shortcut help |
 
-## app.dashboard — `/`
-
-| Key          | Does                           |
-| ------------ | ------------------------------ |
-| <kbd>i</kbd> | shortcut.captureAnIdea         |
-| <kbd>t</kbd> | shortcut.captureATodo          |
-| <kbd>d</kbd> | shortcut.captureANote          |
-| <kbd>b</kbd> | shortcut.captureSomethingToBuy |
-| <kbd>n</kbd> | shortcut.newDiaryEntry         |
-| <kbd>w</kbd> | shortcut.newWins               |
-
-## app.goals — `/goals`
-
-| Key          | Does                  |
-| ------------ | --------------------- |
-| <kbd>n</kbd> | shortcut.newGoal      |
-| <kbd>j</kbd> | shortcut.nextGoal     |
-| <kbd>k</kbd> | shortcut.previousGoal |
-
-## app.habits — `/health/habits`
-
-| Key              | Does                    |
-| ---------------- | ----------------------- |
-| <kbd>j</kbd>     | shortcut.navigateHabits |
-| <kbd>k</kbd>     | shortcut.navigateHabits |
-| <kbd>n</kbd>     | shortcut.newHabit       |
-| <kbd>Enter</kbd> | shortcut.expandCollapse |
-
-## app.recipes — `/health/recipes`
-
-| Key          | Does               |
-| ------------ | ------------------ |
-| <kbd>n</kbd> | shortcut.newRecipe |
-
-## app.toBuy — `/inventory`
-
-| Key          | Does                           |
-| ------------ | ------------------------------ |
-| <kbd>j</kbd> | shortcut.navigateItems         |
-| <kbd>k</kbd> | shortcut.navigateItems         |
-| <kbd>n</kbd> | shortcut.newItem               |
-| <kbd>e</kbd> | shortcut.editItem              |
-| <kbd>d</kbd> | shortcut.deleteItem            |
-| <kbd>D</kbd> | shortcut.toggleDone            |
-| <kbd>z</kbd> | shortcut.archiveUnarchive      |
-| <kbd>1</kbd> | shortcut.toggleSomedayFilter   |
-| <kbd>2</kbd> | shortcut.toggleReplenishFilter |
-| <kbd>b</kbd> | shortcut.toggleShowBought      |
-| <kbd>s</kbd> | shortcut.toggleShowArchived    |
-
-## app.notebooks — `/notebooks`
-
-| Key          | Does                 |
-| ------------ | -------------------- |
-| <kbd>n</kbd> | shortcut.newNotebook |
-
-## app.diary — `/notebooks/diary`
+## Dashboard — `/`
 
 | Key          | Does                     |
 | ------------ | ------------------------ |
-| <kbd>j</kbd> | shortcut.navigateEntries |
-| <kbd>k</kbd> | shortcut.navigateEntries |
-| <kbd>n</kbd> | shortcut.newEntry        |
-| <kbd>e</kbd> | shortcut.editEntry       |
+| <kbd>i</kbd> | Capture an idea          |
+| <kbd>t</kbd> | Capture a todo           |
+| <kbd>d</kbd> | Capture a note           |
+| <kbd>b</kbd> | Capture something to buy |
+| <kbd>n</kbd> | New diary entry          |
+| <kbd>w</kbd> | New wins                 |
 
-## app.ideas — `/notebooks/ideas`
+## Goals — `/goals`
+
+| Key          | Does          |
+| ------------ | ------------- |
+| <kbd>n</kbd> | New goal      |
+| <kbd>j</kbd> | Next goal     |
+| <kbd>k</kbd> | Previous goal |
+
+## Habits — `/health/habits`
+
+| Key              | Does            |
+| ---------------- | --------------- |
+| <kbd>j</kbd>     | Navigate habits |
+| <kbd>k</kbd>     | Navigate habits |
+| <kbd>n</kbd>     | New habit       |
+| <kbd>Enter</kbd> | Expand/collapse |
+
+## Recipes — `/health/recipes`
+
+| Key          | Does       |
+| ------------ | ---------- |
+| <kbd>n</kbd> | New recipe |
+
+## To buy — `/inventory`
 
 | Key          | Does                    |
 | ------------ | ----------------------- |
-| <kbd>j</kbd> | shortcut.navigateIdeas  |
-| <kbd>k</kbd> | shortcut.navigateIdeas  |
-| <kbd>n</kbd> | shortcut.newIdea        |
-| <kbd>e</kbd> | shortcut.editIdea       |
-| <kbd>f</kbd> | shortcut.toggleFavorite |
-| <kbd>a</kbd> | shortcut.toggleApplied  |
+| <kbd>j</kbd> | Navigate items          |
+| <kbd>k</kbd> | Navigate items          |
+| <kbd>n</kbd> | New item                |
+| <kbd>e</kbd> | Edit item               |
+| <kbd>d</kbd> | Delete item             |
+| <kbd>D</kbd> | Toggle done             |
+| <kbd>z</kbd> | Archive/unarchive       |
+| <kbd>1</kbd> | Toggle someday filter   |
+| <kbd>2</kbd> | Toggle replenish filter |
+| <kbd>b</kbd> | Toggle show bought      |
+| <kbd>s</kbd> | Toggle show archived    |
 
-## app.people — `/notebooks/people`
+## Notebooks — `/notebooks`
 
-| Key          | Does                    |
-| ------------ | ----------------------- |
-| <kbd>j</kbd> | shortcut.navigatePeople |
-| <kbd>k</kbd> | shortcut.navigatePeople |
-| <kbd>n</kbd> | shortcut.newPerson      |
+| Key              | Does                          |
+| ---------------- | ----------------------------- |
+| <kbd>h</kbd>     | Move between tabs             |
+| <kbd>l</kbd>     | Move between tabs             |
+| <kbd>j</kbd>     | Navigate list                 |
+| <kbd>k</kbd>     | Navigate list                 |
+| <kbd>Enter</kbd> | Open the one under the cursor |
+| <kbd>e</kbd>     | Edit the one under the cursor |
+| <kbd>n</kbd>     | New notebook                  |
 
-## app.account — `/settings/account`
+## Diary — `/notebooks/diary`
 
-| Key          | Does                      |
-| ------------ | ------------------------- |
-| <kbd>j</kbd> | shortcut.navigateSessions |
-| <kbd>k</kbd> | shortcut.navigateSessions |
+| Key          | Does             |
+| ------------ | ---------------- |
+| <kbd>j</kbd> | Navigate entries |
+| <kbd>k</kbd> | Navigate entries |
+| <kbd>n</kbd> | New entry        |
+| <kbd>e</kbd> | Edit entry       |
 
-## app.integrations — `/settings/integrations/connections`
+## Ideas — `/notebooks/ideas`
 
-| Key          | Does                    |
-| ------------ | ----------------------- |
-| <kbd>j</kbd> | shortcut.navigateTokens |
-| <kbd>k</kbd> | shortcut.navigateTokens |
-| <kbd>n</kbd> | shortcut.newToken       |
+| Key          | Does            |
+| ------------ | --------------- |
+| <kbd>j</kbd> | Navigate ideas  |
+| <kbd>k</kbd> | Navigate ideas  |
+| <kbd>n</kbd> | New idea        |
+| <kbd>e</kbd> | Edit idea       |
+| <kbd>f</kbd> | Toggle favorite |
+| <kbd>a</kbd> | Toggle applied  |
 
-## app.activities — `/tasks/activities`
+## People — `/notebooks/people`
+
+| Key          | Does            |
+| ------------ | --------------- |
+| <kbd>j</kbd> | Navigate people |
+| <kbd>k</kbd> | Navigate people |
+| <kbd>n</kbd> | New person      |
+
+## Account — `/settings/account`
+
+| Key          | Does              |
+| ------------ | ----------------- |
+| <kbd>j</kbd> | Navigate sessions |
+| <kbd>k</kbd> | Navigate sessions |
+
+## Integrations — `/settings/integrations/connections`
+
+| Key          | Does            |
+| ------------ | --------------- |
+| <kbd>j</kbd> | Navigate tokens |
+| <kbd>k</kbd> | Navigate tokens |
+| <kbd>n</kbd> | New token       |
+
+## Activities — `/tasks/activities`
+
+| Key          | Does                   |
+| ------------ | ---------------------- |
+| <kbd>j</kbd> | Navigate list          |
+| <kbd>k</kbd> | Navigate list          |
+| <kbd>n</kbd> | New activity           |
+| <kbd>1</kbd> | Toggle category filter |
+| <kbd>2</kbd> | Toggle category filter |
+| <kbd>3</kbd> | Toggle category filter |
+| <kbd>4</kbd> | Toggle category filter |
+| <kbd>5</kbd> | Toggle category filter |
+| <kbd>6</kbd> | Toggle category filter |
+| <kbd>7</kbd> | Toggle category filter |
+| <kbd>8</kbd> | Toggle category filter |
+| <kbd>9</kbd> | Toggle category filter |
+
+## Board — `/tasks/board`
+
+| Key              | Does                          |
+| ---------------- | ----------------------------- |
+| <kbd>h</kbd>     | Move between columns          |
+| <kbd>j</kbd>     | Move between cards            |
+| <kbd>k</kbd>     | Move between cards            |
+| <kbd>l</kbd>     | Move between columns          |
+| <kbd>H</kbd>     | Carry card to previous column |
+| <kbd>L</kbd>     | Carry card to next column     |
+| <kbd>c</kbd>     | Mark done / reopen            |
+| <kbd>t</kbd>     | Pull onto today / put back    |
+| <kbd>g</kbd>     | Switch Today / General        |
+| <kbd>n</kbd>     | New card                      |
+| <kbd>Enter</kbd> | Open the card                 |
+| <kbd>1</kbd>     | Set the active rating         |
+| <kbd>2</kbd>     | Set the active rating         |
+| <kbd>3</kbd>     | Set the active rating         |
+| <kbd>4</kbd>     | Set the active rating         |
+| <kbd>5</kbd>     | Set the active rating         |
+| <kbd>u</kbd>     | Number keys set urgency       |
+| <kbd>i</kbd>     | Number keys set interest      |
+| <kbd>y</kbd>     | Number keys set energy        |
+| <kbd>x</kbd>     | Ask to delete card            |
+
+## Plan — `/tasks/plan`
 
 | Key          | Does                          |
 | ------------ | ----------------------------- |
-| <kbd>j</kbd> | shortcut.navigateList         |
-| <kbd>k</kbd> | shortcut.navigateList         |
-| <kbd>n</kbd> | shortcut.newActivity          |
-| <kbd>1</kbd> | shortcut.toggleCategoryFilter |
-| <kbd>2</kbd> | shortcut.toggleCategoryFilter |
-| <kbd>3</kbd> | shortcut.toggleCategoryFilter |
-| <kbd>4</kbd> | shortcut.toggleCategoryFilter |
-| <kbd>5</kbd> | shortcut.toggleCategoryFilter |
-| <kbd>6</kbd> | shortcut.toggleCategoryFilter |
-| <kbd>7</kbd> | shortcut.toggleCategoryFilter |
-| <kbd>8</kbd> | shortcut.toggleCategoryFilter |
-| <kbd>9</kbd> | shortcut.toggleCategoryFilter |
+| <kbd>j</kbd> | Navigate slots                |
+| <kbd>k</kbd> | Navigate slots                |
+| <kbd>g</kbd> | Toggle list/grid view         |
+| <kbd>+</kbd> | Zoom in (grid)                |
+| <kbd>=</kbd> | Zoom in (grid)                |
+| <kbd>-</kbd> | Zoom out (grid)               |
+| <kbd>0</kbd> | Reset zoom (grid)             |
+| <kbd>h</kbd> | Switch day                    |
+| <kbd>l</kbd> | Switch day                    |
+| <kbd>[</kbd> | Switch week                   |
+| <kbd>]</kbd> | Switch week                   |
+| <kbd>n</kbd> | New weekly block              |
+| <kbd>N</kbd> | New one-off block             |
+| <kbd>e</kbd> | Edit block                    |
+| <kbd>d</kbd> | Toggle active                 |
+| <kbd>D</kbd> | Delete block                  |
+| <kbd>v</kbd> | Toggle multiselect            |
+| <kbd> </kbd> | Select/deselect (multiselect) |
+| <kbd>x</kbd> | Ask to delete selected        |
+| <kbd>p</kbd> | Copy to days (multiselect)    |
 
-## app.board — `/tasks/board`
+## To-do — `/tasks/todo`
 
-| Key              | Does                               |
-| ---------------- | ---------------------------------- |
-| <kbd>h</kbd>     | shortcut.moveBetweenColumns        |
-| <kbd>j</kbd>     | shortcut.moveBetweenCards          |
-| <kbd>k</kbd>     | shortcut.moveBetweenCards          |
-| <kbd>l</kbd>     | shortcut.moveBetweenColumns        |
-| <kbd>H</kbd>     | shortcut.carryCardToPreviousColumn |
-| <kbd>L</kbd>     | shortcut.carryCardToNextColumn     |
-| <kbd>c</kbd>     | shortcut.markDoneReopen            |
-| <kbd>t</kbd>     | shortcut.pullOntoTodayPut          |
-| <kbd>g</kbd>     | shortcut.switchTodayGeneral        |
-| <kbd>n</kbd>     | shortcut.newCard                   |
-| <kbd>Enter</kbd> | shortcut.openTheCard               |
-| <kbd>1</kbd>     | shortcut.setTheActiveRating        |
-| <kbd>2</kbd>     | shortcut.setTheActiveRating        |
-| <kbd>3</kbd>     | shortcut.setTheActiveRating        |
-| <kbd>4</kbd>     | shortcut.setTheActiveRating        |
-| <kbd>5</kbd>     | shortcut.setTheActiveRating        |
-| <kbd>u</kbd>     | shortcut.numberKeysSetUrgency      |
-| <kbd>i</kbd>     | shortcut.numberKeysSetInterest     |
-| <kbd>y</kbd>     | shortcut.numberKeysSetEnergy       |
-| <kbd>x</kbd>     | shortcut.askToDeleteCard           |
-
-## app.plan — `/tasks/plan`
-
-| Key          | Does                               |
-| ------------ | ---------------------------------- |
-| <kbd>j</kbd> | shortcut.navigateSlots             |
-| <kbd>k</kbd> | shortcut.navigateSlots             |
-| <kbd>g</kbd> | shortcut.toggleListGridView        |
-| <kbd>+</kbd> | shortcut.zoomInGrid                |
-| <kbd>=</kbd> | shortcut.zoomInGrid                |
-| <kbd>-</kbd> | shortcut.zoomOutGrid               |
-| <kbd>0</kbd> | shortcut.resetZoomGrid             |
-| <kbd>h</kbd> | shortcut.switchDay                 |
-| <kbd>l</kbd> | shortcut.switchDay                 |
-| <kbd>[</kbd> | shortcut.switchWeek                |
-| <kbd>]</kbd> | shortcut.switchWeek                |
-| <kbd>n</kbd> | shortcut.newWeeklyBlock            |
-| <kbd>N</kbd> | shortcut.newOneOffBlock            |
-| <kbd>e</kbd> | shortcut.editBlock                 |
-| <kbd>d</kbd> | shortcut.toggleActive              |
-| <kbd>D</kbd> | shortcut.deleteBlock               |
-| <kbd>v</kbd> | shortcut.toggleMultiselect         |
-| <kbd> </kbd> | shortcut.selectDeselectMultiselect |
-| <kbd>x</kbd> | shortcut.askToDeleteSelected       |
-| <kbd>p</kbd> | shortcut.copyToDaysMultiselect     |
-
-## app.toDo — `/tasks/todo`
-
-| Key          | Does                  |
-| ------------ | --------------------- |
-| <kbd>j</kbd> | shortcut.navigateList |
-| <kbd>k</kbd> | shortcut.navigateList |
-| <kbd>n</kbd> | shortcut.newTodo      |
-| <kbd>e</kbd> | shortcut.editTodo     |
-| <kbd>c</kbd> | shortcut.toggleDone   |
-| <kbd>g</kbd> | shortcut.delegate     |
-| <kbd>x</kbd> | shortcut.askToDelete  |
+| Key          | Does          |
+| ------------ | ------------- |
+| <kbd>j</kbd> | Navigate list |
+| <kbd>k</kbd> | Navigate list |
+| <kbd>n</kbd> | New todo      |
+| <kbd>e</kbd> | Edit todo     |
+| <kbd>c</kbd> | Toggle done   |
+| <kbd>g</kbd> | Delegate      |
+| <kbd>x</kbd> | Ask to delete |

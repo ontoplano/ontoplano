@@ -4642,9 +4642,9 @@ checked at both ends rather than trusted at either.
 
 #### `markOnboarded(userId)`
 
-#### `getLocationPanelWidth(userId)`
+#### `getPanelWidth(userId, key)`
 
-#### `setLocationPanelWidth(userId, rem)`
+#### `setPanelWidth(userId, key, rem)`
 
 ### Types
 

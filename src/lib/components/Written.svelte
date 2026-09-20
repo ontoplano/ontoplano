@@ -30,22 +30,27 @@
 	 */
 	let {
 		content,
-		/** A row in a list: one line of text, and pictures the size of a stamp. */
+		/**
+		 * A row in a list: quieter type, and pictures the size of a stamp.
+		 *
+		 * Separate from `oneLine` because a row that has been unfolded to be
+		 * read is still a row — it should wrap rather than truncate, and it
+		 * should not suddenly be as loud as the title above it.
+		 */
 		compact = false,
+		/** Cut to a single line. What a list shows until somebody asks for more. */
+		oneLine = false,
 		class: klass = ''
-	}: { content: string; compact?: boolean; class?: string } = $props();
+	}: { content: string; compact?: boolean; oneLine?: boolean; class?: string } = $props();
 
 	const spoken = $derived(splitAudio(content));
 	const shown = $derived(splitPictures(spoken.text));
-	const height = $derived(compact ? PICTURE_HEIGHT.compact : PICTURE_HEIGHT.full);
+	const height = $derived(oneLine ? PICTURE_HEIGHT.compact : PICTURE_HEIGHT.full);
+	const type = $derived(compact ? 'text-xs text-gray-500' : 'text-sm text-gray-900');
 </script>
 
 {#if shown.text}
-	{#if compact}
-		<p class="truncate text-xs text-gray-500 {klass}">{shown.text}</p>
-	{:else}
-		<p class="text-sm whitespace-pre-wrap text-gray-900 {klass}">{shown.text}</p>
-	{/if}
+	<p class="{oneLine ? 'truncate' : 'whitespace-pre-wrap'} {type} {klass}">{shown.text}</p>
 {/if}
 
 <!--

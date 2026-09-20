@@ -2285,6 +2285,39 @@ html[data-style='playful'] .card-accent {
  * whatever is behind, and in the dark theme that is a dark page, which turns
  * black line art into nothing at all.
  */
+/*
+ * A table in somebody's writing.
+ *
+ * Its own scroller, because a table of four columns is wider than a phone and
+ * a page that scrolls sideways is a page with its right-hand edge missing.
+ * `width: max-content` inside so the columns size to their contents and the
+ * scroll is the table's, not a squeeze.
+ */
+.md .md-table-scroll {
+	margin: 0.6rem 0;
+	overflow-x: auto;
+	max-width: 100%;
+}
+
+.md table.md-table {
+	width: max-content;
+	min-width: 100%;
+	border-collapse: collapse;
+	font-size: 0.9em;
+}
+
+.md table.md-table :is(th, td) {
+	border: 1px solid var(--color-gray-200);
+	padding: 0.3rem 0.55rem;
+	text-align: left;
+	vertical-align: top;
+}
+
+.md table.md-table th {
+	background-color: var(--color-gray-50);
+	font-weight: 600;
+}
+
 .md img.md-image {
 	display: block;
 	margin: 0.6rem 0;
@@ -3974,14 +4007,44 @@ html[data-pie-open] .float-layer {
 	background-color: var(--color-red-50);
 }
 
+/*
+ * The heading is the way in: the section is closed until it is opened.
+ *
+ * The rule under it belongs to the section's contents, so it is drawn only
+ * when there are any — closed, it would be a second line against the box's
+ * own bottom border.
+ */
 .danger-zone-title {
-	border-bottom: 1px solid var(--color-red-300);
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	cursor: pointer;
+	list-style: none;
 	padding: 0.75rem 1rem;
 	font-size: 0.75rem;
 	font-weight: 700;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
 	color: var(--color-red-700);
+}
+
+/* Safari still paints its own marker without this. */
+.danger-zone-title::-webkit-details-marker {
+	display: none;
+}
+
+.danger-zone[open] .danger-zone-title {
+	border-bottom: 1px solid var(--color-red-300);
+}
+
+.danger-zone[open] .danger-zone-mark {
+	transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.danger-zone-mark {
+		transition: transform 150ms ease;
+	}
 }
 
 /*

@@ -26,7 +26,7 @@
 	import { onMount, untrack } from 'svelte';
 	import { browser } from '$app/environment';
 	import { SvelteSet } from 'svelte/reactivity';
-	import { LOCATION_PANEL_WIDTH } from '$lib/services/settings';
+	import SplitColumns from '$lib/components/SplitColumns.svelte';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -36,38 +36,15 @@
 	/*
 	 * How wide the house is, and the handle that says so.
 	 *
-	 * A location's name is as long as the reader made it, and a fixed column
-	 * turns half of them into an ellipsis. The width is theirs to set, comes
-	 * off the list beside it, and is written down once — when they let go —
-	 * rather than on every pixel of the drag.
+	 * The drag lives in `SplitColumns`, which Notebooks uses too; what stays
+	 * here is where the width is written down — once, when the handle is let
+	 * go, rather than on every pixel of it.
 	 */
+	// The seed, read once; from here the handle owns it and the load only
+	// supplies where it was last left.
+	// svelte-ignore state_referenced_locally
 	let panelRem = $state(data.locationPanelRem);
-	let draggingPanel = $state(false);
 	let panelForm = $state<HTMLFormElement>();
-
-	function widenPanel(event: PointerEvent) {
-		const section = (event.currentTarget as HTMLElement).previousElementSibling;
-		if (!section) return;
-		const left = section.getBoundingClientRect().left;
-		const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-
-		draggingPanel = true;
-		(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
-
-		const move = (e: PointerEvent) =>
-			(panelRem = Math.min(
-				LOCATION_PANEL_WIDTH.max,
-				Math.max(LOCATION_PANEL_WIDTH.min, (e.clientX - left) / rem)
-			));
-		const done = () => {
-			draggingPanel = false;
-			window.removeEventListener('pointermove', move);
-			window.removeEventListener('pointerup', done);
-			panelForm?.requestSubmit();
-		};
-		window.addEventListener('pointermove', move);
-		window.addEventListener('pointerup', done);
-	}
 
 	let showForm = $state(false);
 	/** Whether the shopping list is up. */
@@ -1352,75 +1329,54 @@
 			</p>
 		</div>
 
-		<div
-			class="grid overflow-hidden lg:grid-cols-[var(--house)_auto_1fr]"
-			style="--house: {panelRem}rem"
+		<SplitColumns
+			bind:rem={panelRem}
+			label={t('inventory.widenOrNarrowTheLocations')}
+			onsettle={() => panelForm?.requestSubmit()}
 		>
-			<section class="self-start">
-				<header
-					class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 px-4 py-2"
-				>
-					<h2 class="eyebrow text-gray-600">{t('inventory.whereThingsLive')}</h2>
-					<button
-						onclick={() => (addingLocation = true)}
-						class="icon-btn"
-						title={t('inventory.newLocation')}
-						aria-label={t('inventory.newLocation')}><Icon name="plus" /></button
+			{#snippet left()}
+				<section class="self-start">
+					<header
+						class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 px-4 py-2"
 					>
-				</header>
+						<h2 class="eyebrow text-gray-600">{t('inventory.whereThingsLive')}</h2>
+						<button
+							onclick={() => (addingLocation = true)}
+							class="icon-btn"
+							title={t('inventory.newLocation')}
+							aria-label={t('inventory.newLocation')}><Icon name="plus" /></button
+						>
+					</header>
 
-				<!-- Capped on a phone, where the panel sits above the list rather than
+					<!-- Capped on a phone, where the panel sits above the list rather than
 			     beside it: a house with twenty drawers would otherwise push the
 			     things themselves off the bottom of the screen. -->
-				<ul
-					class="max-h-64 divide-y divide-gray-200 overflow-y-auto lg:max-h-none lg:overflow-visible"
-				>
-					{@render locationRow(null, 'Everything', allowedItems.length, 0)}
-					{#each data.locationTree as root (root.id)}
-						{@render branch(root, 0)}
-					{/each}
-					{#if unfiledCount > 0}
-						{@render locationRow(0, t('app.notFiledAnywhere'), unfiledCount, 0)}
-					{/if}
-				</ul>
+					<ul
+						class="max-h-64 divide-y divide-gray-200 overflow-y-auto lg:max-h-none lg:overflow-visible"
+					>
+						{@render locationRow(null, 'Everything', allowedItems.length, 0)}
+						{#each data.locationTree as root (root.id)}
+							{@render branch(root, 0)}
+						{/each}
+						{#if unfiledCount > 0}
+							{@render locationRow(0, t('app.notFiledAnywhere'), unfiledCount, 0)}
+						{/if}
+					</ul>
 
-				<p class="border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
-					{t('inventory.dragAThingOntoA')}
-				</p>
-			</section>
+					<p class="border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
+						{t('inventory.dragAThingOntoA')}
+					</p>
+				</section>
+			{/snippet}
 
-			<!--
-			Desktop only, and not a scrollbar's worth of hit area: on a phone the
-			panel sits above the list, where there is no width to take, and a
-			finger landing on a two-pixel target belongs to the page's scroll.
-		-->
-			<div
-				role="separator"
-				aria-orientation="vertical"
-				aria-label={t('inventory.widenOrNarrowTheLocations')}
-				class="mouse-only hidden w-2 cursor-col-resize touch-none border-x border-gray-200 transition-colors lg:block {draggingPanel
-					? 'bg-gray-300'
-					: 'bg-gray-100 hover:bg-gray-200'}"
-				onpointerdown={widenPanel}
-			></div>
-
-			<form
-				method="POST"
-				action="?/setLocationPanelWidth"
-				class="hidden"
-				bind:this={panelForm}
-				use:enhance={() => async () => {}}
-			>
-				<input type="hidden" name="rem" value={panelRem} />
-			</form>
-
-			<div class="min-w-0 space-y-4 p-4">
-				{#if replenishItems.length > 0}
-					<div data-tour="inventory-list">
-						<!-- "Inventory" was this heading's name before the room took it. These
+			{#snippet right()}
+				<div class="min-w-0 space-y-4 p-4">
+					{#if replenishItems.length > 0}
+						<div data-tour="inventory-list">
+							<!-- "Inventory" was this heading's name before the room took it. These
 			     are the things you restock; the room is both halves. -->
-						<h2 class="mb-2 text-sm font-bold text-gray-500">{t('inventory.toRestock')}</h2>
-						<!--
+							<h2 class="mb-2 text-sm font-bold text-gray-500">{t('inventory.toRestock')}</h2>
+							<!--
 				One category per card, flowing into columns.
 
 				As one tall list this was a metre of scrolling with a name at the left
@@ -1428,9 +1384,9 @@
 				than a grid because the categories are of wildly different lengths and
 				a grid would leave a row as tall as its longest cell.
 			-->
-						{#each replenishByPlace as place (place.id)}
-							{#if showPlaces}
-								<!--
+							{#each replenishByPlace as place (place.id)}
+								{#if showPlaces}
+									<!--
 									The address, root down, the same string the panel shows —
 									and the same fold. Pressing it puts the place away with
 									everything under it, which is what the panel's chevron does
@@ -1438,78 +1394,80 @@
 									about what is open. "Not filed anywhere" is not a place and
 									has nothing to fold.
 								-->
-								<h3 class="mt-4 mb-2 flex items-center gap-2 text-sm text-gray-700 first:mt-0">
-									{#if place.id === 0}
-										<Icon name="shopping" class="size-4 shrink-0 text-gray-400" />
-										<span class="font-medium">{place.label ?? t('app.notFiledAnywhere')}</span>
-									{:else}
-										<button
-											type="button"
-											class="flex items-center gap-2 text-left transition hover:text-gray-900"
-											aria-expanded={!place.folded}
-											title={place.folded
-												? t('inventory.showWhatIsIn', {
-														place: place.label ?? t('app.notFiledAnywhere')
-													})
-												: t('inventory.fold', { place: place.label ?? t('app.notFiledAnywhere') })}
-											onclick={() => toggleFold(place.id)}
-										>
-											<Icon
-												name="chevron-down"
-												class="size-4 shrink-0 text-gray-400 transition-transform {place.folded
-													? '-rotate-90'
-													: ''}"
-											/>
+									<h3 class="mt-4 mb-2 flex items-center gap-2 text-sm text-gray-700 first:mt-0">
+										{#if place.id === 0}
+											<Icon name="shopping" class="size-4 shrink-0 text-gray-400" />
 											<span class="font-medium">{place.label ?? t('app.notFiledAnywhere')}</span>
-											{#if place.folded}
-												<span class="tabular text-xs text-gray-500">{place.held}</span>
-											{/if}
-										</button>
-									{/if}
-								</h3>
-							{/if}
-							<!-- A grid rather than newspaper columns: each place is its own
+										{:else}
+											<button
+												type="button"
+												class="flex items-center gap-2 text-left transition hover:text-gray-900"
+												aria-expanded={!place.folded}
+												title={place.folded
+													? t('inventory.showWhatIsIn', {
+															place: place.label ?? t('app.notFiledAnywhere')
+														})
+													: t('inventory.fold', {
+															place: place.label ?? t('app.notFiledAnywhere')
+														})}
+												onclick={() => toggleFold(place.id)}
+											>
+												<Icon
+													name="chevron-down"
+													class="size-4 shrink-0 text-gray-400 transition-transform {place.folded
+														? '-rotate-90'
+														: ''}"
+												/>
+												<span class="font-medium">{place.label ?? t('app.notFiledAnywhere')}</span>
+												{#if place.folded}
+													<span class="tabular text-xs text-gray-500">{place.held}</span>
+												{/if}
+											</button>
+										{/if}
+									</h3>
+								{/if}
+								<!-- A grid rather than newspaper columns: each place is its own
 						     block now, so a place with one category was a quarter-width
 						     strip beside three quarters of nothing. -->
-							<div class="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
-								{#each place.categories as category (category.name)}
-									<section
-										class="mb-4 break-inside-avoid border border-gray-200 bg-white shadow-card"
-									>
-										<h4 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-500">
-											{category.name}
-										</h4>
-										<div class="divide-y divide-gray-200">
-											{#each category.items as item (item.id)}
-												{@const globalIdx = filteredItems.indexOf(item)}
-												<!--
+								<div class="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">
+									{#each place.categories as category (category.name)}
+										<section
+											class="mb-4 break-inside-avoid border border-gray-200 bg-white shadow-card"
+										>
+											<h4 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-500">
+												{category.name}
+											</h4>
+											<div class="divide-y divide-gray-200">
+												{#each category.items as item (item.id)}
+													{@const globalIdx = filteredItems.indexOf(item)}
+													<!--
 									Still to buy is the normal state of a shopping list, and a wash of
 									alarm colour behind every row spends the one signal that should
 									mean something is wrong. The unticked box already says it. Only
 									what you have — blue — and what you put away — dimmed — are marked.
 								-->
-												<div
-													use:keepInView={globalIdx === selectedIndex}
-													draggable="true"
-													ondragstart={(e) => {
-														dragging = item.id;
-														// Firefox refuses to start a drag with no payload set.
-														e.dataTransfer?.setData('text/plain', String(item.id));
-													}}
-													ondragend={() => {
-														dragging = null;
-														dragOver = null;
-														stopFollowing();
-													}}
-													class="flex cursor-grab items-center gap-x-3 px-4 py-2 {item.snoozed
-														? 'bg-gray-50 opacity-50'
-														: item.bought
-															? 'bg-blue-50'
-															: ''} {globalIdx === selectedIndex
-														? 'ring-2 ring-gray-400 ring-inset'
-														: ''}"
-												>
-													<!--
+													<div
+														use:keepInView={globalIdx === selectedIndex}
+														draggable="true"
+														ondragstart={(e) => {
+															dragging = item.id;
+															// Firefox refuses to start a drag with no payload set.
+															e.dataTransfer?.setData('text/plain', String(item.id));
+														}}
+														ondragend={() => {
+															dragging = null;
+															dragOver = null;
+															stopFollowing();
+														}}
+														class="flex cursor-grab items-center gap-x-3 px-4 py-2 {item.snoozed
+															? 'bg-gray-50 opacity-50'
+															: item.bought
+																? 'bg-blue-50'
+																: ''} {globalIdx === selectedIndex
+															? 'ring-2 ring-gray-400 ring-inset'
+															: ''}"
+													>
+														<!--
 										The count down the left edge, where the thumb already is
 										and where the tick used to be. Stacked rather than in a
 										line: three controls across the front of a row is forty
@@ -1517,118 +1475,118 @@
 										have, and a name that has run out of width breaks one
 										letter per line.
 									-->
-													{@render quantity(item)}
+														{@render quantity(item)}
 
-													<div class="min-w-0 flex-1">
-														<span class="text-sm break-words text-gray-900">{item.name}</span>
-														{#if item.notes}
-															<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
-														{/if}
-														{@render expectedPrice(item)}
-														{@render meta(item)}
-													</div>
+														<div class="min-w-0 flex-1">
+															<span class="text-sm break-words text-gray-900">{item.name}</span>
+															{#if item.notes}
+																<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
+															{/if}
+															{@render expectedPrice(item)}
+															{@render meta(item)}
+														</div>
 
-													<!-- Everything else at the right edge, same order, same x, every row. -->
-													<div class="row-actions">
-														<form
-															method="POST"
-															action="?/toggleSnoozed"
-															use:enhance={tick('toggleSnoozed')}
-														>
-															<input type="hidden" name="id" value={item.id} />
-															<button
-																type="submit"
-																class="icon-btn"
-																aria-pressed={item.snoozed}
-																title={item.snoozed
-																	? t('inventory.putItBackOnThe')
-																	: t('inventory.archive')}
-																aria-label="{item.snoozed
-																	? t('inventory.putItBackOnThe')
-																	: t('inventory.archive')}: {item.name}"
-															>
-																<Icon name={item.snoozed ? 'undo' : 'archive'} />
-															</button>
-														</form>
-														<button
-															onclick={() => startEdit(item)}
-															class="icon-btn"
-															title={t('ui.edit')}
-															aria-label={t('inventory.edit', { name: item.name })}
-															><Icon name="edit" /></button
-														>
-														{#if confirmingDelete === item.id}
+														<!-- Everything else at the right edge, same order, same x, every row. -->
+														<div class="row-actions">
 															<form
 																method="POST"
-																action="?/delete"
-																use:enhance={deferDelete(item.id, item.name)}
+																action="?/toggleSnoozed"
+																use:enhance={tick('toggleSnoozed')}
 															>
 																<input type="hidden" name="id" value={item.id} />
-																<button type="submit" class="btn btn-sm btn-danger" use:armed>
-																	{t('inventory.confirm')}
+																<button
+																	type="submit"
+																	class="icon-btn"
+																	aria-pressed={item.snoozed}
+																	title={item.snoozed
+																		? t('inventory.putItBackOnThe')
+																		: t('inventory.archive')}
+																	aria-label="{item.snoozed
+																		? t('inventory.putItBackOnThe')
+																		: t('inventory.archive')}: {item.name}"
+																>
+																	<Icon name={item.snoozed ? 'undo' : 'archive'} />
 																</button>
 															</form>
 															<button
-																type="button"
-																onclick={() => {
-																	confirmingDelete = null;
-																}}
-																class="btn btn-sm"
+																onclick={() => startEdit(item)}
+																class="icon-btn"
+																title={t('ui.edit')}
+																aria-label={t('inventory.edit', { name: item.name })}
+																><Icon name="edit" /></button
 															>
-																{t('ui.cancel')}
-															</button>
-														{:else}
-															<button
-																type="button"
-																onclick={() => {
-																	confirmingDelete = item.id;
-																}}
-																class="icon-btn icon-btn-danger"
-																title={t('ui.delete')}
-																aria-label={t('inventory.delete', { name: item.name })}
-																><Icon name="trash" /></button
-															>
-														{/if}
+															{#if confirmingDelete === item.id}
+																<form
+																	method="POST"
+																	action="?/delete"
+																	use:enhance={deferDelete(item.id, item.name)}
+																>
+																	<input type="hidden" name="id" value={item.id} />
+																	<button type="submit" class="btn btn-sm btn-danger" use:armed>
+																		{t('inventory.confirm')}
+																	</button>
+																</form>
+																<button
+																	type="button"
+																	onclick={() => {
+																		confirmingDelete = null;
+																	}}
+																	class="btn btn-sm"
+																>
+																	{t('ui.cancel')}
+																</button>
+															{:else}
+																<button
+																	type="button"
+																	onclick={() => {
+																		confirmingDelete = item.id;
+																	}}
+																	class="icon-btn icon-btn-danger"
+																	title={t('ui.delete')}
+																	aria-label={t('inventory.delete', { name: item.name })}
+																	><Icon name="trash" /></button
+																>
+															{/if}
+														</div>
 													</div>
-												</div>
-											{/each}
-										</div>
-									</section>
-								{/each}
-							</div>
-						{/each}
-					</div>
-				{/if}
+												{/each}
+											</div>
+										</section>
+									{/each}
+								</div>
+							{/each}
+						</div>
+					{/if}
 
-				{#if somedayItems.length > 0}
-					<div data-tour="inventory-list">
-						<h2 class="mb-2 text-sm font-bold text-gray-500">{t('inventory.wishlist')}</h2>
-						<!-- The same column width as a category, so the two halves of the page
+					{#if somedayItems.length > 0}
+						<div data-tour="inventory-list">
+							<h2 class="mb-2 text-sm font-bold text-gray-500">{t('inventory.wishlist')}</h2>
+							<!-- The same column width as a category, so the two halves of the page
 			     line up instead of one running the full width of the screen. -->
-						<div
-							class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card lg:w-1/2 xl:w-1/3 2xl:w-1/4"
-						>
-							{#each somedayItems as item (item.id)}
-								{@const globalIdx = filteredItems.indexOf(item)}
-								<div
-									use:keepInView={globalIdx === selectedIndex}
-									draggable="true"
-									ondragstart={(e) => {
-										dragging = item.id;
-										// Firefox refuses to start a drag with no payload set.
-										e.dataTransfer?.setData('text/plain', String(item.id));
-									}}
-									ondragend={() => {
-										dragging = null;
-										dragOver = null;
-										stopFollowing();
-									}}
-									class="flex cursor-grab items-center gap-x-3 px-4 py-2 {globalIdx ===
-									selectedIndex
-										? 'bg-gray-50'
-										: ''} {item.snoozed ? 'opacity-50' : ''}"
-								>
-									<!--
+							<div
+								class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card lg:w-1/2 xl:w-1/3 2xl:w-1/4"
+							>
+								{#each somedayItems as item (item.id)}
+									{@const globalIdx = filteredItems.indexOf(item)}
+									<div
+										use:keepInView={globalIdx === selectedIndex}
+										draggable="true"
+										ondragstart={(e) => {
+											dragging = item.id;
+											// Firefox refuses to start a drag with no payload set.
+											e.dataTransfer?.setData('text/plain', String(item.id));
+										}}
+										ondragend={() => {
+											dragging = null;
+											dragOver = null;
+											stopFollowing();
+										}}
+										class="flex cursor-grab items-center gap-x-3 px-4 py-2 {globalIdx ===
+										selectedIndex
+											? 'bg-gray-50'
+											: ''} {item.snoozed ? 'opacity-50' : ''}"
+									>
+										<!--
 									A tick here and a count over there, deliberately.
 
 									A wishlist item is a chair or a pair of headphones — you own
@@ -1636,127 +1594,140 @@
 									anybody is asking. The things you restock are the ones a
 									number is about.
 								-->
-									<form method="POST" action="?/toggleBought" use:enhance={tick('toggleBought')}>
-										<input type="hidden" name="id" value={item.id} />
-										<button
-											type="submit"
-											aria-pressed={item.bought}
-											class="flex size-5 items-center justify-center border transition {item.bought
-												? 'border-blue-600 bg-blue-600 text-white'
-												: 'border-gray-400 bg-white text-transparent hover:border-gray-600'}"
-											title={item.bought ? t('inventory.putItBackOnThe') : t('tasks.plan.gotIt')}
-											aria-label="{item.bought
-												? t('inventory.putBackOnTheList')
-												: t('tasks.plan.gotIt')}: {item.name}"
-										>
-											<Icon name="check" size={14} />
-										</button>
-									</form>
-
-									<div class="min-w-0 flex-1">
-										<span
-											class="text-sm {item.bought ? 'text-gray-500 line-through' : 'text-gray-900'}"
-										>
-											{item.name}
-										</span>
-										{#if item.notes}
-											<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
-										{/if}
-										{@render expectedPrice(item)}
-										{@render usedIn(item)}
-									</div>
-
-									<div class="row-actions">
-										<form
-											method="POST"
-											action="?/toggleSnoozed"
-											use:enhance={tick('toggleSnoozed')}
-										>
+										<form method="POST" action="?/toggleBought" use:enhance={tick('toggleBought')}>
 											<input type="hidden" name="id" value={item.id} />
 											<button
 												type="submit"
-												class="icon-btn"
-												aria-pressed={item.snoozed}
-												title={item.snoozed
-													? t('inventory.putItBackOnThe')
-													: t('inventory.archive')}
-												aria-label="{item.snoozed
-													? t('inventory.putItBackOnThe')
-													: t('inventory.archive')}: {item.name}"
+												aria-pressed={item.bought}
+												class="flex size-5 items-center justify-center border transition {item.bought
+													? 'border-blue-600 bg-blue-600 text-white'
+													: 'border-gray-400 bg-white text-transparent hover:border-gray-600'}"
+												title={item.bought ? t('inventory.putItBackOnThe') : t('tasks.plan.gotIt')}
+												aria-label="{item.bought
+													? t('inventory.putBackOnTheList')
+													: t('tasks.plan.gotIt')}: {item.name}"
 											>
-												<Icon name={item.snoozed ? 'undo' : 'archive'} />
+												<Icon name="check" size={14} />
 											</button>
 										</form>
-										<button
-											onclick={() => startEdit(item)}
-											class="icon-btn"
-											title={t('ui.edit')}
-											aria-label={t('inventory.edit', { name: item.name })}
-											><Icon name="edit" /></button
-										>
-										{#if confirmingDelete === item.id}
+
+										<div class="min-w-0 flex-1">
+											<span
+												class="text-sm {item.bought
+													? 'text-gray-500 line-through'
+													: 'text-gray-900'}"
+											>
+												{item.name}
+											</span>
+											{#if item.notes}
+												<span class="ml-2 text-xs text-gray-500">{item.notes}</span>
+											{/if}
+											{@render expectedPrice(item)}
+											{@render usedIn(item)}
+										</div>
+
+										<div class="row-actions">
 											<form
 												method="POST"
-												action="?/delete"
-												use:enhance={deferDelete(item.id, item.name)}
+												action="?/toggleSnoozed"
+												use:enhance={tick('toggleSnoozed')}
 											>
 												<input type="hidden" name="id" value={item.id} />
-												<button type="submit" class="btn btn-sm btn-danger" use:armed>
-													{t('inventory.confirm')}
+												<button
+													type="submit"
+													class="icon-btn"
+													aria-pressed={item.snoozed}
+													title={item.snoozed
+														? t('inventory.putItBackOnThe')
+														: t('inventory.archive')}
+													aria-label="{item.snoozed
+														? t('inventory.putItBackOnThe')
+														: t('inventory.archive')}: {item.name}"
+												>
+													<Icon name={item.snoozed ? 'undo' : 'archive'} />
 												</button>
 											</form>
 											<button
-												type="button"
-												onclick={() => {
-													confirmingDelete = null;
-												}}
-												class="btn btn-sm"
+												onclick={() => startEdit(item)}
+												class="icon-btn"
+												title={t('ui.edit')}
+												aria-label={t('inventory.edit', { name: item.name })}
+												><Icon name="edit" /></button
 											>
-												{t('ui.cancel')}
-											</button>
-										{:else}
-											<button
-												type="button"
-												onclick={() => {
-													confirmingDelete = item.id;
-												}}
-												class="icon-btn icon-btn-danger"
-												title={t('ui.delete')}
-												aria-label={t('inventory.delete', { name: item.name })}
-												><Icon name="trash" /></button
-											>
-										{/if}
+											{#if confirmingDelete === item.id}
+												<form
+													method="POST"
+													action="?/delete"
+													use:enhance={deferDelete(item.id, item.name)}
+												>
+													<input type="hidden" name="id" value={item.id} />
+													<button type="submit" class="btn btn-sm btn-danger" use:armed>
+														{t('inventory.confirm')}
+													</button>
+												</form>
+												<button
+													type="button"
+													onclick={() => {
+														confirmingDelete = null;
+													}}
+													class="btn btn-sm"
+												>
+													{t('ui.cancel')}
+												</button>
+											{:else}
+												<button
+													type="button"
+													onclick={() => {
+														confirmingDelete = item.id;
+													}}
+													class="icon-btn icon-btn-danger"
+													title={t('ui.delete')}
+													aria-label={t('inventory.delete', { name: item.name })}
+													><Icon name="trash" /></button
+												>
+											{/if}
+										</div>
 									</div>
-								</div>
-							{/each}
+								{/each}
+							</div>
 						</div>
-					</div>
-				{/if}
+					{/if}
 
-				{#if filteredItems.length === 0}
-					<div class="py-12 text-center text-sm text-gray-500">
-						{#if items.length === 0}
-							<EmptyState
-								icon="shopping"
-								title={t('inventory.theListIsEmpty')}
-								description={t('inventory.inventoryIsWhatYouKeep')}
-							>
-								{#snippet action()}
-									<button onclick={() => (showForm = true)} class="btn btn-primary">
-										<Icon name="plus" />
-										{t('inventory.newItem')}
-									</button>
-								{/snippet}
-							</EmptyState>
-						{:else if notShowing > 0}
-							{t('inventory.nothingHereMatchesTheCurrent')}
-						{:else}
-							{t('inventory.noItemsMatchTheCurrent')}
-						{/if}
-					</div>
-				{/if}
-			</div>
-		</div>
+					{#if filteredItems.length === 0}
+						<div class="py-12 text-center text-sm text-gray-500">
+							{#if items.length === 0}
+								<EmptyState
+									icon="shopping"
+									title={t('inventory.theListIsEmpty')}
+									description={t('inventory.inventoryIsWhatYouKeep')}
+								>
+									{#snippet action()}
+										<button onclick={() => (showForm = true)} class="btn btn-primary">
+											<Icon name="plus" />
+											{t('inventory.newItem')}
+										</button>
+									{/snippet}
+								</EmptyState>
+							{:else if notShowing > 0}
+								{t('inventory.nothingHereMatchesTheCurrent')}
+							{:else}
+								{t('inventory.noItemsMatchTheCurrent')}
+							{/if}
+						</div>
+					{/if}
+				</div>
+			{/snippet}
+		</SplitColumns>
+
+		<form
+			method="POST"
+			action="?/setLocationPanelWidth"
+			class="hidden"
+			bind:this={panelForm}
+			use:enhance={() => async () => {}}
+		>
+			<input type="hidden" name="rem" value={panelRem} />
+		</form>
 	</div>
 </div>
 
