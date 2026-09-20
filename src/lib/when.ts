@@ -128,6 +128,23 @@ export function momentOf(
 	});
 }
 
+/**
+ * The name of a month, from a `YYYY-MM` key.
+ *
+ * Charts and ledgers are grouped by month key, and each of them was building
+ * `${key}-15T12:00:00Z` by hand to get a name out of it — the fifteenth at
+ * noon UTC, far enough from both edges that no zone can push it into a
+ * neighbouring month. Worth having once rather than four times, and worth
+ * saying why: the date is arbitrary and the month is the whole point.
+ */
+export function monthOf(key: string, when: When, extra: Intl.DateTimeFormatOptions = {}): string {
+	const at = new Date(`${key}-15T12:00:00Z`);
+	if (Number.isNaN(at.getTime())) return '';
+	return new Intl.DateTimeFormat(when.locale, { month: 'short', timeZone: 'UTC', ...extra }).format(
+		at
+	);
+}
+
 /** The weekday alone, for a planner column or a habit grid. */
 export function weekdayOf(
 	moment: Moment,

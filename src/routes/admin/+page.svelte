@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { dateOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import { enhance } from '$app/forms';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { invalidateAll } from '$app/navigation';
@@ -14,6 +16,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -46,11 +49,7 @@
 	const kindLabel = mailKindLabel;
 
 	function when(iso: string): string {
-		return new Date(iso).toLocaleDateString(t.locale, {
-			day: 'numeric',
-			month: 'short',
-			year: 'numeric'
-		});
+		return dateOf(iso, now(), {});
 	}
 
 	function ago(iso: string): string {

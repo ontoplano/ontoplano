@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { dayOf, momentOf, weekdayOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Card from '$lib/components/Card.svelte';
@@ -22,6 +24,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	/** Keep the card a card: the tracker is one click away for the full list. */
 	const TODO_PREVIEW = 5;
@@ -47,15 +50,12 @@
 	function dayHeading(date: string, ahead: number): string {
 		if (ahead === 0) return t('app.today');
 		if (ahead === 1) return t('home.tomorrow');
-		return new Date(date + 'T00:00:00').toLocaleDateString(t.locale, { weekday: 'long' });
+		return weekdayOf(date, now(), { weekday: 'long' });
 	}
 
 	/** "19 Sep" — the date under the name, so "Tomorrow" is still a date. */
 	function dayNumber(date: string): string {
-		return new Date(date + 'T00:00:00').toLocaleDateString(t.locale, {
-			day: 'numeric',
-			month: 'short'
-		});
+		return dayOf(date, now());
 	}
 
 	/** "1 block", "3 blocks" — because "1 blocks" is how a sentence loses trust. */
@@ -65,10 +65,7 @@
 
 	/** "17 Aug" — a Monday said the way somebody would say it. */
 	function weekName(weekStart: string): string {
-		return new Date(weekStart + 'T00:00:00').toLocaleDateString(t.locale, {
-			day: 'numeric',
-			month: 'short'
-		});
+		return dayOf(weekStart, now());
 	}
 
 	// Rearranging is a mode rather than something you can trigger by accident:
@@ -286,13 +283,7 @@
 
 	function formatDate(dateStr: string): string {
 		const d = new Date(dateStr);
-		return d.toLocaleDateString(t.locale, {
-			weekday: 'short',
-			month: 'short',
-			day: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
-		});
+		return momentOf(d, now(), { weekday: 'short', year: undefined });
 	}
 
 	function truncate(text: string, max: number): string {
@@ -416,11 +407,7 @@
 	<div class="space-y-6">
 		<div class="flex flex-wrap items-center justify-between gap-3">
 			<h1 class="text-lg font-bold text-gray-900">
-				{new Date().toLocaleDateString(t.locale, {
-					weekday: 'long',
-					month: 'long',
-					day: 'numeric'
-				})}
+				{dayOf(new Date(), now(), { weekday: 'long', month: 'long' })}
 			</h1>
 			<!--
 				Both states of this corner, in one cell.

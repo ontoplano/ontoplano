@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { useWhen } from '$lib/when-context.svelte';
+	import { dateOf, dayOf as shortDay } from '$lib/when';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
@@ -12,6 +14,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -264,11 +267,7 @@
 		const day = new Date(`${iso}T00:00:00`);
 		if (Number.isNaN(day.getTime())) return iso;
 		const thisYear = day.getFullYear() === new Date().getFullYear();
-		return day.toLocaleDateString(t.locale, {
-			day: 'numeric',
-			month: 'short',
-			...(thisYear ? {} : { year: 'numeric' })
-		});
+		return thisYear ? shortDay(day, now()) : dateOf(day, now());
 	}
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */

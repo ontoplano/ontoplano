@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { useWhen } from '$lib/when-context.svelte';
+	import { dayOf, weekdayOf } from '$lib/when';
 	import type { PlainKey } from '$lib/i18n/keys';
 	import { enhance } from '$app/forms';
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
@@ -18,6 +20,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -103,10 +106,7 @@
 	}
 
 	function pretty(dateStr: string): string {
-		return new Date(dateStr + 'T00:00:00').toLocaleDateString(t.locale, {
-			month: 'short',
-			day: 'numeric'
-		});
+		return dayOf(dateStr, now());
 	}
 
 	/** The stale row whose "let it go" has been armed. Nothing deletes on one press. */
@@ -151,7 +151,7 @@
 		for (const item of items) {
 			(days[item.date] ??= {
 				date: item.date,
-				label: new Date(item.date + 'T00:00:00').toLocaleDateString(t.locale, { weekday: 'long' }),
+				label: weekdayOf(item.date, now(), { weekday: 'long' }),
 				items: []
 			}).items.push(item);
 		}

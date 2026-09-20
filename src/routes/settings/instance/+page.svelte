@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { momentOf } from '$lib/when';
+	import { dateOf, momentOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { enhance } from '$app/forms';
@@ -123,11 +123,7 @@
 
 	function when(iso: string | null): string {
 		if (!iso) return '';
-		return new Date(iso).toLocaleDateString(t.locale, {
-			day: 'numeric',
-			month: 'short',
-			year: 'numeric'
-		});
+		return dateOf(iso, now());
 	}
 </script>
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { useWhen } from '$lib/when-context.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import Swatch from '$lib/components/Swatch.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
@@ -34,6 +35,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -96,7 +98,12 @@
 	/** Which period the chosen start date lands in, shown next to the field. */
 	const formPeriod = $derived(
 		formStart
-			? describePeriod(t, formHorizon, periodStart(formHorizon, new Date(`${formStart}T00:00:00`)))
+			? describePeriod(
+					t,
+					now(),
+					formHorizon,
+					periodStart(formHorizon, new Date(`${formStart}T00:00:00`))
+				)
 			: ''
 	);
 	const linking = $derived(linkingId ? (data.goals.find((g) => g.id === linkingId) ?? null) : null);
@@ -664,7 +671,7 @@
 													: 'text-gray-900'}">{goal.title}</span
 											>
 											<span class="tabular text-xs text-gray-500"
-												>{describePeriod(t, goal.horizon, goal.periodStart)}</span
+												>{describePeriod(t, now(), goal.horizon, goal.periodStart)}</span
 											>
 											{#if goal.parentId}
 												{@const parent = data.goals.find((g) => g.id === goal.parentId)}

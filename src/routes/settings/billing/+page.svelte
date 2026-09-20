@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { dateOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
@@ -12,6 +14,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 	/** Only the Play-installed copy has the Digital Goods API — see /start. */
@@ -33,11 +36,7 @@
 
 	function when(iso: string | null): string {
 		if (!iso) return '';
-		return new Date(iso).toLocaleDateString(t.locale, {
-			day: 'numeric',
-			month: 'long',
-			year: 'numeric'
-		});
+		return dateOf(iso, now(), { month: 'long' });
 	}
 
 	/** A bar is only honest when there is a ceiling to draw it against. */

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { dateOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import { untrack } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { SvelteSet } from 'svelte/reactivity';
@@ -43,6 +45,7 @@
 	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
+	const now = useWhen();
 
 	/**
 	 * One notebook: what is in it, and what can be done to it.
@@ -464,11 +467,7 @@
 	}));
 
 	function when(iso: string): string {
-		return new Date(iso).toLocaleDateString(t.locale, {
-			day: 'numeric',
-			month: 'short',
-			year: 'numeric'
-		});
+		return dateOf(iso, now(), {});
 	}
 </script>
 

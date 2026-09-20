@@ -12,6 +12,7 @@
  * the grid posts placement and nothing else, and it must not wipe three numbers
  * on the way past.
  */
+import type { When } from '../src/lib/when';
 import { describe, expect, test } from 'vitest';
 import { translator } from '../src/lib/i18n';
 import { messages as english } from '../src/lib/i18n/catalogues/en';
@@ -99,19 +100,21 @@ describe('where a period ends', () => {
 
 describe('how a period reads to a person', () => {
 	const t = translator('en', english);
+	/* A period is a date, so it is written the way the reader writes dates. */
+	const when: When = { locale: 'en', tz: 'Europe/London', clock: 'auto' };
 
 	test('says the quarter and half in the short forms people use', () => {
-		expect(describePeriod(t, 'quarter', '2026-07-01')).toBe('Q3 2026');
-		expect(describePeriod(t, 'semester', '2026-07-01')).toBe('H2 2026');
-		expect(describePeriod(t, 'semester', '2026-01-01')).toBe('H1 2026');
-		expect(describePeriod(t, 'year', '2026-01-01')).toBe('2026');
+		expect(describePeriod(t, when, 'quarter', '2026-07-01')).toBe('Q3 2026');
+		expect(describePeriod(t, when, 'semester', '2026-07-01')).toBe('H2 2026');
+		expect(describePeriod(t, when, 'semester', '2026-01-01')).toBe('H1 2026');
+		expect(describePeriod(t, when, 'year', '2026-01-01')).toBe('2026');
 	});
 
 	test('and names the month and week in words', () => {
-		expect(describePeriod(t, 'month', '2026-08-01')).toContain('2026');
-		expect(describePeriod(t, 'month', '2026-08-01')).toMatch(/august/i);
-		expect(describePeriod(t, 'week', '2026-08-17')).toMatch(/^Week of /);
-		expect(describePeriod(t, 'day', '2026-08-19')).toMatch(/2026/);
+		expect(describePeriod(t, when, 'month', '2026-08-01')).toContain('2026');
+		expect(describePeriod(t, when, 'month', '2026-08-01')).toMatch(/august/i);
+		expect(describePeriod(t, when, 'week', '2026-08-17')).toMatch(/^Week of /);
+		expect(describePeriod(t, when, 'day', '2026-08-19')).toMatch(/2026/);
 	});
 });
 

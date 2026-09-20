@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { monthOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import { goto } from '$app/navigation';
 	import Swatch from '$lib/components/Swatch.svelte';
 	import { resolve } from '$app/paths';
@@ -11,6 +13,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data }: { data: PageServerData } = $props();
 
@@ -34,12 +37,7 @@
 	}
 
 	/** The months a series covers, as words: "Oct 2025 – Sep 2026". */
-	const monthName = (key: string) =>
-		new Date(`${key}-15T12:00:00Z`).toLocaleString(t.locale, {
-			month: 'short',
-			year: 'numeric',
-			timeZone: 'UTC'
-		});
+	const monthName = (key: string) => monthOf(key, now(), { year: 'numeric' });
 
 	const biggest = $derived(data.byCategory.categories[0] ?? null);
 	const dearest = $derived([...data.totals].sort((a, b) => b.outCents - a.outCents)[0] ?? null);
@@ -217,10 +215,7 @@
 								<title>{monthName(month)}: {money(series.byMonth[i])}</title>
 							</rect>
 							<text x={cx} y="154" text-anchor="middle" class="fill-gray-500 text-[10px]">
-								{new Date(`${month}-15T12:00:00Z`).toLocaleString(t.locale, {
-									month: 'short',
-									timeZone: 'UTC'
-								})}
+								{monthOf(month, now())}
 							</text>
 							<text
 								x={cx}

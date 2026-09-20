@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { wantsTwelveHour } from '$lib/when';
+	import { dayOf, wantsTwelveHour } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
@@ -513,7 +513,7 @@
 
 	function formatWeekDate(dateStr: string): string {
 		const d = new Date(`${dateStr}T00:00:00`);
-		return d.toLocaleDateString(t.locale, { month: 'short', day: 'numeric' });
+		return dayOf(dateStr, now());
 	}
 
 	function defaultActivityChoice(activityId: number | null | undefined): string {
@@ -1397,7 +1397,8 @@
 	 * belong to the previous month; the fourth row never does.
 	 */
 	function monthLabel(from: string): string {
-		return new Date(`${addDaysStr(from, 21)}T12:00:00`).toLocaleDateString(t.locale, {
+		return dayOf(`${addDaysStr(from, 21)}T12:00:00`, now(), {
+			day: undefined,
 			month: 'long',
 			year: 'numeric'
 		});

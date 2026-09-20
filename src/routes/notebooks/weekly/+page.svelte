@@ -1,10 +1,13 @@
 <script lang="ts">
+	import { useWhen } from '$lib/when-context.svelte';
+	import { dayOf } from '$lib/when';
 	import { resolve } from '$app/paths';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import type { PageServerData } from './$types';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data }: { data: PageServerData } = $props();
 
@@ -21,8 +24,8 @@
 		// days of a week are fixed and this only has to name two of them.
 		const monday = new Date(`${weekStart}T00:00:00Z`);
 		const sunday = new Date(monday.getTime() + 6 * 86_400_000);
-		const short = (d: Date) =>
-			d.toLocaleDateString(t.locale, { day: 'numeric', month: 'short', timeZone: 'UTC' });
+		// Built out of UTC parts above, so it is read as UTC here too.
+		const short = (d: Date) => dayOf(d, { ...now(), tz: 'UTC' });
 		return `${short(monday)} – ${short(sunday)} ${sunday.getUTCFullYear()}`;
 	}
 </script>

@@ -1,5 +1,7 @@
 <script lang="ts">
 	/* biome-ignore-all assist/source/organizeImports lint/correctness/noUnusedImports lint/correctness/noUnusedVariables lint/style/useConst: Svelte template and rune usage in this file triggers false positives in current Biome diagnostics. */
+	import { momentOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import { enhance } from '$app/forms';
 	import FilterChips from '$lib/components/FilterChips.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
@@ -19,6 +21,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -78,14 +81,7 @@
 
 	function formatDate(iso: string): string {
 		const d = new Date(iso);
-		return d.toLocaleDateString(t.locale, {
-			weekday: 'short',
-			year: 'numeric',
-			month: 'short',
-			day: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
-		});
+		return momentOf(d, now(), { weekday: 'short' });
 	}
 
 	function openIdeaForm(id: number | null = null) {

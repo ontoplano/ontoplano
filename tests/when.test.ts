@@ -4,6 +4,7 @@ import {
 	dayOf,
 	isClock,
 	momentOf,
+	monthOf,
 	timeOf,
 	wantsTwelveHour,
 	weekdayOf,
@@ -102,6 +103,15 @@ describe('the shapes', () => {
 	test('a weekday is a weekday', () => {
 		// 11 June 2026 is a Thursday.
 		expect(weekdayOf('2026-06-11', london())).toMatch(/Thu/);
+	});
+
+	test('a month key becomes a month name, in any zone', () => {
+		// The fifteenth at noon UTC is far enough from both edges that no zone
+		// can push it into a neighbouring month — which is the whole point.
+		expect(monthOf('2026-01', london())).toMatch(/Jan/);
+		expect(monthOf('2026-01', sao())).toMatch(/jan/i);
+		expect(monthOf('2026-12', london())).toMatch(/Dec/);
+		expect(monthOf('nonsense', london())).toBe('');
 	});
 
 	test('something that is not a date at all renders as nothing', () => {

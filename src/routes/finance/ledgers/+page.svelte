@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { monthOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import { enhance } from '$app/forms';
 	import Swatch from '$lib/components/Swatch.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
@@ -18,6 +20,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -34,11 +37,7 @@
 	const CATEGORY_WASH_ALPHA = '2b';
 
 	/** `2026-02` as somebody would say it. */
-	const monthName = (key: string) =>
-		new Date(`${key}-01T00:00:00`).toLocaleDateString(t.locale, {
-			month: 'long',
-			year: 'numeric'
-		});
+	const monthName = (key: string) => monthOf(key, now(), { month: 'long', year: 'numeric' });
 	const money = (cents: number) => formatMoney(cents, currency);
 
 	type Ledger = PageServerData['ledgers'][number];

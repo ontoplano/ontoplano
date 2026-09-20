@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { dateOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import { resolve } from '$app/paths';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -20,6 +22,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -92,11 +95,7 @@
 	}
 
 	function when(iso: string): string {
-		return new Date(iso).toLocaleDateString(t.locale, {
-			day: 'numeric',
-			month: 'short',
-			year: 'numeric'
-		});
+		return dateOf(iso, now(), {});
 	}
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */

@@ -1,8 +1,11 @@
 <script lang="ts">
+	import { monthOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import { formatMoney, type Currency } from '$lib/money';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	/**
 	 * A month is a column, and each category is a band in it.
@@ -36,8 +39,7 @@
 	/** The same rule the in/out chart uses: numbers under wide columns only. */
 	const labelAmounts = $derived(months.length <= 6);
 
-	const label = (key: string) =>
-		new Date(`${key}-15T12:00:00Z`).toLocaleString(t.locale, { month: 'short', timeZone: 'UTC' });
+	const label = (key: string) => monthOf(key, now());
 	const height = (cents: number) => (FLOOR - 6) * (cents / peak);
 </script>
 

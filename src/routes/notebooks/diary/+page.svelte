@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { momentOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import { enhance } from '$app/forms';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
@@ -20,6 +22,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -73,14 +76,7 @@
 
 	function formatDate(iso: string): string {
 		const d = new Date(iso);
-		return d.toLocaleDateString(t.locale, {
-			weekday: 'short',
-			year: 'numeric',
-			month: 'short',
-			day: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
-		});
+		return momentOf(d, now(), { weekday: 'short' });
 	}
 
 	function formatDateShort(iso: string): string {
