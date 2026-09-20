@@ -18,7 +18,7 @@
 	import NotebookField from '$lib/components/NotebookField.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
-	import { COUNT_STEP, NUMBER_KINDS } from '$lib/number-kinds';
+	import { COUNT_STEP, NUMBER_KINDS, exampleNumber } from '$lib/number-kinds';
 	import { HORIZONS, HORIZON_LABELS, type Horizon } from '$lib/goals';
 	import { useT } from '$lib/i18n';
 
@@ -168,7 +168,7 @@
 						min="0"
 						step={target.whole ? COUNT_STEP : 'any'}
 						inputmode={target.whole ? 'numeric' : 'decimal'}
-						placeholder="3"
+						placeholder={exampleNumber(target.whole, t.locale)}
 						bind:value={target.value}
 						class="w-24 shrink-0"
 					/>

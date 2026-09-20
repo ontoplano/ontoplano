@@ -1,18 +1,14 @@
-import { measuredActivities } from '$lib/services/workouts';
-import { listAreas } from '$lib/services/goals';
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
-import { listCategories } from '$lib/services/activities';
 import {
 	contentsOf,
 	listNotebooks,
 	listOrphanedNotes,
-	notebookTree,
-	pickableNotebooks
+	notebookTree
 } from '$lib/services/notebooks';
-import { listPeople } from '$lib/services/people';
 import { getPanelWidth, NOTEBOOK_PANEL_WIDTH_KEY } from '$lib/services/settings';
 import { notebookActions } from './actions';
+import { notebookPanelData } from './panel-data';
 
 /** The query value that stands for the orphaned notes rather than a notebook. */
 const ORPHANED = 'orphaned';
@@ -45,19 +41,7 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 		orphaned,
 		orphanedSelected: wantsOrphaned || (selected === null && orphaned.length > 0),
 		contents: selected ? contentsOf(ctx, selected) : null,
-		// The Tasks tab is the to-do room looking at one subject, and its editor
-		// offers the same two pickers.
-		categories: listCategories(ctx),
-		pickableNotebooks: pickableNotebooks(ctx),
-		// For the People field on a note, which completes rather than duplicates.
-		allPeople: listPeople(ctx),
-		// The Goals tab writes a goal in place now, and the form offers the
-		// same three pickers the goals room does.
-		areas: listAreas(ctx),
-		workoutMeasures: measuredActivities(ctx).map((m) => ({
-			activity: m.activity,
-			unit: m.unit
-		})),
+		...notebookPanelData(ctx),
 		// Where this reader dragged the divider between the list and the panel.
 		listPanelRem: getPanelWidth(ctx.userId, NOTEBOOK_PANEL_WIDTH_KEY)
 	};

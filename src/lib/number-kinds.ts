@@ -28,3 +28,19 @@ export function numberSymbol(whole: boolean): string {
  * should say so by being the other kind.
  */
 export const COUNT_STEP = 1;
+
+/**
+ * A number of each kind, for the empty box to hold up as an example.
+ *
+ * The example has to be of the kind the picker is on: offering "3" where a
+ * decimal is wanted says the box takes whole numbers, which is the opposite of
+ * what was just chosen. Written in the reader's own numbers, so the separator
+ * is the one their language uses — 3,14 for somebody reading in Portuguese.
+ */
+export const EXAMPLE_COUNT = 3;
+export const EXAMPLE_MEASURE = 3.14;
+
+export function exampleNumber(whole: boolean, locale: string): string {
+	const n = whole ? EXAMPLE_COUNT : EXAMPLE_MEASURE;
+	return n.toLocaleString(locale);
+}

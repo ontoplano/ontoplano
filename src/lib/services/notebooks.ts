@@ -4,6 +4,7 @@ import { db } from '$lib/db/index.js';
 import { user } from '$lib/db/auth.schema.js';
 import { host } from './host.js';
 import { diaryEntries, exceptionalTasks, goals, notebooks, todoTasks } from '$lib/db/schema.js';
+import { listGoals } from './goals.js';
 import type { Ctx } from './ctx.js';
 import { tagsForEntries } from './diary.js';
 import { peopleForEntries } from './people.js';
@@ -362,18 +363,11 @@ export function contentsOf(ctx: Ctx, id: number) {
 			.orderBy(desc(exceptionalTasks.date))
 			.all(),
 
-		goals: db
-			.select({
-				id: goals.id,
-				title: goals.title,
-				horizon: goals.horizon,
-				periodStart: goals.periodStart,
-				status: goals.status
-			})
-			.from(goals)
-			.where(and(eq(goals.notebookId, id), eq(goals.userId, ctx.userId)))
-			.orderBy(desc(goals.periodStart))
-			.all()
+		// The whole goal, not a title and a date: the Goals tab draws the same
+		// card the goals room does, which needs the measures, the links and the
+		// area — see `GoalCard`. Closed ones are included, because a notebook is
+		// also the record of what was attempted there.
+		goals: listGoals(ctx, { includeClosed: true, notebookId: id })
 	};
 }
 

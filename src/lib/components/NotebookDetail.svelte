@@ -6,7 +6,7 @@
 	import TagInput from '$lib/components/TagInput.svelte';
 	import { momentOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
-	import { untrack } from 'svelte';
+	import { untrack, type ComponentProps } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { SvelteSet } from 'svelte/reactivity';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -20,11 +20,13 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import Select from '$lib/components/Select.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
 	import { SECTION_COLORS } from '$lib/colors';
-	import { HORIZON_LABELS, type Horizon } from '$lib/goals';
+	import { type Horizon } from '$lib/goals';
+	import GoalCard from '$lib/components/GoalCard.svelte';
+	import GoalLinksModal from '$lib/components/GoalLinksModal.svelte';
+	import { NOTEBOOK_GOAL_ACTIONS } from '$lib/goal-action-names';
 	import { CLOSED_STATUSES } from '$lib/task-status';
 	import {
 		DEFAULT_NOTE_ORDER,
@@ -89,6 +91,10 @@
 		pickableNotebooks = [],
 		areas = [],
 		workoutMeasures = [],
+		slots = [],
+		todos = [],
+		allTodos = [],
+		activities = [],
 		composing = $bindable(false),
 		/**
 		 * The New button for whichever tab is showing, for the page to draw.
@@ -110,7 +116,8 @@
 			entries: Entry[];
 			todos: Todo[];
 			blocks: { id: number; label: string | null; date: string; startTime: string }[];
-			goals: { id: number; title: string; horizon: Horizon; periodStart: string; status: string }[];
+			/* The whole goal: the tab draws the goals room's own card. */
+			goals: ComponentProps<typeof GoalCard>['goal'][];
 		} | null;
 		orphaned?: Entry[];
 		showingOrphans?: boolean;
@@ -121,6 +128,11 @@
 		pickableNotebooks?: { id: number; title: string }[];
 		areas?: { id: number; name: string }[];
 		workoutMeasures?: { activity: string; unit: string }[];
+		/* What a goal on this notebook can be told to count. */
+		slots?: { id: number; name: string; startTime: string }[];
+		todos?: { id: number; title: string }[];
+		allTodos?: { id: number; title: string; status: string }[];
+		activities?: { id: number; name: string }[];
 		/** Whether the composer is open, so a page can put the button elsewhere. */
 		composing?: boolean;
 		newAction?: { label: string; run?: () => void; href?: string } | undefined;
@@ -307,6 +319,49 @@
 	let goalHorizon = $state<Horizon>('week');
 	let goalStart = $state('');
 	let goalTargets = $state<FormTarget[]>([]);
+	/* Which goal the form is editing, or null while one is being written. */
+	let editingGoalId = $state<number | null>(null);
+	/* Which goal's "what counts towards this" is open. */
+	let linkingGoalId = $state<number | null>(null);
+
+	const editingGoal = $derived(
+		editingGoalId === null
+			? null
+			: (contents?.goals.find((one) => one.id === editingGoalId) ?? null)
+	);
+	const linkingGoal = $derived(
+		linkingGoalId === null
+			? null
+			: (contents?.goals.find((one) => one.id === linkingGoalId) ?? null)
+	);
+
+	/** Units this account already counts things in, offered rather than imposed. */
+	const knownUnits = $derived(
+		[
+			...new Set(
+				(contents?.goals ?? []).flatMap((g) => g.targets.map((one) => one.unit)).filter(Boolean)
+			)
+		].sort()
+	);
+
+	function openGoalEdit(id: number) {
+		const one = contents?.goals.find((g) => g.id === id);
+		if (!one) return;
+		editingGoalId = id;
+		goalHorizon = one.horizon;
+		goalStart = one.periodStart;
+		goalTargets =
+			one.targets.length > 0
+				? one.targets.map((target) => ({
+						id: target.id,
+						value: String(target.targetValue),
+						unit: target.unit,
+						whole: target.whole,
+						measureActivity: target.measureActivity ?? ''
+					}))
+				: [{ id: null, value: '', unit: '', whole: true, measureActivity: '' }];
+		composingGoal = true;
+	}
 
 	$effect(() => {
 		if (!notebook) {
@@ -332,7 +387,13 @@
 							 * it is the same form in both places.
 							 */
 							label: composingGoal ? t('ui.cancel') : t('notebookDetail.newGoal'),
-							run: () => (composingGoal = !composingGoal)
+							run: () => {
+								// Opening it fresh: the same modal edits a goal, and a
+								// half-filled form from the last edit is not a new goal.
+								editingGoalId = null;
+								goalTargets = [];
+								composingGoal = !composingGoal;
+							}
 						};
 	});
 
@@ -823,26 +884,32 @@
 					{t('notebookDetail.noGoalPointsAtThis')}
 				</p>
 			{:else}
-				<ul class="divide-y divide-gray-200">
+				<!--
+					The goals room's own card, not a line of text.
+
+					This was a list of titles linking to `/goals`: you could see
+					that a goal existed and do nothing to it — no edit, no delete,
+					no way to say it was achieved or missed, nothing about what
+					counts towards it. Filing a goal under a notebook is supposed
+					to scope it, not strip it.
+				-->
+				<div class="divide-y divide-gray-200 px-4">
 					{#each contents.goals as goal, at (goal.id)}
-						<li
-							class="flex items-center gap-3 px-4 py-2 text-sm {tab === 'goals' && cursor === at
-								? 'kb-cursor'
-								: ''}"
-						>
-							<Icon name="goals" class="shrink-0 text-gray-500" />
-							<a
-								href={resolve('/goals')}
-								class="min-w-0 flex-1 truncate text-gray-900 hover:underline"
-							>
-								{goal.title}
-							</a>
-							<span class="tabular shrink-0 text-xs text-gray-500">
-								{t(HORIZON_LABELS[goal.horizon])} · {goal.periodStart}
-							</span>
-						</li>
+						<div class={tab === 'goals' && cursor === at ? 'kb-cursor' : ''}>
+							<GoalCard
+								{goal}
+								goals={contents.goals}
+								{allTodos}
+								{slots}
+								{activities}
+								actions={NOTEBOOK_GOAL_ACTIONS}
+								accent={SECTION_COLORS.home}
+								onedit={(id) => openGoalEdit(id)}
+								onlink={(id) => (linkingGoalId = id)}
+							/>
+						</div>
 					{/each}
-				</ul>
+				</div>
 			{/if}
 		{/if}
 	</div>
@@ -1251,29 +1318,41 @@
 	`$lib/services/goal-actions`. The notebook is fixed rather than picked:
 	you are looking at it.
 -->
-<Modal bind:open={composingGoal} title={t('notebookDetail.newGoal')}>
+<Modal
+	bind:open={composingGoal}
+	title={editingGoal ? t('goals.editGoal') : t('notebookDetail.newGoal')}
+	onclose={() => (editingGoalId = null)}
+>
 	<!-- Only ever opened from a notebook's own header, so there is one. -->
 	<form
 		id="notebook-goal-form"
 		method="post"
-		action="?/goalCreate"
+		action={editingGoal ? NOTEBOOK_GOAL_ACTIONS.update : '?/goalCreate'}
 		use:enhance={() => {
+			const wasEditing = editingGoal !== null;
 			return async ({ result, update }) => {
 				await update({ reset: false });
 				if (result.type !== 'success') return;
 				composingGoal = false;
+				editingGoalId = null;
 				goalTargets = [];
-				say(t('notebookDetail.goalAdded'));
+				say(wasEditing ? t('notebookDetail.saved') : t('notebookDetail.goalAdded'));
 			};
 		}}
 	>
+		{#if editingGoal}
+			<input type="hidden" name="id" value={editingGoal.id} />
+		{/if}
 		<GoalFields
+			editing={editingGoal}
+			editingId={editingGoalId}
 			bind:horizon={goalHorizon}
 			bind:start={goalStart}
 			bind:targets={goalTargets}
 			{areas}
 			notebooks={pickableNotebooks}
 			{workoutMeasures}
+			{knownUnits}
 			startingNotebook={notebook?.id ?? null}
 		/>
 	</form>
@@ -1283,10 +1362,21 @@
 			{t('ui.cancel')}
 		</button>
 		<button type="submit" form="notebook-goal-form" class="btn btn-primary">
-			{t('goals.createGoal')}
+			{editingGoal ? t('ui.save') : t('goals.createGoal')}
 		</button>
 	{/snippet}
 </Modal>
+
+<!-- What counts towards a goal, the same modal the goals room opens. -->
+<GoalLinksModal
+	goal={linkingGoal}
+	{activities}
+	{slots}
+	{todos}
+	{allTodos}
+	action={NOTEBOOK_GOAL_ACTIONS.setLinks}
+	onclose={() => (linkingGoalId = null)}
+/>
 
 <style>
 	/*

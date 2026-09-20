@@ -285,7 +285,19 @@ export const notebookActions = {
 	 * see `$lib/services/todo-actions` for the names the markup posts to.
 	 */
 	// A goal written from inside a notebook, the way a task already was.
+	/*
+	 * A goal is made, edited, closed and deleted from inside the notebook it
+	 * belongs to, the same way a todo already was — the same handlers the goals
+	 * room uses, under names this route has free. The names live in
+	 * `$lib/goal-action-names`.
+	 */
 	goalCreate: goalHandlers.create,
+	goalUpdate: goalHandlers.update,
+	goalProgress: goalHandlers.setProgress,
+	goalClose: goalHandlers.close,
+	goalLinks: goalHandlers.setLinks,
+	goalTodoStatus: goalHandlers.setTodoStatus,
+	goalDelete: goalHandlers.remove,
 	todoCreate: todoHandlers.create,
 	todoUpdate: todoHandlers.update,
 	todoStatus: todoHandlers.setStatus,

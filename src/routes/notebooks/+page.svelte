@@ -356,6 +356,10 @@
 						pickableNotebooks={data.pickableNotebooks}
 						areas={data.areas}
 						workoutMeasures={data.workoutMeasures}
+						slots={data.slots}
+						todos={data.todos}
+						allTodos={data.allTodos}
+						activities={data.activities}
 						bind:composing
 						bind:newAction
 					/>

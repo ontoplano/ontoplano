@@ -20,6 +20,13 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **A goal filed under a notebook can be worked on there.** The Goals tab was a
+  list of titles: no edit, no delete, no way to say a goal was achieved or
+  missed, and nothing about what counts towards it. It draws the goals room's
+  own card now, and the goals room groups a notebook's goals under its name,
+  below the ones that are not about a subject.
+- **The measure box's example follows the kind of number.** Choosing ℚ left the
+  placeholder saying 3.
 - **The to-do toolbar stops taking three rows on a phone.** The sort control
   was pushed to the right at every width, so it wrapped onto a line of its
   own with an empty half beside it.
