@@ -161,6 +161,28 @@ assistant with only one of them uses the wrong one when it moves something.
 All of it is that day only. Moving this Thursday's gym never moves gym, which
 is what alt-dragging it in the app does too.
 
+## The pictures and recordings in what it reads
+
+A note, a task and an idea can all hold a picture or a recording, and what a
+tool hands back is the markdown that refers to it: `![the wall](/media/31)`,
+`[said](/media/audio/44)`. No tool returns the file itself — fetch it over
+HTTP with the same key, and the permission is the one that reads the thing it
+is in:
+
+```sh
+curl -H "Authorization: Bearer $ONTOPLANO_KEY" \
+  https://your-instance/media/31 --output picture.png
+```
+
+A picture in a note wants `notes:read`, one on a task `tasks:read`, a face
+`people:read`, a recipe photograph `kitchen:read`. There is no separate media
+grant — a file answers to whatever refers to it, and one that nothing refers
+to answers to nobody. A key tied to one notebook reaches the files inside that
+notebook and no others.
+
+Anything the key may not reach is a **404**, the same as an id that never
+existed, so there is nothing to learn by walking the numbers.
+
 ## How it behaves
 
 - **It offers only what the key holds.** `tools/list` is filtered by permission,

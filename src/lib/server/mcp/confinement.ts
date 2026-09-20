@@ -53,7 +53,8 @@ type Confinable = {
 
 export const CONFINEMENTS: Record<string, Confinable> = Object.freeze({
 	notebook: {
-		label: 'one notebook — its tasks, its goals and its notes, and nothing else',
+		label:
+			'one notebook — its tasks, its goals, its notes, and the pictures and recordings in them, and nothing else',
 		noun: 'notebook',
 		kind: 'notebook',
 		options: (ctx) => listNotebooks(ctx).map((one) => ({ id: one.id, label: one.title })),

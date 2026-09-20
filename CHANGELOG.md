@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **A permission says that the pictures come with it.** "Read your notebooks"
+  always reached the pictures inside them — a file answers to whatever refers
+  to it — and the sentence on the key form never said so. It does now, on
+  every read grant and on the notebook a key can be tied to, and the docs say
+  how an assistant actually fetches one.
 - **A note written in the notebook previews its markdown too.** It shipped in
   the dialog only, which is not where most notes are written. The box also
   starts at twice the height, and Tags and People are the same size instead

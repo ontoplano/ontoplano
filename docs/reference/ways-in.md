@@ -31,13 +31,13 @@ than a permission bit: a grant given to a string of jargon is not informed.
 | `locations:read`   | See where your things live, and what is in each room and drawer                                                                                   |
 | `locations:write`  | Add and change rooms and drawers, and say where a thing lives                                                                                     |
 | `calendar:read`    | Show your plan in a calendar app. It can see the plan and change nothing                                                                          |
-| `notes:read`       | Read your diary and your notebooks                                                                                                                |
+| `notes:read`       | Read your diary and your notebooks, and the pictures and recordings in them                                                                       |
 | `notes:write`      | Write in your diary and your notebooks                                                                                                            |
-| `ideas:read`       | See your ideas                                                                                                                                    |
+| `ideas:read`       | See your ideas, and the pictures and recordings in them                                                                                           |
 | `ideas:write`      | Add ideas, change them, and remove them                                                                                                           |
-| `tasks:read`       | Read your todo list and your goals                                                                                                                |
+| `tasks:read`       | Read your todo list and your goals, and the pictures and recordings on them                                                                       |
 | `tasks:write`      | Add, finish and delete todos, move them on and off a day, and close a goal                                                                        |
-| `kitchen:read`     | Read your recipes                                                                                                                                 |
+| `kitchen:read`     | Read your recipes, and their photographs                                                                                                          |
 | `kitchen:write`    | Add and change recipes                                                                                                                            |
 | `workouts:read`    | See your workouts                                                                                                                                 |
 | `workouts:write`   | Add and change workouts and their categories, put them away, and mark one done                                                                    |
@@ -45,7 +45,7 @@ than a permission bit: a grant given to a string of jargon is not informed.
 | `statements:read`  | Read your imported bank-statement lines, their categories and tags, and the monthly in/out figures                                                |
 | `statements:write` | Add and remove the rules that sort your statement lines                                                                                           |
 | `bills:write`      | Add and change bills, and mark them paid                                                                                                          |
-| `people:read`      | See the people in your life, and whose birthday is coming                                                                                         |
+| `people:read`      | See the people in your life, whose birthday is coming, and their photographs                                                                      |
 | `people:write`     | Add people, and change what is recorded about them                                                                                                |
 | `search:read`      | Search everything you have written, in one go                                                                                                     |
 | `destructive`      | Delete things outright — with only the write grants, it can add and change but never remove                                                       |

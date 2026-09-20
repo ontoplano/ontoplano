@@ -146,8 +146,8 @@ works is a key listed here and the reverse.
 | <kbd>j</kbd>     | Move between cards            |
 | <kbd>k</kbd>     | Move between cards            |
 | <kbd>l</kbd>     | Move between columns          |
-| <kbd>H</kbd>     | Carry card to previous column |
-| <kbd>L</kbd>     | Carry card to next column     |
+| <kbd><</kbd>     | Carry card to previous column |
+| <kbd>></kbd>     | Carry card to next column     |
 | <kbd>c</kbd>     | Mark done / reopen            |
 | <kbd>t</kbd>     | Pull onto today / put back    |
 | <kbd>g</kbd>     | Switch Today / General        |
