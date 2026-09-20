@@ -62,7 +62,10 @@
 </script>
 
 <Field {label} span={12} required>
-	<MarkdownBox bind:element={box} value={content} name="content" required rows={compact ? 4 : 8} />
+	<!-- Twice the height it started at: a note is usually more than two lines,
+	     and a box that has to be grown before it is written in asks a question
+	     nobody wanted. It still grows past this. -->
+	<MarkdownBox bind:element={box} value={content} name="content" required rows={compact ? 8 : 16} />
 	{#if pictures}
 		<PictureAttach target={box} />
 		<RecordingAttach target={box} />
@@ -74,7 +77,10 @@
 		<NotebookField {notebooks} value={notebookId} span={12} />
 	{/if}
 
-	<Field label={t('ui.tags')} span={12} hint={t('fields.note.separateWithCommasOrSpaces')}>
+	<!-- Half the row, so Tags and the People field beside it are the same size
+	     and the row is used. They were 12 and 6 — one full-width box above a
+	     half-width one, for two things of equal weight. -->
+	<Field label={t('ui.tags')} span={6} hint={t('fields.note.separateWithCommasOrSpaces')}>
 		<TagInput
 			value={tags}
 			known={page.data.tagVocabulary ?? []}

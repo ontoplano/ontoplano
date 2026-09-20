@@ -1,6 +1,7 @@
 <script lang="ts">
 	import GoalFields, { type FormTarget } from '$lib/components/fields/GoalFields.svelte';
 	import SortControl from '$lib/components/SortControl.svelte';
+	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
 	import { page } from '$app/state';
 	import TagInput from '$lib/components/TagInput.svelte';
 	import { momentOf } from '$lib/when';
@@ -13,7 +14,6 @@
 	import { armed } from '$lib/actions/armed';
 	import { BackCloses } from '$lib/back-closes';
 	import { isPhone } from '$lib/breakpoints';
-	import { autogrow } from '$lib/actions/autogrow';
 	import { keepInView } from '$lib/actions/keep-in-view';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Field from '$lib/components/Field.svelte';
@@ -703,16 +703,17 @@
 							placeholder={t('ui.title')}
 							class="input mb-2 w-full font-medium"
 						/>
-						<textarea
-							bind:this={addBox}
+						<!-- The same box the modal has, preview and all: a note written
+						     here is the same note, and it was the one place that got a
+						     bare textarea. -->
+						<MarkdownBox
+							bind:element={addBox}
 							bind:value={composing_content}
 							name="content"
-							rows="2"
+							rows={6}
 							required
-							use:autogrow
 							placeholder={t('notebookDetail.writeANoteAbout', { title: notebook.title })}
-							class="textarea"
-						></textarea>
+						/>
 						<!-- A note written here takes a picture the same way a note written in
 			     the diary does. It was missing here, which made pictures look like
 			     a feature of one screen rather than of notes. -->
@@ -965,14 +966,13 @@
 								placeholder={t('ui.title')}
 								class="input mb-2 w-full font-medium"
 							/>
-							<textarea
-								bind:this={editBox}
+							<MarkdownBox
+								bind:element={editBox}
+								value={entry.content}
 								name="content"
-								rows="4"
+								rows={8}
 								required
-								use:autogrow
-								class="textarea">{entry.content}</textarea
-							>
+							/>
 							<PictureAttach target={editBox} />
 							<div class="mt-3">
 								<FormGrid>
@@ -1358,8 +1358,14 @@
 		font-size: 1em;
 	}
 
-	/* Writing at the size you read at. */
-	dialog.nb-surface[open] textarea {
+	/*
+	 * Writing at the size you read at.
+	 *
+	 * `:global`, because the box is `MarkdownBox` now and a scoped selector
+	 * stops at the component boundary — the chosen type size stopped reaching
+	 * the thing being typed into the moment the preview was added.
+	 */
+	dialog.nb-surface[open] :global(textarea) {
 		font-size: var(--nb-type);
 		line-height: 1.6;
 	}

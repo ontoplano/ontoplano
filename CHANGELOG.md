@@ -20,6 +20,13 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **A note written in the notebook previews its markdown too.** It shipped in
+  the dialog only, which is not where most notes are written. The box also
+  starts at twice the height, and Tags and People are the same size instead
+  of one full-width box above a half-width one.
+- **The yearly and monthly tiles are smaller than the plan tiles.** They were
+  the same width and merely shorter, which is what made the two choices read
+  as equally important.
 - **Shift+H and Shift+L walk the room's own tabs, everywhere.** They read the
   strip the room is drawing rather than the menu's list, so they go in the
   order you can see, reach places the menu does not list, and work in Media

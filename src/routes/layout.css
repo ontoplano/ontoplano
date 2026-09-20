@@ -1869,15 +1869,21 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
-	 * The second choice on the page, and a little shorter than the first.
+	 * The second choice on the page, and a smaller one than the first.
 	 *
 	 * Which plan and how often were the same square, so the page asked two
 	 * questions with identical weight when the first is the one being made —
-	 * how often is a detail of it. Shorter rather than narrower: they still sit
-	 * side by side across the same width, and the four lines inside have room.
+	 * how often is a detail of it.
+	 *
+	 * Narrower, not merely shorter. Keeping the full width and cropping the
+	 * height left two tiles as wide as the plans above, which is the thing
+	 * that made them read as equally important; the pair is centred so the
+	 * row still has a middle.
 	 */
 	.choice-tile-small {
 		aspect-ratio: 1.25;
+		width: 72%;
+		justify-self: center;
 	}
 
 	.choice-tile:hover {
