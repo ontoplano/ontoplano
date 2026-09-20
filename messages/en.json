@@ -979,6 +979,7 @@
 	"home.youPayForItYourself": "You pay for it yourself today — cancel your own subscription first, then accept.",
 	"home.yourNotesAndYourWeek": "Your notes and your week stay yours; they just pay for the account.",
 	"home.yoursAndTemporary": "yours, and temporary",
+	"imageViewer.picture": "Picture",
 	"instance.anInstanceBehindAServer": "An instance behind a server",
 	"instance.enterAnyInstanceUrl": "Enter any instance URL — official instance is {https}",
 	"instance.theInstanceOnThisDevice": "The instance on this device",

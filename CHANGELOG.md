@@ -20,6 +20,10 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **A picture opens over the page instead of in a new tab.** Pressing one is
+  the app being asked to show it, not a link being followed — so it fills the
+  screen on a dark ground and the ground closes it. Every rendered picture in
+  the app, wherever it is.
 - **A checklist becomes tasks from the composer, as you type it.** The offer
   was an icon on the finished note's row, found afterwards by somebody who
   went looking. It appears beside Add the instant a `- [ ]` does, says how

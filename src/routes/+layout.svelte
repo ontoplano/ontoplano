@@ -55,6 +55,7 @@
 	import { APP_UPDATE_HUSH_KEY } from '$lib/platform';
 	import { startMarkSpin, stopMarkSpin } from '$lib/mark-spin';
 	import { busy, whileBusy } from '$lib/busy.svelte';
+	import ImageViewer from '$lib/components/ImageViewer.svelte';
 	import { scrollToHash } from '$lib/scroll-to-hash';
 	import { stepWithinRoom } from '$lib/rooms';
 	import { smartNumberFields } from '$lib/number-fields';
@@ -1659,6 +1660,8 @@
 
 		<Reminders />
 		<UndoToast />
+		<!-- Armed for every rendered picture in the app at once. -->
+		<ImageViewer />
 		<Notifications />
 		{#if data.clientErrorReports !== 'off'}
 			<ClientErrorPrompt state={data.clientErrorReports} />

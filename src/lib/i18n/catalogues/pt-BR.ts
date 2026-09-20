@@ -1074,6 +1074,7 @@ export const messages: Catalogue = {
 		'Hoje você mesmo paga por isso — cancele sua própria assinatura antes de aceitar.',
 	'home.yourNotesAndYourWeek': 'Suas notas e sua semana continuam suas; elas só pagam pela conta.',
 	'home.yoursAndTemporary': 'seu, e temporário',
+	'imageViewer.picture': 'Imagem',
 	'instance.anInstanceBehindAServer': 'Uma instância atrás de um servidor',
 	'instance.enterAnyInstanceUrl': 'Digite o endereço de qualquer instância — a oficial é {https}',
 	'instance.theInstanceOnThisDevice': 'A instância neste aparelho',

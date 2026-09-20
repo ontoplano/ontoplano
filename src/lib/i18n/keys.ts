@@ -973,6 +973,7 @@ export type MessageKey =
 	| 'home.youPayForItYourself'
 	| 'home.yourNotesAndYourWeek'
 	| 'home.yoursAndTemporary'
+	| 'imageViewer.picture'
 	| 'instance.anInstanceBehindAServer'
 	| 'instance.enterAnyInstanceUrl'
 	| 'instance.theInstanceOnThisDevice'

@@ -1084,6 +1084,7 @@ export const messages: Catalogue = {
 	'home.yourNotesAndYourWeek':
 		'Ihre Notizen und Ihre Woche bleiben Ihre; sie zahlen nur für das Konto.',
 	'home.yoursAndTemporary': 'Ihres, und vorübergehend',
+	'imageViewer.picture': 'Bild',
 	'instance.anInstanceBehindAServer': 'Eine Instanz hinter einem Server',
 	'instance.enterAnyInstanceUrl':
 		'Geben Sie eine beliebige Instanz-URL ein — die offizielle Instanz ist {https}',

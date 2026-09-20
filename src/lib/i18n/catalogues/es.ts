@@ -1078,6 +1078,7 @@ export const messages: Catalogue = {
 	'home.yourNotesAndYourWeek':
 		'Tus notas y tu semana siguen siendo tuyas; esa persona solo paga la cuenta.',
 	'home.yoursAndTemporary': 'tuya, y temporal',
+	'imageViewer.picture': 'Imagen',
 	'instance.anInstanceBehindAServer': 'Una instancia detrás de un servidor',
 	'instance.enterAnyInstanceUrl':
 		'Escribe cualquier URL de instancia — la instancia oficial es {https}',
