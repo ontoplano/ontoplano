@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import {
 	MAX_SUGGESTIONS,
-	draftTag,
+	draftTags,
 	endsTag,
 	suggestTags,
 	tagsFrom,
@@ -39,23 +39,32 @@ describe('the tags a value arrived with', () => {
 
 describe('the word being typed', () => {
 	test('becomes a tag, in the shape the server uses', () => {
-		expect(draftTag('Work')).toBe('work');
-		expect(draftTag('  urgent  ')).toBe('urgent');
+		expect(draftTags('Work')).toEqual(['work']);
+		expect(draftTags('  urgent  ')).toEqual(['urgent']);
 		// People type #work out of habit; the vocabulary has no hashes in it.
-		expect(draftTag('#house')).toBe('house');
+		expect(draftTags('#house')).toEqual(['house']);
 	});
 
-	test('is not a tag when it is nothing', () => {
-		expect(draftTag('')).toBeNull();
-		expect(draftTag('   ')).toBeNull();
-		expect(draftTag('#')).toBeNull();
+	test('is nothing when it is nothing', () => {
+		expect(draftTags('')).toEqual([]);
+		expect(draftTags('   ')).toEqual([]);
+		expect(draftTags('#')).toEqual([]);
+	});
+
+	test('is several when several were pasted in at once', () => {
+		// A draft is not always typed a letter at a time. Taking the first and
+		// dropping the rest would lose them without saying so.
+		expect(draftTags('work, urgent')).toEqual(['work', 'urgent']);
+		expect(draftTags('#A1, Done')).toEqual(['a1', 'done']);
 	});
 
 	test('is not a second copy of one already on the box', () => {
 		// Pressing space twice is not two tags.
-		expect(draftTag('work', ['work'])).toBeNull();
-		expect(draftTag('WORK', ['work'])).toBeNull();
-		expect(draftTag('urgent', ['work'])).toBe('urgent');
+		expect(draftTags('work', ['work'])).toEqual([]);
+		expect(draftTags('WORK', ['work'])).toEqual([]);
+		expect(draftTags('urgent', ['work'])).toEqual(['urgent']);
+		// Nor twice within one paste.
+		expect(draftTags('work work urgent')).toEqual(['work', 'urgent']);
 	});
 
 	test('is ended by a space, a comma, tab or enter', () => {

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import GoalFields, { type FormTarget } from '$lib/components/fields/GoalFields.svelte';
+	import SortControl from '$lib/components/SortControl.svelte';
 	import { page } from '$app/state';
 	import TagInput from '$lib/components/TagInput.svelte';
 	import { momentOf } from '$lib/when';
@@ -901,29 +902,16 @@
 -->
 {#snippet orderControl()}
 	{#if shownNotes.length > 1 || noteOrder !== DEFAULT_NOTE_ORDER}
-		<Select
+		<!-- The same control the task list uses. See `SortControl`. -->
+		<SortControl
 			value={noteOrder}
-			onchange={(e) => pickOrder(e.currentTarget.value as NoteOrder)}
-			class="w-24 shrink-0 py-1 text-xs"
-			aria-label={t('notebookDetail.orderNotesBy')}
-		>
-			{#each NOTE_ORDERS as option (option)}
-				<option value={option}>{t(ORDER_LABELS[option])}</option>
-			{/each}
-		</Select>
-		<button
-			type="button"
-			onclick={flipDirection}
-			class="icon-btn shrink-0"
-			aria-label={noteDirection === 'asc'
-				? t('notebookDetail.ascendingPressForDescending')
-				: t('notebookDetail.descendingPressForAscending')}
-			title={noteDirection === 'asc'
-				? t('notebookDetail.ascendingPressForDescending')
-				: t('notebookDetail.descendingPressForAscending')}
-		>
-			<Icon name={noteDirection === 'asc' ? 'arrow-up' : 'arrow-down'} />
-		</button>
+			options={NOTE_ORDERS}
+			labels={ORDER_LABELS}
+			direction={noteDirection}
+			onpick={pickOrder}
+			onflip={flipDirection}
+			label={t('notebookDetail.orderNotesBy')}
+		/>
 	{/if}
 {/snippet}
 

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { say } from '$lib/said.svelte';
+	import SortControl from '$lib/components/SortControl.svelte';
 	import { agoOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { deleteLater, isLeaving } from '$lib/undo.svelte';
@@ -199,46 +200,72 @@
 	 * unfinished keeps its own order underneath, because throwing that away is
 	 * throwing away the order somebody arranged by hand.
 	 */
-	const ORDERS = ['newest', 'oldest', 'done'] as const;
+	/*
+	 * What the list is sorted by, and which way — two questions, not one.
+	 *
+	 * These used to be `newest | oldest | done`, cycled by a single button:
+	 * `newest` and `oldest` are one field read two ways, so the list of
+	 * "orders" was a field and a direction folded together, and the only way
+	 * through them was to press until the right one came round. Separated, it
+	 * is the same control a notebook's notes use.
+	 */
+	const ORDERS = ['created', 'done'] as const;
 	type Order = (typeof ORDERS)[number];
 
-	const ORDER_LABELS: Record<Order, { short: PlainKey; long: PlainKey; why: PlainKey }> = {
-		newest: {
-			short: 'todoRows.newest',
-			long: 'todoRows.newestFirst',
-			why: 'todoRows.newestAtTheTopPress'
-		},
-		oldest: {
-			short: 'todoRows.oldest',
-			long: 'todoRows.oldestFirst',
-			why: 'todoRows.oldestAtTheTopPress'
-		},
-		done: {
-			short: 'todoRows.done',
-			long: 'todoRows.lastDoneFirst',
-			why: 'todoRows.whatYouFinishedMostRecently'
-		}
+	/* The field's name only: which way it runs is the arrow's business now. */
+	const ORDER_LABELS: Record<Order, PlainKey> = {
+		created: 'todoRows.added',
+		done: 'todoRows.done'
 	};
 
-	let order = $state<Order>('newest');
+	let order = $state<Order>('created');
+	let direction = $state<'asc' | 'desc'>('desc');
 	$effect(() => {
 		try {
+			/*
+			 * What was stored before the two were separated still means
+			 * something: `newest` and `oldest` were the created field read each
+			 * way, so they are read back as that rather than thrown away.
+			 */
 			const held = localStorage.getItem('ontoplano:todos-order');
-			if (held && (ORDERS as readonly string[]).includes(held)) order = held as Order;
+			if (held === 'newest') {
+				order = 'created';
+				direction = 'desc';
+			} else if (held === 'oldest') {
+				order = 'created';
+				direction = 'asc';
+			} else if (held && (ORDERS as readonly string[]).includes(held)) {
+				order = held as Order;
+			}
+			const heldWay = localStorage.getItem('ontoplano:todos-direction');
+			if (heldWay === 'asc' || heldWay === 'desc') direction = heldWay;
 			// What the older setting said, so nobody's list flips on an update.
-			else if (localStorage.getItem('ontoplano:todos-newest') === '0') order = 'oldest';
+			else if (localStorage.getItem('ontoplano:todos-newest') === '0') {
+				order = 'created';
+				direction = 'asc';
+			}
 		} catch {
 			// A private window, or storage refused. The default stands.
 		}
 	});
 
-	function flipOrder() {
-		order = ORDERS[(ORDERS.indexOf(order) + 1) % ORDERS.length];
+	function remember() {
 		try {
 			localStorage.setItem('ontoplano:todos-order', order);
+			localStorage.setItem('ontoplano:todos-direction', direction);
 		} catch {
-			// It still flips for this visit; only the memory is lost.
+			// It still works for this visit; only the memory is lost.
 		}
+	}
+
+	function pickOrder(next: Order) {
+		order = next;
+		remember();
+	}
+
+	function flipDirection() {
+		direction = direction === 'asc' ? 'desc' : 'asc';
+		remember();
 	}
 
 	/** Finished first, newest of them at the top; the rest as they were. */
@@ -269,10 +296,13 @@
 		else if (tagFilter !== '')
 			shown = shown.filter((t: Todo) => t.tags.some((one) => one.name === tagFilter));
 
-		if (order === 'done') return [...shown].sort(byLastDone);
+		if (order === 'done') {
+			const done = [...shown].sort(byLastDone);
+			return direction === 'asc' ? done.reverse() : done;
+		}
 
 		return [...shown].sort((a: Todo, b: Todo) =>
-			order === 'newest'
+			direction === 'desc'
 				? b.createdAt.localeCompare(a.createdAt)
 				: a.createdAt.localeCompare(b.createdAt)
 		);
@@ -607,15 +637,18 @@
 				empty row read as a pair of related things; they are not — one hides
 				rows and the other reorders them.
 			-->
-			<button
-				onclick={flipOrder}
-				class="btn btn-sm ml-auto shrink-0"
-				title={t(ORDER_LABELS[order].why)}
-			>
-				<Icon name={order === 'oldest' ? 'chevron-up' : 'chevron-down'} />
-				<span class="sm:hidden">{t(ORDER_LABELS[order].short)}</span>
-				<span class="hidden sm:inline">{t(ORDER_LABELS[order].long)}</span>
-			</button>
+			<div class="ml-auto">
+				<!-- The same control a notebook's notes use. See `SortControl`. -->
+				<SortControl
+					value={order}
+					options={ORDERS}
+					labels={ORDER_LABELS}
+					{direction}
+					onpick={pickOrder}
+					onflip={flipDirection}
+					label={t('todoRows.orderTasksBy')}
+				/>
+			</div>
 		{/snippet}
 	</RoomToolbar>
 

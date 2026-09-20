@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **One sorting control, in the notes and in the tasks.** A notebook's notes
+  used a dropdown beside an arrow; its tasks used a button that cycled through
+  the orders, which shows you nothing and cannot go back. Both now say what
+  the order is, open the list when pressed, and flip direction with the arrow
+  beside them — and the task list finally has a direction at all.
 - **An answered slider looks answered.** A one is the thumb a fifth of the way
   along a thin track, which at a glance is the same picture as not having
   answered at all — and the two mean opposite things. An answered one sits on

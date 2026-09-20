@@ -16,7 +16,9 @@ async function newTodo(page: import('@playwright/test').Page, title: string, tag
 	await page.locator('#todo-form [name="heading"]').fill(title);
 	const more = page.getByRole('button', { name: /Category, notebook/ }).first();
 	if (await more.count()) await more.click();
-	await page.locator('#todo-form [name="tags"]').fill(tags);
+	// The visible box takes the words; `[name="tags"]` is the hidden field the
+	// form posts, assembled from the chips. See `TagInput`.
+	await page.locator('#todo-form input[role="combobox"]').fill(tags);
 	await page.getByRole('button', { name: 'Create todo' }).click();
 	await expect(page.getByText(title).first()).toBeVisible();
 }
@@ -59,19 +61,38 @@ test('labels are edited, and an edit that says nothing about them keeps them', a
 
 	await newTodo(page, 'sand the door', 'a1 wood');
 
-	// The edit form arrives with them in it, as words rather than as chips to
-	// be reconstructed — the same box they were typed into.
+	// The edit form arrives with them as chips, and the value it will post is
+	// assembled from those.
 	await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
-	await expect(page.locator('#todo-form [name="tags"]')).toHaveValue('a1, wood');
+	const form = page.locator('#todo-form');
+	await expect(form.locator('.chip').filter({ hasText: 'a1' })).toBeVisible();
+	await expect(form.locator('.chip').filter({ hasText: 'wood' })).toBeVisible();
+	await expect(form.locator('[name="tags"]')).toHaveValue('a1, wood');
 
-	await page.locator('#todo-form [name="tags"]').fill('a2');
+	/*
+	 * Take both off with the keyboard.
+	 *
+	 * Backspace on an empty box removes the last chip, which is what a box of
+	 * chips does everywhere. Driven this way rather than by pressing the two
+	 * remove buttons: removing one re-lays out the row under the pointer, and
+	 * what that does to a synthetic click is a question about the harness
+	 * rather than about the app.
+	 */
+	const box = form.locator('input[role="combobox"]');
+	await box.click();
+	await box.press('Backspace');
+	await expect(form.locator('.chip')).toHaveCount(1);
+	await box.press('Backspace');
+	await expect(form.locator('.chip')).toHaveCount(0);
+
+	await box.fill('a2');
 	await page.getByRole('button', { name: 'Save' }).click();
 	await expect(page.getByRole('button', { name: '#a2' })).toBeVisible();
 	await expect(page.getByRole('button', { name: '#a1' })).toHaveCount(0);
 
 	// Taken off altogether, and then the picker goes with them.
 	await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
-	await page.locator('#todo-form [name="tags"]').fill('');
+	await page.locator('#todo-form .chip').filter({ hasText: 'a2' }).getByRole('button').click();
 	await page.getByRole('button', { name: 'Save' }).click();
 	await expect(page.getByRole('button', { name: '#a2' })).toHaveCount(0);
 	await expect(page.getByLabel('Filter by tag')).toHaveCount(0);

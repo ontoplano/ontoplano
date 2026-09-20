@@ -2769,6 +2769,8 @@ export const messages: Catalogue = {
 	'shortcut.toggleSomedayFilter': 'Alternar filtro de algum dia',
 	'shortcut.zoomInGrid': 'Aumentar zoom (grade)',
 	'shortcut.zoomOutGrid': 'Diminuir zoom (grade)',
+	'sort.ascendingPressForDescending': 'Crescente — toque para decrescente',
+	'sort.descendingPressForAscending': 'Decrescente — toque para crescente',
 	'staging.body': 'Uma cópia do Ontoplano para experimentar. Nada aqui tem garantia de sobreviver.',
 	'staging.heading': 'Homologação.',
 	'start.1Account': '1 conta',
@@ -3124,6 +3126,7 @@ export const messages: Catalogue = {
 	'tasks.review.writeSomethingAboutHowThis': 'Escreva algo sobre como foi esta semana.',
 	'todoRows.aToDoIsATask':
 		'Uma tarefa é algo sem dia marcado. Coloque uma aqui e arraste para o quadro quando ela tiver um dia.',
+	'todoRows.added': 'Criação',
 	'todoRows.anythingYouFinishShowsUp': 'Tudo o que você termina aparece aqui.',
 	'todoRows.archived': 'Arquivadas',
 	'todoRows.completed': 'Concluídas',
@@ -3155,6 +3158,7 @@ export const messages: Catalogue = {
 	'todoRows.oldestAtTheTopPress':
 		'Mais antigos no topo — pressione para o que você acabou de fazer',
 	'todoRows.oldestFirst': 'Mais antigos primeiro',
+	'todoRows.orderTasksBy': 'Ordenar tarefas por',
 	'todoRows.pullOntoToday': 'Puxar para hoje',
 	'todoRows.pulledOntoThisDay': 'Puxada para este dia',
 	'todoRows.putAway': 'Guardar',

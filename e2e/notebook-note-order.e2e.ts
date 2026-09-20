@@ -47,8 +47,13 @@ test('notes are ordered by title, by when they were written, and both ways', asy
 	// The default: the pages of a notebook, beginning at the beginning.
 	expect(await titles(page)).toEqual(['Middle', 'Alpha', 'Zulu']);
 
-	const order = page.getByLabel('Order notes by');
-	await order.selectOption('title');
+	// A menu now, not a native select — the same control the task list uses.
+	const order = page.getByRole('button', { name: 'Order notes by' });
+	const pick = async (name: string) => {
+		await order.click();
+		await page.getByRole('option', { name }).click();
+	};
+	await pick('Title');
 	await expect.poll(() => titles(page)).toEqual(['Alpha', 'Middle', 'Zulu']);
 
 	await page.getByRole('button', { name: 'Ascending' }).click();
@@ -58,7 +63,7 @@ test('notes are ordered by title, by when they were written, and both ways', asy
 	await page.getByRole('button', { name: 'Descending' }).click();
 	await expect.poll(() => titles(page)).toEqual(['Alpha', 'Middle', 'Zulu']);
 
-	await order.selectOption('written');
+	await pick('Written');
 	await page.getByRole('button', { name: 'Ascending' }).click();
 	await expect.poll(() => titles(page)).toEqual(['Zulu', 'Alpha', 'Middle']);
 });
@@ -73,11 +78,13 @@ test('the chosen order survives a reload, and a pin still leads', async ({ page 
 	await addNote(page, 'Alpha', 'a');
 	await addNote(page, 'Zulu', 'z');
 
-	await page.getByLabel('Order notes by').selectOption('title');
+	const order = page.getByRole('button', { name: 'Order notes by' });
+	await order.click();
+	await page.getByRole('option', { name: 'Title' }).click();
 	await expect.poll(() => titles(page)).toEqual(['Alpha', 'Middle', 'Zulu']);
 
 	await visit(page, '/notebooks');
-	await expect(page.getByLabel('Order notes by')).toHaveValue('title');
+	await expect(page.getByRole('button', { name: 'Order notes by' })).toContainText('Title');
 	await expect.poll(() => titles(page)).toEqual(['Alpha', 'Middle', 'Zulu']);
 
 	// Pinning says "this is what the notebook is for", and no alphabet may

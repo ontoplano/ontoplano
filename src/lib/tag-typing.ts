@@ -37,18 +37,29 @@ export function tagsValue(tags: readonly string[]): string {
 }
 
 /**
- * The tag a draft becomes, or null if it is not one yet.
+ * The tags a draft becomes. Usually one; sometimes several.
  *
  * Trimmed, lower-cased and stripped of a leading `#` — the same shape
- * `parseTags` would give it, so a tag typed by hand and a tag chosen from the
- * list are the same tag. Null for whitespace, and for one already on the box:
- * pressing space twice is not two tags, and re-typing one you already have is
- * not a second copy of it.
+ * `parseTags` would give them, so a tag typed by hand and a tag chosen from
+ * the list are the same tag.
+ *
+ * Several, because a draft is not always typed a letter at a time: pasting
+ * "work, urgent" is somebody saying two tags, and taking the first and
+ * dropping the second would lose one without saying so. Typing is the same
+ * rule with one word in it.
+ *
+ * Ones already on the box are left out: pressing space twice is not two tags,
+ * and re-typing one you have is not a second copy of it.
  */
-export function draftTag(draft: string, already: readonly string[] = []): string | null {
-	const [tag] = parseTags(draft);
-	if (!tag) return null;
-	return already.some((one) => one.toLowerCase() === tag) ? null : tag;
+export function draftTags(draft: string, already: readonly string[] = []): string[] {
+	const have = new Set(already.map((one) => one.toLowerCase()));
+	const made: string[] = [];
+	for (const tag of parseTags(draft)) {
+		if (have.has(tag)) continue;
+		have.add(tag);
+		made.push(tag);
+	}
+	return made;
 }
 
 /** Whether what was just typed ends the word — a space, a comma, a tab. */

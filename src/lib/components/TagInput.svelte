@@ -18,7 +18,7 @@
 	 */
 	import Icon from '$lib/components/Icon.svelte';
 	import { useT } from '$lib/i18n';
-	import { draftTag, endsTag, suggestTags, tagsFrom, tagsValue } from '$lib/tag-typing';
+	import { draftTags, endsTag, suggestTags, tagsFrom, tagsValue } from '$lib/tag-typing';
 
 	let {
 		name = 'tags',
@@ -37,6 +37,30 @@
 
 	/** The tags this thing has. Seeded from whatever the form arrived with. */
 	let tags = $state<string[]>(tagsFrom(value));
+
+	/*
+	 * And re-seeded when the form is handed a different thing.
+	 *
+	 * The chips are state rather than a view of the prop, which is the whole
+	 * point — but state initialised once. A modal reused for a second task
+	 * gets a new `value` and kept the first task's chips, so editing anything
+	 * after the first showed the wrong labels and would have saved them.
+	 *
+	 * Keyed on the value the props carry, not on the chips, so typing into the
+	 * box never triggers this: what is typed changes `tags`, and `value` only
+	 * changes when the caller hands over a different thing.
+	 */
+	// A plain variable, deliberately: it is a marker for this effect and not
+	// something anything renders, and making it reactive has the effect
+	// depending on its own write.
+	let seededFrom = value;
+	$effect(() => {
+		const incoming = value;
+		if (incoming === seededFrom) return;
+		seededFrom = incoming;
+		tags = tagsFrom(incoming);
+		draft = '';
+	});
 	/** The word being typed. Nothing else lives in the input. */
 	let draft = $state('');
 
@@ -48,15 +72,30 @@
 		focused && draft.trim() !== '' ? suggestTags(known, draft, tags) : []
 	);
 
-	function add(tag: string | null) {
-		if (tag && !tags.includes(tag)) tags = [...tags, tag];
+	function add(...made: string[]) {
+		const fresh = made.filter((tag) => tag && !tags.includes(tag));
+		if (fresh.length > 0) tags = [...tags, ...fresh];
 		draft = '';
 		at = -1;
 	}
 
+	/*
+	 * Taking one off, after the press has finished being a press.
+	 *
+	 * Svelte delegates `onclick` from a container and walks the path calling
+	 * handlers. Removing a chip inline rebuilds the list *during* that walk,
+	 * the surviving chip's button reuses the node the walk is standing on, and
+	 * its handler runs on the same press — so one press took two labels off.
+	 * The stack said so: two calls, both from the one delegated dispatcher.
+	 *
+	 * A microtask lets the walk finish against the DOM it started on. Still
+	 * before the frame is painted, so nothing is visible but the one removal.
+	 */
 	function drop(tag: string) {
-		tags = tags.filter((one) => one !== tag);
-		box?.focus();
+		queueMicrotask(() => {
+			tags = tags.filter((one) => one !== tag);
+			box?.focus();
+		});
 	}
 
 	function onKeydown(e: KeyboardEvent) {
@@ -73,7 +112,7 @@
 			// so the key keeps whatever it normally does.
 			if (draft.trim() === '') return;
 			e.preventDefault();
-			add(draftTag(draft, tags));
+			add(...draftTags(draft, tags));
 			return;
 		}
 
@@ -113,8 +152,8 @@
 	 */
 	const posted = $derived(
 		(() => {
-			const pending = draftTag(draft, tags);
-			return tagsValue(pending ? [...tags, pending] : tags);
+			const pending = draftTags(draft, tags);
+			return tagsValue(pending.length > 0 ? [...tags, ...pending] : tags);
 		})()
 	);
 </script>

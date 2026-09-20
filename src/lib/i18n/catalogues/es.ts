@@ -2786,6 +2786,8 @@ export const messages: Catalogue = {
 	'shortcut.toggleSomedayFilter': 'Alternar filtro de algún día',
 	'shortcut.zoomInGrid': 'Acercar zoom (cuadrícula)',
 	'shortcut.zoomOutGrid': 'Alejar zoom (cuadrícula)',
+	'sort.ascendingPressForDescending': 'Ascendente — pulsa para descendente',
+	'sort.descendingPressForAscending': 'Descendente — pulsa para ascendente',
 	'staging.body':
 		'Una copia de Ontoplano para probar cosas. Nada de lo que hay aquí tiene garantía de sobrevivir.',
 	'staging.heading': 'Staging.',
@@ -3143,6 +3145,7 @@ export const messages: Catalogue = {
 	'tasks.review.writeSomethingAboutHowThis': 'Escribe algo sobre cómo fue esta semana.',
 	'todoRows.aToDoIsATask':
 		'Una tarea es algo sin un día asignado. Ponla aquí y arrástrala al tablero cuando tenga un lugar.',
+	'todoRows.added': 'Creación',
 	'todoRows.anythingYouFinishShowsUp': 'Todo lo que termines aparece aquí.',
 	'todoRows.archived': 'Archivado',
 	'todoRows.completed': 'Completado',
@@ -3173,6 +3176,7 @@ export const messages: Catalogue = {
 	'todoRows.oldest': 'Más antiguo',
 	'todoRows.oldestAtTheTopPress': 'Lo más antiguo arriba — presiona para lo que acabas de hacer',
 	'todoRows.oldestFirst': 'Más antiguo primero',
+	'todoRows.orderTasksBy': 'Ordenar tareas por',
 	'todoRows.pullOntoToday': 'Traer a hoy',
 	'todoRows.pulledOntoThisDay': 'Traído a este día',
 	'todoRows.putAway': 'Guardar',

@@ -2799,6 +2799,8 @@ export const messages: Catalogue = {
 	'shortcut.toggleSomedayFilter': '„Irgendwann“-Filter umschalten',
 	'shortcut.zoomInGrid': 'Vergrößern (Raster)',
 	'shortcut.zoomOutGrid': 'Verkleinern (Raster)',
+	'sort.ascendingPressForDescending': 'Aufsteigend — für absteigend drücken',
+	'sort.descendingPressForAscending': 'Absteigend — für aufsteigend drücken',
 	'staging.body':
 		'Eine Kopie von Ontoplano zum Ausprobieren. Nichts hier bleibt garantiert erhalten.',
 	'staging.heading': 'Staging.',
@@ -3161,6 +3163,7 @@ export const messages: Catalogue = {
 	'tasks.review.writeSomethingAboutHowThis': 'Schreiben Sie etwas darüber, wie diese Woche lief.',
 	'todoRows.aToDoIsATask':
 		'Eine Aufgabe ohne Tag ist etwas zu erledigen. Legen Sie sie hier ab, und ziehen Sie sie aufs Board, sobald sie einen Platz hat.',
+	'todoRows.added': 'Erstellt',
 	'todoRows.anythingYouFinishShowsUp': 'Alles, was Sie abschließen, taucht hier auf.',
 	'todoRows.archived': 'Archiviert',
 	'todoRows.completed': 'Abgeschlossen',
@@ -3191,6 +3194,7 @@ export const messages: Catalogue = {
 	'todoRows.oldest': 'Älteste',
 	'todoRows.oldestAtTheTopPress': 'Älteste oben — drücken für das zuletzt Erledigte',
 	'todoRows.oldestFirst': 'Älteste zuerst',
+	'todoRows.orderTasksBy': 'Aufgaben sortieren nach',
 	'todoRows.pullOntoToday': 'Auf heute ziehen',
 	'todoRows.pulledOntoThisDay': 'Auf diesen Tag gezogen',
 	'todoRows.putAway': 'Wegräumen',
