@@ -41,8 +41,9 @@ test('the header button follows the tab', async ({ page }) => {
 	await page.keyboard.press('Escape');
 
 	await page.getByRole('button', { name: /^Goals \d/ }).click();
-	const toGoals = page.getByRole('link', { name: 'New goal', exact: true });
-	await expect(toGoals).toBeVisible();
+	// A button, not a link: a goal is written here now, the way a task is.
+	await expect(page.getByRole('button', { name: 'New goal', exact: true })).toBeVisible();
+	await expect(page.getByRole('link', { name: 'New goal', exact: true })).toHaveCount(0);
 	await expect(page.getByRole('button', { name: 'New task', exact: true })).toHaveCount(0);
 });
 
@@ -60,18 +61,33 @@ test('the notebook keeps its own primary verb while Tasks is showing', async ({ 
 	await expect(page.getByRole('button', { name: /New to-do/ })).toHaveCount(0);
 });
 
-test('New goal lands on Goals with the form open and the notebook chosen', async ({ page }) => {
+/**
+ * A goal is written where you are.
+ *
+ * This used to be a link to the goals room carrying the notebook, so the same
+ * press stayed put on the Tasks tab and threw you out of the notebook on the
+ * Goals one. The form is the goals room's own fields either way.
+ */
+test('New goal opens a form in the notebook, and the goal lands in it', async ({ page }) => {
 	test.setTimeout(120_000);
 	await register(page, testEmail('tab-new-goal'));
 	await makeNotebook(page, 'The kitchen');
 	await visit(page, '/notebooks');
 
 	await page.getByRole('button', { name: /^Goals \d/ }).click();
-	await page.getByRole('link', { name: 'New goal', exact: true }).click();
-	await page.waitForURL(/\/goals\?/);
+	await page.getByRole('button', { name: 'New goal', exact: true }).click();
 
-	const form = page.locator('#goal-form');
-	await expect(form).toBeVisible();
-	await expect(form.locator('select[name="notebookId"]')).toHaveValue(/\d+/);
-	await expect(form.locator('select[name="notebookId"] option:checked')).toHaveText(/The kitchen/);
+	// Still on the notebook, with the goals room's own fields in front of you.
+	await expect(page).toHaveURL(/\/notebooks/);
+	const form = page.locator('#notebook-goal-form');
+	await expect(form).toBeVisible({ timeout: 30_000 });
+
+	await form.locator('[name="heading"]').first().fill('Cook something new each week');
+	await page.getByRole('button', { name: 'Create goal' }).click();
+
+	// It is filed under the notebook you were looking at, and you are still here.
+	await expect(page).toHaveURL(/\/notebooks/);
+	await expect(page.getByText('Cook something new each week').first()).toBeVisible({
+		timeout: 30_000
+	});
 });

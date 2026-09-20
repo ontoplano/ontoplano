@@ -1,4 +1,5 @@
 <script lang="ts">
+	import GoalFields, { type FormTarget } from '$lib/components/fields/GoalFields.svelte';
 	import { page } from '$app/state';
 	import TagInput from '$lib/components/TagInput.svelte';
 	import { momentOf } from '$lib/when';
@@ -85,6 +86,8 @@
 		allPeople = [],
 		categories = [],
 		pickableNotebooks = [],
+		areas = [],
+		workoutMeasures = [],
 		composing = $bindable(false),
 		/**
 		 * The New button for whichever tab is showing, for the page to draw.
@@ -115,6 +118,8 @@
 		/** What the Tasks tab's editor offers, the same as the to-do room's. */
 		categories?: { id: number; name: string }[];
 		pickableNotebooks?: { id: number; title: string }[];
+		areas?: { id: number; name: string }[];
+		workoutMeasures?: { activity: string; unit: string }[];
 		/** Whether the composer is open, so a page can put the button elsewhere. */
 		composing?: boolean;
 		newAction?: { label: string; run?: () => void; href?: string } | undefined;
@@ -293,6 +298,11 @@
 	 * fields to keep in step, so the button opens that one.
 	 */
 	let openNewTodo = $state<(() => void) | undefined>(undefined);
+	/* Whether the goal form is open on this notebook. */
+	let composingGoal = $state(false);
+	let goalHorizon = $state<Horizon>('week');
+	let goalStart = $state('');
+	let goalTargets = $state<FormTarget[]>([]);
 
 	$effect(() => {
 		if (!notebook) {
@@ -308,12 +318,17 @@
 				: tab === 'tasks'
 					? { label: t('notebookDetail.newTask'), run: () => openNewTodo?.() }
 					: {
-							// There is no writing a goal from in here: a goal is a goal of
-							// yours that happens to be about this notebook, and it is
-							// written where goals are. The link carries the notebook, so
-							// the form opens with it already chosen.
-							label: t('notebookDetail.newGoal'),
-							href: `${resolve('/goals')}?new=1&notebookId=${notebook.id}`
+							/*
+							 * Written here, like a task.
+							 *
+							 * This used to be a link to the goals room carrying the
+							 * notebook — which meant the same press stayed put on one
+							 * tab and threw you out of the notebook on the next. The
+							 * form is the goals room's own fields (`GoalFields`), so
+							 * it is the same form in both places.
+							 */
+							label: composingGoal ? t('ui.cancel') : t('notebookDetail.newGoal'),
+							run: () => (composingGoal = !composingGoal)
 						};
 	});
 
@@ -749,6 +764,7 @@
 						actions={NOTEBOOK_TODO_ACTIONS}
 						notebookId={notebook.id}
 						shortcutRoom={tab === 'tasks' ? '/tasks/todo' : null}
+						claimsRoomBar={false}
 						bind:openNew={openNewTodo}
 					/>
 				</div>
@@ -1210,6 +1226,50 @@
 			</button>
 		</div>
 	</form>
+</Modal>
+
+<!--
+	Writing a goal without leaving the notebook.
+
+	The same fields the goals room uses, posting to the same handler — see
+	`$lib/services/goal-actions`. The notebook is fixed rather than picked:
+	you are looking at it.
+-->
+<Modal bind:open={composingGoal} title={t('notebookDetail.newGoal')}>
+	<!-- Only ever opened from a notebook's own header, so there is one. -->
+	<form
+		id="notebook-goal-form"
+		method="post"
+		action="?/goalCreate"
+		use:enhance={() => {
+			return async ({ result, update }) => {
+				await update({ reset: false });
+				if (result.type !== 'success') return;
+				composingGoal = false;
+				goalTargets = [];
+				say(t('notebookDetail.goalAdded'));
+			};
+		}}
+	>
+		<GoalFields
+			bind:horizon={goalHorizon}
+			bind:start={goalStart}
+			bind:targets={goalTargets}
+			{areas}
+			notebooks={pickableNotebooks}
+			{workoutMeasures}
+			startingNotebook={notebook?.id ?? null}
+		/>
+	</form>
+
+	{#snippet footer()}
+		<button type="button" class="btn" onclick={() => (composingGoal = false)}>
+			{t('ui.cancel')}
+		</button>
+		<button type="submit" form="notebook-goal-form" class="btn btn-primary">
+			{t('goals.createGoal')}
+		</button>
+	{/snippet}
 </Modal>
 
 <style>

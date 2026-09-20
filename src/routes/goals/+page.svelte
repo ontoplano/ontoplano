@@ -19,6 +19,7 @@
 	import { armed } from '$lib/actions/armed';
 	import type { PageServerData, ActionData } from './$types';
 	import Field from '$lib/components/Field.svelte';
+	import GoalFields from '$lib/components/fields/GoalFields.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import NotebookField from '$lib/components/NotebookField.svelte';
@@ -413,182 +414,20 @@
 				<input type="hidden" name="id" value={editingId} />
 			{/if}
 
-			<FormGrid>
-				<Field label={t('goals.goal')} span={12} required>
-					<OneLine
-						name="heading"
-						placeholder={t('goals.eGTrainThreeTimesA')}
-						value={editing?.title ?? ''}
-						class="input"
-						required
-						autofocus
-					/>
-				</Field>
-
-				<Field label={t('goals.horizon')} span={4}>
-					<select name="horizon" bind:value={formHorizon} class="select">
-						{#each HORIZONS as h (h)}
-							<option value={h}>{t(HORIZON_LABELS[h])}</option>
-						{/each}
-					</select>
-				</Field>
-
-				<Field
-					label={t('goals.starts')}
-					span={4}
-					hint={formPeriod ? t('goals.countsFor', { period: formPeriod }) : ''}
-				>
-					<input
-						autocomplete="off"
-						name="startDate"
-						type="date"
-						bind:value={formStart}
-						class="input"
-					/>
-				</Field>
-
-				<Field label={t('goals.area')} span={4}>
-					<select name="areaId" class="select">
-						<option value="">{t('goals.none')}</option>
-						{#each data.areas as area (area.id)}
-							<option value={area.id} selected={editing?.areaId === area.id}>{area.name}</option>
-						{/each}
-					</select>
-				</Field>
-
-				<NotebookField
-					notebooks={data.notebooks}
-					value={editing?.notebookId ?? startingNotebook}
-					span={4}
-				/>
-
-				<!--
-					What the goal is measured by, one row per thing. Several of them is
-					the ordinary case for a big goal — three gigs played and five songs
-					recorded — and each keeps its own number.
-				-->
-				<div class="col-span-12">
-					<span class="eyebrow text-gray-600">{t('goals.measuredBy')}</span>
-					<div class="mt-1 space-y-2">
-						{#each formTargets as target, i (i)}
-							<div class="flex items-center gap-2">
-								<input type="hidden" name="targetId" value={target.id ?? ''} />
-								<!--
-									Counted or measured, before the number itself.
-
-									It decides what the goal's own card offers later — a plus
-									and a minus, or a field — so it sits where the number is
-									being decided rather than somewhere in a settings screen.
-								-->
-								<label class="shrink-0">
-									<span class="sr-only">{t('goals.whatKindOfNumber')}</span>
-									<select
-										name="targetWhole"
-										bind:value={target.whole}
-										class="select w-16 text-center text-base"
-										title={NUMBER_KINDS.find((k) => k.whole === target.whole)?.label}
-									>
-										{#each NUMBER_KINDS as kind (kind.symbol)}
-											<option value={kind.whole} title={kind.label}>{kind.symbol}</option>
-										{/each}
-									</select>
-								</label>
-								<NumberBox
-									autocomplete="off"
-									name="targetValue"
-									min="0"
-									step={target.whole ? COUNT_STEP : 'any'}
-									inputmode={target.whole ? 'numeric' : 'decimal'}
-									placeholder="3"
-									bind:value={target.value}
-									class="w-24 shrink-0"
-								/>
-								<input
-									autocomplete="off"
-									name="targetUnit"
-									list="goal-units"
-									placeholder={t('goals.booksKmGigs')}
-									bind:value={target.unit}
-									class="input min-w-0 flex-1"
-								/>
-								<button
-									type="button"
-									class="icon-btn icon-btn-danger"
-									title={t('goals.removeMeasure')}
-									aria-label={t('goals.removeMeasure')}
-									onclick={() => (formTargets = formTargets.filter((_, at) => at !== i))}
-								>
-									<Icon name="trash" />
-								</button>
-							</div>
-							<!--
-								Counted from the workouts, or kept by hand.
-
-								Only where there is something to count: an account that has
-								never logged a measure gets no picker for one, rather than an
-								empty dropdown saying nothing. Choosing one takes the unit
-								from the register too, because "km" was already typed there
-								and two spellings of one unit are two units.
-							-->
-							{#if data.workoutMeasures.length > 0}
-								<label class="mt-1 flex items-center gap-2 pl-1">
-									<span class="eyebrow shrink-0 text-gray-500">{t('goals.countedFrom')}</span>
-									<select
-										name="targetMeasure"
-										class="select min-w-0 flex-1 py-1 text-xs"
-										bind:value={target.measureActivity}
-										onchange={() => {
-											const found = data.workoutMeasures.find(
-												(m: { activity: string; unit: string }) =>
-													m.activity === target.measureActivity
-											);
-											if (found?.unit) target.unit = found.unit;
-										}}
-									>
-										<option value="">{t('goals.iKeepThisOneMyself')}</option>
-										{#each data.workoutMeasures as measure (measure.activity + measure.unit)}
-											<option value={measure.activity}>
-												{measure.activity}{measure.unit ? ` (${measure.unit})` : ''}
-											</option>
-										{/each}
-									</select>
-								</label>
-							{/if}
-						{/each}
-					</div>
-					<datalist id="goal-units">
-						{#each knownUnits as unit (unit)}
-							<option value={unit}></option>
-						{/each}
-					</datalist>
-					<button
-						type="button"
-						class="btn btn-sm mt-2"
-						onclick={() => (formTargets = [...formTargets, blankTarget()])}
-					>
-						<Icon name="plus" />
-						{t('goals.addMeasure')}
-					</button>
-					<span class="mt-1 block text-xs text-gray-500">
-						{t('goals.optionalLeaveItEmptyFor')}
-					</span>
-				</div>
-
-				{#if !editingId}
-					<Field label={t('goals.partOf')} span={4}>
-						<select name="parentId" class="select">
-							<option value="">{t('goals.standalone')}</option>
-							{#each parentOptions as g (g.id)}
-								<option value={g.id}>{t(HORIZON_LABELS[g.horizon])}: {g.title}</option>
-							{/each}
-						</select>
-					</Field>
-				{/if}
-
-				<Field label={t('ui.notes')} span={12}>
-					<textarea name="notes" rows="3" class="textarea" value={editing?.notes ?? ''}></textarea>
-				</Field>
-			</FormGrid>
+			<GoalFields
+				{editing}
+				{editingId}
+				bind:horizon={formHorizon}
+				bind:start={formStart}
+				bind:targets={formTargets}
+				period={formPeriod}
+				areas={data.areas}
+				notebooks={data.notebooks}
+				workoutMeasures={data.workoutMeasures}
+				{parentOptions}
+				{knownUnits}
+				{startingNotebook}
+			/>
 		</form>
 
 		{#snippet footer()}

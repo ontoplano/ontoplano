@@ -1506,6 +1506,7 @@ export const messages: Catalogue = {
 	'notebookDetail.deleteThisNote': 'Diese Notiz löschen',
 	'notebookDetail.descendingPressForAscending': 'Absteigend — für aufsteigend drücken',
 	'notebookDetail.editThisNote': 'Diese Notiz bearbeiten',
+	'notebookDetail.goalAdded': 'Ziel erstellt',
 	'notebookDetail.hideArchived': 'Archivierte ausblenden',
 	'notebookDetail.keepThisAtTheTop': 'Oben behalten',
 	'notebookDetail.madeTodos': '{count} Aufgaben erstellt',

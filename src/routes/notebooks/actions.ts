@@ -1,3 +1,4 @@
+import { goalHandlers } from '$lib/services/goal-actions';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from '@sveltejs/kit';
 import { buildCtx } from '$lib/services/ctx';
@@ -268,6 +269,8 @@ export const notebookActions = {
 	 * Prefixed because the plain names above already belong to the notebook —
 	 * see `$lib/services/todo-actions` for the names the markup posts to.
 	 */
+	// A goal written from inside a notebook, the way a task already was.
+	goalCreate: goalHandlers.create,
 	todoCreate: todoHandlers.create,
 	todoUpdate: todoHandlers.update,
 	todoStatus: todoHandlers.setStatus,

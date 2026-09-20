@@ -1483,6 +1483,7 @@ export const messages: Catalogue = {
 	'notebookDetail.deleteThisNote': 'Apagar esta nota',
 	'notebookDetail.descendingPressForAscending': 'Decrescente — toque para crescente',
 	'notebookDetail.editThisNote': 'Editar esta nota',
+	'notebookDetail.goalAdded': 'Meta criada',
 	'notebookDetail.hideArchived': 'Esconder arquivadas',
 	'notebookDetail.keepThisAtTheTop': 'Manter esta no topo',
 	'notebookDetail.madeTodos': '{count} tarefas criadas',

@@ -1462,6 +1462,7 @@ export const messages: Catalogue = {
 	'notebookDetail.deleteThisNote': 'Delete this note',
 	'notebookDetail.descendingPressForAscending': 'Descending — press for ascending',
 	'notebookDetail.editThisNote': 'Edit this note',
+	'notebookDetail.goalAdded': 'Goal added',
 	'notebookDetail.hideArchived': 'Hide archived',
 	'notebookDetail.keepThisAtTheTop': 'Keep this at the top',
 	'notebookDetail.madeTodos': 'Made {count} tasks',

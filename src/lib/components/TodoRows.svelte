@@ -64,6 +64,7 @@
 		 * not to whichever todo a cursor happens to sit on.
 		 */
 		shortcutRoom = null,
+		claimsRoomBar,
 		listTour = null,
 		newTour = null,
 		/**
@@ -85,7 +86,21 @@
 		goalLinks?: Record<number, GoalBacklink[]>;
 		error?: string | undefined;
 		notebookId?: number | null;
+		/**
+		 * Which screen's bindings these rows answer to — `/tasks/todo` and the
+		 * like. Null leaves the keyboard alone entirely.
+		 */
 		shortcutRoom?: string | null;
+		/**
+		 * Whether this list is the room, and so owns the bar's one verb.
+		 *
+		 * Separate from `shortcutRoom` because the two are different questions
+		 * and were one prop: a notebook's Tasks tab wants j/k on its rows and
+		 * does *not* want "New to-do" in the room bar, where "New notebook"
+		 * already sits and the tab header already offers "New task". Turning
+		 * the keys on turned a second, duplicate verb on with them.
+		 */
+		claimsRoomBar?: boolean;
 		listTour?: string | null;
 		newTour?: string | null;
 		openNew?: (() => void) | undefined;
@@ -494,7 +509,7 @@
 	// Read once, on purpose: which screen this list belongs to is fixed for the
 	// life of the component, and the bar is claimed at init or not at all.
 	// svelte-ignore state_referenced_locally
-	if (shortcutRoom)
+	if (shortcutRoom && (claimsRoomBar ?? true))
 		setRoomAction(() => ({
 			label: t('app.newToDo'),
 			run: startNew,

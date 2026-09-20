@@ -1312,6 +1312,7 @@ export type MessageKey =
 	| 'notebookDetail.deleteThisNote'
 	| 'notebookDetail.descendingPressForAscending'
 	| 'notebookDetail.editThisNote'
+	| 'notebookDetail.goalAdded'
 	| 'notebookDetail.hideArchived'
 	| 'notebookDetail.keepThisAtTheTop'
 	| 'notebookDetail.madeTodos'

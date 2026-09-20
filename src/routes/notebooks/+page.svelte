@@ -354,6 +354,8 @@
 						allPeople={data.allPeople}
 						categories={data.categories}
 						pickableNotebooks={data.pickableNotebooks}
+						areas={data.areas}
+						workoutMeasures={data.workoutMeasures}
 						bind:composing
 						bind:newAction
 					/>

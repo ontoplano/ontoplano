@@ -20,6 +20,10 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **A goal is written where you are.** "New goal" on a notebook used to throw
+  you out to the Goals room, while "New task" beside it stayed put — the same
+  press behaving two different ways depending on which tab was showing. It
+  opens the goals room's own form, in the notebook, filed under it.
 - **Write and Preview are the same height, so nothing below them moves.**
   Choosing Preview on a short note used to pull the picture row, the tags and
   the footer up the screen, and choosing Write pushed them back down.

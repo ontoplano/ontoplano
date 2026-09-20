@@ -1,3 +1,5 @@
+import { measuredActivities } from '$lib/services/workouts';
+import { listAreas } from '$lib/services/goals';
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
 import { listCategories } from '$lib/services/activities';
@@ -49,6 +51,13 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 		pickableNotebooks: pickableNotebooks(ctx),
 		// For the People field on a note, which completes rather than duplicates.
 		allPeople: listPeople(ctx),
+		// The Goals tab writes a goal in place now, and the form offers the
+		// same three pickers the goals room does.
+		areas: listAreas(ctx),
+		workoutMeasures: measuredActivities(ctx).map((m) => ({
+			activity: m.activity,
+			unit: m.unit
+		})),
 		// Where this reader dragged the divider between the list and the panel.
 		listPanelRem: getPanelWidth(ctx.userId, NOTEBOOK_PANEL_WIDTH_KEY)
 	};
