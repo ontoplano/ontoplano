@@ -1668,12 +1668,117 @@ export const messages: Catalogue = {
 		'Cada bloque del plan avisa cuando llega su hora. Sin esto, solo avisan los bloques a los que diste un tiempo de anticipación.',
 	'notify.mondayMorningWhatLastWeek':
 		'Lunes por la mañana: lo que realmente fue la semana pasada, con la página que la cierra a un toque de distancia.',
+	'notify.noun.activity': { one: '{count} actividad', other: '{count} actividades' },
+	'notify.noun.alarm': { one: '{count} alarma', other: '{count} alarmas' },
+	'notify.noun.beforeBlock': {
+		one: '{count} recordatorio de bloque',
+		other: '{count} recordatorios de bloque'
+	},
+	'notify.noun.bill': { one: '{count} factura', other: '{count} facturas' },
+	'notify.noun.block': { one: '{count} bloque', other: '{count} bloques' },
+	'notify.noun.bought': { one: '{count} compra', other: '{count} compras' },
+	'notify.noun.dataPoint': { one: '{count} dato', other: '{count} datos' },
+	'notify.noun.entry': { one: '{count} entrada', other: '{count} entradas' },
+	'notify.noun.fromGoal': { one: '{count} vínculo de meta', other: '{count} vínculos de meta' },
+	'notify.noun.goal': { one: '{count} meta', other: '{count} metas' },
+	'notify.noun.goalArea': { one: '{count} área de meta', other: '{count} áreas de meta' },
+	'notify.noun.goalProgress': {
+		one: '{count} progreso de meta',
+		other: '{count} progreso de metas'
+	},
+	'notify.noun.goalTarget': { one: '{count} objetivo de meta', other: '{count} objetivos de meta' },
+	'notify.noun.habit': { one: '{count} hábito', other: '{count} hábitos' },
+	'notify.noun.idea': { one: '{count} idea', other: '{count} ideas' },
+	'notify.noun.inventoryCategory': {
+		one: '{count} categoría de inventario',
+		other: '{count} categorías de inventario'
+	},
+	'notify.noun.inventoryItem': {
+		one: '{count} artículo de inventario',
+		other: '{count} artículos de inventario'
+	},
+	'notify.noun.item': { one: '{count} artículo', other: '{count} artículos' },
+	'notify.noun.itemAttributes': {
+		one: '{count} campo de artículo',
+		other: '{count} campos de artículo'
+	},
+	'notify.noun.ledger': { one: '{count} apunte', other: '{count} apuntes' },
+	'notify.noun.location': { one: '{count} ubicación', other: '{count} ubicaciones' },
+	'notify.noun.movement': { one: '{count} movimiento', other: '{count} movimientos' },
+	'notify.noun.note': { one: '{count} nota', other: '{count} notas' },
+	'notify.noun.notebook': { one: '{count} cuaderno', other: '{count} cuadernos' },
+	'notify.noun.person': { one: '{count} persona', other: '{count} personas' },
+	'notify.noun.price': { one: '{count} precio', other: '{count} precios' },
+	'notify.noun.recipe': { one: '{count} receta', other: '{count} recetas' },
+	'notify.noun.reminder': { one: '{count} recordatorio', other: '{count} recordatorios' },
+	'notify.noun.repeatingBlock': {
+		one: '{count} bloque repetido',
+		other: '{count} bloques repetidos'
+	},
+	'notify.noun.reviewNote': {
+		one: '{count} nota de la revisión',
+		other: '{count} notas de la revisión'
+	},
+	'notify.noun.sortRule': { one: '{count} regla de orden', other: '{count} reglas de orden' },
+	'notify.noun.toGoal': { one: '{count} vínculo de meta', other: '{count} vínculos de meta' },
+	'notify.noun.todo': { one: '{count} tarea', other: '{count} tareas' },
+	'notify.noun.win': { one: '{count} logro', other: '{count} logros' },
+	'notify.noun.workout': { one: '{count} entrenamiento', other: '{count} entrenamientos' },
+	'notify.noun.workoutCategory': {
+		one: '{count} categoría de entrenamiento',
+		other: '{count} categorías de entrenamiento'
+	},
+	'notify.noun.workoutMeasures': {
+		one: '{count} medida de entrenamiento',
+		other: '{count} medidas de entrenamiento'
+	},
+	'notify.noun.workoutSession': { one: '{count} sesión', other: '{count} sesiones' },
 	'notify.onTheMorningForEverybody':
 		'Por la mañana, para todos los que en tu libreta de direcciones tienen una fecha marcada.',
 	'notify.onTheMorningTheWeek':
 		'La mañana en que cambia la semana, mientras la semana pasada todavía tiene bloques sin responder.',
+	'notify.others': { one: '{count} más', other: '{count} más' },
+	'notify.phrase': '{verb} {what}',
 	'notify.theDayOneWantsPaying':
 		'El día en que uno quiere pagarla, cada día que se mantenga sin pagar, y el día en que vence.',
+	'notify.titleMany': { one: '{who} cambió {count} cosa', other: '{who} cambió {count} cosas' },
+	'notify.titleOne': '{who} {verb} {what}',
+	'notify.verb.add': 'añadió',
+	'notify.verb.apply': 'aplicó',
+	'notify.verb.archive': 'archivó',
+	'notify.verb.cancel': 'canceló',
+	'notify.verb.change': 'cambió',
+	'notify.verb.close': 'cerró',
+	'notify.verb.cooked': 'cocinó',
+	'notify.verb.delete': 'eliminó',
+	'notify.verb.dismiss': 'descartó',
+	'notify.verb.drop': 'descartó',
+	'notify.verb.edit': 'editó',
+	'notify.verb.favorite': 'destacó',
+	'notify.verb.file': 'archivó en',
+	'notify.verb.finish': 'terminó',
+	'notify.verb.link': 'vinculó',
+	'notify.verb.log': 'registró',
+	'notify.verb.madeTodosOutOf': 'creó tareas a partir de',
+	'notify.verb.pay': 'pagó',
+	'notify.verb.pin': 'fijó',
+	'notify.verb.put': 'guardó',
+	'notify.verb.record': 'grabó',
+	'notify.verb.remind': 'creó un recordatorio en',
+	'notify.verb.remove': 'quitó',
+	'notify.verb.reopen': 'reabrió',
+	'notify.verb.schedule': 'programó',
+	'notify.verb.set': 'estableció',
+	'notify.verb.share': 'compartió',
+	'notify.verb.tag': 'etiquetó',
+	'notify.verb.tick': 'marcó',
+	'notify.verb.unarchive': 'desarchivó',
+	'notify.verb.unlink': 'desvinculó',
+	'notify.verb.unpay': 'marcó como no pagado',
+	'notify.verb.unpin': 'soltó',
+	'notify.verb.unschedule': 'desprogramó',
+	'notify.verb.untick': 'desmarcó',
+	'notify.verb.write': 'escribió',
 	'notify.whatTheDayTurnedOut': 'Cómo resultó el día, a la hora que elijas.',
 	'offline.noConnection': 'Sin conexión',
 	'offline.offlineOntoplano': 'Sin conexión · Ontoplano',

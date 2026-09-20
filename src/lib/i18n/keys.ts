@@ -1472,9 +1472,87 @@ export type MessageKey =
 	| 'notifications.unread'
 	| 'notify.everyBlockOnThePlan'
 	| 'notify.mondayMorningWhatLastWeek'
+	| 'notify.noun.activity'
+	| 'notify.noun.alarm'
+	| 'notify.noun.beforeBlock'
+	| 'notify.noun.bill'
+	| 'notify.noun.block'
+	| 'notify.noun.bought'
+	| 'notify.noun.dataPoint'
+	| 'notify.noun.entry'
+	| 'notify.noun.fromGoal'
+	| 'notify.noun.goal'
+	| 'notify.noun.goalArea'
+	| 'notify.noun.goalProgress'
+	| 'notify.noun.goalTarget'
+	| 'notify.noun.habit'
+	| 'notify.noun.idea'
+	| 'notify.noun.inventoryCategory'
+	| 'notify.noun.inventoryItem'
+	| 'notify.noun.item'
+	| 'notify.noun.itemAttributes'
+	| 'notify.noun.ledger'
+	| 'notify.noun.location'
+	| 'notify.noun.movement'
+	| 'notify.noun.note'
+	| 'notify.noun.notebook'
+	| 'notify.noun.person'
+	| 'notify.noun.price'
+	| 'notify.noun.recipe'
+	| 'notify.noun.reminder'
+	| 'notify.noun.repeatingBlock'
+	| 'notify.noun.reviewNote'
+	| 'notify.noun.sortRule'
+	| 'notify.noun.toGoal'
+	| 'notify.noun.todo'
+	| 'notify.noun.win'
+	| 'notify.noun.workout'
+	| 'notify.noun.workoutCategory'
+	| 'notify.noun.workoutMeasures'
+	| 'notify.noun.workoutSession'
 	| 'notify.onTheMorningForEverybody'
 	| 'notify.onTheMorningTheWeek'
+	| 'notify.others'
+	| 'notify.phrase'
 	| 'notify.theDayOneWantsPaying'
+	| 'notify.titleMany'
+	| 'notify.titleOne'
+	| 'notify.verb.add'
+	| 'notify.verb.apply'
+	| 'notify.verb.archive'
+	| 'notify.verb.cancel'
+	| 'notify.verb.change'
+	| 'notify.verb.close'
+	| 'notify.verb.cooked'
+	| 'notify.verb.delete'
+	| 'notify.verb.dismiss'
+	| 'notify.verb.drop'
+	| 'notify.verb.edit'
+	| 'notify.verb.favorite'
+	| 'notify.verb.file'
+	| 'notify.verb.finish'
+	| 'notify.verb.link'
+	| 'notify.verb.log'
+	| 'notify.verb.madeTodosOutOf'
+	| 'notify.verb.pay'
+	| 'notify.verb.pin'
+	| 'notify.verb.put'
+	| 'notify.verb.record'
+	| 'notify.verb.remind'
+	| 'notify.verb.remove'
+	| 'notify.verb.reopen'
+	| 'notify.verb.schedule'
+	| 'notify.verb.set'
+	| 'notify.verb.share'
+	| 'notify.verb.tag'
+	| 'notify.verb.tick'
+	| 'notify.verb.unarchive'
+	| 'notify.verb.unlink'
+	| 'notify.verb.unpay'
+	| 'notify.verb.unpin'
+	| 'notify.verb.unschedule'
+	| 'notify.verb.untick'
+	| 'notify.verb.write'
 	| 'notify.whatTheDayTurnedOut'
 	| 'offline.noConnection'
 	| 'offline.offlineOntoplano'
@@ -3167,6 +3245,48 @@ export interface MessageValuesFor {
 	'notebooks.whatIsInside': { show: string | number; title: string | number };
 	'notifications.open': { count: number };
 	'notifications.unread': { count: number };
+	'notify.noun.activity': { count: number };
+	'notify.noun.alarm': { count: number };
+	'notify.noun.beforeBlock': { count: number };
+	'notify.noun.bill': { count: number };
+	'notify.noun.block': { count: number };
+	'notify.noun.bought': { count: number };
+	'notify.noun.dataPoint': { count: number };
+	'notify.noun.entry': { count: number };
+	'notify.noun.fromGoal': { count: number };
+	'notify.noun.goal': { count: number };
+	'notify.noun.goalArea': { count: number };
+	'notify.noun.goalProgress': { count: number };
+	'notify.noun.goalTarget': { count: number };
+	'notify.noun.habit': { count: number };
+	'notify.noun.idea': { count: number };
+	'notify.noun.inventoryCategory': { count: number };
+	'notify.noun.inventoryItem': { count: number };
+	'notify.noun.item': { count: number };
+	'notify.noun.itemAttributes': { count: number };
+	'notify.noun.ledger': { count: number };
+	'notify.noun.location': { count: number };
+	'notify.noun.movement': { count: number };
+	'notify.noun.note': { count: number };
+	'notify.noun.notebook': { count: number };
+	'notify.noun.person': { count: number };
+	'notify.noun.price': { count: number };
+	'notify.noun.recipe': { count: number };
+	'notify.noun.reminder': { count: number };
+	'notify.noun.repeatingBlock': { count: number };
+	'notify.noun.reviewNote': { count: number };
+	'notify.noun.sortRule': { count: number };
+	'notify.noun.toGoal': { count: number };
+	'notify.noun.todo': { count: number };
+	'notify.noun.win': { count: number };
+	'notify.noun.workout': { count: number };
+	'notify.noun.workoutCategory': { count: number };
+	'notify.noun.workoutMeasures': { count: number };
+	'notify.noun.workoutSession': { count: number };
+	'notify.others': { count: number };
+	'notify.phrase': { verb: string | number; what: string | number };
+	'notify.titleMany': { count: number; who: string | number };
+	'notify.titleOne': { verb: string | number; what: string | number; who: string | number };
 	'pictures.hint': { kilobytes: string | number };
 	'ratingPicker.leaveUnanswered': { rating: string | number };
 	'ratings.labelValueOf5': { label: string | number; value: string | number };

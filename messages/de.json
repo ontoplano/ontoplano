@@ -1493,9 +1493,207 @@
 	"notifications.unread": "{count} ungelesen",
 	"notify.everyBlockOnThePlan": "Jeder Block im Plan meldet sich, wenn es so weit ist. Ohne das melden sich nur die Blöcke, denen Sie einen Vorlauf gegeben haben.",
 	"notify.mondayMorningWhatLastWeek": "Montagmorgen: wie die letzte Woche wirklich war, mit der Seite, die sie abschließt, einen Klick entfernt.",
+	"notify.noun.activity": {
+		"one": "{count} Aktivität",
+		"other": "{count} Aktivitäten"
+	},
+	"notify.noun.alarm": {
+		"one": "{count} Wecker",
+		"other": "{count} Wecker"
+	},
+	"notify.noun.beforeBlock": {
+		"one": "{count} Blockhinweis",
+		"other": "{count} Blockhinweise"
+	},
+	"notify.noun.bill": {
+		"one": "{count} Rechnung",
+		"other": "{count} Rechnungen"
+	},
+	"notify.noun.block": {
+		"one": "{count} Block",
+		"other": "{count} Blöcke"
+	},
+	"notify.noun.bought": {
+		"one": "{count} Einkauf",
+		"other": "{count} Einkäufe"
+	},
+	"notify.noun.dataPoint": {
+		"one": "{count} Datenpunkt",
+		"other": "{count} Datenpunkte"
+	},
+	"notify.noun.entry": {
+		"one": "{count} Eintrag",
+		"other": "{count} Einträge"
+	},
+	"notify.noun.fromGoal": {
+		"one": "{count} Zielverknüpfung",
+		"other": "{count} Zielverknüpfungen"
+	},
+	"notify.noun.goal": {
+		"one": "{count} Ziel",
+		"other": "{count} Ziele"
+	},
+	"notify.noun.goalArea": {
+		"one": "{count} Zielbereich",
+		"other": "{count} Zielbereiche"
+	},
+	"notify.noun.goalProgress": {
+		"one": "{count} Zielfortschritt",
+		"other": "{count} Zielfortschritt"
+	},
+	"notify.noun.goalTarget": {
+		"one": "{count} Zielvorgabe",
+		"other": "{count} Zielvorgaben"
+	},
+	"notify.noun.habit": {
+		"one": "{count} Gewohnheit",
+		"other": "{count} Gewohnheiten"
+	},
+	"notify.noun.idea": {
+		"one": "{count} Idee",
+		"other": "{count} Ideen"
+	},
+	"notify.noun.inventoryCategory": {
+		"one": "{count} Bestandskategorie",
+		"other": "{count} Bestandskategorien"
+	},
+	"notify.noun.inventoryItem": {
+		"one": "{count} Bestandsartikel",
+		"other": "{count} Bestandsartikel"
+	},
+	"notify.noun.item": {
+		"one": "{count} Artikel",
+		"other": "{count} Artikel"
+	},
+	"notify.noun.itemAttributes": {
+		"one": "{count} Artikelfeld",
+		"other": "{count} Artikelfelder"
+	},
+	"notify.noun.ledger": {
+		"one": "{count} Buchung",
+		"other": "{count} Buchungen"
+	},
+	"notify.noun.location": {
+		"one": "{count} Ort",
+		"other": "{count} Orte"
+	},
+	"notify.noun.movement": {
+		"one": "{count} Bewegung",
+		"other": "{count} Bewegungen"
+	},
+	"notify.noun.note": {
+		"one": "{count} Notiz",
+		"other": "{count} Notizen"
+	},
+	"notify.noun.notebook": {
+		"one": "{count} Notizbuch",
+		"other": "{count} Notizbücher"
+	},
+	"notify.noun.person": {
+		"one": "{count} Person",
+		"other": "{count} Personen"
+	},
+	"notify.noun.price": {
+		"one": "{count} Preis",
+		"other": "{count} Preise"
+	},
+	"notify.noun.recipe": {
+		"one": "{count} Rezept",
+		"other": "{count} Rezepte"
+	},
+	"notify.noun.reminder": {
+		"one": "{count} Hinweis",
+		"other": "{count} Hinweise"
+	},
+	"notify.noun.repeatingBlock": {
+		"one": "{count} wiederkehrender Block",
+		"other": "{count} wiederkehrende Blöcke"
+	},
+	"notify.noun.reviewNote": {
+		"one": "{count} Rückblicknotiz",
+		"other": "{count} Rückblicknotizen"
+	},
+	"notify.noun.sortRule": {
+		"one": "{count} Sortierregel",
+		"other": "{count} Sortierregeln"
+	},
+	"notify.noun.toGoal": {
+		"one": "{count} Zielverknüpfung",
+		"other": "{count} Zielverknüpfungen"
+	},
+	"notify.noun.todo": {
+		"one": "{count} Aufgabe",
+		"other": "{count} Aufgaben"
+	},
+	"notify.noun.win": {
+		"one": "{count} Erfolg",
+		"other": "{count} Erfolge"
+	},
+	"notify.noun.workout": {
+		"one": "{count} Training",
+		"other": "{count} Trainings"
+	},
+	"notify.noun.workoutCategory": {
+		"one": "{count} Trainingskategorie",
+		"other": "{count} Trainingskategorien"
+	},
+	"notify.noun.workoutMeasures": {
+		"one": "{count} Trainingsmaß",
+		"other": "{count} Trainingsmaße"
+	},
+	"notify.noun.workoutSession": {
+		"one": "{count} Einheit",
+		"other": "{count} Einheiten"
+	},
 	"notify.onTheMorningForEverybody": "Am Morgen, für alle in Ihrem Adressbuch mit einem Datum.",
 	"notify.onTheMorningTheWeek": "Am Morgen, wenn die Woche wechselt, solange die letzte Woche noch unbeantwortete Blöcke hat.",
+	"notify.others": {
+		"one": "{count} weitere",
+		"other": "{count} weitere"
+	},
+	"notify.phrase": "{what} {verb}",
 	"notify.theDayOneWantsPaying": "Der Tag, an dem eine Rechnung bezahlt werden soll, jeder Tag, den sie unbezahlt bleibt, und ihr Fälligkeitstag.",
+	"notify.titleMany": {
+		"one": "{who} hat {count} Sache geändert",
+		"other": "{who} hat {count} Dinge geändert"
+	},
+	"notify.titleOne": "{who}: {what} {verb}",
+	"notify.verb.add": "hinzugefügt",
+	"notify.verb.apply": "angewendet",
+	"notify.verb.archive": "archiviert",
+	"notify.verb.cancel": "abgesagt",
+	"notify.verb.change": "geändert",
+	"notify.verb.close": "geschlossen",
+	"notify.verb.cooked": "gekocht",
+	"notify.verb.delete": "gelöscht",
+	"notify.verb.dismiss": "verworfen",
+	"notify.verb.drop": "fallen gelassen",
+	"notify.verb.edit": "bearbeitet",
+	"notify.verb.favorite": "markiert",
+	"notify.verb.file": "abgelegt",
+	"notify.verb.finish": "abgeschlossen",
+	"notify.verb.link": "verknüpft",
+	"notify.verb.log": "erfasst",
+	"notify.verb.madeTodosOutOf": "Aufgaben gemacht aus",
+	"notify.verb.pay": "bezahlt",
+	"notify.verb.pin": "angeheftet",
+	"notify.verb.put": "weggelegt",
+	"notify.verb.record": "aufgenommen",
+	"notify.verb.remind": "einen Hinweis gesetzt auf",
+	"notify.verb.remove": "entfernt",
+	"notify.verb.reopen": "wieder geöffnet",
+	"notify.verb.schedule": "geplant",
+	"notify.verb.set": "gesetzt",
+	"notify.verb.share": "geteilt",
+	"notify.verb.tag": "beschriftet",
+	"notify.verb.tick": "abgehakt",
+	"notify.verb.unarchive": "zurückgeholt",
+	"notify.verb.unlink": "getrennt",
+	"notify.verb.unpay": "als unbezahlt markiert",
+	"notify.verb.unpin": "losgelöst",
+	"notify.verb.unschedule": "abgesetzt",
+	"notify.verb.untick": "abgewählt",
+	"notify.verb.write": "geschrieben",
 	"notify.whatTheDayTurnedOut": "Wie der Tag tatsächlich war, zu einer Zeit, die Sie wählen.",
 	"offline.noConnection": "Keine Verbindung",
 	"offline.offlineOntoplano": "Offline · Ontoplano",

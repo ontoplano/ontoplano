@@ -54,6 +54,7 @@
 	import { APP_UPDATE_HUSH_KEY } from '$lib/platform';
 	import { startMarkSpin, stopMarkSpin } from '$lib/mark-spin';
 	import { busy, whileBusy } from '$lib/busy.svelte';
+	import { scrollToHash } from '$lib/scroll-to-hash';
 	import { smartNumberFields } from '$lib/number-fields';
 	import type { Snippet } from 'svelte';
 
@@ -732,6 +733,19 @@
 		}
 		const timer = setTimeout(() => (givenUp = true), GIVE_UP_MS);
 		return () => clearTimeout(timer);
+	});
+
+	/*
+	 * Arriving at `#something` puts that something on screen.
+	 *
+	 * The browser does it for the window and this app does not scroll the
+	 * window — see `$lib/scroll-to-hash`. Keyed on the whole URL so following
+	 * a second link to the same page with a different hash moves again.
+	 */
+	$effect(() => {
+		const hash = page.url.hash;
+		if (!hash) return;
+		return scrollToHash(hash);
 	});
 
 	/*

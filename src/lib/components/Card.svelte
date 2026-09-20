@@ -22,6 +22,11 @@
 		 */
 		title = '',
 		description = '',
+		/**
+		 * A name for the section, so a link or a notification can point at it
+		 * and land on it rather than at the top of the page.
+		 */
+		id = '',
 		/** The section's colour, drawn as a rule above the header. Omit for chrome. */
 		accent = '',
 		/** Body padding off, for a card whose content is a full-width list. */
@@ -33,10 +38,16 @@
 		description?: string;
 		accent?: string;
 		flush?: boolean;
+		id?: string;
 		actions?: Snippet;
 		/** Optional: a card can be its title alone — the family seat's is. */
 		children?: Snippet;
 	} = $props();
+
+	/*
+	 * A named card keeps a little air above it when something scrolls to it —
+	 * `scroll-margin-top`, so it does not sit flush under the header.
+	 */
 </script>
 
 <!--
@@ -51,8 +62,9 @@
 	and the space below belonged to nothing.
 -->
 <section
+	id={id || undefined}
 	class="flex flex-col border border-gray-200 bg-white shadow-card {accent ? 'card-accent' : ''}"
-	style={accent ? `--card-accent: ${accent}` : ''}
+	style="{accent ? `--card-accent: ${accent};` : ''}{id ? ' scroll-margin-top: 1rem;' : ''}"
 >
 	<!--
 		The actions wrap under the title when they do not fit, and only then.

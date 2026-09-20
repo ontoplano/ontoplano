@@ -639,6 +639,7 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 		together.
 	-->
 	<Card
+		id="assistant-activity"
 		title={t('settings.integrations.whatYourAssistantsDid')}
 		description={t('settings.integrations.everythingAnAssistantHasChanged')}
 		flush={data.assistantCalls.length > 0}

@@ -20,6 +20,16 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **What an assistant did is said in your own language.** The notification
+  panel's title was translated and every line under it was English, because
+  the sentence was assembled from tool names rather than from the catalogue.
+  Verbs, nouns and their plurals are written in all four languages now, and
+  the order of the words is a translator's to change — German puts the
+  participle last, which no amount of translating the words alone would fix.
+- **A notification about a burst of changes lands on the list of them.** It
+  took you to the integrations page and left you to find the section. Links
+  carrying a `#section` work generally now; the app scrolls its own panel, so
+  the browser's anchor handling had never applied.
 - **The help dock stays out of the way until it is wanted.** Four icons sat in
   the corner of every desktop screen. It is one question mark now, on a phone
   and a desktop alike, and pressing it opens the row — and closes it again.
