@@ -18,6 +18,13 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.181.4 — 2026-09-20
+
+- **Changing the language says it is working.** Every word on every screen is
+  reloaded, which takes a moment, and for that moment the app said nothing at
+  all — the bar across the top and the turning mark only ever answered a
+  navigation. They answer any wait now.
+
 ## 0.181.3 — 2026-09-20
 
 - **A card can be moved on a phone.** Dragging is a mouse gesture and does not

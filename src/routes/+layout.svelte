@@ -53,6 +53,7 @@
 	import { suppressAutofill } from '$lib/autofill';
 	import { APP_UPDATE_HUSH_KEY } from '$lib/platform';
 	import { startMarkSpin, stopMarkSpin } from '$lib/mark-spin';
+	import { busy, whileBusy } from '$lib/busy.svelte';
 	import { smartNumberFields } from '$lib/number-fields';
 	import type { Snippet } from 'svelte';
 
@@ -690,6 +691,11 @@
 	 * any real page here, so past it the honest thing is silence: the page under
 	 * it is the real page, and it is already on screen.
 	 */
+	/*
+	 * How long the indicator insists before it stops saying "working".
+	 * Far past any real wait here; past it the page on screen is the real one.
+	 */
+	const GIVE_UP_MS = 20_000;
 	let givenUp = $state(false);
 	/*
 	 * While the navigation is on, the menu itself turns.
@@ -720,12 +726,26 @@
 		if (givenUp) stopMarkSpin();
 	});
 	$effect(() => {
-		if (!navigating.to) {
+		if (!navigating.to && !busy()) {
 			givenUp = false;
 			return;
 		}
-		const timer = setTimeout(() => (givenUp = true), 20_000);
+		const timer = setTimeout(() => (givenUp = true), GIVE_UP_MS);
 		return () => clearTimeout(timer);
+	});
+
+	/*
+	 * A wait that is not a navigation turns the mark too.
+	 *
+	 * `beforeNavigate` and `afterNavigate` do this for navigations, and they
+	 * are the right hooks for those — a navigation is a press, and the turn
+	 * starts on the press rather than on the wait. Nothing announces the start
+	 * of an `invalidateAll()`, so here the wait itself is the signal.
+	 */
+	$effect(() => {
+		if (!busy()) return;
+		startMarkSpin([deskMark, barMark, barMarkGround], 0);
+		return () => void stopMarkSpin();
 	});
 
 	// Reads the keyboard on hydration; `Ctrl` until then, which is the
@@ -1299,7 +1319,7 @@
 			finished, and a screen of grey blocks reads as a broken app rather
 			than a slow one.
 		-->
-		{#if navigating.to && !givenUp}
+		{#if (navigating.to || busy()) && !givenUp}
 			<div class="nav-progress" role="status" aria-label={t('home.loading')}></div>
 		{/if}
 

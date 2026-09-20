@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
+	import { whileBusy } from '$lib/busy.svelte';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
 	import { isLocale, useT } from '$lib/i18n';
 	import { sectionLabel } from '$lib/sections';
@@ -1143,8 +1144,10 @@
 					if (isIsolatedBuild()) rememberLocaleOnThisDevice(chosen);
 				}
 				// Every word on every screen changes, including the ones the shell
-				// drew — so this one reloads rather than patching the page.
-				return async () => invalidateAll();
+				// drew — so this one reloads rather than patching the page. It is
+				// the slowest thing here that is not a navigation, so it says so
+				// with the bar and the turning mark a navigation would have used.
+				return async () => void whileBusy(invalidateAll());
 			}}
 			class="flex flex-wrap items-center gap-2"
 		>
