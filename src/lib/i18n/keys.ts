@@ -2191,6 +2191,8 @@ export type MessageKey =
 	| 'settings.language.hint'
 	| 'settings.language.saved'
 	| 'settings.language.untranslated'
+	| 'settings.locationAndTime.heading'
+	| 'settings.locationAndTime.hint'
 	| 'settings.menu.colourFor'
 	| 'settings.menu.follows'
 	| 'settings.menu.followsShort'

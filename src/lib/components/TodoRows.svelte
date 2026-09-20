@@ -681,6 +681,37 @@
 		</form>
 
 		{#snippet footer()}
+			<!--
+				Delete sits away from the two safe buttons, at the far left.
+				
+				A task being edited is a task somebody may have decided against,
+				and closing the form to hunt the row's own delete is the long way
+				round. Not beside Save, though: the destructive one and the one
+				everybody presses should never be neighbours, and a press aimed at
+				Save that lands one button over must not be a deletion. Armed
+				first, like every other delete in the app.
+			-->
+			{#if editingId}
+				<form
+					method="post"
+					action={actions.remove}
+					class="mr-auto"
+					use:enhance={(event) => {
+						// The form goes as the row does: leaving it open over a task
+						// that is no longer there is the app arguing with itself.
+						const run = deferDelete(editingId!, editing?.title ?? '');
+						showForm = false;
+						editingId = null;
+						return run(event);
+					}}
+				>
+					<input type="hidden" name="id" value={editingId} />
+					<button type="submit" class="btn btn-danger" use:armed>
+						<Icon name="trash" />
+						{t('ui.delete')}
+					</button>
+				</form>
+			{/if}
 			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 			<button type="submit" form="todo-form" class="btn btn-primary">
 				{editingId ? t('ui.save') : t('todoRows.createTodo')}

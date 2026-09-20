@@ -2531,6 +2531,9 @@ export const messages: Catalogue = {
 		one: '{count} message is not written in this language yet, and shows in English.',
 		other: '{count} messages are not written in this language yet, and show in English.'
 	},
+	'settings.locationAndTime.heading': 'Location and time',
+	'settings.locationAndTime.hint':
+		'Where you are and how you read a clock. Everything else on this page reads differently once these are right.',
 	'settings.menu.colourFor': 'The colour for {room}',
 	'settings.menu.follows': 'Follows {room}',
 	'settings.menu.followsShort': "· {room}'s colour",

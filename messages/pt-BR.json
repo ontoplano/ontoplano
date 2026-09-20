@@ -2362,6 +2362,8 @@
 		"one": "{count} mensagem ainda não foi escrita neste idioma e aparece em inglês.",
 		"other": "{count} mensagens ainda não foram escritas neste idioma e aparecem em inglês."
 	},
+	"settings.locationAndTime.heading": "Local e hora",
+	"settings.locationAndTime.hint": "Onde você está e como você lê as horas. Todo o resto desta página muda depois que isto estiver certo.",
 	"settings.menu.colourFor": "A cor de {room}",
 	"settings.menu.follows": "Segue {room}",
 	"settings.menu.followsShort": "· a cor de {room}",

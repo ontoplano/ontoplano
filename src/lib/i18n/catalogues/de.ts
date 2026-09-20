@@ -2600,6 +2600,9 @@ export const messages: Catalogue = {
 		other:
 			'{count} Nachrichten sind in dieser Sprache noch nicht geschrieben und werden auf Englisch angezeigt.'
 	},
+	'settings.locationAndTime.heading': 'Ort und Zeit',
+	'settings.locationAndTime.hint':
+		'Wo du bist und wie du die Uhr liest. Alles andere auf dieser Seite liest sich anders, sobald das stimmt.',
 	'settings.menu.colourFor': 'Die Farbe für {room}',
 	'settings.menu.follows': 'Folgt {room}',
 	'settings.menu.followsShort': '· Farbe von {room}',
