@@ -316,16 +316,22 @@ const tagTodo = (id, names) => {
 	}
 };
 
-const diary = (seq, content, tags = [], forDate = null) => {
+/*
+ * `pinned` puts one at the top of its notebook, because a seeded instance
+ * that has never pinned anything does not show that a notebook can have a
+ * thing worth keeping above the rest of it.
+ */
+const diary = (seq, content, tags = [], forDate = null, extra = {}) => {
 	const existing = one('select id from diary_entries where user_id = ? and seq = ?', uid, seq);
 	const id =
 		existing?.id ??
 		run(
-			'insert into diary_entries (user_id, seq, content, for_date) values (?, ?, ?, ?)',
+			'insert into diary_entries (user_id, seq, content, for_date, pinned_at) values (?, ?, ?, ?, ?)',
 			uid,
 			seq,
 			content,
-			forDate
+			forDate,
+			extra.pinned ? stamp(dayOffset(-1)) : null
 		);
 	for (const name of tags) {
 		const tagId = tag(name);
@@ -462,8 +468,9 @@ const shoppingItem = (name, type, extra = {}) => {
 	const bought = qty >= Math.max(ideal, 1);
 	return run(
 		`insert into inventory_items
-		 (user_id, name, type, inventory_category_id, notes, qty, ideal_qty, bought, bought_at, snoozed)
-		 values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		 (user_id, name, type, inventory_category_id, notes, qty, ideal_qty, bought, bought_at, snoozed,
+		  attributes)
+		 values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		uid,
 		name,
 		type,
@@ -473,7 +480,15 @@ const shoppingItem = (name, type, extra = {}) => {
 		ideal,
 		bought ? 1 : 0,
 		bought ? stamp(dayOffset(-2)) : null,
-		extra.snoozed ? 1 : 0
+		extra.snoozed ? 1 : 0,
+		/*
+		 * Attributes, because a seeded instance is meant to show what the app
+		 * does and an item with none shows a list of bare names. The cable
+		 * drawer is the case the feature was asked for: a length, a material
+		 * and a speed that can be filtered and compared rather than four
+		 * labels that cannot.
+		 */
+		JSON.stringify(extra.attributes ?? {})
 	);
 };
 
@@ -963,10 +978,14 @@ linkGoal(yearGoal, { activityId: russian });
 
 // --- diary, ideas ----------------------------------------------------------------
 
-diary(1, 'Started using the planner properly. Blocked out the mornings for deep work.', [
-	'planning',
-	'work'
-]);
+diary(
+	1,
+	'Started using the planner properly. Blocked out the mornings for deep work.',
+	['planning', 'work'],
+	null,
+	// Pinned, so a seeded notebook shows that one note can be kept above the rest.
+	{ pinned: true }
+);
 diary(2, 'Gym twice this week with João. The evening slot works better than mornings.', ['health']);
 diary(
 	3,
@@ -1150,6 +1169,36 @@ shoppingItem('lightbulbs', 'replenish', {
 shoppingItem('a proper desk chair', 'someday', { notes: 'try one before buying' });
 shoppingItem('noise-cancelling headphones', 'someday');
 shoppingItem('cast iron pan', 'someday', { bought: true });
+
+/*
+ * A drawer of cables, which is the case attributes were asked for.
+ *
+ * The same key reused across several items is the whole point — three things
+ * with a `length`, two with a `material` — because that is what turns "every
+ * 2m cable" into a question the list can answer rather than four labels that
+ * cannot be compared.
+ *
+ * Lower case, like every other attribute this file writes. The app completes
+ * a key from the ones already used, and `Length` beside `length` is exactly
+ * the drift that completion exists to stop — a seeded instance that shows
+ * both teaches the wrong habit on the first screen somebody opens.
+ */
+const drawer = shoppingCategory('the drawer', 4);
+shoppingItem('USB-C to USB-C cable', 'keep', {
+	categoryId: drawer,
+	qty: 3,
+	attributes: { plug: 'USB-C', length: '2m', speed: '480Mbps', colour: 'white', material: 'silicone' }
+});
+shoppingItem('USB-A to USB-C cable', 'keep', {
+	categoryId: drawer,
+	qty: 2,
+	attributes: { plug: 'USB-A to USB-C', length: '1m', speed: '480Mbps', colour: 'black' }
+});
+shoppingItem('extension lead', 'keep', {
+	categoryId: drawer,
+	qty: 1,
+	attributes: { length: '5m', colour: 'white', sockets: '4', material: 'rubber' }
+});
 
 // --- bills (finance) --------------------------------------------------------------
 //
