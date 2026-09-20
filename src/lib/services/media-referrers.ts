@@ -82,6 +82,27 @@ export function pictureReferrers(ctx: Ctx, id: number): Referrer[] {
 		.all())
 		found.push({ kind: 'recipe', id: row.id, notebookId: null });
 
+	/*
+	 * An idea and a todo hold their pictures the same way a note does: as
+	 * markdown in a text column. These two were missing while the recording
+	 * side had them, so a picture pasted into a task was referred to by
+	 * nothing and therefore reachable by nobody — including the person who
+	 * pasted it, once they were reading over an assistant key.
+	 */
+	for (const row of db
+		.select({ id: ideas.id })
+		.from(ideas)
+		.where(and(eq(ideas.userId, ctx.userId), mentions(ideas.content, path)))
+		.all())
+		found.push({ kind: 'idea', id: row.id, notebookId: null });
+
+	for (const row of db
+		.select({ id: todoTasks.id, notebookId: todoTasks.notebookId })
+		.from(todoTasks)
+		.where(and(eq(todoTasks.userId, ctx.userId), mentions(todoTasks.notes, path)))
+		.all())
+		found.push({ kind: 'todo', id: row.id, notebookId: row.notebookId });
+
 	for (const row of db
 		.select({ id: albumMedia.albumId })
 		.from(albumMedia)

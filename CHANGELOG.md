@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **A picture in a task or an idea can be seen by an assistant that may read
+  it.** It was reachable by nobody at all: a file answers to whatever refers
+  to it, and tasks and ideas were not counted as referring to a picture — only
+  to a recording. Pasting a screenshot onto a task and then asking an
+  assistant about it got nothing.
 - **Times are written the way you read them.** A setting under Preferences —
   12-hour, 24-hour, or whatever your language does, which is the default and
   shows you what each one looks like before you choose. Every screen asks the
