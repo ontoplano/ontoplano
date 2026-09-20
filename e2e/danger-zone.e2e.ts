@@ -48,7 +48,11 @@ test('the danger zone empties this account and nothing else', async ({ page, bro
 	await visit(page, '/settings/account');
 	const zone = page.locator('.danger-zone');
 	await expect(zone).toBeVisible();
-	await expect(zone.getByRole('heading', { name: 'Danger zone' })).toBeVisible();
+	// Closed until it is opened: two Delete buttons should not be on screen
+	// every time somebody comes here to change a password.
+	await expect(zone).not.toHaveAttribute('open', /.*/);
+	await zone.locator('summary').click();
+	await expect(zone.getByText('Danger zone')).toBeVisible();
 
 	// The wrong word is refused, with the password right.
 	await zone.getByRole('button', { name: 'Delete everything' }).click();
@@ -71,6 +75,8 @@ test('the danger zone empties this account and nothing else', async ({ page, bro
 
 	// Both right: it goes.
 	await visit(page, '/settings/account');
+	// A fresh load closes it again, so it is opened again.
+	await page.locator('.danger-zone summary').click();
 	await page.locator('.danger-zone').getByRole('button', { name: 'Delete everything' }).click();
 	const go = page.getByRole('dialog');
 	await go.getByLabel(`Type “${EMPTY}” to confirm`).fill(EMPTY);
