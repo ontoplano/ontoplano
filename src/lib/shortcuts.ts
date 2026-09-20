@@ -30,6 +30,16 @@ export const BROWSE_SHORTCUTS: ShortcutBinding[] = [
 export const GLOBAL_SHORTCUTS: ShortcutBinding[] = [
 	{ key: 'J', action: 'global-next-page', description: 'shortcut.nextPage' },
 	{ key: 'K', action: 'global-prev-page', description: 'shortcut.previousPage' },
+	/*
+	 * The rooms are J and K; the places inside one are H and L.
+	 *
+	 * Lower-case h and l walk the tabs of whatever is on screen — see
+	 * `$lib/browse` — so the shifted pair walking the room's own places keeps
+	 * the same axis at the next level out: sideways is sideways, and the shift
+	 * is how far out you mean.
+	 */
+	{ key: 'L', action: 'global-next-place', description: 'shortcut.nextPlaceInRoom' },
+	{ key: 'H', action: 'global-prev-place', description: 'shortcut.previousPlaceInRoom' },
 	{ key: 'Escape', action: 'global-close', description: 'shortcut.closeForm' },
 	{ key: '?', action: 'global-help', description: 'shortcut.toggleShortcutHelp' }
 ];

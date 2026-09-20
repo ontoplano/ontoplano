@@ -55,6 +55,7 @@
 	import { startMarkSpin, stopMarkSpin } from '$lib/mark-spin';
 	import { busy, whileBusy } from '$lib/busy.svelte';
 	import { scrollToHash } from '$lib/scroll-to-hash';
+	import { stepWithinRoom } from '$lib/rooms';
 	import { smartNumberFields } from '$lib/number-fields';
 	import type { Snippet } from 'svelte';
 
@@ -373,7 +374,7 @@
 		return page.url.pathname === href;
 	}
 
-	import { GLOBAL_SHORTCUTS } from '$lib/shortcuts';
+	import { getAction, GLOBAL_SHORTCUTS } from '$lib/shortcuts';
 	import Icon from '$lib/components/Icon.svelte';
 	import { dev } from '$app/environment';
 	import { commandKey } from '$lib/platform';
@@ -402,6 +403,35 @@
 				// call sitting in the argument, which this cannot be.
 				// eslint-disable-next-line svelte/no-navigation-without-resolve
 				goto(nav[next].href);
+				break;
+			}
+			/*
+			 * Sideways within the room you are already in.
+			 *
+			 * Derived from the addresses rather than declared by each screen,
+			 * so a place added under an existing room answers to these without
+			 * anybody wiring it up — and a room with one place in it does
+			 * nothing, which is the right amount of nothing.
+			 *
+			 * A screen that has already claimed the key keeps it. The board
+			 * binds `H` and `L` to carrying a card into the next column, which
+			 * is a better use of them there than walking away from the board —
+			 * and a key that means two things at once means neither. Checked
+			 * rather than left to whichever handler ran first, because that
+			 * order is an accident of module loading.
+			 */
+			case 'global-next-place':
+			case 'global-prev-place': {
+				if (getAction(page.url.pathname, e.key)) break;
+				const to = stepWithinRoom(
+					page.url.pathname,
+					action === 'global-next-place' ? 1 : -1,
+					data.hiddenSections
+				);
+				if (!to) break;
+				e.preventDefault();
+				// eslint-disable-next-line svelte/no-navigation-without-resolve
+				goto(to);
 				break;
 			}
 		}

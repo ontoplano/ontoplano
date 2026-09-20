@@ -60,3 +60,54 @@ test('a note shows what its markdown will look like, without saving it', async (
 	if (await writeTab.isVisible().catch(() => false)) await writeTab.click();
 	await expect(box).toHaveValue('# A heading\n\n- one\n- two');
 });
+
+/**
+ * Sideways, at two levels.
+ *
+ * `J` and `K` walk the rooms. `H` and `L` walk the places inside the one you
+ * are in — derived from the addresses, so a place added later answers to them
+ * without anybody wiring it up.
+ */
+test('shift H and L walk the places inside the room you are in', async ({ page }) => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await register(page, testEmail('room-keys'));
+	await visit(page, '/tasks/todo');
+	await expect(page).toHaveURL(/\/tasks\/todo/, { timeout: 60_000 });
+	// Off any control the page may have focused, so the guard for "somebody is
+	// typing" does not swallow the key.
+	await page
+		.locator('h1, body')
+		.first()
+		.click({ position: { x: 5, y: 5 } });
+
+	await page.keyboard.press('Shift+L');
+	await expect(page).toHaveURL(/\/tasks\/(?!todo)/, { timeout: 30_000 });
+	const forward = new URL(page.url()).pathname;
+
+	await page.keyboard.press('Shift+H');
+	await expect(page).toHaveURL(/\/tasks\/todo/, { timeout: 30_000 });
+
+	// It moved somewhere inside Tasks, not out of it.
+	expect(forward.startsWith('/tasks/')).toBe(true);
+});
+
+test('a screen that already uses those keys keeps them', async ({ page }) => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await register(page, testEmail('board-keys'));
+
+	// The board binds H and L to carrying a card between columns, which is a
+	// better use of them there. Walking out of the board would take the keys
+	// away from the thing the board is for.
+	await visit(page, '/tasks/board');
+	await expect(page).toHaveURL(/\/tasks\/board/, { timeout: 60_000 });
+	await page
+		.locator('h1, body')
+		.first()
+		.click({ position: { x: 5, y: 5 } });
+
+	await page.keyboard.press('Shift+L');
+	await page.waitForTimeout(500);
+	await expect(page).toHaveURL(/\/tasks\/board/);
+});

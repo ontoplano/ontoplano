@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **Shift+H and Shift+L walk the places inside the room you are in.** `h` and
+  `l` move between a screen's own tabs and `J`/`K` between the rooms; this is
+  the level in between — Board to To-do, the diary to People. Worked out from
+  the addresses, so somewhere added later answers to them with nobody wiring
+  it up, and a screen that already uses those keys keeps them.
 - **What an assistant did is said in your own language.** The notification
   panel's title was translated and every line under it was English, because
   the sentence was assembled from tool names rather than from the catalogue.
