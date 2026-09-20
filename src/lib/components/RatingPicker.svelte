@@ -83,7 +83,16 @@
 			thumb parked on the dot rather than a second thing to find. Drawn behind
 			the input, which paints its thumb over it.
 		-->
-			<div class="relative min-w-0 flex-1">
+			<!--
+				Answered or not, said by the control and not only by the number.
+
+				A one is the thumb a fifth of the way along a thin track, which at
+				a glance is the same picture as unanswered — and the two mean
+				opposite things. So an answered slider sits on a wash of its own,
+				and an unanswered one sits on nothing: the state is the size of
+				the control rather than the size of the number beside it.
+			-->
+			<div class="rating-lane relative min-w-0 flex-1" class:is-answered={value !== null}>
 				<span aria-hidden="true" class="rating-off"></span>
 
 				<input
@@ -142,6 +151,25 @@
 </div>
 
 <style>
+	/*
+	 * The lane an answered slider sits in.
+	 *
+	 * `--hover-wash` is the app's own "slightly different from what is under
+	 * it", defined per theme, so this reads on a light form and a dark one
+	 * without being written twice. Inset so the wash sits under the track
+	 * rather than under the whole row, and rounded to the track's own ends.
+	 */
+	.rating-lane {
+		border-radius: 9999px;
+		padding-inline: 0.375rem;
+		margin-inline: -0.375rem;
+		transition: background-color 120ms ease;
+	}
+
+	.rating-lane.is-answered {
+		background: var(--hover-wash);
+	}
+
 	/*
 	 * A range input, wearing this app's clothes.
 	 *

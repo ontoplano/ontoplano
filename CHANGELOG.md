@@ -20,6 +20,10 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **An answered slider looks answered.** A one is the thumb a fifth of the way
+  along a thin track, which at a glance is the same picture as not having
+  answered at all — and the two mean opposite things. An answered one sits on
+  a shade of its own now.
 - **"Location and time" is one section at the top of Preferences.** The
   language, the clock, the timezone, the first day of the week, the planner's
   hours and which day tasks are generated on were six settings scattered down
