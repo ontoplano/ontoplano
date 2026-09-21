@@ -62,6 +62,7 @@
 	import { smartNumberFields } from '$lib/number-fields';
 	import { tick, type Snippet } from 'svelte';
 	import { SOURCE_URL } from '$lib/links';
+	import { watchKeyboard } from '$lib/keyboard-inset';
 
 	let { children, data }: { children: Snippet; data: LayoutData } = $props();
 
@@ -886,6 +887,15 @@
 		return live();
 	});
 
+	/*
+	 * How much of the screen the phone's keyboard is covering.
+	 *
+	 * Written as a custom property so the CSS can get the bar out of the way
+	 * while somebody is typing — see `$lib/keyboard-inset` for why a phone
+	 * needs telling at all.
+	 */
+	$effect(() => watchKeyboard());
+
 	/* ------------------------------------------------------------- the tour */
 
 	let tour = $state<Tutorial | undefined>();
@@ -1475,7 +1485,7 @@
 			flowing-in is there to avoid.
 		-->
 		<nav
-			class="fixed inset-x-0 bottom-0 z-40 lg:hidden"
+			class="mobile-nav fixed inset-x-0 bottom-0 z-40 lg:hidden"
 			style="padding-bottom: var(--safe-bottom); background: {barField}"
 			aria-label={t('home.primary')}
 			data-tour="mobile-bar"

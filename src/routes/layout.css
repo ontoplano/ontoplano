@@ -3223,6 +3223,27 @@ html .ec {
  */
 
 /* Room for the bottom navigation, plus whatever the home indicator occupies. */
+/*
+ * While the keyboard is up, the bottom of the screen belongs to the keyboard.
+ *
+ * A phone does not resize the page when its keyboard opens, so anything fixed
+ * to the bottom stays exactly where it was — over the field being typed into.
+ * "i am typing, but the input is behind the bar, which is an issue, cuz i
+ * cant see." So the bar, the pie and the bands above them step off the screen
+ * for as long as somebody is writing, which also gives the writing the room.
+ *
+ * `$lib/keyboard-inset` sets the attribute and the measurement.
+ */
+html[data-keyboard='open'] :is(nav.mobile-nav, .notice-band) {
+	transform: translateY(150%);
+	pointer-events: none;
+}
+
+html[data-keyboard='open'] {
+	/* Nothing reserves room for a bar that is not there. */
+	--mobile-nav-height: 0rem;
+}
+
 :root {
 	--mobile-nav-height: 3.5rem;
 	--safe-bottom: env(safe-area-inset-bottom, 0px);

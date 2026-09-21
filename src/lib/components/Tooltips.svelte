@@ -49,6 +49,24 @@
 	let shown = $state(false);
 	let bubble = $state<HTMLDivElement | null>(null);
 
+	/*
+	 * Shown as a popover once it exists, so it is in the top layer.
+	 *
+	 * `showPopover` throws if it is called twice, or on an element that has
+	 * been taken off the screen between the render and this effect — neither
+	 * is worth failing a page over, and the fallback is the bubble drawn
+	 * where it always was.
+	 */
+	$effect(() => {
+		const tip = bubble;
+		if (!tip || !shown) return;
+		try {
+			tip.showPopover?.();
+		} catch {
+			/* already open, or not a popover in this browser */
+		}
+	});
+
 	/** The element whose title we are holding, and the title we took. */
 	let holding: Element | null = null;
 	let held = '';
@@ -210,8 +228,18 @@
 	<!-- `role="tooltip"` and nothing else: the element it describes still owns
 	     its own accessible name, which is the `title` we gave back, or the
 	     `aria-label` that was there all along. -->
+	<!--
+		In the top layer, because half the app is not.
+
+		A `<dialog>` is drawn in the top layer, which no `z-index` can reach
+		over — so inside any modal the bubble was behind the thing it was
+		describing, and what somebody saw was either nothing or the browser's
+		own beige box arriving late. `popover` puts this in the same layer as
+		the dialog, where it can sit over it.
+	-->
 	<div
 		bind:this={bubble}
+		popover="manual"
 		class="tip {at.below ? 'is-below' : ''}"
 		style="left: {at.x}px; top: {at.y}px"
 		role="tooltip"
