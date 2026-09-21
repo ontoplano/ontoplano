@@ -13,8 +13,13 @@ test('each room names itself in the tab', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('page-title'));
 
+	/*
+	 * The tab and the room share a name here, and a title says it once: the
+	 * tab was called "To-do" when this was written and is called "Tasks" now,
+	 * so "Tasks · Tasks · Ontoplano" is what the dedup exists to prevent.
+	 */
 	await visit(page, '/tasks/todo');
-	await expect(page).toHaveTitle(/To-do · Tasks · Ontoplano/);
+	await expect(page).toHaveTitle(/^Tasks · Ontoplano/);
 
 	await visit(page, '/goals');
 	await expect(page).toHaveTitle(/Goals · Ontoplano/);

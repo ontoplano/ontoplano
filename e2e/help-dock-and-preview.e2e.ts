@@ -150,6 +150,15 @@ test('switching to the preview moves nothing below it', async ({ page }) => {
 	await expect(box).toBeVisible({ timeout: 60_000 });
 	await box.fill('# A heading\n\n- one\n- two');
 
+	/*
+	 * Let the typing settle before measuring it.
+	 *
+	 * The box grows to what is in it and the preview redraws 120ms after the
+	 * last keystroke, so a measurement taken straight after `fill` is of a
+	 * form still moving from the typing — which is not what this is about.
+	 */
+	await page.waitForTimeout(500);
+
 	// Something well below the box, whose position is what a person notices.
 	const below = page.locator('dialog').getByText('Anyone this was about.').first();
 	await expect(below).toBeVisible();

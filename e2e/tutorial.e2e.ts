@@ -53,6 +53,8 @@ test('the button in the corner opens the tour for the screen you are on', async 
 	await register(page, testEmail('tour-corner'));
 
 	await visit(page, '/notebooks/ideas');
+	// The dock starts folded; the tour button is behind the question mark.
+	await page.getByRole('button', { name: 'Help', exact: true }).click();
 	await page.getByRole('button', { name: 'Show me around this screen' }).click();
 
 	const tour = tourOf(page);
@@ -83,6 +85,7 @@ test('a screen with no tour says so instead of opening nothing', async ({ page }
 	// not the instance owner gets a 404 there, which is drawn in the same shell
 	// and is just as untoured, so this holds either way.)
 	await visit(page, '/settings/instance');
+	await page.getByRole('button', { name: 'Help', exact: true }).click();
 	const button = page.getByRole('button', { name: 'No tutorial for this screen yet' });
 	await expect(button).toBeVisible();
 	// `aria-disabled`, so it cannot be pressed and there is nothing to open.

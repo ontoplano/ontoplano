@@ -116,7 +116,7 @@ test('the edit form can delete the task it is editing', async ({ page }) => {
 	await page.waitForTimeout(600);
 	// In the dialog's footer — a sibling of `#todo-form`, not inside it — and
 	// not the row's icon of the same name out on the page.
-	const dialog = page.getByRole('dialog', { name: /Edit to-do/i });
+	const dialog = page.getByRole('dialog', { name: /Edit task/i });
 	await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
 
 	// The delete is taken: the toast is what is holding it now. That is the

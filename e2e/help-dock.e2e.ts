@@ -22,12 +22,18 @@ test.describe('on a phone', () => {
 	});
 });
 
-test('on a wide screen the row is simply there, with no fold to press', async ({ page }) => {
+test('on a wide screen the dock is one question mark until it is asked', async ({ page }) => {
 	await register(page, testEmail('dock-wide'));
 	await visit(page, '/');
 
+	// Folded: the row of four sat open over every screen, and help is not what
+	// anybody came to the page for.
+	const fold = page.getByRole('button', { name: 'Help', exact: true });
+	await expect(fold).toBeVisible();
+	await expect(page.getByRole('link', { name: 'The documentation' })).toBeHidden();
+
+	await fold.click();
 	await expect(page.getByRole('link', { name: 'The documentation' })).toBeVisible();
-	await expect(page.getByRole('button', { name: 'Help', exact: true })).toBeHidden();
 });
 
 /**
@@ -41,6 +47,8 @@ test('a reported problem reaches the admin page', async ({ page }) => {
 	await register(page, testEmail('dock-report'));
 	await visit(page, '/tasks/plan');
 
+	// The dock starts folded; the report button is behind the question mark.
+	await page.getByRole('button', { name: 'Help', exact: true }).click();
 	await page.getByRole('button', { name: 'Report a problem, or suggest something' }).click();
 	const dialog = page.getByRole('dialog', { name: 'Tell the operator' });
 	// A problem, not an idea: the dialog opens on this one, and the admin page
