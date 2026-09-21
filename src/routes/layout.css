@@ -140,6 +140,9 @@
 	 * uses light ink.
 	 */
 	--hover-wash: rgb(15 23 42 / 0.05);
+	/* Over a panel whose contents are being replaced. Darker than a hover,
+	   because it is saying wait rather than saying you are here. */
+	--wait-wash: rgb(15 23 42 / 0.12);
 	/*
 	 * Where the keyboard is standing. A shade darker than the hover wash, so
 	 * the two are telling you different things and you can see which is which
@@ -2010,6 +2013,36 @@ label:has(> input[type='radio']:not(:disabled)) {
 		--gauge-ink: var(--color-blue-600);
 	}
 
+	/*
+	 * A panel whose contents are being replaced.
+	 *
+	 * The planner's arrows keep the page where it is now, which is what
+	 * somebody reading the afternoon wanted — and it left a press with nothing
+	 * to show for itself while the next week was fetched. A wash over the part
+	 * that is about to change says the answer is coming, without moving
+	 * anything.
+	 *
+	 * It fades in rather than appearing: a step that answers in forty
+	 * milliseconds should not flash a grey sheet on the way past.
+	 */
+	.grid-waiting {
+		position: absolute;
+		inset: 0;
+		z-index: 5;
+		pointer-events: none;
+		background-color: var(--wait-wash);
+		animation: wait-in 220ms ease both;
+	}
+
+	@keyframes wait-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
 	.chip {
 		display: inline-flex;
 		align-items: center;
@@ -2936,6 +2969,8 @@ html[data-theme='dark'] {
 	/* Fills, not ramp colours: they darken rather than invert. */
 	--color-scrim: rgb(0 0 0 / 0.66);
 	--hover-wash: rgb(255 255 255 / 0.06);
+	/* Dark: a wash that says wait is a shadow, not a light. */
+	--wait-wash: rgb(2 6 23 / 0.35);
 	--cursor-wash: rgb(255 255 255 / 0.1);
 
 	/*
@@ -3056,6 +3091,8 @@ html[data-theme='dark'] {
 		/* Fills, not ramp colours: they darken rather than invert. */
 		--color-scrim: rgb(0 0 0 / 0.66);
 		--hover-wash: rgb(255 255 255 / 0.06);
+		/* Dark: a wash that says wait is a shadow, not a light. */
+		--wait-wash: rgb(2 6 23 / 0.35);
 		--cursor-wash: rgb(255 255 255 / 0.1);
 
 		/*

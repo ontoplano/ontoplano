@@ -21,7 +21,7 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import { preloadData, goto, invalidateAll } from '$app/navigation';
 	import { SECTION_COLORS } from '$lib/colors';
-	import { page } from '$app/state';
+	import { navigating, page } from '$app/state';
 	import { browser } from '$app/environment';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types.js';
@@ -1411,11 +1411,39 @@
 		return resolve(`/tasks/plan?${parts.join('&')}`);
 	}
 
+	/*
+	 * Stepping the week keeps the page where it is.
+	 *
+	 * Every arrow here is a navigation, and a navigation scrolls to the top by
+	 * default — so somebody reading the afternoon, who presses forward to see
+	 * the same hours next week, was thrown back to seven in the morning.
+	 * Nothing about the page above the grid changed; only the grid did.
+	 * `keepFocus` for the same reason: the arrow you pressed is the arrow you
+	 * press again.
+	 *
+	 * What the grid does while the next week is fetched is `waiting` below.
+	 */
 	function goToRange(from: string | null) {
 		// `rangeHref` is what calls `resolve`; the rule cannot see through it.
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		goto(rangeHref(from));
+		goto(rangeHref(from), { noScroll: true, keepFocus: true });
 	}
+
+	/*
+	 * The grid dims while the week it is showing is being replaced.
+	 *
+	 * Now that the page holds still, a press that takes a moment looks like a
+	 * press that did nothing: the arrow was the only thing that moved, and it
+	 * moved back. A wash over the grid says the answer is on its way, and it
+	 * is only over the grid because the grid is the only part that is about to
+	 * change.
+	 *
+	 * Only for a navigation that stays on this page — leaving for another room
+	 * is the shell's business and it has its own answer.
+	 */
+	const waiting = $derived(
+		Boolean(navigating.to && navigating.to.url.pathname === page.url.pathname)
+	);
 
 	/**
 	 * The window the next press wants, fetched before it is pressed.
@@ -4042,6 +4070,17 @@
 		{/if}
 		{#if browser && widthChecked}
 			<Calendar bind:this={ec} plugins={[TimeGrid, DayGrid, Interaction]} options={gridOptions} />
+		{/if}
+
+		<!--
+			The wash that says the next week is on its way.
+
+			Over the grid and nothing else, because the grid is the only part
+			about to change — and `pointer-events: none` so it is a statement
+			rather than a shutter: a press that lands during it still lands.
+		-->
+		{#if waiting}
+			<div class="grid-waiting" aria-hidden="true"></div>
 		{/if}
 	</div>
 	<div class="mt-1 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
