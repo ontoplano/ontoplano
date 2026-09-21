@@ -2,7 +2,6 @@
 	import TagInput from '$lib/components/TagInput.svelte';
 	import { page } from '$app/state';
 	import Field from '$lib/components/Field.svelte';
-	import OneLine from '$lib/components/OneLine.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import NotebookField from '$lib/components/NotebookField.svelte';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';

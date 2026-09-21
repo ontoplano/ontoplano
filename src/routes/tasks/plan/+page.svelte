@@ -512,7 +512,6 @@
 	}
 
 	function formatWeekDate(dateStr: string): string {
-		const d = new Date(`${dateStr}T00:00:00`);
 		return dayOf(dateStr, now());
 	}
 
@@ -1411,6 +1410,8 @@
 	}
 
 	function goToRange(from: string | null) {
+		// `rangeHref` is what calls `resolve`; the rule cannot see through it.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
 		goto(rangeHref(from));
 	}
 
@@ -1429,7 +1430,11 @@
 	 * run again for wherever it landed. Not in the month view: a month is
 	 * twelve times the data and is read rather than stepped through.
 	 */
+	const DAY_MS = 24 * 60 * 60 * 1000;
 	const PRELOAD_DAYS = 3;
+
+	/** ±1, ±2, ±3 — nearest first, because that is the likelier press. */
+	const NEARBY = Array.from({ length: PRELOAD_DAYS }, (_, at) => at + 1).flatMap((n) => [n, -n]);
 
 	$effect(() => {
 		if (viewMode === 'month') return;
@@ -1437,17 +1442,15 @@
 		const back = data.range.prev;
 		const on = data.range.next;
 
-		const shifted = (step: number) => {
-			const day = new Date(`${around}T00:00:00`);
-			day.setDate(day.getDate() + step);
-			return day.toISOString().slice(0, 10);
-		};
+		// Arithmetic on the epoch rather than a `Date` that is then mutated:
+		// a date built and changed in place is the one thing the rules here
+		// refuse, and days are fixed-length in UTC.
+		const shifted = (step: number) =>
+			new Date(Date.parse(`${around}T00:00:00Z`) + step * DAY_MS).toISOString().slice(0, 10);
 
 		// The two arrows first — a whole span each way, which is the press
 		// people make most — then the days either side of where we are.
-		const wanted = [on, back, ...[1, -1, 2, -2, 3, -3].map(shifted)].filter((one): one is string =>
-			Boolean(one)
-		);
+		const wanted = [on, back, ...NEARBY.map(shifted)].filter((one): one is string => Boolean(one));
 
 		void (async () => {
 			for (const from of wanted) {

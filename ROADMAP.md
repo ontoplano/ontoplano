@@ -10,7 +10,6 @@ Redo those that are gone.
 
 More cool optional dashboard overviews for data
 
-
 ### The rest of the REST API
 
 `/api/v1` covers `me`, today, the schedule, shopping, streams, webhooks and
@@ -48,7 +47,6 @@ unreachable from a phone.
   restricted, and whether a self-hosted instance exposes this at all or waits
   for the hoster to turn it on.
 
-
 ---
 
 ## Small improvements
@@ -79,7 +77,7 @@ unreachable from a phone.
 
 ## One day, maybe
 
-- **More media**: annexing PDFs 
+- **More media**: annexing PDFs
 - **A scheme you can schedule** rather than apply by hand, and an MCP tool
   for changing schemes.
 

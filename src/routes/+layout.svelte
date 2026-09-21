@@ -54,7 +54,7 @@
 	import { suppressAutofill } from '$lib/autofill';
 	import { APP_UPDATE_HUSH_KEY } from '$lib/platform';
 	import { startMarkSpin, stopMarkSpin } from '$lib/mark-spin';
-	import { busy, whileBusy } from '$lib/busy.svelte';
+	import { busy } from '$lib/busy.svelte';
 	import ImageViewer from '$lib/components/ImageViewer.svelte';
 	import { scrollToHash } from '$lib/scroll-to-hash';
 	import { stepThroughRoom } from '$lib/room-tabs.svelte';
@@ -384,7 +384,7 @@
 		return page.url.pathname === href;
 	}
 
-	import { getAction, GLOBAL_SHORTCUTS } from '$lib/shortcuts';
+	import { GLOBAL_SHORTCUTS } from '$lib/shortcuts';
 	import Icon from '$lib/components/Icon.svelte';
 	import { dev } from '$app/environment';
 	import { commandKey } from '$lib/platform';

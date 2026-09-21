@@ -68,7 +68,7 @@ docker run -d --name ontoplano -p 1493:1493 \
 Register at `/login` — **the first account owns the instance**, and after it
 registration is closed until changed at `/settings/instance`.
 
-The reminders timer comes installed. 
+The reminders timer comes installed.
 
 ## Developing it
 

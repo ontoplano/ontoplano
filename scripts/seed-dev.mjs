@@ -1187,7 +1187,13 @@ const drawer = shoppingCategory('the drawer', 4);
 shoppingItem('USB-C to USB-C cable', 'keep', {
 	categoryId: drawer,
 	qty: 3,
-	attributes: { plug: 'USB-C', length: '2m', speed: '480Mbps', colour: 'white', material: 'silicone' }
+	attributes: {
+		plug: 'USB-C',
+		length: '2m',
+		speed: '480Mbps',
+		colour: 'white',
+		material: 'silicone'
+	}
 });
 shoppingItem('USB-A to USB-C cable', 'keep', {
 	categoryId: drawer,

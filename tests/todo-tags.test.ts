@@ -14,9 +14,6 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
-import { db } from '../src/lib/db/index.js';
-import { tags, todoTags } from '../src/lib/db/schema';
-import { and, eq } from 'drizzle-orm';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -41,15 +38,6 @@ const named = (id: number, of = ctx) =>
 		.tags.map((one) => one.name);
 
 /** When one label went on this task, read straight off the join. */
-function taggedAt(todoId: number, name: string): string | null {
-	const row = db
-		.select({ at: todoTags.taggedAt })
-		.from(todoTags)
-		.innerJoin(tags, eq(todoTags.tagId, tags.id))
-		.where(and(eq(todoTags.todoId, todoId), eq(tags.name, name)))
-		.get();
-	return row?.at ?? null;
-}
 
 describe('a task carries labels', () => {
 	test('written at birth, normalised the way every other tag is', () => {
