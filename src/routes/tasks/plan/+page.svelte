@@ -4,6 +4,7 @@
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
 	import PickOne from '$lib/components/PickOne.svelte';
+	import Picker from '$lib/components/Picker.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -3362,11 +3363,14 @@
 					-->
 					{#if repeat === 'weekly' && (recurrenceKind === 'weekly' || recurrenceKind === 'weeks')}
 						<Field label={t('tasks.plan.day')} span={4} required>
-							<select name="weekday" required bind:value={formWeekday} class="select">
-								{#each data.weekdays as day, i (i)}
-									<option value={i}>{day}</option>
-								{/each}
-							</select>
+							<Picker
+								name="weekday"
+								required
+								value={String(formWeekday)}
+								options={data.weekdays.map((day, i) => ({ value: String(i), label: day }))}
+								onpick={(next) => (formWeekday = Number(next))}
+								label={t('tasks.plan.day')}
+							/>
 						</Field>
 					{:else if repeat === 'weekly'}
 						<!--
@@ -3416,31 +3420,50 @@
 
 				<FormGrid>
 					<Field label={t('tasks.plan.mode')} span={6} required>
-						<select name="mode" required bind:value={slotMode} class="select">
-							<option value="activity">{t('tasks.plan.activity')}</option>
-							<option value="category">{t('ui.category')}</option>
-							<!-- Only where there is a workout to pick: a mode that lands on
-							     an empty list is a dead end. -->
-							{#if data.workouts.length > 0}
-								<option value="workout">{t('tasks.plan.workout')}</option>
-							{/if}
-						</select>
+						<!-- Only where there is a workout to pick: a mode that lands on an
+						     empty list is a dead end. -->
+						<Picker
+							name="mode"
+							required
+							value={slotMode}
+							options={[
+								{ value: 'activity', label: t('tasks.plan.activity') },
+								{ value: 'category', label: t('ui.category') },
+								...(data.workouts.length > 0
+									? [{ value: 'workout', label: t('tasks.plan.workout') }]
+									: [])
+							]}
+							onpick={(next) => (slotMode = next as typeof slotMode)}
+							label={t('tasks.plan.mode')}
+						/>
 					</Field>
 					{#if slotMode === 'category'}
 						<Field label={t('ui.category')} span={6} required>
-							<select name="categoryId" required bind:value={formCategoryId} class="select">
-								{#each data.categories as cat (cat.id)}
-									<option value={cat.id}>{cat.name}</option>
-								{/each}
-							</select>
+							<Picker
+								name="categoryId"
+								required
+								value={String(formCategoryId ?? '')}
+								options={data.categories.map((cat) => ({
+									value: String(cat.id),
+									label: cat.name
+								}))}
+								onpick={(next) => (formCategoryId = Number(next))}
+								label={t('ui.category')}
+							/>
 						</Field>
 					{:else if slotMode === 'workout'}
 						<Field label={t('tasks.plan.workout')} span={6} required>
-							<select name="workoutId" required bind:value={formWorkoutId} class="select">
-								{#each data.workouts as workout (workout.id)}
-									<option value={workout.id}>{workout.title}</option>
-								{/each}
-							</select>
+							<Picker
+								name="workoutId"
+								required
+								value={String(formWorkoutId ?? '')}
+								options={data.workouts.map((workout) => ({
+									value: String(workout.id),
+									label: workout.title
+								}))}
+								onpick={(next) => (formWorkoutId = Number(next))}
+								label={t('tasks.plan.workout')}
+							/>
 						</Field>
 					{:else}
 						<Field label={t('tasks.plan.activity')} span={6} required>

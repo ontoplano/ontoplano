@@ -2154,9 +2154,20 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * thing on the page with a black fill — which had it competing with the one
 	 * button on the screen that is actually the primary action.
 	 */
+	/*
+	 * A row of positions, which wraps rather than running off its box.
+	 *
+	 * `flex: none` sizes it to its contents, and five of them — "Every week",
+	 * "Some days", "Every N weeks", "Every N days", "Every month" — are wider
+	 * than a dialog: the last tile was cut in half by the edge of the form,
+	 * with nothing to say there was more of it. Sideways scrolling is the
+	 * other answer and the wrong one; this app wraps.
+	 */
 	.seg {
 		display: inline-flex;
 		flex: none;
+		flex-wrap: wrap;
+		max-width: 100%;
 		align-items: center;
 		gap: 0.125rem;
 		padding: 0.1875rem;

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
+import { choose } from './helpers/choose';
 
 /**
  * Workouts, the Health tab, driven the way a person uses it.
@@ -169,9 +170,9 @@ test('a workout planned from the week is named after the workout', async ({ page
 	await visit(page, '/tasks/plan');
 	await page.getByRole('button', { name: 'New block' }).click();
 	const block = page.getByRole('dialog');
-	await block.locator('[name="mode"]').selectOption('workout');
+	await choose(block, 'mode', 'Workout');
 	// No category is asked for: being a workout is what it is filed under.
-	await block.locator('[name="workoutId"]').selectOption({ label: 'Pull day' });
+	await choose(block, 'workoutId', 'Pull day');
 	await block.locator('[name="startTime"]').fill('07:00');
 	await block
 		.getByRole('button', { name: /^(Add|Create|Save)/ })

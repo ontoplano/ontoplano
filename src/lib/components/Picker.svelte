@@ -21,6 +21,7 @@
 	 * `SortControl` is this plus a direction arrow.
 	 */
 	import Icon from '$lib/components/Icon.svelte';
+	import { afterPress } from '$lib/after-press';
 	import { untrack } from 'svelte';
 
 	let {
@@ -78,12 +79,23 @@
 
 	const chosen = $derived(options.find((one) => one.value === now) ?? options[0]);
 
+	/*
+	 * One press, one choice.
+	 *
+	 * Closing the list while the press is still being delivered takes the
+	 * element out from under the pointer, and the browser hands the same press
+	 * to whatever has moved into its place — the button that opens the list,
+	 * which opened it again. Same hazard the tag chips hit; `afterPress` says
+	 * what it costs and why the obvious fixes do not work.
+	 */
 	function take(next: T) {
 		held = next;
 		onpick?.(next);
-		open = false;
-		at = -1;
-		face?.focus();
+		afterPress(() => {
+			open = false;
+			at = -1;
+			face?.focus();
+		});
 	}
 
 	function show() {
@@ -212,6 +224,7 @@
 						type="button"
 						tabindex="-1"
 						role="option"
+						data-value={option.value}
 						aria-selected={option.value === now}
 						class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm whitespace-nowrap {option.value ===
 							now || options.indexOf(option) === at
