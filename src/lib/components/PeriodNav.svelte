@@ -36,11 +36,21 @@
 		atNow = true,
 		nowLabel = t('ui.today'),
 		prevDisabled = false,
+		onwarm,
 		children
 	}: {
 		onprev: () => void;
 		onnext: () => void;
 		onnow?: () => void;
+		/**
+		 * Told which way the pointer is over, before anything is pressed.
+		 *
+		 * A screen that fetches when it steps can fetch while the finger is on
+		 * its way instead — which is most of the round trip, and the only
+		 * moment at which the target is known rather than guessed. `pointerenter`
+		 * covers touch too: it fires as the finger lands, ahead of the press.
+		 */
+		onwarm?: (direction: 'prev' | 'next' | 'now') => void;
 		unit?: string;
 		keys?: [string, string] | string[];
 		atNow?: boolean;
@@ -54,6 +64,8 @@
 <div class="flex w-full items-center gap-2 sm:w-auto">
 	<button
 		onclick={onprev}
+		onpointerenter={() => onwarm?.('prev')}
+		onfocus={() => onwarm?.('prev')}
 		disabled={prevDisabled}
 		class="icon-btn h-11 w-11 shrink-0 disabled:opacity-30"
 		title={t('tasks.plan.backOneUnit', { unit, key: keys[0] })}
@@ -86,6 +98,8 @@
 	{#if onnow}
 		<button
 			onclick={onnow}
+			onpointerenter={() => onwarm?.('now')}
+			onfocus={() => onwarm?.('now')}
 			class="btn btn-sm shrink-0 {atNow ? 'invisible' : ''}"
 			aria-hidden={atNow}
 			tabindex={atNow ? -1 : 0}
@@ -97,6 +111,8 @@
 
 	<button
 		onclick={onnext}
+		onpointerenter={() => onwarm?.('next')}
+		onfocus={() => onwarm?.('next')}
 		class="icon-btn h-11 w-11 shrink-0"
 		title={t('tasks.plan.forwardOneUnit', { unit, key: keys[1] })}
 		aria-label={t('tasks.plan.forwardOneUnitPlain', { unit })}

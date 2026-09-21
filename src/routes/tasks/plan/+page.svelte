@@ -1417,49 +1417,43 @@
 	}
 
 	/**
-	 * The days either side, fetched before anybody asks for them.
+	 * The window the next press wants, fetched before it is pressed.
 	 *
 	 * Every arrow here is a navigation, and a navigation is a round trip: the
 	 * grid sat empty for the length of one every time somebody stepped a day.
 	 * `preloadData` runs the same load ahead of time and SvelteKit hands the
-	 * result to the navigation that follows, so stepping inside this reach is
-	 * a redraw rather than a request.
+	 * result to the navigation that follows.
 	 *
-	 * What is fetched: the window each arrow points at — a whole span either
-	 * way — and then three days either side, which is what the day-shift
-	 * arrows walk through. Past that it pays for itself, and by then this has
-	 * run again for wherever it landed. Not in the month view: a month is
-	 * twelve times the data and is read rather than stepped through.
+	 * It remembers exactly **one** route, though — `load_cache` in its client
+	 * runtime is a single slot, discarded the moment a different route is
+	 * preloaded. So the first version of this, which fetched the two arrows
+	 * and then three days either side, left only the last of the eight in the
+	 * cache: −3 days, which no arrow goes to. Eight requests, and every press
+	 * still waited for its own.
+	 *
+	 * One slot, so one guess, made at the moment the target is known instead
+	 * of guessed: the pointer arriving on an arrow. That is most of the round
+	 * trip on a desktop and the whole of the press on a phone, where
+	 * `pointerenter` fires as the finger lands. `warm` below is what `PeriodNav`
+	 * calls; the speculative one after it covers the keyboard, which has no
+	 * hover to go on — forward, because that is the press people make.
+	 *
+	 * Not in the month view: a month is twelve times the data and is read
+	 * rather than stepped through.
 	 */
-	const DAY_MS = 24 * 60 * 60 * 1000;
-	const PRELOAD_DAYS = 3;
-
-	/** ±1, ±2, ±3 — nearest first, because that is the likelier press. */
-	const NEARBY = Array.from({ length: PRELOAD_DAYS }, (_, at) => at + 1).flatMap((n) => [n, -n]);
+	function warm(direction: 'prev' | 'next' | 'now') {
+		if (viewMode === 'month') return;
+		const from =
+			direction === 'now' ? null : direction === 'next' ? data.range.next : data.range.prev;
+		if (direction !== 'now' && !from) return;
+		void preloadData(rangeHref(from)).catch(() => {});
+	}
 
 	$effect(() => {
 		if (viewMode === 'month') return;
-		const around = data.range.from;
-		const back = data.range.prev;
 		const on = data.range.next;
-
-		// Arithmetic on the epoch rather than a `Date` that is then mutated:
-		// a date built and changed in place is the one thing the rules here
-		// refuse, and days are fixed-length in UTC.
-		const shifted = (step: number) =>
-			new Date(Date.parse(`${around}T00:00:00Z`) + step * DAY_MS).toISOString().slice(0, 10);
-
-		// The two arrows first — a whole span each way, which is the press
-		// people make most — then the days either side of where we are.
-		const wanted = [on, back, ...NEARBY.map(shifted)].filter((one): one is string => Boolean(one));
-
-		void (async () => {
-			for (const from of wanted) {
-				// One at a time: eight requests at once would compete with the
-				// page they are meant to make feel instant.
-				await preloadData(rangeHref(from)).catch(() => {});
-			}
-		})();
+		if (!on) return;
+		void preloadData(rangeHref(on)).catch(() => {});
 	});
 
 	function goToPrevWeek() {
@@ -2557,6 +2551,7 @@
 			onprev={goToPrevWeek}
 			onnext={goToNextWeek}
 			onnow={goToToday}
+			onwarm={warm}
 		>
 			<span class="truncate text-sm text-gray-600">
 				{#if effectiveView === 'month'}
