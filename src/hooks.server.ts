@@ -6,6 +6,7 @@ import { auth } from '$lib/server/auth';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { ensureUserCategories } from '$lib/server/db/ensure-categories';
 import {
+	appName,
 	DEFAULT_THEME,
 	getStyle,
 	getTheme,
@@ -356,13 +357,7 @@ const handleTheme: Handle = ({ event, resolve }) => {
 	// And the demo for the third time: a tab of somebody's own week and a tab
 	// of a sandbox wiped every hour were the same picture in the same window.
 	const mark = isStaging() ? '-staging' : isDemo() ? '-demo' : dev ? '-dev' : '';
-	const appname = isStaging()
-		? 'Ontoplano staging'
-		: isDemo()
-			? 'Ontoplano demo'
-			: dev
-				? 'Ontoplano — Dev'
-				: 'Ontoplano';
+	const appname = appName();
 
 	return resolve(event, {
 		transformPageChunk: ({ html }) =>

@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **The browser tab says where you are** — "To-do · Tasks · Ontoplano" rather
+  than "Ontoplano" on every page, which is useless the moment two of them are
+  open. Staging, the demo and a dev build keep their own name on the end.
 - **A task's description opens it too.** The title was the only thing that
   unfolded one, and the line you are reading when you want the rest did
   nothing. A picture or a recording inside it stays its own control.

@@ -12,6 +12,7 @@
 	import { markUntranslated } from '$lib/i18n/untranslated';
 	import type { LayoutData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
+	import { roomTabs, type RoomTab } from '$lib/room-tabs.svelte';
 	import { NAV_PLACES } from '$lib/sections-nav';
 	import { accentsWith, placesFor } from '$lib/nav-order';
 	import { provideSwipeSurface } from '$lib/swipe-surface';
@@ -329,6 +330,35 @@
 	/** The section being viewed. Its accent fills the active nav tab. */
 	const sectionKey = $derived(sectionFor(page.url.pathname));
 	const section = $derived({ ...SECTIONS[sectionKey], accent: accents[sectionKey] });
+
+	/**
+	 * What the browser tab says.
+	 *
+	 * Every tab said "ontoplano", which is useless the moment there are two of
+	 * them open — and people keep the planner and the notes open side by side.
+	 * It says where you are: the place inside the room where the room draws
+	 * tabs, the room otherwise, and the app's name after it so a bookmark and
+	 * a history entry still read as this app.
+	 *
+	 * Declared here rather than page by page: the shell already works out
+	 * which room is on screen for the nav, and a page added next year gets a
+	 * title without anybody remembering to write one.
+	 */
+	const pageTitle = $derived.by(() => {
+		const here = page.url.pathname;
+		const tabs = roomTabs();
+		const inside = tabs
+			.filter((tab: RoomTab) => here === tab.href || here.startsWith(`${tab.href}/`))
+			.sort((a: RoomTab, b: RoomTab) => b.href.length - a.href.length)[0];
+
+		// `SECTIONS` already carries each room's name as a catalogue key — the
+		// same one the nav draws — so the tab and the nav cannot disagree.
+		const room = t(SECTIONS[sectionKey].name);
+		// A room whose first tab carries the room's own name — Notebooks inside
+		// Notebooks — says it once.
+		const said = [inside?.label === room ? '' : inside?.label, room].filter(Boolean).join(' · ');
+		return said ? `${said} · ${data.appName}` : data.appName;
+	});
 
 	/** The glyph tiled behind the page, from the same table as the nav icons. */
 	const SECTION_GLYPH: Record<SectionKey, IconName> = {
@@ -907,6 +937,10 @@
 		}).catch(() => {});
 	}
 </script>
+
+<svelte:head>
+	<title>{pageTitle}</title>
+</svelte:head>
 
 <svelte:window onkeydown={handleGlobalKeydown} onclick={handleClickOutside} />
 

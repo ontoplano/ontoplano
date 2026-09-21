@@ -14,6 +14,7 @@ import {
 	hasSeenTutorial,
 	isDemo as isDemoInstance,
 	isStaging,
+	appName,
 	getClock
 } from '$lib/server/settings';
 import type { HideableSection } from '$lib/sections';
@@ -220,6 +221,14 @@ export const load: LayoutServerLoad = async (event) => {
 		 * all it does is draw a band.
 		 */
 		staging: isStaging(),
+		/*
+		 * What this instance calls itself, for the browser tab.
+		 *
+		 * The same name `hooks.server.ts` stamps into `<title>` — staging, the
+		 * demo and a dev build each wear their own, and the shell writing a
+		 * title per page must not undo that.
+		 */
+		appName: appName(),
 		// Whether to show somebody around without being asked. The shell decides
 		// where — the dashboard, which is where first run lets go of them.
 		tutorialPending,

@@ -142,6 +142,25 @@ export function siteCookieDomain(): string {
  * account to name, and requiring it would have meant a box that upgraded to
  * this and dropped the variable silently stopped being a demo.
  */
+/**
+ * What this instance calls itself.
+ *
+ * Staging, the demo and a dev build each wear their own name, for the reason
+ * the marks exist: two of these open in one browser, or saved to one home
+ * screen, must not be the same thing. Said once here, because the page's
+ * `<title>` is stamped by `hooks.server.ts` and the shell writes a title per
+ * page on top of it — two spellings of this would disagree the moment one of
+ * them was edited.
+ */
+export function appName(): string {
+	if (isStaging()) return 'Ontoplano staging';
+	if (isDemo()) return 'Ontoplano demo';
+	// `process.env` rather than `$app/environment`: this file is imported by
+	// the scheduled jobs, which run as plain node with no Vite around them —
+	// `tests/billing-outside-vite.test.ts` is what says so out loud.
+	return process.env.NODE_ENV === 'production' ? 'Ontoplano' : 'Ontoplano — Dev';
+}
+
 export function isDemo(): boolean {
 	return process.env.ONTOPLANO_DEMO === 'true';
 }

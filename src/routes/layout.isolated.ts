@@ -80,6 +80,8 @@ export async function load(event: IsolatedEvent): Promise<LayoutServerData> {
 		unreadNotifications: unreadSent(buildCtx(user.id)),
 		demo: false,
 		staging: false,
+		// The copy on the device is the app itself, with the app's own name.
+		appName: 'Ontoplano',
 		tutorialPending: !hasSeenTutorial(user.id),
 		// Push arrives through the device, not through a push service.
 		pushKey: null,
