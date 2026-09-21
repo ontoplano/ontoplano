@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { say } from '$lib/said.svelte';
+	import { discardForm, keptForm } from '$lib/kept-form';
 	import Picker from '$lib/components/Picker.svelte';
 	import SortControl from '$lib/components/SortControl.svelte';
 	import { agoOf } from '$lib/when';
@@ -740,8 +741,18 @@
 		onclose={() => (editingId = null)}
 	>
 		{@const editing = editingTodo()}
+		<!--
+			What was typed survives an accidental close.
+
+			The modal unmounts its body, which is right — the same dialog is
+			reused for different tasks — so the fields cannot survive and what
+			they held is written down instead. Keyed by which form this is: a
+			half-written new task must not come back over a task being edited.
+			See `$lib/kept-form`.
+		-->
 		<form
 			id="todo-form"
+			use:keptForm={editingId ? `edit-todo-${editingId}` : 'new-todo'}
 			method="post"
 			action={editingId ? actions.update : actions.create}
 			use:enhance={() => {
@@ -771,6 +782,8 @@
 						});
 					else say(t('todoRows.taskAdded'));
 
+					// Saved, so there is no draft to come back to.
+					discardForm(wasEditing ? `edit-todo-${wasEditing}` : 'new-todo');
 					showForm = false;
 					editingId = null;
 				};
@@ -838,7 +851,20 @@
 					</button>
 				</form>
 			{/if}
-			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
+			<!--
+				Cancel throws the draft away; Escape and the backdrop keep it.
+
+				Both close the form, and they are not the same act: one is
+				somebody saying they are finished with it, the other is a slip.
+			-->
+			<button
+				type="button"
+				class="btn"
+				onclick={() => {
+					discardForm(editingId ? `edit-todo-${editingId}` : 'new-todo');
+					showForm = false;
+				}}>{t('ui.cancel')}</button
+			>
 			<button type="submit" form="todo-form" class="btn btn-primary">
 				{editingId ? t('ui.save') : t('todoRows.createTodo')}
 			</button>

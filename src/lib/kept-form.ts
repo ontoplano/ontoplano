@@ -39,9 +39,20 @@ function worthKeeping(field: Element): field is HTMLInputElement | HTMLTextAreaE
 	return field.name !== '';
 }
 
+/**
+ * Forms somebody has finished with, between saying so and the form going.
+ *
+ * Cancel and a save both throw the draft away and then close the dialog, and
+ * closing it unmounts the form — which is the moment this writes one down. So
+ * discarding has to outlast the press: without this, Cancel deleted the draft
+ * and the unmount immediately put it back.
+ */
+const finished = new Set<string>();
+
 /** Throw away what was kept, for a form somebody has finished with. */
 export function discardForm(key: string): void {
 	drafts.delete(key);
+	finished.add(key);
 }
 
 /**
@@ -95,6 +106,8 @@ function restore(node: HTMLFormElement, key: string): void {
 }
 
 function remember(node: HTMLFormElement, key: string): void {
+	if (finished.delete(key)) return;
+
 	const typed = new Map<string, string>();
 	let anything = false;
 	for (const field of node.elements) {
