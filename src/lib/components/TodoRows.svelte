@@ -192,6 +192,31 @@
 	});
 
 	/**
+	 * How long a task stays on screen after it is ticked.
+	 *
+	 * Long enough to see the tick land and the row grey, and short enough that
+	 * a list being worked through does not feel like it is holding you up.
+	 */
+	const SEEN_DONE_MS = 500;
+
+	/**
+	 * The ones just ticked, held in the list while the tick is seen.
+	 *
+	 * A list that is not showing finished tasks drops one the instant it is
+	 * marked done — and since the row is what was pressed, the answer to the
+	 * press was the row vanishing, which reads as something deleted rather
+	 * than something done. Held here for half a second, during which
+	 * `shownStatus` already draws it ticked and greyed exactly as a finished
+	 * task is drawn.
+	 */
+	const lingering = new SvelteSet<number>();
+
+	function linger(id: number) {
+		lingering.add(id);
+		setTimeout(() => lingering.delete(id), SEEN_DONE_MS);
+	}
+
+	/**
 	 * What the row says right now.
 	 *
 	 * A tick is held for the undo window rather than sent, so between the click
@@ -312,7 +337,7 @@
 		const here = todos.filter((t: Todo) => !isLeaving(`todo:${t.id}`));
 		let shown = showCompleted
 			? here
-			: here.filter((t: Todo) => !CLOSED_STATUSES.includes(shownStatus(t)));
+			: here.filter((t: Todo) => lingering.has(t.id) || !CLOSED_STATUSES.includes(shownStatus(t)));
 
 		// Away unless asked for. An archived task is one somebody has decided
 		// not to look at, so the list honours that until they say otherwise.
@@ -458,6 +483,9 @@
 					headers: { 'x-sveltekit-action': 'true' }
 				}).then(() => invalidateAll());
 			};
+
+			// Seen to be done before it goes. See `lingering` above.
+			linger(todo.id);
 
 			// Written now, not when the toast expires: a todo that says done here
 			// and is still open everywhere it is counted is one screen telling two
