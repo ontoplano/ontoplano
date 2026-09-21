@@ -205,6 +205,10 @@ export const USER_TABLES: OwnedTable[] = [
 	owned('recurringTasks', schema.recurringTasks as never),
 	owned('activities', schema.activities as never),
 	owned('categories', schema.categories as never),
+	// The chat's provider key. It leaves with the export and comes back with
+	// the import on purpose: an export is the person's own hands, and a moved
+	// instance whose assistant still answers is the point of moving one.
+	owned('modelProviderKeys', schema.modelProviderKeys as never),
 	owned('userSettings', schema.userSettings as never)
 ];
 

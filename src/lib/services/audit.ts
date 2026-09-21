@@ -38,6 +38,10 @@ export const AUDIT_EVENTS = [
 	'seat_accepted',
 	'seat_declined',
 	'seat_removed',
+	// A model-provider key arriving or leaving is a credential changing hands,
+	// and credentials are exactly what this log answers for.
+	'assistant_key_saved',
+	'assistant_key_removed',
 	/*
 	 * Somebody turned away from the demo, and which of the two reasons it was.
 	 *

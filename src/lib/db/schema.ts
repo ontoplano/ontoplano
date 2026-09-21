@@ -12,6 +12,7 @@ import {
 import { sql } from 'drizzle-orm';
 import { user } from './auth.schema.js';
 import { MAIL_KIND_NAMES } from '../mail-kinds.js';
+import { PROVIDER_IDS } from '../assistant-providers.js';
 
 export const categories = sqliteTable(
 	'categories',
@@ -1586,6 +1587,40 @@ export const apiTokens = sqliteTable(
 		uniqueIndex('api_tokens_hash_unique').on(table.tokenHash),
 		index('api_tokens_user_idx').on(table.userId)
 	]
+);
+
+/**
+ * The key the in-app chat calls a model provider with.
+ *
+ * One per account, replaced rather than accumulated: the chat speaks to one
+ * provider at a time, and a second key is a new answer to the same question.
+ *
+ * Stored in the clear, unlike our own tokens, because it has to be: an API
+ * token of ours authenticates somebody to us, so a hash is enough to check it
+ * — but this key authenticates us to somebody else, and only the key itself
+ * can be sent. The blast radius of a stolen database gaining it is "can spend
+ * this person's model credits", which is why the settings screen shows the
+ * prefix and never the key again.
+ */
+export const modelProviderKeys = sqliteTable(
+	'model_provider_keys',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		provider: text('provider', { enum: PROVIDER_IDS }).notNull(),
+		key: text('key').notNull(),
+		prefix: text('prefix').notNull(), // first chars, shown in the UI in place of the key
+		/* Which model to ask for; null means the provider's default in
+		 * `assistant-providers.ts`. */
+		model: text('model'),
+		/* Only Ollama's to change — where that machine listens. */
+		baseUrl: text('base_url'),
+		createdAt: text('created_at').notNull(),
+		updatedAt: text('updated_at').notNull()
+	},
+	(table) => [uniqueIndex('model_provider_keys_user_unique').on(table.userId)]
 );
 
 /**
