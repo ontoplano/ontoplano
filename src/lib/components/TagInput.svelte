@@ -79,38 +79,32 @@
 		at = -1;
 	}
 
-	/*
-	 * Taking one off, after the press has finished being a press.
-	 *
-	 * Svelte delegates `onclick` from a container and walks the path calling
-	 * handlers. Removing a chip inline rebuilds the list *during* that walk,
-	 * the surviving chip's button reuses the node the walk is standing on, and
-	 * its handler runs on the same press — so one press took two labels off.
-	 * The stack said so: two calls, both from the one delegated dispatcher.
-	 *
-	 * A microtask lets the walk finish against the DOM it started on. Still
-	 * before the frame is painted, so nothing is visible but the one removal.
-	 */
-	/*
+	/**
 	 * One press, one label.
 	 *
-	 * A single click was reaching two chips' handlers: the stack showed both
-	 * calls coming from Svelte's one delegated dispatcher, with different
-	 * closures. Deferring the change did not stop it, so the walk is not
-	 * simply reading the live DOM and I cannot honestly say why it visits the
-	 * second.
+	 * Pressing a chip's × removed that chip *and* the next one — under a real
+	 * mouse, never under a synthetic `click`, which is what made it look like
+	 * a mystery. It is not one: removing the pressed element while the press
+	 * is still being delivered makes Chrome finish the press against whatever
+	 * has moved into that spot. The evidence is in the second event itself —
+	 * a *different* event object, same timestamp, `detail: 0` where a real
+	 * mouse click carries `detail: 1` — and it stops happening entirely if
+	 * the handler changes nothing.
 	 *
-	 * What is certain is that both calls belong to one press, and one press
-	 * means one label. The event's own timestamp is the press's identity — it
-	 * is the same object being dispatched — so the second call is recognised
-	 * and ignored. A guard rather than an explanation, and labelled as one.
+	 * So the fix is to let the press finish first. A timeout of zero is a
+	 * whole task later, which is after every listener for this press has run
+	 * and before anything is painted: nothing is visibly slower, and the
+	 * element the browser is still delivering to is where it was.
+	 *
+	 * Not a microtask — that was tried. Microtasks run between two listeners
+	 * for the same event, so the DOM had already changed by the time the
+	 * second one arrived. Nor `stopPropagation`, for the same reason.
 	 */
-	let handledPress = -1;
-	function drop(tag: string, press: MouseEvent) {
-		if (press.timeStamp === handledPress) return;
-		handledPress = press.timeStamp;
-		tags = tags.filter((one) => one !== tag);
-		box?.focus();
+	function drop(tag: string) {
+		setTimeout(() => {
+			tags = tags.filter((one) => one !== tag);
+			box?.focus();
+		}, 0);
 	}
 
 	function onKeydown(e: KeyboardEvent) {
@@ -184,7 +178,7 @@
 					{tag}
 					<button
 						type="button"
-						onclick={(e) => drop(tag, e)}
+						onclick={() => drop(tag)}
 						aria-label={t('tags.removeTag', { tag })}
 						class="opacity-60 transition hover:opacity-100"
 					>

@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **Pressing one tag chip's × takes one label off.** Removing the pressed
+  element while the press was still being delivered made the browser finish it
+  against whatever moved into that spot.
 - **An assistant can ask for part of a list instead of all of it.** The task
   list takes `status`, `withoutTag` and `taggedSince` beside `tag`; notes take
   `tag` and `taggedSince`. A listing answers with a line per row — `verbose`
