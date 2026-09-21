@@ -30,6 +30,7 @@
 		title,
 		tabs,
 		label,
+		belongsTo,
 		dataTour,
 		actions,
 		children
@@ -39,6 +40,15 @@
 		tabs: { href: string; label: string }[];
 		/** What the strip is called, for a screen reader. */
 		label: string;
+		/**
+		 * Which tab a page belongs to when its address says otherwise.
+		 *
+		 * A page can be part of a room and live somewhere else — a data
+		 * stream is reached from Connections and answers at `/data/<slug>`.
+		 * Without this the strip drew with nothing underlined and the page
+		 * read as somewhere else entirely, which is what it looked like.
+		 */
+		belongsTo?: string;
 		/** What a guided tour calls this strip, where one points at it. */
 		dataTour?: string;
 		actions?: import('svelte').Snippet;
@@ -80,7 +90,7 @@
 		return best;
 	}
 
-	const at = $derived(tabFor(page.url.pathname));
+	const at = $derived(tabFor(belongsTo ?? page.url.pathname));
 	const here = (index: number) => index === at;
 
 	/** The panel that moves. Its content is `body`, which is what is replaced. */
