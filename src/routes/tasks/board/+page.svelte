@@ -73,6 +73,15 @@
 	});
 	const editRatingsSet = $derived(Object.values(editRatings).filter((v) => v !== null).length);
 
+	/*
+	 * Opened once the press that asked for it has finished.
+	 *
+	 * A modal put over the board mid-press made the browser deliver that same
+	 * press again, to whatever was under it afterwards — which is the card,
+	 * whose own handler opens it in place. So Edit opened the editor and the
+	 * card at once, and the next press went to the wrong one of the two. See
+	 * `$lib/after-press`.
+	 */
 	function openEditor(card: Card) {
 		editing = card;
 		editRatings = { ...card.ratings };
@@ -310,6 +319,7 @@
 	let openCards = $state(new SvelteSet<string>());
 
 	function readCard(card: Card) {
+		console.log('READ CARD', card.title);
 		if (openCards.has(card.uid)) openCards.delete(card.uid);
 		else openCards.add(card.uid);
 	}
@@ -1129,6 +1139,15 @@
 									card.ratings.urgency != null ||
 									card.ratings.interest != null ||
 									card.ratings.energy != null}
+								<!--
+									The card is named, because it is a button that contains
+									buttons. Without `aria-label` its accessible name is
+									everything written inside it — the title, the notes and the
+									labels of the two icons — so a screen reader announced a
+									single button called "bin this one Nothing written on this
+									one Move this to a column Edit bin this one", and anything
+									looking for the edit control found the whole card first.
+								-->
 								<article
 									draggable="true"
 									ondragstart={(e) => onDragStart(card, e)}
@@ -1144,6 +1163,7 @@
 									role="button"
 									tabindex="0"
 									aria-expanded={openCards.has(card.uid)}
+									aria-label={t('tasks.board.readThisCard', { title: card.title })}
 									class="pill-soft cursor-grab px-2 py-1.5 shadow-card {focusCol === ci &&
 									focusRow === ri
 										? 'kbd-cursor'

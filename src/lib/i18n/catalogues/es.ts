@@ -2889,6 +2889,7 @@ export const messages: Catalogue = {
 	'tasks.board.nothingWrittenOnThisOne': 'Nada escrito en esta.',
 	'tasks.board.numberKeysSet': 'Las teclas numéricas fijan',
 	'tasks.board.rate': 'valorar ·',
+	'tasks.board.readThisCard': 'Leer {title}',
 	'tasks.board.remindMe': 'Recuérdamelo',
 	'tasks.board.removeTheReminderAt': 'Quitar el recordatorio en {slice}',
 	'tasks.board.removeThisReminder': 'Quitar este recordatorio',

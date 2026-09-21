@@ -18,6 +18,7 @@
 	 */
 	import Icon from '$lib/components/Icon.svelte';
 	import { useT } from '$lib/i18n';
+	import { afterPress } from '$lib/after-press';
 	import { draftTags, endsTag, suggestTags, tagsFrom, tagsValue } from '$lib/tag-typing';
 
 	let {
@@ -84,27 +85,15 @@
 	 *
 	 * Pressing a chip's × removed that chip *and* the next one — under a real
 	 * mouse, never under a synthetic `click`, which is what made it look like
-	 * a mystery. It is not one: removing the pressed element while the press
-	 * is still being delivered makes Chrome finish the press against whatever
-	 * has moved into that spot. The evidence is in the second event itself —
-	 * a *different* event object, same timestamp, `detail: 0` where a real
-	 * mouse click carries `detail: 1` — and it stops happening entirely if
-	 * the handler changes nothing.
-	 *
-	 * So the fix is to let the press finish first. A timeout of zero is a
-	 * whole task later, which is after every listener for this press has run
-	 * and before anything is painted: nothing is visibly slower, and the
-	 * element the browser is still delivering to is where it was.
-	 *
-	 * Not a microtask — that was tried. Microtasks run between two listeners
-	 * for the same event, so the DOM had already changed by the time the
-	 * second one arrived. Nor `stopPropagation`, for the same reason.
+	 * a mystery. It is not one: the removal happened while the press was still
+	 * being delivered. `afterPress` says what that costs and why the obvious
+	 * fixes do not work.
 	 */
 	function drop(tag: string) {
-		setTimeout(() => {
+		afterPress(() => {
 			tags = tags.filter((one) => one !== tag);
 			box?.focus();
-		}, 0);
+		});
 	}
 
 	function onKeydown(e: KeyboardEvent) {

@@ -2823,6 +2823,7 @@ export const messages: Catalogue = {
 	'tasks.board.nothingWrittenOnThisOne': 'Nothing written on this one.',
 	'tasks.board.numberKeysSet': 'Number keys set',
 	'tasks.board.rate': 'rate ·',
+	'tasks.board.readThisCard': 'Read {title}',
 	'tasks.board.remindMe': 'Remind me',
 	'tasks.board.removeTheReminderAt': 'Remove the reminder at {slice}',
 	'tasks.board.removeThisReminder': 'Remove this reminder',

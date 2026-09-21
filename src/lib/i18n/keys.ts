@@ -2463,6 +2463,7 @@ export type MessageKey =
 	| 'tasks.board.nothingWrittenOnThisOne'
 	| 'tasks.board.numberKeysSet'
 	| 'tasks.board.rate'
+	| 'tasks.board.readThisCard'
 	| 'tasks.board.remindMe'
 	| 'tasks.board.removeTheReminderAt'
 	| 'tasks.board.removeThisReminder'
@@ -3418,6 +3419,7 @@ export interface MessageValuesFor {
 	'tasks.board.edit': { title: string | number };
 	'tasks.board.minutesFull': { count: number };
 	'tasks.board.movingPickAColumn': { title: string | number };
+	'tasks.board.readThisCard': { title: string | number };
 	'tasks.board.removeTheReminderAt': { slice: string | number };
 	'tasks.plan.backOneUnit': { key: string | number; unit: string | number };
 	'tasks.plan.backOneUnitPlain': { unit: string | number };

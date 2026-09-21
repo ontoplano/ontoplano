@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **The AI agents page says what to pass each tool.** Every tool now carries a
+  table of its parameters — type, whether it is required, the values an enum
+  allows, the default — generated from the same array that serves them.
+- **A board card is a button with a name of its own.** Its accessible name was
+  everything written inside it, the labels of the buttons it contains included.
 - **Pressing one tag chip's × takes one label off.** Removing the pressed
   element while the press was still being delivered made the browser finish it
   against whatever moved into that spot.
