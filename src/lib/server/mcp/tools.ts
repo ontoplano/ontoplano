@@ -2051,7 +2051,7 @@ export const TOOLS: Tool[] = [
 		name: 'note_to_todos',
 		title: 'Make todos out of a checklist note',
 		description:
-			'Turn a note that is really a checklist into the tasks it describes. Every `- [ ]` line becomes a task, with whatever is written under it as that task\u2019s notes; a `- [x]` line comes across already done. Each is filed under the note\u2019s own notebook, and each box is replaced by a reference to the task it became \u2014 `TODO:#4` \u2014 so the note keeps its words and stops being a second copy of the list.',
+			'Turn a note that is really a checklist into the tasks it describes. Every `- [ ]` line becomes a task, with whatever is written under it as that task\u2019s notes; a `- [x]` line comes across already done. Each is filed under the note\u2019s own notebook, and each box is replaced by a reference to the task it became \u2014 `TASK:#4` \u2014 so the note keeps its words and stops being a second copy of the list.',
 		scope: 'tasks:write',
 		alsoNeeds: 'notes:read',
 		writes: true,

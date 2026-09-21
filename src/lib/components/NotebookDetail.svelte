@@ -199,12 +199,12 @@
 		 * A reference reads as the task it names, here too.
 		 *
 		 * A note that was a checklist and became tasks is a note whose first
-		 * line is `TODO:#1` — which in the list would name the note "TODO:#1".
+		 * line is `TASK:#1` — which in the list would name the note "TASK:#1".
 		 * The chip in the body already says the task's title; this is the same
 		 * answer where there is no room for a chip.
 		 */
 		return first
-			.replace(/TODO:#(\d+)/g, (whole, seq) => todoRefs.get(Number(seq))?.title ?? whole)
+			.replace(/(?:TASK|TODO):#(\d+)/g, (whole, seq) => todoRefs.get(Number(seq))?.title ?? whole)
 			.slice(0, 120);
 	}
 
@@ -349,7 +349,7 @@
 	);
 
 	/**
-	 * This notebook's tasks by their number in it, for `TODO:#4` in a note.
+	 * This notebook's tasks by their number in it, for `TASK:#4` in a note.
 	 *
 	 * Rendered with the task's own title and a tick where it is done, so a
 	 * note that points at a list says what is on the list and how far along it
@@ -811,6 +811,7 @@
 							name="content"
 							rows={6}
 							required
+							todos={todoRefs}
 							placeholder={t('notebookDetail.writeANoteAbout', { title: notebook.title })}
 						/>
 						<!-- A note written here takes a picture the same way a note written in
@@ -1100,6 +1101,7 @@
 								name="content"
 								rows={8}
 								required
+								todos={todoRefs}
 							/>
 							<PictureAttach target={editBox} />
 							<div class="mt-3">
@@ -1168,7 +1170,7 @@
 							<!--
 								A reference in the writing opens the task it names.
 
-								`TODO:#4` is rendered as a link by the markdown renderer,
+								`TASK:#4` is rendered as a link by the markdown renderer,
 								which is pure and knows nothing about this screen — so the
 								press is caught here, where the list and its editor are.
 								Delegated from the whole block rather than bound per link:

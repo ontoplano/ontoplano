@@ -5,9 +5,11 @@
  * offer to do it stood over a list that had already been made — press it twice
  * and the tasks exist twice — and the note and the list were two records of
  * one thing, free to drift. Each line that crossed over is a reference now:
- * `TODO:#4`, the task's number inside this notebook.
+ * `TASK:#4`, the task's number inside this notebook.
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { render } from 'svelte/server';
+import TranslatedMarkdownBox from './helpers/TranslatedMarkdownBox.svelte';
 import { makeDatabase, OWNER, seedAccounts } from './helpers/db';
 
 const database = makeDatabase();
@@ -59,7 +61,7 @@ describe('a task inside a notebook', () => {
 		const first = todos.createTodo(ctx, { title: 'first', notebookId: book });
 		todos.deleteTodo(ctx, first);
 		const next = todos.createTodo(ctx, { title: 'second', notebookId: book });
-		// Not 1: `TODO:#1` written in a note must not come to mean this one.
+		// Not 1: `TASK:#1` written in a note must not come to mean this one.
 		expect(todos.getTodo(ctx, next).notebookSeq).toBe(2);
 	});
 });
@@ -79,8 +81,8 @@ describe('making todos of a checklist', () => {
 		// The boxes are gone, so the offer no longer stands over a list that
 		// has already been made.
 		expect(checklist.checklistItems(after)).toHaveLength(0);
-		expect(after).toContain('TODO:#1');
-		expect(after).toContain('TODO:#2');
+		expect(after).toContain('TASK:#1');
+		expect(after).toContain('TASK:#2');
 		// And the writing under a line is still under it.
 		expect(after).toContain('after 9pm');
 		expect(after).toContain('Before the work starts:');
@@ -102,7 +104,7 @@ describe('making todos of a checklist', () => {
 		noteTodos.makeTodosFromEntry(ctx, note, [0]);
 
 		const after = diary.getEntry(ctx, note).content;
-		expect(after).toContain('TODO:#1');
+		expect(after).toContain('TASK:#1');
 		expect(after).toContain('- [ ] left behind');
 	});
 });
@@ -115,7 +117,7 @@ describe('the reference, rendered', () => {
 			[5, { title: 'book the MOT', done: true }]
 		]);
 
-		const html = renderMarkdown('- TODO:#4\n- TODO:#5', refs);
+		const html = renderMarkdown('- TASK:#4\n- TASK:#5', refs);
 		expect(html).toContain('ring the plumber');
 		expect(html).toContain('data-todo-seq="4"');
 		expect(html).toContain('is-done');
@@ -124,15 +126,58 @@ describe('the reference, rendered', () => {
 
 	test('is still a link where the caller has no list', async () => {
 		const { renderMarkdown } = await import('../src/lib/markdown');
-		const html = renderMarkdown('see TODO:#7');
+		const html = renderMarkdown('see TASK:#7');
 		expect(html).toContain('data-todo-seq="7"');
-		expect(html).toContain('TODO:#7');
+		expect(html).toContain('TASK:#7');
+	});
+
+	/*
+	 * The reference was spelled `TODO:#` before the room was renamed, and
+	 * notes written then still say it. A rename that stopped reading the old
+	 * spelling would blank a reference in writing somebody already has.
+	 */
+	test('reads the older TODO: spelling in writing that already exists', async () => {
+		const { renderMarkdown } = await import('../src/lib/markdown');
+		const refs = new Map([[4, { title: 'ring the plumber', done: false }]]);
+
+		const html = renderMarkdown('- TODO:#4', refs);
+		expect(html).toContain('ring the plumber');
+		expect(html).toContain('data-todo-seq="4"');
+		expect(html).not.toContain('TODO:#4');
 	});
 
 	test('escapes a title, like everything else here', async () => {
 		const { renderMarkdown } = await import('../src/lib/markdown');
-		const html = renderMarkdown('TODO:#1', new Map([[1, { title: '<script>x', done: false }]]));
+		const html = renderMarkdown('TASK:#1', new Map([[1, { title: '<script>x', done: false }]]));
 		expect(html).not.toContain('<script>');
 		expect(html).toContain('&lt;script&gt;');
+	});
+});
+
+/*
+ * The preview beside the box draws the note that is being typed, so it has to
+ * resolve a reference the same way the saved note does. It was called with no
+ * list at all, so a chip that read as the task's title once saved read as
+ * `TASK:#4` while it was being written.
+ */
+describe('the reference in the preview', () => {
+	const refs = new Map([[4, { title: 'ring the plumber', done: true }]]);
+	const preview = (value: string, todos?: typeof refs) =>
+		render(TranslatedMarkdownBox, { props: { value, todos } }).body;
+
+	test('is the task it names, where the notebook handed its list over', () => {
+		const html = preview('see TASK:#4', refs);
+		expect(html).toContain('✓ ring the plumber');
+		expect(html).toContain('data-todo-seq="4"');
+	});
+
+	test('reads the older TODO: spelling too', () => {
+		expect(preview('see TODO:#4', refs)).toContain('✓ ring the plumber');
+	});
+
+	test('is still a chip where there is no notebook — the diary, the wheel', () => {
+		const html = preview('see TASK:#4');
+		expect(html).toContain('TASK:#4');
+		expect(html).not.toContain('ring the plumber');
 	});
 });

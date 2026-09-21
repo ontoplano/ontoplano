@@ -262,7 +262,7 @@ const inNotebook = (table, column, value, notebookId) => {
 	// reached yet.
 	//
 	// Tasks are numbered the same way, and were not: a seeded notebook's tasks
-	// had no number on their cards, and `TODO:#4` in a note beside them
+	// had no number on their cards, and `TASK:#4` in a note beside them
 	// pointed at nothing.
 	if (numbered) {
 		run(
@@ -2942,7 +2942,7 @@ const TWELVE_NOTE_SEQ = afterEverything + 1;
 /*
  * A notebook that points at its own tasks.
  *
- * `TODO:#4` in a note is how somebody writing up where a job stands refers to
+ * `TASK:#4` in a note is how somebody writing up where a job stands refers to
  * the thing that has to happen, and it was the one part of a notebook nothing
  * seeded demonstrated — so the reference rendered as the literal text on the
  * one screen where it is meant to render as the task. The kitchen is the case
@@ -2962,17 +2962,17 @@ diary(
 	KITCHEN_NOTE_SEQ,
 	`## Where this stands
 
-Everything hangs on one phone call. TODO:#3 is the only thing in the way —
+Everything hangs on one phone call. TASK:#3 is the only thing in the way —
 until the building manager says whether the wall is structural, quote 3 is
 either the cheap answer or the expensive mistake.
 
 Then, in order:
 
-- TODO:#4, which cannot be ordered before the wall is decided, because the
+- TASK:#4, which cannot be ordered before the wall is decided, because the
   counter is cut to it
-- TODO:#5, the weekend before they start
+- TASK:#5, the weekend before they start
 
-TODO:#1 is in, all three of them, and TODO:#2 is done — 2.34m, not the 2.4m
+TASK:#1 is in, all three of them, and TASK:#2 is done — 2.34m, not the 2.4m
 the first quote assumed.`,
 	['home'],
 	iso(dayAt(3))
@@ -3041,8 +3041,8 @@ What I would do differently: the paperwork drawer took an afternoon and sat on
 the list for seven months. Anything that can be finished in an afternoon
 should not be a goal at all.
 
-**What is left**, which is three Saturdays at most: TODO:#1, then TODO:#2 and
-TODO:#3 on the same day — the wood is already in the hall and has been since
+**What is left**, which is three Saturdays at most: TASK:#1, then TASK:#2 and
+TASK:#3 on the same day — the wood is already in the hall and has been since
 July.`,
 	['living'],
 	iso(dayAt(6)),

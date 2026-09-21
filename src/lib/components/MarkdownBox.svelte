@@ -25,7 +25,7 @@
 	 */
 	import TextBox from './TextBox.svelte';
 	import Written from './Written.svelte';
-	import { renderMarkdown } from '$lib/markdown';
+	import { renderMarkdown, type TodoRefs } from '$lib/markdown';
 	import { useT } from '$lib/i18n';
 	import type { HTMLTextareaAttributes } from 'svelte/elements';
 
@@ -45,6 +45,7 @@
 		element = $bindable(),
 		rows = 6,
 		preview = 'markdown',
+		todos = undefined,
 		class: extra = '',
 		...rest
 	}: HTMLTextareaAttributes & {
@@ -63,6 +64,16 @@
 		 * promise formatting that never arrives, or hide the picture that does.
 		 */
 		preview?: 'markdown' | 'written';
+		/**
+		 * The tasks a reference in the writing may name, by their number in the
+		 * notebook — what `renderMarkdown` resolves `TASK:#4` against.
+		 *
+		 * Optional, and left out by everything written outside a notebook: the
+		 * diary and the capture wheel have no list to point at. Without it the
+		 * preview drew the bare chip while the saved note drew the task's
+		 * title, so the preview was showing something the note would not be.
+		 */
+		todos?: TodoRefs;
 		class?: string;
 	} = $props();
 
@@ -196,7 +207,7 @@
 				<!-- `renderMarkdown` escapes every character of the input before it emits a
 				     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-				{@html renderMarkdown(settled)}
+				{@html renderMarkdown(settled, todos)}
 			{/if}
 		</div>
 	</div>

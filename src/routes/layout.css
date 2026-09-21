@@ -1012,7 +1012,7 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
-	 * A note pointing at a task: `TODO:#4`.
+	 * A note pointing at a task: `TASK:#4`.
 	 *
 	 * A chip rather than a plain link, because it is a thing rather than a
 	 * word — the same treatment a tag gets — and because what follows it in a

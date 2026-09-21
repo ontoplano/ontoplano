@@ -87,7 +87,7 @@
 		/**
 		 * Open this list's editor on one task, handed up like `openNew`.
 		 *
-		 * A note that points at a task — `TODO:#4` — opens the task where the
+		 * A note that points at a task — `TASK:#4` — opens the task where the
 		 * task lives, which is this list's own form. Anything else would be a
 		 * second editor to keep in step with this one.
 		 */
@@ -1259,7 +1259,7 @@
 								This task's number inside its notebook, quietly, at the end
 								of the row.
 
-								It is what a note points at — `TODO:#4` — and what somebody
+								It is what a note points at — `TASK:#4` — and what somebody
 								says out loud when they mean a particular task, so it has to
 								be on the screen: the row id never was, and "the one about
 								the plumber" is the only other way to name one. Bottom right,

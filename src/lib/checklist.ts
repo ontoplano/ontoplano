@@ -107,7 +107,7 @@ function trimBlank(lines: string[]): string {
 /**
  * The note rewritten to point at the tasks it just became.
  *
- * Each checkbox line that crossed over is replaced by a reference — `TODO:#4`,
+ * Each checkbox line that crossed over is replaced by a reference — `TASK:#4`,
  * the task's number inside this notebook — and the writing under it is left
  * exactly where it was, because that writing is now on the task *and* still
  * explains the line in the note.
@@ -139,7 +139,7 @@ export function withTodoReferences(content: string, made: Map<number, number>): 
 		}
 		at += 1;
 		const seq = made.get(at);
-		out.push(seq === undefined ? line : `${indent}- TODO:#${seq}`);
+		out.push(seq === undefined ? line : `${indent}- TASK:#${seq}`);
 	}
 
 	return out.join('\n');

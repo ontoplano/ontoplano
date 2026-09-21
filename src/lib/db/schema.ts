@@ -633,7 +633,7 @@ export const todoTasks = sqliteTable(
 		 * the fourth task about the kitchen is #4 rather than #312, because a
 		 * reference somebody types by hand has to be a number they can see. It
 		 * is written when the task is filed under a notebook — at creation, or
-		 * the first time it is moved into one — and never reused, so `TODO:#4`
+		 * the first time it is moved into one — and never reused, so `TASK:#4`
 		 * cannot come to mean a different task later.
 		 *
 		 * Null for a task filed under nothing, which has nowhere to be fourth

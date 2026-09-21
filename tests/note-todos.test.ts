@@ -90,7 +90,7 @@ describe('making them', () => {
 
 		expect(after).toContain('things before the trip');
 		expect(after).toContain('the boiler makes a noise after 9pm');
-		expect(after).toMatch(/TODO:#\d+/);
+		expect(after).toMatch(/TASK:#\d+/);
 		expect(after).not.toContain('- [ ]');
 		expect(after).not.toContain('- [x]');
 	});

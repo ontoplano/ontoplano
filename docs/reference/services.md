@@ -3076,7 +3076,7 @@ whatever is written under it as that todo's notes — see `$lib/checklist` for
 the shape being read.
 
 The note keeps its words and stops keeping the boxes: each line that crossed
-over becomes a reference to the task it became — `TODO:#4`, the task's
+over becomes a reference to the task it became — `TASK:#4`, the task's
 number inside this notebook — so the note still says what it said and the
 list is where the work now lives. Leaving the boxes behind left the offer
 standing over a list that had already been made, and two records of one list

@@ -10,7 +10,7 @@
  * Supported: headings, horizontal rules, bullet and numbered lists, task
  * lists, block quotes, tables, fenced and inline code, bold, italic,
  * strikethrough, links, pictures you uploaded here, `#12` as a reference to a
- * diary entry, and `TODO:#4` as a reference to a task in the same notebook.
+ * diary entry, and `TASK:#4` as a reference to a task in the same notebook.
  */
 
 const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
@@ -90,7 +90,7 @@ function inline(raw: string, todos?: TodoRefs): string {
 	);
 
 	/*
-	 * `TODO:#4` is how a note points at a task in the same notebook.
+	 * `TASK:#4` is how a note points at a task in the same notebook.
 	 *
 	 * The number is the task's own number *inside that notebook* — the fourth
 	 * task about the kitchen is #4 — because a reference somebody types by
@@ -98,14 +98,19 @@ function inline(raw: string, todos?: TodoRefs): string {
 	 * tasks writes these in place of the boxes, so the note keeps saying what
 	 * it said and the list is where the work now lives.
 	 *
+	 * `TODO:#4` is read as the same thing. The room these live in was called
+	 * Todos when the reference was invented, and notes written then still
+	 * carry that spelling; refusing it now would blank a reference in writing
+	 * somebody already has. Nothing writes it any more.
+	 *
 	 * The task's title and whether it is done are drawn where the caller
 	 * passed them: a note rendered without them still gets a link, which is
 	 * what an export or a page that has not loaded the list should show.
 	 */
-	html = html.replace(/(^|[\s(])TODO:#(\d+)\b/g, (_match, before: string, seq: string) => {
+	html = html.replace(/(^|[\s(])(?:TASK|TODO):#(\d+)\b/g, (_match, before: string, seq: string) => {
 		const one = todos?.get(Number(seq));
 		const done = one?.done ? ' is-done' : '';
-		const label = one ? `${one.done ? '\u2713 ' : ''}${escape(one.title)}` : `TODO:#${seq}`;
+		const label = one ? `${one.done ? '\u2713 ' : ''}${escape(one.title)}` : `TASK:#${seq}`;
 		return `${before}<a class="todo-ref${done}" data-todo-seq="${seq}" href="#todo-${seq}">${label}</a>`;
 	});
 

@@ -43,7 +43,7 @@ export type Todo = {
 	categoryName: string | null;
 	categoryColor: string | null;
 	notebookId: number | null;
-	/** Its number inside that notebook, which is what `TODO:#4` in a note means. */
+	/** Its number inside that notebook, which is what `TASK:#4` in a note means. */
 	notebookSeq: number | null;
 	notebookTitle: string | null;
 	/** When it was put away, or null. Put away is not the same as finished. */
@@ -503,7 +503,7 @@ export type TodoInput = {
 /**
  * This task's number inside the notebook it is filed under.
  *
- * So a note can point at it: `TODO:#4` is the fourth task about the kitchen,
+ * So a note can point at it: `TASK:#4` is the fourth task about the kitchen,
  * which is a number somebody can see on the screen in front of them — the row
  * id is not. The same arrangement notes already have.
  *

@@ -671,7 +671,7 @@ _Needs `notes:write`; writes._
 
 ### `note_to_todos` — Make todos out of a checklist note
 
-Turn a note that is really a checklist into the tasks it describes. Every `- [ ]` line becomes a task, with whatever is written under it as that task’s notes; a `- [x]` line comes across already done. Each is filed under the note’s own notebook, and each box is replaced by a reference to the task it became — `TODO:#4` — so the note keeps its words and stops being a second copy of the list.
+Turn a note that is really a checklist into the tasks it describes. Every `- [ ]` line becomes a task, with whatever is written under it as that task’s notes; a `- [x]` line comes across already done. Each is filed under the note’s own notebook, and each box is replaced by a reference to the task it became — `TASK:#4` — so the note keeps its words and stops being a second copy of the list.
 
 _Needs `tasks:write`; writes._
 
