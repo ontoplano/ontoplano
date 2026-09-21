@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import Field from '$lib/components/Field.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
+	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
 	import RecordingAttach from '$lib/components/RecordingAttach.svelte';
 	import { useT } from '$lib/i18n';
@@ -31,9 +32,17 @@
 </script>
 
 <Field label={t('fields.idea.heading')} span={12} required>
-	<textarea bind:this={box} name="content" required rows={compact ? 4 : 5} class="textarea"
-		>{content}</textarea
-	>
+	<!-- The same box a note is written in, drawn the way the list of ideas
+	     draws it: an idea is a sentence with a picture or a recording stuck to
+	     it, not a document. -->
+	<MarkdownBox
+		bind:element={box}
+		value={content}
+		name="content"
+		required
+		rows={compact ? 4 : 5}
+		preview="written"
+	/>
 	<!-- An idea said out loud is still an idea. The same attachment the note
 	     form has, for the same reason: some of them are quicker to say. -->
 	<PictureAttach target={box} />

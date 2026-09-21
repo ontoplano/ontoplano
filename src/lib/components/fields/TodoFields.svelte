@@ -6,6 +6,7 @@
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import NotebookField from '$lib/components/NotebookField.svelte';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
+	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
 	import RecordingAttach from '$lib/components/RecordingAttach.svelte';
 	import { RATINGS, type Rating } from '$lib/ratings';
@@ -109,7 +110,11 @@
 	</Field>
 
 	<Field label={t('ui.notes')} span={12}>
-		<textarea bind:this={box} name="notes" rows="3" class="textarea">{notes}</textarea>
+		<!-- The same box a note is written in, showing what the words already
+		     are rather than the address of the screenshot in the middle of
+		     them. `written` because that is what draws a task's notes on the
+		     list afterwards. -->
+		<MarkdownBox bind:element={box} value={notes} name="notes" rows={3} preview="written" />
 		<!-- A task said out loud is still a task, and a task is as often a
 		     screenshot: the same two attachments a note and an idea have,
 		     because "ring the plumber about the thing behind the boiler" is

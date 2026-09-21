@@ -24,6 +24,7 @@
 	 * somebody glanced at the preview.
 	 */
 	import TextBox from './TextBox.svelte';
+	import Written from './Written.svelte';
 	import { renderMarkdown } from '$lib/markdown';
 	import { useT } from '$lib/i18n';
 	import type { HTMLTextareaAttributes } from 'svelte/elements';
@@ -43,6 +44,7 @@
 		value = $bindable(''),
 		element = $bindable(),
 		rows = 6,
+		preview = 'markdown',
 		class: extra = '',
 		...rest
 	}: HTMLTextareaAttributes & {
@@ -50,6 +52,17 @@
 		/** The textarea itself, for whatever writes into it. See `TextBox`. */
 		element?: HTMLTextAreaElement;
 		rows?: number;
+		/**
+		 * Which drawing of the words the preview shows.
+		 *
+		 * A preview is only worth having if it is the thing itself, so it has
+		 * to be drawn by whatever draws it afterwards. A note is a document and
+		 * goes through the markdown renderer; a todo's notes and an idea are a
+		 * sentence with a screenshot or a recording stuck to it, and `Written`
+		 * is what the list draws them with. Previewing one as the other would
+		 * promise formatting that never arrives, or hide the picture that does.
+		 */
+		preview?: 'markdown' | 'written';
 		class?: string;
 	} = $props();
 
@@ -177,6 +190,8 @@
 		>
 			{#if empty}
 				<p class="text-gray-400 italic">{t('markdown.nothingToPreviewYet')}</p>
+			{:else if preview === 'written'}
+				<Written content={settled} />
 			{:else}
 				<!-- `renderMarkdown` escapes every character of the input before it emits a
 				     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
