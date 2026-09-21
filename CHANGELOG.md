@@ -20,6 +20,71 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **A label filter holds more than one label.** "The urgent ones" is a
+  question one label answers; "the urgent ones and the ones about the house" is
+  the one anybody with a long list is actually asking. Pressing a label on a
+  task adds it to the filter too, so two presses is two labels. Any of them
+  rather than all — a task carries two or three, and asking for the ones
+  carrying every label you picked usually asks for nothing.
+
+- **A dropdown in a form is the app's own, not the platform's.** Only the
+  closed control could be styled, so on a dark screen opening one produced a
+  white panel with the operating system's blue bar across it. The goal form,
+  the block form and the notebook field draw their own list now, with the keys
+  a dropdown answers to. Dates stay the browser's: a calendar is a real control
+  and a hand-built one is worse.
+
+- **A label filter's menu is no longer cut off by the card it is in.**
+
+- **The task card reads at a glance.** The tick stands level with the title
+  rather than floating halfway down the row, and urgency, interest and energy
+  are three little gauges in the room it gave back — five frets each, one
+  colour each, the words under the pointer. A finished task says when it was
+  finished.
+
+- **A ticked task is seen to be ticked before it goes.** It stays half a
+  second, drawn as a finished one, instead of vanishing the instant you press
+  it.
+
+- **Pressing Escape no longer costs you the task you were writing.** What was
+  typed comes back when the form does. Cancel and a save that worked still
+  throw the draft away, because both are somebody saying they are finished.
+
+- **Stepping the week keeps the page where it is.** Reading the afternoon and
+  pressing forward used to put you back at seven in the morning. The grid dims
+  while the next week arrives, and a press landing during it still lands.
+
+- **An account is in dollars until it says otherwise.** Preferences still takes
+  any currency.
+
+- **A note points at a task as `TASK:#4`.** The room is called Tasks, so the
+  reference is too — and the live preview resolves it now instead of showing
+  the reference itself. Notes written before this keep working.
+
+- **Folding a place in Inventory holds the page still.**
+
+- **The Day / Week / Month control says which one you are on.** The difference
+  between the chosen position and the others was carried by a raised tile the
+  dark theme does not have.
+
+- **The planner's header is two rows on a phone, not four**, with the date
+  centred between the arrows; and on a desktop the arrow that steps the week
+  sits beside the date it steps rather than adrift of it.
+
+- **The permissions table names every family of data.** One row printed its
+  internal key — "statements" — in the middle of a page that was otherwise in
+  your language.
+
+- **A reminder is listed at the time it was set for.** Where the box's clock
+  differed from the account's timezone it was shown hours out.
+
+- **A data stream's page is part of Integrations**, with the room's tabs on it,
+  rather than a page belonging to nothing.
+
+- **A task's notes and an idea are written in the box with the preview**, so a
+  pasted screenshot is a screenshot rather than an address in the middle of a
+  sentence.
+
 - **Tags can be managed.** A Tags tab in Notebooks lists every label the
   account uses with how many things carry it, and renames, colours or removes
   one — across tasks, notes, ideas, blocks and pictures at once, because the
