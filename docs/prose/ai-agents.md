@@ -219,6 +219,8 @@ existed, so there is nothing to learn by walking the numbers.
   exactly those. This is a budget, not a limit: a model reading a list to find
   one thing pays for forty rows it will not use, three times over — on the way
   in, on the way out, and again next turn.
+- **A note says which pictures it refers to, and does not carry them.** The
+  links are on the line; `media` fetches one when it turns out to matter.
 - **A list can be asked for narrowly.** `status`, `tag`, `withoutTag` and
   `taggedSince` on the task list; `tag` and `taggedSince` on notes. The date
   read is the label's own — it does not move when the thing is edited — so

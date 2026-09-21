@@ -232,6 +232,20 @@ describe('the same reach for notes', () => {
 		expect(rows[0].title).toBe('Quotes');
 	});
 
+	test('a line names the pictures it refers to, rather than carrying them', () => {
+		// A note is usually read to find something, and its pictures are the
+		// expensive part. The links are enough to fetch one with `media` if it
+		// turns out to matter.
+		diary.createEntry(mine, {
+			content: 'Look at this ![tap](/media/12) and hear ![said](/media/audio/9).',
+			title: 'The tap',
+			notebookId: kitchen
+		});
+		const rows = itemsOf(call(['notes:read'], 'notebook_notes', { id: kitchen }));
+		const one = rows.find((row) => row.title === 'The tap');
+		expect(one?.media).toEqual(['/media/12', '/media/audio/9']);
+	});
+
 	test('a line carries an opening rather than the writing', () => {
 		const [one] = itemsOf(
 			call(['notes:read'], 'notebook_notes', { id: kitchen, tag: 'ai-review' })

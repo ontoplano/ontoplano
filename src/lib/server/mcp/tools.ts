@@ -597,6 +597,9 @@ type NoteRow = {
 	tags: { id?: number; name: string; taggedAt?: string | null }[];
 };
 
+/** The pictures and recordings a piece of writing refers to, as links. */
+const MEDIA_LINK = /\/media\/(?:audio\/)?\d+/g;
+
 function noteLine(note: NoteRow): Record<string, unknown> {
 	const out: Record<string, unknown> = { id: note.id, createdAt: note.createdAt };
 	if (note.seq !== null && note.seq !== undefined) out.seq = note.seq;
@@ -608,6 +611,17 @@ function noteLine(note: NoteRow): Record<string, unknown> {
 	if (note.tags.length > 0) out.tags = note.tags.map((one) => one.name);
 	if (note.pinnedAt) out.pinned = true;
 	if (note.archivedAt) out.archivedAt = note.archivedAt;
+
+	/*
+	 * What it refers to, as links rather than as bytes.
+	 *
+	 * A note's pictures are the most expensive thing about it and usually not
+	 * why it is being read. The line says they are there and what to ask for;
+	 * `media` fetches one when it turns out to matter. An opening that stops
+	 * before the pictures would otherwise hide them entirely.
+	 */
+	const links = [...new Set(note.content.match(MEDIA_LINK) ?? [])];
+	if (links.length > 0) out.media = links;
 	return out;
 }
 
@@ -1027,7 +1041,7 @@ export const TOOLS: Tool[] = [
 		name: 'finish_block',
 		title: 'Mark a block done or skipped',
 		description:
-			'Answer for one block on the day: it happened, or it did not. Takes the id `today` gives. Skipped is a real answer and goes into the week\u2019s record, which the review asks about \u2014 it is not a way to clear something off the day. Moving one is `change_block`; one that was never happening is `cancel_block`. `todo` takes an answer back.',
+			'Answer for one block on the day: it happened, or it did not. Takes the id `today` gives for that block. Skipping is a real answer — say skipped when the person says they did not do it. It is NOT a way to clear something off the day: a skip goes into the week\u2019s record and the review asks about it. To move a block use `change_block`; to take one off because it was never happening use `cancel_block`. `todo` takes an answer back, for one ticked by mistake.',
 		scope: 'schedule:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'block' }],
@@ -1112,7 +1126,7 @@ export const TOOLS: Tool[] = [
 		name: 'change_block',
 		title: 'Move or rename a block',
 		description:
-			'Change one block on one day: its time, its day, how long it runs, or what it is called. This is "push the study block to four", "make it two hours", "that was actually client work". Takes the id `today` or `upcoming` gives; only the fields you pass change. That day only — moving this Thursday\u2019s gym does not move gym — and never the repeating week.',
+			'Change one block on one day: its time, its day, how long it runs, or what it is called. This is "push the study block to four", "make it two hours", "that was actually client work". Takes the id `today` or `upcoming` gives. Only the fields you pass change. It affects that day only — moving this Thursday\u2019s gym does not move gym — and it never edits the repeating week. Renaming keeps which part of life it belongs to and stops it being the named activity it was, because that is what saying it was something else means.',
 		scope: 'schedule:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'block' }],
@@ -1144,7 +1158,7 @@ export const TOOLS: Tool[] = [
 		name: 'cancel_block',
 		title: 'Take a block off the day',
 		description:
-			'Remove a block from a day because it is not happening — the meeting moved, the class was called off. Not the same as skipped: skipped means it was meant to happen and did not, which the weekly review asks about; cancelled means it was never going to. A repeating block loses that one day only.',
+			'Remove a block from a day because it is not happening — the meeting moved, the class was called off, it was put on the wrong day. This is NOT the same as marking it skipped: skipped means it was meant to happen and did not, which is a fact the weekly review asks about, and cancelled means it was never going to. Use `finish_block` with "skipped" for the first and this for the second. A repeating block is only removed from that one day.',
 		scope: 'schedule:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'block' }],
@@ -3053,7 +3067,7 @@ export const TOOLS: Tool[] = [
 		name: 'repeating_week',
 		title: 'The week as it repeats',
 		description:
-			'The blocks that make up every week — weekday, time, length, category. Weekdays count from Monday: 0 is Monday, 6 is Sunday. Not all are weekly: `repeats` says how often each comes back. This is the template the days are generated from, so read it before changing Tuesdays rather than a Tuesday.',
+			'The blocks that make up every week — each with its weekday, time, length and category. Weekdays are numbered from Monday: 0 is Monday, 6 is Sunday. Not all of them are weekly: `repeats` says in words how often each one comes back, which can be every N weeks, every N days, or a day of the month. This is the template the days are generated from; `today` and `upcoming` show what it produced. Read it before changing Tuesdays rather than a Tuesday.',
 		scope: 'schedule:read',
 		writes: false,
 		input: object({}),
@@ -3067,7 +3081,7 @@ export const TOOLS: Tool[] = [
 		name: 'add_repeating_block',
 		title: 'Put a block on every week',
 		description:
-			'Add a block that comes back — "gym on Tuesdays at seven", "the bins every other Tuesday", "rent on the first". Weekly unless `repeats` says otherwise, and it changes every week from now on; `add_block` is the one for a single day. Weekdays count from Monday: 0 is Monday, 6 is Sunday. Leave the title out for a bare category block — "put work in those hours".',
+			'Add a block that comes back — "gym on Tuesdays at seven", "the bins every other Tuesday", "rent on the first". Weekly unless `repeats` says otherwise. This changes every week from now on; `add_block` is the one for a single day. Weekdays count from Monday: 0 is Monday, 6 is Sunday. A block can be a bare category rather than a named thing — leave the title out and it shows as the category itself, which is what "put work in those hours" means.',
 		scope: 'schedule:write',
 		writes: true,
 		input: object(
