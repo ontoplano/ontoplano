@@ -119,10 +119,30 @@ export function live(options: LiveOptions = {}): () => void {
 		later();
 	}
 
-	// A tab coming back to the front acts on whatever it missed, at once —
-	// the point of noticing is that the screen is right when somebody looks.
+	/*
+	 * Coming back to the front.
+	 *
+	 * Acting on what was missed is half of it, and it was all this did: if
+	 * something had been announced while the tab was hidden, it caught up.
+	 *
+	 * The other half is that a stream does not always survive being in the
+	 * background. Android freezes a web view and its sockets go with it, so
+	 * the phone came back with nothing pending and nothing connected — which
+	 * is the app opening on a badge saying three notifications and a bell
+	 * holding none, until some navigation happened to reload the data. So a
+	 * return to the front reloads once and reopens the stream if it has
+	 * closed. The point of noticing is that the screen is right when somebody
+	 * looks at it.
+	 */
 	const onVisible = () => {
-		if (document.visibilityState === 'visible' && pending) flush();
+		if (document.visibilityState !== 'visible') return;
+		if (pending) {
+			flush();
+		} else if (!busyTyping()) {
+			void invalidateAll();
+		}
+		// `CLOSED` is a stream that will not retry on its own.
+		if (!closed && (source === null || source.readyState === EventSource.CLOSED)) open();
 	};
 	document.addEventListener('visibilitychange', onVisible);
 

@@ -20,6 +20,10 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **The app shows what arrived while it was away.** It opened on a badge saying
+  three notifications and a bell holding none: a frozen web view takes the live
+  stream down with it, so nothing was pending when it came back and nothing
+  reconnected. Returning to the front reloads once and reopens the stream.
 - **A link that names a part of a page lands on that part.** "OD changed 6
   things" opened the integrations page at the top: below `lg` the window does
   not scroll — the page body does — so the browser's own fragment handling
