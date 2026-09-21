@@ -4,7 +4,9 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
+	import Picker from '$lib/components/Picker.svelte';
 	import Select from '$lib/components/Select.svelte';
+	import { deserialize } from '$app/forms';
 	import { enhance } from '$lib/enhance';
 	import { armed } from '$lib/actions/armed';
 	import { resolve } from '$app/paths';
@@ -24,9 +26,90 @@
 	let editing = $state(false);
 	let confirmRemove = $state(false);
 
+	// svelte-ignore state_referenced_locally
 	let provider = $state<string>(data.configured?.provider ?? 'anthropic');
 	const chosen = $derived(providerOf(provider));
 	const showForm = $derived(!data.configured || editing);
+
+	/*
+	 * The models this provider will actually answer to.
+	 *
+	 * Asked rather than typed: a text box for a model name only works for
+	 * somebody who already has the provider's documentation open, and the
+	 * answer changes every few months. The key on the form is what asks — it
+	 * does not have to be saved first, because looking at the list is most of
+	 * how you decide whether to save it.
+	 */
+	// Seeded once; from here the form owns them. See the note on `editing`.
+	// svelte-ignore state_referenced_locally
+	let baseUrl = $state(data.configured?.baseUrl ?? '');
+	let models = $state<{ id: string; label: string }[]>([]);
+	let asking = $state(false);
+	let askFailed = $state('');
+	// svelte-ignore state_referenced_locally
+	let model = $state<string>(data.configured?.model ?? '');
+
+	/** The way out for a name no list can hold: a model released this morning. */
+	let typing = $state(false);
+	let key = $state('');
+
+	/**
+	 * Ask the provider, with whatever the form is holding.
+	 *
+	 * A form action rather than a call from here: the key goes to this
+	 * instance and the instance calls the company, which is the same path the
+	 * chat itself takes and the only one the outbound guard covers.
+	 */
+	async function askForModels() {
+		asking = true;
+		askFailed = '';
+		try {
+			const body = new FormData();
+			body.set('provider', provider);
+			body.set('key', key);
+			body.set('baseUrl', baseUrl);
+			const answer = await fetch('?/models', {
+				method: 'POST',
+				body,
+				headers: { 'x-sveltekit-action': 'true' }
+			});
+			const said = deserialize(await answer.text());
+			if (said.type === 'success' && Array.isArray(said.data?.models)) {
+				models = said.data.models as { id: string; label: string }[];
+				if (models.length === 0) askFailed = t('settings.integrations.chat.noModels');
+			} else {
+				askFailed =
+					(said.type === 'failure' && typeof said.data?.message === 'string'
+						? said.data.message
+						: '') || t('settings.integrations.chat.couldNotAsk');
+			}
+		} catch {
+			askFailed = t('settings.integrations.chat.couldNotAsk');
+		} finally {
+			asking = false;
+		}
+	}
+
+	/*
+	 * A key for one provider says nothing about another's models.
+	 *
+	 * Cleared when the provider changes, and only then: an effect that writes
+	 * three pieces of state the template reads re-ran on its own writes and
+	 * replaced this part of the form on every frame, which leaves a button
+	 * that can be read and never pressed.
+	 */
+	// A marker for the effect below rather than anything rendered, so it is a
+	// plain variable — the same shape `TagInput` and `MarkdownBox` use.
+	// svelte-ignore state_referenced_locally
+	let askedFor = provider;
+	$effect(() => {
+		if (provider === askedFor) return;
+		askedFor = provider;
+		models = [];
+		askFailed = '';
+		typing = false;
+		model = '';
+	});
 </script>
 
 <div class="space-y-6">
@@ -95,25 +178,115 @@
 
 					{#if chosen?.needsKey}
 						<Field label={t('settings.integrations.chat.key')} span={8} required>
-							<OneLine name="key" class="input font-mono" required maxlength={300} />
+							<OneLine
+								name="key"
+								class="input font-mono"
+								required
+								maxlength={300}
+								bind:value={key}
+							/>
 						</Field>
 					{/if}
 
+					<!--
+						The model, offered rather than asked for.
+
+						Empty until the provider has been asked, because the list is
+						the provider's and nothing here can guess it. The button says
+						so; once it has answered, this is a menu of what that key can
+						actually reach. Typing one by hand stays available for a model
+						newer than the list — labelled as that, rather than as the
+						normal way in.
+					-->
 					<Field
 						label={t('settings.integrations.chat.model')}
 						span={chosen?.editableBaseUrl ? 4 : 6}
 						required={!chosen?.defaultModel}
-						hint={chosen?.defaultModel
+						hint={chosen?.defaultModel && !model
 							? t('settings.integrations.chat.emptyMeans', { model: chosen.defaultModel })
 							: ''}
 					>
-						<OneLine
-							name="model"
-							class="input font-mono"
-							placeholder={chosen?.modelHint ?? ''}
-							required={!chosen?.defaultModel}
-							maxlength={100}
-						/>
+						<input type="hidden" name="model" value={model} />
+						{#if typing || (models.length === 0 && model)}
+							<OneLine
+								name="modelTyped"
+								class="input font-mono"
+								placeholder={chosen?.modelHint ?? ''}
+								maxlength={100}
+								bind:value={model}
+							/>
+						{:else if models.length > 0}
+							<Picker
+								value={model}
+								options={[
+									{ value: '', label: t('settings.integrations.chat.pickAModel') },
+									...models.map((one) => ({ value: one.id, label: one.label }))
+								]}
+								onpick={(next) => (model = next)}
+								label={t('settings.integrations.chat.model')}
+								class="w-full"
+							/>
+						{:else}
+							<!--
+								Named itself, because `Field` is a `<label>`.
+
+								A button inside a label takes its accessible name from the
+								whole label — so without this it answers to "Model Ask the
+								provider what it offers Type a model name instead Empty
+								means claude-sonnet-5", which is what a screen reader would
+								read out and what a test cannot address. Same trap the
+								markdown box's Write and Preview tabs hit.
+							-->
+							<button
+								type="button"
+								class="btn btn-sm w-full"
+								aria-label={t('settings.integrations.chat.loadModels')}
+								disabled={asking ||
+									(chosen?.needsKey === true && key.trim() === '' && !data.configured)}
+								onclick={askForModels}
+							>
+								{asking
+									? t('settings.integrations.chat.asking')
+									: t('settings.integrations.chat.loadModels')}
+							</button>
+						{/if}
+
+						<div class="mt-1 flex flex-wrap items-center gap-3 text-xs">
+							{#if models.length > 0}
+								<button
+									type="button"
+									class="link"
+									aria-label={t('settings.integrations.chat.loadModelsAgain')}
+									onclick={() => {
+										models = [];
+										model = '';
+									}}
+								>
+									{t('settings.integrations.chat.loadModelsAgain')}
+								</button>
+							{/if}
+							<button
+								type="button"
+								class="link"
+								aria-label={typing
+									? t('settings.integrations.chat.pickFromTheList')
+									: t('settings.integrations.chat.typeOneInstead')}
+								onclick={() => {
+									typing = !typing;
+									// A refusal from the provider is about the list, and the
+									// list is not what is on screen any more.
+									askFailed = '';
+								}}
+							>
+								{typing
+									? t('settings.integrations.chat.pickFromTheList')
+									: t('settings.integrations.chat.typeOneInstead')}
+							</button>
+						</div>
+
+						{#if askFailed}
+							<p class="mt-1 text-xs text-red-600">{askFailed}</p>
+						{/if}
 					</Field>
 
 					{#if chosen?.editableBaseUrl}
@@ -129,6 +302,7 @@
 								class="input font-mono"
 								placeholder={OLLAMA_DEFAULT_BASE_URL}
 								maxlength={200}
+								bind:value={baseUrl}
 							/>
 						</Field>
 					{/if}

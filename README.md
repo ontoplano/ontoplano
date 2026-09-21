@@ -53,7 +53,8 @@ then `sudo ontoplano config` to set the origin and
 [releases page](https://github.com/ontoplano/ontoplano/releases); they carry
 their own Node, so there is nothing else to install. A packaged install keeps
 its settings in `/etc/ontoplano/` and its database in `/var/lib/ontoplano/`.
-There is no Windows installer yet — [help build one](CONTRIBUTING.md).
+There is no Windows installer yet — [help build one](CONTRIBUTING.md). Windows
+runs it from source; see below.
 
 ### Docker
 
@@ -82,6 +83,35 @@ make db-seed    # synthetic data for the dev account
 `make dev` wants Linux with systemd — on anything else, `yarn dev` runs
 the same server in the foreground. A from-source instance keeps its settings in
 `~/.config/ontoplano/` and its database in `~/.local/share/ontoplano/`.
+
+### On Windows
+
+In PowerShell, once:
+
+```powershell
+wsl --install -d Ubuntu
+```
+
+Reboot if it asks, then open **Ubuntu** from the Start menu and run everything
+there:
+
+```sh
+sudo apt update && sudo apt install -y nodejs npm git
+sudo npm install -g yarn
+git clone https://github.com/ontoplano/ontoplano.git && cd ontoplano
+yarn
+yarn dev
+```
+
+Then open `http://localhost:1493` in Windows — WSL forwards the port, so the
+browser is the one you already use.
+
+**There is no systemd on this path**, and that is the whole difference: nothing
+starts on boot, `make dev` and the `ontoplano` service commands do not apply,
+and `yarn dev` holds the terminal for as long as you want the app up. Close the
+terminal and the app stops. Everything else — the data, the settings, the
+upgrades — works the way it does anywhere else, under your Linux home inside
+WSL (`\\wsl$\Ubuntu\home\<you>` from Explorer).
 
 See `CONTRIBUTING.md` for details on helping with the code.
 

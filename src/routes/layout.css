@@ -2043,6 +2043,26 @@ label:has(> input[type='radio']:not(:disabled)) {
 		}
 	}
 
+	/*
+	 * A control that is a word rather than a button.
+	 *
+	 * For the small choices that sit under a field — "type one instead",
+	 * "ask again" — where a bordered button would weigh more than the thing it
+	 * does. Underlined, because a word with no affordance is a caption: the
+	 * chat's model field shipped two of these as bare text and they read as
+	 * explanation nobody could press.
+	 */
+	.link {
+		color: var(--color-gray-600);
+		text-decoration: underline;
+		text-underline-offset: 2px;
+		cursor: pointer;
+	}
+
+	.link:hover {
+		color: var(--color-gray-900);
+	}
+
 	.chip {
 		display: inline-flex;
 		align-items: center;

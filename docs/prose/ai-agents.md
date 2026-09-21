@@ -26,6 +26,73 @@ It is not on the on-device instance — the chat dials the provider from the
 server the instance runs on. On a phone, point any MCP client at the instance
 you sync with instead.
 
+### Which model
+
+You do not have to know. Paste the key, press **Ask the provider what it
+offers**, and the box becomes a list of what that key can actually reach —
+which is also the quickest way to find out whether the key works before you
+save it. Anthropic and OpenAI name a current model as the default if you pick
+nothing; OpenRouter and Ollama have no sensible default, so they ask.
+
+There is a "type a model name instead" for a model released this morning that
+the provider's own list has not caught up with. It is the exception, not the
+way in.
+
+### Getting a key
+
+Each of these is a company you have an account with, and the key is billed to
+that account rather than to anything here. Ontoplano never holds a provider
+account of its own.
+
+<!-- tabs -->
+
+#### Anthropic
+
+1. Go to **[console.anthropic.com](https://console.anthropic.com)** and sign in.
+   This is the developer console, and it is a different thing from a Claude
+   subscription: **paying for Claude Pro does not give you API credit**, which
+   is the step most people are missing when the key they just made says it has
+   no balance.
+2. **Plans & Billing → Buy credits.** A few dollars is a great deal of chat.
+3. **API keys → Create Key.** Copy it — the console shows it once.
+4. Paste it into Settings → AI & Integrations → Chat, and ask for the models.
+
+A key looks like `sk-ant-api03-…`.
+
+#### OpenAI
+
+1. Go to **[platform.openai.com](https://platform.openai.com)** and sign in.
+   The same caution applies: a ChatGPT Plus subscription is not API credit, and
+   the two are billed separately.
+2. **Settings → Billing** and add a payment method or buy credit.
+3. **API keys → Create new secret key.** Copy it; it is shown once.
+
+A key looks like `sk-proj-…` or `sk-…`.
+
+#### OpenRouter
+
+One account in front of most of the others, which is the reason to pick it: you
+can try a model from a company you have no account with.
+
+1. Go to **[openrouter.ai](https://openrouter.ai)** and sign in.
+2. **Credits** — add some, or use one of the free models the list marks as such.
+3. **Keys → Create Key.**
+
+A key looks like `sk-or-v1-…`. Models are named `company/model`, which is why
+its list is the long one.
+
+#### Ollama
+
+No key and no account: it runs on a machine you have. Install it from
+**[ollama.com](https://ollama.com)**, `ollama pull llama3.3`, and point the
+address at it — `http://127.0.0.1:11434/v1` if it is the same machine as the
+instance.
+
+The instance dials that address from wherever it runs, so an Ollama on your
+laptop is not reachable by an instance on a server somewhere else.
+
+<!-- /tabs -->
+
 ## Make a key
 
 **Settings → AI & Integrations → AI → Make a key.** It is shown once, so keep

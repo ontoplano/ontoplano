@@ -18,6 +18,22 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.1 — 2026-09-21
+
+- **The chat's model is a list, not a text box.** Paste the key, press "Ask the
+  provider what it offers", and the box becomes what that key can actually
+  reach — which is also the quickest way to find out whether the key works
+  before you save it. Typing a name by hand is still there for a model newer
+  than the provider's own list.
+
+- **The docs say how to get a key**, per provider, including the step that
+  catches most people: a Claude or ChatGPT subscription is not API credit, and
+  the two are billed separately.
+
+- **The README says how to run it on Windows** — WSL from PowerShell, then
+  `yarn dev` — and says plainly that there is no systemd on that path, so
+  nothing starts on boot and the terminal holds the app.
+
 ## 0.182.0 — 2026-09-21
 
 - **A chat, with a key of your own.** Settings → AI & Integrations → Chat

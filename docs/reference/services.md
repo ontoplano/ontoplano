@@ -64,6 +64,7 @@ shows up here on the next build.
 | [`media-referrers`](#media-referrers)            | What points at a picture or a recording, and where it lives.                                                                                                                                                                                                         |
 | [`media`](#media)                                | Pictures: what is accepted, where they go, and who may see one.                                                                                                                                                                                                      |
 | [`meta`](#meta)                                  | User-defined key/value metadata attached to planner slots.                                                                                                                                                                                                           |
+| [`model-catalog`](#model-catalog)                | What a provider will actually answer to, asked rather than typed.                                                                                                                                                                                                    |
 | [`model-keys`](#model-keys)                      | The model-provider key behind the in-app chat.                                                                                                                                                                                                                       |
 | [`newsletter`](#newsletter)                      | The one channel nobody else can take away.                                                                                                                                                                                                                           |
 | [`note-todos`](#note-todos)                      | Turning a note that is really a checklist into the todos it describes.                                                                                                                                                                                               |
@@ -2972,6 +2973,34 @@ still present in the payload and so reads as an explicit `{}`.
 ### Types
 
 - `SlotMeta`
+
+## model-catalog
+
+What a provider will actually answer to, asked rather than typed.
+
+The model was a text box, which only works for somebody who already has the
+provider's documentation open — and the answer changes every few months, so
+a list compiled here would be wrong by the time anybody read it. Every one
+of these companies publishes what it serves; this asks, with the key the
+person just pasted, and the form offers what came back.
+
+The key is theirs and the call goes to the company they chose. Nothing is
+stored by this: it is a question asked while a form is open.
+
+### Functions
+
+#### `listModels(provider, key, baseUrl)`
+
+Ask one provider what it serves.
+
+Newest first where the provider says so — all four return their list in
+their own order, and every one of them puts the current generation at the
+top or near it, so the order is left as given rather than sorted into
+alphabetical, which would bury `claude-sonnet-5` under `claude-2`.
+
+### Types
+
+- `ModelChoice` — A model, as the form offers it.
 
 ## model-keys
 

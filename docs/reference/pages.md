@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**60 pages, 242 actions.**
+**60 pages, 243 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -63,7 +63,7 @@ write surface for everything else; both end up calling the same
 | `/settings/family`                   | `addSeat`, `withdrawInvite`, `removeSeat`                                                                                                                                                                                                                                                                                                                                                            |
 | `/settings/instance`                 | `exportSubscribers`, `setRegistration`, `setEmailChange`, `setClientErrors`, `createInvite`, `revokeInvite`                                                                                                                                                                                                                                                                                          |
 | `/settings/integrations`             | `ringOnThisPhone`, `createKey`, `putBack`                                                                                                                                                                                                                                                                                                                                                            |
-| `/settings/integrations/chat`        | `save`, `remove`                                                                                                                                                                                                                                                                                                                                                                                     |
+| `/settings/integrations/chat`        | `save`, `models`, `remove`                                                                                                                                                                                                                                                                                                                                                                           |
 | `/settings/integrations/connections` | `createToken`, `calendarLink`, `notifyAssistant`, `putBack`, `revokeToken`, `updateStream`, `deleteStream`, `createWebhook`, `deleteWebhook`, `reviveWebhook`                                                                                                                                                                                                                                        |
 | `/settings/integrations/widget`      | `connect`                                                                                                                                                                                                                                                                                                                                                                                            |
 | `/settings/preferences`              | `setNotification`, `setErrorReports`, `saveCurrency`, `saveGridHours`, `saveMenu`, `resetMenu`, `setLayout`, `resetLayout`, `addQuote`, `importQuotes`, `deleteQuote`, `setStyle`, `setLanguage`, `setClock`, `setTheme`, `saveWeek`                                                                                                                                                                 |
@@ -503,6 +503,17 @@ once roles land.
 ### `/settings/integrations`
 
 What each family of permissions is called, in the words the app uses.
+
+### `/settings/integrations/chat`
+
+**`models`**
+
+What this provider will answer to, asked with the key on the form.
+
+The key may not be saved yet — somebody pastes one and wants to see the
+models before committing to it — so the form sends what it is holding.
+Where the field is empty and a key is already stored, the stored one is
+used, which is how "Replace" can browse without retyping.
 
 ### `/settings/integrations/connections`
 

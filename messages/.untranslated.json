@@ -1,6 +1,7 @@
 {
-	"total": 237,
+	"total": 244,
 	"files": {
+		"src/lib/assistant-providers.ts": 4,
 		"src/lib/components/Card.svelte": 1,
 		"src/lib/components/MarkdownBox.svelte": 2,
 		"src/lib/components/Picker.svelte": 1,
@@ -14,6 +15,8 @@
 		"src/lib/server/services/client-errors.ts": 4,
 		"src/lib/server/services/family-invite.ts": 4,
 		"src/lib/server/services/mail-log.ts": 3,
+		"src/lib/server/services/model-catalog.ts": 2,
+		"src/lib/server/services/model-keys.ts": 1,
 		"src/lib/server/services/newsletter.ts": 3,
 		"src/lib/server/services/push.ts": 1,
 		"src/lib/server/services/registration.ts": 8,
