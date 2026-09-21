@@ -54,11 +54,18 @@ test('the notebook keeps its own primary verb while Tasks is showing', async ({ 
 	await visit(page, '/notebooks');
 
 	// The room's bar, top right: this page is for making notebooks.
-	await expect(page.getByRole('button', { name: /New notebook/ })).toBeVisible();
+	const bar = page.locator('.room-bar');
+	await expect(bar.getByRole('button', { name: /New notebook/ })).toBeVisible();
 	await page.getByRole('button', { name: /^Tasks \d/ }).click();
-	await expect(page.getByRole('button', { name: /New notebook/ })).toBeVisible();
-	// …and not a second way to do what the header button beside it already does.
-	await expect(page.getByRole('button', { name: /New task/ })).toHaveCount(0);
+	await expect(bar.getByRole('button', { name: /New notebook/ })).toBeVisible();
+	/*
+	 * …and not a second way to do what the header button beside it already
+	 * does. Scoped to the bar: the notebook's own header legitimately offers
+	 * "New task" while that tab is showing, and the two used to be told apart
+	 * by their words rather than by where they are — which stopped working
+	 * the day the to-do list started calling its rows tasks.
+	 */
+	await expect(bar.getByRole('button', { name: /New task/ })).toHaveCount(0);
 });
 
 /**

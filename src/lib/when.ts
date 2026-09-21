@@ -101,6 +101,35 @@ export function timeOf(moment: Moment, when: When, extra: Intl.DateTimeFormatOpt
 	});
 }
 
+/**
+ * The day a moment falls on, where the reader is: `2026-09-21`.
+ *
+ * Not `toISOString().slice(0, 10)`, which is the day in UTC — and at nine in
+ * the evening in São Paulo that is tomorrow. Forms that default to "today"
+ * offered the wrong one for the last three hours of every day, which is
+ * exactly when somebody writing down what they did is likely to be doing it.
+ *
+ * The account's zone rather than the browser's: a person in an airport is
+ * still living in the week they planned.
+ */
+export function dayStamp(moment: Moment, when: When): string {
+	const { at, naive } = parse(moment);
+	if (Number.isNaN(at.getTime())) return '';
+	// `en-CA` writes a date as `2026-09-21`, which is the shape everything
+	// here stores and compares.
+	return new Intl.DateTimeFormat('en-CA', {
+		timeZone: naive ? 'UTC' : when.tz,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit'
+	}).format(at);
+}
+
+/** Today, where the reader is. */
+export function today(when: When): string {
+	return dayStamp(new Date(), when);
+}
+
 /** A day, the short way: `10 Sep`, `Sep 10`, `10 de set.` — the language decides. */
 export function dayOf(moment: Moment, when: When, extra: Intl.DateTimeFormatOptions = {}): string {
 	return formatWith(moment, when, { day: 'numeric', month: 'short', ...extra });

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Picker from '$lib/components/Picker.svelte';
-	import { monthOf } from '$lib/when';
+	import { dayStamp, monthOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { enhance } from '$lib/enhance';
 	import Swatch from '$lib/components/Swatch.svelte';
@@ -144,7 +144,9 @@
 		)
 	);
 	const asDecimal = (cents: number) => (Math.abs(cents) / 100).toFixed(2);
-	const today = new Date().toISOString().slice(0, 10);
+	// The reader's own day: `toISOString` is UTC, which is tomorrow for the
+	// last hours of every evening in São Paulo.
+	const today = $derived(dayStamp(new Date(), now()));
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
 	setRoomAction(() => ({

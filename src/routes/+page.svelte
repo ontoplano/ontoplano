@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import TagInput from '$lib/components/TagInput.svelte';
-	import { dayOf, momentOf, weekdayOf } from '$lib/when';
+	import { dayOf, momentOf, today, weekdayOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -1024,7 +1024,7 @@
 								autocomplete="off"
 								name="forDate"
 								type="date"
-								value={new Date().toISOString().slice(0, 10)}
+								value={today(now())}
 								class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 							/>
 						</div>
