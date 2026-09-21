@@ -2011,6 +2011,7 @@ export const messages: Catalogue = {
 	'rooms.health.title': 'Gesundheit',
 	'rooms.integrations.sections': 'Integrationen-Bereiche',
 	'rooms.integrations.tabs.ai': 'KI',
+	'rooms.integrations.tabs.chat': 'Chat',
 	'rooms.integrations.tabs.connections': 'Integrationen',
 	'rooms.integrations.title': 'Integrationen',
 	'rooms.media.sections': 'Medien-Bereiche',
@@ -2482,6 +2483,20 @@ export const messages: Catalogue = {
 		'Alles davon, sofern Sie nichts anderes festlegen. Alles Nicht-Angekreuzte bleibt außer Reichweite.',
 	'settings.integrations.andLetItDeleteThings': '…und ihm erlauben, Dinge zu löschen',
 	'settings.integrations.bankStatements': 'Kontoauszüge',
+	'settings.integrations.chat.answeringAs':
+		'{provider}, Schlüssel {prefix}…, antwortet als {model}.',
+	'settings.integrations.chat.baseUrl': 'Basis-URL',
+	'settings.integrations.chat.blurb':
+		'Der Chat antwortet mit einem Modell, das du mitbringst — wähle einen Anbieter und füge einen eigenen Schlüssel ein.',
+	'settings.integrations.chat.confirmRemove': 'Bestätigen?',
+	'settings.integrations.chat.emptyMeans': 'Leer bedeutet {model}.',
+	'settings.integrations.chat.key': 'API-Schlüssel',
+	'settings.integrations.chat.model': 'Modell',
+	'settings.integrations.chat.openChat': 'Chat öffnen',
+	'settings.integrations.chat.provider': 'Anbieter',
+	'settings.integrations.chat.removeKey': 'Schlüssel entfernen',
+	'settings.integrations.chat.replaceKey': 'Schlüssel ersetzen',
+	'settings.integrations.chat.title': 'Chat',
 	'settings.integrations.connections.aUrlOfYoursThat':
 		'Eine URL von Ihnen, die informiert wird, wenn hier etwas passiert — neue Aufgaben, Häkchen, Ideen.\nStreams schieben Daten hinein, Webhooks lassen Ihre Programme mithören.',
 	'settings.integrations.connections.address': 'Adresse',

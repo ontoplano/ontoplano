@@ -11,6 +11,10 @@
 	const tabs = [
 		{ href: resolve('/settings/integrations'), label: t('rooms.integrations.tabs.ai') },
 		{
+			href: resolve('/settings/integrations/chat'),
+			label: t('rooms.integrations.tabs.chat')
+		},
+		{
 			href: resolve('/settings/integrations/connections'),
 			label: t('rooms.integrations.tabs.connections')
 		}

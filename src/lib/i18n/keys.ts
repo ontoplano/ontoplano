@@ -1745,6 +1745,7 @@ export type MessageKey =
 	| 'rooms.health.title'
 	| 'rooms.integrations.sections'
 	| 'rooms.integrations.tabs.ai'
+	| 'rooms.integrations.tabs.chat'
 	| 'rooms.integrations.tabs.connections'
 	| 'rooms.integrations.title'
 	| 'rooms.media.sections'
@@ -2107,6 +2108,18 @@ export type MessageKey =
 	| 'settings.integrations.allOfItUnlessYou'
 	| 'settings.integrations.andLetItDeleteThings'
 	| 'settings.integrations.bankStatements'
+	| 'settings.integrations.chat.answeringAs'
+	| 'settings.integrations.chat.baseUrl'
+	| 'settings.integrations.chat.blurb'
+	| 'settings.integrations.chat.confirmRemove'
+	| 'settings.integrations.chat.emptyMeans'
+	| 'settings.integrations.chat.key'
+	| 'settings.integrations.chat.model'
+	| 'settings.integrations.chat.openChat'
+	| 'settings.integrations.chat.provider'
+	| 'settings.integrations.chat.removeKey'
+	| 'settings.integrations.chat.replaceKey'
+	| 'settings.integrations.chat.title'
 	| 'settings.integrations.connections.aUrlOfYoursThat'
 	| 'settings.integrations.connections.address'
 	| 'settings.integrations.connections.anAiAssistantMcp'
@@ -3467,6 +3480,12 @@ export interface MessageValuesFor {
 	'settings.instance.secondsAgo': { count: number };
 	'settings.instance.tables': { tables: string | number };
 	'settings.instance.theEnvironmentOverridesThe': { mode: string | number };
+	'settings.integrations.chat.answeringAs': {
+		model: string | number;
+		prefix: string | number;
+		provider: string | number;
+	};
+	'settings.integrations.chat.emptyMeans': { model: string | number };
 	'settings.integrations.connections.apiV1Streams': { origin: string | number };
 	'settings.integrations.connections.confirmThisDeletesPoints': { count: number };
 	'settings.integrations.connections.isTheMostRevoke': { calendarLinkLimit: string | number };

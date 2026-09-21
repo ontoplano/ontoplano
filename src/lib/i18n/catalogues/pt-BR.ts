@@ -1999,6 +1999,7 @@ export const messages: Catalogue = {
 	'rooms.health.title': 'Saúde',
 	'rooms.integrations.sections': 'Seções de integrações',
 	'rooms.integrations.tabs.ai': 'IA',
+	'rooms.integrations.tabs.chat': 'Chat',
 	'rooms.integrations.tabs.connections': 'Integrações',
 	'rooms.integrations.title': 'Integrações',
 	'rooms.media.sections': 'Seções de mídia',
@@ -2455,6 +2456,20 @@ export const messages: Catalogue = {
 		'Tudo, a menos que você diga o contrário. O que estiver desmarcado fica fora de alcance.',
 	'settings.integrations.andLetItDeleteThings': '…e deixar que ele exclua coisas',
 	'settings.integrations.bankStatements': 'Extratos bancários',
+	'settings.integrations.chat.answeringAs':
+		'{provider}, chave {prefix}…, respondendo como {model}.',
+	'settings.integrations.chat.baseUrl': 'URL base',
+	'settings.integrations.chat.blurb':
+		'O chat responde com um modelo que você traz — escolha um provedor e cole uma chave sua.',
+	'settings.integrations.chat.confirmRemove': 'Confirmar?',
+	'settings.integrations.chat.emptyMeans': 'Vazio significa {model}.',
+	'settings.integrations.chat.key': 'Chave de API',
+	'settings.integrations.chat.model': 'Modelo',
+	'settings.integrations.chat.openChat': 'Abrir o chat',
+	'settings.integrations.chat.provider': 'Provedor',
+	'settings.integrations.chat.removeKey': 'Remover a chave',
+	'settings.integrations.chat.replaceKey': 'Substituir a chave',
+	'settings.integrations.chat.title': 'Chat',
 	'settings.integrations.connections.aUrlOfYoursThat':
 		'Uma URL sua que é avisada quando coisas acontecem aqui — novas tarefas, marcações, ideias.\nStreams empurram dados para dentro, webhooks deixam seus programas escutarem.',
 	'settings.integrations.connections.address': 'Endereço',
