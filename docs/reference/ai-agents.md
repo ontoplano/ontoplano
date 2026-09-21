@@ -12,6 +12,20 @@ The examples below use `https://app.ontoplano.com`. Your own instance answers at
 `https://your-host/api/mcp` — the address you type into the browser, with
 `/api/mcp` after it.
 
+## The chat inside the app
+
+You do not need an external assistant to use the tools. **Settings → AI &
+Integrations → Chat** takes a provider — Anthropic, OpenAI, OpenRouter or
+Ollama — and a key of your own, and the app gains a chat that speaks through
+the same tool surface described on this page: reading and writing, never
+deleting, every write in the same log. Remove the key and the chat is gone.
+Without a key there is no chat anywhere in the app, and nothing ever calls a
+model on your behalf.
+
+It is not on the on-device instance — the chat dials the provider from the
+server the instance runs on. On a phone, point any MCP client at the instance
+you sync with instead.
+
 ## Make a key
 
 **Settings → AI & Integrations → AI → Make a key.** It is shown once, so keep

@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**78 tables.**
+**79 tables.**
 
 | Table                                                       | Columns | Belongs to a user |
 | ----------------------------------------------------------- | ------- | ----------------- |
@@ -52,6 +52,7 @@ exist.
 | [`mail_failures`](#mail_failures)                           | 11      | —                 |
 | [`media`](#media)                                           | 10      | yes               |
 | [`media_tags`](#media_tags)                                 | 4       | yes               |
+| [`model_provider_keys`](#model_provider_keys)               | 9       | yes               |
 | [`newsletter_issues`](#newsletter_issues)                   | 6       | —                 |
 | [`notebooks`](#notebooks)                                   | 8       | yes               |
 | [`people`](#people)                                         | 12      | yes               |
@@ -908,6 +909,24 @@ Indexes:
 - `media_tags_media_idx` on `media_id`
 - `media_tags_tag_idx` on `tag_id`
 - `media_tags_media_tag_unique` on `media_id`, `tag_id` — unique
+
+## model_provider_keys
+
+| Column       | Type    | Null     | Default | Notes             |
+| ------------ | ------- | -------- | ------- | ----------------- |
+| `id`         | integer | not null | —       | primary key, auto |
+| `user_id`    | text    | not null | —       | → `user.id`       |
+| `provider`   | text    | not null | —       | —                 |
+| `key`        | text    | not null | —       | —                 |
+| `prefix`     | text    | not null | —       | —                 |
+| `model`      | text    | null     | —       | —                 |
+| `base_url`   | text    | null     | —       | —                 |
+| `created_at` | text    | not null | —       | —                 |
+| `updated_at` | text    | not null | —       | —                 |
+
+Indexes:
+
+- `model_provider_keys_user_unique` on `user_id` — unique
 
 ## newsletter_issues
 

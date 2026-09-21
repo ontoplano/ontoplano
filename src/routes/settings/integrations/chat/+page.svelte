@@ -95,14 +95,7 @@
 
 					{#if chosen?.needsKey}
 						<Field label={t('settings.integrations.chat.key')} span={8} required>
-							<OneLine
-								name="key"
-								autocomplete="off"
-								spellcheck={false}
-								class="input font-mono"
-								required
-								maxlength={300}
-							/>
+							<OneLine name="key" class="input font-mono" required maxlength={300} />
 						</Field>
 					{/if}
 
@@ -116,8 +109,6 @@
 					>
 						<OneLine
 							name="model"
-							autocomplete="off"
-							spellcheck={false}
 							class="input font-mono"
 							placeholder={chosen?.modelHint ?? ''}
 							required={!chosen?.defaultModel}
@@ -135,8 +126,6 @@
 						>
 							<OneLine
 								name="baseUrl"
-								autocomplete="off"
-								spellcheck={false}
 								class="input font-mono"
 								placeholder={OLLAMA_DEFAULT_BASE_URL}
 								maxlength={200}

@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.0 — 2026-09-21
+
+- **A chat, with a key of your own.** Settings → AI & Integrations → Chat
+  takes a provider — Anthropic, OpenAI, OpenRouter or Ollama — and an API key
+  of yours, and the app gains a chat that can read your plan and act on it. It
+  speaks through the same tools and permissions an external assistant gets:
+  reading and writing, never deleting, every write in the write log. Remove
+  the key and the chat is gone; without one, nothing in the app ever calls a
+  model.
+
 ## 0.181.5 — 2026-09-21
 
 - **The task filters fold away on a phone.** Seven controls needed three rows

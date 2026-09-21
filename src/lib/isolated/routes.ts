@@ -73,6 +73,13 @@ const pages = import.meta.glob(
 	[
 		'/src/routes/**/+page.server.ts',
 		'!/src/routes/admin/**',
+		/*
+		 * The chat dials a model provider from the server — `undici`, the
+		 * outbound guard, a stored key. A device build has none of those, and
+		 * its person already has a better answer: any MCP client pointed at
+		 * the instance they sync with.
+		 */
+		'!/src/routes/assistant/**',
 		'!/src/routes/api/**',
 		'!/src/routes/buy/**',
 		'!/src/routes/demo/**',
@@ -132,6 +139,7 @@ const pageTwins = import.meta.glob('/src/routes/**/page.isolated.ts', {
 const notHere = import.meta.glob(
 	[
 		'/src/routes/admin/**/+page.server.ts',
+		'/src/routes/assistant/+page.server.ts',
 		'/src/routes/buy/+page.server.ts',
 		'/src/routes/demo/**/+page.server.ts',
 		'/src/routes/dev/**/+page.server.ts',

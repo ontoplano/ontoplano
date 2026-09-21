@@ -2,11 +2,7 @@ import type { Actions, PageServerLoad } from './$types';
 
 import { buildCtx } from '$lib/services/ctx';
 import { toActionFailure } from '$lib/http-errors';
-import {
-	describeModelKey,
-	removeModelKey,
-	saveModelKey
-} from '$lib/server/services/model-keys';
+import { describeModelKey, removeModelKey, saveModelKey } from '$lib/server/services/model-keys';
 import { PROVIDERS } from '$lib/assistant-providers';
 
 export const load: PageServerLoad = async ({ locals }) => {

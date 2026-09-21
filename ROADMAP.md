@@ -112,8 +112,10 @@ the question.
 So they stop coming back:
 
 - **An in-process plugin system** — data streams and the API cover it. Too easy to accidentally create an RCE entry point.
-- **AI features inside the app.** The interface is MCP: your assistant, your
-  token, your machine. Nothing in here calls a model.
+- **AI features that call a model on your behalf.** The app holds no model
+  account and pays for no inference. The in-app chat exists, but it speaks
+  through the same tool surface MCP offers and only with a provider key you
+  bring — no key, no chat, and nothing here ever calls a model without one.
 - **Importing a recipe from a URL.** The server would be fetching an address
   somebody typed, which is a request forgery waiting to happen. Paste the page
   instead — that already works.

@@ -230,6 +230,16 @@ export type MessageKey =
 	| 'app.wishlist'
 	| 'app.workouts'
 	| 'app.yearly'
+	| 'assistant.answeringWith'
+	| 'assistant.askAnything'
+	| 'assistant.didNotGoThrough'
+	| 'assistant.placeholder'
+	| 'assistant.send'
+	| 'assistant.stop'
+	| 'assistant.thinking'
+	| 'assistant.title'
+	| 'assistant.tryAgain'
+	| 'assistant.usedTool'
 	| 'attach.attach'
 	| 'attach.chooseOne'
 	| 'attach.noneYet'
@@ -3122,6 +3132,8 @@ export interface MessageValuesFor {
 		lastAttemptAt: string | number;
 	};
 	'admin.minutesAgo': { count: number };
+	'assistant.answeringWith': { model: string | number; provider: string | number };
+	'assistant.usedTool': { tool: string | number };
 	'audio.full': { count: number };
 	'audio.held': { count: number };
 	'audio.justRecorded': { name: string | number };

@@ -56,6 +56,7 @@ sentence somebody agrees to when they grant it.
 | -------------------------------------------- | ------ | ----------------- |
 | `/.well-known/assetlinks.json`               | GET    | —                 |
 | `/account/export`                            | GET    | —                 |
+| `/api/assistant/chat`                        | POST   | —                 |
 | `/api/billing/paddle`                        | POST   | —                 |
 | `/api/billing/play/claim`                    | POST   | —                 |
 | `/api/billing/play/rtdn`                     | POST   | —                 |
@@ -141,6 +142,20 @@ who installs from the store while working perfectly on the developer's phone.
 The export moved with the page it hangs off.
 
 **GET**
+
+### `/api/assistant/chat`
+
+The in-app chat's own door, and the one route that streams an answer.
+
+Session-only on purpose: this is the signed-in person talking to their own
+account, so there is no token to mint and no scope form to fill — the chat
+holds the assistant grants and not `destructive`, the same default the AI
+tab's key form ticks. An external assistant keeps using `/api/mcp`.
+
+A POST rather than a form action because the answer is a stream — the same
+reason `/api/live` is an endpoint.
+
+**POST**
 
 ### `/api/billing/paddle`
 

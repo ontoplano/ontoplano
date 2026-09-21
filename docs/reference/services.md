@@ -23,6 +23,7 @@ shows up here on the next build.
 | [`account`](#account)                            | Taking your data out, and closing your account — and what this instance allows of both.                                                                                                                                                                              |
 | [`activities`](#activities)                      | Categories are the areas of a life; activities are the named recurring things inside them. Both are referenced by planner slots and by history, so neither can be deleted while something still points at it — history that loses its category stops being readable. |
 | [`admin`](#admin)                                | Administration: looking at somebody else's account.                                                                                                                                                                                                                  |
+| [`assistant-chat`](#assistant-chat)              | The in-app chat: the same assistant surface MCP offers, spoken to a model the person brought a key for.                                                                                                                                                              |
 | [`assistant-log`](#assistant-log)                | What an assistant did to an account, and the way back.                                                                                                                                                                                                               |
 | [`assistant-notify`](#assistant-notify)          | Telling somebody what an assistant just did to their account.                                                                                                                                                                                                        |
 | [`attributes`](#attributes)                      | The attributes an account has actually used, and what they are worth reading.                                                                                                                                                                                        |
@@ -63,6 +64,7 @@ shows up here on the next build.
 | [`media-referrers`](#media-referrers)            | What points at a picture or a recording, and where it lives.                                                                                                                                                                                                         |
 | [`media`](#media)                                | Pictures: what is accepted, where they go, and who may see one.                                                                                                                                                                                                      |
 | [`meta`](#meta)                                  | User-defined key/value metadata attached to planner slots.                                                                                                                                                                                                           |
+| [`model-keys`](#model-keys)                      | The model-provider key behind the in-app chat.                                                                                                                                                                                                                       |
 | [`newsletter`](#newsletter)                      | The one channel nobody else can take away.                                                                                                                                                                                                                           |
 | [`note-todos`](#note-todos)                      | Turning a note that is really a checklist into the todos it describes.                                                                                                                                                                                               |
 | [`notebook-media`](#notebook-media)              | Every picture that is in a notebook, as a gallery album.                                                                                                                                                                                                             |
@@ -496,6 +498,23 @@ How many events the instance has recorded lately, for the admin landing.
 ### Types
 
 - `Account`
+
+## assistant-chat
+
+The in-app chat: the same assistant surface MCP offers, spoken to a model
+the person brought a key for.
+
+Everything the model may do goes through `handle()` — the same dispatcher
+an external assistant's calls go through — so scope checks, id resolution,
+the call budget, the write log and the room invalidations all apply here
+without a second copy of any of them. This file only turns the tool table
+into the shape the AI SDK wants and picks which company to dial.
+
+### Functions
+
+#### `chatResponse(caller, row, messages)`
+
+One message in, a streamed answer out, tools and all.
 
 ## assistant-log
 
@@ -2953,6 +2972,38 @@ still present in the payload and so reads as an explicit `{}`.
 ### Types
 
 - `SlotMeta`
+
+## model-keys
+
+The model-provider key behind the in-app chat.
+
+One row per account, replaced on save: the chat speaks to one provider at
+a time. The key authenticates this instance to a company the person chose,
+so it is stored as given (see the schema note) and shown back only as a
+prefix — the settings screen can say which key it is without being able to
+say what it is.
+
+### Functions
+
+#### `saveModelKey(ctx, raw)`
+
+#### `describeModelKey(ctx)`
+
+What the settings screen may know: everything but the key.
+
+#### `configuredModelKey(ctx)`
+
+The whole row, key included — for the chat backend and nobody else.
+
+#### `removeModelKey(ctx)`
+
+#### `modelNameFor(row)`
+
+The model the chat will actually ask for, name or default.
+
+### Types
+
+- `ModelKeyDescription`
 
 ## newsletter
 
