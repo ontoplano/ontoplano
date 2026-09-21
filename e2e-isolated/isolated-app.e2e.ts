@@ -72,10 +72,15 @@ test('the app opens onto a working instance and keeps what it is told', async ({
 
 	// The first open is shown around, exactly like a first visit anywhere;
 	// dismissing it is remembered by the device, so it happens once.
+	//
+	// One press: dismissing used to ask again — "ok, here you can open me
+	// again" — which is a second dialog for somebody who has just said they
+	// want no dialog. The closing step of a tour somebody read to the end
+	// still has its own button; that is a different thing and `tutorial.e2e`
+	// covers it.
 	const tour = page.getByRole('dialog', { name: 'Tutorial' });
 	await expect(tour).toBeVisible({ timeout: 15_000 });
 	await tour.getByRole('button', { name: 'Dismiss' }).click();
-	await tour.getByRole('button', { name: 'Okay, dismiss!' }).click();
 	await expect(tour).toBeHidden();
 
 	// A write through the app's own form, into OPFS. Straight to the todo
@@ -86,13 +91,13 @@ test('the app opens onto a working instance and keeps what it is told', async ({
 	const field = page.locator('[name="heading"]');
 	await expect(async () => {
 		await page
-			.getByRole('button', { name: /New to-do/ })
+			.getByRole('button', { name: /New task/ })
 			.first()
 			.click();
 		await expect(field).toBeVisible({ timeout: 2000 });
 	}).toPass({ timeout: 30000 });
 	await field.fill(title);
-	await page.getByRole('button', { name: 'Create todo' }).click();
+	await page.getByRole('button', { name: 'Create task' }).click();
 	await expect(page.getByText(title)).toBeVisible({ timeout: 30_000 });
 
 	// The only test that matters for a record of a life: close it, open it,
@@ -175,7 +180,6 @@ test('a picture goes into a note on the device', async ({ page }) => {
 	const tour = page.getByRole('dialog', { name: 'Tutorial' });
 	if (await tour.isVisible().catch(() => false)) {
 		await tour.getByRole('button', { name: 'Dismiss' }).click();
-		await tour.getByRole('button', { name: 'Okay, dismiss!' }).click();
 	}
 
 	// Straight at the endpoint the composer uses: what this is about is whether
@@ -214,7 +218,6 @@ test('a ledger made on the device appears without a reload', async ({ page }) =>
 	const tour = page.getByRole('dialog', { name: 'Tutorial' });
 	if (await tour.isVisible().catch(() => false)) {
 		await tour.getByRole('button', { name: 'Dismiss' }).click();
-		await tour.getByRole('button', { name: 'Okay, dismiss!' }).click();
 	}
 
 	await page.getByRole('button', { name: 'New ledger' }).first().click();
@@ -239,7 +242,6 @@ test('a picture is stored and drawn with no server anywhere', async ({ page }) =
 	const tour = page.getByRole('dialog', { name: 'Tutorial' });
 	if (await tour.isVisible().catch(() => false)) {
 		await tour.getByRole('button', { name: 'Dismiss' }).click();
-		await tour.getByRole('button', { name: 'Okay, dismiss!' }).click();
 	}
 
 	await page.getByRole('button', { name: 'New album' }).click();
@@ -587,7 +589,6 @@ test.describe('booking with Android', () => {
 		const tour = page.getByRole('dialog', { name: 'Tutorial' });
 		if (await tour.isVisible().catch(() => false)) {
 			await tour.getByRole('button', { name: 'Dismiss' }).click();
-			await tour.getByRole('button', { name: 'Okay, dismiss!' }).click();
 		}
 
 		/*
