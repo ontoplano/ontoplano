@@ -208,7 +208,24 @@ existed, so there is nothing to learn by walking the numbers.
   `destructive` grant, and without it they are not offered at all.
 - **Every write answers with what it replaced** — `before` and `after`, and for a
   delete the whole removed row — so a bad call can be put back from the
-  conversation itself.
+  conversation itself. Two exceptions say so in their own description:
+  `tag_todo` answers with the labels and nothing else, because two copies of a
+  task to report one label is most of what marking a list costs, and the
+  person's own copy of the change is in the log under Settings → Integrations
+  either way.
+- **A listing answers with a line.** A task comes back as what it is, where it
+  stands and its labels; a note as its name, its labels and an opening.
+  `verbose: true` gives the whole row, and `fields: "title,notes"` gives
+  exactly those. This is a budget, not a limit: a model reading a list to find
+  one thing pays for forty rows it will not use, three times over — on the way
+  in, on the way out, and again next turn.
+- **A list can be asked for narrowly.** `status`, `tag`, `withoutTag` and
+  `taggedSince` on the task list; `tag` and `taggedSince` on notes. The date
+  read is the label's own — it does not move when the thing is edited — so
+  "what went into review since this morning" is one call.
+- **`up_next` answers what to do next**, by the ratings on the tasks
+  themselves: most urgent first, ties broken by higher energy and then higher
+  interest.
 
 The surface is additive within a major version: a tool or a parameter is not
 removed, a parameter does not become required, and an enum does not lose a value

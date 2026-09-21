@@ -1489,7 +1489,7 @@ notebook, under the diary's heading, with the diary's own last entry nowhere.
 
 ### Types
 
-- `Tag`
+- `Tag` — Null on a label that went on before the join carried a date.
 
 ## digest
 
@@ -5278,6 +5278,15 @@ All these produce ["tagfoo", "tagbar"]:
 #### `linkDiaryTags(entryId, tagIds, userId)`
 
 #### `replaceDiaryTags(entryId, tagNames, userId)`
+
+Set a note's labels to exactly these, without forgetting when the old ones
+went on.
+
+The same diff `replaceTodoTags` does, and for the same reason: deleting
+every row and writing them back gives the same answer and a different
+history, so a label that had been there a week came back dated today and
+"what went into review since I last looked" became "what has been edited
+since".
 
 #### `cleanupOrphanTags(userId)`
 

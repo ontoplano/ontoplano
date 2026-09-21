@@ -96,7 +96,12 @@ export function tagsForEntries(ctx: Ctx, entryIds: number[]): Map<number, Tag[]>
 	if (entryIds.length === 0) return byEntry;
 
 	const rows = db
-		.select({ entryId: diaryEntryTags.entryId, id: tags.id, name: tags.name })
+		.select({
+			entryId: diaryEntryTags.entryId,
+			id: tags.id,
+			name: tags.name,
+			taggedAt: diaryEntryTags.taggedAt
+		})
 		.from(diaryEntryTags)
 		.innerJoin(tags, eq(diaryEntryTags.tagId, tags.id))
 		.where(and(inArray(diaryEntryTags.entryId, entryIds), eq(tags.userId, ctx.userId)))
@@ -105,13 +110,14 @@ export function tagsForEntries(ctx: Ctx, entryIds: number[]): Map<number, Tag[]>
 
 	for (const row of rows) {
 		const list = byEntry.get(row.entryId) ?? [];
-		list.push({ id: row.id, name: row.name });
+		list.push({ id: row.id, name: row.name, taggedAt: row.taggedAt });
 		byEntry.set(row.entryId, list);
 	}
 	return byEntry;
 }
 
-export type Tag = { id: number; name: string };
+/** Null on a label that went on before the join carried a date. */
+export type Tag = { id: number; name: string; taggedAt?: string | null };
 
 export function listTags(ctx: Ctx) {
 	return db.select().from(tags).where(eq(tags.userId, ctx.userId)).orderBy(tags.name).all();
@@ -412,7 +418,7 @@ export function latestEntry(ctx: Ctx) {
 	return {
 		...entry,
 		tags: db
-			.select({ id: tags.id, name: tags.name })
+			.select({ id: tags.id, name: tags.name, taggedAt: diaryEntryTags.taggedAt })
 			.from(diaryEntryTags)
 			.innerJoin(tags, eq(diaryEntryTags.tagId, tags.id))
 			.where(and(eq(diaryEntryTags.entryId, entry.id), eq(tags.userId, ctx.userId)))

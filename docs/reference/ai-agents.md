@@ -208,7 +208,24 @@ existed, so there is nothing to learn by walking the numbers.
   `destructive` grant, and without it they are not offered at all.
 - **Every write answers with what it replaced** — `before` and `after`, and for a
   delete the whole removed row — so a bad call can be put back from the
-  conversation itself.
+  conversation itself. Two exceptions say so in their own description:
+  `tag_todo` answers with the labels and nothing else, because two copies of a
+  task to report one label is most of what marking a list costs, and the
+  person's own copy of the change is in the log under Settings → Integrations
+  either way.
+- **A listing answers with a line.** A task comes back as what it is, where it
+  stands and its labels; a note as its name, its labels and an opening.
+  `verbose: true` gives the whole row, and `fields: "title,notes"` gives
+  exactly those. This is a budget, not a limit: a model reading a list to find
+  one thing pays for forty rows it will not use, three times over — on the way
+  in, on the way out, and again next turn.
+- **A list can be asked for narrowly.** `status`, `tag`, `withoutTag` and
+  `taggedSince` on the task list; `tag` and `taggedSince` on notes. The date
+  read is the label's own — it does not move when the thing is edited — so
+  "what went into review since this morning" is one call.
+- **`up_next` answers what to do next**, by the ratings on the tasks
+  themselves: most urgent first, ties broken by higher energy and then higher
+  interest.
 
 The surface is additive within a major version: a tool or a parameter is not
 removed, a parameter does not become required, and an enum does not lose a value
@@ -243,7 +260,7 @@ _Needs `habits:write`; writes._
 
 ### `finish_block` — Mark a block done or skipped
 
-Answer for one block on the day: it happened, or it did not. Takes the id `today` gives for that block. Skipping is a real answer — say skipped when the person says they did not do it. It is NOT a way to clear something off the day: a skip goes into the week’s record and the review asks about it. To move a block use `change_block`; to take one off because it was never happening use `cancel_block`. `todo` takes an answer back, for one ticked by mistake.
+Answer for one block on the day: it happened, or it did not. Takes the id `today` gives. Skipped is a real answer and goes into the week’s record, which the review asks about — it is not a way to clear something off the day. Moving one is `change_block`; one that was never happening is `cancel_block`. `todo` takes an answer back.
 
 _Needs `schedule:write`; writes._
 
@@ -255,13 +272,13 @@ _Needs `schedule:write`; writes._
 
 ### `change_block` — Move or rename a block
 
-Change one block on one day: its time, its day, how long it runs, or what it is called. This is "push the study block to four", "make it two hours", "that was actually client work". Takes the id `today` or `upcoming` gives. Only the fields you pass change. It affects that day only — moving this Thursday’s gym does not move gym — and it never edits the repeating week. Renaming keeps which part of life it belongs to and stops it being the named activity it was, because that is what saying it was something else means.
+Change one block on one day: its time, its day, how long it runs, or what it is called. This is "push the study block to four", "make it two hours", "that was actually client work". Takes the id `today` or `upcoming` gives; only the fields you pass change. That day only — moving this Thursday’s gym does not move gym — and never the repeating week.
 
 _Needs `schedule:write`; writes._
 
 ### `cancel_block` — Take a block off the day
 
-Remove a block from a day because it is not happening — the meeting moved, the class was called off, it was put on the wrong day. This is NOT the same as marking it skipped: skipped means it was meant to happen and did not, which is a fact the weekly review asks about, and cancelled means it was never going to. Use `finish_block` with "skipped" for the first and this for the second. A repeating block is only removed from that one day.
+Remove a block from a day because it is not happening — the meeting moved, the class was called off. Not the same as skipped: skipped means it was meant to happen and did not, which the weekly review asks about; cancelled means it was never going to. A repeating block loses that one day only.
 
 _Needs `schedule:write` and `destructive`; deletes._
 
@@ -291,7 +308,13 @@ _Needs `notes:read`; read-only._
 
 ### `todos` — The todo list
 
-Tasks with no date on them yet. A todo gains a date by being put on a day, which promotes it onto the week. Pass `notebookId` when the question is about one subject — reading the whole list to find four tasks about the kitchen is somebody’s entire todo list going past for no reason.
+Tasks with no date on them yet. A todo gains a date by being put on a day, which promotes it onto the week. Answers with a line per task; `verbose` or `fields` for more. Narrow it rather than reading it whole — `notebookId` for one subject, `status: "open"`, `tag`, `withoutTag`, `taggedSince`.
+
+_Needs `tasks:read`; read-only._
+
+### `up_next` — What to do next
+
+The task to do next, by the ratings on it: most urgent first, ties broken by higher energy and then higher interest. Open, unarchived, undated tasks only — anything with a day on it is on the week and `today` answers for that. Answers with one line by default; `limit` for a short list to choose between.
 
 _Needs `tasks:read`; read-only._
 
@@ -393,7 +416,7 @@ _Needs `tasks:write`; writes._
 
 ### `diary` — Recent diary entries
 
-What has been written lately, newest first. An entry can belong to a notebook or to no notebook at all.
+What has been written lately, newest first. An entry can belong to a notebook or to no notebook at all. Answers with a line and an opening per entry; `verbose` for the writing itself.
 
 _Needs `notes:read`; read-only._
 
@@ -405,7 +428,7 @@ _Needs `notes:write`; writes._
 
 ### `notebook_notes` — The notes in a notebook
 
-What has been written against one subject, newest first, with the id of each note. `diary` deliberately shows only entries outside a notebook, so this is the way to read one — and the way to find the id `archive_note` wants.
+What has been written against one subject, newest first, with the id of each note. `diary` deliberately shows only entries outside a notebook, so this is the way to read one — and the way to find the id `archive_note` wants. Answers with a line and an opening per note; `verbose` for the writing itself, `tag` and `taggedSince` to narrow.
 
 _Needs `notes:read`; read-only._
 
@@ -429,7 +452,7 @@ _Needs `notes:write`; writes._
 
 ### `note_to_todos` — Make todos out of a checklist note
 
-Turn a note that is really a checklist into the tasks it describes. Every `- [ ]` line becomes a task, and whatever is written under it — until the next `- [ ]` — becomes that task’s notes. A `- [x]` line comes across already done. Each one is filed under the note’s own notebook. The note is left exactly as it was: tidy it with `edit_entry`, or put it away with `archive_note`, once you have checked what was made.
+Turn a note that is really a checklist into the tasks it describes. Every `- [ ]` line becomes a task, with whatever is written under it as that task’s notes; a `- [x]` line comes across already done. Each is filed under the note’s own notebook, and each box is replaced by a reference to the task it became — `TODO:#4` — so the note keeps its words and stops being a second copy of the list.
 
 _Needs `tasks:write`; writes._
 
@@ -693,13 +716,13 @@ _Needs `schedule:write`; writes._
 
 ### `repeating_week` — The week as it repeats
 
-The blocks that make up every week — each with its weekday, time, length and category. Weekdays are numbered from Monday: 0 is Monday, 6 is Sunday. Not all of them are weekly: `repeats` says in words how often each one comes back, which can be every N weeks, every N days, or a day of the month. This is the template the days are generated from; `today` and `upcoming` show what it produced. Read it before changing Tuesdays rather than a Tuesday.
+The blocks that make up every week — weekday, time, length, category. Weekdays count from Monday: 0 is Monday, 6 is Sunday. Not all are weekly: `repeats` says how often each comes back. This is the template the days are generated from, so read it before changing Tuesdays rather than a Tuesday.
 
 _Needs `schedule:read`; read-only._
 
 ### `add_repeating_block` — Put a block on every week
 
-Add a block that comes back — "gym on Tuesdays at seven", "the bins every other Tuesday", "rent on the first". Weekly unless `repeats` says otherwise. This changes every week from now on; `add_block` is the one for a single day. Weekdays count from Monday: 0 is Monday, 6 is Sunday. A block can be a bare category rather than a named thing — leave the title out and it shows as the category itself, which is what "put work in those hours" means.
+Add a block that comes back — "gym on Tuesdays at seven", "the bins every other Tuesday", "rent on the first". Weekly unless `repeats` says otherwise, and it changes every week from now on; `add_block` is the one for a single day. Weekdays count from Monday: 0 is Monday, 6 is Sunday. Leave the title out for a bare category block — "put work in those hours".
 
 _Needs `schedule:write`; writes._
 

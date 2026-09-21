@@ -951,8 +951,6 @@ export const messages: Catalogue = {
 	'home.countToGo': 'noch {count}',
 	'home.demoVersion': 'Demoversion',
 	'home.diary': 'Tagebuch',
-	'home.doNotPutYourReal':
-		'Geben Sie hier keine echten Daten ein — dieses Konto wird gelöscht, sobald Sie es nicht mehr nutzen.',
 	'home.done': '{done} erledigt',
 	'home.dragCard': '{card} ziehen, um es zu verschieben',
 	'home.dragTheCardsByThe': 'Ziehen Sie die Karten am Griff in ihrer Ecke.',
@@ -1030,7 +1028,6 @@ export const messages: Catalogue = {
 	'home.onlyWhatBrokeIsSent': 'Nur was kaputt ist, wird gesendet, nie was Sie geschrieben haben.',
 	'home.ontoplano': '{status} · ontoplano',
 	'home.open': 'Öffnen →',
-	'home.openOnYourPhoneTo': 'Öffnen Sie {demoHost} auf Ihrem Telefon, um es auch dort zu sehen.',
 	'home.openRarr': 'Öffnen →',
 	'home.openThePlan': 'Den Plan öffnen',
 	'home.paidOfExpected': '{currency} bezahlt, {currency2} erwartet',
@@ -1059,7 +1056,6 @@ export const messages: Catalogue = {
 	'home.thatPageIsNotHere':
 		'Diese Seite gibt es hier nicht. Sie wurde vielleicht umbenannt oder hat nie existiert.',
 	'home.theme': 'Design',
-	'home.thisIsADemoVersion': 'Dies ist eine Demoversion von ontoplano.',
 	'home.thisIsOntoplanoDemo':
 		'Das ist eine Demoversion von Ontoplano: die Daten hier bleiben nicht erhalten.',
 	'home.threeWins': 'Drei Erfolge',
@@ -1087,7 +1083,6 @@ export const messages: Catalogue = {
 		'Sie zahlen es heute selbst — kündigen Sie zuerst Ihr eigenes Abo, dann nehmen Sie an.',
 	'home.yourNotesAndYourWeek':
 		'Ihre Notizen und Ihre Woche bleiben Ihre; sie zahlen nur für das Konto.',
-	'home.yoursAndTemporary': 'Ihres, und vorübergehend',
 	'imageViewer.picture': 'Bild',
 	'instance.anInstanceBehindAServer': 'Eine Instanz hinter einem Server',
 	'instance.enterAnyInstanceUrl':

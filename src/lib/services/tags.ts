@@ -68,19 +68,39 @@ export function ensureTagIds(tagNames: string[], userId: string): number[] {
 }
 
 export function linkDiaryTags(entryId: number, tagIds: number[], userId: string): void {
+	const now = new Date().toISOString();
 	for (const tagId of tagIds) {
-		db.insert(diaryEntryTags).values({ userId, entryId, tagId }).run();
+		db.insert(diaryEntryTags).values({ userId, entryId, tagId, taggedAt: now }).run();
 	}
 }
 
+/**
+ * Set a note's labels to exactly these, without forgetting when the old ones
+ * went on.
+ *
+ * The same diff `replaceTodoTags` does, and for the same reason: deleting
+ * every row and writing them back gives the same answer and a different
+ * history, so a label that had been there a week came back dated today and
+ * "what went into review since I last looked" became "what has been edited
+ * since".
+ */
 export function replaceDiaryTags(entryId: number, tagNames: string[], userId: string): void {
-	db.delete(diaryEntryTags)
-		.where(and(eq(diaryEntryTags.entryId, entryId), eq(diaryEntryTags.userId, userId)))
-		.run();
+	const wanted = new Set(tagNames.length > 0 ? ensureTagIds(tagNames, userId) : []);
 
-	if (tagNames.length > 0) {
-		linkDiaryTags(entryId, ensureTagIds(tagNames, userId), userId);
+	const have = db
+		.select({ id: diaryEntryTags.id, tagId: diaryEntryTags.tagId })
+		.from(diaryEntryTags)
+		.where(and(eq(diaryEntryTags.entryId, entryId), eq(diaryEntryTags.userId, userId)))
+		.all();
+
+	const dropping = have.filter((row) => !wanted.has(row.tagId)).map((row) => row.id);
+	if (dropping.length > 0) {
+		db.delete(diaryEntryTags).where(inArray(diaryEntryTags.id, dropping)).run();
 	}
+
+	const already = new Set(have.map((row) => row.tagId));
+	const adding = [...wanted].filter((tagId) => !already.has(tagId));
+	if (adding.length > 0) linkDiaryTags(entryId, adding, userId);
 }
 
 export function cleanupOrphanTags(userId: string): void {

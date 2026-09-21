@@ -1,0 +1,1 @@
+ALTER TABLE `diary_entry_tags` ADD `tagged_at` text;

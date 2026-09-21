@@ -223,11 +223,6 @@ export const load: LayoutServerLoad = async (event) => {
 		// Whether to show somebody around without being asked. The shell decides
 		// where — the dashboard, which is where first run lets go of them.
 		tutorialPending,
-		// The demo's own address, for the band that tells a desktop visitor
-		// they can open the same thing on their phone. Taken from the request
-		// rather than from configuration: whatever host they reached it on is
-		// the host that will work when they type it again.
-		demoHost: isDemoInstance() ? event.url.host : null,
 		/*
 		 * The key a browser needs to sign itself up for notifications.
 		 *

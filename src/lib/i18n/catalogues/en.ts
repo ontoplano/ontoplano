@@ -924,8 +924,6 @@ export const messages: Catalogue = {
 	'home.countToGo': '{count} to go',
 	'home.demoVersion': 'Demo version',
 	'home.diary': 'Diary',
-	'home.doNotPutYourReal':
-		'Do not put your real data here — this account is wiped once you stop using it.',
 	'home.done': '{done} done',
 	'home.dragCard': 'Drag {card} to move it',
 	'home.dragTheCardsByThe': 'Drag the cards by the handle in their corner.',
@@ -1002,7 +1000,6 @@ export const messages: Catalogue = {
 	'home.onlyWhatBrokeIsSent': 'Only what broke is sent, never what you wrote.',
 	'home.ontoplano': '{status} · ontoplano',
 	'home.open': 'Open →',
-	'home.openOnYourPhoneTo': 'Open {demoHost} on your phone to see it there too.',
 	'home.openRarr': 'Open →',
 	'home.openThePlan': 'Open the plan',
 	'home.paidOfExpected': '{currency} paid of {currency2} expected',
@@ -1029,7 +1026,6 @@ export const messages: Catalogue = {
 	'home.thatDidNotWorkReload': 'That did not work. Reload and try again.',
 	'home.thatPageIsNotHere': 'That page is not here. It may have been renamed, or never existed.',
 	'home.theme': 'Theme',
-	'home.thisIsADemoVersion': 'This is a demo version of ontoplano.',
 	'home.thisIsOntoplanoDemo': "This is a demo version of Ontoplano: the data here won't persist.",
 	'home.threeWins': 'Three wins',
 	'home.todaySTasks': "Today's Tasks",
@@ -1056,7 +1052,6 @@ export const messages: Catalogue = {
 		'You pay for it yourself today — cancel your own subscription first, then accept.',
 	'home.yourNotesAndYourWeek':
 		'Your notes and your week stay yours; they just pay for the account.',
-	'home.yoursAndTemporary': 'yours, and temporary',
 	'imageViewer.picture': 'Picture',
 	'instance.anInstanceBehindAServer': 'An instance behind a server',
 	'instance.enterAnyInstanceUrl': 'Enter any instance URL — official instance is {https}',

@@ -29,7 +29,7 @@ exist.
 | [`data_points`](#data_points)                               | 10      | yes               |
 | [`data_streams`](#data_streams)                             | 14      | yes               |
 | [`diary_entries`](#diary_entries)                           | 12      | yes               |
-| [`diary_entry_tags`](#diary_entry_tags)                     | 4       | yes               |
+| [`diary_entry_tags`](#diary_entry_tags)                     | 5       | yes               |
 | [`entry_people`](#entry_people)                             | 4       | yes               |
 | [`exceptional_task_tags`](#exceptional_task_tags)           | 5       | yes               |
 | [`exceptional_tasks`](#exceptional_tasks)                   | 19      | yes               |
@@ -453,12 +453,13 @@ Indexes:
 
 ## diary_entry_tags
 
-| Column     | Type    | Null     | Default | Notes                |
-| ---------- | ------- | -------- | ------- | -------------------- |
-| `id`       | integer | not null | —       | primary key, auto    |
-| `user_id`  | text    | not null | —       | → `user.id`          |
-| `entry_id` | integer | not null | —       | → `diary_entries.id` |
-| `tag_id`   | integer | not null | —       | → `tags.id`          |
+| Column      | Type    | Null     | Default | Notes                |
+| ----------- | ------- | -------- | ------- | -------------------- |
+| `id`        | integer | not null | —       | primary key, auto    |
+| `user_id`   | text    | not null | —       | → `user.id`          |
+| `entry_id`  | integer | not null | —       | → `diary_entries.id` |
+| `tag_id`    | integer | not null | —       | → `tags.id`          |
+| `tagged_at` | text    | null     | —       | —                    |
 
 Indexes:
 

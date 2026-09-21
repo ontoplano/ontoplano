@@ -1281,12 +1281,32 @@
 		"writes": false,
 		"destroys": false,
 		"params": {
+			"fields": {
+				"type": "string",
+				"required": false
+			},
 			"limit": {
 				"type": "integer",
 				"required": false
 			},
 			"offset": {
 				"type": "integer",
+				"required": false
+			},
+			"tag": {
+				"type": "string",
+				"required": false
+			},
+			"taggedSince": {
+				"type": "string",
+				"required": false
+			},
+			"verbose": {
+				"type": "boolean",
+				"required": false
+			},
+			"withoutTag": {
+				"type": "string",
 				"required": false
 			}
 		}
@@ -1594,12 +1614,40 @@
 		"writes": false,
 		"destroys": false,
 		"params": {
+			"fields": {
+				"type": "string",
+				"required": false
+			},
 			"id": {
 				"type": "integer",
 				"required": true
 			},
 			"includeArchived": {
 				"type": "boolean",
+				"required": false
+			},
+			"limit": {
+				"type": "integer",
+				"required": false
+			},
+			"offset": {
+				"type": "integer",
+				"required": false
+			},
+			"tag": {
+				"type": "string",
+				"required": false
+			},
+			"taggedSince": {
+				"type": "string",
+				"required": false
+			},
+			"verbose": {
+				"type": "boolean",
+				"required": false
+			},
+			"withoutTag": {
+				"type": "string",
 				"required": false
 			}
 		}
@@ -2106,6 +2154,10 @@
 		"writes": false,
 		"destroys": false,
 		"params": {
+			"fields": {
+				"type": "string",
+				"required": false
+			},
 			"includeArchived": {
 				"type": "boolean",
 				"required": false
@@ -2122,7 +2174,31 @@
 				"type": "integer",
 				"required": false
 			},
+			"status": {
+				"type": "string",
+				"required": false,
+				"enum": [
+					"closed",
+					"doing",
+					"done",
+					"open",
+					"skipped",
+					"todo"
+				]
+			},
 			"tag": {
+				"type": "string",
+				"required": false
+			},
+			"taggedSince": {
+				"type": "string",
+				"required": false
+			},
+			"verbose": {
+				"type": "boolean",
+				"required": false
+			},
+			"withoutTag": {
 				"type": "string",
 				"required": false
 			}
@@ -2225,6 +2301,41 @@
 			"id": {
 				"type": "integer",
 				"required": true
+			}
+		}
+	},
+	"up_next": {
+		"scope": "tasks:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"fields": {
+				"type": "string",
+				"required": false
+			},
+			"limit": {
+				"type": "integer",
+				"required": false
+			},
+			"notebookId": {
+				"type": "integer",
+				"required": false
+			},
+			"tag": {
+				"type": "string",
+				"required": false
+			},
+			"taggedSince": {
+				"type": "string",
+				"required": false
+			},
+			"verbose": {
+				"type": "boolean",
+				"required": false
+			},
+			"withoutTag": {
+				"type": "string",
+				"required": false
 			}
 		}
 	},

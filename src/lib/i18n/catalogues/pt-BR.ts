@@ -943,8 +943,6 @@ export const messages: Catalogue = {
 	'home.countToGo': 'faltam {count}',
 	'home.demoVersion': 'Versão de demonstração',
 	'home.diary': 'Diário',
-	'home.doNotPutYourReal':
-		'Não coloque seus dados reais aqui — esta conta é apagada assim que você parar de usá-la.',
 	'home.done': '{done} feitas',
 	'home.dragCard': 'Arraste {card} para mover',
 	'home.dragTheCardsByThe': 'Arraste os cartões pela alça no canto deles.',
@@ -1021,7 +1019,6 @@ export const messages: Catalogue = {
 	'home.onlyWhatBrokeIsSent': 'Só o que quebrou é enviado, nunca o que você escreveu.',
 	'home.ontoplano': '{status} · ontoplano',
 	'home.open': 'Abrir →',
-	'home.openOnYourPhoneTo': 'Abra {demoHost} no seu celular para ver aí também.',
 	'home.openRarr': 'Abrir →',
 	'home.openThePlan': 'Abrir o plano',
 	'home.paidOfExpected': '{currency} pago de {currency2} esperado',
@@ -1050,7 +1047,6 @@ export const messages: Catalogue = {
 	'home.thatPageIsNotHere':
 		'Essa página não está aqui. Ela pode ter sido renomeada, ou nunca existiu.',
 	'home.theme': 'Tema',
-	'home.thisIsADemoVersion': 'Esta é uma versão de demonstração do ontoplano.',
 	'home.thisIsOntoplanoDemo':
 		'Esta é uma versão de demonstração do Ontoplano: os dados aqui não são guardados.',
 	'home.threeWins': 'Três vitórias',
@@ -1077,7 +1073,6 @@ export const messages: Catalogue = {
 	'home.youPayForItYourself':
 		'Hoje você mesmo paga por isso — cancele sua própria assinatura antes de aceitar.',
 	'home.yourNotesAndYourWeek': 'Suas notas e sua semana continuam suas; elas só pagam pela conta.',
-	'home.yoursAndTemporary': 'seu, e temporário',
 	'imageViewer.picture': 'Imagem',
 	'instance.anInstanceBehindAServer': 'Uma instância atrás de um servidor',
 	'instance.enterAnyInstanceUrl': 'Digite o endereço de qualquer instância — a oficial é {https}',

@@ -81,7 +81,6 @@ export async function load(event: IsolatedEvent): Promise<LayoutServerData> {
 		demo: false,
 		staging: false,
 		tutorialPending: !hasSeenTutorial(user.id),
-		demoHost: null,
 		// Push arrives through the device, not through a push service.
 		pushKey: null,
 		config: { week: getWeekSettings(user.id) },

@@ -394,13 +394,17 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 				 * which is the honest answer.
 				 */
 				const before = tool.writes ? peek(tool, caller.ctx, args, reach) : undefined;
+				// A quiet tool still peeks — the log below wants it — and simply
+				// does not put the two copies in the answer.
 				const value = tool.run(caller.ctx, args, {
 					scopes: caller.scopes,
 					confinement: caller.confinement ?? null
 				});
 				const answer = toolResult(
 					value,
-					tool.writes ? { before, after: peek(tool, caller.ctx, args, reach) } : undefined
+					tool.writes && !tool.quiet
+						? { before, after: peek(tool, caller.ctx, args, reach) }
+						: undefined
 				);
 
 				/*

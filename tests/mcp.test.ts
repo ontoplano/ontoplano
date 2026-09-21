@@ -788,7 +788,9 @@ describe('editing what was created', () => {
 		const changed = rpc(2, 'change_todo', { id, title: 'buy ten stamps' }, ['tasks:write']);
 		expect(changed.result.isError).toBe(false);
 
-		const list = rpc(3, 'todos', {}, ['tasks:read']);
+		// `verbose`, because a listing answers with a line: the notes are the
+		// expensive part of a task and the part a list is least likely to want.
+		const list = rpc(3, 'todos', { verbose: true }, ['tasks:read']);
 		const row = list.result.structuredContent.items.find((t: { id: number }) => t.id === id);
 		expect(row.title).toBe('buy ten stamps');
 		expect(row.notes).toBe('the square ones');

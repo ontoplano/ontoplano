@@ -1629,12 +1629,22 @@
 				class="notice-band fixed inset-x-0 z-30 flex items-center justify-between px-3 text-[11px] leading-none font-medium lg:hidden"
 				style="bottom: calc(var(--mobile-nav-height) + var(--safe-bottom)); height: 1.95rem"
 			>
-				<!-- Two words, split around the pie button that sits in the middle of
-				     this strip. Anything longer was cut off by the menu button and
-				     read as "one shared a—", which says less than nothing. -->
-				<span><strong>{t('home.demoVersion')}</strong></span>
-				<!-- Clear of the help dock, which floats over this corner. -->
-				<span class="pe-10">{t('home.yoursAndTemporary')}</span>
+				<!--
+					Two words and the mark, together at the left.
+
+					The right-hand half used to carry "yours, and temporary" — a
+					reassurance where the band exists to warn, and it read as one
+					half of a sentence split around the pie button in the middle.
+					What belongs beside "Demo version" is where the thing came
+					from, which is the mark: the address will not fit at this size
+					and the mark is the address.
+				-->
+				<!-- eslint-disable svelte/no-navigation-without-resolve -->
+				<a href={SOURCE_URL} target="_blank" rel="noreferrer" class="flex items-center gap-1.5">
+					<strong>{t('home.demoVersion')}</strong>
+					<Icon name="github" size={13} />
+				</a>
+				<!-- eslint-enable svelte/no-navigation-without-resolve -->
 			</div>
 		{/if}
 

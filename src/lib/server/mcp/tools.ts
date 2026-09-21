@@ -23,6 +23,7 @@
 import { localDateOf, type Ctx } from '$lib/services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 import type { Ref } from './refs.js';
+import { CLOSED_STATUSES } from '../../task-status.js';
 import type { Confinement } from './confinement.js';
 import { mayReadFile } from '$lib/services/media-permission.js';
 import { pictureReferrers, recordingReferrers } from '$lib/services/media-referrers.js';
@@ -244,6 +245,17 @@ export type Tool = {
 	 */
 	alsoNeeds?: Scope;
 	/**
+	 * Whether the answer leaves out the row it changed.
+	 *
+	 * Every write answers with `before` and `after` so a wrong call is
+	 * reversible from the transcript. On a tool whose whole subject is one
+	 * small field, that is two complete copies of a task to say one label
+	 * moved — most of what tagging costs, for something the tool's own answer
+	 * already states. The person's copy in the assistant log is unaffected:
+	 * that is where a real undo comes from.
+	 */
+	quiet?: boolean;
+	/**
 	 * The version that announced this tool is going away — set one release
 	 * before a removal, never in the same one. The manifest check refuses a
 	 * removal that was not announced; see `manifest.ts` for the whole rule.
@@ -371,6 +383,138 @@ function paged<T>(
 }
 
 /**
+ * How much of a row to send, and which parts.
+ *
+ * Every answer here is read by a model with a budget, and the default was the
+ * whole row: reading one notebook's task list cost about ten thousand tokens
+ * of which a tenth was used. So a listing answers with a line by default —
+ * enough to know which thing it is and whether it is done — and the rest is
+ * asked for.
+ *
+ * Three levels, because two were not enough in practice:
+ *
+ * - **the default**, a line: what it is, what state it is in, its labels;
+ * - **`verbose`**, the whole row as it was before this existed;
+ * - **`fields`**, exactly the ones named, for a caller that wants two.
+ *
+ * `fields` is checked against the keys the shape can produce and refuses
+ * anything else by name. Nothing a caller sends reaches a query — the filters
+ * and the shaping run over rows a service has already scoped to this account
+ * — and this keeps it that way by construction rather than by trust.
+ */
+type Detail = { verbose: boolean; fields: string[] | null };
+
+const DETAIL_ARGS = {
+	verbose: {
+		type: 'boolean',
+		description:
+			'Send the whole of each row rather than a line. Off by default: a list is usually read to find something, and the thing found is then asked about by id.'
+	},
+	fields: text(
+		'Only these parts of each row, comma-separated — `title,status,tags`. `id` always comes back. Unknown names are refused rather than ignored.'
+	)
+};
+
+function detailOf(args: Record<string, unknown>): Detail {
+	const asked = args.fields;
+	if (asked === undefined || asked === null || asked === '')
+		return { verbose: args.verbose === true, fields: null };
+
+	const names = (Array.isArray(asked) ? asked : String(asked).split(','))
+		.map((one) => String(one).trim())
+		.filter(Boolean);
+	return { verbose: args.verbose === true, fields: names };
+}
+
+/**
+ * One row, cut to what was asked for.
+ *
+ * `full` is everything this kind of thing can say; `line` is the handful that
+ * identifies it. A named field that the full row does not have is a mistake
+ * worth saying out loud — silently sending less than was asked for is how a
+ * caller comes to believe a task has no notes.
+ */
+function detailed(
+	full: Record<string, unknown>,
+	line: Record<string, unknown>,
+	detail: Detail
+): Record<string, unknown> {
+	if (detail.fields) {
+		const known = Object.keys(full);
+		const unknown = detail.fields.filter((name) => !known.includes(name) && name !== 'id');
+		if (unknown.length > 0)
+			throw new ValidationError(
+				`No such field${unknown.length > 1 ? 's' : ''}: ${unknown.join(', ')}. This one has ${known.join(', ')}.`
+			);
+		const out: Record<string, unknown> = { id: full.id };
+		for (const name of detail.fields) if (name in full) out[name] = full[name];
+		return out;
+	}
+	return detail.verbose ? full : line;
+}
+
+/**
+ * The label filters every listing takes.
+ *
+ * `tag` narrows to what carries a word, `withoutTag` to what does not — "open
+ * and not yet `done-by-ai`" is one call rather than a list read and filtered
+ * by hand — and `taggedSince` answers the question a review queue is always
+ * asking: what has been marked since I last looked. It reads the date on the
+ * join, which is the tag's own and does not move when the thing is edited.
+ */
+const TAG_ARGS = {
+	tag: text(
+		'Only the ones carrying this label. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours.'
+	),
+	withoutTag: text(
+		'Only the ones NOT carrying this label. The mirror of `tag`; both may be given.'
+	),
+	taggedSince: text(
+		'Only the ones labelled at or after this moment — `2026-09-21` or a full ISO timestamp. With `tag`, it is that label\u2019s own date; without, any label\u2019s. A label put on before dates were kept does not answer this.'
+	)
+};
+
+/** A label as the caller wrote it: lower case, no leading hashes, trimmed. */
+function tagWord(value: unknown): string {
+	return String(value).replace(/^#+/, '').trim().toLowerCase();
+}
+
+/**
+ * A moment, from a day or a full timestamp.
+ *
+ * A bare day means the start of it, which is what somebody asking "since
+ * Monday" means. ISO strings compare correctly as strings, so the comparison
+ * itself needs no parsing — but the shape is checked here so a typo is a
+ * sentence rather than a filter that quietly matches everything.
+ */
+function momentArg(value: unknown, what: string): string {
+	const said = String(value).trim();
+	if (/^\d{4}-\d{2}-\d{2}$/.test(said)) return `${said}T00:00:00.000Z`;
+	const at = new Date(said);
+	if (Number.isNaN(at.getTime()))
+		throw new ValidationError(`${what} has to be a date like 2026-03-14 or a full ISO timestamp.`);
+	return at.toISOString();
+}
+
+/** Whether a thing's labels satisfy the three filters above. */
+function passesTags(
+	labels: readonly { name: string; taggedAt?: string | null }[],
+	args: Record<string, unknown>
+): boolean {
+	if (args.tag !== undefined && !labels.some((one) => one.name === tagWord(args.tag))) return false;
+	if (args.withoutTag !== undefined && labels.some((one) => one.name === tagWord(args.withoutTag)))
+		return false;
+
+	if (args.taggedSince !== undefined) {
+		const since = momentArg(args.taggedSince, 'taggedSince');
+		const counted =
+			args.tag === undefined ? labels : labels.filter((one) => one.name === tagWord(args.tag));
+		if (!counted.some((one) => one.taggedAt && one.taggedAt >= since)) return false;
+	}
+	return true;
+}
+
+/**
  * A todo as little as it can be said in.
  *
  * The service's shape is written for the app, which wants every column laid
@@ -382,6 +526,9 @@ function paged<T>(
  */
 function briefly(todo: Todo): Record<string, unknown> {
 	const out: Record<string, unknown> = { id: todo.id, title: todo.title, status: todo.status };
+	// The number a person can see on the screen and say out loud — the fourth
+	// task about the kitchen is #4. The id is ours; this one is theirs.
+	if (todo.notebookSeq !== null) out.seq = todo.notebookSeq;
 	if (todo.notes) out.notes = todo.notes;
 	if (todo.scheduledDate) out.scheduledDate = todo.scheduledDate;
 	if (todo.categoryName) out.category = todo.categoryName;
@@ -408,6 +555,89 @@ function briefly(todo: Todo): Record<string, unknown> {
 	);
 	if (Object.keys(ratings).length > 0) out.ratings = ratings;
 	return out;
+}
+
+/**
+ * The same task as one line: which one it is, and where it stands.
+ *
+ * What a list is read for. The notes are the expensive part of a task and the
+ * part a list is least likely to want — a caller looking for one asks by id
+ * once it has found it, or says `verbose`.
+ */
+function asLine(todo: Todo): Record<string, unknown> {
+	const out: Record<string, unknown> = { id: todo.id, title: todo.title, status: todo.status };
+	if (todo.notebookSeq !== null) out.seq = todo.notebookSeq;
+	if (todo.tags.length > 0) out.tags = todo.tags.map((one) => one.name);
+	return out;
+}
+
+/** A task, at whatever detail was asked for. */
+const shapeTodo = (detail: Detail) => (todo: Todo) => detailed(briefly(todo), asLine(todo), detail);
+
+/**
+ * A note, as a line and as the whole thing.
+ *
+ * The words are the point of a note and also the expensive part of one: a
+ * notebook of forty notes is a book, and a listing read to find one should not
+ * carry all of them. The line keeps what identifies it — its number, its name,
+ * its labels, when it was written — and an opening so a reader can tell two
+ * apart. `verbose` gives the writing.
+ */
+const PREVIEW_CHARS = 140;
+
+type NoteRow = {
+	id: number;
+	seq?: number | null;
+	title?: string;
+	content: string;
+	createdAt: string;
+	updatedAt?: string | null;
+	archivedAt?: string | null;
+	pinnedAt?: string | null;
+	tags: { id?: number; name: string; taggedAt?: string | null }[];
+};
+
+function noteLine(note: NoteRow): Record<string, unknown> {
+	const out: Record<string, unknown> = { id: note.id, createdAt: note.createdAt };
+	if (note.seq !== null && note.seq !== undefined) out.seq = note.seq;
+	if (note.title) out.title = note.title;
+	const opening = note.content.trim().replace(/\s+/g, ' ');
+	if (opening)
+		out.opening =
+			opening.length > PREVIEW_CHARS ? `${opening.slice(0, PREVIEW_CHARS)}\u2026` : opening;
+	if (note.tags.length > 0) out.tags = note.tags.map((one) => one.name);
+	if (note.pinnedAt) out.pinned = true;
+	if (note.archivedAt) out.archivedAt = note.archivedAt;
+	return out;
+}
+
+function noteFull(note: NoteRow): Record<string, unknown> {
+	const out: Record<string, unknown> = { ...noteLine(note), content: note.content };
+	delete out.opening;
+	if (note.updatedAt) out.updatedAt = note.updatedAt;
+	const dated = note.tags.filter((one) => one.taggedAt);
+	if (dated.length > 0)
+		out.taggedAt = Object.fromEntries(dated.map((one) => [one.name, one.taggedAt]));
+	return out;
+}
+
+const shapeNote = (detail: Detail) => (note: NoteRow) =>
+	detailed(noteFull(note), noteLine(note), detail);
+
+/**
+ * The four states a task can be in, plus the two words people actually use.
+ *
+ * `open` is "not finished and not given up on", which is the question behind
+ * almost every listing; `closed` is its complement. Naming the four as well
+ * means a caller that wants exactly `doing` can say so.
+ */
+const TASK_STATES = ['todo', 'doing', 'done', 'skipped', 'open', 'closed'] as const;
+
+function matchesState(todo: Todo, said: unknown): boolean {
+	const closed = CLOSED_STATUSES.includes(todo.status);
+	if (said === 'open') return !closed;
+	if (said === 'closed') return closed;
+	return todo.status === said;
 }
 
 /**
@@ -797,7 +1027,7 @@ export const TOOLS: Tool[] = [
 		name: 'finish_block',
 		title: 'Mark a block done or skipped',
 		description:
-			'Answer for one block on the day: it happened, or it did not. Takes the id `today` gives for that block. Skipping is a real answer — say skipped when the person says they did not do it. It is NOT a way to clear something off the day: a skip goes into the week\u2019s record and the review asks about it. To move a block use `change_block`; to take one off because it was never happening use `cancel_block`. `todo` takes an answer back, for one ticked by mistake.',
+			'Answer for one block on the day: it happened, or it did not. Takes the id `today` gives. Skipped is a real answer and goes into the week\u2019s record, which the review asks about \u2014 it is not a way to clear something off the day. Moving one is `change_block`; one that was never happening is `cancel_block`. `todo` takes an answer back.',
 		scope: 'schedule:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'block' }],
@@ -882,7 +1112,7 @@ export const TOOLS: Tool[] = [
 		name: 'change_block',
 		title: 'Move or rename a block',
 		description:
-			'Change one block on one day: its time, its day, how long it runs, or what it is called. This is "push the study block to four", "make it two hours", "that was actually client work". Takes the id `today` or `upcoming` gives. Only the fields you pass change. It affects that day only — moving this Thursday\u2019s gym does not move gym — and it never edits the repeating week. Renaming keeps which part of life it belongs to and stops it being the named activity it was, because that is what saying it was something else means.',
+			'Change one block on one day: its time, its day, how long it runs, or what it is called. This is "push the study block to four", "make it two hours", "that was actually client work". Takes the id `today` or `upcoming` gives; only the fields you pass change. That day only — moving this Thursday\u2019s gym does not move gym — and never the repeating week.',
 		scope: 'schedule:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'block' }],
@@ -914,7 +1144,7 @@ export const TOOLS: Tool[] = [
 		name: 'cancel_block',
 		title: 'Take a block off the day',
 		description:
-			'Remove a block from a day because it is not happening — the meeting moved, the class was called off, it was put on the wrong day. This is NOT the same as marking it skipped: skipped means it was meant to happen and did not, which is a fact the weekly review asks about, and cancelled means it was never going to. Use `finish_block` with "skipped" for the first and this for the second. A repeating block is only removed from that one day.',
+			'Remove a block from a day because it is not happening — the meeting moved, the class was called off. Not the same as skipped: skipped means it was meant to happen and did not, which the weekly review asks about; cancelled means it was never going to. A repeating block loses that one day only.',
 		scope: 'schedule:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'block' }],
@@ -1063,7 +1293,7 @@ export const TOOLS: Tool[] = [
 		name: 'todos',
 		title: 'The todo list',
 		description:
-			'Tasks with no date on them yet. A todo gains a date by being put on a day, which promotes it onto the week. Pass `notebookId` when the question is about one subject \u2014 reading the whole list to find four tasks about the kitchen is somebody\u2019s entire todo list going past for no reason.',
+			'Tasks with no date on them yet. A todo gains a date by being put on a day, which promotes it onto the week. Answers with a line per task; `verbose` or `fields` for more. Narrow it rather than reading it whole \u2014 `notebookId` for one subject, `status: "open"`, `tag`, `withoutTag`, `taggedSince`.',
 		scope: 'tasks:read',
 		writes: false,
 		refs: [{ arg: 'notebookId', kind: 'notebook' }],
@@ -1080,11 +1310,17 @@ export const TOOLS: Tool[] = [
 				description:
 					'Include the tasks that have been put away. Off by default, which is what putting away means.'
 			},
-			tag: text(
-				'Only the tasks carrying this label. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours.'
-			)
+			status: {
+				type: 'string',
+				enum: [...TASK_STATES],
+				description:
+					'Only the tasks in this state. `open` is everything not finished and not skipped, which is what a list is usually read for.'
+			},
+			...TAG_ARGS,
+			...DETAIL_ARGS
 		}),
 		run: (ctx, args) => {
+			const detail = detailOf(args);
 			let rows = listTodos(ctx);
 			if (!args.includeArchived) rows = rows.filter((todo) => !todo.archivedAt);
 			if (args.notebookId !== undefined) {
@@ -1093,11 +1329,61 @@ export const TOOLS: Tool[] = [
 					wanted === 0 ? todo.notebookId === null : todo.notebookId === wanted
 				);
 			}
-			if (args.tag !== undefined) {
-				const wanted = String(args.tag).replace(/^#+/, '').trim().toLowerCase();
-				rows = rows.filter((todo) => todo.tags.some((one) => one.name === wanted));
-			}
-			return paged(rows.map(briefly), args, 50);
+			if (args.status !== undefined) rows = rows.filter((todo) => matchesState(todo, args.status));
+			rows = rows.filter((todo) => passesTags(todo.tags, args));
+			return paged(rows.map(shapeTodo(detail)), args, 50);
+		}
+	},
+	/*
+	 * What to do next, by the numbers the person put on their own tasks.
+	 *
+	 * Urgency first, then energy, then interest — their order, not mine, and
+	 * worth writing down because the middle one is not the obvious way round:
+	 * energy here is how much a task will take out of you, and a tie between
+	 * two urgent things is broken towards the heavier one.
+	 *
+	 * It exists so that "what should I be doing" is one small call rather than
+	 * the whole list read and sorted by a model that then has to explain
+	 * itself. Unrated tasks come last: a task nobody has weighed is not more
+	 * pressing than one somebody marked 1.
+	 */
+	{
+		name: 'up_next',
+		title: 'What to do next',
+		description:
+			'The task to do next, by the ratings on it: most urgent first, ties broken by higher energy and then higher interest. Open, unarchived, undated tasks only \u2014 anything with a day on it is on the week and `today` answers for that. Answers with one line by default; `limit` for a short list to choose between.',
+		scope: 'tasks:read',
+		writes: false,
+		refs: [{ arg: 'notebookId', kind: 'notebook' }],
+		input: object({
+			limit: count('How many to return. One is the usual question.', 1),
+			notebookId: {
+				type: 'integer',
+				description: 'Only tasks filed under this notebook, as `notebooks` gives its id.'
+			},
+			...TAG_ARGS,
+			...DETAIL_ARGS
+		}),
+		run: (ctx, args) => {
+			const detail = detailOf(args);
+			let rows = listTodos(ctx).filter(
+				(todo) => !todo.archivedAt && !CLOSED_STATUSES.includes(todo.status)
+			);
+			if (args.notebookId !== undefined)
+				rows = rows.filter((todo) => todo.notebookId === Number(args.notebookId));
+			rows = rows.filter((todo) => passesTags(todo.tags, args));
+
+			// An unrated task sorts as -1: below a 1, above nothing.
+			const weight = (value: number | null) => (value === null ? -1 : value);
+			const ordered = [...rows].sort(
+				(a, b) =>
+					weight(b.ratings.urgency) - weight(a.ratings.urgency) ||
+					weight(b.ratings.energy) - weight(a.ratings.energy) ||
+					weight(b.ratings.interest) - weight(a.ratings.interest) ||
+					a.sortOrder - b.sortOrder
+			);
+
+			return pageOf(ordered.slice(0, limitOf(args, 1, 20)).map(shapeTodo(detail)), rows.length, 0);
 		}
 	},
 	{
@@ -1253,6 +1539,12 @@ export const TOOLS: Tool[] = [
 			'Put labels on a todo or take them off, leaving its other labels alone — this is the one to use for marking a task, and `change_todo` is for replacing every label at once. Several assistants sharing a list mark their own work this way; `todos` takes a `tag` to read back only the ones you marked. Answers with the labels it has afterwards.',
 		scope: 'tasks:write',
 		writes: true,
+		/*
+		 * The tags it has afterwards are the whole answer. Two copies of the
+		 * task around them was most of what a marking run cost, and said
+		 * nothing the caller did not send or receive.
+		 */
+		quiet: true,
 		refs: [{ arg: 'id', kind: 'todo', subject: true }],
 		input: object(
 			{
@@ -1267,6 +1559,7 @@ export const TOOLS: Tool[] = [
 			['id']
 		),
 		run: (ctx, args) => ({
+			id: Number(args.id),
 			tags: tagTodo(ctx, Number(args.id), { add: args.add, remove: args.remove })
 		})
 	},
@@ -1561,11 +1854,20 @@ export const TOOLS: Tool[] = [
 		name: 'diary',
 		title: 'Recent diary entries',
 		description:
-			'What has been written lately, newest first. An entry can belong to a notebook or to no notebook at all.',
+			'What has been written lately, newest first. An entry can belong to a notebook or to no notebook at all. Answers with a line and an opening per entry; `verbose` for the writing itself.',
 		scope: 'notes:read',
 		writes: false,
-		input: object({ limit: count('How many entries.', 20), offset: from('the diary') }),
-		run: (ctx, args) => paged(listEntries(ctx), args, 20)
+		input: object({
+			limit: count('How many entries.', 20),
+			offset: from('the diary'),
+			...TAG_ARGS,
+			...DETAIL_ARGS
+		}),
+		run: (ctx, args) => {
+			const detail = detailOf(args);
+			const rows = listEntries(ctx).filter((entry) => passesTags(entry.tags, args));
+			return paged(rows.map(shapeNote(detail)), args, 20);
+		}
 	},
 	{
 		name: 'write_entry',
@@ -1600,7 +1902,7 @@ export const TOOLS: Tool[] = [
 		name: 'notebook_notes',
 		title: 'The notes in a notebook',
 		description:
-			'What has been written against one subject, newest first, with the id of each note. `diary` deliberately shows only entries outside a notebook, so this is the way to read one \u2014 and the way to find the id `archive_note` wants.',
+			'What has been written against one subject, newest first, with the id of each note. `diary` deliberately shows only entries outside a notebook, so this is the way to read one \u2014 and the way to find the id `archive_note` wants. Answers with a line and an opening per note; `verbose` for the writing itself, `tag` and `taggedSince` to narrow.',
 		scope: 'notes:read',
 		writes: false,
 		refs: [{ arg: 'id', kind: 'notebook' }],
@@ -1610,13 +1912,20 @@ export const TOOLS: Tool[] = [
 				includeArchived: {
 					type: 'boolean',
 					description: 'Include the notes that have been put away. Off by default, as on the page.'
-				}
+				},
+				limit: count('How many to return.', 50),
+				offset: from('the notebook'),
+				...TAG_ARGS,
+				...DETAIL_ARGS
 			},
 			['id']
 		),
 		run: (ctx, args) => {
-			const notes = contentsOf(ctx, Number(args.id)).entries;
-			return args.includeArchived ? notes : notes.filter((note) => !note.archivedAt);
+			const detail = detailOf(args);
+			let notes = contentsOf(ctx, Number(args.id)).entries;
+			if (!args.includeArchived) notes = notes.filter((note) => !note.archivedAt);
+			notes = notes.filter((note) => passesTags(note.tags, args));
+			return paged(notes.map(shapeNote(detail)), args, 50);
 		}
 	},
 	{
@@ -1710,7 +2019,7 @@ export const TOOLS: Tool[] = [
 		name: 'note_to_todos',
 		title: 'Make todos out of a checklist note',
 		description:
-			'Turn a note that is really a checklist into the tasks it describes. Every `- [ ]` line becomes a task, and whatever is written under it \u2014 until the next `- [ ]` \u2014 becomes that task\u2019s notes. A `- [x]` line comes across already done. Each one is filed under the note\u2019s own notebook. The note is left exactly as it was: tidy it with `edit_entry`, or put it away with `archive_note`, once you have checked what was made.',
+			'Turn a note that is really a checklist into the tasks it describes. Every `- [ ]` line becomes a task, with whatever is written under it as that task\u2019s notes; a `- [x]` line comes across already done. Each is filed under the note\u2019s own notebook, and each box is replaced by a reference to the task it became \u2014 `TODO:#4` \u2014 so the note keeps its words and stops being a second copy of the list.',
 		scope: 'tasks:write',
 		alsoNeeds: 'notes:read',
 		writes: true,
@@ -2744,7 +3053,7 @@ export const TOOLS: Tool[] = [
 		name: 'repeating_week',
 		title: 'The week as it repeats',
 		description:
-			'The blocks that make up every week — each with its weekday, time, length and category. Weekdays are numbered from Monday: 0 is Monday, 6 is Sunday. Not all of them are weekly: `repeats` says in words how often each one comes back, which can be every N weeks, every N days, or a day of the month. This is the template the days are generated from; `today` and `upcoming` show what it produced. Read it before changing Tuesdays rather than a Tuesday.',
+			'The blocks that make up every week — weekday, time, length, category. Weekdays count from Monday: 0 is Monday, 6 is Sunday. Not all are weekly: `repeats` says how often each comes back. This is the template the days are generated from, so read it before changing Tuesdays rather than a Tuesday.',
 		scope: 'schedule:read',
 		writes: false,
 		input: object({}),
@@ -2758,7 +3067,7 @@ export const TOOLS: Tool[] = [
 		name: 'add_repeating_block',
 		title: 'Put a block on every week',
 		description:
-			'Add a block that comes back — "gym on Tuesdays at seven", "the bins every other Tuesday", "rent on the first". Weekly unless `repeats` says otherwise. This changes every week from now on; `add_block` is the one for a single day. Weekdays count from Monday: 0 is Monday, 6 is Sunday. A block can be a bare category rather than a named thing — leave the title out and it shows as the category itself, which is what "put work in those hours" means.',
+			'Add a block that comes back — "gym on Tuesdays at seven", "the bins every other Tuesday", "rent on the first". Weekly unless `repeats` says otherwise, and it changes every week from now on; `add_block` is the one for a single day. Weekdays count from Monday: 0 is Monday, 6 is Sunday. Leave the title out for a bare category block — "put work in those hours".',
 		scope: 'schedule:write',
 		writes: true,
 		input: object(

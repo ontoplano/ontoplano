@@ -431,7 +431,17 @@ export const diaryEntryTags = sqliteTable(
 			.references(() => diaryEntries.id, { onDelete: 'cascade' }),
 		tagId: integer('tag_id')
 			.notNull()
-			.references(() => tags.id, { onDelete: 'cascade' })
+			.references(() => tags.id, { onDelete: 'cascade' }),
+		/*
+		 * When this label went on — the same column the task join carries, and
+		 * for the same reason: a note put into `ai-review` has to be findable
+		 * by *when* it was put there, and the entry's own `updated_at` moves
+		 * for every edit including the one being reviewed.
+		 *
+		 * Null on every row written before this column existed. An invented
+		 * date would read as real.
+		 */
+		taggedAt: text('tagged_at')
 	},
 	(table) => [
 		index('diary_entry_tags_user_idx').on(table.userId),

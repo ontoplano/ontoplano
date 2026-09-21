@@ -856,7 +856,6 @@ export type MessageKey =
 	| 'home.countToGo'
 	| 'home.demoVersion'
 	| 'home.diary'
-	| 'home.doNotPutYourReal'
 	| 'home.done'
 	| 'home.dragCard'
 	| 'home.dragTheCardsByThe'
@@ -923,7 +922,6 @@ export type MessageKey =
 	| 'home.onlyWhatBrokeIsSent'
 	| 'home.ontoplano'
 	| 'home.open'
-	| 'home.openOnYourPhoneTo'
 	| 'home.openRarr'
 	| 'home.openThePlan'
 	| 'home.paidOfExpected'
@@ -950,7 +948,6 @@ export type MessageKey =
 	| 'home.thatDidNotWorkReload'
 	| 'home.thatPageIsNotHere'
 	| 'home.theme'
-	| 'home.thisIsADemoVersion'
 	| 'home.thisIsOntoplanoDemo'
 	| 'home.threeWins'
 	| 'home.todaySTasks'
@@ -975,7 +972,6 @@ export type MessageKey =
 	| 'home.writeSomethingDown'
 	| 'home.youPayForItYourself'
 	| 'home.yourNotesAndYourWeek'
-	| 'home.yoursAndTemporary'
 	| 'imageViewer.picture'
 	| 'instance.anInstanceBehindAServer'
 	| 'instance.enterAnyInstanceUrl'
@@ -3173,7 +3169,6 @@ export interface MessageValuesFor {
 	'home.more2': { goalPreview: string | number };
 	'home.more3': { length: string | number };
 	'home.ontoplano': { status: string | number };
-	'home.openOnYourPhoneTo': { demoHost: string | number };
 	'home.paidOfExpected': { currency: string | number; currency2: string | number };
 	'home.skipped2': { skipped: string | number };
 	'instance.enterAnyInstanceUrl': { https: string | number };

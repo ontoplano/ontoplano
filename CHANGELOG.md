@@ -20,6 +20,16 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **An assistant can ask for part of a list instead of all of it.** The task
+  list takes `status`, `withoutTag` and `taggedSince` beside `tag`; notes take
+  `tag` and `taggedSince`. A listing answers with a line per row — `verbose`
+  for the whole thing, `fields` for exactly the parts wanted — and `tag_todo`
+  answers with the labels rather than two copies of the task. `up_next` answers
+  what to do next, by the ratings on the tasks themselves.
+- **A label on a note carries the day it went on**, the way a label on a task
+  already did, so a note put into review can be found by when it was put there.
+- **The demo band on a phone carries the mark** instead of "yours, and
+  temporary".
 - **A task shows its number inside its notebook**, small, at the end of the row
   — the number a note points at and the one to say out loud when you mean a
   particular task.
