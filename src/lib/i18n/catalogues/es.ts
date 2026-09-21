@@ -217,6 +217,7 @@ export const messages: Catalogue = {
 	'app.sundayAndMondayAreBoth': 'El domingo y el lunes son ambos normales.',
 	'app.supportOntoplano': 'Apoyar a ontoplano',
 	'app.system': 'Sistema',
+	'app.tags': 'Etiquetas',
 	'app.task': 'Tarea',
 	'app.tasks': 'Tareas',
 	'app.tellTheOperator': 'Avisar al operador',
@@ -1654,6 +1655,20 @@ export const messages: Catalogue = {
 	'notebooks.startOneForSomethingYou':
 		'Crea uno para algo a lo que volverás una y otra vez, y enlázale notas, tareas y metas.',
 	'notebooks.tags': '#etiquetas',
+	'notebooks.tags.aTagIsMadeBy':
+		'Una etiqueta nace al escribirla sobre algo — una tarea, una nota, una idea. Aparecen aquí en cuanto existen.',
+	'notebooks.tags.aTagWithNoColour': 'Una etiqueta sin color se dibuja lisa.',
+	'notebooks.tags.editTag': 'Editar etiqueta',
+	'notebooks.tags.noColour': 'Sin color',
+	'notebooks.tags.noTagsYet': 'Aún no hay etiquetas',
+	'notebooks.tags.oneVocabularyForTheWhole':
+		'Un solo conjunto de etiquetas para toda la cuenta — la misma palabra en una tarea, una nota, una idea, un bloque y una foto. Renombrar o quitar una aquí la cambia en todas partes.',
+	'notebooks.tags.renamingOntoAName':
+		'Renombrar a un nombre que ya usas fusiona las dos etiquetas en una.',
+	'notebooks.tags.tagsOntoplano': 'Etiquetas · Ontoplano',
+	'notebooks.tags.thingCarriesIt': 'cosa la lleva',
+	'notebooks.tags.thingsCarryIt': 'cosas la llevan',
+	'notebooks.tags.yesDelete': 'Sí, eliminar',
 	'notebooks.tasksCount': { one: '{count} tarea', other: '{count} tareas' },
 	'notebooks.theirNotebookWas': '{length} {notes} · su cuaderno se eliminó',
 	'notebooks.theirNotebookWasDeletedThe':
@@ -1728,6 +1743,7 @@ export const messages: Catalogue = {
 		other: '{count} notas de la revisión'
 	},
 	'notify.noun.sortRule': { one: '{count} regla de orden', other: '{count} reglas de orden' },
+	'notify.noun.tag': { one: '{count} etiqueta', other: '{count} etiquetas' },
 	'notify.noun.toGoal': { one: '{count} vínculo de meta', other: '{count} vínculos de meta' },
 	'notify.noun.todo': { one: '{count} tarea', other: '{count} tareas' },
 	'notify.noun.win': { one: '{count} logro', other: '{count} logros' },
@@ -1771,9 +1787,11 @@ export const messages: Catalogue = {
 	'notify.verb.pay': 'pagó',
 	'notify.verb.pin': 'fijó',
 	'notify.verb.put': 'guardó',
+	'notify.verb.recolor': 'recoloreó',
 	'notify.verb.record': 'grabó',
 	'notify.verb.remind': 'creó un recordatorio en',
 	'notify.verb.remove': 'quitó',
+	'notify.verb.rename': 'renombró',
 	'notify.verb.reopen': 'reabrió',
 	'notify.verb.schedule': 'programó',
 	'notify.verb.set': 'estableció',
@@ -2000,6 +2018,7 @@ export const messages: Catalogue = {
 	'rooms.notebooks.tabs.ideas': 'Ideas',
 	'rooms.notebooks.tabs.notebooks': 'Cuadernos',
 	'rooms.notebooks.tabs.people': 'Personas',
+	'rooms.notebooks.tabs.tags': 'Etiquetas',
 	'rooms.notebooks.tabs.weekly': 'Notas semanales',
 	'rooms.notebooks.title': 'Cuadernos',
 	'rooms.settings.sections': 'Secciones de configuración',
@@ -2057,6 +2076,8 @@ export const messages: Catalogue = {
 	'scopes.statementsWrite': 'Añadir y quitar las reglas que clasifican las líneas de tu extracto',
 	'scopes.streamsRead': 'Leer todo lo que tus flujos de datos han registrado',
 	'scopes.streamsWrite': 'Enviar lecturas a tus flujos de datos, y crear flujos nuevos',
+	'scopes.tagsRead': 'Ver las etiquetas que usas y los colores que les diste',
+	'scopes.tagsWrite': 'Renombrar tus etiquetas, colorearlas y fusionar dos en una',
 	'scopes.tasksRead':
 		'Leer tu lista de tareas y tus metas, y las fotos y grabaciones que hay en ellas',
 	'scopes.tasksWrite':
@@ -2778,6 +2799,7 @@ export const messages: Catalogue = {
 	'shortcut.editEntry': 'Editar entrada',
 	'shortcut.editIdea': 'Editar idea',
 	'shortcut.editItem': 'Editar elemento',
+	'shortcut.editTag': 'Editar la etiqueta bajo el cursor',
 	'shortcut.editTheOneUnderThe': 'Editar el que está bajo el cursor',
 	'shortcut.editTodo': 'Editar tarea',
 	'shortcut.expandCollapse': 'Expandir/contraer',
@@ -2793,6 +2815,7 @@ export const messages: Catalogue = {
 	'shortcut.navigatePeople': 'Navegar personas',
 	'shortcut.navigateSessions': 'Navegar sesiones',
 	'shortcut.navigateSlots': 'Navegar franjas',
+	'shortcut.navigateTags': 'Navegar por las etiquetas',
 	'shortcut.navigateTokens': 'Navegar tokens',
 	'shortcut.newActivity': 'Nueva actividad',
 	'shortcut.newCard': 'Nueva tarjeta',
@@ -3400,6 +3423,7 @@ export const messages: Catalogue = {
 	'tour.oneLineIsEnough': 'Una línea es suficiente',
 	'tour.oneNotebookPerSubject': 'Un cuaderno por tema',
 	'tour.oneRoomPerKindOf': 'Una sección por cada tipo de cosa',
+	'tour.oneSetOfLabelsFor': 'Un solo conjunto de etiquetas para todo',
 	'tour.ontoplano': 'Ontoplano',
 	'tour.openAPersonToSee':
 		'Abre una persona para ver cada entrada que la mencionó, la más reciente primero.',
@@ -3424,6 +3448,9 @@ export const messages: Catalogue = {
 	'tour.recipesAndWhatTheyCost': 'Recetas, y lo que te cuestan',
 	'tour.recordings': 'Grabaciones',
 	'tour.reminders': 'Recordatorios',
+	'tour.renameOneAndItChanges': 'Renómbrala, dale color, quítala',
+	'tour.renamingOntoALabelYou':
+		'Renombrar a una etiqueta que ya usas fusiona ambas. El color lo lleva la etiqueta allí donde se dibuje; quitarla la retira de todo lo que la llevaba.',
 	'tour.retireOneWithoutLosingIt': 'Retira uno sin perderlo',
 	'tour.review': 'Revisión',
 	'tour.rulesDoTheSorting': 'Las reglas hacen la clasificación',
@@ -3441,6 +3468,7 @@ export const messages: Catalogue = {
 	'tour.starItOrMarkIt': 'Márcalo con estrella, o márcalo como hecho',
 	'tour.systemFollowsThePhoneOr':
 		'El sistema sigue al teléfono o al portátil, incluso cuando cambia al atardecer.',
+	'tour.tags': 'Etiquetas',
 	'tour.tagsAndPeopleAsYou': 'Etiquetas y personas, mientras escribes',
 	'tour.tagsAreFreeFormInvent':
 		'Las etiquetas son libres — inventa una y existe. Nombrar a una persona vincula la entrada con ella.',
@@ -3462,6 +3490,8 @@ export const messages: Catalogue = {
 		'Los mismos bloques que el plan, en la única forma en la que puedes tomar uno y moverlo.',
 	'tour.theSameGestureForA':
 		'El mismo gesto, para una tarea, una idea, una nota o algo que comprar — sin decidir antes dónde va.',
+	'tour.theSameWordOnA':
+		'La misma palabra etiqueta una tarea, una nota, una idea, un bloque y una foto. Aquí viven las palabras en sí.',
 	'tour.theShapeOfANormal': 'La forma de una semana normal',
 	'tour.theStatementIsTheRecord': 'El extracto es el registro',
 	'tour.theThingsWithoutADay': 'Las cosas que aún no tienen día',

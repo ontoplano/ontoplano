@@ -129,3 +129,13 @@ export const HABIT_NEUTRAL_ACCENT = '#6b7280';
 export const CATEGORY_FALLBACK_COLOR = '#d1d5db';
 export const CATEGORY_FALLBACK_LIGHT = '#f3f4f6';
 export const CATEGORY_DEFAULT_NEW = '#6b7280';
+
+// -- Tags ---------------------------------------------------------------------
+
+/**
+ * What the colour box opens on for a label that has never had one.
+ *
+ * A neutral grey rather than a hue: the box is a question, and opening it on
+ * a colour makes it look like an answer somebody already gave.
+ */
+export const TAG_COLOR_DEFAULT = '#6b7280';

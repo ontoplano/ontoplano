@@ -1739,6 +1739,21 @@
 			}
 		}
 	},
+	"recolor_tag": {
+		"scope": "tags:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"color": {
+				"type": "string",
+				"required": true
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"record_movement": {
 		"scope": "statements:write",
 		"writes": true,
@@ -1907,6 +1922,17 @@
 			}
 		}
 	},
+	"remove_tag": {
+		"scope": "tags:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"remove_workout_category": {
 		"scope": "workouts:write",
 		"writes": true,
@@ -1925,6 +1951,21 @@
 		"params": {
 			"id": {
 				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"rename_tag": {
+		"scope": "tags:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"name": {
+				"type": "string",
 				"required": true
 			}
 		}
@@ -2112,6 +2153,12 @@
 				"required": false
 			}
 		}
+	},
+	"tags": {
+		"scope": "tags:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
 	},
 	"tick_bought": {
 		"scope": "inventory:write",

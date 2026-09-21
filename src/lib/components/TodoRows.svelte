@@ -21,6 +21,7 @@
 	import { matchScore } from '$lib/destinations';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
+	import TagChip from '$lib/components/TagChip.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -1238,8 +1239,12 @@
 											once. A label from before the column existed simply
 											does not say — an invented date would be read as real.
 										-->
-										<button
-											type="button"
+										<TagChip
+											name={tag.name}
+											active={tagFilter.includes(tag.name)}
+											title={tag.taggedAt
+												? t('todoRows.taggedAgo', { ago: agoOf(tag.taggedAt, now()) })
+												: undefined}
 											onclick={() => {
 												// Pressing a label adds it to the filter rather than
 												// replacing it, so two presses is two labels — the
@@ -1249,14 +1254,7 @@
 													: [...tagFilter.filter((one) => one !== NO_TAG), tag.name];
 												selectedIndex = 0;
 											}}
-											class="chip"
-											aria-pressed={tagFilter.includes(tag.name)}
-											title={tag.taggedAt
-												? t('todoRows.taggedAgo', { ago: agoOf(tag.taggedAt, now()) })
-												: undefined}
-										>
-											#{tag.name}
-										</button>
+										/>
 									{/each}
 								</div>
 							{/if}

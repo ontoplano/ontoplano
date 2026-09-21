@@ -4,6 +4,7 @@
 	import { useWhen } from '$lib/when-context.svelte';
 	import { enhance } from '$lib/enhance';
 	import FilterChips from '$lib/components/FilterChips.svelte';
+	import TagChip from '$lib/components/TagChip.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -200,7 +201,7 @@
 
 			{#if filterTag && !tagsOpen}
 				<div class="flex flex-wrap items-center gap-2">
-					<span class="chip border-indigo-500 bg-indigo-50 text-indigo-700">#{filterTag}</span>
+					<TagChip name={filterTag} active />
 					<button
 						onclick={() => {
 							filterTag = null;
@@ -218,17 +219,14 @@
 	{#if data.allTags.length > 0 && tagsOpen}
 		<div class="flex flex-wrap gap-2">
 			{#each data.allTags as tag (tag.id)}
-				<button
+				<TagChip
+					name={tag.name}
+					active={filterTag === tag.name}
 					onclick={() => {
 						filterTag = filterTag === tag.name ? null : tag.name;
 						selectedIndex = 0;
 					}}
-					class="chip {filterTag === tag.name
-						? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-						: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-700'}"
-				>
-					#{tag.name}
-				</button>
+				/>
 			{/each}
 			{#if filterTag}
 				<button
@@ -392,15 +390,13 @@
 									{#if idea.tags.length > 0}
 										<div class="flex flex-wrap gap-1">
 											{#each idea.tags as tag (tag.id)}
-												<button
+												<TagChip
+													name={tag.name}
 													onclick={() => {
 														filterTag = tag.name;
 														selectedIndex = 0;
 													}}
-													class="chip"
-												>
-													#{tag.name}
-												</button>
+												/>
 											{/each}
 										</div>
 									{/if}

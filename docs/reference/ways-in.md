@@ -48,6 +48,8 @@ than a permission bit: a grant given to a string of jargon is not informed.
 | `people:read`      | See the people in your life, whose birthday is coming, and their photographs                                                                      |
 | `people:write`     | Add people, and change what is recorded about them                                                                                                |
 | `search:read`      | Search everything you have written, in one go                                                                                                     |
+| `tags:read`        | See the labels you use, and the colours you gave them                                                                                             |
+| `tags:write`       | Rename your labels, colour them, and merge two into one                                                                                           |
 | `destructive`      | Delete things outright — with only the write grants, it can add and change but never remove                                                       |
 
 The narrowness is the point. A phone pushing weight readings needs to write to

@@ -784,6 +784,46 @@ _Needs `ideas:write`; writes._
 | `content` | string  | —        | The idea, rewritten.                          |
 | `tags`    | string  | —        | Comma-separated tags, replacing the old ones. |
 
+### `tags` — The labels
+
+Every label the account uses, alphabetically, with the colour it wears and how many things carry it. One vocabulary for the whole app — the same word on a task, a note, an idea, a block and a picture.
+
+_Needs `tags:read`; read-only._
+
+_Takes no parameters._
+
+### `rename_tag` — Rename a label
+
+Rename a label everywhere at once — for a typo, or for two words that turned out to mean one thing. Renaming onto a name the account already uses merges the two: everything that carried the old label carries the surviving one, and the old label stops existing. Answers with the label that survived.
+
+_Needs `tags:write`; writes._
+
+| Parameter | Type    | Required | What it is                                                                                        |
+| --------- | ------- | -------- | ------------------------------------------------------------------------------------------------- |
+| `id`      | integer | yes      | The label’s id, as `tags` gives it.                                                               |
+| `name`    | string  | yes      | The new name — one word, lower case, no #. A name the account already uses merges the two labels. |
+
+### `recolor_tag` — Colour a label
+
+Give a label a colour, so it is drawn in it wherever a chip for it appears. An empty string takes the colour off again, which is the plain chip every label starts as.
+
+_Needs `tags:write`; writes._
+
+| Parameter | Type    | Required | What it is                                                         |
+| --------- | ------- | -------- | ------------------------------------------------------------------ |
+| `id`      | integer | yes      | The label’s id, as `tags` gives it.                                |
+| `color`   | string  | yes      | The colour as `#rrggbb` — `#0f766e`. An empty string takes it off. |
+
+### `remove_tag` — Delete a label
+
+Take a label out of the vocabulary and off everything that carried it — the tasks, notes, ideas, blocks and pictures keep everything else about them. Nothing is archived; the label is gone. To fold it into another label instead, `rename_tag` onto that one.
+
+_Needs `tags:write` and `destructive`; deletes._
+
+| Parameter | Type    | Required | What it is                          |
+| --------- | ------- | -------- | ----------------------------------- |
+| `id`      | integer | yes      | The label’s id, as `tags` gives it. |
+
 ### `shopping_list` — The shopping list
 
 What is to buy and what is already in the cupboard. An item is a thing, not a line: ticking it bought puts it back in the cupboard rather than deleting it. Each carries how many there are and how many are kept, so "what am I short of" is `qty` below `idealQty` — `short: true` asks for exactly those.

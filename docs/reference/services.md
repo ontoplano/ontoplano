@@ -5281,6 +5281,14 @@ since".
 
 #### `cleanupOrphanTags(userId)`
 
+Drop the labels nothing carries any more.
+
+Read from `CARRIERS` rather than from four hand-written queries: the four
+were diary, ideas, media and todos, so a word used only on a block of the
+week counted as referenced by nobody and was deleted the next time an
+unrelated note was edited. Now a join table cannot be left out of this
+without being left out of every other verb here too.
+
 #### `linkIdeaTags(ideaId, tagIds, userId)`
 
 #### `replaceIdeaTags(ideaId, tagNames, userId)`
@@ -5308,10 +5316,56 @@ exactly as it was.
 
 #### `replaceMediaTags(mediaId, tagNames, userId)`
 
+#### `listTagsWithUses(userId)`
+
+Every label the account has, alphabetically, with how many things carry each.
+
+#### `recolorTag(userId, id, color)`
+
+Give a label a colour, or take its colour away.
+
+Null is a real answer and not a missing one: most labels are words rather
+than colours, and a tag with no colour is drawn as the plain chip it has
+always been.
+
+#### `renameTag(userId, id, name)`
+
+Rename a label — and if the new name is one the account already uses, merge
+into it rather than refusing.
+
+The unique index on (account, name) is what makes the vocabulary one
+vocabulary, and hitting it is exactly what somebody fixing a typo does:
+`worik` should become `work`, and `work` already exists. Refusing leaves
+two words meaning one thing, which is the state they were trying to get
+out of.
+
+Merging means: everything that carried the old label now carries the
+surviving one, and the old label stops existing. For a thing that carried
+_both_ there is nothing to move — it is already labelled — so that join row
+goes, and the one that stays takes the earlier of the two dates, because
+that is when the thing actually started carrying this idea. The survivor
+keeps its own colour unless it never had one, in which case it inherits the
+colour of the label that is being folded into it: a colour that was chosen
+beats no choice at all.
+
+#### `deleteTag(userId, id)`
+
+Take a label out of the vocabulary, and off everything that carried it.
+
+The join rows go explicitly rather than by cascade: the same statement then
+does the same thing whether or not foreign keys are on, which they are not
+during a migration.
+
+#### `tagByName(userId, name)`
+
+The label the account calls this word, if it has one.
+
 ### Types
 
 - `BlockKind`
 - `Tag` — A label and when it went on. The same shape a task's labels have.
+- `TagSummary` — A label as the Tags screen reads it: what it is, its colour, and how much work it is doing.
+- `TagRow` — The label as it is stored.
 
 ## time
 

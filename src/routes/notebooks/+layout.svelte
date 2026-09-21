@@ -33,7 +33,11 @@
 		// What the weekly review writes. It is writing, and it was reachable only
 		// from the week it belonged to — which is a thing nobody navigates to.
 		{ href: resolve('/notebooks/weekly'), label: t('rooms.notebooks.tabs.weekly') },
-		{ href: resolve('/notebooks/people'), label: t('rooms.notebooks.tabs.people') }
+		{ href: resolve('/notebooks/people'), label: t('rooms.notebooks.tabs.people') },
+		// The labels themselves. They are the account's one vocabulary rather
+		// than a notebook's, and this is the room where the writing is — which
+		// is where somebody who wants to tidy a tag goes looking for it.
+		{ href: resolve('/notebooks/tags'), label: t('rooms.notebooks.tabs.tags') }
 	]);
 </script>
 

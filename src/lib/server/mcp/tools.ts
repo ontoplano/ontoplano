@@ -75,6 +75,7 @@ import {
 	toggleFavorite,
 	updateIdea
 } from '$lib/services/ideas.js';
+import { deleteTag, listTagsWithUses, recolorTag, renameTag } from '$lib/services/tags.js';
 import {
 	addGoalLinks,
 	addGoalTarget,
@@ -2258,6 +2259,84 @@ export const TOOLS: Tool[] = [
 				content: args.content ?? current.content,
 				tags: args.tags ?? current.tags.map((t) => t.name).join(', ')
 			});
+			return { ok: true };
+		}
+	},
+	// ── The one vocabulary ────────────────────────────────────
+	/*
+	 * Labels as things in themselves, rather than as a property of what wears
+	 * them.
+	 *
+	 * Every other tool reads a tag off a task or a note. These three are the
+	 * account's vocabulary itself — which is why they answer to `tags:*` and
+	 * not to the room the label happens to be used in: renaming one reaches
+	 * into every room at once.
+	 */
+	{
+		name: 'tags',
+		title: 'The labels',
+		description:
+			'Every label the account uses, alphabetically, with the colour it wears and how many things carry it. One vocabulary for the whole app — the same word on a task, a note, an idea, a block and a picture.',
+		scope: 'tags:read',
+		writes: false,
+		input: object({}),
+		run: (ctx) => ({ tags: listTagsWithUses(ctx.userId) })
+	},
+	{
+		name: 'rename_tag',
+		title: 'Rename a label',
+		description:
+			'Rename a label everywhere at once — for a typo, or for two words that turned out to mean one thing. Renaming onto a name the account already uses merges the two: everything that carried the old label carries the surviving one, and the old label stops existing. Answers with the label that survived.',
+		scope: 'tags:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'tag', subject: true }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The label\u2019s id, as `tags` gives it.' },
+				name: text(
+					'The new name — one word, lower case, no #. A name the account already uses merges the two labels.'
+				)
+			},
+			['id', 'name']
+		),
+		run: (ctx, args) => renameTag(ctx.userId, Number(args.id), args.name)
+	},
+	{
+		name: 'recolor_tag',
+		title: 'Colour a label',
+		description:
+			'Give a label a colour, so it is drawn in it wherever a chip for it appears. An empty string takes the colour off again, which is the plain chip every label starts as.',
+		scope: 'tags:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'tag', subject: true }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The label\u2019s id, as `tags` gives it.' },
+				color: text('The colour as `#rrggbb` — `#0f766e`. An empty string takes it off.')
+			},
+			['id', 'color']
+		),
+		run: (ctx, args) => recolorTag(ctx.userId, Number(args.id), args.color)
+	},
+	{
+		name: 'remove_tag',
+		title: 'Delete a label',
+		description:
+			'Take a label out of the vocabulary and off everything that carried it — the tasks, notes, ideas, blocks and pictures keep everything else about them. Nothing is archived; the label is gone. To fold it into another label instead, `rename_tag` onto that one.',
+		scope: 'tags:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'tag' }],
+		/*
+		 * A label is small and a delete is a delete: this one reaches across
+		 * every room at once, so it wants the grant that says so.
+		 */
+		destroys: true,
+		input: object(
+			{ id: { type: 'integer', description: 'The label\u2019s id, as `tags` gives it.' } },
+			['id']
+		),
+		run: (ctx, args) => {
+			deleteTag(ctx.userId, Number(args.id));
 			return { ok: true };
 		}
 	},

@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**57 pages, 238 actions.**
+**58 pages, 240 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -50,6 +50,7 @@ write surface for everything else; both end up calling the same
 | `/notebooks/diary`                   | `create`, `createWins`, `update`, `delete`                                                                                                                                                                                                                                                                                                                                                           |
 | `/notebooks/ideas`                   | `create`, `update`, `delete`, `toggleApplied`, `updateAppliedNote`, `toggleFavorite`                                                                                                                                                                                                                                                                                                                 |
 | `/notebooks/people`                  | `create`, `update`, `setPicture`, `removePicture`, `delete`                                                                                                                                                                                                                                                                                                                                          |
+| `/notebooks/tags`                    | `save`, `delete`                                                                                                                                                                                                                                                                                                                                                                                     |
 | `/notebooks/weekly`                  | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/offline`                           | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/reminders`                         | `create`, `edit`, `dismiss`, `remove`, `addSound`, `removeSound`, `setSound`                                                                                                                                                                                                                                                                                                                         |
@@ -336,6 +337,14 @@ One notebook, with nothing else on the page.
 The index shows a notebook beside the list of them, which is the right shape
 for moving between subjects and the wrong one for sitting inside a single
 one. This is the same notebook with the whole width.
+
+### `/notebooks/tags`
+
+The labels themselves, rather than the things wearing them.
+
+Every other room reads tags as a property of what they are on. This is the
+one page where the vocabulary is the subject: what words the account has,
+how much work each is doing, and the three things that can be done to one.
 
 ### `/notebooks/weekly`
 

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import TagInput from '$lib/components/TagInput.svelte';
+	import TagChip from '$lib/components/TagChip.svelte';
 	import { momentOf, today } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { enhance } from '$lib/enhance';
@@ -221,17 +222,14 @@
 	{#if data.allTags.length > 0}
 		<div class="flex flex-wrap gap-2">
 			{#each data.allTags as tag (tag.id)}
-				<button
+				<TagChip
+					name={tag.name}
+					active={filterTag === tag.name}
 					onclick={() => {
 						filterTag = filterTag === tag.name ? null : tag.name;
 						selectedIndex = 0;
 					}}
-					class="chip {filterTag === tag.name
-						? 'border-amber-500 bg-amber-50 text-amber-700'
-						: 'text-gray-500 hover:text-gray-700'}"
-				>
-					#{tag.name}
-				</button>
+				/>
 			{/each}
 			{#if filterTag}
 				<button
@@ -473,15 +471,13 @@
 							</a>
 						{/each}
 						{#each entry.tags as tag (tag.id)}
-							<button
+							<TagChip
+								name={tag.name}
 								onclick={() => {
 									filterTag = tag.name;
 									selectedIndex = 0;
 								}}
-								class="chip"
-							>
-								#{tag.name}
-							</button>
+							/>
 						{/each}
 
 						<div class="ml-auto flex flex-wrap items-center gap-2">

@@ -12,7 +12,7 @@ until somebody writes one in `src/lib/tutorials.ts`. The same gap is visible
 in the app: the `?` button goes red on a screen with no tour and says so
 under the pointer.
 
-**18 of 18 screens have one.**
+**19 of 19 screens have one.**
 
 | Screen                               | Tour              | Steps |
 | ------------------------------------ | ----------------- | ----- |
@@ -27,6 +27,7 @@ under the pointer.
 | `/notebooks/diary`                   | tour.diary        | 4     |
 | `/notebooks/ideas`                   | tour.ideas        | 3     |
 | `/notebooks/people`                  | tour.people       | 3     |
+| `/notebooks/tags`                    | tour.tags         | 2     |
 | `/reminders`                         | tour.reminders    | 3     |
 | `/settings/account`                  | tour.account      | 3     |
 | `/settings/integrations/connections` | tour.integrations | 3     |
@@ -133,6 +134,11 @@ at the button that reopens it, so it is not listed here.
 1. tour.aPersonIsNotA
 2. tour.aNameIsEnoughTo
 3. tour.everyMentionInOnePlace
+
+### `/notebooks/tags` — tour.tags
+
+1. tour.oneSetOfLabelsFor
+2. tour.renameOneAndItChanges
 
 ### `/reminders` — tour.reminders
 

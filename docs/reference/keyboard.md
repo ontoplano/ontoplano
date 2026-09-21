@@ -106,6 +106,14 @@ works is a key listed here and the reverse.
 | <kbd>k</kbd> | Navigate people |
 | <kbd>n</kbd> | New person      |
 
+## Tags — `/notebooks/tags`
+
+| Key          | Does                          |
+| ------------ | ----------------------------- |
+| <kbd>j</kbd> | Navigate tags                 |
+| <kbd>k</kbd> | Navigate tags                 |
+| <kbd>e</kbd> | Edit the tag under the cursor |
+
 ## Account — `/settings/account`
 
 | Key          | Does              |

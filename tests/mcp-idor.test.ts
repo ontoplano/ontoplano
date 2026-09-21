@@ -123,6 +123,7 @@ beforeAll(async () => {
 		await import('../src/lib/services/workouts');
 	const { createRule } = await import('../src/lib/services/statements');
 	const { createBill } = await import('../src/lib/services/bills');
+	const { ensureTagIds } = await import('../src/lib/services/tags');
 
 	/** Some services answer with the row, some with its id; both are fine here. */
 	const idOf = (made: unknown): number =>
@@ -163,6 +164,9 @@ beforeAll(async () => {
 	theirs.inventoryCategory = idOf(createInventoryCategory(them, { name: `section ${MARK}` }));
 	createItem(them, { name: `item ${MARK}`, type: 'someday' });
 	theirs.item = listItems(them).find((item) => item.name.includes(MARK))!.id;
+
+	// A label of theirs, which is the account's vocabulary and not a room's.
+	theirs.tag = ensureTagIds([`tag-${MARK}`], them.userId)[0];
 
 	theirs.workoutCategory = idOf(createWorkoutCategory(them, `group ${MARK}`));
 	theirs.workout = idOf(

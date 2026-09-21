@@ -166,6 +166,16 @@ export const SCOPES = {
 	'people:write': 'Add people, and change what is recorded about them',
 	'search:read': 'Search everything you have written, in one go',
 	/*
+	 * Labels, apart from the rooms they are used in.
+	 *
+	 * A tag is the account's one vocabulary — the same word on a task, a note,
+	 * an idea, a block and a picture — so renaming one reaches into every room
+	 * at once. That is not something `notes:write` should be able to do on the
+	 * strength of a sentence about writing in a diary.
+	 */
+	'tags:read': 'See the labels you use, and the colours you gave them',
+	'tags:write': 'Rename your labels, colour them, and merge two into one',
+	/*
 	 * Deleting, apart from writing.
 	 *
 	 * A write scope used to be both: `tasks:write` was "add a todo" and it was

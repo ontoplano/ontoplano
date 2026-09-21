@@ -19,6 +19,7 @@
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import TagChip from '$lib/components/TagChip.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
@@ -1203,7 +1204,7 @@
 								<a href={resolve('/notebooks/people')} class="chip">@{person.name}</a>
 							{/each}
 							{#each entry.tags as tag (tag.id)}
-								<span class="chip">#{tag.name}</span>
+								<TagChip name={tag.name} />
 							{/each}
 
 							<!-- In a shared notebook everybody reads everything, but a note

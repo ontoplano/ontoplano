@@ -315,6 +315,21 @@ export const TUTORIALS: Record<string, Tutorial> = {
 		]
 	},
 
+	'/notebooks/tags': {
+		label: 'tour.tags',
+		steps: [
+			{
+				title: 'tour.oneSetOfLabelsFor',
+				body: 'tour.theSameWordOnA'
+			},
+			{
+				target: '[data-tour="tag-list"]',
+				title: 'tour.renameOneAndItChanges',
+				body: 'tour.renamingOntoALabelYou'
+			}
+		]
+	},
+
 	'/notebooks/people': {
 		label: 'tour.people',
 		steps: [

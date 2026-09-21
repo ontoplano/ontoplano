@@ -104,6 +104,15 @@ export const load: LayoutServerLoad = async (event) => {
 	let tz = serverTimezone();
 	/* Every tag this account has used — one vocabulary, so the shell carries it. */
 	let tagVocabulary: string[] = [];
+	/*
+	 * The colour each label wears, by name.
+	 *
+	 * Beside the vocabulary rather than on the pages, for the same reason the
+	 * vocabulary itself is here: the same word is drawn on a task, a note, an
+	 * idea and a picture, and a colour plumbed through four loaders is a
+	 * colour that shows in three of them. `TagChip` reads this.
+	 */
+	let tagColors: Record<string, string> = {};
 	let week = DEFAULT_WEEK;
 	let hiddenSections: HideableSection[] = [];
 	let navOrder: string[] = [];
@@ -130,7 +139,11 @@ export const load: LayoutServerLoad = async (event) => {
 		theme = getTheme(ctx.userId);
 		clock = getClock(ctx.userId);
 		tz = ctx.tz;
-		tagVocabulary = listTags(ctx).map((one) => one.name);
+		const vocabulary = listTags(ctx);
+		tagVocabulary = vocabulary.map((one) => one.name);
+		tagColors = Object.fromEntries(
+			vocabulary.filter((one) => one.color).map((one) => [one.name, one.color as string])
+		);
 		week = getWeekSettings(ctx.userId);
 		hiddenSections = getHiddenSections(ctx.userId);
 		navOrder = getNavOrder(ctx.userId);
@@ -197,6 +210,7 @@ export const load: LayoutServerLoad = async (event) => {
 		clock,
 		tz,
 		tagVocabulary,
+		tagColors,
 		// Sections this account has put away: out of every menu the shell
 		// renders, still answering at their URLs.
 		hiddenSections,

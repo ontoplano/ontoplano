@@ -411,7 +411,18 @@ export const tags = sqliteTable(
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id),
-		name: text('name').notNull()
+		name: text('name').notNull(),
+		/*
+		 * The colour the label wears, `#rrggbb`, or null for the ones nobody
+		 * has chosen one for.
+		 *
+		 * Nullable rather than defaulted: a tag is created by being typed into
+		 * a box, and handing every word somebody types a colour it did not ask
+		 * for turns a list of labels into a bag of confetti. A tag with no
+		 * colour is drawn as the plain chip it has always been; one with a
+		 * colour is drawn as a `.pill` in it.
+		 */
+		color: text('color')
 	},
 	(table) => [
 		index('tags_user_idx').on(table.userId),

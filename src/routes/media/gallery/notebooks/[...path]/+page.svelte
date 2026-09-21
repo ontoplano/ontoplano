@@ -4,6 +4,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import RoomBar from '$lib/components/RoomBar.svelte';
+	import TagChip from '$lib/components/TagChip.svelte';
 	import { NOTEBOOK_SEPARATOR } from '$lib/notebook-path';
 	import type { PageServerData } from './$types';
 	import { useT } from '$lib/i18n';
@@ -140,7 +141,7 @@
 		{#if viewing.tags.length > 0}
 			<p class="mt-2 flex flex-wrap gap-2">
 				{#each viewing.tags as tag (tag)}
-					<span class="chip text-gray-500">#{tag}</span>
+					<TagChip name={tag} />
 				{/each}
 			</p>
 		{/if}

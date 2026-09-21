@@ -209,6 +209,14 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'n', action: 'new', description: 'shortcut.newNotebook' }
 		]
 	},
+	'/notebooks/tags': {
+		label: 'app.tags',
+		shortcuts: [
+			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateTags' },
+			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateTags' },
+			{ key: 'e', action: 'edit', description: 'shortcut.editTag' }
+		]
+	},
 	'/notebooks/people': {
 		label: 'app.people',
 		shortcuts: [

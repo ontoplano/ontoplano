@@ -218,6 +218,7 @@ export const messages: Catalogue = {
 	'app.sundayAndMondayAreBoth': 'Sonntag und Montag sind beide normale Wochentage.',
 	'app.supportOntoplano': 'ontoplano unterstützen',
 	'app.system': 'System',
+	'app.tags': 'Schlagwörter',
 	'app.task': 'Aufgabe',
 	'app.tasks': 'Aufgaben',
 	'app.tellTheOperator': 'Betreiber informieren',
@@ -1670,6 +1671,20 @@ export const messages: Catalogue = {
 	'notebooks.startOneForSomethingYou':
 		'Legen Sie eins an für etwas, zu dem Sie immer wieder zurückkehren, und verknüpfen Sie Notizen, Aufgaben und Ziele damit.',
 	'notebooks.tags': '#Tags',
+	'notebooks.tags.aTagIsMadeBy':
+		'Ein Schlagwort entsteht, indem man es an etwas schreibt — eine Aufgabe, eine Notiz, eine Idee. Es taucht hier auf, sobald es existiert.',
+	'notebooks.tags.aTagWithNoColour': 'Ein Schlagwort ohne Farbe wird schlicht gezeichnet.',
+	'notebooks.tags.editTag': 'Schlagwort bearbeiten',
+	'notebooks.tags.noColour': 'Keine Farbe',
+	'notebooks.tags.noTagsYet': 'Noch keine Schlagwörter',
+	'notebooks.tags.oneVocabularyForTheWhole':
+		'Ein Satz Schlagwörter für das ganze Konto — dasselbe Wort an einer Aufgabe, einer Notiz, einer Idee, einem Block und einem Bild. Wer eines hier umbenennt oder entfernt, ändert es überall.',
+	'notebooks.tags.renamingOntoAName':
+		'Ein Name, den es schon gibt, führt die beiden Schlagwörter zusammen.',
+	'notebooks.tags.tagsOntoplano': 'Schlagwörter · Ontoplano',
+	'notebooks.tags.thingCarriesIt': 'Sache trägt es',
+	'notebooks.tags.thingsCarryIt': 'Sachen tragen es',
+	'notebooks.tags.yesDelete': 'Ja, löschen',
 	'notebooks.tasksCount': { one: '{count} Aufgabe', other: '{count} Aufgaben' },
 	'notebooks.theirNotebookWas': '{length} {notes} · ihr Notizbuch wurde gelöscht',
 	'notebooks.theirNotebookWasDeletedThe':
@@ -1729,6 +1744,7 @@ export const messages: Catalogue = {
 	},
 	'notify.noun.reviewNote': { one: '{count} Rückblicknotiz', other: '{count} Rückblicknotizen' },
 	'notify.noun.sortRule': { one: '{count} Sortierregel', other: '{count} Sortierregeln' },
+	'notify.noun.tag': { one: '{count} Schlagwort', other: '{count} Schlagwörter' },
 	'notify.noun.toGoal': { one: '{count} Zielverknüpfung', other: '{count} Zielverknüpfungen' },
 	'notify.noun.todo': { one: '{count} Aufgabe', other: '{count} Aufgaben' },
 	'notify.noun.win': { one: '{count} Erfolg', other: '{count} Erfolge' },
@@ -1771,9 +1787,11 @@ export const messages: Catalogue = {
 	'notify.verb.pay': 'bezahlt',
 	'notify.verb.pin': 'angeheftet',
 	'notify.verb.put': 'weggelegt',
+	'notify.verb.recolor': 'umgefärbt',
 	'notify.verb.record': 'aufgenommen',
 	'notify.verb.remind': 'einen Hinweis gesetzt auf',
 	'notify.verb.remove': 'entfernt',
+	'notify.verb.rename': 'umbenannt',
 	'notify.verb.reopen': 'wieder geöffnet',
 	'notify.verb.schedule': 'geplant',
 	'notify.verb.set': 'gesetzt',
@@ -2000,6 +2018,7 @@ export const messages: Catalogue = {
 	'rooms.notebooks.tabs.ideas': 'Ideen',
 	'rooms.notebooks.tabs.notebooks': 'Notizbücher',
 	'rooms.notebooks.tabs.people': 'Personen',
+	'rooms.notebooks.tabs.tags': 'Schlagwörter',
 	'rooms.notebooks.tabs.weekly': 'Wochennotizen',
 	'rooms.notebooks.title': 'Notizbücher',
 	'rooms.settings.sections': 'Einstellungen-Bereiche',
@@ -2063,6 +2082,8 @@ export const messages: Catalogue = {
 		'Die Regeln hinzufügen und entfernen, die Ihre Auszugszeilen einsortieren',
 	'scopes.streamsRead': 'Alles lesen, was Ihre Datenströme je aufgezeichnet haben',
 	'scopes.streamsWrite': 'Messwerte an Ihre Datenströme senden und neue Ströme anlegen',
+	'scopes.tagsRead': 'Sehen, welche Schlagwörter du benutzt und welche Farben sie haben',
+	'scopes.tagsWrite': 'Schlagwörter umbenennen, färben und zwei zu einem zusammenführen',
 	'scopes.tasksRead':
 		'Ihre Aufgabenliste und Ihre Ziele lesen, samt der Bilder und Aufnahmen daran',
 	'scopes.tasksWrite':
@@ -2797,6 +2818,7 @@ export const messages: Catalogue = {
 	'shortcut.editEntry': 'Eintrag bearbeiten',
 	'shortcut.editIdea': 'Idee bearbeiten',
 	'shortcut.editItem': 'Element bearbeiten',
+	'shortcut.editTag': 'Das Schlagwort unter dem Cursor bearbeiten',
 	'shortcut.editTheOneUnderThe': 'Das unter dem Cursor bearbeiten',
 	'shortcut.editTodo': 'Aufgabe bearbeiten',
 	'shortcut.expandCollapse': 'Erweitern/Einklappen',
@@ -2812,6 +2834,7 @@ export const messages: Catalogue = {
 	'shortcut.navigatePeople': 'Zwischen Personen navigieren',
 	'shortcut.navigateSessions': 'Zwischen Sitzungen navigieren',
 	'shortcut.navigateSlots': 'Zwischen Zeitfenstern navigieren',
+	'shortcut.navigateTags': 'Durch die Schlagwörter gehen',
 	'shortcut.navigateTokens': 'Zwischen Tokens navigieren',
 	'shortcut.newActivity': 'Neue Aktivität',
 	'shortcut.newCard': 'Neue Karte',
@@ -3424,6 +3447,7 @@ export const messages: Catalogue = {
 	'tour.oneLineIsEnough': 'Eine Zeile reicht',
 	'tour.oneNotebookPerSubject': 'Ein Notizbuch pro Thema',
 	'tour.oneRoomPerKindOf': 'Ein Bereich pro Art von Ding',
+	'tour.oneSetOfLabelsFor': 'Ein Satz Schlagwörter für alles',
 	'tour.ontoplano': 'Ontoplano',
 	'tour.openAPersonToSee':
 		'Öffnen Sie eine Person, um jeden Eintrag zu sehen, der sie erwähnt — die neuesten zuerst.',
@@ -3448,6 +3472,9 @@ export const messages: Catalogue = {
 	'tour.recipesAndWhatTheyCost': 'Rezepte, und was sie Sie kosten',
 	'tour.recordings': 'Aufnahmen',
 	'tour.reminders': 'Erinnerungen',
+	'tour.renameOneAndItChanges': 'Umbenennen, färben, entfernen',
+	'tour.renamingOntoALabelYou':
+		'Ein Name, den es schon gibt, führt beide zusammen. Die Farbe trägt das Schlagwort überall, wo es gezeichnet wird; wer es entfernt, nimmt es von allem, was es trug.',
 	'tour.retireOneWithoutLosingIt': 'Eine stilllegen, ohne sie zu verlieren',
 	'tour.review': 'Rückblick',
 	'tour.rulesDoTheSorting': 'Regeln übernehmen die Sortierung',
@@ -3466,6 +3493,7 @@ export const messages: Catalogue = {
 	'tour.starItOrMarkIt': 'Markieren Sie es mit einem Stern, oder als erledigt',
 	'tour.systemFollowsThePhoneOr':
 		'System folgt dem Telefon oder dem Laptop, auch wenn es sich bei Sonnenuntergang ändert.',
+	'tour.tags': 'Schlagwörter',
 	'tour.tagsAndPeopleAsYou': 'Tags und Personen, während Sie schreiben',
 	'tour.tagsAreFreeFormInvent':
 		'Tags sind frei wählbar — erfinden Sie einen, und er existiert. Eine Person zu nennen verknüpft den Eintrag mit ihr.',
@@ -3487,6 +3515,8 @@ export const messages: Catalogue = {
 		'Dieselben Blöcke wie im Plan, in der einen Form, in der Sie einen aufnehmen und verschieben können.',
 	'tour.theSameGestureForA':
 		'Dieselbe Geste, für eine Aufgabe, eine Idee, eine Notiz oder etwas zum Kaufen — ohne vorher zu entscheiden, wohin es gehört.',
+	'tour.theSameWordOnA':
+		'Dasselbe Wort beschriftet eine Aufgabe, eine Notiz, eine Idee, einen Block und ein Bild. Hier leben die Wörter selbst.',
 	'tour.theShapeOfANormal': 'Die Form einer normalen Woche',
 	'tour.theStatementIsTheRecord': 'Der Kontoauszug ist der Beleg',
 	'tour.theThingsWithoutADay': 'Die Dinge, die noch keinen Tag haben',

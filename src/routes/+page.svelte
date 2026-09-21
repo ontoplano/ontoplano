@@ -13,6 +13,7 @@
 	import WidgetPicker from '$lib/components/WidgetPicker.svelte';
 	import Pie from '$lib/components/Pie.svelte';
 	import Swatch from '$lib/components/Swatch.svelte';
+	import TagChip from '$lib/components/TagChip.svelte';
 	import { enhance } from '$lib/enhance';
 	import FormError from '$lib/components/FormError.svelte';
 	import { tick } from 'svelte';
@@ -1057,9 +1058,7 @@
 						<div class="mt-2 flex items-center gap-2">
 							<span class="text-xs text-gray-500">{formatDate(data.lastEntry.createdAt)}</span>
 							{#each data.lastEntry.tags as tag (tag.id)}
-								<span class="border border-gray-200 px-1.5 py-0.5 text-xs text-gray-500"
-									>{tag.name}</span
-								>
+								<TagChip name={tag.name} />
 							{/each}
 						</div>
 					</div>

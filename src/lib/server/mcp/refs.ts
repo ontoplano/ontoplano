@@ -17,6 +17,7 @@ import { listReminders } from '$lib/services/reminders.js';
 import { listCategories as listInventoryCategories, listItems } from '$lib/services/inventory.js';
 import { listWeeklySlots } from '$lib/services/slots.js';
 import { listRules } from '$lib/services/statements.js';
+import { listTagsWithUses } from '$lib/services/tags.js';
 import { listTodos } from '$lib/services/todos.js';
 import { listSessions, listWorkoutCategories, listWorkouts } from '$lib/services/workouts.js';
 
@@ -108,6 +109,10 @@ export const KINDS = kinds({
 	},
 
 	sortRule: { label: 'sorting rule', rows: (ctx) => listRules(ctx) },
+
+	/** The account's one vocabulary — a label belongs to the account, not to a room. */
+	tag: { label: 'label', rows: (ctx) => listTagsWithUses(ctx.userId) },
+
 	ledger: { label: 'account', rows: (ctx) => listLedgers(ctx, { includeArchived: true }) },
 
 	/** Both directions: a bill and a payment coming in are one table. */

@@ -48,6 +48,8 @@ export const SCOPE_WORDS = {
 	'people:read': 'scopes.peopleRead',
 	'people:write': 'scopes.peopleWrite',
 	'search:read': 'scopes.searchRead',
+	'tags:read': 'scopes.tagsRead',
+	'tags:write': 'scopes.tagsWrite',
 	destructive: 'scopes.destructive'
 } as const satisfies Record<string, PlainKey>;
 

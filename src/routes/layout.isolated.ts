@@ -37,6 +37,7 @@ export async function load(event: IsolatedEvent): Promise<LayoutServerData> {
 	if (!user) redirect(302, '/login');
 
 	const ctx = buildCtx(user.id);
+	const vocabulary = listTags(ctx);
 	return {
 		user,
 		/*
@@ -63,7 +64,11 @@ export async function load(event: IsolatedEvent): Promise<LayoutServerData> {
 		// read off the one account this device has.
 		clock: getClock(user.id),
 		tz: ctx.tz,
-		tagVocabulary: listTags(ctx).map((one) => one.name),
+		tagVocabulary: vocabulary.map((one) => one.name),
+		// The colours, beside the words — see the server instance's layout.
+		tagColors: Object.fromEntries(
+			vocabulary.filter((one) => one.color).map((one) => [one.name, one.color as string])
+		),
 		hiddenSections: getHiddenSections(user.id),
 		navOrder: getNavOrder(user.id),
 		sectionColors: getSectionColors(user.id),

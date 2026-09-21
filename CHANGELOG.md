@@ -20,6 +20,13 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **Tags can be managed.** A Tags tab in Notebooks lists every label the
+  account uses with how many things carry it, and renames, colours or removes
+  one — across tasks, notes, ideas, blocks and pictures at once, because the
+  vocabulary is the account's rather than a room's. Renaming onto a label you
+  already use merges the two rather than refusing. A label with a colour is
+  drawn in it wherever it appears; one without stays as it was.
+
 - **Two causes of text flickering while it is typed.** The markdown box kept
   what was typed in its caller's prop, so any reload of the page put the
   stored text back until the next keystroke; and a full box re-measured itself
