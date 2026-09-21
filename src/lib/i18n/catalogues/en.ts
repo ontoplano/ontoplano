@@ -1966,6 +1966,51 @@ export const messages: Catalogue = {
 	'rooms.tasks.tabs.review': 'Review',
 	'rooms.tasks.tabs.todo': 'Tasks',
 	'rooms.tasks.title': 'Tasks',
+	'scopes.billsRead':
+		'See your bills, your recorded income, and what you have actually paid or received',
+	'scopes.billsWrite': 'Add and change bills, and mark them paid',
+	'scopes.calendarRead': 'Show your plan in a calendar app. It can see the plan and change nothing',
+	'scopes.cautions.destructive':
+		'What this deletes is gone. Leave it off unless you want the token removing things, not just adding and changing them.',
+	'scopes.cautions.searchRead':
+		'One grant that reads across everything — diary, notebooks, ideas, goals, people, recipes and todos. Only for something you would show all of that.',
+	'scopes.destructive':
+		'Delete things outright — with only the write grants, it can add and change but never remove',
+	'scopes.habitsRead': 'See your habits, which are due today, and whether you kept them',
+	'scopes.habitsWrite': 'Mark a habit kept, or unmark one',
+	'scopes.ideasRead': 'See your ideas, and the pictures and recordings in them',
+	'scopes.ideasWrite': 'Add ideas, change them, and remove them',
+	'scopes.inventoryRead': 'See everything you keep and everything on your shopping list',
+	'scopes.inventoryWrite':
+		'Add things, tick them bought, change how many you keep, and take things off',
+	'scopes.kitchenRead': 'Read your recipes, and their photographs',
+	'scopes.kitchenWrite': 'Add and change recipes',
+	'scopes.locationsRead': 'See where your things live, and what is in each room and drawer',
+	'scopes.locationsWrite': 'Add and change rooms and drawers, and say where a thing lives',
+	'scopes.notesRead': 'Read your diary and your notebooks, and the pictures and recordings in them',
+	'scopes.notesWrite': 'Write in your diary and your notebooks',
+	'scopes.peopleRead':
+		'See the people in your life, whose birthday is coming, and their photographs',
+	'scopes.peopleWrite': 'Add people, and change what is recorded about them',
+	'scopes.pluginDeclare': 'Name and describe itself on your integrations page',
+	'scopes.remindersRead': 'See the reminders you have coming, so this device can ring for them',
+	'scopes.scheduleRead': 'Read everything on your calendar for the days ahead, today included',
+	'scopes.scheduleWrite':
+		'Put blocks on your week — one-off and repeating — move and rename them, take them off a day, set reminders on them, and mark them done or skipped',
+	'scopes.searchRead': 'Search everything you have written, in one go',
+	'scopes.statementsRead':
+		'Read your imported bank-statement lines, their categories and tags, and the monthly in/out figures',
+	'scopes.statementsWrite': 'Add and remove the rules that sort your statement lines',
+	'scopes.streamsRead': 'Read everything your data streams have ever recorded',
+	'scopes.streamsWrite': 'Send readings into your data streams, and create new streams',
+	'scopes.tasksRead': 'Read your todo list and your goals, and the pictures and recordings on them',
+	'scopes.tasksWrite': 'Add, finish and delete todos, move them on and off a day, and close a goal',
+	'scopes.todayRead': "See today's plan — the blocks and the tasks on it",
+	'scopes.webhooksManage':
+		'Send itself a message when something changes here — a task finished, a block done — to an address it chooses',
+	'scopes.workoutsRead': 'See your workouts',
+	'scopes.workoutsWrite':
+		'Add and change workouts and their categories, put them away, and mark one done',
 	'search.anythingYouHaveWrittenDown': 'Anything you have written down',
 	'search.for': '{total} {results} for “{q}”',
 	'search.forOneNotebook': 'for one notebook.',
@@ -3440,6 +3485,12 @@ export const messages: Catalogue = {
 	'ui.undo': 'Undo',
 	'ui.unit': 'Unit',
 	'ui.write': 'write',
+	'webhookEvents.diaryCreated': 'a diary entry is written',
+	'webhookEvents.ideaCreated': 'an idea is captured',
+	'webhookEvents.inventoryAdded': 'something goes on the shopping list',
+	'webhookEvents.inventoryBought': 'something on the list is bought',
+	'webhookEvents.todoCompleted': 'a todo is finished',
+	'webhookEvents.todoCreated': 'a todo is added',
 	'welcome.aFewQuestionsAndA':
 		'A few questions and a week to start from. All of it is editable later.',
 	'welcome.blocksCount': { one: '{count} block', other: '{count} blocks' },

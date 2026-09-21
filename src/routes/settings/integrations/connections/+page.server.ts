@@ -14,21 +14,19 @@ import {
 	ALL_SCOPES,
 	CALENDAR_LINK_LIMIT,
 	CALENDAR_LINK_NAME,
-	SCOPES,
-	SCOPE_CAUTIONS,
 	createToken,
 	freeName,
 	isCalendarLink,
 	listTokens,
 	revokeToken
 } from '$lib/server/services/tokens';
+import { scopeCautionWord, scopeWord, webhookEventWord } from '$lib/scope-words';
 import { listAssistantCalls, putBack } from '$lib/server/services/assistant-log';
 import { confinementChoices, describeConfinement } from '$lib/server/mcp/confinement';
 import { ASSISTANT_PUSH_KEY, catchUp } from '$lib/server/services/assistant-notify';
 import { getUserSetting, setUserSetting } from '$lib/server/settings';
 import {
 	WEBHOOK_EVENTS,
-	WEBHOOK_EVENT_LABELS,
 	createSubscription,
 	deleteSubscription,
 	listSubscriptions,
@@ -81,11 +79,18 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		 * it — see `destructive` in tokens.ts.
 		 */
 		assistantScopesDestructive: ASSISTANT_SCOPES_DESTRUCTIVE,
+		/*
+		 * The permissions, as catalogue keys rather than sentences.
+		 *
+		 * `SCOPES` is the English definition the API reference is generated
+		 * from; what somebody reads before granting one has to be in their own
+		 * language. See `$lib/scope-words`.
+		 */
 		scopes: ALL_SCOPES.map((key) => ({
 			key,
-			description: SCOPES[key],
+			says: scopeWord(key),
 			// The louder line under the wide grants, said before the tick.
-			caution: SCOPE_CAUTIONS[key] ?? null
+			caution: scopeCautionWord(key)
 		})),
 		displays: STREAM_DISPLAYS,
 		/*
@@ -103,7 +108,7 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 			lastStatus: s.lastStatus,
 			disabled: Boolean(s.disabledAt)
 		})),
-		webhookEvents: WEBHOOK_EVENTS.map((key) => ({ key, label: WEBHOOK_EVENT_LABELS[key] })),
+		webhookEvents: WEBHOOK_EVENTS.map((key) => ({ key, says: webhookEventWord(key) })),
 		/** What the tokens did lately, newest first, with the way back. */
 		assistantCalls: listAssistantCalls(ctx, { limit: 30 }),
 		// Absent means on: the point of the thing is knowing.

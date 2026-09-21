@@ -2017,6 +2017,61 @@ export const messages: Catalogue = {
 	'rooms.tasks.tabs.review': 'Rückblick',
 	'rooms.tasks.tabs.todo': 'Aufgaben',
 	'rooms.tasks.title': 'Aufgaben',
+	'scopes.billsRead':
+		'Ihre Rechnungen, Ihre erfassten Einnahmen und das tatsächlich Gezahlte oder Erhaltene sehen',
+	'scopes.billsWrite': 'Rechnungen anlegen und ändern und als bezahlt markieren',
+	'scopes.calendarRead':
+		'Ihren Plan in einer Kalender-App zeigen. Sie sieht den Plan und ändert nichts',
+	'scopes.cautions.destructive':
+		'Was dies löscht, ist weg. Lassen Sie es aus, sofern der Schlüssel nicht auch entfernen soll, statt nur hinzuzufügen und zu ändern.',
+	'scopes.cautions.searchRead':
+		'Eine Berechtigung, die alles liest — Tagebuch, Notizbücher, Ideen, Ziele, Personen, Rezepte und Aufgaben. Nur für etwas, dem Sie all das zeigen würden.',
+	'scopes.destructive':
+		'Dinge endgültig löschen — mit den Schreibrechten allein kann es hinzufügen und ändern, aber nie entfernen',
+	'scopes.habitsRead':
+		'Ihre Gewohnheiten sehen, welche heute anstehen und ob Sie sie eingehalten haben',
+	'scopes.habitsWrite': 'Eine Gewohnheit als eingehalten markieren oder die Markierung entfernen',
+	'scopes.ideasRead': 'Ihre Ideen sehen, samt der Bilder und Aufnahmen darin',
+	'scopes.ideasWrite': 'Ideen hinzufügen, ändern und entfernen',
+	'scopes.inventoryRead': 'Alles sehen, was Sie aufbewahren, und alles auf Ihrer Einkaufsliste',
+	'scopes.inventoryWrite':
+		'Dinge hinzufügen, als gekauft abhaken, den Bestand ändern und Dinge entfernen',
+	'scopes.kitchenRead': 'Ihre Rezepte lesen, samt der Fotos dazu',
+	'scopes.kitchenWrite': 'Rezepte hinzufügen und ändern',
+	'scopes.locationsRead':
+		'Sehen, wo Ihre Dinge sind, und was in jedem Raum und jeder Schublade liegt',
+	'scopes.locationsWrite':
+		'Räume und Schubladen anlegen und ändern und festlegen, wo ein Ding liegt',
+	'scopes.notesRead':
+		'Ihr Tagebuch und Ihre Notizbücher lesen, samt der Bilder und Aufnahmen darin',
+	'scopes.notesWrite': 'In Ihr Tagebuch und Ihre Notizbücher schreiben',
+	'scopes.peopleRead':
+		'Die Menschen in Ihrem Leben sehen, wessen Geburtstag ansteht, und ihre Fotos',
+	'scopes.peopleWrite': 'Personen hinzufügen und ändern, was über sie festgehalten ist',
+	'scopes.pluginDeclare': 'Sich auf Ihrer Integrationsseite benennen und beschreiben',
+	'scopes.remindersRead':
+		'Die anstehenden Erinnerungen sehen, damit dieses Gerät dafür klingeln kann',
+	'scopes.scheduleRead':
+		'Alles in Ihrem Kalender für die nächsten Tage lesen, heute eingeschlossen',
+	'scopes.scheduleWrite':
+		'Blöcke in Ihre Woche setzen — einmalig und wiederkehrend —, sie verschieben und umbenennen, von einem Tag nehmen, Erinnerungen darauf setzen und als erledigt oder übersprungen markieren',
+	'scopes.searchRead': 'Alles Geschriebene auf einmal durchsuchen',
+	'scopes.statementsRead':
+		'Die importierten Kontoauszugszeilen lesen, ihre Kategorien und Tags sowie die monatlichen Ein- und Ausgänge',
+	'scopes.statementsWrite':
+		'Die Regeln hinzufügen und entfernen, die Ihre Auszugszeilen einsortieren',
+	'scopes.streamsRead': 'Alles lesen, was Ihre Datenströme je aufgezeichnet haben',
+	'scopes.streamsWrite': 'Messwerte an Ihre Datenströme senden und neue Ströme anlegen',
+	'scopes.tasksRead':
+		'Ihre Aufgabenliste und Ihre Ziele lesen, samt der Bilder und Aufnahmen daran',
+	'scopes.tasksWrite':
+		'Aufgaben hinzufügen, erledigen und löschen, sie auf einen Tag legen und wieder herunternehmen, und ein Ziel schließen',
+	'scopes.todayRead': 'Den heutigen Plan sehen — die Blöcke und die Aufgaben darin',
+	'scopes.webhooksManage':
+		'Sich selbst eine Nachricht schicken, wenn sich hier etwas ändert — eine erledigte Aufgabe, ein fertiger Block — an eine Adresse seiner Wahl',
+	'scopes.workoutsRead': 'Ihre Trainings sehen',
+	'scopes.workoutsWrite':
+		'Trainings und ihre Kategorien anlegen und ändern, sie ablegen und eines als erledigt markieren',
 	'search.anythingYouHaveWrittenDown': 'Alles, was Sie aufgeschrieben haben',
 	'search.for': '{total} {results} für „{q}“',
 	'search.forOneNotebook': 'für ein Notizbuch.',
@@ -3535,6 +3590,12 @@ export const messages: Catalogue = {
 	'ui.undo': 'Rückgängig',
 	'ui.unit': 'Einheit',
 	'ui.write': 'Schreiben',
+	'webhookEvents.diaryCreated': 'ein Tagebucheintrag wird geschrieben',
+	'webhookEvents.ideaCreated': 'eine Idee wird festgehalten',
+	'webhookEvents.inventoryAdded': 'etwas kommt auf die Einkaufsliste',
+	'webhookEvents.inventoryBought': 'etwas von der Liste wird gekauft',
+	'webhookEvents.todoCompleted': 'eine Aufgabe wird erledigt',
+	'webhookEvents.todoCreated': 'eine Aufgabe wird hinzugefügt',
 	'welcome.aFewQuestionsAndA':
 		'Ein paar Fragen und eine Woche zum Start. Alles lässt sich später bearbeiten.',
 	'welcome.blocksCount': { one: '{count} Block', other: '{count} Blöcke' },

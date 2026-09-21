@@ -8,12 +8,12 @@ import { toActionFailure } from '$lib/http-errors';
 import { listAssistantCalls, putBack } from '$lib/server/services/assistant-log';
 import {
 	RINGER_TOKEN_NAME,
-	SCOPES,
 	createToken,
 	isCalendarLink,
 	listTokens,
 	revokeToken
 } from '$lib/server/services/tokens';
+import { scopeWord } from '$lib/scope-words';
 import { capabilities } from '$lib/server/settings';
 import { confinementChoices, describeConfinement } from '$lib/server/mcp/confinement';
 import { translatorFor, SOURCE_LOCALE } from '$lib/i18n/core';
@@ -57,8 +57,10 @@ function assistantGrid(t: Translate) {
 		};
 		if (verb === 'read') row.read = scope;
 		else row.write = scope;
-		const says = SCOPES[scope as keyof typeof SCOPES];
-		if (says) row.says.push(says);
+		// The sentence in the reader's own language, not the English definition
+		// the API reference is generated from. See `$lib/scope-words`.
+		const says = scopeWord(scope);
+		if (says) row.says.push(t(says));
 		rows.set(subject, row);
 	}
 

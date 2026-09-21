@@ -2005,6 +2005,55 @@ export const messages: Catalogue = {
 	'rooms.tasks.tabs.review': 'Revisão',
 	'rooms.tasks.tabs.todo': 'Tarefas',
 	'rooms.tasks.title': 'Tarefas',
+	'scopes.billsRead':
+		'Ver as suas contas, a sua renda registrada, e o que você de fato pagou ou recebeu',
+	'scopes.billsWrite': 'Adicionar e alterar contas, e marcá-las como pagas',
+	'scopes.calendarRead':
+		'Mostrar o seu plano em um aplicativo de calendário. Ele vê o plano e não muda nada',
+	'scopes.cautions.destructive':
+		'O que isto exclui some. Deixe desligado a não ser que você queira que a chave remova coisas, e não só adicione e altere.',
+	'scopes.cautions.searchRead':
+		'Uma permissão que lê tudo — diário, cadernos, ideias, metas, pessoas, receitas e tarefas. Só para algo a quem você mostraria tudo isso.',
+	'scopes.destructive':
+		'Excluir coisas de vez — só com as permissões de escrita, ele adiciona e altera mas nunca remove',
+	'scopes.habitsRead': 'Ver os seus hábitos, quais são de hoje, e se você os cumpriu',
+	'scopes.habitsWrite': 'Marcar um hábito como cumprido, ou desmarcar',
+	'scopes.ideasRead': 'Ver as suas ideias, e as fotos e gravações nelas',
+	'scopes.ideasWrite': 'Adicionar ideias, alterá-las e removê-las',
+	'scopes.inventoryRead': 'Ver tudo o que você guarda e tudo o que está na sua lista de compras',
+	'scopes.inventoryWrite':
+		'Adicionar coisas, marcar como compradas, mudar quantas você guarda, e tirar coisas da lista',
+	'scopes.kitchenRead': 'Ler as suas receitas, e as fotos delas',
+	'scopes.kitchenWrite': 'Adicionar e alterar receitas',
+	'scopes.locationsRead': 'Ver onde as suas coisas ficam, e o que há em cada cômodo e gaveta',
+	'scopes.locationsWrite': 'Adicionar e alterar cômodos e gavetas, e dizer onde uma coisa fica',
+	'scopes.notesRead': 'Ler o seu diário e os seus cadernos, e as fotos e gravações neles',
+	'scopes.notesWrite': 'Escrever no seu diário e nos seus cadernos',
+	'scopes.peopleRead':
+		'Ver as pessoas da sua vida, de quem é o próximo aniversário, e as fotos delas',
+	'scopes.peopleWrite': 'Adicionar pessoas, e alterar o que está registrado sobre elas',
+	'scopes.pluginDeclare': 'Dizer o próprio nome e o que faz na sua página de integrações',
+	'scopes.remindersRead':
+		'Ver os lembretes que estão por vir, para este aparelho poder tocar por eles',
+	'scopes.scheduleRead': 'Ler tudo o que está na sua agenda nos próximos dias, hoje incluído',
+	'scopes.scheduleWrite':
+		'Colocar blocos na sua semana — únicos e repetidos — mover e renomear, tirar de um dia, pôr lembretes neles, e marcar como feitos ou pulados',
+	'scopes.searchRead': 'Buscar em tudo o que você escreveu, de uma vez',
+	'scopes.statementsRead':
+		'Ler as linhas de extrato bancário que você importou, as categorias e etiquetas delas, e os totais de entrada e saída por mês',
+	'scopes.statementsWrite':
+		'Adicionar e remover as regras que classificam as linhas do seu extrato',
+	'scopes.streamsRead': 'Ler tudo o que os seus streams de dados já registraram',
+	'scopes.streamsWrite': 'Enviar leituras para os seus streams de dados, e criar streams novos',
+	'scopes.tasksRead': 'Ler a sua lista de tarefas e as suas metas, e as fotos e gravações nelas',
+	'scopes.tasksWrite':
+		'Adicionar, concluir e excluir tarefas, colocá-las e tirá-las de um dia, e fechar uma meta',
+	'scopes.todayRead': 'Ver o plano de hoje — os blocos e as tarefas nele',
+	'scopes.webhooksManage':
+		'Mandar uma mensagem para si mesmo quando algo muda aqui — uma tarefa concluída, um bloco feito — para um endereço que ele escolhe',
+	'scopes.workoutsRead': 'Ver os seus treinos',
+	'scopes.workoutsWrite':
+		'Adicionar e alterar treinos e as categorias deles, arquivá-los, e marcar um como feito',
 	'search.anythingYouHaveWrittenDown': 'Qualquer coisa que você tenha anotado',
 	'search.for': '{total} {results} para “{q}”',
 	'search.forOneNotebook': 'para um caderno.',
@@ -3497,6 +3546,12 @@ export const messages: Catalogue = {
 	'ui.undo': 'Desfazer',
 	'ui.unit': 'Unidade',
 	'ui.write': 'escrita',
+	'webhookEvents.diaryCreated': 'uma entrada de diário é escrita',
+	'webhookEvents.ideaCreated': 'uma ideia é registrada',
+	'webhookEvents.inventoryAdded': 'algo entra na lista de compras',
+	'webhookEvents.inventoryBought': 'algo da lista é comprado',
+	'webhookEvents.todoCompleted': 'uma tarefa é concluída',
+	'webhookEvents.todoCreated': 'uma tarefa é adicionada',
 	'welcome.aFewQuestionsAndA':
 		'Algumas perguntas e uma semana para começar. Tudo pode ser editado depois.',
 	'welcome.blocksCount': { one: '{count} bloco', other: '{count} blocos' },

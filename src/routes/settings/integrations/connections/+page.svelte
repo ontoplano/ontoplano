@@ -39,7 +39,10 @@
 
 	// The sentence a scope was granted as, everywhere a scope is shown — the
 	// key is for the developer, the sentence is for the owner of the data.
-	const scopeSentence = (key: string) => data.scopes.find((s) => s.key === key)?.description ?? key;
+	const scopeSentence = (key: string) => {
+		const says = data.scopes.find((s) => s.key === key)?.says;
+		return says ? t(says) : key;
+	};
 
 	/**
 	 * Tick exactly these and untick the rest.
@@ -80,7 +83,10 @@
 		confirmDeleteWebhook = null;
 	}
 
-	const eventLabel = (key: string) => data.webhookEvents.find((e) => e.key === key)?.label ?? key;
+	const eventLabel = (key: string) => {
+		const says = data.webhookEvents.find((e) => e.key === key)?.says;
+		return says ? t(says) : key;
+	};
 
 	/**
 	 * One legible line per assistant call: whatever names the thing best, from
@@ -445,7 +451,7 @@ Token: ${token}`;
 									<input type="checkbox" name="scopes" value={scope.key} class="mt-1" />
 									<span>
 										<code class="font-mono text-xs text-gray-900">{scope.key}</code>
-										<span class="text-gray-500">— {scope.description}</span>
+										<span class="text-gray-500">— {scope.says ? t(scope.says) : scope.key}</span>
 										{#if scope.key.endsWith(':write') && cautionsArmed[scope.key] && !cautionsArmed[scope.key.replace(':write', ':read')]}
 											<!--
 												Write without read.
@@ -473,7 +479,7 @@ Token: ${token}`;
 											<span
 												class="mt-1 mb-0.5 block border-l-2 border-amber-600 pl-2 text-xs font-medium text-amber-700"
 											>
-												<code class="font-mono">{scope.key}</code> — {scope.caution}
+												<code class="font-mono">{scope.key}</code> — {t(scope.caution)}
 											</span>
 										{/if}
 									</span>
@@ -839,7 +845,7 @@ Token: ${token}`;
 								<label class="flex items-start gap-2 text-sm text-gray-700">
 									<input type="checkbox" name="events" value={event.key} class="mt-1" />
 									<span>
-										{event.label}
+										{event.says ? t(event.says) : event.key}
 										<code class="ml-1 font-mono text-xs text-gray-500">{event.key}</code>
 									</span>
 								</label>
