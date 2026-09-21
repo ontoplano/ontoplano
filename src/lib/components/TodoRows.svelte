@@ -9,7 +9,7 @@
 	import { SvelteSet } from 'svelte/reactivity';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import Backlinks from '$lib/components/Backlinks.svelte';
 	import TodoFields from '$lib/components/fields/TodoFields.svelte';
 	import Written from '$lib/components/Written.svelte';
@@ -17,7 +17,6 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { matchScore } from '$lib/destinations';
-	import { submitLock } from '$lib/submitting.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
 	import Field from '$lib/components/Field.svelte';
@@ -122,9 +121,6 @@
 		openNew?: (() => void) | undefined;
 		openTodo?: ((id: number) => void) | undefined;
 	} = $props();
-
-	/* One press, one task — see `$lib/submitting`. */
-	const sending = submitLock();
 
 	let showForm = $state(false);
 	let editingId: number | null = $state(null);
@@ -748,7 +744,7 @@
 			id="todo-form"
 			method="post"
 			action={editingId ? actions.update : actions.create}
-			use:enhance={sending.wrap(() => {
+			use:enhance={() => {
 				const wasEditing = editingId;
 				return async ({ update, result }) => {
 					await update({ reset: false });
@@ -778,7 +774,7 @@
 					showForm = false;
 					editingId = null;
 				};
-			})}
+			}}
 		>
 			{#if editingId}
 				<input type="hidden" name="id" value={editingId} />
@@ -843,12 +839,7 @@
 				</form>
 			{/if}
 			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
-			<!--
-				Disabled while the last press is still being answered: pressing
-				Create twice made two tasks, because the first press takes long
-				enough to look like it missed. See `$lib/submitting`.
-			-->
-			<button type="submit" form="todo-form" class="btn btn-primary" disabled={sending.busy()}>
+			<button type="submit" form="todo-form" class="btn btn-primary">
 				{editingId ? t('ui.save') : t('todoRows.createTodo')}
 			</button>
 		{/snippet}

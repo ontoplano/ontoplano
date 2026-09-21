@@ -2,7 +2,7 @@
 	import RoomBar from '$lib/components/RoomBar.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { resolve } from '$app/paths';
 	import Banner from '$lib/components/Banner.svelte';

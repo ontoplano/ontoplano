@@ -2,7 +2,7 @@
 	import { dateOf, momentOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { settingsForm } from '$lib/actions/settings-form';
 	import { armed } from '$lib/actions/armed';

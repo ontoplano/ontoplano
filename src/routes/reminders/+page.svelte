@@ -6,7 +6,7 @@
 	import RingerHealth from '$lib/components/RingerHealth.svelte';
 	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { browser } from '$app/environment';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import Banner from '$lib/components/Banner.svelte';
 	import { inPhoneApp } from '$lib/instance-choice';
 	import {

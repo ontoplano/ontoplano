@@ -12,7 +12,8 @@
 	import Swatch from '$lib/components/Swatch.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import { armed } from '$lib/actions/armed';
-	import { enhance, deserialize } from '$app/forms';
+	import { enhance } from '$lib/enhance';
+	import { deserialize } from '$app/forms';
 	import FormError from '$lib/components/FormError.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Field from '$lib/components/Field.svelte';

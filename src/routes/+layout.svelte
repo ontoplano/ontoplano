@@ -1,7 +1,7 @@
 <script lang="ts">
 	import './layout.css';
 	// Generated beside the masks it names: scripts/build-eink-masks.mjs.
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import { resolve } from '$app/paths';
 	import { navigating, page } from '$app/state';
 	import { live } from '$lib/live';

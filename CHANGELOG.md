@@ -29,10 +29,11 @@ releases mattered.
 - **A task's description opens it too.** The title was the only thing that
   unfolded one, and the line you are reading when you want the rest did
   nothing. A picture or a recording inside it stays its own control.
-- **Pressing Create twice makes one task.** The first press takes long enough
-  to look like it missed; the second one used to make a second task. A form
-  that is sending disables its own submit — the same in the board's card form
-  and a notebook's note composer.
+- **Pressing Create twice makes one task — on every form in the app.** A form
+  in flight disables its buttons and drops a submission identical to the one
+  already going. Identical rather than merely second: the notebook's divider
+  posts a new width as it is dragged, and that is something new to say each
+  time.
 - **The AI agents page says what to pass each tool.** Every tool now carries a
   table of its parameters — type, whether it is required, the values an enum
   allows, the default — generated from the same array that serves them.

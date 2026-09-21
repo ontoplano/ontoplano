@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { momentOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Banner from '$lib/components/Banner.svelte';
 	import Card from '$lib/components/Card.svelte';

@@ -13,7 +13,7 @@
 	import WidgetPicker from '$lib/components/WidgetPicker.svelte';
 	import Pie from '$lib/components/Pie.svelte';
 	import Swatch from '$lib/components/Swatch.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import FormError from '$lib/components/FormError.svelte';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';

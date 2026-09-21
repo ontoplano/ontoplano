@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import { invalidateAll } from '$app/navigation';
 	import { whileBusy } from '$lib/busy.svelte';
 	import { timeOf, type Clock } from '$lib/when';

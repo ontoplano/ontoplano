@@ -2,7 +2,7 @@
 	import { useWhen } from '$lib/when-context.svelte';
 	import { dayOf, weekdayOf } from '$lib/when';
 	import type { PlainKey } from '$lib/i18n/keys';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
 	import Swatch from '$lib/components/Swatch.svelte';
 	import Pie from '$lib/components/Pie.svelte';

@@ -5,7 +5,7 @@
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import { getAction } from '$lib/shortcuts';
 	import { invalidateAll } from '$app/navigation';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import Banner from '$lib/components/Banner.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';

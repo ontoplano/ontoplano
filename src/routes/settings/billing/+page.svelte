@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { dateOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import { base, resolve } from '$app/paths';

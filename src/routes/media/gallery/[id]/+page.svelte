@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import TagInput from '$lib/components/TagInput.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import { resolve } from '$app/paths';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';

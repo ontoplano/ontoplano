@@ -2,7 +2,7 @@
 	import Picker from '$lib/components/Picker.svelte';
 	import { monthOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import Swatch from '$lib/components/Swatch.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';

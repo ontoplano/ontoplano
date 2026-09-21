@@ -5,7 +5,7 @@
 	import { NOTEBOOK_SEPARATOR } from '$lib/services/notebooks';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import OneLine from '$lib/components/OneLine.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
 	import SplitColumns from '$lib/components/SplitColumns.svelte';

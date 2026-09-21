@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import type { PageServerData, ActionData } from './$types';
 	import Banner from '$lib/components/Banner.svelte';
 	import { autofocus } from '$lib/actions/autofocus.js';

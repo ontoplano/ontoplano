@@ -2,7 +2,7 @@
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { tick } from 'svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import { resolve } from '$app/paths';
 	import { armed } from '$lib/actions/armed';
 	import { autofocus } from '$lib/actions/autofocus';

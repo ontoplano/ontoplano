@@ -15,7 +15,7 @@
 	 */
 	import Icon from '$lib/components/Icon.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import { invalidateAll } from '$app/navigation';
 	import { armed } from '$lib/actions/armed';
 	import { cancelFor, changeNow, isPending } from '$lib/undo.svelte';

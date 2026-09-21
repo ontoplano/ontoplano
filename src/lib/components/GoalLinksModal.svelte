@@ -10,7 +10,7 @@
 	 */
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import { useT } from '$lib/i18n';
 
 	type Linkable = {

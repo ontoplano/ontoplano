@@ -3,7 +3,7 @@
 	import TagInput from '$lib/components/TagInput.svelte';
 	import { momentOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';

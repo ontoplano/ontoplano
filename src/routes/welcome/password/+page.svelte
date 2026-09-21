@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import Banner from '$lib/components/Banner.svelte';
 	import { MIN_PASSWORD_LENGTH, PASSWORD_RULE } from '$lib/passwords';
 	import type { ActionData } from './$types';

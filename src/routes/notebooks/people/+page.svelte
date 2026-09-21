@@ -5,7 +5,7 @@
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
 	import Card from '$lib/components/Card.svelte';

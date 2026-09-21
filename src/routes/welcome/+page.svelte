@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import { tick } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import type { PageServerData, ActionData } from './$types';

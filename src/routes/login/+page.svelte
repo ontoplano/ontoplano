@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import { resolve } from '$app/paths';
 	import { MIN_PASSWORD_LENGTH, PASSWORD_RULE } from '$lib/passwords';
 	import { askAgainOnThisPhone, inPhoneApp } from '$lib/instance-choice';

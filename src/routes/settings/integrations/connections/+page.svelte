@@ -2,7 +2,7 @@
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import OneLine from '$lib/components/OneLine.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';

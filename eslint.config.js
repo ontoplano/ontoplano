@@ -22,6 +22,25 @@ const gitignorePath = path.resolve(import.meta.dirname, '.gitignore');
 const excludePath = path.resolve(import.meta.dirname, '.ignore.local');
 const localIgnores = existsSync(excludePath) ? [includeIgnoreFile(excludePath)] : [];
 
+/*
+ * One press, one submission.
+ *
+ * `$lib/enhance` is `$app/forms`'s own with the guard that makes a form in
+ * flight refuse to be sent again — pressing Create twice made two tasks. A
+ * form importing the other one is a form without it, and the point of putting
+ * the guard there was that a form written next year has it by existing.
+ *
+ * Named once and spread into every block that sets `no-restricted-imports`:
+ * a later block replaces a rule rather than adding to it, so a block that
+ * forgot this would quietly switch it off for the files it covers.
+ */
+const noRawEnhance = {
+	name: '$app/forms',
+	importNames: ['enhance'],
+	message:
+		'Import `enhance` from `$lib/enhance`: a form in flight must refuse a second submission (AGENTS.md, Design Principles).'
+};
+
 export default defineConfig(
 	includeIgnoreFile(gitignorePath),
 	// The Capacitor shell is a generated native project; its JavaScript is
@@ -58,6 +77,7 @@ export default defineConfig(
 			'no-restricted-imports': [
 				'error',
 				{
+					paths: [noRawEnhance],
 					patterns: [
 						{
 							group: ['$lib/server', '$lib/server/*', '**/lib/server', '**/lib/server/*'],
@@ -80,6 +100,7 @@ export default defineConfig(
 			'no-restricted-imports': [
 				'error',
 				{
+					paths: [noRawEnhance],
 					patterns: [
 						{
 							group: [
@@ -99,6 +120,12 @@ export default defineConfig(
 				}
 			]
 		}
+	},
+	{
+		// Everything that is not a route: components live in `$lib` and submit
+		// forms too.
+		files: ['src/lib/**/*.svelte'],
+		rules: { 'no-restricted-imports': ['error', { paths: [noRawEnhance] }] }
 	},
 	{
 		files: ['**/*.svelte', '**/*.svelte.ts', '**/*.svelte.js'],

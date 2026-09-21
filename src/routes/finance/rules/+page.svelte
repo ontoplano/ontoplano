@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Picker from '$lib/components/Picker.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import Swatch from '$lib/components/Swatch.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
