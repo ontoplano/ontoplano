@@ -1,7 +1,6 @@
 import { beforeAll, describe, expect, it, test } from 'vitest';
 import {
 	ASSISTANT_LOG_PATH,
-	destinationFor,
 	nounKey,
 	NOUN_KEYS,
 	phraseFor,
@@ -148,50 +147,22 @@ describe('the line somebody reads', () => {
 });
 
 /**
- * Where a burst takes you.
+ * Where a burst takes you: the log, whatever it was about.
  *
- * The log is the right answer for a burst that went everywhere and the wrong
- * one for a burst about one thing: "added 4 todos" wants the todo list, and
- * four writes into one notebook want that notebook.
+ * It used to open the room a burst was about — the todo list for "added 4
+ * todos", the notebook when every write named one. That is the wrong guess
+ * about the question somebody is asking when they press a notification: the
+ * todos are already where they were, and what they want to see is what was
+ * done to them.
  */
 describe('where a notification points', () => {
-	const call = (tool: string, args: Record<string, unknown> = {}) => ({
-		tool,
-		args: JSON.stringify(args)
+	it('is the log of what an assistant did', () => {
+		expect(ASSISTANT_LOG_PATH).toBe('/settings/integrations#assistant-activity');
 	});
 
-	it('opens the room when every write is about the same kind of thing', () => {
-		expect(destinationFor([call('add_todo'), call('finish_todo'), call('change_todo')])).toBe(
-			'/tasks/todo'
-		);
-	});
-
-	it('opens the notebook when every write names the same one', () => {
-		expect(
-			destinationFor([
-				call('add_todo', { notebookId: 12 }),
-				call('write_entry', { notebookId: 12 })
-			])
-		).toBe('/notebooks/12');
-	});
-
-	it('falls back to the log when the burst went to two rooms', () => {
-		expect(destinationFor([call('add_todo'), call('add_habit')])).toBe(ASSISTANT_LOG_PATH);
-	});
-
-	it('and when a tool is one this cannot read', () => {
-		expect(destinationFor([call('add_todo'), call('something_else_entirely')])).toBe(
-			ASSISTANT_LOG_PATH
-		);
-	});
-
-	/** Two notebooks is not one notebook, so it is the room they share. */
-	it('opens the room when the notebooks differ', () => {
-		expect(
-			destinationFor([
-				call('write_entry', { notebookId: 1 }),
-				call('write_entry', { notebookId: 2 })
-			])
-		).toBe('/notebooks/diary');
+	it('and the hash, because the log is halfway down a long page', () => {
+		// `$lib/scroll-to-hash` is what acts on it: the app scrolls its own
+		// `main`, so the browser's own anchor handling never applied.
+		expect(ASSISTANT_LOG_PATH).toContain('#assistant-activity');
 	});
 });

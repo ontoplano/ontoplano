@@ -311,85 +311,20 @@ type Pending = {
 };
 
 /**
- * Where a burst's noun lives, so the notification opens the thing it is about.
+ * Where a notification opens: the log of what an assistant did, always.
  *
- * The log under Settings is the right answer for a burst that went everywhere
- * and the wrong one for "added 4 todos" — that one wants the todo list, and
- * four writes into one notebook want the notebook. Keyed by the noun a tool's
- * name ends with, which is the same half of the name the sentence is built
- * from: a tool added next year lands here for free if it is named the way the
- * rest are.
- */
-const NOUN_ROOM: Record<string, string> = {
-	block: '/tasks/plan',
-	slot: '/tasks/plan',
-	todo: '/tasks/todo',
-	goal: '/goals',
-	goal_area: '/goals',
-	goal_target: '/goals',
-	entry: '/notebooks/diary',
-	note: '/notebooks/diary',
-	notebook: '/notebooks',
-	idea: '/notebooks/ideas',
-	person: '/notebooks/people',
-	habit: '/health/habits',
-	workout: '/health/workouts',
-	recipe: '/health/recipes',
-	item: '/inventory',
-	item_fields: '/inventory',
-	item_attributes: '/inventory',
-	inventory_item: '/inventory',
-	inventory_category: '/inventory',
-	location: '/inventory',
-	reminder: '/reminders',
-	bill: '/finance/bills',
-	data_point: '/data',
-	stream: '/data'
-};
-
-/** Where the log is, for a burst that touched more than one kind of thing. */
-/*
- * The log, and the part of the page it is on.
+ * It used to work out the room a burst was about — "added 4 todos" opened the
+ * todo list — and that was the wrong guess about what somebody is asking when
+ * they press it: "i don't like it taking to tasks either, i wanted to go to
+ * integrations in the logs of AI changes". The tasks are already where they
+ * were; what a notification is about is what was done, and only the log says
+ * that.
  *
- * Without the hash this landed at the top of a long settings page and left
- * somebody to find the list themselves — which is what "takes me to
- * integrations but not to the right place" meant. `$lib/scroll-to-hash` is
- * what makes the hash mean anything here: the app scrolls its own `main`
- * rather than the window, so the browser's own anchor handling never applied.
+ * `$lib/scroll-to-hash` is what makes the hash mean anything: the app scrolls
+ * its own `main` rather than the window, so the browser's own anchor handling
+ * never applied and this landed at the top of a long settings page.
  */
 export const ASSISTANT_LOG_PATH = '/settings/integrations#assistant-activity';
-
-/**
- * The one thing a burst is about, if it is about one thing.
- *
- * Two questions, narrowest first: did every write name the same notebook, and
- * did every write touch the same room. Anything else — a burst that moved a
- * week around and wrote a note — has no single destination, and the log is
- * what it always was.
- */
-export function destinationFor(calls: Pick<Pending, 'tool' | 'args'>[]): string {
-	const notebooks = new Set<number>();
-	const rooms = new Set<string>();
-
-	for (const call of calls) {
-		const phrase = phraseFor(call.tool);
-		const room = phrase ? NOUN_ROOM[phrase.noun] : undefined;
-		if (!room) return ASSISTANT_LOG_PATH;
-		rooms.add(room);
-
-		let notebookId: unknown;
-		try {
-			notebookId = (JSON.parse(call.args || '{}') as Record<string, unknown>).notebookId;
-		} catch {
-			notebookId = undefined;
-		}
-		notebooks.add(Number.isFinite(Number(notebookId)) ? Number(notebookId) : 0);
-	}
-
-	if (notebooks.size === 1 && !notebooks.has(0)) return `/notebooks/${[...notebooks][0]}`;
-	if (rooms.size === 1) return [...rooms][0];
-	return ASSISTANT_LOG_PATH;
-}
 
 /**
  * Every account with writes nobody has been told about, and the writes.
@@ -510,9 +445,8 @@ export async function notifyAssistantBursts(now = new Date()): Promise<SweepResu
 		const outcome = await pushToUser(userId, {
 			title,
 			body,
-			// The thing it is about where there is one, and the log where there
-			// is not — see `destinationFor`.
-			url: destinationFor(calls),
+			// The log, not the room the writes landed in — see above.
+			url: ASSISTANT_LOG_PATH,
 			// One tag, so a second burst replaces the first on the lock screen
 			// rather than stacking up behind it.
 			tag: 'assistant-activity'
