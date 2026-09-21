@@ -2185,7 +2185,17 @@ label:has(> input[type='radio']:not(:disabled)) {
 		padding: 0.3125rem 0.75rem;
 		font-size: 0.8125rem;
 		font-weight: 500;
-		color: var(--color-gray-600);
+		/*
+		 * The positions you are not on are muted text, not body text.
+		 *
+		 * At gray-600 all three labels were nearly the same ink and the whole
+		 * control came down to spotting a white tile — which the dark theme does
+		 * not have, since a surface there is #232935 on a #222732 track. Muted is
+		 * the lightest step this palette allows a label (gray-400 clears nothing
+		 * on any ground here), and hover still brings one back to full ink, so
+		 * the answer to "which one am I on" is the ink and not the tile.
+		 */
+		color: var(--color-gray-500);
 		white-space: nowrap;
 		transition:
 			background-color 140ms ease,

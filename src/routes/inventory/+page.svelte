@@ -1240,7 +1240,19 @@
 		Loose on the page they were three controls of three shapes floating over
 		the thing they act on.
 	-->
-	<div class="border border-gray-200 bg-white shadow-card">
+	<!--
+		`overflow-anchor: none` because a fold must not move the page.
+
+		Folding a place takes a run of cards out of a two-column grid, so the
+		cards below it reflow upwards by about half of what was removed. The
+		browser's scroll anchoring sees one of those cards shift, decides the
+		page moved under the reader and scrolls to put it back — which moves
+		everything the reader *was* looking at, the heading they just pressed
+		included, by a few hundred pixels. Excluding this subtree from anchoring
+		leaves the scroll where the reader left it; the cards reflow under the
+		heading, which is what a fold is supposed to look like.
+	-->
+	<div class="border border-gray-200 bg-white shadow-card [overflow-anchor:none]">
 		<!--
 			Three kinds of thing, so they look like three: which list you are in
 			(one setting, one track), what it hides (two quiet toggles), and a way
