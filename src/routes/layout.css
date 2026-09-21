@@ -1061,6 +1061,19 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
+	 * A field standing in a row of buttons rather than in a form.
+	 *
+	 * The full-size one is as tall as a paragraph, which is right on a form
+	 * and wrong beside `.btn-sm` — a toolbar with one of each reads as two
+	 * unrelated rows. Same box, the small buttons' height.
+	 */
+	.input-sm {
+		padding: 0.25rem 0.5rem;
+		font-size: 0.8125rem;
+		line-height: 1.25rem;
+	}
+
+	/*
 	 * A select is ours, not the platform's idea of one.
 	 *
 	 * It stays a real `<select>` — a phone still opens its own wheel, a

@@ -3169,6 +3169,7 @@ export const messages: Catalogue = {
 	'todoRows.putItOnADay': 'Colocar em um dia',
 	'todoRows.putOnTheDay': 'Colocar no dia',
 	'todoRows.saved': 'Salvo',
+	'todoRows.searchTheseTasks': 'Buscar nestas tarefas',
 	'todoRows.showArchivedCount': 'Mostrar arquivadas ({count})',
 	'todoRows.showCompleted': 'Mostrar concluídas',
 	'todoRows.showCompletedCount': 'Mostrar concluídas ({count})',

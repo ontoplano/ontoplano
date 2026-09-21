@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **The task list can be searched.** The filters beside it answer "which kind";
+  this answers "the one about the plumber" — across titles, notes and labels,
+  with the count beside it saying what is left.
 - **The browser tab says where you are** — "To-do · Tasks · Ontoplano" rather
   than "Ontoplano" on every page, which is useless the moment two of them are
   open. Staging, the demo and a dev build keep their own name on the end.

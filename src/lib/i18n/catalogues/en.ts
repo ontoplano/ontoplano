@@ -3116,6 +3116,7 @@ export const messages: Catalogue = {
 	'todoRows.putItOnADay': 'Put it on a day',
 	'todoRows.putOnTheDay': 'Put on the day',
 	'todoRows.saved': 'Saved',
+	'todoRows.searchTheseTasks': 'Search these tasks',
 	'todoRows.showArchivedCount': 'Show archived ({count})',
 	'todoRows.showCompleted': 'Show completed',
 	'todoRows.showCompletedCount': 'Show completed ({count})',

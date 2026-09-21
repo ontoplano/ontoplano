@@ -16,6 +16,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
+	import { matchScore } from '$lib/destinations';
 	import { submitLock } from '$lib/submitting.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
@@ -127,6 +128,17 @@
 
 	let showForm = $state(false);
 	let editingId: number | null = $state(null);
+	/**
+	 * Words to look for, across the titles and the notes.
+	 *
+	 * A list of three hundred tasks cannot be read, and the other filters
+	 * answer "which kind" rather than "which one" — somebody looking for the
+	 * plumber knows the word and not the notebook. The app's own fuzzy, so it
+	 * behaves like the palette and the label box rather than inventing a third
+	 * idea of what matching means.
+	 */
+	let looking = $state('');
+
 	let showCompleted = $state(false);
 	/** Put-away tasks are out of the way by default; that is what putting away is. */
 	let showArchived = $state(false);
@@ -310,6 +322,19 @@
 		if (tagFilter === 'none') shown = shown.filter((t: Todo) => t.tags.length === 0);
 		else if (tagFilter !== '')
 			shown = shown.filter((t: Todo) => t.tags.some((one) => one.name === tagFilter));
+
+		const wanted = looking.trim();
+		if (wanted !== '') {
+			// The title first, then everything else written on it: a word in the
+			// notes is how somebody finds the task they described rather than
+			// named.
+			shown = shown.filter(
+				(t: Todo) =>
+					matchScore(t.title, wanted) !== null ||
+					(t.notes ?? '').toLowerCase().includes(wanted.toLowerCase()) ||
+					t.tags.some((one) => one.name.includes(wanted.toLowerCase()))
+			);
+		}
 
 		if (order === 'done') {
 			const done = [...shown].sort(byLastDone);
@@ -667,6 +692,25 @@
 				away from the filters above that, where the distance says what it
 				is — one of these hides rows, the other reorders them.
 			-->
+			<!--
+				Looking for one, rather than choosing a kind.
+
+				The controls beside this answer "which kind" — finished, put
+				away, in this notebook, carrying that label. None of them
+				answers "the one about the plumber", which is what somebody
+				with three hundred tasks is actually asking. It narrows as you
+				type and the count beside it says what is left.
+			-->
+			<label class="min-w-32 flex-1 sm:max-w-56">
+				<span class="sr-only">{t('todoRows.searchTheseTasks')}</span>
+				<input
+					type="search"
+					bind:value={looking}
+					placeholder={t('todoRows.searchTheseTasks')}
+					autocomplete="off"
+					class="input input-sm"
+				/>
+			</label>
 			<!--
 				How many rows are on screen right now.
 

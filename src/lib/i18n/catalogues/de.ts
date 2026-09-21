@@ -3205,6 +3205,7 @@ export const messages: Catalogue = {
 	'todoRows.putItOnADay': 'Auf einen Tag legen',
 	'todoRows.putOnTheDay': 'Auf den Tag legen',
 	'todoRows.saved': 'Gespeichert',
+	'todoRows.searchTheseTasks': 'Diese Aufgaben durchsuchen',
 	'todoRows.showArchivedCount': 'Archivierte zeigen ({count})',
 	'todoRows.showCompleted': 'Abgeschlossene anzeigen',
 	'todoRows.showCompletedCount': 'Erledigte zeigen ({count})',
