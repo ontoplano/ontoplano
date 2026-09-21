@@ -17,7 +17,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { preloadData, goto, invalidateAll } from '$app/navigation';
 	import { SECTION_COLORS } from '$lib/colors';
 	import { page } from '$app/state';
 	import { browser } from '$app/environment';
@@ -1404,11 +1404,59 @@
 		});
 	}
 
-	function goToRange(from: string | null) {
+	function rangeHref(from: string | null): string {
 		const parts: string[] = [`view=${viewMode}`];
 		if (from) parts.push(`from=${from}`);
-		goto(resolve(`/tasks/plan?${parts.join('&')}`));
+		return resolve(`/tasks/plan?${parts.join('&')}`);
 	}
+
+	function goToRange(from: string | null) {
+		goto(rangeHref(from));
+	}
+
+	/**
+	 * The days either side, fetched before anybody asks for them.
+	 *
+	 * Every arrow here is a navigation, and a navigation is a round trip: the
+	 * grid sat empty for the length of one every time somebody stepped a day.
+	 * `preloadData` runs the same load ahead of time and SvelteKit hands the
+	 * result to the navigation that follows, so stepping inside this reach is
+	 * a redraw rather than a request.
+	 *
+	 * What is fetched: the window each arrow points at — a whole span either
+	 * way — and then three days either side, which is what the day-shift
+	 * arrows walk through. Past that it pays for itself, and by then this has
+	 * run again for wherever it landed. Not in the month view: a month is
+	 * twelve times the data and is read rather than stepped through.
+	 */
+	const PRELOAD_DAYS = 3;
+
+	$effect(() => {
+		if (viewMode === 'month') return;
+		const around = data.range.from;
+		const back = data.range.prev;
+		const on = data.range.next;
+
+		const shifted = (step: number) => {
+			const day = new Date(`${around}T00:00:00`);
+			day.setDate(day.getDate() + step);
+			return day.toISOString().slice(0, 10);
+		};
+
+		// The two arrows first — a whole span each way, which is the press
+		// people make most — then the days either side of where we are.
+		const wanted = [on, back, ...[1, -1, 2, -2, 3, -3].map(shifted)].filter((one): one is string =>
+			Boolean(one)
+		);
+
+		void (async () => {
+			for (const from of wanted) {
+				// One at a time: eight requests at once would compete with the
+				// page they are meant to make feel instant.
+				await preloadData(rangeHref(from)).catch(() => {});
+			}
+		})();
+	});
 
 	function goToPrevWeek() {
 		if (data.range.prev) goToRange(data.range.prev);

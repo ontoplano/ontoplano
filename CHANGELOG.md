@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **The planner fetches the windows either side before you step into them.** An
+  arrow was a round trip, so the grid sat empty for the length of one each time.
 - **An assistant can see the pictures it is entitled to.** The new `media` tool
   takes the link as the writing writes it — `/media/31`, `/media/audio/44` —
   and answers with the file. Reaching one used to mean an HTTP request with a
