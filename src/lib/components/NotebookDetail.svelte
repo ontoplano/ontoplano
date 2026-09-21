@@ -879,27 +879,30 @@
 					room uses, so a todo behaves the same way wherever it is found —
 					and a new one written here lands in this notebook.
 				-->
-				<div class="px-4 py-3">
-					<!--
-						`shortcutRoom` so the rows answer to j/k here as they do in
-						the room. The keys did nothing on this tab: the view above
-						declares its items as the notes and gives back none on any
-						other tab, and the list was never told to take them itself.
-						It reads the to-do room's own bindings, which is the point —
-						the same list behaves the same way wherever it is found.
-					-->
-					<TodoRows
-						todos={contents.todos}
-						{categories}
-						notebooks={pickableNotebooks}
-						actions={NOTEBOOK_TODO_ACTIONS}
-						notebookId={notebook.id}
-						shortcutRoom={tab === 'tasks' ? '/tasks/todo' : null}
-						claimsRoomBar={false}
-						bind:openNew={openNewTodo}
-						bind:openTodo={openTodoById}
-					/>
-				</div>
+				<!--
+					`shortcutRoom` so the rows answer to j/k here as they do in the
+					room. The keys did nothing on this tab: the view above declares
+					its items as the notes and gives back none on any other tab, and
+					the list was never told to take them itself. It reads the to-do
+					room's own bindings, which is the point — the same list behaves
+					the same way wherever it is found.
+
+					`framed` off because the card here is the notebook's: the filters
+					and the rows are panes of it, edge to edge, rather than a second
+					card drawn inside the first.
+				-->
+				<TodoRows
+					todos={contents.todos}
+					{categories}
+					notebooks={pickableNotebooks}
+					actions={NOTEBOOK_TODO_ACTIONS}
+					notebookId={notebook.id}
+					shortcutRoom={tab === 'tasks' ? '/tasks/todo' : null}
+					claimsRoomBar={false}
+					framed={false}
+					bind:openNew={openNewTodo}
+					bind:openTodo={openTodoById}
+				/>
 
 				<!--
 					Blocks below, and still a list: a block is a thing that happens at

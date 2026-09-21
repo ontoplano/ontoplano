@@ -73,6 +73,7 @@
 		 * not to whichever todo a cursor happens to sit on.
 		 */
 		shortcutRoom = null,
+		framed = true,
 		claimsRoomBar,
 		listTour = null,
 		newTour = null,
@@ -109,6 +110,15 @@
 		 * like. Null leaves the keyboard alone entirely.
 		 */
 		shortcutRoom?: string | null;
+		/**
+		 * Whether the list draws the surface it sits on.
+		 *
+		 * In the to-do room it is the room: one bordered card with the filters
+		 * along its top. Inside a notebook the card is the notebook's own, and
+		 * these are two more panes of it — a card drawn inside a card is the
+		 * floating this was meant to stop.
+		 */
+		framed?: boolean;
 		/**
 		 * Whether this list is the room, and so owns the bar's one verb.
 		 *
@@ -663,136 +673,537 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<RoomToolbar>
-		{#snippet tools()}
-			<!--
-				One row on a phone, not three.
+	<!--
+		The filters and the list they narrow are one object.
 
-				"Show completed", the notebook picker and the sort order each took
-				a line of their own at 390px — a third of the screen spent before
-				a single task. The labels say the short form where there is no
-				room for the long one, and the picker gives up its width first.
+		They were a row of controls on the page's own ground with a card under
+		it, so the thing acting and the thing acted on read as two. The
+		controls sit along the top of the same surface now, with the rule
+		beneath them doing the separating — the shape the inventory room has.
+		Both empty states are inside it too: a room that is one object when it
+		is full and two when it is empty is worse than either.
+	-->
+	<div class={framed ? 'border border-gray-200 bg-white shadow-card' : ''}>
+		<RoomToolbar inset>
+			{#snippet tools()}
+				<!--
+					One row on a phone, not three.
 
-				A toggle also says which way it is set rather than only what
-				pressing it would do: `aria-pressed` is what the app's own `.btn`
-				reads to draw a control as held.
-			-->
-			<button
-				onclick={() => (showCompleted = !showCompleted)}
-				aria-pressed={showCompleted}
-				class="btn btn-sm shrink-0"
-			>
-				<span class="sm:hidden">{t('todoRows.completed')}</span>
-				<span class="hidden sm:inline"
-					>{showCompleted
-						? t('todoRows.hideCompleted')
-						: t('todoRows.showCompletedCount', { count: finished })}</span
+					"Show completed", the notebook picker and the sort order each took
+					a line of their own at 390px — a third of the screen spent before
+					a single task. The labels say the short form where there is no
+					room for the long one, and the picker gives up its width first.
+
+					A toggle also says which way it is set rather than only what
+					pressing it would do: `aria-pressed` is what the app's own `.btn`
+					reads to draw a control as held.
+				-->
+				<button
+					onclick={() => (showCompleted = !showCompleted)}
+					aria-pressed={showCompleted}
+					class="btn btn-sm shrink-0"
 				>
-			</button>
-			<!-- Named with its number so a put-away task is never quietly gone:
-			     nothing is hidden without the list saying how much. -->
-			<button
-				onclick={() => (showArchived = !showArchived)}
-				aria-pressed={showArchived}
-				class="btn btn-sm"
-				hidden={putAway === 0 && !showArchived}
-			>
-				{showArchived
-					? t('todoRows.hideArchived')
-					: t('todoRows.showArchivedCount', { count: putAway })}
-			</button>
-			{#if notebookId === null}
-				<!-- "Not in one" is an answer, not the absence of a filter: a task
-				     nobody has placed is the thing people go looking for.
+					<span class="sm:hidden">{t('todoRows.completed')}</span>
+					<span class="hidden sm:inline"
+						>{showCompleted
+							? t('todoRows.hideCompleted')
+							: t('todoRows.showCompletedCount', { count: finished })}</span
+					>
+				</button>
+				<!-- Named with its number so a put-away task is never quietly gone:
+				     nothing is hidden without the list saying how much. -->
+				<button
+					onclick={() => (showArchived = !showArchived)}
+					aria-pressed={showArchived}
+					class="btn btn-sm"
+					hidden={putAway === 0 && !showArchived}
+				>
+					{showArchived
+						? t('todoRows.hideArchived')
+						: t('todoRows.showArchivedCount', { count: putAway })}
+				</button>
+				{#if notebookId === null}
+					<!-- "Not in one" is an answer, not the absence of a filter: a task
+					     nobody has placed is the thing people go looking for.
 
-				     A `Picker` rather than a `<select>`: a form field dropped into
-				     a row of buttons is a form field that wandered in, and these
-				     two narrow what is on screen rather than submitting anything.
-				     Wide enough for the word — two controls both squeezed to
-				     "Ever…" are two controls nobody can tell apart. -->
-				<Picker
-					value={notebookFilter}
-					options={notebookChoices}
-					onpick={(next) => (notebookFilter = next)}
-					label={t('ui.notebook')}
-					class="min-w-36 flex-1 sm:flex-none"
+					     A `Picker` rather than a `<select>`: a form field dropped into
+					     a row of buttons is a form field that wandered in, and these
+					     two narrow what is on screen rather than submitting anything.
+					     Wide enough for the word — two controls both squeezed to
+					     "Ever…" are two controls nobody can tell apart. -->
+					<Picker
+						value={notebookFilter}
+						options={notebookChoices}
+						onpick={(next) => (notebookFilter = next)}
+						label={t('ui.notebook')}
+						class="min-w-36 flex-1 sm:flex-none"
+					/>
+				{/if}
+				<!-- Only where there is something to pick: a list nobody has labelled
+				     gets no control for labels. -->
+				{#if tagsInUse.length > 0}
+					<Picker
+						values={tagFilter}
+						options={[{ value: '', label: t('todoRows.everyTag') }, ...tagChoices]}
+						onpickMany={(next) => {
+							// Two rows that are not labels. "Every tag" is the way back to
+							// no filter at all, and "no label" answers the question on its
+							// own — neither combines with a label.
+							if (next.includes('')) tagFilter = [];
+							else if (next.includes(NO_TAG))
+								tagFilter = tagFilter.includes(NO_TAG)
+									? next.filter((one) => one !== NO_TAG)
+									: [NO_TAG];
+							else tagFilter = next;
+						}}
+						label={t('todoRows.filterByTag')}
+						class="min-w-28 flex-1 sm:flex-none"
+					/>
+				{/if}
+				<!--
+					Pushed to the right end, but only where there is a right end.
+
+					`ml-auto` at every width made it wrap onto a line of its own on a
+					phone: three ragged rows, the last one an empty half with one
+					button at the far side of it. Inline below `sm`, where the row is
+					already wrapping and there is nothing to separate it from; pushed
+					away from the filters above that, where the distance says what it
+					is — one of these hides rows, the other reorders them.
+				-->
+				<!--
+					Looking for one, rather than choosing a kind.
+
+					The controls beside this answer "which kind" — finished, put
+					away, in this notebook, carrying that label. None of them
+					answers "the one about the plumber", which is what somebody
+					with three hundred tasks is actually asking. It narrows as you
+					type and the count beside it says what is left.
+				-->
+				<label class="min-w-32 flex-1 sm:max-w-56">
+					<span class="sr-only">{t('todoRows.searchTheseTasks')}</span>
+					<input
+						type="search"
+						bind:value={looking}
+						placeholder={t('todoRows.searchTheseTasks')}
+						autocomplete="off"
+						class="input input-sm"
+					/>
+				</label>
+				<!--
+					How many rows are on screen right now.
+
+					The two toggles say how many are hidden — archived, completed —
+					and nothing said how many are left, so a list narrowed by a
+					notebook and a label gave no number at all for the thing you are
+					actually looking at.
+				-->
+				<span class="tabular shrink-0 self-center text-xs text-gray-500 sm:ml-auto">
+					{t('todoRows.showingCount', { count: visibleTodos.length })}
+				</span>
+				<div>
+					<!-- The same control a notebook's notes use. See `SortControl`. -->
+					<SortControl
+						value={order}
+						options={ORDERS}
+						labels={ORDER_LABELS}
+						{direction}
+						onpick={pickOrder}
+						onflip={flipDirection}
+						label={t('todoRows.orderTasksBy')}
+					/>
+				</div>
+			{/snippet}
+		</RoomToolbar>
+		{#if visibleTodos.length === 0}
+			<!--
+				Empty because there is nothing, or empty because it is all hidden.
+				Saying the first when the second is true is how a list that is
+				doing as it was told reads as a list that is out of date.
+			-->
+			{#if hiddenHere > 0}
+				<EmptyState
+					icon="check"
+					title={t('todoRows.nothingToShow')}
+					description={t('todoRows.hiddenByTheFilters', { count: hiddenHere })}
+				/>
+			{:else}
+				<EmptyState
+					icon="check"
+					title={showCompleted ? t('gallery.id.nothingHereYet') : t('todoRows.nothingWaiting')}
+					description={showCompleted
+						? t('todoRows.anythingYouFinishShowsUp')
+						: t('todoRows.aToDoIsATask')}
 				/>
 			{/if}
-			<!-- Only where there is something to pick: a list nobody has labelled
-			     gets no control for labels. -->
-			{#if tagsInUse.length > 0}
-				<Picker
-					values={tagFilter}
-					options={[{ value: '', label: t('todoRows.everyTag') }, ...tagChoices]}
-					onpickMany={(next) => {
-						// Two rows that are not labels. "Every tag" is the way back to
-						// no filter at all, and "no label" answers the question on its
-						// own — neither combines with a label.
-						if (next.includes('')) tagFilter = [];
-						else if (next.includes(NO_TAG))
-							tagFilter = tagFilter.includes(NO_TAG)
-								? next.filter((one) => one !== NO_TAG)
-								: [NO_TAG];
-						else tagFilter = next;
-					}}
-					label={t('todoRows.filterByTag')}
-					class="min-w-28 flex-1 sm:flex-none"
-				/>
-			{/if}
-			<!--
-				Pushed to the right end, but only where there is a right end.
+		{:else}
+			<div class="divide-y divide-gray-200" data-tour={listTour}>
+				{#each visibleTodos as todo, i (todo.id)}
+					<div
+						use:keepInView={shortcutRoom !== null && selectedIndex === i}
+						class="flex items-stretch gap-4 px-4 py-3 {shortcutRoom && selectedIndex === i
+							? 'kb-cursor'
+							: ''} {isDone(todo) ? 'opacity-50' : ''}"
+					>
+						<form
+							id="toggle-form-{todo.id}"
+							method="post"
+							action={actions.setStatus}
+							use:enhance={deferComplete(todo)}
+							class="flex"
+						>
+							<input type="hidden" name="id" value={todo.id} />
+							<input type="hidden" name="status" value={todo.status === 'done' ? 'todo' : 'done'} />
+							<!--
+								As tall as the row it belongs to.
 
-				`ml-auto` at every width made it wrap onto a line of its own on a
-				phone: three ragged rows, the last one an empty half with one
-				button at the far side of it. Inline below `sm`, where the row is
-				already wrapping and there is nothing to separate it from; pushed
-				away from the filters above that, where the distance says what it
-				is — one of these hides rows, the other reorders them.
-			-->
-			<!--
-				Looking for one, rather than choosing a kind.
+								The box was 20px pinned to the top-left of a row that is often
+								three lines tall — notes, a notebook, a column of icons — so it
+								sat in a corner of a lot of nothing and was a small thing to hit
+								besides. The target now runs the height of the row and the
+								square is bigger and centred in it, which fills the space the
+								rest of the row makes and gives the one action every row has the
+								size it deserves.
+							-->
+							<!--
+								At the top of the row, not down the middle of it.
 
-				The controls beside this answer "which kind" — finished, put
-				away, in this notebook, carrying that label. None of them
-				answers "the one about the plumber", which is what somebody
-				with three hundred tasks is actually asking. It narrows as you
-				type and the count beside it says what is left.
-			-->
-			<label class="min-w-32 flex-1 sm:max-w-56">
-				<span class="sr-only">{t('todoRows.searchTheseTasks')}</span>
-				<input
-					type="search"
-					bind:value={looking}
-					placeholder={t('todoRows.searchTheseTasks')}
-					autocomplete="off"
-					class="input input-sm"
-				/>
-			</label>
-			<!--
-				How many rows are on screen right now.
+								It was `self-stretch` and centred, so on a task with notes,
+								labels and a gauge under the title the box floated halfway down
+								beside none of them. The thing it ticks is the title, so it
+								stands level with the title.
 
-				The two toggles say how many are hidden — archived, completed —
-				and nothing said how many are left, so a list narrowed by a
-				notebook and a label gave no number at all for the thing you are
-				actually looking at.
-			-->
-			<span class="tabular shrink-0 self-center text-xs text-gray-500 sm:ml-auto">
-				{t('todoRows.showingCount', { count: visibleTodos.length })}
-			</span>
-			<div>
-				<!-- The same control a notebook's notes use. See `SortControl`. -->
-				<SortControl
-					value={order}
-					options={ORDERS}
-					labels={ORDER_LABELS}
-					{direction}
-					onpick={pickOrder}
-					onflip={flipDirection}
-					label={t('todoRows.orderTasksBy')}
-				/>
+								And once a task is done it says when: the tick is the only part
+								of the row that knows, and "did I do that this morning or last
+								week" is the question somebody asks of a list they are looking
+								back at.
+							-->
+							<button
+								type="submit"
+								class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
+								aria-label={isDone(todo)
+									? t('todoRows.markIncomplete')
+									: t('todoRows.markComplete')}
+								title={isDone(todo) && todo.completedAt
+									? t('todoRows.doneAgo', {
+											when: momentOf(todo.completedAt, now()),
+											ago: agoOf(todo.completedAt, now())
+										})
+									: undefined}
+							>
+								<span
+									class="flex size-7 items-center justify-center border {isDone(todo)
+										? 'border-gray-400 bg-gray-400'
+										: 'border-gray-400 bg-white'}"
+								>
+									{#if isDone(todo)}
+										<svg class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+											<path
+												fill-rule="evenodd"
+												d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+												clip-rule="evenodd"
+											/>
+										</svg>
+									{/if}
+								</span>
+							</button>
+						</form>
+
+						<!-- One row at every width: the actions are a narrow column of icons
+						     now, which fits beside the title on a phone. -->
+						<div class="flex min-w-0 flex-1 gap-3">
+							<div class="min-w-0 flex-1">
+								<div class="flex flex-wrap items-center gap-2">
+									{#if todo.categoryColor}
+										<span
+											class="h-3 w-1 shrink-0"
+											style="background-color: {todo.categoryColor}"
+											title={todo.categoryName}
+										></span>
+									{/if}
+									<!--
+										`min-w-0` because a flex item will not shrink below its own
+										content by default: a long title stopped being able to wrap,
+										widened the row past the card, and took the whole list off
+										the side of the screen with it. `break-words` so a single
+										long word breaks rather than doing the same thing again.
+									-->
+									<!-- Finished is grey, not struck through: the tick and the
+									     colour say it already, and a line through a title is one
+									     more thing to read past. -->
+									<!--
+										Pressing the title reads the task; it does not edit it.
+
+										The chevron's space is kept on every row, drawn only where
+										there is something under the title — so the titles line up
+										and nothing moves sideways as rows gain and lose notes.
+									-->
+									<span class="flex min-w-0 items-baseline gap-1.5">
+										<span class="w-3 shrink-0 text-gray-400">
+											{#if hasMore(todo)}
+												<Icon
+													name={openNotes.has(todo.id) ? 'chevron-down' : 'chevron-right'}
+													size={12}
+												/>
+											{/if}
+										</span>
+										{#if hasMore(todo)}
+											<button
+												type="button"
+												onclick={() => toggleNotes(todo.id)}
+												aria-expanded={openNotes.has(todo.id)}
+												class="min-w-0 text-left text-sm font-medium break-words {isDone(todo)
+													? 'text-gray-400'
+													: 'text-gray-900'}">{todo.title}</button
+											>
+										{:else}
+											<span
+												class="min-w-0 text-sm font-medium break-words {isDone(todo)
+													? 'text-gray-400'
+													: 'text-gray-900'}">{todo.title}</span
+											>
+										{/if}
+									</span>
+									{#if todo.scheduledDate}
+										<span
+											class="tabular border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
+											title={t('todoRows.pulledOntoThisDay')}
+										>
+											{todo.scheduledDate}
+										</span>
+									{/if}
+									{#if todo.archivedAt}
+										<span
+											class="border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
+											title={t('todoRows.putAway')}
+										>
+											{t('todoRows.archived')}
+										</span>
+									{/if}
+								</div>
+								<!--
+									A recording is a player and a picture is a picture, not the
+									address of either.
+
+									Notes are drawn as a line of text, and both attachments are
+									stored as ordinary markdown — right for the text, wrong on
+									the screen, where the row reads as
+									`[ring the plumber](/media/audio/40)`. `Written` takes them
+									out of the line and draws them under it, the same way an
+									idea's are drawn. They are always there when there are any,
+									so nothing moves when the row is pressed.
+								-->
+								{#if todo.notes}
+									<!--
+										The words under the title open it too.
+
+										The title was the only thing that unfolded a task, and the
+										line under it — the one you are reading when you want the
+										rest — did nothing. It is a press now, wherever there is
+										something to unfold. A picture or a recording inside is
+										still its own control: the press is caught here rather than
+										bound to the whole block, so playing something does not
+										fold the row.
+									-->
+									{#if hasMore(todo)}
+										<!-- svelte-ignore a11y_click_events_have_key_events -->
+										<!-- svelte-ignore a11y_no_static_element_interactions -->
+										<div
+											class="cursor-pointer"
+											onclick={(press) => {
+												const target = press.target as HTMLElement;
+												if (target.closest('a, button, audio, input, textarea')) return;
+												toggleNotes(todo.id);
+											}}
+										>
+											<Written content={todo.notes} compact oneLine={!openNotes.has(todo.id)} />
+										</div>
+									{:else}
+										<Written content={todo.notes} compact oneLine={!openNotes.has(todo.id)} />
+									{/if}
+								{/if}
+								<!-- Pressing one narrows the list to it, the way an idea's do:
+								     a label is only useful if reading back one of them is a
+								     press rather than a trip to a filter. -->
+								<!--
+									The three gauges, in the room the tick used to take.
+
+									Under the title rather than in it: the title line is what
+									somebody scans, and three small objects in the middle of it
+									were three things to read past. Here they sit with the
+									labels, which is the other thing you look at when you are
+									choosing what to do rather than reading what it is.
+								-->
+								{#if todo.tags.length > 0 || hasRatings(todo)}
+									<div class="mt-1 flex flex-wrap items-center gap-1">
+										<RatingBadges values={todo.ratings} />
+										{#each todo.tags as tag (tag.id)}
+											<!--
+												The chip says when it went on.
+												
+												Which is the whole reason the join carries a date: a
+												list of labels says what is true and says nothing
+												about what is new. Under the pointer rather than
+												beside the word, because the age matters when you go
+												looking for it and would be noise on every row at
+												once. A label from before the column existed simply
+												does not say — an invented date would be read as real.
+											-->
+											<TagChip
+												name={tag.name}
+												active={tagFilter.includes(tag.name)}
+												title={tag.taggedAt
+													? t('todoRows.taggedAgo', { ago: agoOf(tag.taggedAt, now()) })
+													: undefined}
+												onclick={() => {
+													// Pressing a label adds it to the filter rather than
+													// replacing it, so two presses is two labels — the
+													// same thing the picker above does.
+													tagFilter = tagFilter.includes(tag.name)
+														? tagFilter.filter((one) => one !== tag.name)
+														: [...tagFilter.filter((one) => one !== NO_TAG), tag.name];
+													selectedIndex = 0;
+												}}
+											/>
+										{/each}
+									</div>
+								{/if}
+								<Backlinks
+									goals={goalLinks[todo.id]}
+									notebook={notebookId === null && todo.notebookId && todo.notebookTitle
+										? { id: todo.notebookId, title: todo.notebookTitle }
+										: null}
+								/>
+							</div>
+
+							<!--
+								Stacked up the right-hand edge, delete at the bottom: the same
+								column an idea card has, so the two rooms behave alike.
+							-->
+							<div class="row-actions-stack">
+								{#if !isDone(todo)}
+									<!-- One column changes; nothing is copied anywhere. -->
+									<form method="post" action={actions.schedule} use:enhance>
+										<input type="hidden" name="id" value={todo.id} />
+										<input
+											type="hidden"
+											name="scheduledDate"
+											value={todo.scheduledDate ? '' : todayStr()}
+										/>
+										<button
+											type="submit"
+											class="icon-btn"
+											aria-pressed={!!todo.scheduledDate}
+											aria-label={todo.scheduledDate
+												? t('todoRows.putBackOnTheGeneral')
+												: t('todoRows.pullOntoToday')}
+											title={todo.scheduledDate
+												? t('todoRows.putBackOnTheGeneral')
+												: t('todoRows.pullOntoToday')}
+										>
+											<Icon name={todo.scheduledDate ? 'undo' : 'arrow-down'} />
+										</button>
+									</form>
+								{/if}
+								{#if !isDone(todo)}
+									<button
+										onclick={() => startDelegate(todo)}
+										class="icon-btn"
+										title={t('todoRows.delegateToADay')}
+										aria-label={t('todoRows.delegateToADay')}
+									>
+										<Icon name="calendar" />
+									</button>
+								{/if}
+								<button
+									title={t('ui.edit')}
+									aria-label={t('ui.edit')}
+									onclick={() => startEdit(todo)}
+									class="icon-btn"
+								>
+									<Icon name="edit" />
+								</button>
+								<!--
+									Away, and back. Not a confirmation: putting a task away is
+									the reversible one — the button beside it is what deletes,
+									and that one asks.
+								-->
+								<!-- Plain `use:enhance`: the default applies the result and
+								     re-reads the page, which is how the row leaves the list. -->
+								<form method="post" action={actions.archive} use:enhance>
+									<input type="hidden" name="id" value={todo.id} />
+									<input type="hidden" name="away" value={todo.archivedAt ? 'false' : 'true'} />
+									<button
+										type="submit"
+										class="icon-btn"
+										title={todo.archivedAt
+											? t('todoRows.takeItBackOut')
+											: t('finance.ledgers.putItAway')}
+										aria-label={todo.archivedAt
+											? t('todoRows.takeItBackOut')
+											: t('finance.ledgers.putItAway')}
+									>
+										<Icon name={todo.archivedAt ? 'undo' : 'archive'} />
+									</button>
+								</form>
+								{#if confirmingDelete === todo.id}
+									<form
+										id="delete-form-{todo.id}"
+										method="post"
+										action={actions.remove}
+										use:enhance={deferDelete(todo.id, todo.title)}
+									>
+										<input type="hidden" name="id" value={todo.id} />
+										<button type="submit" class="btn btn-sm btn-danger" use:armed>
+											{t('todoRows.confirm')}
+										</button>
+									</form>
+									<button
+										type="button"
+										onclick={() => {
+											confirmingDelete = null;
+										}}
+										class="btn btn-sm"
+									>
+										{t('ui.cancel')}
+									</button>
+								{:else}
+									<button
+										title={t('ui.delete')}
+										aria-label={t('ui.delete')}
+										type="button"
+										onclick={() => {
+											confirmingDelete = todo.id;
+										}}
+										class="icon-btn icon-btn-danger"
+									>
+										<Icon name="trash" />
+									</button>
+								{/if}
+
+								<!--
+									This task's number inside its notebook, quietly, at the end
+									of the row.
+
+									It is what a note points at — `TASK:#4` — and what somebody
+									says out loud when they mean a particular task, so it has to
+									be on the screen: the row id never was, and "the one about
+									the plumber" is the only other way to name one. Bottom right,
+									under the actions, because it is a label rather than a
+									control. A task filed under nothing has no number and shows
+									none.
+								-->
+								{#if todo.notebookSeq !== null}
+									<span class="tabular w-full text-right text-[11px] text-gray-400">
+										#{todo.notebookSeq}
+									</span>
+								{/if}
+							</div>
+						</div>
+					</div>
+				{/each}
 			</div>
-		{/snippet}
-	</RoomToolbar>
+		{/if}
+	</div>
 
 	<Modal
 		bind:open={showForm}
@@ -1001,397 +1412,4 @@
 			>
 		{/snippet}
 	</Modal>
-
-	{#if visibleTodos.length === 0}
-		<div class="border border-gray-200 bg-white shadow-sm">
-			<!--
-				Empty because there is nothing, or empty because it is all hidden.
-				Saying the first when the second is true is how a list that is
-				doing as it was told reads as a list that is out of date.
-			-->
-			{#if hiddenHere > 0}
-				<EmptyState
-					icon="check"
-					title={t('todoRows.nothingToShow')}
-					description={t('todoRows.hiddenByTheFilters', { count: hiddenHere })}
-				/>
-			{:else}
-				<EmptyState
-					icon="check"
-					title={showCompleted ? t('gallery.id.nothingHereYet') : t('todoRows.nothingWaiting')}
-					description={showCompleted
-						? t('todoRows.anythingYouFinishShowsUp')
-						: t('todoRows.aToDoIsATask')}
-				/>
-			{/if}
-		</div>
-	{:else}
-		<div
-			class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card"
-			data-tour={listTour}
-		>
-			{#each visibleTodos as todo, i (todo.id)}
-				<div
-					use:keepInView={shortcutRoom !== null && selectedIndex === i}
-					class="flex items-stretch gap-4 px-4 py-3 {shortcutRoom && selectedIndex === i
-						? 'kb-cursor'
-						: ''} {isDone(todo) ? 'opacity-50' : ''}"
-				>
-					<form
-						id="toggle-form-{todo.id}"
-						method="post"
-						action={actions.setStatus}
-						use:enhance={deferComplete(todo)}
-						class="flex"
-					>
-						<input type="hidden" name="id" value={todo.id} />
-						<input type="hidden" name="status" value={todo.status === 'done' ? 'todo' : 'done'} />
-						<!--
-							As tall as the row it belongs to.
-
-							The box was 20px pinned to the top-left of a row that is often
-							three lines tall — notes, a notebook, a column of icons — so it
-							sat in a corner of a lot of nothing and was a small thing to hit
-							besides. The target now runs the height of the row and the
-							square is bigger and centred in it, which fills the space the
-							rest of the row makes and gives the one action every row has the
-							size it deserves.
-						-->
-						<!--
-							At the top of the row, not down the middle of it.
-
-							It was `self-stretch` and centred, so on a task with notes,
-							labels and a gauge under the title the box floated halfway down
-							beside none of them. The thing it ticks is the title, so it
-							stands level with the title.
-
-							And once a task is done it says when: the tick is the only part
-							of the row that knows, and "did I do that this morning or last
-							week" is the question somebody asks of a list they are looking
-							back at.
-						-->
-						<button
-							type="submit"
-							class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
-							aria-label={isDone(todo) ? t('todoRows.markIncomplete') : t('todoRows.markComplete')}
-							title={isDone(todo) && todo.completedAt
-								? t('todoRows.doneAgo', {
-										when: momentOf(todo.completedAt, now()),
-										ago: agoOf(todo.completedAt, now())
-									})
-								: undefined}
-						>
-							<span
-								class="flex size-7 items-center justify-center border {isDone(todo)
-									? 'border-gray-400 bg-gray-400'
-									: 'border-gray-400 bg-white'}"
-							>
-								{#if isDone(todo)}
-									<svg class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-										<path
-											fill-rule="evenodd"
-											d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-											clip-rule="evenodd"
-										/>
-									</svg>
-								{/if}
-							</span>
-						</button>
-					</form>
-
-					<!-- One row at every width: the actions are a narrow column of icons
-					     now, which fits beside the title on a phone. -->
-					<div class="flex min-w-0 flex-1 gap-3">
-						<div class="min-w-0 flex-1">
-							<div class="flex flex-wrap items-center gap-2">
-								{#if todo.categoryColor}
-									<span
-										class="h-3 w-1 shrink-0"
-										style="background-color: {todo.categoryColor}"
-										title={todo.categoryName}
-									></span>
-								{/if}
-								<!--
-									`min-w-0` because a flex item will not shrink below its own
-									content by default: a long title stopped being able to wrap,
-									widened the row past the card, and took the whole list off
-									the side of the screen with it. `break-words` so a single
-									long word breaks rather than doing the same thing again.
-								-->
-								<!-- Finished is grey, not struck through: the tick and the
-								     colour say it already, and a line through a title is one
-								     more thing to read past. -->
-								<!--
-									Pressing the title reads the task; it does not edit it.
-
-									The chevron's space is kept on every row, drawn only where
-									there is something under the title — so the titles line up
-									and nothing moves sideways as rows gain and lose notes.
-								-->
-								<span class="flex min-w-0 items-baseline gap-1.5">
-									<span class="w-3 shrink-0 text-gray-400">
-										{#if hasMore(todo)}
-											<Icon
-												name={openNotes.has(todo.id) ? 'chevron-down' : 'chevron-right'}
-												size={12}
-											/>
-										{/if}
-									</span>
-									{#if hasMore(todo)}
-										<button
-											type="button"
-											onclick={() => toggleNotes(todo.id)}
-											aria-expanded={openNotes.has(todo.id)}
-											class="min-w-0 text-left text-sm font-medium break-words {isDone(todo)
-												? 'text-gray-400'
-												: 'text-gray-900'}">{todo.title}</button
-										>
-									{:else}
-										<span
-											class="min-w-0 text-sm font-medium break-words {isDone(todo)
-												? 'text-gray-400'
-												: 'text-gray-900'}">{todo.title}</span
-										>
-									{/if}
-								</span>
-								{#if todo.scheduledDate}
-									<span
-										class="tabular border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
-										title={t('todoRows.pulledOntoThisDay')}
-									>
-										{todo.scheduledDate}
-									</span>
-								{/if}
-								{#if todo.archivedAt}
-									<span
-										class="border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
-										title={t('todoRows.putAway')}
-									>
-										{t('todoRows.archived')}
-									</span>
-								{/if}
-							</div>
-							<!--
-								A recording is a player and a picture is a picture, not the
-								address of either.
-
-								Notes are drawn as a line of text, and both attachments are
-								stored as ordinary markdown — right for the text, wrong on
-								the screen, where the row reads as
-								`[ring the plumber](/media/audio/40)`. `Written` takes them
-								out of the line and draws them under it, the same way an
-								idea's are drawn. They are always there when there are any,
-								so nothing moves when the row is pressed.
-							-->
-							{#if todo.notes}
-								<!--
-									The words under the title open it too.
-
-									The title was the only thing that unfolded a task, and the
-									line under it — the one you are reading when you want the
-									rest — did nothing. It is a press now, wherever there is
-									something to unfold. A picture or a recording inside is
-									still its own control: the press is caught here rather than
-									bound to the whole block, so playing something does not
-									fold the row.
-								-->
-								{#if hasMore(todo)}
-									<!-- svelte-ignore a11y_click_events_have_key_events -->
-									<!-- svelte-ignore a11y_no_static_element_interactions -->
-									<div
-										class="cursor-pointer"
-										onclick={(press) => {
-											const target = press.target as HTMLElement;
-											if (target.closest('a, button, audio, input, textarea')) return;
-											toggleNotes(todo.id);
-										}}
-									>
-										<Written content={todo.notes} compact oneLine={!openNotes.has(todo.id)} />
-									</div>
-								{:else}
-									<Written content={todo.notes} compact oneLine={!openNotes.has(todo.id)} />
-								{/if}
-							{/if}
-							<!-- Pressing one narrows the list to it, the way an idea's do:
-							     a label is only useful if reading back one of them is a
-							     press rather than a trip to a filter. -->
-							<!--
-								The three gauges, in the room the tick used to take.
-
-								Under the title rather than in it: the title line is what
-								somebody scans, and three small objects in the middle of it
-								were three things to read past. Here they sit with the
-								labels, which is the other thing you look at when you are
-								choosing what to do rather than reading what it is.
-							-->
-							{#if todo.tags.length > 0 || hasRatings(todo)}
-								<div class="mt-1 flex flex-wrap items-center gap-1">
-									<RatingBadges values={todo.ratings} />
-									{#each todo.tags as tag (tag.id)}
-										<!--
-											The chip says when it went on.
-											
-											Which is the whole reason the join carries a date: a
-											list of labels says what is true and says nothing
-											about what is new. Under the pointer rather than
-											beside the word, because the age matters when you go
-											looking for it and would be noise on every row at
-											once. A label from before the column existed simply
-											does not say — an invented date would be read as real.
-										-->
-										<TagChip
-											name={tag.name}
-											active={tagFilter.includes(tag.name)}
-											title={tag.taggedAt
-												? t('todoRows.taggedAgo', { ago: agoOf(tag.taggedAt, now()) })
-												: undefined}
-											onclick={() => {
-												// Pressing a label adds it to the filter rather than
-												// replacing it, so two presses is two labels — the
-												// same thing the picker above does.
-												tagFilter = tagFilter.includes(tag.name)
-													? tagFilter.filter((one) => one !== tag.name)
-													: [...tagFilter.filter((one) => one !== NO_TAG), tag.name];
-												selectedIndex = 0;
-											}}
-										/>
-									{/each}
-								</div>
-							{/if}
-							<Backlinks
-								goals={goalLinks[todo.id]}
-								notebook={notebookId === null && todo.notebookId && todo.notebookTitle
-									? { id: todo.notebookId, title: todo.notebookTitle }
-									: null}
-							/>
-						</div>
-
-						<!--
-							Stacked up the right-hand edge, delete at the bottom: the same
-							column an idea card has, so the two rooms behave alike.
-						-->
-						<div class="row-actions-stack">
-							{#if !isDone(todo)}
-								<!-- One column changes; nothing is copied anywhere. -->
-								<form method="post" action={actions.schedule} use:enhance>
-									<input type="hidden" name="id" value={todo.id} />
-									<input
-										type="hidden"
-										name="scheduledDate"
-										value={todo.scheduledDate ? '' : todayStr()}
-									/>
-									<button
-										type="submit"
-										class="icon-btn"
-										aria-pressed={!!todo.scheduledDate}
-										aria-label={todo.scheduledDate
-											? t('todoRows.putBackOnTheGeneral')
-											: t('todoRows.pullOntoToday')}
-										title={todo.scheduledDate
-											? t('todoRows.putBackOnTheGeneral')
-											: t('todoRows.pullOntoToday')}
-									>
-										<Icon name={todo.scheduledDate ? 'undo' : 'arrow-down'} />
-									</button>
-								</form>
-							{/if}
-							{#if !isDone(todo)}
-								<button
-									onclick={() => startDelegate(todo)}
-									class="icon-btn"
-									title={t('todoRows.delegateToADay')}
-									aria-label={t('todoRows.delegateToADay')}
-								>
-									<Icon name="calendar" />
-								</button>
-							{/if}
-							<button
-								title={t('ui.edit')}
-								aria-label={t('ui.edit')}
-								onclick={() => startEdit(todo)}
-								class="icon-btn"
-							>
-								<Icon name="edit" />
-							</button>
-							<!--
-								Away, and back. Not a confirmation: putting a task away is
-								the reversible one — the button beside it is what deletes,
-								and that one asks.
-							-->
-							<!-- Plain `use:enhance`: the default applies the result and
-							     re-reads the page, which is how the row leaves the list. -->
-							<form method="post" action={actions.archive} use:enhance>
-								<input type="hidden" name="id" value={todo.id} />
-								<input type="hidden" name="away" value={todo.archivedAt ? 'false' : 'true'} />
-								<button
-									type="submit"
-									class="icon-btn"
-									title={todo.archivedAt
-										? t('todoRows.takeItBackOut')
-										: t('finance.ledgers.putItAway')}
-									aria-label={todo.archivedAt
-										? t('todoRows.takeItBackOut')
-										: t('finance.ledgers.putItAway')}
-								>
-									<Icon name={todo.archivedAt ? 'undo' : 'archive'} />
-								</button>
-							</form>
-							{#if confirmingDelete === todo.id}
-								<form
-									id="delete-form-{todo.id}"
-									method="post"
-									action={actions.remove}
-									use:enhance={deferDelete(todo.id, todo.title)}
-								>
-									<input type="hidden" name="id" value={todo.id} />
-									<button type="submit" class="btn btn-sm btn-danger" use:armed>
-										{t('todoRows.confirm')}
-									</button>
-								</form>
-								<button
-									type="button"
-									onclick={() => {
-										confirmingDelete = null;
-									}}
-									class="btn btn-sm"
-								>
-									{t('ui.cancel')}
-								</button>
-							{:else}
-								<button
-									title={t('ui.delete')}
-									aria-label={t('ui.delete')}
-									type="button"
-									onclick={() => {
-										confirmingDelete = todo.id;
-									}}
-									class="icon-btn icon-btn-danger"
-								>
-									<Icon name="trash" />
-								</button>
-							{/if}
-
-							<!--
-								This task's number inside its notebook, quietly, at the end
-								of the row.
-
-								It is what a note points at — `TASK:#4` — and what somebody
-								says out loud when they mean a particular task, so it has to
-								be on the screen: the row id never was, and "the one about
-								the plumber" is the only other way to name one. Bottom right,
-								under the actions, because it is a label rather than a
-								control. A task filed under nothing has no number and shows
-								none.
-							-->
-							{#if todo.notebookSeq !== null}
-								<span class="tabular w-full text-right text-[11px] text-gray-400">
-									#{todo.notebookSeq}
-								</span>
-							{/if}
-						</div>
-					</div>
-				</div>
-			{/each}
-		</div>
-	{/if}
 </div>

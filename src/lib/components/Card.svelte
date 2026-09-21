@@ -31,6 +31,15 @@
 		accent = '',
 		/** Body padding off, for a card whose content is a full-width list. */
 		flush = false,
+		/**
+		 * One pane of a surface that already has the edge.
+		 *
+		 * The card keeps its header, its accent and its body; it gives up its
+		 * own border and shadow, because the thing it is a part of draws them.
+		 * For the halves of a split that reads as one object — see
+		 * `SplitColumns` without `spaced`.
+		 */
+		pane = false,
 		actions,
 		children
 	}: {
@@ -38,6 +47,7 @@
 		description?: string;
 		accent?: string;
 		flush?: boolean;
+		pane?: boolean;
 		id?: string;
 		actions?: Snippet;
 		/** Optional: a card can be its title alone — the family seat's is. */
@@ -63,7 +73,9 @@
 -->
 <section
 	id={id || undefined}
-	class="flex flex-col border border-gray-200 bg-white shadow-card {accent ? 'card-accent' : ''}"
+	class="flex flex-col {pane ? '' : 'border border-gray-200 shadow-card'} bg-white {accent
+		? 'card-accent'
+		: ''}"
 	style="{accent ? `--card-accent: ${accent};` : ''}{id ? ' scroll-margin-top: 1rem;' : ''}"
 >
 	<!--

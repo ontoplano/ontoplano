@@ -143,230 +143,248 @@
 		what went past the edge was simply gone: the Delete button, on a phone,
 		with no way to reach it.
 	-->
-	<SplitColumns
-		bind:rem={panelRem}
-		spaced
-		label={t('notebooks.widenOrNarrowTheList')}
-		onsettle={() => panelForm?.requestSubmit()}
+	<!--
+		The list and what it opens are one object, not two.
+
+		They were two cards on the page's own ground with the backdrop showing
+		between them, which drew them as two views that happen to sit side by
+		side. They are one room: the panel chooses and the column beside it
+		shows, so the divider between them is a seam in one surface — the same
+		shape inventory's places and its things have. `pane` is what takes each
+		card's own edge away; the border and the section's accent belong to both
+		of them, drawn once around the pair rather than once each.
+	-->
+	<div
+		class="card-accent border border-gray-200 bg-white shadow-card"
+		style="--card-accent: {SECTION_COLORS.diary};"
 	>
-		{#snippet left()}
-			<Card accent={SECTION_COLORS.diary} flush>
-				{#if data.notebooks.length === 0}
-					<EmptyState
-						icon="notebook"
-						title={t('notebooks.noNotebooksYet')}
-						description={t('notebooks.startOneForSomethingYou')}
-					>
-						{#snippet action()}
-							<button onclick={openCreate} class="btn btn-primary">
-								<Icon name="plus" />
-								{t('notebooks.newNotebook')}
-							</button>
-						{/snippet}
-					</EmptyState>
-				{:else}
-					<!--
-					Notebooks belong to each other.
-
-					A name with an em dash in it is a place: `Renovation — Kitchen`
-					sits inside `Renovation`, the same reading the gallery gives an
-					album and the same tree inventory draws for a location. Nothing
-					to keep in step and nothing new to learn — renaming one moves it.
-				-->
-					{#snippet notebookRow(node: (typeof data.tree)[number])}
-						<div
-							class="flex items-center gap-3 py-3 pr-4 {node.id === data.selected
-								? 'bg-gray-100'
-								: ''}"
-							style="padding-left: calc(1rem + {node.depth} * 1.6rem)"
+		<SplitColumns
+			bind:rem={panelRem}
+			label={t('notebooks.widenOrNarrowTheList')}
+			onsettle={() => panelForm?.requestSubmit()}
+		>
+			{#snippet left()}
+				<Card flush pane>
+					{#if data.notebooks.length === 0}
+						<EmptyState
+							icon="notebook"
+							title={t('notebooks.noNotebooksYet')}
+							description={t('notebooks.startOneForSomethingYou')}
 						>
-							{#if node.children.length > 0}
-								<button
-									class="icon-btn -ml-1 shrink-0"
-									aria-label={t('notebooks.whatIsInside', {
-										show: opened.has(node.id) ? t('ui.hide') : t('ui.show'),
-										title: node.title
-									})}
-									aria-expanded={opened.has(node.id)}
-									onclick={() => toggle(node.id)}
-								>
-									<Icon name={opened.has(node.id) ? 'chevron-down' : 'chevron-right'} size={14} />
+							{#snippet action()}
+								<button onclick={openCreate} class="btn btn-primary">
+									<Icon name="plus" />
+									{t('notebooks.newNotebook')}
 								</button>
-							{:else}
-								<span class="size-4 shrink-0"></span>
-							{/if}
-
-							<!--
-							Picking a notebook fills the column beside it, which is what a
-							two-column page is for. The full page is reached from that
-							column (Open, above), where the thing it opens is.
-						-->
-							<a
-								href="{resolve('/notebooks')}?notebook={node.id}"
-								class="min-w-0 flex-1 text-sm text-gray-900 hover:underline"
-							>
-								<span class:text-gray-500={node.closedAt}>{leafTitle(node.title)}</span>
-								{#if !node.mine}
-									<span class="eyebrow ml-1 text-gray-500">{node.sharedBy}’s</span>
-								{:else if node.sharedWithFamily}
-									<span class="eyebrow ml-1 text-gray-500">{t('notebooks.family')}</span>
-								{/if}
-								{#if node.closedAt}
-									<span class="eyebrow ml-2 text-gray-500">{t('notebooks.closed')}</span>
-								{/if}
-								<span class="block truncate text-xs text-gray-500">{tally(node)}</span>
-							</a>
-
-							<button
-								onclick={() => openEdit(node)}
-								class="icon-btn"
-								aria-label={t('notebooks.edit', { title: node.title })}
-							>
-								<Icon name="edit" />
-							</button>
-
-							<form
-								method="post"
-								action="?/setClosed"
-								use:enhance={() =>
-									async ({ update }) => {
-										await update({ reset: false });
-									}}
-							>
-								<input type="hidden" name="id" value={node.id} />
-								<input type="hidden" name="closed" value={node.closedAt ? 'false' : 'true'} />
-								<button
-									class="icon-btn"
-									title={node.closedAt ? t('notebooks.reopenIt') : t('notebooks.closeIt')}
-									aria-label="{node.closedAt
-										? t('notebooks.reopenIt')
-										: t('notebooks.closeIt')} {node.title}"
-								>
-									{#if node.closedAt}
-										<Icon name="undo" />
-									{:else}
-										<Icon name="check" />
-									{/if}
-								</button>
-							</form>
-						</div>
-
-						{#if opened.has(node.id)}
-							{#each node.children as child (child.id)}
-								{@render notebookRow(child)}
-							{/each}
-						{/if}
-					{/snippet}
-
-					<div class="flex h-full flex-col divide-y divide-gray-200">
-						{#each data.tree as node (node.id)}
-							{@render notebookRow(node)}
-						{/each}
-
+							{/snippet}
+						</EmptyState>
+					{:else}
 						<!--
-						A notebook of its own, and only when there is something in it. `mt-auto`
-						pins it to the bottom of the card rather than to the end of the list:
-						it is not one more notebook in the same sequence as the others.
-					-->
-						{#if orphaned.length > 0}
-							<a
-								href="{resolve('/notebooks')}?notebook=orphaned"
-								class="mt-auto block px-4 py-3 text-sm hover:underline {showingOrphans
+							Notebooks belong to each other.
+
+							A name with an em dash in it is a place: `Renovation — Kitchen`
+							sits inside `Renovation`, the same reading the gallery gives an
+							album and the same tree inventory draws for a location. Nothing
+							to keep in step and nothing new to learn — renaming one moves it.
+						-->
+						{#snippet notebookRow(node: (typeof data.tree)[number])}
+							<div
+								class="flex items-center gap-3 py-3 pr-4 {node.id === data.selected
 									? 'bg-gray-100'
 									: ''}"
+								style="padding-left: calc(1rem + {node.depth} * 1.6rem)"
 							>
-								<span class="text-gray-900">{t('notebooks.notesWithoutANotebook')}</span>
-								<span class="block truncate text-xs text-gray-500"
-									>{t('notebooks.theirNotebookWas', {
-										length: orphaned.length,
-										notes: orphaned.length === 1 ? 'note' : 'notes'
-									})}</span
+								{#if node.children.length > 0}
+									<button
+										class="icon-btn -ml-1 shrink-0"
+										aria-label={t('notebooks.whatIsInside', {
+											show: opened.has(node.id) ? t('ui.hide') : t('ui.show'),
+											title: node.title
+										})}
+										aria-expanded={opened.has(node.id)}
+										onclick={() => toggle(node.id)}
+									>
+										<Icon name={opened.has(node.id) ? 'chevron-down' : 'chevron-right'} size={14} />
+									</button>
+								{:else}
+									<span class="size-4 shrink-0"></span>
+								{/if}
+
+								<!--
+									Picking a notebook fills the column beside it, which is what a
+									two-column page is for. The full page is reached from that
+									column (Open, above), where the thing it opens is.
+								-->
+								<a
+									href="{resolve('/notebooks')}?notebook={node.id}"
+									class="min-w-0 flex-1 text-sm text-gray-900 hover:underline"
 								>
-							</a>
-						{/if}
-					</div>
-				{/if}
-			</Card>
-		{/snippet}
-
-		<!--
-			The second column is the one you picked, and on a phone there is no
-			second column — there is what is under your thumb. An account with
-			nothing in it showed "no notebooks yet" and then, under it, two more
-			panels saying nothing was chosen.
-		-->
-		{#snippet right()}
-			<div class:hidden={!selected && !showingOrphans} class="contents lg:!block">
-				<Card
-					title={showingOrphans
-						? t('notebooks.notesWithoutANotebook')
-						: (selected?.title ?? t('notebookDetail.nothingChosen'))}
-					description={showingOrphans
-						? t('notebooks.theirNotebookWasDeletedThe')
-						: selected
-							? (selected.description ?? '')
-							: t('notebooks.pickANotebookToSee')}
-					accent={SECTION_COLORS.diary}
-					flush
-				>
-					{#snippet actions()}
-						{#if selected}
-							<!-- The way to the notebook's own page, from the column that is
-					     showing it. The list on the left chooses what appears here. -->
-							<a href={resolve('/notebooks/[id]', { id: String(selected.id) })} class="btn btn-sm">
-								{t('ui.open')}
-								<Icon name="arrow-right" />
-							</a>
-							<!--
-							Writing, where deleting the whole notebook used to be.
-
-							This is a page for browsing notebooks, and the thing most
-							often wanted from one on screen is another note in it —
-							not destroying it, one press away, beside a list you are
-							moving through. Deleting a notebook is on the notebook's
-							own page, which is a place you go to on purpose.
-
-							What it says follows the tab below it: it read "New note"
-							while the Tasks tab was showing, which is a button offering
-							the wrong thing about the list under it.
-						-->
-							{#if newAction?.href}
-								<!-- Already resolved: NotebookDetail builds this with `resolve()`. -->
-								<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-								<a href={newAction.href} class="btn btn-sm btn-primary">
-									<Icon name="plus" />
-									{newAction.label}
+									<span class:text-gray-500={node.closedAt}>{leafTitle(node.title)}</span>
+									{#if !node.mine}
+										<span class="eyebrow ml-1 text-gray-500">{node.sharedBy}’s</span>
+									{:else if node.sharedWithFamily}
+										<span class="eyebrow ml-1 text-gray-500">{t('notebooks.family')}</span>
+									{/if}
+									{#if node.closedAt}
+										<span class="eyebrow ml-2 text-gray-500">{t('notebooks.closed')}</span>
+									{/if}
+									<span class="block truncate text-xs text-gray-500">{tally(node)}</span>
 								</a>
-							{:else if newAction}
-								<button onclick={newAction.run} class="btn btn-sm btn-primary">
-									<Icon name="plus" />
-									{newAction.label}
-								</button>
-							{/if}
-						{/if}
-					{/snippet}
 
-					<NotebookDetail
-						notebook={selected}
-						contents={data.contents}
-						{orphaned}
-						{showingOrphans}
-						allPeople={data.allPeople}
-						categories={data.categories}
-						pickableNotebooks={data.pickableNotebooks}
-						areas={data.areas}
-						workoutMeasures={data.workoutMeasures}
-						slots={data.slots}
-						todos={data.todos}
-						allTodos={data.allTodos}
-						activities={data.activities}
-						bind:composing
-						bind:newAction
-					/>
+								<button
+									onclick={() => openEdit(node)}
+									class="icon-btn"
+									aria-label={t('notebooks.edit', { title: node.title })}
+								>
+									<Icon name="edit" />
+								</button>
+
+								<form
+									method="post"
+									action="?/setClosed"
+									use:enhance={() =>
+										async ({ update }) => {
+											await update({ reset: false });
+										}}
+								>
+									<input type="hidden" name="id" value={node.id} />
+									<input type="hidden" name="closed" value={node.closedAt ? 'false' : 'true'} />
+									<button
+										class="icon-btn"
+										title={node.closedAt ? t('notebooks.reopenIt') : t('notebooks.closeIt')}
+										aria-label="{node.closedAt
+											? t('notebooks.reopenIt')
+											: t('notebooks.closeIt')} {node.title}"
+									>
+										{#if node.closedAt}
+											<Icon name="undo" />
+										{:else}
+											<Icon name="check" />
+										{/if}
+									</button>
+								</form>
+							</div>
+
+							{#if opened.has(node.id)}
+								{#each node.children as child (child.id)}
+									{@render notebookRow(child)}
+								{/each}
+							{/if}
+						{/snippet}
+
+						<div class="flex h-full flex-col divide-y divide-gray-200">
+							{#each data.tree as node (node.id)}
+								{@render notebookRow(node)}
+							{/each}
+
+							<!--
+								A notebook of its own, and only when there is something in it. `mt-auto`
+								pins it to the bottom of the card rather than to the end of the list:
+								it is not one more notebook in the same sequence as the others.
+							-->
+							{#if orphaned.length > 0}
+								<a
+									href="{resolve('/notebooks')}?notebook=orphaned"
+									class="mt-auto block px-4 py-3 text-sm hover:underline {showingOrphans
+										? 'bg-gray-100'
+										: ''}"
+								>
+									<span class="text-gray-900">{t('notebooks.notesWithoutANotebook')}</span>
+									<span class="block truncate text-xs text-gray-500"
+										>{t('notebooks.theirNotebookWas', {
+											length: orphaned.length,
+											notes: orphaned.length === 1 ? 'note' : 'notes'
+										})}</span
+									>
+								</a>
+							{/if}
+						</div>
+					{/if}
 				</Card>
-			</div>
-		{/snippet}
-	</SplitColumns>
+			{/snippet}
+
+			<!--
+				The second column is the one you picked, and on a phone there is no
+				second column — there is what is under your thumb. An account with
+				nothing in it showed "no notebooks yet" and then, under it, two more
+				panels saying nothing was chosen.
+			-->
+			{#snippet right()}
+				<div class:hidden={!selected && !showingOrphans} class="contents lg:!block">
+					<Card
+						title={showingOrphans
+							? t('notebooks.notesWithoutANotebook')
+							: (selected?.title ?? t('notebookDetail.nothingChosen'))}
+						description={showingOrphans
+							? t('notebooks.theirNotebookWasDeletedThe')
+							: selected
+								? (selected.description ?? '')
+								: t('notebooks.pickANotebookToSee')}
+						flush
+						pane
+					>
+						{#snippet actions()}
+							{#if selected}
+								<!-- The way to the notebook's own page, from the column that is
+								     showing it. The list on the left chooses what appears here. -->
+								<a
+									href={resolve('/notebooks/[id]', { id: String(selected.id) })}
+									class="btn btn-sm"
+								>
+									{t('ui.open')}
+									<Icon name="arrow-right" />
+								</a>
+								<!--
+									Writing, where deleting the whole notebook used to be.
+
+									This is a page for browsing notebooks, and the thing most
+									often wanted from one on screen is another note in it —
+									not destroying it, one press away, beside a list you are
+									moving through. Deleting a notebook is on the notebook's
+									own page, which is a place you go to on purpose.
+
+									What it says follows the tab below it: it read "New note"
+									while the Tasks tab was showing, which is a button offering
+									the wrong thing about the list under it.
+								-->
+								{#if newAction?.href}
+									<!-- Already resolved: NotebookDetail builds this with `resolve()`. -->
+									<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+									<a href={newAction.href} class="btn btn-sm btn-primary">
+										<Icon name="plus" />
+										{newAction.label}
+									</a>
+								{:else if newAction}
+									<button onclick={newAction.run} class="btn btn-sm btn-primary">
+										<Icon name="plus" />
+										{newAction.label}
+									</button>
+								{/if}
+							{/if}
+						{/snippet}
+
+						<NotebookDetail
+							notebook={selected}
+							contents={data.contents}
+							{orphaned}
+							{showingOrphans}
+							allPeople={data.allPeople}
+							categories={data.categories}
+							pickableNotebooks={data.pickableNotebooks}
+							areas={data.areas}
+							workoutMeasures={data.workoutMeasures}
+							slots={data.slots}
+							todos={data.todos}
+							allTodos={data.allTodos}
+							activities={data.activities}
+							bind:composing
+							bind:newAction
+						/>
+					</Card>
+				</div>
+			{/snippet}
+		</SplitColumns>
+	</div>
 
 	<form
 		method="POST"
