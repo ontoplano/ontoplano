@@ -37,7 +37,17 @@ export const AUDIT_EVENTS = [
 	'seat_offer_withdrawn',
 	'seat_accepted',
 	'seat_declined',
-	'seat_removed'
+	'seat_removed',
+	/*
+	 * Somebody turned away from the demo, and which of the two reasons it was.
+	 *
+	 * Not about an account — there is none yet — so it is filed against the
+	 * address rather than a person, which is the only thing there is to know.
+	 * It is here because "am I being banned from my own demo" is a question
+	 * the operator has had to answer by guessing, and the digest can answer it
+	 * with a number instead.
+	 */
+	'demo_refused'
 ] as const;
 
 export type AuditEvent = (typeof AUDIT_EVENTS)[number];
