@@ -16,14 +16,14 @@ test('the task list can be searched by what is written on it', async ({ page }) 
 
 	const make = async (title: string, notes = '') => {
 		await page
-			.getByRole('button', { name: /New to-do/ })
+			.getByRole('button', { name: /New task/ })
 			.first()
 			.click();
 		const form = page.getByRole('dialog');
 		await form.locator('[name="heading"]').first().fill(title);
 		if (notes) await form.locator('textarea[name="notes"]').first().fill(notes);
 		await form
-			.getByRole('button', { name: /Create todo/ })
+			.getByRole('button', { name: /Create task/ })
 			.last()
 			.click();
 		await expect(page.getByText(title).first()).toBeVisible({ timeout: 30_000 });

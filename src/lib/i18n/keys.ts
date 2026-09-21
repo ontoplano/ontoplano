@@ -196,6 +196,7 @@ export type MessageKey =
 	| 'app.sundayAndMondayAreBoth'
 	| 'app.supportOntoplano'
 	| 'app.system'
+	| 'app.task'
 	| 'app.tasks'
 	| 'app.tellTheOperator'
 	| 'app.terms'
@@ -639,6 +640,7 @@ export type MessageKey =
 	| 'health.habits.aBadHabitCountsDays'
 	| 'health.habits.aHabitIsSomethingYou'
 	| 'health.habits.addNote'
+	| 'health.habits.collapse'
 	| 'health.habits.confirm'
 	| 'health.habits.createHabit'
 	| 'health.habits.dayStreak'
@@ -648,6 +650,7 @@ export type MessageKey =
 	| 'health.habits.eGGymReading'
 	| 'health.habits.eGSmokingBitingNails'
 	| 'health.habits.editHabit'
+	| 'health.habits.expand'
 	| 'health.habits.inAllScroll'
 	| 'health.habits.kind'
 	| 'health.habits.log'
@@ -2509,6 +2512,7 @@ export type MessageKey =
 	| 'tasks.plan.deleteEveryWeekConfirm'
 	| 'tasks.plan.deleteIt'
 	| 'tasks.plan.deleteSelected'
+	| 'tasks.plan.doneUndo'
 	| 'tasks.plan.dragAcrossAnEmptyStretch'
 	| 'tasks.plan.dragOntoTheGridOr'
 	| 'tasks.plan.dragOntoTheGridTo'
@@ -2552,6 +2556,7 @@ export type MessageKey =
 	| 'tasks.plan.loadIt'
 	| 'tasks.plan.makeItOnceOnly'
 	| 'tasks.plan.makeItRecurrent'
+	| 'tasks.plan.markAsDone'
 	| 'tasks.plan.minutes'
 	| 'tasks.plan.minutesBeforeItStarts'
 	| 'tasks.plan.minutesBeforeItStartsEvery'
@@ -3418,6 +3423,8 @@ export interface MessageValuesFor {
 	'streamChart.inAgainstOutByMonth': { inLabel: string | number; outLabel: string | number };
 	'tags.removeTag': { tag: string | number };
 	'tasks.board.edit': { title: string | number };
+	'tasks.board.markDone': { title: string | number };
+	'tasks.board.markNotDone': { title: string | number };
 	'tasks.board.minutesFull': { count: number };
 	'tasks.board.movingPickAColumn': { title: string | number };
 	'tasks.board.readThisCard': { title: string | number };

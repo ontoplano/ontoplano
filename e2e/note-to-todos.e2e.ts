@@ -114,7 +114,7 @@ test('a to-do takes a picture, and the row draws it', async ({ page }) => {
 	await register(page, testEmail('todo-picture'));
 	await visit(page, '/tasks/todo');
 
-	await page.getByRole('button', { name: 'New to-do' }).click();
+	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('#todo-form [name="heading"]').fill('fix the header');
 
 	// The notes box and its attachments live behind the disclosure on this form.
@@ -127,7 +127,7 @@ test('a to-do takes a picture, and the row draws it', async ({ page }) => {
 		{ timeout: 20000 }
 	);
 
-	await page.getByRole('button', { name: 'Create todo' }).click();
+	await page.getByRole('button', { name: 'Create task' }).click();
 	await expect(page.getByText('fix the header').first()).toBeVisible();
 
 	// Drawn, not printed: no markdown left lying across the row.

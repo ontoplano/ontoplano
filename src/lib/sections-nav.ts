@@ -68,6 +68,17 @@ export type NavPlace = {
 	hide?: HideableSection;
 };
 
+/*
+ * The order the rooms come in, as Estevão asked for it: the week first, then
+ * what is written down, then the body, then the things in the house, then the
+ * money, then what it is all for, then the pictures, then what is about to go
+ * off. It was the order they happened to be written in.
+ *
+ * This is only the *default*: an account can drag them into any order it
+ * likes and that choice is stored — `applyOrder` keeps anything stored and
+ * puts a room it has never heard of at the end, so changing this list moves
+ * nobody who has already chosen.
+ */
 export const NAV_PLACES: NavPlace[] = [
 	{
 		key: 'planner',
@@ -75,14 +86,6 @@ export const NAV_PLACES: NavPlace[] = [
 		section: 'planner',
 		icon: 'planner',
 		href: '/tasks/plan'
-	},
-	{
-		key: 'goals',
-		name: 'sections.goals.label',
-		section: 'goals',
-		icon: 'goals',
-		href: '/goals',
-		hide: 'goals'
 	},
 	{
 		key: 'diary',
@@ -101,6 +104,14 @@ export const NAV_PLACES: NavPlace[] = [
 		hide: 'health'
 	},
 	{
+		key: 'inventory',
+		name: 'sections.inventory.label',
+		section: 'inventory',
+		icon: 'shopping',
+		href: '/inventory',
+		hide: 'inventory'
+	},
+	{
 		key: 'finance',
 		name: 'sections.finance.label',
 		section: 'finance',
@@ -109,20 +120,20 @@ export const NAV_PLACES: NavPlace[] = [
 		hide: 'finance'
 	},
 	{
+		key: 'goals',
+		name: 'sections.goals.label',
+		section: 'goals',
+		icon: 'goals',
+		href: '/goals',
+		hide: 'goals'
+	},
+	{
 		key: 'media',
 		name: 'sections.media.label',
 		section: 'media',
 		icon: 'image',
 		href: '/media/audios',
 		hide: 'media'
-	},
-	{
-		key: 'inventory',
-		name: 'sections.inventory.label',
-		section: 'inventory',
-		icon: 'shopping',
-		href: '/inventory',
-		hide: 'inventory'
 	},
 	// Everything with a time on it, in one place. It has no colour of its own:
 	// a reminder belongs to whatever it is about, so the room borrows the

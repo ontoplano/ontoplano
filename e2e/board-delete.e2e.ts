@@ -8,13 +8,13 @@ test('the delete in the board editor deletes', async ({ page }) => {
 
 	await visit(page, '/tasks/todo');
 	await page
-		.getByRole('button', { name: /New to-do/ })
+		.getByRole('button', { name: /New task/ })
 		.first()
 		.click();
 	const form = page.getByRole('dialog');
 	await form.locator('[name="heading"]').first().fill('bin this one');
 	await form
-		.getByRole('button', { name: /Create todo|Create/ })
+		.getByRole('button', { name: /Create task|Create/ })
 		.last()
 		.click();
 	await expect(page.getByText('bin this one').first()).toBeVisible({ timeout: 30_000 });

@@ -65,9 +65,9 @@ test('an export restores into another account, and only the unportable is missin
 	await register(page, testEmail('move-from'));
 
 	await visit(page, '/tasks/todo');
-	await page.getByRole('button', { name: 'New to-do' }).click();
+	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('[name="heading"]').first().fill('water the tomatoes');
-	await page.getByRole('button', { name: 'Create todo' }).click();
+	await page.getByRole('button', { name: 'Create task' }).click();
 	await expect(page.getByText('water the tomatoes').first()).toBeVisible({ timeout: 30_000 });
 
 	await visit(page, '/media/gallery');

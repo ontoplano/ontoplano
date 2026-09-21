@@ -49,14 +49,14 @@ test('pressing a task reads it, and does not open the form that edits it', async
 	await register(page, testEmail('todo-unfold'));
 	await visit(page, '/tasks/todo');
 
-	await page.getByRole('button', { name: 'New to-do' }).click();
+	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('#todo-form [name="heading"]').fill('ring the plumber');
 	const more = page.getByRole('button', { name: /Category, notebook|Urgency, interest/ }).first();
 	if (await more.count()) await more.click();
 	await page
 		.locator('#todo-form textarea[name="notes"]')
 		.fill('the boiler makes a noise after 9pm\nhis number is on the fridge');
-	await page.getByRole('button', { name: 'Create todo' }).click();
+	await page.getByRole('button', { name: 'Create task' }).click();
 
 	const title = page.getByRole('button', { name: 'ring the plumber' });
 	const notes = page.getByText(/the boiler makes a noise/);

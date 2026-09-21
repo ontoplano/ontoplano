@@ -3678,7 +3678,7 @@
 									? 'border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100'
 									: 'border-blue-700 bg-blue-700 text-white hover:bg-blue-800'}"
 							>
-								{ticked ? `Done ✓ — undo` : `Mark as done`}
+								{ticked ? t('tasks.plan.doneUndo') : t('tasks.plan.markAsDone')}
 							</button>
 						</form>
 					{/if}

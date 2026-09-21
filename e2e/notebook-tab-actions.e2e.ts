@@ -58,7 +58,7 @@ test('the notebook keeps its own primary verb while Tasks is showing', async ({ 
 	await page.getByRole('button', { name: /^Tasks \d/ }).click();
 	await expect(page.getByRole('button', { name: /New notebook/ })).toBeVisible();
 	// …and not a second way to do what the header button beside it already does.
-	await expect(page.getByRole('button', { name: /New to-do/ })).toHaveCount(0);
+	await expect(page.getByRole('button', { name: /New task/ })).toHaveCount(0);
 });
 
 /**

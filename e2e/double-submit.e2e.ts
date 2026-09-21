@@ -14,13 +14,13 @@ test('a double press on Create makes one task', async ({ page }) => {
 	await visit(page, '/tasks/todo');
 
 	await page
-		.getByRole('button', { name: /New to-do/ })
+		.getByRole('button', { name: /New task/ })
 		.first()
 		.click();
 	const form = page.getByRole('dialog');
 	await form.locator('[name="heading"]').first().fill('ring the plumber');
 
-	const create = form.getByRole('button', { name: /Create todo/ });
+	const create = form.getByRole('button', { name: /Create task/ });
 	// Two presses as fast as the browser will deliver them.
 	await create.click({ noWaitAfter: true });
 	await create.click({ noWaitAfter: true, force: true }).catch(() => {});

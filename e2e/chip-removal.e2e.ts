@@ -12,7 +12,7 @@ import { visit } from './helpers/visit';
 async function openTagBox(page: import('@playwright/test').Page, tags: string) {
 	await visit(page, '/tasks/todo');
 	await page
-		.getByRole('button', { name: /New to-do/ })
+		.getByRole('button', { name: /New task/ })
 		.first()
 		.click();
 	const form = page.getByRole('dialog');

@@ -14,7 +14,7 @@ test('pressing a task’s description unfolds it', async ({ page }) => {
 	await visit(page, '/tasks/todo');
 
 	await page
-		.getByRole('button', { name: /New to-do/ })
+		.getByRole('button', { name: /New task/ })
 		.first()
 		.click();
 	const form = page.getByRole('dialog');
@@ -24,7 +24,7 @@ test('pressing a task’s description unfolds it', async ({ page }) => {
 		.first()
 		.fill('the boiler makes a noise after nine, and his number is on the fridge');
 	await form
-		.getByRole('button', { name: /Create todo/ })
+		.getByRole('button', { name: /Create task/ })
 		.last()
 		.click();
 	await expect(page.getByText('ring the plumber').first()).toBeVisible({ timeout: 30_000 });

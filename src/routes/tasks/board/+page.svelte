@@ -319,7 +319,6 @@
 	let openCards = $state(new SvelteSet<string>());
 
 	function readCard(card: Card) {
-		console.log('READ CARD', card.title);
 		if (openCards.has(card.uid)) openCards.delete(card.uid);
 		else openCards.add(card.uid);
 	}
@@ -1193,11 +1192,11 @@
 											}}
 											class="-m-1 flex shrink-0 items-center justify-center p-1 pointer-coarse:w-11"
 											title={shownStatus(card) === 'done'
-												? t('tasks.board.markNotDone')
-												: t('tasks.board.markDone')}
+												? t('tasks.board.markNotDone', { title: card.title })
+												: t('tasks.board.markDone', { title: card.title })}
 											aria-label={shownStatus(card) === 'done'
-												? `Mark ${card.title} not done`
-												: `Mark ${card.title} done`}
+												? t('tasks.board.markNotDone', { title: card.title })
+												: t('tasks.board.markDone', { title: card.title })}
 										>
 											<span
 												class="flex h-4 w-4 items-center justify-center border border-gray-400 {shownStatus(

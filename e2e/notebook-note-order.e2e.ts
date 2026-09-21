@@ -105,7 +105,7 @@ test('a list emptied by its own filters says so rather than saying there is noth
 	// The notebook draws its own New button, and it says what the tab is about.
 	await page.getByRole('button', { name: 'New task', exact: true }).click();
 	await page.locator('#todo-form [name="heading"]').fill('measure the wall');
-	await page.getByRole('button', { name: 'Create todo' }).click();
+	await page.getByRole('button', { name: 'Create task' }).click();
 	await expect(page.getByText('measure the wall').first()).toBeVisible();
 
 	await page.getByRole('button', { name: 'Mark complete' }).first().click();

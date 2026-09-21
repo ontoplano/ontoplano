@@ -16,9 +16,9 @@ test('making a task says so, and offers a way into it', async ({ page }) => {
 	await register(page, testEmail('toast-made'));
 	await visit(page, '/tasks/todo');
 
-	await page.getByRole('button', { name: 'New to-do' }).click();
+	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('[name="heading"]').first().fill('Ring the plumber');
-	await page.getByRole('button', { name: 'Create todo' }).click();
+	await page.getByRole('button', { name: 'Create task' }).click();
 
 	const toast = page.locator('[role="status"]').filter({ hasText: 'Task added' });
 	await expect(toast).toBeVisible({ timeout: 30_000 });
@@ -41,9 +41,9 @@ test('saving a change says so, with nothing to press', async ({ page }) => {
 	await register(page, testEmail('toast-saved'));
 	await visit(page, '/tasks/todo');
 
-	await page.getByRole('button', { name: 'New to-do' }).click();
+	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('[name="heading"]').first().fill('Book the MOT');
-	await page.getByRole('button', { name: 'Create todo' }).click();
+	await page.getByRole('button', { name: 'Create task' }).click();
 	await expect(page.getByText('Book the MOT').first()).toBeVisible({ timeout: 30_000 });
 
 	// Edit it, and the toast for a change offers nothing — the change is on
@@ -63,9 +63,9 @@ test('deleting a task holds the request open, and the way back works', async ({ 
 	await register(page, testEmail('toast-deleted'));
 	await visit(page, '/tasks/todo');
 
-	await page.getByRole('button', { name: 'New to-do' }).click();
+	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('[name="heading"]').first().fill('Cancel the gym');
-	await page.getByRole('button', { name: 'Create todo' }).click();
+	await page.getByRole('button', { name: 'Create task' }).click();
 	await expect(page.getByText('Cancel the gym').first()).toBeVisible({ timeout: 30_000 });
 
 	// Delete is armed by a first press and taken as meant by the second.
@@ -103,9 +103,9 @@ test('the edit form can delete the task it is editing', async ({ page }) => {
 	await register(page, testEmail('edit-delete'));
 	await visit(page, '/tasks/todo');
 
-	await page.getByRole('button', { name: 'New to-do' }).click();
+	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('[name="heading"]').first().fill('Renew the domain');
-	await page.getByRole('button', { name: 'Create todo' }).click();
+	await page.getByRole('button', { name: 'Create task' }).click();
 	await expect(page.getByText('Renew the domain').first()).toBeVisible({ timeout: 30_000 });
 
 	await page.getByRole('button', { name: 'Edit', exact: true }).first().click();

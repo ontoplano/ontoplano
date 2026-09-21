@@ -130,11 +130,11 @@ test('press, flick and release writes the thing', async ({ page }) => {
 	await page.mouse.move(pie.x + 70, pie.y - 40, { steps: 8 });
 	await page.mouse.up();
 
-	await expect(page.getByRole('heading', { name: /new to-do/i })).toBeVisible();
+	await expect(page.getByRole('heading', { name: /new task/i })).toBeVisible();
 	await page.locator('[name=heading]').fill('buy a bigger pan');
 	await page.getByRole('button', { name: 'Save' }).click();
 
-	await expect(page.getByRole('heading', { name: /new to-do/i })).toBeHidden();
+	await expect(page.getByRole('heading', { name: /new task/i })).toBeHidden();
 
 	// And it is really there, in the list that owns it.
 	await visit(page, '/tasks/todo');
@@ -383,11 +383,11 @@ test('the pie says it too, from a page that is not the dashboard', async ({ page
 
 	await (await trigger(page)).click();
 	// The way a person finds a wedge: point at each until the HUD says its name.
-	expect(await pickWedge(page, 'To-do'), 'no wedge announced itself as To-do').toBe(true);
+	expect(await pickWedge(page, 'Task'), 'no wedge announced itself as Task').toBe(true);
 
 	// Generous: the wheel closes, the dialogue mounts and the options behind it
 	// are fetched, and under a full parallel run that is not instant.
-	await expect(page.getByRole('heading', { name: /new to-do/i })).toBeVisible({
+	await expect(page.getByRole('heading', { name: /new task/i })).toBeVisible({
 		timeout: 30_000
 	});
 	await page.locator('[name=heading]').fill('ring the dentist');

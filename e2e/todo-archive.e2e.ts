@@ -12,9 +12,9 @@ import { visit } from './helpers/visit';
  * looking for rather than the absence of a filter.
  */
 async function addTodo(page: import('@playwright/test').Page, title: string) {
-	await page.getByRole('button', { name: 'New to-do' }).click();
+	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('[name="heading"]').first().fill(title);
-	await page.getByRole('button', { name: 'Create todo' }).click();
+	await page.getByRole('button', { name: 'Create task' }).click();
 	await expect(page.getByText(title).first()).toBeVisible();
 }
 

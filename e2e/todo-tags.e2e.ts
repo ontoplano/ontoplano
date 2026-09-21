@@ -12,14 +12,14 @@ import { visit } from './helpers/visit';
  * on, and that the list can be narrowed to one.
  */
 async function newTodo(page: import('@playwright/test').Page, title: string, tags: string) {
-	await page.getByRole('button', { name: 'New to-do' }).click();
+	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('#todo-form [name="heading"]').fill(title);
 	const more = page.getByRole('button', { name: /Category, notebook/ }).first();
 	if (await more.count()) await more.click();
 	// The visible box takes the words; `[name="tags"]` is the hidden field the
 	// form posts, assembled from the chips. See `TagInput`.
 	await page.locator('#todo-form input[role="combobox"]').fill(tags);
-	await page.getByRole('button', { name: 'Create todo' }).click();
+	await page.getByRole('button', { name: 'Create task' }).click();
 	await expect(page.getByText(title).first()).toBeVisible();
 }
 

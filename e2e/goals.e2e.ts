@@ -23,13 +23,13 @@ test('re-saving the choosing modal keeps the done todo linked', async ({ page })
 		const field = page.locator('[name="heading"]');
 		await expect(async () => {
 			await page
-				.getByRole('button', { name: /New to-do/ })
+				.getByRole('button', { name: /New task/ })
 				.first()
 				.click();
 			await expect(field).toBeVisible({ timeout: 2000 });
 		}).toPass({ timeout: 15000 });
 		await field.fill(title);
-		await page.getByRole('button', { name: 'Create todo' }).click();
+		await page.getByRole('button', { name: 'Create task' }).click();
 		await page.waitForTimeout(500);
 	}
 
@@ -114,13 +114,13 @@ test('re-saving the choosing modal keeps the done todo linked', async ({ page })
 		const field = page.locator('[name="heading"]');
 		await expect(async () => {
 			await page
-				.getByRole('button', { name: /New to-do/ })
+				.getByRole('button', { name: /New task/ })
 				.first()
 				.click();
 			await expect(field).toBeVisible({ timeout: 2000 });
 		}).toPass({ timeout: 15000 });
 		await field.fill('third chore');
-		await page.getByRole('button', { name: 'Create todo' }).click();
+		await page.getByRole('button', { name: 'Create task' }).click();
 		await page.waitForTimeout(500);
 	}
 	// Scoped to its own row: the list's order is not this test's to assume,
