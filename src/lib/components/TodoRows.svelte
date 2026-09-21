@@ -793,7 +793,17 @@
 					with three hundred tasks is actually asking. It narrows as you
 					type and the count beside it says what is left.
 				-->
-				<label class="min-w-32 flex-1 sm:max-w-56">
+				<!--
+					A row of its own on a phone.
+
+					Seven controls do not fit across 390px and the toolbar wrapped to
+					three rows, which is the thing the note above it says it exists to
+					prevent. The search box is the one you type into rather than
+					press, so it takes the first line whole and the six small controls
+					wrap under it — two rows instead of three, and a target the width
+					of the screen for the one that wants a keyboard.
+				-->
+				<label class="order-first w-full min-w-32 sm:order-none sm:w-auto sm:max-w-56 sm:flex-1">
 					<span class="sr-only">{t('todoRows.searchTheseTasks')}</span>
 					<input
 						type="search"
