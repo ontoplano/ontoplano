@@ -58,10 +58,41 @@
 	/** Which pane the narrow layout is showing. Ignored once there is room for both. */
 	let showing = $state<'write' | 'preview'>('write');
 
-	/* What the preview is currently drawing — `value` once the typing settles. */
+	/**
+	 * What is in the box, which is not the same as what was passed in.
+	 *
+	 * Most callers hand `value` over one-way — `value={entry.content}` — and
+	 * the box writes what is typed back into its own copy of the prop. Any
+	 * re-render of the caller then re-applies the original string, and what
+	 * somebody typed since the last render vanishes until the next keystroke
+	 * puts it back. That is the flicker: "characters getting deleted… they
+	 * FLICK and disappear, like shit I just wrote in the last 0.5s", in the
+	 * forms that use this box and not in the ones that do not.
+	 *
+	 * So the typing lives here, seeded from the prop and re-seeded only when
+	 * the caller hands over a genuinely different thing — a second note opened
+	 * in the same modal. The same shape `TagInput` uses, for the same reason,
+	 * and `seededFrom` is a plain variable deliberately: it is a marker for
+	 * this effect rather than something anything renders.
+	 */
+	let text = $state(value);
+	let seededFrom = value;
+	$effect(() => {
+		const incoming = value;
+		if (incoming === seededFrom) return;
+		seededFrom = incoming;
+		text = incoming;
+	});
+
+	/* And what is typed goes back out, for a caller that did bind. */
+	$effect(() => {
+		value = text;
+	});
+
+	/* What the preview is currently drawing — the text once the typing settles. */
 	let settled = $state(value);
 	$effect(() => {
-		const next = value;
+		const next = text;
 		const timer = setTimeout(() => (settled = next), PREVIEW_SETTLE_MS);
 		return () => clearTimeout(timer);
 	});
@@ -133,7 +164,7 @@
 			aria-hidden={showing === 'write' ? undefined : 'true'}
 			inert={showing === 'write' ? undefined : true}
 		>
-			<TextBox bind:value bind:element {rows} {...rest} />
+			<TextBox bind:value={text} bind:element {rows} {...rest} />
 		</div>
 
 		<div

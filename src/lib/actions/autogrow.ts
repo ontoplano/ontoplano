@@ -53,13 +53,31 @@ export function autogrow(node: HTMLTextAreaElement, maxHeight = 480) {
 			return;
 		}
 
+		/*
+		 * Nothing to do when the box already fits what is in it.
+		 *
+		 * `content > current` is false both when the text shrank *and* when it
+		 * did not change height at all — which is almost every keystroke. The
+		 * collapse below was therefore running on each one, and a box that is
+		 * full and scrolled loses its own `scrollTop` to `height: auto` for a
+		 * frame: the line being typed jumps away and comes back, which is the
+		 * "characters FLICK and disappear" nobody could catch in a
+		 * screenshot. Measuring only when the content actually got shorter
+		 * leaves ordinary typing alone.
+		 */
+		if (content === current) return;
+
 		// Shrinking is the one case that has to ask, because a box taller than
-		// its content reports its own height. Put the scrollers back afterwards.
+		// its content reports its own height. Put the scrollers back
+		// afterwards — this box's own included, which `height: auto` clamps
+		// exactly like it clamps an ancestor's.
 		const kept = scrollers();
+		const mine = node.scrollTop;
 		node.style.height = 'auto';
 		const wanted = Math.min(node.scrollHeight, maxHeight);
 		node.style.overflowY = node.scrollHeight > maxHeight ? 'auto' : 'hidden';
 		node.style.height = `${wanted}px`;
+		node.scrollTop = mine;
 		restore(kept);
 	};
 

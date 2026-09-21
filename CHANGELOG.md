@@ -20,6 +20,10 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **Two causes of text flickering while it is typed.** The markdown box kept
+  what was typed in its caller's prop, so any reload of the page put the
+  stored text back until the next keystroke; and a full box re-measured itself
+  on every keystroke, which costs a scrolled box its place for a frame.
 - **Deleting a block from the board actually removes it from the day.** It
   deleted the generated occurrence, which the next page load generated straight
   back — so the press closed the dialog and the card was still there. A
