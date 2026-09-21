@@ -23,6 +23,11 @@
 import { localDateOf, type Ctx } from '$lib/services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 import type { Ref } from './refs.js';
+import type { Confinement } from './confinement.js';
+import { mayReadFile } from '$lib/services/media-permission.js';
+import { pictureReferrers, recordingReferrers } from '$lib/services/media-referrers.js';
+import { read as readPicture } from '$lib/services/media.js';
+import { read as readRecording } from '$lib/services/audio.js';
 
 import {
 	archiveEntry,
@@ -209,6 +214,17 @@ export type Tool = {
 	title: string;
 	description: string;
 	scope: Scope;
+	/**
+	 * Scopes any one of which is enough, instead of `scope` alone.
+	 *
+	 * One tool needs this and it is not an exception being carved out: a file
+	 * answers to whatever refers to it, so a picture in a note wants
+	 * `notes:read` and the same tool fetching one off a task wants
+	 * `tasks:read`. Demanding a single scope would hide `media` from a key
+	 * that is entitled to exactly the files it is asking for. `scope` stays
+	 * the one the manifest records and the one a refusal names first.
+	 */
+	anyScope?: Scope[];
 	/** Whether calling it changes anything, which is what a client warns about. */
 	writes: boolean;
 	/**
@@ -259,7 +275,18 @@ export type Tool = {
 	 * there, and the protocol layer answers `before: null` for it.
 	 */
 	subject?: (ctx: Ctx, args: Record<string, unknown>) => unknown;
-	run: (ctx: Ctx, args: Record<string, unknown>) => unknown;
+	/**
+	 * `caller` is the connection's own grants, for the one rule that cannot be
+	 * decided from the arguments: which files this key may see. Every other
+	 * tool ignores it — the scopes were already checked before `run`.
+	 */
+	run: (ctx: Ctx, args: Record<string, unknown>, caller?: ToolCaller) => unknown;
+};
+
+/** What a tool may know about who is calling it. */
+export type ToolCaller = {
+	scopes: readonly string[];
+	confinement?: Confinement | null;
 };
 
 const object = (properties: Record<string, unknown>, required: string[] = []): Shape => ({
@@ -961,6 +988,74 @@ export const TOOLS: Tool[] = [
 				label: g.label,
 				hits: g.hits
 			}))
+	},
+
+	/*
+	 * A picture or a recording, to whoever may read the thing it is in.
+	 *
+	 * 0.181.0 made a file reachable over HTTP with a bearer key — and an
+	 * assistant connected over MCP never holds one: its client keeps the
+	 * credential and hands out none, so the capability worked for a script
+	 * with a pasted key and not for the client it was built for. A screenshot
+	 * dropped into a todo was a thing the model could see the link to and not
+	 * the picture.
+	 *
+	 * The permission is unchanged, and is the same function the HTTP route
+	 * asks (`mayReadFile`): a file answers to whatever refers to it — one in a
+	 * note wants `notes:read`, a face `people:read`, one on a task
+	 * `tasks:read` — and a file nothing refers to is reachable by nobody. So
+	 * this is a second door onto the rule, not a second rule, and no new
+	 * grant.
+	 */
+	{
+		name: 'media',
+		title: 'A picture or a recording',
+		description:
+			'The bytes of a file this key may see, given the link as it appears in the writing \u2014 `/media/12` for a picture, `/media/audio/12` for a recording. A file answers to whatever refers to it, so the grant that lets you read the note lets you see the picture in it; one nothing refers to is reachable by nobody.',
+		scope: 'notes:read',
+		anyScope: ['notes:read', 'ideas:read', 'tasks:read', 'people:read', 'kitchen:read'],
+		writes: false,
+		input: object(
+			{
+				path: text(
+					'The link, exactly as the text writes it: `/media/12`, or `/media/audio/12` for a recording. The number alone is taken as a picture.'
+				)
+			},
+			['path']
+		),
+		run: (ctx, args, caller) => {
+			/*
+			 * The link rather than a number and a kind.
+			 *
+			 * What a model is looking at is `![shot](/media/48)` in a note, and
+			 * handing that back is one step with nothing to get wrong. Two
+			 * arguments would also make "which id is a recording" a question
+			 * the caller has to answer about a number it has never seen.
+			 */
+			const said = String(args.path ?? '').trim();
+			const match = /^(?:\/?media\/)?(audio\/)?(\d+)$/.exec(said.replace(/^\//, ''));
+			if (!match) throw new ValidationError('path is a link like /media/12 or /media/audio/12.');
+
+			const recording = Boolean(match[1]);
+			const id = Number(match[2]);
+
+			const referrers = recording ? recordingReferrers(ctx, id) : pictureReferrers(ctx, id);
+			/*
+			 * The same answer for a file that is not there and one this key may
+			 * not see: these are small integers, and telling the two apart is
+			 * arithmetic anybody could do.
+			 */
+			if (!caller || !mayReadFile(referrers, caller.scopes, caller.confinement ?? null))
+				throw new NotFoundError('No such file, or nothing you may read refers to it.');
+
+			const file = recording ? readRecording(ctx, id) : readPicture(ctx, id);
+			return {
+				media: {
+					mime: file.mime,
+					base64: Buffer.from(file.bytes).toString('base64')
+				}
+			};
+		}
 	},
 
 	// ── The todo list ────────────────────────────────────────────────────────

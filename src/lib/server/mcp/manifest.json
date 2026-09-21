@@ -1537,6 +1537,17 @@
 			}
 		}
 	},
+	"media": {
+		"scope": "notes:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"path": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
 	"month_bills": {
 		"scope": "bills:read",
 		"writes": false,

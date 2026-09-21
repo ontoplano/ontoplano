@@ -43,7 +43,7 @@ shows up here on the next build.
 | [`errors`](#errors)                              | Typed errors thrown by service functions.                                                                                                                                                                                                                            |
 | [`family-invite`](#family-invite)                | Inviting somebody to the plan, and the account that makes for them.                                                                                                                                                                                                  |
 | [`gallery`](#gallery)                            | Albums: lists of references over the one media table.                                                                                                                                                                                                                |
-| [`goal-actions`](#goal-actions)                  | Making a goal, from wherever a goal is made.                                                                                                                                                                                                                         |
+| [`goal-actions`](#goal-actions)                  | Everything done to a goal, from wherever a goal is shown.                                                                                                                                                                                                            |
 | [`goals`](#goals)                                | Goals, and the progress that makes them more than a wish list.                                                                                                                                                                                                       |
 | [`habits`](#habits)                              | Habits are things to do or to avoid, logged one day at a time.                                                                                                                                                                                                       |
 | [`health`](#health)                              | Can this process actually reach the database?                                                                                                                                                                                                                        |
@@ -59,6 +59,7 @@ shows up here on the next build.
 | [`mail-log`](#mail-log)                          | Mail that must not fail silently.                                                                                                                                                                                                                                    |
 | [`media-kind`](#media-kind)                      | Which kind of thing a `media` row is.                                                                                                                                                                                                                                |
 | [`media-limits`](#media-limits)                  | What an instance allows a picture to be.                                                                                                                                                                                                                             |
+| [`media-permission`](#media-permission)          | Whether a caller may see a file, decided by what the file is used for.                                                                                                                                                                                               |
 | [`media-referrers`](#media-referrers)            | What points at a picture or a recording, and where it lives.                                                                                                                                                                                                         |
 | [`media`](#media)                                | Pictures: what is accepted, where they go, and who may see one.                                                                                                                                                                                                      |
 | [`meta`](#meta)                                  | User-defined key/value metadata attached to planner slots.                                                                                                                                                                                                           |
@@ -1702,7 +1703,7 @@ and the gallery never asked.
 
 ## goal-actions
 
-Making a goal, from wherever a goal is made.
+Everything done to a goal, from wherever a goal is shown.
 
 It used to be one action on the goals page, which is why a notebook's "New
 goal" was a link that took you out of the notebook you were looking at —
@@ -1711,7 +1712,14 @@ header had always stayed put, so the same press behaved two different ways
 depending on which tab was showing.
 
 The same arrangement `todo-actions.ts` has, and for the same reason: one
-handler, used by every route that offers the verb.
+handler, used by every route that offers the verb. Making was the first one
+to move; the rest followed when a notebook's Goals tab turned out to be a
+list you could look at and nothing else — no edit, no delete, no way to say
+a goal was missed — because the verbs lived on one page rather than beside
+the thing they act on.
+
+Which name each route answers to is `$lib/goal-action-names`, because a
+notebook page already uses `update` and `delete` for the notebook itself.
 
 ### Functions
 
@@ -2703,6 +2711,48 @@ the services ask through `host.mediaLimits()` rather than either directly.
 ### Types
 
 - `MediaLimits`
+
+## media-permission
+
+Whether a caller may see a file, decided by what the file is used for.
+
+The rule, and the reason it is this rule rather than a new grant: a picture
+or a recording is never loose. It is in a note, or it is somebody's face, or
+it is one of a recipe's photographs — and a person who has said "you may
+read my notebooks" has already said what should happen to the pictures in
+them. Inventing `media:read` would ask them the same question twice and let
+the two answers disagree.
+
+So the permission a file needs is the permission its referrer needs, and a
+file nothing refers to is reachable by nobody. One readable referrer is
+enough: a picture in a note you may read is a picture you may see, whatever
+else it also sits in.
+
+## What is deliberately not reachable
+
+A picture that only lives in a gallery album. There is no scope for the
+gallery — the room has never had one — and this is not the change that
+invents it. `album` is listed below with no scope against it so that the
+omission is a decision somebody can read rather than a kind nobody thought
+of.
+
+## Why it lives here
+
+Two doors ask it: an HTTP request carrying a bearer key, and an assistant
+over MCP, which never holds a raw key at all — its client keeps the
+credential and hands out none. This module imports nothing but types, so the
+MCP tool table can ask it without dragging the token service, the database
+and the billing provider into a cycle with itself. It did, once, and the
+dev server died on `Cannot access '__vite_ssr_import_10__' before
+initialization`.
+
+### Functions
+
+#### `mayReadFile(referrers, scopes, confined)`
+
+### Types
+
+- `FileConfinement` — A key pinned to one thing, as much of it as this rule needs.
 
 ## media-referrers
 

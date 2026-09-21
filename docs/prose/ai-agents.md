@@ -165,14 +165,25 @@ is what alt-dragging it in the app does too.
 
 A note, a task and an idea can all hold a picture or a recording, and what a
 tool hands back is the markdown that refers to it: `![the wall](/media/31)`,
-`[said](/media/audio/44)`. No tool returns the file itself — fetch it over
-HTTP with the same key, and the permission is the one that reads the thing it
-is in:
+`[said](/media/audio/44)`. The **`media`** tool turns that link into the file
+itself — hand it the link exactly as the writing writes it, and the picture
+comes back as a picture:
+
+```json
+{ "name": "media", "arguments": { "path": "/media/31" } }
+```
+
+`/media/audio/44` for a recording. The same file is also an ordinary HTTP
+request, for a script that holds the key itself rather than speaking the
+protocol:
 
 ```sh
 curl -H "Authorization: Bearer $ONTOPLANO_KEY" \
   https://your-instance/media/31 --output picture.png
 ```
+
+Both doors ask the same question, and the answer is the permission that reads
+the thing the file is in.
 
 A picture in a note wants `notes:read`, one on a task `tasks:read`, a face
 `people:read`, a recipe photograph `kitchen:read`. There is no separate media

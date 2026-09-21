@@ -35,7 +35,14 @@ question twice, and two answers that can disagree — a note readable but its
 photographs not, for no reason anybody chose. The grant a file needs is the
 grant its referrer needs.
 
-So an assistant fetches one the way a browser does, with its own key:
+An assistant speaking MCP asks for one with the **`media`** tool, handing it
+the link the writing already gave it:
+
+```json
+{ "name": "media", "arguments": { "path": "/media/31" } }
+```
+
+A script holding the key itself fetches the same file the way a browser does:
 
 ```sh
 curl -H "Authorization: Bearer $ONTOPLANO_KEY" \
@@ -45,9 +52,9 @@ curl -H "Authorization: Bearer $ONTOPLANO_KEY" \
   https://your-instance/media/audio/44 --output recording.webm
 ```
 
-The ids are the ones written into the markdown — `![a photo](/media/31)` and
-`[said](/media/audio/44)` — so a tool that reads a note hands over everything
-needed to fetch what is in it.
+Either way the link is the one written into the markdown — `![a photo](/media/31)`
+and `[said](/media/audio/44)` — so a tool that reads a note hands over
+everything needed to reach what is in it.
 
 A file the key may not reach answers **404**, the same as one that does not
 exist. That is on purpose: a different answer for "exists but not yours" is a
@@ -104,7 +111,7 @@ an assistant that cannot do what you asked.
 | `locations:read`   | See where your things live, and what is in each room and drawer                                                                                                                                                                    | `where_is`, `locations`                                                                                                                                                                                                                                                                                                                                                 |
 | `locations:write`  | Add and change rooms and drawers, and say where a thing lives                                                                                                                                                                      | `add_location`, `change_location`, `remove_location`, `put_item`                                                                                                                                                                                                                                                                                                        |
 | `calendar:read`    | Show your plan in a calendar app. It can see the plan and change nothing                                                                                                                                                           | —                                                                                                                                                                                                                                                                                                                                                                       |
-| `notes:read`       | Read your diary and your notebooks, and the pictures and recordings in them                                                                                                                                                        | `diary`, `notebook_notes`, `notebooks`, `daily_wins`                                                                                                                                                                                                                                                                                                                    |
+| `notes:read`       | Read your diary and your notebooks, and the pictures and recordings in them                                                                                                                                                        | `media`, `diary`, `notebook_notes`, `notebooks`, `daily_wins`                                                                                                                                                                                                                                                                                                           |
 | `notes:write`      | Write in your diary and your notebooks                                                                                                                                                                                             | `write_entry`, `pin_note`, `unpin_note`, `edit_entry`, `archive_note`, `unarchive_note`, `add_notebook`, `remove_notebook`, `share_notebook`, `record_win`                                                                                                                                                                                                              |
 | `ideas:read`       | See your ideas, and the pictures and recordings in them                                                                                                                                                                            | `ideas`                                                                                                                                                                                                                                                                                                                                                                 |
 | `ideas:write`      | Add ideas, change them, and remove them                                                                                                                                                                                            | `add_idea`, `remove_idea`, `change_idea`, `apply_idea`, `favorite_idea`                                                                                                                                                                                                                                                                                                 |

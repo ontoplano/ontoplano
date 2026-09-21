@@ -20,6 +20,12 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **An assistant can see the pictures it is entitled to.** The new `media` tool
+  takes the link as the writing writes it — `/media/31`, `/media/audio/44` —
+  and answers with the file. Reaching one used to mean an HTTP request with a
+  raw key, which an MCP client never hands out, so the capability worked for a
+  script and not for the client it was built for. Same permission rule, same
+  function answering it, no new grant.
 - **The reminder form writes the day-start hour in the reader's own clock.** It
   promised "Empty means 06:00" while the row underneath said "6:00 AM", and the
   sentence was hard-coded English besides.

@@ -35,7 +35,14 @@ question twice, and two answers that can disagree — a note readable but its
 photographs not, for no reason anybody chose. The grant a file needs is the
 grant its referrer needs.
 
-So an assistant fetches one the way a browser does, with its own key:
+An assistant speaking MCP asks for one with the **`media`** tool, handing it
+the link the writing already gave it:
+
+```json
+{ "name": "media", "arguments": { "path": "/media/31" } }
+```
+
+A script holding the key itself fetches the same file the way a browser does:
 
 ```sh
 curl -H "Authorization: Bearer $ONTOPLANO_KEY" \
@@ -45,9 +52,9 @@ curl -H "Authorization: Bearer $ONTOPLANO_KEY" \
   https://your-instance/media/audio/44 --output recording.webm
 ```
 
-The ids are the ones written into the markdown — `![a photo](/media/31)` and
-`[said](/media/audio/44)` — so a tool that reads a note hands over everything
-needed to fetch what is in it.
+Either way the link is the one written into the markdown — `![a photo](/media/31)`
+and `[said](/media/audio/44)` — so a tool that reads a note hands over
+everything needed to reach what is in it.
 
 A file the key may not reach answers **404**, the same as one that does not
 exist. That is on purpose: a different answer for "exists but not yours" is a
