@@ -277,16 +277,23 @@
 	}
 
 	/**
-	 * Dismiss is two presses, and the first one is not a dismissal.
+	 * Dismiss means dismissed.
 	 *
-	 * It jumps to the closing step, which is the one that says where the tour
-	 * lives afterwards. Somebody who leaves in the first ten seconds is exactly
-	 * the person who needs to know it can be reopened, and they are also the
-	 * only person who will never reach that step by pressing Next.
+	 * It used to jump to the closing step — the one that says where the tour
+	 * lives afterwards — on the reasoning that somebody leaving in the first
+	 * ten seconds is the person who most needs to know it can be reopened.
+	 * That reasoning is upside down: what they said was "not now", and
+	 * answering it with one more card is the pattern everybody has learned to
+	 * hate. The button that reopens it is in the help dock, where somebody
+	 * looking for help looks, and it does not need announcing to a person
+	 * walking away.
+	 *
+	 * Reaching the closing step by pressing Next still shows it: that is
+	 * somebody who went through the tour, and telling them where it lives at
+	 * the end is the right moment.
 	 */
 	function dismiss() {
-		if (isClosing || !hasClosing) return close();
-		index = steps.length - 1;
+		close();
 	}
 
 	function close() {

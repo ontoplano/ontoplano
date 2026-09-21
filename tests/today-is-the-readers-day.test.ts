@@ -10,8 +10,10 @@
 import { describe, expect, test } from 'vitest';
 import { dayStamp, today } from '../src/lib/when';
 
-const saoPaulo = { locale: 'pt-BR', tz: 'America/Sao_Paulo', clock: 'auto' as const };
-const tokyo = { locale: 'ja-JP', tz: 'Asia/Tokyo', clock: 'auto' as const };
+// `ja-JP` is not one of the app's languages; the zone is what this is about,
+// and the stamp is written in `en-CA` whatever the reader's language.
+const saoPaulo = { locale: 'pt-BR', tz: 'America/Sao_Paulo', clock: 'auto' } as const;
+const tokyo = { locale: 'en', tz: 'Asia/Tokyo', clock: 'auto' } as const;
 
 describe('the day a moment falls on', () => {
 	test('is the reader’s day, not the UTC one', () => {

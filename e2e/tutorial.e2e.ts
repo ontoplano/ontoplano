@@ -18,7 +18,7 @@ import { visit } from './helpers/visit';
 const tourOf = (page: import('@playwright/test').Page) =>
 	page.getByRole('dialog', { name: 'Tutorial' });
 
-test('a new account is shown around, and dismisses it in two', async ({ page }) => {
+test('a new account is shown around, and dismissing it dismisses it', async ({ page }) => {
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('tour'), 'Smoke Test', true);
 
@@ -30,16 +30,16 @@ test('a new account is shown around, and dismisses it in two', async ({ page }) 
 	await tour.getByRole('button', { name: 'Next' }).click();
 	await expect(tour.getByText('This is ontoplano')).toHaveCount(0);
 
-	// The first Dismiss is not a dismissal: it goes to the step that says how to
-	// get the tour back, and the tour is still up. (This tour ran unasked, so
-	// it has that step; one somebody opened themselves does not.)
+	/*
+	 * Dismiss means dismissed.
+	 *
+	 * It used to take one more step first — the one saying where the tour
+	 * lives afterwards — on the reasoning that somebody leaving early is who
+	 * most needs to know. That is upside down: they said not now, and
+	 * answering with another card is the pattern everybody has learned to
+	 * hate. The help dock is where somebody looking for help looks.
+	 */
 	await tour.getByRole('button', { name: 'Dismiss' }).click();
-	await expect(tour).toBeVisible();
-	await expect(tour.getByText('Click here if you ever need this help')).toBeVisible();
-	await expect(tour.getByRole('button', { name: 'Dismiss', exact: true })).toHaveCount(0);
-
-	// The second one ends it.
-	await tour.getByRole('button', { name: 'Okay, dismiss!' }).click();
 	await expect(tour).toBeHidden();
 
 	// And it stays gone, across a reload — the flag is written, not remembered.

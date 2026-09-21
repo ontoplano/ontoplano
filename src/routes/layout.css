@@ -294,6 +294,30 @@ html[data-style='playful'] .shadow-raised {
 }
 
 /*
+ * A card that paints its own face shows the keyboard's cursor another way.
+ *
+ * The board's cards are `.pill-soft`: they set a background from the
+ * category's colour, which wins over the cursor's grey, and the style above
+ * takes their shadow away — so j and k moved and nothing on the screen said
+ * so ("in tasks/board there is no selection").
+ *
+ * A ring in the card's own hue and a lift, which is the language the to-do
+ * list's cursor already speaks without fighting the paint. Unlayered, like
+ * the rule above it: a layered one would lose to that however specific.
+ */
+html .pill-soft.kbd-cursor {
+	/*
+	 * The ring alone, and a literal lift rather than `--shadow-raised`: that
+	 * token is `none` in this style, and `0 0 0 2px …, none` is not a shadow
+	 * list — the browser drops the whole declaration and the cursor vanishes
+	 * again, which is how this was found.
+	 */
+	box-shadow:
+		0 0 0 2px color-mix(in srgb, var(--pill) 75%, transparent),
+		0 2px 6px rgb(15 23 42 / 0.12);
+}
+
+/*
  * Anything that touches an edge of the viewport, or of the surface it lives in,
  * stays square. A corner needs somewhere to be a corner.
  */

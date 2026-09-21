@@ -102,7 +102,7 @@ test.describe('the todo rail', () => {
 	test('drops a todo once it is done', async ({ page }) => {
 		await register(page, testEmail('board-rail'));
 		const title = 'A rail todo that gets finished';
-		const rail = page.getByRole('complementary', { name: 'To-do list' });
+		const rail = page.getByRole('complementary', { name: 'Tasks' });
 		const todoTab = page.getByRole('button', { name: 'To-do', exact: true });
 		const todayTab = page.getByRole('button', { name: 'Today', exact: true });
 

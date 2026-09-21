@@ -144,11 +144,14 @@ export async function register(
 }
 
 /**
- * Close the guided tour if it has come up.
+ * Get the tour out of the way, wherever a spec is not about the tour.
  *
- * Two presses, deliberately: the first goes to the closing step that says where
- * the tour lives afterwards, the second ends it. Silent when no tour appears —
- * an account that has already seen it is not a failure.
+ * One press: Dismiss means dismissed. It used to take two — the first went to
+ * a step saying where the tour lives afterwards — and that step is still
+ * there for somebody who reaches it by pressing Next.
+ *
+ * Silent when no tour appears: an account that has already seen it is not a
+ * failure.
  */
 export async function dismissTour(page: Page): Promise<void> {
 	const tour = page.getByRole('dialog', { name: 'Tutorial' });
@@ -158,6 +161,5 @@ export async function dismissTour(page: Page): Promise<void> {
 		return;
 	}
 	await tour.getByRole('button', { name: 'Dismiss' }).click();
-	await tour.getByRole('button', { name: 'Okay, dismiss!' }).click();
 	await tour.waitFor({ state: 'hidden' });
 }
