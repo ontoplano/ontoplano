@@ -16,6 +16,7 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import { armed } from '$lib/actions/armed';
+	import { submitLock } from '$lib/submitting.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
 	import Field from '$lib/components/Field.svelte';
@@ -120,6 +121,9 @@
 		openNew?: (() => void) | undefined;
 		openTodo?: ((id: number) => void) | undefined;
 	} = $props();
+
+	/* One press, one task — see `$lib/submitting`. */
+	const sending = submitLock();
 
 	let showForm = $state(false);
 	let editingId: number | null = $state(null);
@@ -700,7 +704,7 @@
 			id="todo-form"
 			method="post"
 			action={editingId ? actions.update : actions.create}
-			use:enhance={() => {
+			use:enhance={sending.wrap(() => {
 				const wasEditing = editingId;
 				return async ({ update, result }) => {
 					await update({ reset: false });
@@ -730,7 +734,7 @@
 					showForm = false;
 					editingId = null;
 				};
-			}}
+			})}
 		>
 			{#if editingId}
 				<input type="hidden" name="id" value={editingId} />
@@ -795,7 +799,12 @@
 				</form>
 			{/if}
 			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
-			<button type="submit" form="todo-form" class="btn btn-primary">
+			<!--
+				Disabled while the last press is still being answered: pressing
+				Create twice made two tasks, because the first press takes long
+				enough to look like it missed. See `$lib/submitting`.
+			-->
+			<button type="submit" form="todo-form" class="btn btn-primary" disabled={sending.busy()}>
 				{editingId ? t('ui.save') : t('todoRows.createTodo')}
 			</button>
 		{/snippet}

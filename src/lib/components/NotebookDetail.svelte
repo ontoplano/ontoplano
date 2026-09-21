@@ -12,6 +12,7 @@
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { resolve } from '$app/paths';
 	import { armed } from '$lib/actions/armed';
+	import { submitLock } from '$lib/submitting.svelte';
 	import { BackCloses } from '$lib/back-closes';
 	import { isPhone } from '$lib/breakpoints';
 	import { keepInView } from '$lib/actions/keep-in-view';
@@ -321,6 +322,9 @@
 	 * owns the form. A second form written beside it would be a second set of
 	 * fields to keep in step, so the button opens that one.
 	 */
+	/* One press, one note — see `$lib/submitting`. */
+	const writing = submitLock();
+
 	let openNewTodo = $state<(() => void) | undefined>(undefined);
 	/** And its editor on one task, for a note that points at one. */
 	let openTodoById = $state<((id: number) => void) | undefined>(undefined);
@@ -781,12 +785,11 @@
 					<form
 						method="post"
 						action="?/addEntry"
-						use:enhance={() =>
-							async ({ update, result }) => {
-								await update({ reset: result.type === 'success' });
-								// Written and gone: the space belongs to the notes again.
-								if (result.type === 'success') composing = false;
-							}}
+						use:enhance={writing.wrap(() => async ({ update, result }) => {
+							await update({ reset: result.type === 'success' });
+							// Written and gone: the space belongs to the notes again.
+							if (result.type === 'success') composing = false;
+						})}
 						class="border-b border-gray-200 bg-gray-50 px-4 pt-3 pb-4"
 					>
 						<input type="hidden" name="notebookId" value={notebook.id} />
@@ -853,13 +856,14 @@
 									name="alsoTodos"
 									value="1"
 									class="btn btn-sm"
+									disabled={writing.busy()}
 									title={t('notebookDetail.makeTodosOfTheCheckboxes')}
 								>
 									<Icon name="check" />
 									{t('notebookDetail.addWithTodos', { count: composingTodoCount })}
 								</button>
 							{/if}
-							<button class="btn btn-primary btn-sm"
+							<button class="btn btn-primary btn-sm" disabled={writing.busy()}
 								><Icon name="plus" /> {t('notebookDetail.addNote')}</button
 							>
 						</div>

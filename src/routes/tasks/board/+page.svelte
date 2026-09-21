@@ -12,6 +12,7 @@
 	import Written from '$lib/components/Written.svelte';
 	import { enhance } from '$app/forms';
 	import { armed } from '$lib/actions/armed';
+	import { submitLock } from '$lib/submitting.svelte';
 	import { focusHere } from '$lib/actions/autofocus';
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -121,6 +122,8 @@
 		return [...totals.entries()].map(([name, v]) => ({ name, ...v }));
 	});
 	let confirmingDelete: string | null = $state(null);
+	/* One press, one card — see `$lib/submitting`. */
+	const sending = submitLock();
 	let dragging: Card | null = $state(null);
 	let dragOverColumn: Status | null = $state(null);
 	let railOver = $state(false);
@@ -744,11 +747,10 @@
 			id="card-form"
 			method="post"
 			action="?/createTodo"
-			use:enhance={() =>
-				async ({ update, result }) => {
-					await update({ reset: false });
-					if (result.type === 'success') showForm = false;
-				}}
+			use:enhance={sending.wrap(() => async ({ update, result }) => {
+				await update({ reset: false });
+				if (result.type === 'success') showForm = false;
+			})}
 		>
 			{#if tab === 'today'}
 				<input type="hidden" name="scheduledDate" value={data.date} />
@@ -775,7 +777,7 @@
 
 		{#snippet footer()}
 			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
-			<button type="submit" form="card-form" class="btn btn-primary"
+			<button type="submit" form="card-form" class="btn btn-primary" disabled={sending.busy()}
 				>{t('tasks.board.addCard')}</button
 			>
 		{/snippet}
