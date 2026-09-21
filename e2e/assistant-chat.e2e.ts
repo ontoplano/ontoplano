@@ -19,7 +19,7 @@ test('the chat appears with a key and goes away with it', async ({ page }) => {
 
 	// Bring one. Anthropic is the preselected provider, so only the key is
 	// typed; the model field says what empty means instead of demanding one.
-	await page.locator('input[name="key"]').fill('sk-ant-e2e-not-a-real-key');
+	await page.locator('[name="key"]').fill('sk-ant-e2e-not-a-real-key');
 	await expect(async () => {
 		await page.getByRole('button', { name: 'Save' }).click();
 		await expect(page.getByText('answering as claude-sonnet-5')).toBeVisible({ timeout: 2000 });

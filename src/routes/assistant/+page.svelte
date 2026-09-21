@@ -22,12 +22,19 @@
 
 	const busy = $derived(chat.status === 'submitted' || chat.status === 'streaming');
 
-	function send(event: SubmitEvent) {
+	function send(event: Event) {
 		event.preventDefault();
 		const said = draft.trim();
 		if (!said || busy) return;
 		draft = '';
 		chat.sendMessage({ text: said });
+	}
+
+	/* The box is a `OneLine`, which is a textarea underneath — Enter would
+	   write a newline it then strips, and never send. Sending is what Enter
+	   means in a chat. */
+	function keyboard(event: KeyboardEvent) {
+		if (event.key === 'Enter' && !event.shiftKey) send(event);
 	}
 
 	/* The newest words stay on screen while an answer streams in. */
@@ -108,6 +115,7 @@
 			bind:value={draft}
 			class="input flex-1"
 			placeholder={t('assistant.placeholder')}
+			onkeydown={keyboard}
 		/>
 		{#if busy}
 			<button type="button" class="btn btn-sm" onclick={() => chat.stop()}>
