@@ -69,9 +69,16 @@
 	let focused = $state(false);
 	let at = $state(-1);
 
-	const suggestions = $derived(
-		focused && draft.trim() !== '' ? suggestTags(known, draft, tags) : []
-	);
+	/**
+	 * What could be typed next, offered as soon as the box is looked at.
+	 *
+	 * It used to wait for a letter, which is the wrong way round: somebody who
+	 * knows their vocabulary wants to pick from it, and somebody who does not
+	 * cannot type the first letter of a word they have never seen. An empty
+	 * draft offers what this account already uses, capped; a letter narrows it
+	 * by the app's own fuzzy.
+	 */
+	const suggestions = $derived(focused ? suggestTags(known, draft, tags) : []);
 
 	function add(...made: string[]) {
 		const fresh = made.filter((tag) => tag && !tags.includes(tag));
@@ -97,10 +104,26 @@
 	}
 
 	function onKeydown(e: KeyboardEvent) {
-		// A suggestion picked out takes Enter and Tab before the word does.
-		if (suggestions.length > 0 && at >= 0 && (e.key === 'Enter' || e.key === 'Tab')) {
+		// A suggestion picked out takes Enter before the word does.
+		if (suggestions.length > 0 && at >= 0 && e.key === 'Enter') {
 			e.preventDefault();
 			add(suggestions[at]);
+			return;
+		}
+
+		/*
+		 * Tab walks the list, and wraps.
+		 *
+		 * The list is the point of the box — it is how somebody uses the words
+		 * they already have rather than inventing a fourth spelling — and
+		 * reaching for the arrow keys to walk it is a hand leaving the
+		 * keyboard's home. Shift walks back. It only takes the key while
+		 * there is a list; otherwise Tab leaves the field, as it must.
+		 */
+		if (e.key === 'Tab' && suggestions.length > 0) {
+			e.preventDefault();
+			const step = e.shiftKey ? -1 : 1;
+			at = (at + step + suggestions.length) % suggestions.length;
 			return;
 		}
 

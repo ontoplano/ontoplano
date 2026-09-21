@@ -682,7 +682,7 @@ export const messages: Catalogue = {
 	'goals.oneMoreUnit': 'Un {unit} más',
 	'goals.optionalLeaveItEmptyFor':
 		'Opcional. Déjalo vacío para una meta que simplemente está hecha o no.',
-	'goals.partOf': 'Parte de',
+	'goals.partOf': 'Submeta de',
 	'goals.partOf2': 'parte de “{title}”',
 	'goals.progressTowards': 'Progreso hacia {value} {unit}',
 	'goals.quarter': 'Trimestre',

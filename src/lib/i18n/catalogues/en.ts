@@ -662,7 +662,7 @@ export const messages: Catalogue = {
 	'goals.oneMoreUnit': 'One more {unit}',
 	'goals.optionalLeaveItEmptyFor':
 		'Optional. Leave it empty for a goal that is simply done or not.',
-	'goals.partOf': 'Part of',
+	'goals.partOf': 'Sub-goal of',
 	'goals.partOf2': 'part of “{title}”',
 	'goals.progressTowards': 'Progress towards {value} {unit}',
 	'goals.quarter': 'Quarter',
