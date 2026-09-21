@@ -237,13 +237,18 @@ const notebook = (title, description, closed = false) => {
 	);
 };
 
+/** The tables whose rows are numbered inside their notebook as well as overall. */
+const NUMBERED_IN_NOTEBOOK = ['diary_entries', 'todo_tasks'];
+
 /** Point an already-seeded row at a notebook, by whatever identifies it here. */
 const inNotebook = (table, column, value, notebookId) => {
+	const numbered = NUMBERED_IN_NOTEBOOK.includes(table);
+
 	// The number goes with the notebook: (notebook_id, notebook_seq) is unique,
 	// so carrying an old number into a new notebook collides with whatever
 	// already holds it there. Cleared in the same statement that moves it.
 	run(
-		`update ${table} set notebook_id = ?${table === 'diary_entries' ? ', notebook_seq = null' : ''} where user_id = ? and ${column} = ?`,
+		`update ${table} set notebook_id = ?${numbered ? ', notebook_seq = null' : ''} where user_id = ? and ${column} = ?`,
 		notebookId,
 		uid,
 		value
@@ -255,17 +260,21 @@ const inNotebook = (table, column, value, notebookId) => {
 	// So the whole notebook is renumbered, cleared first — an UPDATE walks the
 	// rows one at a time and would otherwise trip over a number it has not
 	// reached yet.
-	if (table === 'diary_entries') {
+	//
+	// Tasks are numbered the same way, and were not: a seeded notebook's tasks
+	// had no number on their cards, and `TODO:#4` in a note beside them
+	// pointed at nothing.
+	if (numbered) {
 		run(
-			'update diary_entries set notebook_seq = null where user_id = ? and notebook_id = ?',
+			`update ${table} set notebook_seq = null where user_id = ? and notebook_id = ?`,
 			uid,
 			notebookId
 		);
 		const inBook = db
-			.prepare('select id from diary_entries where user_id = ? and notebook_id = ? order by id')
+			.prepare(`select id from ${table} where user_id = ? and notebook_id = ? order by id`)
 			.all(uid, notebookId);
 		inBook.forEach((row, i) => {
-			db.prepare('update diary_entries set notebook_seq = ? where id = ?').run(i + 1, row.id);
+			db.prepare(`update ${table} set notebook_seq = ? where id = ?`).run(i + 1, row.id);
 		});
 	}
 };
@@ -1152,23 +1161,63 @@ shoppingItem('coffee beans', 'replenish', {
 	categoryId: pantry,
 	notes: 'the dark roast',
 	qty: 1,
-	ideal: 2
+	ideal: 2,
+	attributes: { brand: 'Serra Negra', roast: 'dark', weight: '500g', origin: 'Minas Gerais' }
 });
-shoppingItem('olive oil', 'replenish', { categoryId: pantry, qty: 0, ideal: 1 });
-shoppingItem('rice', 'replenish', { categoryId: pantry, qty: 2, ideal: 2 });
-shoppingItem('milk', 'replenish', { categoryId: fresh, qty: 0, ideal: 2 });
-shoppingItem('eggs', 'replenish', { categoryId: fresh, qty: 6, ideal: 6 });
-shoppingItem('tomatoes', 'replenish', { categoryId: fresh, qty: 1, ideal: 4 });
-shoppingItem('dish soap', 'replenish', { categoryId: household, qty: 2, ideal: 3 });
+shoppingItem('olive oil', 'replenish', {
+	categoryId: pantry,
+	qty: 0,
+	ideal: 1,
+	attributes: { brand: 'Gallo', weight: '500ml', origin: 'Portugal' }
+});
+shoppingItem('rice', 'replenish', {
+	categoryId: pantry,
+	qty: 2,
+	ideal: 2,
+	attributes: { brand: 'Tio João', weight: '1kg', variety: 'parboiled' }
+});
+shoppingItem('milk', 'replenish', {
+	categoryId: fresh,
+	qty: 0,
+	ideal: 2,
+	attributes: { brand: 'Itambé', weight: '1L', variety: 'semi-skimmed' }
+});
+shoppingItem('eggs', 'replenish', {
+	categoryId: fresh,
+	qty: 6,
+	ideal: 6,
+	attributes: { variety: 'free range', size: 'large' }
+});
+shoppingItem('tomatoes', 'replenish', {
+	categoryId: fresh,
+	qty: 1,
+	ideal: 4,
+	attributes: { variety: 'italiano', weight: '1kg' }
+});
+shoppingItem('dish soap', 'replenish', {
+	categoryId: household,
+	qty: 2,
+	ideal: 3,
+	attributes: { brand: 'Ypê', weight: '500ml', scent: 'neutral' }
+});
 shoppingItem('lightbulbs', 'replenish', {
 	categoryId: household,
 	snoozed: true,
 	qty: 0,
-	ideal: 2
+	ideal: 2,
+	attributes: { fitting: 'E27', power: '9W', colour: 'warm white', brand: 'Philips' }
 });
-shoppingItem('a proper desk chair', 'someday', { notes: 'try one before buying' });
-shoppingItem('noise-cancelling headphones', 'someday');
-shoppingItem('cast iron pan', 'someday', { bought: true });
+shoppingItem('a proper desk chair', 'someday', {
+	notes: 'try one before buying',
+	attributes: { budget: 'R$1200', material: 'mesh', colour: 'grey' }
+});
+shoppingItem('noise-cancelling headphones', 'someday', {
+	attributes: { budget: 'R$1800', brand: 'Sony', colour: 'black' }
+});
+shoppingItem('cast iron pan', 'someday', {
+	bought: true,
+	attributes: { material: 'cast iron', size: '26cm', brand: 'Santana' }
+});
 
 /*
  * A drawer of cables, which is the case attributes were asked for.
@@ -1564,6 +1613,14 @@ const deskDrawer = location('Desk drawer', officeLocation);
 const bathroom = location('Bathroom');
 const cabinet = location('Cabinet', bathroom);
 
+/*
+ * `attributes` left out means "leave whatever it has", not "wipe it".
+ *
+ * Several of these name a thing the shopping list already seeded with
+ * attributes on it — dish soap is in the cupboard *and* under the sink — and
+ * writing `{}` over it took them off again, so the item somebody opens from
+ * the map of the home was the one with nothing to show.
+ */
 const filedItem = (name, locationId, attributes = null) => {
 	const existing = one('select id from inventory_items where user_id = ? and name = ?', uid, name);
 	const id =
@@ -1573,31 +1630,28 @@ const filedItem = (name, locationId, attributes = null) => {
 			uid,
 			name
 		);
-	run(
-		'update inventory_items set location_id = ?, attributes = ? where id = ?',
-		locationId,
-		JSON.stringify(attributes ?? {}),
-		id
-	);
+	run('update inventory_items set location_id = ? where id = ?', locationId, id);
+	if (attributes)
+		run('update inventory_items set attributes = ? where id = ?', JSON.stringify(attributes), id);
 };
 
 // The thing the whole feature exists to answer, and its neighbours.
 filedItem('measuring tape', firstDrawer, { length: '5m', kind: 'construction' });
 filedItem('spare keys', firstDrawer, { for: 'the front door' });
-filedItem('sewing kit', secondDrawer, {});
+filedItem('sewing kit', secondDrawer, { contents: 'needles, thread, buttons', kind: 'household' });
 filedItem('passport', secondDrawer, { expires: '2031-04' });
-filedItem('board games', bookshelf, {});
+filedItem('board games', bookshelf, { count: '11', players: '2–6' });
 
 filedItem('USB-C cable', deskDrawer, { plug: 'USB-C', speed: 'USB3' });
 filedItem('HDMI cable', deskDrawer, { length: '2m' });
 filedItem('label printer', officeLocation, { model: 'P710' });
 
-filedItem('blender', kitchenRoom, {});
-filedItem('bicarbonate of soda', pantryLoc, {});
-filedItem('dish soap', underSink, {});
+filedItem('blender', kitchenRoom, { brand: 'Philips', power: '600W', capacity: '1.5L' });
+filedItem('bicarbonate of soda', pantryLoc, { weight: '250g', kind: 'baking' });
+filedItem('dish soap', underSink);
 filedItem('spare bulbs', underSink, { fitting: 'E27', watts: '9' });
 
-filedItem('first aid kit', cabinet, {});
+filedItem('first aid kit', cabinet, { checked: '2026-02', kind: 'household' });
 filedItem('hair clippers', cabinet, { guards: '3, 6, 9' });
 
 // --- dashboard extras ---------------------------------------------------------------
@@ -1795,16 +1849,30 @@ const recipe = (title, extra = {}) => {
 	);
 };
 
+/** What the staples a recipe conjures are like, so they are not bare names. */
+const PANTRY_ATTRIBUTES = {
+	pasta: { shape: 'penne', weight: '500g', brand: 'Barilla' },
+	garlic: { variety: 'roxo', kind: 'fresh' },
+	'black beans': { weight: '1kg', variety: 'preto' },
+	'olive oil': { brand: 'Gallo', weight: '500ml' },
+	onion: { variety: 'brown', kind: 'fresh' },
+	rice: { brand: 'Tio João', weight: '1kg' }
+};
+
 const ingredient = (recipeId, itemName, quantity, unit, note = '') => {
 	let item = one('select id from inventory_items where user_id = ? and name = ?', uid, itemName);
 	if (!item) {
 		const pantry = shoppingCategoryNamed('pantry');
 		const id = run(
-			`insert into inventory_items (user_id, name, type, inventory_category_id, bought)
-			 values (?, ?, 'replenish', ?, 0)`,
+			`insert into inventory_items (user_id, name, type, inventory_category_id, bought, attributes)
+			 values (?, ?, 'replenish', ?, 0, ?)`,
 			uid,
 			itemName,
-			pantry?.id ?? null
+			pantry?.id ?? null,
+			// A pantry staple has a size and a shelf life like everything else
+			// in there; an ingredient conjured by a recipe used to have neither,
+			// so half the cupboard was bare rows.
+			JSON.stringify(PANTRY_ATTRIBUTES[itemName] ?? { kind: 'pantry staple' })
 		);
 		item = { id };
 	}
@@ -2418,7 +2486,10 @@ if (!forgottenTodo)
 	);
 
 idea('Learn to sail, properly, not just crewing for other people', ['someday']);
-shoppingItem('a proper armchair', 'someday', { categoryId: household });
+shoppingItem('a proper armchair', 'someday', {
+	categoryId: household,
+	attributes: { budget: 'R$2500', material: 'leather', colour: 'tan' }
+});
 
 age(
 	'ideas',
@@ -2878,6 +2949,129 @@ run(
 	uid
 );
 run("update diary_entries set created_at = datetime('now') where user_id = ? and seq = 10", uid);
+
+/*
+ * Numbers past everything already written, rather than the next free-looking
+ * ones: `diary()` returns the existing row for a number already used, so a
+ * guess at a gap moves somebody else's note into this notebook instead of
+ * writing a new one. Read from the database because the notes above are
+ * spread over the whole file.
+ */
+const afterEverything =
+	(one('select max(seq) v from diary_entries where user_id = ?', uid)?.v ?? 0) + 1;
+const KITCHEN_NOTE_SEQ = afterEverything;
+const TWELVE_NOTE_SEQ = afterEverything + 1;
+
+/*
+ * A notebook that points at its own tasks.
+ *
+ * `TODO:#4` in a note is how somebody writing up where a job stands refers to
+ * the thing that has to happen, and it was the one part of a notebook nothing
+ * seeded demonstrated — so the reference rendered as the literal text on the
+ * one screen where it is meant to render as the task. The kitchen is the case
+ * for it: a list of quotes is only interesting next to what is blocked on it.
+ *
+ * The numbers are the order these were inserted in, which is what
+ * `inNotebook` numbers by.
+ */
+todo('ring the building manager about the wall', { urgency: 4, interest: 2, sortOrder: 10 });
+todo('order the counter once the wall is settled', { urgency: 2, interest: 4, sortOrder: 11 });
+todo('clear the cupboards before the fitters come', { urgency: 1, interest: 1, sortOrder: 12 });
+inNotebook('todo_tasks', 'title', 'ring the building manager about the wall', kitchen);
+inNotebook('todo_tasks', 'title', 'order the counter once the wall is settled', kitchen);
+inNotebook('todo_tasks', 'title', 'clear the cupboards before the fitters come', kitchen);
+
+diary(
+	KITCHEN_NOTE_SEQ,
+	`## Where this stands
+
+Everything hangs on one phone call. TODO:#3 is the only thing in the way —
+until the building manager says whether the wall is structural, quote 3 is
+either the cheap answer or the expensive mistake.
+
+Then, in order:
+
+- TODO:#4, which cannot be ordered before the wall is decided, because the
+  counter is cut to it
+- TODO:#5, the weekend before they start
+
+TODO:#1 is in, all three of them, and TODO:#2 is done — 2.34m, not the 2.4m
+the first quote assumed.`,
+	['home'],
+	iso(dayAt(3))
+);
+inNotebook('diary_entries', 'seq', KITCHEN_NOTE_SEQ, kitchen);
+
+/*
+ * A year's worth of goals, most of them finished.
+ *
+ * Every other goal here is open or nearly so, which shows the bars and not
+ * what the room is actually for: looking back at a year and seeing that ten
+ * of the twelve things happened. It also fills the "closed" view, which was
+ * two rows.
+ */
+const twelve = notebook(
+	'Twelve in a year',
+	'Twelve things I said I would do this year. Ten of them are done.'
+);
+
+const DONE_THIS_YEAR = [
+	['learn to make sourdough', 'the third loaf was the one'],
+	['swim a kilometre without stopping', 'August, badly, but without stopping'],
+	['grow something edible on the balcony', 'tomatoes, basil, one unhappy pepper'],
+	['see the family in Curitiba twice', 'March and July'],
+	['get the bike fixed and ride it every week', 'new back wheel, and it has stuck'],
+	['go a whole month without ordering food in', 'June. Cooked every night of it'],
+	['learn ten songs by heart', 'eleven, if the short one counts'],
+	['empty the paperwork drawer', 'two bags of shredding and a folder that fits'],
+	['write to three people I had lost touch with', 'two of them wrote back'],
+	['stop working after ten on weeknights', 'not every night, but it is the habit now']
+];
+
+for (const [title, outcome] of DONE_THIS_YEAR) {
+	goal(title, 'year', yearStart, { status: 'achieved', outcome });
+	inNotebook('goals', 'title', title, twelve);
+}
+
+goal('take the boat licence', 'year', yearStart, {
+	notes: 'theory first, then the practical weekend',
+	measures: [{ target: 24, current: 15, unit: 'theory hours' }]
+});
+inNotebook('goals', 'title', 'take the boat licence', twelve);
+
+goal('finish the balcony shelves', 'year', yearStart, {
+	notes: 'wood is bought and sitting in the hall',
+	measures: [{ target: 3, current: 1, unit: 'shelves' }]
+});
+inNotebook('goals', 'title', 'finish the balcony shelves', twelve);
+
+todo('book the boat theory weekend', { urgency: 3, interest: 5, sortOrder: 13 });
+todo('buy the shelf brackets', { urgency: 2, interest: 2, sortOrder: 14 });
+todo('cut the shelves to length', { urgency: 1, interest: 3, sortOrder: 15 });
+inNotebook('todo_tasks', 'title', 'book the boat theory weekend', twelve);
+inNotebook('todo_tasks', 'title', 'buy the shelf brackets', twelve);
+inNotebook('todo_tasks', 'title', 'cut the shelves to length', twelve);
+
+diary(
+	TWELVE_NOTE_SEQ,
+	`## The list, in October
+
+Ten down, two to go, and the two left are the two that need a whole Saturday
+rather than twenty minutes — which is the lesson, really. The ones that got
+done were the ones that fitted into a week.
+
+What I would do differently: the paperwork drawer took an afternoon and sat on
+the list for seven months. Anything that can be finished in an afternoon
+should not be a goal at all.
+
+**What is left**, which is three Saturdays at most: TODO:#1, then TODO:#2 and
+TODO:#3 on the same day — the wood is already in the hall and has been since
+July.`,
+	['living'],
+	iso(dayAt(6)),
+	{ pinned: true }
+);
+inNotebook('diary_entries', 'seq', TWELVE_NOTE_SEQ, twelve);
 
 // Somebody who has been here two months has written up most of their weeks.
 const REVIEWS = [
