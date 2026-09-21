@@ -18,6 +18,14 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.181.5 — 2026-09-21
+
+- **The task filters fold away on a phone.** Seven controls needed three rows
+  at phone width — a third of the screen spent before a single task. The
+  filters now sit behind one button that says what is narrowing the list while
+  they are folded, with a single press back to everything. The search box
+  stays out in the open: it is typed into, not pressed.
+
 ## 0.181.4 — 2026-09-20
 
 - **A label filter holds more than one label.** "The urgent ones" is a

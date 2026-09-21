@@ -387,6 +387,10 @@ export const messages: Catalogue = {
 		'Sepáralas con comas o espacios. Una # inicial no molesta.',
 	'fields.todo.tagsExample': 'cocina, urgente, a1',
 	'fields.todo.urgencyInterestEnergy': 'Urgencia, interés, energía',
+	'filters.clear': 'Limpiar',
+	'filters.filters': 'Filtros',
+	'filters.filtersOn': 'Filtros activos',
+	'filters.narrowThisList': 'Filtrar esta lista',
 	'finance.bills.amountOver': '{amount} de más',
 	'finance.bills.amountUnder': '{amount} de menos',
 	'finance.bills.andItsWholePaymentHistory':

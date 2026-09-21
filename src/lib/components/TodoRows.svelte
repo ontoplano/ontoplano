@@ -20,6 +20,7 @@
 	import { armed } from '$lib/actions/armed';
 	import { matchScore } from '$lib/destinations';
 	import { getAction, keyFor } from '$lib/shortcuts';
+	import FilterBar from '$lib/components/FilterBar.svelte';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
 	import TagChip from '$lib/components/TagChip.svelte';
 	import Field from '$lib/components/Field.svelte';
@@ -474,6 +475,34 @@
 		notebookFilter !== '' || tagFilter.length > 0 || looking.trim().length > 0
 	);
 
+	/**
+	 * What is narrowing the list, in the words the controls use.
+	 *
+	 * Said on the filter button while the controls are folded away, because a
+	 * filter somebody cannot see is a filter they forget is on — which is the
+	 * one way folding these can go wrong.
+	 */
+	function narrowing(): string {
+		const said: string[] = [];
+		if (showCompleted) said.push(t('todoRows.completed'));
+		if (showArchived) said.push(t('todoRows.archived'));
+		if (notebookFilter !== '')
+			said.push(notebookChoices.find((one) => one.value === notebookFilter)?.label ?? '');
+		for (const one of tagFilter) said.push(one === NO_TAG ? t('todoRows.noTag') : `#${one}`);
+		return said.filter(Boolean).join(', ');
+	}
+
+	/** Back to everything, in one press. The search box is not a filter here —
+	    it is the thing being typed into, and clearing it under the cursor is
+	    the app taking the word out of somebody's hands. */
+	function clearFilters() {
+		showCompleted = false;
+		showArchived = false;
+		notebookFilter = '';
+		tagFilter = [];
+		selectedIndex = 0;
+	}
+
 	function isDone(todo: Todo): boolean {
 		return shownStatus(todo) === 'done';
 	}
@@ -701,99 +730,23 @@
 		<RoomToolbar inset>
 			{#snippet tools()}
 				<!--
-					One row on a phone, not three.
+					The controls that narrow the list, folded until they are wanted.
 
-					"Show completed", the notebook picker and the sort order each took
-					a line of their own at 390px — a third of the screen spent before
-					a single task. The labels say the short form where there is no
-					room for the long one, and the picker gives up its width first.
-
-					A toggle also says which way it is set rather than only what
-					pressing it would do: `aria-pressed` is what the app's own `.btn`
-					reads to draw a control as held.
+					Seven of them needed three rows at 390px — a third of the screen
+					spent before a single task. `FilterBar` holds the four that are
+					pressed and leaves out the two that are not: the search box is
+					typed into and the count and the order are read. What is
+					narrowing the list is named on the button while it is shut, and
+					the way back to everything stands beside it.
 				-->
-				<button
-					onclick={() => (showCompleted = !showCompleted)}
-					aria-pressed={showCompleted}
-					class="btn btn-sm shrink-0"
+				<FilterBar
+					name="tasks"
+					on={narrowed || showCompleted || showArchived}
+					summary={narrowing()}
+					onclear={clearFilters}
 				>
-					<span class="sm:hidden">{t('todoRows.completed')}</span>
-					<span class="hidden sm:inline"
-						>{showCompleted
-							? t('todoRows.hideCompleted')
-							: t('todoRows.showCompletedCount', { count: finished })}</span
-					>
-				</button>
-				<!-- Named with its number so a put-away task is never quietly gone:
-				     nothing is hidden without the list saying how much. -->
-				<button
-					onclick={() => (showArchived = !showArchived)}
-					aria-pressed={showArchived}
-					class="btn btn-sm"
-					hidden={putAway === 0 && !showArchived}
-				>
-					{showArchived
-						? t('todoRows.hideArchived')
-						: t('todoRows.showArchivedCount', { count: putAway })}
-				</button>
-				{#if notebookId === null}
-					<!-- "Not in one" is an answer, not the absence of a filter: a task
-					     nobody has placed is the thing people go looking for.
-
-					     A `Picker` rather than a `<select>`: a form field dropped into
-					     a row of buttons is a form field that wandered in, and these
-					     two narrow what is on screen rather than submitting anything.
-					     Wide enough for the word — two controls both squeezed to
-					     "Ever…" are two controls nobody can tell apart. -->
-					<Picker
-						value={notebookFilter}
-						options={notebookChoices}
-						onpick={(next) => (notebookFilter = next)}
-						label={t('ui.notebook')}
-						class="min-w-36 flex-1 sm:flex-none"
-					/>
-				{/if}
-				<!-- Only where there is something to pick: a list nobody has labelled
-				     gets no control for labels. -->
-				{#if tagsInUse.length > 0}
-					<Picker
-						values={tagFilter}
-						options={[{ value: '', label: t('todoRows.everyTag') }, ...tagChoices]}
-						onpickMany={(next) => {
-							// Two rows that are not labels. "Every tag" is the way back to
-							// no filter at all, and "no label" answers the question on its
-							// own — neither combines with a label.
-							if (next.includes('')) tagFilter = [];
-							else if (next.includes(NO_TAG))
-								tagFilter = tagFilter.includes(NO_TAG)
-									? next.filter((one) => one !== NO_TAG)
-									: [NO_TAG];
-							else tagFilter = next;
-						}}
-						label={t('todoRows.filterByTag')}
-						class="min-w-28 flex-1 sm:flex-none"
-					/>
-				{/if}
-				<!--
-					Pushed to the right end, but only where there is a right end.
-
-					`ml-auto` at every width made it wrap onto a line of its own on a
-					phone: three ragged rows, the last one an empty half with one
-					button at the far side of it. Inline below `sm`, where the row is
-					already wrapping and there is nothing to separate it from; pushed
-					away from the filters above that, where the distance says what it
-					is — one of these hides rows, the other reorders them.
-				-->
-				<!--
-					Looking for one, rather than choosing a kind.
-
-					The controls beside this answer "which kind" — finished, put
-					away, in this notebook, carrying that label. None of them
-					answers "the one about the plumber", which is what somebody
-					with three hundred tasks is actually asking. It narrows as you
-					type and the count beside it says what is left.
-				-->
-				<!--
+					{#snippet lead()}
+						<!--
 					A row of its own on a phone.
 
 					Seven controls do not fit across 390px and the toolbar wrapped to
@@ -803,17 +756,21 @@
 					wrap under it — two rows instead of three, and a target the width
 					of the screen for the one that wants a keyboard.
 				-->
-				<label class="order-first w-full min-w-32 sm:order-none sm:w-auto sm:max-w-56 sm:flex-1">
-					<span class="sr-only">{t('todoRows.searchTheseTasks')}</span>
-					<input
-						type="search"
-						bind:value={looking}
-						placeholder={t('todoRows.searchTheseTasks')}
-						autocomplete="off"
-						class="input input-sm"
-					/>
-				</label>
-				<!--
+						<label
+							class="order-first w-full min-w-32 sm:order-none sm:w-auto sm:max-w-56 sm:flex-1"
+						>
+							<span class="sr-only">{t('todoRows.searchTheseTasks')}</span>
+							<input
+								type="search"
+								bind:value={looking}
+								placeholder={t('todoRows.searchTheseTasks')}
+								autocomplete="off"
+								class="input input-sm"
+							/>
+						</label>
+					{/snippet}
+					{#snippet trailing()}
+						<!--
 					How many rows are on screen right now.
 
 					The two toggles say how many are hidden — archived, completed —
@@ -821,21 +778,110 @@
 					notebook and a label gave no number at all for the thing you are
 					actually looking at.
 				-->
-				<span class="tabular shrink-0 self-center text-xs text-gray-500 sm:ml-auto">
-					{t('todoRows.showingCount', { count: visibleTodos.length })}
-				</span>
-				<div>
-					<!-- The same control a notebook's notes use. See `SortControl`. -->
-					<SortControl
-						value={order}
-						options={ORDERS}
-						labels={ORDER_LABELS}
-						{direction}
-						onpick={pickOrder}
-						onflip={flipDirection}
-						label={t('todoRows.orderTasksBy')}
-					/>
-				</div>
+						<span
+							class="tabular shrink-0 self-center text-xs text-gray-500 sm:ml-auto"
+							title={t('todoRows.showingCount', { count: visibleTodos.length })}
+						>
+							<span class="sm:hidden">{visibleTodos.length}</span>
+							<span class="hidden sm:inline"
+								>{t('todoRows.showingCount', { count: visibleTodos.length })}</span
+							>
+						</span>
+						<div>
+							<!-- The same control a notebook's notes use. See `SortControl`. -->
+							<SortControl
+								value={order}
+								options={ORDERS}
+								labels={ORDER_LABELS}
+								{direction}
+								onpick={pickOrder}
+								onflip={flipDirection}
+								label={t('todoRows.orderTasksBy')}
+							/>
+						</div>
+					{/snippet}
+					<button
+						onclick={() => (showCompleted = !showCompleted)}
+						aria-pressed={showCompleted}
+						class="btn btn-sm shrink-0"
+					>
+						<span class="sm:hidden">{t('todoRows.completed')}</span>
+						<span class="hidden sm:inline"
+							>{showCompleted
+								? t('todoRows.hideCompleted')
+								: t('todoRows.showCompletedCount', { count: finished })}</span
+						>
+					</button>
+					<!-- Named with its number so a put-away task is never quietly gone:
+				     nothing is hidden without the list saying how much. -->
+					<button
+						onclick={() => (showArchived = !showArchived)}
+						aria-pressed={showArchived}
+						class="btn btn-sm"
+						hidden={putAway === 0 && !showArchived}
+					>
+						{showArchived
+							? t('todoRows.hideArchived')
+							: t('todoRows.showArchivedCount', { count: putAway })}
+					</button>
+					{#if notebookId === null}
+						<!-- "Not in one" is an answer, not the absence of a filter: a task
+					     nobody has placed is the thing people go looking for.
+
+					     A `Picker` rather than a `<select>`: a form field dropped into
+					     a row of buttons is a form field that wandered in, and these
+					     two narrow what is on screen rather than submitting anything.
+					     Wide enough for the word — two controls both squeezed to
+					     "Ever…" are two controls nobody can tell apart. -->
+						<Picker
+							value={notebookFilter}
+							options={notebookChoices}
+							onpick={(next) => (notebookFilter = next)}
+							label={t('ui.notebook')}
+							class="min-w-36 flex-1 sm:flex-none"
+						/>
+					{/if}
+					<!-- Only where there is something to pick: a list nobody has labelled
+				     gets no control for labels. -->
+					{#if tagsInUse.length > 0}
+						<Picker
+							values={tagFilter}
+							options={[{ value: '', label: t('todoRows.everyTag') }, ...tagChoices]}
+							onpickMany={(next) => {
+								// Two rows that are not labels. "Every tag" is the way back to
+								// no filter at all, and "no label" answers the question on its
+								// own — neither combines with a label.
+								if (next.includes('')) tagFilter = [];
+								else if (next.includes(NO_TAG))
+									tagFilter = tagFilter.includes(NO_TAG)
+										? next.filter((one) => one !== NO_TAG)
+										: [NO_TAG];
+								else tagFilter = next;
+							}}
+							label={t('todoRows.filterByTag')}
+							class="min-w-28 flex-1 sm:flex-none"
+						/>
+					{/if}
+					<!--
+					Pushed to the right end, but only where there is a right end.
+
+					`ml-auto` at every width made it wrap onto a line of its own on a
+					phone: three ragged rows, the last one an empty half with one
+					button at the far side of it. Inline below `sm`, where the row is
+					already wrapping and there is nothing to separate it from; pushed
+					away from the filters above that, where the distance says what it
+					is — one of these hides rows, the other reorders them.
+				-->
+					<!--
+					Looking for one, rather than choosing a kind.
+
+					The controls beside this answer "which kind" — finished, put
+					away, in this notebook, carrying that label. None of them
+					answers "the one about the plumber", which is what somebody
+					with three hundred tasks is actually asking. It narrows as you
+					type and the count beside it says what is left.
+				-->
+				</FilterBar>
 			{/snippet}
 		</RoomToolbar>
 		{#if visibleTodos.length === 0}

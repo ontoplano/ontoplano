@@ -390,6 +390,10 @@ export const messages: Catalogue = {
 		'Mit Kommas oder Leerzeichen trennen. Ein führendes # ist in Ordnung.',
 	'fields.todo.tagsExample': 'küche, dringend, a1',
 	'fields.todo.urgencyInterestEnergy': 'Dringlichkeit, Interesse, Energie',
+	'filters.clear': 'Zurücksetzen',
+	'filters.filters': 'Filter',
+	'filters.filtersOn': 'Filter aktiv',
+	'filters.narrowThisList': 'Diese Liste eingrenzen',
 	'finance.bills.amountOver': '{amount} mehr',
 	'finance.bills.amountUnder': '{amount} weniger',
 	'finance.bills.andItsWholePaymentHistory':

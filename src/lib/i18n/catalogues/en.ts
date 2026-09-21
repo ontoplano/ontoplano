@@ -373,6 +373,10 @@ export const messages: Catalogue = {
 	'fields.todo.separateWithCommasOrSpaces': 'Separate with commas or spaces. A leading # is fine.',
 	'fields.todo.tagsExample': 'kitchen, urgent, a1',
 	'fields.todo.urgencyInterestEnergy': 'Urgency, interest, energy',
+	'filters.clear': 'Clear',
+	'filters.filters': 'Filters',
+	'filters.filtersOn': 'Filters on',
+	'filters.narrowThisList': 'Narrow this list',
 	'finance.bills.amountOver': '{amount} over',
 	'finance.bills.amountUnder': '{amount} under',
 	'finance.bills.andItsWholePaymentHistory':

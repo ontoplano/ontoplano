@@ -388,6 +388,10 @@ export const messages: Catalogue = {
 		'Separe por vírgulas ou espaços. Um # no início não faz mal.',
 	'fields.todo.tagsExample': 'cozinha, urgente, a1',
 	'fields.todo.urgencyInterestEnergy': 'Urgência, interesse, energia',
+	'filters.clear': 'Limpar',
+	'filters.filters': 'Filtros',
+	'filters.filtersOn': 'Filtros ativos',
+	'filters.narrowThisList': 'Filtrar esta lista',
 	'finance.bills.amountOver': '{amount} a mais',
 	'finance.bills.amountUnder': '{amount} a menos',
 	'finance.bills.andItsWholePaymentHistory':
