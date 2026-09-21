@@ -1098,7 +1098,11 @@ export function cancelOccurrence(ctx: Ctx, occurrenceId: unknown): { ok: true } 
 	}
 
 	const record = db
-		.select({ slotId: taskRecords.slotId, scheduledAt: taskRecords.scheduledAt })
+		.select({
+			slotId: taskRecords.slotId,
+			exceptionalSlotId: taskRecords.exceptionalSlotId,
+			scheduledAt: taskRecords.scheduledAt
+		})
 		.from(taskRecords)
 		.where(and(eq(taskRecords.id, id), eq(taskRecords.userId, ctx.userId)))
 		.get();
@@ -1112,6 +1116,20 @@ export function cancelOccurrence(ctx: Ctx, occurrenceId: unknown): { ok: true } 
 		// block that is no longer on it. `moveOccurrence` deletes it for the same
 		// reason.
 		deleteInstance(ctx, id);
+		return { ok: true };
+	}
+
+	/*
+	 * A record made by a one-off block: the block itself has to go.
+	 *
+	 * Deleting the record alone leaves the thing that produced it, and the
+	 * next time that day is looked at `generateInstances` makes the record
+	 * again — so cancelling a one-off did nothing at all, twice over, and the
+	 * screen showed the block right back. The record goes with its parent
+	 * through the cascade.
+	 */
+	if (record.exceptionalSlotId) {
+		deleteExceptional(ctx, record.exceptionalSlotId);
 		return { ok: true };
 	}
 

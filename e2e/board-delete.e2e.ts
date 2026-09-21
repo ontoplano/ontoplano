@@ -48,3 +48,35 @@ test('the delete in the board editor deletes', async ({ page }) => {
 
 	await expect(page.getByText('bin this one')).toHaveCount(0);
 });
+
+/**
+ * And a block, which posts somewhere else entirely.
+ *
+ * "clicking it does nothing just closes modal". A to-do deletes from that
+ * editor; a card that came from the week is a different kind of thing and its
+ * Delete goes to `?/deleteInstance`.
+ */
+test('the delete in the board editor removes a block from the day', async ({ page }) => {
+	test.setTimeout(180_000);
+	await register(page, testEmail('board-delete-block'));
+
+	await visit(page, '/tasks/board');
+	await page.waitForTimeout(1500);
+
+	// The seeded day has blocks on it; take the first one that is a block
+	// rather than a to-do — a block carries a time.
+	const card = page.locator('article.pill-soft').first();
+	await expect(card).toBeVisible({ timeout: 30_000 });
+	const said = (await card.innerText()).split('\n')[0].trim();
+
+	await page
+		.getByRole('button', { name: `Edit ${said}`, exact: true })
+		.first()
+		.click();
+	const editor = page.locator('dialog[open]').first();
+	await expect(editor).toBeVisible({ timeout: 15_000 });
+	await editor.getByRole('button', { name: /Delete/ }).click();
+	await page.waitForTimeout(2500);
+
+	await expect(page.getByText(said, { exact: true })).toHaveCount(0);
+});

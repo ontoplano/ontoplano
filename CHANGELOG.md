@@ -20,6 +20,10 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **Deleting a block from the board actually removes it from the day.** It
+  deleted the generated occurrence, which the next page load generated straight
+  back — so the press closed the dialog and the card was still there. A
+  repeating block is suppressed for that day; a one-off is deleted.
 - **The task list can be searched.** The filters beside it answer "which kind";
   this answers "the one about the plumber" — across titles, notes and labels,
   with the count beside it saying what is left.

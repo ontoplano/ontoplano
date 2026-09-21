@@ -10,7 +10,7 @@ import { toActionFailure } from '$lib/http-errors';
 import { createReminder, deleteReminder, listReminders } from '$lib/services/reminders';
 import { moveOccurrence } from '$lib/services/slots';
 import {
-	deleteInstance,
+	cancelOccurrence,
 	generateForDate,
 	listForDate as listOccurrences,
 	resolveInstanceActivity,
@@ -445,10 +445,24 @@ export const actions = {
 		}
 	},
 
+	/*
+	 * Taking a block off the day, which is not the same as deleting its row.
+	 *
+	 * It used to call `deleteInstance`, which removes the generated
+	 * occurrence and nothing else — and the next page load generates it
+	 * straight back from the block that produced it. So Delete closed the
+	 * dialog and the card was still there: "clicking it does nothing just
+	 * closes modal".
+	 *
+	 * `cancelOccurrence` is the verb that means it: a repeating block is
+	 * suppressed for that day and its row removed, a one-off is deleted
+	 * outright. It is what the planner's own cancel does, and what
+	 * `cancel_block` does over MCP.
+	 */
 	deleteInstance: async ({ request, locals }: IsolatedEvent) => {
 		const formData = await request.formData();
 		try {
-			deleteInstance(buildCtx(locals.user!.id), Number(formData.get('id')));
+			cancelOccurrence(buildCtx(locals.user!.id), formData.get('id'));
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);
