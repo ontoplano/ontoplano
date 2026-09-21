@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **A task's description opens it too.** The title was the only thing that
+  unfolded one, and the line you are reading when you want the rest did
+  nothing. A picture or a recording inside it stays its own control.
 - **Pressing Create twice makes one task.** The first press takes long enough
   to look like it missed; the second one used to make a second task. A form
   that is sending disables its own submit — the same in the board's card form

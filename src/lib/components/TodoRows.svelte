@@ -1045,7 +1045,33 @@
 								so nothing moves when the row is pressed.
 							-->
 							{#if todo.notes}
-								<Written content={todo.notes} compact oneLine={!openNotes.has(todo.id)} />
+								<!--
+									The words under the title open it too.
+
+									The title was the only thing that unfolded a task, and the
+									line under it — the one you are reading when you want the
+									rest — did nothing. It is a press now, wherever there is
+									something to unfold. A picture or a recording inside is
+									still its own control: the press is caught here rather than
+									bound to the whole block, so playing something does not
+									fold the row.
+								-->
+								{#if hasMore(todo)}
+									<!-- svelte-ignore a11y_click_events_have_key_events -->
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
+									<div
+										class="cursor-pointer"
+										onclick={(press) => {
+											const target = press.target as HTMLElement;
+											if (target.closest('a, button, audio, input, textarea')) return;
+											toggleNotes(todo.id);
+										}}
+									>
+										<Written content={todo.notes} compact oneLine={!openNotes.has(todo.id)} />
+									</div>
+								{:else}
+									<Written content={todo.notes} compact oneLine={!openNotes.has(todo.id)} />
+								{/if}
 							{/if}
 							<!-- Pressing one narrows the list to it, the way an idea's do:
 							     a label is only useful if reading back one of them is a
