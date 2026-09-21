@@ -2533,7 +2533,7 @@
 		already looking at when it reaches for them), what shape and what next on
 		the right. It wraps to two rows on a phone and holds one on a laptop.
 	-->
-	<div class="flex flex-wrap items-center gap-x-4 gap-y-2" data-tour="plan-toolbar">
+	<div class="flex flex-wrap items-center gap-x-4 gap-y-1" data-tour="plan-toolbar">
 		<!--
 			One block: ← date →, arrows hugging the date they move.
 
@@ -2586,11 +2586,14 @@
 		-->
 		{#if effectiveView === 'week'}
 			<!--
-				Centred between where you are and what shape you want it: this is
-				an adjustment rather than a way of getting somewhere, and it reads
-				as one when it sits in the middle rather than crowding the arrows.
+				Beside the controls rather than centred on a line of its own.
+
+				Centred, it took a whole row on a phone — four rows of chrome
+				between the tabs and the first hour of the day, which is most of
+				what somebody opens this page to look at. It is an adjustment, so
+				it sits with the other adjustments.
 			-->
-			<div class="mx-auto flex shrink-0 items-center gap-1" data-tour="plan-week-start">
+			<div class="flex shrink-0 items-center gap-1" data-tour="plan-week-start">
 				<span class="eyebrow hidden text-gray-500 lg:inline">{t('tasks.plan.weekStarts')}</span>
 				<button
 					type="button"
@@ -2613,9 +2616,11 @@
 			</div>
 		{/if}
 
-		<!-- Pinned right on a laptop; on a phone it takes the second line whole, so
-		     the two controls sit at the ends instead of huddling in one corner. -->
-		<div class="ml-auto flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
+		<!--
+			Pinned right, and on a phone it shares the second line with the week's
+			own nudge rather than taking one of its own.
+		-->
+		<div class="ml-auto flex flex-1 items-center justify-between gap-2 sm:flex-none sm:justify-end">
 			<!--
 				Schemes: a saved shape of a week, loaded over this one. Here rather
 				than on a line of its own because it is a control, and a control
@@ -3843,7 +3848,7 @@
 		<details
 			bind:open={todosOpen}
 			bind:this={trayEl}
-			class="mb-2 {draggingBlock ? t('tasks.plan.borderBorderDashedBorderGray400BgGray50P') : ''}"
+			class="mb-1 {draggingBlock ? t('tasks.plan.borderBorderDashedBorderGray400BgGray50P') : ''}"
 		>
 			<summary
 				class="flex cursor-pointer list-none items-center gap-2 text-sm text-gray-600 hover:text-gray-900"

@@ -12,12 +12,6 @@ from what the app actually shows.
 
 ###
 
-- `/goals` — one page, no tabs
-
-Can be put away in Preferences (`goals`), which takes it out of the bar, the wheel and the dashboard.
-
-###
-
 - `/notebooks` — one page, no tabs
 
 Can be put away in Preferences (`diary`), which takes it out of the bar, the wheel and the dashboard.
@@ -30,21 +24,27 @@ Can be put away in Preferences (`health`), which takes it out of the bar, the wh
 
 ###
 
+- `/inventory` — one page, no tabs
+
+Can be put away in Preferences (`inventory`), which takes it out of the bar, the wheel and the dashboard.
+
+###
+
 - `/finance/ledgers` — one page, no tabs
 
 Can be put away in Preferences (`finance`), which takes it out of the bar, the wheel and the dashboard.
 
 ###
 
-- `/media/audios` — one page, no tabs
+- `/goals` — one page, no tabs
 
-Can be put away in Preferences (`media`), which takes it out of the bar, the wheel and the dashboard.
+Can be put away in Preferences (`goals`), which takes it out of the bar, the wheel and the dashboard.
 
 ###
 
-- `/inventory` — one page, no tabs
+- `/media/audios` — one page, no tabs
 
-Can be put away in Preferences (`inventory`), which takes it out of the bar, the wheel and the dashboard.
+Can be put away in Preferences (`media`), which takes it out of the bar, the wheel and the dashboard.
 
 ###
 

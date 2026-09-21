@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
+import { chooseValue } from './helpers/choose';
 
 /**
  * A field and the button beside it are the same height on a phone.
@@ -46,7 +47,7 @@ test('a goal’s progress field and the button beside it are the same height', a
 	 * this test is about. A counted measure gets a plus and a minus instead and
 	 * has no field to line anything up with.
 	 */
-	await page.locator('[name="targetWhole"]').first().selectOption('false');
+	await chooseValue(page, 'targetWhole', 'false');
 	await page.locator('[name="targetValue"]').first().fill('1000');
 	await page.locator('[name="targetUnit"]').first().fill('km');
 	await page.getByRole('button', { name: 'Create goal' }).click();

@@ -67,7 +67,7 @@
 		onpointerenter={() => onwarm?.('prev')}
 		onfocus={() => onwarm?.('prev')}
 		disabled={prevDisabled}
-		class="icon-btn h-11 w-11 shrink-0 disabled:opacity-30"
+		class="icon-btn -ml-2 h-11 w-11 shrink-0 disabled:opacity-30 sm:ml-0"
 		title={t('tasks.plan.backOneUnit', { unit, key: keys[0] })}
 		aria-label={t('tasks.plan.backOneUnitPlain', { unit })}
 	>
@@ -84,8 +84,32 @@
 		the app's rule for anything that can change size as a consequence of a
 		press.
 	-->
-	<div class="min-w-0 flex-1 text-center sm:w-72 sm:flex-none sm:text-left">
+	<!--
+		The label takes the middle, and the way back to now sits on top of it.
+
+		On a phone the arrows are at the two ends of the row, so the middle is
+		the middle — except that "Today" was drawn between the label and the
+		forward arrow, holding its width on one side only, and the date sat off
+		centre by half of it. Laid over the right of the cell instead: the
+		label is centred in the row, and the button still never moves the arrow
+		beside it. On a wide screen it goes back into the row, where the label
+		is left-aligned and there is nothing to balance.
+	-->
+	<div class="relative min-w-0 flex-1 text-center sm:w-72 sm:flex-none sm:text-left">
 		{@render children()}
+		{#if onnow}
+			<button
+				onclick={onnow}
+				class="btn btn-sm absolute top-1/2 right-0 shrink-0 -translate-y-1/2 sm:hidden {atNow
+					? 'invisible'
+					: ''}"
+				aria-hidden={atNow}
+				tabindex={atNow ? -1 : 0}
+				title={t('tasks.plan.backToLabel', { label: nowLabel.toLowerCase() })}
+			>
+				{nowLabel}
+			</button>
+		{/if}
 	</div>
 
 	<!--
@@ -113,7 +137,7 @@
 		onclick={onnext}
 		onpointerenter={() => onwarm?.('next')}
 		onfocus={() => onwarm?.('next')}
-		class="icon-btn h-11 w-11 shrink-0"
+		class="icon-btn -mr-2 h-11 w-11 shrink-0 sm:mr-0"
 		title={t('tasks.plan.forwardOneUnit', { unit, key: keys[1] })}
 		aria-label={t('tasks.plan.forwardOneUnitPlain', { unit })}
 	>

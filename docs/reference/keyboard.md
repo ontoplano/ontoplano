@@ -21,7 +21,7 @@ works is a key listed here and the reverse.
 | Key          | Does                     |
 | ------------ | ------------------------ |
 | <kbd>i</kbd> | Capture an idea          |
-| <kbd>t</kbd> | Capture a todo           |
+| <kbd>t</kbd> | Capture a task           |
 | <kbd>d</kbd> | Capture a note           |
 | <kbd>b</kbd> | Capture something to buy |
 | <kbd>n</kbd> | New diary entry          |
@@ -188,14 +188,14 @@ works is a key listed here and the reverse.
 | <kbd>x</kbd> | Ask to delete selected        |
 | <kbd>p</kbd> | Copy to days (multiselect)    |
 
-## To-do — `/tasks/todo`
+## Tasks — `/tasks/todo`
 
 | Key          | Does          |
 | ------------ | ------------- |
 | <kbd>j</kbd> | Navigate list |
 | <kbd>k</kbd> | Navigate list |
-| <kbd>n</kbd> | New todo      |
-| <kbd>e</kbd> | Edit todo     |
+| <kbd>n</kbd> | New task      |
+| <kbd>e</kbd> | Edit task     |
 | <kbd>c</kbd> | Toggle done   |
 | <kbd>g</kbd> | Delegate      |
 | <kbd>x</kbd> | Ask to delete |
