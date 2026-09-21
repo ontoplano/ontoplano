@@ -2382,6 +2382,7 @@ export const messages: Catalogue = {
 	'settings.integrations.allOfItUnlessYou':
 		'All of it, unless you say otherwise. Anything unticked stays out of reach.',
 	'settings.integrations.andLetItDeleteThings': '…and let it delete things',
+	'settings.integrations.bankStatements': 'Bank statements',
 	'settings.integrations.connections.aUrlOfYoursThat':
 		'A URL of yours that is told when things happen here — new todos, ticks, ideas.\nStreams push data in, webhooks let your programs listen.',
 	'settings.integrations.connections.address': 'Address',

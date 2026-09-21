@@ -1122,6 +1122,37 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
+	 * The face of a chooser that stands where a `<select>` did.
+	 *
+	 * `appearance: none` takes the chrome off the closed control, and that is
+	 * as far as CSS reaches: the popup a browser opens is the platform's, and
+	 * on a dark screen it arrives white with the operating system's own blue
+	 * bar across it — "ugly selector", twice, and rightly. `Picker` draws that
+	 * list itself, and this is the button it shows while the list is shut.
+	 *
+	 * Everything a field's face has: the same border, the same height, the
+	 * same chevron in the same place, so a form does not read as one control
+	 * from somewhere else sitting among its fields.
+	 */
+	.select-face {
+		display: flex;
+		width: 100%;
+		align-items: center;
+		border: 1px solid var(--color-gray-300);
+		background-color: var(--color-white);
+		padding: 0.5rem 0.75rem;
+		font-size: 0.875rem;
+		line-height: 1.25rem;
+		color: var(--color-gray-900);
+		box-shadow: var(--shadow-card);
+		text-align: left;
+	}
+
+	.select-face:hover:not(:focus-visible) {
+		border-color: var(--color-gray-400);
+	}
+
+	/*
 	 * A switch, which is still a checkbox.
 	 *
 	 * Same bargain as `.select`: the element stays the platform's — it tabs,
@@ -1217,6 +1248,7 @@ label:has(> input[type='radio']:not(:disabled)) {
 
 	.input:focus,
 	.select:focus,
+	.select-face:focus-visible,
 	.textarea:focus {
 		outline: none;
 		border-color: var(--color-gray-900);

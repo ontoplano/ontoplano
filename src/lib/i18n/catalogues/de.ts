@@ -2455,6 +2455,7 @@ export const messages: Catalogue = {
 	'settings.integrations.allOfItUnlessYou':
 		'Alles davon, sofern Sie nichts anderes festlegen. Alles Nicht-Angekreuzte bleibt außer Reichweite.',
 	'settings.integrations.andLetItDeleteThings': '…und ihm erlauben, Dinge zu löschen',
+	'settings.integrations.bankStatements': 'Kontoauszüge',
 	'settings.integrations.connections.aUrlOfYoursThat':
 		'Eine URL von Ihnen, die informiert wird, wenn hier etwas passiert — neue Aufgaben, Häkchen, Ideen.\nStreams schieben Daten hinein, Webhooks lassen Ihre Programme mithören.',
 	'settings.integrations.connections.address': 'Adresse',

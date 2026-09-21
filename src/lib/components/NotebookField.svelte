@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Field from './Field.svelte';
+	import Picker from './Picker.svelte';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -27,11 +28,17 @@
 
 {#if notebooks.length > 0}
 	<Field label={t('ui.notebook')} {span}>
-		<select {name} class="select">
-			<option value="">{t('ui.none')}</option>
-			{#each notebooks as notebook (notebook.id)}
-				<option value={notebook.id} selected={value === notebook.id}>{notebook.title}</option>
-			{/each}
-		</select>
+		<Picker
+			{name}
+			value={String(value ?? '')}
+			options={[
+				{ value: '', label: t('ui.none') },
+				...notebooks.map((notebook) => ({
+					value: String(notebook.id),
+					label: notebook.title
+				}))
+			]}
+			label={t('ui.notebook')}
+		/>
 	</Field>
 {/if}

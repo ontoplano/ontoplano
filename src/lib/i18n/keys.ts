@@ -2083,6 +2083,7 @@ export type MessageKey =
 	| 'settings.integrations.aiAssistantDefaultName'
 	| 'settings.integrations.allOfItUnlessYou'
 	| 'settings.integrations.andLetItDeleteThings'
+	| 'settings.integrations.bankStatements'
 	| 'settings.integrations.connections.aUrlOfYoursThat'
 	| 'settings.integrations.connections.address'
 	| 'settings.integrations.connections.anAiAssistantMcp'

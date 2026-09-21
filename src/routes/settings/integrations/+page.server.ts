@@ -35,6 +35,7 @@ function subjectLabels(t: Translate): Record<string, string> {
 		bills: t('app.bills'),
 		people: t('app.people'),
 		streams: t('settings.integrations.connections.dataStreams'),
+		statements: t('settings.integrations.bankStatements'),
 		search: t('ui.search')
 	};
 }
@@ -50,6 +51,10 @@ function assistantGrid(t: Translate) {
 		const [subject, verb] = scope.split(':');
 		const row = rows.get(subject) ?? {
 			subject,
+			// Never the raw key: a family added later with no label here printed
+			// itself, so the permissions table had a row called "statements" in
+			// the middle of a page that was otherwise in the reader's language.
+			// `tests/assistant-grid.test.ts` fails rather than letting that ship.
 			label: SUBJECT_LABELS[subject] ?? subject,
 			read: null,
 			write: null,

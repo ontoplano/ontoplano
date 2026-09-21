@@ -18,6 +18,7 @@
 	import NotebookField from '$lib/components/NotebookField.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
+	import Picker from '$lib/components/Picker.svelte';
 	import { COUNT_STEP, NUMBER_KINDS, exampleNumber } from '$lib/number-kinds';
 	import { HORIZONS, HORIZON_LABELS, type Horizon } from '$lib/goals';
 	import { useT } from '$lib/i18n';
@@ -105,11 +106,13 @@
 	</Field>
 
 	<Field label={t('goals.horizon')} span={4}>
-		<select name="horizon" bind:value={horizon} class="select">
-			{#each HORIZONS as h (h)}
-				<option value={h}>{t(HORIZON_LABELS[h])}</option>
-			{/each}
-		</select>
+		<Picker
+			name="horizon"
+			value={horizon}
+			options={HORIZONS.map((h) => ({ value: h, label: t(HORIZON_LABELS[h]) }))}
+			onpick={(next) => (horizon = next)}
+			label={t('goals.horizon')}
+		/>
 	</Field>
 
 	<Field
@@ -121,12 +124,15 @@
 	</Field>
 
 	<Field label={t('goals.area')} span={4}>
-		<select name="areaId" class="select">
-			<option value="">{t('goals.none')}</option>
-			{#each areas as area (area.id)}
-				<option value={area.id} selected={editing?.areaId === area.id}>{area.name}</option>
-			{/each}
-		</select>
+		<Picker
+			name="areaId"
+			value={String(editing?.areaId ?? '')}
+			options={[
+				{ value: '', label: t('goals.none') },
+				...areas.map((area) => ({ value: String(area.id), label: area.name }))
+			]}
+			label={t('goals.area')}
+		/>
 	</Field>
 
 	<NotebookField {notebooks} value={editing?.notebookId ?? startingNotebook} span={4} />
@@ -151,16 +157,17 @@
 					-->
 					<label class="shrink-0">
 						<span class="sr-only">{t('goals.whatKindOfNumber')}</span>
-						<select
+						<Picker
 							name="targetWhole"
-							bind:value={target.whole}
-							class="select w-16 text-center text-base"
-							title={NUMBER_KINDS.find((k) => k.whole === target.whole)?.label}
-						>
-							{#each NUMBER_KINDS as kind (kind.symbol)}
-								<option value={kind.whole} title={kind.label}>{kind.symbol}</option>
-							{/each}
-						</select>
+							class="w-16 shrink-0"
+							value={String(target.whole)}
+							options={NUMBER_KINDS.map((kind) => ({
+								value: String(kind.whole),
+								label: kind.symbol
+							}))}
+							onpick={(next) => (target.whole = next === 'true')}
+							label={t('goals.whatKindOfNumber')}
+						/>
 					</label>
 					<NumberBox
 						autocomplete="off"
@@ -202,24 +209,26 @@
 				{#if workoutMeasures.length > 0}
 					<label class="mt-1 flex items-center gap-2 pl-1">
 						<span class="eyebrow shrink-0 text-gray-500">{t('goals.countedFrom')}</span>
-						<select
+						<Picker
 							name="targetMeasure"
-							class="select min-w-0 flex-1 py-1 text-xs"
-							bind:value={target.measureActivity}
-							onchange={() => {
+							class="min-w-0 flex-1"
+							value={target.measureActivity ?? ''}
+							options={[
+								{ value: '', label: t('goals.iKeepThisOneMyself') },
+								...workoutMeasures.map((measure: { activity: string; unit: string }) => ({
+									value: measure.activity,
+									label: `${measure.activity}${measure.unit ? ` (${measure.unit})` : ''}`
+								}))
+							]}
+							label={t('goals.countedFrom')}
+							onpick={(next) => {
+								target.measureActivity = next;
 								const found = workoutMeasures.find(
-									(m: { activity: string; unit: string }) => m.activity === target.measureActivity
+									(m: { activity: string; unit: string }) => m.activity === next
 								);
 								if (found?.unit) target.unit = found.unit;
 							}}
-						>
-							<option value="">{t('goals.iKeepThisOneMyself')}</option>
-							{#each workoutMeasures as measure (measure.activity + measure.unit)}
-								<option value={measure.activity}>
-									{measure.activity}{measure.unit ? ` (${measure.unit})` : ''}
-								</option>
-							{/each}
-						</select>
+						/>
 					</label>
 				{/if}
 			{/each}
@@ -244,12 +253,18 @@
 
 	{#if !editingId}
 		<Field label={t('goals.partOf')} span={4}>
-			<select name="parentId" class="select">
-				<option value="">{t('goals.standalone')}</option>
-				{#each parentOptions as g (g.id)}
-					<option value={g.id}>{t(HORIZON_LABELS[g.horizon])}: {g.title}</option>
-				{/each}
-			</select>
+			<Picker
+				name="parentId"
+				value=""
+				options={[
+					{ value: '', label: t('goals.standalone') },
+					...parentOptions.map((g) => ({
+						value: String(g.id),
+						label: `${t(HORIZON_LABELS[g.horizon])}: ${g.title}`
+					}))
+				]}
+				label={t('goals.partOf')}
+			/>
 		</Field>
 	{/if}
 

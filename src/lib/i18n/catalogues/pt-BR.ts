@@ -2428,6 +2428,7 @@ export const messages: Catalogue = {
 	'settings.integrations.allOfItUnlessYou':
 		'Tudo, a menos que você diga o contrário. O que estiver desmarcado fica fora de alcance.',
 	'settings.integrations.andLetItDeleteThings': '…e deixar que ele exclua coisas',
+	'settings.integrations.bankStatements': 'Extratos bancários',
 	'settings.integrations.connections.aUrlOfYoursThat':
 		'Uma URL sua que é avisada quando coisas acontecem aqui — novas tarefas, marcações, ideias.\nStreams empurram dados para dentro, webhooks deixam seus programas escutarem.',
 	'settings.integrations.connections.address': 'Endereço',
