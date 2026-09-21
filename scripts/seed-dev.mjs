@@ -1162,25 +1162,25 @@ shoppingItem('coffee beans', 'replenish', {
 	notes: 'the dark roast',
 	qty: 1,
 	ideal: 2,
-	attributes: { brand: 'Serra Negra', roast: 'dark', weight: '500g', origin: 'Minas Gerais' }
+	attributes: { brand: 'Emberdal', roast: 'dark', weight: '500g', origin: 'Halvern Ridge' }
 });
 shoppingItem('olive oil', 'replenish', {
 	categoryId: pantry,
 	qty: 0,
 	ideal: 1,
-	attributes: { brand: 'Gallo', weight: '500ml', origin: 'Portugal' }
+	attributes: { brand: 'Stonegrove', weight: '500ml', origin: 'Verrin Coast' }
 });
 shoppingItem('rice', 'replenish', {
 	categoryId: pantry,
 	qty: 2,
 	ideal: 2,
-	attributes: { brand: 'Tio João', weight: '1kg', variety: 'parboiled' }
+	attributes: { brand: 'Harvestone', weight: '1kg', variety: 'parboiled' }
 });
 shoppingItem('milk', 'replenish', {
 	categoryId: fresh,
 	qty: 0,
 	ideal: 2,
-	attributes: { brand: 'Itambé', weight: '1L', variety: 'semi-skimmed' }
+	attributes: { brand: 'Meadowline', weight: '1L', variety: 'semi-skimmed' }
 });
 shoppingItem('eggs', 'replenish', {
 	categoryId: fresh,
@@ -1192,31 +1192,31 @@ shoppingItem('tomatoes', 'replenish', {
 	categoryId: fresh,
 	qty: 1,
 	ideal: 4,
-	attributes: { variety: 'italiano', weight: '1kg' }
+	attributes: { variety: 'plum', weight: '1kg' }
 });
 shoppingItem('dish soap', 'replenish', {
 	categoryId: household,
 	qty: 2,
 	ideal: 3,
-	attributes: { brand: 'Ypê', weight: '500ml', scent: 'neutral' }
+	attributes: { brand: 'Brightwell', weight: '500ml', scent: 'neutral' }
 });
 shoppingItem('lightbulbs', 'replenish', {
 	categoryId: household,
 	snoozed: true,
 	qty: 0,
 	ideal: 2,
-	attributes: { fitting: 'E27', power: '9W', colour: 'warm white', brand: 'Philips' }
+	attributes: { fitting: 'E27', power: '9W', colour: 'warm white', brand: 'Halovex' }
 });
 shoppingItem('a proper desk chair', 'someday', {
 	notes: 'try one before buying',
-	attributes: { budget: 'R$1200', material: 'mesh', colour: 'grey' }
+	attributes: { budget: '1200', material: 'mesh', colour: 'grey' }
 });
 shoppingItem('noise-cancelling headphones', 'someday', {
-	attributes: { budget: 'R$1800', brand: 'Sony', colour: 'black' }
+	attributes: { budget: '1800', brand: 'Quietvale', colour: 'black' }
 });
 shoppingItem('cast iron pan', 'someday', {
 	bought: true,
-	attributes: { material: 'cast iron', size: '26cm', brand: 'Santana' }
+	attributes: { material: 'cast iron', size: '26cm', brand: 'Ironcrest' }
 });
 
 /*
@@ -1358,20 +1358,22 @@ const ledger = (name, kind, defaultParser) => {
 	);
 };
 
-const account = ledger('Current account', 'bank', 'nubank:conta_corrente');
-const creditCard = ledger('Credit card', 'card', 'nubank:credit_card_month');
+const account = ledger('Current account', 'bank', 'csv:columns');
+const creditCard = ledger('Credit card', 'card', 'csv:columns');
 
 /*
- * The movements, taken from the two exports Estevão actually has.
+ * The movements.
  *
  * Written as rows rather than as CSV text put through the parsers, because
  * this file is rsynced to the staging box on its own and has to run with
  * nothing but better-sqlite3 — importing the app's parsers would break the
- * hourly reset. The parsers are exercised against these same two shapes in
- * `tests/finance-statements.test.ts`, which is where that fidelity belongs.
+ * hourly reset. Both ledgers are seeded against the generic column parser, so
+ * nothing here is tied to one bank's export; the written parsers are exercised
+ * against real export shapes in `tests/finance-statements.test.ts`, which is
+ * where that fidelity belongs.
  *
  * Both signs as the app stores them: negative left the account, and a card
- * charge (positive in Nubank's export) is money leaving.
+ * charge is money leaving whichever sign the export wrote it with.
  */
 const movement = (ledgerId, occurredOn, amountCents, description, n = 1) => {
 	const fingerprint = `${ledgerId}|seed:${occurredOn}:${amountCents}:${description}:${n}`;
@@ -1390,12 +1392,12 @@ const movement = (ledgerId, occurredOn, amountCents, description, n = 1) => {
 		occurredOn,
 		amountCents,
 		description,
-		ledgerId === creditCard ? 'nubank:credit_card_month' : 'nubank:conta_corrente',
+		'csv:columns',
 		fingerprint
 	);
 };
 
-// The account, as `Data,Valor,Identificador,Descrição` reads it.
+// The account, as a `date,amount,id,description` export reads it.
 //
 // Three months of a life rather than three lines repeated: the salary and the
 // bills do come back every month, which is the point of a ledger, but a
@@ -1404,132 +1406,107 @@ const movement = (ledgerId, occurredOn, amountCents, description, n = 1) => {
 // box has nothing to find. So the recurring ones recur and everything else is
 // what a month actually has in it. The two December/January lines are there so
 // the list crosses a year and shows the band that says which one.
-movement(account, '2025-12-28', -9000, 'Bar do Ponto');
-movement(account, '2026-01-01', -4250, 'Farmácia do Bairro');
+movement(account, '2025-12-28', -9000, 'Corner Tap Bar');
+movement(account, '2026-01-01', -4250, 'Northgate Pharmacy');
 
 // July
-movement(account, '2026-07-02', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
-movement(account, '2026-07-03', -5000, 'Transferência enviada pelo Pix - Ontoplano - apoio mensal');
-movement(account, '2026-07-05', -180000, 'Pagamento de boleto - Aluguel Imobiliária Vista');
-movement(account, '2026-07-06', -22000, 'Débito automático - Sítio Terra Viva - cesta semanal');
-movement(account, '2026-07-07', -13500, 'Débito automático - Águas da Cidade');
-movement(account, '2026-07-08', -14000, 'Débito automático - Bloco Escalada Indoor');
-movement(account, '2026-07-09', -9990, 'Débito automático - Fibra Boa Onda');
-movement(account, '2026-07-10', -45900, 'Pagamento de boleto - Plano Vitalis');
-movement(
-	account,
-	'2026-07-11',
-	-6000,
-	'Transferência enviada pelo Pix - Racha de Quinta - mensalidade'
-);
-movement(account, '2026-07-12', -15990, 'Pagamento de boleto - Companhia de Energia');
-movement(account, '2026-07-14', -21000, 'Compra no débito - Posto Bandeirante');
-movement(
-	account,
-	'2026-07-16',
-	-38400,
-	'Pagamento de boleto - Madeireira São Jorge - tábuas de cedro'
-);
-movement(account, '2026-07-17', 32000, 'Estorno de compra - Loja Cometa');
-movement(account, '2026-07-19', -9700, 'Compra no débito - Floricultura Raiz');
-movement(account, '2026-07-21', -8000, 'Saque - Caixa Eletrônico Terminal 4412');
+movement(account, '2026-07-02', 850000, 'Transfer received - Arclight Systems - payroll');
+movement(account, '2026-07-03', -5000, 'Transfer sent - Ontoplano - monthly support');
+movement(account, '2026-07-05', -180000, 'Bill payment - Rent, Vista Lettings');
+movement(account, '2026-07-06', -22000, 'Direct debit - Hollowbrook Farm - weekly box');
+movement(account, '2026-07-07', -13500, 'Direct debit - Clearwater Utilities');
+movement(account, '2026-07-08', -14000, 'Direct debit - Summit Indoor Climbing');
+movement(account, '2026-07-09', -9990, 'Direct debit - Brightline Fibre');
+movement(account, '2026-07-10', -45900, 'Bill payment - Meridian Health Cover');
+movement(account, '2026-07-11', -6000, 'Transfer sent - Thursday Five-a-side - monthly dues');
+movement(account, '2026-07-12', -15990, 'Bill payment - Ridgeline Energy');
+movement(account, '2026-07-14', -21000, 'Debit card purchase - Milepost Fuel');
+movement(account, '2026-07-16', -38400, 'Bill payment - Northwood Timber - cedar boards');
+movement(account, '2026-07-17', 32000, 'Purchase refund - Halden Goods');
+movement(account, '2026-07-19', -9700, 'Debit card purchase - Rootwork Florist');
+movement(account, '2026-07-21', -8000, 'Cash withdrawal - ATM Terminal 4412');
 movement(
 	account,
 	'2026-07-24',
 	-25000,
-	'Transferência enviada pelo Pix - Dona Cleide - •••.447.201-•• - BANCO DO PORTO (0999) Agência: 3712 Conta: 04418-2'
+	'Transfer sent - Cleo Hartman - •••.447.201-•• - NORTHBAY TRUST (0999) Branch: 3712 Account: 04418-2'
 );
-movement(account, '2026-07-28', -300000, 'Aplicação - CDB Renda Fixa 2029');
-movement(
-	account,
-	'2026-07-30',
-	-18900,
-	'Pagamento de boleto - Clínica Veterinária Miau - vacina anual'
-);
+movement(account, '2026-07-28', -300000, 'Savings deposit - Fixed income note 2029');
+movement(account, '2026-07-30', -18900, 'Bill payment - Miller Lane Veterinary - annual vaccines');
 
 // August
-movement(account, '2026-08-03', -5000, 'Transferência enviada pelo Pix - Ontoplano - apoio mensal');
-movement(account, '2026-08-05', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
-movement(account, '2026-08-05', -180000, 'Pagamento de boleto - Aluguel Imobiliária Vista');
-movement(account, '2026-08-06', -22000, 'Débito automático - Sítio Terra Viva - cesta semanal');
-movement(account, '2026-08-07', -14120, 'Débito automático - Águas da Cidade');
-movement(account, '2026-08-08', -14000, 'Débito automático - Bloco Escalada Indoor');
-movement(account, '2026-08-09', -9990, 'Débito automático - Fibra Boa Onda');
-movement(account, '2026-08-10', -45900, 'Pagamento de boleto - Plano Vitalis');
-movement(
-	account,
-	'2026-08-11',
-	-6000,
-	'Transferência enviada pelo Pix - Racha de Quinta - mensalidade'
-);
-movement(account, '2026-08-12', -16240, 'Pagamento de boleto - Companhia de Energia');
-movement(account, '2026-08-13', 45000, 'Transferência recebida pelo Pix - Marco Duarte');
-movement(account, '2026-08-15', -27300, 'Compra no débito - Serralheria e Ferramentas Bitencourt');
+movement(account, '2026-08-03', -5000, 'Transfer sent - Ontoplano - monthly support');
+movement(account, '2026-08-05', 850000, 'Transfer received - Arclight Systems - payroll');
+movement(account, '2026-08-05', -180000, 'Bill payment - Rent, Vista Lettings');
+movement(account, '2026-08-06', -22000, 'Direct debit - Hollowbrook Farm - weekly box');
+movement(account, '2026-08-07', -14120, 'Direct debit - Clearwater Utilities');
+movement(account, '2026-08-08', -14000, 'Direct debit - Summit Indoor Climbing');
+movement(account, '2026-08-09', -9990, 'Direct debit - Brightline Fibre');
+movement(account, '2026-08-10', -45900, 'Bill payment - Meridian Health Cover');
+movement(account, '2026-08-11', -6000, 'Transfer sent - Thursday Five-a-side - monthly dues');
+movement(account, '2026-08-12', -16240, 'Bill payment - Ridgeline Energy');
+movement(account, '2026-08-13', 45000, 'Transfer received - Marcus Reid');
+movement(account, '2026-08-15', -27300, 'Debit card purchase - Ironway Tools & Metalwork');
 movement(
 	account,
 	'2026-08-18',
 	-120000,
-	'Transferência enviada pelo Pix - Zé Cova - •••.821.910-•• - PAGAMENTOS ORIÓN - IP (0998) Agência: 1 Conta: 89023719-0'
+	'Transfer sent - J. Kovac - •••.821.910-•• - ORION PAYMENTS (0998) Branch: 1 Account: 89023719-0'
 );
-movement(account, '2026-08-20', -18700, 'Compra no débito - Posto Bandeirante');
-movement(account, '2026-08-22', -64300, 'Pagamento de boleto - IPVA 2026 parcela 3/3');
-movement(account, '2026-08-26', -11200, 'Compra no débito - Pet Shop Focinho Feliz');
-movement(account, '2026-08-29', -300000, 'Aplicação - CDB Renda Fixa 2029');
+movement(account, '2026-08-20', -18700, 'Debit card purchase - Milepost Fuel');
+movement(account, '2026-08-22', -64300, 'Bill payment - Vehicle tax 2026 instalment 3/3');
+movement(account, '2026-08-26', -11200, 'Debit card purchase - Paws & Whiskers Pet Shop');
+movement(account, '2026-08-29', -300000, 'Savings deposit - Fixed income note 2029');
 
 // September
-movement(account, '2026-09-03', -5000, 'Transferência enviada pelo Pix - Ontoplano - apoio mensal');
-movement(account, '2026-09-05', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
-movement(account, '2026-09-05', -180000, 'Pagamento de boleto - Aluguel Imobiliária Vista');
-movement(account, '2026-09-06', -22000, 'Débito automático - Sítio Terra Viva - cesta semanal');
-movement(account, '2026-09-07', -12880, 'Débito automático - Águas da Cidade');
-movement(account, '2026-09-08', -14000, 'Débito automático - Bloco Escalada Indoor');
-movement(account, '2026-09-09', -15880, 'Pagamento de boleto - Companhia de Energia');
-movement(account, '2026-09-09', -9990, 'Débito automático - Fibra Boa Onda');
-movement(account, '2026-09-10', -45900, 'Pagamento de boleto - Plano Vitalis');
-movement(account, '2026-09-11', 120000, 'Transferência recebida pelo Pix - Restituição IRPF');
-movement(
-	account,
-	'2026-09-11',
-	-6000,
-	'Transferência enviada pelo Pix - Racha de Quinta - mensalidade'
-);
-movement(account, '2026-09-12', -7600, 'Compra no débito - Feira da Praça');
+movement(account, '2026-09-03', -5000, 'Transfer sent - Ontoplano - monthly support');
+movement(account, '2026-09-05', 850000, 'Transfer received - Arclight Systems - payroll');
+movement(account, '2026-09-05', -180000, 'Bill payment - Rent, Vista Lettings');
+movement(account, '2026-09-06', -22000, 'Direct debit - Hollowbrook Farm - weekly box');
+movement(account, '2026-09-07', -12880, 'Direct debit - Clearwater Utilities');
+movement(account, '2026-09-08', -14000, 'Direct debit - Summit Indoor Climbing');
+movement(account, '2026-09-09', -15880, 'Bill payment - Ridgeline Energy');
+movement(account, '2026-09-09', -9990, 'Direct debit - Brightline Fibre');
+movement(account, '2026-09-10', -45900, 'Bill payment - Meridian Health Cover');
+movement(account, '2026-09-11', 120000, 'Transfer received - Tax refund');
+movement(account, '2026-09-11', -6000, 'Transfer sent - Thursday Five-a-side - monthly dues');
+movement(account, '2026-09-12', -7600, 'Debit card purchase - Riverside Farmers Market');
 
 // And the card, as `date,title,amount` reads it — charges, so all outgoing.
 // The same shape of variety, and for the same reason: a card statement where
 // every line is the supermarket is a card statement nobody has.
-movement(creditCard, '2026-07-04', -8600, 'Casa do Jardineiro - mudas e substrato');
-movement(creditCard, '2026-07-08', -19900, 'Mercado Bom Preço');
+movement(creditCard, '2026-07-04', -8600, 'The Potting Shed - seedlings and compost');
+movement(creditCard, '2026-07-08', -19900, 'Fairmount Supermarket');
 movement(creditCard, '2026-07-11', -3990, 'Sonora Streaming');
-movement(creditCard, '2026-07-13', -5590, 'Cinefila.tv');
-movement(creditCard, '2026-07-15', -7400, 'Padaria Estrela');
-movement(creditCard, '2026-07-17', -16800, 'Açougue do Zeca - corte do sítio');
-movement(creditCard, '2026-07-18', -8900, 'Corrida *Vaivem');
-movement(creditCard, '2026-07-19', -13400, 'Drogaria Bom Dia');
-movement(creditCard, '2026-07-20', -24900, 'Ferramentas Boa Lâmina - formão e goiva');
-movement(creditCard, '2026-07-22', -9800, 'Bloco Escalada Indoor - sapatilha');
-movement(creditCard, '2026-07-25', -4780, 'Delivery *Cantina da Vó');
-movement(creditCard, '2026-07-27', -29900, 'Loja Online Tucano');
-movement(creditCard, '2026-08-02', -13900, 'Pet Center - areia e ração dos dois');
-movement(creditCard, '2026-08-06', -18740, 'Mercado Bom Preço');
-movement(creditCard, '2026-08-09', -4200, 'Hortifruti da Esquina');
+movement(creditCard, '2026-07-13', -5590, 'Reelbox.tv');
+movement(creditCard, '2026-07-15', -7400, 'Starling Bakery');
+movement(creditCard, '2026-07-17', -16800, 'Alder Street Butcher - farm cut');
+movement(creditCard, '2026-07-18', -8900, 'Ride *Wayfare');
+movement(creditCard, '2026-07-19', -13400, 'Daybreak Chemist');
+movement(creditCard, '2026-07-20', -24900, 'Keenedge Tools - chisel and gouge');
+movement(creditCard, '2026-07-22', -9800, 'Summit Indoor Climbing - shoes');
+movement(creditCard, '2026-07-25', -4780, 'Delivery *Copper Pot Bistro');
+movement(creditCard, '2026-07-27', -29900, 'Kestrel Online Store');
+movement(creditCard, '2026-08-02', -13900, 'Pet Center - litter and food for both');
+movement(creditCard, '2026-08-06', -18740, 'Fairmount Supermarket');
+movement(creditCard, '2026-08-09', -4200, 'Corner Greengrocer');
 movement(creditCard, '2026-08-11', -3990, 'Sonora Streaming');
-movement(creditCard, '2026-08-12', -6700, 'Casa do Jardineiro - sementes de manjericão');
-movement(creditCard, '2026-08-13', -5590, 'Cinefila.tv');
-movement(creditCard, '2026-08-14', -1000, 'Casa - do caralho');
-movement(creditCard, '2026-08-16', -11250, 'Cine Palácio');
-movement(creditCard, '2026-08-17', -21900, 'Chuteira Store - travinha');
-movement(creditCard, '2026-08-19', -2390, 'Assinatura *Nuvem');
-movement(creditCard, '2026-08-19', -2390, 'Assinatura *Nuvem', 2);
-movement(creditCard, '2026-08-21', -9800, 'Delivery *Sushi Kenzo');
-movement(creditCard, '2026-08-23', -5400, 'Bloco Escalada Indoor - magnésio');
-movement(creditCard, '2026-08-27', -15600, 'Vestir Roupas');
-movement(creditCard, '2026-09-02', -8300, 'Corrida *Vaivem');
-movement(creditCard, '2026-09-04', -12400, 'Madeireira São Jorge - lixas e verniz');
-movement(creditCard, '2026-09-06', -21300, 'Mercado Bom Preço');
-movement(creditCard, '2026-09-07', -13900, 'Pet Center - areia e ração dos dois');
-movement(creditCard, '2026-09-08', -5100, 'Hortifruti da Esquina');
-movement(creditCard, '2026-09-09', -17600, 'Açougue do Zeca - corte do sítio');
+movement(creditCard, '2026-08-12', -6700, 'The Potting Shed - basil seeds');
+movement(creditCard, '2026-08-13', -5590, 'Reelbox.tv');
+movement(creditCard, '2026-08-14', -1000, 'Homeware - odds and ends');
+movement(creditCard, '2026-08-16', -11250, 'Palace Cinema');
+movement(creditCard, '2026-08-17', -21900, 'Bootroom Sports - football boots');
+movement(creditCard, '2026-08-19', -2390, 'Subscription *Nimbus');
+movement(creditCard, '2026-08-19', -2390, 'Subscription *Nimbus', 2);
+movement(creditCard, '2026-08-21', -9800, 'Delivery *Harbour Sushi');
+movement(creditCard, '2026-08-23', -5400, 'Summit Indoor Climbing - chalk');
+movement(creditCard, '2026-08-27', -15600, 'Everyday Clothing');
+movement(creditCard, '2026-09-02', -8300, 'Ride *Wayfare');
+movement(creditCard, '2026-09-04', -12400, 'Northwood Timber - sandpaper and varnish');
+movement(creditCard, '2026-09-06', -21300, 'Fairmount Supermarket');
+movement(creditCard, '2026-09-07', -13900, 'Pet Center - litter and food for both');
+movement(creditCard, '2026-09-08', -5100, 'Corner Greengrocer');
+movement(creditCard, '2026-09-09', -17600, 'Alder Street Butcher - farm cut');
 movement(creditCard, '2026-09-11', -3990, 'Sonora Streaming');
 
 const sortRule = (kind, name, pattern, position, color) => {
@@ -1549,10 +1526,10 @@ const sortRule = (kind, name, pattern, position, color) => {
 };
 
 // Order matters: the first rule that matches wins, so the specific ones sit
-// above the general. `boleto` used to be the whole of Utilities, which put a
-// health plan and a rent payment under it — every bill in Brazil arrives as a
-// boleto, and a rule that matches the envelope rather than the thing inside it
-// is the mistake this seed should be demonstrating the fix for.
+// above the general. `bill payment` used to be the whole of Utilities, which
+// put the health cover and the rent under it — most bills arrive as a bill
+// payment, and a rule that matches the envelope rather than the thing inside
+// it is the mistake this seed should be demonstrating the fix for.
 //
 // Farm food sits above Groceries for the same reason. Somebody who buys a box
 // from a smallholding every week and meat from one butcher wants to see that
@@ -1560,22 +1537,22 @@ const sortRule = (kind, name, pattern, position, color) => {
 // argument for rules you write yourself, and it only shows if the seed has a
 // life in it specific enough to need them.
 sortRule('category', 'Ontoplano', 'ontoplano', 0, '#4338ca');
-sortRule('category', 'Rent', 'aluguel', 1, '#7c2d12');
-sortRule('category', 'Cats', 'veterinária|pet shop|pet center', 2, '#a16207');
-sortRule('category', 'Garden', 'jardineiro|floricultura|muda|semente', 3, '#15803d');
-sortRule('category', 'Woodwork', 'madeireira|ferramenta|serralheria|formão', 4, '#92400e');
-sortRule('category', 'Climbing', 'escalada|magnésio', 5, '#c2410c');
-sortRule('category', 'Football', 'racha|chuteira', 6, '#166534');
-sortRule('category', 'Health', 'vitalis|drogaria|farmácia', 7, '#0e7490');
-sortRule('category', 'Utilities', 'energia|águas|fibra', 8, '#b45309');
-sortRule('category', 'Farm food', 'sítio|açougue|hortifruti|feira', 9, '#4d7c0f');
-sortRule('category', 'Groceries', 'mercado|padaria', 10, '#1d4ed8');
-sortRule('category', 'Transport', 'posto|corrida', 11, '#0369a1');
-sortRule('category', 'Eating out', 'delivery|cantina|sushi', 12, '#be123c');
-sortRule('category', 'Subscriptions', String.raw`assinatura \*|sonora|cinefila`, 13, '#6d28d9');
-sortRule('category', 'Savings', 'aplicação|cdb', 14, '#0f766e');
-sortRule('tag', 'healthy', 'sítio|hortifruti|escalada|racha|feira', 0, '#0f766e');
-sortRule('tag', 'pix', 'pix', 1, '#9d174d');
+sortRule('category', 'Rent', 'rent', 1, '#7c2d12');
+sortRule('category', 'Cats', 'veterinary|pet shop|pet center', 2, '#a16207');
+sortRule('category', 'Garden', 'potting shed|florist|seed', 3, '#15803d');
+sortRule('category', 'Woodwork', 'timber|tools|metalwork|chisel', 4, '#92400e');
+sortRule('category', 'Climbing', 'climbing|chalk', 5, '#c2410c');
+sortRule('category', 'Football', 'five-a-side|football', 6, '#166534');
+sortRule('category', 'Health', 'health cover|chemist|pharmacy', 7, '#0e7490');
+sortRule('category', 'Utilities', 'energy|water|fibre', 8, '#b45309');
+sortRule('category', 'Farm food', 'farm|butcher|greengrocer', 9, '#4d7c0f');
+sortRule('category', 'Groceries', 'supermarket|bakery', 10, '#1d4ed8');
+sortRule('category', 'Transport', String.raw`fuel|ride \*`, 11, '#0369a1');
+sortRule('category', 'Eating out', 'delivery|bistro|sushi', 12, '#be123c');
+sortRule('category', 'Subscriptions', String.raw`subscription \*|sonora|reelbox`, 13, '#6d28d9');
+sortRule('category', 'Savings', 'savings deposit|fixed income', 14, '#0f766e');
+sortRule('tag', 'healthy', 'farm|greengrocer|climbing|five-a-side', 0, '#0f766e');
+sortRule('tag', 'transfers', 'transfer', 1, '#9d174d');
 
 // --- locations (inventory) -----------------------------------------------------------
 //
@@ -1646,7 +1623,7 @@ filedItem('USB-C cable', deskDrawer, { plug: 'USB-C', speed: 'USB3' });
 filedItem('HDMI cable', deskDrawer, { length: '2m' });
 filedItem('label printer', officeLocation, { model: 'P710' });
 
-filedItem('blender', kitchenRoom, { brand: 'Philips', power: '600W', capacity: '1.5L' });
+filedItem('blender', kitchenRoom, { brand: 'Halovex', power: '600W', capacity: '1.5L' });
 filedItem('bicarbonate of soda', pantryLoc, { weight: '250g', kind: 'baking' });
 filedItem('dish soap', underSink);
 filedItem('spare bulbs', underSink, { fitting: 'E27', watts: '9' });
@@ -1851,12 +1828,12 @@ const recipe = (title, extra = {}) => {
 
 /** What the staples a recipe conjures are like, so they are not bare names. */
 const PANTRY_ATTRIBUTES = {
-	pasta: { shape: 'penne', weight: '500g', brand: 'Barilla' },
-	garlic: { variety: 'roxo', kind: 'fresh' },
-	'black beans': { weight: '1kg', variety: 'preto' },
-	'olive oil': { brand: 'Gallo', weight: '500ml' },
+	pasta: { shape: 'penne', weight: '500g', brand: 'Semolo' },
+	garlic: { variety: 'purple', kind: 'fresh' },
+	'black beans': { weight: '1kg', variety: 'black' },
+	'olive oil': { brand: 'Stonegrove', weight: '500ml' },
 	onion: { variety: 'brown', kind: 'fresh' },
-	rice: { brand: 'Tio João', weight: '1kg' }
+	rice: { brand: 'Harvestone', weight: '1kg' }
 };
 
 const ingredient = (recipeId, itemName, quantity, unit, note = '') => {
@@ -2488,7 +2465,7 @@ if (!forgottenTodo)
 idea('Learn to sail, properly, not just crewing for other people', ['someday']);
 shoppingItem('a proper armchair', 'someday', {
 	categoryId: household,
-	attributes: { budget: 'R$2500', material: 'leather', colour: 'tan' }
+	attributes: { budget: '2500', material: 'leather', colour: 'tan' }
 });
 
 age(
