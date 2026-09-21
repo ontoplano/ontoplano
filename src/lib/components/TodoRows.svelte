@@ -156,7 +156,7 @@
 	 * whose — `a1`, `done` — so being able to read back one of them is the
 	 * point of having them at all.
 	 */
-	let tagFilter = $state('');
+	let tagFilter = $state<string[]>([]);
 	let selectedIndex = $state(0);
 	let delegatingId: number | null = $state(null);
 	let confirmingDelete: number | null = $state(null);
@@ -322,9 +322,7 @@
 		else if (notebookFilter !== '')
 			shown = shown.filter((t: Todo) => String(t.notebookId) === notebookFilter);
 
-		if (tagFilter === 'none') shown = shown.filter((t: Todo) => t.tags.length === 0);
-		else if (tagFilter !== '')
-			shown = shown.filter((t: Todo) => t.tags.some((one) => one.name === tagFilter));
+		shown = byTag(shown);
 
 		const wanted = looking.trim();
 		if (wanted !== '') {
@@ -357,9 +355,7 @@
 		if (notebookFilter === 'none') held = held.filter((t: Todo) => t.notebookId === null);
 		else if (notebookFilter !== '')
 			held = held.filter((t: Todo) => String(t.notebookId) === notebookFilter);
-		if (tagFilter === 'none') held = held.filter((t: Todo) => t.tags.length === 0);
-		else if (tagFilter !== '')
-			held = held.filter((t: Todo) => t.tags.some((one) => one.name === tagFilter));
+		held = byTag(held);
 		return held;
 	});
 
@@ -382,11 +378,30 @@
 		...notebooks.map((book) => ({ value: String(book.id), label: book.title }))
 	]);
 
+	/*
+	 * Several labels at once, because one was not a filter.
+	 *
+	 * "Show me the urgent ones" is a question a single label answers; "the
+	 * urgent ones and the ones about the house" is the question anybody with a
+	 * list long enough to filter is actually asking. Any of them rather than
+	 * all: a task carries two or three labels, and asking for the ones
+	 * carrying every label you picked usually asks for nothing.
+	 *
+	 * "No label" stands apart — it is not a label, so it cannot be combined
+	 * with one, and choosing it clears the rest.
+	 */
+	const NO_TAG = 'none';
+
 	let tagChoices = $derived([
-		{ value: '', label: t('todoRows.everyTag') },
-		{ value: 'none', label: t('todoRows.noTag') },
+		{ value: NO_TAG, label: t('todoRows.noTag') },
 		...tagsInUse.map((name) => ({ value: name, label: name }))
 	]);
+
+	function byTag(rows: Todo[]): Todo[] {
+		if (tagFilter.length === 0) return rows;
+		if (tagFilter.includes(NO_TAG)) return rows.filter((t: Todo) => t.tags.length === 0);
+		return rows.filter((t: Todo) => t.tags.some((one) => tagFilter.includes(one.name)));
+	}
 
 	/** How many are hidden by the two toggles, so neither is a silent filter. */
 	let putAway = $derived(inScope.filter((t: Todo) => t.archivedAt !== null).length);
@@ -678,9 +693,19 @@
 			     gets no control for labels. -->
 			{#if tagsInUse.length > 0}
 				<Picker
-					value={tagFilter}
-					options={tagChoices}
-					onpick={(next) => (tagFilter = next)}
+					values={tagFilter}
+					options={[{ value: '', label: t('todoRows.everyTag') }, ...tagChoices]}
+					onpickMany={(next) => {
+						// Two rows that are not labels. "Every tag" is the way back to
+						// no filter at all, and "no label" answers the question on its
+						// own — neither combines with a label.
+						if (next.includes('')) tagFilter = [];
+						else if (next.includes(NO_TAG))
+							tagFilter = tagFilter.includes(NO_TAG)
+								? next.filter((one) => one !== NO_TAG)
+								: [NO_TAG];
+						else tagFilter = next;
+					}}
 					label={t('todoRows.filterByTag')}
 					class="min-w-28 flex-1 sm:flex-none"
 				/>
@@ -1188,11 +1213,16 @@
 										<button
 											type="button"
 											onclick={() => {
-												tagFilter = tagFilter === tag.name ? '' : tag.name;
+												// Pressing a label adds it to the filter rather than
+												// replacing it, so two presses is two labels — the
+												// same thing the picker above does.
+												tagFilter = tagFilter.includes(tag.name)
+													? tagFilter.filter((one) => one !== tag.name)
+													: [...tagFilter.filter((one) => one !== NO_TAG), tag.name];
 												selectedIndex = 0;
 											}}
 											class="chip"
-											aria-pressed={tagFilter === tag.name}
+											aria-pressed={tagFilter.includes(tag.name)}
 											title={tag.taggedAt
 												? t('todoRows.taggedAgo', { ago: agoOf(tag.taggedAt, now()) })
 												: undefined}

@@ -22,21 +22,38 @@
 	 */
 	import Icon from '$lib/components/Icon.svelte';
 	import { afterPress } from '$lib/after-press';
+	import { useT } from '$lib/i18n';
 	import { untrack } from 'svelte';
+
+	const t = useT();
 
 	let {
 		value,
+		values,
 		options,
 		onpick,
+		onpickMany,
 		label,
 		name,
 		required = false,
 		class: klass = ''
 	}: {
-		value: T;
+		value?: T;
+		/**
+		 * Several at once, where narrowing by one is not enough.
+		 *
+		 * A filter that holds one label answers "show me the urgent ones" and
+		 * not "show me the urgent ones and the ones about the house", which is
+		 * the same question asked of a list long enough to need filtering at
+		 * all. Given this, the control toggles rather than chooses: the list
+		 * stays open, each row is a pill that is on or off, and `onpickMany`
+		 * is handed the whole set.
+		 */
+		values?: readonly T[];
 		/** What can be chosen, in the order they should be offered. */
 		options: readonly { value: T; label: string }[];
 		onpick?: (next: T) => void;
+		onpickMany?: (next: T[]) => void;
 		/** What this control is, for whoever is not looking at it. */
 		label: string;
 		/**
@@ -66,6 +83,8 @@
 		held = incoming;
 	});
 
+	const many = $derived(values !== undefined);
+	const chosenMany = $derived(new Set<string>(values ?? []));
 	const now = $derived(name ? held : value);
 	const field = $derived(Boolean(name));
 
@@ -74,10 +93,84 @@
 	let face = $state<HTMLButtonElement>();
 	let list = $state<HTMLElement>();
 
+	/*
+	 * The menu is drawn in the top layer, not inside the card it belongs to.
+	 *
+	 * The playful style clips rounded surfaces so a filled bar flush against a
+	 * card's edge does not poke past the curve — and a toolbar lives inside one
+	 * of those cards, so a menu opening downwards out of it was cut off at the
+	 * card's bottom edge with the rest of the list unreachable. No stacking
+	 * order fixes that: `overflow: clip` is not something a z-index argues
+	 * with.
+	 *
+	 * `popover` is the platform's own way out. The element leaves the
+	 * document's stacking and paint order entirely, which also means it no
+	 * longer sits under the button — so where it goes is arithmetic, done
+	 * against the button's own box each time it opens.
+	 */
+	let where = $state({ left: 0, top: 0, width: 0 });
+
+	function place() {
+		const box = face?.getBoundingClientRect();
+		if (!box) return;
+		where = { left: box.left, top: box.bottom + 4, width: box.width };
+	}
+
+	$effect(() => {
+		if (!open || !list) return;
+		place();
+		try {
+			list.showPopover?.();
+		} catch {
+			/* already open, or a browser without popovers: it still draws */
+		}
+
+		/*
+		 * A popover does not move with the page, because it is not on it. So
+		 * the menu follows while it is open, and any scroll counts — a toolbar
+		 * inside a panel that scrolls is the common case here, and only the
+		 * capture phase hears those.
+		 */
+		const follow = () => place();
+		window.addEventListener('scroll', follow, true);
+		window.addEventListener('resize', follow);
+		return () => {
+			window.removeEventListener('scroll', follow, true);
+			window.removeEventListener('resize', follow);
+			try {
+				list?.hidePopover?.();
+			} catch {
+				/* already closed */
+			}
+		};
+	});
+
 	/** Which row the keyboard is on while the list is open. */
 	let at = $state(-1);
 
 	const chosen = $derived(options.find((one) => one.value === now) ?? options[0]);
+
+	/*
+	 * What the button says when several can be on.
+	 *
+	 * The names, while they fit in a control this size; a count past that,
+	 * because three labels spelled out is a button wider than the toolbar it
+	 * sits in. The full list is one press away.
+	 */
+	const HOW_MANY_FIT = 2;
+	const saidMany = $derived.by(() => {
+		const on = options.filter((one) => chosenMany.has(one.value));
+		if (on.length === 0) return options[0]?.label ?? '';
+		if (on.length <= HOW_MANY_FIT) return on.map((one) => one.label).join(', ');
+		return t('picker.nChosen', { count: on.length });
+	});
+
+	function toggle(next: T) {
+		// A plain array: this is read once to build the answer and thrown away,
+		// so there is nothing here for a reactive Set to be reactive about.
+		const on = (values ?? []).filter((one) => one !== next);
+		onpickMany?.(on.length === (values ?? []).length ? ([...on, next] as T[]) : (on as T[]));
+	}
 
 	/*
 	 * One press, one choice.
@@ -202,7 +295,7 @@
 		onclick={() => (open ? (open = false) : show())}
 		onkeydown={onFaceKey}
 	>
-		<span class="truncate">{chosen?.label ?? ''}</span>
+		<span class="truncate">{many ? saidMany : (chosen?.label ?? '')}</span>
 		<Icon name="chevron-down" size={12} />
 	</button>
 
@@ -214,8 +307,11 @@
 		-->
 		<ul
 			bind:this={list}
-			class="overlay-face absolute top-full left-0 z-20 mt-1 max-h-64 min-w-full overflow-y-auto border shadow-overlay"
+			popover="manual"
+			style="left:{where.left}px; top:{where.top}px; min-width:{where.width}px"
+			class="overlay-face fixed m-0 max-h-64 overflow-y-auto border p-0 shadow-overlay"
 			role="listbox"
+			aria-multiselectable={many ? true : undefined}
 			aria-label={label}
 		>
 			{#each options as option (option.value)}
@@ -225,18 +321,24 @@
 						tabindex="-1"
 						role="option"
 						data-value={option.value}
-						aria-selected={option.value === now}
-						class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm whitespace-nowrap {option.value ===
-							now || options.indexOf(option) === at
+						aria-selected={many ? chosenMany.has(option.value) : option.value === now}
+						class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm whitespace-nowrap {(
+							many ? chosenMany.has(option.value) : option.value === now
+						)
 							? 'overlay-face-on'
-							: ''}"
-						onclick={() => take(option.value)}
+							: options.indexOf(option) === at
+								? 'overlay-face-on'
+								: ''}"
+						onclick={() => (many ? toggle(option.value) : take(option.value))}
 						onmouseenter={() => (at = options.indexOf(option))}
 					>
 						<!-- The tick keeps its place, so the row does not shift when the
 						     chosen one changes. -->
 						<span class="w-3 shrink-0">
-							{#if option.value === now}<Icon name="check" size={12} />{/if}
+							{#if many ? chosenMany.has(option.value) : option.value === now}<Icon
+									name="check"
+									size={12}
+								/>{/if}
 						</span>
 						{option.label}
 					</button>

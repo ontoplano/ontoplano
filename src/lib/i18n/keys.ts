@@ -1574,6 +1574,7 @@ export type MessageKey =
 	| 'phone.aTestRemindersWillLook'
 	| 'pickOne.nothingMatches'
 	| 'pickOne.typeToNarrow'
+	| 'picker.nChosen'
 	| 'pictures.add'
 	| 'pictures.dropAnywhere'
 	| 'pictures.hint'
@@ -3360,6 +3361,7 @@ export interface MessageValuesFor {
 	'notify.phrase': { verb: string | number; what: string | number };
 	'notify.titleMany': { count: number; who: string | number };
 	'notify.titleOne': { verb: string | number; what: string | number; who: string | number };
+	'picker.nChosen': { count: number };
 	'pictures.hint': { kilobytes: string | number };
 	'ratingPicker.leaveUnanswered': { rating: string | number };
 	'ratings.labelValueOf5': { label: string | number; value: string | number };

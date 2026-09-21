@@ -1795,6 +1795,7 @@ export const messages: Catalogue = {
 	'phone.aTestRemindersWillLook': 'Um teste — os lembretes chegam assim.',
 	'pickOne.nothingMatches': 'Nada corresponde',
 	'pickOne.typeToNarrow': 'Digite para filtrar',
+	'picker.nChosen': '{count} escolhidos',
 	'pictures.add': 'Adicionar uma imagem',
 	'pictures.dropAnywhere': 'solte em qualquer lugar da caixa',
 	'pictures.hint': '…ou cole uma, ou arraste uma — até {kilobytes}KB',

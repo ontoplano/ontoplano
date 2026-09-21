@@ -1806,6 +1806,7 @@ export const messages: Catalogue = {
 	'phone.aTestRemindersWillLook': 'Una prueba — así se verán los recordatorios.',
 	'pickOne.nothingMatches': 'Nada coincide',
 	'pickOne.typeToNarrow': 'Escribe para filtrar',
+	'picker.nChosen': '{count} elegidos',
 	'pictures.add': 'Agregar una foto',
 	'pictures.dropAnywhere': 'suéltala en cualquier parte del cuadro',
 	'pictures.hint': '…o pega una, o suelta una — hasta {kilobytes}KB',
