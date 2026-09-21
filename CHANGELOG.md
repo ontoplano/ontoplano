@@ -31,6 +31,8 @@ releases mattered.
 - **The filters in a toolbar are the app's own control, not a `<select>`.** The
   tag and notebook filters on the task list, and the ledger, window, tag and
   month filters in Finance, are the same button-and-menu the sort control uses.
+- **The new filter control keeps the corners every button beside it has.** A
+  full-width button inside a card is drawn as a row, and rows are square.
 - **A menu's chosen row can be read again.** It was marked with a near-white
   wash under the white ink of the dark overlay face.
 - **A board card puts its time under its title.** The time sat in front of the

@@ -54,10 +54,16 @@
 
 <svelte:window onclick={elsewhere} onkeydown={onKey} />
 
-<div bind:this={root} class="relative {klass}">
+<div bind:this={root} class="relative flex {klass}">
+	<!--
+		`flex-1` rather than `w-full` to fill the space the caller gave it: a
+		full-width button inside a card is a *row*, and rows are drawn square —
+		so `w-full` here left these two controls with square corners in a row of
+		rounded ones. See the `w-full` rule in layout.css.
+	-->
 	<button
 		type="button"
-		class="btn btn-sm w-full justify-between"
+		class="btn btn-sm min-w-0 flex-1 justify-between"
 		aria-haspopup="listbox"
 		aria-expanded={open}
 		aria-label={label}
