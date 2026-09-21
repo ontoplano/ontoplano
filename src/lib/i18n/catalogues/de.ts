@@ -1862,10 +1862,13 @@ export const messages: Catalogue = {
 		other: 'Das war der Tag — alle {count} Blöcke beantwortet.'
 	},
 	'reminders.daySomeLeft': 'Das war der Tag — {done} von {total} erledigt, {left} noch offen.',
+	'reminders.dayStartHasAlreadyBeen': '{at} war heute schon.',
 	'reminders.days': 'Tage',
 	'reminders.daysCount': { one: '{count} Tag', other: '{count} Tage' },
 	'reminders.default': 'Standard',
 	'reminders.eGTakeTheBreadOut': 'z. B. das Brot herausnehmen',
+	'reminders.emptyMeansAt': 'Leer bedeutet {at}.',
+	'reminders.emptyMeansDayStart': 'Leer bedeutet {at}, wenn dein Tag beginnt.',
 	'reminders.everythingShowsOnlyTheseAre': 'Alles wird angezeigt. Nur diese werden gehört.',
 	'reminders.exactAlarmsRefused':
 		'Android lässt diese App keinen minutengenauen Wecker stellen, also kommen Erinnerungen zu spät — so spät, wie das Handy mag.',

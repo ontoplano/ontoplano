@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **The reminder form writes the day-start hour in the reader's own clock.** It
+  promised "Empty means 06:00" while the row underneath said "6:00 AM", and the
+  sentence was hard-coded English besides.
 - **The app shows what arrived while it was away.** It opened on a badge saying
   three notifications and a bell holding none: a frozen web view takes the live
   stream down with it, so nothing was pending when it came back and nothing

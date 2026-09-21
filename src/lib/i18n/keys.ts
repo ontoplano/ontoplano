@@ -1620,10 +1620,13 @@ export type MessageKey =
 	| 'reminders.day'
 	| 'reminders.dayAllAnswered'
 	| 'reminders.daySomeLeft'
+	| 'reminders.dayStartHasAlreadyBeen'
 	| 'reminders.days'
 	| 'reminders.daysCount'
 	| 'reminders.default'
 	| 'reminders.eGTakeTheBreadOut'
+	| 'reminders.emptyMeansAt'
+	| 'reminders.emptyMeansDayStart'
 	| 'reminders.everythingShowsOnlyTheseAre'
 	| 'reminders.exactAlarmsRefused'
 	| 'reminders.firstOneAt'
@@ -3329,7 +3332,10 @@ export interface MessageValuesFor {
 	'reminders.checksAgainAt': { when: string | number };
 	'reminders.dayAllAnswered': { count: number };
 	'reminders.daySomeLeft': { done: string | number; left: string | number; total: string | number };
+	'reminders.dayStartHasAlreadyBeen': { at: string | number };
 	'reminders.daysCount': { count: number };
+	'reminders.emptyMeansAt': { at: string | number };
+	'reminders.emptyMeansDayStart': { at: string | number };
 	'reminders.firstOneAt': { when: string | number };
 	'reminders.hear': { name: string | number };
 	'reminders.howManyDaysToCover': { maxDays: string | number };

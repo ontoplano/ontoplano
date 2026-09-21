@@ -1814,10 +1814,13 @@ export const messages: Catalogue = {
 		other: 'That was today — all {count} blocks answered for.'
 	},
 	'reminders.daySomeLeft': 'That was today — {done} of {total} done, {left} still to say.',
+	'reminders.dayStartHasAlreadyBeen': '{at} has already been today.',
 	'reminders.days': 'days',
 	'reminders.daysCount': { one: '{count} day', other: '{count} days' },
 	'reminders.default': 'Default',
 	'reminders.eGTakeTheBreadOut': 'e.g. take the bread out',
+	'reminders.emptyMeansAt': 'Empty means {at}.',
+	'reminders.emptyMeansDayStart': 'Empty means {at}, when your day starts.',
 	'reminders.everythingShowsOnlyTheseAre': 'Everything shows. Only these are heard.',
 	'reminders.exactAlarmsRefused':
 		'Android is not letting this app set an alarm to the minute, so reminders will arrive late — by as much as the phone feels like.',

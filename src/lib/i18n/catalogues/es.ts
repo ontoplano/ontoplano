@@ -1863,10 +1863,13 @@ export const messages: Catalogue = {
 		other: 'Ese fue el día — los {count} bloques respondidos.'
 	},
 	'reminders.daySomeLeft': 'Ese fue el día — {done} de {total} hechos, {left} por responder.',
+	'reminders.dayStartHasAlreadyBeen': '{at} ya pasó hoy.',
 	'reminders.days': 'días',
 	'reminders.daysCount': { one: '{count} día', other: '{count} días' },
 	'reminders.default': 'Predeterminado',
 	'reminders.eGTakeTheBreadOut': 'p. ej. sacar el pan',
+	'reminders.emptyMeansAt': 'Vacío significa {at}.',
+	'reminders.emptyMeansDayStart': 'Vacío significa {at}, cuando empieza tu día.',
 	'reminders.everythingShowsOnlyTheseAre': 'Todo se muestra. Solo estos se escuchan.',
 	'reminders.exactAlarmsRefused':
 		'Android no deja que esta app ponga una alarma al minuto, así que los recordatorios llegarán tarde — lo que al móvil le apetezca.',

@@ -141,9 +141,13 @@ test('an alarm with no time goes off when the day starts', async ({ page }) => {
 	await expect(page.locator('[name="time"]')).toHaveValue('');
 
 	// The field names the hour rather than describing it, so the row can be
-	// checked against what the form promised.
-	const hint = await page.getByText(/Empty means \d{2}:\d{2}/).innerText();
-	const at = hint.match(/\d{2}:\d{2}/)![0];
+	// checked against what the form promised — in the reader's own clock,
+	// which is what the row is written in too.
+	const hint = await page
+		.getByText(/Empty means /)
+		.first()
+		.innerText();
+	const at = hint.match(/\d{1,2}:\d{2}(\s?[AP]M)?/i)![0];
 
 	await page.getByRole('button', { name: 'Set it' }).click();
 	const row = page.locator('li', { hasText: 'call the vet' }).first();
@@ -479,7 +483,9 @@ test('a reminder that is already set can be moved, reworded and given a sound', 
 
 	await expect(page.getByText('take the loaf out')).toBeVisible({ timeout: 15_000 });
 	await expect(page.getByText('take the bread out')).toHaveCount(0);
-	await expect(page.getByText('08:15')).toBeVisible();
+	// The hour the way this reader's clock writes it — "08:15" or "8:15 AM"
+	// depending on the language, both of which contain this.
+	await expect(page.getByText(/8:15/).first()).toBeVisible();
 
 	// And the sound it was just given is visible before it goes off.
 	const changed = page.locator('li', { hasText: 'take the loaf out' });
