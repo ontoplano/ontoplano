@@ -2626,6 +2626,16 @@
 				than on a line of its own because it is a control, and a control
 				belongs with the other controls.
 			-->
+			<!--
+				Quiet, and with a glyph, because it is not one of the three beside
+				it.
+
+				Drawn as a plain button it read as a fourth position in the
+				segmented control next to it — four things of the same size and
+				shape, one of which opens a panel and three of which change what
+				you are looking at. The icon and the lack of a face say which
+				kind of thing it is before the word is read.
+			-->
 			<button
 				type="button"
 				onclick={() => {
@@ -2637,9 +2647,10 @@
 				}}
 				aria-expanded={schemesExpanded}
 				aria-controls="plan-schemes-panel"
-				class="btn btn-sm shrink-0"
+				class="btn btn-sm btn-quiet shrink-0"
 				title={t('tasks.plan.savedShapesOfAWeek')}
 			>
+				<Icon name="copy" size={14} />
 				{t('tasks.plan.schemes')}
 			</button>
 

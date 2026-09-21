@@ -83,55 +83,15 @@
 		under the finger that had just pressed it. Reserved instead, which is
 		the app's rule for anything that can change size as a consequence of a
 		press.
-	-->
-	<!--
-		The label takes the middle, and the way back to now sits on top of it.
 
-		On a phone the arrows are at the two ends of the row, so the middle is
-		the middle — except that "Today" was drawn between the label and the
-		forward arrow, holding its width on one side only, and the date sat off
-		centre by half of it. Laid over the right of the cell instead: the
-		label is centred in the row, and the button still never moves the arrow
-		beside it. On a wide screen it goes back into the row, where the label
-		is left-aligned and there is nothing to balance.
+		The reserve is as wide as the longest of those and not a pixel more:
+		it was half again as wide, and the slack all fell on the right, so the
+		arrow that steps the week sat adrift of the date it steps with nothing
+		in between. Centred, so what slack is left is split.
 	-->
-	<div class="relative min-w-0 flex-1 text-center sm:w-72 sm:flex-none sm:text-left">
+	<div class="relative min-w-0 flex-1 text-center sm:w-52 sm:flex-none">
 		{@render children()}
-		{#if onnow}
-			<button
-				onclick={onnow}
-				class="btn btn-sm absolute top-1/2 right-0 shrink-0 -translate-y-1/2 sm:hidden {atNow
-					? 'invisible'
-					: ''}"
-				aria-hidden={atNow}
-				tabindex={atNow ? -1 : 0}
-				title={t('tasks.plan.backToLabel', { label: nowLabel.toLowerCase() })}
-			>
-				{nowLabel}
-			</button>
-		{/if}
 	</div>
-
-	<!--
-		The way back to now: drawn always, invisible while you are there.
-
-		It used to be added and removed, which moved the arrow beside it every
-		time you stepped away from today or back to it — the same complaint as
-		the label above, one element along.
-	-->
-	{#if onnow}
-		<button
-			onclick={onnow}
-			onpointerenter={() => onwarm?.('now')}
-			onfocus={() => onwarm?.('now')}
-			class="btn btn-sm shrink-0 {atNow ? 'invisible' : ''}"
-			aria-hidden={atNow}
-			tabindex={atNow ? -1 : 0}
-			title={t('tasks.plan.backToLabel', { label: nowLabel.toLowerCase() })}
-		>
-			{nowLabel}
-		</button>
-	{/if}
 
 	<button
 		onclick={onnext}
@@ -143,4 +103,38 @@
 	>
 		<Icon name="arrow-right" size={22} />
 	</button>
+
+	<!--
+		The way back to now: drawn always, invisible while you are there.
+
+		Added and removed, it moved the arrow beside it every time you stepped
+		away from today or back to it — the same complaint as the label above,
+		one element along. So it holds its place either way.
+
+		Where that place is depends on the width, and it is one button either
+		way. After the arrows on a wide screen, so they hug the date they move
+		— it used to sit between them, sixty pixels of nothing between the date
+		and the arrow that steps it. Laid over the label on a phone, where the
+		arrows are at the two ends of the row and a width held on one side only
+		pushed the date off centre by half of it.
+
+		One button and not two of them behind width rules: two controls with
+		the same name in one page is a page where "press Today" has two
+		answers, and the suite duly found both.
+	-->
+	{#if onnow}
+		<button
+			onclick={onnow}
+			onpointerenter={() => onwarm?.('now')}
+			onfocus={() => onwarm?.('now')}
+			class="btn btn-sm absolute top-1/2 right-12 shrink-0 -translate-y-1/2 sm:static sm:translate-y-0 {atNow
+				? 'invisible'
+				: ''}"
+			aria-hidden={atNow}
+			tabindex={atNow ? -1 : 0}
+			title={t('tasks.plan.backToLabel', { label: nowLabel.toLowerCase() })}
+		>
+			{nowLabel}
+		</button>
+	{/if}
 </div>
