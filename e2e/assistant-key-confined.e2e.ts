@@ -46,7 +46,7 @@ test('the key form offers to tie a key to one notebook', async ({ page }) => {
 	 * "not found" where the interesting answer is "disabled".
 	 */
 	const shopping = page.getByRole('checkbox', { name: /Inventory: write/ });
-	const tasks = page.getByRole('checkbox', { name: /To-do list: write/ });
+	const tasks = page.getByRole('checkbox', { name: /Tasks: write/ });
 	await expect(shopping).toBeEnabled();
 
 	await reach.selectOption('notebook');
