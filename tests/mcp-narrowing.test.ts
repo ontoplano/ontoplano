@@ -155,6 +155,25 @@ describe('how much of a row comes back', () => {
 		expect(one.notes).toBeUndefined();
 	});
 
+	test('a line says what the task is about, and names its pictures', () => {
+		// A title is not always the task: half a working list is a line of
+		// title and a paragraph of what actually happened, with the screenshot
+		// that prompted it. Without these a list is unreadable without a
+		// second call per row.
+		const withShot = todos.createTodo(mine, {
+			title: 'ugly as fuck',
+			notes: 'look at this ![shot](/media/39) — the goals header is primitive',
+			notebookId: trip
+		});
+		const [one] = itemsOf(call(['tasks:read'], 'todos', { notebookId: trip })).filter(
+			(row) => row.id === withShot
+		);
+		expect(one.opening).toContain('the goals header is primitive');
+		expect(one.media).toEqual(['/media/39']);
+		// Still a line: the whole paragraph is behind `verbose`.
+		expect(one.notes).toBeUndefined();
+	});
+
 	test('`verbose` is the whole row', () => {
 		const [one] = itemsOf(call(['tasks:read'], 'todos', { tag: 'done-by-ai', verbose: true }));
 		expect(one.notes).toBe('the boiler makes a noise');

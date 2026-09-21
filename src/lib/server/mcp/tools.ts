@@ -514,6 +514,12 @@ function passesTags(
 	return true;
 }
 
+/** How long an opening is: enough to tell two things apart. */
+const PREVIEW_CHARS = 140;
+
+/** The pictures and recordings a piece of writing refers to, as links. */
+const MEDIA_LINK = /\/media\/(?:audio\/)?\d+/g;
+
 /**
  * A todo as little as it can be said in.
  *
@@ -568,6 +574,23 @@ function asLine(todo: Todo): Record<string, unknown> {
 	const out: Record<string, unknown> = { id: todo.id, title: todo.title, status: todo.status };
 	if (todo.notebookSeq !== null) out.seq = todo.notebookSeq;
 	if (todo.tags.length > 0) out.tags = todo.tags.map((one) => one.name);
+
+	/*
+	 * An opening, and what it refers to — the same two a note's line carries.
+	 *
+	 * A title is not always the task. Half the tasks on a working list are a
+	 * line of title and a paragraph of what actually happened, with the
+	 * screenshot that prompted it, and a line that mentioned neither made the
+	 * list unreadable without a second call per row. The opening says what
+	 * this is about and the links say what to fetch if it matters; `verbose`
+	 * is still there for the whole of it.
+	 */
+	const opening = (todo.notes ?? '').trim().replace(/\s+/g, ' ');
+	if (opening)
+		out.opening =
+			opening.length > PREVIEW_CHARS ? `${opening.slice(0, PREVIEW_CHARS)}\u2026` : opening;
+	const links = [...new Set((todo.notes ?? '').match(MEDIA_LINK) ?? [])];
+	if (links.length > 0) out.media = links;
 	return out;
 }
 
@@ -583,8 +606,6 @@ const shapeTodo = (detail: Detail) => (todo: Todo) => detailed(briefly(todo), as
  * its labels, when it was written — and an opening so a reader can tell two
  * apart. `verbose` gives the writing.
  */
-const PREVIEW_CHARS = 140;
-
 type NoteRow = {
 	id: number;
 	seq?: number | null;
@@ -596,9 +617,6 @@ type NoteRow = {
 	pinnedAt?: string | null;
 	tags: { id?: number; name: string; taggedAt?: string | null }[];
 };
-
-/** The pictures and recordings a piece of writing refers to, as links. */
-const MEDIA_LINK = /\/media\/(?:audio\/)?\d+/g;
 
 function noteLine(note: NoteRow): Record<string, unknown> {
 	const out: Record<string, unknown> = { id: note.id, createdAt: note.createdAt };
