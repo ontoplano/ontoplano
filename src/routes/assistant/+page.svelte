@@ -30,13 +30,6 @@
 		chat.sendMessage({ text: said });
 	}
 
-	/* The box is a `OneLine`, which is a textarea underneath — Enter would
-	   write a newline it then strips, and never send. Sending is what Enter
-	   means in a chat. */
-	function keyboard(event: KeyboardEvent) {
-		if (event.key === 'Enter' && !event.shiftKey) send(event);
-	}
-
 	/* The newest words stay on screen while an answer streams in. */
 	$effect(() => {
 		void chat.messages.length;
@@ -115,7 +108,6 @@
 			bind:value={draft}
 			class="input flex-1"
 			placeholder={t('assistant.placeholder')}
-			onkeydown={keyboard}
 		/>
 		{#if busy}
 			<button type="button" class="btn btn-sm" onclick={() => chat.stop()}>

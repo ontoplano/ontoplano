@@ -1,21 +1,12 @@
 import { expect, test } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
+import { openFilters } from './helpers/filters';
 import { visit } from './helpers/visit';
 
-/**
- * The filters fold away now, so anything that narrows the list is behind the
- * button that folds them. Unfolding is idempotent: a spec that has already
- * opened them does not shut them again.
- */
 function chip(page: import('@playwright/test').Page, label: string) {
 	// The fold button says what is narrowing the list, so while `#a2` is on it
 	// there are two buttons with that name. This is the one on the row.
 	return page.locator('button:not([aria-controls])').filter({ hasText: label });
-}
-
-async function openFilters(page: import('@playwright/test').Page): Promise<void> {
-	const fold = page.locator('[aria-controls="tasks-filters"]');
-	if ((await fold.getAttribute('aria-expanded')) === 'false') await fold.click();
 }
 
 /**

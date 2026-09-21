@@ -901,7 +901,28 @@
 					icon="check"
 					title={t('todoRows.nothingToShow')}
 					description={t('todoRows.hiddenByTheFilters', { count: hiddenHere })}
-				/>
+				>
+					{#snippet action()}
+						<!--
+							The way back, right here. The toggles that hid these are
+							folded away with the other filters, and a sentence about
+							hidden work must not send somebody hunting for the way
+							to see it.
+						-->
+						<div class="flex justify-center gap-2">
+							{#if !showCompleted && finished > 0}
+								<button onclick={() => (showCompleted = true)} class="btn btn-sm">
+									{t('todoRows.showCompletedCount', { count: finished })}
+								</button>
+							{/if}
+							{#if !showArchived && putAway > 0}
+								<button onclick={() => (showArchived = true)} class="btn btn-sm">
+									{t('todoRows.showArchivedCount', { count: putAway })}
+								</button>
+							{/if}
+						</div>
+					{/snippet}
+				</EmptyState>
 			{:else}
 				<EmptyState
 					icon="check"

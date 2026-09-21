@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
+import { openFilters } from './helpers/filters';
 import { visit } from './helpers/visit';
 
 /**
@@ -27,14 +28,16 @@ test('a todo can be put away and taken back out', async ({ page }) => {
 	// One todo on the page, so one such button.
 	await page.getByRole('button', { name: 'Put it away' }).click();
 
-	// Gone from the list, and not by being finished.
+	// Gone from the list, and not by being finished. The empty state offers
+	// the way back itself, so nothing needs unfolding to see it.
 	await expect(page.getByText('the tax thing')).toHaveCount(0);
 
 	await page.getByRole('button', { name: 'Show archived' }).click();
 	await expect(page.getByText('the tax thing').first()).toBeVisible();
 
-	// And back, unchanged.
+	// And back, unchanged. The hide toggle lives with the folded filters.
 	await page.getByRole('button', { name: 'Take it back out' }).first().click();
+	await openFilters(page);
 	await page.getByRole('button', { name: 'Hide archived' }).click();
 	await expect(page.getByText('the tax thing').first()).toBeVisible();
 });
@@ -49,6 +52,7 @@ test('the notebook filter has an answer for the unfiled', async ({ page }) => {
 	await visit(page, '/tasks/todo');
 	await addTodo(page, 'a task nobody filed');
 
+	await openFilters(page);
 	const filter = page.getByRole('button', { name: 'Notebook', exact: true });
 	await filter.click();
 	await expect(page.getByRole('option', { name: 'Not in one' })).toBeVisible();

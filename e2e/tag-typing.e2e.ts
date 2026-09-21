@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
+import { openFilters } from './helpers/filters';
 import { visit } from './helpers/visit';
 
 /**
@@ -80,7 +81,8 @@ test('a word left in the box when the form is saved still counts', async ({ page
 	// the list can be narrowed to it.
 	await page.reload();
 	// The tag filter is the app's own menu now rather than a `<select>` — see
-	// `Picker`.
+	// `Picker` — and it folds away with the other filters.
+	await openFilters(page);
 	const filter = page.getByRole('button', { name: /Filter by tag/i });
 	await expect(filter).toBeVisible({ timeout: 30_000 });
 	await filter.click();
