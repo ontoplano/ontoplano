@@ -929,7 +929,6 @@ export type MessageKey =
 	| 'home.paidOfExpected'
 	| 'home.preferences'
 	| 'home.primary'
-	| 'home.readTheCodeAt'
 	| 'home.rearrangeTheCards'
 	| 'home.reportThisError'
 	| 'home.resetDemoAccount'

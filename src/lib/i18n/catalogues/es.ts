@@ -1031,7 +1031,6 @@ export const messages: Catalogue = {
 	'home.paidOfExpected': '{currency} pagado de {currency2} esperado',
 	'home.preferences': 'Preferencias',
 	'home.primary': 'Principal',
-	'home.readTheCodeAt': 'Lee el código en',
 	'home.rearrangeTheCards': 'Reorganizar las tarjetas',
 	'home.reportThisError': 'Reportar este error',
 	'home.resetDemoAccount': 'Reiniciar cuenta de demostración',
@@ -1055,7 +1054,8 @@ export const messages: Catalogue = {
 		'Esa página no está aquí. Puede que la hayan renombrado, o que nunca haya existido.',
 	'home.theme': 'Tema',
 	'home.thisIsADemoVersion': 'Esta es una versión de demostración de ontoplano.',
-	'home.thisIsOntoplanoDemo': 'Esto es Ontoplano Demo, los datos de aquí no se guardan.',
+	'home.thisIsOntoplanoDemo':
+		'Esta es una versión de demostración de Ontoplano: los datos de aquí no se guardan.',
 	'home.threeWins': 'Tres logros',
 	'home.todaySTasks': 'Tareas de hoy',
 	'home.tomorrow': 'Mañana',

@@ -1036,7 +1036,6 @@ export const messages: Catalogue = {
 	'home.paidOfExpected': '{currency} bezahlt, {currency2} erwartet',
 	'home.preferences': 'Einstellungen',
 	'home.primary': 'Primär',
-	'home.readTheCodeAt': 'Den Code lesen unter',
 	'home.rearrangeTheCards': 'Karten neu anordnen',
 	'home.reportThisError': 'Diesen Fehler melden',
 	'home.resetDemoAccount': 'Demokonto zurücksetzen',
@@ -1061,7 +1060,8 @@ export const messages: Catalogue = {
 		'Diese Seite gibt es hier nicht. Sie wurde vielleicht umbenannt oder hat nie existiert.',
 	'home.theme': 'Design',
 	'home.thisIsADemoVersion': 'Dies ist eine Demoversion von ontoplano.',
-	'home.thisIsOntoplanoDemo': 'Das ist Ontoplano Demo, die Daten hier bleiben nicht erhalten.',
+	'home.thisIsOntoplanoDemo':
+		'Das ist eine Demoversion von Ontoplano: die Daten hier bleiben nicht erhalten.',
 	'home.threeWins': 'Drei Erfolge',
 	'home.todaySTasks': 'Heutige Aufgaben',
 	'home.tomorrow': 'Morgen',

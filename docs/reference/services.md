@@ -3084,10 +3084,17 @@ This is the way across: every `- [ ]` line in the note becomes a todo, with
 whatever is written under it as that todo's notes — see `$lib/checklist` for
 the shape being read.
 
-The note is left exactly as it was. Deleting it is a separate press, because
-somebody who meant "also put these on my list" and somebody who meant "move
-these onto my list" both press this button, and only one of them wants the
-note gone.
+The note keeps its words and stops keeping the boxes: each line that crossed
+over becomes a reference to the task it became — `TODO:#4`, the task's
+number inside this notebook — so the note still says what it said and the
+list is where the work now lives. Leaving the boxes behind left the offer
+standing over a list that had already been made, and two records of one list
+to drift apart.
+
+The note itself is not deleted. That is a separate press, because somebody
+who meant "also put these on my list" and somebody who meant "move these
+onto my list" both press this button, and only one of them wants the note
+gone.
 
 ### Functions
 
@@ -5464,9 +5471,11 @@ because archived and unfinished are different answers to different
 questions — coming back to it has to find it exactly as it was, and a status
 would have had to remember what it used to be.
 
-#### `listTodos(ctx)`
+#### `getTodo(ctx, id)`
 
-Everything, ordered the way the board wants it.
+One task, as the list would have shown it.
+
+#### `listTodos(ctx)`
 
 #### `listTodosIn(ctx, notebookId)`
 

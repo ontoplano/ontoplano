@@ -1184,6 +1184,24 @@
 									<Icon name="trash" />
 								</button>
 							{/if}
+
+							<!--
+								This task's number inside its notebook, quietly, at the end
+								of the row.
+
+								It is what a note points at — `TODO:#4` — and what somebody
+								says out loud when they mean a particular task, so it has to
+								be on the screen: the row id never was, and "the one about
+								the plumber" is the only other way to name one. Bottom right,
+								under the actions, because it is a label rather than a
+								control. A task filed under nothing has no number and shows
+								none.
+							-->
+							{#if todo.notebookSeq !== null}
+								<span class="tabular w-full text-right text-[11px] text-gray-400">
+									#{todo.notebookSeq}
+								</span>
+							{/if}
 						</div>
 					</div>
 				</div>

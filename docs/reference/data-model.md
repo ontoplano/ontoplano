@@ -78,7 +78,7 @@ exist.
 | [`tags`](#tags)                                             | 3       | yes               |
 | [`task_records`](#task_records)                             | 15      | yes               |
 | [`todo_tags`](#todo_tags)                                   | 5       | yes               |
-| [`todo_tasks`](#todo_tasks)                                 | 17      | yes               |
+| [`todo_tasks`](#todo_tasks)                                 | 18      | yes               |
 | [`user`](#user)                                             | 11      | —                 |
 | [`user_settings`](#user_settings)                           | 4       | yes               |
 | [`verification`](#verification)                             | 6       | —                 |
@@ -1434,6 +1434,7 @@ Indexes:
 | `completed_at`   | text    | null     | —                     | —                 |
 | `category_id`    | integer | null     | —                     | → `categories.id` |
 | `notebook_id`    | integer | null     | —                     | → `notebooks.id`  |
+| `notebook_seq`   | integer | null     | —                     | —                 |
 | `scheduled_date` | text    | null     | —                     | —                 |
 | `status`         | text    | not null | `'todo'`              | —                 |
 | `archived_at`    | text    | null     | —                     | —                 |
@@ -1449,6 +1450,7 @@ Indexes:
 - `todo_tasks_user_idx` on `user_id`
 - `todo_tasks_scheduled_idx` on `user_id`, `scheduled_date`
 - `todo_tasks_notebook_idx` on `notebook_id`
+- `todo_tasks_notebook_seq_unique` on `notebook_id`, `notebook_seq` — unique
 
 Checks — enforced by the database, not only by the service layer:
 

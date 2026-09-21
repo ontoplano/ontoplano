@@ -20,14 +20,18 @@ releases mattered.
 
 ## 0.181.4 — 2026-09-20
 
+- **A task shows its number inside its notebook**, small, at the end of the row
+  — the number a note points at and the one to say out loud when you mean a
+  particular task.
 - **A note can point at a task in the same notebook.** `TODO:#4` — the task's
   number inside that notebook — renders as the task itself, ticked when it is
   done, and opens its editor. Turning a note's checkboxes into tasks writes
   these in place of the boxes, so the offer stops standing over a list that has
   already been made and the note and the list stop being two records of one
   thing.
-- **The demo band says what it is, and can be read in both themes.** Its ink
-  was a palette colour, which the dark theme inverts — white on orange.
+- **The demo band says what it is, points at the source, and can be read in
+  both themes.** Its ink was a palette colour, which the dark theme inverts —
+  white on orange.
 - **The planner fetches the windows either side before you step into them.** An
   arrow was a round trip, so the grid sat empty for the length of one each time.
 - **An assistant can see the pictures it is entitled to.** The new `media` tool

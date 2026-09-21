@@ -941,17 +941,23 @@
 				<span>
 					<strong>{t('home.thisIsOntoplanoDemo')}</strong>
 				</span>
-				<!-- Where the thing you are looking at came from. A demo visitor is
-				     the reader most likely to want the source, and least likely to
-				     go hunting for it. -->
-				<span class="flex items-center gap-1.5 font-normal">
-					{t('home.readTheCodeAt')}
-					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-					<a href={SOURCE_URL} target="_blank" rel="noreferrer" class="flex items-center gap-1">
-						<Icon name="github" size={14} />
-						{SOURCE_URL.replace(/^https:\/\//, '')}
-					</a>
-				</span>
+				<!-- Where the thing you are looking at came from, with no sentence
+				     around it: a demo visitor is the reader most likely to want the
+				     source and least likely to go hunting for it, and the mark and
+				     the address say it without help. -->
+				<!-- The one address here that is not this instance's own, so the
+				     route rule has nothing to resolve it against. -->
+				<!-- eslint-disable svelte/no-navigation-without-resolve -->
+				<a
+					href={SOURCE_URL}
+					target="_blank"
+					rel="noreferrer"
+					class="flex items-center gap-1.5 font-normal"
+				>
+					<Icon name="github" size={14} />
+					{SOURCE_URL.replace(/^https:\/\//, '')}
+				</a>
+				<!-- eslint-enable svelte/no-navigation-without-resolve -->
 			</div>
 		{/if}
 
