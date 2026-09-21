@@ -76,10 +76,23 @@ describe('making them', () => {
 		expect(made(ids)[0].notebookId).toBeNull();
 	});
 
-	test('the note is left exactly as it was', () => {
+	/*
+	 * It used to be left exactly as it was, and that was the bug: the offer to
+	 * make todos of a checklist is drawn wherever a `- [ ]` is, so it stood
+	 * there over a list that had already been made. What the note keeps is its
+	 * words; what it loses is the boxes, which become references to the tasks
+	 * they became. See `tests/note-todo-references.test.ts`.
+	 */
+	test('keeps its writing, and points at what it became', () => {
 		const id = noteOf(LIST);
 		noteTodos.makeTodosFromEntry(ctx, id);
-		expect(diary.getEntry(ctx, id).content).toBe(LIST);
+		const after = diary.getEntry(ctx, id).content;
+
+		expect(after).toContain('things before the trip');
+		expect(after).toContain('the boiler makes a noise after 9pm');
+		expect(after).toMatch(/TODO:#\d+/);
+		expect(after).not.toContain('- [ ]');
+		expect(after).not.toContain('- [x]');
 	});
 
 	test('a note with no checkbox in it makes nothing', () => {

@@ -82,7 +82,16 @@
 		// `$bindable()` is a compiler directive, not an assignment: this one is
 		// only ever written from here, which is what the rule mistakes it for.
 		// eslint-disable-next-line no-useless-assignment
-		openNew = $bindable()
+		openNew = $bindable(),
+		/**
+		 * Open this list's editor on one task, handed up like `openNew`.
+		 *
+		 * A note that points at a task — `TODO:#4` — opens the task where the
+		 * task lives, which is this list's own form. Anything else would be a
+		 * second editor to keep in step with this one.
+		 */
+		// eslint-disable-next-line no-useless-assignment
+		openTodo = $bindable()
 	}: {
 		todos: Todo[];
 		categories: { id: number; name: string }[];
@@ -109,6 +118,7 @@
 		listTour?: string | null;
 		newTour?: string | null;
 		openNew?: (() => void) | undefined;
+		openTodo?: ((id: number) => void) | undefined;
 	} = $props();
 
 	let showForm = $state(false);
@@ -546,6 +556,10 @@
 	// component, and a screen drawing its own New button opens this one.
 	$effect(() => {
 		openNew = startNew;
+		openTodo = (id: number) => {
+			const one = todos.find((t: Todo) => t.id === id);
+			if (one) startEdit(one);
+		};
 	});
 
 	/*

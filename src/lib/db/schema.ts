@@ -616,6 +616,20 @@ export const todoTasks = sqliteTable(
 		completedAt: text('completed_at'),
 		categoryId: integer('category_id').references(() => categories.id),
 		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
+		/**
+		 * This task's number inside its notebook, so a note can point at it.
+		 *
+		 * The same arrangement a note already has (`diary_entries.notebook_seq`):
+		 * the fourth task about the kitchen is #4 rather than #312, because a
+		 * reference somebody types by hand has to be a number they can see. It
+		 * is written when the task is filed under a notebook — at creation, or
+		 * the first time it is moved into one — and never reused, so `TODO:#4`
+		 * cannot come to mean a different task later.
+		 *
+		 * Null for a task filed under nothing, which has nowhere to be fourth
+		 * of.
+		 */
+		notebookSeq: integer('notebook_seq'),
 		// A todo is a task without a date yet. Setting this is what "drag it onto
 		// today" does — the same row acquires a day rather than being copied.
 		scheduledDate: text('scheduled_date'),
@@ -650,6 +664,7 @@ export const todoTasks = sqliteTable(
 		index('todo_tasks_user_idx').on(table.userId),
 		index('todo_tasks_scheduled_idx').on(table.userId, table.scheduledDate),
 		index('todo_tasks_notebook_idx').on(table.notebookId),
+		uniqueIndex('todo_tasks_notebook_seq_unique').on(table.notebookId, table.notebookSeq),
 		check('todos_urgency_range', sql`${table.urgency} IS NULL OR ${table.urgency} BETWEEN 1 AND 5`),
 		check(
 			'todos_interest_range',

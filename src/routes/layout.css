@@ -963,6 +963,60 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
+	 * The band that says this instance is not what it looks like.
+	 *
+	 * Literal colours, not palette ones. `bg-amber-500 text-amber-950` reads
+	 * correctly in the light theme and inverts in the dark one — the amber
+	 * stays amber because it is a background, and the ink turns near-white,
+	 * which is the white text on orange nobody could read. The band is one
+	 * deliberate colour in both themes, so its ink is stated once here.
+	 */
+	.notice-band {
+		background-color: #f59e0b;
+		color: #3a2106;
+	}
+
+	.notice-band a {
+		color: inherit;
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+
+	/* The half that is a warning rather than a statement. */
+	.notice-band .notice-band-loud {
+		color: #7f1d1d;
+	}
+
+	/*
+	 * A note pointing at a task: `TODO:#4`.
+	 *
+	 * A chip rather than a plain link, because it is a thing rather than a
+	 * word — the same treatment a tag gets — and because what follows it in a
+	 * note is usually the writing that explains it. A finished one is greyed
+	 * and carries its tick; it is not struck through, which is the rule
+	 * everywhere else a completed task appears.
+	 */
+	.todo-ref {
+		display: inline-flex;
+		align-items: baseline;
+		gap: 0.25rem;
+		border: 1px solid var(--color-gray-300);
+		padding: 0 0.375rem;
+		font-size: 0.8125rem;
+		color: var(--color-gray-900);
+		text-decoration: none;
+		cursor: pointer;
+	}
+
+	.todo-ref:hover {
+		background-color: var(--hover-wash);
+	}
+
+	.todo-ref.is-done {
+		color: var(--color-gray-500);
+	}
+
+	/*
 	 * One setting and the button that saves it, fenced together.
 	 *
 	 * A section of several settings drew several Save buttons down one white

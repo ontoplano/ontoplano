@@ -60,6 +60,7 @@
 	import { stepThroughRoom } from '$lib/room-tabs.svelte';
 	import { smartNumberFields } from '$lib/number-fields';
 	import { tick, type Snippet } from 'svelte';
+	import { SOURCE_URL } from '$lib/links';
 
 	let { children, data }: { children: Snippet; data: LayoutData } = $props();
 
@@ -929,26 +930,28 @@
 				the strip above the bottom bar instead, because a band at the
 				top of a phone pushes the whole app down for a sentence.
 			-->
+			<!--
+				`.notice-band` rather than `bg-amber-500 text-amber-950`: the ink
+				was a palette colour and the dark theme inverts those, so the band
+				kept its orange and turned its words near-white. See layout.css.
+			-->
 			<div
-				class="relative z-50 hidden flex-wrap items-center justify-between gap-2 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950 lg:flex"
+				class="notice-band relative z-50 hidden flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm font-medium lg:flex"
 			>
-				<!--
-					The warning is the point, so it is the part that is loud.
-					"Everything here is yours alone" read as reassurance and invited
-					exactly the thing this band exists to prevent: somebody typing
-					their real week into an account that is deleted this afternoon.
-					Red on the amber band, and it says wiped rather than disappears.
-				-->
 				<span>
-					<strong>{t('home.thisIsADemoVersion')}</strong>
-					<strong class="text-red-900">
-						{t('home.doNotPutYourReal')}
-					</strong>
+					<strong>{t('home.thisIsOntoplanoDemo')}</strong>
 				</span>
-				{#if data.demoHost}
-					<span class="font-normal">{t('home.openOnYourPhoneTo', { demoHost: data.demoHost })}</span
-					>
-				{/if}
+				<!-- Where the thing you are looking at came from. A demo visitor is
+				     the reader most likely to want the source, and least likely to
+				     go hunting for it. -->
+				<span class="flex items-center gap-1.5 font-normal">
+					{t('home.readTheCodeAt')}
+					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+					<a href={SOURCE_URL} target="_blank" rel="noreferrer" class="flex items-center gap-1">
+						<Icon name="github" size={14} />
+						{SOURCE_URL.replace(/^https:\/\//, '')}
+					</a>
+				</span>
 			</div>
 		{/if}
 
@@ -967,12 +970,12 @@
 				goes and where there is room for the sentence.
 			-->
 			<div
-				class="relative z-50 hidden flex-wrap items-center justify-between gap-2 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950 lg:flex"
+				class="notice-band relative z-50 hidden flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm font-medium lg:flex"
 			>
 				<span>
 					<strong>{t('home.staging')}</strong>
 					{t('home.aCopyOfOntoplanoFor')}
-					<strong class="text-red-900">{t('home.nothingHereIsPromisedTo')}</strong>
+					<strong class="notice-band-loud">{t('home.nothingHereIsPromisedTo')}</strong>
 				</span>
 			</div>
 
@@ -987,7 +990,7 @@
 				the bar, the same way the demo's band is split.
 			-->
 			<div
-				class="fixed inset-x-0 z-30 flex items-center justify-between bg-amber-500 px-3 text-[11px] leading-none font-medium text-amber-950 lg:hidden"
+				class="notice-band fixed inset-x-0 z-30 flex items-center justify-between px-3 text-[11px] leading-none font-medium lg:hidden"
 				style="bottom: calc(var(--mobile-nav-height) + var(--safe-bottom)); height: 1.95rem"
 			>
 				<span><strong>{t('home.staging2')}</strong></span>
@@ -1053,7 +1056,7 @@
 				sit under the phone's clock.
 			-->
 			<div
-				class="relative z-50 flex flex-wrap items-center justify-between gap-2 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950"
+				class="notice-band relative z-50 flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm font-medium"
 				style="padding-top: calc(var(--safe-top, 0px) + 0.5rem)"
 			>
 				<span>
@@ -1617,7 +1620,7 @@
 				never sees.
 			-->
 			<div
-				class="fixed inset-x-0 z-30 flex items-center justify-between bg-amber-500 px-3 text-[11px] leading-none font-medium text-amber-950 lg:hidden"
+				class="notice-band fixed inset-x-0 z-30 flex items-center justify-between px-3 text-[11px] leading-none font-medium lg:hidden"
 				style="bottom: calc(var(--mobile-nav-height) + var(--safe-bottom)); height: 1.95rem"
 			>
 				<!-- Two words, split around the pie button that sits in the middle of

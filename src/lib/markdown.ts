@@ -9,8 +9,8 @@
  *
  * Supported: headings, horizontal rules, bullet and numbered lists, task
  * lists, block quotes, tables, fenced and inline code, bold, italic,
- * strikethrough, links, pictures you uploaded here, and `#12` as a reference
- * to a diary entry.
+ * strikethrough, links, pictures you uploaded here, `#12` as a reference to a
+ * diary entry, and `TODO:#4` as a reference to a task in the same notebook.
  */
 
 const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
@@ -30,7 +30,7 @@ function safeHref(href: string): string | null {
 	return /^(https?:\/\/|mailto:|\/|#)/i.test(href) ? href : null;
 }
 
-function inline(raw: string): string {
+function inline(raw: string, todos?: TodoRefs): string {
 	let html = escape(raw);
 
 	/*
@@ -88,6 +88,26 @@ function inline(raw: string): string {
 		/(^|[\s(])#(\d+)\b/g,
 		'$1<a class="diary-ref" data-seq="$2" href="#diary-$2">#$2</a>'
 	);
+
+	/*
+	 * `TODO:#4` is how a note points at a task in the same notebook.
+	 *
+	 * The number is the task's own number *inside that notebook* — the fourth
+	 * task about the kitchen is #4 — because a reference somebody types by
+	 * hand has to be a number they can see. Turning a note's checkboxes into
+	 * tasks writes these in place of the boxes, so the note keeps saying what
+	 * it said and the list is where the work now lives.
+	 *
+	 * The task's title and whether it is done are drawn where the caller
+	 * passed them: a note rendered without them still gets a link, which is
+	 * what an export or a page that has not loaded the list should show.
+	 */
+	html = html.replace(/(^|[\s(])TODO:#(\d+)\b/g, (_match, before: string, seq: string) => {
+		const one = todos?.get(Number(seq));
+		const done = one?.done ? ' is-done' : '';
+		const label = one ? `${one.done ? '\u2713 ' : ''}${escape(one.title)}` : `TODO:#${seq}`;
+		return `${before}<a class="todo-ref${done}" data-todo-seq="${seq}" href="#todo-${seq}">${label}</a>`;
+	});
 
 	return html;
 }
@@ -161,28 +181,37 @@ function alignments(line: string): Align[] {
 	});
 }
 
-function row(line: string, align: Align[], tag: 'th' | 'td'): string {
+function row(line: string, align: Align[], tag: 'th' | 'td', todos?: TodoRefs): string {
 	const out = cells(line).map((cell, at) => {
 		const how = align[at] ? ` style="text-align: ${align[at]}"` : '';
-		return `<${tag}${how}>${inline(cell)}</${tag}>`;
+		return `<${tag}${how}>${inline(cell, todos)}</${tag}>`;
 	});
 	return `<tr>${out.join('')}</tr>`;
 }
 
-function listItem(line: string): string {
+function listItem(line: string, todos?: TodoRefs): string {
 	const task = TASK.exec(line);
 	if (task) {
 		const checked = task[1].toLowerCase() === 'x' ? ' checked' : '';
 		// Disabled on purpose: the box shows what the writing says. Ticking it
 		// would have to edit the text, which is a different feature.
-		return `<li class="md-task"><input type="checkbox" disabled${checked} />${inline(task[2])}</li>`;
+		return `<li class="md-task"><input type="checkbox" disabled${checked} />${inline(task[2], todos)}</li>`;
 	}
 
 	const bullet = BULLET.exec(line) ?? NUMBER.exec(line);
-	return `<li>${inline(bullet ? bullet[1] : line)}</li>`;
+	return `<li>${inline(bullet ? bullet[1] : line, todos)}</li>`;
 }
 
-export function renderMarkdown(text: string): string {
+/**
+ * The tasks a piece of writing may point at, by their number in the notebook.
+ *
+ * Optional everywhere: the renderer is pure and a caller that has no list —
+ * an export, a page that has not loaded one — still gets a link rather than
+ * nothing.
+ */
+export type TodoRefs = Map<number, { title: string; done: boolean }>;
+
+export function renderMarkdown(text: string, todos?: TodoRefs): string {
 	const lines = text.replace(/\r\n?/g, '\n').split('\n');
 	const out: string[] = [];
 	let i = 0;
@@ -215,11 +244,11 @@ export function renderMarkdown(text: string): string {
 		 */
 		if (startsTable(lines, i)) {
 			const align = alignments(lines[i + 1]);
-			const head = row(line, align, 'th');
+			const head = row(line, align, 'th', todos);
 			i += 2;
 			const body: string[] = [];
 			while (i < lines.length && lines[i].trim() && ROW.test(lines[i]))
-				body.push(row(lines[i++], align, 'td'));
+				body.push(row(lines[i++], align, 'td', todos));
 			// Its own scroller: a wide table must not take the page sideways with
 			// it, which on a phone is every table of more than two columns.
 			out.push(
@@ -240,7 +269,7 @@ export function renderMarkdown(text: string): string {
 		const heading = HEADING.exec(line);
 		if (heading) {
 			const level = heading[1].length;
-			out.push(`<h${level}>${inline(heading[2])}</h${level}>`);
+			out.push(`<h${level}>${inline(heading[2], todos)}</h${level}>`);
 			i++;
 			continue;
 		}
@@ -251,7 +280,9 @@ export function renderMarkdown(text: string): string {
 				quoted.push(QUOTE.exec(lines[i])![1]);
 				i++;
 			}
-			out.push(`<blockquote>${quoted.map(inline).join('<br />')}</blockquote>`);
+			out.push(
+				`<blockquote>${quoted.map((one) => inline(one, todos)).join('<br />')}</blockquote>`
+			);
 			continue;
 		}
 
@@ -262,7 +293,7 @@ export function renderMarkdown(text: string): string {
 				// A run of bullets and a run of numbers are two lists, not one.
 				const thisOrdered = NUMBER.test(lines[i]) && !BULLET.test(lines[i]);
 				if (thisOrdered !== ordered) break;
-				items.push(listItem(lines[i]));
+				items.push(listItem(lines[i], todos));
 				i++;
 			}
 			const tag = ordered ? 'ol' : 'ul';
@@ -272,7 +303,7 @@ export function renderMarkdown(text: string): string {
 
 		const paragraph: string[] = [];
 		while (i < lines.length && lines[i].trim() && !isBlockStart(lines, i)) {
-			paragraph.push(inline(lines[i]));
+			paragraph.push(inline(lines[i], todos));
 			i++;
 		}
 		out.push(`<p>${paragraph.join('<br />')}</p>`);

@@ -7,7 +7,7 @@
  * dragging a card onto Today does — the same row acquires a day rather than
  * being copied into a second table, so nothing has to be kept in sync.
  */
-import { and, asc, eq, inArray, isNull, notInArray, or } from 'drizzle-orm';
+import { and, asc, eq, inArray, isNull, max, notInArray, or } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
 import {
@@ -26,6 +26,7 @@ import type { RatingValues } from '../ratings.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { ownedNotebookId } from './notebooks.js';
+import { getUserSetting, setUserSetting } from './settings.js';
 import { cleanupOrphanTags, optionalTagInput, parseTags, replaceTodoTags } from './tags.js';
 import { created, stamp, stamps } from './time.js';
 import { host } from './host.js';
@@ -42,6 +43,8 @@ export type Todo = {
 	categoryName: string | null;
 	categoryColor: string | null;
 	notebookId: number | null;
+	/** Its number inside that notebook, which is what `TODO:#4` in a note means. */
+	notebookSeq: number | null;
 	notebookTitle: string | null;
 	/** When it was put away, or null. Put away is not the same as finished. */
 	archivedAt: string | null;
@@ -83,6 +86,7 @@ const SELECTION = {
 	categoryName: categories.name,
 	categoryColor: categories.color,
 	notebookId: todoTasks.notebookId,
+	notebookSeq: todoTasks.notebookSeq,
 	notebookTitle: notebooks.title,
 	archivedAt: todoTasks.archivedAt,
 	urgency: todoTasks.urgency,
@@ -104,6 +108,7 @@ function shape(r: Record<string, unknown>): Todo {
 		categoryName: (r.categoryName as string) ?? null,
 		categoryColor: (r.categoryColor as string) ?? null,
 		notebookId: (r.notebookId as number) ?? null,
+		notebookSeq: (r.notebookSeq as number) ?? null,
 		notebookTitle: (r.notebookTitle as string) ?? null,
 		archivedAt: (r.archivedAt as string) ?? null,
 		completedAt: (r.completedAt as string) ?? null,
@@ -185,6 +190,19 @@ export function archiveTodo(ctx: Ctx, id: number, away = true): void {
 }
 
 /** Everything, ordered the way the board wants it. */
+/** One task, as the list would have shown it. */
+export function getTodo(ctx: Ctx, id: number): Todo {
+	const row = db
+		.select(SELECTION)
+		.from(todoTasks)
+		.leftJoin(categories, eq(todoTasks.categoryId, categories.id))
+		.leftJoin(notebooks, eq(todoTasks.notebookId, notebooks.id))
+		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
+		.get();
+	if (!row) throw new NotFoundError('todo');
+	return withTags(ctx, [shape(row)])[0];
+}
+
 export function listTodos(ctx: Ctx): Todo[] {
 	const rows = db
 		.select(SELECTION)
@@ -482,6 +500,37 @@ export type TodoInput = {
 	tags?: unknown;
 };
 
+/**
+ * This task's number inside the notebook it is filed under.
+ *
+ * So a note can point at it: `TODO:#4` is the fourth task about the kitchen,
+ * which is a number somebody can see on the screen in front of them — the row
+ * id is not. The same arrangement notes already have.
+ *
+ * The high-water mark rather than `max + 1`, and for the same reason a note's
+ * is: deleting the newest task would hand its number to the next one, and a
+ * reference written in a note months ago would silently come to mean something
+ * else. A reference that can change what it refers to is not a reference.
+ *
+ * Null for a task filed under nothing: there is nowhere for it to be fourth of.
+ */
+/** Where a notebook's highest-ever task number is remembered. */
+const SEQ_MARK_KEY = (notebookId: number) => `todos.seq.highest.${notebookId}`;
+
+function nextNotebookSeq(ctx: Ctx, notebookId: number | null | undefined): number | null {
+	if (!notebookId) return null;
+	const present =
+		db
+			.select({ value: max(todoTasks.notebookSeq) })
+			.from(todoTasks)
+			.where(eq(todoTasks.notebookId, notebookId))
+			.get()?.value ?? 0;
+	const everUsed = Number(getUserSetting(ctx.userId, SEQ_MARK_KEY(notebookId)) ?? 0);
+	const highest = Math.max(present, everUsed);
+	setUserSetting(ctx.userId, SEQ_MARK_KEY(notebookId), String(highest + 1));
+	return highest + 1;
+}
+
 export function createTodo(ctx: Ctx, raw: TodoInput): number {
 	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
 	const result = db
@@ -493,6 +542,7 @@ export function createTodo(ctx: Ctx, raw: TodoInput): number {
 			notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),
 			categoryId: ownedCategoryId(ctx, raw.categoryId),
 			notebookId: ownedNotebookId(ctx, raw.notebookId),
+			notebookSeq: nextNotebookSeq(ctx, ownedNotebookId(ctx, raw.notebookId)),
 			scheduledDate: optionalDate(raw.scheduledDate),
 			status: isStatus(raw.status) ? raw.status : 'todo',
 			sortOrder: nextSortOrder(ctx),
@@ -508,13 +558,32 @@ export function createTodo(ctx: Ctx, raw: TodoInput): number {
 }
 
 export function updateTodo(ctx: Ctx, id: number, raw: TodoInput): void {
+	const notebookId = ownedNotebookId(ctx, raw.notebookId);
+	/*
+	 * A task moved into a notebook is numbered there, once.
+	 *
+	 * Kept if it already has one for this notebook — a task edited twice must
+	 * not change its own reference — and taken away if it leaves, because a
+	 * number in a notebook it is no longer in is a reference to nothing.
+	 */
+	const was = db
+		.select({ notebookId: todoTasks.notebookId, notebookSeq: todoTasks.notebookSeq })
+		.from(todoTasks)
+		.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
+		.get();
+	const seq =
+		was && was.notebookId === notebookId && was.notebookSeq !== null
+			? was.notebookSeq
+			: nextNotebookSeq(ctx, notebookId);
+
 	const res = db
 		.update(todoTasks)
 		.set({
 			title: str(raw.title, 'title', { max: MAX_TITLE_LENGTH }),
 			notes: optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH }),
 			categoryId: ownedCategoryId(ctx, raw.categoryId),
-			notebookId: ownedNotebookId(ctx, raw.notebookId),
+			notebookId,
+			notebookSeq: seq,
 			...(raw.ratings ?? {}),
 			updatedAt: stamp(ctx)
 		})

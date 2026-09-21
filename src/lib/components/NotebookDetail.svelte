@@ -6,7 +6,7 @@
 	import TagInput from '$lib/components/TagInput.svelte';
 	import { momentOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
-	import { untrack, type ComponentProps } from 'svelte';
+	import { tick, untrack, type ComponentProps } from 'svelte';
 	import { enhance } from '$app/forms';
 	import { SvelteSet } from 'svelte/reactivity';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -194,7 +194,18 @@
 					.trim()
 			)
 			.find(Boolean);
-		return first ? first.slice(0, 120) : 'Untitled';
+		if (!first) return 'Untitled';
+		/*
+		 * A reference reads as the task it names, here too.
+		 *
+		 * A note that was a checklist and became tasks is a note whose first
+		 * line is `TODO:#1` — which in the list would name the note "TODO:#1".
+		 * The chip in the body already says the task's title; this is the same
+		 * answer where there is no room for a chip.
+		 */
+		return first
+			.replace(/TODO:#(\d+)/g, (whole, seq) => todoRefs.get(Number(seq))?.title ?? whole)
+			.slice(0, 120);
 	}
 
 	/**
@@ -311,6 +322,8 @@
 	 * fields to keep in step, so the button opens that one.
 	 */
 	let openNewTodo = $state<(() => void) | undefined>(undefined);
+	/** And its editor on one task, for a note that points at one. */
+	let openTodoById = $state<((id: number) => void) | undefined>(undefined);
 	/* Whether the goal form is open on this notebook. */
 	let composingGoal = $state(false);
 	/* What is in the composer, so the checklist offer can watch it. */
@@ -334,6 +347,37 @@
 			? null
 			: (contents?.goals.find((one) => one.id === linkingGoalId) ?? null)
 	);
+
+	/**
+	 * This notebook's tasks by their number in it, for `TODO:#4` in a note.
+	 *
+	 * Rendered with the task's own title and a tick where it is done, so a
+	 * note that points at a list says what is on the list and how far along it
+	 * is, rather than a row of numbers.
+	 */
+	const todoRefs = $derived(
+		new Map(
+			(contents?.todos ?? [])
+				.filter((one) => one.notebookSeq !== null)
+				.map((one) => [
+					one.notebookSeq as number,
+					{ title: one.title, done: CLOSED_STATUSES.includes(one.status) }
+				])
+		)
+	);
+
+	function openReferencedTodo(press: MouseEvent) {
+		const link = (press.target as HTMLElement).closest('.todo-ref') as HTMLElement | null;
+		if (!link) return;
+		press.preventDefault();
+		const seq = Number(link.dataset.todoSeq);
+		const one = (contents?.todos ?? []).find((task) => task.notebookSeq === seq);
+		if (!one) return;
+		// The task lives on the Tasks tab, and its editor is that list's own.
+		tab = 'tasks';
+		// After the tab has drawn, so the list is there to be asked.
+		void tick().then(() => openTodoById?.(one.id));
+	}
 
 	/** Units this account already counts things in, offered rather than imposed. */
 	const knownUnits = $derived(
@@ -851,6 +895,7 @@
 						shortcutRoom={tab === 'tasks' ? '/tasks/todo' : null}
 						claimsRoomBar={false}
 						bind:openNew={openNewTodo}
+						bind:openTodo={openTodoById}
 					/>
 				</div>
 
@@ -1120,11 +1165,23 @@
 							</span>
 						</button>
 						{#if openNotes.has(entry.id)}
-							<div class="md mt-2 text-sm text-gray-900">
+							<!--
+								A reference in the writing opens the task it names.
+
+								`TODO:#4` is rendered as a link by the markdown renderer,
+								which is pure and knows nothing about this screen — so the
+								press is caught here, where the list and its editor are.
+								Delegated from the whole block rather than bound per link:
+								the html is written by `{@html}` and has no components in it
+								to put a handler on.
+							-->
+							<!-- svelte-ignore a11y_click_events_have_key_events -->
+							<!-- svelte-ignore a11y_no_static_element_interactions -->
+							<div class="md mt-2 text-sm text-gray-900" onclick={openReferencedTodo}>
 								<!-- `renderMarkdown` escapes every character of the input before it emits a
 								     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
 								<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-								{@html renderMarkdown(entry.content)}
+								{@html renderMarkdown(entry.content, todoRefs)}
 							</div>
 						{/if}
 						<div class="mt-1 flex flex-wrap items-center gap-2">

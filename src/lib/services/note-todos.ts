@@ -1,7 +1,7 @@
-import { checklistItems } from '$lib/checklist.js';
+import { checklistItems, withTodoReferences } from '$lib/checklist.js';
 import type { Ctx } from './ctx.js';
-import { getEntry } from './diary.js';
-import { createTodo, MAX_NOTES_LENGTH, MAX_TITLE_LENGTH, setTodoStatus } from './todos.js';
+import { getEntry, updateEntry } from './diary.js';
+import { createTodo, getTodo, MAX_NOTES_LENGTH, MAX_TITLE_LENGTH, setTodoStatus } from './todos.js';
 
 /**
  * Turning a note that is really a checklist into the todos it describes.
@@ -12,10 +12,17 @@ import { createTodo, MAX_NOTES_LENGTH, MAX_TITLE_LENGTH, setTodoStatus } from '.
  * whatever is written under it as that todo's notes — see `$lib/checklist` for
  * the shape being read.
  *
- * The note is left exactly as it was. Deleting it is a separate press, because
- * somebody who meant "also put these on my list" and somebody who meant "move
- * these onto my list" both press this button, and only one of them wants the
- * note gone.
+ * The note keeps its words and stops keeping the boxes: each line that crossed
+ * over becomes a reference to the task it became — `TODO:#4`, the task's
+ * number inside this notebook — so the note still says what it said and the
+ * list is where the work now lives. Leaving the boxes behind left the offer
+ * standing over a list that had already been made, and two records of one list
+ * to drift apart.
+ *
+ * The note itself is not deleted. That is a separate press, because somebody
+ * who meant "also put these on my list" and somebody who meant "move these
+ * onto my list" both press this button, and only one of them wants the note
+ * gone.
  */
 
 /** What came of it, in the order the note had them. */
@@ -39,6 +46,8 @@ export function makeTodosFromEntry(ctx: Ctx, entryId: number, only?: number[]): 
 	const wanted = only === undefined ? items.map((_, at) => at) : [...new Set(only)].sort(byNumber);
 
 	const ids: number[] = [];
+	/** Which checkbox became which task's number, for rewriting the note. */
+	const numbered = new Map<number, number>();
 	let skipped = 0;
 
 	for (const at of wanted) {
@@ -57,6 +66,20 @@ export function makeTodosFromEntry(ctx: Ctx, entryId: number, only?: number[]): 
 		});
 		if (item.done) setTodoStatus(ctx, id, 'done');
 		ids.push(id);
+
+		/*
+		 * Only a task filed under a notebook has a number to be referred to
+		 * by. A checklist in a note that belongs to no notebook still becomes
+		 * tasks; its boxes stay boxes, because there is nothing to point at.
+		 */
+		const seq = getTodo(ctx, id).notebookSeq;
+		if (seq !== null) numbered.set(at, seq);
+	}
+
+	if (numbered.size > 0) {
+		const rewritten = withTodoReferences(entry.content, numbered);
+		if (rewritten !== entry.content)
+			updateEntry(ctx, entryId, { content: rewritten, title: entry.title });
 	}
 
 	return { ids, skipped };

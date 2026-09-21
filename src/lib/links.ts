@@ -10,6 +10,15 @@
 export const DEFAULT_DOCS_URL = 'https://docs.ontoplano.com';
 export const DEFAULT_SITE_URL = 'https://ontoplano.com';
 
+/**
+ * The source, which is the same address whoever is running the instance.
+ *
+ * Not an operator's setting like the two above: a fork points at its own
+ * repository by editing this, and an ordinary self-hoster is running *this*
+ * code and should say so.
+ */
+export const SOURCE_URL = 'https://github.com/ontoplano/ontoplano';
+
 /** The site is a single page; this is the part of it that takes money. */
 export const SUPPORT_FRAGMENT = '#support';
 
