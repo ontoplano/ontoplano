@@ -3,6 +3,22 @@ import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
+ * The filters fold away now, so anything that narrows the list is behind the
+ * button that folds them. Unfolding is idempotent: a spec that has already
+ * opened them does not shut them again.
+ */
+function chip(page: import('@playwright/test').Page, label: string) {
+	// The fold button says what is narrowing the list, so while `#a2` is on it
+	// there are two buttons with that name. This is the one on the row.
+	return page.locator('button:not([aria-controls])').filter({ hasText: label });
+}
+
+async function openFilters(page: import('@playwright/test').Page): Promise<void> {
+	const fold = page.locator('[aria-controls="tasks-filters"]');
+	if ((await fold.getAttribute('aria-expanded')) === 'false') await fold.click();
+}
+
+/**
  * Labels on a task, and reading back only the ones you want.
  *
  * The reason tasks wanted tags is one the other rooms did not have: several
@@ -30,24 +46,25 @@ test('a task takes labels, and the list narrows to one', async ({ page }) => {
 
 	await newTodo(page, 'renew the domain', '#A1, Done');
 	// Normalised the way every other tag is: lower case, no hash, in order.
-	await expect(page.getByRole('button', { name: '#a1' })).toBeVisible();
-	await expect(page.getByRole('button', { name: '#done' })).toBeVisible();
+	await expect(chip(page, '#a1')).toBeVisible();
+	await expect(chip(page, '#done')).toBeVisible();
 
 	await newTodo(page, 'call the vet', 'a2');
 	await expect(page.getByText('renew the domain')).toBeVisible();
 
 	// Pressing a label is the filter: reading back one of them has to be a
 	// press, or nobody uses them.
-	await page.getByRole('button', { name: '#a2' }).click();
+	await chip(page, '#a2').click();
 	await expect(page.getByText('call the vet')).toBeVisible();
 	await expect(page.getByText('renew the domain')).toHaveCount(0);
 
 	// And pressing it again lets go.
-	await page.getByRole('button', { name: '#a2' }).click();
+	await chip(page, '#a2').click();
 	await expect(page.getByText('renew the domain')).toBeVisible();
 
 	// The picker offers what is actually on the list, and nothing else. It is
 	// the app's own menu rather than a `<select>` — see `Picker`.
+	await openFilters(page);
 	await page.getByRole('button', { name: 'Filter by tag' }).click();
 	await expect(page.getByRole('option')).toHaveText(['Every tag', 'Untagged', 'a1', 'a2', 'done']);
 	await page.getByRole('option', { name: 'a1', exact: true }).click();
@@ -88,13 +105,13 @@ test('labels are edited, and an edit that says nothing about them keeps them', a
 
 	await box.fill('a2');
 	await page.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByRole('button', { name: '#a2' })).toBeVisible();
-	await expect(page.getByRole('button', { name: '#a1' })).toHaveCount(0);
+	await expect(chip(page, '#a2')).toBeVisible();
+	await expect(chip(page, '#a1')).toHaveCount(0);
 
 	// Taken off altogether, and then the picker goes with them.
 	await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
 	await page.locator('#todo-form .chip').filter({ hasText: 'a2' }).getByRole('button').click();
 	await page.getByRole('button', { name: 'Save' }).click();
-	await expect(page.getByRole('button', { name: '#a2' })).toHaveCount(0);
+	await expect(chip(page, '#a2')).toHaveCount(0);
 	await expect(page.getByLabel('Filter by tag')).toHaveCount(0);
 });

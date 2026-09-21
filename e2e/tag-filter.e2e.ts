@@ -3,6 +3,16 @@ import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
+ * The filters fold away now, so anything that narrows the list is behind the
+ * button that folds them. Unfolding is idempotent: a spec that has already
+ * opened them does not shut them again.
+ */
+async function openFilters(page: import('@playwright/test').Page): Promise<void> {
+	const fold = page.locator('[aria-controls="tasks-filters"]');
+	if ((await fold.getAttribute('aria-expanded')) === 'false') await fold.click();
+}
+
+/**
  * Narrowing by more than one label.
  *
  * One was not a filter: "show me the urgent ones" is a question a single label
@@ -34,6 +44,7 @@ test('the tag filter holds several labels at once', async ({ page }) => {
 		await expect(page.getByText(title).first()).toBeVisible({ timeout: 30_000 });
 	}
 
+	await openFilters(page);
 	const face = page.getByRole('button', { name: /label|tag/i }).first();
 	await face.click();
 	await page.getByRole('option', { name: 'home', exact: true }).click();
