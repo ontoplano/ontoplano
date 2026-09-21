@@ -2785,6 +2785,7 @@ export type MessageKey =
 	| 'todoRows.newestAtTheTopPress'
 	| 'todoRows.newestFirst'
 	| 'todoRows.noTag'
+	| 'todoRows.noneMatchTheseFilters'
 	| 'todoRows.notInOne'
 	| 'todoRows.nothingToShow'
 	| 'todoRows.nothingWaiting'
@@ -3542,6 +3543,7 @@ export interface MessageValuesFor {
 	'todoRows.completedTitle': { title: string | number };
 	'todoRows.doneAgo': { ago: string | number; when: string | number };
 	'todoRows.hiddenByTheFilters': { count: number };
+	'todoRows.noneMatchTheseFilters': { count: number };
 	'todoRows.showArchivedCount': { count: number };
 	'todoRows.showCompletedCount': { count: number };
 	'todoRows.showingCount': { count: number };

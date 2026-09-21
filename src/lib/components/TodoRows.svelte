@@ -457,8 +457,22 @@
 			.length
 	);
 
-	/** How many the filters are holding back when the list comes out empty. */
+	/** How many the two toggles are holding back when the list comes out empty. */
 	let hiddenHere = $derived((showCompleted ? 0 : finished) + (showArchived ? 0 : putAway));
+
+	/**
+	 * Whether anything is being narrowed by, beyond the two toggles.
+	 *
+	 * The toggles were the only filters when this list was written, so an
+	 * empty list was either "nothing here" or "it is all finished". There are
+	 * four more now — a notebook, labels, a search box, and the notebook this
+	 * list is inside — and searching for something nothing matches was
+	 * answering "Nothing waiting. A task is one with no day on it", which is a
+	 * list telling you it is empty while it is holding six rows back.
+	 */
+	let narrowed = $derived(
+		notebookFilter !== '' || tagFilter.length > 0 || looking.trim().length > 0
+	);
 
 	function isDone(todo: Todo): boolean {
 		return shownStatus(todo) === 'done';
@@ -820,7 +834,13 @@
 				Saying the first when the second is true is how a list that is
 				doing as it was told reads as a list that is out of date.
 			-->
-			{#if hiddenHere > 0}
+			{#if narrowed}
+				<EmptyState
+					icon="search"
+					title={t('todoRows.nothingToShow')}
+					description={t('todoRows.noneMatchTheseFilters', { count: inScope.length })}
+				/>
+			{:else if hiddenHere > 0}
 				<EmptyState
 					icon="check"
 					title={t('todoRows.nothingToShow')}

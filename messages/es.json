@@ -2962,6 +2962,7 @@
 	"todoRows.newestAtTheTopPress": "Lo más reciente arriba — presiona para lo más antiguo",
 	"todoRows.newestFirst": "Más reciente primero",
 	"todoRows.noTag": "Sin etiqueta",
+	"todoRows.noneMatchTheseFilters": "Ninguna de las {count} de aquí coincide con lo que estás filtrando.",
 	"todoRows.notInOne": "En ninguno",
 	"todoRows.nothingToShow": "Nada que mostrar",
 	"todoRows.nothingWaiting": "Nada pendiente",

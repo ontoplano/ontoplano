@@ -3234,6 +3234,8 @@ export const messages: Catalogue = {
 	'todoRows.newestAtTheTopPress': 'Mais recentes no topo — pressione para os mais antigos',
 	'todoRows.newestFirst': 'Mais recentes primeiro',
 	'todoRows.noTag': 'Sem etiqueta',
+	'todoRows.noneMatchTheseFilters':
+		'Nenhuma das {count} aqui corresponde ao que você está filtrando.',
 	'todoRows.notInOne': 'Fora de qualquer um',
 	'todoRows.nothingToShow': 'Nada para mostrar',
 	'todoRows.nothingWaiting': 'Nada esperando',

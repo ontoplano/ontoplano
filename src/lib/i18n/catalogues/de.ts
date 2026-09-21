@@ -3277,6 +3277,7 @@ export const messages: Catalogue = {
 	'todoRows.newestAtTheTopPress': 'Neueste oben — drücken für die ältesten',
 	'todoRows.newestFirst': 'Neueste zuerst',
 	'todoRows.noTag': 'Ohne Schlagwort',
+	'todoRows.noneMatchTheseFilters': 'Keine der {count} hier passt zu dem, wonach Sie filtern.',
 	'todoRows.notInOne': 'In keinem Notizbuch',
 	'todoRows.nothingToShow': 'Nichts zu zeigen',
 	'todoRows.nothingWaiting': 'Nichts wartet',
