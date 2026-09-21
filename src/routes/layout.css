@@ -2274,6 +2274,15 @@ label:has(> input[type='radio']:not(:disabled)) {
 		content: '';
 		position: absolute;
 		inset: 0;
+		/*
+		 * The row's own corners, not a square.
+		 *
+		 * A list inside a rounded panel draws its first and last rows flush
+		 * against the curve, and a square wash on top of one of them poked
+		 * out past it at both corners — "square background on the hover". In
+		 * the sober style the radius is nought and this changes nothing.
+		 */
+		border-radius: inherit;
 		pointer-events: none;
 		background: var(--hover-wash);
 		opacity: 0;
