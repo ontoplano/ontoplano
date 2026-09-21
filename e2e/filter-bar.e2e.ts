@@ -41,17 +41,14 @@ test('the filter button says what is narrowing the list, and clears it', async (
 	await expect(fold).toHaveAttribute('aria-expanded', 'true');
 
 	// Narrow by a label.
-	await page
-		.locator('[data-picker] button')
-		.filter({ hasText: /Every tag/ })
-		.first()
-		.click();
+	await page.getByRole('button', { name: 'Filter by tag' }).first().click();
 	await page.getByRole('option', { name: 'home', exact: true }).click();
 	await page.keyboard.press('Escape');
 	await expect(page.getByText('post the parcel')).toBeHidden();
 
-	// Fold it away again — and the button now says what is on.
-	const named = page.getByRole('button', { name: '#home', exact: true });
+	// Fold it away again — and the button now says what is on. The row's own
+	// chip says "#home" too, so this asks the one that folds.
+	const named = page.locator('[aria-controls="tasks-filters"]');
 	await named.click();
 	await expect(named).toHaveAttribute('aria-expanded', 'false');
 	await expect(named).toHaveAttribute('aria-pressed', 'true');
