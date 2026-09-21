@@ -3,7 +3,8 @@
 	import { discardForm, keptForm } from '$lib/kept-form';
 	import Picker from '$lib/components/Picker.svelte';
 	import SortControl from '$lib/components/SortControl.svelte';
-	import { agoOf } from '$lib/when';
+	import { agoOf, momentOf } from '$lib/when';
+	import { RATINGS } from '$lib/ratings';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { deleteLater, isLeaving } from '$lib/undo.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
@@ -178,6 +179,11 @@
 	/** Whether there is anything under the title worth unfolding. */
 	function hasMore(todo: Todo): boolean {
 		return Boolean(todo.notes);
+	}
+
+	/** Whether any of the three questions has been answered for this one. */
+	function hasRatings(todo: Todo): boolean {
+		return RATINGS.some((r) => todo.ratings[r] != null);
 	}
 	let formRatings: Record<string, number | null> = $state({
 		urgency: null,
@@ -997,10 +1003,29 @@
 							rest of the row makes and gives the one action every row has the
 							size it deserves.
 						-->
+						<!--
+							At the top of the row, not down the middle of it.
+
+							It was `self-stretch` and centred, so on a task with notes,
+							labels and a gauge under the title the box floated halfway down
+							beside none of them. The thing it ticks is the title, so it
+							stands level with the title.
+
+							And once a task is done it says when: the tick is the only part
+							of the row that knows, and "did I do that this morning or last
+							week" is the question somebody asks of a list they are looking
+							back at.
+						-->
 						<button
 							type="submit"
-							class="-m-1 flex shrink-0 items-center justify-center self-stretch p-1 pointer-coarse:w-11"
+							class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
 							aria-label={isDone(todo) ? t('todoRows.markIncomplete') : t('todoRows.markComplete')}
+							title={isDone(todo) && todo.completedAt
+								? t('todoRows.doneAgo', {
+										when: momentOf(todo.completedAt, now()),
+										ago: agoOf(todo.completedAt, now())
+									})
+								: undefined}
 						>
 							<span
 								class="flex size-7 items-center justify-center border {isDone(todo)
@@ -1075,7 +1100,6 @@
 										>
 									{/if}
 								</span>
-								<RatingBadges values={todo.ratings} />
 								{#if todo.scheduledDate}
 									<span
 										class="tabular border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
@@ -1137,8 +1161,18 @@
 							<!-- Pressing one narrows the list to it, the way an idea's do:
 							     a label is only useful if reading back one of them is a
 							     press rather than a trip to a filter. -->
-							{#if todo.tags.length > 0}
-								<div class="mt-1 flex flex-wrap gap-1">
+							<!--
+								The three gauges, in the room the tick used to take.
+
+								Under the title rather than in it: the title line is what
+								somebody scans, and three small objects in the middle of it
+								were three things to read past. Here they sit with the
+								labels, which is the other thing you look at when you are
+								choosing what to do rather than reading what it is.
+							-->
+							{#if todo.tags.length > 0 || hasRatings(todo)}
+								<div class="mt-1 flex flex-wrap items-center gap-1">
+									<RatingBadges values={todo.ratings} />
 									{#each todo.tags as tag (tag.id)}
 										<!--
 											The chip says when it went on.

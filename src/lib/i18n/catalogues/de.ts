@@ -3236,6 +3236,7 @@ export const messages: Catalogue = {
 	'todoRows.createTodo': 'Aufgabe erstellen',
 	'todoRows.delegateToADay': 'Einem Tag zuweisen',
 	'todoRows.done': 'Erledigt',
+	'todoRows.doneAgo': 'Erledigt {when} — {ago}',
 	'todoRows.editToDo': 'Aufgabe bearbeiten',
 	'todoRows.everyNotebook': 'Alle Notizbücher',
 	'todoRows.everyTag': 'Alle Schlagwörter',

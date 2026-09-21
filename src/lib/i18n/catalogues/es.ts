@@ -3212,6 +3212,7 @@ export const messages: Catalogue = {
 	'todoRows.createTodo': 'Crear tarea',
 	'todoRows.delegateToADay': 'Delegar a un día',
 	'todoRows.done': 'Hecho',
+	'todoRows.doneAgo': 'Hecha {when} — {ago}',
 	'todoRows.editToDo': 'Editar tarea',
 	'todoRows.everyNotebook': 'Todos los cuadernos',
 	'todoRows.everyTag': 'Todas las etiquetas',

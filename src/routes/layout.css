@@ -1962,6 +1962,54 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * two-line note, where it turned the note into a card half the height of
 	 * the screen.
 	 */
+	/*
+	 * A rating, as a little gauge of five frets.
+	 *
+	 * It was a letter and a number — "U4" — which is the information with none
+	 * of the reading: a number has to be decoded, a bar that is nearly full
+	 * does not. Frets rather than a smooth fill because the scale is five whole
+	 * steps and a continuous bar invites a guess at three and a half.
+	 *
+	 * The colour tells the three apart without a letter, and is never the only
+	 * thing saying which is which: the words are in the tooltip and in the
+	 * accessible name. Each gauge names its own ink, so a fourth rating would
+	 * add one line here and nothing else.
+	 */
+	.gauge {
+		display: inline-flex;
+		align-items: center;
+		gap: 1px;
+		border: 1px solid var(--gauge-ink);
+		border-radius: 999px;
+		padding: 2px;
+		/* The pill is drawn at the height of the small print it stands among. */
+		line-height: 0;
+	}
+
+	.gauge > .fret {
+		width: 3px;
+		height: 7px;
+		border-radius: 1px;
+		background-color: var(--gauge-ink);
+		opacity: 0.22;
+	}
+
+	.gauge > .fret.lit {
+		opacity: 1;
+	}
+
+	.gauge[data-rating='urgency'] {
+		--gauge-ink: var(--color-amber-600);
+	}
+
+	.gauge[data-rating='interest'] {
+		--gauge-ink: var(--color-red-600);
+	}
+
+	.gauge[data-rating='energy'] {
+		--gauge-ink: var(--color-blue-600);
+	}
+
 	.chip {
 		display: inline-flex;
 		align-items: center;

@@ -2747,6 +2747,7 @@ export type MessageKey =
 	| 'todoRows.createTodo'
 	| 'todoRows.delegateToADay'
 	| 'todoRows.done'
+	| 'todoRows.doneAgo'
 	| 'todoRows.editToDo'
 	| 'todoRows.everyNotebook'
 	| 'todoRows.everyTag'
@@ -3511,6 +3512,7 @@ export interface MessageValuesFor {
 	'tasks.review.untold': { count: number };
 	'tasks.review.week': { number: string | number; year: string | number };
 	'todoRows.completedTitle': { title: string | number };
+	'todoRows.doneAgo': { ago: string | number; when: string | number };
 	'todoRows.hiddenByTheFilters': { count: number };
 	'todoRows.showArchivedCount': { count: number };
 	'todoRows.showCompletedCount': { count: number };
