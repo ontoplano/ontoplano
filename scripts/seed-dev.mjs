@@ -1269,7 +1269,7 @@ const bill = (name, amountExpected, extra = {}) => {
 		uid,
 		name,
 		amountExpected,
-		extra.currency ?? 'BRL',
+		extra.currency ?? 'USD',
 		extra.dueDay ?? null,
 		extra.payLeadDays ?? 0,
 		extra.rhythm ?? 'monthly',
@@ -1286,7 +1286,7 @@ const billPaid = (billId, period, amountExpected, amountPaid) => {
 		period,
 		amountExpected,
 		amountPaid,
-		'BRL'
+		'USD'
 	);
 };
 
@@ -1333,7 +1333,7 @@ const income = (name, amountExpected, extra = {}) => {
 		uid,
 		name,
 		amountExpected,
-		extra.currency ?? 'BRL',
+		extra.currency ?? 'USD',
 		extra.dueDay ?? null,
 		extra.rhythm ?? 'monthly'
 	);
