@@ -423,9 +423,17 @@
 		)
 	);
 
+	/*
+	 * A reminder's time is wall clock in the account's zone, and stays a string.
+	 *
+	 * Turning it into a `Date` first reads it in whichever zone the machine
+	 * doing the reading is set to, and the formatter then shifts it into the
+	 * account's — so on a box at −03:00 held by an account on UTC, a reminder
+	 * typed for 11:55 PM was listed at 2:55 the next morning. `momentOf` knows
+	 * a naive string for what it is; handing it the string is the fix.
+	 */
 	function when(at: string): string {
-		const d = new Date(at.length === 16 ? at + ':00' : at);
-		return momentOf(d, now(), { weekday: 'short', year: undefined });
+		return momentOf(at, now(), { weekday: 'short', year: undefined });
 	}
 
 	let confirmingDelete = $state<number | null>(null);
