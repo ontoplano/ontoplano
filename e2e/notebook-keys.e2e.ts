@@ -48,9 +48,15 @@ test('h and l walk the tabs, j and k walk the notes', async ({ page }) => {
 
 	await page.keyboard.press('j');
 	await expect(page.locator('article.kb-cursor')).toHaveCount(1);
-	const first = await page.locator('article.kb-cursor [data-note-title]').innerText();
+	const cursor = page.locator('article.kb-cursor [data-note-title]');
+	const first = await cursor.innerText();
 	await page.keyboard.press('j');
-	const second = await page.locator('article.kb-cursor [data-note-title]').innerText();
+	// Waited for rather than read straight away: the keystroke is handled and
+	// the row redrawn a frame later, and reading through it caught the cursor
+	// where it had been — a failure that says "j does not move" about a j that
+	// had not moved yet.
+	await expect(cursor).not.toHaveText(first);
+	const second = await cursor.innerText();
 	expect(second).not.toBe(first);
 	await page.keyboard.press('k');
 	await expect(page.locator('article.kb-cursor [data-note-title]')).toHaveText(first);
