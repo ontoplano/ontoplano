@@ -20,6 +20,13 @@ releases mattered.
 
 ## 0.182.24 — 2026-09-22
 
+- **The first-run tile marked Notebooks says what that room is.** It took its
+  name from the navigation and its sentence from the preference underneath,
+  which is still called `diary`, so the room that holds your notebooks, ideas
+  and people was described as the diary alone. It also offers six rooms rather
+  than nine: People and Ideas are tabs of Notebooks, and a tab is put away in
+  Preferences rather than before you have opened the app.
+
 - **The diary counts the diary.** An entry was numbered among everything the
   account had written, notebook notes included, so the thirtieth diary entry
   was headed `#127` — a number you could not arrive at by counting. The diary
