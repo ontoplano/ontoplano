@@ -2173,7 +2173,12 @@ export const messages: Catalogue = {
 		'Ein Rezept ist eine Liste von Einkaufsartikeln mit Mengen. Setzen Sie eins auf einen Tag, und seine Zutaten landen auf der Liste — nur das, was Ihnen ausgegangen ist.',
 	'sections.recipes.label': 'Rezepte',
 	'sections.reminders.label': 'Erinnerungen',
+	'sections.tags.blurb': 'Die Labels, die Sie verwenden, und der Platz, sie aufzuräumen.',
+	'sections.tags.label': 'Labels',
 	'sections.tasks.label': 'Aufgaben',
+	'sections.weekly.blurb':
+		'Was der Wochenrückblick schreibt, dort aufbewahrt, wo Ihr übriges Schreiben liegt.',
+	'sections.weekly.label': 'Wochennotizen',
 	'sections.workouts.blurb':
 		'Was Sie vorhatten und was Sie tatsächlich getan haben, in Ihren eigenen Einheiten.',
 	'sections.workouts.label': 'Training',

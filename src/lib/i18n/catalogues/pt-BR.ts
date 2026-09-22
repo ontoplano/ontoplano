@@ -2155,7 +2155,12 @@ export const messages: Catalogue = {
 		'Uma receita é uma lista de itens de compra com quantidades. Coloque uma num dia e os ingredientes caem na lista — só o que acabou.',
 	'sections.recipes.label': 'Receitas',
 	'sections.reminders.label': 'Lembretes',
+	'sections.tags.blurb': 'As etiquetas que você usa, e a tela para arrumá-las.',
+	'sections.tags.label': 'Etiquetas',
 	'sections.tasks.label': 'Tarefas',
+	'sections.weekly.blurb':
+		'O que a revisão semanal escreve, guardado junto do resto do que você escreve.',
+	'sections.weekly.label': 'Notas semanais',
 	'sections.workouts.blurb':
 		'O que você planejou fazer e o que de fato fez, nas suas próprias unidades.',
 	'sections.workouts.label': 'Treinos',

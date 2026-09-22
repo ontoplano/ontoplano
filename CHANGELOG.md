@@ -18,6 +18,18 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.18 — 2026-09-22
+
+- **Every shelf in the Notebooks room can be put away.** The room draws six
+  tabs and honoured the preference for two of them: hiding the diary left a
+  Diary tab standing, and Weekly notes and Tags had no preference at all.
+  Preferences now lists all of them under the room, and the room draws what is
+  left — one list, read by both, so a tab added later arrives with a way to
+  turn it off.
+
+- **First run calls a room what the bar calls it.** The tile for the writing
+  room said "Diary" while the app has called it Notebooks for a while.
+
 ## 0.182.17 — 2026-09-22
 
 - **The number under a task, and ten other small labels, can be read.** They

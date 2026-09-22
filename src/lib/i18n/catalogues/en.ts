@@ -2113,7 +2113,11 @@ export const messages: Catalogue = {
 		'A recipe is a list of shopping items with amounts. Put one on a day and its ingredients land on the list — only what you have run out of.',
 	'sections.recipes.label': 'Recipes',
 	'sections.reminders.label': 'Reminders',
+	'sections.tags.blurb': 'The labels you use, and the screen for tidying them.',
+	'sections.tags.label': 'Tags',
 	'sections.tasks.label': 'Tasks',
+	'sections.weekly.blurb': 'What the weekly review writes, kept where the rest of your writing is.',
+	'sections.weekly.label': 'Weekly notes',
 	'sections.workouts.blurb': 'What you planned to do and what you actually did, in your own units.',
 	'sections.workouts.label': 'Workouts',
 	'settings.account.aListFromTodoistGoogle':
