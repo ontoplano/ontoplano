@@ -16,8 +16,20 @@
 const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
 
 function escape(text: string): string {
-	return text.replace(/[&<>"]/g, (c) => ESCAPES[c]);
+	// The NUL is dropped rather than escaped: `inline` uses it to fence off
+	// spans of code from its own replacements, so it must not survive in text.
+	return text.replace(/\u0000/g, '').replace(/[&<>"]/g, (c) => ESCAPES[c]);
 }
+
+/**
+ * A span of code — one backtick, two or three — as CommonMark counts them.
+ *
+ * Three matter here because a fence typed on one line (```` ``` like this ```` )
+ * is a span rather than a block: an info string cannot contain backticks, so
+ * there is no block to open. It used to open one anyway, find no closing fence
+ * on the next line, and render an empty `<pre>` with the words thrown away.
+ */
+const CODE_SPAN = /(`{1,3})([^`]+?)\1/g;
 
 /**
  * A link is only followed if it goes somewhere obviously safe.
@@ -32,6 +44,25 @@ function safeHref(href: string): string | null {
 
 function inline(raw: string, todos?: TodoRefs): string {
 	let html = escape(raw);
+
+	/*
+	 * Code comes out first, and goes back in last.
+	 *
+	 * "What is inside a span of code is not markup" was the intention and
+	 * replacing it first was not enough to keep it: every rule below still ran
+	 * over the text now sitting inside the `<code>`, so `` `a * b * c` ``
+	 * came out with an `<em>` in the middle of it and `` `[x](/y)` `` came out
+	 * as a link. Lifting each span into a placeholder is what actually makes
+	 * the rule true — nothing between here and the bottom of the function can
+	 * see the characters.
+	 */
+	const spans: string[] = [];
+	html = html.replace(CODE_SPAN, (_match, _ticks: string, code: string) => {
+		// One space either side is the fence's own padding rather than part of
+		// what was written: ``` x ``` is the code `x`.
+		spans.push(code.replace(/^ (.*) $/, '$1'));
+		return `\u0000${spans.length - 1}\u0000`;
+	});
 
 	/*
 	 * A picture is one of your own, and nothing else.
@@ -76,8 +107,6 @@ function inline(raw: string, todos?: TodoRefs): string {
 			: match;
 	});
 
-	// Code first: what is inside a span of code is not markup.
-	html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
 	html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
 	html = html.replace(/(^|[^*\w])\*([^*\n]+)\*/g, '$1<em>$2</em>');
 	html = html.replace(/(^|[^_\w])_([^_\n]+)_/g, '$1<em>$2</em>');
@@ -114,7 +143,11 @@ function inline(raw: string, todos?: TodoRefs): string {
 		return `${before}<a class="todo-ref${done}" data-todo-seq="${seq}" href="#todo-${seq}">${label}</a>`;
 	});
 
-	return html;
+	// And the code goes back, untouched by any of the above.
+	return html.replace(
+		/\u0000(\d+)\u0000/g,
+		(_match, at: string) => `<code>${spans[Number(at)]}</code>`
+	);
 }
 
 /*
@@ -139,6 +172,20 @@ const NUMBER = /^\s*\d+[.)]\s+(.*)$/;
 const TASK = /^\s*[-*+]\s+\[([ xX])\]\s*(.*)$/;
 const QUOTE = /^\s*>\s?(.*)$/;
 const FENCE = /^\s*```/;
+/*
+ * …unless it closes on the same line.
+ *
+ * ``` written twice on one line is a code span: a fenced block's info string
+ * cannot contain backticks, so there is no block being opened. This read it as
+ * one, found no closing fence on the lines below, and drew an empty `<pre>`
+ * with everything the person had typed on that line thrown away.
+ */
+const ONE_LINE_FENCE = /^\s*```.*```\s*$/;
+
+/** A fence that opens a block, as opposed to one that closes on its own line. */
+function opensFence(line: string): boolean {
+	return FENCE.test(line) && !ONE_LINE_FENCE.test(line);
+}
 
 /**
  * Whether the line at `at` ends the paragraph above it.
@@ -155,7 +202,10 @@ function isBlockStart(lines: string[], at: number): boolean {
 		BULLET.test(line) ||
 		NUMBER.test(line) ||
 		QUOTE.test(line) ||
-		FENCE.test(line) ||
+		// A fence that closes on its own line is a span inside the paragraph,
+		// not the start of a block — and calling it one left the paragraph
+		// loop with nothing to consume and no line to advance past.
+		opensFence(line) ||
 		startsTable(lines, at)
 	);
 }
@@ -229,7 +279,7 @@ export function renderMarkdown(text: string, todos?: TodoRefs): string {
 			continue;
 		}
 
-		if (FENCE.test(line)) {
+		if (opensFence(line)) {
 			const code: string[] = [];
 			i++;
 			while (i < lines.length && !FENCE.test(lines[i])) code.push(lines[i++]);

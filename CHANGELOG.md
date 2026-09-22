@@ -18,6 +18,18 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.10 — 2026-09-22
+
+- **Backticks keep what is inside them.** `` `a * b * c` `` came out with an
+  italic in the middle, `` `**bold**` `` came out bold, and `` `[x](/y)` ``
+  came out as a link — every rule in the renderer ran over the text after it
+  had been wrapped in code. Now a span of code is lifted out before anything
+  else is read and put back at the end, so what is in it is what you typed.
+
+- **``` on one line is a code span, not an empty block.** Typing a fence that
+  opens and closes on the same line opened a block, found no closing fence
+  below, and drew an empty box with the sentence thrown away.
+
 ## 0.182.9 — 2026-09-22
 
 - **The to-do list can be ordered by priority.** Beside Added and Done there is
