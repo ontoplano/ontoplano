@@ -979,7 +979,7 @@
 							>{sectionLabel(t, leaf.id)}</span
 						>
 						{#if room.hidden}
-							<span class="eyebrow shrink-0 text-gray-400"
+							<span class="eyebrow shrink-0 text-gray-500"
 								>{t('settings.preferences.withTheRoom')}</span
 							>
 						{:else}

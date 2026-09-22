@@ -1451,6 +1451,7 @@ export const messages: Catalogue = {
 	'notebookDetail.ascendingPressForDescending': 'Ascending — press for descending',
 	'notebookDetail.backToThePage': 'Back to the page',
 	'notebookDetail.biggerType': 'Bigger type',
+	'notebookDetail.clearLabels': 'Clear labels',
 	'notebookDetail.deleteThisNote': 'Delete this note',
 	'notebookDetail.descendingPressForAscending': 'Descending — press for ascending',
 	'notebookDetail.editThisNote': 'Edit this note',

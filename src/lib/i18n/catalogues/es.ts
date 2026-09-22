@@ -1483,6 +1483,7 @@ export const messages: Catalogue = {
 	'notebookDetail.ascendingPressForDescending': 'Ascendente — pulsa para descendente',
 	'notebookDetail.backToThePage': 'Volver a la página',
 	'notebookDetail.biggerType': 'Letra más grande',
+	'notebookDetail.clearLabels': 'Quitar etiquetas',
 	'notebookDetail.deleteThisNote': 'Eliminar esta nota',
 	'notebookDetail.descendingPressForAscending': 'Descendente — pulsa para ascendente',
 	'notebookDetail.editThisNote': 'Editar esta nota',

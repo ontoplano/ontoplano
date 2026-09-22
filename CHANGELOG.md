@@ -18,6 +18,22 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.17 — 2026-09-22
+
+- **The number under a task, and ten other small labels, can be read.** They
+  were drawn in a grey the stylesheet itself says is not a text colour — about
+  2.5:1 on this app's surfaces. A bill's amount, a folder's count, "no price
+  yet" and the rest move to the grey that clears 4.5:1, and a test now stops a
+  new one appearing without somebody deciding it is an icon or a deliberate
+  dimming.
+
+- **The notes box opens at the size the dialog gives it.** The task dialog had
+  been making room for notes and then drawing three lines in the middle of it.
+
+- **Pressing a label on a note narrows the notes to it**, the way it has always
+  worked on a task. Press it again to let the rest back; the strip above says
+  which labels are holding, so a filter can't hide rows silently.
+
 ## 0.182.16 — 2026-09-22
 
 - **The words on a coloured label are readable on every colour.** The ink was

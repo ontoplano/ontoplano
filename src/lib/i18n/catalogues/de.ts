@@ -1498,6 +1498,7 @@ export const messages: Catalogue = {
 	'notebookDetail.ascendingPressForDescending': 'Aufsteigend — für absteigend drücken',
 	'notebookDetail.backToThePage': 'Zurück zur Seite',
 	'notebookDetail.biggerType': 'Größere Schrift',
+	'notebookDetail.clearLabels': 'Labels entfernen',
 	'notebookDetail.deleteThisNote': 'Diese Notiz löschen',
 	'notebookDetail.descendingPressForAscending': 'Absteigend — für aufsteigend drücken',
 	'notebookDetail.editThisNote': 'Diese Notiz bearbeiten',

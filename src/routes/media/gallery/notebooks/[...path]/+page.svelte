@@ -95,7 +95,7 @@
 							<span class="min-w-0 flex-1 truncate text-xs font-medium text-gray-700">
 								{folder.leaf}
 							</span>
-							<span class="text-xs text-gray-400 tabular-nums">{folder.totalCount}</span>
+							<span class="text-xs text-gray-500 tabular-nums">{folder.totalCount}</span>
 						</span>
 					</a>
 				</li>

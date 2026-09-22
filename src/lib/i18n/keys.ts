@@ -1305,6 +1305,7 @@ export type MessageKey =
 	| 'notebookDetail.ascendingPressForDescending'
 	| 'notebookDetail.backToThePage'
 	| 'notebookDetail.biggerType'
+	| 'notebookDetail.clearLabels'
 	| 'notebookDetail.deleteThisNote'
 	| 'notebookDetail.descendingPressForAscending'
 	| 'notebookDetail.editThisNote'

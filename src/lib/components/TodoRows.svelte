@@ -1309,7 +1309,7 @@
 									none.
 								-->
 								{#if todo.notebookSeq !== null}
-									<span class="tabular w-full text-right text-[11px] text-gray-400">
+									<span class="tabular w-full text-right text-[11px] text-gray-500">
 										#{todo.notebookSeq}
 									</span>
 								{/if}

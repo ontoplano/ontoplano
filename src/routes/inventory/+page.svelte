@@ -1109,7 +1109,7 @@
 						<!-- "about", because a last known price is not a price. -->
 						<span class="tabular shrink-0 text-right text-gray-600">
 							{#if line.lineCents === null}
-								<span class="text-xs text-gray-400">{t('inventory.noPriceYet')}</span>
+								<span class="text-xs text-gray-500">{t('inventory.noPriceYet')}</span>
 							{:else}
 								{formatMoney(line.lineCents, data.currency)}
 							{/if}

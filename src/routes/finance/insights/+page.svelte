@@ -138,7 +138,7 @@
 					<span class="flex items-center gap-1.5 text-gray-600">
 						<Swatch color={c.color} shape="dot" />
 						{c.name}
-						<span class="text-gray-400 tabular-nums">{money(c.totalCents)}</span>
+						<span class="text-gray-500 tabular-nums">{money(c.totalCents)}</span>
 					</span>
 				{/each}
 			</div>

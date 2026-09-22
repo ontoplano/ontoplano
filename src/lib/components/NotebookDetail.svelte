@@ -525,10 +525,31 @@
 		edited: 'notebookDetail.orderEdited'
 	};
 
+	/**
+	 * The labels the notes are narrowed to, by pressing one on a note.
+	 *
+	 * The task list has done this since it had labels — press `#a1` on a row
+	 * and the list is the rows carrying it — and the notes beside it did
+	 * nothing, though they carry the same vocabulary. Pressing adds rather than
+	 * replaces, so two presses is two labels, and a note has to carry all of
+	 * them: narrowing by pressing is only useful if it narrows.
+	 */
+	let noteTagFilter = $state<string[]>([]);
+
+	function toggleNoteTag(name: string) {
+		noteTagFilter = noteTagFilter.includes(name)
+			? noteTagFilter.filter((one) => one !== name)
+			: [...noteTagFilter, name];
+	}
+
 	/** The notes on screen: everything, or everything still out, in the chosen order. */
 	const shownNotes = $derived.by(() => {
 		const all = contents?.entries ?? orphaned;
-		const out = showArchivedNotes ? all : all.filter((entry) => !entry.archivedAt);
+		let out = showArchivedNotes ? all : all.filter((entry) => !entry.archivedAt);
+		if (noteTagFilter.length > 0)
+			out = out.filter((entry) =>
+				noteTagFilter.every((name) => entry.tags.some((tag) => tag.name === name))
+			);
 		return orderNotes(out, noteOrder, noteDirection);
 	});
 
@@ -1031,6 +1052,24 @@
 				: t('notebookDetail.showArchived', { count: putAwayNotes })}
 		</button>
 	{/if}
+	<!--
+		What the list is narrowed to, and how to stop.
+
+		A filter nothing on the screen mentions is a list that has quietly lost
+		rows: the labels are here, pressed, and pressing one again lets it go.
+	-->
+	{#each noteTagFilter as name (name)}
+		<TagChip {name} active onclick={() => toggleNoteTag(name)} />
+	{/each}
+	{#if noteTagFilter.length > 1}
+		<button
+			type="button"
+			class="btn btn-sm btn-quiet shrink-0"
+			onclick={() => (noteTagFilter = [])}
+		>
+			{t('notebookDetail.clearLabels')}
+		</button>
+	{/if}
 	{@render orderControl()}
 {/snippet}
 
@@ -1207,7 +1246,11 @@
 								<a href={resolve('/notebooks/people')} class="chip">@{person.name}</a>
 							{/each}
 							{#each entry.tags as tag (tag.id)}
-								<TagChip name={tag.name} />
+								<TagChip
+									name={tag.name}
+									active={noteTagFilter.includes(tag.name)}
+									onclick={() => toggleNoteTag(tag.name)}
+								/>
 							{/each}
 
 							<!-- In a shared notebook everybody reads everything, but a note

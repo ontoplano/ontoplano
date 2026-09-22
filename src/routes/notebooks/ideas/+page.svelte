@@ -196,7 +196,7 @@
 			>
 				<Icon name={tagsOpen ? 'chevron-down' : 'chevron-right'} size={14} />
 				{t('ui.tags')}
-				<span class="text-gray-400">({data.allTags.length})</span>
+				<span class="text-gray-500">({data.allTags.length})</span>
 			</button>
 
 			{#if filterTag && !tagsOpen}

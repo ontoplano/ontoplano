@@ -2918,7 +2918,7 @@
 						<Icon name={calendarsOpen ? 'chevron-down' : 'chevron-right'} size={14} />
 						{t('tasks.plan.calendarsYouSubscribeTo')}
 						{#if data.feeds.length > 0}
-							<span class="text-gray-400">({data.feeds.length})</span>
+							<span class="text-gray-500">({data.feeds.length})</span>
 						{/if}
 					</button>
 					{#if calendarsOpen}

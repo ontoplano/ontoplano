@@ -377,7 +377,7 @@
 						{@const history = sessionsOf(workout.id)}
 						<div class="w-full space-y-3 border-t border-gray-100 pt-3">
 							<div class="text-sm whitespace-pre-wrap text-gray-700">
-								{#if workout.plan}{workout.plan}{:else}<span class="text-gray-400"
+								{#if workout.plan}{workout.plan}{:else}<span class="text-gray-500"
 										>{t('health.workouts.noPlanWrittenYet')}</span
 									>{/if}
 							</div>
@@ -495,7 +495,7 @@
 					{#each archived as workout (workout.id)}
 						<li class="flex items-center gap-3 px-4 py-2 text-sm">
 							<span class="min-w-0 flex-1 text-gray-600">{workout.title}</span>
-							<span class="text-xs text-gray-400"
+							<span class="text-xs text-gray-500"
 								>{workout.categoryName ?? t('health.workouts.noCategory2')}</span
 							>
 							<form method="post" action="?/archive" use:enhance>

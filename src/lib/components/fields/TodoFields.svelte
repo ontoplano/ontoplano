@@ -21,6 +21,15 @@
 	 * category, notebook and notes in with them, so capture is one line to fill
 	 * in and the rest one click away rather than a different, lesser form.
 	 */
+	/**
+	 * How tall the notes box opens in the dialog.
+	 *
+	 * Eight lines: enough for the paragraph most tasks get and short enough
+	 * that the ratings and the buttons under it are still on a phone screen.
+	 * It grows from there as anybody types — see `TextBox`.
+	 */
+	const NOTES_ROWS = 8;
+
 	let {
 		title = '',
 		notes = '',
@@ -114,7 +123,22 @@
 		     are rather than the address of the screenshot in the middle of
 		     them. `written` because that is what draws a task's notes on the
 		     list afterwards. -->
-		<MarkdownBox bind:element={box} value={notes} name="notes" rows={3} preview="written" />
+		<!--
+			As tall as the room the form is given.
+
+			Three rows in a dialog that opens with half a screen of space under
+			it is a box you type two sentences into and then scroll inside,
+			while the space it could have used sits empty below. The compact
+			form — the one that shares a card with a list — keeps the short box,
+			because there the space is not going spare.
+		-->
+		<MarkdownBox
+			bind:element={box}
+			value={notes}
+			name="notes"
+			rows={compact ? 3 : NOTES_ROWS}
+			preview="written"
+		/>
 		<!-- A task said out loud is still a task, and a task is as often a
 		     screenshot: the same two attachments a note and an idea have,
 		     because "ring the plumber about the thing behind the boiler" is

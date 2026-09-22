@@ -200,7 +200,7 @@
 			aria-label={t('markdown.preview')}
 		>
 			{#if empty}
-				<p class="text-gray-400 italic">{t('markdown.nothingToPreviewYet')}</p>
+				<p class="text-gray-500 italic">{t('markdown.nothingToPreviewYet')}</p>
 			{:else if preview === 'written'}
 				<Written content={settled} />
 			{:else}
