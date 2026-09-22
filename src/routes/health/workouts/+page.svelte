@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { useWhen } from '$lib/when-context.svelte';
+	import Written from '$lib/components/Written.svelte';
 	import { dateOf, dayOf as shortDay } from '$lib/when';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
@@ -442,7 +443,7 @@
 														</span>
 													{/if}
 													{#if session.notes}
-														<p class="text-xs text-gray-500">{session.notes}</p>
+														<Written content={session.notes} compact />
 													{/if}
 												</div>
 												<div class="flex shrink-0 items-center gap-1">

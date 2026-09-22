@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import Written from '$lib/components/Written.svelte';
 	import TagInput from '$lib/components/TagInput.svelte';
 	import { dayOf, momentOf, today, weekdayOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
@@ -287,11 +288,6 @@
 	function formatDate(dateStr: string): string {
 		const d = new Date(dateStr);
 		return momentOf(d, now(), { weekday: 'short', year: undefined });
-	}
-
-	function truncate(text: string, max: number): string {
-		if (text.length <= max) return text;
-		return text.slice(0, max).trimEnd() + '…';
 	}
 
 	/**
@@ -1056,9 +1052,7 @@
 
 				{#if data.lastEntry}
 					<div>
-						<p class="text-sm leading-relaxed text-gray-700">
-							{truncate(data.lastEntry.content, 300)}
-						</p>
+						<Written content={data.lastEntry.content} lines={4} />
 						<div class="mt-2 flex items-center gap-2">
 							<span class="text-xs text-gray-500">{formatDate(data.lastEntry.createdAt)}</span>
 							{#each data.lastEntry.tags as tag (tag.id)}
@@ -1151,7 +1145,7 @@
 				{:else}
 					<div class="space-y-1">
 						{#each (data.latestIdeas ?? []).slice(0, 5) as idea (idea.id)}
-							<p class="truncate text-sm text-gray-700">{idea.content}</p>
+							<Written content={idea.content} oneLine />
 						{/each}
 						{#if (data.latestIdeas ?? []).length > 5}
 							<span class="text-xs text-gray-500"

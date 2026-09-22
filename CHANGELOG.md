@@ -20,6 +20,13 @@ releases mattered.
 
 ## 0.182.24 — 2026-09-22
 
+- **Writing is drawn as writing on the last screens that were still printing
+  it raw.** The diary card on the dashboard showed `## A month of doing this
+  properly` with the hashes in it, because it cut the entry at 300 characters
+  rather than rendering it; it now shows four lines of the real thing. A goal's
+  notes, a training session's notes and the ideas on the dashboard render too,
+  so a backtick means code wherever you type one.
+
 - **The first-run tile marked Notebooks says what that room is.** It took its
   name from the navigation and its sentence from the preference underneath,
   which is still called `diary`, so the room that holds your notebooks, ideas

@@ -14,6 +14,7 @@
 	 * same handler either way (`$lib/services/goal-actions`).
 	 */
 	import Icon from '$lib/components/Icon.svelte';
+	import Written from '$lib/components/Written.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { enhance } from '$lib/enhance';
 	import { invalidateAll } from '$app/navigation';
@@ -184,7 +185,7 @@
 				</div>
 
 				{#if goal.notes}
-					<p class="mt-0.5 text-xs text-gray-500">{goal.notes}</p>
+					<Written content={goal.notes} compact class="mt-0.5" />
 				{/if}
 
 				<!-- No bar without a measure. An empty track under a goal with

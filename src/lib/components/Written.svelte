@@ -51,6 +51,17 @@
 		/** Cut to a single line. What a list shows until somebody asks for more. */
 		oneLine = false,
 		/**
+		 * Cut after this many lines, for a card that shows an opening.
+		 *
+		 * Different from `oneLine`, which is a row that opens when pressed:
+		 * this is a fixed height with no way to unfold, because the card it is
+		 * on links to the page where the whole thing is. It exists so a preview
+		 * can be *rendered* writing rather than a slice of the characters — a
+		 * card cut at 300 characters shows `## A month of doing this properly`
+		 * with the hashes in it, which is the markup and not the heading.
+		 */
+		lines = undefined,
+		/**
 		 * Take the colour of whatever this sits on, rather than the palette's
 		 * grey. For a ground the palette does not know about — a board card
 		 * wears its category's colour, and grey on teal is grey on teal.
@@ -68,6 +79,7 @@
 		content: string;
 		compact?: boolean;
 		oneLine?: boolean;
+		lines?: number;
 		inheritInk?: boolean;
 		todos?: TodoRefs;
 		class?: string;
@@ -121,7 +133,12 @@
 		now, and `truncate` only cuts a single run of text. One line of a
 		paragraph, and the row opens to the rest.
 	-->
-	<div class="md written {folded ? 'written-one-line' : ''} {type} {klass}">
+	<div
+		class="md written {folded ? 'written-one-line' : ''} {lines
+			? 'written-clamped'
+			: ''} {type} {klass}"
+		style={lines ? `--written-lines: ${lines}` : undefined}
+	>
 		<!-- `renderMarkdown` escapes every character of the input before it emits
 		     a tag, and the only attributes it writes are its own. Same bargain as
 		     the diary and the weekly review. -->
@@ -205,6 +222,21 @@
 		-webkit-box-orient: vertical;
 		-webkit-line-clamp: 1;
 		line-clamp: 1;
+		overflow: hidden;
+	}
+
+	/*
+	 * The same cut, at a height the caller chooses.
+	 *
+	 * A card wants the opening of something rather than one line of it, and
+	 * wants it as writing: headings drawn as headings, and the cut falling
+	 * wherever the rendered text runs out of room.
+	 */
+	.written-clamped {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: var(--written-lines, 3);
+		line-clamp: var(--written-lines, 3);
 		overflow: hidden;
 	}
 
