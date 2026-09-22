@@ -3,6 +3,16 @@ import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
+ * How long a dialog gets to close.
+ *
+ * It closes when the post comes back, so this waits on a server round trip
+ * rather than on a repaint — and Playwright's default five seconds is not
+ * enough for one on a machine running the whole suite at once. Two of these
+ * have failed that way, on different dialogs, for the same reason.
+ */
+const DIALOG_CLOSES = 20_000;
+
+/**
  * The inventory: the shopping list read on a second axis.
  *
  * They are the same rows. "Milk, we are out" and "the tape, second drawer" are
@@ -96,7 +106,7 @@ test('the whole list still works, filed or not', async ({ page }) => {
 	const edit = page.getByRole('dialog', { name: 'Edit item' });
 	await edit.locator('[name="price"]').fill('3.20');
 	await edit.getByRole('button', { name: 'Save' }).click();
-	await expect(edit).toBeHidden();
+	await expect(edit).toBeHidden({ timeout: DIALOG_CLOSES });
 
 	// "Got it" is a count of one now — the arrow where the tick used to be.
 	await page.getByRole('button', { name: 'One more Butter' }).click();
@@ -175,7 +185,7 @@ test('the lists are grouped by where things are, then by category', async ({ pag
 		await d.locator('[name="label"]').fill(name);
 		if (where) await d.locator('[name="locationId"]').selectOption({ label: where });
 		await d.getByRole('button', { name: 'Add item', exact: true }).click();
-		await expect(d).toBeHidden();
+		await expect(d).toBeHidden({ timeout: DIALOG_CLOSES });
 	}
 
 	// Everything: one heading per place, each naming the whole address.
@@ -214,7 +224,7 @@ test('a thing carries its attributes, and one can be taken off again', async ({ 
 	await edit.locator('[name="fieldName"]').first().fill('length');
 	await edit.locator('[name="fieldValue"]').first().fill('5m');
 	await edit.getByRole('button', { name: 'Save' }).click();
-	await expect(edit).toBeHidden();
+	await expect(edit).toBeHidden({ timeout: DIALOG_CLOSES });
 
 	// On the row, because a fact you must open a form to see is one nobody reads.
 	await expect(page.getByText('length: 5m')).toBeVisible();
@@ -225,7 +235,7 @@ test('a thing carries its attributes, and one can be taken off again', async ({ 
 	edit = page.getByRole('dialog', { name: 'Edit item' });
 	await edit.getByRole('button', { name: 'Remove the attribute length' }).click();
 	await edit.getByRole('button', { name: 'Save' }).click();
-	await expect(edit).toBeHidden();
+	await expect(edit).toBeHidden({ timeout: DIALOG_CLOSES });
 	await expect(page.getByText('length: 5m')).toHaveCount(0);
 });
 
@@ -251,10 +261,7 @@ test('a thing is counted, and the list is what you are short of', async ({ page 
 	await add.locator('[name="label"]').fill('Tinned tomatoes');
 	await add.locator('[name="idealQty"]').fill('4');
 	await add.getByRole('button', { name: 'Add item', exact: true }).click();
-	// The dialog closes when the post comes back, so this waits on a server
-	// round trip rather than on a repaint — and the default five seconds is
-	// not enough for one on a machine running the whole suite at once.
-	await expect(add).toBeHidden({ timeout: 20_000 });
+	await expect(add).toBeHidden({ timeout: DIALOG_CLOSES });
 
 	const count = page.locator('[title$="you keep 4"]');
 	await expect(count).toHaveText('0/4');
@@ -372,7 +379,7 @@ test.describe('a row on a phone', () => {
 		await edit.locator('[name="fieldName"]').first().fill('size');
 		await edit.locator('[name="fieldValue"]').first().fill('500ml');
 		await edit.getByRole('button', { name: 'Save' }).click();
-		await expect(edit).toBeHidden();
+		await expect(edit).toBeHidden({ timeout: DIALOG_CLOSES });
 		await expect(page.getByText('size: 500ml')).toBeVisible();
 
 		expect((await below.boundingBox())!.y, 'with a field on the row').toBe(start!.y);
@@ -423,7 +430,7 @@ test.describe('what the filters are hiding', () => {
 			await d.locator('[name="locationId"]').selectOption({ label: where });
 			await d.locator('[name="type"]').selectOption(type);
 			await d.getByRole('button', { name: 'Add item', exact: true }).click();
-			await expect(d).toBeHidden();
+			await expect(d).toBeHidden({ timeout: DIALOG_CLOSES });
 		}
 	}
 
