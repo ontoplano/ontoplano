@@ -15,7 +15,7 @@ import {
 	type DashboardCardId
 } from '$lib/dashboard';
 import { getHiddenSections, getUserSetting, setUserSetting } from '$lib/services/settings';
-import { buildCtx } from '$lib/services/ctx';
+import { buildCtx, localDateOf } from '$lib/services/ctx';
 import { createEntry, latestEntry, listTags } from '$lib/services/diary';
 import { toActionFailure } from '$lib/http-errors';
 import { listActiveOn } from '$lib/services/goals';
@@ -31,7 +31,7 @@ import { getCurrency } from '$lib/services/settings';
 import { listTodos } from '$lib/services/todos';
 import { listWins, saveWins } from '$lib/services/wins';
 import { addDays, generateCurrentWeek } from '$lib/services/week-generator';
-import { localDay } from '$lib/services/time';
+import { localDay, minutesOfDay } from '$lib/services/time';
 
 /**
  * How far ahead the planner card looks.
@@ -89,7 +89,10 @@ export const load = async ({ locals }: IsolatedEvent) => {
 	 * the past, at the top of the screen somebody opens to find out what to do
 	 * next. This is the answer to the question they came with.
 	 */
-	const nowMinutes = ctx.now.getHours() * 60 + ctx.now.getMinutes();
+	// Where the person is, not where the server is: `getHours()` answers in the
+	// box's zone — UTC — so this card was three hours out for an account in
+	// São Paulo and said "7 hours left" when the answer was ten.
+	const nowMinutes = minutesOfDay(ctx.now, ctx.tz);
 	const minutesOf = (time: string) => {
 		const [h, m] = time.split(':').map(Number);
 		return h * 60 + (m || 0);
@@ -235,7 +238,9 @@ export const load = async ({ locals }: IsolatedEvent) => {
 			lastDoneAt: t.lastDoneAt
 		})),
 		billsCard: (() => {
-			const month = `${ctx.now.getUTCFullYear()}-${String(ctx.now.getUTCMonth() + 1).padStart(2, '0')}`;
+			// The month somebody is in, which on the first and the last day of one
+			// is not the month UTC is in.
+			const month = localDateOf(ctx.now, ctx.tz).slice(0, 7);
 			const monthly = listBills(ctx).filter((b) => b.rhythm === 'monthly');
 			const paid = new Set(
 				monthly

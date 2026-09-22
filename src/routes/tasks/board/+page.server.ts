@@ -1,4 +1,5 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
+import { clockOfDay } from '$lib/services/time';
 import { listNotebooks } from '$lib/services/notebooks';
 import { fail } from '@sveltejs/kit';
 import { ratingsFromForm } from '$lib/ratings';
@@ -55,12 +56,15 @@ function parseDate(param: string | null): Date {
  * Today gets the next half hour from now so a promoted todo lands ahead of you
  * rather than in the past; another day starts at nine.
  */
-function nextFreeTime(dateStr: string, now: Date): string {
+function nextFreeTime(dateStr: string, now: Date, tz: string): string {
 	const isToday = formatDate(now) === dateStr;
 	if (!isToday) return '09:00';
 
-	const minutes = now.getMinutes() <= 30 ? 30 : 0;
-	const hour = minutes === 0 ? now.getHours() + 1 : now.getHours();
+	// The clock the person is reading, not the one the box keeps. Landing a
+	// promoted todo "ahead of you" means ahead of *your* afternoon.
+	const { hour: nowHour, minute: nowMinute } = clockOfDay(now, tz);
+	const minutes = nowMinute <= 30 ? 30 : 0;
+	const hour = minutes === 0 ? nowHour + 1 : nowHour;
 	if (hour > 23) return '23:30';
 	return `${pad(hour)}:${pad(minutes)}`;
 }
@@ -291,7 +295,8 @@ export const actions = {
 		const result = promoteTodo(ctx, {
 			todoId: id,
 			date,
-			startTime: formData.get('startTime')?.toString()?.trim() || nextFreeTime(date, ctx.now),
+			startTime:
+				formData.get('startTime')?.toString()?.trim() || nextFreeTime(date, ctx.now, ctx.tz),
 			status: isStatus(status) ? status : undefined
 		});
 

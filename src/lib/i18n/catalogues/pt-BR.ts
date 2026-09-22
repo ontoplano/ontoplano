@@ -956,6 +956,8 @@ export const messages: Catalogue = {
 	'home.hoursShort': '{hours} h',
 	'home.ideas': 'Ideias',
 	'home.in': 'em',
+	'home.inHours': { one: 'em {count} hora', other: 'em {count} horas' },
+	'home.inMinutes': { one: 'em {count} minuto', other: 'em {count} minutos' },
 	'home.inProgress': '{doing} em andamento',
 	'home.itIsAndThisInstance':
 		'É {app} e esta instância roda {instance} — algumas coisas podem não funcionar até ela se atualizar.',
@@ -969,12 +971,14 @@ export const messages: Catalogue = {
 	'home.loading': 'Carregando',
 	'home.mdash': '— {author}',
 	'home.menu': 'Menu',
+	'home.minutesLeft': { one: 'falta {count} minuto', other: 'faltam {count} minutos' },
 	'home.minutesShort': '{minutes} min',
 	'home.more': '+{todoPreview} a mais',
 	'home.more2': '+{goalPreview} a mais',
 	'home.more3': '+{length} a mais',
 	'home.neverYet': 'nunca ainda',
 	'home.newCard': 'Novo cartão',
+	'home.nextEyebrow': 'A seguir',
 	'home.nextThreeDays': 'Próximos três dias',
 	'home.noArea': 'Nenhuma área',
 	'home.noBillsYetWriteDown':
@@ -1005,6 +1009,7 @@ export const messages: Catalogue = {
 		'Nada registrado ainda. Um hábito é algo que você quer fazer — ou parar de fazer — na maioria dos dias.',
 	'home.nothingWrittenYetWhateverHappened':
 		'Nada escrito ainda. O que quer que tenha acontecido hoje, em quantas palavras você quiser.',
+	'home.nowEyebrow': 'Agora',
 	'home.offersToPayForYour': 'oferece pagar pela sua conta.',
 	'home.oneOff': 'avulso',
 	'home.onlyWhatBrokeIsSent': 'Só o que quebrou é enviado, nunca o que você escreveu.',

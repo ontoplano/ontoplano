@@ -5553,6 +5553,20 @@ How far ahead of UTC `tz` is at this instant, in milliseconds.
 
 An instant as the wall-clock time it shows in this zone.
 
+#### `minutesOfDay(instant, tz)`
+
+Minutes since midnight where the person is, not where the server is.
+
+`instant.getHours()` answers in the zone the Node process happens to run in,
+which on the box is UTC. Every screen that compares "now" with a time
+somebody typed — a block at 11:45, the next thing on the dashboard — was
+therefore three hours out for an account in São Paulo, and said so with
+confidence: "7 hours left" where the honest answer was ten.
+
+#### `clockOfDay(instant, tz)`
+
+The hour and minute where the person is, as two numbers.
+
 #### `stamps(ctx)`
 
 The timestamps an insert sets.

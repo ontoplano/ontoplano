@@ -81,6 +81,27 @@ export function localOfInstant(instant: Date, tz: string): string {
 }
 
 /**
+ * Minutes since midnight where the person is, not where the server is.
+ *
+ * `instant.getHours()` answers in the zone the Node process happens to run in,
+ * which on the box is UTC. Every screen that compares "now" with a time
+ * somebody typed — a block at 11:45, the next thing on the dashboard — was
+ * therefore three hours out for an account in São Paulo, and said so with
+ * confidence: "7 hours left" where the honest answer was ten.
+ */
+export function minutesOfDay(instant: Date, tz: string): number {
+	const clock = localOfInstant(instant, tz).slice(11, 16);
+	const [hours, minutes] = clock.split(':').map(Number);
+	return hours * 60 + minutes;
+}
+
+/** The hour and minute where the person is, as two numbers. */
+export function clockOfDay(instant: Date, tz: string): { hour: number; minute: number } {
+	const at = minutesOfDay(instant, tz);
+	return { hour: Math.floor(at / 60), minute: at % 60 };
+}
+
+/**
  * The timestamps an insert sets.
  *
  * The columns have SQL defaults, but `CURRENT_TIMESTAMP` writes

@@ -964,6 +964,8 @@ export const messages: Catalogue = {
 	'home.hoursShort': '{hours} Std.',
 	'home.ideas': 'Ideen',
 	'home.in': 'in',
+	'home.inHours': { one: 'in {count} Stunde', other: 'in {count} Stunden' },
+	'home.inMinutes': { one: 'in {count} Minute', other: 'in {count} Minuten' },
 	'home.inProgress': '{doing} in Bearbeitung',
 	'home.itIsAndThisInstance':
 		'Es ist {app}, und diese Instanz läuft auf {instance} — manches funktioniert erst wieder, wenn sie aufgeholt hat.',
@@ -977,12 +979,14 @@ export const messages: Catalogue = {
 	'home.loading': 'Wird geladen',
 	'home.mdash': '— {author}',
 	'home.menu': 'Menü',
+	'home.minutesLeft': { one: 'noch {count} Minute', other: 'noch {count} Minuten' },
 	'home.minutesShort': '{minutes} Min.',
 	'home.more': '+{todoPreview} weitere',
 	'home.more2': '+{goalPreview} weitere',
 	'home.more3': '+{length} weitere',
 	'home.neverYet': 'noch nie',
 	'home.newCard': 'Neue Karte',
+	'home.nextEyebrow': 'Als Nächstes',
 	'home.nextThreeDays': 'Nächste drei Tage',
 	'home.noArea': 'Kein Bereich',
 	'home.noBillsYetWriteDown':
@@ -1014,6 +1018,7 @@ export const messages: Catalogue = {
 		'Noch nichts erfasst. Eine Gewohnheit ist etwas, das Sie an den meisten Tagen tun — oder lassen — wollen.',
 	'home.nothingWrittenYetWhateverHappened':
 		'Noch nichts geschrieben. Was auch immer heute passiert ist, in so vielen oder so wenigen Worten, wie Sie möchten.',
+	'home.nowEyebrow': 'Jetzt',
 	'home.offersToPayForYour': 'bietet an, für Ihr Konto zu zahlen.',
 	'home.oneOff': 'einmalig',
 	'home.onlyWhatBrokeIsSent': 'Nur was kaputt ist, wird gesendet, nie was Sie geschrieben haben.',

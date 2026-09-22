@@ -18,6 +18,20 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.19 — 2026-09-22
+
+- **"How long until this" is counted where you are.** The dashboard's Now/Next
+  card read the clock off the server, which runs in UTC — so a block at 11:45
+  told an account in São Paulo it had seven hours when it had ten, and the
+  card had rolled into tomorrow while it was still Sunday evening. The same
+  applies to the time a promoted todo lands on, and to which month the bills
+  card is counting.
+
+- **And it says it in your language.** "Now", "Next", "minute" and "hours" were
+  written into that card in English, so the line stayed English whatever the
+  app was set to — with the plural chosen by an `=== 1` rather than by the
+  language.
+
 ## 0.182.18 — 2026-09-22
 
 - **Every shelf in the Notebooks room can be put away.** The room draws six

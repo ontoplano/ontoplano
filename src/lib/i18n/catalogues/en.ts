@@ -938,6 +938,8 @@ export const messages: Catalogue = {
 	'home.hoursShort': '{hours} h',
 	'home.ideas': 'Ideas',
 	'home.in': 'in',
+	'home.inHours': { one: 'in {count} hour', other: 'in {count} hours' },
+	'home.inMinutes': { one: 'in {count} minute', other: 'in {count} minutes' },
 	'home.inProgress': '{doing} in progress',
 	'home.itIsAndThisInstance':
 		'It is {app} and this instance runs {instance} — some things may not work until it catches up.',
@@ -951,12 +953,14 @@ export const messages: Catalogue = {
 	'home.loading': 'Loading',
 	'home.mdash': '— {author}',
 	'home.menu': 'Menu',
+	'home.minutesLeft': { one: '{count} minute left', other: '{count} minutes left' },
 	'home.minutesShort': '{minutes} min',
 	'home.more': '+{todoPreview} more',
 	'home.more2': '+{goalPreview} more',
 	'home.more3': '+{length} more',
 	'home.neverYet': 'never yet',
 	'home.newCard': 'New card',
+	'home.nextEyebrow': 'Next',
 	'home.nextThreeDays': 'Next three days',
 	'home.noArea': 'No area',
 	'home.noBillsYetWriteDown':
@@ -987,6 +991,7 @@ export const messages: Catalogue = {
 		'Nothing tracked yet. A habit is something you want to do — or stop doing — most days.',
 	'home.nothingWrittenYetWhateverHappened':
 		'Nothing written yet. Whatever happened today, in as many or as few words as you like.',
+	'home.nowEyebrow': 'Now',
 	'home.offersToPayForYour': 'offers to pay for your account.',
 	'home.oneOff': 'one-off',
 	'home.onlyWhatBrokeIsSent': 'Only what broke is sent, never what you wrote.',

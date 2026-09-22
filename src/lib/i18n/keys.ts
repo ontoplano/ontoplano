@@ -872,6 +872,8 @@ export type MessageKey =
 	| 'home.hoursShort'
 	| 'home.ideas'
 	| 'home.in'
+	| 'home.inHours'
+	| 'home.inMinutes'
 	| 'home.inProgress'
 	| 'home.itIsAndThisInstance'
 	| 'home.jumpToASection'
@@ -884,12 +886,14 @@ export type MessageKey =
 	| 'home.loading'
 	| 'home.mdash'
 	| 'home.menu'
+	| 'home.minutesLeft'
 	| 'home.minutesShort'
 	| 'home.more'
 	| 'home.more2'
 	| 'home.more3'
 	| 'home.neverYet'
 	| 'home.newCard'
+	| 'home.nextEyebrow'
 	| 'home.nextThreeDays'
 	| 'home.noArea'
 	| 'home.noBillsYetWriteDown'
@@ -912,6 +916,7 @@ export type MessageKey =
 	| 'home.nothingToBuyTheList'
 	| 'home.nothingTrackedYetAHabit'
 	| 'home.nothingWrittenYetWhateverHappened'
+	| 'home.nowEyebrow'
 	| 'home.offersToPayForYour'
 	| 'home.oneOff'
 	| 'home.onlyWhatBrokeIsSent'
@@ -3283,11 +3288,14 @@ export interface MessageValuesFor {
 	'home.hideCard': { card: string | number };
 	'home.hoursAndMinutesShort': { hours: string | number; minutes: string | number };
 	'home.hoursShort': { hours: string | number };
+	'home.inHours': { count: number };
+	'home.inMinutes': { count: number };
 	'home.inProgress': { doing: string | number };
 	'home.itIsAndThisInstance': { app: string | number; instance: string | number };
 	'home.lastDone': { date: string | number };
 	'home.ldquoRdquo': { text: string | number };
 	'home.mdash': { author: string | number };
+	'home.minutesLeft': { count: number };
 	'home.minutesShort': { minutes: string | number };
 	'home.more': { todoPreview: string | number };
 	'home.more2': { goalPreview: string | number };

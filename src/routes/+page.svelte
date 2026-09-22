@@ -553,21 +553,25 @@
 					<div class="min-w-0 flex-1">
 						{#if now}
 							<span class="eyebrow text-gray-600">
-								{now.state === 'now' ? 'Now' : 'Next'}
+								{now.state === 'now' ? t('home.nowEyebrow') : t('home.nextEyebrow')}
 							</span>
 							<p class="mt-1 text-xl font-bold text-gray-900">{now.task.name}</p>
 							<p class="mt-1 text-sm text-gray-500">
 								<span class="tabular">{now.task.startTime}</span>
 								{#if now.task.categoryName}· {now.task.categoryName}{/if}
 								·
+								<!--
+									One message per sentence, and the plural chosen by the
+									language rather than by an `=== 1` here: "minute" and
+									"minutes" were written inline in English, so this line
+									stayed English in every language the app ships.
+								-->
 								{#if now.state === 'now'}
-									{now.minutes} {now.minutes === 1 ? 'minute' : 'minutes'} {t('home.left')}
+									{t('home.minutesLeft', { count: now.minutes })}
 								{:else if now.minutes < 60}
-									{t('home.in')} {now.minutes} {now.minutes === 1 ? 'minute' : 'minutes'}
+									{t('home.inMinutes', { count: now.minutes })}
 								{:else}
-									{t('home.in')}
-									{Math.round(now.minutes / 60)}
-									{Math.round(now.minutes / 60) === 1 ? 'hour' : 'hours'}
+									{t('home.inHours', { count: Math.round(now.minutes / 60) })}
 								{/if}
 							</p>
 						{:else}
