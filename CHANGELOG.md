@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.183.0 — 2026-09-22
 
+- **The page says when it is actually hearing about changes.** `data-live` on
+  the document once the update stream is open — which is a different moment from
+  the request being answered, and the reason a note written by an assistant
+  occasionally took a reload to appear in a tab that was already looking at it.
+
 - **Pressing a block on a rating fills it up to there.** It used to land one
   short: a slider puts its thumb on the nearest step to where you pressed, which
   is right when the thumb is the thing you are placing and wrong for a bar,

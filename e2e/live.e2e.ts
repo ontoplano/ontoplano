@@ -76,17 +76,16 @@ test('a todo added by an assistant turns up without a reload', async ({ page, pl
 	 * somebody is listening.
 	 */
 	/*
-	 * The response, not the request.
+	 * Open, not answered.
 	 *
-	 * A request is resolved the moment the browser sends it, which says nothing
-	 * about the server having subscribed anybody — and an event emitted in that
-	 * gap is an event nobody is listening for. The stream answers with its
-	 * headers as soon as the listener is registered, so that is the signal that
-	 * somebody is actually on the other end.
+	 * Neither the request nor the response proves anybody is listening: the
+	 * subscriber is registered when the stream's *body* starts, which is after
+	 * the response has been handed back, and a change emitted in that gap
+	 * reaches nobody. `data-live` is set from `EventSource`'s own `open`, which
+	 * fires on the first byte — by which time the other end has subscribed.
 	 */
-	const streaming = page.waitForResponse((r) => r.url().includes('/api/live'), { timeout: 20000 });
 	await visit(page, '/tasks/todo');
-	await streaming;
+	await page.waitForSelector('html[data-live]', { timeout: 20000 });
 
 	const title = `written by an assistant ${Date.now()}`;
 	await expect(page.getByText(title)).toHaveCount(0);
@@ -146,26 +145,22 @@ test('a note written by an assistant turns up on its notebook', async ({ page, p
 	expect(notebookId, 'no notebook to watch').toBeTruthy();
 
 	/*
-	 * The stream *this* page opened, before anything is written.
+	 * Wait until the stream is *open*, not until it was answered.
 	 *
 	 * An event emitted into a page that is not listening yet is an event nobody
-	 * hears — there is no replay — so the write has to wait for the stream. It
-	 * used to wait with a `waitForResponse` armed before the navigation, which
-	 * matched the stream the page being left behind had already opened: the new
-	 * page then got its own stream up whenever it managed to, and a write that
-	 * landed first was lost. That is the one in three this failed.
+	 * hears — there is no replay — so the write has to wait for the stream. Two
+	 * earlier attempts at this both raced: a `waitForResponse` armed before the
+	 * navigation matched the stream of the page being left behind, and counting
+	 * responses matched a response that arrives *before* the server subscribes.
+	 * The subscriber is registered when the body starts, which is after the
+	 * response, and a write landing in that window is lost.
 	 *
-	 * Counted instead, so it cannot match the wrong one and cannot be armed too
-	 * late either — the layout opens the stream on an idle callback, which is
-	 * after load.
+	 * `data-live` is set from `EventSource`'s own `open`, which fires on the
+	 * first byte — by which time the other end has already subscribed. Same
+	 * idiom as `data-ready` for hydration, and true in the same way.
 	 */
-	let streams = 0;
-	page.on('response', (r) => {
-		if (r.url().includes('/api/live')) streams += 1;
-	});
-	const before = streams;
 	await visit(page, `/notebooks?notebook=${notebookId}`);
-	await expect.poll(() => streams, { timeout: 20000 }).toBeGreaterThan(before);
+	await page.waitForSelector('html[data-live]', { timeout: 20000 });
 
 	const title = `written while watching ${Date.now()}`;
 	await expect(page.getByText(title)).toHaveCount(0);

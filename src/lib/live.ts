@@ -95,10 +95,27 @@ export function live(options: LiveOptions = {}): () => void {
 	 * that draw the first screen. `requestIdleCallback` with a timeout gets it
 	 * open promptly on a fast machine and still gets it open on a slow one.
 	 */
+	/**
+	 * Marked on the document once the stream is actually open.
+	 *
+	 * Not for styling: for anything that has to know the difference between
+	 * "the request was answered" and "the server is listening". The subscriber
+	 * is registered when the response *body* starts, which is after the
+	 * response itself — so a change written in that window reaches nobody, and
+	 * a test that waited for the response raced it about one time in three.
+	 * `EventSource` fires `open` on the first byte, which is the moment the
+	 * other end has already subscribed.
+	 *
+	 * The same idiom as `data-ready` for hydration, and true in the same way.
+	 */
+	const LIVE_MARK = 'data-live';
+
 	const open = () => {
 		if (closed) return;
 		source = new EventSource('/api/live');
 		source.addEventListener('changed', onChanged);
+		source.addEventListener('open', () => document.documentElement.setAttribute(LIVE_MARK, ''));
+		source.addEventListener('error', () => document.documentElement.removeAttribute(LIVE_MARK));
 	};
 
 	const idle = (window as Window & { requestIdleCallback?: typeof requestIdleCallback })
@@ -159,5 +176,6 @@ export function live(options: LiveOptions = {}): () => void {
 		document.removeEventListener('focusout', onBlur);
 		source?.close();
 		source = null;
+		document.documentElement.removeAttribute(LIVE_MARK);
 	};
 }
