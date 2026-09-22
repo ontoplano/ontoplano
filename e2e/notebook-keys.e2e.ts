@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
+import { pressUntil } from './helpers/press-until';
 
 /**
  * The keys a view declares rather than writes.
@@ -22,7 +23,11 @@ async function makeNotebook(page: Page, title: string) {
 }
 
 async function writeNote(page: Page, title: string) {
-	await page.getByRole('button', { name: /^(New note|New task|New goal|Cancel)$/ }).click();
+	await pressUntil(
+		page,
+		page.getByRole('button', { name: /^(New note|New task|New goal|Cancel)$/ }),
+		page.locator('form[action="?/addEntry"] [name="heading"]')
+	);
 	await page.locator('form[action="?/addEntry"] [name="heading"]').fill(title);
 	await page.locator('form[action="?/addEntry"] textarea[name="content"]').fill(`about ${title}`);
 	await page.getByRole('button', { name: 'Add note' }).click();

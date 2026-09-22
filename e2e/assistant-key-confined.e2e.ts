@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
+import { pressUntil } from './helpers/press-until';
 
 /**
  * A key tied to one notebook, made on the page that makes keys.
@@ -28,12 +29,11 @@ test('the key form offers to tie a key to one notebook', async ({ page }) => {
 	await expect(page.getByText('The flat').first()).toBeVisible();
 
 	await visit(page, '/settings/integrations');
-	await expect(async () => {
-		await page.getByRole('button', { name: 'Create a key' }).click();
-		await expect(page.getByRole('textbox', { name: 'What to call this key' })).toBeVisible({
-			timeout: 2000
-		});
-	}).toPass({ timeout: 15000 });
+	await pressUntil(
+		page,
+		page.getByRole('button', { name: 'Create a key' }),
+		page.getByRole('textbox', { name: 'What to call this key' })
+	);
 
 	const reach = page.getByRole('combobox', { name: 'What it may work on' });
 	await expect(reach).toBeVisible();

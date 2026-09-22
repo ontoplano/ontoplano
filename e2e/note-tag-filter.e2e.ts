@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
+import { pressUntil } from './helpers/press-until';
 
 /**
  * Pressing a label on a note narrows the notes to it.
@@ -39,7 +40,11 @@ async function makeNotebook(page: Page, title: string) {
 }
 
 async function writeNote(page: Page, title: string, label: string) {
-	await page.getByRole('button', { name: /^(New note|New task|New goal|Cancel)$/ }).click();
+	await pressUntil(
+		page,
+		page.getByRole('button', { name: /^(New note|New task|New goal|Cancel)$/ }),
+		page.locator('form[action="?/addEntry"] [name="heading"]')
+	);
 	await page.locator('form[action="?/addEntry"] [name="heading"]').fill(title);
 	await page.locator('form[action="?/addEntry"] textarea[name="content"]').fill(`about ${title}`);
 	// Tags are behind the composer's own disclosure, one press.

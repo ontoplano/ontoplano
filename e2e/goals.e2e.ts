@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
+import { pressUntil } from './helpers/press-until';
 
 /**
  * A done todo stays linked to its goal.
@@ -14,20 +15,13 @@ import { visit } from './helpers/visit';
 test('re-saving the choosing modal keeps the done todo linked', async ({ page }) => {
 	await register(page, testEmail('goals'));
 
-	// Two todos, through the page's own form. The open-then-fill is retried
-	// because the button exists before the page has hydrated enough to obey it.
+	// Two todos, through the page's own form.
 	await visit(page, '/tasks/todo');
 	for (const title of ['first chore', 'second chore']) {
 		// `OneLine` is a textarea on purpose (see the component), so the field
 		// is found by its label rather than by an input selector.
 		const field = page.locator('[name="heading"]');
-		await expect(async () => {
-			await page
-				.getByRole('button', { name: /New task/ })
-				.first()
-				.click();
-			await expect(field).toBeVisible({ timeout: 2000 });
-		}).toPass({ timeout: 15000 });
+		await pressUntil(page, page.getByRole('button', { name: /New task/ }).first(), field);
 		await field.fill(title);
 		await page.getByRole('button', { name: 'Create task' }).click();
 		await page.waitForTimeout(500);
@@ -37,13 +31,7 @@ test('re-saving the choosing modal keeps the done todo linked', async ({ page })
 	await visit(page, '/goals');
 	{
 		const field = page.locator('[name="heading"]');
-		await expect(async () => {
-			await page
-				.getByRole('button', { name: /New goal/ })
-				.first()
-				.click();
-			await expect(field).toBeVisible({ timeout: 2000 });
-		}).toPass({ timeout: 15000 });
+		await pressUntil(page, page.getByRole('button', { name: /New goal/ }).first(), field);
 		await field.fill('ship the thing');
 	}
 	await page.getByRole('button', { name: 'Create goal' }).click();
@@ -112,13 +100,7 @@ test('re-saving the choosing modal keeps the done todo linked', async ({ page })
 	await visit(page, '/tasks/todo');
 	{
 		const field = page.locator('[name="heading"]');
-		await expect(async () => {
-			await page
-				.getByRole('button', { name: /New task/ })
-				.first()
-				.click();
-			await expect(field).toBeVisible({ timeout: 2000 });
-		}).toPass({ timeout: 15000 });
+		await pressUntil(page, page.getByRole('button', { name: /New task/ }).first(), field);
 		await field.fill('third chore');
 		await page.getByRole('button', { name: 'Create task' }).click();
 		await page.waitForTimeout(500);
@@ -163,13 +145,7 @@ test('a goal can be measured by several things, and each keeps its own number', 
 
 	await visit(page, '/goals');
 	const heading = page.locator('[name="heading"]');
-	await expect(async () => {
-		await page
-			.getByRole('button', { name: /New goal/ })
-			.first()
-			.click();
-		await expect(heading).toBeVisible({ timeout: 2000 });
-	}).toPass({ timeout: 15000 });
+	await pressUntil(page, page.getByRole('button', { name: /New goal/ }).first(), heading);
 
 	await heading.fill('get the band going');
 	await page.locator('[name="targetValue"]').first().fill('3');

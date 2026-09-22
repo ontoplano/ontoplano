@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
+import { pressUntil } from './helpers/press-until';
 import { chooseValue } from './helpers/choose';
 
 /**
@@ -30,17 +31,10 @@ test('a goal’s progress field and the button beside it are the same height', a
 	await register(page, testEmail('touch'));
 
 	// A goal with a target, which is what puts the self-reported progress form
-	// on the card. Opening the form is retried: the button exists before the
-	// page has hydrated enough to obey it.
+	// on the card.
 	await visit(page, '/goals');
 	const heading = page.locator('[name="heading"]');
-	await expect(async () => {
-		await page
-			.getByRole('button', { name: /New goal/ })
-			.first()
-			.click();
-		await expect(heading).toBeVisible({ timeout: 2000 });
-	}).toPass({ timeout: 15000 });
+	await pressUntil(page, page.getByRole('button', { name: /New goal/ }).first(), heading);
 	await heading.fill('walk a thousand kilometres');
 	/*
 	 * Measured, not counted: a distance is typed, and the typed field is what
@@ -79,13 +73,7 @@ test('the goal card’s controls sit on one row inside the card', async ({ page 
 
 	await visit(page, '/goals');
 	const heading = page.locator('[name="heading"]');
-	await expect(async () => {
-		await page
-			.getByRole('button', { name: /New goal/ })
-			.first()
-			.click();
-		await expect(heading).toBeVisible({ timeout: 2000 });
-	}).toPass({ timeout: 15000 });
+	await pressUntil(page, page.getByRole('button', { name: /New goal/ }).first(), heading);
 	await heading.fill('finish the book');
 	await page.getByRole('button', { name: 'Create goal' }).click();
 	await page.waitForTimeout(800);
