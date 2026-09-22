@@ -12,11 +12,18 @@
 	import { resolve } from '$app/paths';
 	import { useT } from '$lib/i18n';
 	import { providerOf, OLLAMA_DEFAULT_BASE_URL } from '$lib/assistant-providers';
-	import type { PageServerData, ActionData } from './$types';
+	import type { ChatSettingsData, ChatSettingsForm } from '$lib/chat-settings';
 
 	const t = useT();
 
-	let { data, form }: { data: PageServerData; form: ActionData } = $props();
+	/**
+	 * Everything the chat needs saying about itself, on the AI tab.
+	 *
+	 * It had a tab of its own beside that one, which made three tabs where the
+	 * first two were both about the same thing: the assistant. What the chat
+	 * runs on is a setting of the AI tab, not a room.
+	 */
+	let { data, form }: { data: ChatSettingsData; form: ChatSettingsForm } = $props();
 
 	/*
 	 * The form is shown when there is nothing yet, and again on "Replace" —
@@ -113,7 +120,7 @@
 </script>
 
 <div class="space-y-6">
-	<Card title={t('settings.integrations.chat.title')}>
+	<Card id="chat" title={t('settings.integrations.chat.title')}>
 		<p class="text-sm text-gray-600">{t('settings.integrations.chat.blurb')}</p>
 
 		{#if data.configured}

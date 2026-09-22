@@ -16,7 +16,7 @@ import { visit } from './helpers/visit';
 test('the model is asked for, and a refused key says why', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('chat-model'));
-	await visit(page, '/settings/integrations/chat');
+	await visit(page, '/settings/integrations');
 
 	const ask = page.getByRole('button', { name: 'Ask the provider what it offers' });
 	await expect(ask).toBeVisible({ timeout: 30_000 });

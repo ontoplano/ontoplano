@@ -13,9 +13,9 @@ test('the chat appears with a key and goes away with it', async ({ page }) => {
 	await register(page, testEmail('assistant-chat'));
 
 	// Without a key the chat room does not exist — it answers with the
-	// settings screen that takes one.
+	// settings screen that takes one, which is the AI tab's chat card.
 	await visit(page, '/assistant');
-	await expect(page).toHaveURL(/settings\/integrations\/chat/);
+	await expect(page).toHaveURL(/settings\/integrations(#chat)?$/);
 
 	// Bring one. Anthropic is the preselected provider, so only the key is
 	// typed; the model field says what empty means instead of demanding one.
@@ -36,7 +36,7 @@ test('the chat appears with a key and goes away with it', async ({ page }) => {
 
 	// Remove the key and the room is gone again. The confirm button arms
 	// itself for a moment before it can be pressed, so the press retries.
-	await visit(page, '/settings/integrations/chat');
+	await visit(page, '/settings/integrations');
 	await page.getByRole('button', { name: 'Remove the key' }).click();
 	await expect(async () => {
 		await page.getByRole('button', { name: 'Confirm?' }).click();
@@ -44,5 +44,5 @@ test('the chat appears with a key and goes away with it', async ({ page }) => {
 	}).toPass({ timeout: 15000 });
 
 	await visit(page, '/assistant');
-	await expect(page).toHaveURL(/settings\/integrations\/chat/);
+	await expect(page).toHaveURL(/settings\/integrations(#chat)?$/);
 });

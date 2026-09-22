@@ -18,6 +18,13 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.8 — 2026-09-22
+
+- **Two tabs under AI & Integrations, not three.** The chat had a tab of its
+  own beside the AI one, which read as three rooms where there are two: what
+  the chat runs on is a setting of the AI tab, and it is now the first thing on
+  it. `/settings/integrations/chat` still lands where it used to.
+
 ## 0.182.7 — 2026-09-22
 
 - **`/favicon.ico` is an icon again.** Nothing links to that address and

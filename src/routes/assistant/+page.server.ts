@@ -14,7 +14,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	 * way in is the screen that takes one — not an empty chat explaining
 	 * itself.
 	 */
-	if (!configured) redirect(302, '/settings/integrations/chat');
+	if (!configured) redirect(302, '/settings/integrations#chat');
 
 	const meta = providerOf(configured.provider);
 	return {

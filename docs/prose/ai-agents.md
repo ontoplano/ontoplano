@@ -56,7 +56,7 @@ account of its own.
    no balance.
 2. **Plans & Billing → Buy credits.** A few dollars is a great deal of chat.
 3. **API keys → Create Key.** Copy it — the console shows it once.
-4. Paste it into Settings → AI & Integrations → Chat, and ask for the models.
+4. Paste it into Settings → AI & Integrations → AI, and ask for the models.
 
 A key looks like `sk-ant-api03-…`.
 
