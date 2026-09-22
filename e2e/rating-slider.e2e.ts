@@ -6,11 +6,15 @@ import { visit } from './helpers/visit';
  * The three scales a task carries, set by dragging rather than by pressing.
  *
  * They were five numbered buttons each, and "none of them" was a sixth press
- * on whichever one was already on — a gesture nobody guesses. The slider puts
- * off at the left end of the same track, so setting and clearing are the same
- * motion. What that has to keep doing is the part a control like this quietly
- * breaks: posting the value, and posting *nothing* when it is dragged back to
- * the dot.
+ * on whichever one was already on — a gesture nobody guesses. The slider is
+ * one control for the whole answer, and its thumb rests in the *middle* when
+ * nobody has answered: "no rating" and "the lowest rating" used to be next
+ * door to each other at the left end, which made an unanswered question look
+ * like a one.
+ *
+ * What that has to keep doing is the part a control like this quietly breaks:
+ * posting the number, posting *nothing* when it has been cleared, and never
+ * posting the half-step that only exists so the thumb has somewhere to rest.
  */
 async function openTheScales(page: import('@playwright/test').Page, title: string) {
 	await visit(page, '/tasks/board');
@@ -49,7 +53,7 @@ test('a rating set by the slider is the rating the card keeps', async ({ page })
 	await expect(page.getByTitle('Urgency: 4 of 5').first()).toBeVisible();
 });
 
-test('dragging it back to the dot leaves the card unrated', async ({ page }) => {
+test('the button beside it leaves the card unrated', async ({ page }) => {
 	await register(page, testEmail('rating-off'));
 	const title = 'A card with nothing on it';
 	await openTheScales(page, title);
@@ -59,9 +63,9 @@ test('dragging it back to the dot leaves the card unrated', async ({ page }) => 
 	await expect(page.locator('#card-form input[name="ease"]')).toHaveValue('3');
 
 	/*
-	 * And the button beside it does the same thing, which is the point of it
-	 * being there: dragging to the dot works and cannot be seen, so "how do I
-	 * leave this one blank" needs an answer somebody can look at.
+	 * The button is the only way back now: the thumb's resting place is in the
+	 * middle of the scale rather than off the end of it, so there is no gesture
+	 * that means "forget it" and the way out has to be something to look at.
 	 */
 	await page.getByRole('button', { name: 'Leave ease unanswered' }).click();
 	await expect(page.locator('#card-form input[name="ease"]')).toHaveValue('');
@@ -76,12 +80,25 @@ test('dragging it back to the dot leaves the card unrated', async ({ page }) => 
 		page.locator('#card-form button[aria-label="Leave ease unanswered"]')
 	).toBeDisabled();
 
-	// All the way down is not "1". It is the answer somebody gives by not
-	// answering, and it has to post an empty field rather than a number.
-	await ease.fill('3');
-	await ease.fill('0');
-	await expect(page.locator('#card-form input[name="ease"]')).toHaveValue('');
+	// Cleared, the thumb rests at 2.5 — where an unset rating counts when the
+	// list is sorted, and where the card draws it — and the field posts nothing.
+	await expect(ease).toHaveValue('2.5');
 	await expect(ease).toHaveAttribute('aria-valuetext', 'not set');
+
+	/*
+	 * And the half step is a resting place, not an answer.
+	 *
+	 * It exists because a native range needs one for the thumb to sit between
+	 * two marks. Anything a person does with the control has to land on a whole
+	 * number: dragging onto a half is taken to the whole one it was heading for.
+	 */
+	await ease.fill('3.5');
+	await expect(page.locator('#card-form input[name="ease"]')).toHaveValue('4');
+	await ease.fill('1.5');
+	await expect(page.locator('#card-form input[name="ease"]')).toHaveValue('1');
+
+	await page.getByRole('button', { name: 'Leave ease unanswered' }).click();
+	await expect(page.locator('#card-form input[name="ease"]')).toHaveValue('');
 
 	await page.getByRole('button', { name: 'Add card' }).click();
 	await expect(page.getByText(title, { exact: true })).toBeVisible();

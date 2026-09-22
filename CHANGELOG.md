@@ -20,6 +20,14 @@ releases mattered.
 
 ## 0.183.0 — 2026-09-22
 
+- **A rating you have not answered rests in the middle of its slider.** It used
+  to sit on a dot off the left end, so "no answer" and "the lowest answer" were
+  next door to each other and an unanswered question looked like a one. The
+  thumb now waits at 2.5, between the second and third marks — where the card
+  draws it and where the sort counts it — hollow rather than filled, and
+  hovering it says the rating is not set. The × beside it is the way back to no
+  answer.
+
 - **The three ratings are in one order everywhere: urgency, ease, interest.**
   The sort read them in that order while every form and legend listed urgency,
   interest, ease, so the same three questions came one way round on a card and

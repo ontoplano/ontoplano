@@ -8,6 +8,7 @@
 		RATING_MAX,
 		RATING_MIN,
 		RATING_SCALE_ENDS,
+		RATING_UNRATED,
 		type Rating
 	} from '$lib/ratings.js';
 
@@ -42,21 +43,39 @@
 	} = $props();
 
 	/**
-	 * The stop below the scale, which is the dot — a real answer, and the one
-	 * the slider starts on. Taken from the scale rather than written as 0, so an
-	 * off always sits immediately to the left of wherever the scale begins.
+	 * Where the thumb rests when nobody has answered: the middle, at 2.5.
+	 *
+	 * It used to rest on a dot off the left end of the scale, which put "no
+	 * answer" and "the lowest answer" next door to each other and made an
+	 * unanswered question look like a one. The middle is where an unset rating
+	 * actually counts when the list is sorted, and where the gauge on the card
+	 * draws it — so the control, the card and the arithmetic all say the same
+	 * thing, and 1 is a real answer again.
 	 */
-	const OFF = RATING_MIN - 1;
-
 	const ends = $derived(RATING_SCALE_ENDS[rating]);
-	const shown = $derived(value ?? OFF);
+	const shown = $derived(value ?? RATING_UNRATED);
 
 	/** How much of the track is behind the thumb, for the filled part. */
-	const filled = $derived(((shown - OFF) / (RATING_MAX - OFF)) * 100);
+	const filled = $derived(((shown - RATING_MIN) / (RATING_MAX - RATING_MIN)) * 100);
 
+	/**
+	 * Half steps exist so the thumb can rest between two marks, not so anybody
+	 * can choose one.
+	 *
+	 * The input's step has to be a half for 2.5 to be a position it can hold.
+	 * Every move therefore lands on a half now and then, and is taken to the
+	 * whole number it was heading for — away from where the thumb was, so an
+	 * arrow key moves by one from an answer and by a half from the middle,
+	 * which is the same gesture either way.
+	 */
 	function slide(event: Event) {
-		const n = Number((event.currentTarget as HTMLInputElement).value);
-		value = n === OFF ? null : n;
+		const input = event.currentTarget as HTMLInputElement;
+		const raw = Number(input.value);
+		const was = value ?? RATING_UNRATED;
+		const whole = Number.isInteger(raw) ? raw : raw > was ? Math.ceil(raw) : Math.floor(raw);
+		value = Math.min(RATING_MAX, Math.max(RATING_MIN, whole));
+		// The thumb sits on the answer rather than between two of them.
+		input.value = String(value);
 	}
 </script>
 
@@ -89,28 +108,19 @@
 
 	<div class="min-w-0 flex-1">
 		<div class="flex items-center gap-2">
-			<!--
-			The dot is the track's own left end, not a control beside it.
-
-			It sits exactly under where the thumb rests at zero, so "unrated" is the
-			thumb parked on the dot rather than a second thing to find. Drawn behind
-			the input, which paints its thumb over it.
-		-->
 			<div class="relative min-w-0 flex-1">
-				<span aria-hidden="true" class="rating-off"></span>
-
 				<input
 					type="range"
-					min={OFF}
+					min={RATING_MIN}
 					max={RATING_MAX}
-					step="1"
+					step="0.5"
 					value={shown}
 					oninput={slide}
 					aria-label={t(RATING_LABELS[rating])}
 					aria-valuetext={value === null ? t('ratingPicker.notSet') : `${value} of ${RATING_MAX}`}
 					title={value === null
-						? `${t(RATING_LABELS[rating])}: not answered`
-						: `${t(RATING_LABELS[rating])}: ${value} of ${RATING_MAX} — drag to the dot to leave it unanswered`}
+						? t('ratings.labelNotSet', { label: t(RATING_LABELS[rating]) })
+						: t('ratings.labelValueOf5', { label: t(RATING_LABELS[rating]), value })}
 					class="rating-slide relative w-full"
 					class:is-unset={value === null}
 					style="--filled: {filled}%"
@@ -120,11 +130,12 @@
 			<!--
 			The number, and the way out of answering.
 
-			Dragging to the dot clears it and always did, and a gesture nobody can
-			see is not an answer to "how do I leave this one blank" — so the way out
-			is also a button, labelled, reachable by tab and big enough for a thumb.
-			Both the number and the button keep their place whether or not there is
-			a value, so nothing on the row moves as the slider does.
+			There is no gesture for it any more — the thumb's resting place is in
+			the middle of the scale, not off the end of it — so this button is the
+			only way back to no answer, and it is labelled, reachable by tab and
+			big enough for a thumb. Both the number and the button keep their place
+			whether or not there is a value, so nothing on the row moves as the
+			slider does.
 		-->
 			<span class="tabular w-3 shrink-0 text-right text-xs text-gray-700">
 				{value ?? '–'}
@@ -180,19 +191,6 @@
 	 * filled part is a gradient on the track rather than a second element,
 	 * which is what keeps this one input rather than a construction.
 	 */
-	/* Under the thumb's resting place at zero — half a thumb in from the left,
-	   which is where a range input centres its thumb at the minimum. */
-	.rating-off {
-		position: absolute;
-		left: 0.4375rem;
-		top: 50%;
-		width: 0.25rem;
-		height: 0.25rem;
-		margin: -0.125rem 0 0 -0.125rem;
-		border-radius: 9999px;
-		background: var(--color-gray-400);
-	}
-
 	.rating-slide {
 		appearance: none;
 		-webkit-appearance: none;
