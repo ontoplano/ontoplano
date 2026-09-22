@@ -1,0 +1,87 @@
+import { expect, test, type Page } from '@playwright/test';
+import { register, testEmail } from './helpers/account';
+import { visit } from './helpers/visit';
+
+/**
+ * "Priority" is the three ratings read together, in the to-do list.
+ *
+ * The arithmetic is `$lib/ratings` and `tests/ratings-order.test.ts` pins it;
+ * what this walks is the wiring, which is the part that fails silently — an
+ * order in the picker that sorts by the wrong field, or by none at all, looks
+ * exactly like a list that happened to be in that order already.
+ *
+ * The four it writes are chosen so every rule shows: urgency decides first,
+ * energy breaks the tie between the two urgent ones towards the lighter, and
+ * the one nobody weighed still beats a task deliberately marked 1.
+ */
+async function newTodo(page: Page, title: string, ratings: Record<string, string>) {
+	await page.getByRole('button', { name: 'New task' }).click();
+	await page.locator('#todo-form [name="heading"]').fill(title);
+
+	if (Object.keys(ratings).length > 0) {
+		/*
+		 * The scales are behind a disclosure, and which one depends on the form:
+		 * the room's full form folds them on their own, the compact one folds
+		 * them in with everything else. Either is one press.
+		 */
+		const form = page.locator('#todo-form');
+		await form
+			.getByText(/Urgency, interest, energy|Category, notebook/)
+			.first()
+			.click();
+		for (const [name, value] of Object.entries(ratings)) {
+			// The slider is what a person moves; the hidden field beside it is
+			// what the form posts. See `e2e/rating-slider.e2e.ts`.
+			await form.getByRole('slider', { name }).fill(value);
+			await expect(form.locator(`input[name="${name.toLowerCase()}"]`)).toHaveValue(value);
+		}
+	}
+
+	await page.getByRole('button', { name: 'Create task' }).click();
+	await expect(page.getByText(title).first()).toBeVisible();
+}
+
+/** Where each title sits down the page — which is what "in this order" means. */
+async function order(page: Page, titles: string[]): Promise<string[]> {
+	const placed = [];
+	for (const title of titles) {
+		const box = await page.getByText(title, { exact: true }).first().boundingBox();
+		if (!box) throw new Error(`"${title}" is not on the page`);
+		placed.push({ title, y: box.y });
+	}
+	return placed.sort((a, b) => a.y - b.y).map((one) => one.title);
+}
+
+test('the to-do list can be ordered by priority', async ({ page }) => {
+	test.setTimeout(150_000);
+	await register(page, testEmail('todo-priority'));
+	await visit(page, '/tasks/todo');
+
+	const titles = [
+		'whenever and easy',
+		'urgent and draining',
+		'nobody weighed this',
+		'urgent and light'
+	];
+	// Written in an order that is nobody's priority order, so passing cannot be
+	// an accident of when they were added.
+	await newTodo(page, titles[0], { Urgency: '1', Energy: '1' });
+	await newTodo(page, titles[1], { Urgency: '5', Energy: '5' });
+	await newTodo(page, titles[2], {});
+	await newTodo(page, titles[3], { Urgency: '5', Energy: '1' });
+
+	// The order control says what it is ordering, not what it is set to; the
+	// current order is the word on it.
+	await page.getByRole('button', { name: 'Order tasks by' }).click();
+	await page.getByRole('option', { name: 'Priority' }).click();
+
+	expect(await order(page, titles)).toEqual([
+		// Both urgent; the lighter one first.
+		'urgent and light',
+		'urgent and draining',
+		// Unrated is the middle of the scale nudged half a step to the losing
+		// side — which is still above a deliberate 1.
+		'nobody weighed this',
+		'whenever and easy'
+	]);
+});

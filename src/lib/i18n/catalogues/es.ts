@@ -3304,6 +3304,7 @@ export const messages: Catalogue = {
 	'todoRows.oldestAtTheTopPress': 'Lo más antiguo arriba — presiona para lo que acabas de hacer',
 	'todoRows.oldestFirst': 'Más antiguo primero',
 	'todoRows.orderTasksBy': 'Ordenar tareas por',
+	'todoRows.priority': 'Prioridad',
 	'todoRows.pullOntoToday': 'Traer a hoy',
 	'todoRows.pulledOntoThisDay': 'Traído a este día',
 	'todoRows.putAway': 'Guardar',

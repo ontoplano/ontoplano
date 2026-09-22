@@ -3228,6 +3228,7 @@ export const messages: Catalogue = {
 	'todoRows.oldestAtTheTopPress': 'Oldest at the top — press for what you just did',
 	'todoRows.oldestFirst': 'Oldest first',
 	'todoRows.orderTasksBy': 'Order tasks by',
+	'todoRows.priority': 'Priority',
 	'todoRows.pullOntoToday': 'Pull onto today',
 	'todoRows.pulledOntoThisDay': 'Pulled onto this day',
 	'todoRows.putAway': 'Put away',

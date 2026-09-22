@@ -2831,6 +2831,7 @@ export type MessageKey =
 	| 'todoRows.oldestAtTheTopPress'
 	| 'todoRows.oldestFirst'
 	| 'todoRows.orderTasksBy'
+	| 'todoRows.priority'
 	| 'todoRows.pullOntoToday'
 	| 'todoRows.pulledOntoThisDay'
 	| 'todoRows.putAway'

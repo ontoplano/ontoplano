@@ -18,6 +18,20 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.9 — 2026-09-22
+
+- **The to-do list can be ordered by priority.** Beside Added and Done there is
+  now Priority: the three ratings read together — most urgent first, then the
+  task that takes least out of you, then the one you most want to do. It is the
+  same arithmetic `up_next` answers an assistant with, so the list and the
+  assistant cannot disagree about what comes next. The notebook's Tasks tab has
+  it too, being the same list.
+
+- **An unrated card no longer sinks to the bottom of the board.** Sorting a
+  board column by one rating put everything unrated last, which said "nobody
+  weighed this" and meant "this matters least". It now counts as the middle of
+  the scale nudged half a step to the losing side, exactly as everywhere else.
+
 ## 0.182.8 — 2026-09-22
 
 - **Two tabs under AI & Integrations, not three.** The chat had a tab of its

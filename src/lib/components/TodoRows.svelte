@@ -4,7 +4,7 @@
 	import Picker from '$lib/components/Picker.svelte';
 	import SortControl from '$lib/components/SortControl.svelte';
 	import { agoOf, momentOf } from '$lib/when';
-	import { RATINGS } from '$lib/ratings';
+	import { RATINGS, compareByRatings } from '$lib/ratings';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { deleteLater, isLeaving } from '$lib/undo.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
@@ -276,13 +276,21 @@
 	 * through them was to press until the right one came round. Separated, it
 	 * is the same control a notebook's notes use.
 	 */
-	const ORDERS = ['created', 'done'] as const;
+	/*
+	 * And the third question, which is the one a to-do list is really for:
+	 * *what should I be doing*. Priority is the three ratings read together —
+	 * urgency first, then the task that takes least out of you, then the one
+	 * you most want to do — and it is `$lib/ratings` doing the reading, so this
+	 * list and the `up_next` an assistant asks cannot disagree about it.
+	 */
+	const ORDERS = ['created', 'done', 'priority'] as const;
 	type Order = (typeof ORDERS)[number];
 
 	/* The field's name only: which way it runs is the arrow's business now. */
 	const ORDER_LABELS: Record<Order, PlainKey> = {
 		created: 'todoRows.added',
-		done: 'todoRows.done'
+		done: 'todoRows.done',
+		priority: 'todoRows.priority'
 	};
 
 	let order = $state<Order>('created');
@@ -377,6 +385,17 @@
 		if (order === 'done') {
 			const done = [...shown].sort(byLastDone);
 			return direction === 'asc' ? done.reverse() : done;
+		}
+
+		if (order === 'priority') {
+			/*
+			 * Ties past the three ratings keep the order somebody arranged by
+			 * hand, rather than falling back on when they were written down.
+			 */
+			const best = [...shown].sort(
+				(a: Todo, b: Todo) => compareByRatings(a.ratings, b.ratings) || a.sortOrder - b.sortOrder
+			);
+			return direction === 'asc' ? best.reverse() : best;
 		}
 
 		return [...shown].sort((a: Todo, b: Todo) =>

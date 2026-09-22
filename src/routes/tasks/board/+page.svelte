@@ -26,7 +26,7 @@
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import { formatDuration } from '$lib/duration';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
-	import { RATINGS, type Rating } from '$lib/ratings.js';
+	import { RATINGS, compareByRating, type Rating } from '$lib/ratings.js';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { CLOSED_STATUSES, STATUSES, STATUS_LABELS, type Status } from '$lib/task-status.js';
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
@@ -170,16 +170,20 @@
 			});
 		}
 
+		/*
+		 * One rating, best first — and an unrated card is not last.
+		 *
+		 * It used to sink to the bottom whatever the question was, which said
+		 * "nobody weighed this" and meant "this matters least". A rating
+		 * nobody set counts as the middle of the scale nudged half a step to
+		 * the losing side (`$lib/ratings`), so a card marked 3 beats it and the
+		 * far tiers — urgency 1–2, energy 4–5 — fall below it. Same arithmetic
+		 * as the to-do list's "Up next" and as `up_next` over MCP.
+		 */
 		const key: Rating = sortBy;
-		const ascending = key === 'energy';
-		return [...out].sort((a, b) => {
-			const av = a.ratings[key];
-			const bv = b.ratings[key];
-			if (av === null && bv === null) return a.sortOrder - b.sortOrder;
-			if (av === null) return 1;
-			if (bv === null) return -1;
-			return ascending ? av - bv : bv - av;
-		});
+		return [...out].sort(
+			(a, b) => compareByRating(key, a.ratings[key], b.ratings[key]) || a.sortOrder - b.sortOrder
+		);
 	}
 
 	const columns = $derived(
