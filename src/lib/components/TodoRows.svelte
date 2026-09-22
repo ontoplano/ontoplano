@@ -956,7 +956,8 @@
 				{#each visibleTodos as todo, i (todo.id)}
 					<div
 						use:keepInView={shortcutRoom !== null && selectedIndex === i}
-						class="flex items-stretch gap-4 px-4 py-3 {shortcutRoom && selectedIndex === i
+						class="flex flex-wrap items-stretch gap-x-4 px-4 py-3 {shortcutRoom &&
+						selectedIndex === i
 							? 'kb-cursor'
 							: ''} {isDone(todo) ? 'opacity-50' : ''}"
 					>
@@ -1026,7 +1027,12 @@
 
 						<!-- One row at every width: the actions are a narrow column of icons
 						     now, which fits beside the title on a phone. -->
-						<div class="flex min-w-0 flex-1 gap-3">
+						<!--
+							Wrapping, because the actions below are a full-width line: in a
+							row that cannot wrap they are a sibling competing for the width
+							instead, which squeezes the title to one letter per line.
+						-->
+						<div class="flex min-w-0 flex-1 flex-wrap gap-x-3">
 							<div class="min-w-0 flex-1">
 								<div class="flex flex-wrap items-center gap-2">
 									{#if todo.categoryColor}
@@ -1192,10 +1198,17 @@
 							</div>
 
 							<!--
-								Stacked up the right-hand edge, delete at the bottom: the same
-								column an idea card has, so the two rooms behave alike.
+								Under the words, not beside them.
+
+								The actions were a block three buttons wide pinned to the
+								right-hand edge, which on a phone took a third of the row and
+								left the title with barely enough space to break a word in —
+								"letters barely have space there to span". A note card has
+								never done that: its buttons sit on a line of their own under
+								the text, pushed right. Same here, at every width, because it
+								reads better on a laptop too.
 							-->
-							<div class="row-actions-stack">
+							<div class="task-actions">
 								{#if !isDone(todo)}
 									<!-- One column changes; nothing is copied anywhere. -->
 									<form method="post" action={actions.schedule} use:enhance>
@@ -1309,7 +1322,7 @@
 									none.
 								-->
 								{#if todo.notebookSeq !== null}
-									<span class="tabular w-full text-right text-[11px] text-gray-500">
+									<span class="tabular order-first mr-auto text-[11px] text-gray-500">
 										#{todo.notebookSeq}
 									</span>
 								{/if}

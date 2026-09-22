@@ -18,6 +18,15 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.20 — 2026-09-22
+
+- **A task's buttons sit under its words, not beside them.** They were a block
+  three wide pinned to the right of the row, which on a phone took a third of
+  the width and left the title breaking mid-word. They are one line under the
+  text now, pushed right, the way a note card has always done it — at every
+  width, because it reads better on a laptop too. The task's number keeps the
+  left end of that line.
+
 ## 0.182.19 — 2026-09-22
 
 - **"How long until this" is counted where you are.** The dashboard's Now/Next

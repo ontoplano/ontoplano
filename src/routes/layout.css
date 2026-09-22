@@ -1827,6 +1827,27 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * row with three actions — a finished task, which has no "do it today" or
 	 * "put it on a day" — is one line and a shorter card.
 	 */
+	/*
+	 * A task's actions, on a line of their own under the words.
+	 *
+	 * They used to be `.row-actions-stack` — three buttons wide, pinned to the
+	 * right-hand edge — which on a phone took a third of the row and left the
+	 * title breaking mid-word. A note card has never done that: its buttons
+	 * sit under the text, pushed right, and that reads better on a laptop too.
+	 *
+	 * The row it lives in wraps, so this is a full-width line after the text
+	 * rather than a column beside it. The task's number keeps the left end of
+	 * that line: it is a label, and the space is there.
+	 */
+	.task-actions {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 0.25rem;
+		margin-top: 0.375rem;
+	}
+
 	.row-actions-stack {
 		display: flex;
 		flex-wrap: wrap;
@@ -1841,7 +1862,8 @@ label:has(> input[type='radio']:not(:disabled)) {
 		margin-left: auto;
 	}
 
-	.row-actions-stack {
+	.row-actions-stack,
+	.task-actions {
 		--row-action-size: 2.25rem;
 	}
 
@@ -1849,11 +1871,13 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * Compact with a mouse. A finger keeps the 44px every other control has.
 	 */
 	@media (pointer: fine) {
-		.row-actions-stack {
+		.row-actions-stack,
+		.task-actions {
 			--row-action-size: 1.75rem;
 		}
 
-		.row-actions-stack .icon-btn {
+		.row-actions-stack .icon-btn,
+		.task-actions .icon-btn {
 			width: var(--row-action-size);
 			height: var(--row-action-size);
 		}
@@ -1889,7 +1913,8 @@ label:has(> input[type='radio']:not(:disabled)) {
 			opacity: 0.35;
 		}
 
-		.row-actions-stack {
+		.row-actions-stack,
+		.task-actions {
 			opacity: 0.35;
 		}
 
