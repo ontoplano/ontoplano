@@ -18,6 +18,19 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.15 — 2026-09-22
+
+- **Parking the chat properly.** Its endpoint answers 404 rather than staying
+  open to anybody who had saved a key, its documentation no longer ships — a
+  commented-out section in the prose is now dropped when the reference is
+  generated, so the docs search stops offering a page about a feature nobody
+  can reach — and the two generated pages that still name its code say it is
+  switched off.
+
+- **An Ollama address is judged before it is dialled, blank or not.** Its
+  default is `127.0.0.1`, so leaving the field empty asked for the same
+  unreachable thing as typing it; both now give the same sentence.
+
 ## 0.182.14 — 2026-09-22
 
 - **The chat inside the app is switched off.** It was built the way most apps

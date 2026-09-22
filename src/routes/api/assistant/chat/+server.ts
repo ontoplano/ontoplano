@@ -6,6 +6,7 @@ import { SESSION_BUDGET_KEY, assertNoPaymentHold } from '$lib/server/api/auth';
 import { buildCtx } from '$lib/services/ctx';
 import { chatResponse, chatScopes } from '$lib/server/services/assistant-chat';
 import { configuredModelKey } from '$lib/server/services/model-keys';
+import { CHAT_IN_APP } from '$lib/features';
 import type { UIMessage } from 'ai';
 
 /**
@@ -18,6 +19,10 @@ import type { UIMessage } from 'ai';
  *
  * A POST rather than a form action because the answer is a stream — the same
  * reason `/api/live` is an endpoint.
+ *
+ * **Switched off.** The in-app chat is parked — `CHAT_IN_APP` in
+ * `$lib/features` — and this answers 404 until it comes back. An assistant
+ * reaching in from outside is unaffected: that is `/api/mcp`.
  */
 
 /** The same 256 KB every other endpoint takes. */
@@ -26,6 +31,15 @@ const MAX_CHAT_BODY_BYTES = 256 * 1024;
 const MAX_MESSAGES = 200;
 
 export const POST: RequestHandler = async ({ request, locals }) => {
+	/*
+	 * The door is shut while the chat is parked — see `$lib/features`.
+	 *
+	 * Hiding the room and leaving the endpoint open would leave the whole
+	 * thing running for anybody who had saved a key and knows the address,
+	 * which is not switched off in any sense that matters.
+	 */
+	if (!CHAT_IN_APP) throw error(404);
+
 	if (!locals.user) throw error(401);
 	assertNoPaymentHold(locals.user.id);
 

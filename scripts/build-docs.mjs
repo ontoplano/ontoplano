@@ -1561,6 +1561,7 @@ function prosePages() {
 
 			const body = raw
 				.replace(/<!--\s*(?:title|blurb):.*?-->\n?/g, '')
+
 				.replace(/^[^\S\n]*<!--\s*generated:\s*([\w-]+)\s*-->[^\S\n]*$/gm, (line, name) => {
 					const fragment = FRAGMENTS[name];
 					if (!fragment) {
@@ -1568,7 +1569,23 @@ function prosePages() {
 						process.exit(1);
 					}
 					return fragment();
-				});
+				})
+				/*
+				 * A commented-out section stays in the source and does not ship.
+				 *
+				 * Markdown has no way to switch a section off, so a feature that
+				 * is parked rather than removed — see `CHAT_IN_APP` — gets its
+				 * documentation wrapped in an HTML comment. That was not enough
+				 * on its own: the comment rode through to `docs/reference/`, and
+				 * while a browser does not draw it, the docs site builds its
+				 * search index out of the markdown — so every heading inside the
+				 * comment was still findable, and the first result for "chat"
+				 * was a page about a feature nobody can reach.
+				 *
+				 * The tab markers are the exception, being instructions to the
+				 * site builder rather than prose.
+				 */
+				.replace(/<!--(?!\s*\/?tabs\s*-->)[\s\S]*?-->\n?/g, '');
 
 			return {
 				file,

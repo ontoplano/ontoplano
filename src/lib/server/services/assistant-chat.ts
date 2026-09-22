@@ -33,6 +33,10 @@ import type { Ctx } from '$lib/services/ctx.js';
  * the call budget, the write log and the room invalidations all apply here
  * without a second copy of any of them. This file only turns the tool table
  * into the shape the AI SDK wants and picks which company to dial.
+ *
+ * **Switched off.** The chat this serves is parked — `CHAT_IN_APP` in
+ * `$lib/features` — so nothing calls this today. It is kept, and kept tested,
+ * because the decision is pending rather than made.
  */
 
 /**

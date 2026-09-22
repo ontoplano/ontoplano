@@ -18,9 +18,7 @@ from there** — up the right-hand side, over the top, down the left.
     <text x="0" y="4" font-size="10" text-anchor="middle" fill="var(--muted)">let go here
 </text>
     <text x="0" y="16" font-size="9" text-anchor="middle" fill="var(--muted)">to cancel</text>
-    <!-- Eight wedge dividers and a number in the middle of each, starting at
-         six o'clock and running anti-clockwise. -->
-    <g stroke="var(--line)">
+        <g stroke="var(--line)">
       <line x1="0" y1="46" x2="0" y2="118"/>
       <line x1="32.5" y1="32.5" x2="83.4" y2="83.4"/>
       <line x1="46" y1="0" x2="118" y2="0"/>

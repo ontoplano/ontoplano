@@ -168,6 +168,10 @@ so — see `chatScopes`. An external assistant keeps using `/api/mcp`.
 A POST rather than a form action because the answer is a stream — the same
 reason `/api/live` is an endpoint.
 
+**Switched off.** The in-app chat is parked — `CHAT_IN_APP` in
+`$lib/features` — and this answers 404 until it comes back. An assistant
+reaching in from outside is unaffected: that is `/api/mcp`.
+
 **POST**
 
 ### `/api/billing/paddle`

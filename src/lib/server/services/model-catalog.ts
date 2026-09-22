@@ -172,7 +172,12 @@ export async function listModels(
 	 * fills this form in, and until now the ask came back "Unexpected error"
 	 * while the save explained itself.
 	 */
-	if (baseUrl && !isSelfHosted()) assertPublicUrl(baseUrl, 'address');
+	if (!isSelfHosted() && meta.editableBaseUrl) {
+		// The default is `127.0.0.1` too, so judging only what was typed let the
+		// empty field through to the same refusal a moment later, wearing the
+		// dispatcher's words instead of these.
+		assertPublicUrl(baseUrl || OLLAMA_DEFAULT_BASE_URL, 'address');
+	}
 
 	let body: unknown;
 	switch (provider) {

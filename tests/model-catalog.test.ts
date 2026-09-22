@@ -10,7 +10,18 @@
 import { describe, expect, test, vi, beforeEach, afterEach } from 'vitest';
 
 const fetchPublic = vi.fn();
-vi.mock('../src/lib/server/outbound.js', () => ({ fetchPublic }));
+/*
+ * The real guard, with a stubbed dialler.
+ *
+ * `assertPublicUrl` is what decides whether an address is this server's own,
+ * and it is the answer the form now shows — so the mock keeps it and replaces
+ * only the fetch. Replacing both meant the test proved the sentence and never
+ * the judgement behind it.
+ */
+vi.mock('../src/lib/server/outbound.js', async (importOriginal) => ({
+	...(await importOriginal<typeof import('../src/lib/server/outbound.js')>()),
+	fetchPublic
+}));
 vi.mock('../src/lib/server/settings.js', () => ({ isSelfHosted: () => false }));
 
 const { listModels } = await import('../src/lib/server/services/model-catalog');
@@ -86,9 +97,29 @@ describe('asking a provider what it serves', () => {
 
 	test('asks Ollama where it was told to, and without a key', async () => {
 		answers({ data: [{ id: 'llama3.3' }] });
-		await listModels('ollama', '', 'http://192.168.1.9:11434/v1/');
-		expect(fetchPublic.mock.calls[0][0]).toBe('http://192.168.1.9:11434/v1/models');
-		expect(await listModels('ollama', '', null)).toEqual([{ id: 'llama3.3', label: 'llama3.3' }]);
+		const said = await listModels('ollama', '', 'http://models.example.com:11434/v1/');
+		expect(fetchPublic.mock.calls[0][0]).toBe('http://models.example.com:11434/v1/models');
+		expect(said).toEqual([{ id: 'llama3.3', label: 'llama3.3' }]);
+	});
+
+	/*
+	 * An Ollama on the asker's own machine, which is the case everybody tries.
+	 *
+	 * This instance makes the call, so that address is the server's own
+	 * loopback rather than theirs, and it is refused — the same refusal saving
+	 * it gives. The empty field is refused too: Ollama's default address is
+	 * `127.0.0.1`, so leaving it blank asks for exactly the same thing.
+	 */
+	test('refuses an address that points back at this machine', async () => {
+		answers({ data: [{ id: 'llama3.3' }] });
+		await expect(listModels('ollama', '', 'http://127.0.0.1:11434/')).rejects.toThrow(
+			/this machine/i
+		);
+		await expect(listModels('ollama', '', 'http://192.168.1.9:11434/v1/')).rejects.toThrow(
+			/this machine/i
+		);
+		await expect(listModels('ollama', '', null)).rejects.toThrow(/this machine/i);
+		expect(fetchPublic).not.toHaveBeenCalled();
 	});
 
 	test('refuses to ask without the key the provider needs', async () => {
