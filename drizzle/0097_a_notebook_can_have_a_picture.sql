@@ -1,0 +1,11 @@
+-- A notebook can wear one picture, the way a person does.
+--
+-- Hand-corrected. `drizzle-kit generate` wrote the column and dropped the
+-- action off the foreign key — `REFERENCES media(id)` with no `ON DELETE` —
+-- which is `NO ACTION`, so deleting a picture would have failed rather than
+-- letting the notebook go on without it. It is the same mistake this
+-- repository has already been bitten by four times over, and the reason
+-- `tests/migrate-schema-parity.test.ts` compares every foreign key and its
+-- action between a database built by these files and one built from the
+-- schema.
+ALTER TABLE `notebooks` ADD `picture_id` integer REFERENCES media(id) ON DELETE set null;

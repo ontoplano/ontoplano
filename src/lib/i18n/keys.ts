@@ -1379,7 +1379,9 @@ export type MessageKey =
 	| 'notebooks.family'
 	| 'notebooks.fileBecomesANoteIn'
 	| 'notebooks.goalsCount'
+	| 'notebooks.id.aPictureFor'
 	| 'notebooks.id.atTheBottomOf'
+	| 'notebooks.id.changeThePicture'
 	| 'notebooks.id.close'
 	| 'notebooks.id.closed'
 	| 'notebooks.id.deleteTheNotebook'
@@ -1388,6 +1390,7 @@ export type MessageKey =
 	| 'notebooks.id.itsNotesTasksAndGoals'
 	| 'notebooks.id.larrAllNotebooks'
 	| 'notebooks.id.notesWithoutANotebook'
+	| 'notebooks.id.removeThePicture'
 	| 'notebooks.id.reopen'
 	| 'notebooks.id.shareWithFamily'
 	| 'notebooks.id.sharedBy'
@@ -1608,6 +1611,7 @@ export type MessageKey =
 	| 'pictures.add'
 	| 'pictures.dropAnywhere'
 	| 'pictures.hint'
+	| 'pictures.tooBig'
 	| 'pictures.uploading'
 	| 'plans.exportsPerDay'
 	| 'plans.storedDataPoints'
@@ -3402,6 +3406,7 @@ export interface MessageValuesFor {
 	'notebooks.diary.win': { i: string | number };
 	'notebooks.edit': { title: string | number };
 	'notebooks.goalsCount': { count: number };
+	'notebooks.id.aPictureFor': { title: string | number };
 	'notebooks.id.sharedBy': { sharedBy: string | number };
 	'notebooks.id.titleWillBeGone': { title: string | number };
 	'notebooks.ideas.edited': { updatedAt: string | number };
@@ -3462,6 +3467,7 @@ export interface MessageValuesFor {
 	'oauth.wantsToConnectTo': { client: string | number };
 	'picker.nChosen': { count: number };
 	'pictures.hint': { kilobytes: string | number };
+	'pictures.tooBig': { limit: string | number; name: string | number; size: string | number };
 	'ratingPicker.leaveUnanswered': { rating: string | number };
 	'ratings.labelNotSet': { label: string | number };
 	'ratings.labelValueOf5': { label: string | number; value: string | number };

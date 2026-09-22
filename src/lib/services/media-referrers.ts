@@ -19,6 +19,7 @@ import {
 	albumMedia,
 	diaryEntries,
 	ideas,
+	notebooks,
 	people,
 	recipeImages,
 	todoTasks
@@ -29,7 +30,7 @@ import type { Ctx } from './ctx.js';
  * The kinds of thing that can hold a file, named for the room a person would
  * say it was in rather than for the table it is stored in.
  */
-export type ReferrerKind = 'note' | 'idea' | 'todo' | 'person' | 'recipe' | 'album';
+export type ReferrerKind = 'note' | 'idea' | 'todo' | 'person' | 'recipe' | 'album' | 'notebook';
 
 export type Referrer = {
 	kind: ReferrerKind;
@@ -74,6 +75,20 @@ export function pictureReferrers(ctx: Ctx, id: number): Referrer[] {
 		.where(and(eq(people.userId, ctx.userId), eq(people.pictureId, id)))
 		.all())
 		found.push({ kind: 'person', id: row.id, notebookId: null });
+
+	/*
+	 * A notebook's own picture, which belongs to that notebook.
+	 *
+	 * `notebookId` is its own id rather than null: it is the one file that is
+	 * *about* the notebook, so a key confined to it can see it, the same way it
+	 * sees the notes inside.
+	 */
+	for (const row of db
+		.select({ id: notebooks.id })
+		.from(notebooks)
+		.where(and(eq(notebooks.userId, ctx.userId), eq(notebooks.pictureId, id)))
+		.all())
+		found.push({ kind: 'notebook', id: row.id, notebookId: row.id });
 
 	for (const row of db
 		.select({ id: recipeImages.recipeId })

@@ -30,6 +30,8 @@ export type Notebook = {
 	id: number;
 	title: string;
 	description: string;
+	/** One picture, the way a person has a face. Null until somebody adds one. */
+	pictureId: number | null;
 	closedAt: string | null;
 	/** Whether this account owns it — false for one shared into the family. */
 	mine: boolean;
@@ -177,6 +179,7 @@ export function listNotebooks(ctx: Ctx): Notebook[] {
 			id: notebooks.id,
 			title: notebooks.title,
 			description: notebooks.description,
+			pictureId: notebooks.pictureId,
 			closedAt: notebooks.closedAt,
 			sharedWithFamily: notebooks.sharedWithFamily,
 			ownerId: notebooks.userId,
@@ -269,6 +272,7 @@ export function getNotebook(ctx: Ctx, id: number): Notebook {
 			id: notebooks.id,
 			title: notebooks.title,
 			description: notebooks.description,
+			pictureId: notebooks.pictureId,
 			closedAt: notebooks.closedAt,
 			sharedWithFamily: notebooks.sharedWithFamily,
 			ownerId: notebooks.userId,

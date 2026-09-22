@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.183.0 — 2026-09-22
 
+- **A notebook can have a picture.** On its own page, beside the title: press it
+  to choose one, press again to replace it, and a line under it takes it off.
+  The same arrangement a person's face has — one picture, because it is what the
+  notebook is, and the one it replaces goes if nothing else refers to it.
+
 - **The page says when it is actually hearing about changes.** `data-live` on
   the document once the update stream is open — which is a different moment from
   the request being answered, and the reason a note written by an assistant

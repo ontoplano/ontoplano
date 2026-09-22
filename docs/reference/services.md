@@ -2970,6 +2970,16 @@ Give somebody a face, replacing whatever was there.
 
 #### `removePersonPicture(ctx, personId)`
 
+#### `setNotebookPicture(ctx, notebookId, input)`
+
+Give a notebook a picture, replacing whatever was there.
+
+The same shape a person's face has, and for the same reason: one picture,
+because it is what the notebook _is_, and the one it replaces goes if nothing
+else refers to it.
+
+#### `removeNotebookPicture(ctx, notebookId)`
+
 #### `picturesOf(ctx, recipeId)`
 
 #### `mainPictures(ctx, recipeIds)`

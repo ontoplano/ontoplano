@@ -4,6 +4,7 @@ import type { Actions } from '@sveltejs/kit';
 import { buildCtx } from '$lib/services/ctx';
 import { archiveEntry, createEntry, deleteEntry, pinEntry, updateEntry } from '$lib/services/diary';
 import { makeTodosFromEntry } from '$lib/services/note-todos';
+import { removeNotebookPicture, setNotebookPicture } from '$lib/services/media';
 import { setEntryPeople } from '$lib/services/people';
 import { NOTEBOOK_PANEL_WIDTH_KEY, setPanelWidth } from '$lib/services/settings';
 import { toActionFailure } from '$lib/http-errors';
@@ -61,6 +62,44 @@ export const notebookActions = {
 				formData.get('shared') === 'true'
 			);
 			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
+	 * A picture for the notebook, replacing whatever was there.
+	 *
+	 * Choosing the file is the whole act — there is no second button — the same
+	 * as a person's face, which this is the other of. The size is checked in the
+	 * browser first, because a body over the adapter's limit is refused before
+	 * this code runs and answers with something no form can read.
+	 */
+	setPicture: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const file = formData.get('file');
+		if (!id) return fail(400, { message: 'No notebook' });
+		if (!(file instanceof File) || file.size === 0)
+			return fail(400, { message: 'Choose a picture first.' });
+
+		try {
+			await setNotebookPicture(buildCtx(locals.user!.id), id, {
+				bytes: new Uint8Array(await file.arrayBuffer()),
+				filename: file.name,
+				alt: String(formData.get('title') ?? '')
+			});
+			return { success: true, action: 'setPicture' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	removePicture: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			removeNotebookPicture(buildCtx(locals.user!.id), Number(formData.get('id')));
+			return { success: true, action: 'removePicture' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

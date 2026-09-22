@@ -222,6 +222,16 @@ export const notebooks = sqliteTable(
 		title: text('title').notNull(),
 		description: text('description').default(''),
 		/**
+		 * One picture, so a shelf of subjects is a shelf of things.
+		 *
+		 * The same shape a person has, for the same reason: one rather than a
+		 * gallery, because this is what the notebook *is* and a second of the
+		 * same thing answers no question the first did not. `set null` on
+		 * delete, so removing the picture leaves the notebook — the opposite
+		 * would be a way to lose a trip by tidying up a photograph.
+		 */
+		pictureId: integer('picture_id').references(() => media.id, { onDelete: 'set null' }),
+		/**
 		 * Opt-in, per notebook, by its owner: everybody on the owner's family
 		 * plan can read it and write their own entries into it. The rows keep
 		 * their writers' user_id — sharing widens who may look, never who owns.

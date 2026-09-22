@@ -54,7 +54,7 @@ exist.
 | [`media_tags`](#media_tags)                                 | 4       | yes               |
 | [`model_provider_keys`](#model_provider_keys)               | 9       | yes               |
 | [`newsletter_issues`](#newsletter_issues)                   | 6       | —                 |
-| [`notebooks`](#notebooks)                                   | 8       | yes               |
+| [`notebooks`](#notebooks)                                   | 9       | yes               |
 | [`oauth_clients`](#oauth_clients)                           | 7       | —                 |
 | [`oauth_codes`](#oauth_codes)                               | 11      | yes               |
 | [`people`](#people)                                         | 12      | yes               |
@@ -536,10 +536,10 @@ Checks — enforced by the database, not only by the service layer:
 
 - `exceptional_urgency_range`: `"exceptional_tasks"."urgency" IS NULL OR "exceptional_tasks"."urgency" BETWEEN 0 AND 5`
 - `exceptional_interest_range`: `"exceptional_tasks"."interest" IS NULL OR "exceptional_tasks"."interest" BETWEEN 0 AND 5`
+- `exceptional_ease_range`: `"exceptional_tasks"."ease" IS NULL OR "exceptional_tasks"."ease" BETWEEN 0 AND 5`
 - `exceptional_mode_category`: `"exceptional_tasks"."mode" != 'category' OR "exceptional_tasks"."category_id" IS NOT NULL`
 - `exceptional_mode_activity`: `"exceptional_tasks"."mode" != 'activity' OR "exceptional_tasks"."activity_id" IS NOT NULL`
 - `exceptional_mode_workout`: `"exceptional_tasks"."mode" != 'workout' OR "exceptional_tasks"."workout_id" IS NOT NULL`
-- `exceptional_ease_range`: `"exceptional_tasks"."ease" IS NULL OR "exceptional_tasks"."ease" BETWEEN 0 AND 5`
 
 ## finance_rules
 
@@ -954,6 +954,7 @@ Indexes:
 | `user_id`            | text    | not null | —                     | → `user.id`       |
 | `title`              | text    | not null | —                     | —                 |
 | `description`        | text    | null     | `''`                  | —                 |
+| `picture_id`         | integer | null     | —                     | → `media.id`      |
 | `shared_with_family` | integer | not null | `false`               | —                 |
 | `closed_at`          | text    | null     | —                     | —                 |
 | `created_at`         | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
@@ -1240,11 +1241,11 @@ Checks — enforced by the database, not only by the service layer:
 
 - `slots_urgency_range`: `"recurring_tasks"."urgency" IS NULL OR "recurring_tasks"."urgency" BETWEEN 0 AND 5`
 - `slots_interest_range`: `"recurring_tasks"."interest" IS NULL OR "recurring_tasks"."interest" BETWEEN 0 AND 5`
+- `slots_ease_range`: `"recurring_tasks"."ease" IS NULL OR "recurring_tasks"."ease" BETWEEN 0 AND 5`
 - `slots_weekday_range`: `"recurring_tasks"."weekday" >= 0 AND "recurring_tasks"."weekday" <= 6`
 - `slots_mode_category`: `"recurring_tasks"."mode" != 'category' OR "recurring_tasks"."category_id" IS NOT NULL`
 - `slots_mode_activity`: `"recurring_tasks"."mode" != 'activity' OR "recurring_tasks"."activity_id" IS NOT NULL`
 - `slots_mode_workout`: `"recurring_tasks"."mode" != 'workout' OR "recurring_tasks"."workout_id" IS NOT NULL`
-- `slots_ease_range`: `"recurring_tasks"."ease" IS NULL OR "recurring_tasks"."ease" BETWEEN 0 AND 5`
 
 ## reminder_sounds
 
