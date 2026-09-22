@@ -14,7 +14,7 @@ import {
 	revokeToken
 } from '$lib/server/services/tokens';
 import { scopeWord } from '$lib/scope-words';
-import { capabilities } from '$lib/server/settings';
+import { capabilities, isSelfHosted } from '$lib/server/settings';
 import { confinementChoices, describeConfinement } from '$lib/server/mcp/confinement';
 import { translatorFor, SOURCE_LOCALE } from '$lib/i18n/core';
 import type { Translate } from '$lib/i18n/core';
@@ -128,6 +128,13 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 		 * provider by disagreeing with the same file.
 		 */
 		providers: PROVIDERS,
+		/*
+		 * Whether a model on the same machine is a thing this instance can
+		 * reach. The chat's calls are made here, not in the browser, so on the
+		 * hosted copy `127.0.0.1` is this server's own loopback — and the form
+		 * says so beside the field rather than after the attempt.
+		 */
+		selfHosted: isSelfHosted(),
 		/*
 		 * What this instance can do, which decides whether half of this page is
 		 * anything but a description. An assistant reaches in from the internet,

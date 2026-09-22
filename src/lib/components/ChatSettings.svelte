@@ -326,7 +326,22 @@
 					</Field>
 
 					{#if chosen?.editableBaseUrl}
-						<Field label={t('settings.integrations.chat.baseUrl')} span={8}>
+						<!--
+							Said before the attempt, not after it.
+
+							The call is made by this instance, so an address on the
+							person's own machine is this server's loopback and is
+							refused. That is a surprise to somebody doing the most
+							reasonable thing there is — running Ollama locally and
+							pasting the address it printed.
+						-->
+						<Field
+							label={t('settings.integrations.chat.baseUrl')}
+							span={8}
+							hint={data.selfHosted
+								? undefined
+								: t('settings.integrations.chat.thisInstanceMakesTheCall')}
+						>
 							<OneLine
 								name="baseUrl"
 								class="input font-mono"

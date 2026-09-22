@@ -1,4 +1,4 @@
-import { fetchPublic } from '$lib/server/outbound.js';
+import { assertPublicUrl, fetchPublic } from '$lib/server/outbound.js';
 import { isSelfHosted } from '$lib/server/settings.js';
 import { ValidationError } from '$lib/services/errors.js';
 import {
@@ -21,6 +21,35 @@ import {
  * stored by this: it is a question asked while a form is open.
  */
 
+/**
+ * Why an address could not be dialled, in words somebody can act on.
+ *
+ * The one worth spelling out is an address on the person's own machine. The
+ * call is made by this instance, not by the browser, so `127.0.0.1` is this
+ * server's own loopback and not the laptop the form is open on — which is a
+ * surprise precisely to the person doing the most reasonable thing, running
+ * Ollama locally and pasting the address it printed.
+ */
+function cannotReach(url: string, error: unknown): string {
+	const where = (() => {
+		try {
+			return new URL(url).host;
+		} catch {
+			return url;
+		}
+	})();
+
+	const said = error instanceof Error ? error.message : '';
+	if (/refusing to (resolve|connect)|this machine|private/i.test(said))
+		return (
+			`This instance makes the call, not your browser \u2014 so ${where} is this server\u2019s ` +
+			`own machine rather than yours, and it is refused. Point it at an address on the ` +
+			`internet, or run ontoplano on the machine the model is on.`
+		);
+	if (/timeout|abort/i.test(said)) return `${where} did not answer in time.`;
+	return `Nothing answered at ${where}.`;
+}
+
 /** A model, as the form offers it. */
 export type ModelChoice = { id: string; label: string };
 
@@ -42,10 +71,27 @@ const NOT_A_CHAT = /embed|whisper|tts|audio|dall-e|moderation|image|search|realt
 
 async function ask(url: string, headers: Record<string, string>): Promise<unknown> {
 	const call = isSelfHosted() ? fetch : fetchPublic;
-	const answer = await call(url, {
-		headers,
-		signal: AbortSignal.timeout(ASK_TIMEOUT_MS)
-	} as RequestInit);
+
+	// The two fetches have different `Response` types — node's and undici's —
+	// and the union of them satisfies neither, so what is held here is what
+	// both agree on: something with `ok`, `status`, `text` and `json`.
+	let answer: Awaited<ReturnType<typeof call>>;
+	try {
+		answer = await call(url, {
+			headers,
+			signal: AbortSignal.timeout(ASK_TIMEOUT_MS)
+		} as RequestInit);
+	} catch (error) {
+		/*
+		 * A refusal from the outbound guard, a name that does not resolve, a
+		 * port with nothing behind it — all of them arrive here as an ordinary
+		 * `Error`, which `toServiceError` turns into "Unexpected error" and a
+		 * 500. That is the least useful thing the form could say: nothing about
+		 * this is unexpected, and the person can act on every one of these once
+		 * they are told which happened.
+		 */
+		throw new ValidationError(cannotReach(url, error));
+	}
 
 	if (!answer.ok) {
 		/*
@@ -119,6 +165,14 @@ export async function listModels(
 	const meta = providerOf(provider);
 	if (!meta) throw new ValidationError('Unknown provider');
 	if (meta.needsKey && !key) throw new ValidationError('A key is needed to ask for the models.');
+
+	/*
+	 * Judged before it is dialled, so the answer is the same sentence saving
+	 * it would have given. Asking first and saving second is the order anybody
+	 * fills this form in, and until now the ask came back "Unexpected error"
+	 * while the save explained itself.
+	 */
+	if (baseUrl && !isSelfHosted()) assertPublicUrl(baseUrl, 'address');
 
 	let body: unknown;
 	switch (provider) {

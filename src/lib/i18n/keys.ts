@@ -2137,6 +2137,7 @@ export type MessageKey =
 	| 'settings.integrations.chat.provider'
 	| 'settings.integrations.chat.removeKey'
 	| 'settings.integrations.chat.replaceKey'
+	| 'settings.integrations.chat.thisInstanceMakesTheCall'
 	| 'settings.integrations.chat.title'
 	| 'settings.integrations.chat.typeOneInstead'
 	| 'settings.integrations.connections.aUrlOfYoursThat'

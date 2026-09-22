@@ -2488,6 +2488,8 @@ export const messages: Catalogue = {
 	'settings.integrations.chat.provider': 'Provedor',
 	'settings.integrations.chat.removeKey': 'Remover a chave',
 	'settings.integrations.chat.replaceKey': 'Substituir a chave',
+	'settings.integrations.chat.thisInstanceMakesTheCall':
+		'Quem faz a chamada é esta instância, não o seu navegador — um endereço na sua própria máquina não é alcançável daqui.',
 	'settings.integrations.chat.title': 'Chat',
 	'settings.integrations.chat.typeOneInstead': 'Digitar o nome de um modelo',
 	'settings.integrations.connections.aUrlOfYoursThat':

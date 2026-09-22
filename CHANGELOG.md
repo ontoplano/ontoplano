@@ -18,6 +18,15 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.13 — 2026-09-22
+
+- **The chat's model picker says why an address could not be reached.** Asking
+  a provider for its models answered "Unexpected error" when the address was
+  one this instance refuses — which is every address on your own machine, since
+  the call is made by the instance and not by your browser. It now says that,
+  and the base-URL field says it before you try: on the hosted instance,
+  `127.0.0.1` is the server's own loopback rather than your laptop.
+
 ## 0.182.12 — 2026-09-22
 
 - **A long notebook description folds away.** Written properly — what the

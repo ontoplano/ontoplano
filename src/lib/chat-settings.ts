@@ -12,6 +12,8 @@ import type { ModelKeyDescription } from '$lib/server/services/model-keys';
 export type ChatSettingsData = {
 	configured: ModelKeyDescription | null;
 	mayDelete: boolean;
+	/** Whether this instance can reach a model on its own machine. */
+	selfHosted: boolean;
 	providers: typeof PROVIDERS;
 };
 

@@ -2515,6 +2515,8 @@ export const messages: Catalogue = {
 	'settings.integrations.chat.provider': 'Anbieter',
 	'settings.integrations.chat.removeKey': 'Schlüssel entfernen',
 	'settings.integrations.chat.replaceKey': 'Schlüssel ersetzen',
+	'settings.integrations.chat.thisInstanceMakesTheCall':
+		'Den Aufruf macht diese Instanz, nicht Ihr Browser — eine Adresse auf Ihrem eigenen Rechner ist von hier nicht erreichbar.',
 	'settings.integrations.chat.title': 'Chat',
 	'settings.integrations.chat.typeOneInstead': 'Modellnamen eingeben',
 	'settings.integrations.connections.aUrlOfYoursThat':
