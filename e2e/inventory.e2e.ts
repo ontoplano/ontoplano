@@ -251,7 +251,10 @@ test('a thing is counted, and the list is what you are short of', async ({ page 
 	await add.locator('[name="label"]').fill('Tinned tomatoes');
 	await add.locator('[name="idealQty"]').fill('4');
 	await add.getByRole('button', { name: 'Add item', exact: true }).click();
-	await expect(add).toBeHidden();
+	// The dialog closes when the post comes back, so this waits on a server
+	// round trip rather than on a repaint — and the default five seconds is
+	// not enough for one on a machine running the whole suite at once.
+	await expect(add).toBeHidden({ timeout: 20_000 });
 
 	const count = page.locator('[title$="you keep 4"]');
 	await expect(count).toHaveText('0/4');
