@@ -40,7 +40,7 @@
 
 <RoomBar title={t('assistant.title')}>
 	{#snippet actions()}
-		<a href={resolve('/settings/integrations') + '#chat'} class="btn btn-sm">
+		<a href={resolve('/settings/integrations')} class="btn btn-sm">
 			{t('rooms.settings.title')}
 		</a>
 	{/snippet}
