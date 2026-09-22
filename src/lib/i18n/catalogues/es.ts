@@ -2141,7 +2141,7 @@ export const messages: Catalogue = {
 		'Dilo en lugar de escribirlo. Las grabaciones que haces aquí, con nombre propio.',
 	'sections.audios.label': 'Grabaciones',
 	'sections.diary.blurb':
-		'Lo que pasó, con tus propias palabras, con etiquetas que inventas sobre la marcha. Numeradas, para que una entrada pueda referirse a otra.',
+		'Todo lo que escribes sin fecha. El diario, un cuaderno por tema, ideas y las personas que mencionas al escribir.',
 	'sections.diary.label': 'Diario',
 	'sections.finance.blurb':
 		'Las facturas que esperas pagar, y lo que realmente pagaste — los pocos pagos que caen en un mes, y la diferencia entre lo planeado y lo real.',

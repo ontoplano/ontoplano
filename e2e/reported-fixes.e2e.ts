@@ -59,17 +59,25 @@ test('pressing a task reads it, and does not open the form that edits it', async
 	await page.getByRole('button', { name: 'Create task' }).click();
 
 	const title = page.getByRole('button', { name: 'ring the plumber' });
-	const notes = page.getByText(/the boiler makes a noise/);
+	/*
+	 * The box the writing is drawn in, not the paragraph inside it.
+	 *
+	 * Notes are rendered writing now — a `<p>` per line — so the text matches
+	 * the paragraph, while the folding is the container's: clamped rather than
+	 * truncated, because `truncate` is an ellipsis on one box and does nothing
+	 * to the second paragraph below it.
+	 */
+	const notes = page.locator('.written').filter({ hasText: 'the boiler makes a noise' });
 	await expect(title).toHaveAttribute('aria-expanded', 'false');
 
 	// Folded, the second line is cut off: the text is there but the row is one
 	// line tall, which is what somebody actually sees.
 	const folded = (await notes.boundingBox())!.height;
-	await expect(notes).toHaveClass(/truncate/);
+	await expect(notes).toHaveClass(/written-one-line/);
 
 	await title.click();
 	await expect(title).toHaveAttribute('aria-expanded', 'true');
-	await expect(notes).not.toHaveClass(/truncate/);
+	await expect(notes).not.toHaveClass(/written-one-line/);
 	expect((await notes.boundingBox())!.height).toBeGreaterThan(folded);
 	// And no form: reading is not editing.
 	await expect(page.locator('#todo-form')).toHaveCount(0);

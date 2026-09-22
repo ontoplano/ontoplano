@@ -73,24 +73,28 @@ test('it asks one thing at a time, and the rooms you keep are the rooms you get'
 	await page.getByRole('button', { name: 'Next' }).click();
 	await expect(page.getByRole('heading', { name: 'Which rooms do you want?' })).toBeVisible();
 
-	// The description follows the pointer: eight names nobody has seen mean
-	// nothing on their own.
+	/*
+	 * The description follows the pointer: names nobody has seen mean nothing
+	 * on their own — and it describes the room the tile is named for. The
+	 * writing room is stored as `diary` and called Notebooks in the bar, so a
+	 * tile marked Notebooks explaining the diary is the mismatch to catch.
+	 */
 	await page.getByRole('button', { name: 'Notebooks' }).hover();
-	await expect(page.getByText('A subject you write against')).toBeVisible();
+	await expect(page.getByText('Everything you write with no date on it')).toBeVisible();
 	await page.getByRole('button', { name: 'Health' }).hover();
 	await expect(page.getByText('Habits with streaks')).toBeVisible();
 
 	/*
 	 * The rooms, and only the rooms.
 	 *
-	 * The tabs inside one — Recipes, Habits, Workouts in Health — can be put
-	 * away too, but in Preferences: asking about them before somebody has
-	 * opened the app is asking about something they have no opinion on yet.
+	 * The tabs inside one — Recipes, Habits and Workouts in Health, the diary
+	 * and People in Notebooks — can be put away too, but in Preferences:
+	 * asking about them before somebody has opened the app is asking about
+	 * something they have no opinion on yet.
 	 */
-	await expect(page.getByText('9 of 9 on.')).toBeVisible();
-	await page.getByRole('button', { name: 'People' }).click();
+	await expect(page.getByText('6 of 6 on.')).toBeVisible();
 	await page.getByRole('button', { name: 'Health' }).click();
-	await expect(page.getByText('7 of 9 on.')).toBeVisible();
+	await expect(page.getByText('5 of 6 on.')).toBeVisible();
 
 	await page.getByRole('button', { name: 'Next' }).click();
 	await expect(page.getByRole('heading', { name: 'How should it look?' })).toBeVisible();
@@ -107,8 +111,7 @@ test('it asks one thing at a time, and the rooms you keep are the rooms you get'
 	await page.waitForURL(/\/tasks\/plan/, { timeout: 20000 });
 
 	// And every answer arrived: what was turned off is gone from the navigation
-	// and what was kept is not. People is a tab of Notebooks rather than a room
-	// of its own, so turning it off takes the tab, not a bar entry.
+	// and what was kept is not.
 	const nav = page.locator('header').first();
 	await expect(nav.getByRole('link', { name: 'Notebooks' })).toBeVisible();
 	await expect(nav.getByRole('link', { name: 'Health' })).toHaveCount(0);

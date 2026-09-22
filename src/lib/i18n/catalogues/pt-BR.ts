@@ -2126,7 +2126,7 @@ export const messages: Catalogue = {
 		'Fale em vez de digitar. Gravações que você faz aqui, cada uma com seu próprio nome.',
 	'sections.audios.label': 'Gravações',
 	'sections.diary.blurb':
-		'O que aconteceu, com suas palavras e etiquetas que você inventa no caminho. Numerado, para que uma entrada possa citar outra.',
+		'Tudo o que você escreve sem data. O diário, um caderno por assunto, ideias e as pessoas que seus textos mencionam.',
 	'sections.diary.label': 'Diário',
 	'sections.finance.blurb':
 		'As contas que você espera pagar e o que de fato pagou — o punhado de pagamentos que cai num mês, e a diferença entre o planejado e o real.',

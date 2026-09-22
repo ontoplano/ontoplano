@@ -2084,7 +2084,7 @@ export const messages: Catalogue = {
 		'Say it instead of typing it. Recordings you make here, with a name of their own.',
 	'sections.audios.label': 'Recordings',
 	'sections.diary.blurb':
-		'What happened, in your own words, with tags you invent as you go. Numbered, so one entry can refer to another.',
+		'Everything you write with no date on it. The diary, a notebook per subject, ideas, and the people your writing mentions.',
 	'sections.diary.label': 'Diary',
 	'sections.finance.blurb':
 		'The bills you expect to pay, and what you actually paid — the handful of payments that land on a month, and the gap between planned and real.',
