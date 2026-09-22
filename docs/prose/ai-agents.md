@@ -142,18 +142,22 @@ expire, so there is no refresh token to hold; revoking is what ends it.
 
 ## Make a key
 
-**Settings → AI & Integrations → AI → Make a key.** It is shown once, so keep
+**Settings → AI & Integrations → AI → Create a key.** It is shown once, so keep
 the tab open while you set the assistant up.
 
-Every permission the tools use is ticked to begin with: reading and writing,
-never deleting. Untick what you would rather it did not see — a tool whose
-permission was not granted is not offered to the assistant at all, so a
-read-only key does not know that `add_todo` exists.
+Every permission the tools use is ticked to begin with, reading and writing
+both. Untick what you would rather it did not see — a tool whose permission was
+not granted is not offered to the assistant at all, so a read-only key does not
+know that `add_todo` exists.
 
-Deleting is not on that form. The **Integrations** tab beside it has the full
-one, including `destructive`, for a key meant to run a script rather than an
-assistant. Keys are revoked there too, and a revoked key stops working on the
-next request.
+Deleting is a box of its own below that table, and the one thing that starts
+unticked. Without it an assistant can add and change but never remove, and the
+tools that delete are not offered to it either; tick it if you want them.
+
+The **Integrations** tab beside it has the wider form — every permission, the
+ones an assistant has no use for included, and an expiry date — for a key meant
+to run a script rather than an assistant. Keys are revoked there too, and a
+revoked key stops working on the next request.
 
 ## Connect it
 

@@ -202,7 +202,7 @@
 			{#if empty}
 				<p class="text-gray-500 italic">{t('markdown.nothingToPreviewYet')}</p>
 			{:else if preview === 'written'}
-				<Written content={settled} />
+				<Written content={settled} {todos} />
 			{:else}
 				<!-- `renderMarkdown` escapes every character of the input before it emits a
 				     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->

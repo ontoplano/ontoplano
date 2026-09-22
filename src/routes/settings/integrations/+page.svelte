@@ -338,8 +338,10 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 
 							The three grants an assistant has no use for — declaring a plugin,
 							managing webhooks, handing out a calendar address — are not on
-							this list, and nor is deleting. The Integrations tab has the form
-							with all of them.
+							this list. Deleting is: its own box under the table, unticked,
+							because it is the one grant that should be given on purpose. The
+							Integrations tab has the wider form, with every permission and an
+							expiry, for a key meant to run a script.
 						-->
 
 							<!--

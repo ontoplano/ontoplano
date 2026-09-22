@@ -18,6 +18,18 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.22 — 2026-09-22
+
+- **Writing is rendered the same way everywhere it is shown.** A task's notes,
+  an idea and a note about somebody were drawn as plain text, so a fenced code
+  block came out as three backticks and `TASK:#4` stayed four characters —
+  while the same writing in a notebook rendered properly. One renderer now, and
+  inside a notebook a task's notes link the tasks they name, with their titles.
+
+- **The docs no longer say deleting is missing from the key form.** It is on
+  that form, in a box of its own that starts unticked — which is what the page
+  now says, along with what the wider form on Integrations actually adds.
+
 ## 0.182.21 — 2026-09-22
 
 - **A notebook's tabs have the same strip.** Notes had a hand-rolled row of

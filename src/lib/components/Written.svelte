@@ -15,18 +15,25 @@
 	import { resolve } from '$app/paths';
 	import { AUDIO_HREF, splitAudio } from '$lib/audio-markdown';
 	import { splitPictures } from '$lib/picture-markdown';
+	import { renderMarkdown, type TodoRefs } from '$lib/markdown';
 
 	/**
 	 * A piece of writing as it was typed, with anything attached to it drawn.
 	 *
-	 * An idea, a todo's notes and a note about somebody are drawn as plain text
-	 * rather than through the markdown renderer — they are a sentence, not a
-	 * document. A recording and a picture are both stored as ordinary markdown,
-	 * which is right for the text and wrong on the screen: what somebody sees
-	 * otherwise is `[my great idea, in audio](/media/audio/40)` and
-	 * `![screenshot](/media/12)` sitting in the middle of their own writing.
-	 * Both come out of the text and are drawn under it — the thing itself
-	 * rather than the address of it.
+	 * Markdown, everywhere writing is shown. An idea, a todo's notes and a note
+	 * about somebody used to be drawn as plain text on the grounds that they
+	 * are a sentence rather than a document — and the app then had two answers
+	 * to the same question: a fenced block rendered in a notebook and came out
+	 * as three backticks on a task, `TASK:#4` was a link in one place and four
+	 * characters in the other. Somebody writing in this app writes markdown;
+	 * where it is shown is not the place to decide it is not.
+	 *
+	 * A recording and a picture are both stored as ordinary markdown, which is
+	 * right for the text and wrong on the screen: what somebody sees otherwise
+	 * is `[my great idea, in audio](/media/audio/40)` and `![screenshot](/media/12)`
+	 * sitting in the middle of their own writing. Both come out of the text
+	 * before it is rendered and are drawn under it — the thing itself rather
+	 * than the address of it.
 	 */
 	let {
 		content,
@@ -46,12 +53,20 @@
 		 * wears its category's colour, and grey on teal is grey on teal.
 		 */
 		inheritInk = false,
+		/**
+		 * The tasks this writing may point at, so `TASK:#4` is a link with the
+		 * task's own title on it rather than four characters. Passed where the
+		 * caller has them; without it the reference is still a link, just
+		 * unnamed — which is what an export or a half-loaded page should show.
+		 */
+		todos = undefined,
 		class: klass = ''
 	}: {
 		content: string;
 		compact?: boolean;
 		oneLine?: boolean;
 		inheritInk?: boolean;
+		todos?: TodoRefs;
 		class?: string;
 	} = $props();
 
@@ -61,10 +76,28 @@
 	const size = $derived(compact ? 'text-xs' : 'text-sm');
 	const ink = $derived(inheritInk ? 'opacity-90' : compact ? 'text-gray-500' : 'text-gray-900');
 	const type = $derived(`${size} ${ink}`);
+
+	/*
+	 * `renderMarkdown` escapes every character of the input before it emits a
+	 * tag, and the only attributes it writes are its own — the same bargain the
+	 * diary and the weekly review already make with `{@html}`.
+	 */
+	const html = $derived(renderMarkdown(shown.text, todos));
 </script>
 
 {#if shown.text}
-	<p class="{oneLine ? 'truncate' : 'whitespace-pre-wrap'} {type} {klass}">{shown.text}</p>
+	<!--
+		Clamped rather than truncated when it is one line: the text is elements
+		now, and `truncate` only cuts a single run of text. One line of a
+		paragraph, and the row opens to the rest.
+	-->
+	<div class="md written {oneLine ? 'written-one-line' : ''} {type} {klass}">
+		<!-- `renderMarkdown` escapes every character of the input before it emits
+		     a tag, and the only attributes it writes are its own. Same bargain as
+		     the diary and the weekly review. -->
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+		{@html html}
+	</div>
 {/if}
 
 <!--
@@ -89,6 +122,32 @@
 {/each}
 
 <style>
+	/*
+	 * One line, whatever the markup inside it turns out to be.
+	 *
+	 * `truncate` is `text-overflow: ellipsis` on one box, which does nothing
+	 * once the writing is a paragraph and a list rather than a string. The
+	 * clamp is on the whole block, and everything after the first line —
+	 * another paragraph, a table, a picture the renderer drew — is simply not
+	 * drawn until the row is opened.
+	 */
+	.written-one-line {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 1;
+		line-clamp: 1;
+		overflow: hidden;
+	}
+
+	/* A row is not a document: the renderer's block spacing is too loud here. */
+	.written :global(p + p),
+	.written :global(ul),
+	.written :global(ol),
+	.written :global(pre),
+	.written :global(blockquote) {
+		margin-top: 0.375rem;
+	}
+
 	/*
 	 * The white ground is the same bargain `.md img.md-image` makes: a PNG with
 	 * transparency is drawn on whatever is behind it, and in the dark theme

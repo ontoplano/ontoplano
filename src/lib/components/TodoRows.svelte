@@ -415,6 +415,28 @@
 		return held;
 	});
 
+	/**
+	 * The tasks a note on a task may point at, by their number in this notebook.
+	 *
+	 * Only inside a notebook: `TASK:#4` means the fourth task *of that
+	 * notebook*, and in the room — where every notebook's tasks sit together —
+	 * four different tasks answer to it. A room row draws the reference as the
+	 * characters somebody typed, which is the honest answer to an ambiguous
+	 * number.
+	 */
+	const todoRefs = $derived(
+		notebookId === null
+			? undefined
+			: new Map(
+					todos
+						.filter((one: Todo) => one.notebookSeq !== null)
+						.map((one: Todo) => [
+							one.notebookSeq as number,
+							{ title: one.title, done: CLOSED_STATUSES.includes(one.status) }
+						])
+				)
+	);
+
 	/** Every label on this list, so the picker offers what is actually there. */
 	let tagsInUse = $derived(
 		[...new Set(todos.flatMap((t: Todo) => t.tags.map((one) => one.name)))].sort((a, b) =>
@@ -1137,10 +1159,20 @@
 												toggleNotes(todo.id);
 											}}
 										>
-											<Written content={todo.notes} compact oneLine={!openNotes.has(todo.id)} />
+											<Written
+												content={todo.notes}
+												compact
+												oneLine={!openNotes.has(todo.id)}
+												todos={todoRefs}
+											/>
 										</div>
 									{:else}
-										<Written content={todo.notes} compact oneLine={!openNotes.has(todo.id)} />
+										<Written
+											content={todo.notes}
+											compact
+											oneLine={!openNotes.has(todo.id)}
+											todos={todoRefs}
+										/>
 									{/if}
 								{/if}
 								<!-- Pressing one narrows the list to it, the way an idea's do:
