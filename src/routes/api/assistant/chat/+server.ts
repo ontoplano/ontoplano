@@ -2,10 +2,9 @@ import { error } from '@sveltejs/kit';
 
 import type { RequestHandler } from './$types';
 
-import { ASSISTANT_SCOPES } from '$lib/server/mcp/tools';
 import { SESSION_BUDGET_KEY, assertNoPaymentHold } from '$lib/server/api/auth';
 import { buildCtx } from '$lib/services/ctx';
-import { chatResponse } from '$lib/server/services/assistant-chat';
+import { chatResponse, chatScopes } from '$lib/server/services/assistant-chat';
 import { configuredModelKey } from '$lib/server/services/model-keys';
 import type { UIMessage } from 'ai';
 
@@ -13,9 +12,9 @@ import type { UIMessage } from 'ai';
  * The in-app chat's own door, and the one route that streams an answer.
  *
  * Session-only on purpose: this is the signed-in person talking to their own
- * account, so there is no token to mint and no scope form to fill — the chat
- * holds the assistant grants and not `destructive`, the same default the AI
- * tab's key form ticks. An external assistant keeps using `/api/mcp`.
+ * account, so there is no token to mint. What it may do is still the account's
+ * to decide: every assistant grant, and `destructive` where the Chat tab says
+ * so — see `chatScopes`. An external assistant keeps using `/api/mcp`.
  *
  * A POST rather than a form action because the answer is a stream — the same
  * reason `/api/live` is an endpoint.
@@ -51,10 +50,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 
 	const caller = {
 		ctx,
-		// Everything an assistant is offered, deleting excluded — removing
-		// things for good stays a decision made on a settings screen, not in
-		// a chat turn.
-		scopes: ASSISTANT_SCOPES,
+		scopes: chatScopes(ctx),
 		tokenId: SESSION_BUDGET_KEY
 	};
 

@@ -2124,10 +2124,11 @@ export type MessageKey =
 	| 'settings.integrations.chat.blurb'
 	| 'settings.integrations.chat.confirmRemove'
 	| 'settings.integrations.chat.couldNotAsk'
-	| 'settings.integrations.chat.emptyMeans'
 	| 'settings.integrations.chat.key'
 	| 'settings.integrations.chat.loadModels'
 	| 'settings.integrations.chat.loadModelsAgain'
+	| 'settings.integrations.chat.mayDelete'
+	| 'settings.integrations.chat.mayDeleteCaution'
 	| 'settings.integrations.chat.model'
 	| 'settings.integrations.chat.noModels'
 	| 'settings.integrations.chat.openChat'
@@ -3505,7 +3506,6 @@ export interface MessageValuesFor {
 		prefix: string | number;
 		provider: string | number;
 	};
-	'settings.integrations.chat.emptyMeans': { model: string | number };
 	'settings.integrations.connections.apiV1Streams': { origin: string | number };
 	'settings.integrations.connections.confirmThisDeletesPoints': { count: number };
 	'settings.integrations.connections.isTheMostRevoke': { calendarLinkLimit: string | number };

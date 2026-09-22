@@ -1,5 +1,6 @@
 import {
 	isTheme,
+	setChatMayDelete,
 	setGridHours,
 	setLocale,
 	setTheme,
@@ -101,4 +102,14 @@ export function parseTimezone(value: unknown): string {
 	} catch {
 		throw new ValidationError('Unknown timezone');
 	}
+}
+
+/**
+ * Whether the chat inside the app may delete things.
+ *
+ * A checkbox, so its absence from the form is the answer "no" rather than a
+ * missing field — which is why this takes the posted value and not a boolean.
+ */
+export function setAssistantMayDelete(ctx: Ctx, value: unknown): void {
+	setChatMayDelete(ctx.userId, value !== null && value !== undefined && value !== 'false');
 }

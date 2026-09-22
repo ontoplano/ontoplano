@@ -17,8 +17,9 @@ The examples below use `https://app.ontoplano.com`. Your own instance answers at
 You do not need an external assistant to use the tools. **Settings → AI &
 Integrations → Chat** takes a provider — Anthropic, OpenAI, OpenRouter or
 Ollama — and a key of your own, and the app gains a chat that speaks through
-the same tool surface described on this page: reading and writing, never
-deleting, every write in the same log. Remove the key and the chat is gone.
+the same tool surface described on this page, with the same permissions: it
+reads and writes, every write lands in the same log, and deleting is a box on
+that tab it does not start with. Remove the key and the chat is gone.
 Without a key there is no chat anywhere in the app, and nothing ever calls a
 model on your behalf.
 

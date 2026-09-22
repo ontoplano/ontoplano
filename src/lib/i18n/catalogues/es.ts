@@ -2491,10 +2491,12 @@ export const messages: Catalogue = {
 	'settings.integrations.chat.confirmRemove': '¿Confirmar?',
 	'settings.integrations.chat.couldNotAsk':
 		'No se pudo preguntar al proveedor. Revisa la clave e inténtalo otra vez.',
-	'settings.integrations.chat.emptyMeans': 'Vacío significa {model}.',
 	'settings.integrations.chat.key': 'Clave de API',
 	'settings.integrations.chat.loadModels': 'Preguntar al proveedor qué ofrece',
 	'settings.integrations.chat.loadModelsAgain': 'Preguntar otra vez',
+	'settings.integrations.chat.mayDelete': 'Dejar que el chat borre cosas',
+	'settings.integrations.chat.mayDeleteCaution':
+		'Lo que borra se pierde. Sin esto el chat añade y cambia cosas, pero nunca las quita.',
 	'settings.integrations.chat.model': 'Modelo',
 	'settings.integrations.chat.noModels': 'Esa clave no alcanza ningún modelo de chat.',
 	'settings.integrations.chat.openChat': 'Abrir el chat',

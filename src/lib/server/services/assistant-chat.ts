@@ -20,6 +20,9 @@ import { handle, visibleTools, type Caller } from '$lib/server/mcp/protocol';
 import { fetchPublic } from '$lib/server/outbound.js';
 import { isSelfHosted } from '$lib/server/settings.js';
 import { modelNameFor } from './model-keys.js';
+import { getChatMayDelete } from '$lib/services/settings.js';
+import { ASSISTANT_SCOPES } from '$lib/server/mcp/tools';
+import type { Ctx } from '$lib/services/ctx.js';
 
 /**
  * The in-app chat: the same assistant surface MCP offers, spoken to a model
@@ -121,6 +124,18 @@ function toolsFor(caller: Caller) {
 			})
 		])
 	);
+}
+
+/**
+ * What the chat may do, which is the account's own answer.
+ *
+ * Every grant an assistant is offered, and `destructive` only where somebody
+ * has ticked it on the Chat tab. It is derived rather than written down twice:
+ * a tool added next year brings its scope with it through `ASSISTANT_SCOPES`,
+ * and deleting stays the one grant that has to be asked for.
+ */
+export function chatScopes(ctx: Ctx): readonly string[] {
+	return getChatMayDelete(ctx.userId) ? [...ASSISTANT_SCOPES, 'destructive'] : ASSISTANT_SCOPES;
 }
 
 /** One message in, a streamed answer out, tools and all. */

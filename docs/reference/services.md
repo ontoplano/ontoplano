@@ -513,6 +513,15 @@ into the shape the AI SDK wants and picks which company to dial.
 
 ### Functions
 
+#### `chatScopes(ctx)`
+
+What the chat may do, which is the account's own answer.
+
+Every grant an assistant is offered, and `destructive` only where somebody
+has ticked it on the Chat tab. It is derived rather than written down twice:
+a tool added next year brings its scope with it through `ASSISTANT_SCOPES`,
+and deleting stays the one grant that has to be asked for.
+
 #### `chatResponse(caller, row, messages)`
 
 One message in, a streamed answer out, tools and all.
@@ -3571,6 +3580,13 @@ not a short day, it is a pair of numbers that renders nothing.
 
 Rejected here rather than stored and thrown on every date afterwards.
 
+#### `setAssistantMayDelete(ctx, value)`
+
+Whether the chat inside the app may delete things.
+
+A checkbox, so its absence from the form is the answer "no" rather than a
+missing field — which is why this takes the posted value and not a boolean.
+
 ## protection
 
 What the box has blocked, read from the ban record.
@@ -4825,6 +4841,18 @@ checked at both ends rather than trusted at either.
 #### `getPanelWidth(userId, key)`
 
 #### `setPanelWidth(userId, key, rem)`
+
+#### `getChatMayDelete(userId)`
+
+Whether the chat holds the `destructive` grant.
+
+Off until somebody says otherwise, the same default the key form ticks — an
+assistant that can remove a person or a habit's history is a bad trade for
+most people most of the time. Off is not "never": the grant exists, it is
+theirs to give, and deciding it for them in a route would make the
+permissions screen a lie in one place.
+
+#### `setChatMayDelete(userId, may)`
 
 ### Types
 

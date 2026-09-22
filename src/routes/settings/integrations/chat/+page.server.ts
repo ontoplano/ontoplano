@@ -10,11 +10,19 @@ import {
 } from '$lib/server/services/model-keys';
 import { listModels } from '$lib/server/services/model-catalog';
 import { PROVIDERS, PROVIDER_IDS, type ProviderId } from '$lib/assistant-providers';
+import { getChatMayDelete } from '$lib/services/settings';
+import { setAssistantMayDelete } from '$lib/services/preferences';
 
 export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);
 	return {
 		configured: describeModelKey(ctx),
+		/*
+		 * Whether the chat holds the deleting grant. Off unless somebody said
+		 * otherwise — and theirs to say, which is the whole point of it being
+		 * here rather than decided in the route that answers a chat turn.
+		 */
+		mayDelete: getChatMayDelete(locals.user!.id),
 		/*
 		 * The provider list rides down with the page rather than being imported
 		 * by it, so the form and the service can only ever disagree about a
@@ -69,6 +77,18 @@ export const actions: Actions = {
 		} catch (error) {
 			return toActionFailure(error);
 		}
+	},
+
+	/** The one grant the chat has to be given rather than born with. */
+	permissions: async ({ request, locals }) => {
+		const ctx = buildCtx(locals.user!.id);
+		const form = await request.formData();
+		try {
+			setAssistantMayDelete(ctx, form.get('mayDelete'));
+		} catch (error) {
+			return toActionFailure(error);
+		}
+		return { success: true, action: 'permissions' };
 	},
 
 	remove: async ({ locals }) => {

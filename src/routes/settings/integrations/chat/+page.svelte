@@ -154,6 +154,38 @@
 					</button>
 				{/if}
 			</div>
+
+			<!--
+				The one grant the chat is not born with.
+
+				Every other permission an assistant holds is granted by having a
+				chat at all: it reads and writes the account it belongs to. Deleting
+				is the one worth asking about, because a wrong write is data that is
+				wrong and a wrong delete is data that is gone — so it is off until
+				somebody says otherwise, and it is here rather than decided for them.
+			-->
+			<form method="post" action="?/permissions" use:enhance class="mt-4">
+				<label
+					class="flex max-w-md items-start gap-2 border border-red-200 bg-red-50 px-3 py-2 text-sm text-gray-700"
+				>
+					<input
+						type="checkbox"
+						name="mayDelete"
+						value="on"
+						class="mt-0.5"
+						checked={data.mayDelete}
+						onchange={(e) => e.currentTarget.form?.requestSubmit()}
+					/>
+					<span>
+						<strong class="font-semibold text-red-600"
+							>{t('settings.integrations.chat.mayDelete')}</strong
+						>
+						<span class="mt-0.5 block text-xs leading-relaxed text-gray-500">
+							{t('settings.integrations.chat.mayDeleteCaution')}
+						</span>
+					</span>
+				</label>
+			</form>
 		{/if}
 
 		{#if showForm}
@@ -202,9 +234,6 @@
 						label={t('settings.integrations.chat.model')}
 						span={chosen?.editableBaseUrl ? 4 : 6}
 						required={!chosen?.defaultModel}
-						hint={chosen?.defaultModel && !model
-							? t('settings.integrations.chat.emptyMeans', { model: chosen.defaultModel })
-							: ''}
 					>
 						<input type="hidden" name="model" value={model} />
 						{#if typing || (models.length === 0 && model)}
@@ -290,13 +319,7 @@
 					</Field>
 
 					{#if chosen?.editableBaseUrl}
-						<Field
-							label={t('settings.integrations.chat.baseUrl')}
-							span={8}
-							hint={t('settings.integrations.chat.emptyMeans', {
-								model: OLLAMA_DEFAULT_BASE_URL
-							})}
-						>
+						<Field label={t('settings.integrations.chat.baseUrl')} span={8}>
 							<OneLine
 								name="baseUrl"
 								class="input font-mono"

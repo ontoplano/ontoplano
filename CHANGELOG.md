@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.2 — 2026-09-22
+
+- **The chat can be allowed to delete things.** It could always read and write;
+  deleting was refused outright, which quietly overrode the permission the app
+  already has for exactly this. It is a box on Settings → AI & Integrations →
+  Chat now — off until you tick it, and the caution says why.
+
+- **The model field stops repeating its own placeholder.** "Empty means
+  claude-sonnet-5" sat under a box that already said so.
+
 ## 0.182.1 — 2026-09-21
 
 - **The ban card reads the box's own record.** On a self-hosted server the
