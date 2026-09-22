@@ -20,9 +20,17 @@ const pkg = JSON.parse(readFileSync('package.json', 'utf8')) as {
 	devDependencies: Record<string, string>;
 };
 
-/** Bare specifiers only — relative paths and node: builtins ship with the file. */
+/**
+ * Bare specifiers only — relative paths and node: builtins ship with the file.
+ *
+ * Comments go first, for the reason `check-deps.mjs` strips them: a sentence
+ * about importing is not an import, and a docblock in one of these scripts
+ * saying `import … from 'x'` had this failing on a package called `x`.
+ */
 function packagesImportedBy(file: string): string[] {
-	const source = readFileSync(file, 'utf8');
+	const source = readFileSync(file, 'utf8')
+		.replace(/\/\*[\s\S]*?\*\//g, '')
+		.replace(/(^|[^:])\/\/.*$/gm, '$1');
 	const found = new Set<string>();
 	for (const match of source.matchAll(/(?:^|\s)(?:import|export)[^'"]*from\s*['"]([^'"]+)['"]/g)) {
 		const spec = match[1];
