@@ -48,6 +48,14 @@ function call(
 const itemsOf = (answer: { result: { structuredContent: { items?: unknown[] } } }) =>
 	(answer.result.structuredContent.items ?? []) as Record<string, unknown>[];
 
+/** The names a caller is actually offered — what a confined key can see at all. */
+function listedTools(scopes: string[], confinement?: { kind: string; id: number }): string[] {
+	const message: Rpc = { jsonrpc: '2.0', id: 1, method: 'tools/list' };
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const answer = handleBody({ ctx: mine, scopes, confinement } as any, message) as any;
+	return answer.result.tools.map((one: { name: string }) => one.name);
+}
+
 beforeAll(async () => {
 	({ handleBody } = await import('../src/lib/server/mcp/protocol'));
 	({ buildCtx } = await import('../src/lib/services/ctx'));
@@ -304,6 +312,25 @@ describe('none of it widens what a key can see', () => {
 		// And `up_next` is not a way round it.
 		const next = itemsOf(call(['tasks:read'], 'up_next', { limit: 20 }, confined));
 		expect(next.map((one) => one.title)).not.toContain('pack');
+	});
+
+	test('can ask which notebook it is tied to, and is told only that one', () => {
+		/*
+		 * The tool took no arguments, so it named no notebook and a confined key
+		 * was never offered it — the one assistant that can only work on a single
+		 * subject was the one that could not find out which subject, or the id
+		 * every other tool asks it for.
+		 */
+		const confined = { kind: 'notebook', id: kitchen };
+		const offered = listedTools(['notes:read'], confined);
+		expect(offered).toContain('notebooks');
+
+		const answer = call(['notes:read'], 'notebooks', {}, confined);
+		const said = answer.result.structuredContent as { items?: { id: number; title: string }[] };
+		const rows = said.items ?? (answer.result.structuredContent as { id: number; title: string }[]);
+		const list = Array.isArray(rows) ? rows : [rows];
+		expect(list.map((one) => one.id)).toEqual([kitchen]);
+		expect(list.map((one) => one.title)).toEqual(['Kitchen']);
 	});
 
 	test('asking for another notebook by id is answered about the confined one', () => {

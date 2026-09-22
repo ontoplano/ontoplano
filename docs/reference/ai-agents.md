@@ -823,11 +823,13 @@ _Needs `notes:write`; writes._
 
 ### `notebooks` — Notebooks
 
-The subjects being written against — a trip, a renovation, a book. Ask for these before writing an entry into one.
+The subjects being written against — a trip, a renovation, a book — with the id every other tool means by `notebookId`. Ask for these before writing an entry into one. A key tied to one notebook is answered with that one.
 
 _Needs `notes:read`; read-only._
 
-_Takes no parameters._
+| Parameter | Type    | Required | What it is                                                                       |
+| --------- | ------- | -------- | -------------------------------------------------------------------------------- |
+| `id`      | integer | —        | Only this one, by its id. Usually left off; a confined key is pinned to its own. |
 
 ### `add_notebook` — Make a notebook
 

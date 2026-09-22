@@ -18,6 +18,15 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.11 — 2026-09-22
+
+- **An assistant tied to one notebook can ask which one.** The `notebooks`
+  tool took no arguments, so it named no notebook — and a key confined to a
+  single notebook is only offered the tools that name one. The assistant that
+  can work on exactly one subject was the only assistant that could not find
+  out which subject, or the id every other tool asks it for. It now takes an
+  optional id, and a confined key is answered with its own notebook.
+
 ## 0.182.10 — 2026-09-22
 
 - **Backticks keep what is inside them.** `` `a * b * c` `` came out with an

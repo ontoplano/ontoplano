@@ -1656,7 +1656,12 @@
 		"scope": "notes:read",
 		"writes": false,
 		"destroys": false,
-		"params": {}
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": false
+			}
+		}
 	},
 	"past": {
 		"scope": "schedule:read",

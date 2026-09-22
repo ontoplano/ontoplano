@@ -2103,15 +2103,40 @@ export const TOOLS: Tool[] = [
 			return { ok: true };
 		}
 	},
+	/*
+	 * The subjects, and the one question a confined key could not ask.
+	 *
+	 * This took no arguments, which meant it named no `notebook` reference,
+	 * which meant a key tied to one notebook was never offered it at all — see
+	 * `withinConfinement`. So the assistant that can only work on one subject
+	 * was the one assistant that could not find out which subject that is, or
+	 * the id every other tool asks it for. It had to learn its own id from the
+	 * answer to a write.
+	 *
+	 * The `id` argument fixes it without a second tool: unset it lists
+	 * everything, and for a confined key `confine` pins it to the one notebook
+	 * that key can reach, which is the honest answer to "which notebooks do I
+	 * have?"
+	 */
 	{
 		name: 'notebooks',
 		title: 'Notebooks',
 		description:
-			'The subjects being written against — a trip, a renovation, a book. Ask for these before writing an entry into one.',
+			'The subjects being written against \u2014 a trip, a renovation, a book \u2014 with the id every other tool means by `notebookId`. Ask for these before writing an entry into one. A key tied to one notebook is answered with that one.',
 		scope: 'notes:read',
 		writes: false,
-		input: object({}),
-		run: (ctx) => listNotebooks(ctx)
+		refs: [{ arg: 'id', kind: 'notebook' }],
+		input: object({
+			id: {
+				type: 'integer',
+				description:
+					'Only this one, by its id. Usually left off; a confined key is pinned to its own.'
+			}
+		}),
+		run: (ctx, args) => {
+			const all = listNotebooks(ctx);
+			return args.id === undefined ? all : all.filter((one) => one.id === Number(args.id));
+		}
 	},
 	{
 		name: 'add_notebook',
