@@ -441,10 +441,6 @@
 						word wide — and cost a whole row of height on any screen.
 					-->
 					<div class="flex flex-wrap items-center gap-2">
-						<!-- The number entries are referred to by, as `#12` in another
-						     entry's text. It was in the corner, which put it under the
-						     buttons once they moved down here. -->
-						<span class="tabular text-xs font-medium text-gray-900">#{entry.seq}</span>
 						<span class="text-xs text-gray-500">{formatDate(entry.createdAt)}</span>
 						{#if entry.forDate}
 							<span class="text-xs font-medium text-amber-600"
@@ -540,6 +536,12 @@
 									<Icon name="trash" />
 								</button>
 							{/if}
+
+							<!-- The number entries are referred to by, as `#12` in another
+							     entry's text. At the end of the row rather than the start of
+							     it: what the entry is reads from the left, and the number is
+							     a handle for pointing at it rather than part of the reading. -->
+							<span class="tabular text-xs font-medium text-gray-900">#{entry.seq}</span>
 						</div>
 					</div>
 				</div>

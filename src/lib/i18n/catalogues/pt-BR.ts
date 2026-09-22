@@ -3678,5 +3678,7 @@ export const messages: Catalogue = {
 	'welcome.welcomeToOntoplano': 'Bem-vindo ao ontoplano',
 	'welcome.whichLanguage': 'Qual idioma?',
 	'welcome.whichLanguageHint': 'Tudo o que o aplicativo diz, e os e-mails que ele envia a você.',
-	'welcome.yourTimezone': 'Seu fuso horário'
+	'welcome.yourTimezone': 'Seu fuso horário',
+	'written.openThePicture': 'Abrir a imagem',
+	'written.showTheRest': 'Mostrar o resto'
 };

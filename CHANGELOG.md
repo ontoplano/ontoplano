@@ -18,6 +18,21 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.23 — 2026-09-22
+
+- **The three ratings are little thermometers under the tick box.** Urgency,
+  energy, interest — that order everywhere now, the order the Priority sort
+  reads them in — stacked in the column the tick box stands in, so they line up
+  across every row. Black markings for the five steps and the colour rising
+  through them: yellow, blue, and green for interest, which was red.
+
+- **A picture under folded writing unfolds it first.** Pressing a thumbnail on
+  a one-line row opened the picture in a new tab before you had read the line
+  it belonged to. The first press opens the row; the second opens the picture.
+
+- **A diary entry's number sits at the bottom right**, with the rest of its
+  controls.
+
 ## 0.182.22 — 2026-09-22
 
 - **Writing is rendered the same way everywhere it is shown.** A task's notes,

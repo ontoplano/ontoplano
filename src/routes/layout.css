@@ -2003,35 +2003,69 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * accessible name. Each gauge names its own ink, so a fourth rating would
 	 * add one line here and nothing else.
 	 */
-	.gauge {
+	/*
+	 * Three little thermometers: markings, and the colour rising through them.
+	 *
+	 * The fill is a whole number of fifths — the scale has five steps and a
+	 * continuous bar invites somebody to guess at 3.5 — and the four black
+	 * markings are drawn over it, so the level is read against them rather than
+	 * estimated. The tint underneath is the gauge's own colour at a tenth, so
+	 * an empty one still says which question it is answering.
+	 */
+	.gauges {
 		display: inline-flex;
 		align-items: center;
-		gap: 1px;
-		border: 1px solid var(--gauge-ink);
+		gap: 0.25rem;
+	}
+
+	/* Under the tick box, where a row has room and the title does not. */
+	.gauges-stacked {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 2px;
+		width: 100%;
+	}
+
+	.gauge {
+		position: relative;
+		display: block;
+		width: 2.25rem;
+		height: 0.5rem;
+		overflow: hidden;
+		border: 1px solid color-mix(in srgb, var(--gauge-ink) 55%, transparent);
 		border-radius: 999px;
-		padding: 2px;
-		/* The pill is drawn at the height of the small print it stands among. */
-		line-height: 0;
+		background-color: color-mix(in srgb, var(--gauge-ink) 10%, transparent);
 	}
 
-	.gauge > .fret {
-		width: 3px;
-		height: 7px;
-		border-radius: 1px;
+	.gauges-stacked .gauge {
+		width: 100%;
+	}
+
+	.gauge > .gauge-fill {
+		position: absolute;
+		inset: 0 auto 0 0;
 		background-color: var(--gauge-ink);
-		opacity: 0.22;
 	}
 
-	.gauge > .fret.lit {
-		opacity: 1;
+	/*
+	 * Black, as he asked, and thin: the markings are a scale rather than a
+	 * decoration, and they have to read over the fill and over the tint alike.
+	 */
+	.gauge > .gauge-mark {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		width: 1px;
+		background-color: color-mix(in srgb, var(--color-gray-900) 55%, transparent);
 	}
 
 	.gauge[data-rating='urgency'] {
-		--gauge-ink: var(--color-amber-600);
+		--gauge-ink: var(--color-amber-500);
 	}
 
+	/* Green rather than red, and dark enough not to read as a tick. */
 	.gauge[data-rating='interest'] {
-		--gauge-ink: var(--color-red-600);
+		--gauge-ink: var(--color-emerald-700);
 	}
 
 	.gauge[data-rating='energy'] {

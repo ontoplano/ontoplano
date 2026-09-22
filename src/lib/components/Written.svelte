@@ -16,6 +16,9 @@
 	import { AUDIO_HREF, splitAudio } from '$lib/audio-markdown';
 	import { splitPictures } from '$lib/picture-markdown';
 	import { renderMarkdown, type TodoRefs } from '$lib/markdown';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * A piece of writing as it was typed, with anything attached to it drawn.
@@ -72,7 +75,34 @@
 
 	const spoken = $derived(splitAudio(content));
 	const shown = $derived(splitPictures(spoken.text));
-	const height = $derived(oneLine ? PICTURE_HEIGHT.compact : PICTURE_HEIGHT.full);
+
+	/**
+	 * Unfolded by a press on one of its own pictures, rather than by the row.
+	 *
+	 * A picture under a clamped line sits beneath writing nobody has read yet,
+	 * and a tab opened from there takes somebody away from the line they were
+	 * about to read. So the first press unfolds and the second opens. It is
+	 * dropped as soon as the owner has the row open, so the owner's fold is
+	 * the one that counts again when it closes.
+	 */
+	let revealed = $state(false);
+	$effect(() => {
+		if (!oneLine) revealed = false;
+	});
+
+	const folded = $derived(oneLine && !revealed);
+	/** With nothing written over it a picture has nothing to unfold, so it opens at once. */
+	const unfoldsFirst = $derived(folded && Boolean(shown.text));
+
+	/** The picture that was pressed, so the keyboard lands back on it as a link. */
+	let landOn: number | null = null;
+
+	function unfold(id: number) {
+		landOn = id;
+		revealed = true;
+	}
+
+	const height = $derived(folded ? PICTURE_HEIGHT.compact : PICTURE_HEIGHT.full);
 	const size = $derived(compact ? 'text-xs' : 'text-sm');
 	const ink = $derived(inheritInk ? 'opacity-90' : compact ? 'text-gray-500' : 'text-gray-900');
 	const type = $derived(`${size} ${ink}`);
@@ -91,7 +121,7 @@
 		now, and `truncate` only cuts a single run of text. One line of a
 		paragraph, and the row opens to the rest.
 	-->
-	<div class="md written {oneLine ? 'written-one-line' : ''} {type} {klass}">
+	<div class="md written {folded ? 'written-one-line' : ''} {type} {klass}">
 		<!-- `renderMarkdown` escapes every character of the input before it emits
 		     a tag, and the only attributes it writes are its own. Same bargain as
 		     the diary and the weekly review. -->
@@ -106,13 +136,52 @@
 	Pinch, rotate, save, share: the browser's own picture view already does all
 	of it, on every platform, and better than a lightbox we would have to build
 	and then maintain a focus trap for.
+
+	Folded, it is not a link at all but the control that unfolds the row — the
+	writing the picture belongs to comes first. A span rather than a button so
+	the press carries on up to whoever folded this and their own fold opens
+	with it; standing alone, `unfold` is enough on its own.
 -->
+{#snippet thumbnail(id: number)}
+	<img src="{resolve('/media')}/{id}" alt="" loading="lazy" style="max-height: {height}" />
+{/snippet}
+
 {#if shown.pictures.length > 0}
 	<div class="mt-1 flex flex-wrap gap-2">
 		{#each shown.pictures as id (id)}
-			<a href="{resolve('/media')}/{id}" target="_blank" rel="noopener" class="written-picture">
-				<img src="{resolve('/media')}/{id}" alt="" loading="lazy" style="max-height: {height}" />
-			</a>
+			{#if unfoldsFirst}
+				<span
+					role="button"
+					tabindex="0"
+					aria-expanded="false"
+					aria-label={t('written.showTheRest')}
+					title={t('written.showTheRest')}
+					class="written-picture cursor-pointer"
+					onclick={() => unfold(id)}
+					onkeydown={(press) => {
+						if (press.key !== 'Enter' && press.key !== ' ') return;
+						press.preventDefault();
+						unfold(id);
+					}}
+				>
+					{@render thumbnail(id)}
+				</span>
+			{:else}
+				<a
+					href="{resolve('/media')}/{id}"
+					target="_blank"
+					rel="noopener"
+					class="written-picture"
+					aria-label={t('written.openThePicture')}
+					{@attach (node) => {
+						if (landOn !== id) return;
+						landOn = null;
+						node.focus();
+					}}
+				>
+					{@render thumbnail(id)}
+				</a>
+			{/if}
 		{/each}
 	</div>
 {/if}

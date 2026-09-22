@@ -3135,7 +3135,9 @@ export type MessageKey =
 	| 'welcome.welcomeToOntoplano'
 	| 'welcome.whichLanguage'
 	| 'welcome.whichLanguageHint'
-	| 'welcome.yourTimezone';
+	| 'welcome.yourTimezone'
+	| 'written.openThePicture'
+	| 'written.showTheRest';
 
 /**
  * The keys that take values, and which values.

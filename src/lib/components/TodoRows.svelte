@@ -983,16 +983,28 @@
 							? 'kb-cursor'
 							: ''} {isDone(todo) ? 'opacity-50' : ''}"
 					>
-						<form
-							id="toggle-form-{todo.id}"
-							method="post"
-							action={actions.setStatus}
-							use:enhance={deferComplete(todo)}
-							class="flex"
-						>
-							<input type="hidden" name="id" value={todo.id} />
-							<input type="hidden" name="status" value={todo.status === 'done' ? 'todo' : 'done'} />
-							<!--
+						<!--
+							The tick box and the three gauges are one column.
+
+							He asked for them under the box rather than beside it, and that
+							is also what makes them line up: every row's gauges start at the
+							same x, whatever the title above them is doing.
+						-->
+						<div class="flex shrink-0 flex-col items-center gap-1 self-start">
+							<form
+								id="toggle-form-{todo.id}"
+								method="post"
+								action={actions.setStatus}
+								use:enhance={deferComplete(todo)}
+								class="flex"
+							>
+								<input type="hidden" name="id" value={todo.id} />
+								<input
+									type="hidden"
+									name="status"
+									value={todo.status === 'done' ? 'todo' : 'done'}
+								/>
+								<!--
 								As tall as the row it belongs to.
 
 								The box was 20px pinned to the top-left of a row that is often
@@ -1003,7 +1015,7 @@
 								rest of the row makes and gives the one action every row has the
 								size it deserves.
 							-->
-							<!--
+								<!--
 								At the top of the row, not down the middle of it.
 
 								It was `self-stretch` and centred, so on a task with notes,
@@ -1016,36 +1028,50 @@
 								week" is the question somebody asks of a list they are looking
 								back at.
 							-->
-							<button
-								type="submit"
-								class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
-								aria-label={isDone(todo)
-									? t('todoRows.markIncomplete')
-									: t('todoRows.markComplete')}
-								title={isDone(todo) && todo.completedAt
-									? t('todoRows.doneAgo', {
-											when: momentOf(todo.completedAt, now()),
-											ago: agoOf(todo.completedAt, now())
-										})
-									: undefined}
-							>
-								<span
-									class="flex size-7 items-center justify-center border {isDone(todo)
-										? 'border-gray-400 bg-gray-400'
-										: 'border-gray-400 bg-white'}"
+								<button
+									type="submit"
+									class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
+									aria-label={isDone(todo)
+										? t('todoRows.markIncomplete')
+										: t('todoRows.markComplete')}
+									title={isDone(todo) && todo.completedAt
+										? t('todoRows.doneAgo', {
+												when: momentOf(todo.completedAt, now()),
+												ago: agoOf(todo.completedAt, now())
+											})
+										: undefined}
 								>
-									{#if isDone(todo)}
-										<svg class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-											<path
-												fill-rule="evenodd"
-												d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-												clip-rule="evenodd"
-											/>
-										</svg>
-									{/if}
-								</span>
-							</button>
-						</form>
+									<span
+										class="flex size-7 items-center justify-center border {isDone(todo)
+											? 'border-gray-400 bg-gray-400'
+											: 'border-gray-400 bg-white'}"
+									>
+										{#if isDone(todo)}
+											<svg class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+												<path
+													fill-rule="evenodd"
+													d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+													clip-rule="evenodd"
+												/>
+											</svg>
+										{/if}
+									</span>
+								</button>
+							</form>
+
+							<!--
+							Under the tick box, stacked.
+
+							They were beside the labels under the title, which is where you
+							read what a task *is*; these three answer what it would cost you.
+							The rail the tick box stands in has the width and nothing under
+							it, and stacked they line up across every row — which is the half
+							of "make sure its aligned" that a row of pills could never do.
+						-->
+							{#if hasRatings(todo)}
+								<RatingBadges values={todo.ratings} stacked class="w-full" />
+							{/if}
+						</div>
 
 						<!-- One row at every width: the actions are a narrow column of icons
 						     now, which fits beside the title on a phone. -->
@@ -1187,9 +1213,8 @@
 									labels, which is the other thing you look at when you are
 									choosing what to do rather than reading what it is.
 								-->
-								{#if todo.tags.length > 0 || hasRatings(todo)}
+								{#if todo.tags.length > 0}
 									<div class="mt-1 flex flex-wrap items-center gap-1">
-										<RatingBadges values={todo.ratings} />
 										{#each todo.tags as tag (tag.id)}
 											<!--
 												The chip says when it went on.
