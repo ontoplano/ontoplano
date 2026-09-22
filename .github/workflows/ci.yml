@@ -82,6 +82,19 @@ jobs:
       # Every changelog line sits under the version this branch ships.
       - run: node scripts/check-changelog.mjs
 
+      # Nothing shaped like a credential in any commit this repository holds.
+      # `make lint` already refuses a tracked file *named* like a key; this
+      # reads the content, and reads the history — a secret removed in the next
+      # commit is still in every clone that has already been made, and this
+      # repository is public. Findings that have been looked at and are fine
+      # live in .gitleaksignore, one line each, never a directory turned off.
+      - run: yarn secrets:scan
+
+      # And nothing publicly known against what the app runs on. Runtime
+      # dependencies, high and above: an attacker can look up this repository's
+      # dependencies faster than anybody here would notice on their own.
+      - run: yarn deps:audit
+
       # `yarn run check`, not `yarn check`: the second is yarn's own built-in
       # dependency-integrity command, which wins over a script of the same name
       # and passes without ever looking at the types. This step read as a type

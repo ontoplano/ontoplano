@@ -1,0 +1,20 @@
+# Findings that have been looked at and are not secrets.
+#
+# One line per finding, as commit:file:rule:line — not a rule turned off and
+# not a directory excluded. Ignoring `tests/` wholesale would blind the scan to
+# the one case it exists for, which is a real key pasted into a fixture.
+#
+# A fingerprint holds the line number, so moving one of these brings it back to
+# be looked at again. That is the intended cost.
+#
+# Three strings that are shaped like keys and are plainly not: the fixtures the
+# key-handling tests need in order to test key handling.
+
+# `sk-one-…` and `sk-two-…`, which exist to prove a saved key is replaced
+# rather than accumulated.
+55bb5fd5f0e0ba2145caed3b36e079a868f890b7:tests/model-keys.test.ts:generic-api-key:42
+55bb5fd5f0e0ba2145caed3b36e079a868f890b7:tests/model-keys.test.ts:generic-api-key:43
+
+# `onto_abc-123_x`, the answer a mocked endpoint gives so the hand-over can be
+# followed to the phone.
+0161aa2563863395683153bd30169e801f5b78a6:tests/ringer-handshake.test.ts:generic-api-key:64

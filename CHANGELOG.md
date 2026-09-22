@@ -20,9 +20,17 @@ releases mattered.
 
 ## 0.182.24 — 2026-09-22
 
+- **Four cross-site-scripting fixes and a denial of service, from upstream.**
+  Svelte, nodemailer and devalue move to the versions that carry them; two of
+  the five were in server-side rendering, which is how every page here is
+  drawn. Nothing about the app changes. Every commit is now read for anything
+  shaped like a credential, and the dependencies are checked against what is
+  publicly known about them, on every push — so the next one is caught here
+  rather than by somebody else.
+
 - **Writing is drawn as writing on the last screens that were still printing
   it raw.** The diary card on the dashboard showed `## A month of doing this
-  properly` with the hashes in it, because it cut the entry at 300 characters
+properly` with the hashes in it, because it cut the entry at 300 characters
   rather than rendering it; it now shows four lines of the real thing. A goal's
   notes, a training session's notes and the ideas on the dashboard render too,
   so a backtick means code wherever you type one.
