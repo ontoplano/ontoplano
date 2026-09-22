@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pillStyle } from '$lib/pill-ink';
 	import { dayOf, wantsTwelveHour } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
@@ -3951,7 +3952,7 @@
 							? 'opacity-40'
 							: ''}"
 						style={todo.categoryColor && placingTodoId !== todo.id
-							? `--pill:${todo.categoryColor}`
+							? pillStyle(todo.categoryColor)
 							: ''}
 						title={t('tasks.plan.dragOntoTheGridOr')}
 					>

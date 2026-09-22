@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pillStyle } from '$lib/pill-ink';
 	import { page } from '$app/state';
 
 	/**
@@ -58,22 +59,11 @@
 </script>
 
 {#if onclick}
-	<button
-		type="button"
-		{onclick}
-		{title}
-		aria-pressed={active}
-		class={look}
-		style={ink ? `--pill:${ink}` : undefined}
-	>
+	<button type="button" {onclick} {title} aria-pressed={active} class={look} style={pillStyle(ink)}>
 		#{name}{#if children}{@render children()}{/if}
 	</button>
 {:else}
-	<span
-		{title}
-		class="{look} inline-flex items-center gap-1"
-		style={ink ? `--pill:${ink}` : undefined}
-	>
+	<span {title} class="{look} inline-flex items-center gap-1" style={pillStyle(ink)}>
 		#{name}{#if children}{@render children()}{/if}
 	</span>
 {/if}

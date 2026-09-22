@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pillStyle } from '$lib/pill-ink';
 	import RoomBar from '$lib/components/RoomBar.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
@@ -1001,7 +1002,7 @@
 				{@const color = chipColor(key, value)}
 				<!-- `.pill` when there is a colour: it computes its own ink, so a
 				     pale tag is readable instead of white on white. -->
-				<span class={color ? 'pill' : 'chip'} style={color ? `--pill:${color}` : ''}
+				<span class={color ? 'pill' : 'chip'} style={pillStyle(color) ?? ''}
 					>{value ? `${key}: ${value}` : key}</span
 				>
 			{/each}
@@ -1793,7 +1794,7 @@
 						{:else}
 							<span
 								class={attribute.color ? 'pill' : 'chip'}
-								style={attribute.color ? `--pill:${attribute.color}` : ''}>{attribute.key}</span
+								style={pillStyle(attribute.color) ?? ''}>{attribute.key}</span
 							>
 							<span class="tabular text-xs text-gray-500">{attribute.count}</span>
 
@@ -1871,9 +1872,7 @@
 										>
 									</form>
 								{:else}
-									<span
-										class={one.color ? 'pill' : 'chip'}
-										style={one.color ? `--pill:${one.color}` : ''}
+									<span class={one.color ? 'pill' : 'chip'} style={pillStyle(one.color) ?? ''}
 										>{one.value || t('inventory.noValue')}</span
 									>
 									<span class="tabular text-xs text-gray-500">{one.count}</span>
@@ -1960,7 +1959,7 @@
 								class={attributeFilter === attribute.key ? 'pill' : 'chip'}
 								aria-pressed={attributeFilter === attribute.key}
 								style={attributeFilter === attribute.key
-									? `--pill:${attribute.color ?? 'var(--control-on)'}`
+									? (pillStyle(attribute.color) ?? '--pill:var(--control-on)')
 									: ''}
 								onclick={() =>
 									(attributeFilter = attributeFilter === attribute.key ? null : attribute.key)}
@@ -1977,7 +1976,7 @@
 										class={attributeFilter === key ? 'pill' : 'chip'}
 										aria-pressed={attributeFilter === key}
 										style={attributeFilter === key
-											? `--pill:${one.color ?? attribute.color ?? 'var(--control-on)'}`
+											? (pillStyle(one.color ?? attribute.color) ?? '--pill:var(--control-on)')
 											: ''}
 										onclick={() => (attributeFilter = attributeFilter === key ? null : key)}
 									>

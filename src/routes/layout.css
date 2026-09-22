@@ -2179,7 +2179,23 @@ label:has(> input[type='radio']:not(:disabled)) {
 		html .pill {
 			border-color: transparent;
 			background-color: var(--pill);
-			color: oklch(from var(--pill) clamp(0.16, (0.62 - l) * 100, 0.97) calc(c * 0.25) h);
+			/*
+			 * `--pill-ink` where the app could work it out, this where it could
+			 * not.
+			 *
+			 * The step below is a good rule and a measurably insufficient one:
+			 * over 30,780 colours it bottoms out at 2.4:1, because a vivid cyan
+			 * at L 0.6 reads middling by lightness and bright by luminance, and
+			 * gets white ink on a bright field. CSS can threshold but it cannot
+			 * compare, so the comparison happens in `$lib/pill-ink` — black or
+			 * white, whichever actually contrasts more — and this stays as the
+			 * answer for a `--pill` set by something that has not been taught
+			 * to send one.
+			 */
+			color: var(
+				--pill-ink,
+				oklch(from var(--pill) clamp(0.16, (0.62 - l) * 100, 0.97) calc(c * 0.25) h)
+			);
 		}
 	}
 

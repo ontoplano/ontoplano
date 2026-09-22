@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pillStyle } from '$lib/pill-ink';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import TodoFields from '$lib/components/fields/TodoFields.svelte';
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
@@ -1173,7 +1174,7 @@
 										: ''} {dragging?.uid === card.uid || movingUid === card.uid
 										? 'opacity-40'
 										: ''}"
-									style="--pill: {card.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
+									style={pillStyle(card.categoryColor ?? CATEGORY_FALLBACK_COLOR)}
 									title={card.categoryName ?? t('tasks.board.noCategory')}
 								>
 									<div class="flex items-start gap-2">
@@ -1435,7 +1436,7 @@
 							movingUid === card.uid
 								? 'opacity-40'
 								: ''}"
-							style="--pill: {card.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
+							style={pillStyle(card.categoryColor ?? CATEGORY_FALLBACK_COLOR)}
 							title={card.categoryName ?? t('tasks.board.noCategory')}
 						>
 							<div class="flex items-start gap-2">

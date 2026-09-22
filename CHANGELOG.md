@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.16 — 2026-09-22
+
+- **The words on a coloured label are readable on every colour.** The ink was
+  picked from the colour's lightness, which is not the same as how bright it
+  actually is — so a vivid cyan got white text on a bright field. Measured over
+  the colour space, that rule bottomed out at 2.4:1 and left an eighth of all
+  colours under what small text needs. The app now picks black or white by
+  which one actually contrasts more, keeping the softer near-black wherever it
+  is still readable; the floor is 4.5:1 and a test holds it there.
+
 ## 0.182.15 — 2026-09-22
 
 - **Parking the chat properly.** Its endpoint answers 404 rather than staying
