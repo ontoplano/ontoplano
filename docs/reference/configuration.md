@@ -258,6 +258,7 @@ kind of thing that stays in a deployment script for years.
 | `ONTOPLANO_BACKUP_RETENTION_DAYS`      | `src/lib/server/services/legal.ts`                                                                                                                         |
 | `ONTOPLANO_BAN_CONTROL`                | `src/lib/server/services/protection.ts`                                                                                                                    |
 | `ONTOPLANO_BAN_CONTROL_CMD`            | `src/lib/server/services/protection.ts`                                                                                                                    |
+| `ONTOPLANO_BANS_LOG`                   | `src/lib/server/services/protection.ts`                                                                                                                    |
 | `ONTOPLANO_CONFIG_DIR`                 | `src/lib/server/config.ts`                                                                                                                                 |
 | `ONTOPLANO_CONTACT_EMAIL`              | `src/lib/server/config.ts`                                                                                                                                 |
 | `ONTOPLANO_DATA_DIR`                   | `scripts/migrate.mjs`, `src/lib/server/config.ts`                                                                                                          |
@@ -267,7 +268,6 @@ kind of thing that stays in a deployment script for years.
 | `ONTOPLANO_DEMO_TTL_MINUTES`           | `src/lib/server/settings.ts`                                                                                                                               |
 | `ONTOPLANO_DEV_ORIGIN`                 | `scripts/android-flavours.mjs`                                                                                                                             |
 | `ONTOPLANO_DOCS_URL`                   | `src/lib/server/config.ts`                                                                                                                                 |
-| `ONTOPLANO_FAIL2BAN_LOG`               | `src/lib/server/services/protection.ts`                                                                                                                    |
 | `ONTOPLANO_FAMILY_SEATS`               | `src/lib/server/config.ts`                                                                                                                                 |
 | `ONTOPLANO_HEALTH_TOKEN`               | `src/lib/server/settings.ts`, `src/routes/api/jobs/reminders/+server.ts`, `src/routes/api/jobs/weekly-reviews/+server.ts`, `src/routes/healthz/+server.ts` |
 | `ONTOPLANO_HTTPS`                      | `src/hooks.server.ts`                                                                                                                                      |

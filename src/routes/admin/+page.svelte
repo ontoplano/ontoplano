@@ -335,7 +335,7 @@
 			"is anything happening". Everything else on this page is something the
 			app did; this is what never reached it.
 		-->
-		<Card title={t('admin.blocked')} description={t('admin.whatFail2banHasTurnedAway')} flush>
+		<Card title={t('admin.blocked')} description={t('admin.whatTheBoxHasTurnedAway')} flush>
 			{#if data.demo}
 				<!--
 					The addresses a box turned away are real people's, and the demo is
@@ -423,7 +423,6 @@
 								<div class="flex shrink-0 gap-1">
 									{#if ban.active}
 										<form method="post" action="?/unban" use:enhance>
-											<input type="hidden" name="jail" value={ban.jail} />
 											<input type="hidden" name="address" value={ban.address} />
 											<button class="btn btn-sm" title={t('admin.letThisAddressBackIn')}>
 												{t('admin.unban')}

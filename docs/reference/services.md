@@ -77,7 +77,7 @@ shows up here on the next build.
 | [`plan-intent`](#plan-intent)                    | Which plan somebody said they wanted, carried from the front page to the card.                                                                                                                                                                                       |
 | [`plugins`](#plugins)                            | Plugin manifests: what a plugin says it understands.                                                                                                                                                                                                                 |
 | [`preferences`](#preferences)                    | The settings a person chooses about themselves.                                                                                                                                                                                                                      |
-| [`protection`](#protection)                      | What the box has blocked, read from fail2ban's own log.                                                                                                                                                                                                              |
+| [`protection`](#protection)                      | What the box has blocked, read from the ban record.                                                                                                                                                                                                                  |
 | [`push`](#push)                                  | Telling somebody something while the app is closed.                                                                                                                                                                                                                  |
 | [`quotes`](#quotes)                              | The quotes shown one-per-day on the dashboard.                                                                                                                                                                                                                       |
 | [`recipes`](#recipes)                            | Recipes, and the loop they close.                                                                                                                                                                                                                                    |
@@ -3573,17 +3573,19 @@ Rejected here rather than stored and thrown on every date afterwards.
 
 ## protection
 
-What the box has blocked, read from fail2ban's own log.
+What the box has blocked, read from the ban record.
 
 The administration page can say who has been signing in and who registered,
 because the app did those things itself. It could say nothing at all about
 the layer in front of it — which is where most of what happens to a public
 instance actually happens.
 
-fail2ban's socket belongs to root and `fail2ban-client` is a command this
-process has no business being able to run. Its log is `root:adm` and
-read-only to the group, so the answer is a group membership and a file read:
-nothing to escalate, no shelling out.
+The layer in front is reaction, and reaction never touches the firewall
+itself: every ban runs through `ontoplano-ban-control`, which writes one
+line per ban and unban into a record of its own. That file is `root:adm`
+and read-only to the group, so the answer is a group membership and a file
+read: nothing to escalate, no shelling out, and no parsing another
+program's log format that was never a promise.
 
 sudo usermod -aG adm <the user the app runs as>
 
@@ -3597,7 +3599,7 @@ is looking at.
 
 #### `banControlEnabled()`
 
-#### `unban(jail, address)`
+#### `unban(address)`
 
 Let an address back in now, rather than when its bantime runs out.
 
@@ -3605,9 +3607,9 @@ Let an address back in now, rather than when its bantime runs out.
 
 Out for good.
 
-fail2ban has no "forever" — every jail has a bantime and the timer wins — so
+A jail has no "forever" — every ban has a bantime and the timer wins — so
 this is an entry in the `banned` nftables set the box already keeps, which
-survives a fail2ban restart and a jail expiry.
+survives a daemon restart and a jail expiry.
 
 #### `unblockForever(address)`
 

@@ -87,8 +87,8 @@ export const messages: Catalogue = {
 	'admin.nothingToReadHereYet': 'Nothing to read here yet.',
 	'admin.onDebianAndUbuntu': '. On Debian\n\t\t\t\t\t\tand Ubuntu that file belongs to the',
 	'admin.onYourOwnInstanceThis':
-		'On your own instance this lists the addresses fail2ban has turned away, why, and whether\n\t\t\t\t\t\tthey are still out.',
-	'admin.outForGoodSurvives': 'Out for good — survives fail2ban restarts and jail expiry',
+		'On your own instance this lists the addresses the box has turned away, why, and whether\n\t\t\t\t\t\tthey are still out.',
+	'admin.outForGoodSurvives': 'Out for good — survives restarts and jail expiry',
 	'admin.owner': 'owner',
 	'admin.problemsSomebodyReportedIdeasThey':
 		'Problems somebody reported, ideas they suggested, and crashes they chose to send. Dismiss one once it is dealt with.',
@@ -112,8 +112,8 @@ export const messages: Catalogue = {
 	'admin.thisInstanceCannotSee': 'This instance cannot see',
 	'admin.unban': 'Unban',
 	'admin.unverified': '· unverified',
-	'admin.whatFail2banHasTurnedAway': 'What fail2ban has turned away.',
 	'admin.whatPeopleSentIn': 'What people sent in',
+	'admin.whatTheBoxHasTurnedAway': 'What the box has turned away.',
 	'admin.yesMakeAdmin': 'Yes, make admin',
 	'admin.yesRemoveAdmin': 'Yes, remove admin',
 	'admin.you': 'you',

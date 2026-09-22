@@ -67,7 +67,7 @@ test('says what the box has turned away', async ({ page }) => {
 	// Anchored on the card's own description rather than on the word "Blocked",
 	// which now also appears inside the rows — each one says whether the
 	// address is still out and for how long.
-	const blocked = page.locator('section').filter({ hasText: 'What fail2ban has turned away.' });
+	const blocked = page.locator('section').filter({ hasText: 'What the box has turned away.' });
 	await expect(blocked).toContainText('203.0.113.7');
 	// Not the jail's name — what the address did.
 	await expect(blocked).toContainText('scanner');

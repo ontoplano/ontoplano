@@ -24,7 +24,7 @@ import { isDemo } from '$lib/server/settings';
  * administrator — so this page is public there, deliberately: somebody
  * deciding whether to run this themselves should see what administering it
  * looks like. What they must not see is anything about the box or about other
- * people: the addresses fail2ban turned away are real people's, a failed mail
+ * people: the addresses the box turned away are real people's, a failed mail
  * carries a real address, and a client error carries a stack from the server.
  *
  * Writes are refused in `hooks.server.ts`, in one place, for the same reason
@@ -51,8 +51,8 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		// Mail that did not go out. The same list /healthz counts, so the alert
 		// on a phone and the page it points at cannot disagree.
 		mailFailures: demo ? [] : openFailures(),
-		// What the layer in front of the app has been doing. Read from fail2ban's
-		// log, and honest about not being able to read it.
+		// What the layer in front of the app has been doing. Read from the ban
+		// record, and honest about not being able to read it.
 		protection: demo ? { readable: false, path: '', recent: [], lastDay: 0 } : protection(),
 		// Whether this box has been given the one sudo rule that lets the app
 		// act on a ban. Off means the list is shown and no buttons are.
@@ -88,7 +88,7 @@ export const actions: Actions = adminActions({
 	unban: async ({ request }) => {
 		const formData = await request.formData();
 		try {
-			unban(String(formData.get('jail') ?? ''), String(formData.get('address') ?? ''));
+			unban(String(formData.get('address') ?? ''));
 			return { success: true };
 		} catch (e) {
 			return fail(400, { message: e instanceof Error ? e.message : 'Could not unban that' });

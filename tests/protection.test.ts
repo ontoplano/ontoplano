@@ -4,27 +4,27 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 /**
- * Reading what fail2ban blocked.
+ * Reading the box's ban record.
  *
  * Every case here is one the administration page renders differently, and two
- * of them are the ones that matter: an unreadable log must not look like a
- * quiet night, and a log this process cannot open must not take the page down
+ * of them are the ones that matter: an unreadable record must not look like a
+ * quiet night, and a file this process cannot open must not take the page down
  * with it.
  *
  * The module reads the path from the environment when it is imported, so each
  * test imports it fresh — `vi.resetModules` plus a dynamic import, rather than
  * a static one that would bind to whatever the first test set.
  */
-const dir = mkdtempSync(join(tmpdir(), 'ontoplano-f2b-'));
+const dir = mkdtempSync(join(tmpdir(), 'ontoplano-bans-'));
 afterEach(() => {
-	delete process.env.ONTOPLANO_FAIL2BAN_LOG;
+	delete process.env.ONTOPLANO_BANS_LOG;
 });
 afterAll(() => rmSync(dir, { recursive: true, force: true, maxRetries: 2 }));
 
 async function read(contents: string | null, limit?: number) {
 	const path = join(dir, `log-${Math.random().toString(36).slice(2)}`);
 	if (contents !== null) writeFileSync(path, contents);
-	process.env.ONTOPLANO_FAIL2BAN_LOG = path;
+	process.env.ONTOPLANO_BANS_LOG = path;
 	const { resetModules } = await import('vitest').then((m) => ({
 		resetModules: m.vi.resetModules
 	}));
@@ -33,9 +33,9 @@ async function read(contents: string | null, limit?: number) {
 	return mod.protection(limit);
 }
 
-/** The log's own format: local time, the jail in brackets, then the verb. */
+/** The record's own format: local time, the verb, the jail, the address. */
 function line(at: string, jail: string, action: string, address: string): string {
-	return `${at},123 fail2ban.actions        [1234]: NOTICE  [${jail}] ${action} ${address}`;
+	return `${at} ${action} ${jail} ${address}`;
 }
 
 function today(time: string): string {
@@ -71,12 +71,12 @@ describe('what the box blocked', () => {
 		 */
 		const out = await read(
 			[
-				line(today('08:00:00'), 'ontoplano-web', 'Ban', '203.0.113.4'),
-				line(today('08:30:00'), 'ontoplano-web', 'Unban', '203.0.113.4'),
-				line(today('09:00:00'), 'ontoplano-web', 'Ban', '203.0.113.4'),
-				line(today('09:30:00'), 'ontoplano-web', 'Unban', '203.0.113.4'),
-				line(today('10:00:00'), 'ontoplano-web', 'Ban', '203.0.113.4'),
-				line(today('10:05:00'), 'sshd', 'Ban', '198.51.100.7'),
+				line(today('08:00:00'), 'ontoplano-web', 'ban', '203.0.113.4'),
+				line(today('08:30:00'), 'ontoplano-web', 'unban', '203.0.113.4'),
+				line(today('09:00:00'), 'ontoplano-web', 'ban', '203.0.113.4'),
+				line(today('09:30:00'), 'ontoplano-web', 'unban', '203.0.113.4'),
+				line(today('10:00:00'), 'ontoplano-web', 'ban', '203.0.113.4'),
+				line(today('10:05:00'), 'sshd', 'ban', '198.51.100.7'),
 				''
 			].join('\n')
 		);
@@ -97,10 +97,10 @@ describe('what the box blocked', () => {
 	it('reads bans, and only bans', async () => {
 		const out = await read(
 			[
-				line(today('09:00:00'), 'ontoplano-web', 'Ban', '203.0.113.4'),
-				line(today('09:05:00'), 'sshd', 'Ban', '198.51.100.7'),
-				line(today('09:10:00'), 'ontoplano-web', 'Unban', '203.0.113.4'),
-				`${today('09:11:00')},1 fail2ban.filter [1]: INFO    [sshd] Found 198.51.100.7`,
+				line(today('09:00:00'), 'ontoplano-web', 'ban', '203.0.113.4'),
+				line(today('09:05:00'), 'sshd', 'ban', '198.51.100.7'),
+				line(today('09:10:00'), 'ontoplano-web', 'unban', '203.0.113.4'),
+				`${today('09:11:00')} block sshd 198.51.100.7`,
 				''
 			].join('\n')
 		);
@@ -113,9 +113,9 @@ describe('what the box blocked', () => {
 	it('counts the last 24 hours, not the whole log', async () => {
 		const out = await read(
 			[
-				line('2020-01-01 09:00:00', 'ontoplano-web', 'Ban', '203.0.113.1'),
-				line(ago(60 * 60 * 1000), 'ontoplano-web', 'Ban', '203.0.113.2'),
-				line(ago(30 * 60 * 1000), 'sshd', 'Ban', '2001:db8::1'),
+				line('2020-01-01 09:00:00', 'ontoplano-web', 'ban', '203.0.113.1'),
+				line(ago(60 * 60 * 1000), 'ontoplano-web', 'ban', '203.0.113.2'),
+				line(ago(30 * 60 * 1000), 'sshd', 'ban', '2001:db8::1'),
 				''
 			].join('\n')
 		);
@@ -129,7 +129,7 @@ describe('what the box blocked', () => {
 		// saying "just now", because the count started at midnight and the ban
 		// did not. A rolling day cannot have that seam — this timestamp lands
 		// on yesterday's date whenever the test runs before 00:10.
-		const out = await read(line(ago(10 * 60 * 1000), 'ontoplano-web', 'Ban', '203.0.113.4') + '\n');
+		const out = await read(line(ago(10 * 60 * 1000), 'ontoplano-web', 'ban', '203.0.113.4') + '\n');
 		expect(out.lastDay).toBe(1);
 	});
 
@@ -137,8 +137,8 @@ describe('what the box blocked', () => {
 		// One scanner rebanned every half hour is still one scanner.
 		const out = await read(
 			[
-				line(ago(90 * 60 * 1000), 'ontoplano-web', 'Ban', '203.0.113.4'),
-				line(ago(30 * 60 * 1000), 'ontoplano-web', 'Ban', '203.0.113.4'),
+				line(ago(90 * 60 * 1000), 'ontoplano-web', 'ban', '203.0.113.4'),
+				line(ago(30 * 60 * 1000), 'ontoplano-web', 'ban', '203.0.113.4'),
 				''
 			].join('\n')
 		);
@@ -148,8 +148,8 @@ describe('what the box blocked', () => {
 	it('says what each address did, not which jail it tripped', async () => {
 		const out = await read(
 			[
-				line(ago(60_000), 'sshd', 'Ban', '198.51.100.2'),
-				line(ago(30_000), 'made-up-jail', 'Ban', '203.0.113.9'),
+				line(ago(60_000), 'sshd', 'ban', '198.51.100.2'),
+				line(ago(30_000), 'made-up-jail', 'ban', '203.0.113.9'),
 				''
 			].join('\n')
 		);
@@ -159,7 +159,7 @@ describe('what the box blocked', () => {
 
 	it('shows the newest first, and no more than asked for', async () => {
 		const many = Array.from({ length: 30 }, (_, i) =>
-			line(today(`10:${String(i).padStart(2, '0')}:00`), 'ontoplano-web', 'Ban', `203.0.113.${i}`)
+			line(today(`10:${String(i).padStart(2, '0')}:00`), 'ontoplano-web', 'ban', `203.0.113.${i}`)
 		);
 		const out = await read(many.join('\n') + '\n', 5);
 
@@ -171,7 +171,7 @@ describe('what the box blocked', () => {
 	it('keeps its head when the tail starts mid-line', async () => {
 		// What a rotated or truncated read looks like: a partial line first.
 		const out = await read(
-			`4]: NOTICE  [ontoplano-web] Ban 203.0.113.9\n${line(today('11:00:00'), 'sshd', 'Ban', '198.51.100.2')}\n`
+			`0 ban ontoplano-web 203.0.113.9\n${line(today('11:00:00'), 'sshd', 'ban', '198.51.100.2')}\n`
 		);
 
 		expect(out.recent.map((b) => b.address)).toEqual(['198.51.100.2']);
@@ -181,7 +181,7 @@ describe('what the box blocked', () => {
 /**
  * Letting somebody back in, and keeping somebody out.
  *
- * The app runs as an unprivileged user and fail2ban does not, so these buttons
+ * The app runs as an unprivileged user and the firewall does not, so these buttons
  * cross a privilege boundary through one root helper with a wildcard-free
  * sudoers rule. The rules that make that safe are: nothing goes through a
  * shell, and an instance that has not been set up for it offers no buttons at
@@ -214,7 +214,7 @@ describe('the buttons beside a ban', () => {
 
 		// Not merely hidden: the action itself refuses, so a posted form cannot
 		// reach the helper by skipping the page.
-		expect(() => protection.unban('sshd', '203.0.113.9')).toThrow(/not enabled/);
+		expect(() => protection.unban('203.0.113.9')).toThrow(/not enabled/);
 		expect(() => protection.blockForever('203.0.113.9')).toThrow(/not enabled/);
 		expect(() => protection.unblockForever('203.0.113.9')).toThrow(/not enabled/);
 	});

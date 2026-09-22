@@ -43,9 +43,9 @@ writeFileSync(
 /*
  * And something for the administration page's "Blocked" card to read.
  *
- * The real file is fail2ban's, which a test machine has no reason to have and
- * no right to write. The app takes the path from the environment for exactly
- * this: it is the same reader, pointed somewhere harmless.
+ * The real file is the box's ban record, which a test machine has no reason
+ * to have and no right to write. The app takes the path from the environment
+ * for exactly this: it is the same reader, pointed somewhere harmless.
  */
 const stamp = new Date();
 const pad = (n) => String(n).padStart(2, '0');
@@ -57,12 +57,8 @@ const at = (minutes) => {
 	);
 };
 writeFileSync(
-	process.env.ONTOPLANO_FAIL2BAN_LOG ?? join(tmpdir(), 'ontoplano-e2e-fail2ban.log'),
-	[
-		`${at(6)},123 fail2ban.actions        [1234]: NOTICE  [ontoplano-web] Ban 203.0.113.7`,
-		`${at(40)},123 fail2ban.actions        [1234]: NOTICE  [sshd] Ban 198.51.100.3`,
-		''
-	].join('\n')
+	process.env.ONTOPLANO_BANS_LOG ?? join(tmpdir(), 'ontoplano-e2e-bans.log'),
+	[`${at(6)} ban ontoplano-web 203.0.113.7`, `${at(40)} ban sshd 198.51.100.3`, ''].join('\n')
 );
 
 console.log(`e2e: fresh database at ${db}, config in ${configDir}`);

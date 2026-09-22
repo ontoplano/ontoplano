@@ -93,9 +93,9 @@ export const messages: Catalogue = {
 	'admin.nothingToReadHereYet': 'Hier gibt es noch nichts zu lesen.',
 	'admin.onDebianAndUbuntu': '. Unter Debian\n\t\t\t\t\t\tund Ubuntu gehört diese Datei der',
 	'admin.onYourOwnInstanceThis':
-		'Auf Ihrer eigenen Instanz listet dies die Adressen auf, die fail2ban abgewiesen hat, warum, und ob\n\t\t\t\t\t\tsie noch ausgesperrt sind.',
+		'Auf Ihrer eigenen Instanz listet dies die Adressen auf, die der Server abgewiesen hat, warum, und ob\n\t\t\t\t\t\tsie noch ausgesperrt sind.',
 	'admin.outForGoodSurvives':
-		'Endgültig ausgesperrt — übersteht fail2ban-Neustarts und das Ablaufen der Jail',
+		'Endgültig ausgesperrt — übersteht Neustarts und das Ablaufen der Jail',
 	'admin.owner': 'eigentümer',
 	'admin.problemsSomebodyReportedIdeasThey':
 		'Probleme, die jemand gemeldet hat, Ideen, die jemand vorgeschlagen hat, und Abstürze, die jemand geschickt hat. Einen Eintrag ausblenden, sobald er erledigt ist.',
@@ -119,8 +119,8 @@ export const messages: Catalogue = {
 	'admin.thisInstanceCannotSee': 'Diese Instanz kann nicht sehen',
 	'admin.unban': 'Entsperren',
 	'admin.unverified': '· unbestätigt',
-	'admin.whatFail2banHasTurnedAway': 'Was fail2ban abgewiesen hat.',
 	'admin.whatPeopleSentIn': 'Was eingeschickt wurde',
+	'admin.whatTheBoxHasTurnedAway': 'Was der Server abgewiesen hat.',
 	'admin.yesMakeAdmin': 'Ja, zum Admin machen',
 	'admin.yesRemoveAdmin': 'Ja, Admin entfernen',
 	'admin.you': 'Sie',

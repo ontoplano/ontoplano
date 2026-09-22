@@ -20,6 +20,14 @@ releases mattered.
 
 ## 0.182.1 — 2026-09-21
 
+- **The ban card reads the box's own record.** On a self-hosted server the
+  banning layer is now [reaction](https://reaction.ppom.me) instead of
+  fail2ban, and every ban lands in `/var/log/ontoplano-bans.log` — the admin
+  page reads that file, so the card works the same whatever wrote it.
+  Unbanning no longer asks for a jail, just the address. If the app was told
+  where fail2ban's log was with `ONTOPLANO_FAIL2BAN_LOG`, that setting is now
+  `ONTOPLANO_BANS_LOG`; `ontoplano-server`'s setup wizard arranges all of it.
+
 - **The chat's model is a list, not a text box.** Paste the key, press "Ask the
   provider what it offers", and the box becomes what that key can actually
   reach — which is also the quickest way to find out whether the key works

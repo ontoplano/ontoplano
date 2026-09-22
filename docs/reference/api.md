@@ -850,11 +850,11 @@ A route rather than a file in `static/`, because the right answer differs by
 instance and a static file cannot know which one it is on.
 
 Worth being honest about what this does and does not do. It is a request, and
-only well-behaved crawlers honour it — the addresses fail2ban is banning are
+only well-behaved crawlers honour it — the addresses the box is banning are
 hitting sixty failed requests a minute looking for `/wp-admin` and `.env`, and
 they have never read a robots.txt in their lives. This is here so that the
 pages behind a login do not turn up in a search result, and so that the demo
-is not indexed as a second copy of the site; the banning stays fail2ban's job.
+is not indexed as a second copy of the site; the banning stays the firewall's job.
 
 Everything under a login already redirects, so a crawler learns nothing from
 following them — but a redirect still costs a request, and a list of paths

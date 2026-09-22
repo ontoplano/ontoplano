@@ -2,17 +2,19 @@ import { execFileSync } from 'node:child_process';
 import { openSync, closeSync, fstatSync, readSync, constants } from 'node:fs';
 
 /**
- * What the box has blocked, read from fail2ban's own log.
+ * What the box has blocked, read from the ban record.
  *
  * The administration page can say who has been signing in and who registered,
  * because the app did those things itself. It could say nothing at all about
  * the layer in front of it — which is where most of what happens to a public
  * instance actually happens.
  *
- * fail2ban's socket belongs to root and `fail2ban-client` is a command this
- * process has no business being able to run. Its log is `root:adm` and
- * read-only to the group, so the answer is a group membership and a file read:
- * nothing to escalate, no shelling out.
+ * The layer in front is reaction, and reaction never touches the firewall
+ * itself: every ban runs through `ontoplano-ban-control`, which writes one
+ * line per ban and unban into a record of its own. That file is `root:adm`
+ * and read-only to the group, so the answer is a group membership and a file
+ * read: nothing to escalate, no shelling out, and no parsing another
+ * program's log format that was never a promise.
  *
  *   sudo usermod -aG adm <the user the app runs as>
  *
@@ -21,8 +23,8 @@ import { openSync, closeSync, fstatSync, readSync, constants } from 'node:fs';
  * is looking at.
  */
 
-/** Where fail2ban writes. Debian and Ubuntu put it here; a box that differs can say so. */
-const LOG = process.env.ONTOPLANO_FAIL2BAN_LOG || '/var/log/fail2ban.log';
+/** Where ontoplano-ban-control records bans. vps-setup.sh creates it; a box that differs can say so. */
+const LOG = process.env.ONTOPLANO_BANS_LOG || '/var/log/ontoplano-bans.log';
 
 /**
  * How much of the tail to read.
@@ -40,7 +42,7 @@ export type Ban = {
 	at: string;
 	/** Why this jail bans, in words — what the address actually did. */
 	reason: string;
-	/** When fail2ban let it back in, if it has. Same format as `at`. */
+	/** When it was let back in, if it has been. Same format as `at`. */
 	unbannedAt: string | null;
 	/** How long it was (or has been) blocked, in words. */
 	held: string;
@@ -62,18 +64,15 @@ export type Ban = {
 };
 
 /*
- * What tripping each jail means. The log only names the jail, and a jail name
- * is configuration, not an explanation — "ontoplano-web" says nothing about
- * WHY an address is gone. These are the jail names fail2ban ships with, plus
- * the one this app's own filter uses; an unknown jail falls back to naming
- * itself, which is what a box with its own jails will show.
+ * What tripping each jail means. The record only names the jail, and a jail
+ * name is configuration, not an explanation — "ontoplano-web" says nothing
+ * about WHY an address is gone. These are the jails vps-setup.sh writes into
+ * reaction's config; an unknown jail falls back to naming itself, which is
+ * what a box with jails of its own will show.
  */
 const REASONS: Record<string, string> = {
 	'ontoplano-web': 'hammered the site with errors — 60 failed requests in a minute is a scanner',
 	sshd: 'guessed at SSH logins',
-	'sshd-ddos': 'flooded the SSH port',
-	recidive: 'kept coming back after earlier bans, so banned for longer',
-	postfix: 'sent garbage to the mail server',
 	'postfix-sasl': 'guessed at mail passwords (SMTP)',
 	dovecot: 'guessed at mailbox passwords (IMAP/POP)'
 };
@@ -115,14 +114,12 @@ function tail(path: string, bytes: number): string | null {
 }
 
 /*
- * 2026-08-28 17:01:00,123 fail2ban.actions [1234]: NOTICE  [ontoplano-web] Ban 203.0.113.4
+ * 2026-08-28 17:01:00 ban ontoplano-web 203.0.113.4
  *
  * Only bans. Unbans are the timer expiring, which is not news, and mixing the
  * two into one list makes it read like an argument rather than a record.
  */
-// The greedy `.*` is doing real work: the line carries the process id in
-// brackets too, and the jail is the LAST bracketed thing before the verb.
-const BAN = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}).*\[([^\]]+)\] Ban ([0-9a-fA-F.:]+)/;
+const BAN = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) ban (\S+) ([0-9a-fA-F.:]+)$/;
 
 /*
  * And the unbans, which are not news on their own and are the only way to say
@@ -131,7 +128,7 @@ const BAN = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}).*\[([^\]]+)\] Ban ([0-9a-fA-
  * bantime, and an address let back in an hour later is a different fact from
  * one that is still out.
  */
-const UNBAN = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}).*\[([^\]]+)\] Unban ([0-9a-fA-F.:]+)/;
+const UNBAN = /^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) unban (\S+) ([0-9a-fA-F.:]+)$/;
 
 /** A span in words, from two of the log's own timestamps. */
 function spanBetween(from: string, to: string): string {
@@ -220,16 +217,15 @@ function local(date: Date): string {
 
 /* ── Acting on a ban ─────────────────────────────────────────────────────────
  *
- * Reading the log needs nothing but a group membership. Unbanning needs root,
- * and the way that is usually done — a sudoers line with a wildcard — hands
- * the web process the box: `*` in sudoers matches spaces, and
- * `fail2ban-client set <jail> action <name> actionban` is arbitrary root
- * command execution by design.
+ * Reading the record needs nothing but a group membership. Unbanning needs
+ * root, and the way that is usually done — a sudoers line with a wildcard —
+ * hands the web process the box: `*` in sudoers matches spaces, so the last
+ * argument of any wildcarded privileged command can carry more arguments.
  *
  * So the app runs one fixed path with no wildcards in the rule, and the
- * helper at the other end decides what may be asked for: a verb from four
- * literals, a jail that already exists, and an address that is a bare IP
- * literal. Nothing is passed through a shell at either end.
+ * helper at the other end decides what may be asked for: a verb from a fixed
+ * list, and an address that is a bare IP literal. Nothing is passed through
+ * a shell at either end.
  *
  * Off unless the box says otherwise. An instance that has not been set up for
  * this shows the bans and no buttons, rather than buttons that fail.
@@ -271,16 +267,16 @@ function control(args: string[]): string {
 }
 
 /** Let an address back in now, rather than when its bantime runs out. */
-export function unban(jail: string, address: string): string {
-	return control(['unban', jail, address]);
+export function unban(address: string): string {
+	return control(['unban', address]);
 }
 
 /**
  * Out for good.
  *
- * fail2ban has no "forever" — every jail has a bantime and the timer wins — so
+ * A jail has no "forever" — every ban has a bantime and the timer wins — so
  * this is an entry in the `banned` nftables set the box already keeps, which
- * survives a fail2ban restart and a jail expiry.
+ * survives a daemon restart and a jail expiry.
  */
 export function blockForever(address: string): string {
 	return control(['block', address]);
