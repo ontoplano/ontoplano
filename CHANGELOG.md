@@ -18,6 +18,13 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.12 — 2026-09-22
+
+- **A long notebook description folds away.** Written properly — what the
+  renovation covers, which flat, the measurements — it pushed the notes off a
+  phone screen. It shows two lines with **Show more** under it now, and a
+  description that already fits is drawn with nothing to press.
+
 ## 0.182.11 — 2026-09-22
 
 - **An assistant tied to one notebook can ask which one.** The `notebooks`

@@ -3081,6 +3081,8 @@ export type MessageKey =
 	| 'ui.save'
 	| 'ui.search'
 	| 'ui.show'
+	| 'ui.showLess'
+	| 'ui.showMore'
 	| 'ui.skip'
 	| 'ui.status'
 	| 'ui.tags'

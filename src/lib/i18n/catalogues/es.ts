@@ -3634,6 +3634,8 @@ export const messages: Catalogue = {
 	'ui.save': 'Guardar',
 	'ui.search': 'Buscar',
 	'ui.show': 'Mostrar',
+	'ui.showLess': 'Mostrar menos',
+	'ui.showMore': 'Mostrar más',
 	'ui.skip': 'Omitir',
 	'ui.status': 'Estado',
 	'ui.tags': 'Etiquetas',

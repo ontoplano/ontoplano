@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$lib/enhance';
+	import FoldedText from '$lib/components/FoldedText.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { resolve } from '$app/paths';
 	import { armed } from '$lib/actions/armed';
@@ -64,7 +65,9 @@
 				{/if}
 			</h1>
 			{#if data.notebook.description}
-				<p class="mt-1 max-w-prose text-sm text-gray-500">{data.notebook.description}</p>
+				<!-- Folded when it is long: a description written properly pushed
+				     the notes off a phone screen. See `FoldedText`. -->
+				<FoldedText text={data.notebook.description} class="mt-1" />
 			{/if}
 		</div>
 
