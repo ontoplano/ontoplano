@@ -15,10 +15,15 @@
 
 const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
 
+/** What stands in for a span of code while the rest of a line is read. */
+const MARKER = '\uE000';
+
 function escape(text: string): string {
-	// The NUL is dropped rather than escaped: `inline` uses it to fence off
-	// spans of code from its own replacements, so it must not survive in text.
-	return text.replace(/\u0000/g, '').replace(/[&<>"]/g, (c) => ESCAPES[c]);
+	// The marker is dropped rather than escaped: `inline` uses it to fence off
+	// spans of code from its own replacements, so it must not survive in text
+	// somebody typed. It is a private-use character — one with no meaning of
+	// its own anywhere, which is what makes it safe to give a meaning here.
+	return text.replaceAll(MARKER, '').replace(/[&<>"]/g, (c) => ESCAPES[c]);
 }
 
 /**
@@ -61,7 +66,7 @@ function inline(raw: string, todos?: TodoRefs): string {
 		// One space either side is the fence's own padding rather than part of
 		// what was written: ``` x ``` is the code `x`.
 		spans.push(code.replace(/^ (.*) $/, '$1'));
-		return `\u0000${spans.length - 1}\u0000`;
+		return `${MARKER}${spans.length - 1}${MARKER}`;
 	});
 
 	/*
@@ -145,7 +150,7 @@ function inline(raw: string, todos?: TodoRefs): string {
 
 	// And the code goes back, untouched by any of the above.
 	return html.replace(
-		/\u0000(\d+)\u0000/g,
+		new RegExp(`${MARKER}(\\d+)${MARKER}`, 'g'),
 		(_match, at: string) => `<code>${spans[Number(at)]}</code>`
 	);
 }
