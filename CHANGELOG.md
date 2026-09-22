@@ -20,6 +20,12 @@ releases mattered.
 
 ## 0.183.0 — 2026-09-22
 
+- **Writing and its preview, side by side.** A third choice beside Write and
+  Preview, away to the right. The box used to split into two columns on its own
+  once it got wide enough and no box in the app is ever that wide, so that
+  layout had never once drawn — it is a choice now, at a width the ordinary
+  boxes actually reach.
+
 - **A notebook can have a picture.** On its own page, beside the title: press it
   to choose one, press again to replace it, and a line under it takes it off.
   The same arrangement a person's face has — one picture, because it is what the

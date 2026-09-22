@@ -1417,6 +1417,7 @@ export const messages: Catalogue = {
 	'manifest.writeAnEntry': 'Write an entry',
 	'markdown.nothingToPreviewYet': 'Nothing to preview yet',
 	'markdown.preview': 'Preview',
+	'markdown.sideBySide': 'Side by side',
 	'markdown.write': 'Write',
 	'markdownImport.import': 'Import',
 	'markdownImport.nameForTheNotebookThey': 'Name for the notebook they land in',

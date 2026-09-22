@@ -1446,6 +1446,7 @@ export const messages: Catalogue = {
 	'manifest.writeAnEntry': 'Escribir una entrada',
 	'markdown.nothingToPreviewYet': 'Nada que previsualizar todavía',
 	'markdown.preview': 'Vista previa',
+	'markdown.sideBySide': 'Lado a lado',
 	'markdown.write': 'Escribir',
 	'markdownImport.import': 'Importar',
 	'markdownImport.nameForTheNotebookThey': 'Nombre del cuaderno donde caerán',

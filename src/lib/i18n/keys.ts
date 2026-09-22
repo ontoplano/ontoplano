@@ -1273,6 +1273,7 @@ export type MessageKey =
 	| 'manifest.writeAnEntry'
 	| 'markdown.nothingToPreviewYet'
 	| 'markdown.preview'
+	| 'markdown.sideBySide'
 	| 'markdown.write'
 	| 'markdownImport.import'
 	| 'markdownImport.nameForTheNotebookThey'

@@ -79,8 +79,19 @@
 
 	const t = useT();
 
-	/** Which pane the narrow layout is showing. Ignored once there is room for both. */
-	let showing = $state<'write' | 'preview'>('write');
+	/**
+	 * Which pane is showing: one of them, or both beside each other.
+	 *
+	 * Writing is the default, which is what the box has always opened as.
+	 *
+	 * It used to go side by side on its own once the container passed `@2xl`,
+	 * and no box in this app is that wide — the widest is about 540px — so that
+	 * branch had never once drawn on a screen and the two tabs were the whole
+	 * control. Side by side is a choice now, offered from `@lg`, which the
+	 * ordinary boxes do reach: two columns of about 260px, which is tight and
+	 * is the point of it being a choice rather than a width.
+	 */
+	let showing = $state<'write' | 'preview' | 'both'>('write');
 
 	/**
 	 * What is in the box, which is not the same as what was passed in.
@@ -126,15 +137,19 @@
 
 <div class="@container {extra}">
 	<!--
-		The chooser, only where there is not room for both. `@2xl:hidden` rather
-		than a second markup path, so the two shapes cannot drift apart.
+		Write, Preview, and — away to the right, where there is room for it —
+		both at once.
 
 		Each tab names itself. `Field` is a `<label>`, so a button inside it
 		computes its accessible name from the whole field — which made "Write"
 		answer to the name "Preview" as well, and a test picking the Preview tab
 		by name pressed Write.
+
+		Side by side is offered only where two columns would fit at all. Below
+		that it is not a choice anybody could want, and `both` falls back to the
+		editor alone — writing is what the box is for.
 	-->
-	<div class="mb-2 flex gap-1 @2xl:hidden" role="tablist">
+	<div class="mb-2 flex items-center gap-1" role="tablist">
 		<button
 			type="button"
 			role="tab"
@@ -159,9 +174,25 @@
 		>
 			{t('markdown.preview')}
 		</button>
+		<button
+			type="button"
+			role="tab"
+			aria-selected={showing === 'both'}
+			aria-label={t('markdown.sideBySide')}
+			class="ml-auto hidden rounded px-3 py-1 text-xs font-medium transition @lg:block {showing ===
+			'both'
+				? 'bg-gray-900 text-white'
+				: 'bg-gray-100 text-gray-600 hover:bg-gray-200'}"
+			onclick={() => (showing = 'both')}
+		>
+			{t('markdown.sideBySide')}
+		</button>
 	</div>
 
 	<!--
+		Below two columns, `both` is the editor: the preview is the pane that
+		gives way, because writing is what the box is for.
+
 		Narrow, the two panes are stacked in one cell rather than swapped.
 		
 		Hiding one with `display: none` made the box the height of whichever
@@ -174,7 +205,7 @@
 		Wide, the grid puts them side by side and `items-stretch` already made
 		them agree.
 	-->
-	<div class="grid @2xl:grid-cols-2 @2xl:items-stretch @2xl:gap-3">
+	<div class="grid @lg:items-stretch @lg:gap-3 {showing === 'both' ? '@lg:grid-cols-2' : ''}">
 		<!--
 			`invisible` rather than `hidden`: the pane keeps its place in the
 			cell, which is what holds the height. It is also taken out of the
@@ -182,20 +213,20 @@
 			shown.
 		-->
 		<div
-			class="col-start-1 row-start-1 @2xl:col-start-1 {showing === 'write'
-				? ''
-				: 'invisible @2xl:visible'}"
-			aria-hidden={showing === 'write' ? undefined : 'true'}
-			inert={showing === 'write' ? undefined : true}
+			class="col-start-1 row-start-1 @lg:col-start-1 {showing === 'preview' ? 'hidden' : ''}"
+			aria-hidden={showing === 'preview' ? 'true' : undefined}
+			inert={showing === 'preview' ? true : undefined}
 		>
 			<TextBox bind:value={text} bind:element {rows} {...rest} />
 		</div>
 
 		<div
-			class="md col-start-1 row-start-1 overflow-y-auto rounded border border-gray-200 bg-gray-50 p-3 text-sm text-gray-900 @2xl:col-start-2 {showing ===
+			class="md col-start-1 row-start-1 overflow-y-auto rounded border border-gray-200 bg-gray-50 p-3 text-sm text-gray-900 {showing ===
 			'preview'
 				? ''
-				: 'invisible @2xl:visible'}"
+				: showing === 'both'
+					? 'invisible @lg:visible @lg:col-start-2'
+					: 'hidden'}"
 			aria-live="off"
 			aria-label={t('markdown.preview')}
 		>

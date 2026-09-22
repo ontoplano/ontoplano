@@ -1461,6 +1461,7 @@ export const messages: Catalogue = {
 	'manifest.writeAnEntry': 'Einen Eintrag schreiben',
 	'markdown.nothingToPreviewYet': 'Noch nichts in der Vorschau',
 	'markdown.preview': 'Vorschau',
+	'markdown.sideBySide': 'Nebeneinander',
 	'markdown.write': 'Schreiben',
 	'markdownImport.import': 'Importieren',
 	'markdownImport.nameForTheNotebookThey': 'Name für das Notizbuch, in dem sie landen',
