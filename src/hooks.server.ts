@@ -421,6 +421,7 @@ const handleSecurityHeaders: Handle = async ({ event, resolve }) => {
 	if (contentType === 'text/html') {
 		response.headers.set('content-type', 'text/html; charset=utf-8');
 	}
+
 	/*
 	 * The microphone, to this origin and nothing else.
 	 *
@@ -505,6 +506,7 @@ const HOLD_EXEMPT = [
 	'/api',
 	'/healthz',
 	'/favicon.svg',
+	'/favicon.ico',
 	'/icons',
 	'/manifest.webmanifest'
 ];

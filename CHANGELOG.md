@@ -18,6 +18,22 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.7 — 2026-09-22
+
+- **`/favicon.ico` is an icon again.** Nothing links to that address and
+  everything asks for it — a browser before it has read the page, a chat
+  unfurling a link, the card an assistant draws for a connector. This app had
+  no such file, so the request fell through to the page fallback and those
+  callers drew whatever they had cached, in one case the logo from before the
+  puffin. It is now three sizes in one file, drawn from the same artwork as
+  every other icon.
+
+- **The launcher shortcuts wear the current mark.** Long-press the installed
+  app and the three shortcuts — the board, the diary, the goals — were still
+  the logo this app stopped using a year ago: they were hand-made PNGs that no
+  generator touched. They are drawn now from the app's own room glyphs, and
+  `make lint` checks that every icon is current, which is what nothing did.
+
 ## 0.182.6 — 2026-09-22
 
 - **The connect-an-assistant screen is a question, not a receipt.** What an
@@ -30,7 +46,7 @@ releases mattered.
   assistant that asked for everything got everything or nothing.
 
 - **`up_next` reads the ratings the way the app means them.** Most urgent
-  first, then the task that takes *least* energy — it used to break ties
+  first, then the task that takes _least_ energy — it used to break ties
   towards the heavier one — then the one you most want to do. And a rating
   nobody set is no longer treated as a zero: it counts half a step to the
   losing side of the middle of the scale, so a task deliberately marked 3

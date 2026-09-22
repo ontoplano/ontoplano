@@ -808,6 +808,10 @@ lint:
 	@yarn -s badges:check
 	@yarn -s messages:check
 	@yarn -s copy:check
+	@# Every icon the app ships is drawn from `src/lib/logo/mark.png`, and
+	@# nothing checked that they had been redrawn since: the three launcher
+	@# shortcuts wore the logo from before the puffin for a year.
+	@yarn -s icons --check
 	@node scripts/check-no-secrets.mjs
 	@node scripts/check-android-version.mjs
 	@# The floor on a reminder and the phone's polling interval are one fact
