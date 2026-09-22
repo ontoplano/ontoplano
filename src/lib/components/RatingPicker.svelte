@@ -59,19 +59,29 @@
 	const filled = $derived(((shown - RATING_MIN) / (RATING_MAX - RATING_MIN)) * 100);
 
 	/**
-	 * Half steps exist so the thumb can rest between two marks, not so anybody
-	 * can choose one.
+	 * Seven stops: 0 1 2 · 3 4 5, with no answer in the middle.
 	 *
-	 * The input's step has to be a half for 2.5 to be a position it can hold.
-	 * Every move therefore lands on a half now and then, and is taken to the
-	 * whole number it was heading for — away from where the thumb was, so an
-	 * arrow key moves by one from an answer and by a half from the middle,
-	 * which is the same gesture either way.
+	 * The input runs in halves because 2.5 has to be a position it can hold —
+	 * and 2.5 is the only half anybody can land on. It is not a rating of two
+	 * and a half; it is the absence of one, dead centre with three answers
+	 * either side of it, which is exactly where the card draws an unset rating
+	 * and where the sort counts it.
+	 *
+	 * Every other half is a step passing through, and is taken to the whole
+	 * number it was heading for — away from where the thumb was. So an arrow
+	 * key moves one stop each time wherever it starts: 2 to no-answer to 3, and
+	 * 0 to 1 to 2 below it.
 	 */
 	function slide(event: Event) {
 		const input = event.currentTarget as HTMLInputElement;
 		const raw = Number(input.value);
 		const was = value ?? RATING_UNRATED;
+
+		if (raw === RATING_UNRATED) {
+			value = null;
+			return;
+		}
+
 		const whole = Number.isInteger(raw) ? raw : raw > was ? Math.ceil(raw) : Math.floor(raw);
 		value = Math.min(RATING_MAX, Math.max(RATING_MIN, whole));
 		// The thumb sits on the answer rather than between two of them.
@@ -92,11 +102,7 @@
 	sentence and a slider, all of which have to stay readable — and only once
 	somebody has answered, so the row is quiet until it has something to say.
 -->
-<div
-	data-rating={rating}
-	class:rating-answered={value !== null}
-	class={compact ? 'rating-row flex items-center gap-2' : 'rating-row space-y-1'}
->
+<div data-rating={rating} class={compact ? 'flex items-center gap-2' : 'space-y-1'}>
 	{#if compact}
 		<span class="eyebrow w-16 shrink-0 text-gray-600">{t(RATING_LABELS[rating])}</span>
 	{:else}
@@ -108,7 +114,7 @@
 
 	<div class="min-w-0 flex-1">
 		<div class="flex items-center gap-2">
-			<div class="relative min-w-0 flex-1">
+			<div class="rating-track relative min-w-0 flex-1" class:rating-answered={value !== null}>
 				<input
 					type="range"
 					min={RATING_MIN}
@@ -171,16 +177,26 @@
 	 * The wash behind an answered one. `--rating-ink` is the question's colour,
 	 * set once in `layout.css` for the gauge and for this alike.
 	 */
-	.rating-row {
-		border-radius: inherit;
+	/*
+	 * The colour sits around the slider, not behind the whole row.
+	 *
+	 * Behind the row it washed the label and the sentence as well, which are
+	 * the parts that have to stay readable, and left the slider in a white
+	 * cut-out — the one thing the colour was meant to be about. Around the
+	 * track it reads as the control being answered.
+	 *
+	 * The padding is cancelled by an equal negative margin so that answering a
+	 * rating does not move the row it is on.
+	 */
+	.rating-track {
+		border-radius: 9999px;
 		transition: background-color 120ms ease-out;
+		padding: 0.3125rem 0.625rem;
+		margin: -0.3125rem -0.625rem;
 	}
 
-	.rating-row.rating-answered {
-		background-color: color-mix(in srgb, var(--rating-ink) 14%, transparent);
-		/* Room for the colour to be a shape rather than a stripe behind text. */
-		padding: 0.375rem 0.5rem;
-		margin: -0.375rem -0.5rem;
+	.rating-track.rating-answered {
+		background-color: color-mix(in srgb, var(--rating-ink) 22%, transparent);
 	}
 
 	/*

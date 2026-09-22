@@ -11,8 +11,9 @@ import { visit } from './helpers/visit';
  * exactly like a list that happened to be in that order already.
  *
  * The four it writes are chosen so every rule shows: urgency decides first,
- * ease breaks the tie between the two urgent ones towards the lighter, and
- * the one nobody weighed still beats a task deliberately marked 1.
+ * ease breaks the tie between the two urgent ones towards the easier, and the
+ * one nobody weighed still beats a task deliberately marked at the bottom of
+ * the scale — which is nought, the answer that says "not at all".
  */
 async function newTodo(page: Page, title: string, ratings: Record<string, string>) {
 	await page.getByRole('button', { name: 'New task' }).click();
@@ -26,7 +27,7 @@ async function newTodo(page: Page, title: string, ratings: Record<string, string
 		 */
 		const form = page.locator('#todo-form');
 		await form
-			.getByText(/Urgency, interest, ease|Category, notebook/)
+			.getByText(/Urgency, ease, interest|Category, notebook/)
 			.first()
 			.click();
 		for (const [name, value] of Object.entries(ratings)) {
@@ -65,10 +66,12 @@ test('the to-do list can be ordered by priority', async ({ page }) => {
 	];
 	// Written in an order that is nobody's priority order, so passing cannot be
 	// an accident of when they were added.
-	await newTodo(page, titles[0], { Urgency: '1', Ease: '1' });
-	await newTodo(page, titles[1], { Urgency: '5', Ease: '5' });
+	// Nought for the first one: the bottom of the scale is a real answer, and
+	// this is the walk that proves a form can post it and the database keep it.
+	await newTodo(page, titles[0], { Urgency: '0', Ease: '5' });
+	await newTodo(page, titles[1], { Urgency: '5', Ease: '1' });
 	await newTodo(page, titles[2], {});
-	await newTodo(page, titles[3], { Urgency: '5', Ease: '1' });
+	await newTodo(page, titles[3], { Urgency: '5', Ease: '5' });
 
 	// The order control says what it is ordering, not what it is set to; the
 	// current order is the word on it.
@@ -76,11 +79,11 @@ test('the to-do list can be ordered by priority', async ({ page }) => {
 	await page.getByRole('option', { name: 'Priority' }).click();
 
 	expect(await order(page, titles)).toEqual([
-		// Both urgent; the lighter one first.
+		// Both urgent; the easier one first.
 		'urgent and light',
 		'urgent and draining',
-		// Unrated is the middle of the scale nudged half a step to the losing
-		// side — which is still above a deliberate 1.
+		// Unrated counts as the middle of the scale, which is above a
+		// deliberate nought.
 		'nobody weighed this',
 		'whenever and easy'
 	]);

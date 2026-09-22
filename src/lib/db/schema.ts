@@ -122,12 +122,12 @@ export const recurringTasks = sqliteTable(
 		index('slots_user_idx').on(table.userId),
 		index('slots_weekday_idx').on(table.weekday),
 		index('slots_weekday_time_idx').on(table.weekday, table.startTime),
-		check('slots_urgency_range', sql`${table.urgency} IS NULL OR ${table.urgency} BETWEEN 1 AND 5`),
+		check('slots_urgency_range', sql`${table.urgency} IS NULL OR ${table.urgency} BETWEEN 0 AND 5`),
 		check(
 			'slots_interest_range',
-			sql`${table.interest} IS NULL OR ${table.interest} BETWEEN 1 AND 5`
+			sql`${table.interest} IS NULL OR ${table.interest} BETWEEN 0 AND 5`
 		),
-		check('slots_ease_range', sql`${table.ease} IS NULL OR ${table.ease} BETWEEN 1 AND 5`),
+		check('slots_ease_range', sql`${table.ease} IS NULL OR ${table.ease} BETWEEN 0 AND 5`),
 		check('slots_weekday_range', sql`${table.weekday} >= 0 AND ${table.weekday} <= 6`),
 		check(
 			'slots_mode_category',
@@ -603,13 +603,13 @@ export const exceptionalTasks = sqliteTable(
 		index('exceptional_tasks_notebook_idx').on(table.notebookId),
 		check(
 			'exceptional_urgency_range',
-			sql`${table.urgency} IS NULL OR ${table.urgency} BETWEEN 1 AND 5`
+			sql`${table.urgency} IS NULL OR ${table.urgency} BETWEEN 0 AND 5`
 		),
 		check(
 			'exceptional_interest_range',
-			sql`${table.interest} IS NULL OR ${table.interest} BETWEEN 1 AND 5`
+			sql`${table.interest} IS NULL OR ${table.interest} BETWEEN 0 AND 5`
 		),
-		check('exceptional_ease_range', sql`${table.ease} IS NULL OR ${table.ease} BETWEEN 1 AND 5`),
+		check('exceptional_ease_range', sql`${table.ease} IS NULL OR ${table.ease} BETWEEN 0 AND 5`),
 		check(
 			'exceptional_mode_category',
 			sql`${table.mode} != 'category' OR ${table.categoryId} IS NOT NULL`
@@ -698,12 +698,12 @@ export const todoTasks = sqliteTable(
 		index('todo_tasks_scheduled_idx').on(table.userId, table.scheduledDate),
 		index('todo_tasks_notebook_idx').on(table.notebookId),
 		uniqueIndex('todo_tasks_notebook_seq_unique').on(table.notebookId, table.notebookSeq),
-		check('todos_urgency_range', sql`${table.urgency} IS NULL OR ${table.urgency} BETWEEN 1 AND 5`),
+		check('todos_urgency_range', sql`${table.urgency} IS NULL OR ${table.urgency} BETWEEN 0 AND 5`),
 		check(
 			'todos_interest_range',
-			sql`${table.interest} IS NULL OR ${table.interest} BETWEEN 1 AND 5`
+			sql`${table.interest} IS NULL OR ${table.interest} BETWEEN 0 AND 5`
 		),
-		check('todos_ease_range', sql`${table.ease} IS NULL OR ${table.ease} BETWEEN 1 AND 5`)
+		check('todos_ease_range', sql`${table.ease} IS NULL OR ${table.ease} BETWEEN 0 AND 5`)
 	]
 );
 

@@ -4,7 +4,7 @@
 	import Picker from '$lib/components/Picker.svelte';
 	import SortControl from '$lib/components/SortControl.svelte';
 	import { agoOf, momentOf } from '$lib/when';
-	import { compareByRatings } from '$lib/ratings';
+	import { compareByPriority } from '$lib/ratings';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { deleteLater, isLeaving } from '$lib/undo.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
@@ -388,9 +388,7 @@
 			 * Ties past the three ratings keep the order somebody arranged by
 			 * hand, rather than falling back on when they were written down.
 			 */
-			const best = [...shown].sort(
-				(a: Todo, b: Todo) => compareByRatings(a.ratings, b.ratings) || a.sortOrder - b.sortOrder
-			);
+			const best = [...shown].sort(compareByPriority);
 			return direction === 'asc' ? best.reverse() : best;
 		}
 

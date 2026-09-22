@@ -23,6 +23,7 @@ import {
 	RATING_MAX,
 	RATING_MIN,
 	RATING_UNRATED,
+	compareByPriority,
 	compareByRatings,
 	ratingWeight,
 	type RatingValues
@@ -114,5 +115,58 @@ describe('the order the three are read in', () => {
 
 	test('says nothing about two tasks rated the same', () => {
 		expect(compareByRatings(rated(3, 3, 3), rated(3, 3, 3))).toBe(0);
+	});
+});
+
+/**
+ * What decides between two tasks answered exactly the same way.
+ *
+ * Until now nothing did: each caller fell back to `sortOrder`, which is the
+ * manual drag position and nought for everything nobody has dragged, so the
+ * answer came from whatever order the query returned. Oldest first now, and
+ * said out loud — the task that has been waiting longest is the one being
+ * neglected, and newest-first would bury it for good.
+ */
+describe('two tasks rated the same', () => {
+	const at = (createdAt: string, sortOrder = 0) => ({
+		ratings: rated(3, 3, 3),
+		sortOrder,
+		createdAt
+	});
+
+	test('come out oldest first', () => {
+		const older = at('2026-01-01T09:00:00Z');
+		const newer = at('2026-06-01T09:00:00Z');
+		expect(compareByPriority(older, newer)).toBeLessThan(0);
+		expect(compareByPriority(newer, older)).toBeGreaterThan(0);
+	});
+
+	test('unless somebody has dragged one, which outranks their age', () => {
+		const older = at('2026-01-01T09:00:00Z', 10);
+		const newer = at('2026-06-01T09:00:00Z', 1);
+		expect(compareByPriority(newer, older)).toBeLessThan(0);
+	});
+
+	test('and the ratings still decide before either of them', () => {
+		const urgent = { ratings: rated(5, 3, 3), sortOrder: 99, createdAt: '2026-06-01T09:00:00Z' };
+		const not = { ratings: rated(1, 3, 3), sortOrder: 0, createdAt: '2026-01-01T09:00:00Z' };
+		expect(compareByPriority(urgent, not)).toBeLessThan(0);
+	});
+});
+
+describe('nought, now that it is an answer', () => {
+	test('is the bottom of the scale and below an unrated one', () => {
+		expect(RATING_MIN).toBe(0);
+		expect(
+			order([
+				['unrated', rated(null, 3, 3)],
+				['none at all', rated(0, 3, 3)]
+			])
+		).toEqual(['unrated', 'none at all']);
+	});
+
+	test('and 2.5 sits dead centre, with three answers either side', () => {
+		expect(RATING_UNRATED).toBe(2.5);
+		expect(RATING_UNRATED - RATING_MIN).toBe(RATING_MAX - RATING_UNRATED);
 	});
 });

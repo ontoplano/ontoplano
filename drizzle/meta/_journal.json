@@ -673,6 +673,13 @@
       "when": 1790092741753,
       "tag": "0095_ease_replaces_energy_and_runs_the_other_way",
       "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "6",
+      "when": 1790092741754,
+      "tag": "0096_a_rating_can_be_nothing_at_all",
+      "breakpoints": true
     }
   ]
 }

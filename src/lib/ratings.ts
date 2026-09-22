@@ -20,32 +20,36 @@ import type { PlainKey } from './i18n/keys.js';
 export const RATINGS = ['urgency', 'ease', 'interest'] as const;
 export type Rating = (typeof RATINGS)[number];
 
-export const RATING_MIN = 1;
+export const RATING_MIN = 0;
 export const RATING_MAX = 5;
 
 export type RatingValues = Record<Rating, number | null>;
 
-/** The middle of the scale: three, on a scale of one to five. */
-export const RATING_MIDPOINT = (RATING_MIN + RATING_MAX) / 2;
-
 /**
- * What a rating nobody set counts as: 2.5, for every one of them.
+ * What a rating nobody set counts as: 2.5, dead centre of nought to five.
  *
- * Not zero — a task nobody rated has no rating, and the honest expectation for
- * a number somebody has not chosen is about the middle. Not three either: a
- * task somebody deliberately marked 3 should beat one nobody weighed, so an
- * unrated one sits half a step below the middle.
+ * Not a zero — zero is a real answer now, the bottom of the scale, and "no
+ * urgency at all" is a thing somebody can mean. Not a three either. It is the
+ * exact middle, which is the honest expectation for a number nobody has
+ * chosen, and it leaves three answers below it and three above.
  *
- * What that buys is the shape of the scale. Marking a task 1 or 2 puts it
- * below everything unrated, so those two mean "later" and "later still"
- * rather than two flavours of the same shrug, while 4 and 5 are above it.
+ * What that buys is the shape of the scale: 0, 1 and 2 put a task below
+ * everything unrated, so they mean "later", "later still" and "not really" —
+ * rather than several flavours of the same shrug — while 3, 4 and 5 are above
+ * it.
+ *
+ * It is also the only half-step on the scale, which is what lets it be the
+ * slider's resting place: the thumb sits between two marks, where no answer
+ * can be mistaken for one.
  *
  * One number, once. It used to be 2.5 or 3.5 depending on which way that
  * particular rating ran, which is a rule every screen had to know and which
- * went away when ease replaced energy and all three began running the same
- * way.
+ * went away when ease replaced energy and all three began running the same way.
  */
-export const RATING_UNRATED = RATING_MIDPOINT - 0.5;
+export const RATING_UNRATED = (RATING_MIN + RATING_MAX) / 2;
+
+/** Kept for what still reads "the middle": the same number. */
+export const RATING_MIDPOINT = RATING_UNRATED;
 
 /** What a rating counts as when it is compared: its value, or the unrated one. */
 export function ratingWeight(value: number | null): number {
@@ -78,6 +82,34 @@ export function compareByRatings(a: RatingValues, b: RatingValues): number {
 		if (said !== 0) return said;
 	}
 	return 0;
+}
+
+/**
+ * The whole order, ties included: the ratings, then the older task.
+ *
+ * Three tasks answered the same way have to come out in *some* order, and
+ * until now each caller chose its own — `sortOrder`, which is the manual drag
+ * position and is nought for everything nobody has dragged, so the answer came
+ * from whatever order the query happened to return.
+ *
+ * Oldest first, deliberately. Two tasks that are alike in every way you have
+ * described differ in one way you have not: one has been waiting longer. That
+ * is the one being neglected, and newest-first would bury it for good.
+ *
+ * `sortOrder` still comes first among the ties, because dragging a task
+ * somewhere is a person saying where it goes and outranks anything inferred.
+ */
+export function compareByPriority(
+	a: { ratings: RatingValues; sortOrder?: number; createdAt?: string },
+	b: { ratings: RatingValues; sortOrder?: number; createdAt?: string }
+): number {
+	const byRatings = compareByRatings(a.ratings, b.ratings);
+	if (byRatings !== 0) return byRatings;
+
+	const byHand = (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+	if (byHand !== 0) return byHand;
+
+	return (a.createdAt ?? '').localeCompare(b.createdAt ?? '');
 }
 
 export const RATING_LABELS: Record<Rating, PlainKey> = {

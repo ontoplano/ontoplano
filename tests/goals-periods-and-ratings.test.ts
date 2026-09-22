@@ -146,10 +146,15 @@ describe('what counts as a horizon or a status', () => {
 
 describe('the three numbers a task can carry', () => {
 	test('are whole numbers on the scale, and nothing else', () => {
+		// Nought is an answer — "none at all" — and the bottom of the scale.
+		expect(isRatingValue(0)).toBe(true);
 		expect(isRatingValue(1)).toBe(true);
 		expect(isRatingValue(5)).toBe(true);
-		expect(isRatingValue(0)).toBe(false);
+		expect(isRatingValue(-1)).toBe(false);
 		expect(isRatingValue(6)).toBe(false);
+		// Including the one the slider rests on: 2.5 is the absence of an
+		// answer, and the absence of an answer is stored as null.
+		expect(isRatingValue(2.5)).toBe(false);
 		expect(isRatingValue(3.5)).toBe(false);
 		expect(isRatingValue('3')).toBe(false);
 		expect(isRatingValue(null)).toBe(false);

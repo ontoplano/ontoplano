@@ -24,7 +24,7 @@ import { localDateOf, type Ctx } from '$lib/services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 import type { Ref } from './refs.js';
 import { CLOSED_STATUSES } from '../../task-status.js';
-import { compareByRatings, RATING_MAX, RATING_MIN } from '../../ratings.js';
+import { compareByPriority } from '../../ratings.js';
 import type { Confinement } from './confinement.js';
 import { mayReadFile } from '$lib/services/media-permission.js';
 import { pictureReferrers, recordingReferrers } from '$lib/services/media-referrers.js';
@@ -722,7 +722,7 @@ const MEASURE_NAMES = {
 	}
 } as const;
 
-/** A 1–5 rating, or nothing. Bad numbers are refused before a service sees them. */
+/** A 0–5 rating, or nothing. Bad numbers are refused before a service sees them. */
 const rating = (value: unknown, what: string): number | undefined => {
 	if (value === undefined || value === null) return undefined;
 	const n = Number(value);
@@ -741,12 +741,12 @@ const rating = (value: unknown, what: string): number | undefined => {
 const ENERGY_REMOVED_IN = '0.190';
 
 const ratingArgs = {
-	urgency: { type: 'integer', description: 'How soon it has to happen, 1–5.' },
-	interest: { type: 'integer', description: 'How much they want to do it, 1–5.' },
+	urgency: { type: 'integer', description: 'How soon it has to happen, 0–5.' },
+	interest: { type: 'integer', description: 'How much they want to do it, 0–5.' },
 	ease: {
 		type: 'integer',
 		description:
-			'How easy it is, 1–5, five being easiest. Replaces `energy`, which asked the opposite question on the same scale.'
+			'How easy it is, 0–5, five being easiest. Replaces `energy`, which asked the opposite question on a scale that began at one.'
 	},
 	energy: {
 		type: 'integer',
@@ -756,6 +756,17 @@ const ratingArgs = {
 };
 
 /**
+ * The scale `energy` was asked on: one to five, and frozen at that.
+ *
+ * Written out rather than taken from `RATING_MIN` and `RATING_MAX`, which have
+ * since moved — the scale starts at nought now. A caller still saying `energy`
+ * is speaking the old scale, and the number that mirrors it has to be the old
+ * one for ever: reading today's bounds would quietly turn an energy of 5 into
+ * an ease of 0 instead of 1.
+ */
+const ENERGY_ENDS = { min: 1, max: 5 } as const;
+
+/**
  * What `energy` means now that the question is `ease`.
  *
  * Mirrored rather than refused: a caller that has not been updated is asking a
@@ -763,7 +774,7 @@ const ratingArgs = {
  * either accepting or refusing it. The same arithmetic the migration used on
  * the values already stored.
  */
-const easeFromEnergy = (value: number) => RATING_MIN + RATING_MAX - value;
+const easeFromEnergy = (value: number) => ENERGY_ENDS.min + ENERGY_ENDS.max - value;
 
 /** Whether this call reached for the old spelling, which is worth saying back. */
 const usedEnergy = (args: Record<string, unknown>) =>
@@ -1489,9 +1500,7 @@ export const TOOLS: Tool[] = [
 				rows = rows.filter((todo) => todo.notebookId === Number(args.notebookId));
 			rows = rows.filter((todo) => passesTags(todo.tags, args));
 
-			const ordered = [...rows].sort(
-				(a, b) => compareByRatings(a.ratings, b.ratings) || a.sortOrder - b.sortOrder
-			);
+			const ordered = [...rows].sort(compareByPriority);
 
 			return pageOf(ordered.slice(0, limitOf(args, 1, 20)).map(shapeTodo(detail)), rows.length, 0);
 		}
