@@ -55,6 +55,8 @@ sentence somebody agrees to when they grant it.
 | Endpoint                                     | Method | Scope             |
 | -------------------------------------------- | ------ | ----------------- |
 | `/.well-known/assetlinks.json`               | GET    | —                 |
+| `/.well-known/oauth-authorization-server`    | GET    | —                 |
+| `/.well-known/oauth-protected-resource`      | GET    | —                 |
 | `/account/export`                            | GET    | —                 |
 | `/api/assistant/chat`                        | POST   | —                 |
 | `/api/billing/paddle`                        | POST   | —                 |
@@ -112,6 +114,8 @@ sentence somebody agrees to when they grant it.
 | `/media/[id]`                                | GET    | —                 |
 | `/media/audio`                               | POST   | —                 |
 | `/media/audio/[id]`                          | GET    | —                 |
+| `/oauth/register`                            | POST   | —                 |
+| `/oauth/token`                               | POST   | —                 |
 | `/robots.txt`                                | GET    | —                 |
 | `/settings/account/export`                   | GET    | —                 |
 | `/shopping`                                  | GET    | —                 |
@@ -134,6 +138,14 @@ fingerprints in the usual colon-separated hex form.
 List both your upload key and Play's app-signing key: Play re-signs uploads,
 so an app that only trusts the upload key shows the URL bar for every user
 who installs from the store while working perfectly on the developer's phone.
+
+**GET**
+
+### `/.well-known/oauth-authorization-server`
+
+**GET**
+
+### `/.well-known/oauth-protected-resource`
 
 **GET**
 
@@ -841,6 +853,37 @@ through an `<audio>` element pointed at this URL, and a container that lies
 about its insides is then noise rather than a document on this origin.
 
 **GET**
+
+### `/oauth/register`
+
+A client introducing itself (RFC 7591).
+
+Unauthenticated, because it has to be: the assistant meets this instance
+before the person it belongs to has signed in, and there is nobody to
+authenticate as yet. Nothing it can do here reaches an account — it gets an
+id, and an id is worth nothing until somebody says yes on the consent
+screen.
+
+It is still the one write an anonymous caller can cause, so it is budgeted
+per address, and a refusal is a refusal rather than a queue.
+
+**POST**
+
+### `/oauth/token`
+
+A code, spent for a key.
+
+What comes out is an ordinary `api_tokens` row — the same thing the key form
+makes, carrying the scopes the person agreed to and named after the client
+that asked, so it stands in the list under Settings → AI & Integrations with
+a revoke button beside it. An assistant connected this way is not a second
+kind of access with a second way to take it away.
+
+The token does not expire, so no refresh token is issued: a refresh of
+something that never goes stale is a round trip that buys nobody anything.
+Revoking is what ends it.
+
+**POST**
 
 ### `/robots.txt`
 

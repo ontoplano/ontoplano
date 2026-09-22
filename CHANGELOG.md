@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.4 — 2026-09-22
+
+- **An assistant can connect itself.** Paste your instance's address into
+  Claude, ChatGPT or anything else that speaks MCP, and instead of asking you
+  for a key it sends you to a screen on your own instance: this is what is
+  asking, this is what it could do, connect it or don't. No key is typed or
+  pasted anywhere. What it gets is an ordinary key, named after it, revocable
+  in the same list as the rest — and deleting is a box on that screen which
+  starts unticked.
+
 ## 0.182.3 — 2026-09-22
 
 - **The bans left the administration page.** ontoplano no longer interfaces

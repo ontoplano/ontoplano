@@ -2,6 +2,7 @@
 
 /** Every message this app has. A key not in here does not exist. */
 export type MessageKey =
+	| 'accountImport.aCodeBelongsToTheHandshake'
 	| 'accountImport.aDeviceAgreedToHear'
 	| 'accountImport.aFeedAddressBelongsTo'
 	| 'accountImport.aManifestBelongsToThe'
@@ -1564,6 +1565,16 @@ export type MessageKey =
 	| 'notify.verb.untick'
 	| 'notify.verb.write'
 	| 'notify.whatTheDayTurnedOut'
+	| 'oauth.andLetItDeleteThings'
+	| 'oauth.connectIt'
+	| 'oauth.continue'
+	| 'oauth.handingYouBackTo'
+	| 'oauth.itWouldBeAbleTo'
+	| 'oauth.somethingWantsToConnect'
+	| 'oauth.takingYouBack'
+	| 'oauth.wantsToConnectTo'
+	| 'oauth.whatItDeletesIsGone'
+	| 'oauth.youCanTakeThisBack'
 	| 'offline.noConnection'
 	| 'offline.offlineOntoplano'
 	| 'offline.ontoplanoNeedsTheNetworkFor'
@@ -3400,6 +3411,8 @@ export interface MessageValuesFor {
 	'notify.phrase': { verb: string | number; what: string | number };
 	'notify.titleMany': { count: number; who: string | number };
 	'notify.titleOne': { verb: string | number; what: string | number; who: string | number };
+	'oauth.handingYouBackTo': { client: string | number };
+	'oauth.wantsToConnectTo': { client: string | number };
 	'picker.nChosen': { count: number };
 	'pictures.hint': { kilobytes: string | number };
 	'ratingPicker.leaveUnanswered': { rating: string | number };

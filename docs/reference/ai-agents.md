@@ -94,6 +94,33 @@ laptop is not reachable by an instance on a server somewhere else.
 
 <!-- /tabs -->
 
+## Connecting without a key
+
+Paste your instance's address into an assistant that speaks MCP — Claude,
+ChatGPT, or anything else with a connector screen — and it will do the rest:
+
+```text
+https://app.ontoplano.com/api/mcp
+```
+
+The assistant discovers that the address is protected, registers itself, and
+sends you here. You see a screen on your own instance saying which assistant is
+asking and what it would be able to do, you press **Connect it**, and you are
+handed back. No key is typed, pasted or stored by anybody.
+
+What it gets is an ordinary key, made for it and named after it, so it stands
+in the list under **Settings → AI & Integrations → Integrations** with a revoke
+button beside it like every other. Deleting is a box on that consent screen and
+it starts unticked — the connection reads and writes, and takes nothing away
+unless you said it may.
+
+Two details for anyone implementing against it: the flow is the authorization
+code grant with PKCE (`S256` only — there is no `plain`, and no implicit
+grant), and the discovery documents are at
+`/.well-known/oauth-protected-resource` and
+`/.well-known/oauth-authorization-server`. The token that comes out does not
+expire, so there is no refresh token to hold; revoking is what ends it.
+
 ## Make a key
 
 **Settings → AI & Integrations → AI → Make a key.** It is shown once, so keep
@@ -160,8 +187,10 @@ claude mcp add --scope user --transport http ontoplano https://app.ontoplano.com
 `--scope user` is what makes it permanent everywhere. Without it the server is
 written into whichever project you were standing in.
 
-**Claude Desktop.** Its connector screen asks for an OAuth client id and has
-nowhere to put a key, so this goes through `mcp-remote`:
+**Claude Desktop.** Its connector screen speaks OAuth, so the address on its
+own is the whole setup — see [Connecting without a key](#connecting-without-a-key)
+above. `mcp-remote` is still there for a key you would rather hand over
+yourself:
 
 ```json
 {

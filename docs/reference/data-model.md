@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**79 tables.**
+**81 tables.**
 
 | Table                                                       | Columns | Belongs to a user |
 | ----------------------------------------------------------- | ------- | ----------------- |
@@ -55,6 +55,8 @@ exist.
 | [`model_provider_keys`](#model_provider_keys)               | 9       | yes               |
 | [`newsletter_issues`](#newsletter_issues)                   | 6       | —                 |
 | [`notebooks`](#notebooks)                                   | 8       | yes               |
+| [`oauth_clients`](#oauth_clients)                           | 7       | —                 |
+| [`oauth_codes`](#oauth_codes)                               | 11      | yes               |
 | [`people`](#people)                                         | 12      | yes               |
 | [`plan_members`](#plan_members)                             | 5       | —                 |
 | [`planning_schemes`](#planning_schemes)                     | 5       | yes               |
@@ -960,6 +962,43 @@ Indexes:
 
 - `notebooks_user_idx` on `user_id`
 - `notebooks_user_title_unique` on `user_id`, `title` — unique
+
+## oauth_clients
+
+| Column          | Type    | Null     | Default | Notes             |
+| --------------- | ------- | -------- | ------- | ----------------- |
+| `id`            | integer | not null | —       | primary key, auto |
+| `client_id`     | text    | not null | —       | —                 |
+| `name`          | text    | not null | —       | —                 |
+| `redirect_uris` | text    | not null | —       | —                 |
+| `uri`           | text    | null     | —       | —                 |
+| `created_at`    | text    | not null | —       | —                 |
+| `updated_at`    | text    | not null | —       | —                 |
+
+Indexes:
+
+- `oauth_clients_client_id_unique` on `client_id` — unique
+
+## oauth_codes
+
+| Column           | Type    | Null     | Default | Notes             |
+| ---------------- | ------- | -------- | ------- | ----------------- |
+| `id`             | integer | not null | —       | primary key, auto |
+| `code_hash`      | text    | not null | —       | —                 |
+| `client_id`      | text    | not null | —       | —                 |
+| `user_id`        | text    | not null | —       | → `user.id`       |
+| `scopes`         | text    | not null | `''`    | —                 |
+| `code_challenge` | text    | not null | —       | —                 |
+| `redirect_uri`   | text    | not null | —       | —                 |
+| `resource`       | text    | null     | —       | —                 |
+| `expires_at`     | text    | not null | —       | —                 |
+| `used_at`        | text    | null     | —       | —                 |
+| `created_at`     | text    | not null | —       | —                 |
+
+Indexes:
+
+- `oauth_codes_hash_unique` on `code_hash` — unique
+- `oauth_codes_user_idx` on `user_id`
 
 ## people
 

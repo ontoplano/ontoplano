@@ -3,6 +3,8 @@
 import type { Catalogue } from '../core.js';
 
 export const messages: Catalogue = {
+	'accountImport.aCodeBelongsToTheHandshake':
+		'Uma conexão de assistente pela metade pertence à instância onde foi iniciada.',
 	'accountImport.aDeviceAgreedToHear':
 		'um aparelho concordou em ouvir a instância a que se inscreveu',
 	'accountImport.aFeedAddressBelongsTo': 'um endereço de feed pertence à instância que o serve',
@@ -1781,6 +1783,18 @@ export const messages: Catalogue = {
 	'notify.verb.untick': 'desmarcou',
 	'notify.verb.write': 'escreveu',
 	'notify.whatTheDayTurnedOut': 'Como o dia acabou sendo, na hora que você escolher.',
+	'oauth.andLetItDeleteThings': '…e deixar que ele apague coisas',
+	'oauth.connectIt': 'Conectar',
+	'oauth.continue': 'Continuar',
+	'oauth.handingYouBackTo': 'Levando você de volta para {client}…',
+	'oauth.itWouldBeAbleTo': 'Ele poderá',
+	'oauth.somethingWantsToConnect': 'Conectar um assistente',
+	'oauth.takingYouBack': 'Conectado',
+	'oauth.wantsToConnectTo': '{client} quer se conectar ao seu ontoplano.',
+	'oauth.whatItDeletesIsGone':
+		'O que ele apaga some. Sem isso ele cria e altera coisas, mas nunca as remove.',
+	'oauth.youCanTakeThisBack':
+		'Ele aparece em Configurações → IA e integrações, onde você pode revogá-lo quando quiser.',
 	'offline.noConnection': 'Sem conexão',
 	'offline.offlineOntoplano': 'Offline · Ontoplano',
 	'offline.ontoplanoNeedsTheNetworkFor':

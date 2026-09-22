@@ -86,6 +86,12 @@ const pages = import.meta.glob(
 		'!/src/routes/dev/**',
 		'!/src/routes/legal/**',
 		'!/src/routes/login/**',
+		/*
+		 * The consent screen an assistant sends somebody to. It is about a
+		 * server other software reaches over a network, which a device instance
+		 * is not — the same reason Integrations stayed behind.
+		 */
+		'!/src/routes/oauth/**',
 		'!/src/routes/mail/**',
 		'!/src/routes/newsletter/**',
 		/*
@@ -145,6 +151,7 @@ const notHere = import.meta.glob(
 		'/src/routes/dev/**/+page.server.ts',
 		'/src/routes/legal/**/+page.server.ts',
 		'/src/routes/login/**/+page.server.ts',
+		'/src/routes/oauth/**/+page.server.ts',
 		'/src/routes/mail/**/+page.server.ts',
 		'/src/routes/newsletter/**/+page.server.ts',
 		'/src/routes/settings/account/**/+page.server.ts',

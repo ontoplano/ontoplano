@@ -738,7 +738,13 @@ const handleAccessHolds: Handle = async ({ event, resolve }) => {
 // `/demo` makes the demo's account from its own action, which is a POST by
 // somebody who is not signed in — that is the whole point of it. It answers
 // 404 unless this instance is the demo.
-const PUBLIC_WRITES = ['/login', '/api/auth', '/demo'];
+// The two doors an assistant knocks on before anybody has signed in: it
+// registers itself, and later swaps its code for a token. Neither reaches an
+// account — a client id is worth nothing until somebody says yes on the
+// consent screen, and a code is worth nothing without the verifier it was
+// issued against. The consent screen itself is not here: that one is a page
+// action and needs the session it runs as.
+const PUBLIC_WRITES = ['/login', '/api/auth', '/demo', '/oauth/register', '/oauth/token'];
 
 const handleSignedOutWrites: Handle = ({ event, resolve }) => {
 	const writes = event.request.method !== 'GET' && event.request.method !== 'HEAD';
@@ -752,7 +758,48 @@ const handleSignedOutWrites: Handle = ({ event, resolve }) => {
 	return resolve(event);
 };
 
+/**
+ * Cross-site form posts, refused — the check SvelteKit used to do for us.
+ *
+ * It is here rather than in `svelte.config.js` for one reason: OAuth's token
+ * endpoint is a form post made by a program, which has no `Origin` header at
+ * all, and the framework's version refuses those outright. It is the only
+ * exemption, and it is a safe one — that endpoint reads no cookie and grants
+ * nothing without a code and the PKCE verifier it was issued against, so there
+ * is no ambient authority for a forged post to borrow. Everything else in the
+ * app is a cookie-authenticated form action and is checked exactly as before.
+ *
+ * Mirrors SvelteKit's rule deliberately: the same unsafe methods, the same
+ * three content types a browser will send cross-origin without a preflight,
+ * and the same comparison against this instance's own origin.
+ */
+const FORM_CONTENT_TYPES = [
+	'application/x-www-form-urlencoded',
+	'multipart/form-data',
+	'text/plain'
+];
+const UNSAFE_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
+/** The one door a browser never knocks on. See above. */
+const CSRF_EXEMPT = ['/oauth/token'];
+
+const handleCsrf: Handle = ({ event, resolve }) => {
+	const type = (event.request.headers.get('content-type') ?? '').split(';')[0].trim();
+	const forgeable =
+		UNSAFE_METHODS.includes(event.request.method) &&
+		FORM_CONTENT_TYPES.includes(type) &&
+		!CSRF_EXEMPT.includes(event.url.pathname);
+
+	if (forgeable && event.request.headers.get('origin') !== event.url.origin) {
+		return new Response(`Cross-site ${event.request.method} form submissions are forbidden`, {
+			status: 403
+		});
+	}
+
+	return resolve(event);
+};
+
 export const handle: Handle = sequence(
+	handleCsrf,
 	handleRequestLog,
 	handleSecurityHeaders,
 	handleNativeApp,

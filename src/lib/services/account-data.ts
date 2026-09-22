@@ -209,6 +209,10 @@ export const USER_TABLES: OwnedTable[] = [
 	// the import on purpose: an export is the person's own hands, and a moved
 	// instance whose assistant still answers is the point of moving one.
 	owned('modelProviderKeys', schema.modelProviderKeys as never),
+	// Half-finished handshakes with an assistant. They die in five minutes and
+	// are listed for the same reason everything else is: a table with a
+	// `user_id` that nothing names is a table the deletion leaves behind.
+	owned('oauthCodes', schema.oauthCodes as never),
 	owned('userSettings', schema.userSettings as never)
 ];
 

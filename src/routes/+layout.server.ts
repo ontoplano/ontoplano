@@ -61,6 +61,16 @@ export const load: LayoutServerLoad = async (event) => {
 	// The demo's waiting room is where an account is made, so by definition
 	// nobody is signed in while it is drawn. It 404s off a demo instance.
 	const isDemoDoor = event.url.pathname === '/demo';
+	/*
+	 * The screen an assistant sends somebody to, which answers its own door.
+	 *
+	 * Signing in is part of what it is for, and it has somewhere to send them
+	 * afterwards — the consent screen they were already walking towards. This
+	 * blanket redirect drops that, so the page is left to do it: see
+	 * `oauth/authorize`, which sends them to `/login?next=…` and gets them
+	 * back. Everything else still lands on a bare login page.
+	 */
+	const isConnect = event.url.pathname === '/oauth/authorize';
 
 	if (
 		!event.locals.user &&
@@ -71,7 +81,8 @@ export const load: LayoutServerLoad = async (event) => {
 		!isFrontPage &&
 		!isMailLink &&
 		!isNewsletter &&
-		!isDemoDoor
+		!isDemoDoor &&
+		!isConnect
 	) {
 		return redirect(302, '/login');
 	}

@@ -38,6 +38,9 @@ export const AUDIT_EVENTS = [
 	'seat_accepted',
 	'seat_declined',
 	'seat_removed',
+	// An assistant given the run of the account by name, and when — the end of
+	// the connect flow, where a key is minted without anybody handling one.
+	'assistant_connected',
 	// A model-provider key arriving or leaving is a credential changing hands,
 	// and credentials are exactly what this log answers for.
 	'assistant_key_saved',

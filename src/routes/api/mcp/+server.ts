@@ -81,7 +81,22 @@ export const POST: RequestHandler = async (event) => {
 			headers: { 'mcp-protocol-version': PROTOCOL_VERSION }
 		});
 	} catch (e) {
-		return toJsonError(e);
+		const answer = toJsonError(e);
+		/*
+		 * A 401 says where to ask permission, which is the whole of "no
+		 * configuration" from the client's side (RFC 9728). A client that does
+		 * not speak OAuth ignores the header and is told the same thing it
+		 * always was; one that does follows it, registers itself, and sends the
+		 * person to the consent screen. Neither has to be told an address by
+		 * hand.
+		 */
+		if (answer.status === 401) {
+			answer.headers.set(
+				'www-authenticate',
+				`Bearer resource_metadata="${event.url.origin}/.well-known/oauth-protected-resource"`
+			);
+		}
+		return answer;
 	}
 };
 

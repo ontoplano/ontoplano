@@ -20,6 +20,19 @@ import { claimFirstAccount } from '$lib/server/services/admin';
 import { onboardEntitlement, whyItCannotSell } from '$lib/server/services/billing';
 import { WANTED_PLAN_COOKIE } from '$lib/server/services/plan-intent';
 
+/**
+ * Where to go after signing in, when something sent them here to do it.
+ *
+ * Only ever a path on this instance: a `next` that could name another site is
+ * an open redirect, and a sign-in page is exactly where one is worth having.
+ * So it must start with a single slash — `//host` is a URL with the scheme
+ * left off, and was the first thing tried against this.
+ */
+function nextAfter(url: URL): string {
+	const next = url.searchParams.get('next') ?? '';
+	return next.startsWith('/') && !next.startsWith('//') ? next : '/';
+}
+
 export const load: PageServerLoad = async (event) => {
 	// On the demo, the session that arrives here is almost always a minted
 	// visitor copy — and this form is the operator's only way in, so it stays
@@ -27,7 +40,7 @@ export const load: PageServerLoad = async (event) => {
 	// replaces the visitor session. An account with a password of its own is
 	// signed in for real and goes home like anywhere else.
 	if (event.locals.user && !(isDemo() && isDemoAccount(event.locals.user.id))) {
-		return redirect(302, '/');
+		return redirect(302, nextAfter(event.url));
 	}
 	// The front page's Create account lands straight on the register form
 	// (?register) — one step fewer between "I want this" and the first field.
@@ -81,7 +94,15 @@ export const load: PageServerLoad = async (event) => {
 		/** Named on the register form, so the plan chosen is the plan shown. */
 		wantedPlan: wantsFamily ? ('family' as const) : ('solo' as const),
 		/** Says so before somebody puts their week into a copy of the app. */
-		staging: isStaging()
+		staging: isStaging(),
+		/*
+		 * Where to go once they are in, when something sent them here to sign
+		 * in first — an assistant's consent screen is the one that does. It
+		 * rides on the form's own action, because a form action replaces the
+		 * query string it was posted from and this would otherwise be dropped
+		 * exactly when it matters.
+		 */
+		next: nextAfter(event.url)
 	};
 };
 
@@ -105,7 +126,7 @@ export const actions: Actions = {
 			return fail(500, { message: 'Unexpected error' });
 		}
 
-		return redirect(302, '/');
+		return redirect(302, nextAfter(event.url));
 	},
 	/**
 	 * Register, if this instance is taking anybody.

@@ -652,6 +652,13 @@
       "when": 1790026719193,
       "tag": "0092_a_provider_key_for_the_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "6",
+      "when": 1790036540217,
+      "tag": "0093_a_door_assistants_can_knock_on",
+      "breakpoints": true
     }
   ]
 }

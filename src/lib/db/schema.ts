@@ -1624,6 +1624,72 @@ export const modelProviderKeys = sqliteTable(
 );
 
 /**
+ * The clients that asked to connect, and the codes they are mid-handshake on.
+ *
+ * An assistant used to need a key pasted into a config file, which is the step
+ * most people never finish: they paste the instance address into Claude or
+ * ChatGPT, it asks for a key, and that is where it ends. So the instance
+ * speaks OAuth as well — the client registers itself, the person is shown a
+ * consent screen on their own instance and says yes, and what comes out the
+ * other end is an ordinary `api_tokens` row. Nothing downstream knows the
+ * difference, which is the point: one kind of key, one revoke button.
+ *
+ * A client is nobody's: registration happens before anybody has signed in, and
+ * the same "Claude" row serves every account that connects with it. What is
+ * per-account is the token the flow ends in.
+ */
+export const oauthClients = sqliteTable(
+	'oauth_clients',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		clientId: text('client_id').notNull(),
+		/** What the consent screen calls it. The client's own claim about itself. */
+		name: text('name').notNull(),
+		/** Where a code may be sent, as JSON. Matched whole, never by prefix. */
+		redirectUris: text('redirect_uris').notNull(),
+		/** What it says it is, for somebody reading the list later. */
+		uri: text('uri'),
+		createdAt: text('created_at').notNull(),
+		updatedAt: text('updated_at').notNull()
+	},
+	(table) => [uniqueIndex('oauth_clients_client_id_unique').on(table.clientId)]
+);
+
+/**
+ * One authorization code, hashed, single-use and short-lived.
+ *
+ * Hashed for the same reason a token is: a stolen database must not be a set
+ * of working codes. `used_at` rather than a delete, so a code replayed inside
+ * its five minutes is a refusal we can see rather than a silent second token.
+ */
+export const oauthCodes = sqliteTable(
+	'oauth_codes',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		codeHash: text('code_hash').notNull(),
+		clientId: text('client_id').notNull(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		/** What the person agreed to, comma-joined, as `api_tokens` stores them. */
+		scopes: text('scopes').notNull().default(''),
+		/** PKCE, S256 only — the verifier's hash, never the verifier. */
+		codeChallenge: text('code_challenge').notNull(),
+		/** The one this code may be redeemed against, checked again at the token door. */
+		redirectUri: text('redirect_uri').notNull(),
+		/** What the client said it wanted a token for (RFC 8707), where it said. */
+		resource: text('resource'),
+		expiresAt: text('expires_at').notNull(),
+		usedAt: text('used_at'),
+		createdAt: text('created_at').notNull()
+	},
+	(table) => [
+		uniqueIndex('oauth_codes_hash_unique').on(table.codeHash),
+		index('oauth_codes_user_idx').on(table.userId)
+	]
+);
+
+/**
  * Webhook subscriptions — the other half of the plugin platform.
  *
  * Streams let an external program push data in; this lets one hear about

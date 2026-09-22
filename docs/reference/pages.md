@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**60 pages, 244 actions.**
+**62 pages, 246 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -53,6 +53,8 @@ write surface for everything else; both end up calling the same
 | `/notebooks/people`                  | `create`, `update`, `setPicture`, `removePicture`, `delete`                                                                                                                                                                                                                                                                                                                                          |
 | `/notebooks/tags`                    | `save`, `delete`                                                                                                                                                                                                                                                                                                                                                                                     |
 | `/notebooks/weekly`                  | —                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `/oauth/authorize`                   | `allow`, `deny`                                                                                                                                                                                                                                                                                                                                                                                      |
+| `/oauth/connected`                   | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/offline`                           | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/reminders`                         | `create`, `edit`, `dismiss`, `remove`, `addSound`, `removeSound`, `setSound`                                                                                                                                                                                                                                                                                                                         |
 | `/ring`                              | —                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -260,6 +262,13 @@ price to move something into a drawer.
 
 ### `/login`
 
+Where to go after signing in, when something sent them here to do it.
+
+Only ever a path on this instance: a `next` that could name another site is
+an open redirect, and a sign-in page is exactly where one is worth having.
+So it must start with a single slash — `//host` is a URL with the scheme
+left off, and was the first thing tried against this.
+
 **`signUp`**
 
 Register, if this instance is taking anybody.
@@ -355,6 +364,41 @@ Every week you have written about, in one place.
 The weekly note was reachable only by navigating to the week it belonged to,
 which is a thing nobody does — so the one running account of a year this app
 keeps was write-only. It is writing, so it belongs where the writing is.
+
+### `/oauth/authorize`
+
+"Something wants to connect to your ontoplano."
+
+The only screen in the flow, and the only place anybody decides anything.
+An assistant sent the person here; this says who is asking, what they would
+be handing over, and offers the one grant that is not included — the same
+shape the key form uses, because it is the same decision.
+
+Everything the client sent is checked before a word of it is drawn. Two
+rules do the real work: the redirect address must be one the client
+registered, matched whole, and PKCE is required — so a code intercepted on
+the way back is worth nothing to whoever took it.
+
+**`allow`**
+
+Yes — and the code goes back to the address the client registered.
+
+**`deny`**
+
+No, said in the words the client understands.
+
+### `/oauth/connected`
+
+The last step, and the only reason it exists is the browser's rules.
+
+`form-action 'self'` — right for every form in the app — also governs where
+a form's _redirect_ may land, so the consent screen cannot send anybody
+straight back to the assistant. This page is what it sends them to instead,
+and the hand-back from here is an ordinary navigation.
+
+Which makes this an open redirect unless it is careful, so it is: the
+address must be one the named client registered, compared against the list
+rather than sniffed for a hostname.
 
 ### `/offline`
 

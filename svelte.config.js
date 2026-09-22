@@ -120,12 +120,26 @@ const config = {
 				'base-uri': ['self'],
 				'object-src': ['none']
 			}
-		}
-		// csrf.checkOrigin is left at its default of `true`. It is the only CSRF
-		// defence this app has — there are no tokens — so turning it off makes
-		// every form action forgeable by any page on the internet. If a form
-		// starts failing behind a proxy, the fix is to set ORIGIN correctly, not
-		// to disable the check.
+		},
+		/*
+		 * The same check, moved rather than dropped — see `handleCsrf` in
+		 * `hooks.server.ts`, which is now where it lives and which runs before
+		 * anything else.
+		 *
+		 * It is still the only CSRF defence this app has — there are no tokens —
+		 * so it is not weaker for having moved: same methods, same content
+		 * types, same comparison against `ORIGIN`. What moving it buys is one
+		 * exemption the framework's version cannot express: OAuth's token
+		 * endpoint is a form post from a program with no browser and therefore
+		 * no `Origin` header, which the framework refuses outright. Nothing
+		 * there rides on a cookie — it proves itself with a code and a PKCE
+		 * verifier no other page can know — so there is no session for a
+		 * forgery to borrow.
+		 *
+		 * If a form starts failing behind a proxy, the fix is still to set
+		 * ORIGIN correctly, not to widen the exemption.
+		 */
+		csrf: { checkOrigin: false }
 	},
 	preprocess: [mdsvex({ extensions: ['.svx', '.md'] })],
 	extensions: ['.svelte', '.svx', '.md']

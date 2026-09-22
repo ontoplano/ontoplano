@@ -71,6 +71,7 @@ shows up here on the next build.
 | [`notebook-media`](#notebook-media)              | Every picture that is in a notebook, as a gallery album.                                                                                                                                                                                                             |
 | [`notebooks`](#notebooks)                        | Notebooks: a subject you write against, with no deadline.                                                                                                                                                                                                            |
 | [`notifications`](#notifications)                | Everything the app will tell you about, in one list.                                                                                                                                                                                                                 |
+| [`oauth`](#oauth)                                | Connecting an assistant without anybody handling a key.                                                                                                                                                                                                              |
 | [`onboarding-templates`](#onboarding-templates)  | The starter weeks, as data.                                                                                                                                                                                                                                          |
 | [`onboarding`](#onboarding)                      | First run.                                                                                                                                                                                                                                                           |
 | [`people`](#people)                              | The people in your life, and where they turn up.                                                                                                                                                                                                                     |
@@ -3368,6 +3369,93 @@ The time one of the timed ones goes off, as `HH:MM`.
 - `Notification` — A notification somebody can turn off, as the settings screen draws it.
 - `NotificationId`
 - `NotificationRow` — What the settings screen draws: every notification, with this account's answers already in it.
+
+## oauth
+
+Connecting an assistant without anybody handling a key.
+
+The flow is the one Claude, ChatGPT and the MCP clients already walk: the
+client discovers this instance is protected, registers itself, sends the
+person here to say yes, and swaps the code it gets back for a token. What
+this file owns is the middle — clients, codes and the rules about both. The
+token at the end is an ordinary `api_tokens` row minted by `tokens.ts`, so
+revoking a connected assistant is the same button as revoking a key.
+
+Deliberately small: authorization code grant with PKCE and nothing else. No
+implicit grant (removed in OAuth 2.1), no client secrets (every client here
+is a public one — a desktop app cannot keep a secret), no refresh tokens,
+because the token this issues does not expire and a refresh of a token that
+never goes stale is a round trip that buys nothing.
+
+### Functions
+
+#### `isUsableRedirect(raw)`
+
+Where a code may be sent back to.
+
+`https` anywhere, and `http` only on this machine — which is not a loophole
+but the ordinary case: a desktop client listens on `http://127.0.0.1:PORT`
+because there is nothing to encrypt between a process and itself. Anything
+else is a native app's own scheme (`cursor://`, `com.example.app:/cb`),
+allowed because the protection here is the exact match at both doors, not
+the scheme.
+
+#### `registerClient(input)`
+
+A client registering itself, which happens before anybody has signed in.
+
+Anonymous by design (RFC 7591): the assistant has no account here and the
+person it belongs to has not arrived yet. That makes this the one write in
+the app an unauthenticated caller can cause, so the route in front of it
+rate limits, and everything stored is bounded and never trusted as words:
+the name lands on a consent screen and is the client's claim about itself,
+not ours about it.
+
+#### `findClient(clientId)`
+
+#### `scopesFor(asked, mayDelete)`
+
+What an assistant connected this way may do.
+
+The same set the key form offers — everything an assistant reads and writes
+— with deleting left out unless the person ticked it on the consent screen.
+A client may ask for less by naming scopes; it may not ask for more than
+this, and a scope nobody recognises is dropped rather than refused, because
+a client guessing at names should still connect with what it can have.
+
+#### `issueCode(input)`
+
+The code handed back through the browser, and its hash left here.
+
+#### `redeemCode(input)`
+
+A code spent, once.
+
+Every refusal here is the same refusal on purpose — a token endpoint that
+says which half was wrong is a token endpoint that can be asked. Marked used
+before anything is minted, so two requests racing the same code cannot both
+come out the other side with a token.
+
+#### `forgetStaleCodes(now)`
+
+Codes nobody came back for. Cheap, and run wherever one is issued.
+
+#### `protectedResourceMetadata(origin)`
+
+What this instance says about itself, to a client that has not met it.
+
+Two documents at two well-known addresses, and between them they are the
+whole of "no configuration": the client is told where the MCP endpoint is,
+which authorization server guards it, where to register, where to send the
+person, and where to bring the code back. Nobody types anything but the
+instance's address.
+
+#### `authorizationServerMetadata(origin)`
+
+### Types
+
+- `OAuthClient`
+- `RedeemedCode`
 
 ## onboarding-templates
 

@@ -81,7 +81,14 @@
 
 		<form
 			method="post"
-			action={mode === 'login' ? '?/signIn' : mode === 'register' ? '?/signUp' : '?/requestReset'}
+			action={(mode === 'login'
+				? '?/signIn'
+				: mode === 'register'
+					? '?/signUp'
+					: '?/requestReset') +
+				// Carried by hand: `?/signIn` replaces the whole query string,
+				// so where somebody was headed is lost without this.
+				(data.next && data.next !== '/' ? `&next=${encodeURIComponent(data.next)}` : '')}
 			use:enhance
 		>
 			{#if mode === 'register' && (data.needsInvite || showInvite)}

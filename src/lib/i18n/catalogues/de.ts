@@ -3,6 +3,8 @@
 import type { Catalogue } from '../core.js';
 
 export const messages: Catalogue = {
+	'accountImport.aCodeBelongsToTheHandshake':
+		'Eine halb fertige Assistenten-Verbindung gehört zu der Instanz, auf der sie begonnen wurde.',
 	'accountImport.aDeviceAgreedToHear':
 		'ein Gerät hat zugestimmt, von der Instanz zu hören, die es abonniert hat',
 	'accountImport.aFeedAddressBelongsTo':
@@ -1791,6 +1793,18 @@ export const messages: Catalogue = {
 	'notify.verb.untick': 'abgewählt',
 	'notify.verb.write': 'geschrieben',
 	'notify.whatTheDayTurnedOut': 'Wie der Tag tatsächlich war, zu einer Zeit, die Sie wählen.',
+	'oauth.andLetItDeleteThings': '…und ihn Dinge löschen lassen',
+	'oauth.connectIt': 'Verbinden',
+	'oauth.continue': 'Weiter',
+	'oauth.handingYouBackTo': 'Zurück zu {client}…',
+	'oauth.itWouldBeAbleTo': 'Er könnte',
+	'oauth.somethingWantsToConnect': 'Einen Assistenten verbinden',
+	'oauth.takingYouBack': 'Verbunden',
+	'oauth.wantsToConnectTo': '{client} möchte sich mit deinem ontoplano verbinden.',
+	'oauth.whatItDeletesIsGone':
+		'Gelöschtes ist weg. Ohne dies legt er an und ändert, nimmt aber nie etwas fort.',
+	'oauth.youCanTakeThisBack':
+		'Er steht unter Einstellungen → KI & Integrationen und kann dort jederzeit widerrufen werden.',
 	'offline.noConnection': 'Keine Verbindung',
 	'offline.offlineOntoplano': 'Offline · Ontoplano',
 	'offline.ontoplanoNeedsTheNetworkFor':
