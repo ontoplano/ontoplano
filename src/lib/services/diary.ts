@@ -62,6 +62,7 @@ export function listEntries(ctx: Ctx) {
 		.select({
 			id: diaryEntries.id,
 			seq: diaryEntries.seq,
+			diarySeq: diaryEntries.diarySeq,
 			content: diaryEntries.content,
 			forDate: diaryEntries.forDate,
 			createdAt: diaryEntries.createdAt,
@@ -299,15 +300,21 @@ export function deleteEntry(ctx: Ctx, id: number): void {
 /**
  * Two numbers, both counted at the moment of writing.
  *
- * `seq` is the account's own numbering — every piece of writing it holds, which
- * is what a `#12` reference means. `notebookSeq` is the notebook's, so the
- * fourth note about the kitchen is #4 rather than #36. Both are read and then
- * written, so the whole thing is one transaction: without it two writes landing
- * together would read the same highest number and the second would be rejected
- * by the unique index.
+ * `seq` is the account's own numbering of every piece of writing it holds, and
+ * it is the row's identity rather than anything a person reads. `notebookSeq`
+ * is the notebook's, so the fourth note about the kitchen is #4 rather than
+ * #36. `diarySeq` is the diary's, for an entry that belongs to no notebook —
+ * the thirtieth diary entry is #30, where `seq` would have called it #127
+ * because it was counting the notebooks too.
+ *
+ * All read and then written, so the whole thing is one transaction: without it
+ * two writes landing together would read the same highest number and the second
+ * would be rejected by the unique index.
  */
 /** Where the account's highest-ever entry number is remembered. */
 const SEQ_MARK_KEY = 'diary.seq.highest';
+/** And the diary's own, which is the number the diary actually shows. */
+const DIARY_MARK_KEY = 'diary.number.highest';
 
 function insertEntry(
 	ctx: Ctx,
@@ -333,6 +340,26 @@ function insertEntry(
 		const highest = Math.max(present, everUsed);
 		setUserSetting(ctx.userId, SEQ_MARK_KEY, String(highest + 1));
 
+		/*
+		 * The diary's own count, on the same high-water bargain as `seq`: the
+		 * highest ever given, not the highest still present, so deleting the
+		 * newest entry does not hand its number to the next one — and a `#12`
+		 * somebody wrote keeps meaning the entry it meant.
+		 */
+		const inDiary = !notebookId;
+		let diarySeq = null;
+		if (inDiary) {
+			const presentDiary =
+				tx
+					.select({ value: max(diaryEntries.diarySeq) })
+					.from(diaryEntries)
+					.where(eq(diaryEntries.userId, ctx.userId))
+					.get()?.value ?? 0;
+			const everDiary = Number(getUserSetting(ctx.userId, DIARY_MARK_KEY) ?? 0);
+			diarySeq = Math.max(presentDiary, everDiary) + 1;
+			setUserSetting(ctx.userId, DIARY_MARK_KEY, String(diarySeq));
+		}
+
 		const highestInNotebook = notebookId
 			? (tx
 					.select({ value: max(diaryEntries.notebookSeq) })
@@ -349,6 +376,7 @@ function insertEntry(
 				title,
 				content,
 				seq: highest + 1,
+				diarySeq,
 				notebookId: notebookId ?? null,
 				notebookSeq: highestInNotebook === null ? null : highestInNotebook + 1,
 				...(forDate ? { forDate } : {})

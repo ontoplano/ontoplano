@@ -51,7 +51,7 @@
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- built, read once and thrown away inside this function; nothing tracks it.
 		const map = new Map<number, { content: string; createdAt: string }>();
 		for (const entry of data.entries) {
-			map.set(entry.seq, { content: entry.content, createdAt: entry.createdAt });
+			map.set(entry.diarySeq ?? entry.seq, { content: entry.content, createdAt: entry.createdAt });
 		}
 		return map;
 	}
@@ -424,7 +424,7 @@
 			{#each filteredEntries() as entry, i (entry.id)}
 				<div
 					use:keepInView={i === selectedIndex}
-					id="diary-{entry.seq}"
+					id="diary-{entry.diarySeq ?? entry.seq}"
 					class="relative p-4 {i === selectedIndex ? 'kb-cursor' : ''}"
 				>
 					<div class="md mb-2 text-sm text-gray-900">
@@ -541,7 +541,11 @@
 							     entry's text. At the end of the row rather than the start of
 							     it: what the entry is reads from the left, and the number is
 							     a handle for pointing at it rather than part of the reading. -->
-							<span class="tabular text-xs font-medium text-gray-900">#{entry.seq}</span>
+							<!-- The diary's own number, not the account's count of everything it
+					     holds: the thirtieth entry is #30 and used to read #127. -->
+							<span class="tabular text-xs font-medium text-gray-900"
+								>#{entry.diarySeq ?? entry.seq}</span
+							>
 						</div>
 					</div>
 				</div>

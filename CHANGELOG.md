@@ -18,6 +18,14 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.24 — 2026-09-22
+
+- **The diary counts the diary.** An entry was numbered among everything the
+  account had written, notebook notes included, so the thirtieth diary entry
+  was headed `#127` — a number you could not arrive at by counting. The diary
+  has its own number now, and the `#12`s already written in it were rewritten
+  to the entries they meant.
+
 ## 0.182.23 — 2026-09-22
 
 - **The three ratings are little thermometers under the tick box.** Urgency,

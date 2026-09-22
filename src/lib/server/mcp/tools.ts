@@ -1894,7 +1894,15 @@ export const TOOLS: Tool[] = [
 		}),
 		run: (ctx, args) => {
 			const detail = detailOf(args);
-			const rows = listEntries(ctx).filter((entry) => passesTags(entry.tags, args));
+			/*
+			 * `seq` here is the diary's own number — the one the entry is headed
+			 * with on the page, and the one somebody means by `#12`. The row
+			 * also carries the account-wide `seq`, which counts notebook notes
+			 * too and so names a different entry.
+			 */
+			const rows = listEntries(ctx)
+				.filter((entry) => passesTags(entry.tags, args))
+				.map((entry) => ({ ...entry, seq: entry.diarySeq ?? entry.seq }));
 			return paged(rows.map(shapeNote(detail)), args, 20);
 		}
 	},

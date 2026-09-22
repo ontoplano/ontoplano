@@ -353,6 +353,20 @@ export const diaryEntries = sqliteTable(
 		 */
 		notebookSeq: integer('notebook_seq'),
 		/**
+		 * The diary's own numbering, for an entry that belongs to no notebook.
+		 *
+		 * `seq` counts every piece of writing the account holds, notebook notes
+		 * included, so a person on their thirtieth diary entry was looking at
+		 * `#127`. This counts the diary alone, and it is what the diary draws
+		 * and what a `#12` written there means.
+		 *
+		 * Allocated from a high-water mark like `seq`, never reused: a number in
+		 * something written months ago has to keep meaning what it did. Null for
+		 * a note that lives in a notebook — that one is numbered by its
+		 * notebook.
+		 */
+		diarySeq: integer('diary_seq'),
+		/**
 		 * What the note is called, for a list you can read at a glance.
 		 *
 		 * Empty for a diary entry, which is a day's writing and has no name —
