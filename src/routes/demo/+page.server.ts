@@ -4,6 +4,7 @@ import { auth } from '$lib/server/auth';
 import { isDemo } from '$lib/server/settings';
 import {
 	createDemoAccount,
+	demoAccountCount,
 	DEMO_ACCOUNTS_PER_ADDRESS,
 	DEMO_WINDOW_MS
 } from '$lib/server/services/demo';
@@ -67,16 +68,23 @@ export const actions: Actions = {
 		 * will fix. It says whose limit it is now, and when it lifts.
 		 */
 		if (!budget.allowed) {
-			// Written down, so the operator's digest can say how many people
-			// were turned away rather than leaving it to be guessed at.
-			audit(address, 'demo_refused', { detail: { why: 'rate' }, ip: address });
+			// Written down with the rule and the room at that moment, so the
+			// operator's digest can tell a rate limiter doing its job from a
+			// demo that is actually full — the two look identical as a count.
+			audit(address, 'demo_refused', {
+				detail: { why: 'rate', out: demoAccountCount() },
+				ip: address
+			});
 			return { busy: true, minutes: Math.max(1, Math.ceil(budget.retryAfterSeconds / 60)) };
 		}
 
 		const account = await createDemoAccount(event.url.hostname);
 		if (!account) {
 			// Every seat taken. The page says so rather than spinning forever.
-			audit(address, 'demo_refused', { detail: { why: 'full' }, ip: address });
+			audit(address, 'demo_refused', {
+				detail: { why: 'full', out: demoAccountCount() },
+				ip: address
+			});
 			return { full: true };
 		}
 

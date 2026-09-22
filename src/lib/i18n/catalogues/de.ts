@@ -2523,11 +2523,10 @@ export const messages: Catalogue = {
 		'Bestätigen? Dies löscht {count} Punkte.',
 	'settings.integrations.connections.connectAnAiAssistantWith':
 		'Einen KI-Assistenten damit verbinden',
+	'settings.integrations.connections.connectAnAssistant': 'Einen Assistenten verbinden',
 	'settings.integrations.connections.connectExternalAppsTheyPush':
 		'Externe Apps verbinden. Sie schieben Daten hinein als',
 	'settings.integrations.connections.createACalendarLink': 'Einen Kalenderlink erstellen',
-	'settings.integrations.connections.createATokenToConnect':
-		'Ein Token erstellen, um einen KI-Assistenten zu verbinden →',
 	'settings.integrations.connections.createToken': 'Token erstellen',
 	'settings.integrations.connections.createWebhook': 'Webhook erstellen',
 	'settings.integrations.connections.createdAutomaticallyWhenAnExternal':
@@ -2557,6 +2556,8 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.itCanWriteButNot':
 		'es kann schreiben, aber nicht lesen: die meisten Änderungen benennen etwas über die ID, die das entsprechende Lesen\n\t\t\t\t\t\t\t\t\t\t\t\tliefert.',
 	'settings.integrations.connections.itMay': 'Es darf: {join}',
+	'settings.integrations.connections.itSendsYouBackHere':
+		'Sie werden hierher zurückgeschickt, um die Verbindung zu bestätigen; sie erscheint dann in der Liste unten wie jeder andere Schlüssel.',
 	'settings.integrations.connections.keep': 'Behalten',
 	'settings.integrations.connections.lastDelivery': '· letzte Zustellung',
 	'settings.integrations.connections.lastUsed': '· zuletzt verwendet',
@@ -2580,6 +2581,8 @@ export const messages: Catalogue = {
 		'Oder fügen Sie ihm das in Worten ein — es beschreibt, wofür die App da ist, damit der Assistent\n\t\t\t\t\tdanach greift, statt Sie zu bitten, sich zu wiederholen:',
 	'settings.integrations.connections.pasteTheAddressIntoGoogle':
 		'Fügen Sie die Adresse in Google Kalender, Apple Kalender oder Thunderbird ein, und Ihr Plan erscheint dort und hält sich selbst aktuell. Diese Apps lesen sie nur — nichts, was sie tun, kann Ihren Plan ändern.',
+	'settings.integrations.connections.pasteThisAddressInto':
+		'Fügen Sie diese Adresse in Claude, ChatGPT oder etwas anderes mit einem Konnektor-Bildschirm ein:',
 	'settings.integrations.connections.points': 'Punkte',
 	'settings.integrations.connections.pointsOlderThanThisAre':
 		'Punkte, die älter sind, werden nächtlich gelöscht. Leer lassen, um alles zu behalten.',

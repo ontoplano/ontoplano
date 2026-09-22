@@ -18,6 +18,19 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.5 — 2026-09-22
+
+- **The connect-an-assistant address is on the Integrations page.** The
+  no-key flow starts on the assistant's side, which is exactly where nobody
+  thinks to look first — so Settings → AI & Integrations → Integrations now
+  shows your instance's own address with the one sentence that explains it,
+  above the tokens.
+
+- **The daily digest says who the demo turned away, and why.** A count reads
+  the same whether the rate limiter did its job or every copy was in use;
+  each refusal now names the rule it tripped, the address, and how many
+  copies were out at that moment.
+
 ## 0.182.4 — 2026-09-22
 
 - **An assistant can connect itself.** Paste your instance's address into

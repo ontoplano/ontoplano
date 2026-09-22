@@ -19,8 +19,11 @@
 <div class="mx-auto w-full max-w-lg px-4 py-10">
 	<Card title={t('oauth.takingYouBack')}>
 		<p class="text-sm text-gray-600">{t('oauth.handingYouBackTo', { client: data.client })}</p>
-		<!-- The way on where script did not run, rather than a dead end. -->
+		<!-- The way on where script did not run, rather than a dead end. The
+		     destination is the assistant's own redirect address, not a page of
+		     ours — resolve() is for internal paths and has no business here. -->
 		<p class="mt-3">
+			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 			<a href={data.to} class="btn btn-primary btn-sm" rel="nofollow">{t('oauth.continue')}</a>
 		</p>
 	</Card>

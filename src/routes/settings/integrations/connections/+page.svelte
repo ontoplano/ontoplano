@@ -132,6 +132,19 @@ do today. Do not write anything into my account until I ask you to.
 Token: ${token}`;
 	}
 
+	/* Its own flag, not `copied` — one button flashing "Copied!" because a
+	 * different one was pressed is a small lie. */
+	let copiedAddress = $state(false);
+	async function copyAddress(value: string) {
+		try {
+			await navigator.clipboard.writeText(value);
+			copiedAddress = true;
+			setTimeout(() => (copiedAddress = false), 2000);
+		} catch {
+			copiedAddress = false;
+		}
+	}
+
 	async function copyToken(value: string) {
 		try {
 			await navigator.clipboard.writeText(value);
@@ -337,16 +350,37 @@ Token: ${token}`;
 		</form>
 	</Card>
 
+	<!--
+		The way in that needs no key, above the tokens because it is the path
+		most people should take — and because the flow starts on the
+		assistant's side, where nobody thinks to look first. The app saying
+		so, with the address, is what makes it findable at all.
+	-->
+	<Card title={t('settings.integrations.connections.connectAnAssistant')}>
+		<p class="text-sm text-gray-600">
+			{t('settings.integrations.connections.pasteThisAddressInto')}
+		</p>
+		<div class="mt-2 flex items-center gap-2">
+			<code
+				class="flex-1 overflow-x-auto border border-gray-200 bg-gray-50 px-3 py-2 font-mono text-xs whitespace-nowrap text-gray-900"
+				>{data.origin}/api/mcp</code
+			>
+			<button
+				type="button"
+				class="btn btn-sm shrink-0"
+				onclick={() => copyAddress(`${data.origin}/api/mcp`)}
+			>
+				{copiedAddress ? t('ui.copied') : t('ui.copy')}
+			</button>
+		</div>
+		<p class="mt-2 text-xs text-gray-500">
+			{t('settings.integrations.connections.itSendsYouBackHere')}
+		</p>
+	</Card>
+
 	<!-- API tokens -->
 	<Card title={t('settings.integrations.connections.apiTokens')} flush>
 		{#snippet actions()}
-			{#if data.tokens.length === 0}
-				<!-- Beside the button it points at, small, and gone with the first
-				     token: connecting an assistant is what a first visit is for. -->
-				<span class="mr-2 border border-blue-200 bg-blue-50 px-2 py-1 text-xs text-blue-900">
-					{t('settings.integrations.connections.createATokenToConnect')}
-				</span>
-			{/if}
 			<button
 				type="button"
 				onclick={() => (showTokenForm = true)}

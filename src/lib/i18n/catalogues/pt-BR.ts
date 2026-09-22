@@ -2496,11 +2496,10 @@ export const messages: Catalogue = {
 		'Confirmar? Isso exclui {count} pontos.',
 	'settings.integrations.connections.connectAnAiAssistantWith':
 		'Conecte um assistente de IA com ele',
+	'settings.integrations.connections.connectAnAssistant': 'Conectar um assistente',
 	'settings.integrations.connections.connectExternalAppsTheyPush':
 		'Conecte apps externos. Eles empurram dados para dentro como',
 	'settings.integrations.connections.createACalendarLink': 'Criar um link de calendário',
-	'settings.integrations.connections.createATokenToConnect':
-		'Crie um token para conectar um assistente de IA →',
 	'settings.integrations.connections.createToken': 'Criar token',
 	'settings.integrations.connections.createWebhook': 'Criar webhook',
 	'settings.integrations.connections.createdAutomaticallyWhenAnExternal':
@@ -2529,6 +2528,8 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.itCanWriteButNot':
 		'ele pode escrever mas não ler: a maioria das mudanças nomeia algo pelo id que a leitura correspondente\n\t\t\t\t\t\t\t\t\t\t\t\tfornece.',
 	'settings.integrations.connections.itMay': 'Ele pode: {join}',
+	'settings.integrations.connections.itSendsYouBackHere':
+		'Ele te traz de volta aqui para aprovar a conexão, que então aparece na lista abaixo como qualquer outra chave.',
 	'settings.integrations.connections.keep': 'Manter',
 	'settings.integrations.connections.lastDelivery': '· última entrega',
 	'settings.integrations.connections.lastUsed': '· último uso',
@@ -2552,6 +2553,8 @@ export const messages: Catalogue = {
 		'Ou cole isto nele em palavras — diz para que serve o app, para que o assistente recorra\n\t\t\t\t\ta ele em vez de pedir que você se repita:',
 	'settings.integrations.connections.pasteTheAddressIntoGoogle':
 		'Cole o endereço no Google Calendar, Apple Calendar ou Thunderbird e seu plano aparece lá, mantendo-se atualizado. Esses apps só leem — nada que fizerem pode mudar seu plano.',
+	'settings.integrations.connections.pasteThisAddressInto':
+		'Cole este endereço no Claude, no ChatGPT, ou em qualquer coisa com uma tela de conectores:',
 	'settings.integrations.connections.points': 'pontos',
 	'settings.integrations.connections.pointsOlderThanThisAre':
 		'Pontos mais antigos que isso são excluídos, todas as noites. Deixe vazio para manter tudo.',

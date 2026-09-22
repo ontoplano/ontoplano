@@ -2449,11 +2449,10 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.confirmThisDeletesPoints':
 		'Confirm? This deletes {count} points.',
 	'settings.integrations.connections.connectAnAiAssistantWith': 'Connect an AI assistant with it',
+	'settings.integrations.connections.connectAnAssistant': 'Connect an assistant',
 	'settings.integrations.connections.connectExternalAppsTheyPush':
 		'Connect external apps. They push data in as',
 	'settings.integrations.connections.createACalendarLink': 'Create a calendar link',
-	'settings.integrations.connections.createATokenToConnect':
-		'Create a token to connect an AI assistant →',
 	'settings.integrations.connections.createToken': 'Create token',
 	'settings.integrations.connections.createWebhook': 'Create webhook',
 	'settings.integrations.connections.createdAutomaticallyWhenAnExternal':
@@ -2483,6 +2482,8 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.itCanWriteButNot':
 		'it can write but not look: most changes name a thing by the id the matching read\n\t\t\t\t\t\t\t\t\t\t\t\tgives.',
 	'settings.integrations.connections.itMay': 'It may: {join}',
+	'settings.integrations.connections.itSendsYouBackHere':
+		'It sends you back here to approve the connection, which then stands in the list below like any other key.',
 	'settings.integrations.connections.keep': 'Keep',
 	'settings.integrations.connections.lastDelivery': '· last delivery',
 	'settings.integrations.connections.lastUsed': '· last used',
@@ -2506,6 +2507,8 @@ export const messages: Catalogue = {
 		'Or paste this to it in words — it says what the app is for, so the assistant reaches for\n\t\t\t\t\tit instead of asking you to repeat yourself:',
 	'settings.integrations.connections.pasteTheAddressIntoGoogle':
 		'Paste the address into Google Calendar, Apple Calendar or Thunderbird and your plan appears there, keeping itself current. Those apps only read it — nothing they do can change your plan.',
+	'settings.integrations.connections.pasteThisAddressInto':
+		'Paste this address into Claude, ChatGPT, or anything else with a connector screen:',
 	'settings.integrations.connections.points': 'points',
 	'settings.integrations.connections.pointsOlderThanThisAre':
 		'Points older than this are deleted, nightly. Leave empty to keep everything.',
