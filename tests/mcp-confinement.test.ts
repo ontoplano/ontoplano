@@ -82,6 +82,69 @@ beforeAll(async () => {
 	outside.notebookTodo = idOf(
 		createTodo(ctx(), { title: 'somebody else’s project', notebookId: other })
 	);
+
+	/*
+	 * A screenshot in each notebook. This is what the confinement screen
+	 * promises — "its tasks, its goals, its notes, and the pictures and
+	 * recordings in them" — and what a confined key could not reach at all,
+	 * because `media` takes a link rather than an id and so declared no reach
+	 * for the tool list to judge.
+	 */
+	const { store } = await import('../src/lib/services/media');
+	const gif = (n: number) =>
+		Uint8Array.from([
+			0x47,
+			0x49,
+			0x46,
+			0x38,
+			0x39,
+			0x61,
+			0x01,
+			0x00,
+			0x01,
+			0x00,
+			0x80,
+			0x00,
+			0x00,
+			0xff,
+			0xff,
+			0xff,
+			0x00,
+			0x00,
+			0x00,
+			0x21,
+			0xf9,
+			0x04,
+			0x01,
+			0x00,
+			0x00,
+			0x00,
+			0x00,
+			0x2c,
+			0x00,
+			0x00,
+			0x00,
+			0x00,
+			0x01,
+			0x00,
+			0x01,
+			0x00,
+			0x00,
+			0x02,
+			0x02,
+			0x44,
+			0x01,
+			0x00,
+			n
+		]);
+	inside.picture = (await store(ctx(), { bytes: gif(0x3b), filename: 'wall.gif' })).id;
+	outside.picture = (await store(ctx(), { bytes: gif(0x3a), filename: 'private.gif' })).id;
+	createTodo(ctx(), {
+		title: 'the wall',
+		notes: `![wall](/media/${inside.picture})`,
+		notebookId: mine
+	});
+	createEntry(ctx(), { content: `![private](/media/${outside.picture})` });
 });
 
 describe('what a key tied to one notebook can do', () => {
@@ -148,6 +211,36 @@ describe('what it cannot do', () => {
 		expect(offered).toContain('add_todo');
 		expect(offered).not.toContain('diary');
 		expect(offered).not.toContain('tick_bought');
+	});
+
+	/*
+	 * The pictures the confinement screen promises.
+	 *
+	 * `media` reaches a file by the link the writing spells rather than by an
+	 * id, so it declares no reach and the usual rule hid it from every confined
+	 * key — the one tool whose whole subject is the screenshots in the
+	 * notebook. It says `confinesItself` instead, and the two tests below are
+	 * what that claim is worth: the notebook's own file, and not another.
+	 */
+	it('is offered the tool that fetches a picture', () => {
+		const offered = visibleTools({
+			ctx: ctx(),
+			scopes: Object.keys(SCOPES),
+			confinement: { kind: 'notebook', id: mine }
+		} as never).map((t: { name: string }) => t.name);
+
+		expect(offered).toContain('media');
+	});
+
+	it('sees a picture in its own notebook', () => {
+		const answer = call('media', { path: `/media/${inside.picture}` });
+		expect(failed(answer), said(answer)).toBe(false);
+		expect(said(answer)).toContain('image/gif');
+	});
+
+	it('and not one that lives anywhere else', () => {
+		const answer = call('media', { path: `/media/${outside.picture}` });
+		expect(failed(answer), said(answer)).toBe(true);
 	});
 });
 

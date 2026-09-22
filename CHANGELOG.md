@@ -20,6 +20,13 @@ releases mattered.
 
 ## 0.182.24 — 2026-09-22
 
+- **An assistant given one notebook can see the pictures in it.** The screen
+  that ties a key to a notebook promises "its tasks, its goals, its notes, and
+  the pictures and recordings in them" — and the tool that fetches a picture
+  was the one thing such a key was never offered, so an assistant asked to look
+  at a screenshot could only answer that it had no way to. The file rule itself
+  was right all along: it is the notebook's own pictures, and no others.
+
 - **Four cross-site-scripting fixes and a denial of service, from upstream.**
   Svelte, nodemailer and devalue move to the versions that carry them; two of
   the five were in server-side rendering, which is how every page here is

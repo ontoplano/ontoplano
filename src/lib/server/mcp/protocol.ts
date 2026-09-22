@@ -136,8 +136,12 @@ function offered(caller: Caller, tool: Tool): boolean {
 	if (tool.alsoNeeds && !caller.scopes.includes(tool.alsoNeeds)) return false;
 	if (tool.destroys && !caller.scopes.includes('destructive')) return false;
 	// A confined key is not shown what it cannot call. A model offered a tool
-	// that always refuses spends its turn discovering that.
-	if (caller.confinement && !withinConfinement(caller.confinement, tool)) return false;
+	// that always refuses spends its turn discovering that — and the reverse
+	// costs more: a tool hidden from a key that may use it is a capability
+	// nobody can find, which is how `media` became invisible to every confined
+	// key while the screen went on promising the pictures in the notebook.
+	if (caller.confinement && !tool.confinesItself && !withinConfinement(caller.confinement, tool))
+		return false;
 	return true;
 }
 
@@ -360,7 +364,11 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 				 * than refused, and there is no way to ask which other notebooks
 				 * exist by watching the refusals.
 				 */
-				if (caller.confinement) confine(caller.confinement, tool.refs, tool.input, args);
+				// `confinesItself` is the tool doing this in its own `run` — it
+				// reaches by a link rather than by an id, so there is no
+				// argument here to pin. Refusing it here would refuse it always.
+				if (caller.confinement && !tool.confinesItself)
+					confine(caller.confinement, tool.refs, tool.input, args);
 
 				/*
 				 * Every id it was handed belongs to whoever is calling.

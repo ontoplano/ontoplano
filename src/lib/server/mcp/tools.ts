@@ -281,6 +281,27 @@ export type Tool = {
 	 */
 	refs?: Ref[];
 	/**
+	 * This tool decides the confinement itself, so a confined key is offered it.
+	 *
+	 * A confined key is normally shown only the tools that name a kind its
+	 * confinement holds — which works because naming an id is how a tool
+	 * reaches anything. `media` does not name an id: it takes the link as the
+	 * writing spells it, `/media/12`, and works out what may be read from what
+	 * refers to the file. Judged by the usual rule it declares no reach, so it
+	 * was hidden from every confined key — while the confinement screen
+	 * promised "its tasks, its goals, its notes, and the pictures and
+	 * recordings in them". The pictures were the one part that did not arrive,
+	 * and an assistant asked to look at a screenshot in the notebook it was
+	 * given could only report that it had no such tool.
+	 *
+	 * So: a tool sets this when its own `run` applies the confinement — here,
+	 * `mayReadFile`, which answers for a file in this notebook and refuses one
+	 * anywhere else. It is a statement about the tool, not an exemption: a
+	 * tool that sets it and does not check is a hole, which is why there is a
+	 * test that a confined key is refused a file outside its notebook.
+	 */
+	confinesItself?: boolean;
+	/**
 	 * The row this call is about, as it stands — read before and after every
 	 * write, so the answer carries `before` and `after` and a bad call is
 	 * reversible from the transcript. On a tool that changes an existing thing
@@ -1279,6 +1300,9 @@ export const TOOLS: Tool[] = [
 		scope: 'notes:read',
 		anyScope: ['notes:read', 'ideas:read', 'tasks:read', 'people:read', 'kitchen:read'],
 		writes: false,
+		// It takes a link rather than an id, so it declares no reach — and it
+		// applies the confinement itself, below, through `mayReadFile`.
+		confinesItself: true,
 		input: object(
 			{
 				path: text(
