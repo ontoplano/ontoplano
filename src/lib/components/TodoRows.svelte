@@ -4,7 +4,7 @@
 	import Picker from '$lib/components/Picker.svelte';
 	import SortControl from '$lib/components/SortControl.svelte';
 	import { agoOf, momentOf } from '$lib/when';
-	import { compareByPriority, PRIORITY_MAX, priorityScore, type RatingValues } from '$lib/ratings';
+	import { compareByPriority, type RatingValues } from '$lib/ratings';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { deleteLater, isLeaving } from '$lib/undo.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
@@ -27,6 +27,7 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { CLOSED_STATUSES } from '$lib/task-status';
+	import { ordinal } from '$lib/ordinal';
 	import { keepInView } from '$lib/actions/keep-in-view';
 	import { invalidateAll } from '$app/navigation';
 	import { cancelFor, changeNow, isPending } from '$lib/undo.svelte';
@@ -199,8 +200,47 @@
 		ease: null
 	});
 
-	/** The draft's score, which moves as the sliders do. */
-	const draftScore = $derived(priorityScore(formRatings as RatingValues));
+	/**
+	 * Where this draft would land among the open tasks here, by priority.
+	 *
+	 * A number out of a thousand said what the answers *were*; this says what
+	 * they *do* — which is the only reason anybody moves one of those sliders.
+	 * Counted against the open tasks this list is showing, which is the list
+	 * the task is about to join, and against itself excluded: a task does not
+	 * queue behind the version of itself that is being edited.
+	 *
+	 * A task being written has no age yet, so it takes now — and ties are
+	 * broken towards the older one, which puts a new task behind everything it
+	 * matches exactly. That is the honest answer: it has waited least.
+	 */
+	const editing = $derived(todos.find((one: Todo) => one.id === editingId));
+
+	/**
+	 * Which notebook the draft is filed under, as the form has it.
+	 *
+	 * Bound rather than passed, because the queue it joins is that notebook's:
+	 * moving a task from the kitchen to the trip changes what it is queuing
+	 * behind, and the line it is standing in has to say so while you are still
+	 * choosing.
+	 */
+	let formNotebookId: number | null = $state(null);
+
+	const draftPlace = $derived.by(() => {
+		const draft = {
+			ratings: formRatings as RatingValues,
+			sortOrder: editing?.sortOrder ?? 0,
+			createdAt: editing?.createdAt ?? new Date().toISOString()
+		};
+		const ahead = todos.filter(
+			(one: Todo) =>
+				one.id !== editingId &&
+				one.notebookId === formNotebookId &&
+				!CLOSED_STATUSES.includes(one.status) &&
+				!one.archivedAt &&
+				compareByPriority(one, draft) < 0
+		);
+		return ahead.length + 1;
+	});
 
 	/**
 	 * How long a task stays on screen after it is ticked.
@@ -599,6 +639,8 @@
 		showForm = true;
 		editingId = null;
 		formRatings = { urgency: null, interest: null, ease: null };
+		// Inside a notebook, a new task starts in it; in the room, in none.
+		formNotebookId = notebookId;
 	}
 
 	/**
@@ -630,6 +672,7 @@
 		editingId = todo.id;
 		showForm = true;
 		formRatings = { ...todo.ratings };
+		formNotebookId = todo.notebookId;
 	}
 
 	function startDelegate(todo: Todo) {
@@ -1456,7 +1499,7 @@
 					title={editing?.title ?? ''}
 					notes={editing?.notes ?? ''}
 					categoryId={editing?.categoryId ?? null}
-					notebookId={editing?.notebookId ?? notebookId}
+					bind:notebookId={formNotebookId}
 					tags={editing?.tags.map((one) => one.name).join(', ') ?? ''}
 					scheduledDate={editing?.scheduledDate ?? ''}
 					{categories}
@@ -1517,12 +1560,10 @@
 				number is the only way to see what moving one slider did to the
 				task's place in the list.
 			-->
-			<span
-				class="flex-1 text-center text-sm text-gray-500"
-				title={t('ratings.priorityScoreOf', { score: draftScore, max: PRIORITY_MAX })}
-			>
-				<span class="eyebrow mr-1.5 text-gray-500">{t('ratings.priority')}</span>
-				<span class="tabular text-base text-gray-700">{draftScore}</span>
+			<span class="flex-1 text-center text-sm" title={t('ratings.whereItWouldSit')}>
+				<span class="tabular text-gray-700">
+					{t('ratings.nthInLine', { nth: ordinal(t, draftPlace) })}
+				</span>
 			</span>
 
 			<!--

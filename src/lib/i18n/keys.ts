@@ -1594,6 +1594,10 @@ export type MessageKey =
 	| 'onboarding.studentDescription'
 	| 'ops.backups'
 	| 'ops.billingReconciliation'
+	| 'ordinal.few'
+	| 'ordinal.one'
+	| 'ordinal.other'
+	| 'ordinal.two'
 	| 'people.friend'
 	| 'people.other'
 	| 'people.partner'
@@ -1616,9 +1620,11 @@ export type MessageKey =
 	| 'ratings.interest'
 	| 'ratings.labelNotSet'
 	| 'ratings.labelValueOf5'
+	| 'ratings.nthInLine'
 	| 'ratings.priority'
 	| 'ratings.priorityScoreOf'
 	| 'ratings.urgency'
+	| 'ratings.whereItWouldSit'
 	| 'reminders.aDayAndSomethingTo'
 	| 'reminders.aDayAndWhatTo'
 	| 'reminders.aSoundFile'
@@ -3458,6 +3464,7 @@ export interface MessageValuesFor {
 	'ratingPicker.leaveUnanswered': { rating: string | number };
 	'ratings.labelNotSet': { label: string | number };
 	'ratings.labelValueOf5': { label: string | number; value: string | number };
+	'ratings.nthInLine': { nth: string | number };
 	'ratings.priorityScoreOf': { max: string | number; score: string | number };
 	'reminders.alarmsOnThisPhone': { count: number };
 	'reminders.atLeastMinutesFromNow': { count: number };

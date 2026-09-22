@@ -35,7 +35,7 @@
 		notes = '',
 		tags = '',
 		categoryId = null,
-		notebookId = null,
+		notebookId = $bindable(null),
 		categories = [],
 		notebooks = [],
 		ratings = $bindable({ urgency: null, interest: null, ease: null }),
@@ -106,7 +106,7 @@
 		</select>
 	</Field>
 
-	<NotebookField {notebooks} value={notebookId} />
+	<NotebookField {notebooks} bind:value={notebookId} />
 
 	<Field label={t('ui.tags')} span={12} hint={t('fields.todo.separateWithCommasOrSpaces')}>
 		<!-- The account's one vocabulary, not a second one: a word used on a

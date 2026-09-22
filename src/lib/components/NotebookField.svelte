@@ -15,7 +15,7 @@
 	 */
 	let {
 		notebooks,
-		value = null,
+		value = $bindable(null),
 		span = 6,
 		name = 'notebookId'
 	}: {
@@ -31,6 +31,7 @@
 		<Picker
 			{name}
 			value={String(value ?? '')}
+			onpick={(picked) => (value = picked === '' ? null : Number(picked))}
 			options={[
 				{ value: '', label: t('ui.none') },
 				...notebooks.map((notebook) => ({

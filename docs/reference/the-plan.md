@@ -77,19 +77,19 @@ has not stopped needing doing.
 
 ## Priority
 
-The three ratings — **urgency**, **ease**, **interest** — are answered on the
-same scale, nought to five, where five is the most of what the word says. Each
-is optional, and a task nobody has rated is a perfectly good task.
+The three optional ratings — **urgency**, **ease**, **interest** — are answered
+on the same scale, nought to five, where five is the most of what the word
+says.
 
 Ordering by Priority reads them in that order: most urgent first, then, between
-two equally urgent, the easier one, then the one you would rather do. A rating
-nobody set counts as **2.5** — dead centre, with three answers either side — so
-a task you deliberately marked 3 beats one nobody weighed, while 0, 1 and 2 are
+two equally urgent, the easier one, then the one you would rather do. An unset
+rating counts as **2.5** — dead centre, with three answers either side — so a
+task you deliberately marked 3 beats one nobody weighed, while 0, 1 and 2 are
 the tiers that mean "later". Two tasks answered identically come out oldest
 first, unless one of them has been dragged somewhere by hand.
 
-The same comparison is also shown as a number, so a row can say why it sits
-where it does. Writing the three answers as _u_, _e_ and _i_:
+The same comparison can be written as a single number. Writing the three
+answers as _u_, _e_ and _i_:
 
 <p class="math">
 p(u, e, i) = 1000 · (121·2u + 11·2e + 2i) ⁄ 1330

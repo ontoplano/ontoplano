@@ -1,47 +1,26 @@
 <script lang="ts">
 	/**
-	 * How urgent, how draining, how wanted — as three little thermometers.
+	 * How urgent, how easy, how wanted — as three little thermometers.
 	 *
 	 * They were "U4 I3 E2": three letters and three numbers, which is the
-	 * information and none of the reading. Then they were frets, which read at
-	 * a glance and did not say *what* they were full of. A thermometer does
-	 * both: black markings for the five whole steps, and the colour rising
-	 * through them like a liquid, so "nearly full" is seen rather than counted.
+	 * information and none of the reading. A thermometer is both: black markings
+	 * for the whole steps, and the colour rising through them like a liquid.
 	 *
-	 * The order is `RATING_ORDER` — urgency, ease, interest — which is the
-	 * order the Priority sort reads them in and the order they are asked for on
-	 * the form. Three gauges in a different order on each screen is three
-	 * things to learn instead of one.
-	 *
-	 * Each carries its own colour so they are told apart without a letter:
-	 * urgency yellow, ease blue, interest green. Green rather than the red it
-	 * wore — red is the colour of something wrong, and wanting to do a thing is
-	 * not — and the words are in the tooltip and in the accessible name,
-	 * because a colour on its own is not something everybody can read.
+	 * The order is `RATING_ORDER` — urgency, ease, interest — which is the order
+	 * the Priority sort reads them in and the order they are asked for on the
+	 * form. Three gauges in a different order on each screen is three things to
+	 * learn instead of one.
 	 *
 	 * ## Three, always
 	 *
 	 * A task with only urgency set used to draw one gauge, so the same question
 	 * sat in a different place on every row and the eye had to read each card
-	 * from scratch. All three are always here now: an unset one is drawn at
-	 * 2.5 of five, in grey — which says "no answer" rather than "the lowest
-	 * answer", and lands between the second and third markings rather than on
-	 * one of them, so it cannot be mistaken for a number somebody chose. It is
-	 * also exactly where an unset rating counts in the Priority sort, so the
-	 * picture and the arithmetic make the same claim.
+	 * from scratch. All three are always here now, and `Gauge` draws each of
+	 * them — the same component the slider that sets one is built on, so the
+	 * thing you read and the thing you drag cannot drift apart.
 	 */
-	import {
-		PRIORITY_MAX,
-		priorityScore,
-		RATING_ORDER,
-		RATING_LABELS,
-		RATING_MAX,
-		RATING_UNRATED,
-		type RatingValues
-	} from '$lib/ratings.js';
-	import { useT } from '$lib/i18n';
-
-	const t = useT();
+	import Gauge from '$lib/components/Gauge.svelte';
+	import { RATING_ORDER, type RatingValues } from '$lib/ratings.js';
 
 	let {
 		values,
@@ -49,55 +28,10 @@
 		stacked = false,
 		class: className = ''
 	}: { values: Partial<RatingValues>; stacked?: boolean; class?: string } = $props();
-
-	/** The markings, as something to iterate: the four lines between five steps. */
-	const marks = Array.from({ length: RATING_MAX - 1 }, (_, at) => at + 1);
-
-	const score = $derived(priorityScore(values as RatingValues));
-	const said = $derived(t('ratings.priorityScoreOf', { score, max: PRIORITY_MAX }));
 </script>
 
-<!--
-	The three gauges, with the number they add up to under them.
-
-	The order is exact and invisible: a row sits where it sits and says nothing
-	about why. The score is that same comparison as a figure — nought to a
-	thousand, all fives at the top, a task nobody rated at exactly half — so what
-	the list did can be read off the card.
-
-	Under rather than behind. Behind was the idea and it cannot be read: the rail
-	these stand in is about as wide as the gauges themselves, so a number large
-	enough to see at a glance covers them and neither survives. Beneath them it
-	is the same association and both are legible — grey enough not to compete
-	with the title, which is still what the row is about.
--->
-<span class="gauges-with-score {stacked ? 'gauges-with-score-stacked' : ''} {className}">
-	<span class="gauges {stacked ? 'gauges-stacked' : ''}">
-		{#each RATING_ORDER as r (r)}
-			{@const value = values[r]}
-			{@const said =
-				value == null
-					? t('ratings.labelNotSet', { label: t(RATING_LABELS[r]) })
-					: t('ratings.labelValueOf5', { label: t(RATING_LABELS[r]), value })}
-			<span
-				class="gauge"
-				class:gauge-unset={value == null}
-				data-rating={r}
-				title={said}
-				aria-label={said}
-				role="img"
-			>
-				<!-- The liquid: a fill from the left, in whole steps — or half of one,
-			     greyed, where nobody has answered. -->
-				<span class="gauge-fill" style="width: {((value ?? RATING_UNRATED) / RATING_MAX) * 100}%"
-				></span>
-				<!-- And the markings over it, so the level is read against them. -->
-				{#each marks as mark (mark)}
-					<span class="gauge-mark" style="left: {(mark / RATING_MAX) * 100}%"></span>
-				{/each}
-			</span>
-		{/each}
-	</span>
-
-	<span class="gauge-score" title={said}>{score}</span>
+<span class="gauges {stacked ? 'gauges-stacked' : ''} {className}">
+	{#each RATING_ORDER as r (r)}
+		<Gauge rating={r} value={values[r] ?? null} />
+	{/each}
 </span>

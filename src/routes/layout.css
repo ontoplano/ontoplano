@@ -2031,41 +2031,6 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * estimated. The tint underneath is the gauge's own colour at a tenth, so
 	 * an empty one still says which question it is answering.
 	 */
-	/*
-	 * The three gauges with their score behind them.
-	 *
-	 * Behind rather than beside: the number is the same fact the gauges draw,
-	 * so it sits under them as a watermark rather than competing for the row.
-	 */
-	.gauges-with-score {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.375rem;
-	}
-
-	/* In the rail beside the tick box the gauges are a column, so this is too. */
-	.gauges-with-score-stacked {
-		flex-direction: column;
-		align-items: stretch;
-		gap: 0.125rem;
-		width: 100%;
-	}
-
-	.gauge-score {
-		font-weight: 700;
-		font-size: 0.875rem;
-		line-height: 1.1;
-		letter-spacing: -0.02em;
-		font-variant-numeric: tabular-nums;
-		text-align: center;
-		/*
-		 * Quiet enough not to be the row's subject, dark enough to be read:
-		 * gray-400 is about 2.5:1 on this app's surfaces, which `make lint`
-		 * refuses for words somebody is meant to read.
-		 */
-		color: var(--color-gray-500);
-	}
-
 	.gauges {
 		display: inline-flex;
 		align-items: center;
@@ -2107,6 +2072,19 @@ label:has(> input[type='radio']:not(:disabled)) {
 
 	.gauges-stacked .gauge {
 		width: 100%;
+	}
+
+	/*
+	 * The one somebody drags, rather than reads.
+	 *
+	 * Same height as the one on a card — it is the same object, and the touch
+	 * target is the invisible range laid over it rather than the drawing — but
+	 * no longer than it needs to be. Stretched across the column it was a long
+	 * way for the eye to travel for five steps, and it left the number and the
+	 * way out marooned at the far end of it.
+	 */
+	.gauge-big {
+		max-width: 6rem;
 	}
 
 	/*
@@ -2193,7 +2171,7 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * mistaken for a tick.
 	 */
 	[data-rating='urgency'] {
-		--rating-ink: var(--color-red-500);
+		--rating-ink: var(--color-red-400);
 	}
 
 	[data-rating='ease'] {
