@@ -1,8 +1,6 @@
-import { read } from '$app/server';
-
 import type { RequestHandler } from './$types';
 
-import ico from '$lib/logo/favicon.ico?url';
+import { FAVICON_ICO_BASE64 } from '$lib/logo/favicon-ico';
 
 /**
  * The icon nothing links to and everything asks for.
@@ -20,16 +18,19 @@ import ico from '$lib/logo/favicon.ico?url';
  * correct with no content type at all, and the `nosniff` header this app sends
  * on everything then forbids the browser from working out what it is holding.
  *
- * `src/lib/logo/favicon.ico` is drawn by `scripts/build-icons.mjs` from the
- * same artwork as every other icon, so it cannot be the one that stays behind.
+ * The bytes arrive as a generated module rather than through `$app/server`'s
+ * `read`. That is an adapter feature — the static adapter the device build
+ * uses does not have it, and the node build tripped over the asset's own
+ * bookkeeping mid-`vite build`. `scripts/build-icons.mjs` writes both the
+ * `.ico` and `favicon-ico.ts` from the same artwork as every other icon, so
+ * this cannot be the one that stays behind.
  */
 const TYPE = 'image/vnd.microsoft.icon';
 /** A week. The name never changes, and neither does what it means. */
 const CACHE = 'public, max-age=604800';
 
-export const GET: RequestHandler = async () => {
-	const file = read(ico);
-	return new Response(await file.arrayBuffer(), {
-		headers: { 'content-type': TYPE, 'cache-control': CACHE }
-	});
-};
+/** Decoded once per process rather than per request. */
+const BYTES = Uint8Array.from(Buffer.from(FAVICON_ICO_BASE64, 'base64'));
+
+export const GET: RequestHandler = () =>
+	new Response(BYTES, { headers: { 'content-type': TYPE, 'cache-control': CACHE } });

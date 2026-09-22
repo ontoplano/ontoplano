@@ -1333,8 +1333,10 @@ export type MessageKey =
 	| 'notebookDetail.orderWritten'
 	| 'notebookDetail.people'
 	| 'notebookDetail.saved'
+	| 'notebookDetail.searchTheseNotes'
 	| 'notebookDetail.separateWithCommasOrSpaces'
 	| 'notebookDetail.showArchived'
+	| 'notebookDetail.showingCount'
 	| 'notebookDetail.smallerType'
 	| 'notebookDetail.stopKeepingThisAtThe'
 	| 'notebookDetail.tagsPeople'
@@ -3380,6 +3382,7 @@ export interface MessageValuesFor {
 	'notebookDetail.madeTodos': { count: number };
 	'notebookDetail.makeCountTodos': { count: number };
 	'notebookDetail.showArchived': { count: number };
+	'notebookDetail.showingCount': { count: number };
 	'notebookDetail.writeANoteAbout': { title: string | number };
 	'notebooks.diary.edited': { updatedAt: string | number };
 	'notebooks.diary.for': { forDate: string | number };

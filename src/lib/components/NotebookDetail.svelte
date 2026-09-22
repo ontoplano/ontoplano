@@ -20,6 +20,7 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import TagChip from '$lib/components/TagChip.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
@@ -536,6 +537,16 @@
 	 */
 	let noteTagFilter = $state<string[]>([]);
 
+	/**
+	 * What somebody typed to narrow the notes.
+	 *
+	 * The tasks tab beside this one has had a search box since it was written
+	 * and the notes tab never did, so the same notebook answered "find the one
+	 * about the boiler" on one tab and not on the other. Same box, same place
+	 * in the strip, same order as everything else — see `FilterBar`.
+	 */
+	let noteSearch = $state('');
+
 	function toggleNoteTag(name: string) {
 		noteTagFilter = noteTagFilter.includes(name)
 			? noteTagFilter.filter((one) => one !== name)
@@ -549,6 +560,15 @@
 		if (noteTagFilter.length > 0)
 			out = out.filter((entry) =>
 				noteTagFilter.every((name) => entry.tags.some((tag) => tag.name === name))
+			);
+		const wanted = noteSearch.trim().toLowerCase();
+		if (wanted !== '')
+			// The title first and then the writing, which is how somebody finds
+			// the note they described rather than named.
+			out = out.filter(
+				(entry) =>
+					(entry.title ?? '').toLowerCase().includes(wanted) ||
+					(entry.content ?? '').toLowerCase().includes(wanted)
 			);
 		return orderNotes(out, noteOrder, noteDirection);
 	});
@@ -1040,37 +1060,78 @@
 	on the width — never twice at once, and never two versions of it.
 -->
 {#snippet noteControls()}
-	<!-- Nothing is hidden without the strip saying how much. -->
-	{#if putAwayNotes > 0 || showArchivedNotes}
-		<button
-			type="button"
-			onclick={() => (showArchivedNotes = !showArchivedNotes)}
-			class="btn btn-sm shrink-0"
-		>
-			{showArchivedNotes
-				? t('notebookDetail.hideArchived')
-				: t('notebookDetail.showArchived', { count: putAwayNotes })}
-		</button>
-	{/if}
 	<!--
-		What the list is narrowed to, and how to stop.
+		The same strip the tasks tab has, in the same order.
 
-		A filter nothing on the screen mentions is a list that has quietly lost
-		rows: the labels are here, pressed, and pressing one again lets it go.
+		That tab composes `FilterBar` with a search box in front of it and the
+		count and the order behind it; this one was a hand-rolled row of buttons
+		with no search at all, so one notebook answered "find the one about the
+		boiler" on the Tasks tab and not on the Notes tab beside it. The controls
+		differ because notes and tasks differ. The shape does not.
 	-->
-	{#each noteTagFilter as name (name)}
-		<TagChip {name} active onclick={() => toggleNoteTag(name)} />
-	{/each}
-	{#if noteTagFilter.length > 1}
-		<button
-			type="button"
-			class="btn btn-sm btn-quiet shrink-0"
-			onclick={() => (noteTagFilter = [])}
-		>
-			{t('notebookDetail.clearLabels')}
-		</button>
-	{/if}
-	{@render orderControl()}
+	<FilterBar
+		name="notes"
+		on={noteTagFilter.length > 0 || showArchivedNotes || noteSearch.trim() !== ''}
+		summary={noteTagFilter.map((one) => `#${one}`).join(', ')}
+		onclear={() => {
+			noteTagFilter = [];
+			showArchivedNotes = false;
+			noteSearch = '';
+		}}
+	>
+		{#snippet lead()}
+			<!-- A row of its own on a phone: it is the one control somebody types
+			     into rather than presses. -->
+			<label class="order-first w-full min-w-32 sm:order-none sm:w-auto sm:max-w-56 sm:flex-1">
+				<span class="sr-only">{t('notebookDetail.searchTheseNotes')}</span>
+				<input
+					type="search"
+					bind:value={noteSearch}
+					placeholder={t('notebookDetail.searchTheseNotes')}
+					autocomplete="off"
+					class="input input-sm"
+				/>
+			</label>
+		{/snippet}
+
+		{#snippet trailing()}
+			<!-- How many are on screen right now — the toggles say what is hidden
+			     and nothing said what is left. -->
+			<span
+				class="tabular shrink-0 self-center text-xs text-gray-500 sm:ml-auto"
+				title={t('notebookDetail.showingCount', { count: shownNotes.length })}
+			>
+				<span class="sm:hidden">{shownNotes.length}</span>
+				<span class="hidden sm:inline"
+					>{t('notebookDetail.showingCount', { count: shownNotes.length })}</span
+				>
+			</span>
+			{@render orderControl()}
+		{/snippet}
+
+		<!-- Nothing is hidden without the strip saying how much. -->
+		{#if putAwayNotes > 0 || showArchivedNotes}
+			<button
+				type="button"
+				onclick={() => (showArchivedNotes = !showArchivedNotes)}
+				class="btn btn-sm shrink-0"
+			>
+				{showArchivedNotes
+					? t('notebookDetail.hideArchived')
+					: t('notebookDetail.showArchived', { count: putAwayNotes })}
+			</button>
+		{/if}
+
+		<!--
+			What the list is narrowed to, and how to stop.
+
+			A filter nothing on the screen mentions is a list that has quietly lost
+			rows: the labels are here, pressed, and pressing one again lets it go.
+		-->
+		{#each noteTagFilter as name (name)}
+			<TagChip {name} active onclick={() => toggleNoteTag(name)} />
+		{/each}
+	</FilterBar>
 {/snippet}
 
 {#snippet orderControl()}

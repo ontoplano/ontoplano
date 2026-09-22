@@ -18,6 +18,14 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.21 — 2026-09-22
+
+- **A notebook's tabs have the same strip.** Notes had a hand-rolled row of
+  buttons and no way to search; Tasks beside it had a search box, a fold for
+  the filters, a count and the order. One notebook answered "find the one about
+  the boiler" on one tab and not on the other. Notes now uses the same
+  arrangement, in the same order, and searches titles and writing.
+
 ## 0.182.20 — 2026-09-22
 
 - **A task's buttons sit under its words, not beside them.** They were a block

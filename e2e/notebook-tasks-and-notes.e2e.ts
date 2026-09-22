@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openNoteFilters } from './helpers/filters';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
@@ -62,6 +63,8 @@ test('a note can be put away and taken back out', async ({ page }) => {
 	await expect(page.getByText('Restaurants')).toHaveCount(0);
 
 	// Hidden, not gone: the strip says how many, and they come back unchanged.
+	// It folds now, the way the tasks tab's strip always has.
+	await openNoteFilters(page);
 	await page.getByRole('button', { name: 'Show archived' }).click();
 	await expect(page.getByText('Restaurants').first()).toBeVisible();
 	await page.getByRole('button', { name: 'Take it back out' }).first().click();

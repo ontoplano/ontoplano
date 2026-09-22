@@ -1479,9 +1479,11 @@ export const messages: Catalogue = {
 	'notebookDetail.orderWritten': 'Written',
 	'notebookDetail.people': 'People',
 	'notebookDetail.saved': 'Saved',
+	'notebookDetail.searchTheseNotes': 'Search these notes',
 	'notebookDetail.separateWithCommasOrSpaces':
 		'Separate with commas or spaces. A leading # is fine.',
 	'notebookDetail.showArchived': 'Show archived ({count})',
+	'notebookDetail.showingCount': { one: '{count} note showing', other: '{count} notes showing' },
 	'notebookDetail.smallerType': 'Smaller type',
 	'notebookDetail.stopKeepingThisAtThe': 'Stop keeping this at the top',
 	'notebookDetail.tagsPeople': 'Tags, people',

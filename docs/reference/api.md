@@ -712,8 +712,12 @@ adapter bundles has no mime entry for this extension: the bytes went out
 correct with no content type at all, and the `nosniff` header this app sends
 on everything then forbids the browser from working out what it is holding.
 
-`src/lib/logo/favicon.ico` is drawn by `scripts/build-icons.mjs` from the
-same artwork as every other icon, so it cannot be the one that stays behind.
+The bytes arrive as a generated module rather than through `$app/server`'s
+`read`. That is an adapter feature — the static adapter the device build
+uses does not have it, and the node build tripped over the asset's own
+bookkeeping mid-`vite build`. `scripts/build-icons.mjs` writes both the
+`.ico` and `favicon-ico.ts` from the same artwork as every other icon, so
+this cannot be the one that stays behind.
 
 **GET**
 

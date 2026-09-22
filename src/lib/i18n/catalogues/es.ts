@@ -1511,9 +1511,14 @@ export const messages: Catalogue = {
 	'notebookDetail.orderWritten': 'Escritura',
 	'notebookDetail.people': 'Personas',
 	'notebookDetail.saved': 'Guardado',
+	'notebookDetail.searchTheseNotes': 'Buscar en estas notas',
 	'notebookDetail.separateWithCommasOrSpaces':
 		'Sepáralos con comas o espacios. Un # al inicio está bien.',
 	'notebookDetail.showArchived': 'Mostrar archivadas ({count})',
+	'notebookDetail.showingCount': {
+		one: '{count} nota a la vista',
+		other: '{count} notas a la vista'
+	},
 	'notebookDetail.smallerType': 'Letra más pequeña',
 	'notebookDetail.stopKeepingThisAtThe': 'Dejar de mantenerla arriba',
 	'notebookDetail.tagsPeople': 'Etiquetas, personas',

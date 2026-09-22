@@ -1504,9 +1504,11 @@ export const messages: Catalogue = {
 	'notebookDetail.orderWritten': 'Escrita',
 	'notebookDetail.people': 'Pessoas',
 	'notebookDetail.saved': 'Salvo',
+	'notebookDetail.searchTheseNotes': 'Buscar nestas notas',
 	'notebookDetail.separateWithCommasOrSpaces':
 		'Separe com vírgulas ou espaços. Um # na frente também serve.',
 	'notebookDetail.showArchived': 'Mostrar arquivadas ({count})',
+	'notebookDetail.showingCount': { one: '{count} nota à vista', other: '{count} notas à vista' },
 	'notebookDetail.smallerType': 'Letra menor',
 	'notebookDetail.stopKeepingThisAtThe': 'Não manter mais no topo',
 	'notebookDetail.tagsPeople': 'Etiquetas, pessoas',
