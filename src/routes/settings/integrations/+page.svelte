@@ -4,6 +4,7 @@
 	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
 	import ChatSettings from '$lib/components/ChatSettings.svelte';
+	import { CHAT_IN_APP } from '$lib/features';
 	import Modal from '$lib/components/Modal.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import CopyBlock from '$lib/components/CopyBlock.svelte';
@@ -237,7 +238,9 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 		rooms where there were two: what the chat runs on is a setting of this
 		page. Everything below is how something OUTSIDE the app reaches in.
 	-->
-	<ChatSettings {data} {form} />
+	{#if CHAT_IN_APP}
+		<ChatSettings {data} {form} />
+	{/if}
 
 	<Card
 		title={t('settings.integrations.letAnAiAssistantUse')}

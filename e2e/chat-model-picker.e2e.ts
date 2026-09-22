@@ -13,6 +13,15 @@ import { visit } from './helpers/visit';
  * because that is the half most people meet: what matters is that the app
  * hands back the company's own sentence rather than a number.
  */
+/*
+ * Skipped while the in-app chat is switched off — `CHAT_IN_APP` in
+ * `src/lib/features.ts`. The feature is parked rather than removed: the room,
+ * the settings card and the model catalogue are all still here, and turning
+ * the flag back on should turn these green again without an edit.
+ */
+test.describe.configure({ mode: 'serial' });
+test.skip(true, 'the in-app chat is switched off — see $lib/features');
+
 test('the model is asked for, and a refused key says why', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('chat-model'));

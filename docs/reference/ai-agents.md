@@ -12,6 +12,16 @@ The examples below use `https://app.ontoplano.com`. Your own instance answers at
 `https://your-host/api/mcp` — the address you type into the browser, with
 `/api/mcp` after it.
 
+<!--
+	The chat inside the app is switched off — `CHAT_IN_APP` in
+	`src/lib/features.ts`. Its documentation is kept here, commented, so that
+	turning the flag back on is one edit in each place rather than a rewrite.
+
+	Why it is off: this page is about an assistant you already use reaching
+	*into* ontoplano over MCP. The chat was the other direction — this instance
+	calling a model on your behalf — and the Ollama case makes the problem
+	plain: a server on the internet cannot dial a laptop.
+
 ## The chat inside the app
 
 You do not need an external assistant to use the tools. **Settings → AI &
@@ -45,7 +55,7 @@ Each of these is a company you have an account with, and the key is billed to
 that account rather than to anything here. Ontoplano never holds a provider
 account of its own.
 
-<!-- tabs -->
+<!-- tabs --&gt;
 
 #### Anthropic
 
@@ -92,7 +102,9 @@ instance.
 The instance dials that address from wherever it runs, so an Ollama on your
 laptop is not reachable by an instance on a server somewhere else.
 
-<!-- /tabs -->
+<!-- /tabs --&gt;
+
+-->
 
 ## Connecting without a key
 

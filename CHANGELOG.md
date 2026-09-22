@@ -18,6 +18,16 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.14 — 2026-09-22
+
+- **The chat inside the app is switched off.** It was built the way most apps
+  build one — you bring a provider key and this instance calls the provider on
+  your behalf — and that is the opposite direction from the one that matters
+  here: the assistant you already use reaching _in_ over MCP, with your own
+  account and your own model. Nothing is deleted; the room, the settings card
+  and the model catalogue are all still there behind one flag, and connecting
+  an assistant is unaffected.
+
 ## 0.182.13 — 2026-09-22
 
 - **The chat's model picker says why an address could not be reached.** Asking

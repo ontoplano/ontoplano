@@ -9,6 +9,15 @@ import { visit } from './helpers/visit';
  * so absence is what this walks: no key means the chat room turns you to the
  * screen that takes one, and removing the key puts it back that way.
  */
+/*
+ * Skipped while the in-app chat is switched off — `CHAT_IN_APP` in
+ * `src/lib/features.ts`. The feature is parked rather than removed: the room,
+ * the settings card and the model catalogue are all still here, and turning
+ * the flag back on should turn these green again without an edit.
+ */
+test.describe.configure({ mode: 'serial' });
+test.skip(true, 'the in-app chat is switched off — see $lib/features');
+
 test('the chat appears with a key and goes away with it', async ({ page }) => {
 	await register(page, testEmail('assistant-chat'));
 
