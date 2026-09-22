@@ -55,8 +55,30 @@
 	const ends = $derived(RATING_SCALE_ENDS[rating]);
 	const shown = $derived(value ?? RATING_UNRATED);
 
+	/** Where a value sits along the scale, nought to one. */
+	const along = (v: number) => (v - RATING_MIN) / (RATING_MAX - RATING_MIN);
+
 	/** How much of the track is behind the thumb, for the filled part. */
-	const filled = $derived(((shown - RATING_MIN) / (RATING_MAX - RATING_MIN)) * 100);
+	const filled = $derived(along(shown) * 100);
+
+	/**
+	 * Every stop the control can hold: the six answers, and no-answer between
+	 * two and three.
+	 */
+	const STOPS = [
+		...Array.from({ length: RATING_MAX - RATING_MIN + 1 }, (_, at) => RATING_MIN + at),
+		RATING_UNRATED
+	].sort((a, b) => a - b);
+
+	/**
+	 * Where to draw the ball for a stop.
+	 *
+	 * A range input's thumb travels between its own half-widths, not the whole
+	 * track, so a plain percentage would put the end balls outside where the
+	 * thumb can reach by half a thumb each. `--thumb` is the same length the
+	 * thumb is drawn at, in one place for both.
+	 */
+	const atStop = (v: number) => `calc(var(--thumb) / 2 + (100% - var(--thumb)) * ${along(v)})`;
 
 	/**
 	 * Seven stops: 0 1 2 · 3 4 5, with no answer in the middle.
@@ -113,8 +135,28 @@
 	{/if}
 
 	<div class="min-w-0 flex-1">
-		<div class="flex items-center gap-2">
-			<div class="rating-track relative min-w-0 flex-1" class:rating-answered={value !== null}>
+		<!--
+			The track, the number and the way out are one thing, so the colour is
+			too — it was around the slider alone, which left the number and the ×
+			sitting outside the answer they belong to.
+		-->
+		<div class="rating-row flex items-center gap-2" class:rating-answered={value !== null}>
+			<div class="rating-track relative min-w-0 flex-1">
+				<!--
+					A ball at every stop, and an open one at no-answer.
+
+					The stops are what the scale *is* — seven of them — and a bare
+					line says nothing about where they are. The open one is the
+					middle: the track stops either side of it rather than running
+					through, so "nothing chosen" reads as a gap in the scale rather
+					than as a point on it.
+				-->
+				<span class="rating-anchors" aria-hidden="true">
+					{#each STOPS.filter((stop) => stop !== RATING_UNRATED) as stop (stop)}
+						<span class="rating-anchor" style="left: {atStop(stop)}"></span>
+					{/each}
+				</span>
+
 				<input
 					type="range"
 					min={RATING_MIN}
@@ -131,6 +173,18 @@
 					class:is-unset={value === null}
 					style="--filled: {filled}%"
 				/>
+
+				<!--
+					Drawn after the input, so the line stops either side of it
+					rather than running through. The thumb only ever reaches this
+					point when there is no answer, and then it rests exactly here —
+					so the ring covering it is the ring it was already wearing.
+				-->
+				<span
+					aria-hidden="true"
+					class="rating-anchor rating-anchor-open"
+					style="left: {atStop(RATING_UNRATED)}"
+				></span>
 			</div>
 
 			<!--
@@ -143,7 +197,7 @@
 			whether or not there is a value, so nothing on the row moves as the
 			slider does.
 		-->
-			<span class="tabular w-3 shrink-0 text-right text-xs text-gray-700">
+			<span class="rating-number tabular shrink-0 text-right text-xs">
 				{value ?? '–'}
 			</span>
 
@@ -178,25 +232,109 @@
 	 * set once in `layout.css` for the gauge and for this alike.
 	 */
 	/*
-	 * The colour sits around the slider, not behind the whole row.
+	 * How wide the thumb is drawn, in one place.
 	 *
-	 * Behind the row it washed the label and the sentence as well, which are
-	 * the parts that have to stay readable, and left the slider in a white
-	 * cut-out — the one thing the colour was meant to be about. Around the
-	 * track it reads as the control being answered.
+	 * The balls on the track have to line up with where the thumb can actually
+	 * come to rest, and a range input's thumb travels between its own
+	 * half-widths rather than across the whole track.
+	 */
+	.rating-row {
+		--thumb: 0.875rem;
+	}
+
+	/*
+	 * The colour covers the control, which is the track, the number and the way
+	 * out of answering.
+	 *
+	 * Behind the whole row it washed the label and the sentence, which are the
+	 * parts that have to stay readable. Around the track alone it left the
+	 * number and the × outside the answer they belong to. This is the middle:
+	 * everything you can operate, and nothing you only read.
 	 *
 	 * The padding is cancelled by an equal negative margin so that answering a
 	 * rating does not move the row it is on.
 	 */
-	.rating-track {
+	.rating-row {
+		/*
+		 * Clear of the sentence above it.
+		 *
+		 * The pill's top edge ran into the descenders of "How soon this has to
+		 * happen", which is the line it belongs to — it has to read as beneath
+		 * the question rather than as touching it.
+		 */
+		margin-top: 0.375rem;
 		border-radius: 9999px;
 		transition: background-color 120ms ease-out;
+		/*
+		 * Padded, and pulled back by less than it is padded.
+		 *
+		 * An equal negative margin keeps the row from moving when a rating is
+		 * answered, which is what it was for — but the three of these sit in
+		 * columns beside each other, and a wash that reaches the full padding
+		 * out on both sides touches the next one. Half the horizontal padding
+		 * comes back, so there is always a gap between two answered ones.
+		 */
 		padding: 0.3125rem 0.625rem;
-		margin: -0.3125rem -0.625rem;
+		margin-right: -0.3125rem;
+		margin-bottom: -0.3125rem;
+		margin-left: -0.3125rem;
 	}
 
-	.rating-track.rating-answered {
+	.rating-row.rating-answered {
 		background-color: color-mix(in srgb, var(--rating-ink) 22%, transparent);
+	}
+
+	.rating-number {
+		min-width: 0.75rem;
+		color: var(--color-gray-900);
+	}
+
+	/*
+	 * The stops, drawn on the track under the thumb.
+	 *
+	 * Under, not over: the thumb has to be able to sit on one and cover it, and
+	 * the ball is where the thumb *can* rest rather than a mark beside it.
+	 */
+	.rating-anchors {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+	}
+
+	/* Over the track, and over the thumb where the two meet. */
+	.rating-anchor-open {
+		z-index: 1;
+		pointer-events: none;
+	}
+
+	.rating-anchor {
+		position: absolute;
+		top: 50%;
+		width: 0.375rem;
+		height: 0.375rem;
+		margin: -0.1875rem 0 0 -0.1875rem;
+		border-radius: 9999px;
+		background: var(--color-gray-900);
+	}
+
+	/*
+	 * No-answer: an open ball the line runs into rather than through.
+	 *
+	 * Its middle is filled from whatever it sits on so the line does not show
+	 * inside it, and there is no halo around the outside — the line meets the
+	 * ring and stops there, which is what makes the whole control read as one
+	 * connected object rather than a track with a bead floating over it.
+	 */
+	.rating-anchor-open {
+		width: 0.6875rem;
+		height: 0.6875rem;
+		margin: -0.34375rem 0 0 -0.34375rem;
+		background: var(--color-white);
+		border: 2px solid var(--color-gray-900);
+	}
+
+	.rating-row.rating-answered .rating-anchor-open {
+		background: color-mix(in srgb, var(--rating-ink) 22%, var(--color-white));
 	}
 
 	/*
@@ -213,22 +351,42 @@
 		background: transparent;
 		height: 1.25rem;
 		cursor: pointer;
+		/*
+		 * Block, so the box around it is exactly its own height.
+		 *
+		 * An input is inline, so the wrapper picked up the line box's descender
+		 * space and stood a couple of pixels taller — which put the balls, which
+		 * are placed at half the wrapper's height, below the line they mark.
+		 */
+		display: block;
+	}
+
+	/*
+	 * One object, in one ink.
+	 *
+	 * The line, the balls on it, the ring at no-answer and the thumb are all
+	 * `--slide-ink`, and the part of the line past the thumb is the same ink at
+	 * a quarter rather than a different grey — so the control reads as a single
+	 * thing with some of it filled, instead of four greys that happen to touch.
+	 */
+	.rating-slide {
+		--slide-ink: var(--color-gray-900);
 	}
 
 	.rating-slide::-webkit-slider-runnable-track {
 		height: 2px;
 		background: linear-gradient(
 			to right,
-			var(--color-gray-900) var(--filled),
-			var(--color-gray-300) var(--filled)
+			var(--slide-ink) var(--filled),
+			color-mix(in srgb, var(--slide-ink) 25%, transparent) var(--filled)
 		);
 	}
 	.rating-slide::-moz-range-track {
 		height: 2px;
 		background: linear-gradient(
 			to right,
-			var(--color-gray-900) var(--filled),
-			var(--color-gray-300) var(--filled)
+			var(--slide-ink) var(--filled),
+			color-mix(in srgb, var(--slide-ink) 25%, transparent) var(--filled)
 		);
 	}
 

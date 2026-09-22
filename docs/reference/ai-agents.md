@@ -339,9 +339,9 @@ _Needs `schedule:write`; writes._
 | `start_time` | string  | yes      | When it starts, as HH:MM on a 24-hour clock.                                                                                                                                                         |
 | `minutes`    | integer | —        | How long it runs, in minutes. Default `60`.                                                                                                                                                          |
 | `category`   | string  | —        | Which part of life it belongs to, by name — `categories` lists them. A name that matches nothing is refused, never guessed. The first category is used only when this is left out entirely.          |
-| `urgency`    | integer | —        | How soon it has to happen, 1–5.                                                                                                                                                                      |
-| `interest`   | integer | —        | How much they want to do it, 1–5.                                                                                                                                                                    |
-| `ease`       | integer | —        | How easy it is, 1–5, five being easiest. Replaces `energy`, which asked the opposite question on the same scale.                                                                                     |
+| `urgency`    | integer | —        | How soon it has to happen, 0–5.                                                                                                                                                                      |
+| `interest`   | integer | —        | How much they want to do it, 0–5.                                                                                                                                                                    |
+| `ease`       | integer | —        | How easy it is, 0–5, five being easiest. Replaces `energy`, which asked the opposite question on a scale that began at one.                                                                          |
 | `energy`     | integer | —        | Deprecated — use \`ease\`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in …. **Deprecated.** |
 
 ### `change_block` — Move or rename a block
@@ -535,9 +535,9 @@ _Needs `tasks:write`; writes._
 | `notes`      | string  | —        | The new notes.                                                                                                                                                                                         |
 | `notebookId` | integer | —        | The notebook to file it under, as `notebooks` gives its id. `0` takes it out of whichever one it is in. `add_todo` can file a task at birth; this is how one already made moves.                       |
 | `tags`       | string  | —        | The labels it should carry from now on, comma or space separated — this replaces whatever it had, so include the ones to keep. An empty string takes them all off. Left out, the labels are untouched. |
-| `urgency`    | integer | —        | How soon it has to happen, 1–5.                                                                                                                                                                        |
-| `interest`   | integer | —        | How much they want to do it, 1–5.                                                                                                                                                                      |
-| `ease`       | integer | —        | How easy it is, 1–5, five being easiest. Replaces `energy`, which asked the opposite question on the same scale.                                                                                       |
+| `urgency`    | integer | —        | How soon it has to happen, 0–5.                                                                                                                                                                        |
+| `interest`   | integer | —        | How much they want to do it, 0–5.                                                                                                                                                                      |
+| `ease`       | integer | —        | How easy it is, 0–5, five being easiest. Replaces `energy`, which asked the opposite question on a scale that began at one.                                                                            |
 | `energy`     | integer | —        | Deprecated — use \`ease\`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in …. **Deprecated.**   |
 
 ### `schedule_todo` — Put a todo on a day
@@ -1272,9 +1272,9 @@ _Needs `schedule:write`; writes._
 | `repeats`        | string  | —        | How often it comes back. Weekly if left out. `every_n_weeks` and `every_n_days` need `every`; `monthly` needs `month_day` and ignores the weekday. One of: `weekly`, `every_n_weeks`, `every_n_days`, `monthly`. |
 | `every`          | integer | —        | The N in every N weeks or every N days — 2 is "every other".                                                                                                                                                     |
 | `month_day`      | integer | —        | For `monthly`: which day of the month, 1 to 31. A month too short for it uses its last day.                                                                                                                      |
-| `urgency`        | integer | —        | How soon it has to happen, 1–5.                                                                                                                                                                                  |
-| `interest`       | integer | —        | How much they want to do it, 1–5.                                                                                                                                                                                |
-| `ease`           | integer | —        | How easy it is, 1–5, five being easiest. Replaces `energy`, which asked the opposite question on the same scale.                                                                                                 |
+| `urgency`        | integer | —        | How soon it has to happen, 0–5.                                                                                                                                                                                  |
+| `interest`       | integer | —        | How much they want to do it, 0–5.                                                                                                                                                                                |
+| `ease`           | integer | —        | How easy it is, 0–5, five being easiest. Replaces `energy`, which asked the opposite question on a scale that began at one.                                                                                      |
 | `energy`         | integer | —        | Deprecated — use \`ease\`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in …. **Deprecated.**             |
 
 ### `change_repeating_block` — Change a repeating block

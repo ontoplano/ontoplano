@@ -1775,6 +1775,8 @@
 	"ratings.interest": "Interesse",
 	"ratings.labelNotSet": "{label}: nicht gesetzt",
 	"ratings.labelValueOf5": "{label}: {value} von 5",
+	"ratings.priority": "Priorität",
+	"ratings.priorityScoreOf": "Priorität {score} von {max}",
 	"ratings.urgency": "Dringlichkeit",
 	"reminders.aDayAndSomethingTo": "Ein Tag und etwas, das vorab gesagt wird",
 	"reminders.aDayAndWhatTo": "Ein Tag und was gesagt werden soll. Mehr nicht.",

@@ -31,6 +31,8 @@
 	 * picture and the arithmetic make the same claim.
 	 */
 	import {
+		PRIORITY_MAX,
+		priorityScore,
 		RATING_ORDER,
 		RATING_LABELS,
 		RATING_MAX,
@@ -50,31 +52,52 @@
 
 	/** The markings, as something to iterate: the four lines between five steps. */
 	const marks = Array.from({ length: RATING_MAX - 1 }, (_, at) => at + 1);
+
+	const score = $derived(priorityScore(values as RatingValues));
+	const said = $derived(t('ratings.priorityScoreOf', { score, max: PRIORITY_MAX }));
 </script>
 
-<span class="gauges {stacked ? 'gauges-stacked' : ''} {className}">
-	{#each RATING_ORDER as r (r)}
-		{@const value = values[r]}
-		{@const said =
-			value == null
-				? t('ratings.labelNotSet', { label: t(RATING_LABELS[r]) })
-				: t('ratings.labelValueOf5', { label: t(RATING_LABELS[r]), value })}
-		<span
-			class="gauge"
-			class:gauge-unset={value == null}
-			data-rating={r}
-			title={said}
-			aria-label={said}
-			role="img"
-		>
-			<!-- The liquid: a fill from the left, in whole steps — or half of one,
+<!--
+	The three gauges, with the number they add up to under them.
+
+	The order is exact and invisible: a row sits where it sits and says nothing
+	about why. The score is that same comparison as a figure — nought to a
+	thousand, all fives at the top, a task nobody rated at exactly half — so what
+	the list did can be read off the card.
+
+	Under rather than behind. Behind was the idea and it cannot be read: the rail
+	these stand in is about as wide as the gauges themselves, so a number large
+	enough to see at a glance covers them and neither survives. Beneath them it
+	is the same association and both are legible — grey enough not to compete
+	with the title, which is still what the row is about.
+-->
+<span class="gauges-with-score {stacked ? 'gauges-with-score-stacked' : ''} {className}">
+	<span class="gauges {stacked ? 'gauges-stacked' : ''}">
+		{#each RATING_ORDER as r (r)}
+			{@const value = values[r]}
+			{@const said =
+				value == null
+					? t('ratings.labelNotSet', { label: t(RATING_LABELS[r]) })
+					: t('ratings.labelValueOf5', { label: t(RATING_LABELS[r]), value })}
+			<span
+				class="gauge"
+				class:gauge-unset={value == null}
+				data-rating={r}
+				title={said}
+				aria-label={said}
+				role="img"
+			>
+				<!-- The liquid: a fill from the left, in whole steps — or half of one,
 			     greyed, where nobody has answered. -->
-			<span class="gauge-fill" style="width: {((value ?? RATING_UNRATED) / RATING_MAX) * 100}%"
-			></span>
-			<!-- And the markings over it, so the level is read against them. -->
-			{#each marks as mark (mark)}
-				<span class="gauge-mark" style="left: {(mark / RATING_MAX) * 100}%"></span>
-			{/each}
-		</span>
-	{/each}
+				<span class="gauge-fill" style="width: {((value ?? RATING_UNRATED) / RATING_MAX) * 100}%"
+				></span>
+				<!-- And the markings over it, so the level is read against them. -->
+				{#each marks as mark (mark)}
+					<span class="gauge-mark" style="left: {(mark / RATING_MAX) * 100}%"></span>
+				{/each}
+			</span>
+		{/each}
+	</span>
+
+	<span class="gauge-score" title={said}>{score}</span>
 </span>

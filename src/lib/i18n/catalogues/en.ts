@@ -1801,6 +1801,8 @@ export const messages: Catalogue = {
 	'ratings.interest': 'Interest',
 	'ratings.labelNotSet': '{label}: not set',
 	'ratings.labelValueOf5': '{label}: {value} of 5',
+	'ratings.priority': 'Priority',
+	'ratings.priorityScoreOf': 'Priority {score} of {max}',
 	'ratings.urgency': 'Urgency',
 	'reminders.aDayAndSomethingTo': 'A day and something to say first',
 	'reminders.aDayAndWhatTo': 'A day and what to say. It is about nothing else.',

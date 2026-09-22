@@ -75,6 +75,39 @@ Monday and not finished follows you forward: the board and the planner strip
 both keep showing it after its day has passed, because a task you did not do
 has not stopped needing doing.
 
+## Priority
+
+The three ratings — **urgency**, **ease**, **interest** — are answered on the
+same scale, nought to five, where five is the most of what the word says. Each
+is optional, and a task nobody has rated is a perfectly good task.
+
+Ordering by Priority reads them in that order: most urgent first, then, between
+two equally urgent, the easier one, then the one you would rather do. A rating
+nobody set counts as **2.5** — dead centre, with three answers either side — so
+a task you deliberately marked 3 beats one nobody weighed, while 0, 1 and 2 are
+the tiers that mean "later". Two tasks answered identically come out oldest
+first, unless one of them has been dragged somewhere by hand.
+
+The same comparison is also shown as a number, so a row can say why it sits
+where it does. Writing the three answers as _u_, _e_ and _i_:
+
+<p class="math">
+p(u, e, i) = 1000 · (121·2u + 11·2e + 2i) ⁄ 1330
+</p>
+
+Each answer is worth more than everything below it put together, which is what
+makes one number behave like three read in order. The values are doubled so
+that 2.5 is a whole number, and the weights are powers of **eleven** rather
+than of ten because doubling leaves eleven distinct values — 0 to 10 — and a
+base has to be larger than the count of what it carries. With hundreds and
+tens, half a step of urgency is worth 50 while ease and interest can add 55
+between them, and the number would contradict the order it exists to explain.
+
+The ends are round on purpose: all fives scores **1000**, all noughts **0**, and
+a task with nothing rated at all sits at exactly **500**. The figure is rounded
+to a whole number, so two tasks a hair apart can honestly show the same one —
+what never happens is a higher number sitting below a lower one.
+
 ## Becoming one another
 
 The moves that matter are the ones that change _which_ of the four things a row

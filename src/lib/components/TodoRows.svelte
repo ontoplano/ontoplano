@@ -4,7 +4,7 @@
 	import Picker from '$lib/components/Picker.svelte';
 	import SortControl from '$lib/components/SortControl.svelte';
 	import { agoOf, momentOf } from '$lib/when';
-	import { compareByPriority } from '$lib/ratings';
+	import { compareByPriority, PRIORITY_MAX, priorityScore, type RatingValues } from '$lib/ratings';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { deleteLater, isLeaving } from '$lib/undo.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
@@ -198,6 +198,9 @@
 		interest: null,
 		ease: null
 	});
+
+	/** The draft's score, which moves as the sliders do. */
+	const draftScore = $derived(priorityScore(formRatings as RatingValues));
 
 	/**
 	 * How long a task stays on screen after it is ticked.
@@ -1506,6 +1509,22 @@
 					</button>
 				</form>
 			{/if}
+			<!--
+				What the three answers come to, while they are being answered.
+
+				In the middle of the footer because it is about the whole form
+				rather than about either button beside it, and live because the
+				number is the only way to see what moving one slider did to the
+				task's place in the list.
+			-->
+			<span
+				class="flex-1 text-center text-sm text-gray-500"
+				title={t('ratings.priorityScoreOf', { score: draftScore, max: PRIORITY_MAX })}
+			>
+				<span class="eyebrow mr-1.5 text-gray-500">{t('ratings.priority')}</span>
+				<span class="tabular text-base text-gray-700">{draftScore}</span>
+			</span>
+
 			<!--
 				Cancel throws the draft away; Escape and the backdrop keep it.
 

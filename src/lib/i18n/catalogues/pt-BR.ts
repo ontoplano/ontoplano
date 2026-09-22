@@ -1838,6 +1838,8 @@ export const messages: Catalogue = {
 	'ratings.interest': 'Interesse',
 	'ratings.labelNotSet': '{label}: sem valor',
 	'ratings.labelValueOf5': '{label}: {value} de 5',
+	'ratings.priority': 'Prioridade',
+	'ratings.priorityScoreOf': 'Prioridade {score} de {max}',
 	'ratings.urgency': 'Urgência',
 	'reminders.aDayAndSomethingTo': 'Um dia e algo para dizer primeiro',
 	'reminders.aDayAndWhatTo': 'Um dia e o que dizer. Não é sobre mais nada.',

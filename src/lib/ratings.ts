@@ -85,6 +85,57 @@ export function compareByRatings(a: RatingValues, b: RatingValues): number {
 }
 
 /**
+ * The three answers as one number, nought to a thousand.
+ *
+ * The sort reads the three in order — urgency, then ease, then interest — and
+ * that is exact but invisible: a row sits where it sits and says nothing about
+ * why. The score is the same comparison written as a figure somebody can read
+ * off a card, which means it has to agree with the sort exactly. Sorting by it
+ * and sorting by the three gives the same list, and that is checked over every
+ * pair of answers there is in `tests/ratings-order.test.ts`.
+ *
+ * ## How
+ *
+ * Each answer is worth more than everything below it put together, which is
+ * what makes one number behave like three read in order. The weights are
+ * powers of eleven rather than of ten, and the values are doubled first:
+ *
+ *     raw = 121·2u + 11·2e + 1·2i          score = 1000 · raw / 1330
+ *
+ * Doubled because an unanswered rating counts as 2.5 and everything has to be
+ * a whole number for the digits not to run into each other; eleven because
+ * doubling leaves eleven distinct values, 0 to 10, and a base has to be bigger
+ * than the count of what it carries. With plain hundreds and tens, a half-step
+ * in urgency is worth 50 while ease and interest can add 55 between them — so
+ * `(3, 0, 0)` scored *below* `(2.5, 5, 5)` while the sort put it above, and the
+ * number would have contradicted the order it exists to explain.
+ *
+ * The scale is chosen so the two ends are round: all fives is 1000, all noughts
+ * is 0, and a task nobody has rated at all is exactly 500.
+ */
+export const PRIORITY_MAX = 1000;
+
+/** What each answer is worth, most significant first: urgency, ease, interest. */
+const PRIORITY_WEIGHTS = [121, 11, 1] as const;
+
+/** Doubled, so 2.5 is a whole number and the weights stay whole too. */
+const PRIORITY_SCALE = 2;
+
+/** The largest `raw` there is — all fives — which is what maps to 1000. */
+const PRIORITY_RAW_MAX = PRIORITY_WEIGHTS.reduce(
+	(sum, weight) => sum + weight * PRIORITY_SCALE * RATING_MAX,
+	0
+);
+
+export function priorityScore(values: RatingValues): number {
+	const raw = RATING_ORDER.reduce(
+		(sum, rating, at) => sum + PRIORITY_WEIGHTS[at] * PRIORITY_SCALE * ratingWeight(values[rating]),
+		0
+	);
+	return Math.round((PRIORITY_MAX * raw) / PRIORITY_RAW_MAX);
+}
+
+/**
  * The whole order, ties included: the ratings, then the older task.
  *
  * Three tasks answered the same way have to come out in *some* order, and

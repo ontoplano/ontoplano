@@ -1616,6 +1616,8 @@ export type MessageKey =
 	| 'ratings.interest'
 	| 'ratings.labelNotSet'
 	| 'ratings.labelValueOf5'
+	| 'ratings.priority'
+	| 'ratings.priorityScoreOf'
 	| 'ratings.urgency'
 	| 'reminders.aDayAndSomethingTo'
 	| 'reminders.aDayAndWhatTo'
@@ -3456,6 +3458,7 @@ export interface MessageValuesFor {
 	'ratingPicker.leaveUnanswered': { rating: string | number };
 	'ratings.labelNotSet': { label: string | number };
 	'ratings.labelValueOf5': { label: string | number; value: string | number };
+	'ratings.priorityScoreOf': { max: string | number; score: string | number };
 	'reminders.alarmsOnThisPhone': { count: number };
 	'reminders.atLeastMinutesFromNow': { count: number };
 	'reminders.billDue': { day: string | number; money: string | number; name: string | number };

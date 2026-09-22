@@ -65,6 +65,19 @@ const pages = [
 ].map((p) => ({ ...p, title: titleOf(p.markdown, p.file) }));
 
 const STYLE = `
+/* ── an equation ───────────────────────────────────────────────────────────
+   Set the way a paper would set it rather than as code: the priority score is
+   arithmetic somebody might check, not a line to copy. No typesetting library
+   for one equation — a maths serif, centred, and italics for the letters that
+   stand for the answers. */
+.math {
+  margin: 1.25rem 0;
+  text-align: center;
+  font-family: 'Latin Modern Math', 'Cambria Math', 'STIX Two Math', Georgia, serif;
+  font-size: 1.15rem;
+  font-style: italic;
+  letter-spacing: 0.01em;
+}
 /* ── the search box, and what it finds ─────────────────────────────────────
    The app finds a room from four letters; the docs had nothing but the
    browser's find, which only ever looks at the page already open. */

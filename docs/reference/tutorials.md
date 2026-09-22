@@ -180,7 +180,7 @@ at the button that reopens it, so it is not listed here.
 1. tour.todayAsCards
 2. tour.todayOrEverythingElse
 3. tour.dragACardOrCarry
-4. tour.urgencyInterestEase
+4. tour.urgencyEaseInterest
 
 ### `/tasks/plan` — tour.plan
 

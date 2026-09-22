@@ -25,6 +25,8 @@ import {
 	RATING_UNRATED,
 	compareByPriority,
 	compareByRatings,
+	PRIORITY_MAX,
+	priorityScore,
 	ratingWeight,
 	type RatingValues
 } from '../src/lib/ratings';
@@ -168,5 +170,66 @@ describe('nought, now that it is an answer', () => {
 	test('and 2.5 sits dead centre, with three answers either side', () => {
 		expect(RATING_UNRATED).toBe(2.5);
 		expect(RATING_UNRATED - RATING_MIN).toBe(RATING_MAX - RATING_UNRATED);
+	});
+});
+
+/**
+ * The score is the sort, written as a number.
+ *
+ * It exists to be read off a card, which only works if it says what the order
+ * says — a figure that contradicts the row it sits on is worse than no figure.
+ * So the anchors are pinned, and then every pair of answers there is gets
+ * compared both ways.
+ */
+describe('the priority score', () => {
+	const score = (u: number | null, e: number | null, i: number | null) =>
+		priorityScore(rated(u, e, i));
+
+	test('runs from nought to a thousand, with the ends round', () => {
+		expect(score(5, 5, 5)).toBe(PRIORITY_MAX);
+		expect(score(0, 0, 0)).toBe(0);
+	});
+
+	test('and a task nobody rated sits exactly halfway', () => {
+		expect(score(null, null, null)).toBe(PRIORITY_MAX / 2);
+	});
+
+	test('reads urgency first, whatever the other two say', () => {
+		expect(score(3, 0, 0)).toBeGreaterThan(score(2, 5, 5));
+		// The pair that plain hundreds and tens got wrong: half a step of
+		// urgency is worth less than everything ease and interest can add.
+		expect(score(3, 0, 0)).toBeGreaterThan(score(null, 5, 5));
+	});
+
+	/*
+	 * Never the opposite of the sort — over every pair of answers there is.
+	 *
+	 * Not "always different", because the figure is rounded to a whole number
+	 * and the scale is finer than a thousand steps: two tasks a hair apart can
+	 * honestly show the same number, and the order between them is then the
+	 * tie-break's business. What must never happen is a card reading 460 sitting
+	 * *below* one reading 459.
+	 */
+	test('is never the opposite way round from the sort, over every pair', () => {
+		const values = [null, 0, 1, 2, 3, 4, 5];
+		const all = [];
+		for (const u of values)
+			for (const e of values) for (const i of values) all.push(rated(u, e, i));
+
+		const inverted = [];
+		let shared = 0;
+		for (const a of all)
+			for (const b of all) {
+				const sorted = Math.sign(compareByRatings(a, b));
+				// The sort puts the best first, so a better task is a *lower*
+				// comparison and a *higher* score.
+				const scored = Math.sign(priorityScore(b) - priorityScore(a));
+				if (sorted !== 0 && scored === -sorted) inverted.push([a, b]);
+				if (sorted !== 0 && scored === 0) shared++;
+			}
+		expect(inverted.length, `first inversion: ${JSON.stringify(inverted[0])}`).toBe(0);
+		// Rounding does collapse a few, which is the honest cost of showing a
+		// whole number: worth knowing, not worth hiding.
+		expect(shared).toBeGreaterThan(0);
 	});
 });

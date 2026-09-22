@@ -2031,6 +2031,41 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * estimated. The tint underneath is the gauge's own colour at a tenth, so
 	 * an empty one still says which question it is answering.
 	 */
+	/*
+	 * The three gauges with their score behind them.
+	 *
+	 * Behind rather than beside: the number is the same fact the gauges draw,
+	 * so it sits under them as a watermark rather than competing for the row.
+	 */
+	.gauges-with-score {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
+	}
+
+	/* In the rail beside the tick box the gauges are a column, so this is too. */
+	.gauges-with-score-stacked {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.125rem;
+		width: 100%;
+	}
+
+	.gauge-score {
+		font-weight: 700;
+		font-size: 0.875rem;
+		line-height: 1.1;
+		letter-spacing: -0.02em;
+		font-variant-numeric: tabular-nums;
+		text-align: center;
+		/*
+		 * Quiet enough not to be the row's subject, dark enough to be read:
+		 * gray-400 is about 2.5:1 on this app's surfaces, which `make lint`
+		 * refuses for words somebody is meant to read.
+		 */
+		color: var(--color-gray-500);
+	}
+
 	.gauges {
 		display: inline-flex;
 		align-items: center;
@@ -2158,7 +2193,7 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * mistaken for a tick.
 	 */
 	[data-rating='urgency'] {
-		--rating-ink: var(--color-amber-400);
+		--rating-ink: var(--color-red-500);
 	}
 
 	[data-rating='ease'] {
@@ -3357,13 +3392,23 @@ html[data-theme='dark'] {
  * leaves a white field carrying light inherited text. Bind the controls to the
  * tokens instead, once, for both themes.
  */
-input:not([type='checkbox']):not([type='radio']),
+input:not([type='checkbox']):not([type='radio']):not([type='range']),
 select,
 textarea,
 option {
 	background-color: var(--color-white);
 	color: var(--color-gray-900);
 }
+
+/*
+ * A range is excluded above for a different reason.
+ *
+ * It is not a field with a box round it: it is a track with a thumb on it, and
+ * both are drawn by the component that uses one. A white background painted on
+ * the element itself sat *behind* the track as a white slab the width of the
+ * control — invisible on a white card and, the moment the rating picker put a
+ * colour behind its slider, a white cut-out in the middle of it.
+ */
 
 /*
  * Checkboxes and radios are excluded above on purpose.

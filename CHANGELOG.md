@@ -20,6 +20,17 @@ releases mattered.
 
 ## 0.183.0 — 2026-09-22
 
+- **A task shows what its three ratings come to, as one number.** Nought to a
+  thousand: all fives is 1000, nothing rated at all is exactly 500. It is the
+  same comparison the Priority order makes, written as a figure — so a row can
+  say why it sits where it does — and it moves as you drag a slider, under the
+  ratings on a card and between Delete and Cancel while you are editing one.
+
+- **The slider reads as one object.** The line, the stops along it, the ring at
+  no-answer and the thumb are one ink, the line meets the ring rather than
+  running through it, and the colour of the rating now covers the number and
+  the × beside it instead of stopping at the track. Urgency is red.
+
 - **A rating you have not answered rests in the middle of its slider.** It used
   to sit on a dot off the left end, so "no answer" and "the lowest answer" were
   next door to each other and an unanswered question looked like a one. The
