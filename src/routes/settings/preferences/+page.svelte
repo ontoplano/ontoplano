@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$lib/enhance';
+	import { sliding } from '$lib/actions/sliding';
 	import { invalidateAll } from '$app/navigation';
 	import { whileBusy } from '$lib/busy.svelte';
 	import { timeOf, type Clock } from '$lib/when';
@@ -1253,6 +1254,7 @@
 				if (chosen) document.documentElement.dataset.theme = chosen;
 				return async ({ update }) => update({ reset: false });
 			}}
+			use:sliding
 			class="seg"
 		>
 			{#each THEMES as option (option)}
@@ -1277,6 +1279,7 @@
 				method="post"
 				action="?/setErrorReports"
 				use:settingsForm={{ notice: 'Saved.' }}
+				use:sliding
 				class="seg mt-3"
 			>
 				{#each [['yes', t('settings.preferences.send')], ['no', t('settings.preferences.never')]] as [value, label] (value)}

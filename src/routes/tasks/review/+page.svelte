@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { useWhen } from '$lib/when-context.svelte';
+	import { sliding } from '$lib/actions/sliding';
 	import { dayOf, weekdayOf } from '$lib/when';
 	import type { PlainKey } from '$lib/i18n/keys';
 	import { enhance } from '$lib/enhance';
@@ -324,7 +325,7 @@
 					anything that travels with them would walk out from under the
 					finger that just chose.
 				-->
-				<div class="seg" role="group" aria-label={t('tasks.review.whichHalf')}>
+				<div use:sliding class="seg" role="group" aria-label={t('tasks.review.whichHalf')}>
 					<button
 						type="button"
 						onclick={() => (showing = 'untold')}

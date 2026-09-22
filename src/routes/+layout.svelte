@@ -1,5 +1,6 @@
 <script lang="ts">
 	import './layout.css';
+	import { sliding } from '$lib/actions/sliding';
 	// Generated beside the masks it names: scripts/build-eink-masks.mjs.
 	import { enhance } from '$lib/enhance';
 	import { resolve } from '$app/paths';
@@ -1306,6 +1307,7 @@
 											menuOpen = false;
 										};
 									}}
+									use:sliding
 									class="seg mt-2 flex w-full"
 								>
 									{#each THEMES as option (option)}

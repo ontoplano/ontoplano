@@ -20,6 +20,16 @@ releases mattered.
 
 ## 0.183.0 — 2026-09-22
 
+- **The segmented controls have a tile that moves.** Which half of the week,
+  which board column, Write or Preview — the position you are on used to be
+  drawn by filling that button, so nothing connected where it was to where it
+  is and the eye had to find the filled one again after every press. One tile
+  now, sliding between the positions, in all ten of them at once. It arrives
+  without travelling for anybody who has asked for less movement.
+
+- **Writing's Write and Preview are that control too**, rather than two loose
+  buttons beside each other.
+
 - **A report says which build it came from.** Version and commit, taken from the
   instance rather than asked of the person — the version alone names a dozen
   builds, because it is not bumped per commit. It shows on the report in the

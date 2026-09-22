@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { pillStyle } from '$lib/pill-ink';
+	import { sliding } from '$lib/actions/sliding';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import TodoFields from '$lib/components/fields/TodoFields.svelte';
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
@@ -667,7 +668,13 @@
 			<!-- Today against To-do is a choice of shape, exactly as Day/Week/
 			     Month is on the plan — so it is the same control, and it sits
 			     under the day it is about rather than across the row from it. -->
-			<div class="seg" role="group" aria-label={t('tasks.board.whatToShow')} data-tour="board-tabs">
+			<div
+				use:sliding
+				class="seg"
+				role="group"
+				aria-label={t('tasks.board.whatToShow')}
+				data-tour="board-tabs"
+			>
 				{#each [{ v: 'today', l: 'Today' }, { v: 'general', l: 'To-do' }] as t (t.v)}
 					<button
 						onclick={() => {
@@ -816,7 +823,7 @@
 			-->
 			<div class="mb-3 flex flex-wrap items-center gap-2 border-b border-gray-200 pb-3">
 				<span class="eyebrow shrink-0 text-gray-600">{t('ui.status')}</span>
-				<div class="seg">
+				<div use:sliding class="seg">
 					{#each STATUSES as status (status)}
 						<button
 							type="button"
@@ -1033,6 +1040,7 @@
 				landed.
 			-->
 			<div
+				use:sliding
 				class="seg mb-3 flex w-full md:hidden {dragging || movingUid ? 'ring-2 ring-gray-900' : ''}"
 			>
 				{#each columns as column (column.status)}

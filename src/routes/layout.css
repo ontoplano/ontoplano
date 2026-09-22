@@ -2477,8 +2477,67 @@ label:has(> input[type='radio']:not(:disabled)) {
 		color: var(--color-gray-900);
 	}
 
+	/*
+	 * The tile, where it moves rather than being repainted.
+	 *
+	 * `use:sliding` puts one of these in the track and measures it onto
+	 * whichever child is pressed. The pressed child then keeps its ink and
+	 * gives up its background — the tile is the background now, and it travels
+	 * — so the control reads as one thing with a position rather than as
+	 * several buttons of which one is filled.
+	 *
+	 * Behind the labels: it is drawn first in the track and sits at `z-index:
+	 * 0`, with the children above it, so nothing anybody reads is touched.
+	 */
+	.seg-sliding {
+		position: relative;
+	}
+
+	.seg-tile {
+		position: absolute;
+		top: 0;
+		left: 0;
+		z-index: 0;
+		border-radius: inherit;
+		background-color: var(--color-white);
+		box-shadow: var(--shadow-card);
+		transition:
+			transform 180ms cubic-bezier(0.2, 0, 0, 1),
+			width 180ms cubic-bezier(0.2, 0, 0, 1),
+			height 180ms cubic-bezier(0.2, 0, 0, 1);
+	}
+
+	html[data-style='playful'] .seg-tile {
+		box-shadow: 0 0 0 1px var(--color-gray-200);
+	}
+
+	/* Somebody who asked for less movement gets the position, not the journey. */
+	@media (prefers-reduced-motion: reduce) {
+		.seg-tile {
+			transition: none;
+		}
+	}
+
+	.seg-sliding > a,
+	.seg-sliding > button,
+	.seg-sliding > label {
+		position: relative;
+		z-index: 1;
+	}
+
+	/* With a tile that travels, the pressed child must not paint one of its own. */
+	.seg-sliding > [aria-pressed='true'],
+	.seg-sliding > [aria-selected='true'],
+	.seg-sliding > [aria-current='page'],
+	.seg-sliding > [aria-current='true'],
+	.seg-sliding > :has(> input:checked) {
+		background-color: transparent;
+		box-shadow: none;
+	}
+
 	/* The chosen position is a raised tile, not a filled button. */
 	.seg > [aria-pressed='true'],
+	.seg > [aria-selected='true'],
 	.seg > [aria-current='page'],
 	.seg > [aria-current='true'],
 	.seg > :has(> input:checked) {
@@ -2488,6 +2547,7 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	html[data-style='playful'] .seg > [aria-pressed='true'],
+	html[data-style='playful'] .seg > [aria-selected='true'],
 	html[data-style='playful'] .seg > [aria-current='page'],
 	html[data-style='playful'] .seg > [aria-current='true'],
 	html[data-style='playful'] .seg > :has(> input:checked) {
@@ -2503,9 +2563,16 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * else in here means good — the person who wrote this is colourblind, so the
 	 * pair is blue and red and never green and red.
 	 */
-	.seg > .seg-alarm[aria-pressed='true'] {
+	.seg > .seg-alarm[aria-pressed='true'],
+	.seg-sliding > .seg-alarm[aria-pressed='true'] {
 		background-color: var(--color-red-600);
 		color: var(--ink-on-fill);
+		box-shadow: none;
+	}
+
+	/* And the travelling tile hides under it rather than showing through. */
+	.seg-sliding:has(> .seg-alarm[aria-pressed='true']) > .seg-tile {
+		opacity: 0;
 	}
 
 	.seg > .seg-alarm {

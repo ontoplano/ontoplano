@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { momentOf } from '$lib/when';
+	import { sliding } from '$lib/actions/sliding';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { timeOf } from '$lib/when';
 	import NumberBox from '$lib/components/NumberBox.svelte';
@@ -844,7 +845,7 @@
 				The same number of days, forwards or backwards. It sits first
 				because it changes what every other control in this row means.
 			-->
-			<div class="seg" role="group" aria-label={t('reminders.whichWayToLook')}>
+			<div use:sliding class="seg" role="group" aria-label={t('reminders.whichWayToLook')}>
 				<button
 					type="button"
 					onclick={() => look(data.days, false)}
@@ -885,7 +886,7 @@
 			</button>
 
 			<!-- …and on anything wider, where the row fits, all of them at once. -->
-			<div class="seg hidden sm:flex" role="group" aria-label={t('reminders.howFar')}>
+			<div use:sliding class="seg hidden sm:flex" role="group" aria-label={t('reminders.howFar')}>
 				{#each WINDOWS as window (window)}
 					<button
 						type="button"

@@ -26,6 +26,7 @@
 	import TextBox from './TextBox.svelte';
 	import Written from './Written.svelte';
 	import { renderMarkdown, type TodoRefs } from '$lib/markdown';
+	import { sliding } from '$lib/actions/sliding';
 	import { useT } from '$lib/i18n';
 	import type { HTMLTextareaAttributes } from 'svelte/elements';
 
@@ -149,15 +150,12 @@
 		that it is not a choice anybody could want, and `both` falls back to the
 		editor alone — writing is what the box is for.
 	-->
-	<div class="mb-2 flex items-center gap-1" role="tablist">
+	<div class="seg mb-2" use:sliding role="tablist">
 		<button
 			type="button"
 			role="tab"
 			aria-selected={showing === 'write'}
 			aria-label={t('markdown.write')}
-			class="rounded px-3 py-1 text-xs font-medium transition {showing === 'write'
-				? 'bg-gray-900 text-white'
-				: 'bg-gray-100 text-gray-600 hover:bg-gray-200'}"
 			onclick={() => (showing = 'write')}
 		>
 			{t('markdown.write')}
@@ -167,9 +165,6 @@
 			role="tab"
 			aria-selected={showing === 'preview'}
 			aria-label={t('markdown.preview')}
-			class="rounded px-3 py-1 text-xs font-medium transition {showing === 'preview'
-				? 'bg-gray-900 text-white'
-				: 'bg-gray-100 text-gray-600 hover:bg-gray-200'}"
 			onclick={() => (showing = 'preview')}
 		>
 			{t('markdown.preview')}
@@ -179,10 +174,7 @@
 			role="tab"
 			aria-selected={showing === 'both'}
 			aria-label={t('markdown.sideBySide')}
-			class="ml-auto hidden rounded px-3 py-1 text-xs font-medium transition @lg:block {showing ===
-			'both'
-				? 'bg-gray-900 text-white'
-				: 'bg-gray-100 text-gray-600 hover:bg-gray-200'}"
+			class="hidden @lg:inline-flex"
 			onclick={() => (showing = 'both')}
 		>
 			{t('markdown.sideBySide')}
