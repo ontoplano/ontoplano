@@ -222,17 +222,17 @@ describe('how much of a row comes back', () => {
 });
 
 describe('what to do next', () => {
-	test('is the most urgent, ties broken by energy then interest', () => {
+	test('is the most urgent, ties broken by the lighter one then by interest', () => {
 		const [first] = itemsOf(call(['tasks:read'], 'up_next', { notebookId: kitchen }));
-		// Two at urgency 5; the skip has more energy behind it.
-		expect(first.title).toBe('book the skip');
+		// Two at urgency 5; the plumber takes less out of you than the skip.
+		expect(first.title).toBe('ring the plumber');
 	});
 
 	test('takes a few to choose between, and leaves the finished out', () => {
 		const rows = itemsOf(call(['tasks:read'], 'up_next', { limit: 5, notebookId: kitchen }));
 		expect(rows.map((one) => one.title)).toEqual([
-			'book the skip',
 			'ring the plumber',
+			'book the skip',
 			'choose the tiles'
 		]);
 	});

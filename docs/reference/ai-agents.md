@@ -339,8 +339,11 @@ existed, so there is nothing to learn by walking the numbers.
   read is the label's own — it does not move when the thing is edited — so
   "what went into review since this morning" is one call.
 - **`up_next` answers what to do next**, by the ratings on the tasks
-  themselves: most urgent first, ties broken by higher energy and then higher
-  interest.
+  themselves: most urgent first, then the one that takes least energy, then the
+  one most wanted. Energy runs the other way to the other two — low is good. A
+  rating nobody set is not a zero: it counts half a step to the losing side of
+  the middle of the scale, so a task deliberately marked 3 beats an unrated one,
+  and urgency 1–2 and energy 4–5 are the tiers that mean "later".
 
 The surface is additive within a major version: a tool or a parameter is not
 removed, a parameter does not become required, and an enum does not lose a value
@@ -498,7 +501,7 @@ _Needs `tasks:read`; read-only._
 
 ### `up_next` — What to do next
 
-The task to do next, by the ratings on it: most urgent first, ties broken by higher energy and then higher interest. Open, unarchived, undated tasks only — anything with a day on it is on the week and `today` answers for that. Answers with one line by default; `limit` for a short list to choose between.
+The task to do next, by the ratings on it: most urgent first, then the one that takes least energy, then the one most wanted — energy runs the other way to the other two, low being good. An unrated task is not a zero: it counts half a step to the losing side of the middle of the scale (2.5 urgency, 2.5 interest, 3.5 energy), so a task deliberately marked 3 beats it, while urgency 1–2 and energy 4–5 sit below it as the postpone tiers. Open, unarchived, undated tasks only — anything with a day on it is on the week and `today` answers for that. Answers with one line by default; `limit` for a short list to choose between.
 
 _Needs `tasks:read`; read-only._
 

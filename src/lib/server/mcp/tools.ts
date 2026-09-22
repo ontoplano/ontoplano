@@ -24,6 +24,7 @@ import { localDateOf, type Ctx } from '$lib/services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 import type { Ref } from './refs.js';
 import { CLOSED_STATUSES } from '../../task-status.js';
+import { compareByRatings } from '../../ratings.js';
 import type { Confinement } from './confinement.js';
 import { mayReadFile } from '$lib/services/media-permission.js';
 import { pictureReferrers, recordingReferrers } from '$lib/services/media-referrers.js';
@@ -1370,21 +1371,22 @@ export const TOOLS: Tool[] = [
 	/*
 	 * What to do next, by the numbers the person put on their own tasks.
 	 *
-	 * Urgency first, then energy, then interest — their order, not mine, and
-	 * worth writing down because the middle one is not the obvious way round:
-	 * energy here is how much a task will take out of you, and a tie between
-	 * two urgent things is broken towards the heavier one.
+	 * Urgency first, then energy, then interest. The middle one is not the
+	 * obvious way round: energy is how much a task will take out of you, so a
+	 * tie between two urgent things goes to the lighter one.
+	 *
+	 * An unrated task is not a zero — see `RATING_UNRATED_STEP`, where that
+	 * rule lives, so the board and this answer the same question the same way.
 	 *
 	 * It exists so that "what should I be doing" is one small call rather than
 	 * the whole list read and sorted by a model that then has to explain
-	 * itself. Unrated tasks come last: a task nobody has weighed is not more
-	 * pressing than one somebody marked 1.
+	 * itself.
 	 */
 	{
 		name: 'up_next',
 		title: 'What to do next',
 		description:
-			'The task to do next, by the ratings on it: most urgent first, ties broken by higher energy and then higher interest. Open, unarchived, undated tasks only \u2014 anything with a day on it is on the week and `today` answers for that. Answers with one line by default; `limit` for a short list to choose between.',
+			'The task to do next, by the ratings on it: most urgent first, then the one that takes least energy, then the one most wanted \u2014 energy runs the other way to the other two, low being good. An unrated task is not a zero: it counts half a step to the losing side of the middle of the scale (2.5 urgency, 2.5 interest, 3.5 energy), so a task deliberately marked 3 beats it, while urgency 1\u20132 and energy 4\u20135 sit below it as the postpone tiers. Open, unarchived, undated tasks only \u2014 anything with a day on it is on the week and `today` answers for that. Answers with one line by default; `limit` for a short list to choose between.',
 		scope: 'tasks:read',
 		writes: false,
 		refs: [{ arg: 'notebookId', kind: 'notebook' }],
@@ -1406,14 +1408,8 @@ export const TOOLS: Tool[] = [
 				rows = rows.filter((todo) => todo.notebookId === Number(args.notebookId));
 			rows = rows.filter((todo) => passesTags(todo.tags, args));
 
-			// An unrated task sorts as -1: below a 1, above nothing.
-			const weight = (value: number | null) => (value === null ? -1 : value);
 			const ordered = [...rows].sort(
-				(a, b) =>
-					weight(b.ratings.urgency) - weight(a.ratings.urgency) ||
-					weight(b.ratings.energy) - weight(a.ratings.energy) ||
-					weight(b.ratings.interest) - weight(a.ratings.interest) ||
-					a.sortOrder - b.sortOrder
+				(a, b) => compareByRatings(a.ratings, b.ratings) || a.sortOrder - b.sortOrder
 			);
 
 			return pageOf(ordered.slice(0, limitOf(args, 1, 20)).map(shapeTodo(detail)), rows.length, 0);

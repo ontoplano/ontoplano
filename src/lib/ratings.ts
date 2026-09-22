@@ -19,6 +19,70 @@ export const RATING_MAX = 5;
 
 export type RatingValues = Record<Rating, number | null>;
 
+/**
+ * Which way each rating reads.
+ *
+ * Urgency and interest are better the higher they are; energy is how much a
+ * task will take out of you, so it is better the lower it is. Ordering by
+ * "the best three numbers" means two of them descending and one ascending,
+ * which is the detail everything that sorts by ratings gets wrong once.
+ */
+export const RATING_BETTER: Record<Rating, 'higher' | 'lower'> = {
+	urgency: 'higher',
+	interest: 'higher',
+	energy: 'lower'
+};
+
+/** The middle of the scale: what a task rated neither high nor low sits at. */
+export const RATING_MIDPOINT = (RATING_MIN + RATING_MAX) / 2;
+
+/**
+ * How far off the middle an unrated task sits — and why it sits off it at all.
+ *
+ * A task nobody has rated does not have a rating of zero; it has no rating,
+ * and the honest expectation for a number somebody has not chosen is the
+ * middle of the scale. But a task deliberately marked 3 should beat one nobody
+ * weighed, so an unrated task is put half a step to the losing side of the
+ * middle: 2.5 where high is good, 3.5 where low is good.
+ *
+ * What that buys is the shape of the scale. Marking a task 1 or 2 for urgency
+ * puts it below everything unrated, so those two are "later" and "later still"
+ * rather than two flavours of the same shrug — and on energy, where the order
+ * is reversed, 4 and 5 do the same job.
+ */
+export const RATING_UNRATED_STEP = 0.5;
+
+/** What a rating counts as when it is compared: its value, or the unrated one. */
+export function ratingWeight(rating: Rating, value: number | null): number {
+	if (value !== null) return value;
+	return RATING_BETTER[rating] === 'higher'
+		? RATING_MIDPOINT - RATING_UNRATED_STEP
+		: RATING_MIDPOINT + RATING_UNRATED_STEP;
+}
+
+/** One rating, best first, whichever way that rating runs. */
+export function compareByRating(rating: Rating, a: number | null, b: number | null): number {
+	const difference = ratingWeight(rating, a) - ratingWeight(rating, b);
+	return RATING_BETTER[rating] === 'higher' ? -difference : difference;
+}
+
+/**
+ * The order "what should I be doing" is answered in.
+ *
+ * Most urgent first; between two equally urgent, the one that takes less out
+ * of you; between two of those, the one you would rather do. Ties past that
+ * are not this function's business — the caller falls back to its own order.
+ */
+export const RATING_ORDER: readonly Rating[] = ['urgency', 'energy', 'interest'];
+
+export function compareByRatings(a: RatingValues, b: RatingValues): number {
+	for (const rating of RATING_ORDER) {
+		const said = compareByRating(rating, a[rating], b[rating]);
+		if (said !== 0) return said;
+	}
+	return 0;
+}
+
 export const RATING_LABELS: Record<Rating, PlainKey> = {
 	urgency: 'ratings.urgency',
 	interest: 'ratings.interest',
