@@ -172,3 +172,50 @@ test('the discovery documents say where to knock', async ({ request }) => {
 	expect(refused.status()).toBe(401);
 	expect(refused.headers()['www-authenticate']).toContain('oauth-protected-resource');
 });
+
+/**
+ * The CSRF check moved into `handleCsrf`, and the exemption is one path.
+ *
+ * Worth pinning rather than trusting: what was given up to let a program post
+ * a form with no `Origin` header is the framework's blanket refusal, and the
+ * whole of what replaced it is that hook. A second exempt path added by
+ * accident would be a forgeable form action, which is the one thing the
+ * original check existed to prevent.
+ */
+test('only the token endpoint takes a form post from somewhere else', async ({ request }) => {
+	const elsewhere = 'https://not-this-instance.test';
+
+	// An ordinary action, posted from another origin: refused, as before.
+	const forged = await request.post('/settings/preferences?/saveWeek', {
+		headers: { origin: elsewhere },
+		form: { firstDay: '0', generateDay: '6' }
+	});
+	expect(forged.status()).toBe(403);
+	expect(await forged.text()).toContain('forbidden');
+
+	// The login form too, which is the one a forgery would most like to reach.
+	const forgedSignIn = await request.post('/login?/signIn', {
+		headers: { origin: elsewhere },
+		form: { email: 'nobody@example.test', password: 'whatever-1234' }
+	});
+	expect(forgedSignIn.status()).toBe(403);
+
+	/*
+	 * The token endpoint is the exemption, and it is not a hole: it reads no
+	 * cookie, so there is no session for a forged post to spend. What it
+	 * refuses here is the request on its own terms — no code, no grant.
+	 */
+	const token = await request.post('/oauth/token', {
+		headers: { origin: elsewhere },
+		form: {
+			grant_type: 'authorization_code',
+			code: 'not-a-real-code',
+			client_id: 'nobody',
+			redirect_uri: 'https://claude.ai/callback',
+			code_verifier: 'x'.repeat(43)
+		}
+	});
+	expect(token.status()).not.toBe(403);
+	expect(token.status()).toBe(401);
+	expect((await token.json()).error).toBe('invalid_client');
+});
