@@ -813,6 +813,11 @@ lint:
 	@# shortcuts wore the logo from before the puffin for a year.
 	@yarn -s icons --check
 	@node scripts/check-no-secrets.mjs
+	@# Everything `migrate.mjs` imports is on the list the deploy copies beside
+	@# it. It gained a neighbour once and production stopped on the box with
+	@# ERR_MODULE_NOT_FOUND, after the snapshot and after the old version had
+	@# been stopped.
+	@node scripts/check-ship-list.mjs
 	@node scripts/check-android-version.mjs
 	@# The floor on a reminder and the phone's polling interval are one fact
 	@# written in two languages, with nothing type-checking across the gap.
