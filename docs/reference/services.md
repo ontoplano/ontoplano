@@ -77,7 +77,6 @@ shows up here on the next build.
 | [`plan-intent`](#plan-intent)                    | Which plan somebody said they wanted, carried from the front page to the card.                                                                                                                                                                                       |
 | [`plugins`](#plugins)                            | Plugin manifests: what a plugin says it understands.                                                                                                                                                                                                                 |
 | [`preferences`](#preferences)                    | The settings a person chooses about themselves.                                                                                                                                                                                                                      |
-| [`protection`](#protection)                      | What the box has blocked, read from the ban record.                                                                                                                                                                                                                  |
 | [`push`](#push)                                  | Telling somebody something while the app is closed.                                                                                                                                                                                                                  |
 | [`quotes`](#quotes)                              | The quotes shown one-per-day on the dashboard.                                                                                                                                                                                                                       |
 | [`recipes`](#recipes)                            | Recipes, and the loop they close.                                                                                                                                                                                                                                    |
@@ -3586,57 +3585,6 @@ Whether the chat inside the app may delete things.
 
 A checkbox, so its absence from the form is the answer "no" rather than a
 missing field — which is why this takes the posted value and not a boolean.
-
-## protection
-
-What the box has blocked, read from the ban record.
-
-The administration page can say who has been signing in and who registered,
-because the app did those things itself. It could say nothing at all about
-the layer in front of it — which is where most of what happens to a public
-instance actually happens.
-
-The layer in front is reaction, and reaction never touches the firewall
-itself: every ban runs through `ontoplano-ban-control`, which writes one
-line per ban and unban into a record of its own. That file is `root:adm`
-and read-only to the group, so the answer is a group membership and a file
-read: nothing to escalate, no shelling out, and no parsing another
-program's log format that was never a promise.
-
-sudo usermod -aG adm <the user the app runs as>
-
-Unreadable is a first-class answer. "No bans" and "cannot see bans" look
-identical in a list and mean opposite things, so the page is told which it
-is looking at.
-
-### Functions
-
-#### `protection(limit)`
-
-#### `banControlEnabled()`
-
-#### `unban(address)`
-
-Let an address back in now, rather than when its bantime runs out.
-
-#### `blockForever(address)`
-
-Out for good.
-
-A jail has no "forever" — every ban has a bantime and the timer wins — so
-this is an entry in the `banned` nftables set the box already keeps, which
-survives a daemon restart and a jail expiry.
-
-#### `unblockForever(address)`
-
-#### `permanentlyBlocked()`
-
-Which addresses are out for good, so the page knows which button to offer.
-
-### Types
-
-- `Ban`
-- `Protection`
 
 ## push
 

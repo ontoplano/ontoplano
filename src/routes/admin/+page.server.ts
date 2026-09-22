@@ -1,16 +1,7 @@
-import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import { recentEvents, searchAccounts, setRole } from '$lib/server/services/admin';
 import { adminActions, requireAdminOr404 } from './guard';
 import { dismissFailure, openFailures, retryFailure } from '$lib/server/services/mail-log';
-import {
-	banControlEnabled,
-	blockForever,
-	permanentlyBlocked,
-	protection,
-	unban,
-	unblockForever
-} from '$lib/server/services/protection';
 import { dismissClientError, recentClientErrors } from '$lib/server/services/client-errors';
 import { ValidationError } from '$lib/services/errors';
 import { toActionFailure } from '$lib/http-errors';
@@ -23,9 +14,9 @@ import { isDemo } from '$lib/server/settings';
  * The demo signs every visitor into its one account, which is an
  * administrator — so this page is public there, deliberately: somebody
  * deciding whether to run this themselves should see what administering it
- * looks like. What they must not see is anything about the box or about other
- * people: the addresses the box turned away are real people's, a failed mail
- * carries a real address, and a client error carries a stack from the server.
+ * looks like. What they must not see is anything about other people: a
+ * failed mail carries a real address, and a client error carries a stack
+ * from the server.
  *
  * Writes are refused in `hooks.server.ts`, in one place, for the same reason
  * this list is here rather than spread through the page.
@@ -51,12 +42,6 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		// Mail that did not go out. The same list /healthz counts, so the alert
 		// on a phone and the page it points at cannot disagree.
 		mailFailures: demo ? [] : openFailures(),
-		// What the layer in front of the app has been doing. Read from the ban
-		// record, and honest about not being able to read it.
-		protection: demo ? { readable: false, path: '', recent: [], lastDay: 0 } : protection(),
-		// Whether this box has been given the one sudo rule that lets the app
-		// act on a ban. Off means the list is shown and no buttons are.
-		canControlBans: banControlEnabled(),
 		/*
 		 * The one thing an operator must never learn from a bank statement.
 		 *
@@ -72,7 +57,6 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		// exemption, on principle: staging behaves exactly like production,
 		// and there the banner is simply a true sentence.
 		billingSandbox: billingStatus().sells && billingStatus().ready && billingStatus().sandbox,
-		blockedForever: permanentlyBlocked(),
 		// So the page can leave your own row alone rather than offering a button
 		// the server will refuse.
 		me: locals.user!.id
@@ -80,41 +64,6 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 };
 
 export const actions: Actions = adminActions({
-	/*
-	 * Acting on a ban. Every argument is validated again by the root-side
-	 * helper, which is where the trust boundary actually is — these are the
-	 * page's half of it, not the whole of it.
-	 */
-	unban: async ({ request }) => {
-		const formData = await request.formData();
-		try {
-			unban(String(formData.get('address') ?? ''));
-			return { success: true };
-		} catch (e) {
-			return fail(400, { message: e instanceof Error ? e.message : 'Could not unban that' });
-		}
-	},
-
-	blockForever: async ({ request }) => {
-		const formData = await request.formData();
-		try {
-			blockForever(String(formData.get('address') ?? ''));
-			return { success: true };
-		} catch (e) {
-			return fail(400, { message: e instanceof Error ? e.message : 'Could not block that' });
-		}
-	},
-
-	unblockForever: async ({ request }) => {
-		const formData = await request.formData();
-		try {
-			unblockForever(String(formData.get('address') ?? ''));
-			return { success: true };
-		} catch (e) {
-			return fail(400, { message: e instanceof Error ? e.message : 'Could not unblock that' });
-		}
-	},
-
 	dismissReport: async ({ request }) => {
 		const formData = await request.formData();
 		dismissClientError(Number(formData.get('id')));

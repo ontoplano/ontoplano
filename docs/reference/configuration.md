@@ -256,9 +256,6 @@ kind of thing that stays in a deployment script for years.
 | `ONTOPLANO_ALLOW_PUSH`                 | `scripts/guard-push.mjs`                                                                                                                                   |
 | `ONTOPLANO_APP_URL`                    | `scripts/build-docs-site.mjs`                                                                                                                              |
 | `ONTOPLANO_BACKUP_RETENTION_DAYS`      | `src/lib/server/services/legal.ts`                                                                                                                         |
-| `ONTOPLANO_BAN_CONTROL`                | `src/lib/server/services/protection.ts`                                                                                                                    |
-| `ONTOPLANO_BAN_CONTROL_CMD`            | `src/lib/server/services/protection.ts`                                                                                                                    |
-| `ONTOPLANO_BANS_LOG`                   | `src/lib/server/services/protection.ts`                                                                                                                    |
 | `ONTOPLANO_CONFIG_DIR`                 | `src/lib/server/config.ts`                                                                                                                                 |
 | `ONTOPLANO_CONTACT_EMAIL`              | `src/lib/server/config.ts`                                                                                                                                 |
 | `ONTOPLANO_DATA_DIR`                   | `scripts/migrate.mjs`, `src/lib/server/config.ts`                                                                                                          |

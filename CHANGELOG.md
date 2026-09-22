@@ -18,6 +18,15 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.3 — 2026-09-22
+
+- **The bans left the administration page.** ontoplano no longer interfaces
+  with the machine it runs on: /admin shows what the app itself knows —
+  accounts, events, mail, client errors — and the firewall's record lives on
+  the box's own page instead, which `ontoplano-server`'s `ops-web-setup.sh`
+  serves on a subdomain of its own behind basic auth, with the same unban
+  and block-for-good buttons.
+
 ## 0.182.2 — 2026-09-22
 
 - **The chat can be allowed to delete things.** It could always read and write;
@@ -30,13 +39,10 @@ releases mattered.
 
 ## 0.182.1 — 2026-09-21
 
-- **The ban card reads the box's own record.** On a self-hosted server the
-  banning layer is now [reaction](https://reaction.ppom.me) instead of
-  fail2ban, and every ban lands in `/var/log/ontoplano-bans.log` — the admin
-  page reads that file, so the card works the same whatever wrote it.
-  Unbanning no longer asks for a jail, just the address. If the app was told
-  where fail2ban's log was with `ONTOPLANO_FAIL2BAN_LOG`, that setting is now
-  `ONTOPLANO_BANS_LOG`; `ontoplano-server`'s setup wizard arranges all of it.
+- **The banning layer is reaction.** On a self-hosted server
+  [reaction](https://reaction.ppom.me) replaces fail2ban, and every ban lands
+  in `/var/log/ontoplano-bans.log` — one record, whatever wrote it.
+  `ontoplano-server`'s setup wizard arranges all of it.
 
 - **The chat's model is a list, not a text box.** Paste the key, press "Ask the
   provider what it offers", and the box becomes what that key can actually
