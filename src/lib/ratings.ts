@@ -17,7 +17,7 @@ import type { PlainKey } from './i18n/keys.js';
  * demanding three numbers before you can write one down is how a system stops
  * getting used.
  */
-export const RATINGS = ['urgency', 'interest', 'ease'] as const;
+export const RATINGS = ['urgency', 'ease', 'interest'] as const;
 export type Rating = (typeof RATINGS)[number];
 
 export const RATING_MIN = 1;
@@ -58,13 +58,19 @@ export function compareByRating(a: number | null, b: number | null): number {
 }
 
 /**
- * The order "what should I be doing" is answered in.
+ * The order "what should I be doing" is answered in — and the only order there is.
  *
  * Most urgent first; between two equally urgent, the easiest; between two of
  * those, the one you would rather do. Ties past that are not this function's
  * business — the caller falls back to its own order.
+ *
+ * `RATINGS` itself, rather than a second list beside it. They were two, in two
+ * different orders: the sort read urgency, ease, interest while every form and
+ * every legend listed urgency, interest, ease — so the same three questions
+ * came in one order on the card and another on the screen that sets them. One
+ * name is an alias for the other so that cannot happen again.
  */
-export const RATING_ORDER: readonly Rating[] = ['urgency', 'ease', 'interest'];
+export const RATING_ORDER: readonly Rating[] = RATINGS;
 
 export function compareByRatings(a: RatingValues, b: RatingValues): number {
 	for (const rating of RATING_ORDER) {

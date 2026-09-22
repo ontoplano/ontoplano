@@ -970,6 +970,14 @@ if (!building) {
 	);
 }
 
+/**
+ * Where the build puts the files it serves, as it appears in a path.
+ *
+ * SvelteKit's own, and distinctive enough to tell a missing stylesheet from a
+ * missing database: nothing else on a box is called this.
+ */
+const BUILT_ASSETS = '/_app/';
+
 if (!building && !globalThis.__ontoplanoDeathWatch) {
 	globalThis.__ontoplanoDeathWatch = true;
 
@@ -984,7 +992,32 @@ if (!building && !globalThis.__ontoplanoDeathWatch) {
 			})
 		);
 
+	/*
+	 * A built asset that is not there is not a reason to stop serving.
+	 *
+	 * The static handler builds its list of files once, at boot, and streams
+	 * them on demand — so a file that goes missing afterwards fails inside the
+	 * stream, where nothing is listening, and arrives here. Exiting on that
+	 * turns one absent file into an instance that is down: a deploy copying
+	 * over `build/` takes the site with it, which is the same shape as the
+	 * chunk deletion that broke a release, and a suite that rebuilds under its
+	 * own server loses every test after the first request for it.
+	 *
+	 * So this one kind is logged and survived. Every other uncaught exception
+	 * still exits, because the state after one is genuinely unknown and a
+	 * process limping on in an unknown state is worse than a restart.
+	 */
+	const missingFile = (error: unknown): string | null => {
+		const it = error as { code?: unknown; path?: unknown };
+		return it?.code === 'ENOENT' && typeof it.path === 'string' ? it.path : null;
+	};
+
 	process.on('uncaughtException', (error) => {
+		const gone = missingFile(error);
+		if (gone !== null && gone.includes(BUILT_ASSETS)) {
+			note('missingAsset', error);
+			return;
+		}
 		note('uncaughtException', error);
 		// Node's default is to exit; keeping that, having said why.
 		process.exit(1);

@@ -959,7 +959,7 @@
 						{/if}
 					{/if}
 
-					<MoreOptions label={t('tasks.board.urgencyInterestEase')} count={editRatingsSet}>
+					<MoreOptions label={t('tasks.board.urgencyEaseInterest')} count={editRatingsSet}>
 						{#each RATINGS as r (r)}
 							<div class="col-span-12">
 								<RatingPicker rating={r} bind:value={editRatings[r]} />

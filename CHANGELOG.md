@@ -20,6 +20,22 @@ releases mattered.
 
 ## 0.183.0 — 2026-09-22
 
+- **The three ratings are in one order everywhere: urgency, ease, interest.**
+  The sort read them in that order while every form and legend listed urgency,
+  interest, ease, so the same three questions came one way round on a card and
+  another on the screen that sets them. There is one list now rather than two.
+
+- **A rating you have answered wears its own colour on the form**, the same
+  colour it has on the card — so the yellow one on a task is the yellow one you
+  set it with. Unanswered ones stay plain.
+
+- **A built file that has gone missing no longer takes the instance down.** The
+  static handler lists what it serves once, at boot, so a file removed
+  afterwards — a deploy copying over the build, say — failed inside the stream
+  and reached the process as an uncaught exception, which stopped it. One
+  absent stylesheet is one failed request now. Everything else still stops the
+  process, because the state after an unknown crash is unknown.
+
 - **Energy is now ease, and it counts the other way round.** It asked how much
   a task would take out of you, so five was the worst answer and it was the one
   rating where a bigger number was worse — every list that ordered by ratings

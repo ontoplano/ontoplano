@@ -165,7 +165,7 @@
 	{@render details()}
 	<!-- Three optional five-point scales at the top of a create form read as
 	     work to do before you may write anything down. -->
-	<MoreOptions label={t('fields.todo.urgencyInterestEase')} count={ratingsSet}>
+	<MoreOptions label={t('fields.todo.urgencyEaseInterest')} count={ratingsSet}>
 		{@render scales()}
 	</MoreOptions>
 {/if}

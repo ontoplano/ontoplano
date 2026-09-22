@@ -2145,17 +2145,32 @@ label:has(> input[type='radio']:not(:disabled)) {
 		background-color: color-mix(in srgb, var(--gauge-mark-ink) 55%, transparent);
 	}
 
-	.gauge[data-rating='urgency'] {
-		--gauge-ink: var(--color-amber-400);
+	/*
+	 * A colour per question, and one place that says so.
+	 *
+	 * On the gauge and on the control that sets it, so a rating is the same
+	 * colour wherever it appears. Set on anything carrying `data-rating`, which
+	 * is how both of them name which question they are about — a fourth rating
+	 * adds a line here and nothing else.
+	 *
+	 * Green for interest rather than the red it wore: red is the colour of
+	 * something wrong, and wanting to do a thing is not. Dark enough not to be
+	 * mistaken for a tick.
+	 */
+	[data-rating='urgency'] {
+		--rating-ink: var(--color-amber-400);
 	}
 
-	/* Green rather than red, and dark enough not to read as a tick. */
-	.gauge[data-rating='interest'] {
-		--gauge-ink: var(--color-emerald-600);
+	[data-rating='ease'] {
+		--rating-ink: var(--color-blue-600);
 	}
 
-	.gauge[data-rating='ease'] {
-		--gauge-ink: var(--color-blue-600);
+	[data-rating='interest'] {
+		--rating-ink: var(--color-emerald-600);
+	}
+
+	.gauge {
+		--gauge-ink: var(--rating-ink);
 	}
 
 	/*

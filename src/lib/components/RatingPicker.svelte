@@ -64,7 +64,20 @@
      without extra wiring. Empty string means "unrated". -->
 <input type="hidden" {name} value={value ?? ''} />
 
-<div class={compact ? 'flex items-center gap-2' : 'space-y-1'}>
+<!--
+	Answered, and wearing the question's own colour.
+
+	The three are told apart by colour on the card; the control that sets them
+	says the same thing, so the yellow one on a task is the yellow one on the
+	form. A wash rather than the colour itself — this sits behind a label, a
+	sentence and a slider, all of which have to stay readable — and only once
+	somebody has answered, so the row is quiet until it has something to say.
+-->
+<div
+	data-rating={rating}
+	class:rating-answered={value !== null}
+	class={compact ? 'rating-row flex items-center gap-2' : 'rating-row space-y-1'}
+>
 	{#if compact}
 		<span class="eyebrow w-16 shrink-0 text-gray-600">{t(RATING_LABELS[rating])}</span>
 	{:else}
@@ -143,6 +156,22 @@
 </div>
 
 <style>
+	/*
+	 * The wash behind an answered one. `--rating-ink` is the question's colour,
+	 * set once in `layout.css` for the gauge and for this alike.
+	 */
+	.rating-row {
+		border-radius: inherit;
+		transition: background-color 120ms ease-out;
+	}
+
+	.rating-row.rating-answered {
+		background-color: color-mix(in srgb, var(--rating-ink) 14%, transparent);
+		/* Room for the colour to be a shape rather than a stripe behind text. */
+		padding: 0.375rem 0.5rem;
+		margin: -0.375rem -0.5rem;
+	}
+
 	/*
 	 * A range input, wearing this app's clothes.
 	 *

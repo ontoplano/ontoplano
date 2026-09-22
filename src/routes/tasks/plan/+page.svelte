@@ -3643,7 +3643,7 @@
 					</Field>
 				</FormGrid>
 
-				<MoreOptions label={t('tasks.plan.urgencyInterestEase')} count={ratingsSet}>
+				<MoreOptions label={t('tasks.plan.urgencyEaseInterest')} count={ratingsSet}>
 					{#each RATINGS as r (r)}
 						<div class="col-span-12 sm:col-span-4">
 							<RatingPicker rating={r} bind:value={formRatings[r]} />
