@@ -138,8 +138,16 @@ const config = {
 		 *
 		 * If a form starts failing behind a proxy, the fix is still to set
 		 * ORIGIN correctly, not to widen the exemption.
+		 *
+		 * `trustedOrigins: ['*']` rather than `checkOrigin: false`, which says
+		 * the same thing and is deprecated as of 2.55 — it printed a line on
+		 * every build and start. Neither trusts anybody: they both mean "the
+		 * framework is not the one doing this check", and the check is in
+		 * `handleCsrf`. Which is also stricter than the framework's in one way
+		 * worth knowing: SvelteKit's runs in production only, and this app's
+		 * runs everywhere, so the suite exercises the real thing.
 		 */
-		csrf: { checkOrigin: false }
+		csrf: { trustedOrigins: ['*'] }
 	},
 	preprocess: [mdsvex({ extensions: ['.svx', '.md'] })],
 	extensions: ['.svelte', '.svx', '.md']
