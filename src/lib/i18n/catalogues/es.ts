@@ -1800,6 +1800,8 @@ export const messages: Catalogue = {
 	'oauth.itWouldBeAbleTo': 'Podrá',
 	'oauth.somethingWantsToConnect': 'Conectar un asistente',
 	'oauth.takingYouBack': 'Conectado',
+	'oauth.tickAtLeastOne': 'Marca al menos una cosa, o cancela.',
+	'oauth.untickWhatever': 'Desmarca lo que prefieras que no alcance.',
 	'oauth.wantsToConnectTo': '{client} quiere conectarse a tu ontoplano.',
 	'oauth.whatItDeletesIsGone':
 		'Lo que borra se pierde. Sin esto añade y cambia cosas, pero nunca las quita.',
@@ -2037,6 +2039,18 @@ export const messages: Catalogue = {
 	'rooms.tasks.tabs.review': 'Revisión',
 	'rooms.tasks.tabs.todo': 'Tareas',
 	'rooms.tasks.title': 'Tareas',
+	'scopeGroups.acrossEverything': 'En todo',
+	'scopeGroups.habitsAndWorkouts': 'Hábitos y entrenamientos',
+	'scopeGroups.money': 'Dinero',
+	'scopeGroups.people': 'Personas',
+	'scopeGroups.plumbing': 'Integraciones',
+	'scopeGroups.removingThings': 'Borrar cosas',
+	'scopeGroups.todosAndGoals': 'Tareas y metas',
+	'scopeGroups.whatYouWrite': 'Diario, cuadernos e ideas',
+	'scopeGroups.withoutTheLineAbove':
+		'Sin la línea de arriba puede añadir y cambiar, pero no encontrar qué cambiar.',
+	'scopeGroups.yourHome': 'Casa, cocina y compras',
+	'scopeGroups.yourWeek': 'Tu semana',
 	'scopes.billsRead':
 		'Ver tus facturas, tus ingresos registrados, y lo que realmente has pagado o recibido',
 	'scopes.billsWrite': 'Añadir y cambiar facturas, y marcarlas pagadas',

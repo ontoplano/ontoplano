@@ -1,8 +1,8 @@
-import { error, redirect } from '@sveltejs/kit';
+import { error, fail, redirect } from '@sveltejs/kit';
 
 import type { Actions, PageServerLoad } from './$types';
 
-import { scopeWord } from '$lib/scope-words';
+import { scopeCautionWord, scopeWord } from '$lib/scope-words';
 import {
 	CODE_CHALLENGE_METHOD,
 	findClient,
@@ -10,7 +10,6 @@ import {
 	issueCode,
 	scopesFor
 } from '$lib/server/services/oauth';
-import { translatorFor, SOURCE_LOCALE } from '$lib/i18n/core';
 
 /**
  * "Something wants to connect to your ontoplano."
@@ -140,15 +139,18 @@ export const load: PageServerLoad = async ({ url, locals }) => {
 		);
 	}
 
-	const t = await translatorFor(locals.locale ?? SOURCE_LOCALE);
 	/*
-	 * What it would be allowed, in sentences rather than in scope names. The
-	 * deleting line is not in here: it is the box underneath, unticked.
+	 * What it is asking for, in sentences rather than in scope names, each with
+	 * a box of its own. Ticked to begin with — the assistant asked for these
+	 * and saying yes to all of them has to stay one press — but every one of
+	 * them can be taken away before the press. The deleting line is not in
+	 * here: it is the box underneath, and it starts empty.
 	 */
-	const granted = scopesFor(ask.scope, false).map((scope) => {
-		const says = scopeWord(scope);
-		return { scope, says: says ? t(says) : scope };
-	});
+	const granted = scopesFor(ask.scope, false).map((scope) => ({
+		key: scope,
+		says: scopeWord(scope),
+		caution: scopeCautionWord(scope)
+	}));
 
 	/*
 	 * The question, carried on the form's own action.
@@ -172,7 +174,26 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const now = new Date();
 
-		const scopes = scopesFor(ask.scope, form.get('mayDelete') !== null);
+		/*
+		 * What they left ticked, and nothing they did not.
+		 *
+		 * `scopesFor` is still what bounds it — a form that posts a permission
+		 * the client never asked for, or one this instance does not offer, gets
+		 * no more for having said it. Deleting is not among the boxes: it is
+		 * the one grant that is added rather than kept, by the box underneath.
+		 */
+		const offered = scopesFor(ask.scope, form.get('mayDelete') !== null);
+		const kept = new Set(form.getAll('scopes').map(String));
+		const scopes = offered.filter((scope) => scope === 'destructive' || kept.has(scope));
+
+		// Nothing ticked is not a connection, and it is not a refusal either:
+		// it is a form somebody is still filling in. Back to the screen with a
+		// sentence, rather than home to the client with a key that opens
+		// nothing.
+		if (scopes.every((scope) => scope === 'destructive')) {
+			return fail(400, { error: 'nothingTicked' });
+		}
+
 		forgetStaleCodes(now);
 		const code = issueCode({
 			clientId: ask.clientId,

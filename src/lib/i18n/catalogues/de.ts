@@ -1800,6 +1800,8 @@ export const messages: Catalogue = {
 	'oauth.itWouldBeAbleTo': 'Er könnte',
 	'oauth.somethingWantsToConnect': 'Einen Assistenten verbinden',
 	'oauth.takingYouBack': 'Verbunden',
+	'oauth.tickAtLeastOne': 'Kreuzen Sie mindestens eine Sache an, oder brechen Sie ab.',
+	'oauth.untickWhatever': 'Entfernen Sie das Häkchen bei allem, was er nicht erreichen soll.',
 	'oauth.wantsToConnectTo': '{client} möchte sich mit deinem ontoplano verbinden.',
 	'oauth.whatItDeletesIsGone':
 		'Gelöschtes ist weg. Ohne dies legt er an und ändert, nimmt aber nie etwas fort.',
@@ -2037,6 +2039,18 @@ export const messages: Catalogue = {
 	'rooms.tasks.tabs.review': 'Rückblick',
 	'rooms.tasks.tabs.todo': 'Aufgaben',
 	'rooms.tasks.title': 'Aufgaben',
+	'scopeGroups.acrossEverything': 'Über alles hinweg',
+	'scopeGroups.habitsAndWorkouts': 'Gewohnheiten und Workouts',
+	'scopeGroups.money': 'Geld',
+	'scopeGroups.people': 'Menschen',
+	'scopeGroups.plumbing': 'Integrationen',
+	'scopeGroups.removingThings': 'Dinge löschen',
+	'scopeGroups.todosAndGoals': 'Aufgaben und Ziele',
+	'scopeGroups.whatYouWrite': 'Tagebuch, Notizbücher und Ideen',
+	'scopeGroups.withoutTheLineAbove':
+		'Ohne die Zeile darüber kann er hinzufügen und ändern, aber nicht finden, was zu ändern ist.',
+	'scopeGroups.yourHome': 'Zuhause, Küche und Einkauf',
+	'scopeGroups.yourWeek': 'Ihre Woche',
 	'scopes.billsRead':
 		'Ihre Rechnungen, Ihre erfassten Einnahmen und das tatsächlich Gezahlte oder Erhaltene sehen',
 	'scopes.billsWrite': 'Rechnungen anlegen und ändern und als bezahlt markieren',

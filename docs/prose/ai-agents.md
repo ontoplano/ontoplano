@@ -108,11 +108,18 @@ sends you here. You see a screen on your own instance saying which assistant is
 asking and what it would be able to do, you press **Connect it**, and you are
 handed back. No key is typed, pasted or stored by anybody.
 
+What it would be able to do is a list of tick boxes, gathered by what they are
+about — your week, money, the diary, the house — and everything the assistant
+asked for is ticked. Untick a line, or a whole heading, and the key it walks
+away with cannot reach that at all: a tool whose permission was not granted is
+not offered to the assistant, so one that may not read your diary does not know
+`write_entry` exists.
+
 What it gets is an ordinary key, made for it and named after it, so it stands
 in the list under **Settings → AI & Integrations → Integrations** with a revoke
-button beside it like every other. Deleting is a box on that consent screen and
-it starts unticked — the connection reads and writes, and takes nothing away
-unless you said it may.
+button beside it like every other. Deleting is a box of its own on that screen
+and it starts unticked — the connection reads and writes, and takes nothing
+away unless you said it may.
 
 Two details for anyone implementing against it: the flow is the authorization
 code grant with PKCE (`S256` only — there is no `plain`, and no implicit

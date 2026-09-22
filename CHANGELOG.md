@@ -18,6 +18,25 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.182.6 — 2026-09-22
+
+- **The connect-an-assistant screen is a question, not a receipt.** What an
+  assistant asked for is now a list of tick boxes, gathered by what they are
+  about — your week, money, the diary, the house — and everything is ticked to
+  begin with, so saying yes to all of it is still one press. Untick a line, or
+  a whole heading, and the key it walks away with cannot reach that at all: a
+  tool whose permission was not granted is never offered to the assistant.
+  Before this the only decision on the page was the deleting box, so an
+  assistant that asked for everything got everything or nothing.
+
+- **`up_next` reads the ratings the way the app means them.** Most urgent
+  first, then the task that takes *least* energy — it used to break ties
+  towards the heavier one — then the one you most want to do. And a rating
+  nobody set is no longer treated as a zero: it counts half a step to the
+  losing side of the middle of the scale, so a task deliberately marked 3
+  beats an unrated one, while urgency 1–2 and energy 4–5 are the tiers that
+  mean "later".
+
 ## 0.182.5 — 2026-09-22
 
 - **The connect-an-assistant address is on the Integrations page.** The

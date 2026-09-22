@@ -63,7 +63,13 @@ test('an assistant connects itself, and the key it gets works', async ({ page, r
 		await expect(page.getByText('Claude wants to connect to your ontoplano.')).toBeVisible();
 		await expect(page.getByText('It would be able to')).toBeVisible();
 		// Deleting is offered and not taken.
-		await expect(page.getByRole('checkbox')).not.toBeChecked();
+		await expect(page.getByRole('checkbox', { name: /delete things/i })).not.toBeChecked();
+		// Everything else is ticked, and can be untaken: the whole of an area
+		// goes with its heading, and one line goes on its own.
+		const workouts = page.getByRole('checkbox', { name: /Habits and workouts/ });
+		await expect(workouts).toBeChecked();
+		await workouts.uncheck();
+		await page.getByRole('checkbox', { name: /See your ideas/ }).uncheck();
 
 		// 3. Yes — and the code goes home to the address it registered.
 		await page.getByRole('button', { name: 'Connect it' }).click();
@@ -103,6 +109,12 @@ test('an assistant connects itself, and the key it gets works', async ({ page, r
 		// Everything an assistant does, and not deleting — nobody ticked it.
 		expect(token.scope).toContain('tasks:write');
 		expect(token.scope).not.toContain('destructive');
+		// Nor the two that were untaken on the screen: the heading took its
+		// whole area with it, and the line took itself.
+		expect(token.scope).not.toContain('habits:');
+		expect(token.scope).not.toContain('workouts:');
+		expect(token.scope).not.toContain('ideas:read');
+		expect(token.scope).toContain('ideas:write');
 
 		// 6. And the key works where it was minted to work.
 		const called = await request.post('/api/mcp', {

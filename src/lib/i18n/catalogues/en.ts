@@ -1752,6 +1752,8 @@ export const messages: Catalogue = {
 	'oauth.itWouldBeAbleTo': 'It would be able to',
 	'oauth.somethingWantsToConnect': 'Connect an assistant',
 	'oauth.takingYouBack': 'Connected',
+	'oauth.tickAtLeastOne': 'Tick at least one thing, or cancel.',
+	'oauth.untickWhatever': 'Untick anything you would rather it could not reach.',
 	'oauth.wantsToConnectTo': '{client} wants to connect to your ontoplano.',
 	'oauth.whatItDeletesIsGone':
 		'What it deletes is gone. Without this it adds and changes things but never takes them away.',
@@ -1987,6 +1989,18 @@ export const messages: Catalogue = {
 	'rooms.tasks.tabs.review': 'Review',
 	'rooms.tasks.tabs.todo': 'Tasks',
 	'rooms.tasks.title': 'Tasks',
+	'scopeGroups.acrossEverything': 'Across everything',
+	'scopeGroups.habitsAndWorkouts': 'Habits and workouts',
+	'scopeGroups.money': 'Money',
+	'scopeGroups.people': 'People',
+	'scopeGroups.plumbing': 'Integrations',
+	'scopeGroups.removingThings': 'Removing things',
+	'scopeGroups.todosAndGoals': 'Todos and goals',
+	'scopeGroups.whatYouWrite': 'Diary, notebooks and ideas',
+	'scopeGroups.withoutTheLineAbove':
+		'Without the line above it can add and change, but not find what to change.',
+	'scopeGroups.yourHome': 'Home, kitchen and shopping',
+	'scopeGroups.yourWeek': 'Your week',
 	'scopes.billsRead':
 		'See your bills, your recorded income, and what you have actually paid or received',
 	'scopes.billsWrite': 'Add and change bills, and mark them paid',

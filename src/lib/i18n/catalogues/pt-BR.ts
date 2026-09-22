@@ -1790,6 +1790,8 @@ export const messages: Catalogue = {
 	'oauth.itWouldBeAbleTo': 'Ele poderá',
 	'oauth.somethingWantsToConnect': 'Conectar um assistente',
 	'oauth.takingYouBack': 'Conectado',
+	'oauth.tickAtLeastOne': 'Marque pelo menos uma coisa, ou cancele.',
+	'oauth.untickWhatever': 'Desmarque o que você preferir que ele não alcance.',
 	'oauth.wantsToConnectTo': '{client} quer se conectar ao seu ontoplano.',
 	'oauth.whatItDeletesIsGone':
 		'O que ele apaga some. Sem isso ele cria e altera coisas, mas nunca as remove.',
@@ -2025,6 +2027,18 @@ export const messages: Catalogue = {
 	'rooms.tasks.tabs.review': 'Revisão',
 	'rooms.tasks.tabs.todo': 'Tarefas',
 	'rooms.tasks.title': 'Tarefas',
+	'scopeGroups.acrossEverything': 'Em tudo',
+	'scopeGroups.habitsAndWorkouts': 'Hábitos e treinos',
+	'scopeGroups.money': 'Dinheiro',
+	'scopeGroups.people': 'Pessoas',
+	'scopeGroups.plumbing': 'Integrações',
+	'scopeGroups.removingThings': 'Apagar coisas',
+	'scopeGroups.todosAndGoals': 'Tarefas e metas',
+	'scopeGroups.whatYouWrite': 'Diário, cadernos e ideias',
+	'scopeGroups.withoutTheLineAbove':
+		'Sem a linha acima, ele adiciona e altera, mas não encontra o que alterar.',
+	'scopeGroups.yourHome': 'Casa, cozinha e compras',
+	'scopeGroups.yourWeek': 'Sua semana',
 	'scopes.billsRead':
 		'Ver as suas contas, a sua renda registrada, e o que você de fato pagou ou recebeu',
 	'scopes.billsWrite': 'Adicionar e alterar contas, e marcá-las como pagas',
