@@ -12,6 +12,7 @@ import {
 	registrationMode
 } from '$lib/server/services/registration';
 import { clientKey, rateLimit, signUpBudget } from '$lib/server/rate-limit';
+import { recordFailedSignIn, recordPasswordReset } from '$lib/server/services/attack-watch';
 import { ServiceError } from '$lib/services/errors';
 import { toActionFailure } from '$lib/http-errors';
 import { record } from '$lib/services/audit';
@@ -120,6 +121,11 @@ export const actions: Actions = {
 				record(signedIn.user.id, 'signed_in', { ip: event.getClientAddress() });
 		} catch (error) {
 			if (error instanceof APIError) {
+				// Counted, not blocked: the throttle in hooks.server.ts does the
+				// blocking per address, and this is the other question — whether
+				// the refusals across ALL addresses have the shape of a password
+				// list being tried. See services/attack-watch.ts.
+				recordFailedSignIn(event.getClientAddress(), email);
 				return fail(400, { message: error.message || 'Sign in failed' });
 			}
 			console.error('Sign-in non-API error:', error);
@@ -246,6 +252,10 @@ export const actions: Actions = {
 		const email = formData.get('email')?.toString()?.trim() ?? '';
 
 		if (!email) return fail(400, { message: 'Enter your email address' });
+
+		// Every one of these sends mail, which makes a flood of them somebody
+		// else's bill as well as this instance's problem.
+		recordPasswordReset(event.getClientAddress(), email);
 
 		try {
 			await auth.api.requestPasswordReset({

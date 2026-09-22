@@ -5,6 +5,7 @@ import { sql } from 'drizzle-orm';
 import { db } from '$lib/server/db';
 import { loadConfig } from '$lib/server/config';
 import { isDemo } from '$lib/server/settings';
+import { attackWarnings } from './attack-watch.js';
 import { openFailureCount } from './mail-log.js';
 import { chasedCheckouts } from './billing.js';
 
@@ -234,6 +235,25 @@ export function warnings(r: Resources = resources()): string[] {
 		}
 	} catch {
 		// Same reason.
+	}
+
+	/*
+	 * And what an attack on the app itself looks like from in here.
+	 *
+	 * Everything below the app sees one address at a time — the throttle, the
+	 * banning layer, the firewall — and the attacks worth knowing about at
+	 * this layer have no shape at that size. A password list being tried
+	 * across hundreds of accounts from hundreds of addresses is impeccable
+	 * behaviour from each one of them.
+	 *
+	 * Counts only, never an address or an account name: the numbers are what
+	 * say it is happening, and the identities are in the log for somebody who
+	 * has gone looking on purpose.
+	 */
+	try {
+		for (const line of attackWarnings()) said(line);
+	} catch {
+		// A warning that throws must not take the probe with it.
 	}
 
 	return out;

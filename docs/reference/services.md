@@ -26,6 +26,7 @@ shows up here on the next build.
 | [`assistant-chat`](#assistant-chat)              | The in-app chat: the same assistant surface MCP offers, spoken to a model the person brought a key for.                                                                                                                                                              |
 | [`assistant-log`](#assistant-log)                | What an assistant did to an account, and the way back.                                                                                                                                                                                                               |
 | [`assistant-notify`](#assistant-notify)          | Telling somebody what an assistant just did to their account.                                                                                                                                                                                                        |
+| [`attack-watch`](#attack-watch)                  | What an attack on the app itself looks like from inside the process.                                                                                                                                                                                                 |
 | [`attributes`](#attributes)                      | The attributes an account has actually used, and what they are worth reading.                                                                                                                                                                                        |
 | [`audio`](#audio)                                | Recordings: what is accepted, where they go, and who may hear one.                                                                                                                                                                                                   |
 | [`audit`](#audit)                                | What happened to an account.                                                                                                                                                                                                                                         |
@@ -646,6 +647,64 @@ done. Used when the preference is turned on.
 
 - `Phrase` — A verb's catalogue key, and the noun it acts on, as the identifier spells it.
 - `SweepResult`
+
+## attack-watch
+
+What an attack on the app itself looks like from inside the process.
+
+The box already notices the attacks that are visible from outside it: the
+banning layer reads nginx and jails an address that knocks too often, and
+the firewall drops the ones the whole internet has already seen. Both of
+those are per-address, and the interesting attacks on an app are not.
+
+Credential stuffing with a list of leaked passwords comes from hundreds of
+addresses, a handful of attempts each, against hundreds of accounts. Every
+individual address behaves impeccably. Nothing below the app can see it,
+because the shape of it is only visible to the thing that knows an attempt
+was a sign-in, and that it failed, and whose account it was for.
+
+So this counts three things in a rolling window and says when the shape is
+wrong. It decides nothing and blocks nobody — the throttle in
+`hooks.server.ts` does the blocking, per address, as it always did. This is
+the sentence that reaches a phone, through the warnings `/healthz` already
+publishes and the watcher already relays.
+
+In memory, like `rate-limit.ts` and for the same reason: this is one node
+process with a SQLite file beside it, and a table would be writes on the
+attacker's schedule. What is lost on a restart is a quarter of an hour of
+counting, and an attack that is still happening is counted again by the
+next window.
+
+No address or account name is ever in a warning — only how many of each.
+The counts are what tells you it is happening; the identities are in the
+logs, where somebody looking for them has to go deliberately.
+
+### Functions
+
+#### `recordFailedSignIn(from, account)`
+
+A sign-in that was refused. The password is never passed in, or wanted.
+
+#### `recordPasswordReset(from, account)`
+
+A password-reset request, whether or not the address has an account.
+
+#### `recordServerError(path)`
+
+A request this instance answered with a 5xx.
+
+#### `resetAttackWatch()`
+
+Only for tests, and for a suite that must not inherit the last file's counts.
+
+#### `attackWarnings(now)`
+
+Whatever the shape of the last quarter of an hour says, as sentences.
+
+Returned in the same form as the resource warnings beside them, because
+they travel the same way: into `/healthz`, out through the watcher, into a
+chat message with no context around it. Each one has to stand alone and say
+what to do next.
 
 ## attributes
 
