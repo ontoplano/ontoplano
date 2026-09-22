@@ -20,6 +20,17 @@ releases mattered.
 
 ## 0.183.0 — 2026-09-22
 
+- **Pressing a block on a rating fills it up to there.** It used to land one
+  short: a slider puts its thumb on the nearest step to where you pressed, which
+  is right when the thumb is the thing you are placing and wrong for a bar,
+  where what you mean is "up to here". Pressing the stub below the middle —
+  past the second marking, short of the third — is how you say nobody has
+  answered.
+
+- **The gauges on a task open the form on the gauges.** They were the one thing
+  on a row that showed a number without offering a way to change it. The three
+  scales also start open now rather than folded away.
+
 - **Setting a rating uses the same gauge that shows it.** The card drew a
   little thermometer and the form drew a slider, so the thing you read and the
   thing you dragged looked nothing like each other. One component now, with the

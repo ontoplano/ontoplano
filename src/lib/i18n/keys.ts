@@ -2862,6 +2862,7 @@ export type MessageKey =
 	| 'todoRows.putOnTheDay'
 	| 'todoRows.saved'
 	| 'todoRows.searchTheseTasks'
+	| 'todoRows.setTheRatings'
 	| 'todoRows.showArchivedCount'
 	| 'todoRows.showCompleted'
 	| 'todoRows.showCompletedCount'

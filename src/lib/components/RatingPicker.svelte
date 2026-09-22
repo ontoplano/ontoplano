@@ -71,6 +71,11 @@
 	 * 0 to 1 to 2 below it.
 	 */
 	function slide(event: Event) {
+		// While a finger or a pointer is down, `fillTo` owns the value: the
+		// native control answers "where is the nearest step to this x", and the
+		// question a bar answers is "which block did you press".
+		if (pressing) return;
+
 		const input = event.currentTarget as HTMLInputElement;
 		const raw = Number(input.value);
 		const was = value ?? RATING_UNRATED;
@@ -84,6 +89,61 @@
 		value = Math.min(RATING_MAX, Math.max(RATING_MIN, whole));
 		// The thumb sits on the answer rather than between two of them.
 		input.value = String(value);
+	}
+
+	/** Whether a pointer is down on the bar, so the pointer decides rather than the input. */
+	let pressing = false;
+
+	/**
+	 * Pressing a block fills up to it, rather than to the nearest edge.
+	 *
+	 * A range input puts its thumb on the nearest step to where you pressed, so
+	 * pressing the middle of the fourth block landed on three — right for a
+	 * slider, where the thumb is the thing you are placing, and wrong for a bar,
+	 * where what you are saying is "up to here". The block under the pointer is
+	 * the answer, which is `ceil`.
+	 *
+	 * Nought is the empty bar, off the left end of every block: dragging past
+	 * the start reaches it, and so do the arrow keys and the × beside it.
+	 */
+	function fillTo(event: PointerEvent) {
+		const box = (event.currentTarget as HTMLElement).getBoundingClientRect();
+		if (box.width === 0) return;
+		const along = (event.clientX - box.left) / box.width;
+		if (along <= 0) {
+			value = RATING_MIN;
+			return;
+		}
+
+		const to = along * RATING_MAX;
+		/*
+		 * And the stub of a block below the middle is no answer at all.
+		 *
+		 * An unanswered rating is drawn filled to 2.5, so the place where that
+		 * bar ends — past the second marking, short of the third — is where you
+		 * press to say nobody has answered. Without it there would be no way
+		 * back to that except the × beside it.
+		 */
+		if (to > Math.floor(RATING_UNRATED) && to <= RATING_UNRATED) {
+			value = null;
+			return;
+		}
+
+		value = Math.min(RATING_MAX, Math.max(RATING_MIN, Math.ceil(to)));
+	}
+
+	function press(event: PointerEvent) {
+		pressing = true;
+		(event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
+		fillTo(event);
+	}
+
+	function drag(event: PointerEvent) {
+		if (pressing) fillTo(event);
+	}
+
+	function release() {
+		pressing = false;
 	}
 </script>
 
@@ -123,8 +183,15 @@
 			the gauge filling.
 		-->
 		<div class="rating-row flex items-center gap-2">
-			<div class="rating-track relative min-w-0 flex-1">
-				<Gauge {rating} {value} big class="w-full" />
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<div
+				class="rating-track relative min-w-0 flex-1"
+				onpointerdown={press}
+				onpointermove={drag}
+				onpointerup={release}
+				onpointercancel={release}
+			>
+				<Gauge {rating} {value} class="w-full" />
 
 				<input
 					type="range"
@@ -200,11 +267,19 @@
 		cursor: pointer;
 	}
 
-	/* Wide enough for a finger, whatever the gauge's own height is. */
+	/*
+	 * Wide enough for a finger, and no wider than the bar it draws.
+	 *
+	 * The input is laid over this, so if this were wider than the gauge the
+	 * pressable area would run past the end of the bar and a press out there
+	 * would mean nothing visible.
+	 */
 	.rating-track {
 		min-height: 1.25rem;
+		max-width: 6rem;
 		display: flex;
 		align-items: center;
+		touch-action: none;
 	}
 
 	.rating-number {

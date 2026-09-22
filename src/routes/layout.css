@@ -2049,7 +2049,7 @@ label:has(> input[type='radio']:not(:disabled)) {
 		position: relative;
 		display: block;
 		width: 2.25rem;
-		height: 0.5rem;
+		height: 0.4rem;
 		/*
 		 * Outlined in ink rather than in its own colour.
 		 *
@@ -2074,27 +2074,6 @@ label:has(> input[type='radio']:not(:disabled)) {
 		width: 100%;
 	}
 
-	/*
-	 * The one somebody drags, rather than reads.
-	 *
-	 * Same height as the one on a card — it is the same object, and the touch
-	 * target is the invisible range laid over it rather than the drawing — but
-	 * no longer than it needs to be. Stretched across the column it was a long
-	 * way for the eye to travel for five steps, and it left the number and the
-	 * way out marooned at the far end of it.
-	 */
-	.gauge-big {
-		max-width: 6rem;
-	}
-
-	/*
-	 * The colour, with a lighter top.
-	 *
-	 * A flat bar of one hue at this size reads as a sticker. The gradient is a
-	 * few percent of white at the top falling to the colour itself, which is
-	 * the whole of what makes it look like something filled rather than
-	 * something drawn.
-	 */
 	.gauge > .gauge-fill {
 		position: absolute;
 		inset: 0 auto 0 0;
@@ -2171,11 +2150,11 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * mistaken for a tick.
 	 */
 	[data-rating='urgency'] {
-		--rating-ink: var(--color-red-400);
+		--rating-ink: var(--color-red-300);
 	}
 
 	[data-rating='ease'] {
-		--rating-ink: var(--color-blue-600);
+		--rating-ink: var(--color-blue-400);
 	}
 
 	[data-rating='interest'] {

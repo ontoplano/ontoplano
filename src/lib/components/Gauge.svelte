@@ -20,10 +20,8 @@
 	let {
 		rating,
 		value,
-		/** Taller, for the one somebody is dragging rather than reading. */
-		big = false,
 		class: className = ''
-	}: { rating: Rating; value: number | null; big?: boolean; class?: string } = $props();
+	}: { rating: Rating; value: number | null; class?: string } = $props();
 
 	/** The markings, as something to iterate: the lines between the whole steps. */
 	const marks = Array.from({ length: RATING_MAX - 1 }, (_, at) => at + 1);
@@ -36,7 +34,7 @@
 </script>
 
 <span
-	class="gauge {big ? 'gauge-big' : ''} {className}"
+	class="gauge {className}"
 	class:gauge-unset={value == null}
 	data-rating={rating}
 	title={said}

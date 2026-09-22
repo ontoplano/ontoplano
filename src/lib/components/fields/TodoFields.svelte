@@ -163,9 +163,16 @@
 	</MoreOptions>
 {:else}
 	{@render details()}
-	<!-- Three optional five-point scales at the top of a create form read as
-	     work to do before you may write anything down. -->
-	<MoreOptions label={t('fields.todo.urgencyEaseInterest')} count={ratingsSet}>
+	<!--
+		Three scales, open.
+
+		They were folded because three five-point scales at the top of a create
+		form read as work to do before you may write anything down — and the fold
+		went too far the other way: they are the thing that decides where a task
+		lands, and nobody opens a drawer to find out something they did not know
+		was in it. The fold stays, so it can be put away.
+	-->
+	<MoreOptions label={t('fields.todo.urgencyEaseInterest')} count={ratingsSet} open>
 		{@render scales()}
 	</MoreOptions>
 {/if}

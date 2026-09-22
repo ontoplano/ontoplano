@@ -9,6 +9,7 @@
 	import { deleteLater, isLeaving } from '$lib/undo.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
+	import { tick } from 'svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { enhance } from '$lib/enhance';
@@ -668,12 +669,49 @@
 			});
 		};
 
-	function startEdit(todo: Todo) {
+	/**
+	 * Which slider to land on when the form opens, if any.
+	 *
+	 * Opening from the gauges on a row should arrive at the gauges in the form
+	 * rather than at the top of a dialog somebody then has to scroll.
+	 */
+	let openAtRatings = $state(false);
+
+	function startEdit(todo: Todo, where?: { atRatings?: boolean }) {
 		editingId = todo.id;
 		showForm = true;
 		formRatings = { ...todo.ratings };
 		formNotebookId = todo.notebookId;
+		openAtRatings = where?.atRatings === true;
 	}
+
+	/*
+	 * Land on the first scale, once the dialog has actually drawn one.
+	 *
+	 * The focus is the point rather than the scroll: it puts the arrow keys on
+	 * the rating somebody pressed, and bringing it into view follows from that.
+	 */
+	$effect(() => {
+		if (!showForm || !openAtRatings) return;
+		openAtRatings = false;
+		/*
+		 * After the dialog's own opening move, not during it.
+		 *
+		 * A modal puts the cursor in its first field when it opens, and that
+		 * happens after this effect runs — so focusing here was focusing
+		 * something about to be focused over. Two frames is after the dialog has
+		 * settled and still before anybody could have typed.
+		 */
+		void tick().then(() =>
+			requestAnimationFrame(() =>
+				requestAnimationFrame(() => {
+					const first = document.querySelector<HTMLInputElement>('#todo-form input[type="range"]');
+					first?.focus();
+					first?.scrollIntoView({ block: 'center' });
+				})
+			)
+		);
+	});
 
 	function startDelegate(todo: Todo) {
 		delegatingId = todo.id;
@@ -1114,7 +1152,22 @@
 							full and grey, which says "nobody said" rather than "the lowest
 							there is".
 						-->
-							<RatingBadges values={todo.ratings} stacked class="w-full" />
+							<!--
+							Pressing them opens the form on them.
+
+							They are the one thing on a row that shows a number without
+							offering a way to change it, and the way in was two presses
+							through a dialog that opens somewhere else entirely.
+						-->
+							<button
+								type="button"
+								class="w-full cursor-pointer"
+								onclick={() => startEdit(todo, { atRatings: true })}
+								title={t('todoRows.setTheRatings')}
+								aria-label={t('todoRows.setTheRatings')}
+							>
+								<RatingBadges values={todo.ratings} stacked class="w-full" />
+							</button>
 						</div>
 
 						<!-- One row at every width: the actions are a narrow column of icons
