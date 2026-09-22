@@ -1850,6 +1850,7 @@ export const messages: Catalogue = {
 	'ratings.howMuchYouWantTo': 'Cuánto quieres hacerlo',
 	'ratings.howSoonThisHasTo': 'Qué tan pronto tiene que pasar esto',
 	'ratings.interest': 'Interés',
+	'ratings.labelNotSet': '{label}: sin valor',
 	'ratings.labelValueOf5': '{label}: {value} de 5',
 	'ratings.urgency': 'Urgencia',
 	'reminders.aDayAndSomethingTo': 'Un día y algo que decir primero',

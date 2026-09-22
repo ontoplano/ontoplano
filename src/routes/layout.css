@@ -180,6 +180,25 @@ input[type='radio'] {
 }
 
 /*
+ * Except the inside of a rating gauge.
+ *
+ * The gauge is a track with a fill sliding along it, and both are `span`s —
+ * so the playful style rounded the fill, which is the wrong shape twice over:
+ * a rounded rectangle inside a rounded track leaves a notch at each corner of
+ * the closed end, and the open end domes, so two-of-five reads as the bulb of
+ * a thermometer rather than as a level. The track keeps whatever corners the
+ * style gives it; what is drawn on it does not.
+ *
+ * `!important` because the rule above is `!important` and both of these are
+ * unlayered, while the gauge's own rules live in `@layer components` and lose
+ * to anything outside it however specific they are.
+ */
+.gauge-fill,
+.gauge-mark {
+	border-radius: 0 !important;
+}
+
+/*
  * The phone bar's raised pie button has no rule here any more.
  *
  * It was a circle, forced round against the style's other radii, with the mark
@@ -2031,9 +2050,23 @@ label:has(> input[type='radio']:not(:disabled)) {
 		display: block;
 		width: 2.25rem;
 		height: 0.5rem;
+		/*
+		 * Outlined in ink rather than in its own colour.
+		 *
+		 * Three gauges each ringed in their own hue read as three shapes of
+		 * different weight; one black outline around all of them makes them a
+		 * set, and holds the pale end of a nearly-empty one against the card.
+		 */
+		border: 1px solid var(--color-gray-900);
+		/*
+		 * Clipped to the pill.
+		 *
+		 * The fill is a rectangle from the left edge, and the track is round —
+		 * so its square corners met the curve and left two little notches at
+		 * the closed end, which is the first thing the eye lands on. Hiding the
+		 * overflow lets the fill take the whole rounded end.
+		 */
 		overflow: hidden;
-		border: 1px solid color-mix(in srgb, var(--gauge-ink) 55%, transparent);
-		border-radius: 999px;
 		background-color: color-mix(in srgb, var(--gauge-ink) 10%, transparent);
 	}
 
@@ -2041,10 +2074,44 @@ label:has(> input[type='radio']:not(:disabled)) {
 		width: 100%;
 	}
 
+	/*
+	 * The colour, with a lighter top.
+	 *
+	 * A flat bar of one hue at this size reads as a sticker. The gradient is a
+	 * few percent of white at the top falling to the colour itself, which is
+	 * the whole of what makes it look like something filled rather than
+	 * something drawn.
+	 */
 	.gauge > .gauge-fill {
 		position: absolute;
 		inset: 0 auto 0 0;
-		background-color: var(--gauge-ink);
+		background-image: linear-gradient(
+			to bottom,
+			color-mix(in srgb, var(--gauge-ink) 72%, white) 0%,
+			var(--gauge-ink) 62%,
+			color-mix(in srgb, var(--gauge-ink) 88%, black) 100%
+		);
+	}
+
+	/*
+	 * Nobody has answered this one.
+	 *
+	 * Half full and grey: an empty gauge would say "the lowest there is", which
+	 * is an answer, and a missing gauge moved the other two around. Half is
+	 * where an unset rating actually counts when the list is sorted by
+	 * Priority, so what is drawn and what is computed are the same claim.
+	 */
+	.gauge[data-rating].gauge-unset {
+		/*
+		 * Specific enough to beat the colours below.
+		 *
+		 * `.gauge[data-rating='urgency']` is the same weight as a plain class,
+		 * so an unset gauge kept its own hue and merely went pale — which reads
+		 * as a low rating rather than as no rating, the one thing this is for.
+		 */
+		--gauge-ink: var(--color-gray-400);
+		border-color: var(--color-gray-500);
+		opacity: 0.6;
 	}
 
 	/*
@@ -2060,12 +2127,12 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	.gauge[data-rating='urgency'] {
-		--gauge-ink: var(--color-amber-500);
+		--gauge-ink: var(--color-amber-400);
 	}
 
 	/* Green rather than red, and dark enough not to read as a tick. */
 	.gauge[data-rating='interest'] {
-		--gauge-ink: var(--color-emerald-700);
+		--gauge-ink: var(--color-emerald-600);
 	}
 
 	.gauge[data-rating='energy'] {

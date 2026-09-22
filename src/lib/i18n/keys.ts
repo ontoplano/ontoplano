@@ -1614,6 +1614,7 @@ export type MessageKey =
 	| 'ratings.howMuchYouWantTo'
 	| 'ratings.howSoonThisHasTo'
 	| 'ratings.interest'
+	| 'ratings.labelNotSet'
 	| 'ratings.labelValueOf5'
 	| 'ratings.urgency'
 	| 'reminders.aDayAndSomethingTo'
@@ -3453,6 +3454,7 @@ export interface MessageValuesFor {
 	'picker.nChosen': { count: number };
 	'pictures.hint': { kilobytes: string | number };
 	'ratingPicker.leaveUnanswered': { rating: string | number };
+	'ratings.labelNotSet': { label: string | number };
 	'ratings.labelValueOf5': { label: string | number; value: string | number };
 	'reminders.alarmsOnThisPhone': { count: number };
 	'reminders.atLeastMinutesFromNow': { count: number };

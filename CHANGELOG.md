@@ -20,6 +20,19 @@ releases mattered.
 
 ## 0.182.24 — 2026-09-22
 
+- **Every task shows all three ratings, in the same place.** A task nobody had
+  rated drew nothing, and one rated only for urgency drew a single bar, so the
+  same question sat somewhere different on every row. All three are always
+  there now; an unanswered one is half full and grey, which says "nobody said"
+  rather than "the lowest there is" — and half is where an unset rating
+  actually counts when the list is sorted by Priority.
+
+- **The gauges are outlined in black, and the colour has some depth to it.**
+  The fill also stops in a straight line at the level it reports: it was a
+  rounded rectangle inside a rounded track, which left a notch at each corner
+  of the closed end and domed the open one, so two-of-five looked like the bulb
+  of a thermometer. The yellow and the green are brighter.
+
 - **An assistant given one notebook can see the pictures in it.** The screen
   that ties a key to a notebook promises "its tasks, its goals, its notes, and
   the pictures and recordings in them" — and the tool that fetches a picture

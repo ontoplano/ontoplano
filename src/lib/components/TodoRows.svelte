@@ -4,7 +4,7 @@
 	import Picker from '$lib/components/Picker.svelte';
 	import SortControl from '$lib/components/SortControl.svelte';
 	import { agoOf, momentOf } from '$lib/when';
-	import { RATINGS, compareByRatings } from '$lib/ratings';
+	import { compareByRatings } from '$lib/ratings';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { deleteLater, isLeaving } from '$lib/undo.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
@@ -193,10 +193,6 @@
 		return Boolean(todo.notes);
 	}
 
-	/** Whether any of the three questions has been answered for this one. */
-	function hasRatings(todo: Todo): boolean {
-		return RATINGS.some((r) => todo.ratings[r] != null);
-	}
 	let formRatings: Record<string, number | null> = $state({
 		urgency: null,
 		interest: null,
@@ -1067,10 +1063,14 @@
 							The rail the tick box stands in has the width and nothing under
 							it, and stacked they line up across every row — which is the half
 							of "make sure its aligned" that a row of pills could never do.
+
+							All three, always. Drawing only the answered ones put the same
+							question in a different place on every row, so the eye had to
+							read each card from scratch; an unanswered one is drawn half
+							full and grey, which says "nobody said" rather than "the lowest
+							there is".
 						-->
-							{#if hasRatings(todo)}
-								<RatingBadges values={todo.ratings} stacked class="w-full" />
-							{/if}
+							<RatingBadges values={todo.ratings} stacked class="w-full" />
 						</div>
 
 						<!-- One row at every width: the actions are a narrow column of icons

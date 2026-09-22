@@ -16,11 +16,25 @@
 	 * Each carries its own colour so they are told apart without a letter:
 	 * urgency yellow, energy blue, interest green. Green rather than the red it
 	 * wore — red is the colour of something wrong, and wanting to do a thing is
-	 * not — and a dark green rather than a bright one, so it is not mistaken
-	 * for a tick. The words are in the tooltip and in the accessible name,
+	 * not — and the words are in the tooltip and in the accessible name,
 	 * because a colour on its own is not something everybody can read.
+	 *
+	 * ## Three, always
+	 *
+	 * A task with only urgency set used to draw one gauge, so the same question
+	 * sat in a different place on every row and the eye had to read each card
+	 * from scratch. All three are always here now: an unset one is drawn at
+	 * half, in grey, which says "no answer" rather than "the lowest answer" —
+	 * and half is also where an unset rating actually counts in the Priority
+	 * sort, so the picture and the arithmetic agree.
 	 */
-	import { RATING_ORDER, RATING_LABELS, RATING_MAX, type RatingValues } from '$lib/ratings.js';
+	import {
+		RATING_ORDER,
+		RATING_LABELS,
+		RATING_MAX,
+		RATING_MIDPOINT,
+		type RatingValues
+	} from '$lib/ratings.js';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -32,27 +46,33 @@
 		class: className = ''
 	}: { values: Partial<RatingValues>; stacked?: boolean; class?: string } = $props();
 
-	const shown = $derived(RATING_ORDER.filter((r) => values[r] != null));
-
 	/** The markings, as something to iterate: the four lines between five steps. */
 	const marks = Array.from({ length: RATING_MAX - 1 }, (_, at) => at + 1);
 </script>
 
-{#if shown.length > 0}
-	<span class="gauges {stacked ? 'gauges-stacked' : ''} {className}">
-		{#each shown as r (r)}
-			{@const said = t('ratings.labelValueOf5', {
-				label: t(RATING_LABELS[r]),
-				value: values[r] ?? 0
-			})}
-			<span class="gauge" data-rating={r} title={said} aria-label={said} role="img">
-				<!-- The liquid: a fill from the left, in whole steps. -->
-				<span class="gauge-fill" style="width: {((values[r] ?? 0) / RATING_MAX) * 100}%"></span>
-				<!-- And the markings over it, so the level is read against them. -->
-				{#each marks as mark (mark)}
-					<span class="gauge-mark" style="left: {(mark / RATING_MAX) * 100}%"></span>
-				{/each}
-			</span>
-		{/each}
-	</span>
-{/if}
+<span class="gauges {stacked ? 'gauges-stacked' : ''} {className}">
+	{#each RATING_ORDER as r (r)}
+		{@const value = values[r]}
+		{@const said =
+			value == null
+				? t('ratings.labelNotSet', { label: t(RATING_LABELS[r]) })
+				: t('ratings.labelValueOf5', { label: t(RATING_LABELS[r]), value })}
+		<span
+			class="gauge"
+			class:gauge-unset={value == null}
+			data-rating={r}
+			title={said}
+			aria-label={said}
+			role="img"
+		>
+			<!-- The liquid: a fill from the left, in whole steps — or half of one,
+			     greyed, where nobody has answered. -->
+			<span class="gauge-fill" style="width: {((value ?? RATING_MIDPOINT) / RATING_MAX) * 100}%"
+			></span>
+			<!-- And the markings over it, so the level is read against them. -->
+			{#each marks as mark (mark)}
+				<span class="gauge-mark" style="left: {(mark / RATING_MAX) * 100}%"></span>
+			{/each}
+		</span>
+	{/each}
+</span>
