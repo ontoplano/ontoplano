@@ -2115,15 +2115,34 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
-	 * Black, as he asked, and thin: the markings are a scale rather than a
-	 * decoration, and they have to read over the fill and over the tint alike.
+	 * The markings: thin, and the same ink in both themes.
+	 *
+	 * They are a scale rather than a decoration, so they have to read over the
+	 * fill and over the empty tint alike — and the fill is the same bright
+	 * colour whichever theme is on. Written as its own ink rather than as
+	 * `--color-gray-900`, which the dark theme remaps to near-white: the
+	 * markings turned pale inside a bright pill and looked like scratches.
 	 */
+	.gauge {
+		--gauge-mark-ink: #111827;
+	}
+
 	.gauge > .gauge-mark {
 		position: absolute;
 		top: 0;
 		bottom: 0;
 		width: 1px;
-		background-color: color-mix(in srgb, var(--color-gray-900) 55%, transparent);
+		/*
+		 * Centred on the step it marks, not started at it.
+		 *
+		 * `left: 40%` puts the mark's left edge there, so its middle — which is
+		 * what the eye reads — sits half a pixel further along, and every mark
+		 * is late by the same amount. The level is drawn at a true percentage,
+		 * so an unset gauge at 2.5 ended up looking nearer 2.4 than halfway
+		 * between the second and third markings.
+		 */
+		transform: translateX(-50%);
+		background-color: color-mix(in srgb, var(--gauge-mark-ink) 55%, transparent);
 	}
 
 	.gauge[data-rating='urgency'] {
@@ -2135,7 +2154,7 @@ label:has(> input[type='radio']:not(:disabled)) {
 		--gauge-ink: var(--color-emerald-600);
 	}
 
-	.gauge[data-rating='energy'] {
+	.gauge[data-rating='ease'] {
 		--gauge-ink: var(--color-blue-600);
 	}
 

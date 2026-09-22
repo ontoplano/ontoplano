@@ -332,16 +332,17 @@ Add a one-off block to one day: a title, a start time and how long it runs. This
 
 _Needs `schedule:write`; writes._
 
-| Parameter    | Type    | Required | What it is                                                                                                                                                                                  |
-| ------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `date`       | string  | yes      | The day, as YYYY-MM-DD.                                                                                                                                                                     |
-| `title`      | string  | yes      | What it is — shown on the block.                                                                                                                                                            |
-| `start_time` | string  | yes      | When it starts, as HH:MM on a 24-hour clock.                                                                                                                                                |
-| `minutes`    | integer | —        | How long it runs, in minutes. Default `60`.                                                                                                                                                 |
-| `category`   | string  | —        | Which part of life it belongs to, by name — `categories` lists them. A name that matches nothing is refused, never guessed. The first category is used only when this is left out entirely. |
-| `urgency`    | integer | —        | How soon it has to happen, 1–5.                                                                                                                                                             |
-| `interest`   | integer | —        | How much they want to do it, 1–5.                                                                                                                                                           |
-| `energy`     | integer | —        | How much it will take out of them, 1–5.                                                                                                                                                     |
+| Parameter    | Type    | Required | What it is                                                                                                                                                                                           |
+| ------------ | ------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `date`       | string  | yes      | The day, as YYYY-MM-DD.                                                                                                                                                                              |
+| `title`      | string  | yes      | What it is — shown on the block.                                                                                                                                                                     |
+| `start_time` | string  | yes      | When it starts, as HH:MM on a 24-hour clock.                                                                                                                                                         |
+| `minutes`    | integer | —        | How long it runs, in minutes. Default `60`.                                                                                                                                                          |
+| `category`   | string  | —        | Which part of life it belongs to, by name — `categories` lists them. A name that matches nothing is refused, never guessed. The first category is used only when this is left out entirely.          |
+| `urgency`    | integer | —        | How soon it has to happen, 1–5.                                                                                                                                                                      |
+| `interest`   | integer | —        | How much they want to do it, 1–5.                                                                                                                                                                    |
+| `ease`       | integer | —        | How easy it is, 1–5, five being easiest. Replaces `energy`, which asked the opposite question on the same scale.                                                                                     |
+| `energy`     | integer | —        | Deprecated — use \`ease\`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in …. **Deprecated.** |
 
 ### `change_block` — Move or rename a block
 
@@ -430,7 +431,7 @@ _Needs `tasks:read`; read-only._
 
 ### `up_next` — What to do next
 
-The task to do next, by the ratings on it: most urgent first, then the one that takes least energy, then the one most wanted — energy runs the other way to the other two, low being good. An unrated task is not a zero: it counts half a step to the losing side of the middle of the scale (2.5 urgency, 2.5 interest, 3.5 energy), so a task deliberately marked 3 beats it, while urgency 1–2 and energy 4–5 sit below it as the postpone tiers. Open, unarchived, undated tasks only — anything with a day on it is on the week and `today` answers for that. Answers with one line by default; `limit` for a short list to choose between.
+The task to do next, by the ratings on it: most urgent first, then the easiest, then the one most wanted. All three run the same way — five is the most of what the word says. An unrated one is not a zero: it counts as the middle of the scale, 2.5, so anything marked 4 or 5 beats it and 1 or 2 falls below it as the postpone tiers. Open, unarchived, undated tasks only — anything with a day on it is on the week and `today` answers for that. Answers with one line by default; `limit` for a short list to choose between.
 
 _Needs `tasks:read`; read-only._
 
@@ -536,7 +537,8 @@ _Needs `tasks:write`; writes._
 | `tags`       | string  | —        | The labels it should carry from now on, comma or space separated — this replaces whatever it had, so include the ones to keep. An empty string takes them all off. Left out, the labels are untouched. |
 | `urgency`    | integer | —        | How soon it has to happen, 1–5.                                                                                                                                                                        |
 | `interest`   | integer | —        | How much they want to do it, 1–5.                                                                                                                                                                      |
-| `energy`     | integer | —        | How much it will take out of them, 1–5.                                                                                                                                                                |
+| `ease`       | integer | —        | How easy it is, 1–5, five being easiest. Replaces `energy`, which asked the opposite question on the same scale.                                                                                       |
+| `energy`     | integer | —        | Deprecated — use \`ease\`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in …. **Deprecated.**   |
 
 ### `schedule_todo` — Put a todo on a day
 
@@ -1272,7 +1274,8 @@ _Needs `schedule:write`; writes._
 | `month_day`      | integer | —        | For `monthly`: which day of the month, 1 to 31. A month too short for it uses its last day.                                                                                                                      |
 | `urgency`        | integer | —        | How soon it has to happen, 1–5.                                                                                                                                                                                  |
 | `interest`       | integer | —        | How much they want to do it, 1–5.                                                                                                                                                                                |
-| `energy`         | integer | —        | How much it will take out of them, 1–5.                                                                                                                                                                          |
+| `ease`           | integer | —        | How easy it is, 1–5, five being easiest. Replaces `energy`, which asked the opposite question on the same scale.                                                                                                 |
+| `energy`         | integer | —        | Deprecated — use \`ease\`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in …. **Deprecated.**             |
 
 ### `change_repeating_block` — Change a repeating block
 

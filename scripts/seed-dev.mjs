@@ -204,7 +204,7 @@ const todo = (title, extra = {}) => {
 	}
 	const id = run(
 		`insert into todo_tasks
-		 (user_id, title, notes, status, completed, scheduled_date, category_id, urgency, interest, energy, sort_order)
+		 (user_id, title, notes, status, completed, scheduled_date, category_id, urgency, interest, ease, sort_order)
 		 values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		uid,
 		title,
@@ -215,7 +215,7 @@ const todo = (title, extra = {}) => {
 		extra.categoryId ?? null,
 		extra.urgency ?? null,
 		extra.interest ?? null,
-		extra.energy ?? null,
+		extra.ease ?? null,
 		extra.sortOrder ?? 0
 	);
 	tagTodo(id, extra.tags ?? []);
@@ -897,13 +897,13 @@ todo('call the dentist', {
 	tags: ['health', 'phone'],
 	urgency: 4,
 	interest: 1,
-	energy: 2,
+	ease: 2,
 	categoryId: personal,
 	sortOrder: 1
 });
 todo('buy running shoes', {
 	interest: 4,
-	energy: 2,
+	ease: 2,
 	categoryId: health,
 	sortOrder: 2,
 	tags: ['shopping']
@@ -911,7 +911,7 @@ todo('buy running shoes', {
 todo('renew the domain', {
 	tags: ['a1', 'done'],
 	urgency: 5,
-	energy: 1,
+	ease: 1,
 	categoryId: work,
 	scheduledDate: today,
 	sortOrder: 3
@@ -1419,7 +1419,7 @@ movement(account, '2026-07-08', -14000, 'Direct debit - Summit Indoor Climbing')
 movement(account, '2026-07-09', -9990, 'Direct debit - Brightline Fibre');
 movement(account, '2026-07-10', -45900, 'Bill payment - Meridian Health Cover');
 movement(account, '2026-07-11', -6000, 'Transfer sent - Thursday Five-a-side - monthly dues');
-movement(account, '2026-07-12', -15990, 'Bill payment - Ridgeline Energy');
+movement(account, '2026-07-12', -15990, 'Bill payment - Ridgeline Ease');
 movement(account, '2026-07-14', -21000, 'Debit card purchase - Milepost Fuel');
 movement(account, '2026-07-16', -38400, 'Bill payment - Northwood Timber - cedar boards');
 movement(account, '2026-07-17', 32000, 'Purchase refund - Halden Goods');
@@ -1444,7 +1444,7 @@ movement(account, '2026-08-08', -14000, 'Direct debit - Summit Indoor Climbing')
 movement(account, '2026-08-09', -9990, 'Direct debit - Brightline Fibre');
 movement(account, '2026-08-10', -45900, 'Bill payment - Meridian Health Cover');
 movement(account, '2026-08-11', -6000, 'Transfer sent - Thursday Five-a-side - monthly dues');
-movement(account, '2026-08-12', -16240, 'Bill payment - Ridgeline Energy');
+movement(account, '2026-08-12', -16240, 'Bill payment - Ridgeline Ease');
 movement(account, '2026-08-13', 45000, 'Transfer received - Marcus Reid');
 movement(account, '2026-08-15', -27300, 'Debit card purchase - Ironway Tools & Metalwork');
 movement(
@@ -1465,7 +1465,7 @@ movement(account, '2026-09-05', -180000, 'Bill payment - Rent, Vista Lettings');
 movement(account, '2026-09-06', -22000, 'Direct debit - Hollowbrook Farm - weekly box');
 movement(account, '2026-09-07', -12880, 'Direct debit - Clearwater Utilities');
 movement(account, '2026-09-08', -14000, 'Direct debit - Summit Indoor Climbing');
-movement(account, '2026-09-09', -15880, 'Bill payment - Ridgeline Energy');
+movement(account, '2026-09-09', -15880, 'Bill payment - Ridgeline Ease');
 movement(account, '2026-09-09', -9990, 'Direct debit - Brightline Fibre');
 movement(account, '2026-09-10', -45900, 'Bill payment - Meridian Health Cover');
 movement(account, '2026-09-11', 120000, 'Transfer received - Tax refund');
@@ -1544,7 +1544,7 @@ sortRule('category', 'Woodwork', 'timber|tools|metalwork|chisel', 4, '#92400e');
 sortRule('category', 'Climbing', 'climbing|chalk', 5, '#c2410c');
 sortRule('category', 'Football', 'five-a-side|football', 6, '#166534');
 sortRule('category', 'Health', 'health cover|chemist|pharmacy', 7, '#0e7490');
-sortRule('category', 'Utilities', 'energy|water|fibre', 8, '#b45309');
+sortRule('category', 'Utilities', 'ease|water|fibre', 8, '#b45309');
 sortRule('category', 'Farm food', 'farm|butcher|greengrocer', 9, '#4d7c0f');
 sortRule('category', 'Groceries', 'supermarket|bakery', 10, '#1d4ed8');
 sortRule('category', 'Transport', String.raw`fuel|ride \*`, 11, '#0369a1');

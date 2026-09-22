@@ -94,7 +94,7 @@ export const recurringTasks = sqliteTable(
 		// JSON because the board sorts and filters on them.
 		urgency: integer('urgency'),
 		interest: integer('interest'),
-		energy: integer('energy'),
+		ease: integer('ease'),
 		// User-defined key/value pairs, opaque to ontoplano and surfaced to
 		// plugins via the schedule API — e.g. { "alarm": "true", "remind_min": "5" }.
 		// Stored as a JSON object of string→string. See services/meta.ts.
@@ -127,7 +127,7 @@ export const recurringTasks = sqliteTable(
 			'slots_interest_range',
 			sql`${table.interest} IS NULL OR ${table.interest} BETWEEN 1 AND 5`
 		),
-		check('slots_energy_range', sql`${table.energy} IS NULL OR ${table.energy} BETWEEN 1 AND 5`),
+		check('slots_ease_range', sql`${table.ease} IS NULL OR ${table.ease} BETWEEN 1 AND 5`),
 		check('slots_weekday_range', sql`${table.weekday} >= 0 AND ${table.weekday} <= 6`),
 		check(
 			'slots_mode_category',
@@ -181,7 +181,7 @@ export const taskRecords = sqliteTable(
 		// durationOverride overrides its length. Null means "inherit".
 		urgencyOverride: integer('urgency_override'),
 		interestOverride: integer('interest_override'),
-		energyOverride: integer('energy_override'),
+		easeOverride: integer('ease_override'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)
@@ -586,7 +586,7 @@ export const exceptionalTasks = sqliteTable(
 		// the board sorts and filters on them.
 		urgency: integer('urgency'),
 		interest: integer('interest'),
-		energy: integer('energy'),
+		ease: integer('ease'),
 		meta: text('meta').notNull().default('{}'),
 
 		/** The recipe this block is for, when it is a meal. See `recurring_tasks`. */
@@ -609,10 +609,7 @@ export const exceptionalTasks = sqliteTable(
 			'exceptional_interest_range',
 			sql`${table.interest} IS NULL OR ${table.interest} BETWEEN 1 AND 5`
 		),
-		check(
-			'exceptional_energy_range',
-			sql`${table.energy} IS NULL OR ${table.energy} BETWEEN 1 AND 5`
-		),
+		check('exceptional_ease_range', sql`${table.ease} IS NULL OR ${table.ease} BETWEEN 1 AND 5`),
 		check(
 			'exceptional_mode_category',
 			sql`${table.mode} != 'category' OR ${table.categoryId} IS NOT NULL`
@@ -688,7 +685,7 @@ export const todoTasks = sqliteTable(
 		// JSON because the board sorts and filters on them.
 		urgency: integer('urgency'),
 		interest: integer('interest'),
-		energy: integer('energy'),
+		ease: integer('ease'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),
@@ -706,7 +703,7 @@ export const todoTasks = sqliteTable(
 			'todos_interest_range',
 			sql`${table.interest} IS NULL OR ${table.interest} BETWEEN 1 AND 5`
 		),
-		check('todos_energy_range', sql`${table.energy} IS NULL OR ${table.energy} BETWEEN 1 AND 5`)
+		check('todos_ease_range', sql`${table.ease} IS NULL OR ${table.ease} BETWEEN 1 AND 5`)
 	]
 );
 

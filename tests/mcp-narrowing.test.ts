@@ -74,12 +74,12 @@ beforeAll(async () => {
 		notes: 'the boiler makes a noise',
 		notebookId: kitchen,
 		tags: 'done-by-ai',
-		ratings: { urgency: 5, interest: 1, energy: 2 }
+		ratings: { urgency: 5, interest: 1, ease: 4 }
 	});
 	made.skip = todos.createTodo(mine, {
 		title: 'book the skip',
 		notebookId: kitchen,
-		ratings: { urgency: 5, interest: 3, energy: 4 }
+		ratings: { urgency: 5, interest: 3, ease: 2 }
 	});
 	made.tiles = todos.createTodo(mine, {
 		title: 'choose the tiles',
@@ -232,7 +232,7 @@ describe('how much of a row comes back', () => {
 describe('what to do next', () => {
 	test('is the most urgent, ties broken by the lighter one then by interest', () => {
 		const [first] = itemsOf(call(['tasks:read'], 'up_next', { notebookId: kitchen }));
-		// Two at urgency 5; the plumber takes less out of you than the skip.
+		// Two at urgency 5; the plumber is the easier of the two.
 		expect(first.title).toBe('ring the plumber');
 	});
 

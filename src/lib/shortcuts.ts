@@ -95,7 +95,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: '5', action: 'rate', description: 'shortcut.setTheActiveRating' },
 			{ key: 'u', action: 'rate-urgency', description: 'shortcut.numberKeysSetUrgency' },
 			{ key: 'i', action: 'rate-interest', description: 'shortcut.numberKeysSetInterest' },
-			{ key: 'y', action: 'rate-energy', description: 'shortcut.numberKeysSetEnergy' },
+			{ key: 'y', action: 'rate-ease', description: 'shortcut.numberKeysSetEase' },
 			{ key: 'x', action: 'delete', description: 'shortcut.askToDeleteCard' }
 		]
 	},

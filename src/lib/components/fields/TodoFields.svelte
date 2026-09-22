@@ -38,7 +38,7 @@
 		notebookId = null,
 		categories = [],
 		notebooks = [],
-		ratings = $bindable({ urgency: null, interest: null, energy: null }),
+		ratings = $bindable({ urgency: null, interest: null, ease: null }),
 		compact = false,
 		scheduledDate = ''
 	}: {
@@ -165,7 +165,7 @@
 	{@render details()}
 	<!-- Three optional five-point scales at the top of a create form read as
 	     work to do before you may write anything down. -->
-	<MoreOptions label={t('fields.todo.urgencyInterestEnergy')} count={ratingsSet}>
+	<MoreOptions label={t('fields.todo.urgencyInterestEase')} count={ratingsSet}>
 		{@render scales()}
 	</MoreOptions>
 {/if}

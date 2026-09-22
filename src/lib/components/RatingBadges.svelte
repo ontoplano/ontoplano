@@ -8,13 +8,13 @@
 	 * both: black markings for the five whole steps, and the colour rising
 	 * through them like a liquid, so "nearly full" is seen rather than counted.
 	 *
-	 * The order is `RATING_ORDER` — urgency, energy, interest — which is the
+	 * The order is `RATING_ORDER` — urgency, ease, interest — which is the
 	 * order the Priority sort reads them in and the order they are asked for on
 	 * the form. Three gauges in a different order on each screen is three
 	 * things to learn instead of one.
 	 *
 	 * Each carries its own colour so they are told apart without a letter:
-	 * urgency yellow, energy blue, interest green. Green rather than the red it
+	 * urgency yellow, ease blue, interest green. Green rather than the red it
 	 * wore — red is the colour of something wrong, and wanting to do a thing is
 	 * not — and the words are in the tooltip and in the accessible name,
 	 * because a colour on its own is not something everybody can read.
@@ -24,15 +24,17 @@
 	 * A task with only urgency set used to draw one gauge, so the same question
 	 * sat in a different place on every row and the eye had to read each card
 	 * from scratch. All three are always here now: an unset one is drawn at
-	 * half, in grey, which says "no answer" rather than "the lowest answer" —
-	 * and half is also where an unset rating actually counts in the Priority
-	 * sort, so the picture and the arithmetic agree.
+	 * 2.5 of five, in grey — which says "no answer" rather than "the lowest
+	 * answer", and lands between the second and third markings rather than on
+	 * one of them, so it cannot be mistaken for a number somebody chose. It is
+	 * also exactly where an unset rating counts in the Priority sort, so the
+	 * picture and the arithmetic make the same claim.
 	 */
 	import {
 		RATING_ORDER,
 		RATING_LABELS,
 		RATING_MAX,
-		RATING_MIDPOINT,
+		RATING_UNRATED,
 		type RatingValues
 	} from '$lib/ratings.js';
 	import { useT } from '$lib/i18n';
@@ -67,7 +69,7 @@
 		>
 			<!-- The liquid: a fill from the left, in whole steps — or half of one,
 			     greyed, where nobody has answered. -->
-			<span class="gauge-fill" style="width: {((value ?? RATING_MIDPOINT) / RATING_MAX) * 100}%"
+			<span class="gauge-fill" style="width: {((value ?? RATING_UNRATED) / RATING_MAX) * 100}%"
 			></span>
 			<!-- And the markings over it, so the level is read against them. -->
 			{#each marks as mark (mark)}

@@ -43,14 +43,14 @@
 	let ratings = $state<Record<Rating, number | null>>({
 		urgency: null,
 		interest: null,
-		energy: null
+		ease: null
 	});
 
 	$effect(() => {
 		// Named so the effect re-runs for each opening: nothing carries over
 		// from the last thing that was written down.
 		void capture.key;
-		ratings = { urgency: null, interest: null, energy: null };
+		ratings = { urgency: null, interest: null, ease: null };
 	});
 
 	$effect(() => {

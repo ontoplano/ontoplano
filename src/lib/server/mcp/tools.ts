@@ -24,7 +24,7 @@ import { localDateOf, type Ctx } from '$lib/services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 import type { Ref } from './refs.js';
 import { CLOSED_STATUSES } from '../../task-status.js';
-import { compareByRatings } from '../../ratings.js';
+import { compareByRatings, RATING_MAX, RATING_MIN } from '../../ratings.js';
 import type { Confinement } from './confinement.js';
 import { mayReadFile } from '$lib/services/media-permission.js';
 import { pictureReferrers, recordingReferrers } from '$lib/services/media-referrers.js';
@@ -731,20 +731,75 @@ const rating = (value: unknown, what: string): number | undefined => {
 	return n;
 };
 
+/**
+ * The release `energy` stops being accepted in.
+ *
+ * Named rather than "a future release": the caller is a model reading this
+ * answer, and it can act on a version number. One constant, so the sentence
+ * and the schema cannot drift apart.
+ */
+const ENERGY_REMOVED_IN = '0.190';
+
 const ratingArgs = {
 	urgency: { type: 'integer', description: 'How soon it has to happen, 1–5.' },
 	interest: { type: 'integer', description: 'How much they want to do it, 1–5.' },
-	energy: { type: 'integer', description: 'How much it will take out of them, 1–5.' }
+	ease: {
+		type: 'integer',
+		description:
+			'How easy it is, 1–5, five being easiest. Replaces `energy`, which asked the opposite question on the same scale.'
+	},
+	energy: {
+		type: 'integer',
+		deprecated: true,
+		description: `Deprecated — use \`ease\`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in ${ENERGY_REMOVED_IN}.`
+	}
 };
+
+/**
+ * What `energy` means now that the question is `ease`.
+ *
+ * Mirrored rather than refused: a caller that has not been updated is asking a
+ * coherent question on the old scale, and answering it wrongly is worse than
+ * either accepting or refusing it. The same arithmetic the migration used on
+ * the values already stored.
+ */
+const easeFromEnergy = (value: number) => RATING_MIN + RATING_MAX - value;
+
+/** Whether this call reached for the old spelling, which is worth saying back. */
+const usedEnergy = (args: Record<string, unknown>) =>
+	args.energy !== undefined && args.ease === undefined;
+
+/**
+ * What to say back to a caller that used it.
+ *
+ * In the answer rather than only in the schema, because a translation nobody
+ * is told about is invisible: the call worked, and the assistant goes on using
+ * the dead spelling until the release that removes it.
+ */
+const ENERGY_WARNING =
+	`\`energy\` is deprecated and will be removed in ${ENERGY_REMOVED_IN}. ` +
+	'Use `ease`, which asks the opposite question on the same scale — an ' +
+	'energy of 5 is an ease of 1. This call was translated.';
+
+/** Ease, from whichever of the two arguments the caller used. */
+function easeOf(args: Record<string, unknown>): number | null {
+	const asked = rating(args.ease, 'ease');
+	if (asked !== undefined) return asked ?? null;
+	const old = rating(args.energy, 'energy');
+	return old === undefined || old === null ? null : easeFromEnergy(old);
+}
 
 const ratingsOf = (args: Record<string, unknown>) => ({
 	urgency: rating(args.urgency, 'urgency') ?? null,
 	interest: rating(args.interest, 'interest') ?? null,
-	energy: rating(args.energy, 'energy') ?? null
+	ease: easeOf(args)
 });
 
 const gaveARating = (args: Record<string, unknown>) =>
-	args.urgency !== undefined || args.interest !== undefined || args.energy !== undefined;
+	args.urgency !== undefined ||
+	args.interest !== undefined ||
+	args.ease !== undefined ||
+	args.energy !== undefined;
 
 /*
  * WHAT NEVER GETS A DELETE TOOL
@@ -1147,7 +1202,9 @@ export const TOOLS: Tool[] = [
 				...(gaveARating(args) ? { ratings: ratingsOf(args) } : {})
 			});
 
-			return { id, category: chosen.name };
+			return usedEnergy(args)
+				? { id, category: chosen.name, warning: ENERGY_WARNING }
+				: { id, category: chosen.name };
 		}
 	},
 	{
@@ -1395,12 +1452,12 @@ export const TOOLS: Tool[] = [
 	/*
 	 * What to do next, by the numbers the person put on their own tasks.
 	 *
-	 * Urgency first, then energy, then interest. The middle one is not the
-	 * obvious way round: energy is how much a task will take out of you, so a
-	 * tie between two urgent things goes to the lighter one.
+	 * Urgency first, then ease, then interest: a tie between two urgent things
+	 * goes to the easier one.
 	 *
-	 * An unrated task is not a zero — see `RATING_UNRATED_STEP`, where that
-	 * rule lives, so the board and this answer the same question the same way.
+	 * An unrated task is not a zero — it is the middle of the scale, and that
+	 * rule lives in `$lib/ratings`, so the board and this answer the same
+	 * question the same way.
 	 *
 	 * It exists so that "what should I be doing" is one small call rather than
 	 * the whole list read and sorted by a model that then has to explain
@@ -1410,7 +1467,7 @@ export const TOOLS: Tool[] = [
 		name: 'up_next',
 		title: 'What to do next',
 		description:
-			'The task to do next, by the ratings on it: most urgent first, then the one that takes least energy, then the one most wanted \u2014 energy runs the other way to the other two, low being good. An unrated task is not a zero: it counts half a step to the losing side of the middle of the scale (2.5 urgency, 2.5 interest, 3.5 energy), so a task deliberately marked 3 beats it, while urgency 1\u20132 and energy 4\u20135 sit below it as the postpone tiers. Open, unarchived, undated tasks only \u2014 anything with a day on it is on the week and `today` answers for that. Answers with one line by default; `limit` for a short list to choose between.',
+			'The task to do next, by the ratings on it: most urgent first, then the easiest, then the one most wanted. All three run the same way \u2014 five is the most of what the word says. An unrated one is not a zero: it counts as the middle of the scale, 2.5, so anything marked 4 or 5 beats it and 1 or 2 falls below it as the postpone tiers. Open, unarchived, undated tasks only \u2014 anything with a day on it is on the week and `today` answers for that. Answers with one line by default; `limit` for a short list to choose between.',
 		scope: 'tasks:read',
 		writes: false,
 		refs: [{ arg: 'notebookId', kind: 'notebook' }],
@@ -1666,12 +1723,14 @@ export const TOOLS: Tool[] = [
 							ratings: {
 								urgency: rating(args.urgency, 'urgency') ?? current.ratings.urgency,
 								interest: rating(args.interest, 'interest') ?? current.ratings.interest,
-								energy: rating(args.energy, 'energy') ?? current.ratings.energy
+								// `easeOf` also answers for a caller still sending `energy`;
+								// null from it means neither was given, so this one is left.
+								ease: easeOf(args) ?? current.ratings.ease
 							}
 						}
 					: {})
 			});
-			return { ok: true };
+			return usedEnergy(args) ? { ok: true, warning: ENERGY_WARNING } : { ok: true };
 		}
 	},
 	{
@@ -3271,7 +3330,9 @@ export const TOOLS: Tool[] = [
 				recurrence: recurrenceFromArgs(args, anchor),
 				...(gaveARating(args) ? { ratings: ratingsOf(args) } : {})
 			});
-			return { id, category: chosen.name };
+			return usedEnergy(args)
+				? { id, category: chosen.name, warning: ENERGY_WARNING }
+				: { id, category: chosen.name };
 		}
 	},
 	{

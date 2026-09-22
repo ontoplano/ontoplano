@@ -175,11 +175,11 @@ describe('the three numbers a task can carry', () => {
 
 	test('and a value off the scale clears rather than storing nonsense', () => {
 		const form = new FormData();
-		form.set('energy', '9');
-		expect(ratingFromForm(form, 'energy')).toBeNull();
+		form.set('ease', '9');
+		expect(ratingFromForm(form, 'ease')).toBeNull();
 
-		form.set('energy', 'lots');
-		expect(ratingFromForm(form, 'energy')).toBeNull();
+		form.set('ease', 'lots');
+		expect(ratingFromForm(form, 'ease')).toBeNull();
 	});
 
 	test('all three at once omit the ones nobody submitted', () => {

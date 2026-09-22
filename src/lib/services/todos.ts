@@ -91,7 +91,7 @@ const SELECTION = {
 	archivedAt: todoTasks.archivedAt,
 	urgency: todoTasks.urgency,
 	interest: todoTasks.interest,
-	energy: todoTasks.energy,
+	ease: todoTasks.ease,
 	createdAt: todoTasks.createdAt,
 	updatedAt: todoTasks.updatedAt
 };
@@ -115,7 +115,7 @@ function shape(r: Record<string, unknown>): Todo {
 		ratings: {
 			urgency: (r.urgency as number) ?? null,
 			interest: (r.interest as number) ?? null,
-			energy: (r.energy as number) ?? null
+			ease: (r.ease as number) ?? null
 		},
 		// Filled in by `withTags`, which reads them for a whole list at once.
 		tags: (r.tags as Tag[]) ?? [],
@@ -368,7 +368,7 @@ export function promoteTodo(
 				notebookId: todo.notebookId,
 				urgency: todo.urgency,
 				interest: todo.interest,
-				energy: todo.energy
+				ease: todo.ease
 			})
 			.returning({ id: exceptionalTasks.id })
 			.get();
@@ -457,7 +457,7 @@ export function demoteToTodo(ctx: Ctx, slotId: number): { ok: true; todoId: numb
 				notebookId: slot.notebookId,
 				urgency: slot.urgency,
 				interest: slot.interest,
-				energy: slot.energy
+				ease: slot.ease
 			})
 			.returning({ id: todoTasks.id })
 			.get();
@@ -851,12 +851,12 @@ export function demoteInstance(ctx: Ctx, instanceId: number): void {
 			notes: taskRecords.notes,
 			urgencyOverride: taskRecords.urgencyOverride,
 			interestOverride: taskRecords.interestOverride,
-			energyOverride: taskRecords.energyOverride,
+			easeOverride: taskRecords.easeOverride,
 			label: exceptionalTasks.label,
 			categoryId: exceptionalTasks.categoryId,
 			urgency: exceptionalTasks.urgency,
 			interest: exceptionalTasks.interest,
-			energy: exceptionalTasks.energy
+			ease: exceptionalTasks.ease
 		})
 		.from(taskRecords)
 		.innerJoin(exceptionalTasks, eq(taskRecords.exceptionalSlotId, exceptionalTasks.id))
@@ -880,7 +880,7 @@ export function demoteInstance(ctx: Ctx, instanceId: number): void {
 				sortOrder,
 				urgency: instance.urgencyOverride ?? instance.urgency,
 				interest: instance.interestOverride ?? instance.interest,
-				energy: instance.energyOverride ?? instance.energy
+				ease: instance.easeOverride ?? instance.ease
 			})
 			.run();
 

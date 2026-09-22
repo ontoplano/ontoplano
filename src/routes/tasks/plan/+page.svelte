@@ -371,7 +371,7 @@
 	let formRatings: Record<string, number | null> = $state({
 		urgency: null,
 		interest: null,
-		energy: null
+		ease: null
 	});
 
 	/** How many of the folded-away ratings currently carry a value. */
@@ -576,7 +576,7 @@
 		formRatings = {
 			urgency: slot.urgency ?? null,
 			interest: slot.interest ?? null,
-			energy: slot.energy ?? null
+			ease: slot.ease ?? null
 		};
 		editingKind = 'slot';
 		editingBlockId = slot.id;
@@ -598,7 +598,7 @@
 		formRatings = {
 			urgency: exc.urgency ?? null,
 			interest: exc.interest ?? null,
-			energy: exc.energy ?? null
+			ease: exc.ease ?? null
 		};
 		editingKind = 'exceptional';
 		editingBlockId = exc.id;
@@ -629,7 +629,7 @@
 		recurrenceAnchor = anchor;
 		recurrenceInterval = 2;
 		recurrenceMonthDay = 1;
-		formRatings = { urgency: null, interest: null, energy: null };
+		formRatings = { urgency: null, interest: null, ease: null };
 		editingKind = null;
 		editingBlockId = null;
 		repeat = mode;
@@ -3643,7 +3643,7 @@
 					</Field>
 				</FormGrid>
 
-				<MoreOptions label={t('tasks.plan.urgencyInterestEnergy')} count={ratingsSet}>
+				<MoreOptions label={t('tasks.plan.urgencyInterestEase')} count={ratingsSet}>
 					{#each RATINGS as r (r)}
 						<div class="col-span-12 sm:col-span-4">
 							<RatingPicker rating={r} bind:value={formRatings[r]} />

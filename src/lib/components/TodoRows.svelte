@@ -196,7 +196,7 @@
 	let formRatings: Record<string, number | null> = $state({
 		urgency: null,
 		interest: null,
-		energy: null
+		ease: null
 	});
 
 	/**
@@ -597,7 +597,7 @@
 	function startNew() {
 		showForm = true;
 		editingId = null;
-		formRatings = { urgency: null, interest: null, energy: null };
+		formRatings = { urgency: null, interest: null, ease: null };
 	}
 
 	/**

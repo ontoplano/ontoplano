@@ -54,17 +54,17 @@ test('dragging it back to the dot leaves the card unrated', async ({ page }) => 
 	const title = 'A card with nothing on it';
 	await openTheScales(page, title);
 
-	const energy = page.getByRole('slider', { name: 'Energy' });
-	await energy.fill('3');
-	await expect(page.locator('#card-form input[name="energy"]')).toHaveValue('3');
+	const ease = page.getByRole('slider', { name: 'Ease' });
+	await ease.fill('3');
+	await expect(page.locator('#card-form input[name="ease"]')).toHaveValue('3');
 
 	/*
 	 * And the button beside it does the same thing, which is the point of it
 	 * being there: dragging to the dot works and cannot be seen, so "how do I
 	 * leave this one blank" needs an answer somebody can look at.
 	 */
-	await page.getByRole('button', { name: 'Leave energy unanswered' }).click();
-	await expect(page.locator('#card-form input[name="energy"]')).toHaveValue('');
+	await page.getByRole('button', { name: 'Leave ease unanswered' }).click();
+	await expect(page.locator('#card-form input[name="ease"]')).toHaveValue('');
 
 	/*
 	 * With nothing to clear it keeps its place and stops being a control: not
@@ -73,20 +73,20 @@ test('dragging it back to the dot leaves the card unrated', async ({ page }) => 
 	 * accessibility tree, which is why this has to find it by selector.
 	 */
 	await expect(
-		page.locator('#card-form button[aria-label="Leave energy unanswered"]')
+		page.locator('#card-form button[aria-label="Leave ease unanswered"]')
 	).toBeDisabled();
 
 	// All the way down is not "1". It is the answer somebody gives by not
 	// answering, and it has to post an empty field rather than a number.
-	await energy.fill('3');
-	await energy.fill('0');
-	await expect(page.locator('#card-form input[name="energy"]')).toHaveValue('');
-	await expect(energy).toHaveAttribute('aria-valuetext', 'not set');
+	await ease.fill('3');
+	await ease.fill('0');
+	await expect(page.locator('#card-form input[name="ease"]')).toHaveValue('');
+	await expect(ease).toHaveAttribute('aria-valuetext', 'not set');
 
 	await page.getByRole('button', { name: 'Add card' }).click();
 	await expect(page.getByText(title, { exact: true })).toBeVisible();
 
 	// Nothing on the card: an unrated task is a perfectly good task, and it
 	// must not arrive wearing the lowest number on the scale.
-	await expect(page.getByTitle(/^Energy: /)).toHaveCount(0);
+	await expect(page.getByTitle(/^Ease: /)).toHaveCount(0);
 });

@@ -168,7 +168,7 @@ works is a key listed here and the reverse.
 | <kbd>5</kbd>     | Set the active rating         |
 | <kbd>u</kbd>     | Number keys set urgency       |
 | <kbd>i</kbd>     | Number keys set interest      |
-| <kbd>y</kbd>     | Number keys set energy        |
+| <kbd>y</kbd>     | Number keys set ease          |
 | <kbd>x</kbd>     | Ask to delete card            |
 
 ## Plan — `/tasks/plan`

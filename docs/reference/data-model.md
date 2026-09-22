@@ -521,7 +521,7 @@ Indexes:
 | `notebook_id`         | integer | null     | —                     | → `notebooks.id`  |
 | `urgency`             | integer | null     | —                     | —                 |
 | `interest`            | integer | null     | —                     | —                 |
-| `energy`              | integer | null     | —                     | —                 |
+| `ease`                | integer | null     | —                     | —                 |
 | `meta`                | text    | not null | `'{}'`                | —                 |
 | `recipe_id`           | integer | null     | —                     | → `recipes.id`    |
 | `workout_id`          | integer | null     | —                     | → `workouts.id`   |
@@ -536,10 +536,10 @@ Checks — enforced by the database, not only by the service layer:
 
 - `exceptional_urgency_range`: `"exceptional_tasks"."urgency" IS NULL OR "exceptional_tasks"."urgency" BETWEEN 1 AND 5`
 - `exceptional_interest_range`: `"exceptional_tasks"."interest" IS NULL OR "exceptional_tasks"."interest" BETWEEN 1 AND 5`
-- `exceptional_energy_range`: `"exceptional_tasks"."energy" IS NULL OR "exceptional_tasks"."energy" BETWEEN 1 AND 5`
 - `exceptional_mode_category`: `"exceptional_tasks"."mode" != 'category' OR "exceptional_tasks"."category_id" IS NOT NULL`
 - `exceptional_mode_activity`: `"exceptional_tasks"."mode" != 'activity' OR "exceptional_tasks"."activity_id" IS NOT NULL`
 - `exceptional_mode_workout`: `"exceptional_tasks"."mode" != 'workout' OR "exceptional_tasks"."workout_id" IS NOT NULL`
+- `exceptional_ease_range`: `"exceptional_tasks"."ease" IS NULL OR "exceptional_tasks"."ease" BETWEEN 1 AND 5`
 
 ## finance_rules
 
@@ -1223,7 +1223,7 @@ Indexes:
 | `remind_lead_minutes` | integer | null     | —                     | —                 |
 | `urgency`             | integer | null     | —                     | —                 |
 | `interest`            | integer | null     | —                     | —                 |
-| `energy`              | integer | null     | —                     | —                 |
+| `ease`                | integer | null     | —                     | —                 |
 | `meta`                | text    | not null | `'{}'`                | —                 |
 | `recipe_id`           | integer | null     | —                     | → `recipes.id`    |
 | `workout_id`          | integer | null     | —                     | → `workouts.id`   |
@@ -1240,11 +1240,11 @@ Checks — enforced by the database, not only by the service layer:
 
 - `slots_urgency_range`: `"recurring_tasks"."urgency" IS NULL OR "recurring_tasks"."urgency" BETWEEN 1 AND 5`
 - `slots_interest_range`: `"recurring_tasks"."interest" IS NULL OR "recurring_tasks"."interest" BETWEEN 1 AND 5`
-- `slots_energy_range`: `"recurring_tasks"."energy" IS NULL OR "recurring_tasks"."energy" BETWEEN 1 AND 5`
 - `slots_weekday_range`: `"recurring_tasks"."weekday" >= 0 AND "recurring_tasks"."weekday" <= 6`
 - `slots_mode_category`: `"recurring_tasks"."mode" != 'category' OR "recurring_tasks"."category_id" IS NOT NULL`
 - `slots_mode_activity`: `"recurring_tasks"."mode" != 'activity' OR "recurring_tasks"."activity_id" IS NOT NULL`
 - `slots_mode_workout`: `"recurring_tasks"."mode" != 'workout' OR "recurring_tasks"."workout_id" IS NOT NULL`
+- `slots_ease_range`: `"recurring_tasks"."ease" IS NULL OR "recurring_tasks"."ease" BETWEEN 1 AND 5`
 
 ## reminder_sounds
 
@@ -1450,7 +1450,7 @@ Indexes:
 | `label_override`       | text    | null     | —                     | —                        |
 | `urgency_override`     | integer | null     | —                     | —                        |
 | `interest_override`    | integer | null     | —                     | —                        |
-| `energy_override`      | integer | null     | —                     | —                        |
+| `ease_override`        | integer | null     | —                     | —                        |
 | `created_at`           | text    | not null | `(CURRENT_TIMESTAMP)` | —                        |
 
 Indexes:
@@ -1502,7 +1502,7 @@ Indexes:
 | `sort_order`     | integer | not null | `0`                   | —                 |
 | `urgency`        | integer | null     | —                     | —                 |
 | `interest`       | integer | null     | —                     | —                 |
-| `energy`         | integer | null     | —                     | —                 |
+| `ease`           | integer | null     | —                     | —                 |
 | `created_at`     | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 | `updated_at`     | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
@@ -1517,7 +1517,7 @@ Checks — enforced by the database, not only by the service layer:
 
 - `todos_urgency_range`: `"todo_tasks"."urgency" IS NULL OR "todo_tasks"."urgency" BETWEEN 1 AND 5`
 - `todos_interest_range`: `"todo_tasks"."interest" IS NULL OR "todo_tasks"."interest" BETWEEN 1 AND 5`
-- `todos_energy_range`: `"todo_tasks"."energy" IS NULL OR "todo_tasks"."energy" BETWEEN 1 AND 5`
+- `todos_ease_range`: `"todo_tasks"."ease" IS NULL OR "todo_tasks"."ease" BETWEEN 1 AND 5`
 
 ## user
 

@@ -41,7 +41,7 @@
 	type Card = PageServerData['todayCards'][number];
 
 	let tab: 'today' | 'general' = $state('today');
-	let maxEnergy: number | null = $state(null);
+	let minEase: number | null = $state(null);
 	let sortBy: 'default' | Rating = $state('default');
 	let showDone = $state(false);
 
@@ -54,7 +54,7 @@
 	let formRatings: Record<string, number | null> = $state({
 		urgency: null,
 		interest: null,
-		energy: null
+		ease: null
 	});
 
 	/** How many of the folded-away ratings currently carry a value. */
@@ -70,7 +70,7 @@
 	let editRatings: Record<string, number | null> = $state({
 		urgency: null,
 		interest: null,
-		energy: null
+		ease: null
 	});
 	const editRatingsSet = $derived(Object.values(editRatings).filter((v) => v !== null).length);
 
@@ -157,8 +157,11 @@
 
 		// An unrated card is never hidden: the filter is for choosing among what
 		// you have described, not for burying what you have not.
-		if (maxEnergy !== null) {
-			out = out.filter((c) => c.ratings.energy === null || c.ratings.energy <= maxEnergy!);
+		// "At least this easy" — the comparison turned round with the scale. As
+		// `energy` it meant "takes no more than this much out of me", which is
+		// the same wish expressed from the other end.
+		if (minEase !== null) {
+			out = out.filter((c) => c.ratings.ease === null || c.ratings.ease >= minEase!);
 		}
 
 		if (sortBy === 'default') {
@@ -175,15 +178,15 @@
 		 * One rating, best first — and an unrated card is not last.
 		 *
 		 * It used to sink to the bottom whatever the question was, which said
-		 * "nobody weighed this" and meant "this matters least". A rating
-		 * nobody set counts as the middle of the scale nudged half a step to
-		 * the losing side (`$lib/ratings`), so a card marked 3 beats it and the
-		 * far tiers — urgency 1–2, energy 4–5 — fall below it. Same arithmetic
-		 * as the to-do list's "Up next" and as `up_next` over MCP.
+		 * "nobody weighed this" and meant "this matters least". A rating nobody
+		 * set counts as the middle of the scale (`$lib/ratings`), so 4 and 5
+		 * beat it and 1 and 2 fall below it, on all three alike now that ease
+		 * runs the same way as the other two. Same arithmetic as the to-do
+		 * list's "Priority" and as `up_next` over MCP.
 		 */
 		const key: Rating = sortBy;
 		return [...out].sort(
-			(a, b) => compareByRating(key, a.ratings[key], b.ratings[key]) || a.sortOrder - b.sortOrder
+			(a, b) => compareByRating(a.ratings[key], b.ratings[key]) || a.sortOrder - b.sortOrder
 		);
 	}
 
@@ -544,7 +547,7 @@
 			}
 			case 'rate': {
 				e.preventDefault();
-				// Cycles urgency by default; interest and energy sit behind u/i/y.
+				// Cycles urgency by default; interest and ease sit behind u/i/y.
 				const value = Number(e.key);
 				post('setRatings', {
 					kind: card.kind,
@@ -555,14 +558,10 @@
 			}
 			case 'rate-urgency':
 			case 'rate-interest':
-			case 'rate-energy':
+			case 'rate-ease':
 				e.preventDefault();
 				ratingKey =
-					action === 'rate-urgency'
-						? 'urgency'
-						: action === 'rate-interest'
-							? 'interest'
-							: 'energy';
+					action === 'rate-urgency' ? 'urgency' : action === 'rate-interest' ? 'interest' : 'ease';
 				return;
 			case 'toggle-done':
 				e.preventDefault();
@@ -588,7 +587,7 @@
 
 	function openForm() {
 		showForm = true;
-		formRatings = { urgency: null, interest: null, energy: null };
+		formRatings = { urgency: null, interest: null, ease: null };
 		tick();
 	}
 
@@ -681,7 +680,7 @@
 			</div>
 
 			<!--
-				Sort, energy and the rest, in a dialog rather than in the page.
+				Sort, ease and the rest, in a dialog rather than in the page.
 
 				They used to unfold into a row above the columns, which pushed the
 				whole board down the moment you pressed the button — and pushed it
@@ -708,7 +707,7 @@
 		<div class="space-y-4 text-sm">
 			<div class="flex flex-wrap items-center gap-1">
 				<span class="eyebrow mr-1 text-gray-600">{t('tasks.board.sort')}</span>
-				{#each [{ v: 'default', l: 'Default' }, { v: 'urgency', l: 'Urgency' }, { v: 'interest', l: 'Interest' }, { v: 'energy', l: 'Energy' }] as opt (opt.v)}
+				{#each [{ v: 'default', l: 'Default' }, { v: 'urgency', l: 'Urgency' }, { v: 'interest', l: 'Interest' }, { v: 'ease', l: 'Ease' }] as opt (opt.v)}
 					<button
 						onclick={() => (sortBy = opt.v as typeof sortBy)}
 						class="border px-2 py-0.5 text-xs {sortBy === opt.v
@@ -719,11 +718,11 @@
 			</div>
 
 			<div class="flex flex-wrap items-center gap-1">
-				<span class="eyebrow mr-1 text-gray-600">{t('tasks.board.energyUpTo')}</span>
+				<span class="eyebrow mr-1 text-gray-600">{t('tasks.board.easeFrom')}</span>
 				{#each [1, 2, 3, 4, 5] as n (n)}
 					<button
-						onclick={() => (maxEnergy = maxEnergy === n ? null : n)}
-						class="tabular h-6 w-6 border text-xs {maxEnergy === n
+						onclick={() => (minEase = minEase === n ? null : n)}
+						class="tabular h-6 w-6 border text-xs {minEase === n
 							? 'on-fill font-semibold'
 							: 'border-gray-300 bg-white text-gray-500 hover:text-gray-900'}">{n}</button
 					>
@@ -960,7 +959,7 @@
 						{/if}
 					{/if}
 
-					<MoreOptions label={t('tasks.board.urgencyInterestEnergy')} count={editRatingsSet}>
+					<MoreOptions label={t('tasks.board.urgencyInterestEase')} count={editRatingsSet}>
 						{#each RATINGS as r (r)}
 							<div class="col-span-12">
 								<RatingPicker rating={r} bind:value={editRatings[r]} />
@@ -1142,7 +1141,7 @@
 									card.goals.length > 0 ||
 									card.ratings.urgency != null ||
 									card.ratings.interest != null ||
-									card.ratings.energy != null}
+									card.ratings.ease != null}
 								<!--
 									The card is named, because it is a button that contains
 									buttons. Without `aria-label` its accessible name is

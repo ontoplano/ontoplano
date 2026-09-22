@@ -18,6 +18,30 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.183.0 — 2026-09-22
+
+- **Energy is now ease, and it counts the other way round.** It asked how much
+  a task would take out of you, so five was the worst answer and it was the one
+  rating where a bigger number was worse — every list that ordered by ratings
+  had to know that, and an unrated task landed on a different number depending
+  on which question it was. Ease asks the opposite: five is easiest, like five
+  is most urgent and most wanted. Everything you had rated was turned round
+  with it, so a task you called draining is still the draining one.
+
+- **A rating nobody set counts as 2.5, for all three alike.** It used to be 2.5
+  or 3.5 depending on which way that rating ran. A task you deliberately marked
+  3 still beats one nobody weighed, and 1 and 2 still mean "later" and "later
+  still" — and the grey half-filled gauge now sits exactly where the sort puts
+  it, between the second and third markings.
+
+- **The markings inside a gauge stay black in the dark theme.** They took their
+  colour from the text ink, which the dark theme turns near-white, so the scale
+  came out as pale scratches across a bright pill.
+
+- **An assistant still saying `energy` keeps working, and is told it is going
+  away.** The value is translated — an energy of 5 is an ease of 1 — and the
+  answer says so, naming 0.190 as the release that stops accepting it.
+
 ## 0.182.24 — 2026-09-22
 
 - **Every task shows all three ratings, in the same place.** A task nobody had

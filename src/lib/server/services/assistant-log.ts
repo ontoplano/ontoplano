@@ -263,7 +263,7 @@ function recreate(ctx: Ctx, tool: string, before: Record<string, unknown>): stri
 				ratings: {
 					urgency: (before.urgency as number) ?? null,
 					interest: (before.interest as number) ?? null,
-					energy: (before.energy as number) ?? null
+					ease: (before.ease as number) ?? null
 				}
 			});
 			return `the repeating block "${String(before.label || before.activityName || before.categoryName || 'block')}"`;

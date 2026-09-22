@@ -129,7 +129,7 @@ export function listWeeklySlots(ctx: Ctx) {
 			recurrence: recurringTasks.recurrence,
 			urgency: recurringTasks.urgency,
 			interest: recurringTasks.interest,
-			energy: recurringTasks.energy,
+			ease: recurringTasks.ease,
 			meta: recurringTasks.meta,
 			active: recurringTasks.active
 		})
@@ -175,7 +175,7 @@ export function listExceptionals(ctx: Ctx, from: string, to: string) {
 			label: exceptionalTasks.label,
 			urgency: exceptionalTasks.urgency,
 			interest: exceptionalTasks.interest,
-			energy: exceptionalTasks.energy,
+			ease: exceptionalTasks.ease,
 			meta: exceptionalTasks.meta,
 			active: exceptionalTasks.active,
 			// A one-off's status lives on its instance now, not on the block.
@@ -751,7 +751,7 @@ export function moveOccurrence(
 				label: slot.label,
 				urgency: slot.urgency,
 				interest: slot.interest,
-				energy: slot.energy,
+				ease: slot.ease,
 				meta: slot.meta
 			})
 			.returning({ id: exceptionalTasks.id })
@@ -804,7 +804,7 @@ export function convertRepeat(ctx: Ctx, id: number, raw: { to: unknown; date: un
 					label: one.label,
 					urgency: one.urgency,
 					interest: one.interest,
-					energy: one.energy,
+					ease: one.ease,
 					meta: one.meta
 				})
 				.run();
@@ -841,7 +841,7 @@ export function convertRepeat(ctx: Ctx, id: number, raw: { to: unknown; date: un
 				label: slot.label,
 				urgency: slot.urgency,
 				interest: slot.interest,
-				energy: slot.energy,
+				ease: slot.ease,
 				meta: slot.meta
 			})
 			.run();

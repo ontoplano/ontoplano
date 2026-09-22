@@ -199,7 +199,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 			},
 			{
 				target: '[data-tour="board-ratings"]',
-				title: 'tour.urgencyInterestEnergy',
+				title: 'tour.urgencyInterestEase',
 				body: 'tour.threeOptionalNumbersOnEvery'
 			}
 		]

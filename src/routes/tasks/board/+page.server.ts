@@ -89,7 +89,7 @@ export type Card = {
 	categoryId: number | null;
 	categoryName: string | null;
 	categoryColor: string | null;
-	ratings: { urgency: number | null; interest: number | null; energy: number | null };
+	ratings: { urgency: number | null; interest: number | null; ease: number | null };
 	/** How long it takes, so the day can be added up. */
 	durationMinutes: number;
 	/** Blank on a todo; a block's own label, for the editor. */

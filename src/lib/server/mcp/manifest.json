@@ -76,9 +76,14 @@
 				"type": "string",
 				"required": true
 			},
-			"energy": {
+			"ease": {
 				"type": "integer",
 				"required": false
+			},
+			"energy": {
+				"type": "integer",
+				"required": false,
+				"deprecated": true
 			},
 			"interest": {
 				"type": "integer",
@@ -399,9 +404,14 @@
 				"type": "string",
 				"required": false
 			},
-			"energy": {
+			"ease": {
 				"type": "integer",
 				"required": false
+			},
+			"energy": {
+				"type": "integer",
+				"required": false,
+				"deprecated": true
 			},
 			"every": {
 				"type": "integer",
@@ -1121,9 +1131,14 @@
 		"writes": true,
 		"destroys": false,
 		"params": {
-			"energy": {
+			"ease": {
 				"type": "integer",
 				"required": false
+			},
+			"energy": {
+				"type": "integer",
+				"required": false,
+				"deprecated": true
 			},
 			"id": {
 				"type": "integer",
