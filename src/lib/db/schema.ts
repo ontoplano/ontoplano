@@ -1431,6 +1431,17 @@ export const clientErrors = sqliteTable(
 		stack: text('stack'),
 		/** Which browser, as it described itself. Nothing is inferred from it. */
 		userAgent: text('user_agent'),
+		/**
+		 * Which build produced it — the version and the commit, as one string.
+		 *
+		 * Taken from the running instance rather than sent by the page: the
+		 * server knows what it is running and a client could be a tab left open
+		 * across a deploy. The version alone would not do it, because the
+		 * version is not bumped per commit, so "0.183.0" names a dozen builds.
+		 *
+		 * Null for a report written before this column existed.
+		 */
+		build: text('build'),
 		/*
 		 * A crash the app noticed, or a bug somebody sat down and reported.
 		 *

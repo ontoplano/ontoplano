@@ -20,6 +20,12 @@ releases mattered.
 
 ## 0.183.0 — 2026-09-22
 
+- **A report says which build it came from.** Version and commit, taken from the
+  instance rather than asked of the person — the version alone names a dozen
+  builds, because it is not bumped per commit. It shows on the report in the
+  administration page and in the mail, and the sentence that says what is sent
+  now says this too.
+
 - **Writing and its preview, side by side.** A third choice beside Write and
   Preview, away to the right. The box used to split into two columns on its own
   once it got wide enough and no box in the app is ever that wide, so that

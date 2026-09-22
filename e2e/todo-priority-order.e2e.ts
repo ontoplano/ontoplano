@@ -26,10 +26,26 @@ async function newTodo(page: Page, title: string, ratings: Record<string, string
 		 * them in with everything else. Either is one press.
 		 */
 		const form = page.locator('#todo-form');
-		await form
-			.getByText(/Urgency, ease, interest|Category, notebook/)
-			.first()
-			.click();
+		/*
+		 * Opened if it is not already, rather than pressed.
+		 *
+		 * The three scales start open now, so a press on the summary closed them
+		 * and the sliders went with them. Asking for the state wanted rather than
+		 * toggling is the version that survives the default changing again.
+		 */
+		const fold = form
+			.locator('details')
+			.filter({ hasText: /Urgency, ease, interest/ })
+			.first();
+		if ((await fold.count()) > 0 && !(await fold.evaluate((d: HTMLDetailsElement) => d.open))) {
+			await fold.locator('summary').first().click();
+		} else if ((await fold.count()) === 0) {
+			// The compact form folds them in with everything else.
+			await form
+				.getByText(/Category, notebook/)
+				.first()
+				.click();
+		}
 		for (const [name, value] of Object.entries(ratings)) {
 			// The slider is what a person moves; the hidden field beside it is
 			// what the form posts. See `e2e/rating-slider.e2e.ts`.

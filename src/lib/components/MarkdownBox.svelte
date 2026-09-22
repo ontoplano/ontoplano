@@ -213,7 +213,7 @@
 			shown.
 		-->
 		<div
-			class="col-start-1 row-start-1 @lg:col-start-1 {showing === 'preview' ? 'hidden' : ''}"
+			class="col-start-1 row-start-1 @lg:col-start-1 {showing === 'preview' ? 'invisible' : ''}"
 			aria-hidden={showing === 'preview' ? 'true' : undefined}
 			inert={showing === 'preview' ? true : undefined}
 		>
@@ -226,7 +226,7 @@
 				? ''
 				: showing === 'both'
 					? 'invisible @lg:visible @lg:col-start-2'
-					: 'hidden'}"
+					: 'invisible'}"
 			aria-live="off"
 			aria-label={t('markdown.preview')}
 		>

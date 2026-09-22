@@ -24,7 +24,7 @@ exist.
 | [`bills`](#bills)                                           | 17      | yes               |
 | [`calendar_feeds`](#calendar_feeds)                         | 9       | yes               |
 | [`categories`](#categories)                                 | 5       | yes               |
-| [`client_errors`](#client_errors)                           | 8       | yes               |
+| [`client_errors`](#client_errors)                           | 9       | yes               |
 | [`daily_wins`](#daily_wins)                                 | 6       | yes               |
 | [`data_points`](#data_points)                               | 10      | yes               |
 | [`data_streams`](#data_streams)                             | 14      | yes               |
@@ -359,6 +359,7 @@ Indexes:
 | `url`        | text    | null     | —                     | —                 |
 | `stack`      | text    | null     | —                     | —                 |
 | `user_agent` | text    | null     | —                     | —                 |
+| `build`      | text    | null     | —                     | —                 |
 | `kind`       | text    | not null | `'crash'`             | —                 |
 | `created_at` | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 

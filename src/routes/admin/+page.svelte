@@ -317,6 +317,12 @@
 								<pre
 									class="mt-2 max-h-48 overflow-auto bg-gray-50 p-2 text-xs whitespace-pre-wrap text-gray-700">{report.stack}</pre>
 							{/if}
+							{#if report.build}
+								<!-- The build it happened on. A version alone would not do it:
+								     the version is not bumped per commit, so it names a dozen
+								     builds and "which code was this" stays unanswered. -->
+								<p class="tabular mt-2 text-xs text-gray-500">{report.build}</p>
+							{/if}
 							{#if report.userAgent}
 								<p class="mt-2 text-xs break-all text-gray-500">{report.userAgent}</p>
 							{/if}

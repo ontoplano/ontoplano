@@ -1928,7 +1928,7 @@
 	"reportDialog.thatDidNotSend": "That did not send. Try again in a moment.",
 	"reportDialog.whatHappened": "What happened",
 	"reportDialog.whatThisIs": "What this is",
-	"reportDialog.whereItGoes": "It goes to whoever runs this instance, carrying your account, information about the browser you're using, and the fact it came from {where}. None of your personal data goes with it.",
+	"reportDialog.whereItGoes": "It goes to whoever runs this instance, carrying your account, information about the browser you're using, which version of the app this is, and the fact it came from {where}. None of your personal data goes with it.",
 	"reportDialog.yourIdea": "Your idea",
 	"rooms.finance.sections": "Finance sections",
 	"rooms.finance.tabs.bills": "Bills",

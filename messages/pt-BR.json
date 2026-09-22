@@ -1928,7 +1928,7 @@
 	"reportDialog.thatDidNotSend": "Isso não foi enviado. Tente de novo daqui a pouco.",
 	"reportDialog.whatHappened": "O que aconteceu",
 	"reportDialog.whatThisIs": "O que é isto",
-	"reportDialog.whereItGoes": "Vai para quem opera esta instância, levando sua conta, informações sobre o navegador que você usa, e o fato de ter vindo de {where}. Nenhum dado pessoal seu vai junto.",
+	"reportDialog.whereItGoes": "Vai para quem opera esta instância, levando sua conta, informações sobre o navegador que você usa, qual versão do app é esta, e o fato de ter vindo de {where}. Nenhum dado pessoal seu vai junto.",
 	"reportDialog.yourIdea": "Sua ideia",
 	"rooms.finance.sections": "Seções de finanças",
 	"rooms.finance.tabs.bills": "Contas",

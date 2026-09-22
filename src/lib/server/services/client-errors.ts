@@ -3,6 +3,7 @@ import { desc, eq, sql } from 'drizzle-orm';
 import { loadConfig } from '../config.js';
 import { renderEmail } from '../email-template.js';
 import { sendLogged } from './mail-log.js';
+import { build as buildOf } from './version.js';
 import { db } from '$lib/db/index.js';
 import { MAX_REPORT_LENGTH } from '$lib/report.js';
 import { clientErrors, user } from '$lib/db/schema.js';
@@ -146,10 +147,12 @@ async function mailFeedback(
 
 	const what = kind === 'suggestion' ? 'Suggestion' : 'Report';
 	const where = optionalStr(input.url, 'url', { max: 300 }) || 'somewhere';
+	const running = buildOf();
 	const body = [
 		`${what} from ${ctx.userId}`,
 		`Page: ${where}`,
 		`Browser: ${optionalStr(input.userAgent, 'userAgent', { max: 300 }) || 'not said'}`,
+		`Build: ${running.version} (${running.commit})`,
 		'',
 		str(input.message, 'message', { max: MAX_REPORT_LENGTH })
 	].join('\n');
@@ -172,6 +175,18 @@ function write(
 	const stack = optionalStr(input.stack, 'stack', { max: 8000 });
 	const userAgent = optionalStr(input.userAgent, 'userAgent', { max: 300 });
 
+	/*
+	 * Which build this happened on, asked of the instance rather than the page.
+	 *
+	 * A report without one is a report somebody has to guess at: the version is
+	 * not bumped per commit, so the commit is half the answer and the version
+	 * alone names a dozen builds. Server-side because the server knows what it
+	 * is running — a tab left open across a deploy would say something older,
+	 * and the question being answered is "which code is this".
+	 */
+	const running = buildOf();
+	const build = `${running.version} (${running.commit})`;
+
 	console.error(
 		JSON.stringify({
 			at: now.toISOString(),
@@ -190,6 +205,7 @@ function write(
 			url,
 			stack,
 			userAgent,
+			build,
 			kind,
 			createdAt: now.toISOString()
 		})
@@ -212,6 +228,8 @@ export type ReportedError = {
 	url: string | null;
 	stack: string | null;
 	userAgent: string | null;
+	/** The version and commit it happened on, or null for one recorded before. */
+	build: string | null;
 	kind: 'crash' | 'report' | 'suggestion';
 	createdAt: string;
 };
@@ -232,6 +250,7 @@ export function recentClientErrors(limit = 40): ReportedError[] {
 			url: clientErrors.url,
 			stack: clientErrors.stack,
 			userAgent: clientErrors.userAgent,
+			build: clientErrors.build,
 			kind: clientErrors.kind,
 			createdAt: clientErrors.createdAt
 		})

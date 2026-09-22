@@ -2018,7 +2018,7 @@ export const messages: Catalogue = {
 	'reportDialog.whatHappened': 'Was passiert ist',
 	'reportDialog.whatThisIs': 'Worum es geht',
 	'reportDialog.whereItGoes':
-		'Es geht an die Person, die diese Instanz betreibt — mit Ihrem Konto, Angaben zu Ihrem Browser und der Seite {where}, von der es kam. Keine Ihrer persönlichen Daten gehen mit.',
+		'Es geht an die Person, die diese Instanz betreibt — mit Ihrem Konto, Angaben zu Ihrem Browser, welche Version der App das ist und der Seite {where}, von der es kam. Keine Ihrer persönlichen Daten gehen mit.',
 	'reportDialog.yourIdea': 'Ihre Idee',
 	'rooms.finance.sections': 'Finanzen-Bereiche',
 	'rooms.finance.tabs.bills': 'Rechnungen',
