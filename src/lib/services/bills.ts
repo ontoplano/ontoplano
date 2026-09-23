@@ -176,6 +176,26 @@ export function listBills(
 		.map(row);
 }
 
+/**
+ * The bills, each saying which period it is in and whether that one is settled.
+ *
+ * The Finance room worked this out in its own `load`, so anywhere else that
+ * showed a bill — a notebook's Bills tab — had the row without the two things
+ * the row is about: which period the tick would pay, and whether it is already
+ * paid. A row drawn without them offers to pay a bill that is paid.
+ */
+export function listBillsThisPeriod(
+	ctx: Ctx,
+	opts: { includeArchived?: boolean; flow?: Flow; notebookId?: number } = {}
+): (Bill & { period: string; paidThisPeriod: boolean })[] {
+	const bills = listBills(ctx, opts);
+	return bills.map((bill) => {
+		const period = periodFor(bill.rhythm, ctx.now);
+		const paid = listPayments(ctx, bill.id).some((payment) => payment.period === period);
+		return { ...bill, period, paidThisPeriod: paid };
+	});
+}
+
 export function getBill(ctx: Ctx, id: number): Bill {
 	const found = db
 		.select({

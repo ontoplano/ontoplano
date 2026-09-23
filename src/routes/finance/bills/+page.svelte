@@ -7,11 +7,12 @@
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { armed } from '$lib/actions/armed';
-	import { autofocus } from '$lib/actions/autofocus';
 	import { formatMoney, type Currency } from '$lib/money';
+	import { MONTHS, RHYTHMS, WEEKDAYS, asDecimal } from '$lib/bill-summary';
 	import type { PageServerData, ActionData } from './$types';
+	import BillRow from '$lib/components/BillRow.svelte';
+	import { BILL_ROOM_ACTIONS } from '$lib/bill-action-names';
 	import { useT } from '$lib/i18n';
-	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
 
@@ -27,7 +28,6 @@
 	// bill being changed — one form, so the two can never drift apart.
 	let showForm = $state(false);
 	let editing: (typeof data.bills)[number] | null = $state(null);
-	let paying: number | null = $state(null);
 	/** The bill whose payment is being pointed at a statement line. */
 	let attaching: number | null = $state(null);
 	/** Narrowing that list, because six weeks of a current account is long. */
@@ -47,45 +47,8 @@
 
 	// Monthly first — it is the common bill and the service's own default, so the
 	// select lands on it when nobody changes the dropdown.
-	const RHYTHMS: { value: string; label: PlainKey }[] = [
-		{ value: 'monthly', label: 'app.monthly' },
-		{ value: 'weekly', label: 'app.weekly' },
-		{ value: 'yearly', label: 'app.yearly' },
-		{ value: 'once', label: 'app.oneOff' }
-	];
-
-	/** The rhythm's own word, not the key it is under. */
-	function rhythmLabel(r: string): string {
-		const rhythm = RHYTHMS.find((x) => x.value === r);
-		return rhythm ? t(rhythm.label) : r;
-	}
-
 	/** The rhythm the open form is on, so its due-day field asks the right thing. */
 	let formRhythm = $state('monthly');
-
-	const WEEKDAYS: { value: number; label: PlainKey }[] = [
-		{ value: 1, label: 'app.monday' },
-		{ value: 2, label: 'app.tuesday' },
-		{ value: 3, label: 'app.wednesday' },
-		{ value: 4, label: 'app.thursday' },
-		{ value: 5, label: 'app.friday' },
-		{ value: 6, label: 'app.saturday' },
-		{ value: 7, label: 'app.sunday' }
-	];
-	const MONTHS = [
-		'January',
-		'February',
-		'March',
-		'April',
-		'May',
-		'June',
-		'July',
-		'August',
-		'September',
-		'October',
-		'November',
-		'December'
-	];
 
 	function openNew() {
 		editing = null;
@@ -109,26 +72,8 @@
 
 	// A cents amount as the decimal the field shows, so editing starts from the
 	// real value rather than blank.
-	const asDecimal = (cents: number) => (cents / 100).toFixed(2);
 
 	/** "R$120,00 · Monthly, due the 5, pay 2 days before" — one line, one string. */
-	function summaryOf(bill: (typeof data.bills)[number]): string {
-		let line = `${money(bill.amountExpected)} · ${rhythmLabel(bill.rhythm)}`;
-		if (bill.dueDay) {
-			if (bill.rhythm === 'weekly') {
-				const weekday = WEEKDAYS.find((d) => d.value === bill.dueDay);
-				line += t('finance.bills.dueEveryWeekday', { weekday: weekday ? t(weekday.label) : '' });
-			} else if (bill.rhythm === 'yearly') {
-				line += `, due ${MONTHS[(bill.dueMonth ?? 1) - 1]} ${bill.dueDay}`;
-			} else {
-				line += `, due the ${bill.dueDay}`;
-			}
-			if (bill.payLeadDays > 0)
-				line += `, pay ${bill.payLeadDays} ${bill.payLeadDays === 1 ? 'day' : 'days'} before`;
-		}
-		return line;
-	}
-
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
 	setRoomAction(() => ({ label: t('finance.bills.newBill'), run: openNew }));
 </script>
@@ -159,107 +104,19 @@
 	{:else}
 		<ul class="divide-y divide-gray-100 rounded border border-gray-200">
 			{#each active as bill (bill.id)}
-				<li class="list-row">
-					<div class="list-row-main">
-						<div class="flex flex-wrap items-center gap-2">
-							<span class="font-medium break-words text-gray-900">{bill.name}</span>
-							{#if bill.paidThisPeriod}
-								<span class="rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-700">
-									{t('finance.bills.paid')}
-								</span>
-							{/if}
-						</div>
-						<div class="text-xs text-gray-500">{summaryOf(bill)}</div>
-					</div>
-
-					<div class="flex flex-1 flex-wrap items-center justify-end gap-2">
-						{#if bill.paidThisPeriod}
-							<form method="post" action="?/unpay" use:enhance>
-								<input type="hidden" name="id" value={bill.id} />
-								<input type="hidden" name="period" value={bill.period} />
-								<button
-									class="icon-btn"
-									title={t('finance.bills.undoThisPeriodSPayment')}
-									aria-label={t('finance.bills.undoThePaymentFor', { name: bill.name })}
-								>
-									<Icon name="undo" />
-								</button>
-							</form>
-						{:else if paying === bill.id}
-							<form
-								method="post"
-								action="?/pay"
-								class="flex items-center gap-1"
-								use:enhance={() =>
-									({ result, update }) => {
-										if (result.type === 'success') paying = null;
-										return update();
-									}}
-							>
-								<input type="hidden" name="id" value={bill.id} />
-								<input type="hidden" name="period" value={data.periods[bill.id]} />
-								<input
-									name="amount"
-									inputmode="decimal"
-									use:autofocus
-									class="input w-24"
-									placeholder={asDecimal(bill.amountExpected)}
-								/>
-								<button class="btn btn-primary btn-sm" type="submit"
-									>{t('finance.bills.paid2')}</button
-								>
-								<button class="btn btn-sm" type="button" onclick={() => (paying = null)}>×</button>
-							</form>
-						{:else}
-							<button
-								class="icon-btn"
-								title={t('finance.bills.markPaid')}
-								aria-label={t('finance.bills.markPaid2', { name: bill.name })}
-								onclick={() => (paying = bill.id)}
-							>
-								<Icon name="check" />
-							</button>
-							<!--
-								And the other way to pay one: point at the line that did it.
-								
-								The tick is somebody saying a bill was paid; this is the bank
-								saying so, and the amount comes from the statement rather than
-								from what was expected. Both are real — cash, a transfer that
-								has not landed, an account this instance does not import — so
-								neither replaces the other.
-							-->
-							<button
-								class="icon-btn"
-								title={t('finance.bills.attachThePayment')}
-								aria-label={t('finance.bills.attachATransactionTo', { name: bill.name })}
-								onclick={() => (attaching = bill.id)}
-							>
-								<Icon name="link" />
-							</button>
-						{/if}
-
-						<button
-							class="icon-btn"
-							aria-label={t('finance.bills.edit', { name: bill.name })}
-							onclick={() => openEdit(bill)}
-						>
-							<Icon name="edit" />
-						</button>
-
-						<form
-							method="post"
-							action="?/archive"
-							use:enhance
-							title={t('finance.bills.putThisBillAway')}
-						>
-							<input type="hidden" name="id" value={bill.id} />
-							<input type="hidden" name="archived" value="true" />
-							<button class="icon-btn" aria-label={t('finance.bills.archive', { name: bill.name })}>
-								<Icon name="archive" />
-							</button>
-						</form>
-					</div>
-				</li>
+				<!--
+					The row is a component, so a bill filed under a notebook is the
+					same bill this room shows — see `BillRow`.
+				-->
+				<BillRow
+					{bill}
+					{currency}
+					actions={BILL_ROOM_ACTIONS}
+					period={data.periods[bill.id]}
+					paid={bill.paidThisPeriod}
+					onedit={() => openEdit(bill)}
+					onattach={(id) => (attaching = id)}
+				/>
 			{/each}
 		</ul>
 	{/if}

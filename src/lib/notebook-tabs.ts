@@ -92,13 +92,6 @@ const LEDGER_KINDS: { value: string; label: PlainKey }[] = [
 	{ value: 'other', label: 'notebooks.fields.other' }
 ];
 
-const RHYTHMS: { value: string; label: PlainKey }[] = [
-	{ value: 'monthly', label: 'notebooks.fields.monthly' },
-	{ value: 'weekly', label: 'notebooks.fields.weekly' },
-	{ value: 'yearly', label: 'notebooks.fields.yearly' },
-	{ value: 'once', label: 'notebooks.fields.once' }
-];
-
 const HABIT_TYPES: { value: string; label: PlainKey }[] = [
 	{ value: 'bad', label: 'notebooks.fields.somethingToStop' },
 	{ value: 'good', label: 'notebooks.fields.somethingToKeepUp' },
@@ -166,43 +159,6 @@ export const MODULE_SPECS: Partial<Record<NotebookModule, ModuleSpec>> = {
 			}
 		],
 		room: (row) => `${resolve('/finance/ledgers')}?ledger=${row.id}`
-	},
-
-	bills: {
-		newLabel: 'notebooks.newBill',
-		empty: 'notebooks.nothingUnderThisSubjectYet',
-		create: NOTEBOOK_ACTIONS.bills.create,
-		update: NOTEBOOK_ACTIONS.bills.update,
-		remove: NOTEBOOK_ACTIONS.bills.delete,
-		archive: { action: NOTEBOOK_ACTIONS.bills.archive, field: 'archived' },
-		mark: {
-			action: NOTEBOOK_ACTIONS.bills.pay,
-			icon: 'check',
-			label: 'notebooks.marks.paid',
-			undo: 'notebooks.marks.notPaidAfterAll'
-		},
-		fields: [
-			{ kind: 'text', name: 'heading', label: 'notebooks.fields.name', span: 8, required: true },
-			{ kind: 'money', name: 'amount', label: 'notebooks.fields.howMuch', span: 4 },
-			{
-				kind: 'select',
-				name: 'rhythm',
-				label: 'notebooks.fields.howOften',
-				span: 4,
-				options: RHYTHMS
-			},
-			{ kind: 'number', name: 'dueDay', label: 'notebooks.fields.dueOn', span: 4, min: 1, max: 28 },
-			{
-				kind: 'number',
-				name: 'payLeadDays',
-				label: 'notebooks.fields.payItDaysEarly',
-				span: 4,
-				min: 0,
-				max: 27
-			},
-			{ kind: 'textarea', name: 'notes', label: 'notebooks.fields.notes', rows: 2 }
-		],
-		room: () => resolve('/finance/bills')
 	},
 
 	habits: {

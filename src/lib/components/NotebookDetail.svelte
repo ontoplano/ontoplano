@@ -46,6 +46,8 @@
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import ModuleTab from '$lib/components/ModuleTab.svelte';
 	import IdeaCard from '$lib/components/IdeaCard.svelte';
+	import BillRow from '$lib/components/BillRow.svelte';
+	import { NOTEBOOK_BILL_ACTIONS } from '$lib/bill-action-names';
 	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
 	import { NOTEBOOK_IDEA_ACTIONS } from '$lib/idea-action-names';
 	import { DEFAULT_MODULES, moduleMeta, type NotebookModule } from '$lib/notebook-modules';
@@ -141,6 +143,11 @@
 			goals: ComponentProps<typeof GoalCard>['goal'][];
 			/* And the whole idea, for the same reason — see `IdeaCard`. */
 			ideas: ComponentProps<typeof IdeaCard>['idea'][];
+			/* And the whole bill, with the period its tick would pay. */
+			bills: (ComponentProps<typeof BillRow>['bill'] & {
+				period: string;
+				paidThisPeriod: boolean;
+			})[];
 			/*
 			 * The other modules, each as its room's own rows.
 			 *
@@ -712,6 +719,15 @@
 					count: contents?.ideas.length ?? 0,
 					done: contents?.ideas.filter((idea) => idea.isApplied).length ?? 0
 				};
+			if (key === 'bills')
+				return {
+					key,
+					label: moduleMeta(key).name,
+					count: contents?.bills.length ?? 0,
+					// Put away, not paid: a bill comes round again, and whether this
+					// month's is settled is the mark on the row rather than a tally.
+					done: contents?.bills.filter((bill) => !bill.active).length ?? 0
+				};
 
 			const rows = rowsFor(key, contents as Record<string, unknown[]> | null, { t, currency });
 			return {
@@ -1172,6 +1188,26 @@
 							</div>
 						{/each}
 					</div>
+				{/if}
+			{:else if tab === 'bills'}
+				<!--
+					The Finance room's own row: what it costs, its rhythm, the day it
+					falls due, the tick that pays it and the undo beside it.
+				-->
+				{#if contents.bills.length === 0}
+					<EmptyState icon="wallet" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+				{:else}
+					<ul class="divide-y divide-gray-200">
+						{#each contents.bills as bill (bill.id)}
+							<BillRow
+								{bill}
+								{currency}
+								actions={NOTEBOOK_BILL_ACTIONS}
+								period={bill.period}
+								paid={bill.paidThisPeriod}
+							/>
+						{/each}
+					</ul>
 				{/if}
 			{:else}
 				<!--

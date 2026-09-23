@@ -63,18 +63,6 @@ const SHAPES: Partial<
 		done: Boolean(row.archived)
 	}),
 
-	bills: (row, { t, currency }) => ({
-		id: Number(row.id),
-		title: String(row.name ?? ''),
-		meta: facts(
-			formatMoney(Number(row.amountExpected ?? 0), currency, t.locale),
-			row.dueDay ? t('notebooks.rows.dueOnThe', { day: Number(row.dueDay) }) : null
-		),
-		// Archived, not paid: a bill is never finished with, it comes round
-		// again. Whether this month's is paid is the mark on the row.
-		done: !row.active
-	}),
-
 	habits: (row, { t }) => ({
 		id: Number(row.id),
 		title: String(row.name ?? ''),
