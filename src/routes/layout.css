@@ -237,6 +237,21 @@ input[type='radio'] {
 	.room-tabs .seg-track {
 		border-radius: 0 !important;
 	}
+
+	/*
+	 * And so has anything filling the room, for the same reason.
+	 *
+	 * On a phone a room's body runs to both screen edges, so the card inside it
+	 * does too — and a rounded corner there is a notch of the ground showing
+	 * through, with the section's accent stripe curving away from the edge it
+	 * is supposed to be flush against. The one thing he circled and asked about
+	 * twice.
+	 */
+	.room-body > *,
+	.room-body > * > .room-surface,
+	.room-body .room-surface {
+		border-radius: 0 !important;
+	}
 }
 
 /*
@@ -596,21 +611,23 @@ html[data-style='playful'] .section-pattern {
 }
 
 /*
- * A little more of it in the dark.
+ * More of it in the dark, not less.
  *
- * The same opacity over a dark ground is a fainter mark than over a light one —
+ * The same opacity over a dark ground is a fainter mark than over a light one:
  * there is simply less contrast available between the accent and near-black
- * than between the accent and near-white. A nudge, not a doubling: it is still
- * meant to read as texture.
+ * than between the accent and near-white. These numbers were written for a
+ * tiled glyph, where the mark is a whole shape — a grain is specks, and half
+ * of them are near-transparent before the opacity is applied at all, so the
+ * old figure came out as nothing whatever on a dark ground.
  */
 html[data-theme='dark'] .section-pattern,
 html[data-theme='dark'][data-style='playful'] .section-pattern {
-	opacity: 0.1;
+	opacity: 0.55;
 }
 
 @media (prefers-color-scheme: dark) {
 	html:not([data-theme='light']) .section-pattern {
-		opacity: 0.1;
+		opacity: 0.55;
 	}
 }
 
@@ -4201,8 +4218,17 @@ html[data-style='playful'] .room-surface {
 	flex: none;
 }
 
+/*
+ * The track is the row.
+ *
+ * It was as wide as its tabs, so the room's colour showed to the right of it
+ * and the strip read as a pill floating on the bar rather than as the top of
+ * the room. It fills the line now, with the tabs at the start of it and the
+ * verb — where there is one — beyond its end.
+ */
 .room-tabs > .seg-track {
 	display: flex;
+	flex: 1 1 auto;
 }
 
 .room-tabs .seg-scroll {
@@ -4220,6 +4246,23 @@ html[data-style='playful'] .room-surface {
  */
 .room-frame > * + * {
 	margin-top: 0;
+}
+
+/*
+ * The ground a room stands on, under the tabs that choose between its pages.
+ *
+ * The tabs are square along the bottom because they sit on this rather than
+ * float above it. Every room has it, so no room has to remember — and a page
+ * that draws a card of its own now draws it on a surface rather than on the
+ * backdrop, which is the difference between a room and a pile.
+ *
+ * It runs to both screen edges on a phone, where the room does; inside the
+ * gutter it is the room's own width.
+ */
+.room-body {
+	min-height: 12rem;
+	background-color: var(--color-white);
+	border-top: 1px solid var(--color-gray-200);
 }
 
 .scroll-hints {

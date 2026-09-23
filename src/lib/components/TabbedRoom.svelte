@@ -274,7 +274,16 @@
 	     page gutter back first. -->
 	<div bind:this={frame} class="slide-frame">
 		<div bind:this={pane}>
-			<div bind:this={body}>{@render children()}</div>
+			<!--
+				Something solid under the tabs.
+
+				The track is square along its bottom edge because it sits on the
+				room rather than floating above it — and that only reads as right
+				if there is a surface there to sit on. Without one the strip is a
+				pill with two corners cut off for no reason, which is what Finance
+				and Media and Health looked like.
+			-->
+			<div bind:this={body} class="room-body">{@render children()}</div>
 		</div>
 		<div bind:this={stage} class="slide-stage" aria-hidden="true"></div>
 		<!--
