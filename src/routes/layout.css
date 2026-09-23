@@ -4162,6 +4162,24 @@ html button.tab-link {
 }
 
 /*
+ * A notebook on the shelf: the same columns on every row.
+ *
+ * The fold arrow, the picture, the name and the two buttons each keep their
+ * place whether or not a given row has one. Before this a notebook with
+ * children indented its own title by an arrow's width and one without pictures
+ * let the buttons drift left, so no two rows in the column agreed about where
+ * anything was — which is what a list is for.
+ */
+.notebook-row {
+	display: grid;
+	grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+	align-items: center;
+	gap: 0.75rem;
+	padding-block: 0.75rem;
+	padding-right: 1rem;
+}
+
+/*
  * A count that changes, in a slot as wide as the longest it can be.
  *
  * "1 task showing" and "0 tasks showing" are different widths, so narrowing a

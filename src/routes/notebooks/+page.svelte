@@ -183,10 +183,19 @@
 							to keep in step and nothing new to learn — renaming one moves it.
 						-->
 						{#snippet notebookRow(node: (typeof data.tree)[number])}
+							<!--
+								One row, in columns that line up down the list.
+
+								The fold arrow, the picture, the name and the two buttons each
+								keep their place whether or not this row has one — a notebook
+								with children indented its own title by an arrow's width and a
+								notebook with a picture pushed its buttons along, so no two
+								rows in the column agreed about where anything was. The depth
+								is the only thing allowed to move a row, and it moves the whole
+								row rather than its parts.
+							-->
 							<div
-								class="flex items-center gap-3 py-3 pr-4 {node.id === data.selected
-									? 'bg-gray-100'
-									: ''}"
+								class="notebook-row {node.id === data.selected ? 'bg-gray-100' : ''}"
 								style="padding-left: calc(1rem + {node.depth} * 1.6rem)"
 							>
 								{#if node.children.length > 0}
@@ -202,7 +211,29 @@
 										<Icon name={opened.has(node.id) ? 'chevron-down' : 'chevron-right'} size={14} />
 									</button>
 								{:else}
-									<span class="size-4 shrink-0"></span>
+									<span class="icon-btn -ml-1 shrink-0" aria-hidden="true"></span>
+								{/if}
+
+								<!--
+									The notebook's own picture, where a person's face would be.
+
+									Reserved on every row: a shelf where some rows have one and
+									some do not is a shelf whose names start in two places.
+								-->
+								{#if node.pictureId}
+									<img
+										src="/media/{node.pictureId}"
+										alt=""
+										loading="lazy"
+										class="size-8 shrink-0 rounded-lg border border-gray-200 bg-white object-cover"
+									/>
+								{:else}
+									<span
+										aria-hidden="true"
+										class="flex size-8 shrink-0 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-100 text-gray-400"
+									>
+										<Icon name="notebook" size={14} />
+									</span>
 								{/if}
 
 								<!--
@@ -318,6 +349,18 @@
 						flush
 						pane
 					>
+						{#snippet lead()}
+							<!-- The notebook's own picture, beside its name — and pressing it
+							     is how you change it, the same control the shelf and the two
+							     Edit notebook dialogues use. -->
+							{#if selected && !showingOrphans}
+								<NotebookPicture
+									notebook={selected}
+									kilobytes={data.pictureKilobytes}
+									size="size-10"
+								/>
+							{/if}
+						{/snippet}
 						{#snippet actions()}
 							{#if selected}
 								<!-- The way to the notebook's own page, from the column that is
