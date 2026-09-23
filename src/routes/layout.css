@@ -4452,7 +4452,7 @@ html[data-style='playful'] .room-surface {
 .room-tabs > .seg-track {
 	display: flex;
 	flex: 1 1 auto;
-	padding-inline: 0.5rem;
+	padding-inline: 0.75rem;
 }
 
 .room-tabs .seg-scroll {

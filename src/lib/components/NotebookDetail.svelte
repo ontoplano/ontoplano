@@ -738,7 +738,19 @@
 			</div>
 			{@render noteList(shownNotes, null)}
 		{:else if !notebook || !contents}
-			<EmptyState icon="notebook" title={t('notebookDetail.nothingChosen')} />
+			<!--
+				What a notebook is, said where there is room to say it.
+
+				It was a paragraph in a band between the tabs and the shelf — read
+				once, in the way ever after, and gone the moment the first notebook
+				existed. This column is empty until somebody picks one, which is
+				exactly where an explanation belongs and exactly when it is wanted.
+			-->
+			<EmptyState
+				icon="notebook"
+				title={t('notebookDetail.nothingChosen')}
+				description={t('notebooks.aSubjectYouWriteAgainst')}
+			/>
 		{:else}
 			<!-- Everything about this notebook, one kind at a time. -->
 			<!--

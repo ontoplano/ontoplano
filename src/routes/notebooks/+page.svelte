@@ -15,7 +15,6 @@
 	import NotebookDetail from '$lib/components/NotebookDetail.svelte';
 	import NotebookFields from '$lib/components/fields/NotebookFields.svelte';
 	import NotebookPicture from '$lib/components/NotebookPicture.svelte';
-	import { SECTION_COLORS } from '$lib/colors';
 	import type { PageServerData, ActionData } from './$types';
 	import { useT } from '$lib/i18n';
 
@@ -129,15 +128,6 @@
 
 <div class="space-y-4">
 	<!-- The heading and the tabs are the layout's — see `TabbedRoom`. -->
-	<!-- What a notebook is, for somebody who has none. Once there are some on
-	     screen they say it better than the sentence does, and it is a paragraph
-	     between the tabs and the thing you came for. -->
-	{#if data.notebooks.length === 0}
-		<p class="page-intro">
-			{t('notebooks.aSubjectYouWriteAgainst')}
-		</p>
-	{/if}
-
 	<FormError message={form?.message} />
 
 	<!--
@@ -161,10 +151,7 @@
 		card's own edge away; the border and the section's accent belong to both
 		of them, drawn once around the pair rather than once each.
 	-->
-	<div
-		class="card-accent border border-gray-200 bg-white shadow-card"
-		style="--card-accent: {SECTION_COLORS.diary};"
-	>
+	<div class="border border-gray-200 bg-white shadow-card">
 		<SplitColumns
 			bind:rem={panelRem}
 			label={t('notebooks.widenOrNarrowTheList')}
