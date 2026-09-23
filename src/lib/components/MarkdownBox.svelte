@@ -46,6 +46,7 @@
 		element = $bindable(),
 		rows = 6,
 		preview = 'markdown',
+		start = 'write',
 		todos = undefined,
 		class: extra = '',
 		...rest
@@ -65,6 +66,8 @@
 		 * promise formatting that never arrives, or hide the picture that does.
 		 */
 		preview?: 'markdown' | 'written';
+		/** Which pane it opens on. See the note on `showing`. */
+		start?: 'write' | 'preview' | 'both';
 		/**
 		 * The tasks a reference in the writing may name, by their number in the
 		 * notebook — what `renderMarkdown` resolves `TASK:#4` against.
@@ -83,7 +86,14 @@
 	/**
 	 * Which pane is showing: one of them, or both beside each other.
 	 *
-	 * Writing is the default, which is what the box has always opened as.
+	 * What it opens as is the caller's: a note is a document somebody is
+	 * composing and the preview is half of what they are doing, so the note
+	 * forms open side by side. A box that is one field on a form among many —
+	 * a task's notes, a goal's — opens as the editor, because there the
+	 * writing is a sentence rather than a thing being made.
+	 *
+	 * Below `@sm` there is no side by side to open as, and `both` falls back to
+	 * the editor alone.
 	 *
 	 * It used to go side by side on its own once the container passed `@2xl`,
 	 * and no box in this app is that wide — the widest is about 540px — so that
@@ -99,7 +109,7 @@
 	 * own width, where two columns of prose is not a choice anybody could want
 	 * and `both` falls back to the editor alone.
 	 */
-	let showing = $state<'write' | 'preview' | 'both'>('write');
+	let showing = $state<'write' | 'preview' | 'both'>(start);
 
 	/**
 	 * The single pane to come back to when Side by side is switched off.

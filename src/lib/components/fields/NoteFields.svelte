@@ -107,7 +107,17 @@
 	<!-- Twice the height it started at: a note is usually more than two lines,
 	     and a box that has to be grown before it is written in asks a question
 	     nobody wanted. It still grows past this. -->
-	<MarkdownBox bind:element={box} value={content} name="content" required rows={compact ? 8 : 16} />
+	<!-- A note is a document being composed, and the preview is half of what
+	     somebody is doing — so it opens side by side wherever there is room for
+	     two columns. See `MarkdownBox`. -->
+	<MarkdownBox
+		bind:element={box}
+		value={content}
+		name="content"
+		required
+		rows={compact ? 8 : 16}
+		start="both"
+	/>
 	{#if pictures}
 		<PictureAttach target={box} />
 		<RecordingAttach target={box} />

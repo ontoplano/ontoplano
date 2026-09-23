@@ -866,6 +866,7 @@
 							name="content"
 							rows={6}
 							required
+							start="both"
 							todos={todoRefs}
 							placeholder={t('notebookDetail.writeANoteAbout', { title: notebook.title })}
 						/>
@@ -1229,6 +1230,7 @@
 								name="content"
 								rows={8}
 								required
+								start="both"
 								todos={todoRefs}
 							/>
 							<PictureAttach target={editBox} />
