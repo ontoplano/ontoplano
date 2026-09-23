@@ -18,6 +18,79 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.183.1 — 2026-09-23
+
+- **A room is one object now, not a handful of cards floating on the
+  backdrop.** The tabs sit on a track that spans the line, with the room's one
+  verb — New notebook, New task — at the end of it; the track is square along
+  its bottom and the room begins immediately underneath, so the two read as one
+  thing with a seam rather than a strip hovering over a card. Every room has
+  that surface, so the controls that narrow a list are a block along its top
+  instead of chrome adrift above it. Ideas and People were the two that showed
+  it worst and are the two that changed most.
+
+- **Settings → Integrations is one room with sections** rather than two rooms
+  stacked: it used to draw a second bar, a second title and a second strip of
+  tabs, each with a band of page between.
+
+- **The corners stop showing the page through them.** The shell itself carried
+  a radius and clipped at it, so every screen in the app lost a bite out of all
+  four corners — which is why this kept reappearing somewhere new after each
+  place it was chased out of. Anything that reaches a screen edge is square
+  now, and there is a test that asks the question the only way that cannot be
+  satisfied by fixing one component: whatever happens to be in the corner, at
+  two widths, across five rooms.
+
+- **The backdrop is a grain rather than a scattering of glyphs.** The room's own
+  icon tiled behind the page was meant to read as texture and never did — it
+  was a handful of recognisable objects floating behind the work. Same section
+  colour, nothing in it to look at.
+
+- **The three ratings on a task are nested bars.** Width says which rating —
+  urgency widest and behind, then ease, then interest — and height says its
+  value, on one baseline and one scale, so a tall card no longer draws a taller
+  4 than a short one. Hovering them says the numbers, one per line. The sliders
+  that set them are drawn the same way, run the full width of the form, and no
+  longer snap back a step when dragged quickly.
+
+- **A notebook is its cover.** The shelf is a shelf: the picture is what you
+  look at and the name hangs under it. Closed notebooks go to the end, notes
+  whose notebook was deleted are a bin in the corner rather than a book called
+  "Notes without a notebook", and pressing a picture opens the notebook's
+  editor. Both Edit notebook dialogues offer the same fields — including the
+  picture, which neither did.
+
+- **A notebook lends its labels to the notes written in it.** Set them once on
+  the notebook; a new note there starts with them filled in, where they can be
+  taken out again before saving.
+
+- **The fold mark moved off a task's title onto the first line of its
+  writing**, where the thing being folded actually is — and a task whose note
+  fits on one line no longer carries a chevron that does nothing. Reading an
+  open note no longer folds it away mid-sentence.
+
+- **Filters are simply on the strip wherever there is room for them**, and a
+  sheet on a phone where there is not. A toggle keeps its width when pressed —
+  "Show completed (1)" becoming "Hide completed" moved every control to its
+  right — and the scrollbar's room is kept whether or not there is one, so a
+  list growing past the fold no longer shifts the page.
+
+- **Writing opens side by side**, and every markdown box offers that choice
+  rather than only the wide ones.
+
+- **The quick note says where it goes.** It read "Diary note" and offered no
+  choice; it is a note, with a picker under it that starts on the diary and
+  offers the notebooks.
+
+- **A task list can be ordered by when it was last labelled.**
+
+- **An assistant's single write is announced by name** — "Claude labelled «bad
+  filter button»" — rather than "labelled 1 todo", and a labelling says which
+  labels went on and which came off.
+
+- **Reset demo account is only offered where it can work.** Signed into your own
+  account on the demo instance you were shown a button that could only fail.
+
 ## 0.183.0 — 2026-09-22
 
 - **The diary can be put away on its own, and the writing room cannot.** The
