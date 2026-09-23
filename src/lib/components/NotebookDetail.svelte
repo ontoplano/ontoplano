@@ -1111,14 +1111,23 @@
 		{#snippet count()}
 			<!-- How many are on screen right now — the toggles say what is hidden
 			     and nothing said what is left. -->
+			<!-- Held open at the count of every note there is — see `.count-slot`. -->
 			<span
-				class="tabular shrink-0 self-center text-xs text-gray-500"
+				class="tabular count-slot shrink-0 self-center text-xs text-gray-500"
 				title={t('notebookDetail.showingCount', { count: shownNotes.length })}
 			>
-				<span class="sm:hidden">{shownNotes.length}</span>
-				<span class="hidden sm:inline"
-					>{t('notebookDetail.showingCount', { count: shownNotes.length })}</span
-				>
+				<span class="count-widest" aria-hidden="true">
+					<span class="sm:hidden">{contents?.entries.length ?? 0}</span>
+					<span class="hidden sm:inline"
+						>{t('notebookDetail.showingCount', { count: contents?.entries.length ?? 0 })}</span
+					>
+				</span>
+				<span>
+					<span class="sm:hidden">{shownNotes.length}</span>
+					<span class="hidden sm:inline"
+						>{t('notebookDetail.showingCount', { count: shownNotes.length })}</span
+					>
+				</span>
 			</span>
 		{/snippet}
 
@@ -1133,9 +1142,7 @@
 				onclick={() => (showArchivedNotes = !showArchivedNotes)}
 				class="btn btn-sm shrink-0"
 			>
-				{showArchivedNotes
-					? t('notebookDetail.hideArchived')
-					: t('notebookDetail.showArchived', { count: putAwayNotes })}
+				{t('notebookDetail.archivedCount', { count: putAwayNotes })}
 			</button>
 		{/if}
 

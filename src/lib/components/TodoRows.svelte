@@ -968,14 +968,37 @@
 					notebook and a label gave no number at all for the thing you are
 					actually looking at.
 				-->
+						<!--
+							In a slot wide enough for the longest it can be.
+
+							"1 task showing" and "0 tasks showing" are different widths,
+							so narrowing the list shifted every control after it. The
+							words are the content; the room they take is not allowed to
+							be.
+						-->
+						<!--
+							In a slot as wide as the longest it can be.
+
+							Held open by the same sentence at the count of the whole list,
+							which is the largest it can say and does not change when a
+							filter does. See `.count-slot`.
+						-->
 						<span
-							class="tabular shrink-0 self-center text-xs text-gray-500"
+							class="tabular count-slot shrink-0 self-center text-xs text-gray-500"
 							title={t('todoRows.showingCount', { count: visibleTodos.length })}
 						>
-							<span class="sm:hidden">{visibleTodos.length}</span>
-							<span class="hidden sm:inline"
-								>{t('todoRows.showingCount', { count: visibleTodos.length })}</span
-							>
+							<span class="count-widest" aria-hidden="true">
+								<span class="sm:hidden">{inScope.length}</span>
+								<span class="hidden sm:inline"
+									>{t('todoRows.showingCount', { count: inScope.length })}</span
+								>
+							</span>
+							<span>
+								<span class="sm:hidden">{visibleTodos.length}</span>
+								<span class="hidden sm:inline"
+									>{t('todoRows.showingCount', { count: visibleTodos.length })}</span
+								>
+							</span>
 						</span>
 					{/snippet}
 					{#snippet trailing()}
@@ -990,16 +1013,24 @@
 							label={t('todoRows.orderTasksBy')}
 						/>
 					{/snippet}
+					<!--
+						One label, whichever way it is set.
+
+						It read "Show completed (1)" and became "Hide completed", so
+						pressing it changed its own width and moved every control to
+						its right. It names what it is about and says on or off the
+						way every other toggle here does — with `aria-pressed` and the
+						pressed surface. The number is how many completed tasks there
+						are, which does not change when you press it; how many are
+						*showing* is the count beside the search box.
+					-->
 					<button
 						onclick={() => (showCompleted = !showCompleted)}
 						aria-pressed={showCompleted}
 						class="btn btn-sm shrink-0"
 					>
 						<span class="sm:hidden">{t('todoRows.completed')}</span>
-						<span class="hidden sm:inline"
-							>{showCompleted
-								? t('todoRows.hideCompleted')
-								: t('todoRows.showCompletedCount', { count: finished })}</span
+						<span class="hidden sm:inline">{t('todoRows.completedCount', { count: finished })}</span
 						>
 					</button>
 					<!-- Named with its number so a put-away task is never quietly gone:
@@ -1010,9 +1041,7 @@
 						class="btn btn-sm"
 						hidden={putAway === 0 && !showArchived}
 					>
-						{showArchived
-							? t('todoRows.hideArchived')
-							: t('todoRows.showArchivedCount', { count: putAway })}
+						{t('todoRows.archivedCount', { count: putAway })}
 					</button>
 					{#if notebookId === null}
 						<!-- "Not in one" is an answer, not the absence of a filter: a task

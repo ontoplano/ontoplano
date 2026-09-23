@@ -1308,6 +1308,7 @@ export type MessageKey =
 	| 'notebookDetail.anaJoão'
 	| 'notebookDetail.anyoneThisNoteIsAbout'
 	| 'notebookDetail.archived'
+	| 'notebookDetail.archivedCount'
 	| 'notebookDetail.ascendingPressForDescending'
 	| 'notebookDetail.backToThePage'
 	| 'notebookDetail.biggerType'
@@ -2832,7 +2833,9 @@ export type MessageKey =
 	| 'todoRows.added'
 	| 'todoRows.anythingYouFinishShowsUp'
 	| 'todoRows.archived'
+	| 'todoRows.archivedCount'
 	| 'todoRows.completed'
+	| 'todoRows.completedCount'
 	| 'todoRows.completedTitle'
 	| 'todoRows.confirm'
 	| 'todoRows.createTodo'
@@ -3403,6 +3406,7 @@ export interface MessageValuesFor {
 	'media.showWhatIsIn': { name: string | number };
 	'newsletter.off.nothingMoreWillBeSent': { email: string | number };
 	'notebookDetail.addWithTodos': { count: number };
+	'notebookDetail.archivedCount': { count: number };
 	'notebookDetail.madeTodos': { count: number };
 	'notebookDetail.makeCountTodos': { count: number };
 	'notebookDetail.showArchived': { count: number };
@@ -3637,6 +3641,8 @@ export interface MessageValuesFor {
 	'tasks.review.undoTheAnswerFor': { title: string | number };
 	'tasks.review.untold': { count: number };
 	'tasks.review.week': { number: string | number; year: string | number };
+	'todoRows.archivedCount': { count: number };
+	'todoRows.completedCount': { count: number };
 	'todoRows.completedTitle': { title: string | number };
 	'todoRows.doneAgo': { ago: string | number; when: string | number };
 	'todoRows.hiddenByTheFilters': { count: number };
