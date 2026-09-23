@@ -1,26 +1,25 @@
 <script lang="ts">
-	import NumberBox from '$lib/components/NumberBox.svelte';
+	import { useWhen } from '$lib/when-context.svelte';
 	import Swatch from '$lib/components/Swatch.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import RoomBar from '$lib/components/RoomBar.svelte';
-	import { COUNT_STEP, NUMBER_KINDS } from '$lib/number-kinds';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
-	import { enhance } from '$app/forms';
-	import { invalidateAll } from '$app/navigation';
-	import { cancelFor, changeNow, isPending } from '$lib/undo.svelte';
+	import { enhance } from '$lib/enhance';
 	import FormError from '$lib/components/FormError.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
-	import { armed } from '$lib/actions/armed';
 	import type { PageServerData, ActionData } from './$types';
 	import Field from '$lib/components/Field.svelte';
+	import GoalCard from '$lib/components/GoalCard.svelte';
+	import GoalLinksModal from '$lib/components/GoalLinksModal.svelte';
+	import GoalFields from '$lib/components/fields/GoalFields.svelte';
+	import { GOAL_ROOM_ACTIONS } from '$lib/goal-action-names';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import NotebookField from '$lib/components/NotebookField.svelte';
 	import {
 		HORIZONS,
 		HORIZON_LABELS,
@@ -34,6 +33,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -43,17 +43,6 @@
 	let showAreas = $state(false);
 	let editingId: number | null = $state(null);
 	let linkingId: number | null = $state(null);
-	/*
-	 * Completed to-dos in the choosing modal, off until asked for. Linked done
-	 * ones always show (unlisting them is how saving used to unlink them); the
-	 * REST of the finished list only appears on request, because a goal made
-	 * of work already done is the exception and forty struck-through lines are
-	 * not a picker.
-	 */
-	let showDoneTodos = $state(false);
-	/** Whose linked tasks are unfolded on the card. */
-	let openTasksId: number | null = $state(null);
-	let confirmingDelete: number | null = $state(null);
 	let areaFilter: number | null = $state(null);
 	let formHorizon: Horizon = $state('week');
 	let formStart: string = $state('');
@@ -81,9 +70,27 @@
 
 	/** One column per horizon, so the year and the week sit side by side. */
 	const byHorizon = $derived(
-		HORIZONS.map((h) => ({ horizon: h, goals: visible.filter((g) => g.horizon === h) })).filter(
-			(c) => c.goals.length > 0 || showForm
-		)
+		HORIZONS.map((h) => {
+			const of = visible.filter((g) => g.horizon === h);
+			/*
+			 * A goal about a subject sits below the ones about the life.
+			 *
+			 * Filing a goal under a notebook scopes it — "read twelve books" is
+			 * a goal you hold; "finish the kitchen tiling" belongs to the
+			 * renovation and is only a goal while that is going on. Mixed into
+			 * one list they read as the same kind of thing, so the loose ones
+			 * come first and each notebook's own are grouped under its name.
+			 */
+			const loose = of.filter((g) => g.notebookId === null);
+			const filed = [...new Set(of.filter((g) => g.notebookId !== null).map((g) => g.notebookId))]
+				.map((id) => ({
+					id: id as number,
+					title: of.find((g) => g.notebookId === id)?.notebookTitle ?? '',
+					goals: of.filter((g) => g.notebookId === id)
+				}))
+				.sort((a, b) => a.title.localeCompare(b.title));
+			return { horizon: h, goals: of, loose, filed };
+		}).filter((c) => c.goals.length > 0 || showForm)
 	);
 
 	/** Parents a goal of this horizon could genuinely belong to. */
@@ -96,7 +103,12 @@
 	/** Which period the chosen start date lands in, shown next to the field. */
 	const formPeriod = $derived(
 		formStart
-			? describePeriod(t, formHorizon, periodStart(formHorizon, new Date(`${formStart}T00:00:00`)))
+			? describePeriod(
+					t,
+					now(),
+					formHorizon,
+					periodStart(formHorizon, new Date(`${formStart}T00:00:00`))
+				)
 			: ''
 	);
 	const linking = $derived(linkingId ? (data.goals.find((g) => g.id === linkingId) ?? null) : null);
@@ -111,25 +123,6 @@
 	const knownUnits = $derived(
 		[...new Set(data.goals.flatMap((g) => g.targets.map((t) => t.unit)).filter(Boolean))].sort()
 	);
-
-	function percent(goal: Goal): number | null {
-		return goal.progress.fraction === null ? null : Math.round(goal.progress.fraction * 100);
-	}
-
-	function progressLabel(goal: Goal): string {
-		// The tasks, when there are any: the measures under them say the rest.
-		if (goal.progress.total)
-			return t('goals.doneOfTotal', { done: goal.progress.done ?? 0, total: goal.progress.total });
-		if (goal.progress.total === 0 && goal.targets.length === 0) return t('goals.nothingCountedYet');
-		// One measure reads as itself; several are listed under the bar, so the
-		// line above them says how many rather than repeating the first.
-		if (goal.targets.length === 1) {
-			const t = goal.targets[0];
-			return `${t.currentValue} / ${t.targetValue} ${t.unit}`.trim();
-		}
-		if (goal.targets.length > 1) return t('goals.measuresCount', { count: goal.targets.length });
-		return t('goals.noMeasureSet');
-	}
 
 	function blankTarget() {
 		// Counted by default: most goals are a number of things done, and kept
@@ -192,44 +185,6 @@
 		return formatDate(new Date());
 	}
 
-	/**
-	 * Close a goal, in a few seconds, unless it was a slip.
-	 *
-	 * The same shape the board uses for ticking a task off: the screen shows the
-	 * outcome at once and so does the server: holding the request made the card
-	 * and everything counted from it disagree for the length of a toast. Undo
-	 * reopens the goal, which is an ordinary write. A second press inside the
-	 * window is the same gesture as pressing Undo.
-	 */
-	function closeLater(goal: { id: number; title: string }, status: 'achieved' | 'missed') {
-		const key = `goal:${goal.id}`;
-		if (isPending(key)) {
-			cancelFor(key);
-			return;
-		}
-
-		const write = (to: string) => {
-			const body = new FormData();
-			body.set('id', String(goal.id));
-			body.set('status', to);
-			return fetch(`${location.pathname}?/close`, {
-				method: 'POST',
-				headers: { 'x-sveltekit-action': 'true' },
-				body
-			}).then(() => invalidateAll());
-		};
-
-		const said = status === 'achieved' ? 'Achieved' : 'Missed';
-		// `close` reopens too — it clears the closing date for `open` — so Undo
-		// is the same action in the other direction.
-		changeNow(
-			key,
-			`${said} — ${goal.title}`,
-			() => write(status),
-			() => write('open')
-		);
-	}
-
 	function handleKeydown(e: KeyboardEvent) {
 		if (
 			e.target instanceof HTMLInputElement ||
@@ -242,7 +197,6 @@
 			showForm = false;
 			editingId = null;
 			linkingId = null;
-			confirmingDelete = null;
 			return;
 		}
 		const action = getAction('/goals', e.key);
@@ -406,182 +360,20 @@
 				<input type="hidden" name="id" value={editingId} />
 			{/if}
 
-			<FormGrid>
-				<Field label={t('goals.goal')} span={12} required>
-					<OneLine
-						name="heading"
-						placeholder={t('goals.eGTrainThreeTimesA')}
-						value={editing?.title ?? ''}
-						class="input"
-						required
-						autofocus
-					/>
-				</Field>
-
-				<Field label={t('goals.horizon')} span={4}>
-					<select name="horizon" bind:value={formHorizon} class="select">
-						{#each HORIZONS as h (h)}
-							<option value={h}>{t(HORIZON_LABELS[h])}</option>
-						{/each}
-					</select>
-				</Field>
-
-				<Field
-					label={t('goals.starts')}
-					span={4}
-					hint={formPeriod ? t('goals.countsFor', { period: formPeriod }) : ''}
-				>
-					<input
-						autocomplete="off"
-						name="startDate"
-						type="date"
-						bind:value={formStart}
-						class="input"
-					/>
-				</Field>
-
-				<Field label={t('goals.area')} span={4}>
-					<select name="areaId" class="select">
-						<option value="">{t('goals.none')}</option>
-						{#each data.areas as area (area.id)}
-							<option value={area.id} selected={editing?.areaId === area.id}>{area.name}</option>
-						{/each}
-					</select>
-				</Field>
-
-				<NotebookField
-					notebooks={data.notebooks}
-					value={editing?.notebookId ?? startingNotebook}
-					span={4}
-				/>
-
-				<!--
-					What the goal is measured by, one row per thing. Several of them is
-					the ordinary case for a big goal — three gigs played and five songs
-					recorded — and each keeps its own number.
-				-->
-				<div class="col-span-12">
-					<span class="eyebrow text-gray-600">{t('goals.measuredBy')}</span>
-					<div class="mt-1 space-y-2">
-						{#each formTargets as target, i (i)}
-							<div class="flex items-center gap-2">
-								<input type="hidden" name="targetId" value={target.id ?? ''} />
-								<!--
-									Counted or measured, before the number itself.
-
-									It decides what the goal's own card offers later — a plus
-									and a minus, or a field — so it sits where the number is
-									being decided rather than somewhere in a settings screen.
-								-->
-								<label class="shrink-0">
-									<span class="sr-only">{t('goals.whatKindOfNumber')}</span>
-									<select
-										name="targetWhole"
-										bind:value={target.whole}
-										class="select w-16 text-center text-base"
-										title={NUMBER_KINDS.find((k) => k.whole === target.whole)?.label}
-									>
-										{#each NUMBER_KINDS as kind (kind.symbol)}
-											<option value={kind.whole} title={kind.label}>{kind.symbol}</option>
-										{/each}
-									</select>
-								</label>
-								<NumberBox
-									autocomplete="off"
-									name="targetValue"
-									min="0"
-									step={target.whole ? COUNT_STEP : 'any'}
-									inputmode={target.whole ? 'numeric' : 'decimal'}
-									placeholder="3"
-									bind:value={target.value}
-									class="w-24 shrink-0"
-								/>
-								<input
-									autocomplete="off"
-									name="targetUnit"
-									list="goal-units"
-									placeholder={t('goals.booksKmGigs')}
-									bind:value={target.unit}
-									class="input min-w-0 flex-1"
-								/>
-								<button
-									type="button"
-									class="icon-btn icon-btn-danger"
-									title={t('goals.removeMeasure')}
-									aria-label={t('goals.removeMeasure')}
-									onclick={() => (formTargets = formTargets.filter((_, at) => at !== i))}
-								>
-									<Icon name="trash" />
-								</button>
-							</div>
-							<!--
-								Counted from the workouts, or kept by hand.
-
-								Only where there is something to count: an account that has
-								never logged a measure gets no picker for one, rather than an
-								empty dropdown saying nothing. Choosing one takes the unit
-								from the register too, because "km" was already typed there
-								and two spellings of one unit are two units.
-							-->
-							{#if data.workoutMeasures.length > 0}
-								<label class="mt-1 flex items-center gap-2 pl-1">
-									<span class="eyebrow shrink-0 text-gray-500">{t('goals.countedFrom')}</span>
-									<select
-										name="targetMeasure"
-										class="select min-w-0 flex-1 py-1 text-xs"
-										bind:value={target.measureActivity}
-										onchange={() => {
-											const found = data.workoutMeasures.find(
-												(m: { activity: string; unit: string }) =>
-													m.activity === target.measureActivity
-											);
-											if (found?.unit) target.unit = found.unit;
-										}}
-									>
-										<option value="">{t('goals.iKeepThisOneMyself')}</option>
-										{#each data.workoutMeasures as measure (measure.activity + measure.unit)}
-											<option value={measure.activity}>
-												{measure.activity}{measure.unit ? ` (${measure.unit})` : ''}
-											</option>
-										{/each}
-									</select>
-								</label>
-							{/if}
-						{/each}
-					</div>
-					<datalist id="goal-units">
-						{#each knownUnits as unit (unit)}
-							<option value={unit}></option>
-						{/each}
-					</datalist>
-					<button
-						type="button"
-						class="btn btn-sm mt-2"
-						onclick={() => (formTargets = [...formTargets, blankTarget()])}
-					>
-						<Icon name="plus" />
-						{t('goals.addMeasure')}
-					</button>
-					<span class="mt-1 block text-xs text-gray-500">
-						{t('goals.optionalLeaveItEmptyFor')}
-					</span>
-				</div>
-
-				{#if !editingId}
-					<Field label={t('goals.partOf')} span={4}>
-						<select name="parentId" class="select">
-							<option value="">{t('goals.standalone')}</option>
-							{#each parentOptions as g (g.id)}
-								<option value={g.id}>{t(HORIZON_LABELS[g.horizon])}: {g.title}</option>
-							{/each}
-						</select>
-					</Field>
-				{/if}
-
-				<Field label={t('ui.notes')} span={12}>
-					<textarea name="notes" rows="3" class="textarea" value={editing?.notes ?? ''}></textarea>
-				</Field>
-			</FormGrid>
+			<GoalFields
+				{editing}
+				{editingId}
+				bind:horizon={formHorizon}
+				bind:start={formStart}
+				bind:targets={formTargets}
+				period={formPeriod}
+				areas={data.areas}
+				notebooks={data.notebooks}
+				workoutMeasures={data.workoutMeasures}
+				{parentOptions}
+				{knownUnits}
+				{startingNotebook}
+			/>
 		</form>
 
 		{#snippet footer()}
@@ -619,6 +411,23 @@
 		</div>
 	{/if}
 
+	{#snippet card(goal: Goal)}
+		<GoalCard
+			{goal}
+			goals={data.goals}
+			allTodos={data.allTodos}
+			slots={data.slots}
+			activities={data.activities}
+			actions={GOAL_ROOM_ACTIONS}
+			{accent}
+			onedit={(id) => {
+				const one = data.goals.find((g) => g.id === id);
+				if (one) openEdit(one);
+			}}
+			onlink={(id) => (linkingId = id)}
+		/>
+	{/snippet}
+
 	<!--
 		No strip of page between two groups on a phone.
 
@@ -641,464 +450,48 @@
 				</div>
 
 				<div class="divide-y divide-gray-200">
-					{#each column.goals as goal (goal.id)}
-						{@const pct = percent(goal)}
-						<!-- Named so anything that belongs to this goal can link straight at it. -->
-						<div id="goal-{goal.id}" class="py-3 target:bg-yellow-50">
-							<!-- The buttons do not shrink, so on a phone they used to squeeze
-							     the title into a one-word-per-line ribbon. Below `sm` they go
-							     underneath instead. -->
-							<div class="flex flex-col gap-3 sm:flex-row sm:items-start">
-								<div class="flex min-w-0 flex-1 items-start gap-3">
-									<span
-										class="mt-1 h-4 w-1 shrink-0"
-										style="background-color: {goal.areaColor ?? '#d1d5db'}"
-										title={goal.areaName ?? t('goals.noArea')}
-									></span>
-
-									<div class="min-w-0 flex-1">
-										<div class="flex flex-wrap items-baseline gap-2">
-											<span
-												class="text-sm font-medium {goal.status !== 'open'
-													? 'text-gray-400'
-													: 'text-gray-900'}">{goal.title}</span
-											>
-											<span class="tabular text-xs text-gray-500"
-												>{describePeriod(t, goal.horizon, goal.periodStart)}</span
-											>
-											{#if goal.parentId}
-												{@const parent = data.goals.find((g) => g.id === goal.parentId)}
-												{#if parent}
-													<span class="text-xs text-gray-500"
-														>{t('goals.partOf2', { title: parent.title })}</span
-													>
-												{/if}
-											{/if}
-											{#if goal.status !== 'open'}
-												<span class="eyebrow text-gray-600">{goal.status}</span>
-											{/if}
-										</div>
-
-										{#if goal.notes}
-											<p class="mt-0.5 text-xs text-gray-500">{goal.notes}</p>
-										{/if}
-
-										<!-- No bar without a measure. An empty track under a goal with
-										     nothing to count reads as "0%", which is a claim about
-										     progress rather than the absence of one. -->
-										<div class="mt-2 flex items-center gap-3">
-											{#if pct !== null}
-												<!-- Grows into the width instead of leaving it empty: on a
-												     phone a fixed 6rem bar left two thirds of the row blank. -->
-												<div class="h-1.5 min-w-24 flex-1 bg-gray-200 sm:max-w-40 sm:flex-none">
-													<div
-														class="h-full"
-														style="width: {pct}%; background-color: {goal.areaColor ?? accent}"
-													></div>
-												</div>
-											{/if}
-											<span class="tabular text-xs text-gray-500">
-												{progressLabel(goal)}{pct !== null ? ` · ${pct}%` : ''}
-											</span>
-										</div>
-
-										<!--
-											Every measure the goal was given, each with the number it
-											stands at. A goal counted from linked tasks keeps them
-											visible and editable: they are what somebody typed in, and
-											hiding them because a todo got attached loses the record.
-										-->
-										{#if goal.targets.length > 0}
-											<div class="mt-2 space-y-1">
-												{#each goal.targets as target (target.id)}
-													<form
-														method="post"
-														action="?/setProgress"
-														use:enhance
-														class="flex flex-wrap items-center gap-2"
-													>
-														<input type="hidden" name="targetId" value={target.id} />
-														<!--
-															A measure counted from the workouts is read, not typed.
-
-															The number is the sum of what the register holds for
-															that activity inside the goal's period, so there is
-															nothing to press: a box here would let somebody write
-															a total their own sessions contradict, with nothing on
-															screen to say which one is true. The word it counts is
-															shown instead, so the figure is not a mystery.
-														-->
-														{#if target.measureActivity}
-															<span
-																class="chip shrink-0"
-																title={t('goals.countedFromYourWorkouts')}
-															>
-																<Icon name="health" size={12} class="mr-1" />
-																{target.measureActivity}
-															</span>
-															<span class="tabular text-xs text-gray-700">
-																{target.currentValue}
-															</span>
-														{:else if target.whole}
-															<!--
-																A thing you count moves one at a time.
-
-																Twelve books is finished a book at a time, and
-																reaching for a keyboard to turn 3 into 4 is absurd —
-																so a counted measure gets a minus and a plus, each of
-																which is the whole gesture: the button carries the new
-																number, so a press is a submit and there is nothing to
-																save afterwards. A measured one keeps its field,
-																because 14.6 is not two presses away from anything.
-															-->
-															<button
-																class="icon-btn"
-																name="currentValue"
-																value={Math.max(0, target.currentValue - COUNT_STEP)}
-																disabled={target.currentValue <= 0}
-																title={t('goals.oneFewer')}
-																aria-label={t('goals.oneFewerUnit', {
-																	unit: target.unit || t('goals.towardsThis')
-																}).trim()}
-															>
-																<Icon name="minus" />
-															</button>
-															<span class="tabular text-xs text-gray-700">
-																{target.currentValue}
-															</span>
-															<button
-																class="icon-btn"
-																name="currentValue"
-																value={target.currentValue + COUNT_STEP}
-																title={t('goals.oneMore')}
-																aria-label={t('goals.oneMoreUnit', {
-																	unit: target.unit || t('goals.towardsThis')
-																}).trim()}
-															>
-																<Icon name="plus" />
-															</button>
-														{:else}
-															<NumberBox
-																autocomplete="off"
-																name="currentValue"
-																min="0"
-																step="any"
-																value={target.currentValue}
-																aria-label={t('goals.progressTowards', {
-																	value: target.targetValue,
-																	unit: target.unit
-																}).trim()}
-																class="w-20"
-															/>
-														{/if}
-														<span class="tabular text-xs text-gray-500">
-															/ {target.targetValue}
-															{target.unit}
-														</span>
-														<div class="h-1 w-16 shrink-0 bg-gray-200">
-															<div
-																class="h-full"
-																style="width: {Math.round(target.fraction * 100)}%;
-																	background-color: {goal.areaColor ?? accent}"
-															></div>
-														</div>
-														{#if !target.whole && !target.measureActivity}
-															<button
-																class="icon-btn"
-																title={t('goals.saveProgress')}
-																aria-label={t('goals.saveProgress')}
-															>
-																<Icon name="check" />
-															</button>
-														{/if}
-													</form>
-												{/each}
-											</div>
-										{/if}
-
-										<!--
-											What counts towards this goal, under the goal rather than
-											among the buttons that close it. It reveals a part of this
-											card, so it belongs to the card's own column.
-										-->
-										<button
-											onclick={() => (openTasksId = openTasksId === goal.id ? null : goal.id)}
-											class="btn btn-sm btn-quiet mt-2"
-											title={t('goals.whatCountsTowardsThisGoal')}
-											>{t('goals.tasks', {
-												length:
-													goal.linkedSlotIds.length +
-													goal.linkedTodoIds.length +
-													goal.linkedActivityIds.length
-											})}<Icon
-												name={openTasksId === goal.id ? 'chevron-up' : 'chevron-down'}
-												size={12}
-											/>
-										</button>
-									</div>
-								</div>
-
-								<!--
-									The controls, in three treatments, starting wherever the goal's
-									text happened to end. The rail puts them at the same place on
-									every row, and the two that matter — how it ended — keep their
-									words, because "achieved" and "missed" are a judgement you make
-									once and not a routine action you would recognise from a glyph.
-
-									Four of them, not five: "Tasks (n)" went back to the goal's own
-									column below. It is a disclosure for what is already on the card
-									and not something done to the goal, and as the rail's fifth
-									member it was what pushed the row past the width of a phone —
-									which put delete on a line of its own, alone, in the corner.
-								-->
-								<!--
-									The words on the left, under the goal's own text; the two
-									glyphs against the right edge. On a phone the whole rail sat
-									left and the right half of the card was air.
-								-->
-								<!--
-									Full width only where the card is a column.
-
-									`.row-actions` is `flex: none`, so `w-full` on a row makes
-									it take the whole width and the text beside it collapses to
-									one character per line. That is what a goal card did on a
-									desktop: the title read downwards, a letter at a time.
-								-->
-								<div class="row-actions w-full gap-1 sm:w-auto">
-									{#if goal.status === 'open'}
-										<!--
-											Closing a goal is a verdict on months of work, and it was
-											one click with nothing between the click and the verdict.
-											Both answers wait a few seconds now, the way ticking a
-											task off does.
-										-->
-										<button
-											type="button"
-											class="btn btn-sm"
-											title={t('goals.closeItAsDone')}
-											onclick={() => closeLater(goal, 'achieved')}
-										>
-											{t('goals.achieved')}
-										</button>
-										<button
-											type="button"
-											class="btn btn-sm btn-quiet"
-											title={t('goals.closeItAsNotDone')}
-											onclick={() => closeLater(goal, 'missed')}
-										>
-											{t('goals.missed')}
-										</button>
-									{:else}
-										<form method="post" action="?/close" use:enhance>
-											<input type="hidden" name="id" value={goal.id} />
-											<input type="hidden" name="status" value="open" />
-											<button class="btn btn-sm">{t('goals.reopen')}</button>
-										</form>
-									{/if}
-									<button
-										title={t('ui.edit')}
-										aria-label={t('ui.edit')}
-										onclick={() => openEdit(goal)}
-										class="icon-btn ml-auto"><Icon name="edit" /></button
-									>
-									{#if confirmingDelete === goal.id}
-										<form method="post" action="?/remove" use:enhance>
-											<input type="hidden" name="id" value={goal.id} />
-											<button class="btn btn-sm btn-danger" use:armed>{t('goals.confirm')}</button>
-										</form>
-									{:else}
-										<button
-											title={t('ui.delete')}
-											aria-label={t('ui.delete')}
-											onclick={() => (confirmingDelete = goal.id)}
-											class="icon-btn icon-btn-danger"><Icon name="trash" /></button
-										>
-									{/if}
-								</div>
-							</div>
-
-							{#if openTasksId === goal.id}
-								<!--
-									What already counts, on the card. The modal is for choosing;
-									this is for looking and ticking — a list you could see but not
-									tick sent you to the todo page for the one action the list
-									exists for.
-								-->
-								<div class="mt-3 border border-gray-200 bg-gray-50 p-3">
-									{#each data.allTodos.filter( (t) => goal.linkedTodoIds.includes(t.id) ) as todo (todo.id)}
-										<form method="post" action="?/setTodoStatus" use:enhance class="contents">
-											<input type="hidden" name="todoId" value={todo.id} />
-											<input
-												type="hidden"
-												name="status"
-												value={todo.status === 'done' ? 'todo' : 'done'}
-											/>
-											<label class="flex cursor-pointer items-center gap-2 py-1 text-sm">
-												<input
-													type="checkbox"
-													checked={todo.status === 'done'}
-													onchange={(e) => e.currentTarget.form?.requestSubmit()}
-													class="h-3.5 w-3.5"
-												/>
-												<span class={todo.status === 'done' ? 'text-gray-400' : 'text-gray-800'}
-													>{todo.title}</span
-												>
-											</label>
-										</form>
-									{/each}
-
-									{#each data.slots.filter( (sl) => goal.linkedSlotIds.includes(sl.id) ) as sl (sl.id)}
-										<p class="py-1 text-xs text-gray-500">
-											<span class="tabular">{sl.startTime}</span>{t('goals.everyWeekIts', {
-												name: sl.name
-											})}
-										</p>
-									{/each}
-									{#each data.activities.filter( (a) => goal.linkedActivityIds.includes(a.id) ) as a (a.id)}
-										<p class="py-1 text-xs text-gray-500">
-											{t('goals.everyBlockOf', { name: a.name })}
-										</p>
-									{/each}
-
-									{#if goal.linkedTodoIds.length + goal.linkedSlotIds.length + goal.linkedActivityIds.length === 0}
-										<p class="py-1 text-xs text-gray-500">
-											{t('goals.nothingLinkedYetProgress')}
-										</p>
-									{/if}
-
-									<button
-										type="button"
-										class="btn btn-sm mt-2"
-										onclick={() => {
-											showDoneTodos = false;
-											linkingId = goal.id;
-										}}
-									>
-										{t('goals.chooseTasks')}
-									</button>
-								</div>
-							{/if}
-						</div>
+					{#each column.loose as goal (goal.id)}
+						{@render card(goal)}
 					{/each}
 
 					{#if column.goals.length === 0}
 						<p class="py-3 text-xs text-gray-500">{t('goals.nothingAtThisHorizon')}</p>
 					{/if}
 				</div>
+
+				<!--
+					A notebook's own goals, under a rule with its name on it, so the
+					list says which of these are about a subject and which are not.
+					The name is a link: the notebook is where the rest of it is.
+				-->
+				{#each column.filed as book (book.id)}
+					<div class="mt-3 border-t-2 border-gray-300 pt-2">
+						<a
+							href={resolve('/notebooks/[id]', { id: String(book.id) })}
+							class="eyebrow flex items-center gap-1.5 text-gray-600 hover:text-gray-900"
+						>
+							<Icon name="notebook" size={12} />
+							{book.title}
+						</a>
+						<div class="mt-1 divide-y divide-gray-200">
+							{#each book.goals as goal (goal.id)}
+								{@render card(goal)}
+							{/each}
+						</div>
+					</div>
+				{/each}
 			</section>
 		{/each}
 	</div>
 
-	<Modal
-		open={linkingId !== null}
+	<GoalLinksModal
+		goal={linking}
+		activities={data.activities}
+		slots={data.slots}
+		todos={data.todos}
+		allTodos={data.allTodos}
+		action={GOAL_ROOM_ACTIONS.setLinks}
 		error={form?.message}
 		onclose={() => (linkingId = null)}
-		title={t('goals.linkedTasks')}
-		description={t('goals.linkedTasksMakeProgress')}
-		size="lg"
-	>
-		{#if linking}
-			<form
-				id="links-form"
-				method="post"
-				action="?/setLinks"
-				use:enhance={() =>
-					async ({ update }) => {
-						await update({ reset: false });
-						linkingId = null;
-					}}
-			>
-				<input type="hidden" name="id" value={linking.id} />
-
-				<div class="grid gap-4 sm:grid-cols-3">
-					<div>
-						<span class="eyebrow text-gray-600">{t('goals.activities')}</span>
-						<div class="mt-2 max-h-64 space-y-1 overflow-y-auto">
-							{#each data.activities as a (a.id)}
-								<label class="flex items-center gap-2 text-sm text-gray-700">
-									<input
-										type="checkbox"
-										name="activityId"
-										value={a.id}
-										checked={linking.linkedActivityIds.includes(a.id)}
-										class="h-3 w-3"
-									/>
-									{a.name}
-								</label>
-							{:else}
-								<EmptyState icon="planner" title={t('goals.noActivitiesYet')} compact />
-							{/each}
-						</div>
-					</div>
-					<div>
-						<span class="eyebrow text-gray-600">{t('goals.weeklyBlocks')}</span>
-						<div class="mt-2 max-h-64 space-y-1 overflow-y-auto">
-							{#each data.slots as sl (sl.id)}
-								<label class="flex items-center gap-2 text-sm text-gray-700">
-									<input
-										type="checkbox"
-										name="slotId"
-										value={sl.id}
-										checked={linking.linkedSlotIds.includes(sl.id)}
-										class="h-3 w-3"
-									/>
-									<span class="tabular">{sl.startTime}</span>
-									{sl.name}
-								</label>
-							{:else}
-								<EmptyState icon="calendar" title={t('goals.noWeeklyBlocksYet')} compact />
-							{/each}
-						</div>
-					</div>
-					<div>
-						<span class="eyebrow text-gray-600">{t('goals.toDos')}</span>
-						<div class="mt-2 max-h-64 space-y-1 overflow-y-auto">
-							<!--
-								Open to-dos, plus any DONE one this goal already counts.
-
-								setGoalLinks replaces the whole set, which is only safe while
-								this form shows a checkbox for everything linked — and it
-								stopped: done to-dos left the list, so saving the form silently
-								unlinked them and the progress bar dropped. They stay here,
-								ticked and struck through, until somebody unticks them; the
-								rest of the finished list unfolds on request below, so a goal
-								can also count something already done.
-							-->
-							{#each [...data.todos, ...data.allTodos.filter((t) => t.status === 'done' && (showDoneTodos || linking.linkedTodoIds.includes(t.id)))] as t (t.id)}
-								<label class="flex items-center gap-2 text-sm text-gray-700">
-									<input
-										type="checkbox"
-										name="todoId"
-										value={t.id}
-										checked={linking.linkedTodoIds.includes(t.id)}
-										class="h-3 w-3"
-									/>
-									<span class={'status' in t && t.status === 'done' ? 'text-gray-400' : ''}
-										>{t.title}</span
-									>
-								</label>
-							{:else}
-								<p class="text-xs text-gray-500">{t('goals.noOpenTodos')}</p>
-							{/each}
-						</div>
-						{#if !showDoneTodos}
-							<button
-								type="button"
-								class="btn btn-sm btn-quiet mt-2"
-								onclick={() => (showDoneTodos = true)}
-							>
-								{t('goals.showCompletedToDos')}
-							</button>
-						{/if}
-					</div>
-				</div>
-			</form>
-		{/if}
-
-		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (linkingId = null)}>{t('ui.cancel')}</button>
-			<button type="submit" form="links-form" class="btn btn-primary">{t('goals.saveLinks')}</button
-			>
-		{/snippet}
-	</Modal>
+	/>
 </div>

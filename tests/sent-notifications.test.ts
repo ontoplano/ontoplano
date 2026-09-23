@@ -61,6 +61,24 @@ describe('what the badge counts', () => {
 		expect(sent.unreadCount(ctx())).toBe(before + 1);
 	});
 
+	/*
+	 * A reminder raised by the page you were looking at.
+	 *
+	 * It belongs in the list — "what was I told today" has to have one answer
+	 * whether the app was open or not — and it does not belong in the count,
+	 * because you watched it appear. A badge for something you have already
+	 * seen is a badge that means nothing.
+	 */
+	it('does not count one that was seen as it arrived', () => {
+		const before = sent.unreadCount(ctx());
+		const one = sent.record(OWNER, { title: 'cooking', seen: true });
+
+		expect(sent.unreadCount(ctx())).toBe(before);
+		expect(one.readAt).not.toBeNull();
+		// And it is still in the list, which is the whole point of writing it.
+		expect(sent.list(ctx()).some((row) => row.id === one.id)).toBe(true);
+	});
+
 	it('falls when one is read, and stays there when it is read again', () => {
 		const one = sent.record(OWNER, { title: 'to be read' });
 		const before = sent.unreadCount(ctx());

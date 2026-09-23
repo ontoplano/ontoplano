@@ -21,13 +21,57 @@ data, and the picker shows the sentence.
 Grant the narrowest set that works. A token lives on a phone, in a config
 file, in somebody else's service — what it cannot read cannot leak.
 
+## Pictures and recordings come with what refers to them
+
+A file has no permission of its own. It answers to whatever it is used in: a
+picture pasted into a note is reachable by a key with `notes:read`, a
+screenshot on a task by `tasks:read`, somebody's face by `people:read`, a
+recipe's photograph by `kitchen:read`, and a recording by whichever of those
+holds it. A file nothing refers to is reachable by nobody.
+
+There is no `media:read`, deliberately. Granting "you may read my notebooks"
+and then asking a second question about the pictures inside them is the same
+question twice, and two answers that can disagree — a note readable but its
+photographs not, for no reason anybody chose. The grant a file needs is the
+grant its referrer needs.
+
+An assistant speaking MCP asks for one with the **`media`** tool, handing it
+the link the writing already gave it:
+
+```json
+{ "name": "media", "arguments": { "path": "/media/31" } }
+```
+
+A script holding the key itself fetches the same file the way a browser does:
+
+```sh
+curl -H "Authorization: Bearer $ONTOPLANO_KEY" \
+  https://your-instance/media/31 --output picture.png
+
+curl -H "Authorization: Bearer $ONTOPLANO_KEY" \
+  https://your-instance/media/audio/44 --output recording.webm
+```
+
+Either way the link is the one written into the markdown — `![a photo](/media/31)`
+and `[said](/media/audio/44)` — so a tool that reads a note hands over
+everything needed to reach what is in it.
+
+A file the key may not reach answers **404**, the same as one that does not
+exist. That is on purpose: a different answer for "exists but not yours" is a
+way to count somebody else's pictures one id at a time.
+
+One gap worth knowing: a picture that lives only in a gallery album is
+reachable by nobody. The gallery has never had a scope of its own, and this is
+not the change that invents one.
+
 ## Tying a key to one thing
 
 A scope is about the account: `tasks:write` is every to-do there is. The thing
 people usually want to hand an assistant is narrower than that — work on _this_
 project with me — so a key can also be tied to a single notebook. Such a key
-sees that notebook, the tasks and goals filed under it, and the notes written
-in it. Everything else in the account is not refused to it; it is not there.
+sees that notebook, the tasks and goals filed under it, the notes written in
+it, and the pictures and recordings inside those. Everything else in the
+account is not refused to it; it is not there.
 
 The narrowing is not a filter the tools apply. Each tool declares which of its
 arguments name a thing and what kind, and the id is resolved against the rows

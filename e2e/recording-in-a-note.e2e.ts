@@ -17,6 +17,7 @@ test.use({
 });
 
 test('records into a note, and the note plays it back', async ({ page }) => {
+	test.setTimeout(120_000);
 	await register(page, testEmail('note-audio'));
 	await visit(page, '/notebooks/diary');
 
@@ -32,9 +33,16 @@ test('records into a note, and the note plays it back', async ({ page }) => {
 	await page.getByRole('textbox', { name: 'What to call it' }).fill('said aloud');
 	await page.getByRole('button', { name: 'Save', exact: true }).click();
 
-	// The line it wrote is the shape everything else reads.
+	/*
+	 * The line it wrote is the shape everything else reads.
+	 *
+	 * Given room for the upload rather than the default five seconds: the line
+	 * only appears once the audio is stored and has an id, and on a loaded CI
+	 * runner that is a network round trip with a blob on it. `pictures.e2e`
+	 * waits twenty for the same reason, on a file a fraction of the size.
+	 */
 	const box = page.locator('textarea[name="content"]').first();
-	await expect(box).toHaveValue(/\[said aloud\]\(\/media\/audio\/\d+\)/);
+	await expect(box).toHaveValue(/\[said aloud\]\(\/media\/audio\/\d+\)/, { timeout: 20_000 });
 
 	await box.fill(`Before it.\n\n${await box.inputValue()}`);
 	await page.getByRole('button', { name: 'Post entry' }).click();

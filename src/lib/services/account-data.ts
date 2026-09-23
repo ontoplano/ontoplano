@@ -174,6 +174,8 @@ export const USER_TABLES: OwnedTable[] = [
 	owned('habits', schema.habits as never),
 	owned('taskRecords', schema.taskRecords as never),
 	owned('suppressedSlots', schema.suppressedSlots as never),
+	// The join before the rows it points at, as with `todoTags`.
+	owned('exceptionalTaskTags', schema.exceptionalTaskTags as never),
 	owned('exceptionalTasks', schema.exceptionalTasks as never),
 	owned('auditEvents', schema.auditEvents as never),
 	// What the assistants did, before/after included — as much the account's
@@ -199,9 +201,18 @@ export const USER_TABLES: OwnedTable[] = [
 	owned('media', schema.media as never),
 	// Last of the subjects: entries, todos, goals and blocks all point at it.
 	owned('notebooks', schema.notebooks as never),
+	owned('recurringTaskTags', schema.recurringTaskTags as never),
 	owned('recurringTasks', schema.recurringTasks as never),
 	owned('activities', schema.activities as never),
 	owned('categories', schema.categories as never),
+	// The chat's provider key. It leaves with the export and comes back with
+	// the import on purpose: an export is the person's own hands, and a moved
+	// instance whose assistant still answers is the point of moving one.
+	owned('modelProviderKeys', schema.modelProviderKeys as never),
+	// Half-finished handshakes with an assistant. They die in five minutes and
+	// are listed for the same reason everything else is: a table with a
+	// `user_id` that nothing names is a table the deletion leaves behind.
+	owned('oauthCodes', schema.oauthCodes as never),
 	owned('userSettings', schema.userSettings as never)
 ];
 

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
+import { openFilters } from './helpers/filters';
 import { visit } from './helpers/visit';
 
 /**
@@ -12,9 +13,9 @@ import { visit } from './helpers/visit';
  * looking for rather than the absence of a filter.
  */
 async function addTodo(page: import('@playwright/test').Page, title: string) {
-	await page.getByRole('button', { name: 'New to-do' }).click();
+	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('[name="heading"]').first().fill(title);
-	await page.getByRole('button', { name: 'Create todo' }).click();
+	await page.getByRole('button', { name: 'Create task' }).click();
 	await expect(page.getByText(title).first()).toBeVisible();
 }
 
@@ -27,15 +28,18 @@ test('a todo can be put away and taken back out', async ({ page }) => {
 	// One todo on the page, so one such button.
 	await page.getByRole('button', { name: 'Put it away' }).click();
 
-	// Gone from the list, and not by being finished.
+	// Gone from the list, and not by being finished. The empty state offers
+	// the way back itself, so nothing needs unfolding to see it.
 	await expect(page.getByText('the tax thing')).toHaveCount(0);
 
-	await page.getByRole('button', { name: 'Show archived' }).click();
+	await page.getByRole('button', { name: /^Archived/ }).click();
 	await expect(page.getByText('the tax thing').first()).toBeVisible();
 
-	// And back, unchanged.
+	// And back, unchanged. The hide toggle lives with the folded filters.
 	await page.getByRole('button', { name: 'Take it back out' }).first().click();
-	await page.getByRole('button', { name: 'Hide archived' }).click();
+	await openFilters(page);
+	// One label either way now: the pressed state says which — see `RoomToolbar`.
+	await page.getByRole('button', { name: /^Archived/ }).click();
 	await expect(page.getByText('the tax thing').first()).toBeVisible();
 });
 
@@ -49,14 +53,17 @@ test('the notebook filter has an answer for the unfiled', async ({ page }) => {
 	await visit(page, '/tasks/todo');
 	await addTodo(page, 'a task nobody filed');
 
-	const filter = page.getByRole('combobox').first();
-	await expect(filter.getByRole('option', { name: 'Not in one' })).toBeAttached();
-	await expect(filter.getByRole('option', { name: 'Kitchen' })).toBeAttached();
+	await openFilters(page);
+	const filter = page.getByRole('button', { name: 'Notebook', exact: true });
+	await filter.click();
+	await expect(page.getByRole('option', { name: 'Not in one' })).toBeVisible();
+	await expect(page.getByRole('option', { name: 'Kitchen' })).toBeVisible();
 
 	// Filed under nothing, so "Not in one" keeps it and the notebook drops it.
-	await filter.selectOption('none');
+	await page.getByRole('option', { name: 'Not in one' }).click();
 	await expect(page.getByText('a task nobody filed').first()).toBeVisible();
 
-	await filter.selectOption({ label: 'Kitchen' });
+	await filter.click();
+	await page.getByRole('option', { name: 'Kitchen' }).click();
 	await expect(page.getByText('a task nobody filed')).toHaveCount(0);
 });

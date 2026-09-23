@@ -7,7 +7,7 @@ out of the schema — so this page cannot disagree with the schema, and a
 column added without a migration does not appear here because it does not
 exist.
 
-**76 tables.**
+**81 tables.**
 
 | Table                                                       | Columns | Belongs to a user |
 | ----------------------------------------------------------- | ------- | ----------------- |
@@ -24,13 +24,14 @@ exist.
 | [`bills`](#bills)                                           | 17      | yes               |
 | [`calendar_feeds`](#calendar_feeds)                         | 9       | yes               |
 | [`categories`](#categories)                                 | 5       | yes               |
-| [`client_errors`](#client_errors)                           | 8       | yes               |
+| [`client_errors`](#client_errors)                           | 9       | yes               |
 | [`daily_wins`](#daily_wins)                                 | 6       | yes               |
 | [`data_points`](#data_points)                               | 10      | yes               |
 | [`data_streams`](#data_streams)                             | 14      | yes               |
-| [`diary_entries`](#diary_entries)                           | 12      | yes               |
-| [`diary_entry_tags`](#diary_entry_tags)                     | 4       | yes               |
+| [`diary_entries`](#diary_entries)                           | 13      | yes               |
+| [`diary_entry_tags`](#diary_entry_tags)                     | 5       | yes               |
 | [`entry_people`](#entry_people)                             | 4       | yes               |
+| [`exceptional_task_tags`](#exceptional_task_tags)           | 5       | yes               |
 | [`exceptional_tasks`](#exceptional_tasks)                   | 19      | yes               |
 | [`finance_rules`](#finance_rules)                           | 8       | yes               |
 | [`finance_transactions`](#finance_transactions)             | 10      | yes               |
@@ -51,8 +52,11 @@ exist.
 | [`mail_failures`](#mail_failures)                           | 11      | —                 |
 | [`media`](#media)                                           | 10      | yes               |
 | [`media_tags`](#media_tags)                                 | 4       | yes               |
+| [`model_provider_keys`](#model_provider_keys)               | 9       | yes               |
 | [`newsletter_issues`](#newsletter_issues)                   | 6       | —                 |
-| [`notebooks`](#notebooks)                                   | 8       | yes               |
+| [`notebooks`](#notebooks)                                   | 10      | yes               |
+| [`oauth_clients`](#oauth_clients)                           | 7       | —                 |
+| [`oauth_codes`](#oauth_codes)                               | 11      | yes               |
 | [`people`](#people)                                         | 12      | yes               |
 | [`plan_members`](#plan_members)                             | 5       | —                 |
 | [`planning_schemes`](#planning_schemes)                     | 5       | yes               |
@@ -63,6 +67,7 @@ exist.
 | [`recipe_images`](#recipe_images)                           | 7       | yes               |
 | [`recipe_items`](#recipe_items)                             | 8       | yes               |
 | [`recipes`](#recipes)                                       | 12      | yes               |
+| [`recurring_task_tags`](#recurring_task_tags)               | 5       | yes               |
 | [`recurring_tasks`](#recurring_tasks)                       | 20      | yes               |
 | [`reminder_sounds`](#reminder_sounds)                       | 7       | yes               |
 | [`reminders`](#reminders)                                   | 12      | yes               |
@@ -73,10 +78,10 @@ exist.
 | [`subscribers`](#subscribers)                               | 7       | —                 |
 | [`subscriptions`](#subscriptions)                           | 15      | yes               |
 | [`suppressed_slots`](#suppressed_slots)                     | 5       | yes               |
-| [`tags`](#tags)                                             | 3       | yes               |
+| [`tags`](#tags)                                             | 4       | yes               |
 | [`task_records`](#task_records)                             | 15      | yes               |
-| [`todo_tags`](#todo_tags)                                   | 4       | yes               |
-| [`todo_tasks`](#todo_tasks)                                 | 17      | yes               |
+| [`todo_tags`](#todo_tags)                                   | 5       | yes               |
+| [`todo_tasks`](#todo_tasks)                                 | 18      | yes               |
 | [`user`](#user)                                             | 11      | —                 |
 | [`user_settings`](#user_settings)                           | 4       | yes               |
 | [`verification`](#verification)                             | 6       | —                 |
@@ -354,6 +359,7 @@ Indexes:
 | `url`        | text    | null     | —                     | —                 |
 | `stack`      | text    | null     | —                     | —                 |
 | `user_agent` | text    | null     | —                     | —                 |
+| `build`      | text    | null     | —                     | —                 |
 | `kind`       | text    | not null | `'crash'`             | —                 |
 | `created_at` | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
@@ -431,6 +437,7 @@ Indexes:
 | `user_id`      | text    | not null | —                     | → `user.id`       |
 | `seq`          | integer | not null | `0`                   | —                 |
 | `notebook_seq` | integer | null     | —                     | —                 |
+| `diary_seq`    | integer | null     | —                     | —                 |
 | `title`        | text    | not null | `''`                  | —                 |
 | `content`      | text    | not null | —                     | —                 |
 | `for_date`     | text    | null     | —                     | —                 |
@@ -451,12 +458,13 @@ Indexes:
 
 ## diary_entry_tags
 
-| Column     | Type    | Null     | Default | Notes                |
-| ---------- | ------- | -------- | ------- | -------------------- |
-| `id`       | integer | not null | —       | primary key, auto    |
-| `user_id`  | text    | not null | —       | → `user.id`          |
-| `entry_id` | integer | not null | —       | → `diary_entries.id` |
-| `tag_id`   | integer | not null | —       | → `tags.id`          |
+| Column      | Type    | Null     | Default | Notes                |
+| ----------- | ------- | -------- | ------- | -------------------- |
+| `id`        | integer | not null | —       | primary key, auto    |
+| `user_id`   | text    | not null | —       | → `user.id`          |
+| `entry_id`  | integer | not null | —       | → `diary_entries.id` |
+| `tag_id`    | integer | not null | —       | → `tags.id`          |
+| `tagged_at` | text    | null     | —       | —                    |
 
 Indexes:
 
@@ -480,6 +488,22 @@ Indexes:
 - `entry_people_person_idx` on `person_id`
 - `entry_people_unique` on `entry_id`, `person_id` — unique
 
+## exceptional_task_tags
+
+| Column      | Type    | Null     | Default | Notes                    |
+| ----------- | ------- | -------- | ------- | ------------------------ |
+| `id`        | integer | not null | —       | primary key, auto        |
+| `user_id`   | text    | not null | —       | → `user.id`              |
+| `task_id`   | integer | not null | —       | → `exceptional_tasks.id` |
+| `tag_id`    | integer | not null | —       | → `tags.id`              |
+| `tagged_at` | text    | null     | —       | —                        |
+
+Indexes:
+
+- `exceptional_task_tags_user_idx` on `user_id`
+- `exceptional_task_tags_task_idx` on `task_id`
+- `exceptional_task_tags_tag_idx` on `tag_id`
+
 ## exceptional_tasks
 
 | Column                | Type    | Null     | Default               | Notes             |
@@ -498,7 +522,7 @@ Indexes:
 | `notebook_id`         | integer | null     | —                     | → `notebooks.id`  |
 | `urgency`             | integer | null     | —                     | —                 |
 | `interest`            | integer | null     | —                     | —                 |
-| `energy`              | integer | null     | —                     | —                 |
+| `ease`                | integer | null     | —                     | —                 |
 | `meta`                | text    | not null | `'{}'`                | —                 |
 | `recipe_id`           | integer | null     | —                     | → `recipes.id`    |
 | `workout_id`          | integer | null     | —                     | → `workouts.id`   |
@@ -511,9 +535,9 @@ Indexes:
 
 Checks — enforced by the database, not only by the service layer:
 
-- `exceptional_urgency_range`: `"exceptional_tasks"."urgency" IS NULL OR "exceptional_tasks"."urgency" BETWEEN 1 AND 5`
-- `exceptional_interest_range`: `"exceptional_tasks"."interest" IS NULL OR "exceptional_tasks"."interest" BETWEEN 1 AND 5`
-- `exceptional_energy_range`: `"exceptional_tasks"."energy" IS NULL OR "exceptional_tasks"."energy" BETWEEN 1 AND 5`
+- `exceptional_urgency_range`: `"exceptional_tasks"."urgency" IS NULL OR "exceptional_tasks"."urgency" BETWEEN 0 AND 5`
+- `exceptional_interest_range`: `"exceptional_tasks"."interest" IS NULL OR "exceptional_tasks"."interest" BETWEEN 0 AND 5`
+- `exceptional_ease_range`: `"exceptional_tasks"."ease" IS NULL OR "exceptional_tasks"."ease" BETWEEN 0 AND 5`
 - `exceptional_mode_category`: `"exceptional_tasks"."mode" != 'category' OR "exceptional_tasks"."category_id" IS NOT NULL`
 - `exceptional_mode_activity`: `"exceptional_tasks"."mode" != 'activity' OR "exceptional_tasks"."activity_id" IS NOT NULL`
 - `exceptional_mode_workout`: `"exceptional_tasks"."mode" != 'workout' OR "exceptional_tasks"."workout_id" IS NOT NULL`
@@ -890,6 +914,24 @@ Indexes:
 - `media_tags_tag_idx` on `tag_id`
 - `media_tags_media_tag_unique` on `media_id`, `tag_id` — unique
 
+## model_provider_keys
+
+| Column       | Type    | Null     | Default | Notes             |
+| ------------ | ------- | -------- | ------- | ----------------- |
+| `id`         | integer | not null | —       | primary key, auto |
+| `user_id`    | text    | not null | —       | → `user.id`       |
+| `provider`   | text    | not null | —       | —                 |
+| `key`        | text    | not null | —       | —                 |
+| `prefix`     | text    | not null | —       | —                 |
+| `model`      | text    | null     | —       | —                 |
+| `base_url`   | text    | null     | —       | —                 |
+| `created_at` | text    | not null | —       | —                 |
+| `updated_at` | text    | not null | —       | —                 |
+
+Indexes:
+
+- `model_provider_keys_user_unique` on `user_id` — unique
+
 ## newsletter_issues
 
 | Column    | Type    | Null     | Default               | Notes             |
@@ -913,6 +955,8 @@ Indexes:
 | `user_id`            | text    | not null | —                     | → `user.id`       |
 | `title`              | text    | not null | —                     | —                 |
 | `description`        | text    | null     | `''`                  | —                 |
+| `picture_id`         | integer | null     | —                     | → `media.id`      |
+| `default_tags`       | text    | not null | `''`                  | —                 |
 | `shared_with_family` | integer | not null | `false`               | —                 |
 | `closed_at`          | text    | null     | —                     | —                 |
 | `created_at`         | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
@@ -922,6 +966,43 @@ Indexes:
 
 - `notebooks_user_idx` on `user_id`
 - `notebooks_user_title_unique` on `user_id`, `title` — unique
+
+## oauth_clients
+
+| Column          | Type    | Null     | Default | Notes             |
+| --------------- | ------- | -------- | ------- | ----------------- |
+| `id`            | integer | not null | —       | primary key, auto |
+| `client_id`     | text    | not null | —       | —                 |
+| `name`          | text    | not null | —       | —                 |
+| `redirect_uris` | text    | not null | —       | —                 |
+| `uri`           | text    | null     | —       | —                 |
+| `created_at`    | text    | not null | —       | —                 |
+| `updated_at`    | text    | not null | —       | —                 |
+
+Indexes:
+
+- `oauth_clients_client_id_unique` on `client_id` — unique
+
+## oauth_codes
+
+| Column           | Type    | Null     | Default | Notes             |
+| ---------------- | ------- | -------- | ------- | ----------------- |
+| `id`             | integer | not null | —       | primary key, auto |
+| `code_hash`      | text    | not null | —       | —                 |
+| `client_id`      | text    | not null | —       | —                 |
+| `user_id`        | text    | not null | —       | → `user.id`       |
+| `scopes`         | text    | not null | `''`    | —                 |
+| `code_challenge` | text    | not null | —       | —                 |
+| `redirect_uri`   | text    | not null | —       | —                 |
+| `resource`       | text    | null     | —       | —                 |
+| `expires_at`     | text    | not null | —       | —                 |
+| `used_at`        | text    | null     | —       | —                 |
+| `created_at`     | text    | not null | —       | —                 |
+
+Indexes:
+
+- `oauth_codes_hash_unique` on `code_hash` — unique
+- `oauth_codes_user_idx` on `user_id`
 
 ## people
 
@@ -1111,6 +1192,22 @@ Checks — enforced by the database, not only by the service layer:
 - `recipes_servings_positive`: `"recipes"."servings" IS NULL OR "recipes"."servings" > 0`
 - `recipes_minutes_positive`: `"recipes"."minutes" IS NULL OR "recipes"."minutes" > 0`
 
+## recurring_task_tags
+
+| Column      | Type    | Null     | Default | Notes                  |
+| ----------- | ------- | -------- | ------- | ---------------------- |
+| `id`        | integer | not null | —       | primary key, auto      |
+| `user_id`   | text    | not null | —       | → `user.id`            |
+| `task_id`   | integer | not null | —       | → `recurring_tasks.id` |
+| `tag_id`    | integer | not null | —       | → `tags.id`            |
+| `tagged_at` | text    | null     | —       | —                      |
+
+Indexes:
+
+- `recurring_task_tags_user_idx` on `user_id`
+- `recurring_task_tags_task_idx` on `task_id`
+- `recurring_task_tags_tag_idx` on `tag_id`
+
 ## recurring_tasks
 
 | Column                | Type    | Null     | Default               | Notes             |
@@ -1129,7 +1226,7 @@ Checks — enforced by the database, not only by the service layer:
 | `remind_lead_minutes` | integer | null     | —                     | —                 |
 | `urgency`             | integer | null     | —                     | —                 |
 | `interest`            | integer | null     | —                     | —                 |
-| `energy`              | integer | null     | —                     | —                 |
+| `ease`                | integer | null     | —                     | —                 |
 | `meta`                | text    | not null | `'{}'`                | —                 |
 | `recipe_id`           | integer | null     | —                     | → `recipes.id`    |
 | `workout_id`          | integer | null     | —                     | → `workouts.id`   |
@@ -1144,9 +1241,9 @@ Indexes:
 
 Checks — enforced by the database, not only by the service layer:
 
-- `slots_urgency_range`: `"recurring_tasks"."urgency" IS NULL OR "recurring_tasks"."urgency" BETWEEN 1 AND 5`
-- `slots_interest_range`: `"recurring_tasks"."interest" IS NULL OR "recurring_tasks"."interest" BETWEEN 1 AND 5`
-- `slots_energy_range`: `"recurring_tasks"."energy" IS NULL OR "recurring_tasks"."energy" BETWEEN 1 AND 5`
+- `slots_urgency_range`: `"recurring_tasks"."urgency" IS NULL OR "recurring_tasks"."urgency" BETWEEN 0 AND 5`
+- `slots_interest_range`: `"recurring_tasks"."interest" IS NULL OR "recurring_tasks"."interest" BETWEEN 0 AND 5`
+- `slots_ease_range`: `"recurring_tasks"."ease" IS NULL OR "recurring_tasks"."ease" BETWEEN 0 AND 5`
 - `slots_weekday_range`: `"recurring_tasks"."weekday" >= 0 AND "recurring_tasks"."weekday" <= 6`
 - `slots_mode_category`: `"recurring_tasks"."mode" != 'category' OR "recurring_tasks"."category_id" IS NOT NULL`
 - `slots_mode_activity`: `"recurring_tasks"."mode" != 'activity' OR "recurring_tasks"."activity_id" IS NOT NULL`
@@ -1332,6 +1429,7 @@ Indexes:
 | `id`      | integer | not null | —       | primary key, auto |
 | `user_id` | text    | not null | —       | → `user.id`       |
 | `name`    | text    | not null | —       | —                 |
+| `color`   | text    | null     | —       | —                 |
 
 Indexes:
 
@@ -1355,7 +1453,7 @@ Indexes:
 | `label_override`       | text    | null     | —                     | —                        |
 | `urgency_override`     | integer | null     | —                     | —                        |
 | `interest_override`    | integer | null     | —                     | —                        |
-| `energy_override`      | integer | null     | —                     | —                        |
+| `ease_override`        | integer | null     | —                     | —                        |
 | `created_at`           | text    | not null | `(CURRENT_TIMESTAMP)` | —                        |
 
 Indexes:
@@ -1374,12 +1472,13 @@ Checks — enforced by the database, not only by the service layer:
 
 ## todo_tags
 
-| Column    | Type    | Null     | Default | Notes             |
-| --------- | ------- | -------- | ------- | ----------------- |
-| `id`      | integer | not null | —       | primary key, auto |
-| `user_id` | text    | not null | —       | → `user.id`       |
-| `todo_id` | integer | not null | —       | → `todo_tasks.id` |
-| `tag_id`  | integer | not null | —       | → `tags.id`       |
+| Column      | Type    | Null     | Default | Notes             |
+| ----------- | ------- | -------- | ------- | ----------------- |
+| `id`        | integer | not null | —       | primary key, auto |
+| `user_id`   | text    | not null | —       | → `user.id`       |
+| `todo_id`   | integer | not null | —       | → `todo_tasks.id` |
+| `tag_id`    | integer | not null | —       | → `tags.id`       |
+| `tagged_at` | text    | null     | —       | —                 |
 
 Indexes:
 
@@ -1399,13 +1498,14 @@ Indexes:
 | `completed_at`   | text    | null     | —                     | —                 |
 | `category_id`    | integer | null     | —                     | → `categories.id` |
 | `notebook_id`    | integer | null     | —                     | → `notebooks.id`  |
+| `notebook_seq`   | integer | null     | —                     | —                 |
 | `scheduled_date` | text    | null     | —                     | —                 |
 | `status`         | text    | not null | `'todo'`              | —                 |
 | `archived_at`    | text    | null     | —                     | —                 |
 | `sort_order`     | integer | not null | `0`                   | —                 |
 | `urgency`        | integer | null     | —                     | —                 |
 | `interest`       | integer | null     | —                     | —                 |
-| `energy`         | integer | null     | —                     | —                 |
+| `ease`           | integer | null     | —                     | —                 |
 | `created_at`     | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 | `updated_at`     | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
@@ -1414,12 +1514,13 @@ Indexes:
 - `todo_tasks_user_idx` on `user_id`
 - `todo_tasks_scheduled_idx` on `user_id`, `scheduled_date`
 - `todo_tasks_notebook_idx` on `notebook_id`
+- `todo_tasks_notebook_seq_unique` on `notebook_id`, `notebook_seq` — unique
 
 Checks — enforced by the database, not only by the service layer:
 
-- `todos_urgency_range`: `"todo_tasks"."urgency" IS NULL OR "todo_tasks"."urgency" BETWEEN 1 AND 5`
-- `todos_interest_range`: `"todo_tasks"."interest" IS NULL OR "todo_tasks"."interest" BETWEEN 1 AND 5`
-- `todos_energy_range`: `"todo_tasks"."energy" IS NULL OR "todo_tasks"."energy" BETWEEN 1 AND 5`
+- `todos_urgency_range`: `"todo_tasks"."urgency" IS NULL OR "todo_tasks"."urgency" BETWEEN 0 AND 5`
+- `todos_interest_range`: `"todo_tasks"."interest" IS NULL OR "todo_tasks"."interest" BETWEEN 0 AND 5`
+- `todos_ease_range`: `"todo_tasks"."ease" IS NULL OR "todo_tasks"."ease" BETWEEN 0 AND 5`
 
 ## user
 

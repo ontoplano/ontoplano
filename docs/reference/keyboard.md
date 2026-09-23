@@ -7,19 +7,21 @@ works is a key listed here and the reverse.
 
 ## Everywhere
 
-| Key               | Does                 |
-| ----------------- | -------------------- |
-| <kbd>J</kbd>      | Next page            |
-| <kbd>K</kbd>      | Previous page        |
-| <kbd>Escape</kbd> | Close form           |
-| <kbd>?</kbd>      | Toggle shortcut help |
+| Key               | Does                        |
+| ----------------- | --------------------------- |
+| <kbd>J</kbd>      | Next page                   |
+| <kbd>K</kbd>      | Previous page               |
+| <kbd>L</kbd>      | Next place in this room     |
+| <kbd>H</kbd>      | Previous place in this room |
+| <kbd>Escape</kbd> | Close form                  |
+| <kbd>?</kbd>      | Toggle shortcut help        |
 
 ## Dashboard — `/`
 
 | Key          | Does                     |
 | ------------ | ------------------------ |
 | <kbd>i</kbd> | Capture an idea          |
-| <kbd>t</kbd> | Capture a todo           |
+| <kbd>t</kbd> | Capture a task           |
 | <kbd>d</kbd> | Capture a note           |
 | <kbd>b</kbd> | Capture something to buy |
 | <kbd>n</kbd> | New diary entry          |
@@ -104,6 +106,14 @@ works is a key listed here and the reverse.
 | <kbd>k</kbd> | Navigate people |
 | <kbd>n</kbd> | New person      |
 
+## Tags — `/notebooks/tags`
+
+| Key          | Does                          |
+| ------------ | ----------------------------- |
+| <kbd>j</kbd> | Navigate tags                 |
+| <kbd>k</kbd> | Navigate tags                 |
+| <kbd>e</kbd> | Edit the tag under the cursor |
+
 ## Account — `/settings/account`
 
 | Key          | Does              |
@@ -144,8 +154,8 @@ works is a key listed here and the reverse.
 | <kbd>j</kbd>     | Move between cards            |
 | <kbd>k</kbd>     | Move between cards            |
 | <kbd>l</kbd>     | Move between columns          |
-| <kbd>H</kbd>     | Carry card to previous column |
-| <kbd>L</kbd>     | Carry card to next column     |
+| <kbd><</kbd>     | Carry card to previous column |
+| <kbd>></kbd>     | Carry card to next column     |
 | <kbd>c</kbd>     | Mark done / reopen            |
 | <kbd>t</kbd>     | Pull onto today / put back    |
 | <kbd>g</kbd>     | Switch Today / General        |
@@ -158,7 +168,7 @@ works is a key listed here and the reverse.
 | <kbd>5</kbd>     | Set the active rating         |
 | <kbd>u</kbd>     | Number keys set urgency       |
 | <kbd>i</kbd>     | Number keys set interest      |
-| <kbd>y</kbd>     | Number keys set energy        |
+| <kbd>y</kbd>     | Number keys set ease          |
 | <kbd>x</kbd>     | Ask to delete card            |
 
 ## Plan — `/tasks/plan`
@@ -186,14 +196,14 @@ works is a key listed here and the reverse.
 | <kbd>x</kbd> | Ask to delete selected        |
 | <kbd>p</kbd> | Copy to days (multiselect)    |
 
-## To-do — `/tasks/todo`
+## Tasks — `/tasks/todo`
 
 | Key          | Does          |
 | ------------ | ------------- |
 | <kbd>j</kbd> | Navigate list |
 | <kbd>k</kbd> | Navigate list |
-| <kbd>n</kbd> | New todo      |
-| <kbd>e</kbd> | Edit todo     |
+| <kbd>n</kbd> | New task      |
+| <kbd>e</kbd> | Edit task     |
 | <kbd>c</kbd> | Toggle done   |
 | <kbd>g</kbd> | Delegate      |
 | <kbd>x</kbd> | Ask to delete |

@@ -1,24 +1,34 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
-	import { enhance } from '$app/forms';
+	import GoalFields, { type FormTarget } from '$lib/components/fields/GoalFields.svelte';
+	import SortControl from '$lib/components/SortControl.svelte';
+	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
+	import { page } from '$app/state';
+	import TagInput from '$lib/components/TagInput.svelte';
+	import { momentOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
+	import { tick, untrack, type ComponentProps } from 'svelte';
+	import { enhance } from '$lib/enhance';
 	import { SvelteSet } from 'svelte/reactivity';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { resolve } from '$app/paths';
 	import { armed } from '$lib/actions/armed';
 	import { BackCloses } from '$lib/back-closes';
 	import { isPhone } from '$lib/breakpoints';
-	import { autogrow } from '$lib/actions/autogrow';
 	import { keepInView } from '$lib/actions/keep-in-view';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import TagChip from '$lib/components/TagChip.svelte';
+	import FilterBar from '$lib/components/FilterBar.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import Select from '$lib/components/Select.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
 	import { SECTION_COLORS } from '$lib/colors';
-	import { HORIZON_LABELS, type Horizon } from '$lib/goals';
+	import { type Horizon } from '$lib/goals';
+	import GoalCard from '$lib/components/GoalCard.svelte';
+	import GoalLinksModal from '$lib/components/GoalLinksModal.svelte';
+	import { NOTEBOOK_GOAL_ACTIONS } from '$lib/goal-action-names';
 	import { CLOSED_STATUSES } from '$lib/task-status';
 	import {
 		DEFAULT_NOTE_ORDER,
@@ -33,6 +43,7 @@
 		type NoteOrder
 	} from '$lib/note-order';
 	import TodoRows from '$lib/components/TodoRows.svelte';
+	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { NOTEBOOK_TODO_ACTIONS } from '$lib/todo-actions';
 	import type { Todo } from '$lib/services/todos';
 	import { browsable } from '$lib/browse.svelte';
@@ -43,6 +54,7 @@
 	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
+	const now = useWhen();
 
 	/**
 	 * One notebook: what is in it, and what can be done to it.
@@ -80,6 +92,12 @@
 		allPeople = [],
 		categories = [],
 		pickableNotebooks = [],
+		areas = [],
+		workoutMeasures = [],
+		slots = [],
+		todos = [],
+		allTodos = [],
+		activities = [],
 		composing = $bindable(false),
 		/**
 		 * The New button for whichever tab is showing, for the page to draw.
@@ -101,7 +119,8 @@
 			entries: Entry[];
 			todos: Todo[];
 			blocks: { id: number; label: string | null; date: string; startTime: string }[];
-			goals: { id: number; title: string; horizon: Horizon; periodStart: string; status: string }[];
+			/* The whole goal: the tab draws the goals room's own card. */
+			goals: ComponentProps<typeof GoalCard>['goal'][];
 		} | null;
 		orphaned?: Entry[];
 		showingOrphans?: boolean;
@@ -110,6 +129,13 @@
 		/** What the Tasks tab's editor offers, the same as the to-do room's. */
 		categories?: { id: number; name: string }[];
 		pickableNotebooks?: { id: number; title: string }[];
+		areas?: { id: number; name: string }[];
+		workoutMeasures?: { activity: string; unit: string }[];
+		/* What a goal on this notebook can be told to count. */
+		slots?: { id: number; name: string; startTime: string }[];
+		todos?: { id: number; title: string }[];
+		allTodos?: { id: number; title: string; status: string }[];
+		activities?: { id: number; name: string }[];
 		/** Whether the composer is open, so a page can put the button elsewhere. */
 		composing?: boolean;
 		newAction?: { label: string; run?: () => void; href?: string } | undefined;
@@ -171,7 +197,18 @@
 					.trim()
 			)
 			.find(Boolean);
-		return first ? first.slice(0, 120) : 'Untitled';
+		if (!first) return 'Untitled';
+		/*
+		 * A reference reads as the task it names, here too.
+		 *
+		 * A note that was a checklist and became tasks is a note whose first
+		 * line is `TASK:#1` — which in the list would name the note "TASK:#1".
+		 * The chip in the body already says the task's title; this is the same
+		 * answer where there is no room for a chip.
+		 */
+		return first
+			.replace(/(?:TASK|TODO):#(\d+)/g, (whole, seq) => todoRefs.get(Number(seq))?.title ?? whole)
+			.slice(0, 120);
 	}
 
 	/**
@@ -288,6 +325,90 @@
 	 * fields to keep in step, so the button opens that one.
 	 */
 	let openNewTodo = $state<(() => void) | undefined>(undefined);
+	/** And its editor on one task, for a note that points at one. */
+	let openTodoById = $state<((id: number) => void) | undefined>(undefined);
+	/* Whether the goal form is open on this notebook. */
+	let composingGoal = $state(false);
+	/* What is in the composer, so the checklist offer can watch it. */
+	let composing_content = $state('');
+	const composingTodoCount = $derived(checklistItems(composing_content).length);
+	let goalHorizon = $state<Horizon>('week');
+	let goalStart = $state('');
+	let goalTargets = $state<FormTarget[]>([]);
+	/* Which goal the form is editing, or null while one is being written. */
+	let editingGoalId = $state<number | null>(null);
+	/* Which goal's "what counts towards this" is open. */
+	let linkingGoalId = $state<number | null>(null);
+
+	const editingGoal = $derived(
+		editingGoalId === null
+			? null
+			: (contents?.goals.find((one) => one.id === editingGoalId) ?? null)
+	);
+	const linkingGoal = $derived(
+		linkingGoalId === null
+			? null
+			: (contents?.goals.find((one) => one.id === linkingGoalId) ?? null)
+	);
+
+	/**
+	 * This notebook's tasks by their number in it, for `TASK:#4` in a note.
+	 *
+	 * Rendered with the task's own title and a tick where it is done, so a
+	 * note that points at a list says what is on the list and how far along it
+	 * is, rather than a row of numbers.
+	 */
+	const todoRefs = $derived(
+		new Map(
+			(contents?.todos ?? [])
+				.filter((one) => one.notebookSeq !== null)
+				.map((one) => [
+					one.notebookSeq as number,
+					{ title: one.title, done: CLOSED_STATUSES.includes(one.status) }
+				])
+		)
+	);
+
+	function openReferencedTodo(press: MouseEvent) {
+		const link = (press.target as HTMLElement).closest('.todo-ref') as HTMLElement | null;
+		if (!link) return;
+		press.preventDefault();
+		const seq = Number(link.dataset.todoSeq);
+		const one = (contents?.todos ?? []).find((task) => task.notebookSeq === seq);
+		if (!one) return;
+		// The task lives on the Tasks tab, and its editor is that list's own.
+		tab = 'tasks';
+		// After the tab has drawn, so the list is there to be asked.
+		void tick().then(() => openTodoById?.(one.id));
+	}
+
+	/** Units this account already counts things in, offered rather than imposed. */
+	const knownUnits = $derived(
+		[
+			...new Set(
+				(contents?.goals ?? []).flatMap((g) => g.targets.map((one) => one.unit)).filter(Boolean)
+			)
+		].sort()
+	);
+
+	function openGoalEdit(id: number) {
+		const one = contents?.goals.find((g) => g.id === id);
+		if (!one) return;
+		editingGoalId = id;
+		goalHorizon = one.horizon;
+		goalStart = one.periodStart;
+		goalTargets =
+			one.targets.length > 0
+				? one.targets.map((target) => ({
+						id: target.id,
+						value: String(target.targetValue),
+						unit: target.unit,
+						whole: target.whole,
+						measureActivity: target.measureActivity ?? ''
+					}))
+				: [{ id: null, value: '', unit: '', whole: true, measureActivity: '' }];
+		composingGoal = true;
+	}
 
 	$effect(() => {
 		if (!notebook) {
@@ -303,12 +424,23 @@
 				: tab === 'tasks'
 					? { label: t('notebookDetail.newTask'), run: () => openNewTodo?.() }
 					: {
-							// There is no writing a goal from in here: a goal is a goal of
-							// yours that happens to be about this notebook, and it is
-							// written where goals are. The link carries the notebook, so
-							// the form opens with it already chosen.
-							label: t('notebookDetail.newGoal'),
-							href: `${resolve('/goals')}?new=1&notebookId=${notebook.id}`
+							/*
+							 * Written here, like a task.
+							 *
+							 * This used to be a link to the goals room carrying the
+							 * notebook — which meant the same press stayed put on one
+							 * tab and threw you out of the notebook on the next. The
+							 * form is the goals room's own fields (`GoalFields`), so
+							 * it is the same form in both places.
+							 */
+							label: composingGoal ? t('ui.cancel') : t('notebookDetail.newGoal'),
+							run: () => {
+								// Opening it fresh: the same modal edits a goal, and a
+								// half-filled form from the last edit is not a new goal.
+								editingGoalId = null;
+								goalTargets = [];
+								composingGoal = !composingGoal;
+							}
 						};
 	});
 
@@ -395,10 +527,50 @@
 		edited: 'notebookDetail.orderEdited'
 	};
 
+	/**
+	 * The labels the notes are narrowed to, by pressing one on a note.
+	 *
+	 * The task list has done this since it had labels — press `#a1` on a row
+	 * and the list is the rows carrying it — and the notes beside it did
+	 * nothing, though they carry the same vocabulary. Pressing adds rather than
+	 * replaces, so two presses is two labels, and a note has to carry all of
+	 * them: narrowing by pressing is only useful if it narrows.
+	 */
+	let noteTagFilter = $state<string[]>([]);
+
+	/**
+	 * What somebody typed to narrow the notes.
+	 *
+	 * The tasks tab beside this one has had a search box since it was written
+	 * and the notes tab never did, so the same notebook answered "find the one
+	 * about the boiler" on one tab and not on the other. Same box, same place
+	 * in the strip, same order as everything else — see `FilterBar`.
+	 */
+	let noteSearch = $state('');
+
+	function toggleNoteTag(name: string) {
+		noteTagFilter = noteTagFilter.includes(name)
+			? noteTagFilter.filter((one) => one !== name)
+			: [...noteTagFilter, name];
+	}
+
 	/** The notes on screen: everything, or everything still out, in the chosen order. */
 	const shownNotes = $derived.by(() => {
 		const all = contents?.entries ?? orphaned;
-		const out = showArchivedNotes ? all : all.filter((entry) => !entry.archivedAt);
+		let out = showArchivedNotes ? all : all.filter((entry) => !entry.archivedAt);
+		if (noteTagFilter.length > 0)
+			out = out.filter((entry) =>
+				noteTagFilter.every((name) => entry.tags.some((tag) => tag.name === name))
+			);
+		const wanted = noteSearch.trim().toLowerCase();
+		if (wanted !== '')
+			// The title first and then the writing, which is how somebody finds
+			// the note they described rather than named.
+			out = out.filter(
+				(entry) =>
+					(entry.title ?? '').toLowerCase().includes(wanted) ||
+					(entry.content ?? '').toLowerCase().includes(wanted)
+			);
 		return orderNotes(out, noteOrder, noteDirection);
 	});
 
@@ -451,24 +623,38 @@
 	 * Only on the notes tab: Tasks is `TodoRows`, which walks itself, and
 	 * Goals is a list of links to somewhere else.
 	 */
+	/*
+	 * What j/k walks depends on which tab is showing.
+	 *
+	 * It used to be the notes and nothing else — the other two tabs declared
+	 * no items, so the keys did nothing at all on them while h/l went on
+	 * switching between the three. Tasks are the exception: that list is the
+	 * to-do room's own component and takes the keys itself, so this hands them
+	 * over rather than fighting it for them.
+	 */
 	browsable(() => ({
-		items: () => (tab === 'notes' ? shownNotes : []),
+		items: () => (tab === 'notes' ? shownNotes : tab === 'goals' ? (contents?.goals ?? []) : []),
 		cursor: () => cursor,
 		moveTo: (at: number) => (cursor = at),
 		tabs: { of: TAB_KEYS, current: () => tab, go: (key: string) => (tab = key as Tab) },
-		open: (at: number) => toggleNote(shownNotes[at].id),
+		open: (at: number) => {
+			if (tab === 'notes') toggleNote(shownNotes[at].id);
+		},
 		edit: (at: number) => {
+			if (tab !== 'notes') return;
 			editingNoteId = shownNotes[at].id;
 			noteSaved = false;
 		}
 	}));
 
+	/*
+	 * A note's stamp says the time as well as the day.
+	 *
+	 * Two notes written on the same afternoon read as the same note otherwise,
+	 * and which one is the later of them is the thing somebody is looking for.
+	 */
 	function when(iso: string): string {
-		return new Date(iso).toLocaleDateString(t.locale, {
-			day: 'numeric',
-			month: 'short',
-			year: 'numeric'
-		});
+		return momentOf(iso, now());
 	}
 </script>
 
@@ -552,18 +738,33 @@
 			</div>
 			{@render noteList(shownNotes, null)}
 		{:else if !notebook || !contents}
-			<EmptyState icon="notebook" title={t('notebookDetail.nothingChosen')} />
+			<!--
+				What a notebook is, said where there is room to say it.
+
+				It was a paragraph in a band between the tabs and the shelf — read
+				once, in the way ever after, and gone the moment the first notebook
+				existed. This column is empty until somebody picks one, which is
+				exactly where an explanation belongs and exactly when it is wanted.
+			-->
+			<EmptyState
+				icon="notebook"
+				title={t('notebookDetail.nothingChosen')}
+				description={t('notebooks.aSubjectYouWriteAgainst')}
+			/>
 		{:else}
 			<!-- Everything about this notebook, one kind at a time. -->
 			<!--
-				The tabs and what can be done in them, on one row at every width.
+				The tabs, and what is done to what they list.
 				
-				They were on two below `sm`, because when the buttons lived inside
-				the scrolling strip they ended up drawn over the last tab — "New
-				note" sitting on top of "Goals 0". The fix for that is not a second
-				row: it is that the strip takes the space that is left and scrolls,
-				and the buttons sit beside it and do not shrink. A row holding one
-				icon costs a centimetre of a phone screen to say nothing.
+				The controls never go inside the scrolling strip — they were drawn
+				over the last tab when they did, "New note" sitting on top of
+				"Goals 0" — so they sit beside it and do not shrink. Which is
+				exactly what left no tabs at all on a phone: "Show archived (1)"
+				and the order control took the row and the strip shrank to a
+				letter. Below `sm` they drop to a row of their own under the tabs,
+				where there is width for them; the full-screen button stays up
+				here at every size, because one icon costs nothing and it is the
+				control for the panel rather than for what is in it.
 			-->
 			<div class="flex items-center border-b border-gray-200 pr-2">
 				<div class="snap-strip min-w-0 flex-1 gap-1 px-2 md:flex">
@@ -593,21 +794,6 @@
 					{/each}
 				</div>
 				<div class="flex shrink-0 items-center justify-end gap-2 pl-2">
-					{#if tab === 'notes'}
-						<!-- Nothing is hidden without the strip saying how much. -->
-						{#if putAwayNotes > 0 || showArchivedNotes}
-							<button
-								type="button"
-								onclick={() => (showArchivedNotes = !showArchivedNotes)}
-								class="btn btn-sm shrink-0"
-							>
-								{showArchivedNotes
-									? t('notebookDetail.hideArchived')
-									: t('notebookDetail.showArchived', { count: putAwayNotes })}
-							</button>
-						{/if}
-						{@render orderControl()}
-					{/if}
 					<button
 						type="button"
 						onclick={() => (maximized ? leaveMaximized() : enterMaximized())}
@@ -623,6 +809,24 @@
 					</button>
 				</div>
 			</div>
+
+			{#if tab === 'notes'}
+				<!--
+					The same block the Tasks tab draws, by the same component.
+
+					This was a hand-rolled row with `px-2 py-1.5` on it while Tasks
+					used `RoomToolbar inset`, which is a whole rem — so the search
+					box, the filter button, the count and the sort all sat eight
+					pixels further left here, and the strip was a different height.
+					Changing tab moved every control in it. One component, so the
+					two cannot drift again.
+				-->
+				<RoomToolbar inset>
+					{#snippet tools()}
+						{@render noteControls()}
+					{/snippet}
+				</RoomToolbar>
+			{/if}
 
 			{#if tab === 'notes'}
 				<!--
@@ -665,15 +869,19 @@
 							placeholder={t('ui.title')}
 							class="input mb-2 w-full font-medium"
 						/>
-						<textarea
-							bind:this={addBox}
+						<!-- The same box the modal has, preview and all: a note written
+						     here is the same note, and it was the one place that got a
+						     bare textarea. -->
+						<MarkdownBox
+							bind:element={addBox}
+							bind:value={composing_content}
 							name="content"
-							rows="2"
+							rows={6}
 							required
-							use:autogrow
+							start="both"
+							todos={todoRefs}
 							placeholder={t('notebookDetail.writeANoteAbout', { title: notebook.title })}
-							class="textarea"
-						></textarea>
+						/>
 						<!-- A note written here takes a picture the same way a note written in
 			     the diary does. It was missing here, which made pictures look like
 			     a feature of one screen rather than of notes. -->
@@ -695,7 +903,31 @@
 								{@render tagsAndPeople('', '')}
 							</MoreOptions>
 						</div>
-						<div class="mt-2 flex justify-end">
+						<!--
+							The checklist offer, where the checkboxes are being typed.
+
+							It used to be an icon on the finished note's row, found
+							afterwards by somebody who went looking. The moment it is
+							wanted is while the list is being written, so it appears the
+							instant a `- [ ]` does.
+
+							The row holds its height whether or not the button is in it,
+							so a checkbox typed into the third line does not shift the
+							composer under the hand about to press Add.
+						-->
+						<div class="mt-2 flex min-h-8 items-center justify-end gap-2">
+							{#if composingTodoCount > 0}
+								<button
+									type="submit"
+									name="alsoTodos"
+									value="1"
+									class="btn btn-sm"
+									title={t('notebookDetail.makeTodosOfTheCheckboxes')}
+								>
+									<Icon name="check" />
+									{t('notebookDetail.addWithTodos', { count: composingTodoCount })}
+								</button>
+							{/if}
 							<button class="btn btn-primary btn-sm"
 								><Icon name="plus" /> {t('notebookDetail.addNote')}</button
 							>
@@ -714,16 +946,30 @@
 					room uses, so a todo behaves the same way wherever it is found —
 					and a new one written here lands in this notebook.
 				-->
-				<div class="px-4 py-3">
-					<TodoRows
-						todos={contents.todos}
-						{categories}
-						notebooks={pickableNotebooks}
-						actions={NOTEBOOK_TODO_ACTIONS}
-						notebookId={notebook.id}
-						bind:openNew={openNewTodo}
-					/>
-				</div>
+				<!--
+					`shortcutRoom` so the rows answer to j/k here as they do in the
+					room. The keys did nothing on this tab: the view above declares
+					its items as the notes and gives back none on any other tab, and
+					the list was never told to take them itself. It reads the to-do
+					room's own bindings, which is the point — the same list behaves
+					the same way wherever it is found.
+
+					`framed` off because the card here is the notebook's: the filters
+					and the rows are panes of it, edge to edge, rather than a second
+					card drawn inside the first.
+				-->
+				<TodoRows
+					todos={contents.todos}
+					{categories}
+					notebooks={pickableNotebooks}
+					actions={NOTEBOOK_TODO_ACTIONS}
+					notebookId={notebook.id}
+					shortcutRoom={tab === 'tasks' ? '/tasks/todo' : null}
+					claimsRoomBar={false}
+					framed={false}
+					bind:openNew={openNewTodo}
+					bind:openTodo={openTodoById}
+				/>
 
 				<!--
 					Blocks below, and still a list: a block is a thing that happens at
@@ -749,22 +995,32 @@
 					{t('notebookDetail.noGoalPointsAtThis')}
 				</p>
 			{:else}
-				<ul class="divide-y divide-gray-200">
-					{#each contents.goals as goal (goal.id)}
-						<li class="flex items-center gap-3 px-4 py-2 text-sm">
-							<Icon name="goals" class="shrink-0 text-gray-500" />
-							<a
-								href={resolve('/goals')}
-								class="min-w-0 flex-1 truncate text-gray-900 hover:underline"
-							>
-								{goal.title}
-							</a>
-							<span class="tabular shrink-0 text-xs text-gray-500">
-								{t(HORIZON_LABELS[goal.horizon])} · {goal.periodStart}
-							</span>
-						</li>
+				<!--
+					The goals room's own card, not a line of text.
+
+					This was a list of titles linking to `/goals`: you could see
+					that a goal existed and do nothing to it — no edit, no delete,
+					no way to say it was achieved or missed, nothing about what
+					counts towards it. Filing a goal under a notebook is supposed
+					to scope it, not strip it.
+				-->
+				<div class="divide-y divide-gray-200 px-4">
+					{#each contents.goals as goal, at (goal.id)}
+						<div class={tab === 'goals' && cursor === at ? 'kb-cursor' : ''}>
+							<GoalCard
+								{goal}
+								goals={contents.goals}
+								{allTodos}
+								{slots}
+								{activities}
+								actions={NOTEBOOK_GOAL_ACTIONS}
+								accent={SECTION_COLORS.home}
+								onedit={(id) => openGoalEdit(id)}
+								onlink={(id) => (linkingGoalId = id)}
+							/>
+						</div>
 					{/each}
-				</ul>
+				</div>
 			{/if}
 		{/if}
 	</div>
@@ -782,7 +1038,11 @@
 -->
 {#snippet tagsAndPeople(tags: string, people: string)}
 	<Field label={t('ui.tags')} span={6} hint={t('notebookDetail.separateWithCommasOrSpaces')}>
-		<OneLine name="tags" placeholder={t('notebookDetail.workHealth')} value={tags} class="input" />
+		<TagInput
+			value={tags}
+			known={page.data.tagVocabulary ?? []}
+			placeholder={t('notebookDetail.workHealth')}
+		/>
 	</Field>
 	<Field
 		label={t('notebookDetail.people')}
@@ -819,31 +1079,110 @@
 	directions is six presses to get back where you started — and the select is
 	a fixed width, so choosing a longer word does not move the arrow beside it.
 -->
+<!--
+	What is done to the list of notes: what it shows, and in what order.
+
+	One snippet, drawn either beside the tabs or on a row below them depending
+	on the width — never twice at once, and never two versions of it.
+-->
+{#snippet noteControls()}
+	<!--
+		The same strip the tasks tab has, in the same order.
+
+		That tab composes `FilterBar` with a search box in front of it and the
+		count and the order behind it; this one was a hand-rolled row of buttons
+		with no search at all, so one notebook answered "find the one about the
+		boiler" on the Tasks tab and not on the Notes tab beside it. The controls
+		differ because notes and tasks differ. The shape does not.
+	-->
+	<FilterBar
+		name="notes"
+		on={noteTagFilter.length > 0 || showArchivedNotes || noteSearch.trim() !== ''}
+		summary={noteTagFilter.map((one) => `#${one}`).join(', ')}
+		onclear={() => {
+			noteTagFilter = [];
+			showArchivedNotes = false;
+			noteSearch = '';
+		}}
+	>
+		{#snippet lead()}
+			<!-- The box fills the slot; how wide that slot is belongs to
+			     `FilterBar`, so this tab and the Tasks tab beside it are the same
+			     shape. -->
+			<label class="block w-full">
+				<span class="sr-only">{t('notebookDetail.searchTheseNotes')}</span>
+				<input
+					type="search"
+					bind:value={noteSearch}
+					placeholder={t('notebookDetail.searchTheseNotes')}
+					autocomplete="off"
+					class="input input-sm"
+				/>
+			</label>
+		{/snippet}
+
+		{#snippet count()}
+			<!-- How many are on screen right now — the toggles say what is hidden
+			     and nothing said what is left. -->
+			<!-- Held open at the count of every note there is — see `.count-slot`. -->
+			<span
+				class="tabular count-slot shrink-0 self-center text-xs text-gray-500"
+				title={t('notebookDetail.showingCount', { count: shownNotes.length })}
+			>
+				<span class="count-widest" aria-hidden="true">
+					<span class="sm:hidden">{contents?.entries.length ?? 0}</span>
+					<span class="hidden sm:inline"
+						>{t('notebookDetail.showingCount', { count: contents?.entries.length ?? 0 })}</span
+					>
+				</span>
+				<span>
+					<span class="sm:hidden">{shownNotes.length}</span>
+					<span class="hidden sm:inline"
+						>{t('notebookDetail.showingCount', { count: shownNotes.length })}</span
+					>
+				</span>
+			</span>
+		{/snippet}
+
+		{#snippet trailing()}
+			{@render orderControl()}
+		{/snippet}
+
+		<!-- Nothing is hidden without the strip saying how much. -->
+		{#if putAwayNotes > 0 || showArchivedNotes}
+			<button
+				type="button"
+				onclick={() => (showArchivedNotes = !showArchivedNotes)}
+				class="btn btn-sm shrink-0"
+			>
+				{t('notebookDetail.archivedCount', { count: putAwayNotes })}
+			</button>
+		{/if}
+
+		<!--
+			What the list is narrowed to, and how to stop.
+
+			A filter nothing on the screen mentions is a list that has quietly lost
+			rows: the labels are here, pressed, and pressing one again lets it go.
+		-->
+		{#each noteTagFilter as name (name)}
+			<TagChip {name} active onclick={() => toggleNoteTag(name)} />
+		{/each}
+	</FilterBar>
+{/snippet}
+
 {#snippet orderControl()}
 	{#if shownNotes.length > 1 || noteOrder !== DEFAULT_NOTE_ORDER}
-		<Select
+		<!-- The same control the task list uses. See `SortControl`. -->
+		<SortControl
 			value={noteOrder}
-			onchange={(e) => pickOrder(e.currentTarget.value as NoteOrder)}
-			class="w-24 shrink-0 py-1 text-xs"
-			aria-label={t('notebookDetail.orderNotesBy')}
-		>
-			{#each NOTE_ORDERS as option (option)}
-				<option value={option}>{t(ORDER_LABELS[option])}</option>
-			{/each}
-		</Select>
-		<button
-			type="button"
-			onclick={flipDirection}
-			class="icon-btn shrink-0"
-			aria-label={noteDirection === 'asc'
-				? t('notebookDetail.ascendingPressForDescending')
-				: t('notebookDetail.descendingPressForAscending')}
-			title={noteDirection === 'asc'
-				? t('notebookDetail.ascendingPressForDescending')
-				: t('notebookDetail.descendingPressForAscending')}
-		>
-			<Icon name={noteDirection === 'asc' ? 'arrow-up' : 'arrow-down'} />
-		</button>
+			options={NOTE_ORDERS}
+			labels={ORDER_LABELS}
+			direction={noteDirection}
+			onpick={pickOrder}
+			onflip={flipDirection}
+			label={t('notebookDetail.orderNotesBy')}
+		/>
 	{/if}
 {/snippet}
 
@@ -897,14 +1236,15 @@
 								placeholder={t('ui.title')}
 								class="input mb-2 w-full font-medium"
 							/>
-							<textarea
-								bind:this={editBox}
+							<MarkdownBox
+								bind:element={editBox}
+								value={entry.content}
 								name="content"
-								rows="4"
+								rows={8}
 								required
-								use:autogrow
-								class="textarea">{entry.content}</textarea
-							>
+								start="both"
+								todos={todoRefs}
+							/>
 							<PictureAttach target={editBox} />
 							<div class="mt-3">
 								<FormGrid>
@@ -969,11 +1309,23 @@
 							</span>
 						</button>
 						{#if openNotes.has(entry.id)}
-							<div class="md mt-2 text-sm text-gray-900">
+							<!--
+								A reference in the writing opens the task it names.
+
+								`TASK:#4` is rendered as a link by the markdown renderer,
+								which is pure and knows nothing about this screen — so the
+								press is caught here, where the list and its editor are.
+								Delegated from the whole block rather than bound per link:
+								the html is written by `{@html}` and has no components in it
+								to put a handler on.
+							-->
+							<!-- svelte-ignore a11y_click_events_have_key_events -->
+							<!-- svelte-ignore a11y_no_static_element_interactions -->
+							<div class="md mt-2 text-sm text-gray-900" onclick={openReferencedTodo}>
 								<!-- `renderMarkdown` escapes every character of the input before it emits a
 								     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
 								<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-								{@html renderMarkdown(entry.content)}
+								{@html renderMarkdown(entry.content, todoRefs)}
 							</div>
 						{/if}
 						<div class="mt-1 flex flex-wrap items-center gap-2">
@@ -993,7 +1345,11 @@
 								<a href={resolve('/notebooks/people')} class="chip">@{person.name}</a>
 							{/each}
 							{#each entry.tags as tag (tag.id)}
-								<span class="chip">#{tag.name}</span>
+								<TagChip
+									name={tag.name}
+									active={noteTagFilter.includes(tag.name)}
+									onclick={() => toggleNoteTag(tag.name)}
+								/>
 							{/each}
 
 							<!-- In a shared notebook everybody reads everything, but a note
@@ -1176,6 +1532,73 @@
 	</form>
 </Modal>
 
+<!--
+	Writing a goal without leaving the notebook.
+
+	The same fields the goals room uses, posting to the same handler — see
+	`$lib/services/goal-actions`. The notebook is fixed rather than picked:
+	you are looking at it.
+-->
+<Modal
+	bind:open={composingGoal}
+	title={editingGoal ? t('goals.editGoal') : t('notebookDetail.newGoal')}
+	onclose={() => (editingGoalId = null)}
+>
+	<!-- Only ever opened from a notebook's own header, so there is one. -->
+	<form
+		id="notebook-goal-form"
+		method="post"
+		action={editingGoal ? NOTEBOOK_GOAL_ACTIONS.update : '?/goalCreate'}
+		use:enhance={() => {
+			const wasEditing = editingGoal !== null;
+			return async ({ result, update }) => {
+				await update({ reset: false });
+				if (result.type !== 'success') return;
+				composingGoal = false;
+				editingGoalId = null;
+				goalTargets = [];
+				say(wasEditing ? t('notebookDetail.saved') : t('notebookDetail.goalAdded'));
+			};
+		}}
+	>
+		{#if editingGoal}
+			<input type="hidden" name="id" value={editingGoal.id} />
+		{/if}
+		<GoalFields
+			editing={editingGoal}
+			editingId={editingGoalId}
+			bind:horizon={goalHorizon}
+			bind:start={goalStart}
+			bind:targets={goalTargets}
+			{areas}
+			notebooks={pickableNotebooks}
+			{workoutMeasures}
+			{knownUnits}
+			startingNotebook={notebook?.id ?? null}
+		/>
+	</form>
+
+	{#snippet footer()}
+		<button type="button" class="btn" onclick={() => (composingGoal = false)}>
+			{t('ui.cancel')}
+		</button>
+		<button type="submit" form="notebook-goal-form" class="btn btn-primary">
+			{editingGoal ? t('ui.save') : t('goals.createGoal')}
+		</button>
+	{/snippet}
+</Modal>
+
+<!-- What counts towards a goal, the same modal the goals room opens. -->
+<GoalLinksModal
+	goal={linkingGoal}
+	{activities}
+	{slots}
+	{todos}
+	{allTodos}
+	action={NOTEBOOK_GOAL_ACTIONS.setLinks}
+	onclose={() => (linkingGoalId = null)}
+/>
+
 <style>
 	/*
 	 * Inline, the surface is not there: `display: contents` lays its children
@@ -1246,8 +1669,14 @@
 		font-size: 1em;
 	}
 
-	/* Writing at the size you read at. */
-	dialog.nb-surface[open] textarea {
+	/*
+	 * Writing at the size you read at.
+	 *
+	 * `:global`, because the box is `MarkdownBox` now and a scoped selector
+	 * stops at the component boundary — the chosen type size stopped reaching
+	 * the thing being typed into the moment the preview was added.
+	 */
+	dialog.nb-surface[open] :global(textarea) {
 		font-size: var(--nb-type);
 		line-height: 1.6;
 	}

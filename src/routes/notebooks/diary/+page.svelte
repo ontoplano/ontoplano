@@ -1,5 +1,10 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
+	import TagInput from '$lib/components/TagInput.svelte';
+	import TagChip from '$lib/components/TagChip.svelte';
+	import { momentOf, today } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
+	import { enhance } from '$lib/enhance';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -20,6 +25,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -45,7 +51,7 @@
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- built, read once and thrown away inside this function; nothing tracks it.
 		const map = new Map<number, { content: string; createdAt: string }>();
 		for (const entry of data.entries) {
-			map.set(entry.seq, { content: entry.content, createdAt: entry.createdAt });
+			map.set(entry.diarySeq ?? entry.seq, { content: entry.content, createdAt: entry.createdAt });
 		}
 		return map;
 	}
@@ -73,14 +79,7 @@
 
 	function formatDate(iso: string): string {
 		const d = new Date(iso);
-		return d.toLocaleDateString(t.locale, {
-			weekday: 'short',
-			year: 'numeric',
-			month: 'short',
-			day: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
-		});
+		return momentOf(d, now(), { weekday: 'short' });
 	}
 
 	function formatDateShort(iso: string): string {
@@ -223,17 +222,14 @@
 	{#if data.allTags.length > 0}
 		<div class="flex flex-wrap gap-2">
 			{#each data.allTags as tag (tag.id)}
-				<button
+				<TagChip
+					name={tag.name}
+					active={filterTag === tag.name}
 					onclick={() => {
 						filterTag = filterTag === tag.name ? null : tag.name;
 						selectedIndex = 0;
 					}}
-					class="chip {filterTag === tag.name
-						? 'border-amber-500 bg-amber-50 text-amber-700'
-						: 'text-gray-500 hover:text-gray-700'}"
-				>
-					#{tag.name}
-				</button>
+				/>
 			{/each}
 			{#if filterTag}
 				<button
@@ -270,7 +266,7 @@
 					autocomplete="off"
 					name="forDate"
 					type="date"
-					value={new Date().toISOString().slice(0, 10)}
+					value={today(now())}
 					class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
 			</div>
@@ -292,10 +288,9 @@
 			</div>
 			<label class="block">
 				<span class="text-sm font-medium text-gray-700">{t('ui.tags')}</span>
-				<OneLine
-					name="tags"
+				<TagInput
+					known={page.data.tagVocabulary ?? []}
 					placeholder={t('notebooks.diary.tagsCommasOrSpaces')}
-					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 				/>
 			</label>
 			<div class="flex items-center gap-2">
@@ -429,8 +424,8 @@
 			{#each filteredEntries() as entry, i (entry.id)}
 				<div
 					use:keepInView={i === selectedIndex}
-					id="diary-{entry.seq}"
-					class="relative p-4 {i === selectedIndex ? 'kb-cursor -outline-offset-2' : ''}"
+					id="diary-{entry.diarySeq ?? entry.seq}"
+					class="relative p-4 {i === selectedIndex ? 'kb-cursor' : ''}"
 				>
 					<div class="md mb-2 text-sm text-gray-900">
 						<!-- `renderMarkdown` escapes every character of the input before it emits a
@@ -446,10 +441,6 @@
 						word wide — and cost a whole row of height on any screen.
 					-->
 					<div class="flex flex-wrap items-center gap-2">
-						<!-- The number entries are referred to by, as `#12` in another
-						     entry's text. It was in the corner, which put it under the
-						     buttons once they moved down here. -->
-						<span class="tabular text-xs font-medium text-gray-900">#{entry.seq}</span>
 						<span class="text-xs text-gray-500">{formatDate(entry.createdAt)}</span>
 						{#if entry.forDate}
 							<span class="text-xs font-medium text-amber-600"
@@ -476,15 +467,13 @@
 							</a>
 						{/each}
 						{#each entry.tags as tag (tag.id)}
-							<button
+							<TagChip
+								name={tag.name}
 								onclick={() => {
 									filterTag = tag.name;
 									selectedIndex = 0;
 								}}
-								class="chip"
-							>
-								#{tag.name}
-							</button>
+							/>
 						{/each}
 
 						<div class="ml-auto flex flex-wrap items-center gap-2">
@@ -547,6 +536,16 @@
 									<Icon name="trash" />
 								</button>
 							{/if}
+
+							<!-- The number entries are referred to by, as `#12` in another
+							     entry's text. At the end of the row rather than the start of
+							     it: what the entry is reads from the left, and the number is
+							     a handle for pointing at it rather than part of the reading. -->
+							<!-- The diary's own number, not the account's count of everything it
+					     holds: the thirtieth entry is #30 and used to read #127. -->
+							<span class="tabular text-xs font-medium text-gray-900"
+								>#{entry.diarySeq ?? entry.seq}</span
+							>
 						</div>
 					</div>
 				</div>

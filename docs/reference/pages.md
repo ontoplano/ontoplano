@@ -11,13 +11,14 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**57 pages, 237 actions.**
+**61 pages, 246 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `/`                                  | `createDiaryEntry`, `saveWins`, `setLayout`, `resetLayout`                                                                                                                                                                                                                                                                                                                                           |
 | `/admin`                             | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/admin/[id]`                        | —                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `/assistant`                         | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/buy`                               | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/data/[slug]`                       | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/demo`                              | `default`                                                                                                                                                                                                                                                                                                                                                                                            |
@@ -26,7 +27,7 @@ write surface for everything else; both end up calling the same
 | `/finance/insights`                  | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/finance/ledgers`                   | `createLedger`, `updateLedger`, `moveLedger`, `archiveLedger`, `deleteLedger`, `import`, `addMovement`, `updateMovement`, `deleteMovement`                                                                                                                                                                                                                                                           |
 | `/finance/rules`                     | `create`, `update`, `move`, `delete`                                                                                                                                                                                                                                                                                                                                                                 |
-| `/goals`                             | `setTodoStatus`, `createArea`, `deleteArea`, `create`, `update`, `setProgress`, `close`, `setLinks`, `remove`                                                                                                                                                                                                                                                                                        |
+| `/goals`                             | `createArea`, `deleteArea`, `create`, `update`, `setProgress`, `close`, `setLinks`, `setTodoStatus`, `remove`                                                                                                                                                                                                                                                                                        |
 | `/health/habits`                     | `create`, `update`, `delete`, `logOccurrence`, `toggleOccurrence`, `updateOccurrence`, `deleteOccurrence`                                                                                                                                                                                                                                                                                            |
 | `/health/recipes`                    | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/health/recipes/[id]`               | —                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -50,7 +51,10 @@ write surface for everything else; both end up calling the same
 | `/notebooks/diary`                   | `create`, `createWins`, `update`, `delete`                                                                                                                                                                                                                                                                                                                                                           |
 | `/notebooks/ideas`                   | `create`, `update`, `delete`, `toggleApplied`, `updateAppliedNote`, `toggleFavorite`                                                                                                                                                                                                                                                                                                                 |
 | `/notebooks/people`                  | `create`, `update`, `setPicture`, `removePicture`, `delete`                                                                                                                                                                                                                                                                                                                                          |
+| `/notebooks/tags`                    | `save`, `delete`                                                                                                                                                                                                                                                                                                                                                                                     |
 | `/notebooks/weekly`                  | —                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `/oauth/authorize`                   | `allow`, `deny`                                                                                                                                                                                                                                                                                                                                                                                      |
+| `/oauth/connected`                   | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/offline`                           | —                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `/reminders`                         | `create`, `edit`, `dismiss`, `remove`, `addSound`, `removeSound`, `setSound`                                                                                                                                                                                                                                                                                                                         |
 | `/ring`                              | —                                                                                                                                                                                                                                                                                                                                                                                                    |
@@ -60,10 +64,10 @@ write surface for everything else; both end up calling the same
 | `/settings/billing`                  | `acceptFamilyOffer`, `declineFamilyOffer`, `checkout`, `switchInterval`                                                                                                                                                                                                                                                                                                                              |
 | `/settings/family`                   | `addSeat`, `withdrawInvite`, `removeSeat`                                                                                                                                                                                                                                                                                                                                                            |
 | `/settings/instance`                 | `exportSubscribers`, `setRegistration`, `setEmailChange`, `setClientErrors`, `createInvite`, `revokeInvite`                                                                                                                                                                                                                                                                                          |
-| `/settings/integrations`             | `ringOnThisPhone`, `createKey`, `putBack`                                                                                                                                                                                                                                                                                                                                                            |
+| `/settings/integrations`             | `save`, `models`, `permissions`, `remove`, `ringOnThisPhone`, `createKey`, `putBack`                                                                                                                                                                                                                                                                                                                 |
 | `/settings/integrations/connections` | `createToken`, `calendarLink`, `notifyAssistant`, `putBack`, `revokeToken`, `updateStream`, `deleteStream`, `createWebhook`, `deleteWebhook`, `reviveWebhook`                                                                                                                                                                                                                                        |
 | `/settings/integrations/widget`      | `connect`                                                                                                                                                                                                                                                                                                                                                                                            |
-| `/settings/preferences`              | `setNotification`, `setErrorReports`, `saveCurrency`, `saveGridHours`, `saveMenu`, `resetMenu`, `setLayout`, `resetLayout`, `addQuote`, `importQuotes`, `deleteQuote`, `setStyle`, `setLanguage`, `setTheme`, `saveWeek`                                                                                                                                                                             |
+| `/settings/preferences`              | `setNotification`, `setErrorReports`, `saveCurrency`, `saveGridHours`, `saveMenu`, `resetMenu`, `setLayout`, `resetLayout`, `addQuote`, `importQuotes`, `deleteQuote`, `setStyle`, `setLanguage`, `setClock`, `setTheme`, `saveWeek`                                                                                                                                                                 |
 | `/start`                             | `checkout`                                                                                                                                                                                                                                                                                                                                                                                           |
 | `/tasks/activities`                  | `create`, `update`, `toggleActive`, `delete`, `createCategory`, `updateCategory`, `deleteCategory`                                                                                                                                                                                                                                                                                                   |
 | `/tasks/board`                       | `setStatus`, `reorder`, `schedule`, `promote`, `demote`, `createTodo`, `setRatings`, `remind`, `unremind`, `editInstance`, `resolveActivity`, `deleteInstance`, `deleteTodo`                                                                                                                                                                                                                         |
@@ -94,9 +98,9 @@ What the demo may see here, and what it may not.
 The demo signs every visitor into its one account, which is an
 administrator — so this page is public there, deliberately: somebody
 deciding whether to run this themselves should see what administering it
-looks like. What they must not see is anything about the box or about other
-people: the addresses fail2ban turned away are real people's, a failed mail
-carries a real address, and a client error carries a stack from the server.
+looks like. What they must not see is anything about other people: a
+failed mail carries a real address, and a client error carries a stack
+from the server.
 
 Writes are refused in `hooks.server.ts`, in one place, for the same reason
 this list is here rather than spread through the page.
@@ -257,6 +261,13 @@ price to move something into a drawer.
 
 ### `/login`
 
+Where to go after signing in, when something sent them here to do it.
+
+Only ever a path on this instance: a `next` that could name another site is
+an open redirect, and a sign-in page is exactly where one is worth having.
+So it must start with a single slash — `//host` is a URL with the scheme
+left off, and was the first thing tried against this.
+
 **`signUp`**
 
 Register, if this instance is taking anybody.
@@ -337,6 +348,14 @@ The index shows a notebook beside the list of them, which is the right shape
 for moving between subjects and the wrong one for sitting inside a single
 one. This is the same notebook with the whole width.
 
+### `/notebooks/tags`
+
+The labels themselves, rather than the things wearing them.
+
+Every other room reads tags as a property of what they are on. This is the
+one page where the vocabulary is the subject: what words the account has,
+how much work each is doing, and the three things that can be done to one.
+
 ### `/notebooks/weekly`
 
 Every week you have written about, in one place.
@@ -344,6 +363,41 @@ Every week you have written about, in one place.
 The weekly note was reachable only by navigating to the week it belonged to,
 which is a thing nobody does — so the one running account of a year this app
 keeps was write-only. It is writing, so it belongs where the writing is.
+
+### `/oauth/authorize`
+
+"Something wants to connect to your ontoplano."
+
+The only screen in the flow, and the only place anybody decides anything.
+An assistant sent the person here; this says who is asking, what they would
+be handing over, and offers the one grant that is not included — the same
+shape the key form uses, because it is the same decision.
+
+Everything the client sent is checked before a word of it is drawn. Two
+rules do the real work: the redirect address must be one the client
+registered, matched whole, and PKCE is required — so a code intercepted on
+the way back is worth nothing to whoever took it.
+
+**`allow`**
+
+Yes — and the code goes back to the address the client registered.
+
+**`deny`**
+
+No, said in the words the client understands.
+
+### `/oauth/connected`
+
+The last step, and the only reason it exists is the browser's rules.
+
+`form-action 'self'` — right for every form in the app — also governs where
+a form's _redirect_ may land, so the consent screen cannot send anybody
+straight back to the assistant. This page is what it sends them to instead,
+and the hand-back from here is an ordinary navigation.
+
+Which makes this an open redirect unless it is careful, so it is: the
+address must be one the named client registered, compared against the list
+rather than sniffed for a hostname.
 
 ### `/offline`
 
@@ -492,6 +546,19 @@ once roles land.
 ### `/settings/integrations`
 
 What each family of permissions is called, in the words the app uses.
+
+**`models`**
+
+What this provider will answer to, asked with the key on the form.
+
+The key may not be saved yet — somebody pastes one and wants to see the
+models before committing to it — so the form sends what it is holding.
+Where the field is empty and a key is already stored, the stored one is
+used, which is how "Replace" can browse without retyping.
+
+**`permissions`**
+
+The one grant the chat has to be given rather than born with.
 
 ### `/settings/integrations/connections`
 

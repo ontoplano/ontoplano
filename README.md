@@ -53,9 +53,10 @@ then `sudo ontoplano config` to set the origin and
 [releases page](https://github.com/ontoplano/ontoplano/releases); they carry
 their own Node, so there is nothing else to install. A packaged install keeps
 its settings in `/etc/ontoplano/` and its database in `/var/lib/ontoplano/`.
-There is no Windows installer yet — [help build one](CONTRIBUTING.md).
+There is no Windows installer yet — [help build one](CONTRIBUTING.md). Windows
+runs it from source; see below.
 
-### docker
+### Docker
 
 ```sh
 docker run -d --name ontoplano -p 1493:1493 \
@@ -68,8 +69,7 @@ docker run -d --name ontoplano -p 1493:1493 \
 Register at `/login` — **the first account owns the instance**, and after it
 registration is closed until changed at `/settings/instance`.
 
-The reminders timer comes installed. The Monday review mail does not — it needs
-SMTP; [the docs](https://docs.ontoplano.com/running-it) set it up.
+The reminders timer comes installed.
 
 ## Developing it
 
@@ -83,6 +83,35 @@ make db-seed    # synthetic data for the dev account
 `make dev` wants Linux with systemd — on anything else, `yarn dev` runs
 the same server in the foreground. A from-source instance keeps its settings in
 `~/.config/ontoplano/` and its database in `~/.local/share/ontoplano/`.
+
+### On Windows
+
+In PowerShell, once:
+
+```powershell
+wsl --install -d Ubuntu
+```
+
+Reboot if it asks, then open **Ubuntu** from the Start menu and run everything
+there:
+
+```sh
+sudo apt update && sudo apt install -y nodejs npm git
+sudo npm install -g yarn
+git clone https://github.com/ontoplano/ontoplano.git && cd ontoplano
+yarn
+yarn dev
+```
+
+Then open `http://localhost:1493` in Windows — WSL forwards the port, so the
+browser is the one you already use.
+
+**There is no systemd on this path**, and that is the whole difference: nothing
+starts on boot, `make dev` and the `ontoplano` service commands do not apply,
+and `yarn dev` holds the terminal for as long as you want the app up. Close the
+terminal and the app stops. Everything else — the data, the settings, the
+upgrades — works the way it does anywhere else, under your Linux home inside
+WSL (`\\wsl$\Ubuntu\home\<you>` from Explorer).
 
 See `CONTRIBUTING.md` for details on helping with the code.
 
@@ -109,13 +138,6 @@ phone.
 Signing in is an address and a password.
 Email is optional — without SMTP settings, confirmation and reset links are
 written to the server log instead of sent.
-
-## The name
-
-The code is AGPL-3.0-or-later. The name, the wordmark and the mark are not:
-they are trademarks, and [`TRADEMARK.md`](TRADEMARK.md) says what you may do
-with them — which includes shipping this software unmodified with its name and
-artwork intact, and does not include putting them on a fork.
 
 ## Sponsors
 

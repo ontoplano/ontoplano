@@ -19,7 +19,9 @@ test('people wear an @ and tags wear a #', async ({ page }) => {
 
 	const form = page.locator('#entry-form');
 	await form.locator('textarea[name=content]').fill('Coffee, and the week ahead.');
-	await form.locator('[name=tags]').fill('planning');
+	// The visible box takes the words; `[name=tags]` is the hidden field the
+	// chips are assembled into — see `TagInput`.
+	await form.locator('input[role="combobox"]').fill('planning');
 	// The people field takes names and makes the ones it does not know, which is
 	// the whole point of it being a text field.
 	await form.locator('input[name=people]').fill('Ana');
@@ -70,7 +72,7 @@ test('a note written in a notebook takes tags and people too', async ({ page }) 
 	await page.locator('textarea[name="content"]').first().fill('Tiles arrive Tuesday.');
 	// Folded away by default: the common act is typing a line and pressing add.
 	await page.getByText('Tags, people').first().click();
-	await page.locator('[name="tags"]').first().fill('kitchen, tiles');
+	await page.locator('input[role="combobox"]').first().fill('kitchen, tiles');
 	await page.locator('input[name="people"]').first().fill('Ana');
 	await page.getByRole('button', { name: /Add note/ }).click();
 

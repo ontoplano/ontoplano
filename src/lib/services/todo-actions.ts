@@ -38,7 +38,7 @@ export const todoHandlers = {
 	create: async ({ request, locals }: Event) => {
 		const formData = await request.formData();
 		try {
-			createTodo(buildCtx(locals.user!.id), {
+			const made = createTodo(buildCtx(locals.user!.id), {
 				title: formData.get('heading'),
 				notes: formData.get('notes'),
 				categoryId: formData.get('categoryId'),
@@ -49,7 +49,12 @@ export const todoHandlers = {
 				scheduledDate: formData.get('scheduledDate'),
 				ratings: ratingsFromForm(formData)
 			});
-			return { success: true };
+			/*
+			 * The id comes back, so the toast can offer a way straight into the
+			 * thing just made. Without it the only route to "say more about
+			 * this" is finding the row again in a list that has just reordered.
+			 */
+			return { success: true, id: made };
 		} catch (e) {
 			return toActionFailure(e);
 		}

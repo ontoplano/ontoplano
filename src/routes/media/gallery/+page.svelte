@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
-	import { deserialize, enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
+	import { deserialize } from '$app/forms';
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import EmptyState from '$lib/components/EmptyState.svelte';

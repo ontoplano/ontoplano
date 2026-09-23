@@ -39,9 +39,14 @@ test('a picture lives once, however many albums hold it', async ({ page }) => {
 	await expect(page.locator('li img')).toHaveCount(1, { timeout: 15_000 });
 
 	// Tags read like diary tags — spaces or commas — and come back as chips.
+	// Typed into the box rather than the field: `[name="tags"]` is the hidden
+	// field `TagInput` posts, and what is typed goes into the combobox beside
+	// the chips. A space is what turns a word into one.
 	await page.locator('li img').first().click();
 	const lightbox = page.getByRole('dialog');
-	await lightbox.locator('[name="tags"]').fill('#Beach family');
+	const tagBox = lightbox.locator('input[role="combobox"]').first();
+	await tagBox.fill('#Beach family');
+	await tagBox.press('Space');
 	await lightbox.getByRole('button', { name: 'Save tags' }).click();
 	await expect(lightbox.getByRole('button', { name: '#beach' })).toBeVisible();
 	await expect(lightbox.getByRole('button', { name: '#family' })).toBeVisible();

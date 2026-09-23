@@ -14,6 +14,7 @@ import { STYLES, isStyle, type Style } from '../style.js';
 import { THEMES, type Theme } from '../theme.js';
 import { DEFAULT_CURRENCY, isCurrency, type Currency } from '../money.js';
 import { isHideableSection, type HideableSection } from '../sections.js';
+import { isClock, type Clock } from '../when.js';
 import { isLocale, type Locale } from '../i18n/locales.js';
 import { SECTIONS } from '../colors.js';
 import { isHexColor } from '../nav-order.js';
@@ -96,6 +97,28 @@ export function getLocale(userId: string): Locale | null {
 
 export function setLocale(userId: string, locale: Locale): void {
 	setUserSetting(userId, LOCALE_KEY, locale);
+}
+
+// --- The clock ----------------------------------------------------------------
+
+export const CLOCK_KEY = 'ui.clock';
+
+/**
+ * Whether this account reads a 12- or a 24-hour clock.
+ *
+ * `auto` — the default, and what almost everybody should be on — asks the
+ * language: English says four in the afternoon, Portuguese and German say
+ * sixteen. It is a setting because the language is a good guess about a person
+ * and not a statement about them: plenty of people read English and think in
+ * 24, and the app has no business arguing.
+ */
+export function getClock(userId: string): Clock {
+	const stored = getUserSetting(userId, CLOCK_KEY);
+	return isClock(stored) ? stored : 'auto';
+}
+
+export function setClock(userId: string, clock: Clock): void {
+	setUserSetting(userId, CLOCK_KEY, clock);
 }
 
 // --- Hidden sections ----------------------------------------------------------
@@ -412,4 +435,25 @@ export function getPanelWidth(userId: string, key: string): number {
 export function setPanelWidth(userId: string, key: string, rem: number): void {
 	const held = Math.min(PANEL_WIDTH.max, Math.max(PANEL_WIDTH.min, rem));
 	setUserSetting(userId, key, String(Math.round(held * 10) / 10));
+}
+
+// --- What the chat inside the app may do ---------------------------------------
+
+export const CHAT_MAY_DELETE_KEY = 'assistant.chatMayDelete';
+
+/**
+ * Whether the chat holds the `destructive` grant.
+ *
+ * Off until somebody says otherwise, the same default the key form ticks — an
+ * assistant that can remove a person or a habit's history is a bad trade for
+ * most people most of the time. Off is not "never": the grant exists, it is
+ * theirs to give, and deciding it for them in a route would make the
+ * permissions screen a lie in one place.
+ */
+export function getChatMayDelete(userId: string): boolean {
+	return getUserSetting(userId, CHAT_MAY_DELETE_KEY) === 'true';
+}
+
+export function setChatMayDelete(userId: string, may: boolean): void {
+	setUserSetting(userId, CHAT_MAY_DELETE_KEY, may ? 'true' : 'false');
 }

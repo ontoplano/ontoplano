@@ -8,6 +8,7 @@
  * the server load's generated data type, so the two cannot drift without the
  * build saying so.
  */
+import { listTags } from '$lib/services/diary';
 import type { LayoutServerData } from './$types';
 import { redirect } from '@sveltejs/kit';
 import type { IsolatedEvent } from '$lib/isolated/routes';
@@ -16,6 +17,7 @@ import { listCategories } from '$lib/services/activities';
 import { buildCtx } from '$lib/services/ctx';
 import {
 	getHiddenSections,
+	getClock,
 	getLocale,
 	getNavOrder,
 	getSectionColors,
@@ -35,6 +37,7 @@ export async function load(event: IsolatedEvent): Promise<LayoutServerData> {
 	if (!user) redirect(302, '/login');
 
 	const ctx = buildCtx(user.id);
+	const vocabulary = listTags(ctx);
 	return {
 		user,
 		/*
@@ -57,6 +60,15 @@ export async function load(event: IsolatedEvent): Promise<LayoutServerData> {
 			colorLight: c.colorLight
 		})),
 		theme: getTheme(user.id),
+		// Which clock, and which zone — the same two the server instance sends,
+		// read off the one account this device has.
+		clock: getClock(user.id),
+		tz: ctx.tz,
+		tagVocabulary: vocabulary.map((one) => one.name),
+		// The colours, beside the words — see the server instance's layout.
+		tagColors: Object.fromEntries(
+			vocabulary.filter((one) => one.color).map((one) => [one.name, one.color as string])
+		),
 		hiddenSections: getHiddenSections(user.id),
 		navOrder: getNavOrder(user.id),
 		sectionColors: getSectionColors(user.id),
@@ -72,9 +84,11 @@ export async function load(event: IsolatedEvent): Promise<LayoutServerData> {
 		notifications: listSent(buildCtx(user.id)),
 		unreadNotifications: unreadSent(buildCtx(user.id)),
 		demo: false,
+		demoAccount: false,
 		staging: false,
+		// The copy on the device is the app itself, with the app's own name.
+		appName: 'Ontoplano',
 		tutorialPending: !hasSeenTutorial(user.id),
-		demoHost: null,
 		// Push arrives through the device, not through a push service.
 		pushKey: null,
 		config: { week: getWeekSettings(user.id) },

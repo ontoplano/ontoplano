@@ -77,7 +77,7 @@ describe('a todo', () => {
 		expect(todo.ratings.interest).toBe(4);
 		// Unset stays unset rather than becoming a zero, which would read as
 		// "rated lowest" instead of "not rated".
-		expect(todo.ratings.energy).toBeNull();
+		expect(todo.ratings.ease).toBeNull();
 	});
 
 	test('can be reordered, and the order sticks', () => {
@@ -140,7 +140,7 @@ describe('putting a todo on the calendar', () => {
 			notes: 'second class is fine',
 			categoryId: work,
 			notebookId: notebook,
-			ratings: { urgency: 4, interest: null, energy: null }
+			ratings: { urgency: 4, interest: null, ease: null }
 		});
 		todos.promoteTodo(ctx, { todoId: id, date: '2026-08-19', startTime: '11:00' });
 
@@ -444,7 +444,7 @@ describe("a notebook's tasks", () => {
 		const found = notebooks.contentsOf(ctx, book).todos;
 		expect(found.map((t) => t.id)).toEqual([mine]);
 		expect(found[0]).toMatchObject({ notes: 'the long one', archivedAt: null });
-		expect(found[0].ratings).toEqual({ urgency: null, interest: null, energy: null });
+		expect(found[0].ratings).toEqual({ urgency: null, interest: null, ease: null });
 	});
 });
 

@@ -31,11 +31,20 @@ const here = dirname(fileURLToPath(import.meta.url));
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
 const declared = Object.keys(pkg.dependencies ?? {});
 
-/** Bare specifiers imported by the scripts that ship alongside this one. */
+/**
+ * Bare specifiers imported by the scripts that ship alongside this one.
+ *
+ * Comments are stripped before the match, because a sentence ABOUT importing
+ * is not an import: `import … from 'x'` written in a docblock had this
+ * reporting a package called `x` as unloadable on every run, which is noise
+ * in exactly the output somebody reads when a deploy has just stopped.
+ */
 function neededByScripts() {
 	const needed = new Set();
 	for (const file of readdirSync(here).filter((f) => f.endsWith('.mjs'))) {
-		const source = readFileSync(join(here, file), 'utf8');
+		const source = readFileSync(join(here, file), 'utf8')
+			.replace(/\/\*[\s\S]*?\*\//g, '')
+			.replace(/(^|[^:])\/\/.*$/gm, '$1');
 		for (const m of source.matchAll(/(?:^|\s)import[^'"]*from\s*['"]([^'"]+)['"]/g)) {
 			const spec = m[1];
 			if (spec.startsWith('.') || spec.startsWith('node:')) continue;

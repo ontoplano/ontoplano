@@ -23,6 +23,13 @@
 import { localDateOf, type Ctx } from '$lib/services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 import type { Ref } from './refs.js';
+import { CLOSED_STATUSES } from '../../task-status.js';
+import { compareByPriority } from '../../ratings.js';
+import type { Confinement } from './confinement.js';
+import { mayReadFile } from '$lib/services/media-permission.js';
+import { pictureReferrers, recordingReferrers } from '$lib/services/media-referrers.js';
+import { read as readPicture } from '$lib/services/media.js';
+import { read as readRecording } from '$lib/services/audio.js';
 
 import {
 	archiveEntry,
@@ -69,6 +76,7 @@ import {
 	toggleFavorite,
 	updateIdea
 } from '$lib/services/ideas.js';
+import { deleteTag, listTagsWithUses, recolorTag, renameTag } from '$lib/services/tags.js';
 import {
 	addGoalLinks,
 	addGoalTarget,
@@ -86,6 +94,7 @@ import {
 import {
 	contentsOf,
 	createNotebook,
+	updateNotebook,
 	deleteNotebook,
 	listNotebooks,
 	setNotebookShared
@@ -209,6 +218,17 @@ export type Tool = {
 	title: string;
 	description: string;
 	scope: Scope;
+	/**
+	 * Scopes any one of which is enough, instead of `scope` alone.
+	 *
+	 * One tool needs this and it is not an exception being carved out: a file
+	 * answers to whatever refers to it, so a picture in a note wants
+	 * `notes:read` and the same tool fetching one off a task wants
+	 * `tasks:read`. Demanding a single scope would hide `media` from a key
+	 * that is entitled to exactly the files it is asking for. `scope` stays
+	 * the one the manifest records and the one a refusal names first.
+	 */
+	anyScope?: Scope[];
 	/** Whether calling it changes anything, which is what a client warns about. */
 	writes: boolean;
 	/**
@@ -227,6 +247,17 @@ export type Tool = {
 	 * todo, and then read the todo.
 	 */
 	alsoNeeds?: Scope;
+	/**
+	 * Whether the answer leaves out the row it changed.
+	 *
+	 * Every write answers with `before` and `after` so a wrong call is
+	 * reversible from the transcript. On a tool whose whole subject is one
+	 * small field, that is two complete copies of a task to say one label
+	 * moved — most of what tagging costs, for something the tool's own answer
+	 * already states. The person's copy in the assistant log is unaffected:
+	 * that is where a real undo comes from.
+	 */
+	quiet?: boolean;
 	/**
 	 * The version that announced this tool is going away — set one release
 	 * before a removal, never in the same one. The manifest check refuses a
@@ -251,6 +282,27 @@ export type Tool = {
 	 */
 	refs?: Ref[];
 	/**
+	 * This tool decides the confinement itself, so a confined key is offered it.
+	 *
+	 * A confined key is normally shown only the tools that name a kind its
+	 * confinement holds — which works because naming an id is how a tool
+	 * reaches anything. `media` does not name an id: it takes the link as the
+	 * writing spells it, `/media/12`, and works out what may be read from what
+	 * refers to the file. Judged by the usual rule it declares no reach, so it
+	 * was hidden from every confined key — while the confinement screen
+	 * promised "its tasks, its goals, its notes, and the pictures and
+	 * recordings in them". The pictures were the one part that did not arrive,
+	 * and an assistant asked to look at a screenshot in the notebook it was
+	 * given could only report that it had no such tool.
+	 *
+	 * So: a tool sets this when its own `run` applies the confinement — here,
+	 * `mayReadFile`, which answers for a file in this notebook and refuses one
+	 * anywhere else. It is a statement about the tool, not an exemption: a
+	 * tool that sets it and does not check is a hole, which is why there is a
+	 * test that a confined key is refused a file outside its notebook.
+	 */
+	confinesItself?: boolean;
+	/**
 	 * The row this call is about, as it stands — read before and after every
 	 * write, so the answer carries `before` and `after` and a bad call is
 	 * reversible from the transcript. On a tool that changes an existing thing
@@ -259,7 +311,18 @@ export type Tool = {
 	 * there, and the protocol layer answers `before: null` for it.
 	 */
 	subject?: (ctx: Ctx, args: Record<string, unknown>) => unknown;
-	run: (ctx: Ctx, args: Record<string, unknown>) => unknown;
+	/**
+	 * `caller` is the connection's own grants, for the one rule that cannot be
+	 * decided from the arguments: which files this key may see. Every other
+	 * tool ignores it — the scopes were already checked before `run`.
+	 */
+	run: (ctx: Ctx, args: Record<string, unknown>, caller?: ToolCaller) => unknown;
+};
+
+/** What a tool may know about who is calling it. */
+export type ToolCaller = {
+	scopes: readonly string[];
+	confinement?: Confinement | null;
 };
 
 const object = (properties: Record<string, unknown>, required: string[] = []): Shape => ({
@@ -344,6 +407,144 @@ function paged<T>(
 }
 
 /**
+ * How much of a row to send, and which parts.
+ *
+ * Every answer here is read by a model with a budget, and the default was the
+ * whole row: reading one notebook's task list cost about ten thousand tokens
+ * of which a tenth was used. So a listing answers with a line by default —
+ * enough to know which thing it is and whether it is done — and the rest is
+ * asked for.
+ *
+ * Three levels, because two were not enough in practice:
+ *
+ * - **the default**, a line: what it is, what state it is in, its labels;
+ * - **`verbose`**, the whole row as it was before this existed;
+ * - **`fields`**, exactly the ones named, for a caller that wants two.
+ *
+ * `fields` is checked against the keys the shape can produce and refuses
+ * anything else by name. Nothing a caller sends reaches a query — the filters
+ * and the shaping run over rows a service has already scoped to this account
+ * — and this keeps it that way by construction rather than by trust.
+ */
+type Detail = { verbose: boolean; fields: string[] | null };
+
+const DETAIL_ARGS = {
+	verbose: {
+		type: 'boolean',
+		description:
+			'Send the whole of each row rather than a line. Off by default: a list is usually read to find something, and the thing found is then asked about by id.'
+	},
+	fields: text(
+		'Only these parts of each row, comma-separated — `title,status,tags`. `id` always comes back. Unknown names are refused rather than ignored.'
+	)
+};
+
+function detailOf(args: Record<string, unknown>): Detail {
+	const asked = args.fields;
+	if (asked === undefined || asked === null || asked === '')
+		return { verbose: args.verbose === true, fields: null };
+
+	const names = (Array.isArray(asked) ? asked : String(asked).split(','))
+		.map((one) => String(one).trim())
+		.filter(Boolean);
+	return { verbose: args.verbose === true, fields: names };
+}
+
+/**
+ * One row, cut to what was asked for.
+ *
+ * `full` is everything this kind of thing can say; `line` is the handful that
+ * identifies it. A named field that the full row does not have is a mistake
+ * worth saying out loud — silently sending less than was asked for is how a
+ * caller comes to believe a task has no notes.
+ */
+function detailed(
+	full: Record<string, unknown>,
+	line: Record<string, unknown>,
+	detail: Detail
+): Record<string, unknown> {
+	if (detail.fields) {
+		const known = Object.keys(full);
+		const unknown = detail.fields.filter((name) => !known.includes(name) && name !== 'id');
+		if (unknown.length > 0)
+			throw new ValidationError(
+				`No such field${unknown.length > 1 ? 's' : ''}: ${unknown.join(', ')}. This one has ${known.join(', ')}.`
+			);
+		const out: Record<string, unknown> = { id: full.id };
+		for (const name of detail.fields) if (name in full) out[name] = full[name];
+		return out;
+	}
+	return detail.verbose ? full : line;
+}
+
+/**
+ * The label filters every listing takes.
+ *
+ * `tag` narrows to what carries a word, `withoutTag` to what does not — "open
+ * and not yet `done-by-ai`" is one call rather than a list read and filtered
+ * by hand — and `taggedSince` answers the question a review queue is always
+ * asking: what has been marked since I last looked. It reads the date on the
+ * join, which is the tag's own and does not move when the thing is edited.
+ */
+const TAG_ARGS = {
+	tag: text(
+		'Only the ones carrying this label. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours.'
+	),
+	withoutTag: text(
+		'Only the ones NOT carrying this label. The mirror of `tag`; both may be given.'
+	),
+	taggedSince: text(
+		'Only the ones labelled at or after this moment — `2026-09-21` or a full ISO timestamp. With `tag`, it is that label\u2019s own date; without, any label\u2019s. A label put on before dates were kept does not answer this.'
+	)
+};
+
+/** A label as the caller wrote it: lower case, no leading hashes, trimmed. */
+function tagWord(value: unknown): string {
+	return String(value).replace(/^#+/, '').trim().toLowerCase();
+}
+
+/**
+ * A moment, from a day or a full timestamp.
+ *
+ * A bare day means the start of it, which is what somebody asking "since
+ * Monday" means. ISO strings compare correctly as strings, so the comparison
+ * itself needs no parsing — but the shape is checked here so a typo is a
+ * sentence rather than a filter that quietly matches everything.
+ */
+function momentArg(value: unknown, what: string): string {
+	const said = String(value).trim();
+	if (/^\d{4}-\d{2}-\d{2}$/.test(said)) return `${said}T00:00:00.000Z`;
+	const at = new Date(said);
+	if (Number.isNaN(at.getTime()))
+		throw new ValidationError(`${what} has to be a date like 2026-03-14 or a full ISO timestamp.`);
+	return at.toISOString();
+}
+
+/** Whether a thing's labels satisfy the three filters above. */
+function passesTags(
+	labels: readonly { name: string; taggedAt?: string | null }[],
+	args: Record<string, unknown>
+): boolean {
+	if (args.tag !== undefined && !labels.some((one) => one.name === tagWord(args.tag))) return false;
+	if (args.withoutTag !== undefined && labels.some((one) => one.name === tagWord(args.withoutTag)))
+		return false;
+
+	if (args.taggedSince !== undefined) {
+		const since = momentArg(args.taggedSince, 'taggedSince');
+		const counted =
+			args.tag === undefined ? labels : labels.filter((one) => one.name === tagWord(args.tag));
+		if (!counted.some((one) => one.taggedAt && one.taggedAt >= since)) return false;
+	}
+	return true;
+}
+
+/** How long an opening is: enough to tell two things apart. */
+const PREVIEW_CHARS = 140;
+
+/** The pictures and recordings a piece of writing refers to, as links. */
+const MEDIA_LINK = /\/media\/(?:audio\/)?\d+/g;
+
+/**
  * A todo as little as it can be said in.
  *
  * The service's shape is written for the app, which wants every column laid
@@ -355,6 +556,9 @@ function paged<T>(
  */
 function briefly(todo: Todo): Record<string, unknown> {
 	const out: Record<string, unknown> = { id: todo.id, title: todo.title, status: todo.status };
+	// The number a person can see on the screen and say out loud — the fourth
+	// task about the kitchen is #4. The id is ours; this one is theirs.
+	if (todo.notebookSeq !== null) out.seq = todo.notebookSeq;
 	if (todo.notes) out.notes = todo.notes;
 	if (todo.scheduledDate) out.scheduledDate = todo.scheduledDate;
 	if (todo.categoryName) out.category = todo.categoryName;
@@ -364,11 +568,132 @@ function briefly(todo: Todo): Record<string, unknown> {
 	// Names, not ids: the id of a tag is of no use to a reader, and the whole
 	// point of a label here is the word.
 	if (todo.tags.length > 0) out.tags = todo.tags.map((one) => one.name);
+	/*
+	 * And when each went on, where that is known.
+	 *
+	 * Separate from `tags` so the common reading stays a plain list of words.
+	 * This is what lets a caller answer "what has been marked since this
+	 * morning" without comparing against a list it remembered — the task's own
+	 * `updatedAt` moves for every edit and cannot say.
+	 */
+	const dated = todo.tags.filter((one) => one.taggedAt);
+	if (dated.length > 0) {
+		out.taggedAt = Object.fromEntries(dated.map((one) => [one.name, one.taggedAt]));
+	}
 	const ratings = Object.fromEntries(
 		Object.entries(todo.ratings).filter(([, value]) => value !== null)
 	);
 	if (Object.keys(ratings).length > 0) out.ratings = ratings;
 	return out;
+}
+
+/**
+ * The same task as one line: which one it is, and where it stands.
+ *
+ * What a list is read for. The notes are the expensive part of a task and the
+ * part a list is least likely to want — a caller looking for one asks by id
+ * once it has found it, or says `verbose`.
+ */
+function asLine(todo: Todo): Record<string, unknown> {
+	const out: Record<string, unknown> = { id: todo.id, title: todo.title, status: todo.status };
+	if (todo.notebookSeq !== null) out.seq = todo.notebookSeq;
+	if (todo.tags.length > 0) out.tags = todo.tags.map((one) => one.name);
+
+	/*
+	 * An opening, and what it refers to — the same two a note's line carries.
+	 *
+	 * A title is not always the task. Half the tasks on a working list are a
+	 * line of title and a paragraph of what actually happened, with the
+	 * screenshot that prompted it, and a line that mentioned neither made the
+	 * list unreadable without a second call per row. The opening says what
+	 * this is about and the links say what to fetch if it matters; `verbose`
+	 * is still there for the whole of it.
+	 */
+	const opening = (todo.notes ?? '').trim().replace(/\s+/g, ' ');
+	if (opening)
+		out.opening =
+			opening.length > PREVIEW_CHARS ? `${opening.slice(0, PREVIEW_CHARS)}\u2026` : opening;
+	const links = [...new Set((todo.notes ?? '').match(MEDIA_LINK) ?? [])];
+	if (links.length > 0) out.media = links;
+	return out;
+}
+
+/** A task, at whatever detail was asked for. */
+const shapeTodo = (detail: Detail) => (todo: Todo) => detailed(briefly(todo), asLine(todo), detail);
+
+/**
+ * A note, as a line and as the whole thing.
+ *
+ * The words are the point of a note and also the expensive part of one: a
+ * notebook of forty notes is a book, and a listing read to find one should not
+ * carry all of them. The line keeps what identifies it — its number, its name,
+ * its labels, when it was written — and an opening so a reader can tell two
+ * apart. `verbose` gives the writing.
+ */
+type NoteRow = {
+	id: number;
+	seq?: number | null;
+	title?: string;
+	content: string;
+	createdAt: string;
+	updatedAt?: string | null;
+	archivedAt?: string | null;
+	pinnedAt?: string | null;
+	tags: { id?: number; name: string; taggedAt?: string | null }[];
+};
+
+function noteLine(note: NoteRow): Record<string, unknown> {
+	const out: Record<string, unknown> = { id: note.id, createdAt: note.createdAt };
+	if (note.seq !== null && note.seq !== undefined) out.seq = note.seq;
+	if (note.title) out.title = note.title;
+	const opening = note.content.trim().replace(/\s+/g, ' ');
+	if (opening)
+		out.opening =
+			opening.length > PREVIEW_CHARS ? `${opening.slice(0, PREVIEW_CHARS)}\u2026` : opening;
+	if (note.tags.length > 0) out.tags = note.tags.map((one) => one.name);
+	if (note.pinnedAt) out.pinned = true;
+	if (note.archivedAt) out.archivedAt = note.archivedAt;
+
+	/*
+	 * What it refers to, as links rather than as bytes.
+	 *
+	 * A note's pictures are the most expensive thing about it and usually not
+	 * why it is being read. The line says they are there and what to ask for;
+	 * `media` fetches one when it turns out to matter. An opening that stops
+	 * before the pictures would otherwise hide them entirely.
+	 */
+	const links = [...new Set(note.content.match(MEDIA_LINK) ?? [])];
+	if (links.length > 0) out.media = links;
+	return out;
+}
+
+function noteFull(note: NoteRow): Record<string, unknown> {
+	const out: Record<string, unknown> = { ...noteLine(note), content: note.content };
+	delete out.opening;
+	if (note.updatedAt) out.updatedAt = note.updatedAt;
+	const dated = note.tags.filter((one) => one.taggedAt);
+	if (dated.length > 0)
+		out.taggedAt = Object.fromEntries(dated.map((one) => [one.name, one.taggedAt]));
+	return out;
+}
+
+const shapeNote = (detail: Detail) => (note: NoteRow) =>
+	detailed(noteFull(note), noteLine(note), detail);
+
+/**
+ * The four states a task can be in, plus the two words people actually use.
+ *
+ * `open` is "not finished and not given up on", which is the question behind
+ * almost every listing; `closed` is its complement. Naming the four as well
+ * means a caller that wants exactly `doing` can say so.
+ */
+const TASK_STATES = ['todo', 'doing', 'done', 'skipped', 'open', 'closed'] as const;
+
+function matchesState(todo: Todo, said: unknown): boolean {
+	const closed = CLOSED_STATUSES.includes(todo.status);
+	if (said === 'open') return !closed;
+	if (said === 'closed') return closed;
+	return todo.status === said;
 }
 
 /**
@@ -398,7 +723,7 @@ const MEASURE_NAMES = {
 	}
 } as const;
 
-/** A 1–5 rating, or nothing. Bad numbers are refused before a service sees them. */
+/** A 0–5 rating, or nothing. Bad numbers are refused before a service sees them. */
 const rating = (value: unknown, what: string): number | undefined => {
 	if (value === undefined || value === null) return undefined;
 	const n = Number(value);
@@ -407,20 +732,86 @@ const rating = (value: unknown, what: string): number | undefined => {
 	return n;
 };
 
+/**
+ * The release `energy` stops being accepted in.
+ *
+ * Named rather than "a future release": the caller is a model reading this
+ * answer, and it can act on a version number. One constant, so the sentence
+ * and the schema cannot drift apart.
+ */
+const ENERGY_REMOVED_IN = '0.190';
+
 const ratingArgs = {
-	urgency: { type: 'integer', description: 'How soon it has to happen, 1–5.' },
-	interest: { type: 'integer', description: 'How much they want to do it, 1–5.' },
-	energy: { type: 'integer', description: 'How much it will take out of them, 1–5.' }
+	urgency: { type: 'integer', description: 'How soon it has to happen, 0–5.' },
+	interest: { type: 'integer', description: 'How much they want to do it, 0–5.' },
+	ease: {
+		type: 'integer',
+		description:
+			'How easy it is, 0–5, five being easiest. Replaces `energy`, which asked the opposite question on a scale that began at one.'
+	},
+	energy: {
+		type: 'integer',
+		deprecated: true,
+		description: `Deprecated — use \`ease\`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in ${ENERGY_REMOVED_IN}.`
+	}
 };
+
+/**
+ * The scale `energy` was asked on: one to five, and frozen at that.
+ *
+ * Written out rather than taken from `RATING_MIN` and `RATING_MAX`, which have
+ * since moved — the scale starts at nought now. A caller still saying `energy`
+ * is speaking the old scale, and the number that mirrors it has to be the old
+ * one for ever: reading today's bounds would quietly turn an energy of 5 into
+ * an ease of 0 instead of 1.
+ */
+const ENERGY_ENDS = { min: 1, max: 5 } as const;
+
+/**
+ * What `energy` means now that the question is `ease`.
+ *
+ * Mirrored rather than refused: a caller that has not been updated is asking a
+ * coherent question on the old scale, and answering it wrongly is worse than
+ * either accepting or refusing it. The same arithmetic the migration used on
+ * the values already stored.
+ */
+const easeFromEnergy = (value: number) => ENERGY_ENDS.min + ENERGY_ENDS.max - value;
+
+/** Whether this call reached for the old spelling, which is worth saying back. */
+const usedEnergy = (args: Record<string, unknown>) =>
+	args.energy !== undefined && args.ease === undefined;
+
+/**
+ * What to say back to a caller that used it.
+ *
+ * In the answer rather than only in the schema, because a translation nobody
+ * is told about is invisible: the call worked, and the assistant goes on using
+ * the dead spelling until the release that removes it.
+ */
+const ENERGY_WARNING =
+	`\`energy\` is deprecated and will be removed in ${ENERGY_REMOVED_IN}. ` +
+	'Use `ease`, which asks the opposite question on the same scale — an ' +
+	'energy of 5 is an ease of 1. This call was translated.';
+
+/** Ease, from whichever of the two arguments the caller used. */
+function easeOf(args: Record<string, unknown>): number | null {
+	const asked = rating(args.ease, 'ease');
+	if (asked !== undefined) return asked ?? null;
+	const old = rating(args.energy, 'energy');
+	return old === undefined || old === null ? null : easeFromEnergy(old);
+}
 
 const ratingsOf = (args: Record<string, unknown>) => ({
 	urgency: rating(args.urgency, 'urgency') ?? null,
 	interest: rating(args.interest, 'interest') ?? null,
-	energy: rating(args.energy, 'energy') ?? null
+	ease: easeOf(args)
 });
 
 const gaveARating = (args: Record<string, unknown>) =>
-	args.urgency !== undefined || args.interest !== undefined || args.energy !== undefined;
+	args.urgency !== undefined ||
+	args.interest !== undefined ||
+	args.ease !== undefined ||
+	args.energy !== undefined;
 
 /*
  * WHAT NEVER GETS A DELETE TOOL
@@ -823,7 +1214,9 @@ export const TOOLS: Tool[] = [
 				...(gaveARating(args) ? { ratings: ratingsOf(args) } : {})
 			});
 
-			return { id, category: chosen.name };
+			return usedEnergy(args)
+				? { id, category: chosen.name, warning: ENERGY_WARNING }
+				: { id, category: chosen.name };
 		}
 	},
 	{
@@ -951,12 +1344,83 @@ export const TOOLS: Tool[] = [
 			}))
 	},
 
+	/*
+	 * A picture or a recording, to whoever may read the thing it is in.
+	 *
+	 * 0.181.0 made a file reachable over HTTP with a bearer key — and an
+	 * assistant connected over MCP never holds one: its client keeps the
+	 * credential and hands out none, so the capability worked for a script
+	 * with a pasted key and not for the client it was built for. A screenshot
+	 * dropped into a todo was a thing the model could see the link to and not
+	 * the picture.
+	 *
+	 * The permission is unchanged, and is the same function the HTTP route
+	 * asks (`mayReadFile`): a file answers to whatever refers to it — one in a
+	 * note wants `notes:read`, a face `people:read`, one on a task
+	 * `tasks:read` — and a file nothing refers to is reachable by nobody. So
+	 * this is a second door onto the rule, not a second rule, and no new
+	 * grant.
+	 */
+	{
+		name: 'media',
+		title: 'A picture or a recording',
+		description:
+			'The bytes of a file this key may see, given the link as it appears in the writing \u2014 `/media/12` for a picture, `/media/audio/12` for a recording. A file answers to whatever refers to it, so the grant that lets you read the note lets you see the picture in it; one nothing refers to is reachable by nobody.',
+		scope: 'notes:read',
+		anyScope: ['notes:read', 'ideas:read', 'tasks:read', 'people:read', 'kitchen:read'],
+		writes: false,
+		// It takes a link rather than an id, so it declares no reach — and it
+		// applies the confinement itself, below, through `mayReadFile`.
+		confinesItself: true,
+		input: object(
+			{
+				path: text(
+					'The link, exactly as the text writes it: `/media/12`, or `/media/audio/12` for a recording. The number alone is taken as a picture.'
+				)
+			},
+			['path']
+		),
+		run: (ctx, args, caller) => {
+			/*
+			 * The link rather than a number and a kind.
+			 *
+			 * What a model is looking at is `![shot](/media/48)` in a note, and
+			 * handing that back is one step with nothing to get wrong. Two
+			 * arguments would also make "which id is a recording" a question
+			 * the caller has to answer about a number it has never seen.
+			 */
+			const said = String(args.path ?? '').trim();
+			const match = /^(?:\/?media\/)?(audio\/)?(\d+)$/.exec(said.replace(/^\//, ''));
+			if (!match) throw new ValidationError('path is a link like /media/12 or /media/audio/12.');
+
+			const recording = Boolean(match[1]);
+			const id = Number(match[2]);
+
+			const referrers = recording ? recordingReferrers(ctx, id) : pictureReferrers(ctx, id);
+			/*
+			 * The same answer for a file that is not there and one this key may
+			 * not see: these are small integers, and telling the two apart is
+			 * arithmetic anybody could do.
+			 */
+			if (!caller || !mayReadFile(referrers, caller.scopes, caller.confinement ?? null))
+				throw new NotFoundError('No such file, or nothing you may read refers to it.');
+
+			const file = recording ? readRecording(ctx, id) : readPicture(ctx, id);
+			return {
+				media: {
+					mime: file.mime,
+					base64: Buffer.from(file.bytes).toString('base64')
+				}
+			};
+		}
+	},
+
 	// ── The todo list ────────────────────────────────────────────────────────
 	{
 		name: 'todos',
 		title: 'The todo list',
 		description:
-			'Tasks with no date on them yet. A todo gains a date by being put on a day, which promotes it onto the week. Pass `notebookId` when the question is about one subject \u2014 reading the whole list to find four tasks about the kitchen is somebody\u2019s entire todo list going past for no reason.',
+			'Tasks with no date on them yet. A todo gains a date by being put on a day, which promotes it onto the week. Answers with a line per task; `verbose` or `fields` for more. Narrow it rather than reading it whole \u2014 `notebookId` for one subject, `status: "open"`, `tag`, `withoutTag`, `taggedSince`.',
 		scope: 'tasks:read',
 		writes: false,
 		refs: [{ arg: 'notebookId', kind: 'notebook' }],
@@ -973,11 +1437,17 @@ export const TOOLS: Tool[] = [
 				description:
 					'Include the tasks that have been put away. Off by default, which is what putting away means.'
 			},
-			tag: text(
-				'Only the tasks carrying this label. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours.'
-			)
+			status: {
+				type: 'string',
+				enum: [...TASK_STATES],
+				description:
+					'Only the tasks in this state. `open` is everything not finished and not skipped, which is what a list is usually read for.'
+			},
+			...TAG_ARGS,
+			...DETAIL_ARGS
 		}),
 		run: (ctx, args) => {
+			const detail = detailOf(args);
 			let rows = listTodos(ctx);
 			if (!args.includeArchived) rows = rows.filter((todo) => !todo.archivedAt);
 			if (args.notebookId !== undefined) {
@@ -986,11 +1456,54 @@ export const TOOLS: Tool[] = [
 					wanted === 0 ? todo.notebookId === null : todo.notebookId === wanted
 				);
 			}
-			if (args.tag !== undefined) {
-				const wanted = String(args.tag).replace(/^#+/, '').trim().toLowerCase();
-				rows = rows.filter((todo) => todo.tags.some((one) => one.name === wanted));
-			}
-			return paged(rows.map(briefly), args, 50);
+			if (args.status !== undefined) rows = rows.filter((todo) => matchesState(todo, args.status));
+			rows = rows.filter((todo) => passesTags(todo.tags, args));
+			return paged(rows.map(shapeTodo(detail)), args, 50);
+		}
+	},
+	/*
+	 * What to do next, by the numbers the person put on their own tasks.
+	 *
+	 * Urgency first, then ease, then interest: a tie between two urgent things
+	 * goes to the easier one.
+	 *
+	 * An unrated task is not a zero — it is the middle of the scale, and that
+	 * rule lives in `$lib/ratings`, so the board and this answer the same
+	 * question the same way.
+	 *
+	 * It exists so that "what should I be doing" is one small call rather than
+	 * the whole list read and sorted by a model that then has to explain
+	 * itself.
+	 */
+	{
+		name: 'up_next',
+		title: 'What to do next',
+		description:
+			'The task to do next, by the ratings on it: most urgent first, then the easiest, then the one most wanted. All three run the same way \u2014 five is the most of what the word says. An unrated one is not a zero: it counts as the middle of the scale, 2.5, so anything marked 4 or 5 beats it and 1 or 2 falls below it as the postpone tiers. Open, unarchived, undated tasks only \u2014 anything with a day on it is on the week and `today` answers for that. Answers with one line by default; `limit` for a short list to choose between.',
+		scope: 'tasks:read',
+		writes: false,
+		refs: [{ arg: 'notebookId', kind: 'notebook' }],
+		input: object({
+			limit: count('How many to return. One is the usual question.', 1),
+			notebookId: {
+				type: 'integer',
+				description: 'Only tasks filed under this notebook, as `notebooks` gives its id.'
+			},
+			...TAG_ARGS,
+			...DETAIL_ARGS
+		}),
+		run: (ctx, args) => {
+			const detail = detailOf(args);
+			let rows = listTodos(ctx).filter(
+				(todo) => !todo.archivedAt && !CLOSED_STATUSES.includes(todo.status)
+			);
+			if (args.notebookId !== undefined)
+				rows = rows.filter((todo) => todo.notebookId === Number(args.notebookId));
+			rows = rows.filter((todo) => passesTags(todo.tags, args));
+
+			const ordered = [...rows].sort(compareByPriority);
+
+			return pageOf(ordered.slice(0, limitOf(args, 1, 20)).map(shapeTodo(detail)), rows.length, 0);
 		}
 	},
 	{
@@ -1146,6 +1659,12 @@ export const TOOLS: Tool[] = [
 			'Put labels on a todo or take them off, leaving its other labels alone — this is the one to use for marking a task, and `change_todo` is for replacing every label at once. Several assistants sharing a list mark their own work this way; `todos` takes a `tag` to read back only the ones you marked. Answers with the labels it has afterwards.',
 		scope: 'tasks:write',
 		writes: true,
+		/*
+		 * The tags it has afterwards are the whole answer. Two copies of the
+		 * task around them was most of what a marking run cost, and said
+		 * nothing the caller did not send or receive.
+		 */
+		quiet: true,
 		refs: [{ arg: 'id', kind: 'todo', subject: true }],
 		input: object(
 			{
@@ -1160,6 +1679,7 @@ export const TOOLS: Tool[] = [
 			['id']
 		),
 		run: (ctx, args) => ({
+			id: Number(args.id),
 			tags: tagTodo(ctx, Number(args.id), { add: args.add, remove: args.remove })
 		})
 	},
@@ -1213,12 +1733,14 @@ export const TOOLS: Tool[] = [
 							ratings: {
 								urgency: rating(args.urgency, 'urgency') ?? current.ratings.urgency,
 								interest: rating(args.interest, 'interest') ?? current.ratings.interest,
-								energy: rating(args.energy, 'energy') ?? current.ratings.energy
+								// `easeOf` also answers for a caller still sending `energy`;
+								// null from it means neither was given, so this one is left.
+								ease: easeOf(args) ?? current.ratings.ease
 							}
 						}
 					: {})
 			});
-			return { ok: true };
+			return usedEnergy(args) ? { ok: true, warning: ENERGY_WARNING } : { ok: true };
 		}
 	},
 	{
@@ -1454,11 +1976,28 @@ export const TOOLS: Tool[] = [
 		name: 'diary',
 		title: 'Recent diary entries',
 		description:
-			'What has been written lately, newest first. An entry can belong to a notebook or to no notebook at all.',
+			'What has been written lately, newest first. An entry can belong to a notebook or to no notebook at all. Answers with a line and an opening per entry; `verbose` for the writing itself.',
 		scope: 'notes:read',
 		writes: false,
-		input: object({ limit: count('How many entries.', 20), offset: from('the diary') }),
-		run: (ctx, args) => paged(listEntries(ctx), args, 20)
+		input: object({
+			limit: count('How many entries.', 20),
+			offset: from('the diary'),
+			...TAG_ARGS,
+			...DETAIL_ARGS
+		}),
+		run: (ctx, args) => {
+			const detail = detailOf(args);
+			/*
+			 * `seq` here is the diary's own number — the one the entry is headed
+			 * with on the page, and the one somebody means by `#12`. The row
+			 * also carries the account-wide `seq`, which counts notebook notes
+			 * too and so names a different entry.
+			 */
+			const rows = listEntries(ctx)
+				.filter((entry) => passesTags(entry.tags, args))
+				.map((entry) => ({ ...entry, seq: entry.diarySeq ?? entry.seq }));
+			return paged(rows.map(shapeNote(detail)), args, 20);
+		}
 	},
 	{
 		name: 'write_entry',
@@ -1493,7 +2032,7 @@ export const TOOLS: Tool[] = [
 		name: 'notebook_notes',
 		title: 'The notes in a notebook',
 		description:
-			'What has been written against one subject, newest first, with the id of each note. `diary` deliberately shows only entries outside a notebook, so this is the way to read one \u2014 and the way to find the id `archive_note` wants.',
+			'What has been written against one subject, newest first, with the id of each note. `diary` deliberately shows only entries outside a notebook, so this is the way to read one \u2014 and the way to find the id `archive_note` wants. Answers with a line and an opening per note; `verbose` for the writing itself, `tag` and `taggedSince` to narrow.',
 		scope: 'notes:read',
 		writes: false,
 		refs: [{ arg: 'id', kind: 'notebook' }],
@@ -1503,13 +2042,20 @@ export const TOOLS: Tool[] = [
 				includeArchived: {
 					type: 'boolean',
 					description: 'Include the notes that have been put away. Off by default, as on the page.'
-				}
+				},
+				limit: count('How many to return.', 50),
+				offset: from('the notebook'),
+				...TAG_ARGS,
+				...DETAIL_ARGS
 			},
 			['id']
 		),
 		run: (ctx, args) => {
-			const notes = contentsOf(ctx, Number(args.id)).entries;
-			return args.includeArchived ? notes : notes.filter((note) => !note.archivedAt);
+			const detail = detailOf(args);
+			let notes = contentsOf(ctx, Number(args.id)).entries;
+			if (!args.includeArchived) notes = notes.filter((note) => !note.archivedAt);
+			notes = notes.filter((note) => passesTags(note.tags, args));
+			return paged(notes.map(shapeNote(detail)), args, 50);
 		}
 	},
 	{
@@ -1603,7 +2149,7 @@ export const TOOLS: Tool[] = [
 		name: 'note_to_todos',
 		title: 'Make todos out of a checklist note',
 		description:
-			'Turn a note that is really a checklist into the tasks it describes. Every `- [ ]` line becomes a task, and whatever is written under it \u2014 until the next `- [ ]` \u2014 becomes that task\u2019s notes. A `- [x]` line comes across already done. Each one is filed under the note\u2019s own notebook. The note is left exactly as it was: tidy it with `edit_entry`, or put it away with `archive_note`, once you have checked what was made.',
+			'Turn a note that is really a checklist into the tasks it describes. Every `- [ ]` line becomes a task, with whatever is written under it as that task\u2019s notes; a `- [x]` line comes across already done. Each is filed under the note\u2019s own notebook, and each box is replaced by a reference to the task it became \u2014 `TASK:#4` \u2014 so the note keeps its words and stops being a second copy of the list.',
 		scope: 'tasks:write',
 		alsoNeeds: 'notes:read',
 		writes: true,
@@ -1658,15 +2204,40 @@ export const TOOLS: Tool[] = [
 			return { ok: true };
 		}
 	},
+	/*
+	 * The subjects, and the one question a confined key could not ask.
+	 *
+	 * This took no arguments, which meant it named no `notebook` reference,
+	 * which meant a key tied to one notebook was never offered it at all — see
+	 * `withinConfinement`. So the assistant that can only work on one subject
+	 * was the one assistant that could not find out which subject that is, or
+	 * the id every other tool asks it for. It had to learn its own id from the
+	 * answer to a write.
+	 *
+	 * The `id` argument fixes it without a second tool: unset it lists
+	 * everything, and for a confined key `confine` pins it to the one notebook
+	 * that key can reach, which is the honest answer to "which notebooks do I
+	 * have?"
+	 */
 	{
 		name: 'notebooks',
 		title: 'Notebooks',
 		description:
-			'The subjects being written against — a trip, a renovation, a book. Ask for these before writing an entry into one.',
+			'The subjects being written against \u2014 a trip, a renovation, a book \u2014 with the id every other tool means by `notebookId`. Ask for these before writing an entry into one. A key tied to one notebook is answered with that one.',
 		scope: 'notes:read',
 		writes: false,
-		input: object({}),
-		run: (ctx) => listNotebooks(ctx)
+		refs: [{ arg: 'id', kind: 'notebook' }],
+		input: object({
+			id: {
+				type: 'integer',
+				description:
+					'Only this one, by its id. Usually left off; a confined key is pinned to its own.'
+			}
+		}),
+		run: (ctx, args) => {
+			const all = listNotebooks(ctx);
+			return args.id === undefined ? all : all.filter((one) => one.id === Number(args.id));
+		}
 	},
 	{
 		name: 'add_notebook',
@@ -1678,13 +2249,48 @@ export const TOOLS: Tool[] = [
 		input: object(
 			{
 				title: text('What it is about.'),
-				description: text('A line under the title, shown on its page.')
+				description: text('A line under the title, shown on its page.'),
+				defaultTags: text(
+					'Labels a new note in it starts with, comma or space separated \u2014 the ones writing about this subject always carries, so nobody types them on every note. The person can still take them off a note as they write it.'
+				)
 			},
 			['title']
 		),
 		run: (ctx, args) => ({
-			id: createNotebook(ctx, { title: args.title, description: args.description })
+			id: createNotebook(ctx, {
+				title: args.title,
+				description: args.description,
+				defaultTags: args.defaultTags
+			})
 		})
+	},
+	{
+		name: 'change_notebook',
+		title: 'Change a notebook',
+		description:
+			'Rename a notebook, rewrite the line under its title, or set the labels a new note in it starts with. The title is always sent; the other two change only when given.',
+		scope: 'notes:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'notebook', subject: true }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The notebook\u2019s id, as `notebooks` gives it.' },
+				title: text('What it is about. Renaming with the \u2014 separator moves it under another.'),
+				description: text('A line under the title, shown on its page.'),
+				defaultTags: text(
+					'Labels a new note in it starts with, comma or space separated. An empty string clears them; left out, they are untouched.'
+				)
+			},
+			['id', 'title']
+		),
+		run: (ctx, args) => {
+			updateNotebook(ctx, Number(args.id), {
+				title: args.title,
+				description: args.description,
+				defaultTags: args.defaultTags
+			});
+			return { id: Number(args.id) };
+		}
 	},
 	{
 		/*
@@ -1810,6 +2416,84 @@ export const TOOLS: Tool[] = [
 				content: args.content ?? current.content,
 				tags: args.tags ?? current.tags.map((t) => t.name).join(', ')
 			});
+			return { ok: true };
+		}
+	},
+	// ── The one vocabulary ────────────────────────────────────
+	/*
+	 * Labels as things in themselves, rather than as a property of what wears
+	 * them.
+	 *
+	 * Every other tool reads a tag off a task or a note. These three are the
+	 * account's vocabulary itself — which is why they answer to `tags:*` and
+	 * not to the room the label happens to be used in: renaming one reaches
+	 * into every room at once.
+	 */
+	{
+		name: 'tags',
+		title: 'The labels',
+		description:
+			'Every label the account uses, alphabetically, with the colour it wears and how many things carry it. One vocabulary for the whole app — the same word on a task, a note, an idea, a block and a picture.',
+		scope: 'tags:read',
+		writes: false,
+		input: object({}),
+		run: (ctx) => ({ tags: listTagsWithUses(ctx.userId) })
+	},
+	{
+		name: 'rename_tag',
+		title: 'Rename a label',
+		description:
+			'Rename a label everywhere at once — for a typo, or for two words that turned out to mean one thing. Renaming onto a name the account already uses merges the two: everything that carried the old label carries the surviving one, and the old label stops existing. Answers with the label that survived.',
+		scope: 'tags:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'tag', subject: true }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The label\u2019s id, as `tags` gives it.' },
+				name: text(
+					'The new name — one word, lower case, no #. A name the account already uses merges the two labels.'
+				)
+			},
+			['id', 'name']
+		),
+		run: (ctx, args) => renameTag(ctx.userId, Number(args.id), args.name)
+	},
+	{
+		name: 'recolor_tag',
+		title: 'Colour a label',
+		description:
+			'Give a label a colour, so it is drawn in it wherever a chip for it appears. An empty string takes the colour off again, which is the plain chip every label starts as.',
+		scope: 'tags:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'tag', subject: true }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The label\u2019s id, as `tags` gives it.' },
+				color: text('The colour as `#rrggbb` — `#0f766e`. An empty string takes it off.')
+			},
+			['id', 'color']
+		),
+		run: (ctx, args) => recolorTag(ctx.userId, Number(args.id), args.color)
+	},
+	{
+		name: 'remove_tag',
+		title: 'Delete a label',
+		description:
+			'Take a label out of the vocabulary and off everything that carried it — the tasks, notes, ideas, blocks and pictures keep everything else about them. Nothing is archived; the label is gone. To fold it into another label instead, `rename_tag` onto that one.',
+		scope: 'tags:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'tag' }],
+		/*
+		 * A label is small and a delete is a delete: this one reaches across
+		 * every room at once, so it wants the grant that says so.
+		 */
+		destroys: true,
+		input: object(
+			{ id: { type: 'integer', description: 'The label\u2019s id, as `tags` gives it.' } },
+			['id']
+		),
+		run: (ctx, args) => {
+			deleteTag(ctx.userId, Number(args.id));
 			return { ok: true };
 		}
 	},
@@ -2691,7 +3375,9 @@ export const TOOLS: Tool[] = [
 				recurrence: recurrenceFromArgs(args, anchor),
 				...(gaveARating(args) ? { ratings: ratingsOf(args) } : {})
 			});
-			return { id, category: chosen.name };
+			return usedEnergy(args)
+				? { id, category: chosen.name, warning: ENERGY_WARNING }
+				: { id, category: chosen.name };
 		}
 	},
 	{

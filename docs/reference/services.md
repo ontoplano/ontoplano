@@ -23,8 +23,10 @@ shows up here on the next build.
 | [`account`](#account)                            | Taking your data out, and closing your account — and what this instance allows of both.                                                                                                                                                                              |
 | [`activities`](#activities)                      | Categories are the areas of a life; activities are the named recurring things inside them. Both are referenced by planner slots and by history, so neither can be deleted while something still points at it — history that loses its category stops being readable. |
 | [`admin`](#admin)                                | Administration: looking at somebody else's account.                                                                                                                                                                                                                  |
+| [`assistant-chat`](#assistant-chat)              | The in-app chat: the same assistant surface MCP offers, spoken to a model the person brought a key for.                                                                                                                                                              |
 | [`assistant-log`](#assistant-log)                | What an assistant did to an account, and the way back.                                                                                                                                                                                                               |
 | [`assistant-notify`](#assistant-notify)          | Telling somebody what an assistant just did to their account.                                                                                                                                                                                                        |
+| [`attack-watch`](#attack-watch)                  | What an attack on the app itself looks like from inside the process.                                                                                                                                                                                                 |
 | [`attributes`](#attributes)                      | The attributes an account has actually used, and what they are worth reading.                                                                                                                                                                                        |
 | [`audio`](#audio)                                | Recordings: what is accepted, where they go, and who may hear one.                                                                                                                                                                                                   |
 | [`audit`](#audit)                                | What happened to an account.                                                                                                                                                                                                                                         |
@@ -43,6 +45,7 @@ shows up here on the next build.
 | [`errors`](#errors)                              | Typed errors thrown by service functions.                                                                                                                                                                                                                            |
 | [`family-invite`](#family-invite)                | Inviting somebody to the plan, and the account that makes for them.                                                                                                                                                                                                  |
 | [`gallery`](#gallery)                            | Albums: lists of references over the one media table.                                                                                                                                                                                                                |
+| [`goal-actions`](#goal-actions)                  | Everything done to a goal, from wherever a goal is shown.                                                                                                                                                                                                            |
 | [`goals`](#goals)                                | Goals, and the progress that makes them more than a wish list.                                                                                                                                                                                                       |
 | [`habits`](#habits)                              | Habits are things to do or to avoid, logged one day at a time.                                                                                                                                                                                                       |
 | [`health`](#health)                              | Can this process actually reach the database?                                                                                                                                                                                                                        |
@@ -58,21 +61,24 @@ shows up here on the next build.
 | [`mail-log`](#mail-log)                          | Mail that must not fail silently.                                                                                                                                                                                                                                    |
 | [`media-kind`](#media-kind)                      | Which kind of thing a `media` row is.                                                                                                                                                                                                                                |
 | [`media-limits`](#media-limits)                  | What an instance allows a picture to be.                                                                                                                                                                                                                             |
+| [`media-permission`](#media-permission)          | Whether a caller may see a file, decided by what the file is used for.                                                                                                                                                                                               |
 | [`media-referrers`](#media-referrers)            | What points at a picture or a recording, and where it lives.                                                                                                                                                                                                         |
 | [`media`](#media)                                | Pictures: what is accepted, where they go, and who may see one.                                                                                                                                                                                                      |
 | [`meta`](#meta)                                  | User-defined key/value metadata attached to planner slots.                                                                                                                                                                                                           |
+| [`model-catalog`](#model-catalog)                | What a provider will actually answer to, asked rather than typed.                                                                                                                                                                                                    |
+| [`model-keys`](#model-keys)                      | The model-provider key behind the in-app chat.                                                                                                                                                                                                                       |
 | [`newsletter`](#newsletter)                      | The one channel nobody else can take away.                                                                                                                                                                                                                           |
 | [`note-todos`](#note-todos)                      | Turning a note that is really a checklist into the todos it describes.                                                                                                                                                                                               |
 | [`notebook-media`](#notebook-media)              | Every picture that is in a notebook, as a gallery album.                                                                                                                                                                                                             |
 | [`notebooks`](#notebooks)                        | Notebooks: a subject you write against, with no deadline.                                                                                                                                                                                                            |
 | [`notifications`](#notifications)                | Everything the app will tell you about, in one list.                                                                                                                                                                                                                 |
+| [`oauth`](#oauth)                                | Connecting an assistant without anybody handling a key.                                                                                                                                                                                                              |
 | [`onboarding-templates`](#onboarding-templates)  | The starter weeks, as data.                                                                                                                                                                                                                                          |
 | [`onboarding`](#onboarding)                      | First run.                                                                                                                                                                                                                                                           |
 | [`people`](#people)                              | The people in your life, and where they turn up.                                                                                                                                                                                                                     |
 | [`plan-intent`](#plan-intent)                    | Which plan somebody said they wanted, carried from the front page to the card.                                                                                                                                                                                       |
 | [`plugins`](#plugins)                            | Plugin manifests: what a plugin says it understands.                                                                                                                                                                                                                 |
 | [`preferences`](#preferences)                    | The settings a person chooses about themselves.                                                                                                                                                                                                                      |
-| [`protection`](#protection)                      | What the box has blocked, read from fail2ban's own log.                                                                                                                                                                                                              |
 | [`push`](#push)                                  | Telling somebody something while the app is closed.                                                                                                                                                                                                                  |
 | [`quotes`](#quotes)                              | The quotes shown one-per-day on the dashboard.                                                                                                                                                                                                                       |
 | [`recipes`](#recipes)                            | Recipes, and the loop they close.                                                                                                                                                                                                                                    |
@@ -495,6 +501,36 @@ How many events the instance has recorded lately, for the admin landing.
 
 - `Account`
 
+## assistant-chat
+
+The in-app chat: the same assistant surface MCP offers, spoken to a model
+the person brought a key for.
+
+Everything the model may do goes through `handle()` — the same dispatcher
+an external assistant's calls go through — so scope checks, id resolution,
+the call budget, the write log and the room invalidations all apply here
+without a second copy of any of them. This file only turns the tool table
+into the shape the AI SDK wants and picks which company to dial.
+
+**Switched off.** The chat this serves is parked — `CHAT_IN_APP` in
+`$lib/features` — so nothing calls this today. It is kept, and kept tested,
+because the decision is pending rather than made.
+
+### Functions
+
+#### `chatScopes(ctx)`
+
+What the chat may do, which is the account's own answer.
+
+Every grant an assistant is offered, and `destructive` only where somebody
+has ticked it on the Chat tab. It is derived rather than written down twice:
+a tool added next year brings its scope with it through `ASSISTANT_SCOPES`,
+and deleting stays the one grant that has to be asked for.
+
+#### `chatResponse(caller, row, messages)`
+
+One message in, a streamed answer out, tools and all.
+
 ## assistant-log
 
 What an assistant did to an account, and the way back.
@@ -562,33 +598,44 @@ will find.
 
 #### `phraseFor(tool)`
 
-What a tool did, as a verb and a noun.
+What a tool did, as a verb key and a noun.
 
 Returns `null` for a name this cannot read, and the caller counts those
 under "things" rather than guessing — a wrong sentence about somebody's data
 is worse than a vague one.
 
-#### `nounFor(noun, count)`
+#### `nounKey(noun)`
 
-`data_point` → `data point`, and plural when there is more than one.
+`data_point` → `dataPoint`, which is how the catalogue spells its nouns.
 
-#### `summarise(tools, token)`
+#### `subjectName(write)`
 
-A burst of calls, as the line a person reads.
+What the thing a write was about is called, if anything says.
+
+`before` first, because it is the row as it stood and a rename would
+otherwise announce the new name as though it were the old one; then the
+arguments, which is where a create's title lives since there was no row to
+read. Null when neither says — a reminder set by time has no name, and
+counting it is better than inventing one.
+
+#### `summarise(writes, token, t)`
+
+A burst of calls, as the line a person reads, in their own language.
 
 Grouped by what was done to what, because that is the shape of the answer
-somebody wants: "3 todos added, 8 blocks changed" rather than eleven lines.
+somebody wants: "changed 3 blocks, wrote 1 entry" rather than eleven lines.
 The largest group leads, since with one group it is the whole sentence and
 with several it is the one worth seeing first.
 
-#### `destinationFor(calls)`
+Active voice, the same way round as the title. "3 blocks changed, 1 entry
+wrote" was the first shape and the last two words are wrong English: a
+passive needs the participle. One form per verb is what somebody would say
+out loud, and it is also the form a translator can work with.
 
-The one thing a burst is about, if it is about one thing.
-
-Two questions, narrowest first: did every write name the same notebook, and
-did every write touch the same room. Anything else — a burst that moved a
-week around and wrote a note — has no single destination, and the log is
-what it always was.
+A noun the catalogue has never heard of falls back to the identifier with
+its underscores opened out. That is not a language, but it is a true
+sentence about somebody's data, which is the thing that matters most here —
+and it only happens for a tool added without its noun being added beside it.
 
 #### `notifyAssistantBursts(now)`
 
@@ -608,8 +655,67 @@ done. Used when the preference is turned on.
 
 ### Types
 
-- `Phrase`
+- `Phrase` — A verb's catalogue key, and the noun it acts on, as the identifier spells it.
+- `Written` — One write, as much of it as is known.
 - `SweepResult`
+
+## attack-watch
+
+What an attack on the app itself looks like from inside the process.
+
+The box already notices the attacks that are visible from outside it: the
+banning layer reads nginx and jails an address that knocks too often, and
+the firewall drops the ones the whole internet has already seen. Both of
+those are per-address, and the interesting attacks on an app are not.
+
+Credential stuffing with a list of leaked passwords comes from hundreds of
+addresses, a handful of attempts each, against hundreds of accounts. Every
+individual address behaves impeccably. Nothing below the app can see it,
+because the shape of it is only visible to the thing that knows an attempt
+was a sign-in, and that it failed, and whose account it was for.
+
+So this counts three things in a rolling window and says when the shape is
+wrong. It decides nothing and blocks nobody — the throttle in
+`hooks.server.ts` does the blocking, per address, as it always did. This is
+the sentence that reaches a phone, through the warnings `/healthz` already
+publishes and the watcher already relays.
+
+In memory, like `rate-limit.ts` and for the same reason: this is one node
+process with a SQLite file beside it, and a table would be writes on the
+attacker's schedule. What is lost on a restart is a quarter of an hour of
+counting, and an attack that is still happening is counted again by the
+next window.
+
+No address or account name is ever in a warning — only how many of each.
+The counts are what tells you it is happening; the identities are in the
+logs, where somebody looking for them has to go deliberately.
+
+### Functions
+
+#### `recordFailedSignIn(from, account)`
+
+A sign-in that was refused. The password is never passed in, or wanted.
+
+#### `recordPasswordReset(from, account)`
+
+A password-reset request, whether or not the address has an account.
+
+#### `recordServerError(path)`
+
+A request this instance answered with a 5xx.
+
+#### `resetAttackWatch()`
+
+Only for tests, and for a suite that must not inherit the last file's counts.
+
+#### `attackWarnings(now)`
+
+Whatever the shape of the last quarter of an hour says, as sentences.
+
+Returned in the same form as the resource warnings beside them, because
+they travel the same way: into `/healthz`, out through the watcher, into a
+chat message with no context around it. Each one has to stand alone and say
+what to do next.
 
 ## attributes
 
@@ -1477,7 +1583,7 @@ notebook, under the diary's heading, with the diary's own last entry nowhere.
 
 ### Types
 
-- `Tag`
+- `Tag` — Null on a label that went on before the join carried a date.
 
 ## digest
 
@@ -1688,6 +1794,32 @@ and the gallery never asked.
 - `AlbumPicture`
 - `AlbumNode`
 - `FolderPlan` — A folder of pictures, as albums.
+
+## goal-actions
+
+Everything done to a goal, from wherever a goal is shown.
+
+It used to be one action on the goals page, which is why a notebook's "New
+goal" was a link that took you out of the notebook you were looking at —
+there was nowhere else the form could post to. A task made from the same
+header had always stayed put, so the same press behaved two different ways
+depending on which tab was showing.
+
+The same arrangement `todo-actions.ts` has, and for the same reason: one
+handler, used by every route that offers the verb. Making was the first one
+to move; the rest followed when a notebook's Goals tab turned out to be a
+list you could look at and nothing else — no edit, no delete, no way to say
+a goal was missed — because the verbs lived on one page rather than beside
+the thing they act on.
+
+Which name each route answers to is `$lib/goal-action-names`, because a
+notebook page already uses `update` and `delete` for the notebook itself.
+
+### Functions
+
+#### `targetsFrom(formData)`
+
+The rows of "what this goal is measured by", as the form posts them.
 
 ## goals
 
@@ -2674,6 +2806,48 @@ the services ask through `host.mediaLimits()` rather than either directly.
 
 - `MediaLimits`
 
+## media-permission
+
+Whether a caller may see a file, decided by what the file is used for.
+
+The rule, and the reason it is this rule rather than a new grant: a picture
+or a recording is never loose. It is in a note, or it is somebody's face, or
+it is one of a recipe's photographs — and a person who has said "you may
+read my notebooks" has already said what should happen to the pictures in
+them. Inventing `media:read` would ask them the same question twice and let
+the two answers disagree.
+
+So the permission a file needs is the permission its referrer needs, and a
+file nothing refers to is reachable by nobody. One readable referrer is
+enough: a picture in a note you may read is a picture you may see, whatever
+else it also sits in.
+
+## What is deliberately not reachable
+
+A picture that only lives in a gallery album. There is no scope for the
+gallery — the room has never had one — and this is not the change that
+invents it. `album` is listed below with no scope against it so that the
+omission is a decision somebody can read rather than a kind nobody thought
+of.
+
+## Why it lives here
+
+Two doors ask it: an HTTP request carrying a bearer key, and an assistant
+over MCP, which never holds a raw key at all — its client keeps the
+credential and hands out none. This module imports nothing but types, so the
+MCP tool table can ask it without dragging the token service, the database
+and the billing provider into a cycle with itself. It did, once, and the
+dev server died on `Cannot access '__vite_ssr_import_10__' before
+initialization`.
+
+### Functions
+
+#### `mayReadFile(referrers, scopes, confined)`
+
+### Types
+
+- `FileConfinement` — A key pinned to one thing, as much of it as this rule needs.
+
 ## media-referrers
 
 What points at a picture or a recording, and where it lives.
@@ -2807,6 +2981,16 @@ Give somebody a face, replacing whatever was there.
 
 #### `removePersonPicture(ctx, personId)`
 
+#### `setNotebookPicture(ctx, notebookId, input)`
+
+Give a notebook a picture, replacing whatever was there.
+
+The same shape a person's face has, and for the same reason: one picture,
+because it is what the notebook _is_, and the one it replaces goes if nothing
+else refers to it.
+
+#### `removeNotebookPicture(ctx, notebookId)`
+
 #### `picturesOf(ctx, recipeId)`
 
 #### `mainPictures(ctx, recipeIds)`
@@ -2882,6 +3066,66 @@ still present in the payload and so reads as an explicit `{}`.
 ### Types
 
 - `SlotMeta`
+
+## model-catalog
+
+What a provider will actually answer to, asked rather than typed.
+
+The model was a text box, which only works for somebody who already has the
+provider's documentation open — and the answer changes every few months, so
+a list compiled here would be wrong by the time anybody read it. Every one
+of these companies publishes what it serves; this asks, with the key the
+person just pasted, and the form offers what came back.
+
+The key is theirs and the call goes to the company they chose. Nothing is
+stored by this: it is a question asked while a form is open.
+
+### Functions
+
+#### `listModels(provider, key, baseUrl)`
+
+Ask one provider what it serves.
+
+Newest first where the provider says so — all four return their list in
+their own order, and every one of them puts the current generation at the
+top or near it, so the order is left as given rather than sorted into
+alphabetical, which would bury `claude-sonnet-5` under `claude-2`.
+
+### Types
+
+- `ModelChoice` — A model, as the form offers it.
+
+## model-keys
+
+The model-provider key behind the in-app chat.
+
+One row per account, replaced on save: the chat speaks to one provider at
+a time. The key authenticates this instance to a company the person chose,
+so it is stored as given (see the schema note) and shown back only as a
+prefix — the settings screen can say which key it is without being able to
+say what it is.
+
+### Functions
+
+#### `saveModelKey(ctx, raw)`
+
+#### `describeModelKey(ctx)`
+
+What the settings screen may know: everything but the key.
+
+#### `configuredModelKey(ctx)`
+
+The whole row, key included — for the chat backend and nobody else.
+
+#### `removeModelKey(ctx)`
+
+#### `modelNameFor(row)`
+
+The model the chat will actually ask for, name or default.
+
+### Types
+
+- `ModelKeyDescription`
 
 ## newsletter
 
@@ -3004,10 +3248,17 @@ This is the way across: every `- [ ]` line in the note becomes a todo, with
 whatever is written under it as that todo's notes — see `$lib/checklist` for
 the shape being read.
 
-The note is left exactly as it was. Deleting it is a separate press, because
-somebody who meant "also put these on my list" and somebody who meant "move
-these onto my list" both press this button, and only one of them wants the
-note gone.
+The note keeps its words and stops keeping the boxes: each line that crossed
+over becomes a reference to the task it became — `TASK:#4`, the task's
+number inside this notebook — so the note still says what it said and the
+list is where the work now lives. Leaving the boxes behind left the offer
+standing over a list that had already been made, and two records of one list
+to drift apart.
+
+The note itself is not deleted. That is a separate press, because somebody
+who meant "also put these on my list" and somebody who meant "move these
+onto my list" both press this button, and only one of them wants the note
+gone.
 
 ### Functions
 
@@ -3121,6 +3372,14 @@ Everything pointed at this notebook, in the three shapes it can arrive in.
 
 #### `updateNotebook(ctx, id, raw)`
 
+#### `defaultTagsOf(ctx, notebookId)`
+
+The labels a new note in this notebook should start with.
+
+Empty for a note filed nowhere, and empty for a notebook nobody set any on,
+which is the same answer and wants no distinction. Reads the column rather
+than the whole notebook: this runs on every note written.
+
 #### `setNotebookClosed(ctx, id, closed)`
 
 Close a finished subject, or reopen one you went back to.
@@ -3202,6 +3461,93 @@ The time one of the timed ones goes off, as `HH:MM`.
 - `Notification` — A notification somebody can turn off, as the settings screen draws it.
 - `NotificationId`
 - `NotificationRow` — What the settings screen draws: every notification, with this account's answers already in it.
+
+## oauth
+
+Connecting an assistant without anybody handling a key.
+
+The flow is the one Claude, ChatGPT and the MCP clients already walk: the
+client discovers this instance is protected, registers itself, sends the
+person here to say yes, and swaps the code it gets back for a token. What
+this file owns is the middle — clients, codes and the rules about both. The
+token at the end is an ordinary `api_tokens` row minted by `tokens.ts`, so
+revoking a connected assistant is the same button as revoking a key.
+
+Deliberately small: authorization code grant with PKCE and nothing else. No
+implicit grant (removed in OAuth 2.1), no client secrets (every client here
+is a public one — a desktop app cannot keep a secret), no refresh tokens,
+because the token this issues does not expire and a refresh of a token that
+never goes stale is a round trip that buys nothing.
+
+### Functions
+
+#### `isUsableRedirect(raw)`
+
+Where a code may be sent back to.
+
+`https` anywhere, and `http` only on this machine — which is not a loophole
+but the ordinary case: a desktop client listens on `http://127.0.0.1:PORT`
+because there is nothing to encrypt between a process and itself. Anything
+else is a native app's own scheme (`cursor://`, `com.example.app:/cb`),
+allowed because the protection here is the exact match at both doors, not
+the scheme.
+
+#### `registerClient(input)`
+
+A client registering itself, which happens before anybody has signed in.
+
+Anonymous by design (RFC 7591): the assistant has no account here and the
+person it belongs to has not arrived yet. That makes this the one write in
+the app an unauthenticated caller can cause, so the route in front of it
+rate limits, and everything stored is bounded and never trusted as words:
+the name lands on a consent screen and is the client's claim about itself,
+not ours about it.
+
+#### `findClient(clientId)`
+
+#### `scopesFor(asked, mayDelete)`
+
+What an assistant connected this way may do.
+
+The same set the key form offers — everything an assistant reads and writes
+— with deleting left out unless the person ticked it on the consent screen.
+A client may ask for less by naming scopes; it may not ask for more than
+this, and a scope nobody recognises is dropped rather than refused, because
+a client guessing at names should still connect with what it can have.
+
+#### `issueCode(input)`
+
+The code handed back through the browser, and its hash left here.
+
+#### `redeemCode(input)`
+
+A code spent, once.
+
+Every refusal here is the same refusal on purpose — a token endpoint that
+says which half was wrong is a token endpoint that can be asked. Marked used
+before anything is minted, so two requests racing the same code cannot both
+come out the other side with a token.
+
+#### `forgetStaleCodes(now)`
+
+Codes nobody came back for. Cheap, and run wherever one is issued.
+
+#### `protectedResourceMetadata(origin)`
+
+What this instance says about itself, to a client that has not met it.
+
+Two documents at two well-known addresses, and between them they are the
+whole of "no configuration": the client is told where the MCP endpoint is,
+which authorization server guards it, where to register, where to send the
+person, and where to bring the code back. Nobody types anything but the
+instance's address.
+
+#### `authorizationServerMetadata(origin)`
+
+### Types
+
+- `OAuthClient`
+- `RedeemedCode`
 
 ## onboarding-templates
 
@@ -3385,6 +3731,14 @@ a list, a range, or a timezone the platform recognises.
 
 #### `setUserLanguage(ctx, value)`
 
+#### `setUserClock(ctx, value)`
+
+Which clock this account reads.
+
+`auto` is a real answer, not the absence of one — it means "whatever my
+language does" and has to survive being chosen deliberately after a person
+has tried 12 and 24 and decided the default was right.
+
 #### `setUserStyle(ctx, value)`
 
 #### `saveWeekPreferences(ctx, raw)`
@@ -3405,54 +3759,12 @@ not a short day, it is a pair of numbers that renders nothing.
 
 Rejected here rather than stored and thrown on every date afterwards.
 
-## protection
+#### `setAssistantMayDelete(ctx, value)`
 
-What the box has blocked, read from fail2ban's own log.
+Whether the chat inside the app may delete things.
 
-The administration page can say who has been signing in and who registered,
-because the app did those things itself. It could say nothing at all about
-the layer in front of it — which is where most of what happens to a public
-instance actually happens.
-
-fail2ban's socket belongs to root and `fail2ban-client` is a command this
-process has no business being able to run. Its log is `root:adm` and
-read-only to the group, so the answer is a group membership and a file read:
-nothing to escalate, no shelling out.
-
-sudo usermod -aG adm <the user the app runs as>
-
-Unreadable is a first-class answer. "No bans" and "cannot see bans" look
-identical in a list and mean opposite things, so the page is told which it
-is looking at.
-
-### Functions
-
-#### `protection(limit)`
-
-#### `banControlEnabled()`
-
-#### `unban(jail, address)`
-
-Let an address back in now, rather than when its bantime runs out.
-
-#### `blockForever(address)`
-
-Out for good.
-
-fail2ban has no "forever" — every jail has a bantime and the timer wins — so
-this is an entry in the `banned` nftables set the box already keeps, which
-survives a fail2ban restart and a jail expiry.
-
-#### `unblockForever(address)`
-
-#### `permanentlyBlocked()`
-
-Which addresses are out for good, so the page knows which button to offer.
-
-### Types
-
-- `Ban`
-- `Protection`
+A checkbox, so its absence from the form is the answer "no" rather than a
+missing field — which is why this takes the posted value and not a boolean.
 
 ## push
 
@@ -4571,6 +4883,18 @@ a screen of keys.
 
 #### `setLocale(userId, locale)`
 
+#### `getClock(userId)`
+
+Whether this account reads a 12- or a 24-hour clock.
+
+`auto` — the default, and what almost everybody should be on — asks the
+language: English says four in the afternoon, Portuguese and German say
+sixteen. It is a setting because the language is a good guess about a person
+and not a statement about them: plenty of people read English and think in
+24, and the app has no business arguing.
+
+#### `setClock(userId, clock)`
+
 #### `getHiddenSections(userId)`
 
 The sections this account has put away — out of every menu, still there at
@@ -4645,6 +4969,18 @@ checked at both ends rather than trusted at either.
 #### `getPanelWidth(userId, key)`
 
 #### `setPanelWidth(userId, key, rem)`
+
+#### `getChatMayDelete(userId)`
+
+Whether the chat holds the `destructive` grant.
+
+Off until somebody says otherwise, the same default the key form ticks — an
+assistant that can remove a person or a habit's history is a bad trade for
+most people most of the time. Off is not "never": the grant exists, it is
+theirs to give, and deciding it for them in a route would make the
+permissions screen a lie in one place.
+
+#### `setChatMayDelete(userId, may)`
 
 ### Types
 
@@ -5172,19 +5508,102 @@ All these produce ["tagfoo", "tagbar"]:
 
 #### `replaceDiaryTags(entryId, tagNames, userId)`
 
+Set a note's labels to exactly these, without forgetting when the old ones
+went on.
+
+The same diff `replaceTodoTags` does, and for the same reason: deleting
+every row and writing them back gives the same answer and a different
+history, so a label that had been there a week came back dated today and
+"what went into review since I last looked" became "what has been edited
+since".
+
 #### `cleanupOrphanTags(userId)`
+
+Drop the labels nothing carries any more.
+
+Read from `CARRIERS` rather than from four hand-written queries: the four
+were diary, ideas, media and todos, so a word used only on a block of the
+week counted as referenced by nobody and was deleted the next time an
+unrelated note was edited. Now a join table cannot be left out of this
+without being left out of every other verb here too.
 
 #### `linkIdeaTags(ideaId, tagIds, userId)`
 
 #### `replaceIdeaTags(ideaId, tagNames, userId)`
 
+#### `tagsForBlock(kind, taskId, userId)`
+
+#### `replaceBlockTags(kind, taskId, tagNames, userId)`
+
+Set a block's labels to exactly these, keeping the dates of the survivors.
+
 #### `linkTodoTags(todoId, tagIds, userId)`
 
 #### `replaceTodoTags(todoId, tagNames, userId)`
 
+Set the labels to exactly these, without forgetting when the old ones went on.
+
+This used to delete every row and write them all back, which is the same
+answer and a different history: a label that had been there a week came back
+dated today, so "what was tagged since I last looked" was whatever had been
+edited since. Now only the difference moves — the ones going away are
+dropped, the new ones are dated, and a label that was already there is left
+exactly as it was.
+
 #### `linkMediaTags(mediaId, tagIds, userId)`
 
 #### `replaceMediaTags(mediaId, tagNames, userId)`
+
+#### `listTagsWithUses(userId)`
+
+Every label the account has, alphabetically, with how many things carry each.
+
+#### `recolorTag(userId, id, color)`
+
+Give a label a colour, or take its colour away.
+
+Null is a real answer and not a missing one: most labels are words rather
+than colours, and a tag with no colour is drawn as the plain chip it has
+always been.
+
+#### `renameTag(userId, id, name)`
+
+Rename a label — and if the new name is one the account already uses, merge
+into it rather than refusing.
+
+The unique index on (account, name) is what makes the vocabulary one
+vocabulary, and hitting it is exactly what somebody fixing a typo does:
+`worik` should become `work`, and `work` already exists. Refusing leaves
+two words meaning one thing, which is the state they were trying to get
+out of.
+
+Merging means: everything that carried the old label now carries the
+surviving one, and the old label stops existing. For a thing that carried
+_both_ there is nothing to move — it is already labelled — so that join row
+goes, and the one that stays takes the earlier of the two dates, because
+that is when the thing actually started carrying this idea. The survivor
+keeps its own colour unless it never had one, in which case it inherits the
+colour of the label that is being folded into it: a colour that was chosen
+beats no choice at all.
+
+#### `deleteTag(userId, id)`
+
+Take a label out of the vocabulary, and off everything that carried it.
+
+The join rows go explicitly rather than by cascade: the same statement then
+does the same thing whether or not foreign keys are on, which they are not
+during a migration.
+
+#### `tagByName(userId, name)`
+
+The label the account calls this word, if it has one.
+
+### Types
+
+- `BlockKind`
+- `Tag` — A label and when it went on. The same shape a task's labels have.
+- `TagSummary` — A label as the Tags screen reads it: what it is, its colour, and how much work it is doing.
+- `TagRow` — The label as it is stored.
 
 ## time
 
@@ -5221,6 +5640,20 @@ How far ahead of UTC `tz` is at this instant, in milliseconds.
 #### `localOfInstant(instant, tz)`
 
 An instant as the wall-clock time it shows in this zone.
+
+#### `minutesOfDay(instant, tz)`
+
+Minutes since midnight where the person is, not where the server is.
+
+`instant.getHours()` answers in the zone the Node process happens to run in,
+which on the box is UTC. Every screen that compares "now" with a time
+somebody typed — a block at 11:45, the next thing on the dashboard — was
+therefore three hours out for an account in São Paulo, and said so with
+confidence: "7 hours left" where the honest answer was ten.
+
+#### `clockOfDay(instant, tz)`
+
+The hour and minute where the person is, as two numbers.
 
 #### `stamps(ctx)`
 
@@ -5260,7 +5693,7 @@ A `Date` as the day it is, where it is — `2026-09-19`.
 yesterday for anybody west of Greenwich in the evening. Written out of the
 local parts instead, which is what every table keyed by day holds.
 
-#### `instantInWords(iso, locale, now)`
+#### `instantInWords(iso, when, now)`
 
 An instant, said where the reader is.
 
@@ -5344,9 +5777,11 @@ because archived and unfinished are different answers to different
 questions — coming back to it has to find it exactly as it was, and a status
 would have had to remember what it used to be.
 
-#### `listTodos(ctx)`
+#### `getTodo(ctx, id)`
 
-Everything, ordered the way the board wants it.
+One task, as the list would have shown it.
+
+#### `listTodos(ctx)`
 
 #### `listTodosIn(ctx, notebookId)`
 

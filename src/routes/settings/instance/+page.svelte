@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { dateOf, momentOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { settingsForm } from '$lib/actions/settings-form';
 	import { armed } from '$lib/actions/armed';
@@ -17,6 +19,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -98,12 +101,7 @@
 	}
 
 	function exactly(iso: string): string {
-		return new Date(iso).toLocaleString(t.locale, {
-			day: 'numeric',
-			month: 'short',
-			hour: '2-digit',
-			minute: '2-digit'
-		});
+		return momentOf(iso, now(), { year: undefined });
 	}
 
 	/**
@@ -125,11 +123,7 @@
 
 	function when(iso: string | null): string {
 		if (!iso) return '';
-		return new Date(iso).toLocaleDateString(t.locale, {
-			day: 'numeric',
-			month: 'short',
-			year: 'numeric'
-		});
+		return dateOf(iso, now());
 	}
 </script>
 

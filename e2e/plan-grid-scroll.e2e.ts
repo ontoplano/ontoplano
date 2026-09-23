@@ -54,8 +54,14 @@ test('a day ending at midnight can be scrolled to midnight', async ({ page }) =>
 	const scrolled = await main.evaluate((el) => el.scrollTop);
 	expect(scrolled, 'the grid did not scroll').toBeGreaterThan(0);
 
-	// The last hour of the day is on screen once it has.
-	await expect(page.locator('.ec-main').getByText('23:00', { exact: true })).toBeVisible();
+	// The last hour of the day is on screen once it has — written the way this
+	// reader's clock writes it, "23:00" or "11 PM".
+	await expect(
+		page
+			.locator('.ec-main')
+			.getByText(/^(23:00|11(:00)?\s?PM)$/i)
+			.first()
+	).toBeVisible();
 });
 
 /**

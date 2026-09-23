@@ -1,8 +1,10 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import Icon from '$lib/components/Icon.svelte';
 	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
+	import ChatSettings from '$lib/components/ChatSettings.svelte';
+	import { CHAT_IN_APP } from '$lib/features';
 	import Modal from '$lib/components/Modal.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import CopyBlock from '$lib/components/CopyBlock.svelte';
@@ -229,6 +231,17 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 		and change what is in this app. The protocol's name appears once, where
 		somebody who does know it will look for it.
 	-->
+	<!--
+		The chat first, because it is the thing somebody came here to use.
+
+		It had a tab of its own beside this one until the tabs read as three
+		rooms where there were two: what the chat runs on is a setting of this
+		page. Everything below is how something OUTSIDE the app reaches in.
+	-->
+	{#if CHAT_IN_APP}
+		<ChatSettings {data} {form} />
+	{/if}
+
 	<Card
 		title={t('settings.integrations.letAnAiAssistantUse')}
 		description={t('settings.integrations.yourWeekToDoListDiary')}
@@ -325,8 +338,10 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 
 							The three grants an assistant has no use for — declaring a plugin,
 							managing webhooks, handing out a calendar address — are not on
-							this list, and nor is deleting. The Integrations tab has the form
-							with all of them.
+							this list. Deleting is: its own box under the table, unticked,
+							because it is the one grant that should be given on purpose. The
+							Integrations tab has the wider form, with every permission and an
+							expiry, for a key meant to run a script.
 						-->
 
 							<!--
@@ -639,6 +654,7 @@ bearer_token_env_var = "ONTOPLANO_KEY"
 		together.
 	-->
 	<Card
+		id="assistant-activity"
 		title={t('settings.integrations.whatYourAssistantsDid')}
 		description={t('settings.integrations.everythingAnAssistantHasChanged')}
 		flush={data.assistantCalls.length > 0}

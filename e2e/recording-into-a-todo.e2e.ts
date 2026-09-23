@@ -25,7 +25,7 @@ test('a to-do takes a recording, and plays it back on the row', async ({ page })
 	await register(page, testEmail('todo-audio'));
 	await visit(page, '/tasks/todo');
 
-	await page.getByRole('button', { name: 'New to-do' }).click();
+	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('#todo-form [name="heading"]').fill('ring the plumber');
 
 	// The notes box and its attachment live behind the disclosure on this form.
@@ -43,7 +43,7 @@ test('a to-do takes a recording, and plays it back on the row', async ({ page })
 		/\[what he said\]\(\/media\/audio\/\d+\)/
 	);
 
-	await page.getByRole('button', { name: 'Create todo' }).click();
+	await page.getByRole('button', { name: 'Create task' }).click();
 	await expect(page.getByText('ring the plumber').first()).toBeVisible();
 
 	// On the row: a player, and no markdown link left lying in the text.

@@ -12,6 +12,7 @@
  * the grid posts placement and nothing else, and it must not wipe three numbers
  * on the way past.
  */
+import type { When } from '../src/lib/when';
 import { describe, expect, test } from 'vitest';
 import { translator } from '../src/lib/i18n';
 import { messages as english } from '../src/lib/i18n/catalogues/en';
@@ -99,19 +100,21 @@ describe('where a period ends', () => {
 
 describe('how a period reads to a person', () => {
 	const t = translator('en', english);
+	/* A period is a date, so it is written the way the reader writes dates. */
+	const when: When = { locale: 'en', tz: 'Europe/London', clock: 'auto' };
 
 	test('says the quarter and half in the short forms people use', () => {
-		expect(describePeriod(t, 'quarter', '2026-07-01')).toBe('Q3 2026');
-		expect(describePeriod(t, 'semester', '2026-07-01')).toBe('H2 2026');
-		expect(describePeriod(t, 'semester', '2026-01-01')).toBe('H1 2026');
-		expect(describePeriod(t, 'year', '2026-01-01')).toBe('2026');
+		expect(describePeriod(t, when, 'quarter', '2026-07-01')).toBe('Q3 2026');
+		expect(describePeriod(t, when, 'semester', '2026-07-01')).toBe('H2 2026');
+		expect(describePeriod(t, when, 'semester', '2026-01-01')).toBe('H1 2026');
+		expect(describePeriod(t, when, 'year', '2026-01-01')).toBe('2026');
 	});
 
 	test('and names the month and week in words', () => {
-		expect(describePeriod(t, 'month', '2026-08-01')).toContain('2026');
-		expect(describePeriod(t, 'month', '2026-08-01')).toMatch(/august/i);
-		expect(describePeriod(t, 'week', '2026-08-17')).toMatch(/^Week of /);
-		expect(describePeriod(t, 'day', '2026-08-19')).toMatch(/2026/);
+		expect(describePeriod(t, when, 'month', '2026-08-01')).toContain('2026');
+		expect(describePeriod(t, when, 'month', '2026-08-01')).toMatch(/august/i);
+		expect(describePeriod(t, when, 'week', '2026-08-17')).toMatch(/^Week of /);
+		expect(describePeriod(t, when, 'day', '2026-08-19')).toMatch(/2026/);
 	});
 });
 
@@ -143,10 +146,15 @@ describe('what counts as a horizon or a status', () => {
 
 describe('the three numbers a task can carry', () => {
 	test('are whole numbers on the scale, and nothing else', () => {
+		// Nought is an answer — "none at all" — and the bottom of the scale.
+		expect(isRatingValue(0)).toBe(true);
 		expect(isRatingValue(1)).toBe(true);
 		expect(isRatingValue(5)).toBe(true);
-		expect(isRatingValue(0)).toBe(false);
+		expect(isRatingValue(-1)).toBe(false);
 		expect(isRatingValue(6)).toBe(false);
+		// Including the one the slider rests on: 2.5 is the absence of an
+		// answer, and the absence of an answer is stored as null.
+		expect(isRatingValue(2.5)).toBe(false);
 		expect(isRatingValue(3.5)).toBe(false);
 		expect(isRatingValue('3')).toBe(false);
 		expect(isRatingValue(null)).toBe(false);
@@ -172,11 +180,11 @@ describe('the three numbers a task can carry', () => {
 
 	test('and a value off the scale clears rather than storing nonsense', () => {
 		const form = new FormData();
-		form.set('energy', '9');
-		expect(ratingFromForm(form, 'energy')).toBeNull();
+		form.set('ease', '9');
+		expect(ratingFromForm(form, 'ease')).toBeNull();
 
-		form.set('energy', 'lots');
-		expect(ratingFromForm(form, 'energy')).toBeNull();
+		form.set('ease', 'lots');
+		expect(ratingFromForm(form, 'ease')).toBeNull();
 	});
 
 	test('all three at once omit the ones nobody submitted', () => {

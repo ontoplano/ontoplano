@@ -138,14 +138,29 @@ test('a long unbroken name does not push its controls off the screen', async ({ 
 	// And nothing was pushed past the edge, which is the thing that actually
 	// broke: the page did not scroll, the controls simply left. Reported by name
 	// so a failure says which control went.
-	const escaped = await page.evaluate(() =>
-		[...document.querySelectorAll('button, a')]
+	//
+	// A row that scrolls sideways on purpose is not that. A room's tab strip is
+	// one — it carries its own scroll hints, and the sixth tab of a room with
+	// six is reached by scrolling the strip, not by the page growing. So the
+	// question is asked of controls nothing scrolls, which is where "pushed off
+	// the screen" means gone.
+	const escaped = await page.evaluate(() => {
+		const scrollsSideways = (el: Element): boolean => {
+			for (let at: Element | null = el; at; at = at.parentElement) {
+				const overflow = getComputedStyle(at).overflowX;
+				if ((overflow === 'auto' || overflow === 'scroll') && at.scrollWidth > at.clientWidth)
+					return true;
+			}
+			return false;
+		};
+
+		return [...document.querySelectorAll('button, a')]
 			.filter((el) => {
 				const rect = el.getBoundingClientRect();
-				return rect.width > 0 && rect.right > window.innerWidth + 1;
+				return rect.width > 0 && rect.right > window.innerWidth + 1 && !scrollsSideways(el);
 			})
-			.map((el) => el.getAttribute('aria-label') || el.textContent?.trim().slice(0, 30) || '?')
-	);
+			.map((el) => el.getAttribute('aria-label') || el.textContent?.trim().slice(0, 30) || '?');
+	});
 
 	expect(escaped, 'controls pushed off the right edge').toEqual([]);
 });

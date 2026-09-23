@@ -13,6 +13,7 @@ import { db } from '$lib/db/index.js';
 import { apiTokens, dataPoints, dataStreams, planMembers, subscriptions } from '$lib/db/schema.js';
 import { isSelfHosted, pricing } from '../settings.js';
 import { record } from '$lib/services/audit.js';
+import { localeForUser } from '../locale.js';
 import { user } from '$lib/db/auth.schema.js';
 import { NotFoundError, ValidationError } from '$lib/services/errors.js';
 import type { Ctx } from '$lib/services/ctx.js';
@@ -410,8 +411,19 @@ export function assertWithinLimit(ctx: Ctx, key: LimitKey, adding = 1): void {
 	const current = usage(ctx.userId)[key];
 	if (current + adding <= limit) return;
 
+	/*
+	 * The number is written the way the reader writes numbers.
+	 *
+	 * It was pinned to `en-US`, so a Brazilian account was told its plan allows
+	 * "5,000 notes" — which in pt-BR reads as five, and is the one part of this
+	 * sentence where getting it wrong changes the meaning rather than the
+	 * accent. The sentence around it is still English, like every other error
+	 * a service throws; that is a larger job than this one and is not pretended
+	 * to be done here.
+	 */
+	const allowed = new Intl.NumberFormat(localeForUser(ctx.userId)).format(limit);
 	throw new ForbiddenError(
-		`Your plan allows ${limit.toLocaleString('en-US')} ${LIMIT_LABELS[key].toLowerCase()}. ` +
+		`Your plan allows ${allowed} ${LIMIT_LABELS[key].toLowerCase()}. ` +
 			`Nothing has been deleted — upgrading raises the limit.`
 	);
 }

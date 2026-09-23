@@ -30,7 +30,15 @@
 import { and, eq, like, or, sql } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
-import { albumMedia, diaryEntries, media, people, recipeImages, recipes } from '$lib/db/schema.js';
+import {
+	albumMedia,
+	diaryEntries,
+	media,
+	notebooks,
+	people,
+	recipeImages,
+	recipes
+} from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { sha256Hex } from './digest.js';
 import { NotFoundError, ValidationError } from './errors.js';
@@ -412,6 +420,64 @@ export function removePersonPicture(ctx: Ctx, personId: number): void {
 	db.update(people)
 		.set({ pictureId: null })
 		.where(and(eq(people.id, personId), eq(people.userId, ctx.userId)))
+		.run();
+	removeIfUnreferenced(ctx, current);
+}
+
+// ── A notebook's picture ─────────────────────────────────────────────────────
+
+function assertOwnsNotebook(ctx: Ctx, notebookId: number): void {
+	const found = db
+		.select({ id: notebooks.id })
+		.from(notebooks)
+		.where(and(eq(notebooks.id, notebookId), eq(notebooks.userId, ctx.userId)))
+		.get();
+	if (!found) throw new NotFoundError('No such notebook.');
+}
+
+/**
+ * Give a notebook a picture, replacing whatever was there.
+ *
+ * The same shape a person's face has, and for the same reason: one picture,
+ * because it is what the notebook *is*, and the one it replaces goes if nothing
+ * else refers to it.
+ */
+export async function setNotebookPicture(
+	ctx: Ctx,
+	notebookId: number,
+	input: { bytes: Uint8Array; filename?: string; alt?: string }
+): Promise<Picture> {
+	assertOwnsNotebook(ctx, notebookId);
+
+	const previous = db
+		.select({ pictureId: notebooks.pictureId })
+		.from(notebooks)
+		.where(and(eq(notebooks.id, notebookId), eq(notebooks.userId, ctx.userId)))
+		.get()?.pictureId;
+
+	const picture = await store(ctx, input);
+	db.update(notebooks)
+		.set({ pictureId: picture.id })
+		.where(and(eq(notebooks.id, notebookId), eq(notebooks.userId, ctx.userId)))
+		.run();
+
+	if (previous && previous !== picture.id) removeIfUnreferenced(ctx, previous);
+	return picture;
+}
+
+export function removeNotebookPicture(ctx: Ctx, notebookId: number): void {
+	assertOwnsNotebook(ctx, notebookId);
+
+	const current = db
+		.select({ pictureId: notebooks.pictureId })
+		.from(notebooks)
+		.where(and(eq(notebooks.id, notebookId), eq(notebooks.userId, ctx.userId)))
+		.get()?.pictureId;
+	if (!current) return;
+
+	db.update(notebooks)
+		.set({ pictureId: null })
+		.where(and(eq(notebooks.id, notebookId), eq(notebooks.userId, ctx.userId)))
 		.run();
 	removeIfUnreferenced(ctx, current);
 }

@@ -1,5 +1,8 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { page } from '$app/state';
+	import TagInput from '$lib/components/TagInput.svelte';
+	import TagChip from '$lib/components/TagChip.svelte';
+	import { enhance } from '$lib/enhance';
 	import { resolve } from '$app/paths';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
@@ -187,14 +190,11 @@
 	{#if albumTags.length > 0}
 		<div class="flex flex-wrap gap-2">
 			{#each albumTags as tag (tag)}
-				<button
+				<TagChip
+					name={tag}
+					active={filterTag === tag}
 					onclick={() => (filterTag = filterTag === tag ? '' : tag)}
-					class="chip {filterTag === tag
-						? 'border-fuchsia-700 bg-fuchsia-50 text-fuchsia-800'
-						: 'text-gray-500 hover:text-gray-700'}"
-				>
-					#{tag}
-				</button>
+				/>
 			{/each}
 		</div>
 	{/if}
@@ -320,15 +320,13 @@
 			{#if viewing.tags.length > 0}
 				<div class="flex flex-wrap gap-1.5">
 					{#each viewing.tags as tag (tag)}
-						<button
-							class="chip"
+						<TagChip
+							name={tag}
 							onclick={() => {
 								filterTag = tag;
 								viewingId = null;
 							}}
-						>
-							#{tag}
-						</button>
+						/>
 					{/each}
 				</div>
 			{/if}
@@ -336,10 +334,9 @@
 				<input type="hidden" name="mediaId" value={viewing.id} />
 				<label class="block flex-1 text-sm">
 					<span class="text-gray-600">{t('ui.tags')}</span>
-					<OneLine
-						name="tags"
-						value={viewing.tags.join(' ')}
-						class="input mt-1 w-full"
+					<TagInput
+						value={viewing.tags.join(', ')}
+						known={page.data.tagVocabulary ?? []}
 						placeholder={t('gallery.id.tagsCommasOrSpaces')}
 					/>
 				</label>

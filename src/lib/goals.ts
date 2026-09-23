@@ -1,3 +1,4 @@
+import { dateOf, dayOf, type When } from './when.js';
 import type { PlainKey } from './i18n/keys.js';
 import type { Translate } from './i18n/core.js';
 /**
@@ -93,19 +94,19 @@ export function periodEnd(horizon: Horizon, start: string): string {
 }
 
 /** How the period reads to a human: "Q3 2026", "Aug 2026", "week of 17 Aug". */
-export function describePeriod(t: Translate, horizon: Horizon, start: string): string {
+export function describePeriod(t: Translate, when: When, horizon: Horizon, start: string): string {
 	const d = new Date(start + 'T00:00:00');
 	const y = d.getFullYear();
 	switch (horizon) {
 		case 'day':
-			return d.toLocaleDateString(t.locale, { day: 'numeric', month: 'short', year: 'numeric' });
+			return dateOf(start, when);
 		case 'week':
 			return t('goals.weekOfDateYear', {
-				date: d.toLocaleDateString(t.locale, { day: 'numeric', month: 'short' }),
+				date: dayOf(start, when),
 				year: y
 			});
 		case 'month':
-			return d.toLocaleDateString(t.locale, { month: 'long', year: 'numeric' });
+			return dayOf(start, when, { day: undefined, month: 'long', year: 'numeric' });
 		case 'quarter':
 			return `Q${Math.floor(d.getMonth() / 3) + 1} ${y}`;
 		case 'semester':

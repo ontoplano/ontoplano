@@ -4,7 +4,7 @@
 	/**
 	 * The fields a form does not need to show to be usable.
 	 *
-	 * Urgency, interest and energy are all optional, and three five-point scales
+	 * Urgency, interest and ease are all optional, and three five-point scales
 	 * at the top of a create form read as work to do before you may write
 	 * anything down. They live in here, one click away, with a count so nothing
 	 * you did set is hidden without a trace.

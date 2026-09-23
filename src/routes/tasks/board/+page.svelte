@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { pillStyle } from '$lib/pill-ink';
+	import { sliding } from '$lib/actions/sliding';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import TodoFields from '$lib/components/fields/TodoFields.svelte';
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
@@ -10,7 +12,7 @@
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import Written from '$lib/components/Written.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import { armed } from '$lib/actions/armed';
 	import { focusHere } from '$lib/actions/autofocus';
 	import FormError from '$lib/components/FormError.svelte';
@@ -26,7 +28,7 @@
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import { formatDuration } from '$lib/duration';
 	import RatingPicker from '$lib/components/RatingPicker.svelte';
-	import { RATINGS, type Rating } from '$lib/ratings.js';
+	import { RATINGS, compareByRating, type Rating } from '$lib/ratings.js';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { CLOSED_STATUSES, STATUSES, STATUS_LABELS, type Status } from '$lib/task-status.js';
 	import { CATEGORY_FALLBACK_COLOR } from '$lib/colors.js';
@@ -40,7 +42,7 @@
 	type Card = PageServerData['todayCards'][number];
 
 	let tab: 'today' | 'general' = $state('today');
-	let maxEnergy: number | null = $state(null);
+	let minEase: number | null = $state(null);
 	let sortBy: 'default' | Rating = $state('default');
 	let showDone = $state(false);
 
@@ -53,7 +55,7 @@
 	let formRatings: Record<string, number | null> = $state({
 		urgency: null,
 		interest: null,
-		energy: null
+		ease: null
 	});
 
 	/** How many of the folded-away ratings currently carry a value. */
@@ -69,10 +71,19 @@
 	let editRatings: Record<string, number | null> = $state({
 		urgency: null,
 		interest: null,
-		energy: null
+		ease: null
 	});
 	const editRatingsSet = $derived(Object.values(editRatings).filter((v) => v !== null).length);
 
+	/*
+	 * Opened once the press that asked for it has finished.
+	 *
+	 * A modal put over the board mid-press made the browser deliver that same
+	 * press again, to whatever was under it afterwards — which is the card,
+	 * whose own handler opens it in place. So Edit opened the editor and the
+	 * card at once, and the next press went to the wrong one of the two. See
+	 * `$lib/after-press`.
+	 */
 	function openEditor(card: Card) {
 		editing = card;
 		editRatings = { ...card.ratings };
@@ -147,8 +158,11 @@
 
 		// An unrated card is never hidden: the filter is for choosing among what
 		// you have described, not for burying what you have not.
-		if (maxEnergy !== null) {
-			out = out.filter((c) => c.ratings.energy === null || c.ratings.energy <= maxEnergy!);
+		// "At least this easy" — the comparison turned round with the scale. As
+		// `energy` it meant "takes no more than this much out of me", which is
+		// the same wish expressed from the other end.
+		if (minEase !== null) {
+			out = out.filter((c) => c.ratings.ease === null || c.ratings.ease >= minEase!);
 		}
 
 		if (sortBy === 'default') {
@@ -161,16 +175,20 @@
 			});
 		}
 
+		/*
+		 * One rating, best first — and an unrated card is not last.
+		 *
+		 * It used to sink to the bottom whatever the question was, which said
+		 * "nobody weighed this" and meant "this matters least". A rating nobody
+		 * set counts as the middle of the scale (`$lib/ratings`), so 4 and 5
+		 * beat it and 1 and 2 fall below it, on all three alike now that ease
+		 * runs the same way as the other two. Same arithmetic as the to-do
+		 * list's "Priority" and as `up_next` over MCP.
+		 */
 		const key: Rating = sortBy;
-		const ascending = key === 'energy';
-		return [...out].sort((a, b) => {
-			const av = a.ratings[key];
-			const bv = b.ratings[key];
-			if (av === null && bv === null) return a.sortOrder - b.sortOrder;
-			if (av === null) return 1;
-			if (bv === null) return -1;
-			return ascending ? av - bv : bv - av;
-		});
+		return [...out].sort(
+			(a, b) => compareByRating(a.ratings[key], b.ratings[key]) || a.sortOrder - b.sortOrder
+		);
 	}
 
 	const columns = $derived(
@@ -530,7 +548,7 @@
 			}
 			case 'rate': {
 				e.preventDefault();
-				// Cycles urgency by default; interest and energy sit behind u/i/y.
+				// Cycles urgency by default; interest and ease sit behind u/i/y.
 				const value = Number(e.key);
 				post('setRatings', {
 					kind: card.kind,
@@ -541,14 +559,10 @@
 			}
 			case 'rate-urgency':
 			case 'rate-interest':
-			case 'rate-energy':
+			case 'rate-ease':
 				e.preventDefault();
 				ratingKey =
-					action === 'rate-urgency'
-						? 'urgency'
-						: action === 'rate-interest'
-							? 'interest'
-							: 'energy';
+					action === 'rate-urgency' ? 'urgency' : action === 'rate-interest' ? 'interest' : 'ease';
 				return;
 			case 'toggle-done':
 				e.preventDefault();
@@ -574,7 +588,7 @@
 
 	function openForm() {
 		showForm = true;
-		formRatings = { urgency: null, interest: null, energy: null };
+		formRatings = { urgency: null, interest: null, ease: null };
 		tick();
 	}
 
@@ -595,6 +609,36 @@
 		kbd: keyFor('/tasks/board', 'new')
 	}));
 </script>
+
+{#snippet opened(card: Card)}
+	<!--
+		What a card says when it is opened, wherever it is sitting.
+
+		This was written out twice — once for a column card and once for the
+		to-do rail — and the two had already drifted: the rail left out the
+		goals, so the same card said different things depending on where you
+		found it. Reading a card ought to be the same act either way.
+
+		A wash rather than a rule: a `border-t` across a card with rounded
+		corners draws a line stopping short of both edges, which reads as
+		something gone wrong. The words take the card's own ink, because its
+		ground is its category's colour and no fixed grey is legible on all of
+		them.
+	-->
+	<div class="card-opened mt-1.5 rounded px-2 py-1.5">
+		{#if card.notes}
+			<Written content={card.notes} compact inheritInk />
+		{:else}
+			<p class="text-xs italic opacity-75">{t('tasks.board.nothingWrittenOnThisOne')}</p>
+		{/if}
+		{#each card.goals as goal (goal.id)}
+			<p class="mt-1 flex items-center gap-1 text-xs opacity-75">
+				<Icon name="goals" size={11} />
+				{goal.title}
+			</p>
+		{/each}
+	</div>
+{/snippet}
 
 <svelte:window onkeydown={handleKeydown} />
 
@@ -624,7 +668,13 @@
 			<!-- Today against To-do is a choice of shape, exactly as Day/Week/
 			     Month is on the plan — so it is the same control, and it sits
 			     under the day it is about rather than across the row from it. -->
-			<div class="seg" role="group" aria-label={t('tasks.board.whatToShow')} data-tour="board-tabs">
+			<div
+				use:sliding
+				class="seg"
+				role="group"
+				aria-label={t('tasks.board.whatToShow')}
+				data-tour="board-tabs"
+			>
 				{#each [{ v: 'today', l: 'Today' }, { v: 'general', l: 'To-do' }] as t (t.v)}
 					<button
 						onclick={() => {
@@ -637,7 +687,7 @@
 			</div>
 
 			<!--
-				Sort, energy and the rest, in a dialog rather than in the page.
+				Sort, ease and the rest, in a dialog rather than in the page.
 
 				They used to unfold into a row above the columns, which pushed the
 				whole board down the moment you pressed the button — and pushed it
@@ -664,7 +714,7 @@
 		<div class="space-y-4 text-sm">
 			<div class="flex flex-wrap items-center gap-1">
 				<span class="eyebrow mr-1 text-gray-600">{t('tasks.board.sort')}</span>
-				{#each [{ v: 'default', l: 'Default' }, { v: 'urgency', l: 'Urgency' }, { v: 'interest', l: 'Interest' }, { v: 'energy', l: 'Energy' }] as opt (opt.v)}
+				{#each [{ v: 'default', l: 'Default' }, { v: 'urgency', l: 'Urgency' }, { v: 'interest', l: 'Interest' }, { v: 'ease', l: 'Ease' }] as opt (opt.v)}
 					<button
 						onclick={() => (sortBy = opt.v as typeof sortBy)}
 						class="border px-2 py-0.5 text-xs {sortBy === opt.v
@@ -675,11 +725,11 @@
 			</div>
 
 			<div class="flex flex-wrap items-center gap-1">
-				<span class="eyebrow mr-1 text-gray-600">{t('tasks.board.energyUpTo')}</span>
+				<span class="eyebrow mr-1 text-gray-600">{t('tasks.board.easeFrom')}</span>
 				{#each [1, 2, 3, 4, 5] as n (n)}
 					<button
-						onclick={() => (maxEnergy = maxEnergy === n ? null : n)}
-						class="tabular h-6 w-6 border text-xs {maxEnergy === n
+						onclick={() => (minEase = minEase === n ? null : n)}
+						class="tabular h-6 w-6 border text-xs {minEase === n
 							? 'on-fill font-semibold'
 							: 'border-gray-300 bg-white text-gray-500 hover:text-gray-900'}">{n}</button
 					>
@@ -773,7 +823,7 @@
 			-->
 			<div class="mb-3 flex flex-wrap items-center gap-2 border-b border-gray-200 pb-3">
 				<span class="eyebrow shrink-0 text-gray-600">{t('ui.status')}</span>
-				<div class="seg">
+				<div use:sliding class="seg">
 					{#each STATUSES as status (status)}
 						<button
 							type="button"
@@ -916,7 +966,7 @@
 						{/if}
 					{/if}
 
-					<MoreOptions label={t('tasks.board.urgencyInterestEnergy')} count={editRatingsSet}>
+					<MoreOptions label={t('tasks.board.urgencyEaseInterest')} count={editRatingsSet}>
 						{#each RATINGS as r (r)}
 							<div class="col-span-12">
 								<RatingPicker rating={r} bind:value={editRatings[r]} />
@@ -990,6 +1040,7 @@
 				landed.
 			-->
 			<div
+				use:sliding
 				class="seg mb-3 flex w-full md:hidden {dragging || movingUid ? 'ring-2 ring-gray-900' : ''}"
 			>
 				{#each columns as column (column.status)}
@@ -1098,7 +1149,16 @@
 									card.goals.length > 0 ||
 									card.ratings.urgency != null ||
 									card.ratings.interest != null ||
-									card.ratings.energy != null}
+									card.ratings.ease != null}
+								<!--
+									The card is named, because it is a button that contains
+									buttons. Without `aria-label` its accessible name is
+									everything written inside it — the title, the notes and the
+									labels of the two icons — so a screen reader announced a
+									single button called "bin this one Nothing written on this
+									one Move this to a column Edit bin this one", and anything
+									looking for the edit control found the whole card first.
+								-->
 								<article
 									draggable="true"
 									ondragstart={(e) => onDragStart(card, e)}
@@ -1114,13 +1174,14 @@
 									role="button"
 									tabindex="0"
 									aria-expanded={openCards.has(card.uid)}
+									aria-label={t('tasks.board.readThisCard', { title: card.title })}
 									class="pill-soft cursor-grab px-2 py-1.5 shadow-card {focusCol === ci &&
 									focusRow === ri
 										? 'kbd-cursor'
 										: ''} {dragging?.uid === card.uid || movingUid === card.uid
 										? 'opacity-40'
 										: ''}"
-									style="--pill: {card.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
+									style={pillStyle(card.categoryColor ?? CATEGORY_FALLBACK_COLOR)}
 									title={card.categoryName ?? t('tasks.board.noCategory')}
 								>
 									<div class="flex items-start gap-2">
@@ -1143,11 +1204,11 @@
 											}}
 											class="-m-1 flex shrink-0 items-center justify-center p-1 pointer-coarse:w-11"
 											title={shownStatus(card) === 'done'
-												? t('tasks.board.markNotDone')
-												: t('tasks.board.markDone')}
+												? t('tasks.board.markNotDone', { title: card.title })
+												: t('tasks.board.markDone', { title: card.title })}
 											aria-label={shownStatus(card) === 'done'
-												? `Mark ${card.title} not done`
-												: `Mark ${card.title} done`}
+												? t('tasks.board.markNotDone', { title: card.title })
+												: t('tasks.board.markDone', { title: card.title })}
 										>
 											<span
 												class="flex h-4 w-4 items-center justify-center border border-gray-400 {shownStatus(
@@ -1169,14 +1230,6 @@
 												on a laptop. A card with nothing to say is one line now.
 											-->
 											<div class="flex items-baseline gap-1.5">
-												{#if card.startTime}
-													<!-- The card's own ink, at full strength: this is ten pixels,
-													     and anything held back from a tinted ground at that size
-													     stops clearing 4.5:1. The size carries the hierarchy. -->
-													<span class="tabular shrink-0 font-mono text-[10px]">
-														{card.startTime}
-													</span>
-												{/if}
 												<p class="min-w-0 flex-1 truncate text-sm text-gray-900">{card.title}</p>
 												<!-- Pick it up. A drag is a mouse gesture and does not
 												     exist under a finger, so the move a board is for
@@ -1207,8 +1260,28 @@
 													<Icon name="edit" size={14} />
 												</button>
 											</div>
-											{#if badges}
-												<div class="mt-0.5 flex flex-wrap items-center gap-2">
+											<!--
+												The second line, whether or not there is anything on it.
+
+												The time used to sit in front of the title, which cost
+												the title five characters on every card that had one and
+												left the ones without a time reading differently from
+												the ones with. And the line only existed when a card had
+												a badge, so a card wearing one label stood taller than
+												its neighbours. It is always here and always the same
+												height: the titles start at the same place and the cards
+												end at the same place.
+											-->
+											<div class="mt-0.5 flex min-h-4 flex-wrap items-center gap-2 text-gray-500">
+												{#if card.startTime}
+													<!-- Full strength: this is ten pixels, and anything held
+													     back from a tinted ground at that size stops clearing
+													     4.5:1. The size carries the hierarchy. -->
+													<span class="tabular shrink-0 font-mono text-[10px] text-gray-900">
+														{card.startTime}
+													</span>
+												{/if}
+												{#if badges}
 													{#if needsResolution(card)}
 														<button
 															type="button"
@@ -1239,8 +1312,8 @@
 															<Icon name="goals" size={11} />
 														</span>
 													{/if}
-												</div>
-											{/if}
+												{/if}
+											</div>
 										</div>
 									</div>
 
@@ -1253,21 +1326,16 @@
 										form that edits it and pressing Cancel.
 									-->
 									{#if openCards.has(card.uid)}
-										<div class="mt-1.5 border-t border-gray-200 pt-1.5">
-											{#if card.notes}
-												<Written content={card.notes} compact />
-											{:else}
-												<p class="text-xs text-gray-500">
-													{t('tasks.board.nothingWrittenOnThisOne')}
-												</p>
-											{/if}
-											{#each card.goals as goal (goal.id)}
-												<p class="mt-1 flex items-center gap-1 text-xs text-gray-500">
-													<Icon name="goals" size={11} />
-													{goal.title}
-												</p>
-											{/each}
-										</div>
+										<!--
+											A wash, not a rule.
+											
+											This was a `border-t` across a card with rounded
+											corners, which drew a straight line stopping short of
+											both edges — a single-sided border that reads as a
+											mistake rather than as a division. A shade of its own
+											says "this part opened" without drawing anything.
+										-->
+										{@render opened(card)}
 									{/if}
 
 									<!--
@@ -1375,7 +1443,7 @@
 							movingUid === card.uid
 								? 'opacity-40'
 								: ''}"
-							style="--pill: {card.categoryColor ?? CATEGORY_FALLBACK_COLOR}"
+							style={pillStyle(card.categoryColor ?? CATEGORY_FALLBACK_COLOR)}
 							title={card.categoryName ?? t('tasks.board.noCategory')}
 						>
 							<div class="flex items-start gap-2">
@@ -1398,13 +1466,7 @@
 								</button>
 							</div>
 							{#if openCards.has(card.uid)}
-								<div class="mt-1.5 border-t border-gray-200 pt-1.5">
-									{#if card.notes}
-										<Written content={card.notes} compact />
-									{:else}
-										<p class="text-xs text-gray-500">{t('tasks.board.nothingWrittenOnThisOne')}</p>
-									{/if}
-								</div>
+								{@render opened(card)}
 							{/if}
 						</article>
 					{/each}
@@ -1482,3 +1544,29 @@
 		{t('tasks.board.delete')}
 	</p>
 </div>
+
+<style>
+	/*
+	 * The part of a card that opened.
+	 *
+	 * This was a `border-t` across a card with rounded corners, which drew a
+	 * straight line stopping short of both edges — a single-sided border that
+	 * reads as a mistake rather than as a division. A shade of its own says
+	 * "this part opened" and draws nothing.
+	 *
+	 * `--hover-wash` is the app's own "slightly different from what is under
+	 * it", defined per theme, so it reads on a light card and on a dark one
+	 * without being written twice.
+	 */
+	/*
+	 * A card's ground is its category's colour — brown, teal, blue, or the
+	 * plain one — so no fixed grey is readable on all of them. The wash is a
+	 * shade of whatever is under it and the words take the card's own ink,
+	 * which is already the colour chosen to be read against that ground.
+	 * `text-gray-700` on a pale card was grey on grey.
+	 */
+	.card-opened {
+		background: var(--hover-wash);
+		color: inherit;
+	}
+</style>

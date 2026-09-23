@@ -33,9 +33,9 @@ const ON_THE_SERVER = 'written on the server';
 const ON_THE_DEVICE = 'written on the device';
 
 async function addTodo(page: import('@playwright/test').Page, title: string) {
-	await page.getByRole('button', { name: 'New to-do' }).click();
+	await page.getByRole('button', { name: 'New task' }).click();
 	await page.locator('[name="heading"]').first().fill(title);
-	await page.getByRole('button', { name: 'Create todo' }).click();
+	await page.getByRole('button', { name: 'Create task' }).click();
 	await expect(page.getByText(title).first()).toBeVisible({ timeout: 30_000 });
 }
 
@@ -86,7 +86,7 @@ test('what is written on the device stays there, and the server never shows thro
 	// The same screen, answered by the device.
 	const go = await onDevice(page);
 	await go('/tasks/todo');
-	await expect(page.getByRole('button', { name: 'New to-do' })).toBeVisible({ timeout: 60_000 });
+	await expect(page.getByRole('button', { name: 'New task' })).toBeVisible({ timeout: 60_000 });
 	await expect(page.getByText(ON_THE_SERVER)).toHaveCount(0);
 
 	await addTodo(page, ON_THE_DEVICE);
@@ -128,7 +128,7 @@ test('deleting the instance on the device leaves the server account untouched', 
 
 	const go = await onDevice(page);
 	await go('/tasks/todo');
-	await expect(page.getByRole('button', { name: 'New to-do' })).toBeVisible({ timeout: 60_000 });
+	await expect(page.getByRole('button', { name: 'New task' })).toBeVisible({ timeout: 60_000 });
 	await addTodo(page, ON_THE_DEVICE);
 
 	// The account page the device has: no address, no password, one way out.
@@ -215,7 +215,7 @@ test('an export moves from the server onto the device, and the server keeps its 
 
 	const go = await onDevice(page);
 	await go('/tasks/todo');
-	await expect(page.getByRole('button', { name: 'New to-do' })).toBeVisible({ timeout: 60_000 });
+	await expect(page.getByRole('button', { name: 'New task' })).toBeVisible({ timeout: 60_000 });
 	await addTodo(page, ON_THE_DEVICE);
 
 	await go('/settings/account/import');

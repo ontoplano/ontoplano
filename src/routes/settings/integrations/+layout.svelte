@@ -17,6 +17,18 @@
 	];
 </script>
 
-<TabbedRoom title={t('rooms.integrations.title')} {tabs} label={t('rooms.integrations.sections')}>
+<!--
+	Inside Settings, which already has a bar and its tabs.
+
+	`nested` so this draws only its own strip, at the top of the surface
+	Settings put there — it used to draw the whole of a room again, which gave
+	the page two bars, two titles and two bands of page ground between them.
+-->
+<TabbedRoom
+	nested
+	title={t('rooms.integrations.title')}
+	{tabs}
+	label={t('rooms.integrations.sections')}
+>
 	{@render children()}
 </TabbedRoom>

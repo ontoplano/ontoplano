@@ -1,8 +1,10 @@
+import { goalHandlers } from '$lib/services/goal-actions';
 import { fail, redirect } from '@sveltejs/kit';
 import type { Actions } from '@sveltejs/kit';
 import { buildCtx } from '$lib/services/ctx';
 import { archiveEntry, createEntry, deleteEntry, pinEntry, updateEntry } from '$lib/services/diary';
 import { makeTodosFromEntry } from '$lib/services/note-todos';
+import { removeNotebookPicture, setNotebookPicture } from '$lib/services/media';
 import { setEntryPeople } from '$lib/services/people';
 import { NOTEBOOK_PANEL_WIDTH_KEY, setPanelWidth } from '$lib/services/settings';
 import { toActionFailure } from '$lib/http-errors';
@@ -29,7 +31,8 @@ export const notebookActions = {
 		try {
 			createNotebook(buildCtx(locals.user!.id), {
 				title: formData.get('heading'),
-				description: formData.get('description')
+				description: formData.get('description'),
+				defaultTags: formData.get('defaultTags')
 			});
 			return { success: true };
 		} catch (e) {
@@ -42,7 +45,8 @@ export const notebookActions = {
 		try {
 			updateNotebook(buildCtx(locals.user!.id), Number(formData.get('id')), {
 				title: formData.get('heading'),
-				description: formData.get('description')
+				description: formData.get('description'),
+				defaultTags: formData.get('defaultTags')
 			});
 			return { success: true };
 		} catch (e) {
@@ -60,6 +64,44 @@ export const notebookActions = {
 				formData.get('shared') === 'true'
 			);
 			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
+	 * A picture for the notebook, replacing whatever was there.
+	 *
+	 * Choosing the file is the whole act — there is no second button — the same
+	 * as a person's face, which this is the other of. The size is checked in the
+	 * browser first, because a body over the adapter's limit is refused before
+	 * this code runs and answers with something no form can read.
+	 */
+	setPicture: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const id = Number(formData.get('id'));
+		const file = formData.get('file');
+		if (!id) return fail(400, { message: 'No notebook' });
+		if (!(file instanceof File) || file.size === 0)
+			return fail(400, { message: 'Choose a picture first.' });
+
+		try {
+			await setNotebookPicture(buildCtx(locals.user!.id), id, {
+				bytes: new Uint8Array(await file.arrayBuffer()),
+				filename: file.name,
+				alt: String(formData.get('title') ?? '')
+			});
+			return { success: true, action: 'setPicture' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	removePicture: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			removeNotebookPicture(buildCtx(locals.user!.id), Number(formData.get('id')));
+			return { success: true, action: 'removePicture' };
 		} catch (e) {
 			return toActionFailure(e);
 		}
@@ -102,6 +144,21 @@ export const notebookActions = {
 				notebookId
 			});
 			setEntryPeople(ctx, id, formData.get('people'));
+
+			/*
+			 * A checklist written here becomes the tasks it describes, in one
+			 * press.
+			 *
+			 * The offer used to be an icon on the note's row, found after the
+			 * note was written and only by somebody who went looking. Offering
+			 * it while the checkboxes are being typed is the moment it is
+			 * wanted — so the composer shows it the instant a `- [ ]` appears,
+			 * and this is what that button posts.
+			 */
+			if (formData.get('alsoTodos')) {
+				const made = makeTodosFromEntry(ctx, id);
+				return { success: true, action: 'addEntry', made: made.ids.length };
+			}
 			return { success: true, action: 'addEntry' };
 		} catch (e) {
 			return toActionFailure(e);
@@ -268,6 +325,20 @@ export const notebookActions = {
 	 * Prefixed because the plain names above already belong to the notebook —
 	 * see `$lib/services/todo-actions` for the names the markup posts to.
 	 */
+	// A goal written from inside a notebook, the way a task already was.
+	/*
+	 * A goal is made, edited, closed and deleted from inside the notebook it
+	 * belongs to, the same way a todo already was — the same handlers the goals
+	 * room uses, under names this route has free. The names live in
+	 * `$lib/goal-action-names`.
+	 */
+	goalCreate: goalHandlers.create,
+	goalUpdate: goalHandlers.update,
+	goalProgress: goalHandlers.setProgress,
+	goalClose: goalHandlers.close,
+	goalLinks: goalHandlers.setLinks,
+	goalTodoStatus: goalHandlers.setTodoStatus,
+	goalDelete: goalHandlers.remove,
 	todoCreate: todoHandlers.create,
 	todoUpdate: todoHandlers.update,
 	todoStatus: todoHandlers.setStatus,

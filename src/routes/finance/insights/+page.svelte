@@ -1,4 +1,7 @@
 <script lang="ts">
+	import Picker from '$lib/components/Picker.svelte';
+	import { monthOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import { goto } from '$app/navigation';
 	import Swatch from '$lib/components/Swatch.svelte';
 	import { resolve } from '$app/paths';
@@ -11,6 +14,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data }: { data: PageServerData } = $props();
 
@@ -34,12 +38,7 @@
 	}
 
 	/** The months a series covers, as words: "Oct 2025 – Sep 2026". */
-	const monthName = (key: string) =>
-		new Date(`${key}-15T12:00:00Z`).toLocaleString(t.locale, {
-			month: 'short',
-			year: 'numeric',
-			timeZone: 'UTC'
-		});
+	const monthName = (key: string) => monthOf(key, now(), { year: 'numeric' });
 
 	const biggest = $derived(data.byCategory.categories[0] ?? null);
 	const dearest = $derived([...data.totals].sort((a, b) => b.outCents - a.outCents)[0] ?? null);
@@ -50,22 +49,26 @@
 <div class="space-y-5">
 	<!-- What is being looked at. -->
 	<div class="flex flex-wrap items-center gap-2">
-		<select
-			class="select select-sm w-auto"
-			value={data.ledgerId}
-			onchange={(e) => filter({ ledger: Number((e.currentTarget as HTMLSelectElement).value) })}
-		>
-			<option value={0}>{t('finance.insights.everyLedger')}</option>
-			{#each data.ledgers as l (l.id)}<option value={l.id}>{l.name}</option>{/each}
-		</select>
-		<select
-			class="select select-sm w-auto"
-			value={data.months}
-			onchange={(e) => filter({ months: Number((e.currentTarget as HTMLSelectElement).value) })}
-		>
-			{#each WINDOWS as w (w)}<option value={w}>{t('finance.insights.lastMonths', { w: w })}</option
-				>{/each}
-		</select>
+		<!-- Pickers rather than `<select>`s: these narrow what is on screen and
+		     stand in a row of buttons. See `Picker`. -->
+		<Picker
+			value={String(data.ledgerId)}
+			options={[
+				{ value: '0', label: t('finance.insights.everyLedger') },
+				...data.ledgers.map((l) => ({ value: String(l.id), label: l.name }))
+			]}
+			onpick={(next) => filter({ ledger: Number(next) })}
+			label={t('finance.insights.everyLedger')}
+		/>
+		<Picker
+			value={String(data.months)}
+			options={WINDOWS.map((w) => ({
+				value: String(w),
+				label: t('finance.insights.lastMonths', { w })
+			}))}
+			onpick={(next) => filter({ months: Number(next) })}
+			label={t('finance.insights.lastMonths', { w: data.months })}
+		/>
 		{#if data.totals.length > 0}
 			<span class="text-xs text-gray-500">
 				{monthName(data.totals[0].month)} – {monthName(data.totals[data.totals.length - 1].month)}
@@ -135,7 +138,7 @@
 					<span class="flex items-center gap-1.5 text-gray-600">
 						<Swatch color={c.color} shape="dot" />
 						{c.name}
-						<span class="text-gray-400 tabular-nums">{money(c.totalCents)}</span>
+						<span class="text-gray-500 tabular-nums">{money(c.totalCents)}</span>
 					</span>
 				{/each}
 			</div>
@@ -155,13 +158,12 @@
 			<div class="mb-1 flex flex-wrap items-center gap-2">
 				<h2 class="text-sm font-semibold text-gray-900">{t('finance.insights.whatOneTagCosts')}</h2>
 				{#if data.tags.length > 0}
-					<select
-						class="select select-sm w-auto"
-						value={data.tag}
-						onchange={(e) => filter({ tag: (e.currentTarget as HTMLSelectElement).value })}
-					>
-						{#each data.tags as tag (tag.name)}<option value={tag.name}>#{tag.name}</option>{/each}
-					</select>
+					<Picker
+						value={data.tag ?? ''}
+						options={data.tags.map((tag) => ({ value: tag.name, label: `#${tag.name}` }))}
+						onpick={(next) => filter({ tag: next })}
+						label={t('finance.insights.whatOneTagCosts')}
+					/>
 				{/if}
 			</div>
 
@@ -217,10 +219,7 @@
 								<title>{monthName(month)}: {money(series.byMonth[i])}</title>
 							</rect>
 							<text x={cx} y="154" text-anchor="middle" class="fill-gray-500 text-[10px]">
-								{new Date(`${month}-15T12:00:00Z`).toLocaleString(t.locale, {
-									month: 'short',
-									timeZone: 'UTC'
-								})}
+								{monthOf(month, now())}
 							</text>
 							<text
 								x={cx}

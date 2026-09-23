@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import { resolve } from '$app/paths';
 	import { MIN_PASSWORD_LENGTH, PASSWORD_RULE } from '$lib/passwords';
 	import { askAgainOnThisPhone, inPhoneApp } from '$lib/instance-choice';
@@ -81,7 +81,14 @@
 
 		<form
 			method="post"
-			action={mode === 'login' ? '?/signIn' : mode === 'register' ? '?/signUp' : '?/requestReset'}
+			action={(mode === 'login'
+				? '?/signIn'
+				: mode === 'register'
+					? '?/signUp'
+					: '?/requestReset') +
+				// Carried by hand: `?/signIn` replaces the whole query string,
+				// so where somebody was headed is lost without this.
+				(data.next && data.next !== '/' ? `&next=${encodeURIComponent(data.next)}` : '')}
 			use:enhance
 		>
 			{#if mode === 'register' && (data.needsInvite || showInvite)}

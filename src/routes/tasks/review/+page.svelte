@@ -1,6 +1,9 @@
 <script lang="ts">
+	import { useWhen } from '$lib/when-context.svelte';
+	import { sliding } from '$lib/actions/sliding';
+	import { dayOf, weekdayOf } from '$lib/when';
 	import type { PlainKey } from '$lib/i18n/keys';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
 	import Swatch from '$lib/components/Swatch.svelte';
 	import Pie from '$lib/components/Pie.svelte';
@@ -18,6 +21,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
@@ -103,10 +107,7 @@
 	}
 
 	function pretty(dateStr: string): string {
-		return new Date(dateStr + 'T00:00:00').toLocaleDateString(t.locale, {
-			month: 'short',
-			day: 'numeric'
-		});
+		return dayOf(dateStr, now());
 	}
 
 	/** The stale row whose "let it go" has been armed. Nothing deletes on one press. */
@@ -151,7 +152,7 @@
 		for (const item of items) {
 			(days[item.date] ??= {
 				date: item.date,
-				label: new Date(item.date + 'T00:00:00').toLocaleDateString(t.locale, { weekday: 'long' }),
+				label: weekdayOf(item.date, now(), { weekday: 'long' }),
 				items: []
 			}).items.push(item);
 		}
@@ -179,7 +180,7 @@
 			goto(`${resolve('/tasks/review')}?week=${data.week.next}`)}
 	>
 		<h2 class="text-base font-semibold text-gray-900">
-			{t('tasks.review.week', { number: data.week.number, year: data.week.year })}
+			{t('tasks.review.week', { number: String(data.week.number), year: data.week.year })}
 		</h2>
 		<p class="truncate text-sm text-gray-500">
 			{pretty(data.reading.weekStart)} — {pretty(data.reading.weekEnd)}
@@ -324,7 +325,7 @@
 					anything that travels with them would walk out from under the
 					finger that just chose.
 				-->
-				<div class="seg" role="group" aria-label={t('tasks.review.whichHalf')}>
+				<div use:sliding class="seg" role="group" aria-label={t('tasks.review.whichHalf')}>
 					<button
 						type="button"
 						onclick={() => (showing = 'untold')}

@@ -8,13 +8,13 @@ import { toActionFailure } from '$lib/http-errors';
 import { listAssistantCalls, putBack } from '$lib/server/services/assistant-log';
 import {
 	RINGER_TOKEN_NAME,
-	SCOPES,
 	createToken,
 	isCalendarLink,
 	listTokens,
 	revokeToken
 } from '$lib/server/services/tokens';
-import { capabilities } from '$lib/server/settings';
+import { scopeWord } from '$lib/scope-words';
+import { capabilities, isSelfHosted } from '$lib/server/settings';
 import { confinementChoices, describeConfinement } from '$lib/server/mcp/confinement';
 import { translatorFor, SOURCE_LOCALE } from '$lib/i18n/core';
 import type { Translate } from '$lib/i18n/core';
@@ -35,6 +35,8 @@ function subjectLabels(t: Translate): Record<string, string> {
 		bills: t('app.bills'),
 		people: t('app.people'),
 		streams: t('settings.integrations.connections.dataStreams'),
+		statements: t('settings.integrations.bankStatements'),
+		tags: t('app.tags'),
 		search: t('ui.search')
 	};
 }
@@ -50,6 +52,10 @@ function assistantGrid(t: Translate) {
 		const [subject, verb] = scope.split(':');
 		const row = rows.get(subject) ?? {
 			subject,
+			// Never the raw key: a family added later with no label here printed
+			// itself, so the permissions table had a row called "statements" in
+			// the middle of a page that was otherwise in the reader's language.
+			// `tests/assistant-grid.test.ts` fails rather than letting that ship.
 			label: SUBJECT_LABELS[subject] ?? subject,
 			read: null,
 			write: null,
@@ -57,8 +63,10 @@ function assistantGrid(t: Translate) {
 		};
 		if (verb === 'read') row.read = scope;
 		else row.write = scope;
-		const says = SCOPES[scope as keyof typeof SCOPES];
-		if (says) row.says.push(says);
+		// The sentence in the reader's own language, not the English definition
+		// the API reference is generated from. See `$lib/scope-words`.
+		const says = scopeWord(scope);
+		if (says) row.says.push(t(says));
 		rows.set(subject, row);
 	}
 
@@ -71,6 +79,17 @@ function assistantGrid(t: Translate) {
 		return (ai === -1 ? order.length : ai) - (bi === -1 ? order.length : bi);
 	});
 }
+
+import {
+	configuredModelKey,
+	describeModelKey,
+	removeModelKey,
+	saveModelKey
+} from '$lib/server/services/model-keys';
+import { listModels } from '$lib/server/services/model-catalog';
+import { PROVIDERS, PROVIDER_IDS, type ProviderId } from '$lib/assistant-providers';
+import { getChatMayDelete } from '$lib/services/settings';
+import { setAssistantMayDelete } from '$lib/services/preferences';
 
 export const load: PageServerLoad = async ({ locals, url }) => {
 	const ctx = buildCtx(locals.user!.id);
@@ -90,6 +109,32 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 
 	return {
 		origin: url.origin,
+		/*
+		 * The chat's own settings, which used to be a tab of their own.
+		 *
+		 * Three tabs where the first two were both about the assistant: what
+		 * the chat runs on is a setting of this page, not a room beside it.
+		 */
+		configured: describeModelKey(ctx),
+		/*
+		 * Whether the chat holds the deleting grant. Off unless somebody said
+		 * otherwise — and theirs to say, which is the whole point of it being
+		 * here rather than decided in the route that answers a chat turn.
+		 */
+		mayDelete: getChatMayDelete(locals.user!.id),
+		/*
+		 * The provider list rides down with the page rather than being imported
+		 * by it, so the form and the service can only ever disagree about a
+		 * provider by disagreeing with the same file.
+		 */
+		providers: PROVIDERS,
+		/*
+		 * Whether a model on the same machine is a thing this instance can
+		 * reach. The chat's calls are made here, not in the browser, so on the
+		 * hosted copy `127.0.0.1` is this server's own loopback — and the form
+		 * says so beside the field rather than after the attempt.
+		 */
+		selfHosted: isSelfHosted(),
 		/*
 		 * What this instance can do, which decides whether half of this page is
 		 * anything but a description. An assistant reaches in from the internet,
@@ -138,6 +183,74 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 const RINGER_TOKEN = RINGER_TOKEN_NAME;
 
 export const actions: Actions = {
+	save: async ({ request, locals }) => {
+		const ctx = buildCtx(locals.user!.id);
+		const form = await request.formData();
+		try {
+			const saved = saveModelKey(ctx, {
+				provider: form.get('provider'),
+				key: form.get('key'),
+				model: form.get('model'),
+				baseUrl: form.get('baseUrl')
+			});
+			return { success: true, saved };
+		} catch (error) {
+			return toActionFailure(error);
+		}
+	},
+
+	/**
+	 * What this provider will answer to, asked with the key on the form.
+	 *
+	 * The key may not be saved yet — somebody pastes one and wants to see the
+	 * models before committing to it — so the form sends what it is holding.
+	 * Where the field is empty and a key is already stored, the stored one is
+	 * used, which is how "Replace" can browse without retyping.
+	 */
+	models: async ({ request, locals }) => {
+		const ctx = buildCtx(locals.user!.id);
+		const form = await request.formData();
+		const provider = String(form.get('provider') ?? '');
+		if (!(PROVIDER_IDS as readonly string[]).includes(provider))
+			return { success: false, action: 'models', message: 'Unknown provider' };
+
+		try {
+			const typed = String(form.get('key') ?? '').trim();
+			const stored = typed ? null : configuredModelKey(ctx);
+			const key = typed || (stored?.provider === provider ? stored.key : '');
+			const models = await listModels(
+				provider as ProviderId,
+				key,
+				String(form.get('baseUrl') ?? '') || null
+			);
+			return { success: true, action: 'models', models };
+		} catch (error) {
+			return toActionFailure(error);
+		}
+	},
+
+	/** The one grant the chat has to be given rather than born with. */
+	permissions: async ({ request, locals }) => {
+		const ctx = buildCtx(locals.user!.id);
+		const form = await request.formData();
+		try {
+			setAssistantMayDelete(ctx, form.get('mayDelete'));
+		} catch (error) {
+			return toActionFailure(error);
+		}
+		return { success: true, action: 'permissions' };
+	},
+
+	remove: async ({ locals }) => {
+		const ctx = buildCtx(locals.user!.id);
+		try {
+			removeModelKey(ctx);
+		} catch (error) {
+			return toActionFailure(error);
+		}
+		return { success: true };
+	},
+
 	/*
 	 * A key for a phone to ring with.
 	 *

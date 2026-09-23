@@ -56,6 +56,33 @@ describe('what refers to a picture', () => {
 		});
 	});
 
+	/*
+	 * The one that was missing, and the gap it left.
+	 *
+	 * A picture pasted into a task or an idea was referred to by nothing, so
+	 * it was reachable by nobody — the recording side had both of these and
+	 * the picture side did not, which is the kind of asymmetry only a test
+	 * asking the same question of both ever finds.
+	 */
+	test('an idea and a task count too, and each says where it lives', () => {
+		// Its own notebook name: the database is shared across this file, and a
+		// title collides account-wide.
+		const book = notebooks.createNotebook(ctx, { title: 'The leak' });
+		ideas.createIdea(ctx, { content: 'thought ![b](/media/41)' });
+		todos.createTodo(ctx, {
+			title: 'ring the plumber',
+			notes: 'the leak ![c](/media/41)',
+			notebookId: book
+		});
+
+		const found = referrers.pictureReferrers(ctx, 41);
+		expect(found.map((r) => r.kind).sort()).toEqual(['idea', 'todo']);
+		expect(found.find((r) => r.kind === 'todo')?.notebookId).toBe(book);
+		// An idea lives in no notebook, and saying null is what refuses it to a
+		// key confined to one.
+		expect(found.find((r) => r.kind === 'idea')?.notebookId).toBeNull();
+	});
+
 	test('nothing at all, for a picture nobody has used', () => {
 		expect(referrers.pictureReferrers(ctx, 999)).toEqual([]);
 	});

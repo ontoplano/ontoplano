@@ -294,8 +294,177 @@ function cautionTable() {
  * publishing them: what the docs promise and what an assistant is told are
  * the same strings.
  */
+/**
+ * A tool's parameters, read out of the same array that serves them.
+ *
+ * The page used to give a name, a sentence and a scope, and nothing about
+ * what to pass — so anybody writing a call had to read `tools.ts` or guess.
+ * Everything needed is in the `input` schema beside the description: the
+ * type, whether it is required, the values an enum allows, the default.
+ *
+ * Three shapes turn up in that schema and all three are handled here: an
+ * object literal (`{ type, description, enum, default }`), one of the helpers
+ * (`text('…')`, `count('…', 50)`, `from('the list')`), and a spread of a
+ * shared table (`...TAG_ARGS`), which is a `const` in the same file and is
+ * resolved from it.
+ */
+function argTablesOf(source) {
+	const tables = new Map();
+	const lists = new Map();
+	for (const st of source.statements) {
+		if (!ts.isVariableStatement(st)) continue;
+		for (const decl of st.declarationList.declarations) {
+			if (!decl.initializer) continue;
+			const name = decl.name.getText(source);
+			// `as const` is how the shared ones are written, so unwrap it before
+			// asking what shape they are.
+			const body = ts.isAsExpression(decl.initializer)
+				? decl.initializer.expression
+				: decl.initializer;
+			if (ts.isObjectLiteralExpression(body)) tables.set(name, body);
+			// `['todo', …] as const`, which is how the enums that are shared
+			// between tools are written.
+			if (ts.isArrayLiteralExpression(body)) {
+				const value = body;
+				lists.set(name, value.elements.map((el) => literalText(el, source)).filter(Boolean));
+			}
+		}
+	}
+	return { tables, lists };
+}
+
+/** The text of a string literal or template with no substitutions. */
+function literalText(node, source) {
+	if (!node) return '';
+	if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return node.text;
+	if (ts.isTemplateExpression(node)) {
+		// `from()` builds its sentence with the thing it pages through in it.
+		return node
+			.getText(source)
+			.replace(/^`|`$/g, '')
+			.replace(/\$\{[^}]*\}/g, '…');
+	}
+	return '';
+}
+
+function paramFrom(name, value, source, required, lists, tables) {
+	const out = { name, required, type: 'string', description: '' };
+
+	// `targets: targetsParam` — the shape is a `const` in the same file.
+	if (ts.isIdentifier(value)) {
+		const named = tables.get(value.getText(source));
+		if (!named) return null;
+		value = named;
+	}
+	if (ts.isAsExpression(value)) value = value.expression;
+
+	if (ts.isCallExpression(value)) {
+		const called = value.expression.getText(source);
+		const first = literalText(value.arguments[0], source);
+		if (called === 'text') Object.assign(out, { type: 'string', description: first });
+		else if (called === 'count')
+			Object.assign(out, {
+				type: 'integer',
+				description: first,
+				default: value.arguments[1]?.getText(source)
+			});
+		else if (called === 'from')
+			Object.assign(out, {
+				type: 'integer',
+				description: `Skip this many before counting, so the rest of ${first} can be read a page at a time.`,
+				default: '0'
+			});
+		else return null;
+		return out;
+	}
+
+	if (!ts.isObjectLiteralExpression(value)) return null;
+	for (const prop of value.properties) {
+		if (!ts.isPropertyAssignment(prop)) continue;
+		const key = prop.name.getText(source).replace(/['"]/g, '');
+		if (key === 'type') out.type = literalText(prop.initializer, source) || out.type;
+		if (key === 'description') out.description = literalText(prop.initializer, source);
+		if (key === 'default') out.default = prop.initializer.getText(source);
+		if (key === 'enum' && ts.isArrayLiteralExpression(prop.initializer)) {
+			const values = [];
+			for (const el of prop.initializer.elements) {
+				// `enum: [...TASK_STATES]` — the list is shared between tools.
+				if (ts.isSpreadElement(el)) {
+					values.push(...(lists.get(el.expression.getText(source)) ?? []));
+					continue;
+				}
+				const said = literalText(el, source);
+				if (said) values.push(said);
+			}
+			if (values.length > 0) out.enum = values;
+		}
+		if (key === 'deprecated') out.deprecated = true;
+		/*
+		 * An array of objects — a goal's measures, a workout's readings. The
+		 * fields of one item are what a caller needs to know, and they are
+		 * described inside `items.properties`.
+		 */
+		if (key === 'items' && ts.isObjectLiteralExpression(prop.initializer)) {
+			for (const inner of prop.initializer.properties) {
+				if (!ts.isPropertyAssignment(inner)) continue;
+				if (inner.name.getText(source) !== 'properties') continue;
+				if (!ts.isObjectLiteralExpression(inner.initializer)) continue;
+				out.fields = inner.initializer.properties
+					.filter((one) => ts.isPropertyAssignment(one))
+					.map((one) => one.name.getText(source).replace(/['"]/g, ''));
+			}
+		}
+	}
+	return out;
+}
+
+function paramsOf(input, source, tables, lists) {
+	if (!input || !ts.isCallExpression(input)) return [];
+	const [shape, requiredList] = input.arguments;
+	if (!shape || !ts.isObjectLiteralExpression(shape)) return [];
+
+	const required = new Set(
+		requiredList && ts.isArrayLiteralExpression(requiredList)
+			? requiredList.elements.map((el) => literalText(el, source))
+			: []
+	);
+
+	const params = [];
+	const take = (node) => {
+		for (const prop of node.properties) {
+			if (ts.isSpreadAssignment(prop)) {
+				const table = tables.get(prop.expression.getText(source));
+				if (table) take(table);
+				continue;
+			}
+			if (!ts.isPropertyAssignment(prop)) continue;
+			const name = prop.name.getText(source).replace(/['"]/g, '');
+			const param = paramFrom(name, prop.initializer, source, required.has(name), lists, tables);
+			if (param) params.push(param);
+		}
+	};
+	take(shape);
+	return params;
+}
+
 function mcpTools() {
 	const source = parse(join(ROOT, 'src/lib/server/mcp/tools.ts'));
+	const { tables, lists } = argTablesOf(source);
+
+	/*
+	 * Some enums are the app's own vocabularies, declared where the thing
+	 * lives rather than beside the tool — habit types, what a person can be to
+	 * you. The page has to list them or it is telling half the story, so the
+	 * files they come from are read too.
+	 */
+	for (const from of [
+		'src/lib/services/habits.ts',
+		'src/lib/people.ts',
+		'src/lib/task-status.ts'
+	]) {
+		const other = argTablesOf(parse(join(ROOT, from)));
+		for (const [name, values] of other.lists) if (!lists.has(name)) lists.set(name, values);
+	}
 	const tools = [];
 	const visit = (n) => {
 		if (
@@ -316,6 +485,13 @@ function mcpTools() {
 					if (key === 'writes') tool.writes = prop.initializer.kind === ts.SyntaxKind.TrueKeyword;
 					if (key === 'destroys')
 						tool.destroys = prop.initializer.kind === ts.SyntaxKind.TrueKeyword;
+					if (key === 'input') tool.params = paramsOf(prop.initializer, source, tables, lists);
+					// A tool any one of several grants reaches — a file answers to
+					// whatever refers to it, so `media` is not one scope's.
+					if (key === 'anyScope' && ts.isArrayLiteralExpression(prop.initializer))
+						tool.anyScope = prop.initializer.elements
+							.map((el) => literalText(el, source))
+							.filter(Boolean);
 				}
 				if (tool.name) tools.push(tool);
 			}
@@ -1220,18 +1396,49 @@ const FRAGMENTS = {
 			...scopeTable().map((r) => `| \`${r.key}\` | ${r.value} |`)
 		].join('\n'),
 	'mcp-tools': () => {
-		const tools = mcpTools();
-		return tools
-			.map(
-				(t) =>
-					`### \`${t.name}\` — ${t.title}\n\n${t.description}\n\n_Needs ${
-						// Deleting is its own grant on top of the room's write scope —
+		/*
+		 * Each tool: what it is for, what it needs, and what to pass it.
+		 *
+		 * The parameters are the part this page was missing. Somebody writing
+		 * a call had the sentence and nothing else — no names, no types, no
+		 * idea which of them was required or what an enum allowed — so they
+		 * read `tools.ts` or guessed. It all comes from the same array that
+		 * serves the tools, so the page cannot drift from the server.
+		 */
+		const asRow = (p) => {
+			const bits = [p.description];
+			if (p.enum) bits.push(`One of: ${p.enum.map((v) => `\`${v}\``).join(', ')}.`);
+			if (p.fields) bits.push(`Each one carries ${p.fields.map((f) => `\`${f}\``).join(', ')}.`);
+			if (p.default !== undefined) bits.push(`Default \`${p.default}\`.`);
+			if (p.deprecated) bits.push('**Deprecated.**');
+			const said = bits.filter(Boolean).join(' ').replace(/\|/g, '\\|').replace(/\n+/g, ' ');
+			return `| \`${p.name}\` | ${p.type} | ${p.required ? 'yes' : '—'} | ${said} |`;
+		};
+
+		return mcpTools()
+			.map((t) => {
+				const needs = t.destroys
+					? // Deleting is its own grant on top of the room's write scope —
 						// see `destructive` in the scope table.
-						t.destroys
-							? `\`${t.scope}\` and \`destructive\`; deletes`
-							: `\`${t.scope}\`; ${t.writes ? 'writes' : 'read-only'}`
-					}._`
-			)
+						`\`${t.scope}\` and \`destructive\`; deletes`
+					: t.anyScope
+						? // Any one of several is enough: a file answers to whichever
+							// grant reads the thing it sits in.
+							`any of ${t.anyScope.map((one) => `\`${one}\``).join(', ')}; read-only`
+						: `\`${t.scope}\`; ${t.writes ? 'writes' : 'read-only'}`;
+
+				const table =
+					t.params && t.params.length > 0
+						? [
+								'',
+								'| Parameter | Type | Required | What it is |',
+								'| --- | --- | --- | --- |',
+								...t.params.map(asRow)
+							].join('\n')
+						: '\n_Takes no parameters._';
+
+				return `### \`${t.name}\` — ${t.title}\n\n${t.description}\n\n_Needs ${needs}._\n${table}`;
+			})
 			.join('\n\n');
 	},
 	permissions: () => {
@@ -1354,6 +1561,7 @@ function prosePages() {
 
 			const body = raw
 				.replace(/<!--\s*(?:title|blurb):.*?-->\n?/g, '')
+
 				.replace(/^[^\S\n]*<!--\s*generated:\s*([\w-]+)\s*-->[^\S\n]*$/gm, (line, name) => {
 					const fragment = FRAGMENTS[name];
 					if (!fragment) {
@@ -1361,7 +1569,23 @@ function prosePages() {
 						process.exit(1);
 					}
 					return fragment();
-				});
+				})
+				/*
+				 * A commented-out section stays in the source and does not ship.
+				 *
+				 * Markdown has no way to switch a section off, so a feature that
+				 * is parked rather than removed — see `CHAT_IN_APP` — gets its
+				 * documentation wrapped in an HTML comment. That was not enough
+				 * on its own: the comment rode through to `docs/reference/`, and
+				 * while a browser does not draw it, the docs site builds its
+				 * search index out of the markdown — so every heading inside the
+				 * comment was still findable, and the first result for "chat"
+				 * was a page about a feature nobody can reach.
+				 *
+				 * The tab markers are the exception, being instructions to the
+				 * site builder rather than prose.
+				 */
+				.replace(/<!--(?!\s*\/?tabs\s*-->)[\s\S]*?-->\n?/g, '');
 
 			return {
 				file,

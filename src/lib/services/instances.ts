@@ -385,7 +385,7 @@ export function listInstances(ctx: Ctx, from: Date, to: Date): Occurrence[] {
 			durationOverride: taskRecords.durationOverride,
 			urgencyOverride: taskRecords.urgencyOverride,
 			interestOverride: taskRecords.interestOverride,
-			energyOverride: taskRecords.energyOverride,
+			easeOverride: taskRecords.easeOverride,
 			resolvedActivityId: taskRecords.resolvedActivityId,
 			resolvedActivityName: resolvedActivities.name,
 			resolvedActivityColor: resolvedActivities.color,
@@ -400,7 +400,7 @@ export function listInstances(ctx: Ctx, from: Date, to: Date): Occurrence[] {
 			slotCategoryColor: slotCategories.color,
 			slotUrgency: recurringTasks.urgency,
 			slotInterest: recurringTasks.interest,
-			slotEnergy: recurringTasks.energy,
+			slotEnergy: recurringTasks.ease,
 			slotActivityId: recurringTasks.activityId,
 			slotActivityName: slotActivities.name,
 			slotActivityColor: slotActivities.color,
@@ -419,7 +419,7 @@ export function listInstances(ctx: Ctx, from: Date, to: Date): Occurrence[] {
 			oneOffCategoryColor: oneOffCategories.color,
 			oneOffUrgency: exceptionalTasks.urgency,
 			oneOffInterest: exceptionalTasks.interest,
-			oneOffEnergy: exceptionalTasks.energy,
+			oneOffEnergy: exceptionalTasks.ease,
 			oneOffActivityId: exceptionalTasks.activityId,
 			oneOffActivityName: oneOffActivities.name,
 			oneOffActivityColor: oneOffActivities.color,
@@ -521,7 +521,7 @@ export function listInstances(ctx: Ctx, from: Date, to: Date): Occurrence[] {
 			ratings: {
 				urgency: r.urgencyOverride ?? (weekly ? r.slotUrgency : r.oneOffUrgency) ?? null,
 				interest: r.interestOverride ?? (weekly ? r.slotInterest : r.oneOffInterest) ?? null,
-				energy: r.energyOverride ?? (weekly ? r.slotEnergy : r.oneOffEnergy) ?? null
+				ease: r.easeOverride ?? (weekly ? r.slotEnergy : r.oneOffEnergy) ?? null
 			},
 			meta: (weekly ? r.slotMeta : r.oneOffMeta) ?? '{}'
 		};
@@ -836,7 +836,7 @@ function ownedActivity(ctx: Ctx, value: unknown): number | null {
 export function setInstanceRatings(
 	ctx: Ctx,
 	id: number,
-	ratings: { urgency?: number | null; interest?: number | null; energy?: number | null }
+	ratings: { urgency?: number | null; interest?: number | null; ease?: number | null }
 ): void {
 	if (Object.keys(ratings).length === 0) return;
 
@@ -845,7 +845,7 @@ export function setInstanceRatings(
 		.set({
 			urgencyOverride: ratings.urgency,
 			interestOverride: ratings.interest,
-			energyOverride: ratings.energy
+			easeOverride: ratings.ease
 		})
 		.where(and(eq(taskRecords.id, id), eq(taskRecords.userId, ctx.userId)))
 		.run();
@@ -1098,7 +1098,11 @@ export function cancelOccurrence(ctx: Ctx, occurrenceId: unknown): { ok: true } 
 	}
 
 	const record = db
-		.select({ slotId: taskRecords.slotId, scheduledAt: taskRecords.scheduledAt })
+		.select({
+			slotId: taskRecords.slotId,
+			exceptionalSlotId: taskRecords.exceptionalSlotId,
+			scheduledAt: taskRecords.scheduledAt
+		})
 		.from(taskRecords)
 		.where(and(eq(taskRecords.id, id), eq(taskRecords.userId, ctx.userId)))
 		.get();
@@ -1112,6 +1116,20 @@ export function cancelOccurrence(ctx: Ctx, occurrenceId: unknown): { ok: true } 
 		// block that is no longer on it. `moveOccurrence` deletes it for the same
 		// reason.
 		deleteInstance(ctx, id);
+		return { ok: true };
+	}
+
+	/*
+	 * A record made by a one-off block: the block itself has to go.
+	 *
+	 * Deleting the record alone leaves the thing that produced it, and the
+	 * next time that day is looked at `generateInstances` makes the record
+	 * again — so cancelling a one-off did nothing at all, twice over, and the
+	 * screen showed the block right back. The record goes with its parent
+	 * through the cascade.
+	 */
+	if (record.exceptionalSlotId) {
+		deleteExceptional(ctx, record.exceptionalSlotId);
 		return { ok: true };
 	}
 

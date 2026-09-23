@@ -15,18 +15,29 @@
 	import { resolve } from '$app/paths';
 	import { AUDIO_HREF, splitAudio } from '$lib/audio-markdown';
 	import { splitPictures } from '$lib/picture-markdown';
+	import { renderMarkdown, type TodoRefs } from '$lib/markdown';
+	import { overflows } from '$lib/actions/overflows';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * A piece of writing as it was typed, with anything attached to it drawn.
 	 *
-	 * An idea, a todo's notes and a note about somebody are drawn as plain text
-	 * rather than through the markdown renderer — they are a sentence, not a
-	 * document. A recording and a picture are both stored as ordinary markdown,
-	 * which is right for the text and wrong on the screen: what somebody sees
-	 * otherwise is `[my great idea, in audio](/media/audio/40)` and
-	 * `![screenshot](/media/12)` sitting in the middle of their own writing.
-	 * Both come out of the text and are drawn under it — the thing itself
-	 * rather than the address of it.
+	 * Markdown, everywhere writing is shown. An idea, a todo's notes and a note
+	 * about somebody used to be drawn as plain text on the grounds that they
+	 * are a sentence rather than a document — and the app then had two answers
+	 * to the same question: a fenced block rendered in a notebook and came out
+	 * as three backticks on a task, `TASK:#4` was a link in one place and four
+	 * characters in the other. Somebody writing in this app writes markdown;
+	 * where it is shown is not the place to decide it is not.
+	 *
+	 * A recording and a picture are both stored as ordinary markdown, which is
+	 * right for the text and wrong on the screen: what somebody sees otherwise
+	 * is `[my great idea, in audio](/media/audio/40)` and `![screenshot](/media/12)`
+	 * sitting in the middle of their own writing. Both come out of the text
+	 * before it is rendered and are drawn under it — the thing itself rather
+	 * than the address of it.
 	 */
 	let {
 		content,
@@ -40,17 +51,112 @@
 		compact = false,
 		/** Cut to a single line. What a list shows until somebody asks for more. */
 		oneLine = false,
+		ontruncate,
+		/**
+		 * Cut after this many lines, for a card that shows an opening.
+		 *
+		 * Different from `oneLine`, which is a row that opens when pressed:
+		 * this is a fixed height with no way to unfold, because the card it is
+		 * on links to the page where the whole thing is. It exists so a preview
+		 * can be *rendered* writing rather than a slice of the characters — a
+		 * card cut at 300 characters shows `## A month of doing this properly`
+		 * with the hashes in it, which is the markup and not the heading.
+		 */
+		lines = undefined,
+		/**
+		 * Take the colour of whatever this sits on, rather than the palette's
+		 * grey. For a ground the palette does not know about — a board card
+		 * wears its category's colour, and grey on teal is grey on teal.
+		 */
+		inheritInk = false,
+		/**
+		 * The tasks this writing may point at, so `TASK:#4` is a link with the
+		 * task's own title on it rather than four characters. Passed where the
+		 * caller has them; without it the reference is still a link, just
+		 * unnamed — which is what an export or a half-loaded page should show.
+		 */
+		todos = undefined,
 		class: klass = ''
-	}: { content: string; compact?: boolean; oneLine?: boolean; class?: string } = $props();
+	}: {
+		content: string;
+		compact?: boolean;
+		oneLine?: boolean;
+		/**
+		 * Told whether the clamp is actually cutting anything off.
+		 *
+		 * Only the element that carries the clamp can answer this, which is why
+		 * it is reported from in here rather than measured by whoever drew it:
+		 * a wrapper around this does not overflow, so a caller watching its own
+		 * box is told "nothing is folded" about a paragraph that plainly is.
+		 */
+		ontruncate?: (yes: boolean) => void;
+		lines?: number;
+		inheritInk?: boolean;
+		todos?: TodoRefs;
+		class?: string;
+	} = $props();
 
 	const spoken = $derived(splitAudio(content));
 	const shown = $derived(splitPictures(spoken.text));
-	const height = $derived(oneLine ? PICTURE_HEIGHT.compact : PICTURE_HEIGHT.full);
-	const type = $derived(compact ? 'text-xs text-gray-500' : 'text-sm text-gray-900');
+
+	/**
+	 * Unfolded by a press on one of its own pictures, rather than by the row.
+	 *
+	 * A picture under a clamped line sits beneath writing nobody has read yet,
+	 * and a tab opened from there takes somebody away from the line they were
+	 * about to read. So the first press unfolds and the second opens. It is
+	 * dropped as soon as the owner has the row open, so the owner's fold is
+	 * the one that counts again when it closes.
+	 */
+	let revealed = $state(false);
+	$effect(() => {
+		if (!oneLine) revealed = false;
+	});
+
+	const folded = $derived(oneLine && !revealed);
+	/** With nothing written over it a picture has nothing to unfold, so it opens at once. */
+	const unfoldsFirst = $derived(folded && Boolean(shown.text));
+
+	/** The picture that was pressed, so the keyboard lands back on it as a link. */
+	let landOn: number | null = null;
+
+	function unfold(id: number) {
+		landOn = id;
+		revealed = true;
+	}
+
+	const height = $derived(folded ? PICTURE_HEIGHT.compact : PICTURE_HEIGHT.full);
+	const size = $derived(compact ? 'text-xs' : 'text-sm');
+	const ink = $derived(inheritInk ? 'opacity-90' : compact ? 'text-gray-500' : 'text-gray-900');
+	const type = $derived(`${size} ${ink}`);
+
+	/*
+	 * `renderMarkdown` escapes every character of the input before it emits a
+	 * tag, and the only attributes it writes are its own — the same bargain the
+	 * diary and the weekly review already make with `{@html}`.
+	 */
+	const html = $derived(renderMarkdown(shown.text, todos));
 </script>
 
 {#if shown.text}
-	<p class="{oneLine ? 'truncate' : 'whitespace-pre-wrap'} {type} {klass}">{shown.text}</p>
+	<!--
+		Clamped rather than truncated when it is one line: the text is elements
+		now, and `truncate` only cuts a single run of text. One line of a
+		paragraph, and the row opens to the rest.
+	-->
+	<div
+		use:overflows={ontruncate ?? (() => {})}
+		class="md written {folded ? 'written-one-line' : ''} {lines
+			? 'written-clamped'
+			: ''} {type} {klass}"
+		style={lines ? `--written-lines: ${lines}` : undefined}
+	>
+		<!-- `renderMarkdown` escapes every character of the input before it emits
+		     a tag, and the only attributes it writes are its own. Same bargain as
+		     the diary and the weekly review. -->
+		<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+		{@html html}
+	</div>
 {/if}
 
 <!--
@@ -59,13 +165,52 @@
 	Pinch, rotate, save, share: the browser's own picture view already does all
 	of it, on every platform, and better than a lightbox we would have to build
 	and then maintain a focus trap for.
+
+	Folded, it is not a link at all but the control that unfolds the row — the
+	writing the picture belongs to comes first. A span rather than a button so
+	the press carries on up to whoever folded this and their own fold opens
+	with it; standing alone, `unfold` is enough on its own.
 -->
+{#snippet thumbnail(id: number)}
+	<img src="{resolve('/media')}/{id}" alt="" loading="lazy" style="max-height: {height}" />
+{/snippet}
+
 {#if shown.pictures.length > 0}
 	<div class="mt-1 flex flex-wrap gap-2">
 		{#each shown.pictures as id (id)}
-			<a href="{resolve('/media')}/{id}" target="_blank" rel="noopener" class="written-picture">
-				<img src="{resolve('/media')}/{id}" alt="" loading="lazy" style="max-height: {height}" />
-			</a>
+			{#if unfoldsFirst}
+				<span
+					role="button"
+					tabindex="0"
+					aria-expanded="false"
+					aria-label={t('written.showTheRest')}
+					title={t('written.showTheRest')}
+					class="written-picture cursor-pointer"
+					onclick={() => unfold(id)}
+					onkeydown={(press) => {
+						if (press.key !== 'Enter' && press.key !== ' ') return;
+						press.preventDefault();
+						unfold(id);
+					}}
+				>
+					{@render thumbnail(id)}
+				</span>
+			{:else}
+				<a
+					href="{resolve('/media')}/{id}"
+					target="_blank"
+					rel="noopener"
+					class="written-picture"
+					aria-label={t('written.openThePicture')}
+					{@attach (node) => {
+						if (landOn !== id) return;
+						landOn = null;
+						node.focus();
+					}}
+				>
+					{@render thumbnail(id)}
+				</a>
+			{/if}
 		{/each}
 	</div>
 {/if}
@@ -75,6 +220,47 @@
 {/each}
 
 <style>
+	/*
+	 * One line, whatever the markup inside it turns out to be.
+	 *
+	 * `truncate` is `text-overflow: ellipsis` on one box, which does nothing
+	 * once the writing is a paragraph and a list rather than a string. The
+	 * clamp is on the whole block, and everything after the first line —
+	 * another paragraph, a table, a picture the renderer drew — is simply not
+	 * drawn until the row is opened.
+	 */
+	.written-one-line {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 1;
+		line-clamp: 1;
+		overflow: hidden;
+	}
+
+	/*
+	 * The same cut, at a height the caller chooses.
+	 *
+	 * A card wants the opening of something rather than one line of it, and
+	 * wants it as writing: headings drawn as headings, and the cut falling
+	 * wherever the rendered text runs out of room.
+	 */
+	.written-clamped {
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: var(--written-lines, 3);
+		line-clamp: var(--written-lines, 3);
+		overflow: hidden;
+	}
+
+	/* A row is not a document: the renderer's block spacing is too loud here. */
+	.written :global(p + p),
+	.written :global(ul),
+	.written :global(ol),
+	.written :global(pre),
+	.written :global(blockquote) {
+		margin-top: 0.375rem;
+	}
+
 	/*
 	 * The white ground is the same bargain `.md img.md-image` makes: a PNG with
 	 * transparency is drawn on whatever is behind it, and in the dark theme

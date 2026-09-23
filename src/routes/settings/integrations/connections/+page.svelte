@@ -2,7 +2,7 @@
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import OneLine from '$lib/components/OneLine.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
@@ -10,6 +10,7 @@
 	import { resolve } from '$app/paths';
 	import Field from '$lib/components/Field.svelte';
 	import KeyReach from '$lib/components/KeyReach.svelte';
+	import ScopeChoice from '$lib/components/ScopeChoice.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import type { PageServerData, ActionData } from './$types';
@@ -39,38 +40,21 @@
 
 	// The sentence a scope was granted as, everywhere a scope is shown — the
 	// key is for the developer, the sentence is for the owner of the data.
-	const scopeSentence = (key: string) => data.scopes.find((s) => s.key === key)?.description ?? key;
+	const scopeSentence = (key: string) => {
+		const says = data.scopes.find((s) => s.key === key)?.says;
+		return says ? t(says) : key;
+	};
 
 	/**
-	 * Tick exactly these and untick the rest.
+	 * The permission boxes, so the presets below can set them.
 	 *
-	 * Set rather than add, so pressing a preset twice is the same as pressing it
-	 * once and the button always leaves the form in the state its label claims.
+	 * The list itself is `ScopeChoice`, shared with the consent screen an
+	 * assistant sends somebody to — the same question, asked the same way. The
+	 * presets stay here: "an AI assistant" is a sentence that means something
+	 * on a form where somebody is making a key by hand, and nothing on a screen
+	 * where an assistant is the one asking.
 	 */
-	let scopeBox = $state<HTMLElement>();
-
-	/**
-	 * Which cautioned scopes are currently ticked, read from the DOM.
-	 *
-	 * From the DOM rather than bound state, because the preset and Clear
-	 * buttons set `.checked` directly — a binding would go stale the moment
-	 * either was pressed.
-	 */
-	let cautionsArmed = $state<Record<string, boolean>>({});
-	function syncCautions() {
-		const armed: Record<string, boolean> = {};
-		for (const box of scopeBox?.querySelectorAll<HTMLInputElement>(
-			'input[name="scopes"]:checked'
-		) ?? [])
-			armed[box.value] = true;
-		cautionsArmed = armed;
-	}
-
-	function tick(keys: string[]) {
-		for (const box of scopeBox?.querySelectorAll<HTMLInputElement>('input[name="scopes"]') ?? [])
-			box.checked = keys.includes(box.value);
-		syncCautions();
-	}
+	let scopeChoice = $state<ReturnType<typeof ScopeChoice>>();
 
 	function closeForms() {
 		showTokenForm = false;
@@ -80,7 +64,10 @@
 		confirmDeleteWebhook = null;
 	}
 
-	const eventLabel = (key: string) => data.webhookEvents.find((e) => e.key === key)?.label ?? key;
+	const eventLabel = (key: string) => {
+		const says = data.webhookEvents.find((e) => e.key === key)?.says;
+		return says ? t(says) : key;
+	};
 
 	/**
 	 * One legible line per assistant call: whatever names the thing best, from
@@ -124,6 +111,19 @@ Once connected, list the tools you were offered and tell me what I asked you to
 do today. Do not write anything into my account until I ask you to.
 
 Token: ${token}`;
+	}
+
+	/* Its own flag, not `copied` — one button flashing "Copied!" because a
+	 * different one was pressed is a small lie. */
+	let copiedAddress = $state(false);
+	async function copyAddress(value: string) {
+		try {
+			await navigator.clipboard.writeText(value);
+			copiedAddress = true;
+			setTimeout(() => (copiedAddress = false), 2000);
+		} catch {
+			copiedAddress = false;
+		}
 	}
 
 	async function copyToken(value: string) {
@@ -331,16 +331,37 @@ Token: ${token}`;
 		</form>
 	</Card>
 
+	<!--
+		The way in that needs no key, above the tokens because it is the path
+		most people should take — and because the flow starts on the
+		assistant's side, where nobody thinks to look first. The app saying
+		so, with the address, is what makes it findable at all.
+	-->
+	<Card title={t('settings.integrations.connections.connectAnAssistant')}>
+		<p class="text-sm text-gray-600">
+			{t('settings.integrations.connections.pasteThisAddressInto')}
+		</p>
+		<div class="mt-2 flex items-center gap-2">
+			<code
+				class="flex-1 overflow-x-auto border border-gray-200 bg-gray-50 px-3 py-2 font-mono text-xs whitespace-nowrap text-gray-900"
+				>{data.origin}/api/mcp</code
+			>
+			<button
+				type="button"
+				class="btn btn-sm shrink-0"
+				onclick={() => copyAddress(`${data.origin}/api/mcp`)}
+			>
+				{copiedAddress ? t('ui.copied') : t('ui.copy')}
+			</button>
+		</div>
+		<p class="mt-2 text-xs text-gray-500">
+			{t('settings.integrations.connections.itSendsYouBackHere')}
+		</p>
+	</Card>
+
 	<!-- API tokens -->
 	<Card title={t('settings.integrations.connections.apiTokens')} flush>
 		{#snippet actions()}
-			{#if data.tokens.length === 0}
-				<!-- Beside the button it points at, small, and gone with the first
-				     token: connecting an assistant is what a first visit is for. -->
-				<span class="mr-2 border border-blue-200 bg-blue-50 px-2 py-1 text-xs text-blue-900">
-					{t('settings.integrations.connections.createATokenToConnect')}
-				</span>
-			{/if}
 			<button
 				type="button"
 				onclick={() => (showTokenForm = true)}
@@ -424,62 +445,26 @@ Token: ${token}`;
 							<button
 								type="button"
 								class="btn btn-sm border-blue-200 bg-blue-50 text-blue-900 hover:bg-blue-100"
-								onclick={() => tick(data.assistantScopes)}
+								onclick={() => scopeChoice?.tick(data.assistantScopes)}
 							>
 								{t('settings.integrations.connections.anAiAssistantMcp')}
 							</button>
 							<button
 								type="button"
 								class="btn btn-sm btn-quiet"
-								onclick={() => tick(data.assistantScopesDestructive)}
+								onclick={() => scopeChoice?.tick(data.assistantScopesDestructive)}
 							>
 								{t('settings.integrations.connections.andLetItDeleteThings')}
 							</button>
-							<button type="button" class="btn btn-sm btn-quiet" onclick={() => tick([])}>
+							<button
+								type="button"
+								class="btn btn-sm btn-quiet"
+								onclick={() => scopeChoice?.tick([])}
+							>
 								{t('settings.integrations.connections.clear')}
 							</button>
 						</p>
-						<div class="space-y-1" bind:this={scopeBox} onchange={syncCautions}>
-							{#each data.scopes as scope (scope.key)}
-								<label class="flex items-start gap-2 text-sm text-gray-700">
-									<input type="checkbox" name="scopes" value={scope.key} class="mt-1" />
-									<span>
-										<code class="font-mono text-xs text-gray-900">{scope.key}</code>
-										<span class="text-gray-500">— {scope.description}</span>
-										{#if scope.key.endsWith(':write') && cautionsArmed[scope.key] && !cautionsArmed[scope.key.replace(':write', ':read')]}
-											<!--
-												Write without read.
-
-												Most write tools take an id, and ids come from the read
-												tool next to them: `habits:write` alone can tick a habit
-												by name and nothing else, and `tasks:write` alone cannot
-												find the todo it is meant to finish. The pair is not
-												forced — a token that may add to the shopping list
-												without reading the list is a real thing to want — but a
-												grant that will not work is worth one sentence before it
-												is made.
-											-->
-											<span
-												class="mt-1 mb-0.5 block border-l-2 border-blue-600 pl-2 text-xs font-medium text-blue-700"
-											>
-												{t('settings.integrations.connections.without')}
-												<code class="font-mono">{scope.key.replace(':write', ':read')}</code>
-												{t('settings.integrations.connections.itCanWriteButNot')}
-											</span>
-										{/if}
-										{#if scope.caution && cautionsArmed[scope.key]}
-											<!-- Only once the tick is in: a warning about a grant nobody
-											     is granting is noise, and named for its permission. -->
-											<span
-												class="mt-1 mb-0.5 block border-l-2 border-amber-600 pl-2 text-xs font-medium text-amber-700"
-											>
-												<code class="font-mono">{scope.key}</code> — {scope.caution}
-											</span>
-										{/if}
-									</span>
-								</label>
-							{/each}
-						</div>
+						<ScopeChoice bind:this={scopeChoice} scopes={data.scopes} showKeys />
 					</fieldset>
 				</FormGrid>
 			</form>
@@ -839,7 +824,7 @@ Token: ${token}`;
 								<label class="flex items-start gap-2 text-sm text-gray-700">
 									<input type="checkbox" name="events" value={event.key} class="mt-1" />
 									<span>
-										{event.label}
+										{event.says ? t(event.says) : event.key}
 										<code class="ml-1 font-mono text-xs text-gray-500">{event.key}</code>
 									</span>
 								</label>

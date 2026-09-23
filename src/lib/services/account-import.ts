@@ -100,7 +100,11 @@ export const NOT_PORTABLE: Record<string, PlainKey> = {
 	// An address at a push service, tied to one browser and to the key of the
 	// instance it subscribed to. Nothing here could send to it, and permission
 	// given to one site is not permission given to another.
-	pushSubscriptions: 'accountImport.aDeviceAgreedToHear'
+	pushSubscriptions: 'accountImport.aDeviceAgreedToHear',
+	// A code mid-handshake with an assistant, against a client this instance
+	// has never heard of and an address it never registered. It expires in
+	// minutes and is worth nothing anywhere but where it was issued.
+	oauthCodes: 'accountImport.aCodeBelongsToTheHandshake'
 };
 
 export type ImportResult = {

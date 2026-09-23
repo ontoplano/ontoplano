@@ -140,6 +140,15 @@
 	 * uses light ink.
 	 */
 	--hover-wash: rgb(15 23 42 / 0.05);
+	/* Over a panel whose contents are being replaced. Darker than a hover,
+	   because it is saying wait rather than saying you are here. */
+	--wait-wash: rgb(15 23 42 / 0.12);
+	/*
+	 * Where the keyboard is standing. A shade darker than the hover wash, so
+	 * the two are telling you different things and you can see which is which
+	 * when the pointer is resting on the row the cursor is on.
+	 */
+	--cursor-wash: rgb(15 23 42 / 0.08);
 
 	/* Flat and close to the surface. Depth separates layers, it does not decorate. */
 	--shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.06);
@@ -171,6 +180,106 @@ input[type='radio'] {
 }
 
 /*
+ * Except the inside of a rating gauge.
+ *
+ * The gauge is a track with a fill sliding along it, and both are `span`s —
+ * so the playful style rounded the fill, which is the wrong shape twice over:
+ * a rounded rectangle inside a rounded track leaves a notch at each corner of
+ * the closed end, and the open end domes, so two-of-five reads as the bulb of
+ * a thermometer rather than as a level. The track keeps whatever corners the
+ * style gives it; what is drawn on it does not.
+ *
+ * `!important` because the rule above is `!important` and both of these are
+ * unlayered, while the gauge's own rules live in `@layer components` and lose
+ * to anything outside it however specific they are.
+ */
+.gauge-fill {
+	border-radius: 0 !important;
+}
+
+/*
+ * And the travelling tile is concentric with the track it runs in.
+ *
+ * A curve inset by the track's padding has to be that much tighter, or the two
+ * do not follow each other and the gap between them pinches at the corners.
+ * `!important` and unlayered for the same reason as the gauge above: the
+ * playful style's blanket rule matches this as a `<span>` and lives outside
+ * the layer, so it wins however specific the rule inside the layer is.
+ */
+.seg-tile {
+	border-radius: calc(var(--radius, 0px) - var(--seg-pad, 0px)) !important;
+}
+
+/*
+ * A room's tabs sit on the thing they choose between.
+ *
+ * Rounded at the top and square along the bottom, with nothing under them: the
+ * track and the room's body are one object with a rule where they meet, rather
+ * than a floating pill above a card with a strip of the page showing between.
+ * A corner needs somewhere to be a corner, and the place two surfaces meet is
+ * not it.
+ *
+ * Unlayered and `!important` for the same reason as the tile above: the track
+ * is a `<div>`, the playful style's blanket radius matches it from outside the
+ * layer, and nothing inside the layer can outrank that however specific.
+ */
+.room-tabs .seg-track {
+	border-end-start-radius: 0 !important;
+	border-end-end-radius: 0 !important;
+}
+
+/*
+ * And the room under it is square along the top, because the track sits on it.
+ *
+ * Both are `<div>`s, so the playful style's blanket radius rounds them from
+ * outside the layer and nothing inside the layer can outrank it. The notch
+ * that leaves at each end of the join is the single thing in this app he has
+ * pointed at most often.
+ */
+.room-body,
+/*
+ * …and whatever is actually at the top of it.
+ *
+ * The thing the track meets is rarely the body's own first child: pages wrap
+ * their content in a spacing div or two, and the card with the section's
+ * accent stripe down its side sits inside that. A curve there leaves the
+ * stripe bending away from the edge it is meant to run down, which is the
+ * orange hook at the top of the notebooks list.
+ */
+.room-body > :first-child,
+.room-body > :first-child > :first-child,
+.room-body > :first-child > :first-child > :first-child {
+	border-start-start-radius: 0 !important;
+	border-start-end-radius: 0 !important;
+}
+
+/*
+ * And on a phone it has no corners at all: the room runs to both screen edges
+ * there, so the track does too, and a corner against the edge of the screen is
+ * a notch of whatever is behind showing through. Same rule as the shell.
+ */
+@media (width < 40rem) {
+	.room-tabs .seg-track {
+		border-radius: 0 !important;
+	}
+
+	/*
+	 * And so has anything filling the room, for the same reason.
+	 *
+	 * On a phone a room's body runs to both screen edges, so the card inside it
+	 * does too — and a rounded corner there is a notch of the ground showing
+	 * through, with the section's accent stripe curving away from the edge it
+	 * is supposed to be flush against. The one thing he circled and asked about
+	 * twice.
+	 */
+	.room-body > *,
+	.room-body > * > .room-surface,
+	.room-body .room-surface {
+		border-radius: 0 !important;
+	}
+}
+
+/*
  * The phone bar's raised pie button has no rule here any more.
  *
  * It was a circle, forced round against the style's other radii, with the mark
@@ -191,8 +300,11 @@ input[type='radio'] {
  *    sober rule is what taught the app to expect square corners, so its
  *    opposite has to be equally blanket.
  * 2. **Nothing edge-to-edge does.** A rounded corner needs a gap around it to
- *    read as a corner; on the header it just leaves a notch of page showing
- *    through, which is what a bar bleeding to the viewport edge cannot have.
+ *    read as a corner; against a screen edge it just leaves a notch of
+ *    whatever is behind showing through, which reads as a rendering fault.
+ *    This applies to the shell as much as to a bar inside it —
+ *    `e2e/corners.e2e.ts` is the guard, because the thing most likely to be
+ *    rounded by accident is the biggest box on the page.
  */
 html[data-style='playful'] {
 	--radius-sm: 0.375rem; /* chips, kbd, badges */
@@ -252,6 +364,22 @@ html[data-style='playful'] article {
 }
 
 /*
+ * A pane has no corners of its own: the surface it is part of has them.
+ *
+ * Two concentric curves of the same radius, a pixel apart, leave a crescent of
+ * the outer one showing at every corner — which is what the notebooks page was
+ * doing at the top of both its columns, a white wedge over the tint. The
+ * parent already clips (see below), so a pane drawn square comes out with the
+ * parent's own corner and nothing between them.
+ *
+ * After the blanket rules above, and no more specific than it needs to be:
+ * a pane that is deliberately rounded says so with a class of its own.
+ */
+html[data-style='playful'] .card-pane {
+	border-radius: 0;
+}
+
+/*
  * A rounded surface clips its own children.
  *
  * A filled bar sitting flush against a card's edge — a header, a tinted row —
@@ -288,6 +416,30 @@ html[data-style='playful'] .shadow-raised {
 }
 
 /*
+ * A card that paints its own face shows the keyboard's cursor another way.
+ *
+ * The board's cards are `.pill-soft`: they set a background from the
+ * category's colour, which wins over the cursor's grey, and the style above
+ * takes their shadow away — so j and k moved and nothing on the screen said
+ * so ("in tasks/board there is no selection").
+ *
+ * A ring in the card's own hue and a lift, which is the language the to-do
+ * list's cursor already speaks without fighting the paint. Unlayered, like
+ * the rule above it: a layered one would lose to that however specific.
+ */
+html .pill-soft.kbd-cursor {
+	/*
+	 * The ring alone, and a literal lift rather than `--shadow-raised`: that
+	 * token is `none` in this style, and `0 0 0 2px …, none` is not a shadow
+	 * list — the browser drops the whole declaration and the cursor vanishes
+	 * again, which is how this was found.
+	 */
+	box-shadow:
+		0 0 0 2px color-mix(in srgb, var(--pill) 75%, transparent),
+		0 2px 6px rgb(15 23 42 / 0.12);
+}
+
+/*
  * Anything that touches an edge of the viewport, or of the surface it lives in,
  * stays square. A corner needs somewhere to be a corner.
  */
@@ -303,6 +455,22 @@ html[data-style='playful'] .edge-to-edge,
  * every other bar that touches an edge.
  */
 html[data-style='playful'] .room-bar,
+/*
+ * The shell itself, which is the whole screen.
+ *
+ * `.page-surface` is `100dvh` wide and tall and clips what is inside it, so an
+ * 8px radius on it took a bite out of all four corners of the app and let the
+ * document's own ground show through — on every page, in every room, whatever
+ * was drawn inside. It is the reason this notch kept coming back somewhere new
+ * after each place it was chased out of: it was never the thing in the corner,
+ * it was the window.
+ *
+ * `.slide-frame` and `.slide-stage` are the same width and also clip, for the
+ * movement between rooms.
+ */
+html[data-style='playful'] .page-surface,
+html[data-style='playful'] .slide-frame,
+html[data-style='playful'] .slide-stage,
 html[data-style='playful'] nav > a,
 html[data-style='playful'] .divide-y > *,
 html[data-style='playful'] dialog > div > header,
@@ -452,29 +620,39 @@ html {
 	z-index: 0;
 	pointer-events: none;
 	color: var(--section-accent);
-	opacity: 0.045;
+	/*
+	 * More of it than the glyphs needed.
+	 *
+	 * A tiled icon at five percent is a large shape you can see; a grain at
+	 * five percent is nothing at all, because the mark is a speck and half of
+	 * the specks are near-transparent to begin with. This is the number at
+	 * which it reads as a surface rather than as a clean wash.
+	 */
+	opacity: 0.35;
 }
 
 html[data-style='playful'] .section-pattern {
-	opacity: 0.1;
+	opacity: 0.45;
 }
 
 /*
- * A little more of it in the dark.
+ * More of it in the dark, not less.
  *
- * The same opacity over a dark ground is a fainter mark than over a light one —
+ * The same opacity over a dark ground is a fainter mark than over a light one:
  * there is simply less contrast available between the accent and near-black
- * than between the accent and near-white. A nudge, not a doubling: it is still
- * meant to read as texture.
+ * than between the accent and near-white. These numbers were written for a
+ * tiled glyph, where the mark is a whole shape — a grain is specks, and half
+ * of them are near-transparent before the opacity is applied at all, so the
+ * old figure came out as nothing whatever on a dark ground.
  */
 html[data-theme='dark'] .section-pattern,
 html[data-theme='dark'][data-style='playful'] .section-pattern {
-	opacity: 0.1;
+	opacity: 0.55;
 }
 
 @media (prefers-color-scheme: dark) {
 	html:not([data-theme='light']) .section-pattern {
-		opacity: 0.1;
+		opacity: 0.55;
 	}
 }
 
@@ -549,7 +727,16 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 		z-index: 20;
 		gap: 0;
 		margin-inline: calc(-1 * var(--page-gutter));
-		padding-inline: var(--page-gutter);
+		/*
+		 * The bar keeps its own margins, whatever the page's gutter is.
+		 *
+		 * On a phone the gutter is nothing — the room runs to both screen edges
+		 * — and the bar took that literally: the room's name, its glyph and its
+		 * one verb all ended up flush against the sides of the screen. What
+		 * goes edge to edge is the room's body and the track above it, not the
+		 * words in the header.
+		 */
+		padding-inline: 0;
 		padding-top: calc(var(--safe-top) + 0.75rem);
 		/*
 		 * A header, in the room's own colour — the same one the desktop's has.
@@ -607,8 +794,37 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
  * by a different amount than the padding either leaves a sliver of gutter or
  * makes the page scroll sideways, and nothing type-checks across that gap.
  */
+/*
+ * The scrollbar's room is kept whether or not there is a scrollbar.
+ *
+ * Every list that grows past the fold took a scrollbar's width off the page
+ * as it did, and everything on the screen shifted by that much — pressing
+ * "Completed" on the task list moved the controls beside it, which is the
+ * thing this app is not supposed to do. Reserving the gutter costs a dozen
+ * pixels on a desktop and nothing at all where the scrollbar is an overlay.
+ *
+ * Only from `sm`: on a phone the room runs to both screen edges and the
+ * scrollbar is drawn over the content rather than beside it, so reserving a
+ * gutter there takes fifteen pixels off the width of every card for nothing.
+ */
+@media (width >= 40rem) {
+	html,
+	.page-gutter {
+		scrollbar-gutter: stable;
+	}
+}
+
+/*
+ * On a phone the room runs to both edges.
+ *
+ * A rem of page ground down each side is a rem the rows do not have, and the
+ * rows are what somebody came for. It reads as the room hovering in the middle
+ * of the screen rather than being the screen — and there is no gap to lose,
+ * because the rows have their own padding. Wider than a phone the gutter is
+ * what separates the room from the window, and it stays.
+ */
 .page-gutter {
-	--page-gutter: 1rem;
+	--page-gutter: 0rem;
 	padding-inline: var(--page-gutter);
 }
 
@@ -956,6 +1172,90 @@ label:has(> input[type='radio']:not(:disabled)) {
 		background-color: var(--color-white);
 	}
 
+	/*
+	 * The band that says this instance is not what it looks like.
+	 *
+	 * Literal colours, not palette ones. `bg-amber-500 text-amber-950` reads
+	 * correctly in the light theme and inverts in the dark one — the amber
+	 * stays amber because it is a background, and the ink turns near-white,
+	 * which is the white text on orange nobody could read. The band is one
+	 * deliberate colour in both themes, so its ink is stated once here.
+	 */
+	.notice-band {
+		background-color: #f59e0b;
+		color: #3a2106;
+	}
+
+	.notice-band a {
+		color: inherit;
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+
+	/* The half that is a warning rather than a statement. */
+	.notice-band .notice-band-loud {
+		color: #7f1d1d;
+	}
+
+	/*
+	 * A note pointing at a task: `TASK:#4`.
+	 *
+	 * A chip rather than a plain link, because it is a thing rather than a
+	 * word — the same treatment a tag gets — and because what follows it in a
+	 * note is usually the writing that explains it. A finished one is greyed
+	 * and carries its tick; it is not struck through, which is the rule
+	 * everywhere else a completed task appears.
+	 */
+	.todo-ref {
+		display: inline-flex;
+		align-items: baseline;
+		gap: 0.25rem;
+		border: 1px solid var(--color-gray-300);
+		padding: 0 0.375rem;
+		font-size: 0.8125rem;
+		color: var(--color-gray-900);
+		text-decoration: none;
+		cursor: pointer;
+	}
+
+	.todo-ref:hover {
+		background-color: var(--hover-wash);
+	}
+
+	.todo-ref.is-done {
+		color: var(--color-gray-500);
+	}
+
+	/*
+	 * One setting and the button that saves it, fenced together.
+	 *
+	 * A section of several settings drew several Save buttons down one white
+	 * panel with nothing saying which fields each one covered — the answer
+	 * was "the ones immediately above it", which is a rule you learn by
+	 * pressing the button and seeing what happened. Each group is a box now,
+	 * and the button is inside the box it saves.
+	 */
+	.setting-group {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		border: 1px solid var(--color-gray-200);
+		background-color: var(--hover-wash);
+		padding: 1rem;
+	}
+
+	/* The button is its own width; a column stretches its children. */
+	.setting-group > .btn {
+		align-self: flex-start;
+	}
+
+	/* A group whose one field saves itself needs no fence: nothing to mistake. */
+	.setting-group.is-instant {
+		background-color: transparent;
+		border-color: transparent;
+		padding: 0;
+	}
+
 	.input,
 	.select,
 	.textarea {
@@ -968,6 +1268,19 @@ label:has(> input[type='radio']:not(:disabled)) {
 		line-height: 1.25rem;
 		color: var(--color-gray-900);
 		box-shadow: var(--shadow-card);
+	}
+
+	/*
+	 * A field standing in a row of buttons rather than in a form.
+	 *
+	 * The full-size one is as tall as a paragraph, which is right on a form
+	 * and wrong beside `.btn-sm` — a toolbar with one of each reads as two
+	 * unrelated rows. Same box, the small buttons' height.
+	 */
+	.input-sm {
+		padding: 0.25rem 0.5rem;
+		font-size: 0.8125rem;
+		line-height: 1.25rem;
 	}
 
 	/*
@@ -992,6 +1305,37 @@ label:has(> input[type='radio']:not(:disabled)) {
 	/* A select's own width, where a full-width field would be absurd. */
 	.select.w-auto {
 		width: auto;
+	}
+
+	/*
+	 * The face of a chooser that stands where a `<select>` did.
+	 *
+	 * `appearance: none` takes the chrome off the closed control, and that is
+	 * as far as CSS reaches: the popup a browser opens is the platform's, and
+	 * on a dark screen it arrives white with the operating system's own blue
+	 * bar across it — "ugly selector", twice, and rightly. `Picker` draws that
+	 * list itself, and this is the button it shows while the list is shut.
+	 *
+	 * Everything a field's face has: the same border, the same height, the
+	 * same chevron in the same place, so a form does not read as one control
+	 * from somewhere else sitting among its fields.
+	 */
+	.select-face {
+		display: flex;
+		width: 100%;
+		align-items: center;
+		border: 1px solid var(--color-gray-300);
+		background-color: var(--color-white);
+		padding: 0.5rem 0.75rem;
+		font-size: 0.875rem;
+		line-height: 1.25rem;
+		color: var(--color-gray-900);
+		box-shadow: var(--shadow-card);
+		text-align: left;
+	}
+
+	.select-face:hover:not(:focus-visible) {
+		border-color: var(--color-gray-400);
 	}
 
 	/*
@@ -1090,6 +1434,7 @@ label:has(> input[type='radio']:not(:disabled)) {
 
 	.input:focus,
 	.select:focus,
+	.select-face:focus-visible,
 	.textarea:focus {
 		outline: none;
 		border-color: var(--color-gray-900);
@@ -1338,6 +1683,18 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 */
 	.overlay-face-quiet {
 		color: rgb(255 255 255 / 0.66);
+	}
+
+	/*
+	 * The row in force, on that same face.
+	 *
+	 * A menu on the dark face marked its chosen row with `bg-gray-100`, which
+	 * paints near-white under the white ink the face gives everything on it —
+	 * the one row you most need to read was the one you could not. A wash of
+	 * the face's own ink says the same thing and stays readable.
+	 */
+	.overlay-face-on {
+		background-color: rgb(255 255 255 / 0.12);
 	}
 
 	/*
@@ -1653,6 +2010,64 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * row with three actions — a finished task, which has no "do it today" or
 	 * "put it on a day" — is one line and a shorter card.
 	 */
+	/*
+	 * A task's actions, on a line of their own under the words.
+	 *
+	 * They used to be `.row-actions-stack` — three buttons wide, pinned to the
+	 * right-hand edge — which on a phone took a third of the row and left the
+	 * title breaking mid-word. A note card has never done that: its buttons
+	 * sit under the text, pushed right, and that reads better on a laptop too.
+	 *
+	 * The row it lives in wraps, so this is a full-width line after the text
+	 * rather than a column beside it. The task's number keeps the left end of
+	 * that line: it is a label, and the space is there.
+	 */
+	.task-actions {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 0.25rem;
+		margin-top: 0.375rem;
+	}
+
+	/*
+	 * A task's writing, with room in the margin for the mark that folds it.
+	 *
+	 * The chevron used to sit in front of the title, which put the mark for
+	 * "there is more of this" on the one line that is not the more of it — and
+	 * indented every title in the list by a glyph most rows had nothing to put
+	 * in. It hangs in the writing's own left margin now, on the first line,
+	 * with the lines under it hanging to the same place: one indented paragraph
+	 * with a handle, rather than a glyph wedged into a line.
+	 *
+	 * Only where there is something to fold. A row whose note fits on one line
+	 * has no mark and no margin, and its writing starts under the title like
+	 * everything else does.
+	 */
+	.todo-notes-foldable {
+		position: relative;
+		padding-left: 1.125rem;
+	}
+
+	.todo-fold {
+		position: absolute;
+		top: 0;
+		left: 0;
+		display: flex;
+		width: 1.125rem;
+		align-items: center;
+		justify-content: flex-start;
+		/* As tall as the line it sits on, so the mark is centred against that
+		   line rather than against the whole paragraph. */
+		height: 1.25rem;
+		color: var(--color-gray-400);
+	}
+
+	.todo-fold:hover {
+		color: var(--color-gray-900);
+	}
+
 	.row-actions-stack {
 		display: flex;
 		flex-wrap: wrap;
@@ -1667,7 +2082,8 @@ label:has(> input[type='radio']:not(:disabled)) {
 		margin-left: auto;
 	}
 
-	.row-actions-stack {
+	.row-actions-stack,
+	.task-actions {
 		--row-action-size: 2.25rem;
 	}
 
@@ -1675,11 +2091,13 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * Compact with a mouse. A finger keeps the 44px every other control has.
 	 */
 	@media (pointer: fine) {
-		.row-actions-stack {
+		.row-actions-stack,
+		.task-actions {
 			--row-action-size: 1.75rem;
 		}
 
-		.row-actions-stack .icon-btn {
+		.row-actions-stack .icon-btn,
+		.task-actions .icon-btn {
 			width: var(--row-action-size);
 			height: var(--row-action-size);
 		}
@@ -1715,7 +2133,8 @@ label:has(> input[type='radio']:not(:disabled)) {
 			opacity: 0.35;
 		}
 
-		.row-actions-stack {
+		.row-actions-stack,
+		.task-actions {
 			opacity: 0.35;
 		}
 
@@ -1749,12 +2168,20 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
-	 * The keyboard cursor: which card j/k is standing on.
+	 * The keyboard cursor: which row j/k is standing on.
 	 *
-	 * Outside the card, not inside it — an inset ring redrew the card's own
-	 * border and squeezed its content, so selecting a card made it flinch. And
-	 * only where there is a keyboard: on a phone the "cursor" is the finger,
-	 * and a permanently highlighted first card read as meaning something.
+	 * A wash and a small lift, not a rule around it. It was a two-pixel
+	 * outline, which on rows that sit flush against each other drew a heavy
+	 * line above and below the selected one — and the top one was clipped away
+	 * on the first row, so the first selection never looked like the others.
+	 * Boxing a row that has no box of its own was the mistake; saying "this
+	 * one" by shading it needs no edges at all.
+	 *
+	 * Only where there is a keyboard: on a phone the cursor is the finger, and
+	 * a permanently shaded first row reads as meaning something.
+	 *
+	 * `position: relative` so the lift is drawn over the row after it rather
+	 * than under it, which is the difference between a shadow and a smudge.
 	 */
 	.kb-cursor {
 		outline: none;
@@ -1762,8 +2189,10 @@ label:has(> input[type='radio']:not(:disabled)) {
 
 	@media (pointer: fine) {
 		.kb-cursor {
-			outline: 2px solid var(--color-gray-900);
-			outline-offset: 3px;
+			position: relative;
+			z-index: 1;
+			background: var(--cursor-wash);
+			box-shadow: var(--shadow-raised);
 		}
 	}
 
@@ -1781,6 +2210,179 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * two-line note, where it turned the note into a card half the height of
 	 * the screen.
 	 */
+	/*
+	 * A rating, as a little gauge of five frets.
+	 *
+	 * It was a letter and a number — "U4" — which is the information with none
+	 * of the reading: a number has to be decoded, a bar that is nearly full
+	 * does not. Frets rather than a smooth fill because the scale is five whole
+	 * steps and a continuous bar invites a guess at three and a half.
+	 *
+	 * The colour tells the three apart without a letter, and is never the only
+	 * thing saying which is which: the words are in the tooltip and in the
+	 * accessible name. Each gauge names its own ink, so a fourth rating would
+	 * add one line here and nothing else.
+	 */
+	/*
+	 * The gauge under a slider, drawn like the bars on a card.
+	 *
+	 * Flat: a grey track the width a 5 would fill, and the question's colour
+	 * filling as much of it as the answer. No outline, no gradient, no markings
+	 * between the steps — the same treatment `RatingBadges` gives the three
+	 * nested bars a row wears, because the thing being set here is the thing
+	 * drawn there.
+	 *
+	 * It was a pill ringed in black with a gradient inside and four black
+	 * marks over it, at four pixels tall. All three were texture at that size,
+	 * and none of them survived beside the flat bars on the card behind the
+	 * form.
+	 */
+	.gauges {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+	}
+
+	/* Under the tick box, where a row has room and the title does not. */
+	.gauges-stacked {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 2px;
+		width: 100%;
+	}
+
+	.gauge {
+		position: relative;
+		display: block;
+		width: 2.25rem;
+		height: 0.5rem;
+		/*
+		 * The track is the box a 5 would fill, in the same grey the card's bars
+		 * stand on. Grey rather than a tint of the rating's own colour: the
+		 * label above the slider says which question it is, and a coloured
+		 * track made an unanswered one look like a low answer.
+		 *
+		 * `overflow` clips the fill to the track's corners — the fill is a
+		 * rectangle from the left edge, and its square end met the curve and
+		 * left two notches at the closed end. Two curves never share an edge.
+		 */
+		overflow: hidden;
+		border-radius: 2px;
+		background-color: var(--color-gray-200);
+	}
+
+	.gauges-stacked .gauge {
+		width: 100%;
+	}
+
+	.gauge > .gauge-fill {
+		position: absolute;
+		inset: 0 auto 0 0;
+		background-color: var(--gauge-ink);
+	}
+
+	/*
+	 * Nobody has answered this one.
+	 *
+	 * Half full and grey: an empty gauge would say "the lowest there is", which
+	 * is an answer, and a missing gauge moved the other two around. Half is
+	 * where an unset rating actually counts when the list is sorted by
+	 * Priority, so what is drawn and what is computed are the same claim.
+	 */
+	.gauge[data-rating].gauge-unset {
+		/*
+		 * Specific enough to beat the colours below.
+		 *
+		 * `.gauge[data-rating='urgency']` is the same weight as a plain class,
+		 * so an unset gauge kept its own hue and merely went pale — which reads
+		 * as a low rating rather than as no rating, the one thing this is for.
+		 */
+		--gauge-ink: var(--color-gray-400);
+	}
+
+	/*
+	 * A colour per question, and one place that says so.
+	 *
+	 * On the gauge and on the control that sets it, so a rating is the same
+	 * colour wherever it appears. Set on anything carrying `data-rating`, which
+	 * is how both of them name which question they are about — a fourth rating
+	 * adds a line here and nothing else.
+	 *
+	 * Green for interest rather than the red it wore: red is the colour of
+	 * something wrong, and wanting to do a thing is not.
+	 *
+	 * All three at the same step of their ramp, and a soft one. They were 300,
+	 * 400 and 600, so the three bars on a card read as three different weights
+	 * before they read as three different heights — and height is the whole
+	 * point of them. Same lightness, so the only thing that differs is hue and
+	 * how tall it stands.
+	 */
+	[data-rating='urgency'] {
+		--rating-ink: var(--color-red-400);
+	}
+
+	[data-rating='ease'] {
+		--rating-ink: var(--color-blue-400);
+	}
+
+	[data-rating='interest'] {
+		--rating-ink: var(--color-emerald-400);
+	}
+
+	.gauge {
+		--gauge-ink: var(--rating-ink);
+	}
+
+	/*
+	 * A panel whose contents are being replaced.
+	 *
+	 * The planner's arrows keep the page where it is now, which is what
+	 * somebody reading the afternoon wanted — and it left a press with nothing
+	 * to show for itself while the next week was fetched. A wash over the part
+	 * that is about to change says the answer is coming, without moving
+	 * anything.
+	 *
+	 * It fades in rather than appearing: a step that answers in forty
+	 * milliseconds should not flash a grey sheet on the way past.
+	 */
+	.grid-waiting {
+		position: absolute;
+		inset: 0;
+		z-index: 5;
+		pointer-events: none;
+		background-color: var(--wait-wash);
+		animation: wait-in 220ms ease both;
+	}
+
+	@keyframes wait-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	/*
+	 * A control that is a word rather than a button.
+	 *
+	 * For the small choices that sit under a field — "type one instead",
+	 * "ask again" — where a bordered button would weigh more than the thing it
+	 * does. Underlined, because a word with no affordance is a caption: the
+	 * chat's model field shipped two of these as bare text and they read as
+	 * explanation nobody could press.
+	 */
+	.link {
+		color: var(--color-gray-600);
+		text-decoration: underline;
+		text-underline-offset: 2px;
+		cursor: pointer;
+	}
+
+	.link:hover {
+		color: var(--color-gray-900);
+	}
+
 	.chip {
 		display: inline-flex;
 		align-items: center;
@@ -1853,15 +2455,21 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
-	 * The second choice on the page, and a little shorter than the first.
+	 * The second choice on the page, and a smaller one than the first.
 	 *
 	 * Which plan and how often were the same square, so the page asked two
 	 * questions with identical weight when the first is the one being made —
-	 * how often is a detail of it. Shorter rather than narrower: they still sit
-	 * side by side across the same width, and the four lines inside have room.
+	 * how often is a detail of it.
+	 *
+	 * Narrower, not merely shorter. Keeping the full width and cropping the
+	 * height left two tiles as wide as the plans above, which is the thing
+	 * that made them read as equally important; the pair is centred so the
+	 * row still has a middle.
 	 */
 	.choice-tile-small {
 		aspect-ratio: 1.25;
+		width: 72%;
+		justify-self: center;
 	}
 
 	.choice-tile:hover {
@@ -1891,7 +2499,23 @@ label:has(> input[type='radio']:not(:disabled)) {
 		html .pill {
 			border-color: transparent;
 			background-color: var(--pill);
-			color: oklch(from var(--pill) clamp(0.16, (0.62 - l) * 100, 0.97) calc(c * 0.25) h);
+			/*
+			 * `--pill-ink` where the app could work it out, this where it could
+			 * not.
+			 *
+			 * The step below is a good rule and a measurably insufficient one:
+			 * over 30,780 colours it bottoms out at 2.4:1, because a vivid cyan
+			 * at L 0.6 reads middling by lightness and bright by luminance, and
+			 * gets white ink on a bright field. CSS can threshold but it cannot
+			 * compare, so the comparison happens in `$lib/pill-ink` — black or
+			 * white, whichever actually contrasts more — and this stays as the
+			 * answer for a `--pill` set by something that has not been taught
+			 * to send one.
+			 */
+			color: var(
+				--pill-ink,
+				oklch(from var(--pill) clamp(0.16, (0.62 - l) * 100, 0.97) calc(c * 0.25) h)
+			);
 		}
 	}
 
@@ -1967,18 +2591,63 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * thing on the page with a black fill — which had it competing with the one
 	 * button on the screen that is actually the primary action.
 	 */
+	/*
+	 * A row of positions, which wraps rather than running off its box.
+	 *
+	 * `flex: none` sizes it to its contents, and five of them — "Every week",
+	 * "Some days", "Every N weeks", "Every N days", "Every month" — are wider
+	 * than a dialog: the last tile was cut in half by the edge of the form,
+	 * with nothing to say there was more of it. Sideways scrolling is the
+	 * other answer and the wrong one; this app wraps.
+	 */
 	.seg {
 		display: inline-flex;
 		flex: none;
+		flex-wrap: wrap;
+		max-width: 100%;
 		align-items: center;
 		gap: 0.125rem;
-		padding: 0.1875rem;
+		--seg-pad: 0.1875rem;
+		padding: var(--seg-pad);
 		background-color: var(--color-gray-150);
+		/*
+		 * Its own corner, rather than the blanket one.
+		 *
+		 * The track is a `<nav>` where a room's tabs are drawn, and `nav` is not
+		 * in the list of elements the playful style rounds — so the track was
+		 * square while the tile travelling inside it was not, which is a rounded
+		 * shape sitting in a sharp box and was reported three times before
+		 * anybody thought to ask what element it was. A control that is a shape
+		 * says so itself instead of hoping the element list covers it.
+		 */
+		border-radius: var(--radius, 0);
+	}
+
+	/*
+	 * The row that scrolls inside a track.
+	 *
+	 * Where a `.seg` holds more than fits — a room's tabs — the choices live in
+	 * a strip of their own so the fade that says "there is more this way" can
+	 * mask the tabs without taking the track's surface with it.
+	 */
+	.seg-scroll {
+		display: flex;
+		min-width: 0;
+		align-items: center;
+		gap: 0.125rem;
+	}
+
+	/* A track holding a scrolling strip clips, so the fade ends where it does. */
+	.seg-track {
+		overflow: clip;
 	}
 
 	.seg > button,
 	.seg > a,
-	.seg > label {
+	.seg > label,
+	.seg-scroll > button,
+	.seg-scroll > a,
+	.seg-scroll > label {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -1987,7 +2656,17 @@ label:has(> input[type='radio']:not(:disabled)) {
 		padding: 0.3125rem 0.75rem;
 		font-size: 0.8125rem;
 		font-weight: 500;
-		color: var(--color-gray-600);
+		/*
+		 * The positions you are not on are muted text, not body text.
+		 *
+		 * At gray-600 all three labels were nearly the same ink and the whole
+		 * control came down to spotting a white tile — which the dark theme does
+		 * not have, since a surface there is #232935 on a #222732 track. Muted is
+		 * the lightest step this palette allows a label (gray-400 clears nothing
+		 * on any ground here), and hover still brings one back to full ink, so
+		 * the answer to "which one am I on" is the ink and not the tile.
+		 */
+		color: var(--color-gray-500);
 		white-space: nowrap;
 		transition:
 			background-color 140ms ease,
@@ -1996,12 +2675,105 @@ label:has(> input[type='radio']:not(:disabled)) {
 
 	.seg > button:hover,
 	.seg > a:hover,
-	.seg > label:hover {
+	.seg > label:hover,
+	.seg-scroll > button:hover,
+	.seg-scroll > a:hover,
+	.seg-scroll > label:hover {
 		color: var(--color-gray-900);
+	}
+
+	/*
+	 * The tile, where it moves rather than being repainted.
+	 *
+	 * `use:sliding` puts one of these in the track and measures it onto
+	 * whichever child is pressed. The pressed child then keeps its ink and
+	 * gives up its background — the tile is the background now, and it travels
+	 * — so the control reads as one thing with a position rather than as
+	 * several buttons of which one is filled.
+	 *
+	 * Behind the labels: it is drawn first in the track and sits at `z-index:
+	 * 0`, with the children above it, so nothing anybody reads is touched.
+	 */
+	.seg-sliding {
+		position: relative;
+	}
+
+	.seg-tile {
+		position: absolute;
+		top: 0;
+		left: 0;
+		z-index: 0;
+		background-color: var(--color-white);
+		box-shadow: var(--shadow-card);
+		transition:
+			transform 180ms cubic-bezier(0.2, 0, 0, 1),
+			width 180ms cubic-bezier(0.2, 0, 0, 1),
+			height 180ms cubic-bezier(0.2, 0, 0, 1);
+	}
+
+	html[data-style='playful'] .seg-tile {
+		box-shadow: 0 0 0 1px var(--color-gray-200);
+	}
+
+	/* Somebody who asked for less movement gets the position, not the journey. */
+	@media (prefers-reduced-motion: reduce) {
+		.seg-tile {
+			transition: none;
+		}
+	}
+
+	/*
+	 * A choice that stands beside a `.seg` rather than inside it.
+	 *
+	 * The markdown box's Side by side is not a place the tile can be — it says
+	 * how much of the pair to show, and when it is on the tile covers both
+	 * positions at once. So it is a button at the far end of the strip, drawn
+	 * at the same size and weight as a position so the strip reads as one row,
+	 * and wearing the tile's own surface when it is on.
+	 */
+	.seg-aside {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border: 1px solid transparent;
+		background-color: transparent;
+		padding: 0.3125rem 0.75rem;
+		font-size: 0.8125rem;
+		font-weight: 500;
+		color: var(--color-gray-500);
+		white-space: nowrap;
+		transition:
+			background-color 140ms ease,
+			color 140ms ease;
+	}
+
+	.seg-aside:hover {
+		color: var(--color-gray-900);
+	}
+
+	.seg-aside[aria-pressed='true'] {
+		background-color: var(--color-white);
+		box-shadow: var(--shadow-card);
+		color: var(--color-gray-900);
+	}
+
+	html[data-style='playful'] .seg-aside[aria-pressed='true'] {
+		box-shadow: 0 0 0 1px var(--color-gray-200);
+	}
+
+	.seg-sliding > a,
+	.seg-sliding > button,
+	.seg-sliding > label,
+	.seg-scroll.seg-sliding > a,
+	.seg-scroll.seg-sliding > button,
+	.seg-scroll.seg-sliding > label {
+		position: relative;
+		z-index: 1;
 	}
 
 	/* The chosen position is a raised tile, not a filled button. */
 	.seg > [aria-pressed='true'],
+	.seg > [aria-selected='true'],
 	.seg > [aria-current='page'],
 	.seg > [aria-current='true'],
 	.seg > :has(> input:checked) {
@@ -2011,10 +2783,43 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	html[data-style='playful'] .seg > [aria-pressed='true'],
+	html[data-style='playful'] .seg > [aria-selected='true'],
 	html[data-style='playful'] .seg > [aria-current='page'],
 	html[data-style='playful'] .seg > [aria-current='true'],
 	html[data-style='playful'] .seg > :has(> input:checked) {
 		box-shadow: 0 0 0 1px var(--color-gray-200);
+	}
+
+	/*
+	 * In a track with a travelling tile, the tile owns the surface. Alone.
+	 *
+	 * The pressed child paints nothing: no background, no ring, no corner. The
+	 * tile behind it is all three.
+	 *
+	 * This has to come after the two rules above rather than before them, which
+	 * is where it was. Same specificity, so order decided it, and the marked
+	 * child kept its own white rectangle — invisible while one position was
+	 * marked, because that rectangle and the tile were the same shape. The
+	 * markdown box marks Write and Preview together, and then there were two
+	 * white rectangles inside one tile with their rounded corners meeting in
+	 * the middle: a seam down a shape that is meant to read as one, notched at
+	 * both ends.
+	 *
+	 * Two curves never share an edge — the pane rule above is the same mistake
+	 * in a different place.
+	 */
+	.seg-sliding > [aria-pressed='true'],
+	.seg-sliding > [aria-selected='true'],
+	.seg-sliding > [aria-current='page'],
+	.seg-sliding > [aria-current='true'],
+	.seg-sliding > :has(> input:checked),
+	html[data-style='playful'] .seg-sliding > [aria-pressed='true'],
+	html[data-style='playful'] .seg-sliding > [aria-selected='true'],
+	html[data-style='playful'] .seg-sliding > [aria-current='page'],
+	html[data-style='playful'] .seg-sliding > [aria-current='true'],
+	html[data-style='playful'] .seg-sliding > :has(> input:checked) {
+		background-color: transparent;
+		box-shadow: none;
 	}
 
 	/*
@@ -2026,9 +2831,16 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * else in here means good — the person who wrote this is colourblind, so the
 	 * pair is blue and red and never green and red.
 	 */
-	.seg > .seg-alarm[aria-pressed='true'] {
+	.seg > .seg-alarm[aria-pressed='true'],
+	.seg-sliding > .seg-alarm[aria-pressed='true'] {
 		background-color: var(--color-red-600);
 		color: var(--ink-on-fill);
+		box-shadow: none;
+	}
+
+	/* And the travelling tile hides under it rather than showing through. */
+	.seg-sliding:has(> .seg-alarm[aria-pressed='true']) > .seg-tile {
+		opacity: 0;
 	}
 
 	.seg > .seg-alarm {
@@ -2076,6 +2888,15 @@ label:has(> input[type='radio']:not(:disabled)) {
 		content: '';
 		position: absolute;
 		inset: 0;
+		/*
+		 * The row's own corners, not a square.
+		 *
+		 * A list inside a rounded panel draws its first and last rows flush
+		 * against the curve, and a square wash on top of one of them poked
+		 * out past it at both corners — "square background on the hover". In
+		 * the sober style the radius is nought and this changes nothing.
+		 */
+		border-radius: inherit;
 		pointer-events: none;
 		background: var(--hover-wash);
 		opacity: 0;
@@ -2671,6 +3492,9 @@ html[data-theme='dark'] {
 	/* Fills, not ramp colours: they darken rather than invert. */
 	--color-scrim: rgb(0 0 0 / 0.66);
 	--hover-wash: rgb(255 255 255 / 0.06);
+	/* Dark: a wash that says wait is a shadow, not a light. */
+	--wait-wash: rgb(2 6 23 / 0.35);
+	--cursor-wash: rgb(255 255 255 / 0.1);
 
 	/*
 	 * The colored ramps invert like the grays: 50–300 become washes and
@@ -2790,6 +3614,9 @@ html[data-theme='dark'] {
 		/* Fills, not ramp colours: they darken rather than invert. */
 		--color-scrim: rgb(0 0 0 / 0.66);
 		--hover-wash: rgb(255 255 255 / 0.06);
+		/* Dark: a wash that says wait is a shadow, not a light. */
+		--wait-wash: rgb(2 6 23 / 0.35);
+		--cursor-wash: rgb(255 255 255 / 0.1);
 
 		/*
 		 * The colored ramps invert like the grays: 50–300 become washes and
@@ -2857,13 +3684,23 @@ html[data-theme='dark'] {
  * leaves a white field carrying light inherited text. Bind the controls to the
  * tokens instead, once, for both themes.
  */
-input:not([type='checkbox']):not([type='radio']),
+input:not([type='checkbox']):not([type='radio']):not([type='range']),
 select,
 textarea,
 option {
 	background-color: var(--color-white);
 	color: var(--color-gray-900);
 }
+
+/*
+ * A range is excluded above for a different reason.
+ *
+ * It is not a field with a box round it: it is a track with a thumb on it, and
+ * both are drawn by the component that uses one. A white background painted on
+ * the element itself sat *behind* the track as a white slab the width of the
+ * control — invisible on a white card and, the moment the rating picker put a
+ * colour behind its slider, a white cut-out in the middle of it.
+ */
 
 /*
  * Checkboxes and radios are excluded above on purpose.
@@ -3066,6 +3903,27 @@ html .ec {
  */
 
 /* Room for the bottom navigation, plus whatever the home indicator occupies. */
+/*
+ * While the keyboard is up, the bottom of the screen belongs to the keyboard.
+ *
+ * A phone does not resize the page when its keyboard opens, so anything fixed
+ * to the bottom stays exactly where it was — over the field being typed into.
+ * "i am typing, but the input is behind the bar, which is an issue, cuz i
+ * cant see." So the bar, the pie and the bands above them step off the screen
+ * for as long as somebody is writing, which also gives the writing the room.
+ *
+ * `$lib/keyboard-inset` sets the attribute and the measurement.
+ */
+html[data-keyboard='open'] :is(nav.mobile-nav, .notice-band) {
+	transform: translateY(150%);
+	pointer-events: none;
+}
+
+html[data-keyboard='open'] {
+	/* Nothing reserves room for a bar that is not there. */
+	--mobile-nav-height: 0rem;
+}
+
 :root {
 	--mobile-nav-height: 3.5rem;
 	--safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -3294,6 +4152,441 @@ html button.tab-link {
  * they are painted on the scrolling box itself, so they sit against the edge of
  * what is visible rather than against the edge of what exists.
  */
+/*
+ * A room's tabs and its verb, on one line.
+ *
+ * The verb used to sit on the title line with a rule between it and the tabs,
+ * so a room opened as three loose things — a name, a button, a row of
+ * underlined words. Here they are one strip: the track, and the verb at the
+ * end of it.
+ */
+/*
+ * A second level of tabs, inside a room that already has one.
+ *
+ * It stands on the surface the outer room put there rather than bringing its
+ * own, so it is the top block of that surface with a rule under it — the same
+ * place a room's controls sit. No track behind it: one grey strip inside
+ * another grey strip is two things where there is one section of one room.
+ */
+.room-frame-nested {
+	border-bottom: 1px solid var(--color-gray-200);
+}
+
+.room-frame-nested .seg-track {
+	background-color: transparent;
+	border-radius: 0 !important;
+}
+
+.room-frame-nested .room-tabs {
+	padding-inline: 0.5rem;
+}
+
+.room-tabs {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	/* The bar above is a grid, and a grid item will not shrink below its own
+	   content without this — so six tabs across 390px ran off the side of the
+	   screen and took the verb with them. */
+	min-width: 0;
+}
+
+/*
+ * The verb at the far end of the strip, not tucked against the last tab.
+ *
+ * On the verb itself rather than on `:last-child`: a room with no verb — Weekly
+ * notes — has the tabs as the last child, and pushed the whole strip over to
+ * the right-hand side of the screen.
+ */
+.room-verb {
+	margin-left: auto;
+}
+
+/*
+ * A shelf of notebooks, picked the way books are.
+ *
+ * They were rows with a stamp of a picture at the front, which is a list of
+ * names with a decoration on it. A subject you come back to for months is a
+ * thing, and the thing is its cover: the picture is what you look at and the
+ * name hangs under it, glued on rather than set beside it.
+ *
+ * A cover is a fixed size rather than a share of the width: `1fr` in a panel
+ * somebody has dragged narrow gives one cover the whole column, and a book
+ * three hundred pixels tall is a poster. As many across as fit, and no fewer
+ * than two on the narrowest the panel goes.
+ */
+.notebook-shelf {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, 6.5rem);
+	justify-content: space-between;
+	gap: 0.75rem;
+	align-content: start;
+	padding: 0.75rem;
+}
+
+/*
+ * What is inside a folder sits under it, indented, so a spine of covers reads
+ * as belonging to the one above rather than as more of the same shelf.
+ */
+.notebook-cover {
+	position: relative;
+	margin-left: calc(var(--cover-depth, 0) * 0.75rem);
+}
+
+.cover-face {
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+	border-radius: var(--radius, 0);
+	padding: 0.375rem;
+	text-decoration: none;
+}
+
+.cover-face:hover,
+.cover-face.is-chosen {
+	background-color: var(--color-gray-100);
+}
+
+/*
+ * The cover itself: the shape of a book rather than a square, so a shelf of
+ * them reads as a shelf. Object-fit, because somebody's photograph is whatever
+ * shape their camera was.
+ */
+.cover-art {
+	display: flex;
+	aspect-ratio: 3 / 4;
+	width: 100%;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--color-gray-200);
+	border-radius: calc(var(--radius, 0px) - 2px);
+	background-color: var(--color-white);
+	object-fit: cover;
+	box-shadow: var(--shadow-card);
+}
+
+.cover-art-empty {
+	border-style: dashed;
+	border-color: var(--color-gray-300);
+	background-color: var(--color-gray-100);
+	box-shadow: none;
+}
+
+/*
+ * What is left over, as a bin in the corner of the shelf.
+ *
+ * Notes whose notebook was deleted are not a notebook, and a row of them at
+ * the end of the list read as one — a book on the shelf called "Notes without
+ * a notebook". Pinned to the bottom corner, where a bin goes, and out of the
+ * sequence somebody is reading.
+ */
+.shelf-bin {
+	position: sticky;
+	bottom: 0.5rem;
+	z-index: 1;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	align-self: end;
+	margin: 0 0.5rem 0 auto;
+	border: 1px solid var(--color-gray-200);
+	border-radius: var(--radius, 0);
+	background-color: var(--color-white);
+	padding: 0.375rem 0.5rem;
+	color: var(--color-gray-500);
+	box-shadow: var(--shadow-card);
+}
+
+.shelf-bin:hover,
+.shelf-bin.is-chosen {
+	color: var(--color-gray-900);
+	background-color: var(--color-gray-100);
+}
+
+/* Glued to the cover: the name of the thing directly above it, not a caption. */
+.cover-name {
+	display: block;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	line-height: 1.25;
+	color: var(--color-gray-900);
+	overflow-wrap: anywhere;
+}
+
+.cover-tally {
+	display: block;
+	font-size: 0.6875rem;
+	line-height: 1.2;
+	color: var(--color-gray-500);
+}
+
+/*
+ * What you do to a notebook, on its cover.
+ *
+ * A shelf has no columns to put them in, so they sit in the corner of the
+ * cover and come up when it is under the pointer — or always, on a touch
+ * screen, where there is no hover to come up on.
+ */
+.cover-actions {
+	position: absolute;
+	top: 0.5rem;
+	right: 0.5rem;
+	display: flex;
+	align-items: center;
+	gap: 0.125rem;
+	border-radius: var(--radius, 0);
+	background-color: color-mix(in srgb, var(--color-white) 88%, transparent);
+	opacity: 0;
+	transition: opacity 120ms ease;
+}
+
+.notebook-cover:hover .cover-actions,
+.notebook-cover:focus-within .cover-actions {
+	opacity: 1;
+}
+
+@media (hover: none) {
+	.cover-actions {
+		opacity: 1;
+	}
+}
+
+/*
+ * A count that changes, in a slot as wide as the longest it can be.
+ *
+ * "1 task showing" and "0 tasks showing" are different widths, so narrowing a
+ * list shifted every control to the right of the number. The words are the
+ * content; the room they take is not allowed to be.
+ *
+ * Sized by holding the sentence at its largest count — the whole list, which
+ * does not change when a filter does — invisibly underneath the real one. A
+ * `min-width` in `ch` was the first answer and cannot be right: the sentence
+ * is translated, and German's is half as long again as English's.
+ */
+.count-slot {
+	display: inline-grid;
+	justify-items: start;
+}
+
+.count-slot > * {
+	grid-area: 1 / 1;
+}
+
+.count-slot > .count-widest {
+	visibility: hidden;
+	pointer-events: none;
+}
+
+/*
+ * The one surface a room's body stands on.
+ *
+ * Every room used to draw this itself, if it drew it at all: the notebooks
+ * page and the task list had one, Ideas had a card round its list and left its
+ * filters floating on the backdrop above it, and the rooms that never got
+ * round to it were a column of loose objects on a patterned ground. Here, so
+ * it is the same surface everywhere and nobody has to remember to draw one.
+ *
+ * It clips, so the blocks inside it — an inset toolbar, the first row of a
+ * list — take its corners rather than poking square ones past the curve.
+ */
+.room-surface {
+	border: 1px solid var(--color-gray-200);
+	background-color: var(--color-white);
+	box-shadow: var(--shadow-card);
+	overflow: clip;
+}
+
+/*
+ * Two panes of one surface get a seam, not a gap.
+ *
+ * Where a room is a list and what the list chose — people, notebooks,
+ * inventory — the divider is a rule down the middle of one object rather than
+ * the page showing through between two. Only from `lg`, where there are two
+ * columns at all: below that the panes are stacked and the rule between rows
+ * does the separating.
+ */
+@media (width >= 64rem) {
+	.room-surface > .card-pane + .card-pane,
+	.room-surface > * + * > .card-pane {
+		border-left: 1px solid var(--color-gray-200);
+	}
+}
+
+html[data-style='playful'] .room-surface {
+	border-radius: var(--radius-md);
+}
+
+/*
+ * The track scrolls rather than wraps, and gives way before the verb does.
+ *
+ * `.seg` wraps, which is right for a control sitting in a form and wrong for a
+ * room's tabs: six of them across 390px wrapped to two lines and pushed the
+ * verb off the side of the screen. `.scroll-hints` is already the horizontal
+ * scroller every long strip in this app uses; this lets it do its job.
+ */
+.room-tabs > .seg {
+	flex: 0 1 auto;
+	min-width: 0;
+	flex-wrap: nowrap;
+}
+
+/*
+ * The tabs do not shrink; the strip holding them does.
+ *
+ * This was on the track's children, which is the strip itself — so the strip
+ * could not give way, overflowed the track, and the track's `clip` cut it off
+ * mid-word with no fade at all. The fade only ever appears on something that
+ * is scrolling, and a thing that cannot shrink never scrolls.
+ */
+.room-tabs .seg-scroll > * {
+	flex: none;
+}
+
+/*
+ * The track is the row, and things inside it are not flush against its edge.
+ *
+ * It was as wide as its tabs, so the room's colour showed to the right of it
+ * and the strip read as a pill floating on the bar rather than as the top of
+ * the room. It fills the line now, with the tabs at the start of it and the
+ * verb at the end — and a track's only padding was the three pixels the tile
+ * needs to clear its own edge, so New block sat touching the side of the
+ * thing it stands in.
+ */
+.room-tabs > .seg-track {
+	display: flex;
+	flex: 1 1 auto;
+	padding-inline: 0.75rem;
+}
+
+.room-tabs .seg-scroll {
+	flex: 0 1 auto;
+	min-width: 0;
+}
+
+/*
+ * A room's tabs read at the size they always did.
+ *
+ * `.seg` sets its choices a step smaller than body text, which is right for a
+ * control sitting in a form and wrong for the names of the places in a room —
+ * they were the one thing on the strip somebody reads from across the desk.
+ */
+.room-tabs .seg-scroll > a {
+	font-size: 0.875rem;
+	padding-block: 0.5rem;
+}
+
+/*
+ * And the one you are on is in full ink, in weight, and underlined in the
+ * room's own colour.
+ *
+ * The weight alone was not enough — six words in a row with one of them a
+ * little darker is a difference you have to go looking for. The line is what
+ * the strip has always used to say where you are, and it says it at a glance.
+ *
+ * Drawn as an inset shadow rather than a border so that turning it on moves
+ * nothing: a border would make the tab you are on two pixels taller than the
+ * five beside it.
+ */
+.room-tabs .seg-scroll > [aria-current='page'] {
+	color: var(--color-gray-900);
+	font-weight: 700;
+	box-shadow: inset 0 -2px 0 var(--section-accent, var(--color-gray-900));
+}
+
+/*
+ * The first tab is not flush against the side of the screen.
+ *
+ * On a phone the track runs to both edges, so without this the word
+ * "Notebooks" starts three pixels from the glass.
+ */
+@media (width < 40rem) {
+	.room-tabs .seg-scroll {
+		padding-inline: 0.75rem;
+	}
+}
+
+/*
+ * A room whose strip is buttons rather than tabs pads itself, since it has no
+ * track to do it — Inventory's shopping list is one button on the bar.
+ */
+@media (width < 40rem) {
+	.room-tabs:not(:has(.seg-track)) {
+		padding-inline: 1rem;
+	}
+}
+
+/*
+ * And the strip sits on what it is a strip of, with nothing between.
+ *
+ * `space-y-4` put a rem of page ground under the tabs — a band of nothing
+ * between the tab you pressed and the list it chose, which is most of what
+ * made a room read as loose things floating near each other. The track is
+ * square along its bottom edge and the body starts there.
+ */
+.room-frame > * + * {
+	margin-top: 0;
+}
+
+/*
+ * The ground a room stands on, under the tabs that choose between its pages.
+ *
+ * The tabs are square along the bottom because they sit on this rather than
+ * float above it. Every room has it, so no room has to remember — and a page
+ * that draws a card of its own now draws it on a surface rather than on the
+ * backdrop, which is the difference between a room and a pile.
+ *
+ * It runs to both screen edges on a phone, where the room does; inside the
+ * gutter it is the room's own width.
+ */
+.room-body {
+	min-height: 12rem;
+	background-color: var(--color-white);
+	border-top: 1px solid var(--color-gray-200);
+	/*
+	 * Air inside it, since it is a surface now and not the page's ground.
+	 *
+	 * The planner's Day / Week / Month ran to the very edge of the room, and so
+	 * did every other page whose content is loose controls rather than a list.
+	 *
+	 * No padding at the top: the first thing in a room meets the track above
+	 * it, and anything that wants air there brings its own.
+	 */
+	padding: 0 1rem 1rem;
+}
+
+/*
+ * Except on a phone, where the room *is* the screen.
+ *
+ * There the page has no gutter and the room runs to both edges, so a rem down
+ * its sides is a rem the rows do not have — and the cards that step back out
+ * of it below would be stepping out of nothing.
+ */
+@media (width < 40rem) {
+	.room-body {
+		padding-inline: 0;
+	}
+}
+
+/*
+ * And a full-width card steps back out of it.
+ *
+ * A room whose content is one card — the notebooks shelf, the task list —
+ * wants its rows edge to edge, and a rem of white around a white card is a
+ * rem of nothing. Cancelling the body's padding instead was the first answer
+ * and is wrong for the rooms that have both: the activities room has a card
+ * and a row of chips above it, and the chips ended up against the glass.
+ */
+@media (width >= 40rem) {
+	.room-body > .room-surface,
+	.room-body > [class*='shadow-card'],
+	.room-body > * > .room-surface,
+	.room-body > * > [class*='shadow-card'],
+	.room-body > * > * > .room-surface,
+	.room-body > * > * > [class*='shadow-card'] {
+		margin-inline: -1rem;
+	}
+}
+
 .scroll-hints {
 	position: relative;
 	overflow-x: auto;
@@ -3330,7 +4623,15 @@ html button.tab-link {
  * tab underneath is still a tab you can press.
  */
 .scroll-hints {
-	--fade-edge: 2.5rem;
+	/*
+	 * Short enough to read as an edge rather than as a stain.
+	 *
+	 * It was 2.5rem, which is most of a tab — a word half-dissolved over that
+	 * distance looks like something went wrong rather than like a row that
+	 * carries on. A rem and a half is the last letter or two going soft, which
+	 * is all the fade has to say.
+	 */
+	--fade-edge: 1.5rem;
 }
 
 .scroll-hints[data-more='right'] {

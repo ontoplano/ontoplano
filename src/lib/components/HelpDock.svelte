@@ -32,13 +32,15 @@
 
 	let show = $state(false);
 	/**
-	 * Open on a wide screen, folded on a narrow one.
+	 * Folded until it is asked for, on a phone and on a desktop alike.
 	 *
-	 * Four buttons in the corner of a phone is a bar across the bottom right of
-	 * every screen, over whatever is under it. Folded it is one square wearing
-	 * the question mark — the glyph that already means "help is here" — and a
-	 * tap opens the row. Tapping the question mark again closes it, so it is
-	 * the same control both ways rather than an expand with no collapse.
+	 * Four buttons in the corner is a bar across the bottom right of every
+	 * screen, over whatever is under it — and a desktop used to get it open
+	 * always, which is help nobody asked for taking up the same room whether
+	 * it is wanted or not. Folded it is one square wearing the question mark,
+	 * the glyph that already means "help is here", and pressing it opens the
+	 * row. Pressing it again closes it, so it is the same control both ways
+	 * rather than an expand with no collapse.
 	 */
 	let open = $state(false);
 	/** Whether the form for telling the operator something is up. */
@@ -139,7 +141,7 @@
 	-->
 	<div class="dock flex border border-gray-300 bg-white shadow-sm">
 		<!--
-			The fold, and the only button on a narrow screen until it is opened.
+			The fold, and the only button drawn until it is opened.
 			
 			It carries the question mark because that is the glyph anybody looks
 			for, and pressing it again closes the row — one control, both ways.
@@ -267,27 +269,17 @@
 		}
 	}
 	/*
-	 * Folded on a narrow screen, open on a wide one.
+	 * Folded until it is asked for, at every width.
 	 *
-	 * The toggle is the only button a phone shows until it is pressed; at `lg`
-	 * the row is always open and the toggle would be a button that does
-	 * nothing, so it is not drawn at all.
+	 * A desktop used to get the row open on every screen, which is four icons
+	 * sitting over the page in the corner of everything you do — help you are
+	 * not asking for, taking up the same room whether you want it or not. One
+	 * question mark says help is here just as well, and says it quietly.
+	 *
+	 * The toggle carries the question mark and closes the row again, so it is
+	 * one control both ways rather than an expand with no collapse.
 	 */
 	.dock-more:not(.is-open) {
 		display: none;
-	}
-
-	@media (min-width: 64rem) {
-		.dock-toggle {
-			display: none;
-		}
-
-		/* `:not(.is-open)` as well, and not for tidiness: the folded rule above
-		   is the more specific selector, so a plain `.dock-more` here loses to
-		   it and the row stayed hidden on a desktop too. */
-		.dock-more,
-		.dock-more:not(.is-open) {
-			display: flex;
-		}
 	}
 </style>

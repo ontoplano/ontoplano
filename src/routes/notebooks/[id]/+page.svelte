@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
-	import OneLine from '$lib/components/OneLine.svelte';
+	import { enhance } from '$lib/enhance';
+	import FoldedText from '$lib/components/FoldedText.svelte';
 	import { resolve } from '$app/paths';
 	import { armed } from '$lib/actions/armed';
-	import Field from '$lib/components/Field.svelte';
 	import FormError from '$lib/components/FormError.svelte';
-	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
+	import NotebookFields from '$lib/components/fields/NotebookFields.svelte';
+	import NotebookPicture from '$lib/components/NotebookPicture.svelte';
 	import NotebookDetail from '$lib/components/NotebookDetail.svelte';
 	import { SECTION_COLORS } from '$lib/colors';
 	import type { PageServerData, ActionData } from './$types';
@@ -18,6 +18,7 @@
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
 	let editing = $state(false);
+
 	/** The New button for whichever tab is showing — see NotebookDetail. */
 	let newAction = $state<{ label: string; run?: () => void; href?: string } | undefined>(undefined);
 	let confirmingDelete = $state(false);
@@ -40,32 +41,71 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<div class="flex flex-wrap items-start justify-between gap-3">
-		<div class="min-w-0">
-			<a
-				href={resolve('/notebooks')}
-				class="text-xs text-gray-500 hover:text-gray-900 hover:underline"
-			>
-				{t('notebooks.id.larrAllNotebooks')}
-			</a>
-			<h1 class="mt-1 text-lg font-bold text-gray-900">
-				{data.notebook.title}
-				{#if data.notebook.closedAt}
-					<span class="eyebrow ml-2 align-middle text-gray-500">{t('notebooks.id.closed')}</span>
-				{/if}
-				{#if !data.notebook.mine}
-					<span class="eyebrow ml-2 align-middle text-gray-500"
-						>{t('notebooks.id.sharedBy', { sharedBy: data.notebook.sharedBy ?? '' })}</span
-					>
-				{:else if data.notebook.sharedWithFamily}
-					<span class="eyebrow ml-2 align-middle text-gray-500"
-						>{t('notebooks.id.sharedWithFamily')}</span
-					>
-				{/if}
-			</h1>
-			{#if data.notebook.description}
-				<p class="mt-1 max-w-prose text-sm text-gray-500">{data.notebook.description}</p>
+	<!--
+		The header stands on a surface of its own.
+
+		The title, the description and the picture sat straight on the page's
+		patterned ground while everything below them — the tabs, the notes, the
+		tasks — stood on white, so the one part naming what you are looking at
+		was the one part with nothing under it. Same surface the panes below use,
+		so the page reads as one thing.
+	-->
+	<div
+		class="flex flex-wrap items-start justify-between gap-3 border border-gray-200 bg-white p-3 shadow-card"
+	>
+		<!-- The picture and what it is a picture of, together: `justify-between`
+		     put the whole width between them. -->
+		<div class="flex min-w-0 items-start gap-3">
+			<!--
+			The picture, where somebody looks when they want to change it.
+
+			The same arrangement a person has: one picture, and pressing it is how
+			you set or replace it rather than hunting for a field in the edit form.
+			Only for a notebook of your own — one shared into the family is
+			somebody else's to dress.
+		-->
+			<!-- The picture, where somebody looks when they want to change it —
+			     drawn by the same component the two Edit notebook dialogues use,
+			     so there is one of it rather than three. -->
+			{#if data.notebook.mine}
+				<NotebookPicture notebook={data.notebook} kilobytes={data.pictureKilobytes} removable />
+			{:else if data.notebook.pictureId}
+				<img
+					src="/media/{data.notebook.pictureId}"
+					alt=""
+					loading="lazy"
+					class="size-12 shrink-0 rounded-lg border border-gray-200 bg-white object-cover"
+				/>
 			{/if}
+
+			<div class="min-w-0">
+				<a
+					href={resolve('/notebooks')}
+					class="text-xs text-gray-500 hover:text-gray-900 hover:underline"
+				>
+					{t('notebooks.id.larrAllNotebooks')}
+				</a>
+				<h1 class="mt-1 text-lg font-bold text-gray-900">
+					{data.notebook.title}
+					{#if data.notebook.closedAt}
+						<span class="eyebrow ml-2 align-middle text-gray-500">{t('notebooks.id.closed')}</span>
+					{/if}
+					{#if !data.notebook.mine}
+						<span class="eyebrow ml-2 align-middle text-gray-500"
+							>{t('notebooks.id.sharedBy', { sharedBy: data.notebook.sharedBy ?? '' })}</span
+						>
+					{:else if data.notebook.sharedWithFamily}
+						<span class="eyebrow ml-2 align-middle text-gray-500"
+							>{t('notebooks.id.sharedWithFamily')}</span
+						>
+					{/if}
+				</h1>
+				{#if data.notebook.description}
+					<!-- Folded when it is long: a description written properly pushed
+				     the notes off a phone screen. See `FoldedText`. -->
+					<FoldedText text={data.notebook.description} class="mt-1" />
+				{/if}
+			</div>
 		</div>
 
 		<div class="flex flex-wrap items-center gap-2">
@@ -167,6 +207,12 @@
 			allPeople={data.allPeople}
 			categories={data.categories}
 			pickableNotebooks={data.pickableNotebooks}
+			areas={data.areas}
+			workoutMeasures={data.workoutMeasures}
+			slots={data.slots}
+			todos={data.todos}
+			allTodos={data.allTodos}
+			activities={data.activities}
 			bind:newAction
 		/>
 	</section>
@@ -184,16 +230,26 @@
 			}}
 	>
 		<input type="hidden" name="id" value={data.notebook.id} />
-		<FormGrid>
-			<Field label={t('ui.title')} span={12} required>
-				<OneLine name="heading" value={data.notebook.title} class="input" required />
-			</Field>
-			<Field label={t('notebooks.id.whatItIsFor')} span={12}>
-				<textarea name="description" rows="2" class="textarea">{data.notebook.description}</textarea
-				>
-			</Field>
-		</FormGrid>
+		<NotebookFields
+			title={data.notebook.title}
+			description={data.notebook.description}
+			defaultTags={data.notebook.defaultTags}
+		/>
 	</form>
+
+	<!-- Beside the form rather than in it: a picture goes up as multipart the
+	     moment it is chosen, which is not the same submission as the words. -->
+	{#if data.notebook.mine}
+		<div class="mt-3 flex items-start gap-3 border-t border-gray-200 pt-3">
+			<NotebookPicture
+				notebook={data.notebook}
+				kilobytes={data.pictureKilobytes}
+				size="size-24"
+				removable
+			/>
+			<p class="text-sm text-gray-500">{t('notebooks.id.thePicture')}</p>
+		</div>
+	{/if}
 
 	{#snippet footer()}
 		<button type="button" class="btn" onclick={() => (editing = false)}>{t('ui.cancel')}</button>

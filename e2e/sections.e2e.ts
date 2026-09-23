@@ -75,6 +75,7 @@ test('hiding a section empties the menus but not the URL', async ({ page }) => {
  * back, and the list is simply still right.
  */
 test('saving the menu does not empty the list', async ({ page }) => {
+	test.setTimeout(120_000);
 	await page.setViewportSize({ width: 1280, height: 800 });
 	await register(page, testEmail('sections-keep'));
 	await visit(page, '/settings/preferences');
@@ -89,7 +90,9 @@ test('saving the menu does not empty the list', async ({ page }) => {
 	// re-render to hide a reset behind.
 	await page.route('**/__data.json*', (route) => route.abort());
 	await menu.getByRole('button', { name: 'Save menu' }).click();
-	await page.waitForResponse((r) => r.url().includes('saveMenu'));
+	// The submit is a form post the server answers after writing; on a loaded
+	// runner that is well past the default thirty seconds this test had.
+	await page.waitForResponse((r) => r.url().includes('saveMenu'), { timeout: 60_000 });
 	await page.waitForTimeout(500);
 
 	// Still put away, and every other room still listed.

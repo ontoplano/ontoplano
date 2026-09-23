@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import { resolve } from '$app/paths';
 	import { DEMO_ACCOUNTS_PER_ADDRESS } from '$lib/demo-limits';
 	import { onMount } from 'svelte';

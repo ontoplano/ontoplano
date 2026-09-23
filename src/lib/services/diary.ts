@@ -14,7 +14,7 @@ import {
 import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { host } from './host.js';
-import { ownedNotebookId } from './notebooks.js';
+import { defaultTagsOf, ownedNotebookId } from './notebooks.js';
 import { stamp, stamps } from './time.js';
 import { str } from './validate.js';
 
@@ -62,6 +62,7 @@ export function listEntries(ctx: Ctx) {
 		.select({
 			id: diaryEntries.id,
 			seq: diaryEntries.seq,
+			diarySeq: diaryEntries.diarySeq,
 			content: diaryEntries.content,
 			forDate: diaryEntries.forDate,
 			createdAt: diaryEntries.createdAt,
@@ -96,7 +97,12 @@ export function tagsForEntries(ctx: Ctx, entryIds: number[]): Map<number, Tag[]>
 	if (entryIds.length === 0) return byEntry;
 
 	const rows = db
-		.select({ entryId: diaryEntryTags.entryId, id: tags.id, name: tags.name })
+		.select({
+			entryId: diaryEntryTags.entryId,
+			id: tags.id,
+			name: tags.name,
+			taggedAt: diaryEntryTags.taggedAt
+		})
 		.from(diaryEntryTags)
 		.innerJoin(tags, eq(diaryEntryTags.tagId, tags.id))
 		.where(and(inArray(diaryEntryTags.entryId, entryIds), eq(tags.userId, ctx.userId)))
@@ -105,13 +111,14 @@ export function tagsForEntries(ctx: Ctx, entryIds: number[]): Map<number, Tag[]>
 
 	for (const row of rows) {
 		const list = byEntry.get(row.entryId) ?? [];
-		list.push({ id: row.id, name: row.name });
+		list.push({ id: row.id, name: row.name, taggedAt: row.taggedAt });
 		byEntry.set(row.entryId, list);
 	}
 	return byEntry;
 }
 
-export type Tag = { id: number; name: string };
+/** Null on a label that went on before the join carried a date. */
+export type Tag = { id: number; name: string; taggedAt?: string | null };
 
 export function listTags(ctx: Ctx) {
 	return db.select().from(tags).where(eq(tags.userId, ctx.userId)).orderBy(tags.name).all();
@@ -123,15 +130,19 @@ export function createEntry(
 ): number {
 	const content = str(raw.content, 'content', { max: MAX_ENTRY_LENGTH });
 	host.assertEntryWithinLimit(content);
-	const entryId = insertEntry(
-		ctx,
-		content,
-		undefined,
-		ownedNotebookId(ctx, raw.notebookId),
-		noteTitle(raw.title)
-	);
+	const notebookId = ownedNotebookId(ctx, raw.notebookId);
+	const entryId = insertEntry(ctx, content, undefined, notebookId, noteTitle(raw.title));
 
-	const tagNames = parseTags(optionalTagInput(raw.tags));
+	/*
+	 * A notebook's own labels, for a note that named none.
+	 *
+	 * Only when the caller said nothing about labels at all — an empty string
+	 * is somebody having cleared the ones the form offered, and putting them
+	 * back would make that impossible. The forms send whatever is in the box,
+	 * so this is the assistant's path and the quick-add that has no box.
+	 */
+	const asked = raw.tags === undefined ? defaultTagsOf(ctx, notebookId) : raw.tags;
+	const tagNames = parseTags(optionalTagInput(asked));
 	if (tagNames.length > 0) linkDiaryTags(entryId, ensureTagIds(tagNames, ctx.userId), ctx.userId);
 
 	// The id and nothing else: a diary entry's content never leaves the app.
@@ -293,15 +304,21 @@ export function deleteEntry(ctx: Ctx, id: number): void {
 /**
  * Two numbers, both counted at the moment of writing.
  *
- * `seq` is the account's own numbering — every piece of writing it holds, which
- * is what a `#12` reference means. `notebookSeq` is the notebook's, so the
- * fourth note about the kitchen is #4 rather than #36. Both are read and then
- * written, so the whole thing is one transaction: without it two writes landing
- * together would read the same highest number and the second would be rejected
- * by the unique index.
+ * `seq` is the account's own numbering of every piece of writing it holds, and
+ * it is the row's identity rather than anything a person reads. `notebookSeq`
+ * is the notebook's, so the fourth note about the kitchen is #4 rather than
+ * #36. `diarySeq` is the diary's, for an entry that belongs to no notebook —
+ * the thirtieth diary entry is #30, where `seq` would have called it #127
+ * because it was counting the notebooks too.
+ *
+ * All read and then written, so the whole thing is one transaction: without it
+ * two writes landing together would read the same highest number and the second
+ * would be rejected by the unique index.
  */
 /** Where the account's highest-ever entry number is remembered. */
 const SEQ_MARK_KEY = 'diary.seq.highest';
+/** And the diary's own, which is the number the diary actually shows. */
+const DIARY_MARK_KEY = 'diary.number.highest';
 
 function insertEntry(
 	ctx: Ctx,
@@ -327,6 +344,26 @@ function insertEntry(
 		const highest = Math.max(present, everUsed);
 		setUserSetting(ctx.userId, SEQ_MARK_KEY, String(highest + 1));
 
+		/*
+		 * The diary's own count, on the same high-water bargain as `seq`: the
+		 * highest ever given, not the highest still present, so deleting the
+		 * newest entry does not hand its number to the next one — and a `#12`
+		 * somebody wrote keeps meaning the entry it meant.
+		 */
+		const inDiary = !notebookId;
+		let diarySeq = null;
+		if (inDiary) {
+			const presentDiary =
+				tx
+					.select({ value: max(diaryEntries.diarySeq) })
+					.from(diaryEntries)
+					.where(eq(diaryEntries.userId, ctx.userId))
+					.get()?.value ?? 0;
+			const everDiary = Number(getUserSetting(ctx.userId, DIARY_MARK_KEY) ?? 0);
+			diarySeq = Math.max(presentDiary, everDiary) + 1;
+			setUserSetting(ctx.userId, DIARY_MARK_KEY, String(diarySeq));
+		}
+
 		const highestInNotebook = notebookId
 			? (tx
 					.select({ value: max(diaryEntries.notebookSeq) })
@@ -343,6 +380,7 @@ function insertEntry(
 				title,
 				content,
 				seq: highest + 1,
+				diarySeq,
 				notebookId: notebookId ?? null,
 				notebookSeq: highestInNotebook === null ? null : highestInNotebook + 1,
 				...(forDate ? { forDate } : {})
@@ -412,7 +450,7 @@ export function latestEntry(ctx: Ctx) {
 	return {
 		...entry,
 		tags: db
-			.select({ id: tags.id, name: tags.name })
+			.select({ id: tags.id, name: tags.name, taggedAt: diaryEntryTags.taggedAt })
 			.from(diaryEntryTags)
 			.innerJoin(tags, eq(diaryEntryTags.tagId, tags.id))
 			.where(and(eq(diaryEntryTags.entryId, entry.id), eq(tags.userId, ctx.userId)))

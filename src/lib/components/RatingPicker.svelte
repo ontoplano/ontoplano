@@ -2,12 +2,14 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	import Gauge from '$lib/components/Gauge.svelte';
 	import {
 		RATING_HINTS,
 		RATING_LABELS,
 		RATING_MAX,
 		RATING_MIN,
 		RATING_SCALE_ENDS,
+		RATING_UNRATED,
 		type Rating
 	} from '$lib/ratings.js';
 
@@ -42,21 +44,135 @@
 	} = $props();
 
 	/**
-	 * The stop below the scale, which is the dot — a real answer, and the one
-	 * the slider starts on. Taken from the scale rather than written as 0, so an
-	 * off always sits immediately to the left of wherever the scale begins.
+	 * Where the thumb rests when nobody has answered: the middle, at 2.5.
+	 *
+	 * It used to rest on a dot off the left end of the scale, which put "no
+	 * answer" and "the lowest answer" next door to each other and made an
+	 * unanswered question look like a one. The middle is where an unset rating
+	 * actually counts when the list is sorted, and where the gauge on the card
+	 * draws it — so the control, the card and the arithmetic all say the same
+	 * thing, and 1 is a real answer again.
 	 */
-	const OFF = RATING_MIN - 1;
-
 	const ends = $derived(RATING_SCALE_ENDS[rating]);
-	const shown = $derived(value ?? OFF);
+	const shown = $derived(value ?? RATING_UNRATED);
 
-	/** How much of the track is behind the thumb, for the filled part. */
-	const filled = $derived(((shown - OFF) / (RATING_MAX - OFF)) * 100);
-
+	/**
+	 * Seven stops: 0 1 2 · 3 4 5, with no answer in the middle.
+	 *
+	 * The input runs in halves because 2.5 has to be a position it can hold —
+	 * and 2.5 is the only half anybody can land on. It is not a rating of two
+	 * and a half; it is the absence of one, dead centre with three answers
+	 * either side of it, which is exactly where the card draws an unset rating
+	 * and where the sort counts it.
+	 *
+	 * Every other half is a step passing through, and is taken to the whole
+	 * number it was heading for — away from where the thumb was. So an arrow
+	 * key moves one stop each time wherever it starts: 2 to no-answer to 3, and
+	 * 0 to 1 to 2 below it.
+	 */
 	function slide(event: Event) {
-		const n = Number((event.currentTarget as HTMLInputElement).value);
-		value = n === OFF ? null : n;
+		// While a finger or a pointer is down, `fillTo` owns the value: the
+		// native control answers "where is the nearest step to this x", and the
+		// question a bar answers is "which block did you press".
+		if (pressing) return;
+
+		const input = event.currentTarget as HTMLInputElement;
+		const raw = Number(input.value);
+		const was = value ?? RATING_UNRATED;
+
+		if (raw === RATING_UNRATED) {
+			value = null;
+			return;
+		}
+
+		const whole = Number.isInteger(raw) ? raw : raw > was ? Math.ceil(raw) : Math.floor(raw);
+		value = Math.min(RATING_MAX, Math.max(RATING_MIN, whole));
+		// The thumb sits on the answer rather than between two of them.
+		input.value = String(value);
+	}
+
+	/** Whether a pointer is down on the bar, so the pointer decides rather than the input. */
+	let pressing = false;
+
+	/**
+	 * The native control, kept in step with the answer at every moment.
+	 *
+	 * While a pointer is down the bar decides and `slide` stands off, so the
+	 * input went on holding whatever the native slider had worked out from the
+	 * pointer — a different number, because a range puts its thumb on the
+	 * *nearest* step and a bar fills up to the block you are on. The event that
+	 * arrives as the drag ends then carried that stale number and applied it,
+	 * which is the value snapping back a step the moment you let go. It showed
+	 * up as "I move them faster, they flick back": moving fast is what puts the
+	 * two furthest apart.
+	 *
+	 * So every answer the bar works out is written straight back into the
+	 * input. There is never a second number to come back.
+	 */
+	let slider: HTMLInputElement | undefined = $state();
+
+	/** The answer, as the native control spells it — 2.5 is "nobody said". */
+	const asStep = (answer: number | null) => String(answer ?? RATING_UNRATED);
+
+	/**
+	 * Pressing a block fills up to it, rather than to the nearest edge.
+	 *
+	 * A range input puts its thumb on the nearest step to where you pressed, so
+	 * pressing the middle of the fourth block landed on three — right for a
+	 * slider, where the thumb is the thing you are placing, and wrong for a bar,
+	 * where what you are saying is "up to here". The block under the pointer is
+	 * the answer, which is `ceil`.
+	 *
+	 * Nought is the empty bar, off the left end of every block: dragging past
+	 * the start reaches it, and so do the arrow keys and the × beside it.
+	 */
+	function fillTo(event: PointerEvent) {
+		const box = (event.currentTarget as HTMLElement).getBoundingClientRect();
+		if (box.width === 0) return;
+		const along = (event.clientX - box.left) / box.width;
+		if (along <= 0) {
+			value = RATING_MIN;
+			return;
+		}
+
+		const to = along * RATING_MAX;
+		/*
+		 * And the stub of a block below the middle is no answer at all.
+		 *
+		 * An unanswered rating is drawn filled to 2.5, so the place where that
+		 * bar ends — past the second marking, short of the third — is where you
+		 * press to say nobody has answered. Without it there would be no way
+		 * back to that except the × beside it.
+		 */
+		if (to > Math.floor(RATING_UNRATED) && to <= RATING_UNRATED) {
+			value = null;
+			return;
+		}
+
+		value = Math.min(RATING_MAX, Math.max(RATING_MIN, Math.ceil(to)));
+	}
+
+	/** What `fillTo` decided, told to the input as well. */
+	function fill(event: PointerEvent) {
+		fillTo(event);
+		if (slider) slider.value = asStep(value);
+	}
+
+	function press(event: PointerEvent) {
+		pressing = true;
+		(event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
+		fill(event);
+	}
+
+	function drag(event: PointerEvent) {
+		if (pressing) fill(event);
+	}
+
+	function release() {
+		pressing = false;
+		// And once more on the way out, for the event the native control fires
+		// as the press ends — by now it says the same thing this does.
+		if (slider) slider.value = asStep(value);
 	}
 </script>
 
@@ -64,7 +180,16 @@
      without extra wiring. Empty string means "unrated". -->
 <input type="hidden" {name} value={value ?? ''} />
 
-<div class={compact ? 'flex items-center gap-2' : 'space-y-1'}>
+<!--
+	Answered, and wearing the question's own colour.
+
+	The three are told apart by colour on the card; the control that sets them
+	says the same thing, so the yellow one on a task is the yellow one on the
+	form. A wash rather than the colour itself — this sits behind a label, a
+	sentence and a slider, all of which have to stay readable — and only once
+	somebody has answered, so the row is quiet until it has something to say.
+-->
+<div data-rating={rating} class={compact ? 'flex items-center gap-2' : 'space-y-1'}>
 	{#if compact}
 		<span class="eyebrow w-16 shrink-0 text-gray-600">{t(RATING_LABELS[rating])}</span>
 	{:else}
@@ -75,47 +200,58 @@
 	{/if}
 
 	<div class="min-w-0 flex-1">
-		<div class="flex items-center gap-2">
-			<!--
-			The dot is the track's own left end, not a control beside it.
+		<!--
+			The gauge is the control.
 
-			It sits exactly under where the thumb rests at zero, so "unrated" is the
-			thumb parked on the dot rather than a second thing to find. Drawn behind
-			the input, which paints its thumb over it.
+			It was a line with a thumb, which is a second drawing of the same fact
+			— the card shows a little thermometer and the form showed a slider, so
+			the thing you read and the thing you set looked nothing like each
+			other. This is `Gauge`, the one on the card, with the range input laid
+			over it at no opacity: the platform's own control still handles the
+			finger, the arrow keys and the screen reader, and what you see it do is
+			the gauge filling.
 		-->
-			<div class="relative min-w-0 flex-1">
-				<span aria-hidden="true" class="rating-off"></span>
+		<div class="rating-row flex items-center gap-2">
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<div
+				class="rating-track relative min-w-0 flex-1"
+				onpointerdown={press}
+				onpointermove={drag}
+				onpointerup={release}
+				onpointercancel={release}
+			>
+				<Gauge {rating} {value} class="w-full" />
 
 				<input
 					type="range"
-					min={OFF}
+					min={RATING_MIN}
 					max={RATING_MAX}
-					step="1"
+					step="0.5"
+					bind:this={slider}
 					value={shown}
 					oninput={slide}
 					aria-label={t(RATING_LABELS[rating])}
 					aria-valuetext={value === null ? t('ratingPicker.notSet') : `${value} of ${RATING_MAX}`}
 					title={value === null
-						? `${t(RATING_LABELS[rating])}: not answered`
-						: `${t(RATING_LABELS[rating])}: ${value} of ${RATING_MAX} — drag to the dot to leave it unanswered`}
-					class="rating-slide relative w-full"
-					style="--filled: {filled}%"
+						? t('ratings.labelNotSet', { label: t(RATING_LABELS[rating]) })
+						: t('ratings.labelValueOf5', { label: t(RATING_LABELS[rating]), value })}
+					class="rating-slide"
 				/>
 			</div>
 
-			<!--
-			The number, and the way out of answering.
-
-			Dragging to the dot clears it and always did, and a gesture nobody can
-			see is not an answer to "how do I leave this one blank" — so the way out
-			is also a button, labelled, reachable by tab and big enough for a thumb.
-			Both the number and the button keep their place whether or not there is
-			a value, so nothing on the row moves as the slider does.
-		-->
-			<span class="tabular w-3 shrink-0 text-right text-xs text-gray-700">
+			<span class="rating-number tabular shrink-0 text-right text-xs">
 				{value ?? '–'}
 			</span>
 
+			<!--
+				The way out of answering.
+
+				There is no gesture for it — the gauge's resting place is in the
+				middle of its own scale, not off the end of it — so this is the only
+				way back to no answer, and it is labelled, reachable by tab and big
+				enough for a thumb. It keeps its place whether or not there is a
+				value, so nothing on the row moves as the gauge fills.
+			-->
 			<button
 				type="button"
 				onclick={() => (value = null)}
@@ -132,97 +268,68 @@
 			</button>
 		</div>
 
-		{#if !compact}
-			<div class="mt-0.5 flex justify-between text-[10px] text-gray-500">
-				<span>{ends[0]}</span>
-				<span>{ends[1]}</span>
-			</div>
-		{/if}
+		<div class="mt-1 flex justify-between text-[0.6875rem] leading-none text-gray-500">
+			<span>{ends[0]}</span>
+			<span>{ends[1]}</span>
+		</div>
 	</div>
 </div>
 
 <style>
 	/*
-	 * A range input, wearing this app's clothes.
+	 * The control, laid over the gauge it drives.
 	 *
-	 * Every browser draws its own and none of them can be styled through the
-	 * shared parts, so the track and the thumb are written out per engine. The
-	 * filled part is a gradient on the track rather than a second element,
-	 * which is what keeps this one input rather than a construction.
+	 * Invisible rather than absent: the platform's own range still handles a
+	 * finger, a mouse, the arrow keys, Home and End and a screen reader, and a
+	 * hand-built one would have to reimplement every one of those. What anybody
+	 * sees is the gauge underneath filling.
 	 */
-	/* Under the thumb's resting place at zero — half a thumb in from the left,
-	   which is where a range input centres its thumb at the minimum. */
-	.rating-off {
-		position: absolute;
-		left: 0.4375rem;
-		top: 50%;
-		width: 0.25rem;
-		height: 0.25rem;
-		margin: -0.125rem 0 0 -0.125rem;
-		border-radius: 9999px;
-		background: var(--color-gray-400);
-	}
-
 	.rating-slide {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		margin: 0;
 		appearance: none;
 		-webkit-appearance: none;
 		background: transparent;
-		height: 1.25rem;
+		opacity: 0;
 		cursor: pointer;
 	}
 
-	.rating-slide::-webkit-slider-runnable-track {
-		height: 2px;
-		background: linear-gradient(
-			to right,
-			var(--color-gray-900) var(--filled),
-			var(--color-gray-300) var(--filled)
-		);
+	/*
+	 * Wide enough for a finger, and no wider than the bar it draws.
+	 *
+	 * The input is laid over this, so if this were wider than the gauge the
+	 * pressable area would run past the end of the bar and a press out there
+	 * would mean nothing visible.
+	 */
+	/*
+	 * As wide as the column it is in.
+	 *
+	 * It was capped at 6rem, which was right when the gauge was a small pill
+	 * beside a lot of other things and is wrong now that it is the control: on
+	 * a phone the form is the whole screen and the slider was a stub a sixth of
+	 * the way across, under a scale — "whenever … now" — that ran the full
+	 * width. The two are the same measurement and have to be the same length.
+	 */
+	.rating-track {
+		min-height: 1.25rem;
+		display: flex;
+		align-items: center;
+		touch-action: none;
 	}
-	.rating-slide::-moz-range-track {
-		height: 2px;
-		background: linear-gradient(
-			to right,
-			var(--color-gray-900) var(--filled),
-			var(--color-gray-300) var(--filled)
-		);
+
+	.rating-number {
+		min-width: 0.75rem;
+		color: var(--color-gray-900);
 	}
 
 	/*
-	 * Big enough for a finger, on a control that is two pixels tall.
-	 *
-	 * The touch target is the input's own height — a fifth of an inch — and the
-	 * thumb is what says where to put the finger.
+	 * Focus lands on the gauge, since that is what anybody is looking at.
 	 */
-	.rating-slide::-webkit-slider-thumb {
-		appearance: none;
-		-webkit-appearance: none;
-		width: 0.875rem;
-		height: 0.875rem;
-		margin-top: -0.375rem;
-		border-radius: 9999px;
-		background: var(--color-gray-900);
-	}
-	.rating-slide::-moz-range-thumb {
-		width: 0.875rem;
-		height: 0.875rem;
-		border: 0;
-		border-radius: 9999px;
-		background: var(--color-gray-900);
-	}
-
-	/* Unanswered: the thumb is hollow, so a slider sitting at the dot does not
-	   read as a deliberate "lowest". */
-	.rating-slide[aria-valuetext='not set']::-webkit-slider-thumb {
-		background: var(--color-gray-100);
-		box-shadow: inset 0 0 0 2px var(--color-gray-400);
-	}
-	.rating-slide[aria-valuetext='not set']::-moz-range-thumb {
-		background: var(--color-gray-100);
-		box-shadow: inset 0 0 0 2px var(--color-gray-400);
-	}
-
-	.rating-slide:focus-visible {
+	.rating-slide:focus-visible + :global(.gauge),
+	.rating-track:has(.rating-slide:focus-visible) :global(.gauge) {
 		outline: 2px solid var(--color-gray-900);
 		outline-offset: 2px;
 	}

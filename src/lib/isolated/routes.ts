@@ -73,12 +73,25 @@ const pages = import.meta.glob(
 	[
 		'/src/routes/**/+page.server.ts',
 		'!/src/routes/admin/**',
+		/*
+		 * The chat dials a model provider from the server — `undici`, the
+		 * outbound guard, a stored key. A device build has none of those, and
+		 * its person already has a better answer: any MCP client pointed at
+		 * the instance they sync with.
+		 */
+		'!/src/routes/assistant/**',
 		'!/src/routes/api/**',
 		'!/src/routes/buy/**',
 		'!/src/routes/demo/**',
 		'!/src/routes/dev/**',
 		'!/src/routes/legal/**',
 		'!/src/routes/login/**',
+		/*
+		 * The consent screen an assistant sends somebody to. It is about a
+		 * server other software reaches over a network, which a device instance
+		 * is not — the same reason Integrations stayed behind.
+		 */
+		'!/src/routes/oauth/**',
 		'!/src/routes/mail/**',
 		'!/src/routes/newsletter/**',
 		/*
@@ -132,11 +145,13 @@ const pageTwins = import.meta.glob('/src/routes/**/page.isolated.ts', {
 const notHere = import.meta.glob(
 	[
 		'/src/routes/admin/**/+page.server.ts',
+		'/src/routes/assistant/+page.server.ts',
 		'/src/routes/buy/+page.server.ts',
 		'/src/routes/demo/**/+page.server.ts',
 		'/src/routes/dev/**/+page.server.ts',
 		'/src/routes/legal/**/+page.server.ts',
 		'/src/routes/login/**/+page.server.ts',
+		'/src/routes/oauth/**/+page.server.ts',
 		'/src/routes/mail/**/+page.server.ts',
 		'/src/routes/newsletter/**/+page.server.ts',
 		'/src/routes/settings/account/**/+page.server.ts',

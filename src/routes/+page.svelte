@@ -1,4 +1,9 @@
 <script lang="ts">
+	import { page } from '$app/state';
+	import Written from '$lib/components/Written.svelte';
+	import TagInput from '$lib/components/TagInput.svelte';
+	import { dayOf, momentOf, today, weekdayOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Card from '$lib/components/Card.svelte';
@@ -9,7 +14,8 @@
 	import WidgetPicker from '$lib/components/WidgetPicker.svelte';
 	import Pie from '$lib/components/Pie.svelte';
 	import Swatch from '$lib/components/Swatch.svelte';
-	import { enhance } from '$app/forms';
+	import TagChip from '$lib/components/TagChip.svelte';
+	import { enhance } from '$lib/enhance';
 	import FormError from '$lib/components/FormError.svelte';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types';
@@ -22,6 +28,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	/** Keep the card a card: the tracker is one click away for the full list. */
 	const TODO_PREVIEW = 5;
@@ -47,15 +54,12 @@
 	function dayHeading(date: string, ahead: number): string {
 		if (ahead === 0) return t('app.today');
 		if (ahead === 1) return t('home.tomorrow');
-		return new Date(date + 'T00:00:00').toLocaleDateString(t.locale, { weekday: 'long' });
+		return weekdayOf(date, now(), { weekday: 'long' });
 	}
 
 	/** "19 Sep" — the date under the name, so "Tomorrow" is still a date. */
 	function dayNumber(date: string): string {
-		return new Date(date + 'T00:00:00').toLocaleDateString(t.locale, {
-			day: 'numeric',
-			month: 'short'
-		});
+		return dayOf(date, now());
 	}
 
 	/** "1 block", "3 blocks" — because "1 blocks" is how a sentence loses trust. */
@@ -65,10 +69,7 @@
 
 	/** "17 Aug" — a Monday said the way somebody would say it. */
 	function weekName(weekStart: string): string {
-		return new Date(weekStart + 'T00:00:00').toLocaleDateString(t.locale, {
-			day: 'numeric',
-			month: 'short'
-		});
+		return dayOf(weekStart, now());
 	}
 
 	// Rearranging is a mode rather than something you can trigger by accident:
@@ -286,18 +287,7 @@
 
 	function formatDate(dateStr: string): string {
 		const d = new Date(dateStr);
-		return d.toLocaleDateString(t.locale, {
-			weekday: 'short',
-			month: 'short',
-			day: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
-		});
-	}
-
-	function truncate(text: string, max: number): string {
-		if (text.length <= max) return text;
-		return text.slice(0, max).trimEnd() + '…';
+		return momentOf(d, now(), { weekday: 'short', year: undefined });
 	}
 
 	/**
@@ -416,11 +406,7 @@
 	<div class="space-y-6">
 		<div class="flex flex-wrap items-center justify-between gap-3">
 			<h1 class="text-lg font-bold text-gray-900">
-				{new Date().toLocaleDateString(t.locale, {
-					weekday: 'long',
-					month: 'long',
-					day: 'numeric'
-				})}
+				{dayOf(new Date(), now(), { weekday: 'long', month: 'long' })}
 			</h1>
 			<!--
 				Both states of this corner, in one cell.
@@ -563,21 +549,25 @@
 					<div class="min-w-0 flex-1">
 						{#if now}
 							<span class="eyebrow text-gray-600">
-								{now.state === 'now' ? 'Now' : 'Next'}
+								{now.state === 'now' ? t('home.nowEyebrow') : t('home.nextEyebrow')}
 							</span>
 							<p class="mt-1 text-xl font-bold text-gray-900">{now.task.name}</p>
 							<p class="mt-1 text-sm text-gray-500">
 								<span class="tabular">{now.task.startTime}</span>
 								{#if now.task.categoryName}· {now.task.categoryName}{/if}
 								·
+								<!--
+									One message per sentence, and the plural chosen by the
+									language rather than by an `=== 1` here: "minute" and
+									"minutes" were written inline in English, so this line
+									stayed English in every language the app ships.
+								-->
 								{#if now.state === 'now'}
-									{now.minutes} {now.minutes === 1 ? 'minute' : 'minutes'} {t('home.left')}
+									{t('home.minutesLeft', { count: now.minutes })}
 								{:else if now.minutes < 60}
-									{t('home.in')} {now.minutes} {now.minutes === 1 ? 'minute' : 'minutes'}
+									{t('home.inMinutes', { count: now.minutes })}
 								{:else}
-									{t('home.in')}
-									{Math.round(now.minutes / 60)}
-									{Math.round(now.minutes / 60) === 1 ? 'hour' : 'hours'}
+									{t('home.inHours', { count: Math.round(now.minutes / 60) })}
 								{/if}
 							</p>
 						{:else}
@@ -1007,10 +997,9 @@
 							placeholder={t('home.whatSOnYourMind')}
 							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						></textarea>
-						<OneLine
-							name="tags"
+						<TagInput
+							known={page.data.tagVocabulary ?? []}
 							placeholder={t('home.tagsCommaSeparated')}
-							class="block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 						/>
 						<button type="submit" class="btn btn-primary btn-sm">
 							{t('ui.save')}
@@ -1036,7 +1025,7 @@
 								autocomplete="off"
 								name="forDate"
 								type="date"
-								value={new Date().toISOString().slice(0, 10)}
+								value={today(now())}
 								class="border border-gray-300 px-2 py-1 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
 							/>
 						</div>
@@ -1063,15 +1052,11 @@
 
 				{#if data.lastEntry}
 					<div>
-						<p class="text-sm leading-relaxed text-gray-700">
-							{truncate(data.lastEntry.content, 300)}
-						</p>
+						<Written content={data.lastEntry.content} lines={4} />
 						<div class="mt-2 flex items-center gap-2">
 							<span class="text-xs text-gray-500">{formatDate(data.lastEntry.createdAt)}</span>
 							{#each data.lastEntry.tags as tag (tag.id)}
-								<span class="border border-gray-200 px-1.5 py-0.5 text-xs text-gray-500"
-									>{tag.name}</span
-								>
+								<TagChip name={tag.name} />
 							{/each}
 						</div>
 					</div>
@@ -1160,7 +1145,7 @@
 				{:else}
 					<div class="space-y-1">
 						{#each (data.latestIdeas ?? []).slice(0, 5) as idea (idea.id)}
-							<p class="truncate text-sm text-gray-700">{idea.content}</p>
+							<Written content={idea.content} oneLine />
 						{/each}
 						{#if (data.latestIdeas ?? []).length > 5}
 							<span class="text-xs text-gray-500"

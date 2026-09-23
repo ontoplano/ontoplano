@@ -1,7 +1,16 @@
 import { db } from '$lib/db/index.js';
-import { tags, diaryEntryTags, ideaTags, mediaTags, todoTags } from '$lib/db/schema';
-import { eq, and, notInArray } from 'drizzle-orm';
-import { ValidationError } from './errors.js';
+import {
+	tags,
+	diaryEntryTags,
+	exceptionalTaskTags,
+	ideaTags,
+	mediaTags,
+	recurringTaskTags,
+	todoTags
+} from '$lib/db/schema';
+import { eq, and, count, inArray, notInArray, sql } from 'drizzle-orm';
+import { NotFoundError, ValidationError } from './errors.js';
+import { str } from './validate.js';
 
 /**
  * Tags, and the rows that join them to what they tag.
@@ -60,56 +69,63 @@ export function ensureTagIds(tagNames: string[], userId: string): number[] {
 }
 
 export function linkDiaryTags(entryId: number, tagIds: number[], userId: string): void {
+	const now = new Date().toISOString();
 	for (const tagId of tagIds) {
-		db.insert(diaryEntryTags).values({ userId, entryId, tagId }).run();
+		db.insert(diaryEntryTags).values({ userId, entryId, tagId, taggedAt: now }).run();
 	}
 }
 
+/**
+ * Set a note's labels to exactly these, without forgetting when the old ones
+ * went on.
+ *
+ * The same diff `replaceTodoTags` does, and for the same reason: deleting
+ * every row and writing them back gives the same answer and a different
+ * history, so a label that had been there a week came back dated today and
+ * "what went into review since I last looked" became "what has been edited
+ * since".
+ */
 export function replaceDiaryTags(entryId: number, tagNames: string[], userId: string): void {
-	db.delete(diaryEntryTags)
-		.where(and(eq(diaryEntryTags.entryId, entryId), eq(diaryEntryTags.userId, userId)))
-		.run();
+	const wanted = new Set(tagNames.length > 0 ? ensureTagIds(tagNames, userId) : []);
 
-	if (tagNames.length > 0) {
-		linkDiaryTags(entryId, ensureTagIds(tagNames, userId), userId);
+	const have = db
+		.select({ id: diaryEntryTags.id, tagId: diaryEntryTags.tagId })
+		.from(diaryEntryTags)
+		.where(and(eq(diaryEntryTags.entryId, entryId), eq(diaryEntryTags.userId, userId)))
+		.all();
+
+	const dropping = have.filter((row) => !wanted.has(row.tagId)).map((row) => row.id);
+	if (dropping.length > 0) {
+		db.delete(diaryEntryTags).where(inArray(diaryEntryTags.id, dropping)).run();
 	}
+
+	const already = new Set(have.map((row) => row.tagId));
+	const adding = [...wanted].filter((tagId) => !already.has(tagId));
+	if (adding.length > 0) linkDiaryTags(entryId, adding, userId);
 }
 
+/**
+ * Drop the labels nothing carries any more.
+ *
+ * Read from `CARRIERS` rather than from four hand-written queries: the four
+ * were diary, ideas, media and todos, so a word used only on a block of the
+ * week counted as referenced by nobody and was deleted the next time an
+ * unrelated note was edited. Now a join table cannot be left out of this
+ * without being left out of every other verb here too.
+ */
 export function cleanupOrphanTags(userId: string): void {
-	const diaryRefIds = db
-		.select({ tagId: diaryEntryTags.tagId })
-		.from(diaryEntryTags)
-		.innerJoin(tags, eq(diaryEntryTags.tagId, tags.id))
-		.where(eq(tags.userId, userId))
-		.all()
-		.map((r) => r.tagId);
-
-	const ideaRefIds = db
-		.select({ tagId: ideaTags.tagId })
-		.from(ideaTags)
-		.innerJoin(tags, eq(ideaTags.tagId, tags.id))
-		.where(eq(tags.userId, userId))
-		.all()
-		.map((r) => r.tagId);
-
-	const mediaRefIds = db
-		.select({ tagId: mediaTags.tagId })
-		.from(mediaTags)
-		.innerJoin(tags, eq(mediaTags.tagId, tags.id))
-		.where(eq(tags.userId, userId))
-		.all()
-		.map((r) => r.tagId);
-
-	const todoRefIds = db
-		.select({ tagId: todoTags.tagId })
-		.from(todoTags)
-		.innerJoin(tags, eq(todoTags.tagId, tags.id))
-		.where(eq(tags.userId, userId))
-		.all()
-		.map((r) => r.tagId);
-
 	const referencedIds = [
-		...new Set([...diaryRefIds, ...ideaRefIds, ...mediaRefIds, ...todoRefIds])
+		...new Set(
+			CARRIERS.flatMap((carrier) =>
+				db
+					.select({ tagId: carrier.table.tagId })
+					.from(carrier.table)
+					.innerJoin(tags, eq(carrier.table.tagId, tags.id))
+					.where(eq(tags.userId, userId))
+					.all()
+					.map((row) => row.tagId)
+			)
+		)
 	];
 
 	if (referencedIds.length === 0) {
@@ -137,20 +153,95 @@ export function replaceIdeaTags(ideaId: number, tagNames: string[], userId: stri
 	}
 }
 
-export function linkTodoTags(todoId: number, tagIds: number[], userId: string): void {
-	for (const tagId of tagIds) {
-		db.insert(todoTags).values({ userId, todoId, tagId }).run();
+/**
+ * The same three verbs for a block, recurring or one-off.
+ *
+ * A label belonged to the dateless task only, which made it a property of one
+ * shape of task rather than of a task: "everything about the move" could not
+ * include the three hours booked for it. The vocabulary is the one `tags`
+ * table either way — a word used on a task is the same word on a block.
+ */
+function blockJoin(kind: BlockKind) {
+	return kind === 'recurring' ? recurringTaskTags : exceptionalTaskTags;
+}
+
+export type BlockKind = 'recurring' | 'exceptional';
+
+/** A label and when it went on. The same shape a task's labels have. */
+export type Tag = { id: number; name: string; taggedAt: string | null };
+
+export function tagsForBlock(kind: BlockKind, taskId: number, userId: string): Tag[] {
+	const join = blockJoin(kind);
+	return db
+		.select({ id: tags.id, name: tags.name, taggedAt: join.taggedAt })
+		.from(join)
+		.innerJoin(tags, eq(join.tagId, tags.id))
+		.where(and(eq(join.taskId, taskId), eq(join.userId, userId)))
+		.orderBy(tags.name)
+		.all();
+}
+
+/** Set a block's labels to exactly these, keeping the dates of the survivors. */
+export function replaceBlockTags(
+	kind: BlockKind,
+	taskId: number,
+	tagNames: string[],
+	userId: string
+): void {
+	const join = blockJoin(kind);
+	const wanted = new Set(tagNames.length > 0 ? ensureTagIds(tagNames, userId) : []);
+
+	const have = db
+		.select({ id: join.id, tagId: join.tagId })
+		.from(join)
+		.where(and(eq(join.taskId, taskId), eq(join.userId, userId)))
+		.all();
+
+	const dropping = have.filter((row) => !wanted.has(row.tagId)).map((row) => row.id);
+	if (dropping.length > 0) db.delete(join).where(inArray(join.id, dropping)).run();
+
+	const already = new Set(have.map((row) => row.tagId));
+	const now = new Date().toISOString();
+	for (const tagId of wanted) {
+		if (already.has(tagId)) continue;
+		db.insert(join).values({ userId, taskId, tagId, taggedAt: now }).run();
 	}
 }
 
-export function replaceTodoTags(todoId: number, tagNames: string[], userId: string): void {
-	db.delete(todoTags)
-		.where(and(eq(todoTags.todoId, todoId), eq(todoTags.userId, userId)))
-		.run();
-
-	if (tagNames.length > 0) {
-		linkTodoTags(todoId, ensureTagIds(tagNames, userId), userId);
+export function linkTodoTags(todoId: number, tagIds: number[], userId: string): void {
+	const now = new Date().toISOString();
+	for (const tagId of tagIds) {
+		db.insert(todoTags).values({ userId, todoId, tagId, taggedAt: now }).run();
 	}
+}
+
+/**
+ * Set the labels to exactly these, without forgetting when the old ones went on.
+ *
+ * This used to delete every row and write them all back, which is the same
+ * answer and a different history: a label that had been there a week came back
+ * dated today, so "what was tagged since I last looked" was whatever had been
+ * edited since. Now only the difference moves — the ones going away are
+ * dropped, the new ones are dated, and a label that was already there is left
+ * exactly as it was.
+ */
+export function replaceTodoTags(todoId: number, tagNames: string[], userId: string): void {
+	const wanted = new Set(tagNames.length > 0 ? ensureTagIds(tagNames, userId) : []);
+
+	const have = db
+		.select({ id: todoTags.id, tagId: todoTags.tagId })
+		.from(todoTags)
+		.where(and(eq(todoTags.todoId, todoId), eq(todoTags.userId, userId)))
+		.all();
+
+	const dropping = have.filter((row) => !wanted.has(row.tagId)).map((row) => row.id);
+	if (dropping.length > 0) {
+		db.delete(todoTags).where(inArray(todoTags.id, dropping)).run();
+	}
+
+	const already = new Set(have.map((row) => row.tagId));
+	const adding = [...wanted].filter((tagId) => !already.has(tagId));
+	if (adding.length > 0) linkTodoTags(todoId, adding, userId);
 }
 
 export function linkMediaTags(mediaId: number, tagIds: number[], userId: string): void {
@@ -167,4 +258,230 @@ export function replaceMediaTags(mediaId: number, tagNames: string[], userId: st
 	if (tagNames.length > 0) {
 		linkMediaTags(mediaId, ensureTagIds(tagNames, userId), userId);
 	}
+}
+
+/**
+ * The account's one vocabulary, as a thing you can manage.
+ *
+ * A tag used to come into being by being typed into a box and never leave:
+ * no rename, no colour, no way off. These are the verbs for the Tags tab in
+ * the Notebooks room — the same word is on a task, a note, an idea, a block
+ * and a picture, so every one of them is account-wide by definition.
+ */
+
+/** As long as one label may be. Longer than anybody types, short enough to index. */
+export const MAX_TAG_NAME_LENGTH = 60;
+
+/** What `<input type="color">` produces, and nothing else. */
+const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+
+/**
+ * Every table that joins a tag to something that carries it.
+ *
+ * Written down once, because the verbs below all have to visit every one of
+ * them: a rename that merges, a delete that detaches, a count that says how
+ * much a word is doing. A seventh join table added without a line here is a
+ * room where labels quietly stop being managed, and nothing would fail.
+ *
+ * `owner` is what the row is *on* — the note, the task, the picture — which
+ * is what a merge needs to notice that one thing carries both labels.
+ */
+const CARRIERS = [
+	{ table: diaryEntryTags, owner: diaryEntryTags.entryId, taggedAt: diaryEntryTags.taggedAt },
+	{
+		table: exceptionalTaskTags,
+		owner: exceptionalTaskTags.taskId,
+		taggedAt: exceptionalTaskTags.taggedAt
+	},
+	{ table: ideaTags, owner: ideaTags.ideaId, taggedAt: null },
+	{ table: mediaTags, owner: mediaTags.mediaId, taggedAt: null },
+	{
+		table: recurringTaskTags,
+		owner: recurringTaskTags.taskId,
+		taggedAt: recurringTaskTags.taggedAt
+	},
+	{ table: todoTags, owner: todoTags.todoId, taggedAt: todoTags.taggedAt }
+];
+
+/** A label as the Tags screen reads it: what it is, its colour, and how much work it is doing. */
+export type TagSummary = { id: number; name: string; color: string | null; uses: number };
+
+/** The label as it is stored. */
+export type TagRow = { id: number; name: string; color: string | null };
+
+/** One name, normalised the way `TagInput` normalises what is typed into it. */
+function tagName(raw: unknown): string {
+	const words = parseTags(str(raw, 'name', { max: MAX_TAG_NAME_LENGTH }));
+	if (words.length === 0) throw new ValidationError('A tag needs a name');
+	// Commas and spaces are what separates two tags everywhere else in the app,
+	// so a rename to "urgent work" is two labels asking to be one.
+	if (words.length > 1) throw new ValidationError('A tag is one word — no spaces or commas');
+	return words[0];
+}
+
+/** `#rrggbb`, or null for the ones nobody has chosen a colour for. */
+function tagColor(raw: unknown): string | null {
+	if (raw === undefined || raw === null || raw === '') return null;
+	return str(raw, 'colour', { max: 7, pattern: HEX_COLOR }).toLowerCase();
+}
+
+function tagOf(id: number, userId: string): TagRow {
+	const found = db
+		.select({ id: tags.id, name: tags.name, color: tags.color })
+		.from(tags)
+		.where(and(eq(tags.id, id), eq(tags.userId, userId)))
+		.get();
+	// A stranger's id answers exactly as an id that was never there (I1).
+	if (!found) throw new NotFoundError('tag');
+	return found;
+}
+
+/** Every label the account has, alphabetically, with how many things carry each. */
+export function listTagsWithUses(userId: string): TagSummary[] {
+	const uses = new Map<number, number>();
+	for (const carrier of CARRIERS) {
+		const rows = db
+			.select({ tagId: carrier.table.tagId, n: count() })
+			.from(carrier.table)
+			.where(eq(carrier.table.userId, userId))
+			.groupBy(carrier.table.tagId)
+			.all();
+		for (const row of rows) uses.set(row.tagId, (uses.get(row.tagId) ?? 0) + Number(row.n));
+	}
+
+	return db
+		.select({ id: tags.id, name: tags.name, color: tags.color })
+		.from(tags)
+		.where(eq(tags.userId, userId))
+		.orderBy(tags.name)
+		.all()
+		.map((tag) => ({ ...tag, uses: uses.get(tag.id) ?? 0 }));
+}
+
+/**
+ * Give a label a colour, or take its colour away.
+ *
+ * Null is a real answer and not a missing one: most labels are words rather
+ * than colours, and a tag with no colour is drawn as the plain chip it has
+ * always been.
+ */
+export function recolorTag(userId: string, id: number, color: unknown): TagRow {
+	const tag = tagOf(id, userId);
+	const chosen = tagColor(color);
+	db.update(tags).set({ color: chosen }).where(eq(tags.id, tag.id)).run();
+	return { ...tag, color: chosen };
+}
+
+/**
+ * Rename a label — and if the new name is one the account already uses, merge
+ * into it rather than refusing.
+ *
+ * The unique index on (account, name) is what makes the vocabulary one
+ * vocabulary, and hitting it is exactly what somebody fixing a typo does:
+ * `worik` should become `work`, and `work` already exists. Refusing leaves
+ * two words meaning one thing, which is the state they were trying to get
+ * out of.
+ *
+ * Merging means: everything that carried the old label now carries the
+ * surviving one, and the old label stops existing. For a thing that carried
+ * *both* there is nothing to move — it is already labelled — so that join row
+ * goes, and the one that stays takes the earlier of the two dates, because
+ * that is when the thing actually started carrying this idea. The survivor
+ * keeps its own colour unless it never had one, in which case it inherits the
+ * colour of the label that is being folded into it: a colour that was chosen
+ * beats no choice at all.
+ */
+export function renameTag(userId: string, id: number, name: unknown): TagRow {
+	const tag = tagOf(id, userId);
+	const wanted = tagName(name);
+	if (wanted === tag.name) return tag;
+
+	const existing = db
+		.select({ id: tags.id, name: tags.name, color: tags.color })
+		.from(tags)
+		.where(and(eq(tags.name, wanted), eq(tags.userId, userId)))
+		.get();
+
+	if (!existing) {
+		db.update(tags).set({ name: wanted }).where(eq(tags.id, tag.id)).run();
+		return { ...tag, name: wanted };
+	}
+
+	for (const carrier of CARRIERS) {
+		const rows = db
+			.select({
+				id: carrier.table.id,
+				owner: carrier.owner,
+				tagId: carrier.table.tagId,
+				taggedAt: carrier.taggedAt ?? sql<string | null>`null`
+			})
+			.from(carrier.table)
+			.where(
+				and(eq(carrier.table.userId, userId), inArray(carrier.table.tagId, [tag.id, existing.id]))
+			)
+			.all();
+
+		const surviving = new Map<number, { id: number; taggedAt: string | null }>();
+		for (const row of rows)
+			if (row.tagId === existing.id)
+				surviving.set(row.owner, { id: row.id, taggedAt: row.taggedAt });
+
+		for (const row of rows) {
+			if (row.tagId !== tag.id) continue;
+			const already = surviving.get(row.owner);
+			if (!already) {
+				// Repointed rather than rewritten, so the date the label went on
+				// survives the rename.
+				db.update(carrier.table)
+					.set({ tagId: existing.id })
+					.where(eq(carrier.table.id, row.id))
+					.run();
+				continue;
+			}
+			if (
+				carrier.taggedAt &&
+				row.taggedAt &&
+				(!already.taggedAt || row.taggedAt < already.taggedAt)
+			)
+				db.update(carrier.table)
+					.set({ taggedAt: row.taggedAt })
+					.where(eq(carrier.table.id, already.id))
+					.run();
+			db.delete(carrier.table).where(eq(carrier.table.id, row.id)).run();
+		}
+	}
+
+	if (!existing.color && tag.color)
+		db.update(tags).set({ color: tag.color }).where(eq(tags.id, existing.id)).run();
+	db.delete(tags).where(eq(tags.id, tag.id)).run();
+
+	return { ...existing, color: existing.color ?? tag.color };
+}
+
+/**
+ * Take a label out of the vocabulary, and off everything that carried it.
+ *
+ * The join rows go explicitly rather than by cascade: the same statement then
+ * does the same thing whether or not foreign keys are on, which they are not
+ * during a migration.
+ */
+export function deleteTag(userId: string, id: number): void {
+	const tag = tagOf(id, userId);
+	for (const carrier of CARRIERS)
+		db.delete(carrier.table)
+			.where(and(eq(carrier.table.userId, userId), eq(carrier.table.tagId, tag.id)))
+			.run();
+	db.delete(tags).where(eq(tags.id, tag.id)).run();
+}
+
+/** The label the account calls this word, if it has one. */
+export function tagByName(userId: string, name: unknown): TagRow {
+	const wanted = tagName(name);
+	const found = db
+		.select({ id: tags.id, name: tags.name, color: tags.color })
+		.from(tags)
+		.where(and(eq(tags.name, wanted), eq(tags.userId, userId)))
+		.get();
+	if (!found) throw new NotFoundError('tag');
+	return found;
 }

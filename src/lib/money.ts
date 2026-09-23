@@ -24,7 +24,15 @@ export const CURRENCIES = ['BRL', 'EUR', 'GBP', 'USD', 'CHF', 'JPY', 'CAD', 'AUD
  */
 export type Currency = string;
 
-export const DEFAULT_CURRENCY: Currency = 'BRL';
+/**
+ * What an account is in until it says otherwise.
+ *
+ * Not the author's own currency: a stranger opening the demo, and anybody
+ * self-hosting who never visits Preferences, sees this one — and a shopfront
+ * quoting a currency the reader does not use reads as an app for somewhere
+ * else. It is a default and not a claim; Preferences takes any ISO 4217 code.
+ */
+export const DEFAULT_CURRENCY: Currency = 'USD';
 
 /**
  * Every currency this platform knows, which is ISO 4217.

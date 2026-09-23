@@ -9,19 +9,13 @@
  * not have them, so the computation is hand-written and this is what checks it.
  */
 import { execFileSync } from 'node:child_process';
-import {
-	cpSync,
-	mkdirSync,
-	mkdtempSync,
-	readFileSync,
-	rmSync,
-	symlinkSync,
-	writeFileSync
-} from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import Database from 'better-sqlite3';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+
+import { installMigrator } from './helpers/migrator';
 
 const ROOT = join(import.meta.dirname, '..');
 const work = mkdtempSync(join(tmpdir(), 'ontoplano-quantities-'));
@@ -41,11 +35,7 @@ function migrate() {
 let after: Database.Database;
 
 beforeAll(() => {
-	cpSync(join(ROOT, 'drizzle'), join(work, 'drizzle'), { recursive: true });
-	mkdirSync(join(work, 'scripts'), { recursive: true });
-	cpSync(join(ROOT, 'scripts/migrate.mjs'), join(work, 'scripts/migrate.mjs'));
-	cpSync(join(ROOT, 'scripts/db-snapshot.mjs'), join(work, 'scripts/db-snapshot.mjs'));
-	symlinkSync(join(ROOT, 'node_modules'), join(work, 'node_modules'));
+	installMigrator(work);
 
 	const journal = JSON.parse(readFileSync(JOURNAL, 'utf8'));
 	const at = journal.entries.findIndex((e: { tag: string }) => e.tag.startsWith('0058_'));

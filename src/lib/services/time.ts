@@ -1,4 +1,5 @@
 import type { Ctx } from './ctx.js';
+import { momentOf, timeOf, type When } from '../when.js';
 
 /**
  * Time, in the two shapes this app actually has.
@@ -80,6 +81,27 @@ export function localOfInstant(instant: Date, tz: string): string {
 }
 
 /**
+ * Minutes since midnight where the person is, not where the server is.
+ *
+ * `instant.getHours()` answers in the zone the Node process happens to run in,
+ * which on the box is UTC. Every screen that compares "now" with a time
+ * somebody typed — a block at 11:45, the next thing on the dashboard — was
+ * therefore three hours out for an account in São Paulo, and said so with
+ * confidence: "7 hours left" where the honest answer was ten.
+ */
+export function minutesOfDay(instant: Date, tz: string): number {
+	const clock = localOfInstant(instant, tz).slice(11, 16);
+	const [hours, minutes] = clock.split(':').map(Number);
+	return hours * 60 + minutes;
+}
+
+/** The hour and minute where the person is, as two numbers. */
+export function clockOfDay(instant: Date, tz: string): { hour: number; minute: number } {
+	const at = minutesOfDay(instant, tz);
+	return { hour: Math.floor(at / 60), minute: at % 60 };
+}
+
+/**
  * The timestamps an insert sets.
  *
  * The columns have SQL defaults, but `CURRENT_TIMESTAMP` writes
@@ -141,12 +163,18 @@ export function localDay(d: Date): string {
  * which day. The locale decides the order of the parts and what goes between
  * them, so nothing is joined by hand here.
  */
-export function instantInWords(iso: string, locale: string, now = new Date()): string {
+export function instantInWords(iso: string, when: When, now = new Date()): string {
 	const at = new Date(iso);
 	if (Number.isNaN(at.getTime())) return iso;
 
-	const clock = { hour: '2-digit', minute: '2-digit' } as const;
-	return at.toDateString() === now.toDateString()
-		? at.toLocaleTimeString(locale, clock)
-		: at.toLocaleString(locale, { day: 'numeric', month: 'short', ...clock });
+	/*
+	 * Whether today is today is asked in the reader's own zone.
+	 *
+	 * `toDateString` is the machine's, which for somebody three hours west of
+	 * the server means everything written after nine in the evening claims to
+	 * be from yesterday — and then says so, with a date nobody needed.
+	 */
+	const sameDay =
+		localOfInstant(at, when.tz).slice(0, 10) === localOfInstant(now, when.tz).slice(0, 10);
+	return sameDay ? timeOf(at, when) : momentOf(at, when, { year: undefined });
 }

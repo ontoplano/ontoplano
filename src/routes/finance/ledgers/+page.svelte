@@ -1,5 +1,8 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import Picker from '$lib/components/Picker.svelte';
+	import { dayStamp, monthOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
+	import { enhance } from '$lib/enhance';
 	import Swatch from '$lib/components/Swatch.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
@@ -18,6 +21,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -34,11 +38,7 @@
 	const CATEGORY_WASH_ALPHA = '2b';
 
 	/** `2026-02` as somebody would say it. */
-	const monthName = (key: string) =>
-		new Date(`${key}-01T00:00:00`).toLocaleDateString(t.locale, {
-			month: 'long',
-			year: 'numeric'
-		});
+	const monthName = (key: string) => monthOf(key, now(), { month: 'long', year: 'numeric' });
 	const money = (cents: number) => formatMoney(cents, currency);
 
 	type Ledger = PageServerData['ledgers'][number];
@@ -144,7 +144,9 @@
 		)
 	);
 	const asDecimal = (cents: number) => (Math.abs(cents) / 100).toFixed(2);
-	const today = new Date().toISOString().slice(0, 10);
+	// The reader's own day: `toISOString` is UTC, which is tomorrow for the
+	// last hours of every evening in São Paulo.
+	const today = $derived(dayStamp(new Date(), now()));
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
 	setRoomAction(() => ({
@@ -340,17 +342,15 @@
 					nothing. A list of the months there is something to look at is
 					native everywhere, and shorter.
 				-->
-				<select
-					class="select w-auto"
-					aria-label={t('finance.ledgers.month')}
-					value={data.month}
-					onchange={(e) => filter({ month: (e.currentTarget as HTMLSelectElement).value })}
-				>
-					<option value="">{t('finance.ledgers.everyMonth')}</option>
-					{#each data.months as m (m)}
-						<option value={m}>{monthName(m)}</option>
-					{/each}
-				</select>
+				<Picker
+					value={data.month ?? ''}
+					options={[
+						{ value: '', label: t('finance.ledgers.everyMonth') },
+						...data.months.map((m) => ({ value: m, label: monthName(m) }))
+					]}
+					onpick={(next) => filter({ month: next })}
+					label={t('finance.ledgers.month')}
+				/>
 				{#if data.query || data.month}
 					<button class="btn btn-sm" onclick={() => filter({ q: '', month: '' })}
 						>{t('finance.ledgers.clear')}</button

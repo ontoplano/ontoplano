@@ -14,6 +14,7 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 import { snapshot } from './db-snapshot.mjs';
+import { runDataSteps } from './data-steps.mjs';
 
 const path =
 	process.env.DATABASE_URL ||
@@ -125,6 +126,16 @@ try {
 		 * or three you had never heard of came in with a pull. The tags are the
 		 * answer and they are already in the journal.
 		 */
+		/*
+		 * And the handful of changes to the data itself, which SQL cannot say.
+		 *
+		 * After the schema and inside the same run, because a step exists to
+		 * finish what a migration started — the diary's renumbering leaves
+		 * references pointing at the old numbers until this has run. Each runs
+		 * once per database and says so; see `data-steps.mjs`.
+		 */
+		runDataSteps(client);
+
 		const applied = appliedCount() - before;
 		if (applied === 0) {
 			console.log('Database already up to date.');

@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { dateOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
+	import { enhance } from '$lib/enhance';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -14,6 +16,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -46,11 +49,7 @@
 	const kindLabel = mailKindLabel;
 
 	function when(iso: string): string {
-		return new Date(iso).toLocaleDateString(t.locale, {
-			day: 'numeric',
-			month: 'short',
-			year: 'numeric'
-		});
+		return dateOf(iso, now(), {});
 	}
 
 	function ago(iso: string): string {
@@ -318,6 +317,12 @@
 								<pre
 									class="mt-2 max-h-48 overflow-auto bg-gray-50 p-2 text-xs whitespace-pre-wrap text-gray-700">{report.stack}</pre>
 							{/if}
+							{#if report.build}
+								<!-- The build it happened on. A version alone would not do it:
+								     the version is not bumped per commit, so it names a dozen
+								     builds and "which code was this" stays unanswered. -->
+								<p class="tabular mt-2 text-xs text-gray-500">{report.build}</p>
+							{/if}
 							{#if report.userAgent}
 								<p class="mt-2 text-xs break-all text-gray-500">{report.userAgent}</p>
 							{/if}
@@ -326,133 +331,6 @@
 								<button class="btn btn-sm">{t('ui.dismiss')}</button>
 							</form>
 						</details>
-					{/each}
-				</div>
-			{/if}
-		</Card>
-
-		<!--
-			The layer in front of the app, in the one place somebody looks after
-			"is anything happening". Everything else on this page is something the
-			app did; this is what never reached it.
-		-->
-		<Card title={t('admin.blocked')} description={t('admin.whatFail2banHasTurnedAway')} flush>
-			{#if data.demo}
-				<!--
-					The addresses a box turned away are real people's, and the demo is
-					public. The card stays so the feature is visible; the list does not.
-				-->
-				<div class="px-4 py-3 text-sm text-gray-500">
-					<p class="text-gray-900">{t('admin.hiddenOnTheDemo')}</p>
-					<p class="mt-1">
-						{t('admin.onYourOwnInstanceThis')}
-					</p>
-				</div>
-			{:else if !data.protection.readable}
-				<div class="px-4 py-3 text-sm text-gray-500">
-					<p class="text-gray-900">{t('admin.nothingToReadHereYet')}</p>
-					<p class="mt-1">
-						{t('admin.thisInstanceCannotSee')}
-						<code class="text-xs">{data.protection.path}</code>{t('admin.onDebianAndUbuntu')}
-						<code class="text-xs">{t('admin.adm')}</code>
-						{t('admin.group')}
-					</p>
-					<pre class="mt-2 overflow-x-auto text-xs">{t('admin.sudoUsermodAgAdmWhoami')}</pre>
-					<p class="mt-1">
-						{t('admin.theSecondCommandMattersEven')}
-					</p>
-				</div>
-			{:else if data.protection.recent.length === 0}
-				<EmptyState icon="shield" title={t('admin.nobodyHasBeenTurnedAway')} />
-			{:else}
-				{#if !data.canControlBans}
-					<!--
-						What the instance cannot do, and nothing about how to change
-						that: this page belongs to whoever runs the instance, and it is
-						not the place to explain somebody's server to them.
-					-->
-					<p class="border-b border-gray-200 px-4 py-2 text-xs text-gray-500">
-						{t('admin.readOnlyThisInstanceCannotUnban')}
-					</p>
-				{/if}
-				<p class="border-b border-gray-200 px-4 py-2 text-xs text-gray-500">
-					{t('admin.blockedInTheLast', {
-						lastDay: data.protection.lastDay,
-						addresses: data.protection.lastDay === 1 ? 'address' : 'addresses'
-					})}
-				</p>
-				<div class="divide-y divide-gray-200">
-					{#each data.protection.recent as ban (ban.at + ban.address)}
-						<div class="flex items-baseline gap-2 px-4 py-2 text-sm">
-							<span class="min-w-0 flex-1">
-								<span class="tabular text-gray-900">{ban.address}</span>
-								<span class="block text-xs text-gray-500">{ban.reason}</span>
-								<!--
-									"Blocked" with no duration reads as "blocked forever", which
-									is the one thing it never means: every jail has a bantime.
-									Whether it is still out, and for how long, is the fact.
-								-->
-								<span class="block text-xs {ban.active ? 'text-gray-600' : 'text-gray-500'}">
-									{#if ban.active}
-										{t('admin.stillBlocked')} {ban.held} {t('admin.soFar')}
-									{:else}
-										{t('admin.letBackInAfter')} {ban.held}
-									{/if}
-									<!--
-										One ban is a scanner passing through; the ninth is
-										somebody working at it, and that is the row worth
-										blocking for good. The list only shows the last few, so
-										without this a repeat offender reads as a first-timer.
-									-->
-									{#if ban.times > 1}
-										· <strong class="font-medium"
-											>{t('admin.inThisLog', { times: ban.times })}</strong
-										>
-									{/if}
-								</span>
-							</span>
-							<span class="shrink-0 text-xs text-gray-500">{ago(ban.at)}</span>
-
-							<!--
-								Only where the box has been given the one sudo rule that lets
-								the app act. Elsewhere the list is a record and nothing more,
-								which is honest — buttons that always fail are worse than no
-								buttons.
-							-->
-							{#if data.canControlBans}
-								{@const forever = data.blockedForever.includes(ban.address)}
-								<div class="flex shrink-0 gap-1">
-									{#if ban.active}
-										<form method="post" action="?/unban" use:enhance>
-											<input type="hidden" name="jail" value={ban.jail} />
-											<input type="hidden" name="address" value={ban.address} />
-											<button class="btn btn-sm" title={t('admin.letThisAddressBackIn')}>
-												{t('admin.unban')}
-											</button>
-										</form>
-									{/if}
-									{#if forever}
-										<form method="post" action="?/unblockForever" use:enhance>
-											<input type="hidden" name="address" value={ban.address} />
-											<button class="btn btn-sm" title={t('admin.liftThePermanentBlock')}>
-												{t('admin.liftBlock')}
-											</button>
-										</form>
-									{:else}
-										<form method="post" action="?/blockForever" use:enhance>
-											<input type="hidden" name="address" value={ban.address} />
-											<button
-												class="btn btn-sm btn-danger"
-												use:armed
-												title={t('admin.outForGoodSurvives')}
-											>
-												{t('admin.blockForGood')}
-											</button>
-										</form>
-									{/if}
-								</div>
-							{/if}
-						</div>
 					{/each}
 				</div>
 			{/if}

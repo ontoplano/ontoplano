@@ -204,7 +204,7 @@ const todo = (title, extra = {}) => {
 	}
 	const id = run(
 		`insert into todo_tasks
-		 (user_id, title, notes, status, completed, scheduled_date, category_id, urgency, interest, energy, sort_order)
+		 (user_id, title, notes, status, completed, scheduled_date, category_id, urgency, interest, ease, sort_order)
 		 values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		uid,
 		title,
@@ -215,7 +215,7 @@ const todo = (title, extra = {}) => {
 		extra.categoryId ?? null,
 		extra.urgency ?? null,
 		extra.interest ?? null,
-		extra.energy ?? null,
+		extra.ease ?? null,
 		extra.sortOrder ?? 0
 	);
 	tagTodo(id, extra.tags ?? []);
@@ -237,13 +237,18 @@ const notebook = (title, description, closed = false) => {
 	);
 };
 
+/** The tables whose rows are numbered inside their notebook as well as overall. */
+const NUMBERED_IN_NOTEBOOK = ['diary_entries', 'todo_tasks'];
+
 /** Point an already-seeded row at a notebook, by whatever identifies it here. */
 const inNotebook = (table, column, value, notebookId) => {
+	const numbered = NUMBERED_IN_NOTEBOOK.includes(table);
+
 	// The number goes with the notebook: (notebook_id, notebook_seq) is unique,
 	// so carrying an old number into a new notebook collides with whatever
 	// already holds it there. Cleared in the same statement that moves it.
 	run(
-		`update ${table} set notebook_id = ?${table === 'diary_entries' ? ', notebook_seq = null' : ''} where user_id = ? and ${column} = ?`,
+		`update ${table} set notebook_id = ?${numbered ? ', notebook_seq = null' : ''} where user_id = ? and ${column} = ?`,
 		notebookId,
 		uid,
 		value
@@ -255,17 +260,21 @@ const inNotebook = (table, column, value, notebookId) => {
 	// So the whole notebook is renumbered, cleared first — an UPDATE walks the
 	// rows one at a time and would otherwise trip over a number it has not
 	// reached yet.
-	if (table === 'diary_entries') {
+	//
+	// Tasks are numbered the same way, and were not: a seeded notebook's tasks
+	// had no number on their cards, and `TASK:#4` in a note beside them
+	// pointed at nothing.
+	if (numbered) {
 		run(
-			'update diary_entries set notebook_seq = null where user_id = ? and notebook_id = ?',
+			`update ${table} set notebook_seq = null where user_id = ? and notebook_id = ?`,
 			uid,
 			notebookId
 		);
 		const inBook = db
-			.prepare('select id from diary_entries where user_id = ? and notebook_id = ? order by id')
+			.prepare(`select id from ${table} where user_id = ? and notebook_id = ? order by id`)
 			.all(uid, notebookId);
 		inBook.forEach((row, i) => {
-			db.prepare('update diary_entries set notebook_seq = ? where id = ?').run(i + 1, row.id);
+			db.prepare(`update ${table} set notebook_seq = ? where id = ?`).run(i + 1, row.id);
 		});
 	}
 };
@@ -316,16 +325,22 @@ const tagTodo = (id, names) => {
 	}
 };
 
-const diary = (seq, content, tags = [], forDate = null) => {
+/*
+ * `pinned` puts one at the top of its notebook, because a seeded instance
+ * that has never pinned anything does not show that a notebook can have a
+ * thing worth keeping above the rest of it.
+ */
+const diary = (seq, content, tags = [], forDate = null, extra = {}) => {
 	const existing = one('select id from diary_entries where user_id = ? and seq = ?', uid, seq);
 	const id =
 		existing?.id ??
 		run(
-			'insert into diary_entries (user_id, seq, content, for_date) values (?, ?, ?, ?)',
+			'insert into diary_entries (user_id, seq, content, for_date, pinned_at) values (?, ?, ?, ?, ?)',
 			uid,
 			seq,
 			content,
-			forDate
+			forDate,
+			extra.pinned ? stamp(dayOffset(-1)) : null
 		);
 	for (const name of tags) {
 		const tagId = tag(name);
@@ -462,8 +477,9 @@ const shoppingItem = (name, type, extra = {}) => {
 	const bought = qty >= Math.max(ideal, 1);
 	return run(
 		`insert into inventory_items
-		 (user_id, name, type, inventory_category_id, notes, qty, ideal_qty, bought, bought_at, snoozed)
-		 values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		 (user_id, name, type, inventory_category_id, notes, qty, ideal_qty, bought, bought_at, snoozed,
+		  attributes)
+		 values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		uid,
 		name,
 		type,
@@ -473,7 +489,15 @@ const shoppingItem = (name, type, extra = {}) => {
 		ideal,
 		bought ? 1 : 0,
 		bought ? stamp(dayOffset(-2)) : null,
-		extra.snoozed ? 1 : 0
+		extra.snoozed ? 1 : 0,
+		/*
+		 * Attributes, because a seeded instance is meant to show what the app
+		 * does and an item with none shows a list of bare names. The cable
+		 * drawer is the case the feature was asked for: a length, a material
+		 * and a speed that can be filtered and compared rather than four
+		 * labels that cannot.
+		 */
+		JSON.stringify(extra.attributes ?? {})
 	);
 };
 
@@ -873,13 +897,13 @@ todo('call the dentist', {
 	tags: ['health', 'phone'],
 	urgency: 4,
 	interest: 1,
-	energy: 2,
+	ease: 2,
 	categoryId: personal,
 	sortOrder: 1
 });
 todo('buy running shoes', {
 	interest: 4,
-	energy: 2,
+	ease: 2,
 	categoryId: health,
 	sortOrder: 2,
 	tags: ['shopping']
@@ -887,7 +911,7 @@ todo('buy running shoes', {
 todo('renew the domain', {
 	tags: ['a1', 'done'],
 	urgency: 5,
-	energy: 1,
+	ease: 1,
 	categoryId: work,
 	scheduledDate: today,
 	sortOrder: 3
@@ -963,10 +987,14 @@ linkGoal(yearGoal, { activityId: russian });
 
 // --- diary, ideas ----------------------------------------------------------------
 
-diary(1, 'Started using the planner properly. Blocked out the mornings for deep work.', [
-	'planning',
-	'work'
-]);
+diary(
+	1,
+	'Started using the planner properly. Blocked out the mornings for deep work.',
+	['planning', 'work'],
+	null,
+	// Pinned, so a seeded notebook shows that one note can be kept above the rest.
+	{ pinned: true }
+);
 diary(2, 'Gym twice this week with João. The evening slot works better than mornings.', ['health']);
 diary(
 	3,
@@ -1133,23 +1161,99 @@ shoppingItem('coffee beans', 'replenish', {
 	categoryId: pantry,
 	notes: 'the dark roast',
 	qty: 1,
-	ideal: 2
+	ideal: 2,
+	attributes: { brand: 'Emberdal', roast: 'dark', weight: '500g', origin: 'Halvern Ridge' }
 });
-shoppingItem('olive oil', 'replenish', { categoryId: pantry, qty: 0, ideal: 1 });
-shoppingItem('rice', 'replenish', { categoryId: pantry, qty: 2, ideal: 2 });
-shoppingItem('milk', 'replenish', { categoryId: fresh, qty: 0, ideal: 2 });
-shoppingItem('eggs', 'replenish', { categoryId: fresh, qty: 6, ideal: 6 });
-shoppingItem('tomatoes', 'replenish', { categoryId: fresh, qty: 1, ideal: 4 });
-shoppingItem('dish soap', 'replenish', { categoryId: household, qty: 2, ideal: 3 });
+shoppingItem('olive oil', 'replenish', {
+	categoryId: pantry,
+	qty: 0,
+	ideal: 1,
+	attributes: { brand: 'Stonegrove', weight: '500ml', origin: 'Verrin Coast' }
+});
+shoppingItem('rice', 'replenish', {
+	categoryId: pantry,
+	qty: 2,
+	ideal: 2,
+	attributes: { brand: 'Harvestone', weight: '1kg', variety: 'parboiled' }
+});
+shoppingItem('milk', 'replenish', {
+	categoryId: fresh,
+	qty: 0,
+	ideal: 2,
+	attributes: { brand: 'Meadowline', weight: '1L', variety: 'semi-skimmed' }
+});
+shoppingItem('eggs', 'replenish', {
+	categoryId: fresh,
+	qty: 6,
+	ideal: 6,
+	attributes: { variety: 'free range', size: 'large' }
+});
+shoppingItem('tomatoes', 'replenish', {
+	categoryId: fresh,
+	qty: 1,
+	ideal: 4,
+	attributes: { variety: 'plum', weight: '1kg' }
+});
+shoppingItem('dish soap', 'replenish', {
+	categoryId: household,
+	qty: 2,
+	ideal: 3,
+	attributes: { brand: 'Brightwell', weight: '500ml', scent: 'neutral' }
+});
 shoppingItem('lightbulbs', 'replenish', {
 	categoryId: household,
 	snoozed: true,
 	qty: 0,
-	ideal: 2
+	ideal: 2,
+	attributes: { fitting: 'E27', power: '9W', colour: 'warm white', brand: 'Halovex' }
 });
-shoppingItem('a proper desk chair', 'someday', { notes: 'try one before buying' });
-shoppingItem('noise-cancelling headphones', 'someday');
-shoppingItem('cast iron pan', 'someday', { bought: true });
+shoppingItem('a proper desk chair', 'someday', {
+	notes: 'try one before buying',
+	attributes: { budget: '1200', material: 'mesh', colour: 'grey' }
+});
+shoppingItem('noise-cancelling headphones', 'someday', {
+	attributes: { budget: '1800', brand: 'Quietvale', colour: 'black' }
+});
+shoppingItem('cast iron pan', 'someday', {
+	bought: true,
+	attributes: { material: 'cast iron', size: '26cm', brand: 'Ironcrest' }
+});
+
+/*
+ * A drawer of cables, which is the case attributes were asked for.
+ *
+ * The same key reused across several items is the whole point — three things
+ * with a `length`, two with a `material` — because that is what turns "every
+ * 2m cable" into a question the list can answer rather than four labels that
+ * cannot be compared.
+ *
+ * Lower case, like every other attribute this file writes. The app completes
+ * a key from the ones already used, and `Length` beside `length` is exactly
+ * the drift that completion exists to stop — a seeded instance that shows
+ * both teaches the wrong habit on the first screen somebody opens.
+ */
+const drawer = shoppingCategory('the drawer', 4);
+shoppingItem('USB-C to USB-C cable', 'keep', {
+	categoryId: drawer,
+	qty: 3,
+	attributes: {
+		plug: 'USB-C',
+		length: '2m',
+		speed: '480Mbps',
+		colour: 'white',
+		material: 'silicone'
+	}
+});
+shoppingItem('USB-A to USB-C cable', 'keep', {
+	categoryId: drawer,
+	qty: 2,
+	attributes: { plug: 'USB-A to USB-C', length: '1m', speed: '480Mbps', colour: 'black' }
+});
+shoppingItem('extension lead', 'keep', {
+	categoryId: drawer,
+	qty: 1,
+	attributes: { length: '5m', colour: 'white', sockets: '4', material: 'rubber' }
+});
 
 // --- bills (finance) --------------------------------------------------------------
 //
@@ -1165,7 +1269,7 @@ const bill = (name, amountExpected, extra = {}) => {
 		uid,
 		name,
 		amountExpected,
-		extra.currency ?? 'BRL',
+		extra.currency ?? 'USD',
 		extra.dueDay ?? null,
 		extra.payLeadDays ?? 0,
 		extra.rhythm ?? 'monthly',
@@ -1182,7 +1286,7 @@ const billPaid = (billId, period, amountExpected, amountPaid) => {
 		period,
 		amountExpected,
 		amountPaid,
-		'BRL'
+		'USD'
 	);
 };
 
@@ -1229,7 +1333,7 @@ const income = (name, amountExpected, extra = {}) => {
 		uid,
 		name,
 		amountExpected,
-		extra.currency ?? 'BRL',
+		extra.currency ?? 'USD',
 		extra.dueDay ?? null,
 		extra.rhythm ?? 'monthly'
 	);
@@ -1254,20 +1358,22 @@ const ledger = (name, kind, defaultParser) => {
 	);
 };
 
-const account = ledger('Current account', 'bank', 'nubank:conta_corrente');
-const creditCard = ledger('Credit card', 'card', 'nubank:credit_card_month');
+const account = ledger('Current account', 'bank', 'csv:columns');
+const creditCard = ledger('Credit card', 'card', 'csv:columns');
 
 /*
- * The movements, taken from the two exports Estevão actually has.
+ * The movements.
  *
  * Written as rows rather than as CSV text put through the parsers, because
  * this file is rsynced to the staging box on its own and has to run with
  * nothing but better-sqlite3 — importing the app's parsers would break the
- * hourly reset. The parsers are exercised against these same two shapes in
- * `tests/finance-statements.test.ts`, which is where that fidelity belongs.
+ * hourly reset. Both ledgers are seeded against the generic column parser, so
+ * nothing here is tied to one bank's export; the written parsers are exercised
+ * against real export shapes in `tests/finance-statements.test.ts`, which is
+ * where that fidelity belongs.
  *
  * Both signs as the app stores them: negative left the account, and a card
- * charge (positive in Nubank's export) is money leaving.
+ * charge is money leaving whichever sign the export wrote it with.
  */
 const movement = (ledgerId, occurredOn, amountCents, description, n = 1) => {
 	const fingerprint = `${ledgerId}|seed:${occurredOn}:${amountCents}:${description}:${n}`;
@@ -1286,12 +1392,12 @@ const movement = (ledgerId, occurredOn, amountCents, description, n = 1) => {
 		occurredOn,
 		amountCents,
 		description,
-		ledgerId === creditCard ? 'nubank:credit_card_month' : 'nubank:conta_corrente',
+		'csv:columns',
 		fingerprint
 	);
 };
 
-// The account, as `Data,Valor,Identificador,Descrição` reads it.
+// The account, as a `date,amount,id,description` export reads it.
 //
 // Three months of a life rather than three lines repeated: the salary and the
 // bills do come back every month, which is the point of a ledger, but a
@@ -1300,132 +1406,107 @@ const movement = (ledgerId, occurredOn, amountCents, description, n = 1) => {
 // box has nothing to find. So the recurring ones recur and everything else is
 // what a month actually has in it. The two December/January lines are there so
 // the list crosses a year and shows the band that says which one.
-movement(account, '2025-12-28', -9000, 'Bar do Ponto');
-movement(account, '2026-01-01', -4250, 'Farmácia do Bairro');
+movement(account, '2025-12-28', -9000, 'Corner Tap Bar');
+movement(account, '2026-01-01', -4250, 'Northgate Pharmacy');
 
 // July
-movement(account, '2026-07-02', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
-movement(account, '2026-07-03', -5000, 'Transferência enviada pelo Pix - Ontoplano - apoio mensal');
-movement(account, '2026-07-05', -180000, 'Pagamento de boleto - Aluguel Imobiliária Vista');
-movement(account, '2026-07-06', -22000, 'Débito automático - Sítio Terra Viva - cesta semanal');
-movement(account, '2026-07-07', -13500, 'Débito automático - Águas da Cidade');
-movement(account, '2026-07-08', -14000, 'Débito automático - Bloco Escalada Indoor');
-movement(account, '2026-07-09', -9990, 'Débito automático - Fibra Boa Onda');
-movement(account, '2026-07-10', -45900, 'Pagamento de boleto - Plano Vitalis');
-movement(
-	account,
-	'2026-07-11',
-	-6000,
-	'Transferência enviada pelo Pix - Racha de Quinta - mensalidade'
-);
-movement(account, '2026-07-12', -15990, 'Pagamento de boleto - Companhia de Energia');
-movement(account, '2026-07-14', -21000, 'Compra no débito - Posto Bandeirante');
-movement(
-	account,
-	'2026-07-16',
-	-38400,
-	'Pagamento de boleto - Madeireira São Jorge - tábuas de cedro'
-);
-movement(account, '2026-07-17', 32000, 'Estorno de compra - Loja Cometa');
-movement(account, '2026-07-19', -9700, 'Compra no débito - Floricultura Raiz');
-movement(account, '2026-07-21', -8000, 'Saque - Caixa Eletrônico Terminal 4412');
+movement(account, '2026-07-02', 850000, 'Transfer received - Arclight Systems - payroll');
+movement(account, '2026-07-03', -5000, 'Transfer sent - Ontoplano - monthly support');
+movement(account, '2026-07-05', -180000, 'Bill payment - Rent, Vista Lettings');
+movement(account, '2026-07-06', -22000, 'Direct debit - Hollowbrook Farm - weekly box');
+movement(account, '2026-07-07', -13500, 'Direct debit - Clearwater Utilities');
+movement(account, '2026-07-08', -14000, 'Direct debit - Summit Indoor Climbing');
+movement(account, '2026-07-09', -9990, 'Direct debit - Brightline Fibre');
+movement(account, '2026-07-10', -45900, 'Bill payment - Meridian Health Cover');
+movement(account, '2026-07-11', -6000, 'Transfer sent - Thursday Five-a-side - monthly dues');
+movement(account, '2026-07-12', -15990, 'Bill payment - Ridgeline Ease');
+movement(account, '2026-07-14', -21000, 'Debit card purchase - Milepost Fuel');
+movement(account, '2026-07-16', -38400, 'Bill payment - Northwood Timber - cedar boards');
+movement(account, '2026-07-17', 32000, 'Purchase refund - Halden Goods');
+movement(account, '2026-07-19', -9700, 'Debit card purchase - Rootwork Florist');
+movement(account, '2026-07-21', -8000, 'Cash withdrawal - ATM Terminal 4412');
 movement(
 	account,
 	'2026-07-24',
 	-25000,
-	'Transferência enviada pelo Pix - Dona Cleide - •••.447.201-•• - BANCO DO PORTO (0999) Agência: 3712 Conta: 04418-2'
+	'Transfer sent - Cleo Hartman - •••.447.201-•• - NORTHBAY TRUST (0999) Branch: 3712 Account: 04418-2'
 );
-movement(account, '2026-07-28', -300000, 'Aplicação - CDB Renda Fixa 2029');
-movement(
-	account,
-	'2026-07-30',
-	-18900,
-	'Pagamento de boleto - Clínica Veterinária Miau - vacina anual'
-);
+movement(account, '2026-07-28', -300000, 'Savings deposit - Fixed income note 2029');
+movement(account, '2026-07-30', -18900, 'Bill payment - Miller Lane Veterinary - annual vaccines');
 
 // August
-movement(account, '2026-08-03', -5000, 'Transferência enviada pelo Pix - Ontoplano - apoio mensal');
-movement(account, '2026-08-05', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
-movement(account, '2026-08-05', -180000, 'Pagamento de boleto - Aluguel Imobiliária Vista');
-movement(account, '2026-08-06', -22000, 'Débito automático - Sítio Terra Viva - cesta semanal');
-movement(account, '2026-08-07', -14120, 'Débito automático - Águas da Cidade');
-movement(account, '2026-08-08', -14000, 'Débito automático - Bloco Escalada Indoor');
-movement(account, '2026-08-09', -9990, 'Débito automático - Fibra Boa Onda');
-movement(account, '2026-08-10', -45900, 'Pagamento de boleto - Plano Vitalis');
-movement(
-	account,
-	'2026-08-11',
-	-6000,
-	'Transferência enviada pelo Pix - Racha de Quinta - mensalidade'
-);
-movement(account, '2026-08-12', -16240, 'Pagamento de boleto - Companhia de Energia');
-movement(account, '2026-08-13', 45000, 'Transferência recebida pelo Pix - Marco Duarte');
-movement(account, '2026-08-15', -27300, 'Compra no débito - Serralheria e Ferramentas Bitencourt');
+movement(account, '2026-08-03', -5000, 'Transfer sent - Ontoplano - monthly support');
+movement(account, '2026-08-05', 850000, 'Transfer received - Arclight Systems - payroll');
+movement(account, '2026-08-05', -180000, 'Bill payment - Rent, Vista Lettings');
+movement(account, '2026-08-06', -22000, 'Direct debit - Hollowbrook Farm - weekly box');
+movement(account, '2026-08-07', -14120, 'Direct debit - Clearwater Utilities');
+movement(account, '2026-08-08', -14000, 'Direct debit - Summit Indoor Climbing');
+movement(account, '2026-08-09', -9990, 'Direct debit - Brightline Fibre');
+movement(account, '2026-08-10', -45900, 'Bill payment - Meridian Health Cover');
+movement(account, '2026-08-11', -6000, 'Transfer sent - Thursday Five-a-side - monthly dues');
+movement(account, '2026-08-12', -16240, 'Bill payment - Ridgeline Ease');
+movement(account, '2026-08-13', 45000, 'Transfer received - Marcus Reid');
+movement(account, '2026-08-15', -27300, 'Debit card purchase - Ironway Tools & Metalwork');
 movement(
 	account,
 	'2026-08-18',
 	-120000,
-	'Transferência enviada pelo Pix - Zé Cova - •••.821.910-•• - PAGAMENTOS ORIÓN - IP (0998) Agência: 1 Conta: 89023719-0'
+	'Transfer sent - J. Kovac - •••.821.910-•• - ORION PAYMENTS (0998) Branch: 1 Account: 89023719-0'
 );
-movement(account, '2026-08-20', -18700, 'Compra no débito - Posto Bandeirante');
-movement(account, '2026-08-22', -64300, 'Pagamento de boleto - IPVA 2026 parcela 3/3');
-movement(account, '2026-08-26', -11200, 'Compra no débito - Pet Shop Focinho Feliz');
-movement(account, '2026-08-29', -300000, 'Aplicação - CDB Renda Fixa 2029');
+movement(account, '2026-08-20', -18700, 'Debit card purchase - Milepost Fuel');
+movement(account, '2026-08-22', -64300, 'Bill payment - Vehicle tax 2026 instalment 3/3');
+movement(account, '2026-08-26', -11200, 'Debit card purchase - Paws & Whiskers Pet Shop');
+movement(account, '2026-08-29', -300000, 'Savings deposit - Fixed income note 2029');
 
 // September
-movement(account, '2026-09-03', -5000, 'Transferência enviada pelo Pix - Ontoplano - apoio mensal');
-movement(account, '2026-09-05', 850000, 'Transferência recebida pelo Pix - ACME LTDA');
-movement(account, '2026-09-05', -180000, 'Pagamento de boleto - Aluguel Imobiliária Vista');
-movement(account, '2026-09-06', -22000, 'Débito automático - Sítio Terra Viva - cesta semanal');
-movement(account, '2026-09-07', -12880, 'Débito automático - Águas da Cidade');
-movement(account, '2026-09-08', -14000, 'Débito automático - Bloco Escalada Indoor');
-movement(account, '2026-09-09', -15880, 'Pagamento de boleto - Companhia de Energia');
-movement(account, '2026-09-09', -9990, 'Débito automático - Fibra Boa Onda');
-movement(account, '2026-09-10', -45900, 'Pagamento de boleto - Plano Vitalis');
-movement(account, '2026-09-11', 120000, 'Transferência recebida pelo Pix - Restituição IRPF');
-movement(
-	account,
-	'2026-09-11',
-	-6000,
-	'Transferência enviada pelo Pix - Racha de Quinta - mensalidade'
-);
-movement(account, '2026-09-12', -7600, 'Compra no débito - Feira da Praça');
+movement(account, '2026-09-03', -5000, 'Transfer sent - Ontoplano - monthly support');
+movement(account, '2026-09-05', 850000, 'Transfer received - Arclight Systems - payroll');
+movement(account, '2026-09-05', -180000, 'Bill payment - Rent, Vista Lettings');
+movement(account, '2026-09-06', -22000, 'Direct debit - Hollowbrook Farm - weekly box');
+movement(account, '2026-09-07', -12880, 'Direct debit - Clearwater Utilities');
+movement(account, '2026-09-08', -14000, 'Direct debit - Summit Indoor Climbing');
+movement(account, '2026-09-09', -15880, 'Bill payment - Ridgeline Ease');
+movement(account, '2026-09-09', -9990, 'Direct debit - Brightline Fibre');
+movement(account, '2026-09-10', -45900, 'Bill payment - Meridian Health Cover');
+movement(account, '2026-09-11', 120000, 'Transfer received - Tax refund');
+movement(account, '2026-09-11', -6000, 'Transfer sent - Thursday Five-a-side - monthly dues');
+movement(account, '2026-09-12', -7600, 'Debit card purchase - Riverside Farmers Market');
 
 // And the card, as `date,title,amount` reads it — charges, so all outgoing.
 // The same shape of variety, and for the same reason: a card statement where
 // every line is the supermarket is a card statement nobody has.
-movement(creditCard, '2026-07-04', -8600, 'Casa do Jardineiro - mudas e substrato');
-movement(creditCard, '2026-07-08', -19900, 'Mercado Bom Preço');
+movement(creditCard, '2026-07-04', -8600, 'The Potting Shed - seedlings and compost');
+movement(creditCard, '2026-07-08', -19900, 'Fairmount Supermarket');
 movement(creditCard, '2026-07-11', -3990, 'Sonora Streaming');
-movement(creditCard, '2026-07-13', -5590, 'Cinefila.tv');
-movement(creditCard, '2026-07-15', -7400, 'Padaria Estrela');
-movement(creditCard, '2026-07-17', -16800, 'Açougue do Zeca - corte do sítio');
-movement(creditCard, '2026-07-18', -8900, 'Corrida *Vaivem');
-movement(creditCard, '2026-07-19', -13400, 'Drogaria Bom Dia');
-movement(creditCard, '2026-07-20', -24900, 'Ferramentas Boa Lâmina - formão e goiva');
-movement(creditCard, '2026-07-22', -9800, 'Bloco Escalada Indoor - sapatilha');
-movement(creditCard, '2026-07-25', -4780, 'Delivery *Cantina da Vó');
-movement(creditCard, '2026-07-27', -29900, 'Loja Online Tucano');
-movement(creditCard, '2026-08-02', -13900, 'Pet Center - areia e ração dos dois');
-movement(creditCard, '2026-08-06', -18740, 'Mercado Bom Preço');
-movement(creditCard, '2026-08-09', -4200, 'Hortifruti da Esquina');
+movement(creditCard, '2026-07-13', -5590, 'Reelbox.tv');
+movement(creditCard, '2026-07-15', -7400, 'Starling Bakery');
+movement(creditCard, '2026-07-17', -16800, 'Alder Street Butcher - farm cut');
+movement(creditCard, '2026-07-18', -8900, 'Ride *Wayfare');
+movement(creditCard, '2026-07-19', -13400, 'Daybreak Chemist');
+movement(creditCard, '2026-07-20', -24900, 'Keenedge Tools - chisel and gouge');
+movement(creditCard, '2026-07-22', -9800, 'Summit Indoor Climbing - shoes');
+movement(creditCard, '2026-07-25', -4780, 'Delivery *Copper Pot Bistro');
+movement(creditCard, '2026-07-27', -29900, 'Kestrel Online Store');
+movement(creditCard, '2026-08-02', -13900, 'Pet Center - litter and food for both');
+movement(creditCard, '2026-08-06', -18740, 'Fairmount Supermarket');
+movement(creditCard, '2026-08-09', -4200, 'Corner Greengrocer');
 movement(creditCard, '2026-08-11', -3990, 'Sonora Streaming');
-movement(creditCard, '2026-08-12', -6700, 'Casa do Jardineiro - sementes de manjericão');
-movement(creditCard, '2026-08-13', -5590, 'Cinefila.tv');
-movement(creditCard, '2026-08-14', -1000, 'Casa - do caralho');
-movement(creditCard, '2026-08-16', -11250, 'Cine Palácio');
-movement(creditCard, '2026-08-17', -21900, 'Chuteira Store - travinha');
-movement(creditCard, '2026-08-19', -2390, 'Assinatura *Nuvem');
-movement(creditCard, '2026-08-19', -2390, 'Assinatura *Nuvem', 2);
-movement(creditCard, '2026-08-21', -9800, 'Delivery *Sushi Kenzo');
-movement(creditCard, '2026-08-23', -5400, 'Bloco Escalada Indoor - magnésio');
-movement(creditCard, '2026-08-27', -15600, 'Vestir Roupas');
-movement(creditCard, '2026-09-02', -8300, 'Corrida *Vaivem');
-movement(creditCard, '2026-09-04', -12400, 'Madeireira São Jorge - lixas e verniz');
-movement(creditCard, '2026-09-06', -21300, 'Mercado Bom Preço');
-movement(creditCard, '2026-09-07', -13900, 'Pet Center - areia e ração dos dois');
-movement(creditCard, '2026-09-08', -5100, 'Hortifruti da Esquina');
-movement(creditCard, '2026-09-09', -17600, 'Açougue do Zeca - corte do sítio');
+movement(creditCard, '2026-08-12', -6700, 'The Potting Shed - basil seeds');
+movement(creditCard, '2026-08-13', -5590, 'Reelbox.tv');
+movement(creditCard, '2026-08-14', -1000, 'Homeware - odds and ends');
+movement(creditCard, '2026-08-16', -11250, 'Palace Cinema');
+movement(creditCard, '2026-08-17', -21900, 'Bootroom Sports - football boots');
+movement(creditCard, '2026-08-19', -2390, 'Subscription *Nimbus');
+movement(creditCard, '2026-08-19', -2390, 'Subscription *Nimbus', 2);
+movement(creditCard, '2026-08-21', -9800, 'Delivery *Harbour Sushi');
+movement(creditCard, '2026-08-23', -5400, 'Summit Indoor Climbing - chalk');
+movement(creditCard, '2026-08-27', -15600, 'Everyday Clothing');
+movement(creditCard, '2026-09-02', -8300, 'Ride *Wayfare');
+movement(creditCard, '2026-09-04', -12400, 'Northwood Timber - sandpaper and varnish');
+movement(creditCard, '2026-09-06', -21300, 'Fairmount Supermarket');
+movement(creditCard, '2026-09-07', -13900, 'Pet Center - litter and food for both');
+movement(creditCard, '2026-09-08', -5100, 'Corner Greengrocer');
+movement(creditCard, '2026-09-09', -17600, 'Alder Street Butcher - farm cut');
 movement(creditCard, '2026-09-11', -3990, 'Sonora Streaming');
 
 const sortRule = (kind, name, pattern, position, color) => {
@@ -1445,10 +1526,10 @@ const sortRule = (kind, name, pattern, position, color) => {
 };
 
 // Order matters: the first rule that matches wins, so the specific ones sit
-// above the general. `boleto` used to be the whole of Utilities, which put a
-// health plan and a rent payment under it — every bill in Brazil arrives as a
-// boleto, and a rule that matches the envelope rather than the thing inside it
-// is the mistake this seed should be demonstrating the fix for.
+// above the general. `bill payment` used to be the whole of Utilities, which
+// put the health cover and the rent under it — most bills arrive as a bill
+// payment, and a rule that matches the envelope rather than the thing inside
+// it is the mistake this seed should be demonstrating the fix for.
 //
 // Farm food sits above Groceries for the same reason. Somebody who buys a box
 // from a smallholding every week and meat from one butcher wants to see that
@@ -1456,22 +1537,22 @@ const sortRule = (kind, name, pattern, position, color) => {
 // argument for rules you write yourself, and it only shows if the seed has a
 // life in it specific enough to need them.
 sortRule('category', 'Ontoplano', 'ontoplano', 0, '#4338ca');
-sortRule('category', 'Rent', 'aluguel', 1, '#7c2d12');
-sortRule('category', 'Cats', 'veterinária|pet shop|pet center', 2, '#a16207');
-sortRule('category', 'Garden', 'jardineiro|floricultura|muda|semente', 3, '#15803d');
-sortRule('category', 'Woodwork', 'madeireira|ferramenta|serralheria|formão', 4, '#92400e');
-sortRule('category', 'Climbing', 'escalada|magnésio', 5, '#c2410c');
-sortRule('category', 'Football', 'racha|chuteira', 6, '#166534');
-sortRule('category', 'Health', 'vitalis|drogaria|farmácia', 7, '#0e7490');
-sortRule('category', 'Utilities', 'energia|águas|fibra', 8, '#b45309');
-sortRule('category', 'Farm food', 'sítio|açougue|hortifruti|feira', 9, '#4d7c0f');
-sortRule('category', 'Groceries', 'mercado|padaria', 10, '#1d4ed8');
-sortRule('category', 'Transport', 'posto|corrida', 11, '#0369a1');
-sortRule('category', 'Eating out', 'delivery|cantina|sushi', 12, '#be123c');
-sortRule('category', 'Subscriptions', String.raw`assinatura \*|sonora|cinefila`, 13, '#6d28d9');
-sortRule('category', 'Savings', 'aplicação|cdb', 14, '#0f766e');
-sortRule('tag', 'healthy', 'sítio|hortifruti|escalada|racha|feira', 0, '#0f766e');
-sortRule('tag', 'pix', 'pix', 1, '#9d174d');
+sortRule('category', 'Rent', 'rent', 1, '#7c2d12');
+sortRule('category', 'Cats', 'veterinary|pet shop|pet center', 2, '#a16207');
+sortRule('category', 'Garden', 'potting shed|florist|seed', 3, '#15803d');
+sortRule('category', 'Woodwork', 'timber|tools|metalwork|chisel', 4, '#92400e');
+sortRule('category', 'Climbing', 'climbing|chalk', 5, '#c2410c');
+sortRule('category', 'Football', 'five-a-side|football', 6, '#166534');
+sortRule('category', 'Health', 'health cover|chemist|pharmacy', 7, '#0e7490');
+sortRule('category', 'Utilities', 'ease|water|fibre', 8, '#b45309');
+sortRule('category', 'Farm food', 'farm|butcher|greengrocer', 9, '#4d7c0f');
+sortRule('category', 'Groceries', 'supermarket|bakery', 10, '#1d4ed8');
+sortRule('category', 'Transport', String.raw`fuel|ride \*`, 11, '#0369a1');
+sortRule('category', 'Eating out', 'delivery|bistro|sushi', 12, '#be123c');
+sortRule('category', 'Subscriptions', String.raw`subscription \*|sonora|reelbox`, 13, '#6d28d9');
+sortRule('category', 'Savings', 'savings deposit|fixed income', 14, '#0f766e');
+sortRule('tag', 'healthy', 'farm|greengrocer|climbing|five-a-side', 0, '#0f766e');
+sortRule('tag', 'transfers', 'transfer', 1, '#9d174d');
 
 // --- locations (inventory) -----------------------------------------------------------
 //
@@ -1509,6 +1590,14 @@ const deskDrawer = location('Desk drawer', officeLocation);
 const bathroom = location('Bathroom');
 const cabinet = location('Cabinet', bathroom);
 
+/*
+ * `attributes` left out means "leave whatever it has", not "wipe it".
+ *
+ * Several of these name a thing the shopping list already seeded with
+ * attributes on it — dish soap is in the cupboard *and* under the sink — and
+ * writing `{}` over it took them off again, so the item somebody opens from
+ * the map of the home was the one with nothing to show.
+ */
 const filedItem = (name, locationId, attributes = null) => {
 	const existing = one('select id from inventory_items where user_id = ? and name = ?', uid, name);
 	const id =
@@ -1518,31 +1607,28 @@ const filedItem = (name, locationId, attributes = null) => {
 			uid,
 			name
 		);
-	run(
-		'update inventory_items set location_id = ?, attributes = ? where id = ?',
-		locationId,
-		JSON.stringify(attributes ?? {}),
-		id
-	);
+	run('update inventory_items set location_id = ? where id = ?', locationId, id);
+	if (attributes)
+		run('update inventory_items set attributes = ? where id = ?', JSON.stringify(attributes), id);
 };
 
 // The thing the whole feature exists to answer, and its neighbours.
 filedItem('measuring tape', firstDrawer, { length: '5m', kind: 'construction' });
 filedItem('spare keys', firstDrawer, { for: 'the front door' });
-filedItem('sewing kit', secondDrawer, {});
+filedItem('sewing kit', secondDrawer, { contents: 'needles, thread, buttons', kind: 'household' });
 filedItem('passport', secondDrawer, { expires: '2031-04' });
-filedItem('board games', bookshelf, {});
+filedItem('board games', bookshelf, { count: '11', players: '2–6' });
 
 filedItem('USB-C cable', deskDrawer, { plug: 'USB-C', speed: 'USB3' });
 filedItem('HDMI cable', deskDrawer, { length: '2m' });
 filedItem('label printer', officeLocation, { model: 'P710' });
 
-filedItem('blender', kitchenRoom, {});
-filedItem('bicarbonate of soda', pantryLoc, {});
-filedItem('dish soap', underSink, {});
+filedItem('blender', kitchenRoom, { brand: 'Halovex', power: '600W', capacity: '1.5L' });
+filedItem('bicarbonate of soda', pantryLoc, { weight: '250g', kind: 'baking' });
+filedItem('dish soap', underSink);
 filedItem('spare bulbs', underSink, { fitting: 'E27', watts: '9' });
 
-filedItem('first aid kit', cabinet, {});
+filedItem('first aid kit', cabinet, { checked: '2026-02', kind: 'household' });
 filedItem('hair clippers', cabinet, { guards: '3, 6, 9' });
 
 // --- dashboard extras ---------------------------------------------------------------
@@ -1740,16 +1826,30 @@ const recipe = (title, extra = {}) => {
 	);
 };
 
+/** What the staples a recipe conjures are like, so they are not bare names. */
+const PANTRY_ATTRIBUTES = {
+	pasta: { shape: 'penne', weight: '500g', brand: 'Semolo' },
+	garlic: { variety: 'purple', kind: 'fresh' },
+	'black beans': { weight: '1kg', variety: 'black' },
+	'olive oil': { brand: 'Stonegrove', weight: '500ml' },
+	onion: { variety: 'brown', kind: 'fresh' },
+	rice: { brand: 'Harvestone', weight: '1kg' }
+};
+
 const ingredient = (recipeId, itemName, quantity, unit, note = '') => {
 	let item = one('select id from inventory_items where user_id = ? and name = ?', uid, itemName);
 	if (!item) {
 		const pantry = shoppingCategoryNamed('pantry');
 		const id = run(
-			`insert into inventory_items (user_id, name, type, inventory_category_id, bought)
-			 values (?, ?, 'replenish', ?, 0)`,
+			`insert into inventory_items (user_id, name, type, inventory_category_id, bought, attributes)
+			 values (?, ?, 'replenish', ?, 0, ?)`,
 			uid,
 			itemName,
-			pantry?.id ?? null
+			pantry?.id ?? null,
+			// A pantry staple has a size and a shelf life like everything else
+			// in there; an ingredient conjured by a recipe used to have neither,
+			// so half the cupboard was bare rows.
+			JSON.stringify(PANTRY_ATTRIBUTES[itemName] ?? { kind: 'pantry staple' })
 		);
 		item = { id };
 	}
@@ -2363,7 +2463,10 @@ if (!forgottenTodo)
 	);
 
 idea('Learn to sail, properly, not just crewing for other people', ['someday']);
-shoppingItem('a proper armchair', 'someday', { categoryId: household });
+shoppingItem('a proper armchair', 'someday', {
+	categoryId: household,
+	attributes: { budget: '2500', material: 'leather', colour: 'tan' }
+});
 
 age(
 	'ideas',
@@ -2823,6 +2926,129 @@ run(
 	uid
 );
 run("update diary_entries set created_at = datetime('now') where user_id = ? and seq = 10", uid);
+
+/*
+ * Numbers past everything already written, rather than the next free-looking
+ * ones: `diary()` returns the existing row for a number already used, so a
+ * guess at a gap moves somebody else's note into this notebook instead of
+ * writing a new one. Read from the database because the notes above are
+ * spread over the whole file.
+ */
+const afterEverything =
+	(one('select max(seq) v from diary_entries where user_id = ?', uid)?.v ?? 0) + 1;
+const KITCHEN_NOTE_SEQ = afterEverything;
+const TWELVE_NOTE_SEQ = afterEverything + 1;
+
+/*
+ * A notebook that points at its own tasks.
+ *
+ * `TASK:#4` in a note is how somebody writing up where a job stands refers to
+ * the thing that has to happen, and it was the one part of a notebook nothing
+ * seeded demonstrated — so the reference rendered as the literal text on the
+ * one screen where it is meant to render as the task. The kitchen is the case
+ * for it: a list of quotes is only interesting next to what is blocked on it.
+ *
+ * The numbers are the order these were inserted in, which is what
+ * `inNotebook` numbers by.
+ */
+todo('ring the building manager about the wall', { urgency: 4, interest: 2, sortOrder: 10 });
+todo('order the counter once the wall is settled', { urgency: 2, interest: 4, sortOrder: 11 });
+todo('clear the cupboards before the fitters come', { urgency: 1, interest: 1, sortOrder: 12 });
+inNotebook('todo_tasks', 'title', 'ring the building manager about the wall', kitchen);
+inNotebook('todo_tasks', 'title', 'order the counter once the wall is settled', kitchen);
+inNotebook('todo_tasks', 'title', 'clear the cupboards before the fitters come', kitchen);
+
+diary(
+	KITCHEN_NOTE_SEQ,
+	`## Where this stands
+
+Everything hangs on one phone call. TASK:#3 is the only thing in the way —
+until the building manager says whether the wall is structural, quote 3 is
+either the cheap answer or the expensive mistake.
+
+Then, in order:
+
+- TASK:#4, which cannot be ordered before the wall is decided, because the
+  counter is cut to it
+- TASK:#5, the weekend before they start
+
+TASK:#1 is in, all three of them, and TASK:#2 is done — 2.34m, not the 2.4m
+the first quote assumed.`,
+	['home'],
+	iso(dayAt(3))
+);
+inNotebook('diary_entries', 'seq', KITCHEN_NOTE_SEQ, kitchen);
+
+/*
+ * A year's worth of goals, most of them finished.
+ *
+ * Every other goal here is open or nearly so, which shows the bars and not
+ * what the room is actually for: looking back at a year and seeing that ten
+ * of the twelve things happened. It also fills the "closed" view, which was
+ * two rows.
+ */
+const twelve = notebook(
+	'Twelve in a year',
+	'Twelve things I said I would do this year. Ten of them are done.'
+);
+
+const DONE_THIS_YEAR = [
+	['learn to make sourdough', 'the third loaf was the one'],
+	['swim a kilometre without stopping', 'August, badly, but without stopping'],
+	['grow something edible on the balcony', 'tomatoes, basil, one unhappy pepper'],
+	['see the family in Curitiba twice', 'March and July'],
+	['get the bike fixed and ride it every week', 'new back wheel, and it has stuck'],
+	['go a whole month without ordering food in', 'June. Cooked every night of it'],
+	['learn ten songs by heart', 'eleven, if the short one counts'],
+	['empty the paperwork drawer', 'two bags of shredding and a folder that fits'],
+	['write to three people I had lost touch with', 'two of them wrote back'],
+	['stop working after ten on weeknights', 'not every night, but it is the habit now']
+];
+
+for (const [title, outcome] of DONE_THIS_YEAR) {
+	goal(title, 'year', yearStart, { status: 'achieved', outcome });
+	inNotebook('goals', 'title', title, twelve);
+}
+
+goal('take the boat licence', 'year', yearStart, {
+	notes: 'theory first, then the practical weekend',
+	measures: [{ target: 24, current: 15, unit: 'theory hours' }]
+});
+inNotebook('goals', 'title', 'take the boat licence', twelve);
+
+goal('finish the balcony shelves', 'year', yearStart, {
+	notes: 'wood is bought and sitting in the hall',
+	measures: [{ target: 3, current: 1, unit: 'shelves' }]
+});
+inNotebook('goals', 'title', 'finish the balcony shelves', twelve);
+
+todo('book the boat theory weekend', { urgency: 3, interest: 5, sortOrder: 13 });
+todo('buy the shelf brackets', { urgency: 2, interest: 2, sortOrder: 14 });
+todo('cut the shelves to length', { urgency: 1, interest: 3, sortOrder: 15 });
+inNotebook('todo_tasks', 'title', 'book the boat theory weekend', twelve);
+inNotebook('todo_tasks', 'title', 'buy the shelf brackets', twelve);
+inNotebook('todo_tasks', 'title', 'cut the shelves to length', twelve);
+
+diary(
+	TWELVE_NOTE_SEQ,
+	`## The list, in October
+
+Ten down, two to go, and the two left are the two that need a whole Saturday
+rather than twenty minutes — which is the lesson, really. The ones that got
+done were the ones that fitted into a week.
+
+What I would do differently: the paperwork drawer took an afternoon and sat on
+the list for seven months. Anything that can be finished in an afternoon
+should not be a goal at all.
+
+**What is left**, which is three Saturdays at most: TASK:#1, then TASK:#2 and
+TASK:#3 on the same day — the wood is already in the hall and has been since
+July.`,
+	['living'],
+	iso(dayAt(6)),
+	{ pinned: true }
+);
+inNotebook('diary_entries', 'seq', TWELVE_NOTE_SEQ, twelve);
 
 // Somebody who has been here two months has written up most of their weeks.
 const REVIEWS = [

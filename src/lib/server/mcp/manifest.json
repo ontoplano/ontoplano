@@ -76,9 +76,14 @@
 				"type": "string",
 				"required": true
 			},
-			"energy": {
+			"ease": {
 				"type": "integer",
 				"required": false
+			},
+			"energy": {
+				"type": "integer",
+				"required": false,
+				"deprecated": true
 			},
 			"interest": {
 				"type": "integer",
@@ -307,6 +312,10 @@
 		"writes": true,
 		"destroys": false,
 		"params": {
+			"defaultTags": {
+				"type": "string",
+				"required": false
+			},
 			"description": {
 				"type": "string",
 				"required": false
@@ -399,9 +408,14 @@
 				"type": "string",
 				"required": false
 			},
-			"energy": {
+			"ease": {
 				"type": "integer",
 				"required": false
+			},
+			"energy": {
+				"type": "integer",
+				"required": false,
+				"deprecated": true
 			},
 			"every": {
 				"type": "integer",
@@ -936,6 +950,29 @@
 			}
 		}
 	},
+	"change_notebook": {
+		"scope": "notes:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"defaultTags": {
+				"type": "string",
+				"required": false
+			},
+			"description": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"title": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
 	"change_person": {
 		"scope": "people:write",
 		"writes": true,
@@ -1121,9 +1158,14 @@
 		"writes": true,
 		"destroys": false,
 		"params": {
-			"energy": {
+			"ease": {
 				"type": "integer",
 				"required": false
+			},
+			"energy": {
+				"type": "integer",
+				"required": false,
+				"deprecated": true
 			},
 			"id": {
 				"type": "integer",
@@ -1281,12 +1323,32 @@
 		"writes": false,
 		"destroys": false,
 		"params": {
+			"fields": {
+				"type": "string",
+				"required": false
+			},
 			"limit": {
 				"type": "integer",
 				"required": false
 			},
 			"offset": {
 				"type": "integer",
+				"required": false
+			},
+			"tag": {
+				"type": "string",
+				"required": false
+			},
+			"taggedSince": {
+				"type": "string",
+				"required": false
+			},
+			"verbose": {
+				"type": "boolean",
+				"required": false
+			},
+			"withoutTag": {
+				"type": "string",
 				"required": false
 			}
 		}
@@ -1537,6 +1599,17 @@
 			}
 		}
 	},
+	"media": {
+		"scope": "notes:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"path": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
 	"month_bills": {
 		"scope": "bills:read",
 		"writes": false,
@@ -1583,12 +1656,40 @@
 		"writes": false,
 		"destroys": false,
 		"params": {
+			"fields": {
+				"type": "string",
+				"required": false
+			},
 			"id": {
 				"type": "integer",
 				"required": true
 			},
 			"includeArchived": {
 				"type": "boolean",
+				"required": false
+			},
+			"limit": {
+				"type": "integer",
+				"required": false
+			},
+			"offset": {
+				"type": "integer",
+				"required": false
+			},
+			"tag": {
+				"type": "string",
+				"required": false
+			},
+			"taggedSince": {
+				"type": "string",
+				"required": false
+			},
+			"verbose": {
+				"type": "boolean",
+				"required": false
+			},
+			"withoutTag": {
+				"type": "string",
 				"required": false
 			}
 		}
@@ -1597,7 +1698,12 @@
 		"scope": "notes:read",
 		"writes": false,
 		"destroys": false,
-		"params": {}
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": false
+			}
+		}
 	},
 	"past": {
 		"scope": "schedule:read",
@@ -1677,6 +1783,21 @@
 			"id": {
 				"type": "integer",
 				"required": false
+			}
+		}
+	},
+	"recolor_tag": {
+		"scope": "tags:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"color": {
+				"type": "string",
+				"required": true
+			},
+			"id": {
+				"type": "integer",
+				"required": true
 			}
 		}
 	},
@@ -1848,6 +1969,17 @@
 			}
 		}
 	},
+	"remove_tag": {
+		"scope": "tags:write",
+		"writes": true,
+		"destroys": true,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"remove_workout_category": {
 		"scope": "workouts:write",
 		"writes": true,
@@ -1866,6 +1998,21 @@
 		"params": {
 			"id": {
 				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"rename_tag": {
+		"scope": "tags:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"name": {
+				"type": "string",
 				"required": true
 			}
 		}
@@ -2054,6 +2201,12 @@
 			}
 		}
 	},
+	"tags": {
+		"scope": "tags:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
+	},
 	"tick_bought": {
 		"scope": "inventory:write",
 		"writes": true,
@@ -2095,6 +2248,10 @@
 		"writes": false,
 		"destroys": false,
 		"params": {
+			"fields": {
+				"type": "string",
+				"required": false
+			},
 			"includeArchived": {
 				"type": "boolean",
 				"required": false
@@ -2111,7 +2268,31 @@
 				"type": "integer",
 				"required": false
 			},
+			"status": {
+				"type": "string",
+				"required": false,
+				"enum": [
+					"closed",
+					"doing",
+					"done",
+					"open",
+					"skipped",
+					"todo"
+				]
+			},
 			"tag": {
+				"type": "string",
+				"required": false
+			},
+			"taggedSince": {
+				"type": "string",
+				"required": false
+			},
+			"verbose": {
+				"type": "boolean",
+				"required": false
+			},
+			"withoutTag": {
 				"type": "string",
 				"required": false
 			}
@@ -2214,6 +2395,41 @@
 			"id": {
 				"type": "integer",
 				"required": true
+			}
+		}
+	},
+	"up_next": {
+		"scope": "tasks:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"fields": {
+				"type": "string",
+				"required": false
+			},
+			"limit": {
+				"type": "integer",
+				"required": false
+			},
+			"notebookId": {
+				"type": "integer",
+				"required": false
+			},
+			"tag": {
+				"type": "string",
+				"required": false
+			},
+			"taggedSince": {
+				"type": "string",
+				"required": false
+			},
+			"verbose": {
+				"type": "boolean",
+				"required": false
+			},
+			"withoutTag": {
+				"type": "string",
+				"required": false
 			}
 		}
 	},

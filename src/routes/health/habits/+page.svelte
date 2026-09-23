@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import FilterChips from '$lib/components/FilterChips.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
@@ -441,7 +441,7 @@
 		{#snippet footer()}
 			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 			<button type="submit" form="habit-form" class="btn btn-primary">
-				{editingId ? 'Save' : t('health.habits.createHabit')}
+				{editingId ? t('ui.save') : t('health.habits.createHabit')}
 			</button>
 		{/snippet}
 	</Modal>
@@ -571,8 +571,12 @@
 									confirmingDeleteId = null;
 								}}
 								class="icon-btn"
-								title={expandedHabitId === habit.id ? 'Collapse' : 'Expand'}
-								aria-label={expandedHabitId === habit.id ? 'Collapse' : 'Expand'}
+								title={expandedHabitId === habit.id
+									? t('health.habits.collapse')
+									: t('health.habits.expand')}
+								aria-label={expandedHabitId === habit.id
+									? t('health.habits.collapse')
+									: t('health.habits.expand')}
 							>
 								<Icon name={expandedHabitId === habit.id ? 'chevron-up' : 'chevron-down'} />
 							</button>

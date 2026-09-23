@@ -610,6 +610,97 @@
       "when": 1789815385298,
       "tag": "0086_goal_targets_count_a_workout_measure",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "6",
+      "when": 1789928485978,
+      "tag": "0087_tags_carry_a_date_and_reach_blocks",
+      "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "6",
+      "when": 1789951299693,
+      "tag": "0088_a_task_is_numbered_inside_its_notebook",
+      "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "6",
+      "when": 1789952576799,
+      "tag": "0089_existing_tasks_get_their_notebook_number",
+      "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "6",
+      "when": 1789956537851,
+      "tag": "0090_a_note_label_carries_the_day_it_went_on",
+      "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "6",
+      "when": 1790018456012,
+      "tag": "0091_a_tag_carries_a_colour",
+      "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "6",
+      "when": 1790026719193,
+      "tag": "0092_a_provider_key_for_the_chat",
+      "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "6",
+      "when": 1790036540217,
+      "tag": "0093_a_door_assistants_can_knock_on",
+      "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "6",
+      "when": 1790092741752,
+      "tag": "0094_a_diary_entry_has_its_own_number",
+      "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "6",
+      "when": 1790092741753,
+      "tag": "0095_ease_replaces_energy_and_runs_the_other_way",
+      "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "6",
+      "when": 1790092741754,
+      "tag": "0096_a_rating_can_be_nothing_at_all",
+      "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "6",
+      "when": 1790117286480,
+      "tag": "0097_a_notebook_can_have_a_picture",
+      "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "6",
+      "when": 1790119256001,
+      "tag": "0098_a_report_names_the_build_it_came_from",
+      "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "6",
+      "when": 1790128315051,
+      "tag": "0099_notebook_default_tags",
+      "breakpoints": true
     }
   ]
 }

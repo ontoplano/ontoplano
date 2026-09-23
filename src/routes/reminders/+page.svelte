@@ -1,9 +1,13 @@
 <script lang="ts">
+	import { momentOf } from '$lib/when';
+	import { sliding } from '$lib/actions/sliding';
+	import { useWhen } from '$lib/when-context.svelte';
+	import { timeOf } from '$lib/when';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import RingerHealth from '$lib/components/RingerHealth.svelte';
 	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { browser } from '$app/environment';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import Banner from '$lib/components/Banner.svelte';
 	import { inPhoneApp } from '$lib/instance-choice';
 	import {
@@ -31,8 +35,18 @@
 	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
+
+	/*
+	 * The hour a dateless alarm goes off, written the way this reader reads a
+	 * clock. `data.dayStart` is the stored `HH:MM`, which is the right thing
+	 * to compare against and the wrong thing to show: the rows above say
+	 * "6:00 AM" for somebody on a twelve-hour clock while the form promised
+	 * "06:00".
+	 */
+	const dayStartSaid = $derived(timeOf(`2000-01-01T${data.dayStart}`, now()));
 
 	/**
 	 * Everything with a time on it.
@@ -410,15 +424,17 @@
 		)
 	);
 
+	/*
+	 * A reminder's time is wall clock in the account's zone, and stays a string.
+	 *
+	 * Turning it into a `Date` first reads it in whichever zone the machine
+	 * doing the reading is set to, and the formatter then shifts it into the
+	 * account's — so on a box at −03:00 held by an account on UTC, a reminder
+	 * typed for 11:55 PM was listed at 2:55 the next morning. `momentOf` knows
+	 * a naive string for what it is; handing it the string is the fix.
+	 */
 	function when(at: string): string {
-		const d = new Date(at.length === 16 ? at + ':00' : at);
-		return d.toLocaleString(t.locale, {
-			weekday: 'short',
-			day: 'numeric',
-			month: 'short',
-			hour: '2-digit',
-			minute: '2-digit'
-		});
+		return momentOf(at, now(), { weekday: 'short', year: undefined });
 	}
 
 	let confirmingDelete = $state<number | null>(null);
@@ -489,7 +505,9 @@
 {#snippet whyNotThisTime(when: string, at: string)}
 	{#if hasBeen(when, at)}
 		<p class="text-sm text-gray-600">
-			{at ? t('reminders.thatTimeHasAlreadyBeen') : `${data.dayStart} has already been today.`}
+			{at
+				? t('reminders.thatTimeHasAlreadyBeen')
+				: t('reminders.dayStartHasAlreadyBeen', { at: dayStartSaid })}
 			{t('reminders.giveItALaterOne')}
 		</p>
 	{:else if isTooSoon(when, at)}
@@ -715,7 +733,7 @@
 				<Field
 					label={t('reminders.time')}
 					span={6}
-					hint="Empty means {data.dayStart}, when your day starts."
+					hint={t('reminders.emptyMeansDayStart', { at: dayStartSaid })}
 				>
 					<!--
 							The browser's own time field, whatever it draws.
@@ -742,7 +760,7 @@
 						autocomplete="off"
 						bind:value={time}
 						min={day === earliestDay ? floorAt.slice(11, 16) : undefined}
-						title={t('reminders.whatTimeItShouldGo', { dayStart: data.dayStart })}
+						title={t('reminders.whatTimeItShouldGo', { dayStart: dayStartSaid })}
 						class="input"
 					/>
 				</Field>
@@ -827,7 +845,7 @@
 				The same number of days, forwards or backwards. It sits first
 				because it changes what every other control in this row means.
 			-->
-			<div class="seg" role="group" aria-label={t('reminders.whichWayToLook')}>
+			<div use:sliding class="seg" role="group" aria-label={t('reminders.whichWayToLook')}>
 				<button
 					type="button"
 					onclick={() => look(data.days, false)}
@@ -868,7 +886,7 @@
 			</button>
 
 			<!-- …and on anything wider, where the row fits, all of them at once. -->
-			<div class="seg hidden sm:flex" role="group" aria-label={t('reminders.howFar')}>
+			<div use:sliding class="seg hidden sm:flex" role="group" aria-label={t('reminders.howFar')}>
 				{#each WINDOWS as window (window)}
 					<button
 						type="button"
@@ -1103,7 +1121,11 @@
 											class="input"
 										/>
 									</Field>
-									<Field label={t('reminders.time')} span={6} hint="Empty means {data.dayStart}.">
+									<Field
+										label={t('reminders.time')}
+										span={6}
+										hint={t('reminders.emptyMeansAt', { at: dayStartSaid })}
+									>
 										<input
 											name="time"
 											type="time"

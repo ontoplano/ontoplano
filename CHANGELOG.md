@@ -18,6 +18,856 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.183.1 — 2026-09-23
+
+- **A room is one object now, not a handful of cards floating on the
+  backdrop.** The tabs sit on a track that spans the line, with the room's one
+  verb — New notebook, New task — at the end of it; the track is square along
+  its bottom and the room begins immediately underneath, so the two read as one
+  thing with a seam rather than a strip hovering over a card. Every room has
+  that surface, so the controls that narrow a list are a block along its top
+  instead of chrome adrift above it. Ideas and People were the two that showed
+  it worst and are the two that changed most.
+
+- **Settings → Integrations is one room with sections** rather than two rooms
+  stacked: it used to draw a second bar, a second title and a second strip of
+  tabs, each with a band of page between.
+
+- **The corners stop showing the page through them.** The shell itself carried
+  a radius and clipped at it, so every screen in the app lost a bite out of all
+  four corners — which is why this kept reappearing somewhere new after each
+  place it was chased out of. Anything that reaches a screen edge is square
+  now, and there is a test that asks the question the only way that cannot be
+  satisfied by fixing one component: whatever happens to be in the corner, at
+  two widths, across five rooms.
+
+- **The backdrop is a grain rather than a scattering of glyphs.** The room's own
+  icon tiled behind the page was meant to read as texture and never did — it
+  was a handful of recognisable objects floating behind the work. Same section
+  colour, nothing in it to look at.
+
+- **The three ratings on a task are nested bars.** Width says which rating —
+  urgency widest and behind, then ease, then interest — and height says its
+  value, on one baseline and one scale, so a tall card no longer draws a taller
+  4 than a short one. Hovering them says the numbers, one per line. The sliders
+  that set them are drawn the same way, run the full width of the form, and no
+  longer snap back a step when dragged quickly.
+
+- **A notebook is its cover.** The shelf is a shelf: the picture is what you
+  look at and the name hangs under it. Closed notebooks go to the end, notes
+  whose notebook was deleted are a bin in the corner rather than a book called
+  "Notes without a notebook", and pressing a picture opens the notebook's
+  editor. Both Edit notebook dialogues offer the same fields — including the
+  picture, which neither did.
+
+- **A notebook lends its labels to the notes written in it.** Set them once on
+  the notebook; a new note there starts with them filled in, where they can be
+  taken out again before saving.
+
+- **The fold mark moved off a task's title onto the first line of its
+  writing**, where the thing being folded actually is — and a task whose note
+  fits on one line no longer carries a chevron that does nothing. Reading an
+  open note no longer folds it away mid-sentence.
+
+- **Filters are simply on the strip wherever there is room for them**, and a
+  sheet on a phone where there is not. A toggle keeps its width when pressed —
+  "Show completed (1)" becoming "Hide completed" moved every control to its
+  right — and the scrollbar's room is kept whether or not there is one, so a
+  list growing past the fold no longer shifts the page.
+
+- **Writing opens side by side**, and every markdown box offers that choice
+  rather than only the wide ones.
+
+- **The quick note says where it goes.** It read "Diary note" and offered no
+  choice; it is a note, with a picker under it that starts on the diary and
+  offers the notebooks.
+
+- **A task list can be ordered by when it was last labelled.**
+
+- **An assistant's single write is announced by name** — "Claude labelled «bad
+  filter button»" — rather than "labelled 1 todo", and a labelling says which
+  labels went on and which came off.
+
+- **Reset demo account is only offered where it can work.** Signed into your own
+  account on the demo instance you were shown a button that could only fail.
+
+## 0.183.0 — 2026-09-22
+
+- **The diary can be put away on its own, and the writing room cannot.** The
+  room and the diary tab shared one word, so hiding the diary meant hiding the
+  room — and taking the notebooks, the ideas and the people with it. The room
+  is always on now, like the planner, which frees that switch to mean the diary
+  alone. The notebooks are not a switch either: a Notebooks room with its
+  notebooks put away is a room with nothing in it. First run stops asking about
+  it for the same reason.
+
+  If you had previously put that room away, you will find it back — with the
+  diary tab hidden instead, which is what the setting now means. Preferences
+  turns it on again.
+
+- **The segmented controls have a tile that moves.** Which half of the week,
+  which board column, Write or Preview — the position you are on used to be
+  drawn by filling that button, so nothing connected where it was to where it
+  is and the eye had to find the filled one again after every press. One tile
+  now, sliding between the positions, in all ten of them at once. It arrives
+  without travelling for anybody who has asked for less movement.
+
+- **Writing's Write and Preview are that control too**, rather than two loose
+  buttons beside each other.
+
+- **A report says which build it came from.** Version and commit, taken from the
+  instance rather than asked of the person — the version alone names a dozen
+  builds, because it is not bumped per commit. It shows on the report in the
+  administration page and in the mail, and the sentence that says what is sent
+  now says this too.
+
+- **Writing and its preview, side by side.** A third choice beside Write and
+  Preview, away to the right. The box used to split into two columns on its own
+  once it got wide enough and no box in the app is ever that wide, so that
+  layout had never once drawn — it is a choice now, at a width the ordinary
+  boxes actually reach.
+
+- **A notebook can have a picture.** On its own page, beside the title: press it
+  to choose one, press again to replace it, and a line under it takes it off.
+  The same arrangement a person's face has — one picture, because it is what the
+  notebook is, and the one it replaces goes if nothing else refers to it.
+
+- **The page says when it is actually hearing about changes.** `data-live` on
+  the document once the update stream is open — which is a different moment from
+  the request being answered, and the reason a note written by an assistant
+  occasionally took a reload to appear in a tab that was already looking at it.
+
+- **Pressing a block on a rating fills it up to there.** It used to land one
+  short: a slider puts its thumb on the nearest step to where you pressed, which
+  is right when the thumb is the thing you are placing and wrong for a bar,
+  where what you mean is "up to here". Pressing the stub below the middle —
+  past the second marking, short of the third — is how you say nobody has
+  answered.
+
+- **The gauges on a task open the form on the gauges.** They were the one thing
+  on a row that showed a number without offering a way to change it. The three
+  scales also start open now rather than folded away.
+
+- **Setting a rating uses the same gauge that shows it.** The card drew a
+  little thermometer and the form drew a slider, so the thing you read and the
+  thing you dragged looked nothing like each other. One component now, with the
+  control laid over it invisibly — the platform's own range still handles a
+  finger, the arrow keys and a screen reader, and what you see is the gauge
+  filling. An unanswered one is half full and grey, markings included.
+
+- **While you are editing a task, the footer says where it would sit.** "3rd in
+  line", among the open tasks in the notebook it is filed under, moving as you
+  drag and following the notebook you pick. It replaces the score, which said
+  what the answers were rather than what they do.
+
+- **The slider reads as one object.** The line, the stops along it, the ring at
+  no-answer and the thumb are one ink, the line meets the ring rather than
+  running through it, and the colour of the rating now covers the number and
+  the × beside it instead of stopping at the track. Urgency is red.
+
+- **A rating you have not answered rests in the middle of its slider.** It used
+  to sit on a dot off the left end, so "no answer" and "the lowest answer" were
+  next door to each other and an unanswered question looked like a one. The
+  thumb now waits at 2.5, between the second and third marks — where the card
+  draws it and where the sort counts it — hollow rather than filled, and
+  hovering it says the rating is not set. The × beside it is the way back to no
+  answer.
+
+- **The three ratings are in one order everywhere: urgency, ease, interest.**
+  The sort read them in that order while every form and legend listed urgency,
+  interest, ease, so the same three questions came one way round on a card and
+  another on the screen that sets them. There is one list now rather than two.
+
+- **A rating you have answered wears its own colour on the form**, the same
+  colour it has on the card — so the yellow one on a task is the yellow one you
+  set it with. Unanswered ones stay plain.
+
+- **A built file that has gone missing no longer takes the instance down.** The
+  static handler lists what it serves once, at boot, so a file removed
+  afterwards — a deploy copying over the build, say — failed inside the stream
+  and reached the process as an uncaught exception, which stopped it. One
+  absent stylesheet is one failed request now. Everything else still stops the
+  process, because the state after an unknown crash is unknown.
+
+- **Energy is now ease, and it counts the other way round.** It asked how much
+  a task would take out of you, so five was the worst answer and it was the one
+  rating where a bigger number was worse — every list that ordered by ratings
+  had to know that, and an unrated task landed on a different number depending
+  on which question it was. Ease asks the opposite: five is easiest, like five
+  is most urgent and most wanted. Everything you had rated was turned round
+  with it, so a task you called draining is still the draining one.
+
+- **A rating nobody set counts as 2.5, for all three alike.** It used to be 2.5
+  or 3.5 depending on which way that rating ran. A task you deliberately marked
+  3 still beats one nobody weighed, and 1 and 2 still mean "later" and "later
+  still" — and the grey half-filled gauge now sits exactly where the sort puts
+  it, between the second and third markings.
+
+- **The markings inside a gauge stay black in the dark theme.** They took their
+  colour from the text ink, which the dark theme turns near-white, so the scale
+  came out as pale scratches across a bright pill.
+
+- **An assistant still saying `energy` keeps working, and is told it is going
+  away.** The value is translated — an energy of 5 is an ease of 1 — and the
+  answer says so, naming 0.190 as the release that stops accepting it.
+
+## 0.182.24 — 2026-09-22
+
+- **Every task shows all three ratings, in the same place.** A task nobody had
+  rated drew nothing, and one rated only for urgency drew a single bar, so the
+  same question sat somewhere different on every row. All three are always
+  there now; an unanswered one is half full and grey, which says "nobody said"
+  rather than "the lowest there is" — and half is where an unset rating
+  actually counts when the list is sorted by Priority.
+
+- **The gauges are outlined in black, and the colour has some depth to it.**
+  The fill also stops in a straight line at the level it reports: it was a
+  rounded rectangle inside a rounded track, which left a notch at each corner
+  of the closed end and domed the open one, so two-of-five looked like the bulb
+  of a thermometer. The yellow and the green are brighter.
+
+- **An assistant given one notebook can see the pictures in it.** The screen
+  that ties a key to a notebook promises "its tasks, its goals, its notes, and
+  the pictures and recordings in them" — and the tool that fetches a picture
+  was the one thing such a key was never offered, so an assistant asked to look
+  at a screenshot could only answer that it had no way to. The file rule itself
+  was right all along: it is the notebook's own pictures, and no others.
+
+- **Four cross-site-scripting fixes and a denial of service, from upstream.**
+  Svelte, nodemailer and devalue move to the versions that carry them; two of
+  the five were in server-side rendering, which is how every page here is
+  drawn. Nothing about the app changes. Every commit is now read for anything
+  shaped like a credential, and the dependencies are checked against what is
+  publicly known about them, on every push — so the next one is caught here
+  rather than by somebody else.
+
+- **Writing is drawn as writing on the last screens that were still printing
+  it raw.** The diary card on the dashboard showed `## A month of doing this
+properly` with the hashes in it, because it cut the entry at 300 characters
+  rather than rendering it; it now shows four lines of the real thing. A goal's
+  notes, a training session's notes and the ideas on the dashboard render too,
+  so a backtick means code wherever you type one.
+
+- **The first-run tile marked Notebooks says what that room is.** It took its
+  name from the navigation and its sentence from the preference underneath,
+  which is still called `diary`, so the room that holds your notebooks, ideas
+  and people was described as the diary alone. It also offers six rooms rather
+  than nine: People and Ideas are tabs of Notebooks, and a tab is put away in
+  Preferences rather than before you have opened the app.
+
+- **The diary counts the diary.** An entry was numbered among everything the
+  account had written, notebook notes included, so the thirtieth diary entry
+  was headed `#127` — a number you could not arrive at by counting. The diary
+  has its own number now, and the `#12`s already written in it were rewritten
+  to the entries they meant.
+
+## 0.182.23 — 2026-09-22
+
+- **The three ratings are little thermometers under the tick box.** Urgency,
+  energy, interest — that order everywhere now, the order the Priority sort
+  reads them in — stacked in the column the tick box stands in, so they line up
+  across every row. Black markings for the five steps and the colour rising
+  through them: yellow, blue, and green for interest, which was red.
+
+- **A picture under folded writing unfolds it first.** Pressing a thumbnail on
+  a one-line row opened the picture in a new tab before you had read the line
+  it belonged to. The first press opens the row; the second opens the picture.
+
+- **A diary entry's number sits at the bottom right**, with the rest of its
+  controls.
+
+## 0.182.22 — 2026-09-22
+
+- **Writing is rendered the same way everywhere it is shown.** A task's notes,
+  an idea and a note about somebody were drawn as plain text, so a fenced code
+  block came out as three backticks and `TASK:#4` stayed four characters —
+  while the same writing in a notebook rendered properly. One renderer now, and
+  inside a notebook a task's notes link the tasks they name, with their titles.
+
+- **The docs no longer say deleting is missing from the key form.** It is on
+  that form, in a box of its own that starts unticked — which is what the page
+  now says, along with what the wider form on Integrations actually adds.
+
+## 0.182.21 — 2026-09-22
+
+- **A notebook's tabs have the same strip.** Notes had a hand-rolled row of
+  buttons and no way to search; Tasks beside it had a search box, a fold for
+  the filters, a count and the order. One notebook answered "find the one about
+  the boiler" on one tab and not on the other. Notes now uses the same
+  arrangement, in the same order, and searches titles and writing.
+
+## 0.182.20 — 2026-09-22
+
+- **A task's buttons sit under its words, not beside them.** They were a block
+  three wide pinned to the right of the row, which on a phone took a third of
+  the width and left the title breaking mid-word. They are one line under the
+  text now, pushed right, the way a note card has always done it — at every
+  width, because it reads better on a laptop too. The task's number keeps the
+  left end of that line.
+
+## 0.182.19 — 2026-09-22
+
+- **"How long until this" is counted where you are.** The dashboard's Now/Next
+  card read the clock off the server, which runs in UTC — so a block at 11:45
+  told an account in São Paulo it had seven hours when it had ten, and the
+  card had rolled into tomorrow while it was still Sunday evening. The same
+  applies to the time a promoted todo lands on, and to which month the bills
+  card is counting.
+
+- **And it says it in your language.** "Now", "Next", "minute" and "hours" were
+  written into that card in English, so the line stayed English whatever the
+  app was set to — with the plural chosen by an `=== 1` rather than by the
+  language.
+
+## 0.182.18 — 2026-09-22
+
+- **Every shelf in the Notebooks room can be put away.** The room draws six
+  tabs and honoured the preference for two of them: hiding the diary left a
+  Diary tab standing, and Weekly notes and Tags had no preference at all.
+  Preferences now lists all of them under the room, and the room draws what is
+  left — one list, read by both, so a tab added later arrives with a way to
+  turn it off.
+
+- **First run calls a room what the bar calls it.** The tile for the writing
+  room said "Diary" while the app has called it Notebooks for a while.
+
+## 0.182.17 — 2026-09-22
+
+- **The number under a task, and ten other small labels, can be read.** They
+  were drawn in a grey the stylesheet itself says is not a text colour — about
+  2.5:1 on this app's surfaces. A bill's amount, a folder's count, "no price
+  yet" and the rest move to the grey that clears 4.5:1, and a test now stops a
+  new one appearing without somebody deciding it is an icon or a deliberate
+  dimming.
+
+- **The notes box opens at the size the dialog gives it.** The task dialog had
+  been making room for notes and then drawing three lines in the middle of it.
+
+- **Pressing a label on a note narrows the notes to it**, the way it has always
+  worked on a task. Press it again to let the rest back; the strip above says
+  which labels are holding, so a filter can't hide rows silently.
+
+## 0.182.16 — 2026-09-22
+
+- **The words on a coloured label are readable on every colour.** The ink was
+  picked from the colour's lightness, which is not the same as how bright it
+  actually is — so a vivid cyan got white text on a bright field. Measured over
+  the colour space, that rule bottomed out at 2.4:1 and left an eighth of all
+  colours under what small text needs. The app now picks black or white by
+  which one actually contrasts more, keeping the softer near-black wherever it
+  is still readable; the floor is 4.5:1 and a test holds it there.
+
+## 0.182.15 — 2026-09-22
+
+- **Parking the chat properly.** Its endpoint answers 404 rather than staying
+  open to anybody who had saved a key, its documentation no longer ships — a
+  commented-out section in the prose is now dropped when the reference is
+  generated, so the docs search stops offering a page about a feature nobody
+  can reach — and the two generated pages that still name its code say it is
+  switched off.
+
+- **An Ollama address is judged before it is dialled, blank or not.** Its
+  default is `127.0.0.1`, so leaving the field empty asked for the same
+  unreachable thing as typing it; both now give the same sentence.
+
+## 0.182.14 — 2026-09-22
+
+- **The chat inside the app is switched off.** It was built the way most apps
+  build one — you bring a provider key and this instance calls the provider on
+  your behalf — and that is the opposite direction from the one that matters
+  here: the assistant you already use reaching _in_ over MCP, with your own
+  account and your own model. Nothing is deleted; the room, the settings card
+  and the model catalogue are all still there behind one flag, and connecting
+  an assistant is unaffected.
+
+## 0.182.13 — 2026-09-22
+
+- **The chat's model picker says why an address could not be reached.** Asking
+  a provider for its models answered "Unexpected error" when the address was
+  one this instance refuses — which is every address on your own machine, since
+  the call is made by the instance and not by your browser. It now says that,
+  and the base-URL field says it before you try: on the hosted instance,
+  `127.0.0.1` is the server's own loopback rather than your laptop.
+
+## 0.182.12 — 2026-09-22
+
+- **A long notebook description folds away.** Written properly — what the
+  renovation covers, which flat, the measurements — it pushed the notes off a
+  phone screen. It shows two lines with **Show more** under it now, and a
+  description that already fits is drawn with nothing to press.
+
+## 0.182.11 — 2026-09-22
+
+- **An assistant tied to one notebook can ask which one.** The `notebooks`
+  tool took no arguments, so it named no notebook — and a key confined to a
+  single notebook is only offered the tools that name one. The assistant that
+  can work on exactly one subject was the only assistant that could not find
+  out which subject, or the id every other tool asks it for. It now takes an
+  optional id, and a confined key is answered with its own notebook.
+
+## 0.182.10 — 2026-09-22
+
+- **Backticks keep what is inside them.** `` `a * b * c` `` came out with an
+  italic in the middle, `` `**bold**` `` came out bold, and `` `[x](/y)` ``
+  came out as a link — every rule in the renderer ran over the text after it
+  had been wrapped in code. Now a span of code is lifted out before anything
+  else is read and put back at the end, so what is in it is what you typed.
+
+- **``` on one line is a code span, not an empty block.** Typing a fence that
+  opens and closes on the same line opened a block, found no closing fence
+  below, and drew an empty box with the sentence thrown away.
+
+## 0.182.9 — 2026-09-22
+
+- **The to-do list can be ordered by priority.** Beside Added and Done there is
+  now Priority: the three ratings read together — most urgent first, then the
+  task that takes least out of you, then the one you most want to do. It is the
+  same arithmetic `up_next` answers an assistant with, so the list and the
+  assistant cannot disagree about what comes next. The notebook's Tasks tab has
+  it too, being the same list.
+
+- **An unrated card no longer sinks to the bottom of the board.** Sorting a
+  board column by one rating put everything unrated last, which said "nobody
+  weighed this" and meant "this matters least". It now counts as the middle of
+  the scale nudged half a step to the losing side, exactly as everywhere else.
+
+## 0.182.8 — 2026-09-22
+
+- **Two tabs under AI & Integrations, not three.** The chat had a tab of its
+  own beside the AI one, which read as three rooms where there are two: what
+  the chat runs on is a setting of the AI tab, and it is now the first thing on
+  it. `/settings/integrations/chat` still lands where it used to.
+
+## 0.182.7 — 2026-09-22
+
+- **`/favicon.ico` is an icon again.** Nothing links to that address and
+  everything asks for it — a browser before it has read the page, a chat
+  unfurling a link, the card an assistant draws for a connector. This app had
+  no such file, so the request fell through to the page fallback and those
+  callers drew whatever they had cached, in one case the logo from before the
+  puffin. It is now three sizes in one file, drawn from the same artwork as
+  every other icon.
+
+- **The launcher shortcuts wear the current mark.** Long-press the installed
+  app and the three shortcuts — the board, the diary, the goals — were still
+  the logo this app stopped using a year ago: they were hand-made PNGs that no
+  generator touched. They are drawn now from the app's own room glyphs, and
+  `make lint` checks that every icon is current, which is what nothing did.
+
+## 0.182.6 — 2026-09-22
+
+- **The connect-an-assistant screen is a question, not a receipt.** What an
+  assistant asked for is now a list of tick boxes, gathered by what they are
+  about — your week, money, the diary, the house — and everything is ticked to
+  begin with, so saying yes to all of it is still one press. Untick a line, or
+  a whole heading, and the key it walks away with cannot reach that at all: a
+  tool whose permission was not granted is never offered to the assistant.
+  Before this the only decision on the page was the deleting box, so an
+  assistant that asked for everything got everything or nothing.
+
+- **`up_next` reads the ratings the way the app means them.** Most urgent
+  first, then the task that takes _least_ energy — it used to break ties
+  towards the heavier one — then the one you most want to do. And a rating
+  nobody set is no longer treated as a zero: it counts half a step to the
+  losing side of the middle of the scale, so a task deliberately marked 3
+  beats an unrated one, while urgency 1–2 and energy 4–5 are the tiers that
+  mean "later".
+
+## 0.182.5 — 2026-09-22
+
+- **The connect-an-assistant address is on the Integrations page.** The
+  no-key flow starts on the assistant's side, which is exactly where nobody
+  thinks to look first — so Settings → AI & Integrations → Integrations now
+  shows your instance's own address with the one sentence that explains it,
+  above the tokens.
+
+- **The daily digest says who the demo turned away, and why.** A count reads
+  the same whether the rate limiter did its job or every copy was in use;
+  each refusal now names the rule it tripped, the address, and how many
+  copies were out at that moment.
+
+## 0.182.4 — 2026-09-22
+
+- **An assistant can connect itself.** Paste your instance's address into
+  Claude, ChatGPT or anything else that speaks MCP, and instead of asking you
+  for a key it sends you to a screen on your own instance: this is what is
+  asking, this is what it could do, connect it or don't. No key is typed or
+  pasted anywhere. What it gets is an ordinary key, named after it, revocable
+  in the same list as the rest — and deleting is a box on that screen which
+  starts unticked.
+
+## 0.182.3 — 2026-09-22
+
+- **The bans left the administration page.** ontoplano no longer interfaces
+  with the machine it runs on: /admin shows what the app itself knows —
+  accounts, events, mail, client errors — and the firewall's record lives on
+  the box's own page instead, which `ontoplano-server`'s `ops-web-setup.sh`
+  serves on a subdomain of its own behind basic auth, with the same unban
+  and block-for-good buttons.
+
+## 0.182.2 — 2026-09-22
+
+- **The chat can be allowed to delete things.** It could always read and write;
+  deleting was refused outright, which quietly overrode the permission the app
+  already has for exactly this. It is a box on Settings → AI & Integrations →
+  Chat now — off until you tick it, and the caution says why.
+
+- **The model field stops repeating its own placeholder.** "Empty means
+  claude-sonnet-5" sat under a box that already said so.
+
+## 0.182.1 — 2026-09-21
+
+- **The banning layer is reaction.** On a self-hosted server
+  [reaction](https://reaction.ppom.me) replaces fail2ban, and every ban lands
+  in `/var/log/ontoplano-bans.log` — one record, whatever wrote it.
+  `ontoplano-server`'s setup wizard arranges all of it.
+
+- **The chat's model is a list, not a text box.** Paste the key, press "Ask the
+  provider what it offers", and the box becomes what that key can actually
+  reach — which is also the quickest way to find out whether the key works
+  before you save it. Typing a name by hand is still there for a model newer
+  than the provider's own list.
+
+- **The docs say how to get a key**, per provider, including the step that
+  catches most people: a Claude or ChatGPT subscription is not API credit, and
+  the two are billed separately.
+
+- **The README says how to run it on Windows** — WSL from PowerShell, then
+  `yarn dev` — and says plainly that there is no systemd on that path, so
+  nothing starts on boot and the terminal holds the app.
+
+## 0.182.0 — 2026-09-21
+
+- **A chat, with a key of your own.** Settings → AI & Integrations → Chat
+  takes a provider — Anthropic, OpenAI, OpenRouter or Ollama — and an API key
+  of yours, and the app gains a chat that can read your plan and act on it. It
+  speaks through the same tools and permissions an external assistant gets:
+  reading and writing, never deleting, every write in the write log. Remove
+  the key and the chat is gone; without one, nothing in the app ever calls a
+  model.
+
+## 0.181.5 — 2026-09-21
+
+- **The task filters fold away on a phone.** Seven controls needed three rows
+  at phone width — a third of the screen spent before a single task. The
+  filters now sit behind one button that says what is narrowing the list while
+  they are folded, with a single press back to everything. The search box
+  stays out in the open: it is typed into, not pressed.
+
+## 0.181.4 — 2026-09-20
+
+- **A label filter holds more than one label.** "The urgent ones" is a
+  question one label answers; "the urgent ones and the ones about the house" is
+  the one anybody with a long list is actually asking. Pressing a label on a
+  task adds it to the filter too, so two presses is two labels. Any of them
+  rather than all — a task carries two or three, and asking for the ones
+  carrying every label you picked usually asks for nothing.
+
+- **A dropdown in a form is the app's own, not the platform's.** Only the
+  closed control could be styled, so on a dark screen opening one produced a
+  white panel with the operating system's blue bar across it. The goal form,
+  the block form and the notebook field draw their own list now, with the keys
+  a dropdown answers to. Dates stay the browser's: a calendar is a real control
+  and a hand-built one is worse.
+
+- **A label filter's menu is no longer cut off by the card it is in.**
+
+- **The task card reads at a glance.** The tick stands level with the title
+  rather than floating halfway down the row, and urgency, interest and energy
+  are three little gauges in the room it gave back — five frets each, one
+  colour each, the words under the pointer. A finished task says when it was
+  finished.
+
+- **A ticked task is seen to be ticked before it goes.** It stays half a
+  second, drawn as a finished one, instead of vanishing the instant you press
+  it.
+
+- **Pressing Escape no longer costs you the task you were writing.** What was
+  typed comes back when the form does. Cancel and a save that worked still
+  throw the draft away, because both are somebody saying they are finished.
+
+- **Stepping the week keeps the page where it is.** Reading the afternoon and
+  pressing forward used to put you back at seven in the morning. The grid dims
+  while the next week arrives, and a press landing during it still lands.
+
+- **An account is in dollars until it says otherwise.** Preferences still takes
+  any currency.
+
+- **A note points at a task as `TASK:#4`.** The room is called Tasks, so the
+  reference is too — and the live preview resolves it now instead of showing
+  the reference itself. Notes written before this keep working.
+
+- **Folding a place in Inventory holds the page still.**
+
+- **The Day / Week / Month control says which one you are on.** The difference
+  between the chosen position and the others was carried by a raised tile the
+  dark theme does not have.
+
+- **The planner's header is two rows on a phone, not four**, with the date
+  centred between the arrows; and on a desktop the arrow that steps the week
+  sits beside the date it steps rather than adrift of it.
+
+- **The permissions table names every family of data.** One row printed its
+  internal key — "statements" — in the middle of a page that was otherwise in
+  your language.
+
+- **A reminder is listed at the time it was set for.** Where the box's clock
+  differed from the account's timezone it was shown hours out.
+
+- **A data stream's page is part of Integrations**, with the room's tabs on it,
+  rather than a page belonging to nothing.
+
+- **A task's notes and an idea are written in the box with the preview**, so a
+  pasted screenshot is a screenshot rather than an address in the middle of a
+  sentence.
+
+- **Tags can be managed.** A Tags tab in Notebooks lists every label the
+  account uses with how many things carry it, and renames, colours or removes
+  one — across tasks, notes, ideas, blocks and pictures at once, because the
+  vocabulary is the account's rather than a room's. Renaming onto a label you
+  already use merges the two rather than refusing. A label with a colour is
+  drawn in it wherever it appears; one without stays as it was.
+
+- **Two causes of text flickering while it is typed.** The markdown box kept
+  what was typed in its caller's prop, so any reload of the page put the
+  stored text back until the next keystroke; and a full box re-measured itself
+  on every keystroke, which costs a scrolled box its place for a frame.
+- **Deleting a block from the board actually removes it from the day.** It
+  deleted the generated occurrence, which the next page load generated straight
+  back — so the press closed the dialog and the card was still there. A
+  repeating block is suppressed for that day; a one-off is deleted.
+- **The task list can be searched.** The filters beside it answer "which kind";
+  this answers "the one about the plumber" — across titles, notes and labels,
+  with the count beside it saying what is left.
+- **The browser tab says where you are** — "To-do · Tasks · Ontoplano" rather
+  than "Ontoplano" on every page, which is useless the moment two of them are
+  open. Staging, the demo and a dev build keep their own name on the end.
+- **A task's description opens it too.** The title was the only thing that
+  unfolded one, and the line you are reading when you want the rest did
+  nothing. A picture or a recording inside it stays its own control.
+- **Pressing Create twice makes one task — on every form in the app.** A form
+  in flight disables its buttons and drops a submission identical to the one
+  already going. Identical rather than merely second: the notebook's divider
+  posts a new width as it is dragged, and that is something new to say each
+  time.
+- **The AI agents page says what to pass each tool.** Every tool now carries a
+  table of its parameters — type, whether it is required, the values an enum
+  allows, the default — generated from the same array that serves them.
+- **A board card is a button with a name of its own.** Its accessible name was
+  everything written inside it, the labels of the buttons it contains included.
+- **Pressing one tag chip's × takes one label off.** Removing the pressed
+  element while the press was still being delivered made the browser finish it
+  against whatever moved into that spot.
+- **An assistant can ask for part of a list instead of all of it.** The task
+  list takes `status`, `withoutTag` and `taggedSince` beside `tag`; notes take
+  `tag` and `taggedSince`. A listing answers with a line per row — `verbose`
+  for the whole thing, `fields` for exactly the parts wanted — and `tag_todo`
+  answers with the labels rather than two copies of the task. `up_next` answers
+  what to do next, by the ratings on the tasks themselves.
+- **A label on a note carries the day it went on**, the way a label on a task
+  already did, so a note put into review can be found by when it was put there.
+- **The demo band on a phone carries the mark** instead of "yours, and
+  temporary".
+- **A task shows its number inside its notebook**, small, at the end of the row
+  — the number a note points at and the one to say out loud when you mean a
+  particular task.
+- **A note can point at a task in the same notebook.** `TODO:#4` — the task's
+  number inside that notebook — renders as the task itself, ticked when it is
+  done, and opens its editor. Turning a note's checkboxes into tasks writes
+  these in place of the boxes, so the offer stops standing over a list that has
+  already been made and the note and the list stop being two records of one
+  thing.
+- **The demo band says what it is, points at the source, and can be read in
+  both themes.** Its ink was a palette colour, which the dark theme inverts —
+  white on orange.
+- **The planner fetches the windows either side before you step into them.** An
+  arrow was a round trip, so the grid sat empty for the length of one each time.
+- **An assistant can see the pictures it is entitled to.** The new `media` tool
+  takes the link as the writing writes it — `/media/31`, `/media/audio/44` —
+  and answers with the file. Reaching one used to mean an HTTP request with a
+  raw key, which an MCP client never hands out, so the capability worked for a
+  script and not for the client it was built for. Same permission rule, same
+  function answering it, no new grant.
+- **The reminder form writes the day-start hour in the reader's own clock.** It
+  promised "Empty means 06:00" while the row underneath said "6:00 AM", and the
+  sentence was hard-coded English besides.
+- **The app shows what arrived while it was away.** It opened on a badge saying
+  three notifications and a bell holding none: a frozen web view takes the live
+  stream down with it, so nothing was pending when it came back and nothing
+  reconnected. Returning to the front reloads once and reopens the stream.
+- **A link that names a part of a page lands on that part.** "OD changed 6
+  things" opened the integrations page at the top: below `lg` the window does
+  not scroll — the page body does — so the browser's own fragment handling
+  moved nothing.
+- **The filters in a toolbar are the app's own control, not a `<select>`.** The
+  tag and notebook filters on the task list, and the ledger, window, tag and
+  month filters in Finance, are the same button-and-menu the sort control uses.
+- **The new filter control keeps the corners every button beside it has.** A
+  full-width button inside a card is drawn as a row, and rows are square.
+- **A menu's chosen row can be read again.** It was marked with a near-white
+  wash under the white ink of the dark overlay face.
+- **A board card puts its time under its title.** The time sat in front of the
+  title and cost it five characters on every card that had one, and the badge
+  line only existed when there was a badge — so a card wearing one label stood
+  taller than its neighbours. Both lines are always there now.
+- **A notebook's filters sit under its tabs, the way the Tasks tab already
+  did.** On a phone they took the row and left one letter of "Notes" showing.
+- **The task filters say how many tasks are showing**, not only how many are
+  hidden.
+- **Each setting in Location and time is fenced with the button that saves
+  it.** Several Save buttons down one panel said nothing about which fields
+  each one covered.
+- **A goal filed under a notebook can be worked on there.** The Goals tab was a
+  list of titles: no edit, no delete, no way to say a goal was achieved or
+  missed, and nothing about what counts towards it. It draws the goals room's
+  own card now, and the goals room groups a notebook's goals under its name,
+  below the ones that are not about a subject.
+- **The measure box's example follows the kind of number.** Choosing ℚ left the
+  placeholder saying 3.
+- **The to-do toolbar stops taking three rows on a phone.** The sort control
+  was pushed to the right at every width, so it wrapped onto a line of its
+  own with an empty half beside it.
+- **A task can be given a day as it is written.** The form could not say when,
+  so "ring the plumber tomorrow" became a task with the word tomorrow in its
+  title and a day that still looked empty.
+- **Removing one tag chip removes one tag.** A single press was reaching the
+  next chip's handler as well, so two came off.
+- **An opened card says the same thing wherever it is.** The to-do rail left
+  out the goals a card belongs to, because it was a second copy of the same
+  markup.
+- **A permission says that the pictures come with it.** "Read your notebooks"
+  always reached the pictures inside them — a file answers to whatever refers
+  to it — and the sentence on the key form never said so. It does now, on
+  every read grant and on the notebook a key can be tied to, and the docs say
+  how an assistant actually fetches one.
+- **A note written in the notebook previews its markdown too.** It shipped in
+  the dialog only, which is not where most notes are written. The box also
+  starts at twice the height, and Tags and People are the same size instead
+  of one full-width box above a half-width one.
+- **The yearly and monthly tiles are smaller than the plan tiles.** They were
+  the same width and merely shorter, which is what made the two choices read
+  as equally important.
+- **Shift+H and Shift+L walk the room's own tabs, everywhere.** They read the
+  strip the room is drawing rather than the menu's list, so they go in the
+  order you can see, reach places the menu does not list, and work in Media
+  and Finance — which answered to nothing before. The board no longer takes
+  them for itself: it carries a card with `<` and `>`.
+- **One sorting control, in the notes and in the tasks.** A notebook's notes
+  used a dropdown beside an arrow; its tasks used a button that cycled through
+  the orders, which shows you nothing and cannot go back. Both now say what
+  the order is, open the list when pressed, and flip direction with the arrow
+  beside them — and the task list finally has a direction at all.
+- **An answered slider looks answered.** A one is the thumb a fifth of the way
+  along a thin track, which at a glance is the same picture as not having
+  answered at all — and the two mean opposite things. An answered one sits on
+  a shade of its own now.
+- **"Location and time" is one section at the top of Preferences.** The
+  language, the clock, the timezone, the first day of the week, the planner's
+  hours and which day tasks are generated on were six settings scattered down
+  the page, and they are one subject — everything else reads differently once
+  they are right.
+- **A task can be deleted from the form that edits it.** Away from Save, at
+  the far left, armed like every other delete.
+- **A label remembers when it went on.** The chip says how long ago under the
+  pointer, and an assistant can ask what has been marked since this morning —
+  neither was answerable before, because a task's own timestamp moves for
+  every edit. Labels also reach a recurring block and a one-off block now, not
+  only a task with no day.
+- **The tag box empties as you type, and suggests as you go.** The chips and
+  the box were two views of one string, so the box could never clear — and
+  nothing was suggested, because the word being typed was whatever trailed the
+  last separator, which right after a space is nothing. They are two things
+  now. Backspace on an empty box takes the last chip off, and a word still
+  being typed when you press Save counts anyway.
+- **An opened card is shaded, not underlined.** A rule across the top of a
+  rounded card stopped short of both edges and read as a mistake; the notes
+  sit on a shade of their own now, and "nothing written on this one" is
+  legible instead of nearly invisible.
+- **A picture opens over the page instead of in a new tab.** Pressing one is
+  the app being asked to show it, not a link being followed — so it fills the
+  screen on a dark ground and the ground closes it. Every rendered picture in
+  the app, wherever it is.
+- **A checklist becomes tasks from the composer, as you type it.** The offer
+  was an icon on the finished note's row, found afterwards by somebody who
+  went looking. It appears beside Add the instant a `- [ ]` does, says how
+  many it will make, and makes them with the note in one press. The row holds
+  its height so nothing shifts under the hand about to press Add.
+- **A reminder is in the bell list whether or not the app was open.** One that
+  came due while you were looking at a page was raised by the page itself and
+  written down nowhere, so the same reminder was in the list or not depending
+  on which device happened to be awake. It goes in either way now — already
+  read when you watched it appear, since a badge for that means nothing.
+- **A goal is written where you are.** "New goal" on a notebook used to throw
+  you out to the Goals room, while "New task" beside it stayed put — the same
+  press behaving two different ways depending on which tab was showing. It
+  opens the goals room's own form, in the notebook, filed under it.
+- **Write and Preview are the same height, so nothing below them moves.**
+  Choosing Preview on a short note used to pull the picture row, the tags and
+  the footer up the screen, and choosing Write pushed them back down.
+- **j and k walk a notebook's tasks and goals, not only its notes.** h and l
+  switched between the three tabs and the other two answered to nothing.
+- **The planner's day names follow the app's language.** "Sun 20 / Mon 21" sat
+  under a Portuguese screen in every view. The calendar formats its own
+  headers and was never told which language to do it in.
+- **A year is written as a year.** "Week of Aug 24 2,026" — a year handed to a
+  sentence as a number was grouped like a quantity.
+- **A note's stamp says the time as well as the day.** Two notes written the
+  same afternoon read as the same note otherwise.
+- **A plan's limit is written the way you write numbers.** It was pinned to
+  American formatting, so a Portuguese account was told its plan allows
+  "5,000 notes" — which in pt-BR reads as five.
+- **Typing a tag suggests the ones you already use.** The box splits on spaces
+  and commas as you type — which is what the server has always done with what
+  it holds, so "work urgent" was two tags and the box was the only thing that
+  did not say so. Settled words are chips, the one being typed offers what it
+  could be, and arrows and Enter pick one. Every place that takes tags.
+- **The app says so when you make, change or delete a task.** Making one
+  offers a way straight into it rather than an undo — you asked for it and it
+  is there, so the useful next move is saying more about it. Changing one says
+  "Saved" and offers nothing, because the change is on the screen behind it.
+  Deleting one now waits a few seconds with the way back on the toast, the way
+  Inventory already did, instead of asking "are you sure" before the fact.
+- **A picture in a task or an idea can be seen by an assistant that may read
+  it.** It was reachable by nobody at all: a file answers to whatever refers
+  to it, and tasks and ideas were not counted as referring to a picture — only
+  to a recording. Pasting a screenshot onto a task and then asking an
+  assistant about it got nothing.
+- **Times are written the way you read them.** A setting under Preferences —
+  12-hour, 24-hour, or whatever your language does, which is the default and
+  shows you what each one looks like before you choose. Every screen asks the
+  same question of the same answer now, instead of thirty-seven places each
+  deciding for themselves; the planner, the notification panel and the
+  reminder list had disagreed for a while.
+- **The row the keyboard is on is shaded, not boxed.** A two-pixel rule above
+  and below it, on rows that sit flush, drew a heavy line between them — and
+  the top one was clipped on the first row, so the first selection never
+  looked like the others. It is a wash and a small lift now.
+- **Shift+H and Shift+L walk the places inside the room you are in.** `h` and
+  `l` move between a screen's own tabs and `J`/`K` between the rooms; this is
+  the level in between — Board to To-do, the diary to People. Worked out from
+  the addresses, so somewhere added later answers to them with nobody wiring
+  it up, and a screen that already uses those keys keeps them.
+- **What an assistant did is said in your own language.** The notification
+  panel's title was translated and every line under it was English, because
+  the sentence was assembled from tool names rather than from the catalogue.
+  Verbs, nouns and their plurals are written in all four languages now, and
+  the order of the words is a translator's to change — German puts the
+  participle last, which no amount of translating the words alone would fix.
+- **A notification about a burst of changes lands on the list of them.** It
+  took you to the integrations page and left you to find the section. Links
+  carrying a `#section` work generally now; the app scrolls its own panel, so
+  the browser's anchor handling had never applied.
+- **The help dock stays out of the way until it is wanted.** Four icons sat in
+  the corner of every desktop screen. It is one question mark now, on a phone
+  and a desktop alike, and pressing it opens the row — and closes it again.
+- **A note shows what its markdown will look like, as you type it.** Beside the
+  box where there is room for two columns, behind a Write/Preview pair where
+  there is not. It has nothing to do with saving.
+- **Changing the language says it is working.** Every word on every screen is
+  reloaded, which takes a moment, and for that moment the app said nothing at
+  all — the bar across the top and the turning mark only ever answered a
+  navigation. They answer any wait now.
+
 ## 0.181.3 — 2026-09-20
 
 - **A card can be moved on a phone.** Dragging is a mouse gesture and does not

@@ -43,14 +43,14 @@
 	let ratings = $state<Record<Rating, number | null>>({
 		urgency: null,
 		interest: null,
-		energy: null
+		ease: null
 	});
 
 	$effect(() => {
 		// Named so the effect re-runs for each opening: nothing carries over
 		// from the last thing that was written down.
 		void capture.key;
-		ratings = { urgency: null, interest: null, energy: null };
+		ratings = { urgency: null, interest: null, ease: null };
 	});
 
 	$effect(() => {
@@ -68,8 +68,15 @@
 	{#if capture.key === 'idea'}
 		<IdeaFields compact />
 	{:else if capture.key === 'note'}
-		<!-- A diary note, so no notebook picker: see NoteFields. -->
-		<NoteFields compact label={t('capture.diaryNote')} notebook={false} />
+		<!--
+			A note, and where it goes.
+
+			It said "Diary note" and offered no choice, which named the place
+			rather than the thing and then hid the only decision there is. It is
+			a note; the picker under it says whether it lands in the diary or in
+			one of the notebooks, and it starts on the diary.
+		-->
+		<NoteFields compact label={t('app.note')} notebooks={options.notebooks} />
 	{:else if capture.key === 'todo'}
 		<TodoFields
 			compact

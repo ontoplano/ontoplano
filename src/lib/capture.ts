@@ -56,7 +56,9 @@ export const CAPTURES: Capture[] = [
 	{
 		key: 'todo',
 		shortcut: 't',
-		label: 'app.toDo',
+		// The singular, because the dialog says "New {thing}": the tab is
+		// called Tasks and one of them is a task.
+		label: 'app.task',
 		icon: 'check',
 		color: SECTION_COLORS.planner,
 		lead: 'heading',

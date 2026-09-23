@@ -76,6 +76,25 @@ describe('an error report', () => {
 	});
 
 	/*
+	 * Which build it happened on, without anybody being asked.
+	 *
+	 * A report that does not say is a report somebody has to guess at, and the
+	 * version alone would not answer it — the version is not bumped per commit,
+	 * so one names a dozen builds. It comes from the running instance rather
+	 * than from the page, which is what stops a tab left open across a deploy
+	 * from reporting an older one.
+	 */
+	it('says which build it happened on, version and commit', () => {
+		service.setClientErrorConsent(ctx, 'yes');
+		service.recordClientError(ctx, { message: 'something gave way' });
+
+		const [report] = service.recentClientErrors();
+		expect(report.build, 'no build on the report').toBeTruthy();
+		// `version (commit)` — both halves, because either alone is ambiguous.
+		expect(report.build).toMatch(/^\d+\.\d+\.\d+ \(.+\)$/);
+	});
+
+	/*
 	 * The error page's own button.
 	 *
 	 * An error the router turned into the error page never reaches the window

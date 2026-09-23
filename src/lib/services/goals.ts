@@ -190,7 +190,10 @@ function progressFor(
 	};
 }
 
-export function listGoals(ctx: Ctx, opts: { includeClosed?: boolean } = {}): Goal[] {
+export function listGoals(
+	ctx: Ctx,
+	opts: { includeClosed?: boolean; notebookId?: number } = {}
+): Goal[] {
 	const rows = db
 		.select({
 			id: goals.id,
@@ -211,7 +214,11 @@ export function listGoals(ctx: Ctx, opts: { includeClosed?: boolean } = {}): Goa
 		.from(goals)
 		.leftJoin(goalAreas, eq(goals.areaId, goalAreas.id))
 		.leftJoin(notebooks, eq(goals.notebookId, notebooks.id))
-		.where(eq(goals.userId, ctx.userId))
+		.where(
+			opts.notebookId === undefined
+				? eq(goals.userId, ctx.userId)
+				: and(eq(goals.userId, ctx.userId), eq(goals.notebookId, opts.notebookId))
+		)
 		.orderBy(asc(goals.periodStart), asc(goals.title))
 		.all();
 

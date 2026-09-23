@@ -30,6 +30,16 @@ export const BROWSE_SHORTCUTS: ShortcutBinding[] = [
 export const GLOBAL_SHORTCUTS: ShortcutBinding[] = [
 	{ key: 'J', action: 'global-next-page', description: 'shortcut.nextPage' },
 	{ key: 'K', action: 'global-prev-page', description: 'shortcut.previousPage' },
+	/*
+	 * The rooms are J and K; the places inside one are H and L.
+	 *
+	 * Lower-case h and l walk the tabs of whatever is on screen — see
+	 * `$lib/browse` — so the shifted pair walking the room's own places keeps
+	 * the same axis at the next level out: sideways is sideways, and the shift
+	 * is how far out you mean.
+	 */
+	{ key: 'L', action: 'global-next-place', description: 'shortcut.nextPlaceInRoom' },
+	{ key: 'H', action: 'global-prev-place', description: 'shortcut.previousPlaceInRoom' },
 	{ key: 'Escape', action: 'global-close', description: 'shortcut.closeForm' },
 	{ key: '?', action: 'global-help', description: 'shortcut.toggleShortcutHelp' }
 ];
@@ -62,8 +72,17 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'j', action: 'next-card', description: 'shortcut.moveBetweenCards' },
 			{ key: 'k', action: 'prev-card', description: 'shortcut.moveBetweenCards' },
 			{ key: 'l', action: 'next-column', description: 'shortcut.moveBetweenColumns' },
-			{ key: 'H', action: 'carry-left', description: 'shortcut.carryCardToPreviousColumn' },
-			{ key: 'L', action: 'carry-right', description: 'shortcut.carryCardToNextColumn' },
+			/*
+			 * `<` and `>`, not `H` and `L`.
+			 *
+			 * Those two walk the places inside a room, everywhere in the app —
+			 * and a key that means one thing on nine screens and something else
+			 * on the tenth is a key nobody trusts. The board used to claim them,
+			 * so the board was the one room you could not walk out of sideways.
+			 * The angle brackets already read as "push it that way".
+			 */
+			{ key: '<', action: 'carry-left', description: 'shortcut.carryCardToPreviousColumn' },
+			{ key: '>', action: 'carry-right', description: 'shortcut.carryCardToNextColumn' },
 			{ key: 'c', action: 'toggle-done', description: 'shortcut.markDoneReopen' },
 			{ key: 't', action: 'toggle-today', description: 'shortcut.pullOntoTodayPut' },
 			{ key: 'g', action: 'switch-tab', description: 'shortcut.switchTodayGeneral' },
@@ -76,7 +95,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: '5', action: 'rate', description: 'shortcut.setTheActiveRating' },
 			{ key: 'u', action: 'rate-urgency', description: 'shortcut.numberKeysSetUrgency' },
 			{ key: 'i', action: 'rate-interest', description: 'shortcut.numberKeysSetInterest' },
-			{ key: 'y', action: 'rate-energy', description: 'shortcut.numberKeysSetEnergy' },
+			{ key: 'y', action: 'rate-ease', description: 'shortcut.numberKeysSetEase' },
 			{ key: 'x', action: 'delete', description: 'shortcut.askToDeleteCard' }
 		]
 	},
@@ -188,6 +207,14 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		shortcuts: [
 			...BROWSE_SHORTCUTS,
 			{ key: 'n', action: 'new', description: 'shortcut.newNotebook' }
+		]
+	},
+	'/notebooks/tags': {
+		label: 'app.tags',
+		shortcuts: [
+			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateTags' },
+			{ key: 'k', action: 'navigate-up', description: 'shortcut.navigateTags' },
+			{ key: 'e', action: 'edit', description: 'shortcut.editTag' }
 		]
 	},
 	'/notebooks/people': {

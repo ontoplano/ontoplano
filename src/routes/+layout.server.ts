@@ -1,5 +1,8 @@
 import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
+import type { Clock } from '$lib/when';
+import { serverTimezone } from '$lib/services/ctx';
+import { listTags } from '$lib/services/diary';
 import {
 	DEFAULT_THEME,
 	DEFAULT_WEEK,
@@ -10,13 +13,16 @@ import {
 	getWeekSettings,
 	hasSeenTutorial,
 	isDemo as isDemoInstance,
-	isStaging
+	isStaging,
+	appName,
+	getClock
 } from '$lib/server/settings';
 import type { HideableSection } from '$lib/sections';
 import { clientErrorState } from '$lib/server/services/client-errors';
 import { needsFirstRun } from '$lib/services/onboarding';
 import { listCategories } from '$lib/services/activities';
 import { buildCtx } from '$lib/services/ctx';
+import { isDemoAccount } from '$lib/server/services/demo';
 import {
 	list as listSent,
 	unreadCount as unreadSent,
@@ -56,6 +62,16 @@ export const load: LayoutServerLoad = async (event) => {
 	// The demo's waiting room is where an account is made, so by definition
 	// nobody is signed in while it is drawn. It 404s off a demo instance.
 	const isDemoDoor = event.url.pathname === '/demo';
+	/*
+	 * The screen an assistant sends somebody to, which answers its own door.
+	 *
+	 * Signing in is part of what it is for, and it has somewhere to send them
+	 * afterwards — the consent screen they were already walking towards. This
+	 * blanket redirect drops that, so the page is left to do it: see
+	 * `oauth/authorize`, which sends them to `/login?next=…` and gets them
+	 * back. Everything else still lands on a bare login page.
+	 */
+	const isConnect = event.url.pathname === '/oauth/authorize';
 
 	if (
 		!event.locals.user &&
@@ -66,7 +82,8 @@ export const load: LayoutServerLoad = async (event) => {
 		!isFrontPage &&
 		!isMailLink &&
 		!isNewsletter &&
-		!isDemoDoor
+		!isDemoDoor &&
+		!isConnect
 	) {
 		return redirect(302, '/login');
 	}
@@ -94,6 +111,20 @@ export const load: LayoutServerLoad = async (event) => {
 
 	let userCategories: { id: number; name: string; color: string; colorLight: string }[] = [];
 	let theme = DEFAULT_THEME;
+	let clock: Clock = 'auto';
+	/* The account's zone, so every screen writes a time in the same one. */
+	let tz = serverTimezone();
+	/* Every tag this account has used — one vocabulary, so the shell carries it. */
+	let tagVocabulary: string[] = [];
+	/*
+	 * The colour each label wears, by name.
+	 *
+	 * Beside the vocabulary rather than on the pages, for the same reason the
+	 * vocabulary itself is here: the same word is drawn on a task, a note, an
+	 * idea and a picture, and a colour plumbed through four loaders is a
+	 * colour that shows in three of them. `TagChip` reads this.
+	 */
+	let tagColors: Record<string, string> = {};
 	let week = DEFAULT_WEEK;
 	let hiddenSections: HideableSection[] = [];
 	let navOrder: string[] = [];
@@ -109,6 +140,7 @@ export const load: LayoutServerLoad = async (event) => {
 	 */
 	let notifications: SentNotification[] = [];
 	let unreadNotifications = 0;
+	let resettableDemo = false;
 	if (event.locals.user) {
 		const ctx = buildCtx(event.locals.user.id);
 		userCategories = listCategories(ctx).map((c) => ({
@@ -118,6 +150,13 @@ export const load: LayoutServerLoad = async (event) => {
 			colorLight: c.colorLight
 		}));
 		theme = getTheme(ctx.userId);
+		clock = getClock(ctx.userId);
+		tz = ctx.tz;
+		const vocabulary = listTags(ctx);
+		tagVocabulary = vocabulary.map((one) => one.name);
+		tagColors = Object.fromEntries(
+			vocabulary.filter((one) => one.color).map((one) => [one.name, one.color as string])
+		);
 		week = getWeekSettings(ctx.userId);
 		hiddenSections = getHiddenSections(ctx.userId);
 		navOrder = getNavOrder(ctx.userId);
@@ -133,6 +172,7 @@ export const load: LayoutServerLoad = async (event) => {
 		 * written once and never again.
 		 */
 		tutorialPending = isDemoInstance() || !hasSeenTutorial(ctx.userId);
+		resettableDemo = isDemoInstance() && isDemoAccount(ctx.userId);
 	}
 
 	/*
@@ -176,6 +216,15 @@ export const load: LayoutServerLoad = async (event) => {
 		 * universal load beside this one turns it into a catalogue.
 		 */
 		locale: event.locals.locale ?? SOURCE_LOCALE,
+		/*
+		 * Which clock this account reads. On the shell rather than on a page,
+		 * because every room writes a time and they have to agree — see
+		 * `$lib/when`.
+		 */
+		clock,
+		tz,
+		tagVocabulary,
+		tagColors,
 		// Sections this account has put away: out of every menu the shell
 		// renders, still answering at their URLs.
 		hiddenSections,
@@ -191,6 +240,16 @@ export const load: LayoutServerLoad = async (event) => {
 		// hourly, so nobody mistakes it for their own instance.
 		demo: isDemoInstance(),
 		/*
+		 * And whether *this* account is one of the throwaway copies.
+		 *
+		 * Not the same question as the one above, which is why the menu used to
+		 * offer Reset demo account to the operator signed into their own
+		 * account on the demo instance — and resetting refuses that, correctly,
+		 * so the button was one that could only fail. Only a visitor's own copy
+		 * can be put back.
+		 */
+		demoAccount: resettableDemo,
+		/*
 		 * And so does staging, on every page rather than only on the way in.
 		 *
 		 * It used to say so on the sign-in form and nowhere else, so the moment
@@ -200,14 +259,17 @@ export const load: LayoutServerLoad = async (event) => {
 		 * all it does is draw a band.
 		 */
 		staging: isStaging(),
+		/*
+		 * What this instance calls itself, for the browser tab.
+		 *
+		 * The same name `hooks.server.ts` stamps into `<title>` — staging, the
+		 * demo and a dev build each wear their own, and the shell writing a
+		 * title per page must not undo that.
+		 */
+		appName: appName(),
 		// Whether to show somebody around without being asked. The shell decides
 		// where — the dashboard, which is where first run lets go of them.
 		tutorialPending,
-		// The demo's own address, for the band that tells a desktop visitor
-		// they can open the same thing on their phone. Taken from the request
-		// rather than from configuration: whatever host they reached it on is
-		// the host that will work when they type it again.
-		demoHost: isDemoInstance() ? event.url.host : null,
 		/*
 		 * The key a browser needs to sign itself up for notifications.
 		 *

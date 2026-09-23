@@ -6,6 +6,7 @@ import { auth } from '$lib/server/auth';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { ensureUserCategories } from '$lib/server/db/ensure-categories';
 import {
+	appName,
 	DEFAULT_THEME,
 	getStyle,
 	getTheme,
@@ -23,6 +24,7 @@ import {
 	touchDemoAccount
 } from '$lib/server/services/demo';
 import { clientKey, rateLimit, signUpBudget } from '$lib/server/rate-limit';
+import { recordFailedSignIn, recordServerError } from '$lib/server/services/attack-watch';
 import { bindFileCaller } from '$lib/services/host';
 import { fileCaller } from '$lib/server/api/media-access';
 import { checkSignUpAllowed, consumeInvite } from '$lib/server/services/registration';
@@ -356,13 +358,7 @@ const handleTheme: Handle = ({ event, resolve }) => {
 	// And the demo for the third time: a tab of somebody's own week and a tab
 	// of a sandbox wiped every hour were the same picture in the same window.
 	const mark = isStaging() ? '-staging' : isDemo() ? '-demo' : dev ? '-dev' : '';
-	const appname = isStaging()
-		? 'Ontoplano staging'
-		: isDemo()
-			? 'Ontoplano demo'
-			: dev
-				? 'Ontoplano — Dev'
-				: 'Ontoplano';
+	const appname = appName();
 
 	return resolve(event, {
 		transformPageChunk: ({ html }) =>
@@ -426,6 +422,7 @@ const handleSecurityHeaders: Handle = async ({ event, resolve }) => {
 	if (contentType === 'text/html') {
 		response.headers.set('content-type', 'text/html; charset=utf-8');
 	}
+
 	/*
 	 * The microphone, to this origin and nothing else.
 	 *
@@ -461,19 +458,68 @@ const handleAuthRateLimit: Handle = async ({ event, resolve }) => {
 		event.request.method === 'POST' &&
 		(event.url.pathname.startsWith('/api/auth') || event.url.pathname === '/login');
 
-	if (isCredentialPost) {
-		const key = `auth:${clientKey(event.request, event.getClientAddress)}`;
-		const { allowed, retryAfterSeconds } = rateLimit(key, AUTH_ATTEMPTS, AUTH_WINDOW_MS);
-		if (!allowed) {
-			return new Response('Too many attempts. Try again shortly.', {
-				status: 429,
-				headers: { 'Retry-After': String(retryAfterSeconds) }
-			});
-		}
+	if (!isCredentialPost) return resolve(event);
+
+	const from = clientKey(event.request, event.getClientAddress);
+	const { allowed, retryAfterSeconds } = rateLimit(`auth:${from}`, AUTH_ATTEMPTS, AUTH_WINDOW_MS);
+	if (!allowed) {
+		return new Response('Too many attempts. Try again shortly.', {
+			status: 429,
+			headers: { 'Retry-After': String(retryAfterSeconds) }
+		});
 	}
 
-	return resolve(event);
+	/*
+	 * Which account was being tried, read before the body is spent.
+	 *
+	 * The form action on /login records its own refusals — it has the address
+	 * and the email in hand — but the API door is the one an attacker with a
+	 * password list actually uses, and there the email is only in the body.
+	 * A clone so the request the handler receives is untouched, and only for
+	 * the sign-in paths: nothing else here wants it.
+	 */
+	const account = isSignIn(event.url.pathname) ? await attemptedAccount(event.request) : null;
+
+	const response = await resolve(event);
+
+	// 401 is better-auth's answer to wrong credentials; 400 is the form
+	// action's. Either way it is a refusal, and it is the count across ALL
+	// addresses that says whether a list is being worked through.
+	// services/attack-watch.ts does the counting; this only reports.
+	if (account !== null && (response.status === 401 || response.status === 403)) {
+		recordFailedSignIn(from, account);
+	}
+
+	return response;
 };
+
+/** The doors that take a password. `/login` posts to a form action instead. */
+const isSignIn = (path: string) => path.startsWith('/api/auth/sign-in');
+
+/**
+ * The email a credential post was for, or null.
+ *
+ * Best effort by design: a body that is not the shape expected is an attempt
+ * that will fail anyway, and this must never be the reason a request errors.
+ * The password is not read, not returned and not logged.
+ */
+async function attemptedAccount(request: Request): Promise<string | null> {
+	try {
+		const type = request.headers.get('content-type') ?? '';
+		if (type.includes('application/json')) {
+			const body = await request.clone().json();
+			const email = (body as { email?: unknown })?.email;
+			return typeof email === 'string' && email ? email : null;
+		}
+		if (type.includes('form')) {
+			const email = (await request.clone().formData()).get('email');
+			return typeof email === 'string' && email ? email : null;
+		}
+	} catch {
+		// An unparseable body is not an incident here.
+	}
+	return null;
+}
 
 /**
  * A form posted after the session ended lands on the login page.
@@ -510,6 +556,7 @@ const HOLD_EXEMPT = [
 	'/api',
 	'/healthz',
 	'/favicon.svg',
+	'/favicon.ico',
 	'/icons',
 	'/manifest.webmanifest'
 ];
@@ -743,7 +790,13 @@ const handleAccessHolds: Handle = async ({ event, resolve }) => {
 // `/demo` makes the demo's account from its own action, which is a POST by
 // somebody who is not signed in — that is the whole point of it. It answers
 // 404 unless this instance is the demo.
-const PUBLIC_WRITES = ['/login', '/api/auth', '/demo'];
+// The two doors an assistant knocks on before anybody has signed in: it
+// registers itself, and later swaps its code for a token. Neither reaches an
+// account — a client id is worth nothing until somebody says yes on the
+// consent screen, and a code is worth nothing without the verifier it was
+// issued against. The consent screen itself is not here: that one is a page
+// action and needs the session it runs as.
+const PUBLIC_WRITES = ['/login', '/api/auth', '/demo', '/oauth/register', '/oauth/token'];
 
 const handleSignedOutWrites: Handle = ({ event, resolve }) => {
 	const writes = event.request.method !== 'GET' && event.request.method !== 'HEAD';
@@ -757,7 +810,48 @@ const handleSignedOutWrites: Handle = ({ event, resolve }) => {
 	return resolve(event);
 };
 
+/**
+ * Cross-site form posts, refused — the check SvelteKit used to do for us.
+ *
+ * It is here rather than in `svelte.config.js` for one reason: OAuth's token
+ * endpoint is a form post made by a program, which has no `Origin` header at
+ * all, and the framework's version refuses those outright. It is the only
+ * exemption, and it is a safe one — that endpoint reads no cookie and grants
+ * nothing without a code and the PKCE verifier it was issued against, so there
+ * is no ambient authority for a forged post to borrow. Everything else in the
+ * app is a cookie-authenticated form action and is checked exactly as before.
+ *
+ * Mirrors SvelteKit's rule deliberately: the same unsafe methods, the same
+ * three content types a browser will send cross-origin without a preflight,
+ * and the same comparison against this instance's own origin.
+ */
+const FORM_CONTENT_TYPES = [
+	'application/x-www-form-urlencoded',
+	'multipart/form-data',
+	'text/plain'
+];
+const UNSAFE_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
+/** The one door a browser never knocks on. See above. */
+const CSRF_EXEMPT = ['/oauth/token'];
+
+const handleCsrf: Handle = ({ event, resolve }) => {
+	const type = (event.request.headers.get('content-type') ?? '').split(';')[0].trim();
+	const forgeable =
+		UNSAFE_METHODS.includes(event.request.method) &&
+		FORM_CONTENT_TYPES.includes(type) &&
+		!CSRF_EXEMPT.includes(event.url.pathname);
+
+	if (forgeable && event.request.headers.get('origin') !== event.url.origin) {
+		return new Response(`Cross-site ${event.request.method} form submissions are forbidden`, {
+			status: 403
+		});
+	}
+
+	return resolve(event);
+};
+
 export const handle: Handle = sequence(
+	handleCsrf,
 	handleRequestLog,
 	handleSecurityHeaders,
 	handleNativeApp,
@@ -787,6 +881,11 @@ export const handleError: HandleServerError = ({ error, event, status }) => {
 	// The same id the request line carries, so the error and its request are
 	// one grep. Assets skip the logging hook and get their own.
 	const id = event.locals.rid ?? crypto.randomUUID().slice(0, 6);
+
+	// Counted as well as logged: one 500 is a bug to chase, thirty in a
+	// quarter of an hour is an incident, and only the second one should reach
+	// a phone. services/attack-watch.ts decides which this is.
+	if (status >= 500) recordServerError(event.url.pathname);
 
 	console.error(
 		JSON.stringify({
@@ -871,6 +970,14 @@ if (!building) {
 	);
 }
 
+/**
+ * Where the build puts the files it serves, as it appears in a path.
+ *
+ * SvelteKit's own, and distinctive enough to tell a missing stylesheet from a
+ * missing database: nothing else on a box is called this.
+ */
+const BUILT_ASSETS = '/_app/';
+
 if (!building && !globalThis.__ontoplanoDeathWatch) {
 	globalThis.__ontoplanoDeathWatch = true;
 
@@ -885,7 +992,32 @@ if (!building && !globalThis.__ontoplanoDeathWatch) {
 			})
 		);
 
+	/*
+	 * A built asset that is not there is not a reason to stop serving.
+	 *
+	 * The static handler builds its list of files once, at boot, and streams
+	 * them on demand — so a file that goes missing afterwards fails inside the
+	 * stream, where nothing is listening, and arrives here. Exiting on that
+	 * turns one absent file into an instance that is down: a deploy copying
+	 * over `build/` takes the site with it, which is the same shape as the
+	 * chunk deletion that broke a release, and a suite that rebuilds under its
+	 * own server loses every test after the first request for it.
+	 *
+	 * So this one kind is logged and survived. Every other uncaught exception
+	 * still exits, because the state after one is genuinely unknown and a
+	 * process limping on in an unknown state is worse than a restart.
+	 */
+	const missingFile = (error: unknown): string | null => {
+		const it = error as { code?: unknown; path?: unknown };
+		return it?.code === 'ENOENT' && typeof it.path === 'string' ? it.path : null;
+	};
+
 	process.on('uncaughtException', (error) => {
+		const gone = missingFile(error);
+		if (gone !== null && gone.includes(BUILT_ASSETS)) {
+			note('missingAsset', error);
+			return;
+		}
 		note('uncaughtException', error);
 		// Node's default is to exit; keeping that, having said why.
 		process.exit(1);

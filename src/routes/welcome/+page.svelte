@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { NAV_PLACES } from '$lib/sections-nav';
+	import { enhance } from '$lib/enhance';
 	import { tick } from 'svelte';
 	import { SvelteSet } from 'svelte/reactivity';
 	import type { PageServerData, ActionData } from './$types';
@@ -8,7 +9,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import type { Theme } from '$lib/theme';
 	import { useT } from '$lib/i18n';
-	import { sectionBlurb, sectionLabel } from '$lib/sections';
+	import { sectionBlurb, roomLabel, sectionLabel } from '$lib/sections';
 	import type { PlainKey } from '$lib/i18n/keys';
 	import { invalidateAll } from '$app/navigation';
 	import { LOCALES, LOCALE_NAMES, type Locale } from '$lib/i18n/locales';
@@ -368,7 +369,7 @@ at a time, and show me what you will write before writing it.`
 														? 'border-gray-900 bg-gray-50 font-medium text-gray-900'
 														: 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50'}"
 												>
-													<span class="flex-1">{sectionLabel(t, room.id)}</span>
+													<span class="flex-1">{roomLabel(t, room.id, NAV_PLACES)}</span>
 													{#if wanted.has(room.id)}
 														<Icon name="check" />
 													{/if}

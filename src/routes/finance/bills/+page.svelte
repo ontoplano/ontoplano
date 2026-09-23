@@ -1,7 +1,7 @@
 <script lang="ts">
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -280,7 +280,7 @@
 					{#each archived as bill (bill.id)}
 						<li class="flex items-center gap-3 px-4 py-2 text-sm">
 							<span class="min-w-0 flex-1 text-gray-600">{bill.name}</span>
-							<span class="text-xs text-gray-400">{money(bill.amountExpected)}</span>
+							<span class="text-xs text-gray-500">{money(bill.amountExpected)}</span>
 							<form method="post" action="?/archive" use:enhance>
 								<input type="hidden" name="id" value={bill.id} />
 								<input type="hidden" name="archived" value="false" />

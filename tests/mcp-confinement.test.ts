@@ -82,6 +82,69 @@ beforeAll(async () => {
 	outside.notebookTodo = idOf(
 		createTodo(ctx(), { title: 'somebody else’s project', notebookId: other })
 	);
+
+	/*
+	 * A screenshot in each notebook. This is what the confinement screen
+	 * promises — "its tasks, its goals, its notes, and the pictures and
+	 * recordings in them" — and what a confined key could not reach at all,
+	 * because `media` takes a link rather than an id and so declared no reach
+	 * for the tool list to judge.
+	 */
+	const { store } = await import('../src/lib/services/media');
+	const gif = (n: number) =>
+		Uint8Array.from([
+			0x47,
+			0x49,
+			0x46,
+			0x38,
+			0x39,
+			0x61,
+			0x01,
+			0x00,
+			0x01,
+			0x00,
+			0x80,
+			0x00,
+			0x00,
+			0xff,
+			0xff,
+			0xff,
+			0x00,
+			0x00,
+			0x00,
+			0x21,
+			0xf9,
+			0x04,
+			0x01,
+			0x00,
+			0x00,
+			0x00,
+			0x00,
+			0x2c,
+			0x00,
+			0x00,
+			0x00,
+			0x00,
+			0x01,
+			0x00,
+			0x01,
+			0x00,
+			0x00,
+			0x02,
+			0x02,
+			0x44,
+			0x01,
+			0x00,
+			n
+		]);
+	inside.picture = (await store(ctx(), { bytes: gif(0x3b), filename: 'wall.gif' })).id;
+	outside.picture = (await store(ctx(), { bytes: gif(0x3a), filename: 'private.gif' })).id;
+	createTodo(ctx(), {
+		title: 'the wall',
+		notes: `![wall](/media/${inside.picture})`,
+		notebookId: mine
+	});
+	createEntry(ctx(), { content: `![private](/media/${outside.picture})` });
 });
 
 describe('what a key tied to one notebook can do', () => {
@@ -107,6 +170,32 @@ describe('what a key tied to one notebook can do', () => {
 		expect(said(call('notebook_notes', { id: mine }))).toContain('boiler');
 		expect(failed(call('write_entry', { content: 'the electrician comes Tuesday' }))).toBe(false);
 		expect(failed(call('change_goal', { id: inside.goal, notes: 'quotes first' }))).toBe(false);
+	});
+
+	/*
+	 * The three reads a confined key is likeliest to be missing, named.
+	 *
+	 * `todos` being offered says nothing about the rest: these are the ones
+	 * that answer "what should I do next", "which notebooks are there" and
+	 * "show me that picture", and an assistant without them has to read the
+	 * whole list and sort it itself — which is what it was doing, on a key
+	 * that was supposed to have them. They are asserted one by one rather than
+	 * as a count, so a regression names which one went.
+	 */
+	it('is offered the reads that make it useful, by name', () => {
+		const offered = visibleTools({
+			ctx: ctx(),
+			scopes: Object.keys(SCOPES),
+			confinement: { kind: 'notebook', id: mine }
+		} as never).map((t: { name: string }) => t.name);
+		for (const name of ['todos', 'up_next', 'notebooks', 'notebook_notes', 'media'])
+			expect(offered, `${name} is missing from a confined key's tool list`).toContain(name);
+	});
+
+	it('can actually call the one that says what to do next', () => {
+		// Being offered it and being able to call it are two promises, and the
+		// second is the one an assistant finds out about.
+		expect(failed(call('up_next', {}))).toBe(false);
 	});
 });
 
@@ -148,6 +237,36 @@ describe('what it cannot do', () => {
 		expect(offered).toContain('add_todo');
 		expect(offered).not.toContain('diary');
 		expect(offered).not.toContain('tick_bought');
+	});
+
+	/*
+	 * The pictures the confinement screen promises.
+	 *
+	 * `media` reaches a file by the link the writing spells rather than by an
+	 * id, so it declares no reach and the usual rule hid it from every confined
+	 * key — the one tool whose whole subject is the screenshots in the
+	 * notebook. It says `confinesItself` instead, and the two tests below are
+	 * what that claim is worth: the notebook's own file, and not another.
+	 */
+	it('is offered the tool that fetches a picture', () => {
+		const offered = visibleTools({
+			ctx: ctx(),
+			scopes: Object.keys(SCOPES),
+			confinement: { kind: 'notebook', id: mine }
+		} as never).map((t: { name: string }) => t.name);
+
+		expect(offered).toContain('media');
+	});
+
+	it('sees a picture in its own notebook', () => {
+		const answer = call('media', { path: `/media/${inside.picture}` });
+		expect(failed(answer), said(answer)).toBe(false);
+		expect(said(answer)).toContain('image/gif');
+	});
+
+	it('and not one that lives anywhere else', () => {
+		const answer = call('media', { path: `/media/${outside.picture}` });
+		expect(failed(answer), said(answer)).toBe(true);
 	});
 });
 

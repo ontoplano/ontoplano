@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { listCategories } from '$lib/services/activities';
-import { buildCtx } from '$lib/services/ctx';
+import { buildCtx, localDateOf } from '$lib/services/ctx';
 import { mainPictures } from '$lib/services/media';
 import { foodCategories, withMissingCounts } from '$lib/services/recipes';
 import { recipeActions } from './actions';
@@ -31,7 +31,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 		hasFoodCategory: foodCategories(ctx).length > 0,
 		// For putting a recipe on a day without opening it first.
 		categories: listCategories(ctx),
-		today: new Date(ctx.now).toISOString().slice(0, 10)
+		today: localDateOf(ctx.now, ctx.tz)
 	};
 };
 

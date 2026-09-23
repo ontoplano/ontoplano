@@ -125,8 +125,14 @@ export const SCOPES = {
 	 *
 	 * Named for the room rather than the table, because that is what the person
 	 * granting them is picturing.
+	 *
+	 * Each read grant says that the media comes with it, because it does and
+	 * the sentence was silent about it: a file answers to whatever refers to
+	 * it, so a picture in a note is reachable by whoever may read the note —
+	 * see `$lib/server/api/media-access`. Somebody granting "read my
+	 * notebooks" should not have to guess whether the pictures were included.
 	 */
-	'notes:read': 'Read your diary and your notebooks',
+	'notes:read': 'Read your diary and your notebooks, and the pictures and recordings in them',
 	'notes:write': 'Write in your diary and your notebooks',
 	/*
 	 * Ideas, apart from notes.
@@ -136,11 +142,11 @@ export const SCOPES = {
 	 * granted by a sentence about capturing thoughts. A capture tool needs
 	 * the inbox and nothing else.
 	 */
-	'ideas:read': 'See your ideas',
+	'ideas:read': 'See your ideas, and the pictures and recordings in them',
 	'ideas:write': 'Add ideas, change them, and remove them',
-	'tasks:read': 'Read your todo list and your goals',
+	'tasks:read': 'Read your todo list and your goals, and the pictures and recordings on them',
 	'tasks:write': 'Add, finish and delete todos, move them on and off a day, and close a goal',
-	'kitchen:read': 'Read your recipes',
+	'kitchen:read': 'Read your recipes, and their photographs',
 	'kitchen:write': 'Add and change recipes',
 	'workouts:read': 'See your workouts',
 	'workouts:write':
@@ -156,9 +162,19 @@ export const SCOPES = {
 	 * that is not only the owner's to hand over. Their own tick, so a token
 	 * for the shopping list never learns who is in somebody's life.
 	 */
-	'people:read': 'See the people in your life, and whose birthday is coming',
+	'people:read': 'See the people in your life, whose birthday is coming, and their photographs',
 	'people:write': 'Add people, and change what is recorded about them',
 	'search:read': 'Search everything you have written, in one go',
+	/*
+	 * Labels, apart from the rooms they are used in.
+	 *
+	 * A tag is the account's one vocabulary — the same word on a task, a note,
+	 * an idea, a block and a picture — so renaming one reaches into every room
+	 * at once. That is not something `notes:write` should be able to do on the
+	 * strength of a sentence about writing in a diary.
+	 */
+	'tags:read': 'See the labels you use, and the colours you gave them',
+	'tags:write': 'Rename your labels, colour them, and merge two into one',
 	/*
 	 * Deleting, apart from writing.
 	 *

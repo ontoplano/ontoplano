@@ -103,3 +103,44 @@ function trimBlank(lines: string[]): string {
 	);
 	return kept.map((line) => line.slice(indent)).join('\n');
 }
+
+/**
+ * The note rewritten to point at the tasks it just became.
+ *
+ * Each checkbox line that crossed over is replaced by a reference — `TASK:#4`,
+ * the task's number inside this notebook — and the writing under it is left
+ * exactly where it was, because that writing is now on the task *and* still
+ * explains the line in the note.
+ *
+ * Why rewrite at all: the offer to make todos of a checklist is drawn wherever
+ * a `- [ ]` is, and after making them the boxes were still boxes, so the
+ * button stood there offering to do it again and there were two records of the
+ * same list drifting apart. A reference is one record, said in both places.
+ *
+ * `made` is keyed by the position of the checkbox in the note, which is what
+ * `makeTodosFromEntry` counts by — one that was left behind keeps its box.
+ */
+export function withTodoReferences(content: string, made: Map<number, number>): string {
+	const out: string[] = [];
+	let at = -1;
+
+	for (const line of content.split('\n')) {
+		const box = CHECKBOX.exec(line);
+		if (!box) {
+			out.push(line);
+			continue;
+		}
+		const [, indent, , said] = box;
+		// Counted the same way `checklistItems` counts: a box with nothing
+		// after it is not a todo and does not take a number.
+		if (!said.replace(DECORATION, '').trim()) {
+			out.push(line);
+			continue;
+		}
+		at += 1;
+		const seq = made.get(at);
+		out.push(seq === undefined ? line : `${indent}- TASK:#${seq}`);
+	}
+
+	return out.join('\n');
+}

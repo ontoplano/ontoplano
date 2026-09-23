@@ -60,6 +60,37 @@ describe('the journal', () => {
 		expect(diary.listEntries(ctx).find((e) => e.id === next)!.seq).toBeGreaterThan(seq);
 	});
 
+	/**
+	 * `seq` numbers everything an account writes, notebook notes included, so
+	 * the thirtieth diary entry was headed `#127` — a number nobody could arrive
+	 * at by counting. The diary keeps its own, and that is the one on the page.
+	 */
+	test('and the diary counts the diary, not everything written', () => {
+		const shelf = notebooks.createNotebook(ctx, { title: 'Numbering' });
+		const highest = Math.max(0, ...diary.listEntries(ctx).map((e) => e.diarySeq ?? 0));
+
+		const before = diary.createEntry(ctx, { content: 'in the diary' });
+		diary.createEntry(ctx, { content: 'in the notebook', notebookId: shelf });
+		const after = diary.createEntry(ctx, { content: 'in the diary again' });
+
+		const seen = diary.listEntries(ctx);
+		expect(seen.find((e) => e.id === before)!.diarySeq).toBe(highest + 1);
+		// The note in between took no diary number, so these two are consecutive.
+		expect(seen.find((e) => e.id === after)!.diarySeq).toBe(highest + 2);
+		expect(
+			database.get('SELECT diary_seq AS n FROM diary_entries WHERE notebook_id = ?', shelf)
+		).toEqual({ n: null });
+	});
+
+	test('and a diary number is not reused either', () => {
+		const doomed = diary.createEntry(ctx, { content: 'numbered, then gone' });
+		const had = diary.listEntries(ctx).find((e) => e.id === doomed)!.diarySeq;
+		diary.deleteEntry(ctx, doomed);
+
+		const next = diary.createEntry(ctx, { content: 'the one after' });
+		expect(diary.listEntries(ctx).find((e) => e.id === next)!.diarySeq).toBe((had ?? 0) + 1);
+	});
+
 	test('carries tags, and replacing them is posting the rest', () => {
 		const id = diary.createEntry(ctx, { content: 'gym then reading', tags: 'health, reading' });
 		expect(

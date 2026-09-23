@@ -12,20 +12,152 @@ The examples below use `https://app.ontoplano.com`. Your own instance answers at
 `https://your-host/api/mcp` — the address you type into the browser, with
 `/api/mcp` after it.
 
+<!--
+	The chat inside the app is switched off — `CHAT_IN_APP` in
+	`src/lib/features.ts`. Its documentation is kept here, commented, so that
+	turning the flag back on is one edit in each place rather than a rewrite.
+
+	Why it is off: this page is about an assistant you already use reaching
+	*into* ontoplano over MCP. The chat was the other direction — this instance
+	calling a model on your behalf — and the Ollama case makes the problem
+	plain: a server on the internet cannot dial a laptop.
+
+## The chat inside the app
+
+You do not need an external assistant to use the tools. **Settings → AI &
+Integrations → Chat** takes a provider — Anthropic, OpenAI, OpenRouter or
+Ollama — and a key of your own, and the app gains a chat that speaks through
+the same tool surface described on this page, with the same permissions: it
+reads and writes, every write lands in the same log, and deleting is a box on
+that tab it does not start with. Remove the key and the chat is gone.
+Without a key there is no chat anywhere in the app, and nothing ever calls a
+model on your behalf.
+
+It is not on the on-device instance — the chat dials the provider from the
+server the instance runs on. On a phone, point any MCP client at the instance
+you sync with instead.
+
+### Which model
+
+You do not have to know. Paste the key, press **Ask the provider what it
+offers**, and the box becomes a list of what that key can actually reach —
+which is also the quickest way to find out whether the key works before you
+save it. Anthropic and OpenAI name a current model as the default if you pick
+nothing; OpenRouter and Ollama have no sensible default, so they ask.
+
+There is a "type a model name instead" for a model released this morning that
+the provider's own list has not caught up with. It is the exception, not the
+way in.
+
+### Getting a key
+
+Each of these is a company you have an account with, and the key is billed to
+that account rather than to anything here. Ontoplano never holds a provider
+account of its own.
+
+<!-- tabs --&gt;
+
+#### Anthropic
+
+1. Go to **[console.anthropic.com](https://console.anthropic.com)** and sign in.
+   This is the developer console, and it is a different thing from a Claude
+   subscription: **paying for Claude Pro does not give you API credit**, which
+   is the step most people are missing when the key they just made says it has
+   no balance.
+2. **Plans & Billing → Buy credits.** A few dollars is a great deal of chat.
+3. **API keys → Create Key.** Copy it — the console shows it once.
+4. Paste it into Settings → AI & Integrations → AI, and ask for the models.
+
+A key looks like `sk-ant-api03-…`.
+
+#### OpenAI
+
+1. Go to **[platform.openai.com](https://platform.openai.com)** and sign in.
+   The same caution applies: a ChatGPT Plus subscription is not API credit, and
+   the two are billed separately.
+2. **Settings → Billing** and add a payment method or buy credit.
+3. **API keys → Create new secret key.** Copy it; it is shown once.
+
+A key looks like `sk-proj-…` or `sk-…`.
+
+#### OpenRouter
+
+One account in front of most of the others, which is the reason to pick it: you
+can try a model from a company you have no account with.
+
+1. Go to **[openrouter.ai](https://openrouter.ai)** and sign in.
+2. **Credits** — add some, or use one of the free models the list marks as such.
+3. **Keys → Create Key.**
+
+A key looks like `sk-or-v1-…`. Models are named `company/model`, which is why
+its list is the long one.
+
+#### Ollama
+
+No key and no account: it runs on a machine you have. Install it from
+**[ollama.com](https://ollama.com)**, `ollama pull llama3.3`, and point the
+address at it — `http://127.0.0.1:11434/v1` if it is the same machine as the
+instance.
+
+The instance dials that address from wherever it runs, so an Ollama on your
+laptop is not reachable by an instance on a server somewhere else.
+
+<!-- /tabs --&gt;
+
+-->
+
+## Connecting without a key
+
+Paste your instance's address into an assistant that speaks MCP — Claude,
+ChatGPT, or anything else with a connector screen — and it will do the rest:
+
+```text
+https://app.ontoplano.com/api/mcp
+```
+
+The assistant discovers that the address is protected, registers itself, and
+sends you here. You see a screen on your own instance saying which assistant is
+asking and what it would be able to do, you press **Connect it**, and you are
+handed back. No key is typed, pasted or stored by anybody.
+
+What it would be able to do is a list of tick boxes, gathered by what they are
+about — your week, money, the diary, the house — and everything the assistant
+asked for is ticked. Untick a line, or a whole heading, and the key it walks
+away with cannot reach that at all: a tool whose permission was not granted is
+not offered to the assistant, so one that may not read your diary does not know
+`write_entry` exists.
+
+What it gets is an ordinary key, made for it and named after it, so it stands
+in the list under **Settings → AI & Integrations → Integrations** with a revoke
+button beside it like every other. Deleting is a box of its own on that screen
+and it starts unticked — the connection reads and writes, and takes nothing
+away unless you said it may.
+
+Two details for anyone implementing against it: the flow is the authorization
+code grant with PKCE (`S256` only — there is no `plain`, and no implicit
+grant), and the discovery documents are at
+`/.well-known/oauth-protected-resource` and
+`/.well-known/oauth-authorization-server`. The token that comes out does not
+expire, so there is no refresh token to hold; revoking is what ends it.
+
 ## Make a key
 
-**Settings → AI & Integrations → AI → Make a key.** It is shown once, so keep
+**Settings → AI & Integrations → AI → Create a key.** It is shown once, so keep
 the tab open while you set the assistant up.
 
-Every permission the tools use is ticked to begin with: reading and writing,
-never deleting. Untick what you would rather it did not see — a tool whose
-permission was not granted is not offered to the assistant at all, so a
-read-only key does not know that `add_todo` exists.
+Every permission the tools use is ticked to begin with, reading and writing
+both. Untick what you would rather it did not see — a tool whose permission was
+not granted is not offered to the assistant at all, so a read-only key does not
+know that `add_todo` exists.
 
-Deleting is not on that form. The **Integrations** tab beside it has the full
-one, including `destructive`, for a key meant to run a script rather than an
-assistant. Keys are revoked there too, and a revoked key stops working on the
-next request.
+Deleting is a box of its own below that table, and the one thing that starts
+unticked. Without it an assistant can add and change but never remove, and the
+tools that delete are not offered to it either; tick it if you want them.
+
+The **Integrations** tab beside it has the wider form — every permission, the
+ones an assistant has no use for included, and an expiry date — for a key meant
+to run a script rather than an assistant. Keys are revoked there too, and a
+revoked key stops working on the next request.
 
 ## Connect it
 
@@ -78,8 +210,10 @@ claude mcp add --scope user --transport http ontoplano https://app.ontoplano.com
 `--scope user` is what makes it permanent everywhere. Without it the server is
 written into whichever project you were standing in.
 
-**Claude Desktop.** Its connector screen asks for an OAuth client id and has
-nowhere to put a key, so this goes through `mcp-remote`:
+**Claude Desktop.** Its connector screen speaks OAuth, so the address on its
+own is the whole setup — see [Connecting without a key](#connecting-without-a-key)
+above. `mcp-remote` is still there for a key you would rather hand over
+yourself:
 
 ```json
 {
@@ -161,6 +295,39 @@ assistant with only one of them uses the wrong one when it moves something.
 All of it is that day only. Moving this Thursday's gym never moves gym, which
 is what alt-dragging it in the app does too.
 
+## The pictures and recordings in what it reads
+
+A note, a task and an idea can all hold a picture or a recording, and what a
+tool hands back is the markdown that refers to it: `![the wall](/media/31)`,
+`[said](/media/audio/44)`. The **`media`** tool turns that link into the file
+itself — hand it the link exactly as the writing writes it, and the picture
+comes back as a picture:
+
+```json
+{ "name": "media", "arguments": { "path": "/media/31" } }
+```
+
+`/media/audio/44` for a recording. The same file is also an ordinary HTTP
+request, for a script that holds the key itself rather than speaking the
+protocol:
+
+```sh
+curl -H "Authorization: Bearer $ONTOPLANO_KEY" \
+  https://your-instance/media/31 --output picture.png
+```
+
+Both doors ask the same question, and the answer is the permission that reads
+the thing the file is in.
+
+A picture in a note wants `notes:read`, one on a task `tasks:read`, a face
+`people:read`, a recipe photograph `kitchen:read`. There is no separate media
+grant — a file answers to whatever refers to it, and one that nothing refers
+to answers to nobody. A key tied to one notebook reaches the files inside that
+notebook and no others.
+
+Anything the key may not reach is a **404**, the same as an id that never
+existed, so there is nothing to learn by walking the numbers.
+
 ## How it behaves
 
 - **It offers only what the key holds.** `tools/list` is filtered by permission,
@@ -175,7 +342,31 @@ is what alt-dragging it in the app does too.
   `destructive` grant, and without it they are not offered at all.
 - **Every write answers with what it replaced** — `before` and `after`, and for a
   delete the whole removed row — so a bad call can be put back from the
-  conversation itself.
+  conversation itself. Two exceptions say so in their own description:
+  `tag_todo` answers with the labels and nothing else, because two copies of a
+  task to report one label is most of what marking a list costs, and the
+  person's own copy of the change is in the log under Settings → Integrations
+  either way.
+- **A listing answers with a line.** A task comes back as what it is, where it
+  stands and its labels; a note as its name, its labels and an opening.
+  `verbose: true` gives the whole row, and `fields: "title,notes"` gives
+  exactly those. This is a budget, not a limit: a model reading a list to find
+  one thing pays for forty rows it will not use, three times over — on the way
+  in, on the way out, and again next turn.
+- **A line says what the row is about, and names the pictures it refers to.**
+  A task's line carries an opening of its notes and the links in them; a note's
+  line the same. `media` fetches one when it turns out to matter — a list is
+  rarely read for its pictures, and always read to find something.
+- **A list can be asked for narrowly.** `status`, `tag`, `withoutTag` and
+  `taggedSince` on the task list; `tag` and `taggedSince` on notes. The date
+  read is the label's own — it does not move when the thing is edited — so
+  "what went into review since this morning" is one call.
+- **`up_next` answers what to do next**, by the ratings on the tasks
+  themselves: most urgent first, then the one that takes least energy, then the
+  one most wanted. Energy runs the other way to the other two — low is good. A
+  rating nobody set is not a zero: it counts half a step to the losing side of
+  the middle of the scale, so a task deliberately marked 3 beats an unrated one,
+  and urgency 1–2 and energy 4–5 are the tiers that mean "later".
 
 The surface is additive within a major version: a tool or a parameter is not
 removed, a parameter does not become required, and an enum does not lose a value

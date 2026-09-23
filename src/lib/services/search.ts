@@ -133,6 +133,7 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 		.select({
 			id: diaryEntries.id,
 			seq: diaryEntries.seq,
+			diarySeq: diaryEntries.diarySeq,
 			content: diaryEntries.content,
 			notebookId: diaryEntries.notebookId,
 			notebookTitle: notebooks.title
@@ -158,8 +159,11 @@ export function search(ctx: Ctx, raw: unknown): Hit[] {
 			title: firstLine(row.content),
 			snippet: inNotebook
 				? `in ${row.notebookTitle} · ${snippetOf(row.content, query, 90)}`
-				: `#${row.seq} · ${snippetOf(row.content, query, 100)}`,
-			href: inNotebook ? `/notebooks/${row.notebookId}` : `/notebooks/diary#diary-${row.seq}`
+				: // The number the diary draws, which is the one somebody is looking for.
+					`#${row.diarySeq ?? row.seq} · ${snippetOf(row.content, query, 100)}`,
+			href: inNotebook
+				? `/notebooks/${row.notebookId}`
+				: `/notebooks/diary#diary-${row.diarySeq ?? row.seq}`
 		});
 	}
 

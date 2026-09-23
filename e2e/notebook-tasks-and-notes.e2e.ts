@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openNoteFilters } from './helpers/filters';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
@@ -31,13 +32,13 @@ test('a notebook’s tasks are operated on where they are', async ({ page }) => 
 	// notebook draws its own New button, and it says what the tab is about.
 	await page.getByRole('button', { name: 'New task', exact: true }).click();
 	await page.locator('#todo-form [name="heading"]').fill('measure the wall');
-	await page.getByRole('button', { name: 'Create todo' }).click();
+	await page.getByRole('button', { name: 'Create task' }).click();
 	await expect(page.getByText('measure the wall').first()).toBeVisible();
 
 	// The whole verb set, on the row: away and back.
 	await page.getByRole('button', { name: 'Put it away' }).first().click();
 	await expect(page.getByText('measure the wall')).toHaveCount(0);
-	await page.getByRole('button', { name: 'Show archived' }).click();
+	await page.getByRole('button', { name: /^Archived/ }).click();
 	await expect(page.getByText('measure the wall').first()).toBeVisible();
 	await page.getByRole('button', { name: 'Take it back out' }).first().click();
 
@@ -62,7 +63,9 @@ test('a note can be put away and taken back out', async ({ page }) => {
 	await expect(page.getByText('Restaurants')).toHaveCount(0);
 
 	// Hidden, not gone: the strip says how many, and they come back unchanged.
-	await page.getByRole('button', { name: 'Show archived' }).click();
+	// It folds now, the way the tasks tab's strip always has.
+	await openNoteFilters(page);
+	await page.getByRole('button', { name: /^Archived/ }).click();
 	await expect(page.getByText('Restaurants').first()).toBeVisible();
 	await page.getByRole('button', { name: 'Take it back out' }).first().click();
 	await expect(page.getByText('Restaurants').first()).toBeVisible();

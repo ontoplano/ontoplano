@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import Picker from '$lib/components/Picker.svelte';
+	import { enhance } from '$lib/enhance';
 	import Swatch from '$lib/components/Swatch.svelte';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
@@ -48,22 +49,24 @@
 	<!-- What the rules add up to, and what is still unsorted. -->
 	<Card title={t('finance.rules.whereItWent')} accent="var(--section-accent)">
 		<div class="mb-3 flex flex-wrap items-center gap-2">
-			<select
-				class="select select-sm w-auto"
-				value={data.ledgerId}
-				onchange={(e) => filter({ ledger: Number((e.currentTarget as HTMLSelectElement).value) })}
-			>
-				<option value={0}>{t('finance.rules.everyLedger')}</option>
-				{#each data.ledgers as l (l.id)}<option value={l.id}>{l.name}</option>{/each}
-			</select>
-			<select
-				class="select select-sm w-auto"
-				value={data.months}
-				onchange={(e) => filter({ months: Number((e.currentTarget as HTMLSelectElement).value) })}
-			>
-				{#each WINDOWS as w (w)}<option value={w}>{t('finance.rules.lastMonths', { w: w })}</option
-					>{/each}
-			</select>
+			<Picker
+				value={String(data.ledgerId)}
+				options={[
+					{ value: '0', label: t('finance.rules.everyLedger') },
+					...data.ledgers.map((l) => ({ value: String(l.id), label: l.name }))
+				]}
+				onpick={(next) => filter({ ledger: Number(next) })}
+				label={t('finance.rules.everyLedger')}
+			/>
+			<Picker
+				value={String(data.months)}
+				options={WINDOWS.map((w) => ({
+					value: String(w),
+					label: t('finance.rules.lastMonths', { w })
+				}))}
+				onpick={(next) => filter({ months: Number(next) })}
+				label={t('finance.rules.lastMonths', { w: data.months })}
+			/>
 			{#if data.unsorted > 0}
 				<a
 					href={resolve('/finance/ledgers')}

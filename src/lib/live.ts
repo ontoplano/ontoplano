@@ -95,10 +95,27 @@ export function live(options: LiveOptions = {}): () => void {
 	 * that draw the first screen. `requestIdleCallback` with a timeout gets it
 	 * open promptly on a fast machine and still gets it open on a slow one.
 	 */
+	/**
+	 * Marked on the document once the stream is actually open.
+	 *
+	 * Not for styling: for anything that has to know the difference between
+	 * "the request was answered" and "the server is listening". The subscriber
+	 * is registered when the response *body* starts, which is after the
+	 * response itself — so a change written in that window reaches nobody, and
+	 * a test that waited for the response raced it about one time in three.
+	 * `EventSource` fires `open` on the first byte, which is the moment the
+	 * other end has already subscribed.
+	 *
+	 * The same idiom as `data-ready` for hydration, and true in the same way.
+	 */
+	const LIVE_MARK = 'data-live';
+
 	const open = () => {
 		if (closed) return;
 		source = new EventSource('/api/live');
 		source.addEventListener('changed', onChanged);
+		source.addEventListener('open', () => document.documentElement.setAttribute(LIVE_MARK, ''));
+		source.addEventListener('error', () => document.documentElement.removeAttribute(LIVE_MARK));
 	};
 
 	const idle = (window as Window & { requestIdleCallback?: typeof requestIdleCallback })
@@ -119,10 +136,30 @@ export function live(options: LiveOptions = {}): () => void {
 		later();
 	}
 
-	// A tab coming back to the front acts on whatever it missed, at once —
-	// the point of noticing is that the screen is right when somebody looks.
+	/*
+	 * Coming back to the front.
+	 *
+	 * Acting on what was missed is half of it, and it was all this did: if
+	 * something had been announced while the tab was hidden, it caught up.
+	 *
+	 * The other half is that a stream does not always survive being in the
+	 * background. Android freezes a web view and its sockets go with it, so
+	 * the phone came back with nothing pending and nothing connected — which
+	 * is the app opening on a badge saying three notifications and a bell
+	 * holding none, until some navigation happened to reload the data. So a
+	 * return to the front reloads once and reopens the stream if it has
+	 * closed. The point of noticing is that the screen is right when somebody
+	 * looks at it.
+	 */
 	const onVisible = () => {
-		if (document.visibilityState === 'visible' && pending) flush();
+		if (document.visibilityState !== 'visible') return;
+		if (pending) {
+			flush();
+		} else if (!busyTyping()) {
+			void invalidateAll();
+		}
+		// `CLOSED` is a stream that will not retry on its own.
+		if (!closed && (source === null || source.readyState === EventSource.CLOSED)) open();
 	};
 	document.addEventListener('visibilitychange', onVisible);
 
@@ -139,5 +176,6 @@ export function live(options: LiveOptions = {}): () => void {
 		document.removeEventListener('focusout', onBlur);
 		source?.close();
 		source = null;
+		document.documentElement.removeAttribute(LIVE_MARK);
 	};
 }

@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { buildCtx } from '$lib/services/ctx';
+import { buildCtx, localDateOf } from '$lib/services/ctx';
 import { NotFoundError } from '$lib/services/errors';
 import { listCategories } from '$lib/services/activities';
 import { mediaLimits, picturesOf } from '$lib/services/media';
@@ -28,7 +28,7 @@ export const load: PageServerLoad = async ({ locals, params }) => {
 			pantry: edibleItems(ctx),
 			// For putting it on a day: a meal is a block like any other.
 			categories: listCategories(ctx),
-			today: new Date(ctx.now).toISOString().slice(0, 10)
+			today: localDateOf(ctx.now, ctx.tz)
 		};
 	} catch (e) {
 		if (e instanceof NotFoundError) error(404, 'Recipe not found');

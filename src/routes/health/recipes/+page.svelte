@@ -4,7 +4,7 @@
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import OneLine from '$lib/components/OneLine.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import { resolve } from '$app/paths';
 	import { autogrow } from '$lib/actions/autogrow';
 	import Banner from '$lib/components/Banner.svelte';

@@ -16,7 +16,18 @@
 /** How long a plain message stays up. Long enough to read, short enough to ignore. */
 export const SAID_MS = 2400;
 
-export type Said = { id: number; message: string };
+/**
+ * Something to press, for a message where there is an obvious next move.
+ *
+ * "Task added" with an Edit button is the case this exists for: the thing you
+ * most often want after making a task is to say more about it, and hunting the
+ * list for the row you just made is the long way round. Deliberately not an
+ * undo — you asked for the task, it is there, and taking it back is what
+ * delete is for. `undo.svelte.ts` is the store for things with an inverse.
+ */
+export type SaidAction = { label: string; run: () => void };
+
+export type Said = { id: number; message: string; action?: SaidAction };
 
 export const said = $state<{ items: Said[] }>({ items: [] });
 
@@ -28,10 +39,13 @@ let next = 1;
  * Pressing Save four times should not leave four toasts: they all say the same
  * thing, and a column of them is the app shouting. The last one wins and its
  * timer starts again, which reads as one message that keeps being true.
+ *
+ * `action` is optional and is the difference between "Saved", which has
+ * nothing to press, and "Task added", which has an Edit.
  */
-export function say(message: string): void {
+export function say(message: string, action?: SaidAction): void {
 	const id = next++;
-	said.items = [{ id, message }];
+	said.items = [{ id, message, action }];
 	setTimeout(() => {
 		said.items = said.items.filter((one) => one.id !== id);
 	}, SAID_MS);

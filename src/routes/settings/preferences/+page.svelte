@@ -1,6 +1,10 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
+	import { sliding } from '$lib/actions/sliding';
 	import { invalidateAll } from '$app/navigation';
+	import { whileBusy } from '$lib/busy.svelte';
+	import { timeOf, type Clock } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
 	import { isLocale, useT } from '$lib/i18n';
 	import { sectionLabel } from '$lib/sections';
@@ -29,6 +33,19 @@
 	let { data }: { data: PageServerData } = $props();
 
 	const t = useT();
+
+	/*
+	 * What each choice actually looks like, rather than its name.
+	 *
+	 * "24-hour" is a word about a format; `16:00` is the thing you will see on
+	 * every screen afterwards. A person picking between them is picking between
+	 * two appearances, so the menu shows the appearances.
+	 */
+	const when = useWhen();
+	function clockExample(clock: Clock): string {
+		// A time that reads differently either way: 16:00 and 4:00 PM.
+		return timeOf('2026-01-01T16:00', { ...when(), clock });
+	}
 
 	/**
 	 * The currency, chosen from the shortlist or typed.
@@ -300,47 +317,182 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<form
-		method="post"
-		action="?/saveWeek"
-		use:settingsForm={{ notice: t('settings.preferences.weekSaved') }}
-		class="space-y-4 border border-gray-200 bg-white p-6 shadow-card"
-	>
+	<!--
+		Where you are and how you read a clock, in one place.
+		
+		The language, the 12/24 clock, the timezone, the first day of the week,
+		the planner's hours and which day tasks are generated on were six
+		settings scattered down the page, and they are one subject: every one
+		of them is an answer to "where am I and how do I read a time". First,
+		because everything below reads differently once they are right.
+		
+		Separate forms inside one section: each still posts to the action it
+		always did, so grouping them changed how they look and nothing about
+		what they do.
+	-->
+	<section class="space-y-6 border border-gray-200 bg-white p-6 shadow-card">
 		<div>
-			<h2 class="text-sm font-semibold text-gray-900">
-				{t('settings.preferences.weekAndTimezone')}
-			</h2>
+			<h2 class="text-sm font-semibold text-gray-900">{t('settings.locationAndTime.heading')}</h2>
+			<p class="mt-1 text-sm text-gray-500">{t('settings.locationAndTime.hint')}</p>
 		</div>
-		<div class="flex gap-4">
-			<label class="flex-1">
-				<span class="eyebrow text-gray-600">{t('settings.preferences.firstDayOfWeek')}</span>
-				<select
-					name="firstDay"
-					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-				>
-					{#each dayNames as day, i (i)}
-						<option value={i} selected={data.week.firstDay === i}>{day}</option>
-					{/each}
-				</select>
-			</label>
-			<label class="flex-1">
-				<span class="eyebrow text-gray-600">{t('settings.preferences.generateTasksOn')}</span>
-				<select
-					name="generateDay"
-					class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-				>
-					{#each dayNames as day, i (i)}
-						<option value={i} selected={data.week.generateDay === i}>{day}</option>
-					{/each}
-				</select>
-			</label>
+		<div class="mb-4">
+			<h2 class="text-sm font-semibold text-gray-900">{t('settings.language.heading')}</h2>
+			<p class="mt-1 text-sm text-gray-500">{t('settings.language.hint')}</p>
 		</div>
-		<label class="block max-w-xs">
-			<span class="eyebrow text-gray-600">{t('settings.preferences.timezone')}</span>
-			<TimezonePicker groups={data.zones} value={data.timezone} />
-		</label>
-		<button class="btn btn-primary">{t('ui.save')}</button>
-	</form>
+
+		<form
+			method="post"
+			action="?/setLanguage"
+			use:enhance={({ formData }) => {
+				/*
+				 * The device's own copy remembers too.
+				 *
+				 * An instance running on the device has no server to ask on the
+				 * next first paint, so the choice is written where the shell can
+				 * read it before the database has opened. See `+layout.ts`.
+				 */
+				const chosen = formData.get('language')?.toString();
+				if (isLocale(chosen)) {
+					// <html> is outside the component tree, and it is what a screen
+					// reader picks its voice from — the same reason the theme is
+					// stamped here rather than waited for.
+					document.documentElement.lang = chosen;
+					if (isIsolatedBuild()) rememberLocaleOnThisDevice(chosen);
+				}
+				// Every word on every screen changes, including the ones the shell
+				// drew — so this one reloads rather than patching the page. It is
+				// the slowest thing here that is not a navigation, so it says so
+				// with the bar and the turning mark a navigation would have used.
+				return async () => void whileBusy(invalidateAll());
+			}}
+			class="flex flex-wrap items-center gap-2"
+		>
+			<!--
+				A select, because a language list is a list: two today, a dozen when
+				people start sending translations, and a row of buttons stops being a
+				row at four. It submits on change — a Save beside a one-field form is
+				a second press for nothing.
+			-->
+			<select
+				name="language"
+				class="select w-auto"
+				value={t.locale}
+				onchange={(e) => e.currentTarget.form?.requestSubmit()}
+			>
+				{#each data.languages as language (language.tag)}
+					<option value={language.tag} lang={language.tag}>
+						{language.name}{language.untranslated > 0
+							? ` — ${t('settings.language.untranslated', { count: language.untranslated })}`
+							: ''}
+					</option>
+				{/each}
+			</select>
+		</form>
+		<div class="mb-4">
+			<h2 class="text-sm font-semibold text-gray-900">{t('settings.clock.heading')}</h2>
+			<p class="mt-1 text-sm text-gray-500">{t('settings.clock.hint')}</p>
+		</div>
+		<form
+			method="post"
+			action="?/setClock"
+			use:enhance={() => async () => void whileBusy(invalidateAll())}
+			class="flex flex-wrap items-center gap-2"
+		>
+			<select
+				name="clock"
+				class="select w-auto"
+				value={data.clock}
+				onchange={(e) => e.currentTarget.form?.requestSubmit()}
+			>
+				<option value="auto">{t('settings.clock.auto', { example: clockExample('auto') })}</option>
+				<option value="12">{t('settings.clock.twelve', { example: clockExample('12') })}</option>
+				<option value="24">{t('settings.clock.twentyFour', { example: clockExample('24') })}</option
+				>
+			</select>
+		</form>
+		<form
+			method="post"
+			action="?/saveWeek"
+			use:settingsForm={{ notice: t('settings.preferences.weekSaved') }}
+			class="setting-group"
+		>
+			<div>
+				<h2 class="text-sm font-semibold text-gray-900">
+					{t('settings.preferences.weekAndTimezone')}
+				</h2>
+			</div>
+			<div class="flex gap-4">
+				<label class="flex-1">
+					<span class="eyebrow text-gray-600">{t('settings.preferences.firstDayOfWeek')}</span>
+					<select
+						name="firstDay"
+						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					>
+						{#each dayNames as day, i (i)}
+							<option value={i} selected={data.week.firstDay === i}>{day}</option>
+						{/each}
+					</select>
+				</label>
+				<label class="flex-1">
+					<span class="eyebrow text-gray-600">{t('settings.preferences.generateTasksOn')}</span>
+					<select
+						name="generateDay"
+						class="mt-1 block w-full border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+					>
+						{#each dayNames as day, i (i)}
+							<option value={i} selected={data.week.generateDay === i}>{day}</option>
+						{/each}
+					</select>
+				</label>
+			</div>
+			<label class="block max-w-xs">
+				<span class="eyebrow text-gray-600">{t('settings.preferences.timezone')}</span>
+				<TimezonePicker groups={data.zones} value={data.timezone} />
+			</label>
+			<button class="btn btn-primary">{t('ui.save')}</button>
+		</form>
+
+		<!--
+		The hours the planner draws.
+
+		Six to midnight is a reasonable default and a poor law: a baker's day
+		starts at four and a night shift ends after it.
+	-->
+		<form
+			method="post"
+			action="?/saveGridHours"
+			use:settingsForm={{ notice: t('settings.preferences.plannerHoursSaved') }}
+			class="setting-group"
+		>
+			<div>
+				<h2 class="text-sm font-semibold text-gray-900">
+					{t('settings.preferences.plannerHours')}
+				</h2>
+				<p class="mt-1 text-sm text-gray-500">
+					{t('settings.preferences.theStretchOfTheDay')}
+				</p>
+			</div>
+			<div class="flex gap-4">
+				<label class="flex-1 sm:max-w-[10rem]">
+					<span class="eyebrow text-gray-600">{t('settings.preferences.dayStartsAt')}</span>
+					<select name="start" class="select mt-1">
+						{#each Array.from({ length: 24 }, (_, h) => h) as h (h)}
+							<option value={h} selected={data.gridHours.start === h}>{hourLabel(h)}</option>
+						{/each}
+					</select>
+				</label>
+				<label class="flex-1 sm:max-w-[10rem]">
+					<span class="eyebrow text-gray-600">{t('settings.preferences.dayEndsAt')}</span>
+					<select name="end" class="select mt-1">
+						{#each Array.from({ length: 24 }, (_, h) => h + 1) as h (h)}
+							<option value={h} selected={data.gridHours.end === h}>{hourLabel(h)}</option>
+						{/each}
+					</select>
+				</label>
+			</div>
+			<button class="btn btn-primary">{t('ui.save')}</button>
+		</form>
+	</section>
 
 	<!-- One currency per account: a shopping list in three is a spreadsheet. -->
 	<form
@@ -420,45 +572,6 @@
 		<button class="btn btn-primary" disabled={currencyChoice === OTHER && !preview}
 			>{t('ui.save')}</button
 		>
-	</form>
-
-	<!--
-		The hours the planner draws.
-
-		Six to midnight is a reasonable default and a poor law: a baker's day
-		starts at four and a night shift ends after it.
-	-->
-	<form
-		method="post"
-		action="?/saveGridHours"
-		use:settingsForm={{ notice: t('settings.preferences.plannerHoursSaved') }}
-		class="space-y-4 border border-gray-200 bg-white p-6 shadow-card"
-	>
-		<div>
-			<h2 class="text-sm font-semibold text-gray-900">{t('settings.preferences.plannerHours')}</h2>
-			<p class="mt-1 text-sm text-gray-500">
-				{t('settings.preferences.theStretchOfTheDay')}
-			</p>
-		</div>
-		<div class="flex gap-4">
-			<label class="flex-1 sm:max-w-[10rem]">
-				<span class="eyebrow text-gray-600">{t('settings.preferences.dayStartsAt')}</span>
-				<select name="start" class="select mt-1">
-					{#each Array.from({ length: 24 }, (_, h) => h) as h (h)}
-						<option value={h} selected={data.gridHours.start === h}>{hourLabel(h)}</option>
-					{/each}
-				</select>
-			</label>
-			<label class="flex-1 sm:max-w-[10rem]">
-				<span class="eyebrow text-gray-600">{t('settings.preferences.dayEndsAt')}</span>
-				<select name="end" class="select mt-1">
-					{#each Array.from({ length: 24 }, (_, h) => h + 1) as h (h)}
-						<option value={h} selected={data.gridHours.end === h}>{hourLabel(h)}</option>
-					{/each}
-				</select>
-			</label>
-		</div>
-		<button class="btn btn-primary">{t('ui.save')}</button>
 	</form>
 
 	<!--
@@ -867,7 +980,7 @@
 							>{sectionLabel(t, leaf.id)}</span
 						>
 						{#if room.hidden}
-							<span class="eyebrow shrink-0 text-gray-400"
+							<span class="eyebrow shrink-0 text-gray-500"
 								>{t('settings.preferences.withTheRoom')}</span
 							>
 						{:else}
@@ -1117,59 +1230,11 @@
 		The language, above Appearance because it changes every other word on
 		the page and somebody who cannot read the page is looking for this one.
 	-->
-	<section class="border border-gray-200 bg-white p-6 shadow-card">
-		<div class="mb-4">
-			<h2 class="text-sm font-semibold text-gray-900">{t('settings.language.heading')}</h2>
-			<p class="mt-1 text-sm text-gray-500">{t('settings.language.hint')}</p>
-		</div>
 
-		<form
-			method="post"
-			action="?/setLanguage"
-			use:enhance={({ formData }) => {
-				/*
-				 * The device's own copy remembers too.
-				 *
-				 * An instance running on the device has no server to ask on the
-				 * next first paint, so the choice is written where the shell can
-				 * read it before the database has opened. See `+layout.ts`.
-				 */
-				const chosen = formData.get('language')?.toString();
-				if (isLocale(chosen)) {
-					// <html> is outside the component tree, and it is what a screen
-					// reader picks its voice from — the same reason the theme is
-					// stamped here rather than waited for.
-					document.documentElement.lang = chosen;
-					if (isIsolatedBuild()) rememberLocaleOnThisDevice(chosen);
-				}
-				// Every word on every screen changes, including the ones the shell
-				// drew — so this one reloads rather than patching the page.
-				return async () => invalidateAll();
-			}}
-			class="flex flex-wrap items-center gap-2"
-		>
-			<!--
-				A select, because a language list is a list: two today, a dozen when
-				people start sending translations, and a row of buttons stops being a
-				row at four. It submits on change — a Save beside a one-field form is
-				a second press for nothing.
-			-->
-			<select
-				name="language"
-				class="select w-auto"
-				value={t.locale}
-				onchange={(e) => e.currentTarget.form?.requestSubmit()}
-			>
-				{#each data.languages as language (language.tag)}
-					<option value={language.tag} lang={language.tag}>
-						{language.name}{language.untranslated > 0
-							? ` — ${t('settings.language.untranslated', { count: language.untranslated })}`
-							: ''}
-					</option>
-				{/each}
-			</select>
-		</form>
-	</section>
+	<!--
+		The clock, under the language because it is a question the language has
+		usually already answered — see `$lib/when`.
+	-->
 
 	<section class="border border-gray-200 bg-white p-6 shadow-card">
 		<div class="mb-4">
@@ -1189,6 +1254,7 @@
 				if (chosen) document.documentElement.dataset.theme = chosen;
 				return async ({ update }) => update({ reset: false });
 			}}
+			use:sliding
 			class="seg"
 		>
 			{#each THEMES as option (option)}
@@ -1213,6 +1279,7 @@
 				method="post"
 				action="?/setErrorReports"
 				use:settingsForm={{ notice: 'Saved.' }}
+				use:sliding
 				class="seg mt-3"
 			>
 				{#each [['yes', t('settings.preferences.send')], ['no', t('settings.preferences.never')]] as [value, label] (value)}

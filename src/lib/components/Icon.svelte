@@ -4,12 +4,23 @@
 	 *
 	 * Inline paths rather than a package: the CSP forbids external assets, the
 	 * app already draws its nav this way, and thirty glyphs is not worth a
-	 * dependency that ships to a webview. Drawn on a 24×24 grid, stroked not
-	 * filled, so they sit at the weight of the text beside them.
+	 * dependency that ships to a webview. Drawn on a 24×24 grid, stroked rather
+	 * than filled unless `FILLED` says otherwise, so they sit at the weight of
+	 * the text beside them.
 	 *
 	 * Emoji are not an option — they are somebody else's typeface, they carry a
 	 * colour we did not choose, and they render differently on every platform.
+	 *
+	 * `FILLED` is for the few that are a shape rather than a line. GitHub's
+	 * mark is somebody else's and is recognisable only as itself. The funnel is
+	 * ours and is one anyway: stroked at 1.75 on a 14px button it is a thin
+	 * wireframe triangle with a tail, which is not what a funnel looks like.
+	 * Both take `currentColor` as their fill, so they still sit at the weight
+	 * of the text beside them.
 	 */
+	/** Marks drawn as a filled shape rather than a stroked line. */
+	export const FILLED: Partial<Record<string, true>> = { github: true, filter: true };
+
 	export const ICONS = {
 		// actions
 		plus: 'M12 5v14M5 12h14',
@@ -131,7 +142,15 @@
 		heart: 'M12 20S4 15 4 9.5A4 4 0 0 1 12 7a4 4 0 0 1 8 2.5C20 15 12 20 12 20z',
 		// An open book: the documentation, which is a different thing from the
 		// tour — the tour is this screen, the book is everything.
-		book: 'M12 6c-2-1.5-4.5-2-8-2v13c3.5 0 6 .5 8 2 2-1.5 4.5-2 8-2V4c-3.5 0-6 .5-8 2zM12 6v13'
+		book: 'M12 6c-2-1.5-4.5-2-8-2v13c3.5 0 6 .5 8 2 2-1.5 4.5-2 8-2V4c-3.5 0-6 .5-8 2zM12 6v13',
+
+		/*
+		 * GitHub's own mark, filled, because that is the only shape it is.
+		 * Drawn on the same 24×24 grid as everything else here so it lines up
+		 * with the words beside it.
+		 */
+		github:
+			'M12 2C6.48 2 2 6.58 2 12.23c0 4.51 2.87 8.34 6.84 9.69.5.1.68-.22.68-.49 0-.24-.01-.89-.01-1.74-2.78.62-3.37-1.37-3.37-1.37-.45-1.18-1.11-1.5-1.11-1.5-.91-.64.07-.63.07-.63 1 .07 1.53 1.05 1.53 1.05.89 1.57 2.34 1.11 2.91.85.09-.66.35-1.11.63-1.37-2.22-.26-4.56-1.14-4.56-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05a9.3 9.3 0 0 1 2.5-.34c.85 0 1.71.12 2.5.34 1.91-1.33 2.75-1.05 2.75-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.93-2.34 4.8-4.57 5.05.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.18.6.69.49A10.06 10.06 0 0 0 22 12.23C22 6.58 17.52 2 12 2z'
 	} as const;
 
 	export type IconName = keyof typeof ICONS;
@@ -166,5 +185,9 @@
 	aria-label={label || undefined}
 	aria-hidden={label ? undefined : 'true'}
 >
-	<path d={ICONS[name]} />
+	<path
+		d={ICONS[name]}
+		fill={FILLED[name] ? 'currentColor' : 'none'}
+		stroke={FILLED[name] ? 'none' : 'currentColor'}
+	/>
 </svg>

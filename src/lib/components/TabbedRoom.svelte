@@ -1,8 +1,11 @@
 <script lang="ts">
+	import { setRoomTabs } from '$lib/room-tabs.svelte';
 	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
 	import { navigating, page } from '$app/state';
 	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { scrollHints } from '$lib/actions/scroll-hints';
+	import RoomVerb from '$lib/components/RoomVerb.svelte';
+	import { phoneWidth } from '$lib/breakpoints.svelte';
 	import { onSwipe } from '$lib/swipe';
 	import { swipeSurface } from '$lib/swipe-surface';
 	import {
@@ -29,7 +32,9 @@
 		title,
 		tabs,
 		label,
+		belongsTo,
 		dataTour,
+		nested = false,
 		actions,
 		children
 	}: {
@@ -38,11 +43,39 @@
 		tabs: { href: string; label: string }[];
 		/** What the strip is called, for a screen reader. */
 		label: string;
+		/**
+		 * Which tab a page belongs to when its address says otherwise.
+		 *
+		 * A page can be part of a room and live somewhere else — a data
+		 * stream is reached from Connections and answers at `/data/<slug>`.
+		 * Without this the strip drew with nothing underlined and the page
+		 * read as somewhere else entirely, which is what it looked like.
+		 */
+		belongsTo?: string;
 		/** What a guided tour calls this strip, where one points at it. */
 		dataTour?: string;
+		/**
+		 * Whether this room is inside another one.
+		 *
+		 * Then it draws only its tabs, at the top of the surface the outer room
+		 * already put there — no bar, no title, no second body. Two of these
+		 * stacked whole is two rooms on one screen.
+		 */
+		nested?: boolean;
 		actions?: import('svelte').Snippet;
 		children: import('svelte').Snippet;
 	} = $props();
+
+	/*
+	 * The strip says what it is drawing, so `H` and `L` can walk the same list
+	 * in the same order. See `$lib/room-tabs` — it was worked out from the
+	 * menu before, which is a different list with a different order and holes
+	 * in it where a room has no menu entries at all.
+	 */
+	$effect(() => {
+		setRoomTabs(tabs);
+		return () => setRoomTabs([]);
+	});
 
 	/**
 	 * Which tab a path is under. One of them, never two.
@@ -68,7 +101,7 @@
 		return best;
 	}
 
-	const at = $derived(tabFor(page.url.pathname));
+	const at = $derived(tabFor(belongsTo ?? page.url.pathname));
 	const here = (index: number) => index === at;
 
 	/** The panel that moves. Its content is `body`, which is what is replaced. */
@@ -101,9 +134,12 @@
 	 * makes "anywhere, at any height" true — which is what a phone app does
 	 * and what listening on the content only ever half did.
 	 */
-	const surface = swipeSurface();
+	/** Whether the verb has room at the end of the tab strip. */
+	const phone = phoneWidth();
+
+	const swipeTarget = swipeSurface();
 	$effect(() => {
-		const on = surface?.();
+		const on = swipeTarget?.();
 		if (!on) return;
 		return onSwipe(on, { next: () => step(1), back: () => step(-1) });
 	});
@@ -186,39 +222,91 @@
 	});
 </script>
 
-<div class="space-y-4">
-	<RoomBar {title} {actions}>
-		<nav
-			use:scrollHints
-			class="scroll-hints flex gap-0 border-b border-gray-200 md:gap-1"
-			aria-label={label}
-			data-tour={dataTour}
-		>
-			<!-- Resolved by whoever described the tabs: a stream's slug is a route
-			     parameter, and the rule cannot see through the array. -->
-			<!-- eslint-disable svelte/no-navigation-without-resolve -->
-			{#each tabs as tab, index (tab.href)}
-				<a
-					href={tab.href}
-					aria-current={here(index) ? 'page' : undefined}
-					class="tab-link border-b-2 px-2 py-2 text-sm font-medium whitespace-nowrap transition sm:px-4 {here(
-						index
-					)
-						? 'border-gray-900 text-gray-900'
-						: 'border-transparent text-gray-500 hover:text-gray-700'}"
-				>
-					{tab.label}
-				</a>
-			{/each}
-			<!-- eslint-enable svelte/no-navigation-without-resolve -->
-		</nav>
-	</RoomBar>
+{#snippet strip()}
+	<!--
+		The tabs and the room's verb, on one line and on one ground.
+
+			They were a row of underlined words with nothing behind them and the
+			verb up on the title line a rule away, which reads as three loose
+			things rather than as one strip. The tabs are the same control the
+			markdown box uses now — a track with a tile that travels to the place
+			you are on — and the verb stands at the far end of it.
+
+			`sliding` measures whichever child carries `aria-current="page"`, the
+			convention this strip already used, so nothing here had to learn how
+			the tile works.
+		-->
+	<div class="room-tabs">
+		<!--
+				The track and the strip that scrolls inside it are two elements.
+
+				The fade that says "there is more this way" is a mask, and a mask
+				takes the background with it — so masking the track itself made
+				its own surface dissolve at the end and showed the room's colour
+				through, which reads as a smudge rather than as a row that
+				continues. The track keeps its surface and its corner; the row of
+				tabs inside it is the thing that fades.
+			-->
+		<div class="seg seg-track min-w-0">
+			<nav use:scrollHints class="seg-scroll scroll-hints" aria-label={label} data-tour={dataTour}>
+				<!-- Resolved by whoever described the tabs: a stream's slug is a
+					     route parameter, and the rule cannot see through it. -->
+				<!-- eslint-disable svelte/no-navigation-without-resolve -->
+				{#each tabs as tab, index (tab.href)}
+					<a href={tab.href} aria-current={here(index) ? 'page' : undefined}>
+						{tab.label}
+					</a>
+				{/each}
+				<!-- eslint-enable svelte/no-navigation-without-resolve -->
+			</nav>
+			<!--
+					The verb stands on the same ground as the tabs.
+
+					It was a sibling of the track, so it sat on the page behind with
+					the track's surface stopping short of it — two objects on one
+					line rather than one strip with a button at the end.
+
+					On a phone it goes back up beside the room's name: there is no
+					room for it here across 390px, where the tabs would have to give
+					way and half of them would end up behind the fade.
+				-->
+			{#if !phone.current}<RoomVerb />{/if}
+		</div>
+	</div>
+{/snippet}
+
+<div class="room-frame {nested ? 'room-frame-nested' : ''}">
+	{#if nested}
+		<!--
+			A second level of tabs inside a room that already has one.
+
+			Settings → Integrations is two rooms deep, and drawing the whole of
+			this twice gave it two bars, two titles and two bands of page ground
+			— which reads as two rooms stacked rather than as one room with
+			sections in it. Nested, only the strip is drawn, and it sits at the
+			top of the surface the outer room already put there.
+		-->
+		{@render strip()}
+	{:else}
+		<RoomBar {title} {actions} verbInTabs={!phone.current}>
+			{@render strip()}
+		</RoomBar>
+	{/if}
 
 	<!-- `.slide-frame` is where the movement is clipped, and why it gives the
 	     page gutter back first. -->
 	<div bind:this={frame} class="slide-frame">
 		<div bind:this={pane}>
-			<div bind:this={body}>{@render children()}</div>
+			<!--
+				Something solid under the tabs.
+
+				The track is square along its bottom edge because it sits on the
+				room rather than floating above it — and that only reads as right
+				if there is a surface there to sit on. Without one the strip is a
+				pill with two corners cut off for no reason, which is what Finance
+				and Media and Health looked like.
+			-->
+			<div bind:this={body} class={nested ? '' : 'room-body'}>{@render children()}</div>
 		</div>
 		<div bind:this={stage} class="slide-stage" aria-hidden="true"></div>
 		<!--

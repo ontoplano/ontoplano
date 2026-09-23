@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
+import { pressUntil } from './helpers/press-until';
 
 /**
  * The keys a view declares rather than writes.
@@ -22,7 +23,11 @@ async function makeNotebook(page: Page, title: string) {
 }
 
 async function writeNote(page: Page, title: string) {
-	await page.getByRole('button', { name: /^(New note|New task|New goal|Cancel)$/ }).click();
+	await pressUntil(
+		page,
+		page.getByRole('button', { name: /^(New note|New task|New goal|Cancel)$/ }),
+		page.locator('form[action="?/addEntry"] [name="heading"]')
+	);
 	await page.locator('form[action="?/addEntry"] [name="heading"]').fill(title);
 	await page.locator('form[action="?/addEntry"] textarea[name="content"]').fill(`about ${title}`);
 	await page.getByRole('button', { name: 'Add note' }).click();
@@ -43,9 +48,15 @@ test('h and l walk the tabs, j and k walk the notes', async ({ page }) => {
 
 	await page.keyboard.press('j');
 	await expect(page.locator('article.kb-cursor')).toHaveCount(1);
-	const first = await page.locator('article.kb-cursor [data-note-title]').innerText();
+	const cursor = page.locator('article.kb-cursor [data-note-title]');
+	const first = await cursor.innerText();
 	await page.keyboard.press('j');
-	const second = await page.locator('article.kb-cursor [data-note-title]').innerText();
+	// Waited for rather than read straight away: the keystroke is handled and
+	// the row redrawn a frame later, and reading through it caught the cursor
+	// where it had been — a failure that says "j does not move" about a j that
+	// had not moved yet.
+	await expect(cursor).not.toHaveText(first);
+	const second = await cursor.innerText();
 	expect(second).not.toBe(first);
 	await page.keyboard.press('k');
 	await expect(page.locator('article.kb-cursor [data-note-title]')).toHaveText(first);
@@ -126,13 +137,25 @@ test('the list can be widened, and it stays widened', async ({ page }) => {
 	);
 });
 
-test('what a notebook is, said only while there are none', async ({ page }) => {
+/**
+ * What a notebook is, said where there is room to say it.
+ *
+ * It was a paragraph in a band between the tabs and the shelf: read once, in
+ * the way ever after, and gone the moment the first notebook existed. It is
+ * the empty right-hand column's own description now — that column is blank
+ * until somebody picks a notebook, which is where an explanation belongs and
+ * when it is wanted, so it survives the first notebook being made.
+ */
+test('what a notebook is, said in the column that is waiting for one', async ({ page }) => {
 	test.setTimeout(120_000);
 	await register(page, testEmail('nb-intro'));
 	await visit(page, '/notebooks');
 
-	const intro = page.locator('p.page-intro');
-	await expect(intro).toBeVisible();
+	const said = page.getByText(/A subject you write against with no deadline/);
+	await expect(said.first()).toBeVisible();
+
+	// And it is no longer a band above the shelf.
+	await expect(page.locator('p.page-intro')).toHaveCount(0);
 
 	await makeNotebook(page, 'The kitchen');
 	await visit(page, '/notebooks');

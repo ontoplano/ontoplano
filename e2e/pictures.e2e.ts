@@ -138,7 +138,13 @@ test('a note written in a notebook takes one too', async ({ page }) => {
 
 	const box = page.getByPlaceholder('Write a note about Kitchen');
 	await box.fill('The tiles.');
-	await page.locator('input[type="file"]').first().setInputFiles(SMALL);
+	/*
+	 * The note's own attach, not the first file input on the page: the
+	 * notebooks panel carries one of its own for the notebook's picture, and
+	 * "the first one" stopped meaning this one the day that arrived. `multiple`
+	 * is what tells them apart — a notebook wears one picture.
+	 */
+	await page.locator('input[type="file"][multiple]').first().setInputFiles(SMALL);
 	await expect(box).toHaveValue(/!\[small\.png\]\(\/media\/\d+\)/, { timeout: 20000 });
 });
 

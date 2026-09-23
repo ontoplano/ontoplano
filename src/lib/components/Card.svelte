@@ -22,10 +22,25 @@
 		 */
 		title = '',
 		description = '',
+		/**
+		 * A name for the section, so a link or a notification can point at it
+		 * and land on it rather than at the top of the page.
+		 */
+		id = '',
 		/** The section's colour, drawn as a rule above the header. Omit for chrome. */
 		accent = '',
 		/** Body padding off, for a card whose content is a full-width list. */
 		flush = false,
+		/**
+		 * One pane of a surface that already has the edge.
+		 *
+		 * The card keeps its header, its accent and its body; it gives up its
+		 * own border, shadow and corners, because the thing it is a part of
+		 * draws them. For the halves of a split that reads as one object — see
+		 * `SplitColumns` without `spaced`.
+		 */
+		pane = false,
+		lead,
 		actions,
 		children
 	}: {
@@ -33,10 +48,19 @@
 		description?: string;
 		accent?: string;
 		flush?: boolean;
+		pane?: boolean;
+		id?: string;
+		/** Drawn before the title: the picture of whatever this card is about. */
+		lead?: Snippet;
 		actions?: Snippet;
 		/** Optional: a card can be its title alone — the family seat's is. */
 		children?: Snippet;
 	} = $props();
+
+	/*
+	 * A named card keeps a little air above it when something scrolls to it —
+	 * `scroll-margin-top`, so it does not sit flush under the header.
+	 */
 </script>
 
 <!--
@@ -51,8 +75,11 @@
 	and the space below belonged to nothing.
 -->
 <section
-	class="flex flex-col border border-gray-200 bg-white shadow-card {accent ? 'card-accent' : ''}"
-	style={accent ? `--card-accent: ${accent}` : ''}
+	id={id || undefined}
+	class="flex flex-col {pane ? 'card-pane' : 'border border-gray-200 shadow-card'} bg-white {accent
+		? 'card-accent'
+		: ''}"
+	style="{accent ? `--card-accent: ${accent};` : ''}{id ? ' scroll-margin-top: 1rem;' : ''}"
 >
 	<!--
 		The actions wrap under the title when they do not fit, and only then.
@@ -64,8 +91,13 @@
 	-->
 	<header
 		class="section-tint card-header flex flex-wrap items-start justify-between gap-x-4 gap-y-2 border-b border-gray-200"
-		hidden={!title && !description && !actions}
+		hidden={!title && !description && !actions && !lead}
 	>
+		{#if lead}
+			<!-- Whatever the card is *of*, beside what it is called — a notebook's
+			     picture, the way a person's face sits beside their name. -->
+			<div class="shrink-0">{@render lead()}</div>
+		{/if}
 		<div class="min-w-0 flex-1">
 			{#if title}<h2 class="eyebrow text-gray-600">{title}</h2>{/if}
 			{#if description}

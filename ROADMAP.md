@@ -1,54 +1,14 @@
 # Roadmap
 
-What Ontoplano does not do yet. `CHANGELOG.md` is what it already does.
-
-Nothing here is scheduled. Want one? Open an issue saying so — the bullets under
-each are the parts already decided; the rest is open.
-
----
-
 ## In scope
 
-### The widget, ten times better
+### Widgets
 
-The Android home-screen widget shows today's habits and tasks, and that is
-the whole of it. It should be worth the screen it sits on. What that means
-is still open — ticking a habit without opening the app, a schedule widget,
-a shopping-list widget are the candidates — but the direction is decided:
-not a small polish, an order of magnitude.
+Redo those that are gone.
 
-### Finance
+### Insights
 
-Money, in the same place as the life it pays for. Opinionated and small, not
-accounting — the existing decision against budget-tracking still holds
-(spreadsheets of every coffee, no connection to the week). This is different:
-it starts from the handful of payments that actually land on a calendar.
-
-**Bills, the first tab.** A bill is something expected to be paid — a name, an
-amount expected, a rhythm (monthly, usually). Marking one paid records the
-amount actually paid, which may differ from the expected one, and that
-gap is the seed everything else in this section measures from.
-
-Paying a bill can spawn a recurring task — monthly, typically — that shows up
-in the calendar like any task, but is special: ticking it marks the bill paid
-for that period rather than just completing a to-do. So the week already knows
-about the rent the way it knows about a dentist appointment, and the ticking
-is the same gesture, and the money side is a consequence of it rather than a
-second chore.
-
-- Bills reuse `categories` and can link to `goals`, like everything else.
-- The recurring "pay X" task is a task type that carries a bill and an amount,
-  not a free-text to-do that happens to be named after a bill.
-- Actual-vs-expected per bill, per month, is the first real number; later tabs
-  (income, a month's shape) build on the same rows rather than a new store.
-- Nothing here reaches out to a bank or an account. Amounts are entered, the
-  way a shopping-list price is — no server fetching anybody's finances.
-
-### Trips
-
-Notebooks already hold a trip's writing. What is missing is the date range
-with a place and the one page that shows a trip whole — what to pack, what it
-cost, what happened. The work is the linking, not new units.
+More cool optional dashboard overviews for data
 
 ### The rest of the REST API
 
@@ -87,55 +47,18 @@ unreachable from a phone.
   restricted, and whether a self-hosted instance exposes this at all or waits
   for the hoster to turn it on.
 
-### A home inventory
-
-Asked for [on the launch
-thread](https://news.ycombinator.com/item?id=49581932#49582260): where things
-live, not what to buy — "where do we keep the measuring tape?". Shopping is a
-flat list; an inventory is a tree with tags and per-item fields (a tape is 3m
-or 5m, a cable is USB-C or not). The likely shape is `/shopping` reworked into
-an `/inventory` that keeps the list as its consumable half.
-
-- Parent-child places: house → room → drawer.
-- Tags, and free fields per item.
-- "I have it / I need it" stays — the shopping list is the "I need it" view.
-- Reachable over MCP, so an assistant can answer "where is the tape".
-
-### Another language
-
-Every string is written into its page in English.
-
-**The app only.** `app.ontoplano.com` is what gets translated — and the tutorial
-with it, because a tour written in a language somebody does not read is worse
-than no tour. The marketing site stays English, the docs stay English; both can
-follow later, and neither is what somebody uses every day.
-
-- Strings into a keyed catalogue; the build fails on a key that is gone.
-- Locale per account in `user_settings`, browser first, instance as fallback —
-  and changeable under Settings, not inferred and left at that.
-- The tour's steps come out of the same catalogue as the rest of the app.
-- Dates and numbers through `Intl` — several places still hardcode `en-US`.
-- Portuguese, Russian and Chinese first.
-
 ---
 
 ## Small improvements
-
-- **Recipes belong under a Health section.** Recipes sit on their own today;
-  they read as part of eating well, next to habits and the shopping list, not
-  as a standalone room. The move is navigation and framing, not the data.
 
 - **Sharing beyond shopping and notebooks.** A family plan can share a
   shopping category and a notebook today, opt-in, owner-controlled. Tasks
   and goals that belong to it should be shared too, but only editable by the
   owner (much like the categories and notebooks are).
 
-- **Audio on notes**, by the path images already take.
 - **An `.ics` importer**, beside the Todoist, Google Tasks, Google Keep,
   org-mode and Obsidian ones. Subscribing to a calendar already works;
   importing one does not.
-- **A scheme you can schedule** rather than apply by hand, and an MCP tool
-  for changing schemes.
 - **A token's own log** on the page that lists them: a token says when it was
   last used and not what it did.
 - **Filter the plan by kind.** On `/tasks/plan`, show only the recurring
@@ -154,8 +77,9 @@ follow later, and neither is what somebody uses every day.
 
 ## One day, maybe
 
-**More media**: annexing PDFs and larger images, under a size limit, so small
-servers (like mine) are not overloaded.
+- **More media**: annexing PDFs
+- **A scheme you can schedule** rather than apply by hand, and an MCP tool
+  for changing schemes.
 
 ### A business section
 
@@ -187,11 +111,11 @@ the question.
 
 So they stop coming back:
 
-- **Budget tracking** — huge, crowded, barely touches the week.
-- **Reading lists** — a different app.
 - **An in-process plugin system** — data streams and the API cover it. Too easy to accidentally create an RCE entry point.
-- **AI features inside the app.** The interface is MCP: your assistant, your
-  token, your machine. Nothing in here calls a model.
+- **AI features that call a model on your behalf.** The app holds no model
+  account and pays for no inference. The in-app chat exists, but it speaks
+  through the same tool surface MCP offers and only with a provider key you
+  bring — no key, no chat, and nothing here ever calls a model without one.
 - **Importing a recipe from a URL.** The server would be fetching an address
   somebody typed, which is a request forgery waiting to happen. Paste the page
   instead — that already works.

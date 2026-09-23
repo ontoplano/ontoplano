@@ -1,8 +1,11 @@
 <script lang="ts">
+	import { useWhen } from '$lib/when-context.svelte';
+	import Written from '$lib/components/Written.svelte';
+	import { dateOf, dayOf as shortDay } from '$lib/when';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -12,6 +15,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -264,11 +268,7 @@
 		const day = new Date(`${iso}T00:00:00`);
 		if (Number.isNaN(day.getTime())) return iso;
 		const thisYear = day.getFullYear() === new Date().getFullYear();
-		return day.toLocaleDateString(t.locale, {
-			day: 'numeric',
-			month: 'short',
-			...(thisYear ? {} : { year: 'numeric' })
-		});
+		return thisYear ? shortDay(day, now()) : dateOf(day, now());
 	}
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
@@ -378,7 +378,7 @@
 						{@const history = sessionsOf(workout.id)}
 						<div class="w-full space-y-3 border-t border-gray-100 pt-3">
 							<div class="text-sm whitespace-pre-wrap text-gray-700">
-								{#if workout.plan}{workout.plan}{:else}<span class="text-gray-400"
+								{#if workout.plan}{workout.plan}{:else}<span class="text-gray-500"
 										>{t('health.workouts.noPlanWrittenYet')}</span
 									>{/if}
 							</div>
@@ -443,7 +443,7 @@
 														</span>
 													{/if}
 													{#if session.notes}
-														<p class="text-xs text-gray-500">{session.notes}</p>
+														<Written content={session.notes} compact />
 													{/if}
 												</div>
 												<div class="flex shrink-0 items-center gap-1">
@@ -496,7 +496,7 @@
 					{#each archived as workout (workout.id)}
 						<li class="flex items-center gap-3 px-4 py-2 text-sm">
 							<span class="min-w-0 flex-1 text-gray-600">{workout.title}</span>
-							<span class="text-xs text-gray-400"
+							<span class="text-xs text-gray-500"
 								>{workout.categoryName ?? t('health.workouts.noCategory2')}</span
 							>
 							<form method="post" action="?/archive" use:enhance>

@@ -36,13 +36,13 @@ test('the todo page runs against the device, and the server never hears of it', 
 	const field = page.locator('[name="heading"]');
 	await expect(async () => {
 		await page
-			.getByRole('button', { name: /New to-do/ })
+			.getByRole('button', { name: /New task/ })
 			.first()
 			.click();
 		await expect(field).toBeVisible({ timeout: 2000 });
 	}).toPass({ timeout: 30000 });
 	await field.fill(title);
-	await page.getByRole('button', { name: 'Create todo' }).click();
+	await page.getByRole('button', { name: 'Create task' }).click();
 	await expect(page.getByText(title)).toBeVisible({ timeout: 30_000 });
 
 	// Navigating away and back stays on the bridge, and the row is still
@@ -109,7 +109,7 @@ test('the todo page runs against the device, and the server never hears of it', 
 	// The server's own render of the same page has never seen the row. This
 	// is the whole claim: isolated mode did not leak a single write.
 	await visit(page, '/tasks/todo');
-	await expect(page.getByRole('button', { name: /New to-do/ }).first()).toBeVisible();
+	await expect(page.getByRole('button', { name: /New task/ }).first()).toBeVisible();
 	await expect(page.getByText(title)).toHaveCount(0);
 	await visit(page, '/reminders');
 	await expect(page.locator('main')).toBeVisible();

@@ -1,9 +1,11 @@
 <script lang="ts">
+	import { momentOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import { CHOOSE_PATH, askAgainOnThisPhone, inPhoneApp } from '$lib/instance-choice';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import { getAction } from '$lib/shortcuts';
 	import { invalidateAll } from '$app/navigation';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import Banner from '$lib/components/Banner.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
@@ -19,6 +21,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
@@ -163,12 +166,7 @@
 	/** Times come from the server as UTC; the browser knows what they mean here. */
 	function when(iso: string): string {
 		const d = new Date(iso);
-		return d.toLocaleString(t.locale, {
-			day: 'numeric',
-			month: 'short',
-			hour: '2-digit',
-			minute: '2-digit'
-		});
+		return momentOf(d, now(), { year: undefined });
 	}
 
 	const notice = $derived(form?.success ? form.message : null);

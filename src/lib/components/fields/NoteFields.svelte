@@ -1,11 +1,12 @@
 <script lang="ts">
+	import TagInput from '$lib/components/TagInput.svelte';
+	import { page } from '$app/state';
 	import Field from '$lib/components/Field.svelte';
-	import OneLine from '$lib/components/OneLine.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
 	import NotebookField from '$lib/components/NotebookField.svelte';
 	import PictureAttach from '$lib/components/PictureAttach.svelte';
 	import RecordingAttach from '$lib/components/RecordingAttach.svelte';
-	import { autogrow } from '$lib/actions/autogrow';
+	import MarkdownBox from '$lib/components/MarkdownBox.svelte';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -49,7 +50,7 @@
 		content?: string;
 		tags?: string;
 		notebookId?: number | null;
-		notebooks?: { id: number; title: string }[];
+		notebooks?: { id: number; title: string; defaultTags?: string }[];
 		compact?: boolean;
 		pictures?: boolean;
 		notebook?: boolean;
@@ -57,17 +58,66 @@
 	} = $props();
 
 	let box = $state<HTMLTextAreaElement>();
+
+	/*
+	 * A notebook's own labels, filled in rather than applied.
+	 *
+	 * "Every new note here starts with these" is a suggestion, so it belongs
+	 * in the box where the person can see it and take it out again — not
+	 * added on the server where they would find out afterwards. Picking a
+	 * different notebook swaps them, and anything typed is left alone: the
+	 * swap only replaces what the last notebook put there.
+	 */
+	let filedIn = $state(notebookId);
+	let labels = $state(tags);
+
+	const defaultsFor = (id: number | null) =>
+		(id === null ? '' : (notebooks.find((one) => one.id === id)?.defaultTags ?? '')).trim();
+
+	/*
+	 * Plain variables, for the same reason TagInput's is: they mark what this
+	 * effect last did, and making them reactive would have it depend on its
+	 * own writes.
+	 *
+	 * `openedWith` is the re-seed TagInput needs for the same reason — one
+	 * modal is reused for the next note, so the props change under a component
+	 * that is not rebuilt, and state seeded once would show the last note's
+	 * labels and save them.
+	 */
+	let openedWith = { notebookId, tags };
+	let suggested = defaultsFor(notebookId);
+	$effect(() => {
+		if (notebookId !== openedWith.notebookId || tags !== openedWith.tags) {
+			openedWith = { notebookId, tags };
+			filedIn = notebookId;
+			labels = tags;
+			suggested = defaultsFor(notebookId);
+			return;
+		}
+
+		const now = defaultsFor(filedIn);
+		if (now === suggested) return;
+		// Only what the last notebook put there is replaced; anything typed stays.
+		if (labels.trim() === suggested) labels = now;
+		suggested = now;
+	});
 </script>
 
 <Field {label} span={12} required>
-	<textarea
-		bind:this={box}
+	<!-- Twice the height it started at: a note is usually more than two lines,
+	     and a box that has to be grown before it is written in asks a question
+	     nobody wanted. It still grows past this. -->
+	<!-- A note is a document being composed, and the preview is half of what
+	     somebody is doing — so it opens side by side wherever there is room for
+	     two columns. See `MarkdownBox`. -->
+	<MarkdownBox
+		bind:element={box}
+		value={content}
 		name="content"
 		required
-		rows={compact ? 4 : 8}
-		use:autogrow
-		class="textarea">{content}</textarea
-	>
+		rows={compact ? 8 : 16}
+		start="both"
+	/>
 	{#if pictures}
 		<PictureAttach target={box} />
 		<RecordingAttach target={box} />
@@ -76,20 +126,51 @@
 
 {#snippet rest()}
 	{#if notebook}
-		<NotebookField {notebooks} value={notebookId} span={12} />
+		{@render where()}
 	{/if}
 
-	<Field label={t('ui.tags')} span={12} hint={t('fields.note.separateWithCommasOrSpaces')}>
-		<OneLine name="tags" placeholder={t('fields.note.tagsExample')} value={tags} class="input" />
+	<!-- Half the row, so Tags and the People field beside it are the same size
+	     and the row is used. They were 12 and 6 — one full-width box above a
+	     half-width one, for two things of equal weight. -->
+	<Field label={t('ui.tags')} span={6} hint={t('fields.note.separateWithCommasOrSpaces')}>
+		<TagInput
+			bind:value={labels}
+			known={page.data.tagVocabulary ?? []}
+			placeholder={t('fields.note.tagsExample')}
+		/>
 	</Field>
 {/snippet}
 
+<!--
+	Where the note goes, out where it can be seen.
+
+	A note with no notebook is a diary entry, which is a place rather than the
+	absence of one — so the choice is Diary and the notebooks, and it is the
+	first thing under the box rather than folded away with the labels. Somebody
+	writing something down is deciding where it goes as they write it.
+-->
+{#snippet where()}
+	<NotebookField
+		{notebooks}
+		bind:value={filedIn}
+		span={12}
+		label={t('ui.notebook')}
+		noneLabel={t('sections.diary.label')}
+	/>
+{/snippet}
+
 {#if compact}
-	<MoreOptions
-		label={notebook ? t('fields.note.notebookTags') : 'Tags'}
-		count={(tags ? 1 : 0) + (notebook && notebookId ? 1 : 0)}
-	>
-		{@render rest()}
+	{#if notebook}
+		{@render where()}
+	{/if}
+	<MoreOptions label={t('ui.tags')} count={labels ? 1 : 0}>
+		<Field label={t('ui.tags')} span={12} hint={t('fields.note.separateWithCommasOrSpaces')}>
+			<TagInput
+				bind:value={labels}
+				known={page.data.tagVocabulary ?? []}
+				placeholder={t('fields.note.tagsExample')}
+			/>
+		</Field>
 	</MoreOptions>
 {:else}
 	{@render rest()}

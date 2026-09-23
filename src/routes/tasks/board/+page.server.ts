@@ -1,4 +1,5 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
+import { clockOfDay } from '$lib/services/time';
 import { listNotebooks } from '$lib/services/notebooks';
 import { fail } from '@sveltejs/kit';
 import { ratingsFromForm } from '$lib/ratings';
@@ -10,7 +11,7 @@ import { toActionFailure } from '$lib/http-errors';
 import { createReminder, deleteReminder, listReminders } from '$lib/services/reminders';
 import { moveOccurrence } from '$lib/services/slots';
 import {
-	deleteInstance,
+	cancelOccurrence,
 	generateForDate,
 	listForDate as listOccurrences,
 	resolveInstanceActivity,
@@ -55,12 +56,15 @@ function parseDate(param: string | null): Date {
  * Today gets the next half hour from now so a promoted todo lands ahead of you
  * rather than in the past; another day starts at nine.
  */
-function nextFreeTime(dateStr: string, now: Date): string {
+function nextFreeTime(dateStr: string, now: Date, tz: string): string {
 	const isToday = formatDate(now) === dateStr;
 	if (!isToday) return '09:00';
 
-	const minutes = now.getMinutes() <= 30 ? 30 : 0;
-	const hour = minutes === 0 ? now.getHours() + 1 : now.getHours();
+	// The clock the person is reading, not the one the box keeps. Landing a
+	// promoted todo "ahead of you" means ahead of *your* afternoon.
+	const { hour: nowHour, minute: nowMinute } = clockOfDay(now, tz);
+	const minutes = nowMinute <= 30 ? 30 : 0;
+	const hour = minutes === 0 ? nowHour + 1 : nowHour;
 	if (hour > 23) return '23:30';
 	return `${pad(hour)}:${pad(minutes)}`;
 }
@@ -85,7 +89,7 @@ export type Card = {
 	categoryId: number | null;
 	categoryName: string | null;
 	categoryColor: string | null;
-	ratings: { urgency: number | null; interest: number | null; energy: number | null };
+	ratings: { urgency: number | null; interest: number | null; ease: number | null };
 	/** How long it takes, so the day can be added up. */
 	durationMinutes: number;
 	/** Blank on a todo; a block's own label, for the editor. */
@@ -291,7 +295,8 @@ export const actions = {
 		const result = promoteTodo(ctx, {
 			todoId: id,
 			date,
-			startTime: formData.get('startTime')?.toString()?.trim() || nextFreeTime(date, ctx.now),
+			startTime:
+				formData.get('startTime')?.toString()?.trim() || nextFreeTime(date, ctx.now, ctx.tz),
 			status: isStatus(status) ? status : undefined
 		});
 
@@ -445,10 +450,24 @@ export const actions = {
 		}
 	},
 
+	/*
+	 * Taking a block off the day, which is not the same as deleting its row.
+	 *
+	 * It used to call `deleteInstance`, which removes the generated
+	 * occurrence and nothing else — and the next page load generates it
+	 * straight back from the block that produced it. So Delete closed the
+	 * dialog and the card was still there: "clicking it does nothing just
+	 * closes modal".
+	 *
+	 * `cancelOccurrence` is the verb that means it: a repeating block is
+	 * suppressed for that day and its row removed, a one-off is deleted
+	 * outright. It is what the planner's own cancel does, and what
+	 * `cancel_block` does over MCP.
+	 */
 	deleteInstance: async ({ request, locals }: IsolatedEvent) => {
 		const formData = await request.formData();
 		try {
-			deleteInstance(buildCtx(locals.user!.id), Number(formData.get('id')));
+			cancelOccurrence(buildCtx(locals.user!.id), formData.get('id'));
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);

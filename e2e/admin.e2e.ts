@@ -58,25 +58,15 @@ test('administration is a tab you can leave again', async ({ page }) => {
 	await expect(page.locator('[aria-current="page"]')).toHaveText('Account');
 });
 
-test('says what the box has turned away', async ({ page }) => {
+test('does not interface with the box', async ({ page }) => {
 	await signInAsOwner(page);
 	await page.goto('/admin');
 
-	// The fixture log `e2e/prepare.mjs` writes, read through the same path a
-	// real instance uses.
-	// Anchored on the card's own description rather than on the word "Blocked",
-	// which now also appears inside the rows — each one says whether the
-	// address is still out and for how long.
-	const blocked = page.locator('section').filter({ hasText: 'What fail2ban has turned away.' });
-	await expect(blocked).toContainText('203.0.113.7');
-	// Not the jail's name — what the address did.
-	await expect(blocked).toContainText('scanner');
-	// Both fixture bans are minutes old, so the rolling count must agree with
-	// the rows under it — the card once said "0 blocked today" above a ban
-	// made just before midnight.
-	await expect(blocked).toContainText('2 addresses blocked in the last 24 hours');
-	// A ban with no duration reads as "forever", which it never is.
-	await expect(blocked).toContainText('still blocked');
+	// The bans left this page for the box's own subdomain — the app never
+	// interfaces with the machine it runs on. What guards the boundary here
+	// is the absence: no card reading the firewall, on any instance.
+	await expect(page.getByText('What the box has turned away.')).toHaveCount(0);
+	await expect(page.getByRole('button', { name: 'Unban' })).toHaveCount(0);
 });
 
 /**
@@ -275,8 +265,8 @@ test('an administrator cannot become somebody else', async ({ page }) => {
  * SvelteKit does not run the layout's `load` for a POSTed form action, so
  * "the page is behind a check" says nothing about the actions on it — they
  * are each reachable by a bare same-origin POST. Found as a live privilege
- * escalation: any signed-in account could drive the ban controls and empty
- * the mail-failure queue. This posts as a fresh non-admin and expects the
+ * escalation: any signed-in account could grant roles and empty the
+ * mail-failure queue. This posts as a fresh non-admin and expects the
  * same 404 a missing page answers.
  */
 test('admin actions refuse a non-admin, page load or no page load', async ({ page }) => {
@@ -294,9 +284,6 @@ test('admin actions refuse a non-admin, page load or no page load', async ({ pag
 		.trim();
 
 	for (const [action, form] of [
-		['unban', { jail: 'sshd', address: '203.0.113.9' }],
-		['blockForever', { address: '203.0.113.9' }],
-		['unblockForever', { address: '203.0.113.9' }],
 		['dismissReport', { id: '1' }],
 		['retryMail', { id: '1' }],
 		['dismissMail', { id: '1' }],

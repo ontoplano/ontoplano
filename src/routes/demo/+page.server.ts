@@ -4,10 +4,12 @@ import { auth } from '$lib/server/auth';
 import { isDemo } from '$lib/server/settings';
 import {
 	createDemoAccount,
+	demoAccountCount,
 	DEMO_ACCOUNTS_PER_ADDRESS,
 	DEMO_WINDOW_MS
 } from '$lib/server/services/demo';
 import { clientKey, rateLimit } from '$lib/server/rate-limit';
+import { record as audit } from '$lib/services/audit';
 
 /**
  * The demo's front door.
@@ -51,11 +53,10 @@ export const actions: Actions = {
 		 * person opening the demo a few times, useless to a script doing it in
 		 * a loop. Shared with the hook so the two cannot drift apart.
 		 */
-		const budget = rateLimit(
-			`demo:${clientKey(event.request, event.getClientAddress)}`,
-			DEMO_ACCOUNTS_PER_ADDRESS,
-			DEMO_WINDOW_MS
-		);
+		// Whose visit this is, as far as anything here knows: there is no
+		// account yet, so the address is both the subject and the detail.
+		const address = clientKey(event.request, event.getClientAddress);
+		const budget = rateLimit(`demo:${address}`, DEMO_ACCOUNTS_PER_ADDRESS, DEMO_WINDOW_MS);
 		/*
 		 * Two different answers, which were the same answer.
 		 *
@@ -67,12 +68,23 @@ export const actions: Actions = {
 		 * will fix. It says whose limit it is now, and when it lifts.
 		 */
 		if (!budget.allowed) {
+			// Written down with the rule and the room at that moment, so the
+			// operator's digest can tell a rate limiter doing its job from a
+			// demo that is actually full — the two look identical as a count.
+			audit(address, 'demo_refused', {
+				detail: { why: 'rate', out: demoAccountCount() },
+				ip: address
+			});
 			return { busy: true, minutes: Math.max(1, Math.ceil(budget.retryAfterSeconds / 60)) };
 		}
 
 		const account = await createDemoAccount(event.url.hostname);
 		if (!account) {
 			// Every seat taken. The page says so rather than spinning forever.
+			audit(address, 'demo_refused', {
+				detail: { why: 'full', out: demoAccountCount() },
+				ip: address
+			});
 			return { full: true };
 		}
 

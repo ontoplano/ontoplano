@@ -29,13 +29,13 @@ sentence somebody agrees to when they grant it.
 | `locations:read`   | See where your things live, and what is in each room and drawer                                                                                   |
 | `locations:write`  | Add and change rooms and drawers, and say where a thing lives                                                                                     |
 | `calendar:read`    | Show your plan in a calendar app. It can see the plan and change nothing                                                                          |
-| `notes:read`       | Read your diary and your notebooks                                                                                                                |
+| `notes:read`       | Read your diary and your notebooks, and the pictures and recordings in them                                                                       |
 | `notes:write`      | Write in your diary and your notebooks                                                                                                            |
-| `ideas:read`       | See your ideas                                                                                                                                    |
+| `ideas:read`       | See your ideas, and the pictures and recordings in them                                                                                           |
 | `ideas:write`      | Add ideas, change them, and remove them                                                                                                           |
-| `tasks:read`       | Read your todo list and your goals                                                                                                                |
+| `tasks:read`       | Read your todo list and your goals, and the pictures and recordings on them                                                                       |
 | `tasks:write`      | Add, finish and delete todos, move them on and off a day, and close a goal                                                                        |
-| `kitchen:read`     | Read your recipes                                                                                                                                 |
+| `kitchen:read`     | Read your recipes, and their photographs                                                                                                          |
 | `kitchen:write`    | Add and change recipes                                                                                                                            |
 | `workouts:read`    | See your workouts                                                                                                                                 |
 | `workouts:write`   | Add and change workouts and their categories, put them away, and mark one done                                                                    |
@@ -43,9 +43,11 @@ sentence somebody agrees to when they grant it.
 | `statements:read`  | Read your imported bank-statement lines, their categories and tags, and the monthly in/out figures                                                |
 | `statements:write` | Add and remove the rules that sort your statement lines                                                                                           |
 | `bills:write`      | Add and change bills, and mark them paid                                                                                                          |
-| `people:read`      | See the people in your life, and whose birthday is coming                                                                                         |
+| `people:read`      | See the people in your life, whose birthday is coming, and their photographs                                                                      |
 | `people:write`     | Add people, and change what is recorded about them                                                                                                |
 | `search:read`      | Search everything you have written, in one go                                                                                                     |
+| `tags:read`        | See the labels you use, and the colours you gave them                                                                                             |
+| `tags:write`       | Rename your labels, colour them, and merge two into one                                                                                           |
 | `destructive`      | Delete things outright — with only the write grants, it can add and change but never remove                                                       |
 
 ## Endpoints
@@ -53,7 +55,10 @@ sentence somebody agrees to when they grant it.
 | Endpoint                                     | Method | Scope             |
 | -------------------------------------------- | ------ | ----------------- |
 | `/.well-known/assetlinks.json`               | GET    | —                 |
+| `/.well-known/oauth-authorization-server`    | GET    | —                 |
+| `/.well-known/oauth-protected-resource`      | GET    | —                 |
 | `/account/export`                            | GET    | —                 |
+| `/api/assistant/chat`                        | POST   | —                 |
 | `/api/billing/paddle`                        | POST   | —                 |
 | `/api/billing/play/claim`                    | POST   | —                 |
 | `/api/billing/play/rtdn`                     | POST   | —                 |
@@ -66,6 +71,7 @@ sentence somebody agrees to when they grant it.
 | `/api/mcp`                                   | POST   | —                 |
 | `/api/mcp`                                   | GET    | —                 |
 | `/api/notifications`                         | POST   | —                 |
+| `/api/notifications/raised`                  | POST   | —                 |
 | `/api/pricing`                               | GET    | —                 |
 | `/api/push`                                  | POST   | —                 |
 | `/api/push`                                  | DELETE | —                 |
@@ -97,6 +103,7 @@ sentence somebody agrees to when they grant it.
 | `/api/v1/webhooks`                           | POST   | `webhooks:manage` |
 | `/api/v1/webhooks/[id]`                      | DELETE | `webhooks:manage` |
 | `/calendar/[token]`                          | GET    | `calendar:read`   |
+| `/favicon.ico`                               | GET    | —                 |
 | `/health/meals`                              | GET    | —                 |
 | `/health/trainings`                          | GET    | —                 |
 | `/healthz`                                   | GET    | —                 |
@@ -108,6 +115,8 @@ sentence somebody agrees to when they grant it.
 | `/media/[id]`                                | GET    | —                 |
 | `/media/audio`                               | POST   | —                 |
 | `/media/audio/[id]`                          | GET    | —                 |
+| `/oauth/register`                            | POST   | —                 |
+| `/oauth/token`                               | POST   | —                 |
 | `/robots.txt`                                | GET    | —                 |
 | `/settings/account/export`                   | GET    | —                 |
 | `/shopping`                                  | GET    | —                 |
@@ -133,11 +142,37 @@ who installs from the store while working perfectly on the developer's phone.
 
 **GET**
 
+### `/.well-known/oauth-authorization-server`
+
+**GET**
+
+### `/.well-known/oauth-protected-resource`
+
+**GET**
+
 ### `/account/export`
 
 The export moved with the page it hangs off.
 
 **GET**
+
+### `/api/assistant/chat`
+
+The in-app chat's own door, and the one route that streams an answer.
+
+Session-only on purpose: this is the signed-in person talking to their own
+account, so there is no token to mint. What it may do is still the account's
+to decide: every assistant grant, and `destructive` where the Chat tab says
+so — see `chatScopes`. An external assistant keeps using `/api/mcp`.
+
+A POST rather than a form action because the answer is a stream — the same
+reason `/api/live` is an endpoint.
+
+**Switched off.** The in-app chat is parked — `CHAT_IN_APP` in
+`$lib/features` — and this answers 404 until it comes back. An assistant
+reaching in from outside is unaffected: that is `/api/mcp`.
+
+**POST**
 
 ### `/api/billing/paddle`
 
@@ -320,6 +355,27 @@ hang an action on, and every page in the app is behind it.
 
 Answers the count back, so the badge is what the database says rather than
 what the browser guessed after pressing something.
+
+**POST**
+
+### `/api/notifications/raised`
+
+Something the app told you itself, written down.
+
+Most notifications come from the server, and `pushToUser` records every one
+on its way out. A reminder that comes due while a page is open does not: the
+page raises it (`Reminders.svelte`), and the phone's own alarms do the same.
+Nothing was sent, so nothing was recorded — and the bell list then held a
+reminder or not depending on whether the app happened to be open when it
+fired, which is the one thing that should make no difference.
+
+So the page says so. The row goes in already read: you were looking at the
+screen when it appeared, so it belongs in "what was I told today" and does
+not belong in the count of things waiting on you.
+
+Idempotent by `key` rather than by luck. Push and the page can both raise
+the same reminder — the notification `tag` already stops two appearing on
+screen, and this stops two rows.
 
 **POST**
 
@@ -639,6 +695,32 @@ arrive at a working feed with a key that also writes.
 
 **GET** — requires `calendar:read`
 
+### `/favicon.ico`
+
+The icon nothing links to and everything asks for.
+
+A browser fetches this before it has read a line of the page, and so does
+anything that wants a picture for a link without rendering one — a chat
+unfurling a URL, a feed reader, the card an assistant draws for a connector
+it is about to connect to. There was no such file here, so the request fell
+through to the SPA fallback and every one of those callers was handed a page
+where an image should have been. What they drew instead was whatever they
+had cached, which in one case was the logo this app stopped using a year ago.
+
+A route rather than a file in `static/`, because the static server the node
+adapter bundles has no mime entry for this extension: the bytes went out
+correct with no content type at all, and the `nosniff` header this app sends
+on everything then forbids the browser from working out what it is holding.
+
+The bytes arrive as a generated module rather than through `$app/server`'s
+`read`. That is an adapter feature — the static adapter the device build
+uses does not have it, and the node build tripped over the asset's own
+bookkeeping mid-`vite build`. `scripts/build-icons.mjs` writes both the
+`.ico` and `favicon-ico.ts` from the same artwork as every other icon, so
+this cannot be the one that stays behind.
+
+**GET**
+
 ### `/health/meals`
 
 Where this week's meals used to be.
@@ -803,6 +885,37 @@ about its insides is then noise rather than a document on this origin.
 
 **GET**
 
+### `/oauth/register`
+
+A client introducing itself (RFC 7591).
+
+Unauthenticated, because it has to be: the assistant meets this instance
+before the person it belongs to has signed in, and there is nobody to
+authenticate as yet. Nothing it can do here reaches an account — it gets an
+id, and an id is worth nothing until somebody says yes on the consent
+screen.
+
+It is still the one write an anonymous caller can cause, so it is budgeted
+per address, and a refusal is a refusal rather than a queue.
+
+**POST**
+
+### `/oauth/token`
+
+A code, spent for a key.
+
+What comes out is an ordinary `api_tokens` row — the same thing the key form
+makes, carrying the scopes the person agreed to and named after the client
+that asked, so it stands in the list under Settings → AI & Integrations with
+a revoke button beside it. An assistant connected this way is not a second
+kind of access with a second way to take it away.
+
+The token does not expire, so no refresh token is issued: a refresh of
+something that never goes stale is a round trip that buys nobody anything.
+Revoking is what ends it.
+
+**POST**
+
 ### `/robots.txt`
 
 What a crawler is welcome to read.
@@ -811,11 +924,11 @@ A route rather than a file in `static/`, because the right answer differs by
 instance and a static file cannot know which one it is on.
 
 Worth being honest about what this does and does not do. It is a request, and
-only well-behaved crawlers honour it — the addresses fail2ban is banning are
+only well-behaved crawlers honour it — the addresses the box is banning are
 hitting sixty failed requests a minute looking for `/wp-admin` and `.env`, and
 they have never read a robots.txt in their lives. This is here so that the
 pages behind a login do not turn up in a search result, and so that the demo
-is not indexed as a second copy of the site; the banning stays fail2ban's job.
+is not indexed as a second copy of the site; the banning stays the firewall's job.
 
 Everything under a login already redirects, so a crawler learns nothing from
 following them — but a redirect still costs a request, and a list of paths

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
+import { pressUntil } from './helpers/press-until';
 
 /**
  * Making a key for an assistant, and the paste it produces.
@@ -15,15 +16,13 @@ test('a key made on the AI tab arrives inside the words you paste', async ({ pag
 	await register(page, testEmail('assistant-key'));
 	await visit(page, '/settings/integrations');
 
-	// The button exists before the page has hydrated enough to obey it.
-	await expect(async () => {
-		await page.getByRole('button', { name: 'Create a key' }).click();
-		// A OneLine (a textarea that behaves like an input), found by its accessible
-		// name so the selector survives whichever element backs it.
-		await expect(page.getByRole('textbox', { name: 'What to call this key' })).toBeVisible({
-			timeout: 2000
-		});
-	}).toPass({ timeout: 15000 });
+	// A OneLine (a textarea that behaves like an input), found by its accessible
+	// name so the selector survives whichever element backs it.
+	await pressUntil(
+		page,
+		page.getByRole('button', { name: 'Create a key' }),
+		page.getByRole('textbox', { name: 'What to call this key' })
+	);
 
 	/*
 	 * The permissions are the caller's to change, which is the whole reason

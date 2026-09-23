@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
+import { choose } from './helpers/choose';
 
 /**
  * A goal whose number comes from the workout register.
@@ -34,14 +35,14 @@ test('a goal can count a workout measure, and the number is read not typed', asy
 	await visit(page, '/goals');
 	await page.getByRole('button', { name: 'New goal' }).first().click();
 	await page.locator('#goal-form [name="heading"]').fill('run 100km this quarter');
-	await page.locator('#goal-form select[name="horizon"]').selectOption('quarter');
+	await choose(page.locator('#goal-form'), 'horizon', 'Quarter');
 	await page.locator('#goal-form [name="targetValue"]').first().fill('100');
 	await page.locator('#goal-form [name="targetUnit"]').first().fill('km');
 
 	// Offered only because something has actually been measured.
-	const counted = page.locator('#goal-form [name="targetMeasure"]').first();
+	const counted = page.locator('#goal-form [data-picker="targetMeasure"]').first();
 	await expect(counted).toBeVisible();
-	await counted.selectOption('ran');
+	await choose(page.locator('#goal-form'), 'targetMeasure', /^ran/);
 	// Choosing one takes the unit from the register, so two spellings of one
 	// unit do not become two units.
 	await expect(page.locator('#goal-form [name="targetUnit"]').first()).toHaveValue('km');

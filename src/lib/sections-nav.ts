@@ -68,6 +68,17 @@ export type NavPlace = {
 	hide?: HideableSection;
 };
 
+/*
+ * The order the rooms come in, as Estevão asked for it: the week first, then
+ * what is written down, then the body, then the things in the house, then the
+ * money, then what it is all for, then the pictures, then what is about to go
+ * off. It was the order they happened to be written in.
+ *
+ * This is only the *default*: an account can drag them into any order it
+ * likes and that choice is stored — `applyOrder` keeps anything stored and
+ * puts a room it has never heard of at the end, so changing this list moves
+ * nobody who has already chosen.
+ */
 export const NAV_PLACES: NavPlace[] = [
 	{
 		key: 'planner',
@@ -76,21 +87,20 @@ export const NAV_PLACES: NavPlace[] = [
 		icon: 'planner',
 		href: '/tasks/plan'
 	},
-	{
-		key: 'goals',
-		name: 'sections.goals.label',
-		section: 'goals',
-		icon: 'goals',
-		href: '/goals',
-		hide: 'goals'
-	},
+	/*
+	 * No `hide`: the writing room is always on, like the planner.
+	 *
+	 * It is where the diary, the notebooks, the ideas and the people live, and
+	 * an account that puts all of that away has put the app away. What can be
+	 * put away is each shelf inside it — see `HIDEABLE_SECTIONS`, where the
+	 * diary now has a switch of its own rather than going with the room.
+	 */
 	{
 		key: 'diary',
 		name: 'sections.notebooks.label',
 		section: 'diary',
 		icon: 'diary',
-		href: '/notebooks',
-		hide: 'diary'
+		href: '/notebooks'
 	},
 	{
 		key: 'health',
@@ -101,6 +111,14 @@ export const NAV_PLACES: NavPlace[] = [
 		hide: 'health'
 	},
 	{
+		key: 'inventory',
+		name: 'sections.inventory.label',
+		section: 'inventory',
+		icon: 'shopping',
+		href: '/inventory',
+		hide: 'inventory'
+	},
+	{
 		key: 'finance',
 		name: 'sections.finance.label',
 		section: 'finance',
@@ -109,20 +127,20 @@ export const NAV_PLACES: NavPlace[] = [
 		hide: 'finance'
 	},
 	{
+		key: 'goals',
+		name: 'sections.goals.label',
+		section: 'goals',
+		icon: 'goals',
+		href: '/goals',
+		hide: 'goals'
+	},
+	{
 		key: 'media',
 		name: 'sections.media.label',
 		section: 'media',
 		icon: 'image',
 		href: '/media/audios',
 		hide: 'media'
-	},
-	{
-		key: 'inventory',
-		name: 'sections.inventory.label',
-		section: 'inventory',
-		icon: 'shopping',
-		href: '/inventory',
-		hide: 'inventory'
 	},
 	// Everything with a time on it, in one place. It has no colour of its own:
 	// a reminder belongs to whatever it is about, so the room borrows the

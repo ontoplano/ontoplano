@@ -57,6 +57,24 @@ const ISOLATED_FIELD = constant('MARK_FIELD_ISOLATED');
  * one: the outermost ring of the mark then continues into the corners instead
  * of ending at a square edge somebody picked a colour for.
  */
+/**
+ * The room glyphs, read from the set the app draws its own nav with.
+ *
+ * The launcher shortcuts — the three things a long press on the installed app
+ * offers — are not the mark: they are a board, a diary and a goal, and they
+ * have to be told apart at the size a launcher draws them. Taking them from
+ * `Icon.svelte` is what keeps them the same drawings the app uses, and what
+ * stops them ageing: they were hand-made PNGs committed with the Android work
+ * and they still wore the logo from before the puffin, a year after it went.
+ */
+const iconSetFile = join(ROOT, 'src/lib/components/Icon.svelte');
+const iconSet = readFileSync(iconSetFile, 'utf8');
+const glyph = (name) => {
+	const m = iconSet.match(new RegExp(`\\n\\t*'?${name}'?:\\s*\\n?\\s*'([^']+)'`));
+	if (!m) throw new Error(`${relative(ROOT, iconSetFile)} no longer draws '${name}'`);
+	return m[1];
+};
+
 const shapeFile = join(ROOT, 'src/lib/logo/mark-shape.ts');
 const shape = readFileSync(shapeFile, 'utf8');
 /** What the last run measured, for the case where this one cannot measure. */
@@ -235,6 +253,29 @@ const solid = icon(SOLID, FIELD);
 const maskable = icon(MASKABLE, FIELD);
 const apple = icon(APPLE, FIELD);
 
+/**
+ * A launcher shortcut: one room's glyph, white on the mark's own dark.
+ *
+ * Drawn at the maskable scale, because a launcher crops these the same way it
+ * crops the app tile — a glyph drawn to the edge loses its ends on a circular
+ * mask. Stroke weight and joins are the app's own, carried in with the path.
+ */
+const GLYPH_GRID = 24;
+const GLYPH_STROKE = 1.75;
+function shortcutIcon(name) {
+	const side = SIZE * MASKABLE;
+	const at = (SIZE - side) / 2;
+	return `${header}
+<svg xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${SIZE}" viewBox="0 0 ${SIZE} ${SIZE}">
+  <rect width="${SIZE}" height="${SIZE}" fill="${FIELD}"/>
+  <svg x="${at}" y="${at}" width="${side}" height="${side}" viewBox="0 0 ${GLYPH_GRID} ${GLYPH_GRID}">
+    <path d="${glyph(name)}" fill="none" stroke="#ffffff" stroke-width="${GLYPH_STROKE}"
+      stroke-linecap="square" stroke-linejoin="miter"/>
+  </svg>
+</svg>
+`;
+}
+
 const stagingIcon = (scale, ground, top) => bandedIcon(STAGING_BAND, scale, ground, top);
 const devIcon = (scale, ground, top) => bandedIcon(DEV_BAND, scale, ground, top);
 const demoIcon = (scale, ground, top) => bandedIcon(DEMO_BAND, scale, ground, top);
@@ -312,7 +353,15 @@ const pngs = [
 	['static/icons/favicon-16-demo.png', plainDemo, 16],
 	['static/icons/favicon-32-demo.png', plainDemo, 32],
 	['static/icons/favicon-48-demo.png', plainDemo, 48],
-	['static/icons/apple-touch-icon-demo.png', appleDemo, 180]
+	['static/icons/apple-touch-icon-demo.png', appleDemo, 180],
+	/*
+	 * The three a long press on the installed app offers, named in
+	 * `src/routes/manifest.webmanifest/+server.ts`. 192 because that is the
+	 * size the manifest claims for them.
+	 */
+	['static/icons/shortcut-board.png', shortcutIcon('planner'), 192],
+	['static/icons/shortcut-diary.png', shortcutIcon('diary'), 192],
+	['static/icons/shortcut-goals.png', shortcutIcon('goals'), 192]
 ];
 
 // ── Rasterising ──────────────────────────────────────────────────────────────
@@ -554,6 +603,58 @@ const favicons = () => {
 	];
 };
 
+/**
+ * `/favicon.ico`, which is fetched whether or not anything links to it.
+ *
+ * A browser asks for it before it has read a line of the page, and so does
+ * everything that wants a picture for a link without rendering one — a chat
+ * unfurling a URL, a feed reader, the card an assistant draws for a connector
+ * it is about to connect to. This app had no such file, so that request fell
+ * through to the SPA fallback and those callers were handed 130KB of HTML
+ * where an image should have been, and drew whatever they had cached from
+ * years ago.
+ *
+ * Three sizes in the one file, each rasterised at the size it will be drawn,
+ * for the same reason the PNGs above are: the caller picks rather than scales.
+ * The container is ICO's own — a header, one directory entry per image, then
+ * the PNGs themselves, which every browser since IE11 reads.
+ *
+ * Written beside the mark rather than into `static/`, because a file in there
+ * is served by the adapter's own static server — whose mime table has no entry
+ * for this extension, so it went out with no content type at all, and the
+ * `nosniff` this app sends made a browser refuse the thing it had just been
+ * given. `src/routes/favicon.ico/+server.ts` serves it and says what it is.
+ */
+const ICO_SIZES = [16, 32, 48];
+
+function ico(images) {
+	const header = Buffer.alloc(6);
+	header.writeUInt16LE(0, 0); // reserved
+	header.writeUInt16LE(1, 2); // 1 = icon, as opposed to a cursor
+	header.writeUInt16LE(images.length, 4);
+
+	const entries = [];
+	const bodies = [];
+	let at = header.length + images.length * 16;
+	for (const { size, png } of images) {
+		const entry = Buffer.alloc(16);
+		// 0 means 256 in this format; nothing here is that big, but the rule
+		// is the format's rather than ours.
+		entry.writeUInt8(size >= 256 ? 0 : size, 0);
+		entry.writeUInt8(size >= 256 ? 0 : size, 1);
+		entry.writeUInt8(0, 2); // no colour palette
+		entry.writeUInt8(0, 3); // reserved
+		entry.writeUInt16LE(1, 4); // colour planes
+		entry.writeUInt16LE(32, 6); // bits per pixel
+		entry.writeUInt32LE(png.length, 8);
+		entry.writeUInt32LE(at, 12);
+		at += png.length;
+		entries.push(entry);
+		bodies.push(png);
+	}
+	return Buffer.concat([header, ...entries, ...bodies]);
+}
+
 console.log(
 	`ontoplano icons, from ${relative(ROOT, markFile)} (${createHash('sha256').update(mark).digest('hex').slice(0, 8)})`
 );
@@ -562,12 +663,34 @@ if (rasteriser) {
 	console.log(`  favicons and PNGs drawn by ${rasteriser.name}`);
 	for (const [path, svg] of favicons()) write(path, svg);
 	for (const [path, svg, size] of pngs) write(path, rasteriser.run(svg, size));
+	const icoBytes = ico(
+		ICO_SIZES.map((size) => ({ size, png: Buffer.from(rasteriser.run(plain, size)) }))
+	);
+	write('src/lib/logo/favicon.ico', icoBytes);
+	/*
+	 * And the same bytes as a module the route can import.
+	 *
+	 * The route used to read the `.ico` through `$app/server`'s `read`, which
+	 * is an adapter feature: the static adapter the device build uses does not
+	 * have it, and the node build tripped over the asset's own bookkeeping
+	 * during `vite build`. A generated module is none of those things — it is
+	 * the same bytes, in the one language every build already compiles.
+	 */
+	write(
+		'src/lib/logo/favicon-ico.ts',
+		`// Generated by scripts/build-icons.mjs from src/lib/logo/mark.png. Do not edit.\n` +
+			`//\n` +
+			`// The bytes of \`favicon.ico\`, base64, so \`src/routes/favicon.ico/+server.ts\`\n` +
+			`// can answer with them in every build without an adapter's help.\n` +
+			`export const FAVICON_ICO_BASE64 =\n\t'${icoBytes.toString('base64')}';\n`
+	);
 } else {
 	console.log(
 		'  no rasteriser (@resvg/resvg-js or rsvg-convert) — favicons and PNGs were left alone'
 	);
 	console.log('  install one and run this again, or the app icon stays on the old mark');
-	stale += pngs.length + 3;
+	// Three favicon SVGs, the PNGs, and the .ico.
+	stale += pngs.length + 4;
 }
 
 /*

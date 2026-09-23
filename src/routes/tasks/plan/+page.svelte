@@ -1,7 +1,11 @@
 <script lang="ts">
+	import { pillStyle } from '$lib/pill-ink';
+	import { dayOf, wantsTwelveHour } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import PeriodNav from '$lib/components/PeriodNav.svelte';
 	import PickOne from '$lib/components/PickOne.svelte';
+	import Picker from '$lib/components/Picker.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -10,14 +14,15 @@
 	import Swatch from '$lib/components/Swatch.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import { armed } from '$lib/actions/armed';
-	import { enhance, deserialize } from '$app/forms';
+	import { enhance } from '$lib/enhance';
+	import { deserialize } from '$app/forms';
 	import FormError from '$lib/components/FormError.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
-	import { goto, invalidateAll } from '$app/navigation';
+	import { preloadData, goto, invalidateAll } from '$app/navigation';
 	import { SECTION_COLORS } from '$lib/colors';
-	import { page } from '$app/state';
+	import { navigating, page } from '$app/state';
 	import { browser } from '$app/environment';
 	import { tick } from 'svelte';
 	import type { PageServerData, ActionData } from './$types.js';
@@ -42,6 +47,7 @@
 	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
+	const now = useWhen();
 
 	/** Whether a block repeats, as the two words the form offers. */
 	const RECURRENCE_CHOICES: { value: string; label: PlainKey }[] = [
@@ -365,7 +371,7 @@
 	let formRatings: Record<string, number | null> = $state({
 		urgency: null,
 		interest: null,
-		energy: null
+		ease: null
 	});
 
 	/** How many of the folded-away ratings currently carry a value. */
@@ -509,8 +515,7 @@
 	}
 
 	function formatWeekDate(dateStr: string): string {
-		const d = new Date(`${dateStr}T00:00:00`);
-		return d.toLocaleDateString(t.locale, { month: 'short', day: 'numeric' });
+		return dayOf(dateStr, now());
 	}
 
 	function defaultActivityChoice(activityId: number | null | undefined): string {
@@ -571,7 +576,7 @@
 		formRatings = {
 			urgency: slot.urgency ?? null,
 			interest: slot.interest ?? null,
-			energy: slot.energy ?? null
+			ease: slot.ease ?? null
 		};
 		editingKind = 'slot';
 		editingBlockId = slot.id;
@@ -593,7 +598,7 @@
 		formRatings = {
 			urgency: exc.urgency ?? null,
 			interest: exc.interest ?? null,
-			energy: exc.energy ?? null
+			ease: exc.ease ?? null
 		};
 		editingKind = 'exceptional';
 		editingBlockId = exc.id;
@@ -624,7 +629,7 @@
 		recurrenceAnchor = anchor;
 		recurrenceInterval = 2;
 		recurrenceMonthDay = 1;
-		formRatings = { urgency: null, interest: null, energy: null };
+		formRatings = { urgency: null, interest: null, ease: null };
 		editingKind = null;
 		editingBlockId = null;
 		repeat = mode;
@@ -1394,17 +1399,92 @@
 	 * belong to the previous month; the fourth row never does.
 	 */
 	function monthLabel(from: string): string {
-		return new Date(`${addDaysStr(from, 21)}T12:00:00`).toLocaleDateString(t.locale, {
+		return dayOf(`${addDaysStr(from, 21)}T12:00:00`, now(), {
+			day: undefined,
 			month: 'long',
 			year: 'numeric'
 		});
 	}
 
-	function goToRange(from: string | null) {
+	function rangeHref(from: string | null): string {
 		const parts: string[] = [`view=${viewMode}`];
 		if (from) parts.push(`from=${from}`);
-		goto(resolve(`/tasks/plan?${parts.join('&')}`));
+		return resolve(`/tasks/plan?${parts.join('&')}`);
 	}
+
+	/*
+	 * Stepping the week keeps the page where it is.
+	 *
+	 * Every arrow here is a navigation, and a navigation scrolls to the top by
+	 * default — so somebody reading the afternoon, who presses forward to see
+	 * the same hours next week, was thrown back to seven in the morning.
+	 * Nothing about the page above the grid changed; only the grid did.
+	 * `keepFocus` for the same reason: the arrow you pressed is the arrow you
+	 * press again.
+	 *
+	 * What the grid does while the next week is fetched is `waiting` below.
+	 */
+	function goToRange(from: string | null) {
+		// `rangeHref` is what calls `resolve`; the rule cannot see through it.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		goto(rangeHref(from), { noScroll: true, keepFocus: true });
+	}
+
+	/*
+	 * The grid dims while the week it is showing is being replaced.
+	 *
+	 * Now that the page holds still, a press that takes a moment looks like a
+	 * press that did nothing: the arrow was the only thing that moved, and it
+	 * moved back. A wash over the grid says the answer is on its way, and it
+	 * is only over the grid because the grid is the only part that is about to
+	 * change.
+	 *
+	 * Only for a navigation that stays on this page — leaving for another room
+	 * is the shell's business and it has its own answer.
+	 */
+	const waiting = $derived(
+		Boolean(navigating.to && navigating.to.url.pathname === page.url.pathname)
+	);
+
+	/**
+	 * The window the next press wants, fetched before it is pressed.
+	 *
+	 * Every arrow here is a navigation, and a navigation is a round trip: the
+	 * grid sat empty for the length of one every time somebody stepped a day.
+	 * `preloadData` runs the same load ahead of time and SvelteKit hands the
+	 * result to the navigation that follows.
+	 *
+	 * It remembers exactly **one** route, though — `load_cache` in its client
+	 * runtime is a single slot, discarded the moment a different route is
+	 * preloaded. So the first version of this, which fetched the two arrows
+	 * and then three days either side, left only the last of the eight in the
+	 * cache: −3 days, which no arrow goes to. Eight requests, and every press
+	 * still waited for its own.
+	 *
+	 * One slot, so one guess, made at the moment the target is known instead
+	 * of guessed: the pointer arriving on an arrow. That is most of the round
+	 * trip on a desktop and the whole of the press on a phone, where
+	 * `pointerenter` fires as the finger lands. `warm` below is what `PeriodNav`
+	 * calls; the speculative one after it covers the keyboard, which has no
+	 * hover to go on — forward, because that is the press people make.
+	 *
+	 * Not in the month view: a month is twelve times the data and is read
+	 * rather than stepped through.
+	 */
+	function warm(direction: 'prev' | 'next' | 'now') {
+		if (viewMode === 'month') return;
+		const from =
+			direction === 'now' ? null : direction === 'next' ? data.range.next : data.range.prev;
+		if (direction !== 'now' && !from) return;
+		void preloadData(rangeHref(from)).catch(() => {});
+	}
+
+	$effect(() => {
+		if (viewMode === 'month') return;
+		const on = data.range.next;
+		if (!on) return;
+		void preloadData(rangeHref(on)).catch(() => {});
+	});
 
 	function goToPrevWeek() {
 		if (data.range.prev) goToRange(data.range.prev);
@@ -1927,7 +2007,8 @@
 			narrow: narrowScreen,
 			today: data.today,
 			markOf: markOf,
-			locale: t.locale
+			locale: t.locale,
+			twelveHour: wantsTwelveHour(now())
 		}),
 		events: gridEvents,
 		editable: true,
@@ -2481,7 +2562,7 @@
 		already looking at when it reaches for them), what shape and what next on
 		the right. It wraps to two rows on a phone and holds one on a laptop.
 	-->
-	<div class="flex flex-wrap items-center gap-x-4 gap-y-2" data-tour="plan-toolbar">
+	<div class="flex flex-wrap items-center gap-x-4 gap-y-1" data-tour="plan-toolbar">
 		<!--
 			One block: ← date →, arrows hugging the date they move.
 
@@ -2500,6 +2581,7 @@
 			onprev={goToPrevWeek}
 			onnext={goToNextWeek}
 			onnow={goToToday}
+			onwarm={warm}
 		>
 			<span class="truncate text-sm text-gray-600">
 				{#if effectiveView === 'month'}
@@ -2533,11 +2615,14 @@
 		-->
 		{#if effectiveView === 'week'}
 			<!--
-				Centred between where you are and what shape you want it: this is
-				an adjustment rather than a way of getting somewhere, and it reads
-				as one when it sits in the middle rather than crowding the arrows.
+				Beside the controls rather than centred on a line of its own.
+
+				Centred, it took a whole row on a phone — four rows of chrome
+				between the tabs and the first hour of the day, which is most of
+				what somebody opens this page to look at. It is an adjustment, so
+				it sits with the other adjustments.
 			-->
-			<div class="mx-auto flex shrink-0 items-center gap-1" data-tour="plan-week-start">
+			<div class="flex shrink-0 items-center gap-1" data-tour="plan-week-start">
 				<span class="eyebrow hidden text-gray-500 lg:inline">{t('tasks.plan.weekStarts')}</span>
 				<button
 					type="button"
@@ -2560,13 +2645,25 @@
 			</div>
 		{/if}
 
-		<!-- Pinned right on a laptop; on a phone it takes the second line whole, so
-		     the two controls sit at the ends instead of huddling in one corner. -->
-		<div class="ml-auto flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
+		<!--
+			Pinned right, and on a phone it shares the second line with the week's
+			own nudge rather than taking one of its own.
+		-->
+		<div class="ml-auto flex flex-1 items-center justify-between gap-2 sm:flex-none sm:justify-end">
 			<!--
 				Schemes: a saved shape of a week, loaded over this one. Here rather
 				than on a line of its own because it is a control, and a control
 				belongs with the other controls.
+			-->
+			<!--
+				Quiet, and with a glyph, because it is not one of the three beside
+				it.
+
+				Drawn as a plain button it read as a fourth position in the
+				segmented control next to it — four things of the same size and
+				shape, one of which opens a panel and three of which change what
+				you are looking at. The icon and the lack of a face say which
+				kind of thing it is before the word is read.
 			-->
 			<button
 				type="button"
@@ -2579,9 +2676,10 @@
 				}}
 				aria-expanded={schemesExpanded}
 				aria-controls="plan-schemes-panel"
-				class="btn btn-sm shrink-0"
+				class="btn btn-sm btn-quiet shrink-0"
 				title={t('tasks.plan.savedShapesOfAWeek')}
 			>
+				<Icon name="copy" size={14} />
 				{t('tasks.plan.schemes')}
 			</button>
 
@@ -2820,7 +2918,7 @@
 						<Icon name={calendarsOpen ? 'chevron-down' : 'chevron-right'} size={14} />
 						{t('tasks.plan.calendarsYouSubscribeTo')}
 						{#if data.feeds.length > 0}
-							<span class="text-gray-400">({data.feeds.length})</span>
+							<span class="text-gray-500">({data.feeds.length})</span>
 						{/if}
 					</button>
 					{#if calendarsOpen}
@@ -3310,11 +3408,14 @@
 					-->
 					{#if repeat === 'weekly' && (recurrenceKind === 'weekly' || recurrenceKind === 'weeks')}
 						<Field label={t('tasks.plan.day')} span={4} required>
-							<select name="weekday" required bind:value={formWeekday} class="select">
-								{#each data.weekdays as day, i (i)}
-									<option value={i}>{day}</option>
-								{/each}
-							</select>
+							<Picker
+								name="weekday"
+								required
+								value={String(formWeekday)}
+								options={data.weekdays.map((day, i) => ({ value: String(i), label: day }))}
+								onpick={(next) => (formWeekday = Number(next))}
+								label={t('tasks.plan.day')}
+							/>
 						</Field>
 					{:else if repeat === 'weekly'}
 						<!--
@@ -3364,31 +3465,50 @@
 
 				<FormGrid>
 					<Field label={t('tasks.plan.mode')} span={6} required>
-						<select name="mode" required bind:value={slotMode} class="select">
-							<option value="activity">{t('tasks.plan.activity')}</option>
-							<option value="category">{t('ui.category')}</option>
-							<!-- Only where there is a workout to pick: a mode that lands on
-							     an empty list is a dead end. -->
-							{#if data.workouts.length > 0}
-								<option value="workout">{t('tasks.plan.workout')}</option>
-							{/if}
-						</select>
+						<!-- Only where there is a workout to pick: a mode that lands on an
+						     empty list is a dead end. -->
+						<Picker
+							name="mode"
+							required
+							value={slotMode}
+							options={[
+								{ value: 'activity', label: t('tasks.plan.activity') },
+								{ value: 'category', label: t('ui.category') },
+								...(data.workouts.length > 0
+									? [{ value: 'workout', label: t('tasks.plan.workout') }]
+									: [])
+							]}
+							onpick={(next) => (slotMode = next as typeof slotMode)}
+							label={t('tasks.plan.mode')}
+						/>
 					</Field>
 					{#if slotMode === 'category'}
 						<Field label={t('ui.category')} span={6} required>
-							<select name="categoryId" required bind:value={formCategoryId} class="select">
-								{#each data.categories as cat (cat.id)}
-									<option value={cat.id}>{cat.name}</option>
-								{/each}
-							</select>
+							<Picker
+								name="categoryId"
+								required
+								value={String(formCategoryId ?? '')}
+								options={data.categories.map((cat) => ({
+									value: String(cat.id),
+									label: cat.name
+								}))}
+								onpick={(next) => (formCategoryId = Number(next))}
+								label={t('ui.category')}
+							/>
 						</Field>
 					{:else if slotMode === 'workout'}
 						<Field label={t('tasks.plan.workout')} span={6} required>
-							<select name="workoutId" required bind:value={formWorkoutId} class="select">
-								{#each data.workouts as workout (workout.id)}
-									<option value={workout.id}>{workout.title}</option>
-								{/each}
-							</select>
+							<Picker
+								name="workoutId"
+								required
+								value={String(formWorkoutId ?? '')}
+								options={data.workouts.map((workout) => ({
+									value: String(workout.id),
+									label: workout.title
+								}))}
+								onpick={(next) => (formWorkoutId = Number(next))}
+								label={t('tasks.plan.workout')}
+							/>
 						</Field>
 					{:else}
 						<Field label={t('tasks.plan.activity')} span={6} required>
@@ -3523,7 +3643,7 @@
 					</Field>
 				</FormGrid>
 
-				<MoreOptions label={t('tasks.plan.urgencyInterestEnergy')} count={ratingsSet}>
+				<MoreOptions label={t('tasks.plan.urgencyEaseInterest')} count={ratingsSet}>
 					{#each RATINGS as r (r)}
 						<div class="col-span-12 sm:col-span-4">
 							<RatingPicker rating={r} bind:value={formRatings[r]} />
@@ -3621,7 +3741,7 @@
 									? 'border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100'
 									: 'border-blue-700 bg-blue-700 text-white hover:bg-blue-800'}"
 							>
-								{ticked ? `Done ✓ — undo` : `Mark as done`}
+								{ticked ? t('tasks.plan.doneUndo') : t('tasks.plan.markAsDone')}
 							</button>
 						</form>
 					{/if}
@@ -3768,7 +3888,7 @@
 		<details
 			bind:open={todosOpen}
 			bind:this={trayEl}
-			class="mb-2 {draggingBlock ? t('tasks.plan.borderBorderDashedBorderGray400BgGray50P') : ''}"
+			class="mb-1 {draggingBlock ? t('tasks.plan.borderBorderDashedBorderGray400BgGray50P') : ''}"
 		>
 			<summary
 				class="flex cursor-pointer list-none items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
@@ -3832,7 +3952,7 @@
 							? 'opacity-40'
 							: ''}"
 						style={todo.categoryColor && placingTodoId !== todo.id
-							? `--pill:${todo.categoryColor}`
+							? pillStyle(todo.categoryColor)
 							: ''}
 						title={t('tasks.plan.dragOntoTheGridOr')}
 					>
@@ -3951,6 +4071,17 @@
 		{/if}
 		{#if browser && widthChecked}
 			<Calendar bind:this={ec} plugins={[TimeGrid, DayGrid, Interaction]} options={gridOptions} />
+		{/if}
+
+		<!--
+			The wash that says the next week is on its way.
+
+			Over the grid and nothing else, because the grid is the only part
+			about to change — and `pointer-events: none` so it is a statement
+			rather than a shutter: a press that lands during it still lands.
+		-->
+		{#if waiting}
+			<div class="grid-waiting" aria-hidden="true"></div>
 		{/if}
 	</div>
 	<div class="mt-1 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">

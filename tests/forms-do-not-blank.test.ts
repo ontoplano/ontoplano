@@ -81,20 +81,31 @@ it('a note form offers a notebook, and its actions read it', () => {
 });
 
 /**
- * Except in the diary, which is not one notebook among others.
+ * The diary page does not offer a notebook to file a note in.
  *
- * It is the day, and a note written into it is a note about the day — offering
- * to file it somewhere else at the moment of writing asks a question the page
- * has already answered, and answering it took the note out of the diary the
- * writer was looking at. Both doors into the diary are pinned: the page itself
- * and the capture wheel's "Diary note", which is the same note by another
- * route and drifted from it once already.
+ * It is the day, and a note written *on that page* is a note about the day —
+ * offering to file it somewhere else asks a question the page has already
+ * answered, and answering it took the note out of the diary the writer was
+ * looking at.
+ *
+ * The capture form is the other case and used to be pinned here with it. It is
+ * not the diary: it is the one place somebody writes a note without having
+ * chosen where they are, so it asks — starting on the diary, which is where it
+ * used to go silently. "Diary note" named the destination and hid the only
+ * decision there is.
  */
-it('the diary does not offer a notebook to file a note in', () => {
-	for (const path of [
-		'src/routes/notebooks/diary/+page.svelte',
-		'src/lib/components/CaptureForm.svelte'
-	]) {
-		expect(readFileSync(path, 'utf8'), path).toMatch(/notebook=\{false\}/);
-	}
+it('the diary page does not offer a notebook to file a note in', () => {
+	expect(readFileSync('src/routes/notebooks/diary/+page.svelte', 'utf8')).toMatch(
+		/notebook=\{false\}/
+	);
+});
+
+it('and the capture form does, starting on the diary', () => {
+	const form = readFileSync('src/lib/components/CaptureForm.svelte', 'utf8');
+	expect(form).not.toMatch(/notebook=\{false\}/);
+	expect(form).toMatch(/notebooks=\{options\.notebooks\}/);
+
+	// "no notebook" is the diary here, and says so rather than "— none —".
+	const fields = readFileSync('src/lib/components/fields/NoteFields.svelte', 'utf8');
+	expect(fields).toMatch(/noneLabel=\{t\('sections\.diary\.label'\)\}/);
 });

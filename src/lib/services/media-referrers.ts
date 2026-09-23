@@ -19,6 +19,7 @@ import {
 	albumMedia,
 	diaryEntries,
 	ideas,
+	notebooks,
 	people,
 	recipeImages,
 	todoTasks
@@ -29,7 +30,7 @@ import type { Ctx } from './ctx.js';
  * The kinds of thing that can hold a file, named for the room a person would
  * say it was in rather than for the table it is stored in.
  */
-export type ReferrerKind = 'note' | 'idea' | 'todo' | 'person' | 'recipe' | 'album';
+export type ReferrerKind = 'note' | 'idea' | 'todo' | 'person' | 'recipe' | 'album' | 'notebook';
 
 export type Referrer = {
 	kind: ReferrerKind;
@@ -75,12 +76,47 @@ export function pictureReferrers(ctx: Ctx, id: number): Referrer[] {
 		.all())
 		found.push({ kind: 'person', id: row.id, notebookId: null });
 
+	/*
+	 * A notebook's own picture, which belongs to that notebook.
+	 *
+	 * `notebookId` is its own id rather than null: it is the one file that is
+	 * *about* the notebook, so a key confined to it can see it, the same way it
+	 * sees the notes inside.
+	 */
+	for (const row of db
+		.select({ id: notebooks.id })
+		.from(notebooks)
+		.where(and(eq(notebooks.userId, ctx.userId), eq(notebooks.pictureId, id)))
+		.all())
+		found.push({ kind: 'notebook', id: row.id, notebookId: row.id });
+
 	for (const row of db
 		.select({ id: recipeImages.recipeId })
 		.from(recipeImages)
 		.where(and(eq(recipeImages.userId, ctx.userId), eq(recipeImages.mediaId, id)))
 		.all())
 		found.push({ kind: 'recipe', id: row.id, notebookId: null });
+
+	/*
+	 * An idea and a todo hold their pictures the same way a note does: as
+	 * markdown in a text column. These two were missing while the recording
+	 * side had them, so a picture pasted into a task was referred to by
+	 * nothing and therefore reachable by nobody — including the person who
+	 * pasted it, once they were reading over an assistant key.
+	 */
+	for (const row of db
+		.select({ id: ideas.id })
+		.from(ideas)
+		.where(and(eq(ideas.userId, ctx.userId), mentions(ideas.content, path)))
+		.all())
+		found.push({ kind: 'idea', id: row.id, notebookId: null });
+
+	for (const row of db
+		.select({ id: todoTasks.id, notebookId: todoTasks.notebookId })
+		.from(todoTasks)
+		.where(and(eq(todoTasks.userId, ctx.userId), mentions(todoTasks.notes, path)))
+		.all())
+		found.push({ kind: 'todo', id: row.id, notebookId: row.notebookId });
 
 	for (const row of db
 		.select({ id: albumMedia.albumId })

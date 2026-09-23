@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { MAX_REPORT_LENGTH } from '$lib/report';
+	import { sliding } from '$lib/actions/sliding';
 	import { page } from '$app/state';
 	import Modal from '$lib/components/Modal.svelte';
 	import { useT } from '$lib/i18n';
@@ -104,7 +105,7 @@
 	{#if phase === 'sent'}
 		<p class="text-sm text-gray-700">{t('reportDialog.sentThankYouIt')}</p>
 	{:else}
-		<div class="seg mb-3" role="group" aria-label={t('reportDialog.whatThisIs')}>
+		<div use:sliding class="seg mb-3" role="group" aria-label={t('reportDialog.whatThisIs')}>
 			{#each KINDS as k (k.key)}
 				<button type="button" onclick={() => (kind = k.key)} aria-pressed={kind === k.key}>
 					{t(k.label)}

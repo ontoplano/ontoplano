@@ -136,7 +136,7 @@
 		tabindex="0"
 		class="split-handle mouse-only hidden cursor-col-resize touch-none lg:block {spaced
 			? 'w-4'
-			: 'w-2 border-x border-gray-200'} {dragging ? 'is-dragging' : ''}"
+			: 'is-seam w-2'} {dragging ? 'is-dragging' : ''}"
 		onpointerdown={grab}
 		onkeydown={nudge}
 	></div>
@@ -145,11 +145,26 @@
 </div>
 
 <style>
+	/* The grip: how thick the bar is and how tall. */
+	.split-handle {
+		--grip-thickness: 4px;
+		--grip-height: 2.25rem;
+	}
+
 	/*
-	 * The grip: a rule down the middle of the handle rather than a filled
-	 * strip, so it reads as something to take hold of in both arrangements —
-	 * against a seam, and in the gap between two cards where there is no seam
-	 * to thicken.
+	 * The grip: one rounded bar.
+	 *
+	 * It was a two-pixel rule in `--color-gray-300`, which the dark theme turns
+	 * into a wash — so on a dark ground the gap between the two cards was
+	 * simply empty, and the only thing saying it could be dragged was a cursor
+	 * you had to already be over it to see.
+	 *
+	 * Dots replaced it and were worse: a column of three-pixel circles drawn by
+	 * a radial gradient whose stop is a hard edge, which at that size is not a
+	 * circle at all — it is a stack of notches with corners on them. A bar has
+	 * one outline, the browser rounds it properly, and it is the idiom anyway.
+	 * `--color-gray-500` is a mid grey rather than a ramp end, so it reads
+	 * against both grounds without being redefined per theme.
 	 */
 	.split-handle {
 		position: relative;
@@ -157,22 +172,49 @@
 		transition: background-color 120ms ease;
 	}
 
+	/*
+	 * One seam, not two.
+	 *
+	 * Where the columns are a single surface the divider is a rule down the
+	 * middle of it. It was `border-x` on the strip, which is two hairlines with
+	 * a gap between them — a channel rather than a seam, and with the grip
+	 * sitting between the two it read as a third line.
+	 */
+	.split-handle.is-seam::before {
+		content: '';
+		position: absolute;
+		inset-block: 0;
+		left: 50%;
+		width: 1px;
+		transform: translateX(-50%);
+		background-color: var(--color-gray-200);
+	}
+
 	.split-handle::after {
 		content: '';
 		position: absolute;
 		top: 50%;
 		left: 50%;
-		width: 2px;
-		height: 2.5rem;
+		width: var(--grip-thickness);
+		height: var(--grip-height);
 		transform: translate(-50%, -50%);
-		background-color: var(--color-gray-300);
-		transition: background-color 120ms ease;
+		border-radius: calc(var(--grip-thickness) / 2);
+		background-color: var(--color-gray-500);
+		opacity: 0.6;
+		transition: opacity 120ms ease;
 	}
 
 	.split-handle:hover::after,
 	.split-handle:focus-visible::after,
 	.split-handle.is-dragging::after {
-		background-color: var(--color-gray-500);
+		opacity: 1;
+	}
+
+	/* A wash under the whole strip while it is being held, so what you have hold
+	   of is the strip and not only the bar on it. */
+	.split-handle.is-dragging,
+	.split-handle:hover {
+		background-color: var(--hover-wash);
 	}
 
 	.split-handle:focus-visible {

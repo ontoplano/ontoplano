@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { dateOf } from '$lib/when';
+	import { useWhen } from '$lib/when-context.svelte';
+	import { enhance } from '$lib/enhance';
 	import { invalidateAll } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import Banner from '$lib/components/Banner.svelte';
@@ -9,6 +11,7 @@
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
+	const now = useWhen();
 
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 	/**
@@ -60,11 +63,7 @@
 	const familyFrom = $derived(fromMonthly(tierPricing(data.pricing, 'family')));
 
 	function when(iso: string): string {
-		return new Date(iso).toLocaleDateString(t.locale, {
-			day: 'numeric',
-			month: 'long',
-			year: 'numeric'
-		});
+		return dateOf(iso, now(), { month: 'long' });
 	}
 
 	/**

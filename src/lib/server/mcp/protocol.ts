@@ -111,18 +111,37 @@ function assertScope(caller: Caller, scope: Scope): void {
  * and they are not the same thing to hand an assistant.
  */
 function assertAllowed(caller: Caller, tool: Tool): void {
-	assertScope(caller, tool.scope);
+	/*
+	 * A tool whose permission can come from any of several grants — `media`,
+	 * where a file answers to whatever refers to it — is allowed by holding
+	 * one of them. The refusal names the tool's primary scope, which is the
+	 * one somebody reaching for it most likely meant to grant.
+	 */
+	if (tool.anyScope) {
+		if (!tool.anyScope.some((one) => caller.scopes.includes(one)))
+			throw new ForbiddenError(
+				`This token does not have any of: ${tool.anyScope.map((one) => `\`${one}\``).join(', ')}.`
+			);
+	} else {
+		assertScope(caller, tool.scope);
+	}
 	if (tool.alsoNeeds) assertScope(caller, tool.alsoNeeds);
 	if (tool.destroys) assertScope(caller, 'destructive');
 }
 
 function offered(caller: Caller, tool: Tool): boolean {
-	if (!caller.scopes.includes(tool.scope)) return false;
+	if (tool.anyScope) {
+		if (!tool.anyScope.some((one) => caller.scopes.includes(one))) return false;
+	} else if (!caller.scopes.includes(tool.scope)) return false;
 	if (tool.alsoNeeds && !caller.scopes.includes(tool.alsoNeeds)) return false;
 	if (tool.destroys && !caller.scopes.includes('destructive')) return false;
 	// A confined key is not shown what it cannot call. A model offered a tool
-	// that always refuses spends its turn discovering that.
-	if (caller.confinement && !withinConfinement(caller.confinement, tool)) return false;
+	// that always refuses spends its turn discovering that — and the reverse
+	// costs more: a tool hidden from a key that may use it is a capability
+	// nobody can find, which is how `media` became invisible to every confined
+	// key while the screen went on promising the pictures in the notebook.
+	if (caller.confinement && !tool.confinesItself && !withinConfinement(caller.confinement, tool))
+		return false;
 	return true;
 }
 
@@ -177,7 +196,44 @@ function structuredFrom(value: unknown): Record<string, unknown> {
 	return { result: value ?? null };
 }
 
+/**
+ * A file, as the protocol carries one.
+ *
+ * `media` answers with bytes rather than a row, and a model cannot look at
+ * JSON: MCP has `image` and `audio` content blocks for exactly this, so the
+ * picture arrives as a picture. The structured half still says what it is, so
+ * a client that only reads that is not left with nothing.
+ */
+type Bytes = { media: { mime: string; base64: string } };
+
+function isBytes(value: unknown): value is Bytes {
+	if (value === null || typeof value !== 'object' || !('media' in value)) return false;
+	const media = (value as Bytes).media;
+	return (
+		typeof media === 'object' &&
+		media !== null &&
+		typeof media.mime === 'string' &&
+		typeof media.base64 === 'string'
+	);
+}
+
+function fileResult(value: Bytes) {
+	const { mime, base64 } = value.media;
+	return {
+		content: [
+			{
+				type: mime.startsWith('audio/') ? 'audio' : 'image',
+				data: base64,
+				mimeType: mime
+			}
+		],
+		structuredContent: { mime, bytes: Math.ceil((base64.length * 3) / 4) },
+		isError: false
+	};
+}
+
 function toolResult(value: unknown, mutation?: { before: unknown; after: unknown }) {
+	if (!mutation && isBytes(value)) return fileResult(value);
 	const structured = mutation ? { ...structuredFrom(value), ...mutation } : structuredFrom(value);
 	return {
 		// The same object, not the raw value: two encodings of one answer that
@@ -308,7 +364,11 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 				 * than refused, and there is no way to ask which other notebooks
 				 * exist by watching the refusals.
 				 */
-				if (caller.confinement) confine(caller.confinement, tool.refs, tool.input, args);
+				// `confinesItself` is the tool doing this in its own `run` — it
+				// reaches by a link rather than by an id, so there is no
+				// argument here to pin. Refusing it here would refuse it always.
+				if (caller.confinement && !tool.confinesItself)
+					confine(caller.confinement, tool.refs, tool.input, args);
 
 				/*
 				 * Every id it was handed belongs to whoever is calling.
@@ -342,10 +402,17 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 				 * which is the honest answer.
 				 */
 				const before = tool.writes ? peek(tool, caller.ctx, args, reach) : undefined;
-				const value = tool.run(caller.ctx, args);
+				// A quiet tool still peeks — the log below wants it — and simply
+				// does not put the two copies in the answer.
+				const value = tool.run(caller.ctx, args, {
+					scopes: caller.scopes,
+					confinement: caller.confinement ?? null
+				});
 				const answer = toolResult(
 					value,
-					tool.writes ? { before, after: peek(tool, caller.ctx, args, reach) } : undefined
+					tool.writes && !tool.quiet
+						? { before, after: peek(tool, caller.ctx, args, reach) }
+						: undefined
 				);
 
 				/*

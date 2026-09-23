@@ -642,6 +642,15 @@ export function baseGridOptions(
 		markOf?: (kind: string, refId: number, date: string) => 'done' | 'undone' | null;
 		/** The account's own language, for the day headers a locale changes. */
 		locale?: string;
+		/**
+		 * Whether this account reads a 12-hour clock.
+		 *
+		 * FullCalendar takes its own format objects rather than asking `Intl`,
+		 * so the answer has to be handed in — `$lib/when` is where it comes
+		 * from, and passing it keeps the grid agreeing with every other time
+		 * in the app rather than with a literal written here.
+		 */
+		twelveHour?: boolean;
 	} = {}
 ): Calendar.Options {
 	const slotHeight = opts.slotHeight ?? GRID_ZOOM_LEVELS[GRID_DEFAULT_ZOOM_INDEX];
@@ -656,6 +665,7 @@ export function baseGridOptions(
 	const today = opts.today ?? '';
 	const markOf = opts.markOf;
 	const locale = opts.locale;
+	const hour12 = opts.twelveHour ?? false;
 
 	/** A block's own date, in the same `YYYY-MM-DD` the server speaks. */
 	const dateOf = (start: Date) =>
@@ -699,7 +709,7 @@ export function baseGridOptions(
 		firstDay: 1,
 		height: '100%',
 		headerToolbar: { start: '', center: '', end: '' },
-		eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+		eventTimeFormat: { hour: hour12 ? 'numeric' : '2-digit', minute: '2-digit', hour12 },
 		// A month cell is one line tall whatever the zoom, so it stacks and then
 		// says "+2 more" instead of measuring.
 		dayMaxEvents: month,
@@ -723,10 +733,10 @@ export function baseGridOptions(
 		 */
 		selectLongPressDelay: 200,
 		nowIndicator: !month,
-		// 24-hour, matching every other time in the app — the board and the
-		// tracker both read 07:00. It is also narrower, which is what lets the
-		// hour gutter shrink on a phone.
-		slotLabelFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+		// Whatever clock the account reads, matching every other time in the
+		// app. 24-hour is also narrower, which is what lets the hour gutter
+		// shrink on a phone — a 12-hour gutter needs the extra room and gets it.
+		slotLabelFormat: { hour: hour12 ? 'numeric' : '2-digit', minute: '2-digit', hour12 },
 		/*
 		 * A month cell says what, not when.
 		 *
@@ -800,15 +810,37 @@ export function baseGridOptions(
 		 * whole row sat at different heights. The break is decided here and the
 		 * CSS honours it (`white-space: pre-line`).
 		 */
+		/*
+		 * The library formats its own headers, so it needs its own locale.
+		 *
+		 * `dayHeaderFormat` below is an options object, and the calendar hands
+		 * that to `Intl` with whatever locale it was configured with — which
+		 * was none, so every day name came out English while the rest of the
+		 * screen was Portuguese. The narrow case never showed it, because that
+		 * one is a function and was already formatting with ours.
+		 */
+		locale,
 		dayHeaderFormat: month
-			? { weekday: 'short' }
+			? (date: Date) => weekdayShort(date, locale)
 			: days === 1
 				? { weekday: 'long', day: 'numeric', month: 'short' }
 				: narrow
 					? (date: Date) =>
 							`${date.getDate()}\n${date.toLocaleDateString(locale, { weekday: 'narrow' })}`
-					: { weekday: 'short', day: 'numeric' }
+					: (date: Date) => `${weekdayShort(date, locale)} ${date.getDate()}`
 	};
+}
+
+/**
+ * A weekday's short name, without the full stop some languages put on it.
+ *
+ * `weekday: 'short'` gives "dom." and "seg." in Portuguese — an abbreviation
+ * mark that is correct prose and wrong in a column header, where the width is
+ * three characters and the reader already knows it is short. English has none
+ * of them, which is why this only shows up once the grid speaks anything else.
+ */
+function weekdayShort(date: Date, locale: string | undefined): string {
+	return date.toLocaleDateString(locale, { weekday: 'short' }).replace(/\.+$/, '');
 }
 
 /** A `YYYY-MM-DD` shifted by whole days, staying a civil date. */

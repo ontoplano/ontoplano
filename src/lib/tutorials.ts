@@ -199,7 +199,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 			},
 			{
 				target: '[data-tour="board-ratings"]',
-				title: 'tour.urgencyInterestEnergy',
+				title: 'tour.urgencyEaseInterest',
 				body: 'tour.threeOptionalNumbersOnEvery'
 			}
 		]
@@ -311,6 +311,21 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				target: '[data-tour="diary-list"]',
 				title: 'tour.findItAgainByTag',
 				body: 'tour.everyTagOnAnEntry'
+			}
+		]
+	},
+
+	'/notebooks/tags': {
+		label: 'tour.tags',
+		steps: [
+			{
+				title: 'tour.oneSetOfLabelsFor',
+				body: 'tour.theSameWordOnA'
+			},
+			{
+				target: '[data-tour="tag-list"]',
+				title: 'tour.renameOneAndItChanges',
+				body: 'tour.renamingOntoALabelYou'
 			}
 		]
 	},

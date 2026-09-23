@@ -12,6 +12,7 @@ import {
 import { sql } from 'drizzle-orm';
 import { user } from './auth.schema.js';
 import { MAIL_KIND_NAMES } from '../mail-kinds.js';
+import { PROVIDER_IDS } from '../assistant-providers.js';
 
 export const categories = sqliteTable(
 	'categories',
@@ -93,7 +94,7 @@ export const recurringTasks = sqliteTable(
 		// JSON because the board sorts and filters on them.
 		urgency: integer('urgency'),
 		interest: integer('interest'),
-		energy: integer('energy'),
+		ease: integer('ease'),
 		// User-defined key/value pairs, opaque to ontoplano and surfaced to
 		// plugins via the schedule API — e.g. { "alarm": "true", "remind_min": "5" }.
 		// Stored as a JSON object of string→string. See services/meta.ts.
@@ -121,12 +122,12 @@ export const recurringTasks = sqliteTable(
 		index('slots_user_idx').on(table.userId),
 		index('slots_weekday_idx').on(table.weekday),
 		index('slots_weekday_time_idx').on(table.weekday, table.startTime),
-		check('slots_urgency_range', sql`${table.urgency} IS NULL OR ${table.urgency} BETWEEN 1 AND 5`),
+		check('slots_urgency_range', sql`${table.urgency} IS NULL OR ${table.urgency} BETWEEN 0 AND 5`),
 		check(
 			'slots_interest_range',
-			sql`${table.interest} IS NULL OR ${table.interest} BETWEEN 1 AND 5`
+			sql`${table.interest} IS NULL OR ${table.interest} BETWEEN 0 AND 5`
 		),
-		check('slots_energy_range', sql`${table.energy} IS NULL OR ${table.energy} BETWEEN 1 AND 5`),
+		check('slots_ease_range', sql`${table.ease} IS NULL OR ${table.ease} BETWEEN 0 AND 5`),
 		check('slots_weekday_range', sql`${table.weekday} >= 0 AND ${table.weekday} <= 6`),
 		check(
 			'slots_mode_category',
@@ -180,7 +181,7 @@ export const taskRecords = sqliteTable(
 		// durationOverride overrides its length. Null means "inherit".
 		urgencyOverride: integer('urgency_override'),
 		interestOverride: integer('interest_override'),
-		energyOverride: integer('energy_override'),
+		easeOverride: integer('ease_override'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)
@@ -220,6 +221,28 @@ export const notebooks = sqliteTable(
 			.references(() => user.id),
 		title: text('title').notNull(),
 		description: text('description').default(''),
+		/**
+		 * One picture, so a shelf of subjects is a shelf of things.
+		 *
+		 * The same shape a person has, for the same reason: one rather than a
+		 * gallery, because this is what the notebook *is* and a second of the
+		 * same thing answers no question the first did not. `set null` on
+		 * delete, so removing the picture leaves the notebook — the opposite
+		 * would be a way to lose a trip by tidying up a photograph.
+		 */
+		pictureId: integer('picture_id').references(() => media.id, { onDelete: 'set null' }),
+		/**
+		 * Labels a new note in this notebook starts with, comma separated.
+		 *
+		 * A notebook is a subject, and writing about one subject tends to
+		 * carry the same few labels every time — typing them again on each
+		 * note is the work the notebook was supposed to save. Stored as the
+		 * text somebody typed rather than as rows in `diary_tags`: these are
+		 * not a tagging, they are what the next tagging starts from, and a tag
+		 * renamed elsewhere should not silently rewrite what this notebook
+		 * suggests.
+		 */
+		defaultTags: text('default_tags').notNull().default(''),
 		/**
 		 * Opt-in, per notebook, by its owner: everybody on the owner's family
 		 * plan can read it and write their own entries into it. The rows keep
@@ -352,6 +375,20 @@ export const diaryEntries = sqliteTable(
 		 */
 		notebookSeq: integer('notebook_seq'),
 		/**
+		 * The diary's own numbering, for an entry that belongs to no notebook.
+		 *
+		 * `seq` counts every piece of writing the account holds, notebook notes
+		 * included, so a person on their thirtieth diary entry was looking at
+		 * `#127`. This counts the diary alone, and it is what the diary draws
+		 * and what a `#12` written there means.
+		 *
+		 * Allocated from a high-water mark like `seq`, never reused: a number in
+		 * something written months ago has to keep meaning what it did. Null for
+		 * a note that lives in a notebook — that one is numbered by its
+		 * notebook.
+		 */
+		diarySeq: integer('diary_seq'),
+		/**
 		 * What the note is called, for a list you can read at a glance.
 		 *
 		 * Empty for a diary entry, which is a day's writing and has no name —
@@ -411,7 +448,18 @@ export const tags = sqliteTable(
 		userId: text('user_id')
 			.notNull()
 			.references(() => user.id),
-		name: text('name').notNull()
+		name: text('name').notNull(),
+		/*
+		 * The colour the label wears, `#rrggbb`, or null for the ones nobody
+		 * has chosen one for.
+		 *
+		 * Nullable rather than defaulted: a tag is created by being typed into
+		 * a box, and handing every word somebody types a colour it did not ask
+		 * for turns a list of labels into a bag of confetti. A tag with no
+		 * colour is drawn as the plain chip it has always been; one with a
+		 * colour is drawn as a `.pill` in it.
+		 */
+		color: text('color')
 	},
 	(table) => [
 		index('tags_user_idx').on(table.userId),
@@ -431,7 +479,17 @@ export const diaryEntryTags = sqliteTable(
 			.references(() => diaryEntries.id, { onDelete: 'cascade' }),
 		tagId: integer('tag_id')
 			.notNull()
-			.references(() => tags.id, { onDelete: 'cascade' })
+			.references(() => tags.id, { onDelete: 'cascade' }),
+		/*
+		 * When this label went on — the same column the task join carries, and
+		 * for the same reason: a note put into `ai-review` has to be findable
+		 * by *when* it was put there, and the entry's own `updated_at` moves
+		 * for every edit including the one being reviewed.
+		 *
+		 * Null on every row written before this column existed. An invented
+		 * date would read as real.
+		 */
+		taggedAt: text('tagged_at')
 	},
 	(table) => [
 		index('diary_entry_tags_user_idx').on(table.userId),
@@ -550,7 +608,7 @@ export const exceptionalTasks = sqliteTable(
 		// the board sorts and filters on them.
 		urgency: integer('urgency'),
 		interest: integer('interest'),
-		energy: integer('energy'),
+		ease: integer('ease'),
 		meta: text('meta').notNull().default('{}'),
 
 		/** The recipe this block is for, when it is a meal. See `recurring_tasks`. */
@@ -567,16 +625,13 @@ export const exceptionalTasks = sqliteTable(
 		index('exceptional_tasks_notebook_idx').on(table.notebookId),
 		check(
 			'exceptional_urgency_range',
-			sql`${table.urgency} IS NULL OR ${table.urgency} BETWEEN 1 AND 5`
+			sql`${table.urgency} IS NULL OR ${table.urgency} BETWEEN 0 AND 5`
 		),
 		check(
 			'exceptional_interest_range',
-			sql`${table.interest} IS NULL OR ${table.interest} BETWEEN 1 AND 5`
+			sql`${table.interest} IS NULL OR ${table.interest} BETWEEN 0 AND 5`
 		),
-		check(
-			'exceptional_energy_range',
-			sql`${table.energy} IS NULL OR ${table.energy} BETWEEN 1 AND 5`
-		),
+		check('exceptional_ease_range', sql`${table.ease} IS NULL OR ${table.ease} BETWEEN 0 AND 5`),
 		check(
 			'exceptional_mode_category',
 			sql`${table.mode} != 'category' OR ${table.categoryId} IS NOT NULL`
@@ -616,6 +671,20 @@ export const todoTasks = sqliteTable(
 		completedAt: text('completed_at'),
 		categoryId: integer('category_id').references(() => categories.id),
 		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
+		/**
+		 * This task's number inside its notebook, so a note can point at it.
+		 *
+		 * The same arrangement a note already has (`diary_entries.notebook_seq`):
+		 * the fourth task about the kitchen is #4 rather than #312, because a
+		 * reference somebody types by hand has to be a number they can see. It
+		 * is written when the task is filed under a notebook — at creation, or
+		 * the first time it is moved into one — and never reused, so `TASK:#4`
+		 * cannot come to mean a different task later.
+		 *
+		 * Null for a task filed under nothing, which has nowhere to be fourth
+		 * of.
+		 */
+		notebookSeq: integer('notebook_seq'),
 		// A todo is a task without a date yet. Setting this is what "drag it onto
 		// today" does — the same row acquires a day rather than being copied.
 		scheduledDate: text('scheduled_date'),
@@ -638,7 +707,7 @@ export const todoTasks = sqliteTable(
 		// JSON because the board sorts and filters on them.
 		urgency: integer('urgency'),
 		interest: integer('interest'),
-		energy: integer('energy'),
+		ease: integer('ease'),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),
@@ -650,12 +719,13 @@ export const todoTasks = sqliteTable(
 		index('todo_tasks_user_idx').on(table.userId),
 		index('todo_tasks_scheduled_idx').on(table.userId, table.scheduledDate),
 		index('todo_tasks_notebook_idx').on(table.notebookId),
-		check('todos_urgency_range', sql`${table.urgency} IS NULL OR ${table.urgency} BETWEEN 1 AND 5`),
+		uniqueIndex('todo_tasks_notebook_seq_unique').on(table.notebookId, table.notebookSeq),
+		check('todos_urgency_range', sql`${table.urgency} IS NULL OR ${table.urgency} BETWEEN 0 AND 5`),
 		check(
 			'todos_interest_range',
-			sql`${table.interest} IS NULL OR ${table.interest} BETWEEN 1 AND 5`
+			sql`${table.interest} IS NULL OR ${table.interest} BETWEEN 0 AND 5`
 		),
-		check('todos_energy_range', sql`${table.energy} IS NULL OR ${table.energy} BETWEEN 1 AND 5`)
+		check('todos_ease_range', sql`${table.ease} IS NULL OR ${table.ease} BETWEEN 0 AND 5`)
 	]
 );
 
@@ -1048,12 +1118,78 @@ export const todoTags = sqliteTable(
 			.references(() => todoTasks.id, { onDelete: 'cascade' }),
 		tagId: integer('tag_id')
 			.notNull()
-			.references(() => tags.id, { onDelete: 'cascade' })
+			.references(() => tags.id, { onDelete: 'cascade' }),
+		/*
+		 * When this label went on.
+		 *
+		 * A join with no date cannot answer "what has been done since I last
+		 * looked" — the todo's own `updated_at` moves for every edit, including
+		 * one that has nothing to do with its labels. With this, a chip can say
+		 * "3h ago", the list can be ordered by it, and a review queue can be
+		 * read by age rather than by memory.
+		 */
+		taggedAt: text('tagged_at')
 	},
 	(table) => [
 		index('todo_tags_user_idx').on(table.userId),
 		index('todo_tags_todo_idx').on(table.todoId),
 		index('todo_tags_tag_idx').on(table.tagId)
+	]
+);
+
+/**
+ * The same labels, on the two kinds of block.
+ *
+ * A task with no day is a `todo_task`; a thing that happens at a time is a
+ * `recurring_task` or an `exceptional_task`. Labels belonged to the first
+ * only, which made them a property of one shape of task rather than of a task
+ * — so "everything about the move" could not include the three hours booked
+ * for it.
+ *
+ * Both point at the one `tags` table: a word used on a todo is the same word
+ * here, which is the whole reason there is a single vocabulary.
+ */
+export const recurringTaskTags = sqliteTable(
+	'recurring_task_tags',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		taskId: integer('task_id')
+			.notNull()
+			.references(() => recurringTasks.id, { onDelete: 'cascade' }),
+		tagId: integer('tag_id')
+			.notNull()
+			.references(() => tags.id, { onDelete: 'cascade' }),
+		taggedAt: text('tagged_at')
+	},
+	(table) => [
+		index('recurring_task_tags_user_idx').on(table.userId),
+		index('recurring_task_tags_task_idx').on(table.taskId),
+		index('recurring_task_tags_tag_idx').on(table.tagId)
+	]
+);
+
+export const exceptionalTaskTags = sqliteTable(
+	'exceptional_task_tags',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		taskId: integer('task_id')
+			.notNull()
+			.references(() => exceptionalTasks.id, { onDelete: 'cascade' }),
+		tagId: integer('tag_id')
+			.notNull()
+			.references(() => tags.id, { onDelete: 'cascade' }),
+		taggedAt: text('tagged_at')
+	},
+	(table) => [
+		index('exceptional_task_tags_user_idx').on(table.userId),
+		index('exceptional_task_tags_task_idx').on(table.taskId),
+		index('exceptional_task_tags_tag_idx').on(table.tagId)
 	]
 );
 
@@ -1307,6 +1443,17 @@ export const clientErrors = sqliteTable(
 		stack: text('stack'),
 		/** Which browser, as it described itself. Nothing is inferred from it. */
 		userAgent: text('user_agent'),
+		/**
+		 * Which build produced it — the version and the commit, as one string.
+		 *
+		 * Taken from the running instance rather than sent by the page: the
+		 * server knows what it is running and a client could be a tab left open
+		 * across a deploy. The version alone would not do it, because the
+		 * version is not bumped per commit, so "0.183.0" names a dozen builds.
+		 *
+		 * Null for a report written before this column existed.
+		 */
+		build: text('build'),
 		/*
 		 * A crash the app noticed, or a bug somebody sat down and reported.
 		 *
@@ -1483,6 +1630,106 @@ export const apiTokens = sqliteTable(
 	(table) => [
 		uniqueIndex('api_tokens_hash_unique').on(table.tokenHash),
 		index('api_tokens_user_idx').on(table.userId)
+	]
+);
+
+/**
+ * The key the in-app chat calls a model provider with.
+ *
+ * One per account, replaced rather than accumulated: the chat speaks to one
+ * provider at a time, and a second key is a new answer to the same question.
+ *
+ * Stored in the clear, unlike our own tokens, because it has to be: an API
+ * token of ours authenticates somebody to us, so a hash is enough to check it
+ * — but this key authenticates us to somebody else, and only the key itself
+ * can be sent. The blast radius of a stolen database gaining it is "can spend
+ * this person's model credits", which is why the settings screen shows the
+ * prefix and never the key again.
+ */
+export const modelProviderKeys = sqliteTable(
+	'model_provider_keys',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		provider: text('provider', { enum: PROVIDER_IDS }).notNull(),
+		key: text('key').notNull(),
+		prefix: text('prefix').notNull(), // first chars, shown in the UI in place of the key
+		/* Which model to ask for; null means the provider's default in
+		 * `assistant-providers.ts`. */
+		model: text('model'),
+		/* Only Ollama's to change — where that machine listens. */
+		baseUrl: text('base_url'),
+		createdAt: text('created_at').notNull(),
+		updatedAt: text('updated_at').notNull()
+	},
+	(table) => [uniqueIndex('model_provider_keys_user_unique').on(table.userId)]
+);
+
+/**
+ * The clients that asked to connect, and the codes they are mid-handshake on.
+ *
+ * An assistant used to need a key pasted into a config file, which is the step
+ * most people never finish: they paste the instance address into Claude or
+ * ChatGPT, it asks for a key, and that is where it ends. So the instance
+ * speaks OAuth as well — the client registers itself, the person is shown a
+ * consent screen on their own instance and says yes, and what comes out the
+ * other end is an ordinary `api_tokens` row. Nothing downstream knows the
+ * difference, which is the point: one kind of key, one revoke button.
+ *
+ * A client is nobody's: registration happens before anybody has signed in, and
+ * the same "Claude" row serves every account that connects with it. What is
+ * per-account is the token the flow ends in.
+ */
+export const oauthClients = sqliteTable(
+	'oauth_clients',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		clientId: text('client_id').notNull(),
+		/** What the consent screen calls it. The client's own claim about itself. */
+		name: text('name').notNull(),
+		/** Where a code may be sent, as JSON. Matched whole, never by prefix. */
+		redirectUris: text('redirect_uris').notNull(),
+		/** What it says it is, for somebody reading the list later. */
+		uri: text('uri'),
+		createdAt: text('created_at').notNull(),
+		updatedAt: text('updated_at').notNull()
+	},
+	(table) => [uniqueIndex('oauth_clients_client_id_unique').on(table.clientId)]
+);
+
+/**
+ * One authorization code, hashed, single-use and short-lived.
+ *
+ * Hashed for the same reason a token is: a stolen database must not be a set
+ * of working codes. `used_at` rather than a delete, so a code replayed inside
+ * its five minutes is a refusal we can see rather than a silent second token.
+ */
+export const oauthCodes = sqliteTable(
+	'oauth_codes',
+	{
+		id: integer('id').primaryKey({ autoIncrement: true }),
+		codeHash: text('code_hash').notNull(),
+		clientId: text('client_id').notNull(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id, { onDelete: 'cascade' }),
+		/** What the person agreed to, comma-joined, as `api_tokens` stores them. */
+		scopes: text('scopes').notNull().default(''),
+		/** PKCE, S256 only — the verifier's hash, never the verifier. */
+		codeChallenge: text('code_challenge').notNull(),
+		/** The one this code may be redeemed against, checked again at the token door. */
+		redirectUri: text('redirect_uri').notNull(),
+		/** What the client said it wanted a token for (RFC 8707), where it said. */
+		resource: text('resource'),
+		expiresAt: text('expires_at').notNull(),
+		usedAt: text('used_at'),
+		createdAt: text('created_at').notNull()
+	},
+	(table) => [
+		uniqueIndex('oauth_codes_hash_unique').on(table.codeHash),
+		index('oauth_codes_user_idx').on(table.userId)
 	]
 );
 

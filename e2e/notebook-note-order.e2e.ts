@@ -47,8 +47,13 @@ test('notes are ordered by title, by when they were written, and both ways', asy
 	// The default: the pages of a notebook, beginning at the beginning.
 	expect(await titles(page)).toEqual(['Middle', 'Alpha', 'Zulu']);
 
-	const order = page.getByLabel('Order notes by');
-	await order.selectOption('title');
+	// A menu now, not a native select — the same control the task list uses.
+	const order = page.getByRole('button', { name: 'Order notes by' });
+	const pick = async (name: string) => {
+		await order.click();
+		await page.getByRole('option', { name }).click();
+	};
+	await pick('Title');
 	await expect.poll(() => titles(page)).toEqual(['Alpha', 'Middle', 'Zulu']);
 
 	await page.getByRole('button', { name: 'Ascending' }).click();
@@ -58,7 +63,7 @@ test('notes are ordered by title, by when they were written, and both ways', asy
 	await page.getByRole('button', { name: 'Descending' }).click();
 	await expect.poll(() => titles(page)).toEqual(['Alpha', 'Middle', 'Zulu']);
 
-	await order.selectOption('written');
+	await pick('Written');
 	await page.getByRole('button', { name: 'Ascending' }).click();
 	await expect.poll(() => titles(page)).toEqual(['Zulu', 'Alpha', 'Middle']);
 });
@@ -73,11 +78,13 @@ test('the chosen order survives a reload, and a pin still leads', async ({ page 
 	await addNote(page, 'Alpha', 'a');
 	await addNote(page, 'Zulu', 'z');
 
-	await page.getByLabel('Order notes by').selectOption('title');
+	const order = page.getByRole('button', { name: 'Order notes by' });
+	await order.click();
+	await page.getByRole('option', { name: 'Title' }).click();
 	await expect.poll(() => titles(page)).toEqual(['Alpha', 'Middle', 'Zulu']);
 
 	await visit(page, '/notebooks');
-	await expect(page.getByLabel('Order notes by')).toHaveValue('title');
+	await expect(page.getByRole('button', { name: 'Order notes by' })).toContainText('Title');
 	await expect.poll(() => titles(page)).toEqual(['Alpha', 'Middle', 'Zulu']);
 
 	// Pinning says "this is what the notebook is for", and no alphabet may
@@ -98,7 +105,7 @@ test('a list emptied by its own filters says so rather than saying there is noth
 	// The notebook draws its own New button, and it says what the tab is about.
 	await page.getByRole('button', { name: 'New task', exact: true }).click();
 	await page.locator('#todo-form [name="heading"]').fill('measure the wall');
-	await page.getByRole('button', { name: 'Create todo' }).click();
+	await page.getByRole('button', { name: 'Create task' }).click();
 	await expect(page.getByText('measure the wall').first()).toBeVisible();
 
 	await page.getByRole('button', { name: 'Mark complete' }).first().click();
@@ -108,9 +115,9 @@ test('a list emptied by its own filters says so rather than saying there is noth
 	// notebook while its own tab counts a task in it.
 	await expect(page.getByRole('button', { name: 'Tasks 1/1' })).toBeVisible();
 	await expect(page.getByText('Nothing waiting')).toHaveCount(0);
-	await expect(page.getByText('1 hidden by the buttons above.')).toBeVisible();
-	await expect(page.getByRole('button', { name: 'Show completed (1)' })).toBeVisible();
+	await expect(page.getByText('1 hidden by the filters.')).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Completed (1)' })).toBeVisible();
 
-	await page.getByRole('button', { name: 'Show completed (1)' }).click();
+	await page.getByRole('button', { name: 'Completed (1)' }).click();
 	await expect(page.getByText('measure the wall').first()).toBeVisible();
 });

@@ -1,16 +1,19 @@
 <script lang="ts">
 	import './layout.css';
+	import { sliding } from '$lib/actions/sliding';
 	// Generated beside the masks it names: scripts/build-eink-masks.mjs.
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import { resolve } from '$app/paths';
 	import { navigating, page } from '$app/state';
 	import { live } from '$lib/live';
 	import { afterNavigate, beforeNavigate, goto } from '$app/navigation';
 	import { isIsolatedBuild } from '$lib/isolated/mode';
 	import { provideT, translator } from '$lib/i18n';
+	import { provideWhen } from '$lib/when-context.svelte';
 	import { markUntranslated } from '$lib/i18n/untranslated';
 	import type { LayoutData } from './$types';
 	import { NAV_DROPDOWN_ITEM, SECTIONS, sectionFor } from '$lib/colors.js';
+	import { roomTabs, type RoomTab } from '$lib/room-tabs.svelte';
 	import { NAV_PLACES } from '$lib/sections-nav';
 	import { accentsWith, placesFor } from '$lib/nav-order';
 	import { provideSwipeSurface } from '$lib/swipe-surface';
@@ -27,7 +30,6 @@
 	import { CHOOSE_PATH, inPhoneApp, storedChoice } from '$lib/instance-choice';
 	import { handOverRingerKey } from '$lib/ringer-handshake';
 	import { THEMES, THEME_LABELS } from '$lib/theme.js';
-	import type { SectionKey } from '$lib/colors.js';
 	import SectionPattern from '$lib/components/SectionPattern.svelte';
 	import HelpDock from '$lib/components/HelpDock.svelte';
 	import Tutorial from '$lib/components/Tutorial.svelte';
@@ -49,12 +51,17 @@
 	import ClientErrorPrompt from '$lib/components/ClientErrorPrompt.svelte';
 	import { undo } from '$lib/undo.svelte';
 	import { palette } from '$lib/palette.svelte';
-	import type { IconName } from '$lib/components/Icon.svelte';
 	import { suppressAutofill } from '$lib/autofill';
 	import { APP_UPDATE_HUSH_KEY } from '$lib/platform';
 	import { startMarkSpin, stopMarkSpin } from '$lib/mark-spin';
+	import { busy } from '$lib/busy.svelte';
+	import ImageViewer from '$lib/components/ImageViewer.svelte';
+	import { scrollToHash } from '$lib/scroll-to-hash';
+	import { stepThroughRoom } from '$lib/room-tabs.svelte';
 	import { smartNumberFields } from '$lib/number-fields';
-	import type { Snippet } from 'svelte';
+	import { tick, type Snippet } from 'svelte';
+	import { SOURCE_URL } from '$lib/links';
+	import { watchKeyboard } from '$lib/keyboard-inset';
 
 	let { children, data }: { children: Snippet; data: LayoutData } = $props();
 
@@ -129,6 +136,13 @@
 	 */
 	const t = $derived(translator(data.locale, data.catalogue, data.borrowed));
 	provideT(() => t);
+
+	/*
+	 * The language, the zone and the clock, together, for anything that writes
+	 * a date. See `$lib/when` — the point is that every screen asks the same
+	 * question of the same answer.
+	 */
+	provideWhen(() => ({ locale: t.locale, tz: data.tz, clock: data.clock }));
 
 	/*
 	 * And on a build that is not the real one, the ones still in English are
@@ -317,43 +331,34 @@
 	const sectionKey = $derived(sectionFor(page.url.pathname));
 	const section = $derived({ ...SECTIONS[sectionKey], accent: accents[sectionKey] });
 
-	/** The glyph tiled behind the page, from the same table as the nav icons. */
-	const SECTION_GLYPH: Record<SectionKey, IconName> = {
-		home: 'home',
-		planner: 'planner',
-		goals: 'goals',
-		diary: 'diary',
-		ideas: 'ideas',
-		health: 'health',
-		finance: 'wallet',
-		inventory: 'shopping',
-		media: 'image'
-	};
-
 	/**
-	 * The glyph behind the page, where the section is not specific enough.
+	 * What the browser tab says.
 	 *
-	 * People and Notebooks both belong to the Diary section, so keying the
-	 * background off the section alone drew a journal behind all three — and the
-	 * whole point of the wash is that a room looks like itself. Longest prefix
-	 * wins, so `/notebooks` beats `/diary`.
+	 * Every tab said "ontoplano", which is useless the moment there are two of
+	 * them open — and people keep the planner and the notes open side by side.
+	 * It says where you are: the place inside the room where the room draws
+	 * tabs, the room otherwise, and the app's name after it so a bookmark and
+	 * a history entry still read as this app.
+	 *
+	 * Declared here rather than page by page: the shell already works out
+	 * which room is on screen for the nav, and a page added next year gets a
+	 * title without anybody remembering to write one.
 	 */
-	const ROUTE_GLYPH: [string, IconName][] = [
-		['/notebooks', 'notebook'],
-		['/notebooks/people', 'user'],
-		['/health/recipes', 'utensils'],
-		// Settings belongs to no room, so it fell through to home — and the
-		// account page was tiled with houses.
-		['/settings', 'user'],
-		['/settings/instance', 'settings'],
-		['/admin', 'shield']
-	];
+	const pageTitle = $derived.by(() => {
+		const here = page.url.pathname;
+		const tabs = roomTabs();
+		const inside = tabs
+			.filter((tab: RoomTab) => here === tab.href || here.startsWith(`${tab.href}/`))
+			.sort((a: RoomTab, b: RoomTab) => b.href.length - a.href.length)[0];
 
-	const pageGlyph = $derived(
-		ROUTE_GLYPH.filter(([prefix]) => page.url.pathname.startsWith(prefix)).sort(
-			(a, b) => b[0].length - a[0].length
-		)[0]?.[1] ?? SECTION_GLYPH[sectionKey]
-	);
+		// `SECTIONS` already carries each room's name as a catalogue key — the
+		// same one the nav draws — so the tab and the nav cannot disagree.
+		const room = t(SECTIONS[sectionKey].name);
+		// A room whose first tab carries the room's own name — Notebooks inside
+		// Notebooks — says it once.
+		const said = [inside?.label === room ? '' : inside?.label, room].filter(Boolean).join(' · ');
+		return said ? `${said} · ${data.appName}` : data.appName;
+	});
 
 	function isNavActive(href: string): boolean {
 		if (href === '/') return page.url.pathname === '/';
@@ -400,6 +405,30 @@
 				// call sitting in the argument, which this cannot be.
 				// eslint-disable-next-line svelte/no-navigation-without-resolve
 				goto(nav[next].href);
+				break;
+			}
+			/*
+			 * Sideways within the room you are already in.
+			 *
+			 * Derived from the addresses rather than declared by each screen,
+			 * so a place added under an existing room answers to these without
+			 * anybody wiring it up — and a room with one place in it does
+			 * nothing, which is the right amount of nothing.
+			 *
+			 * A screen that has already claimed the key keeps it. The board
+			 * binds `H` and `L` to carrying a card into the next column, which
+			 * is a better use of them there than walking away from the board —
+			 * and a key that means two things at once means neither. Checked
+			 * rather than left to whichever handler ran first, because that
+			 * order is an accident of module loading.
+			 */
+			case 'global-next-place':
+			case 'global-prev-place': {
+				const to = stepThroughRoom(page.url.pathname, action === 'global-next-place' ? 1 : -1);
+				if (!to) break;
+				e.preventDefault();
+				// eslint-disable-next-line svelte/no-navigation-without-resolve
+				goto(to);
 				break;
 			}
 		}
@@ -594,6 +623,23 @@
 	 * that ends on the same screen it started on is not an arrival.
 	 */
 	afterNavigate(({ from, to }) => {
+		/*
+		 * A link that names a part of a page lands on that part.
+		 *
+		 * The browser's own fragment scrolling moves the *window*, and below
+		 * `lg` the window does not scroll here — `main` does. So "OD changed 6
+		 * things" opened the integrations page at the top and left somebody to
+		 * find the activity list themselves. `scrollIntoView` walks up to
+		 * whatever actually scrolls, which is the right answer at both widths;
+		 * the tick is for the page it is landing on to have drawn.
+		 */
+		const hash = to?.url.hash ?? '';
+		if (hash.length > 1) {
+			void tick().then(() => {
+				document.getElementById(hash.slice(1))?.scrollIntoView({ block: 'start' });
+			});
+			return;
+		}
 		if (from?.url && to?.url && from.url.pathname === to.url.pathname) return;
 		scroller?.scrollTo({ top: 0 });
 	});
@@ -690,6 +736,11 @@
 	 * any real page here, so past it the honest thing is silence: the page under
 	 * it is the real page, and it is already on screen.
 	 */
+	/*
+	 * How long the indicator insists before it stops saying "working".
+	 * Far past any real wait here; past it the page on screen is the real one.
+	 */
+	const GIVE_UP_MS = 20_000;
 	let givenUp = $state(false);
 	/*
 	 * While the navigation is on, the menu itself turns.
@@ -720,12 +771,39 @@
 		if (givenUp) stopMarkSpin();
 	});
 	$effect(() => {
-		if (!navigating.to) {
+		if (!navigating.to && !busy()) {
 			givenUp = false;
 			return;
 		}
-		const timer = setTimeout(() => (givenUp = true), 20_000);
+		const timer = setTimeout(() => (givenUp = true), GIVE_UP_MS);
 		return () => clearTimeout(timer);
+	});
+
+	/*
+	 * Arriving at `#something` puts that something on screen.
+	 *
+	 * The browser does it for the window and this app does not scroll the
+	 * window — see `$lib/scroll-to-hash`. Keyed on the whole URL so following
+	 * a second link to the same page with a different hash moves again.
+	 */
+	$effect(() => {
+		const hash = page.url.hash;
+		if (!hash) return;
+		return scrollToHash(hash);
+	});
+
+	/*
+	 * A wait that is not a navigation turns the mark too.
+	 *
+	 * `beforeNavigate` and `afterNavigate` do this for navigations, and they
+	 * are the right hooks for those — a navigation is a press, and the turn
+	 * starts on the press rather than on the wait. Nothing announces the start
+	 * of an `invalidateAll()`, so here the wait itself is the signal.
+	 */
+	$effect(() => {
+		if (!busy()) return;
+		startMarkSpin([deskMark, barMark, barMarkGround], 0);
+		return () => void stopMarkSpin();
 	});
 
 	// Reads the keyboard on hydration; `Ctrl` until then, which is the
@@ -769,6 +847,15 @@
 		if (!data.user) return;
 		return live();
 	});
+
+	/*
+	 * How much of the screen the phone's keyboard is covering.
+	 *
+	 * Written as a custom property so the CSS can get the bar out of the way
+	 * while somebody is typing — see `$lib/keyboard-inset` for why a phone
+	 * needs telling at all.
+	 */
+	$effect(() => watchKeyboard());
 
 	/* ------------------------------------------------------------- the tour */
 
@@ -822,6 +909,10 @@
 	}
 </script>
 
+<svelte:head>
+	<title>{pageTitle}</title>
+</svelte:head>
+
 <svelte:window onkeydown={handleGlobalKeydown} onclick={handleClickOutside} />
 
 {#if data.user && !bareScreen}
@@ -844,26 +935,34 @@
 				the strip above the bottom bar instead, because a band at the
 				top of a phone pushes the whole app down for a sentence.
 			-->
+			<!--
+				`.notice-band` rather than `bg-amber-500 text-amber-950`: the ink
+				was a palette colour and the dark theme inverts those, so the band
+				kept its orange and turned its words near-white. See layout.css.
+			-->
 			<div
-				class="relative z-50 hidden flex-wrap items-center justify-between gap-2 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950 lg:flex"
+				class="notice-band relative z-50 hidden flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm font-medium lg:flex"
 			>
-				<!--
-					The warning is the point, so it is the part that is loud.
-					"Everything here is yours alone" read as reassurance and invited
-					exactly the thing this band exists to prevent: somebody typing
-					their real week into an account that is deleted this afternoon.
-					Red on the amber band, and it says wiped rather than disappears.
-				-->
 				<span>
-					<strong>{t('home.thisIsADemoVersion')}</strong>
-					<strong class="text-red-900">
-						{t('home.doNotPutYourReal')}
-					</strong>
+					<strong>{t('home.thisIsOntoplanoDemo')}</strong>
 				</span>
-				{#if data.demoHost}
-					<span class="font-normal">{t('home.openOnYourPhoneTo', { demoHost: data.demoHost })}</span
-					>
-				{/if}
+				<!-- Where the thing you are looking at came from, with no sentence
+				     around it: a demo visitor is the reader most likely to want the
+				     source and least likely to go hunting for it, and the mark and
+				     the address say it without help. -->
+				<!-- The one address here that is not this instance's own, so the
+				     route rule has nothing to resolve it against. -->
+				<!-- eslint-disable svelte/no-navigation-without-resolve -->
+				<a
+					href={SOURCE_URL}
+					target="_blank"
+					rel="noreferrer"
+					class="flex items-center gap-1.5 font-normal"
+				>
+					<Icon name="github" size={14} />
+					{SOURCE_URL.replace(/^https:\/\//, '')}
+				</a>
+				<!-- eslint-enable svelte/no-navigation-without-resolve -->
 			</div>
 		{/if}
 
@@ -882,12 +981,12 @@
 				goes and where there is room for the sentence.
 			-->
 			<div
-				class="relative z-50 hidden flex-wrap items-center justify-between gap-2 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950 lg:flex"
+				class="notice-band relative z-50 hidden flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm font-medium lg:flex"
 			>
 				<span>
 					<strong>{t('home.staging')}</strong>
 					{t('home.aCopyOfOntoplanoFor')}
-					<strong class="text-red-900">{t('home.nothingHereIsPromisedTo')}</strong>
+					<strong class="notice-band-loud">{t('home.nothingHereIsPromisedTo')}</strong>
 				</span>
 			</div>
 
@@ -902,7 +1001,7 @@
 				the bar, the same way the demo's band is split.
 			-->
 			<div
-				class="fixed inset-x-0 z-30 flex items-center justify-between bg-amber-500 px-3 text-[11px] leading-none font-medium text-amber-950 lg:hidden"
+				class="notice-band fixed inset-x-0 z-30 flex items-center justify-between px-3 text-[11px] leading-none font-medium lg:hidden"
 				style="bottom: calc(var(--mobile-nav-height) + var(--safe-bottom)); height: 1.95rem"
 			>
 				<span><strong>{t('home.staging2')}</strong></span>
@@ -968,7 +1067,7 @@
 				sit under the phone's clock.
 			-->
 			<div
-				class="relative z-50 flex flex-wrap items-center justify-between gap-2 bg-amber-500 px-4 py-2 text-sm font-medium text-amber-950"
+				class="notice-band relative z-50 flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm font-medium"
 				style="padding-top: calc(var(--safe-top, 0px) + 0.5rem)"
 			>
 				<span>
@@ -986,7 +1085,7 @@
 			</div>
 		{/if}
 
-		<SectionPattern icon={pageGlyph} />
+		<SectionPattern />
 		<!--
 			No top bar on a phone.
 			
@@ -1168,6 +1267,7 @@
 											menuOpen = false;
 										};
 									}}
+									use:sliding
 									class="seg mt-2 flex w-full"
 								>
 									{#each THEMES as option (option)}
@@ -1233,7 +1333,7 @@
 								>
 									{t('home.whereThisLives')}
 								</a>
-							{:else if data.demo}
+							{:else if data.demoAccount}
 								<!--
 									Where Sign out would be, on a demo that has no way back in.
 									Somebody who has made a mess of the fixtures wants a clean
@@ -1299,7 +1399,7 @@
 			finished, and a screen of grey blocks reads as a broken app rather
 			than a slow one.
 		-->
-		{#if navigating.to && !givenUp}
+		{#if (navigating.to || busy()) && !givenUp}
 			<div class="nav-progress" role="status" aria-label={t('home.loading')}></div>
 		{/if}
 
@@ -1347,7 +1447,7 @@
 			flowing-in is there to avoid.
 		-->
 		<nav
-			class="fixed inset-x-0 bottom-0 z-40 lg:hidden"
+			class="mobile-nav fixed inset-x-0 bottom-0 z-40 lg:hidden"
 			style="padding-bottom: var(--safe-bottom); background: {barField}"
 			aria-label={t('home.primary')}
 			data-tour="mobile-bar"
@@ -1532,15 +1632,25 @@
 				never sees.
 			-->
 			<div
-				class="fixed inset-x-0 z-30 flex items-center justify-between bg-amber-500 px-3 text-[11px] leading-none font-medium text-amber-950 lg:hidden"
+				class="notice-band fixed inset-x-0 z-30 flex items-center justify-between px-3 text-[11px] leading-none font-medium lg:hidden"
 				style="bottom: calc(var(--mobile-nav-height) + var(--safe-bottom)); height: 1.95rem"
 			>
-				<!-- Two words, split around the pie button that sits in the middle of
-				     this strip. Anything longer was cut off by the menu button and
-				     read as "one shared a—", which says less than nothing. -->
-				<span><strong>{t('home.demoVersion')}</strong></span>
-				<!-- Clear of the help dock, which floats over this corner. -->
-				<span class="pe-10">{t('home.yoursAndTemporary')}</span>
+				<!--
+					Two words and the mark, together at the left.
+
+					The right-hand half used to carry "yours, and temporary" — a
+					reassurance where the band exists to warn, and it read as one
+					half of a sentence split around the pie button in the middle.
+					What belongs beside "Demo version" is where the thing came
+					from, which is the mark: the address will not fit at this size
+					and the mark is the address.
+				-->
+				<!-- eslint-disable svelte/no-navigation-without-resolve -->
+				<a href={SOURCE_URL} target="_blank" rel="noreferrer" class="flex items-center gap-1.5">
+					<strong>{t('home.demoVersion')}</strong>
+					<Icon name="github" size={13} />
+				</a>
+				<!-- eslint-enable svelte/no-navigation-without-resolve -->
 			</div>
 		{/if}
 
@@ -1587,6 +1697,8 @@
 
 		<Reminders />
 		<UndoToast />
+		<!-- Armed for every rendered picture in the app at once. -->
+		<ImageViewer />
 		<Notifications />
 		{#if data.clientErrorReports !== 'off'}
 			<ClientErrorPrompt state={data.clientErrorReports} />

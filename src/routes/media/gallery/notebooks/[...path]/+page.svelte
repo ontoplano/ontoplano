@@ -4,6 +4,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import RoomBar from '$lib/components/RoomBar.svelte';
+	import TagChip from '$lib/components/TagChip.svelte';
 	import { NOTEBOOK_SEPARATOR } from '$lib/notebook-path';
 	import type { PageServerData } from './$types';
 	import { useT } from '$lib/i18n';
@@ -94,7 +95,7 @@
 							<span class="min-w-0 flex-1 truncate text-xs font-medium text-gray-700">
 								{folder.leaf}
 							</span>
-							<span class="text-xs text-gray-400 tabular-nums">{folder.totalCount}</span>
+							<span class="text-xs text-gray-500 tabular-nums">{folder.totalCount}</span>
 						</span>
 					</a>
 				</li>
@@ -140,7 +141,7 @@
 		{#if viewing.tags.length > 0}
 			<p class="mt-2 flex flex-wrap gap-2">
 				{#each viewing.tags as tag (tag)}
-					<span class="chip text-gray-500">#{tag}</span>
+					<TagChip name={tag} />
 				{/each}
 			</p>
 		{/if}

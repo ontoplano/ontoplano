@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
+import { choose, chooseValue } from './helpers/choose';
 
 /**
  * A block that comes back on something other than a weekday.
@@ -74,7 +75,7 @@ test('a block that comes back every two days lands on every second day', async (
 	await form.locator('[name="recurrenceAnchor"]').fill(anchor);
 	await form.locator('[name="startTime"]').fill('09:00');
 	await form.locator('[name="label"]').fill('every-other-day');
-	await form.locator('[name="mode"]').selectOption('category');
+	await choose(form, 'mode', 'Category');
 	await form.getByRole('button', { name: /Add repeating block|Save block/ }).click();
 	await expect(form).toBeHidden({ timeout: 20_000 });
 
@@ -108,7 +109,7 @@ test('a fortnightly block skips the week between', async ({ page }) => {
 	await form.locator('[name="recurrenceAnchor"]').fill(dayAfter(start, 3));
 	await form.locator('[name="startTime"]').fill('10:00');
 	await form.locator('[name="label"]').fill('the-bins');
-	await form.locator('[name="mode"]').selectOption('category');
+	await choose(form, 'mode', 'Category');
 	await form.getByRole('button', { name: /Add repeating block|Save block/ }).click();
 	await expect(form).toBeHidden({ timeout: 20_000 });
 
@@ -144,7 +145,7 @@ test('a monthly block lands on its date and nowhere else', async ({ page }) => {
 	await form.locator('[name="recurrenceAnchor"]').fill(dayAfter(start, 0));
 	await form.locator('[name="startTime"]').fill('11:00');
 	await form.locator('[name="label"]').fill('the-rent');
-	await form.locator('[name="mode"]').selectOption('category');
+	await choose(form, 'mode', 'Category');
 	await form.getByRole('button', { name: /Add repeating block|Save block/ }).click();
 	await expect(form).toBeHidden({ timeout: 20_000 });
 
@@ -173,7 +174,7 @@ test('skipping one occurrence leaves the block’s other days alone', async ({ p
 	await form.locator('[name="recurrenceAnchor"]').fill(anchor);
 	await form.locator('[name="startTime"]').fill('09:00');
 	await form.locator('[name="label"]').fill('the-stretches');
-	await form.locator('[name="mode"]').selectOption('category');
+	await choose(form, 'mode', 'Category');
 	await form.getByRole('button', { name: /Add repeating block|Save block/ }).click();
 	await expect(form).toBeHidden({ timeout: 20_000 });
 
@@ -224,7 +225,7 @@ test('editing a block does not quietly shift the rhythm it already had', async (
 	await form.locator('[name="recurrenceAnchor"]').fill(anchor);
 	await form.locator('[name="startTime"]').fill('09:00');
 	await form.locator('[name="label"]').fill('the-walk');
-	await form.locator('[name="mode"]').selectOption('category');
+	await choose(form, 'mode', 'Category');
 	await form.getByRole('button', { name: /Add repeating block|Save block/ }).click();
 	await expect(form).toBeHidden({ timeout: 20_000 });
 
@@ -290,7 +291,7 @@ test('a block dragged out on the grid is drawn as a block, not a sliver', async 
 	await page.mouse.up();
 	await expect(form).toBeVisible({ timeout: 15_000 });
 
-	await form.locator('[name="mode"]').selectOption('category');
+	await choose(form, 'mode', 'Category');
 	await form.locator('[name="label"]').fill('dragged-out');
 	// From the keyboard, so nothing clicks outside the calendar to clear the
 	// selection for us. Not from the notes field — that is a textarea now, and
@@ -378,7 +379,7 @@ test.describe('the preview on the grid', () => {
 		await page.getByRole('button', { name: 'New block' }).click();
 		const form = page.getByRole('dialog');
 		await expect(form).toBeVisible();
-		await form.locator('[name="mode"]').selectOption('category');
+		await choose(form, 'mode', 'Category');
 		await form.locator('[name="label"]').fill('preview me');
 		await form.locator('[name="startTime"]').fill('14:00');
 		await form.locator('[name="durationMinutes"]').fill('60');
@@ -419,7 +420,7 @@ test.describe('the preview on the grid', () => {
 		// A block of its own, so this test owns what it counts.
 		await page.getByRole('button', { name: 'New block' }).click();
 		const form = page.getByRole('dialog');
-		await form.locator('[name="mode"]').selectOption('category');
+		await choose(form, 'mode', 'Category');
 		await form.locator('[name="label"]').fill('the-one');
 		await form.locator('[name="startTime"]').fill('10:00');
 		await form.getByRole('button', { name: /Add repeating block|Save block/ }).click();
@@ -461,7 +462,7 @@ test.describe('the preview on the grid', () => {
 		await page.getByRole('button', { name: 'New block' }).click();
 		const form = page.getByRole('dialog');
 		await form.getByRole('button', { name: 'Once only', exact: true }).click();
-		await form.locator('[name="mode"]').selectOption('category');
+		await choose(form, 'mode', 'Category');
 		await form.locator('[name="label"]').fill('just-this-once');
 		await form.locator('[name="startTime"]').fill('11:00');
 		await expect(page.locator('.og-event--preview')).toHaveCount(1);
@@ -485,7 +486,7 @@ test.describe('the preview on the grid', () => {
 
 		await page.getByRole('button', { name: 'New block' }).click();
 		const form = page.getByRole('dialog');
-		await form.locator('[name="mode"]').selectOption('category');
+		await choose(form, 'mode', 'Category');
 		await form.locator('[name="label"]').fill('late one');
 		await form.locator('[name="startTime"]').fill('21:00');
 		await page.waitForTimeout(600);
@@ -682,10 +683,10 @@ test('a weekly block does not fill in the weeks before it existed', async ({ pag
 	await form.getByRole('button', { name: 'Comes back', exact: true }).first().click();
 	await form.getByRole('button', { name: 'Every week', exact: true }).click();
 	await form.locator('[name="recurrenceAnchor"]').fill(thisThursday);
-	await form.locator('[name="weekday"]').selectOption('3');
+	await chooseValue(form, 'weekday', '3');
 	await form.locator('[name="startTime"]').fill('12:15');
 	await form.locator('[name="label"]').fill('the-lunch');
-	await form.locator('[name="mode"]').selectOption('category');
+	await choose(form, 'mode', 'Category');
 	await form.getByRole('button', { name: /Add repeating block|Save block/ }).click();
 	await expect(form).toBeHidden({ timeout: 20_000 });
 

@@ -1,8 +1,8 @@
 <script lang="ts">
+	import { pillStyle } from '$lib/pill-ink';
 	import RoomBar from '$lib/components/RoomBar.svelte';
-	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { resolve } from '$app/paths';
 	import Banner from '$lib/components/Banner.svelte';
@@ -1001,7 +1001,7 @@
 				{@const color = chipColor(key, value)}
 				<!-- `.pill` when there is a colour: it computes its own ink, so a
 				     pale tag is readable instead of white on white. -->
-				<span class={color ? 'pill' : 'chip'} style={color ? `--pill:${color}` : ''}
+				<span class={color ? 'pill' : 'chip'} style={pillStyle(color) ?? ''}
 					>{value ? `${key}: ${value}` : key}</span
 				>
 			{/each}
@@ -1020,27 +1020,30 @@
 		are in and what it hides are a row along the top of the panel they
 		filter, which can wrap in peace.
 	-->
-	<RoomBar title={t('inventory.inventory')} />
+	<RoomBar title={t('inventory.inventory')}>
+		<!--
+			The list you actually take to the shop.
 
-	<!--
-		The list you actually take to the shop.
+			The room is the cupboard: what you have, where it lives, how much you
+			keep. This is the one reading of it that is not about any of that —
+			it is the trip, and it is worth a button of its own rather than being
+			assembled in somebody's head from the rows above.
 
-		The room is the cupboard: what you have, where it lives, how much you
-		keep. This is the one reading of it that is not about any of that — it
-		is the trip, and it is worth a button of its own rather than being
-		assembled in somebody's head from the rows above.
-	-->
-	<RoomToolbar>
-		{#snippet tools()}
-			<button class="btn btn-primary" onclick={() => (showRun = true)}>
+			In the bar rather than on a strip of page ground under it. Every room
+			with tabs puts its controls on the bar and its body flush underneath;
+			this one had a band of the section's colour between the two with a
+			button floating in it, which is the one room that broke the run.
+		-->
+		<div class="room-tabs">
+			<button class="btn btn-sm" onclick={() => (showRun = true)}>
 				<Icon name="shopping" />
 				{t('inventory.shoppingList2')}
 				{#if data.run.lines.length > 0}
 					<span class="tabular text-xs opacity-80">{data.run.lines.length}</span>
 				{/if}
 			</button>
-		{/snippet}
-	</RoomToolbar>
+		</div>
+	</RoomBar>
 
 	{#if !online || ticks.pending.length > 0}
 		<Banner kind="warning">
@@ -1108,7 +1111,7 @@
 						<!-- "about", because a last known price is not a price. -->
 						<span class="tabular shrink-0 text-right text-gray-600">
 							{#if line.lineCents === null}
-								<span class="text-xs text-gray-400">{t('inventory.noPriceYet')}</span>
+								<span class="text-xs text-gray-500">{t('inventory.noPriceYet')}</span>
 							{:else}
 								{formatMoney(line.lineCents, data.currency)}
 							{/if}
@@ -1240,7 +1243,19 @@
 		Loose on the page they were three controls of three shapes floating over
 		the thing they act on.
 	-->
-	<div class="border border-gray-200 bg-white shadow-card">
+	<!--
+		`overflow-anchor: none` because a fold must not move the page.
+
+		Folding a place takes a run of cards out of a two-column grid, so the
+		cards below it reflow upwards by about half of what was removed. The
+		browser's scroll anchoring sees one of those cards shift, decides the
+		page moved under the reader and scrolls to put it back — which moves
+		everything the reader *was* looking at, the heading they just pressed
+		included, by a few hundred pixels. Excluding this subtree from anchoring
+		leaves the scroll where the reader left it; the cards reflow under the
+		heading, which is what a fold is supposed to look like.
+	-->
+	<div class="room-body [overflow-anchor:none]">
 		<!--
 			Three kinds of thing, so they look like three: which list you are in
 			(one setting, one track), what it hides (two quiet toggles), and a way
@@ -1781,7 +1796,7 @@
 						{:else}
 							<span
 								class={attribute.color ? 'pill' : 'chip'}
-								style={attribute.color ? `--pill:${attribute.color}` : ''}>{attribute.key}</span
+								style={pillStyle(attribute.color) ?? ''}>{attribute.key}</span
 							>
 							<span class="tabular text-xs text-gray-500">{attribute.count}</span>
 
@@ -1859,9 +1874,7 @@
 										>
 									</form>
 								{:else}
-									<span
-										class={one.color ? 'pill' : 'chip'}
-										style={one.color ? `--pill:${one.color}` : ''}
+									<span class={one.color ? 'pill' : 'chip'} style={pillStyle(one.color) ?? ''}
 										>{one.value || t('inventory.noValue')}</span
 									>
 									<span class="tabular text-xs text-gray-500">{one.count}</span>
@@ -1948,7 +1961,7 @@
 								class={attributeFilter === attribute.key ? 'pill' : 'chip'}
 								aria-pressed={attributeFilter === attribute.key}
 								style={attributeFilter === attribute.key
-									? `--pill:${attribute.color ?? 'var(--control-on)'}`
+									? (pillStyle(attribute.color) ?? '--pill:var(--control-on)')
 									: ''}
 								onclick={() =>
 									(attributeFilter = attributeFilter === attribute.key ? null : attribute.key)}
@@ -1965,7 +1978,7 @@
 										class={attributeFilter === key ? 'pill' : 'chip'}
 										aria-pressed={attributeFilter === key}
 										style={attributeFilter === key
-											? `--pill:${one.color ?? attribute.color ?? 'var(--control-on)'}`
+											? (pillStyle(one.color ?? attribute.color) ?? '--pill:var(--control-on)')
 											: ''}
 										onclick={() => (attributeFilter = attributeFilter === key ? null : key)}
 									>
