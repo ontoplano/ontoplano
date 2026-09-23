@@ -236,22 +236,9 @@
 			description={data.notebook.description}
 			defaultTags={data.notebook.defaultTags}
 			notebook={data.notebook}
+			pictureKilobytes={data.pictureKilobytes}
 		/>
 	</form>
-
-	<!-- Beside the form rather than in it: a picture goes up as multipart the
-	     moment it is chosen, which is not the same submission as the words. -->
-	{#if data.notebook.mine}
-		<div class="mt-3 flex items-start gap-3 border-t border-gray-200 pt-3">
-			<NotebookPicture
-				notebook={data.notebook}
-				kilobytes={data.pictureKilobytes}
-				size="size-24"
-				removable
-			/>
-			<p class="text-sm text-gray-500">{t('notebooks.id.thePicture')}</p>
-		</div>
-	{/if}
 
 	{#snippet footer()}
 		<button type="button" class="btn" onclick={() => (editing = false)}>{t('ui.cancel')}</button>

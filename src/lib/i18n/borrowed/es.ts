@@ -76,6 +76,7 @@ export const borrowed: ReadonlySet<string> = new Set([
 	'notebooks.rows.ofWanted',
 	'notebooks.rows.servesCount',
 	'notebooks.rows.streakDays',
+	'notebooks.tabs',
 	'notebooks.thisIsGoneFromEverywhere',
 	'notebooks.whatItHolds',
 	'notebooks.workoutsCount',

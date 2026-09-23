@@ -1590,7 +1590,6 @@ export const messages: Catalogue = {
 	'notebooks.id.sharedBy': 'shared by {sharedBy}',
 	'notebooks.id.sharedWithFamily': 'shared with family',
 	'notebooks.id.stopSharing': 'Stop sharing',
-	'notebooks.id.thePicture': 'Shown beside the notebook everywhere it is listed.',
 	'notebooks.id.titleWillBeGone': '“{title}” will be gone.',
 	'notebooks.id.whatItIsFor': 'What it is for',
 	'notebooks.ideas.applied': 'Applied',
@@ -1691,6 +1690,7 @@ export const messages: Catalogue = {
 	'notebooks.rows.streakDays': { one: '{count} day', other: '{count} days' },
 	'notebooks.startOneForSomethingYou':
 		'Start one for something you will keep coming back to, and point notes, tasks and goals at it.',
+	'notebooks.tabs': 'Tabs',
 	'notebooks.tags': '#tags',
 	'notebooks.tags.aTagIsMadeBy':
 		'A tag is made by typing it onto something — a task, a note, an idea. They turn up here once they exist.',

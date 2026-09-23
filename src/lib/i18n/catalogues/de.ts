@@ -1640,7 +1640,6 @@ export const messages: Catalogue = {
 	'notebooks.id.sharedBy': 'geteilt von {sharedBy}',
 	'notebooks.id.sharedWithFamily': 'mit Familie geteilt',
 	'notebooks.id.stopSharing': 'Teilen beenden',
-	'notebooks.id.thePicture': 'Wird neben dem Notizbuch überall dort gezeigt, wo es aufgeführt ist.',
 	'notebooks.id.titleWillBeGone': '„{title}" wird verschwinden.',
 	'notebooks.id.whatItIsFor': 'Wofür es da ist',
 	'notebooks.ideas.applied': 'Angewendet',
@@ -1743,6 +1742,7 @@ export const messages: Catalogue = {
 	'notebooks.rows.streakDays': { one: '{count} day', other: '{count} days' },
 	'notebooks.startOneForSomethingYou':
 		'Legen Sie eins an für etwas, zu dem Sie immer wieder zurückkehren, und verknüpfen Sie Notizen, Aufgaben und Ziele damit.',
+	'notebooks.tabs': 'Tabs',
 	'notebooks.tags': '#Tags',
 	'notebooks.tags.aTagIsMadeBy':
 		'Ein Schlagwort entsteht, indem man es an etwas schreibt — eine Aufgabe, eine Notiz, eine Idee. Es taucht hier auf, sobald es existiert.',

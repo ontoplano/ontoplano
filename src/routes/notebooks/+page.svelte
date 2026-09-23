@@ -520,23 +520,9 @@
 			description={editing?.description ?? ''}
 			defaultTags={editing?.defaultTags ?? ''}
 			notebook={editing}
+			pictureKilobytes={data.pictureKilobytes}
 		/>
 	</form>
-
-	<!-- Beside the form rather than in it: a picture goes up as multipart the
-	     moment it is chosen, which is not the same submission as the words. A
-	     notebook that does not exist yet has nothing to attach one to. -->
-	{#if editing && editing.mine !== false}
-		<div class="mt-3 flex items-start gap-3 border-t border-gray-200 pt-3">
-			<NotebookPicture
-				notebook={editing}
-				kilobytes={data.pictureKilobytes}
-				size="size-24"
-				removable
-			/>
-			<p class="text-sm text-gray-500">{t('notebooks.id.thePicture')}</p>
-		</div>
-	{/if}
 
 	<!--
 		The other way to make one: bring a folder of markdown in.

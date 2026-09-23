@@ -1625,7 +1625,6 @@ export const messages: Catalogue = {
 	'notebooks.id.sharedBy': 'compartido por {sharedBy}',
 	'notebooks.id.sharedWithFamily': 'compartido con la familia',
 	'notebooks.id.stopSharing': 'Dejar de compartir',
-	'notebooks.id.thePicture': 'Se muestra junto al cuaderno en todos los lugares donde aparece.',
 	'notebooks.id.titleWillBeGone': '"{title}" va a desaparecer.',
 	'notebooks.id.whatItIsFor': 'Para qué sirve',
 	'notebooks.ideas.applied': 'Aplicada',
@@ -1727,6 +1726,7 @@ export const messages: Catalogue = {
 	'notebooks.rows.streakDays': { one: '{count} day', other: '{count} days' },
 	'notebooks.startOneForSomethingYou':
 		'Crea uno para algo a lo que volverás una y otra vez, y enlázale notas, tareas y metas.',
+	'notebooks.tabs': 'Tabs',
 	'notebooks.tags': '#etiquetas',
 	'notebooks.tags.aTagIsMadeBy':
 		'Una etiqueta nace al escribirla sobre algo — una tarea, una nota, una idea. Aparecen aquí en cuanto existen.',

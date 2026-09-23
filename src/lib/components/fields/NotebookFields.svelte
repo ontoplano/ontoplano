@@ -13,6 +13,7 @@
 	import OneLine from '$lib/components/OneLine.svelte';
 	import TagInput from '$lib/components/TagInput.svelte';
 	import ToggleRow from '$lib/components/ToggleRow.svelte';
+	import NotebookPicture from '$lib/components/NotebookPicture.svelte';
 	import { moduleChoicesOf, type NotebookModule } from '$lib/notebook-modules';
 	import { page } from '$app/state';
 	import { useT } from '$lib/i18n';
@@ -37,15 +38,22 @@
 		 * offer the same fields. They did not: only one route had asked the
 		 * server for them.
 		 */
-		notebook = null
+		notebook = null,
+		/** What the browser refuses before sending. The page knows the ceiling. */
+		pictureKilobytes = 0
 	}: {
 		title?: string;
 		description?: string;
 		defaultTags?: string;
 		notebook?: {
+			id: number;
+			title: string;
+			mine?: boolean;
+			pictureId: number | null;
 			modules: readonly NotebookModule[];
 			counts: Record<NotebookModule, number>;
 		} | null;
+		pictureKilobytes?: number;
 	} = $props();
 
 	const modules = $derived(
@@ -54,15 +62,31 @@
 </script>
 
 <FormGrid>
-	<Field label={t('ui.title')} span={12} required hint={t('notebooks.anEmDashMakesA')}>
-		<OneLine
-			name="heading"
-			placeholder={t('notebooks.kitchenRenovation')}
-			value={title}
-			class="input"
-			required
-		/>
-	</Field>
+	<!--
+		The cover beside the name it belongs to.
+
+		It was a block bolted on under the form with a line explaining what it
+		was for, which is a caption for something nobody needed explaining: a
+		picture next to a title is a cover. It goes up on its own the moment it
+		is chosen — a multipart send, not the same submission as the words —
+		which is why it sits beside the field rather than inside the form.
+	-->
+	<div class="col-span-12 flex items-end gap-3">
+		{#if notebook && notebook.mine !== false}
+			<NotebookPicture {notebook} kilobytes={pictureKilobytes} size="size-20" removable />
+		{/if}
+		<div class="min-w-0 flex-1">
+			<Field label={t('ui.title')} span={12} required hint={t('notebooks.anEmDashMakesA')}>
+				<OneLine
+					name="heading"
+					placeholder={t('notebooks.kitchenRenovation')}
+					value={title}
+					class="input"
+					required
+				/>
+			</Field>
+		</div>
+	</div>
 
 	<Field label={t('notebooks.whatItIsFor')} span={12}>
 		<textarea name="description" rows="3" class="textarea">{description}</textarea>
@@ -87,7 +111,7 @@
 		and one wrapping nine checkboxes lends its whole text to each of them.
 	-->
 	{#if modules.length > 0}
-		<Field label={t('notebooks.whatItHolds')} span={12} group>
+		<Field label={t('notebooks.tabs')} span={12} group>
 			<!-- Unticking every box posts no `modules` at all. This is what tells
 			     the action the form asked. -->
 			<input type="hidden" name="modulesPosted" value="1" />
