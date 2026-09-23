@@ -4,6 +4,8 @@
 	import { navigating, page } from '$app/state';
 	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { scrollHints } from '$lib/actions/scroll-hints';
+	import { sliding } from '$lib/actions/sliding';
+	import RoomVerb from '$lib/components/RoomVerb.svelte';
 	import { onSwipe } from '$lib/swipe';
 	import { swipeSurface } from '$lib/swipe-surface';
 	import {
@@ -208,32 +210,41 @@
 	});
 </script>
 
-<div class="space-y-4">
-	<RoomBar {title} {actions}>
-		<nav
-			use:scrollHints
-			class="scroll-hints flex gap-0 border-b border-gray-200 md:gap-1"
-			aria-label={label}
-			data-tour={dataTour}
-		>
-			<!-- Resolved by whoever described the tabs: a stream's slug is a route
-			     parameter, and the rule cannot see through the array. -->
-			<!-- eslint-disable svelte/no-navigation-without-resolve -->
-			{#each tabs as tab, index (tab.href)}
-				<a
-					href={tab.href}
-					aria-current={here(index) ? 'page' : undefined}
-					class="tab-link border-b-2 px-2 py-2 text-sm font-medium whitespace-nowrap transition sm:px-4 {here(
-						index
-					)
-						? 'border-gray-900 text-gray-900'
-						: 'border-transparent text-gray-500 hover:text-gray-700'}"
-				>
-					{tab.label}
-				</a>
-			{/each}
-			<!-- eslint-enable svelte/no-navigation-without-resolve -->
-		</nav>
+<div class="room-frame">
+	<RoomBar {title} {actions} verbInTabs>
+		<!--
+			The tabs and the room's verb, on one line and on one ground.
+
+			They were a row of underlined words with nothing behind them and the
+			verb up on the title line a rule away, which reads as three loose
+			things rather than as one strip. The tabs are the same control the
+			markdown box uses now — a track with a tile that travels to the place
+			you are on — and the verb stands at the far end of it.
+
+			`sliding` measures whichever child carries `aria-current="page"`, the
+			convention this strip already used, so nothing here had to learn how
+			the tile works.
+		-->
+		<div class="room-tabs">
+			<nav
+				use:scrollHints
+				use:sliding
+				class="seg scroll-hints min-w-0"
+				aria-label={label}
+				data-tour={dataTour}
+			>
+				<!-- Resolved by whoever described the tabs: a stream's slug is a route
+				     parameter, and the rule cannot see through the array. -->
+				<!-- eslint-disable svelte/no-navigation-without-resolve -->
+				{#each tabs as tab, index (tab.href)}
+					<a href={tab.href} aria-current={here(index) ? 'page' : undefined}>
+						{tab.label}
+					</a>
+				{/each}
+				<!-- eslint-enable svelte/no-navigation-without-resolve -->
+			</nav>
+			<RoomVerb />
+		</div>
 	</RoomBar>
 
 	<!-- `.slide-frame` is where the movement is clipped, and why it gives the

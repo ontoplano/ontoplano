@@ -2,10 +2,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { NAV_PLACES } from '$lib/sections-nav';
 	import { page } from '$app/state';
-	import { roomAction } from '$lib/room-action.svelte';
-	import { useT } from '$lib/i18n';
-
-	const t = useT();
+	import RoomVerb from '$lib/components/RoomVerb.svelte';
 
 	/**
 	 * A room's name, its tabs, and the way back — in one place for every room.
@@ -31,6 +28,7 @@
 		title,
 		back,
 		backLabel = 'Back',
+		verbInTabs = false,
 		actions,
 		children
 	}: {
@@ -50,10 +48,14 @@
 		actions?: import('svelte').Snippet;
 		/** The room's tab strip, when it has one. */
 		children?: import('svelte').Snippet;
+		/**
+		 * Whether the room draws its own verb at the end of its tab strip.
+		 *
+		 * A room with tabs does — see `TabbedRoom`, where the verb sits with the
+		 * places it applies to. Without this it would be drawn twice.
+		 */
+		verbInTabs?: boolean;
 	} = $props();
-
-	/** The screen's primary verb, declared by whichever page is on screen. */
-	const room = $derived(roomAction());
 
 	/** The room's own glyph, found the way the bar below finds it: by path. */
 	const glyph = $derived(
@@ -83,43 +85,14 @@
 		<!--
 			The screen's one verb, in the corner every screen keeps it in.
 
-			Declared by the page through `$lib/room-action` rather than passed
-			down, because the page that knows what the verb is sits three
-			components below this bar — and the bar is the only place it is ever
-			drawn, which is what stops it wandering. Quiet rather than filled:
-			it is the room's own header, and a solid block of ink up here shouts
-			over the name beside it.
+			`RoomVerb` draws it; this is only where it goes. A room with tabs
+			puts it at the end of its tab strip instead and says so with
+			`verbInTabs`, so the verb and the places it applies to read as one
+			object rather than two rows of loose controls.
 		-->
-		{#if room}
+		{#if !verbInTabs}
 			<div class="ml-auto flex shrink-0 items-center gap-2">
-				{#if room.href}
-					<!-- Resolved by the page that declared it. -->
-					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-					<a href={room.href} class="btn btn-sm" data-tour={room.tour || undefined}>
-						<Icon name="plus" />
-						{room.label}
-					</a>
-				{:else}
-					<button
-						type="button"
-						class="btn btn-sm"
-						onclick={room.run}
-						data-tour={room.tour || undefined}
-					>
-						{#if !room.open}<Icon name="plus" />{/if}
-						{room.open ? t('ui.cancel') : room.label}
-						{#if room.kbd && !room.open}
-							<!-- The chip reads against the button it sits on: the quiet
-							     `.btn`, not the filled one it used to ride. Grey-100 on
-							     grey-600 flips with the ramp, so it is legible in both
-							     themes rather than in one. -->
-							<kbd
-								class="hidden border border-gray-300 bg-gray-100 px-1 text-xs text-gray-600 sm:inline"
-								>{room.kbd}</kbd
-							>
-						{/if}
-					</button>
-				{/if}
+				<RoomVerb />
 			</div>
 		{/if}
 		{#if actions}
