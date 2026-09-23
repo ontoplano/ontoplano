@@ -1254,17 +1254,23 @@
 								-->
 								{#if todo.notes}
 									<!--
-										The words under the title open it too.
+										The words under the title open it — and never shut it.
 
 										The title was the only thing that unfolded a task, and the
 										line under it — the one you are reading when you want the
-										rest — did nothing. It is a press now, wherever there is
-										something to unfold. A picture or a recording inside is
-										still its own control: the press is caught here rather than
-										bound to the whole block, so playing something does not
-										fold the row.
+										rest — did nothing, so the first line became a press too.
+										One direction only: once it is open, the whole note is a
+										paragraph somebody is reading, and reading it means
+										selecting a word, following a link, or simply putting the
+										cursor down in it. Every one of those folded it away. The
+										chevron and the title still shut it, which is where
+										somebody looks to.
+
+										A picture or a recording inside is still its own control:
+										the press is caught here rather than bound to the whole
+										block, so playing something does not fold the row.
 									-->
-									{#if hasMore(todo)}
+									{#if hasMore(todo) && !openNotes.has(todo.id)}
 										<!-- svelte-ignore a11y_click_events_have_key_events -->
 										<!-- svelte-ignore a11y_no_static_element_interactions -->
 										<div
