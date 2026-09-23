@@ -1629,7 +1629,9 @@ export type MessageKey =
 	| 'ratings.howMuchYouWantTo'
 	| 'ratings.howSoonThisHasTo'
 	| 'ratings.interest'
+	| 'ratings.labelNone'
 	| 'ratings.labelNotSet'
+	| 'ratings.labelValue'
 	| 'ratings.labelValueOf5'
 	| 'ratings.nthInLine'
 	| 'ratings.priority'
@@ -3485,7 +3487,9 @@ export interface MessageValuesFor {
 	'pictures.hint': { kilobytes: string | number };
 	'pictures.tooBig': { limit: string | number; name: string | number; size: string | number };
 	'ratingPicker.leaveUnanswered': { rating: string | number };
+	'ratings.labelNone': { label: string | number };
 	'ratings.labelNotSet': { label: string | number };
+	'ratings.labelValue': { label: string | number; value: string | number };
 	'ratings.labelValueOf5': { label: string | number; value: string | number };
 	'ratings.nthInLine': { nth: string | number };
 	'ratings.priorityScoreOf': { max: string | number; score: string | number };

@@ -170,12 +170,18 @@ export const RATING_LABELS: Record<Rating, PlainKey> = {
 };
 
 /**
- * The three, in words — "Urgency: 4 of 5 · Ease: not set · Interest: 3 of 5".
+ * The three, one per line — "Urgency 4 / Ease – / Interest 3".
  *
  * What the bars on a card say when somebody hovers them, and the only place
- * the numbers themselves appear outside the form that sets them. The bars are
- * a comparison; this is the reading, and putting it in one function keeps the
- * row, the card and anything that grows them later saying the same sentence.
+ * the numbers appear outside the form that sets them. One function, so the
+ * row, the card and anything that grows them later say the same thing.
+ *
+ * A line each rather than one run of text: three readings strung together
+ * with separators is a sentence to parse where it should be a table to
+ * glance at. And the scale is not repeated — the label says which question
+ * it is, everyone knows it goes to five, and "Urgency: 4 of 5 · Ease: not
+ * set · Interest: 3 of 5" was three quarters punctuation. An unset one is a
+ * dash, which is what the card draws for it too.
  */
 export function ratingSummary(
 	values: Partial<RatingValues>,
@@ -185,9 +191,9 @@ export function ratingSummary(
 		const label = t(RATING_LABELS[rating] as never);
 		const value = values[rating];
 		return value == null
-			? t('ratings.labelNotSet' as never, { label } as never)
-			: t('ratings.labelValueOf5' as never, { label, value } as never);
-	}).join(' · ');
+			? t('ratings.labelNone' as never, { label } as never)
+			: t('ratings.labelValue' as never, { label, value } as never);
+	}).join('\n');
 }
 
 export const RATING_HINTS: Record<Rating, PlainKey> = {
