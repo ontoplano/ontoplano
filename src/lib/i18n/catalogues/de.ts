@@ -465,7 +465,6 @@ export const messages: Catalogue = {
 	'finance.ledgers.clear': 'Leeren',
 	'finance.ledgers.coffee': 'Kaffee',
 	'finance.ledgers.currentAccount': 'Girokonto',
-	'finance.ledgers.dataValorIdentificadorDescrição': 'Data,Valor,Identificador,Descrição',
 	'finance.ledgers.datesAreDayFirst': 'Daten beginnen mit dem Tag — 02/03 ist der zweite März',
 	'finance.ledgers.day': 'Tag',
 	'finance.ledgers.delete': '{name} löschen',
@@ -508,6 +507,7 @@ export const messages: Catalogue = {
 	'finance.ledgers.none': '— keine —',
 	'finance.ledgers.nothingHereYet': 'Noch nichts hier',
 	'finance.ledgers.orPasteItBelow': 'oder unten einfügen',
+	'finance.ledgers.pasteExample': 'Date,Amount,Description\n02/03/2026,-12.30,Corner Bakery',
 	'finance.ledgers.preselectedWhenImportingIntoThis':
 		'Beim Import in diese Buchung vorausgewählt. Beim Import änderbar.',
 	'finance.ledgers.putItAway': 'Ablegen',

@@ -818,7 +818,7 @@
 					bind:value={statementText}
 					rows="7"
 					class="input w-full font-mono text-xs"
-					placeholder={t('finance.ledgers.dataValorIdentificadorDescrição')}
+					placeholder={t('finance.ledgers.pasteExample')}
 				></textarea>
 				<div>
 					<button class="btn btn-primary btn-sm" type="submit">{t('finance.ledgers.import')}</button

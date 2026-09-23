@@ -12,9 +12,9 @@ import type { Locale } from './locales.js';
 
 const UNTRANSLATED: Record<Locale, number> = {
 	en: 0,
-	'pt-BR': 74,
-	de: 74,
-	es: 74
+	'pt-BR': 75,
+	de: 75,
+	es: 75
 };
 
 export function untranslatedCount(locale: Locale): number {

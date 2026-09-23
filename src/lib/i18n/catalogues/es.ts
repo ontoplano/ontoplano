@@ -462,7 +462,6 @@ export const messages: Catalogue = {
 	'finance.ledgers.clear': 'Borrar',
 	'finance.ledgers.coffee': 'Café',
 	'finance.ledgers.currentAccount': 'Cuenta corriente',
-	'finance.ledgers.dataValorIdentificadorDescrição': 'Data,Valor,Identificador,Descrição',
 	'finance.ledgers.datesAreDayFirst':
 		'Las fechas van con el día primero — 02/03 es el dos de marzo',
 	'finance.ledgers.day': 'Día',
@@ -506,6 +505,7 @@ export const messages: Catalogue = {
 	'finance.ledgers.none': '— ninguno —',
 	'finance.ledgers.nothingHereYet': 'Todavía no hay nada aquí',
 	'finance.ledgers.orPasteItBelow': 'o pégalo abajo',
+	'finance.ledgers.pasteExample': 'Date,Amount,Description\n02/03/2026,-12.30,Corner Bakery',
 	'finance.ledgers.preselectedWhenImportingIntoThis':
 		'Preseleccionado al importar a este movimiento. Se puede cambiar al importar.',
 	'finance.ledgers.putItAway': 'Archivarlo',

@@ -319,6 +319,47 @@
 
 <div class="space-y-4">
 	<!--
+		First, because it is what people come here for.
+
+		It was the last section on a long page: somebody who wants the app dark
+		scrolled past the timezone, the notifications, the menu and the
+		dashboard to find it.
+	-->
+
+	<section class="border border-gray-200 bg-white p-6 shadow-card">
+		<div class="mb-4">
+			<h2 class="text-sm font-semibold text-gray-900">{t('settings.preferences.appearance')}</h2>
+			<p class="mt-1 text-sm text-gray-500">
+				{t('settings.preferences.ldquoSystemRdquoUsesWhateverYourDevice')}
+			</p>
+		</div>
+
+		<form
+			method="post"
+			action="?/setTheme"
+			data-tour="prefs-theme"
+			use:enhance={({ formData }) => {
+				// <html> is outside the component tree, so `update()` will not touch it.
+				const chosen = formData.get('theme')?.toString();
+				if (chosen) document.documentElement.dataset.theme = chosen;
+				return async ({ update }) => update({ reset: false });
+			}}
+			use:sliding
+			class="seg"
+		>
+			{#each THEMES as option (option)}
+				<button type="submit" name="theme" value={option} aria-pressed={data.theme === option}>
+					{option === 'system'
+						? t('app.matchMyDevice')
+						: option === 'light'
+							? t('app.light')
+							: t('app.dark')}
+				</button>
+			{/each}
+		</form>
+	</section>
+
+	<!--
 		Where you are and how you read a clock, in one place.
 		
 		The language, the 12/24 clock, the timezone, the first day of the week,
@@ -1201,49 +1242,6 @@
 				>
 					<span class="block text-sm font-semibold text-gray-900">{t(option.label)}</span>
 					<span class="mt-1 block text-xs text-gray-500">{t(option.hint)}</span>
-				</button>
-			{/each}
-		</form>
-	</section>
-
-	<!--
-		The language, above Appearance because it changes every other word on
-		the page and somebody who cannot read the page is looking for this one.
-	-->
-
-	<!--
-		The clock, under the language because it is a question the language has
-		usually already answered — see `$lib/when`.
-	-->
-
-	<section class="border border-gray-200 bg-white p-6 shadow-card">
-		<div class="mb-4">
-			<h2 class="text-sm font-semibold text-gray-900">{t('settings.preferences.appearance')}</h2>
-			<p class="mt-1 text-sm text-gray-500">
-				{t('settings.preferences.ldquoSystemRdquoUsesWhateverYourDevice')}
-			</p>
-		</div>
-
-		<form
-			method="post"
-			action="?/setTheme"
-			data-tour="prefs-theme"
-			use:enhance={({ formData }) => {
-				// <html> is outside the component tree, so `update()` will not touch it.
-				const chosen = formData.get('theme')?.toString();
-				if (chosen) document.documentElement.dataset.theme = chosen;
-				return async ({ update }) => update({ reset: false });
-			}}
-			use:sliding
-			class="seg"
-		>
-			{#each THEMES as option (option)}
-				<button type="submit" name="theme" value={option} aria-pressed={data.theme === option}>
-					{option === 'system'
-						? t('app.matchMyDevice')
-						: option === 'light'
-							? t('app.light')
-							: t('app.dark')}
 				</button>
 			{/each}
 		</form>
