@@ -3282,6 +3282,7 @@ export const messages: Catalogue = {
 	'todoRows.showCompleted': 'Show completed',
 	'todoRows.showCompletedCount': 'Show completed ({count})',
 	'todoRows.showingCount': { one: '{count} task showing', other: '{count} tasks showing' },
+	'todoRows.tagged': 'Tagged',
 	'todoRows.taggedAgo': 'Labelled {ago}',
 	'todoRows.takeItBackOut': 'Take it back out',
 	'todoRows.taskAdded': 'Task added',

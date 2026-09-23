@@ -402,12 +402,13 @@
 	 * you most want to do — and it is `$lib/ratings` doing the reading, so this
 	 * list and the `up_next` an assistant asks cannot disagree about it.
 	 */
-	const ORDERS = ['created', 'done', 'priority'] as const;
+	const ORDERS = ['created', 'tagged', 'done', 'priority'] as const;
 	type Order = (typeof ORDERS)[number];
 
 	/* The field's name only: which way it runs is the arrow's business now. */
 	const ORDER_LABELS: Record<Order, PlainKey> = {
 		created: 'todoRows.added',
+		tagged: 'todoRows.tagged',
 		done: 'todoRows.done',
 		priority: 'todoRows.priority'
 	};
@@ -462,6 +463,30 @@
 		remember();
 	}
 
+	/**
+	 * When a task was last labelled — the newest label on it, or nothing.
+	 *
+	 * The join carries the date each label went on, which is the whole reason
+	 * it has one: a list of labels says what is true and says nothing about
+	 * what is new. This is the reading that uses it.
+	 */
+	function lastTagged(todo: Todo): string | null {
+		let newest: string | null = null;
+		for (const tag of todo.tags)
+			if (tag.taggedAt && (!newest || tag.taggedAt > newest)) newest = tag.taggedAt;
+		return newest;
+	}
+
+	/** Labelled most recently first; the ones nobody has labelled after them. */
+	function byLastTagged(a: Todo, b: Todo): number {
+		const left = lastTagged(a);
+		const right = lastTagged(b);
+		if (!left && !right) return 0;
+		if (!left) return 1;
+		if (!right) return -1;
+		return right.localeCompare(left);
+	}
+
 	/** Finished first, newest of them at the top; the rest as they were. */
 	function byLastDone(a: Todo, b: Todo): number {
 		if (!a.completedAt && !b.completedAt) return 0;
@@ -499,6 +524,11 @@
 					(t.notes ?? '').toLowerCase().includes(wanted.toLowerCase()) ||
 					t.tags.some((one) => one.name.includes(wanted.toLowerCase()))
 			);
+		}
+
+		if (order === 'tagged') {
+			const tagged = [...shown].sort(byLastTagged);
+			return direction === 'asc' ? tagged.reverse() : tagged;
 		}
 
 		if (order === 'done') {

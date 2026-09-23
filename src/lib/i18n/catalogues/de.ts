@@ -3385,6 +3385,7 @@ export const messages: Catalogue = {
 	'todoRows.showCompleted': 'Abgeschlossene anzeigen',
 	'todoRows.showCompletedCount': 'Erledigte zeigen ({count})',
 	'todoRows.showingCount': { one: '{count} Aufgabe sichtbar', other: '{count} Aufgaben sichtbar' },
+	'todoRows.tagged': 'Gelabelt',
 	'todoRows.taggedAgo': 'Beschriftet {ago}',
 	'todoRows.takeItBackOut': 'Wieder herausnehmen',
 	'todoRows.taskAdded': 'Aufgabe erstellt',

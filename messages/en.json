@@ -3076,6 +3076,7 @@
 		"one": "{count} task showing",
 		"other": "{count} tasks showing"
 	},
+	"todoRows.tagged": "Tagged",
 	"todoRows.taggedAgo": "Labelled {ago}",
 	"todoRows.takeItBackOut": "Take it back out",
 	"todoRows.taskAdded": "Task added",

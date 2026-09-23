@@ -2884,6 +2884,7 @@ export type MessageKey =
 	| 'todoRows.showCompleted'
 	| 'todoRows.showCompletedCount'
 	| 'todoRows.showingCount'
+	| 'todoRows.tagged'
 	| 'todoRows.taggedAgo'
 	| 'todoRows.takeItBackOut'
 	| 'todoRows.taskAdded'
