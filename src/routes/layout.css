@@ -229,6 +229,31 @@ input[type='radio'] {
 }
 
 /*
+ * And the room under it is square along the top, because the track sits on it.
+ *
+ * Both are `<div>`s, so the playful style's blanket radius rounds them from
+ * outside the layer and nothing inside the layer can outrank it. The notch
+ * that leaves at each end of the join is the single thing in this app he has
+ * pointed at most often.
+ */
+.room-body,
+/*
+ * …and whatever is actually at the top of it.
+ *
+ * The thing the track meets is rarely the body's own first child: pages wrap
+ * their content in a spacing div or two, and the card with the section's
+ * accent stripe down its side sits inside that. A curve there leaves the
+ * stripe bending away from the edge it is meant to run down, which is the
+ * orange hook at the top of the notebooks list.
+ */
+.room-body > :first-child,
+.room-body > :first-child > :first-child,
+.room-body > :first-child > :first-child > :first-child {
+	border-start-start-radius: 0 !important;
+	border-start-end-radius: 0 !important;
+}
+
+/*
  * And on a phone it has no corners at all: the room runs to both screen edges
  * there, so the track does too, and a corner against the edge of the screen is
  * a notch of whatever is behind showing through. Same rule as the shell.
@@ -4306,20 +4331,6 @@ html[data-style='playful'] .room-surface {
 	min-height: 12rem;
 	background-color: var(--color-white);
 	border-top: 1px solid var(--color-gray-200);
-}
-
-/*
- * And whatever is first in it is square along the top.
- *
- * The track above has a square bottom edge because it sits on the room. If the
- * first thing in the room is rounded, the two do not meet: there is a notch of
- * the page's ground at each end of the join, which is the corner he circled on
- * the diary's tag row. Two shapes that share an edge cannot both have corners
- * on it, and the one that keeps them is the one above.
- */
-.room-body > :first-child {
-	border-start-start-radius: 0 !important;
-	border-start-end-radius: 0 !important;
 }
 
 .scroll-hints {
