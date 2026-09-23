@@ -171,6 +171,32 @@ describe('what a key tied to one notebook can do', () => {
 		expect(failed(call('write_entry', { content: 'the electrician comes Tuesday' }))).toBe(false);
 		expect(failed(call('change_goal', { id: inside.goal, notes: 'quotes first' }))).toBe(false);
 	});
+
+	/*
+	 * The three reads a confined key is likeliest to be missing, named.
+	 *
+	 * `todos` being offered says nothing about the rest: these are the ones
+	 * that answer "what should I do next", "which notebooks are there" and
+	 * "show me that picture", and an assistant without them has to read the
+	 * whole list and sort it itself — which is what it was doing, on a key
+	 * that was supposed to have them. They are asserted one by one rather than
+	 * as a count, so a regression names which one went.
+	 */
+	it('is offered the reads that make it useful, by name', () => {
+		const offered = visibleTools({
+			ctx: ctx(),
+			scopes: Object.keys(SCOPES),
+			confinement: { kind: 'notebook', id: mine }
+		} as never).map((t: { name: string }) => t.name);
+		for (const name of ['todos', 'up_next', 'notebooks', 'notebook_notes', 'media'])
+			expect(offered, `${name} is missing from a confined key's tool list`).toContain(name);
+	});
+
+	it('can actually call the one that says what to do next', () => {
+		// Being offered it and being able to call it are two promises, and the
+		// second is the one an assistant finds out about.
+		expect(failed(call('up_next', {}))).toBe(false);
+	});
 });
 
 describe('what it cannot do', () => {
