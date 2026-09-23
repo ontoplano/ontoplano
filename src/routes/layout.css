@@ -4414,15 +4414,33 @@ html[data-style='playful'] .room-surface {
 }
 
 /*
- * The tab you are on is the one in full ink.
+ * A room's tabs read at the size they always did.
  *
- * The rest of the strip is muted, which is what `.seg` does to a position you
- * are not on; this is the other half of it, said with weight rather than with
- * a tile. A row of places is chrome, and chrome should be still.
+ * `.seg` sets its choices a step smaller than body text, which is right for a
+ * control sitting in a form and wrong for the names of the places in a room —
+ * they were the one thing on the strip somebody reads from across the desk.
+ */
+.room-tabs .seg-scroll > a {
+	font-size: 0.875rem;
+	padding-block: 0.5rem;
+}
+
+/*
+ * And the one you are on is in full ink, in weight, and underlined in the
+ * room's own colour.
+ *
+ * The weight alone was not enough — six words in a row with one of them a
+ * little darker is a difference you have to go looking for. The line is what
+ * the strip has always used to say where you are, and it says it at a glance.
+ *
+ * Drawn as an inset shadow rather than a border so that turning it on moves
+ * nothing: a border would make the tab you are on two pixels taller than the
+ * five beside it.
  */
 .room-tabs .seg-scroll > [aria-current='page'] {
 	color: var(--color-gray-900);
 	font-weight: 700;
+	box-shadow: inset 0 -2px 0 var(--section-accent, var(--color-gray-900));
 }
 
 /*

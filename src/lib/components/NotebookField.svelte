@@ -17,29 +17,41 @@
 		notebooks,
 		value = $bindable(null),
 		span = 6,
-		name = 'notebookId'
+		name = 'notebookId',
+		label = '',
+		noneLabel = ''
 	}: {
-		notebooks: { id: number; title: string }[];
+		notebooks: { id: number; title: string; defaultTags?: string }[];
 		value?: number | null;
 		span?: 3 | 4 | 6 | 8 | 12;
 		name?: string;
+		/** What the field is called. "Notebook" unless the caller says otherwise. */
+		label?: string;
+		/**
+		 * What "in no notebook" is called here.
+		 *
+		 * Usually nothing — a thing filed nowhere is filed nowhere. A note is
+		 * the exception: one in no notebook is in the diary, which is a place
+		 * rather than the absence of one, and "— none —" said the opposite.
+		 */
+		noneLabel?: string;
 	} = $props();
 </script>
 
 {#if notebooks.length > 0}
-	<Field label={t('ui.notebook')} {span}>
+	<Field label={label || t('ui.notebook')} {span}>
 		<Picker
 			{name}
 			value={String(value ?? '')}
 			onpick={(picked) => (value = picked === '' ? null : Number(picked))}
 			options={[
-				{ value: '', label: t('ui.none') },
+				{ value: '', label: noneLabel || t('ui.none') },
 				...notebooks.map((notebook) => ({
 					value: String(notebook.id),
 					label: notebook.title
 				}))
 			]}
-			label={t('ui.notebook')}
+			label={label || t('ui.notebook')}
 		/>
 	</Field>
 {/if}
