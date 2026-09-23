@@ -1094,11 +1094,11 @@
 			</label>
 		{/snippet}
 
-		{#snippet trailing()}
+		{#snippet count()}
 			<!-- How many are on screen right now — the toggles say what is hidden
 			     and nothing said what is left. -->
 			<span
-				class="tabular shrink-0 self-center text-xs text-gray-500 sm:ml-auto"
+				class="tabular shrink-0 self-center text-xs text-gray-500"
 				title={t('notebookDetail.showingCount', { count: shownNotes.length })}
 			>
 				<span class="sm:hidden">{shownNotes.length}</span>
@@ -1106,6 +1106,9 @@
 					>{t('notebookDetail.showingCount', { count: shownNotes.length })}</span
 				>
 			</span>
+		{/snippet}
+
+		{#snippet trailing()}
 			{@render orderControl()}
 		{/snippet}
 

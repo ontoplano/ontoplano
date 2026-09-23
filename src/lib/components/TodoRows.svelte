@@ -888,9 +888,10 @@
 							/>
 						</label>
 					{/snippet}
-					{#snippet trailing()}
+					{#snippet count()}
 						<!--
-					How many rows are on screen right now.
+					How many rows are on screen right now, beside the button that
+					narrowed them.
 
 					The two toggles say how many are hidden — archived, completed —
 					and nothing said how many are left, so a list narrowed by a
@@ -898,7 +899,7 @@
 					actually looking at.
 				-->
 						<span
-							class="tabular shrink-0 self-center text-xs text-gray-500 sm:ml-auto"
+							class="tabular shrink-0 self-center text-xs text-gray-500"
 							title={t('todoRows.showingCount', { count: visibleTodos.length })}
 						>
 							<span class="sm:hidden">{visibleTodos.length}</span>
@@ -906,18 +907,18 @@
 								>{t('todoRows.showingCount', { count: visibleTodos.length })}</span
 							>
 						</span>
-						<div>
-							<!-- The same control a notebook's notes use. See `SortControl`. -->
-							<SortControl
-								value={order}
-								options={ORDERS}
-								labels={ORDER_LABELS}
-								{direction}
-								onpick={pickOrder}
-								onflip={flipDirection}
-								label={t('todoRows.orderTasksBy')}
-							/>
-						</div>
+					{/snippet}
+					{#snippet trailing()}
+						<!-- The same control a notebook's notes use. See `SortControl`. -->
+						<SortControl
+							value={order}
+							options={ORDERS}
+							labels={ORDER_LABELS}
+							{direction}
+							onpick={pickOrder}
+							onflip={flipDirection}
+							label={t('todoRows.orderTasksBy')}
+						/>
 					{/snippet}
 					<button
 						onclick={() => (showCompleted = !showCompleted)}
