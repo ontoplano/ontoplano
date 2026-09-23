@@ -18,15 +18,44 @@
 export type Overflows = (yes: boolean) => void;
 
 export function overflows(el: HTMLElement, tell: Overflows) {
+	/*
+	 * What was last reported, so the same answer is not sent twice.
+	 *
+	 * Kept across `update`: a caller writing `use:overflows={(over) => …}`
+	 * hands over a new closure on every render, and re-measuring on each one
+	 * meant reporting, which re-rendered, which handed over another closure.
+	 * The callback is swapped; the answer is not re-asked.
+	 */
 	let told: boolean | null = null;
+	let answer = tell;
+
+	/*
+	 * How tall the text would be with nothing cut off.
+	 *
+	 * `scrollHeight` cannot answer this for the clamp the app actually uses: a
+	 * `-webkit-box` with `line-clamp` reports the clamped height as both its
+	 * client and its scroll height, so a paragraph cut to one line looks
+	 * exactly like a paragraph that is one line. The clamp is lifted for the
+	 * length of one measurement and put straight back, with no chance to paint
+	 * in between — the read is synchronous.
+	 *
+	 * `''` rather than the old value, because the clamp is a class rather than
+	 * an inline style: emptying the property is what hands it back.
+	 */
+	const naturalHeight = () => {
+		el.style.webkitLineClamp = 'unset';
+		const tall = el.scrollHeight;
+		el.style.webkitLineClamp = '';
+		return tall;
+	};
 
 	const measure = () => {
 		// A pixel of slack: sub-pixel line heights make an unclamped element
-		// report a scrollHeight a fraction taller than its box, forever.
-		const over = el.scrollHeight - el.clientHeight > 1 || el.scrollWidth - el.clientWidth > 1;
+		// report a height a fraction taller than its box, forever.
+		const over = naturalHeight() - el.clientHeight > 1 || el.scrollWidth - el.clientWidth > 1;
 		if (over === told) return;
 		told = over;
-		tell(over);
+		answer(over);
 	};
 
 	const sized = new ResizeObserver(measure);
@@ -40,9 +69,7 @@ export function overflows(el: HTMLElement, tell: Overflows) {
 
 	return {
 		update(next: Overflows) {
-			tell = next;
-			told = null;
-			measure();
+			answer = next;
 		},
 		destroy() {
 			cancelAnimationFrame(frame);
