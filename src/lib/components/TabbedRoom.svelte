@@ -4,7 +4,6 @@
 	import { navigating, page } from '$app/state';
 	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { scrollHints } from '$lib/actions/scroll-hints';
-	import { sliding } from '$lib/actions/sliding';
 	import RoomVerb from '$lib/components/RoomVerb.svelte';
 	import { phoneWidth } from '$lib/breakpoints.svelte';
 	import { onSwipe } from '$lib/swipe';
@@ -243,7 +242,6 @@
 			<div class="seg seg-track min-w-0">
 				<nav
 					use:scrollHints
-					use:sliding
 					class="seg-scroll scroll-hints"
 					aria-label={label}
 					data-tour={dataTour}
@@ -258,15 +256,19 @@
 					{/each}
 					<!-- eslint-enable svelte/no-navigation-without-resolve -->
 				</nav>
-			</div>
-			<!--
-				And on a phone it goes back up beside the name.
+				<!--
+					The verb stands on the same ground as the tabs.
 
-				There is no room for it at the end of the strip across 390px: the
-				tabs had to give way to it and half of them ended up behind the
-				fade. The title line has the space and nothing else in it.
-			-->
-			{#if !phone.current}<RoomVerb />{/if}
+					It was a sibling of the track, so it sat on the page behind with
+					the track's surface stopping short of it — two objects on one
+					line rather than one strip with a button at the end.
+
+					On a phone it goes back up beside the room's name: there is no
+					room for it here across 390px, where the tabs would have to give
+					way and half of them would end up behind the fade.
+				-->
+				{#if !phone.current}<RoomVerb />{/if}
+			</div>
 		</div>
 	</RoomBar>
 

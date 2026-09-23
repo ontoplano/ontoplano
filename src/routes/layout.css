@@ -4246,6 +4246,18 @@ html[data-style='playful'] .room-surface {
 }
 
 /*
+ * The tab you are on is the one in full ink.
+ *
+ * The rest of the strip is muted, which is what `.seg` does to a position you
+ * are not on; this is the other half of it, said with weight rather than with
+ * a tile. A row of places is chrome, and chrome should be still.
+ */
+.room-tabs .seg-scroll > [aria-current='page'] {
+	color: var(--color-gray-900);
+	font-weight: 700;
+}
+
+/*
  * The first tab is not flush against the side of the screen.
  *
  * On a phone the track runs to both edges, so without this the word
@@ -4254,6 +4266,16 @@ html[data-style='playful'] .room-surface {
 @media (width < 40rem) {
 	.room-tabs .seg-scroll {
 		padding-inline: 0.75rem;
+	}
+}
+
+/*
+ * A room whose strip is buttons rather than tabs pads itself, since it has no
+ * track to do it — Inventory's shopping list is one button on the bar.
+ */
+@media (width < 40rem) {
+	.room-tabs:not(:has(.seg-track)) {
+		padding-inline: 1rem;
 	}
 }
 
@@ -4284,6 +4306,20 @@ html[data-style='playful'] .room-surface {
 	min-height: 12rem;
 	background-color: var(--color-white);
 	border-top: 1px solid var(--color-gray-200);
+}
+
+/*
+ * And whatever is first in it is square along the top.
+ *
+ * The track above has a square bottom edge because it sits on the room. If the
+ * first thing in the room is rounded, the two do not meet: there is a notch of
+ * the page's ground at each end of the join, which is the corner he circled on
+ * the diary's tag row. Two shapes that share an edge cannot both have corners
+ * on it, and the one that keeps them is the one above.
+ */
+.room-body > :first-child {
+	border-start-start-radius: 0 !important;
+	border-start-end-radius: 0 !important;
 }
 
 .scroll-hints {

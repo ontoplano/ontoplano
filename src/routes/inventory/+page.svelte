@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { pillStyle } from '$lib/pill-ink';
 	import RoomBar from '$lib/components/RoomBar.svelte';
-	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import { enhance } from '$lib/enhance';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -1021,27 +1020,30 @@
 		are in and what it hides are a row along the top of the panel they
 		filter, which can wrap in peace.
 	-->
-	<RoomBar title={t('inventory.inventory')} />
+	<RoomBar title={t('inventory.inventory')}>
+		<!--
+			The list you actually take to the shop.
 
-	<!--
-		The list you actually take to the shop.
+			The room is the cupboard: what you have, where it lives, how much you
+			keep. This is the one reading of it that is not about any of that —
+			it is the trip, and it is worth a button of its own rather than being
+			assembled in somebody's head from the rows above.
 
-		The room is the cupboard: what you have, where it lives, how much you
-		keep. This is the one reading of it that is not about any of that — it
-		is the trip, and it is worth a button of its own rather than being
-		assembled in somebody's head from the rows above.
-	-->
-	<RoomToolbar>
-		{#snippet tools()}
-			<button class="btn btn-primary" onclick={() => (showRun = true)}>
+			In the bar rather than on a strip of page ground under it. Every room
+			with tabs puts its controls on the bar and its body flush underneath;
+			this one had a band of the section's colour between the two with a
+			button floating in it, which is the one room that broke the run.
+		-->
+		<div class="room-tabs">
+			<button class="btn btn-sm" onclick={() => (showRun = true)}>
 				<Icon name="shopping" />
 				{t('inventory.shoppingList2')}
 				{#if data.run.lines.length > 0}
 					<span class="tabular text-xs opacity-80">{data.run.lines.length}</span>
 				{/if}
 			</button>
-		{/snippet}
-	</RoomToolbar>
+		</div>
+	</RoomBar>
 
 	{#if !online || ticks.pending.length > 0}
 		<Banner kind="warning">
@@ -1253,7 +1255,7 @@
 		leaves the scroll where the reader left it; the cards reflow under the
 		heading, which is what a fold is supposed to look like.
 	-->
-	<div class="border border-gray-200 bg-white shadow-card [overflow-anchor:none]">
+	<div class="room-body [overflow-anchor:none]">
 		<!--
 			Three kinds of thing, so they look like three: which list you are in
 			(one setting, one track), what it hides (two quiet toggles), and a way
