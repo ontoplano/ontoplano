@@ -761,10 +761,24 @@ Make a notebook — a subject written against with no deadline: a book, a trip, 
 
 _Needs `notes:write`; writes._
 
-| Parameter     | Type   | Required | What it is                                 |
-| ------------- | ------ | -------- | ------------------------------------------ |
-| `title`       | string | yes      | What it is about.                          |
-| `description` | string | —        | A line under the title, shown on its page. |
+| Parameter     | Type   | Required | What it is                                                                                                                                                                                                          |
+| ------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`       | string | yes      | What it is about.                                                                                                                                                                                                   |
+| `description` | string | —        | A line under the title, shown on its page.                                                                                                                                                                          |
+| `defaultTags` | string | —        | Labels a new note in it starts with, comma or space separated — the ones writing about this subject always carries, so nobody types them on every note. The person can still take them off a note as they write it. |
+
+### `change_notebook` — Change a notebook
+
+Rename a notebook, rewrite the line under its title, or set the labels a new note in it starts with. The title is always sent; the other two change only when given.
+
+_Needs `notes:write`; writes._
+
+| Parameter     | Type    | Required | What it is                                                                                                                |
+| ------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | integer | yes      | The notebook’s id, as `notebooks` gives it.                                                                               |
+| `title`       | string  | yes      | What it is about. Renaming with the — separator moves it under another.                                                   |
+| `description` | string  | —        | A line under the title, shown on its page.                                                                                |
+| `defaultTags` | string  | —        | Labels a new note in it starts with, comma or space separated. An empty string clears them; left out, they are untouched. |
 
 ### `remove_notebook` — Remove an empty notebook
 

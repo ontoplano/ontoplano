@@ -54,7 +54,7 @@ exist.
 | [`media_tags`](#media_tags)                                 | 4       | yes               |
 | [`model_provider_keys`](#model_provider_keys)               | 9       | yes               |
 | [`newsletter_issues`](#newsletter_issues)                   | 6       | —                 |
-| [`notebooks`](#notebooks)                                   | 9       | yes               |
+| [`notebooks`](#notebooks)                                   | 10      | yes               |
 | [`oauth_clients`](#oauth_clients)                           | 7       | —                 |
 | [`oauth_codes`](#oauth_codes)                               | 11      | yes               |
 | [`people`](#people)                                         | 12      | yes               |
@@ -956,6 +956,7 @@ Indexes:
 | `title`              | text    | not null | —                     | —                 |
 | `description`        | text    | null     | `''`                  | —                 |
 | `picture_id`         | integer | null     | —                     | → `media.id`      |
+| `default_tags`       | text    | not null | `''`                  | —                 |
 | `shared_with_family` | integer | not null | `false`               | —                 |
 | `closed_at`          | text    | null     | —                     | —                 |
 | `created_at`         | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |

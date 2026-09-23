@@ -608,7 +608,17 @@ is worse than a vague one.
 
 `data_point` → `dataPoint`, which is how the catalogue spells its nouns.
 
-#### `summarise(tools, token, t)`
+#### `subjectName(write)`
+
+What the thing a write was about is called, if anything says.
+
+`before` first, because it is the row as it stood and a rename would
+otherwise announce the new name as though it were the old one; then the
+arguments, which is where a create's title lives since there was no row to
+read. Null when neither says — a reminder set by time has no name, and
+counting it is better than inventing one.
+
+#### `summarise(writes, token, t)`
 
 A burst of calls, as the line a person reads, in their own language.
 
@@ -646,6 +656,7 @@ done. Used when the preference is turned on.
 ### Types
 
 - `Phrase` — A verb's catalogue key, and the noun it acts on, as the identifier spells it.
+- `Written` — One write, as much of it as is known.
 - `SweepResult`
 
 ## attack-watch
@@ -3360,6 +3371,14 @@ Everything pointed at this notebook, in the three shapes it can arrive in.
 #### `createNotebook(ctx, raw)`
 
 #### `updateNotebook(ctx, id, raw)`
+
+#### `defaultTagsOf(ctx, notebookId)`
+
+The labels a new note in this notebook should start with.
+
+Empty for a note filed nowhere, and empty for a notebook nobody set any on,
+which is the same answer and wants no distinction. Reads the column rather
+than the whole notebook: this runs on every note written.
 
 #### `setNotebookClosed(ctx, id, closed)`
 
