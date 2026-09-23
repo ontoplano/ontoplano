@@ -1,20 +1,24 @@
 import type { Page } from '@playwright/test';
 
 /**
- * The controls that narrow a task list live behind one fold button now — see
- * `FilterBar`. A spec reaches for this before pressing anything that folds:
- * the completed and archived toggles, the notebook picker, the tag picker.
- * Opening is idempotent, so a spec that has already unfolded loses nothing.
+ * The controls that narrow a list are out on the page wherever there is room
+ * for them — see `FilterBar` — and behind one button on a phone, where there
+ * is not. A spec reaches for this before pressing one of them: it opens the
+ * phone's sheet and does nothing at all on a wider screen, so the same spec
+ * reads the same way at both widths.
  */
 export async function openFilters(page: Page, name = 'tasks'): Promise<void> {
-	const fold = page.locator(`[aria-controls="${name}-filters"]`);
-	if ((await fold.getAttribute('aria-expanded')) === 'false') await fold.click();
+	const controls = page.locator(`#${name}-filters`);
+	if (await controls.isVisible().catch(() => false)) return;
+
+	const sheet = page.locator('.filter-toggle');
+	if ((await sheet.count()) > 0) await sheet.first().click();
 }
 
 /**
- * The same fold over a notebook's notes, which grew one when that strip was
- * made to match the tasks tab beside it — same search box, same order, same
- * controls behind the same button.
+ * The same over a notebook's notes, which grew the same strip when that tab
+ * was made to match the tasks tab beside it — same search box, same count,
+ * same order, same controls.
  */
 export async function openNoteFilters(page: Page): Promise<void> {
 	await openFilters(page, 'notes');
