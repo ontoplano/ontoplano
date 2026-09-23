@@ -866,19 +866,10 @@
 					onclear={clearFilters}
 				>
 					{#snippet lead()}
-						<!--
-					A row of its own on a phone.
-
-					Seven controls do not fit across 390px and the toolbar wrapped to
-					three rows, which is the thing the note above it says it exists to
-					prevent. The search box is the one you type into rather than
-					press, so it takes the first line whole and the six small controls
-					wrap under it — two rows instead of three, and a target the width
-					of the screen for the one that wants a keyboard.
-				-->
-						<label
-							class="order-first w-full min-w-32 sm:order-none sm:w-auto sm:max-w-56 sm:flex-1"
-						>
+						<!-- The box fills the slot; how wide that slot is belongs to
+						     `FilterBar`, so this tab and the Notes tab beside it are
+						     the same shape. -->
+						<label class="block w-full">
 							<span class="sr-only">{t('todoRows.searchTheseTasks')}</span>
 							<input
 								type="search"
