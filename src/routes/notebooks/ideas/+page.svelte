@@ -5,7 +5,8 @@
 	import { enhance } from '$lib/enhance';
 	import FilterChips from '$lib/components/FilterChips.svelte';
 	import TagChip from '$lib/components/TagChip.svelte';
-	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import { SECTION_COLORS } from '$lib/colors';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import FormError from '$lib/components/FormError.svelte';
@@ -175,101 +176,6 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<!--
-		The tags fold away, and start folded.
-
-		Every tag anybody has ever used, above everything, is a wall of chips
-		between the page and the ideas — and an idea list gathers tags faster than
-		almost anything else here. It is a filter, which is something you go
-		looking for; the ideas are what the page is.
-
-		The one it is filtered by stays visible while the rest are folded, or
-		closing the list would hide the fact that a filter is on.
-	-->
-	{#if data.allTags.length > 0}
-		<div class="space-y-2">
-			<button
-				type="button"
-				onclick={() => (tagsOpen = !tagsOpen)}
-				class="flex items-center gap-1.5 text-xs font-medium tracking-wide text-gray-500 uppercase hover:text-gray-900"
-				aria-expanded={tagsOpen}
-			>
-				<Icon name={tagsOpen ? 'chevron-down' : 'chevron-right'} size={14} />
-				{t('ui.tags')}
-				<span class="text-gray-500">({data.allTags.length})</span>
-			</button>
-
-			{#if filterTag && !tagsOpen}
-				<div class="flex flex-wrap items-center gap-2">
-					<TagChip name={filterTag} active />
-					<button
-						onclick={() => {
-							filterTag = null;
-							selectedIndex = 0;
-						}}
-						class="border border-gray-200 bg-white px-2 py-0.5 text-xs text-gray-500 transition hover:text-gray-600"
-					>
-						{t('notebooks.ideas.clear')}
-					</button>
-				</div>
-			{/if}
-		</div>
-	{/if}
-
-	{#if data.allTags.length > 0 && tagsOpen}
-		<div class="flex flex-wrap gap-2">
-			{#each data.allTags as tag (tag.id)}
-				<TagChip
-					name={tag.name}
-					active={filterTag === tag.name}
-					onclick={() => {
-						filterTag = filterTag === tag.name ? null : tag.name;
-						selectedIndex = 0;
-					}}
-				/>
-			{/each}
-			{#if filterTag}
-				<button
-					onclick={() => {
-						filterTag = null;
-						selectedIndex = 0;
-					}}
-					class="border border-gray-200 bg-white px-2 py-0.5 text-xs text-gray-500 transition hover:text-gray-600"
-				>
-					{t('notebooks.ideas.clear')}
-				</button>
-			{/if}
-		</div>
-	{/if}
-
-	<!-- Two rows of filters over an empty list is chrome with nothing to act on. -->
-	{#if data.ideas.length > 0}
-		<RoomToolbar>
-			{#snippet filters()}
-				<FilterChips
-					label={t('notebooks.ideas.applied')}
-					bind:value={filterApplied}
-					onchange={() => (selectedIndex = 0)}
-					options={[
-						{ value: 'all', label: 'ui.all' },
-						{ value: 'applied', label: 'notebooks.ideas.applied' },
-						{ value: 'not-applied', label: 'notebooks.ideas.notApplied' }
-					]}
-				/>
-				<FilterChips
-					label={t('notebooks.ideas.favourite')}
-					bind:value={filterFavorite}
-					onchange={() => (selectedIndex = 0)}
-					options={[
-						{ value: 'all', label: 'ui.all' },
-						{ value: 'favorite', label: 'notebooks.ideas.favourites' },
-						{ value: 'not-favorite', label: 'notebooks.ideas.notFavourite' }
-					]}
-				/>
-			{/snippet}
-		</RoomToolbar>
-	{/if}
-
 	<FormError message={form?.message} />
 
 	<Modal
@@ -337,231 +243,338 @@
 			They are one list, so they sit on one surface with a hairline between
 			them — the same shape the todo list and the activities list have.
 		-->
-		<div
-			class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card"
-			data-tour="idea-list"
-		>
-			{#each filteredIdeas as idea, i (idea.id)}
-				<div
-					use:keepInView={i === clampedSelectedIndex}
-					class="relative p-4 {i === clampedSelectedIndex ? 'kb-cursor' : ''}"
-				>
-					<div class="mb-2 flex items-start gap-4">
-						<form
-							method="post"
-							action="?/toggleFavorite"
-							data-favorite-toggle-id={idea.id}
-							use:enhance
-						>
-							<input type="hidden" name="id" value={idea.id} />
-							<button
-								type="submit"
-								class="mt-0.5 text-lg leading-none transition {idea.favorite
-									? 'text-amber-600 hover:text-amber-700'
-									: 'text-gray-300 hover:text-amber-600'}"
-								aria-label={idea.favorite
-									? t('notebooks.ideas.removeFavorite')
-									: t('notebooks.ideas.markAsFavorite')}
+		<!--
+			The controls and the ideas are one object — see `RoomSurface`. They
+			were two: a fold of tags and two rows of chips on the page's own
+			patterned ground, then a gap, then a card of rows.
+		-->
+		<RoomSurface accent={SECTION_COLORS.ideas} dataTour="idea-list">
+			{#snippet tools()}
+				<!--
+					The tags fold away, and start folded.
+
+					Every tag anybody has ever used, above everything, is a wall of
+					chips between the page and the ideas — and an idea list gathers
+					tags faster than almost anything else here. It is a filter,
+					which is something you go looking for; the ideas are what the
+					page is.
+
+					The one it is filtered by stays visible while the rest are
+					folded, or closing the list would hide that a filter is on.
+				-->
+				{@render ideaTags()}
+			{/snippet}
+			{#snippet filters()}
+				{#if data.ideas.length > 0}{@render ideaFilters()}{/if}
+			{/snippet}
+			<div class="divide-y divide-gray-200">
+				{#each filteredIdeas as idea, i (idea.id)}
+					<div
+						use:keepInView={i === clampedSelectedIndex}
+						class="relative p-4 {i === clampedSelectedIndex ? 'kb-cursor' : ''}"
+					>
+						<div class="mb-2 flex items-start gap-4">
+							<form
+								method="post"
+								action="?/toggleFavorite"
+								data-favorite-toggle-id={idea.id}
+								use:enhance
 							>
-								{idea.favorite ? '★' : '☆'}
-							</button>
-						</form>
-
-						<div class="min-w-0 flex-1">
-							<Written content={idea.content} />
-
-							<!-- Date and tags wrap as one row. The buttons are not in here any
-							     more: they are the column up the right-hand edge. -->
-							<div class="mt-2 flex flex-wrap items-center gap-2">
-								<div class="flex flex-wrap items-center gap-2">
-									<span class="text-xs text-gray-500">{formatDate(idea.createdAt)}</span>
-									{#if idea.isApplied}
-										<span class="text-xs font-medium text-blue-700"
-											>{t('notebooks.ideas.applied2')}</span
-										>
-									{/if}
-									{#if idea.updatedAt !== idea.createdAt}
-										<span class="text-xs text-gray-500"
-											>{t('notebooks.ideas.edited', {
-												updatedAt: formatDate(idea.updatedAt)
-											})}</span
-										>
-									{/if}
-									{#if idea.tags.length > 0}
-										<div class="flex flex-wrap gap-1">
-											{#each idea.tags as tag (tag.id)}
-												<TagChip
-													name={tag.name}
-													onclick={() => {
-														filterTag = tag.name;
-														selectedIndex = 0;
-													}}
-												/>
-											{/each}
-										</div>
-									{/if}
-								</div>
-							</div>
-
-							{#if idea.isApplied && i === clampedSelectedIndex}
-								<div
-									class="mt-3 border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900 shadow-sm"
+								<input type="hidden" name="id" value={idea.id} />
+								<button
+									type="submit"
+									class="mt-0.5 text-lg leading-none transition {idea.favorite
+										? 'text-amber-600 hover:text-amber-700'
+										: 'text-gray-300 hover:text-amber-600'}"
+									aria-label={idea.favorite
+										? t('notebooks.ideas.removeFavorite')
+										: t('notebooks.ideas.markAsFavorite')}
 								>
-									<div class="flex items-start justify-between gap-3">
-										<div class="min-w-0 flex-1">
-											<div class="text-xs font-medium tracking-wide text-blue-700 uppercase">
-												{t('notebooks.ideas.appliedNote')}
-											</div>
-											{#if editingAppliedNoteId === idea.id}
-												<form
-													method="post"
-													action="?/updateAppliedNote"
-													use:enhance={() => {
-														return async ({ update }) => {
-															await update({ reset: false });
-															editingAppliedNoteId = null;
-															appliedNoteDraft = '';
-														};
-													}}
-													class="mt-2 flex items-center gap-2"
-												>
-													<input type="hidden" name="id" value={idea.id} />
-													<OneLine
-														name="appliedNote"
-														placeholder={t('notebooks.ideas.whatDidYouApply')}
-														bind:value={appliedNoteDraft}
-														class="min-w-0 flex-1 border border-blue-300 bg-white px-2 py-1 text-sm shadow-sm focus:border-blue-700 focus:ring-1 focus:ring-blue-700 focus:outline-none"
-														autofocus
-													/>
-													<button type="submit" class="btn btn-primary btn-sm"
-														>{t('ui.save')}</button
-													>
-													<button
-														type="button"
-														onclick={() => {
-															editingAppliedNoteId = null;
-															appliedNoteDraft = '';
-														}}
-														class="btn btn-sm"
-													>
-														{t('ui.cancel')}
-													</button>
-												</form>
-											{:else}
-												<p class="mt-1 text-sm whitespace-pre-wrap text-blue-900">
-													{idea.appliedNote || t('notebooks.ideas.noAppliedNoteYet')}
-												</p>
-											{/if}
-										</div>
+									{idea.favorite ? '★' : '☆'}
+								</button>
+							</form>
 
-										{#if editingAppliedNoteId !== idea.id}
-											<button
-												type="button"
-												onclick={() => startAppliedNoteEdit(idea)}
-												class="border border-blue-200 bg-white px-2 py-1 text-xs text-blue-700 hover:bg-blue-100"
+							<div class="min-w-0 flex-1">
+								<Written content={idea.content} />
+
+								<!-- Date and tags wrap as one row. The buttons are not in here any
+							     more: they are the column up the right-hand edge. -->
+								<div class="mt-2 flex flex-wrap items-center gap-2">
+									<div class="flex flex-wrap items-center gap-2">
+										<span class="text-xs text-gray-500">{formatDate(idea.createdAt)}</span>
+										{#if idea.isApplied}
+											<span class="text-xs font-medium text-blue-700"
+												>{t('notebooks.ideas.applied2')}</span
 											>
-												{idea.appliedNote
-													? t('notebooks.ideas.editNote')
-													: t('notebookDetail.addNote')}
-											</button>
+										{/if}
+										{#if idea.updatedAt !== idea.createdAt}
+											<span class="text-xs text-gray-500"
+												>{t('notebooks.ideas.edited', {
+													updatedAt: formatDate(idea.updatedAt)
+												})}</span
+											>
+										{/if}
+										{#if idea.tags.length > 0}
+											<div class="flex flex-wrap gap-1">
+												{#each idea.tags as tag (tag.id)}
+													<TagChip
+														name={tag.name}
+														onclick={() => {
+															filterTag = tag.name;
+															selectedIndex = 0;
+														}}
+													/>
+												{/each}
+											</div>
 										{/if}
 									</div>
 								</div>
-							{/if}
-						</div>
 
-						<!--
+								{#if idea.isApplied && i === clampedSelectedIndex}
+									<div
+										class="mt-3 border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900 shadow-sm"
+									>
+										<div class="flex items-start justify-between gap-3">
+											<div class="min-w-0 flex-1">
+												<div class="text-xs font-medium tracking-wide text-blue-700 uppercase">
+													{t('notebooks.ideas.appliedNote')}
+												</div>
+												{#if editingAppliedNoteId === idea.id}
+													<form
+														method="post"
+														action="?/updateAppliedNote"
+														use:enhance={() => {
+															return async ({ update }) => {
+																await update({ reset: false });
+																editingAppliedNoteId = null;
+																appliedNoteDraft = '';
+															};
+														}}
+														class="mt-2 flex items-center gap-2"
+													>
+														<input type="hidden" name="id" value={idea.id} />
+														<OneLine
+															name="appliedNote"
+															placeholder={t('notebooks.ideas.whatDidYouApply')}
+															bind:value={appliedNoteDraft}
+															class="min-w-0 flex-1 border border-blue-300 bg-white px-2 py-1 text-sm shadow-sm focus:border-blue-700 focus:ring-1 focus:ring-blue-700 focus:outline-none"
+															autofocus
+														/>
+														<button type="submit" class="btn btn-primary btn-sm"
+															>{t('ui.save')}</button
+														>
+														<button
+															type="button"
+															onclick={() => {
+																editingAppliedNoteId = null;
+																appliedNoteDraft = '';
+															}}
+															class="btn btn-sm"
+														>
+															{t('ui.cancel')}
+														</button>
+													</form>
+												{:else}
+													<p class="mt-1 text-sm whitespace-pre-wrap text-blue-900">
+														{idea.appliedNote || t('notebooks.ideas.noAppliedNoteYet')}
+													</p>
+												{/if}
+											</div>
+
+											{#if editingAppliedNoteId !== idea.id}
+												<button
+													type="button"
+													onclick={() => startAppliedNoteEdit(idea)}
+													class="border border-blue-200 bg-white px-2 py-1 text-xs text-blue-700 hover:bg-blue-100"
+												>
+													{idea.appliedNote
+														? t('notebooks.ideas.editNote')
+														: t('notebookDetail.addNote')}
+												</button>
+											{/if}
+										</div>
+									</div>
+								{/if}
+							</div>
+
+							<!--
 							The card's actions, stacked up its right-hand edge: edit and the
 							applied toggle at the top, delete as far from them as the card is
 							tall. They used to be a row above the text, which squeezed it and
 							put delete under the thumb.
 						-->
-						<div class="row-actions-stack">
-							{#if confirmingDeleteId === idea.id}
-								<form
-									method="post"
-									action="?/delete"
-									use:enhance={() => {
-										return async ({ update }) => {
-											await update({ reset: false });
+							<div class="row-actions-stack">
+								{#if confirmingDeleteId === idea.id}
+									<form
+										method="post"
+										action="?/delete"
+										use:enhance={() => {
+											return async ({ update }) => {
+												await update({ reset: false });
+												confirmingDeleteId = null;
+											};
+										}}
+									>
+										<input type="hidden" name="id" value={idea.id} />
+										<button
+											type="submit"
+											class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
+											use:armed
+										>
+											{t('notebooks.ideas.confirm')}
+										</button>
+									</form>
+									<button
+										type="button"
+										onclick={() => {
 											confirmingDeleteId = null;
-										};
-									}}
-								>
-									<input type="hidden" name="id" value={idea.id} />
-									<button
-										type="submit"
-										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
-										use:armed
+										}}
+										class="btn btn-sm"
 									>
-										{t('notebooks.ideas.confirm')}
+										{t('ui.cancel')}
 									</button>
-								</form>
-								<button
-									type="button"
-									onclick={() => {
-										confirmingDeleteId = null;
-									}}
-									class="btn btn-sm"
-								>
-									{t('ui.cancel')}
-								</button>
-							{:else}
-								<button
-									title={t('ui.edit')}
-									aria-label={t('ui.edit')}
-									onclick={() => openIdeaForm(idea.id)}
-									class="icon-btn"
-								>
-									<Icon name="edit" />
-								</button>
-
-								<form
-									method="post"
-									action="?/toggleApplied"
-									data-applied-toggle-id={idea.id}
-									use:enhance={() => {
-										return async ({ update }) => {
-											await update({ reset: false });
-											if (editingAppliedNoteId === idea.id) {
-												editingAppliedNoteId = null;
-												appliedNoteDraft = '';
-											}
-										};
-									}}
-								>
-									<input type="hidden" name="id" value={idea.id} />
+								{:else}
 									<button
-										type="submit"
-										title={idea.isApplied
-											? t('notebooks.ideas.appliedUndo')
-											: t('notebooks.ideas.markApplied')}
-										aria-label={idea.isApplied
-											? t('notebooks.ideas.appliedUndo')
-											: t('notebooks.ideas.markApplied')}
-										aria-pressed={idea.isApplied}
-										class="icon-btn {idea.isApplied ? 'text-blue-700' : ''}"
+										title={t('ui.edit')}
+										aria-label={t('ui.edit')}
+										onclick={() => openIdeaForm(idea.id)}
+										class="icon-btn"
 									>
-										<Icon name="check" />
+										<Icon name="edit" />
 									</button>
-								</form>
 
-								<button
-									title={t('ui.delete')}
-									aria-label={t('ui.delete')}
-									type="button"
-									onclick={() => {
-										confirmingDeleteId = idea.id;
-									}}
-									class="icon-btn icon-btn-danger"
-								>
-									<Icon name="trash" />
-								</button>
-							{/if}
+									<form
+										method="post"
+										action="?/toggleApplied"
+										data-applied-toggle-id={idea.id}
+										use:enhance={() => {
+											return async ({ update }) => {
+												await update({ reset: false });
+												if (editingAppliedNoteId === idea.id) {
+													editingAppliedNoteId = null;
+													appliedNoteDraft = '';
+												}
+											};
+										}}
+									>
+										<input type="hidden" name="id" value={idea.id} />
+										<button
+											type="submit"
+											title={idea.isApplied
+												? t('notebooks.ideas.appliedUndo')
+												: t('notebooks.ideas.markApplied')}
+											aria-label={idea.isApplied
+												? t('notebooks.ideas.appliedUndo')
+												: t('notebooks.ideas.markApplied')}
+											aria-pressed={idea.isApplied}
+											class="icon-btn {idea.isApplied ? 'text-blue-700' : ''}"
+										>
+											<Icon name="check" />
+										</button>
+									</form>
+
+									<button
+										title={t('ui.delete')}
+										aria-label={t('ui.delete')}
+										type="button"
+										onclick={() => {
+											confirmingDeleteId = idea.id;
+										}}
+										class="icon-btn icon-btn-danger"
+									>
+										<Icon name="trash" />
+									</button>
+								{/if}
+							</div>
 						</div>
 					</div>
-				</div>
-			{/each}
-		</div>
+				{/each}
+			</div>
+		</RoomSurface>
 	{/if}
 </div>
+
+<!--
+	The two blocks the surface puts along its top, written here because they
+	are this room's own and only their placement belongs to the component.
+-->
+{#snippet ideaTags()}
+	{#if data.allTags.length > 0}
+		<div class="space-y-2">
+			<button
+				type="button"
+				onclick={() => (tagsOpen = !tagsOpen)}
+				class="flex items-center gap-1.5 text-xs font-medium tracking-wide text-gray-500 uppercase hover:text-gray-900"
+				aria-expanded={tagsOpen}
+			>
+				<Icon name={tagsOpen ? 'chevron-down' : 'chevron-right'} size={14} />
+				{t('ui.tags')}
+				<span class="text-gray-500">({data.allTags.length})</span>
+			</button>
+
+			{#if filterTag && !tagsOpen}
+				<div class="flex flex-wrap items-center gap-2">
+					<TagChip name={filterTag} active />
+					<button
+						onclick={() => {
+							filterTag = null;
+							selectedIndex = 0;
+						}}
+						class="border border-gray-200 bg-white px-2 py-0.5 text-xs text-gray-500 transition hover:text-gray-600"
+					>
+						{t('notebooks.ideas.clear')}
+					</button>
+				</div>
+			{/if}
+		</div>
+	{/if}
+
+	{#if data.allTags.length > 0 && tagsOpen}
+		<div class="flex flex-wrap gap-2">
+			{#each data.allTags as tag (tag.id)}
+				<TagChip
+					name={tag.name}
+					active={filterTag === tag.name}
+					onclick={() => {
+						filterTag = filterTag === tag.name ? null : tag.name;
+						selectedIndex = 0;
+					}}
+				/>
+			{/each}
+			{#if filterTag}
+				<button
+					onclick={() => {
+						filterTag = null;
+						selectedIndex = 0;
+					}}
+					class="border border-gray-200 bg-white px-2 py-0.5 text-xs text-gray-500 transition hover:text-gray-600"
+				>
+					{t('notebooks.ideas.clear')}
+				</button>
+			{/if}
+		</div>
+	{/if}
+{/snippet}
+
+{#snippet ideaFilters()}
+	<FilterChips
+		label={t('notebooks.ideas.applied')}
+		bind:value={filterApplied}
+		onchange={() => (selectedIndex = 0)}
+		options={[
+			{ value: 'all', label: 'ui.all' },
+			{ value: 'applied', label: 'notebooks.ideas.applied' },
+			{ value: 'not-applied', label: 'notebooks.ideas.notApplied' }
+		]}
+	/>
+	<FilterChips
+		label={t('notebooks.ideas.favourite')}
+		bind:value={filterFavorite}
+		onchange={() => (selectedIndex = 0)}
+		options={[
+			{ value: 'all', label: 'ui.all' },
+			{ value: 'favorite', label: 'notebooks.ideas.favourites' },
+			{ value: 'not-favorite', label: 'notebooks.ideas.notFavourite' }
+		]}
+	/>
+{/snippet}

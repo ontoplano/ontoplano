@@ -125,9 +125,9 @@
 	 * makes "anywhere, at any height" true — which is what a phone app does
 	 * and what listening on the content only ever half did.
 	 */
-	const surface = swipeSurface();
+	const swipeTarget = swipeSurface();
 	$effect(() => {
-		const on = surface?.();
+		const on = swipeTarget?.();
 		if (!on) return;
 		return onSwipe(on, { next: () => step(1), back: () => step(-1) });
 	});
