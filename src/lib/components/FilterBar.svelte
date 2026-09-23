@@ -120,6 +120,26 @@
 		{#if on}<span class="filter-dot" aria-hidden="true"></span>{/if}
 	</button>
 
+	<!--
+		The way back to everything, beside the thing that took it away.
+
+		Outside the slot, deliberately: a filter that is on while the strip is
+		folded away is the "forgot it was on" case this component exists to
+		prevent, and a Clear folded away with it would be the way back hidden
+		behind the thing you cannot see. Drawn always and made invisible while
+		there is nothing to clear, so switching a filter on moves nothing.
+	-->
+	{#if onclear}
+		<button
+			type="button"
+			onclick={onclear}
+			class="btn btn-sm btn-quiet shrink-0 {on ? '' : 'invisible'}"
+			inert={!on}
+		>
+			{t('filters.clear')}
+		</button>
+	{/if}
+
 	{#if count}{@render count()}{/if}
 
 	<!--
@@ -145,22 +165,6 @@
 		inert={!open}
 	>
 		{@render children()}
-
-		<!--
-			The way back to everything, beside the thing that took it away.
-
-			Drawn always and made invisible while there is nothing to clear, so
-			switching a filter on does not move the controls beside it.
-		-->
-		{#if onclear}
-			<button
-				type="button"
-				onclick={onclear}
-				class="btn btn-sm btn-quiet shrink-0 {on ? '' : 'invisible'}"
-			>
-				{t('filters.clear')}
-			</button>
-		{/if}
 	</div>
 
 	{#if trailing}
