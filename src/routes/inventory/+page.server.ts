@@ -1,5 +1,6 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
+import { pickableNotebooks } from '$lib/services/notebooks';
 import { itemHandlers } from '$lib/services/item-actions';
 import { host } from '$lib/services/host';
 import { toActionFailure } from '$lib/http-errors';
@@ -39,6 +40,9 @@ import {
 export const load = async ({ locals }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
 	return {
+		// The subject a thing belongs to, asked in the room's own form: the
+		// notebook's tab opens this same form with its own notebook chosen.
+		notebooks: pickableNotebooks(ctx),
 		items: listItems(ctx),
 		// What a trip to the shop actually looks like: see `shoppingRun`.
 		run: shoppingRun(ctx),

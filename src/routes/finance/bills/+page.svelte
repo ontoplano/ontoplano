@@ -185,7 +185,7 @@
 			}}
 	>
 		{#if editing}<input type="hidden" name="id" value={editing.id} />{/if}
-		<BillFields {editing} bind:rhythm={formRhythm} />
+		<BillFields {editing} bind:rhythm={formRhythm} notebooks={data.notebooks} />
 	</form>
 	{#snippet footer()}
 		<button class="btn" type="button" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>

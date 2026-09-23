@@ -1,5 +1,6 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
+import { pickableNotebooks } from '$lib/services/notebooks';
 import { workoutHandlers } from '$lib/services/workout-actions';
 import { toActionFailure } from '$lib/http-errors';
 import {
@@ -27,6 +28,9 @@ export const load = async ({ locals }: IsolatedEvent) => {
 	// A workout needs no category: on the grid it is its own kind of block and
 	// wears Health's colour, the way a meal does.
 	return {
+		// The subject a thing belongs to, asked in the room's own form: the
+		// notebook's tab opens this same form with its own notebook chosen.
+		notebooks: pickableNotebooks(ctx),
 		workouts: listWorkouts(ctx, { includeArchived: true }),
 		// Made on first sight, so an account that predates the table has them.
 		categories: listWorkoutCategories(ctx),

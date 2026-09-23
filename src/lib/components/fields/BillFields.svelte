@@ -10,6 +10,9 @@
 	 * The same move as `IdeaFields` and `NotebookFields`: the fields live with
 	 * the thing, not with one screen.
 	 */
+	import Field from '$lib/components/Field.svelte';
+	import FormGrid from '$lib/components/FormGrid.svelte';
+	import NotebookField from '$lib/components/NotebookField.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { MONTHS, RHYTHMS, WEEKDAYS, asDecimal } from '$lib/bill-summary';
@@ -25,6 +28,7 @@
 		dueDay: number | null;
 		dueMonth: number | null;
 		payLeadDays: number;
+		notebookId?: number | null;
 	} | null;
 
 	let {
@@ -36,98 +40,95 @@
 		 * falls on a weekday and a yearly one on a date, and the question has to
 		 * change as the answer does.
 		 */
-		rhythm = $bindable('monthly')
-	}: { editing?: Editing; rhythm?: string } = $props();
+		rhythm = $bindable('monthly'),
+		notebooks = [],
+		/** The notebook a bill written from inside one belongs to. */
+		startingNotebook = null
+	}: {
+		editing?: Editing;
+		rhythm?: string;
+		notebooks?: { id: number; title: string }[];
+		startingNotebook?: number | null;
+	} = $props();
 </script>
 
-<div class="grid gap-3 sm:grid-cols-2">
-	<label class="block text-sm">
-		<span class="text-gray-600">{t('ui.name')}</span>
+<FormGrid>
+	<Field label={t('ui.name')} span={6} required>
 		<OneLine
 			name="heading"
 			placeholder={t('finance.bills.rent')}
 			value={editing?.name ?? ''}
-			class="input mt-1 w-full"
+			class="input"
 			required
 			autofocus
 		/>
-	</label>
-	<label class="block text-sm">
-		<span class="text-gray-600">{t('finance.bills.expectedAmount')}</span>
+	</Field>
+
+	<Field label={t('finance.bills.expectedAmount')} span={6}>
 		<input
 			name="amount"
 			inputmode="decimal"
 			value={editing ? asDecimal(editing.amountExpected) : ''}
-			class="input mt-1 w-full"
+			class="input"
 			placeholder="0,00"
 		/>
-	</label>
-	<label class="block text-sm">
-		<span class="text-gray-600">{t('finance.bills.rhythm')}</span>
+	</Field>
+
+	<Field label={t('finance.bills.rhythm')} span={6}>
 		<select
 			name="rhythm"
-			class="select mt-1 w-full"
+			class="select"
 			value={editing?.rhythm ?? 'monthly'}
 			onchange={(e) => (rhythm = (e.currentTarget as HTMLSelectElement).value)}
 		>
 			{#each RHYTHMS as r (r.value)}<option value={r.value}>{t(r.label)}</option>{/each}
 		</select>
-	</label>
+	</Field>
+
 	<!-- One question, asked in the rhythm's own terms: a weekly bill falls on a
 	     weekday, a yearly one on a date, a monthly one on a day. -->
 	{#if rhythm === 'weekly'}
-		<label class="block text-sm">
-			<span class="text-gray-600">{t('finance.bills.dueOn')}</span>
-			<select name="dueDay" class="select mt-1 w-full" value={editing?.dueDay ?? 5}>
+		<Field label={t('finance.bills.dueOn')} span={6} hint={t('finance.bills.theLastDayItCan')}>
+			<select name="dueDay" class="select" value={editing?.dueDay ?? 5}>
 				{#each WEEKDAYS as d (d.value)}<option value={d.value}>{t(d.label)}</option>{/each}
 			</select>
-			<span class="mt-1 block text-xs text-gray-500">{t('finance.bills.theLastDayItCan')}</span>
-		</label>
+		</Field>
 	{:else if rhythm === 'yearly'}
-		<label class="block text-sm">
-			<span class="text-gray-600">{t('finance.bills.dueMonth')}</span>
-			<select name="dueMonth" class="select mt-1 w-full" value={editing?.dueMonth ?? 1}>
+		<Field label={t('finance.bills.dueMonth')} span={3}>
+			<select name="dueMonth" class="select" value={editing?.dueMonth ?? 1}>
 				{#each MONTHS as m, i (m)}<option value={i + 1}>{m}</option>{/each}
 			</select>
-		</label>
-		<label class="block text-sm">
-			<span class="text-gray-600">{t('finance.bills.dueDayOfThatMonth')}</span>
-			<NumberBox
-				name="dueDay"
-				min="1"
-				max="28"
-				value={editing?.dueDay ?? ''}
-				class="mt-1 w-full"
-				placeholder="15"
-			/>
-			<span class="mt-1 block text-xs text-gray-500">{t('finance.bills.theLastDayItCan')}</span>
-		</label>
+		</Field>
+		<Field
+			label={t('finance.bills.dueDayOfThatMonth')}
+			span={3}
+			hint={t('finance.bills.theLastDayItCan')}
+		>
+			<NumberBox name="dueDay" min="1" max="28" value={editing?.dueDay ?? ''} placeholder="15" />
+		</Field>
 	{:else}
-		<label class="block text-sm">
-			<span class="text-gray-600">{t('finance.bills.dueDayOfTheMonth')}</span>
-			<NumberBox
-				name="dueDay"
-				min="1"
-				max="28"
-				value={editing?.dueDay ?? ''}
-				class="mt-1 w-full"
-				placeholder="5"
-			/>
-			<span class="mt-1 block text-xs text-gray-500">{t('finance.bills.theLastDayItCan')}</span>
-		</label>
+		<Field
+			label={t('finance.bills.dueDayOfTheMonth')}
+			span={6}
+			hint={t('finance.bills.theLastDayItCan')}
+		>
+			<NumberBox name="dueDay" min="1" max="28" value={editing?.dueDay ?? ''} placeholder="5" />
+		</Field>
 	{/if}
-	<label class="block text-sm">
-		<span class="text-gray-600">{t('finance.bills.payItThisManyDays')}</span>
+
+	<Field
+		label={t('finance.bills.payItThisManyDays')}
+		span={6}
+		hint={t('finance.bills.whenItTurnsUpOn')}
+	>
 		<NumberBox
 			name="payLeadDays"
 			min="0"
 			max="27"
 			value={editing?.payLeadDays ?? 0}
-			class="mt-1 w-full"
 			placeholder="0"
 		/>
-		<span class="mt-1 block text-xs text-gray-500">
-			{t('finance.bills.whenItTurnsUpOn')}
-		</span>
-	</label>
-</div>
+	</Field>
+
+	<NotebookField {notebooks} value={editing?.notebookId ?? startingNotebook} span={6} />
+</FormGrid>

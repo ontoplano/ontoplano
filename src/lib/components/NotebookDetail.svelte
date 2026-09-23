@@ -57,6 +57,12 @@
 	import { NOTEBOOK_HABIT_ACTIONS } from '$lib/habit-action-names';
 	import { NOTEBOOK_BILL_ACTIONS } from '$lib/bill-action-names';
 	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
+	import BillFields from '$lib/components/fields/BillFields.svelte';
+	import BuyFields from '$lib/components/fields/BuyFields.svelte';
+	import HabitFields from '$lib/components/fields/HabitFields.svelte';
+	import LedgerFields from '$lib/components/fields/LedgerFields.svelte';
+	import RecipeFields from '$lib/components/fields/RecipeFields.svelte';
+	import WorkoutFields from '$lib/components/fields/WorkoutFields.svelte';
 	import { NOTEBOOK_IDEA_ACTIONS } from '$lib/idea-action-names';
 	import { DEFAULT_MODULES, moduleMeta, type NotebookModule } from '$lib/notebook-modules';
 	import type { Currency } from '$lib/money';
@@ -110,6 +116,9 @@
 		showingOrphans = false,
 		allPeople = [],
 		categories = [],
+		inventoryCategories = [],
+		workoutCategories = [],
+		parsers = [],
 		currency = 'BRL',
 		pickableNotebooks = [],
 		areas = [],
@@ -198,6 +207,10 @@
 		allPeople?: { id: number; name: string }[];
 		/** What the Tasks tab's editor offers, the same as the to-do room's. */
 		categories?: { id: number; name: string }[];
+		/** What the other tabs' own forms offer, the same as their rooms'. */
+		inventoryCategories?: { id: number; name: string }[];
+		workoutCategories?: { id: number; name: string }[];
+		parsers?: { key: string; name: string }[];
 		/** For the money a ledger holds and a bill expects. */
 		currency?: Currency;
 		pickableNotebooks?: { id: number; title: string }[];
@@ -533,21 +546,19 @@
 	});
 
 	/**
-	 * Where a module's own room is, and what its New button says.
+	 * Which prefix each module's own handlers answer under, here.
 	 *
-	 * These six write through the room's own form, which is where that form
-	 * lives — the same reason the Goals tab used to be a link. Each is being
-	 * moved in here one at a time, the way Goals and Ideas already have been:
-	 * the form is the room's component, so it is the same form in both places
-	 * rather than a thinner one written twice.
+	 * The notebook page mounts every room's handlers under its module's name —
+	 * see `$lib/services/scoped-actions` — so a form on a tab posts to the code
+	 * the room runs rather than to a second implementation of it.
 	 */
-	const ROOM_OF: Partial<Record<NotebookModule, string>> = {
-		inventory: resolve('/inventory'),
-		ledgers: resolve('/finance/ledgers'),
-		bills: resolve('/finance/bills'),
-		habits: resolve('/health/habits'),
-		workouts: resolve('/health/workouts'),
-		recipes: resolve('/health/recipes')
+	const ACTION_PREFIX: Partial<Record<NotebookModule, string>> = {
+		inventory: 'item',
+		ledgers: 'ledger',
+		bills: 'bill',
+		habits: 'habit',
+		workouts: 'workout',
+		recipes: 'recipe'
 	};
 
 	const NEW_LABELS: Partial<Record<NotebookModule, PlainKey>> = {
@@ -577,6 +588,30 @@
 	function closeIdeaForm() {
 		composingIdea = false;
 		editingIdeaId = null;
+	}
+
+	/*
+	 * The other six tabs' composer: the room's own form, opened here.
+	 *
+	 * New used to be a link to the room, which threw you out of the notebook to
+	 * write the thing and then filed it back under the subject by magic — "is
+	 * this a joke? Just open the same modal". It is the same modal: the room's
+	 * fields, the room's handlers, and the notebook selector every one of those
+	 * forms now carries, already set to this one.
+	 */
+	let composingModule = $state<NotebookModule | null>(null);
+	let billRhythm = $state('monthly');
+	let habitKind = $state<'bad' | 'good' | 'neutral'>('bad');
+	let habitDays = $state<boolean[]>([false, false, false, false, false, false, false]);
+	let newMeasures = $state<{ activity: string; unit: string }[]>([{ activity: '', unit: '' }]);
+
+	function openComposer(module: NotebookModule) {
+		// Opened fresh: what the last one was left on is not part of this one.
+		billRhythm = 'monthly';
+		habitKind = 'bad';
+		habitDays = [false, false, false, false, false, false, false];
+		newMeasures = [{ activity: '', unit: '' }];
+		composingModule = module;
 	}
 
 	$effect(() => {
@@ -620,10 +655,10 @@
 										composingGoal = !composingGoal;
 									}
 								}
-							: // The rest, each in the room that owns its form.
+							: // The rest: the room's own form, opened here — see `openComposer`.
 								{
 									label: t(NEW_LABELS[tab] ?? 'ui.add'),
-									href: ROOM_OF[tab]
+									run: () => openComposer(tab)
 								};
 	});
 
@@ -2016,6 +2051,76 @@
 		<button type="submit" form="notebook-idea-form" class="btn btn-primary">{t('ui.save')}</button>
 	{/snippet}
 </Modal>
+
+<!--
+	The other tabs' composer: the room's own form, in the notebook.
+
+	Same fields, same handlers, and the notebook selector each of those forms
+	carries is already on this one — so writing a bill here is writing a bill,
+	and the subject it belongs to is a question the form asks rather than a
+	thing that happens to it.
+-->
+{#if notebook && composingModule}
+	{@const module = composingModule}
+	<Modal open title={t(NEW_LABELS[module] ?? 'ui.add')} onclose={() => (composingModule = null)}>
+		<form
+			id="notebook-module-form"
+			method="post"
+			action="?/{ACTION_PREFIX[module]}Create"
+			use:enhance={() =>
+				async ({ result, update }) => {
+					await update({ reset: false });
+					if (result.type !== 'success') return;
+					say(t(NEW_LABELS[module] ?? 'ui.add'));
+					composingModule = null;
+				}}
+		>
+			{#if module === 'inventory'}
+				<FormGrid>
+					<BuyFields
+						categories={inventoryCategories}
+						notebooks={pickableNotebooks}
+						startingNotebook={notebook.id}
+						showFields
+					/>
+				</FormGrid>
+			{:else if module === 'ledgers'}
+				<LedgerFields {parsers} notebooks={pickableNotebooks} startingNotebook={notebook.id} />
+			{:else if module === 'bills'}
+				<BillFields
+					bind:rhythm={billRhythm}
+					notebooks={pickableNotebooks}
+					startingNotebook={notebook.id}
+				/>
+			{:else if module === 'habits'}
+				<HabitFields
+					bind:kind={habitKind}
+					bind:days={habitDays}
+					notebooks={pickableNotebooks}
+					startingNotebook={notebook.id}
+				/>
+			{:else if module === 'workouts'}
+				<WorkoutFields
+					categories={workoutCategories}
+					bind:measures={newMeasures}
+					notebooks={pickableNotebooks}
+					startingNotebook={notebook.id}
+				/>
+			{:else if module === 'recipes'}
+				<RecipeFields notebooks={pickableNotebooks} startingNotebook={notebook.id} />
+			{/if}
+		</form>
+
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={() => (composingModule = null)}
+				>{t('ui.cancel')}</button
+			>
+			<button type="submit" form="notebook-module-form" class="btn btn-primary"
+				>{t('ui.save')}</button
+			>
+		{/snippet}
+	</Modal>
+{/if}
 
 <!--
 	One picker for every tab: linking is the same act whatever the thing is.

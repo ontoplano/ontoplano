@@ -46,7 +46,7 @@ test.describe('what a notebook holds', () => {
 		// Switch Inventory on, in the dialog the title and the description live
 		// in — one pencil, one place to answer for the notebook.
 		await page.getByRole('button', { name: 'Rename' }).click();
-		await expect(page.getByText('What it holds')).toBeVisible();
+		await expect(page.getByText('Tabs', { exact: true })).toBeVisible();
 		// Notes is stated rather than offered: a notebook you cannot write in is
 		// not a notebook.
 		await expect(page.getByRole('checkbox', { name: 'Notes' })).toHaveCount(0);
@@ -60,7 +60,7 @@ test.describe('what a notebook holds', () => {
 		// And the tab does the room's work rather than linking to it.
 		await inventoryTab.click();
 		await page.getByRole('button', { name: 'New thing' }).click();
-		await page.getByLabel('What it is').fill('Wall tiles');
+		await page.getByLabel('Item').fill('Wall tiles');
 		await page.getByRole('button', { name: 'Save' }).click();
 		await page.waitForTimeout(600);
 		await expect(page.getByText('Wall tiles')).toBeVisible();
@@ -82,7 +82,7 @@ test.describe('what a notebook holds', () => {
 
 		await page.getByRole('button', { name: /^Inventory/ }).click();
 		await page.getByRole('button', { name: 'New thing' }).click();
-		await page.getByLabel('What it is').fill('Sealant');
+		await page.getByLabel('Item').fill('Sealant');
 		await page.getByRole('button', { name: 'Save' }).click();
 		await page.waitForTimeout(600);
 
@@ -116,7 +116,7 @@ test.describe('what a notebook holds', () => {
 		// The preference is one answer, given once: a room nobody wants is not
 		// a question a notebook asks again.
 		await page.getByRole('button', { name: 'Rename' }).click();
-		await expect(page.getByText('What it holds')).toBeVisible();
+		await expect(page.getByText('Tabs', { exact: true })).toBeVisible();
 		await expect(page.getByRole('checkbox', { name: 'Ledgers' })).toHaveCount(0);
 		await expect(page.getByRole('checkbox', { name: 'Bills' })).toHaveCount(0);
 		// And the ones that have nothing to do with Finance are still there.

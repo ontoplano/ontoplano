@@ -18,6 +18,18 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.183.3 — 2026-09-23
+
+- **New, on a notebook's tab, opens the room's own form.** Pressing New item,
+  New bill, New ledger, New habit, New workout or New recipe inside a notebook
+  used to take you to that room and file whatever you wrote back under the
+  subject afterwards. It opens the same dialog the room opens, in the notebook,
+  with everything that form asks — a bill written against a subject can say
+  when it falls due, and a workout can name what it measures.
+- **Every one of those forms asks which notebook it belongs to.** In the room
+  the field starts empty; inside a notebook it starts on that notebook, and
+  editing something from the room never quietly takes it out of one.
+
 ## 0.183.2 — 2026-09-23
 
 - **A notebook holds what its subject actually accumulates.** A renovation is

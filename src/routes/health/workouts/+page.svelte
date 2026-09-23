@@ -7,6 +7,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Modal from '$lib/components/Modal.svelte';
+	import WorkoutFields from '$lib/components/fields/WorkoutFields.svelte';
 	import { armed } from '$lib/actions/armed';
 	import type { PageServerData, ActionData } from './$types';
 	import WorkoutCard from '$lib/components/WorkoutCard.svelte';
@@ -55,30 +56,6 @@
 
 	function blankDeclared() {
 		return { activity: '', unit: '' };
-	}
-
-	/** The last row is always empty, so typing into it grows the list. */
-	function declaredTyped(index: number) {
-		if (index === declared.length - 1 && declared[index].activity.trim() !== '')
-			declared.push(blankDeclared());
-	}
-
-	function removeDeclared(index: number) {
-		declared.splice(index, 1);
-		if (declared.length === 0) declared.push(blankDeclared());
-	}
-
-	/*
-	 * And both directions, because this order is the order the session form
-	 * opens in — a run that measures distance before pace asks for them in that
-	 * order every week. The lines of a session have no such buttons: their
-	 * order is how they were typed on the day, and nothing later reads it.
-	 */
-	function moveDeclared(index: number, by: number) {
-		const to = index + by;
-		if (to < 0 || to >= declared.length) return;
-		const [row] = declared.splice(index, 1);
-		declared.splice(to, 0, row);
 	}
 
 	function openNew() {
@@ -372,128 +349,12 @@
 			}}
 	>
 		{#if editing}<input type="hidden" name="id" value={editing.id} />{/if}
-		<div class="space-y-3">
-			<div class="grid gap-3 sm:grid-cols-2">
-				<label class="block text-sm">
-					<span class="text-gray-600">{t('ui.name')}</span>
-					<OneLine
-						name="heading"
-						placeholder={t('health.workouts.pushDay')}
-						value={editing?.title ?? ''}
-						class="input mt-1 w-full"
-						required
-						autofocus
-					/>
-				</label>
-				<label class="block text-sm">
-					<span class="text-gray-600">{t('ui.category')}</span>
-					<select name="categoryId" class="select mt-1 w-full" value={editing?.categoryId ?? ''}>
-						<option value="">{t('health.workouts.noCategory')}</option>
-						{#each data.categories as c (c.id)}<option value={c.id}>{c.name}</option>{/each}
-					</select>
-				</label>
-				<label class="block text-sm">
-					<span class="text-gray-600">{t('health.workouts.aboutHowLongMin')}</span>
-					<NumberBox
-						name="minutes"
-						min="1"
-						value={editing?.minutes ?? ''}
-						class="mt-1 w-full"
-						placeholder="45"
-					/>
-				</label>
-			</div>
-			<label class="block text-sm">
-				<span class="text-gray-600">{t('health.workouts.plan')}</span>
-				<textarea
-					name="plan"
-					rows="4"
-					class="input mt-1 w-full"
-					placeholder={t('health.workouts.benchRowsDips48')}>{editing?.plan ?? ''}</textarea
-				>
-			</label>
-
-			<!--
-				What this workout measures — names, not numbers.
-
-				Nothing is recorded here. It decides what the form for a session
-				opens on, so writing one down is filling in figures beside words
-				somebody already chose rather than typing "deadlifted" again every
-				week. A session may still measure anything; this is what is already
-				on screen.
-			-->
-			<div>
-				<span class="text-sm text-gray-600">{t('health.workouts.whatItMeasures')}</span>
-				<p class="mb-2 text-xs text-gray-500">
-					{t('health.workouts.suggestedWhenYouWriteA')}
-				</p>
-				<div class="mb-1 grid grid-cols-[1fr_6rem_auto] gap-2 text-xs text-gray-500">
-					<span>{t('health.workouts.what')}</span>
-					<span>{t('ui.unit')}</span>
-					<span></span>
-				</div>
-				{#each declared as measure, index (index)}
-					<div class="mb-2 grid grid-cols-[1fr_6rem_auto] items-center gap-2">
-						<!-- A plain input, not a `OneLine`: it completes from the datalist
-						     the session form declares, and a textarea cannot carry one.
-						     See `tests/autofill-field-names.test.ts`. -->
-						<input
-							type="text"
-							name="planActivity"
-							list="workout-activities"
-							placeholder={t('health.workouts.ran')}
-							autocomplete="off"
-							bind:value={measure.activity}
-							oninput={() => declaredTyped(index)}
-							class="input"
-						/>
-						<OneLine
-							name="planUnit"
-							placeholder={t('health.workouts.km')}
-							bind:value={measure.unit}
-							class="input"
-						/>
-						<div class="flex items-center">
-							<button
-								type="button"
-								class="icon-btn"
-								disabled={index === 0}
-								title={t('health.workouts.askForThisOneEarlier')}
-								aria-label={t('health.workouts.moveUp', { activity: measure.activity || 'this' })}
-								onclick={() => moveDeclared(index, -1)}
-							>
-								<Icon name="chevron-up" />
-							</button>
-							<button
-								type="button"
-								class="icon-btn"
-								disabled={index === declared.length - 1}
-								title={t('health.workouts.askForThisOneLater')}
-								aria-label={t('health.workouts.moveDown', { activity: measure.activity || 'this' })}
-								onclick={() => moveDeclared(index, 1)}
-							>
-								<Icon name="chevron-down" />
-							</button>
-							<button
-								type="button"
-								class="icon-btn icon-btn-danger"
-								title={t('health.workouts.takeThisOneOut')}
-								aria-label={t('health.workouts.stopMeasuring', {
-									activity: measure.activity || 'this'
-								})}
-								onclick={() => removeDeclared(index)}
-							>
-								<Icon name="minus" />
-							</button>
-						</div>
-					</div>
-				{/each}
-				<button type="button" class="btn btn-sm" onclick={() => declared.push(blankDeclared())}>
-					<Icon name="plus" />
-					{t('health.workouts.measureSomethingElse')}
-				</button>
-			</div>
-		</div>
+		<WorkoutFields
+			{editing}
+			categories={data.categories}
+			bind:measures={declared}
+			notebooks={data.notebooks}
+		/>
 	</form>
 	{#snippet footer()}
 		<button class="btn" type="button" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>

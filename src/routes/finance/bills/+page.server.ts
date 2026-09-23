@@ -1,5 +1,6 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
+import { pickableNotebooks } from '$lib/services/notebooks';
 import { billHandlers } from '$lib/services/bill-actions';
 import { getCurrency } from '$lib/services/settings';
 import { listMovements } from '$lib/services/statements';
@@ -50,6 +51,9 @@ export const load = async ({ locals }: IsolatedEvent) => {
 	since.setDate(since.getDate() - MOVEMENT_PICKER_DAYS);
 
 	return {
+		// The subject a thing belongs to, asked in the room's own form: the
+		// notebook's tab opens this same form with its own notebook chosen.
+		notebooks: pickableNotebooks(ctx),
 		currency: getCurrency(ctx.userId),
 		month,
 		bills: bills.map((b) => ({ ...b, paidThisPeriod: paid.has(b.id), period: periods[b.id] })),

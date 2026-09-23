@@ -10,24 +10,35 @@
 	 */
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
+	import NotebookField from '$lib/components/NotebookField.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { FULL_DAY_LABELS } from '$lib/habit-heatmap';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
 
-	type Editing = { name: string; description: string | null; scheduledDays: string | null } | null;
+	type Editing = {
+		name: string;
+		description: string | null;
+		scheduledDays: string | null;
+		notebookId?: number | null;
+	} | null;
 
 	let {
 		editing = null,
 		/** The kind the form is on: it decides the placeholder and the days field. */
 		kind = $bindable<'bad' | 'good' | 'neutral'>('bad'),
 		/** One per weekday, Monday first — the shape `scheduledDays` is stored in. */
-		days = $bindable<boolean[]>([false, false, false, false, false, false, false])
+		days = $bindable<boolean[]>([false, false, false, false, false, false, false]),
+		notebooks = [],
+		/** The notebook a habit kept against one subject belongs to. */
+		startingNotebook = null
 	}: {
 		editing?: Editing;
 		kind?: 'bad' | 'good' | 'neutral';
 		days?: boolean[];
+		notebooks?: { id: number; title: string }[];
+		startingNotebook?: number | null;
 	} = $props();
 
 	/** The stored spelling: the indexes that are on, comma separated. */
@@ -84,9 +95,11 @@
 		</div>
 	</Field>
 
-	<Field label={t('ui.description')} span={12}>
+	<Field label={t('ui.description')} span={6}>
 		<OneLine name="description" value={editing?.description ?? ''} class="input" />
 	</Field>
+
+	<NotebookField {notebooks} value={editing?.notebookId ?? startingNotebook} span={6} />
 
 	<!-- Only where it means something: a bad habit is not on a schedule, it is
 	     a thing you are counting the days since. -->

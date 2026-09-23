@@ -61,6 +61,8 @@
 	/** A count that changed, kept on screen until the page catches up. */
 	/** The thing's own fields, while it is being edited. */
 	let editFields = $state<[string, string][]>([]);
+	/** The subject it is filed under, so an edit does not take it out of one. */
+	let editNotebookId = $state<number | null>(null);
 	let editIdealQty = $state('1');
 
 	/** Which row is asking "really delete?" — Escape cancels it from anywhere. */
@@ -606,6 +608,7 @@
 		newLocationId = location !== null && location !== 0 ? location : null;
 		newItemType = filterType === 'someday' ? 'someday' : 'replenish';
 		editInventoryCategoryId = defaultInventoryCategoryId;
+		editNotebookId = null;
 		showForm = true;
 	}
 
@@ -623,6 +626,7 @@
 		// everybody's way, and on a phone it is not always the possible one.
 		newLocationId = item.locationId;
 		editIdealQty = String(item.idealQty ?? 1);
+		editNotebookId = item.notebookId;
 		showForm = true;
 	}
 
@@ -1092,8 +1096,10 @@
 					bind:locationId={newLocationId}
 					bind:fields={editFields}
 					bind:idealQty={editIdealQty}
+					bind:notebookId={editNotebookId}
 					categories={data.inventoryCategories}
 					locations={locationChoices}
+					notebooks={data.notebooks}
 					askLocation={true}
 					showFields
 				/>

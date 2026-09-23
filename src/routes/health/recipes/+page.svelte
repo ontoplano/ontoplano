@@ -6,7 +6,6 @@
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { enhance } from '$lib/enhance';
 	import { resolve } from '$app/paths';
-	import { autogrow } from '$lib/actions/autogrow';
 	import Banner from '$lib/components/Banner.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Field from '$lib/components/Field.svelte';
@@ -14,6 +13,7 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
+	import RecipeFields from '$lib/components/fields/RecipeFields.svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import RecipeCard from '$lib/components/RecipeCard.svelte';
 	import { useT } from '$lib/i18n';
@@ -188,30 +188,7 @@
 	<!-- Everything the editor has. Making somebody create a title and then
 	     immediately press Edit to write the recipe is two steps for one act. -->
 	<form id="recipe-form" method="post" action="?/create" use:enhance>
-		<FormGrid>
-			<Field label={t('health.recipes.whatItIs')} span={12} required>
-				<OneLine name="heading" class="input" required />
-			</Field>
-			<Field label={t('health.recipes.serves')} span={4}>
-				<NumberBox autocomplete="off" name="servings" min="1" />
-			</Field>
-			<Field label={t('health.recipes.minutes')} span={4}>
-				<NumberBox autocomplete="off" name="minutes" min="1" />
-			</Field>
-			<Field label={t('health.recipes.whereItCameFrom')} span={4}>
-				<OneLine name="source" class="input" />
-			</Field>
-			<Field
-				label={t('health.recipes.method')}
-				span={12}
-				hint={t('health.recipes.markdownHeadingsListsNumbersIngredients')}
-			>
-				<textarea name="method" rows="8" use:autogrow class="textarea"></textarea>
-			</Field>
-			<Field label={t('ui.notes')} span={12}>
-				<textarea name="notes" rows="2" class="textarea"></textarea>
-			</Field>
-		</FormGrid>
+		<RecipeFields notebooks={data.notebooks} />
 	</form>
 
 	{#snippet footer()}

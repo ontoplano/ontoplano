@@ -11,12 +11,13 @@
 	import { resolve } from '$app/paths';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import LedgerFields from '$lib/components/fields/LedgerFields.svelte';
+	import { LEDGER_KIND_LABELS } from '$lib/services/ledgers';
 	import Modal from '$lib/components/Modal.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { formatMoney, type Currency } from '$lib/money';
-	import { LEDGER_KIND_LABELS, LEDGER_KINDS } from '$lib/services/ledgers';
 	import type { PageServerData, ActionData } from './$types';
 	import LedgerTile from '$lib/components/LedgerTile.svelte';
 	import { useT } from '$lib/i18n';
@@ -550,36 +551,7 @@
 				return update({ reset: result.type === 'success' });
 			}}
 	>
-		<div class="grid gap-3">
-			<label class="block text-sm">
-				<span class="text-gray-600">{t('ui.name')}</span>
-				<OneLine
-					name="heading"
-					placeholder={t('finance.ledgers.currentAccount')}
-					class="input mt-1 w-full"
-					required
-					autofocus
-				/>
-			</label>
-			<label class="block text-sm">
-				<span class="text-gray-600">{t('finance.ledgers.whatItIs')}</span>
-				<select name="kind" class="select mt-1 w-full">
-					{#each LEDGER_KINDS as kind (kind)}
-						<option value={kind}>{t(LEDGER_KIND_LABELS[kind])}</option>
-					{/each}
-				</select>
-			</label>
-			<label class="block text-sm">
-				<span class="text-gray-600">{t('finance.ledgers.usualExport')}</span>
-				<select name="defaultParser" class="select mt-1 w-full">
-					<option value="">{t('finance.ledgers.askEveryTime')}</option>
-					{#each data.parsers as p (p.key)}<option value={p.key}>{p.name}</option>{/each}
-				</select>
-				<span class="mt-1 block text-xs text-gray-500">
-					{t('finance.ledgers.preselectedWhenImportingIntoThis')}
-				</span>
-			</label>
-		</div>
+		<LedgerFields parsers={data.parsers} notebooks={data.notebooks} />
 	</form>
 	{#snippet footer()}
 		<button class="btn" type="button" onclick={() => (showNewLedger = false)}
@@ -609,31 +581,7 @@
 				}}
 		>
 			<input type="hidden" name="id" value={editingLedger.id} />
-			<div class="grid gap-3">
-				<label class="block text-sm">
-					<span class="text-gray-600">{t('ui.name')}</span>
-					<OneLine name="heading" value={editingLedger.name} class="input mt-1 w-full" required />
-				</label>
-				<label class="block text-sm">
-					<span class="text-gray-600">{t('finance.ledgers.whatItIs')}</span>
-					<select name="kind" class="select mt-1 w-full" value={editingLedger.kind}>
-						{#each LEDGER_KINDS as kind (kind)}
-							<option value={kind}>{t(LEDGER_KIND_LABELS[kind])}</option>
-						{/each}
-					</select>
-				</label>
-				<label class="block text-sm">
-					<span class="text-gray-600">{t('finance.ledgers.usualExport')}</span>
-					<select
-						name="defaultParser"
-						class="select mt-1 w-full"
-						value={editingLedger.defaultParser ?? ''}
-					>
-						<option value="">{t('finance.ledgers.askEveryTime')}</option>
-						{#each data.parsers as p (p.key)}<option value={p.key}>{p.name}</option>{/each}
-					</select>
-				</label>
-			</div>
+			<LedgerFields editing={editingLedger} parsers={data.parsers} notebooks={data.notebooks} />
 		</form>
 	{/if}
 	{#snippet footer()}

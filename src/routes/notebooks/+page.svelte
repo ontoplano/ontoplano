@@ -473,6 +473,9 @@
 							{showingOrphans}
 							allPeople={data.allPeople}
 							categories={data.categories}
+							inventoryCategories={data.inventoryCategories}
+							workoutCategories={data.workoutCategories}
+							parsers={data.parsers}
 							currency={data.currency}
 							pickableNotebooks={data.pickableNotebooks}
 							areas={data.areas}

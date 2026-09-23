@@ -1,5 +1,6 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
+import { pickableNotebooks } from '$lib/services/notebooks';
 import { ledgerHandlers } from '$lib/services/ledger-actions';
 import { toActionFailure } from '$lib/http-errors';
 import { getCurrency } from '$lib/services/settings';
@@ -37,6 +38,9 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 		: null;
 
 	return {
+		// The subject a thing belongs to, asked in the room's own form: the
+		// notebook's tab opens this same form with its own notebook chosen.
+		notebooks: pickableNotebooks(ctx),
 		currency: getCurrency(ctx.userId),
 		parsers: availableParsers(),
 		ledgers,

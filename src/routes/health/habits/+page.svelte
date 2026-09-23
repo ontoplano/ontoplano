@@ -194,7 +194,12 @@
 			{#if editingId}
 				<input type="hidden" name="id" value={editingId} />
 			{/if}
-			<HabitFields editing={editHabit} bind:kind={newHabitType} bind:days={scheduledDaysState} />
+			<HabitFields
+				editing={editHabit}
+				bind:kind={newHabitType}
+				bind:days={scheduledDaysState}
+				notebooks={data.notebooks}
+			/>
 		</form>
 
 		{#snippet footer()}

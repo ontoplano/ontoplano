@@ -1,4 +1,5 @@
 import { listActivities, listCategories } from '$lib/services/activities';
+import { availableParsers } from '$lib/services/statements';
 import { listCategories as listInventoryCategories } from '$lib/services/inventory';
 import { listWorkoutCategories } from '$lib/services/workouts';
 import { getCurrency } from '$lib/services/settings';
@@ -28,6 +29,9 @@ export function notebookPanelData(ctx: Ctx) {
 		// rooms hand them — see each module's own card.
 		inventoryCategories: listInventoryCategories(ctx),
 		workoutCategories: listWorkoutCategories(ctx),
+		// The statement exports this account is usually given, so the Ledgers
+		// tab's form can preselect one exactly as the Finance room's does.
+		parsers: availableParsers(),
 		// For the money a ledger holds and a bill expects.
 		currency: getCurrency(ctx.userId),
 		pickableNotebooks: pickableNotebooks(ctx),
