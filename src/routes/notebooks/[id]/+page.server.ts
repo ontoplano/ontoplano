@@ -3,7 +3,7 @@ import { error } from '@sveltejs/kit';
 import { buildCtx } from '$lib/services/ctx';
 import { host } from '$lib/services/host';
 import { NotFoundError } from '$lib/services/errors';
-import { contentsOf, getNotebook, moduleChoices } from '$lib/services/notebooks';
+import { contentsOf, getNotebook } from '$lib/services/notebooks';
 import { notebookActions } from '../actions';
 import { notebookPanelData } from '../panel-data';
 
@@ -24,10 +24,6 @@ export const load = async ({ locals, params }: IsolatedEvent) => {
 			notebook: getNotebook(ctx, id),
 			contents: contentsOf(ctx, id),
 			...notebookPanelData(ctx),
-			// What the Edit dialog switches, and how much is filed under each.
-			// Not in `notebookPanelData`: it is about one notebook, and the index
-			// draws the panel for whichever is selected rather than for a known one.
-			moduleChoices: moduleChoices(ctx, id),
 			onFamilyPlan: host.familyUserIds(ctx.userId).length > 1
 		};
 	} catch (e) {

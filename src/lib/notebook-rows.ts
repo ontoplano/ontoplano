@@ -41,21 +41,6 @@ function facts(...parts: (string | false | null | undefined)[]): string[] {
 const SHAPES: Partial<
 	Record<NotebookModule, (row: Record<string, never>, ctx: RowContext) => ModuleRow>
 > = {
-	ideas: (row, { t }) => {
-		const content = String(row.content ?? '');
-		return {
-			id: Number(row.id),
-			// An idea has no title: its first line is what it is called, the same
-			// way a note with no heading is listed by its opening.
-			title: content.split('\n')[0] || content,
-			meta: facts(
-				(row.tags as { name: string }[] | undefined)?.map((tag) => tag.name).join(' · '),
-				row.favorite ? t('notebooks.rows.favourite') : null
-			),
-			done: Boolean(row.isApplied)
-		};
-	},
-
 	inventory: (row, { t }) => ({
 		id: Number(row.id),
 		title: String(row.name ?? ''),

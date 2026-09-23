@@ -13,7 +13,7 @@
 	import OneLine from '$lib/components/OneLine.svelte';
 	import TagInput from '$lib/components/TagInput.svelte';
 	import ToggleRow from '$lib/components/ToggleRow.svelte';
-	import type { PlainKey } from '$lib/i18n/keys';
+	import { moduleChoicesOf, type NotebookModule } from '$lib/notebook-modules';
 	import { page } from '$app/state';
 	import { useT } from '$lib/i18n';
 
@@ -24,20 +24,33 @@
 		description = '',
 		defaultTags = '',
 		/**
-		 * What this notebook can be switched on to hold, and what it holds now.
+		 * The notebook being edited, when one exists.
 		 *
 		 * Absent while one is being made: a notebook that does not exist yet has
-		 * nothing filed under it and starts with notes and tasks, so asking here
-		 * would be a question with no consequence anybody can see. It is on the
-		 * Edit dialog, where the counts beside each row mean something.
+		 * nothing filed under it and starts with notes and tasks, so asking what
+		 * it holds would be a question with no consequence anybody can see. It
+		 * is on the Edit dialog, where the counts beside each row mean
+		 * something.
+		 *
+		 * The choices are worked out here rather than loaded, so that both
+		 * dialogs — the one on the list and the one on the notebook's own page —
+		 * offer the same fields. They did not: only one route had asked the
+		 * server for them.
 		 */
-		modules = []
+		notebook = null
 	}: {
 		title?: string;
 		description?: string;
 		defaultTags?: string;
-		modules?: { id: string; name: PlainKey; always: boolean; on: boolean; held: number }[];
+		notebook?: {
+			modules: readonly NotebookModule[];
+			counts: Record<NotebookModule, number>;
+		} | null;
 	} = $props();
+
+	const modules = $derived(
+		notebook ? moduleChoicesOf(notebook, page.data.hiddenSections ?? []) : []
+	);
 </script>
 
 <FormGrid>

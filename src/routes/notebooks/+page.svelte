@@ -482,6 +482,7 @@
 			title={editing?.title ?? ''}
 			description={editing?.description ?? ''}
 			defaultTags={editing?.defaultTags ?? ''}
+			notebook={editing}
 		/>
 	</form>
 

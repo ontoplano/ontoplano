@@ -161,3 +161,35 @@ export function modulesFor(
 		return !('hide' in meta && meta.hide) || !isHidden(hiddenSections, meta.hide);
 	});
 }
+
+/**
+ * Every module a notebook may be offered, with this notebook's answer.
+ *
+ * Pure, and computed from a notebook the page already has: the list and the
+ * single-notebook page both draw the same Edit dialog, and one of them had no
+ * "what it holds" at all because the server had only been asked for it on the
+ * other. A dialog that offers different fields depending on which pencil you
+ * pressed is the drift `NotebookFields` exists to prevent.
+ *
+ * A module whose room this account has put away is left out altogether. It
+ * would be a switch that changes nothing on screen, and the honest place to
+ * answer for it is Preferences, where the room itself was put away. What was
+ * stored for it is not lost: the server carries hidden modules over untouched.
+ */
+export function moduleChoicesOf(
+	notebook: { modules: readonly NotebookModule[]; counts: Record<NotebookModule, number> },
+	hiddenSections: readonly string[] = []
+): { id: NotebookModule; name: PlainKey; always: boolean; on: boolean; held: number }[] {
+	const on = new Set(notebook.modules);
+	return NOTEBOOK_MODULES.filter(
+		(m) => !('hide' in m && m.hide) || !isHidden(hiddenSections, m.hide)
+	).map((m) => ({
+		id: m.id,
+		name: m.name,
+		always: 'always' in m,
+		on: on.has(m.id),
+		// Counted whether or not it is switched on: turning a module off is one
+		// tab fewer, not four things deleted, and the row has to say so.
+		held: notebook.counts[m.id] ?? 0
+	}));
+}

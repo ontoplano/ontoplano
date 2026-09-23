@@ -106,25 +106,6 @@ const HABIT_TYPES: { value: string; label: PlainKey }[] = [
 ];
 
 export const MODULE_SPECS: Partial<Record<NotebookModule, ModuleSpec>> = {
-	ideas: {
-		newLabel: 'notebooks.newIdea',
-		empty: 'notebooks.nothingUnderThisSubjectYet',
-		create: NOTEBOOK_ACTIONS.ideas.create,
-		update: NOTEBOOK_ACTIONS.ideas.update,
-		remove: NOTEBOOK_ACTIONS.ideas.delete,
-		mark: {
-			action: NOTEBOOK_ACTIONS.ideas.toggleApplied,
-			icon: 'check',
-			label: 'notebooks.marks.applied',
-			undo: 'notebooks.marks.notAppliedAfterAll'
-		},
-		fields: [
-			{ kind: 'textarea', name: 'content', label: 'notebooks.fields.theIdea', rows: 3 },
-			{ kind: 'text', name: 'tags', label: 'notebooks.fields.tags' }
-		],
-		room: () => resolve('/notebooks/ideas')
-	},
-
 	inventory: {
 		newLabel: 'notebooks.newItem',
 		empty: 'notebooks.nothingUnderThisSubjectYet',

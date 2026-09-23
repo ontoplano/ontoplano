@@ -238,7 +238,7 @@
 			title={data.notebook.title}
 			description={data.notebook.description}
 			defaultTags={data.notebook.defaultTags}
-			modules={data.moduleChoices}
+			notebook={data.notebook}
 		/>
 	</form>
 

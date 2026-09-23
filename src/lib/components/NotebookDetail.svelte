@@ -45,6 +45,9 @@
 	import TodoRows from '$lib/components/TodoRows.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import ModuleTab from '$lib/components/ModuleTab.svelte';
+	import IdeaCard from '$lib/components/IdeaCard.svelte';
+	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
+	import { NOTEBOOK_IDEA_ACTIONS } from '$lib/idea-action-names';
 	import { DEFAULT_MODULES, moduleMeta, type NotebookModule } from '$lib/notebook-modules';
 	import { MODULE_SPECS } from '$lib/notebook-tabs';
 	import { rowsFor } from '$lib/notebook-rows';
@@ -136,6 +139,8 @@
 			blocks: { id: number; label: string | null; date: string; startTime: string }[];
 			/* The whole goal: the tab draws the goals room's own card. */
 			goals: ComponentProps<typeof GoalCard>['goal'][];
+			/* And the whole idea, for the same reason — see `IdeaCard`. */
+			ideas: ComponentProps<typeof IdeaCard>['idea'][];
 			/*
 			 * The other modules, each as its room's own rows.
 			 *
@@ -469,6 +474,26 @@
 	/** The module tabs' editor, opened from the same New button as the rest. */
 	let moduleComposing = $state(false);
 
+	/*
+	 * The Ideas tab's own composer, and which idea it is editing.
+	 *
+	 * `IdeaFields` rather than fields written here, for the same reason the
+	 * Goals tab uses `GoalFields`: an idea written in a notebook has to be the
+	 * same idea, with the same box, the same attachments and the same tags.
+	 */
+	let composingIdea = $state(false);
+	let editingIdeaId = $state<number | null>(null);
+	const editedIdea = $derived(
+		(
+			contents?.ideas as { id: number; content: string; tags: { name: string }[] }[] | undefined
+		)?.find((one) => one.id === editingIdeaId)
+	);
+
+	function closeIdeaForm() {
+		composingIdea = false;
+		editingIdeaId = null;
+	}
+
 	$effect(() => {
 		if (!notebook) {
 			newAction = undefined;
@@ -483,30 +508,38 @@
 					}
 				: tab === 'tasks'
 					? { label: t('notebookDetail.newTask'), run: () => openNewTodo?.() }
-					: tab === 'goals'
+					: tab === 'ideas'
 						? {
-								/*
-								 * Written here, like a task.
-								 *
-								 * This used to be a link to the goals room carrying the
-								 * notebook — which meant the same press stayed put on one
-								 * tab and threw you out of the notebook on the next. The
-								 * form is the goals room's own fields (`GoalFields`), so
-								 * it is the same form in both places.
-								 */
-								label: composingGoal ? t('ui.cancel') : t('notebookDetail.newGoal'),
+								label: composingIdea ? t('ui.cancel') : t('notebooks.newIdea'),
 								run: () => {
-									// Opening it fresh: the same modal edits a goal, and a
-									// half-filled form from the last edit is not a new goal.
-									editingGoalId = null;
-									goalTargets = [];
-									composingGoal = !composingGoal;
+									editingIdeaId = null;
+									composingIdea = !composingIdea;
 								}
 							}
-						: // Every other module's tab, which owns its own editor.
-							spec
-							? { label: t(spec.newLabel), run: () => (moduleComposing = true) }
-							: undefined;
+						: tab === 'goals'
+							? {
+									/*
+									 * Written here, like a task.
+									 *
+									 * This used to be a link to the goals room carrying the
+									 * notebook — which meant the same press stayed put on one
+									 * tab and threw you out of the notebook on the next. The
+									 * form is the goals room's own fields (`GoalFields`), so
+									 * it is the same form in both places.
+									 */
+									label: composingGoal ? t('ui.cancel') : t('notebookDetail.newGoal'),
+									run: () => {
+										// Opening it fresh: the same modal edits a goal, and a
+										// half-filled form from the last edit is not a new goal.
+										editingGoalId = null;
+										goalTargets = [];
+										composingGoal = !composingGoal;
+									}
+								}
+							: // Every other module's tab, which owns its own editor.
+								spec
+								? { label: t(spec.newLabel), run: () => (moduleComposing = true) }
+								: undefined;
 	});
 
 	/*
@@ -671,6 +704,13 @@
 					label: 'app.goals' as PlainKey,
 					count: contents?.goals.length ?? 0,
 					done: contents?.goals.filter((goal) => goal.status !== 'open').length ?? 0
+				};
+			if (key === 'ideas')
+				return {
+					key,
+					label: moduleMeta(key).name,
+					count: contents?.ideas.length ?? 0,
+					done: contents?.ideas.filter((idea) => idea.isApplied).length ?? 0
 				};
 
 			const rows = rowsFor(key, contents as Record<string, unknown[]> | null, { t, currency });
@@ -1105,6 +1145,34 @@
 						</div>
 					{/each}
 				</div>
+			{:else if tab === 'ideas'}
+				<!--
+					The Ideas room's own card, not a line with a tick beside it.
+
+					An idea filed under a subject is an idea: its star, its tags, the
+					note saying what was applied, and the verbs up its right-hand
+					edge. Drawing a thinner version of it here is how the two screens
+					stopped agreeing about what an idea is — see `IdeaCard`.
+				-->
+				{#if contents.ideas.length === 0}
+					<EmptyState icon="ideas" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+				{:else}
+					<div class="divide-y divide-gray-200 px-4">
+						{#each contents.ideas as idea (idea.id)}
+							<div class="py-2">
+								<IdeaCard
+									{idea}
+									actions={NOTEBOOK_IDEA_ACTIONS}
+									selected
+									onedit={(id) => {
+										editingIdeaId = id;
+										composingIdea = true;
+									}}
+								/>
+							</div>
+						{/each}
+					</div>
+				{/if}
 			{:else}
 				<!--
 					Everything else this subject holds, in its own room's terms.
@@ -1690,6 +1758,53 @@
 		<button type="submit" form="notebook-goal-form" class="btn btn-primary">
 			{editingGoal ? t('ui.save') : t('goals.createGoal')}
 		</button>
+	{/snippet}
+</Modal>
+
+<!--
+	The Ideas tab's composer, which is the Ideas room's form.
+
+	`IdeaFields` — the same box, the same picture and recording attachments,
+	the same tag input — so an idea caught against a subject is the same idea
+	caught anywhere else. The notebook rides along hidden, which is what files
+	it here.
+-->
+<Modal
+	bind:open={composingIdea}
+	title={editedIdea ? t('ui.edit') : t('notebooks.newIdea')}
+	onclose={closeIdeaForm}
+>
+	<form
+		id="notebook-idea-form"
+		method="post"
+		action={editedIdea ? '?/ideaUpdate' : '?/ideaCreate'}
+		use:enhance={() => {
+			const wasEditing = editedIdea !== undefined;
+			return async ({ result, update }) => {
+				await update({ reset: false });
+				if (result.type !== 'success') return;
+				closeIdeaForm();
+				say(wasEditing ? t('notebookDetail.saved') : t('notebooks.newIdea'));
+			};
+		}}
+	>
+		{#if editedIdea}
+			<input type="hidden" name="id" value={editedIdea.id} />
+		{/if}
+		<!-- What files it under this subject, on edits too, so saving an idea
+		     from in here never takes it out of the notebook. -->
+		<input type="hidden" name="notebookId" value={notebook?.id ?? ''} />
+		<FormGrid>
+			<IdeaFields
+				content={editedIdea?.content ?? ''}
+				tags={editedIdea?.tags.map((one) => one.name).join(', ') ?? ''}
+			/>
+		</FormGrid>
+	</form>
+
+	{#snippet footer()}
+		<button type="button" class="btn" onclick={closeIdeaForm}>{t('ui.cancel')}</button>
+		<button type="submit" form="notebook-idea-form" class="btn btn-primary">{t('ui.save')}</button>
 	{/snippet}
 </Modal>
 
