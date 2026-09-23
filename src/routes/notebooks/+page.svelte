@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { SvelteSet } from 'svelte/reactivity';
 	import { setRoomAction } from '$lib/room-action.svelte';
-	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { NOTEBOOK_SEPARATOR } from '$lib/services/notebooks';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { enhance } from '$lib/enhance';
@@ -117,10 +116,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<!-- The heading is the layout's — Notes, with this tab lit. -->
-	<RoomToolbar>
-		{#snippet tools()}{/snippet}
-	</RoomToolbar>
+	<!-- The heading and the tabs are the layout's — see `TabbedRoom`. -->
 	<!-- What a notebook is, for somebody who has none. Once there are some on
 	     screen they say it better than the sentence does, and it is a paragraph
 	     between the tabs and the thing you came for. -->

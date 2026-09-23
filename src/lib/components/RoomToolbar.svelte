@@ -34,6 +34,15 @@
 	} = $props();
 </script>
 
+<!--
+	Nothing at all when there is nothing in it.
+
+	`{#if tools}` is true for a snippet that renders nothing, which is not the
+	same question — the notebooks page passed `{#snippet tools()}{/snippet}` and
+	got an empty block with a rem of margin under it, a gap on the page that no
+	markup on the page explained. The rule in the style below asks what actually
+	came out of the snippets rather than whether they were handed over.
+-->
 {#if tools || filters}
 	<div class="room-toolbar {inset ? 'room-toolbar-inset' : ''}">
 		{#if tools}
@@ -55,6 +64,11 @@
 		flex-direction: column;
 		gap: 0.6rem;
 		margin-bottom: 1rem;
+	}
+
+	/* A toolbar whose rows all rendered nothing takes no room and no margin. */
+	.room-toolbar:not(:has(.room-toolbar-row > *)) {
+		display: none;
 	}
 
 	.room-toolbar-row {
