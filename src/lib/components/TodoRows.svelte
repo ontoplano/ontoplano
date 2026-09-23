@@ -1098,11 +1098,7 @@
 							is also what makes them line up: every row's gauges start at the
 							same x, whatever the title above them is doing.
 						-->
-						<!--
-							And as tall as the row, so the bars have the height to be read
-							with. The rail beside a three-line task was two thirds empty.
-						-->
-						<div class="flex shrink-0 flex-col items-center gap-1 self-stretch">
+						<div class="flex shrink-0 flex-col items-center gap-1 self-start">
 							<form
 								id="toggle-form-{todo.id}"
 								method="post"
@@ -1195,7 +1191,7 @@
 						-->
 							<button
 								type="button"
-								class="min-h-0 flex-1 cursor-pointer"
+								class="cursor-pointer"
 								onclick={() => startEdit(todo, { atRatings: true })}
 								title={ratingSummary(todo.ratings, t as never)}
 								aria-label={ratingSummary(todo.ratings, t as never)}
@@ -1343,39 +1339,6 @@
 									labels, which is the other thing you look at when you are
 									choosing what to do rather than reading what it is.
 								-->
-								{#if todo.tags.length > 0}
-									<div class="mt-1 flex flex-wrap items-center gap-1">
-										{#each todo.tags as tag (tag.id)}
-											<!--
-												The chip says when it went on.
-												
-												Which is the whole reason the join carries a date: a
-												list of labels says what is true and says nothing
-												about what is new. Under the pointer rather than
-												beside the word, because the age matters when you go
-												looking for it and would be noise on every row at
-												once. A label from before the column existed simply
-												does not say — an invented date would be read as real.
-											-->
-											<TagChip
-												name={tag.name}
-												active={tagFilter.includes(tag.name)}
-												title={tag.taggedAt
-													? t('todoRows.taggedAgo', { ago: agoOf(tag.taggedAt, now()) })
-													: undefined}
-												onclick={() => {
-													// Pressing a label adds it to the filter rather than
-													// replacing it, so two presses is two labels — the
-													// same thing the picker above does.
-													tagFilter = tagFilter.includes(tag.name)
-														? tagFilter.filter((one) => one !== tag.name)
-														: [...tagFilter.filter((one) => one !== NO_TAG), tag.name];
-													selectedIndex = 0;
-												}}
-											/>
-										{/each}
-									</div>
-								{/if}
 								<Backlinks
 									goals={goalLinks[todo.id]}
 									notebook={notebookId === null && todo.notebookId && todo.notebookTitle
@@ -1508,11 +1471,51 @@
 									control. A task filed under nothing has no number and shows
 									none.
 								-->
-								{#if todo.notebookSeq !== null}
-									<span class="tabular order-first mr-auto text-[11px] text-gray-500">
-										#{todo.notebookSeq}
-									</span>
-								{/if}
+								<!--
+									The number and then the labels, on the same line.
+
+									The labels used to sit above, under the notes, which put
+									them in the middle of what somebody is reading rather than
+									with the other things a row is filed under. They belong
+									with the number: both of them say how to find this task
+									again rather than what it is.
+								-->
+								<div class="order-first mr-auto flex min-w-0 flex-wrap items-center gap-1">
+									{#if todo.notebookSeq !== null}
+										<span class="tabular text-[11px] text-gray-500">
+											#{todo.notebookSeq}
+										</span>
+									{/if}
+									{#each todo.tags as tag (tag.id)}
+										<!--
+											The chip says when it went on.
+											
+											Which is the whole reason the join carries a date: a
+											list of labels says what is true and says nothing
+											about what is new. Under the pointer rather than
+											beside the word, because the age matters when you go
+											looking for it and would be noise on every row at
+											once. A label from before the column existed simply
+											does not say — an invented date would be read as real.
+										-->
+										<TagChip
+											name={tag.name}
+											active={tagFilter.includes(tag.name)}
+											title={tag.taggedAt
+												? t('todoRows.taggedAgo', { ago: agoOf(tag.taggedAt, now()) })
+												: undefined}
+											onclick={() => {
+												// Pressing a label adds it to the filter rather than
+												// replacing it, so two presses is two labels — the
+												// same thing the picker above does.
+												tagFilter = tagFilter.includes(tag.name)
+													? tagFilter.filter((one) => one !== tag.name)
+													: [...tagFilter.filter((one) => one !== NO_TAG), tag.name];
+												selectedIndex = 0;
+											}}
+										/>
+									{/each}
+								</div>
 							</div>
 						</div>
 					</div>
@@ -1646,7 +1649,19 @@
 				number is the only way to see what moving one slider did to the
 				task's place in the list.
 			-->
-			<span class="flex-1 text-center text-sm" title={t('ratings.whereItWouldSit')}>
+			<span
+				class="flex flex-1 items-center justify-center gap-2 text-sm"
+				title={t('ratings.whereItWouldSit')}
+			>
+				<!--
+					The same three bars the card will wear, moving as the sliders do.
+
+					What the sliders set is a drawing on a row, and the form asked
+					somebody to imagine it: three numbers here, three bars out
+					there. It is the drawing itself now, so what you are making is
+					in front of you while you make it.
+				-->
+				<RatingBadges values={formRatings} />
 				<span class="tabular text-gray-700">
 					{t('ratings.nthInLine', { nth: ordinal(t, draftPlace) })}
 				</span>
