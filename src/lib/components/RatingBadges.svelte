@@ -65,14 +65,24 @@
 	 * comparison and the eye does not have to find each one's bottom first.
 	 */
 	.rating-bars {
-		--bar-width: 4px;
-		--bar-height: 1.75rem;
+		--bar-width: 5px;
 		--bar-gap: 3px;
+		/* Enough to read on a one-line task, which is the shortest row there is. */
+		--bar-least: 1.75rem;
 
 		display: inline-flex;
 		align-items: end;
 		gap: var(--bar-gap);
-		height: var(--bar-height);
+		/*
+		 * All of the rail, less the padding.
+		 *
+		 * They were a fixed 1.75rem in a column that is often three lines tall,
+		 * so most of the one part of a card with height to spare was empty and
+		 * the difference between a 3 and a 4 was two pixels. The caller gives
+		 * this the leftover height under the tick box; this takes it.
+		 */
+		height: 100%;
+		min-height: var(--bar-least);
 	}
 
 	/*
