@@ -25,7 +25,7 @@ export function notebookPanelData(ctx: Ctx) {
 		// offers the same two pickers.
 		categories: listCategories(ctx),
 		// What the other module tabs' editors offer, the same lists their own
-		// rooms hand them — see `ModuleTab`.
+		// rooms hand them — see each module's own card.
 		inventoryCategories: listInventoryCategories(ctx),
 		workoutCategories: listWorkoutCategories(ctx),
 		// For the money a ledger holds and a bill expects.

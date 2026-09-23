@@ -19,7 +19,7 @@ import {
  * panel, and a notebook is not where somebody imports one.
  *
  * Mounted under the room's older names there and under a prefix inside a
- * notebook — see `$lib/module-actions`.
+ * notebook — see `$lib/ledger-action-names`.
  */
 type Event = Pick<RequestEvent, 'request'> & { locals: App.Locals };
 

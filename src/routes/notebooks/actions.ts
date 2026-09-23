@@ -376,7 +376,7 @@ export const notebookActions = {
 	 * habit on a notebook's Habits tab runs the code the Health room runs, and
 	 * a bill paid here is paid there. `under` applies the same naming rule the
 	 * markup's action names come from, so a form and its handler cannot drift
-	 * apart; see `$lib/module-actions`.
+	 * apart; see `$lib/services/scoped-actions`.
 	 *
 	 * All of them, whatever this notebook is switched on for: what a notebook
 	 * holds is a preference about what to draw, not about what may be posted,

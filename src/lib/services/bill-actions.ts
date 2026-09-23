@@ -19,7 +19,7 @@ import {
  * The Finance room shows every bill; a notebook shows the ones filed under its
  * subject — the architect's fee, the skip hire — and paying one there has to
  * mean the same thing. The notebook mounts these under a prefix; see
- * `$lib/module-actions` for the names each screen posts to.
+ * `$lib/bill-action-names` for the names each screen posts to.
  */
 type Event = Pick<RequestEvent, 'request'> & { locals: App.Locals };
 

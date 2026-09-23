@@ -616,7 +616,7 @@ export function mealsBetween(ctx: Ctx, from: string, to: string) {
 }
 
 /** Recipes ordered by how much of them you already have. */
-export function withMissingCounts(ctx: Ctx) {
+export function withMissingCounts(ctx: Ctx, options: { notebookId?: number } = {}) {
 	const counts = db
 		.select({
 			recipeId: recipeItems.recipeId,
@@ -631,7 +631,7 @@ export function withMissingCounts(ctx: Ctx) {
 
 	const byRecipe = new Map(counts.map((c) => [c.recipeId, c]));
 
-	return listRecipes(ctx).map((recipe) => {
+	return listRecipes(ctx, options).map((recipe) => {
 		const count = byRecipe.get(recipe.id);
 		return {
 			...recipe,

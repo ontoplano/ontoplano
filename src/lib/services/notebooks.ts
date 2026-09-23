@@ -36,8 +36,9 @@ import { listItems } from './inventory.js';
 import { listLedgers } from './ledgers.js';
 import { listBillsThisPeriod } from './bills.js';
 import { listHabits, listOccurrences, today as habitsToday } from './habits.js';
-import { listWorkouts } from './workouts.js';
-import { listRecipes } from './recipes.js';
+import { listWorkouts, listSessions as listWorkoutSessions } from './workouts.js';
+import { withMissingCounts } from './recipes.js';
+import { mainPictures } from './media.js';
 import { getHiddenSections, getWeekSettings } from './settings.js';
 import { isHidden } from '../sections.js';
 import { ConflictError, NotFoundError } from './errors.js';
@@ -54,6 +55,15 @@ import { optionalTagInput, parseTags } from './tags.js';
  * deleting a notebook leaves every one of them where it is. That is the whole
  * design, and the reason this is not a second task system.
  */
+
+/**
+ * How much of the workout register a notebook carries.
+ *
+ * The same reasoning the Health room's own page uses: the history under a
+ * workout is read rather than paged, and a few hundred rows is far enough back
+ * to be useful without the page being a database dump.
+ */
+const NOTEBOOK_SESSIONS = 300;
 
 export const MAX_TITLE_LENGTH = 120;
 export const MAX_DESCRIPTION_LENGTH = 2000;
@@ -537,7 +547,12 @@ export function contentsOf(ctx: Ctx, id: number) {
 		today: habitsToday(ctx),
 		weekFirstDay: getWeekSettings(ctx.userId).firstDay,
 		workouts: listWorkouts(ctx, { notebookId: id, includeArchived: true }),
-		recipes: listRecipes(ctx, { notebookId: id, includeArchived: true })
+		// The register under each plan, the same list the Health room hands its
+		// cards. Every session, narrowed by the card to its own workout.
+		workoutSessions: listWorkoutSessions(ctx, { limit: NOTEBOOK_SESSIONS }),
+		// The same rows the Kitchen hands its cards: what each needs, and what
+		// of that the cupboard has not got, plus the picture it is known by.
+		recipes: withRecipePictures(ctx, withMissingCounts(ctx, { notebookId: id }))
 	};
 }
 
@@ -813,4 +828,19 @@ export function setNotebookShared(ctx: Ctx, id: number, shared: boolean): void {
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('notebook');
+}
+
+/**
+ * Each recipe with the picture it is known by.
+ *
+ * One query for the whole list rather than one per card, which is the same
+ * bargain the Kitchen's own load makes — forty round trips to ask "does this
+ * one have a picture" is how a list stops being instant.
+ */
+function withRecipePictures<T extends { id: number }>(ctx: Ctx, recipes: T[]) {
+	const main = mainPictures(
+		ctx,
+		recipes.map((one) => one.id)
+	);
+	return recipes.map((one) => ({ ...one, mainPicture: main.get(one.id) ?? null }));
 }

@@ -18,6 +18,7 @@
 	import { formatMoney, type Currency } from '$lib/money';
 	import { LEDGER_KIND_LABELS, LEDGER_KINDS } from '$lib/services/ledgers';
 	import type { PageServerData, ActionData } from './$types';
+	import LedgerTile from '$lib/components/LedgerTile.svelte';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -160,31 +161,15 @@
 		{#snippet tools()}
 			{#each active as ledger (ledger.id)}
 				<!--
-				One ledger, as a tile you can read at a glance: what it is
-				called over what it holds. Written as two lines rather than
-				four things strung across one, because on a phone the strung
-				version ran two ledgers into each other and off the screen.
-			-->
-				<button
-					class="flex min-w-36 shrink-0 flex-col items-start gap-0.5 rounded border px-3 py-2 text-left transition-colors {data
-						.current?.id === ledger.id
-						? 'border-gray-900 bg-gray-50'
-						: 'border-gray-200 hover:border-gray-400'}"
-					onclick={() => show(ledger.id)}
-				>
-					<span class="w-full truncate text-sm font-medium text-gray-900">{ledger.name}</span>
-					<span class="flex w-full items-baseline gap-2">
-						<span class="text-xs text-gray-500">{t(LEDGER_KIND_LABELS[ledger.kind])}</span>
-						<span class="text-xs text-gray-400 tabular-nums">{ledger.count}</span>
-						<span
-							class="ml-auto text-xs tabular-nums {ledger.balanceCents < 0
-								? 'text-red-600'
-								: 'text-blue-700'}"
-						>
-							{money(ledger.balanceCents)}
-						</span>
-					</span>
-				</button>
+					The tile is a component, so a ledger filed under a notebook reads
+					the same way it does here — see `LedgerTile`.
+				-->
+				<LedgerTile
+					{ledger}
+					{currency}
+					current={data.current?.id === ledger.id}
+					onpick={(id) => show(id)}
+				/>
 			{/each}
 			{#if archived.length > 0}
 				<button

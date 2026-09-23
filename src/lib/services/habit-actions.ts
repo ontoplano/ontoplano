@@ -18,8 +18,8 @@ import type { RequestEvent } from '@sveltejs/kit';
  * The Health room shows every habit; a notebook shows the ones filed under it,
  * and ticking one there has to mean the same thing. So the handlers live here
  * and both routes mount them — see `$lib/services/scoped-actions` for how the
- * notebook mounts them under a prefix, and `$lib/scoped-actions` for the names
- * the markup posts to.
+ * notebook mounts them under a prefix, and `$lib/habit-action-names` for the
+ * names the markup posts to.
  */
 type Event = Pick<RequestEvent, 'request'> & { locals: App.Locals };
 

@@ -42,7 +42,6 @@ const ALLOWED: Record<string, number> = {
 	'src/lib/components/TodoRows.svelte': 3,
 	'src/routes/+page.svelte': 2,
 	'src/routes/demo/+page.svelte': 1,
-	'src/routes/health/workouts/+page.svelte': 1,
 	'src/routes/instance/+page.svelte': 1,
 	'src/routes/inventory/+page.svelte': 3,
 	'src/routes/start/+page.svelte': 2,

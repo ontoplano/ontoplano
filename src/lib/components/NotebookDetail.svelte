@@ -44,17 +44,20 @@
 	} from '$lib/note-order';
 	import TodoRows from '$lib/components/TodoRows.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
-	import ModuleTab from '$lib/components/ModuleTab.svelte';
 	import IdeaCard from '$lib/components/IdeaCard.svelte';
 	import BillRow from '$lib/components/BillRow.svelte';
 	import HabitCard from '$lib/components/HabitCard.svelte';
+	import LedgerTile from '$lib/components/LedgerTile.svelte';
+	import RecipeCard from '$lib/components/RecipeCard.svelte';
+	import WorkoutCard from '$lib/components/WorkoutCard.svelte';
+	import ItemRow from '$lib/components/ItemRow.svelte';
+	import { NOTEBOOK_ITEM_ACTIONS } from '$lib/item-action-names';
+	import { NOTEBOOK_WORKOUT_ACTIONS } from '$lib/workout-action-names';
 	import { NOTEBOOK_HABIT_ACTIONS } from '$lib/habit-action-names';
 	import { NOTEBOOK_BILL_ACTIONS } from '$lib/bill-action-names';
 	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
 	import { NOTEBOOK_IDEA_ACTIONS } from '$lib/idea-action-names';
 	import { DEFAULT_MODULES, moduleMeta, type NotebookModule } from '$lib/notebook-modules';
-	import { MODULE_SPECS } from '$lib/notebook-tabs';
-	import { rowsFor } from '$lib/notebook-rows';
 	import type { Currency } from '$lib/money';
 	import { NOTEBOOK_TODO_ACTIONS } from '$lib/todo-actions';
 	import type { Todo } from '$lib/services/todos';
@@ -103,10 +106,7 @@
 		showingOrphans = false,
 		allPeople = [],
 		categories = [],
-		inventoryCategories = [],
-		workoutCategories = [],
 		currency = 'BRL',
-		formMessage = null,
 		pickableNotebooks = [],
 		areas = [],
 		workoutMeasures = [],
@@ -157,6 +157,15 @@
 			today: string;
 			/** 0 for Monday — where the heatmap's weeks start. */
 			weekFirstDay: number;
+			/* The ledgers this subject's money moves through — see `LedgerTile`. */
+			ledgers: ComponentProps<typeof LedgerTile>['ledger'][];
+			/* And the whole recipe, with what the cupboard has not got. */
+			recipes: ComponentProps<typeof RecipeCard>['recipe'][];
+			/* And the whole workout, with the register under its plan. */
+			workouts: ComponentProps<typeof WorkoutCard>['workout'][];
+			workoutSessions: ComponentProps<typeof WorkoutCard>['sessions'];
+			/* And the whole thing, with its count and its own fields. */
+			inventory: ComponentProps<typeof ItemRow>['item'][];
 			/*
 			 * The other modules, each as its room's own rows.
 			 *
@@ -173,18 +182,8 @@
 		allPeople?: { id: number; name: string }[];
 		/** What the Tasks tab's editor offers, the same as the to-do room's. */
 		categories?: { id: number; name: string }[];
-		/** What the Inventory and Workouts tabs' editors offer, from their rooms. */
-		inventoryCategories?: { id: number; name: string }[];
-		workoutCategories?: { id: number; name: string }[];
 		/** For the money a ledger holds and a bill expects. */
 		currency?: Currency;
-		/**
-		 * What the last submission said, if it failed.
-		 *
-		 * The page behind an open dialog is dimmed and inert, so an error drawn
-		 * out there cannot be read — a module's editor has to carry its own.
-		 */
-		formMessage?: string | null;
 		pickableNotebooks?: { id: number; title: string }[];
 		areas?: { id: number; name: string }[];
 		workoutMeasures?: { activity: string; unit: string }[];
@@ -487,8 +486,32 @@
 		composingGoal = true;
 	}
 
-	/** The module tabs' editor, opened from the same New button as the rest. */
-	let moduleComposing = $state(false);
+	/**
+	 * Where a module's own room is, and what its New button says.
+	 *
+	 * These six write through the room's own form, which is where that form
+	 * lives — the same reason the Goals tab used to be a link. Each is being
+	 * moved in here one at a time, the way Goals and Ideas already have been:
+	 * the form is the room's component, so it is the same form in both places
+	 * rather than a thinner one written twice.
+	 */
+	const ROOM_OF: Partial<Record<NotebookModule, string>> = {
+		inventory: resolve('/inventory'),
+		ledgers: resolve('/finance/ledgers'),
+		bills: resolve('/finance/bills'),
+		habits: resolve('/health/habits'),
+		workouts: resolve('/health/workouts'),
+		recipes: resolve('/health/recipes')
+	};
+
+	const NEW_LABELS: Partial<Record<NotebookModule, PlainKey>> = {
+		inventory: 'notebooks.newItem',
+		ledgers: 'notebooks.newLedger',
+		bills: 'notebooks.newBill',
+		habits: 'notebooks.newHabit',
+		workouts: 'notebooks.newWorkout',
+		recipes: 'notebooks.newRecipe'
+	};
 
 	/*
 	 * The Ideas tab's own composer, and which idea it is editing.
@@ -515,7 +538,6 @@
 			newAction = undefined;
 			return;
 		}
-		const spec = MODULE_SPECS[tab];
 		newAction =
 			tab === 'notes'
 				? {
@@ -552,10 +574,11 @@
 										composingGoal = !composingGoal;
 									}
 								}
-							: // Every other module's tab, which owns its own editor.
-								spec
-								? { label: t(spec.newLabel), run: () => (moduleComposing = true) }
-								: undefined;
+							: // The rest, each in the room that owns its form.
+								{
+									label: t(NEW_LABELS[tab] ?? 'ui.add'),
+									href: ROOM_OF[tab]
+								};
 	});
 
 	/*
@@ -728,6 +751,20 @@
 					count: contents?.ideas.length ?? 0,
 					done: contents?.ideas.filter((idea) => idea.isApplied).length ?? 0
 				};
+			if (key === 'inventory')
+				return {
+					key,
+					label: moduleMeta(key).name,
+					count: contents?.inventory.length ?? 0,
+					// Got it, which is what the tick on a row says.
+					done: contents?.inventory.filter((item) => item.bought).length ?? 0
+				};
+			if (key === 'workouts')
+				return { key, label: moduleMeta(key).name, count: contents?.workouts.length ?? 0 };
+			if (key === 'recipes')
+				return { key, label: moduleMeta(key).name, count: contents?.recipes.length ?? 0 };
+			if (key === 'ledgers')
+				return { key, label: moduleMeta(key).name, count: contents?.ledgers.length ?? 0 };
 			if (key === 'habits')
 				return {
 					key,
@@ -751,15 +788,9 @@
 					done: contents?.bills.filter((bill) => !bill.active).length ?? 0
 				};
 
-			const rows = rowsFor(key, contents as Record<string, unknown[]> | null, { t, currency });
-			return {
-				key,
-				label: moduleMeta(key).name,
-				count: rows.length,
-				// What "done" means differs per room — bought, paid, put away — and
-				// `rowsFor` is where that is decided.
-				done: rows.filter((row) => row.done).length
-			};
+			// Every module above names itself; this is the compiler's proof that
+			// none is missing rather than a fallback anybody reaches.
+			return { key, label: moduleMeta(key).name, count: 0 };
 		})
 	);
 
@@ -1211,6 +1242,80 @@
 						{/each}
 					</div>
 				{/if}
+			{:else if tab === 'inventory'}
+				<!--
+					The Inventory room's own row: the count you press up and down, the
+					price, the thing's own fields and the recipes that use it. The
+					count is the whole point of the list — two tins and none are both
+					"unticked" until you look — see `ItemRow`.
+				-->
+				{#if contents.inventory.length === 0}
+					<EmptyState icon="shopping" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+				{:else}
+					<div class="divide-y divide-gray-200">
+						{#each contents.inventory as item (item.id)}
+							<div class="flex items-center gap-x-3 px-4 py-2">
+								<ItemRow {item} {currency} actions={NOTEBOOK_ITEM_ACTIONS} />
+							</div>
+						{/each}
+					</div>
+				{/if}
+			{:else if tab === 'workouts'}
+				<!--
+					The Health room's own card: the plan, and the record of what was
+					actually done under it. Writing a session down is the room's own
+					dialog, which is why that one is a link out rather than a form
+					here — see `WorkoutCard`.
+				-->
+				{#if contents.workouts.length === 0}
+					<EmptyState icon="flame" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+				{:else}
+					<ul class="divide-y divide-gray-200">
+						{#each contents.workouts as workout (workout.id)}
+							<WorkoutCard
+								{workout}
+								sessions={contents.workoutSessions}
+								actions={NOTEBOOK_WORKOUT_ACTIONS}
+							/>
+						{/each}
+					</ul>
+				{/if}
+			{:else if tab === 'recipes'}
+				<!--
+					The Kitchen's own card: the picture it is known by, and what it
+					needs that the cupboard has not got. The loop between a recipe, the
+					week and the shopping list is what the room is for, and a card
+					without it is a title in a list — see `RecipeCard`.
+				-->
+				{#if contents.recipes.length === 0}
+					<EmptyState icon="utensils" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+				{:else}
+					<div class="grid gap-px bg-gray-200 sm:grid-cols-2">
+						{#each contents.recipes as recipe (recipe.id)}
+							<RecipeCard {recipe} />
+						{/each}
+					</div>
+				{/if}
+			{:else if tab === 'ledgers'}
+				<!--
+					The Finance room's own tile: what it is called over what it holds,
+					with the balance at the end. A statement is a page rather than a
+					panel, so pressing one goes there — a notebook is not where
+					somebody reads a bank export.
+				-->
+				{#if contents.ledgers.length === 0}
+					<EmptyState icon="wallet" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+				{:else}
+					<div class="flex flex-wrap gap-2 px-4 py-3">
+						{#each contents.ledgers as ledger (ledger.id)}
+							<LedgerTile
+								{ledger}
+								{currency}
+								href={`${resolve('/finance/ledgers')}?ledger=${ledger.id}`}
+							/>
+						{/each}
+					</div>
+				{/if}
 			{:else if tab === 'habits'}
 				<!--
 					The Health room's own card: the streak, the year at a glance, the
@@ -1252,27 +1357,6 @@
 						{/each}
 					</ul>
 				{/if}
-			{:else}
-				<!--
-					Everything else this subject holds, in its own room's terms.
-
-					One component for all seven — see `ModuleTab`, which is why a
-					bill and a habit line up rather than each having been drawn by
-					hand. It posts to this page, which mounts each room's own
-					handlers, so the work is real work and not a copy of it.
-				-->
-				<div class="px-4 py-3">
-					<ModuleTab
-						module={tab}
-						notebookId={notebook.id}
-						contents={contents as Record<string, unknown[]>}
-						{currency}
-						{inventoryCategories}
-						{workoutCategories}
-						{formMessage}
-						bind:composing={moduleComposing}
-					/>
-				</div>
 			{/if}
 		{/if}
 	</div>

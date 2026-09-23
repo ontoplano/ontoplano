@@ -206,10 +206,7 @@
 			contents={data.contents}
 			allPeople={data.allPeople}
 			categories={data.categories}
-			inventoryCategories={data.inventoryCategories}
-			workoutCategories={data.workoutCategories}
 			currency={data.currency}
-			formMessage={form?.message ?? null}
 			pickableNotebooks={data.pickableNotebooks}
 			areas={data.areas}
 			workoutMeasures={data.workoutMeasures}

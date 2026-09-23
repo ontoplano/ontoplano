@@ -1,5 +1,4 @@
 import type { Actions } from '@sveltejs/kit';
-import { scopedName } from '../scoped-actions.js';
 
 /**
  * A room's handlers, mounted under a prefix.
@@ -10,11 +9,15 @@ import { scopedName } from '../scoped-actions.js';
  * things by the same button. The plain names belong to the notebook itself, so
  * they are mounted prefixed: `create` becomes `habitCreate`.
  *
- * The prefix is applied by `scopedName`, the same function the markup's action
- * names come from, so a form and its handler cannot disagree about the name.
+ * What the markup posts to is the matching `*-action-names.ts` beside each
+ * card — `$lib/habit-action-names`, `$lib/bill-action-names` and the rest —
+ * which spell the same names out for the two screens that draw the card.
  */
 export function under(prefix: string, handlers: Actions): Actions {
 	return Object.fromEntries(
-		Object.entries(handlers).map(([verb, handler]) => [scopedName(prefix, verb), handler])
+		Object.entries(handlers).map(([verb, handler]) => [
+			`${prefix}${verb[0].toUpperCase()}${verb.slice(1)}`,
+			handler
+		])
 	);
 }
