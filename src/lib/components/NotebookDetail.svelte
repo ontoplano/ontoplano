@@ -43,6 +43,7 @@
 		type NoteOrder
 	} from '$lib/note-order';
 	import TodoRows from '$lib/components/TodoRows.svelte';
+	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { NOTEBOOK_TODO_ACTIONS } from '$lib/todo-actions';
 	import type { Todo } from '$lib/services/todos';
 	import { browsable } from '$lib/browse.svelte';
@@ -798,9 +799,21 @@
 			</div>
 
 			{#if tab === 'notes'}
-				<div class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-2 py-1.5">
-					{@render noteControls()}
-				</div>
+				<!--
+					The same block the Tasks tab draws, by the same component.
+
+					This was a hand-rolled row with `px-2 py-1.5` on it while Tasks
+					used `RoomToolbar inset`, which is a whole rem — so the search
+					box, the filter button, the count and the sort all sat eight
+					pixels further left here, and the strip was a different height.
+					Changing tab moved every control in it. One component, so the
+					two cannot drift again.
+				-->
+				<RoomToolbar inset>
+					{#snippet tools()}
+						{@render noteControls()}
+					{/snippet}
+				</RoomToolbar>
 			{/if}
 
 			{#if tab === 'notes'}
@@ -1080,9 +1093,10 @@
 		}}
 	>
 		{#snippet lead()}
-			<!-- A row of its own on a phone: it is the one control somebody types
-			     into rather than presses. -->
-			<label class="order-first w-full min-w-32 sm:order-none sm:w-auto sm:max-w-56 sm:flex-1">
+			<!-- The box fills the slot; how wide that slot is belongs to
+			     `FilterBar`, so this tab and the Tasks tab beside it are the same
+			     shape. -->
+			<label class="block w-full">
 				<span class="sr-only">{t('notebookDetail.searchTheseNotes')}</span>
 				<input
 					type="search"
