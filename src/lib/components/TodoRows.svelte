@@ -24,6 +24,7 @@
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
 	import { ratingSummary } from '$lib/ratings';
+	import { overflows } from '$lib/actions/overflows';
 	import TagChip from '$lib/components/TagChip.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -192,8 +193,30 @@
 	}
 
 	/** Whether there is anything under the title worth unfolding. */
+	/**
+	 * The rows whose one-line notes are showing less than they hold.
+	 *
+	 * Measured rather than counted — see `$lib/actions/overflows`. A row is in
+	 * here only while it is folded; opening it stops it overflowing, which is
+	 * why `hasMore` keeps the open ones too, so the chevron that shuts one does
+	 * not vanish the moment it works.
+	 */
+	const truncated = new SvelteSet<number>();
+
+	const notesTruncate = (id: number) => (over: boolean) => {
+		if (over) truncated.add(id);
+		else truncated.delete(id);
+	};
+
+	/**
+	 * Whether this row has anything folded away.
+	 *
+	 * Not "does it have notes": a task whose note is one short line carried a
+	 * chevron, and pressing it swapped one line of text for the same line of
+	 * text. A control that unfolds nothing is not an offer.
+	 */
 	function hasMore(todo: Todo): boolean {
-		return Boolean(todo.notes);
+		return Boolean(todo.notes) && (truncated.has(todo.id) || openNotes.has(todo.id));
 	}
 
 	let formRatings: Record<string, number | null> = $state({
@@ -1061,7 +1084,11 @@
 							is also what makes them line up: every row's gauges start at the
 							same x, whatever the title above them is doing.
 						-->
-						<div class="flex shrink-0 flex-col items-center gap-1 self-start">
+						<!--
+							And as tall as the row, so the bars have the height to be read
+							with. The rail beside a three-line task was two thirds empty.
+						-->
+						<div class="flex shrink-0 flex-col items-center gap-1 self-stretch">
 							<form
 								id="toggle-form-{todo.id}"
 								method="post"
@@ -1154,7 +1181,7 @@
 						-->
 							<button
 								type="button"
-								class="cursor-pointer"
+								class="min-h-0 flex-1 cursor-pointer"
 								onclick={() => startEdit(todo, { atRatings: true })}
 								title={ratingSummary(todo.ratings, t as never)}
 								aria-label={ratingSummary(todo.ratings, t as never)}
@@ -1270,32 +1297,25 @@
 										the press is caught here rather than bound to the whole
 										block, so playing something does not fold the row.
 									-->
-									{#if hasMore(todo) && !openNotes.has(todo.id)}
-										<!-- svelte-ignore a11y_click_events_have_key_events -->
-										<!-- svelte-ignore a11y_no_static_element_interactions -->
-										<div
-											class="cursor-pointer"
-											onclick={(press) => {
-												const target = press.target as HTMLElement;
-												if (target.closest('a, button, audio, input, textarea')) return;
-												toggleNotes(todo.id);
-											}}
-										>
-											<Written
-												content={todo.notes}
-												compact
-												oneLine={!openNotes.has(todo.id)}
-												todos={todoRefs}
-											/>
-										</div>
-									{:else}
+									<!-- svelte-ignore a11y_click_events_have_key_events -->
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
+									<div
+										use:overflows={notesTruncate(todo.id)}
+										class={hasMore(todo) && !openNotes.has(todo.id) ? 'cursor-pointer' : ''}
+										onclick={(press) => {
+											if (!hasMore(todo) || openNotes.has(todo.id)) return;
+											const target = press.target as HTMLElement;
+											if (target.closest('a, button, audio, input, textarea')) return;
+											toggleNotes(todo.id);
+										}}
+									>
 										<Written
 											content={todo.notes}
 											compact
 											oneLine={!openNotes.has(todo.id)}
 											todos={todoRefs}
 										/>
-									{/if}
+									</div>
 								{/if}
 								<!-- Pressing one narrows the list to it, the way an idea's do:
 								     a label is only useful if reading back one of them is a
