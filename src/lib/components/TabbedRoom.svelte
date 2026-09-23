@@ -226,23 +226,35 @@
 			the tile works.
 		-->
 		<div class="room-tabs">
-			<nav
-				use:scrollHints
-				use:sliding
-				class="seg scroll-hints min-w-0"
-				aria-label={label}
-				data-tour={dataTour}
-			>
-				<!-- Resolved by whoever described the tabs: a stream's slug is a route
-				     parameter, and the rule cannot see through the array. -->
-				<!-- eslint-disable svelte/no-navigation-without-resolve -->
-				{#each tabs as tab, index (tab.href)}
-					<a href={tab.href} aria-current={here(index) ? 'page' : undefined}>
-						{tab.label}
-					</a>
-				{/each}
-				<!-- eslint-enable svelte/no-navigation-without-resolve -->
-			</nav>
+			<!--
+				The track and the strip that scrolls inside it are two elements.
+
+				The fade that says "there is more this way" is a mask, and a mask
+				takes the background with it — so masking the track itself made
+				its own surface dissolve at the end and showed the room's colour
+				through, which reads as a smudge rather than as a row that
+				continues. The track keeps its surface and its corner; the row of
+				tabs inside it is the thing that fades.
+			-->
+			<div class="seg seg-track min-w-0">
+				<nav
+					use:scrollHints
+					use:sliding
+					class="seg-scroll scroll-hints"
+					aria-label={label}
+					data-tour={dataTour}
+				>
+					<!-- Resolved by whoever described the tabs: a stream's slug is a
+					     route parameter, and the rule cannot see through it. -->
+					<!-- eslint-disable svelte/no-navigation-without-resolve -->
+					{#each tabs as tab, index (tab.href)}
+						<a href={tab.href} aria-current={here(index) ? 'page' : undefined}>
+							{tab.label}
+						</a>
+					{/each}
+					<!-- eslint-enable svelte/no-navigation-without-resolve -->
+				</nav>
+			</div>
 			<RoomVerb />
 		</div>
 	</RoomBar>

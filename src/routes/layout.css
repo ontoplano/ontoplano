@@ -198,6 +198,37 @@ input[type='radio'] {
 }
 
 /*
+ * And the travelling tile is concentric with the track it runs in.
+ *
+ * A curve inset by the track's padding has to be that much tighter, or the two
+ * do not follow each other and the gap between them pinches at the corners.
+ * `!important` and unlayered for the same reason as the gauge above: the
+ * playful style's blanket rule matches this as a `<span>` and lives outside
+ * the layer, so it wins however specific the rule inside the layer is.
+ */
+.seg-tile {
+	border-radius: calc(var(--radius, 0px) - var(--seg-pad, 0px)) !important;
+}
+
+/*
+ * A room's tabs sit on the thing they choose between.
+ *
+ * Rounded at the top and square along the bottom, with nothing under them: the
+ * track and the room's body are one object with a rule where they meet, rather
+ * than a floating pill above a card with a strip of the page showing between.
+ * A corner needs somewhere to be a corner, and the place two surfaces meet is
+ * not it.
+ *
+ * Unlayered and `!important` for the same reason as the tile above: the track
+ * is a `<div>`, the playful style's blanket radius matches it from outside the
+ * layer, and nothing inside the layer can outrank that however specific.
+ */
+.room-tabs .seg-track {
+	border-end-start-radius: 0 !important;
+	border-end-end-radius: 0 !important;
+}
+
+/*
  * The phone bar's raised pie button has no rule here any more.
  *
  * It was a circle, forced round against the style's other radii, with the mark
@@ -2477,13 +2508,47 @@ label:has(> input[type='radio']:not(:disabled)) {
 		max-width: 100%;
 		align-items: center;
 		gap: 0.125rem;
-		padding: 0.1875rem;
+		--seg-pad: 0.1875rem;
+		padding: var(--seg-pad);
 		background-color: var(--color-gray-150);
+		/*
+		 * Its own corner, rather than the blanket one.
+		 *
+		 * The track is a `<nav>` where a room's tabs are drawn, and `nav` is not
+		 * in the list of elements the playful style rounds — so the track was
+		 * square while the tile travelling inside it was not, which is a rounded
+		 * shape sitting in a sharp box and was reported three times before
+		 * anybody thought to ask what element it was. A control that is a shape
+		 * says so itself instead of hoping the element list covers it.
+		 */
+		border-radius: var(--radius, 0);
+	}
+
+	/*
+	 * The row that scrolls inside a track.
+	 *
+	 * Where a `.seg` holds more than fits — a room's tabs — the choices live in
+	 * a strip of their own so the fade that says "there is more this way" can
+	 * mask the tabs without taking the track's surface with it.
+	 */
+	.seg-scroll {
+		display: flex;
+		min-width: 0;
+		align-items: center;
+		gap: 0.125rem;
+	}
+
+	/* A track holding a scrolling strip clips, so the fade ends where it does. */
+	.seg-track {
+		overflow: clip;
 	}
 
 	.seg > button,
 	.seg > a,
-	.seg > label {
+	.seg > label,
+	.seg-scroll > button,
+	.seg-scroll > a,
+	.seg-scroll > label {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -2511,7 +2576,10 @@ label:has(> input[type='radio']:not(:disabled)) {
 
 	.seg > button:hover,
 	.seg > a:hover,
-	.seg > label:hover {
+	.seg > label:hover,
+	.seg-scroll > button:hover,
+	.seg-scroll > a:hover,
+	.seg-scroll > label:hover {
 		color: var(--color-gray-900);
 	}
 
@@ -2536,7 +2604,6 @@ label:has(> input[type='radio']:not(:disabled)) {
 		top: 0;
 		left: 0;
 		z-index: 0;
-		border-radius: inherit;
 		background-color: var(--color-white);
 		box-shadow: var(--shadow-card);
 		transition:
@@ -2597,7 +2664,10 @@ label:has(> input[type='radio']:not(:disabled)) {
 
 	.seg-sliding > a,
 	.seg-sliding > button,
-	.seg-sliding > label {
+	.seg-sliding > label,
+	.seg-scroll.seg-sliding > a,
+	.seg-scroll.seg-sliding > button,
+	.seg-scroll.seg-sliding > label {
 		position: relative;
 		z-index: 1;
 	}
@@ -4013,6 +4083,32 @@ html button.tab-link {
 }
 
 /*
+ * A count that changes, in a slot as wide as the longest it can be.
+ *
+ * "1 task showing" and "0 tasks showing" are different widths, so narrowing a
+ * list shifted every control to the right of the number. The words are the
+ * content; the room they take is not allowed to be.
+ *
+ * Sized by holding the sentence at its largest count — the whole list, which
+ * does not change when a filter does — invisibly underneath the real one. A
+ * `min-width` in `ch` was the first answer and cannot be right: the sentence
+ * is translated, and German's is half as long again as English's.
+ */
+.count-slot {
+	display: inline-grid;
+	justify-items: start;
+}
+
+.count-slot > * {
+	grid-area: 1 / 1;
+}
+
+.count-slot > .count-widest {
+	visibility: hidden;
+	pointer-events: none;
+}
+
+/*
  * The one surface a room's body stands on.
  *
  * Every room used to draw this itself, if it drew it at all: the notebooks
@@ -4070,15 +4166,15 @@ html[data-style='playful'] .room-surface {
 }
 
 /*
- * And the strip sits closer to what it is a strip of.
+ * And the strip sits on what it is a strip of, with nothing between.
  *
- * `space-y-4` between the bar and the room put a rem of page ground under the
- * tabs, which on a phone is a band of nothing between the tab you pressed and
- * the list it chose. Half of it, and the tabs' own track already holds them
- * apart from the name above.
+ * `space-y-4` put a rem of page ground under the tabs — a band of nothing
+ * between the tab you pressed and the list it chose, which is most of what
+ * made a room read as loose things floating near each other. The track is
+ * square along its bottom edge and the body starts there.
  */
 .room-frame > * + * {
-	margin-top: 0.5rem;
+	margin-top: 0;
 }
 
 .scroll-hints {
@@ -4117,7 +4213,15 @@ html[data-style='playful'] .room-surface {
  * tab underneath is still a tab you can press.
  */
 .scroll-hints {
-	--fade-edge: 2.5rem;
+	/*
+	 * Short enough to read as an edge rather than as a stain.
+	 *
+	 * It was 2.5rem, which is most of a tab — a word half-dissolved over that
+	 * distance looks like something went wrong rather than like a row that
+	 * carries on. A rem and a half is the last letter or two going soft, which
+	 * is all the fade has to say.
+	 */
+	--fade-edge: 1.5rem;
 }
 
 .scroll-hints[data-more='right'] {
