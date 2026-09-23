@@ -702,7 +702,16 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
 		z-index: 20;
 		gap: 0;
 		margin-inline: calc(-1 * var(--page-gutter));
-		padding-inline: var(--page-gutter);
+		/*
+		 * The bar keeps its own margins, whatever the page's gutter is.
+		 *
+		 * On a phone the gutter is nothing — the room runs to both screen edges
+		 * — and the bar took that literally: the room's name, its glyph and its
+		 * one verb all ended up flush against the sides of the screen. What
+		 * goes edge to edge is the room's body and the track above it, not the
+		 * words in the header.
+		 */
+		padding-inline: 0;
 		padding-top: calc(var(--safe-top) + 0.75rem);
 		/*
 		 * A header, in the room's own colour — the same one the desktop's has.
@@ -4234,6 +4243,18 @@ html[data-style='playful'] .room-surface {
 .room-tabs .seg-scroll {
 	flex: 0 1 auto;
 	min-width: 0;
+}
+
+/*
+ * The first tab is not flush against the side of the screen.
+ *
+ * On a phone the track runs to both edges, so without this the word
+ * "Notebooks" starts three pixels from the glass.
+ */
+@media (width < 40rem) {
+	.room-tabs .seg-scroll {
+		padding-inline: 0.75rem;
+	}
 }
 
 /*

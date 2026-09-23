@@ -23,7 +23,16 @@
  * Nothing moves where somebody has asked for that: with `prefers-reduced-motion`
  * the tile still goes to the right place, it simply arrives there at once.
  */
-const SELECTED = '[aria-pressed="true"], [aria-selected="true"]';
+/*
+ * What counts as the position you are on.
+ *
+ * All three of the conventions this app uses to say so. `aria-current` was
+ * missing, and a room's tabs are the one `.seg` that says it that way — so the
+ * tile matched nothing, was hidden, and a room's strip had no mark on the tab
+ * you were looking at. "how should i know i am in rules?"
+ */
+const SELECTED =
+	'[aria-pressed="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"]';
 
 export function sliding(track: HTMLElement) {
 	const tile = document.createElement('span');

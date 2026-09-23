@@ -121,6 +121,14 @@
 	@media (max-width: 639px) {
 		.room-bar-head {
 			min-height: 3.25rem;
+			/*
+			 * Its own margins on a phone, where the page has none.
+			 *
+			 * The room's body and the tab track below run to both screen edges
+			 * there; the name and the verb are words and a button and want air
+			 * around them like everything else that is read.
+			 */
+			padding-inline: 1rem;
 		}
 	}
 </style>
