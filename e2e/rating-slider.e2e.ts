@@ -47,10 +47,18 @@ test('a rating set by the slider is the rating the card keeps', async ({ page })
 	await page.getByRole('button', { name: 'Add card' }).click();
 	await expect(page.getByText(title, { exact: true })).toBeVisible();
 
-	// And the card carries it afterwards. Read off the board rather than by
-	// reopening the form: what is drawn on the card came back from the
-	// database, so this fails if the number only ever lived in the control.
-	await expect(page.getByTitle('Urgency: 4 of 5').first()).toBeVisible();
+	/*
+	 * And the card carries it afterwards. Read off the board rather than by
+	 * reopening the form: what is drawn on the card came back from the
+	 * database, so this fails if the number only ever lived in the control.
+	 *
+	 * The three bars are one object and say all three numbers at once — they
+	 * are pressed together and read together, so there is one title over the
+	 * group rather than one per bar.
+	 */
+	await expect(
+		page.locator('[title*="Urgency: 4 of 5"], [aria-label*="Urgency: 4 of 5"]').first()
+	).toBeVisible();
 });
 
 test('the button beside it leaves the card unrated', async ({ page }) => {

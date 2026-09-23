@@ -59,7 +59,16 @@
 	 * pixels wide is a row of things to miss. The caller wraps it in the
 	 * button; `ratingSummary` is what that button says on hover.
 	 */
-	import { RATING_MAX, RATING_ORDER, RATING_UNRATED, type RatingValues } from '$lib/ratings.js';
+	import {
+		RATING_MAX,
+		RATING_ORDER,
+		RATING_UNRATED,
+		ratingSummary,
+		type RatingValues
+	} from '$lib/ratings.js';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	let {
 		values,
@@ -67,6 +76,18 @@
 		stacked = false,
 		class: className = ''
 	}: { values: Partial<RatingValues>; stacked?: boolean; class?: string } = $props();
+
+	/**
+	 * What the three say, in words.
+	 *
+	 * Carried here rather than by whoever draws it: the board draws these on a
+	 * card with nothing around them, and when the per-bar titles went the way
+	 * of the per-bar gauges that card stopped saying its numbers at all — on
+	 * hover and to a screen reader alike. A caller that wraps this in a button
+	 * gives that button its own name for what pressing does; this stays the
+	 * name of what is drawn.
+	 */
+	const said = $derived(ratingSummary(values, t as never));
 
 	/** How tall a bar stands, as a percentage of the group. */
 	const heightOf = (value: number | null | undefined) =>
@@ -83,7 +104,12 @@
 	const widthOf = (at: number) => ((RATING_ORDER.length - at) * 100) / RATING_ORDER.length;
 </script>
 
-<span class="rating-bars {stacked ? 'rating-bars-stacked' : ''} {className}" aria-hidden="true">
+<span
+	class="rating-bars {stacked ? 'rating-bars-stacked' : ''} {className}"
+	role="img"
+	title={said}
+	aria-label={said}
+>
 	{#each RATING_ORDER as r, at (r)}
 		<span
 			class="rating-bar"

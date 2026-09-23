@@ -23,7 +23,6 @@
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
-	import { ratingSummary } from '$lib/ratings';
 	import { phoneWidth } from '$lib/breakpoints.svelte';
 	import TagChip from '$lib/components/TagChip.svelte';
 	import Field from '$lib/components/Field.svelte';
@@ -1241,8 +1240,7 @@
 								type="button"
 								class="cursor-pointer"
 								onclick={() => startEdit(todo, { atRatings: true })}
-								title={ratingSummary(todo.ratings, t as never)}
-								aria-label={ratingSummary(todo.ratings, t as never)}
+								aria-label={t('todoRows.setTheRatings')}
 							>
 								<RatingBadges values={todo.ratings} stacked />
 							</button>
