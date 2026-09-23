@@ -1,6 +1,6 @@
 <script lang="ts">
 	import TabbedRoom from '$lib/components/TabbedRoom.svelte';
-	import { isHidden } from '$lib/sections';
+	import { isHidden, HEALTH_TABS, type HideableSection } from '$lib/sections';
 	import { resolve } from '$app/paths';
 	import type { Snippet } from 'svelte';
 	import { useT } from '$lib/i18n';
@@ -34,15 +34,9 @@
 	 * nothing here.
 	 */
 	const tabs = $derived([
-		...(isHidden(data.hiddenSections, 'habits')
-			? []
-			: [{ href: resolve('/health/habits'), label: t('rooms.health.tabs.habits') }]),
-		...(isHidden(data.hiddenSections, 'workouts')
-			? []
-			: [{ href: resolve('/health/workouts'), label: t('rooms.health.tabs.workouts') }]),
-		...(isHidden(data.hiddenSections, 'recipes')
-			? []
-			: [{ href: resolve('/health/recipes'), label: t('rooms.health.tabs.recipes') }]),
+		...HEALTH_TABS.filter((tab) => !isHidden(data.hiddenSections, tab.id as HideableSection)).map(
+			(tab) => ({ href: resolve(tab.href as '/health/habits'), label: t(tab.label) })
+		),
 		...data.streams.map((s) => ({ href: resolve('/data/[slug]', { slug: s.slug }), label: s.name }))
 	]);
 </script>

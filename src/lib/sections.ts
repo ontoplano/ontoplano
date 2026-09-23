@@ -115,6 +115,90 @@ export const NOTEBOOK_TABS = [
 	{ id: 'tags', href: '/notebooks/tags', label: 'rooms.notebooks.tabs.tags' }
 ] as const;
 
+/** The planner's tabs, in the order it shows them. */
+export const TASK_TABS = [
+	{ href: '/tasks/plan', label: 'rooms.tasks.tabs.plan' },
+	{ href: '/tasks/board', label: 'rooms.tasks.tabs.board' },
+	{ href: '/tasks/todo', label: 'rooms.tasks.tabs.todo' },
+	{ href: '/tasks/activities', label: 'rooms.tasks.tabs.activities' },
+	{ href: '/tasks/review', label: 'rooms.tasks.tabs.review' }
+] as const;
+
+/**
+ * The Health room's fixed tabs. Whatever this account measures is appended by
+ * the layout — a data stream earns a tab by existing, so it cannot be listed
+ * here.
+ */
+export const HEALTH_TABS = [
+	{ id: 'habits', href: '/health/habits', label: 'rooms.health.tabs.habits' },
+	{ id: 'workouts', href: '/health/workouts', label: 'rooms.health.tabs.workouts' },
+	{ id: 'recipes', href: '/health/recipes', label: 'rooms.health.tabs.recipes' }
+] as const;
+
+/** The Finance room's tabs, in the order it shows them. */
+export const FINANCE_TABS = [
+	{ href: '/finance/ledgers', label: 'rooms.finance.tabs.ledgers' },
+	// Bills had a room and nothing pointing at it, which is a room nobody
+	// finds. Beside Ledgers, because a bill is money leaving on a date and
+	// that is the same subject as the lines it will turn into.
+	{ href: '/finance/bills', label: 'rooms.finance.tabs.bills' },
+	{ href: '/finance/rules', label: 'rooms.finance.tabs.rules' },
+	{ href: '/finance/insights', label: 'rooms.finance.tabs.insights' }
+] as const;
+
+/**
+ * The Media room's tabs.
+ *
+ * Recordings first: a picture is chosen from a disk, a recording is made
+ * here, so it is the one the room lands on.
+ */
+export const MEDIA_TABS = [
+	{ id: 'audios', href: '/media/audios', label: 'rooms.media.tabs.audios' },
+	{ id: 'gallery', href: '/media/gallery', label: 'rooms.media.tabs.gallery' }
+] as const;
+
+/**
+ * A tab inside a room: where it goes, what it is called, and the preference
+ * that puts it away when it has one.
+ *
+ * `id` is a `string` rather than a `HideableSection` because one tab is not
+ * one — Notebooks names its own room and deliberately has no switch.
+ */
+export type RoomTab = {
+	id?: string;
+	href: string;
+	label: PlainKey;
+};
+
+/**
+ * What each room holds, by the key the navigation knows it as.
+ *
+ * The rooms' layouts draw from this, and so does the wheel — which is the
+ * point: the wheel says what is behind a wedge before you go there, and a
+ * second list of tab names written into it would start disagreeing with the
+ * strips the same week. A room with no tabs is simply absent.
+ */
+export const ROOM_TABS: Record<string, readonly RoomTab[]> = {
+	planner: TASK_TABS,
+	diary: NOTEBOOK_TABS,
+	health: HEALTH_TABS,
+	finance: FINANCE_TABS,
+	media: MEDIA_TABS
+};
+
+/**
+ * What is inside a room, named — leaving out whatever this account put away.
+ *
+ * The data streams Health appends are not here: they are this account's own
+ * measurements rather than the room's shape, and a wheel that named three of
+ * them would be saying something different on every install.
+ */
+export function roomTabNames(t: Translate, room: string, hidden: readonly string[] = []): string[] {
+	return (ROOM_TABS[room] ?? [])
+		.filter((tab) => !(tab.id && isHidden(hidden, tab.id as HideableSection)))
+		.map((tab) => t(tab.label));
+}
+
 /**
  * The rooms themselves, without the tabs inside them.
  *

@@ -3,12 +3,9 @@
 	import FilterChips from '$lib/components/FilterChips.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
-	import OneLine from '$lib/components/OneLine.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
-	import Field from '$lib/components/Field.svelte';
-	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { tick } from 'svelte';
 	import type { PageData, ActionData } from './$types';
@@ -16,6 +13,7 @@
 	import { keepInView } from '$lib/actions/keep-in-view';
 	import HabitCard from '$lib/components/HabitCard.svelte';
 	import { HABIT_ROOM_ACTIONS } from '$lib/habit-action-names';
+	import HabitFields from '$lib/components/fields/HabitFields.svelte';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -40,8 +38,6 @@
 
 	let newHabitType: 'bad' | 'good' | 'neutral' = $state('bad');
 	let scheduledDaysState: boolean[] = $state([false, false, false, false, false, false, false]);
-
-	const FULL_DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 	function filteredHabits() {
 		if (typeFilter === 'all') return data.habits as Habit[];
@@ -127,11 +123,6 @@
 		});
 	}
 
-	function getScheduledDaysString(): string {
-		const days = scheduledDaysState.map((checked, i) => (checked ? i : -1)).filter((i) => i !== -1);
-		return days.join(',');
-	}
-
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
 	setRoomAction(() => ({
 		label: t('health.habits.newHabit'),
@@ -203,82 +194,7 @@
 			{#if editingId}
 				<input type="hidden" name="id" value={editingId} />
 			{/if}
-			<input type="hidden" name="scheduledDays" value={getScheduledDaysString()} />
-
-			<FormGrid>
-				<Field label={t('ui.name')} span={12} required>
-					<OneLine
-						name="label"
-						placeholder={newHabitType === 'bad'
-							? t('health.habits.eGSmokingBitingNails')
-							: newHabitType === 'neutral'
-								? t('health.habits.eGCoffeeNaps')
-								: t('health.habits.eGGymReading')}
-						value={editHabit?.name ?? ''}
-						class="input"
-						required
-					/>
-				</Field>
-
-				<Field
-					label={t('health.habits.kind')}
-					span={12}
-					hint={t('health.habits.aBadHabitCountsDays')}
-				>
-					<div class="flex gap-2">
-						{#each [['bad', 'Bad'], ['good', 'Good'], ['neutral', 'Neutral']] as [value, label] (value)}
-							<label
-								class="flex-1 cursor-pointer border px-3 py-2 text-center text-sm {newHabitType ===
-								value
-									? 'on-fill font-medium'
-									: 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}"
-							>
-								<input
-									type="radio"
-									name="type"
-									{value}
-									checked={newHabitType === value}
-									onchange={() => (newHabitType = value as 'bad' | 'good' | 'neutral')}
-									class="sr-only"
-								/>
-								{label}
-							</label>
-						{/each}
-					</div>
-				</Field>
-
-				<Field label={t('ui.description')} span={12}>
-					<OneLine name="description" value={editHabit?.description ?? ''} class="input" />
-				</Field>
-
-				{#if newHabitType === 'good' || newHabitType === 'neutral'}
-					<Field
-						label={t('health.habits.onWhichDays')}
-						span={12}
-						hint={t('health.habits.noneSelectedMeansEveryDay')}
-					>
-						<div class="flex flex-wrap gap-1">
-							{#each FULL_DAY_LABELS as label, i (label)}
-								<label
-									class="cursor-pointer border px-2 py-1 text-xs {scheduledDaysState[i]
-										? 'on-fill font-medium'
-										: 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'}"
-								>
-									<input
-										type="checkbox"
-										checked={scheduledDaysState[i]}
-										onchange={(e) => {
-											scheduledDaysState[i] = (e.target as HTMLInputElement).checked;
-										}}
-										class="sr-only"
-									/>
-									{label}
-								</label>
-							{/each}
-						</div>
-					</Field>
-				{/if}
-			</FormGrid>
+			<HabitFields editing={editHabit} bind:kind={newHabitType} bind:days={scheduledDaysState} />
 		</form>
 
 		{#snippet footer()}

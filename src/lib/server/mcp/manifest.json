@@ -1373,10 +1373,15 @@
 			},
 			"tag": {
 				"type": "string",
-				"required": false
+				"required": false,
+				"deprecated": true
 			},
 			"taggedSince": {
 				"type": "string",
+				"required": false
+			},
+			"tags": {
+				"type": "array",
 				"required": false
 			},
 			"verbose": {
@@ -1385,6 +1390,11 @@
 			},
 			"withoutTag": {
 				"type": "string",
+				"required": false,
+				"deprecated": true
+			},
+			"withoutTags": {
+				"type": "array",
 				"required": false
 			}
 		}
@@ -1714,10 +1724,15 @@
 			},
 			"tag": {
 				"type": "string",
-				"required": false
+				"required": false,
+				"deprecated": true
 			},
 			"taggedSince": {
 				"type": "string",
+				"required": false
+			},
+			"tags": {
+				"type": "array",
 				"required": false
 			},
 			"verbose": {
@@ -1726,6 +1741,11 @@
 			},
 			"withoutTag": {
 				"type": "string",
+				"required": false,
+				"deprecated": true
+			},
+			"withoutTags": {
+				"type": "array",
 				"required": false
 			}
 		}
@@ -2318,10 +2338,15 @@
 			},
 			"tag": {
 				"type": "string",
-				"required": false
+				"required": false,
+				"deprecated": true
 			},
 			"taggedSince": {
 				"type": "string",
+				"required": false
+			},
+			"tags": {
+				"type": "array",
 				"required": false
 			},
 			"verbose": {
@@ -2330,6 +2355,11 @@
 			},
 			"withoutTag": {
 				"type": "string",
+				"required": false,
+				"deprecated": true
+			},
+			"withoutTags": {
+				"type": "array",
 				"required": false
 			}
 		}
@@ -2453,10 +2483,15 @@
 			},
 			"tag": {
 				"type": "string",
-				"required": false
+				"required": false,
+				"deprecated": true
 			},
 			"taggedSince": {
 				"type": "string",
+				"required": false
+			},
+			"tags": {
+				"type": "array",
 				"required": false
 			},
 			"verbose": {
@@ -2465,6 +2500,11 @@
 			},
 			"withoutTag": {
 				"type": "string",
+				"required": false,
+				"deprecated": true
+			},
+			"withoutTags": {
+				"type": "array",
 				"required": false
 			}
 		}

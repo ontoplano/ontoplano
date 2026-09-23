@@ -26,6 +26,7 @@ let mine: ReturnType<typeof buildCtx>;
 let theirs: ReturnType<typeof buildCtx>;
 let kitchen = 0;
 let trip = 0;
+let queue = 0;
 /** Ids, so a filtered answer can be checked against the task it should be. */
 const made: Record<string, number> = {};
 
@@ -48,6 +49,15 @@ function call(
 const itemsOf = (answer: { result: { structuredContent: { items?: unknown[] } } }) =>
 	(answer.result.structuredContent.items ?? []) as Record<string, unknown>[];
 
+/** What a listing said about the spelling it was asked in, if anything. */
+const warningOf = (answer: { result: { structuredContent: { warning?: string } } }) =>
+	answer.result.structuredContent.warning;
+
+const titlesOf = (answer: { result: { structuredContent: { items?: unknown[] } } }) =>
+	itemsOf(answer)
+		.map((one) => one.title as string)
+		.sort();
+
 /** The names a caller is actually offered — what a confined key can see at all. */
 function listedTools(scopes: string[], confinement?: { kind: string; id: number }): string[] {
 	const message: Rpc = { jsonrpc: '2.0', id: 1, method: 'tools/list' };
@@ -68,6 +78,7 @@ beforeAll(async () => {
 
 	kitchen = notebooks.createNotebook(mine, { title: 'Kitchen' });
 	trip = notebooks.createNotebook(mine, { title: 'Trip' });
+	queue = notebooks.createNotebook(mine, { title: 'Queue' });
 
 	made.plumber = todos.createTodo(mine, {
 		title: 'ring the plumber',
@@ -89,6 +100,25 @@ beforeAll(async () => {
 	made.pack = todos.createTodo(mine, { title: 'pack', notebookId: trip });
 	made.finished = todos.createTodo(mine, { title: 'buy stamps', notebookId: kitchen });
 	todos.setTodoStatus(mine, made.finished, 'done');
+
+	// A queue split across three labels — the case `tags` exists for, where
+	// reading it used to be three calls and a merge done by the caller.
+	made.urgent = todos.createTodo(mine, {
+		title: 'file the tax return',
+		notebookId: queue,
+		tags: 'u5'
+	});
+	made.easy = todos.createTodo(mine, {
+		title: 'water the plants',
+		notebookId: queue,
+		tags: 'e2'
+	});
+	made.wanted = todos.createTodo(mine, {
+		title: 'read the manual',
+		notebookId: queue,
+		tags: 'i5'
+	});
+	made.unlabelled = todos.createTodo(mine, { title: 'sort the shed', notebookId: queue });
 
 	// The stranger's own list, which must never appear in any answer here.
 	todos.createTodo(theirs, { title: 'somebody else’s secret', tags: 'done-by-ai' });
@@ -126,6 +156,40 @@ describe('narrowing a task list', () => {
 		);
 		expect(rest.map((one) => one.title)).not.toContain('ring the plumber');
 		expect(rest.map((one) => one.title)).toContain('book the skip');
+	});
+
+	test('by any of several labels, sent as a list or as one string', () => {
+		expect(
+			titlesOf(call(['tasks:read'], 'todos', { tags: ['u5', 'i5'], notebookId: queue }))
+		).toEqual(['file the tax return', 'read the manual']);
+
+		// Assistants send both shapes, so both have to mean the same thing.
+		expect(titlesOf(call(['tasks:read'], 'todos', { tags: 'u5, i5', notebookId: queue }))).toEqual([
+			'file the tax return',
+			'read the manual'
+		]);
+	});
+
+	test('`withoutTags` drops anything carrying any one of them', () => {
+		expect(
+			titlesOf(call(['tasks:read'], 'todos', { withoutTags: ['u5', 'e2'], notebookId: queue }))
+		).toEqual(['read the manual', 'sort the shed']);
+	});
+
+	test('the single-label spelling still works, and the answer says it is going', () => {
+		const old = call(['tasks:read'], 'todos', { tag: 'u5', notebookId: queue });
+		expect(titlesOf(old)).toEqual(['file the tax return']);
+		expect(warningOf(old)).toMatch(/`tag` is deprecated/);
+		expect(warningOf(old)).toContain('0.185.0');
+
+		const mirror = call(['tasks:read'], 'todos', { withoutTag: 'u5', notebookId: queue });
+		expect(titlesOf(mirror)).not.toContain('file the tax return');
+		expect(warningOf(mirror)).toMatch(/`withoutTag` is deprecated/);
+
+		// The spelling that replaced it is not nagged at.
+		expect(
+			warningOf(call(['tasks:read'], 'todos', { tags: ['u5'], notebookId: queue }))
+		).toBeUndefined();
 	});
 
 	test('by when a label went on', () => {
@@ -243,6 +307,15 @@ describe('what to do next', () => {
 			'book the skip',
 			'choose the tiles'
 		]);
+	});
+
+	test('can be asked of several queues at once', () => {
+		const rows = call(['tasks:read'], 'up_next', {
+			limit: 5,
+			tags: ['u5', 'i5'],
+			notebookId: queue
+		});
+		expect(titlesOf(rows)).toEqual(['file the tax return', 'read the manual']);
 	});
 
 	test('answers with one line, so asking costs almost nothing', () => {

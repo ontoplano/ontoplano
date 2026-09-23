@@ -40,6 +40,7 @@ import { listWorkouts, listSessions as listWorkoutSessions } from './workouts.js
 import { withMissingCounts } from './recipes.js';
 import { mainPictures } from './media.js';
 import { getHiddenSections, getWeekSettings } from './settings.js';
+import { linkableInto } from './notebook-linking.js';
 import { isHidden } from '../sections.js';
 import { ConflictError, NotFoundError } from './errors.js';
 import { stamp, stamps } from './time.js';
@@ -552,7 +553,19 @@ export function contentsOf(ctx: Ctx, id: number) {
 		workoutSessions: listWorkoutSessions(ctx, { limit: NOTEBOOK_SESSIONS }),
 		// The same rows the Kitchen hands its cards: what each needs, and what
 		// of that the cupboard has not got, plus the picture it is known by.
-		recipes: withRecipePictures(ctx, withMissingCounts(ctx, { notebookId: id }))
+		recipes: withRecipePictures(ctx, withMissingCounts(ctx, { notebookId: id })),
+
+		/*
+		 * And what each tab could take that it has not got.
+		 *
+		 * Loaded with the notebook rather than fetched when the picker opens:
+		 * it is one query per module over a personal account's own rows, the
+		 * dialog filters what it was given, and a device instance has nowhere
+		 * to fetch from anyway.
+		 */
+		linkable: Object.fromEntries(
+			NOTEBOOK_MODULES.map((module) => [module.id, linkableInto(ctx, module.id, id)])
+		) as Record<NotebookModule, ReturnType<typeof linkableInto>>
 	};
 }
 
@@ -798,6 +811,17 @@ function notebookTitled(ctx: Ctx, title: string) {
  * delete, the share switch — stays the owner's alone, which is why the
  * writers below keep their own userId WHERE and the readers call this.
  */
+/**
+ * A notebook this account may reach, or a loud refusal.
+ *
+ * Exported because linking something into one has to make the same check —
+ * see `notebook-linking.ts`. Reachable, not owned: a family member's shared
+ * notebook is one you may file things under.
+ */
+export function assertReachableNotebook(ctx: Ctx, id: number): void {
+	assertReachable(ctx, id);
+}
+
 function assertReachable(ctx: Ctx, id: number): void {
 	const others = host.familyUserIds(ctx.userId).filter((one) => one !== ctx.userId);
 	const reachable = db

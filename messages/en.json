@@ -1508,6 +1508,7 @@
 		"other": "{count} ideas"
 	},
 	"notebooks.importedFromAnObsidianVault": "Imported from an Obsidian vault.",
+	"notebooks.inAnotherNotebook": "in another notebook",
 	"notebooks.inventoryCount": {
 		"one": "{count} thing",
 		"other": "{count} things"
@@ -1518,6 +1519,16 @@
 		"one": "{count} ledger",
 		"other": "{count} ledgers"
 	},
+	"notebooks.linkBill": "Link bill",
+	"notebooks.linkGoal": "Link goal",
+	"notebooks.linkHabit": "Link habit",
+	"notebooks.linkIdea": "Link idea",
+	"notebooks.linkItem": "Link thing",
+	"notebooks.linkLedger": "Link ledger",
+	"notebooks.linkNote": "Link note",
+	"notebooks.linkRecipe": "Link recipe",
+	"notebooks.linkTask": "Link task",
+	"notebooks.linkWorkout": "Link workout",
 	"notebooks.marks.applied": "Applied",
 	"notebooks.marks.bought": "Bought",
 	"notebooks.marks.cooked": "Cooked it",
@@ -1544,7 +1555,10 @@
 	},
 	"notebooks.notesWithoutANotebook": "Notes without a notebook",
 	"notebooks.nothingInItYet": "nothing in it yet",
+	"notebooks.nothingLeftToLink": "There is nothing left to link.",
+	"notebooks.nothingMatchesThat": "Nothing matches that.",
 	"notebooks.nothingUnderThisSubjectYet": "Nothing under this subject yet.",
+	"notebooks.onlyTheFirstAreListed": "Only the first few hundred are listed — narrow it with the box above.",
 	"notebooks.openInItsRoom": "Open where it lives",
 	"notebooks.orImportAFolderOf": "…or import a folder of markdown",
 	"notebooks.people.19900314Or0314WithoutThe": "1990-03-14, or --03-14 without the year",
@@ -1599,6 +1613,7 @@
 		"one": "{count} day",
 		"other": "{count} days"
 	},
+	"notebooks.searchToLink": "Search",
 	"notebooks.startOneForSomethingYou": "Start one for something you will keep coming back to, and point notes, tasks and goals at it.",
 	"notebooks.tabs": "Tabs",
 	"notebooks.tags": "#tags",

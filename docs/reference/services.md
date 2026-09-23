@@ -74,6 +74,7 @@ shows up here on the next build.
 | [`model-keys`](#model-keys)                      | The model-provider key behind the in-app chat.                                                                                                                                                                                                                       |
 | [`newsletter`](#newsletter)                      | The one channel nobody else can take away.                                                                                                                                                                                                                           |
 | [`note-todos`](#note-todos)                      | Turning a note that is really a checklist into the todos it describes.                                                                                                                                                                                               |
+| [`notebook-linking`](#notebook-linking)          | Putting something that already exists under a subject.                                                                                                                                                                                                               |
 | [`notebook-media`](#notebook-media)              | Every picture that is in a notebook, as a gallery album.                                                                                                                                                                                                             |
 | [`notebooks`](#notebooks)                        | Notebooks: a subject you write against, with no deadline.                                                                                                                                                                                                            |
 | [`notifications`](#notifications)                | Everything the app will tell you about, in one list.                                                                                                                                                                                                                 |
@@ -923,7 +924,7 @@ Everything that can be done to a bill, wherever the row is on screen.
 The Finance room shows every bill; a notebook shows the ones filed under its
 subject — the architect's fee, the skip hire — and paying one there has to
 mean the same thing. The notebook mounts these under a prefix; see
-`$lib/module-actions` for the names each screen posts to.
+`$lib/bill-action-names` for the names each screen posts to.
 
 ## billing
 
@@ -1111,6 +1112,15 @@ Every bill, active first, newest within each — or one subject's.
 `notebookId` narrows rather than changing the shape: a notebook's Bills tab
 is this room looking at one subject and draws the rows with the same
 component, so it needs exactly what the room needs.
+
+#### `listBillsThisPeriod(ctx, opts)`
+
+The bills, each saying which period it is in and whether that one is settled.
+
+The Finance room worked this out in its own `load`, so anywhere else that
+showed a bill — a notebook's Bills tab — had the row without the two things
+the row is about: which period the tick would pay, and whether it is already
+paid. A row drawn without them offers to pay a bill that is paid.
 
 #### `getBill(ctx, id)`
 
@@ -1939,8 +1949,8 @@ Everything that can be done to a habit, wherever the row is on screen.
 The Health room shows every habit; a notebook shows the ones filed under it,
 and ticking one there has to mean the same thing. So the handlers live here
 and both routes mount them — see `$lib/services/scoped-actions` for how the
-notebook mounts them under a prefix, and `$lib/scoped-actions` for the names
-the markup posts to.
+notebook mounts them under a prefix, and `$lib/habit-action-names` for the
+names the markup posts to.
 
 ## habits
 
@@ -2685,7 +2695,7 @@ thing. The lines themselves stay in the room: a statement is a page, not a
 panel, and a notebook is not where somebody imports one.
 
 Mounted under the room's older names there and under a prefix inside a
-notebook — see `$lib/module-actions`.
+notebook — see `$lib/ledger-action-names`.
 
 ## ledgers
 
@@ -3366,6 +3376,43 @@ notebook is a great deal easier to notice and move than one in none.
 
 - `MadeTodos` — What came of it, in the order the note had them.
 
+## notebook-linking
+
+Putting something that already exists under a subject.
+
+Every tab can make a new thing; none of them could take one that was already
+there. A renovation that starts halfway through a project has its tiles on
+the shopping list and its account in Finance already, and the only way to
+gather them was to delete each one and write it again under the notebook.
+
+Linking is the same act for all of them — set `notebook_id` — so this is one
+function rather than nine, and one modal draws all of them. What differs is
+only which table and which column a row is named by, which is the table
+below.
+
+### Functions
+
+#### `linkableInto(ctx, module, notebookId)`
+
+What could be filed under this notebook, that is not already.
+
+Both the things filed nowhere and the things filed under another subject: a
+tin of tomatoes bought for the kitchen is a fair thing to move to the
+renovation, and refusing that would mean deleting it to re-make it. The ones
+that are elsewhere say so, so moving one is a choice rather than a surprise.
+
+#### `fileUnderNotebook(ctx, module, id, notebookId)`
+
+File one under this notebook, or take it out.
+
+One statement, scoped by the account as well as the id (I1) — never a check
+followed by an unscoped write. A null notebook is how a thing is unfiled,
+which is the same act in reverse.
+
+### Types
+
+- `Linkables`
+
 ## notebook-media
 
 Every picture that is in a notebook, as a gallery album.
@@ -3519,6 +3566,14 @@ habit out of its subject.
 #### `pickableNotebooks(ctx)`
 
 The open notebooks, for the selector on every form that can point at one.
+
+#### `assertReachableNotebook(ctx, id)`
+
+A notebook this account may reach, or a loud refusal.
+
+Exported because linking something into one has to make the same check —
+see `notebook-linking.ts`. Reachable, not owned: a family member's shared
+notebook is one you may file things under.
 
 #### `setNotebookShared(ctx, id, shared)`
 
@@ -4121,7 +4176,7 @@ exist too, but they repeat forever and putting them on a dated calendar would
 mean expanding them; `neededBetween` counts them, and this lists what was
 deliberately put on a day.
 
-#### `withMissingCounts(ctx)`
+#### `withMissingCounts(ctx, options)`
 
 Recipes ordered by how much of them you already have.
 
@@ -4872,8 +4927,9 @@ with the same code the Health room does, or the two screens mean different
 things by the same button. The plain names belong to the notebook itself, so
 they are mounted prefixed: `create` becomes `habitCreate`.
 
-The prefix is applied by `scopedName`, the same function the markup's action
-names come from, so a form and its handler cannot disagree about the name.
+What the markup posts to is the matching `*-action-names.ts` beside each
+card — `$lib/habit-action-names`, `$lib/bill-action-names` and the rest —
+which spell the same names out for the two screens that draw the card.
 
 ### Functions
 

@@ -51,6 +51,7 @@
 	import RecipeCard from '$lib/components/RecipeCard.svelte';
 	import WorkoutCard from '$lib/components/WorkoutCard.svelte';
 	import ItemRow from '$lib/components/ItemRow.svelte';
+	import LinkIntoNotebook from '$lib/components/LinkIntoNotebook.svelte';
 	import { NOTEBOOK_ITEM_ACTIONS } from '$lib/item-action-names';
 	import { NOTEBOOK_WORKOUT_ACTIONS } from '$lib/workout-action-names';
 	import { NOTEBOOK_HABIT_ACTIONS } from '$lib/habit-action-names';
@@ -67,6 +68,9 @@
 	import { say } from '$lib/said.svelte';
 	import { useT } from '$lib/i18n';
 	import type { PlainKey } from '$lib/i18n/keys';
+
+	/** What the picker is given, per module. */
+	type LinkableList = ComponentProps<typeof LinkIntoNotebook>['candidates'];
 
 	const t = useT();
 	const now = useWhen();
@@ -128,7 +132,17 @@
 		// `$bindable()` is a compiler directive, not an assignment: this one is
 		// only ever written from here, which is what the rule mistakes it for.
 		// eslint-disable-next-line no-useless-assignment
-		newAction = $bindable()
+		newAction = $bindable(),
+		/**
+		 * The Link button, beside New, for whichever tab is showing.
+		 *
+		 * Drawn by the page for the same reason `newAction` is — the strip
+		 * beside the tabs has no room for it at 390px. Every tab has it: a
+		 * subject started halfway through has its things already, and the only
+		 * way to gather them was to delete each one and write it again.
+		 */
+		// eslint-disable-next-line no-useless-assignment
+		linkAction = $bindable()
 	}: {
 		notebook?: {
 			id: number;
@@ -166,6 +180,8 @@
 			workoutSessions: ComponentProps<typeof WorkoutCard>['sessions'];
 			/* And the whole thing, with its count and its own fields. */
 			inventory: ComponentProps<typeof ItemRow>['item'][];
+			/* What each tab could take that it has not got — see `LinkIntoNotebook`. */
+			linkable: Record<string, LinkableList>;
 			/*
 			 * The other modules, each as its room's own rows.
 			 *
@@ -195,6 +211,7 @@
 		/** Whether the composer is open, so a page can put the button elsewhere. */
 		composing?: boolean;
 		newAction?: { label: string; run?: () => void; href?: string } | undefined;
+		linkAction?: { label: string; run: () => void } | undefined;
 	} = $props();
 
 	let editingNoteId = $state<number | null>(null);
@@ -485,6 +502,35 @@
 				: [{ id: null, value: '', unit: '', whole: true, measureActivity: '' }];
 		composingGoal = true;
 	}
+
+	/** Which tab's picker is open, if any. */
+	let linking = $state(false);
+
+	/**
+	 * What the Link button says, per tab.
+	 *
+	 * The singular noun, matching the New button beside it: a tab offering
+	 * "New thing" and "Link Inventory" is naming the same thing twice in two
+	 * registers.
+	 */
+	const LINK_LABEL: Partial<Record<NotebookModule, PlainKey>> = {
+		notes: 'notebooks.linkNote',
+		tasks: 'notebooks.linkTask',
+		goals: 'notebooks.linkGoal',
+		ideas: 'notebooks.linkIdea',
+		inventory: 'notebooks.linkItem',
+		ledgers: 'notebooks.linkLedger',
+		bills: 'notebooks.linkBill',
+		habits: 'notebooks.linkHabit',
+		workouts: 'notebooks.linkWorkout',
+		recipes: 'notebooks.linkRecipe'
+	};
+
+	$effect(() => {
+		linkAction = notebook
+			? { label: t(LINK_LABEL[tab] ?? 'ui.add'), run: () => (linking = true) }
+			: undefined;
+	});
 
 	/**
 	 * Where a module's own room is, and what its New button says.
@@ -1970,6 +2016,21 @@
 		<button type="submit" form="notebook-idea-form" class="btn btn-primary">{t('ui.save')}</button>
 	{/snippet}
 </Modal>
+
+<!--
+	One picker for every tab: linking is the same act whatever the thing is.
+	It reads the tab that is showing rather than being drawn nine times.
+-->
+{#if notebook}
+	<LinkIntoNotebook
+		bind:open={linking}
+		module={tab}
+		what={t(LINK_LABEL[tab] ?? 'ui.add')}
+		notebookId={notebook.id}
+		candidates={(contents?.linkable as Record<string, LinkableList> | undefined)?.[tab]}
+		action="?/linkIntoNotebook"
+	/>
+{/if}
 
 <!-- What counts towards a goal, the same modal the goals room opens. -->
 <GoalLinksModal

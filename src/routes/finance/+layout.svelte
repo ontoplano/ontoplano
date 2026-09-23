@@ -1,6 +1,7 @@
 <script lang="ts">
 	import TabbedRoom from '$lib/components/TabbedRoom.svelte';
 	import { resolve } from '$app/paths';
+	import { FINANCE_TABS } from '$lib/sections';
 	import type { Snippet } from 'svelte';
 	import { useT } from '$lib/i18n';
 
@@ -8,15 +9,13 @@
 
 	let { children }: { children: Snippet } = $props();
 
-	const tabs = [
-		{ href: resolve('/finance/ledgers'), label: t('rooms.finance.tabs.ledgers') },
-		// Bills had a room and nothing pointing at it, which is a room nobody
-		// finds. Beside Ledgers, because a bill is money leaving on a date and
-		// that is the same subject as the lines it will turn into.
-		{ href: resolve('/finance/bills'), label: t('rooms.finance.tabs.bills') },
-		{ href: resolve('/finance/rules'), label: t('rooms.finance.tabs.rules') },
-		{ href: resolve('/finance/insights'), label: t('rooms.finance.tabs.insights') }
-	];
+	// The list is `FINANCE_TABS`, which the wheel reads too.
+	const tabs = $derived(
+		FINANCE_TABS.map((tab) => ({
+			href: resolve(tab.href as '/finance/ledgers'),
+			label: t(tab.label)
+		}))
+	);
 </script>
 
 <TabbedRoom title={t('rooms.finance.title')} {tabs} label={t('rooms.finance.sections')}>

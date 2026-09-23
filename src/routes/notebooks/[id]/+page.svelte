@@ -21,6 +21,8 @@
 
 	/** The New button for whichever tab is showing — see NotebookDetail. */
 	let newAction = $state<{ label: string; run?: () => void; href?: string } | undefined>(undefined);
+	/** The Link button beside it — see NotebookDetail. */
+	let linkAction = $state<{ label: string; run: () => void } | undefined>(undefined);
 	let confirmingDelete = $state(false);
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -128,6 +130,14 @@
 					{newAction.label}
 				</button>
 			{/if}
+			{#if linkAction}
+				<!-- The other way to fill a tab: take something that is already
+				     there. See `LinkIntoNotebook`. -->
+				<button onclick={linkAction.run} class="btn btn-sm">
+					<Icon name="link" />
+					{linkAction.label}
+				</button>
+			{/if}
 			{#if data.notebook.mine && data.onFamilyPlan}
 				<!-- The owner's switch: everybody on the plan reads it and writes
 				     their own entries into it. Entries keep their writers. -->
@@ -215,6 +225,7 @@
 			allTodos={data.allTodos}
 			activities={data.activities}
 			bind:newAction
+			bind:linkAction
 		/>
 	</section>
 </div>

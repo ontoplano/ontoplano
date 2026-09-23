@@ -44,6 +44,8 @@
 	let panelForm = $state<HTMLFormElement>();
 	/** The New button for whichever tab the panel is showing — see NotebookDetail. */
 	let newAction = $state<{ label: string; run?: () => void; href?: string } | undefined>(undefined);
+	/** The Link button beside it — see NotebookDetail. */
+	let linkAction = $state<{ label: string; run: () => void } | undefined>(undefined);
 
 	const editing = $derived(
 		editingId ? (data.notebooks.find((n) => n.id === editingId) ?? null) : null
@@ -453,6 +455,14 @@
 										{newAction.label}
 									</button>
 								{/if}
+								{#if linkAction}
+									<!-- The other way to fill a tab: take something that is
+									     already there. See `LinkIntoNotebook`. -->
+									<button onclick={linkAction.run} class="btn btn-sm">
+										<Icon name="link" />
+										{linkAction.label}
+									</button>
+								{/if}
 							{/if}
 						{/snippet}
 
@@ -473,6 +483,7 @@
 							activities={data.activities}
 							bind:composing
 							bind:newAction
+							bind:linkAction
 						/>
 					</Card>
 				</div>

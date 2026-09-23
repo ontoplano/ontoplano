@@ -1,10 +1,11 @@
 {
-	"total": 231,
+	"total": 234,
 	"files": {
 		"src/lib/assistant-providers.ts": 4,
 		"src/lib/components/Card.svelte": 1,
 		"src/lib/components/MarkdownBox.svelte": 2,
 		"src/lib/components/Picker.svelte": 1,
+		"src/lib/components/fields/HabitFields.svelte": 3,
 		"src/lib/json-body.ts": 4,
 		"src/lib/server/api/auth.ts": 1,
 		"src/lib/server/services/admin.ts": 11,

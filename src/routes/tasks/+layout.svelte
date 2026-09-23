@@ -1,6 +1,7 @@
 <script lang="ts">
 	import TabbedRoom from '$lib/components/TabbedRoom.svelte';
 	import { resolve } from '$app/paths';
+	import { TASK_TABS } from '$lib/sections';
 	import type { Snippet } from 'svelte';
 	import { useT } from '$lib/i18n';
 
@@ -8,13 +9,17 @@
 
 	let { children }: { children: Snippet } = $props();
 
-	const tabs = $derived([
-		{ href: resolve('/tasks/plan'), label: t('rooms.tasks.tabs.plan') },
-		{ href: resolve('/tasks/board'), label: t('rooms.tasks.tabs.board') },
-		{ href: resolve('/tasks/todo'), label: t('rooms.tasks.tabs.todo') },
-		{ href: resolve('/tasks/activities'), label: t('rooms.tasks.tabs.activities') },
-		{ href: resolve('/tasks/review'), label: t('rooms.tasks.tabs.review') }
-	]);
+	// `TASK_TABS`, not a list of its own: the wheel names what is in this room
+	// before you go there, and it reads the same declaration.
+	const tabs = $derived(
+		TASK_TABS.map((tab) => ({
+			// `resolve` takes a literal, so the addresses are matched here rather
+			// than built — a tab whose address is not a route of this app stops
+			// the build.
+			href: resolve(tab.href as '/tasks/plan'),
+			label: t(tab.label)
+		}))
+	);
 </script>
 
 <TabbedRoom

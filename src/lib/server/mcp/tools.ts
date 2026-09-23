@@ -479,29 +479,111 @@ function detailed(
 }
 
 /**
+ * The release the single-label `tag` and `withoutTag` stop being accepted in.
+ *
+ * Named rather than "a future release": the caller is a model reading the
+ * answer, and it can act on a version number. One constant, so the schema and
+ * the sentence the answer carries cannot drift apart.
+ */
+const SINGLE_TAG_REMOVED_IN = '0.185.0';
+
+/** Each label filter's old spelling, beside the one that replaced it. */
+const SINGLE_TAG_ARGS = [
+	['tag', 'tags'],
+	['withoutTag', 'withoutTags']
+] as const;
+
+/**
  * The label filters every listing takes.
  *
- * `tag` narrows to what carries a word, `withoutTag` to what does not — "open
- * and not yet `done-by-ai`" is one call rather than a list read and filtered
- * by hand — and `taggedSince` answers the question a review queue is always
- * asking: what has been marked since I last looked. It reads the date on the
- * join, which is the tag's own and does not move when the thing is edited.
+ * `tags` narrows to what carries one of a set of words and `withoutTags`
+ * drops what carries any of them — "open and not yet `done-by-ai`" is one
+ * call rather than a list read and filtered by hand, and a queue spread over
+ * `u5`, `e2` and `i5` is one call rather than three. `taggedSince` answers the
+ * question a review queue is always asking: what has been marked since I last
+ * looked. It reads the date on the join, which is the tag's own and does not
+ * move when the thing is edited.
  */
 const TAG_ARGS = {
-	tag: text(
-		'Only the ones carrying this label. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours.'
-	),
-	withoutTag: text(
-		'Only the ones NOT carrying this label. The mirror of `tag`; both may be given.'
-	),
+	tags: {
+		type: 'array',
+		items: { type: 'string' },
+		description:
+			'Only the ones carrying at least one of these labels, so naming several reads several queues in one call — `["u5", "e2", "i5"]`. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours. A single string of them, separated by commas or spaces, is understood too.'
+	},
+	withoutTags: {
+		type: 'array',
+		items: { type: 'string' },
+		description:
+			'Leave out the ones carrying any of these labels. The mirror of `tags`, written the same way; both may be given.'
+	},
+	tag: {
+		type: 'string',
+		deprecated: true,
+		description: `Deprecated — use \`tags\`, which asks the same thing of any number of labels at once. Still accepted so an assistant written against the old shape keeps working, and removed in ${SINGLE_TAG_REMOVED_IN}.`
+	},
+	withoutTag: {
+		type: 'string',
+		deprecated: true,
+		description: `Deprecated — use \`withoutTags\`, which drops anything carrying any of the labels named. Still accepted so an assistant written against the old shape keeps working, and removed in ${SINGLE_TAG_REMOVED_IN}.`
+	},
 	taggedSince: text(
-		'Only the ones labelled at or after this moment — `2026-09-21` or a full ISO timestamp. With `tag`, it is that label\u2019s own date; without, any label\u2019s. A label put on before dates were kept does not answer this.'
+		'Only the ones labelled at or after this moment — `2026-09-21` or a full ISO timestamp. With `tags`, it is the date of whichever of those labels the thing carries; without, any label\u2019s. A label put on before dates were kept does not answer this.'
 	)
 };
 
 /** A label as the caller wrote it: lower case, no leading hashes, trimmed. */
 function tagWord(value: unknown): string {
 	return String(value).replace(/^#+/, '').trim().toLowerCase();
+}
+
+/**
+ * The labels one filter names.
+ *
+ * A real JSON array and a single string holding all of them both turn up in
+ * practice — assistants send `["u5","e2"]` and `"u5, e2"` about equally — and
+ * refusing one of them teaches the caller nothing that accepting it does not.
+ */
+function tagWords(value: unknown): string[] {
+	const said = Array.isArray(value) ? value : String(value).split(/[,\s]+/);
+	return said.map(tagWord).filter(Boolean);
+}
+
+/** The labels one filter names, from the current spelling or the old one. */
+function tagsAsked(args: Record<string, unknown>, many: string, one: string): string[] {
+	const said = args[many] ?? args[one];
+	return said === undefined ? [] : tagWords(said);
+}
+
+/**
+ * What to say back to a caller that used the single-label spelling.
+ *
+ * In the answer rather than only in the schema, because a translation nobody
+ * is told about is invisible: the call worked, so the assistant goes on using
+ * the dead spelling right up to the release that removes it.
+ */
+function tagWarning(args: Record<string, unknown>): string | null {
+	const old = SINGLE_TAG_ARGS.filter(
+		([one, many]) => args[one] !== undefined && args[many] === undefined
+	);
+	if (old.length === 0) return null;
+
+	const were = old.map(([one]) => `\`${one}\``).join(' and ');
+	const instead = old.map(([, many]) => `\`${many}\``).join(' and ');
+	return (
+		`${were} ${old.length > 1 ? 'are' : 'is'} deprecated and will be removed in ${SINGLE_TAG_REMOVED_IN}. ` +
+		`Use ${instead}, which ${old.length > 1 ? 'take' : 'takes'} any number of labels — a thing matches if it carries any one of them. ` +
+		'This call was translated.'
+	);
+}
+
+/** A listing's answer, carrying the note when the call used the old spelling. */
+function sayingTags(
+	answer: Record<string, unknown>,
+	args: Record<string, unknown>
+): Record<string, unknown> {
+	const warning = tagWarning(args);
+	return warning ? { ...answer, warning } : answer;
 }
 
 /**
@@ -526,14 +608,16 @@ function passesTags(
 	labels: readonly { name: string; taggedAt?: string | null }[],
 	args: Record<string, unknown>
 ): boolean {
-	if (args.tag !== undefined && !labels.some((one) => one.name === tagWord(args.tag))) return false;
-	if (args.withoutTag !== undefined && labels.some((one) => one.name === tagWord(args.withoutTag)))
-		return false;
+	const wanted = tagsAsked(args, 'tags', 'tag');
+	if (wanted.length > 0 && !labels.some((one) => wanted.includes(one.name))) return false;
+
+	const unwanted = tagsAsked(args, 'withoutTags', 'withoutTag');
+	if (unwanted.length > 0 && labels.some((one) => unwanted.includes(one.name))) return false;
 
 	if (args.taggedSince !== undefined) {
 		const since = momentArg(args.taggedSince, 'taggedSince');
 		const counted =
-			args.tag === undefined ? labels : labels.filter((one) => one.name === tagWord(args.tag));
+			wanted.length === 0 ? labels : labels.filter((one) => wanted.includes(one.name));
 		if (!counted.some((one) => one.taggedAt && one.taggedAt >= since)) return false;
 	}
 	return true;
@@ -1421,7 +1505,7 @@ export const TOOLS: Tool[] = [
 		name: 'todos',
 		title: 'The todo list',
 		description:
-			'Tasks with no date on them yet. A todo gains a date by being put on a day, which promotes it onto the week. Answers with a line per task; `verbose` or `fields` for more. Narrow it rather than reading it whole \u2014 `notebookId` for one subject, `status: "open"`, `tag`, `withoutTag`, `taggedSince`.',
+			'Tasks with no date on them yet. A todo gains a date by being put on a day, which promotes it onto the week. Answers with a line per task; `verbose` or `fields` for more. Narrow it rather than reading it whole \u2014 `notebookId` for one subject, `status: "open"`, `tags`, `withoutTags`, `taggedSince`.',
 		scope: 'tasks:read',
 		writes: false,
 		refs: [{ arg: 'notebookId', kind: 'notebook' }],
@@ -1459,7 +1543,7 @@ export const TOOLS: Tool[] = [
 			}
 			if (args.status !== undefined) rows = rows.filter((todo) => matchesState(todo, args.status));
 			rows = rows.filter((todo) => passesTags(todo.tags, args));
-			return paged(rows.map(shapeTodo(detail)), args, 50);
+			return sayingTags(paged(rows.map(shapeTodo(detail)), args, 50), args);
 		}
 	},
 	/*
@@ -1480,7 +1564,7 @@ export const TOOLS: Tool[] = [
 		name: 'up_next',
 		title: 'What to do next',
 		description:
-			'The task to do next, by the ratings on it: most urgent first, then the easiest, then the one most wanted. All three run the same way \u2014 five is the most of what the word says. An unrated one is not a zero: it counts as the middle of the scale, 2.5, so anything marked 4 or 5 beats it and 1 or 2 falls below it as the postpone tiers. Open, unarchived, undated tasks only \u2014 anything with a day on it is on the week and `today` answers for that. Answers with one line by default; `limit` for a short list to choose between.',
+			'The task to do next, by the ratings on it: most urgent first, then the easiest, then the one most wanted. All three run the same way \u2014 five is the most of what the word says. An unrated one is not a zero: it counts as the middle of the scale, 2.5, so anything marked 4 or 5 beats it and 1 or 2 falls below it as the postpone tiers. Open, unarchived, undated tasks only \u2014 anything with a day on it is on the week and `today` answers for that. Answers with one line by default; `limit` for a short list to choose between, and `tags` to ask it of one queue or of several at once.',
 		scope: 'tasks:read',
 		writes: false,
 		refs: [{ arg: 'notebookId', kind: 'notebook' }],
@@ -1504,7 +1588,10 @@ export const TOOLS: Tool[] = [
 
 			const ordered = [...rows].sort(compareByPriority);
 
-			return pageOf(ordered.slice(0, limitOf(args, 1, 20)).map(shapeTodo(detail)), rows.length, 0);
+			return sayingTags(
+				pageOf(ordered.slice(0, limitOf(args, 1, 20)).map(shapeTodo(detail)), rows.length, 0),
+				args
+			);
 		}
 	},
 	{
@@ -1997,7 +2084,7 @@ export const TOOLS: Tool[] = [
 			const rows = listEntries(ctx)
 				.filter((entry) => passesTags(entry.tags, args))
 				.map((entry) => ({ ...entry, seq: entry.diarySeq ?? entry.seq }));
-			return paged(rows.map(shapeNote(detail)), args, 20);
+			return sayingTags(paged(rows.map(shapeNote(detail)), args, 20), args);
 		}
 	},
 	{
@@ -2033,7 +2120,7 @@ export const TOOLS: Tool[] = [
 		name: 'notebook_notes',
 		title: 'The notes in a notebook',
 		description:
-			'What has been written against one subject, newest first, with the id of each note. `diary` deliberately shows only entries outside a notebook, so this is the way to read one \u2014 and the way to find the id `archive_note` wants. Answers with a line and an opening per note; `verbose` for the writing itself, `tag` and `taggedSince` to narrow.',
+			'What has been written against one subject, newest first, with the id of each note. `diary` deliberately shows only entries outside a notebook, so this is the way to read one \u2014 and the way to find the id `archive_note` wants. Answers with a line and an opening per note; `verbose` for the writing itself, `tags` and `taggedSince` to narrow.',
 		scope: 'notes:read',
 		writes: false,
 		refs: [{ arg: 'id', kind: 'notebook' }],
@@ -2056,7 +2143,7 @@ export const TOOLS: Tool[] = [
 			let notes = contentsOf(ctx, Number(args.id)).entries;
 			if (!args.includeArchived) notes = notes.filter((note) => !note.archivedAt);
 			notes = notes.filter((note) => passesTags(note.tags, args));
-			return paged(notes.map(shapeNote(detail)), args, 50);
+			return sayingTags(paged(notes.map(shapeNote(detail)), args, 50), args);
 		}
 	},
 	{

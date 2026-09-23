@@ -357,10 +357,12 @@ existed, so there is nothing to learn by walking the numbers.
   A task's line carries an opening of its notes and the links in them; a note's
   line the same. `media` fetches one when it turns out to matter — a list is
   rarely read for its pictures, and always read to find something.
-- **A list can be asked for narrowly.** `status`, `tag`, `withoutTag` and
-  `taggedSince` on the task list; `tag` and `taggedSince` on notes. The date
-  read is the label's own — it does not move when the thing is edited — so
-  "what went into review since this morning" is one call.
+- **A list can be asked for narrowly.** `status`, `tags`, `withoutTags` and
+  `taggedSince` on the task list; `tags` and `taggedSince` on notes. `tags`
+  takes as many labels as you like and answers with anything carrying any one
+  of them, so a queue spread over `u5`, `e2` and `i5` is one call rather than
+  three. The date read is the label's own — it does not move when the thing is
+  edited — so "what went into review since this morning" is one call.
 - **`up_next` answers what to do next**, by the ratings on the tasks
   themselves: most urgent first, then the one that takes least energy, then the
   one most wanted. Energy runs the other way to the other two — low is good. A

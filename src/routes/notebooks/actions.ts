@@ -11,6 +11,7 @@ import { toActionFailure } from '$lib/http-errors';
 import { importVaultAction } from '$lib/import-vault-action';
 import { todoHandlers } from '$lib/services/todo-actions';
 import { under } from '$lib/services/scoped-actions';
+import { fileUnderNotebook } from '$lib/services/notebook-linking';
 import { billHandlers } from '$lib/services/bill-actions';
 import { habitHandlers } from '$lib/services/habit-actions';
 import { ideaHandlers } from '$lib/services/idea-actions';
@@ -326,6 +327,28 @@ export const notebookActions = {
 		// it would answer 404 — correctly, and unhelpfully, to the person who
 		// deleted it.
 		redirect(303, '/notebooks');
+	},
+
+	/**
+	 * Put something that already exists under this notebook.
+	 *
+	 * One action for every module, because linking is one act — see
+	 * `$lib/services/notebook-linking`. The module travels in the form rather
+	 * than being nine actions with the same body.
+	 */
+	linkIntoNotebook: async ({ request, locals }) => {
+		const formData = await request.formData();
+		try {
+			fileUnderNotebook(
+				buildCtx(locals.user!.id),
+				String(formData.get('module') ?? ''),
+				formData.get('id'),
+				Number(formData.get('notebookId')) || null
+			);
+			return { success: true, action: 'linkIntoNotebook' };
+		} catch (e) {
+			return toActionFailure(e);
+		}
 	},
 
 	/**
