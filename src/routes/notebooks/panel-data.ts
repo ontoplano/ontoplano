@@ -1,6 +1,7 @@
 import { listActivities, listCategories } from '$lib/services/activities';
 import { linkableSlots, listAreas } from '$lib/services/goals';
 import { pickableNotebooks } from '$lib/services/notebooks';
+import { mediaLimits } from '$lib/services/media';
 import { listPeople } from '$lib/services/people';
 import { listTodos } from '$lib/services/todos';
 import { measuredActivities } from '$lib/services/workouts';
@@ -21,6 +22,11 @@ export function notebookPanelData(ctx: Ctx) {
 		// offers the same two pickers.
 		categories: listCategories(ctx),
 		pickableNotebooks: pickableNotebooks(ctx),
+		// The browser refuses an over-large picture before it is sent, because a
+		// body over the adapter's limit is rejected with something no form can
+		// read. Same number the server enforces, and here rather than on one
+		// route because both of them draw the picture control now.
+		pictureKilobytes: mediaLimits().maxKilobytes,
 		// For the People field on a note, which completes rather than duplicates.
 		allPeople: listPeople(ctx),
 		// The Goals tab writes and edits a goal in place, with the same fields

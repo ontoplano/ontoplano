@@ -4,7 +4,6 @@ import { buildCtx } from '$lib/services/ctx';
 import { host } from '$lib/services/host';
 import { NotFoundError } from '$lib/services/errors';
 import { contentsOf, getNotebook } from '$lib/services/notebooks';
-import { mediaLimits } from '$lib/services/media';
 import { notebookActions } from '../actions';
 import { notebookPanelData } from '../panel-data';
 
@@ -25,10 +24,6 @@ export const load = async ({ locals, params }: IsolatedEvent) => {
 			notebook: getNotebook(ctx, id),
 			contents: contentsOf(ctx, id),
 			...notebookPanelData(ctx),
-			// The browser refuses an over-large picture before it is sent, because
-			// a body over the adapter's limit is rejected with something no form
-			// can read. Same number the server enforces.
-			pictureKilobytes: mediaLimits().maxKilobytes,
 			onFamilyPlan: host.familyUserIds(ctx.userId).length > 1
 		};
 	} catch (e) {

@@ -4,19 +4,18 @@
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { NOTEBOOK_SEPARATOR } from '$lib/services/notebooks';
 	import { getAction, keyFor } from '$lib/shortcuts';
-	import OneLine from '$lib/components/OneLine.svelte';
 	import { enhance } from '$lib/enhance';
 	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
 	import SplitColumns from '$lib/components/SplitColumns.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
-	import Field from '$lib/components/Field.svelte';
 	import FormError from '$lib/components/FormError.svelte';
-	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import MarkdownImport from '$lib/components/MarkdownImport.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import NotebookDetail from '$lib/components/NotebookDetail.svelte';
+	import NotebookFields from '$lib/components/fields/NotebookFields.svelte';
+	import NotebookPicture from '$lib/components/NotebookPicture.svelte';
 	import { SECTION_COLORS } from '$lib/colors';
 	import type { PageServerData, ActionData } from './$types';
 	import { useT } from '$lib/i18n';
@@ -421,24 +420,22 @@
 			<input type="hidden" name="id" value={editingId} />
 		{/if}
 
-		<FormGrid>
-			<Field label={t('ui.title')} span={12} required hint={t('notebooks.anEmDashMakesA')}>
-				<OneLine
-					name="heading"
-					placeholder={t('notebooks.kitchenRenovation')}
-					value={editing?.title ?? ''}
-					class="input"
-					required
-				/>
-			</Field>
-
-			<Field label={t('notebooks.whatItIsFor')} span={12}>
-				<textarea name="description" rows="3" class="textarea"
-					>{editing?.description ?? ''}</textarea
-				>
-			</Field>
-		</FormGrid>
+		<NotebookFields
+			title={editing?.title ?? ''}
+			description={editing?.description ?? ''}
+			defaultTags={editing?.defaultTags ?? ''}
+		/>
 	</form>
+
+	<!-- Beside the form rather than in it: a picture goes up as multipart the
+	     moment it is chosen, which is not the same submission as the words. A
+	     notebook that does not exist yet has nothing to attach one to. -->
+	{#if editing && editing.mine !== false}
+		<div class="mt-3 flex items-start gap-3 border-t border-gray-200 pt-3">
+			<NotebookPicture notebook={editing} kilobytes={data.pictureKilobytes} size="size-10" />
+			<p class="text-sm text-gray-500">{t('notebooks.id.thePicture')}</p>
+		</div>
+	{/if}
 
 	<!--
 		The other way to make one: bring a folder of markdown in.

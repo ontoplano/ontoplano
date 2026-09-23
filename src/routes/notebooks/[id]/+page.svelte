@@ -1,16 +1,13 @@
 <script lang="ts">
 	import { enhance } from '$lib/enhance';
 	import FoldedText from '$lib/components/FoldedText.svelte';
-	import OneLine from '$lib/components/OneLine.svelte';
 	import { resolve } from '$app/paths';
 	import { armed } from '$lib/actions/armed';
-	import Field from '$lib/components/Field.svelte';
 	import FormError from '$lib/components/FormError.svelte';
-	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import TagInput from '$lib/components/TagInput.svelte';
-	import { page } from '$app/state';
+	import NotebookFields from '$lib/components/fields/NotebookFields.svelte';
+	import NotebookPicture from '$lib/components/NotebookPicture.svelte';
 	import NotebookDetail from '$lib/components/NotebookDetail.svelte';
 	import { SECTION_COLORS } from '$lib/colors';
 	import type { PageServerData, ActionData } from './$types';
@@ -22,10 +19,6 @@
 
 	let editing = $state(false);
 
-	/** The picture form, submitted the moment a file is chosen. */
-	let pictureForm: HTMLFormElement | undefined = $state();
-	let uploading = $state(false);
-	let pictureProblem = $state('');
 	/** The New button for whichever tab is showing — see NotebookDetail. */
 	let newAction = $state<{ label: string; run?: () => void; href?: string } | undefined>(undefined);
 	let confirmingDelete = $state(false);
@@ -71,70 +64,18 @@
 			Only for a notebook of your own — one shared into the family is
 			somebody else's to dress.
 		-->
+			<!-- The picture, where somebody looks when they want to change it —
+			     drawn by the same component the two Edit notebook dialogues use,
+			     so there is one of it rather than three. -->
 			{#if data.notebook.mine}
-				<form
-					bind:this={pictureForm}
-					method="post"
-					action="?/setPicture"
-					enctype="multipart/form-data"
-					use:enhance={() =>
-						async ({ update }) => {
-							uploading = false;
-							await update({ reset: false });
-						}}
-					class="shrink-0"
-				>
-					<input type="hidden" name="id" value={data.notebook.id} />
-					<input type="hidden" name="title" value={data.notebook.title} />
-					<label
-						class="block cursor-pointer rounded-lg transition focus-within:ring-2 focus-within:ring-gray-900 hover:opacity-80"
-						title={data.notebook.pictureId
-							? t('notebooks.id.changeThePicture')
-							: t('notebooks.id.aPictureFor', { title: data.notebook.title })}
-					>
-						{#if data.notebook.pictureId}
-							<img
-								src="/media/{data.notebook.pictureId}"
-								alt=""
-								loading="lazy"
-								class="size-12 rounded-lg border border-gray-200 bg-white object-cover"
-							/>
-						{:else}
-							<span
-								aria-hidden="true"
-								class="flex size-12 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-100 text-gray-500"
-							>
-								<Icon name="image" />
-							</span>
-						{/if}
-						<span class="sr-only"
-							>{t('notebooks.id.aPictureFor', { title: data.notebook.title })}</span
-						>
-						<input
-							type="file"
-							name="file"
-							accept="image/png,image/jpeg,image/webp,image/gif"
-							class="sr-only"
-							onchange={(e) => {
-								const field = e.currentTarget as HTMLInputElement;
-								const file = field.files?.[0];
-								pictureProblem = '';
-								if (!file) return;
-								if (file.size > data.pictureKilobytes * 1024) {
-									pictureProblem = t('pictures.tooBig', {
-										limit: data.pictureKilobytes,
-										name: file.name,
-										size: Math.ceil(file.size / 1024)
-									});
-									field.value = '';
-									return;
-								}
-								uploading = true;
-								pictureForm?.requestSubmit();
-							}}
-						/>
-					</label>
-				</form>
+				<NotebookPicture notebook={data.notebook} kilobytes={data.pictureKilobytes} />
+			{:else if data.notebook.pictureId}
+				<img
+					src="/media/{data.notebook.pictureId}"
+					alt=""
+					loading="lazy"
+					class="size-12 shrink-0 rounded-lg border border-gray-200 bg-white object-cover"
+				/>
 			{/if}
 
 			<div class="min-w-0">
@@ -163,19 +104,6 @@
 					<!-- Folded when it is long: a description written properly pushed
 				     the notes off a phone screen. See `FoldedText`. -->
 					<FoldedText text={data.notebook.description} class="mt-1" />
-				{/if}
-				{#if pictureProblem}
-					<p class="mt-1 text-xs text-red-700">{pictureProblem}</p>
-				{:else if uploading}
-					<p class="mt-1 text-xs text-gray-500">{t('notebooks.people.uploading')}</p>
-				{/if}
-				{#if data.notebook.mine && data.notebook.pictureId}
-					<form method="post" action="?/removePicture" use:enhance class="mt-1">
-						<input type="hidden" name="id" value={data.notebook.id} />
-						<button class="text-xs text-gray-500 hover:text-gray-900 hover:underline">
-							{t('notebooks.id.removeThePicture')}
-						</button>
-					</form>
 				{/if}
 			</div>
 		</div>
@@ -302,30 +230,21 @@
 			}}
 	>
 		<input type="hidden" name="id" value={data.notebook.id} />
-		<FormGrid>
-			<Field label={t('ui.title')} span={12} required>
-				<OneLine name="heading" value={data.notebook.title} class="input" required />
-			</Field>
-			<Field label={t('notebooks.id.whatItIsFor')} span={12}>
-				<textarea name="description" rows="2" class="textarea">{data.notebook.description}</textarea
-				>
-			</Field>
-			<!-- What writing about this subject usually carries, so nobody types
-			     it on every note. Filled into the note form, not applied behind
-			     it: see NoteFields. -->
-			<Field
-				label={t('notebooks.id.defaultTags')}
-				span={12}
-				hint={t('notebooks.id.everyNewNoteStartsWith')}
-			>
-				<TagInput
-					name="defaultTags"
-					value={data.notebook.defaultTags}
-					known={page.data.tagVocabulary ?? []}
-				/>
-			</Field>
-		</FormGrid>
+		<NotebookFields
+			title={data.notebook.title}
+			description={data.notebook.description}
+			defaultTags={data.notebook.defaultTags}
+		/>
 	</form>
+
+	<!-- Beside the form rather than in it: a picture goes up as multipart the
+	     moment it is chosen, which is not the same submission as the words. -->
+	{#if data.notebook.mine}
+		<div class="mt-3 flex items-start gap-3 border-t border-gray-200 pt-3">
+			<NotebookPicture notebook={data.notebook} kilobytes={data.pictureKilobytes} size="size-10" />
+			<p class="text-sm text-gray-500">{t('notebooks.id.thePicture')}</p>
+		</div>
+	{/if}
 
 	{#snippet footer()}
 		<button type="button" class="btn" onclick={() => (editing = false)}>{t('ui.cancel')}</button>
