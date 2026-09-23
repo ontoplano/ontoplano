@@ -218,8 +218,11 @@ input[type='radio'] {
  *    sober rule is what taught the app to expect square corners, so its
  *    opposite has to be equally blanket.
  * 2. **Nothing edge-to-edge does.** A rounded corner needs a gap around it to
- *    read as a corner; on the header it just leaves a notch of page showing
- *    through, which is what a bar bleeding to the viewport edge cannot have.
+ *    read as a corner; against a screen edge it just leaves a notch of
+ *    whatever is behind showing through, which reads as a rendering fault.
+ *    This applies to the shell as much as to a bar inside it —
+ *    `e2e/corners.e2e.ts` is the guard, because the thing most likely to be
+ *    rounded by accident is the biggest box on the page.
  */
 html[data-style='playful'] {
 	--radius-sm: 0.375rem; /* chips, kbd, badges */
@@ -370,6 +373,22 @@ html[data-style='playful'] .edge-to-edge,
  * every other bar that touches an edge.
  */
 html[data-style='playful'] .room-bar,
+/*
+ * The shell itself, which is the whole screen.
+ *
+ * `.page-surface` is `100dvh` wide and tall and clips what is inside it, so an
+ * 8px radius on it took a bite out of all four corners of the app and let the
+ * document's own ground show through — on every page, in every room, whatever
+ * was drawn inside. It is the reason this notch kept coming back somewhere new
+ * after each place it was chased out of: it was never the thing in the corner,
+ * it was the window.
+ *
+ * `.slide-frame` and `.slide-stage` are the same width and also clip, for the
+ * movement between rooms.
+ */
+html[data-style='playful'] .page-surface,
+html[data-style='playful'] .slide-frame,
+html[data-style='playful'] .slide-stage,
 html[data-style='playful'] nav > a,
 html[data-style='playful'] .divide-y > *,
 html[data-style='playful'] dialog > div > header,
