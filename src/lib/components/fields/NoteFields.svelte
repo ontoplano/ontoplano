@@ -126,7 +126,7 @@
 
 {#snippet rest()}
 	{#if notebook}
-		<NotebookField {notebooks} bind:value={filedIn} span={12} />
+		{@render where()}
 	{/if}
 
 	<!-- Half the row, so Tags and the People field beside it are the same size
@@ -141,12 +141,36 @@
 	</Field>
 {/snippet}
 
+<!--
+	Where the note goes, out where it can be seen.
+
+	A note with no notebook is a diary entry, which is a place rather than the
+	absence of one — so the choice is Diary and the notebooks, and it is the
+	first thing under the box rather than folded away with the labels. Somebody
+	writing something down is deciding where it goes as they write it.
+-->
+{#snippet where()}
+	<NotebookField
+		{notebooks}
+		bind:value={filedIn}
+		span={12}
+		label={t('ui.notebook')}
+		noneLabel={t('sections.diary.label')}
+	/>
+{/snippet}
+
 {#if compact}
-	<MoreOptions
-		label={notebook ? t('fields.note.notebookTags') : 'Tags'}
-		count={(labels ? 1 : 0) + (notebook && filedIn ? 1 : 0)}
-	>
-		{@render rest()}
+	{#if notebook}
+		{@render where()}
+	{/if}
+	<MoreOptions label="Tags" count={labels ? 1 : 0}>
+		<Field label={t('ui.tags')} span={12} hint={t('fields.note.separateWithCommasOrSpaces')}>
+			<TagInput
+				bind:value={labels}
+				known={page.data.tagVocabulary ?? []}
+				placeholder={t('fields.note.tagsExample')}
+			/>
+		</Field>
 	</MoreOptions>
 {:else}
 	{@render rest()}
