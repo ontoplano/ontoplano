@@ -3026,6 +3026,7 @@ export const messages: Catalogue = {
 	'tasks.activities.cannotDeleteReferencedByPlanner':
 		'Kann nicht gelöscht werden: wird vom Planer oder der Historie referenziert',
 	'tasks.activities.categories': 'Kategorien',
+	'tasks.activities.categoriesCount': 'Kategorien',
 	'tasks.activities.clear': 'leeren',
 	'tasks.activities.confirm': 'Bestätigen?',
 	'tasks.activities.createActivity': 'Aktivität erstellen',

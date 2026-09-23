@@ -2743,6 +2743,7 @@
 	"tasks.activities.anActivityIsANamed": "Eine Aktivität ist eine benannte Sache, die Sie tun — Fitnessstudio, Russisch, konzentriertes Arbeiten. Blöcke im Raster verweisen darauf.",
 	"tasks.activities.cannotDeleteReferencedByPlanner": "Kann nicht gelöscht werden: wird vom Planer oder der Historie referenziert",
 	"tasks.activities.categories": "Kategorien",
+	"tasks.activities.categoriesCount": "Kategorien",
 	"tasks.activities.clear": "leeren",
 	"tasks.activities.confirm": "Bestätigen?",
 	"tasks.activities.createActivity": "Aktivität erstellen",

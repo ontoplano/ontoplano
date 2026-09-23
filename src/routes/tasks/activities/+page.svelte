@@ -137,9 +137,9 @@
 				class="btn btn-sm"
 				data-tour="activity-categories"
 			>
-				{showCategoryForm
-					? t('tasks.activities.hideCategories')
-					: t('tasks.activities.manageCategories')}
+				<!-- One label either way: "Manage categories" becoming "Hide
+				     categories" is a press that changes its own width. -->
+				{t('tasks.activities.categoriesCount')}
 			</button>
 		{/snippet}
 	</RoomToolbar>

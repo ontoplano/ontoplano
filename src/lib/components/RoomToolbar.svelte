@@ -79,6 +79,21 @@
 		min-width: 0;
 	}
 
+	/*
+	 * Loose controls inside a room are not flush against its sides.
+	 *
+	 * The body only gives itself padding when its content is not already a
+	 * full-width card — a list wants its rows edge to edge. A page with both,
+	 * like the activities room, then had its controls touching the sides. The
+	 * inset toolbar is a block of that surface and carries its own padding, so
+	 * this is only for the loose one.
+	 */
+	:global(.room-body) > .room-toolbar:not(.room-toolbar-inset),
+	:global(.room-body) > :global(*) > .room-toolbar:not(.room-toolbar-inset) {
+		padding-inline: 1rem;
+		padding-top: 0.75rem;
+	}
+
 	/* Filters read as a second rank: same row shape, quieter type. */
 	.room-toolbar-filters {
 		font-size: 0.875rem;

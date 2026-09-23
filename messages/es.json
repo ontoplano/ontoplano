@@ -2743,6 +2743,7 @@
 	"tasks.activities.anActivityIsANamed": "Una actividad es algo con nombre que haces — gimnasio, ruso, trabajo profundo. Los bloques de la cuadrícula apuntan a ellas.",
 	"tasks.activities.cannotDeleteReferencedByPlanner": "No se puede eliminar: está referenciada por el planificador o el historial",
 	"tasks.activities.categories": "Categorías",
+	"tasks.activities.categoriesCount": "Categorías",
 	"tasks.activities.clear": "borrar",
 	"tasks.activities.confirm": "¿Confirmar?",
 	"tasks.activities.createActivity": "Crear actividad",

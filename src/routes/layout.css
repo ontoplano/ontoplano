@@ -4479,24 +4479,29 @@ html[data-style='playful'] .room-surface {
 	 *
 	 * The planner's Day / Week / Month ran to the very edge of the room, and so
 	 * did every other page whose content is loose controls rather than a list.
+	 *
+	 * No padding at the top: the first thing in a room meets the track above
+	 * it, and anything that wants air there brings its own.
 	 */
-	padding: 0.75rem 1rem 1rem;
+	padding: 0 1rem 1rem;
 }
 
 /*
- * Unless what is in it is already a surface of its own.
+ * And a full-width card steps back out of it.
  *
- * A room whose body is one full-width card — the notebooks shelf, the task
- * list — wants its rows running edge to edge, and padding round them would
- * inset a white card inside a white room by a rem for no reason. The body asks
- * what it is holding rather than every page having to say.
+ * A room whose content is one card — the notebooks shelf, the task list —
+ * wants its rows edge to edge, and a rem of white around a white card is a
+ * rem of nothing. Cancelling the body's padding instead was the first answer
+ * and is wrong for the rooms that have both: the activities room has a card
+ * and a row of chips above it, and the chips ended up against the glass.
  */
-.room-body:has(> .room-surface),
-.room-body:has(> * > .room-surface),
-.room-body:has(> [class*='shadow-card']),
-.room-body:has(> * > [class*='shadow-card']),
-.room-body:has(> * > * > [class*='shadow-card']) {
-	padding: 0;
+.room-body > .room-surface,
+.room-body > [class*='shadow-card'],
+.room-body > * > .room-surface,
+.room-body > * > [class*='shadow-card'],
+.room-body > * > * > .room-surface,
+.room-body > * > * > [class*='shadow-card'] {
+	margin-inline: -1rem;
 }
 
 .scroll-hints {

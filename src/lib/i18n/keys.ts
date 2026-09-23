@@ -2554,6 +2554,7 @@ export type MessageKey =
 	| 'tasks.activities.anActivityIsANamed'
 	| 'tasks.activities.cannotDeleteReferencedByPlanner'
 	| 'tasks.activities.categories'
+	| 'tasks.activities.categoriesCount'
 	| 'tasks.activities.clear'
 	| 'tasks.activities.confirm'
 	| 'tasks.activities.createActivity'
