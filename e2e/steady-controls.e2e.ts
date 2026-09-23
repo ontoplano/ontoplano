@@ -53,7 +53,16 @@ test('the task strip does not shift when its toggles are pressed', async ({ page
 			const from = strip.getBoundingClientRect().left;
 			return [...strip.querySelectorAll('button, input, [role="combobox"]')].map((el) => {
 				const box = el.getBoundingClientRect();
-				return `${el.textContent?.trim().slice(0, 12) || el.tagName}@${Math.round(box.x - from)}`;
+				/*
+				 * To the nearest two pixels. A button whose pressed state paints a
+				 * ring lays out a fraction of a pixel differently, and rounding
+				 * lands that on either side of a whole number. What this is for is
+				 * a control moving because the words in it got shorter, which is
+				 * tens of pixels, not one.
+				 */
+				return `${el.textContent?.trim().slice(0, 12) || el.tagName}@${
+					Math.round((box.x - from) / 2) * 2
+				}`;
 			});
 		});
 

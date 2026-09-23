@@ -795,6 +795,23 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
  * makes the page scroll sideways, and nothing type-checks across that gap.
  */
 /*
+ * The scrollbar's room is kept whether or not there is a scrollbar.
+ *
+ * Every list that grows past the fold took a scrollbar's width off the page
+ * as it did, and everything on the screen shifted by that much — pressing
+ * "Completed" on the task list moved the controls beside it, which is the
+ * thing this app is not supposed to do. Reserving the gutter costs a dozen
+ * pixels on a desktop and nothing at all where the scrollbar is an overlay.
+ */
+html {
+	scrollbar-gutter: stable;
+}
+
+.page-gutter {
+	scrollbar-gutter: stable;
+}
+
+/*
  * On a phone the room runs to both edges.
  *
  * A rem of page ground down each side is a rem the rows do not have, and the
