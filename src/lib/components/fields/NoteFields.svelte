@@ -163,7 +163,7 @@
 	{#if notebook}
 		{@render where()}
 	{/if}
-	<MoreOptions label="Tags" count={labels ? 1 : 0}>
+	<MoreOptions label={t('ui.tags')} count={labels ? 1 : 0}>
 		<Field label={t('ui.tags')} span={12} hint={t('fields.note.separateWithCommasOrSpaces')}>
 			<TagInput
 				bind:value={labels}

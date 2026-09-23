@@ -57,7 +57,7 @@ test('a rating set by the slider is the rating the card keeps', async ({ page })
 	 * group rather than one per bar.
 	 */
 	await expect(
-		page.locator('[title*="Urgency: 4 of 5"], [aria-label*="Urgency: 4 of 5"]').first()
+		page.locator('[title*="Urgency 4"], [aria-label*="Urgency 4"]').first()
 	).toBeVisible();
 });
 

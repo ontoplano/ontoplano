@@ -802,13 +802,16 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
  * "Completed" on the task list moved the controls beside it, which is the
  * thing this app is not supposed to do. Reserving the gutter costs a dozen
  * pixels on a desktop and nothing at all where the scrollbar is an overlay.
+ *
+ * Only from `sm`: on a phone the room runs to both screen edges and the
+ * scrollbar is drawn over the content rather than beside it, so reserving a
+ * gutter there takes fifteen pixels off the width of every card for nothing.
  */
-html {
-	scrollbar-gutter: stable;
-}
-
-.page-gutter {
-	scrollbar-gutter: stable;
+@media (width >= 40rem) {
+	html,
+	.page-gutter {
+		scrollbar-gutter: stable;
+	}
 }
 
 /*
@@ -4552,6 +4555,19 @@ html[data-style='playful'] .room-surface {
 }
 
 /*
+ * Except on a phone, where the room *is* the screen.
+ *
+ * There the page has no gutter and the room runs to both edges, so a rem down
+ * its sides is a rem the rows do not have — and the cards that step back out
+ * of it below would be stepping out of nothing.
+ */
+@media (width < 40rem) {
+	.room-body {
+		padding-inline: 0;
+	}
+}
+
+/*
  * And a full-width card steps back out of it.
  *
  * A room whose content is one card — the notebooks shelf, the task list —
@@ -4560,13 +4576,15 @@ html[data-style='playful'] .room-surface {
  * and is wrong for the rooms that have both: the activities room has a card
  * and a row of chips above it, and the chips ended up against the glass.
  */
-.room-body > .room-surface,
-.room-body > [class*='shadow-card'],
-.room-body > * > .room-surface,
-.room-body > * > [class*='shadow-card'],
-.room-body > * > * > .room-surface,
-.room-body > * > * > [class*='shadow-card'] {
-	margin-inline: -1rem;
+@media (width >= 40rem) {
+	.room-body > .room-surface,
+	.room-body > [class*='shadow-card'],
+	.room-body > * > .room-surface,
+	.room-body > * > [class*='shadow-card'],
+	.room-body > * > * > .room-surface,
+	.room-body > * > * > [class*='shadow-card'] {
+		margin-inline: -1rem;
+	}
 }
 
 .scroll-hints {

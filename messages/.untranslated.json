@@ -1,11 +1,10 @@
 {
-	"total": 244,
+	"total": 247,
 	"files": {
 		"src/lib/assistant-providers.ts": 4,
 		"src/lib/components/Card.svelte": 1,
 		"src/lib/components/MarkdownBox.svelte": 2,
 		"src/lib/components/Picker.svelte": 1,
-		"src/lib/components/TodoRows.svelte": 1,
 		"src/lib/json-body.ts": 4,
 		"src/lib/server/api/auth.ts": 1,
 		"src/lib/server/billing/providers/paddle.ts": 10,
@@ -18,6 +17,7 @@
 		"src/lib/server/services/model-catalog.ts": 2,
 		"src/lib/server/services/model-keys.ts": 1,
 		"src/lib/server/services/newsletter.ts": 3,
+		"src/lib/server/services/oauth.ts": 2,
 		"src/lib/server/services/push.ts": 1,
 		"src/lib/server/services/registration.ts": 8,
 		"src/lib/server/services/subscriptions.ts": 12,
@@ -38,7 +38,7 @@
 		"src/lib/services/inventory.ts": 7,
 		"src/lib/services/ledgers.ts": 3,
 		"src/lib/services/locations.ts": 1,
-		"src/lib/services/media.ts": 9,
+		"src/lib/services/media.ts": 10,
 		"src/lib/services/meta.ts": 1,
 		"src/lib/services/notebook-media.ts": 1,
 		"src/lib/services/notebooks.ts": 2,
@@ -63,6 +63,7 @@
 		"src/routes/+layout.svelte": 7,
 		"src/routes/media/+server.ts": 2,
 		"src/routes/settings/instance/+page.server.ts": 1,
+		"src/routes/settings/integrations/connections/+page.svelte": 1,
 		"src/routes/tasks/review/+page.server.ts": 2,
 		"src/routes/welcome/password/+page.server.ts": 1
 	}

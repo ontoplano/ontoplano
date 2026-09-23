@@ -137,13 +137,25 @@ test('the list can be widened, and it stays widened', async ({ page }) => {
 	);
 });
 
-test('what a notebook is, said only while there are none', async ({ page }) => {
+/**
+ * What a notebook is, said where there is room to say it.
+ *
+ * It was a paragraph in a band between the tabs and the shelf: read once, in
+ * the way ever after, and gone the moment the first notebook existed. It is
+ * the empty right-hand column's own description now — that column is blank
+ * until somebody picks a notebook, which is where an explanation belongs and
+ * when it is wanted, so it survives the first notebook being made.
+ */
+test('what a notebook is, said in the column that is waiting for one', async ({ page }) => {
 	test.setTimeout(120_000);
 	await register(page, testEmail('nb-intro'));
 	await visit(page, '/notebooks');
 
-	const intro = page.locator('p.page-intro');
-	await expect(intro).toBeVisible();
+	const said = page.getByText(/A subject you write against with no deadline/);
+	await expect(said.first()).toBeVisible();
+
+	// And it is no longer a band above the shelf.
+	await expect(page.locator('p.page-intro')).toHaveCount(0);
 
 	await makeNotebook(page, 'The kitchen');
 	await visit(page, '/notebooks');
