@@ -46,7 +46,18 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <div class="space-y-4">
-	<div class="flex flex-wrap items-start justify-between gap-3">
+	<!--
+		The header stands on a surface of its own.
+
+		The title, the description and the picture sat straight on the page's
+		patterned ground while everything below them — the tabs, the notes, the
+		tasks — stood on white, so the one part naming what you are looking at
+		was the one part with nothing under it. Same surface the panes below use,
+		so the page reads as one thing.
+	-->
+	<div
+		class="flex flex-wrap items-start justify-between gap-3 border border-gray-200 bg-white p-3 shadow-card"
+	>
 		<!-- The picture and what it is a picture of, together: `justify-between`
 		     put the whole width between them. -->
 		<div class="flex min-w-0 items-start gap-3">
