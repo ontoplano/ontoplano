@@ -81,10 +81,10 @@
 			and a list of nine reads as two lists.
 		-->
 		<span class="size-4 shrink-0" aria-hidden="true"></span>
-		<span class="min-w-0 flex-1 truncate {always ? 'text-gray-900' : 'text-gray-400'}">{label}</span
+		<span class="min-w-0 flex-1 truncate {always ? 'text-gray-900' : 'text-gray-500'}">{label}</span
 		>
 		{@render trailing?.()}
-		<span class="eyebrow shrink-0 text-gray-400"
+		<span class="eyebrow shrink-0 text-gray-500"
 			>{note ?? (always ? t('ui.alwaysOn') : t('ui.withTheRoom'))}</span
 		>
 	{:else}

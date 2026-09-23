@@ -1,5 +1,5 @@
 {
-	"total": 247,
+	"total": 231,
 	"files": {
 		"src/lib/assistant-providers.ts": 4,
 		"src/lib/components/Card.svelte": 1,
@@ -7,8 +7,6 @@
 		"src/lib/components/Picker.svelte": 1,
 		"src/lib/json-body.ts": 4,
 		"src/lib/server/api/auth.ts": 1,
-		"src/lib/server/billing/providers/paddle.ts": 10,
-		"src/lib/server/billing/providers/play.ts": 6,
 		"src/lib/server/services/admin.ts": 11,
 		"src/lib/server/services/assistant-log.ts": 7,
 		"src/lib/server/services/client-errors.ts": 4,

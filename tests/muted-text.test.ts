@@ -45,7 +45,6 @@ const ALLOWED: Record<string, number> = {
 	'src/routes/health/workouts/+page.svelte': 1,
 	'src/routes/instance/+page.svelte': 1,
 	'src/routes/inventory/+page.svelte': 3,
-	'src/routes/settings/preferences/+page.svelte': 1,
 	'src/routes/start/+page.svelte': 2,
 	// The in-app chat, which is switched off — see `$lib/features`.
 	'src/routes/assistant/+page.svelte': 2

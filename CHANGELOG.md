@@ -28,7 +28,7 @@ releases mattered.
   that does the room's own work, not a list of links. Adding a habit on a
   notebook's Habits tab makes the same habit the Health room shows.
 - **Which of them a notebook has is its own answer.** In the notebook's Edit
-  dialog, under *What it holds*. A new notebook starts with notes and tasks
+  dialog, under _What it holds_. A new notebook starts with notes and tasks
   only, so a reading list is not born with nine tabs; everything that exists
   today keeps the three it had. Switching one off takes the tab and nothing
   else — the dialog says how much is filed under it, and those rows stay in
@@ -39,7 +39,7 @@ releases mattered.
 - **Show/Hide became a tick.** The rooms and their tabs in Preferences are
   checkboxes now: ticked means it is there. The old button relabelled itself
   under the cursor and changed width doing it, so you could not press it twice
-  without reading it again. It is the same control a notebook's *What it holds*
+  without reading it again. It is the same control a notebook's _What it holds_
   list uses.
 - **A key tied to one notebook reaches everything in it.** Not just its notes,
   tasks and goals — whatever that notebook has been switched on to hold. An

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { enhance } from '$app/forms';
+	import { enhance } from '$lib/enhance';
 	import { armed } from '$lib/actions/armed';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Field from '$lib/components/Field.svelte';
@@ -170,7 +170,7 @@
 				<div class="min-w-0 flex-1">
 					<p
 						class="truncate text-sm {row.done
-							? 'text-gray-400 line-through'
+							? 'text-gray-500 line-through'
 							: 'font-medium text-gray-900'}"
 					>
 						{row.title}
