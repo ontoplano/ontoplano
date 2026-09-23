@@ -1384,6 +1384,7 @@
 	"notebooks.billsCount": null,
 	"notebooks.closeIt": "Cerrarlo",
 	"notebooks.closed": "cerrado",
+	"notebooks.closedCount": null,
 	"notebooks.createNotebook": "Crear cuaderno",
 	"notebooks.deleteTheNotebook": "Eliminar el cuaderno",
 	"notebooks.deleteThisNotebook": "¿Eliminar este cuaderno?",

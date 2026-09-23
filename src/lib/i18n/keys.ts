@@ -1357,6 +1357,7 @@ export type MessageKey =
 	| 'notebooks.billsCount'
 	| 'notebooks.closeIt'
 	| 'notebooks.closed'
+	| 'notebooks.closedCount'
 	| 'notebooks.createNotebook'
 	| 'notebooks.deleteTheNotebook'
 	| 'notebooks.deleteThisNotebook'
@@ -3488,6 +3489,7 @@ export interface MessageValuesFor {
 	'notebookDetail.writeANoteAbout': { title: string | number };
 	'notebooks.alreadyFiled': { count: number };
 	'notebooks.billsCount': { count: number };
+	'notebooks.closedCount': { count: number };
 	'notebooks.diary.edited': { updatedAt: string | number };
 	'notebooks.diary.for': { forDate: string | number };
 	'notebooks.diary.noEntriesWith': { filterTag: string | number };

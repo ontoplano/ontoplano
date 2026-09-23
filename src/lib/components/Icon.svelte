@@ -71,6 +71,15 @@
 		// Put away rather than thrown away: the lid, the box, and the arrow down
 		// into it — the gesture a chat app archives a conversation with.
 		archive: 'M3 5h18v4H3zM5 9v10h14V9M10 13h4',
+		/*
+		 * Three arrows chasing each other round a triangle.
+		 *
+		 * For notes whose notebook was deleted: they were not thrown away, they
+		 * are waiting to be put somewhere. A bin says the opposite of what that
+		 * chip is for — it is where things go to come back.
+		 */
+		recycle:
+			'M7 19H5a2 2 0 0 1-1.73-3L5.5 12M5.5 12 4 14.5M5.5 12l2.6 1M12 5l1 1.73 2.24 3.88M15.24 10.6l.36-2.9M15.24 10.6l2.9-.36M17 19h2a2 2 0 0 0 1.73-3l-1.2-2.08M19.53 13.92 17 14.6M19.53 13.92l-1.5-2.2M9 19h6',
 		// A drawing pin seen from the side: the head, the collar, the point.
 		pin: 'M9 4h6l-1 5 3 3H7l3-3-1-5zM12 12v8',
 		wallet:

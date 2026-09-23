@@ -51,12 +51,23 @@ export type SectionKey =
 	| 'inventory'
 	| 'media';
 
+/** The writing room's accent, shared by every shelf in it. */
+const SECTIONS_DIARY_ACCENT = '#b45309';
+
 export const SECTIONS: Record<SectionKey, { accent: string; name: PlainKey }> = {
 	home: { accent: '#475569', name: 'sections.home.label' },
 	planner: { accent: '#1d4ed8', name: 'sections.tasks.label' },
 	goals: { accent: '#7c2d12', name: 'sections.goals.label' },
-	diary: { accent: '#b45309', name: 'sections.notebooks.label' },
-	ideas: { accent: '#6d28d9', name: 'sections.ideas.label' },
+	diary: { accent: SECTIONS_DIARY_ACCENT, name: 'sections.notebooks.label' },
+	/*
+	 * The same accent as the diary, because Ideas is part of that room.
+	 *
+	 * It had a colour of its own from when it was a room at the top level. It
+	 * is a tab inside Notebooks now, and a tab wearing a different colour from
+	 * the room around it reads as somewhere else you have arrived at — on its
+	 * own page, and on the dashboard card that names it.
+	 */
+	ideas: { accent: SECTIONS_DIARY_ACCENT, name: 'sections.ideas.label' },
 	health: { accent: '#0f766e', name: 'sections.health.label' },
 	finance: { accent: '#155e63', name: 'sections.finance.label' },
 	inventory: { accent: '#9d174d', name: 'sections.inventory.label' },
@@ -69,11 +80,11 @@ export function sectionFor(pathname: string): SectionKey {
 	if (pathname.startsWith('/goals')) return 'goals';
 	if (pathname.startsWith('/health')) return 'health';
 	if (pathname.startsWith('/finance')) return 'finance';
-	// Ideas keeps its own colour inside the room, and the room's own comes
-	// after it — a prefix test on the parent would swallow the child.
-	if (pathname.startsWith('/notebooks/ideas')) return 'ideas';
 	// The whole Notebooks room wears the diary section's colour, as the room
-	// did when it lived at /diary.
+	// did when it lived at /diary — Ideas included. It kept a colour of its
+	// own from when it was a room at the top level; it is a tab now, and a tab
+	// that wears a different colour from the room around it reads as somewhere
+	// else you have arrived at.
 	if (pathname.startsWith('/notebooks')) return 'diary';
 	if (pathname.startsWith('/inventory')) return 'inventory';
 	if (pathname.startsWith('/media')) return 'media';

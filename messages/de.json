@@ -1384,6 +1384,7 @@
 	"notebooks.billsCount": null,
 	"notebooks.closeIt": "Schließen",
 	"notebooks.closed": "geschlossen",
+	"notebooks.closedCount": null,
 	"notebooks.createNotebook": "Notizbuch erstellen",
 	"notebooks.deleteTheNotebook": "Das Notizbuch löschen",
 	"notebooks.deleteThisNotebook": "Dieses Notizbuch löschen?",

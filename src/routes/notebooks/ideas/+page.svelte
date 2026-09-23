@@ -226,7 +226,7 @@
 			were two: a fold of tags and two rows of chips on the page's own
 			patterned ground, then a gap, then a card of rows.
 		-->
-		<RoomSurface accent={SECTION_COLORS.ideas} dataTour="idea-list">
+		<RoomSurface accent={SECTION_COLORS.diary} dataTour="idea-list">
 			{#snippet tools()}
 				<!--
 					The tags fold away, and start folded.

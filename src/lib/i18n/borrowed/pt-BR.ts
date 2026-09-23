@@ -12,6 +12,7 @@ export const borrowed: ReadonlySet<string> = new Set([
 	'notebooks.aNotebookStartsWith',
 	'notebooks.alreadyFiled',
 	'notebooks.billsCount',
+	'notebooks.closedCount',
 	'notebooks.fields.aboutWhat',
 	'notebooks.fields.bank',
 	'notebooks.fields.card',

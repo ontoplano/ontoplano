@@ -69,9 +69,18 @@
 	 * the order is about how the shelf reads, and the tree the server builds is
 	 * about what is inside what — two different questions.
 	 */
-	const shelved = $derived(
-		[...data.tree].sort((a, b) => Number(Boolean(a.closedAt)) - Number(Boolean(b.closedAt)))
-	);
+	const shelved = $derived(data.tree.filter((node) => !node.closedAt));
+
+	/*
+	 * The ones that are finished with, folded away.
+	 *
+	 * A closed notebook is history — a trip that happened, a renovation that
+	 * ended — and it was sitting on the same shelf as the ones being written
+	 * in, only greyer. They are behind a line now, closed to begin with,
+	 * because the shelf is for what you are working on.
+	 */
+	const closed = $derived(data.tree.filter((node) => Boolean(node.closedAt)));
+	let showClosed = $state(false);
 	const showingOrphans = $derived(data.orphanedSelected && !selected);
 
 	function openCreate() {
@@ -317,6 +326,37 @@
 							{/each}
 						</div>
 
+						{#if closed.length > 0}
+							<!--
+								The line under the shelf, and what is behind it.
+
+								Pressing the line is what opens it — the rule and its label
+								are one control, so there is nothing to hunt for and nothing
+								drawn that is not the thing itself.
+							-->
+							<button
+								type="button"
+								class="shelf-fold"
+								onclick={() => (showClosed = !showClosed)}
+								aria-expanded={showClosed}
+							>
+								<span class="shelf-fold-line" aria-hidden="true"></span>
+								<span class="shelf-fold-label">
+									<Icon name={showClosed ? 'chevron-down' : 'chevron-right'} size={14} />
+									{t('notebooks.closedCount', { count: closed.length })}
+								</span>
+								<span class="shelf-fold-line" aria-hidden="true"></span>
+							</button>
+
+							{#if showClosed}
+								<div class="notebook-shelf">
+									{#each closed as node (node.id)}
+										{@render notebookRow(node)}
+									{/each}
+								</div>
+							{/if}
+						{/if}
+
 						<!--
 							What is left over, as a bin in the corner.
 
@@ -335,7 +375,7 @@
 								})}
 								aria-label={t('notebooks.notesWithoutANotebook')}
 							>
-								<Icon name="trash" size={16} />
+								<Icon name="recycle" size={16} />
 								<span class="tabular text-xs">{orphaned.length}</span>
 							</a>
 						{/if}

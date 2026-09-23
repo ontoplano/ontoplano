@@ -1508,6 +1508,7 @@ export const messages: Catalogue = {
 	'notebooks.billsCount': { one: '{count} bill', other: '{count} bills' },
 	'notebooks.closeIt': 'Close it',
 	'notebooks.closed': 'closed',
+	'notebooks.closedCount': { one: '{count} closed', other: '{count} closed' },
 	'notebooks.createNotebook': 'Create notebook',
 	'notebooks.deleteTheNotebook': 'Delete the notebook',
 	'notebooks.deleteThisNotebook': 'Delete this notebook?',

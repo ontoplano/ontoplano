@@ -4273,6 +4273,45 @@ html button.tab-link {
 }
 
 /*
+ * The line under the shelf, and what is behind it.
+ *
+ * A closed notebook is history — a trip that happened, a renovation that
+ * ended — and it sat on the same shelf as the ones being written in, only
+ * greyer, so a shelf of five became a shelf of twelve over a year. The rule
+ * IS the control: pressing the line opens what is under it, so there is no
+ * button drawn beside a divider that does nothing.
+ */
+.shelf-fold {
+	display: flex;
+	align-items: center;
+	gap: 0.625rem;
+	width: 100%;
+	margin: 0.75rem 0 0.25rem;
+	padding: 0.25rem 0.5rem;
+	color: var(--color-gray-500);
+	cursor: pointer;
+}
+
+.shelf-fold:hover {
+	color: var(--color-gray-900);
+}
+
+.shelf-fold-line {
+	flex: 1;
+	height: 1px;
+	background-color: var(--color-gray-200);
+}
+
+.shelf-fold-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	font-size: 0.75rem;
+	font-weight: 500;
+	white-space: nowrap;
+}
+
+/*
  * What is left over, as a bin in the corner of the shelf.
  *
  * Notes whose notebook was deleted are not a notebook, and a row of them at
@@ -4286,14 +4325,16 @@ html button.tab-link {
 	z-index: 1;
 	display: inline-flex;
 	align-items: center;
-	gap: 0.25rem;
+	/* The glyph and its number read as one thing, centred on the same line. */
+	justify-content: center;
+	gap: 0.375rem;
 	align-self: end;
-	margin: 0 0.5rem 0 auto;
-	border: 1px solid var(--color-gray-200);
+	margin: 0 0.75rem 0 auto;
 	border-radius: var(--radius, 0);
 	background-color: var(--color-white);
-	padding: 0.375rem 0.5rem;
+	padding: 0.5rem 0.75rem;
 	color: var(--color-gray-500);
+	line-height: 1;
 	box-shadow: var(--shadow-card);
 }
 

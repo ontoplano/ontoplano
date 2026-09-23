@@ -1384,6 +1384,7 @@
 	"notebooks.billsCount": null,
 	"notebooks.closeIt": "Fechar",
 	"notebooks.closed": "fechado",
+	"notebooks.closedCount": null,
 	"notebooks.createNotebook": "Criar caderno",
 	"notebooks.deleteTheNotebook": "Excluir o caderno",
 	"notebooks.deleteThisNotebook": "Excluir este caderno?",

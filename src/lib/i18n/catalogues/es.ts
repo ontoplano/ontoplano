@@ -1543,6 +1543,7 @@ export const messages: Catalogue = {
 	'notebooks.billsCount': { one: '{count} bill', other: '{count} bills' },
 	'notebooks.closeIt': 'Cerrarlo',
 	'notebooks.closed': 'cerrado',
+	'notebooks.closedCount': { one: '{count} closed', other: '{count} closed' },
 	'notebooks.createNotebook': 'Crear cuaderno',
 	'notebooks.deleteTheNotebook': 'Eliminar el cuaderno',
 	'notebooks.deleteThisNotebook': '¿Eliminar este cuaderno?',
