@@ -620,9 +620,12 @@ export function defaultTagsOf(ctx: Ctx, notebookId: number | null): string {
  */
 function wantedModules(raw: unknown): string[] | null {
 	if (raw === undefined || raw === null) return null;
-	if (Array.isArray(raw)) return raw.map((one) => String(one));
-	return String(raw)
-		.split(',')
+	// Split whether it arrived as a list or as one comma-separated string, and
+	// whether a list's entries are single ids or lists themselves: a form posts
+	// one field per ticked box, an assistant sends a sentence's worth of them,
+	// and `FormData.getAll` on a single comma-joined field gives one of each.
+	return (Array.isArray(raw) ? raw : [raw])
+		.flatMap((one) => String(one).split(','))
 		.map((part) => part.trim())
 		.filter(Boolean);
 }

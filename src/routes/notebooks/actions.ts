@@ -40,7 +40,11 @@ export const notebookActions = {
 			createNotebook(buildCtx(locals.user!.id), {
 				title: formData.get('heading'),
 				description: formData.get('description'),
-				defaultTags: formData.get('defaultTags')
+				defaultTags: formData.get('defaultTags'),
+				// What it holds, when whoever is making it said. The dialog does
+				// not ask — a notebook is made in one field and answered for
+				// afterwards — so this is usually the default.
+				modules: formData.has('modules') ? formData.getAll('modules') : undefined
 			});
 			return { success: true };
 		} catch (e) {
