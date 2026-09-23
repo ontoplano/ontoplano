@@ -24,6 +24,7 @@
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
 	import { ratingSummary } from '$lib/ratings';
+	import { phoneWidth } from '$lib/breakpoints.svelte';
 	import TagChip from '$lib/components/TagChip.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -155,6 +156,9 @@
 	let showCompleted = $state(false);
 	/** Put-away tasks are out of the way by default; that is what putting away is. */
 	let showArchived = $state(false);
+
+	/** Whether the filters are behind a button right now — see `FilterBar`. */
+	const phone = phoneWidth();
 	/**
 	 * Which notebook's tasks to show.
 	 *
@@ -1043,23 +1047,29 @@
 				>
 					{#snippet action()}
 						<!--
-							The way back, right here. The toggles that hid these are
-							folded away with the other filters, and a sentence about
-							hidden work must not send somebody hunting for the way
-							to see it.
+							The way back, where the toggles that hid these are not on the
+							screen to press.
+
+							On a phone they are behind the filter button, and a sentence
+							about hidden work must not send somebody hunting for the way
+							to see it. Anything wider has them out on the strip a few
+							centimetres above this, and a second identical button is not
+							a second way back — it is the same one twice.
 						-->
-						<div class="flex justify-center gap-2">
-							{#if !showCompleted && finished > 0}
-								<button onclick={() => (showCompleted = true)} class="btn btn-sm">
-									{t('todoRows.showCompletedCount', { count: finished })}
-								</button>
-							{/if}
-							{#if !showArchived && putAway > 0}
-								<button onclick={() => (showArchived = true)} class="btn btn-sm">
-									{t('todoRows.showArchivedCount', { count: putAway })}
-								</button>
-							{/if}
-						</div>
+						{#if phone.current}
+							<div class="flex justify-center gap-2">
+								{#if !showCompleted && finished > 0}
+									<button onclick={() => (showCompleted = true)} class="btn btn-sm">
+										{t('todoRows.showCompletedCount', { count: finished })}
+									</button>
+								{/if}
+								{#if !showArchived && putAway > 0}
+									<button onclick={() => (showArchived = true)} class="btn btn-sm">
+										{t('todoRows.showArchivedCount', { count: putAway })}
+									</button>
+								{/if}
+							</div>
+						{/if}
 					{/snippet}
 				</EmptyState>
 			{:else}

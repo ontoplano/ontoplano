@@ -35,7 +35,7 @@ test('the filters are out on a wide screen, and clear in one press', async ({ pa
 
 	// No press to reach them, and no button offering one.
 	await expect(page.locator('#tasks-filters')).toBeVisible();
-	await expect(page.getByRole('button', { name: /Every notebook/ })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Filter by tag' }).first()).toBeVisible();
 	await expect(page.locator('.filter-toggle')).toHaveCount(0);
 
 	// Narrow by a label.
@@ -70,10 +70,10 @@ test('on a phone they are a sheet, and the button says one is on', async ({ page
 	const sheet = page.locator('.filter-toggle');
 	await expect(sheet).toHaveCount(1);
 	await expect(sheet).toHaveAttribute('aria-pressed', 'false');
-	await expect(page.getByRole('button', { name: /Every notebook/ })).toBeHidden();
+	await expect(page.getByRole('button', { name: 'Filter by tag' })).toBeHidden();
 
 	await sheet.click();
-	await expect(page.getByRole('button', { name: /Every notebook/ })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Filter by tag' }).first()).toBeVisible();
 
 	// Narrow, and close it: the button carries that something is on, so a
 	// filter behind a press is never a list that has quietly lost rows.
