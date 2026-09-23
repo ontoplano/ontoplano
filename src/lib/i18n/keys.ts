@@ -1491,6 +1491,8 @@ export type MessageKey =
 	| 'notifications.title'
 	| 'notifications.unread'
 	| 'notify.everyBlockOnThePlan'
+	| 'notify.labelsAs'
+	| 'notify.labelsOff'
 	| 'notify.mondayMorningWhatLastWeek'
 	| 'notify.noun.activity'
 	| 'notify.noun.alarm'
@@ -1537,6 +1539,7 @@ export type MessageKey =
 	| 'notify.phrase'
 	| 'notify.theDayOneWantsPaying'
 	| 'notify.titleMany'
+	| 'notify.titleNamed'
 	| 'notify.titleOne'
 	| 'notify.verb.add'
 	| 'notify.verb.apply'
@@ -3421,6 +3424,8 @@ export interface MessageValuesFor {
 	'notebooks.whatIsInside': { show: string | number; title: string | number };
 	'notifications.open': { count: number };
 	'notifications.unread': { count: number };
+	'notify.labelsAs': { labels: string | number };
+	'notify.labelsOff': { labels: string | number };
 	'notify.noun.activity': { count: number };
 	'notify.noun.alarm': { count: number };
 	'notify.noun.beforeBlock': { count: number };
@@ -3463,6 +3468,7 @@ export interface MessageValuesFor {
 	'notify.others': { count: number };
 	'notify.phrase': { verb: string | number; what: string | number };
 	'notify.titleMany': { count: number; who: string | number };
+	'notify.titleNamed': { verb: string | number; what: string | number; who: string | number };
 	'notify.titleOne': { verb: string | number; what: string | number; who: string | number };
 	'oauth.handingYouBackTo': { client: string | number };
 	'oauth.wantsToConnectTo': { client: string | number };

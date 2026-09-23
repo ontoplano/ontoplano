@@ -5,6 +5,8 @@ import {
 	NOUN_KEYS,
 	phraseFor,
 	PHRASE_OVERRIDES,
+	subjectName,
+	SUBJECT_MAX,
 	summarise,
 	VERB_KEYS
 } from '../src/lib/server/services/assistant-notify';
@@ -137,6 +139,93 @@ describe('the line somebody reads', () => {
 		const many = summarise(['add_todo', 'write_entry'], 'Claude', pt);
 		expect(many.title).toBe('Claude alterou 2 coisas');
 		expect(many.body).toBe('adicionou 1 tarefa, escreveu 1 entrada');
+	});
+
+	/*
+	 * "labelled 1 todo" told you the shape of what happened and nothing about
+	 * your afternoon: you have one task in mind and the line would not say
+	 * whether it was that one. A count is the honest answer for a burst, where
+	 * there is no single thing to name.
+	 */
+	test('a single write names the thing it was about', () => {
+		const { title, body } = summarise(
+			[
+				{
+					tool: 'tag_todo',
+					args: { id: 7, add: 'done-by-ai' },
+					before: { title: 'bad filter button' }
+				}
+			],
+			'Claude',
+			en
+		);
+		expect(title).toBe('Claude labelled \u201cbad filter button\u201d');
+		expect(body).toBe('as done-by-ai');
+	});
+
+	test('and says which labels came off', () => {
+		const { body } = summarise(
+			[
+				{
+					tool: 'tag_todo',
+					args: { id: 7, add: 'reviewed-by-ai', remove: 'ai-review' },
+					before: { title: 'bad filter button' }
+				}
+			],
+			'Claude',
+			en
+		);
+		expect(body).toBe('as reviewed-by-ai, ai-review taken off');
+	});
+
+	test('a create has no before, so the name comes from what was sent', () => {
+		const { title, body } = summarise(
+			[{ tool: 'add_todo', args: { title: 'Buy milk' } }],
+			'Claude',
+			en
+		);
+		expect(title).toBe('Claude added \u201cBuy milk\u201d');
+		// No labels to say, so the kind of thing is still worth carrying.
+		expect(body).toBe('added 1 todo');
+	});
+
+	test('two writes are counted, named or not', () => {
+		const { title } = summarise(
+			[
+				{ tool: 'tag_todo', args: { id: 7 }, before: { title: 'bad filter button' } },
+				{ tool: 'tag_todo', args: { id: 8 }, before: { title: 'filter header bar' } }
+			],
+			'Claude',
+			en
+		);
+		expect(title).toBe('Claude labelled 2 todos');
+	});
+
+	test('a write about something nameless is counted, not invented', () => {
+		const { title } = summarise(
+			[{ tool: 'change_reminder', args: { id: 3, at: '2026-09-23T10:00:00Z' } }],
+			'Claude',
+			en
+		);
+		expect(title).toBe('Claude changed 1 reminder');
+	});
+
+	test('the name a rename replaced is the one announced', () => {
+		// Otherwise the notification reports the new name as though you had
+		// already known it, which is the one thing you did not.
+		const { title } = summarise(
+			[{ tool: 'rename_tag', args: { name: 'chores' }, before: { name: 'errands' } }],
+			'Claude',
+			en
+		);
+		expect(title).toContain('errands');
+	});
+
+	test('a title longer than a lock screen is cut, not sent whole', () => {
+		const long = 'x'.repeat(SUBJECT_MAX * 2);
+		const named = subjectName({ tool: 'change_todo', before: { title: long } });
+		expect(named).toHaveLength(SUBJECT_MAX);
+		expect(named?.endsWith('\u2026')).toBe(true);
 	});
 
 	test('a noun the catalogue never learnt falls back to words, not to a key', () => {

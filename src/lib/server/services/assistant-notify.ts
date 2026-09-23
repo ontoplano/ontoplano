@@ -221,6 +221,68 @@ export function nounKey(noun: string): string {
 }
 
 /**
+ * The longest a subject's own name is allowed to be in a notification.
+ *
+ * Somebody's todo title can be a paragraph. A lock screen shows perhaps forty
+ * characters of a title anyway, so this is about what the row in the
+ * notification shade holds rather than about what looks tidy here.
+ */
+export const SUBJECT_MAX = 60;
+
+/** The fields a row keeps its own name in, in the order worth trying. */
+const NAME_FIELDS = ['title', 'name', 'text'] as const;
+
+/**
+ * One write, as much of it as is known.
+ *
+ * A plain string is a write only its tool name is known for — which is what
+ * the many-case needs and all it ever reads. The object carries the two things
+ * the log already stores beside the name, and they are what lets a single
+ * write be named rather than counted.
+ */
+export type Written = string | { tool: string; args?: unknown; before?: unknown };
+
+const toolOf = (write: Written): string => (typeof write === 'string' ? write : write.tool);
+
+/** A string field off a JSON object, trimmed, or null for anything else. */
+function stringField(value: unknown, field: string): string | null {
+	if (typeof value !== 'object' || value === null) return null;
+	const found = (value as Record<string, unknown>)[field];
+	if (typeof found !== 'string') return null;
+	const trimmed = found.trim();
+	return trimmed.length > 0 ? trimmed : null;
+}
+
+/**
+ * What the thing a write was about is called, if anything says.
+ *
+ * `before` first, because it is the row as it stood and a rename would
+ * otherwise announce the new name as though it were the old one; then the
+ * arguments, which is where a create's title lives since there was no row to
+ * read. Null when neither says — a reminder set by time has no name, and
+ * counting it is better than inventing one.
+ */
+export function subjectName(write: Written): string | null {
+	if (typeof write === 'string') return null;
+	for (const source of [write.before, write.args])
+		for (const field of NAME_FIELDS) {
+			const found = stringField(source, field);
+			if (found)
+				return found.length > SUBJECT_MAX ? `${found.slice(0, SUBJECT_MAX - 1)}\u2026` : found;
+		}
+	return null;
+}
+
+/** The labels a labelling call put on and took off, as the person wrote them. */
+function labelsOf(write: Written): { added: string[]; removed: string[] } {
+	const list = (field: string) =>
+		(stringField(typeof write === 'string' ? null : write.args, field) ?? '')
+			.split(/[,\s]+/)
+			.filter(Boolean);
+	return { added: list('add'), removed: list('remove') };
+}
+
+/**
  * A burst of calls, as the line a person reads, in their own language.
  *
  * Grouped by what was done to what, because that is the shape of the answer
@@ -239,15 +301,15 @@ export function nounKey(noun: string): string {
  * and it only happens for a tool added without its noun being added beside it.
  */
 export function summarise(
-	tools: string[],
+	writes: Written[],
 	token: string,
 	t: Translate
 ): { title: string; body: string } {
 	const groups = new Map<string, { verb: string; noun: string; count: number }>();
 	let unreadable = 0;
 
-	for (const tool of tools) {
-		const phrase = phraseFor(tool);
+	for (const write of writes) {
+		const phrase = phraseFor(toolOf(write));
 		if (!phrase) {
 			unreadable += 1;
 			continue;
@@ -273,7 +335,33 @@ export function summarise(
 	});
 	if (unreadable > 0) parts.push(t('notify.others', { count: unreadable }));
 
-	const total = tools.length;
+	const total = writes.length;
+
+	/*
+	 * One write, and the thing it was about has a name: say the name.
+	 *
+	 * "labelled 1 todo" is a sentence about a shape rather than about
+	 * somebody's afternoon — they have one todo in mind and the notification
+	 * will not say whether it is that one. A count is the right answer for a
+	 * burst, where there is no one thing to name; for a single write it is
+	 * only a count because nobody looked.
+	 */
+	const only = total === 1 && unreadable === 0 ? writes[0] : null;
+	const named = only ? subjectName(only) : null;
+	if (only && named) {
+		const { verb } = said(ordered[0]);
+		const labels = labelsOf(only);
+		const detail: string[] = [];
+		if (labels.added.length > 0)
+			detail.push(t('notify.labelsAs', { labels: labels.added.join(', ') }));
+		if (labels.removed.length > 0)
+			detail.push(t('notify.labelsOff', { labels: labels.removed.join(', ') }));
+		return {
+			title: t('notify.titleNamed', { who: token, verb, what: named }),
+			body: detail.length > 0 ? detail.join(', ') : parts.join(', ')
+		};
+	}
+
 	let title: string;
 	if (ordered.length === 1 && unreadable === 0) {
 		const { verb, what } = said(ordered[0]);
@@ -309,9 +397,26 @@ type Pending = {
 	id: number;
 	tool: string;
 	args: string;
+	/** The subject as it stood, as the log wrote it. Null for a create. */
+	before: string | null;
 	tokenId: number | null;
 	createdAt: string;
 };
+
+/** One logged row as a write the sentence can read, its JSON opened out. */
+function asWritten(row: Pending): Written {
+	return { tool: row.tool, args: fromJson(row.args), before: fromJson(row.before) };
+}
+
+/** Unreadable JSON is nothing rather than a thrown sweep. */
+function fromJson(text: string | null): unknown {
+	if (!text) return null;
+	try {
+		return JSON.parse(text);
+	} catch {
+		return null;
+	}
+}
 
 /**
  * Where a notification opens: the log of what an assistant did, always.
@@ -342,6 +447,7 @@ function pendingByAccount(limit: number): Map<string, Pending[]> {
 			id: assistantCalls.id,
 			tool: assistantCalls.tool,
 			args: assistantCalls.args,
+			before: assistantCalls.before,
 			tokenId: assistantCalls.tokenId,
 			createdAt: assistantCalls.createdAt
 		})
@@ -440,7 +546,7 @@ export async function notifyAssistantBursts(now = new Date()): Promise<SweepResu
 		 * setting counts. Same rule as a reminder — see `$lib/server/locale`.
 		 */
 		const { title, body } = summarise(
-			calls.map((c) => c.tool),
+			calls.map(asWritten),
 			whoFor(calls),
 			await translatorFor(localeForUser(userId))
 		);

@@ -1707,6 +1707,8 @@ export const messages: Catalogue = {
 	'notifications.unread': '{count} ungelesen',
 	'notify.everyBlockOnThePlan':
 		'Jeder Block im Plan meldet sich, wenn es so weit ist. Ohne das melden sich nur die Blöcke, denen Sie einen Vorlauf gegeben haben.',
+	'notify.labelsAs': 'als {labels}',
+	'notify.labelsOff': '{labels} entfernt',
 	'notify.mondayMorningWhatLastWeek':
 		'Montagmorgen: wie die letzte Woche wirklich war, mit der Seite, die sie abschließt, einen Klick entfernt.',
 	'notify.noun.activity': { one: '{count} Aktivität', other: '{count} Aktivitäten' },
@@ -1768,6 +1770,7 @@ export const messages: Catalogue = {
 		one: '{who} hat {count} Sache geändert',
 		other: '{who} hat {count} Dinge geändert'
 	},
+	'notify.titleNamed': '{who}: „{what}“ {verb}',
 	'notify.titleOne': '{who}: {what} {verb}',
 	'notify.verb.add': 'hinzugefügt',
 	'notify.verb.apply': 'angewendet',

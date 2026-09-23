@@ -1681,6 +1681,8 @@ export const messages: Catalogue = {
 	'notifications.unread': '{count} não lidas',
 	'notify.everyBlockOnThePlan':
 		'Todo bloco do plano avisa quando chega a hora. Sem isso, só avisam os blocos aos quais você deu uma antecedência.',
+	'notify.labelsAs': 'como {labels}',
+	'notify.labelsOff': '{labels} removido',
 	'notify.mondayMorningWhatLastWeek':
 		'Segunda de manhã: como a semana passada realmente foi, com a página que a encerra a um toque de distância.',
 	'notify.noun.activity': { one: '{count} atividade', other: '{count} atividades' },
@@ -1755,6 +1757,7 @@ export const messages: Catalogue = {
 	'notify.theDayOneWantsPaying':
 		'No dia em que uma conta pede para ser paga, todo dia em que continua sem pagamento, e no dia do vencimento.',
 	'notify.titleMany': { one: '{who} alterou {count} coisa', other: '{who} alterou {count} coisas' },
+	'notify.titleNamed': '{who} {verb} “{what}”',
 	'notify.titleOne': '{who} {verb} {what}',
 	'notify.verb.add': 'adicionou',
 	'notify.verb.apply': 'aplicou',
