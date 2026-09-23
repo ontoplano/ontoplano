@@ -274,9 +274,17 @@
 	 * pressable area would run past the end of the bar and a press out there
 	 * would mean nothing visible.
 	 */
+	/*
+	 * As wide as the column it is in.
+	 *
+	 * It was capped at 6rem, which was right when the gauge was a small pill
+	 * beside a lot of other things and is wrong now that it is the control: on
+	 * a phone the form is the whole screen and the slider was a stub a sixth of
+	 * the way across, under a scale — "whenever … now" — that ran the full
+	 * width. The two are the same measurement and have to be the same length.
+	 */
 	.rating-track {
 		min-height: 1.25rem;
-		max-width: 6rem;
 		display: flex;
 		align-items: center;
 		touch-action: none;

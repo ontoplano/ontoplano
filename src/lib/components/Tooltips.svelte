@@ -266,11 +266,20 @@
 		animation: tip-arrives 90ms ease-out both;
 	}
 
-	/* A long one wraps rather than running off the screen; a short one stays on
-	   one line, which is nearly all of them. */
+	/*
+	 * A long one wraps rather than running off the screen; a short one stays on
+	 * one line, which is nearly all of them.
+	 *
+	 * `pre-line` rather than `normal`, so a `title` written as two lines
+	 * arrives as two lines. A task's number carries "Written down …" and "Last
+	 * changed …", and run together they read as one sentence with a date in the
+	 * middle of it. Every other run of whitespace still collapses, which is
+	 * what keeps a title indented inside markup from arriving with its
+	 * indentation.
+	 */
 	@supports (width: min-content) {
 		.tip {
-			white-space: normal;
+			white-space: pre-line;
 			width: max-content;
 			max-width: min(20rem, calc(100vw - 2rem));
 		}
