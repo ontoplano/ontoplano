@@ -4,19 +4,22 @@
 	 *
 	 * Inline paths rather than a package: the CSP forbids external assets, the
 	 * app already draws its nav this way, and thirty glyphs is not worth a
-	 * dependency that ships to a webview. Drawn on a 24×24 grid, stroked not
-	 * filled, so they sit at the weight of the text beside them.
+	 * dependency that ships to a webview. Drawn on a 24×24 grid, stroked rather
+	 * than filled unless `FILLED` says otherwise, so they sit at the weight of
+	 * the text beside them.
 	 *
 	 * Emoji are not an option — they are somebody else's typeface, they carry a
 	 * colour we did not choose, and they render differently on every platform.
 	 *
-	 * `FILLED` is the exception: somebody else's mark — GitHub's — which is
-	 * recognisable only as itself and cannot be redrawn as a stroke without
-	 * becoming a different, worse drawing. It takes `currentColor` as its fill
-	 * so it still sits at the weight of the text beside it.
+	 * `FILLED` is for the few that are a shape rather than a line. GitHub's
+	 * mark is somebody else's and is recognisable only as itself. The funnel is
+	 * ours and is one anyway: stroked at 1.75 on a 14px button it is a thin
+	 * wireframe triangle with a tail, which is not what a funnel looks like.
+	 * Both take `currentColor` as their fill, so they still sit at the weight
+	 * of the text beside them.
 	 */
 	/** Marks drawn as a filled shape rather than a stroked line. */
-	export const FILLED: Partial<Record<string, true>> = { github: true };
+	export const FILLED: Partial<Record<string, true>> = { github: true, filter: true };
 
 	export const ICONS = {
 		// actions
