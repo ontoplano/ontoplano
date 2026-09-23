@@ -1882,6 +1882,43 @@ label:has(> input[type='radio']:not(:disabled)) {
 		margin-top: 0.375rem;
 	}
 
+	/*
+	 * A task's writing, with room in the margin for the mark that folds it.
+	 *
+	 * The chevron used to sit in front of the title, which put the mark for
+	 * "there is more of this" on the one line that is not the more of it — and
+	 * indented every title in the list by a glyph most rows had nothing to put
+	 * in. It hangs in the writing's own left margin now, on the first line,
+	 * with the lines under it hanging to the same place: one indented paragraph
+	 * with a handle, rather than a glyph wedged into a line.
+	 *
+	 * Only where there is something to fold. A row whose note fits on one line
+	 * has no mark and no margin, and its writing starts under the title like
+	 * everything else does.
+	 */
+	.todo-notes-foldable {
+		position: relative;
+		padding-left: 1.125rem;
+	}
+
+	.todo-fold {
+		position: absolute;
+		top: 0;
+		left: 0;
+		display: flex;
+		width: 1.125rem;
+		align-items: center;
+		justify-content: flex-start;
+		/* As tall as the line it sits on, so the mark is centred against that
+		   line rather than against the whole paragraph. */
+		height: 1.25rem;
+		color: var(--color-gray-400);
+	}
+
+	.todo-fold:hover {
+		color: var(--color-gray-900);
+	}
+
 	.row-actions-stack {
 		display: flex;
 		flex-wrap: wrap;

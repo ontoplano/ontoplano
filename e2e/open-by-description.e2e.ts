@@ -20,15 +20,14 @@ const LONG =
 	'rather than anything being wrong with the boiler itself at all.';
 
 /**
- * The line under the title opens the task, and does not shut it again.
+ * The mark that folds a task sits on the first line of its writing.
  *
- * The title was the only thing that unfolded one, and the words under it — the
- * line you are reading when you want the rest — did nothing. It opens one now.
- * It does not close one: once it is open the note is a paragraph somebody is
- * reading, and reading means selecting a word or following a link, both of
- * which folded it away. The title and the chevron still shut it.
+ * Not in front of the title: that put the mark for "there is more of this" on
+ * the one line that is not the more of it. Folded, anything in the block opens
+ * it — there is nothing to lose by pressing in the wrong place when the only
+ * thing that can happen is seeing more. Open, only the first line shuts it.
  */
-test('pressing a task’s description unfolds it, and reading it does not fold it', async ({
+test('the first line of a task’s writing folds it, and the rest of it does not', async ({
 	page
 }) => {
 	test.setTimeout(180_000);
@@ -48,25 +47,32 @@ test('pressing a task’s description unfolds it, and reading it does not fold i
 		.click();
 	await expect(page.getByText('ring the plumber').first()).toBeVisible({ timeout: 30_000 });
 
-	const title = page.getByRole('button', { name: 'ring the plumber' });
-	await expect(title).toHaveAttribute('aria-expanded', 'false');
+	const fold = page.locator('.todo-fold');
+	await expect(fold).toHaveAttribute('aria-expanded', 'false');
 
+	// Folded, the words open it — anything in the block does.
 	await page
 		.getByText(/the boiler makes a noise/)
 		.first()
 		.click();
-	await expect(title).toHaveAttribute('aria-expanded', 'true');
+	await expect(fold).toHaveAttribute('aria-expanded', 'true');
 
-	// Pressing the words again leaves it open: they are being read, not pressed.
-	await page
-		.getByText(/the boiler makes a noise/)
-		.first()
-		.click();
-	await expect(title).toHaveAttribute('aria-expanded', 'true');
+	/*
+	 * Open, only the first line shuts it. Everything under that is a paragraph
+	 * being read, and reading means selecting a word or following a link — both
+	 * of which used to fold the row away mid-sentence.
+	 */
+	const notes = page.locator('.todo-notes').first();
+	const box = (await notes.boundingBox())!;
+	await page.mouse.click(box.x + box.width / 2, box.y + box.height - 4);
+	await expect(fold).toHaveAttribute('aria-expanded', 'true');
 
-	// The title is what shuts it.
-	await title.click();
-	await expect(title).toHaveAttribute('aria-expanded', 'false');
+	// The first line does, and so does the mark beside it.
+	await page.mouse.click(box.x + box.width / 2, box.y + 6);
+	await expect(fold).toHaveAttribute('aria-expanded', 'false');
+
+	await fold.click();
+	await expect(fold).toHaveAttribute('aria-expanded', 'true');
 });
 
 /**
@@ -94,5 +100,5 @@ test('a note that fits on one line has no chevron at all', async ({ page }) => {
 	await expect(page.getByText('post the parcel').first()).toBeVisible({ timeout: 30_000 });
 
 	await expect(page.getByText('before five').first()).toBeVisible();
-	await expect(page.getByRole('button', { name: 'post the parcel' })).toHaveCount(0);
+	await expect(page.locator('.todo-fold')).toHaveCount(0);
 });

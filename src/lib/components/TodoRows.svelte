@@ -217,6 +217,54 @@
 	};
 
 	/**
+	 * A press inside a task's writing: does it fold, unfold, or neither?
+	 *
+	 * Folded, anything in the block opens it — there is nothing to lose by
+	 * pressing in the wrong place when the only thing that can happen is seeing
+	 * more. Open, only the first line shuts it again, because everything below
+	 * is a paragraph being read.
+	 *
+	 * Which line was pressed comes from where the pointer was, measured against
+	 * the block's own first line height. An overlay over that line would have
+	 * been simpler and would have swallowed the links in it.
+	 */
+	function foldPress(todo: Todo, press: MouseEvent) {
+		if (!hasMore(todo)) return;
+
+		const target = press.target as HTMLElement;
+		if (target.closest('a, button, audio, input, textarea')) return;
+
+		if (!openNotes.has(todo.id)) {
+			toggleNotes(todo.id);
+			return;
+		}
+
+		const block = press.currentTarget as HTMLElement;
+		const box = block.getBoundingClientRect();
+		const line = parseFloat(getComputedStyle(block).lineHeight);
+		if (press.clientY - box.top > (Number.isFinite(line) ? line : FALLBACK_LINE)) return;
+		toggleNotes(todo.id);
+	}
+
+	/** If a browser answers `normal` for the line height, a line is about this. */
+	const FALLBACK_LINE = 20;
+
+	/**
+	 * When this task was written down, and when it was last touched.
+	 *
+	 * On the number, because the number is the only part of a row that is about
+	 * the record rather than about the work — "which one is this" and "how old
+	 * is it" are the same question asked twice. The second line only when the
+	 * two differ: "written then, changed then" with the same instant twice says
+	 * nothing and makes the line harder to read.
+	 */
+	function whenOf(todo: Todo): string {
+		const written = t('todoRows.writtenDown', { when: momentOf(todo.createdAt, now()) });
+		if (!todo.updatedAt || todo.updatedAt === todo.createdAt) return written;
+		return `${written}\n${t('todoRows.lastChanged', { when: momentOf(todo.updatedAt, now()) })}`;
+	}
+
+	/**
 	 * Whether this row has anything folded away.
 	 *
 	 * Not "does it have notes": a task whose note is one short line carried a
@@ -1228,38 +1276,24 @@
 									     colour say it already, and a line through a title is one
 									     more thing to read past. -->
 									<!--
-										Pressing the title reads the task; it does not edit it.
+										The title is the title. The chevron belongs to the writing.
 
-										The chevron's space is kept on every row, drawn only where
-										there is something under the title — so the titles line up
-										and nothing moves sideways as rows gain and lose notes.
+										It used to sit in front of the title, which put the mark
+										for "there is more of this" on the line that is not the
+										more of it — and indented every title in the list by a
+										glyph most rows had nothing to put in. It is on the first
+										line of the notes now, in their own left margin, with the
+										lines under it hanging to the same place.
+
+										The title still opens a folded row, along with everything
+										else in the block; what shuts one is the chevron and the
+										line beside it. See the notes below.
 									-->
-									<span class="flex min-w-0 items-baseline gap-1.5">
-										<span class="w-3 shrink-0 text-gray-400">
-											{#if hasMore(todo)}
-												<Icon
-													name={openNotes.has(todo.id) ? 'chevron-down' : 'chevron-right'}
-													size={12}
-												/>
-											{/if}
-										</span>
-										{#if hasMore(todo)}
-											<button
-												type="button"
-												onclick={() => toggleNotes(todo.id)}
-												aria-expanded={openNotes.has(todo.id)}
-												class="min-w-0 text-left text-sm font-medium break-words {isDone(todo)
-													? 'text-gray-400'
-													: 'text-gray-900'}">{todo.title}</button
-											>
-										{:else}
-											<span
-												class="min-w-0 text-sm font-medium break-words {isDone(todo)
-													? 'text-gray-400'
-													: 'text-gray-900'}">{todo.title}</span
-											>
-										{/if}
-									</span>
+									<span
+										class="min-w-0 text-sm font-medium break-words {isDone(todo)
+											? 'text-gray-400'
+											: 'text-gray-900'}">{todo.title}</span
+									>
 									{#if todo.scheduledDate}
 										<span
 											class="tabular border border-gray-200 bg-gray-50 px-1 text-[10px] text-gray-600"
@@ -1291,33 +1325,52 @@
 								-->
 								{#if todo.notes}
 									<!--
-										The words under the title open it — and never shut it.
+										The chevron sits on the first line of the writing, and
+										that line is what folds it.
 
-										The title was the only thing that unfolded a task, and the
-										line under it — the one you are reading when you want the
-										rest — did nothing, so the first line became a press too.
-										One direction only: once it is open, the whole note is a
-										paragraph somebody is reading, and reading it means
-										selecting a word, following a link, or simply putting the
-										cursor down in it. Every one of those folded it away. The
-										chevron and the title still shut it, which is where
-										somebody looks to.
+										Open, the press is the first line and the mark beside it —
+										nothing else. Everything under it is a paragraph somebody
+										is reading, and reading means selecting a word or
+										following a link, both of which used to fold the row away
+										mid-sentence. Which line was pressed is worked out from
+										where the pointer was rather than from an overlay, so the
+										words stay selectable and a link in them stays a link.
 
-										A picture or a recording inside is still its own control:
-										the press is caught here rather than bound to the whole
-										block, so playing something does not fold the row.
+										Folded, the whole block opens: the title, the line, a
+										picture in it, any of them. There is nothing to lose by
+										pressing in the wrong place when the only thing that can
+										happen is seeing more.
+
+										A picture or a recording is still its own control — the
+										press is caught here rather than bound to the block, so
+										playing something does not fold the row.
 									-->
 									<!-- svelte-ignore a11y_click_events_have_key_events -->
 									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<div
-										class={hasMore(todo) && !openNotes.has(todo.id) ? 'cursor-pointer' : ''}
-										onclick={(press) => {
-											if (!hasMore(todo) || openNotes.has(todo.id)) return;
-											const target = press.target as HTMLElement;
-											if (target.closest('a, button, audio, input, textarea')) return;
-											toggleNotes(todo.id);
-										}}
+										class="todo-notes {hasMore(todo) ? 'todo-notes-foldable' : ''} {hasMore(todo) &&
+										!openNotes.has(todo.id)
+											? 'cursor-pointer'
+											: ''}"
+										onclick={(press) => foldPress(todo, press)}
 									>
+										{#if hasMore(todo)}
+											<button
+												type="button"
+												class="todo-fold"
+												onclick={(press) => {
+													press.stopPropagation();
+													toggleNotes(todo.id);
+												}}
+												aria-expanded={openNotes.has(todo.id)}
+												aria-label={todo.title}
+											>
+												<Icon
+													name={openNotes.has(todo.id) ? 'chevron-down' : 'chevron-right'}
+													size={12}
+												/>
+											</button>
+										{/if}
 										<Written
 											content={todo.notes}
 											compact
@@ -1482,7 +1535,7 @@
 								-->
 								<div class="order-first mr-auto flex min-w-0 flex-wrap items-center gap-1">
 									{#if todo.notebookSeq !== null}
-										<span class="tabular text-[11px] text-gray-500">
+										<span class="tabular text-[11px] text-gray-500" title={whenOf(todo)}>
 											#{todo.notebookSeq}
 										</span>
 									{/if}

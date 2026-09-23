@@ -3302,6 +3302,7 @@ export const messages: Catalogue = {
 	'todoRows.hideArchived': 'Esconder arquivadas',
 	'todoRows.hideCompleted': 'Esconder concluídas',
 	'todoRows.itKeepsItsPlaceIn': 'Ele mantém o lugar na lista e ganha um horário no plano.',
+	'todoRows.lastChanged': 'Alterada {when}',
 	'todoRows.lastDoneFirst': 'Últimos feitos primeiro',
 	'todoRows.markComplete': 'Marcar como concluída',
 	'todoRows.markIncomplete': 'Marcar como não concluída',
@@ -3340,6 +3341,7 @@ export const messages: Catalogue = {
 	'todoRows.time': 'Hora',
 	'todoRows.whatYouFinishedMostRecently':
 		'O que você terminou mais recentemente — pressione para os mais recentes',
+	'todoRows.writtenDown': 'Anotada {when}',
 	'tour.aCategoryFridgeBathroom':
 		'Uma categoria — geladeira, banheiro, escrivaninha — é o que faz a lista acompanhar o percurso pela casa.',
 	'tour.aCurrentAccountIsOne':

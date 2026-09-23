@@ -2847,6 +2847,7 @@ export type MessageKey =
 	| 'todoRows.hideArchived'
 	| 'todoRows.hideCompleted'
 	| 'todoRows.itKeepsItsPlaceIn'
+	| 'todoRows.lastChanged'
 	| 'todoRows.lastDoneFirst'
 	| 'todoRows.markComplete'
 	| 'todoRows.markIncomplete'
@@ -2882,6 +2883,7 @@ export type MessageKey =
 	| 'todoRows.taskAdded'
 	| 'todoRows.time'
 	| 'todoRows.whatYouFinishedMostRecently'
+	| 'todoRows.writtenDown'
 	| 'tour.aCategoryFridgeBathroom'
 	| 'tour.aCurrentAccountIsOne'
 	| 'tour.aDayAndASentence'
@@ -3638,11 +3640,13 @@ export interface MessageValuesFor {
 	'todoRows.completedTitle': { title: string | number };
 	'todoRows.doneAgo': { ago: string | number; when: string | number };
 	'todoRows.hiddenByTheFilters': { count: number };
+	'todoRows.lastChanged': { when: string | number };
 	'todoRows.noneMatchTheseFilters': { count: number };
 	'todoRows.showArchivedCount': { count: number };
 	'todoRows.showCompletedCount': { count: number };
 	'todoRows.showingCount': { count: number };
 	'todoRows.taggedAgo': { ago: string | number };
+	'todoRows.writtenDown': { when: string | number };
 	'ui.hoursAbbrev': { count: number };
 	'ui.hoursMinutesAbbrev': { hours: string | number; minutes: string | number };
 	'ui.minutesAbbrev': { count: number };

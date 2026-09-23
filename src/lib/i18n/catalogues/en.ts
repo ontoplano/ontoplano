@@ -3245,6 +3245,7 @@ export const messages: Catalogue = {
 	'todoRows.hideArchived': 'Hide archived',
 	'todoRows.hideCompleted': 'Hide completed',
 	'todoRows.itKeepsItsPlaceIn': 'It keeps its place in the list and gains a time on the plan.',
+	'todoRows.lastChanged': 'Last changed {when}',
 	'todoRows.lastDoneFirst': 'Last done first',
 	'todoRows.markComplete': 'Mark complete',
 	'todoRows.markIncomplete': 'Mark incomplete',
@@ -3280,6 +3281,7 @@ export const messages: Catalogue = {
 	'todoRows.taskAdded': 'Task added',
 	'todoRows.time': 'Time',
 	'todoRows.whatYouFinishedMostRecently': 'What you finished most recently — press for the newest',
+	'todoRows.writtenDown': 'Written down {when}',
 	'tour.aCategoryFridgeBathroom':
 		'A category — fridge, bathroom, desk — is what makes the list match the walk around the house.',
 	'tour.aCurrentAccountIsOne':
