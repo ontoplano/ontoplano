@@ -61,8 +61,21 @@ export const HIDEABLE_SECTIONS = [
 	 * holds together, so a tab added to the room arrives with a way to put it
 	 * away rather than being the seventh one nobody can.
 	 */
-	{ id: 'diary' },
-	{ id: 'notebooks', parent: 'diary' },
+	/*
+	 * The writing room's shelves. The room itself is not among them.
+	 *
+	 * `diary` is the room's key in the navigation and the diary tab's own id,
+	 * which are the same historical word for two things — and that is why the
+	 * diary had no switch of its own: hiding it meant hiding the room, so the
+	 * tab could only go by taking the notebooks, the ideas and the people with
+	 * it. The room is always on now, so the word is free to mean the tab, and
+	 * `parent: 'diary'` reads oddly for exactly one line and is what makes the
+	 * diary a shelf like the others.
+	 *
+	 * `notebooks` is not here either. The room is the notebooks; a Notebooks
+	 * room with its notebooks put away is a room with nothing in it.
+	 */
+	{ id: 'diary', parent: 'diary' },
 	{ id: 'ideas', parent: 'diary' },
 	{ id: 'weekly', parent: 'diary' },
 	{ id: 'people', parent: 'diary' },

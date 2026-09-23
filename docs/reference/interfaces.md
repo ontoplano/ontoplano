@@ -14,8 +14,6 @@ from what the app actually shows.
 
 - `/notebooks` — one page, no tabs
 
-Can be put away in Preferences (`diary`), which takes it out of the bar, the wheel and the dashboard.
-
 ###
 
 - `/health/habits` — one page, no tabs

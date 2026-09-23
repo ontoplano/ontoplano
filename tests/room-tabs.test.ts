@@ -14,7 +14,13 @@
  */
 import { describe, expect, test } from 'vitest';
 
-import { HIDEABLE_SECTIONS, NOTEBOOK_TABS, isHideableSection } from '../src/lib/sections';
+import {
+	HIDEABLE_ROOMS,
+	HIDEABLE_SECTIONS,
+	NOTEBOOK_TABS,
+	isHideableSection,
+	leavesOf
+} from '../src/lib/sections';
 import { LOCALES } from '../src/lib/i18n/locales';
 import { messages as english } from '../src/lib/i18n/catalogues/en';
 import { messages as portuguese } from '../src/lib/i18n/catalogues/pt-BR';
@@ -28,15 +34,39 @@ const CATALOGUES: Record<string, Record<string, unknown>> = {
 	de: german
 };
 
+/** The one tab that cannot be put away: it is what the room is. */
+const ALWAYS_ON: string[] = ['notebooks'];
+
 describe("the notebooks room's tabs", () => {
-	test('can each be put away', () => {
-		for (const tab of NOTEBOOK_TABS)
+	test('can each be put away, except the notebooks themselves', () => {
+		for (const tab of NOTEBOOK_TABS) {
+			if (ALWAYS_ON.includes(tab.id)) {
+				// A Notebooks room with its notebooks put away is a room with
+				// nothing in it, so there is deliberately no preference for it.
+				expect(isHideableSection(tab.id), `${tab.id} should be always on`).toBe(false);
+				continue;
+			}
 			expect(isHideableSection(tab.id), `${tab.id} has no preference`).toBe(true);
+		}
 	});
 
 	test('are all still sections — nothing here was renamed out from under it', () => {
-		const known = new Set(HIDEABLE_SECTIONS.map((s) => s.id));
-		for (const tab of NOTEBOOK_TABS) expect(known.has(tab.id)).toBe(true);
+		const known = new Set<string>(HIDEABLE_SECTIONS.map((s) => s.id));
+		for (const tab of NOTEBOOK_TABS)
+			if (!ALWAYS_ON.includes(tab.id)) expect(known.has(tab.id)).toBe(true);
+	});
+
+	/*
+	 * The diary has a switch of its own.
+	 *
+	 * It did not: `diary` was the room's key, so putting the diary away meant
+	 * putting the room away and taking the notebooks, the ideas and the people
+	 * with it. This is the assertion that says the word means the tab now.
+	 */
+	test('and the diary is one of them rather than the room', () => {
+		expect(isHideableSection('diary')).toBe(true);
+		expect(leavesOf('diary')).toContain('diary');
+		expect(HIDEABLE_ROOMS.map((r) => r.id)).not.toContain('diary');
 	});
 
 	test('each have an address inside the room', () => {

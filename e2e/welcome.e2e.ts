@@ -75,26 +75,33 @@ test('it asks one thing at a time, and the rooms you keep are the rooms you get'
 
 	/*
 	 * The description follows the pointer: names nobody has seen mean nothing
-	 * on their own — and it describes the room the tile is named for. The
-	 * writing room is stored as `diary` and called Notebooks in the bar, so a
-	 * tile marked Notebooks explaining the diary is the mismatch to catch.
+	 * on their own, and it describes the room the tile is named for.
 	 */
-	await page.getByRole('button', { name: 'Notebooks' }).hover();
-	await expect(page.getByText('Everything you write with no date on it')).toBeVisible();
 	await page.getByRole('button', { name: 'Health' }).hover();
 	await expect(page.getByText('Habits with streaks')).toBeVisible();
+	await page.getByRole('button', { name: 'Inventory' }).hover();
+	await expect(page.getByText('What to buy')).toBeVisible();
+
+	/*
+	 * Notebooks is not among them, because it cannot be turned off.
+	 *
+	 * The writing room holds the diary, the notebooks, the ideas and the
+	 * people, and an account that put all of that away has put the app away.
+	 * Each shelf inside it goes on its own, in Preferences.
+	 */
+	await expect(page.getByRole('button', { name: 'Notebooks' })).toHaveCount(0);
 
 	/*
 	 * The rooms, and only the rooms.
 	 *
 	 * The tabs inside one — Recipes, Habits and Workouts in Health, the diary
-	 * and People in Notebooks — can be put away too, but in Preferences:
+	 * and People in the writing room — can be put away too, but in Preferences:
 	 * asking about them before somebody has opened the app is asking about
 	 * something they have no opinion on yet.
 	 */
-	await expect(page.getByText('6 of 6 on.')).toBeVisible();
+	await expect(page.getByText('5 of 5 on.')).toBeVisible();
 	await page.getByRole('button', { name: 'Health' }).click();
-	await expect(page.getByText('5 of 6 on.')).toBeVisible();
+	await expect(page.getByText('4 of 5 on.')).toBeVisible();
 
 	await page.getByRole('button', { name: 'Next' }).click();
 	await expect(page.getByRole('heading', { name: 'How should it look?' })).toBeVisible();

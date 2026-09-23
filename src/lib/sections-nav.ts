@@ -87,13 +87,20 @@ export const NAV_PLACES: NavPlace[] = [
 		icon: 'planner',
 		href: '/tasks/plan'
 	},
+	/*
+	 * No `hide`: the writing room is always on, like the planner.
+	 *
+	 * It is where the diary, the notebooks, the ideas and the people live, and
+	 * an account that puts all of that away has put the app away. What can be
+	 * put away is each shelf inside it — see `HIDEABLE_SECTIONS`, where the
+	 * diary now has a switch of its own rather than going with the room.
+	 */
 	{
 		key: 'diary',
 		name: 'sections.notebooks.label',
 		section: 'diary',
 		icon: 'diary',
-		href: '/notebooks',
-		hide: 'diary'
+		href: '/notebooks'
 	},
 	{
 		key: 'health',

@@ -20,6 +20,18 @@ releases mattered.
 
 ## 0.183.0 — 2026-09-22
 
+- **The diary can be put away on its own, and the writing room cannot.** The
+  room and the diary tab shared one word, so hiding the diary meant hiding the
+  room — and taking the notebooks, the ideas and the people with it. The room
+  is always on now, like the planner, which frees that switch to mean the diary
+  alone. The notebooks are not a switch either: a Notebooks room with its
+  notebooks put away is a room with nothing in it. First run stops asking about
+  it for the same reason.
+
+  If you had previously put that room away, you will find it back — with the
+  diary tab hidden instead, which is what the setting now means. Preferences
+  turns it on again.
+
 - **The segmented controls have a tile that moves.** Which half of the week,
   which board column, Write or Preview — the position you are on used to be
   drawn by filling that button, so nothing connected where it was to where it

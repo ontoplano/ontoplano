@@ -36,12 +36,12 @@ export const DESTINATIONS: Destination[] = [
 
 	{ label: 'app.goals', group: '', href: '/goals', icon: 'goals', hide: 'goals' },
 
+	// No `hide`: the notebooks are what the room is, and the room is always on.
 	{
 		label: 'app.notebooks',
 		group: 'Notebooks',
 		href: '/notebooks',
-		icon: 'notebook',
-		hide: 'notebooks'
+		icon: 'notebook'
 	},
 	{
 		label: 'app.diary',
