@@ -88,9 +88,16 @@
 	 * It used to go side by side on its own once the container passed `@2xl`,
 	 * and no box in this app is that wide — the widest is about 540px — so that
 	 * branch had never once drawn on a screen and the two tabs were the whole
-	 * control. Side by side is a choice now, offered from `@lg`, which the
-	 * ordinary boxes do reach: two columns of about 260px, which is tight and
-	 * is the point of it being a choice rather than a width.
+	 * control.
+	 *
+	 * Side by side is a choice now, offered from `@sm`. It was `@lg`, which is
+	 * 512px, and that fell between the two dialog widths this app has: the task
+	 * and note editors are `md` and their box is 536px, the capture sheet is
+	 * `sm` and its box is about 408px. So the same component offered the choice
+	 * in one dialogue and not in the one beside it, which reads as two
+	 * different editors. `@sm` is 384px — under every dialog and over a phone's
+	 * own width, where two columns of prose is not a choice anybody could want
+	 * and `both` falls back to the editor alone.
 	 */
 	let showing = $state<'write' | 'preview' | 'both'>('write');
 
@@ -212,7 +219,7 @@
 		<button
 			type="button"
 			aria-pressed={showing === 'both'}
-			class="seg-aside ml-auto hidden @lg:inline-flex"
+			class="seg-aside ml-auto hidden @sm:inline-flex"
 			onclick={toggleBoth}
 		>
 			{t('markdown.sideBySide')}
@@ -243,7 +250,7 @@
 		agree.
 	-->
 	<div
-		class="relative grid @lg:items-stretch @lg:gap-3 {showing === 'both' ? '@lg:grid-cols-2' : ''}"
+		class="relative grid @sm:items-stretch @sm:gap-3 {showing === 'both' ? '@sm:grid-cols-2' : ''}"
 	>
 		<!--
 			The editor is always in flow, even while the preview is the one
@@ -251,7 +258,7 @@
 			keeps it saying so.
 		-->
 		<div
-			class="col-start-1 row-start-1 @lg:col-start-1 {showing === 'preview' ? 'invisible' : ''}"
+			class="col-start-1 row-start-1 @sm:col-start-1 {showing === 'preview' ? 'invisible' : ''}"
 			aria-hidden={showing === 'preview' ? 'true' : undefined}
 			inert={showing === 'preview' ? true : undefined}
 		>
@@ -265,7 +272,7 @@
 		<div
 			class="md overflow-y-auto rounded border border-gray-200 bg-gray-50 p-3 text-sm text-gray-900 {showing ===
 			'both'
-				? 'invisible absolute inset-0 @lg:visible @lg:static @lg:col-start-2 @lg:row-start-1'
+				? 'invisible absolute inset-0 @sm:visible @sm:static @sm:col-start-2 @sm:row-start-1'
 				: showing === 'preview'
 					? 'absolute inset-0'
 					: 'invisible absolute inset-0'}"
