@@ -117,8 +117,21 @@
 
 	<FormError message={form?.message} />
 
-	<div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]">
-		<Card accent={SECTION_COLORS.diary} flush>
+	<!--
+		The list and whoever you picked are one object, not two.
+
+		They were two cards with the page's own patterned ground showing between
+		them, which draws them as two views that happen to sit side by side.
+		They are one room: the list chooses and the column beside it shows, so
+		the divider between them is a seam in one surface — the same shape the
+		notebooks page and the inventory room have. `pane` is what takes each
+		card's own edge away.
+	-->
+	<div
+		class="card-accent room-surface grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)]"
+		style="--card-accent: {SECTION_COLORS.diary}"
+	>
+		<Card flush pane>
 			{#if data.people.length === 0}
 				<EmptyState
 					icon="user"
@@ -282,8 +295,8 @@
 				description={selectedPerson
 					? t(RELATIONSHIP_LABELS[selectedPerson.relationship])
 					: t('notebooks.people.pickSomebodyToSeeEverything')}
-				accent={SECTION_COLORS.diary}
 				flush
+				pane
 			>
 				{#if !selectedPerson}
 					<EmptyState icon="diary" title={t('notebooks.people.nobodySelected')} />

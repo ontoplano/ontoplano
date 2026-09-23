@@ -4031,6 +4031,22 @@ html button.tab-link {
 	overflow: clip;
 }
 
+/*
+ * Two panes of one surface get a seam, not a gap.
+ *
+ * Where a room is a list and what the list chose — people, notebooks,
+ * inventory — the divider is a rule down the middle of one object rather than
+ * the page showing through between two. Only from `lg`, where there are two
+ * columns at all: below that the panes are stacked and the rule between rows
+ * does the separating.
+ */
+@media (width >= 64rem) {
+	.room-surface > .card-pane + .card-pane,
+	.room-surface > * + * > .card-pane {
+		border-left: 1px solid var(--color-gray-200);
+	}
+}
+
 html[data-style='playful'] .room-surface {
 	border-radius: var(--radius-md);
 }
