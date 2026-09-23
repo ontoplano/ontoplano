@@ -280,6 +280,22 @@ html[data-style='playful'] article {
 }
 
 /*
+ * A pane has no corners of its own: the surface it is part of has them.
+ *
+ * Two concentric curves of the same radius, a pixel apart, leave a crescent of
+ * the outer one showing at every corner — which is what the notebooks page was
+ * doing at the top of both its columns, a white wedge over the tint. The
+ * parent already clips (see below), so a pane drawn square comes out with the
+ * parent's own corner and nothing between them.
+ *
+ * After the blanket rules above, and no more specific than it needs to be:
+ * a pane that is deliberately rounded says so with a class of its own.
+ */
+html[data-style='playful'] .card-pane {
+	border-radius: 0;
+}
+
+/*
  * A rounded surface clips its own children.
  *
  * A filled bar sitting flush against a card's edge — a header, a tinted row —
@@ -2146,11 +2162,16 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * adds a line here and nothing else.
 	 *
 	 * Green for interest rather than the red it wore: red is the colour of
-	 * something wrong, and wanting to do a thing is not. Dark enough not to be
-	 * mistaken for a tick.
+	 * something wrong, and wanting to do a thing is not.
+	 *
+	 * All three at the same step of their ramp, and a soft one. They were 300,
+	 * 400 and 600, so the three bars on a card read as three different weights
+	 * before they read as three different heights — and height is the whole
+	 * point of them. Same lightness, so the only thing that differs is hue and
+	 * how tall it stands.
 	 */
 	[data-rating='urgency'] {
-		--rating-ink: var(--color-red-300);
+		--rating-ink: var(--color-red-400);
 	}
 
 	[data-rating='ease'] {
@@ -2158,7 +2179,7 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	[data-rating='interest'] {
-		--rating-ink: var(--color-emerald-600);
+		--rating-ink: var(--color-emerald-400);
 	}
 
 	.gauge {

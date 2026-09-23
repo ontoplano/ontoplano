@@ -35,8 +35,8 @@
 		 * One pane of a surface that already has the edge.
 		 *
 		 * The card keeps its header, its accent and its body; it gives up its
-		 * own border and shadow, because the thing it is a part of draws them.
-		 * For the halves of a split that reads as one object — see
+		 * own border, shadow and corners, because the thing it is a part of
+		 * draws them. For the halves of a split that reads as one object — see
 		 * `SplitColumns` without `spaced`.
 		 */
 		pane = false,
@@ -73,7 +73,7 @@
 -->
 <section
 	id={id || undefined}
-	class="flex flex-col {pane ? '' : 'border border-gray-200 shadow-card'} bg-white {accent
+	class="flex flex-col {pane ? 'card-pane' : 'border border-gray-200 shadow-card'} bg-white {accent
 		? 'card-accent'
 		: ''}"
 	style="{accent ? `--card-accent: ${accent};` : ''}{id ? ' scroll-margin-top: 1rem;' : ''}"
