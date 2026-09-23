@@ -25,7 +25,7 @@
 </script>
 
 {#if room}
-	<div class="flex shrink-0 items-center gap-2">
+	<div class="room-verb flex shrink-0 items-center gap-2">
 		{#if room.href}
 			<!-- Resolved by the page that declared it. -->
 			<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->

@@ -3982,10 +3982,38 @@ html button.tab-link {
 	min-width: 0;
 }
 
-/* The verb at the far end of the strip, not tucked against the last tab: the
-   tabs say where you are, and the one thing you came to do is its own corner. */
-.room-tabs > :last-child {
+/*
+ * The verb at the far end of the strip, not tucked against the last tab.
+ *
+ * On the verb itself rather than on `:last-child`: a room with no verb — Weekly
+ * notes — has the tabs as the last child, and pushed the whole strip over to
+ * the right-hand side of the screen.
+ */
+.room-verb {
 	margin-left: auto;
+}
+
+/*
+ * The one surface a room's body stands on.
+ *
+ * Every room used to draw this itself, if it drew it at all: the notebooks
+ * page and the task list had one, Ideas had a card round its list and left its
+ * filters floating on the backdrop above it, and the rooms that never got
+ * round to it were a column of loose objects on a patterned ground. Here, so
+ * it is the same surface everywhere and nobody has to remember to draw one.
+ *
+ * It clips, so the blocks inside it — an inset toolbar, the first row of a
+ * list — take its corners rather than poking square ones past the curve.
+ */
+.room-surface {
+	border: 1px solid var(--color-gray-200);
+	background-color: var(--color-white);
+	box-shadow: var(--shadow-card);
+	overflow: clip;
+}
+
+html[data-style='playful'] .room-surface {
+	border-radius: var(--radius-md);
 }
 
 /*
