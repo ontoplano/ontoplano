@@ -35,18 +35,49 @@
 		 * Beside a name in a panel header it is a destructive link sitting under
 		 * a thing you were only looking at.
 		 */
-		removable = false
+		removable = false,
+		/**
+		 * Pressed to open the notebook's editor rather than the file chooser.
+		 *
+		 * Beside a name in a panel header the picture is the notebook, and
+		 * pressing it should open the thing — the dialogue where the name, the
+		 * labels and the picture all live. Only the editor itself hands over the
+		 * file chooser, where changing the picture is what you came to do.
+		 */
+		onpress
 	}: {
 		notebook: { id: number; title: string; pictureId: number | null; mine?: boolean };
 		kilobytes: number;
 		size?: string;
 		removable?: boolean;
+		onpress?: () => void;
 	} = $props();
 
 	let form: HTMLFormElement | undefined = $state();
 	let uploading = $state(false);
 	let problem = $state('');
 </script>
+
+{#snippet face()}
+	{#if notebook.pictureId}
+		<img
+			src="/media/{notebook.pictureId}"
+			alt=""
+			loading="lazy"
+			class="{size} rounded-lg border border-gray-200 bg-white object-cover"
+		/>
+	{:else}
+		<!-- A notebook, not a photograph: the placeholder says what the
+			     thing is, and every other empty picture in the app draws the
+			     mark of what it belongs to. -->
+		<span
+			aria-hidden="true"
+			class="{size} flex items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-100 text-gray-500"
+		>
+			<Icon name="notebook" />
+		</span>
+	{/if}
+{/snippet}
 
 <div class="shrink-0">
 	<form
@@ -71,30 +102,15 @@
 			picture sitting in the left half of it, which reads as a switch
 			somebody has flipped.
 		-->
+
 		<label
 			class="block w-fit cursor-pointer rounded-lg transition focus-within:ring-2 focus-within:ring-gray-900 hover:opacity-80"
+			hidden={Boolean(onpress)}
 			title={notebook.pictureId
 				? t('notebooks.id.changeThePicture')
 				: t('notebooks.id.aPictureFor', { title: notebook.title })}
 		>
-			{#if notebook.pictureId}
-				<img
-					src="/media/{notebook.pictureId}"
-					alt=""
-					loading="lazy"
-					class="{size} rounded-lg border border-gray-200 bg-white object-cover"
-				/>
-			{:else}
-				<!-- A notebook, not a photograph: the placeholder says what the
-				     thing is, and every other empty picture in the app draws the
-				     mark of what it belongs to. -->
-				<span
-					aria-hidden="true"
-					class="{size} flex items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-100 text-gray-500"
-				>
-					<Icon name="notebook" />
-				</span>
-			{/if}
+			{@render face()}
 			<span class="sr-only">{t('notebooks.id.aPictureFor', { title: notebook.title })}</span>
 			<input
 				type="file"
@@ -122,6 +138,19 @@
 		</label>
 	</form>
 
+	<!-- Where pressing it opens the notebook rather than the file chooser. -->
+	{#if onpress}
+		<button
+			type="button"
+			onclick={onpress}
+			class="block w-fit cursor-pointer rounded-lg transition hover:opacity-80 focus-visible:ring-2 focus-visible:ring-gray-900"
+			aria-label={t('notebooks.id.editNotebook')}
+			title={t('notebooks.id.editNotebook')}
+		>
+			{@render face()}
+		</button>
+	{/if}
+
 	{#if uploading}
 		<p class="mt-1 text-xs text-gray-500">{t('pictures.uploading')}</p>
 	{/if}
@@ -129,11 +158,18 @@
 		<p class="mt-1 text-xs text-red-700">{problem}</p>
 	{/if}
 
+	<!-- A bin rather than a sentence: it is one small destructive act beside
+	     the thing it acts on, and "Remove the picture" underlined was a line of
+	     prose doing a button's job. -->
 	{#if removable && notebook.pictureId}
-		<form method="post" action="?/removePicture" use:enhance>
+		<form method="post" action="?/removePicture" use:enhance class="mt-1 flex justify-center">
 			<input type="hidden" name="id" value={notebook.id} />
-			<button class="mt-1 text-xs text-gray-500 underline hover:text-gray-900">
-				{t('notebooks.id.removeThePicture')}
+			<button
+				class="icon-btn text-gray-500 hover:text-red-700"
+				aria-label={t('notebooks.id.removeThePicture')}
+				title={t('notebooks.id.removeThePicture')}
+			>
+				<Icon name="trash" size={16} />
 			</button>
 		</form>
 	{/if}

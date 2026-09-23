@@ -244,7 +244,7 @@
 			<NotebookPicture
 				notebook={data.notebook}
 				kilobytes={data.pictureKilobytes}
-				size="size-10"
+				size="size-24"
 				removable
 			/>
 			<p class="text-sm text-gray-500">{t('notebooks.id.thePicture')}</p>

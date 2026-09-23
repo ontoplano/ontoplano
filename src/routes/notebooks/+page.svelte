@@ -59,6 +59,18 @@
 	/** The name as it reads under its parent: the last part of the path. */
 	const leafTitle = (title: string) => title.split(NOTEBOOK_SEPARATOR).at(-1) ?? title;
 	const orphaned = $derived(data.orphaned);
+
+	/**
+	 * The shelf, with the closed ones at the end.
+	 *
+	 * A closed notebook is a finished subject: it is kept, and it is not what
+	 * somebody is looking for. Sorted here rather than on the server because
+	 * the order is about how the shelf reads, and the tree the server builds is
+	 * about what is inside what — two different questions.
+	 */
+	const shelved = $derived(
+		[...data.tree].sort((a, b) => Number(Boolean(a.closedAt)) - Number(Boolean(b.closedAt)))
+	);
 	const showingOrphans = $derived(data.orphanedSelected && !selected);
 
 	function openCreate() {
@@ -202,12 +214,13 @@
 									class="cover-face {node.id === data.selected ? 'is-chosen' : ''}"
 									aria-current={node.id === data.selected ? 'true' : undefined}
 								>
+									<!-- A cover with no picture is a blank cover, not a cover with a
+									     notebook drawn on it: a shelf of identical glyphs is noise
+									     where the picture is supposed to be the thing you read. -->
 									{#if node.pictureId}
 										<img src="/media/{node.pictureId}" alt="" loading="lazy" class="cover-art" />
 									{:else}
-										<span class="cover-art cover-art-empty" aria-hidden="true">
-											<Icon name="notebook" size={22} />
-										</span>
+										<span class="cover-art cover-art-empty" aria-hidden="true"></span>
 									{/if}
 
 									<span class="cover-name" class:text-gray-500={node.closedAt}>
@@ -289,32 +302,33 @@
 						{/snippet}
 
 						<div class="notebook-shelf">
-							{#each data.tree as node (node.id)}
+							{#each shelved as node (node.id)}
 								{@render notebookRow(node)}
 							{/each}
-
-							<!--
-								A notebook of its own, and only when there is something in it. `mt-auto`
-								pins it to the bottom of the card rather than to the end of the list:
-								it is not one more notebook in the same sequence as the others.
-							-->
-							{#if orphaned.length > 0}
-								<a
-									href="{resolve('/notebooks')}?notebook=orphaned"
-									class="mt-auto block px-4 py-3 text-sm hover:underline {showingOrphans
-										? 'bg-gray-100'
-										: ''}"
-								>
-									<span class="text-gray-900">{t('notebooks.notesWithoutANotebook')}</span>
-									<span class="block truncate text-xs text-gray-500"
-										>{t('notebooks.theirNotebookWas', {
-											length: orphaned.length,
-											notes: orphaned.length === 1 ? 'note' : 'notes'
-										})}</span
-									>
-								</a>
-							{/if}
 						</div>
+
+						<!--
+							What is left over, as a bin in the corner.
+
+							Notes whose notebook was deleted are not a notebook, and a row
+							of them at the end of the shelf read as one — a book on the
+							shelf called "Notes without a notebook". It is a small thing
+							pinned to the bottom corner of the panel, where a bin goes.
+						-->
+						{#if orphaned.length > 0}
+							<a
+								href="{resolve('/notebooks')}?notebook=orphaned"
+								class="shelf-bin {showingOrphans ? 'is-chosen' : ''}"
+								title={t('notebooks.theirNotebookWas', {
+									length: orphaned.length,
+									notes: orphaned.length === 1 ? 'note' : 'notes'
+								})}
+								aria-label={t('notebooks.notesWithoutANotebook')}
+							>
+								<Icon name="trash" size={16} />
+								<span class="tabular text-xs">{orphaned.length}</span>
+							</a>
+						{/if}
 					{/if}
 				</Card>
 			{/snippet}
@@ -348,6 +362,7 @@
 									notebook={selected}
 									kilobytes={data.pictureKilobytes}
 									size="size-16"
+									onpress={() => openEdit(selected)}
 								/>
 							{/if}
 						{/snippet}
@@ -464,7 +479,7 @@
 			<NotebookPicture
 				notebook={editing}
 				kilobytes={data.pictureKilobytes}
-				size="size-10"
+				size="size-24"
 				removable
 			/>
 			<p class="text-sm text-gray-500">{t('notebooks.id.thePicture')}</p>
