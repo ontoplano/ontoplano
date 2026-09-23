@@ -26,10 +26,9 @@ test('hiding a section empties the menus but not the URL', async ({ page }) => {
 	// Put it away. Order, colour and this are one list now, so it is one form.
 	await visit(page, '/settings/preferences');
 	const menu = page.locator('form[action="?/saveMenu"]');
-	const inventory = menu.locator('div').filter({
-		has: page.getByRole('button', { name: 'Move Inventory up' })
-	});
-	await inventory.getByRole('button', { name: 'Hide' }).click();
+	// Ticked means the room is there — one control, one meaning, the same one
+	// a notebook's "what it holds" list uses. See `ToggleRow`.
+	await menu.getByRole('checkbox', { name: 'Inventory' }).uncheck();
 	await menu.getByRole('button', { name: 'Save menu' }).click();
 	await expect(page.getByText('Menu saved.')).toBeVisible();
 
@@ -48,9 +47,8 @@ test('hiding a section empties the menus but not the URL', async ({ page }) => {
 	await visit(page, '/settings/preferences');
 	await page
 		.locator('form[action="?/saveMenu"]')
-		.getByRole('button', { name: 'Show' })
-		.first()
-		.click();
+		.getByRole('checkbox', { name: 'Inventory' })
+		.check();
 	await page
 		.locator('form[action="?/saveMenu"]')
 		.getByRole('button', { name: 'Save menu' })
@@ -81,10 +79,7 @@ test('saving the menu does not empty the list', async ({ page }) => {
 	await visit(page, '/settings/preferences');
 
 	const menu = page.locator('form[action="?/saveMenu"]');
-	const inventory = menu.locator('div').filter({
-		has: page.getByRole('button', { name: 'Move Inventory up' })
-	});
-	await inventory.getByRole('button', { name: 'Hide' }).click();
+	await menu.getByRole('checkbox', { name: 'Inventory' }).uncheck();
 
 	// Nothing may repaint the form after the submit — no data reload, so no
 	// re-render to hide a reset behind.
@@ -96,7 +91,7 @@ test('saving the menu does not empty the list', async ({ page }) => {
 	await page.waitForTimeout(500);
 
 	// Still put away, and every other room still listed.
-	await expect(menu.getByRole('button', { name: 'Show' })).toHaveCount(1);
+	await expect(menu.getByRole('checkbox', { name: 'Inventory' })).not.toBeChecked();
 	// Seven visible: eight rooms — since People, Recipes and Ideas became tabs
 	// of Notebooks and Health, plus Reminders — with one put away.
 	await expect(menu.getByRole('button', { name: /^Move .* up$/ })).toHaveCount(7);

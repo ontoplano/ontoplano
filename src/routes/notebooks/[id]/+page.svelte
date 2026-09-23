@@ -206,6 +206,10 @@
 			contents={data.contents}
 			allPeople={data.allPeople}
 			categories={data.categories}
+			inventoryCategories={data.inventoryCategories}
+			workoutCategories={data.workoutCategories}
+			currency={data.currency}
+			formMessage={form?.message ?? null}
 			pickableNotebooks={data.pickableNotebooks}
 			areas={data.areas}
 			workoutMeasures={data.workoutMeasures}
@@ -218,7 +222,7 @@
 	</section>
 </div>
 
-<Modal bind:open={editing} error={form?.message} title={t('notebooks.id.editNotebook')} size="sm">
+<Modal bind:open={editing} error={form?.message} title={t('notebooks.id.editNotebook')}>
 	<form
 		id="notebook-form"
 		method="post"
@@ -234,6 +238,7 @@
 			title={data.notebook.title}
 			description={data.notebook.description}
 			defaultTags={data.notebook.defaultTags}
+			modules={data.moduleChoices}
 		/>
 	</form>
 

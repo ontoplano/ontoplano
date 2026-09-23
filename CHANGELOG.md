@@ -18,6 +18,38 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.183.2 — 2026-09-23
+
+- **A notebook holds what its subject actually accumulates.** A renovation is
+  not only notes and tasks: it is the tiles to buy, the account the payments
+  leave from, the invoices, and the recipe for the kitchen it ends in. Every
+  notebook can now be switched on to hold inventory, ledgers, bills, habits,
+  workouts, recipes and ideas beside its notes, tasks and goals — each as a tab
+  that does the room's own work, not a list of links. Adding a habit on a
+  notebook's Habits tab makes the same habit the Health room shows.
+- **Which of them a notebook has is its own answer.** In the notebook's Edit
+  dialog, under *What it holds*. A new notebook starts with notes and tasks
+  only, so a reading list is not born with nine tabs; everything that exists
+  today keeps the three it had. Switching one off takes the tab and nothing
+  else — the dialog says how much is filed under it, and those rows stay in
+  their own rooms.
+- **A room you have put away stays away.** Hide Finance in Preferences and no
+  notebook offers Ledgers or Bills, which is what putting a room away was
+  always supposed to mean.
+- **Show/Hide became a tick.** The rooms and their tabs in Preferences are
+  checkboxes now: ticked means it is there. The old button relabelled itself
+  under the cursor and changed width doing it, so you could not press it twice
+  without reading it again. It is the same control a notebook's *What it holds*
+  list uses.
+- **A key tied to one notebook reaches everything in it.** Not just its notes,
+  tasks and goals — whatever that notebook has been switched on to hold. An
+  assistant given the renovation can add its shopping and tick it off, and
+  still see nothing else in the account.
+- **For assistants:** `add_notebook` takes `modules`, `change_notebook` is new,
+  and `add_idea`, `add_inventory_item`, `add_bill`, `add_ledger`, `add_habit`,
+  `add_workout` and `add_recipe` each take a `notebookId`. `notebooks` answers
+  with what each one holds.
+
 ## 0.183.1 — 2026-09-23
 
 - **A room is one object now, not a handful of cards floating on the

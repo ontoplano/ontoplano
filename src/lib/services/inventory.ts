@@ -3,6 +3,7 @@ import { and, asc, desc, eq, inArray, or, sql } from 'drizzle-orm';
 import { db } from '$lib/db/index.js';
 import { locations, pricePoints, inventoryCategories, inventoryItems } from '$lib/db/schema.js';
 import { getLocation } from './locations.js';
+import { notebookPatch } from './notebooks.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { stamp, stamps } from './time.js';
@@ -33,6 +34,8 @@ export type ItemInput = {
 	locationId?: unknown;
 	/** How many of it you keep. One unless somebody says otherwise. */
 	idealQty?: unknown;
+	/** The subject it belongs to, when it is part of one. */
+	notebookId?: unknown;
 };
 
 /*
@@ -88,7 +91,14 @@ function ownedLocation(ctx: Ctx, locationId: number): void {
 	getLocation(ctx, locationId);
 }
 
-export function listItems(ctx: Ctx) {
+/**
+ * The items, all of them or one subject's.
+ *
+ * `notebookId` narrows rather than changing the shape: a notebook's Inventory
+ * tab is this room looking at one subject and draws the rows with the same
+ * component, so it needs exactly what the room needs.
+ */
+export function listItems(ctx: Ctx, scope: { notebookId?: number } = {}) {
 	return db
 		.select({
 			id: inventoryItems.id,
@@ -105,12 +115,17 @@ export function listItems(ctx: Ctx) {
 			attributes: inventoryItems.attributes,
 			boughtAt: inventoryItems.boughtAt,
 			snoozed: inventoryItems.snoozed,
+			notebookId: inventoryItems.notebookId,
 			createdAt: inventoryItems.createdAt,
 			ownerId: inventoryItems.userId
 		})
 		.from(inventoryItems)
 		.leftJoin(inventoryCategories, eq(inventoryItems.inventoryCategoryId, inventoryCategories.id))
-		.where(itemReach(ctx))
+		.where(
+			scope.notebookId === undefined
+				? itemReach(ctx)
+				: and(itemReach(ctx), eq(inventoryItems.notebookId, scope.notebookId))
+		)
 		.orderBy(inventoryItems.bought, desc(inventoryItems.createdAt))
 		.all()
 		.map(({ ownerId, ...item }) => ({ ...item, mine: ownerId === ctx.userId }));
@@ -680,7 +695,9 @@ function parseItem(ctx: Ctx, raw: ItemInput) {
 		// Typed as money, stored as an integer. A blank field means nobody has
 		// said what it costs, which is different from saying it is free.
 		priceCents: parseMoney(raw.price, getCurrency(ctx.userId)),
-		idealQty: parseIdealQty(raw.idealQty)
+		idealQty: parseIdealQty(raw.idealQty),
+		// Only when the caller mentioned it — see `notebookPatch`.
+		...notebookPatch(ctx, raw)
 	};
 }
 

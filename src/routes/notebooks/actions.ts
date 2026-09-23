@@ -10,6 +10,14 @@ import { NOTEBOOK_PANEL_WIDTH_KEY, setPanelWidth } from '$lib/services/settings'
 import { toActionFailure } from '$lib/http-errors';
 import { importVaultAction } from '$lib/import-vault-action';
 import { todoHandlers } from '$lib/services/todo-actions';
+import { under } from '$lib/services/scoped-actions';
+import { billHandlers } from '$lib/services/bill-actions';
+import { habitHandlers } from '$lib/services/habit-actions';
+import { ideaHandlers } from '$lib/services/idea-actions';
+import { itemHandlers } from '$lib/services/item-actions';
+import { ledgerHandlers } from '$lib/services/ledger-actions';
+import { workoutHandlers } from '$lib/services/workout-actions';
+import { recipeActions } from '../health/recipes/actions';
 import {
 	createNotebook,
 	deleteNotebook,
@@ -46,7 +54,17 @@ export const notebookActions = {
 			updateNotebook(buildCtx(locals.user!.id), Number(formData.get('id')), {
 				title: formData.get('heading'),
 				description: formData.get('description'),
-				defaultTags: formData.get('defaultTags')
+				defaultTags: formData.get('defaultTags'),
+				/*
+				 * What it holds, when the form asked about it.
+				 *
+				 * `modulesPosted` rather than the boxes themselves: unticking
+				 * every one of them sends no `modules` field at all, which is
+				 * indistinguishable from a form that never asked — and would
+				 * quietly leave the tabs as they were instead of clearing them.
+				 * A form that asked says so.
+				 */
+				modules: formData.has('modulesPosted') ? formData.getAll('modules') : undefined
 			});
 			return { success: true };
 		} catch (e) {
@@ -345,5 +363,27 @@ export const notebookActions = {
 	todoSchedule: todoHandlers.schedule,
 	todoDelegate: todoHandlers.delegate,
 	todoArchive: todoHandlers.archive,
-	todoDelete: todoHandlers.remove
+	todoDelete: todoHandlers.remove,
+
+	/*
+	 * Every other module a notebook can hold, answering here too.
+	 *
+	 * Each room's own handlers, mounted under the module's prefix — ticking a
+	 * habit on a notebook's Habits tab runs the code the Health room runs, and
+	 * a bill paid here is paid there. `under` applies the same naming rule the
+	 * markup's action names come from, so a form and its handler cannot drift
+	 * apart; see `$lib/module-actions`.
+	 *
+	 * All of them, whatever this notebook is switched on for: what a notebook
+	 * holds is a preference about what to draw, not about what may be posted,
+	 * and a tab that appeared the moment a module was switched on would
+	 * otherwise post to an action that was not mounted.
+	 */
+	...under('idea', ideaHandlers),
+	...under('item', itemHandlers),
+	...under('ledger', ledgerHandlers),
+	...under('bill', billHandlers),
+	...under('habit', habitHandlers),
+	...under('workout', workoutHandlers),
+	...under('recipe', recipeActions)
 } satisfies Actions;

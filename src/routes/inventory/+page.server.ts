@@ -1,5 +1,6 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
+import { itemHandlers } from '$lib/services/item-actions';
 import { host } from '$lib/services/host';
 import { toActionFailure } from '$lib/http-errors';
 import { recipesByItem } from '$lib/services/recipes';
@@ -28,20 +29,11 @@ import {
 	deleteCategory,
 	renameCategory,
 	setCategoryShared,
-	createItem,
-	deleteItem,
 	listCategories,
 	setCategoryFood,
 	listItems,
 	shoppingRun,
-	recordPaid,
-	restockItem,
-	setItemAttributes,
-	setItemLocation,
-	setQty,
-	toggleBought,
-	toggleSnoozed,
-	updateItem
+	setItemLocation
 } from '$lib/services/inventory';
 
 export const load = async ({ locals }: IsolatedEvent) => {
@@ -67,19 +59,15 @@ export const load = async ({ locals }: IsolatedEvent) => {
 	};
 };
 
-/** Every action here is the same shape: read the form, call the service, map errors. */
-/** `fieldName`/`fieldValue` pairs, in order, as the object they describe. */
-function fieldsFrom(formData: FormData): Record<string, string> {
-	const names = formData.getAll('fieldName').map(String);
-	const values = formData.getAll('fieldValue').map(String);
-	const out: Record<string, string> = {};
-	names.forEach((name, i) => {
-		const key = name.trim();
-		if (key) out[key] = (values[i] ?? '').trim();
-	});
-	return out;
-}
-
+/**
+ * Every action here is the same shape: read the form, call the service, map errors.
+ *
+ * What an item itself can be asked to do is in `$lib/services/item-actions`,
+ * spread in below — a notebook's Inventory tab mounts the same handlers, so
+ * ticking something bought there is the same code as ticking it here. What
+ * stays is the room managing itself: its sections, its locations, and the
+ * vocabulary its things describe themselves with.
+ */
 export const actions = {
 	/** Rename an attribute everywhere it is used — or merge it into another. */
 	renameAttribute: async ({ request, locals }: IsolatedEvent) => {
@@ -222,144 +210,8 @@ export const actions = {
 		}
 	},
 
-	create: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			const name = formData.get('label');
-			const ctx = buildCtx(locals.user!.id);
-			const { alreadyHad, id } = createItem(ctx, {
-				name,
-				type: formData.get('type'),
-				notes: formData.get('notes'),
-				price: formData.get('price'),
-				inventoryCategoryId: formData.get('inventoryCategoryId'),
-				locationId: formData.get('locationId'),
-				idealQty: formData.get('idealQty')
-			});
+	...itemHandlers,
 
-			/*
-			 * Attributes, when the form carried any.
-			 *
-			 * Only when something was written: they are replaced wholesale, and
-			 * adding a thing that is already on the list must not wipe what the
-			 * row already says about itself.
-			 */
-			const attributes = fieldsFrom(formData);
-			if (Object.keys(attributes).length > 0) setItemAttributes(ctx, id, attributes);
-
-			return {
-				success: true,
-				action: 'create',
-				notice: alreadyHad
-					? `${String(name).trim()} was already on the list, so it is back on it.`
-					: null
-			};
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	update: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			const ctx = buildCtx(locals.user!.id);
-			const id = Number(formData.get('id'));
-			updateItem(ctx, id, {
-				name: formData.get('label'),
-				type: formData.get('type'),
-				notes: formData.get('notes'),
-				price: formData.get('price'),
-				inventoryCategoryId: formData.get('inventoryCategoryId'),
-				idealQty: formData.get('idealQty')
-			});
-			/*
-			 * The thing's own fields, saved with the rest of it.
-			 *
-			 * Not every thing shares a shape — a tape has a length, a cable has
-			 * a plug — so these are this thing's, written as pairs. They go
-			 * through the same save because a second button for them would be a
-			 * second thing to remember to press.
-			 */
-			setItemAttributes(ctx, id, fieldsFrom(formData));
-			// Where it lives, when the form carried the field. `updateItem`
-			// re-parses the row and would not have known about it; this is the
-			// same call a drag makes.
-			if (formData.has('locationId')) {
-				const raw = String(formData.get('locationId') ?? '');
-				setItemLocation(ctx, id, raw === '' ? null : Number(raw));
-			}
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	/**
-	 * How many of it there are, from the arrows beside the name.
-	 *
-	 * Its own action rather than a field on `update`: this is pressed in a
-	 * cupboard with one thumb, and `update` re-parses the whole row.
-	 */
-	setQty: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			setQty(buildCtx(locals.user!.id), Number(formData.get('id')), Number(formData.get('qty')));
-			return { success: true, action: 'setQty' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	toggleBought: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			toggleBought(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	/** What you actually paid. Never part of the tick, which has to stay one press. */
-	paid: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			recordPaid(buildCtx(locals.user!.id), Number(formData.get('id')), formData.get('paid'));
-			return { success: true, action: 'paid' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	delete: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			deleteItem(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	restock: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			restockItem(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	toggleSnoozed: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			toggleSnoozed(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
 	createLocation: async ({ request, locals }: IsolatedEvent) => {
 		const formData = await request.formData();
 		try {
@@ -427,20 +279,6 @@ export const actions = {
 				raw === '' ? null : Number(raw)
 			);
 			return { success: true, action: 'putItem' };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	setFields: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			setItemAttributes(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				fieldsFrom(formData)
-			);
-			return { success: true, action: 'setFields' };
 		} catch (e) {
 			return toActionFailure(e);
 		}

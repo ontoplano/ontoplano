@@ -21,7 +21,7 @@ exist.
 | [`bill_payments`](#bill_payments)                           | 11      | yes               |
 | [`billing_checkouts`](#billing_checkouts)                   | 8       | yes               |
 | [`billing_events`](#billing_events)                         | 8       | —                 |
-| [`bills`](#bills)                                           | 17      | yes               |
+| [`bills`](#bills)                                           | 18      | yes               |
 | [`calendar_feeds`](#calendar_feeds)                         | 9       | yes               |
 | [`categories`](#categories)                                 | 5       | yes               |
 | [`client_errors`](#client_errors)                           | 9       | yes               |
@@ -40,21 +40,21 @@ exist.
 | [`goal_targets`](#goal_targets)                             | 9       | yes               |
 | [`goals`](#goals)                                           | 14      | yes               |
 | [`habit_occurrences`](#habit_occurrences)                   | 6       | yes               |
-| [`habits`](#habits)                                         | 7       | yes               |
+| [`habits`](#habits)                                         | 8       | yes               |
 | [`idea_tags`](#idea_tags)                                   | 4       | yes               |
-| [`ideas`](#ideas)                                           | 8       | yes               |
+| [`ideas`](#ideas)                                           | 9       | yes               |
 | [`inventory_attribute_colors`](#inventory_attribute_colors) | 5       | yes               |
 | [`inventory_categories`](#inventory_categories)             | 7       | yes               |
-| [`inventory_items`](#inventory_items)                       | 16      | yes               |
+| [`inventory_items`](#inventory_items)                       | 17      | yes               |
 | [`invites`](#invites)                                       | 9       | —                 |
-| [`ledgers`](#ledgers)                                       | 10      | yes               |
+| [`ledgers`](#ledgers)                                       | 11      | yes               |
 | [`locations`](#locations)                                   | 8       | yes               |
 | [`mail_failures`](#mail_failures)                           | 11      | —                 |
 | [`media`](#media)                                           | 10      | yes               |
 | [`media_tags`](#media_tags)                                 | 4       | yes               |
 | [`model_provider_keys`](#model_provider_keys)               | 9       | yes               |
 | [`newsletter_issues`](#newsletter_issues)                   | 6       | —                 |
-| [`notebooks`](#notebooks)                                   | 10      | yes               |
+| [`notebooks`](#notebooks)                                   | 11      | yes               |
 | [`oauth_clients`](#oauth_clients)                           | 7       | —                 |
 | [`oauth_codes`](#oauth_codes)                               | 11      | yes               |
 | [`people`](#people)                                         | 12      | yes               |
@@ -66,7 +66,7 @@ exist.
 | [`quotes`](#quotes)                                         | 5       | yes               |
 | [`recipe_images`](#recipe_images)                           | 7       | yes               |
 | [`recipe_items`](#recipe_items)                             | 8       | yes               |
-| [`recipes`](#recipes)                                       | 12      | yes               |
+| [`recipes`](#recipes)                                       | 13      | yes               |
 | [`recurring_task_tags`](#recurring_task_tags)               | 5       | yes               |
 | [`recurring_tasks`](#recurring_tasks)                       | 20      | yes               |
 | [`reminder_sounds`](#reminder_sounds)                       | 7       | yes               |
@@ -91,7 +91,7 @@ exist.
 | [`workout_measures`](#workout_measures)                     | 7       | yes               |
 | [`workout_plan_measures`](#workout_plan_measures)           | 6       | yes               |
 | [`workout_sessions`](#workout_sessions)                     | 7       | yes               |
-| [`workouts`](#workouts)                                     | 11      | yes               |
+| [`workouts`](#workouts)                                     | 12      | yes               |
 
 ## account
 
@@ -303,6 +303,7 @@ Indexes:
 | `notes`           | text    | null     | `''`                  | —                 |
 | `active`          | integer | not null | `true`                | —                 |
 | `sort_order`      | integer | not null | `0`                   | —                 |
+| `notebook_id`     | integer | null     | —                     | → `notebooks.id`  |
 | `created_at`      | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 | `updated_at`      | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
@@ -310,6 +311,7 @@ Indexes:
 
 - `bills_user_idx` on `user_id`
 - `bills_active_idx` on `user_id`, `active`
+- `bills_notebook_idx` on `notebook_id`
 
 Checks — enforced by the database, not only by the service layer:
 
@@ -694,11 +696,13 @@ Indexes:
 | `description`    | text    | null     | `''`                  | —                 |
 | `type`           | text    | not null | `'bad'`               | —                 |
 | `scheduled_days` | text    | null     | `''`                  | —                 |
+| `notebook_id`    | integer | null     | —                     | → `notebooks.id`  |
 | `created_at`     | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
 Indexes:
 
 - `habits_user_idx` on `user_id`
+- `habits_notebook_idx` on `notebook_id`
 
 ## idea_tags
 
@@ -725,12 +729,14 @@ Indexes:
 | `is_applied`   | integer | not null | `false`               | —                 |
 | `applied_note` | text    | null     | —                     | —                 |
 | `favorite`     | integer | not null | `false`               | —                 |
+| `notebook_id`  | integer | null     | —                     | → `notebooks.id`  |
 | `created_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 | `updated_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
 Indexes:
 
 - `ideas_user_idx` on `user_id`
+- `ideas_notebook_idx` on `notebook_id`
 - `ideas_created_idx` on `created_at`
 
 ## inventory_attribute_colors
@@ -783,6 +789,7 @@ Indexes:
 | `location_id`           | integer | null     | —                     | → `locations.id`            |
 | `attributes`            | text    | not null | `'{}'`                | —                           |
 | `snoozed`               | integer | not null | `false`               | —                           |
+| `notebook_id`           | integer | null     | —                     | → `notebooks.id`            |
 | `created_at`            | text    | not null | `(CURRENT_TIMESTAMP)` | —                           |
 | `updated_at`            | text    | not null | `(CURRENT_TIMESTAMP)` | —                           |
 
@@ -793,6 +800,7 @@ Indexes:
 - `inventory_items_bought_idx` on `bought`
 - `inventory_items_snoozed_idx` on `snoozed`
 - `inventory_items_category_idx` on `inventory_category_id`
+- `inventory_items_notebook_idx` on `notebook_id`
 
 Checks — enforced by the database, not only by the service layer:
 
@@ -828,12 +836,14 @@ Indexes:
 | `currency`       | text    | null     | —                     | —                 |
 | `sort_order`     | integer | not null | `0`                   | —                 |
 | `archived`       | integer | not null | `false`               | —                 |
+| `notebook_id`    | integer | null     | —                     | → `notebooks.id`  |
 | `created_at`     | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 | `updated_at`     | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
 Indexes:
 
 - `ledgers_user_idx` on `user_id`
+- `ledgers_notebook_idx` on `notebook_id`
 - `ledgers_user_name_unique` on `user_id`, `name` — unique
 
 ## locations
@@ -958,6 +968,7 @@ Indexes:
 | `picture_id`         | integer | null     | —                     | → `media.id`      |
 | `default_tags`       | text    | not null | `''`                  | —                 |
 | `shared_with_family` | integer | not null | `false`               | —                 |
+| `modules`            | text    | null     | —                     | —                 |
 | `closed_at`          | text    | null     | —                     | —                 |
 | `created_at`         | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 | `updated_at`         | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
@@ -1180,12 +1191,14 @@ Checks — enforced by the database, not only by the service layer:
 | `source`         | text    | null     | `''`                  | —                 |
 | `last_cooked_at` | text    | null     | —                     | —                 |
 | `archived_at`    | text    | null     | —                     | —                 |
+| `notebook_id`    | integer | null     | —                     | → `notebooks.id`  |
 | `created_at`     | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 | `updated_at`     | text    | not null | `(CURRENT_TIMESTAMP)` | —                 |
 
 Indexes:
 
 - `recipes_user_idx` on `user_id`
+- `recipes_notebook_idx` on `notebook_id`
 
 Checks — enforced by the database, not only by the service layer:
 
@@ -1688,12 +1701,14 @@ Indexes:
 | `minutes`      | integer | null     | —                     | —                         |
 | `last_done_at` | text    | null     | —                     | —                         |
 | `archived_at`  | text    | null     | —                     | —                         |
+| `notebook_id`  | integer | null     | —                     | → `notebooks.id`          |
 | `created_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                         |
 | `updated_at`   | text    | not null | `(CURRENT_TIMESTAMP)` | —                         |
 
 Indexes:
 
 - `workouts_user_idx` on `user_id`
+- `workouts_notebook_idx` on `notebook_id`
 
 Checks — enforced by the database, not only by the service layer:
 

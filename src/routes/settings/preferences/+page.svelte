@@ -8,6 +8,7 @@
 	import { isIsolatedBuild } from '$lib/isolated/mode';
 	import { isLocale, useT } from '$lib/i18n';
 	import { sectionLabel } from '$lib/sections';
+	import ToggleRow from '$lib/components/ToggleRow.svelte';
 	import { rememberLocaleOnThisDevice } from '$lib/i18n/device';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { page } from '$app/state';
@@ -881,119 +882,98 @@
 		>
 			{#each orderedRooms as room, i (room.key)}
 				{@const shown = !room.hidden}
-				<div
-					class="flex items-center gap-3 border px-3 py-2 {shown
-						? 'border-gray-200'
-						: 'border-dashed border-gray-300 bg-gray-50'}"
+				<ToggleRow
+					label={t(room.name)}
+					on={shown}
+					always={!room.hide}
+					onToggle={() => toggleRoom(room.key)}
 				>
-					<input type="hidden" name="room" value={room.key} />
-					{#if room.hidden && room.hide}
-						<input type="hidden" name="hidden" value={room.hide} />
-					{/if}
+					{#snippet leading()}
+						<input type="hidden" name="room" value={room.key} />
+						{#if room.hidden && room.hide}
+							<input type="hidden" name="hidden" value={room.hide} />
+						{/if}
 
-					<!-- A number only where there is a position. A room that is put
-					     away has no place in the order, so it has no number. -->
-					<span class="tabular w-5 shrink-0 text-xs text-gray-500">
-						{shown ? i + 1 : ''}
-					</span>
+						<!-- A number only where there is a position. A room that is put
+						     away has no place in the order, so it has no number. -->
+						<span class="tabular w-5 shrink-0 text-xs text-gray-500">
+							{shown ? i + 1 : ''}
+						</span>
 
-					{#if room.ownsColor}
-						<input
-							type="color"
-							name="color.{room.section}"
-							value={room.accent}
-							class="h-6 w-8 shrink-0 cursor-pointer border border-gray-300 bg-white p-0.5"
-							aria-label={t('settings.menu.colourFor', { room: t(room.name) })}
-						/>
-					{:else}
-						<!-- Shown, not editable: this room wears another's colour, and
-						     three pickers for one value is three ways to disagree. -->
-						<span
-							class="h-6 w-8 shrink-0 border border-gray-200"
-							style="background-color: {room.accent}"
-							title={room.colorFrom ? t('settings.menu.follows', { room: t(room.colorFrom) }) : ''}
-						></span>
-					{/if}
+						{#if room.ownsColor}
+							<input
+								type="color"
+								name="color.{room.section}"
+								value={room.accent}
+								class="h-6 w-8 shrink-0 cursor-pointer border border-gray-300 bg-white p-0.5"
+								aria-label={t('settings.menu.colourFor', { room: t(room.name) })}
+							/>
+						{:else}
+							<!-- Shown, not editable: this room wears another's colour, and
+							     three pickers for one value is three ways to disagree. -->
+							<span
+								class="h-6 w-8 shrink-0 border border-gray-200"
+								style="background-color: {room.accent}"
+								title={room.colorFrom
+									? t('settings.menu.follows', { room: t(room.colorFrom) })
+									: ''}
+							></span>
+						{/if}
+					{/snippet}
 
-					<span class="min-w-0 flex-1 truncate text-sm {shown ? 'text-gray-900' : 'text-gray-500'}">
-						{t(room.name)}
+					{#snippet trailing()}
 						{#if room.colorFrom}
-							<span class="text-xs text-gray-500"
+							<span class="shrink-0 text-xs text-gray-500"
 								>{t('settings.menu.followsShort', { room: t(room.colorFrom) })}</span
 							>
 						{/if}
-					</span>
-
-					{#if shown}
-						<button
-							type="button"
-							onclick={() => shiftRoom(room.key, -1)}
-							disabled={i === 0}
-							class="p-1 text-gray-500 hover:text-gray-900 disabled:opacity-30"
-							title={t('settings.preferences.moveUp')}
-							aria-label={t('settings.menu.moveUp', { what: t(room.name) })}
-						>
-							<Icon name="chevron-up" size={16} />
-						</button>
-						<button
-							type="button"
-							onclick={() => shiftRoom(room.key, 1)}
-							disabled={i === lastShownIndex}
-							class="p-1 text-gray-500 hover:text-gray-900 disabled:opacity-30"
-							title={t('settings.preferences.moveDown')}
-							aria-label={t('settings.menu.moveDown', { what: t(room.name) })}
-						>
-							<Icon name="chevron-down" size={16} />
-						</button>
-					{/if}
-
-					{#if room.hide}
-						<button
-							type="button"
-							onclick={() => toggleRoom(room.key)}
-							class="btn btn-sm shrink-0"
-							aria-pressed={room.hidden}
-						>
-							{room.hidden ? 'Show' : 'Hide'}
-						</button>
-					{:else}
-						<span class="eyebrow shrink-0 text-gray-500">{t('settings.preferences.alwaysOn')}</span>
-					{/if}
-				</div>
+						{#if shown}
+							<button
+								type="button"
+								onclick={() => shiftRoom(room.key, -1)}
+								disabled={i === 0}
+								class="p-1 text-gray-500 hover:text-gray-900 disabled:opacity-30"
+								title={t('settings.preferences.moveUp')}
+								aria-label={t('settings.menu.moveUp', { what: t(room.name) })}
+							>
+								<Icon name="chevron-up" size={16} />
+							</button>
+							<button
+								type="button"
+								onclick={() => shiftRoom(room.key, 1)}
+								disabled={i === lastShownIndex}
+								class="p-1 text-gray-500 hover:text-gray-900 disabled:opacity-30"
+								title={t('settings.preferences.moveDown')}
+								aria-label={t('settings.menu.moveDown', { what: t(room.name) })}
+							>
+								<Icon name="chevron-down" size={16} />
+							</button>
+						{/if}
+					{/snippet}
+				</ToggleRow>
 
 				<!--
 					The tabs inside the room, one line each.
-					
+
 					Indented under it rather than listed beside it: they are not
-					rooms, and putting Recipes away should leave Workouts where
-					it is. A room that is itself put away says so once and does
-					not offer the choice twice.
+					rooms, and putting Recipes away should leave Workouts where it
+					is. A room that is itself put away says so once and does not
+					offer the choice twice.
 				-->
 				{#each room.leaves as leaf (leaf.id)}
-					<div
-						class="ml-8 flex items-center gap-3 border border-l-2 border-gray-200 border-l-gray-300 px-3 py-1.5 text-sm"
+					<ToggleRow
+						nested
+						label={sectionLabel(t, leaf.id)}
+						on={!leaf.hidden && !room.hidden}
+						locked={room.hidden}
+						onToggle={() => toggleLeaf(leaf.id)}
 					>
-						{#if leaf.hidden || room.hidden}
-							<input type="hidden" name="hidden" value={leaf.id} />
-						{/if}
-						<span class="min-w-0 flex-1 truncate {room.hidden ? 'text-gray-400' : 'text-gray-700'}"
-							>{sectionLabel(t, leaf.id)}</span
-						>
-						{#if room.hidden}
-							<span class="eyebrow shrink-0 text-gray-500"
-								>{t('settings.preferences.withTheRoom')}</span
-							>
-						{:else}
-							<button
-								type="button"
-								onclick={() => toggleLeaf(leaf.id)}
-								class="btn btn-sm shrink-0"
-								aria-pressed={leaf.hidden}
-							>
-								{leaf.hidden ? 'Show' : 'Hide'}
-							</button>
-						{/if}
-					</div>
+						{#snippet leading()}
+							{#if leaf.hidden || room.hidden}
+								<input type="hidden" name="hidden" value={leaf.id} />
+							{/if}
+						{/snippet}
+					</ToggleRow>
 				{/each}
 			{/each}
 

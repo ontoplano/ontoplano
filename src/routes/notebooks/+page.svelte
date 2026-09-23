@@ -14,6 +14,8 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import NotebookDetail from '$lib/components/NotebookDetail.svelte';
 	import NotebookFields from '$lib/components/fields/NotebookFields.svelte';
+	import type { NotebookModule } from '$lib/notebook-modules';
+	import type { KeyWithValues } from '$lib/i18n/keys';
 	import NotebookPicture from '$lib/components/NotebookPicture.svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { useT } from '$lib/i18n';
@@ -107,11 +109,32 @@
 	 * Notes, not entries: writing in a notebook is a note and writing in the
 	 * diary is an entry, and the tab above this list already says so.
 	 */
+	/** Each of these takes a `count`, so none of them is a `PlainKey`. */
+	type CountKey = Extract<KeyWithValues, `notebooks.${string}Count`>;
+
+	const COUNT_LABELS: Partial<Record<NotebookModule, CountKey>> = {
+		notes: 'notebooks.notesCount',
+		tasks: 'notebooks.tasksCount',
+		goals: 'notebooks.goalsCount',
+		ideas: 'notebooks.ideasCount',
+		inventory: 'notebooks.inventoryCount',
+		ledgers: 'notebooks.ledgersCount',
+		bills: 'notebooks.billsCount',
+		habits: 'notebooks.habitsCount',
+		workouts: 'notebooks.workoutsCount',
+		recipes: 'notebooks.recipesCount'
+	};
+
 	function tally(n: Notebook): string {
-		const parts: string[] = [];
-		if (n.entries) parts.push(t('notebooks.notesCount', { count: n.entries }));
-		if (n.tasks) parts.push(t('notebooks.tasksCount', { count: n.tasks }));
-		if (n.goals) parts.push(t('notebooks.goalsCount', { count: n.goals }));
+		// One part per module the notebook actually holds, in the order its tabs
+		// are in, so the row and the tabs agree about what is in there.
+		const parts = n.modules
+			.map((module) => {
+				const count = n.counts[module] ?? 0;
+				const label = COUNT_LABELS[module];
+				return count && label ? t(label, { count }) : null;
+			})
+			.filter((part): part is string => part !== null);
 		return parts.join(' · ') || t('notebooks.nothingInItYet');
 	}
 
@@ -400,6 +423,10 @@
 							{showingOrphans}
 							allPeople={data.allPeople}
 							categories={data.categories}
+							inventoryCategories={data.inventoryCategories}
+							workoutCategories={data.workoutCategories}
+							currency={data.currency}
+							formMessage={form?.message ?? null}
 							pickableNotebooks={data.pickableNotebooks}
 							areas={data.areas}
 							workoutMeasures={data.workoutMeasures}

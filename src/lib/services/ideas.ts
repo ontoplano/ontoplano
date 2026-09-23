@@ -12,6 +12,7 @@ import {
 } from './tags.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
+import { notebookPatch } from './notebooks.js';
 import { stamp, stamps } from './time.js';
 import { host } from './host.js';
 import { str } from './validate.js';
@@ -33,10 +34,18 @@ export type Idea = {
 	favorite: boolean;
 	createdAt: string;
 	updatedAt: string;
+	notebookId: number | null;
 	tags: IdeaTag[];
 };
 
-export function listIdeas(ctx: Ctx): Idea[] {
+/**
+ * The ideas, all of them or one subject's.
+ *
+ * `notebookId` narrows rather than changing the shape: a notebook's Ideas tab
+ * is this room looking at one subject and draws the rows with the same
+ * component, so it needs exactly what the room needs.
+ */
+export function listIdeas(ctx: Ctx, scope: { notebookId?: number } = {}): Idea[] {
 	const rows = db
 		.select({
 			id: ideas.id,
@@ -44,11 +53,16 @@ export function listIdeas(ctx: Ctx): Idea[] {
 			isApplied: ideas.isApplied,
 			appliedNote: ideas.appliedNote,
 			favorite: ideas.favorite,
+			notebookId: ideas.notebookId,
 			createdAt: ideas.createdAt,
 			updatedAt: ideas.updatedAt
 		})
 		.from(ideas)
-		.where(eq(ideas.userId, ctx.userId))
+		.where(
+			scope.notebookId === undefined
+				? eq(ideas.userId, ctx.userId)
+				: and(eq(ideas.userId, ctx.userId), eq(ideas.notebookId, scope.notebookId))
+		)
 		.orderBy(desc(ideas.createdAt))
 		.all();
 
@@ -67,7 +81,10 @@ export function listTags(ctx: Ctx): { id: number; userId: string; name: string }
 	return db.select().from(tags).where(eq(tags.userId, ctx.userId)).orderBy(tags.name).all();
 }
 
-export function createIdea(ctx: Ctx, raw: { content: unknown; tags?: unknown }): number {
+export function createIdea(
+	ctx: Ctx,
+	raw: { content: unknown; tags?: unknown; notebookId?: unknown }
+): number {
 	const content = str(raw.content, 'content', { max: MAX_IDEA_LENGTH });
 	const tagNames = parseTags(optionalTagInput(raw.tags));
 	const now = stamp(ctx);
@@ -76,9 +93,9 @@ export function createIdea(ctx: Ctx, raw: { content: unknown; tags?: unknown }):
 		.insert(ideas)
 		.values({
 			...stamps(ctx),
-			...stamps(ctx),
 			userId: ctx.userId,
 			content,
+			...notebookPatch(ctx, raw),
 			createdAt: now,
 			updatedAt: now
 		})
@@ -93,12 +110,16 @@ export function createIdea(ctx: Ctx, raw: { content: unknown; tags?: unknown }):
 	return ideaId;
 }
 
-export function updateIdea(ctx: Ctx, id: number, raw: { content: unknown; tags?: unknown }): void {
+export function updateIdea(
+	ctx: Ctx,
+	id: number,
+	raw: { content: unknown; tags?: unknown; notebookId?: unknown }
+): void {
 	const content = str(raw.content, 'content', { max: MAX_IDEA_LENGTH });
 
 	const res = db
 		.update(ideas)
-		.set({ content, updatedAt: stamp(ctx) })
+		.set({ content, ...notebookPatch(ctx, raw), updatedAt: stamp(ctx) })
 		.where(and(eq(ideas.id, id), eq(ideas.userId, ctx.userId)))
 		.run();
 

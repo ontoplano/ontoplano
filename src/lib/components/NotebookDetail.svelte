@@ -44,6 +44,11 @@
 	} from '$lib/note-order';
 	import TodoRows from '$lib/components/TodoRows.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
+	import ModuleTab from '$lib/components/ModuleTab.svelte';
+	import { DEFAULT_MODULES, moduleMeta, type NotebookModule } from '$lib/notebook-modules';
+	import { MODULE_SPECS } from '$lib/notebook-tabs';
+	import { rowsFor } from '$lib/notebook-rows';
+	import type { Currency } from '$lib/money';
 	import { NOTEBOOK_TODO_ACTIONS } from '$lib/todo-actions';
 	import type { Todo } from '$lib/services/todos';
 	import { browsable } from '$lib/browse.svelte';
@@ -91,6 +96,10 @@
 		showingOrphans = false,
 		allPeople = [],
 		categories = [],
+		inventoryCategories = [],
+		workoutCategories = [],
+		currency = 'BRL',
+		formMessage = null,
 		pickableNotebooks = [],
 		areas = [],
 		workoutMeasures = [],
@@ -114,13 +123,28 @@
 		// eslint-disable-next-line no-useless-assignment
 		newAction = $bindable()
 	}: {
-		notebook?: { id: number; title: string; description: string } | null;
+		notebook?: {
+			id: number;
+			title: string;
+			description: string;
+			/** What it holds, already narrowed by what this account has put away. */
+			modules?: NotebookModule[];
+		} | null;
 		contents?: {
 			entries: Entry[];
 			todos: Todo[];
 			blocks: { id: number; label: string | null; date: string; startTime: string }[];
 			/* The whole goal: the tab draws the goals room's own card. */
 			goals: ComponentProps<typeof GoalCard>['goal'][];
+			/*
+			 * The other modules, each as its room's own rows.
+			 *
+			 * Loosely typed on purpose: `ModuleTab` reads them through
+			 * `$lib/notebook-rows`, which is the one place that knows what a
+			 * habit's row looks like as against a bill's. Naming seven row types
+			 * here would be that knowledge written twice.
+			 */
+			[module: string]: unknown;
 		} | null;
 		orphaned?: Entry[];
 		showingOrphans?: boolean;
@@ -128,6 +152,18 @@
 		allPeople?: { id: number; name: string }[];
 		/** What the Tasks tab's editor offers, the same as the to-do room's. */
 		categories?: { id: number; name: string }[];
+		/** What the Inventory and Workouts tabs' editors offer, from their rooms. */
+		inventoryCategories?: { id: number; name: string }[];
+		workoutCategories?: { id: number; name: string }[];
+		/** For the money a ledger holds and a bill expects. */
+		currency?: Currency;
+		/**
+		 * What the last submission said, if it failed.
+		 *
+		 * The page behind an open dialog is dimmed and inert, so an error drawn
+		 * out there cannot be read — a module's editor has to carry its own.
+		 */
+		formMessage?: string | null;
 		pickableNotebooks?: { id: number; title: string }[];
 		areas?: { id: number; name: string }[];
 		workoutMeasures?: { activity: string; unit: string }[];
@@ -313,9 +349,29 @@
 	 * A notebook with a dozen notes pushed its tasks below the fold, so the two
 	 * halves of "everything about this" could not be seen together at all.
 	 */
-	const TAB_KEYS = ['notes', 'tasks', 'goals'] as const;
-	type Tab = (typeof TAB_KEYS)[number];
+	/*
+	 * Which tabs this notebook has is the notebook's own answer now.
+	 *
+	 * Notes and tasks by default, and whatever else the subject accumulates —
+	 * its shopping, its bills, the account it is paid from. The list arrives
+	 * already narrowed by what this account has put away altogether, so a room
+	 * hidden in Preferences cannot come back as a tab in here; see
+	 * `$lib/notebook-modules`.
+	 */
+	const TAB_KEYS = $derived<readonly NotebookModule[]>(notebook?.modules ?? DEFAULT_MODULES);
+	type Tab = NotebookModule;
 	let tab = $state<Tab>('notes');
+
+	/*
+	 * A tab that was showing and is not offered any more.
+	 *
+	 * Switching Inventory off while standing on it would otherwise leave the
+	 * strip with nothing lit and the body drawing a module the notebook no
+	 * longer has. Notes is always there, which is what makes it the fallback.
+	 */
+	$effect(() => {
+		if (!TAB_KEYS.includes(tab)) tab = 'notes';
+	});
 
 	/**
 	 * The Tasks tab's own New, reached from a button the page draws.
@@ -410,11 +466,15 @@
 		composingGoal = true;
 	}
 
+	/** The module tabs' editor, opened from the same New button as the rest. */
+	let moduleComposing = $state(false);
+
 	$effect(() => {
 		if (!notebook) {
 			newAction = undefined;
 			return;
 		}
+		const spec = MODULE_SPECS[tab];
 		newAction =
 			tab === 'notes'
 				? {
@@ -423,25 +483,30 @@
 					}
 				: tab === 'tasks'
 					? { label: t('notebookDetail.newTask'), run: () => openNewTodo?.() }
-					: {
-							/*
-							 * Written here, like a task.
-							 *
-							 * This used to be a link to the goals room carrying the
-							 * notebook — which meant the same press stayed put on one
-							 * tab and threw you out of the notebook on the next. The
-							 * form is the goals room's own fields (`GoalFields`), so
-							 * it is the same form in both places.
-							 */
-							label: composingGoal ? t('ui.cancel') : t('notebookDetail.newGoal'),
-							run: () => {
-								// Opening it fresh: the same modal edits a goal, and a
-								// half-filled form from the last edit is not a new goal.
-								editingGoalId = null;
-								goalTargets = [];
-								composingGoal = !composingGoal;
+					: tab === 'goals'
+						? {
+								/*
+								 * Written here, like a task.
+								 *
+								 * This used to be a link to the goals room carrying the
+								 * notebook — which meant the same press stayed put on one
+								 * tab and threw you out of the notebook on the next. The
+								 * form is the goals room's own fields (`GoalFields`), so
+								 * it is the same form in both places.
+								 */
+								label: composingGoal ? t('ui.cancel') : t('notebookDetail.newGoal'),
+								run: () => {
+									// Opening it fresh: the same modal edits a goal, and a
+									// half-filled form from the last edit is not a new goal.
+									editingGoalId = null;
+									goalTargets = [];
+									composingGoal = !composingGoal;
+								}
 							}
-						};
+						: // Every other module's tab, which owns its own editor.
+							spec
+							? { label: t(spec.newLabel), run: () => (moduleComposing = true) }
+							: undefined;
 	});
 
 	/*
@@ -579,23 +644,46 @@
 		(contents?.entries ?? orphaned).filter((entry) => entry.archivedAt).length
 	);
 
-	const tabs = $derived<{ key: Tab; label: PlainKey; count: number; done?: number }[]>([
-		{ key: 'notes', label: 'app.notes', count: shownNotes.length },
-		{
-			key: 'tasks',
-			label: 'app.tasks',
-			count: (contents?.todos.length ?? 0) + (contents?.blocks.length ?? 0),
-			// A block on the grid is a thing that happens rather than a thing to
-			// finish, so only the todos are counted as done or not.
-			done: contents?.todos.filter((todo) => CLOSED_STATUSES.includes(todo.status)).length ?? 0
-		},
-		{
-			key: 'goals',
-			label: 'app.goals',
-			count: contents?.goals.length ?? 0,
-			done: contents?.goals.filter((goal) => goal.status !== 'open').length ?? 0
-		}
-	]);
+	/**
+	 * The strip: one entry per module this notebook holds, in the app's order.
+	 *
+	 * Built from the same list the body switches on, so a tab can never be
+	 * drawn with nothing behind it. Notes, tasks and goals count themselves
+	 * because they are drawn here; everything else is counted through
+	 * `rowsFor`, which is what the tab itself draws — so the number beside a
+	 * tab is exactly how many lines pressing it shows.
+	 */
+	const tabs = $derived<{ key: Tab; label: PlainKey; count: number; done?: number }[]>(
+		TAB_KEYS.map((key) => {
+			if (key === 'notes') return { key, label: 'app.notes' as PlainKey, count: shownNotes.length };
+			if (key === 'tasks')
+				return {
+					key,
+					label: 'app.tasks' as PlainKey,
+					count: (contents?.todos.length ?? 0) + (contents?.blocks.length ?? 0),
+					// A block on the grid is a thing that happens rather than a thing
+					// to finish, so only the todos are counted as done or not.
+					done: contents?.todos.filter((todo) => CLOSED_STATUSES.includes(todo.status)).length ?? 0
+				};
+			if (key === 'goals')
+				return {
+					key,
+					label: 'app.goals' as PlainKey,
+					count: contents?.goals.length ?? 0,
+					done: contents?.goals.filter((goal) => goal.status !== 'open').length ?? 0
+				};
+
+			const rows = rowsFor(key, contents as Record<string, unknown[]> | null, { t, currency });
+			return {
+				key,
+				label: moduleMeta(key).name,
+				count: rows.length,
+				// What "done" means differs per room — bought, paid, put away — and
+				// `rowsFor` is where that is decided.
+				done: rows.filter((row) => row.done).length
+			};
+		})
+	);
 
 	/**
 	 * Where the cursor is among the notes, for the keyboard.
@@ -990,11 +1078,7 @@
 						{/each}
 					</ul>
 				{/if}
-			{:else if contents.goals.length === 0}
-				<p class="px-4 py-3 text-sm text-gray-500">
-					{t('notebookDetail.noGoalPointsAtThis')}
-				</p>
-			{:else}
+			{:else if tab === 'goals'}
 				<!--
 					The goals room's own card, not a line of text.
 
@@ -1020,6 +1104,27 @@
 							/>
 						</div>
 					{/each}
+				</div>
+			{:else}
+				<!--
+					Everything else this subject holds, in its own room's terms.
+
+					One component for all seven — see `ModuleTab`, which is why a
+					bill and a habit line up rather than each having been drawn by
+					hand. It posts to this page, which mounts each room's own
+					handlers, so the work is real work and not a copy of it.
+				-->
+				<div class="px-4 py-3">
+					<ModuleTab
+						module={tab}
+						notebookId={notebook.id}
+						contents={contents as Record<string, unknown[]>}
+						{currency}
+						{inventoryCategories}
+						{workoutCategories}
+						{formMessage}
+						bind:composing={moduleComposing}
+					/>
 				</div>
 			{/if}
 		{/if}

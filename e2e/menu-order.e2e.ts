@@ -129,12 +129,9 @@ test.describe('the one menu list', () => {
 		await visit(page, '/settings/preferences');
 		const menu = page.locator('form[action="?/saveMenu"]');
 
-		// The row is the one whose Move buttons name Inventory; its Hide is the
-		// sibling of those.
-		const ideas = menu.locator('div').filter({
-			has: page.getByRole('button', { name: 'Move Inventory up' })
-		});
-		await ideas.getByRole('button', { name: 'Hide' }).click();
+		// Ticked means the room is there — see `ToggleRow`, the same control a
+		// notebook's "what it holds" list uses.
+		await menu.getByRole('checkbox', { name: 'Inventory' }).uncheck();
 
 		// It loses its arrows the moment it is put away — there is no order for
 		// it to have a position in.

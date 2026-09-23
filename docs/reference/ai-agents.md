@@ -747,7 +747,7 @@ _Needs `notes:write`; writes._
 
 ### `notebooks` — Notebooks
 
-The subjects being written against — a trip, a renovation, a book — with the id every other tool means by `notebookId`. Ask for these before writing an entry into one. A key tied to one notebook is answered with that one.
+The subjects being written against — a trip, a renovation, a book — with the id every other tool means by `notebookId`. Ask for these before writing an entry into one. A key tied to one notebook is answered with that one. `modules` is what each one holds: the tabs it shows, which is also what it will accept being filed under it.
 
 _Needs `notes:read`; read-only._
 
@@ -761,28 +761,30 @@ Make a notebook — a subject written against with no deadline: a book, a trip, 
 
 _Needs `notes:write`; writes._
 
-| Parameter     | Type   | Required | What it is                                                                                                                                                                                                          |
-| ------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `title`       | string | yes      | What it is about.                                                                                                                                                                                                   |
-| `description` | string | —        | A line under the title, shown on its page.                                                                                                                                                                          |
-| `defaultTags` | string | —        | Labels a new note in it starts with, comma or space separated — the ones writing about this subject always carries, so nobody types them on every note. The person can still take them off a note as they write it. |
+| Parameter     | Type   | Required | What it is                                                                                                                                                                                                                                                                                                                    |
+| ------------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`       | string | yes      | What it is about.                                                                                                                                                                                                                                                                                                             |
+| `description` | string | —        | A line under the title, shown on its page.                                                                                                                                                                                                                                                                                    |
+| `defaultTags` | string | —        | Labels a new note in it starts with, comma or space separated — the ones writing about this subject always carries, so nobody types them on every note. The person can still take them off a note as they write it.                                                                                                           |
+| `modules`     | string | —        | What it holds, comma separated — notes, tasks, goals, ideas, inventory, ledgers, bills, habits, workouts, recipes. Notes and tasks unless this says otherwise, and notes are always in it. Only name what the subject actually accumulates: nine tabs on a reading list is the app deciding what somebody’s subject is about. |
 
 ### `change_notebook` — Change a notebook
 
-Rename a notebook, rewrite the line under its title, or set the labels a new note in it starts with. The title is always sent; the other two change only when given.
+Rename a notebook, rewrite the line under its title, set the labels a new note in it starts with, or change what it holds. The title is always sent; the rest change only when given.
 
 _Needs `notes:write`; writes._
 
-| Parameter     | Type    | Required | What it is                                                                                                                |
-| ------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `id`          | integer | yes      | The notebook’s id, as `notebooks` gives it.                                                                               |
-| `title`       | string  | yes      | What it is about. Renaming with the — separator moves it under another.                                                   |
-| `description` | string  | —        | A line under the title, shown on its page.                                                                                |
-| `defaultTags` | string  | —        | Labels a new note in it starts with, comma or space separated. An empty string clears them; left out, they are untouched. |
+| Parameter     | Type    | Required | What it is                                                                                                                                                                                                                                                                               |
+| ------------- | ------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | integer | yes      | The notebook’s id, as `notebooks` gives it.                                                                                                                                                                                                                                              |
+| `title`       | string  | yes      | What it is about. Renaming with the — separator moves it under another.                                                                                                                                                                                                                  |
+| `description` | string  | —        | A line under the title, shown on its page.                                                                                                                                                                                                                                               |
+| `defaultTags` | string  | —        | Labels a new note in it starts with, comma or space separated. An empty string clears them; left out, they are untouched.                                                                                                                                                                |
+| `modules`     | string  | —        | What it holds, comma separated — notes, tasks, goals, ideas, inventory, ledgers, bills, habits, workouts, recipes. The whole list, not an addition. Notes are always in it. Switching one off keeps whatever is already filed under it; it stops being a tab, and stays in its own room. |
 
 ### `remove_notebook` — Remove an empty notebook
 
-Delete a notebook that holds nothing — no notes, no tasks, no goals. One with anything in it is refused with what it holds: somebody’s writing is deleted by them in the app, never through a tool. For a notebook made by mistake.
+Delete a notebook that holds nothing — no notes, no tasks, nothing filed under it at all. One with anything in it is refused with what it holds: somebody’s writing is deleted by them in the app, never through a tool. For a notebook made by mistake.
 
 _Needs `notes:write` and `destructive`; deletes._
 
@@ -818,10 +820,11 @@ Write an idea down without deciding where it belongs. The lowest-friction thing 
 
 _Needs `ideas:write`; writes._
 
-| Parameter | Type   | Required | What it is            |
-| --------- | ------ | -------- | --------------------- |
-| `content` | string | yes      | The idea.             |
-| `tags`    | string | —        | Comma-separated tags. |
+| Parameter    | Type    | Required | What it is                                                                                                                                                                                                     |
+| ------------ | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `content`    | string  | yes      | The idea.                                                                                                                                                                                                      |
+| `tags`       | string  | —        | Comma-separated tags.                                                                                                                                                                                          |
+| `notebookId` | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
 
 ### `remove_idea` — Delete an idea
 
@@ -901,12 +904,13 @@ Put something on the list. If the cupboard already has it, this says so rather t
 
 _Needs `inventory:write`; writes._
 
-| Parameter | Type   | Required | What it is                                                                                                                                                                   |
-| --------- | ------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`    | string | yes      | What to buy.                                                                                                                                                                 |
-| `type`    | string | —        | `replenish` is something the cupboard runs out of and wants again; `someday` is a wishlist item. Default `replenish`. One of: `replenish`, `someday`. Default `'replenish'`. |
-| `notes`   | string | —        | Anything else about it.                                                                                                                                                      |
-| `section` | string | —        | The section to file it under, by name — `inventory_categories` lists them.                                                                                                   |
+| Parameter    | Type    | Required | What it is                                                                                                                                                                                                     |
+| ------------ | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`       | string  | yes      | What to buy.                                                                                                                                                                                                   |
+| `type`       | string  | —        | `replenish` is something the cupboard runs out of and wants again; `someday` is a wishlist item. Default `replenish`. One of: `replenish`, `someday`. Default `'replenish'`.                                   |
+| `notes`      | string  | —        | Anything else about it.                                                                                                                                                                                        |
+| `section`    | string  | —        | The section to file it under, by name — `inventory_categories` lists them.                                                                                                                                     |
+| `notebookId` | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
 
 ### `tick_bought` — Tick something bought
 
@@ -974,14 +978,15 @@ Write a recipe down. Ingredients are one per line — "200 g flour", "2 eggs" �
 
 _Needs `kitchen:write`; writes._
 
-| Parameter     | Type    | Required | What it is                    |
-| ------------- | ------- | -------- | ----------------------------- |
-| `title`       | string  | yes      | What it is called.            |
-| `ingredients` | string  | —        | One per line, quantity first. |
-| `method`      | string  | —        | How to make it, as Markdown.  |
-| `servings`    | integer | —        | How many it feeds.            |
-| `minutes`     | integer | —        | How long it takes.            |
-| `source`      | string  | —        | Where it came from.           |
+| Parameter     | Type    | Required | What it is                                                                                                                                                                                                     |
+| ------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`       | string  | yes      | What it is called.                                                                                                                                                                                             |
+| `ingredients` | string  | —        | One per line, quantity first.                                                                                                                                                                                  |
+| `method`      | string  | —        | How to make it, as Markdown.                                                                                                                                                                                   |
+| `servings`    | integer | —        | How many it feeds.                                                                                                                                                                                             |
+| `minutes`     | integer | —        | How long it takes.                                                                                                                                                                                             |
+| `source`      | string  | —        | Where it came from.                                                                                                                                                                                            |
+| `notebookId`  | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
 
 ### `change_recipe` — Change a recipe
 
@@ -1173,12 +1178,13 @@ Start tracking a habit: something to keep doing (`good`), to avoid (`bad`), or j
 
 _Needs `habits:write`; writes._
 
-| Parameter       | Type   | Required | What it is                                                                      |
-| --------------- | ------ | -------- | ------------------------------------------------------------------------------- |
-| `name`          | string | yes      | The habit, in the person’s own words.                                           |
-| `type`          | string | —        | good to keep, bad to avoid, neutral to watch. One of: `bad`, `good`, `neutral`. |
-| `description`   | string | —        | Anything else about it.                                                         |
-| `scheduledDays` | string | —        | The days it is due, in the shape `all_habits` shows. Every day if left out.     |
+| Parameter       | Type    | Required | What it is                                                                                                                                                                                                     |
+| --------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`          | string  | yes      | The habit, in the person’s own words.                                                                                                                                                                          |
+| `type`          | string  | —        | good to keep, bad to avoid, neutral to watch. One of: `bad`, `good`, `neutral`.                                                                                                                                |
+| `description`   | string  | —        | Anything else about it.                                                                                                                                                                                        |
+| `scheduledDays` | string  | —        | The days it is due, in the shape `all_habits` shows. Every day if left out.                                                                                                                                    |
+| `notebookId`    | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
 
 ### `change_habit` — Change a habit
 
@@ -1692,14 +1698,15 @@ Write a workout down: a title, a category (one of the account’s own, from `wor
 
 _Needs `workouts:write`; writes._
 
-| Parameter     | Type    | Required | What it is                                                                                                                                                                     |
-| ------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `title`       | string  | yes      | What the session is called.                                                                                                                                                    |
-| `category_id` | integer | —        | Its category, from `workout_categories`.                                                                                                                                       |
-| `plan`        | string  | —        | What to do, as Markdown.                                                                                                                                                       |
-| `minutes`     | integer | —        | Roughly how long it takes.                                                                                                                                                     |
-| `notes`       | string  | —        | Anything else.                                                                                                                                                                 |
-| `measures`    | array   | —        | What this workout is measured by, in the order a session should be asked for them. Names and units in the person’s own words; no amounts. Each one carries `activity`, `unit`. |
+| Parameter     | Type    | Required | What it is                                                                                                                                                                                                     |
+| ------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`       | string  | yes      | What the session is called.                                                                                                                                                                                    |
+| `category_id` | integer | —        | Its category, from `workout_categories`.                                                                                                                                                                       |
+| `plan`        | string  | —        | What to do, as Markdown.                                                                                                                                                                                       |
+| `minutes`     | integer | —        | Roughly how long it takes.                                                                                                                                                                                     |
+| `notes`       | string  | —        | Anything else.                                                                                                                                                                                                 |
+| `measures`    | array   | —        | What this workout is measured by, in the order a session should be asked for them. Names and units in the person’s own words; no amounts. Each one carries `activity`, `unit`.                                 |
+| `notebookId`  | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
 
 ### `change_workout` — Change a workout
 
@@ -1751,11 +1758,12 @@ A new place money moves through. `kind` is bank, card, cash or other; `default_p
 
 _Needs `statements:write`; writes._
 
-| Parameter        | Type   | Required | What it is                                  |
-| ---------------- | ------ | -------- | ------------------------------------------- |
-| `name`           | string | yes      | What it is called — "Nubank", "Visa".       |
-| `kind`           | string | —        | bank, card, cash or other.                  |
-| `default_parser` | string | —        | An export key like 'nubank:conta_corrente'. |
+| Parameter        | Type    | Required | What it is                                                                                                                                                                                                     |
+| ---------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`           | string  | yes      | What it is called — "Nubank", "Visa".                                                                                                                                                                          |
+| `kind`           | string  | —        | bank, card, cash or other.                                                                                                                                                                                     |
+| `default_parser` | string  | —        | An export key like 'nubank:conta_corrente'.                                                                                                                                                                    |
+| `notebookId`     | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
 
 ### `record_movement` — Put a line in a ledger
 
@@ -1895,16 +1903,17 @@ Write down a bill you expect to pay: a name, the expected amount in minor units 
 
 _Needs `bills:write`; writes._
 
-| Parameter         | Type    | Required | What it is                                                                                   |
-| ----------------- | ------- | -------- | -------------------------------------------------------------------------------------------- |
-| `name`            | string  | yes      | What the bill is called.                                                                     |
-| `amount_expected` | integer | —        | The expected amount, in minor units (cents).                                                 |
-| `rhythm`          | string  | —        | weekly, monthly, yearly, or once.                                                            |
-| `due_day`         | integer | —        | Day of the month it falls due, 1-28 (monthly) — the last day it can be paid.                 |
-| `pay_lead_days`   | integer | —        | Pay it this many days before the due day (0 = on the day). It turns up on the week that day. |
-| `currency`        | string  | —        | A currency code like BRL. The account’s default if left out.                                 |
-| `flow`            | string  | —        | 'out' for a bill (the default), 'in' for income.                                             |
-| `notes`           | string  | —        | Anything else.                                                                               |
+| Parameter         | Type    | Required | What it is                                                                                                                                                                                                     |
+| ----------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`            | string  | yes      | What the bill is called.                                                                                                                                                                                       |
+| `amount_expected` | integer | —        | The expected amount, in minor units (cents).                                                                                                                                                                   |
+| `rhythm`          | string  | —        | weekly, monthly, yearly, or once.                                                                                                                                                                              |
+| `due_day`         | integer | —        | Day of the month it falls due, 1-28 (monthly) — the last day it can be paid.                                                                                                                                   |
+| `pay_lead_days`   | integer | —        | Pay it this many days before the due day (0 = on the day). It turns up on the week that day.                                                                                                                   |
+| `currency`        | string  | —        | A currency code like BRL. The account’s default if left out.                                                                                                                                                   |
+| `flow`            | string  | —        | 'out' for a bill (the default), 'in' for income.                                                                                                                                                               |
+| `notes`           | string  | —        | Anything else.                                                                                                                                                                                                 |
+| `notebookId`      | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
 
 ### `change_bill` — Change a bill
 

@@ -69,9 +69,11 @@ not the change that invents one.
 A scope is about the account: `tasks:write` is every to-do there is. The thing
 people usually want to hand an assistant is narrower than that — work on _this_
 project with me — so a key can also be tied to a single notebook. Such a key
-sees that notebook, the tasks and goals filed under it, the notes written in
-it, and the pictures and recordings inside those. Everything else in the
-account is not refused to it; it is not there.
+sees that notebook and everything filed under it: the notes written in it and
+the pictures and recordings inside those, its tasks and goals, and whatever
+else it has been switched on to hold — its shopping, its bills, the account
+they are paid from. Everything else in the account is not refused to it; it is
+not there.
 
 The narrowing is not a filter the tools apply. Each tool declares which of its
 arguments name a thing and what kind, and the id is resolved against the rows

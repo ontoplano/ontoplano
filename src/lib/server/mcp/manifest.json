@@ -49,6 +49,10 @@
 				"type": "string",
 				"required": true
 			},
+			"notebookId": {
+				"type": "integer",
+				"required": false
+			},
 			"notes": {
 				"type": "string",
 				"required": false
@@ -201,6 +205,10 @@
 				"type": "string",
 				"required": true
 			},
+			"notebookId": {
+				"type": "integer",
+				"required": false
+			},
 			"scheduledDays": {
 				"type": "string",
 				"required": false
@@ -224,6 +232,10 @@
 			"content": {
 				"type": "string",
 				"required": true
+			},
+			"notebookId": {
+				"type": "integer",
+				"required": false
 			},
 			"tags": {
 				"type": "string",
@@ -254,6 +266,10 @@
 			"name": {
 				"type": "string",
 				"required": true
+			},
+			"notebookId": {
+				"type": "integer",
+				"required": false
 			},
 			"notes": {
 				"type": "string",
@@ -289,6 +305,10 @@
 			"name": {
 				"type": "string",
 				"required": true
+			},
+			"notebookId": {
+				"type": "integer",
+				"required": false
 			}
 		}
 	},
@@ -317,6 +337,10 @@
 				"required": false
 			},
 			"description": {
+				"type": "string",
+				"required": false
+			},
+			"modules": {
 				"type": "string",
 				"required": false
 			},
@@ -382,6 +406,10 @@
 				"required": false
 			},
 			"minutes": {
+				"type": "integer",
+				"required": false
+			},
+			"notebookId": {
 				"type": "integer",
 				"required": false
 			},
@@ -529,6 +557,10 @@
 				"required": false
 			},
 			"minutes": {
+				"type": "integer",
+				"required": false
+			},
+			"notebookId": {
 				"type": "integer",
 				"required": false
 			},
@@ -966,6 +998,10 @@
 			"id": {
 				"type": "integer",
 				"required": true
+			},
+			"modules": {
+				"type": "string",
+				"required": false
 			},
 			"title": {
 				"type": "string",

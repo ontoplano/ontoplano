@@ -1,16 +1,10 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
+import { ledgerHandlers } from '$lib/services/ledger-actions';
 import { toActionFailure } from '$lib/http-errors';
 import { getCurrency } from '$lib/services/settings';
 import { parseMoney } from '$lib/money';
-import {
-	createLedger,
-	deleteLedger,
-	listLedgers,
-	moveLedger,
-	setLedgerArchived,
-	updateLedger
-} from '$lib/services/ledgers';
+import { listLedgers } from '$lib/services/ledgers';
 import {
 	availableParsers,
 	deleteMovement,
@@ -56,67 +50,19 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 };
 
 export const actions = {
-	createLedger: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			const made = createLedger(buildCtx(locals.user!.id), {
-				name: form.get('heading'),
-				kind: form.get('kind') || 'bank',
-				defaultParser: form.get('defaultParser')
-			});
-			return { success: true, ledgerId: made.id };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	updateLedger: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			updateLedger(buildCtx(locals.user!.id), Number(form.get('id')), {
-				name: form.get('heading'),
-				kind: form.get('kind'),
-				defaultParser: form.get('defaultParser')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	moveLedger: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			moveLedger(buildCtx(locals.user!.id), Number(form.get('id')), Number(form.get('delta')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	archiveLedger: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			setLedgerArchived(
-				buildCtx(locals.user!.id),
-				Number(form.get('id')),
-				form.get('archived') === 'true'
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	deleteLedger: async ({ request, locals }: IsolatedEvent) => {
-		const form = await request.formData();
-		try {
-			deleteLedger(buildCtx(locals.user!.id), Number(form.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
+	/*
+	 * The ledger itself, under the names this room has always used.
+	 *
+	 * The handlers are in `$lib/services/ledger-actions`, because a notebook's
+	 * Ledgers tab runs the same ones — a ledger renamed there is renamed here.
+	 * What stays below is this room's own work: importing a statement and
+	 * correcting the lines in it.
+	 */
+	createLedger: ledgerHandlers.create,
+	updateLedger: ledgerHandlers.update,
+	moveLedger: ledgerHandlers.move,
+	archiveLedger: ledgerHandlers.archive,
+	deleteLedger: ledgerHandlers.delete,
 
 	import: async ({ request, locals }: IsolatedEvent) => {
 		const form = await request.formData();

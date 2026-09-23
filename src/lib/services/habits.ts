@@ -5,6 +5,7 @@ import { habitOccurrences, habits } from '$lib/db/schema.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { created } from './time.js';
 import { ConflictError, NotFoundError } from './errors.js';
+import { notebookPatch } from './notebooks.js';
 import { num, oneOf, optionalStr, str } from './validate.js';
 
 /**
@@ -30,9 +31,17 @@ export type HabitInput = {
 	description?: unknown;
 	type?: unknown;
 	scheduledDays?: unknown;
+	notebookId?: unknown;
 };
 
-export function listHabits(ctx: Ctx) {
+/**
+ * The habits, all of them or one subject's.
+ *
+ * `notebookId` narrows rather than changing the shape: the notebook's Habits
+ * tab is this room looking at one subject, and it draws the rows with the same
+ * component, so it needs exactly what the room needs.
+ */
+export function listHabits(ctx: Ctx, scope: { notebookId?: number } = {}) {
 	const rows = db
 		.select({
 			id: habits.id,
@@ -40,10 +49,15 @@ export function listHabits(ctx: Ctx) {
 			description: habits.description,
 			type: habits.type,
 			scheduledDays: habits.scheduledDays,
+			notebookId: habits.notebookId,
 			createdAt: habits.createdAt
 		})
 		.from(habits)
-		.where(eq(habits.userId, ctx.userId))
+		.where(
+			scope.notebookId === undefined
+				? eq(habits.userId, ctx.userId)
+				: and(eq(habits.userId, ctx.userId), eq(habits.notebookId, scope.notebookId))
+		)
 		.orderBy(habits.name)
 		.all();
 
@@ -85,7 +99,7 @@ export function today(ctx: Ctx): string {
 export function createHabit(ctx: Ctx, raw: HabitInput): number {
 	const result = db
 		.insert(habits)
-		.values({ ...created(ctx), userId: ctx.userId, ...parseHabit(raw) })
+		.values({ ...created(ctx), userId: ctx.userId, ...parseHabit(ctx, raw) })
 		.run();
 	return Number(result.lastInsertRowid);
 }
@@ -93,7 +107,7 @@ export function createHabit(ctx: Ctx, raw: HabitInput): number {
 export function updateHabit(ctx: Ctx, id: number, raw: HabitInput): void {
 	const res = db
 		.update(habits)
-		.set(parseHabit(raw))
+		.set(parseHabit(ctx, raw))
 		.where(and(eq(habits.id, id), eq(habits.userId, ctx.userId)))
 		.run();
 
@@ -202,7 +216,7 @@ export function parseScheduledDays(raw: string | null): number[] {
 		.filter((n) => !isNaN(n) && n >= 0 && n <= 6);
 }
 
-function parseHabit(raw: HabitInput) {
+function parseHabit(ctx: Ctx, raw: HabitInput) {
 	return {
 		name: str(raw.name, 'name', { max: MAX_NAME_LENGTH }),
 		description: optionalStr(raw.description, 'description', { max: MAX_DESCRIPTION_LENGTH }),
@@ -212,7 +226,11 @@ function parseHabit(raw: HabitInput) {
 				: oneOf(raw.type, 'type', HABIT_TYPES),
 		scheduledDays: parseScheduledDays(
 			raw.scheduledDays === undefined || raw.scheduledDays === null ? '' : String(raw.scheduledDays)
-		).join(',')
+		).join(','),
+		// Only when the caller mentioned it. An update that says nothing about
+		// the notebook must leave it alone, or every assistant renaming a habit
+		// would quietly take it out of the subject it belongs to.
+		...notebookPatch(ctx, raw)
 	};
 }
 

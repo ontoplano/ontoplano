@@ -1,4 +1,7 @@
 import { listActivities, listCategories } from '$lib/services/activities';
+import { listCategories as listInventoryCategories } from '$lib/services/inventory';
+import { listWorkoutCategories } from '$lib/services/workouts';
+import { getCurrency } from '$lib/services/settings';
 import { linkableSlots, listAreas } from '$lib/services/goals';
 import { pickableNotebooks } from '$lib/services/notebooks';
 import { mediaLimits } from '$lib/services/media';
@@ -21,6 +24,12 @@ export function notebookPanelData(ctx: Ctx) {
 		// The Tasks tab is the to-do room looking at one subject, and its editor
 		// offers the same two pickers.
 		categories: listCategories(ctx),
+		// What the other module tabs' editors offer, the same lists their own
+		// rooms hand them — see `ModuleTab`.
+		inventoryCategories: listInventoryCategories(ctx),
+		workoutCategories: listWorkoutCategories(ctx),
+		// For the money a ledger holds and a bill expects.
+		currency: getCurrency(ctx.userId),
 		pickableNotebooks: pickableNotebooks(ctx),
 		// The browser refuses an over-large picture before it is sent, because a
 		// body over the adapter's limit is rejected with something no form can

@@ -31,6 +31,7 @@ shows up here on the next build.
 | [`audio`](#audio)                                | Recordings: what is accepted, where they go, and who may hear one.                                                                                                                                                                                                   |
 | [`audit`](#audit)                                | What happened to an account.                                                                                                                                                                                                                                         |
 | [`backlinks`](#backlinks)                        | Which goal a thing belongs to.                                                                                                                                                                                                                                       |
+| [`bill-actions`](#bill-actions)                  | Everything that can be done to a bill, wherever the row is on screen.                                                                                                                                                                                                |
 | [`billing`](#billing)                            | Billing, as the rest of the app sees it.                                                                                                                                                                                                                             |
 | [`bills`](#bills)                                | Bills: money expected to go out, on a rhythm.                                                                                                                                                                                                                        |
 | [`birthdays`](#birthdays)                        | Being told it is somebody's birthday, on the morning of it.                                                                                                                                                                                                          |
@@ -47,14 +48,18 @@ shows up here on the next build.
 | [`gallery`](#gallery)                            | Albums: lists of references over the one media table.                                                                                                                                                                                                                |
 | [`goal-actions`](#goal-actions)                  | Everything done to a goal, from wherever a goal is shown.                                                                                                                                                                                                            |
 | [`goals`](#goals)                                | Goals, and the progress that makes them more than a wish list.                                                                                                                                                                                                       |
+| [`habit-actions`](#habit-actions)                | Everything that can be done to a habit, wherever the row is on screen.                                                                                                                                                                                               |
 | [`habits`](#habits)                              | Habits are things to do or to avoid, logged one day at a time.                                                                                                                                                                                                       |
 | [`health`](#health)                              | Can this process actually reach the database?                                                                                                                                                                                                                        |
 | [`host`](#host)                                  | What the surrounding instance does for the services.                                                                                                                                                                                                                 |
+| [`idea-actions`](#idea-actions)                  | Everything that can be done to an idea, wherever the row is on screen.                                                                                                                                                                                               |
 | [`ideas`](#ideas)                                | Quick capture: a thought, optionally tagged, optionally marked as applied.                                                                                                                                                                                           |
 | [`import-vault`](#import-vault)                  | A vault of markdown becomes notebook entries.                                                                                                                                                                                                                        |
 | [`imports`](#imports)                            | Bringing a list in from somewhere else.                                                                                                                                                                                                                              |
 | [`instances`](#instances)                        | The one answer to "what is on, between these dates".                                                                                                                                                                                                                 |
 | [`inventory`](#inventory)                        | Two lists that share a table: `replenish` is stock you keep, `someday` is a wishlist. The difference is what "bought" means — a replenish item comes back when it runs out, a someday item is done.                                                                  |
+| [`item-actions`](#item-actions)                  | Everything that can be done to an inventory item, wherever the row is.                                                                                                                                                                                               |
+| [`ledger-actions`](#ledger-actions)              | Everything that can be done to a ledger, wherever the row is on screen.                                                                                                                                                                                              |
 | [`ledgers`](#ledgers)                            | Ledgers: the places money moves through.                                                                                                                                                                                                                             |
 | [`legal`](#legal)                                | The facts the policies are written around.                                                                                                                                                                                                                           |
 | [`locations`](#locations)                        | Locations: the tree an inventory hangs on.                                                                                                                                                                                                                           |
@@ -93,6 +98,7 @@ shows up here on the next build.
 | [`ringtones`](#ringtones)                        | The sounds a reminder can make.                                                                                                                                                                                                                                      |
 | [`schedule`](#schedule)                          | Read-only view of what's coming up.                                                                                                                                                                                                                                  |
 | [`schemes`](#schemes)                            | Saved weeks.                                                                                                                                                                                                                                                         |
+| [`scoped-actions`](#scoped-actions)              | A room's handlers, mounted under a prefix.                                                                                                                                                                                                                           |
 | [`search`](#search)                              | One box over everything the account owns.                                                                                                                                                                                                                            |
 | [`sent-notifications`](#sent-notifications)      | What the app has told somebody, kept so they can read it again.                                                                                                                                                                                                      |
 | [`sessions`](#sessions)                          | The sessions an account currently has open.                                                                                                                                                                                                                          |
@@ -113,6 +119,7 @@ shows up here on the next build.
 | [`webhooks`](#webhooks)                          | Webhooks: plugins that listen instead of push.                                                                                                                                                                                                                       |
 | [`week-generator`](#week-generator)              | Format a Date as 'YYYY-MM-DDTHH:MM:SS' in local time (no UTC conversion).                                                                                                                                                                                            |
 | [`wins`](#wins)                                  | Three things that went well today.                                                                                                                                                                                                                                   |
+| [`workout-actions`](#workout-actions)            | Everything that can be done to a workout, wherever the row is on screen.                                                                                                                                                                                             |
 | [`workouts`](#workouts)                          | Workouts: workouts you plan like meals.                                                                                                                                                                                                                              |
 
 ## access
@@ -909,6 +916,15 @@ for something almost always empty.
 - `GoalBacklink`
 - `GoalBacklinks`
 
+## bill-actions
+
+Everything that can be done to a bill, wherever the row is on screen.
+
+The Finance room shows every bill; a notebook shows the ones filed under its
+subject — the architect's fee, the skip hire — and paying one there has to
+mean the same thing. The notebook mounts these under a prefix; see
+`$lib/module-actions` for the names each screen posts to.
+
 ## billing
 
 Billing, as the rest of the app sees it.
@@ -1090,7 +1106,11 @@ The period key a rhythm settles into for a given instant.
 
 #### `listBills(ctx, opts)`
 
-Every bill, active first, newest within each.
+Every bill, active first, newest within each — or one subject's.
+
+`notebookId` narrows rather than changing the shape: a notebook's Bills tab
+is this room looking at one subject and draws the rows with the same
+component, so it needs exactly what the room needs.
 
 #### `getBill(ctx, id)`
 
@@ -1912,6 +1932,16 @@ And the way back off it, one link at a time.
 - `GoalTarget` — One thing a goal is measured by. A goal can want several at once.
 - `Goal`
 
+## habit-actions
+
+Everything that can be done to a habit, wherever the row is on screen.
+
+The Health room shows every habit; a notebook shows the ones filed under it,
+and ticking one there has to mean the same thing. So the handlers live here
+and both routes mount them — see `$lib/services/scoped-actions` for how the
+notebook mounts them under a prefix, and `$lib/scoped-actions` for the names
+the markup posts to.
+
 ## habits
 
 Habits are things to do or to avoid, logged one day at a time.
@@ -1922,7 +1952,13 @@ It is still one statement — never a check followed by an unscoped write.
 
 ### Functions
 
-#### `listHabits(ctx)`
+#### `listHabits(ctx, scope)`
+
+The habits, all of them or one subject's.
+
+`notebookId` narrows rather than changing the shape: the notebook's Habits
+tab is this room looking at one subject, and it draws the rows with the same
+component, so it needs exactly what the room needs.
 
 #### `listOccurrences(ctx)`
 
@@ -2054,13 +2090,27 @@ and the safe answer everywhere: the route falls back to the session.
 - `Host`
 - `FileCaller` — A caller holding a key rather than a session, and what it is allowed.
 
+## idea-actions
+
+Everything that can be done to an idea, wherever the row is on screen.
+
+The Ideas room shows every idea; a notebook shows the ones filed under it,
+and marking one applied there has to mean the same thing. The notebook
+mounts these under a prefix — see `$lib/services/scoped-actions`.
+
 ## ideas
 
 Quick capture: a thought, optionally tagged, optionally marked as applied.
 
 ### Functions
 
-#### `listIdeas(ctx)`
+#### `listIdeas(ctx, scope)`
+
+The ideas, all of them or one subject's.
+
+`notebookId` narrows rather than changing the shape: a notebook's Ideas tab
+is this room looking at one subject and draws the rows with the same
+component, so it needs exactly what the room needs.
 
 #### `listTags(ctx)`
 
@@ -2448,7 +2498,13 @@ when it runs out, a someday item is done.
 
 ### Functions
 
-#### `listItems(ctx)`
+#### `listItems(ctx, scope)`
+
+The items, all of them or one subject's.
+
+`notebookId` narrows rather than changing the shape: a notebook's Inventory
+tab is this room looking at one subject and draws the rows with the same
+component, so it needs exactly what the room needs.
 
 #### `listCategories(ctx)`
 
@@ -2606,6 +2662,31 @@ What is still to buy, for the dashboard card.
 - `PricePoint`
 - `ShoppingRun` — The list you take to the shop: what has run low, how much of it, and what that is likely to cost.
 
+## item-actions
+
+Everything that can be done to an inventory item, wherever the row is.
+
+The Inventory room shows everything; a notebook shows what is filed under
+it, and ticking something bought there has to mean the same thing. The
+notebook mounts these under a prefix — see `$lib/services/scoped-actions`.
+
+What is not here is the room's own furniture: sections, locations, the
+attribute vocabulary. Those are the room managing itself, and a notebook has
+no business offering them.
+
+## ledger-actions
+
+Everything that can be done to a ledger, wherever the row is on screen.
+
+The Finance room shows every ledger beside the lines in it; a notebook shows
+the ones filed under its subject — the account the renovation is being paid
+from — and naming, archiving or dropping one there has to mean the same
+thing. The lines themselves stay in the room: a statement is a page, not a
+panel, and a notebook is not where somebody imports one.
+
+Mounted under the room's older names there and under a prefix inside a
+notebook — see `$lib/module-actions`.
+
 ## ledgers
 
 Ledgers: the places money moves through.
@@ -2619,6 +2700,12 @@ rather than two choices.
 ### Functions
 
 #### `listLedgers(ctx, opts)`
+
+The ledgers, all of them or one subject's.
+
+`notebookId` narrows rather than changing the shape: a notebook's Ledgers
+tab is this room looking at one subject and draws the rows with the same
+component, so it needs exactly what the room needs.
 
 #### `getLedger(ctx, id)`
 
@@ -3364,6 +3451,19 @@ notebook of their own, and only when there are any.
 
 #### `getNotebook(ctx, id)`
 
+#### `moduleChoices(ctx, id)`
+
+What the Edit dialog offers: every module, with this notebook's answer.
+
+The whole list rather than only what is on, because the dialog's job is
+switching them, and each row carries how much is already filed under it —
+the number is what makes turning one off legible as "this tab goes" rather
+than "this is deleted".
+
+A module whose room this account has put away is left out altogether. It
+would be a switch that changes nothing on screen, and the honest place to
+answer for it is Preferences, where the room itself was put away.
+
 #### `contentsOf(ctx, id)`
 
 Everything pointed at this notebook, in the three shapes it can arrive in.
@@ -3406,6 +3506,16 @@ Every service that lets something belong to a notebook goes through here, so
 "somebody else's notebook" and "no notebook" cannot be confused: an id you do
 not own is a 404, not a silent null (I3).
 
+#### `notebookPatch(ctx, raw)`
+
+`{ notebookId }` when the caller named one, and nothing at all when it did not.
+
+Spread into the values a room writes. The distinction matters because these
+rooms are reached two ways: a form posts every field it has, including an
+empty notebook meaning "none", while an assistant changing a habit's name
+over MCP says nothing about the notebook and must not be read as taking the
+habit out of its subject.
+
 #### `pickableNotebooks(ctx)`
 
 The open notebooks, for the selector on every form that can point at one.
@@ -3418,6 +3528,7 @@ Share a notebook with the family, or stop. The owner's switch alone.
 
 - `Notebook`
 - `NotebookNode`
+- `Tally` — One number per module — see `$lib/notebook-modules`.
 
 ## notifications
 
@@ -3929,6 +4040,12 @@ Items in a category the account has said holds food.
 #### `foodCategories(ctx)`
 
 #### `listRecipes(ctx, options)`
+
+The recipes, all of them or one subject's.
+
+`notebookId` narrows rather than changing the shape: a notebook's Recipes
+tab is this room looking at one subject and draws the rows with the same
+component, so it needs exactly what the room needs.
 
 #### `getRecipe(ctx, id)`
 
@@ -4744,6 +4861,23 @@ Replace the weekly plan with a saved one.
 #### `deleteScheme(ctx, schemeId)`
 
 #### `renameScheme(ctx, schemeId, rawName)`
+
+## scoped-actions
+
+A room's handlers, mounted under a prefix.
+
+The notebook page answers for every module it can hold, and each module's
+handlers are the room's own — the Habits tab inside a notebook ticks a habit
+with the same code the Health room does, or the two screens mean different
+things by the same button. The plain names belong to the notebook itself, so
+they are mounted prefixed: `create` becomes `habitCreate`.
+
+The prefix is applied by `scopedName`, the same function the markup's action
+names come from, so a form and its handler cannot disagree about the name.
+
+### Functions
+
+#### `under(prefix, handlers)`
 
 ## search
 
@@ -6131,6 +6265,18 @@ Keyed by (date, position) so re-saving edits the same three rows instead of
 accumulating duplicates, and an emptied box removes its win rather than
 storing a blank.
 
+## workout-actions
+
+Everything that can be done to a workout, wherever the row is on screen.
+
+The Health room shows every workout; a notebook shows the ones filed under
+its subject — a training block, a race somebody is working towards — and
+writing a session down there has to mean the same thing. The notebook mounts
+these under a prefix; see `$lib/module-actions`.
+
+The categories are not here: those are the room's own vocabulary, managed
+where they are used everywhere rather than from inside one subject.
+
 ## workouts
 
 Workouts: workouts you plan like meals.
@@ -6150,6 +6296,12 @@ mistake and clears itself off any block (the FK is set-null).
 ### Functions
 
 #### `listWorkouts(ctx, opts)`
+
+The workouts, all of them or one subject's.
+
+`notebookId` narrows rather than changing the shape: a notebook's Workouts
+tab is this room looking at one subject and draws the rows with the same
+component, so it needs exactly what the room needs.
 
 #### `listWorkoutCategories(ctx)`
 

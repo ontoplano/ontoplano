@@ -1348,10 +1348,13 @@ export type MessageKey =
 	| 'notebookDetail.workHealth'
 	| 'notebookDetail.writeANoteAbout'
 	| 'notebookDetail.yesDelete'
+	| 'notebooks.aNotebookStartsWith'
 	| 'notebooks.aSubjectYouWriteAgainst'
+	| 'notebooks.alreadyFiled'
 	| 'notebooks.anEmDashMakesA'
 	| 'notebooks.andFromTheFrontmatter'
 	| 'notebooks.atTheBottomOf'
+	| 'notebooks.billsCount'
 	| 'notebooks.closeIt'
 	| 'notebooks.closed'
 	| 'notebooks.createNotebook'
@@ -1379,8 +1382,41 @@ export type MessageKey =
 	| 'notebooks.each'
 	| 'notebooks.edit'
 	| 'notebooks.family'
+	| 'notebooks.fields.aboutWhat'
+	| 'notebooks.fields.bank'
+	| 'notebooks.fields.card'
+	| 'notebooks.fields.cash'
+	| 'notebooks.fields.dueOn'
+	| 'notebooks.fields.howManyYouKeep'
+	| 'notebooks.fields.howMuch'
+	| 'notebooks.fields.howOften'
+	| 'notebooks.fields.kind'
+	| 'notebooks.fields.minutes'
+	| 'notebooks.fields.monthly'
+	| 'notebooks.fields.name'
+	| 'notebooks.fields.noKind'
+	| 'notebooks.fields.noSection'
+	| 'notebooks.fields.notes'
+	| 'notebooks.fields.once'
+	| 'notebooks.fields.other'
+	| 'notebooks.fields.payItDaysEarly'
+	| 'notebooks.fields.replenish'
+	| 'notebooks.fields.section'
+	| 'notebooks.fields.servings'
+	| 'notebooks.fields.someday'
+	| 'notebooks.fields.somethingToCount'
+	| 'notebooks.fields.somethingToKeepUp'
+	| 'notebooks.fields.somethingToStop'
+	| 'notebooks.fields.tags'
+	| 'notebooks.fields.theIdea'
+	| 'notebooks.fields.thePlan'
+	| 'notebooks.fields.weekly'
+	| 'notebooks.fields.whatItIs'
+	| 'notebooks.fields.whereItCameFrom'
+	| 'notebooks.fields.yearly'
 	| 'notebooks.fileBecomesANoteIn'
 	| 'notebooks.goalsCount'
+	| 'notebooks.habitsCount'
 	| 'notebooks.id.aPictureFor'
 	| 'notebooks.id.atTheBottomOf'
 	| 'notebooks.id.changeThePicture'
@@ -1425,15 +1461,37 @@ export type MessageKey =
 	| 'notebooks.ideas.removeFavorite'
 	| 'notebooks.ideas.saveIdea'
 	| 'notebooks.ideas.whatDidYouApply'
+	| 'notebooks.ideasCount'
 	| 'notebooks.importedFromAnObsidianVault'
+	| 'notebooks.inventoryCount'
 	| 'notebooks.itsNotesTasksAndGoals'
 	| 'notebooks.kitchenRenovation'
+	| 'notebooks.ledgersCount'
+	| 'notebooks.marks.applied'
+	| 'notebooks.marks.bought'
+	| 'notebooks.marks.cooked'
+	| 'notebooks.marks.doneToday'
+	| 'notebooks.marks.notAppliedAfterAll'
+	| 'notebooks.marks.notPaidAfterAll'
+	| 'notebooks.marks.notToday'
+	| 'notebooks.marks.paid'
+	| 'notebooks.marks.ranOut'
+	| 'notebooks.marks.today'
 	| 'notebooks.md'
+	| 'notebooks.newBill'
+	| 'notebooks.newHabit'
+	| 'notebooks.newIdea'
+	| 'notebooks.newItem'
+	| 'notebooks.newLedger'
 	| 'notebooks.newNotebook'
+	| 'notebooks.newRecipe'
+	| 'notebooks.newWorkout'
 	| 'notebooks.noNotebooksYet'
 	| 'notebooks.notesCount'
 	| 'notebooks.notesWithoutANotebook'
 	| 'notebooks.nothingInItYet'
+	| 'notebooks.nothingUnderThisSubjectYet'
+	| 'notebooks.openInItsRoom'
 	| 'notebooks.orImportAFolderOf'
 	| 'notebooks.people.19900314Or0314WithoutThe'
 	| 'notebooks.people.aPictureOf'
@@ -1463,7 +1521,15 @@ export type MessageKey =
 	| 'notebooks.people.uploading'
 	| 'notebooks.people.yesDelete'
 	| 'notebooks.pickANotebookToSee'
+	| 'notebooks.recipesCount'
 	| 'notebooks.reopenIt'
+	| 'notebooks.rows.dueOnThe'
+	| 'notebooks.rows.favourite'
+	| 'notebooks.rows.linesCount'
+	| 'notebooks.rows.minutesLong'
+	| 'notebooks.rows.ofWanted'
+	| 'notebooks.rows.servesCount'
+	| 'notebooks.rows.streakDays'
 	| 'notebooks.startOneForSomethingYou'
 	| 'notebooks.tags'
 	| 'notebooks.tags.aTagIsMadeBy'
@@ -1480,13 +1546,16 @@ export type MessageKey =
 	| 'notebooks.tasksCount'
 	| 'notebooks.theirNotebookWas'
 	| 'notebooks.theirNotebookWasDeletedThe'
+	| 'notebooks.thisIsGoneFromEverywhere'
 	| 'notebooks.weekly.everyWeekYouWriteAbout'
 	| 'notebooks.weekly.nothingWrittenYet'
 	| 'notebooks.weekly.openThatWeek'
 	| 'notebooks.weekly.weeklyNotesOntoplano'
 	| 'notebooks.whatIsInside'
+	| 'notebooks.whatItHolds'
 	| 'notebooks.whatItIsFor'
 	| 'notebooks.widenOrNarrowTheList'
+	| 'notebooks.workoutsCount'
 	| 'notifications.markAllRead'
 	| 'notifications.none'
 	| 'notifications.open'
@@ -2332,7 +2401,6 @@ export type MessageKey =
 	| 'settings.menu.moveDown'
 	| 'settings.menu.moveUp'
 	| 'settings.preferences.aRoomYouPut'
-	| 'settings.preferences.alwaysOn'
 	| 'settings.preferences.androidSaidNoAndWill'
 	| 'settings.preferences.another'
 	| 'settings.preferences.appearance'
@@ -2417,7 +2485,6 @@ export type MessageKey =
 	| 'settings.preferences.when'
 	| 'settings.preferences.whenAPageBreaksSend'
 	| 'settings.preferences.whichCardsAppearAndIn'
-	| 'settings.preferences.withTheRoom'
 	| 'settings.timezone.unchanged'
 	| 'shortcut.archiveUnarchive'
 	| 'shortcut.askToDelete'
@@ -3087,7 +3154,9 @@ export type MessageKey =
 	| 'ui.actions'
 	| 'ui.add'
 	| 'ui.all'
+	| 'ui.alwaysOn'
 	| 'ui.amount'
+	| 'ui.archive'
 	| 'ui.back'
 	| 'ui.cancel'
 	| 'ui.category'
@@ -3132,6 +3201,7 @@ export type MessageKey =
 	| 'ui.today'
 	| 'ui.undo'
 	| 'ui.unit'
+	| 'ui.withTheRoom'
 	| 'ui.write'
 	| 'webhookEvents.diaryCreated'
 	| 'webhookEvents.ideaCreated'
@@ -3416,24 +3486,38 @@ export interface MessageValuesFor {
 	'notebookDetail.showArchived': { count: number };
 	'notebookDetail.showingCount': { count: number };
 	'notebookDetail.writeANoteAbout': { title: string | number };
+	'notebooks.alreadyFiled': { count: number };
+	'notebooks.billsCount': { count: number };
 	'notebooks.diary.edited': { updatedAt: string | number };
 	'notebooks.diary.for': { forDate: string | number };
 	'notebooks.diary.noEntriesWith': { filterTag: string | number };
 	'notebooks.diary.win': { i: string | number };
 	'notebooks.edit': { title: string | number };
 	'notebooks.goalsCount': { count: number };
+	'notebooks.habitsCount': { count: number };
 	'notebooks.id.aPictureFor': { title: string | number };
 	'notebooks.id.sharedBy': { sharedBy: string | number };
 	'notebooks.id.titleWillBeGone': { title: string | number };
 	'notebooks.ideas.edited': { updatedAt: string | number };
+	'notebooks.ideasCount': { count: number };
+	'notebooks.inventoryCount': { count: number };
+	'notebooks.ledgersCount': { count: number };
 	'notebooks.notesCount': { count: number };
 	'notebooks.people.aPictureOf': { add: string | number; name: string | number };
 	'notebooks.people.addAPictureOf': { name: string | number };
 	'notebooks.people.changeTheirPicture': { name: string | number };
 	'notebooks.people.nothingWrittenAboutYet': { name: string | number };
+	'notebooks.recipesCount': { count: number };
+	'notebooks.rows.dueOnThe': { day: string | number };
+	'notebooks.rows.linesCount': { count: number };
+	'notebooks.rows.minutesLong': { count: number };
+	'notebooks.rows.ofWanted': { have: string | number; want: string | number };
+	'notebooks.rows.servesCount': { count: number };
+	'notebooks.rows.streakDays': { count: number };
 	'notebooks.tasksCount': { count: number };
 	'notebooks.theirNotebookWas': { length: string | number; notes: string | number };
 	'notebooks.whatIsInside': { show: string | number; title: string | number };
+	'notebooks.workoutsCount': { count: number };
 	'notifications.open': { count: number };
 	'notifications.unread': { count: number };
 	'notify.labelsAs': { labels: string | number };

@@ -355,7 +355,7 @@ describe('notebooks as folders', () => {
 
 		const root = notebooks.notebookTree(ctx).find((n) => n.title === 'Reading list')!;
 		expect(root.entries).toBe(1);
-		expect(root.totals?.entries).toBe(3);
+		expect(root.totals?.notes).toBe(3);
 	});
 });
 

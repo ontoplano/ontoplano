@@ -3,6 +3,13 @@ import { listEveryEntry } from '$lib/services/diary.js';
 import { listGoals } from '$lib/services/goals.js';
 import { listNotebooks } from '$lib/services/notebooks.js';
 import { listTodos } from '$lib/services/todos.js';
+import { listIdeas } from '$lib/services/ideas.js';
+import { listItems } from '$lib/services/inventory.js';
+import { listHabits } from '$lib/services/habits.js';
+import { listLedgers } from '$lib/services/ledgers.js';
+import { FLOWS, listBills } from '$lib/services/bills.js';
+import { listWorkouts } from '$lib/services/workouts.js';
+import { listRecipes } from '$lib/services/recipes.js';
 import { ForbiddenError } from '$lib/services/errors.js';
 import type { Ref, RefKind } from './refs.js';
 import { TOOLS } from './tools.js';
@@ -28,7 +35,7 @@ import { TOOLS } from './tools.js';
  *   1. A tool that names nothing is refused. A confined key cannot call
  *      `diary` or `goals`, because those are about the account, not a thing.
  *   2. A tool that names a kind this confinement does not contain is refused
- *      — an inventory item is not inside a notebook.
+ *      — a person is not inside a notebook.
  *   3. Where a tool names the confining kind itself, the argument is *set*
  *      rather than checked. Asking for another notebook does not fail; it is
  *      simply not what the call ends up being about. Nothing here is ever read
@@ -54,15 +61,37 @@ type Confinable = {
 export const CONFINEMENTS: Record<string, Confinable> = Object.freeze({
 	notebook: {
 		label:
-			'one notebook — its tasks, its goals, its notes, and the pictures and recordings in them, and nothing else',
+			'one notebook — everything filed under it, the pictures and recordings in its notes included, and nothing else',
 		noun: 'notebook',
 		kind: 'notebook',
 		options: (ctx) => listNotebooks(ctx).map((one) => ({ id: one.id, label: one.title })),
+		/*
+		 * What is inside a notebook, which is more than writing now.
+		 *
+		 * It was notes, tasks and goals, and the comment above this table said
+		 * there was no such thing as "the inventory items in a notebook". There
+		 * is: a subject accumulates the things it needs bought, the account it
+		 * is paid from, the invoices. A key tied to the renovation should be
+		 * able to add its tiles and tick them off, and no more.
+		 *
+		 * Every one of these is the same predicate — the rows whose
+		 * `notebookId` is this one — which is also what makes rule 3 safe for
+		 * them: a tool that names a notebook has that argument set to this one,
+		 * so anything created through such a key lands inside it.
+		 */
 		contains: {
 			notebook: (ctx, id) => listNotebooks(ctx).filter((one) => one.id === id),
 			todo: (ctx, id) => listTodos(ctx).filter((one) => one.notebookId === id),
 			goal: (ctx, id) => listGoals(ctx, { includeClosed: true }).filter((g) => g.notebookId === id),
-			note: (ctx, id) => listEveryEntry(ctx).filter((one) => one.notebookId === id)
+			note: (ctx, id) => listEveryEntry(ctx).filter((one) => one.notebookId === id),
+			idea: (ctx, id) => listIdeas(ctx, { notebookId: id }),
+			item: (ctx, id) => listItems(ctx, { notebookId: id }),
+			habit: (ctx, id) => listHabits(ctx, { notebookId: id }),
+			ledger: (ctx, id) => listLedgers(ctx, { notebookId: id, includeArchived: true }),
+			bill: (ctx, id) =>
+				FLOWS.flatMap((flow) => listBills(ctx, { notebookId: id, includeArchived: true, flow })),
+			workout: (ctx, id) => listWorkouts(ctx, { notebookId: id, includeArchived: true }),
+			recipe: (ctx, id) => listRecipes(ctx, { notebookId: id, includeArchived: true })
 		}
 	}
 });
@@ -81,9 +110,9 @@ export function isConfinementKind(kind: unknown): kind is ConfinementKind {
  * What this confinement lets a caller see of each kind.
  *
  * Null for a kind it does not contain at all, which is the answer that refuses
- * a tool rather than narrowing it — there is no such thing as "the inventory
- * items in a notebook", and pretending there are none would make the tool look
- * as if it had simply found nothing.
+ * a tool rather than narrowing it — there is no such thing as "the people in a
+ * notebook", and pretending there are none would make the tool look as if it
+ * had simply found nothing.
  */
 export function reachOf(confinement: Confinement) {
 	const table = CONFINEMENTS[confinement.kind];

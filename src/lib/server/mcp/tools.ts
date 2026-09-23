@@ -94,10 +94,11 @@ import {
 import {
 	contentsOf,
 	createNotebook,
-	updateNotebook,
 	deleteNotebook,
+	getNotebook,
 	listNotebooks,
-	setNotebookShared
+	setNotebookShared,
+	updateNotebook
 } from '$lib/services/notebooks.js';
 import {
 	cooked,
@@ -2223,7 +2224,7 @@ export const TOOLS: Tool[] = [
 		name: 'notebooks',
 		title: 'Notebooks',
 		description:
-			'The subjects being written against \u2014 a trip, a renovation, a book \u2014 with the id every other tool means by `notebookId`. Ask for these before writing an entry into one. A key tied to one notebook is answered with that one.',
+			'The subjects being written against \u2014 a trip, a renovation, a book \u2014 with the id every other tool means by `notebookId`. Ask for these before writing an entry into one. A key tied to one notebook is answered with that one. `modules` is what each one holds: the tabs it shows, which is also what it will accept being filed under it.',
 		scope: 'notes:read',
 		writes: false,
 		refs: [{ arg: 'id', kind: 'notebook' }],
@@ -2252,6 +2253,9 @@ export const TOOLS: Tool[] = [
 				description: text('A line under the title, shown on its page.'),
 				defaultTags: text(
 					'Labels a new note in it starts with, comma or space separated \u2014 the ones writing about this subject always carries, so nobody types them on every note. The person can still take them off a note as they write it.'
+				),
+				modules: text(
+					'What it holds, comma separated \u2014 notes, tasks, goals, ideas, inventory, ledgers, bills, habits, workouts, recipes. Notes and tasks unless this says otherwise, and notes are always in it. Only name what the subject actually accumulates: nine tabs on a reading list is the app deciding what somebody\u2019s subject is about.'
 				)
 			},
 			['title']
@@ -2260,7 +2264,8 @@ export const TOOLS: Tool[] = [
 			id: createNotebook(ctx, {
 				title: args.title,
 				description: args.description,
-				defaultTags: args.defaultTags
+				defaultTags: args.defaultTags,
+				modules: args.modules
 			})
 		})
 	},
@@ -2268,7 +2273,7 @@ export const TOOLS: Tool[] = [
 		name: 'change_notebook',
 		title: 'Change a notebook',
 		description:
-			'Rename a notebook, rewrite the line under its title, or set the labels a new note in it starts with. The title is always sent; the other two change only when given.',
+			'Rename a notebook, rewrite the line under its title, set the labels a new note in it starts with, or change what it holds. The title is always sent; the rest change only when given.',
 		scope: 'notes:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'notebook', subject: true }],
@@ -2279,6 +2284,9 @@ export const TOOLS: Tool[] = [
 				description: text('A line under the title, shown on its page.'),
 				defaultTags: text(
 					'Labels a new note in it starts with, comma or space separated. An empty string clears them; left out, they are untouched.'
+				),
+				modules: text(
+					'What it holds, comma separated \u2014 notes, tasks, goals, ideas, inventory, ledgers, bills, habits, workouts, recipes. The whole list, not an addition. Notes are always in it. Switching one off keeps whatever is already filed under it; it stops being a tab, and stays in its own room.'
 				)
 			},
 			['id', 'title']
@@ -2287,7 +2295,8 @@ export const TOOLS: Tool[] = [
 			updateNotebook(ctx, Number(args.id), {
 				title: args.title,
 				description: args.description,
-				defaultTags: args.defaultTags
+				defaultTags: args.defaultTags,
+				modules: args.modules
 			});
 			return { id: Number(args.id) };
 		}
@@ -2305,7 +2314,7 @@ export const TOOLS: Tool[] = [
 		name: 'remove_notebook',
 		title: 'Remove an empty notebook',
 		description:
-			'Delete a notebook that holds nothing — no notes, no tasks, no goals. One with anything in it is refused with what it holds: somebody\u2019s writing is deleted by them in the app, never through a tool. For a notebook made by mistake.',
+			'Delete a notebook that holds nothing \u2014 no notes, no tasks, nothing filed under it at all. One with anything in it is refused with what it holds: somebody\u2019s writing is deleted by them in the app, never through a tool. For a notebook made by mistake.',
 		scope: 'notes:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'notebook' }],
@@ -2315,13 +2324,19 @@ export const TOOLS: Tool[] = [
 			['id']
 		),
 		run: (ctx, args) => {
-			const held = contentsOf(ctx, Number(args.id));
-			const entries = held.entries.length;
-			const tasks = held.todos.length + held.blocks.length;
-			const goals = held.goals.length;
-			if (entries + tasks + goals > 0)
+			/*
+			 * Empty means empty of everything, not of the three it used to hold.
+			 *
+			 * A notebook can hold its subject's shopping, its bills and the
+			 * account it is paid from now. Counting only notes, tasks and goals
+			 * would let an assistant delete a renovation that holds forty items
+			 * because nobody had written a note in it.
+			 */
+			const notebook = getNotebook(ctx, Number(args.id));
+			const held = Object.entries(notebook.counts).filter(([, n]) => n > 0);
+			if (held.length > 0)
 				throw new ValidationError(
-					`That notebook holds ${entries} note(s), ${tasks} task(s) and ${goals} goal(s). What is written in it is deleted by the person, in the app — not through a tool.`
+					`That notebook holds ${held.map(([what, n]) => `${n} ${what}`).join(', ')}. What is filed under it is deleted by the person, in the app — not through a tool.`
 				);
 			deleteNotebook(ctx, Number(args.id));
 			return { ok: true };
@@ -2368,8 +2383,26 @@ export const TOOLS: Tool[] = [
 			'Write an idea down without deciding where it belongs. The lowest-friction thing here; prefer it to a todo when the person has not said they will do it.',
 		scope: 'ideas:write',
 		writes: true,
-		input: object({ content: text('The idea.'), tags: text('Comma-separated tags.') }, ['content']),
-		run: (ctx, args) => ({ id: createIdea(ctx, { content: args.content, tags: args.tags ?? '' }) })
+		refs: [{ arg: 'notebookId', kind: 'notebook' }],
+		input: object(
+			{
+				content: text('The idea.'),
+				tags: text('Comma-separated tags.'),
+				notebookId: {
+					type: 'integer',
+					description:
+						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this.'
+				}
+			},
+			['content']
+		),
+		run: (ctx, args) => ({
+			id: createIdea(ctx, {
+				content: args.content,
+				tags: args.tags ?? '',
+				...(args.notebookId === undefined ? {} : { notebookId: args.notebookId })
+			})
+		})
 	},
 
 	// ── The kitchen and the list ─────────────────────────────────────────────
@@ -2525,6 +2558,7 @@ export const TOOLS: Tool[] = [
 			'Put something on the list. If the cupboard already has it, this says so rather than adding a second one.',
 		scope: 'inventory:write',
 		writes: true,
+		refs: [{ arg: 'notebookId', kind: 'notebook' }],
 		input: object(
 			{
 				name: text('What to buy.'),
@@ -2536,7 +2570,12 @@ export const TOOLS: Tool[] = [
 					default: 'replenish'
 				},
 				notes: text('Anything else about it.'),
-				section: text('The section to file it under, by name — `inventory_categories` lists them.')
+				section: text('The section to file it under, by name — `inventory_categories` lists them.'),
+				notebookId: {
+					type: 'integer',
+					description:
+						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this.'
+				}
 			},
 			['name']
 		),
@@ -2558,7 +2597,8 @@ export const TOOLS: Tool[] = [
 				name: args.name,
 				type: args.type ?? 'replenish',
 				notes: args.notes ?? '',
-				...(inventoryCategoryId !== undefined ? { inventoryCategoryId } : {})
+				...(inventoryCategoryId !== undefined ? { inventoryCategoryId } : {}),
+				...(args.notebookId === undefined ? {} : { notebookId: args.notebookId })
 			});
 		}
 	},
@@ -2658,6 +2698,7 @@ export const TOOLS: Tool[] = [
 			'Write a recipe down. Ingredients are one per line — "200 g flour", "2 eggs" — and each becomes a shopping item, so the list knows about them the day the meal is planned.',
 		scope: 'kitchen:write',
 		writes: true,
+		refs: [{ arg: 'notebookId', kind: 'notebook' }],
 		input: object(
 			{
 				title: text('What it is called.'),
@@ -2665,7 +2706,12 @@ export const TOOLS: Tool[] = [
 				method: text('How to make it, as Markdown.'),
 				servings: { type: 'integer', description: 'How many it feeds.' },
 				minutes: { type: 'integer', description: 'How long it takes.' },
-				source: text('Where it came from.')
+				source: text('Where it came from.'),
+				notebookId: {
+					type: 'integer',
+					description:
+						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this.'
+				}
 			},
 			['title']
 		),
@@ -2676,7 +2722,8 @@ export const TOOLS: Tool[] = [
 				notes: '',
 				servings: args.servings ?? null,
 				minutes: args.minutes ?? null,
-				source: args.source ?? ''
+				source: args.source ?? '',
+				...(args.notebookId === undefined ? {} : { notebookId: args.notebookId })
 			});
 			// The ingredients are a second call because each one becomes a shopping
 			// item: `importIngredients` is the same parser the paste box uses, so a
@@ -3116,6 +3163,7 @@ export const TOOLS: Tool[] = [
 			'Start tracking a habit: something to keep doing (`good`), to avoid (`bad`), or just to watch (`neutral`). Scheduled days come in the same shape `all_habits` shows for existing ones; leave them out for every day.',
 		scope: 'habits:write',
 		writes: true,
+		refs: [{ arg: 'notebookId', kind: 'notebook' }],
 		input: object(
 			{
 				name: text('The habit, in the person\u2019s own words.'),
@@ -3127,7 +3175,12 @@ export const TOOLS: Tool[] = [
 				description: text('Anything else about it.'),
 				scheduledDays: text(
 					'The days it is due, in the shape `all_habits` shows. Every day if left out.'
-				)
+				),
+				notebookId: {
+					type: 'integer',
+					description:
+						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this.'
+				}
 			},
 			['name']
 		),
@@ -3136,7 +3189,8 @@ export const TOOLS: Tool[] = [
 				name: args.name,
 				type: args.type,
 				description: args.description,
-				scheduledDays: args.scheduledDays
+				scheduledDays: args.scheduledDays,
+				...(args.notebookId === undefined ? {} : { notebookId: args.notebookId })
 			})
 		})
 	},
@@ -4264,6 +4318,7 @@ export const TOOLS: Tool[] = [
 			'Write a workout down: a title, a category (one of the account\u2019s own, from `workout_categories`), a plan as Markdown, and roughly how long it takes. Scheduling it onto a day is a block with its workoutId, the way a meal is a block with a recipe.',
 		scope: 'workouts:write',
 		writes: true,
+		refs: [{ arg: 'notebookId', kind: 'notebook' }],
 		input: object(
 			{
 				title: text('What the session is called.'),
@@ -4271,7 +4326,12 @@ export const TOOLS: Tool[] = [
 				plan: text('What to do, as Markdown.'),
 				minutes: { type: 'integer', description: 'Roughly how long it takes.' },
 				notes: text('Anything else.'),
-				measures: MEASURE_NAMES
+				measures: MEASURE_NAMES,
+				notebookId: {
+					type: 'integer',
+					description:
+						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this.'
+				}
 			},
 			['title']
 		),
@@ -4282,7 +4342,8 @@ export const TOOLS: Tool[] = [
 				plan: args.plan ?? '',
 				minutes: args.minutes ?? null,
 				notes: args.notes ?? '',
-				measures: args.measures
+				measures: args.measures,
+				...(args.notebookId === undefined ? {} : { notebookId: args.notebookId })
 			})
 		})
 	},
@@ -4377,11 +4438,17 @@ export const TOOLS: Tool[] = [
 			'A new place money moves through. `kind` is bank, card, cash or other; `default_parser` preselects an export format when importing into it.',
 		scope: 'statements:write',
 		writes: true,
+		refs: [{ arg: 'notebookId', kind: 'notebook' }],
 		input: object(
 			{
 				name: text('What it is called — "Nubank", "Visa".'),
 				kind: text('bank, card, cash or other.'),
-				default_parser: text("An export key like 'nubank:conta_corrente'.")
+				default_parser: text("An export key like 'nubank:conta_corrente'."),
+				notebookId: {
+					type: 'integer',
+					description:
+						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this.'
+				}
 			},
 			['name']
 		),
@@ -4389,7 +4456,8 @@ export const TOOLS: Tool[] = [
 			id: createLedger(ctx, {
 				name: args.name,
 				kind: args.kind ?? 'bank',
-				defaultParser: args.default_parser
+				defaultParser: args.default_parser,
+				...(args.notebookId === undefined ? {} : { notebookId: args.notebookId })
 			}).id
 		})
 	},
@@ -4629,6 +4697,7 @@ export const TOOLS: Tool[] = [
 			'Write down a bill you expect to pay: a name, the expected amount in minor units (cents), and a rhythm (weekly, monthly, yearly, once). A monthly bill can name the day of the month it falls due.',
 		scope: 'bills:write',
 		writes: true,
+		refs: [{ arg: 'notebookId', kind: 'notebook' }],
 		input: object(
 			{
 				name: text('What the bill is called.'),
@@ -4649,7 +4718,12 @@ export const TOOLS: Tool[] = [
 				},
 				currency: text('A currency code like BRL. The account\u2019s default if left out.'),
 				flow: text("'out' for a bill (the default), 'in' for income."),
-				notes: text('Anything else.')
+				notes: text('Anything else.'),
+				notebookId: {
+					type: 'integer',
+					description:
+						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this.'
+				}
 			},
 			['name']
 		),
@@ -4663,7 +4737,8 @@ export const TOOLS: Tool[] = [
 				dueMonth: args.due_month,
 				payLeadDays: args.pay_lead_days,
 				currency: args.currency,
-				notes: args.notes ?? ''
+				notes: args.notes ?? '',
+				...(args.notebookId === undefined ? {} : { notebookId: args.notebookId })
 			}).id
 		})
 	},
