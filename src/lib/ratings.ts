@@ -169,6 +169,27 @@ export const RATING_LABELS: Record<Rating, PlainKey> = {
 	ease: 'ratings.ease'
 };
 
+/**
+ * The three, in words — "Urgency: 4 of 5 · Ease: not set · Interest: 3 of 5".
+ *
+ * What the bars on a card say when somebody hovers them, and the only place
+ * the numbers themselves appear outside the form that sets them. The bars are
+ * a comparison; this is the reading, and putting it in one function keeps the
+ * row, the card and anything that grows them later saying the same sentence.
+ */
+export function ratingSummary(
+	values: Partial<RatingValues>,
+	t: (key: never, values?: never) => string
+): string {
+	return RATING_ORDER.map((rating) => {
+		const label = t(RATING_LABELS[rating] as never);
+		const value = values[rating];
+		return value == null
+			? t('ratings.labelNotSet' as never, { label } as never)
+			: t('ratings.labelValueOf5' as never, { label, value } as never);
+	}).join(' · ');
+}
+
 export const RATING_HINTS: Record<Rating, PlainKey> = {
 	urgency: 'ratings.howSoonThisHasTo',
 	interest: 'ratings.howMuchYouWantTo',

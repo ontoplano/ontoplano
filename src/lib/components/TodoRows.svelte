@@ -23,6 +23,7 @@
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
+	import { ratingSummary } from '$lib/ratings';
 	import TagChip from '$lib/components/TagChip.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -1162,12 +1163,12 @@
 						-->
 							<button
 								type="button"
-								class="w-full cursor-pointer"
+								class="cursor-pointer"
 								onclick={() => startEdit(todo, { atRatings: true })}
-								title={t('todoRows.setTheRatings')}
-								aria-label={t('todoRows.setTheRatings')}
+								title={ratingSummary(todo.ratings, t as never)}
+								aria-label={ratingSummary(todo.ratings, t as never)}
 							>
-								<RatingBadges values={todo.ratings} stacked class="w-full" />
+								<RatingBadges values={todo.ratings} stacked />
 							</button>
 						</div>
 
