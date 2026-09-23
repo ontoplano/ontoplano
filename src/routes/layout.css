@@ -2583,16 +2583,6 @@ label:has(> input[type='radio']:not(:disabled)) {
 		z-index: 1;
 	}
 
-	/* With a tile that travels, the pressed child must not paint one of its own. */
-	.seg-sliding > [aria-pressed='true'],
-	.seg-sliding > [aria-selected='true'],
-	.seg-sliding > [aria-current='page'],
-	.seg-sliding > [aria-current='true'],
-	.seg-sliding > :has(> input:checked) {
-		background-color: transparent;
-		box-shadow: none;
-	}
-
 	/* The chosen position is a raised tile, not a filled button. */
 	.seg > [aria-pressed='true'],
 	.seg > [aria-selected='true'],
@@ -2613,23 +2603,34 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
-	 * In a track with a travelling tile, the tile owns the outline. Alone.
+	 * In a track with a travelling tile, the tile owns the surface. Alone.
 	 *
-	 * The rule above is more specific than the one that clears the pressed
-	 * child's own surface, so it put the ring back on — invisible while one
-	 * position was marked, because the ring and the tile were the same
-	 * rectangle. The markdown box marks two at once, and then there were two
-	 * rings inside one tile with their rounded corners meeting in the middle:
-	 * a seam down a shape that is meant to read as one, notched at both ends.
+	 * The pressed child paints nothing: no background, no ring, no corner. The
+	 * tile behind it is all three.
 	 *
-	 * Two curves never share an edge — see the pane rule above, which is the
-	 * same mistake in a different place.
+	 * This has to come after the two rules above rather than before them, which
+	 * is where it was. Same specificity, so order decided it, and the marked
+	 * child kept its own white rectangle — invisible while one position was
+	 * marked, because that rectangle and the tile were the same shape. The
+	 * markdown box marks Write and Preview together, and then there were two
+	 * white rectangles inside one tile with their rounded corners meeting in
+	 * the middle: a seam down a shape that is meant to read as one, notched at
+	 * both ends.
+	 *
+	 * Two curves never share an edge — the pane rule above is the same mistake
+	 * in a different place.
 	 */
+	.seg-sliding > [aria-pressed='true'],
+	.seg-sliding > [aria-selected='true'],
+	.seg-sliding > [aria-current='page'],
+	.seg-sliding > [aria-current='true'],
+	.seg-sliding > :has(> input:checked),
 	html[data-style='playful'] .seg-sliding > [aria-pressed='true'],
 	html[data-style='playful'] .seg-sliding > [aria-selected='true'],
 	html[data-style='playful'] .seg-sliding > [aria-current='page'],
 	html[data-style='playful'] .seg-sliding > [aria-current='true'],
 	html[data-style='playful'] .seg-sliding > :has(> input:checked) {
+		background-color: transparent;
 		box-shadow: none;
 	}
 
@@ -3963,6 +3964,60 @@ html button.tab-link {
  * they are painted on the scrolling box itself, so they sit against the edge of
  * what is visible rather than against the edge of what exists.
  */
+/*
+ * A room's tabs and its verb, on one line.
+ *
+ * The verb used to sit on the title line with a rule between it and the tabs,
+ * so a room opened as three loose things — a name, a button, a row of
+ * underlined words. Here they are one strip: the track, and the verb at the
+ * end of it.
+ */
+.room-tabs {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	/* The bar above is a grid, and a grid item will not shrink below its own
+	   content without this — so six tabs across 390px ran off the side of the
+	   screen and took the verb with them. */
+	min-width: 0;
+}
+
+/* The verb at the far end of the strip, not tucked against the last tab: the
+   tabs say where you are, and the one thing you came to do is its own corner. */
+.room-tabs > :last-child {
+	margin-left: auto;
+}
+
+/*
+ * The track scrolls rather than wraps, and gives way before the verb does.
+ *
+ * `.seg` wraps, which is right for a control sitting in a form and wrong for a
+ * room's tabs: six of them across 390px wrapped to two lines and pushed the
+ * verb off the side of the screen. `.scroll-hints` is already the horizontal
+ * scroller every long strip in this app uses; this lets it do its job.
+ */
+.room-tabs > .seg {
+	flex: 0 1 auto;
+	min-width: 0;
+	flex-wrap: nowrap;
+}
+
+.room-tabs > .seg > * {
+	flex: none;
+}
+
+/*
+ * And the strip sits closer to what it is a strip of.
+ *
+ * `space-y-4` between the bar and the room put a rem of page ground under the
+ * tabs, which on a phone is a band of nothing between the tab you pressed and
+ * the list it chose. Half of it, and the tabs' own track already holds them
+ * apart from the name above.
+ */
+.room-frame > * + * {
+	margin-top: 0.5rem;
+}
+
 .scroll-hints {
 	position: relative;
 	overflow-x: auto;
