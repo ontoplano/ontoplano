@@ -193,8 +193,7 @@ input[type='radio'] {
  * unlayered, while the gauge's own rules live in `@layer components` and lose
  * to anything outside it however specific they are.
  */
-.gauge-fill,
-.gauge-mark {
+.gauge-fill {
 	border-radius: 0 !important;
 }
 
@@ -2039,13 +2038,18 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * add one line here and nothing else.
 	 */
 	/*
-	 * Three little thermometers: markings, and the colour rising through them.
+	 * The gauge under a slider, drawn like the bars on a card.
 	 *
-	 * The fill is a whole number of fifths — the scale has five steps and a
-	 * continuous bar invites somebody to guess at 3.5 — and the four black
-	 * markings are drawn over it, so the level is read against them rather than
-	 * estimated. The tint underneath is the gauge's own colour at a tenth, so
-	 * an empty one still says which question it is answering.
+	 * Flat: a grey track the width a 5 would fill, and the question's colour
+	 * filling as much of it as the answer. No outline, no gradient, no markings
+	 * between the steps — the same treatment `RatingBadges` gives the three
+	 * nested bars a row wears, because the thing being set here is the thing
+	 * drawn there.
+	 *
+	 * It was a pill ringed in black with a gradient inside and four black
+	 * marks over it, at four pixels tall. All three were texture at that size,
+	 * and none of them survived beside the flat bars on the card behind the
+	 * form.
 	 */
 	.gauges {
 		display: inline-flex;
@@ -2065,25 +2069,20 @@ label:has(> input[type='radio']:not(:disabled)) {
 		position: relative;
 		display: block;
 		width: 2.25rem;
-		height: 0.4rem;
+		height: 0.5rem;
 		/*
-		 * Outlined in ink rather than in its own colour.
+		 * The track is the box a 5 would fill, in the same grey the card's bars
+		 * stand on. Grey rather than a tint of the rating's own colour: the
+		 * label above the slider says which question it is, and a coloured
+		 * track made an unanswered one look like a low answer.
 		 *
-		 * Three gauges each ringed in their own hue read as three shapes of
-		 * different weight; one black outline around all of them makes them a
-		 * set, and holds the pale end of a nearly-empty one against the card.
-		 */
-		border: 1px solid var(--color-gray-900);
-		/*
-		 * Clipped to the pill.
-		 *
-		 * The fill is a rectangle from the left edge, and the track is round —
-		 * so its square corners met the curve and left two little notches at
-		 * the closed end, which is the first thing the eye lands on. Hiding the
-		 * overflow lets the fill take the whole rounded end.
+		 * `overflow` clips the fill to the track's corners — the fill is a
+		 * rectangle from the left edge, and its square end met the curve and
+		 * left two notches at the closed end. Two curves never share an edge.
 		 */
 		overflow: hidden;
-		background-color: color-mix(in srgb, var(--gauge-ink) 10%, transparent);
+		border-radius: 2px;
+		background-color: var(--color-gray-200);
 	}
 
 	.gauges-stacked .gauge {
@@ -2093,12 +2092,7 @@ label:has(> input[type='radio']:not(:disabled)) {
 	.gauge > .gauge-fill {
 		position: absolute;
 		inset: 0 auto 0 0;
-		background-image: linear-gradient(
-			to bottom,
-			color-mix(in srgb, var(--gauge-ink) 72%, white) 0%,
-			var(--gauge-ink) 62%,
-			color-mix(in srgb, var(--gauge-ink) 88%, black) 100%
-		);
+		background-color: var(--gauge-ink);
 	}
 
 	/*
@@ -2118,39 +2112,6 @@ label:has(> input[type='radio']:not(:disabled)) {
 		 * as a low rating rather than as no rating, the one thing this is for.
 		 */
 		--gauge-ink: var(--color-gray-400);
-		border-color: var(--color-gray-500);
-		opacity: 0.6;
-	}
-
-	/*
-	 * The markings: thin, and the same ink in both themes.
-	 *
-	 * They are a scale rather than a decoration, so they have to read over the
-	 * fill and over the empty tint alike — and the fill is the same bright
-	 * colour whichever theme is on. Written as its own ink rather than as
-	 * `--color-gray-900`, which the dark theme remaps to near-white: the
-	 * markings turned pale inside a bright pill and looked like scratches.
-	 */
-	.gauge {
-		--gauge-mark-ink: #111827;
-	}
-
-	.gauge > .gauge-mark {
-		position: absolute;
-		top: 0;
-		bottom: 0;
-		width: 1px;
-		/*
-		 * Centred on the step it marks, not started at it.
-		 *
-		 * `left: 40%` puts the mark's left edge there, so its middle — which is
-		 * what the eye reads — sits half a pixel further along, and every mark
-		 * is late by the same amount. The level is drawn at a true percentage,
-		 * so an unset gauge at 2.5 ended up looking nearer 2.4 than halfway
-		 * between the second and third markings.
-		 */
-		transform: translateX(-50%);
-		background-color: color-mix(in srgb, var(--gauge-mark-ink) 55%, transparent);
 	}
 
 	/*

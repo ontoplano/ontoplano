@@ -1,16 +1,21 @@
 <script lang="ts">
 	/**
-	 * One rating, as a little thermometer.
+	 * One rating, under the slider that sets it.
 	 *
-	 * A pill with black markings for the whole steps and the question's colour
-	 * rising through them, so "nearly full" is seen rather than counted. It is
-	 * the same object on a task's row and under the slider that sets it — one
-	 * component rather than two drawings that have to be kept in step, which is
-	 * how the row and the form drifted apart the first time.
+	 * A flat track with the question's colour filling it, so "nearly full" is
+	 * seen rather than counted. It wears the same treatment as the nested bars
+	 * a card draws — flat, no outline, no gradient, no markings between the
+	 * steps — because the thing being set here is the thing drawn there, and
+	 * two different pictures of one number is two things to learn.
 	 *
-	 * An unanswered one is drawn at 2.5 and greyed, markings included: that is
-	 * where the sort counts it, and between two markings rather than on one, so
-	 * "nobody said" cannot be mistaken for a number somebody chose.
+	 * The markings went with the rest of it. They were four black lines over a
+	 * bar four pixels tall, which at that size is texture, and the number
+	 * itself is written beside the slider anyway.
+	 *
+	 * An unanswered one is drawn at 2.5 and greyed. That is where the sort
+	 * counts it, and here — unlike on a card, where every bar wears its own
+	 * colour — the distinction is worth drawing, because this is the screen
+	 * where somebody is deciding whether to answer at all.
 	 */
 	import { RATING_LABELS, RATING_MAX, RATING_UNRATED, type Rating } from '$lib/ratings.js';
 	import { useT } from '$lib/i18n';
@@ -22,9 +27,6 @@
 		value,
 		class: className = ''
 	}: { rating: Rating; value: number | null; class?: string } = $props();
-
-	/** The markings, as something to iterate: the lines between the whole steps. */
-	const marks = Array.from({ length: RATING_MAX - 1 }, (_, at) => at + 1);
 
 	const said = $derived(
 		value == null
@@ -44,8 +46,4 @@
 	<!-- The liquid: a fill from the left, in whole steps — or 2.5 of them,
 	     greyed, where nobody has answered. -->
 	<span class="gauge-fill" style="width: {((value ?? RATING_UNRATED) / RATING_MAX) * 100}%"></span>
-	<!-- And the markings over it, so the level is read against them. -->
-	{#each marks as mark (mark)}
-		<span class="gauge-mark" style="left: {(mark / RATING_MAX) * 100}%"></span>
-	{/each}
 </span>
