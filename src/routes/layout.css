@@ -4183,21 +4183,122 @@ html button.tab-link {
 }
 
 /*
- * A notebook on the shelf: the same columns on every row.
+ * A shelf of notebooks, picked the way books are.
  *
- * The fold arrow, the picture, the name and the two buttons each keep their
- * place whether or not a given row has one. Before this a notebook with
- * children indented its own title by an arrow's width and one without pictures
- * let the buttons drift left, so no two rows in the column agreed about where
- * anything was — which is what a list is for.
+ * They were rows with a stamp of a picture at the front, which is a list of
+ * names with a decoration on it. A subject you come back to for months is a
+ * thing, and the thing is its cover: the picture is what you look at and the
+ * name hangs under it, glued on rather than set beside it.
+ *
+ * A cover is a fixed size rather than a share of the width: `1fr` in a panel
+ * somebody has dragged narrow gives one cover the whole column, and a book
+ * three hundred pixels tall is a poster. As many across as fit, and no fewer
+ * than two on the narrowest the panel goes.
  */
-.notebook-row {
+.notebook-shelf {
 	display: grid;
-	grid-template-columns: auto auto minmax(0, 1fr) auto auto;
-	align-items: center;
+	grid-template-columns: repeat(auto-fill, 6.5rem);
+	justify-content: space-between;
 	gap: 0.75rem;
-	padding-block: 0.75rem;
-	padding-right: 1rem;
+	align-content: start;
+	padding: 0.75rem;
+}
+
+/*
+ * What is inside a folder sits under it, indented, so a spine of covers reads
+ * as belonging to the one above rather than as more of the same shelf.
+ */
+.notebook-cover {
+	position: relative;
+	margin-left: calc(var(--cover-depth, 0) * 0.75rem);
+}
+
+.cover-face {
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+	border-radius: var(--radius, 0);
+	padding: 0.375rem;
+	text-decoration: none;
+}
+
+.cover-face:hover,
+.cover-face.is-chosen {
+	background-color: var(--color-gray-100);
+}
+
+/*
+ * The cover itself: the shape of a book rather than a square, so a shelf of
+ * them reads as a shelf. Object-fit, because somebody's photograph is whatever
+ * shape their camera was.
+ */
+.cover-art {
+	display: flex;
+	aspect-ratio: 3 / 4;
+	width: 100%;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--color-gray-200);
+	border-radius: calc(var(--radius, 0px) - 2px);
+	background-color: var(--color-white);
+	object-fit: cover;
+	box-shadow: var(--shadow-card);
+}
+
+.cover-art-empty {
+	border-style: dashed;
+	border-color: var(--color-gray-300);
+	background-color: var(--color-gray-100);
+	color: var(--color-gray-400);
+	box-shadow: none;
+}
+
+/* Glued to the cover: the name of the thing directly above it, not a caption. */
+.cover-name {
+	display: block;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	line-height: 1.25;
+	color: var(--color-gray-900);
+	overflow-wrap: anywhere;
+}
+
+.cover-tally {
+	display: block;
+	font-size: 0.6875rem;
+	line-height: 1.2;
+	color: var(--color-gray-500);
+}
+
+/*
+ * What you do to a notebook, on its cover.
+ *
+ * A shelf has no columns to put them in, so they sit in the corner of the
+ * cover and come up when it is under the pointer — or always, on a touch
+ * screen, where there is no hover to come up on.
+ */
+.cover-actions {
+	position: absolute;
+	top: 0.5rem;
+	right: 0.5rem;
+	display: flex;
+	align-items: center;
+	gap: 0.125rem;
+	border-radius: var(--radius, 0);
+	background-color: color-mix(in srgb, var(--color-white) 88%, transparent);
+	opacity: 0;
+	transition: opacity 120ms ease;
+}
+
+.notebook-cover:hover .cover-actions,
+.notebook-cover:focus-within .cover-actions {
+	opacity: 1;
+}
+
+@media (hover: none) {
+	.cover-actions {
+		opacity: 1;
+	}
 }
 
 /*

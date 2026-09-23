@@ -184,111 +184,101 @@
 						-->
 						{#snippet notebookRow(node: (typeof data.tree)[number])}
 							<!--
-								One row, in columns that line up down the list.
+								A notebook is its cover.
 
-								The fold arrow, the picture, the name and the two buttons each
-								keep their place whether or not this row has one — a notebook
-								with children indented its own title by an arrow's width and a
-								notebook with a picture pushed its buttons along, so no two
-								rows in the column agreed about where anything was. The depth
-								is the only thing allowed to move a row, and it moves the whole
-								row rather than its parts.
+								They were rows with a stamp of a picture at the front, which
+								is a list of names with a decoration; a shelf of subjects is a
+								shelf of things, and you pick one the way you pick a book —
+								by looking at it. The picture is the object and the name hangs
+								under it, glued on rather than beside it.
+
+								A notebook with children keeps its fold, and what is inside it
+								opens as its own shelf under it — indented, so a spine of
+								covers reads as belonging to the one above.
 							-->
-							<div
-								class="notebook-row {node.id === data.selected ? 'bg-gray-100' : ''}"
-								style="padding-left: calc(1rem + {node.depth} * 1.6rem)"
-							>
-								{#if node.children.length > 0}
-									<button
-										class="icon-btn -ml-1 shrink-0"
-										aria-label={t('notebooks.whatIsInside', {
-											show: opened.has(node.id) ? t('ui.hide') : t('ui.show'),
-											title: node.title
-										})}
-										aria-expanded={opened.has(node.id)}
-										onclick={() => toggle(node.id)}
-									>
-										<Icon name={opened.has(node.id) ? 'chevron-down' : 'chevron-right'} size={14} />
-									</button>
-								{:else}
-									<span class="icon-btn -ml-1 shrink-0" aria-hidden="true"></span>
-								{/if}
-
-								<!--
-									The notebook's own picture, where a person's face would be.
-
-									Reserved on every row: a shelf where some rows have one and
-									some do not is a shelf whose names start in two places.
-								-->
-								{#if node.pictureId}
-									<img
-										src="/media/{node.pictureId}"
-										alt=""
-										loading="lazy"
-										class="size-8 shrink-0 rounded-lg border border-gray-200 bg-white object-cover"
-									/>
-								{:else}
-									<span
-										aria-hidden="true"
-										class="flex size-8 shrink-0 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-100 text-gray-400"
-									>
-										<Icon name="notebook" size={14} />
-									</span>
-								{/if}
-
-								<!--
-									Picking a notebook fills the column beside it, which is what a
-									two-column page is for. The full page is reached from that
-									column (Open, above), where the thing it opens is.
-								-->
+							<div class="notebook-cover" style="--cover-depth: {node.depth}">
 								<a
 									href="{resolve('/notebooks')}?notebook={node.id}"
-									class="min-w-0 flex-1 text-sm text-gray-900 hover:underline"
+									class="cover-face {node.id === data.selected ? 'is-chosen' : ''}"
+									aria-current={node.id === data.selected ? 'true' : undefined}
 								>
-									<span class:text-gray-500={node.closedAt}>{leafTitle(node.title)}</span>
-									{#if !node.mine}
-										<span class="eyebrow ml-1 text-gray-500">{node.sharedBy}’s</span>
-									{:else if node.sharedWithFamily}
-										<span class="eyebrow ml-1 text-gray-500">{t('notebooks.family')}</span>
+									{#if node.pictureId}
+										<img src="/media/{node.pictureId}" alt="" loading="lazy" class="cover-art" />
+									{:else}
+										<span class="cover-art cover-art-empty" aria-hidden="true">
+											<Icon name="notebook" size={22} />
+										</span>
 									{/if}
-									{#if node.closedAt}
-										<span class="eyebrow ml-2 text-gray-500">{t('notebooks.closed')}</span>
-									{/if}
-									<span class="block truncate text-xs text-gray-500">{tally(node)}</span>
+
+									<span class="cover-name" class:text-gray-500={node.closedAt}>
+										{leafTitle(node.title)}
+									</span>
+									<span class="cover-tally">
+										{tally(node)}
+										{#if !node.mine}
+											· {node.sharedBy}’s
+										{:else if node.sharedWithFamily}
+											· {t('notebooks.family')}
+										{/if}
+										{#if node.closedAt}
+											· {t('notebooks.closed')}
+										{/if}
+									</span>
 								</a>
 
-								<button
-									onclick={() => openEdit(node)}
-									class="icon-btn"
-									aria-label={t('notebooks.edit', { title: node.title })}
-								>
-									<Icon name="edit" />
-								</button>
-
-								<form
-									method="post"
-									action="?/setClosed"
-									use:enhance={() =>
-										async ({ update }) => {
-											await update({ reset: false });
-										}}
-								>
-									<input type="hidden" name="id" value={node.id} />
-									<input type="hidden" name="closed" value={node.closedAt ? 'false' : 'true'} />
+								<!--
+									What you do to it, on the cover rather than in a column of
+									their own: a shelf has no columns.
+								-->
+								<div class="cover-actions">
+									{#if node.children.length > 0}
+										<button
+											class="icon-btn"
+											aria-label={t('notebooks.whatIsInside', {
+												show: opened.has(node.id) ? t('ui.hide') : t('ui.show'),
+												title: node.title
+											})}
+											aria-expanded={opened.has(node.id)}
+											onclick={() => toggle(node.id)}
+										>
+											<Icon
+												name={opened.has(node.id) ? 'chevron-down' : 'chevron-right'}
+												size={14}
+											/>
+										</button>
+									{/if}
 									<button
+										onclick={() => openEdit(node)}
 										class="icon-btn"
-										title={node.closedAt ? t('notebooks.reopenIt') : t('notebooks.closeIt')}
-										aria-label="{node.closedAt
-											? t('notebooks.reopenIt')
-											: t('notebooks.closeIt')} {node.title}"
+										aria-label={t('notebooks.edit', { title: node.title })}
 									>
-										{#if node.closedAt}
-											<Icon name="undo" />
-										{:else}
-											<Icon name="check" />
-										{/if}
+										<Icon name="edit" />
 									</button>
-								</form>
+									<form
+										method="post"
+										action="?/setClosed"
+										use:enhance={() =>
+											async ({ update }) => {
+												await update({ reset: false });
+											}}
+									>
+										<input type="hidden" name="id" value={node.id} />
+										<input type="hidden" name="closed" value={node.closedAt ? 'false' : 'true'} />
+										<button
+											class="icon-btn"
+											title={node.closedAt ? t('notebooks.reopenIt') : t('notebooks.closeIt')}
+											aria-label="{node.closedAt
+												? t('notebooks.reopenIt')
+												: t('notebooks.closeIt')} {node.title}"
+										>
+											{#if node.closedAt}
+												<Icon name="undo" />
+											{:else}
+												<Icon name="check" />
+											{/if}
+										</button>
+									</form>
+								</div>
 							</div>
 
 							{#if opened.has(node.id)}
@@ -298,7 +288,7 @@
 							{/if}
 						{/snippet}
 
-						<div class="flex h-full flex-col divide-y divide-gray-200">
+						<div class="notebook-shelf">
 							{#each data.tree as node (node.id)}
 								{@render notebookRow(node)}
 							{/each}
@@ -357,7 +347,7 @@
 								<NotebookPicture
 									notebook={selected}
 									kilobytes={data.pictureKilobytes}
-									size="size-10"
+									size="size-16"
 								/>
 							{/if}
 						{/snippet}
@@ -471,7 +461,12 @@
 	     notebook that does not exist yet has nothing to attach one to. -->
 	{#if editing && editing.mine !== false}
 		<div class="mt-3 flex items-start gap-3 border-t border-gray-200 pt-3">
-			<NotebookPicture notebook={editing} kilobytes={data.pictureKilobytes} size="size-10" />
+			<NotebookPicture
+				notebook={editing}
+				kilobytes={data.pictureKilobytes}
+				size="size-10"
+				removable
+			/>
 			<p class="text-sm text-gray-500">{t('notebooks.id.thePicture')}</p>
 		</div>
 	{/if}

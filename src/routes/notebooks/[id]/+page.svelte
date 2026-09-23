@@ -68,7 +68,7 @@
 			     drawn by the same component the two Edit notebook dialogues use,
 			     so there is one of it rather than three. -->
 			{#if data.notebook.mine}
-				<NotebookPicture notebook={data.notebook} kilobytes={data.pictureKilobytes} />
+				<NotebookPicture notebook={data.notebook} kilobytes={data.pictureKilobytes} removable />
 			{:else if data.notebook.pictureId}
 				<img
 					src="/media/{data.notebook.pictureId}"
@@ -241,7 +241,12 @@
 	     moment it is chosen, which is not the same submission as the words. -->
 	{#if data.notebook.mine}
 		<div class="mt-3 flex items-start gap-3 border-t border-gray-200 pt-3">
-			<NotebookPicture notebook={data.notebook} kilobytes={data.pictureKilobytes} size="size-10" />
+			<NotebookPicture
+				notebook={data.notebook}
+				kilobytes={data.pictureKilobytes}
+				size="size-10"
+				removable
+			/>
 			<p class="text-sm text-gray-500">{t('notebooks.id.thePicture')}</p>
 		</div>
 	{/if}

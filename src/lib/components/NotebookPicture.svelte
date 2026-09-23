@@ -27,11 +27,20 @@
 		/** What the server will accept, so the browser can refuse first. */
 		kilobytes,
 		/** Tailwind size class for the square — `size-12` on a page, `size-10` in a dialog. */
-		size = 'size-12'
+		size = 'size-12',
+		/**
+		 * Whether to offer taking the picture off.
+		 *
+		 * Only on the notebook's own page and in the dialogue that edits it.
+		 * Beside a name in a panel header it is a destructive link sitting under
+		 * a thing you were only looking at.
+		 */
+		removable = false
 	}: {
 		notebook: { id: number; title: string; pictureId: number | null; mine?: boolean };
 		kilobytes: number;
 		size?: string;
+		removable?: boolean;
 	} = $props();
 
 	let form: HTMLFormElement | undefined = $state();
@@ -120,7 +129,7 @@
 		<p class="mt-1 text-xs text-red-700">{problem}</p>
 	{/if}
 
-	{#if notebook.pictureId}
+	{#if removable && notebook.pictureId}
 		<form method="post" action="?/removePicture" use:enhance>
 			<input type="hidden" name="id" value={notebook.id} />
 			<button class="mt-1 text-xs text-gray-500 underline hover:text-gray-900">

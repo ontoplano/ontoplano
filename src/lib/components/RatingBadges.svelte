@@ -9,7 +9,7 @@
 	 *
 	 * This is the rest of it: the bars nest. Urgency is the widest and sits
 	 * behind, ease is narrower in front of it, interest is narrowest in front
-	 * of that — all three standing on one baseline and sharing a left edge, so
+	 * of that — all three standing on one baseline and sharing a right edge, so
 	 * the group is one object about the size of a thumbnail. **Width says which
 	 * rating; height says its value.** A row of separate bars needs the eye to
 	 * count positions before it can read anything; nested, the one at the back
@@ -121,8 +121,8 @@
 
 <style>
 	/*
-	 * The group. Every bar is positioned from the same bottom-left corner, so
-	 * they share a baseline and a left edge and the widths do the nesting.
+	 * The group. Every bar is positioned from the same bottom-right corner, so
+	 * they share a baseline and a right edge and the widths do the nesting.
 	 */
 	.rating-bars {
 		/* One scale for every row in the list — see the note above. */
@@ -146,10 +146,17 @@
 		border-radius: 2px;
 	}
 
+	/*
+	 * Every bar from the same bottom-right corner.
+	 *
+	 * They shared a left edge first, which put the narrowest one — interest —
+	 * over the left of the other two and left the widest showing only on the
+	 * right. Anchored right, the slivers fall on the left where the eye starts.
+	 */
 	.rating-bar {
 		position: absolute;
+		right: 0;
 		bottom: 0;
-		left: 0;
 		border-radius: 2px;
 		background-color: var(--rating-ink);
 	}

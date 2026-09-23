@@ -1174,7 +1174,16 @@
 							is also what makes them line up: every row's gauges start at the
 							same x, whatever the title above them is doing.
 						-->
-						<div class="flex shrink-0 flex-col items-center gap-1 self-start">
+						<!--
+							The rail runs the height of the row.
+
+							The tick box sits at the top and the three bars at the bottom, so
+							the space under them is the space above it — rather than both
+							bunched at the top with the rest of the rail empty. The bars keep
+							their own fixed height: what stretches is the column, not the
+							scale, or a taller card would draw a taller 4 than a short one.
+						-->
+						<div class="flex shrink-0 flex-col items-center gap-1 self-stretch">
 							<form
 								id="toggle-form-{todo.id}"
 								method="post"
@@ -1267,7 +1276,7 @@
 						-->
 							<button
 								type="button"
-								class="cursor-pointer"
+								class="mt-auto cursor-pointer"
 								onclick={() => startEdit(todo, { atRatings: true })}
 								aria-label={t('todoRows.setTheRatings')}
 							>
