@@ -47,6 +47,8 @@
 	import ModuleTab from '$lib/components/ModuleTab.svelte';
 	import IdeaCard from '$lib/components/IdeaCard.svelte';
 	import BillRow from '$lib/components/BillRow.svelte';
+	import HabitCard from '$lib/components/HabitCard.svelte';
+	import { NOTEBOOK_HABIT_ACTIONS } from '$lib/habit-action-names';
 	import { NOTEBOOK_BILL_ACTIONS } from '$lib/bill-action-names';
 	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
 	import { NOTEBOOK_IDEA_ACTIONS } from '$lib/idea-action-names';
@@ -148,6 +150,13 @@
 				period: string;
 				paidThisPeriod: boolean;
 			})[];
+			/* And the whole habit, with the days it has been logged. */
+			habits: ComponentProps<typeof HabitCard>['habit'][];
+			habitOccurrences: ComponentProps<typeof HabitCard>['occurrences'];
+			/** The account's today, which the heatmap and the tick both read. */
+			today: string;
+			/** 0 for Monday — where the heatmap's weeks start. */
+			weekFirstDay: number;
 			/*
 			 * The other modules, each as its room's own rows.
 			 *
@@ -719,6 +728,19 @@
 					count: contents?.ideas.length ?? 0,
 					done: contents?.ideas.filter((idea) => idea.isApplied).length ?? 0
 				};
+			if (key === 'habits')
+				return {
+					key,
+					label: moduleMeta(key).name,
+					count: contents?.habits.length ?? 0,
+					// Done today, which is the one thing a habit row is pressed for.
+					done:
+						contents?.habits.filter((habit) =>
+							contents.habitOccurrences.some(
+								(one) => one.habitId === habit.id && one.date === contents.today
+							)
+						).length ?? 0
+				};
 			if (key === 'bills')
 				return {
 					key,
@@ -1186,6 +1208,27 @@
 									}}
 								/>
 							</div>
+						{/each}
+					</div>
+				{/if}
+			{:else if tab === 'habits'}
+				<!--
+					The Health room's own card: the streak, the year at a glance, the
+					backdating and the note on each day. A habit without those is a
+					checkbox — see `HabitCard`.
+				-->
+				{#if contents.habits.length === 0}
+					<EmptyState icon="health" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+				{:else}
+					<div class="divide-y divide-gray-200">
+						{#each contents.habits as habit (habit.id)}
+							<HabitCard
+								{habit}
+								occurrences={contents.habitOccurrences}
+								today={contents.today}
+								firstDay={contents.weekFirstDay}
+								actions={NOTEBOOK_HABIT_ACTIONS}
+							/>
 						{/each}
 					</div>
 				{/if}

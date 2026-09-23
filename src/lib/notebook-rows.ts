@@ -63,17 +63,6 @@ const SHAPES: Partial<
 		done: Boolean(row.archived)
 	}),
 
-	habits: (row, { t }) => ({
-		id: Number(row.id),
-		title: String(row.name ?? ''),
-		meta: facts(
-			Number(row.streak ?? 0) > 0
-				? t('notebooks.rows.streakDays', { count: Number(row.streak) })
-				: null
-		),
-		done: false
-	}),
-
 	workouts: (row, { t }) => ({
 		id: Number(row.id),
 		title: String(row.title ?? ''),

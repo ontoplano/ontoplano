@@ -35,10 +35,10 @@ import { listIdeas } from './ideas.js';
 import { listItems } from './inventory.js';
 import { listLedgers } from './ledgers.js';
 import { listBillsThisPeriod } from './bills.js';
-import { listHabits } from './habits.js';
+import { listHabits, listOccurrences, today as habitsToday } from './habits.js';
 import { listWorkouts } from './workouts.js';
 import { listRecipes } from './recipes.js';
-import { getHiddenSections } from './settings.js';
+import { getHiddenSections, getWeekSettings } from './settings.js';
 import { isHidden } from '../sections.js';
 import { ConflictError, NotFoundError } from './errors.js';
 import { stamp, stamps } from './time.js';
@@ -531,6 +531,11 @@ export function contentsOf(ctx: Ctx, id: number) {
 		ledgers: listLedgers(ctx, { notebookId: id, includeArchived: true }),
 		bills: listBillsThisPeriod(ctx, { notebookId: id, includeArchived: true }),
 		habits: listHabits(ctx, { notebookId: id }),
+		// What the heatmap draws and the tick reads, the same two the Health
+		// room's own load hands its cards.
+		habitOccurrences: listOccurrences(ctx),
+		today: habitsToday(ctx),
+		weekFirstDay: getWeekSettings(ctx.userId).firstDay,
 		workouts: listWorkouts(ctx, { notebookId: id, includeArchived: true }),
 		recipes: listRecipes(ctx, { notebookId: id, includeArchived: true })
 	};

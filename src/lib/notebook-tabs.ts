@@ -92,12 +92,6 @@ const LEDGER_KINDS: { value: string; label: PlainKey }[] = [
 	{ value: 'other', label: 'notebooks.fields.other' }
 ];
 
-const HABIT_TYPES: { value: string; label: PlainKey }[] = [
-	{ value: 'bad', label: 'notebooks.fields.somethingToStop' },
-	{ value: 'good', label: 'notebooks.fields.somethingToKeepUp' },
-	{ value: 'neutral', label: 'notebooks.fields.somethingToCount' }
-];
-
 export const MODULE_SPECS: Partial<Record<NotebookModule, ModuleSpec>> = {
 	inventory: {
 		newLabel: 'notebooks.newItem',
@@ -159,32 +153,6 @@ export const MODULE_SPECS: Partial<Record<NotebookModule, ModuleSpec>> = {
 			}
 		],
 		room: (row) => `${resolve('/finance/ledgers')}?ledger=${row.id}`
-	},
-
-	habits: {
-		newLabel: 'notebooks.newHabit',
-		empty: 'notebooks.nothingUnderThisSubjectYet',
-		create: NOTEBOOK_ACTIONS.habits.create,
-		update: NOTEBOOK_ACTIONS.habits.update,
-		remove: NOTEBOOK_ACTIONS.habits.delete,
-		mark: {
-			action: NOTEBOOK_ACTIONS.habits.toggleOccurrence,
-			icon: 'check',
-			label: 'notebooks.marks.today',
-			undo: 'notebooks.marks.notToday'
-		},
-		fields: [
-			{ kind: 'text', name: 'label', label: 'notebooks.fields.name', span: 8, required: true },
-			{
-				kind: 'select',
-				name: 'type',
-				label: 'notebooks.fields.kind',
-				span: 4,
-				options: HABIT_TYPES
-			},
-			{ kind: 'textarea', name: 'description', label: 'notebooks.fields.notes', rows: 2 }
-		],
-		room: () => resolve('/health/habits')
 	},
 
 	workouts: {
