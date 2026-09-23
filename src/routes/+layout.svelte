@@ -30,7 +30,6 @@
 	import { CHOOSE_PATH, inPhoneApp, storedChoice } from '$lib/instance-choice';
 	import { handOverRingerKey } from '$lib/ringer-handshake';
 	import { THEMES, THEME_LABELS } from '$lib/theme.js';
-	import type { SectionKey } from '$lib/colors.js';
 	import SectionPattern from '$lib/components/SectionPattern.svelte';
 	import HelpDock from '$lib/components/HelpDock.svelte';
 	import Tutorial from '$lib/components/Tutorial.svelte';
@@ -52,7 +51,6 @@
 	import ClientErrorPrompt from '$lib/components/ClientErrorPrompt.svelte';
 	import { undo } from '$lib/undo.svelte';
 	import { palette } from '$lib/palette.svelte';
-	import type { IconName } from '$lib/components/Icon.svelte';
 	import { suppressAutofill } from '$lib/autofill';
 	import { APP_UPDATE_HUSH_KEY } from '$lib/platform';
 	import { startMarkSpin, stopMarkSpin } from '$lib/mark-spin';
@@ -361,44 +359,6 @@
 		const said = [inside?.label === room ? '' : inside?.label, room].filter(Boolean).join(' · ');
 		return said ? `${said} · ${data.appName}` : data.appName;
 	});
-
-	/** The glyph tiled behind the page, from the same table as the nav icons. */
-	const SECTION_GLYPH: Record<SectionKey, IconName> = {
-		home: 'home',
-		planner: 'planner',
-		goals: 'goals',
-		diary: 'diary',
-		ideas: 'ideas',
-		health: 'health',
-		finance: 'wallet',
-		inventory: 'shopping',
-		media: 'image'
-	};
-
-	/**
-	 * The glyph behind the page, where the section is not specific enough.
-	 *
-	 * People and Notebooks both belong to the Diary section, so keying the
-	 * background off the section alone drew a journal behind all three — and the
-	 * whole point of the wash is that a room looks like itself. Longest prefix
-	 * wins, so `/notebooks` beats `/diary`.
-	 */
-	const ROUTE_GLYPH: [string, IconName][] = [
-		['/notebooks', 'notebook'],
-		['/notebooks/people', 'user'],
-		['/health/recipes', 'utensils'],
-		// Settings belongs to no room, so it fell through to home — and the
-		// account page was tiled with houses.
-		['/settings', 'user'],
-		['/settings/instance', 'settings'],
-		['/admin', 'shield']
-	];
-
-	const pageGlyph = $derived(
-		ROUTE_GLYPH.filter(([prefix]) => page.url.pathname.startsWith(prefix)).sort(
-			(a, b) => b[0].length - a[0].length
-		)[0]?.[1] ?? SECTION_GLYPH[sectionKey]
-	);
 
 	function isNavActive(href: string): boolean {
 		if (href === '/') return page.url.pathname === '/';
@@ -1125,7 +1085,7 @@
 			</div>
 		{/if}
 
-		<SectionPattern icon={pageGlyph} />
+		<SectionPattern />
 		<!--
 			No top bar on a phone.
 			
