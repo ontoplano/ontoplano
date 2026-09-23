@@ -84,6 +84,7 @@ export async function load(event: IsolatedEvent): Promise<LayoutServerData> {
 		notifications: listSent(buildCtx(user.id)),
 		unreadNotifications: unreadSent(buildCtx(user.id)),
 		demo: false,
+		demoAccount: false,
 		staging: false,
 		// The copy on the device is the app itself, with the app's own name.
 		appName: 'Ontoplano',

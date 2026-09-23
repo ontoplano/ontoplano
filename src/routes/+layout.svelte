@@ -1373,7 +1373,7 @@
 								>
 									{t('home.whereThisLives')}
 								</a>
-							{:else if data.demo}
+							{:else if data.demoAccount}
 								<!--
 									Where Sign out would be, on a demo that has no way back in.
 									Somebody who has made a mess of the fixtures wants a clean

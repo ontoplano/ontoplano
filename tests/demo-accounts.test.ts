@@ -79,6 +79,38 @@ describe('a demo account', () => {
 });
 
 describe('resetting', () => {
+	/*
+	 * The half that was never checked, and the half somebody presses.
+	 *
+	 * "It refuses a real account" was the only thing asserted here, which is
+	 * the guard rather than the feature: a reset that threw on every demo
+	 * account would have passed this file. The menu offering it is gated on
+	 * the same `isDemoAccount` the service checks — the operator signed into
+	 * their own account on the demo instance was shown a button that could
+	 * only fail.
+	 */
+	it('empties a demo account and lays the fixtures down again', async () => {
+		pretendVisitor('visitor-reset', new Date(Date.now() + 600_000).toISOString());
+
+		const { buildCtx } = await import('../src/lib/services/ctx');
+		const notebooks = await import('../src/lib/services/notebooks');
+		const ctx = buildCtx('visitor-reset', { tz: 'UTC' });
+		notebooks.createNotebook(ctx, { title: 'The mess somebody made' });
+
+		await demo.resetDemoAccount('visitor-reset');
+
+		const left = notebooks.listNotebooks(ctx).map((one) => one.title);
+		expect(left).not.toContain('The mess somebody made');
+		// And it is the fixtures, not an empty account: the seed is what the
+		// next visitor would have been handed.
+		expect(left.length).toBeGreaterThan(0);
+
+		// And away again: the fixtures include pictures, and the sweep's own
+		// test asserts on the whole media table.
+		settings.setUserSetting('visitor-reset', 'demo.expiresAt', new Date(0).toISOString());
+		demo.sweepDemoAccounts();
+	}, 45_000);
+
 	it('refuses an account that does not carry the demo stamp', async () => {
 		// This is the one function that empties a whole account. It is only
 		// ever handed demo accounts today, but "the callers are careful" is

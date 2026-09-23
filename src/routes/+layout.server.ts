@@ -22,6 +22,7 @@ import { clientErrorState } from '$lib/server/services/client-errors';
 import { needsFirstRun } from '$lib/services/onboarding';
 import { listCategories } from '$lib/services/activities';
 import { buildCtx } from '$lib/services/ctx';
+import { isDemoAccount } from '$lib/server/services/demo';
 import {
 	list as listSent,
 	unreadCount as unreadSent,
@@ -139,6 +140,7 @@ export const load: LayoutServerLoad = async (event) => {
 	 */
 	let notifications: SentNotification[] = [];
 	let unreadNotifications = 0;
+	let resettableDemo = false;
 	if (event.locals.user) {
 		const ctx = buildCtx(event.locals.user.id);
 		userCategories = listCategories(ctx).map((c) => ({
@@ -170,6 +172,7 @@ export const load: LayoutServerLoad = async (event) => {
 		 * written once and never again.
 		 */
 		tutorialPending = isDemoInstance() || !hasSeenTutorial(ctx.userId);
+		resettableDemo = isDemoInstance() && isDemoAccount(ctx.userId);
 	}
 
 	/*
@@ -236,6 +239,16 @@ export const load: LayoutServerLoad = async (event) => {
 		// The public demo says so on every page: a copy of your own, deleted
 		// hourly, so nobody mistakes it for their own instance.
 		demo: isDemoInstance(),
+		/*
+		 * And whether *this* account is one of the throwaway copies.
+		 *
+		 * Not the same question as the one above, which is why the menu used to
+		 * offer Reset demo account to the operator signed into their own
+		 * account on the demo instance — and resetting refuses that, correctly,
+		 * so the button was one that could only fail. Only a visitor's own copy
+		 * can be put back.
+		 */
+		demoAccount: resettableDemo,
 		/*
 		 * And so does staging, on every page rather than only on the way in.
 		 *
