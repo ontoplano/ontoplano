@@ -77,9 +77,14 @@
 		 * For notes whose notebook was deleted: they were not thrown away, they
 		 * are waiting to be put somewhere. A bin says the opposite of what that
 		 * chip is for — it is where things go to come back.
+		 *
+		 * Six subpaths in one `d`: three sides, each ending in a chevron. Drawn
+		 * on the same 24x24 grid as the rest, and it has to survive being 16px
+		 * in a corner — the first attempt at this was hand-placed coordinates
+		 * and rendered as a squiggle.
 		 */
 		recycle:
-			'M7 19H5a2 2 0 0 1-1.73-3L5.5 12M5.5 12 4 14.5M5.5 12l2.6 1M12 5l1 1.73 2.24 3.88M15.24 10.6l.36-2.9M15.24 10.6l2.9-.36M17 19h2a2 2 0 0 0 1.73-3l-1.2-2.08M19.53 13.92 17 14.6M19.53 13.92l-1.5-2.2M9 19h6',
+			'M7 19H4.8a1.8 1.8 0 0 1-1.57-2.67L7.2 9.5M11 19h8.2a1.8 1.8 0 0 0 1.56-2.67l-1.23-2.12M14 16l-3 3 3 3M8.3 13.6 7.2 9.5l-4.1 1.1M9.34 5.81l1.1-1.89A1.8 1.8 0 0 1 12 3a1.8 1.8 0 0 1 1.53.89l3.94 6.84M13.38 9.63l4.1 1.1 1.1-4.1',
 		// A drawing pin seen from the side: the head, the collar, the point.
 		pin: 'M9 4h6l-1 5 3 3H7l3-3-1-5zM12 12v8',
 		wallet:
