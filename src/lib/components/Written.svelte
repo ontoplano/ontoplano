@@ -16,6 +16,7 @@
 	import { AUDIO_HREF, splitAudio } from '$lib/audio-markdown';
 	import { splitPictures } from '$lib/picture-markdown';
 	import { renderMarkdown, type TodoRefs } from '$lib/markdown';
+	import { overflows } from '$lib/actions/overflows';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -50,6 +51,7 @@
 		compact = false,
 		/** Cut to a single line. What a list shows until somebody asks for more. */
 		oneLine = false,
+		ontruncate,
 		/**
 		 * Cut after this many lines, for a card that shows an opening.
 		 *
@@ -79,6 +81,15 @@
 		content: string;
 		compact?: boolean;
 		oneLine?: boolean;
+		/**
+		 * Told whether the clamp is actually cutting anything off.
+		 *
+		 * Only the element that carries the clamp can answer this, which is why
+		 * it is reported from in here rather than measured by whoever drew it:
+		 * a wrapper around this does not overflow, so a caller watching its own
+		 * box is told "nothing is folded" about a paragraph that plainly is.
+		 */
+		ontruncate?: (yes: boolean) => void;
 		lines?: number;
 		inheritInk?: boolean;
 		todos?: TodoRefs;
@@ -134,6 +145,7 @@
 		paragraph, and the row opens to the rest.
 	-->
 	<div
+		use:overflows={ontruncate ?? (() => {})}
 		class="md written {folded ? 'written-one-line' : ''} {lines
 			? 'written-clamped'
 			: ''} {type} {klass}"

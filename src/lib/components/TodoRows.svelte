@@ -24,7 +24,6 @@
 	import FilterBar from '$lib/components/FilterBar.svelte';
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
 	import { ratingSummary } from '$lib/ratings';
-	import { overflows } from '$lib/actions/overflows';
 	import TagChip from '$lib/components/TagChip.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -204,6 +203,11 @@
 	const truncated = new SvelteSet<number>();
 
 	const notesTruncate = (id: number) => (over: boolean) => {
+		// Opening a row takes the clamp off, so the element stops overflowing and
+		// says so. That is not "there was never anything folded" — it is the
+		// answer to a question nobody is asking while it is open, and acting on
+		// it would take away the chevron that shuts it again.
+		if (openNotes.has(id)) return;
 		if (over) truncated.add(id);
 		else truncated.delete(id);
 	};
@@ -1300,7 +1304,6 @@
 									<!-- svelte-ignore a11y_click_events_have_key_events -->
 									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<div
-										use:overflows={notesTruncate(todo.id)}
 										class={hasMore(todo) && !openNotes.has(todo.id) ? 'cursor-pointer' : ''}
 										onclick={(press) => {
 											if (!hasMore(todo) || openNotes.has(todo.id)) return;
@@ -1313,6 +1316,7 @@
 											content={todo.notes}
 											compact
 											oneLine={!openNotes.has(todo.id)}
+											ontruncate={notesTruncate(todo.id)}
 											todos={todoRefs}
 										/>
 									</div>
