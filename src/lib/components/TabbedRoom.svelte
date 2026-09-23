@@ -34,6 +34,7 @@
 		label,
 		belongsTo,
 		dataTour,
+		nested = false,
 		actions,
 		children
 	}: {
@@ -53,6 +54,14 @@
 		belongsTo?: string;
 		/** What a guided tour calls this strip, where one points at it. */
 		dataTour?: string;
+		/**
+		 * Whether this room is inside another one.
+		 *
+		 * Then it draws only its tabs, at the top of the surface the outer room
+		 * already put there — no bar, no title, no second body. Two of these
+		 * stacked whole is two rooms on one screen.
+		 */
+		nested?: boolean;
 		actions?: import('svelte').Snippet;
 		children: import('svelte').Snippet;
 	} = $props();
@@ -213,10 +222,9 @@
 	});
 </script>
 
-<div class="room-frame">
-	<RoomBar {title} {actions} verbInTabs={!phone.current}>
-		<!--
-			The tabs and the room's verb, on one line and on one ground.
+{#snippet strip()}
+	<!--
+		The tabs and the room's verb, on one line and on one ground.
 
 			They were a row of underlined words with nothing behind them and the
 			verb up on the title line a rule away, which reads as three loose
@@ -228,8 +236,8 @@
 			convention this strip already used, so nothing here had to learn how
 			the tile works.
 		-->
-		<div class="room-tabs">
-			<!--
+	<div class="room-tabs">
+		<!--
 				The track and the strip that scrolls inside it are two elements.
 
 				The fade that says "there is more this way" is a mask, and a mask
@@ -239,24 +247,19 @@
 				continues. The track keeps its surface and its corner; the row of
 				tabs inside it is the thing that fades.
 			-->
-			<div class="seg seg-track min-w-0">
-				<nav
-					use:scrollHints
-					class="seg-scroll scroll-hints"
-					aria-label={label}
-					data-tour={dataTour}
-				>
-					<!-- Resolved by whoever described the tabs: a stream's slug is a
+		<div class="seg seg-track min-w-0">
+			<nav use:scrollHints class="seg-scroll scroll-hints" aria-label={label} data-tour={dataTour}>
+				<!-- Resolved by whoever described the tabs: a stream's slug is a
 					     route parameter, and the rule cannot see through it. -->
-					<!-- eslint-disable svelte/no-navigation-without-resolve -->
-					{#each tabs as tab, index (tab.href)}
-						<a href={tab.href} aria-current={here(index) ? 'page' : undefined}>
-							{tab.label}
-						</a>
-					{/each}
-					<!-- eslint-enable svelte/no-navigation-without-resolve -->
-				</nav>
-				<!--
+				<!-- eslint-disable svelte/no-navigation-without-resolve -->
+				{#each tabs as tab, index (tab.href)}
+					<a href={tab.href} aria-current={here(index) ? 'page' : undefined}>
+						{tab.label}
+					</a>
+				{/each}
+				<!-- eslint-enable svelte/no-navigation-without-resolve -->
+			</nav>
+			<!--
 					The verb stands on the same ground as the tabs.
 
 					It was a sibling of the track, so it sat on the page behind with
@@ -267,10 +270,28 @@
 					room for it here across 390px, where the tabs would have to give
 					way and half of them would end up behind the fade.
 				-->
-				{#if !phone.current}<RoomVerb />{/if}
-			</div>
+			{#if !phone.current}<RoomVerb />{/if}
 		</div>
-	</RoomBar>
+	</div>
+{/snippet}
+
+<div class="room-frame {nested ? 'room-frame-nested' : ''}">
+	{#if nested}
+		<!--
+			A second level of tabs inside a room that already has one.
+
+			Settings → Integrations is two rooms deep, and drawing the whole of
+			this twice gave it two bars, two titles and two bands of page ground
+			— which reads as two rooms stacked rather than as one room with
+			sections in it. Nested, only the strip is drawn, and it sits at the
+			top of the surface the outer room already put there.
+		-->
+		{@render strip()}
+	{:else}
+		<RoomBar {title} {actions} verbInTabs={!phone.current}>
+			{@render strip()}
+		</RoomBar>
+	{/if}
 
 	<!-- `.slide-frame` is where the movement is clipped, and why it gives the
 	     page gutter back first. -->
@@ -285,7 +306,7 @@
 				pill with two corners cut off for no reason, which is what Finance
 				and Media and Health looked like.
 			-->
-			<div bind:this={body} class="room-body">{@render children()}</div>
+			<div bind:this={body} class={nested ? '' : 'room-body'}>{@render children()}</div>
 		</div>
 		<div bind:this={stage} class="slide-stage" aria-hidden="true"></div>
 		<!--

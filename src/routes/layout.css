@@ -4140,6 +4140,27 @@ html button.tab-link {
  * underlined words. Here they are one strip: the track, and the verb at the
  * end of it.
  */
+/*
+ * A second level of tabs, inside a room that already has one.
+ *
+ * It stands on the surface the outer room put there rather than bringing its
+ * own, so it is the top block of that surface with a rule under it — the same
+ * place a room's controls sit. No track behind it: one grey strip inside
+ * another grey strip is two things where there is one section of one room.
+ */
+.room-frame-nested {
+	border-bottom: 1px solid var(--color-gray-200);
+}
+
+.room-frame-nested .seg-track {
+	background-color: transparent;
+	border-radius: 0 !important;
+}
+
+.room-frame-nested .room-tabs {
+	padding-inline: 0.5rem;
+}
+
 .room-tabs {
 	display: flex;
 	align-items: center;
