@@ -229,6 +229,17 @@ input[type='radio'] {
 }
 
 /*
+ * And on a phone it has no corners at all: the room runs to both screen edges
+ * there, so the track does too, and a corner against the edge of the screen is
+ * a notch of whatever is behind showing through. Same rule as the shell.
+ */
+@media (width < 40rem) {
+	.room-tabs .seg-track {
+		border-radius: 0 !important;
+	}
+}
+
+/*
  * The phone bar's raised pie button has no rule here any more.
  *
  * It was a circle, forced round against the style's other radii, with the mark
@@ -569,11 +580,19 @@ html {
 	z-index: 0;
 	pointer-events: none;
 	color: var(--section-accent);
-	opacity: 0.045;
+	/*
+	 * More of it than the glyphs needed.
+	 *
+	 * A tiled icon at five percent is a large shape you can see; a grain at
+	 * five percent is nothing at all, because the mark is a speck and half of
+	 * the specks are near-transparent to begin with. This is the number at
+	 * which it reads as a surface rather than as a clean wash.
+	 */
+	opacity: 0.35;
 }
 
 html[data-style='playful'] .section-pattern {
-	opacity: 0.1;
+	opacity: 0.45;
 }
 
 /*
@@ -724,8 +743,17 @@ html[data-theme='dark'][data-style='playful'] .section-pattern {
  * by a different amount than the padding either leaves a sliver of gutter or
  * makes the page scroll sideways, and nothing type-checks across that gap.
  */
+/*
+ * On a phone the room runs to both edges.
+ *
+ * A rem of page ground down each side is a rem the rows do not have, and the
+ * rows are what somebody came for. It reads as the room hovering in the middle
+ * of the screen rather than being the screen — and there is no gap to lose,
+ * because the rows have their own padding. Wider than a phone the gutter is
+ * what separates the room from the window, and it stays.
+ */
 .page-gutter {
-	--page-gutter: 1rem;
+	--page-gutter: 0rem;
 	padding-inline: var(--page-gutter);
 }
 
@@ -4161,8 +4189,25 @@ html[data-style='playful'] .room-surface {
 	flex-wrap: nowrap;
 }
 
-.room-tabs > .seg > * {
+/*
+ * The tabs do not shrink; the strip holding them does.
+ *
+ * This was on the track's children, which is the strip itself — so the strip
+ * could not give way, overflowed the track, and the track's `clip` cut it off
+ * mid-word with no fade at all. The fade only ever appears on something that
+ * is scrolling, and a thing that cannot shrink never scrolls.
+ */
+.room-tabs .seg-scroll > * {
 	flex: none;
+}
+
+.room-tabs > .seg-track {
+	display: flex;
+}
+
+.room-tabs .seg-scroll {
+	flex: 0 1 auto;
+	min-width: 0;
 }
 
 /*

@@ -6,6 +6,7 @@
 	import { scrollHints } from '$lib/actions/scroll-hints';
 	import { sliding } from '$lib/actions/sliding';
 	import RoomVerb from '$lib/components/RoomVerb.svelte';
+	import { phoneWidth } from '$lib/breakpoints.svelte';
 	import { onSwipe } from '$lib/swipe';
 	import { swipeSurface } from '$lib/swipe-surface';
 	import {
@@ -125,6 +126,9 @@
 	 * makes "anywhere, at any height" true — which is what a phone app does
 	 * and what listening on the content only ever half did.
 	 */
+	/** Whether the verb has room at the end of the tab strip. */
+	const phone = phoneWidth();
+
 	const swipeTarget = swipeSurface();
 	$effect(() => {
 		const on = swipeTarget?.();
@@ -211,7 +215,7 @@
 </script>
 
 <div class="room-frame">
-	<RoomBar {title} {actions} verbInTabs>
+	<RoomBar {title} {actions} verbInTabs={!phone.current}>
 		<!--
 			The tabs and the room's verb, on one line and on one ground.
 
@@ -255,7 +259,14 @@
 					<!-- eslint-enable svelte/no-navigation-without-resolve -->
 				</nav>
 			</div>
-			<RoomVerb />
+			<!--
+				And on a phone it goes back up beside the name.
+
+				There is no room for it at the end of the strip across 390px: the
+				tabs had to give way to it and half of them ended up behind the
+				fade. The title line has the space and nothing else in it.
+			-->
+			{#if !phone.current}<RoomVerb />{/if}
 		</div>
 	</RoomBar>
 
