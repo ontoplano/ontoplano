@@ -2539,6 +2539,45 @@ label:has(> input[type='radio']:not(:disabled)) {
 		}
 	}
 
+	/*
+	 * A choice that stands beside a `.seg` rather than inside it.
+	 *
+	 * The markdown box's Side by side is not a place the tile can be — it says
+	 * how much of the pair to show, and when it is on the tile covers both
+	 * positions at once. So it is a button at the far end of the strip, drawn
+	 * at the same size and weight as a position so the strip reads as one row,
+	 * and wearing the tile's own surface when it is on.
+	 */
+	.seg-aside {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border: 1px solid transparent;
+		background-color: transparent;
+		padding: 0.3125rem 0.75rem;
+		font-size: 0.8125rem;
+		font-weight: 500;
+		color: var(--color-gray-500);
+		white-space: nowrap;
+		transition:
+			background-color 140ms ease,
+			color 140ms ease;
+	}
+
+	.seg-aside:hover {
+		color: var(--color-gray-900);
+	}
+
+	.seg-aside[aria-pressed='true'] {
+		background-color: var(--color-white);
+		box-shadow: var(--shadow-card);
+		color: var(--color-gray-900);
+	}
+
+	html[data-style='playful'] .seg-aside[aria-pressed='true'] {
+		box-shadow: 0 0 0 1px var(--color-gray-200);
+	}
+
 	.seg-sliding > a,
 	.seg-sliding > button,
 	.seg-sliding > label {
@@ -2573,6 +2612,27 @@ label:has(> input[type='radio']:not(:disabled)) {
 	html[data-style='playful'] .seg > [aria-current='true'],
 	html[data-style='playful'] .seg > :has(> input:checked) {
 		box-shadow: 0 0 0 1px var(--color-gray-200);
+	}
+
+	/*
+	 * In a track with a travelling tile, the tile owns the outline. Alone.
+	 *
+	 * The rule above is more specific than the one that clears the pressed
+	 * child's own surface, so it put the ring back on — invisible while one
+	 * position was marked, because the ring and the tile were the same
+	 * rectangle. The markdown box marks two at once, and then there were two
+	 * rings inside one tile with their rounded corners meeting in the middle:
+	 * a seam down a shape that is meant to read as one, notched at both ends.
+	 *
+	 * Two curves never share an edge — see the pane rule above, which is the
+	 * same mistake in a different place.
+	 */
+	html[data-style='playful'] .seg-sliding > [aria-pressed='true'],
+	html[data-style='playful'] .seg-sliding > [aria-selected='true'],
+	html[data-style='playful'] .seg-sliding > [aria-current='page'],
+	html[data-style='playful'] .seg-sliding > [aria-current='true'],
+	html[data-style='playful'] .seg-sliding > :has(> input:checked) {
+		box-shadow: none;
 	}
 
 	/*

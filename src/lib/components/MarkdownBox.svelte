@@ -95,6 +95,25 @@
 	let showing = $state<'write' | 'preview' | 'both'>('write');
 
 	/**
+	 * The single pane to come back to when Side by side is switched off.
+	 *
+	 * Side by side is a toggle over the pair rather than a third position:
+	 * pressing it takes in whichever of the two you were on, and pressing it
+	 * again gives you that one back. Coming back to Write always would throw
+	 * away the answer somebody had just given.
+	 */
+	let lastSingle = $state<'write' | 'preview'>('write');
+
+	function show(pane: 'write' | 'preview') {
+		lastSingle = pane;
+		showing = pane;
+	}
+
+	function toggleBoth() {
+		showing = showing === 'both' ? lastSingle : 'both';
+	}
+
+	/**
 	 * What is in the box, which is not the same as what was passed in.
 	 *
 	 * Most callers hand `value` over one-way — `value={entry.content}` — and
@@ -150,32 +169,51 @@
 		that it is not a choice anybody could want, and `both` falls back to the
 		editor alone — writing is what the box is for.
 	-->
-	<div class="seg mb-2" use:sliding role="tablist">
+	<div class="mb-2 flex items-center gap-2">
+		<!--
+			The pair, as one control with a position.
+
+			The tile travels between Write and Preview — and when Side by side
+			is on it covers them both, because both of them are what you are
+			looking at. `sliding` measures whatever carries `aria-selected`, so
+			marking both is the whole of that: nothing here has to know how wide
+			two of them are.
+		-->
+		<div class="seg" use:sliding role="tablist">
+			<button
+				type="button"
+				role="tab"
+				aria-selected={showing === 'write' || showing === 'both'}
+				aria-label={t('markdown.write')}
+				onclick={() => show('write')}
+			>
+				{t('markdown.write')}
+			</button>
+			<button
+				type="button"
+				role="tab"
+				aria-selected={showing === 'preview' || showing === 'both'}
+				aria-label={t('markdown.preview')}
+				onclick={() => show('preview')}
+			>
+				{t('markdown.preview')}
+			</button>
+		</div>
+
+		<!--
+			And the one that takes in both, at the far end of the strip.
+
+			A button rather than a third tab: it does not name a place the tile
+			can be, it says how much of the pair to show. Only where two columns
+			would fit at all — below that it is not a choice anybody could want,
+			and `both` falls back to the editor alone, because writing is what
+			the box is for.
+		-->
 		<button
 			type="button"
-			role="tab"
-			aria-selected={showing === 'write'}
-			aria-label={t('markdown.write')}
-			onclick={() => (showing = 'write')}
-		>
-			{t('markdown.write')}
-		</button>
-		<button
-			type="button"
-			role="tab"
-			aria-selected={showing === 'preview'}
-			aria-label={t('markdown.preview')}
-			onclick={() => (showing = 'preview')}
-		>
-			{t('markdown.preview')}
-		</button>
-		<button
-			type="button"
-			role="tab"
-			aria-selected={showing === 'both'}
-			aria-label={t('markdown.sideBySide')}
-			class="hidden @lg:inline-flex"
-			onclick={() => (showing = 'both')}
+			aria-pressed={showing === 'both'}
+			class="seg-aside ml-auto hidden @lg:inline-flex"
+			onclick={toggleBoth}
 		>
 			{t('markdown.sideBySide')}
 		</button>
@@ -185,24 +223,32 @@
 		Below two columns, `both` is the editor: the preview is the pane that
 		gives way, because writing is what the box is for.
 
-		Narrow, the two panes are stacked in one cell rather than swapped.
-		
-		Hiding one with `display: none` made the box the height of whichever
-		was showing, so choosing Preview on a short note pulled the picture
-		row, the tags, the people and the footer up the screen — and choosing
-		Write pushed them back down. Stacked, the cell is as tall as the taller
-		of the two and the press moves nothing, which is the rule everywhere
-		else in the app.
+		Stacked, the editor is the one that sets the height and the preview is
+		laid over it.
 
-		Wide, the grid puts them side by side and `items-stretch` already made
-		them agree.
+		Hiding one with `display: none` made the box the height of whichever was
+		showing, so choosing Preview on a short note pulled the picture row, the
+		tags, the people and the footer up the screen — and choosing Write
+		pushed them back down. Both in one grid cell fixed that and bought a
+		worse problem: a cell is as tall as its tallest item, so a long note's
+		preview stretched the box to its own height and left a screen of dead
+		space under an eight-row editor. There should never be more room there
+		than there is writing in it.
+
+		So the preview is taken out of the sizing — absolute over the editor,
+		scrolling inside it. The height is the editor's at every moment, the
+		press still moves nothing, and what the preview cannot fit it scrolls.
+
+		Side by side is two columns in flow, where `items-stretch` makes them
+		agree.
 	-->
-	<div class="grid @lg:items-stretch @lg:gap-3 {showing === 'both' ? '@lg:grid-cols-2' : ''}">
+	<div
+		class="relative grid @lg:items-stretch @lg:gap-3 {showing === 'both' ? '@lg:grid-cols-2' : ''}"
+	>
 		<!--
-			`invisible` rather than `hidden`: the pane keeps its place in the
-			cell, which is what holds the height. It is also taken out of the
-			tab order and off the screen reader, since it is not the one being
-			shown.
+			The editor is always in flow, even while the preview is the one
+			being read: it is what says how tall the box is, and `invisible`
+			keeps it saying so.
 		-->
 		<div
 			class="col-start-1 row-start-1 @lg:col-start-1 {showing === 'preview' ? 'invisible' : ''}"
@@ -212,15 +258,21 @@
 			<TextBox bind:value={text} bind:element {rows} {...rest} />
 		</div>
 
+		<!--
+			And the preview is laid over it, except side by side, where it is a
+			column of its own and stretches to match.
+		-->
 		<div
-			class="md col-start-1 row-start-1 overflow-y-auto rounded border border-gray-200 bg-gray-50 p-3 text-sm text-gray-900 {showing ===
-			'preview'
-				? ''
-				: showing === 'both'
-					? 'invisible @lg:visible @lg:col-start-2'
-					: 'invisible'}"
+			class="md overflow-y-auto rounded border border-gray-200 bg-gray-50 p-3 text-sm text-gray-900 {showing ===
+			'both'
+				? 'invisible absolute inset-0 @lg:visible @lg:static @lg:col-start-2 @lg:row-start-1'
+				: showing === 'preview'
+					? 'absolute inset-0'
+					: 'invisible absolute inset-0'}"
 			aria-live="off"
 			aria-label={t('markdown.preview')}
+			aria-hidden={showing === 'write' ? 'true' : undefined}
+			inert={showing === 'write' ? true : undefined}
 		>
 			{#if empty}
 				<p class="text-gray-500 italic">{t('markdown.nothingToPreviewYet')}</p>
