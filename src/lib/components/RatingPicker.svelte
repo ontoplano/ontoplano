@@ -95,6 +95,26 @@
 	let pressing = false;
 
 	/**
+	 * The native control, kept in step with the answer at every moment.
+	 *
+	 * While a pointer is down the bar decides and `slide` stands off, so the
+	 * input went on holding whatever the native slider had worked out from the
+	 * pointer — a different number, because a range puts its thumb on the
+	 * *nearest* step and a bar fills up to the block you are on. The event that
+	 * arrives as the drag ends then carried that stale number and applied it,
+	 * which is the value snapping back a step the moment you let go. It showed
+	 * up as "I move them faster, they flick back": moving fast is what puts the
+	 * two furthest apart.
+	 *
+	 * So every answer the bar works out is written straight back into the
+	 * input. There is never a second number to come back.
+	 */
+	let slider: HTMLInputElement | undefined = $state();
+
+	/** The answer, as the native control spells it — 2.5 is "nobody said". */
+	const asStep = (answer: number | null) => String(answer ?? RATING_UNRATED);
+
+	/**
 	 * Pressing a block fills up to it, rather than to the nearest edge.
 	 *
 	 * A range input puts its thumb on the nearest step to where you pressed, so
@@ -132,18 +152,27 @@
 		value = Math.min(RATING_MAX, Math.max(RATING_MIN, Math.ceil(to)));
 	}
 
+	/** What `fillTo` decided, told to the input as well. */
+	function fill(event: PointerEvent) {
+		fillTo(event);
+		if (slider) slider.value = asStep(value);
+	}
+
 	function press(event: PointerEvent) {
 		pressing = true;
 		(event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
-		fillTo(event);
+		fill(event);
 	}
 
 	function drag(event: PointerEvent) {
-		if (pressing) fillTo(event);
+		if (pressing) fill(event);
 	}
 
 	function release() {
 		pressing = false;
+		// And once more on the way out, for the event the native control fires
+		// as the press ends — by now it says the same thing this does.
+		if (slider) slider.value = asStep(value);
 	}
 </script>
 
@@ -198,6 +227,7 @@
 					min={RATING_MIN}
 					max={RATING_MAX}
 					step="0.5"
+					bind:this={slider}
 					value={shown}
 					oninput={slide}
 					aria-label={t(RATING_LABELS[rating])}
