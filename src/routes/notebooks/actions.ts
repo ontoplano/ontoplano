@@ -31,7 +31,8 @@ export const notebookActions = {
 		try {
 			createNotebook(buildCtx(locals.user!.id), {
 				title: formData.get('heading'),
-				description: formData.get('description')
+				description: formData.get('description'),
+				defaultTags: formData.get('defaultTags')
 			});
 			return { success: true };
 		} catch (e) {
@@ -44,7 +45,8 @@ export const notebookActions = {
 		try {
 			updateNotebook(buildCtx(locals.user!.id), Number(formData.get('id')), {
 				title: formData.get('heading'),
-				description: formData.get('description')
+				description: formData.get('description'),
+				defaultTags: formData.get('defaultTags')
 			});
 			return { success: true };
 		} catch (e) {

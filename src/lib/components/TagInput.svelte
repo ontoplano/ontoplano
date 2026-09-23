@@ -23,12 +23,20 @@
 
 	let {
 		name = 'tags',
-		value = '',
+		value = $bindable(''),
 		/** The account's whole vocabulary, for suggesting. */
 		known = [],
 		placeholder = ''
 	}: {
 		name?: string;
+		/**
+		 * The tags, in and out.
+		 *
+		 * Handed in it seeds the chips; bound, it reports them back — which a
+		 * form needs when something else on it wants to know what the box
+		 * holds before it is submitted. A caller that only seeds can pass it
+		 * plainly and never hear about it again.
+		 */
 		value?: string;
 		known?: readonly string[];
 		placeholder?: string;
@@ -57,10 +65,20 @@
 	let seededFrom = value;
 	$effect(() => {
 		const incoming = value;
-		if (incoming === seededFrom) return;
-		seededFrom = incoming;
-		tags = tagsFrom(incoming);
-		draft = '';
+		if (incoming !== seededFrom) {
+			seededFrom = incoming;
+			tags = tagsFrom(incoming);
+			draft = '';
+			return;
+		}
+		// Otherwise it is the chips that moved, and `value` is the way back
+		// out. Same marker guards both directions, so neither answers the
+		// other.
+		const held = tagsValue(tags);
+		if (held !== seededFrom) {
+			seededFrom = held;
+			value = held;
+		}
 	});
 	/** The word being typed. Nothing else lives in the input. */
 	let draft = $state('');

@@ -1572,9 +1572,11 @@ export const messages: Catalogue = {
 	'notebooks.id.changeThePicture': 'Cambiar la imagen',
 	'notebooks.id.close': 'Cerrar',
 	'notebooks.id.closed': 'cerrado',
+	'notebooks.id.defaultTags': 'Etiquetas para notas nuevas',
 	'notebooks.id.deleteTheNotebook': 'Eliminar el cuaderno',
 	'notebooks.id.deleteThisNotebook': '¿Eliminar este cuaderno?',
 	'notebooks.id.editNotebook': 'Editar cuaderno',
+	'notebooks.id.everyNewNoteStartsWith': 'Una nota escrita aquí empieza con estas',
 	'notebooks.id.itsNotesTasksAndGoals':
 		'Sus notas, tareas y metas no se eliminarán. Las tareas y metas se quedan donde están, en el\n\t\tplanificador y en Metas; las notas se mueven a',
 	'notebooks.id.larrAllNotebooks': '← Todos los cuadernos',

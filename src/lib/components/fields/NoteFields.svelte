@@ -50,7 +50,7 @@
 		content?: string;
 		tags?: string;
 		notebookId?: number | null;
-		notebooks?: { id: number; title: string }[];
+		notebooks?: { id: number; title: string; defaultTags?: string }[];
 		compact?: boolean;
 		pictures?: boolean;
 		notebook?: boolean;
@@ -58,6 +58,49 @@
 	} = $props();
 
 	let box = $state<HTMLTextAreaElement>();
+
+	/*
+	 * A notebook's own labels, filled in rather than applied.
+	 *
+	 * "Every new note here starts with these" is a suggestion, so it belongs
+	 * in the box where the person can see it and take it out again — not
+	 * added on the server where they would find out afterwards. Picking a
+	 * different notebook swaps them, and anything typed is left alone: the
+	 * swap only replaces what the last notebook put there.
+	 */
+	let filedIn = $state(notebookId);
+	let labels = $state(tags);
+
+	const defaultsFor = (id: number | null) =>
+		(id === null ? '' : (notebooks.find((one) => one.id === id)?.defaultTags ?? '')).trim();
+
+	/*
+	 * Plain variables, for the same reason TagInput's is: they mark what this
+	 * effect last did, and making them reactive would have it depend on its
+	 * own writes.
+	 *
+	 * `openedWith` is the re-seed TagInput needs for the same reason — one
+	 * modal is reused for the next note, so the props change under a component
+	 * that is not rebuilt, and state seeded once would show the last note's
+	 * labels and save them.
+	 */
+	let openedWith = { notebookId, tags };
+	let suggested = defaultsFor(notebookId);
+	$effect(() => {
+		if (notebookId !== openedWith.notebookId || tags !== openedWith.tags) {
+			openedWith = { notebookId, tags };
+			filedIn = notebookId;
+			labels = tags;
+			suggested = defaultsFor(notebookId);
+			return;
+		}
+
+		const now = defaultsFor(filedIn);
+		if (now === suggested) return;
+		// Only what the last notebook put there is replaced; anything typed stays.
+		if (labels.trim() === suggested) labels = now;
+		suggested = now;
+	});
 </script>
 
 <Field {label} span={12} required>
@@ -73,7 +116,7 @@
 
 {#snippet rest()}
 	{#if notebook}
-		<NotebookField {notebooks} value={notebookId} span={12} />
+		<NotebookField {notebooks} bind:value={filedIn} span={12} />
 	{/if}
 
 	<!-- Half the row, so Tags and the People field beside it are the same size
@@ -81,7 +124,7 @@
 	     half-width one, for two things of equal weight. -->
 	<Field label={t('ui.tags')} span={6} hint={t('fields.note.separateWithCommasOrSpaces')}>
 		<TagInput
-			value={tags}
+			bind:value={labels}
 			known={page.data.tagVocabulary ?? []}
 			placeholder={t('fields.note.tagsExample')}
 		/>
@@ -91,7 +134,7 @@
 {#if compact}
 	<MoreOptions
 		label={notebook ? t('fields.note.notebookTags') : 'Tags'}
-		count={(tags ? 1 : 0) + (notebook && notebookId ? 1 : 0)}
+		count={(labels ? 1 : 0) + (notebook && filedIn ? 1 : 0)}
 	>
 		{@render rest()}
 	</MoreOptions>

@@ -12,6 +12,7 @@ import { listTodosIn } from './todos.js';
 import { ConflictError, NotFoundError } from './errors.js';
 import { stamp, stamps } from './time.js';
 import { num, optionalStr, str } from './validate.js';
+import { optionalTagInput, parseTags } from './tags.js';
 
 /**
  * Notebooks: a subject you write against, with no deadline.
@@ -32,6 +33,8 @@ export type Notebook = {
 	description: string;
 	/** One picture, the way a person has a face. Null until somebody adds one. */
 	pictureId: number | null;
+	/** What a new note here starts labelled with. Empty when nothing is set. */
+	defaultTags: string;
 	closedAt: string | null;
 	/** Whether this account owns it — false for one shared into the family. */
 	mine: boolean;
@@ -180,6 +183,7 @@ export function listNotebooks(ctx: Ctx): Notebook[] {
 			title: notebooks.title,
 			description: notebooks.description,
 			pictureId: notebooks.pictureId,
+			defaultTags: notebooks.defaultTags,
 			closedAt: notebooks.closedAt,
 			sharedWithFamily: notebooks.sharedWithFamily,
 			ownerId: notebooks.userId,
@@ -273,6 +277,7 @@ export function getNotebook(ctx: Ctx, id: number): Notebook {
 			title: notebooks.title,
 			description: notebooks.description,
 			pictureId: notebooks.pictureId,
+			defaultTags: notebooks.defaultTags,
 			closedAt: notebooks.closedAt,
 			sharedWithFamily: notebooks.sharedWithFamily,
 			ownerId: notebooks.userId,
@@ -375,7 +380,10 @@ export function contentsOf(ctx: Ctx, id: number) {
 	};
 }
 
-export function createNotebook(ctx: Ctx, raw: { title: unknown; description?: unknown }): number {
+export function createNotebook(
+	ctx: Ctx,
+	raw: { title: unknown; description?: unknown; defaultTags?: unknown }
+): number {
 	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
 	if (notebookTitled(ctx, title)) throw new ConflictError('A notebook by that name already exists');
 
@@ -385,7 +393,8 @@ export function createNotebook(ctx: Ctx, raw: { title: unknown; description?: un
 			...stamps(ctx),
 			userId: ctx.userId,
 			title,
-			description: optionalStr(raw.description, 'description', { max: MAX_DESCRIPTION_LENGTH })
+			description: optionalStr(raw.description, 'description', { max: MAX_DESCRIPTION_LENGTH }),
+			defaultTags: parseTags(optionalTagInput(raw.defaultTags)).join(', ')
 		})
 		.run();
 
@@ -395,7 +404,7 @@ export function createNotebook(ctx: Ctx, raw: { title: unknown; description?: un
 export function updateNotebook(
 	ctx: Ctx,
 	id: number,
-	raw: { title: unknown; description?: unknown }
+	raw: { title: unknown; description?: unknown; defaultTags?: unknown }
 ): void {
 	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
 
@@ -407,12 +416,34 @@ export function updateNotebook(
 		.set({
 			title,
 			description: optionalStr(raw.description, 'description', { max: MAX_DESCRIPTION_LENGTH }),
+			// Left out entirely, they stay as they were: this takes the whole
+			// form and also one field at a time from an assistant.
+			...(raw.defaultTags === undefined
+				? {}
+				: { defaultTags: parseTags(optionalTagInput(raw.defaultTags)).join(', ') }),
 			updatedAt: stamp(ctx)
 		})
 		.where(and(eq(notebooks.id, id), eq(notebooks.userId, ctx.userId)))
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('notebook');
+}
+
+/**
+ * The labels a new note in this notebook should start with.
+ *
+ * Empty for a note filed nowhere, and empty for a notebook nobody set any on,
+ * which is the same answer and wants no distinction. Reads the column rather
+ * than the whole notebook: this runs on every note written.
+ */
+export function defaultTagsOf(ctx: Ctx, notebookId: number | null): string {
+	if (notebookId === null) return '';
+	const found = db
+		.select({ defaultTags: notebooks.defaultTags })
+		.from(notebooks)
+		.where(eq(notebooks.id, notebookId))
+		.get();
+	return found?.defaultTags ?? '';
 }
 
 /** Close a finished subject, or reopen one you went back to. */
@@ -485,22 +516,26 @@ export function ownedNotebookId(ctx: Ctx, value: unknown): number | null {
 /** The open notebooks, for the selector on every form that can point at one. */
 export function pickableNotebooks(ctx: Ctx) {
 	const others = host.familyUserIds(ctx.userId).filter((one) => one !== ctx.userId);
-	return db
-		.select({ id: notebooks.id, title: notebooks.title })
-		.from(notebooks)
-		.where(
-			and(
-				others.length === 0
-					? eq(notebooks.userId, ctx.userId)
-					: or(
-							eq(notebooks.userId, ctx.userId),
-							and(inArray(notebooks.userId, others), eq(notebooks.sharedWithFamily, true))
-						)!,
-				isNull(notebooks.closedAt)
+	return (
+		db
+			// The labels come along: the note form fills them in when a notebook is
+			// picked, which it cannot do by asking the server after every pick.
+			.select({ id: notebooks.id, title: notebooks.title, defaultTags: notebooks.defaultTags })
+			.from(notebooks)
+			.where(
+				and(
+					others.length === 0
+						? eq(notebooks.userId, ctx.userId)
+						: or(
+								eq(notebooks.userId, ctx.userId),
+								and(inArray(notebooks.userId, others), eq(notebooks.sharedWithFamily, true))
+							)!,
+					isNull(notebooks.closedAt)
+				)
 			)
-		)
-		.orderBy(notebooks.title)
-		.all();
+			.orderBy(notebooks.title)
+			.all()
+	);
 }
 
 function notebookTitled(ctx: Ctx, title: string) {

@@ -94,6 +94,7 @@ import {
 import {
 	contentsOf,
 	createNotebook,
+	updateNotebook,
 	deleteNotebook,
 	listNotebooks,
 	setNotebookShared
@@ -2248,13 +2249,48 @@ export const TOOLS: Tool[] = [
 		input: object(
 			{
 				title: text('What it is about.'),
-				description: text('A line under the title, shown on its page.')
+				description: text('A line under the title, shown on its page.'),
+				defaultTags: text(
+					'Labels a new note in it starts with, comma or space separated \u2014 the ones writing about this subject always carries, so nobody types them on every note. The person can still take them off a note as they write it.'
+				)
 			},
 			['title']
 		),
 		run: (ctx, args) => ({
-			id: createNotebook(ctx, { title: args.title, description: args.description })
+			id: createNotebook(ctx, {
+				title: args.title,
+				description: args.description,
+				defaultTags: args.defaultTags
+			})
 		})
+	},
+	{
+		name: 'change_notebook',
+		title: 'Change a notebook',
+		description:
+			'Rename a notebook, rewrite the line under its title, or set the labels a new note in it starts with. The title is always sent; the other two change only when given.',
+		scope: 'notes:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'notebook', subject: true }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The notebook\u2019s id, as `notebooks` gives it.' },
+				title: text('What it is about. Renaming with the \u2014 separator moves it under another.'),
+				description: text('A line under the title, shown on its page.'),
+				defaultTags: text(
+					'Labels a new note in it starts with, comma or space separated. An empty string clears them; left out, they are untouched.'
+				)
+			},
+			['id', 'title']
+		),
+		run: (ctx, args) => {
+			updateNotebook(ctx, Number(args.id), {
+				title: args.title,
+				description: args.description,
+				defaultTags: args.defaultTags
+			});
+			return { id: Number(args.id) };
+		}
 	},
 	{
 		/*

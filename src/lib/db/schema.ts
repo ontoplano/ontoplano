@@ -232,6 +232,18 @@ export const notebooks = sqliteTable(
 		 */
 		pictureId: integer('picture_id').references(() => media.id, { onDelete: 'set null' }),
 		/**
+		 * Labels a new note in this notebook starts with, comma separated.
+		 *
+		 * A notebook is a subject, and writing about one subject tends to
+		 * carry the same few labels every time — typing them again on each
+		 * note is the work the notebook was supposed to save. Stored as the
+		 * text somebody typed rather than as rows in `diary_tags`: these are
+		 * not a tagging, they are what the next tagging starts from, and a tag
+		 * renamed elsewhere should not silently rewrite what this notebook
+		 * suggests.
+		 */
+		defaultTags: text('default_tags').notNull().default(''),
+		/**
 		 * Opt-in, per notebook, by its owner: everybody on the owner's family
 		 * plan can read it and write their own entries into it. The rows keep
 		 * their writers' user_id — sharing widens who may look, never who owns.

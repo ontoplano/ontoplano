@@ -312,6 +312,10 @@
 		"writes": true,
 		"destroys": false,
 		"params": {
+			"defaultTags": {
+				"type": "string",
+				"required": false
+			},
 			"description": {
 				"type": "string",
 				"required": false
@@ -943,6 +947,29 @@
 			"parent_id": {
 				"type": "integer",
 				"required": false
+			}
+		}
+	},
+	"change_notebook": {
+		"scope": "notes:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"defaultTags": {
+				"type": "string",
+				"required": false
+			},
+			"description": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"title": {
+				"type": "string",
+				"required": true
 			}
 		}
 	},

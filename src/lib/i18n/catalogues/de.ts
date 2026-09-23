@@ -1587,9 +1587,11 @@ export const messages: Catalogue = {
 	'notebooks.id.changeThePicture': 'Bild ändern',
 	'notebooks.id.close': 'Schließen',
 	'notebooks.id.closed': 'geschlossen',
+	'notebooks.id.defaultTags': 'Labels für neue Notizen',
 	'notebooks.id.deleteTheNotebook': 'Das Notizbuch löschen',
 	'notebooks.id.deleteThisNotebook': 'Dieses Notizbuch löschen?',
 	'notebooks.id.editNotebook': 'Notizbuch bearbeiten',
+	'notebooks.id.everyNewNoteStartsWith': 'Eine Notiz hier beginnt mit diesen',
 	'notebooks.id.itsNotesTasksAndGoals':
 		'Seine Notizen, Aufgaben und Ziele werden nicht gelöscht. Die Aufgaben und Ziele bleiben, wo sie sind, im\n\t\tPlaner und bei den Zielen; die Notizen wandern zu',
 	'notebooks.id.larrAllNotebooks': '← Alle Notizbücher',

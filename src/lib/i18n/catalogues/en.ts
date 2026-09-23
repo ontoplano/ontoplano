@@ -1537,9 +1537,11 @@ export const messages: Catalogue = {
 	'notebooks.id.changeThePicture': 'Change the picture',
 	'notebooks.id.close': 'Close',
 	'notebooks.id.closed': 'closed',
+	'notebooks.id.defaultTags': 'Labels for new notes',
 	'notebooks.id.deleteTheNotebook': 'Delete the notebook',
 	'notebooks.id.deleteThisNotebook': 'Delete this notebook?',
 	'notebooks.id.editNotebook': 'Edit notebook',
+	'notebooks.id.everyNewNoteStartsWith': 'A note written here starts with these',
 	'notebooks.id.itsNotesTasksAndGoals':
 		'Its notes, tasks and goals will not be deleted. The tasks and goals stay where they are, in the\n\t\tplanner and in Goals; the notes move to',
 	'notebooks.id.larrAllNotebooks': '← All notebooks',

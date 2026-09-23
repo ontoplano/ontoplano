@@ -9,6 +9,8 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
+	import TagInput from '$lib/components/TagInput.svelte';
+	import { page } from '$app/state';
 	import NotebookDetail from '$lib/components/NotebookDetail.svelte';
 	import { SECTION_COLORS } from '$lib/colors';
 	import type { PageServerData, ActionData } from './$types';
@@ -307,6 +309,20 @@
 			<Field label={t('notebooks.id.whatItIsFor')} span={12}>
 				<textarea name="description" rows="2" class="textarea">{data.notebook.description}</textarea
 				>
+			</Field>
+			<!-- What writing about this subject usually carries, so nobody types
+			     it on every note. Filled into the note form, not applied behind
+			     it: see NoteFields. -->
+			<Field
+				label={t('notebooks.id.defaultTags')}
+				span={12}
+				hint={t('notebooks.id.everyNewNoteStartsWith')}
+			>
+				<TagInput
+					name="defaultTags"
+					value={data.notebook.defaultTags}
+					known={page.data.tagVocabulary ?? []}
+				/>
 			</Field>
 		</FormGrid>
 	</form>

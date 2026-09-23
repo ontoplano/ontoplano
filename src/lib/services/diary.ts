@@ -14,7 +14,7 @@ import {
 import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { host } from './host.js';
-import { ownedNotebookId } from './notebooks.js';
+import { defaultTagsOf, ownedNotebookId } from './notebooks.js';
 import { stamp, stamps } from './time.js';
 import { str } from './validate.js';
 
@@ -130,15 +130,19 @@ export function createEntry(
 ): number {
 	const content = str(raw.content, 'content', { max: MAX_ENTRY_LENGTH });
 	host.assertEntryWithinLimit(content);
-	const entryId = insertEntry(
-		ctx,
-		content,
-		undefined,
-		ownedNotebookId(ctx, raw.notebookId),
-		noteTitle(raw.title)
-	);
+	const notebookId = ownedNotebookId(ctx, raw.notebookId);
+	const entryId = insertEntry(ctx, content, undefined, notebookId, noteTitle(raw.title));
 
-	const tagNames = parseTags(optionalTagInput(raw.tags));
+	/*
+	 * A notebook's own labels, for a note that named none.
+	 *
+	 * Only when the caller said nothing about labels at all — an empty string
+	 * is somebody having cleared the ones the form offered, and putting them
+	 * back would make that impossible. The forms send whatever is in the box,
+	 * so this is the assistant's path and the quick-add that has no box.
+	 */
+	const asked = raw.tags === undefined ? defaultTagsOf(ctx, notebookId) : raw.tags;
+	const tagNames = parseTags(optionalTagInput(asked));
 	if (tagNames.length > 0) linkDiaryTags(entryId, ensureTagIds(tagNames, ctx.userId), ctx.userId);
 
 	// The id and nothing else: a diary entry's content never leaves the app.
