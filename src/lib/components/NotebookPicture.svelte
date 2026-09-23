@@ -53,8 +53,17 @@
 	>
 		<input type="hidden" name="id" value={notebook.id} />
 		<input type="hidden" name="title" value={notebook.title} />
+		<!--
+			As wide as the picture and no wider.
+
+			`block` made it as wide as the column, which is as wide as the widest
+			thing under it — "Remove the picture", or "uploading…". The ring then
+			drew a rounded rectangle twice the width of the square with the
+			picture sitting in the left half of it, which reads as a switch
+			somebody has flipped.
+		-->
 		<label
-			class="block cursor-pointer rounded-lg transition focus-within:ring-2 focus-within:ring-gray-900 hover:opacity-80"
+			class="block w-fit cursor-pointer rounded-lg transition focus-within:ring-2 focus-within:ring-gray-900 hover:opacity-80"
 			title={notebook.pictureId
 				? t('notebooks.id.changeThePicture')
 				: t('notebooks.id.aPictureFor', { title: notebook.title })}
