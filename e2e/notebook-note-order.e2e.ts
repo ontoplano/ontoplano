@@ -116,8 +116,8 @@ test('a list emptied by its own filters says so rather than saying there is noth
 	await expect(page.getByRole('button', { name: 'Tasks 1/1' })).toBeVisible();
 	await expect(page.getByText('Nothing waiting')).toHaveCount(0);
 	await expect(page.getByText('1 hidden by the filters.')).toBeVisible();
-	await expect(page.getByRole('button', { name: 'Show completed (1)' })).toBeVisible();
+	await expect(page.getByRole('button', { name: 'Completed (1)' })).toBeVisible();
 
-	await page.getByRole('button', { name: 'Show completed (1)' }).click();
+	await page.getByRole('button', { name: 'Completed (1)' }).click();
 	await expect(page.getByText('measure the wall').first()).toBeVisible();
 });

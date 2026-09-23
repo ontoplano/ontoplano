@@ -32,13 +32,14 @@ test('a todo can be put away and taken back out', async ({ page }) => {
 	// the way back itself, so nothing needs unfolding to see it.
 	await expect(page.getByText('the tax thing')).toHaveCount(0);
 
-	await page.getByRole('button', { name: 'Show archived' }).click();
+	await page.getByRole('button', { name: /^Archived/ }).click();
 	await expect(page.getByText('the tax thing').first()).toBeVisible();
 
 	// And back, unchanged. The hide toggle lives with the folded filters.
 	await page.getByRole('button', { name: 'Take it back out' }).first().click();
 	await openFilters(page);
-	await page.getByRole('button', { name: 'Hide archived' }).click();
+	// One label either way now: the pressed state says which — see `RoomToolbar`.
+	await page.getByRole('button', { name: /^Archived/ }).click();
 	await expect(page.getByText('the tax thing').first()).toBeVisible();
 });
 

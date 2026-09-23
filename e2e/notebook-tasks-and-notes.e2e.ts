@@ -38,7 +38,7 @@ test('a notebook’s tasks are operated on where they are', async ({ page }) => 
 	// The whole verb set, on the row: away and back.
 	await page.getByRole('button', { name: 'Put it away' }).first().click();
 	await expect(page.getByText('measure the wall')).toHaveCount(0);
-	await page.getByRole('button', { name: 'Show archived' }).click();
+	await page.getByRole('button', { name: /^Archived/ }).click();
 	await expect(page.getByText('measure the wall').first()).toBeVisible();
 	await page.getByRole('button', { name: 'Take it back out' }).first().click();
 
@@ -65,7 +65,7 @@ test('a note can be put away and taken back out', async ({ page }) => {
 	// Hidden, not gone: the strip says how many, and they come back unchanged.
 	// It folds now, the way the tasks tab's strip always has.
 	await openNoteFilters(page);
-	await page.getByRole('button', { name: 'Show archived' }).click();
+	await page.getByRole('button', { name: /^Archived/ }).click();
 	await expect(page.getByText('Restaurants').first()).toBeVisible();
 	await page.getByRole('button', { name: 'Take it back out' }).first().click();
 	await expect(page.getByText('Restaurants').first()).toBeVisible();

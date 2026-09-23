@@ -38,22 +38,22 @@ test('the task strip does not shift when its toggles are pressed', async ({ page
 	await page.waitForTimeout(1200);
 
 	/**
-	 * Where every control on the strip sits.
+	 * Where every control sits, measured from the strip's own left edge.
 	 *
-	 * Rounded to two pixels rather than to one: showing the completed tasks
-	 * makes the list long enough for a scrollbar, and a scrollbar takes its
-	 * width off the page. That is the browser, not the strip, and it moves
-	 * everything by the same pixel. What this is looking for is a control
-	 * moving because the words in it got shorter, which is tens of pixels.
+	 * Not from the viewport's: showing the completed tasks makes the list long
+	 * enough for a scrollbar, and a scrollbar takes its width off the page and
+	 * moves everything by the same pixel or two. That is the browser, not the
+	 * strip. What this is looking for is one control moving *relative to the
+	 * others* because the words in it got shorter, which is tens of pixels.
 	 */
 	const places = () =>
 		page.evaluate(() => {
 			const strip = document.querySelector('.room-toolbar-row > div');
 			if (!strip) return [];
+			const from = strip.getBoundingClientRect().left;
 			return [...strip.querySelectorAll('button, input, [role="combobox"]')].map((el) => {
 				const box = el.getBoundingClientRect();
-				const at = Math.round(box.x / 2) * 2;
-				return `${el.textContent?.trim().slice(0, 12) || el.tagName}@${at}`;
+				return `${el.textContent?.trim().slice(0, 12) || el.tagName}@${Math.round(box.x - from)}`;
 			});
 		});
 
