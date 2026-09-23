@@ -4292,16 +4292,19 @@ html[data-style='playful'] .room-surface {
 }
 
 /*
- * The track is the row.
+ * The track is the row, and things inside it are not flush against its edge.
  *
  * It was as wide as its tabs, so the room's colour showed to the right of it
  * and the strip read as a pill floating on the bar rather than as the top of
  * the room. It fills the line now, with the tabs at the start of it and the
- * verb — where there is one — beyond its end.
+ * verb at the end — and a track's only padding was the three pixels the tile
+ * needs to clear its own edge, so New block sat touching the side of the
+ * thing it stands in.
  */
 .room-tabs > .seg-track {
 	display: flex;
 	flex: 1 1 auto;
+	padding-inline: 0.5rem;
 }
 
 .room-tabs .seg-scroll {
@@ -4370,6 +4373,29 @@ html[data-style='playful'] .room-surface {
 	min-height: 12rem;
 	background-color: var(--color-white);
 	border-top: 1px solid var(--color-gray-200);
+	/*
+	 * Air inside it, since it is a surface now and not the page's ground.
+	 *
+	 * The planner's Day / Week / Month ran to the very edge of the room, and so
+	 * did every other page whose content is loose controls rather than a list.
+	 */
+	padding: 0.75rem 1rem 1rem;
+}
+
+/*
+ * Unless what is in it is already a surface of its own.
+ *
+ * A room whose body is one full-width card — the notebooks shelf, the task
+ * list — wants its rows running edge to edge, and padding round them would
+ * inset a white card inside a white room by a rem for no reason. The body asks
+ * what it is holding rather than every page having to say.
+ */
+.room-body:has(> .room-surface),
+.room-body:has(> * > .room-surface),
+.room-body:has(> [class*='shadow-card']),
+.room-body:has(> * > [class*='shadow-card']),
+.room-body:has(> * > * > [class*='shadow-card']) {
+	padding: 0;
 }
 
 .scroll-hints {
