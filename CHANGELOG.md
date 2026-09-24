@@ -28,6 +28,12 @@ releases mattered.
   finishing one and for putting it back, and nothing for the column between
   them, so "doing" could only be set by hand in the app. `change_task` takes a
   status.
+- **"Bring something in" finds the thing you are looking for.** The picker
+  carries a few hundred rows and searches them in the page — but they were
+  unordered, so what it carried was the oldest things the account ever held,
+  and finished tasks counted towards the limit. Something written last week
+  was not in the list at all. It offers the newest first now, and nothing
+  finished or put away.
 - **A label goes on a task from the row itself.** There is a `+` at the end of
   the labels; pressing it gives you a box that completes from the words you
   already use, and Enter puts one on. Adding a label used to mean opening the

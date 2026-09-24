@@ -1841,6 +1841,7 @@ export const messages: Catalogue = {
 	'notebooks.fields.yearly': 'Yearly',
 	'notebooks.fileBecomesANoteIn':
 		'file becomes a note in one notebook, keeping its text\n\t\t\t\tand its tags — from',
+	'notebooks.finishedOnesAreNotListed': 'Finished and put-away things are not offered.',
 	'notebooks.goalsCount': { one: '{count} goal', other: '{count} goals' },
 	'notebooks.habitsCount': { one: '{count} habit', other: '{count} habits' },
 	'notebooks.id.aPictureFor': 'A picture for {title}',
@@ -1933,7 +1934,7 @@ export const messages: Catalogue = {
 	'notebooks.nothingMatchesThat': 'Nothing matches that.',
 	'notebooks.nothingUnderThisSubjectYet': 'Nothing under this subject yet.',
 	'notebooks.onlyTheFirstAreListed':
-		'Only the first few hundred are listed — narrow it with the box above.',
+		'Only the newest few hundred are listed — narrow it with the box above.',
 	'notebooks.openInItsRoom': 'Open where it lives',
 	'notebooks.orImportAFolderOf': '…or import a folder of markdown',
 	'notebooks.people.19900314Or0314WithoutThe': '1990-03-14, or --03-14 without the year',

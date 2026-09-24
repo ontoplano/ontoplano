@@ -102,7 +102,6 @@ export const borrowed: ReadonlySet<string> = new Set([
 	'notebooks.nothingLeftToLink',
 	'notebooks.nothingMatchesThat',
 	'notebooks.nothingUnderThisSubjectYet',
-	'notebooks.onlyTheFirstAreListed',
 	'notebooks.openInItsRoom',
 	'notebooks.proceed',
 	'notebooks.recipesCount',

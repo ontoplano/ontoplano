@@ -1885,6 +1885,7 @@ export const messages: Catalogue = {
 	'notebooks.fields.yearly': 'Yearly',
 	'notebooks.fileBecomesANoteIn':
 		'el archivo se convierte en una nota dentro de un cuaderno, conservando su texto\n\t\t\t\ty sus etiquetas — desde',
+	'notebooks.finishedOnesAreNotListed': 'Las cosas terminadas o guardadas no se ofrecen.',
 	'notebooks.goalsCount': { one: '{count} meta', other: '{count} metas' },
 	'notebooks.habitsCount': { one: '{count} habit', other: '{count} habits' },
 	'notebooks.id.aPictureFor': 'Una imagen para {title}',
@@ -1977,7 +1978,7 @@ export const messages: Catalogue = {
 	'notebooks.nothingMatchesThat': 'Nothing matches that.',
 	'notebooks.nothingUnderThisSubjectYet': 'Nothing under this subject yet.',
 	'notebooks.onlyTheFirstAreListed':
-		'Only the first few hundred are listed — narrow it with the box above.',
+		'Solo aparecen los pocos cientos más recientes — usa el campo de arriba para filtrar.',
 	'notebooks.openInItsRoom': 'Open where it lives',
 	'notebooks.orImportAFolderOf': '…o importa una carpeta de markdown',
 	'notebooks.people.19900314Or0314WithoutThe': '1990-03-14, o --03-14 sin el año',

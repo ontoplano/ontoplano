@@ -1,4 +1,4 @@
-import { and, eq, isNull, max, ne, or } from 'drizzle-orm';
+import { and, desc, eq, isNull, max, ne, notInArray, or, type SQL } from 'drizzle-orm';
 import type { SQLiteColumn, SQLiteTable } from 'drizzle-orm/sqlite-core';
 
 import { db } from '$lib/db/index.js';
@@ -19,6 +19,7 @@ import { NotFoundError } from './errors.js';
 import { num } from './validate.js';
 import { assertReachableNotebook } from './notebooks.js';
 import { isNotebookModule, type NotebookModule } from '../notebook-modules.js';
+import { CLOSED_STATUSES } from '../task-status.js';
 
 /**
  * Putting something that already exists under a subject.
@@ -41,6 +42,19 @@ type Linkable = {
 	label: SQLiteColumn;
 	/** Where to look when that one is empty, as a note's heading usually is. */
 	fallback?: SQLiteColumn;
+	/**
+	 * What counts as still live, where the thing has a way of being over.
+	 *
+	 * A picker that offers to file a task you finished in March, or a recipe
+	 * you put away, is offering work rather than help — and on an account
+	 * with a year of ticked-off tasks behind it, it is *mostly* offering
+	 * that: the cap below was being spent on rows nobody would pick, so the
+	 * one being looked for fell off the end and the search never saw it.
+	 *
+	 * Absent means everything the table holds is live. An idea, a bill and a
+	 * tin of tomatoes have no finished state.
+	 */
+	live?: () => SQL | undefined;
 };
 
 /** The first line of a column, which is what a list of these shows. */
@@ -53,16 +67,26 @@ const TABLES: Partial<Record<NotebookModule, Linkable>> = {
 	// A note usually has no heading — the writing is the note — so the picker
 	// read a column of empty strings and drew a list of blank rows with a link
 	// icon on each. The content's first line is what every other list shows.
-	notes: { table: diaryEntries, label: diaryEntries.title, fallback: diaryEntries.content },
-	tasks: { table: todoTasks, label: todoTasks.title },
-	goals: { table: goals, label: goals.title },
+	notes: {
+		table: diaryEntries,
+		label: diaryEntries.title,
+		fallback: diaryEntries.content,
+		live: () => isNull(diaryEntries.archivedAt)
+	},
+	tasks: {
+		table: todoTasks,
+		label: todoTasks.title,
+		live: () =>
+			and(notInArray(todoTasks.status, [...CLOSED_STATUSES]), isNull(todoTasks.archivedAt))
+	},
+	goals: { table: goals, label: goals.title, live: () => isNull(goals.closedAt) },
 	ideas: { table: ideas, label: ideas.content },
 	inventory: { table: inventoryItems, label: inventoryItems.name },
-	ledgers: { table: ledgers, label: ledgers.name },
+	ledgers: { table: ledgers, label: ledgers.name, live: () => eq(ledgers.archived, false) },
 	bills: { table: bills, label: bills.name },
 	habits: { table: habits, label: habits.name },
-	workouts: { table: workouts, label: workouts.title },
-	recipes: { table: recipes, label: recipes.title }
+	workouts: { table: workouts, label: workouts.title, live: () => isNull(workouts.archivedAt) },
+	recipes: { table: recipes, label: recipes.title, live: () => isNull(recipes.archivedAt) }
 };
 
 /**
@@ -95,7 +119,7 @@ export function linkableInto(ctx: Ctx, module: string, notebookId: number): Link
 	const linkable = TABLES[module];
 	if (!linkable) throw new NotFoundError('module');
 
-	const { table, label, fallback } = linkable;
+	const { table, label, fallback, live } = linkable;
 	const rows = db
 		.select({
 			id: table.id,
@@ -107,9 +131,22 @@ export function linkableInto(ctx: Ctx, module: string, notebookId: number): Link
 		.where(
 			and(
 				eq(table.userId, ctx.userId),
-				or(isNull(table.notebookId), ne(table.notebookId, notebookId))
+				or(isNull(table.notebookId), ne(table.notebookId, notebookId)),
+				// Finished and put-away things are not candidates — see `live`.
+				live?.()
 			)
 		)
+		/*
+		 * Newest first, so what the cap keeps is what somebody is looking for.
+		 *
+		 * There was no order at all, which means the database's, which means
+		 * oldest first in practice: the three hundred rows carried were the
+		 * three hundred *earliest* things the account ever held, and a task
+		 * written last week was simply not among them. The box then searched
+		 * that slice and found nothing, which reads as the search being
+		 * broken rather than the list.
+		 */
+		.orderBy(desc(table.id))
 		.limit(LINKABLE_LIMIT + 1)
 		.all();
 

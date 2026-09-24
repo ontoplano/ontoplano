@@ -1676,6 +1676,7 @@
 	"notebooks.fields.whereItCameFrom": null,
 	"notebooks.fields.yearly": null,
 	"notebooks.fileBecomesANoteIn": "arquivo vira uma nota em um caderno, mantendo seu texto\n\t\t\t\te suas tags — a partir de",
+	"notebooks.finishedOnesAreNotListed": "Coisas concluídas ou guardadas não aparecem aqui.",
 	"notebooks.goalsCount": {
 		"one": "{count} meta",
 		"other": "{count} metas"
@@ -1770,7 +1771,7 @@
 	"notebooks.nothingLeftToLink": null,
 	"notebooks.nothingMatchesThat": null,
 	"notebooks.nothingUnderThisSubjectYet": null,
-	"notebooks.onlyTheFirstAreListed": null,
+	"notebooks.onlyTheFirstAreListed": "Só as poucas centenas mais recentes aparecem — use o campo acima para filtrar.",
 	"notebooks.openInItsRoom": null,
 	"notebooks.orImportAFolderOf": "…ou importe uma pasta de markdown",
 	"notebooks.people.19900314Or0314WithoutThe": "1990-03-14, ou --03-14 sem o ano",

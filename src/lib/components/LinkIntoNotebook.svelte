@@ -123,7 +123,13 @@
 			class="input w-full"
 			autofocus
 		/>
-		<p class="text-xs text-gray-500">{t('notebooks.chooseWhatToBring')}</p>
+		<p class="text-xs text-gray-500">
+			{t('notebooks.chooseWhatToBring')}
+			<!-- What is not on offer, said before somebody looks for it: a finished
+			     task is not a candidate, and a picker that says nothing about that
+			     reads as a search that cannot find things. -->
+			{t('notebooks.finishedOnesAreNotListed')}
+		</p>
 
 		{#if candidates.items.length === 0}
 			<EmptyState icon="link" title={t('notebooks.nothingLeftToLink')} compact />

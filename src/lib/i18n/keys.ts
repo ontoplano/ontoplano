@@ -1649,6 +1649,7 @@ export type MessageKey =
 	| 'notebooks.fields.whereItCameFrom'
 	| 'notebooks.fields.yearly'
 	| 'notebooks.fileBecomesANoteIn'
+	| 'notebooks.finishedOnesAreNotListed'
 	| 'notebooks.goalsCount'
 	| 'notebooks.habitsCount'
 	| 'notebooks.id.aPictureFor'

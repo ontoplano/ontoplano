@@ -97,3 +97,39 @@ test('a note with no heading is listed by its first line', () => {
 	expect(row?.label).toBe('Measured again: 3.42 by 2.79.');
 	expect(offered.every((one) => one.label !== '')).toBe(true);
 });
+
+/**
+ * What the picker offers, and what it will not.
+ *
+ * The list is capped and the search runs in the browser over what was sent —
+ * which is right for a personal account, and was wrong in two ways at once.
+ * The rows were unordered, so the cap kept the oldest things the account ever
+ * held; and finished ones counted towards it, so an account with a year of
+ * ticked-off tasks behind it spent the whole cap on rows nobody would pick.
+ * A task written last week was then simply not in the list, and the box that
+ * could not find it looked like the broken thing.
+ */
+test('a finished task is not something to bring into a notebook', async () => {
+	const todos = await import('../src/lib/services/todos');
+
+	const open = todos.createTodo(ctx, { title: 'hang the door' });
+	const done = todos.createTodo(ctx, { title: 'sand the door' });
+	const away = todos.createTodo(ctx, { title: 'paint the door' });
+	todos.setTodoStatus(ctx, done, 'done');
+	todos.archiveTodo(ctx, away, true);
+
+	const offered = linking.linkableInto(ctx, 'tasks', kitchen).items.map((one) => one.id);
+	expect(offered).toContain(open);
+	expect(offered).not.toContain(done);
+	expect(offered).not.toContain(away);
+});
+
+test('and what the cap keeps is the newest, not the oldest', async () => {
+	const todos = await import('../src/lib/services/todos');
+
+	const older = todos.createTodo(ctx, { title: 'the one from months ago' });
+	const newer = todos.createTodo(ctx, { title: 'the one from this week' });
+
+	const offered = linking.linkableInto(ctx, 'tasks', kitchen).items.map((one) => one.id);
+	expect(offered.indexOf(newer)).toBeLessThan(offered.indexOf(older));
+});
