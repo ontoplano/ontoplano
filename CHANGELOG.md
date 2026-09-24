@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **The mark turns without dragging a shadow round with it.** While the app
+  was loading a page, a second octagon behind the phone bar's mark turned
+  with it and swung its corners out past the rim.
 - **An assistant that adds something is told what it added,** and a create
   that produced nothing now says so instead of answering with an id for a
   task that is not there.
