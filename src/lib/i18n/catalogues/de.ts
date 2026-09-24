@@ -5,6 +5,7 @@ import type { Catalogue } from '../core.js';
 export const messages: Catalogue = {
 	'accountImport.aCodeBelongsToTheHandshake':
 		'Eine halb fertige Assistenten-Verbindung gehört zu der Instanz, auf der sie begonnen wurde.',
+	'accountImport.aDayAlreadyLogged': 'ein Tag, der für diese Gewohnheit schon eingetragen war',
 	'accountImport.aDeviceAgreedToHear':
 		'ein Gerät hat zugestimmt, von der Instanz zu hören, die es abonniert hat',
 	'accountImport.aFeedAddressBelongsTo':

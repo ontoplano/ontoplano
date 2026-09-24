@@ -219,6 +219,33 @@ describe('what does not travel', () => {
 		).toBe(true);
 	});
 
+	/*
+	 * A file older than the rule the database now holds.
+	 *
+	 * A habit's day is one row since 0.183.3; an export taken before that can
+	 * carry the same day twice, and the whole restore used to fail on it. The
+	 * duplicate is dropped and named, which is the same bargain the rest of the
+	 * skipped rows get.
+	 */
+	test('a day logged twice in an old file costs the file nothing but that day', async () => {
+		const result = await accountImport.importAccount(STRANGER, {
+			exportedAt: now.toISOString(),
+			account: { id: 'x', name: 'x', email: 'a@b.test' },
+			data: {
+				habits: [{ id: 7, userId: 'x', name: 'swim', type: 'good' }],
+				habitOccurrences: [
+					{ id: 1, userId: 'x', habitId: 7, date: '2026-08-17', notes: 'twice' },
+					{ id: 2, userId: 'x', habitId: 7, date: '2026-08-17', notes: '' }
+				]
+			}
+		});
+
+		const doubled = result.skipped.find((s) => s.name === 'habitOccurrences');
+		expect(doubled?.rows, 'the second copy of the day was dropped').toBe(1);
+		expect(english[doubled!.why]).toMatch(/already logged/i);
+		expect(result.tables.find((c) => c.name === 'habits')?.rows).toBe(1);
+	});
+
 	test('a table this version has never heard of is reported, not refused', async () => {
 		const result = await accountImport.importAccount(STRANGER, {
 			exportedAt: now.toISOString(),

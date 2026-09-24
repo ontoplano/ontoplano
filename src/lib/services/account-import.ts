@@ -442,6 +442,15 @@ export async function importAccount(
 			remap.set(toSql.get(table.name)!, mine);
 
 			let droppedHere = 0;
+			/*
+			 * Rows the database itself will not take twice.
+			 *
+			 * A habit's day is one row now, and an export taken before that was
+			 * true can carry the same day twice. One of them has to go, and the
+			 * restore saying so is better than either losing it quietly or
+			 * refusing the whole file over a duplicate square.
+			 */
+			let doubledHere = 0;
 			for (const raw of rows) {
 				if (!raw || typeof raw !== 'object' || Array.isArray(raw)) continue;
 
@@ -525,21 +534,34 @@ export async function importAccount(
 					row[key] = mapped ?? null;
 				}
 
-				const inserted = tx
-					.insert(table.table)
-					.values(row as never)
-					.returning({ id: (table.table as unknown as { id: never }).id })
-					.get() as { id: number } | undefined;
+				let inserted: { id: number } | undefined;
+				try {
+					inserted = tx
+						.insert(table.table)
+						.values(row as never)
+						.returning({ id: (table.table as unknown as { id: never }).id })
+						.get() as { id: number } | undefined;
+				} catch (error) {
+					if ((error as { code?: string })?.code !== 'SQLITE_CONSTRAINT_UNIQUE') throw error;
+					doubledHere++;
+					continue;
+				}
 
 				if (inserted && typeof wasId === 'number') mine.set(wasId, inserted.id);
 			}
 
-			counts.push({ name: table.name, rows: rows.length - droppedHere });
+			counts.push({ name: table.name, rows: rows.length - droppedHere - doubledHere });
 			if (droppedHere > 0)
 				skipped.push({
 					name: table.name,
 					rows: droppedHere,
 					why: 'accountImport.notAFormatThisApp'
+				});
+			if (doubledHere > 0)
+				skipped.push({
+					name: table.name,
+					rows: doubledHere,
+					why: 'accountImport.aDayAlreadyLogged'
 				});
 		}
 	});

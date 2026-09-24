@@ -1,5 +1,6 @@
 {
 	"accountImport.aCodeBelongsToTheHandshake": "Uma conexão de assistente pela metade pertence à instância onde foi iniciada.",
+	"accountImport.aDayAlreadyLogged": "um dia que já estava registrado para esse hábito",
 	"accountImport.aDeviceAgreedToHear": "um aparelho concordou em ouvir a instância a que se inscreveu",
 	"accountImport.aFeedAddressBelongsTo": "um endereço de feed pertence à instância que o serve",
 	"accountImport.aManifestBelongsToThe": "um manifesto pertence ao token que o declarou",

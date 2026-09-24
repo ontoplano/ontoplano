@@ -5,6 +5,7 @@ import type { Catalogue } from '../core.js';
 export const messages: Catalogue = {
 	'accountImport.aCodeBelongsToTheHandshake':
 		'A half-finished assistant connection belongs to the instance it was started on.',
+	'accountImport.aDayAlreadyLogged': 'a day that was already logged for that habit',
 	'accountImport.aDeviceAgreedToHear': 'a device agreed to hear from the instance it subscribed to',
 	'accountImport.aFeedAddressBelongsTo': 'a feed address belongs to the instance that serves it',
 	'accountImport.aManifestBelongsToThe': 'a manifest belongs to the token that declared it',

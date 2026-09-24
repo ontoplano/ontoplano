@@ -123,6 +123,42 @@ export function deleteHabit(ctx: Ctx, id: number): void {
 	if (res.changes === 0) throw new NotFoundError('habit');
 }
 
+/**
+ * A day, written down — or refused because it is already there.
+ *
+ * Asking first and inserting second is two statements, and two presses landing
+ * together both read nothing and both write. `habit_occurrences_once_a_day_idx`
+ * is what actually stops that; this turns what SQLite says about it into the
+ * answer the caller was going to get anyway, so a race and a plain second
+ * attempt are refused in the same words.
+ *
+ * Answers whether it wrote, for the toggle: the day is logged either way, and
+ * the loser of a race has nothing left to do.
+ */
+function writeOccurrence(
+	ctx: Ctx,
+	values: { habitId: number; date: string; notes: string | null }
+): boolean {
+	try {
+		db.insert(habitOccurrences)
+			.values({ ...created(ctx), userId: ctx.userId, ...values })
+			.run();
+		return true;
+	} catch (error) {
+		if (!alreadyLogged(error)) throw error;
+		return false;
+	}
+}
+
+/** SQLite's word for "that day is taken", and nobody else's. */
+function alreadyLogged(error: unknown): boolean {
+	const code = (error as { code?: string })?.code;
+	return (
+		code === 'SQLITE_CONSTRAINT_UNIQUE' &&
+		String((error as Error)?.message ?? '').includes('habit_occurrences')
+	);
+}
+
 export function logOccurrence(
 	ctx: Ctx,
 	raw: { habitId: unknown; date?: unknown; notes?: unknown }
@@ -131,11 +167,10 @@ export function logOccurrence(
 	const date = parseDate(ctx, raw.date);
 	const notes = optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH });
 
-	if (occurrenceOn(habitId, date)) throw new ConflictError('Already logged for this date');
-
-	db.insert(habitOccurrences)
-		.values({ ...created(ctx), userId: ctx.userId, habitId, date, notes })
-		.run();
+	// One statement rather than "is it there?" then "put it there": the second
+	// shape is what let two presses both write.
+	if (!writeOccurrence(ctx, { habitId, date, notes }))
+		throw new ConflictError('Already logged for this date');
 }
 
 /** Clicking a day in the heatmap: log it, or take it back. */
@@ -149,9 +184,9 @@ export function toggleOccurrence(ctx: Ctx, raw: { habitId: unknown; date: unknow
 			.where(and(eq(habitOccurrences.id, existing.id), eq(habitOccurrences.userId, ctx.userId)))
 			.run();
 	} else {
-		db.insert(habitOccurrences)
-			.values({ ...created(ctx), userId: ctx.userId, habitId, date, notes: '' })
-			.run();
+		// A second press that arrives alongside the first finds the day logged
+		// rather than an error: what it asked for has happened.
+		writeOccurrence(ctx, { habitId, date, notes: '' });
 	}
 }
 

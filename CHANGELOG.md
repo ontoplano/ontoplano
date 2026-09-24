@@ -20,6 +20,10 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **A habit's day is logged once.** Two presses arriving together — a double
+  tap, a form sent twice — could both land, giving one day two squares' worth
+  of credit and a streak that counted it more than once. Any day already
+  doubled is merged when you upgrade, keeping whichever copy carries a note.
 - **The mark turns without dragging a shadow round with it.** While the app
   was loading a page, a second octagon behind the phone bar's mark turned
   with it and swung its corners out past the rim.

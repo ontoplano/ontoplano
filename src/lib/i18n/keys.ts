@@ -3,6 +3,7 @@
 /** Every message this app has. A key not in here does not exist. */
 export type MessageKey =
 	| 'accountImport.aCodeBelongsToTheHandshake'
+	| 'accountImport.aDayAlreadyLogged'
 	| 'accountImport.aDeviceAgreedToHear'
 	| 'accountImport.aFeedAddressBelongsTo'
 	| 'accountImport.aManifestBelongsToThe'

@@ -5,6 +5,7 @@ import type { Catalogue } from '../core.js';
 export const messages: Catalogue = {
 	'accountImport.aCodeBelongsToTheHandshake':
 		'Una conexión de asistente a medias pertenece a la instancia donde empezó.',
+	'accountImport.aDayAlreadyLogged': 'un día que ya estaba registrado para ese hábito',
 	'accountImport.aDeviceAgreedToHear':
 		'un dispositivo aceptó escuchar a la instancia a la que se suscribió',
 	'accountImport.aFeedAddressBelongsTo':

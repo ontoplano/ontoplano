@@ -582,7 +582,20 @@ export const habitOccurrences = sqliteTable(
 	(table) => [
 		index('habit_occurrences_user_idx').on(table.userId),
 		index('habit_occurrences_habit_idx').on(table.habitId),
-		index('habit_occurrences_date_idx').on(table.date)
+		index('habit_occurrences_date_idx').on(table.date),
+		/*
+		 * A day is either done or it is not.
+		 *
+		 * The services asked first and inserted second, which holds until two
+		 * presses land together — a double tap on the heatmap, a form sent
+		 * twice — and then both read nothing and both write. What came out was
+		 * a habit logged twice on one day: two squares' worth of credit for one
+		 * day's work, and a streak counting a day more than once.
+		 *
+		 * The check belongs here rather than in the reading, because here is the
+		 * only place two requests cannot get past at the same time.
+		 */
+		uniqueIndex('habit_occurrences_once_a_day_idx').on(table.habitId, table.date)
 	]
 );
 
