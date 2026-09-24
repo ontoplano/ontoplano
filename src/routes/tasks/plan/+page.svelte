@@ -309,7 +309,7 @@
 		const rect = info.el.getBoundingClientRect();
 		const flip = rect.right + 260 > window.innerWidth;
 		hovered = {
-			...describeGridEvent(info.event),
+			...describeGridEvent(info.event, t),
 			top: rect.top,
 			left: flip ? rect.left : rect.right,
 			flip

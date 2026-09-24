@@ -68,6 +68,8 @@ import {
 	parseRecurrence,
 	serialiseRecurrence
 } from '../../recurrence.js';
+import { translator } from '../../i18n/core.js';
+import { messages as englishMessages } from '../../i18n/catalogues/en.js';
 import {
 	createIdea,
 	deleteIdea,
@@ -1162,9 +1164,16 @@ function recurrenceFromArgs(args: Record<string, unknown>, anchor: string): stri
 	return serialiseRecurrence({ kind: 'weekly', anchor });
 }
 
+/**
+ * The tools speak English — their descriptions, their errors, their answers —
+ * whatever language the account reads the app in, so a rhythm described here
+ * is described from the English catalogue.
+ */
+const english = translator('en', englishMessages);
+
 /** The rhythm in words, so a row does not have to be decoded to be read. */
-function repeatsInWords(recurrence: string | null, weekdayName: string): string {
-	return describeRecurrence(parseRecurrence(recurrence), weekdayName);
+function repeatsInWords(recurrence: string | null, weekday: number): string {
+	return describeRecurrence(parseRecurrence(recurrence), weekday, english);
 }
 
 /** The next date on or after `from` that falls on this Monday-indexed weekday. */
@@ -1174,16 +1183,6 @@ function nextWeekdayOnOrAfter(from: Date, weekday: unknown): Date {
 	d.setDate(d.getDate() + ahead);
 	return d;
 }
-
-const WEEKDAY_NAMES = [
-	'Monday',
-	'Tuesday',
-	'Wednesday',
-	'Thursday',
-	'Friday',
-	'Saturday',
-	'Sunday'
-];
 
 export const TOOLS: Tool[] = [
 	// ── Looking ──────────────────────────────────────────────────────────────
@@ -3481,7 +3480,7 @@ export const TOOLS: Tool[] = [
 		run: (ctx) =>
 			listWeeklySlots(ctx).map((slot) => ({
 				...slot,
-				repeats: repeatsInWords(slot.recurrence, WEEKDAY_NAMES[slot.weekday] ?? 'that day')
+				repeats: repeatsInWords(slot.recurrence, slot.weekday)
 			}))
 	},
 	{

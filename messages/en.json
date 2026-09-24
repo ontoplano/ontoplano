@@ -1923,6 +1923,19 @@
 	"ratings.priorityScoreOf": "Priority {score} of {max}",
 	"ratings.urgency": "Urgency",
 	"ratings.whereItWouldSit": "Which row this is in the list, live",
+	"recurrence.everyDay": "Every day",
+	"recurrence.everyNDays": {
+		"one": "Every day",
+		"other": "Every {count} days"
+	},
+	"recurrence.everyNWeeks": {
+		"one": "Every week on {weekday}",
+		"other": "Every {count} weeks on {weekday}"
+	},
+	"recurrence.everyOtherWeek": "Every other {weekday}",
+	"recurrence.monthly": "Day {day} of each month",
+	"recurrence.weekdays": "Every {days}",
+	"recurrence.weekly": "Every {weekday}",
 	"reminders.aDayAndSomethingTo": "A day and something to say first",
 	"reminders.aDayAndWhatTo": "A day and what to say. It is about nothing else.",
 	"reminders.aSoundFile": "A sound file",
@@ -3040,6 +3053,8 @@
 	"tasks.plan.startADayEarlier": "Start the week a day earlier",
 	"tasks.plan.startADayLater": "Start the week a day later",
 	"tasks.plan.startFromATemplate": "Start from a template",
+	"tasks.plan.stateInactive": "Inactive",
+	"tasks.plan.stateSkipped": "Skipped",
 	"tasks.plan.stillWithoutATime": "still without a time",
 	"tasks.plan.stopSubscribing": "Stop subscribing",
 	"tasks.plan.stopSubscribingTo": "Stop subscribing to {name}",

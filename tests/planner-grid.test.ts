@@ -15,6 +15,7 @@ import { describe, expect, test } from 'vitest';
 import { UNTITLED_BLOCK } from '../src/lib/planner-grid';
 import { messages as english } from '../src/lib/i18n/catalogues/en';
 import { messages as portuguese } from '../src/lib/i18n/catalogues/pt-BR';
+import { translator } from '../src/lib/i18n/core';
 import {
 	addDaysStr,
 	baseGridOptions,
@@ -341,8 +342,11 @@ describe('reading a block that is too short to show its own title', () => {
 		extendedProps: props
 	});
 
+	const en = translator('en', english);
+	const pt = translator('pt-BR', portuguese);
+
 	test('the hover card says when, how long, and what state it is in', () => {
-		const detail = describeGridEvent(event(30, { categoryName: 'Work', active: true }));
+		const detail = describeGridEvent(event(30, { categoryName: 'Work', active: true }), en);
 		expect(detail.title).toBe('Deep work');
 		expect(detail.timeText).toBe('09:00 – 09:30');
 		expect(detail.durationText).toBe('30min');
@@ -351,43 +355,49 @@ describe('reading a block that is too short to show its own title', () => {
 	});
 
 	test('a label that just repeats the title is not said twice', () => {
-		expect(describeGridEvent(event(30, { label: 'Deep work' })).label).toBeNull();
-		expect(describeGridEvent(event(30, { label: 'in the shed' })).label).toBe('in the shed');
+		expect(describeGridEvent(event(30, { label: 'Deep work' }), en).label).toBeNull();
+		expect(describeGridEvent(event(30, { label: 'in the shed' }), en).label).toBe('in the shed');
 	});
 
 	test('it says how often a block comes back, when that is not every week', () => {
 		// A fortnightly block and a weekly one are the same rectangle on the
 		// grid, so this is the only place the difference can be read.
-		const weekly = describeGridEvent(event(30, { kind: 'slot', recurrence: 'weekly' }));
+		const weekly = describeGridEvent(event(30, { kind: 'slot', recurrence: 'weekly' }), en);
 		expect(weekly.repeats).toBeNull();
 
 		// 2026-08-17 is a Monday.
 		const fortnightly = describeGridEvent(
-			event(30, { kind: 'slot', recurrence: 'weeks:2:2026-08-17' })
+			event(30, { kind: 'slot', recurrence: 'weeks:2:2026-08-17' }),
+			en
 		);
 		expect(fortnightly.repeats).toBe('Every other Monday');
 
 		const everyThird = describeGridEvent(
-			event(30, { kind: 'slot', recurrence: 'days:3:2026-08-17' })
+			event(30, { kind: 'slot', recurrence: 'days:3:2026-08-17' }),
+			en
 		);
 		expect(everyThird.repeats).toBe('Every 3 days');
 
+		// In the reader's language, weekday included.
+		expect(
+			describeGridEvent(event(30, { kind: 'slot', recurrence: 'weeks:2:2026-08-17' }), pt).repeats
+		).toBe('A cada duas semanas: Segunda-feira');
+
 		// A one-off has no rhythm to describe.
-		expect(describeGridEvent(event(30, { kind: 'exceptional' })).repeats).toBeNull();
+		expect(describeGridEvent(event(30, { kind: 'exceptional' }), en).repeats).toBeNull();
 	});
 
 	test('and it names the state in words rather than by colour alone', () => {
-		expect(describeGridEvent(event(30, { kind: 'exceptional' })).state).toBe('One-off');
-		expect(describeGridEvent(event(30, { suppressed: true })).state).toBe('Skipped');
-		expect(describeGridEvent(event(30, { active: false })).state).toBe('Inactive');
+		expect(describeGridEvent(event(30, { kind: 'exceptional' }), en).state).toBe('One-off');
+		expect(describeGridEvent(event(30, { suppressed: true }), en).state).toBe('Skipped');
+		expect(describeGridEvent(event(30, { active: false }), en).state).toBe('Inactive');
+		expect(describeGridEvent(event(30, { suppressed: true }), pt).state).toBe('Pulado');
 	});
 
 	test('an event with no title of its own still describes something', () => {
-		// The word moved into `messages/`, so what comes back is the key it is
-		// under — and the point of the test is that there IS one, and that the
-		// catalogue has words for it in every language.
 		const nameless = { ...event(30), title: undefined };
-		expect(describeGridEvent(nameless).title).toBe(UNTITLED_BLOCK);
+		expect(describeGridEvent(nameless, en).title).toBe(english[UNTITLED_BLOCK]);
+		expect(describeGridEvent(nameless, pt).title).toBe(portuguese[UNTITLED_BLOCK]);
 		expect(english[UNTITLED_BLOCK]).toBeTruthy();
 		expect(portuguese[UNTITLED_BLOCK]).toBeTruthy();
 	});

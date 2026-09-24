@@ -1884,6 +1884,19 @@
 	"ratings.priorityScoreOf": "Priorität {score} von {max}",
 	"ratings.urgency": "Dringlichkeit",
 	"ratings.whereItWouldSit": null,
+	"recurrence.everyDay": "Jeden Tag",
+	"recurrence.everyNDays": {
+		"one": "Jeden Tag",
+		"other": "Alle {count} Tage"
+	},
+	"recurrence.everyNWeeks": {
+		"one": "Jeden {weekday}",
+		"other": "Alle {count} Wochen am {weekday}"
+	},
+	"recurrence.everyOtherWeek": "Jeden zweiten {weekday}",
+	"recurrence.monthly": "Am {day}. jedes Monats",
+	"recurrence.weekdays": "Jeden {days}",
+	"recurrence.weekly": "Jeden {weekday}",
 	"reminders.aDayAndSomethingTo": "Ein Tag und etwas, das vorab gesagt wird",
 	"reminders.aDayAndWhatTo": "Ein Tag und was gesagt werden soll. Mehr nicht.",
 	"reminders.aSoundFile": "Eine Audiodatei",
@@ -3001,6 +3014,8 @@
 	"tasks.plan.startADayEarlier": "Woche einen Tag früher beginnen",
 	"tasks.plan.startADayLater": "Woche einen Tag später beginnen",
 	"tasks.plan.startFromATemplate": "Von einer Vorlage starten",
+	"tasks.plan.stateInactive": "Inaktiv",
+	"tasks.plan.stateSkipped": "Übersprungen",
 	"tasks.plan.stillWithoutATime": "noch ohne Uhrzeit",
 	"tasks.plan.stopSubscribing": "Abonnement beenden",
 	"tasks.plan.stopSubscribingTo": "Abonnement von {name} beenden",

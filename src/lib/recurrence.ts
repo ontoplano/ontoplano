@@ -41,6 +41,9 @@
  * this existed carry none, and a rule with no anchor still means what it always
  * meant rather than vanishing.
  */
+import { WEEKDAYS } from './bill-summary.js';
+import type { Translate } from './i18n/core.js';
+
 export type Recurrence =
 	| { kind: 'weekly'; anchor?: string }
 	| { kind: 'weekdays'; days: number[]; anchor?: string }
@@ -213,32 +216,33 @@ export function reanchor(r: Recurrence, date: Date): Recurrence {
 /**
  * A short human description, for a list row that has no space for a form.
  *
- * `weekdayNames` is the whole week, Monday first, for the shape that names
- * several of them; `weekdayName` is the block's own, for the shapes that have
- * exactly one.
+ * `weekday` is the block's own, Monday-indexed, for the shapes that have
+ * exactly one. The words come from the catalogue, so the sentence is in the
+ * reader's language — weekday names included.
  */
-export function describeRecurrence(
-	r: Recurrence,
-	weekdayName: string,
-	weekdayNames: readonly string[] = []
-): string {
+export function describeRecurrence(r: Recurrence, weekday: number, t: Translate): string {
+	const dayName = (d: number) => {
+		const known = WEEKDAYS[d];
+		return known ? t(known.label) : String(d);
+	};
 	switch (r.kind) {
 		case 'weekly':
-			return `Every ${weekdayName}`;
+			return t('recurrence.weekly', { weekday: dayName(weekday) });
 
 		case 'weekdays': {
-			const named = r.days.map((d) => weekdayNames[d] ?? String(d));
-			if (named.length === 7) return 'Every day';
-			if (named.length === 1) return `Every ${named[0]}`;
-			return `Every ${named.slice(0, -1).join(', ')} and ${named[named.length - 1]}`;
+			if (r.days.length === 7) return t('recurrence.everyDay');
+			const days = new Intl.ListFormat(t.locale, { type: 'conjunction' }).format(
+				r.days.map(dayName)
+			);
+			return t('recurrence.weekdays', { days });
 		}
 		case 'weeks':
 			return r.interval === 2
-				? `Every other ${weekdayName}`
-				: `Every ${r.interval} weeks on ${weekdayName}`;
+				? t('recurrence.everyOtherWeek', { weekday: dayName(weekday) })
+				: t('recurrence.everyNWeeks', { count: r.interval, weekday: dayName(weekday) });
 		case 'days':
-			return r.interval === 1 ? 'Every day' : `Every ${r.interval} days`;
+			return t('recurrence.everyNDays', { count: r.interval });
 		case 'monthly':
-			return `Day ${r.day} of each month`;
+			return t('recurrence.monthly', { day: r.day });
 	}
 }

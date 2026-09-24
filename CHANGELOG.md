@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **A block's rhythm reads in your language.** The plan's hover card said
+  "Every other Thursday" in English whatever language you chose, along with
+  "One-off", "Skipped" and "Inactive"; it says them in yours now.
 - **Dropdown lists stay on the screen.** A long list, like the parent goals
   in the goal form, fits a phone's width and opens upwards near the bottom of
   a form, and Escape closes the list without closing the form.

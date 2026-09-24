@@ -1725,6 +1725,13 @@ export type MessageKey =
 	| 'ratings.priorityScoreOf'
 	| 'ratings.urgency'
 	| 'ratings.whereItWouldSit'
+	| 'recurrence.everyDay'
+	| 'recurrence.everyNDays'
+	| 'recurrence.everyNWeeks'
+	| 'recurrence.everyOtherWeek'
+	| 'recurrence.monthly'
+	| 'recurrence.weekdays'
+	| 'recurrence.weekly'
 	| 'reminders.aDayAndSomethingTo'
 	| 'reminders.aDayAndWhatTo'
 	| 'reminders.aSoundFile'
@@ -2812,6 +2819,8 @@ export type MessageKey =
 	| 'tasks.plan.startADayEarlier'
 	| 'tasks.plan.startADayLater'
 	| 'tasks.plan.startFromATemplate'
+	| 'tasks.plan.stateInactive'
+	| 'tasks.plan.stateSkipped'
 	| 'tasks.plan.stillWithoutATime'
 	| 'tasks.plan.stopSubscribing'
 	| 'tasks.plan.stopSubscribingTo'
@@ -3599,6 +3608,12 @@ export interface MessageValuesFor {
 	'ratings.labelValueOf5': { label: string | number; value: string | number };
 	'ratings.nthInLine': { nth: string | number };
 	'ratings.priorityScoreOf': { max: string | number; score: string | number };
+	'recurrence.everyNDays': { count: number };
+	'recurrence.everyNWeeks': { count: number; weekday: string | number };
+	'recurrence.everyOtherWeek': { weekday: string | number };
+	'recurrence.monthly': { day: string | number };
+	'recurrence.weekdays': { days: string | number };
+	'recurrence.weekly': { weekday: string | number };
 	'reminders.alarmsOnThisPhone': { count: number };
 	'reminders.atLeastMinutesFromNow': { count: number };
 	'reminders.billDue': { day: string | number; money: string | number; name: string | number };
