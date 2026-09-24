@@ -137,6 +137,23 @@
 			at = (at + step + list.length) % list.length;
 		} else if (event.key === 'Enter' || event.key === ',' || event.key === ' ') {
 			/*
+			 * A word that is not one of this account's labels does nothing.
+			 *
+			 * It used to do worse than nothing: with no suggestion to take, none of
+			 * this ran, the key went on to the dialog, and Enter closed the panel —
+			 * so a typo threw away the filter somebody was building. This box is not
+			 * where labels are made; it is where they are picked, and picking one
+			 * that is not there is picking nothing. The word goes, the same as a
+			 * word that was taken.
+			 */
+			if (drafts[side] !== '' && list.length === 0) {
+				event.preventDefault();
+				drafts[side] = '';
+				listing = false;
+				at = 0;
+				return;
+			}
+			/*
 			 * A comma and a space take the word too.
 			 *
 			 * They are what separates two labels everywhere else in the app —
@@ -265,11 +282,7 @@
 					<span class="min-w-[2.5ch]">+{value.include.length}</span>
 					<span class="min-w-[2.5ch]">−{value.exclude.length}</span>
 				</span>
-				<span class="w-3.5 shrink-0" aria-hidden="true">
-					{#if value.include.length > 1}
-						<Icon name={value.mode === 'all' ? 'intersect' : 'union'} size={14} />
-					{/if}
-				</span>
+				<span class="w-3.5 shrink-0" aria-hidden="true"> </span>
 			{:else}
 				<span class="truncate">{t('tagFilter.tags')}</span>
 			{/if}
@@ -295,7 +308,7 @@
 			role="group"
 			aria-label={t('tagFilter.filterByTag')}
 			style="left:{where.left}px; top:{where.top}px"
-			class="overlay-face fixed m-0 w-[min(22rem,calc(100vw-1rem))] space-y-3 overflow-visible border p-3 shadow-overlay"
+			class="fixed m-0 w-[min(22rem,calc(100vw-1rem))] space-y-3 overflow-visible border border-gray-200 bg-white p-3 shadow-overlay"
 		>
 			{#each SIDES as side (side)}
 				<div class="space-y-1.5" data-side={side}>
@@ -341,6 +354,23 @@
 							role="presentation"
 							onclick={() => boxes[side]?.focus()}
 						>
+							{#if side === 'include' && value.include.length > 1}
+								<!--
+									What the labels in this box are doing, at the front of it.
+
+									Before them rather than between them and the cursor: it is
+									the operator, and an operator goes in front of what it
+									operates on. Only once there are two — one label is one
+									label however they are meant to combine.
+								-->
+								<span
+									class="shrink-0 text-gray-500"
+									title={t(value.mode === 'all' ? 'tagFilter.allHint' : 'tagFilter.anyHint')}
+									aria-hidden="true"
+								>
+									<Icon name={value.mode === 'all' ? 'intersect' : 'union'} size={14} />
+								</span>
+							{/if}
 							{#each value[side] as entry (entry)}
 								{#if entry === UNTAGGED}
 									<span class="chip inline-flex items-center gap-1 italic">
@@ -370,20 +400,6 @@
 									</TagChip>
 								{/if}
 							{/each}
-							{#if side === 'include' && value.include.length > 1}
-								<!--
-									What the words in this box are doing, where they are typed.
-									Only once there are two of them: one label is one label
-									however they are meant to combine.
-								-->
-								<span
-									class="shrink-0 text-gray-500"
-									title={t(value.mode === 'all' ? 'tagFilter.allHint' : 'tagFilter.anyHint')}
-									aria-hidden="true"
-								>
-									<Icon name={value.mode === 'all' ? 'intersect' : 'union'} size={14} />
-								</span>
-							{/if}
 							<input
 								bind:this={boxes[side]}
 								bind:value={drafts[side]}
@@ -394,7 +410,17 @@
 								aria-labelledby="{name}-{side}-label"
 								aria-expanded={typing === side && suggestions.length > 0}
 								aria-controls="{name}-{side}-options"
-								placeholder={t(side === 'include' ? 'tagFilter.addToKeep' : 'tagFilter.addToHide')}
+								{...{
+									/*
+									 * The placeholder says what to do with an empty box, so it goes
+									 * the moment the box has something in it: "Tags to show…" beside
+									 * two labels reads as a third one.
+									 */
+									placeholder:
+										value[side].length > 0
+											? ''
+											: t(side === 'include' ? 'tagFilter.addToKeep' : 'tagFilter.addToHide')
+								}}
 								onfocus={() => {
 									typing = side;
 									listing = false;
@@ -417,7 +443,7 @@
 							<ul
 								id="{name}-{side}-options"
 								role="listbox"
-								class="overlay-face absolute z-20 mt-1 max-h-48 w-full overflow-y-auto border shadow-overlay"
+								class="absolute z-20 mt-1 max-h-48 w-full overflow-y-auto border border-gray-200 bg-white shadow-overlay"
 							>
 								{#each suggestions as entry, i (entry)}
 									<li role="presentation">
@@ -427,7 +453,7 @@
 											tabindex="-1"
 											aria-selected={i === at}
 											class="block w-full px-3 py-1.5 text-left text-sm {i === at
-												? 'overlay-face-on'
+												? 'bg-gray-100'
 												: ''} {entry === UNTAGGED ? 'italic' : ''}"
 											onmousedown={(event) => {
 												event.preventDefault();

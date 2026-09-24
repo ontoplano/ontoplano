@@ -43,10 +43,10 @@ releases mattered.
 - **Bringing a note or a task into a notebook no longer fails** with
   "Unexpected error" when that notebook already holds a few. It takes the
   next number there rather than carrying its old one across.
-- **The tag filter's Any and All are one control,** and what the labels are
-  doing is shown where they are typed rather than on the button that would
-  change it. A comma or a space takes the word, the way they do everywhere
-  else.
+- **The tag filter's Any and All are one control,** with the ∪ or ∩ at the
+  front of the labels it applies to. A comma or a space takes the word, a
+  word that is not one of your labels just clears rather than closing the
+  panel, and the panel is a light surface in the light theme.
 - **The notebooks shelf wears the room's colour** down its side, like every
   other tab in the room.
 - **An assistant can ask what a notebook's labels are** — `notebook_tags` —
