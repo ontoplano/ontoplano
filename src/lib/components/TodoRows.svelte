@@ -1228,7 +1228,7 @@
 						class="flex flex-wrap items-stretch gap-x-4 px-4 py-3 {shortcutRoom &&
 						selectedIndex === i
 							? 'kb-cursor'
-							: ''} {isDone(todo) ? 'opacity-50' : ''}"
+							: ''} {isDone(todo) ? 'opacity-50' : ''} {todo.status === 'doing' ? 'is-doing' : ''}"
 					>
 						<!--
 							The tick box and the three gauges are one column.
@@ -1297,10 +1297,14 @@
 											})
 										: undefined}
 								>
+									<!-- Blue while it is the one being worked on, so the state is
+									     on the box that owns it rather than only on the row. -->
 									<span
 										class="flex size-7 items-center justify-center border {isDone(todo)
 											? 'border-gray-400 bg-gray-400'
-											: 'border-gray-400 bg-white'}"
+											: todo.status === 'doing'
+												? 'doing-box'
+												: 'border-gray-400 bg-white'}"
 									>
 										{#if isDone(todo)}
 											<svg class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
@@ -1511,6 +1515,39 @@
 								reads better on a laptop too.
 							-->
 							<div class="task-actions">
+								{#if !isDone(todo)}
+									<!--
+										What you are on, said on the list rather than only on the
+										board.
+
+										`doing` has always been a status and the board has always
+										been able to set it; the list could not, so the one place
+										somebody actually works from could not say "this is the one
+										I am on". It is a toggle rather than a step in a cycle:
+										pressing it says so, pressing it again says you are not.
+									-->
+									<form method="post" action={actions.setStatus} use:enhance>
+										<input type="hidden" name="id" value={todo.id} />
+										<input
+											type="hidden"
+											name="status"
+											value={todo.status === 'doing' ? 'todo' : 'doing'}
+										/>
+										<button
+											type="submit"
+											class="icon-btn"
+											aria-pressed={todo.status === 'doing'}
+											aria-label={todo.status === 'doing'
+												? t('todoRows.stopDoing')
+												: t('todoRows.startDoing')}
+											title={todo.status === 'doing'
+												? t('todoRows.stopDoing')
+												: t('todoRows.startDoing')}
+										>
+											<Icon name="play" />
+										</button>
+									</form>
+								{/if}
 								{#if !isDone(todo)}
 									<!-- One column changes; nothing is copied anywhere. -->
 									<form method="post" action={actions.schedule} use:enhance>

@@ -3175,6 +3175,7 @@
 	"todoRows.confirm": "¿Confirmar?",
 	"todoRows.createTodo": "Crear tarea",
 	"todoRows.delegateToADay": "Delegar a un día",
+	"todoRows.doing": null,
 	"todoRows.done": "Hecho",
 	"todoRows.doneAgo": "Hecha {when} — {ago}",
 	"todoRows.editToDo": "Editar tarea",
@@ -3216,6 +3217,8 @@
 		"one": "{count} tarea a la vista",
 		"other": "{count} tareas a la vista"
 	},
+	"todoRows.startDoing": null,
+	"todoRows.stopDoing": null,
 	"todoRows.tagged": "Etiquetada",
 	"todoRows.taggedAgo": "Etiquetado {ago}",
 	"todoRows.takeItBackOut": "Sacarlo de nuevo",

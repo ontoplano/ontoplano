@@ -3175,6 +3175,7 @@
 	"todoRows.confirm": "Confirmar?",
 	"todoRows.createTodo": "Criar tarefa",
 	"todoRows.delegateToADay": "Delegar para um dia",
+	"todoRows.doing": null,
 	"todoRows.done": "Feito",
 	"todoRows.doneAgo": "Concluída {when} — {ago}",
 	"todoRows.editToDo": "Editar tarefa",
@@ -3216,6 +3217,8 @@
 		"one": "{count} tarefa à vista",
 		"other": "{count} tarefas à vista"
 	},
+	"todoRows.startDoing": null,
+	"todoRows.stopDoing": null,
 	"todoRows.tagged": "Etiquetada",
 	"todoRows.taggedAgo": "Etiquetado {ago}",
 	"todoRows.takeItBackOut": "Tirar de volta",

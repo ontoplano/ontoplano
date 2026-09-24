@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **Say which task you are on, from the task list.** The board could always
+  set it; the list — the screen you actually work from — could not. The one
+  you are on is washed blue and keeps a blue spine.
 - **"3rd in line" is always the priority order,** whatever the list is
   sorted by — it is what the three sliders are for. And the quick sheet says
   it too, once the rest of the form is unfolded.

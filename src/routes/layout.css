@@ -1908,6 +1908,44 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * buttons was shipped twice, which is twice more than a layout this
 	 * common should be reinvented.
 	 */
+	/*
+	 * The task somebody is on.
+	 *
+	 * `doing` has always been a status and the board has always drawn it; the
+	 * list could not even be told about it, so the one screen people work from
+	 * had no way to say "this is the one". Blue because it is the app's own
+	 * colour for the planner — the room this task belongs to — and because the
+	 * two states it has to be told apart from are grey (done) and nothing.
+	 *
+	 * A wash and a spine, the same two marks everything else here uses for
+	 * "this one" — see `.is-pinned`.
+	 */
+	/*
+	 * `html` in front of both: the rows are a `divide-y` list, and that utility
+	 * sets `border-color` on every child — so a bare `.is-doing` had its spine
+	 * painted the divider's grey. The alternating row wash wins the background
+	 * the same way. One step of specificity is enough and is what
+	 * `.pill-soft.kbd-cursor` above does for the same reason.
+	 */
+	html .is-doing {
+		/*
+		 * The spine is an inset shadow rather than a left border.
+		 *
+		 * These rows are a `divide-y` list, and that utility paints
+		 * `border-color` on every child — same specificity, written later, so a
+		 * border here came out the divider's grey however blue it was asked to
+		 * be. A shadow is nobody else's property and takes no room in the box.
+		 */
+		box-shadow: inset 3px 0 0 var(--color-blue-500);
+		background-color: color-mix(in srgb, var(--color-blue-500) 10%, transparent);
+	}
+
+	/* The tick box on that row, in the same colour as the row. */
+	html .doing-box {
+		border-color: var(--color-blue-500);
+		background-color: color-mix(in srgb, var(--color-blue-500) 20%, transparent);
+	}
+
 	.list-row {
 		display: flex;
 		flex-wrap: wrap;

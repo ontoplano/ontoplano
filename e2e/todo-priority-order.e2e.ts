@@ -104,3 +104,34 @@ test('the to-do list can be ordered by priority', async ({ page }) => {
 		'whenever and easy'
 	]);
 });
+
+test('the list can say which task you are on, and shows it', async ({ page }) => {
+	test.setTimeout(180_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('todo-doing'));
+	await visit(page, '/tasks/todo');
+
+	await page
+		.getByRole('button', { name: /New task/ })
+		.first()
+		.click();
+	await page.locator('#todo-form [name="heading"]').fill('ring the plumber');
+	await page.getByRole('button', { name: 'Create task' }).click();
+	await expect(page.getByText('ring the plumber').first()).toBeVisible({ timeout: 30_000 });
+
+	/*
+	 * `doing` has always been a status and the board has always been able to
+	 * set it; the list — the one screen people work from — could not, so there
+	 * was no way to say "this is the one I am on" where it matters.
+	 */
+	const row = page.locator('.is-doing');
+	await expect(row).toHaveCount(0);
+
+	await page.getByRole('button', { name: 'Say you are on it' }).first().click();
+	await expect(row).toHaveCount(1);
+	await expect(row).toContainText('ring the plumber');
+
+	// And it is a toggle, not a step in a cycle nobody can go back through.
+	await page.getByRole('button', { name: 'Not on it any more' }).first().click();
+	await expect(row).toHaveCount(0);
+});

@@ -3232,6 +3232,7 @@
 	"todoRows.confirm": "Confirm?",
 	"todoRows.createTodo": "Create task",
 	"todoRows.delegateToADay": "Delegate to a day",
+	"todoRows.doing": "On it",
 	"todoRows.done": "Done",
 	"todoRows.doneAgo": "Done {when} — {ago}",
 	"todoRows.editToDo": "Edit task",
@@ -3273,6 +3274,8 @@
 		"one": "{count} task showing",
 		"other": "{count} tasks showing"
 	},
+	"todoRows.startDoing": "Say you are on it",
+	"todoRows.stopDoing": "Not on it any more",
 	"todoRows.tagged": "Tagged",
 	"todoRows.taggedAgo": "Labelled {ago}",
 	"todoRows.takeItBackOut": "Take it back out",

@@ -3175,6 +3175,7 @@
 	"todoRows.confirm": "Bestätigen?",
 	"todoRows.createTodo": "Aufgabe erstellen",
 	"todoRows.delegateToADay": "Einem Tag zuweisen",
+	"todoRows.doing": null,
 	"todoRows.done": "Erledigt",
 	"todoRows.doneAgo": "Erledigt {when} — {ago}",
 	"todoRows.editToDo": "Aufgabe bearbeiten",
@@ -3216,6 +3217,8 @@
 		"one": "{count} Aufgabe sichtbar",
 		"other": "{count} Aufgaben sichtbar"
 	},
+	"todoRows.startDoing": null,
+	"todoRows.stopDoing": null,
 	"todoRows.tagged": "Gelabelt",
 	"todoRows.taggedAgo": "Beschriftet {ago}",
 	"todoRows.takeItBackOut": "Wieder herausnehmen",

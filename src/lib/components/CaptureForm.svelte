@@ -50,6 +50,8 @@
 		inventoryCategories: [],
 		queue: []
 	});
+	/** Whether the answer above is an answer, rather than the state before one. */
+	let loaded = $state(false);
 	let ratings = $state<Record<Rating, number | null>>({
 		urgency: null,
 		interest: null,
@@ -71,8 +73,11 @@
 	 * sliders are for. It is here at all because a sheet that asks for three
 	 * numbers and says nothing about what they do is asking for three numbers.
 	 *
-	 * Nought until the queue has arrived, in which case the line is not drawn:
-	 * "1st in line" against a list nobody has loaded yet would be a guess.
+	 * Not drawn until the queue has actually arrived — "1st in line" against a
+	 * list nobody has fetched yet is a guess that happens to be right on an
+	 * empty account and wrong on every other. An empty queue that *has*
+	 * arrived is a real answer, and the first task somebody writes down is
+	 * first in line.
 	 */
 	const place = $derived(
 		options.queue.filter(
@@ -86,11 +91,16 @@
 	);
 
 	$effect(() => {
-		if (options.categories.length || options.inventoryCategories.length) return;
+		// `loaded` rather than "are there any categories": an account with none
+		// of them fetched successfully and would otherwise ask again on every
+		// opening — and never be able to say where a task would land.
+		if (loaded) return;
 		fetch('/api/capture-options')
 			.then((res) => (res.ok ? res.json() : null))
-			.then((loaded) => {
-				if (loaded) options = loaded;
+			.then((got) => {
+				if (!got) return;
+				options = got;
+				loaded = true;
 			})
 			.catch(() => {});
 	});
@@ -115,7 +125,7 @@
 			categories={options.categories}
 			notebooks={options.notebooks}
 			bind:ratings
-			place={options.queue.length > 0 ? whereItWouldSit : undefined}
+			place={loaded ? whereItWouldSit : undefined}
 		/>
 	{:else}
 		<BuyFields compact categories={options.inventoryCategories} />
