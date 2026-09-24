@@ -1010,7 +1010,7 @@
 		 * never lands in the middle of a scroll. It is not on the scrim
 		 * itself, which is full-screen and would be a different question.
 		 */
-		--hud-blur: 14px;
+		--hud-blur: 8px;
 		--hud-ink: 62%;
 
 		position: fixed;
@@ -1058,6 +1058,9 @@
 		align-items: center;
 		gap: 0.5rem;
 		border-radius: var(--radius-lg, 0);
+		/* Edged in the letters' own colour, so the plate belongs to the room it
+		   is naming rather than being a grey card the name landed on. */
+		border: 1px solid color-mix(in srgb, currentColor var(--hud-ink), white);
 		background-color: var(--hud-plate);
 		-webkit-backdrop-filter: blur(var(--hud-blur));
 		backdrop-filter: blur(var(--hud-blur));

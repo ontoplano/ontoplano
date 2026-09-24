@@ -39,11 +39,21 @@ export type Capture = {
 	into: string;
 	/** The section this writes into. A hidden section takes its wedge with it. */
 	hide?: HideableSection;
+	/**
+	 * The room the new thing lands in, so the receipt can offer to open it.
+	 *
+	 * Capture writes somewhere you are not looking, and "Added to your to-dos"
+	 * then left you to go and find it — which on a phone, where most quick
+	 * adds happen, is the difference between writing a line and writing the
+	 * thing properly. See `$lib/open-from-url`.
+	 */
+	room: string;
 };
 
 export const CAPTURES: Capture[] = [
 	{
 		key: 'idea',
+		room: '/notebooks/ideas',
 		shortcut: 'i',
 		label: 'app.idea',
 		icon: 'ideas',
@@ -55,6 +65,7 @@ export const CAPTURES: Capture[] = [
 	},
 	{
 		key: 'todo',
+		room: '/tasks/todo',
 		shortcut: 't',
 		// The singular, because the dialog says "New {thing}": the tab is
 		// called Tasks and one of them is a task.
@@ -67,6 +78,7 @@ export const CAPTURES: Capture[] = [
 	},
 	{
 		key: 'note',
+		room: '/notebooks/diary',
 		shortcut: 'd',
 		label: 'app.note',
 		icon: 'diary',
@@ -78,6 +90,7 @@ export const CAPTURES: Capture[] = [
 	},
 	{
 		key: 'buy',
+		room: '/inventory',
 		shortcut: 'b',
 		label: 'app.buy',
 		icon: 'shopping',
