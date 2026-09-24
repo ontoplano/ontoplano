@@ -3,12 +3,17 @@ import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 
 /**
- * The number in the task form says which row this is, in the list on screen.
+ * The number in the task form says where this comes in the queue.
  *
- * It used to be counted against every open task in the notebook whatever the
- * list was doing — so opening the top row of a list ordered by when things
- * were added was told it was third, which reads as the form comparing a task
- * with itself. The claim has to be one somebody can check by looking.
+ * Counted by priority and by nothing else, against the rows the list is
+ * showing. The three sliders decide one thing — where this comes — and
+ * counting instead against whatever the list happens to be sorted by made the
+ * number answer a different question every time the sort control moved:
+ * alphabetically it said where the word fell, and a slider moved under it and
+ * changed nothing, which is the sliders looking broken.
+ *
+ * So the claim is checkable by looking whenever the list is in the order the
+ * number is about, which is what this walks.
  */
 async function add(page: Page, title: string) {
 	await page.getByRole('button', { name: 'New task' }).first().click();
@@ -17,13 +22,14 @@ async function add(page: Page, title: string) {
 	await expect(page.getByText(title).first()).toBeVisible();
 }
 
-/** Which row the form says it is, with the editor open on the nth row. */
-async function placeOfRow(page: Page, nth: number): Promise<string> {
-	await visit(page, '/tasks/todo');
-	await page.getByRole('button', { name: /Edit/ }).nth(nth).click();
-	const said = page.getByText(/in line/).first();
-	await expect(said).toBeVisible();
-	return (await said.textContent()) ?? '';
+/** Put the list in priority order — the order the number is about. */
+async function orderByPriority(page: Page) {
+	await page
+		.getByRole('button', { name: /Order tasks by/ })
+		.first()
+		.click();
+	await page.getByRole('option', { name: 'Priority' }).click();
+	await expect(page.getByRole('button', { name: /Order tasks by/ })).toContainText('Priority');
 }
 
 test('the place in the form is the place in the list', async ({ page }) => {
@@ -35,20 +41,15 @@ test('the place in the form is the place in the list', async ({ page }) => {
 	await add(page, 'Second thing');
 	await add(page, 'Third thing');
 
-	// Newest first, which is what the list is ordered by to begin with.
-	expect(await placeOfRow(page, 0)).toContain('1st');
-	expect(await placeOfRow(page, 2)).toContain('3rd');
-
-	// Ordered by priority, the same rows read the same way — and there the
-	// number is what the sliders move, which is the reason it exists.
+	// In priority order, the row and the number agree — which is the claim
+	// somebody can check by looking.
 	await visit(page, '/tasks/todo');
-	await page
-		.getByRole('button', { name: /Order tasks by/ })
-		.first()
-		.click();
-	await page.getByRole('option', { name: 'Priority' }).click();
-	await expect(page.getByRole('button', { name: /Order tasks by/ })).toContainText('Priority');
-
+	await orderByPriority(page);
 	await page.getByRole('button', { name: /Edit/ }).first().click();
 	await expect(page.getByText(/in line/).first()).toContainText('1st');
+
+	await visit(page, '/tasks/todo');
+	await orderByPriority(page);
+	await page.getByRole('button', { name: /Edit/ }).nth(2).click();
+	await expect(page.getByText(/in line/).first()).toContainText('3rd');
 });

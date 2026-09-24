@@ -98,14 +98,14 @@ test('labels are edited, and an edit that says nothing about them keeps them', a
 	await expect(form.locator('.chip')).toHaveCount(0);
 
 	await box.fill('a2');
-	await page.getByRole('button', { name: 'Save' }).click();
+	await page.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(chip(page, '#a2')).toBeVisible();
 	await expect(chip(page, '#a1')).toHaveCount(0);
 
 	// Taken off altogether, and then the picker goes with them.
 	await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
 	await page.locator('#todo-form .chip').filter({ hasText: 'a2' }).getByRole('button').click();
-	await page.getByRole('button', { name: 'Save' }).click();
+	await page.getByRole('button', { name: 'Save', exact: true }).click();
 	await expect(chip(page, '#a2')).toHaveCount(0);
 	await expect(page.locator('[aria-controls="todo-tags-panel"]')).toHaveCount(0);
 });

@@ -50,7 +50,7 @@ test('saving a change says so, with nothing to press', async ({ page }) => {
 	// screen behind it.
 	await page.getByRole('button', { name: 'Edit' }).last().click();
 	await page.locator('[name="heading"]').first().fill('Book the MOT properly');
-	await page.getByRole('button', { name: 'Save' }).click();
+	await page.getByRole('button', { name: 'Save', exact: true }).click();
 
 	const toast = page.locator('[role="status"]').filter({ hasText: 'Saved' });
 	await expect(toast).toBeVisible({ timeout: 30_000 });

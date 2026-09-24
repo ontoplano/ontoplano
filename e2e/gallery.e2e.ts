@@ -60,11 +60,22 @@ test('a picture lives once, however many albums hold it', async ({ page }) => {
 	await lightbox.getByRole('button', { name: 'Add', exact: true }).click();
 	await expect(page.getByText(/Also in: Best of/)).toBeVisible();
 
-	// The album filters by tag, and clicking the tag again lets go.
+	/*
+	 * The album filters by tag, through the same folded panel the task list and
+	 * the diary use — the labels are asked for rather than laid out, so the
+	 * panel is opened, a label is taken, and clearing it puts the album back.
+	 */
 	await lightbox.getByRole('button', { name: 'Close', exact: true }).last().click();
-	await page.getByRole('button', { name: '#beach' }).click();
+	const face = page.locator('[aria-controls="gallery-tags-panel"]');
+	const panel = page.locator('#gallery-tags-panel');
+
+	await face.click();
+	await panel.locator('[data-side="include"] input[role="combobox"]').fill('beach');
+	await panel.locator('[data-side="include"] input[role="combobox"]').press('Enter');
 	await expect(page.locator('li img')).toHaveCount(1);
-	await page.getByRole('button', { name: '#beach' }).click();
+
+	await panel.getByRole('button', { name: 'Clear' }).click();
+	await page.keyboard.press('Escape');
 
 	// Both albums count it.
 	await visit(page, '/media/gallery');

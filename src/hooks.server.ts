@@ -1,4 +1,6 @@
 import { redirect, type Handle, type HandleServerError } from '@sveltejs/kit';
+import { getRequestEvent } from '$app/server';
+import { SOURCE_LOCALE } from '$lib/i18n/core';
 import { provider } from '$lib/server/billing/index';
 import { sequence } from '@sveltejs/kit/hooks';
 import { building, dev } from '$app/environment';
@@ -36,7 +38,7 @@ import {
 } from '$lib/server/services/billing';
 import { accessHoldFor, holdDestination } from '$lib/server/services/access';
 import { record } from '$lib/services/audit';
-import { toJsonError } from '$lib/http-errors';
+import { bindRefusalLocale, toJsonError } from '$lib/http-errors';
 import {
 	APP_COOKIE,
 	APP_LAUNCH_PARAM,
@@ -57,6 +59,16 @@ import { demoRefusal } from '$lib/server/demo-guard';
  * the migration check before anything has said which database to open.
  */
 bindFileCaller(fileCaller);
+
+/**
+ * And the language a refusal is answered in.
+ *
+ * `$lib/http-errors` is bundled for the device as well — the isolated instance
+ * runs the route files in a worker — so it cannot reach for the request
+ * itself. Bound here instead, where `$app/server` is a real thing, and asked
+ * per refusal inside the request rather than held as module state.
+ */
+bindRefusalLocale(() => getRequestEvent().locals.locale ?? SOURCE_LOCALE);
 
 /**
  * Registration control, at the one door there is.

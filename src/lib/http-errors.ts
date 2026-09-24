@@ -1,10 +1,10 @@
 import { fail, type ActionFailure } from '@sveltejs/kit';
-import { getRequestEvent } from '$app/server';
 
 import { toServiceError, type ErrorCode, type ServiceError } from '$lib/services/errors.js';
 import {
 	SOURCE_LOCALE,
 	translatorFor,
+	type Locale,
 	type MessageKey,
 	type MessageValues
 } from '$lib/i18n/core.js';
@@ -26,23 +26,39 @@ import {
  */
 
 /**
+ * Who is being answered, asked at the moment of answering.
+ *
+ * This module is bundled for the device as well as for the server: the
+ * isolated instance runs the route files in a worker, which is where they are
+ * globbed from, so anything here that reached for `$app/server` would fail the
+ * build rather than merely go unused. And a module-level *locale* would be
+ * worse than either — a server answers many people at once, and one request's
+ * language leaking into another's page is the bug this whole file exists
+ * downstream of.
+ *
+ * So what is held is a way of asking, bound once by whichever side is running:
+ * `hooks.server.ts` binds the request's own, and anything that does not bind
+ * gets the source language. Asked per call, inside the request, so concurrent
+ * requests each get their own answer.
+ */
+let askLocale: () => Locale = () => SOURCE_LOCALE;
+
+export function bindRefusalLocale(source: () => Locale): void {
+	askLocale = source;
+}
+
+/**
  * The refusal, in the language of whoever is being refused.
  *
  * A service throws a key; here is where it becomes a sentence, because here is
- * the first place that knows which request is being answered. Outside a
- * request — a job, a worker, a test calling the adapter directly — there is no
- * event to ask, and the source language is the honest answer.
- *
- * An error still carrying a plain sentence is left as it is.
+ * the first place that knows whose request is being answered. An error still
+ * carrying a plain sentence is left as it is.
  */
 async function said(err: ServiceError): Promise<string> {
 	if (!err.key) return err.message;
-	let locale = SOURCE_LOCALE;
-	try {
-		locale = getRequestEvent().locals.locale ?? SOURCE_LOCALE;
-	} catch {
-		// No request in scope. See above.
-	}
+	// Before the await: some environments can only answer this synchronously,
+	// inside the call that started the request.
+	const locale = askLocale();
 	// The generated signature pairs each key with its own placeholders, which a
 	// key held in a variable cannot satisfy. `useT` widens it the same way.
 	const t = (await translatorFor(locale)) as (key: MessageKey, values?: MessageValues) => string;
