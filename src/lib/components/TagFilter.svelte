@@ -267,6 +267,16 @@
 	</button>
 
 	{#if open}
+		<!--
+			`overflow-visible` because a popover is a scroll container by default.
+
+			The browser's own rules give `[popover]` `overflow: auto`, and the
+			suggestion list under each box is positioned against the box rather
+			than laid out in flow — so the panel clipped it at its own bottom
+			edge and scrolled the rest out of reach. Four labels of a longer list
+			showed and the Hide side went under them. No stacking order argues
+			with that; the panel has to stop clipping.
+		-->
 		<div
 			bind:this={panel}
 			id="{name}-panel"
@@ -274,7 +284,7 @@
 			role="group"
 			aria-label={t('tagFilter.filterByTag')}
 			style="left:{where.left}px; top:{where.top}px"
-			class="overlay-face fixed m-0 w-[min(22rem,calc(100vw-1rem))] space-y-3 border p-3 shadow-overlay"
+			class="overlay-face fixed m-0 w-[min(22rem,calc(100vw-1rem))] space-y-3 overflow-visible border p-3 shadow-overlay"
 		>
 			{#each SIDES as side (side)}
 				<div class="space-y-1.5" data-side={side}>

@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **The list of labels under a tag filter is no longer cut off** at the
+  bottom of the panel it opens in.
 - **The task count no longer nudges the filters beside it** when a tag
   filter narrows the list.
 - **The diary, ideas and the gallery filter by tags the same way,** and a

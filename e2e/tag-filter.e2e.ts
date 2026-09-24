@@ -206,3 +206,40 @@ test('the diary filters by the same control', async ({ page }) => {
 	await expect(page.getByText('Nothing matches these tags.')).toBeVisible();
 	await expect(diaryFace).toBeVisible();
 });
+
+test('the suggestions under a box are not cut off at the panel edge', async ({ page }) => {
+	test.setTimeout(180_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('tag-filter-list'));
+	await visit(page, '/tasks/todo');
+	// Enough labels that the list is longer than the panel is tall.
+	await newTask(page, 'label the vocabulary', 'home urgent reading garden money music');
+
+	await openFilters(page);
+	await face(page).click();
+	await box(page, 'include').click();
+
+	const list = panel(page).locator('[data-side="include"] ul[role="listbox"]');
+	await expect(list).toBeVisible();
+
+	// A popover is a scroll container by the browser's own rules, and the list
+	// is positioned rather than laid out in flow: clipped, it stopped at the
+	// panel's bottom edge and the rest of the labels went behind it. So the
+	// list has to reach past that edge...
+	const holder = (await panel(page).boundingBox())!;
+	const under = (await list.boundingBox())!;
+	expect(under.y + under.height).toBeGreaterThan(holder.y + holder.height);
+
+	// ...and the part of it that is past the edge has to be the thing under
+	// the pointer there, rather than whatever the panel was covering.
+	const reaches = await list.evaluate((el, edge) => {
+		const box = el.getBoundingClientRect();
+		const below = (box.bottom + edge) / 2;
+		return el.contains(document.elementFromPoint(box.left + box.width / 2, below));
+	}, holder.y + holder.height);
+	expect(reaches).toBe(true);
+
+	// And the label at the far end of it is still a press away.
+	await list.getByRole('option', { name: 'urgent', exact: true }).click();
+	await expect(face(page)).toContainText('+1');
+});
