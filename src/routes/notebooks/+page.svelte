@@ -406,6 +406,7 @@
 							: selected
 								? (selected.description ?? '')
 								: t('notebooks.pickANotebookToSee')}
+						foldDescription={!!selected && !showingOrphans}
 						flush
 						pane
 					>

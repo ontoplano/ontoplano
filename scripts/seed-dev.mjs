@@ -1097,7 +1097,10 @@ diary(8, 'The leak is fixed. Two weeks and a new bit of ceiling.', ['home']);
 
 const kitchen = notebook(
 	'Kitchen renovation',
-	'Quotes, measurements, and whatever the plumber said last.'
+	'Quotes, measurements, and whatever the plumber said last.\n' +
+		'The kitchen is 3.4 by 2.8 metres; the old cabinets come out in the first week, ' +
+		'and the plumber has to be booked before the tiler.\n' +
+		'Budget is whatever is left after the boiler. The three shops worth visiting are in the notes.'
 );
 const readingNotebook = notebook('Reading', 'What I am reading, and what I thought of it.');
 const portugal = notebook('Portugal in September', 'Everything for the trip.');

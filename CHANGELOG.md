@@ -20,6 +20,10 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **A notebook's name and description no longer shrink to a sliver on a
+  phone.** On the Notebooks shelf the buttons drop below the name when there
+  isn't room, and a long description folds behind Show more, as it does on the
+  notebook's own page.
 - **Tag suggestions follow the notebook.** With a notebook picked in the task
   form, the Tags box offers only the tags that notebook already uses; with
   none picked, all of yours as before.
