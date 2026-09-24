@@ -50,3 +50,33 @@ test('an open folder and what is inside it sit on one ground', async ({ page }) 
 	expect(block.width).toBeGreaterThan(cover.width);
 	expect(block.height).toBeGreaterThan(cover.height);
 });
+
+test('a notebook page is one card, so its stripe starts at the top', async ({ page }) => {
+	test.setTimeout(120_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('nb-stripe'));
+
+	await makeNotebook(page, 'Renovation');
+	await visit(page, '/notebooks');
+	await page
+		.getByRole('link', { name: /Renovation/ })
+		.first()
+		.click();
+	await page.getByRole('link', { name: 'Open' }).first().click();
+	await page.waitForURL(/\/notebooks\/\d+/);
+
+	/*
+	 * The header and the tabs were two bordered cards with a gap between them,
+	 * so the accent down the side belonged to the lower one and the rule began
+	 * half way down the page — under the title it was there to colour.
+	 */
+	const striped = page.locator('.card-accent').first();
+	await expect(striped).toBeVisible();
+
+	const card = (await striped.boundingBox())!;
+	const title = (await page.getByRole('heading', { name: 'Renovation' }).boundingBox())!;
+	expect(card.y).toBeLessThan(title.y);
+
+	// And nothing inside it draws a second edge of its own.
+	await expect(striped.locator('.detail-header-frame.shadow-card')).toHaveCount(0);
+});

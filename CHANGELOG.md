@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **A notebook's page is one card,** so the coloured rule down its side
+  starts at the title rather than half way down.
 - **A notebook's tabs can be put in the order you want them,** from the same
   dialog that switches them on.
 - **The demo's notebooks have a year in them.** The renovation and the trip

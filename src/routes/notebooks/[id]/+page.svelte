@@ -64,6 +64,18 @@
 
 <div class="space-y-4">
 	<!--
+		The header and the tabs under it are one card, with one stripe.
+
+		They were two bordered cards with a gap between them, so the accent down
+		the side belonged to the lower one and the rule started half way down the
+		page — under the title it was supposed to be colouring. One surface, one
+		edge: the header is a pane of it and so is everything below.
+	-->
+	<div
+		class="card-accent flex min-w-0 flex-col border border-gray-200 bg-white shadow-card"
+		style="--card-accent: {SECTION_COLORS.diary}"
+	>
+		<!--
 		The header stands on a surface of its own.
 
 		The title, the description and the picture sat straight on the page's
@@ -72,128 +84,129 @@
 		was the one part with nothing under it. Same surface the panes below use,
 		so the page reads as one thing.
 	-->
-	<DetailHeader
-		surface
-		title={data.notebook.title}
-		back={{ href: resolve('/notebooks'), label: t('notebooks.id.larrAllNotebooks') }}
-		lead={data.notebook.mine || data.notebook.pictureId ? picture : undefined}
-	>
-		{#snippet badges()}
-			{#if data.notebook.closedAt}
-				<span class="eyebrow ml-2 align-middle text-gray-500">{t('notebooks.id.closed')}</span>
-			{/if}
-			{#if !data.notebook.mine}
-				<span class="eyebrow ml-2 align-middle text-gray-500"
-					>{t('notebooks.id.sharedBy', { sharedBy: data.notebook.sharedBy ?? '' })}</span
-				>
-			{:else if data.notebook.sharedWithFamily}
-				<span class="eyebrow ml-2 align-middle text-gray-500"
-					>{t('notebooks.id.sharedWithFamily')}</span
-				>
-			{/if}
-		{/snippet}
+		<DetailHeader
+			surface
+			pane
+			title={data.notebook.title}
+			back={{ href: resolve('/notebooks'), label: t('notebooks.id.larrAllNotebooks') }}
+			lead={data.notebook.mine || data.notebook.pictureId ? picture : undefined}
+		>
+			{#snippet badges()}
+				{#if data.notebook.closedAt}
+					<span class="eyebrow ml-2 align-middle text-gray-500">{t('notebooks.id.closed')}</span>
+				{/if}
+				{#if !data.notebook.mine}
+					<span class="eyebrow ml-2 align-middle text-gray-500"
+						>{t('notebooks.id.sharedBy', { sharedBy: data.notebook.sharedBy ?? '' })}</span
+					>
+				{:else if data.notebook.sharedWithFamily}
+					<span class="eyebrow ml-2 align-middle text-gray-500"
+						>{t('notebooks.id.sharedWithFamily')}</span
+					>
+				{/if}
+			{/snippet}
 
-		{#snippet meta()}
-			{#if data.notebook.description}
-				<!-- Folded when it is long: a description written properly pushed
+			{#snippet meta()}
+				{#if data.notebook.description}
+					<!-- Folded when it is long: a description written properly pushed
 				     the notes off a phone screen. See `FoldedText`. -->
-				<FoldedText text={data.notebook.description} />
-			{/if}
-		{/snippet}
+					<FoldedText text={data.notebook.description} />
+				{/if}
+			{/snippet}
 
-		{#snippet actions()}
-			<!--
+			{#snippet actions()}
+				<!--
 				The one thing this page is for, and it follows the tab below: New
 				note while notes are showing, New task on Tasks, New goal on Goals.
 				Drawn here rather than in the tab strip so the strip has the room
 				its tabs need at 390px — see NotebookDetail's `newAction`.
 			-->
-			{#if linkAction}
-				<!-- The other way to fill a tab: take something that is already
+				{#if linkAction}
+					<!-- The other way to fill a tab: take something that is already
 				     there. See `LinkIntoNotebook`.
 
 				     Before the New button rather than after it: the primary verb
 				     ends the row, so the button pressed most is the one nearest
 				     the edge a hand comes from. -->
-				<button onclick={linkAction.run} class="btn btn-sm">
-					<Icon name="link" />
-					{linkAction.label}
-				</button>
-			{/if}
-			{#if newAction?.href}
-				<!-- Already resolved: NotebookDetail builds this with `resolve()`. -->
-				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-				<a href={newAction.href} class="btn btn-sm btn-primary">
-					<Icon name="plus" />
-					{newAction.label}
-				</a>
-			{:else if newAction}
-				<button onclick={newAction.run} class="btn btn-sm btn-primary">
-					<Icon name="plus" />
-					{newAction.label}
-				</button>
-			{/if}
-			{#if data.notebook.mine && data.onFamilyPlan}
-				<!-- The owner's switch: everybody on the plan reads it and writes
+					<button onclick={linkAction.run} class="btn btn-sm">
+						<Icon name="link" />
+						{linkAction.label}
+					</button>
+				{/if}
+				{#if newAction?.href}
+					<!-- Already resolved: NotebookDetail builds this with `resolve()`. -->
+					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+					<a href={newAction.href} class="btn btn-sm btn-primary">
+						<Icon name="plus" />
+						{newAction.label}
+					</a>
+				{:else if newAction}
+					<button onclick={newAction.run} class="btn btn-sm btn-primary">
+						<Icon name="plus" />
+						{newAction.label}
+					</button>
+				{/if}
+				{#if data.notebook.mine && data.onFamilyPlan}
+					<!-- The owner's switch: everybody on the plan reads it and writes
 				     their own entries into it. Entries keep their writers. -->
-				<form
-					method="post"
-					action="?/setShared"
-					use:enhance={() =>
-						async ({ update }) => {
-							await update({ reset: false });
-						}}
-				>
-					<input type="hidden" name="id" value={data.notebook.id} />
-					<input
-						type="hidden"
-						name="shared"
-						value={data.notebook.sharedWithFamily ? 'false' : 'true'}
-					/>
-					<button class="btn btn-sm">
-						<Icon name="user" />
-						{data.notebook.sharedWithFamily
-							? t('notebooks.id.stopSharing')
-							: t('notebooks.id.shareWithFamily')}
+					<form
+						method="post"
+						action="?/setShared"
+						use:enhance={() =>
+							async ({ update }) => {
+								await update({ reset: false });
+							}}
+					>
+						<input type="hidden" name="id" value={data.notebook.id} />
+						<input
+							type="hidden"
+							name="shared"
+							value={data.notebook.sharedWithFamily ? 'false' : 'true'}
+						/>
+						<button class="btn btn-sm">
+							<Icon name="user" />
+							{data.notebook.sharedWithFamily
+								? t('notebooks.id.stopSharing')
+								: t('notebooks.id.shareWithFamily')}
+						</button>
+					</form>
+				{/if}
+				{#if data.notebook.mine}
+					<button
+						onclick={() => (editing = true)}
+						class="btn btn-sm"
+						title={t('ui.rename')}
+						aria-label={t('ui.rename')}><Icon name="edit" /></button
+					>
+					<form
+						method="post"
+						action="?/setClosed"
+						use:enhance={() =>
+							async ({ update }) => {
+								await update({ reset: false });
+							}}
+					>
+						<input type="hidden" name="id" value={data.notebook.id} />
+						<input type="hidden" name="closed" value={data.notebook.closedAt ? 'false' : 'true'} />
+						<button class="btn btn-sm">
+							{#if data.notebook.closedAt}
+								<Icon name="undo" /> {t('notebooks.id.reopen')}
+							{:else}
+								<Icon name="check" /> {t('notebooks.id.close')}
+							{/if}
+						</button>
+					</form>
+					<button onclick={() => (confirmingDelete = true)} class="btn btn-danger btn-sm">
+						<Icon name="trash" />
+						{t('ui.delete')}
 					</button>
-				</form>
-			{/if}
-			{#if data.notebook.mine}
-				<button
-					onclick={() => (editing = true)}
-					class="btn btn-sm"
-					title={t('ui.rename')}
-					aria-label={t('ui.rename')}><Icon name="edit" /></button
-				>
-				<form
-					method="post"
-					action="?/setClosed"
-					use:enhance={() =>
-						async ({ update }) => {
-							await update({ reset: false });
-						}}
-				>
-					<input type="hidden" name="id" value={data.notebook.id} />
-					<input type="hidden" name="closed" value={data.notebook.closedAt ? 'false' : 'true'} />
-					<button class="btn btn-sm">
-						{#if data.notebook.closedAt}
-							<Icon name="undo" /> {t('notebooks.id.reopen')}
-						{:else}
-							<Icon name="check" /> {t('notebooks.id.close')}
-						{/if}
-					</button>
-				</form>
-				<button onclick={() => (confirmingDelete = true)} class="btn btn-danger btn-sm">
-					<Icon name="trash" />
-					{t('ui.delete')}
-				</button>
-			{/if}
-		{/snippet}
-	</DetailHeader>
+				{/if}
+			{/snippet}
+		</DetailHeader>
 
-	<FormError message={form?.message} />
+		<FormError message={form?.message} />
 
-	<!--
+		<!--
 		The whole width, which is the point of being here rather than on the index.
 
 		`min-w-0` because it is a flex column: without it every child may be as
@@ -202,30 +215,28 @@
 		so what that looked like was ordinary sentences with their right-hand
 		ends missing.
 	-->
-	<section
-		class="card-accent flex min-w-0 flex-col border border-gray-200 bg-white shadow-card"
-		style="--card-accent: {SECTION_COLORS.diary}"
-	>
-		<NotebookDetail
-			notebook={data.notebook}
-			contents={data.contents}
-			allPeople={data.allPeople}
-			categories={data.categories}
-			inventoryCategories={data.inventoryCategories}
-			workoutCategories={data.workoutCategories}
-			parsers={data.parsers}
-			currency={data.currency}
-			pickableNotebooks={data.pickableNotebooks}
-			areas={data.areas}
-			workoutMeasures={data.workoutMeasures}
-			slots={data.slots}
-			todos={data.todos}
-			allTodos={data.allTodos}
-			activities={data.activities}
-			bind:newAction
-			bind:linkAction
-		/>
-	</section>
+		<section class="flex min-w-0 flex-col border-t border-gray-200">
+			<NotebookDetail
+				notebook={data.notebook}
+				contents={data.contents}
+				allPeople={data.allPeople}
+				categories={data.categories}
+				inventoryCategories={data.inventoryCategories}
+				workoutCategories={data.workoutCategories}
+				parsers={data.parsers}
+				currency={data.currency}
+				pickableNotebooks={data.pickableNotebooks}
+				areas={data.areas}
+				workoutMeasures={data.workoutMeasures}
+				slots={data.slots}
+				todos={data.todos}
+				allTodos={data.allTodos}
+				activities={data.activities}
+				bind:newAction
+				bind:linkAction
+			/>
+		</section>
+	</div>
 </div>
 
 <Modal bind:open={editing} error={form?.message} title={t('notebooks.id.editNotebook')}>

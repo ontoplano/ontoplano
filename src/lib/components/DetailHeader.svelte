@@ -20,6 +20,15 @@
 		back,
 		/** Its own box, for a page whose other parts are boxes too. */
 		surface = false,
+		/**
+		 * Already inside a surface: keep the padding, give up the edge.
+		 *
+		 * A detail page whose header and body are two bordered cards is two
+		 * cards, and the accent stripe down the side then belongs to one of
+		 * them — which is what left the notebook page with a rule that started
+		 * half way down. Told this, the header is a pane of the card around it.
+		 */
+		pane = false,
 		/** A picture before everything, the height of the whole header. */
 		lead,
 		/** Small labels after the name, inside the heading. */
@@ -31,6 +40,7 @@
 		title: string;
 		back?: { href: string; label: string };
 		surface?: boolean;
+		pane?: boolean;
 		lead?: Snippet;
 		badges?: Snippet;
 		meta?: Snippet;
@@ -38,7 +48,11 @@
 	} = $props();
 </script>
 
-<div class="detail-header-frame {surface ? 'border border-gray-200 bg-white shadow-card' : ''}">
+<div
+	class="detail-header-frame {surface && !pane
+		? 'border border-gray-200 bg-white shadow-card'
+		: ''}"
+>
 	<div class="detail-header" class:has-lead={!!lead} class:is-surface={surface}>
 		{#if lead}<div class="detail-lead">{@render lead()}</div>{/if}
 		{#if back}
