@@ -477,7 +477,20 @@ export const tags = sqliteTable(
 		 * colour is drawn as the plain chip it has always been; one with a
 		 * colour is drawn as a `.pill` in it.
 		 */
-		color: text('color')
+		color: text('color'),
+		/*
+		 * What the word means here, in the account's own terms.
+		 *
+		 * A tag is one word and a word is not always its own definition:
+		 * `#short` on the shopping means low on something and `#short` on a
+		 * note about a book means the book is. Whoever chose it knows; whoever
+		 * reads it a year later does not, and neither does an assistant asked
+		 * to label something the same way.
+		 *
+		 * Empty rather than null, because there is no difference worth keeping
+		 * between a tag nobody described and one described as nothing.
+		 */
+		description: text('description').notNull().default('')
 	},
 	(table) => [
 		index('tags_user_idx').on(table.userId),

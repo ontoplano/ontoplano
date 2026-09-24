@@ -15,7 +15,7 @@ import {
 } from '$lib/db/schema';
 import { eq, and, count, inArray, isNotNull, notInArray, sql } from 'drizzle-orm';
 import { NotFoundError, ValidationError } from './errors.js';
-import { str } from './validate.js';
+import { optionalStr, str } from './validate.js';
 
 /**
  * Tags, and the rows that join them to what they tag.
@@ -309,10 +309,35 @@ const CARRIERS = [
 ];
 
 /** A label as the Tags screen reads it: what it is, its colour, and how much work it is doing. */
-export type TagSummary = { id: number; name: string; color: string | null; uses: number };
+export type TagSummary = {
+	id: number;
+	name: string;
+	color: string | null;
+	description: string;
+	uses: number;
+};
 
 /** The label as it is stored. */
-export type TagRow = { id: number; name: string; color: string | null };
+export type TagRow = { id: number; name: string; color: string | null; description: string };
+
+/**
+ * How long a label's meaning may be.
+ *
+ * A sentence, not a note: what `#short` means here is one line, and anything
+ * longer is a note that should be in a notebook.
+ */
+export const MAX_TAG_DESCRIPTION_LENGTH = 200;
+
+/** What a tag counts towards, in the order a notebook's own tabs run. */
+export type TagUseKind = 'notes' | 'tasks' | 'ideas';
+const USE_ORDER: readonly TagUseKind[] = ['notes', 'tasks', 'ideas'];
+
+/** A label inside one notebook: what it is, and what carries it in there. */
+export type NotebookTag = TagRow & {
+	uses: number;
+	/** One entry per kind that has any, in `USE_ORDER`. */
+	by: { kind: TagUseKind; count: number }[];
+};
 
 /** One name, normalised the way `TagInput` normalises what is typed into it. */
 function tagName(raw: unknown): string {
@@ -332,7 +357,12 @@ function tagColor(raw: unknown): string | null {
 
 function tagOf(id: number, userId: string): TagRow {
 	const found = db
-		.select({ id: tags.id, name: tags.name, color: tags.color })
+		.select({
+			id: tags.id,
+			name: tags.name,
+			color: tags.color,
+			description: tags.description
+		})
 		.from(tags)
 		.where(and(eq(tags.id, id), eq(tags.userId, userId)))
 		.get();
@@ -355,7 +385,12 @@ export function listTagsWithUses(userId: string): TagSummary[] {
 	}
 
 	return db
-		.select({ id: tags.id, name: tags.name, color: tags.color })
+		.select({
+			id: tags.id,
+			name: tags.name,
+			color: tags.color,
+			description: tags.description
+		})
 		.from(tags)
 		.where(eq(tags.userId, userId))
 		.orderBy(tags.name)
@@ -402,7 +437,12 @@ export function renameTag(userId: string, id: number, name: unknown): TagRow {
 	if (wanted === tag.name) return tag;
 
 	const existing = db
-		.select({ id: tags.id, name: tags.name, color: tags.color })
+		.select({
+			id: tags.id,
+			name: tags.name,
+			color: tags.color,
+			description: tags.description
+		})
 		.from(tags)
 		.where(and(eq(tags.name, wanted), eq(tags.userId, userId)))
 		.get();
@@ -483,12 +523,129 @@ export function deleteTag(userId: string, id: number): void {
 export function tagByName(userId: string, name: unknown): TagRow {
 	const wanted = tagName(name);
 	const found = db
-		.select({ id: tags.id, name: tags.name, color: tags.color })
+		.select({
+			id: tags.id,
+			name: tags.name,
+			color: tags.color,
+			description: tags.description
+		})
 		.from(tags)
 		.where(and(eq(tags.name, wanted), eq(tags.userId, userId)))
 		.get();
 	if (!found) throw new NotFoundError('tag');
 	return found;
+}
+
+/**
+ * The carriers that can be inside a notebook, and what each one counts as.
+ *
+ * `CARRIERS` above is every table that joins a tag to something; this is the
+ * subset whose things are filed under a subject. Pictures and the repeating
+ * week are not — a picture belongs to the gallery and a repeating block to the
+ * template — so a tag's uses inside a notebook are these three kinds and no
+ * others. `kind` is what the count is called on screen, in `USE_ORDER`.
+ */
+const FILED = [
+	{
+		kind: 'notes' as const,
+		join: diaryEntryTags,
+		owner: diaryEntryTags.entryId,
+		thing: diaryEntries
+	},
+	{ kind: 'tasks' as const, join: todoTags, owner: todoTags.todoId, thing: todoTasks },
+	{
+		kind: 'tasks' as const,
+		join: exceptionalTaskTags,
+		owner: exceptionalTaskTags.taskId,
+		thing: exceptionalTasks
+	},
+	{ kind: 'ideas' as const, join: ideaTags, owner: ideaTags.ideaId, thing: ideas }
+];
+
+/**
+ * What a label means here, in the account's own words.
+ *
+ * Empty takes the meaning off again, which is a real answer: most labels are
+ * a word that explains itself.
+ */
+export function describeTag(userId: string, id: number, description: unknown): TagRow {
+	const tag = tagOf(id, userId);
+	const said = optionalStr(description, 'description', {
+		max: MAX_TAG_DESCRIPTION_LENGTH
+	}).trim();
+	db.update(tags).set({ description: said }).where(eq(tags.id, tag.id)).run();
+	return { ...tag, description: said };
+}
+
+/**
+ * One notebook's labels, with what carries each of them in there.
+ *
+ * The Tags screen counted a word across the whole account, which answers a
+ * question nobody has: `#home` doing forty things somewhere is not why it is
+ * on this renovation. Here the count is the subject's own, and it is broken
+ * down by kind — two notes and one task — because "three things have it" does
+ * not say where to go and look.
+ *
+ * A label the notebook hands new notes by default is listed at nought, once
+ * it exists at all: it is part of this subject's vocabulary whether or not
+ * anything in here wears it yet. A suggestion nobody has ever used anywhere is
+ * not listed, because there is nothing to list — default tags are stored as
+ * the text somebody typed, and a word becomes a label by being put on
+ * something.
+ */
+export function tagsInNotebook(userId: string, notebookId: number): NotebookTag[] {
+	/** tag id → kind → how many. */
+	const counts = new Map<number, Map<TagUseKind, number>>();
+	const bump = (tagId: number, kind: TagUseKind, n: number) => {
+		const kinds = counts.get(tagId) ?? new Map<TagUseKind, number>();
+		kinds.set(kind, (kinds.get(kind) ?? 0) + n);
+		counts.set(tagId, kinds);
+	};
+
+	for (const { kind, join, owner, thing } of FILED) {
+		const rows = db
+			.select({ tagId: join.tagId, n: count() })
+			.from(join)
+			.innerJoin(thing, and(eq(thing.id, owner), eq(thing.userId, userId)))
+			.where(and(eq(join.userId, userId), eq(thing.notebookId, notebookId)))
+			.groupBy(join.tagId)
+			.all();
+		for (const row of rows) bump(row.tagId, kind, Number(row.n));
+	}
+
+	// The notebook's own suggestions, by name — they are stored as the text
+	// somebody typed rather than as rows, which is why this is a second read.
+	const suggested = new Set(
+		parseTags(
+			db
+				.select({ defaultTags: notebooks.defaultTags })
+				.from(notebooks)
+				.where(and(eq(notebooks.id, notebookId), eq(notebooks.userId, userId)))
+				.get()?.defaultTags ?? ''
+		)
+	);
+
+	const wanted = db
+		.select({
+			id: tags.id,
+			name: tags.name,
+			color: tags.color,
+			description: tags.description
+		})
+		.from(tags)
+		.where(eq(tags.userId, userId))
+		.orderBy(tags.name)
+		.all()
+		.filter((tag) => counts.has(tag.id) || suggested.has(tag.name));
+
+	return wanted.map((tag) => {
+		const kinds = counts.get(tag.id);
+		const by = USE_ORDER.filter((kind) => (kinds?.get(kind) ?? 0) > 0).map((kind) => ({
+			kind,
+			count: kinds?.get(kind) ?? 0
+		}));
+		return { ...tag, uses: by.reduce((sum, one) => sum + one.count, 0), by };
+	});
 }
 
 /**
@@ -509,13 +666,7 @@ export function tagsByNotebook(userId: string): Record<number, string[]> {
 		byNotebook.set(notebookId, names);
 	};
 
-	const filed = [
-		{ join: diaryEntryTags, owner: diaryEntryTags.entryId, thing: diaryEntries },
-		{ join: todoTags, owner: todoTags.todoId, thing: todoTasks },
-		{ join: exceptionalTaskTags, owner: exceptionalTaskTags.taskId, thing: exceptionalTasks },
-		{ join: ideaTags, owner: ideaTags.ideaId, thing: ideas }
-	] as const;
-	for (const { join, owner, thing } of filed) {
+	for (const { join, owner, thing } of FILED) {
 		const rows = db
 			.selectDistinct({ notebookId: thing.notebookId, name: tags.name })
 			.from(join)

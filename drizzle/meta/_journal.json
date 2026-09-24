@@ -715,6 +715,13 @@
       "when": 1790191468594,
       "tag": "0101_existing_notebooks_keep_goals",
       "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "6",
+      "when": 1790236684495,
+      "tag": "0102_a_tag_says_what_it_means",
+      "breakpoints": true
     }
   ]
 }
