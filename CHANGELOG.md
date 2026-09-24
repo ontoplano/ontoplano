@@ -29,6 +29,10 @@ releases mattered.
 - **Every one of those forms asks which notebook it belongs to.** In the room
   the field starts empty; inside a notebook it starts on that notebook, and
   editing something from the room never quietly takes it out of one.
+- **The mailing-list form stops promising an email.** "Check your inbox — there
+  is one link to follow" was the answer for a while after the confirming
+  message stopped being sent. An address is on the list the moment it is typed,
+  and the form says so: "You're on the list."
 - **A task's labels are at full strength again.** They share a line with the
   row's buttons, and that whole line was faded until the pointer was on it — so
   a label's ink came out a grey nobody could read. The fade belongs to the

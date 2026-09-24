@@ -2,7 +2,12 @@ import { json, text } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { clientKey, rateLimit } from '$lib/server/rate-limit';
 import { ValidationError } from '$lib/services/errors';
-import { newsletterEnabled, newsletterOrigin, subscribe } from '$lib/server/services/newsletter';
+import {
+	SUBSCRIBE_ACCEPTED,
+	newsletterEnabled,
+	newsletterOrigin,
+	subscribe
+} from '$lib/server/services/newsletter';
 
 /**
  * The one public endpoint the newsletter form posts to.
@@ -35,6 +40,9 @@ import { newsletterEnabled, newsletterOrigin, subscribe } from '$lib/server/serv
  */
 const PER_MINUTE = 2;
 const PER_HOUR = 10;
+
+/** What the form says when it has been used too often. See the limits above. */
+const TOO_MANY = 'Too many tries. Give it a minute.';
 
 function corsHeaders(request: Request): Record<string, string> {
 	const allowed = newsletterOrigin();
@@ -71,7 +79,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 		const budget = rateLimit(`subscribe:${window}:${key}`, limit, window);
 		if (!budget.allowed) {
 			return json(
-				{ ok: false, message: 'Too many tries. Give it a minute.' },
+				{ ok: false, message: TOO_MANY },
 				{
 					status: 429,
 					headers: { ...headers, 'retry-after': String(budget.retryAfterSeconds) }
@@ -102,8 +110,7 @@ export const POST: RequestHandler = async ({ request, getClientAddress }) => {
 		throw error;
 	}
 
-	return json(
-		{ ok: true, message: 'Check your inbox — there is one link to follow.' },
-		{ headers }
-	);
+	// The site prints what it is told, so this is the one sentence a stranger
+	// reads. It lives with the service — see `SUBSCRIBE_ACCEPTED`.
+	return json({ ok: true, message: SUBSCRIBE_ACCEPTED }, { headers });
 };

@@ -77,6 +77,20 @@ describe('subscribing', () => {
 		expect(list.confirmedAddresses()).toEqual(['reader@example.test']);
 	});
 
+	/*
+	 * The sentence and the behaviour, held together.
+	 *
+	 * It said "check your inbox — there is one link to follow" for a while
+	 * after the confirming mail stopped being sent, so a stranger was told to
+	 * go and find something that was never coming.
+	 */
+	test('what the form answers promises nothing to go and look for', async () => {
+		await list.subscribe('reader@example.test');
+
+		expect(sendEmail).not.toHaveBeenCalled();
+		expect(list.SUBSCRIBE_ACCEPTED).not.toMatch(/inbox|confirm|link|email|mail/i);
+	});
+
 	test('the same address twice is one row and still no mail', async () => {
 		await list.subscribe('reader@example.test');
 		await list.subscribe('reader@example.test');

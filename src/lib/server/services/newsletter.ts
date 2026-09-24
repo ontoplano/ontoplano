@@ -28,17 +28,19 @@ import { localeForAddress } from '$lib/server/locale';
  * facts, and keeping them unrelated is what stops "unsubscribe" from ever being
  * confused with "delete my account".
  *
- * ## Double opt-in, and what that buys
+ * ## One step, and what stands in for the second
  *
- * A row is created unconfirmed. Nothing is ever sent to it but the one
- * confirmation, and if the link is never followed the row stays a dead address
- * that costs nothing. So typing somebody else's address into the form
- * subscribes nobody, which is both the law here and in the EU and the reason a
- * list is worth having: everyone on it asked twice.
+ * An address is on the list the moment somebody types it and presses the
+ * button. Double opt-in is the safer arrangement and this deliberately is not
+ * it: a confirming click loses the people who do not go back to their mail,
+ * and the form promising a message it then has to send is the thing that was
+ * saying "check your inbox" for a mail nobody was sending.
  *
- * The confirmation token is *not* cleared afterwards, because it is also what
- * the unsubscribe link in every issue carries. A way in that becomes no way out
- * is precisely how a domain gets filed as spam.
+ * What stands in its place is the part that actually protects a domain: a hard
+ * rate limit in front of the endpoint, and an unsubscribe link in every single
+ * message — one click, nobody signed in to anything.
+ *
+ * Every row still carries a token, because that link is what it carries.
  *
  * ## What it never says
  *
@@ -48,10 +50,21 @@ import { localeForAddress } from '$lib/server/locale';
  * differed.
  */
 
+/**
+ * What the form says when it has worked.
+ *
+ * Here rather than in the route, beside the code that decides what actually
+ * happens: the sentence went on saying "check your inbox — there is one link
+ * to follow" for a while after the confirming mail stopped being sent, and a
+ * promise kept in a different file from the thing it promises is how that
+ * happens. `tests/newsletter.test.ts` holds it to what `subscribe` does.
+ */
+export const SUBSCRIBE_ACCEPTED = "You're on the list.";
+
 /** Long enough that a token cannot be guessed, short enough to sit in a URL. */
 const TOKEN_BYTES = 24;
 
-/** RFC-shaped enough to catch a typo; the confirmation catches the rest. */
+/** RFC-shaped enough to catch a typo, which is all a form can do for one. */
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_EMAIL_LENGTH = 254;
 
@@ -86,13 +99,11 @@ function normalise(raw: unknown): string {
 }
 
 /**
- * Take an address, and send exactly one confirmation to it.
+ * Take an address, and put it on the list.
  *
- * Answers `true` whatever happened, because the caller is a public form and
- * the difference between "new" and "already on the list" is not the form's to
- * disclose. A send that fails is a mail-log row like any other; the person is
- * told the same thing either way, because "check your inbox" is true and
- * "our SMTP is down" is not their problem to act on.
+ * Nothing is sent. Answers the same whatever happened, because the caller is a
+ * public form and the difference between "new" and "already on the list" is not
+ * the form's to disclose.
  */
 export async function subscribe(rawEmail: unknown, source = 'site'): Promise<void> {
 	if (!newsletterEnabled()) throw new ValidationError('Not available here.');
