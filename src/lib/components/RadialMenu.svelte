@@ -985,7 +985,22 @@
 		 */
 		--hud-top: 12%;
 		/* Tight and dark, not a halo — see the note under this rule. */
-		--hud-edge: 0 1px 0 rgb(0 0 0 / 0.55), 0 0 3px rgb(0 0 0 / 0.75), 0 2px 10px rgb(0 0 0 / 0.45);
+		/* A hairline under the letters, on top of the plate below. */
+		--hud-edge: 0 1px 2px rgb(0 0 0 / 0.55);
+		/*
+		 * What the words stand on, and how much of the room's colour survives it.
+		 *
+		 * Measured rather than guessed. A room's accent is a mid-tone by design,
+		 * and the scrim over a light page is a light grey — Finance's teal on that
+		 * came out at about 2.5:1, which is under the 3:1 a heading needs and
+		 * exactly what "still hard to read" meant. At this plate and this mix
+		 * every room lands between 5.9:1 (Goals, the darkest) and 8.1:1.
+		 *
+		 * Lifting towards white rather than to white: the colour is how somebody
+		 * knows which room they are on before they have read the word.
+		 */
+		--hud-plate: rgb(0 0 0 / 0.78);
+		--hud-ink: 62%;
 
 		position: fixed;
 		/* Well above the ring, which sits under the thumb, and clear of the
@@ -1010,11 +1025,30 @@
 		 * a bright cloud sitting behind the name. The scrim is what separates
 		 * the name from the page; the section's colour on its own is the name.
 		 */
+	/*
+		 * A plate under the words, after all.
+		 *
+		 * Two attempts without one: a five-pixel outline in the page's own ground,
+		 * which at this size is a bright cloud rather than an edge, and then dark
+		 * shadows alone. The shadows are right and they are not enough — a room's
+		 * colour is a mid-tone by design, the scrim over a light page is a light
+		 * grey, and mid-tone letters on light grey do not read however they are
+		 * edged. Finance, which is a teal, was the one that proved it.
+		 *
+		 * So the letters get something dark to stand on and are lifted towards
+		 * white on it, which keeps them the room's colour rather than making them
+		 * white. It is a second surface over a dimmed page, which is what the
+		 * scrim was supposed to avoid — but a label nobody can read is not a
+		 * label, and this one is the wheel's whole answer to "where am I going".
+		 */
 	.pie-hud-inner {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 0.5rem;
+		border-radius: var(--radius-lg, 0);
+		background-color: var(--hud-plate);
+		padding: 0.875rem 1.5rem 1rem;
 		font-weight: 800;
 		letter-spacing: 0.08em;
 		/* The tracking above pushes the last letter off centre by its own
@@ -1042,6 +1076,10 @@
 		 * them, so the colour stays the colour.
 		 */
 	.pie-hud-name {
+		/* Lifted towards white on the plate, so it stays the room's colour
+		   rather than becoming white. The inline colour is on the block above,
+		   so this is the first place it can be mixed. */
+		color: color-mix(in srgb, currentColor var(--hud-ink), white);
 		font-size: 2.5rem;
 		text-transform: uppercase;
 		text-shadow: var(--hud-edge);
@@ -1058,6 +1096,10 @@
 	 * move the name every time the pointer crossed a wedge.
 	 */
 	.pie-hud-tabs {
+		/* Lifted towards white on the plate, so it stays the room's colour
+		   rather than becoming white. The inline colour is on the block above,
+		   so this is the first place it can be mixed. */
+		color: color-mix(in srgb, currentColor var(--hud-ink), white);
 		/*
 		 * Small enough that the longest room stays on one line — on a phone
 		 * too, where the line is what has to give.
