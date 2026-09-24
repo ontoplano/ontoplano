@@ -72,9 +72,17 @@ export function live(options: LiveOptions = {}): () => void {
 		timer = null;
 		if (closed || !pending) return;
 
-		// Not now: the tab is in the background, or a sentence is half written.
-		// The change is kept, and this runs again when the reason goes away.
-		if (document.visibilityState !== 'visible' || busyTyping()) return;
+		/*
+		 * Not now: the tab is in the background, or a sentence is half written.
+		 *
+		 * The change is kept. A hidden tab is woken by `visibilitychange`,
+		 * which always arrives; a focused field is not, because `focusout`
+		 * only fires if focus actually moves — somebody who leaves the cursor
+		 * in a box and walks away never gives it up, and the change waited
+		 * there for ever. So this asks again rather than waiting to be told.
+		 */
+		if (document.visibilityState !== 'visible') return;
+		if (busyTyping()) return later();
 
 		const change = pending;
 		pending = null;
@@ -84,6 +92,18 @@ export function live(options: LiveOptions = {}): () => void {
 	const later = () => {
 		if (timer) clearTimeout(timer);
 		timer = setTimeout(flush, SETTLE_MS);
+	};
+
+	/**
+	 * Load the page again because something was missed, rather than announced.
+	 *
+	 * Through the same gate as an announcement — coalesced, and never over a
+	 * half-written sentence — but past the `rooms` filter, because what was
+	 * missed is by definition unknown.
+	 */
+	const catchUp = () => {
+		pending = { rooms: [], at: new Date().toISOString(), via: 'app' };
+		later();
 	};
 
 	/*
@@ -110,11 +130,32 @@ export function live(options: LiveOptions = {}): () => void {
 	 */
 	const LIVE_MARK = 'data-live';
 
+	/*
+	 * Whether this is a reconnection rather than the first connection.
+	 *
+	 * A stream carries no replay: anything announced while it was down reached
+	 * nobody and is not coming again. `EventSource` reconnects on its own and
+	 * says nothing about the gap, so a tab that lost its stream for four
+	 * seconds — a proxy closing an idle connection, a loaded box, a phone
+	 * whose web view was frozen — went on showing what it had, indefinitely,
+	 * while looking perfectly connected. The screen only came right when some
+	 * navigation happened to reload it.
+	 *
+	 * So a reconnection reloads once. It costs one loader run on a thing that
+	 * is already rare, and it is the difference between a stream that drops
+	 * and one that loses data when it drops.
+	 */
+	let everOpened = false;
+
 	const open = () => {
 		if (closed) return;
 		source = new EventSource('/api/live');
 		source.addEventListener('changed', onChanged);
-		source.addEventListener('open', () => document.documentElement.setAttribute(LIVE_MARK, ''));
+		source.addEventListener('open', () => {
+			document.documentElement.setAttribute(LIVE_MARK, '');
+			if (everOpened) catchUp();
+			everOpened = true;
+		});
 		source.addEventListener('error', () => document.documentElement.removeAttribute(LIVE_MARK));
 	};
 
@@ -153,11 +194,8 @@ export function live(options: LiveOptions = {}): () => void {
 	 */
 	const onVisible = () => {
 		if (document.visibilityState !== 'visible') return;
-		if (pending) {
-			flush();
-		} else if (!busyTyping()) {
-			void invalidateAll();
-		}
+		if (pending) flush();
+		else catchUp();
 		// `CLOSED` is a stream that will not retry on its own.
 		if (!closed && (source === null || source.readyState === EventSource.CLOSED)) open();
 	};

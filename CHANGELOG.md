@@ -28,6 +28,14 @@ releases mattered.
   finishing one and for putting it back, and nothing for the column between
   them, so "doing" could only be set by hand in the app. `change_task` takes a
   status.
+- **A page that lost its live connection catches up when it gets it back.**
+  The stream carries no replay, so anything an assistant wrote while the
+  connection was down reached nobody — and the tab went on showing what it had
+  while looking perfectly connected. A reconnection reloads the page once.
+- **A change that arrives while you are typing no longer waits for ever.** The
+  reload is held back so it cannot rebuild the page under a half-written note,
+  but it was waiting to be told you had finished — and a cursor left in a box
+  never says so.
 - **A welcome that could not be sent says so.** An instance with the mailing
   list switched on but no mail server configured put the address on the list,
   answered "You're on the list", and sent nothing — with no trace in the mail
