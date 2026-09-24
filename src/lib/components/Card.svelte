@@ -40,6 +40,10 @@
 		 * `SplitColumns` without `spaced`.
 		 */
 		pane = false,
+		/** Placement from outside — a grid cell's span, say. Not for restyling. */
+		class: className = '',
+		/** The anchor a tutorial step points at. */
+		dataTour = '',
 		lead,
 		actions,
 		children
@@ -49,6 +53,8 @@
 		accent?: string;
 		flush?: boolean;
 		pane?: boolean;
+		class?: string;
+		dataTour?: string;
 		id?: string;
 		/** Drawn before the title: the picture of whatever this card is about. */
 		lead?: Snippet;
@@ -76,9 +82,10 @@
 -->
 <section
 	id={id || undefined}
+	data-tour={dataTour || undefined}
 	class="flex flex-col {pane ? 'card-pane' : 'border border-gray-200 shadow-card'} bg-white {accent
 		? 'card-accent'
-		: ''}"
+		: ''} {className}"
 	style="{accent ? `--card-accent: ${accent};` : ''}{id ? ' scroll-margin-top: 1rem;' : ''}"
 >
 	<!--
@@ -99,7 +106,10 @@
 			<div class="shrink-0">{@render lead()}</div>
 		{/if}
 		<div class="min-w-0 flex-1">
-			{#if title}<h2 class="eyebrow text-gray-600">{title}</h2>{/if}
+			<!-- As tall as a line of small text, so a card whose header carries a
+			     count or a note is the same height as the card beside it that
+			     carries nothing: two headers in a row meet in one line. -->
+			{#if title}<h2 class="eyebrow flex min-h-4 items-center text-gray-600">{title}</h2>{/if}
 			{#if description}
 				<!--
 					pre-line: a description may break itself onto a second line with \n.

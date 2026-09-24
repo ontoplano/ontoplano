@@ -20,6 +20,10 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **A recipe's page lines up.** Ingredients, method and pictures no longer
+  overlap, their edges and headers match, and the buttons sit beside the
+  recipe's name. The weekly review's two top cards and a notebook's header got
+  the same fix.
 - **The wheel names Inventory's tabs**, Stock and Wishlist, the way it names
   every other room's. The search box offers every tab of every room too —
   Workouts, Finance, Media and both Inventory lists were missing — and matches

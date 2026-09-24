@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { enhance } from '$lib/enhance';
 	import FoldedText from '$lib/components/FoldedText.svelte';
+	import DetailHeader from '$lib/components/DetailHeader.svelte';
 	import { resolve } from '$app/paths';
 	import { armed } from '$lib/actions/armed';
 	import FormError from '$lib/components/FormError.svelte';
@@ -42,6 +43,25 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
+<!--
+	The picture, where somebody looks when they want to change it — drawn by the
+	same component the two Edit notebook dialogues use, so there is one of it
+	rather than three. Only for a notebook of your own: one shared into the
+	family is somebody else's to dress.
+-->
+{#snippet picture()}
+	{#if data.notebook.mine}
+		<NotebookPicture notebook={data.notebook} kilobytes={data.pictureKilobytes} removable />
+	{:else if data.notebook.pictureId}
+		<img
+			src="/media/{data.notebook.pictureId}"
+			alt=""
+			loading="lazy"
+			class="size-12 shrink-0 rounded-lg border border-gray-200 bg-white object-cover"
+		/>
+	{/if}
+{/snippet}
+
 <div class="space-y-4">
 	<!--
 		The header stands on a surface of its own.
@@ -52,65 +72,36 @@
 		was the one part with nothing under it. Same surface the panes below use,
 		so the page reads as one thing.
 	-->
-	<div
-		class="flex flex-wrap items-start justify-between gap-3 border border-gray-200 bg-white p-3 shadow-card"
+	<DetailHeader
+		surface
+		title={data.notebook.title}
+		back={{ href: resolve('/notebooks'), label: t('notebooks.id.larrAllNotebooks') }}
+		lead={data.notebook.mine || data.notebook.pictureId ? picture : undefined}
 	>
-		<!-- The picture and what it is a picture of, together: `justify-between`
-		     put the whole width between them. -->
-		<div class="flex min-w-0 items-start gap-3">
-			<!--
-			The picture, where somebody looks when they want to change it.
-
-			The same arrangement a person has: one picture, and pressing it is how
-			you set or replace it rather than hunting for a field in the edit form.
-			Only for a notebook of your own — one shared into the family is
-			somebody else's to dress.
-		-->
-			<!-- The picture, where somebody looks when they want to change it —
-			     drawn by the same component the two Edit notebook dialogues use,
-			     so there is one of it rather than three. -->
-			{#if data.notebook.mine}
-				<NotebookPicture notebook={data.notebook} kilobytes={data.pictureKilobytes} removable />
-			{:else if data.notebook.pictureId}
-				<img
-					src="/media/{data.notebook.pictureId}"
-					alt=""
-					loading="lazy"
-					class="size-12 shrink-0 rounded-lg border border-gray-200 bg-white object-cover"
-				/>
+		{#snippet badges()}
+			{#if data.notebook.closedAt}
+				<span class="eyebrow ml-2 align-middle text-gray-500">{t('notebooks.id.closed')}</span>
 			{/if}
-
-			<div class="min-w-0">
-				<a
-					href={resolve('/notebooks')}
-					class="text-xs text-gray-500 hover:text-gray-900 hover:underline"
+			{#if !data.notebook.mine}
+				<span class="eyebrow ml-2 align-middle text-gray-500"
+					>{t('notebooks.id.sharedBy', { sharedBy: data.notebook.sharedBy ?? '' })}</span
 				>
-					{t('notebooks.id.larrAllNotebooks')}
-				</a>
-				<h1 class="mt-1 text-lg font-bold text-gray-900">
-					{data.notebook.title}
-					{#if data.notebook.closedAt}
-						<span class="eyebrow ml-2 align-middle text-gray-500">{t('notebooks.id.closed')}</span>
-					{/if}
-					{#if !data.notebook.mine}
-						<span class="eyebrow ml-2 align-middle text-gray-500"
-							>{t('notebooks.id.sharedBy', { sharedBy: data.notebook.sharedBy ?? '' })}</span
-						>
-					{:else if data.notebook.sharedWithFamily}
-						<span class="eyebrow ml-2 align-middle text-gray-500"
-							>{t('notebooks.id.sharedWithFamily')}</span
-						>
-					{/if}
-				</h1>
-				{#if data.notebook.description}
-					<!-- Folded when it is long: a description written properly pushed
-				     the notes off a phone screen. See `FoldedText`. -->
-					<FoldedText text={data.notebook.description} class="mt-1" />
-				{/if}
-			</div>
-		</div>
+			{:else if data.notebook.sharedWithFamily}
+				<span class="eyebrow ml-2 align-middle text-gray-500"
+					>{t('notebooks.id.sharedWithFamily')}</span
+				>
+			{/if}
+		{/snippet}
 
-		<div class="flex flex-wrap items-center gap-2">
+		{#snippet meta()}
+			{#if data.notebook.description}
+				<!-- Folded when it is long: a description written properly pushed
+				     the notes off a phone screen. See `FoldedText`. -->
+				<FoldedText text={data.notebook.description} />
+			{/if}
+		{/snippet}
+
+		{#snippet actions()}
 			<!--
 				The one thing this page is for, and it follows the tab below: New
 				note while notes are showing, New task on Tasks, New goal on Goals.
@@ -193,8 +184,8 @@
 					{t('ui.delete')}
 				</button>
 			{/if}
-		</div>
-	</div>
+		{/snippet}
+	</DetailHeader>
 
 	<FormError message={form?.message} />
 

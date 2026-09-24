@@ -4729,6 +4729,21 @@ html[data-style='playful'] .room-surface {
 	html[data-style='playful'] .room-body > * > * > [class*='shadow-card'] {
 		border-radius: 0;
 	}
+
+	/*
+	 * Only a card that is the full width. Two in a row stepping out of both
+	 * sides slid under each other by a rem; cards laid out side by side go in
+	 * a `CardGrid`, and stay inside the room's gutter.
+	 */
+	.room-body .card-grid > * {
+		margin-inline: 0;
+	}
+
+	/* A grid on a page of full-width cards steps out as one, so its outer
+	   edges line up with theirs. */
+	.room-body .card-grid-bleed {
+		margin-inline: -1rem;
+	}
 }
 
 .scroll-hints {
