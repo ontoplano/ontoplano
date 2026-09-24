@@ -2100,8 +2100,14 @@ label:has(> input[type='radio']:not(:disabled)) {
 		color: var(--color-gray-400);
 	}
 
-	.todo-fold:hover {
+	.todo-fold:hover,
+	.todo-notes-hot .todo-fold {
 		color: var(--color-gray-900);
+	}
+
+	/* Where a press would fold or unfold it — see `foldHover`. */
+	.todo-notes-hot {
+		cursor: pointer;
 	}
 
 	.row-actions-stack {

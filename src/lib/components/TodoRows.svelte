@@ -228,21 +228,34 @@
 	 * been simpler and would have swallowed the links in it.
 	 */
 	function foldPress(todo: Todo, press: MouseEvent) {
-		if (!hasMore(todo)) return;
+		if (folds(todo, press)) toggleNotes(todo.id);
+	}
 
-		const target = press.target as HTMLElement;
-		if (target.closest('a, button, audio, input, textarea')) return;
+	/** Whether a press where this pointer is would fold or unfold the writing. */
+	function folds(todo: Todo, at: MouseEvent): boolean {
+		if (!hasMore(todo)) return false;
 
-		if (!openNotes.has(todo.id)) {
-			toggleNotes(todo.id);
-			return;
-		}
+		const target = at.target as HTMLElement;
+		if (target.closest('a, button, audio, input, textarea')) return false;
+		if (!openNotes.has(todo.id)) return true;
 
-		const block = press.currentTarget as HTMLElement;
+		const block = at.currentTarget as HTMLElement;
 		const box = block.getBoundingClientRect();
 		const line = parseFloat(getComputedStyle(block).lineHeight);
-		if (press.clientY - box.top > (Number.isFinite(line) ? line : FALLBACK_LINE)) return;
-		toggleNotes(todo.id);
+		return at.clientY - box.top <= (Number.isFinite(line) ? line : FALLBACK_LINE);
+	}
+
+	/**
+	 * The pointer says so before the press does.
+	 *
+	 * Over the line that folds an open note the cursor was the text one, so
+	 * the line read as words to select rather than a handle, and the chevron
+	 * beside it stayed grey. Asked with the same test the press uses, so the
+	 * two cannot disagree; a class on the block rather than state, since it
+	 * changes on every pixel of movement.
+	 */
+	function foldHover(todo: Todo, move: PointerEvent) {
+		(move.currentTarget as HTMLElement).classList.toggle('todo-notes-hot', folds(todo, move));
 	}
 
 	/** If a browser answers `normal` for the line height, a line is about this. */
@@ -1422,11 +1435,11 @@
 									<!-- svelte-ignore a11y_click_events_have_key_events -->
 									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<div
-										class="todo-notes {hasMore(todo) ? 'todo-notes-foldable' : ''} {hasMore(todo) &&
-										!openNotes.has(todo.id)
-											? 'cursor-pointer'
-											: ''}"
+										class="todo-notes {hasMore(todo) ? 'todo-notes-foldable' : ''}"
 										onclick={(press) => foldPress(todo, press)}
+										onpointermove={(move) => foldHover(todo, move)}
+										onpointerleave={(leave) =>
+											(leave.currentTarget as HTMLElement).classList.remove('todo-notes-hot')}
 									>
 										{#if hasMore(todo)}
 											<button
