@@ -1,3 +1,6 @@
+import type { Pathname } from '$app/types';
+import type { IconName } from '$lib/components/Icon.svelte';
+import type { NavKey } from './sections-nav.js';
 import type { Translate } from './i18n/index.js';
 import type { PlainKey } from './i18n/keys.js';
 
@@ -101,15 +104,20 @@ export const HIDEABLE_SECTIONS = [
  * it, and nothing said so.
  */
 export const NOTEBOOK_TABS = [
-	{ id: 'notebooks', href: '/notebooks', label: 'rooms.notebooks.tabs.notebooks' },
+	{
+		id: 'notebooks',
+		href: '/notebooks',
+		label: 'rooms.notebooks.tabs.notebooks',
+		icon: 'notebook'
+	},
 	{ id: 'diary', href: '/notebooks/diary', label: 'rooms.notebooks.tabs.diary' },
 	// Ideas is writing too — a line you jot and come back to — and a room of
 	// its own in the bar for something that small was a room nobody entered.
-	{ id: 'ideas', href: '/notebooks/ideas', label: 'rooms.notebooks.tabs.ideas' },
+	{ id: 'ideas', href: '/notebooks/ideas', label: 'rooms.notebooks.tabs.ideas', icon: 'ideas' },
 	// What the weekly review writes. It is writing, and it was reachable only
 	// from the week it belonged to, which is a thing nobody navigates to.
 	{ id: 'weekly', href: '/notebooks/weekly', label: 'rooms.notebooks.tabs.weekly' },
-	{ id: 'people', href: '/notebooks/people', label: 'rooms.notebooks.tabs.people' },
+	{ id: 'people', href: '/notebooks/people', label: 'rooms.notebooks.tabs.people', icon: 'user' },
 	// The labels themselves. They are the account's one vocabulary rather than
 	// a notebook's, and this is the room where the writing is.
 	{ id: 'tags', href: '/notebooks/tags', label: 'rooms.notebooks.tabs.tags' }
@@ -119,9 +127,9 @@ export const NOTEBOOK_TABS = [
 export const TASK_TABS = [
 	{ href: '/tasks/plan', label: 'rooms.tasks.tabs.plan' },
 	{ href: '/tasks/board', label: 'rooms.tasks.tabs.board' },
-	{ href: '/tasks/todo', label: 'rooms.tasks.tabs.todo' },
-	{ href: '/tasks/activities', label: 'rooms.tasks.tabs.activities' },
-	{ href: '/tasks/review', label: 'rooms.tasks.tabs.review' }
+	{ href: '/tasks/todo', label: 'rooms.tasks.tabs.todo', icon: 'check' },
+	{ href: '/tasks/activities', label: 'rooms.tasks.tabs.activities', icon: 'tag' },
+	{ href: '/tasks/review', label: 'rooms.tasks.tabs.review', icon: 'check' }
 ] as const;
 
 /**
@@ -132,7 +140,7 @@ export const TASK_TABS = [
 export const HEALTH_TABS = [
 	{ id: 'habits', href: '/health/habits', label: 'rooms.health.tabs.habits' },
 	{ id: 'workouts', href: '/health/workouts', label: 'rooms.health.tabs.workouts' },
-	{ id: 'recipes', href: '/health/recipes', label: 'rooms.health.tabs.recipes' }
+	{ id: 'recipes', href: '/health/recipes', label: 'rooms.health.tabs.recipes', icon: 'shopping' }
 ] as const;
 
 /** The Finance room's tabs, in the order it shows them. */
@@ -157,6 +165,12 @@ export const MEDIA_TABS = [
 	{ id: 'gallery', href: '/media/gallery', label: 'rooms.media.tabs.gallery' }
 ] as const;
 
+/** The Inventory room's tabs: what you keep, and what you might get one day. */
+export const INVENTORY_TABS = [
+	{ href: '/inventory/stock', label: 'inventory.stock' },
+	{ href: '/inventory/wishlist', label: 'inventory.wishlist' }
+] as const;
+
 /**
  * A tab inside a room: where it goes, what it is called, and the preference
  * that puts it away when it has one.
@@ -166,37 +180,48 @@ export const MEDIA_TABS = [
  */
 export type RoomTab = {
 	id?: string;
-	href: string;
+	href: Pathname;
 	label: PlainKey;
+	/** What the palette draws beside it; the room's own glyph when absent. */
+	icon?: IconName;
 };
 
 /**
  * What each room holds, by the key the navigation knows it as.
  *
- * The rooms' layouts draw from this, and so does the wheel — which is the
- * point: the wheel says what is behind a wedge before you go there, and a
- * second list of tab names written into it would start disagreeing with the
- * strips the same week. A room with no tabs is simply absent.
+ * The one list of a room's tabs. `TabbedRoom` draws its strip from here when
+ * given a `room`, the wheel names the tabs under each wedge from here, and the
+ * palette offers each tab as a place from here. It is keyed by every room the
+ * bar has, so a new room cannot be left out of it: Inventory's two tabs were
+ * written into its layout alone, and the wheel showed nothing under it.
+ *
+ * A room with one page is an empty list.
  */
-export const ROOM_TABS: Record<string, readonly RoomTab[]> = {
+export const ROOM_TABS: Record<NavKey, readonly RoomTab[]> = {
 	planner: TASK_TABS,
 	diary: NOTEBOOK_TABS,
 	health: HEALTH_TABS,
+	inventory: INVENTORY_TABS,
 	finance: FINANCE_TABS,
-	media: MEDIA_TABS
+	goals: [],
+	media: MEDIA_TABS,
+	reminders: []
 };
 
 /**
- * What is inside a room, named — leaving out whatever this account put away.
+ * A room's tabs, leaving out whatever this account put away.
  *
  * The data streams Health appends are not here: they are this account's own
  * measurements rather than the room's shape, and a wheel that named three of
  * them would be saying something different on every install.
  */
-export function roomTabNames(t: Translate, room: string, hidden: readonly string[] = []): string[] {
-	return (ROOM_TABS[room] ?? [])
-		.filter((tab) => !(tab.id && isHidden(hidden, tab.id as HideableSection)))
-		.map((tab) => t(tab.label));
+export function visibleRoomTabs(room: NavKey, hidden: readonly string[] = []): RoomTab[] {
+	return ROOM_TABS[room].filter((tab) => !(tab.id && isHidden(hidden, tab.id as HideableSection)));
+}
+
+/** What is inside a room, named — the words the wheel runs together. */
+export function roomTabNames(t: Translate, room: NavKey, hidden: readonly string[] = []): string[] {
+	return visibleRoomTabs(room, hidden).map((tab) => t(tab.label));
 }
 
 /**

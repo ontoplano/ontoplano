@@ -1169,7 +1169,7 @@ export const messages: Catalogue = {
 	'inventory.showWhatIsIn': 'Mostrar o que tem em {place}',
 	'inventory.showWhatYouAlreadyHave': 'Mostrar o que você já tem ({bought})',
 	'inventory.showWhatYouPutAway': 'Mostrar o que você guardou ({snoozed})',
-	'inventory.stock': 'Stock',
+	'inventory.stock': 'Estoque',
 	'inventory.takeThisAttributeOffEverything': 'Remover este atributo de tudo',
 	'inventory.theListIsEmpty': 'A lista está vazia',
 	'inventory.tickTheOnesThatHold':

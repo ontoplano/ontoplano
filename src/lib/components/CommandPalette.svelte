@@ -26,7 +26,7 @@
 	let hits = $state<Hit[]>([]);
 	let input = $state<HTMLInputElement | null>(null);
 
-	const places = $derived(findDestinations(query, hidden).slice(0, query ? 6 : 8));
+	const places = $derived(findDestinations(query, t, hidden).slice(0, query ? 6 : 8));
 	type Row = { sort: 'place'; place: Destination } | { sort: 'thing'; hit: Hit };
 	const rows = $derived<Row[]>([
 		...places.map((place) => ({ sort: 'place' as const, place })),
@@ -174,7 +174,7 @@
 							<Icon name={row.place.icon} class="shrink-0 text-gray-500" />
 							<span class="text-gray-900">{t(row.place.label)}</span>
 							{#if row.place.group}
-								<span class="text-xs text-gray-500">{row.place.group}</span>
+								<span class="text-xs text-gray-500">{t(row.place.group)}</span>
 							{/if}
 						{:else}
 							<Icon name="tag" class="shrink-0 text-gray-300" />

@@ -4,7 +4,6 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import TabbedRoom from '$lib/components/TabbedRoom.svelte';
 	import { formatMoney } from '$lib/money';
-	import { resolve } from '$app/paths';
 	import type { Snippet } from 'svelte';
 	import type { LayoutServerData } from './$types';
 	import { useT } from '$lib/i18n';
@@ -23,18 +22,13 @@
 	 */
 	let { children, data }: { children: Snippet; data: LayoutServerData } = $props();
 
-	const tabs = [
-		{ href: resolve('/inventory/stock'), label: t('inventory.stock') },
-		{ href: resolve('/inventory/wishlist'), label: t('inventory.wishlist') }
-	];
-
 	/** Whether the shopping list is up. */
 	let showRun = $state(false);
 </script>
 
 <TabbedRoom
 	title={t('inventory.inventory')}
-	{tabs}
+	room="inventory"
 	label={t('inventory.whichList')}
 	dataTour="inventory-tabs"
 >

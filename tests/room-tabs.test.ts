@@ -13,14 +13,19 @@
  * the list has been left behind by a rename.
  */
 import { describe, expect, test } from 'vitest';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import {
 	HIDEABLE_ROOMS,
 	HIDEABLE_SECTIONS,
 	NOTEBOOK_TABS,
+	ROOM_TABS,
 	isHideableSection,
+	roomTabNames,
 	leavesOf
 } from '../src/lib/sections';
+import { NAV_PLACES } from '../src/lib/sections-nav';
 import { LOCALES } from '../src/lib/i18n/locales';
 import { messages as english } from '../src/lib/i18n/catalogues/en';
 import { messages as portuguese } from '../src/lib/i18n/catalogues/pt-BR';
@@ -87,5 +92,52 @@ describe("the notebooks room's tabs", () => {
 					`sections.${tab.id}.blurb`
 				);
 			}
+	});
+});
+
+/*
+ * A room of the bar draws its strip from `ROOM_TABS`, never from a list of its
+ * own.
+ *
+ * Inventory's layout wrote its two tabs out by hand, the registry never heard
+ * of them, and the wheel showed nothing under INVENTORY while it named every
+ * shelf of Health. `TabbedRoom` still takes a `tabs` list — Settings' tabs
+ * depend on who is signed in — so this is what keeps that door for the rooms
+ * that are not in the bar.
+ */
+describe('a room of the bar', () => {
+	/** Rooms reached from the account menu, not the bar. */
+	const NOT_IN_THE_BAR = [
+		'src/routes/settings/+layout.svelte',
+		'src/routes/settings/integrations/+layout.svelte',
+		'src/routes/admin/+layout.svelte'
+	];
+
+	const drawers = readdirSync('src', { recursive: true, encoding: 'utf8' })
+		.filter((file) => file.endsWith('.svelte') && !file.endsWith('TabbedRoom.svelte'))
+		.map((file) => join('src', file))
+		.filter((file) => readFileSync(file, 'utf8').includes('<TabbedRoom'));
+
+	test('draws its tabs from the registry rather than a list of its own', () => {
+		for (const file of drawers) {
+			const source = readFileSync(file, 'utf8');
+			const own = /<TabbedRoom[^>]*(\{tabs\}|\btabs=)/s.test(source);
+			if (NOT_IN_THE_BAR.includes(file)) continue;
+			expect(own, `${file} passes its own tabs`).toBe(false);
+			expect(source, `${file} names no room`).toMatch(/<TabbedRoom[^>]*\broom="/s);
+		}
+	});
+
+	test('with more than one page names its tabs in the wheel', () => {
+		const t = (key: string) => key;
+		expect(roomTabNames(t as never, 'inventory')).toEqual([
+			'inventory.stock',
+			'inventory.wishlist'
+		]);
+		for (const place of NAV_PLACES)
+			for (const tab of ROOM_TABS[place.key])
+				expect(tab.href === place.href || tab.href.startsWith(`/${place.href.split('/')[1]}`)).toBe(
+					true
+				);
 	});
 });
