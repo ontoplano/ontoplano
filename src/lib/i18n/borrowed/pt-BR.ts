@@ -51,6 +51,7 @@ export const borrowed: ReadonlySet<string> = new Set([
 	'notebooks.habitsCount',
 	'notebooks.ideasCount',
 	'notebooks.inAnotherNotebook',
+	'notebooks.inside',
 	'notebooks.inventoryCount',
 	'notebooks.ledgersCount',
 	'notebooks.linkBill',

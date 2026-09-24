@@ -4344,13 +4344,36 @@ html button.tab-link {
 	padding: 0.75rem;
 }
 
-/*
- * What is inside a folder sits under it, indented, so a spine of covers reads
- * as belonging to the one above rather than as more of the same shelf.
- */
 .notebook-cover {
 	position: relative;
-	margin-left: calc(var(--cover-depth, 0) * 0.75rem);
+}
+
+/*
+ * An open folder and what is inside it, on one ground.
+ *
+ * They were flat siblings with the children nudged a few pixels right, which
+ * is an indent the eye does not read on a grid of pictures: opening a folder
+ * looked like the shelf getting longer. The block takes the whole width of the
+ * shelf and holds its own grid, so the covers inside it keep the size and the
+ * spacing of every other cover and only the ground says they belong together.
+ *
+ * A folder inside an open folder gets its own block, one step darker, because
+ * the tint is what depth is drawn with now.
+ */
+.notebook-family {
+	display: grid;
+	grid-column: 1 / -1;
+	grid-template-columns: repeat(auto-fill, 6.5rem);
+	justify-content: space-between;
+	gap: 0.75rem;
+	align-content: start;
+	border-radius: var(--radius, 0);
+	background-color: color-mix(in srgb, var(--color-gray-500) 9%, transparent);
+	padding: 0.5rem;
+}
+
+.notebook-family .notebook-family {
+	background-color: color-mix(in srgb, var(--color-gray-500) 9%, transparent);
 }
 
 .cover-face {

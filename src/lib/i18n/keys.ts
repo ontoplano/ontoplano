@@ -1467,6 +1467,7 @@ export type MessageKey =
 	| 'notebooks.ideasCount'
 	| 'notebooks.importedFromAnObsidianVault'
 	| 'notebooks.inAnotherNotebook'
+	| 'notebooks.inside'
 	| 'notebooks.inventoryCount'
 	| 'notebooks.itsNotesTasksAndGoals'
 	| 'notebooks.kitchenRenovation'

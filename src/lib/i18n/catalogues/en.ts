@@ -1623,6 +1623,7 @@ export const messages: Catalogue = {
 	'notebooks.ideasCount': { one: '{count} idea', other: '{count} ideas' },
 	'notebooks.importedFromAnObsidianVault': 'Imported from an Obsidian vault.',
 	'notebooks.inAnotherNotebook': 'in another notebook',
+	'notebooks.inside': 'Inside',
 	'notebooks.inventoryCount': { one: '{count} thing', other: '{count} things' },
 	'notebooks.itsNotesTasksAndGoals':
 		'Its notes, tasks and goals will not be deleted. The tasks and goals stay where they are, in the\n\t\tplanner and in Goals; the notes move to',

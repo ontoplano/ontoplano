@@ -1673,6 +1673,7 @@ export const messages: Catalogue = {
 	'notebooks.ideasCount': { one: '{count} idea', other: '{count} ideas' },
 	'notebooks.importedFromAnObsidianVault': 'Aus einem Obsidian-Tresor importiert.',
 	'notebooks.inAnotherNotebook': 'in another notebook',
+	'notebooks.inside': 'Inside',
 	'notebooks.inventoryCount': { one: '{count} thing', other: '{count} things' },
 	'notebooks.itsNotesTasksAndGoals':
 		'Seine Notizen, Aufgaben und Ziele werden nicht gelöscht. Die Aufgaben und Ziele bleiben, wo sie sind, im\n\t\tPlaner und bei den Zielen; die Notizen wandern zu',

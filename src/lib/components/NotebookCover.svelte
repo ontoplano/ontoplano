@@ -22,15 +22,12 @@
 	let {
 		notebook,
 		href,
-		/** How far inside another one it sits, so a child indents under its parent. */
-		depth = 0,
 		chosen = false,
 		/** What can be done to it, drawn in the corner of the cover. */
 		actions
 	}: {
 		notebook: Notebook;
 		href: string;
-		depth?: number;
 		chosen?: boolean;
 		actions?: Snippet;
 	} = $props();
@@ -74,7 +71,7 @@
 </script>
 
 <!-- eslint-disable svelte/no-navigation-without-resolve -->
-<div class="notebook-cover" style="--cover-depth: {depth}">
+<div class="notebook-cover">
 	<!-- Already resolved: the caller builds this with `resolve()`. -->
 	<a
 		{href}

@@ -15,6 +15,8 @@
 	import ToggleRow from '$lib/components/ToggleRow.svelte';
 	import NotebookPicture from '$lib/components/NotebookPicture.svelte';
 	import { moduleChoicesOf, type NotebookModule } from '$lib/notebook-modules';
+	import NotebookField from '$lib/components/NotebookField.svelte';
+	import { isInsideNotebook, leafNotebookName, parentNotebookPath } from '$lib/notebook-path';
 	import { page } from '$app/state';
 	import { useT } from '$lib/i18n';
 
@@ -40,7 +42,13 @@
 		 */
 		notebook = null,
 		/** What the browser refuses before sending. The page knows the ceiling. */
-		pictureKilobytes = 0
+		pictureKilobytes = 0,
+		/**
+		 * The notebooks this one could go inside — the whole shelf.
+		 *
+		 * Empty where the caller has none to offer, and the field draws nothing.
+		 */
+		notebooks = []
 	}: {
 		title?: string;
 		description?: string;
@@ -54,7 +62,37 @@
 			counts: Record<NotebookModule, number>;
 		} | null;
 		pictureKilobytes?: number;
+		notebooks?: { id: number; title: string }[];
 	} = $props();
+
+	/*
+	 * The name, and the notebook it sits inside, as two fields.
+	 *
+	 * A notebook's place is its name — `Renovation — Kitchen` sits inside
+	 * `Renovation` — and that is what makes renaming one the way to move it.
+	 * It also meant the only way to file a new notebook under another was to
+	 * know to type an em dash, which nobody does. The box holds the name; this
+	 * holds the place; the server joins them.
+	 */
+	let inside = $state<number | null>(null);
+	let seededFrom = title;
+	const parentOf = (full: string) => {
+		const path = parentNotebookPath(full);
+		return path ? (notebooks.find((one) => one.title === path)?.id ?? null) : null;
+	};
+	$effect(() => {
+		if (title === seededFrom) return;
+		seededFrom = title;
+		inside = parentOf(title);
+	});
+
+	/*
+	 * Everything except itself and what is already under it: a notebook inside
+	 * its own child is a name that contains itself and a tree with no bottom.
+	 */
+	const couldHold = $derived(
+		notebooks.filter((one) => !notebook || !isInsideNotebook(one.title, notebook.title))
+	);
 
 	const modules = $derived(
 		notebook ? moduleChoicesOf(notebook, page.data.hiddenSections ?? []) : []
@@ -76,17 +114,27 @@
 			<NotebookPicture {notebook} kilobytes={pictureKilobytes} size="size-20" removable />
 		{/if}
 		<div class="min-w-0 flex-1">
-			<Field label={t('ui.title')} span={12} required hint={t('notebooks.anEmDashMakesA')}>
+			<Field label={t('ui.title')} span={12} required>
 				<OneLine
 					name="heading"
 					placeholder={t('notebooks.kitchenRenovation')}
-					value={title}
+					value={leafNotebookName(title)}
 					class="input"
 					required
 				/>
 			</Field>
 		</div>
 	</div>
+
+	<!-- Where it goes. `NotebookField` is the same control that files a note or
+	     a task under a subject, asking the same question about a notebook. -->
+	<NotebookField
+		notebooks={couldHold}
+		bind:value={inside}
+		span={12}
+		name="parent"
+		label={t('notebooks.inside')}
+	/>
 
 	<Field label={t('notebooks.whatItIsFor')} span={12}>
 		<textarea name="description" rows="3" class="textarea">{description}</textarea>

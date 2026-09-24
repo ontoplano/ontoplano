@@ -3,6 +3,7 @@
 	import { sliding } from '$lib/actions/sliding';
 	// Generated beside the masks it names: scripts/build-eink-masks.mjs.
 	import { enhance } from '$lib/enhance';
+	import { guardSubmits, releaseHeldButtons } from '$lib/one-press';
 	import { resolve } from '$app/paths';
 	import { navigating, page } from '$app/state';
 	import { live } from '$lib/live';
@@ -582,7 +583,17 @@
 		roomArriving = slideOn(page$, changedRoom, true);
 	});
 
+	/*
+	 * One press, one submission — on every form in the app, not only the ones
+	 * `$lib/enhance` wraps. Here because it is a property of the app rather
+	 * than of any screen in it; see `$lib/one-press`.
+	 */
+	$effect(() => guardSubmits());
+
 	afterNavigate(() => {
+		// A plain form's press ends in a navigation, and arriving is what says
+		// the press is over. Enhanced forms let go of their own buttons.
+		releaseHeldButtons();
 		// Asked to stop as soon as the room is here; it finishes its turn on the
 		// way, so the quickest navigation still leaves a mark that went round.
 		stopMarkSpin();

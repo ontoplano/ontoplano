@@ -40,6 +40,9 @@ export const notebookActions = {
 		try {
 			createNotebook(buildCtx(locals.user!.id), {
 				title: formData.get('heading'),
+				// Where it goes, as its own field: the place is part of the name,
+				// and the service is what puts the two halves together.
+				parent: formData.get('parent'),
 				description: formData.get('description'),
 				defaultTags: formData.get('defaultTags'),
 				// What it holds, when whoever is making it said. The dialog does
@@ -58,6 +61,7 @@ export const notebookActions = {
 		try {
 			updateNotebook(buildCtx(locals.user!.id), Number(formData.get('id')), {
 				title: formData.get('heading'),
+				parent: formData.get('parent'),
 				description: formData.get('description'),
 				defaultTags: formData.get('defaultTags'),
 				/*

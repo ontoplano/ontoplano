@@ -1648,6 +1648,7 @@ export const messages: Catalogue = {
 	'notebooks.ideasCount': { one: '{count} idea', other: '{count} ideas' },
 	'notebooks.importedFromAnObsidianVault': 'Importado de um cofre do Obsidian.',
 	'notebooks.inAnotherNotebook': 'in another notebook',
+	'notebooks.inside': 'Inside',
 	'notebooks.inventoryCount': { one: '{count} thing', other: '{count} things' },
 	'notebooks.itsNotesTasksAndGoals':
 		'Suas notas, tarefas e metas não serão excluídas. As tarefas e metas ficam onde estão, no\n\t\tplanejador e em Metas; as notas vão para',

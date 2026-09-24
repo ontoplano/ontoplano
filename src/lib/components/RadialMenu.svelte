@@ -976,10 +976,22 @@
 	 * now: the wedges say their icon, and the name is said once, large.
 	 */
 	.pie-hud {
+		/*
+		 * How far down the name sits, and how hard it is drawn.
+		 *
+		 * Named because both are the kind of thing somebody will want to nudge:
+		 * where it sits depends on how big a thumb's reach is, and how hard it
+		 * is drawn depends on what it lands over.
+		 */
+		--hud-top: 12%;
+		/* Tight and dark, not a halo — see the note under this rule. */
+		--hud-edge: 0 1px 0 rgb(0 0 0 / 0.55), 0 0 3px rgb(0 0 0 / 0.75), 0 2px 10px rgb(0 0 0 / 0.45);
+
 		position: fixed;
-		/* A fifth of the way down: clear of the status bar and the app's own
-			   header, and well above the ring, which sits under the thumb. */
-		top: 22%;
+		/* Well above the ring, which sits under the thumb, and clear of the
+			   status bar and the app's own header. It was a fifth of the way down
+			   and read as sitting on the wheel rather than over the page. */
+		top: var(--hud-top);
 		left: 0;
 		right: 0;
 		display: flex;
@@ -1011,9 +1023,29 @@
 		line-height: 1.05;
 	}
 
+	/*
+		 * What holds the letters together over whatever is behind them.
+		 *
+		 * The room's own colour at this size is a thin bright shape on a dimmed
+		 * page, and a pale room over a pale photograph disappeared. A panel is
+		 * the obvious answer and the wrong one — a second surface floating over
+		 * a surface the scrim is already dimming — and the version before that
+		 * was a five-pixel outline in the page's ground, which at 2.5rem is a
+		 * bright cloud sitting behind the name rather than an edge on it.
+		 *
+		 * So: shadows rather than an outline, dark rather than light, and tight
+		 * rather than wide. One hairline directly under the letters to separate
+		 * them from what they sit on, one three-pixel blur that acts as the
+		 * edge, and one soft wide one that does the work a background would —
+		 * it darkens the page under the words without drawing a shape with
+		 * corners. `paint-order` puts that under the glyphs rather than over
+		 * them, so the colour stays the colour.
+		 */
 	.pie-hud-name {
 		font-size: 2.5rem;
 		text-transform: uppercase;
+		text-shadow: var(--hud-edge);
+		paint-order: stroke fill;
 	}
 
 	/*
@@ -1040,6 +1072,8 @@
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
 		white-space: nowrap;
+		/* The same edge the name gets: a hint nobody can read is not a hint. */
+		text-shadow: var(--hud-edge);
 		opacity: 0.85;
 	}
 

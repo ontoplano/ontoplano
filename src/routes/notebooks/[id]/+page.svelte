@@ -108,6 +108,18 @@
 				Drawn here rather than in the tab strip so the strip has the room
 				its tabs need at 390px — see NotebookDetail's `newAction`.
 			-->
+			{#if linkAction}
+				<!-- The other way to fill a tab: take something that is already
+				     there. See `LinkIntoNotebook`.
+
+				     Before the New button rather than after it: the primary verb
+				     ends the row, so the button pressed most is the one nearest
+				     the edge a hand comes from. -->
+				<button onclick={linkAction.run} class="btn btn-sm">
+					<Icon name="link" />
+					{linkAction.label}
+				</button>
+			{/if}
 			{#if newAction?.href}
 				<!-- Already resolved: NotebookDetail builds this with `resolve()`. -->
 				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
@@ -119,14 +131,6 @@
 				<button onclick={newAction.run} class="btn btn-sm btn-primary">
 					<Icon name="plus" />
 					{newAction.label}
-				</button>
-			{/if}
-			{#if linkAction}
-				<!-- The other way to fill a tab: take something that is already
-				     there. See `LinkIntoNotebook`. -->
-				<button onclick={linkAction.run} class="btn btn-sm">
-					<Icon name="link" />
-					{linkAction.label}
 				</button>
 			{/if}
 			{#if data.notebook.mine && data.onFamilyPlan}
@@ -241,6 +245,7 @@
 			description={data.notebook.description}
 			defaultTags={data.notebook.defaultTags}
 			notebook={data.notebook}
+			notebooks={data.pickableNotebooks}
 			pictureKilobytes={data.pictureKilobytes}
 		/>
 	</form>

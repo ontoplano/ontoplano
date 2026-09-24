@@ -89,41 +89,15 @@
 
 {#snippet details()}
 	<!--
-		A day, optionally.
-		
-		A task with no day sits in the general list; giving it one puts it on
-		that day, which is what the two shapes already mean — `scheduled_date`
-		null is "not yet", and a date is "then". The quick form could write a
-		task and not say when, so "ring the plumber tomorrow" became a task
-		with the word tomorrow in its title and a day that still looked empty.
+		The writing, straight under the name.
+
+		Half the tasks on a working list are a line of title and a paragraph of
+		what actually happened. That paragraph was below the day, the category
+		and the notebook — three answers somebody usually leaves alone — so the
+		one field they came to fill in was the one they had to scroll past the
+		rest to reach. What the task is, then what it is about, then where it
+		goes.
 	-->
-	<Field label={t('fields.todo.day')} span={6} hint={t('fields.todo.leaveItForNoDay')}>
-		<input
-			autocomplete="off"
-			name="scheduledDate"
-			type="date"
-			value={scheduledDate}
-			class="input"
-		/>
-	</Field>
-
-	<Field label={t('ui.category')} span={6}>
-		<select name="categoryId" class="select">
-			<option value="">{t('fields.todo.none')}</option>
-			{#each categories as cat (cat.id)}
-				<option value={cat.id} selected={categoryId === cat.id}>{cat.name}</option>
-			{/each}
-		</select>
-	</Field>
-
-	<NotebookField {notebooks} bind:value={notebookId} />
-
-	<Field label={t('ui.tags')} span={12} hint={t('fields.todo.separateWithCommasOrSpaces')}>
-		<!-- The account's one vocabulary, not a second one: a word used on a
-		     diary entry is the same word here. -->
-		<TagInput value={tags} known={knownTags} placeholder={t('fields.todo.tagsExample')} />
-	</Field>
-
 	<Field label={t('ui.notes')} span={12}>
 		<!-- The same box a note is written in, showing what the words already
 		     are rather than the address of the screenshot in the middle of
@@ -152,6 +126,42 @@
 		<PictureAttach target={box} />
 		<RecordingAttach target={box} />
 	</Field>
+
+	<Field label={t('ui.tags')} span={12} hint={t('fields.todo.separateWithCommasOrSpaces')}>
+		<!-- The account's one vocabulary, not a second one: a word used on a
+		     diary entry is the same word here. -->
+		<TagInput value={tags} known={knownTags} placeholder={t('fields.todo.tagsExample')} />
+	</Field>
+
+	<!--
+		A day, optionally.
+		
+		A task with no day sits in the general list; giving it one puts it on
+		that day, which is what the two shapes already mean — `scheduled_date`
+		null is "not yet", and a date is "then". The quick form could write a
+		task and not say when, so "ring the plumber tomorrow" became a task
+		with the word tomorrow in its title and a day that still looked empty.
+	-->
+	<Field label={t('fields.todo.day')} span={6} hint={t('fields.todo.leaveItForNoDay')}>
+		<input
+			autocomplete="off"
+			name="scheduledDate"
+			type="date"
+			value={scheduledDate}
+			class="input"
+		/>
+	</Field>
+
+	<Field label={t('ui.category')} span={6}>
+		<select name="categoryId" class="select">
+			<option value="">{t('fields.todo.none')}</option>
+			{#each categories as cat (cat.id)}
+				<option value={cat.id} selected={categoryId === cat.id}>{cat.name}</option>
+			{/each}
+		</select>
+	</Field>
+
+	<NotebookField {notebooks} bind:value={notebookId} />
 {/snippet}
 
 {#snippet scales()}

@@ -42,7 +42,7 @@ import { mainPictures } from './media.js';
 import { getHiddenSections, getWeekSettings } from './settings.js';
 import { linkableInto } from './notebook-linking.js';
 import { isHidden } from '../sections.js';
-import { ConflictError, NotFoundError } from './errors.js';
+import { ConflictError, NotFoundError, ValidationError } from './errors.js';
 import { stamp, stamps } from './time.js';
 import { num, optionalStr, str } from './validate.js';
 import { optionalTagInput, parseTags } from './tags.js';
@@ -114,7 +114,7 @@ export type Notebook = {
  * rather than two.
  */
 export { NOTEBOOK_SEPARATOR } from '../notebook-path.js';
-import { NOTEBOOK_SEPARATOR } from '../notebook-path.js';
+import { NOTEBOOK_SEPARATOR, isInsideNotebook, joinNotebookPath } from '../notebook-path.js';
 
 export type NotebookNode = Notebook & {
 	depth: number;
@@ -650,11 +650,47 @@ export function contentsOf(ctx: Ctx, id: number) {
 	};
 }
 
+/**
+ * The full title, from the name somebody typed and the notebook they filed it
+ * inside.
+ *
+ * A notebook's place is its name — `Renovation — Kitchen` sits inside
+ * `Renovation` — which is one fact rather than two and is why renaming one
+ * moves it. The form asks the two halves separately all the same, because
+ * typing an em dash is not something anybody should have to know about.
+ *
+ * `parent` left out entirely means "the name is the whole title", which is
+ * what an assistant renaming a notebook over MCP is saying; an empty string
+ * means "not inside anything", which is a form that asked.
+ */
+function titleUnder(ctx: Ctx, raw: { title: unknown; parent?: unknown }, self?: number): string {
+	const leaf = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
+	const given = raw.parent;
+	if (given === undefined || given === null || given === '') return leaf;
+
+	const parent = getNotebook(ctx, Number(given));
+	// Its own child is a title that contains itself, which is a notebook that
+	// can never be drawn and a tree that never terminates.
+	if (self !== undefined && isInsideNotebook(parent.title, getNotebook(ctx, self).title))
+		throw new ValidationError('A notebook cannot go inside itself');
+
+	const full = joinNotebookPath(parent.title, leaf);
+	if (full.length > MAX_TITLE_LENGTH)
+		throw new ValidationError('That name is too long for the notebook it goes inside');
+	return full;
+}
+
 export function createNotebook(
 	ctx: Ctx,
-	raw: { title: unknown; description?: unknown; defaultTags?: unknown; modules?: unknown }
+	raw: {
+		title: unknown;
+		parent?: unknown;
+		description?: unknown;
+		defaultTags?: unknown;
+		modules?: unknown;
+	}
 ): number {
-	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
+	const title = titleUnder(ctx, raw);
 	if (notebookTitled(ctx, title)) throw new ConflictError('A notebook by that name already exists');
 
 	const result = db
@@ -678,9 +714,15 @@ export function createNotebook(
 export function updateNotebook(
 	ctx: Ctx,
 	id: number,
-	raw: { title: unknown; description?: unknown; defaultTags?: unknown; modules?: unknown }
+	raw: {
+		title: unknown;
+		parent?: unknown;
+		description?: unknown;
+		defaultTags?: unknown;
+		modules?: unknown;
+	}
 ): void {
-	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
+	const title = titleUnder(ctx, raw, id);
 
 	const clash = notebookTitled(ctx, title);
 	if (clash && clash.id !== id) throw new ConflictError('A notebook by that name already exists');

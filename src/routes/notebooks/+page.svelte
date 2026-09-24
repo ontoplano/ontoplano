@@ -180,24 +180,19 @@
 							album and the same tree inventory draws for a location. Nothing
 							to keep in step and nothing new to learn — renaming one moves it.
 						-->
-						{#snippet notebookRow(node: (typeof data.tree)[number])}
-							<!--
-								A notebook is its cover.
+						<!--
+							A notebook is its cover.
 
-								They were rows with a stamp of a picture at the front, which
-								is a list of names with a decoration; a shelf of subjects is a
-								shelf of things, and you pick one the way you pick a book —
-								by looking at it. The picture is the object and the name hangs
-								under it, glued on rather than beside it.
-
-								A notebook with children keeps its fold, and what is inside it
-								opens as its own shelf under it — indented, so a spine of
-								covers reads as belonging to the one above.
-							-->
+							They were rows with a stamp of a picture at the front, which is a
+							list of names with a decoration; a shelf of subjects is a shelf of
+							things, and you pick one the way you pick a book — by looking at
+							it. The picture is the object and the name hangs under it, glued
+							on rather than beside it.
+						-->
+						{#snippet cover(node: (typeof data.tree)[number])}
 							<NotebookCover
 								notebook={node}
 								href="{resolve('/notebooks')}?notebook={node.id}"
-								depth={node.depth}
 								chosen={node.id === data.selected}
 							>
 								{#snippet actions()}
@@ -250,11 +245,28 @@
 									</form>
 								{/snippet}
 							</NotebookCover>
+						{/snippet}
 
-							{#if opened.has(node.id)}
-								{#each node.children as child (child.id)}
-									{@render notebookRow(child)}
-								{/each}
+						<!--
+							An open folder and what is inside it are one block.
+
+							They were flat siblings on one shelf with the children nudged a
+							little to the right, so opening a folder produced covers that
+							belonged to it and looked like more of the shelf — the indent is
+							a few pixels and the eye does not count pixels. A ground behind
+							the pair says it instead: the folder and its contents sit on one
+							tint, and a folder inside that one gets a tint of its own.
+						-->
+						{#snippet notebookRow(node: (typeof data.tree)[number])}
+							{#if node.children.length > 0 && opened.has(node.id)}
+								<div class="notebook-family">
+									{@render cover(node)}
+									{#each node.children as child (child.id)}
+										{@render notebookRow(child)}
+									{/each}
+								</div>
+							{:else}
+								{@render cover(node)}
 							{/if}
 						{/snippet}
 
@@ -379,6 +391,18 @@
 									while the Tasks tab was showing, which is a button offering
 									the wrong thing about the list under it.
 								-->
+								{#if linkAction}
+									<!-- The other way to fill a tab: take something that is
+									     already there. See `LinkIntoNotebook`.
+
+									     Before the New button rather than after it: the primary
+									     verb ends the row, so the button somebody presses most
+									     is the one nearest the edge their hand comes from. -->
+									<button onclick={linkAction.run} class="btn btn-sm">
+										<Icon name="link" />
+										{linkAction.label}
+									</button>
+								{/if}
 								{#if newAction?.href}
 									<!-- Already resolved: NotebookDetail builds this with `resolve()`. -->
 									<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
@@ -390,14 +414,6 @@
 									<button onclick={newAction.run} class="btn btn-sm btn-primary">
 										<Icon name="plus" />
 										{newAction.label}
-									</button>
-								{/if}
-								{#if linkAction}
-									<!-- The other way to fill a tab: take something that is
-									     already there. See `LinkIntoNotebook`. -->
-									<button onclick={linkAction.run} class="btn btn-sm">
-										<Icon name="link" />
-										{linkAction.label}
 									</button>
 								{/if}
 							{/if}
@@ -471,6 +487,7 @@
 			description={editing?.description ?? ''}
 			defaultTags={editing?.defaultTags ?? ''}
 			notebook={editing}
+			notebooks={data.notebooks}
 			pictureKilobytes={data.pictureKilobytes}
 		/>
 	</form>

@@ -20,6 +20,16 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **A notebook can be filed inside another from the form,** instead of only
+  by typing an em dash into its name.
+- **An open folder and the notebooks inside it share one ground,** rather
+  than being flat neighbours with a small indent.
+- **The task form asks for the notes straight after the title.**
+- **Link comes before New** in a notebook's header.
+- **The wheel's room name sits higher and is drawn to be read** over whatever
+  is behind it.
+- **One press, one submission, on every form** — a Save button goes dead
+  while the request it started is still out.
 - **Saving a notebook's tabs no longer blanks them on the way out,** and a
   tab ticked in that dialog now looks ticked.
 - **The Notebooks tour says what a notebook can hold** — the shelf of
@@ -31,10 +41,11 @@ releases mattered.
   look like — wherever there is room for two columns.
 - **The demo's icon is yellow.** It was violet, which is one dark smudge
   beside the dev icon's blue in a row of browser tabs.
-- **A task's three ratings are three columns of one width,** with a strip
-  of the ruler beside them that nothing covers. They nested before, so a
-  short interest left ease looking twice the size of urgency, and a task
-  rated 5 across the board filled the box with nothing to read it against.
+- **A task's three rating bars show slivers of one width,** with a strip of
+  the ruler beside them that nothing covers. Every bar was rounded on all
+  four corners, so the one in front bit a crescent out of the one behind
+  at each junction, and a task rated 5 on all three filled the box with
+  nothing to read it against.
 - **The list of labels under a tag filter is no longer cut off** at the
   bottom of the panel it opens in.
 - **The task count no longer nudges the filters beside it** when a tag
