@@ -423,17 +423,37 @@ export const PANEL_WIDTH = { min: 13, max: 34, fallback: 17 } as const;
 export const LOCATION_PANEL_WIDTH_KEY = 'inventory.location_panel_rem';
 export const NOTEBOOK_PANEL_WIDTH_KEY = 'notebooks.list_panel_rem';
 
+/**
+ * The narrowest the shelf of notebooks goes: one cover, and the padding round
+ * it.
+ *
+ * The general floor is a floor for a list of names, where about thirteen rems
+ * is as narrow as a name survives. A shelf is not a list of names — it is a
+ * grid of covers 6.5rem wide — so its honest floor is one column of them, and
+ * dragging it in stopped a long way short of that: one cover, then a band of
+ * empty space too narrow to hold a second.
+ *
+ * Stated per panel rather than lowered for everyone, because a panel of
+ * somebody's place names at this width is an ellipsis.
+ */
+export const NOTEBOOK_PANEL_MIN = 8;
+
+/** The narrowest this particular panel goes. See `NOTEBOOK_PANEL_MIN`. */
+export function panelWidthMin(key: string): number {
+	return key === NOTEBOOK_PANEL_WIDTH_KEY ? NOTEBOOK_PANEL_MIN : PANEL_WIDTH.min;
+}
+
 export function getPanelWidth(userId: string, key: string): number {
 	const raw = getUserSetting(userId, key);
 	if (raw === null || raw.trim() === '') return PANEL_WIDTH.fallback;
 	const rem = Number(raw);
-	return Number.isFinite(rem) && rem >= PANEL_WIDTH.min && rem <= PANEL_WIDTH.max
+	return Number.isFinite(rem) && rem >= panelWidthMin(key) && rem <= PANEL_WIDTH.max
 		? rem
 		: PANEL_WIDTH.fallback;
 }
 
 export function setPanelWidth(userId: string, key: string, rem: number): void {
-	const held = Math.min(PANEL_WIDTH.max, Math.max(PANEL_WIDTH.min, rem));
+	const held = Math.min(PANEL_WIDTH.max, Math.max(panelWidthMin(key), rem));
 	setUserSetting(userId, key, String(Math.round(held * 10) / 10));
 }
 

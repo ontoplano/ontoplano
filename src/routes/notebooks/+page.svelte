@@ -7,6 +7,7 @@
 	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
 	import SplitColumns from '$lib/components/SplitColumns.svelte';
+	import { NOTEBOOK_PANEL_MIN } from '$lib/services/settings';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -186,8 +187,11 @@
 		of them, drawn once around the pair rather than once each.
 	-->
 	<div class="border border-gray-200 bg-white shadow-card">
+		<!-- The shelf's own floor: one cover wide. A list of names cannot go this
+		     narrow and a grid of covers can — see `NOTEBOOK_PANEL_MIN`. -->
 		<SplitColumns
 			bind:rem={panelRem}
+			min={NOTEBOOK_PANEL_MIN}
 			label={t('notebooks.widenOrNarrowTheList')}
 			onsettle={() => panelForm?.requestSubmit()}
 		>

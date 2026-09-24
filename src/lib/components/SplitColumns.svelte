@@ -22,6 +22,15 @@
 	let {
 		/** The left column's width in rem, bound so the page can post it. */
 		rem = $bindable(PANEL_WIDTH.fallback),
+		/**
+		 * The narrowest this one goes, where the general floor is wrong for it.
+		 *
+		 * A panel of names cannot lose much more than thirteen rems and still be
+		 * names; a shelf of fixed-width covers can, and stopping it at the same
+		 * number left one cover beside a band of space too narrow for a second.
+		 * The server clamps to the same number — see `panelWidthMin`.
+		 */
+		min = PANEL_WIDTH.min,
 		/** What the handle is called, for whoever is not looking at it. */
 		label,
 		/**
@@ -46,6 +55,7 @@
 		right
 	}: {
 		rem?: number;
+		min?: number;
 		label: string;
 		onsettle?: (rem: number) => void;
 		spaced?: boolean;
@@ -67,7 +77,7 @@
 		handle.setPointerCapture(event.pointerId);
 
 		const move = (e: PointerEvent) =>
-			(rem = Math.min(PANEL_WIDTH.max, Math.max(PANEL_WIDTH.min, (e.clientX - from) / oneRem)));
+			(rem = Math.min(PANEL_WIDTH.max, Math.max(min, (e.clientX - from) / oneRem)));
 		const done = () => {
 			dragging = false;
 			window.removeEventListener('pointermove', move);
@@ -94,13 +104,13 @@
 				: event.key === 'ArrowRight'
 					? rem + STEP_REM
 					: event.key === 'Home'
-						? PANEL_WIDTH.min
+						? min
 						: event.key === 'End'
 							? PANEL_WIDTH.max
 							: null;
 		if (to === null) return;
 		event.preventDefault();
-		rem = Math.min(PANEL_WIDTH.max, Math.max(PANEL_WIDTH.min, to));
+		rem = Math.min(PANEL_WIDTH.max, Math.max(min, to));
 		void settle();
 	}
 
@@ -131,7 +141,7 @@
 		aria-orientation="vertical"
 		aria-label={label}
 		aria-valuenow={Math.round(rem)}
-		aria-valuemin={PANEL_WIDTH.min}
+		aria-valuemin={min}
 		aria-valuemax={PANEL_WIDTH.max}
 		tabindex="0"
 		class="split-handle mouse-only hidden cursor-col-resize touch-none lg:block {spaced

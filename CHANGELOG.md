@@ -29,6 +29,11 @@ releases mattered.
 - **Every one of those forms asks which notebook it belongs to.** In the room
   the field starts empty; inside a notebook it starts on that notebook, and
   editing something from the room never quietly takes it out of one.
+- **The shelf of notebooks squeezes down to one cover.** Dragging the list
+  narrow stopped a long way short of that, leaving a single cover beside a band
+  of space too narrow to hold a second and no way to take it in further. The
+  panel has its own floor now — the width of one cover — rather than the one
+  meant for a column of names.
 - **The mailing-list form stops promising an email.** "Check your inbox — there
   is one link to follow" was the answer for a while after the confirming
   message stopped being sent. An address is on the list the moment it is typed,

@@ -4231,8 +4231,9 @@ html button.tab-link {
  *
  * A cover is a fixed size rather than a share of the width: `1fr` in a panel
  * somebody has dragged narrow gives one cover the whole column, and a book
- * three hundred pixels tall is a poster. As many across as fit, and no fewer
- * than two on the narrowest the panel goes.
+ * three hundred pixels tall is a poster. As many across as fit — and the panel
+ * stops at exactly one of them (`NOTEBOOK_PANEL_MIN`), so the narrowest shelf
+ * is a spine of covers rather than one cover beside a band of nothing.
  */
 .notebook-shelf {
 	display: grid;
