@@ -123,6 +123,30 @@ test.describe('what a notebook holds', () => {
 		await expect(page.getByRole('checkbox', { name: 'Habits' })).toBeVisible();
 	});
 
+	test('a notebook opens on its own first tab', async ({ page }) => {
+		await register(page, testEmail('nb-first-tab'));
+
+		await makeNotebook(page, 'Renovation');
+
+		// Switch on a tab and put it in front of Notes.
+		await page.getByRole('button', { name: 'Rename' }).click();
+		await page.getByRole('checkbox', { name: 'Inventory' }).check();
+		await page.getByRole('button', { name: /Move Inventory up/ }).click();
+		await page.getByRole('button', { name: /Move Inventory up/ }).click();
+		await page.getByRole('button', { name: 'Save' }).click();
+		await page.waitForTimeout(600);
+
+		/*
+		 * The order somebody puts a notebook's tabs in is that notebook's answer
+		 * to "what is this mostly". It opened on Notes regardless, which made
+		 * the order a decoration.
+		 */
+		await page.reload();
+		const strip = page.locator('[data-tour="notebook-tabs"] button');
+		await expect(strip.first()).toContainText('Inventory');
+		await expect(strip.first()).toHaveClass(/border-b-2/);
+	});
+
 	test('the tabs keep their ticks across a save', async ({ page }) => {
 		await register(page, testEmail('nb-modules-save'));
 

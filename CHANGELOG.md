@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **A notebook opens on its own first tab,** rather than on Notes whatever
+  order you put its tabs in.
 - **"Not now" on the update warning lasts as long as the app is open,** not
   for the whole version — closing it and starting it again asks you once
   more. It is on your account page too, where there is nothing to dismiss.

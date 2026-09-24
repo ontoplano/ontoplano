@@ -410,17 +410,27 @@
 	 */
 	const TAB_KEYS = $derived<readonly NotebookModule[]>(notebook?.modules ?? DEFAULT_MODULES);
 	type Tab = NotebookModule;
-	let tab = $state<Tab>('notes');
+
+	/*
+	 * A notebook opens on its own first tab.
+	 *
+	 * It always opened on Notes, which made the order somebody put the tabs in
+	 * a decoration: a renovation whose first tab is its shopping opened on the
+	 * writing anyway. The first tab is the answer to "what is this notebook
+	 * mostly", and it is the notebook's to give.
+	 */
+	const firstTab = $derived<Tab>(TAB_KEYS[0] ?? 'notes');
+	let tab = $state<Tab>(untrack(() => firstTab));
 
 	/*
 	 * A tab that was showing and is not offered any more.
 	 *
 	 * Switching Inventory off while standing on it would otherwise leave the
 	 * strip with nothing lit and the body drawing a module the notebook no
-	 * longer has. Notes is always there, which is what makes it the fallback.
+	 * longer has. It falls back to the first tab, the same one it opened on.
 	 */
 	$effect(() => {
-		if (!TAB_KEYS.includes(tab)) tab = 'notes';
+		if (!TAB_KEYS.includes(tab)) tab = firstTab;
 	});
 
 	/**
@@ -663,8 +673,12 @@
 	});
 
 	/*
-	 * Whichever notebook you move to opens on its notes, not on whichever tab
-	 * the last one happened to be showing.
+	 * Whichever notebook you move to opens on its own first tab, not on
+	 * whichever one the last notebook happened to be showing.
+	 *
+	 * Its first, not Notes: the order somebody puts a notebook's tabs in is
+	 * that notebook's answer to "what is this mostly", and opening on the
+	 * writing regardless made that order a decoration.
 	 *
 	 * Compared by which notebook it is, not by the object: the props arrive
 	 * fresh from every load, so watching `notebook` itself sent you back to
@@ -678,7 +692,7 @@
 		const subject = showingOrphans ? 'orphans' : String(notebook?.id ?? '');
 		if (subject === subjectOnScreen) return;
 		subjectOnScreen = subject;
-		tab = 'notes';
+		tab = firstTab;
 	});
 
 	/**
