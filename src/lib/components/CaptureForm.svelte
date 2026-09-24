@@ -1,5 +1,8 @@
 <script lang="ts">
 	import FormGrid from '$lib/components/FormGrid.svelte';
+	import RatingBadges from '$lib/components/RatingBadges.svelte';
+	import { compareByPriority, type RatingValues } from '$lib/ratings';
+	import { ordinal } from '$lib/ordinal';
 	import BuyFields from '$lib/components/fields/BuyFields.svelte';
 	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
 	import NoteFields from '$lib/components/fields/NoteFields.svelte';
@@ -37,9 +40,16 @@
 		categories: { id: number; name: string }[];
 		notebooks: { id: number; title: string }[];
 		inventoryCategories: { id: number; name: string }[];
+		/** The queue a new task would join — see `whereItWouldSit` below. */
+		queue: { ratings: RatingValues; sortOrder: number; createdAt: string }[];
 	};
 
-	let options = $state<Options>({ categories: [], notebooks: [], inventoryCategories: [] });
+	let options = $state<Options>({
+		categories: [],
+		notebooks: [],
+		inventoryCategories: [],
+		queue: []
+	});
 	let ratings = $state<Record<Rating, number | null>>({
 		urgency: null,
 		interest: null,
@@ -52,6 +62,28 @@
 		void capture.key;
 		ratings = { urgency: null, interest: null, ease: null };
 	});
+
+	/*
+	 * Where this would land in the queue, live, as the sliders move.
+	 *
+	 * The same claim the full editor makes at its foot, counted the same way:
+	 * by priority and nothing else, because that is the order the three
+	 * sliders are for. It is here at all because a sheet that asks for three
+	 * numbers and says nothing about what they do is asking for three numbers.
+	 *
+	 * Nought until the queue has arrived, in which case the line is not drawn:
+	 * "1st in line" against a list nobody has loaded yet would be a guess.
+	 */
+	const place = $derived(
+		options.queue.filter(
+			(one) =>
+				compareByPriority(one, {
+					ratings: ratings as RatingValues,
+					sortOrder: 0,
+					createdAt: new Date().toISOString()
+				}) < 0
+		).length + 1
+	);
 
 	$effect(() => {
 		if (options.categories.length || options.inventoryCategories.length) return;
@@ -83,8 +115,28 @@
 			categories={options.categories}
 			notebooks={options.notebooks}
 			bind:ratings
+			place={options.queue.length > 0 ? whereItWouldSit : undefined}
 		/>
 	{:else}
 		<BuyFields compact categories={options.inventoryCategories} />
 	{/if}
 </FormGrid>
+
+<!--
+	What the three sliders decide, said under them.
+
+	The same two things the full editor's footer shows — the bars the card will
+	wear, and where it lands — so the quick sheet and the editor are making the
+	same claim rather than the sheet being the version with no answer.
+-->
+{#snippet whereItWouldSit()}
+	<span
+		class="col-span-12 flex items-center justify-center gap-2 text-sm"
+		title={t('ratings.whereItWouldSit')}
+	>
+		<RatingBadges values={ratings} />
+		<span class="tabular text-gray-700">
+			{t('ratings.nthInLine', { nth: ordinal(t, place) })}
+		</span>
+	</span>
+{/snippet}

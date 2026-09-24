@@ -546,36 +546,28 @@
 	 * A number out of a thousand said what the answers *were*; this says what
 	 * they *do*, which is the only reason anybody moves one of those sliders.
 	 *
-	 * Counted against the list as it is actually showing — the same rows, the
-	 * same order, the same filters — because that is the one claim somebody can
-	 * check by looking. It used to be counted against every open task in the
-	 * notebook whatever the list was doing, so opening the top row of a list
-	 * ordered by when things were added was told it was third, and the number
-	 * looked like the form comparing a task with itself.
+	 * **Always by priority, whatever the list is sorted by.** The three sliders
+	 * decide one thing — where this comes in the queue — and priority is the
+	 * order that reads them. Counting instead against whatever the list happens
+	 * to be showing made the number answer a different question every time the
+	 * sort control moved: alphabetically it said where the word fell, and a
+	 * slider moved under it and changed nothing, which is the sliders looking
+	 * broken.
 	 *
-	 * Ordered by priority, the draft is placed by its own answers rather than
-	 * by where the row already is: that is what makes the number move as a
-	 * slider does. In every other order the sliders do not decide the place, so
-	 * it is simply the row's own. A task being written has no row yet, and
-	 * joins by when it was written down, which is now.
+	 * Counted against the rows on screen — the same filters, the same notebook
+	 * — because that is the claim somebody can check by looking, and against
+	 * the draft's own answers rather than where its row already is, which is
+	 * what makes the number move as a slider does. A task being written has no
+	 * row yet and joins by when it was written down, which is now.
 	 */
 	const draftPlace = $derived.by(() => {
 		const others = visibleTodos.filter((one: Todo) => one.id !== editingId);
-
-		if (order !== 'priority') {
-			const at = visibleTodos.findIndex((one: Todo) => one.id === editingId);
-			if (at >= 0) return at + 1;
-			return order === 'created' && direction === 'desc' ? 1 : others.length + 1;
-		}
-
 		const draft = {
 			ratings: formRatings as RatingValues,
 			sortOrder: editing?.sortOrder ?? 0,
 			createdAt: editing?.createdAt ?? new Date().toISOString()
 		};
-		const ahead = others.filter((one: Todo) => compareByPriority(one, draft) < 0).length;
-		// Worst first when the order is flipped, so the place counts the other way.
-		return direction === 'asc' ? others.length - ahead + 1 : ahead + 1;
+		return others.filter((one: Todo) => compareByPriority(one, draft) < 0).length + 1;
 	});
 
 	/** Whatever the notebook picker lets through, before the two toggles. */
@@ -964,6 +956,31 @@
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
+
+<!--
+	Where this task would land, and the bars it will wear.
+
+	One snippet, drawn in two places: at the foot of the full editor, and under
+	the scales in the quick form once they are unfolded. They are the same
+	claim about the same draft, so two copies of it would be two things to keep
+	in step.
+
+	What the sliders set is a drawing on a row, and the form used to ask
+	somebody to imagine it: three numbers here, three bars out there. It is the
+	drawing itself now, so what is being made is in front of whoever is making
+	it.
+-->
+{#snippet whereItWouldSit()}
+	<span
+		class="flex flex-1 items-center justify-center gap-2 text-sm"
+		title={t('ratings.whereItWouldSit')}
+	>
+		<RatingBadges values={formRatings} />
+		<span class="tabular text-gray-700">
+			{t('ratings.nthInLine', { nth: ordinal(t, draftPlace) })}
+		</span>
+	</span>
+{/snippet}
 
 <div class="space-y-4">
 	<!--
@@ -1737,6 +1754,7 @@
 					{categories}
 					{notebooks}
 					bind:ratings={formRatings}
+					place={whereItWouldSit}
 				/>
 			</FormGrid>
 		</form>
@@ -1792,23 +1810,7 @@
 				number is the only way to see what moving one slider did to the
 				task's place in the list.
 			-->
-			<span
-				class="flex flex-1 items-center justify-center gap-2 text-sm"
-				title={t('ratings.whereItWouldSit')}
-			>
-				<!--
-					The same three bars the card will wear, moving as the sliders do.
-
-					What the sliders set is a drawing on a row, and the form asked
-					somebody to imagine it: three numbers here, three bars out
-					there. It is the drawing itself now, so what you are making is
-					in front of you while you make it.
-				-->
-				<RatingBadges values={formRatings} />
-				<span class="tabular text-gray-700">
-					{t('ratings.nthInLine', { nth: ordinal(t, draftPlace) })}
-				</span>
-			</span>
+			{@render whereItWouldSit()}
 
 			<!--
 				Cancel throws the draft away; Escape and the backdrop keep it.

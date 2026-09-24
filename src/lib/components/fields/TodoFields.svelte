@@ -1,5 +1,6 @@
 <script lang="ts">
 	import TagInput from '$lib/components/TagInput.svelte';
+	import type { Snippet } from 'svelte';
 	import { page } from '$app/state';
 	import Field from '$lib/components/Field.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -40,6 +41,15 @@
 		notebooks = [],
 		ratings = $bindable({ urgency: null, interest: null, ease: null }),
 		compact = false,
+		/**
+		 * Where this would land in the queue, drawn under the scales.
+		 *
+		 * Passed in rather than worked out here: the answer is a place among
+		 * the other tasks, and this component knows about one task. Absent
+		 * where the form has no list to be ranked against — the capture sheet
+		 * on the dashboard is written without one.
+		 */
+		place = undefined,
 		scheduledDate = ''
 	}: {
 		title?: string;
@@ -51,6 +61,7 @@
 		notebooks?: { id: number; title: string }[];
 		ratings?: Record<Rating, number | null>;
 		compact?: boolean;
+		place?: Snippet;
 		/** The day it sits on, or '' for a task with no day yet. */
 		scheduledDate?: string;
 	} = $props();
@@ -176,6 +187,9 @@
 	<MoreOptions label={t('fields.todo.categoryNotebookTagsNotesRatings')} count={filled}>
 		{@render details()}
 		{@render scales()}
+		<!-- Unfolded, the scales are on screen, and what they decide should be
+		     on screen with them rather than only in the full editor. -->
+		{@render place?.()}
 	</MoreOptions>
 {:else}
 	{@render details()}

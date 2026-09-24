@@ -45,3 +45,30 @@ test('the receipt offers Edit, and it opens the thing just written', async ({ pa
 	 */
 	expect(new URL(page.url()).searchParams.get('edit')).toBeNull();
 });
+
+test('the quick sheet says where the task would land, once the rest is unfolded', async ({
+	page
+}) => {
+	test.setTimeout(180_000);
+	await page.setViewportSize({ width: 390, height: 844 });
+	await register(page, testEmail('capture-place'));
+
+	await visit(page, '/');
+	await page.keyboard.press('t');
+	await expect(page.getByRole('dialog')).toBeVisible({ timeout: 30_000 });
+
+	/*
+	 * A sheet that asks for three numbers and says nothing about what they do
+	 * is asking for three numbers. It is the same claim the full editor makes
+	 * at its foot, and it is behind the fold because the sheet's whole point is
+	 * that one line is enough.
+	 */
+	const place = page.getByText(/in line/);
+	await expect(place).toHaveCount(1);
+
+	await page
+		.getByText(/Category, notebook/)
+		.first()
+		.click();
+	await expect(place).toBeVisible({ timeout: 10_000 });
+});

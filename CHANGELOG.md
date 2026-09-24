@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **"3rd in line" is always the priority order,** whatever the list is
+  sorted by — it is what the three sliders are for. And the quick sheet says
+  it too, once the rest of the form is unfolded.
 - **A quick capture offers to open what it just wrote.** "Added to your
   to-dos" left you to go and find the row again to say anything more about
   it; there is an Edit on the receipt now, which lands in the room with
