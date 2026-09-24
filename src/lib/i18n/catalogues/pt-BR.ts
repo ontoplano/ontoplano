@@ -3102,7 +3102,25 @@ export const messages: Catalogue = {
 	'tagFilter.withAll': 'com todas de {tags}',
 	'tagFilter.withAny': 'com qualquer uma de {tags}',
 	'tagFilter.without': 'sem {tags}',
+	'tags.aLabelIsMadeByTyping':
+		'A label is made by typing one into the tags box on a note, a task or an idea.',
+	'tags.allLabels': 'All labels',
+	'tags.hideWhatCarriesIt': 'Hide what carries {tag}',
+	'tags.inThisNotebook': 'The labels on what is filed here, and what carries each of them.',
+	'tags.manageTags': 'Manage tags',
+	'tags.noTagsInThisNotebook': 'Nothing here is labelled yet',
+	'tags.nothingCarriesItHere': 'Nothing here carries it yet',
 	'tags.removeTag': 'Remover {tag}',
+	'tags.renamingChangesItEverywhere':
+		"A label is the account's one word: renaming it here renames it on your week and in the gallery too.",
+	'tags.showWhatCarriesIt': 'Show what carries {tag}',
+	'tags.uses.ideas': { one: '{count} idea', other: '{count} ideas' },
+	'tags.uses.notes': { one: '{count} note', other: '{count} notes' },
+	'tags.uses.pictures': { one: '{count} picture', other: '{count} pictures' },
+	'tags.uses.tasks': { one: '{count} task', other: '{count} tasks' },
+	'tags.whatItMeans': 'What it means',
+	'tags.whatItMeansHint':
+		'One line, for whoever reads it in a year — and for an assistant asked to label something the same way.',
 	'taskStatus.doing': 'Fazendo',
 	'taskStatus.pending': 'Pendente',
 	'tasks.activities.anActivityIsANamed':

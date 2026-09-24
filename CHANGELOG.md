@@ -20,6 +20,15 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **A notebook says which labels are on what is filed in it,** from a Manage
+  tags button on the notebook itself. "3 things carry it" unfolds into two
+  notes and a task, so it is somewhere to go and look rather than a number.
+- **A label can say what it means** — one line, for whoever reads it in a
+  year and for an assistant asked to label something the same way.
+- **Tags is no longer a tab in the Notebooks room.** Every word in the
+  account with a number beside it is not what anybody wants while they are
+  looking at one subject; the whole list is still there, one press on from
+  a notebook's own labels, and it is still where one is deleted or merged.
 - **A notebook's page is one card,** so the coloured rule down its side
   starts at the title rather than half way down.
 - **A notebook's tabs can be put in the order you want them,** from the same

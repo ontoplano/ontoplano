@@ -13,6 +13,7 @@
 	import MarkdownImport from '$lib/components/MarkdownImport.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import NotebookDetail from '$lib/components/NotebookDetail.svelte';
+	import NotebookTags from '$lib/components/NotebookTags.svelte';
 	import NotebookFields from '$lib/components/fields/NotebookFields.svelte';
 	import NotebookCover from '$lib/components/NotebookCover.svelte';
 	import NotebookPicture from '$lib/components/NotebookPicture.svelte';
@@ -28,6 +29,8 @@
 	/** Whether the markdown importer is open. Closed until asked for. */
 
 	let showForm = $state(false);
+	/** The labels on what is filed in the notebook showing — see `NotebookTags`. */
+	let managingTags = $state(false);
 	let editingId = $state<number | null>(null);
 	/** Whether the note composer in the panel is open; the button for it is up here. */
 	let composing = $state(false);
@@ -369,53 +372,75 @@
 						{/snippet}
 						{#snippet actions()}
 							{#if selected}
-								<!-- The way to the notebook's own page, from the column that is
-								     showing it. The list on the left chooses what appears here. -->
-								<a
-									href={resolve('/notebooks/[id]', { id: String(selected.id) })}
-									class="btn btn-sm"
-								>
-									{t('ui.open')}
-									<Icon name="arrow-right" />
-								</a>
 								<!--
-									Writing, where deleting the whole notebook used to be.
+									Two rows, and what goes in each.
 
-									This is a page for browsing notebooks, and the thing most
-									often wanted from one on screen is another note in it —
-									not destroying it, one press away, beside a list you are
-									moving through. Deleting a notebook is on the notebook's
-									own page, which is a place you go to on purpose.
-
-									What it says follows the tab below it: it read "New note"
-									while the Tasks tab was showing, which is a button offering
-									the wrong thing about the list under it.
+									Filling the notebook is the top one — the two ways to put
+									something in it, with the primary verb at the end where a
+									hand comes from. Leaving it is the bottom one: the labels
+									on what is in here, and the way through to its own page.
+									They were one row of four, which reads as four things of
+									equal weight and is exactly what it is not.
 								-->
-								{#if linkAction}
-									<!-- The other way to fill a tab: take something that is
-									     already there. See `LinkIntoNotebook`.
+								<div class="flex flex-col items-end gap-2">
+									<div class="flex flex-wrap items-center justify-end gap-2">
+										{#if linkAction}
+											<!-- The other way to fill a tab: take something that is
+											     already there. See `LinkIntoNotebook`. -->
+											<button onclick={linkAction.run} class="btn btn-sm">
+												<Icon name="link" />
+												{linkAction.label}
+											</button>
+										{/if}
+										<!--
+											Writing, where deleting the whole notebook used to be.
 
-									     Before the New button rather than after it: the primary
-									     verb ends the row, so the button somebody presses most
-									     is the one nearest the edge their hand comes from. -->
-									<button onclick={linkAction.run} class="btn btn-sm">
-										<Icon name="link" />
-										{linkAction.label}
-									</button>
-								{/if}
-								{#if newAction?.href}
-									<!-- Already resolved: NotebookDetail builds this with `resolve()`. -->
-									<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-									<a href={newAction.href} class="btn btn-sm btn-primary">
-										<Icon name="plus" />
-										{newAction.label}
-									</a>
-								{:else if newAction}
-									<button onclick={newAction.run} class="btn btn-sm btn-primary">
-										<Icon name="plus" />
-										{newAction.label}
-									</button>
-								{/if}
+											This is a page for browsing notebooks, and the thing most
+											often wanted from one on screen is another note in it —
+											not destroying it, one press away, beside a list you are
+											moving through. Deleting a notebook is on the notebook's
+											own page, which is a place you go to on purpose.
+
+											What it says follows the tab below it: it read "New note"
+											while the Tasks tab was showing, which is a button
+											offering the wrong thing about the list under it.
+										-->
+										{#if newAction?.href}
+											<!-- Already resolved: NotebookDetail builds this with `resolve()`. -->
+											<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+											<a href={newAction.href} class="btn btn-sm btn-primary">
+												<Icon name="plus" />
+												{newAction.label}
+											</a>
+										{:else if newAction}
+											<button onclick={newAction.run} class="btn btn-sm btn-primary">
+												<Icon name="plus" />
+												{newAction.label}
+											</button>
+										{/if}
+									</div>
+
+									<div class="flex flex-wrap items-center justify-end gap-2">
+										<!-- This subject's own words, rather than the whole
+										     account's: the Tags tab used to sit in the room strip,
+										     answering a question nobody has while looking at one
+										     notebook. -->
+										<button onclick={() => (managingTags = true)} class="btn btn-sm">
+											<Icon name="tag" />
+											{t('tags.manageTags')}
+										</button>
+										<!-- The way to the notebook's own page, from the column
+										     that is showing it. The list on the left chooses what
+										     appears here. -->
+										<a
+											href={resolve('/notebooks/[id]', { id: String(selected.id) })}
+											class="btn btn-sm"
+										>
+											{t('ui.open')}
+											<Icon name="arrow-right" />
+										</a>
+									</div>
+								</div>
 							{/if}
 						{/snippet}
 
@@ -457,6 +482,14 @@
 		<input type="hidden" name="rem" value={panelRem} />
 	</form>
 </div>
+
+<NotebookTags
+	bind:open={managingTags}
+	title={selected?.title ?? ''}
+	tags={data.notebookTags}
+	action="?/saveTag"
+	error={form?.message ?? null}
+/>
 
 <Modal
 	bind:open={showForm}

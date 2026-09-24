@@ -328,9 +328,14 @@ export type TagRow = { id: number; name: string; color: string | null; descripti
  */
 export const MAX_TAG_DESCRIPTION_LENGTH = 200;
 
-/** What a tag counts towards, in the order a notebook's own tabs run. */
-export type TagUseKind = 'notes' | 'tasks' | 'ideas';
-const USE_ORDER: readonly TagUseKind[] = ['notes', 'tasks', 'ideas'];
+/**
+ * What a tag counts towards, in the order a notebook's own tabs run.
+ *
+ * `pictures` never appears inside a notebook — a picture belongs to the
+ * gallery — so it is last, where the whole account is being counted.
+ */
+export type TagUseKind = 'notes' | 'tasks' | 'ideas' | 'pictures';
+const USE_ORDER: readonly TagUseKind[] = ['notes', 'tasks', 'ideas', 'pictures'];
 
 /** A label inside one notebook: what it is, and what carries it in there. */
 export type NotebookTag = TagRow & {
@@ -594,6 +599,23 @@ export function describeTag(userId: string, id: number, description: unknown): T
  * something.
  */
 export function tagsInNotebook(userId: string, notebookId: number): NotebookTag[] {
+	return countedTags(userId, notebookId);
+}
+
+/**
+ * The same reading of the whole account: every label, and what carries it.
+ *
+ * The Tags screen had a bare number per label — "3 things carry it" — which
+ * says how much a word is doing and not one thing about where. The kinds are
+ * the same words the notebook version uses, plus the pictures, which are the
+ * one carrier that is never filed under a subject.
+ */
+export function tagsWithUses(userId: string): NotebookTag[] {
+	return countedTags(userId, null);
+}
+
+/** One notebook's labels, or the account's when no notebook is named. */
+function countedTags(userId: string, notebookId: number | null): NotebookTag[] {
 	/** tag id → kind → how many. */
 	const counts = new Map<number, Map<TagUseKind, number>>();
 	const bump = (tagId: number, kind: TagUseKind, n: number) => {
@@ -607,23 +629,51 @@ export function tagsInNotebook(userId: string, notebookId: number): NotebookTag[
 			.select({ tagId: join.tagId, n: count() })
 			.from(join)
 			.innerJoin(thing, and(eq(thing.id, owner), eq(thing.userId, userId)))
-			.where(and(eq(join.userId, userId), eq(thing.notebookId, notebookId)))
+			.where(
+				notebookId === null
+					? eq(join.userId, userId)
+					: and(eq(join.userId, userId), eq(thing.notebookId, notebookId))
+			)
 			.groupBy(join.tagId)
 			.all();
 		for (const row of rows) bump(row.tagId, kind, Number(row.n));
 	}
 
+	/*
+	 * The carriers that are nowhere near a notebook, counted only when the
+	 * whole account is the question: a picture belongs to the gallery, and a
+	 * repeating block to the template rather than to a subject. The repeating
+	 * ones count as tasks — a block and a todo are the same task at two
+	 * stages, which is how the notebook tabs count them too.
+	 */
+	if (notebookId === null)
+		for (const [kind, join] of [
+			['pictures', mediaTags],
+			['tasks', recurringTaskTags]
+		] as const) {
+			const rows = db
+				.select({ tagId: join.tagId, n: count() })
+				.from(join)
+				.where(eq(join.userId, userId))
+				.groupBy(join.tagId)
+				.all();
+			for (const row of rows) bump(row.tagId, kind, Number(row.n));
+		}
+
 	// The notebook's own suggestions, by name — they are stored as the text
 	// somebody typed rather than as rows, which is why this is a second read.
-	const suggested = new Set(
-		parseTags(
-			db
-				.select({ defaultTags: notebooks.defaultTags })
-				.from(notebooks)
-				.where(and(eq(notebooks.id, notebookId), eq(notebooks.userId, userId)))
-				.get()?.defaultTags ?? ''
-		)
-	);
+	const suggested =
+		notebookId === null
+			? new Set<string>()
+			: new Set(
+					parseTags(
+						db
+							.select({ defaultTags: notebooks.defaultTags })
+							.from(notebooks)
+							.where(and(eq(notebooks.id, notebookId), eq(notebooks.userId, userId)))
+							.get()?.defaultTags ?? ''
+					)
+				);
 
 	const wanted = db
 		.select({
@@ -636,7 +686,9 @@ export function tagsInNotebook(userId: string, notebookId: number): NotebookTag[
 		.where(eq(tags.userId, userId))
 		.orderBy(tags.name)
 		.all()
-		.filter((tag) => counts.has(tag.id) || suggested.has(tag.name));
+		// The account's own listing keeps a label nothing carries: it exists,
+		// and the screen it is on is where it is deleted.
+		.filter((tag) => notebookId === null || counts.has(tag.id) || suggested.has(tag.name));
 
 	return wanted.map((tag) => {
 		const kinds = counts.get(tag.id);

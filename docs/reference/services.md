@@ -5817,6 +5817,39 @@ during a migration.
 
 The label the account calls this word, if it has one.
 
+#### `describeTag(userId, id, description)`
+
+What a label means here, in the account's own words.
+
+Empty takes the meaning off again, which is a real answer: most labels are
+a word that explains itself.
+
+#### `tagsInNotebook(userId, notebookId)`
+
+One notebook's labels, with what carries each of them in there.
+
+The Tags screen counted a word across the whole account, which answers a
+question nobody has: `#home` doing forty things somewhere is not why it is
+on this renovation. Here the count is the subject's own, and it is broken
+down by kind — two notes and one task — because "three things have it" does
+not say where to go and look.
+
+A label the notebook hands new notes by default is listed at nought, once
+it exists at all: it is part of this subject's vocabulary whether or not
+anything in here wears it yet. A suggestion nobody has ever used anywhere is
+not listed, because there is nothing to list — default tags are stored as
+the text somebody typed, and a word becomes a label by being put on
+something.
+
+#### `tagsWithUses(userId)`
+
+The same reading of the whole account: every label, and what carries it.
+
+The Tags screen had a bare number per label — "3 things carry it" — which
+says how much a word is doing and not one thing about where. The kinds are
+the same words the notebook version uses, plus the pictures, which are the
+one carrier that is never filed under a subject.
+
 #### `tagsByNotebook(userId)`
 
 The labels each notebook uses: the ones on the notes, tasks and ideas filed
@@ -5837,6 +5870,8 @@ One notebook's labels — nothing, for a notebook this account never filed anyth
 - `Tag` — A label and when it went on. The same shape a task's labels have.
 - `TagSummary` — A label as the Tags screen reads it: what it is, its colour, and how much work it is doing.
 - `TagRow` — The label as it is stored.
+- `TagUseKind` — What a tag counts towards, in the order a notebook's own tabs run.
+- `NotebookTag` — A label inside one notebook: what it is, and what carries it in there.
 
 ## time
 

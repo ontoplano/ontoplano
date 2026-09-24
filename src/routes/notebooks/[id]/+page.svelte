@@ -8,6 +8,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import NotebookFields from '$lib/components/fields/NotebookFields.svelte';
+	import NotebookTags from '$lib/components/NotebookTags.svelte';
 	import NotebookPicture from '$lib/components/NotebookPicture.svelte';
 	import NotebookDetail from '$lib/components/NotebookDetail.svelte';
 	import { SECTION_COLORS } from '$lib/colors';
@@ -19,6 +20,8 @@
 	let { data, form }: { data: PageServerData; form: ActionData } = $props();
 
 	let editing = $state(false);
+	/** The labels on what is filed here — see `NotebookTags`. */
+	let managingTags = $state(false);
 
 	/** The New button for whichever tab is showing — see NotebookDetail. */
 	let newAction = $state<{ label: string; run?: () => void; href?: string } | undefined>(undefined);
@@ -146,6 +149,13 @@
 						{newAction.label}
 					</button>
 				{/if}
+				<!-- This subject's own words, rather than the whole account's: the
+				     Tags tab used to sit in the room strip, answering a question
+				     nobody has while they are looking at one notebook. -->
+				<button onclick={() => (managingTags = true)} class="btn btn-sm">
+					<Icon name="tag" />
+					{t('tags.manageTags')}
+				</button>
 				{#if data.notebook.mine && data.onFamilyPlan}
 					<!-- The owner's switch: everybody on the plan reads it and writes
 				     their own entries into it. Entries keep their writers. -->
@@ -238,6 +248,14 @@
 		</section>
 	</div>
 </div>
+
+<NotebookTags
+	bind:open={managingTags}
+	title={data.notebook.title}
+	tags={data.notebookTags}
+	action="?/saveTag"
+	error={form?.message ?? null}
+/>
 
 <Modal bind:open={editing} error={form?.message} title={t('notebooks.id.editNotebook')}>
 	<form

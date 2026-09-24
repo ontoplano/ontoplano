@@ -78,7 +78,7 @@ exist.
 | [`subscribers`](#subscribers)                               | 7       | —                 |
 | [`subscriptions`](#subscriptions)                           | 15      | yes               |
 | [`suppressed_slots`](#suppressed_slots)                     | 5       | yes               |
-| [`tags`](#tags)                                             | 4       | yes               |
+| [`tags`](#tags)                                             | 5       | yes               |
 | [`task_records`](#task_records)                             | 15      | yes               |
 | [`todo_tags`](#todo_tags)                                   | 5       | yes               |
 | [`todo_tasks`](#todo_tasks)                                 | 18      | yes               |
@@ -1437,12 +1437,13 @@ Indexes:
 
 ## tags
 
-| Column    | Type    | Null     | Default | Notes             |
-| --------- | ------- | -------- | ------- | ----------------- |
-| `id`      | integer | not null | —       | primary key, auto |
-| `user_id` | text    | not null | —       | → `user.id`       |
-| `name`    | text    | not null | —       | —                 |
-| `color`   | text    | null     | —       | —                 |
+| Column        | Type    | Null     | Default | Notes             |
+| ------------- | ------- | -------- | ------- | ----------------- |
+| `id`          | integer | not null | —       | primary key, auto |
+| `user_id`     | text    | not null | —       | → `user.id`       |
+| `name`        | text    | not null | —       | —                 |
+| `color`       | text    | null     | —       | —                 |
+| `description` | text    | not null | `''`    | —                 |
 
 Indexes:
 

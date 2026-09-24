@@ -8,6 +8,7 @@ import { removeNotebookPicture, setNotebookPicture } from '$lib/services/media';
 import { setEntryPeople } from '$lib/services/people';
 import { NOTEBOOK_PANEL_WIDTH_KEY, setPanelWidth } from '$lib/services/settings';
 import { toActionFailure } from '$lib/http-errors';
+import { describeTag, recolorTag, renameTag } from '$lib/services/tags';
 import { importVaultAction } from '$lib/import-vault-action';
 import { todoHandlers } from '$lib/services/todo-actions';
 import { under } from '$lib/services/scoped-actions';
@@ -35,6 +36,28 @@ import {
  * rather than being written twice and drifting.
  */
 export const notebookActions = {
+	/*
+	 * What a label is, saved from inside a notebook.
+	 *
+	 * The same act as on the Tags screen and deliberately the same three
+	 * calls: a label is the account's one word, so renaming it here renames it
+	 * on the week too. Deleting one is not offered from in here — taking a
+	 * word out of the vocabulary because one subject has finished with it is a
+	 * decision for the screen that can see all of them.
+	 */
+	saveTag: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const userId = locals.user!.id;
+		try {
+			const after = renameTag(userId, Number(formData.get('id')), formData.get('label'));
+			recolorTag(userId, after.id, formData.get('color'));
+			describeTag(userId, after.id, formData.get('description'));
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
 	create: async ({ request, locals }) => {
 		const formData = await request.formData();
 		try {

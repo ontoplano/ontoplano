@@ -2665,7 +2665,22 @@ export type MessageKey =
 	| 'tagFilter.withAll'
 	| 'tagFilter.withAny'
 	| 'tagFilter.without'
+	| 'tags.aLabelIsMadeByTyping'
+	| 'tags.allLabels'
+	| 'tags.hideWhatCarriesIt'
+	| 'tags.inThisNotebook'
+	| 'tags.manageTags'
+	| 'tags.noTagsInThisNotebook'
+	| 'tags.nothingCarriesItHere'
 	| 'tags.removeTag'
+	| 'tags.renamingChangesItEverywhere'
+	| 'tags.showWhatCarriesIt'
+	| 'tags.uses.ideas'
+	| 'tags.uses.notes'
+	| 'tags.uses.pictures'
+	| 'tags.uses.tasks'
+	| 'tags.whatItMeans'
+	| 'tags.whatItMeansHint'
 	| 'taskStatus.doing'
 	| 'taskStatus.pending'
 	| 'tasks.activities.anActivityIsANamed'
@@ -3746,7 +3761,13 @@ export interface MessageValuesFor {
 	'tagFilter.withAll': { tags: string | number };
 	'tagFilter.withAny': { tags: string | number };
 	'tagFilter.without': { tags: string | number };
+	'tags.hideWhatCarriesIt': { tag: string | number };
 	'tags.removeTag': { tag: string | number };
+	'tags.showWhatCarriesIt': { tag: string | number };
+	'tags.uses.ideas': { count: number };
+	'tags.uses.notes': { count: number };
+	'tags.uses.pictures': { count: number };
+	'tags.uses.tasks': { count: number };
 	'tasks.board.edit': { title: string | number };
 	'tasks.board.markDone': { title: string | number };
 	'tasks.board.markNotDone': { title: string | number };
