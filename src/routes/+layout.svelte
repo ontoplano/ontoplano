@@ -1312,6 +1312,24 @@
 							>
 								{t('home.aiAmpIntegrations')}
 							</a>
+							{#if data.canEditInstance}
+								<a
+									href={resolve('/settings/instance')}
+									onclick={() => (menuOpen = false)}
+									class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
+								>
+									{t('rooms.settings.tabs.instance')}
+								</a>
+							{/if}
+							{#if data.canAdminister}
+								<a
+									href={resolve('/admin')}
+									onclick={() => (menuOpen = false)}
+									class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
+								>
+									{t('rooms.settings.tabs.administration')}
+								</a>
+							{/if}
 							<!--
 								Not on the demo. The account was handed over by a cookie and
 								has no password anybody knows, so signing out of it is leaving

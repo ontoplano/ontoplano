@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **The account menu takes you to Instance and Administration.** Whoever
+  can open those pages finds them under AI & Integrations; nobody else sees
+  them.
 - **New, on a notebook's tab, opens the room's own form.** Pressing New item,
   New bill, New ledger, New habit, New workout or New recipe inside a notebook
   used to take you to that room and file whatever you wrote back under the

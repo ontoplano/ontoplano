@@ -51,6 +51,10 @@ export async function load(event: IsolatedEvent): Promise<LayoutServerData> {
 		// The device's shell and its pages are one build — there is no version
 		// for either to fall behind.
 		appUpdate: null,
+		// As in `settings/layout.isolated.ts`: Instance is the build and the
+		// database here, and there is no deployment to administer.
+		canEditInstance: true,
+		canAdminister: false,
 		// Nobody shares a device's instance, so nobody can offer to pay for it.
 		familyOffer: null,
 		categories: listCategories(ctx).map((c) => ({

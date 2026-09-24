@@ -35,6 +35,7 @@ import { publicKey } from '$lib/server/services/push';
 import { build } from '$lib/server/services/version';
 import { appBehindInstance } from '$lib/platform';
 import { invitationFor } from '$lib/server/services/subscriptions';
+import { canEditInstance, isAdmin } from '$lib/server/services/admin';
 import { SOURCE_LOCALE } from '$lib/i18n/locales';
 
 export const load: LayoutServerLoad = async (event) => {
@@ -205,6 +206,14 @@ export const load: LayoutServerLoad = async (event) => {
 	return {
 		appUpdate,
 		user: event.locals.user ?? null,
+		/*
+		 * Whether the account menu offers Instance and Administration.
+		 *
+		 * The same two answers the settings tab strip and the pages themselves
+		 * give, so the menu never links to a 404.
+		 */
+		canEditInstance: event.locals.user ? canEditInstance(event.locals.user.id) : false,
+		canAdminister: event.locals.user ? isAdmin(event.locals.user.id) : false,
 		familyOffer,
 		categories: userCategories,
 		theme,
