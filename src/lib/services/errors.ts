@@ -4,7 +4,55 @@
  * Services never import SvelteKit types or return `fail()` — they throw these,
  * and the route/API adapters map them to the right response shape. That's what
  * lets a form action and a JSON endpoint call the same function.
+ *
+ * **A refusal is a message key, not a sentence.** These reach a person: a form
+ * action puts one in `form.message` and the screen shows it. Written as English
+ * in the source, an account set to Portuguese got its screens translated and
+ * its refusals in English — which is worse than an untranslated screen, because
+ * a refusal is read at exactly the moment somebody is stuck.
+ *
+ * So a thrown error carries the key and the values, and the adapter that turns
+ * it into a response is what translates, in the language of the request it is
+ * answering. A plain string is still accepted: a few of these are read by
+ * software rather than by a person.
  */
+import type { MessageKey, MessageValues } from '$lib/i18n/core.js';
+
+/**
+ * What an error says: a key to look up, or a sentence nobody will translate.
+ *
+ * The object form carries its own values, so a message with a number or a name
+ * in it reads as one sentence in every language rather than a stem with
+ * something appended.
+ */
+export type Said =
+	| string
+	| {
+			key: MessageKey;
+			values?: MessageValues;
+			/**
+			 * The sentence a log line and an API client see, where the key alone
+			 * would be unhelpful. `not found` is the one that matters: the API has
+			 * always answered "todo not found", and a key is not that.
+			 */
+			text?: string;
+	  };
+
+/** The key half of whatever was said, if there is one. */
+function keyOf(said: Said): { key?: MessageKey; values?: MessageValues } {
+	return typeof said === 'string' ? {} : { key: said.key, values: said.values };
+}
+
+/**
+ * The string an error carries as its `message`.
+ *
+ * For a key this is the key itself, which is what a log line and a stack trace
+ * get. Nobody reads it out to a person — the adapters translate — and a key in
+ * a log is more useful than a sentence in the wrong language anyway.
+ */
+function textOf(said: Said): string {
+	return typeof said === 'string' ? said : (said.text ?? said.key);
+}
 
 export type ErrorCode =
 	| 'validation_error'
@@ -21,60 +69,74 @@ export class ServiceError extends Error {
 	readonly code: ErrorCode;
 	readonly status: number;
 	readonly details?: unknown;
+	/** The catalogue entry to read this out of, where there is one. */
+	readonly key?: MessageKey;
+	readonly values?: MessageValues;
 
-	constructor(code: ErrorCode, status: number, message: string, details?: unknown) {
-		super(message);
+	constructor(code: ErrorCode, status: number, said: Said, details?: unknown) {
+		super(textOf(said));
 		this.name = 'ServiceError';
 		this.code = code;
 		this.status = status;
 		this.details = details;
+		const { key, values } = keyOf(said);
+		this.key = key;
+		this.values = values;
 	}
 }
 
 export class ValidationError extends ServiceError {
-	constructor(message: string, details?: unknown) {
-		super('validation_error', 422, message, details);
+	constructor(said: Said, details?: unknown) {
+		super('validation_error', 422, said, details);
 	}
 }
 
 /**
  * Thrown both when a resource does not exist and when it belongs to another
  * user. Never distinguish the two — doing so leaks existence.
+ *
+ * `what` is the kind of thing, in English, and nobody is shown it: the adapters
+ * say "not found" in the reader's own language, and this is what the log line
+ * and the API's `message` carry.
  */
 export class NotFoundError extends ServiceError {
 	constructor(what: string) {
-		super('not_found', 404, `${what} not found`);
+		super('not_found', 404, {
+			key: 'errors.notFound',
+			values: { what },
+			text: `${what} not found`
+		});
 	}
 }
 
 export class ConflictError extends ServiceError {
-	constructor(message: string) {
-		super('conflict', 409, message);
+	constructor(said: Said) {
+		super('conflict', 409, said);
 	}
 }
 
 export class PlanLimitError extends ServiceError {
-	constructor(message: string, details?: unknown) {
-		super('plan_limit', 402, message, details);
+	constructor(said: Said, details?: unknown) {
+		super('plan_limit', 402, said, details);
 	}
 }
 
 export class UnauthorizedError extends ServiceError {
-	constructor(message = 'Authentication required') {
-		super('unauthorized', 401, message);
+	constructor(said: Said = { key: 'errors.authenticationRequired' }) {
+		super('unauthorized', 401, said);
 	}
 }
 
 /** Allowed, but not this often. 429, and the message says when to come back. */
 export class RateLimitedError extends ServiceError {
-	constructor(message: string) {
-		super('rate_limited', 429, message);
+	constructor(said: Said) {
+		super('rate_limited', 429, said);
 	}
 }
 
 export class ForbiddenError extends ServiceError {
-	constructor(message = 'Insufficient scope') {
-		super('forbidden', 403, message);
+	constructor(said: Said = { key: 'errors.insufficientScope' }) {
+		super('forbidden', 403, said);
 	}
 }
 
@@ -84,5 +146,5 @@ export function toServiceError(e: unknown): ServiceError {
 	// server-side and tell the caller nothing beyond "500" — error text from
 	// the database is not something to hand to an API client.
 	console.error('Unexpected service error:', e);
-	return new ServiceError('internal', 500, 'Unexpected error');
+	return new ServiceError('internal', 500, { key: 'errors.unexpected' });
 }

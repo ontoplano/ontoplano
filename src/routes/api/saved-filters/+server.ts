@@ -36,7 +36,7 @@ export const POST = async ({ locals, request }: IsolatedEvent) => {
 			: saveFilter(locals.user.id, String(surface ?? ''), name, query);
 		return json({ filters });
 	} catch (e) {
-		const failed = toActionFailure(e);
+		const failed = await toActionFailure(e);
 		return json({ message: failed.data?.message ?? 'Not saved' }, { status: failed.status });
 	}
 };
