@@ -135,20 +135,20 @@ const MAX_VALUE_LENGTH = 200_000;
 export function parseExport(raw: unknown): AccountExport {
 	if (typeof raw === 'string') {
 		if (raw.length > MAX_BYTES)
-			throw new ValidationError('That file is too big to restore through the browser.');
+			throw new ValidationError({ key: 'errors.accountImport.thatFileIsTooBig' });
 		try {
 			raw = JSON.parse(raw);
 		} catch {
-			throw new ValidationError('That file is not JSON.');
+			throw new ValidationError({ key: 'errors.accountImport.thatFileIsNotJson' });
 		}
 	}
 
 	if (!raw || typeof raw !== 'object' || Array.isArray(raw))
-		throw new ValidationError('That file is not an ontoplano export.');
+		throw new ValidationError({ key: 'errors.accountImport.thatFile' });
 
 	const body = raw as Partial<AccountExport>;
 	if (!body.data || typeof body.data !== 'object' || Array.isArray(body.data))
-		throw new ValidationError('That file has no account data in it.');
+		throw new ValidationError({ key: 'errors.accountImport.thatFileHasNoAccount' });
 
 	let total = 0;
 	for (const [name, rows] of Object.entries(body.data)) {
@@ -495,9 +495,7 @@ export async function importAccount(
 					// Buffer at all — reaches this line with something real in it.
 					const kind = row.bytes instanceof Uint8Array ? sniff(row.bytes) : null;
 					if (!kind)
-						throw new ValidationError(
-							'The file carries a picture that is not a format this app accepts'
-						);
+						throw new ValidationError({ key: 'errors.accountImport.theFileCarriesAPicture' });
 					row.mime = kind.mime;
 					row.filename = tidyFilename(String(row.filename ?? '')) || `picture.${kind.extension}`;
 					row.byteSize = (row.bytes as Uint8Array).length;
@@ -507,9 +505,7 @@ export async function importAccount(
 				}
 				if (table.name === 'ringtones') {
 					if (!(RINGTONE_TYPES as readonly string[]).includes(String(row.mime)))
-						throw new ValidationError(
-							'The file carries a sound that is not a format this app accepts'
-						);
+						throw new ValidationError({ key: 'errors.accountImport.theFileCarriesASound' });
 					if (row.data instanceof Uint8Array) row.bytes = row.data.length;
 				}
 

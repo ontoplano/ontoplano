@@ -40,7 +40,7 @@ export function optionalTagInput(value: unknown): string {
 	if (value === undefined || value === null) return '';
 	const given = String(value).trim();
 	if (given.length > MAX_TAGS_LENGTH)
-		throw new ValidationError('That is more tags than one thing can carry');
+		throw new ValidationError({ key: 'errors.tags.thatIsMoreTagsThan' });
 	return given;
 }
 
@@ -347,10 +347,10 @@ export type NotebookTag = TagRow & {
 /** One name, normalised the way `TagInput` normalises what is typed into it. */
 function tagName(raw: unknown): string {
 	const words = parseTags(str(raw, 'name', { max: MAX_TAG_NAME_LENGTH }));
-	if (words.length === 0) throw new ValidationError('A tag needs a name');
+	if (words.length === 0) throw new ValidationError({ key: 'errors.tags.aTagNeedsAName' });
 	// Commas and spaces are what separates two tags everywhere else in the app,
 	// so a rename to "urgent work" is two labels asking to be one.
-	if (words.length > 1) throw new ValidationError('A tag is one word — no spaces or commas');
+	if (words.length > 1) throw new ValidationError({ key: 'errors.tags.aTagIsOneWord' });
 	return words[0];
 }
 

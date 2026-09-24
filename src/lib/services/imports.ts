@@ -213,7 +213,7 @@ export function parseTodoistCsv(text: string): ParseResult {
 	const iDate = at('DATE');
 
 	if (iType === -1 || iContent === -1) {
-		throw new ValidationError('That does not look like a Todoist export — no TYPE/CONTENT header');
+		throw new ValidationError({ key: 'errors.imports.thatDoesNotLookLike' });
 	}
 
 	const tasks: ImportedTask[] = [];
@@ -280,12 +280,12 @@ export function parseGoogleTasks(text: string): ParseResult {
 	try {
 		parsed = JSON.parse(text);
 	} catch {
-		throw new ValidationError('That file is not JSON — export Tasks from Google Takeout');
+		throw new ValidationError({ key: 'errors.imports.thatFileIsNotJson' });
 	}
 
 	const lists = (parsed as { items?: unknown })?.items;
 	if (!Array.isArray(lists)) {
-		throw new ValidationError('No task lists in that file — it should be Takeout’s Tasks.json');
+		throw new ValidationError({ key: 'errors.imports.noTaskLists' });
 	}
 
 	const tasks: ImportedTask[] = [];
@@ -361,7 +361,7 @@ export function parseGoogleKeep(text: string): ParseResult {
 	try {
 		parsed = JSON.parse(text);
 	} catch {
-		throw new ValidationError('That file is not JSON — export Keep from Google Takeout');
+		throw new ValidationError({ key: 'errors.imports.thatFileIsNotJsonExport' });
 	}
 
 	const files = Array.isArray(parsed) ? parsed : [parsed];
@@ -515,14 +515,13 @@ export function importTasks(
 	input: { text: unknown; notebook?: unknown; includeDone?: boolean }
 ): ImportResult {
 	const text = typeof input.text === 'string' ? input.text : '';
-	if (!text.trim()) throw new ValidationError('Nothing to import — paste the file or choose one');
-	if (text.length > MAX_INPUT) throw new ValidationError('That file is too big to import at once');
+	if (!text.trim()) throw new ValidationError({ key: 'errors.imports.nothingToImportPaste' });
+	if (text.length > MAX_INPUT)
+		throw new ValidationError({ key: 'errors.imports.thatFileIsTooBig' });
 
 	const source = detectSource(text);
 	if (!source) {
-		throw new ValidationError(
-			'That is not a Todoist CSV, a Google Tasks export, a Google Keep note or an org file.'
-		);
+		throw new ValidationError({ key: 'errors.imports.thatIsNotATodoist' });
 	}
 
 	const parsed =
@@ -651,7 +650,7 @@ export function freeNotebookTitle(ctx: Ctx, asked: unknown, fallback: string): s
 		const numbered = `${dated} ${n}`;
 		if (!taken(ctx, numbered)) return numbered;
 	}
-	throw new ValidationError('Too many imports by that name — give this one a name of its own');
+	throw new ValidationError({ key: 'errors.imports.tooManyImports' });
 }
 
 function taken(ctx: Ctx, title: string): boolean {

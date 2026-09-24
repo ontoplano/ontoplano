@@ -288,7 +288,7 @@ export function createToken(
 			)
 		)
 		.get();
-	if (taken) throw new ConflictError('You already have a key called that.');
+	if (taken) throw new ConflictError({ key: 'errors.tokens.youAlreadyHaveAKey' });
 
 	const requested = Array.isArray(input.scopes)
 		? input.scopes
@@ -302,7 +302,7 @@ export function createToken(
 				.filter((s): s is Scope => (ALL_SCOPES as string[]).includes(s))
 		)
 	];
-	if (scopes.length === 0) throw new ForbiddenError('At least one valid scope is required');
+	if (scopes.length === 0) throw new ForbiddenError({ key: 'errors.tokens.atLeastOneValidScope' });
 
 	/*
 	 * A calendar link stands alone, and it is refused rather than trimmed.
@@ -314,9 +314,7 @@ export function createToken(
 	 * are making; combining silently makes neither.
 	 */
 	if (scopes.includes('calendar:read') && scopes.length > 1) {
-		throw new ForbiddenError(
-			'A calendar link reads your plan and nothing else — it cannot be combined with other scopes'
-		);
+		throw new ForbiddenError({ key: 'errors.tokens.aCalendarLinkReads' });
 	}
 
 	if (isCalendarLink(scopes)) {
@@ -385,7 +383,7 @@ function confinementFrom(
 	const kind = input.confinedKind;
 	if (kind === undefined || kind === null || kind === '') return null;
 	if (!isConfinementKind(kind))
-		throw new ValidationError('That is not something a key can be tied to.');
+		throw new ValidationError({ key: 'errors.tokens.thatIsNotSomething' });
 
 	const id = num(input.confinedId, 'Which one', { int: true, min: 1 });
 	const rows = KINDS[CONFINEMENTS[kind].kind].rows(ctx);
@@ -490,19 +488,20 @@ function confinementOf(kind: string | null, id: number | null): Confinement | nu
  */
 export function authenticateToken(plaintext: string, now: Date): AuthenticatedToken {
 	if (!plaintext || !plaintext.startsWith(TOKEN_PREFIX))
-		throw new UnauthorizedError('Invalid token');
+		throw new UnauthorizedError({ key: 'errors.tokens.invalidToken' });
 
 	const hash = hashToken(plaintext);
 	const row = db.select().from(apiTokens).where(eq(apiTokens.tokenHash, hash)).get();
-	if (!row) throw new UnauthorizedError('Invalid token');
+	if (!row) throw new UnauthorizedError({ key: 'errors.tokens.invalidToken' });
 
 	const a = Buffer.from(row.tokenHash, 'hex');
 	const b = Buffer.from(hash, 'hex');
-	if (a.length !== b.length || !timingSafeEqual(a, b)) throw new UnauthorizedError('Invalid token');
+	if (a.length !== b.length || !timingSafeEqual(a, b))
+		throw new UnauthorizedError({ key: 'errors.tokens.invalidToken' });
 
-	if (row.revokedAt) throw new UnauthorizedError('Token has been revoked');
+	if (row.revokedAt) throw new UnauthorizedError({ key: 'errors.tokens.tokenHasBeenRevoked' });
 	if (row.expiresAt && new Date(row.expiresAt) <= now)
-		throw new UnauthorizedError('Token has expired');
+		throw new UnauthorizedError({ key: 'errors.tokens.tokenHasExpired' });
 
 	// Best-effort usage stamp; never let it fail the request.
 	try {

@@ -2,6 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 import { makeDatabase, OWNER, seedAccounts } from './helpers/db';
 import { translator } from '../src/lib/i18n';
 import { messages as english } from '../src/lib/i18n/catalogues/en';
+import { refusal } from './helpers/refusal';
 
 /**
  * An Obsidian vault, arriving.
@@ -142,12 +143,16 @@ describe('bringing a vault in', () => {
 	});
 
 	test('nothing markdown in it is refused, and nothing is written', () => {
-		expect(() => vault.importVault(ctx, { files: [note('a.png', 'x')] }, t)).toThrow(/markdown/i);
+		expect(refusal(() => vault.importVault(ctx, { files: [note('a.png', 'x')] }, t))).toMatch(
+			/markdown/i
+		);
 		expect(entryCount()).toBe(0);
 	});
 
 	test('a vault of empty notes is refused, and nothing is written', () => {
-		expect(() => vault.importVault(ctx, { files: [note('a.md', '  \n')] }, t)).toThrow(/empty/i);
+		expect(refusal(() => vault.importVault(ctx, { files: [note('a.md', '  \n')] }, t))).toMatch(
+			/empty/i
+		);
 		expect(entryCount()).toBe(0);
 	});
 
@@ -225,15 +230,17 @@ describe('a file that is not text', () => {
 	});
 
 	test('and a vault of nothing but binaries is refused, saying why', () => {
-		expect(() =>
-			vault.importVault(
-				ctx,
-				{
-					files: [{ path: 'a.md', text: `${nul}${nul}` }],
-					notebook: 'None'
-				},
-				t
+		expect(
+			refusal(() =>
+				vault.importVault(
+					ctx,
+					{
+						files: [{ path: 'a.md', text: `${nul}${nul}` }],
+						notebook: 'None'
+					},
+					t
+				)
 			)
-		).toThrow(/does not make something markdown/);
+		).toMatch(/does not make something markdown/);
 	});
 });

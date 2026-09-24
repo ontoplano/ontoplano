@@ -62,7 +62,8 @@ function fields(ctx: Ctx, input: LedgerInput, fallback?: Ledger) {
 		input.defaultParser === undefined || input.defaultParser === null || input.defaultParser === ''
 			? null
 			: str(input.defaultParser, 'parser', { max: 100 });
-	if (parser && !parserFor(parser)) throw new ValidationError('No parser knows that export.');
+	if (parser && !parserFor(parser))
+		throw new ValidationError({ key: 'errors.ledgers.noParserKnowsThatExport' });
 	return {
 		name: str(input.name ?? fallback?.name, 'name', { max: MAX_LEDGER_NAME_LENGTH }),
 		kind: oneOf(input.kind ?? fallback?.kind ?? 'bank', 'kind', LEDGER_KINDS),
@@ -143,7 +144,7 @@ export function createLedger(ctx: Ctx, input: LedgerInput): Ledger {
 	const f = fields(ctx, input);
 	const existing = listLedgers(ctx, { includeArchived: true });
 	if (existing.some((l) => l.name === f.name))
-		throw new ConflictError('A ledger by that name already exists.');
+		throw new ConflictError({ key: 'errors.ledgers.aLedgerByThatName' });
 	const inserted = db
 		.insert(ledgers)
 		.values({ userId: ctx.userId, ...f, sortOrder: existing.length, ...stamps(ctx) })
@@ -159,7 +160,7 @@ export function updateLedger(ctx: Ctx, id: number, input: LedgerInput): Ledger {
 		f.name !== before.name &&
 		listLedgers(ctx, { includeArchived: true }).some((l) => l.name === f.name)
 	)
-		throw new ConflictError('A ledger by that name already exists.');
+		throw new ConflictError({ key: 'errors.ledgers.aLedgerByThatName' });
 	db.update(ledgers)
 		.set({ ...f, updatedAt: stamp(ctx) })
 		.where(and(eq(ledgers.id, id), eq(ledgers.userId, ctx.userId)))

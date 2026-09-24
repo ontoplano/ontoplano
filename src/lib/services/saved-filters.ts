@@ -74,16 +74,16 @@ export function saveFilter(
 	rawQuery: unknown
 ): SavedFilter[] {
 	const name = str(rawName, 'name', { max: MAX_FILTER_NAME_LENGTH }).trim();
-	if (!name) throw new ValidationError('A saved filter needs a name');
+	if (!name) throw new ValidationError({ key: 'errors.savedFilters.aSavedFilterNeeds' });
 
 	// The query as the address writes it, without the leading `?`. Not parsed:
 	// what it means belongs to the screen, and this only has to give it back.
 	const query = String(rawQuery ?? '').replace(/^\?/, '');
-	if (!query) throw new ValidationError('There is nothing to save — nothing is narrowed');
+	if (!query) throw new ValidationError({ key: 'errors.savedFilters.thereIsNothingToSave' });
 
 	const kept = savedFilters(userId, surface).filter((one) => one.name !== name);
 	if (kept.length >= MAX_SAVED_FILTERS)
-		throw new ValidationError('That is as many saved filters as one list keeps');
+		throw new ValidationError({ key: 'errors.savedFilters.thatIsAsManySaved' });
 
 	const next = [...kept, { name, query }];
 	setUserSetting(userId, keyFor(where(surface)), JSON.stringify(next));
@@ -107,6 +107,7 @@ export function deleteFilter(userId: string, surface: string, rawName: unknown):
  */
 function where(surface: unknown): string {
 	const given = String(surface ?? '').trim();
-	if (!/^\/[a-z0-9/-]*$/i.test(given)) throw new ValidationError('That is not a screen');
+	if (!/^\/[a-z0-9/-]*$/i.test(given))
+		throw new ValidationError({ key: 'errors.savedFilters.thatIsNotAScreen' });
 	return given;
 }

@@ -8,6 +8,7 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
+import { refusal } from './helpers/refusal';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -201,6 +202,8 @@ describe('nowhere to put food yet', () => {
 		for (const c of s.inventory.listCategories(theirs))
 			s.inventory.setCategoryFood(theirs, c.id, false);
 
-		expect(() => s.recipes.importIngredients(theirs, id, '3 screws')).toThrow(/holds food/i);
+		expect(refusal(() => s.recipes.importIngredients(theirs, id, '3 screws'))).toMatch(
+			/holds food/i
+		);
 	});
 });

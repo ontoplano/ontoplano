@@ -349,7 +349,7 @@ export function createArea(ctx: Ctx, raw: { name: unknown; color?: unknown }): n
 		.where(and(eq(goalAreas.userId, ctx.userId), eq(goalAreas.name, name)))
 		.get();
 
-	if (clash) throw new ConflictError('You already have an area with that name');
+	if (clash) throw new ConflictError({ key: 'errors.goals.youAlreadyHaveAnArea' });
 
 	const result = db
 		.insert(goalAreas)
@@ -600,7 +600,7 @@ export function setTargetProgress(ctx: Ctx, targetId: number, value: unknown): v
 		.where(and(eq(goalTargets.id, targetId), eq(goalTargets.userId, ctx.userId)))
 		.get();
 	if (counted?.measureActivity)
-		throw new ValidationError('That one is counted from your workouts, not typed in');
+		throw new ValidationError({ key: 'errors.goals.thatOneIsCountedFrom' });
 
 	const res = db
 		.update(goalTargets)
@@ -616,7 +616,7 @@ export function setTargetProgress(ctx: Ctx, targetId: number, value: unknown): v
 
 export function closeGoal(ctx: Ctx, id: number, raw: { status: unknown; outcome?: unknown }): void {
 	const status = raw.status;
-	if (!isGoalStatus(status)) throw new ValidationError('Invalid status');
+	if (!isGoalStatus(status)) throw new ValidationError({ key: 'errors.goals.invalidStatus' });
 
 	const now = stamp(ctx);
 	const res = db
@@ -829,7 +829,7 @@ function ownedActivityIds(ctx: Ctx): number[] {
 }
 
 function parseHorizon(value: unknown): Horizon {
-	if (!isHorizon(value)) throw new ValidationError('Pick a horizon');
+	if (!isHorizon(value)) throw new ValidationError({ key: 'errors.goals.pickAHorizon' });
 	return value;
 }
 
@@ -843,7 +843,7 @@ function parseHorizon(value: unknown): Horizon {
 function parseAnchor(value: unknown): Date | null {
 	const raw = value === undefined || value === null ? '' : String(value).trim();
 	if (!raw) return null;
-	if (!DATE_PATTERN.test(raw)) throw new ValidationError('Invalid date');
+	if (!DATE_PATTERN.test(raw)) throw new ValidationError({ key: 'errors.goals.invalidDate' });
 	return new Date(`${raw}T00:00:00`);
 }
 
@@ -865,7 +865,7 @@ type ParsedTarget = {
 
 function parseTargets(value: unknown): ParsedTarget[] | null {
 	if (value === undefined || value === null) return null;
-	if (!Array.isArray(value)) throw new ValidationError('Invalid measures');
+	if (!Array.isArray(value)) throw new ValidationError({ key: 'errors.goals.invalidMeasures' });
 
 	const out: ParsedTarget[] = [];
 	for (const entry of value) {
@@ -922,6 +922,6 @@ function touchGoal(ctx: Ctx, goalId: number): void {
 function parseColor(value: unknown): string | null {
 	if (value === undefined || value === null || String(value).trim() === '') return null;
 	const color = String(value).trim();
-	if (!HEX_COLOR.test(color)) throw new ValidationError('Invalid color format');
+	if (!HEX_COLOR.test(color)) throw new ValidationError({ key: 'errors.goals.invalidColorFormat' });
 	return color;
 }

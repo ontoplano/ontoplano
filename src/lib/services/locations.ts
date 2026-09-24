@@ -133,7 +133,7 @@ function ownedParent(ctx: Ctx, value: unknown, selfId?: number): number | null {
 	const parentId = num(value, 'parent', { int: true });
 	getLocation(ctx, parentId); // ownership, and existence
 	if (selfId !== undefined && (parentId === selfId || wouldCycle(ctx, selfId, parentId)))
-		throw new ValidationError('A location cannot be inside itself.');
+		throw new ValidationError({ key: 'errors.locations.aLocationCannotBeInside' });
 	return parentId;
 }
 

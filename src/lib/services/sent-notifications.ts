@@ -164,7 +164,7 @@ export function markRead(ctx: Ctx, id: number): void {
 		.from(sentNotifications)
 		.where(and(eq(sentNotifications.id, id), eq(sentNotifications.userId, ctx.userId)))
 		.get();
-	if (!exists) throw new NotFoundError('No such notification.');
+	if (!exists) throw new NotFoundError({ key: 'errors.sentNotifications.noSuchNotification' });
 }
 
 /**

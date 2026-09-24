@@ -153,7 +153,7 @@ export function importStatement(
 	getLedger(ctx, ledgerId); // ownership
 	const source = str(input.source, 'bank export', { max: 100 });
 	const parser = parserFor(source);
-	if (!parser) throw new ValidationError('No parser knows that export.');
+	if (!parser) throw new ValidationError({ key: 'errors.statements.noParserKnowsThatExport' });
 	const text = str(input.text, 'statement', { max: MAX_STATEMENT_LENGTH });
 
 	const read =

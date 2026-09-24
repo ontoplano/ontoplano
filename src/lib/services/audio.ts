@@ -192,7 +192,7 @@ export async function store(
 	const limits = audioLimits();
 
 	if (!input.bytes || input.bytes.length === 0)
-		throw new ValidationError('That recording was empty.');
+		throw new ValidationError({ key: 'errors.audio.thatRecordingWasEmpty' });
 	if (input.bytes.length > limits.audioBytes)
 		throw new ValidationError(
 			`Recordings here are at most ${limits.audioKilobytes}KB, and that one is ${Math.ceil(
@@ -201,7 +201,7 @@ export async function store(
 		);
 
 	const kind = sniffAudio(input.bytes);
-	if (!kind) throw new ValidationError('That is not a recording this instance takes.');
+	if (!kind) throw new ValidationError({ key: 'errors.audio.thatIsNotARecording' });
 
 	const sha256 = await sha256Hex(input.bytes);
 	const existing = db
@@ -281,7 +281,7 @@ export function read(ctx: Ctx, id: number): { mime: string; name: string; bytes:
 		.from(media)
 		.where(and(eq(media.id, id), eq(media.userId, ctx.userId), isRecording))
 		.get();
-	if (!row) throw new NotFoundError('No such recording.');
+	if (!row) throw new NotFoundError({ key: 'errors.audio.noSuchRecording' });
 	return { mime: row.mime, name: row.filename, bytes: new Uint8Array(row.bytes) };
 }
 
@@ -297,7 +297,7 @@ export function list(ctx: Ctx): Recording[] {
 
 export function rename(ctx: Ctx, id: number, name: unknown): Recording {
 	const tidy = tidyAudioName(String(name ?? ''));
-	if (!tidy) throw new ValidationError('A recording needs a name.');
+	if (!tidy) throw new ValidationError({ key: 'errors.audio.aRecordingNeedsAName' });
 
 	const row = db
 		.update(media)
@@ -305,7 +305,7 @@ export function rename(ctx: Ctx, id: number, name: unknown): Recording {
 		.where(and(eq(media.id, id), eq(media.userId, ctx.userId), isRecording))
 		.returning()
 		.get();
-	if (!row) throw new NotFoundError('No such recording.');
+	if (!row) throw new NotFoundError({ key: 'errors.audio.noSuchRecording' });
 	return toRecording(row);
 }
 
@@ -315,5 +315,5 @@ export function remove(ctx: Ctx, id: number): void {
 		.where(and(eq(media.id, id), eq(media.userId, ctx.userId), isRecording))
 		.returning()
 		.get();
-	if (!row) throw new NotFoundError('No such recording.');
+	if (!row) throw new NotFoundError({ key: 'errors.audio.noSuchRecording' });
 }

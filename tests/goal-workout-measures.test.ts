@@ -12,6 +12,7 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
+import { refusal } from './helpers/refusal';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -107,7 +108,7 @@ describe('the two numbers can never disagree', () => {
 	test('typing into a counted measure is refused', () => {
 		const id = runningGoal();
 		const t = target(id);
-		expect(() => goals.setTargetProgress(ctx, t.id, 99)).toThrow(/workouts/i);
+		expect(refusal(() => goals.setTargetProgress(ctx, t.id, 99))).toMatch(/workouts/i);
 		expect(target(id).currentValue).not.toBe(99);
 	});
 

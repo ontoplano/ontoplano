@@ -35,7 +35,7 @@ export function clientErrorState(userId: string): ClientErrorState {
 
 export function setClientErrorConsent(ctx: Ctx, decision: unknown): void {
 	if (!loadConfig().reports.clientErrors)
-		throw new ForbiddenError('Error reporting is not enabled on this server');
+		throw new ForbiddenError({ key: 'errors.clientErrors.errorReportingIsNotEnabled' });
 	setUserSetting(ctx.userId, CONSENT_KEY, oneOf(decision, 'decision', ['yes', 'no'] as const));
 }
 
@@ -72,9 +72,12 @@ export function recordClientError(
 	 * reporting off collects nothing.
 	 */
 	const state = clientErrorState(ctx.userId);
-	if (state === 'off') throw new ForbiddenError('Error reporting is not enabled on this server');
+	if (state === 'off')
+		throw new ForbiddenError({ key: 'errors.clientErrors.errorReportingIsNotEnabled' });
 	if (state !== 'yes' && !options.once)
-		throw new ForbiddenError('Error reporting is not enabled for this account');
+		throw new ForbiddenError({
+			key: 'errors.clientErrors.errorReportingIsNotEnabledForThisAccount'
+		});
 
 	write(ctx.userId, input, ctx.now);
 }
@@ -94,7 +97,7 @@ export function recordClientError(
  */
 export function recordVisitorError(input: Record<string, unknown>, now: Date): void {
 	if (!loadConfig().reports.clientErrors)
-		throw new ForbiddenError('Error reporting is not enabled on this server');
+		throw new ForbiddenError({ key: 'errors.clientErrors.errorReportingIsNotEnabled' });
 
 	write(null, input, now);
 }

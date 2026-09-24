@@ -170,7 +170,7 @@ export function logOccurrence(
 	// One statement rather than "is it there?" then "put it there": the second
 	// shape is what let two presses both write.
 	if (!writeOccurrence(ctx, { habitId, date, notes }))
-		throw new ConflictError('Already logged for this date');
+		throw new ConflictError({ key: 'errors.habits.alreadyLoggedForThisDate' });
 }
 
 /** Clicking a day in the heatmap: log it, or take it back. */

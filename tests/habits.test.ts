@@ -9,6 +9,7 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
+import { refusal } from './helpers/refusal';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -83,7 +84,7 @@ describe('logging a day', () => {
 		const id = habits.createHabit(ctx, { name: 'stretch', type: 'good' });
 		habits.logOccurrence(ctx, { habitId: id, date: '2026-08-17' });
 
-		expect(() => habits.logOccurrence(ctx, { habitId: id, date: '2026-08-17' })).toThrow(
+		expect(refusal(() => habits.logOccurrence(ctx, { habitId: id, date: '2026-08-17' }))).toMatch(
 			/already logged/i
 		);
 		expect(habits.listOccurrences(ctx).filter((o) => o.habitId === id)).toHaveLength(1);
@@ -99,15 +100,17 @@ describe('logging a day', () => {
 		const id = habits.createHabit(ctx, { name: 'push-ups', type: 'good' });
 		habits.logOccurrence(ctx, { habitId: id, date: '2026-08-18' });
 
-		expect(() =>
-			database.exec(
-				`insert into habit_occurrences (user_id, habit_id, date, notes, created_at)
+		expect(
+			refusal(() =>
+				database.exec(
+					`insert into habit_occurrences (user_id, habit_id, date, notes, created_at)
 				 values (?, ?, ?, '', '2026-08-18T09:00:00')`,
-				OWNER,
-				id,
-				'2026-08-18'
+					OWNER,
+					id,
+					'2026-08-18'
+				)
 			)
-		).toThrow(/unique/i);
+		).toMatch(/unique/i);
 	});
 });
 

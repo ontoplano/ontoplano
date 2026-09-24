@@ -12,6 +12,7 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
+import { refusalOf } from './helpers/refusal';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -130,7 +131,7 @@ describe('what it will read', () => {
 			})
 		} as unknown as Parameters<Services['api']['readJson']>[0];
 
-		await expect(s.api.readJson(event)).rejects.toThrow(/too large/i);
+		expect(await refusalOf(() => s.api.readJson(event))).toMatch(/too large/i);
 	});
 
 	test('an ordinary body still reads', async () => {

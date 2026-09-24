@@ -50,10 +50,10 @@ function webAddress(value: unknown): string {
 	try {
 		url = new URL(raw);
 	} catch {
-		throw new ValidationError('homepage must be a web address');
+		throw new ValidationError({ key: 'errors.plugins.homepageMustBeAWeb' });
 	}
 	if (url.protocol !== 'http:' && url.protocol !== 'https:')
-		throw new ValidationError('homepage must be an http or https address');
+		throw new ValidationError({ key: 'errors.plugins.homepageMustBeAnHttp' });
 	return url.toString();
 }
 
@@ -79,14 +79,15 @@ function text(value: unknown, field: string, { required = false } = {}): string 
  */
 export function parseMetaKeys(input: unknown): PluginMetaKey[] {
 	if (input === undefined || input === null) return [];
-	if (!Array.isArray(input)) throw new ValidationError('metaKeys must be an array');
+	if (!Array.isArray(input))
+		throw new ValidationError({ key: 'errors.plugins.metakeysMustBeAnArray' });
 	if (input.length > MAX_PLUGIN_META_KEYS)
 		throw new ValidationError(`at most ${MAX_PLUGIN_META_KEYS} metadata keys`);
 
 	const seen = new Set<string>();
 	return input.map((entry) => {
 		if (typeof entry !== 'object' || entry === null)
-			throw new ValidationError('each metadata key must be an object');
+			throw new ValidationError({ key: 'errors.plugins.eachMetadataKeyMust' });
 
 		const row = entry as Record<string, unknown>;
 		const key = text(row.key, 'metaKeys[].key', { required: true }).toLowerCase();
@@ -158,9 +159,7 @@ export function upsertManifest(
 ): PluginManifest {
 	const source = text(input.source, 'source', { required: true }).toLowerCase();
 	if (!SOURCE_PATTERN.test(source))
-		throw new ValidationError(
-			'source must be lowercase letters, digits, hyphens and underscores, starting with a letter'
-		);
+		throw new ValidationError({ key: 'errors.plugins.sourceMustBeLowercaseLetters' });
 
 	const row = {
 		userId,

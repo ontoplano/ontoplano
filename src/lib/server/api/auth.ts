@@ -130,7 +130,7 @@ export function authenticateApi(
 		return { ctx: buildCtx(event.locals.user.id, { now }), via: 'session', holds: () => true };
 	}
 
-	throw new UnauthorizedError('Provide a bearer token or sign in');
+	throw new UnauthorizedError({ key: 'errors.auth.provideABearerToken' });
 }
 
 /**

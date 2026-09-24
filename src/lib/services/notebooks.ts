@@ -672,11 +672,11 @@ function titleUnder(ctx: Ctx, raw: { title: unknown; parent?: unknown }, self?: 
 	// Its own child is a title that contains itself, which is a notebook that
 	// can never be drawn and a tree that never terminates.
 	if (self !== undefined && isInsideNotebook(parent.title, getNotebook(ctx, self).title))
-		throw new ValidationError('A notebook cannot go inside itself');
+		throw new ValidationError({ key: 'errors.notebooks.aNotebookCannotGoInside' });
 
 	const full = joinNotebookPath(parent.title, leaf);
 	if (full.length > MAX_TITLE_LENGTH)
-		throw new ValidationError('That name is too long for the notebook it goes inside');
+		throw new ValidationError({ key: 'errors.notebooks.thatNameIsTooLong' });
 	return full;
 }
 
@@ -691,7 +691,8 @@ export function createNotebook(
 	}
 ): number {
 	const title = titleUnder(ctx, raw);
-	if (notebookTitled(ctx, title)) throw new ConflictError('A notebook by that name already exists');
+	if (notebookTitled(ctx, title))
+		throw new ConflictError({ key: 'errors.notebooks.aNotebookByThatName' });
 
 	const result = db
 		.insert(notebooks)
@@ -725,7 +726,8 @@ export function updateNotebook(
 	const title = titleUnder(ctx, raw, id);
 
 	const clash = notebookTitled(ctx, title);
-	if (clash && clash.id !== id) throw new ConflictError('A notebook by that name already exists');
+	if (clash && clash.id !== id)
+		throw new ConflictError({ key: 'errors.notebooks.aNotebookByThatName' });
 
 	const wanted = wantedModules(raw.modules);
 

@@ -8,6 +8,7 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
+import { refusal } from './helpers/refusal';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -24,17 +25,17 @@ beforeAll(async () => {
 
 describe('setRole', () => {
 	test('an administrator cannot demote themselves', () => {
-		expect(() => admin.setRole(STRANGER, STRANGER, 'member')).toThrow(/yourself/i);
+		expect(refusal(() => admin.setRole(STRANGER, STRANGER, 'member'))).toMatch(/yourself/i);
 		expect(admin.roleOf(STRANGER)).toBe('admin');
 	});
 
 	test('nor promote themselves, which is the same rule', () => {
-		expect(() => admin.setRole(OWNER, OWNER, 'admin')).toThrow(/yourself/i);
+		expect(refusal(() => admin.setRole(OWNER, OWNER, 'admin'))).toMatch(/yourself/i);
 	});
 
 	test('the instance owner cannot be demoted by anybody', () => {
 		// It would show a "member" badge on somebody who still has every power.
-		expect(() => admin.setRole(STRANGER, OWNER, 'member')).toThrow(/owns the instance/i);
+		expect(refusal(() => admin.setRole(STRANGER, OWNER, 'member'))).toMatch(/owns the instance/i);
 		expect(admin.isAdmin(OWNER)).toBe(true);
 	});
 
@@ -45,7 +46,7 @@ describe('setRole', () => {
 	});
 
 	test('an unknown role is refused rather than stored', () => {
-		expect(() => admin.setRole(OWNER, STRANGER, 'superuser')).toThrow(/unknown role/i);
+		expect(refusal(() => admin.setRole(OWNER, STRANGER, 'superuser'))).toMatch(/unknown role/i);
 	});
 });
 
@@ -117,7 +118,9 @@ describe('deleteAccountAsAdmin', () => {
 	test('refuses a typed address that is not this account’s', () => {
 		const id = makeVictim('b@test.invalid');
 
-		expect(() => admin.deleteAccountAsAdmin(STRANGER, id, 'a@test.invalid')).toThrow(/address/i);
+		expect(refusal(() => admin.deleteAccountAsAdmin(STRANGER, id, 'a@test.invalid'))).toMatch(
+			/address/i
+		);
 		expect(exists(id), 'the wrong address still deleted the account').toBe(true);
 	});
 
@@ -134,16 +137,16 @@ describe('deleteAccountAsAdmin', () => {
 	});
 
 	test('refuses your own account, whatever you type', () => {
-		expect(() => admin.deleteAccountAsAdmin(STRANGER, STRANGER, 'stranger@test.invalid')).toThrow(
-			/Settings/i
-		);
+		expect(
+			refusal(() => admin.deleteAccountAsAdmin(STRANGER, STRANGER, 'stranger@test.invalid'))
+		).toMatch(/Settings/i);
 		expect(exists(STRANGER)).toBe(true);
 	});
 
 	test('refuses the account that owns the instance', () => {
-		expect(() => admin.deleteAccountAsAdmin(STRANGER, OWNER, 'owner@test.invalid')).toThrow(
-			/owns the instance/i
-		);
+		expect(
+			refusal(() => admin.deleteAccountAsAdmin(STRANGER, OWNER, 'owner@test.invalid'))
+		).toMatch(/owns the instance/i);
 		expect(exists(OWNER)).toBe(true);
 	});
 

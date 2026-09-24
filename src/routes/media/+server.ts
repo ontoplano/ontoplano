@@ -22,11 +22,12 @@ import { mediaLimits, store } from '$lib/services/media';
  */
 export const POST: RequestHandler = async (event) => {
 	try {
-		if (!event.locals.user) throw new UnauthorizedError('Sign in first.');
+		if (!event.locals.user) throw new UnauthorizedError({ key: 'errors.mediaUpload.signInFirst' });
 
 		const form = await event.request.formData();
 		const file = form.get('file');
-		if (!(file instanceof File)) throw new UnauthorizedError('No file in that request.');
+		if (!(file instanceof File))
+			throw new UnauthorizedError({ key: 'errors.mediaUpload.noFileInThatRequest' });
 
 		// Read the ceiling before the bytes: a browser that ignored the accept
 		// attribute should not get to spend the memory first.

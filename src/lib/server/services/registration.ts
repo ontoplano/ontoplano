@@ -117,16 +117,18 @@ export function checkSignUpAllowed(code: unknown, now: Date): { invite: Invite |
 		if (!trimmed) return { invite: null };
 
 		const invite = findUsable(trimmed, now);
-		if (!invite) throw new ForbiddenError('That invitation code is not valid, or has been used');
+		if (!invite) throw new ForbiddenError({ key: 'errors.registration.thatInvitationCode' });
 		return { invite };
 	}
 
-	if (mode === 'closed') throw new ForbiddenError('This instance is not accepting new accounts');
+	if (mode === 'closed')
+		throw new ForbiddenError({ key: 'errors.registration.thisInstanceIsNotAccepting' });
 
-	if (!trimmed) throw new ForbiddenError('Registering here takes an invitation code');
+	if (!trimmed)
+		throw new ForbiddenError({ key: 'errors.registration.registeringHereTakesAnInvitation' });
 
 	const invite = findUsable(trimmed, now);
-	if (!invite) throw new ForbiddenError('That invitation code is not valid, or has been used');
+	if (!invite) throw new ForbiddenError({ key: 'errors.registration.thatInvitationCode' });
 
 	return { invite };
 }
@@ -171,7 +173,7 @@ export function createInvite(
 			: Number(raw.expiresInDays);
 
 	if (days !== null && (!Number.isInteger(days) || days < 1 || days > 365))
-		throw new ValidationError('An invite lasts between 1 and 365 days');
+		throw new ValidationError({ key: 'errors.registration.anInviteLastsBetween1' });
 
 	const expiresAt =
 		days === null ? null : new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
@@ -217,12 +219,12 @@ function parseGrantUntil(raw: unknown, now: Date): string | null {
 
 	const value = str(raw, 'until', { max: 40 });
 	const match = value.match(/^(\d{4}-\d{2}-\d{2})/);
-	if (!match) throw new ValidationError('Invalid date');
+	if (!match) throw new ValidationError({ key: 'errors.registration.invalidDate' });
 
 	const until = new Date(`${match[1]}T23:59:59.999Z`);
-	if (isNaN(until.getTime())) throw new ValidationError('Invalid date');
+	if (isNaN(until.getTime())) throw new ValidationError({ key: 'errors.registration.invalidDate' });
 	if (until.getTime() <= now.getTime())
-		throw new ValidationError('A free month that has already ended grants nothing');
+		throw new ValidationError({ key: 'errors.registration.aFreeMonth' });
 
 	return until.toISOString();
 }

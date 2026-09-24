@@ -149,11 +149,9 @@ export async function retryFailure(id: number): Promise<SendResult> {
 		.from(mailFailures)
 		.where(and(eq(mailFailures.id, id), isNull(mailFailures.resolvedAt)))
 		.get();
-	if (!row) throw new NotFoundError('That failure is gone — resolved or dismissed already');
+	if (!row) throw new NotFoundError({ key: 'errors.mailLog.thatFailureIsGoneResolved' });
 	if (row.bodyText === null) {
-		throw new ValidationError(
-			'This mail cannot be replayed — its link has expired. Ask for a fresh one.'
-		);
+		throw new ValidationError({ key: 'errors.mailLog.thisMailCannotBeReplayed' });
 	}
 
 	const result = await sendEmail({
@@ -185,7 +183,7 @@ export function dismissFailure(id: number): void {
 		.from(mailFailures)
 		.where(and(eq(mailFailures.id, id), isNull(mailFailures.resolvedAt)))
 		.get();
-	if (!row) throw new NotFoundError('That failure is gone — resolved or dismissed already');
+	if (!row) throw new NotFoundError({ key: 'errors.mailLog.thatFailureIsGoneResolved' });
 	db.update(mailFailures)
 		.set({ resolvedAt: new Date().toISOString() })
 		.where(eq(mailFailures.id, id))

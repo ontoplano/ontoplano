@@ -95,17 +95,23 @@ export class ValidationError extends ServiceError {
  * Thrown both when a resource does not exist and when it belongs to another
  * user. Never distinguish the two — doing so leaks existence.
  *
- * `what` is the kind of thing, in English, and nobody is shown it: the adapters
- * say "not found" in the reader's own language, and this is what the log line
- * and the API's `message` carry.
+ * A plain string is the *kind* of thing, in English — `'todo'`, `'seat'` — and
+ * nobody is ever shown it: it is what the log line and the API's `message`
+ * carry, while a person reads one flat sentence that names nothing, which is
+ * what not leaking existence means. A key is for the few refusals that have
+ * something to say beyond "no": that the invitation was already answered, that
+ * the failure has been dealt with.
+ *
+ * Both were spelled the same way before, and the sentences lost: the API read
+ * back "That failure is gone — resolved or dismissed already not found".
  */
 export class NotFoundError extends ServiceError {
-	constructor(what: string) {
-		super('not_found', 404, {
-			key: 'errors.notFound',
-			values: { what },
-			text: `${what} not found`
-		});
+	constructor(said: Said) {
+		super(
+			'not_found',
+			404,
+			typeof said === 'string' ? { key: 'errors.notFound', text: `${said} not found` } : said
+		);
 	}
 }
 

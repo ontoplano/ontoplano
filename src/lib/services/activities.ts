@@ -109,9 +109,7 @@ export function toggleActivityActive(ctx: Ctx, id: number): void {
 
 export function deleteActivity(ctx: Ctx, id: number): void {
 	if (activityReferences(ctx, id) > 0)
-		throw new ValidationError(
-			'Cannot delete: activity is referenced by planner slots or task history'
-		);
+		throw new ValidationError({ key: 'errors.activities.cannotDeleteActivityIsReferenced' });
 
 	const res = db
 		.delete(activities)
@@ -131,7 +129,7 @@ export function createCategory(ctx: Ctx, raw: { name: unknown; color?: unknown }
 		.where(and(eq(categories.userId, ctx.userId), eq(categories.name, name)))
 		.get();
 
-	if (clash) throw new ConflictError('Category already exists');
+	if (clash) throw new ConflictError({ key: 'errors.activities.categoryAlreadyExists' });
 
 	const result = db
 		.insert(categories)
@@ -196,7 +194,7 @@ export function deleteCategory(ctx: Ctx, id: number): void {
 	);
 
 	if (activityRefs > 0 || slotRefs > 0)
-		throw new ValidationError('Cannot delete: category has activities or planner slots');
+		throw new ValidationError({ key: 'errors.activities.cannotDeleteCategoryHasActivities' });
 
 	const res = db
 		.delete(categories)
@@ -248,7 +246,8 @@ function requireCategory(ctx: Ctx, value: unknown): number {
 function parseColor(value: unknown): string | null {
 	if (value === undefined || value === null || String(value).trim() === '') return null;
 	const color = String(value).trim();
-	if (!HEX_COLOR.test(color)) throw new ValidationError('Invalid color format');
+	if (!HEX_COLOR.test(color))
+		throw new ValidationError({ key: 'errors.activities.invalidColorFormat' });
 	return color;
 }
 

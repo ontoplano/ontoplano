@@ -95,6 +95,7 @@ export const VERB_KEYS = new Set([
 	'change',
 	'close',
 	'delete',
+	'describe',
 	'dismiss',
 	'drop',
 	'edit',

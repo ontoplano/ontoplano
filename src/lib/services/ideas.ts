@@ -162,7 +162,7 @@ export function toggleApplied(ctx: Ctx, id: number, note: unknown): void {
 /** The note beside an applied idea, which is not the idea. See `toggleApplied`. */
 export function updateAppliedNote(ctx: Ctx, id: number, note: unknown): void {
 	const existing = ownedIdea(ctx, id);
-	if (!existing.isApplied) throw new ValidationError('Idea is not marked as applied');
+	if (!existing.isApplied) throw new ValidationError({ key: 'errors.ideas.ideaIsNotMarked' });
 
 	db.update(ideas)
 		.set({ appliedNote: optionalNote(note) })

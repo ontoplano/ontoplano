@@ -23,11 +23,19 @@ describe('a notebook’s modules', () => {
 		expect(parseModules(undefined)).toEqual([...DEFAULT_MODULES]);
 	});
 
-	test('the list comes back in the app’s order, not the order it was stored in', () => {
-		const declared = NOTEBOOK_MODULES.map((m) => m.id);
-		const shuffled = 'recipes,tasks,bills,notes';
-		const back = parseModules(shuffled);
-		expect(back).toEqual(declared.filter((id) => back.includes(id)));
+	/*
+	 * It used to come back in the app's declared order, and that was right
+	 * while nobody could say otherwise. The tabs are draggable now, so the
+	 * stored order IS somebody's answer — putting it back in the app's order
+	 * would be the app undoing what they arranged.
+	 */
+	test('the list comes back in the order it was stored in', () => {
+		expect(parseModules('recipes,tasks,bills,notes')).toEqual([
+			'recipes',
+			'tasks',
+			'bills',
+			'notes'
+		]);
 	});
 
 	test('notes survive a list that leaves them out', () => {

@@ -564,10 +564,12 @@ export function seatOwnerAccount(memberId: string): { id: string; name: string }
  */
 export function addToPlan(ownerId: string, email: string): { id: string; name: string } {
 	const owner = resolvePlan(ownerId);
-	if (owner.plan === 'none') throw new ValidationError('This plan is not active');
+	if (owner.plan === 'none')
+		throw new ValidationError({ key: 'errors.subscriptions.thisPlanIsNotActive' });
 
 	const seats = seatsFor(ownerId);
-	if (seats <= 1) throw new ValidationError('This plan covers one account');
+	if (seats <= 1)
+		throw new ValidationError({ key: 'errors.subscriptions.thisPlanCoversOneAccount' });
 
 	// The payer holds a seat too, which is why the comparison is against
 	// seats - 1 rather than seats. Offers count: see `seatsTaken`.
@@ -578,17 +580,19 @@ export function addToPlan(ownerId: string, email: string): { id: string; name: s
 	const wanted = String(email ?? '')
 		.trim()
 		.toLowerCase();
-	if (!wanted) throw new ValidationError('An email address is needed');
+	if (!wanted) throw new ValidationError({ key: 'errors.subscriptions.anEmailAddressIsNeeded' });
 
 	const account = db.select().from(user).where(eq(user.email, wanted)).get();
 	// Deliberately the same message either way: whether an address has an
 	// account here is not a payer's business to learn by typing addresses in.
 	if (!account || account.id === ownerId) {
-		throw new ValidationError('No account here uses that address');
+		throw new ValidationError({ key: 'errors.subscriptions.noAccountHereUses' });
 	}
 
-	if (seatOwnerOf(account.id)) throw new ValidationError('That account is already on a plan');
-	if (invitationFor(account.id)) throw new ValidationError('That account has already been asked');
+	if (seatOwnerOf(account.id))
+		throw new ValidationError({ key: 'errors.subscriptions.thatAccountIsAlready' });
+	if (invitationFor(account.id))
+		throw new ValidationError({ key: 'errors.subscriptions.thatAccountHasAlreadyBeen' });
 
 	const theirs = db
 		.select({ id: subscriptions.id })
@@ -596,7 +600,7 @@ export function addToPlan(ownerId: string, email: string): { id: string; name: s
 		.where(eq(subscriptions.userId, account.id))
 		.get();
 	if (theirs && resolvePlan(account.id).plan !== 'none') {
-		throw new ValidationError('That account already pays for itself');
+		throw new ValidationError({ key: 'errors.subscriptions.thatAccountAlreadyPays' });
 	}
 
 	// An offer, not a seat. `accepted_at` stays null until the other account
@@ -623,17 +627,15 @@ export function acceptPlanInvite(memberId: string): { ownerId: string } {
 		.from(planMembers)
 		.where(and(eq(planMembers.memberId, memberId), isNull(planMembers.acceptedAt)))
 		.get();
-	if (!row) throw new NotFoundError('There is no invitation waiting');
+	if (!row) throw new NotFoundError({ key: 'errors.subscriptions.thereIsNoInvitationWaiting' });
 
 	const own = resolvePlan(memberId);
 	if (own.billable && own.plan !== 'none') {
-		throw new ValidationError(
-			'You are paying for this account yourself. Cancel your own subscription first, then accept.'
-		);
+		throw new ValidationError({ key: 'errors.subscriptions.youArePaying' });
 	}
 
 	if (resolvePlan(row.ownerId).plan === 'none') {
-		throw new ValidationError('That plan is no longer active');
+		throw new ValidationError({ key: 'errors.subscriptions.thatPlanIsNoLonger' });
 	}
 
 	db.update(planMembers)
@@ -650,7 +652,8 @@ export function declinePlanInvite(memberId: string): void {
 		.delete(planMembers)
 		.where(and(eq(planMembers.memberId, memberId), isNull(planMembers.acceptedAt)))
 		.run();
-	if (result.changes === 0) throw new NotFoundError('There is no invitation waiting');
+	if (result.changes === 0)
+		throw new NotFoundError({ key: 'errors.subscriptions.thereIsNoInvitationWaiting' });
 	record(memberId, 'seat_declined');
 }
 
@@ -666,7 +669,8 @@ export function cancelPlanInvite(ownerId: string, memberId: string): void {
 			)
 		)
 		.run();
-	if (result.changes === 0) throw new NotFoundError('There is no invitation waiting');
+	if (result.changes === 0)
+		throw new NotFoundError({ key: 'errors.subscriptions.thereIsNoInvitationWaiting' });
 	record(ownerId, 'seat_offer_withdrawn', { detail: { member: memberId } });
 }
 

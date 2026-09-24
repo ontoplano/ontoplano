@@ -20,6 +20,10 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **Refusals are in your own language.** "A notebook by that name already
+  exists" and two hundred and fifty-six sentences like it were English
+  wherever you read the app — which is the wrong moment to be handed a
+  language you did not choose. They are translated now, in all four.
 - **A habit's day is logged once.** Two presses arriving together — a double
   tap, a form sent twice — could both land, giving one day two squares' worth
   of credit and a streak that counted it more than once. Any day already

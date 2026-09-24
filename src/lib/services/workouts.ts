@@ -284,7 +284,7 @@ function ownedCategory(ctx: Ctx, value: unknown): number | null {
 		.from(workoutCategories)
 		.where(and(eq(workoutCategories.id, id), eq(workoutCategories.userId, ctx.userId)))
 		.get();
-	if (!owned) throw new ValidationError('That is not one of your workout kinds.');
+	if (!owned) throw new ValidationError({ key: 'errors.workouts.thatIsNotOne' });
 	return id;
 }
 
@@ -345,7 +345,7 @@ export function setWorkoutMeasures(ctx: Ctx, workoutId: number, raw: unknown): v
 	getWorkout(ctx, workoutId); // ownership
 
 	if (raw !== undefined && raw !== null && !Array.isArray(raw))
-		throw new ValidationError('Measures have to be a list');
+		throw new ValidationError({ key: 'errors.workouts.measuresHave' });
 	const rows = ((raw ?? []) as { activity?: unknown; unit?: unknown }[])
 		.filter((row) => row && String(row.activity ?? '').trim() !== '')
 		.map((row) => ({
@@ -550,7 +550,7 @@ const DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 function measureRows(raw: unknown): { activity: string; amount: number | null; unit: string }[] {
 	if (raw === undefined || raw === null) return [];
-	if (!Array.isArray(raw)) throw new ValidationError('Measures have to be a list');
+	if (!Array.isArray(raw)) throw new ValidationError({ key: 'errors.workouts.measuresHave' });
 	if (raw.length > MAX_MEASURES_PER_SESSION)
 		throw new ValidationError(`A session takes at most ${MAX_MEASURES_PER_SESSION} lines`);
 

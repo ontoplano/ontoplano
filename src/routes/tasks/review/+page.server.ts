@@ -64,7 +64,7 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 function sortOf(raw: FormDataEntryValue | null): 'todo' | 'idea' | 'inventory' {
 	const v = String(raw ?? '');
 	if (v === 'todo' || v === 'idea' || v === 'inventory') return v;
-	throw new ValidationError('Unknown kind');
+	throw new ValidationError({ key: 'errors.review.unknownKind' });
 }
 
 export const actions = {
@@ -128,7 +128,8 @@ export const actions = {
 		const formData = await request.formData();
 		try {
 			const raw = String(formData.get('status') ?? '');
-			if (raw !== 'done' && raw !== 'skipped') throw new ValidationError('Invalid status');
+			if (raw !== 'done' && raw !== 'skipped')
+				throw new ValidationError({ key: 'errors.review.invalidStatus' });
 
 			const ctx = buildCtx(locals.user!.id);
 			const resolved = resolveLoose(

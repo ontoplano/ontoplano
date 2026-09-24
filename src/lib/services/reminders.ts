@@ -96,7 +96,8 @@ export function localNow(ctx: Ctx): string {
 /** Minutes before a block starts, as the wall-clock time to fire at. */
 function minutesBefore(scheduledAt: string, lead: number): string {
 	const at = new Date(`${scheduledAt.slice(0, 19)}`);
-	if (isNaN(at.getTime())) throw new ValidationError('That block has no time on it');
+	if (isNaN(at.getTime()))
+		throw new ValidationError({ key: 'errors.reminders.thatBlockHasNoTime' });
 	at.setMinutes(at.getMinutes() - lead);
 
 	const pad = (n: number) => String(n).padStart(2, '0');
@@ -333,7 +334,7 @@ function remindAtFrom(ctx: Ctx, given: unknown): string {
 	const at = String(given ?? '').trim();
 	const dayOnly = /^\d{4}-\d{2}-\d{2}$/.test(at);
 	if (!dayOnly && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/.test(at)) {
-		throw new ValidationError('That is not a day, or a day and a time.');
+		throw new ValidationError({ key: 'errors.reminders.thatIsNotADay' });
 	}
 	const when = dayOnly ? `${at}T${startOfDay(ctx.userId)}:00` : at.length === 16 ? `${at}:00` : at;
 
@@ -522,7 +523,7 @@ export function editReminder(
 			.set(change)
 			.where(and(eq(reminders.id, which), eq(reminders.userId, ctx.userId)))
 			.run().changes > 0;
-	if (!changed) throw new NotFoundError('No such reminder');
+	if (!changed) throw new NotFoundError({ key: 'errors.reminders.noSuchReminder' });
 
 	// Moving one is as much a change to the clock's next wake-up as adding one.
 	host.reminderScheduleChanged();

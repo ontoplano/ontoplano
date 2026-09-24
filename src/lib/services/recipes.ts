@@ -117,7 +117,7 @@ function firstFoodCategory(ctx: Ctx): { id: number; name: string } {
 		.where(eq(inventoryCategories.userId, ctx.userId))
 		.get();
 
-	if (any) throw new ValidationError('No shopping category holds food yet — tick one in settings');
+	if (any) throw new ValidationError({ key: 'errors.recipes.noShoppingCategoryHoldsFood' });
 
 	const id = db
 		.insert(inventoryCategories)

@@ -456,7 +456,7 @@ export function toggleSlotActive(ctx: Ctx, id: number): void {
 
 export function deleteSlots(ctx: Ctx, ids: number[]): void {
 	const wanted = ids.filter((n) => Number.isFinite(n) && n > 0);
-	if (wanted.length === 0) throw new ValidationError('No slots selected');
+	if (wanted.length === 0) throw new ValidationError({ key: 'errors.slots.noSlotsSelected' });
 
 	const owned = db
 		.select({ id: recurringTasks.id })
@@ -506,8 +506,9 @@ export function copySlotsToWeekdays(ctx: Ctx, ids: number[], days: number[]): vo
 	const wanted = ids.filter((n) => Number.isFinite(n) && n > 0);
 	const targetDays = days.filter((n) => Number.isInteger(n) && n >= 0 && n <= 6);
 
-	if (wanted.length === 0) throw new ValidationError('No slots selected');
-	if (targetDays.length === 0) throw new ValidationError('No target days selected');
+	if (wanted.length === 0) throw new ValidationError({ key: 'errors.slots.noSlotsSelected' });
+	if (targetDays.length === 0)
+		throw new ValidationError({ key: 'errors.slots.noTargetDaysSelected' });
 
 	const sources = db
 		.select()
@@ -880,7 +881,7 @@ export function importWeekCsv(
 		.map((l) => l.trim())
 		.filter((l) => l.length > 0);
 
-	if (lines.length < 2) throw new ValidationError('CSV must have a header and at least one row');
+	if (lines.length < 2) throw new ValidationError({ key: 'errors.slots.csvMustHaveAHeader' });
 
 	const known = new Map(
 		db
@@ -958,7 +959,7 @@ export function importWeekCsv(
 		}
 	}
 
-	if (rows.length === 0) throw new ValidationError('No valid slots found in CSV');
+	if (rows.length === 0) throw new ValidationError({ key: 'errors.slots.noValidSlotsFound' });
 
 	db.transaction((tx) => {
 		if (raw.clearExisting) clearWeeklyPlanIn(tx, ctx);
@@ -1040,13 +1041,16 @@ function parseBlock(ctx: Ctx, raw: BlockInput) {
 	const remindLeadMinutes = parseRemindLead(raw.remindLeadMinutes);
 
 	const categoryId = ownedCategoryId(ctx, raw.categoryId);
-	if (mode === 'category' && !categoryId) throw new ValidationError('Category required');
+	if (mode === 'category' && !categoryId)
+		throw new ValidationError({ key: 'errors.slots.categoryRequired' });
 
 	const activityId = mode === 'activity' ? resolveActivityId(ctx, raw) : null;
-	if (mode === 'activity' && !activityId) throw new ValidationError('Activity required');
+	if (mode === 'activity' && !activityId)
+		throw new ValidationError({ key: 'errors.slots.activityRequired' });
 
 	const workoutId = mode === 'workout' ? ownedWorkoutId(ctx, raw.workoutId) : null;
-	if (mode === 'workout' && !workoutId) throw new ValidationError('Workout required');
+	if (mode === 'workout' && !workoutId)
+		throw new ValidationError({ key: 'errors.slots.workoutRequired' });
 
 	return {
 		startTime,
@@ -1071,7 +1075,7 @@ function ownedWorkoutId(ctx: Ctx, value: unknown): number | null {
 		.where(and(eq(workouts.id, id), eq(workouts.userId, ctx.userId)))
 		.get();
 
-	if (!owned) throw new ValidationError('That workout is not yours.');
+	if (!owned) throw new ValidationError({ key: 'errors.slots.thatWorkoutIsNotYours' });
 	return id;
 }
 
@@ -1103,7 +1107,7 @@ function resolveActivityId(ctx: Ctx, raw: BlockInput): number | null {
 
 	const name = str(raw.newActivityName, 'Activity name', { max: MAX_ACTIVITY_NAME_LENGTH });
 	const categoryId = ownedCategoryId(ctx, raw.newActivityCategoryId);
-	if (!categoryId) throw new ValidationError('Category is required for the new activity');
+	if (!categoryId) throw new ValidationError({ key: 'errors.slots.categoryIsRequired' });
 
 	const existing = db
 		.select({ id: activities.id })

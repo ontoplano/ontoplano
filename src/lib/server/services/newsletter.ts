@@ -98,7 +98,7 @@ function normalise(raw: unknown): string {
 		.trim()
 		.toLowerCase();
 	if (!email || email.length > MAX_EMAIL_LENGTH || !EMAIL.test(email)) {
-		throw new ValidationError('That does not look like an email address.');
+		throw new ValidationError({ key: 'errors.newsletter.thatDoesNotLookLike' });
 	}
 	return email;
 }
@@ -117,7 +117,8 @@ function normalise(raw: unknown): string {
  * mail log where the operator sees it, not in an answer to a stranger.
  */
 export async function subscribe(rawEmail: unknown, source = 'site'): Promise<void> {
-	if (!newsletterEnabled()) throw new ValidationError('Not available here.');
+	if (!newsletterEnabled())
+		throw new ValidationError({ key: 'errors.newsletter.notAvailableHere' });
 
 	const email = normalise(rawEmail);
 	const existing = db.select().from(subscribers).where(eq(subscribers.email, email)).get();
@@ -287,7 +288,8 @@ export type Issue = { version: string; subject: string; lines: string[] };
  * person running it.
  */
 export async function announce(issue: Issue): Promise<{ sent: number; failed: number }> {
-	if (!newsletterEnabled()) throw new ValidationError('The newsletter is off on this instance.');
+	if (!newsletterEnabled())
+		throw new ValidationError({ key: 'errors.newsletter.theNewsletterIsOff' });
 	if (announced(issue.version))
 		throw new ValidationError(`${issue.version} has already gone out to the list.`);
 

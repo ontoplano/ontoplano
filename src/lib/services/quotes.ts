@@ -64,8 +64,8 @@ export function importQuotes(ctx: Ctx, raw: unknown): QuoteImport {
 		.map((line) => line.trim())
 		.filter(Boolean);
 
-	if (lines.length === 0) throw new ValidationError('Nothing to import');
-	if (lines.length > 500) throw new ValidationError('That is more than 500 quotes');
+	if (lines.length === 0) throw new ValidationError({ key: 'errors.quotes.nothingToImport' });
+	if (lines.length > 500) throw new ValidationError({ key: 'errors.quotes.thatIsMoreThan500' });
 
 	const existing = new Set(listQuotes(ctx).map((q) => q.text));
 	let added = 0;

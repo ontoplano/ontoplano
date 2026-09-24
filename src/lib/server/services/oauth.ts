@@ -91,8 +91,9 @@ export function registerClient(input: {
 	const name = str(input.name ?? 'An assistant', 'client name', { max: MAX_CLIENT_NAME });
 
 	const asked = Array.isArray(input.redirectUris) ? input.redirectUris : [];
-	if (asked.length === 0) throw new ValidationError('redirect_uris is required');
-	if (asked.length > MAX_REDIRECT_URIS) throw new ValidationError('Too many redirect_uris');
+	if (asked.length === 0) throw new ValidationError({ key: 'errors.oauth.redirectUrisIsRequired' });
+	if (asked.length > MAX_REDIRECT_URIS)
+		throw new ValidationError({ key: 'errors.oauth.tooManyRedirectUris' });
 
 	const redirectUris = asked.map((one) => {
 		const uri = str(one, 'redirect_uri', { max: MAX_URI_LENGTH });

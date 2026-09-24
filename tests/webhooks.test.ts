@@ -8,6 +8,7 @@
 import { createHmac } from 'node:crypto';
 import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from 'vitest';
 import { makeDatabase, OWNER, STRANGER, seedAccounts } from './helpers/db';
+import { refusal } from './helpers/refusal';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -39,9 +40,11 @@ describe('subscribing', () => {
 	});
 
 	test('unknown events are refused, not silently dropped to none', () => {
-		expect(() =>
-			s.createSubscription(ctx, { url: 'https://example.com/hook', events: ['nonsense'] })
-		).toThrow(/at least one/i);
+		expect(
+			refusal(() =>
+				s.createSubscription(ctx, { url: 'https://example.com/hook', events: ['nonsense'] })
+			)
+		).toMatch(/at least one/i);
 	});
 
 	test('a stranger deleting my subscription gets the same answer as for one that never existed', () => {
@@ -50,8 +53,8 @@ describe('subscribing', () => {
 			events: ['todo.created']
 		});
 		const stranger = { ...ctx, userId: STRANGER };
-		expect(() => s.deleteSubscription(stranger, sub.id)).toThrow(/not found/i);
-		expect(() => s.deleteSubscription(stranger, 999_999)).toThrow(/not found/i);
+		expect(refusal(() => s.deleteSubscription(stranger, sub.id))).toMatch(/not found/i);
+		expect(refusal(() => s.deleteSubscription(stranger, 999_999))).toMatch(/not found/i);
 	});
 
 	test('a hosted instance refuses private addresses; self-hosted may point anywhere', () => {
@@ -76,9 +79,11 @@ describe('subscribing', () => {
 	test('there is a ceiling on subscriptions', () => {
 		for (let i = 0; i < 10; i++)
 			s.createSubscription(ctx, { url: `https://example.com/hook/${i}`, events: ['todo.created'] });
-		expect(() =>
-			s.createSubscription(ctx, { url: 'https://example.com/hook/10', events: ['todo.created'] })
-		).toThrow(/at most/i);
+		expect(
+			refusal(() =>
+				s.createSubscription(ctx, { url: 'https://example.com/hook/10', events: ['todo.created'] })
+			)
+		).toMatch(/at most/i);
 	});
 });
 

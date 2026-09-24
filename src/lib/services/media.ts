@@ -184,7 +184,8 @@ export async function store(
 ): Promise<Picture> {
 	const limits = mediaLimits();
 
-	if (!input.bytes || input.bytes.length === 0) throw new ValidationError('That file was empty.');
+	if (!input.bytes || input.bytes.length === 0)
+		throw new ValidationError({ key: 'errors.media.thatFileWasEmpty' });
 	if (input.bytes.length > limits.maxBytes)
 		throw new ValidationError(
 			`Pictures here are at most ${limits.maxKilobytes}KB, and that one is ${Math.ceil(
@@ -193,10 +194,7 @@ export async function store(
 		);
 
 	const kind = sniff(input.bytes);
-	if (!kind)
-		throw new ValidationError(
-			'That is not a picture this instance takes — JPEG, PNG, GIF or WebP.'
-		);
+	if (!kind) throw new ValidationError({ key: 'errors.media.thatIsNotAPicture' });
 
 	const sha256 = await sha256Hex(input.bytes);
 	const existing = db
@@ -259,7 +257,7 @@ export function read(ctx: Ctx, id: number): { mime: string; filename: string; by
 		.from(media)
 		.where(and(eq(media.id, id), eq(media.userId, ctx.userId), isPicture))
 		.get();
-	if (!row) throw new NotFoundError('No such picture.');
+	if (!row) throw new NotFoundError({ key: 'errors.media.noSuchPicture' });
 	return { mime: row.mime, filename: row.filename, bytes: new Uint8Array(row.bytes) };
 }
 
@@ -325,7 +323,7 @@ export function remove(ctx: Ctx, id: number): void {
 		.delete(media)
 		.where(and(eq(media.id, id), eq(media.userId, ctx.userId)))
 		.run();
-	if (gone.changes === 0) throw new NotFoundError('No such picture.');
+	if (gone.changes === 0) throw new NotFoundError({ key: 'errors.media.noSuchPicture' });
 }
 
 /** Remove it only if nothing points at it any more. Returns whether it went. */
@@ -379,7 +377,7 @@ function assertOwnsPerson(ctx: Ctx, personId: number): void {
 		.from(people)
 		.where(and(eq(people.id, personId), eq(people.userId, ctx.userId)))
 		.get();
-	if (!found) throw new NotFoundError('No such person.');
+	if (!found) throw new NotFoundError({ key: 'errors.media.noSuchPerson' });
 }
 
 /** Give somebody a face, replacing whatever was there. */
@@ -432,7 +430,7 @@ function assertOwnsNotebook(ctx: Ctx, notebookId: number): void {
 		.from(notebooks)
 		.where(and(eq(notebooks.id, notebookId), eq(notebooks.userId, ctx.userId)))
 		.get();
-	if (!found) throw new NotFoundError('No such notebook.');
+	if (!found) throw new NotFoundError({ key: 'errors.media.noSuchNotebook' });
 }
 
 /**
@@ -523,7 +521,7 @@ function assertOwnsRecipe(ctx: Ctx, recipeId: number): void {
 		.from(recipes)
 		.where(and(eq(recipes.id, recipeId), eq(recipes.userId, ctx.userId)))
 		.get();
-	if (!found) throw new NotFoundError('No such recipe.');
+	if (!found) throw new NotFoundError({ key: 'errors.media.noSuchRecipe' });
 }
 
 /**
@@ -550,7 +548,7 @@ export async function attachToRecipe(
 	const picture = await store(ctx, input);
 
 	if (already.some((p) => p.id === picture.id))
-		throw new ValidationError('That picture is already on this recipe.');
+		throw new ValidationError({ key: 'errors.media.thatPictureIsAlready' });
 
 	db.insert(recipeImages)
 		.values({
@@ -580,7 +578,8 @@ export function detachFromRecipe(ctx: Ctx, recipeId: number, mediaId: number): v
 			)
 		)
 		.run();
-	if (gone.changes === 0) throw new NotFoundError('No such picture on this recipe.');
+	if (gone.changes === 0)
+		throw new NotFoundError({ key: 'errors.media.noSuchPictureOnThisRecipe' });
 
 	// The gallery keeps a main one as long as it has anything in it.
 	const left = picturesOf(ctx, recipeId);
@@ -610,7 +609,7 @@ export function setMain(ctx: Ctx, recipeId: number, mediaId: number): void {
 			)
 		)
 		.get();
-	if (!target) throw new NotFoundError('No such picture on this recipe.');
+	if (!target) throw new NotFoundError({ key: 'errors.media.noSuchPictureOnThisRecipe' });
 
 	db.transaction((tx) => {
 		tx.update(recipeImages)

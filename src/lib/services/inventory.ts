@@ -183,7 +183,7 @@ export function createCategory(ctx: Ctx, raw: { name: unknown; isFood?: unknown 
 			)
 		)
 		.get();
-	if (existing) throw new ValidationError('There is already a category with that name');
+	if (existing) throw new ValidationError({ key: 'errors.inventory.thereIsAlreadyACategory' });
 
 	const last =
 		db
@@ -224,7 +224,7 @@ export function renameCategory(ctx: Ctx, id: number, raw: unknown): void {
 		)
 		.get();
 	if (clash && clash.id !== id)
-		throw new ValidationError('There is already a category with that name');
+		throw new ValidationError({ key: 'errors.inventory.thereIsAlreadyACategory' });
 
 	const res = db
 		.update(inventoryCategories)
@@ -473,7 +473,7 @@ export function deleteItem(ctx: Ctx, id: number): void {
 export function setQty(ctx: Ctx, id: number, wanted: number, raw: { paid?: unknown } = {}): void {
 	const item = ownedItem(ctx, id);
 	const qty = Math.max(0, Math.floor(Number.isFinite(wanted) ? wanted : 0));
-	if (qty > 9999) throw new ValidationError('That is more of one thing than a home holds.');
+	if (qty > 9999) throw new ValidationError({ key: 'errors.inventory.thatIsMoreOfOne' });
 
 	const enough = Math.max(item.idealQty ?? 1, 1);
 	const bought = qty >= enough;
@@ -562,7 +562,7 @@ export function recordPaid(ctx: Ctx, id: number, raw: unknown): void {
 	ownedItem(ctx, id);
 
 	const paid = parseMoney(raw, getCurrency(ctx.userId));
-	if (paid === null) throw new ValidationError('Invalid price');
+	if (paid === null) throw new ValidationError({ key: 'errors.inventory.invalidPrice' });
 
 	db.transaction((tx) => {
 		tx.insert(pricePoints)
@@ -635,7 +635,8 @@ export function priceDrift(
 /** Put a replenish item back on the list; a wishlist item has nothing to restock. */
 export function restockItem(ctx: Ctx, id: number): void {
 	const item = ownedItem(ctx, id);
-	if (item.type !== 'replenish') throw new ValidationError('Only replenish items can be restocked');
+	if (item.type !== 'replenish')
+		throw new ValidationError({ key: 'errors.inventory.onlyReplenishItemsCan' });
 
 	// "We are out of it" is a count of none, not a flag: through setQty so the
 	// two cannot disagree.
@@ -705,7 +706,7 @@ function parseItem(ctx: Ctx, raw: ItemInput) {
 function parseIdealQty(value: unknown): number {
 	if (value === undefined || value === null || value === '') return 1;
 	const n = num(value, 'ideal quantity', { int: true, min: 0 });
-	if (n > 9999) throw new ValidationError('That is more of one thing than a home holds.');
+	if (n > 9999) throw new ValidationError({ key: 'errors.inventory.thatIsMoreOfOne' });
 	return n;
 }
 
@@ -718,7 +719,7 @@ function parseLocationId(ctx: Ctx, value: unknown): number | null {
 		.from(locations)
 		.where(and(eq(locations.id, id), eq(locations.userId, ctx.userId)))
 		.get();
-	if (!owned) throw new ValidationError('That is not one of your locations.');
+	if (!owned) throw new ValidationError({ key: 'errors.inventory.thatIsNotOne' });
 	return id;
 }
 

@@ -17,6 +17,8 @@
 import type { Ctx } from '$lib/services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 import { ForbiddenError, ServiceError } from '$lib/services/errors.js';
+import { translator, type MessageKey, type MessageValues } from '$lib/i18n/core.js';
+import { messages as englishMessages } from '$lib/i18n/catalogues/en.js';
 import { TOOLS, TOOLS_BY_NAME, type Tool } from './tools.js';
 import { assertRefs, madeRow, resolveRef, type Reach, type Ref } from './refs.js';
 import { confine, reachOf, withinConfinement, type Confinement } from './confinement.js';
@@ -315,8 +317,18 @@ function toolFailure(message: string) {
 	};
 }
 
+/**
+ * The tools speak English, whatever the account reads the app in — so a
+ * refusal that carries a message key is read out of the English catalogue
+ * here rather than handed over as `errors.schedule.aDayLooksLike2026`.
+ */
+const english = translator('en', englishMessages) as (
+	key: MessageKey,
+	values?: MessageValues
+) => string;
+
 function messageOf(e: unknown): string {
-	if (e instanceof ServiceError) return e.message;
+	if (e instanceof ServiceError) return e.key ? english(e.key, e.values) : e.message;
 	if (e instanceof Error) return e.message;
 	return 'Something went wrong.';
 }

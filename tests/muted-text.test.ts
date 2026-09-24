@@ -35,7 +35,6 @@ const ALLOWED: Record<string, number> = {
 	'src/routes/finance/ledgers/+page.svelte': 3,
 	// Finished, hidden, or not the chosen one — dimmed on purpose.
 	'src/lib/components/Backlinks.svelte': 1,
-	'src/lib/components/GoalCard.svelte': 2,
 	'src/lib/components/GoalLinksModal.svelte': 1,
 	'src/lib/components/NotebookDetail.svelte': 2,
 	// One chevron, and two greyings of a finished task.

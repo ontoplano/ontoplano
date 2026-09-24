@@ -69,7 +69,17 @@ function stillTurning(): boolean {
 	return pending.length > 0;
 }
 
+/**
+ * The mark the app hands over, and the layer inside it that turns.
+ *
+ * Only the medallion moves — the rim of the mark stands still — so the element
+ * given to `startMarkSpin` is not the element that gets a `rotate`. A bare node
+ * with no medallion in it turns nothing at all, which is deliberate: the phone
+ * bar draws a plain octagon behind the mark, and turning that swept its corners
+ * out past a rim that had stopped.
+ */
 let mark: HTMLElement;
+let medallion: HTMLElement;
 
 beforeEach(async () => {
 	clock = 0;
@@ -85,6 +95,9 @@ beforeEach(async () => {
 
 	document.body.innerHTML = '';
 	mark = document.createElement('div');
+	medallion = document.createElement('img');
+	medallion.className = 'mark-turn';
+	mark.append(medallion);
 	document.body.append(mark);
 
 	vi.resetModules();
@@ -99,7 +112,31 @@ describe('the turn that answers a press', () => {
 	test('starts painting at once, rather than after a delay', () => {
 		startMarkSpin([mark], 0);
 		frames(4);
-		expect(angleOf(mark), 'nothing was drawn').toBeGreaterThan(0);
+		expect(angleOf(medallion), 'nothing was drawn').toBeGreaterThan(0);
+	});
+
+	test('turns the medallion and not the mark around it', () => {
+		startMarkSpin([mark], 0);
+		frames(4);
+		expect(angleOf(mark), 'the rim turned with it').toBe(0);
+	});
+
+	/*
+	 * The phone bar's ground is one of these: an octagon of flat colour behind
+	 * the mark, handed to the turn along with it back when the whole mark
+	 * turned. Once the turn became a disc inside the ring, it went on
+	 * revolving behind a rim that had stopped — corners sweeping out past the
+	 * edge, in a colour meant never to be seen as a shape.
+	 */
+	test('and leaves alone anything handed to it that is not a mark', () => {
+		const ground = document.createElement('span');
+		document.body.append(ground);
+
+		startMarkSpin([ground, mark], 0);
+		frames(8);
+
+		expect(angleOf(ground), 'something behind the mark was turned').toBe(0);
+		expect(angleOf(medallion)).toBeGreaterThan(0);
 	});
 
 	/**
@@ -114,7 +151,7 @@ describe('the turn that answers a press', () => {
 	test('every turn moves, however the caller asked for it', () => {
 		startMarkSpin([mark]);
 		frames(4);
-		expect(angleOf(mark)).toBeGreaterThan(0);
+		expect(angleOf(medallion)).toBeGreaterThan(0);
 	});
 });
 
@@ -123,10 +160,10 @@ describe('a turn nobody has stopped', () => {
 		startMarkSpin([mark], 0);
 		frames(120);
 		// Several revolutions in, and still turning: the wait is what ends it.
-		expect(angleOf(mark)).toBeGreaterThan(720);
-		const far = angleOf(mark);
+		expect(angleOf(medallion)).toBeGreaterThan(720);
+		const far = angleOf(medallion);
 		frames(30);
-		expect(angleOf(mark)).toBeGreaterThan(far);
+		expect(angleOf(medallion)).toBeGreaterThan(far);
 	});
 });
 
@@ -134,7 +171,7 @@ describe('a turn that has been asked to stop', () => {
 	test('finishes its revolution and rests upright', async () => {
 		startMarkSpin([mark], 0);
 		frames(20);
-		const caught = angleOf(mark);
+		const caught = angleOf(medallion);
 		expect(caught).toBeGreaterThan(0);
 
 		const landed = stopMarkSpin();
@@ -145,7 +182,7 @@ describe('a turn that has been asked to stop', () => {
 
 		// And it went most of the way round to get there rather than stopping
 		// where it stood: a landing, not a halt.
-		expect(angleOf(mark)).toBeGreaterThan(caught + 90);
+		expect(angleOf(medallion)).toBeGreaterThan(caught + 90);
 	});
 
 	test('goes round once even when it is stopped in the same tick', async () => {
@@ -159,7 +196,7 @@ describe('a turn that has been asked to stop', () => {
 		startMarkSpin([mark], 0);
 		const landed = stopMarkSpin();
 		frames(20);
-		expect(angleOf(mark), 'it rested without turning').toBeGreaterThan(0);
+		expect(angleOf(medallion), 'it rested without turning').toBeGreaterThan(0);
 
 		/*
 		 * A whole one, read frame by frame: resting takes the property off, so
@@ -173,7 +210,7 @@ describe('a turn that has been asked to stop', () => {
 		let furthest = 0;
 		for (let i = 0; i < 200; i += 1) {
 			frames(1);
-			furthest = Math.max(furthest, angleOf(mark));
+			furthest = Math.max(furthest, angleOf(medallion));
 		}
 		expect(furthest, 'it stopped short of a full turn').toBeGreaterThan(340);
 

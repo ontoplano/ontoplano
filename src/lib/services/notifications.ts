@@ -160,7 +160,8 @@ export function notifies(userId: string, id: NotificationId): boolean {
 /** The time one of the timed ones goes off, as `HH:MM`. */
 export function notifyAt(userId: string, id: NotificationId): string {
 	const what = byId.get(id);
-	if (!what?.time) throw new ValidationError('That notification has no time of its own.');
+	if (!what?.time)
+		throw new ValidationError({ key: 'errors.notifications.thatNotificationHasNoTime' });
 	return getUserSetting(userId, what.time.key) ?? what.time.of(userId);
 }
 
@@ -209,7 +210,7 @@ export function setNotification(
 	choice: { on: boolean; at?: unknown }
 ): void {
 	const what = byId.get(String(id ?? '') as NotificationId);
-	if (!what) throw new ValidationError('There is no such notification.');
+	if (!what) throw new ValidationError({ key: 'errors.notifications.thereIsNoSuchNotification' });
 
 	setUserSetting(ctx.userId, what.key, choice.on ? 'on' : 'off');
 
@@ -218,7 +219,8 @@ export function setNotification(
 		// The browser's time field hands back HH:MM; anything else is somebody
 		// posting the form themselves, and an hour nobody can mean is not a
 		// setting to store and puzzle over later.
-		if (!TIME_PATTERN.test(at)) throw new ValidationError('That is not a time of day.');
+		if (!TIME_PATTERN.test(at))
+			throw new ValidationError({ key: 'errors.notifications.thatIsNotATime' });
 		setUserSetting(ctx.userId, what.time.key, at);
 	}
 }

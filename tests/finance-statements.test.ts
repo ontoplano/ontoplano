@@ -11,6 +11,7 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
+import { refusal } from './helpers/refusal';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -127,28 +128,32 @@ describe('importing', () => {
 	});
 
 	test('text no parser recognises is refused with the parser named', () => {
-		expect(() =>
-			statements.importStatement(ctx, {
-				ledgerId: account,
-				source: 'nubank:conta_corrente',
-				text: 'hello,world'
-			})
-		).toThrow(/no lines matched/);
-		expect(() =>
-			statements.importStatement(ctx, {
-				ledgerId: card,
-				source: 'unknown:thing',
-				text: CREDIT_CARD
-			})
-		).toThrow(/No parser/);
+		expect(
+			refusal(() =>
+				statements.importStatement(ctx, {
+					ledgerId: account,
+					source: 'nubank:conta_corrente',
+					text: 'hello,world'
+				})
+			)
+		).toMatch(/no lines matched/);
+		expect(
+			refusal(() =>
+				statements.importStatement(ctx, {
+					ledgerId: card,
+					source: 'unknown:thing',
+					text: CREDIT_CARD
+				})
+			)
+		).toMatch(/No parser/);
 	});
 });
 
 describe('the rules', () => {
 	test('an invalid regular expression is refused before it is stored', () => {
-		expect(() => statements.createRule(ctx, { kind: 'tag', name: 'broken', pattern: '(' })).toThrow(
-			/regular expression/
-		);
+		expect(
+			refusal(() => statements.createRule(ctx, { kind: 'tag', name: 'broken', pattern: '(' }))
+		).toMatch(/regular expression/);
 	});
 
 	/*
@@ -159,9 +164,9 @@ describe('the rules', () => {
 	 * out.
 	 */
 	test('a pattern that could never finish is refused', () => {
-		expect(() =>
-			statements.createRule(ctx, { kind: 'tag', name: 'slow', pattern: '(a+)+$' })
-		).toThrow(/repetition inside a repetition/i);
+		expect(
+			refusal(() => statements.createRule(ctx, { kind: 'tag', name: 'slow', pattern: '(a+)+$' }))
+		).toMatch(/repetition inside a repetition/i);
 		expect(statements.listRules(ctx).some((r) => r.name === 'slow')).toBe(false);
 	});
 
@@ -225,9 +230,9 @@ describe('the rules', () => {
 	});
 
 	test('a broken pattern is refused with the engine\u2019s own complaint', () => {
-		expect(() =>
-			statements.updateRule(ctx, statements.listRules(ctx)[0].id, { pattern: 'a(' })
-		).toThrow(/not a valid expression/);
+		expect(
+			refusal(() => statements.updateRule(ctx, statements.listRules(ctx)[0].id, { pattern: 'a(' }))
+		).toMatch(/not a valid expression/);
 	});
 
 	test('tags overlap freely', () => {

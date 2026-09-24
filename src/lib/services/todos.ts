@@ -709,7 +709,7 @@ export function tagTodo(
 }
 
 export function setTodoStatus(ctx: Ctx, id: number, status: unknown): void {
-	if (!isStatus(status)) throw new ValidationError('Invalid status');
+	if (!isStatus(status)) throw new ValidationError({ key: 'errors.todos.invalidStatus' });
 
 	const res = db
 		.update(todoTasks)
@@ -809,8 +809,10 @@ export function delegateTodo(
 	const categoryId = ownedCategoryId(ctx, raw.categoryId);
 	const activityId = ownedActivityId(ctx, raw.activityId);
 
-	if (mode === 'category' && !categoryId) throw new ValidationError('Category required');
-	if (mode === 'activity' && !activityId) throw new ValidationError('Activity required');
+	if (mode === 'category' && !categoryId)
+		throw new ValidationError({ key: 'errors.todos.categoryRequired' });
+	if (mode === 'activity' && !activityId)
+		throw new ValidationError({ key: 'errors.todos.activityRequired' });
 
 	const todo = db
 		.select({ title: todoTasks.title, notebookId: todoTasks.notebookId })
@@ -892,7 +894,7 @@ function ownedActivityId(ctx: Ctx, value: unknown): number | null {
  */
 export function reorderTodos(ctx: Ctx, ids: unknown[]): void {
 	const ordered = ids.map(Number).filter((n) => Number.isFinite(n) && n > 0);
-	if (ordered.length === 0) throw new ValidationError('Bad ordering');
+	if (ordered.length === 0) throw new ValidationError({ key: 'errors.todos.badOrdering' });
 
 	const now = stamp(ctx);
 	db.transaction((tx) => {
@@ -943,7 +945,7 @@ export function demoteInstance(ctx: Ctx, instanceId: number): void {
 		.where(and(eq(taskRecords.id, instanceId), eq(taskRecords.userId, ctx.userId)))
 		.get();
 
-	if (!instance) throw new ValidationError('Only one-off blocks can go back to the todo list');
+	if (!instance) throw new ValidationError({ key: 'errors.todos.onlyOneOffBlocksCan' });
 
 	const sortOrder = nextSortOrder(ctx);
 

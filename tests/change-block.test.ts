@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
+import { refusal } from './helpers/refusal';
 
 /**
  * Moving a block, which the API could not do.
@@ -334,7 +335,9 @@ describe('what it refuses', () => {
 
 	test('a call that changes nothing, rather than pretending it did', () => {
 		const block = oneOff(MONDAY, '14:00', 90, 'Study block');
-		expect(() => instances.changeOccurrence(ctx, block.id, {})).toThrow(/nothing to change/i);
+		expect(refusal(() => instances.changeOccurrence(ctx, block.id, {}))).toMatch(
+			/nothing to change/i
+		);
 	});
 
 	/** Somebody else's block is not there, which is the same answer as not existing. */

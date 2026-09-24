@@ -71,9 +71,10 @@ export function addRingtone(
 	const mime = String(input.mime ?? '');
 
 	if (!(RINGTONE_TYPES as readonly string[]).includes(mime)) {
-		throw new ValidationError('That is not a sound file this app can play — MP3, OGG or WAV.');
+		throw new ValidationError({ key: 'errors.ringtones.thatIsNotASound' });
 	}
-	if (input.data.byteLength === 0) throw new ValidationError('That file is empty.');
+	if (input.data.byteLength === 0)
+		throw new ValidationError({ key: 'errors.ringtones.thatFileIsEmpty' });
 	if (input.data.byteLength > MAX_RINGTONE_BYTES) {
 		throw new ValidationError(
 			`That is ${Math.round(input.data.byteLength / 1024)} KB. The limit is ${MAX_RINGTONE_BYTES / 1024} KB.`
@@ -157,7 +158,7 @@ export function setSoundChoice(
 ): void {
 	const wanted = String(kind ?? '');
 	if (!(REMINDER_KINDS as readonly string[]).includes(wanted)) {
-		throw new ValidationError('That is not a kind of reminder.');
+		throw new ValidationError({ key: 'errors.ringtones.thatIsNotAKind' });
 	}
 
 	// A sound belonging to somebody else is not a sound: checked rather than

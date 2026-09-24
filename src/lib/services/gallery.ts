@@ -214,7 +214,7 @@ export function createAlbum(ctx: Ctx, input: { name: unknown }): Album {
 	if (existing.length >= limit)
 		throw new ValidationError(`This instance keeps at most ${limit} albums.`);
 	if (existing.some((a) => a.name === name))
-		throw new ConflictError('An album by that name already exists.');
+		throw new ConflictError({ key: 'errors.gallery.anAlbumByThatName' });
 	const inserted = db
 		.insert(albums)
 		.values({ userId: ctx.userId, name, sortOrder: existing.length, ...stamps(ctx) })

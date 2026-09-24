@@ -220,7 +220,7 @@ function ownedCategory(ctx: Ctx, value: unknown): number | null {
 		.from(categories)
 		.where(and(eq(categories.id, id), eq(categories.userId, ctx.userId)))
 		.get();
-	if (!owned) throw new ValidationError('That category is not yours.');
+	if (!owned) throw new ValidationError({ key: 'errors.bills.thatCategoryIsNotYours' });
 	return id;
 }
 
@@ -232,7 +232,7 @@ function ownedGoal(ctx: Ctx, value: unknown): number | null {
 		.from(goals)
 		.where(and(eq(goals.id, id), eq(goals.userId, ctx.userId)))
 		.get();
-	if (!owned) throw new ValidationError('That goal is not yours.');
+	if (!owned) throw new ValidationError({ key: 'errors.bills.thatGoalIsNotYours' });
 	return id;
 }
 

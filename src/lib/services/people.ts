@@ -57,7 +57,7 @@ function parseBirthday(value: unknown): string | null {
 		const day = Number(raw.slice(-2));
 		if (month >= 1 && month <= 12 && day >= 1 && day <= 31) return raw;
 	}
-	throw new ValidationError('A birthday looks like 1990-03-14, or --03-14 without the year');
+	throw new ValidationError({ key: 'errors.people.aBirthdayLooksLike1990' });
 }
 
 /**
@@ -133,7 +133,8 @@ export function createPerson(
 	}
 ): number {
 	const name = str(raw.name, 'name', { max: MAX_NAME_LENGTH });
-	if (personNamed(ctx, name)) throw new ConflictError('Somebody by that name already exists');
+	if (personNamed(ctx, name))
+		throw new ConflictError({ key: 'errors.people.somebodyByThatNameAlready' });
 
 	const result = db
 		.insert(people)
@@ -169,7 +170,8 @@ export function updatePerson(
 	const name = str(raw.name, 'name', { max: MAX_NAME_LENGTH });
 
 	const clash = personNamed(ctx, name);
-	if (clash && clash.id !== id) throw new ConflictError('Somebody by that name already exists');
+	if (clash && clash.id !== id)
+		throw new ConflictError({ key: 'errors.people.somebodyByThatNameAlready' });
 
 	const res = db
 		.update(people)
@@ -208,7 +210,7 @@ export function deletePerson(ctx: Ctx, id: number): void {
  */
 export function setEntryPeople(ctx: Ctx, entryId: number, raw: unknown): void {
 	const names = parsePeople(raw === undefined || raw === null ? '' : String(raw));
-	if (names.length > 25) throw new ValidationError('That is a lot of people for one entry');
+	if (names.length > 25) throw new ValidationError({ key: 'errors.people.thatIsALot' });
 
 	const owned = db
 		.select({ id: diaryEntries.id })
@@ -284,6 +286,7 @@ function assertOwned(ctx: Ctx, id: number): void {
 
 function parseRelationship(value: unknown): Relationship {
 	if (value === undefined || value === null || value === '') return 'other';
-	if (!isRelationship(value)) throw new ValidationError('Unknown relationship');
+	if (!isRelationship(value))
+		throw new ValidationError({ key: 'errors.people.unknownRelationship' });
 	return value;
 }

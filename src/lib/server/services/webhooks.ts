@@ -51,17 +51,17 @@ export const EVENT_HEADER = 'x-ontoplano-event';
  */
 function assertDeliverable(raw: unknown): string {
 	if (typeof raw !== 'string' || raw.length === 0 || raw.length > 300)
-		throw new ValidationError('Webhook address has to be a URL of at most 300 characters');
+		throw new ValidationError({ key: 'errors.webhooks.webhookAddress' });
 
 	let url: URL;
 	try {
 		url = new URL(raw);
 	} catch {
-		throw new ValidationError('Webhook address has to be a valid URL');
+		throw new ValidationError({ key: 'errors.webhooks.webhookAddressHasToBeAValid' });
 	}
 
 	if (url.protocol !== 'https:' && url.protocol !== 'http:')
-		throw new ValidationError('Webhook address has to be http or https');
+		throw new ValidationError({ key: 'errors.webhooks.webhookAddressHasToBeHttp' });
 
 	if (!isSelfHosted()) assertPublicUrl(raw, 'webhook address');
 
@@ -77,7 +77,8 @@ function eventsOf(raw: unknown): WebhookEvent[] {
 				.filter((e): e is WebhookEvent => (WEBHOOK_EVENTS as readonly string[]).includes(e))
 		)
 	];
-	if (events.length === 0) throw new ValidationError('At least one known event is required');
+	if (events.length === 0)
+		throw new ValidationError({ key: 'errors.webhooks.atLeastOneKnownEvent' });
 	return events;
 }
 

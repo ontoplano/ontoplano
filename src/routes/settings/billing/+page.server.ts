@@ -148,9 +148,7 @@ export const actions: Actions = {
 			// mail, and flipping back and forth is a spam machine, not a plan.
 			const budget = rateLimit(`billing-switch:${locals.user!.id}`, 2, 24 * 60 * 60 * 1000);
 			if (!budget.allowed) {
-				throw new RateLimitedError(
-					'You have already switched twice today. You can switch again tomorrow.'
-				);
+				throw new RateLimitedError({ key: 'errors.billing.youHaveAlreadySwitchedTwice' });
 			}
 			await changeInterval(locals.user!.id, interval);
 		} catch (e) {

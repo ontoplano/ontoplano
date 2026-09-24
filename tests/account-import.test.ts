@@ -14,6 +14,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { messages as english } from '../src/lib/i18n/catalogues/en';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
+import { refusal, refusalOf } from './helpers/refusal';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -260,10 +261,10 @@ describe('what does not travel', () => {
 
 describe('a file that is not an export', () => {
 	test('is refused with a sentence, not a stack trace', async () => {
-		expect(() => accountImport.parseExport('not json at all {')).toThrow(/not JSON/i);
-		expect(() => accountImport.parseExport('[]')).toThrow(/not an ontoplano export/i);
-		expect(() => accountImport.parseExport('{}')).toThrow(/no account data/i);
-		expect(() => accountImport.parseExport('{"data":{"todoTasks":"nope"}}')).toThrow(
+		expect(refusal(() => accountImport.parseExport('not json at all {'))).toMatch(/not JSON/i);
+		expect(refusal(() => accountImport.parseExport('[]'))).toMatch(/not an ontoplano export/i);
+		expect(refusal(() => accountImport.parseExport('{}'))).toMatch(/no account data/i);
+		expect(refusal(() => accountImport.parseExport('{"data":{"todoTasks":"nope"}}'))).toMatch(
 			/not a list of rows/i
 		);
 	});
@@ -277,9 +278,9 @@ describe('a file that is not an export', () => {
 	 */
 	test("is refused when it is too big to be anybody's data", async () => {
 		const huge = `{"data":{"todoTasks":[${'{},'.repeat(200_001).slice(0, -1)}]}}`;
-		expect(() => accountImport.parseExport(huge)).toThrow(/most one restore may carry/i);
+		expect(refusal(() => accountImport.parseExport(huge))).toMatch(/most one restore may carry/i);
 
-		expect(() => accountImport.parseExport('x'.repeat(20_000_001))).toThrow(/too big/i);
+		expect(refusal(() => accountImport.parseExport('x'.repeat(20_000_001)))).toMatch(/too big/i);
 	});
 
 	test('drops a value no column can hold rather than failing mid-restore', async () => {
@@ -328,25 +329,27 @@ describe('a file cannot lie about the type of its bytes', () => {
 
 	test('an HTML "picture" is refused, whole import and all', async () => {
 		const doc = Buffer.from('<script>fetch("/api/v1/export")</script>');
-		await expect(
-			accountImport.importAccount(STRANGER, {
-				exportedAt: now.toISOString(),
-				account: { id: 'x', name: 'x', email: 'someone@example.test' },
-				data: {
-					media: [
-						{
-							id: 1,
-							userId: 'x',
-							mime: 'text/html',
-							filename: 'photo.html',
-							byteSize: doc.length,
-							sha256: 'x',
-							bytes: doc.toString('base64')
-						}
-					]
-				}
-			})
-		).rejects.toThrow(/not a format this app accepts/);
+		expect(
+			await refusalOf(() =>
+				accountImport.importAccount(STRANGER, {
+					exportedAt: now.toISOString(),
+					account: { id: 'x', name: 'x', email: 'someone@example.test' },
+					data: {
+						media: [
+							{
+								id: 1,
+								userId: 'x',
+								mime: 'text/html',
+								filename: 'photo.html',
+								byteSize: doc.length,
+								sha256: 'x',
+								bytes: doc.toString('base64')
+							}
+						]
+					}
+				})
+			)
+		).toMatch(/not a format this app accepts/);
 	});
 
 	test('a real picture claiming a document type is stored under what its bytes say', async () => {
@@ -365,24 +368,26 @@ describe('a file cannot lie about the type of its bytes', () => {
 	});
 
 	test('a "sound" with a document type is refused the same way', async () => {
-		await expect(
-			accountImport.importAccount(STRANGER, {
-				exportedAt: now.toISOString(),
-				account: { id: 'x', name: 'x', email: 'someone@example.test' },
-				data: {
-					ringtones: [
-						{
-							id: 1,
-							userId: 'x',
-							name: 'chime',
-							mime: 'text/html',
-							bytes: 4,
-							data: Buffer.from('<h1>hi</h1>').toString('base64')
-						}
-					]
-				}
-			})
-		).rejects.toThrow(/not a format this app accepts/);
+		expect(
+			await refusalOf(() =>
+				accountImport.importAccount(STRANGER, {
+					exportedAt: now.toISOString(),
+					account: { id: 'x', name: 'x', email: 'someone@example.test' },
+					data: {
+						ringtones: [
+							{
+								id: 1,
+								userId: 'x',
+								name: 'chime',
+								mime: 'text/html',
+								bytes: 4,
+								data: Buffer.from('<h1>hi</h1>').toString('base64')
+							}
+						]
+					}
+				})
+			)
+		).toMatch(/not a format this app accepts/);
 	});
 });
 
@@ -450,7 +455,7 @@ describe('the preview, and the way through it offers', () => {
 	});
 
 	test('the refusal still stands by default', async () => {
-		await expect(accountImport.importAccount(STRANGER, file)).rejects.toThrow(
+		expect(await refusalOf(() => accountImport.importAccount(STRANGER, file))).toMatch(
 			/not a format this app accepts/
 		);
 	});

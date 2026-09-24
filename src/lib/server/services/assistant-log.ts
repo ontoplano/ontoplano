@@ -165,12 +165,13 @@ export function putBack(ctx: Ctx, id: number): { made: string } {
 		.where(and(eq(assistantCalls.id, id), eq(assistantCalls.userId, ctx.userId)))
 		.get();
 	if (!row) throw new NotFoundError('call');
-	if (!row.destroyed) throw new ValidationError('That call changed something; it deleted nothing.');
-	if (row.restoredAt) throw new ValidationError('Already put back.');
+	if (!row.destroyed)
+		throw new ValidationError({ key: 'errors.assistantLog.thatCallChangedSomething' });
+	if (row.restoredAt) throw new ValidationError({ key: 'errors.assistantLog.alreadyPutBack' });
 
 	const before = row.before === null ? null : parsed(row.before);
 	if (!before || typeof before !== 'object')
-		throw new ValidationError('Nothing was recorded to put back.');
+		throw new ValidationError({ key: 'errors.assistantLog.nothingWasRecordedToPut' });
 
 	const made = recreate(ctx, row.tool, before as Record<string, unknown>);
 
@@ -235,9 +236,7 @@ function recreate(ctx: Ctx, tool: string, before: Record<string, unknown>): stri
 			// a block or a todo belongs to its subject, and the honest fix is to
 			// set it again on the thing itself.
 			if (before.subjectKind !== 'free')
-				throw new ValidationError(
-					'That reminder belonged to something — set it again on the thing itself.'
-				);
+				throw new ValidationError({ key: 'errors.assistantLog.thatReminderBelongedToSomething' });
 			createFreeReminder(ctx, {
 				at: before.remindAt,
 				message: before.message,
@@ -282,7 +281,7 @@ function recreate(ctx: Ctx, tool: string, before: Record<string, unknown>): stri
 			// Which one is whatever the recorded goal had and the live one lacks,
 			// and it comes back standing where it stood.
 			const goal = listGoals(ctx, { includeClosed: true }).find((g) => g.id === Number(before.id));
-			if (!goal) throw new ValidationError('That goal is gone, so its measure has nowhere to go.');
+			if (!goal) throw new ValidationError({ key: 'errors.assistantLog.thatGoalIsGoneSo' });
 
 			const had = Array.isArray(before.targets)
 				? (before.targets as { unit?: unknown; targetValue?: unknown; currentValue?: unknown }[])
@@ -290,7 +289,8 @@ function recreate(ctx: Ctx, tool: string, before: Record<string, unknown>): stri
 			const missing = had.find(
 				(t) => !goal.targets.some((live) => live.unit === String(t.unit ?? ''))
 			);
-			if (!missing) throw new ValidationError('That measure is already back on the goal.');
+			if (!missing)
+				throw new ValidationError({ key: 'errors.assistantLog.thatMeasureIsAlreadyBack' });
 
 			const id = addGoalTarget(ctx, goal.id, { value: missing.targetValue, unit: missing.unit });
 			if (Number(missing.currentValue) > 0) setTargetProgress(ctx, id, missing.currentValue);
@@ -304,6 +304,6 @@ function recreate(ctx: Ctx, tool: string, before: Record<string, unknown>): stri
 		}
 
 		default:
-			throw new ValidationError('That call has no way back from here.');
+			throw new ValidationError({ key: 'errors.assistantLog.thatCallHasNoWay' });
 	}
 }
