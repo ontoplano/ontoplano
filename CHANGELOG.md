@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.183.5 — 2026-09-24
+
+- Select several tasks at once in the task list or a notebook: change their status, add or remove labels, move them to another notebook, or delete them after confirmation.
+
 ## 0.183.4 — 2026-09-24
 
 - **Every label you use is a tab of the writing room again.** The screen that

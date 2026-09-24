@@ -154,6 +154,16 @@ test.describe('one account cannot reach another account by id', () => {
 			create: { path: '/tasks/todo?/create', form: { heading: "alice's todo" } },
 			attack: (id) => ({ path: '/tasks/todo?/update', form: { id, heading: 'taken' } })
 		},
+		...(['status', 'tag', 'notebook', 'remove'] as const).map((verb) => ({
+			name: `task batch ${verb}`,
+			page: '/tasks/todo',
+			payloadKey: 'todos',
+			create: { path: '/tasks/todo?/create', form: { heading: "alice's selected task" } },
+			attack: (id: string) => ({
+				path: '/tasks/todo?/batch',
+				form: { id, do: verb, status: 'done', add: 'taken', notebookId: '' }
+			})
+		})),
 		{
 			name: 'habit',
 			page: '/health/habits',

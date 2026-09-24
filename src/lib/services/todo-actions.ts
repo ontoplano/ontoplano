@@ -6,11 +6,14 @@ import {
 	createTodo,
 	delegateTodo,
 	deleteTodo,
+	batchTodos,
+	isBatchVerb,
 	scheduleTodo,
 	setTodoStatus,
 	tagTodo,
 	updateTodo
 } from '$lib/services/todos';
+import { ValidationError } from '$lib/services/errors';
 import type { RequestEvent } from '@sveltejs/kit';
 
 /**
@@ -95,6 +98,33 @@ export const todoHandlers = {
 				remove: formData.get('remove')
 			});
 			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/*
+	 * The same verbs, over a selection.
+	 *
+	 * One action rather than four, because what differs between them is one
+	 * word and the fields that word reads — and a route that had to mount
+	 * `batchStatus`, `batchTag`, `batchNotebook` and `batchRemove` is four
+	 * names for one idea in two places each. `batchTodos` is where the rule
+	 * that matters lives: all of them or none.
+	 */
+	batch: async ({ request, locals }: Event) => {
+		const formData = await request.formData();
+		try {
+			const verb = formData.get('do');
+			if (!isBatchVerb(verb)) throw new ValidationError({ key: 'errors.todos.invalidBatch' });
+
+			const count = batchTodos(buildCtx(locals.user!.id), verb, formData.getAll('id'), {
+				status: formData.get('status'),
+				add: formData.get('add'),
+				remove: formData.get('remove'),
+				notebookId: formData.get('notebookId')
+			});
+			return { success: true, count };
 		} catch (e) {
 			return toActionFailure(e);
 		}

@@ -218,6 +218,11 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				body: 'tour.aTitleAndNothingElse'
 			},
 			{
+				target: '[data-tour="todo-selection"]',
+				title: 'todoRows.selectMany',
+				body: 'tour.taskSelection'
+			},
+			{
 				target: '[data-tour="todo-list"]',
 				title: 'tour.jAndKMoveE',
 				body: 'tour.handOffATodoWith'

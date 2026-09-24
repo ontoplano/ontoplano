@@ -6240,11 +6240,29 @@ The reverse of `promoteTodo`: a one-off block goes back to being a todo.
 Only one-offs can go back. A weekly block is a standing commitment, not a
 todo that happens to have a time.
 
+#### `isBatchVerb(value)`
+
+#### `batchTodos(ctx, verb, rawIds, what)`
+
+Do one thing to each of these, or do it to none of them.
+
+In a transaction on purpose. A batch that half worked is the worst of the
+three outcomes: the list comes back showing four of nine done and there is
+no way to tell which four without reading them, and no way to ask for "the
+rest" except by hand. Whichever row is refused — a notebook that is not
+this account's, a status that is not a status — takes the whole press with
+it, and the answer says so.
+
+`move` is `fileUnderNotebook`'s job rather than an update: a task moving
+into a notebook takes the next number free in it, and carrying the old one
+across collides with whatever already holds it.
+
 ### Types
 
 - `Todo`
 - `Tag`
 - `TodoInput`
+- `BatchVerb`
 
 ## tokens
 

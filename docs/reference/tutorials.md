@@ -31,7 +31,7 @@ under the pointer.
 | `/tasks/activities`                  | tour.activities   | 3     |
 | `/tasks/board`                       | tour.board        | 4     |
 | `/tasks/plan`                        | tour.plan         | 6     |
-| `/tasks/todo`                        | tour.toDo         | 3     |
+| `/tasks/todo`                        | tour.toDo         | 4     |
 
 Toured as well, though nothing obliges them to be — a screen reached from
 a link rather than from the navigation:
@@ -203,4 +203,5 @@ at the button that reopens it, so it is not listed here.
 
 1. tour.theThingsWithoutADay
 2. tour.oneLineIsEnough
-3. tour.jAndKMoveE
+3. todoRows.selectMany
+4. tour.jAndKMoveE

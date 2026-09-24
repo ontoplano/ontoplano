@@ -25,6 +25,7 @@
 	import Written from '$lib/components/Written.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import { autofocus } from '$lib/actions/autofocus';
 	import { armed } from '$lib/actions/armed';
 	import { matchScore } from '$lib/destinations';
 	import { getAction, keyFor } from '$lib/shortcuts';
@@ -36,7 +37,7 @@
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import { CLOSED_STATUSES } from '$lib/task-status';
+	import { STATUSES, STATUS_LABELS, CLOSED_STATUSES } from '$lib/task-status';
 	import { ordinal } from '$lib/ordinal';
 	import { keepInView } from '$lib/actions/keep-in-view';
 	import { invalidateAll } from '$app/navigation';
@@ -147,6 +148,44 @@
 		openNew?: (() => void) | undefined;
 		openTodo?: ((id: number) => void) | undefined;
 	} = $props();
+
+	let selecting = $state(false);
+	const chosen = new SvelteSet<number>();
+	let batchVerb = $state<'status' | 'tag' | 'notebook' | 'remove' | null>(null);
+	let batchError = $state<string | undefined>();
+
+	function endSelection() {
+		selecting = false;
+		chosen.clear();
+		batchVerb = null;
+		batchError = undefined;
+	}
+	function toggleSelected(id: number) {
+		if (chosen.has(id)) chosen.delete(id);
+		else chosen.add(id);
+	}
+	function openBatch(verb: NonNullable<typeof batchVerb>) {
+		batchError = undefined;
+		batchVerb = verb;
+	}
+	const batchLabels = {
+		status: 'todoRows.batchStatus',
+		tag: 'todoRows.batchTag',
+		notebook: 'todoRows.batchNotebook',
+		remove: 'todoRows.batchDelete'
+	} as const;
+	const submitBatch: SubmitFunction = () => {
+		batchError = undefined;
+		return async ({ update, result }) => {
+			await update({ reset: false });
+			if (result.type === 'success') {
+				endSelection();
+				say(t('todoRows.batchUpdated', { count: Number(result.data?.count ?? 0) }));
+			} else if (result.type === 'failure') {
+				batchError = String(result.data?.message ?? '');
+			}
+		};
+	};
 
 	let showForm = $state(false);
 	let editingId: number | null = $state(null);
@@ -559,6 +598,13 @@
 		);
 	});
 
+	// Only visible rows participate. Filtering cannot leave hidden tasks selected.
+	const selectedTodos = $derived(visibleTodos.filter((todo) => chosen.has(todo.id)));
+	$effect(() => {
+		const visible = new Set(visibleTodos.map((todo) => todo.id));
+		for (const id of chosen) if (!visible.has(id)) chosen.delete(id);
+	});
+
 	/**
 	 * Which row this is in the list on screen, live.
 	 *
@@ -868,6 +914,14 @@
 		if (!shortcutRoom) return;
 
 		if (e.key === 'Escape') {
+			if (batchVerb) {
+				batchVerb = null;
+				return;
+			}
+			if (selecting) {
+				endSelection();
+				return;
+			}
 			e.preventDefault();
 			showForm = false;
 			editingId = null;
@@ -884,6 +938,12 @@
 		)
 			return;
 
+		if (batchVerb || showForm || delegatingId !== null) return;
+		if (selecting && e.key === ' ' && !(e.target instanceof HTMLButtonElement)) {
+			e.preventDefault();
+			if (visibleTodos[selectedIndex]) toggleSelected(visibleTodos[selectedIndex].id);
+			return;
+		}
 		const action = getAction(shortcutRoom, e.key);
 		if (!action) return;
 		e.preventDefault();
@@ -910,6 +970,10 @@
 				}
 				break;
 			case 'toggle-done':
+				if (selecting) {
+					if (visibleTodos[selectedIndex]) toggleSelected(visibleTodos[selectedIndex].id);
+					break;
+				}
 				if (visibleTodos.length > 0 && visibleTodos[selectedIndex]) {
 					const f = document.getElementById(`toggle-form-${visibleTodos[selectedIndex].id}`);
 					if (f instanceof HTMLFormElement) f.requestSubmit();
@@ -925,6 +989,10 @@
 				}
 				break;
 			case 'delete':
+				if (selecting) {
+					if (selectedTodos.length) openBatch('remove');
+					break;
+				}
 				if (visibleTodos.length > 0 && visibleTodos[selectedIndex]) {
 					// Arms the confirmation only. Deleting takes a deliberate click.
 					confirmingDelete = visibleTodos[selectedIndex].id;
@@ -1196,6 +1264,71 @@
 				</FilterBar>
 			{/snippet}
 		</RoomToolbar>
+		<div
+			data-tour="todo-selection"
+			class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-4 py-2"
+		>
+			<button
+				type="button"
+				class="btn btn-sm w-36 shrink-0"
+				aria-pressed={selecting}
+				onclick={() => {
+					if (selecting) endSelection();
+					else selecting = true;
+				}}
+			>
+				{selecting ? t('ui.cancel') : t('todoRows.selectMany')}
+			</button>
+			<span
+				class="tabular min-w-24 text-xs text-gray-600"
+				aria-live="polite"
+				class:invisible={!selecting}
+			>
+				{t('todoRows.selectedCount', { count: selectedTodos.length })}
+			</span>
+			<div class="flex items-center gap-1" class:invisible={!selecting}>
+				<button
+					type="button"
+					class="icon-btn"
+					title={t('todoRows.selectVisible')}
+					aria-label={t('todoRows.selectVisible')}
+					disabled={!visibleTodos.length}
+					onclick={() => {
+						for (const todo of visibleTodos) chosen.add(todo.id);
+					}}><Icon name="check" /></button
+				>
+				<button
+					type="button"
+					class="icon-btn"
+					title={t('todoRows.clearSelection')}
+					aria-label={t('todoRows.clearSelection')}
+					disabled={!selectedTodos.length}
+					onclick={() => chosen.clear()}><Icon name="close" /></button
+				>
+				{#each ['status', 'tag', 'notebook', 'remove'] as verb (verb)}
+					{@const kind = verb as NonNullable<typeof batchVerb>}
+					<button
+						type="button"
+						class="icon-btn"
+						title={t(batchLabels[kind])}
+						aria-label={t(batchLabels[kind])}
+						disabled={!selectedTodos.length}
+						onclick={() => openBatch(kind)}
+					>
+						<Icon
+							name={kind === 'status'
+								? 'play'
+								: kind === 'tag'
+									? 'tag'
+									: kind === 'notebook'
+										? 'notebook'
+										: 'trash'}
+						/>
+					</button>
+				{/each}
+				<kbd class="text-xs" title={t('todoRows.selectionKeys')}>j/k · Space</kbd>
+			</div>
+		</div>
 		{#if visibleTodos.length === 0}
 			<!--
 				Empty because there is nothing, or empty because it is all hidden.
@@ -1254,6 +1387,8 @@
 			<div class="divide-y divide-gray-200" data-tour={listTour}>
 				{#each visibleTodos as todo, i (todo.id)}
 					<div
+						data-todo-id={todo.id}
+						class:bg-gray-100={selecting && chosen.has(todo.id)}
 						use:keepInView={shortcutRoom !== null && selectedIndex === i}
 						class="flex flex-wrap items-stretch gap-x-4 px-4 py-3 {shortcutRoom &&
 						selectedIndex === i
@@ -1277,20 +1412,38 @@
 							scale, or a taller card would draw a taller 4 than a short one.
 						-->
 						<div class="flex shrink-0 flex-col items-center gap-1 self-stretch">
-							<form
-								id="toggle-form-{todo.id}"
-								method="post"
-								action={actions.setStatus}
-								use:enhance={deferComplete(todo)}
-								class="flex"
-							>
-								<input type="hidden" name="id" value={todo.id} />
-								<input
-									type="hidden"
-									name="status"
-									value={todo.status === 'done' ? 'todo' : 'done'}
-								/>
-								<!--
+							{#if selecting}
+								<button
+									type="button"
+									role="checkbox"
+									aria-checked={chosen.has(todo.id)}
+									aria-label={t('todoRows.selectTask', { title: todo.title })}
+									title={t('todoRows.selectTask', { title: todo.title })}
+									class="-m-1 flex items-start justify-center self-start p-1 pointer-coarse:w-11"
+									onclick={() => toggleSelected(todo.id)}
+								>
+									<span
+										style="border-radius: 50%"
+										class="flex size-7 items-center justify-center border border-gray-500 hover:bg-gray-200"
+										class:bg-gray-200={chosen.has(todo.id)}
+										>{#if chosen.has(todo.id)}<Icon name="check" />{/if}</span
+									>
+								</button>
+							{:else}
+								<form
+									id="toggle-form-{todo.id}"
+									method="post"
+									action={actions.setStatus}
+									use:enhance={deferComplete(todo)}
+									class="flex"
+								>
+									<input type="hidden" name="id" value={todo.id} />
+									<input
+										type="hidden"
+										name="status"
+										value={todo.status === 'done' ? 'todo' : 'done'}
+									/>
+									<!--
 								As tall as the row it belongs to.
 
 								The box was 20px pinned to the top-left of a row that is often
@@ -1301,7 +1454,7 @@
 								rest of the row makes and gives the one action every row has the
 								size it deserves.
 							-->
-								<!--
+									<!--
 								At the top of the row, not down the middle of it.
 
 								It was `self-stretch` and centred, so on a task with notes,
@@ -1314,40 +1467,41 @@
 								week" is the question somebody asks of a list they are looking
 								back at.
 							-->
-								<button
-									type="submit"
-									class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
-									aria-label={isDone(todo)
-										? t('todoRows.markIncomplete')
-										: t('todoRows.markComplete')}
-									title={isDone(todo) && todo.completedAt
-										? t('todoRows.doneAgo', {
-												when: momentOf(todo.completedAt, now()),
-												ago: agoOf(todo.completedAt, now())
-											})
-										: undefined}
-								>
-									<!-- Blue while it is the one being worked on, so the state is
-									     on the box that owns it rather than only on the row. -->
-									<span
-										class="flex size-7 items-center justify-center border {isDone(todo)
-											? 'border-gray-400 bg-gray-400'
-											: todo.status === 'doing'
-												? 'doing-box'
-												: 'border-gray-400 bg-white'}"
+									<button
+										type="submit"
+										class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
+										aria-label={isDone(todo)
+											? t('todoRows.markIncomplete')
+											: t('todoRows.markComplete')}
+										title={isDone(todo) && todo.completedAt
+											? t('todoRows.doneAgo', {
+													when: momentOf(todo.completedAt, now()),
+													ago: agoOf(todo.completedAt, now())
+												})
+											: undefined}
 									>
-										{#if isDone(todo)}
-											<svg class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
-												<path
-													fill-rule="evenodd"
-													d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-													clip-rule="evenodd"
-												/>
-											</svg>
-										{/if}
-									</span>
-								</button>
-							</form>
+										<!-- Blue while it is the one being worked on, so the state is
+									     on the box that owns it rather than only on the row. -->
+										<span
+											class="flex size-7 items-center justify-center border {isDone(todo)
+												? 'border-gray-400 bg-gray-400'
+												: todo.status === 'doing'
+													? 'doing-box'
+													: 'border-gray-400 bg-white'}"
+										>
+											{#if isDone(todo)}
+												<svg class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
+													<path
+														fill-rule="evenodd"
+														d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+														clip-rule="evenodd"
+													/>
+												</svg>
+											{/if}
+										</span>
+									</button>
+								</form>
+							{/if}
 
 							<!--
 							Under the tick box, stacked.
@@ -1544,7 +1698,7 @@
 								the text, pushed right. Same here, at every width, because it
 								reads better on a laptop too.
 							-->
-							<div class="task-actions">
+							<div class="task-actions" inert={selecting} class:opacity-50={selecting}>
 								{#if !isDone(todo)}
 									<!--
 										What you are on, said on the list rather than only on the
@@ -1764,6 +1918,74 @@
 			</div>
 		{/if}
 	</div>
+
+	<Modal
+		open={batchVerb !== null}
+		title={batchVerb ? t(batchLabels[batchVerb]) : ''}
+		description={t('todoRows.selectedCount', { count: selectedTodos.length })}
+		error={batchError}
+		onclose={() => (batchVerb = null)}
+		size="sm"
+	>
+		{#if batchVerb}
+			<form id="todo-batch-form" method="post" action={actions.batch} use:enhance={submitBatch}>
+				<input type="hidden" name="do" value={batchVerb} />
+				{#each selectedTodos as todo (todo.id)}<input
+						type="hidden"
+						name="id"
+						value={todo.id}
+					/>{/each}
+				<FormGrid>
+					{#if batchVerb === 'status'}
+						<Field label={t('todoRows.batchStatus')} span={12}>
+							<select name="status" class="select" use:autofocus>
+								{#each STATUSES as status (status)}<option value={status}
+										>{t(STATUS_LABELS[status])}</option
+									>{/each}
+							</select>
+						</Field>
+					{:else if batchVerb === 'tag'}
+						<Field label={t('todoRows.addLabels')} span={12}
+							><input name="add" class="input" use:autofocus /></Field
+						>
+						<Field label={t('todoRows.removeLabels')} span={12}
+							><input name="remove" class="input" /></Field
+						>
+					{:else if batchVerb === 'notebook'}
+						<Field label={t('ui.notebook')} span={12}>
+							<select name="notebookId" class="select" use:autofocus>
+								<option value="">{t('todoRows.notInOne')}</option>
+								{#each notebooks as notebook (notebook.id)}<option value={notebook.id}
+										>{notebook.title}</option
+									>{/each}
+							</select>
+						</Field>
+					{:else}
+						<p class="col-span-12 text-sm text-gray-700">{t('todoRows.deleteSelectedWarning')}</p>
+					{/if}
+				</FormGrid>
+			</form>
+		{/if}
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={() => (batchVerb = null)}>{t('ui.cancel')}</button>
+			{#if batchVerb === 'remove'}
+				<button
+					type="submit"
+					form="todo-batch-form"
+					class="btn btn-danger"
+					use:armed
+					disabled={!selectedTodos.length}>{t('ui.delete')}</button
+				>
+			{:else}
+				<button
+					type="submit"
+					form="todo-batch-form"
+					class="btn btn-primary"
+					disabled={!selectedTodos.length}>{t('ui.save')}</button
+				>
+			{/if}
+		{/snippet}
+	</Modal>
 
 	<Modal
 		bind:open={showForm}

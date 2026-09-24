@@ -427,6 +427,7 @@ export const notebookActions = {
 	todoStatus: todoHandlers.setStatus,
 	todoSchedule: todoHandlers.schedule,
 	todoTag: todoHandlers.tag,
+	todoBatch: todoHandlers.batch,
 	todoDelegate: todoHandlers.delegate,
 	todoArchive: todoHandlers.archive,
 	todoDelete: todoHandlers.remove,

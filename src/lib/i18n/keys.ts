@@ -499,8 +499,11 @@ export type MessageKey =
 	| 'errors.todos.activityRequired'
 	| 'errors.todos.badOrdering'
 	| 'errors.todos.categoryRequired'
+	| 'errors.todos.invalidBatch'
 	| 'errors.todos.invalidStatus'
+	| 'errors.todos.nothingWasChosen'
 	| 'errors.todos.onlyOneOffBlocksCan'
+	| 'errors.todos.thatIsTooManyAtOnce'
 	| 'errors.tokens.aCalendarLinkReads'
 	| 'errors.tokens.atLeastOneValidScope'
 	| 'errors.tokens.invalidToken'
@@ -3206,16 +3209,24 @@ export type MessageKey =
 	| 'tasks.review.whichHalf'
 	| 'tasks.review.writeSomethingAboutHowThis'
 	| 'todoRows.aToDoIsATask'
+	| 'todoRows.addLabels'
 	| 'todoRows.added'
 	| 'todoRows.anythingYouFinishShowsUp'
 	| 'todoRows.archived'
 	| 'todoRows.archivedCount'
+	| 'todoRows.batchDelete'
+	| 'todoRows.batchNotebook'
+	| 'todoRows.batchStatus'
+	| 'todoRows.batchTag'
+	| 'todoRows.batchUpdated'
+	| 'todoRows.clearSelection'
 	| 'todoRows.completed'
 	| 'todoRows.completedCount'
 	| 'todoRows.completedTitle'
 	| 'todoRows.confirm'
 	| 'todoRows.createTodo'
 	| 'todoRows.delegateToADay'
+	| 'todoRows.deleteSelectedWarning'
 	| 'todoRows.doing'
 	| 'todoRows.done'
 	| 'todoRows.doneAgo'
@@ -3248,8 +3259,14 @@ export type MessageKey =
 	| 'todoRows.putBackOnTheGeneral'
 	| 'todoRows.putItOnADay'
 	| 'todoRows.putOnTheDay'
+	| 'todoRows.removeLabels'
 	| 'todoRows.saved'
 	| 'todoRows.searchTheseTasks'
+	| 'todoRows.selectMany'
+	| 'todoRows.selectTask'
+	| 'todoRows.selectVisible'
+	| 'todoRows.selectedCount'
+	| 'todoRows.selectionKeys'
 	| 'todoRows.setTheRatings'
 	| 'todoRows.showArchivedCount'
 	| 'todoRows.showCompleted'
@@ -3406,6 +3423,7 @@ export type MessageKey =
 	| 'tour.tagsAreFreeFormInvent'
 	| 'tour.tagsCutAcross'
 	| 'tour.takeItWithYou'
+	| 'tour.taskSelection'
 	| 'tour.tasksHoldYourWeekNotebooks'
 	| 'tour.theAppArrangedYourWay'
 	| 'tour.theArrowsStepAWholeWeek'
@@ -4068,12 +4086,15 @@ export interface MessageValuesFor {
 	'tasks.review.untold': { count: number };
 	'tasks.review.week': { number: string | number; year: string | number };
 	'todoRows.archivedCount': { count: number };
+	'todoRows.batchUpdated': { count: number };
 	'todoRows.completedCount': { count: number };
 	'todoRows.completedTitle': { title: string | number };
 	'todoRows.doneAgo': { ago: string | number; when: string | number };
 	'todoRows.hiddenByTheFilters': { count: number };
 	'todoRows.lastChanged': { when: string | number };
 	'todoRows.noneMatchTheseFilters': { count: number };
+	'todoRows.selectTask': { title: string | number };
+	'todoRows.selectedCount': { count: number };
 	'todoRows.showArchivedCount': { count: number };
 	'todoRows.showCompletedCount': { count: number };
 	'todoRows.showingCount': { count: number };

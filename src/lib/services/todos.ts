@@ -41,6 +41,7 @@ import type { RatingValues } from '../ratings.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { ownedNotebookId } from './notebooks.js';
+import { fileUnderNotebook } from './notebook-linking.js';
 import { getUserSetting, setUserSetting } from './settings.js';
 import { cleanupOrphanTags, optionalTagInput, parseTags, replaceTodoTags } from './tags.js';
 import { created, stamp, stamps } from './time.js';
@@ -976,4 +977,71 @@ export function demoteInstance(ctx: Ctx, instanceId: number): void {
 			)
 			.run();
 	});
+}
+
+/**
+ * What can be done to a handful of tasks at once.
+ *
+ * The list already does each of these one row at a time, and doing them one
+ * row at a time is exactly the problem: labelling nine tasks `#later` is nine
+ * presses, nine round trips and nine reorders of the list under your hand.
+ * The verbs are the row's own — there is nothing here a single row could not
+ * already do — so this adds reach rather than capability.
+ */
+export const BATCH_VERBS = ['status', 'tag', 'notebook', 'remove'] as const;
+export type BatchVerb = (typeof BATCH_VERBS)[number];
+
+export function isBatchVerb(value: unknown): value is BatchVerb {
+	return typeof value === 'string' && (BATCH_VERBS as readonly string[]).includes(value);
+}
+
+/** How many a single press may touch. A selection, not a migration. */
+export const MAX_BATCH = 500;
+
+/**
+ * Do one thing to each of these, or do it to none of them.
+ *
+ * In a transaction on purpose. A batch that half worked is the worst of the
+ * three outcomes: the list comes back showing four of nine done and there is
+ * no way to tell which four without reading them, and no way to ask for "the
+ * rest" except by hand. Whichever row is refused — a notebook that is not
+ * this account's, a status that is not a status — takes the whole press with
+ * it, and the answer says so.
+ *
+ * `move` is `fileUnderNotebook`'s job rather than an update: a task moving
+ * into a notebook takes the next number free in it, and carrying the old one
+ * across collides with whatever already holds it.
+ */
+export function batchTodos(
+	ctx: Ctx,
+	verb: BatchVerb,
+	rawIds: unknown[],
+	what: { status?: unknown; add?: unknown; remove?: unknown; notebookId?: unknown }
+): number {
+	if (!isBatchVerb(verb)) throw new ValidationError({ key: 'errors.todos.invalidBatch' });
+	if (rawIds.length === 0) throw new ValidationError({ key: 'errors.todos.nothingWasChosen' });
+	if (rawIds.length > MAX_BATCH)
+		throw new ValidationError({ key: 'errors.todos.thatIsTooManyAtOnce' });
+	const ids = [...new Set(rawIds.map((id) => num(id, 'id', { int: true, min: 1 })))];
+	if (verb === 'notebook' && what.notebookId === undefined)
+		throw new ValidationError({ key: 'errors.todos.invalidBatch' });
+
+	db.transaction(() => {
+		const notebookId = verb === 'notebook' ? ownedNotebookId(ctx, what.notebookId) : null;
+		for (const id of ids) {
+			if (verb === 'status') setTodoStatus(ctx, id, what.status);
+			else if (verb === 'tag') tagTodo(ctx, id, { add: what.add, remove: what.remove });
+			else if (verb === 'remove') deleteTodo(ctx, id);
+			else {
+				const current = db
+					.select({ notebookId: todoTasks.notebookId })
+					.from(todoTasks)
+					.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
+					.get();
+				if (!current) throw new NotFoundError('todo');
+				if (current.notebookId !== notebookId) fileUnderNotebook(ctx, 'tasks', id, notebookId);
+			}
+		}
+	});
+	return ids.length;
 }

@@ -13,6 +13,8 @@ export type TodoActionNames = {
 	schedule: string;
 	/** A label on or off, without going through the whole row. */
 	tag: string;
+	/** The same verbs over a selection of rows — see `batchTodos`. */
+	batch: string;
 	delegate: string;
 	archive: string;
 	remove: string;
@@ -25,6 +27,7 @@ export const TODO_ROOM_ACTIONS: TodoActionNames = {
 	setStatus: '?/setStatus',
 	schedule: '?/schedule',
 	tag: '?/tag',
+	batch: '?/batch',
 	delegate: '?/delegate',
 	archive: '?/archive',
 	remove: '?/delete'
@@ -37,6 +40,7 @@ export const NOTEBOOK_TODO_ACTIONS: TodoActionNames = {
 	setStatus: '?/todoStatus',
 	schedule: '?/todoSchedule',
 	tag: '?/todoTag',
+	batch: '?/todoBatch',
 	delegate: '?/todoDelegate',
 	archive: '?/todoArchive',
 	remove: '?/todoDelete'
