@@ -5,6 +5,8 @@
 	import Picker from '$lib/components/Picker.svelte';
 	import TagFilter from '$lib/components/TagFilter.svelte';
 	import { tagFilterInUrl } from '$lib/tag-filter-url.svelte';
+	import { filtersInUrl } from '$lib/filters-in-url.svelte';
+	import SavedFilters from '$lib/components/SavedFilters.svelte';
 	import { NO_TAG_FILTER, UNTAGGED, isTagFiltering, passesTagFilter } from '$lib/tag-filter';
 	import SortControl from '$lib/components/SortControl.svelte';
 	import { agoOf, momentOf } from '$lib/when';
@@ -156,9 +158,21 @@
 	 */
 	let looking = $state('');
 
-	let showCompleted = $state(false);
+	/*
+	 * What is narrowing this list, kept in the address.
+	 *
+	 * All of it rather than the labels alone: a filtered list was a thing you
+	 * could see and not a thing you could send, a reload threw it away, and a
+	 * saved filter had nothing to save. See `$lib/filters-in-url`.
+	 *
+	 * Absent means the default, so an unfiltered list still has a clean
+	 * address.
+	 */
+	const filters = filtersInUrl({ done: '', away: '', notebook: '' });
+
+	const showCompleted = $derived(filters.get('done') === 'show');
 	/** Put-away tasks are out of the way by default; that is what putting away is. */
-	let showArchived = $state(false);
+	const showArchived = $derived(filters.get('away') === 'show');
 
 	/** Whether the filters are behind a button right now — see `FilterBar`. */
 	const phone = phoneWidth();
@@ -170,7 +184,7 @@
 	 * exactly what somebody goes looking for. Not offered inside a notebook,
 	 * where the answer is already fixed.
 	 */
-	let notebookFilter = $state('');
+	const notebookFilter = $derived(filters.get('notebook'));
 	/**
 	 * Which labels to show and which to hide — see `$lib/tag-filter`.
 	 *
@@ -688,9 +702,7 @@
 	    it is the thing being typed into, and clearing it under the cursor is
 	    the app taking the word out of somebody's hands. */
 	function clearFilters() {
-		showCompleted = false;
-		showArchived = false;
-		notebookFilter = '';
+		filters.clear();
 		tagFilter.current = { ...NO_TAG_FILTER };
 		selectedIndex = 0;
 	}
@@ -1095,7 +1107,7 @@
 						*showing* is the count beside the search box.
 					-->
 					<button
-						onclick={() => (showCompleted = !showCompleted)}
+						onclick={() => filters.set('done', showCompleted ? '' : 'show')}
 						aria-pressed={showCompleted}
 						class="btn btn-sm shrink-0"
 					>
@@ -1106,7 +1118,7 @@
 					<!-- Named with its number so a put-away task is never quietly gone:
 				     nothing is hidden without the list saying how much. -->
 					<button
-						onclick={() => (showArchived = !showArchived)}
+						onclick={() => filters.set('away', showArchived ? '' : 'show')}
 						aria-pressed={showArchived}
 						class="btn btn-sm"
 						hidden={putAway === 0 && !showArchived}
@@ -1125,13 +1137,19 @@
 						<Picker
 							value={notebookFilter}
 							options={notebookChoices}
-							onpick={(next) => (notebookFilter = next)}
+							onpick={(next) => filters.set('notebook', next)}
 							label={t('ui.notebook')}
 							class="min-w-36 flex-1 sm:flex-none"
 						/>
 					{/if}
 					<!-- Only where there is something to pick: a list nobody has labelled
 				     gets no control for labels. -->
+					<!-- The narrowings this screen has kept, with the controls that
+					     make one. See `SavedFilters`. -->
+					<SavedFilters
+						surface="/tasks/todo"
+						narrowed={narrowed || showCompleted || showArchived}
+					/>
 					{#if tagsInUse.length > 0 || isTagFiltering(tagFilter.current)}
 						<TagFilter
 							tags={tagsInUse}
@@ -1198,12 +1216,12 @@
 						{#if phone.current}
 							<div class="flex justify-center gap-2">
 								{#if !showCompleted && finished > 0}
-									<button onclick={() => (showCompleted = true)} class="btn btn-sm">
+									<button onclick={() => filters.set('done', 'show')} class="btn btn-sm">
 										{t('todoRows.showCompletedCount', { count: finished })}
 									</button>
 								{/if}
 								{#if !showArchived && putAway > 0}
-									<button onclick={() => (showArchived = true)} class="btn btn-sm">
+									<button onclick={() => filters.set('away', 'show')} class="btn btn-sm">
 										{t('todoRows.showArchivedCount', { count: putAway })}
 									</button>
 								{/if}

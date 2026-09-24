@@ -119,8 +119,27 @@
 
 	const modules = $derived([...offered].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id)));
 
+	/*
+	 * Which of them are on right now, rather than which were on when this
+	 * opened.
+	 *
+	 * The arrows and the numbers belong to a tab that is going to exist, and
+	 * the server's answer is one save behind what the boxes say — so ticking
+	 * Inventory gave a row with no way to move it until the dialog had been
+	 * saved and opened again, which is the arrangement asking somebody to
+	 * guess that saving is what unlocks it.
+	 */
+	let ticked = $state<string[]>(
+		untrack(() => offered.filter((one) => one.on).map((one) => one.id))
+	);
+	$effect(() => {
+		if ((notebook?.id ?? null) === seededFor) return;
+		ticked = offered.filter((one) => one.on).map((one) => one.id);
+	});
+	const isOn = (id: string) => ticked.includes(id);
+
 	/** The last row that has a place in the order: an off one has no tab. */
-	const lastOn = $derived(modules.map((one) => one.on).lastIndexOf(true));
+	const lastOn = $derived(modules.map((one) => isOn(one.id)).lastIndexOf(true));
 
 	function shift(id: string, by: number) {
 		const at = order.indexOf(id);
@@ -207,6 +226,8 @@
 						value={module.id}
 						on={module.on}
 						always={module.always}
+						onToggle={(now) =>
+							(ticked = now ? [...ticked, module.id] : ticked.filter((one) => one !== module.id))}
 						note={module.held ? t('notebooks.alreadyFiled', { count: module.held }) : undefined}
 					>
 						{#snippet leading()}
@@ -223,12 +244,12 @@
 							<!-- A number only where there is a place: a module that is off
 							     has no tab and so no position in the strip. -->
 							<span class="tabular w-5 shrink-0 text-xs text-gray-500">
-								{module.on ? at + 1 : ''}
+								{isOn(module.id) ? at + 1 : ''}
 							</span>
 						{/snippet}
 
 						{#snippet trailing()}
-							{#if module.on}
+							{#if isOn(module.id)}
 								<button
 									type="button"
 									onclick={() => shift(module.id, -1)}

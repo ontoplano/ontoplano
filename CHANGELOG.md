@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **A narrowed task list is a link.** Which filters are on now lives in the
+  address, so it survives a reload and can be bookmarked or sent.
+- **Keep a set of filters under a name.** "Everything urgent about the
+  house that nobody has done" is four controls set four ways; save it once
+  and it is a chip beside them.
 - **A notebook opens on its own first tab,** rather than on Notes whatever
   order you put its tabs in.
 - **"Not now" on the update warning lasts as long as the app is open,** not

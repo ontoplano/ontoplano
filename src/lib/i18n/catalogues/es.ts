@@ -371,10 +371,17 @@ export const messages: Catalogue = {
 		'Sepáralas con comas o espacios. Una # inicial no molesta.',
 	'fields.todo.tagsExample': 'cocina, urgente, a1',
 	'fields.todo.urgencyEaseInterest': 'Urgencia, facilidad, interés',
+	'filters.applyFilter': 'Show {name}',
 	'filters.clear': 'Limpiar',
 	'filters.filters': 'Filtros',
 	'filters.filtersOn': 'Filtros activos',
+	'filters.forgetFilter': 'Forget {name}',
+	'filters.nameThisFilter': 'What to call it',
 	'filters.narrowThisList': 'Filtrar esta lista',
+	'filters.saveThese': 'Save these',
+	'filters.saved': 'Saved',
+	'filters.savedFilterHint':
+		'These four controls set four ways, kept under a name. It is the address of the list, so a saved one still works after a control changes.',
 	'finance.bills.amountOver': '{amount} de más',
 	'finance.bills.amountUnder': '{amount} de menos',
 	'finance.bills.andItsWholePaymentHistory':

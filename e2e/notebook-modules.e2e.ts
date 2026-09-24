@@ -128,11 +128,10 @@ test.describe('what a notebook holds', () => {
 
 		await makeNotebook(page, 'Renovation');
 
-		// Switch on a tab and put it in front of Notes.
+		// Tasks above Notes: the two every notebook starts with, so this is
+		// about the order and not about switching anything on.
 		await page.getByRole('button', { name: 'Rename' }).click();
-		await page.getByRole('checkbox', { name: 'Inventory' }).check();
-		await page.getByRole('button', { name: /Move Inventory up/ }).click();
-		await page.getByRole('button', { name: /Move Inventory up/ }).click();
+		await page.getByRole('button', { name: /Move Tasks up/ }).click();
 		await page.getByRole('button', { name: 'Save' }).click();
 		await page.waitForTimeout(600);
 
@@ -143,7 +142,7 @@ test.describe('what a notebook holds', () => {
 		 */
 		await page.reload();
 		const strip = page.locator('[data-tour="notebook-tabs"] button');
-		await expect(strip.first()).toContainText('Inventory');
+		await expect(strip.first()).toContainText('Tasks');
 		await expect(strip.first()).toHaveClass(/border-b-2/);
 	});
 

@@ -374,10 +374,17 @@ export const messages: Catalogue = {
 		'Mit Kommas oder Leerzeichen trennen. Ein führendes # ist in Ordnung.',
 	'fields.todo.tagsExample': 'küche, dringend, a1',
 	'fields.todo.urgencyEaseInterest': 'Dringlichkeit, Leichtigkeit, Interesse',
+	'filters.applyFilter': 'Show {name}',
 	'filters.clear': 'Zurücksetzen',
 	'filters.filters': 'Filter',
 	'filters.filtersOn': 'Filter aktiv',
+	'filters.forgetFilter': 'Forget {name}',
+	'filters.nameThisFilter': 'What to call it',
 	'filters.narrowThisList': 'Diese Liste eingrenzen',
+	'filters.saveThese': 'Save these',
+	'filters.saved': 'Saved',
+	'filters.savedFilterHint':
+		'These four controls set four ways, kept under a name. It is the address of the list, so a saved one still works after a control changes.',
 	'finance.bills.amountOver': '{amount} mehr',
 	'finance.bills.amountUnder': '{amount} weniger',
 	'finance.bills.andItsWholePaymentHistory':

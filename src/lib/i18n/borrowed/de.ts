@@ -10,6 +10,12 @@
  */
 export const borrowed: ReadonlySet<string> = new Set([
 	'card.theNotebooksYouHaveWritten',
+	'filters.applyFilter',
+	'filters.forgetFilter',
+	'filters.nameThisFilter',
+	'filters.saveThese',
+	'filters.saved',
+	'filters.savedFilterHint',
 	'finance.ledgers.pasteExample',
 	'home.noNotebooksYetOneHolds',
 	'mail.newsletterWelcome.action',

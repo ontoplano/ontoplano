@@ -372,10 +372,17 @@ export const messages: Catalogue = {
 		'Separe por vírgulas ou espaços. Um # no início não faz mal.',
 	'fields.todo.tagsExample': 'cozinha, urgente, a1',
 	'fields.todo.urgencyEaseInterest': 'Urgência, facilidade, interesse',
+	'filters.applyFilter': 'Show {name}',
 	'filters.clear': 'Limpar',
 	'filters.filters': 'Filtros',
 	'filters.filtersOn': 'Filtros ativos',
+	'filters.forgetFilter': 'Forget {name}',
+	'filters.nameThisFilter': 'What to call it',
 	'filters.narrowThisList': 'Filtrar esta lista',
+	'filters.saveThese': 'Save these',
+	'filters.saved': 'Saved',
+	'filters.savedFilterHint':
+		'These four controls set four ways, kept under a name. It is the address of the list, so a saved one still works after a control changes.',
 	'finance.bills.amountOver': '{amount} a mais',
 	'finance.bills.amountUnder': '{amount} a menos',
 	'finance.bills.andItsWholePaymentHistory':

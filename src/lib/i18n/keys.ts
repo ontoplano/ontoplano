@@ -341,10 +341,16 @@ export type MessageKey =
 	| 'fields.todo.separateWithCommasOrSpaces'
 	| 'fields.todo.tagsExample'
 	| 'fields.todo.urgencyEaseInterest'
+	| 'filters.applyFilter'
 	| 'filters.clear'
 	| 'filters.filters'
 	| 'filters.filtersOn'
+	| 'filters.forgetFilter'
+	| 'filters.nameThisFilter'
 	| 'filters.narrowThisList'
+	| 'filters.saveThese'
+	| 'filters.saved'
+	| 'filters.savedFilterHint'
 	| 'finance.bills.amountOver'
 	| 'finance.bills.amountUnder'
 	| 'finance.bills.andItsWholePaymentHistory'
@@ -3350,6 +3356,8 @@ export interface MessageValuesFor {
 		minutes2: string | number;
 	};
 	'fields.buy.removeTheAttribute': { written: string | number };
+	'filters.applyFilter': { name: string | number };
+	'filters.forgetFilter': { name: string | number };
 	'finance.bills.amountOver': { amount: string | number };
 	'finance.bills.amountUnder': { amount: string | number };
 	'finance.bills.archive': { name: string | number };

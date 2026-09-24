@@ -358,10 +358,17 @@ export const messages: Catalogue = {
 	'fields.todo.separateWithCommasOrSpaces': 'Separate with commas or spaces. A leading # is fine.',
 	'fields.todo.tagsExample': 'kitchen, urgent, a1',
 	'fields.todo.urgencyEaseInterest': 'Urgency, ease, interest',
+	'filters.applyFilter': 'Show {name}',
 	'filters.clear': 'Clear',
 	'filters.filters': 'Filters',
 	'filters.filtersOn': 'Filters on',
+	'filters.forgetFilter': 'Forget {name}',
+	'filters.nameThisFilter': 'What to call it',
 	'filters.narrowThisList': 'Narrow this list',
+	'filters.saveThese': 'Save these',
+	'filters.saved': 'Saved',
+	'filters.savedFilterHint':
+		'These four controls set four ways, kept under a name. It is the address of the list, so a saved one still works after a control changes.',
 	'finance.bills.amountOver': '{amount} over',
 	'finance.bills.amountUnder': '{amount} under',
 	'finance.bills.andItsWholePaymentHistory':
