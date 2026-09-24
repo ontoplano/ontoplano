@@ -1,59 +1,151 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { openFilters } from './helpers/filters';
 import { visit } from './helpers/visit';
 
 /**
- * Narrowing by more than one label.
+ * Narrowing by labels: some to show, some to hide, any or all.
  *
- * One was not a filter: "show me the urgent ones" is a question a single label
- * answers, and "the urgent ones and the ones about the house" is the question
- * anybody with a list long enough to filter is actually asking. Any of them
- * rather than all — a task carries two or three labels, and asking for the
- * ones carrying every label picked usually asks for nothing.
+ * One was not a filter — "the urgent ones about the house" is two labels that
+ * must both be there, and "everything not yet marked done" is a label that
+ * must not. The control folds into one button that says what it is doing, and
+ * the filter lives in the address so a reload keeps it.
  */
-test('the tag filter holds several labels at once', async ({ page }) => {
-	test.setTimeout(240_000);
-	await page.setViewportSize({ width: 1100, height: 900 });
-	await register(page, testEmail('tag-filter'));
-	await visit(page, '/tasks/todo');
 
-	for (const [title, tags] of [
-		['ring the plumber', 'home'],
-		['read the Republic', 'reading'],
-		['post the parcel', 'errands']
-	] as const) {
-		await page
-			.getByRole('button', { name: /New task/ })
-			.first()
-			.click();
-		const form = page.getByRole('dialog');
-		await form.locator('[name="heading"]').first().fill(title);
+const TASKS = [
+	['ring the plumber', 'home'],
+	['fix the roof', 'home urgent'],
+	['read the Republic', 'reading'],
+	['sort the shed', '']
+] as const;
+
+async function newTask(page: Page, title: string, tags: string) {
+	await page
+		.getByRole('button', { name: /New task/ })
+		.first()
+		.click();
+	const form = page.getByRole('dialog');
+	await form.locator('[name="heading"]').first().fill(title);
+	if (tags) {
 		await form.locator('input[role="combobox"]').first().fill(tags);
 		await form.locator('input[role="combobox"]').first().press('Space');
-		await page.getByRole('button', { name: 'Create task' }).click();
-		await expect(page.getByText(title).first()).toBeVisible({ timeout: 30_000 });
 	}
+	await page.getByRole('button', { name: 'Create task' }).click();
+	await expect(page.getByText(title).first()).toBeVisible({ timeout: 30_000 });
+}
+
+/** Which of the four tasks the list is showing, in their order. */
+async function showing(page: Page): Promise<string[]> {
+	const out: string[] = [];
+	for (const [title] of TASKS) if (await page.getByText(title).first().isVisible()) out.push(title);
+	return out;
+}
+
+const face = (page: Page) => page.locator('[aria-controls="todo-tags-panel"]');
+const panel = (page: Page) => page.locator('#todo-tags-panel');
+const box = (page: Page, side: 'include' | 'exclude') =>
+	panel(page).locator(`[data-side="${side}"] input[role="combobox"]`);
+
+test('labels to show, labels to hide, any or all — and the address keeps it', async ({ page }) => {
+	test.setTimeout(240_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('tag-filter'));
+	await visit(page, '/tasks/todo');
+	for (const [title, tags] of TASKS) await newTask(page, title, tags);
 
 	await openFilters(page);
-	const face = page.getByRole('button', { name: /label|tag/i }).first();
-	await face.click();
-	await page.getByRole('option', { name: 'home', exact: true }).click();
-	await page.getByRole('option', { name: 'reading', exact: true }).click();
+	await expect(face(page)).toHaveAccessibleName('Filter by tag');
+
+	// Where the list starts, and where the button beside the filter is: opening
+	// the panel and choosing labels must move neither.
+	const list = page.locator('[data-tour]').filter({ has: page.getByText('ring the plumber') });
+	const listTop = (await list.first().boundingBox())!.y;
+	const faceBox = (await face(page).boundingBox())!;
+
+	await face(page).click();
+	await expect(panel(page)).toBeVisible();
+	await expect(box(page, 'include')).toBeFocused();
+
+	// Typing narrows the vocabulary; Enter takes the one under the cursor.
+	await box(page, 'include').fill('hom');
+	await box(page, 'include').press('Enter');
+	await expect.poll(() => showing(page)).toEqual(['ring the plumber', 'fix the roof']);
+
+	await box(page, 'include').fill('urgent');
+	await box(page, 'include').press('Enter');
+	// Any of them, by default.
+	await expect.poll(() => showing(page)).toEqual(['ring the plumber', 'fix the roof']);
+
+	await panel(page).getByRole('button', { name: 'Carrying all of them' }).click();
+	await expect.poll(() => showing(page)).toEqual(['fix the roof']);
+
+	expect((await list.first().boundingBox())!.y).toBe(listTop);
+	expect(await face(page).boundingBox()).toEqual(faceBox);
+
+	// Escape folds it, back onto the button — which says what is on.
 	await page.keyboard.press('Escape');
+	await expect(panel(page)).toBeHidden();
+	await expect(face(page)).toBeFocused();
+	await expect(face(page)).toContainText('+2');
+	await expect(face(page)).toHaveAccessibleName(/with all of #home, #urgent/);
 
-	// Both kinds are shown, the third is not.
-	await expect(page.getByText('ring the plumber')).toBeVisible();
-	await expect(page.getByText('read the Republic')).toBeVisible();
-	await expect(page.getByText('post the parcel')).toBeHidden();
+	// The address holds it, so a reload comes back the same.
+	expect(page.url()).toContain('tag=home&tag=urgent&tagmode=all');
+	await page.reload();
+	await expect.poll(() => showing(page)).toEqual(['fix the roof']);
 
-	// And the button says which, rather than just "filtered".
-	await expect(face).toContainText('home');
-	await expect(face).toContainText('reading');
+	// Hiding: anything carrying #home goes, and so does anything untagged.
+	await openFilters(page);
+	await face(page).click();
+	await panel(page).getByRole('button', { name: 'Clear' }).click();
+	await expect.poll(() => showing(page)).toHaveLength(4);
+	await box(page, 'exclude').fill('home');
+	await box(page, 'exclude').press('Enter');
+	await expect.poll(() => showing(page)).toEqual(['read the Republic', 'sort the shed']);
+	await box(page, 'exclude').fill('untag');
+	await box(page, 'exclude').press('Enter');
+	await expect.poll(() => showing(page)).toEqual(['read the Republic']);
 
-	// "Every tag" is the way back, not a fourth label.
-	await face.click();
-	await page.getByRole('option', { name: 'Every tag' }).click();
+	// Backspace in an empty box takes the last chip off, the way any box of
+	// chips does; a label hidden here is not offered to show as well.
+	await box(page, 'exclude').press('Backspace');
+	await expect.poll(() => showing(page)).toEqual(['read the Republic', 'sort the shed']);
+	await box(page, 'include').fill('home');
+	await expect(panel(page).getByRole('option', { name: 'home', exact: true })).toHaveCount(0);
+
+	// Untagged, shown on its own.
+	await box(page, 'include').fill('');
+	await panel(page).locator('[data-side="exclude"] button[aria-label="Remove #home"]').click();
+	await box(page, 'include').fill('untag');
+	await box(page, 'include').press('Enter');
+	await expect.poll(() => showing(page)).toEqual(['sort the shed']);
+});
+
+test('at phone width it sits in the filter sheet and stays on the screen', async ({ page }) => {
+	test.setTimeout(180_000);
+	await page.setViewportSize({ width: 390, height: 844 });
+	await register(page, testEmail('tag-filter-phone'));
+	await visit(page, '/tasks/todo');
+	for (const [title, tags] of TASKS.slice(0, 3)) await newTask(page, title, tags);
+
+	// Arriving on a link that already carries a filter.
+	await visit(page, '/tasks/todo?nottag=home');
+	await expect.poll(() => showing(page)).toEqual(['read the Republic']);
+
+	// The phone's filter button says something is on.
+	await expect(page.locator('.filter-toggle')).toHaveAccessibleName(/#home/);
+
+	await openFilters(page);
+	await face(page).click();
+	await expect(panel(page)).toBeVisible();
+	const at = (await panel(page).boundingBox())!;
+	expect(at.x).toBeGreaterThanOrEqual(0);
+	expect(at.x + at.width).toBeLessThanOrEqual(390);
+
+	await panel(page).locator('button[aria-label="Remove #home"]').click();
+	await expect(face(page)).toHaveAccessibleName('Filter by tag');
 	await page.keyboard.press('Escape');
-	await expect(page.getByText('post the parcel')).toBeVisible();
+	await expect(panel(page)).toBeHidden();
+	// Escape folded the panel and left the sheet it sits in.
+	await expect(face(page)).toBeVisible();
 });

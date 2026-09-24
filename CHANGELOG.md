@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **Filter by tags to show and tags to hide.** The task list and a
+  notebook's tasks take tags to show and tags to hide, and whether a task
+  needs any of them (∪) or all of them (∩); "Untagged" works on either side.
+  Folded, the button says what it is doing — `+2 −1 ∩` — and the filter stays
+  in the address, so a reload or a shared link comes back the same.
 - **Assistants can ask for tasks carrying every tag named.** `todos` and
   `up_next` take `tagMode: "all"` beside `tags` and `withoutTags`.
 - **A notebook's name and description no longer shrink to a sliver on a

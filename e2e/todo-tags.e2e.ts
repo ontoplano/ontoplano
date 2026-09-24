@@ -53,11 +53,13 @@ test('a task takes labels, and the list narrows to one', async ({ page }) => {
 	await chip(page, '#a2').click();
 	await expect(page.getByText('renew the domain')).toBeVisible();
 
-	// The picker offers what is actually on the list, and nothing else. It is
-	// the app's own menu rather than a `<select>` — see `Picker`.
+	// The tag filter offers what is actually on the list, and nothing else —
+	// plus "Untagged", which is an answer rather than a label. See `TagFilter`.
 	await openFilters(page);
 	await page.getByRole('button', { name: 'Filter by tag' }).click();
-	await expect(page.getByRole('option')).toHaveText(['Every tag', 'Untagged', 'a1', 'a2', 'done']);
+	const show = page.locator('#todo-tags-panel [data-side="include"] input[role="combobox"]');
+	await expect(show).toBeFocused();
+	await expect(page.getByRole('option')).toHaveText(['Untagged', 'a1', 'a2', 'done']);
 	await page.getByRole('option', { name: 'a1', exact: true }).click();
 	await expect(page.getByText('renew the domain')).toBeVisible();
 	await expect(page.getByText('call the vet')).toHaveCount(0);
@@ -104,5 +106,5 @@ test('labels are edited, and an edit that says nothing about them keeps them', a
 	await page.locator('#todo-form .chip').filter({ hasText: 'a2' }).getByRole('button').click();
 	await page.getByRole('button', { name: 'Save' }).click();
 	await expect(chip(page, '#a2')).toHaveCount(0);
-	await expect(page.getByLabel('Filter by tag')).toHaveCount(0);
+	await expect(page.locator('[aria-controls="todo-tags-panel"]')).toHaveCount(0);
 });

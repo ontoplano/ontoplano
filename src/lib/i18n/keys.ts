@@ -1374,7 +1374,6 @@ export type MessageKey =
 	| 'notebooks.diary.for'
 	| 'notebooks.diary.newEntry'
 	| 'notebooks.diary.newWins'
-	| 'notebooks.diary.noEntriesWith'
 	| 'notebooks.diary.people'
 	| 'notebooks.diary.postEntry'
 	| 'notebooks.diary.saveWins'
@@ -2642,6 +2641,23 @@ export type MessageKey =
 	| 'style.playfulHint'
 	| 'style.sober'
 	| 'style.soberHint'
+	| 'tagFilter.addToHide'
+	| 'tagFilter.addToKeep'
+	| 'tagFilter.all'
+	| 'tagFilter.allHint'
+	| 'tagFilter.any'
+	| 'tagFilter.anyHint'
+	| 'tagFilter.clear'
+	| 'tagFilter.filterByTag'
+	| 'tagFilter.hide'
+	| 'tagFilter.howTheyCombine'
+	| 'tagFilter.keep'
+	| 'tagFilter.nothingMatches'
+	| 'tagFilter.tags'
+	| 'tagFilter.untagged'
+	| 'tagFilter.withAll'
+	| 'tagFilter.withAny'
+	| 'tagFilter.without'
 	| 'tags.removeTag'
 	| 'taskStatus.doing'
 	| 'taskStatus.pending'
@@ -2941,8 +2957,6 @@ export type MessageKey =
 	| 'todoRows.doneAgo'
 	| 'todoRows.editToDo'
 	| 'todoRows.everyNotebook'
-	| 'todoRows.everyTag'
-	| 'todoRows.filterByTag'
 	| 'todoRows.hiddenByTheFilters'
 	| 'todoRows.hideArchived'
 	| 'todoRows.hideCompleted'
@@ -2955,7 +2969,6 @@ export type MessageKey =
 	| 'todoRows.newest'
 	| 'todoRows.newestAtTheTopPress'
 	| 'todoRows.newestFirst'
-	| 'todoRows.noTag'
 	| 'todoRows.noneMatchTheseFilters'
 	| 'todoRows.notInOne'
 	| 'todoRows.nothingToShow'
@@ -3520,7 +3533,6 @@ export interface MessageValuesFor {
 	'notebooks.closedCount': { count: number };
 	'notebooks.diary.edited': { updatedAt: string | number };
 	'notebooks.diary.for': { forDate: string | number };
-	'notebooks.diary.noEntriesWith': { filterTag: string | number };
 	'notebooks.diary.win': { i: string | number };
 	'notebooks.edit': { title: string | number };
 	'notebooks.goalsCount': { count: number };
@@ -3720,6 +3732,9 @@ export interface MessageValuesFor {
 	'start.youGetFreeDaysEvenIf': { trialDaysAhead: string | number };
 	'streamChart.dateCountPoints': { count: number; date: string | number };
 	'streamChart.inAgainstOutByMonth': { inLabel: string | number; outLabel: string | number };
+	'tagFilter.withAll': { tags: string | number };
+	'tagFilter.withAny': { tags: string | number };
+	'tagFilter.without': { tags: string | number };
 	'tags.removeTag': { tag: string | number };
 	'tasks.board.edit': { title: string | number };
 	'tasks.board.markDone': { title: string | number };

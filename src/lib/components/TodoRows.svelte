@@ -2,6 +2,9 @@
 	import { say } from '$lib/said.svelte';
 	import { discardForm, keptForm } from '$lib/kept-form';
 	import Picker from '$lib/components/Picker.svelte';
+	import TagFilter from '$lib/components/TagFilter.svelte';
+	import { tagFilterInUrl } from '$lib/tag-filter-url.svelte';
+	import { NO_TAG_FILTER, UNTAGGED, isTagFiltering, passesTagFilter } from '$lib/tag-filter';
 	import SortControl from '$lib/components/SortControl.svelte';
 	import { agoOf, momentOf } from '$lib/when';
 	import { compareByPriority, type RatingValues } from '$lib/ratings';
@@ -168,13 +171,14 @@
 	 */
 	let notebookFilter = $state('');
 	/**
-	 * Which label to show, `''` for all and `'none'` for the ones with none.
+	 * Which labels to show and which to hide — see `$lib/tag-filter`.
 	 *
 	 * A label is what several assistants on one list use to say whose work is
-	 * whose — `a1`, `done` — so being able to read back one of them is the
-	 * point of having them at all.
+	 * whose — `a1`, `done` — so being able to read back one of them, or
+	 * everything not yet marked by one, is the point of having them at all.
+	 * Kept in the address, so a reload or a shared link keeps it.
 	 */
-	let tagFilter = $state<string[]>([]);
+	const tagFilter = tagFilterInUrl();
 	let selectedIndex = $state(0);
 	let delegatingId: number | null = $state(null);
 	let confirmingDelete: number | null = $state(null);
@@ -624,29 +628,13 @@
 		...notebooks.map((book) => ({ value: String(book.id), label: book.title }))
 	]);
 
-	/*
-	 * Several labels at once, because one was not a filter.
-	 *
-	 * "Show me the urgent ones" is a question a single label answers; "the
-	 * urgent ones and the ones about the house" is the question anybody with a
-	 * list long enough to filter is actually asking. Any of them rather than
-	 * all: a task carries two or three labels, and asking for the ones
-	 * carrying every label you picked usually asks for nothing.
-	 *
-	 * "No label" stands apart — it is not a label, so it cannot be combined
-	 * with one, and choosing it clears the rest.
-	 */
-	const NO_TAG = 'none';
-
-	let tagChoices = $derived([
-		{ value: NO_TAG, label: t('todoRows.noTag') },
-		...tagsInUse.map((name) => ({ value: name, label: name }))
-	]);
-
 	function byTag(rows: Todo[]): Todo[] {
-		if (tagFilter.length === 0) return rows;
-		if (tagFilter.includes(NO_TAG)) return rows.filter((t: Todo) => t.tags.length === 0);
-		return rows.filter((t: Todo) => t.tags.some((one) => tagFilter.includes(one.name)));
+		return rows.filter((t: Todo) =>
+			passesTagFilter(
+				t.tags.map((one) => one.name),
+				tagFilter.current
+			)
+		);
 	}
 
 	/** How many are hidden by the two toggles, so neither is a silent filter. */
@@ -681,7 +669,7 @@
 	 * list telling you it is empty while it is holding six rows back.
 	 */
 	let narrowed = $derived(
-		notebookFilter !== '' || tagFilter.length > 0 || looking.trim().length > 0
+		notebookFilter !== '' || isTagFiltering(tagFilter.current) || looking.trim().length > 0
 	);
 
 	/**
@@ -697,7 +685,9 @@
 		if (showArchived) said.push(t('todoRows.archived'));
 		if (notebookFilter !== '')
 			said.push(notebookChoices.find((one) => one.value === notebookFilter)?.label ?? '');
-		for (const one of tagFilter) said.push(one === NO_TAG ? t('todoRows.noTag') : `#${one}`);
+		const word = (one: string) => (one === UNTAGGED ? t('tagFilter.untagged') : `#${one}`);
+		for (const one of tagFilter.current.include) said.push(word(one));
+		for (const one of tagFilter.current.exclude) said.push(`−${word(one)}`);
 		return said.filter(Boolean).join(', ');
 	}
 
@@ -708,7 +698,7 @@
 		showCompleted = false;
 		showArchived = false;
 		notebookFilter = '';
-		tagFilter = [];
+		tagFilter.current = { ...NO_TAG_FILTER };
 		selectedIndex = 0;
 	}
 
@@ -1113,23 +1103,16 @@
 					{/if}
 					<!-- Only where there is something to pick: a list nobody has labelled
 				     gets no control for labels. -->
-					{#if tagsInUse.length > 0}
-						<Picker
-							values={tagFilter}
-							options={[{ value: '', label: t('todoRows.everyTag') }, ...tagChoices]}
-							onpickMany={(next) => {
-								// Two rows that are not labels. "Every tag" is the way back to
-								// no filter at all, and "no label" answers the question on its
-								// own — neither combines with a label.
-								if (next.includes('')) tagFilter = [];
-								else if (next.includes(NO_TAG))
-									tagFilter = tagFilter.includes(NO_TAG)
-										? next.filter((one) => one !== NO_TAG)
-										: [NO_TAG];
-								else tagFilter = next;
+					{#if tagsInUse.length > 0 || isTagFiltering(tagFilter.current)}
+						<TagFilter
+							tags={tagsInUse}
+							value={tagFilter.current}
+							onchange={(next) => {
+								tagFilter.current = next;
+								selectedIndex = 0;
 							}}
-							label={t('todoRows.filterByTag')}
-							class="min-w-28 flex-1 sm:flex-none"
+							name="todo-tags"
+							class="min-w-36 flex-1 sm:flex-none"
 						/>
 					{/if}
 					<!--
@@ -1644,17 +1627,21 @@
 										-->
 										<TagChip
 											name={tag.name}
-											active={tagFilter.includes(tag.name)}
+											active={tagFilter.current.include.includes(tag.name)}
 											title={tag.taggedAt
 												? t('todoRows.taggedAgo', { ago: agoOf(tag.taggedAt, now()) })
 												: undefined}
 											onclick={() => {
-												// Pressing a label adds it to the filter rather than
-												// replacing it, so two presses is two labels — the
-												// same thing the picker above does.
-												tagFilter = tagFilter.includes(tag.name)
-													? tagFilter.filter((one) => one !== tag.name)
-													: [...tagFilter.filter((one) => one !== NO_TAG), tag.name];
+												// Pressing a label adds it to the ones shown rather
+												// than replacing them, so two presses is two labels.
+												const held = tagFilter.current;
+												tagFilter.current = held.include.includes(tag.name)
+													? { ...held, include: held.include.filter((one) => one !== tag.name) }
+													: {
+															...held,
+															include: [...held.include, tag.name],
+															exclude: held.exclude.filter((one) => one !== tag.name)
+														};
 												selectedIndex = 0;
 											}}
 										/>

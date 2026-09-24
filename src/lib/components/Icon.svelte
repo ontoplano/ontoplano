@@ -40,6 +40,9 @@
 		bell: 'M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6M10 20a2 2 0 0 0 4 0',
 		search: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM16 16l4 4',
 		filter: 'M4 5h16l-6 7v6l-4 2v-8z',
+		/* A tag filter's two modes: carrying all of them (∩) or any (∪). */
+		intersect: 'M6 19v-7a6 6 0 0 1 12 0v7',
+		union: 'M6 5v7a6 6 0 0 0 12 0V5',
 		download: 'M12 4v10M8 10l4 4 4-4M5 19h14',
 		copy: 'M9 4h9v13M5 8h9v12H5z',
 		drag: 'M9 6h.01M9 12h.01M9 18h.01M15 6h.01M15 12h.01M15 18h.01',
