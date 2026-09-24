@@ -29,8 +29,22 @@ import type { SubmitFunction } from '@sveltejs/kit';
  */
 function submitters(form: HTMLFormElement): HTMLButtonElement[] {
 	const own = [...form.querySelectorAll<HTMLButtonElement>('button:not([type="button"])')];
-	const outside = form.id
-		? [...document.querySelectorAll<HTMLButtonElement>(`button[form="${CSS.escape(form.id)}"]`)]
+	/*
+	 * `getAttribute('id')`, never `form.id`.
+	 *
+	 * A form exposes its own named controls as properties of itself, and those
+	 * win over the element's — so on any form carrying a field called `id`,
+	 * `form.id` is that `<input>` rather than the string. Which is every edit
+	 * form in this app: the hidden field naming the row being edited is called
+	 * `id`. `CSS.escape` then stringified an element into
+	 * `[object HTMLInputElement]`, the selector matched nothing, and the Save
+	 * button in the dialog's footer was never disabled — while Create, on a
+	 * form with no such field, worked perfectly. One symptom, and it looked
+	 * like the footer being outside the form.
+	 */
+	const id = form.getAttribute('id');
+	const outside = id
+		? [...document.querySelectorAll<HTMLButtonElement>(`button[form="${CSS.escape(id)}"]`)]
 		: [];
 	return [...new Set([...own, ...outside])];
 }

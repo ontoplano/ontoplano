@@ -28,6 +28,12 @@ releases mattered.
   finishing one and for putting it back, and nothing for the column between
   them, so "doing" could only be set by hand in the app. `change_task` takes a
   status.
+- **Save is held while it is saving.** Pressing Create twice has made one task
+  for a while; pressing Save twice was never guarded at all, on any edit form
+  in the app. The guard looks the button up by the form's id, and a form hands
+  out its own fields as properties of itself — so on every edit form, whose
+  hidden field naming the row is called `id`, it was looking up an `<input>`
+  instead of a name and finding nothing.
 - **A saved filter works when you press it.** Choosing one changed the address
   and the list followed — except the labels, which kept a copy of what they
   were showing when the page loaded and ignored it. So a saved filter with a

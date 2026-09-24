@@ -73,3 +73,45 @@ test('a double press on a notebook’s New note makes one note', async ({ page }
 	await page.waitForTimeout(2000);
 	await expect(page.getByText('Tiles arrive Tuesday.')).toHaveCount(1);
 });
+
+/**
+ * And Save, on a form that carries a field called `id`.
+ *
+ * Which every edit form does — the hidden field naming the row being edited.
+ * A form exposes its named controls as properties of itself and those win
+ * over the element's own, so `form.id` was that `<input>` rather than the
+ * string, the selector built from it matched nothing, and the Save button in
+ * the dialog's footer was never among the ones held. Create worked, because a
+ * create form has no such field, which is exactly why this went unnoticed.
+ */
+test('Save is held while it is saving, on a form with an id field', async ({ page }) => {
+	test.setTimeout(180_000);
+	await register(page, testEmail('double-submit-edit'));
+	await visit(page, '/tasks/todo');
+
+	await page
+		.getByRole('button', { name: /New task/ })
+		.first()
+		.click();
+	const dialog = page.getByRole('dialog');
+	await dialog.locator('[name="heading"]').first().fill('sand the door');
+	await dialog.getByRole('button', { name: /Create task/ }).click();
+	await expect(page.getByText('sand the door').first()).toBeVisible({ timeout: 30_000 });
+
+	// Held open long enough that "while it is saving" is a window a test can
+	// look at, the way a real box's is.
+	await page.route(
+		(url) => url.pathname === '/tasks/todo' && url.search.includes('update'),
+		async (route) => {
+			await new Promise((wait) => setTimeout(wait, 1500));
+			await route.continue();
+		}
+	);
+
+	await page.getByRole('button', { name: 'Edit', exact: true }).first().click();
+	const save = page.locator('button[form="todo-form"]');
+	await expect(save).toBeEnabled();
+
+	await save.click({ noWaitAfter: true });
+	await expect(save).toBeDisabled();
+});
