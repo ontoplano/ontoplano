@@ -1641,12 +1641,24 @@ Services never import SvelteKit types or return `fail()` — they throw these,
 and the route/API adapters map them to the right response shape. That's what
 lets a form action and a JSON endpoint call the same function.
 
+**A refusal is a message key, not a sentence.** These reach a person: a form
+action puts one in `form.message` and the screen shows it. Written as English
+in the source, an account set to Portuguese got its screens translated and
+its refusals in English — which is worse than an untranslated screen, because
+a refusal is read at exactly the moment somebody is stuck.
+
+So a thrown error carries the key and the values, and the adapter that turns
+it into a response is what translates, in the language of the request it is
+answering. A plain string is still accepted: a few of these are read by
+software rather than by a person.
+
 ### Functions
 
 #### `toServiceError(e)`
 
 ### Types
 
+- `Said` — What an error says: a key to look up, or a sentence nobody will translate.
 - `ErrorCode`
 
 ## family-invite
