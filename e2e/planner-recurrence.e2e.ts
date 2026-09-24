@@ -740,10 +740,13 @@ for (const size of [
 			return {
 				seg: el.getBoundingClientRect().right,
 				last: last.right,
-				inner
+				inner,
+				rows: new Set([...el.children].map((c) => Math.round(c.getBoundingClientRect().top))).size
 			};
 		});
 		expect(fits.seg).toBeLessThanOrEqual(fits.inner + 0.5);
 		expect(fits.last).toBeLessThanOrEqual(fits.inner + 0.5);
+		// One row: "Todo mês" on a line of its own read as a sixth choice.
+		expect(fits.rows).toBe(1);
 	});
 }

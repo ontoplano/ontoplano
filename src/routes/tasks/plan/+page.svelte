@@ -44,9 +44,13 @@
 	import { Calendar, DayGrid, TimeGrid, Interaction } from '@event-calendar/core';
 	import '@event-calendar/core/index.css';
 	import { useT } from '$lib/i18n';
+	import { WEEKDAYS } from '$lib/bill-summary';
 	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
+
+	/** Monday first, in the reader's language — the server's list is English. */
+	const weekdayNames = $derived(WEEKDAYS.map((day) => t(day.label)));
 	const now = useWhen();
 
 	/** Whether a block repeats, as the two words the form offers. */
@@ -3092,7 +3096,7 @@
 				<input type="hidden" name="ids" value={[...selectedIds].join(',')} />
 				<input type="hidden" name="targetDays" value={[...copyTargetDays].join(',')} />
 				<div class="mb-3 flex flex-wrap gap-2">
-					{#each data.weekdays as day, i (i)}
+					{#each weekdayNames as day, i (i)}
 						<label
 							class="flex items-center gap-1.5 px-2 py-1 text-sm {selectedWeekday === i
 								? 'cursor-not-allowed text-gray-500'
@@ -3292,7 +3296,7 @@
 						<span class="eyebrow shrink-0 text-gray-500">{t('tasks.plan.howOften')}</span>
 						<input type="hidden" name="recurrenceKind" value={recurrenceKind} />
 
-						<div class="seg">
+						<div class="seg seg-fill">
 							{#each [{ v: 'weekly', l: t('tasks.plan.everyWeek') }, { v: 'weekdays', l: t('tasks.plan.someDays') }, { v: 'weeks', l: t('tasks.plan.everyNWeeks') }, { v: 'days', l: t('tasks.plan.everyNDays') }, { v: 'monthly', l: t('finance.ledgers.everyMonth') }] as opt (opt.v)}
 								<button
 									type="button"
@@ -3314,7 +3318,7 @@
 						-->
 						{#if recurrenceKind === 'weekdays'}
 							<div class="seg flex-wrap" role="group" aria-label={t('tasks.plan.someDays')}>
-								{#each data.weekdays as day, i (i)}
+								{#each weekdayNames as day, i (i)}
 									<button
 										type="button"
 										aria-pressed={recurrenceDays.includes(i)}
@@ -3412,7 +3416,7 @@
 								name="weekday"
 								required
 								value={String(formWeekday)}
-								options={data.weekdays.map((day, i) => ({ value: String(i), label: day }))}
+								options={weekdayNames.map((day, i) => ({ value: String(i), label: day }))}
 								onpick={(next) => (formWeekday = Number(next))}
 								label={t('tasks.plan.day')}
 							/>
@@ -3869,7 +3873,7 @@
 					class="flex-1"
 					title={day.date}
 				>
-					{day.isToday ? 'Today' : day.name.slice(0, 3)}
+					{day.isToday ? t('app.today') : weekdayNames[day.weekday].slice(0, 3)}
 				</button>
 			{/each}
 		</div>

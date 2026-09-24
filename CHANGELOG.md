@@ -20,6 +20,12 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **The block form's frequency choices stay on one row.** In Portuguese the
+  last one no longer drops to a line of its own; on a phone a long label
+  breaks inside its own choice instead.
+- **The planner says its weekdays in your language** — the block form's day,
+  the some-days choices, copy-to-weekdays and the phone's day switcher, which
+  also said "Today" in English.
 - **A rating dragged with the mouse stays where you let go.** In Firefox,
   moving the mouse after a quick drag on urgency, ease or interest no longer
   sends it back to where it was.

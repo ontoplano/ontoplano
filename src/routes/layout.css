@@ -2679,6 +2679,32 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
+	 * A row of positions that stays one row, however long the words.
+	 *
+	 * The block form's five frequencies wrapped their last one onto a line of
+	 * its own in Portuguese, which reads as a sixth thing rather than the end
+	 * of the row. Here the row fills its box and the tiles share it, each
+	 * starting from its word's width; where that does not fit, a label breaks
+	 * inside its own tile rather than the row breaking.
+	 */
+	.seg.seg-fill {
+		display: flex;
+		flex-wrap: nowrap;
+		width: 100%;
+		align-items: stretch;
+	}
+
+	.seg.seg-fill > button {
+		flex: 1 1 auto;
+		min-width: 0;
+		padding-inline: 0.5rem;
+		text-align: center;
+		white-space: normal;
+		text-wrap: balance;
+		line-height: 1.2;
+	}
+
+	/*
 	 * The row that scrolls inside a track.
 	 *
 	 * Where a `.seg` holds more than fits — a room's tabs — the choices live in

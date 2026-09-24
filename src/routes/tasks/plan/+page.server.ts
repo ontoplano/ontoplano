@@ -329,7 +329,6 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 		schemes: listSchemes(ctx),
 		// The starter weeks onboarding offers, offered again.
 		templates: TEMPLATES.map((t) => ({ key: t.key, label: t.label, description: t.description })),
-		weekdays: WEEKDAYS,
 		today: formatDate(today),
 		/*
 		 * What became of each block, for the days that have been.
