@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **Every markdown box opens side by side** — the writing and what it will
+  look like — wherever there is room for two columns.
 - **The demo's icon is yellow.** It was violet, which is one dark smudge
   beside the dev icon's blue in a row of browser tabs.
 - **A task's rating gauges keep a strip of their ruler showing.** A task

@@ -46,7 +46,7 @@
 		element = $bindable(),
 		rows = 6,
 		preview = 'markdown',
-		start = 'write',
+		start = 'both',
 		todos = undefined,
 		class: extra = '',
 		...rest
@@ -86,11 +86,12 @@
 	/**
 	 * Which pane is showing: one of them, or both beside each other.
 	 *
-	 * What it opens as is the caller's: a note is a document somebody is
-	 * composing and the preview is half of what they are doing, so the note
-	 * forms open side by side. A box that is one field on a form among many —
-	 * a task's notes, a goal's — opens as the editor, because there the
-	 * writing is a sentence rather than a thing being made.
+	 * Side by side, wherever there is room for it. It opened as the editor
+	 * alone and each form said for itself whether it wanted the pair, which
+	 * meant the same box behaved one way in the note editor and another in the
+	 * task editor beside it — and the preview, which is the reason any of this
+	 * is markdown, was a thing you had to go and ask for. A caller can still
+	 * say `start` where it has a reason to; none of them does.
 	 *
 	 * Below `@sm` there is no side by side to open as, and `both` falls back to
 	 * the editor alone.
