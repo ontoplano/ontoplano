@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **Saving a notebook's tabs no longer blanks them on the way out,** and a
+  tab ticked in that dialog now looks ticked.
 - **The Notebooks tour says what a notebook can hold** — the shelf of
   covers, how one sits inside another, and the tabs that are other rooms
   looking at one subject.

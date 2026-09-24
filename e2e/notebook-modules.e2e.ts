@@ -122,4 +122,38 @@ test.describe('what a notebook holds', () => {
 		// And the ones that have nothing to do with Finance are still there.
 		await expect(page.getByRole('checkbox', { name: 'Habits' })).toBeVisible();
 	});
+
+	test('the tabs keep their ticks across a save', async ({ page }) => {
+		await register(page, testEmail('nb-modules-save'));
+
+		await makeNotebook(page, 'Garden');
+
+		await page.getByRole('button', { name: 'Rename' }).click();
+		const recipes = page.getByRole('checkbox', { name: 'Recipes' });
+		await recipes.check();
+		// The row follows its own tick: a control that says the opposite of what
+		// it is showing is a control nobody can trust.
+		await expect(recipes).toBeChecked();
+
+		/*
+		 * And the save does not unpick them on the way out.
+		 *
+		 * An enhanced submit resets the form on success, and reset means the
+		 * `checked` attribute rather than what was on screen — so every box went
+		 * blank for the moment before the dialog closed, which reads exactly like
+		 * the save having thrown the answer away.
+		 */
+		await page.getByRole('button', { name: 'Save' }).click();
+		await expect
+			.poll(async () =>
+				page
+					.getByRole('checkbox', { name: 'Recipes' })
+					.isChecked()
+					.catch(() => true)
+			)
+			.toBe(true);
+
+		await page.waitForTimeout(600);
+		await expect(page.getByRole('button', { name: /^Recipes/ })).toBeVisible();
+	});
 });

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Snippet } from 'svelte';
+	import { untrack, type Snippet } from 'svelte';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -57,12 +57,42 @@
 
 	/** Nothing to press: it is either never off, or already off with its room. */
 	const fixed = $derived(locked || always);
+
+	/*
+	 * What the row is showing, which is not always what it was handed.
+	 *
+	 * Where this posts rather than drives state — a notebook's tabs — the
+	 * caller gives `on` and hears nothing back until the form is submitted. So
+	 * a row somebody had just ticked kept the dashed border and the grey label
+	 * of an off one: a control saying the opposite of its own tick. It follows
+	 * the box now, and goes back to the caller's answer when that changes.
+	 */
+	let here = $state(untrack(() => on));
+	$effect(() => {
+		here = on;
+	});
+
+	let box = $state<HTMLInputElement>();
+
+	/*
+	 * And what it goes back to when the form is reset.
+	 *
+	 * An enhanced submit calls `form.reset()` on success, and reset does not
+	 * mean "what it was showing" — it means the `checked` *attribute*, which
+	 * Svelte never writes because it sets the property instead. So saving the
+	 * Edit notebook dialog unticked every tab for the moment before the dialog
+	 * closed, which looks exactly like the save having thrown the answer away.
+	 * Writing the default beside the state is what makes reset a no-op here.
+	 */
+	$effect(() => {
+		if (box) box.defaultChecked = here;
+	});
 </script>
 
 <div
 	class="flex items-center gap-3 border px-3 text-sm {nested
 		? 'ml-8 border-l-2 border-gray-200 border-l-gray-300 py-1.5'
-		: on
+		: here
 			? 'border-gray-200 py-2'
 			: 'border-dashed border-gray-300 bg-gray-50 py-2'}"
 >
@@ -90,14 +120,16 @@
 	{:else}
 		<label class="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
 			<input
+				bind:this={box}
+				bind:checked={here}
 				type="checkbox"
 				{name}
 				{value}
-				checked={on}
 				class="size-4 shrink-0"
 				onchange={(e) => onToggle?.(e.currentTarget.checked)}
 			/>
-			<span class="min-w-0 flex-1 truncate {on ? 'text-gray-900' : 'text-gray-500'}">{label}</span>
+			<span class="min-w-0 flex-1 truncate {here ? 'text-gray-900' : 'text-gray-500'}">{label}</span
+			>
 		</label>
 		{@render trailing?.()}
 		{#if note}
