@@ -23,7 +23,7 @@
 import { localDateOf, type Ctx } from '$lib/services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 import type { Ref, RefKind } from './refs.js';
-import { CLOSED_STATUSES } from '../../task-status.js';
+import { CLOSED_STATUSES, STATUSES } from '../../task-status.js';
 import { compareByPriority } from '../../ratings.js';
 import type { Confinement } from './confinement.js';
 import { mayReadFile } from '$lib/services/media-permission.js';
@@ -1830,7 +1830,7 @@ export const TOOLS: Tool[] = [
 		name: 'change_todo',
 		title: 'Change a todo',
 		description:
-			'Rewrite a todo\u2019s title or notes. Only the fields given change. Moving it on or off a day is `schedule_todo`; done and not-done are `finish_todo` and `reopen_todo`.',
+			'Rewrite a todo\u2019s title, notes or state. Only the fields given change. Moving it on or off a day is `schedule_todo`; `finish_todo` and `reopen_todo` are the shorthands for the two ends of `status`.',
 		scope: 'tasks:write',
 		writes: true,
 		refs: [
@@ -1842,6 +1842,20 @@ export const TOOLS: Tool[] = [
 				id: { type: 'integer', description: 'The todo\u2019s id, as `todos` gives it.' },
 				title: text('The new title, in the person\u2019s own words.'),
 				notes: text('The new notes.'),
+				/*
+				 * Started, which had no spelling at all.
+				 *
+				 * `finish_todo` and `reopen_todo` set the two ends and nothing set
+				 * the middle, so "I have begun that one" \u2014 a column on the board,
+				 * and what an assistant working a list wants to say before it is
+				 * finished \u2014 could only be said by hand in the app.
+				 */
+				status: {
+					type: 'string',
+					enum: [...STATUSES],
+					description:
+						'What state it is in: `todo` waiting, `doing` started, `done` finished, `skipped` given up on. Left out, it is untouched.'
+				},
 				notebookId: {
 					type: 'integer',
 					description:
@@ -1883,6 +1897,9 @@ export const TOOLS: Tool[] = [
 						}
 					: {})
 			});
+			// Its own column, and its own validation: a word that is not one of
+			// the four is refused rather than written.
+			if (args.status !== undefined) setTodoStatus(ctx, current.id, args.status);
 			return usedEnergy(args) ? { ok: true, warning: ENERGY_WARNING } : { ok: true };
 		}
 	},

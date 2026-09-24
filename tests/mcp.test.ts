@@ -796,6 +796,39 @@ describe('editing what was created', () => {
 		expect(row.notes).toBe('the square ones');
 	});
 
+	/*
+	 * Started is a state a caller can reach.
+	 *
+	 * `finish_todo` and `reopen_todo` set the two ends and nothing set the
+	 * middle, so an assistant working through a list could say a task was done
+	 * but never that it had begun — the board's own middle column, unreachable
+	 * from outside the app.
+	 */
+	it('marks a todo as started, and refuses a word that is not a state', () => {
+		const made = rpc(1, 'add_todo', { title: 'strip the hallway' }, ['tasks:write']);
+		const id = made.result.structuredContent.id as number;
+
+		expect(rpc(2, 'change_todo', { id, status: 'doing' }, ['tasks:write']).result.isError).toBe(
+			false
+		);
+		const started = rpc(3, 'todos', { verbose: true }, ['tasks:read']);
+		expect(
+			started.result.structuredContent.items.find((t: { id: number }) => t.id === id).status
+		).toBe('doing');
+
+		// And the title given beside it still lands: one call, both fields.
+		rpc(4, 'change_todo', { id, title: 'strip the hallway walls', status: 'done' }, [
+			'tasks:write'
+		]);
+		const list = rpc(5, 'todos', { verbose: true, status: 'closed' }, ['tasks:read']);
+		const row = list.result.structuredContent.items.find((t: { id: number }) => t.id === id);
+		expect(row.title).toBe('strip the hallway walls');
+		expect(row.status).toBe('done');
+
+		const refused = rpc(6, 'change_todo', { id, status: 'started' }, ['tasks:write']);
+		expect(refused.result.isError).toBe(true);
+	});
+
 	it('changes a goal the person already committed to', () => {
 		database.exec(
 			`insert into goals (user_id, title, notes, horizon, period_start, status, created_at, updated_at)

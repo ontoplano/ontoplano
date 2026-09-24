@@ -532,7 +532,7 @@ _Needs `tasks:write`; writes._
 
 ### `change_todo` — Change a todo
 
-Rewrite a todo’s title or notes. Only the fields given change. Moving it on or off a day is `schedule_todo`; done and not-done are `finish_todo` and `reopen_todo`.
+Rewrite a todo’s title, notes or state. Only the fields given change. Moving it on or off a day is `schedule_todo`; `finish_todo` and `reopen_todo` are the shorthands for the two ends of `status`.
 
 _Needs `tasks:write`; writes._
 
@@ -541,6 +541,7 @@ _Needs `tasks:write`; writes._
 | `id`         | integer | yes      | The todo’s id, as `todos` gives it.                                                                                                                                                                    |
 | `title`      | string  | —        | The new title, in the person’s own words.                                                                                                                                                              |
 | `notes`      | string  | —        | The new notes.                                                                                                                                                                                         |
+| `status`     | string  | —        | What state it is in: `todo` waiting, `doing` started, `done` finished, `skipped` given up on. Left out, it is untouched. One of: `todo`, `doing`, `done`, `skipped`.                                   |
 | `notebookId` | integer | —        | The notebook to file it under, as `notebooks` gives its id. `0` takes it out of whichever one it is in. `add_todo` can file a task at birth; this is how one already made moves.                       |
 | `tags`       | string  | —        | The labels it should carry from now on, comma or space separated — this replaces whatever it had, so include the ones to keep. An empty string takes them all off. Left out, the labels are untouched. |
 | `urgency`    | integer | —        | How soon it has to happen, 0–5.                                                                                                                                                                        |
