@@ -29,9 +29,10 @@ releases mattered.
   look like — wherever there is room for two columns.
 - **The demo's icon is yellow.** It was violet, which is one dark smudge
   beside the dev icon's blue in a row of browser tabs.
-- **A task's rating gauges keep a strip of their ruler showing.** A task
-  rated 5 for urgency filled the box edge to edge, leaving nothing to read
-  the heights against.
+- **A task's three ratings are three columns of one width,** with a strip
+  of the ruler beside them that nothing covers. They nested before, so a
+  short interest left ease looking twice the size of urgency, and a task
+  rated 5 across the board filled the box with nothing to read it against.
 - **The list of labels under a tag filter is no longer cut off** at the
   bottom of the panel it opens in.
 - **The task count no longer nudges the filters beside it** when a tag

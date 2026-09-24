@@ -1,26 +1,28 @@
 <script lang="ts">
 	/**
-	 * How urgent, how easy, how wanted — as three nested bars.
+	 * How urgent, how easy, how wanted — as three columns of one width.
 	 *
 	 * They were "U4 I3 E2": three letters and three numbers, which is the
 	 * information and none of the reading. Then little horizontal thermometers,
-	 * which read better and cost a row of the card each. Then three bars of
-	 * equal width side by side, which is most of the idea.
+	 * which read better and cost a row of the card each.
 	 *
-	 * This is the rest of it: the bars nest. Urgency is the widest and sits
-	 * behind, ease is narrower in front of it, interest is narrowest in front
-	 * of that — all three standing on one baseline and sharing a right edge, so
-	 * the group is one object about the size of a thumbnail. **Width says which
-	 * rating; height says its value.** A row of separate bars needs the eye to
-	 * count positions before it can read anything; nested, the one at the back
-	 * is always urgency wherever your eye lands.
+	 * Now: three columns of equal width standing on one baseline, in
+	 * `RATING_ORDER` — urgency, ease, interest — left to right, which is the
+	 * order the Priority sort reads them in and the order the form asks for
+	 * them. **Position says which rating; height says its value.** The group is
+	 * one object about the size of a thumbnail.
+	 *
+	 * They used to nest — urgency a full-width rectangle behind, ease narrower
+	 * in front of it, interest narrower still — so that the leftmost band was
+	 * urgency at whatever height your eye landed on. It reads well only while
+	 * all three are tall: above the top of a short interest, ease's rectangle
+	 * is two columns wide and the same answer looks like twice as much as
+	 * urgency beside it. Somebody comparing two rows was comparing the wrong
+	 * thing. Separate columns are the same reading at every height, and the
+	 * leftmost one is still urgency.
 	 *
 	 * Nothing else is drawn — no outline, no gradient, no marks between the
 	 * steps. At this size all three were texture rather than information.
-	 *
-	 * The order is `RATING_ORDER` — urgency, ease, interest — which is the
-	 * order the Priority sort reads them in and the order the form asks for
-	 * them. Back to front is that same order, so there is one thing to learn.
 	 *
 	 * ## One scale, on every row
 	 *
@@ -79,7 +81,7 @@
 
 	let {
 		values,
-		/** Kept for the callers that ask for it; the group nests either way. */
+		/** Kept for the callers that ask for it; the group is drawn the same way. */
 		stacked = false,
 		class: className = ''
 	}: { values: Partial<RatingValues>; stacked?: boolean; class?: string } = $props();
@@ -100,15 +102,8 @@
 	const heightOf = (value: number | null | undefined) =>
 		((value ?? RATING_UNRATED) / RATING_MAX) * 100;
 
-	/**
-	 * How wide the nth bar is, as a percentage of the group.
-	 *
-	 * Even steps down to the last one, so each shows a sliver exactly as wide
-	 * as the narrowest bar — three equal thirds for the three there are. Any
-	 * finer and the slivers stop being a width you can tell apart, which is the
-	 * whole of how you know which bar is which.
-	 */
-	const widthOf = (at: number) => ((RATING_ORDER.length - at) * 100) / RATING_ORDER.length;
+	/** One column each, as a percentage of the box a 5 would fill. */
+	const COLUMN = 100 / RATING_ORDER.length;
 </script>
 
 <span
@@ -118,7 +113,7 @@
 	aria-label={said}
 >
 	<!--
-		The bars stand in their own box on the right, so the widths below stay
+		The columns stand in their own box on the right, so the widths below stay
 		percentages of what a 5 fills rather than of the group plus its strip.
 	-->
 	<span class="rating-stack">
@@ -126,7 +121,7 @@
 			<span
 				class="rating-bar"
 				data-rating={r}
-				style="width: {widthOf(at)}%; height: {heightOf(values[r])}%; z-index: {at + 1}"
+				style="left: {COLUMN * at}%; width: {COLUMN}%; height: {heightOf(values[r])}%"
 			></span>
 		{/each}
 	</span>
@@ -134,14 +129,14 @@
 
 <style>
 	/*
-	 * The group. Every bar is positioned from the same bottom-right corner, so
-	 * they share a baseline and a right edge and the widths do the nesting.
+	 * The group. Every column stands on the same floor, a third of the box
+	 * wide, so they are read against each other and not against themselves.
 	 */
 	.rating-bars {
 		/* One scale for every row in the list — see the note above. */
 		--bars-height: 2.25rem;
 		--bars-width: 1.5rem;
-		/* One bar's worth: three of them nest across `--bars-width`. */
+		/* One column's worth: three of them fill `--bars-width`. */
 		--bars-column: calc(var(--bars-width) / 3);
 
 		position: relative;
@@ -176,16 +171,9 @@
 		width: var(--bars-width);
 	}
 
-	/*
-	 * Every bar from the same bottom-right corner.
-	 *
-	 * They shared a left edge first, which put the narrowest one — interest —
-	 * over the left of the other two and left the widest showing only on the
-	 * right. Anchored right, the slivers fall on the left where the eye starts.
-	 */
+	/* Each column in its own third, all of them standing on the same floor. */
 	.rating-bar {
 		position: absolute;
-		right: 0;
 		bottom: 0;
 		border-radius: 2px;
 		background-color: var(--rating-ink);
