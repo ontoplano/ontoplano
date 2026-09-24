@@ -258,7 +258,7 @@
 							{/if}
 						{/snippet}
 
-						<div class="notebook-shelf">
+						<div data-tour="notebook-shelf" class="notebook-shelf">
 							{#each shelved as node (node.id)}
 								{@render notebookRow(node)}
 							{/each}

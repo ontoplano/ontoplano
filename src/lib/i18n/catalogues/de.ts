@@ -3522,10 +3522,13 @@ export const messages: Catalogue = {
 		'Eine Gewohnheit ist entweder eine, die Sie beibehalten, oder eine, die Sie vermeiden wollen, und beide werden gleich erfasst: eine Markierung pro Tag.',
 	'tour.aNameIsEnoughTo': 'Ein Name reicht zum Start',
 	'tour.aNameOrTheMoment': 'Ein Name, oder der Moment',
+	'tour.aNotebookCanHoldWhatever':
+		'A notebook holds whatever its subject accumulates — the tiles to buy, the invoices, the recipe you will cook in it. Each tab is that room looking at this one subject, and Edit notebook chooses which tabs it has.',
 	'tour.aPersonIsNotA': 'Eine Person ist kein Tag',
 	'tour.aRenovationATripA':
 		'Eine Renovierung, eine Reise, eine Recherche. Ein Notizbuch enthält Notizen zu einem Thema, und es ist egal, wann Sie sie geschrieben haben.',
 	'tour.aSentenceIsAComplete': 'Ein Satz ist eine vollständige Idee',
+	'tour.aShelfOfSubjects': 'A shelf of subjects',
 	'tour.aStreamIsASeries':
 		'Ein Stream ist eine Reihe, die etwas anderes fortlaufend liefert — ein Gewicht, eine Schrittzahl — und er bekommt eine eigene Seite unter Gesundheit.',
 	'tour.aTagOnAPicture':
@@ -3588,6 +3591,8 @@ export const messages: Catalogue = {
 		'Einträge, Notizen, Ideen, Ziele, Personen, Rezepte, Aufgaben. Gruppiert nach dem, was sie sind.',
 	'tour.everyDeviceThatIsSigned': 'Jedes Gerät, das angemeldet ist',
 	'tour.everyMentionInOnePlace': 'Jede Erwähnung an einem Ort',
+	'tour.everyNotebookIsACover':
+		'A cover with its name under it and a count of what is inside. Name one “Renovation — Kitchen” and it sits inside “Renovation”; renaming it is how it moves.',
 	'tour.everyTagOnAnEntry':
 		'Jeder Tag auf einem Eintrag ist ein Filter. Die Suche reicht bis in die Wörter darin.',
 	'tour.everythingInOneBox': 'Alles, in einem Feld',
@@ -3643,6 +3648,7 @@ export const messages: Catalogue = {
 	'tour.movingAndSharing': 'Verschieben und Teilen',
 	'tour.notACalendarOfAppointments':
 		'Die Blöcke, die sich wiederholen sollen. Alles andere in Aufgaben baut darauf auf.',
+	'tour.notJustNotesAndTasks': 'Not just notes and tasks',
 	'tour.notebooks': 'Notizbücher',
 	'tour.nothingCarriesItselfOver': 'Nichts überträgt sich von selbst',
 	'tour.numbersFromElsewhere': 'Zahlen von anderswo',

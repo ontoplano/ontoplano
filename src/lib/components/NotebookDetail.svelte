@@ -1045,7 +1045,7 @@
 				control for the panel rather than for what is in it.
 			-->
 			<div class="flex items-center border-b border-gray-200 pr-2">
-				<div class="snap-strip min-w-0 flex-1 gap-1 px-2 md:flex">
+				<div data-tour="notebook-tabs" class="snap-strip min-w-0 flex-1 gap-1 px-2 md:flex">
 					{#each tabs as option (option.key)}
 						<!--
 							The strip gives up its width to the controls beside it, so on a

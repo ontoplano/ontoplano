@@ -3501,10 +3501,13 @@ export const messages: Catalogue = {
 		'Un hábito es uno que mantener o uno que evitar, y ambos se registran igual: una marca por día.',
 	'tour.aNameIsEnoughTo': 'Un nombre basta para empezar',
 	'tour.aNameOrTheMoment': 'Un nombre, o el momento',
+	'tour.aNotebookCanHoldWhatever':
+		'A notebook holds whatever its subject accumulates — the tiles to buy, the invoices, the recipe you will cook in it. Each tab is that room looking at this one subject, and Edit notebook chooses which tabs it has.',
 	'tour.aPersonIsNotA': 'Una persona no es una etiqueta',
 	'tour.aRenovationATripA':
 		'Una renovación, un viaje, una investigación. Un cuaderno guarda notas sobre un tema, y no le importa cuándo las escribiste.',
 	'tour.aSentenceIsAComplete': 'Una frase es una idea completa',
+	'tour.aShelfOfSubjects': 'A shelf of subjects',
 	'tour.aStreamIsASeries':
 		'Un flujo es una serie que algo más sigue actualizando — un peso, un conteo de pasos — y tiene su propia página en Salud.',
 	'tour.aTagOnAPicture':
@@ -3567,6 +3570,8 @@ export const messages: Catalogue = {
 		'Entradas, notas, ideas, metas, personas, recetas, tareas. Agrupadas por lo que son.',
 	'tour.everyDeviceThatIsSigned': 'Todos los dispositivos con sesión iniciada',
 	'tour.everyMentionInOnePlace': 'Cada mención, en un solo lugar',
+	'tour.everyNotebookIsACover':
+		'A cover with its name under it and a count of what is inside. Name one “Renovation — Kitchen” and it sits inside “Renovation”; renaming it is how it moves.',
 	'tour.everyTagOnAnEntry':
 		'Cada etiqueta en una entrada es un filtro. La búsqueda alcanza las palabras dentro de ellas.',
 	'tour.everythingInOneBox': 'Todo, en una sola caja',
@@ -3622,6 +3627,7 @@ export const messages: Catalogue = {
 	'tour.movingAndSharing': 'Mover y compartir',
 	'tour.notACalendarOfAppointments':
 		'Los bloques que planeas repetir. Todo lo demás en Tareas se construye a partir de esto.',
+	'tour.notJustNotesAndTasks': 'Not just notes and tasks',
 	'tour.notebooks': 'Cuadernos',
 	'tour.nothingCarriesItselfOver': 'Nada se traslada solo',
 	'tour.numbersFromElsewhere': 'Números de otra parte',

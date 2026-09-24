@@ -3488,6 +3488,20 @@ The notebooks as they belong to each other, roots first.
 
 Open ones first: a closed notebook is history, not a place you are writing.
 
+#### `recentlyEditedNotebooks(ctx, limit)`
+
+The notebooks worked on most recently, newest first.
+
+"Worked on" is the newest stamp on anything the notebook holds, not the
+notebook row's own: writing five notes into the kitchen today has to put it
+above a notebook that was renamed last week, or the word means the opposite
+of what somebody reading it expects. The row's own stamp still counts, so a
+notebook that has just been made and not yet written in is recent.
+
+Closed ones are left out. A closed notebook is history — a trip that
+happened — and the last thing that happened in it was closing it, which
+would put it at the top of exactly the list nobody wants it in.
+
 #### `listOrphanedNotes(ctx)`
 
 Notes whose notebook was deleted.

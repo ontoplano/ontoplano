@@ -3481,10 +3481,13 @@ export const messages: Catalogue = {
 		'Um hábito é algo a manter ou a evitar, e os dois são registrados da mesma forma: uma marca por dia.',
 	'tour.aNameIsEnoughTo': 'Um nome já basta para começar',
 	'tour.aNameOrTheMoment': 'Um nome, ou o momento',
+	'tour.aNotebookCanHoldWhatever':
+		'A notebook holds whatever its subject accumulates — the tiles to buy, the invoices, the recipe you will cook in it. Each tab is that room looking at this one subject, and Edit notebook chooses which tabs it has.',
 	'tour.aPersonIsNotA': 'Uma pessoa não é uma tag',
 	'tour.aRenovationATripA':
 		'Uma reforma, uma viagem, uma pesquisa. Um caderno reúne notas sobre um assunto, e não importa quando você as escreveu.',
 	'tour.aSentenceIsAComplete': 'Uma frase é uma ideia completa',
+	'tour.aShelfOfSubjects': 'A shelf of subjects',
 	'tour.aStreamIsASeries':
 		'Um fluxo é uma série que outra coisa vai alimentando — um peso, uma contagem de passos — e tem uma página só sua em Saúde.',
 	'tour.aTagOnAPicture':
@@ -3547,6 +3550,8 @@ export const messages: Catalogue = {
 		'Entradas, notas, ideias, metas, pessoas, receitas, tarefas. Agrupados pelo que são.',
 	'tour.everyDeviceThatIsSigned': 'Todo dispositivo conectado',
 	'tour.everyMentionInOnePlace': 'Toda menção, em um só lugar',
+	'tour.everyNotebookIsACover':
+		'A cover with its name under it and a count of what is inside. Name one “Renovation — Kitchen” and it sits inside “Renovation”; renaming it is how it moves.',
 	'tour.everyTagOnAnEntry':
 		'Toda tag em uma entrada é um filtro. A busca alcança as palavras dentro delas.',
 	'tour.everythingInOneBox': 'Tudo, em uma caixa',
@@ -3602,6 +3607,7 @@ export const messages: Catalogue = {
 	'tour.movingAndSharing': 'Movendo e compartilhando',
 	'tour.notACalendarOfAppointments':
 		'Os blocos que você pretende repetir. Tudo o mais em Tarefas é construído a partir disso.',
+	'tour.notJustNotesAndTasks': 'Not just notes and tasks',
 	'tour.notebooks': 'Cadernos',
 	'tour.nothingCarriesItselfOver': 'Nada se transfere sozinho',
 	'tour.numbersFromElsewhere': 'Números de outros lugares',

@@ -3421,10 +3421,13 @@ export const messages: Catalogue = {
 		'A habit is either one to keep or one to avoid, and both are logged the same way: one mark a day.',
 	'tour.aNameIsEnoughTo': 'A name is enough to start',
 	'tour.aNameOrTheMoment': 'A name, or the moment',
+	'tour.aNotebookCanHoldWhatever':
+		'A notebook holds whatever its subject accumulates — the tiles to buy, the invoices, the recipe you will cook in it. Each tab is that room looking at this one subject, and Edit notebook chooses which tabs it has.',
 	'tour.aPersonIsNotA': 'A person is not a tag',
 	'tour.aRenovationATripA':
 		'A renovation, a trip, a piece of research. A notebook holds notes about one subject, and it does not care when you wrote them.',
 	'tour.aSentenceIsAComplete': 'A sentence is a complete idea',
+	'tour.aShelfOfSubjects': 'A shelf of subjects',
 	'tour.aStreamIsASeries':
 		'A stream is a series something else keeps pushing — a weight, a step count — and it gets a page of its own under Health.',
 	'tour.aTagOnAPicture':
@@ -3486,6 +3489,8 @@ export const messages: Catalogue = {
 		'Entries, notes, ideas, goals, people, recipes, todos. Grouped by what they are.',
 	'tour.everyDeviceThatIsSigned': 'Every device that is signed in',
 	'tour.everyMentionInOnePlace': 'Every mention, in one place',
+	'tour.everyNotebookIsACover':
+		'A cover with its name under it and a count of what is inside. Name one “Renovation — Kitchen” and it sits inside “Renovation”; renaming it is how it moves.',
 	'tour.everyTagOnAnEntry':
 		'Every tag on an entry is a filter. Search reaches the words inside them.',
 	'tour.everythingInOneBox': 'Everything, in one box',
@@ -3540,6 +3545,7 @@ export const messages: Catalogue = {
 	'tour.movingAndSharing': 'Moving and sharing',
 	'tour.notACalendarOfAppointments':
 		'The blocks you mean to repeat. Everything else in Tasks is built out of this.',
+	'tour.notJustNotesAndTasks': 'Not just notes and tasks',
 	'tour.notebooks': 'Notebooks',
 	'tour.nothingCarriesItselfOver': 'Nothing carries itself over',
 	'tour.numbersFromElsewhere': 'Numbers from elsewhere',
