@@ -103,76 +103,89 @@
 	}
 </script>
 
-{#if filters.length > 0 || narrowed}
-	<div class="col-span-full flex w-full flex-wrap items-center gap-2">
-		{#if filters.length > 0}
-			<span class="eyebrow shrink-0 text-gray-500">{t('filters.saved')}</span>
-		{/if}
+<!--
+	Always here, whether or not there is anything to save.
 
-		{#each filters as one (one.name)}
-			<!-- The name is the button and the cross is inside it, the way a tag
+	It used to appear the moment something narrowed the list — which put a row
+	into the filter strip and pushed the list under it down, on the press that
+	was supposed to be narrowing it. Pressing a control may not move the page.
+	So the button is always drawn and is simply dead until there is something
+	to keep.
+-->
+<div class="col-span-full flex w-full flex-wrap items-center gap-2">
+	{#if filters.length > 0}
+		<span class="eyebrow shrink-0 text-gray-500">{t('filters.saved')}</span>
+	{/if}
+
+	{#each filters as one (one.name)}
+		<!-- The name is the button and the cross is inside it, the way a tag
 			     chip carries its own way off. -->
-			<span class="chip inline-flex items-center gap-1">
-				<button
-					type="button"
-					class="min-w-0 truncate"
-					aria-label={t('filters.applyFilter', { name: one.name })}
-					onclick={() => apply(one)}
-				>
-					{one.name}
-				</button>
-				<button
-					type="button"
-					class="opacity-60 transition hover:opacity-100"
-					aria-label={t('filters.forgetFilter', { name: one.name })}
-					title={t('filters.forgetFilter', { name: one.name })}
-					onclick={() => forget(one)}
-				>
-					<Icon name="close" size={12} />
-				</button>
-			</span>
-		{/each}
+		<span class="chip inline-flex items-center gap-1">
+			<button
+				type="button"
+				class="min-w-0 truncate"
+				aria-label={t('filters.applyFilter', { name: one.name })}
+				onclick={() => apply(one)}
+			>
+				{one.name}
+			</button>
+			<button
+				type="button"
+				class="opacity-60 transition hover:opacity-100"
+				aria-label={t('filters.forgetFilter', { name: one.name })}
+				title={t('filters.forgetFilter', { name: one.name })}
+				onclick={() => forget(one)}
+			>
+				<Icon name="close" size={12} />
+			</button>
+		</span>
+	{/each}
 
-		{#if narrowed}
-			{#if naming}
-				<span class="flex min-w-0 items-center gap-1">
-					<!-- A plain input: this names a filter rather than filling a field,
+	{#if naming}
+		<span class="flex min-w-0 items-center gap-1">
+			<!-- A plain input: this names a filter rather than filling a field,
 					     it posts nothing, and `OneLine` is a textarea for autofill's
 					     sake — which is not a thing a one-word label wants. -->
-					<!-- svelte-ignore a11y_autofocus -->
-					<input
-						type="text"
-						bind:value={name}
-						class="input h-8 w-40"
-						placeholder={t('filters.nameThisFilter')}
-						aria-label={t('filters.nameThisFilter')}
-						maxlength="40"
-						autocomplete="off"
-						autofocus
-						onkeydown={(event: KeyboardEvent) => {
-							// Enter keeps it and Escape gives up, which is what a one-field
-							// question is for; neither may reach the sheet around it.
-							if (event.key === 'Enter') {
-								event.preventDefault();
-								event.stopPropagation();
-								keep();
-							} else if (event.key === 'Escape') {
-								event.preventDefault();
-								event.stopPropagation();
-								naming = false;
-								name = '';
-							}
-						}}
-					/>
-					<button type="button" class="btn btn-sm btn-primary" onclick={keep}>{t('ui.save')}</button
-					>
-				</span>
-			{:else}
-				<button type="button" class="btn btn-sm" onclick={() => (naming = true)}>
-					<Icon name="check" size={14} />
-					{t('filters.saveThese')}
-				</button>
-			{/if}
-		{/if}
-	</div>
-{/if}
+			<!-- svelte-ignore a11y_autofocus -->
+			<input
+				type="text"
+				bind:value={name}
+				class="input h-8 w-40"
+				placeholder={t('filters.nameThisFilter')}
+				aria-label={t('filters.nameThisFilter')}
+				maxlength="40"
+				autocomplete="off"
+				autofocus
+				onkeydown={(event: KeyboardEvent) => {
+					// Enter keeps it and Escape gives up, which is what a one-field
+					// question is for; neither may reach the sheet around it.
+					if (event.key === 'Enter') {
+						event.preventDefault();
+						event.stopPropagation();
+						keep();
+					} else if (event.key === 'Escape') {
+						event.preventDefault();
+						event.stopPropagation();
+						naming = false;
+						name = '';
+					}
+				}}
+			/>
+			<button type="button" class="btn btn-sm btn-primary" onclick={keep}>{t('ui.save')}</button>
+		</span>
+	{:else}
+		<!-- Dead rather than absent: what it would do is worth seeing before
+			     there is anything to do it to, and a button that arrives moves
+			     everything under it. -->
+		<button
+			type="button"
+			class="btn btn-sm"
+			disabled={!narrowed}
+			title={t('filters.savedFilterHint')}
+			onclick={() => (naming = true)}
+		>
+			<Icon name="check" size={14} />
+			{t('filters.saveThese')}
+		</button>
+	{/if}
+</div>
