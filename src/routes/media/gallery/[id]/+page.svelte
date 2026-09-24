@@ -1,4 +1,7 @@
 <script lang="ts">
+	import TagFilter from '$lib/components/TagFilter.svelte';
+	import { tagFilterInUrl } from '$lib/tag-filter-url.svelte';
+	import { isTagFiltering, passesTagFilter } from '$lib/tag-filter';
 	import { page } from '$app/state';
 	import TagInput from '$lib/components/TagInput.svelte';
 	import TagChip from '$lib/components/TagChip.svelte';
@@ -36,11 +39,9 @@
 	};
 	const leafName = leafAlbumName;
 
-	/** Filtering by a tag, the way the diary does. Empty means everything. */
-	let filterTag = $state('');
-	const shown = $derived(
-		filterTag ? data.pictures.filter((p) => p.tags.includes(filterTag)) : data.pictures
-	);
+	/** Filtering by tags, the way the diary does; kept in the address. */
+	const tagFilter = tagFilterInUrl();
+	const shown = $derived(data.pictures.filter((p) => passesTagFilter(p.tags, tagFilter.current)));
 	const albumTags = $derived([...new Set(data.pictures.flatMap((p) => p.tags))].sort());
 
 	let uploadForm: HTMLFormElement | undefined = $state();
@@ -183,19 +184,15 @@
 		</div>
 	{/if}
 
-	<!--
-		The diary's own gesture: click a tag to see just it, click it again to
-		let go. In the gallery's colour rather than the diary's.
-	-->
-	{#if albumTags.length > 0}
-		<div class="flex flex-wrap gap-2">
-			{#each albumTags as tag (tag)}
-				<TagChip
-					name={tag}
-					active={filterTag === tag}
-					onclick={() => (filterTag = filterTag === tag ? '' : tag)}
-				/>
-			{/each}
+	<!-- The same tag filter the diary and the task list use. -->
+	{#if albumTags.length > 0 || isTagFiltering(tagFilter.current)}
+		<div class="flex">
+			<TagFilter
+				tags={albumTags}
+				value={tagFilter.current}
+				onchange={(next) => (tagFilter.current = next)}
+				name="gallery-tags"
+			/>
 		</div>
 	{/if}
 
@@ -323,7 +320,7 @@
 						<TagChip
 							name={tag}
 							onclick={() => {
-								filterTag = tag;
+								tagFilter.current = { include: [tag], exclude: [], mode: 'any' };
 								viewingId = null;
 							}}
 						/>

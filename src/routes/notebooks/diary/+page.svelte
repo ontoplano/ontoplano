@@ -8,7 +8,9 @@
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
-	import TagFold from '$lib/components/TagFold.svelte';
+	import TagFilter from '$lib/components/TagFilter.svelte';
+	import { tagFilterInUrl } from '$lib/tag-filter-url.svelte';
+	import { isTagFiltering, passesTagFilter } from '$lib/tag-filter';
 	import { SECTION_COLORS } from '$lib/colors';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import FormError from '$lib/components/FormError.svelte';
@@ -36,7 +38,8 @@
 	let showWinsForm = $state(false);
 	let editingId: number | null = $state(null);
 	let selectedIndex = $state(0);
-	let filterTag: string | null = $state(null);
+	/** Which labels to show and which to hide, kept in the address. */
+	const tagFilter = tagFilterInUrl();
 	let confirmingDeleteId: number | null = $state(null);
 	let winInputCount = $state(3);
 	const winsEnabled = $derived(data.winsEnabled);
@@ -60,8 +63,12 @@
 	}
 
 	function filteredEntries() {
-		if (!filterTag) return data.entries;
-		return data.entries.filter((e) => e.tags.some((t) => t.name === filterTag));
+		return data.entries.filter((e) =>
+			passesTagFilter(
+				e.tags.map((one) => one.name),
+				tagFilter.current
+			)
+		);
 	}
 
 	function editingEntry() {
@@ -359,27 +366,20 @@
 		{/snippet}
 	</Modal>
 
-	{#if filteredEntries().length === 0}
+	{#if data.entries.length === 0}
 		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
-			{#if filterTag}
-				<EmptyState
-					icon="diary"
-					title={t('notebooks.diary.noEntriesWith', { filterTag: filterTag })}
-				/>
-			{:else}
-				<EmptyState
-					icon="diary"
-					title={t('notebooks.diary.theJournalIsEmpty')}
-					description={t('notebooks.diary.whateverHappenedTodayInAs')}
-				>
-					{#snippet action()}
-						<button onclick={() => (showForm = true)} class="btn btn-primary">
-							<Icon name="plus" />
-							{t('notebooks.diary.newEntry')}
-						</button>
-					{/snippet}
-				</EmptyState>
-			{/if}
+			<EmptyState
+				icon="diary"
+				title={t('notebooks.diary.theJournalIsEmpty')}
+				description={t('notebooks.diary.whateverHappenedTodayInAs')}
+			>
+				{#snippet action()}
+					<button onclick={() => (showForm = true)} class="btn btn-primary">
+						<Icon name="plus" />
+						{t('notebooks.diary.newEntry')}
+					</button>
+				{/snippet}
+			</EmptyState>
 		</div>
 	{:else}
 		<!--
@@ -395,16 +395,28 @@
 
 			They were a loose row of every tag anybody has used, on the page's own
 			ground above the entries — wider than the list under it and belonging
-			to nothing. Same control, same place: see `TagFold`.
+			to nothing. Same control, same place: see `TagFilter`.
 		-->
 		<RoomSurface accent={SECTION_COLORS.diary} dataTour="diary-list">
 			{#snippet tools()}
-				<TagFold
-					tags={data.allTags}
-					bind:selected={filterTag}
-					onchange={() => (selectedIndex = 0)}
-				/>
+				{#if data.allTags.length > 0 || isTagFiltering(tagFilter.current)}
+					<TagFilter
+						tags={data.allTags.map((tag) => tag.name)}
+						value={tagFilter.current}
+						onchange={(next) => {
+							tagFilter.current = next;
+							selectedIndex = 0;
+						}}
+						name="diary-tags"
+					/>
+				{/if}
 			{/snippet}
+			<!-- Inside the surface, so the control that emptied it stays to undo it. -->
+			{#if filteredEntries().length === 0}
+				<div class="p-8 text-center text-sm text-gray-500">
+					<EmptyState icon="diary" title={t('tagFilter.nothingMatches')} />
+				</div>
+			{/if}
 			<!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
 			<div
 				class="divide-y divide-gray-200"
@@ -460,8 +472,15 @@
 							{#each entry.tags as tag (tag.id)}
 								<TagChip
 									name={tag.name}
+									active={tagFilter.current.include.includes(tag.name)}
 									onclick={() => {
-										filterTag = tag.name;
+										const held = tagFilter.current;
+										if (!held.include.includes(tag.name))
+											tagFilter.current = {
+												...held,
+												include: [...held.include, tag.name],
+												exclude: held.exclude.filter((one) => one !== tag.name)
+											};
 										selectedIndex = 0;
 									}}
 								/>

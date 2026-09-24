@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **The diary, ideas and the gallery filter by tags the same way,** and a
+  filter that matches nothing keeps its controls on screen so it can be undone.
 - **Filter by tags to show and tags to hide.** The task list and a
   notebook's tasks take tags to show and tags to hide, and whether a task
   needs any of them (∪) or all of them (∩); "Untagged" works on either side.

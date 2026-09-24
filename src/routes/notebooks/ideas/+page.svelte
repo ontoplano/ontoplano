@@ -2,7 +2,9 @@
 	/* biome-ignore-all assist/source/organizeImports lint/correctness/noUnusedImports lint/correctness/noUnusedVariables lint/style/useConst: Svelte template and rune usage in this file triggers false positives in current Biome diagnostics. */
 	import { enhance } from '$lib/enhance';
 	import FilterChips from '$lib/components/FilterChips.svelte';
-	import TagFold from '$lib/components/TagFold.svelte';
+	import TagFilter from '$lib/components/TagFilter.svelte';
+	import { tagFilterInUrl } from '$lib/tag-filter-url.svelte';
+	import { isTagFiltering, passesTagFilter } from '$lib/tag-filter';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import { SECTION_COLORS } from '$lib/colors';
 	import { setRoomAction } from '$lib/room-action.svelte';
@@ -26,12 +28,8 @@
 	let showForm = $state(false);
 	let editingId: number | null = $state(null);
 	let selectedIndex = $state(0);
-	let filterTag: string | null = $state(null);
-	/*
-	 * The tag list is folded to begin with. Somebody opening Ideas came to read
-	 * ideas; the tags are how you narrow them once you know what you are after,
-	 * and every tag ever used is a wall of chips above the thing itself.
-	 */
+	/** Which labels to show and which to hide, kept in the address. */
+	const tagFilter = tagFilterInUrl();
 	/*
 	 * The ones still waiting, first.
 	 *
@@ -44,7 +42,12 @@
 
 	let filteredIdeas = $derived.by(() =>
 		data.ideas
-			.filter((idea) => !filterTag || idea.tags.some((tag) => tag.name === filterTag))
+			.filter((idea) =>
+				passesTagFilter(
+					idea.tags.map((tag) => tag.name),
+					tagFilter.current
+				)
+			)
 			.filter((idea) => {
 				if (filterApplied === 'applied') return idea.isApplied;
 				if (filterApplied === 'not-applied') return !idea.isApplied;
@@ -192,24 +195,20 @@
 		{/snippet}
 	</Modal>
 
-	{#if filteredIdeas.length === 0}
+	{#if data.ideas.length === 0}
 		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
-			{#if filterTag || filterApplied !== 'all' || filterFavorite !== 'all'}
-				<EmptyState icon="ideas" title={t('notebooks.ideas.noIdeasMatchTheCurrent')} />
-			{:else}
-				<EmptyState
-					icon="ideas"
-					title={t('notebooks.ideas.nothingCapturedYet')}
-					description={t('notebooks.ideas.ideasAreTheThingsYou')}
-				>
-					{#snippet action()}
-						<button onclick={() => (showForm = true)} class="btn btn-primary">
-							<Icon name="plus" />
-							{t('notebooks.ideas.newIdea')}
-						</button>
-					{/snippet}
-				</EmptyState>
-			{/if}
+			<EmptyState
+				icon="ideas"
+				title={t('notebooks.ideas.nothingCapturedYet')}
+				description={t('notebooks.ideas.ideasAreTheThingsYou')}
+			>
+				{#snippet action()}
+					<button onclick={() => (showForm = true)} class="btn btn-primary">
+						<Icon name="plus" />
+						{t('notebooks.ideas.newIdea')}
+					</button>
+				{/snippet}
+			</EmptyState>
 		</div>
 	{:else}
 		<!--
@@ -234,16 +233,19 @@
 					chips between the page and the ideas — and an idea list gathers
 					tags faster than almost anything else here. It is a filter,
 					which is something you go looking for; the ideas are what the
-					page is.
-
-					The one it is filtered by stays visible while the rest are
-					folded, or closing the list would hide that a filter is on.
+					page is. Folded, it still says what it is doing.
 				-->
 				{@render ideaTags()}
 			{/snippet}
 			{#snippet filters()}
 				{#if data.ideas.length > 0}{@render ideaFilters()}{/if}
 			{/snippet}
+			<!-- Inside the surface, so the controls that emptied it stay to undo it. -->
+			{#if filteredIdeas.length === 0}
+				<div class="p-8 text-center text-sm text-gray-500">
+					<EmptyState icon="ideas" title={t('notebooks.ideas.noIdeasMatchTheCurrent')} />
+				</div>
+			{/if}
 			<div class="divide-y divide-gray-200">
 				{#each filteredIdeas as idea, i (idea.id)}
 					<div
@@ -260,7 +262,13 @@
 							actions={IDEA_ROOM_ACTIONS}
 							selected={i === clampedSelectedIndex}
 							ontag={(name) => {
-								filterTag = name;
+								const held = tagFilter.current;
+								if (!held.include.includes(name))
+									tagFilter.current = {
+										...held,
+										include: [...held.include, name],
+										exclude: held.exclude.filter((one) => one !== name)
+									};
 								selectedIndex = 0;
 							}}
 							onedit={(id) => openIdeaForm(id)}
@@ -277,7 +285,17 @@
 	are this room's own and only their placement belongs to the component.
 -->
 {#snippet ideaTags()}
-	<TagFold tags={data.allTags} bind:selected={filterTag} onchange={() => (selectedIndex = 0)} />
+	{#if data.allTags.length > 0 || isTagFiltering(tagFilter.current)}
+		<TagFilter
+			tags={data.allTags.map((tag) => tag.name)}
+			value={tagFilter.current}
+			onchange={(next) => {
+				tagFilter.current = next;
+				selectedIndex = 0;
+			}}
+			name="idea-tags"
+		/>
+	{/if}
 {/snippet}
 
 {#snippet ideaFilters()}
