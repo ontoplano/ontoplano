@@ -98,5 +98,6 @@ export const borrowed: ReadonlySet<string> = new Set([
 	'notebooks.workoutsCount',
 	'ui.alwaysOn',
 	'ui.archive',
+	'ui.clear',
 	'ui.withTheRoom'
 ]);

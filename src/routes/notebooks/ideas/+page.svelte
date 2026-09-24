@@ -2,7 +2,7 @@
 	/* biome-ignore-all assist/source/organizeImports lint/correctness/noUnusedImports lint/correctness/noUnusedVariables lint/style/useConst: Svelte template and rune usage in this file triggers false positives in current Biome diagnostics. */
 	import { enhance } from '$lib/enhance';
 	import FilterChips from '$lib/components/FilterChips.svelte';
-	import TagChip from '$lib/components/TagChip.svelte';
+	import TagFold from '$lib/components/TagFold.svelte';
 	import RoomSurface from '$lib/components/RoomSurface.svelte';
 	import { SECTION_COLORS } from '$lib/colors';
 	import { setRoomAction } from '$lib/room-action.svelte';
@@ -32,7 +32,6 @@
 	 * ideas; the tags are how you narrow them once you know what you are after,
 	 * and every tag ever used is a wall of chips above the thing itself.
 	 */
-	let tagsOpen = $state(false);
 	/*
 	 * The ones still waiting, first.
 	 *
@@ -278,61 +277,7 @@
 	are this room's own and only their placement belongs to the component.
 -->
 {#snippet ideaTags()}
-	{#if data.allTags.length > 0}
-		<div class="space-y-2">
-			<button
-				type="button"
-				onclick={() => (tagsOpen = !tagsOpen)}
-				class="flex items-center gap-1.5 text-xs font-medium tracking-wide text-gray-500 uppercase hover:text-gray-900"
-				aria-expanded={tagsOpen}
-			>
-				<Icon name={tagsOpen ? 'chevron-down' : 'chevron-right'} size={14} />
-				{t('ui.tags')}
-				<span class="text-gray-500">({data.allTags.length})</span>
-			</button>
-
-			{#if filterTag && !tagsOpen}
-				<div class="flex flex-wrap items-center gap-2">
-					<TagChip name={filterTag} active />
-					<button
-						onclick={() => {
-							filterTag = null;
-							selectedIndex = 0;
-						}}
-						class="border border-gray-200 bg-white px-2 py-0.5 text-xs text-gray-500 transition hover:text-gray-600"
-					>
-						{t('notebooks.ideas.clear')}
-					</button>
-				</div>
-			{/if}
-		</div>
-	{/if}
-
-	{#if data.allTags.length > 0 && tagsOpen}
-		<div class="flex flex-wrap gap-2">
-			{#each data.allTags as tag (tag.id)}
-				<TagChip
-					name={tag.name}
-					active={filterTag === tag.name}
-					onclick={() => {
-						filterTag = filterTag === tag.name ? null : tag.name;
-						selectedIndex = 0;
-					}}
-				/>
-			{/each}
-			{#if filterTag}
-				<button
-					onclick={() => {
-						filterTag = null;
-						selectedIndex = 0;
-					}}
-					class="border border-gray-200 bg-white px-2 py-0.5 text-xs text-gray-500 transition hover:text-gray-600"
-				>
-					{t('notebooks.ideas.clear')}
-				</button>
-			{/if}
-		</div>
-	{/if}
+	<TagFold tags={data.allTags} bind:selected={filterTag} onchange={() => (selectedIndex = 0)} />
 {/snippet}
 
 {#snippet ideaFilters()}

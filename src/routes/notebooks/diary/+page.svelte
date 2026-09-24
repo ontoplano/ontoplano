@@ -7,6 +7,9 @@
 	import { enhance } from '$lib/enhance';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
+	import RoomSurface from '$lib/components/RoomSurface.svelte';
+	import TagFold from '$lib/components/TagFold.svelte';
+	import { SECTION_COLORS } from '$lib/colors';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import NoteFields from '$lib/components/fields/NoteFields.svelte';
@@ -219,32 +222,6 @@
 		{/snippet}
 	</RoomToolbar>
 
-	{#if data.allTags.length > 0}
-		<div class="flex flex-wrap gap-2">
-			{#each data.allTags as tag (tag.id)}
-				<TagChip
-					name={tag.name}
-					active={filterTag === tag.name}
-					onclick={() => {
-						filterTag = filterTag === tag.name ? null : tag.name;
-						selectedIndex = 0;
-					}}
-				/>
-			{/each}
-			{#if filterTag}
-				<button
-					onclick={() => {
-						filterTag = null;
-						selectedIndex = 0;
-					}}
-					class="chip text-gray-500 hover:text-gray-600"
-				>
-					{t('notebooks.diary.clear')}
-				</button>
-			{/if}
-		</div>
-	{/if}
-
 	<FormError message={form?.message} />
 
 	{#if winsEnabled && showWinsForm}
@@ -413,46 +390,60 @@
 			diary is one thing you scroll, which is what every other list in the
 			app already looks like: one bordered surface, a hairline between rows.
 		-->
-		<!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
-		<div
-			class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card"
-			data-tour="diary-list"
-			onpointerover={handleEntriesPointerOver}
-			onpointerout={handleEntriesPointerOut}
-			onclick={handleEntriesClick}
-		>
-			{#each filteredEntries() as entry, i (entry.id)}
-				<div
-					use:keepInView={i === selectedIndex}
-					id="diary-{entry.diarySeq ?? entry.seq}"
-					class="relative p-4 {i === selectedIndex ? 'kb-cursor' : ''}"
-				>
-					<div class="md mb-2 text-sm text-gray-900">
-						<!-- `renderMarkdown` escapes every character of the input before it emits a
-						     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
-						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-						{@html renderMarkdown(entry.content)}
-					</div>
+		<!--
+			The tags fold away on the surface, the way the Ideas room's do.
 
-					<!--
+			They were a loose row of every tag anybody has used, on the page's own
+			ground above the entries — wider than the list under it and belonging
+			to nothing. Same control, same place: see `TagFold`.
+		-->
+		<RoomSurface accent={SECTION_COLORS.diary} dataTour="diary-list">
+			{#snippet tools()}
+				<TagFold
+					tags={data.allTags}
+					bind:selected={filterTag}
+					onchange={() => (selectedIndex = 0)}
+				/>
+			{/snippet}
+			<!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
+			<div
+				class="divide-y divide-gray-200"
+				onpointerover={handleEntriesPointerOver}
+				onpointerout={handleEntriesPointerOut}
+				onclick={handleEntriesClick}
+			>
+				{#each filteredEntries() as entry, i (entry.id)}
+					<div
+						use:keepInView={i === selectedIndex}
+						id="diary-{entry.diarySeq ?? entry.seq}"
+						class="relative p-4 {i === selectedIndex ? 'kb-cursor' : ''}"
+					>
+						<div class="md mb-2 text-sm text-gray-900">
+							<!-- `renderMarkdown` escapes every character of the input before it emits a
+						     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
+							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+							{@html renderMarkdown(entry.content)}
+						</div>
+
+						<!--
 						One footer row: what the entry is on the left, what you can do to it
 						on the right. Edit and Delete used to sit beside the writing and
 						refuse to shrink, which on a phone left the writing a column one
 						word wide — and cost a whole row of height on any screen.
 					-->
-					<div class="flex flex-wrap items-center gap-2">
-						<span class="text-xs text-gray-500">{formatDate(entry.createdAt)}</span>
-						{#if entry.forDate}
-							<span class="text-xs font-medium text-amber-600"
-								>{t('notebooks.diary.for', { forDate: entry.forDate })}</span
-							>
-						{/if}
-						{#if entry.updatedAt !== entry.createdAt}
-							<span class="text-xs text-gray-500"
-								>{t('notebooks.diary.edited', { updatedAt: formatDate(entry.updatedAt) })}</span
-							>
-						{/if}
-						<!--
+						<div class="flex flex-wrap items-center gap-2">
+							<span class="text-xs text-gray-500">{formatDate(entry.createdAt)}</span>
+							{#if entry.forDate}
+								<span class="text-xs font-medium text-amber-600"
+									>{t('notebooks.diary.for', { forDate: entry.forDate })}</span
+								>
+							{/if}
+							{#if entry.updatedAt !== entry.createdAt}
+								<span class="text-xs text-gray-500"
+									>{t('notebooks.diary.edited', { updatedAt: formatDate(entry.updatedAt) })}</span
+								>
+							{/if}
+							<!--
 							`@` in front of a person, the way `#` goes in front of a tag.
 
 							They are the same chip in the same row and they were telling
@@ -461,96 +452,97 @@
 							the people list. One character, and the row is legible without
 							knowing anything.
 						-->
-						{#each entry.people as person (person.id)}
-							<a href={resolve('/notebooks/people')} class="chip">
-								@{person.name}
-							</a>
-						{/each}
-						{#each entry.tags as tag (tag.id)}
-							<TagChip
-								name={tag.name}
-								onclick={() => {
-									filterTag = tag.name;
-									selectedIndex = 0;
-								}}
-							/>
-						{/each}
-
-						<div class="ml-auto flex flex-wrap items-center gap-2">
-							{#if confirmingDeleteId === entry.id}
-								<form
-									method="post"
-									action="?/delete"
-									use:enhance={() => {
-										return async ({ update }) => {
-											await update({ reset: false });
-											confirmingDeleteId = null;
-										};
+							{#each entry.people as person (person.id)}
+								<a href={resolve('/notebooks/people')} class="chip">
+									@{person.name}
+								</a>
+							{/each}
+							{#each entry.tags as tag (tag.id)}
+								<TagChip
+									name={tag.name}
+									onclick={() => {
+										filterTag = tag.name;
+										selectedIndex = 0;
 									}}
-								>
-									<input type="hidden" name="id" value={entry.id} />
-									<button
-										type="submit"
-										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
-										use:armed
+								/>
+							{/each}
+
+							<div class="ml-auto flex flex-wrap items-center gap-2">
+								{#if confirmingDeleteId === entry.id}
+									<form
+										method="post"
+										action="?/delete"
+										use:enhance={() => {
+											return async ({ update }) => {
+												await update({ reset: false });
+												confirmingDeleteId = null;
+											};
+										}}
 									>
-										{t('notebooks.diary.confirm')}
+										<input type="hidden" name="id" value={entry.id} />
+										<button
+											type="submit"
+											class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
+											use:armed
+										>
+											{t('notebooks.diary.confirm')}
+										</button>
+									</form>
+									<button
+										type="button"
+										onclick={() => {
+											confirmingDeleteId = null;
+										}}
+										class="btn btn-sm"
+									>
+										{t('ui.cancel')}
 									</button>
-								</form>
-								<button
-									type="button"
-									onclick={() => {
-										confirmingDeleteId = null;
-									}}
-									class="btn btn-sm"
-								>
-									{t('ui.cancel')}
-								</button>
-							{:else}
-								<button
-									title={t('ui.edit')}
-									aria-label={t('ui.edit')}
-									onclick={() => {
-										editingId = entry.id;
-										showForm = true;
-										tick().then(() => {
-											const ta = document.querySelector<HTMLTextAreaElement>(
-												'textarea[name="content"]'
-											);
-											ta?.focus();
-										});
-									}}
-									class="icon-btn"
-								>
-									<Icon name="edit" />
-								</button>
-								<button
-									title={t('ui.delete')}
-									aria-label={t('ui.delete')}
-									type="button"
-									onclick={() => {
-										confirmingDeleteId = entry.id;
-									}}
-									class="icon-btn icon-btn-danger"
-								>
-									<Icon name="trash" />
-								</button>
-							{/if}
+								{:else}
+									<button
+										title={t('ui.edit')}
+										aria-label={t('ui.edit')}
+										onclick={() => {
+											editingId = entry.id;
+											showForm = true;
+											tick().then(() => {
+												const ta = document.querySelector<HTMLTextAreaElement>(
+													'textarea[name="content"]'
+												);
+												ta?.focus();
+											});
+										}}
+										class="icon-btn"
+									>
+										<Icon name="edit" />
+									</button>
+									<button
+										title={t('ui.delete')}
+										aria-label={t('ui.delete')}
+										type="button"
+										onclick={() => {
+											confirmingDeleteId = entry.id;
+										}}
+										class="icon-btn icon-btn-danger"
+									>
+										<Icon name="trash" />
+									</button>
+								{/if}
 
-							<!-- The number entries are referred to by, as `#12` in another
+								<!-- The number entries are referred to by, as `#12` in another
 							     entry's text. At the end of the row rather than the start of
 							     it: what the entry is reads from the left, and the number is
 							     a handle for pointing at it rather than part of the reading. -->
-							<!-- The diary's own number, not the account's count of everything it
+								<!-- The diary's own number, not the account's count of everything it
 					     holds: the thirtieth entry is #30 and used to read #127. -->
-							<span class="tabular text-xs font-medium text-gray-900"
-								>#{entry.diarySeq ?? entry.seq}</span
-							>
+								<span class="tabular text-xs font-medium text-gray-900"
+									>#{entry.diarySeq ?? entry.seq}</span
+								>
+							</div>
 						</div>
 					</div>
-				</div>
-			{/each}
-		</div>
+				{/each}
+			</div>
+		</RoomSurface>
 	{/if}
 </div>
 
