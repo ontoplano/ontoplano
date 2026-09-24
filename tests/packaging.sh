@@ -92,6 +92,8 @@ else
 		./usr/lib/ontoplano/build/index.js \
 		./usr/lib/ontoplano/node/bin/node \
 		./usr/lib/ontoplano/migrate.mjs \
+		./usr/lib/ontoplano/db-snapshot.mjs \
+		./usr/lib/ontoplano/data-steps.mjs \
 		./usr/lib/ontoplano/drizzle/ \
 		./usr/bin/ontoplano \
 		./usr/lib/systemd/system/ontoplano.service \
@@ -133,6 +135,9 @@ else
 	for path in \
 		/usr/lib/ontoplano/build/index.js \
 		/usr/lib/ontoplano/node/bin/node \
+		/usr/lib/ontoplano/migrate.mjs \
+		/usr/lib/ontoplano/db-snapshot.mjs \
+		/usr/lib/ontoplano/data-steps.mjs \
 		/usr/bin/ontoplano \
 		/usr/lib/systemd/system/ontoplano.service \
 		/usr/lib/systemd/system/ontoplano-reminders.timer \

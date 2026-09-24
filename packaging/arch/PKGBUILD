@@ -45,6 +45,7 @@ package() {
 	cp -R "$srcdir/node_modules_prod" "$lib/node_modules"
 	install -Dm644 scripts/migrate.mjs "$lib/migrate.mjs"
 	install -Dm644 scripts/db-snapshot.mjs "$lib/db-snapshot.mjs"
+	install -Dm644 scripts/data-steps.mjs "$lib/data-steps.mjs"
 
 	# Trimmed to what a running instance reads: the type field, without which
 	# Node treats the .mjs siblings' imports as CommonJS, and the version the app

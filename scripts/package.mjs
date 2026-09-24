@@ -104,6 +104,7 @@ function stage({ bundleNode, arch }) {
 	cpSync(join(ROOT, 'drizzle'), join(lib, 'drizzle'), { recursive: true });
 	cpSync(join(ROOT, 'scripts/migrate.mjs'), join(lib, 'migrate.mjs'));
 	cpSync(join(ROOT, 'scripts/db-snapshot.mjs'), join(lib, 'db-snapshot.mjs'));
+	cpSync(join(ROOT, 'scripts/data-steps.mjs'), join(lib, 'data-steps.mjs'));
 
 	// `package.json`, trimmed to what a running instance reads: the type field
 	// (without it Node treats the .mjs siblings' imports as CommonJS) and the
