@@ -28,6 +28,15 @@ releases mattered.
   finishing one and for putting it back, and nothing for the column between
   them, so "doing" could only be set by hand in the app. `change_task` takes a
   status.
+- **The cursor in the tag box is a cursor again.** It came out tapered at both
+  ends and shorter than the line — because the control beside it was 37.5px
+  tall, so everything laid out below it sat on a half pixel and a one-pixel
+  bar was drawn across two rows of the screen.
+- **"Any" and "All" are dead until there are two labels** for them to be about.
+  They said the same thing over one.
+- **A tag is called a tag.** Half the app called them labels.
+- **The line saying where a task would land says what it means:** its position
+  among open tasks, ordered by priority.
 - **Every tab wears its glyph, and every glyph lives in one file.** The tab
   strips were words; the wheel and the palette drew pictures, each list
   carrying its own — so the same idea had a glyph in three files and two of the

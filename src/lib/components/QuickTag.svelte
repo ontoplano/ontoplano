@@ -89,7 +89,7 @@
 			list={listId}
 			class="input h-7 w-32 py-0 text-xs"
 			placeholder={t('quickTag.placeholder')}
-			aria-label={t('quickTag.addALabel')}
+			aria-label={t('quickTag.addATag')}
 			autocomplete="off"
 			autofocus
 			onkeydown={(key) => {
@@ -119,8 +119,8 @@
 		type="button"
 		class="chip quick-tag"
 		onclick={start}
-		title={t('quickTag.addALabel')}
-		aria-label={t('quickTag.addALabel')}
+		title={t('quickTag.addATag')}
+		aria-label={t('quickTag.addATag')}
 	>
 		<Icon name="tag" size={12} />
 		<Icon name="plus" size={12} />

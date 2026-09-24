@@ -191,12 +191,22 @@
 	const EDGE = 8;
 	let where = $state({ left: 0, top: 0 });
 
+	/*
+	 * Put down on whole pixels, which is not fussiness.
+	 *
+	 * `getBoundingClientRect` answers in fractions — a button whose bottom is
+	 * at 340.5 is ordinary — and the panel was placed at exactly that, so
+	 * everything inside it sat on a half pixel. Text survives that; a caret
+	 * does not. A one-pixel bar drawn across two device rows is antialiased at
+	 * both ends, which comes out as a cursor that tapers to a point and looks
+	 * shorter than the line it is on. Rounding is the whole fix.
+	 */
 	function place() {
 		const box = face?.getBoundingClientRect();
 		if (!box) return;
 		const width = panel?.offsetWidth ?? 0;
 		const left = Math.max(EDGE, Math.min(box.left, window.innerWidth - width - EDGE));
-		where = { left, top: box.bottom + GAP };
+		where = { left: Math.round(left), top: Math.round(box.bottom + GAP) };
 	}
 
 	$effect(() => {
@@ -393,6 +403,15 @@
 						</div>
 						{#if side === 'include'}
 							<!--
+								Dead until there are two labels for it to be about.
+
+								"Any" and "All" are the same answer over one label, so a
+								control that changes nothing is a control that says the
+								screen is not listening. Dead rather than absent: what it
+								would do is worth seeing before there is anything to do it
+								to, and a strip that arrives moves the row it is in.
+							-->
+							<!--
 								The same strip the markdown box uses for Write and Preview.
 
 								Two buttons side by side is two things that might both be on;
@@ -401,19 +420,22 @@
 								button says what pressing it would do, and a ∪ where the
 								words are typed says what the words are doing.
 							-->
+							{@const together = value.include.length > 1}
 							<div
-								class="seg shrink-0"
+								class="seg shrink-0 {together ? '' : 'opacity-40'}"
 								use:sliding
 								role="tablist"
+								aria-disabled={!together}
 								aria-label={t('tagFilter.howTheyCombine')}
 							>
 								{#each [{ mode: 'any' as const, word: t('tagFilter.any'), hint: t('tagFilter.anyHint') }, { mode: 'all' as const, word: t('tagFilter.all'), hint: t('tagFilter.allHint') }] as choice (choice.mode)}
 									<button
 										type="button"
 										role="tab"
+										disabled={!together}
 										aria-selected={value.mode === choice.mode}
-										title={choice.hint}
-										aria-label={choice.hint}
+										title={together ? choice.hint : t('tagFilter.onlyWithTwo')}
+										aria-label={together ? choice.hint : t('tagFilter.onlyWithTwo')}
 										onclick={() => setMode(choice.mode)}
 									>
 										{choice.word}

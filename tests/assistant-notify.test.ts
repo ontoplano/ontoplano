@@ -142,7 +142,7 @@ describe('the line somebody reads', () => {
 	});
 
 	/*
-	 * "labelled 1 todo" told you the shape of what happened and nothing about
+	 * "tagged 1 task" told you the shape of what happened and nothing about
 	 * your afternoon: you have one task in mind and the line would not say
 	 * whether it was that one. A count is the honest answer for a burst, where
 	 * there is no single thing to name.
@@ -159,7 +159,7 @@ describe('the line somebody reads', () => {
 			'Claude',
 			en
 		);
-		expect(title).toBe('Claude labelled \u201cbad filter button\u201d');
+		expect(title).toBe('Claude tagged \u201cbad filter button\u201d');
 		expect(body).toBe('as done-by-ai');
 	});
 
@@ -198,7 +198,7 @@ describe('the line somebody reads', () => {
 			'Claude',
 			en
 		);
-		expect(title).toBe('Claude labelled 2 tasks');
+		expect(title).toBe('Claude tagged 2 tasks');
 	});
 
 	test('a write about something nameless is counted, not invented', () => {

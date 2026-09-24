@@ -2801,6 +2801,17 @@ label:has(> input[type='radio']:not(:disabled)) {
 		background-color: transparent;
 		padding: 0.3125rem 0.75rem;
 		font-size: 0.8125rem;
+		/*
+		 * A whole number of pixels, which is not fussiness.
+		 *
+		 * 13px text at the inherited 1.5 is 19.5, so the control came out 37.5
+		 * tall and every element laid out beside or below it sat on a half
+		 * pixel. Text survives that. A caret does not: a one-pixel bar drawn
+		 * across two device rows is antialiased at both ends, which reads as a
+		 * cursor tapering to a point and shorter than the line it is on — the
+		 * tag filter's box, reported as "weird cursor, sharp at the ends".
+		 */
+		line-height: 1.25rem;
 		font-weight: 500;
 		/*
 		 * The positions you are not on are muted text, not body text.

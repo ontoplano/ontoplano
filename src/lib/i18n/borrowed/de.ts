@@ -118,7 +118,6 @@ export const borrowed: ReadonlySet<string> = new Set([
 	'notebooks.thisIsGoneFromEverywhere',
 	'notebooks.whatItHolds',
 	'notebooks.workoutsCount',
-	'ratings.whereItWouldSit',
 	'tags.aLabelIsMadeByTyping',
 	'tags.hideWhatCarriesIt',
 	'tags.inThisNotebook',
