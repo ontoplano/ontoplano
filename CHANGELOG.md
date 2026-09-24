@@ -29,6 +29,12 @@ releases mattered.
 - **Every one of those forms asks which notebook it belongs to.** In the room
   the field starts empty; inside a notebook it starts on that notebook, and
   editing something from the room never quietly takes it out of one.
+- **The number in the task form says which row this is.** It counted against
+  every open task in the notebook whatever the list was doing, so opening the
+  top row of a list ordered by when things were added was told it was third.
+  It is the list on screen now — same rows, same order, same filters — and
+  ordered by priority it still moves as the sliders do, which is what it is
+  for.
 - **The diary's tags fold away, the way the Ideas room's already did.** Every
   tag anybody has ever used sat in a loose row above the entries, wider than
   the list under it and belonging to nothing. It is the same control in both

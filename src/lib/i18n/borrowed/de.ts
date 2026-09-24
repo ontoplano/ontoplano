@@ -96,6 +96,7 @@ export const borrowed: ReadonlySet<string> = new Set([
 	'notebooks.thisIsGoneFromEverywhere',
 	'notebooks.whatItHolds',
 	'notebooks.workoutsCount',
+	'ratings.whereItWouldSit',
 	'ui.alwaysOn',
 	'ui.archive',
 	'ui.clear',

@@ -280,19 +280,6 @@
 		ease: null
 	});
 
-	/**
-	 * Where this draft would land among the open tasks here, by priority.
-	 *
-	 * A number out of a thousand said what the answers *were*; this says what
-	 * they *do* — which is the only reason anybody moves one of those sliders.
-	 * Counted against the open tasks this list is showing, which is the list
-	 * the task is about to join, and against itself excluded: a task does not
-	 * queue behind the version of itself that is being edited.
-	 *
-	 * A task being written has no age yet, so it takes now — and ties are
-	 * broken towards the older one, which puts a new task behind everything it
-	 * matches exactly. That is the honest answer: it has waited least.
-	 */
 	const editing = $derived(todos.find((one: Todo) => one.id === editingId));
 
 	/**
@@ -304,23 +291,6 @@
 	 * choosing.
 	 */
 	let formNotebookId: number | null = $state(null);
-
-	const draftPlace = $derived.by(() => {
-		const draft = {
-			ratings: formRatings as RatingValues,
-			sortOrder: editing?.sortOrder ?? 0,
-			createdAt: editing?.createdAt ?? new Date().toISOString()
-		};
-		const ahead = todos.filter(
-			(one: Todo) =>
-				one.id !== editingId &&
-				one.notebookId === formNotebookId &&
-				!CLOSED_STATUSES.includes(one.status) &&
-				!one.archivedAt &&
-				compareByPriority(one, draft) < 0
-		);
-		return ahead.length + 1;
-	});
 
 	/**
 	 * How long a task stays on screen after it is ticked.
@@ -550,6 +520,44 @@
 				? b.createdAt.localeCompare(a.createdAt)
 				: a.createdAt.localeCompare(b.createdAt)
 		);
+	});
+
+	/**
+	 * Which row this is in the list on screen, live.
+	 *
+	 * A number out of a thousand said what the answers *were*; this says what
+	 * they *do*, which is the only reason anybody moves one of those sliders.
+	 *
+	 * Counted against the list as it is actually showing — the same rows, the
+	 * same order, the same filters — because that is the one claim somebody can
+	 * check by looking. It used to be counted against every open task in the
+	 * notebook whatever the list was doing, so opening the top row of a list
+	 * ordered by when things were added was told it was third, and the number
+	 * looked like the form comparing a task with itself.
+	 *
+	 * Ordered by priority, the draft is placed by its own answers rather than
+	 * by where the row already is: that is what makes the number move as a
+	 * slider does. In every other order the sliders do not decide the place, so
+	 * it is simply the row's own. A task being written has no row yet, and
+	 * joins by when it was written down, which is now.
+	 */
+	const draftPlace = $derived.by(() => {
+		const others = visibleTodos.filter((one: Todo) => one.id !== editingId);
+
+		if (order !== 'priority') {
+			const at = visibleTodos.findIndex((one: Todo) => one.id === editingId);
+			if (at >= 0) return at + 1;
+			return order === 'created' && direction === 'desc' ? 1 : others.length + 1;
+		}
+
+		const draft = {
+			ratings: formRatings as RatingValues,
+			sortOrder: editing?.sortOrder ?? 0,
+			createdAt: editing?.createdAt ?? new Date().toISOString()
+		};
+		const ahead = others.filter((one: Todo) => compareByPriority(one, draft) < 0).length;
+		// Worst first when the order is flipped, so the place counts the other way.
+		return direction === 'asc' ? others.length - ahead + 1 : ahead + 1;
 	});
 
 	/** Whatever the notebook picker lets through, before the two toggles. */

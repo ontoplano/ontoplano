@@ -1958,7 +1958,7 @@ export const messages: Catalogue = {
 	'ratings.priority': 'Priorität',
 	'ratings.priorityScoreOf': 'Priorität {score} von {max}',
 	'ratings.urgency': 'Dringlichkeit',
-	'ratings.whereItWouldSit': 'Wo dies unter den offenen Aufgaben hier stünde, nach Priorität',
+	'ratings.whereItWouldSit': 'Which row this is in the list, live',
 	'reminders.aDayAndSomethingTo': 'Ein Tag und etwas, das vorab gesagt wird',
 	'reminders.aDayAndWhatTo': 'Ein Tag und was gesagt werden soll. Mehr nicht.',
 	'reminders.aSoundFile': 'Eine Audiodatei',

@@ -1945,7 +1945,7 @@ export const messages: Catalogue = {
 	'ratings.priority': 'Prioridade',
 	'ratings.priorityScoreOf': 'Prioridade {score} de {max}',
 	'ratings.urgency': 'Urgência',
-	'ratings.whereItWouldSit': 'Onde isto ficaria entre as tarefas abertas daqui, por prioridade',
+	'ratings.whereItWouldSit': 'Which row this is in the list, live',
 	'reminders.aDayAndSomethingTo': 'Um dia e algo para dizer primeiro',
 	'reminders.aDayAndWhatTo': 'Um dia e o que dizer. Não é sobre mais nada.',
 	'reminders.aSoundFile': 'Um arquivo de som',

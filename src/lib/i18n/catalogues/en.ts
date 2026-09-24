@@ -1908,7 +1908,7 @@ export const messages: Catalogue = {
 	'ratings.priority': 'Priority',
 	'ratings.priorityScoreOf': 'Priority {score} of {max}',
 	'ratings.urgency': 'Urgency',
-	'ratings.whereItWouldSit': 'Where this would sit among the open tasks here, by priority',
+	'ratings.whereItWouldSit': 'Which row this is in the list, live',
 	'reminders.aDayAndSomethingTo': 'A day and something to say first',
 	'reminders.aDayAndWhatTo': 'A day and what to say. It is about nothing else.',
 	'reminders.aSoundFile': 'A sound file',
