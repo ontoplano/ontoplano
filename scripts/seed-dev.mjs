@@ -985,6 +985,25 @@ const gymSlot = one(
 if (gymSlot) linkGoal(monthGoal, { slotId: gymSlot.id });
 linkGoal(yearGoal, { activityId: russian });
 
+/*
+ * A week counted from its to-dos, part done — the commonest goal there is,
+ * and the one whose card carries a count, a bar and the fold of tasks.
+ */
+const weekGoal = goal('clear the paperwork pile', 'week', monday, {
+	areaId: areaCraft,
+	parentId: yearGoal
+});
+[
+	['file the tax receipts', 'done'],
+	['renew the passport', 'done'],
+	['cancel the old phone plan', 'done'],
+	['scan the lease', 'done'],
+	['reply to the bank letter', 'todo'],
+	['book the car inspection', 'todo']
+].forEach(([title, status], at) =>
+	linkGoal(weekGoal, { todoId: todo(title, { status, sortOrder: 20 + at }) })
+);
+
 // --- diary, ideas ----------------------------------------------------------------
 
 diary(

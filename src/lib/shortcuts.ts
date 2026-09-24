@@ -61,7 +61,8 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		shortcuts: [
 			{ key: 'n', action: 'new', description: 'shortcut.newGoal' },
 			{ key: 'j', action: 'next', description: 'shortcut.nextGoal' },
-			{ key: 'k', action: 'prev', description: 'shortcut.previousGoal' }
+			{ key: 'k', action: 'prev', description: 'shortcut.previousGoal' },
+			{ key: 'e', action: 'edit', description: 'shortcut.editTheOneUnderThe' }
 		]
 	},
 

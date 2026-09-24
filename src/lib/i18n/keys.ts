@@ -555,10 +555,12 @@ export type MessageKey =
 	| 'gallery.renameAlbum'
 	| 'gallery.trips'
 	| 'goals.aGoalIsACommitment'
+	| 'goals.abandoned'
 	| 'goals.achieved'
 	| 'goals.activities'
 	| 'goals.addArea'
 	| 'goals.addMeasure'
+	| 'goals.allAreas'
 	| 'goals.area'
 	| 'goals.areas'
 	| 'goals.booksKmGigs'
@@ -570,6 +572,8 @@ export type MessageKey =
 	| 'goals.countedFromYourWorkouts'
 	| 'goals.countsFor'
 	| 'goals.createGoal'
+	| 'goals.deleteGoal'
+	| 'goals.deleteGoalBody'
 	| 'goals.doneOfTotal'
 	| 'goals.eGFitness'
 	| 'goals.eGTrainThreeTimesA'
@@ -579,7 +583,6 @@ export type MessageKey =
 	| 'goals.fitnessStudyMoney'
 	| 'goals.goal'
 	| 'goals.goals'
-	| 'goals.hideClosed'
 	| 'goals.horizon'
 	| 'goals.iKeepThisOneMyself'
 	| 'goals.linkedTasks'
@@ -3347,6 +3350,7 @@ export interface MessageValuesFor {
 	'gallery.refused': { willRefuse: string | number };
 	'gallery.rename': { name: string | number };
 	'goals.countsFor': { period: string | number };
+	'goals.deleteGoalBody': { title: string | number };
 	'goals.doneOfTotal': { done: string | number; total: string | number };
 	'goals.everyBlockOf': { name: string | number };
 	'goals.everyWeekIts': { name: string | number };

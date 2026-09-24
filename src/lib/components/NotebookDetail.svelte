@@ -1278,7 +1278,7 @@
 					counts towards it. Filing a goal under a notebook is supposed
 					to scope it, not strip it.
 				-->
-				<div class="divide-y divide-gray-200 px-4">
+				<div class="divide-y divide-gray-200">
 					{#each contents.goals as goal, at (goal.id)}
 						<div class={tab === 'goals' && cursor === at ? 'kb-cursor' : ''}>
 							<GoalCard
