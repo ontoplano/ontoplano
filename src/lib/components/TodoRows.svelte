@@ -1032,6 +1032,16 @@
 					summary={narrowing()}
 					onclear={clearFilters}
 				>
+					{#snippet banner()}
+						<!-- The narrowings this screen has kept, on a line of their own
+						     above the controls that make one. They are a different
+						     question from "which rows" and were crowding the answer to
+						     it off the strip. See `SavedFilters`. -->
+						<SavedFilters
+							surface="/tasks/todo"
+							narrowed={narrowed || showCompleted || showArchived}
+						/>
+					{/snippet}
 					{#snippet lead()}
 						<!-- The box fills the slot; how wide that slot is belongs to
 						     `FilterBar`, so this tab and the Notes tab beside it are
@@ -1152,12 +1162,6 @@
 					{/if}
 					<!-- Only where there is something to pick: a list nobody has labelled
 				     gets no control for labels. -->
-					<!-- The narrowings this screen has kept, with the controls that
-					     make one. See `SavedFilters`. -->
-					<SavedFilters
-						surface="/tasks/todo"
-						narrowed={narrowed || showCompleted || showArchived}
-					/>
 					{#if tagsInUse.length > 0 || isTagFiltering(tagFilter.current)}
 						<TagFilter
 							tags={tagsInUse}

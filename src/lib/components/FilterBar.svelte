@@ -59,6 +59,7 @@
 		 */
 		summary = '',
 		onclear,
+		banner,
 		lead,
 		count,
 		trailing,
@@ -68,6 +69,17 @@
 		on?: boolean;
 		summary?: string;
 		onclear?: () => void;
+		/**
+		 * A row of its own, above the controls.
+		 *
+		 * For the one thing that is not a control: the narrowings this list has
+		 * kept. In the strip it was a seventh object competing with the six
+		 * that answer "which rows" — so the search box, the count and the
+		 * toggles were pushed onto a second and third line and the strip read
+		 * as a heap. It is a different question ("one I set up earlier") and it
+		 * gets its own line to ask it on.
+		 */
+		banner?: Snippet;
 		lead?: Snippet;
 		/**
 		 * How many rows are showing, read rather than pressed.
@@ -96,6 +108,17 @@
 	 */
 	const said = $derived(on && summary ? summary : t('filters.filters'));
 </script>
+
+<!--
+	The banner row, where there is a row to spare.
+
+	On a phone it goes into the sheet with the controls, for the reason the
+	controls are there: two more permanent lines above the search box, on a
+	screen that has about nine, to answer a question most visits do not ask.
+-->
+{#if banner && !phone.current}
+	<div class="mb-2 flex w-full flex-wrap items-center gap-2">{@render banner()}</div>
+{/if}
 
 <div class="flex w-full flex-wrap items-center gap-2">
 	<!--
@@ -187,6 +210,9 @@
 		hidden one.
 	-->
 	<Modal bind:open title={t('filters.filters')} size="sm">
+		{#if banner}
+			<div class="mb-3 flex flex-wrap items-center gap-2">{@render banner()}</div>
+		{/if}
 		<div id="{name}-filters" class="flex flex-wrap items-center gap-2">
 			{@render children()}
 		</div>

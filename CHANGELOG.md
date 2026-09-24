@@ -28,6 +28,18 @@ releases mattered.
   finishing one and for putting it back, and nothing for the column between
   them, so "doing" could only be set by hand in the app. `change_task` takes a
   status.
+- **A saved filter works when you press it.** Choosing one changed the address
+  and the list followed — except the labels, which kept a copy of what they
+  were showing when the page loaded and ignored it. So a saved filter with a
+  label in it did nothing until you reloaded the page.
+- **The saved filters are a row of their own, and you can change one.** They
+  were chips in the middle of the controls, which pushed the search box, the
+  count and the toggles onto three lines; the row said nothing about which one
+  you were looking at; and the only thing you could do to one was throw it
+  away, with a cross a press away from the name. They sit above the controls
+  now as a picker that shows which is in force, with a pencil for renaming
+  one, pointing it at what is showing, or forgetting it — that last behind a
+  second press.
 - **"Bring something in" finds the thing you are looking for.** The picker
   carries a few hundred rows and searches them in the page — but they were
   unordered, so what it carried was the oldest things the account ever held,

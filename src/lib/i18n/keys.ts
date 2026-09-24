@@ -554,14 +554,22 @@ export type MessageKey =
 	| 'fields.todo.urgencyEaseInterest'
 	| 'filters.applyFilter'
 	| 'filters.clear'
+	| 'filters.editFilter'
+	| 'filters.editingFilter'
 	| 'filters.filters'
 	| 'filters.filtersOn'
 	| 'filters.forgetFilter'
+	| 'filters.forgetForGood'
+	| 'filters.forgetIt'
 	| 'filters.nameThisFilter'
 	| 'filters.narrowThisList'
+	| 'filters.noneChosen'
+	| 'filters.nothingSavedYet'
 	| 'filters.saveThese'
 	| 'filters.saved'
 	| 'filters.savedFilterHint'
+	| 'filters.sureForget'
+	| 'filters.updateToShowing'
 	| 'finance.bills.amountOver'
 	| 'finance.bills.amountUnder'
 	| 'finance.bills.andItsWholePaymentHistory'
@@ -3578,6 +3586,7 @@ export interface MessageValuesFor {
 	'fields.buy.removeTheAttribute': { written: string | number };
 	'filters.applyFilter': { name: string | number };
 	'filters.forgetFilter': { name: string | number };
+	'filters.sureForget': { name: string | number };
 	'finance.bills.amountOver': { amount: string | number };
 	'finance.bills.amountUnder': { amount: string | number };
 	'finance.bills.archive': { name: string | number };
