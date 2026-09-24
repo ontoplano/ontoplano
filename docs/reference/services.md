@@ -2841,8 +2841,10 @@ not a history.
 
 A box with no SMTP at all is a deliberate state for a self-hosted install
 (the log is the transport), so unconfigured is only recorded when the
-caller says so — the trial notice does, because an instance that sells
-subscriptions has no business dropping the one mail money depends on.
+caller says so — the newsletter welcome does, because an instance with the
+mailing list switched on has said it means to write to people, and a
+stranger who was told "You're on the list" has no other way to find out
+that nothing was sent.
 
 ### Functions
 
