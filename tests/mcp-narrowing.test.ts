@@ -293,6 +293,54 @@ describe('how much of a row comes back', () => {
 	});
 });
 
+describe('`fields` offers what the shape can carry', () => {
+	/** Every tool that takes `fields`, with what it needs to answer at all. */
+	const needs: Record<string, () => Record<string, unknown>> = {
+		notebook_notes: () => ({ id: kitchen })
+	};
+
+	test('every key a verbose row carries is a field that can be asked for', async () => {
+		const { TOOLS } = await import('../src/lib/server/mcp/tools');
+		const takingFields = TOOLS.filter(
+			(tool) => 'fields' in ((tool.input as { properties?: object }).properties ?? {})
+		);
+		expect(takingFields.map((tool) => tool.name).sort()).toEqual(
+			['diary', 'notebook_notes', 'todos', 'up_next'].sort()
+		);
+
+		diary.createEntry(mine, { content: 'A quiet day.', title: 'Sunday', tags: 'rest' });
+		for (const tool of takingFields) {
+			const base = needs[tool.name]?.() ?? {};
+			const rows = itemsOf(call([tool.scope], tool.name, { ...base, verbose: true, limit: 20 }));
+			const keys = [...new Set(rows.flatMap((row) => Object.keys(row)))];
+			expect(keys.length, `${tool.name} answered nothing to check`).toBeGreaterThan(1);
+			const answer = call([tool.scope], tool.name, { ...base, fields: keys.join(','), limit: 20 });
+			expect(answer.result.isError, `${tool.name}: ${answer.result.content?.[0]?.text}`).not.toBe(
+				true
+			);
+		}
+	});
+
+	test('`tags` can be asked of a list whose rows carry none', () => {
+		// The shape has labels whether or not this row does; refusing the word
+		// because the first task happened to be unlabelled was the bug.
+		for (const name of ['todos', 'up_next']) {
+			const answer = call(['tasks:read'], name, {
+				notebookId: trip,
+				fields: 'title,tags,taggedAt,ratings,opening,media'
+			});
+			expect(answer.result.isError, `${name}: ${answer.result.content?.[0]?.text}`).not.toBe(true);
+			const [one] = itemsOf(answer);
+			expect(one.title).toBe('pack');
+		}
+
+		const [labelled] = itemsOf(
+			call(['tasks:read'], 'up_next', { tags: 'done-by-ai', fields: 'title,tags' })
+		);
+		expect(labelled).toEqual({ id: made.plumber, title: 'ring the plumber', tags: ['done-by-ai'] });
+	});
+});
+
 describe('what to do next', () => {
 	test('is the most urgent, ties broken by the lighter one then by interest', () => {
 		const [first] = itemsOf(call(['tasks:read'], 'up_next', { notebookId: kitchen }));

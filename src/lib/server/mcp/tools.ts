@@ -451,13 +451,24 @@ function detailOf(args: Record<string, unknown>): Detail {
 	return { verbose: args.verbose === true, fields: names };
 }
 
+/** A shaped row without the keys it holds nothing under. */
+function present(row: Record<string, unknown>): Record<string, unknown> {
+	return Object.fromEntries(Object.entries(row).filter(([, value]) => value !== undefined));
+}
+
 /**
  * One row, cut to what was asked for.
  *
  * `full` is everything this kind of thing can say; `line` is the handful that
- * identifies it. A named field that the full row does not have is a mistake
- * worth saying out loud — silently sending less than was asked for is how a
- * caller comes to believe a task has no notes.
+ * identifies it. Both are built with every key they can carry, set to
+ * `undefined` where this row has nothing — so the names a caller may ask for
+ * are the shape's, not whichever this particular row happens to fill, and a
+ * task with no labels yet does not refuse `tags`. The empty keys are dropped
+ * before anything is sent.
+ *
+ * A named field that neither shape has is a mistake worth saying out loud —
+ * silently sending less than was asked for is how a caller comes to believe a
+ * task has no notes.
  */
 function detailed(
 	full: Record<string, unknown>,
@@ -465,17 +476,18 @@ function detailed(
 	detail: Detail
 ): Record<string, unknown> {
 	if (detail.fields) {
-		const known = Object.keys(full);
+		const known = [...new Set([...Object.keys(full), ...Object.keys(line)])];
 		const unknown = detail.fields.filter((name) => !known.includes(name) && name !== 'id');
 		if (unknown.length > 0)
 			throw new ValidationError(
 				`No such field${unknown.length > 1 ? 's' : ''}: ${unknown.join(', ')}. This one has ${known.join(', ')}.`
 			);
 		const out: Record<string, unknown> = { id: full.id };
-		for (const name of detail.fields) if (name in full) out[name] = full[name];
-		return out;
+		for (const name of detail.fields)
+			out[name] = Object.hasOwn(full, name) ? full[name] : line[name];
+		return present(out);
 	}
-	return detail.verbose ? full : line;
+	return present(detail.verbose ? full : line);
 }
 
 /**
@@ -626,6 +638,13 @@ function passesTags(
 /** How long an opening is: enough to tell two things apart. */
 const PREVIEW_CHARS = 140;
 
+/** The start of a piece of writing on one line, or nothing when it is empty. */
+function openingOf(text: string): string | undefined {
+	const opening = text.trim().replace(/\s+/g, ' ');
+	if (!opening) return undefined;
+	return opening.length > PREVIEW_CHARS ? `${opening.slice(0, PREVIEW_CHARS)}\u2026` : opening;
+}
+
 /** The pictures and recordings a piece of writing refers to, as links. */
 const MEDIA_LINK = /\/media\/(?:audio\/)?\d+/g;
 
@@ -643,16 +662,16 @@ function briefly(todo: Todo): Record<string, unknown> {
 	const out: Record<string, unknown> = { id: todo.id, title: todo.title, status: todo.status };
 	// The number a person can see on the screen and say out loud — the fourth
 	// task about the kitchen is #4. The id is ours; this one is theirs.
-	if (todo.notebookSeq !== null) out.seq = todo.notebookSeq;
-	if (todo.notes) out.notes = todo.notes;
-	if (todo.scheduledDate) out.scheduledDate = todo.scheduledDate;
-	if (todo.categoryName) out.category = todo.categoryName;
-	if (todo.notebookId !== null) out.notebookId = todo.notebookId;
-	if (todo.notebookTitle) out.notebook = todo.notebookTitle;
-	if (todo.archivedAt) out.archivedAt = todo.archivedAt;
+	out.seq = todo.notebookSeq ?? undefined;
+	out.notes = todo.notes || undefined;
+	out.scheduledDate = todo.scheduledDate || undefined;
+	out.category = todo.categoryName || undefined;
+	out.notebookId = todo.notebookId ?? undefined;
+	out.notebook = todo.notebookTitle || undefined;
+	out.archivedAt = todo.archivedAt || undefined;
 	// Names, not ids: the id of a tag is of no use to a reader, and the whole
 	// point of a label here is the word.
-	if (todo.tags.length > 0) out.tags = todo.tags.map((one) => one.name);
+	out.tags = todo.tags.length > 0 ? todo.tags.map((one) => one.name) : undefined;
 	/*
 	 * And when each went on, where that is known.
 	 *
@@ -662,13 +681,12 @@ function briefly(todo: Todo): Record<string, unknown> {
 	 * `updatedAt` moves for every edit and cannot say.
 	 */
 	const dated = todo.tags.filter((one) => one.taggedAt);
-	if (dated.length > 0) {
-		out.taggedAt = Object.fromEntries(dated.map((one) => [one.name, one.taggedAt]));
-	}
+	out.taggedAt =
+		dated.length > 0 ? Object.fromEntries(dated.map((one) => [one.name, one.taggedAt])) : undefined;
 	const ratings = Object.fromEntries(
 		Object.entries(todo.ratings).filter(([, value]) => value !== null)
 	);
-	if (Object.keys(ratings).length > 0) out.ratings = ratings;
+	out.ratings = Object.keys(ratings).length > 0 ? ratings : undefined;
 	return out;
 }
 
@@ -681,8 +699,8 @@ function briefly(todo: Todo): Record<string, unknown> {
  */
 function asLine(todo: Todo): Record<string, unknown> {
 	const out: Record<string, unknown> = { id: todo.id, title: todo.title, status: todo.status };
-	if (todo.notebookSeq !== null) out.seq = todo.notebookSeq;
-	if (todo.tags.length > 0) out.tags = todo.tags.map((one) => one.name);
+	out.seq = todo.notebookSeq ?? undefined;
+	out.tags = todo.tags.length > 0 ? todo.tags.map((one) => one.name) : undefined;
 
 	/*
 	 * An opening, and what it refers to — the same two a note's line carries.
@@ -694,12 +712,9 @@ function asLine(todo: Todo): Record<string, unknown> {
 	 * this is about and the links say what to fetch if it matters; `verbose`
 	 * is still there for the whole of it.
 	 */
-	const opening = (todo.notes ?? '').trim().replace(/\s+/g, ' ');
-	if (opening)
-		out.opening =
-			opening.length > PREVIEW_CHARS ? `${opening.slice(0, PREVIEW_CHARS)}\u2026` : opening;
+	out.opening = openingOf(todo.notes ?? '');
 	const links = [...new Set((todo.notes ?? '').match(MEDIA_LINK) ?? [])];
-	if (links.length > 0) out.media = links;
+	out.media = links.length > 0 ? links : undefined;
 	return out;
 }
 
@@ -729,15 +744,12 @@ type NoteRow = {
 
 function noteLine(note: NoteRow): Record<string, unknown> {
 	const out: Record<string, unknown> = { id: note.id, createdAt: note.createdAt };
-	if (note.seq !== null && note.seq !== undefined) out.seq = note.seq;
-	if (note.title) out.title = note.title;
-	const opening = note.content.trim().replace(/\s+/g, ' ');
-	if (opening)
-		out.opening =
-			opening.length > PREVIEW_CHARS ? `${opening.slice(0, PREVIEW_CHARS)}\u2026` : opening;
-	if (note.tags.length > 0) out.tags = note.tags.map((one) => one.name);
-	if (note.pinnedAt) out.pinned = true;
-	if (note.archivedAt) out.archivedAt = note.archivedAt;
+	out.seq = note.seq ?? undefined;
+	out.title = note.title || undefined;
+	out.opening = openingOf(note.content);
+	out.tags = note.tags.length > 0 ? note.tags.map((one) => one.name) : undefined;
+	out.pinned = note.pinnedAt ? true : undefined;
+	out.archivedAt = note.archivedAt || undefined;
 
 	/*
 	 * What it refers to, as links rather than as bytes.
@@ -748,17 +760,17 @@ function noteLine(note: NoteRow): Record<string, unknown> {
 	 * before the pictures would otherwise hide them entirely.
 	 */
 	const links = [...new Set(note.content.match(MEDIA_LINK) ?? [])];
-	if (links.length > 0) out.media = links;
+	out.media = links.length > 0 ? links : undefined;
 	return out;
 }
 
 function noteFull(note: NoteRow): Record<string, unknown> {
 	const out: Record<string, unknown> = { ...noteLine(note), content: note.content };
 	delete out.opening;
-	if (note.updatedAt) out.updatedAt = note.updatedAt;
+	out.updatedAt = note.updatedAt || undefined;
 	const dated = note.tags.filter((one) => one.taggedAt);
-	if (dated.length > 0)
-		out.taggedAt = Object.fromEntries(dated.map((one) => [one.name, one.taggedAt]));
+	out.taggedAt =
+		dated.length > 0 ? Object.fromEntries(dated.map((one) => [one.name, one.taggedAt])) : undefined;
 	return out;
 }
 

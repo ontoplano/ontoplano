@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **An assistant can ask a list for just the labels.** `fields: "title,tags"`
+  on the task and note lists was refused whenever the first row had none.
 - **The line that folds a task's notes looks pressable.** Over it the cursor
   is a hand and the chevron lights up; the lines under it keep the text
   cursor, since pressing them does nothing.
