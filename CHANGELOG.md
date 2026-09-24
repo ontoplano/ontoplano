@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **Dropdown lists stay on the screen.** A long list, like the parent goals
+  in the goal form, fits a phone's width and opens upwards near the bottom of
+  a form, and Escape closes the list without closing the form.
 - **An assistant can ask a list for just the labels.** `fields: "title,tags"`
   on the task and note lists was refused whenever the first row had none.
 - **The line that folds a task's notes looks pressable.** Over it the cursor
