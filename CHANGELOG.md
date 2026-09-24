@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **An assistant is told which tools your key is not giving it,** and the
+  permission each would need — so it can ask you to widen the key instead of
+  quietly working around the gap.
 - **The trial-ending email is in your own language,** like every other
   message the app sends. It was written in literal English.
 - **Putting a task on a day can ask to be reminded about it** — the same

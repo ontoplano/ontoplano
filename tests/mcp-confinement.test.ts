@@ -22,6 +22,7 @@ afterAll(() => database.remove());
 
 let handleBody: typeof import('../src/lib/server/mcp/protocol').handleBody;
 let visibleTools: typeof import('../src/lib/server/mcp/protocol').visibleTools;
+let withheldTools: typeof import('../src/lib/server/mcp/protocol').withheldTools;
 let buildCtx: typeof import('../src/lib/services/ctx').buildCtx;
 let SCOPES: typeof import('../src/lib/server/services/tokens').SCOPES;
 
@@ -57,7 +58,7 @@ const failed = (answer: ReturnType<typeof call>) =>
 const said = (answer: ReturnType<typeof call>) => JSON.stringify(answer.result ?? answer);
 
 beforeAll(async () => {
-	({ handleBody, visibleTools } = await import('../src/lib/server/mcp/protocol'));
+	({ handleBody, visibleTools, withheldTools } = await import('../src/lib/server/mcp/protocol'));
 	({ buildCtx } = await import('../src/lib/services/ctx'));
 	({ SCOPES } = await import('../src/lib/server/services/tokens'));
 
@@ -396,5 +397,46 @@ describe('a key that is not confined', () => {
 		const answer = call('todos', {}, false);
 		expect(failed(answer)).toBe(false);
 		expect(said(answer)).toContain('a private errand');
+	});
+});
+
+/*
+ * An absence says nothing.
+ *
+ * A tool missing from the list could be a permission this token does not hold
+ * or a feature this build does not have, and an assistant cannot tell those
+ * apart — so the careful ones stop and do something worse quietly, and the
+ * person never learns their key was narrow. The list says which are held back
+ * and what to ask for.
+ */
+describe('what is being held back', () => {
+	it('names the tools a narrow key is not offered, and the grant each needs', () => {
+		const narrow = { ctx: ctx(), scopes: ['tasks:read'] };
+
+		const offered = visibleTools(narrow).map((one) => one.name);
+		const held = withheldTools(narrow);
+
+		expect(offered).toContain('todos');
+		expect(held.length).toBeGreaterThan(0);
+		// Nothing is in both lists, and everything is in one of them.
+		expect(held.map((one) => one.name).filter((name) => offered.includes(name))).toEqual([]);
+
+		const writing = held.find((one) => one.name === 'add_todo');
+		expect(writing?.needs, 'it should say which grant would offer it').toBe('tasks:write');
+	});
+
+	it('says destructive where that is the grant that is missing', () => {
+		const everythingButDeleting = {
+			ctx: ctx(),
+			scopes: ['tasks:read', 'tasks:write']
+		};
+
+		const held = withheldTools(everythingButDeleting);
+		expect(held.find((one) => one.name === 'drop_todo')?.needs).toBe('destructive');
+	});
+
+	it('holds nothing back from a key that may do everything', async () => {
+		const { ASSISTANT_SCOPES } = await import('../src/lib/server/mcp/tools');
+		expect(withheldTools({ ctx: ctx(), scopes: [...ASSISTANT_SCOPES, 'destructive'] })).toEqual([]);
 	});
 });
