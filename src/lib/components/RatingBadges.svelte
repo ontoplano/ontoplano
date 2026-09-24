@@ -52,6 +52,13 @@
 	 * no telling a 1 from a 2 without another row to compare against; with it
 	 * every bar is read against the same box.
 	 *
+	 * The ground reaches one column further left than the bars do, and that
+	 * strip of it is never covered. A task rated 5 for urgency filled the box
+	 * edge to edge and left no ground showing at all — so the row where the
+	 * ruler disappears is the row that looks most like every other one. A
+	 * column wide, so it reads as part of the group and not as a rule beside
+	 * it.
+	 *
 	 * ## One target
 	 *
 	 * The group is read as one object and is pressed as one: whoever wants to
@@ -110,13 +117,19 @@
 	title={said}
 	aria-label={said}
 >
-	{#each RATING_ORDER as r, at (r)}
-		<span
-			class="rating-bar"
-			data-rating={r}
-			style="width: {widthOf(at)}%; height: {heightOf(values[r])}%; z-index: {at + 1}"
-		></span>
-	{/each}
+	<!--
+		The bars stand in their own box on the right, so the widths below stay
+		percentages of what a 5 fills rather than of the group plus its strip.
+	-->
+	<span class="rating-stack">
+		{#each RATING_ORDER as r, at (r)}
+			<span
+				class="rating-bar"
+				data-rating={r}
+				style="width: {widthOf(at)}%; height: {heightOf(values[r])}%; z-index: {at + 1}"
+			></span>
+		{/each}
+	</span>
 </span>
 
 <style>
@@ -128,10 +141,12 @@
 		/* One scale for every row in the list — see the note above. */
 		--bars-height: 2.25rem;
 		--bars-width: 1.5rem;
+		/* One bar's worth: three of them nest across `--bars-width`. */
+		--bars-column: calc(var(--bars-width) / 3);
 
 		position: relative;
 		display: inline-block;
-		width: var(--bars-width);
+		width: calc(var(--bars-width) + var(--bars-column));
 		height: var(--bars-height);
 		flex: none;
 		/*
@@ -147,6 +162,18 @@
 		 */
 		background-color: var(--gauge-ground, var(--color-gray-200));
 		border-radius: 2px;
+	}
+
+	/*
+	 * What a 5 on every rating would fill: the right-hand part of the group,
+	 * with the strip of ground that is always showing to the left of it.
+	 */
+	.rating-stack {
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		width: var(--bars-width);
 	}
 
 	/*

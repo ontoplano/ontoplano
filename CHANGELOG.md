@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **A task's rating gauges keep a strip of their ruler showing.** A task
+  rated 5 for urgency filled the box edge to edge, leaving nothing to read
+  the heights against.
 - **The list of labels under a tag filter is no longer cut off** at the
   bottom of the panel it opens in.
 - **The task count no longer nudges the filters beside it** when a tag
