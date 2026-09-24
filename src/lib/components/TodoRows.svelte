@@ -1329,7 +1329,7 @@
 						/>
 					</button>
 				{/each}
-				<kbd class="text-xs" title={t('todoRows.selectionKeys')}>j/k · Space</kbd>
+				<kbd class="text-xs" title={t('todoRows.selectionKeys')}></kbd>
 			</div>
 		</div>
 		{#if visibleTodos.length === 0}
