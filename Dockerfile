@@ -59,7 +59,7 @@ COPY --from=build /app/build ./build
 # The migrations and the two scripts that apply and snapshot them. Not part of
 # the build output, and the container has no git remote to fetch them from.
 COPY --from=build /app/drizzle ./drizzle
-COPY --from=build /app/scripts/migrate.mjs /app/scripts/db-snapshot.mjs ./scripts/
+COPY --from=build /app/scripts/migrate.mjs /app/scripts/db-snapshot.mjs /app/scripts/db-snapshot.mjs ./scripts/
 COPY --from=build /app/package.json ./
 COPY docker-entrypoint.sh /usr/local/bin/
 # Stated rather than inherited: a checkout on a filesystem that does not carry
