@@ -116,6 +116,14 @@ describe('how a period reads to a person', () => {
 		expect(describePeriod(t, when, 'week', '2026-08-17')).toMatch(/^Week of /);
 		expect(describePeriod(t, when, 'day', '2026-08-19')).toMatch(/2026/);
 	});
+
+	test('and writes the year as a year in a language that groups thousands', () => {
+		const pt = translator('pt-BR', portuguese);
+		const there: When = { locale: 'pt-BR', tz: 'America/Sao_Paulo', clock: 'auto' };
+		const week = describePeriod(pt, there, 'week', '2026-08-24');
+		expect(week).toMatch(/^Semana de .* 2026$/);
+		expect(week).not.toContain('2.026');
+	});
 });
 
 describe('which goals can sit inside which', () => {
