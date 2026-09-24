@@ -700,3 +700,50 @@ test('a weekly block does not fill in the weeks before it existed', async ({ pag
 	expect(await countIn(page, `/tasks/plan?from=${dayAfter(start, -7)}`, 'the-lunch')).toBe(0);
 	expect(await countIn(page, `/tasks/plan?from=${dayAfter(start, -28)}`, 'the-lunch')).toBe(0);
 });
+
+/*
+ * The frequency choices stay inside their panel in a language with long words.
+ *
+ * Portuguese's five labels are wider than the dialog's row. A `.seg` that
+ * does not wrap runs "Todo mês" past the panel's right edge, over its padding
+ * and border, at phone width and desktop width alike.
+ */
+for (const size of [
+	{ name: 'phone', width: 390, height: 844 },
+	{ name: 'desktop', width: 1440, height: 900 }
+]) {
+	test(`the frequency choices stay inside their panel in Portuguese (${size.name})`, async ({
+		page
+	}) => {
+		test.setTimeout(120_000);
+		await page.setViewportSize({ width: size.width, height: size.height });
+		await register(page, testEmail(`rec-pt-${size.name}`));
+		await page.request.post('/settings/preferences?/setLanguage', {
+			form: { language: 'pt-BR' },
+			headers: { origin: new URL(page.url()).origin },
+			maxRedirects: 0
+		});
+		await visit(page, '/tasks/plan');
+
+		await page.getByRole('button', { name: 'Novo bloco' }).click();
+		const form = page.getByRole('dialog');
+		await form.getByRole('button', { name: 'Volta', exact: true }).first().click();
+		const seg = form.getByRole('button', { name: 'Todo mês', exact: true }).locator('..');
+		await expect(seg).toBeVisible();
+
+		const fits = await seg.evaluate((el) => {
+			const panel = el.parentElement!;
+			const style = getComputedStyle(panel);
+			const box = panel.getBoundingClientRect();
+			const inner = box.right - parseFloat(style.borderRightWidth) - parseFloat(style.paddingRight);
+			const last = el.lastElementChild!.getBoundingClientRect();
+			return {
+				seg: el.getBoundingClientRect().right,
+				last: last.right,
+				inner
+			};
+		});
+		expect(fits.seg).toBeLessThanOrEqual(fits.inner + 0.5);
+		expect(fits.last).toBeLessThanOrEqual(fits.inner + 0.5);
+	});
+}
