@@ -28,6 +28,12 @@ releases mattered.
   finishing one and for putting it back, and nothing for the column between
   them, so "doing" could only be set by hand in the app. `change_task` takes a
   status.
+- **The tag filter's boxes are one line, and what you picked sits above them.**
+  The chosen labels were chips inside the box you type into, so the box was a
+  different height on every screen — and once the chips filled a line the
+  cursor sat alone on a second one, which read as a two-line field with a
+  stray caret in it. They are beside Show and Hide now, and the field below is
+  only ever the line you type into.
 - **Save is held while it is saving.** Pressing Create twice has made one task
   for a while; pressing Save twice was never guarded at all, on any edit form
   in the app. The guard looks the button up by the form's id, and a form hands

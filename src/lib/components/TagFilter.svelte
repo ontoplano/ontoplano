@@ -258,6 +258,64 @@
 	});
 </script>
 
+<!--
+	What is being filtered by, read rather than typed.
+
+	Out of the field and up beside the word for the side it belongs to. Both
+	sides draw it, and the field below has to stay one line whatever is chosen
+	— which is the whole of what was wrong: chips and a cursor sharing a box
+	gave the box a different height on every screen, and once the chips filled
+	a line the cursor sat alone on a second one, so a one-line field read as a
+	two-line field with a stray caret in it.
+-->
+{#snippet picked(side: Side)}
+	{#if side === 'include' && value.include.length > 1}
+		<!--
+			What the labels are doing, in front of them.
+
+			It is the operator, and an operator goes in front of what it
+			operates on. Only once there are two — one label is one label
+			however they are meant to combine.
+		-->
+		<span
+			class="shrink-0 text-gray-500"
+			title={t(value.mode === 'all' ? 'tagFilter.allHint' : 'tagFilter.anyHint')}
+			aria-hidden="true"
+		>
+			<Icon name={value.mode === 'all' ? 'intersect' : 'union'} size={14} />
+		</span>
+	{/if}
+	{#each value[side] as entry (entry)}
+		{#if entry === UNTAGGED}
+			<span class="chip tag-chip inline-flex items-center gap-1 italic">
+				{#if side === 'exclude'}<Icon name="minus" size={10} />{/if}
+				{untaggedWord}
+				<button
+					type="button"
+					class="opacity-60 transition hover:opacity-100"
+					aria-label={t('tags.removeTag', { tag: untaggedWord })}
+					title={t('tags.removeTag', { tag: untaggedWord })}
+					onclick={() => drop(side, entry)}
+				>
+					<Icon name="close" size={12} />
+				</button>
+			</span>
+		{:else}
+			<TagChip name={entry} class={side === 'exclude' ? 'line-through' : ''}>
+				<button
+					type="button"
+					class="no-underline opacity-60 transition hover:opacity-100"
+					aria-label={t('tags.removeTag', { tag: said(entry) })}
+					title={t('tags.removeTag', { tag: said(entry) })}
+					onclick={() => drop(side, entry)}
+				>
+					<Icon name="close" size={12} />
+				</button>
+			</TagChip>
+		{/if}
+	{/each}
+{/snippet}
+
 <svelte:window onclick={elsewhere} onkeydown={onKey} />
 
 <div bind:this={root} class="relative flex {klass}" data-tag-filter={name}>
@@ -312,10 +370,27 @@
 		>
 			{#each SIDES as side (side)}
 				<div class="space-y-1.5" data-side={side}>
-					<div class="flex min-h-7 items-center justify-between gap-2">
-						<span class="eyebrow shrink-0" id="{name}-{side}-label">
+					<!--
+						The labels are beside the word for what they are doing, not
+						inside the box where they are typed.
+
+						They lived in the box as chips with the cursor after them,
+						which meant the box was a different height on every screen and
+						— once the chips filled a line — the cursor sat alone on a
+						second one, so a one-line field looked like a two-line field
+						with a stray caret in it. Out here they are read, and the box
+						below is only ever the one line you type into.
+					-->
+					<!-- Aligned to the top rather than the middle: the labels wrap onto
+					     a second line and a third, and the word for the side has to stay
+					     level with the first of them rather than drifting down the block. -->
+					<div class="flex min-h-7 flex-wrap items-start gap-x-2 gap-y-1.5">
+						<span class="eyebrow mt-1 shrink-0" id="{name}-{side}-label">
 							{t(side === 'include' ? 'tagFilter.keep' : 'tagFilter.hide')}
 						</span>
+						<div class="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
+							{@render picked(side)}
+						</div>
 						{#if side === 'include'}
 							<!--
 								The same strip the markdown box uses for Write and Preview.
@@ -350,56 +425,10 @@
 
 					<div class="relative">
 						<div
-							class="input flex min-h-9 flex-wrap items-center gap-1.5 py-1"
+							class="input flex min-h-9 items-center gap-1.5 py-1"
 							role="presentation"
 							onclick={() => boxes[side]?.focus()}
 						>
-							{#if side === 'include' && value.include.length > 1}
-								<!--
-									What the labels in this box are doing, at the front of it.
-
-									Before them rather than between them and the cursor: it is
-									the operator, and an operator goes in front of what it
-									operates on. Only once there are two — one label is one
-									label however they are meant to combine.
-								-->
-								<span
-									class="shrink-0 text-gray-500"
-									title={t(value.mode === 'all' ? 'tagFilter.allHint' : 'tagFilter.anyHint')}
-									aria-hidden="true"
-								>
-									<Icon name={value.mode === 'all' ? 'intersect' : 'union'} size={14} />
-								</span>
-							{/if}
-							{#each value[side] as entry (entry)}
-								{#if entry === UNTAGGED}
-									<span class="chip inline-flex items-center gap-1 italic">
-										{#if side === 'exclude'}<Icon name="minus" size={10} />{/if}
-										{untaggedWord}
-										<button
-											type="button"
-											class="opacity-60 transition hover:opacity-100"
-											aria-label={t('tags.removeTag', { tag: untaggedWord })}
-											title={t('tags.removeTag', { tag: untaggedWord })}
-											onclick={() => drop(side, entry)}
-										>
-											<Icon name="close" size={12} />
-										</button>
-									</span>
-								{:else}
-									<TagChip name={entry} class={side === 'exclude' ? 'line-through' : ''}>
-										<button
-											type="button"
-											class="no-underline opacity-60 transition hover:opacity-100"
-											aria-label={t('tags.removeTag', { tag: said(entry) })}
-											title={t('tags.removeTag', { tag: said(entry) })}
-											onclick={() => drop(side, entry)}
-										>
-											<Icon name="close" size={12} />
-										</button>
-									</TagChip>
-								{/if}
-							{/each}
 							<input
 								bind:this={boxes[side]}
 								bind:value={drafts[side]}
@@ -412,14 +441,12 @@
 								aria-controls="{name}-{side}-options"
 								{...{
 									/*
-									 * The placeholder says what to do with an empty box, so it goes
-									 * the moment the box has something in it: "Tags to show…" beside
-									 * two labels reads as a third one.
+									 * Always said, now that the chosen labels are drawn above
+									 * rather than inside. It used to go the moment the box held
+									 * a chip — "Tags to show…" beside two labels reads as a
+									 * third one — and there is nothing beside it any more.
 									 */
-									placeholder:
-										value[side].length > 0
-											? ''
-											: t(side === 'include' ? 'tagFilter.addToKeep' : 'tagFilter.addToHide')
+									placeholder: t(side === 'include' ? 'tagFilter.addToKeep' : 'tagFilter.addToHide')
 								}}
 								onfocus={() => {
 									typing = side;
