@@ -1,14 +1,19 @@
 import { db } from '$lib/db/index.js';
 import {
 	tags,
+	diaryEntries,
 	diaryEntryTags,
+	exceptionalTasks,
 	exceptionalTaskTags,
+	ideas,
 	ideaTags,
 	mediaTags,
+	notebooks,
 	recurringTaskTags,
-	todoTags
+	todoTags,
+	todoTasks
 } from '$lib/db/schema';
-import { eq, and, count, inArray, notInArray, sql } from 'drizzle-orm';
+import { eq, and, count, inArray, isNotNull, notInArray, sql } from 'drizzle-orm';
 import { NotFoundError, ValidationError } from './errors.js';
 import { str } from './validate.js';
 
@@ -484,4 +489,57 @@ export function tagByName(userId: string, name: unknown): TagRow {
 		.get();
 	if (!found) throw new NotFoundError('tag');
 	return found;
+}
+
+/**
+ * The labels each notebook uses: the ones on the notes, tasks and ideas filed
+ * in it, and the ones it hands a new note by default.
+ *
+ * What a tag field suggests once a notebook is chosen — a subject's own few
+ * words rather than the whole account's vocabulary. Every row read is this
+ * account's own, so a notebook somebody else filed things in contributes only
+ * what this account filed there.
+ */
+export function tagsByNotebook(userId: string): Record<number, string[]> {
+	const byNotebook = new Map<number, Set<string>>();
+	const add = (notebookId: number | null, name: string) => {
+		if (notebookId === null || !name) return;
+		const names = byNotebook.get(notebookId) ?? new Set<string>();
+		names.add(name);
+		byNotebook.set(notebookId, names);
+	};
+
+	const filed = [
+		{ join: diaryEntryTags, owner: diaryEntryTags.entryId, thing: diaryEntries },
+		{ join: todoTags, owner: todoTags.todoId, thing: todoTasks },
+		{ join: exceptionalTaskTags, owner: exceptionalTaskTags.taskId, thing: exceptionalTasks },
+		{ join: ideaTags, owner: ideaTags.ideaId, thing: ideas }
+	] as const;
+	for (const { join, owner, thing } of filed) {
+		const rows = db
+			.selectDistinct({ notebookId: thing.notebookId, name: tags.name })
+			.from(join)
+			.innerJoin(thing, and(eq(thing.id, owner), eq(thing.userId, userId)))
+			.innerJoin(tags, and(eq(tags.id, join.tagId), eq(tags.userId, userId)))
+			.where(and(eq(join.userId, userId), isNotNull(thing.notebookId)))
+			.all();
+		for (const row of rows) add(row.notebookId, row.name);
+	}
+
+	const defaults = db
+		.select({ id: notebooks.id, defaultTags: notebooks.defaultTags })
+		.from(notebooks)
+		.where(and(eq(notebooks.userId, userId), sql`${notebooks.defaultTags} <> ''`))
+		.all();
+	for (const notebook of defaults)
+		for (const name of parseTags(notebook.defaultTags)) add(notebook.id, name);
+
+	return Object.fromEntries(
+		[...byNotebook].map(([id, names]) => [id, [...names].sort((a, b) => a.localeCompare(b))])
+	);
+}
+
+/** One notebook's labels — nothing, for a notebook this account never filed anything in. */
+export function notebookTags(userId: string, notebookId: number): string[] {
+	return tagsByNotebook(userId)[notebookId] ?? [];
 }

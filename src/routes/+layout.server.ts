@@ -3,6 +3,7 @@ import type { LayoutServerLoad } from './$types';
 import type { Clock } from '$lib/when';
 import { serverTimezone } from '$lib/services/ctx';
 import { listTags } from '$lib/services/diary';
+import { tagsByNotebook } from '$lib/services/tags';
 import {
 	DEFAULT_THEME,
 	DEFAULT_WEEK,
@@ -126,6 +127,8 @@ export const load: LayoutServerLoad = async (event) => {
 	 * colour that shows in three of them. `TagChip` reads this.
 	 */
 	let tagColors: Record<string, string> = {};
+	/* The same words by notebook, so a tag field can offer a subject's own. */
+	let tagVocabularyByNotebook: Record<number, string[]> = {};
 	let week = DEFAULT_WEEK;
 	let hiddenSections: HideableSection[] = [];
 	let navOrder: string[] = [];
@@ -155,6 +158,7 @@ export const load: LayoutServerLoad = async (event) => {
 		tz = ctx.tz;
 		const vocabulary = listTags(ctx);
 		tagVocabulary = vocabulary.map((one) => one.name);
+		tagVocabularyByNotebook = tagsByNotebook(ctx.userId);
 		tagColors = Object.fromEntries(
 			vocabulary.filter((one) => one.color).map((one) => [one.name, one.color as string])
 		);
@@ -233,6 +237,7 @@ export const load: LayoutServerLoad = async (event) => {
 		clock,
 		tz,
 		tagVocabulary,
+		tagVocabularyByNotebook,
 		tagColors,
 		// Sections this account has put away: out of every menu the shell
 		// renders, still answering at their URLs.

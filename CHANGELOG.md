@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **Tag suggestions follow the notebook.** With a notebook picked in the task
+  form, the Tags box offers only the tags that notebook already uses; with
+  none picked, all of yours as before.
 - **A block's rhythm reads in your language.** The plan's hover card said
   "Every other Thursday" in English whatever language you chose, along with
   "One-off", "Skipped" and "Inactive"; it says them in yours now.

@@ -9,6 +9,7 @@
  * build saying so.
  */
 import { listTags } from '$lib/services/diary';
+import { tagsByNotebook } from '$lib/services/tags';
 import type { LayoutServerData } from './$types';
 import { redirect } from '@sveltejs/kit';
 import type { IsolatedEvent } from '$lib/isolated/routes';
@@ -69,6 +70,7 @@ export async function load(event: IsolatedEvent): Promise<LayoutServerData> {
 		clock: getClock(user.id),
 		tz: ctx.tz,
 		tagVocabulary: vocabulary.map((one) => one.name),
+		tagVocabularyByNotebook: tagsByNotebook(user.id),
 		// The colours, beside the words — see the server instance's layout.
 		tagColors: Object.fromEntries(
 			vocabulary.filter((one) => one.color).map((one) => [one.name, one.color as string])

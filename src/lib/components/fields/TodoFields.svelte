@@ -67,6 +67,16 @@
 			(notes ? 1 : 0) +
 			(tags ? 1 : 0)
 	);
+
+	/*
+	 * With a notebook chosen, the words that subject already uses; with none,
+	 * the whole account's vocabulary.
+	 */
+	const knownTags = $derived(
+		notebookId
+			? (page.data.tagVocabularyByNotebook?.[notebookId] ?? [])
+			: (page.data.tagVocabulary ?? [])
+	);
 </script>
 
 <Field label={t('ui.title')} span={12} required>
@@ -111,11 +121,7 @@
 	<Field label={t('ui.tags')} span={12} hint={t('fields.todo.separateWithCommasOrSpaces')}>
 		<!-- The account's one vocabulary, not a second one: a word used on a
 		     diary entry is the same word here. -->
-		<TagInput
-			value={tags}
-			known={page.data.tagVocabulary ?? []}
-			placeholder={t('fields.todo.tagsExample')}
-		/>
+		<TagInput value={tags} known={knownTags} placeholder={t('fields.todo.tagsExample')} />
 	</Field>
 
 	<Field label={t('ui.notes')} span={12}>
