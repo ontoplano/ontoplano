@@ -1000,6 +1000,17 @@
 		 * knows which room they are on before they have read the word.
 		 */
 		--hud-plate: rgb(0 0 0 / 0.78);
+		/*
+		 * How much of the page behind it is taken out of focus.
+		 *
+		 * Free here, whatever it costs elsewhere: the wheel is a press and a
+		 * hold, and while it is up the page under it is not scrolling — there
+		 * is a scrim over it and the finger is on the handle. The blur is
+		 * composited once and then only when the label changes wedge, so it
+		 * never lands in the middle of a scroll. It is not on the scrim
+		 * itself, which is full-screen and would be a different question.
+		 */
+		--hud-blur: 14px;
 		--hud-ink: 62%;
 
 		position: fixed;
@@ -1048,6 +1059,8 @@
 		gap: 0.5rem;
 		border-radius: var(--radius-lg, 0);
 		background-color: var(--hud-plate);
+		-webkit-backdrop-filter: blur(var(--hud-blur));
+		backdrop-filter: blur(var(--hud-blur));
 		padding: 0.875rem 1.5rem 1rem;
 		font-weight: 800;
 		letter-spacing: 0.08em;

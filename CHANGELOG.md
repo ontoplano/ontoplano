@@ -49,7 +49,8 @@ releases mattered.
 - **The task form asks for the notes straight after the title.**
 - **Link comes before New** in a notebook's header.
 - **The wheel's room name sits higher and can be read** over whatever is
-  behind it — it stands on a dark plate now, and every room clears 5.9:1.
+  behind it — it stands on a dark plate that blurs the page, and every room
+  clears 5.9:1.
 - **One press, one submission, on every form** — a Save button goes dead
   while the request it started is still out.
 - **Saving a notebook's tabs no longer blanks them on the way out,** and a
