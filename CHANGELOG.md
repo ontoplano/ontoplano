@@ -28,6 +28,11 @@ releases mattered.
   finishing one and for putting it back, and nothing for the column between
   them, so "doing" could only be set by hand in the app. `change_task` takes a
   status.
+- **A welcome that could not be sent says so.** An instance with the mailing
+  list switched on but no mail server configured put the address on the list,
+  answered "You're on the list", and sent nothing — with no trace in the mail
+  log, on /admin, or in what `/healthz` warns about. It is a failure you can
+  see and retry now.
 - **The task tools over MCP are named after tasks.** `add_todo` is `add_task`,
   `change_todo` is `change_task`, the listing is `tasks`, and so on through
   the set — the app has called them tasks everywhere else for a long time.

@@ -31,12 +31,14 @@ const database = makeDatabase();
 afterAll(() => database.remove());
 
 type Mail = { to: string; subject: string; text: string };
-const sendEmail = vi.fn<(email: Mail) => Promise<{ delivered: boolean }>>(async () => ({
-	delivered: true
-}));
+const sendEmail = vi.fn<(email: Mail) => Promise<{ delivered: boolean; reason?: string }>>(
+	async () => ({ delivered: true })
+);
+/** Whether this instance has anywhere to send mail. See the test at the foot. */
+let configured = true;
 vi.mock('../src/lib/server/email', () => ({
 	sendEmail: (email: Mail) => sendEmail(email),
-	isEmailConfigured: () => true
+	isEmailConfigured: () => configured
 }));
 
 let enabled = true;
@@ -62,8 +64,11 @@ beforeAll(async () => {
 
 beforeEach(() => {
 	sendEmail.mockClear();
+	sendEmail.mockResolvedValue({ delivered: true });
 	enabled = true;
+	configured = true;
 	database.exec('delete from subscribers');
+	database.exec('delete from mail_failures');
 });
 
 /** The token that would be in a message's unsubscribe link. */
@@ -103,6 +108,37 @@ describe('subscribing', () => {
 		await list.subscribe('reader@example.test');
 
 		expect(list.SUBSCRIBE_ACCEPTED).not.toMatch(/inbox|confirm|link|email|mail/i);
+	});
+
+	/*
+	 * A welcome that went nowhere is written down.
+	 *
+	 * A box with no SMTP is a fine thing to be, and `sendLogged` normally
+	 * trusts the log for one — except here, where the person on the other end
+	 * has been told "You're on the list" and has no other way to find out that
+	 * nothing was sent. Without this the failure is invisible in every place
+	 * an operator looks: the mail log, /admin, and the warnings /healthz
+	 * reports.
+	 */
+	test('a welcome that could not be sent at all is a failure somebody can see', async () => {
+		configured = false;
+		sendEmail.mockResolvedValue({
+			delivered: false,
+			reason: 'SMTP is not configured on this server'
+		});
+
+		await list.subscribe('reader@example.test');
+
+		const failure = database.get(
+			'select kind, to_email, error from mail_failures where resolved_at is null'
+		) as { kind: string; to_email: string; error: string } | undefined;
+		expect(failure?.kind).toBe('newsletter-welcome');
+		expect(failure?.to_email).toBe('reader@example.test');
+		expect(failure?.error).toMatch(/not configured/i);
+
+		// And the address is on the list either way: the row is the list, and a
+		// welcome that bounced is not a reason to drop somebody who asked.
+		expect(list.counts()).toEqual({ confirmed: 1, pending: 0 });
 	});
 
 	test('the same address twice is one row and one mail', async () => {

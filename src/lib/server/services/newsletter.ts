@@ -184,9 +184,23 @@ async function welcome(email: string): Promise<void> {
 					small: stop ? [t('mail.stopThese', { url: stop })] : []
 				})
 			},
-			// Re-sendable: nothing in it expires, so an operator clearing a
-			// failure can send the same words rather than nothing.
-			{ retryable: true }
+			{
+				// Re-sendable: nothing in it expires, so an operator clearing a
+				// failure can send the same words rather than nothing.
+				retryable: true,
+				/*
+				 * No SMTP is a failure here, not a shrug.
+				 *
+				 * A box with no mail configured is a fine thing to be — except
+				 * when the newsletter is switched on, which is the operator
+				 * saying they intend to write to people. Without this the
+				 * stranger is told "You're on the list", nothing is sent, and
+				 * nothing anywhere says so: not the mail log, not /admin, not
+				 * the warnings /healthz reports. The first anybody hears is
+				 * somebody asking why no mail arrived.
+				 */
+				trackUnconfigured: true
+			}
 		);
 	} catch {
 		// The row is written and the person is subscribed. What went wrong with
