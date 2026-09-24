@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **The demo's notebooks have a year in them.** The renovation and the trip
+  carry twenty-odd notes and thirty-odd tasks each, tagged and rated, and
+  every notebook has a cover.
+- **The notebooks card is on the dashboard from the start,** under the two
+  that draw the week.
 - **Joining the mailing list sends you a note saying so** — nothing to
   confirm, and the way off is in it.
 - **A notebook can be filed inside another from the form,** instead of only

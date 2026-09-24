@@ -96,6 +96,14 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 		section: 'planner'
 	},
 	{
+		id: 'notebooks',
+		label: 'app.notebooks',
+		description: 'card.theNotebooksYouHaveWritten',
+		defaultOn: true,
+		width: 'half',
+		section: 'diary'
+	},
+	{
 		id: 'goals',
 		label: 'app.goals',
 		description: 'card.goalsWhosePeriodCoversToday',
@@ -139,14 +147,6 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 		width: 'half',
 		section: 'ideas',
 		hide: 'ideas'
-	},
-	{
-		id: 'notebooks',
-		label: 'app.notebooks',
-		description: 'card.theNotebooksYouHaveWritten',
-		defaultOn: true,
-		width: 'half',
-		section: 'diary'
 	},
 	{
 		id: 'bills',
