@@ -1519,6 +1519,8 @@
 	.day-column {
 		padding-left: 0.625rem;
 		border-left: 2px solid var(--color-gray-200);
+		/* A rule has no corners: rounded, it hooked in at both ends. */
+		border-radius: 0;
 	}
 
 	.day-column.is-today {

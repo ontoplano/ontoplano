@@ -24,7 +24,7 @@
 	const ICONS = { error: 'error', success: 'check', warning: 'warning', info: 'info' } as const;
 </script>
 
-<div class="banner {kind}" role={kind === 'error' ? 'alert' : 'status'}>
+<div class="banner edge-stripe {kind}" role={kind === 'error' ? 'alert' : 'status'}>
 	<Icon name={ICONS[kind]} size={16} />
 	<div class="body">
 		{#if children}{@render children()}{:else}{message}{/if}

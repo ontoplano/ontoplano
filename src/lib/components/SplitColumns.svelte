@@ -124,7 +124,7 @@
 <div
 	class="grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[var(--split-left)_auto_minmax(0,1fr)] {spaced
 		? 'gap-4 lg:gap-0'
-		: 'overflow-hidden'}"
+		: 'edge-to-edge overflow-hidden'}"
 	style="--split-left: {rem}rem"
 >
 	{@render left()}

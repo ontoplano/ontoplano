@@ -945,7 +945,7 @@
 	bind:this={surface}
 	onclose={leaveMaximized}
 	aria-label={notebook?.title ?? 'Notes'}
-	class="nb-surface bg-white"
+	class="nb-surface as-surface bg-white"
 	style="--nb-type: {TYPE_STEPS[typeStep]}"
 >
 	{#if maximized}

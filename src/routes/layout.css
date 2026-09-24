@@ -272,6 +272,7 @@ input[type='radio'] {
 	 * is supposed to be flush against. The one thing he circled and asked about
 	 * twice.
 	 */
+	.room-body,
 	.room-body > *,
 	.room-body > * > .room-surface,
 	.room-body .room-surface {
@@ -483,6 +484,41 @@ html[data-style='playful'] dialog > div > footer,
 html[data-style='playful'] details.no-round,
 html[data-style='playful'] svg {
 	border-radius: 0;
+}
+
+/*
+ * The same for anything whose only border is a rule across it — a toolbar
+ * row, a tab strip. Rounded, the rule curves up at both ends and meets the
+ * edge of the card as a hook, which is the notebook's tab strip inside its
+ * accented card. A shape with a rule along one side only has no corners to
+ * round.
+ */
+html[data-style='playful']
+	:is(.border-b, .border-t, .border-y):not(.border, .border-x, .border-l, .border-r) {
+	border-radius: 0;
+}
+
+/*
+ * A line of text cut off at its end clips, and a clip follows the radius:
+ * the corner took the top off a leading "l", so "lunch" read "ıunch".
+ */
+html[data-style='playful'] .truncate {
+	border-radius: 0;
+}
+
+/*
+ * A dialog that is part of the page, not a panel over it.
+ *
+ * The rules above round and clip `dialog > div` because that is a modal's
+ * panel. A notebook's surface is a `<dialog>` laid out with `display:
+ * contents` until it is maximized, so its body matched them too: a 16px
+ * clipped curve inside the square pane beside the shelf, cutting the corner
+ * off the last note's row and bending the tab strip's rule. Its children are
+ * rows of the pane it stands in, and when maximized they are the screen.
+ */
+html[data-style='playful'] dialog.as-surface > div {
+	border-radius: 0;
+	overflow: visible;
 }
 
 /*
@@ -2947,6 +2983,21 @@ html[data-style='playful'] .card-accent {
 }
 
 /*
+ * A stripe down one side squares that side.
+ *
+ * A thick left border on a rounded shape bends round the corner and thins
+ * into the hairline along the top, so the stripe ends in two curved slivers
+ * — the accented cards, every banner, the pinned note. One
+ * of the two shapes has to give up its radius, and the stripe cannot bend, so
+ * the corner does: anything wearing a stripe carries `.edge-stripe`, or is
+ * one of the shared classes below that always wear one.
+ */
+html[data-style='playful'] :is(.edge-stripe, .card-accent, .page-intro, .is-pinned) {
+	border-start-start-radius: 0;
+	border-end-start-radius: 0;
+}
+
+/*
  * Rendered Markdown, in an entry or a note.
  *
  * Tailwind's reset takes the browser's own heading and list styles away, which
@@ -4662,6 +4713,21 @@ html[data-style='playful'] .room-surface {
 	.room-body > * > * > .room-surface,
 	.room-body > * > * > [class*='shadow-card'] {
 		margin-inline: -1rem;
+	}
+
+	/*
+	 * Stepped out, it runs down both sides of the body, so it is square like
+	 * anything else flush with the edge of what holds it. Rounded, its bottom
+	 * corners sat a rem inside the body's own — two curves nested at each
+	 * corner of the notebooks room, with a strip of white between them.
+	 */
+	html[data-style='playful'] .room-body > .room-surface,
+	html[data-style='playful'] .room-body > [class*='shadow-card'],
+	html[data-style='playful'] .room-body > * > .room-surface,
+	html[data-style='playful'] .room-body > * > [class*='shadow-card'],
+	html[data-style='playful'] .room-body > * > * > .room-surface,
+	html[data-style='playful'] .room-body > * > * > [class*='shadow-card'] {
+		border-radius: 0;
 	}
 }
 

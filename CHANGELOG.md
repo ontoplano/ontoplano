@@ -20,6 +20,10 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **Rounded corners no longer leave slivers.** In the playful style, accent
+  stripes, banners, the notebook list and its notes, and the dashboard's day
+  columns meet their corners cleanly, and a short label no longer loses its
+  first letter to a rounded edge.
 - **A data stream's page stays inside Health.** Opening Sleep or Weight keeps
   Health's tabs on screen with that stream underlined, and Shift+H / Shift+L
   move between them as they do in the rest of the room.

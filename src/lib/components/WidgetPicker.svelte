@@ -107,7 +107,7 @@
 								type="button"
 								aria-pressed={chosen}
 								onclick={() => ontoggle(card.id)}
-								class="widget-tile {chosen ? 'is-on' : ''}"
+								class="widget-tile {chosen ? 'is-on edge-stripe' : ''}"
 								style="--widget-accent: {SECTIONS[group.section].accent}"
 							>
 								<span class="widget-mark" aria-hidden="true">
