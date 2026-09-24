@@ -7,8 +7,10 @@
 import ts from 'typescript';
 
 /** Every `const NAME = '…'` at the top of a file, so a template can say it. */
+/** @type {WeakMap<import('typescript').SourceFile, Map<string, string>>} */
 const constantsOf = new WeakMap();
 
+/** @param {import('typescript').SourceFile} source */
 function stringConstants(source) {
 	let found = constantsOf.get(source);
 	if (found) return found;
@@ -33,6 +35,10 @@ function stringConstants(source) {
  * backtick rather than a backslash and one. A substitution naming a string
  * constant in the same file — `removed in ${ENERGY_REMOVED_IN}` — is replaced
  * by its value; anything else, which only the running code knows, by `…`.
+ *
+ * @param {import('typescript').Node | undefined} node
+ * @param {import('typescript').SourceFile} source
+ * @returns {string}
  */
 export function literalText(node, source) {
 	if (!node) return '';
@@ -50,7 +56,12 @@ export function literalText(node, source) {
 	return '';
 }
 
-/** One parameter as a row of the tools page's table. */
+/**
+ * One parameter as a row of the tools page's table.
+ *
+ * @param {{ name: string, type?: string, description?: string, enum?: string[], fields?: string[], default?: unknown, deprecated?: boolean, required?: boolean }} p
+ * @returns {string}
+ */
 export function paramRow(p) {
 	const bits = [p.description];
 	if (p.enum) bits.push(`One of: ${p.enum.map((v) => `\`${v}\``).join(', ')}.`);
