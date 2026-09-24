@@ -20,6 +20,14 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **The goals toolbar is one row.** Area is a picker, Show closed is a toggle,
+  and Areas sits quietly at the right.
+- **A goal reads top to bottom.** Title, area and period first, then progress
+  and measures; achieved, missed, edit and delete are icons on the right, and
+  hovering lights the whole row to the card's edges.
+- **Deleting a goal asks first, in its own dialog,** and says its linked tasks
+  are kept.
+- **j and k show which goal they are on,** and e edits it.
 - **Rounded corners no longer leave slivers.** In the playful style, accent
   stripes, banners, the notebook list and its notes, and the dashboard's day
   columns meet their corners cleanly, and a short label no longer loses its

@@ -217,3 +217,35 @@ test('a goal can be measured by several things, and each keeps its own number', 
 	await expect(page.getByText('50%')).toBeVisible();
 	await expect(rows.first().getByRole('button', { name: /One fewer/ })).toBeEnabled();
 });
+
+/**
+ * A goal row reaches its card's edges, and deleting it asks first.
+ *
+ * The list used to sit inset in the card's padding, so the hover wash was a
+ * square floating inside a rounded card. And delete was a second button where
+ * the first had been, which a double press confirmed by itself.
+ */
+test('a goal row spans its card, and delete asks in a dialog', async ({ page }) => {
+	await register(page, testEmail('goal-row'));
+	await visit(page, '/goals');
+	const heading = page.locator('[name="heading"]');
+	await pressUntil(page, page.getByRole('button', { name: /New goal/ }).first(), heading);
+	await heading.fill('paint the fence');
+	await page.getByRole('button', { name: 'Create goal' }).click();
+
+	const row = page.locator('[id^="goal-"]', { hasText: 'paint the fence' });
+	await expect(row).toBeVisible();
+	const card = page.locator('section', { has: row });
+	const [rowBox, cardBox] = [await row.boundingBox(), await card.boundingBox()];
+	// Inside the card's border on both sides, and no further in.
+	expect(rowBox!.x - cardBox!.x).toBeLessThanOrEqual(4);
+	expect(cardBox!.x + cardBox!.width - (rowBox!.x + rowBox!.width)).toBeLessThanOrEqual(2);
+
+	await row.getByRole('button', { name: 'Delete' }).click();
+	const dialog = page.getByRole('dialog');
+	await expect(dialog).toContainText('paint the fence');
+	await expect(row).toBeVisible();
+	await page.waitForTimeout(500);
+	await dialog.getByRole('button', { name: 'Delete' }).click();
+	await expect(row).toHaveCount(0);
+});
