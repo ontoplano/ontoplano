@@ -108,6 +108,14 @@
 	 *
 	 * So every answer the bar works out is written straight back into the
 	 * input. There is never a second number to come back.
+	 *
+	 * And the input never sees the pointer at all (`pointer-events: none`
+	 * below). Firefox runs its own thumb drag off the mouse, and the capture
+	 * the bar takes stole the mouseup that ends it: the drag never finished,
+	 * so the next movement of the mouse — after letting go — dragged the
+	 * invisible thumb and set the answer to wherever the pointer had gone.
+	 * The input is left to the keyboard and the screen reader, which is all
+	 * it was ever kept for.
 	 */
 	let slider: HTMLInputElement | undefined = $state();
 
@@ -173,6 +181,11 @@
 		// And once more on the way out, for the event the native control fires
 		// as the press ends — by now it says the same thing this does.
 		if (slider) slider.value = asStep(value);
+		// The press no longer reaches the input, so it does not focus it either;
+		// the arrow keys go on from where the pointer left it. On the way out
+		// rather than in, because the press's own default moves focus after
+		// `pointerdown` has run.
+		slider?.focus({ preventScroll: true });
 	}
 </script>
 
@@ -279,10 +292,11 @@
 	/*
 	 * The control, laid over the gauge it drives.
 	 *
-	 * Invisible rather than absent: the platform's own range still handles a
-	 * finger, a mouse, the arrow keys, Home and End and a screen reader, and a
-	 * hand-built one would have to reimplement every one of those. What anybody
-	 * sees is the gauge underneath filling.
+	 * Invisible rather than absent: the platform's own range still handles the
+	 * arrow keys, Home and End and a screen reader, and a hand-built one would
+	 * have to reimplement every one of those. The pointer is the bar's — see
+	 * `slider` above for why the input may not see it. What anybody sees is
+	 * the gauge underneath filling.
 	 */
 	.rating-slide {
 		position: absolute;
@@ -294,7 +308,7 @@
 		-webkit-appearance: none;
 		background: transparent;
 		opacity: 0;
-		cursor: pointer;
+		pointer-events: none;
 	}
 
 	/*
@@ -318,6 +332,7 @@
 		display: flex;
 		align-items: center;
 		touch-action: none;
+		cursor: pointer;
 	}
 
 	.rating-number {

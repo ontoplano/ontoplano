@@ -20,6 +20,11 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **A rating dragged with the mouse stays where you let go.** In Firefox,
+  moving the mouse after a quick drag on urgency, ease or interest no longer
+  sends it back to where it was.
+- **Dragging a rating with your finger keeps where you let go.** A quick
+  sideways drag on a gauge no longer changes tab and closes the form.
 - **A recipe's page lines up.** Ingredients, method and pictures no longer
   overlap, their edges and headers match, and the buttons sit beside the
   recipe's name. The weekly review's two top cards and a notebook's header got
