@@ -372,7 +372,8 @@
 			);
 		if (href === '/tasks/plan') return page.url.pathname.startsWith('/tasks');
 		if (href === '/goals') return page.url.pathname.startsWith('/goals');
-		if (href === '/health/habits') return page.url.pathname.startsWith('/health');
+		if (href === '/health/habits')
+			return page.url.pathname.startsWith('/health') || page.url.pathname.startsWith('/data/');
 		return page.url.pathname === href;
 	}
 

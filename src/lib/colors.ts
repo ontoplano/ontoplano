@@ -79,6 +79,8 @@ export function sectionFor(pathname: string): SectionKey {
 	if (pathname.startsWith('/tasks')) return 'planner';
 	if (pathname.startsWith('/goals')) return 'goals';
 	if (pathname.startsWith('/health')) return 'health';
+	// A data stream's page is one of Health's tabs; see `HealthRoom`.
+	if (pathname.startsWith('/data/')) return 'health';
 	if (pathname.startsWith('/finance')) return 'finance';
 	// The whole Notebooks room wears the diary section's colour, as the room
 	// did when it lived at /diary — Ideas included. It kept a colour of its

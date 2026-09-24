@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **A data stream's page stays inside Health.** Opening Sleep or Weight keeps
+  Health's tabs on screen with that stream underlined, and Shift+H / Shift+L
+  move between them as they do in the rest of the room.
 - **The account menu takes you to Instance and Administration.** Whoever
   can open those pages finds them under AI & Integrations; nobody else sees
   them.

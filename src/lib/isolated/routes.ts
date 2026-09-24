@@ -237,7 +237,11 @@ const endpoints = import.meta.glob(
  * route's own file comes as it is.
  */
 const layouts = import.meta.glob(
-	['/src/routes/**/layout.isolated.ts', '/src/routes/health/+layout.server.ts'],
+	[
+		'/src/routes/**/layout.isolated.ts',
+		'/src/routes/health/+layout.server.ts',
+		'/src/routes/data/+layout.server.ts'
+	],
 	{ eager: true }
 ) as Record<string, LayoutModule>;
 // Keys only, never compiled: the node array a data request answers with has
