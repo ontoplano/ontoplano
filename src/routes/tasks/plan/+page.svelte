@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { pillStyle } from '$lib/pill-ink';
+	import RemindLead from '$lib/components/RemindLead.svelte';
 	import { dayOf, wantsTwelveHour } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
@@ -1717,17 +1718,6 @@
 	let remindLead: number | string = $state(0);
 
 	/** "30 min", "1 h", "Not at all" — the chips, in the fewest words. */
-	function leadLabel(minutes: number): string {
-		if (minutes === 0) return t('tasks.plan.notAtAll');
-		if (minutes < 60) return t('tasks.plan.leadMinutes', { count: minutes });
-		if (minutes === 1440) return t('tasks.plan.aDay');
-		return minutes % 60 === 0
-			? t('tasks.plan.leadHours', { count: minutes / 60 })
-			: t('tasks.plan.leadHoursMinutes', {
-					hours: Math.floor(minutes / 60),
-					minutes: minutes % 60
-				});
-	}
 
 	const editingBlock = $derived.by((): Slot | Exceptional | null => {
 		if (editingBlockId === null) return null;
@@ -3604,47 +3594,7 @@
 						gym" — said once, applying to every occurrence of it. Each
 						occurrence gets its own nudge as it appears.
 					-->
-					<Field
-						label={t('tasks.plan.remindMe')}
-						span={12}
-						hint={t('tasks.plan.minutesBeforeItStartsEvery')}
-					>
-						<!--
-							A list and a box, not one or the other.
-
-							The list is what anybody picks nine times out of ten, and
-							hunting for "10" in a number field is worse than tapping it.
-							But "the usual few" is a guess about somebody else's life —
-							45 minutes for a commute, three hours for a flight — so the
-							list writes into the box rather than replacing it, and the
-							box is what is submitted.
-						-->
-						<div class="flex flex-wrap items-center gap-2">
-							<NumberBox
-								autocomplete="off"
-								name="remindLeadMinutes"
-								min="0"
-								max="1440"
-								step="5"
-								bind:value={remindLead}
-								placeholder="0"
-								class="w-28"
-								aria-label={t('tasks.plan.minutesBeforeItStarts')}
-							/>
-							<div class="flex flex-wrap gap-1">
-								{#each [0, 5, 10, 30, 60, 1440] as minutes (minutes)}
-									<button
-										type="button"
-										class="chip"
-										aria-pressed={Number(remindLead) === minutes}
-										onclick={() => (remindLead = minutes)}
-									>
-										{leadLabel(minutes)}
-									</button>
-								{/each}
-							</div>
-						</div>
-					</Field>
+					<RemindLead bind:value={remindLead} hint="tasks.plan.minutesBeforeItStartsEvery" />
 				</FormGrid>
 
 				<MoreOptions label={t('tasks.plan.urgencyEaseInterest')} count={ratingsSet}>

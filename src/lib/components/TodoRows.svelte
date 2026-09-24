@@ -7,6 +7,7 @@
 	import { tagFilterInUrl } from '$lib/tag-filter-url.svelte';
 	import { filtersInUrl } from '$lib/filters-in-url.svelte';
 	import SavedFilters from '$lib/components/SavedFilters.svelte';
+	import RemindLead from '$lib/components/RemindLead.svelte';
 	import { NO_TAG_FILTER, UNTAGGED, isTagFiltering, passesTagFilter } from '$lib/tag-filter';
 	import SortControl from '$lib/components/SortControl.svelte';
 	import { agoOf, momentOf } from '$lib/when';
@@ -196,6 +197,8 @@
 	const tagFilter = tagFilterInUrl();
 	let selectedIndex = $state(0);
 	let delegatingId: number | null = $state(null);
+	/** How long before it starts to be nudged — see `RemindLead`. */
+	let delegateLead: number | string = $state(0);
 	let confirmingDelete: number | null = $state(null);
 	/**
 	 * Which rows are showing everything written on them.
@@ -850,6 +853,9 @@
 
 	function startDelegate(todo: Todo) {
 		delegatingId = todo.id;
+		// Each task is asked afresh: a reminder carried over from the last one
+		// is a nudge nobody asked for about something else.
+		delegateLead = 0;
 	}
 
 	function formatDate(d: Date): string {
@@ -1944,6 +1950,12 @@
 							{/each}
 						</select>
 					</Field>
+					<!--
+						And a nudge, since this is where somebody says "do it on
+						Thursday" — which is exactly when they want telling. It is the
+						same control the planner's own block form asks with.
+					-->
+					<RemindLead bind:value={delegateLead} />
 				</FormGrid>
 			</form>
 		{/if}

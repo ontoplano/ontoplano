@@ -135,7 +135,8 @@ export const todoHandlers = {
 				durationMinutes: formData.get('durationMinutes'),
 				mode: formData.get('mode'),
 				categoryId: formData.get('categoryId'),
-				activityId: formData.get('activityId')
+				activityId: formData.get('activityId'),
+				remindLeadMinutes: formData.get('remindLeadMinutes')
 			});
 			return { success: true };
 		} catch (e) {

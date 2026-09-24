@@ -779,6 +779,15 @@ export function delegateTodo(
 		mode: unknown;
 		categoryId?: unknown;
 		activityId?: unknown;
+		/**
+		 * How long before it starts to be nudged, or nothing.
+		 *
+		 * Putting a task on a day is the same act as making a block, and a
+		 * block has always been able to ask for a reminder — so the one dialog
+		 * that could not was the one people reach for when they think "do this
+		 * on Thursday", which is exactly when they want telling.
+		 */
+		remindLeadMinutes?: unknown;
 	}
 ): void {
 	const date = requiredDate(raw.date);
@@ -788,6 +797,15 @@ export function delegateTodo(
 			? 60
 			: num(raw.durationMinutes, 'duration', { int: true, min: 1, max: 24 * 60 });
 	const mode = oneOf(raw.mode, 'mode', ['category', 'activity'] as const);
+	// Nought and nothing are the same answer: no reminder. Stored as null so a
+	// block that was never asked and one answered "not at all" read alike.
+	const lead =
+		raw.remindLeadMinutes === undefined ||
+		raw.remindLeadMinutes === null ||
+		raw.remindLeadMinutes === '' ||
+		Number(raw.remindLeadMinutes) === 0
+			? null
+			: num(raw.remindLeadMinutes, 'reminder', { int: true, min: 0, max: 24 * 60 });
 	const categoryId = ownedCategoryId(ctx, raw.categoryId);
 	const activityId = ownedActivityId(ctx, raw.activityId);
 
@@ -814,6 +832,7 @@ export function delegateTodo(
 				categoryId,
 				activityId,
 				label: todo.title.slice(0, MAX_LABEL_LENGTH),
+				remindLeadMinutes: lead,
 				// As with promoting: giving a task a time must not take it out of
 				// the notebook it belongs to.
 				notebookId: todo.notebookId

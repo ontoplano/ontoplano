@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **Putting a task on a day can ask to be reminded about it** — the same
+  control the planner's own blocks use. It is where you say "do this on
+  Thursday", which is when you most want telling.
 - **A narrowed task list is a link.** Which filters are on now lives in the
   address, so it survives a reload and can be bookmarked or sent.
 - **Keep a set of filters under a name.** "Everything urgent about the
