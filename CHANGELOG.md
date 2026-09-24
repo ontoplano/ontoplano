@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **Joining the mailing list sends you a note saying so** — nothing to
+  confirm, and the way off is in it.
 - **A notebook can be filed inside another from the form,** instead of only
   by typing an em dash into its name.
 - **An open folder and the notebooks inside it share one ground,** rather

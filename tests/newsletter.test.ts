@@ -4,17 +4,23 @@ import { makeDatabase } from './helpers/db';
 /**
  * The mailing list: what it refuses, and what it never says.
  *
- * Pressing the button is the answer — there is no confirming click, and
- * nothing is sent when somebody subscribes. That is a deliberate trade: it
- * gives up the guarantee that an address belongs to whoever typed it, and what
- * stands in its place is a rate limit in front of the form and an unsubscribe
- * link in every message.
+ * Pressing the button is the answer — there is no confirming click. That is a
+ * deliberate trade: it gives up the guarantee that an address belongs to
+ * whoever typed it, and what stands in its place is a rate limit in front of
+ * the form and an unsubscribe link in every message.
  *
- * Two properties matter more than the happy path.
+ * Three properties matter more than the happy path.
  *
- * **Subscribing sends nothing.** A form on a public page that mails whatever
- * is typed into it is a way to send mail to strangers. This one writes a row
- * and says nothing to anybody.
+ * **Joining is said out loud, once.** A welcome goes to an address that has
+ * just joined, because somebody who typed an address into a web page has no
+ * other evidence it worked, and an address typed by somebody else has nowhere
+ * to complain to until something arrives at it. It asks for nothing and
+ * carries the way off.
+ *
+ * **And only once.** A form on a public page that mails whatever is typed into
+ * it is a way to send mail to strangers. Typing an address that is already on
+ * the list sends nothing at all, so the form cannot be pressed repeatedly at
+ * somebody else's inbox.
  *
  * **The form is not a way to ask who is on the list.** Subscribing answers the
  * same thing whether the address is new, already there, or previously
@@ -69,12 +75,19 @@ function tokenOf(email: string): string {
 }
 
 describe('subscribing', () => {
-	test('puts the address on the list at once, and sends nothing', async () => {
+	test('puts the address on the list at once, and says so', async () => {
 		await list.subscribe('reader@example.test');
 
-		expect(sendEmail).not.toHaveBeenCalled();
 		expect(list.counts()).toEqual({ confirmed: 1, pending: 0 });
 		expect(list.confirmedAddresses()).toEqual(['reader@example.test']);
+
+		expect(sendEmail).toHaveBeenCalledTimes(1);
+		const [sent] = sendEmail.mock.calls[0];
+		expect(sent.to).toBe('reader@example.test');
+		// It asks for nothing: there is no click to make, and the only link in
+		// it that matters is the one out.
+		expect(sent.text).not.toMatch(/confirm/i);
+		expect(sent.text).toContain(`/newsletter/off?t=${tokenOf('reader@example.test')}`);
 	});
 
 	/*
@@ -82,20 +95,23 @@ describe('subscribing', () => {
 	 *
 	 * It said "check your inbox — there is one link to follow" for a while
 	 * after the confirming mail stopped being sent, so a stranger was told to
-	 * go and find something that was never coming.
+	 * go and find something that was never coming. A welcome arrives now, but
+	 * it is not a step: nothing waits on it, so the sentence must not send
+	 * anybody off to look for it either.
 	 */
 	test('what the form answers promises nothing to go and look for', async () => {
 		await list.subscribe('reader@example.test');
 
-		expect(sendEmail).not.toHaveBeenCalled();
 		expect(list.SUBSCRIBE_ACCEPTED).not.toMatch(/inbox|confirm|link|email|mail/i);
 	});
 
-	test('the same address twice is one row and still no mail', async () => {
+	test('the same address twice is one row and one mail', async () => {
 		await list.subscribe('reader@example.test');
 		await list.subscribe('reader@example.test');
 
-		expect(sendEmail).not.toHaveBeenCalled();
+		// The second press writes nothing and sends nothing, which is what stops
+		// this form being a way to post mail at somebody else's inbox.
+		expect(sendEmail).toHaveBeenCalledTimes(1);
 		expect(list.counts()).toEqual({ confirmed: 1, pending: 0 });
 	});
 
@@ -159,6 +175,8 @@ describe('announcing a release', () => {
 	test('reaches everybody on the list, one message each', async () => {
 		await list.subscribe('one@example.test');
 		await list.subscribe('two@example.test');
+		// Their welcomes have been and gone; this is about the issue.
+		sendEmail.mockClear();
 
 		expect(await list.announce(issue)).toEqual({ sent: 2, failed: 0 });
 		expect(sendEmail).toHaveBeenCalledTimes(2);

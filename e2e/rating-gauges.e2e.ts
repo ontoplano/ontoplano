@@ -5,11 +5,13 @@ import { visit } from './helpers/visit';
 /**
  * How the three ratings are drawn on a card.
  *
- * They nested once — urgency a full-width rectangle behind, ease narrower in
- * front of it — so above the top of a short interest, ease was two columns
- * wide and the same answer looked like twice as much as urgency beside it.
- * Whoever was comparing two rows was comparing the wrong thing. So: three
- * columns of one width, and a strip of the ruler that nothing ever covers.
+ * They nest: urgency three columns wide behind, ease two in front of it,
+ * interest one in front of that, all sharing a baseline and a right edge. What
+ * you read is the sliver each one leaves showing, and those have to be one
+ * width — a bar in front that is rounded at the foot bites a crescent out of
+ * the one behind it at exactly the height where two slivers are compared, and
+ * a task rated 5 on all three then drew three slivers nobody would call
+ * equal. Beside them, a strip of the ruler that nothing ever covers.
  */
 async function cardWithRatings(
 	page: import('@playwright/test').Page,
@@ -37,34 +39,53 @@ async function cardWithRatings(
 	await expect(page.getByText(title, { exact: true })).toBeVisible();
 }
 
-test('the three columns are one width, whatever the numbers are', async ({ page }) => {
+test('the slivers are one width, and the ruler is never covered', async ({ page }) => {
 	test.setTimeout(180_000);
 	await register(page, testEmail('gauges'));
 
-	// The shape the old drawing got wrong: two tall and one short.
-	await cardWithRatings(page, 'Two tall and one short', {
-		urgency: '4',
-		ease: '4',
-		interest: '1'
+	// Five on all three: every bar is full height, so every junction between two
+	// slivers is on show for its whole length. This is the one he reported.
+	await cardWithRatings(page, 'Five on all three', {
+		urgency: '5',
+		ease: '5',
+		interest: '5'
 	});
 
 	const drawn = await page
 		.locator('.rating-bars')
 		.first()
 		.evaluate((group) => {
-			const widths = [...group.querySelectorAll('.rating-bar')].map(
-				(bar) => Math.round(bar.getBoundingClientRect().width * 100) / 100
-			);
+			const bars = [...group.querySelectorAll('.rating-bar')];
+			const widths = bars.map((bar) => bar.getBoundingClientRect().width);
 			const stack = group.querySelector('.rating-stack')!.getBoundingClientRect();
 			const box = group.getBoundingClientRect();
-			return { widths, stack: stack.width, group: box.width, right: box.right - stack.right };
+			return {
+				widths,
+				// What each one leaves showing: the step down to the next, and the
+				// narrowest bar entire.
+				slivers: widths.map((wide, at) => (at === bars.length - 1 ? wide : wide - widths[at + 1])),
+				// Whether a bar in front can cut into the one behind it at the foot.
+				feet: bars.map((bar) => getComputedStyle(bar).borderBottomLeftRadius),
+				stack: stack.width,
+				group: box.width,
+				right: box.right - stack.right
+			};
 		});
 
-	expect(drawn.widths).toHaveLength(3);
-	expect(new Set(drawn.widths).size, `columns differ: ${drawn.widths.join(', ')}`).toBe(1);
+	// Nested, widest first: three columns, then two, then one.
+	expect(drawn.widths[0]).toBeGreaterThan(drawn.widths[1]);
+	expect(drawn.widths[1]).toBeGreaterThan(drawn.widths[2]);
 
-	// And the ruler reaches a column further left than they do, so a task rated
-	// 5 across the board still has something to be read against.
-	expect(drawn.group - drawn.stack).toBeCloseTo(drawn.widths[0], 1);
+	const said = drawn.slivers.map((n) => n.toFixed(2)).join(', ');
+	for (const sliver of drawn.slivers.slice(1))
+		expect(sliver, `slivers differ: ${said}`).toBeCloseTo(drawn.slivers[0], 1);
+
+	// Square at the foot, or the sliver behind gains back a crescent of exactly
+	// what the arithmetic above just proved even.
+	for (const foot of drawn.feet) expect(foot).toBe('0px');
+
+	// And the ruler reaches a column further left than the bars do, so a task
+	// rated 5 across the board still has something to be read against.
+	expect(drawn.group - drawn.stack).toBeCloseTo(drawn.widths[2], 1);
 	expect(drawn.right).toBeCloseTo(0, 1);
 });

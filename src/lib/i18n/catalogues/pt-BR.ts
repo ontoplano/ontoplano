@@ -1396,6 +1396,12 @@ export const messages: Catalogue = {
 	'mail.familyOffer.small': 'Se você não estava esperando isso, recuse e nada acontece.',
 	'mail.familyOffer.subject': '{owner} se ofereceu para pagar a sua conta do ontoplano',
 	'mail.newsletter.action': 'Ver o que mudou',
+	'mail.newsletterWelcome.action': 'Have a look at ontoplano',
+	'mail.newsletterWelcome.line1':
+		'Nothing to do — you are on the list. This is the only message that is not about a release.',
+	'mail.newsletterWelcome.line2':
+		'What arrives from here is one note per version, saying what changed and what it is for.',
+	'mail.newsletterWelcome.subject': "You're on the ontoplano list",
 	'mail.reset.action': 'Escolher uma nova senha',
 	'mail.reset.line': 'Alguém pediu para redefinir a senha desta conta do ontoplano.',
 	'mail.reset.small':

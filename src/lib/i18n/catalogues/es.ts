@@ -1403,6 +1403,12 @@ export const messages: Catalogue = {
 	'mail.familyOffer.small': 'Si no esperabas esto, recházala y no pasa nada.',
 	'mail.familyOffer.subject': '{owner} se ofreció a pagar tu cuenta de ontoplano',
 	'mail.newsletter.action': 'Ver qué cambió',
+	'mail.newsletterWelcome.action': 'Have a look at ontoplano',
+	'mail.newsletterWelcome.line1':
+		'Nothing to do — you are on the list. This is the only message that is not about a release.',
+	'mail.newsletterWelcome.line2':
+		'What arrives from here is one note per version, saying what changed and what it is for.',
+	'mail.newsletterWelcome.subject': "You're on the ontoplano list",
 	'mail.reset.action': 'Elige una nueva contraseña',
 	'mail.reset.line': 'Alguien pidió restablecer la contraseña de esta cuenta de ontoplano.',
 	'mail.reset.small':

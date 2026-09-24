@@ -3247,9 +3247,14 @@ confused with "delete my account".
 
 An address is on the list the moment somebody types it and presses the
 button. Double opt-in is the safer arrangement and this deliberately is not
-it: a confirming click loses the people who do not go back to their mail,
-and the form promising a message it then has to send is the thing that was
-saying "check your inbox" for a mail nobody was sending.
+it: a confirming click loses the people who do not go back to their mail.
+
+A welcome note still goes out, and it is not that click. It asks for
+nothing; it says the address is on the list, says what will arrive, and
+carries the way off. Somebody who has handed over an address and been shown
+a sentence on a web page has no other evidence the thing worked, and an
+address typed by mistake — or by somebody else — has nowhere to complain to
+until a message arrives at it.
 
 What stands in its place is the part that actually protects a domain: a hard
 rate limit in front of the endpoint, and an unsubscribe link in every single
@@ -3278,9 +3283,15 @@ The one other origin allowed to post the form, if there is one.
 
 Take an address, and put it on the list.
 
-Nothing is sent. Answers the same whatever happened, because the caller is a
-public form and the difference between "new" and "already on the list" is not
-the form's to disclose.
+Answers the same whatever happened, because the caller is a public form and
+the difference between "new" and "already on the list" is not the form's to
+disclose. Mail follows the same rule: a welcome goes to an address that has
+just joined and to nothing else, so the form cannot be used to send anything
+to an address that did not ask for it twice.
+
+The send is after the write and cannot undo it. A subscriber whose welcome
+bounced is subscribed — the list is the row — and the failure belongs in the
+mail log where the operator sees it, not in an answer to a stranger.
 
 #### `unsubscribe(token)`
 
