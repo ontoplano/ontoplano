@@ -11,8 +11,6 @@
 [![licence AGPL-3.0](.github/badges/licence.svg)](LICENSE)
 [![host it yourself](.github/badges/host-it.svg)](#running-it)
 
-[![Try the demo](.github/badges/try-the-demo.svg)](https://demo.ontoplano.com)
-
 [ontoplano.com](https://ontoplano.com) · [official instance](https://app.ontoplano.com) · [documentation](https://docs.ontoplano.com)
 
 `.deb` · `.rpm` · Arch · Docker · Android
@@ -25,6 +23,8 @@
 > output is reviewed and tested before it lands.
 >
 > Help improve it by creating issues and pull requests.
+
+[![Try the demo](.github/badges/try-the-demo.svg)](https://demo.ontoplano.com)
 
 ---
 
