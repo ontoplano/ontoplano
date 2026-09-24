@@ -158,3 +158,51 @@ test('at phone width it sits in the filter sheet and stays on the screen', async
 	// Escape folded the panel and left the sheet it sits in.
 	await expect(face(page)).toBeVisible();
 });
+
+test('the diary filters by the same control', async ({ page }) => {
+	test.setTimeout(180_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('tag-filter-diary'));
+	await visit(page, '/notebooks/diary');
+
+	for (const [content, tags] of [
+		['Coffee, and the week ahead.', 'planning'],
+		['Ran along the river.', 'running outside'],
+		['Rain all day.', 'outside']
+	] as const) {
+		await page.locator('[data-tour="diary-new"]').click();
+		const form = page.locator('#entry-form');
+		await form.locator('textarea[name=content]').fill(content);
+		await form.locator('input[role="combobox"]').fill(tags);
+		const post = page.getByRole('button', { name: 'Post entry', exact: true });
+		await post.click();
+		await expect(post).toBeHidden();
+	}
+
+	const diaryFace = page.locator('[aria-controls="diary-tags-panel"]');
+	const diaryPanel = page.locator('#diary-tags-panel');
+	await diaryFace.click();
+	const hide = diaryPanel.locator('[data-side="exclude"] input[role="combobox"]');
+	await hide.fill('runn');
+	await hide.press('Enter');
+	await page.keyboard.press('Escape');
+	await expect(page.getByText('Ran along the river.')).toBeHidden();
+	await expect(page.getByText('Rain all day.')).toBeVisible();
+	expect(page.url()).toContain('nottag=running');
+
+	// A label on an entry is still a press away from being the filter.
+	await page.getByRole('button', { name: '#outside', exact: true }).first().click();
+	await expect(page.getByText('Coffee, and the week ahead.')).toBeHidden();
+	await expect(page.getByText('Rain all day.')).toBeVisible();
+	await expect(diaryFace).toContainText('+1');
+
+	// Narrowed to nothing, the control that did it is still there to undo it.
+	await diaryFace.click();
+	const show = diaryPanel.locator('[data-side="include"] input[role="combobox"]');
+	await show.fill('planning');
+	await show.press('Enter');
+	await diaryPanel.getByRole('button', { name: 'Carrying all of them' }).click();
+	await page.keyboard.press('Escape');
+	await expect(page.getByText('Nothing matches these tags.')).toBeVisible();
+	await expect(diaryFace).toBeVisible();
+});
