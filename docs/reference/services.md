@@ -5971,9 +5971,11 @@ would have had to remember what it used to be.
 
 One task, as the list would have shown it.
 
-#### `listTodos(ctx)`
+#### `listTodos(ctx, options)`
 
-#### `listTodosIn(ctx, notebookId)`
+Every todo, or the ones a tag filter lets through.
+
+#### `listTodosIn(ctx, notebookId, options)`
 
 Everything filed under one notebook.
 

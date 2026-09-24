@@ -1380,6 +1380,14 @@
 				"type": "string",
 				"required": false
 			},
+			"tagMode": {
+				"type": "string",
+				"required": false,
+				"enum": [
+					"all",
+					"any"
+				]
+			},
 			"tags": {
 				"type": "array",
 				"required": false
@@ -1730,6 +1738,14 @@
 			"taggedSince": {
 				"type": "string",
 				"required": false
+			},
+			"tagMode": {
+				"type": "string",
+				"required": false,
+				"enum": [
+					"all",
+					"any"
+				]
 			},
 			"tags": {
 				"type": "array",
@@ -2345,6 +2361,14 @@
 				"type": "string",
 				"required": false
 			},
+			"tagMode": {
+				"type": "string",
+				"required": false,
+				"enum": [
+					"all",
+					"any"
+				]
+			},
 			"tags": {
 				"type": "array",
 				"required": false
@@ -2489,6 +2513,14 @@
 			"taggedSince": {
 				"type": "string",
 				"required": false
+			},
+			"tagMode": {
+				"type": "string",
+				"required": false,
+				"enum": [
+					"all",
+					"any"
+				]
 			},
 			"tags": {
 				"type": "array",

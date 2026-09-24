@@ -7,7 +7,21 @@
  * dragging a card onto Today does — the same row acquires a day rather than
  * being copied into a second table, so nothing has to be kept in sync.
  */
-import { and, asc, eq, inArray, isNull, max, notInArray, or } from 'drizzle-orm';
+import {
+	and,
+	asc,
+	eq,
+	exists,
+	inArray,
+	isNull,
+	max,
+	not,
+	notExists,
+	notInArray,
+	or,
+	sql,
+	type SQL
+} from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
 import {
@@ -22,6 +36,7 @@ import {
 	workouts
 } from '$lib/db/schema.js';
 import { CLOSED_STATUSES, isStatus, type Status } from '../task-status.js';
+import { UNTAGGED, isTagFiltering, type TagFilter } from '../tag-filter.js';
 import type { RatingValues } from '../ratings.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
@@ -203,13 +218,49 @@ export function getTodo(ctx: Ctx, id: number): Todo {
 	return withTags(ctx, [shape(row)])[0];
 }
 
-export function listTodos(ctx: Ctx): Todo[] {
+/**
+ * The SQL for one entry of a tag filter: this todo carries that label, or —
+ * for `UNTAGGED` — carries none. Scoped by account on both sides of the join,
+ * so a label of somebody else's with the same name answers nothing.
+ */
+function carries(ctx: Ctx, entry: string): SQL {
+	const labels = db
+		.select({ one: sql`1` })
+		.from(todoTags)
+		.innerJoin(tags, eq(todoTags.tagId, tags.id))
+		.where(
+			and(
+				eq(todoTags.todoId, todoTasks.id),
+				eq(todoTags.userId, ctx.userId),
+				eq(tags.userId, ctx.userId),
+				entry === UNTAGGED ? undefined : eq(tags.name, entry)
+			)
+		);
+	return entry === UNTAGGED ? notExists(labels) : exists(labels);
+}
+
+/**
+ * A tag filter as a `WHERE` clause — see `$lib/tag-filter` for what it means.
+ * Undefined when there is nothing to narrow by.
+ */
+function tagCondition(ctx: Ctx, filter: TagFilter | undefined): SQL | undefined {
+	if (!filter || !isTagFiltering(filter)) return undefined;
+	const kept = filter.include.map((entry) => carries(ctx, entry));
+	const dropped = filter.exclude.map((entry) => carries(ctx, entry));
+	return and(
+		kept.length === 0 ? undefined : filter.mode === 'all' ? and(...kept) : or(...kept),
+		dropped.length === 0 ? undefined : not(or(...dropped)!)
+	);
+}
+
+/** Every todo, or the ones a tag filter lets through. */
+export function listTodos(ctx: Ctx, options: { tags?: TagFilter } = {}): Todo[] {
 	const rows = db
 		.select(SELECTION)
 		.from(todoTasks)
 		.leftJoin(categories, eq(todoTasks.categoryId, categories.id))
 		.leftJoin(notebooks, eq(todoTasks.notebookId, notebooks.id))
-		.where(eq(todoTasks.userId, ctx.userId))
+		.where(and(eq(todoTasks.userId, ctx.userId), tagCondition(ctx, options.tags)))
 		.orderBy(asc(todoTasks.sortOrder), asc(todoTasks.createdAt))
 		.all()
 		.map(shape);
@@ -223,13 +274,23 @@ export function listTodos(ctx: Ctx): Todo[] {
  * the to-do room looking at one subject, so it needs the whole todo rather
  * than a title and a status.
  */
-export function listTodosIn(ctx: Ctx, notebookId: number): Todo[] {
+export function listTodosIn(
+	ctx: Ctx,
+	notebookId: number,
+	options: { tags?: TagFilter } = {}
+): Todo[] {
 	const rows = db
 		.select(SELECTION)
 		.from(todoTasks)
 		.leftJoin(categories, eq(todoTasks.categoryId, categories.id))
 		.leftJoin(notebooks, eq(todoTasks.notebookId, notebooks.id))
-		.where(and(eq(todoTasks.notebookId, notebookId), eq(todoTasks.userId, ctx.userId)))
+		.where(
+			and(
+				eq(todoTasks.notebookId, notebookId),
+				eq(todoTasks.userId, ctx.userId),
+				tagCondition(ctx, options.tags)
+			)
+		)
 		.orderBy(asc(todoTasks.sortOrder), asc(todoTasks.createdAt))
 		.all()
 		.map(shape);

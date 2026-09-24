@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **Assistants can ask for tasks carrying every tag named.** `todos` and
+  `up_next` take `tagMode: "all"` beside `tags` and `withoutTags`.
 - **A notebook's name and description no longer shrink to a sliver on a
   phone.** On the Notebooks shelf the buttons drop below the name when there
   isn't room, and a long description folds behind Show more, as it does on the

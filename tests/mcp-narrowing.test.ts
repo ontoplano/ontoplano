@@ -176,6 +176,32 @@ describe('narrowing a task list', () => {
 		).toEqual(['read the manual', 'sort the shed']);
 	});
 
+	test('`tagMode: "all"` keeps only what carries every label named', () => {
+		const both = todos.createTodo(mine, {
+			title: 'urgent and easy',
+			notebookId: queue,
+			tags: 'u5 e2'
+		});
+		try {
+			expect(
+				titlesOf(
+					call(['tasks:read'], 'todos', { tags: ['u5', 'e2'], tagMode: 'all', notebookId: queue })
+				)
+			).toEqual(['urgent and easy']);
+			expect(
+				titlesOf(call(['tasks:read'], 'up_next', { tags: ['u5', 'e2'], tagMode: 'all', limit: 5 }))
+			).toEqual(['urgent and easy']);
+			// A mode it does not know is a sentence, not a filter quietly read as `any`.
+			expect(
+				JSON.stringify(
+					call(['tasks:read'], 'todos', { tags: ['u5'], tagMode: 'some', notebookId: queue })
+				)
+			).toMatch(/tagMode has to be/);
+		} finally {
+			todos.deleteTodo(mine, both);
+		}
+	});
+
 	test('the single-label spelling still works, and the answer says it is going', () => {
 		const old = call(['tasks:read'], 'todos', { tag: 'u5', notebookId: queue });
 		expect(titlesOf(old)).toEqual(['file the tax return']);

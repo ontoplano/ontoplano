@@ -207,6 +207,7 @@ import {
 	listItems as listInventoryItems
 } from '$lib/services/inventory.js';
 import { NotFoundError, ValidationError } from '$lib/services/errors.js';
+import { passesTagFilter, TAG_MODES, type TagFilter, type TagMode } from '$lib/tag-filter.js';
 
 /** JSON Schema, the subset a tool's arguments actually use. */
 type Shape = {
@@ -525,6 +526,12 @@ const TAG_ARGS = {
 		description:
 			'Only the ones carrying at least one of these labels, so naming several reads several queues in one call — `["u5", "e2", "i5"]`. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours. A single string of them, separated by commas or spaces, is understood too.'
 	},
+	tagMode: {
+		type: 'string',
+		enum: [...TAG_MODES],
+		description:
+			'How `tags` combine. `any` (the default) keeps what carries at least one of them; `all` keeps only what carries every one. `withoutTags` drops the same either way.'
+	},
 	withoutTags: {
 		type: 'array',
 		items: { type: 'string' },
@@ -617,16 +624,31 @@ function momentArg(value: unknown, what: string): string {
 	return at.toISOString();
 }
 
-/** Whether a thing's labels satisfy the three filters above. */
+/** The label filters a call asked for, in the shape the app's own filter takes. */
+function tagFilterOf(args: Record<string, unknown>): TagFilter {
+	if (args.tagMode !== undefined && !TAG_MODES.includes(args.tagMode as TagMode))
+		throw new ValidationError('tagMode has to be `any` or `all`.');
+	return {
+		include: tagsAsked(args, 'tags', 'tag'),
+		exclude: tagsAsked(args, 'withoutTags', 'withoutTag'),
+		mode: args.tagMode === 'all' ? 'all' : 'any'
+	};
+}
+
+/** Whether a thing's labels satisfy the filters above. */
 function passesTags(
 	labels: readonly { name: string; taggedAt?: string | null }[],
 	args: Record<string, unknown>
 ): boolean {
-	const wanted = tagsAsked(args, 'tags', 'tag');
-	if (wanted.length > 0 && !labels.some((one) => wanted.includes(one.name))) return false;
-
-	const unwanted = tagsAsked(args, 'withoutTags', 'withoutTag');
-	if (unwanted.length > 0 && labels.some((one) => unwanted.includes(one.name))) return false;
+	const asked = tagFilterOf(args);
+	const wanted = asked.include;
+	if (
+		!passesTagFilter(
+			labels.map((one) => one.name),
+			asked
+		)
+	)
+		return false;
 
 	if (args.taggedSince !== undefined) {
 		const since = momentArg(args.taggedSince, 'taggedSince');
@@ -1544,7 +1566,7 @@ export const TOOLS: Tool[] = [
 		}),
 		run: (ctx, args) => {
 			const detail = detailOf(args);
-			let rows = listTodos(ctx);
+			let rows = listTodos(ctx, { tags: tagFilterOf(args) });
 			if (!args.includeArchived) rows = rows.filter((todo) => !todo.archivedAt);
 			if (args.notebookId !== undefined) {
 				const wanted = Number(args.notebookId);
@@ -1590,7 +1612,7 @@ export const TOOLS: Tool[] = [
 		}),
 		run: (ctx, args) => {
 			const detail = detailOf(args);
-			let rows = listTodos(ctx).filter(
+			let rows = listTodos(ctx, { tags: tagFilterOf(args) }).filter(
 				(todo) => !todo.archivedAt && !CLOSED_STATUSES.includes(todo.status)
 			);
 			if (args.notebookId !== undefined)
