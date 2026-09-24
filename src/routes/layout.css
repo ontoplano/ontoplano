@@ -3485,6 +3485,9 @@ html[data-theme='dark'] {
 	/* Above the page *and* above a card, so a button reads on either. */
 	--btn-face: #2f3644;
 
+	/* One step further up in the dark, or it is the card. See the light block. */
+	--gauge-ground: var(--color-gray-300);
+
 	--color-gray-50: #161a20;
 	--color-gray-100: #1c212a;
 	--color-gray-150: #222732;
@@ -3606,6 +3609,9 @@ html[data-theme='dark'] {
 
 		/* Above the page *and* above a card, so a button reads on either. */
 		--btn-face: #2f3644;
+
+		/* One step further up in the dark, or it is the card. See the light block. */
+		--gauge-ground: var(--color-gray-300);
 
 		--color-gray-50: #161a20;
 		--color-gray-100: #1c212a;
@@ -3753,6 +3759,17 @@ option {
 	--ink-on-fill: #ffffff;
 	/* What a plain button is made of. Above the page in every theme. */
 	--btn-face: var(--color-gray-150);
+
+	/*
+	 * The box a full set of ratings would fill, behind the gauges.
+	 *
+	 * A ruler rather than a fourth shape: faint, and the same wash whichever of
+	 * the app's grounds it lands on. One step above the card in the light
+	 * theme; in the dark one that same step is `--color-gray-200`, which is
+	 * within a hair of the card itself and left the gauges standing on nothing.
+	 * So it is a token with an answer per theme rather than a grey named once.
+	 */
+	--gauge-ground: var(--color-gray-200);
 
 	/*
 	 * The mark on the phone's bottom bar, and everything that follows from it.

@@ -138,11 +138,14 @@
 		 * The box a 5 on every rating would fill.
 		 *
 		 * Faint: it is a ruler rather than a fourth shape, and the bars have to
-		 * stay the thing you see. `--color-gray-200` rather than a mix of
-		 * whatever is behind it, because the rows alternate two grounds and the
-		 * selected one is a third — one wash that reads on all of them.
+		 * stay the thing you see. A token rather than a mix of whatever is
+		 * behind it, because the rows alternate two grounds and the selected one
+		 * is a third — one wash that reads on all of them. It has an answer per
+		 * theme: the grey that is one step above a card in the light theme is
+		 * within a hair of the card in the dark one, which left the gauges
+		 * standing on nothing. See `--gauge-ground`.
 		 */
-		background-color: var(--color-gray-200);
+		background-color: var(--gauge-ground, var(--color-gray-200));
 		border-radius: 2px;
 	}
 

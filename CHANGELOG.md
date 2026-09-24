@@ -29,6 +29,10 @@ releases mattered.
 - **Every one of those forms asks which notebook it belongs to.** In the room
   the field starts empty; inside a notebook it starts on that notebook, and
   editing something from the room never quietly takes it out of one.
+- **The rating gauges stand on something you can see in the dark theme.** The
+  box behind them is a ruler — it says how big a five would be — and it was the
+  grey that sits one step above a card in the light theme, which in the dark
+  one is within a hair of the card itself. It has an answer per theme now.
 - **Inventory is two tabs: Stock and Wishlist.** They were one list with a
   segment over it — All, Restock, Wishlist, Short — which read as four equal
   readings of one thing. What you keep and how much of it is one question; what
