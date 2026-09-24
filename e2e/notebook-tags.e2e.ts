@@ -19,6 +19,32 @@ async function makeNotebook(page: Page, title: string) {
 	});
 }
 
+/** Which notebook that is, as the address names it. */
+async function notebookId(page: Page, title: string): Promise<string> {
+	await visit(page, '/notebooks');
+	await page
+		.getByRole('link', { name: new RegExp(title) })
+		.first()
+		.click();
+	await page.waitForURL(/\?notebook=\d+/);
+	return new URL(page.url()).searchParams.get('notebook')!;
+}
+
+/**
+ * A note in that notebook, labelled.
+ *
+ * Posted rather than typed: the quick form folds its labels away, and this
+ * test is about the panel that reads them back rather than the form that
+ * writes one.
+ */
+async function writeNote(page: Page, into: string, content: string, tags: string) {
+	const origin = new URL(page.url()).origin;
+	await page.request.post('/notebooks/diary?/create', {
+		headers: { Origin: origin, 'x-sveltekit-action': 'true' },
+		form: { content, tags, notebookId: into }
+	});
+}
+
 test('the labels are the notebook’s, and they say what carries them', async ({ page }) => {
 	test.setTimeout(180_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
@@ -31,27 +57,19 @@ test('the labels are the notebook’s, and they say what carries them', async ({
 	// Tags is not a tab in the room any more.
 	await expect(page.getByRole('link', { name: 'Tags', exact: true })).toHaveCount(0);
 
-	// Two notes and a task about the kitchen, one of them labelled twice.
+	// Two notes about the kitchen, one of them labelled twice.
+	const kitchen = await notebookId(page, 'Kitchen');
+	await writeNote(page, kitchen, 'the plumber can move the pipes', 'home');
+	await writeNote(page, kitchen, 'tiles are the slow bit', 'home money');
+
+	await visit(page, '/notebooks');
 	await page
 		.getByRole('link', { name: /Kitchen/ })
 		.first()
 		.click();
-	for (const [content, tags] of [
-		['the plumber can move the pipes', 'home'],
-		['tiles are the slow bit', 'home money']
-	] as const) {
-		await page.getByRole('button', { name: 'New note', exact: true }).first().click();
-		await page.locator('textarea[name="content"]').first().fill(content);
-		// The quick form folds the labels away — see `NoteFields`' compact mode.
-		const fold = page.getByRole('button', { name: /^Tags/ }).first();
-		if (await fold.count()) await fold.click();
-		await page.locator('input[role="combobox"]').first().fill(tags);
-		await page
-			.getByRole('button', { name: /Add note/ })
-			.last()
-			.click();
-		await expect(page.getByText(content).first()).toBeVisible({ timeout: 30_000 });
-	}
+	await expect(page.getByText('the plumber can move the pipes').first()).toBeVisible({
+		timeout: 30_000
+	});
 
 	await page.getByRole('button', { name: 'Manage tags' }).click();
 	const panel = page.getByRole('dialog').filter({ hasText: 'The labels on what is filed here' });

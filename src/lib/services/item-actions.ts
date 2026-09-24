@@ -77,6 +77,8 @@ export const itemHandlers = {
 			return {
 				success: true,
 				action: 'create',
+				// The id comes back so a receipt can offer a way straight into it.
+				id,
 				notice: alreadyHad
 					? `${String(name).trim()} was already on the list, so it is back on it.`
 					: null

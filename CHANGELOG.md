@@ -20,6 +20,10 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **A quick capture offers to open what it just wrote.** "Added to your
+  to-dos" left you to go and find the row again to say anything more about
+  it; there is an Edit on the receipt now, which lands in the room with
+  that thing's own editor open.
 - **Bring several things into a notebook at once.** Tick them, press Bring,
   and anything that is under another subject is named before it moves —
   a notebook holds the row rather than a copy of it. What arrives shows up

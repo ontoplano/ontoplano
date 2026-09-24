@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { openFromUrl } from '$lib/open-from-url.svelte';
 	import TagInput from '$lib/components/TagInput.svelte';
 	import TagChip from '$lib/components/TagChip.svelte';
 	import { momentOf, today } from '$lib/when';
@@ -37,6 +38,16 @@
 	let showForm = $state(false);
 	let showWinsForm = $state(false);
 	let editingId: number | null = $state(null);
+
+	/*
+	 * The address can ask for one, which is how the receipt after a quick
+	 * capture offers a way straight into the entry it just wrote. See
+	 * `$lib/open-from-url`.
+	 */
+	openFromUrl((id) => {
+		editingId = id;
+		showForm = true;
+	});
 	let selectedIndex = $state(0);
 	/** Which labels to show and which to hide, kept in the address. */
 	const tagFilter = tagFilterInUrl();

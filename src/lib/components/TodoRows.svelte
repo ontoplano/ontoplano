@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { say } from '$lib/said.svelte';
+	import { openFromUrl } from '$lib/open-from-url.svelte';
 	import { discardForm, keptForm } from '$lib/kept-form';
 	import Picker from '$lib/components/Picker.svelte';
 	import TagFilter from '$lib/components/TagFilter.svelte';
@@ -804,6 +805,16 @@
 		formNotebookId = todo.notebookId;
 		openAtRatings = where?.atRatings === true;
 	}
+
+	/*
+	 * And the address can ask for one, which is how the receipt after a quick
+	 * capture offers a way straight into the task it just wrote. See
+	 * `$lib/open-from-url`.
+	 */
+	openFromUrl((id) => {
+		const todo = todos.find((one: Todo) => one.id === id);
+		if (todo) startEdit(todo);
+	});
 
 	/*
 	 * Land on the first scale, once the dialog has actually drawn one.

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { pillStyle } from '$lib/pill-ink';
+	import { openFromUrl } from '$lib/open-from-url.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import { enhance } from '$lib/enhance';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -656,6 +657,16 @@
 		editNotebookId = item.notebookId;
 		showForm = true;
 	}
+
+	/*
+	 * And the address can ask for one, which is how the receipt after a quick
+	 * capture offers a way straight into the thing it just wrote. See
+	 * `$lib/open-from-url`.
+	 */
+	openFromUrl((id) => {
+		const item = data.items.find((one) => one.id === id);
+		if (item) startEdit(item);
+	});
 
 	/** An item's attributes, as pairs, from the JSON they are stored as. */
 	function fieldsOf(raw: string | null | undefined): [string, string][] {

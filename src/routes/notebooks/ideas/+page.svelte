@@ -1,6 +1,7 @@
 <script lang="ts">
 	/* biome-ignore-all assist/source/organizeImports lint/correctness/noUnusedImports lint/correctness/noUnusedVariables lint/style/useConst: Svelte template and rune usage in this file triggers false positives in current Biome diagnostics. */
 	import { enhance } from '$lib/enhance';
+	import { openFromUrl } from '$lib/open-from-url.svelte';
 	import FilterChips from '$lib/components/FilterChips.svelte';
 	import TagFilter from '$lib/components/TagFilter.svelte';
 	import { tagFilterInUrl } from '$lib/tag-filter-url.svelte';
@@ -80,6 +81,13 @@
 		showForm = true;
 		editingId = id;
 	}
+
+	/*
+	 * And the address can ask for one, which is how the receipt after a quick
+	 * capture offers a way straight into what it just wrote. See
+	 * `$lib/open-from-url`.
+	 */
+	openFromUrl((id) => openIdeaForm(id));
 
 	function closeForms() {
 		showForm = false;

@@ -23,14 +23,16 @@ export const ideaHandlers = {
 	create: async ({ request, locals }: Event) => {
 		const formData = await request.formData();
 		try {
-			createIdea(buildCtx(locals.user!.id), {
+			const made = createIdea(buildCtx(locals.user!.id), {
 				content: formData.get('content'),
 				tags: formData.get('tags'),
 				// `has` rather than `get`: the room's form says nothing about a
 				// notebook and must not be read as taking the idea out of one.
 				...(formData.has('notebookId') ? { notebookId: formData.get('notebookId') } : {})
 			});
-			return { success: true };
+			// The id comes back so a receipt can offer a way straight into it —
+			// the same reason a todo's does. See `$lib/open-from-url`.
+			return { success: true, id: made };
 		} catch (e) {
 			return toActionFailure(e);
 		}

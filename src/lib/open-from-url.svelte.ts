@@ -53,11 +53,24 @@ export function openFromUrl(open: (id: number) => void, param: string = EDIT_PAR
 		 * navigated to, so it should not be a step the back button walks
 		 * through — pressing back after closing the editor would otherwise
 		 * reopen it.
+		 *
+		 * Built as a string rather than by mutating a `URL`: this is already a
+		 * resolved address that the page is standing on, and the `?edit=` on
+		 * the end of it is the only part being taken away.
 		 */
-		const clean = new URL(page.url);
-		clean.searchParams.delete(param);
-		replaceState(clean, page.state);
+		const here = page.url.pathname + withoutParam(page.url.search, param);
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		replaceState(here, page.state);
 	});
+}
+
+/** A query string with one parameter taken out of it. */
+function withoutParam(search: string, param: string): string {
+	const kept = search
+		.replace(/^\?/, '')
+		.split('&')
+		.filter((pair) => pair !== '' && decodeURIComponent(pair.split('=')[0]) !== param);
+	return kept.length > 0 ? `?${kept.join('&')}` : '';
 }
 
 /** The address that opens one of these in its own room. */
