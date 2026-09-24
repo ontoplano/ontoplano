@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **"Not now" on the update warning lasts as long as the app is open,** not
+  for the whole version — closing it and starting it again asks you once
+  more. It is on your account page too, where there is nothing to dismiss.
 - **Say which task you are on, from the task list.** The board could always
   set it; the list — the screen you actually work from — could not. The one
   you are on is washed blue and keeps a blue spine.

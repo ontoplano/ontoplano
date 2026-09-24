@@ -67,17 +67,27 @@
 	let { children, data }: { children: Snippet; data: LayoutData } = $props();
 
 	/*
-	 * The update warning can be put away, per instance version: "not now" said
-	 * to 0.174.0 holds until the instance moves past it. Read in an effect
-	 * rather than at init so the server and the first client render agree, and
-	 * a storage that throws (private mode) leaves the warning standing, which
-	 * is the safe way round.
+	 * The update warning can be put away for as long as the app stays open.
+	 *
+	 * `sessionStorage`, not `localStorage`: "not now" is an answer about right
+	 * now — somebody on a train, mid-sentence — and it used to be an answer
+	 * about that whole version, so an app closed and opened again a week later
+	 * still said nothing while running a build the instance had moved past.
+	 * Shutting the app down and starting it again is the clearest way somebody
+	 * says "ask me again", and a fresh launch is a fresh session.
+	 *
+	 * It is still per instance version, so a hush said to 0.174.0 does not
+	 * carry over to the next one even within a session.
+	 *
+	 * Read in an effect rather than at init so the server and the first client
+	 * render agree, and a storage that throws (private mode) leaves the
+	 * warning standing, which is the safe way round.
 	 */
 	let updateHushed = $state(false);
 	$effect(() => {
 		if (!data.appUpdate) return;
 		try {
-			updateHushed = localStorage.getItem(APP_UPDATE_HUSH_KEY) === data.appUpdate.instance;
+			updateHushed = sessionStorage.getItem(APP_UPDATE_HUSH_KEY) === data.appUpdate.instance;
 		} catch {
 			updateHushed = false;
 		}
@@ -85,9 +95,10 @@
 	function hushUpdate() {
 		updateHushed = true;
 		try {
-			localStorage.setItem(APP_UPDATE_HUSH_KEY, data.appUpdate!.instance);
+			sessionStorage.setItem(APP_UPDATE_HUSH_KEY, data.appUpdate!.instance);
 		} catch {
-			// Nowhere to remember it: it comes back next launch, which is fair.
+			// Nowhere to remember it: it comes back on the next page, which is
+			// noisier than intended and still the safe way round.
 		}
 	}
 

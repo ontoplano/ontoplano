@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { momentOf } from '$lib/when';
+	import { page } from '$app/state';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { CHOOSE_PATH, askAgainOnThisPhone, inPhoneApp } from '$lib/instance-choice';
 	import type { SubmitFunction } from '@sveltejs/kit';
@@ -209,6 +210,24 @@
 
 	{#if notice}
 		<Banner kind="success" message={notice} />
+	{/if}
+
+	<!--
+		The installed app being behind the instance, said here too.
+		
+		The band at the top of the shell can be put away for the session, which
+		is right — somebody mid-sentence should be able to get rid of it. This
+		is the page they come to when they go looking, so it says the same thing
+		without a way to dismiss it: they arrived on purpose.
+	-->
+	{#if page.data.appUpdate}
+		<Banner
+			kind="warning"
+			message="{t('home.updateTheApp')}{t('home.itIsAndThisInstance', {
+				app: page.data.appUpdate.app,
+				instance: page.data.appUpdate.instance
+			})}"
+		/>
 	{/if}
 
 	<!--

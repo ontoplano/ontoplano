@@ -116,8 +116,11 @@ export function couldBeTheApp(userAgent: string | null | undefined): boolean {
 
 /**
  * Where "not now" is remembered, holding the instance version it was said to.
- * The warning stays away until the instance moves again — a dismissal means
- * "I know about this one", not "never tell me".
+ *
+ * In `sessionStorage`, so it lasts as long as the app stays open: "not now" is
+ * an answer about right now, and closing the app and starting it again is the
+ * clearest way somebody says "ask me again". The version is kept with it so a
+ * hush said to one build does not quietly cover the next.
  */
 export const APP_UPDATE_HUSH_KEY = 'ontoplano_update_hushed';
 
