@@ -32,3 +32,11 @@ body:
       label: How do you think Ontoplano could be changed to do it better
     validations:
       required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version — only if you run it yourself, on a machine or on the phone
+      description: Settings → Instance shows it, beside the commit and the build time.
+      placeholder: 0.178.15
+
