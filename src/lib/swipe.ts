@@ -55,9 +55,31 @@ export function onSwipe(
 		return null;
 	}
 
+	/**
+	 * Whether the finger landed on something that takes sideways movement
+	 * for itself, where a drag is that thing's gesture and never a swipe.
+	 *
+	 * A control says so with `touch-action` — `none` or `pan-y` tells the
+	 * browser not to pan sideways over it because it is handling that, which
+	 * is what a slider, a gauge or a draggable card does. And anything inside
+	 * an open dialog: a form over the page is not the page, and a tab change
+	 * under it takes the form away mid-answer.
+	 */
+	function claimedAt(target: EventTarget | null): boolean {
+		let el = target instanceof Element ? target : null;
+		while (el && el !== node) {
+			if (el instanceof HTMLDialogElement && el.open) return true;
+			if (el instanceof HTMLInputElement && el.type === 'range') return true;
+			const how = getComputedStyle(el).touchAction;
+			if (how === 'none' || how.startsWith('pan-y')) return true;
+			el = el.parentElement;
+		}
+		return false;
+	}
+
 	function down(event: TouchEvent) {
 		// One finger. Two is a pinch, and whatever it means it is not this.
-		if (event.touches.length !== 1) {
+		if (event.touches.length !== 1 || claimedAt(event.target)) {
 			from = null;
 			return;
 		}

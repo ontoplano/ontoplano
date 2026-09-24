@@ -115,3 +115,57 @@ test('the button beside it leaves the card unrated', async ({ page }) => {
 	// must not arrive wearing the lowest number on the scale.
 	await expect(page.getByTitle(/^Ease: /)).toHaveCount(0);
 });
+
+/*
+ * A quick drag across a gauge with a finger stays where the finger left it.
+ *
+ * The screen swipes between tabs on a sideways finger, listened for on the
+ * whole scroller, and the gauge sits inside it. A drag long enough to cross a
+ * block or two was also a swipe, so letting go changed tab under the form:
+ * the screen flicked away and the answer went with it. A control that takes
+ * sideways movement for itself, and anything in an open dialog, is not the
+ * page's to swipe.
+ */
+test.describe('on a phone', () => {
+	test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+	test('a fast drag on a gauge keeps the answer and the form', async ({ page }) => {
+		await register(page, testEmail('rating-drag'));
+		await openTheScales(page, 'Dragged in a hurry');
+		const where = page.url();
+
+		const track = page.locator('#card-form [data-rating="urgency"] .rating-track');
+		const posted = page.locator('#card-form input[name="urgency"]');
+		await track.scrollIntoViewIfNeeded();
+		const box = (await track.boundingBox())!;
+		const y = box.y + box.height / 2;
+		// The middle of the nth block.
+		const on = (n: number) => box.x + (box.width * (n - 0.5)) / 5;
+
+		const cdp = await page.context().newCDPSession(page);
+		const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', x?: number) =>
+			cdp.send('Input.dispatchTouchEvent', {
+				type,
+				touchPoints: x === undefined ? [] : [{ x, y, id: 1 }]
+			});
+
+		// Across the bar and back, in one to three moves each: fast.
+		for (const [from, to, moves] of [
+			[1, 5, 3],
+			[5, 1, 2],
+			[2, 4, 1]
+		] as const) {
+			await touch('touchStart', on(from));
+			for (let i = 1; i <= moves; i++)
+				await touch('touchMove', on(from) + ((on(to) - on(from)) * i) / moves);
+			await touch('touchEnd');
+
+			await expect(posted).toHaveValue(String(to));
+			// And it holds once whatever the gesture set off has settled.
+			await page.waitForTimeout(600);
+			await expect(posted).toHaveValue(String(to));
+			expect(page.url()).toBe(where);
+		}
+		await cdp.detach();
+	});
+});
