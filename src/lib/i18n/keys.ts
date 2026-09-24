@@ -1365,6 +1365,9 @@ export type MessageKey =
 	| 'notebooks.andFromTheFrontmatter'
 	| 'notebooks.atTheBottomOf'
 	| 'notebooks.billsCount'
+	| 'notebooks.bringNThings'
+	| 'notebooks.broughtNThings'
+	| 'notebooks.chooseWhatToBring'
 	| 'notebooks.closeIt'
 	| 'notebooks.closed'
 	| 'notebooks.closedCount'
@@ -1543,6 +1546,7 @@ export type MessageKey =
 	| 'notebooks.people.uploading'
 	| 'notebooks.people.yesDelete'
 	| 'notebooks.pickANotebookToSee'
+	| 'notebooks.proceed'
 	| 'notebooks.recipesCount'
 	| 'notebooks.reopenIt'
 	| 'notebooks.rows.dueOnThe'
@@ -1570,6 +1574,7 @@ export type MessageKey =
 	| 'notebooks.tasksCount'
 	| 'notebooks.theirNotebookWas'
 	| 'notebooks.theirNotebookWasDeletedThe'
+	| 'notebooks.theseLiveElsewhere'
 	| 'notebooks.thisIsGoneFromEverywhere'
 	| 'notebooks.weekly.everyWeekYouWriteAbout'
 	| 'notebooks.weekly.nothingWrittenYet'
@@ -3556,6 +3561,8 @@ export interface MessageValuesFor {
 	'notebookDetail.writeANoteAbout': { title: string | number };
 	'notebooks.alreadyFiled': { count: number };
 	'notebooks.billsCount': { count: number };
+	'notebooks.bringNThings': { count: number };
+	'notebooks.broughtNThings': { count: number; notebook: string | number };
 	'notebooks.closedCount': { count: number };
 	'notebooks.diary.edited': { updatedAt: string | number };
 	'notebooks.diary.for': { forDate: string | number };

@@ -1,4 +1,4 @@
-import { and, eq, isNull, ne, or } from 'drizzle-orm';
+import { and, eq, isNull, max, ne, or } from 'drizzle-orm';
 import type { SQLiteColumn, SQLiteTable } from 'drizzle-orm/sqlite-core';
 
 import { db } from '$lib/db/index.js';
@@ -39,10 +39,21 @@ type Linkable = {
 	table: SQLiteTable & { id: SQLiteColumn; userId: SQLiteColumn; notebookId: SQLiteColumn };
 	/** What the row is called — `name` on most, `title` on some, the text itself on an idea. */
 	label: SQLiteColumn;
+	/** Where to look when that one is empty, as a note's heading usually is. */
+	fallback?: SQLiteColumn;
 };
 
+/** The first line of a column, which is what a list of these shows. */
+const firstLine = (value: unknown): string =>
+	String(value ?? '')
+		.split('\n')[0]
+		.trim();
+
 const TABLES: Partial<Record<NotebookModule, Linkable>> = {
-	notes: { table: diaryEntries, label: diaryEntries.title },
+	// A note usually has no heading — the writing is the note — so the picker
+	// read a column of empty strings and drew a list of blank rows with a link
+	// icon on each. The content's first line is what every other list shows.
+	notes: { table: diaryEntries, label: diaryEntries.title, fallback: diaryEntries.content },
 	tasks: { table: todoTasks, label: todoTasks.title },
 	goals: { table: goals, label: goals.title },
 	ideas: { table: ideas, label: ideas.content },
@@ -84,9 +95,14 @@ export function linkableInto(ctx: Ctx, module: string, notebookId: number): Link
 	const linkable = TABLES[module];
 	if (!linkable) throw new NotFoundError('module');
 
-	const { table, label } = linkable;
+	const { table, label, fallback } = linkable;
 	const rows = db
-		.select({ id: table.id, label, notebookId: table.notebookId })
+		.select({
+			id: table.id,
+			label,
+			fallback: fallback ?? label,
+			notebookId: table.notebookId
+		})
 		.from(table)
 		.where(
 			and(
@@ -100,8 +116,8 @@ export function linkableInto(ctx: Ctx, module: string, notebookId: number): Link
 	return {
 		items: rows.slice(0, LINKABLE_LIMIT).map((row) => ({
 			id: row.id as number,
-			// An idea is its own first line, the way a note with no heading is.
-			label: String(row.label ?? '').split('\n')[0] || String(row.label ?? ''),
+			// An idea is its own first line, and so is a note with no heading.
+			label: firstLine(row.label) || firstLine(row.fallback),
 			elsewhere: row.notebookId !== null
 		})),
 		more: rows.length > LINKABLE_LIMIT
@@ -111,9 +127,24 @@ export function linkableInto(ctx: Ctx, module: string, notebookId: number): Link
 /**
  * File one under this notebook, or take it out.
  *
- * One statement, scoped by the account as well as the id (I1) — never a check
- * followed by an unscoped write. A null notebook is how a thing is unfiled,
- * which is the same act in reverse.
+ * Scoped by the account as well as the id (I1) — never a check followed by an
+ * unscoped write. A null notebook is how a thing is unfiled, which is the same
+ * act in reverse.
+ *
+ * ## The number goes with the notebook
+ *
+ * A note and a task are numbered inside their notebook as well as in the
+ * account — `#4` on a card, and what `TASK:#4` in somebody's writing points
+ * at — and `(notebook_id, notebook_seq)` is unique. So moving one that already
+ * had a number into a notebook that already has that number is a constraint
+ * failure, and it is the ordinary case rather than a corner: bringing anything
+ * into a notebook with more than three things in it hit it. What came back was
+ * "Unexpected error", which is the least useful thing this could have said.
+ *
+ * The number is therefore not carried. It is dropped on the way out and the
+ * next one in the new notebook is taken, which is what the number means: where
+ * this sits in that notebook, not where it sat in the last one. `seed-dev.mjs`
+ * has the same note beside its own version of this.
  */
 export function fileUnderNotebook(
 	ctx: Ctx,
@@ -127,11 +158,43 @@ export function fileUnderNotebook(
 	if (notebookId !== null) assertReachableNotebook(ctx, notebookId);
 
 	const rowId = num(id, 'id', { int: true, min: 1 });
+	const { table } = linkable;
+	const mine = and(eq(table.id, rowId), eq(table.userId, ctx.userId));
+
 	const res = db
-		.update(linkable.table)
-		.set({ notebookId })
-		.where(and(eq(linkable.table.id, rowId), eq(linkable.table.userId, ctx.userId)))
+		.update(table)
+		.set(
+			numbered(table)
+				? { notebookId, notebookSeq: nextSeqIn(ctx, table, notebookId) }
+				: { notebookId }
+		)
+		.where(mine)
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError(module);
+}
+
+/** Whether this table numbers its rows inside their notebook as well. */
+function numbered(table: Linkable['table']): table is Linkable['table'] & {
+	notebookSeq: SQLiteColumn;
+} {
+	return 'notebookSeq' in table;
+}
+
+/**
+ * The next number free in that notebook — or nothing, for a thing being
+ * unfiled, which has no notebook to be numbered inside.
+ */
+function nextSeqIn(
+	ctx: Ctx,
+	table: Linkable['table'] & { notebookSeq: SQLiteColumn },
+	notebookId: number | null
+): number | null {
+	if (notebookId === null) return null;
+	const highest = db
+		.select({ seq: max(table.notebookSeq) })
+		.from(table)
+		.where(and(eq(table.userId, ctx.userId), eq(table.notebookId, notebookId)))
+		.get();
+	return Number(highest?.seq ?? 0) + 1;
 }

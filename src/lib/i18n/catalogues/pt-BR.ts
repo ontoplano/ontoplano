@@ -1544,6 +1544,13 @@ export const messages: Catalogue = {
 		'e do frontmatter — com a pasta\n\t\t\t\tem que estava, também como tag. Nada é enviado como arquivo; as notas são lidas aqui. Excluir o caderno\n\t\t\t\tdesfaz isso.',
 	'notebooks.atTheBottomOf': ', no fim da lista.',
 	'notebooks.billsCount': { one: '{count} bill', other: '{count} bills' },
+	'notebooks.bringNThings': { one: 'Bring {count} thing', other: 'Bring {count} things' },
+	'notebooks.broughtNThings': {
+		one: 'Brought {count} thing to {notebook}',
+		other: 'Brought {count} things to {notebook}'
+	},
+	'notebooks.chooseWhatToBring':
+		'Tick what to bring in. Anything already under another subject says so.',
 	'notebooks.closeIt': 'Fechar',
 	'notebooks.closed': 'fechado',
 	'notebooks.closedCount': { one: '{count} closed', other: '{count} closed' },
@@ -1731,6 +1738,7 @@ export const messages: Catalogue = {
 	'notebooks.people.uploading': 'enviando…',
 	'notebooks.people.yesDelete': 'Sim, excluir',
 	'notebooks.pickANotebookToSee': 'Escolha um caderno para ver tudo o que pertence a ele.',
+	'notebooks.proceed': 'Proceed',
 	'notebooks.recipesCount': { one: '{count} recipe', other: '{count} recipes' },
 	'notebooks.reopenIt': 'Reabrir',
 	'notebooks.rows.dueOnThe': 'due on the {day}',
@@ -1763,6 +1771,8 @@ export const messages: Catalogue = {
 	'notebooks.theirNotebookWas': '{length} {notes} · o caderno da pessoa foi excluído',
 	'notebooks.theirNotebookWasDeletedThe':
 		'O caderno foi apagado. O que estava escrito foi mantido e espera aqui.',
+	'notebooks.theseLiveElsewhere':
+		'These live in another notebook and will stop being there to be here:',
 	'notebooks.thisIsGoneFromEverywhere':
 		'This is gone from everywhere, not only from this notebook.',
 	'notebooks.weekly.everyWeekYouWriteAbout':

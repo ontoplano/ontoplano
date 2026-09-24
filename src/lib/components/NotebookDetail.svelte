@@ -2130,6 +2130,7 @@
 		module={tab}
 		what={t(LINK_LABEL[tab] ?? 'ui.add')}
 		notebookId={notebook.id}
+		notebookTitle={notebook.title}
 		candidates={(contents?.linkable as Record<string, LinkableList> | undefined)?.[tab]}
 		action="?/linkIntoNotebook"
 	/>

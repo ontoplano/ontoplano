@@ -1519,6 +1519,13 @@ export const messages: Catalogue = {
 		'and from the frontmatter — with the folder\n\t\t\t\tit was in as a tag too. Nothing is uploaded as a file; the notes are read here. Deleting the notebook\n\t\t\t\tundoes it.',
 	'notebooks.atTheBottomOf': ', at the bottom of the list.',
 	'notebooks.billsCount': { one: '{count} bill', other: '{count} bills' },
+	'notebooks.bringNThings': { one: 'Bring {count} thing', other: 'Bring {count} things' },
+	'notebooks.broughtNThings': {
+		one: 'Brought {count} thing to {notebook}',
+		other: 'Brought {count} things to {notebook}'
+	},
+	'notebooks.chooseWhatToBring':
+		'Tick what to bring in. Anything already under another subject says so.',
 	'notebooks.closeIt': 'Close it',
 	'notebooks.closed': 'closed',
 	'notebooks.closedCount': { one: '{count} closed', other: '{count} closed' },
@@ -1705,6 +1712,7 @@ export const messages: Catalogue = {
 	'notebooks.people.uploading': 'uploading…',
 	'notebooks.people.yesDelete': 'Yes, delete',
 	'notebooks.pickANotebookToSee': 'Pick a notebook to see everything that belongs to it.',
+	'notebooks.proceed': 'Proceed',
 	'notebooks.recipesCount': { one: '{count} recipe', other: '{count} recipes' },
 	'notebooks.reopenIt': 'Reopen it',
 	'notebooks.rows.dueOnThe': 'due on the {day}',
@@ -1737,6 +1745,8 @@ export const messages: Catalogue = {
 	'notebooks.theirNotebookWas': '{length} {notes} · their notebook was deleted',
 	'notebooks.theirNotebookWasDeletedThe':
 		'Their notebook was deleted. The writing was kept and waits here.',
+	'notebooks.theseLiveElsewhere':
+		'These live in another notebook and will stop being there to be here:',
 	'notebooks.thisIsGoneFromEverywhere':
 		'This is gone from everywhere, not only from this notebook.',
 	'notebooks.weekly.everyWeekYouWriteAbout':

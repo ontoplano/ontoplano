@@ -1569,6 +1569,13 @@ export const messages: Catalogue = {
 		'und aus dem Frontmatter — mit dem Ordner,\n\t\t\t\tin dem sie war, ebenfalls als Tag. Nichts wird als Datei hochgeladen; die Notizen werden hier gelesen. Das Löschen des Notizbuchs\n\t\t\t\tmacht es rückgängig.',
 	'notebooks.atTheBottomOf': ', unten in der Liste.',
 	'notebooks.billsCount': { one: '{count} bill', other: '{count} bills' },
+	'notebooks.bringNThings': { one: 'Bring {count} thing', other: 'Bring {count} things' },
+	'notebooks.broughtNThings': {
+		one: 'Brought {count} thing to {notebook}',
+		other: 'Brought {count} things to {notebook}'
+	},
+	'notebooks.chooseWhatToBring':
+		'Tick what to bring in. Anything already under another subject says so.',
 	'notebooks.closeIt': 'Schließen',
 	'notebooks.closed': 'geschlossen',
 	'notebooks.closedCount': { one: '{count} closed', other: '{count} closed' },
@@ -1757,6 +1764,7 @@ export const messages: Catalogue = {
 	'notebooks.people.yesDelete': 'Ja, löschen',
 	'notebooks.pickANotebookToSee':
 		'Wählen Sie ein Notizbuch aus, um alles zu sehen, was dazugehört.',
+	'notebooks.proceed': 'Proceed',
 	'notebooks.recipesCount': { one: '{count} recipe', other: '{count} recipes' },
 	'notebooks.reopenIt': 'Wieder öffnen',
 	'notebooks.rows.dueOnThe': 'due on the {day}',
@@ -1789,6 +1797,8 @@ export const messages: Catalogue = {
 	'notebooks.theirNotebookWas': '{length} {notes} · ihr Notizbuch wurde gelöscht',
 	'notebooks.theirNotebookWasDeletedThe':
 		'Ihr Notizbuch wurde gelöscht. Die Texte wurden aufbewahrt und warten hier.',
+	'notebooks.theseLiveElsewhere':
+		'These live in another notebook and will stop being there to be here:',
 	'notebooks.thisIsGoneFromEverywhere':
 		'This is gone from everywhere, not only from this notebook.',
 	'notebooks.weekly.everyWeekYouWriteAbout':

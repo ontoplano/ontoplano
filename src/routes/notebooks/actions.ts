@@ -365,14 +365,25 @@ export const notebookActions = {
 	 */
 	linkIntoNotebook: async ({ request, locals }) => {
 		const formData = await request.formData();
+		const ctx = buildCtx(locals.user!.id);
+		const module = String(formData.get('module') ?? '');
+		const notebookId = Number(formData.get('notebookId')) || null;
+
+		/*
+		 * Several at once, because that is what somebody is doing here.
+		 *
+		 * Starting a renovation halfway through means bringing in the six
+		 * things already on the shopping list, and one press per thing — each
+		 * closing the dialog and reopening it — is the picker refusing to be
+		 * used for the thing it exists for. The ids arrive as one field
+		 * repeated, so one and six are the same code path.
+		 */
+		const ids = formData.getAll('id');
+		if (ids.length === 0) return fail(400, { message: 'Nothing chosen' });
+
 		try {
-			fileUnderNotebook(
-				buildCtx(locals.user!.id),
-				String(formData.get('module') ?? ''),
-				formData.get('id'),
-				Number(formData.get('notebookId')) || null
-			);
-			return { success: true, action: 'linkIntoNotebook' };
+			for (const id of ids) fileUnderNotebook(ctx, module, id, notebookId);
+			return { success: true, action: 'linkIntoNotebook', brought: ids.length };
 		} catch (e) {
 			return toActionFailure(e);
 		}

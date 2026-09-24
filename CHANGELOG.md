@@ -20,6 +20,16 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **Bring several things into a notebook at once.** Tick them, press Bring,
+  and anything that is under another subject is named before it moves —
+  a notebook holds the row rather than a copy of it. What arrives shows up
+  straight away, and a line says how many.
+- **The picker lists notes by their first line,** instead of a column of
+  blank rows: a note usually has no heading, because the writing is the
+  note.
+- **Bringing a note or a task into a notebook no longer fails** with
+  "Unexpected error" when that notebook already holds a few. It takes the
+  next number there rather than carrying its old one across.
 - **The tag filter's Any and All are one control,** and what the labels are
   doing is shown where they are typed rather than on the button that would
   change it. A comma or a space takes the word, the way they do everywhere

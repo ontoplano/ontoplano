@@ -42,6 +42,9 @@ test('the labels are the notebook’s, and they say what carries them', async ({
 	] as const) {
 		await page.getByRole('button', { name: 'New note', exact: true }).first().click();
 		await page.locator('textarea[name="content"]').first().fill(content);
+		// The quick form folds the labels away — see `NoteFields`' compact mode.
+		const fold = page.getByRole('button', { name: /^Tags/ }).first();
+		if (await fold.count()) await fold.click();
 		await page.locator('input[role="combobox"]').first().fill(tags);
 		await page
 			.getByRole('button', { name: /Add note/ })
