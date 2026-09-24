@@ -6,48 +6,6 @@ Every room the app has, and what is inside it. Generated from the
 navigation and from each section’s own tab strip, so it cannot drift
 from what the app actually shows.
 
-###
-
-- `/tasks/plan` — one page, no tabs
-
-###
-
-- `/notebooks` — one page, no tabs
-
-###
-
-- `/health/habits` — one page, no tabs
-
-Can be put away in Preferences (`health`), which takes it out of the bar, the wheel and the dashboard.
-
-###
-
-- `/inventory/stock` — one page, no tabs
-
-Can be put away in Preferences (`inventory`), which takes it out of the bar, the wheel and the dashboard.
-
-###
-
-- `/finance/ledgers` — one page, no tabs
-
-Can be put away in Preferences (`finance`), which takes it out of the bar, the wheel and the dashboard.
-
-###
-
-- `/goals` — one page, no tabs
-
-Can be put away in Preferences (`goals`), which takes it out of the bar, the wheel and the dashboard.
-
-###
-
-- `/media/audios` — one page, no tabs
-
-Can be put away in Preferences (`media`), which takes it out of the bar, the wheel and the dashboard.
-
-###
-
-- `/reminders` — one page, no tabs
-
 ### Everywhere else
 
 - **Home** — `/`, the dashboard; the wordmark is the way back to it

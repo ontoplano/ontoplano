@@ -4716,6 +4716,11 @@ html[data-style='playful'] .room-surface {
 .room-tabs .seg-scroll > a {
 	font-size: 0.875rem;
 	padding-block: 0.5rem;
+	/* The glyph and the word are one label with a space in it, not two
+	   things — see `$lib/glyphs` for where the glyph comes from. */
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
 }
 
 /*

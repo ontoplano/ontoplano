@@ -19,8 +19,10 @@
 	} from '$lib/slide';
 	import { hintMarkSpin } from '$lib/mark-spin';
 	import { resolve } from '$app/paths';
-	import { visibleRoomTabs } from '$lib/sections';
+	import { tabGlyph, visibleRoomTabs } from '$lib/sections';
+	import Icon from '$lib/components/Icon.svelte';
 	import type { NavKey } from '$lib/sections-nav';
+	import type { IconName } from '$lib/components/Icon.svelte';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -58,9 +60,9 @@
 		 * off it, whose tabs depend on who is signed in. In the order they are
 		 * shown, which is the order a swipe walks.
 		 */
-		tabs?: { href: string; label: string }[];
+		tabs?: { href: string; label: string; icon?: IconName }[];
 		/** Tabs this account adds after the room's own: Health's data streams. */
-		extra?: { href: string; label: string }[];
+		extra?: { href: string; label: string; icon?: IconName }[];
 		/** What the strip is called, for a screen reader. */
 		label: string;
 		/** What a guided tour calls this strip, where one points at it. */
@@ -90,7 +92,9 @@
 						// `resolve` takes one literal at a time; `RoomTab.href` is already a
 						// `Pathname`, so a tab pointing at no route has failed to build there.
 						href: resolve(tab.href as '/'),
-						label: t(tab.label)
+						label: t(tab.label),
+						// From `$lib/glyphs`, which is where every glyph in the app lives.
+						icon: tabGlyph(tab, room)
 					})),
 					...extra
 				]
@@ -278,7 +282,11 @@
 					     route parameter, and the rule cannot see through it. -->
 				<!-- eslint-disable svelte/no-navigation-without-resolve -->
 				{#each tabs as tab, index (tab.href)}
+					<!-- The glyph before the word, where the one list has one for this
+					     tab. A room whose tabs it has never heard of draws words, which
+					     is what every strip did before. -->
 					<a href={tab.href} aria-current={here(index) ? 'page' : undefined}>
+						{#if tab.icon}<Icon name={tab.icon} size={14} />{/if}
 						{tab.label}
 					</a>
 				{/each}

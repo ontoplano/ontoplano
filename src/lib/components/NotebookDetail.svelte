@@ -64,7 +64,12 @@
 	import RecipeFields from '$lib/components/fields/RecipeFields.svelte';
 	import WorkoutFields from '$lib/components/fields/WorkoutFields.svelte';
 	import { NOTEBOOK_IDEA_ACTIONS } from '$lib/idea-action-names';
-	import { DEFAULT_MODULES, moduleMeta, type NotebookModule } from '$lib/notebook-modules';
+	import {
+		DEFAULT_MODULES,
+		moduleGlyph,
+		moduleMeta,
+		type NotebookModule
+	} from '$lib/notebook-modules';
 	import type { Currency } from '$lib/money';
 	import { NOTEBOOK_TODO_ACTIONS } from '$lib/todo-actions';
 	import type { Todo } from '$lib/services/todos';
@@ -1070,12 +1075,19 @@
 						<button
 							use:keepInView={tab === option.key}
 							onclick={() => (tab = option.key)}
-							class="tab-link px-3 py-2 text-sm font-medium whitespace-nowrap transition {tab ===
+							class="tab-link inline-flex items-center gap-1.5 px-3 py-2 text-sm font-medium whitespace-nowrap transition {tab ===
 							option.key
 								? 'border-b-2 text-gray-900'
 								: 'text-gray-500 hover:text-gray-700'}"
 							style={tab === option.key ? `border-color: ${SECTION_COLORS.diary}` : ''}
 						>
+							<!-- The glyph before the word, from `$lib/glyphs` — the same
+						     list the rooms' own strips read, so a notebook's Tasks tab
+						     and the planner in the bar cannot end up wearing two
+						     different pictures of the same idea. -->
+							{#if moduleGlyph(option.key)}
+								<Icon name={moduleGlyph(option.key)!} size={14} />
+							{/if}
 							{t(option.label)}
 							<span class="tabular ml-1 text-xs text-gray-500">
 								{option.done !== undefined && option.count > 0

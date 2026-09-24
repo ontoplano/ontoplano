@@ -7,7 +7,13 @@ import type { PlainKey } from '$lib/i18n/keys';
  */
 import type { Pathname } from '$app/types';
 import type { IconName } from '$lib/components/Icon.svelte';
-import { isHidden, isHideableSection, ROOM_TABS, type HideableSection } from '$lib/sections';
+import {
+	isHidden,
+	isHideableSection,
+	ROOM_TABS,
+	tabGlyph,
+	type HideableSection
+} from '$lib/sections';
 import { NAV_PLACES } from '$lib/sections-nav';
 import type { Translate } from '$lib/i18n/core';
 
@@ -72,7 +78,7 @@ export const DESTINATIONS: Destination[] = [
 			label: tab.label,
 			group: place.name,
 			href: tab.href,
-			icon: tab.icon ?? place.icon,
+			icon: tabGlyph(tab, place.key) ?? place.icon,
 			hide: tab.id && isHideableSection(tab.id) ? [...room, tab.id] : room
 		}));
 	}),

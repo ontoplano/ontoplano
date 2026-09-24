@@ -12,23 +12,20 @@ until somebody writes one in `src/lib/tutorials.ts`. The same gap is visible
 in the app: the `?` button goes red on a screen with no tour and says so
 under the pointer.
 
-**19 of 19 screens have one.**
+**16 of 16 screens have one.**
 
 | Screen                               | Tour              | Steps |
 | ------------------------------------ | ----------------- | ----- |
 | `/`                                  | tour.ontoplano    | 8     |
-| `/finance/ledgers`                   | tour.ledgers      | 3     |
 | `/goals`                             | tour.goals        | 4     |
 | `/health/habits`                     | tour.habits       | 3     |
 | `/health/recipes`                    | tour.recipes      | 5     |
 | `/inventory/stock`                   | tour.shopping     | 3     |
-| `/media/audios`                      | tour.recordings   | 3     |
 | `/notebooks`                         | tour.notebooks    | 4     |
 | `/notebooks/diary`                   | tour.diary        | 4     |
 | `/notebooks/ideas`                   | tour.ideas        | 3     |
 | `/notebooks/people`                  | tour.people       | 3     |
 | `/notebooks/tags`                    | tour.tags         | 2     |
-| `/reminders`                         | tour.reminders    | 3     |
 | `/settings/account`                  | tour.account      | 3     |
 | `/settings/integrations/connections` | tour.integrations | 3     |
 | `/tasks/activities`                  | tour.activities   | 3     |
@@ -39,8 +36,11 @@ under the pointer.
 Toured as well, though nothing obliges them to be — a screen reached from
 a link rather than from the navigation:
 
+- `/finance/ledgers` — tour.ledgers
 - `/health/workouts` — tour.workouts
+- `/media/audios` — tour.recordings
 - `/media/gallery` — tour.gallery
+- `/reminders` — tour.reminders
 - `/search` — tour.search
 - `/settings/preferences` — tour.preferences
 - `/tasks/review` — tour.review

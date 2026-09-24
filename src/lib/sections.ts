@@ -3,6 +3,7 @@ import type { IconName } from '$lib/components/Icon.svelte';
 import type { NavKey } from './sections-nav.js';
 import type { Translate } from './i18n/index.js';
 import type { PlainKey } from './i18n/keys.js';
+import { glyphFor } from './glyphs.js';
 
 /**
  * The sections a person can put away.
@@ -104,20 +105,15 @@ export const HIDEABLE_SECTIONS = [
  * it, and nothing said so.
  */
 export const NOTEBOOK_TABS = [
-	{
-		id: 'notebooks',
-		href: '/notebooks',
-		label: 'rooms.notebooks.tabs.notebooks',
-		icon: 'notebook'
-	},
+	{ id: 'notebooks', href: '/notebooks', label: 'rooms.notebooks.tabs.notebooks' },
 	{ id: 'diary', href: '/notebooks/diary', label: 'rooms.notebooks.tabs.diary' },
 	// Ideas is writing too — a line you jot and come back to — and a room of
 	// its own in the bar for something that small was a room nobody entered.
-	{ id: 'ideas', href: '/notebooks/ideas', label: 'rooms.notebooks.tabs.ideas', icon: 'ideas' },
+	{ id: 'ideas', href: '/notebooks/ideas', label: 'rooms.notebooks.tabs.ideas' },
 	// What the weekly review writes. It is writing, and it was reachable only
 	// from the week it belonged to, which is a thing nobody navigates to.
 	{ id: 'weekly', href: '/notebooks/weekly', label: 'rooms.notebooks.tabs.weekly' },
-	{ id: 'people', href: '/notebooks/people', label: 'rooms.notebooks.tabs.people', icon: 'user' },
+	{ id: 'people', href: '/notebooks/people', label: 'rooms.notebooks.tabs.people' },
 	/*
 	 * Every word in the account, with what carries it.
 	 *
@@ -127,16 +123,16 @@ export const NOTEBOOK_TABS = [
 	 * find. The notebook's own words are still the Manage tags button on it
 	 * (see `NotebookTags`); this is the whole vocabulary, one tab along.
 	 */
-	{ id: 'tags', href: '/notebooks/tags', label: 'rooms.notebooks.tabs.tags', icon: 'tag' }
+	{ id: 'tags', href: '/notebooks/tags', label: 'rooms.notebooks.tabs.tags' }
 ] as const;
 
 /** The planner's tabs, in the order it shows them. */
 export const TASK_TABS = [
 	{ href: '/tasks/plan', label: 'rooms.tasks.tabs.plan' },
 	{ href: '/tasks/board', label: 'rooms.tasks.tabs.board' },
-	{ href: '/tasks/todo', label: 'rooms.tasks.tabs.todo', icon: 'check' },
-	{ href: '/tasks/activities', label: 'rooms.tasks.tabs.activities', icon: 'tag' },
-	{ href: '/tasks/review', label: 'rooms.tasks.tabs.review', icon: 'check' }
+	{ href: '/tasks/todo', label: 'rooms.tasks.tabs.todo' },
+	{ href: '/tasks/activities', label: 'rooms.tasks.tabs.activities' },
+	{ href: '/tasks/review', label: 'rooms.tasks.tabs.review' }
 ] as const;
 
 /**
@@ -147,7 +143,7 @@ export const TASK_TABS = [
 export const HEALTH_TABS = [
 	{ id: 'habits', href: '/health/habits', label: 'rooms.health.tabs.habits' },
 	{ id: 'workouts', href: '/health/workouts', label: 'rooms.health.tabs.workouts' },
-	{ id: 'recipes', href: '/health/recipes', label: 'rooms.health.tabs.recipes', icon: 'shopping' }
+	{ id: 'recipes', href: '/health/recipes', label: 'rooms.health.tabs.recipes' }
 ] as const;
 
 /** The Finance room's tabs, in the order it shows them. */
@@ -189,9 +185,19 @@ export type RoomTab = {
 	id?: string;
 	href: Pathname;
 	label: PlainKey;
-	/** What the palette draws beside it; the room's own glyph when absent. */
-	icon?: IconName;
 };
+
+/**
+ * The glyph a tab wears, and the room's own where it has none of its own.
+ *
+ * Not a field on the tab. Every list that draws one of these — the strip, the
+ * wheel, the palette — used to carry its own `icon:`, so a glyph lived in as
+ * many places as it was drawn and two of the writing room's tabs had simply
+ * never been given one. `$lib/glyphs` is the list; this is how a tab asks it.
+ */
+export function tabGlyph(tab: RoomTab, room?: NavKey): IconName | undefined {
+	return glyphFor(tab.href, tab.id, room);
+}
 
 /**
  * What each room holds, by the key the navigation knows it as.

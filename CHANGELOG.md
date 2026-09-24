@@ -28,6 +28,12 @@ releases mattered.
   finishing one and for putting it back, and nothing for the column between
   them, so "doing" could only be set by hand in the app. `change_task` takes a
   status.
+- **Every tab wears its glyph, and every glyph lives in one file.** The tab
+  strips were words; the wheel and the palette drew pictures, each list
+  carrying its own — so the same idea had a glyph in three files and two of the
+  writing room's tabs had none at all. `src/lib/glyphs.ts` is the list now.
+  Change a line there and the bar, the wheel, the palette, a room's tabs and a
+  notebook's tabs all follow.
 - **A habit's day can be counted again.** 0.183.3 made a day one row, to stop a
   double tap counting it twice. That stopped the counting as well: a bad habit
   is a thing you count, and the heatmap has always shaded a day by how many

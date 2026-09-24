@@ -2,6 +2,7 @@ import { SECTIONS, type SectionKey } from '$lib/colors';
 import type { PlainKey } from './i18n/keys.js';
 import type { HideableSection } from '$lib/sections';
 import type { IconName } from '$lib/components/Icon.svelte';
+import { glyphFor } from '$lib/glyphs';
 
 /**
  * The eight rooms, and the door into each.
@@ -77,6 +78,14 @@ export type NavPlace = {
 	name: PlainKey;
 	/** The section it belongs to — its colour, and the wash behind its pages. */
 	section: SectionKey;
+	/**
+	 * Its glyph, from `$lib/glyphs` rather than written here.
+	 *
+	 * The bar, the wheel, the palette and a room's own tab strip all draw it,
+	 * and it used to be written into each of those lists — so changing what
+	 * Ideas looks like meant finding it in three files. One list now, and this
+	 * reads it.
+	 */
 	icon: IconName;
 	href: string;
 	/** The preference that puts it away. Absent means always there. */
@@ -94,12 +103,11 @@ export type NavPlace = {
  * puts a room it has never heard of at the end, so changing this list moves
  * nobody who has already chosen.
  */
-export const NAV_PLACES: NavPlace[] = [
+const PLACES: Omit<NavPlace, 'icon'>[] = [
 	{
 		key: 'planner',
 		name: 'sections.tasks.label',
 		section: 'planner',
-		icon: 'planner',
 		href: '/tasks/plan'
 	},
 	/*
@@ -114,14 +122,12 @@ export const NAV_PLACES: NavPlace[] = [
 		key: 'diary',
 		name: 'sections.notebooks.label',
 		section: 'diary',
-		icon: 'diary',
 		href: '/notebooks'
 	},
 	{
 		key: 'health',
 		name: 'sections.health.label',
 		section: 'health',
-		icon: 'health',
 		href: '/health/habits',
 		hide: 'health'
 	},
@@ -129,7 +135,6 @@ export const NAV_PLACES: NavPlace[] = [
 		key: 'inventory',
 		name: 'sections.inventory.label',
 		section: 'inventory',
-		icon: 'shopping',
 		href: '/inventory/stock',
 		hide: 'inventory'
 	},
@@ -137,7 +142,6 @@ export const NAV_PLACES: NavPlace[] = [
 		key: 'finance',
 		name: 'sections.finance.label',
 		section: 'finance',
-		icon: 'wallet',
 		href: '/finance/ledgers',
 		hide: 'finance'
 	},
@@ -145,7 +149,6 @@ export const NAV_PLACES: NavPlace[] = [
 		key: 'goals',
 		name: 'sections.goals.label',
 		section: 'goals',
-		icon: 'goals',
 		href: '/goals',
 		hide: 'goals'
 	},
@@ -153,7 +156,6 @@ export const NAV_PLACES: NavPlace[] = [
 		key: 'media',
 		name: 'sections.media.label',
 		section: 'media',
-		icon: 'image',
 		href: '/media/audios',
 		hide: 'media'
 	},
@@ -164,10 +166,22 @@ export const NAV_PLACES: NavPlace[] = [
 		key: 'reminders',
 		name: 'sections.reminders.label',
 		section: 'planner',
-		icon: 'clock',
 		href: '/reminders'
 	}
 ];
+
+/**
+ * The places, each wearing the glyph the one list gives it.
+ *
+ * Written out beside every entry once, in this file and in three others. Now
+ * it is read from `$lib/glyphs`, so editing what a room looks like is editing
+ * one line and seeing it in the bar, the wheel, the palette and the room's
+ * own tab strip at once. A room whose key is not in that list does not build.
+ */
+export const NAV_PLACES: NavPlace[] = PLACES.map((place) => ({
+	...place,
+	icon: glyphFor(place.key) as IconName
+}));
 
 export const ROOMS: Room[] = NAV_PLACES.map((place) => ({
 	key: place.key,
