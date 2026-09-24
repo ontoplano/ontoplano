@@ -3423,7 +3423,7 @@ export const messages: Catalogue = {
 	'tagFilter.without': 'ohne {tags}',
 	'tags.aLabelIsMadeByTyping':
 		'A label is made by typing one into the tags box on a note, a task or an idea.',
-	'tags.allLabels': 'All labels',
+	'tags.allLabels': 'Alle Schlagwörter',
 	'tags.hideWhatCarriesIt': 'Hide what carries {tag}',
 	'tags.inThisNotebook': 'The labels on what is filed here, and what carries each of them.',
 	'tags.manageTags': 'Manage tags',

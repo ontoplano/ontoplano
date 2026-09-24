@@ -117,19 +117,17 @@ export const NOTEBOOK_TABS = [
 	// What the weekly review writes. It is writing, and it was reachable only
 	// from the week it belonged to, which is a thing nobody navigates to.
 	{ id: 'weekly', href: '/notebooks/weekly', label: 'rooms.notebooks.tabs.weekly' },
-	{ id: 'people', href: '/notebooks/people', label: 'rooms.notebooks.tabs.people', icon: 'user' }
+	{ id: 'people', href: '/notebooks/people', label: 'rooms.notebooks.tabs.people', icon: 'user' },
 	/*
-	 * The labels are not a tab here any more.
+	 * Every word in the account, with what carries it.
 	 *
-	 * `/notebooks/tags` is still the page — it is where a label is deleted or
-	 * merged, which are account-wide acts and belong on a screen that can see
-	 * every label at once. It stopped being a tab because a tab is a thing you
-	 * meet while browsing your subjects, and "every word in the account, with
-	 * a number beside it" is not a question anybody has while looking at a
-	 * renovation. What they want there is that notebook's own words, which is
-	 * the Manage tags button on it — see `NotebookTags` — and the way here is
-	 * at the foot of that.
+	 * It is the one screen that can see all of them at once, which is why
+	 * deleting and merging live there and nowhere else — and a screen that can
+	 * only be reached through a dialog on a notebook is one most people never
+	 * find. The notebook's own words are still the Manage tags button on it
+	 * (see `NotebookTags`); this is the whole vocabulary, one tab along.
 	 */
+	{ id: 'tags', href: '/notebooks/tags', label: 'rooms.notebooks.tabs.tags', icon: 'tag' }
 ] as const;
 
 /** The planner's tabs, in the order it shows them. */

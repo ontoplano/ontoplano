@@ -3089,7 +3089,7 @@
 	"tagFilter.withAny": "mit einem von {tags}",
 	"tagFilter.without": "ohne {tags}",
 	"tags.aLabelIsMadeByTyping": null,
-	"tags.allLabels": null,
+	"tags.allLabels": "Alle Schlagwörter",
 	"tags.hideWhatCarriesIt": null,
 	"tags.inThisNotebook": null,
 	"tags.manageTags": null,

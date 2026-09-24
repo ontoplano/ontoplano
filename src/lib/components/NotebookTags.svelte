@@ -75,8 +75,8 @@
 
 	{#snippet footer()}
 		<!-- The way to the whole vocabulary, where a label is deleted or merged.
-		     It is not a tab in this room any more: what a person wants while
-		     looking at a subject is that subject's words. -->
+		     It is the Tags tab of the room as well; this is the door from here,
+		     for somebody who is already looking at one subject's words. -->
 		<a href={resolve('/notebooks/tags')} class="btn btn-sm mr-auto">
 			{t('tags.allLabels')}
 			<Icon name="arrow-right" />

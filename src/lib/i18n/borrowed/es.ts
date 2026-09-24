@@ -121,7 +121,6 @@ export const borrowed: ReadonlySet<string> = new Set([
 	'notebooks.workoutsCount',
 	'ratings.whereItWouldSit',
 	'tags.aLabelIsMadeByTyping',
-	'tags.allLabels',
 	'tags.hideWhatCarriesIt',
 	'tags.inThisNotebook',
 	'tags.manageTags',
