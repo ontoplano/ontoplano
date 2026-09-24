@@ -582,20 +582,21 @@ export const habitOccurrences = sqliteTable(
 	(table) => [
 		index('habit_occurrences_user_idx').on(table.userId),
 		index('habit_occurrences_habit_idx').on(table.habitId),
-		index('habit_occurrences_date_idx').on(table.date),
+		index('habit_occurrences_date_idx').on(table.date)
 		/*
-		 * A day is either done or it is not.
+		 * A day can hold more than one of these, and that is the point.
 		 *
-		 * The services asked first and inserted second, which holds until two
-		 * presses land together — a double tap on the heatmap, a form sent
-		 * twice — and then both read nothing and both write. What came out was
-		 * a habit logged twice on one day: two squares' worth of credit for one
-		 * day's work, and a streak counting a day more than once.
+		 * There was a unique index here for a while, on (habit, date), put in
+		 * to stop a double tap counting one day twice. It stopped rather more
+		 * than that: a bad habit is a thing you count — three cigarettes on
+		 * Tuesday is the answer somebody wants — and the heatmap has always
+		 * shaded a day by how many times it was logged. One row per day made
+		 * every square the same colour and the shading unreachable.
 		 *
-		 * The check belongs here rather than in the reading, because here is the
-		 * only place two requests cannot get past at the same time.
+		 * The double tap is answered where it happens instead: once a day is
+		 * logged, the card says so and the mark that logs it is not there to
+		 * be pressed again. See `HabitCard`.
 		 */
-		uniqueIndex('habit_occurrences_once_a_day_idx').on(table.habitId, table.date)
 	]
 );
 

@@ -1,0 +1,16 @@
+-- A day can hold more than one of these again.
+--
+-- 0103 put a unique index on (habit, date) to stop a double tap counting one
+-- day twice. It stopped rather more than that: a bad habit is a thing you
+-- count — three cigarettes on Tuesday is the answer somebody wants — and the
+-- heatmap has always shaded a day by how many times it was logged. One row per
+-- day made every square the same colour and the shading unreachable.
+--
+-- The double tap is answered where it happens instead: once a day is logged
+-- the card says so, and the mark that logs it is not there to be pressed
+-- again.
+--
+-- What this cannot undo: 0103 deleted the duplicate rows it found before it
+-- could build the index. Anything doubled on a database that has already run
+-- it is gone.
+DROP INDEX `habit_occurrences_once_a_day_idx`;

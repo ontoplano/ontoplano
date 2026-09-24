@@ -108,7 +108,8 @@
 	});
 
 	const occ = $derived(occurrences.filter((one) => one.habitId === habit.id));
-	const todayLogged = $derived(occ.some((one) => one.date === today));
+	const todayCount = $derived(occ.filter((one) => one.date === today).length);
+	const todayLogged = $derived(todayCount > 0);
 	const isBad = $derived(habit.type === 'bad');
 	const isNeutral = $derived(habit.type === 'neutral');
 
@@ -188,6 +189,19 @@
 
 		<div class="ml-auto flex items-center gap-2 sm:shrink-0">
 			{#if todayLogged}
+				<!--
+					Once today is logged, the mark that logs it is not there.
+
+					Which is the whole of the double-tap answer: a second press
+					lands on a label rather than on the control, so one day cannot
+					be counted twice by accident. What it says is the count, not
+					just the fact — a bad habit is a thing you count, and "logged
+					today" three times over is three cigarettes rather than one.
+
+					Logging it again is a press of its own beside the label. Small
+					and separate on purpose: deliberate, and nowhere near where the
+					first press landed.
+				-->
 				<span
 					class="border {isBad
 						? 'border-red-200 bg-red-50 text-red-600'
@@ -195,8 +209,24 @@
 							? 'border-gray-300 bg-gray-50 text-gray-600'
 							: 'border-blue-200 bg-blue-50 text-blue-600'} px-2 py-1 text-xs font-medium"
 				>
-					{isBad ? t('health.habits.loggedToday') : t('health.habits.doneToday')}
+					{todayCount > 1
+						? t('health.habits.loggedTodayTimes', { count: todayCount })
+						: isBad
+							? t('health.habits.loggedToday')
+							: t('health.habits.doneToday')}
 				</span>
+				<form method="post" action={actions.logOccurrence} use:enhance>
+					<input type="hidden" name="habitId" value={habit.id} />
+					<input type="hidden" name="date" value={today} />
+					<button
+						type="submit"
+						class="icon-btn"
+						title={t('health.habits.logItAgain')}
+						aria-label={t('health.habits.logItAgain')}
+					>
+						<Icon name="plus" size={14} />
+					</button>
+				</form>
 			{:else}
 				<form method="post" action={actions.logOccurrence} use:enhance>
 					<input type="hidden" name="habitId" value={habit.id} />

@@ -398,7 +398,6 @@ export const messages: Catalogue = {
 	'errors.goals.pickAHorizon': 'Pick a horizon',
 	'errors.goals.thatOneIsCountedFrom': 'That one is counted from your workouts, not typed in',
 	'errors.goals.youAlreadyHaveAnArea': 'You already have an area with that name',
-	'errors.habits.alreadyLoggedForThisDate': 'Already logged for this date',
 	'errors.ideas.ideaIsNotMarked': 'Idea is not marked as applied',
 	'errors.importVault.everyNoteInThatVault': 'Every note in that vault is empty.',
 	'errors.importVault.noMarkdownFiles':
@@ -951,8 +950,10 @@ export const messages: Catalogue = {
 	'health.habits.inAllScroll': '{length} in all — scroll the list.',
 	'health.habits.kind': 'Kind',
 	'health.habits.log': 'Log',
+	'health.habits.logItAgain': 'Log it again',
 	'health.habits.logPastEntry': 'Log past entry:',
 	'health.habits.loggedToday': 'logged today',
+	'health.habits.loggedTodayTimes': 'Logged today ×{count}',
 	'health.habits.newHabit': 'New habit',
 	'health.habits.noneSelectedMeansEveryDay': 'None selected means every day.',
 	'health.habits.note': 'note',

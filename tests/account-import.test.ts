@@ -221,14 +221,15 @@ describe('what does not travel', () => {
 	});
 
 	/*
-	 * A file older than the rule the database now holds.
+	 * A day logged twice comes back logged twice.
 	 *
-	 * A habit's day is one row since 0.183.3; an export taken before that can
-	 * carry the same day twice, and the whole restore used to fail on it. The
-	 * duplicate is dropped and named, which is the same bargain the rest of the
-	 * skipped rows get.
+	 * 0.183.3 made a habit's day one row and restores dropped the second copy,
+	 * naming it in the skipped list. 0.183.4 took that rule back out — a bad
+	 * habit is a thing you count, and the heatmap shades a day by how many
+	 * times it was logged — so there is nothing to drop and nothing to say:
+	 * what the file holds is what comes back.
 	 */
-	test('a day logged twice in an old file costs the file nothing but that day', async () => {
+	test('a day logged twice in a file comes back as both', async () => {
 		const result = await accountImport.importAccount(STRANGER, {
 			exportedAt: now.toISOString(),
 			account: { id: 'x', name: 'x', email: 'a@b.test' },
@@ -241,9 +242,8 @@ describe('what does not travel', () => {
 			}
 		});
 
-		const doubled = result.skipped.find((s) => s.name === 'habitOccurrences');
-		expect(doubled?.rows, 'the second copy of the day was dropped').toBe(1);
-		expect(english[doubled!.why]).toMatch(/already logged/i);
+		expect(result.skipped.find((s) => s.name === 'habitOccurrences')).toBeUndefined();
+		expect(result.tables.find((c) => c.name === 'habitOccurrences')?.rows).toBe(2);
 		expect(result.tables.find((c) => c.name === 'habits')?.rows).toBe(1);
 	});
 

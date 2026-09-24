@@ -9,7 +9,6 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
-import { refusal } from './helpers/refusal';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -80,37 +79,37 @@ describe('logging a day', () => {
 		expect(() => habits.logOccurrence(theirs, { habitId: mine.id, date: '2026-08-17' })).toThrow();
 	});
 
-	test('the same day twice is refused', () => {
-		const id = habits.createHabit(ctx, { name: 'stretch', type: 'good' });
+	/*
+	 * A day holds as many as happened.
+	 *
+	 * There was a unique index on (habit, date) for one release, put in to stop
+	 * a double tap counting a day twice. It stopped the counting as well, which
+	 * is most of what a bad habit's record is for — three cigarettes on Tuesday
+	 * is the answer somebody wants, and the heatmap has always shaded a day by
+	 * how many times it was logged. The double tap is answered on the card
+	 * instead: once today is logged, the mark that logs it is gone.
+	 */
+	test('a day can be logged more than once, because some habits are counted', () => {
+		const id = habits.createHabit(ctx, { name: 'cigarette', type: 'bad' });
+		habits.logOccurrence(ctx, { habitId: id, date: '2026-08-17' });
+		habits.logOccurrence(ctx, { habitId: id, date: '2026-08-17', notes: 'after lunch' });
 		habits.logOccurrence(ctx, { habitId: id, date: '2026-08-17' });
 
-		expect(refusal(() => habits.logOccurrence(ctx, { habitId: id, date: '2026-08-17' }))).toMatch(
-			/already logged/i
-		);
-		expect(habits.listOccurrences(ctx).filter((o) => o.habitId === id)).toHaveLength(1);
+		const logged = habits.listOccurrences(ctx).filter((o) => o.habitId === id);
+		expect(logged).toHaveLength(3);
+		expect(logged.filter((o) => o.notes === 'after lunch')).toHaveLength(1);
 	});
 
-	/*
-	 * The refusal above is a read followed by a write, and two presses landing
-	 * together get past it — which is how a day came to be logged twice. The
-	 * database is what actually stops it, so that is what is asked here: the
-	 * row is written around the service, the way a racing request would.
-	 */
-	test('and the day is taken even for a writer that never asked', () => {
-		const id = habits.createHabit(ctx, { name: 'push-ups', type: 'good' });
+	test('and the heatmap takes one back at a time, not the whole day', () => {
+		const id = habits.createHabit(ctx, { name: 'coffee', type: 'neutral' });
+		habits.logOccurrence(ctx, { habitId: id, date: '2026-08-18' });
 		habits.logOccurrence(ctx, { habitId: id, date: '2026-08-18' });
 
-		expect(
-			refusal(() =>
-				database.exec(
-					`insert into habit_occurrences (user_id, habit_id, date, notes, created_at)
-				 values (?, ?, ?, '', '2026-08-18T09:00:00')`,
-					OWNER,
-					id,
-					'2026-08-18'
-				)
-			)
-		).toMatch(/unique/i);
+		habits.toggleOccurrence(ctx, { habitId: id, date: '2026-08-18' });
+		expect(habits.listOccurrences(ctx).filter((o) => o.habitId === id)).toHaveLength(1);
+
+		habits.toggleOccurrence(ctx, { habitId: id, date: '2026-08-18' });
+		expect(habits.listOccurrences(ctx).filter((o) => o.habitId === id)).toHaveLength(0);
 	});
 });
 

@@ -411,7 +411,6 @@ export const messages: Catalogue = {
 	'errors.goals.thatOneIsCountedFrom':
 		'Esa se cuenta a partir de tus entrenamientos, no se escribe',
 	'errors.goals.youAlreadyHaveAnArea': 'Ya tienes un área con ese nombre',
-	'errors.habits.alreadyLoggedForThisDate': 'Ese día ya está registrado',
 	'errors.ideas.ideaIsNotMarked': 'Esa idea no está marcada como aplicada',
 	'errors.importVault.everyNoteInThatVault': 'Todas las notas de esa bóveda están vacías.',
 	'errors.importVault.noMarkdownFiles':
@@ -979,8 +978,10 @@ export const messages: Catalogue = {
 	'health.habits.inAllScroll': '{length} en total — desplázate por la lista.',
 	'health.habits.kind': 'Tipo',
 	'health.habits.log': 'Registrar',
+	'health.habits.logItAgain': 'Registrarlo otra vez',
 	'health.habits.logPastEntry': 'Registrar entrada pasada:',
 	'health.habits.loggedToday': 'registrado hoy',
+	'health.habits.loggedTodayTimes': 'Registrado hoy ×{count}',
 	'health.habits.newHabit': 'Nuevo hábito',
 	'health.habits.noneSelectedMeansEveryDay': 'Si no seleccionas ninguno, es todos los días.',
 	'health.habits.note': 'nota',

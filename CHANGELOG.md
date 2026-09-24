@@ -28,6 +28,13 @@ releases mattered.
   finishing one and for putting it back, and nothing for the column between
   them, so "doing" could only be set by hand in the app. `change_task` takes a
   status.
+- **A habit's day can be counted again.** 0.183.3 made a day one row, to stop a
+  double tap counting it twice. That stopped the counting as well: a bad habit
+  is a thing you count, and the heatmap has always shaded a day by how many
+  times it was logged. The rule is gone, and the double tap is answered where
+  it happens — once today is logged the card says so and the mark that logs it
+  is not there to be pressed again. It says how many, and logging one more is
+  a small press of its own beside it.
 - **The tag filter's boxes are one line, and what you picked sits above them.**
   The chosen labels were chips inside the box you type into, so the box was a
   different height on every screen — and once the chips filled a line the

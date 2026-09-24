@@ -685,7 +685,6 @@ Indexes:
 - `habit_occurrences_user_idx` on `user_id`
 - `habit_occurrences_habit_idx` on `habit_id`
 - `habit_occurrences_date_idx` on `date`
-- `habit_occurrences_once_a_day_idx` on `habit_id`, `date` — unique
 
 ## habits
 

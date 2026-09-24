@@ -729,6 +729,13 @@
       "when": 1790247925183,
       "tag": "0103_a_habit_is_logged_once_a_day",
       "breakpoints": true
+    },
+    {
+      "idx": 104,
+      "version": "6",
+      "when": 1790285660008,
+      "tag": "0104_a_habit_day_can_be_logged_more_than_once",
+      "breakpoints": true
     }
   ]
 }

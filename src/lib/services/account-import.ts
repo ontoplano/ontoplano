@@ -445,10 +445,11 @@ export async function importAccount(
 			/*
 			 * Rows the database itself will not take twice.
 			 *
-			 * A habit's day is one row now, and an export taken before that was
-			 * true can carry the same day twice. One of them has to go, and the
-			 * restore saying so is better than either losing it quietly or
-			 * refusing the whole file over a duplicate square.
+			 * Nothing in the schema refuses one at the moment — a habit's day
+			 * did for one release and does not any more — so this is here for
+			 * the next rule somebody adds. What it buys when that happens: the
+			 * restore names the row it could not take, rather than either
+			 * losing it quietly or refusing the whole file over one of them.
 			 */
 			let doubledHere = 0;
 			for (const raw of rows) {

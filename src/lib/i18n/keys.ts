@@ -369,7 +369,6 @@ export type MessageKey =
 	| 'errors.goals.pickAHorizon'
 	| 'errors.goals.thatOneIsCountedFrom'
 	| 'errors.goals.youAlreadyHaveAnArea'
-	| 'errors.habits.alreadyLoggedForThisDate'
 	| 'errors.ideas.ideaIsNotMarked'
 	| 'errors.importVault.everyNoteInThatVault'
 	| 'errors.importVault.noMarkdownFiles'
@@ -875,8 +874,10 @@ export type MessageKey =
 	| 'health.habits.inAllScroll'
 	| 'health.habits.kind'
 	| 'health.habits.log'
+	| 'health.habits.logItAgain'
 	| 'health.habits.logPastEntry'
 	| 'health.habits.loggedToday'
+	| 'health.habits.loggedTodayTimes'
 	| 'health.habits.newHabit'
 	| 'health.habits.noneSelectedMeansEveryDay'
 	| 'health.habits.note'
@@ -3657,6 +3658,7 @@ export interface MessageValuesFor {
 	'health.habits.dayStreak': { count: number };
 	'health.habits.daysClean': { count: number };
 	'health.habits.inAllScroll': { length: string | number };
+	'health.habits.loggedTodayTimes': { count: number };
 	'health.habits.total': { length: string | number };
 	'health.recipes.id.addedOfThem': { added: string | number };
 	'health.recipes.id.findOnTheShoppingList': { name: string | number };

@@ -1999,7 +1999,11 @@ A year of history, which is what the heatmap draws.
 
 #### `toggleOccurrence(ctx, raw)`
 
-Clicking a day in the heatmap: log it, or take it back.
+Clicking a day in the heatmap: log it, or take one back.
+
+One at a time, on a day that holds several: the square goes a shade lighter
+rather than empty. Which is what a square with a number behind it means, and
+the only reading under which pressing it twice returns you to where you were.
 
 #### `updateOccurrence(ctx, id, notes)`
 

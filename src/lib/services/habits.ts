@@ -4,7 +4,7 @@ import { db } from '$lib/db/index.js';
 import { habitOccurrences, habits } from '$lib/db/schema.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { created } from './time.js';
-import { ConflictError, NotFoundError } from './errors.js';
+import { NotFoundError } from './errors.js';
 import { notebookPatch } from './notebooks.js';
 import { num, oneOf, optionalStr, str } from './validate.js';
 
@@ -124,39 +124,26 @@ export function deleteHabit(ctx: Ctx, id: number): void {
 }
 
 /**
- * A day, written down — or refused because it is already there.
+ * A day, written down.
  *
- * Asking first and inserting second is two statements, and two presses landing
- * together both read nothing and both write. `habit_occurrences_once_a_day_idx`
- * is what actually stops that; this turns what SQLite says about it into the
- * answer the caller was going to get anyway, so a race and a plain second
- * attempt are refused in the same words.
+ * One statement and no question first, because there is nothing to ask: a day
+ * may hold several of these. A bad habit is a thing you count — three
+ * cigarettes on Tuesday is the answer somebody wants — and the heatmap has
+ * always shaded a day by how many times it was logged.
  *
- * Answers whether it wrote, for the toggle: the day is logged either way, and
- * the loser of a race has nothing left to do.
+ * There was a unique index on (habit, date) for one release, put in to stop a
+ * double tap counting a day twice. It stopped the counting as well, which is
+ * most of what a bad habit's record is for. The double tap is answered on the
+ * card now: once today is logged the mark that logs it is replaced by what it
+ * says, so the press that would have doubled it lands on nothing.
  */
 function writeOccurrence(
 	ctx: Ctx,
 	values: { habitId: number; date: string; notes: string | null }
-): boolean {
-	try {
-		db.insert(habitOccurrences)
-			.values({ ...created(ctx), userId: ctx.userId, ...values })
-			.run();
-		return true;
-	} catch (error) {
-		if (!alreadyLogged(error)) throw error;
-		return false;
-	}
-}
-
-/** SQLite's word for "that day is taken", and nobody else's. */
-function alreadyLogged(error: unknown): boolean {
-	const code = (error as { code?: string })?.code;
-	return (
-		code === 'SQLITE_CONSTRAINT_UNIQUE' &&
-		String((error as Error)?.message ?? '').includes('habit_occurrences')
-	);
+): void {
+	db.insert(habitOccurrences)
+		.values({ ...created(ctx), userId: ctx.userId, ...values })
+		.run();
 }
 
 export function logOccurrence(
@@ -167,13 +154,16 @@ export function logOccurrence(
 	const date = parseDate(ctx, raw.date);
 	const notes = optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH });
 
-	// One statement rather than "is it there?" then "put it there": the second
-	// shape is what let two presses both write.
-	if (!writeOccurrence(ctx, { habitId, date, notes }))
-		throw new ConflictError({ key: 'errors.habits.alreadyLoggedForThisDate' });
+	writeOccurrence(ctx, { habitId, date, notes });
 }
 
-/** Clicking a day in the heatmap: log it, or take it back. */
+/**
+ * Clicking a day in the heatmap: log it, or take one back.
+ *
+ * One at a time, on a day that holds several: the square goes a shade lighter
+ * rather than empty. Which is what a square with a number behind it means, and
+ * the only reading under which pressing it twice returns you to where you were.
+ */
 export function toggleOccurrence(ctx: Ctx, raw: { habitId: unknown; date: unknown }): void {
 	const habitId = ownedHabitId(ctx, raw.habitId);
 	const date = str(raw.date, 'date', { max: 10, pattern: DATE_PATTERN });
@@ -184,8 +174,6 @@ export function toggleOccurrence(ctx: Ctx, raw: { habitId: unknown; date: unknow
 			.where(and(eq(habitOccurrences.id, existing.id), eq(habitOccurrences.userId, ctx.userId)))
 			.run();
 	} else {
-		// A second press that arrives alongside the first finds the day logged
-		// rather than an error: what it asked for has happened.
 		writeOccurrence(ctx, { habitId, date, notes: '' });
 	}
 }
