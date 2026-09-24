@@ -1147,6 +1147,7 @@ export const messages: Catalogue = {
 	'inventory.showWhatIsIn': 'Show what is in {place}',
 	'inventory.showWhatYouAlreadyHave': 'Show what you already have ({bought})',
 	'inventory.showWhatYouPutAway': 'Show what you put away ({snoozed})',
+	'inventory.stock': 'Stock',
 	'inventory.takeThisAttributeOffEverything': 'Take this attribute off everything',
 	'inventory.theListIsEmpty': 'The list is empty',
 	'inventory.tickTheOnesThatHold':
@@ -3609,7 +3610,7 @@ export const messages: Catalogue = {
 	'tour.todayOrEverythingElse': 'Today, or everything else',
 	'tour.tokensForProgramsThatRead':
 		'Tokens for programs that read or write on your behalf, a calendar link, and the data other apps push in.',
-	'tour.twoListsOnePage': 'Two lists, one page',
+	'tour.twoListsOnePage': 'Two lists, two tabs',
 	'tour.typeAWordYouRemember': 'Type a word you remember',
 	'tour.upToSixPicturesPer':
 		'Up to six pictures per recipe. Star one and it becomes the one the list shows.',
@@ -3624,7 +3625,7 @@ export const messages: Catalogue = {
 		'What went well, what did not, what you are changing. It is the part you will read next year.',
 	'tour.whereYouAreAndWhat': 'Where you are, and what shape',
 	'tour.whereYourWeekBegins': 'Where your week begins',
-	'tour.whichListAndWhereIt': 'Which list, and where it lives',
+	'tour.whichListAndWhereIt': 'Where it lives',
 	'tour.workHealthWhateverDividesYour':
 		'Work, health, whatever divides your life. Every block wears its category’s colour, on the grid and on the dashboard.',
 	'tour.workouts': 'Workouts',

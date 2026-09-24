@@ -1241,12 +1241,16 @@
 		{#snippet card_shopping()}
 			<Card title={t('home.shopping')} accent={SECTION_COLORS.inventory}>
 				{#snippet actions()}
-					<a href={resolve('/inventory')} class="text-xs text-gray-500 hover:text-gray-900"
+					<a href={resolve('/inventory/stock')} class="text-xs text-gray-500 hover:text-gray-900"
 						>{t('home.open')}</a
 					>
 				{/snippet}
 				{#if data.shoppingCard.lines.length === 0}
-					{@render nothingYet(t('home.nothingToBuyTheList'), '/inventory', t('home.addAnItem'))}
+					{@render nothingYet(
+						t('home.nothingToBuyTheList'),
+						'/inventory/stock',
+						t('home.addAnItem')
+					)}
 				{:else}
 					<ul class="space-y-1">
 						{#each data.shoppingCard.lines.slice(0, SHOPPING_PREVIEW) as line (line.id)}
@@ -1270,12 +1274,16 @@
 		{#snippet card_wishlist()}
 			<Card title={t('home.wishlist')} accent={SECTION_COLORS.inventory}>
 				{#snippet actions()}
-					<a href={resolve('/inventory')} class="text-xs text-gray-500 hover:text-gray-900"
+					<a href={resolve('/inventory/wishlist')} class="text-xs text-gray-500 hover:text-gray-900"
 						>{t('home.open')}</a
 					>
 				{/snippet}
 				{#if data.shoppingCard.wishlist.length === 0}
-					{@render nothingYet(t('home.nothingOnTheWishlist'), '/inventory', t('home.addAnItem'))}
+					{@render nothingYet(
+						t('home.nothingOnTheWishlist'),
+						'/inventory/wishlist',
+						t('home.addAnItem')
+					)}
 				{:else}
 					<ul class="space-y-1">
 						{#each data.shoppingCard.wishlist.slice(0, SHOPPING_PREVIEW) as item (item.id)}

@@ -115,7 +115,7 @@ export const NAV_PLACES: NavPlace[] = [
 		name: 'sections.inventory.label',
 		section: 'inventory',
 		icon: 'shopping',
-		href: '/inventory',
+		href: '/inventory/stock',
 		hide: 'inventory'
 	},
 	{

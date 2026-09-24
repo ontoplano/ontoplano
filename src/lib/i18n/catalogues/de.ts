@@ -1181,6 +1181,7 @@ export const messages: Catalogue = {
 	'inventory.showWhatIsIn': 'Zeigen, was in {place} ist',
 	'inventory.showWhatYouAlreadyHave': 'Anzeigen, was Sie schon haben ({bought})',
 	'inventory.showWhatYouPutAway': 'Anzeigen, was Sie weggelegt haben ({snoozed})',
+	'inventory.stock': 'Stock',
 	'inventory.takeThisAttributeOffEverything': 'Dieses Attribut überall entfernen',
 	'inventory.theListIsEmpty': 'Die Liste ist leer',
 	'inventory.tickTheOnesThatHold':
@@ -3717,7 +3718,7 @@ export const messages: Catalogue = {
 	'tour.todayOrEverythingElse': 'Heute, oder alles andere',
 	'tour.tokensForProgramsThatRead':
 		'Tokens für Programme, die in Ihrem Namen lesen oder schreiben, ein Kalenderlink, und die Daten, die andere Apps hereinschieben.',
-	'tour.twoListsOnePage': 'Zwei Listen, eine Seite',
+	'tour.twoListsOnePage': 'Two lists, two tabs',
 	'tour.typeAWordYouRemember': 'Tippen Sie ein Wort, an das Sie sich erinnern',
 	'tour.upToSixPicturesPer':
 		'Bis zu sechs Bilder pro Rezept. Markieren Sie eines mit einem Stern, und es wird das, das die Liste zeigt.',
@@ -3732,7 +3733,7 @@ export const messages: Catalogue = {
 		'Was gut lief, was nicht, was Sie ändern. Das ist der Teil, den Sie nächstes Jahr lesen werden.',
 	'tour.whereYouAreAndWhat': 'Wo Sie sind, und in welcher Form',
 	'tour.whereYourWeekBegins': 'Wo deine Woche beginnt',
-	'tour.whichListAndWhereIt': 'Welche Liste, und wo sie lebt',
+	'tour.whichListAndWhereIt': 'Where it lives',
 	'tour.workHealthWhateverDividesYour':
 		'Arbeit, Gesundheit, was auch immer Ihr Leben einteilt. Jeder Block trägt die Farbe seiner Kategorie, im Raster und auf dem Dashboard.',
 	'tour.workouts': 'Trainings',

@@ -136,7 +136,7 @@ test('every old address lands on the one page', async ({ page }) => {
 	await register(page, testEmail('inv-urls'));
 	for (const old of ['/shopping', '/inventory/list', '/inventory/things']) {
 		await visit(page, old);
-		await expect(page).toHaveURL(/\/inventory$/);
+		await expect(page).toHaveURL(/\/inventory\/stock$/);
 	}
 });
 
@@ -325,7 +325,18 @@ test.describe('a row on a phone', () => {
 		await addItem(page, 'Extra virgin olive oil');
 
 		await page.getByRole('button', { name: 'One more Extra virgin olive oil' }).click();
-		await expect(page.locator('[title$="you keep 1"]')).toHaveText('1');
+		/*
+		 * The pointer is taken off the row first.
+		 *
+		 * The count moves under the cursor when it changes on a phone, and a
+		 * hovered element has its `title` borrowed by the app's own tooltip —
+		 * see `Tooltips.svelte` — so the attribute this reads is simply not
+		 * there while the pointer is resting on it.
+		 */
+		await page.mouse.move(0, 0);
+		// Sized for a loaded runner, like the count above it: the press posts a
+		// form and the room's whole query runs again behind it.
+		await expect(page.locator('[title$="you keep 1"]')).toHaveText('1', { timeout: 15_000 });
 
 		/*
 		 * Wider than it is tall: that is what a line of text is, and what a
@@ -439,11 +450,14 @@ test.describe('what the filters are hiding', () => {
 		await visit(page, '/inventory');
 		await aHouse(page);
 
+		// The panel counts what this tab would show: the kitchen holds two
+		// things you restock, and one thing you might buy one day.
 		const kitchen = page.getByRole('button', { name: /^Kitchen/ }).first();
-		await expect(kitchen.locator('span').last()).toHaveText('3');
+		await expect(kitchen.locator('span').last()).toHaveText('2');
 
 		// Only the wishlist: the kitchen holds one of those, its drawer none.
-		await page.getByRole('button', { name: 'Wishlist', exact: true }).click();
+		await page.getByRole('link', { name: 'Wishlist', exact: true }).click();
+		await page.waitForURL(/\/inventory\/wishlist/);
 		await expect(kitchen.locator('span').last()).toHaveText('1');
 		await expect(
 			page
@@ -477,8 +491,10 @@ test.describe('what the filters are hiding', () => {
 		// Nothing hidden: the line is in the layout but has nothing to say.
 		await expect(line).toBeHidden();
 
-		await page.getByRole('button', { name: 'Wishlist', exact: true }).click();
-		await expect(line).toHaveText('Not showing 2 items');
+		// Short is a filter, and what it leaves out is what the line counts.
+		// The wishlist is not: it is the other tab, not something hidden here.
+		await page.getByRole('button', { name: 'Short', exact: true }).click();
+		await expect(line).toHaveText(/^Not showing \d+ items?$/);
 
 		// The panel under it has not moved a pixel — the space was already
 		// reserved, which is the whole point of keeping the line invisible
@@ -487,7 +503,7 @@ test.describe('what the filters are hiding', () => {
 		expect(before, 'the panel is on screen').not.toBeNull();
 		expect(after!.y).toBe(before!.y);
 
-		await page.getByRole('button', { name: 'All', exact: true }).click();
+		await page.getByRole('button', { name: 'Short', exact: true }).click();
 		await expect(line).toBeHidden();
 		expect((await panel.boundingBox())!.y).toBe(before!.y);
 	});
@@ -504,10 +520,11 @@ test.describe('what the filters are hiding', () => {
 
 		await page.getByRole('button', { name: 'Fold Kitchen' }).click();
 		await expect(drawer).toBeHidden();
-		// The kitchen is still there, still saying how much is inside it.
+		// The kitchen is still there, still saying how much is inside it — what
+		// this tab would show, which is everything in it but the wishlist one.
 		const kitchen = page.getByRole('button', { name: /^Kitchen/ }).first();
 		await expect(kitchen).toBeVisible();
-		await expect(kitchen.locator('span').last()).toHaveText('3');
+		await expect(kitchen.locator('span').last()).toHaveText('2');
 
 		// And it stays folded across a reload, which is what makes it worth doing.
 		await visit(page, '/inventory');

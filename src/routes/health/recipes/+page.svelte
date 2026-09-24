@@ -84,7 +84,7 @@
 		     into it, which is a worse first impression than a sentence. -->
 		<Banner kind="warning">
 			{t('health.recipes.noFoodCategoryYet')}
-			<a href={resolve('/inventory')} class="underline"
+			<a href={resolve('/inventory/stock')} class="underline"
 				>{t('health.recipes.tickOneOnTheShopping')}</a
 			>
 		</Banner>

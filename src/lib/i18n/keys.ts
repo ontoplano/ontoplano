@@ -1064,6 +1064,7 @@ export type MessageKey =
 	| 'inventory.showWhatIsIn'
 	| 'inventory.showWhatYouAlreadyHave'
 	| 'inventory.showWhatYouPutAway'
+	| 'inventory.stock'
 	| 'inventory.takeThisAttributeOffEverything'
 	| 'inventory.theListIsEmpty'
 	| 'inventory.tickTheOnesThatHold'

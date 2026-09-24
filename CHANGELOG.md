@@ -29,6 +29,12 @@ releases mattered.
 - **Every one of those forms asks which notebook it belongs to.** In the room
   the field starts empty; inside a notebook it starts on that notebook, and
   editing something from the room never quietly takes it out of one.
+- **Inventory is two tabs: Stock and Wishlist.** They were one list with a
+  segment over it — All, Restock, Wishlist, Short — which read as four equal
+  readings of one thing. What you keep and how much of it is one question; what
+  you might buy one day is another. Each is a tab with an address of its own,
+  and "short" stays where it belongs, a filter beside the others on the
+  cupboard. Every old link to /inventory still lands on the cupboard.
 - **The shelf of notebooks squeezes down to one cover.** Dragging the list
   narrow stopped a long way short of that, leaving a single cover beside a band
   of space too narrow to hold a second and no way to take it in further. The

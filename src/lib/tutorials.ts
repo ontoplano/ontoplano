@@ -435,7 +435,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 			}
 		]
 	},
-	'/inventory': {
+	'/inventory/stock': {
 		label: 'tour.shopping',
 		steps: [
 			{

@@ -1173,6 +1173,7 @@ export const messages: Catalogue = {
 	'inventory.showWhatIsIn': 'Mostrar qué hay en {place}',
 	'inventory.showWhatYouAlreadyHave': 'Mostrar lo que ya tienes ({bought})',
 	'inventory.showWhatYouPutAway': 'Mostrar lo que guardaste ({snoozed})',
+	'inventory.stock': 'Stock',
 	'inventory.takeThisAttributeOffEverything': 'Quitar este atributo de todo',
 	'inventory.theListIsEmpty': 'La lista está vacía',
 	'inventory.tickTheOnesThatHold':
@@ -3692,7 +3693,7 @@ export const messages: Catalogue = {
 	'tour.todayOrEverythingElse': 'Hoy, o todo lo demás',
 	'tour.tokensForProgramsThatRead':
 		'Tokens para programas que leen o escriben en tu nombre, un enlace de calendario, y los datos que otras apps envían.',
-	'tour.twoListsOnePage': 'Dos listas, una página',
+	'tour.twoListsOnePage': 'Two lists, two tabs',
 	'tour.typeAWordYouRemember': 'Escribe una palabra que recuerdes',
 	'tour.upToSixPicturesPer':
 		'Hasta seis fotos por receta. Márcala con estrella y se convierte en la que muestra la lista.',
@@ -3707,7 +3708,7 @@ export const messages: Catalogue = {
 		'Qué salió bien, qué no, qué estás cambiando. Es la parte que leerás el próximo año.',
 	'tour.whereYouAreAndWhat': 'Dónde estás, y qué forma tiene',
 	'tour.whereYourWeekBegins': 'Dónde empieza tu semana',
-	'tour.whichListAndWhereIt': 'Qué lista, y dónde vive',
+	'tour.whichListAndWhereIt': 'Where it lives',
 	'tour.workHealthWhateverDividesYour':
 		'Trabajo, salud, lo que sea que divida tu vida. Cada bloque lleva el color de su categoría, en la cuadrícula y en el panel.',
 	'tour.workouts': 'Entrenamientos',

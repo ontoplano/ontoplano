@@ -43,7 +43,7 @@ const ALLOWED: Record<string, number> = {
 	'src/routes/+page.svelte': 2,
 	'src/routes/demo/+page.svelte': 1,
 	'src/routes/instance/+page.svelte': 1,
-	'src/routes/inventory/+page.svelte': 3,
+	'src/lib/components/InventoryRoom.svelte': 3,
 	'src/routes/start/+page.svelte': 2,
 	// The in-app chat, which is switched off — see `$lib/features`.
 	'src/routes/assistant/+page.svelte': 2

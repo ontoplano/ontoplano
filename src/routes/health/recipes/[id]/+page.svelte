@@ -171,7 +171,7 @@
 							<!-- Every ingredient is a shopping item; this is the way to it,
 							     for when you want to check the price or tick it off. -->
 							<a
-								href={resolve('/inventory')}
+								href={resolve('/inventory/stock')}
 								class="shrink-0 text-gray-500 hover:text-gray-900"
 								title={t('health.recipes.id.findOnTheShoppingList', { name: ingredient.name })}
 								aria-label={t('health.recipes.id.findOnTheShoppingList', { name: ingredient.name })}

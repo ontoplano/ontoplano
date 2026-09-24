@@ -64,7 +64,7 @@ export const DESTINATIONS: Destination[] = [
 	{
 		label: 'app.inventory',
 		group: 'Inventory',
-		href: '/inventory',
+		href: '/inventory/stock',
 		icon: 'shopping',
 		hide: 'inventory'
 	},
