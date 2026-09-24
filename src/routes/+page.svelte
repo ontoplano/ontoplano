@@ -11,6 +11,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import FrontDoor from '$lib/components/FrontDoor.svelte';
 	import QuickCapture from '$lib/components/QuickCapture.svelte';
+	import NotebookCover from '$lib/components/NotebookCover.svelte';
 	import WidgetPicker from '$lib/components/WidgetPicker.svelte';
 	import Pie from '$lib/components/Pie.svelte';
 	import Swatch from '$lib/components/Swatch.svelte';
@@ -1157,6 +1158,31 @@
 			</Card>
 		{/snippet}
 
+		{#snippet card_notebooks()}
+			<Card title={t('app.notebooks')} accent={SECTION_COLORS.diary}>
+				{#snippet actions()}
+					<a href={resolve('/notebooks')} class="text-xs text-gray-500 hover:text-gray-900"
+						>{t('home.open')}</a
+					>
+				{/snippet}
+				{#if (data.recentNotebooks ?? []).length === 0}
+					{@render nothingYet(
+						t('home.noNotebooksYetOneHolds'),
+						'/notebooks',
+						t('notebooks.newNotebook')
+					)}
+				{:else}
+					<!-- The same shelf the room draws, three covers of it: a notebook is
+					     picked by looking at it, here as much as there. -->
+					<div class="notebook-shelf !p-0">
+						{#each data.recentNotebooks ?? [] as notebook (notebook.id)}
+							<NotebookCover {notebook} href="{resolve('/notebooks')}?notebook={notebook.id}" />
+						{/each}
+					</div>
+				{/if}
+			</Card>
+		{/snippet}
+
 		{#snippet card_bills()}
 			<Card title={t('home.bills')} accent={SECTION_COLORS.finance}>
 				{#snippet actions()}
@@ -1241,12 +1267,16 @@
 		{#snippet card_shopping()}
 			<Card title={t('home.shopping')} accent={SECTION_COLORS.inventory}>
 				{#snippet actions()}
-					<a href={resolve('/inventory')} class="text-xs text-gray-500 hover:text-gray-900"
+					<a href={resolve('/inventory/stock')} class="text-xs text-gray-500 hover:text-gray-900"
 						>{t('home.open')}</a
 					>
 				{/snippet}
 				{#if data.shoppingCard.lines.length === 0}
-					{@render nothingYet(t('home.nothingToBuyTheList'), '/inventory', t('home.addAnItem'))}
+					{@render nothingYet(
+						t('home.nothingToBuyTheList'),
+						'/inventory/stock',
+						t('home.addAnItem')
+					)}
 				{:else}
 					<ul class="space-y-1">
 						{#each data.shoppingCard.lines.slice(0, SHOPPING_PREVIEW) as line (line.id)}
@@ -1270,12 +1300,16 @@
 		{#snippet card_wishlist()}
 			<Card title={t('home.wishlist')} accent={SECTION_COLORS.inventory}>
 				{#snippet actions()}
-					<a href={resolve('/inventory')} class="text-xs text-gray-500 hover:text-gray-900"
+					<a href={resolve('/inventory/wishlist')} class="text-xs text-gray-500 hover:text-gray-900"
 						>{t('home.open')}</a
 					>
 				{/snippet}
 				{#if data.shoppingCard.wishlist.length === 0}
-					{@render nothingYet(t('home.nothingOnTheWishlist'), '/inventory', t('home.addAnItem'))}
+					{@render nothingYet(
+						t('home.nothingOnTheWishlist'),
+						'/inventory/wishlist',
+						t('home.addAnItem')
+					)}
 				{:else}
 					<ul class="space-y-1">
 						{#each data.shoppingCard.wishlist.slice(0, SHOPPING_PREVIEW) as item (item.id)}
@@ -1434,6 +1468,7 @@
 						{:else if id === 'threeWins'}{@render card_threeWins()}
 						{:else if id === 'latestTodos'}{@render card_latestTodos()}
 						{:else if id === 'ideas'}{@render card_ideas()}
+						{:else if id === 'notebooks'}{@render card_notebooks()}
 						{/if}
 					</div>
 				{/if}
@@ -1511,6 +1546,8 @@
 	.day-column {
 		padding-left: 0.625rem;
 		border-left: 2px solid var(--color-gray-200);
+		/* A rule has no corners: rounded, it hooked in at both ends. */
+		border-radius: 0;
 	}
 
 	.day-column.is-today {

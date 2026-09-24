@@ -1,6 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { listCategories } from '$lib/services/activities';
 import { buildCtx, localDateOf } from '$lib/services/ctx';
+import { pickableNotebooks } from '$lib/services/notebooks';
 import { mainPictures } from '$lib/services/media';
 import { foodCategories, withMissingCounts } from '$lib/services/recipes';
 import { recipeActions } from './actions';
@@ -25,6 +26,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 	const ctx = buildCtx(locals.user!.id);
 
 	return {
+		// The subject a thing belongs to, asked in the room's own form: the
+		// notebook's tab opens this same form with its own notebook chosen.
+		notebooks: pickableNotebooks(ctx),
 		recipes: withPictures(ctx),
 		// With no food category nothing can be an ingredient, and the page has to
 		// say so rather than offering an editor that refuses everything.

@@ -42,7 +42,10 @@ export const recipeActions = {
 				notes: formData.get('notes'),
 				servings: formData.get('servings'),
 				minutes: formData.get('minutes'),
-				source: formData.get('source')
+				source: formData.get('source'),
+				// `has` rather than `get`: the room's form says nothing about a
+				// notebook and must not be read as taking the recipe out of one.
+				...(formData.has('notebookId') ? { notebookId: formData.get('notebookId') } : {})
 			});
 		} catch (e) {
 			return toActionFailure(e);
@@ -115,7 +118,8 @@ export const recipeActions = {
 				notes: formData.get('notes'),
 				servings: formData.get('servings'),
 				minutes: formData.get('minutes'),
-				source: formData.get('source')
+				source: formData.get('source'),
+				...(formData.has('notebookId') ? { notebookId: formData.get('notebookId') } : {})
 			});
 			return { success: true, action: 'update' };
 		} catch (e) {
@@ -291,6 +295,11 @@ export const recipeActions = {
 			return toActionFailure(e);
 		}
 
-		redirect(303, '/health/recipes');
+		// Back where the deleting happened. From a recipe's own page there is
+		// nothing left to show, so it is the list; from a notebook's Recipes tab
+		// the notebook is still there and being sent to the cookbook instead is
+		// losing your place. `back` is the path the form was on.
+		const back = String(formData.get('back') ?? '');
+		redirect(303, back.startsWith('/notebooks/') ? back : '/health/recipes');
 	}
 } satisfies Actions;

@@ -10,8 +10,8 @@ import { pressUntil } from './helpers/press-until';
  * confined key cannot reach past its notebook. This is the other half: that
  * the choice is actually on the screen, that choosing it changes what the
  * permissions below are offering — a key tied to a notebook cannot touch the
- * shopping list, so a tickable shopping box would be a grant that grants
- * nothing — and that the key which comes out says what it is tied to.
+ * address book, so a tickable People box would be a grant that grants nothing
+ * — and that the key which comes out says what it is tied to.
  */
 test('the key form offers to tie a key to one notebook', async ({ page }) => {
 	await register(page, testEmail('confined-key'));
@@ -45,9 +45,14 @@ test('the key form offers to tie a key to one notebook', async ({ page }) => {
 	 * not post a grant it is not offering — so a selector on them would report
 	 * "not found" where the interesting answer is "disabled".
 	 */
-	const shopping = page.getByRole('checkbox', { name: /Inventory: write/ });
+	/*
+	 * People rather than the shopping list, which a notebook holds now: a
+	 * subject accumulates things to buy, and a key given the renovation is
+	 * meant to be able to add its tiles. Nobody is filed under a subject.
+	 */
+	const people = page.getByRole('checkbox', { name: /People: write/ });
 	const tasks = page.getByRole('checkbox', { name: /Tasks: write/ });
-	await expect(shopping).toBeEnabled();
+	await expect(people).toBeEnabled();
 
 	await reach.selectOption('notebook');
 	await expect(page.getByRole('combobox', { name: 'Which notebook' })).toBeVisible();
@@ -59,8 +64,10 @@ test('the key form offers to tie a key to one notebook', async ({ page }) => {
 	 * mind, and would hide the reason: it is the tie that put them out of
 	 * reach, not the app deciding for them.
 	 */
-	await expect(shopping).toBeDisabled();
+	await expect(people).toBeDisabled();
 	await expect(tasks).toBeEnabled();
+	// And one the tie brought into reach, which it did not have before.
+	await expect(page.getByRole('checkbox', { name: /Inventory: write/ })).toBeEnabled();
 
 	// Named, because the field is required — an unnamed key is one you
 	// cannot pick out of the list afterwards, which is the one moment the

@@ -7,20 +7,30 @@
 	 * which read better and cost a row of the card each. Then three bars of
 	 * equal width side by side, which is most of the idea.
 	 *
-	 * This is the rest of it: the bars nest. Urgency is the widest and sits
-	 * behind, ease is narrower in front of it, interest is narrowest in front
-	 * of that — all three standing on one baseline and sharing a right edge, so
+	 * This is the rest of it: the bars nest. Urgency is three columns wide and
+	 * sits behind, ease is two in front of it, interest is one in front of
+	 * that — all three standing on one baseline and sharing a right edge, so
 	 * the group is one object about the size of a thumbnail. **Width says which
 	 * rating; height says its value.** A row of separate bars needs the eye to
 	 * count positions before it can read anything; nested, the one at the back
 	 * is always urgency wherever your eye lands.
 	 *
-	 * Nothing else is drawn — no outline, no gradient, no marks between the
-	 * steps. At this size all three were texture rather than information.
-	 *
 	 * The order is `RATING_ORDER` — urgency, ease, interest — which is the
 	 * order the Priority sort reads them in and the order the form asks for
 	 * them. Back to front is that same order, so there is one thing to learn.
+	 *
+	 * ## The slivers are one width
+	 *
+	 * Each bar shows a sliver exactly as wide as the narrowest — three equal
+	 * thirds — and that only holds if nothing eats into them. It did: every bar
+	 * was rounded on all four corners, so the bar in front took a bite out of
+	 * the one behind at the top and the bottom of every junction, and a task
+	 * rated 5 on all three drew three slivers nobody would call equal. The caps
+	 * are rounded and the feet are square: the junction between two slivers is
+	 * a straight line down, which is where the eye measures.
+	 *
+	 * Nothing else is drawn — no outline, no gradient, no marks between the
+	 * steps. At this size all three were texture rather than information.
 	 *
 	 * ## One scale, on every row
 	 *
@@ -52,6 +62,13 @@
 	 * no telling a 1 from a 2 without another row to compare against; with it
 	 * every bar is read against the same box.
 	 *
+	 * The ground reaches one column further left than the bars do, and that
+	 * strip of it is never covered. A task rated 5 for urgency filled the box
+	 * edge to edge and left no ground showing at all — so the row where the
+	 * ruler disappears is the row that looks most like every other one. A
+	 * column wide, so it reads as part of the group and not as a rule beside
+	 * it.
+	 *
 	 * ## One target
 	 *
 	 * The group is read as one object and is pressed as one: whoever wants to
@@ -72,7 +89,7 @@
 
 	let {
 		values,
-		/** Kept for the callers that ask for it; the group nests either way. */
+		/** Kept for the callers that ask for it; the group is drawn the same way. */
 		stacked = false,
 		class: className = ''
 	}: { values: Partial<RatingValues>; stacked?: boolean; class?: string } = $props();
@@ -94,7 +111,7 @@
 		((value ?? RATING_UNRATED) / RATING_MAX) * 100;
 
 	/**
-	 * How wide the nth bar is, as a percentage of the group.
+	 * How wide the nth bar is, as a percentage of the box a 5 would fill.
 	 *
 	 * Even steps down to the last one, so each shows a sliver exactly as wide
 	 * as the narrowest bar — three equal thirds for the three there are. Any
@@ -110,13 +127,19 @@
 	title={said}
 	aria-label={said}
 >
-	{#each RATING_ORDER as r, at (r)}
-		<span
-			class="rating-bar"
-			data-rating={r}
-			style="width: {widthOf(at)}%; height: {heightOf(values[r])}%; z-index: {at + 1}"
-		></span>
-	{/each}
+	<!--
+		The bars stand in their own box on the right, so the widths below stay
+		percentages of what a 5 fills rather than of the group plus its strip.
+	-->
+	<span class="rating-stack">
+		{#each RATING_ORDER as r, at (r)}
+			<span
+				class="rating-bar"
+				data-rating={r}
+				style="width: {widthOf(at)}%; height: {heightOf(values[r])}%; z-index: {at + 1}"
+			></span>
+		{/each}
+	</span>
 </span>
 
 <style>
@@ -128,22 +151,39 @@
 		/* One scale for every row in the list — see the note above. */
 		--bars-height: 2.25rem;
 		--bars-width: 1.5rem;
+		/* One column's worth: three of them fill `--bars-width`. */
+		--bars-column: calc(var(--bars-width) / 3);
 
 		position: relative;
 		display: inline-block;
-		width: var(--bars-width);
+		width: calc(var(--bars-width) + var(--bars-column));
 		height: var(--bars-height);
 		flex: none;
 		/*
 		 * The box a 5 on every rating would fill.
 		 *
 		 * Faint: it is a ruler rather than a fourth shape, and the bars have to
-		 * stay the thing you see. `--color-gray-200` rather than a mix of
-		 * whatever is behind it, because the rows alternate two grounds and the
-		 * selected one is a third — one wash that reads on all of them.
+		 * stay the thing you see. A token rather than a mix of whatever is
+		 * behind it, because the rows alternate two grounds and the selected one
+		 * is a third — one wash that reads on all of them. It has an answer per
+		 * theme: the grey that is one step above a card in the light theme is
+		 * within a hair of the card in the dark one, which left the gauges
+		 * standing on nothing. See `--gauge-ground`.
 		 */
-		background-color: var(--color-gray-200);
+		background-color: var(--gauge-ground, var(--color-gray-200));
 		border-radius: 2px;
+	}
+
+	/*
+	 * What a 5 on every rating would fill: the right-hand part of the group,
+	 * with the strip of ground that is always showing to the left of it.
+	 */
+	.rating-stack {
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		width: var(--bars-width);
 	}
 
 	/*
@@ -152,12 +192,16 @@
 	 * They shared a left edge first, which put the narrowest one — interest —
 	 * over the left of the other two and left the widest showing only on the
 	 * right. Anchored right, the slivers fall on the left where the eye starts.
+	 *
+	 * Capped, not rounded: a radius at the foot of a bar in front bites a
+	 * crescent out of the sliver behind it, at exactly the height where two
+	 * slivers are compared. See the note above.
 	 */
 	.rating-bar {
 		position: absolute;
 		right: 0;
 		bottom: 0;
-		border-radius: 2px;
+		border-radius: 2px 2px 0 0;
 		background-color: var(--rating-ink);
 	}
 </style>

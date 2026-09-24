@@ -361,6 +361,18 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				target: '[data-tour="notebook-new"]',
 				title: 'tour.oneNotebookPerSubject',
 				body: 'tour.diaryEntriesAreWhatHappened'
+			},
+			{
+				target: '[data-tour="notebook-shelf"]',
+				title: 'tour.aShelfOfSubjects',
+				body: 'tour.everyNotebookIsACover'
+			},
+			{
+				// Skipped until a notebook is open, which is right: there are no
+				// tabs to point at on an empty shelf.
+				target: '[data-tour="notebook-tabs"]',
+				title: 'tour.notJustNotesAndTasks',
+				body: 'tour.aNotebookCanHoldWhatever'
 			}
 		]
 	},
@@ -435,7 +447,7 @@ export const TUTORIALS: Record<string, Tutorial> = {
 			}
 		]
 	},
-	'/inventory': {
+	'/inventory/stock': {
 		label: 'tour.shopping',
 		steps: [
 			{

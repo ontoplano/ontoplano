@@ -61,7 +61,8 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 		shortcuts: [
 			{ key: 'n', action: 'new', description: 'shortcut.newGoal' },
 			{ key: 'j', action: 'next', description: 'shortcut.nextGoal' },
-			{ key: 'k', action: 'prev', description: 'shortcut.previousGoal' }
+			{ key: 'k', action: 'prev', description: 'shortcut.previousGoal' },
+			{ key: 'e', action: 'edit', description: 'shortcut.editTheOneUnderThe' }
 		]
 	},
 
@@ -174,7 +175,7 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'a', action: 'toggle-applied', description: 'shortcut.toggleApplied' }
 		]
 	},
-	'/inventory': {
+	'/inventory/stock': {
 		label: 'app.toBuy',
 		shortcuts: [
 			{ key: 'j', action: 'navigate-down', description: 'shortcut.navigateItems' },
@@ -184,8 +185,6 @@ export const PAGE_SHORTCUTS: Record<string, PageShortcuts> = {
 			{ key: 'd', action: 'delete', description: 'shortcut.deleteItem' },
 			{ key: 'D', action: 'toggle-done', description: 'shortcut.toggleDone' },
 			{ key: 'z', action: 'snooze', description: 'shortcut.archiveUnarchive' },
-			{ key: '1', action: 'filter-someday', description: 'shortcut.toggleSomedayFilter' },
-			{ key: '2', action: 'filter-replenish', description: 'shortcut.toggleReplenishFilter' },
 			{ key: 'b', action: 'toggle-show-bought', description: 'shortcut.toggleShowBought' },
 			{ key: 's', action: 'toggle-show-snoozed', description: 'shortcut.toggleShowArchived' }
 		]

@@ -22,6 +22,7 @@ afterAll(() => database.remove());
 
 let handleBody: typeof import('../src/lib/server/mcp/protocol').handleBody;
 let visibleTools: typeof import('../src/lib/server/mcp/protocol').visibleTools;
+let withheldTools: typeof import('../src/lib/server/mcp/protocol').withheldTools;
 let buildCtx: typeof import('../src/lib/services/ctx').buildCtx;
 let SCOPES: typeof import('../src/lib/server/services/tokens').SCOPES;
 
@@ -57,7 +58,7 @@ const failed = (answer: ReturnType<typeof call>) =>
 const said = (answer: ReturnType<typeof call>) => JSON.stringify(answer.result ?? answer);
 
 beforeAll(async () => {
-	({ handleBody, visibleTools } = await import('../src/lib/server/mcp/protocol'));
+	({ handleBody, visibleTools, withheldTools } = await import('../src/lib/server/mcp/protocol'));
 	({ buildCtx } = await import('../src/lib/services/ctx'));
 	({ SCOPES } = await import('../src/lib/server/services/tokens'));
 
@@ -65,6 +66,7 @@ beforeAll(async () => {
 	const { createTodo } = await import('../src/lib/services/todos');
 	const { createGoal } = await import('../src/lib/services/goals');
 	const { createEntry } = await import('../src/lib/services/diary');
+	const { createItem } = await import('../src/lib/services/inventory');
 	const idOf = (made: unknown) => (typeof made === 'number' ? made : (made as { id: number }).id);
 
 	mine = idOf(createNotebook(ctx(), { title: 'The flat' }));
@@ -75,6 +77,9 @@ beforeAll(async () => {
 		createGoal(ctx(), { title: 'rewire the kitchen', horizon: 'month', notebookId: mine })
 	);
 	inside.note = idOf(createEntry(ctx(), { content: 'the boiler is from 1998', notebookId: mine }));
+	// A notebook holds its subject's shopping now, so a key given the flat can
+	// tick the flat's tiles off — and nothing else's.
+	inside.item = idOf(createItem(ctx(), { name: 'wall tiles', type: 'someday', notebookId: mine }));
 
 	outside.todo = idOf(createTodo(ctx(), { title: 'a private errand' }));
 	outside.goal = idOf(createGoal(ctx(), { title: 'a private goal', horizon: 'year' }));
@@ -145,6 +150,7 @@ beforeAll(async () => {
 		notebookId: mine
 	});
 	createEntry(ctx(), { content: `![private](/media/${outside.picture})` });
+	outside.item = idOf(createItem(ctx(), { name: 'milk', type: 'replenish' }));
 });
 
 describe('what a key tied to one notebook can do', () => {
@@ -221,9 +227,17 @@ describe('what it cannot do', () => {
 			expect(failed(call(tool, {})), `${tool} answered a confined key`).toBe(true);
 	});
 
-	it('cannot reach a room the confinement says nothing about', () => {
-		expect(failed(call('tick_bought', { id: 1 }))).toBe(true);
-		expect(failed(call('change_bill', { id: 1 }))).toBe(true);
+	it('reaches what its notebook holds, and no other room’s rows', () => {
+		// The flat's tiles: filed under the notebook this key was given.
+		expect(failed(call('tick_bought', { id: inside.item }))).toBe(false);
+		// The milk: an ordinary shopping item, filed under nothing.
+		expect(failed(call('tick_bought', { id: outside.item }))).toBe(true);
+	});
+
+	it('cannot reach a kind that does not live in a notebook at all', () => {
+		// Shopping and bills are things a subject accumulates; a person is
+		// somebody in your life, and no notebook contains one.
+		expect(failed(call('change_person', { id: 1 }))).toBe(true);
 	});
 
 	it('is not even shown the tools it cannot call', () => {
@@ -236,7 +250,10 @@ describe('what it cannot do', () => {
 		expect(offered).toContain('todos');
 		expect(offered).toContain('add_todo');
 		expect(offered).not.toContain('diary');
-		expect(offered).not.toContain('tick_bought');
+		// Offered, because a notebook holds its subject's shopping now.
+		expect(offered).toContain('tick_bought');
+		// Not offered: people are not filed under a subject.
+		expect(offered).not.toContain('change_person');
 	});
 
 	/*
@@ -380,5 +397,46 @@ describe('a key that is not confined', () => {
 		const answer = call('todos', {}, false);
 		expect(failed(answer)).toBe(false);
 		expect(said(answer)).toContain('a private errand');
+	});
+});
+
+/*
+ * An absence says nothing.
+ *
+ * A tool missing from the list could be a permission this token does not hold
+ * or a feature this build does not have, and an assistant cannot tell those
+ * apart — so the careful ones stop and do something worse quietly, and the
+ * person never learns their key was narrow. The list says which are held back
+ * and what to ask for.
+ */
+describe('what is being held back', () => {
+	it('names the tools a narrow key is not offered, and the grant each needs', () => {
+		const narrow = { ctx: ctx(), scopes: ['tasks:read'] };
+
+		const offered = visibleTools(narrow).map((one) => one.name);
+		const held = withheldTools(narrow);
+
+		expect(offered).toContain('todos');
+		expect(held.length).toBeGreaterThan(0);
+		// Nothing is in both lists, and everything is in one of them.
+		expect(held.map((one) => one.name).filter((name) => offered.includes(name))).toEqual([]);
+
+		const writing = held.find((one) => one.name === 'add_todo');
+		expect(writing?.needs, 'it should say which grant would offer it').toBe('tasks:write');
+	});
+
+	it('says destructive where that is the grant that is missing', () => {
+		const everythingButDeleting = {
+			ctx: ctx(),
+			scopes: ['tasks:read', 'tasks:write']
+		};
+
+		const held = withheldTools(everythingButDeleting);
+		expect(held.find((one) => one.name === 'drop_todo')?.needs).toBe('destructive');
+	});
+
+	it('holds nothing back from a key that may do everything', async () => {
+		const { ASSISTANT_SCOPES } = await import('../src/lib/server/mcp/tools');
+		expect(withheldTools({ ctx: ctx(), scopes: [...ASSISTANT_SCOPES, 'destructive'] })).toEqual([]);
 	});
 });

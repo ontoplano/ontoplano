@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts } from './helpers/db';
+import { refusal } from './helpers/refusal';
 
 /**
  * A report somebody sends has to arrive somewhere a person looks.
@@ -118,9 +119,9 @@ describe('an error report', () => {
 			...config.loadConfig(),
 			reports: { clientErrors: false, feedbackEmail: '' }
 		});
-		expect(() => service.recordClientError(ctx, { message: 'nope' }, { once: true })).toThrow(
-			/not enabled on this server/
-		);
+		expect(
+			refusal(() => service.recordClientError(ctx, { message: 'nope' }, { once: true }))
+		).toMatch(/not enabled on this server/);
 	});
 
 	/**
@@ -146,7 +147,7 @@ describe('an error report', () => {
 			...config.loadConfig(),
 			reports: { clientErrors: false, feedbackEmail: '' }
 		});
-		expect(() => service.recordVisitorError({ message: 'nope' }, new Date())).toThrow(
+		expect(refusal(() => service.recordVisitorError({ message: 'nope' }, new Date()))).toMatch(
 			/not enabled on this server/
 		);
 	});

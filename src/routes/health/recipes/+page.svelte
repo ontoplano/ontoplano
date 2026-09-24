@@ -6,7 +6,6 @@
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { enhance } from '$lib/enhance';
 	import { resolve } from '$app/paths';
-	import { autogrow } from '$lib/actions/autogrow';
 	import Banner from '$lib/components/Banner.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Field from '$lib/components/Field.svelte';
@@ -14,7 +13,9 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
+	import RecipeFields from '$lib/components/fields/RecipeFields.svelte';
 	import type { PageServerData, ActionData } from './$types';
+	import RecipeCard from '$lib/components/RecipeCard.svelte';
 	import { useT } from '$lib/i18n';
 
 	const t = useT();
@@ -83,7 +84,7 @@
 		     into it, which is a worse first impression than a sentence. -->
 		<Banner kind="warning">
 			{t('health.recipes.noFoodCategoryYet')}
-			<a href={resolve('/inventory')} class="underline"
+			<a href={resolve('/inventory/stock')} class="underline"
 				>{t('health.recipes.tickOneOnTheShopping')}</a
 			>
 		</Banner>
@@ -127,89 +128,12 @@
 			data-tour="recipe-list"
 		>
 			{#each visible as recipe (recipe.id)}
-				<div class="relative bg-white">
-					<!--
-						Putting a recipe on a day, without opening it first.
-
-						This is the whole of what the Meals tab used to be for, in the
-						place a recipe is already being looked at. The button sits above
-						the card's own link rather than inside it, because a button
-						inside an anchor is neither.
-					-->
-					<button
-						type="button"
-						onclick={() =>
-							(planning = {
-								id: recipe.id,
-								title: recipe.title,
-								minutes: recipe.minutes ?? null
-							})}
-						title={t('health.recipes.putItOnADay')}
-						aria-label={t('health.recipes.putOnADay', { title: recipe.title })}
-						class="btn btn-sm absolute top-2 right-2 z-10"
-					>
-						<Icon name="calendar" />
-					</button>
-					<a
-						href={resolve('/health/recipes/[id]', { id: String(recipe.id) })}
-						class="block h-full p-4 transition-colors hover:bg-gray-50 max-sm:flex max-sm:items-start max-sm:gap-3"
-					>
-						<!--
-						The picture, when there is one: a cookbook you recognise by
-						sight rather than by reading forty titles. Sized so a card
-						without one is not a different shape from a card with one.
-					-->
-						{#if recipe.mainPicture}
-							<!--
-							A square, not a stripe.
-
-							Full-width at a fixed height crops a photograph to a letterbox
-							— a horse becomes a horse's flank, a face becomes an eye — and
-							a page of those is unreadable. A square of one size, whatever
-							the picture's own shape, is what makes a grid of cards scan.
-						-->
-							<img
-								src="/media/{recipe.mainPicture}"
-								alt=""
-								loading="lazy"
-								class="mb-3 block size-[9.6rem] rounded-md border border-gray-200 bg-white object-cover max-sm:mb-0 max-sm:size-20 max-sm:shrink-0"
-							/>
-						{/if}
-
-						<!-- On a phone the picture is beside the words, so they share a
-						     column of their own rather than sitting under an empty half. -->
-						<span class="block min-w-0 max-sm:flex-1">
-							<span class="block text-sm font-medium text-gray-900">{recipe.title}</span>
-
-							<span class="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-								{#if recipe.minutes}<span class="tabular"
-										>{t('health.recipes.min', { minutes: recipe.minutes })}</span
-									>{/if}
-								{#if recipe.servings}<span class="tabular"
-										>{t('health.recipes.serves2', { servings: recipe.servings })}</span
-									>{/if}
-								<span class="tabular"
-									>{t('health.recipes.ingredients', { ingredients: recipe.ingredients })}</span
-								>
-							</span>
-
-							<span class="mt-2 block text-xs">
-								{#if recipe.ingredients === 0}
-									<span class="text-gray-500">{t('health.recipes.nothingInItYet')}</span>
-								{:else if recipe.missing === 0}
-									<span class="text-teal-700">{t('health.recipes.youHaveEverything')}</span>
-								{:else}
-									<span class="text-amber-700"
-										>{t('health.recipes.missing', {
-											missing: recipe.missing,
-											ingredients: recipe.missing === 1 ? 'ingredient' : 'ingredients'
-										})}</span
-									>
-								{/if}
-							</span>
-						</span></a
-					>
-				</div>
+				<!--
+					The card is a component, so a recipe filed under a notebook is the
+					same recipe this room shows — its picture, and what it needs that
+					the cupboard has not got. See `RecipeCard`.
+				-->
+				<RecipeCard {recipe} onplan={(one) => (planning = one)} />
 			{/each}
 		</div>
 	{/if}
@@ -264,30 +188,7 @@
 	<!-- Everything the editor has. Making somebody create a title and then
 	     immediately press Edit to write the recipe is two steps for one act. -->
 	<form id="recipe-form" method="post" action="?/create" use:enhance>
-		<FormGrid>
-			<Field label={t('health.recipes.whatItIs')} span={12} required>
-				<OneLine name="heading" class="input" required />
-			</Field>
-			<Field label={t('health.recipes.serves')} span={4}>
-				<NumberBox autocomplete="off" name="servings" min="1" />
-			</Field>
-			<Field label={t('health.recipes.minutes')} span={4}>
-				<NumberBox autocomplete="off" name="minutes" min="1" />
-			</Field>
-			<Field label={t('health.recipes.whereItCameFrom')} span={4}>
-				<OneLine name="source" class="input" />
-			</Field>
-			<Field
-				label={t('health.recipes.method')}
-				span={12}
-				hint={t('health.recipes.markdownHeadingsListsNumbersIngredients')}
-			>
-				<textarea name="method" rows="8" use:autogrow class="textarea"></textarea>
-			</Field>
-			<Field label={t('ui.notes')} span={12}>
-				<textarea name="notes" rows="2" class="textarea"></textarea>
-			</Field>
-		</FormGrid>
+		<RecipeFields notebooks={data.notebooks} />
 	</form>
 
 	{#snippet footer()}

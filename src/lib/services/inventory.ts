@@ -3,6 +3,7 @@ import { and, asc, desc, eq, inArray, or, sql } from 'drizzle-orm';
 import { db } from '$lib/db/index.js';
 import { locations, pricePoints, inventoryCategories, inventoryItems } from '$lib/db/schema.js';
 import { getLocation } from './locations.js';
+import { notebookPatch } from './notebooks.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { stamp, stamps } from './time.js';
@@ -33,6 +34,8 @@ export type ItemInput = {
 	locationId?: unknown;
 	/** How many of it you keep. One unless somebody says otherwise. */
 	idealQty?: unknown;
+	/** The subject it belongs to, when it is part of one. */
+	notebookId?: unknown;
 };
 
 /*
@@ -88,7 +91,14 @@ function ownedLocation(ctx: Ctx, locationId: number): void {
 	getLocation(ctx, locationId);
 }
 
-export function listItems(ctx: Ctx) {
+/**
+ * The items, all of them or one subject's.
+ *
+ * `notebookId` narrows rather than changing the shape: a notebook's Inventory
+ * tab is this room looking at one subject and draws the rows with the same
+ * component, so it needs exactly what the room needs.
+ */
+export function listItems(ctx: Ctx, scope: { notebookId?: number } = {}) {
 	return db
 		.select({
 			id: inventoryItems.id,
@@ -105,12 +115,17 @@ export function listItems(ctx: Ctx) {
 			attributes: inventoryItems.attributes,
 			boughtAt: inventoryItems.boughtAt,
 			snoozed: inventoryItems.snoozed,
+			notebookId: inventoryItems.notebookId,
 			createdAt: inventoryItems.createdAt,
 			ownerId: inventoryItems.userId
 		})
 		.from(inventoryItems)
 		.leftJoin(inventoryCategories, eq(inventoryItems.inventoryCategoryId, inventoryCategories.id))
-		.where(itemReach(ctx))
+		.where(
+			scope.notebookId === undefined
+				? itemReach(ctx)
+				: and(itemReach(ctx), eq(inventoryItems.notebookId, scope.notebookId))
+		)
 		.orderBy(inventoryItems.bought, desc(inventoryItems.createdAt))
 		.all()
 		.map(({ ownerId, ...item }) => ({ ...item, mine: ownerId === ctx.userId }));
@@ -168,7 +183,7 @@ export function createCategory(ctx: Ctx, raw: { name: unknown; isFood?: unknown 
 			)
 		)
 		.get();
-	if (existing) throw new ValidationError('There is already a category with that name');
+	if (existing) throw new ValidationError({ key: 'errors.inventory.thereIsAlreadyACategory' });
 
 	const last =
 		db
@@ -209,7 +224,7 @@ export function renameCategory(ctx: Ctx, id: number, raw: unknown): void {
 		)
 		.get();
 	if (clash && clash.id !== id)
-		throw new ValidationError('There is already a category with that name');
+		throw new ValidationError({ key: 'errors.inventory.thereIsAlreadyACategory' });
 
 	const res = db
 		.update(inventoryCategories)
@@ -458,7 +473,7 @@ export function deleteItem(ctx: Ctx, id: number): void {
 export function setQty(ctx: Ctx, id: number, wanted: number, raw: { paid?: unknown } = {}): void {
 	const item = ownedItem(ctx, id);
 	const qty = Math.max(0, Math.floor(Number.isFinite(wanted) ? wanted : 0));
-	if (qty > 9999) throw new ValidationError('That is more of one thing than a home holds.');
+	if (qty > 9999) throw new ValidationError({ key: 'errors.inventory.thatIsMoreOfOne' });
 
 	const enough = Math.max(item.idealQty ?? 1, 1);
 	const bought = qty >= enough;
@@ -547,7 +562,7 @@ export function recordPaid(ctx: Ctx, id: number, raw: unknown): void {
 	ownedItem(ctx, id);
 
 	const paid = parseMoney(raw, getCurrency(ctx.userId));
-	if (paid === null) throw new ValidationError('Invalid price');
+	if (paid === null) throw new ValidationError({ key: 'errors.inventory.invalidPrice' });
 
 	db.transaction((tx) => {
 		tx.insert(pricePoints)
@@ -620,7 +635,8 @@ export function priceDrift(
 /** Put a replenish item back on the list; a wishlist item has nothing to restock. */
 export function restockItem(ctx: Ctx, id: number): void {
 	const item = ownedItem(ctx, id);
-	if (item.type !== 'replenish') throw new ValidationError('Only replenish items can be restocked');
+	if (item.type !== 'replenish')
+		throw new ValidationError({ key: 'errors.inventory.onlyReplenishItemsCan' });
 
 	// "We are out of it" is a count of none, not a flag: through setQty so the
 	// two cannot disagree.
@@ -680,7 +696,9 @@ function parseItem(ctx: Ctx, raw: ItemInput) {
 		// Typed as money, stored as an integer. A blank field means nobody has
 		// said what it costs, which is different from saying it is free.
 		priceCents: parseMoney(raw.price, getCurrency(ctx.userId)),
-		idealQty: parseIdealQty(raw.idealQty)
+		idealQty: parseIdealQty(raw.idealQty),
+		// Only when the caller mentioned it — see `notebookPatch`.
+		...notebookPatch(ctx, raw)
 	};
 }
 
@@ -688,7 +706,7 @@ function parseItem(ctx: Ctx, raw: ItemInput) {
 function parseIdealQty(value: unknown): number {
 	if (value === undefined || value === null || value === '') return 1;
 	const n = num(value, 'ideal quantity', { int: true, min: 0 });
-	if (n > 9999) throw new ValidationError('That is more of one thing than a home holds.');
+	if (n > 9999) throw new ValidationError({ key: 'errors.inventory.thatIsMoreOfOne' });
 	return n;
 }
 
@@ -701,7 +719,7 @@ function parseLocationId(ctx: Ctx, value: unknown): number | null {
 		.from(locations)
 		.where(and(eq(locations.id, id), eq(locations.userId, ctx.userId)))
 		.get();
-	if (!owned) throw new ValidationError('That is not one of your locations.');
+	if (!owned) throw new ValidationError({ key: 'errors.inventory.thatIsNotOne' });
 	return id;
 }
 

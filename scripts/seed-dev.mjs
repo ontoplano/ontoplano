@@ -237,6 +237,69 @@ const notebook = (title, description, closed = false) => {
 	);
 };
 
+/**
+ * A note written straight into a notebook, and a task filed in one.
+ *
+ * The other two helpers make a thing and `inNotebook` moves it afterwards,
+ * which is right for the handful the seed names one at a time and wrong for a
+ * notebook meant to look lived in: twenty notes is twenty names to invent and
+ * twenty moves to write. These take the notebook first, because that is the
+ * fact about them, and leave the numbering to `renumber` at the end.
+ */
+const notebookNote = (notebookId, content, tags = [], extra = {}) => {
+	const existing = one(
+		'select id from diary_entries where user_id = ? and content = ?',
+		uid,
+		content
+	);
+	const seq = (one('select max(seq) v from diary_entries where user_id = ?', uid)?.v ?? 0) + 1;
+	const id =
+		existing?.id ??
+		run(
+			`insert into diary_entries (user_id, seq, content, notebook_id, for_date, pinned_at)
+			 values (?, ?, ?, ?, ?, ?)`,
+			uid,
+			seq,
+			content,
+			notebookId,
+			extra.forDate ?? null,
+			extra.pinned ? stamp(dayOffset(-1)) : null
+		);
+	for (const name of tags) {
+		const tagId = tag(name);
+		if (!one('select id from diary_entry_tags where entry_id = ? and tag_id = ?', id, tagId))
+			run(
+				'insert into diary_entry_tags (user_id, entry_id, tag_id) values (?, ?, ?)',
+				uid,
+				id,
+				tagId
+			);
+	}
+	return id;
+};
+
+const notebookTodo = (notebookId, title, extra = {}) => {
+	const id = todo(title, extra);
+	run('update todo_tasks set notebook_id = ? where id = ?', notebookId, id);
+	return id;
+};
+
+/** Number what is in a notebook, once everything is in it. */
+const renumber = (notebookId) => {
+	for (const table of ['diary_entries', 'todo_tasks']) {
+		run(
+			`update ${table} set notebook_seq = null where user_id = ? and notebook_id = ?`,
+			uid,
+			notebookId
+		);
+		db.prepare(`select id from ${table} where user_id = ? and notebook_id = ? order by id`)
+			.all(uid, notebookId)
+			.forEach((row, i) => {
+				db.prepare(`update ${table} set notebook_seq = ? where id = ?`).run(i + 1, row.id);
+			});
+	}
+};
+
 /** The tables whose rows are numbered inside their notebook as well as overall. */
 const NUMBERED_IN_NOTEBOOK = ['diary_entries', 'todo_tasks'];
 
@@ -985,6 +1048,25 @@ const gymSlot = one(
 if (gymSlot) linkGoal(monthGoal, { slotId: gymSlot.id });
 linkGoal(yearGoal, { activityId: russian });
 
+/*
+ * A week counted from its to-dos, part done — the commonest goal there is,
+ * and the one whose card carries a count, a bar and the fold of tasks.
+ */
+const weekGoal = goal('clear the paperwork pile', 'week', monday, {
+	areaId: areaCraft,
+	parentId: yearGoal
+});
+[
+	['file the tax receipts', 'done'],
+	['renew the passport', 'done'],
+	['cancel the old phone plan', 'done'],
+	['scan the lease', 'done'],
+	['reply to the bank letter', 'todo'],
+	['book the car inspection', 'todo']
+].forEach(([title, status], at) =>
+	linkGoal(weekGoal, { todoId: todo(title, { status, sortOrder: 20 + at }) })
+);
+
 // --- diary, ideas ----------------------------------------------------------------
 
 diary(
@@ -1078,7 +1160,10 @@ diary(8, 'The leak is fixed. Two weeks and a new bit of ceiling.', ['home']);
 
 const kitchen = notebook(
 	'Kitchen renovation',
-	'Quotes, measurements, and whatever the plumber said last.'
+	'Quotes, measurements, and whatever the plumber said last.\n' +
+		'The kitchen is 3.4 by 2.8 metres; the old cabinets come out in the first week, ' +
+		'and the plumber has to be booked before the tiler.\n' +
+		'Budget is whatever is left after the boiler. The three shops worth visiting are in the notes.'
 );
 const readingNotebook = notebook('Reading', 'What I am reading, and what I thought of it.');
 const portugal = notebook('Portugal in September', 'Everything for the trip.');
@@ -1110,6 +1195,176 @@ inNotebook('diary_entries', 'seq', 6, readingNotebook);
 inNotebook('diary_entries', 'seq', 7, portugal);
 inNotebook('diary_entries', 'seq', 8, leak);
 inNotebook('goals', 'title', 'read twelve books', readingNotebook);
+
+/*
+ * Two notebooks with a year in them, and two with a page.
+ *
+ * A demo of notebooks that holds four lines is a demo of the field rather than
+ * of the feature: the fold, the tag filter, the counts on the tabs, the task
+ * list that scrolls, the note somebody pinned to the top — none of them show
+ * anything on a notebook with three notes in it. So the renovation and the
+ * trip carry what a subject actually accumulates over months, and Reading and
+ * The Republic stay short, which is the other true shape and the one a new
+ * notebook has.
+ *
+ * Ratings on the tasks throughout: the to-do room sorts by them, and a list
+ * where nobody answered draws three half-height bars on every row.
+ */
+const KITCHEN_NOTES = [
+	['The tiler wants the wall re-skimmed first. That is another week.', ['home', 'plumbing']],
+	['Three quotes in. The middle one can start in April; the cheap one cannot say when.', ['money']],
+	['Measured again: 3.42 by 2.79. The old drawing was out by four centimetres.', ['home']],
+	['The boiler is staying. Moving it is two thousand on its own and it works.', ['money']],
+	['Tiles: the matt ones mark, the gloss ones show every fingerprint. Ask about satin.', ['home']],
+	[
+		'Worktop shops worth visiting are the two on Bridge Street. The third is a showroom for one brand.',
+		['home']
+	],
+	[
+		'Quartz against oak: quartz wins on the sink side, oak everywhere else. Ugly, but honest.',
+		['home']
+	],
+	['Electrician wants the layout final before he books. Fair enough.', ['plumbing']],
+	['The window is coming out after all — the frame is gone at the bottom corner.', ['home']],
+	['Skip booked for the 14th. Two weeks, which the plumber says is optimistic.', ['home']],
+	[
+		'Paint: the sample looks grey in the morning and green after four. Living with it a week.',
+		['home']
+	],
+	[
+		'Cabinet doors are the cheapest way to change our minds later, so the carcasses go plain.',
+		['money']
+	],
+	[
+		'Note for the tiler: the wall is not square by about a centimetre over two metres.',
+		['plumbing']
+	],
+	['Handles are the thing everyone touches and the last thing anyone budgets for.', ['home']],
+	['The old cooker goes to Marco. He is collecting on Saturday.', ['home']],
+	['Floor has to go in before the units or the dishwasher cannot come out again.', ['home']],
+	['Asked about the extractor: recirculating is half the work and none of the point.', ['home']],
+	['Running total is over by about eight hundred, most of it the window.', ['money']],
+	['Lights: one on the ceiling is what we have now and it is why nobody cooks here.', ['home']],
+	['Two weeks without a kitchen is the part nobody plans. Microwave on the landing.', ['home']],
+	['Finished list of what is left, for the last week — see the tasks.', ['home']]
+];
+
+/** `[title, done, urgency, interest, ease, tags]`. */
+const KITCHEN_TASKS = [
+	['book the plumber for the first week', true, 5, 2, 3, ['plumbing']],
+	['get three quotes for the counter', false, 3, 2, 2, ['money']],
+	['measure the wall properly', true, 4, 1, 4, ['home']],
+	['order the skip', true, 5, 1, 5, ['home']],
+	['empty the top cupboards', true, 3, 1, 4, ['home']],
+	['take the old cooker out', true, 4, 2, 2, ['home']],
+	['strip the tiles off the splashback wall', true, 4, 2, 2, ['home']],
+	['cap the old feed before the units go', true, 5, 1, 2, ['plumbing']],
+	['choose the worktop', false, 4, 4, 2, ['home']],
+	['choose the tiles', false, 3, 4, 3, ['home']],
+	['get the electrician to quote the sockets', true, 4, 2, 3, ['plumbing']],
+	['decide where the fridge goes', true, 3, 3, 4, ['home']],
+	['confirm the window measurements with the fitter', true, 5, 1, 3, ['home']],
+	['pay the deposit on the units', true, 5, 1, 5, ['money']],
+	['chase the delivery date', false, 4, 1, 4, ['money']],
+	['clear the hall for the delivery', false, 3, 1, 5, ['home']],
+	['sand and fill the ceiling before painting', true, 2, 1, 2, ['home']],
+	['paint the ceiling', true, 2, 2, 3, ['home']],
+	['live with the paint sample for a week', true, 1, 3, 5, ['home']],
+	['book the tiler for after the plumber', false, 4, 2, 3, ['plumbing']],
+	['order the handles', false, 2, 4, 5, ['home']],
+	['sort out a temporary sink', true, 4, 1, 3, ['home']],
+	['move the microwave to the landing', true, 2, 1, 5, ['home']],
+	['take the old units to the tip', true, 3, 1, 2, ['home']],
+	['seal round the new window', false, 3, 1, 3, ['home']],
+	['fit the extractor', false, 3, 3, 2, ['plumbing']],
+	['put the doors on', false, 3, 5, 3, ['home']],
+	['touch up the skirting', false, 1, 1, 4, ['home']],
+	['get the final invoice from the plumber', true, 4, 1, 4, ['money']],
+	['photograph everything for the insurance', true, 2, 2, 4, ['home']],
+	['send Marco the cooker collection time', true, 3, 2, 5, ['home']]
+];
+
+const PORTUGAL_NOTES = [
+	['Nine days, Lisbon in and Porto out. The train between them is three hours.', ['travel']],
+	['Flights are cheapest on the Tuesday either side. Worth the two days off.', ['travel', 'money']],
+	['September is still warm and the queues are gone. Everybody says the same thing.', ['travel']],
+	['Alfama is the one to stay in for the first half. Steep, though.', ['travel']],
+	['Booked the Lisbon flat: two nights, kitchen, no lift, fourth floor.', ['travel']],
+	['Porto: staying near São Bento so the station is a walk.', ['travel']],
+	['The tram everyone photographs is the 28 and it is full by nine.', ['travel']],
+	['Ana says go to Sintra on a weekday and start at the top of the hill.', ['travel', 'family']],
+	['Tiles: the museum is in a convent out past the river and worth the trip.', ['travel']],
+	[
+		'Food notes: bacalhau done twelve ways, and the pastries are a different thing there.',
+		['food']
+	],
+	[
+		'Booked the place in the Douro for two nights. It is the middle of nowhere, on purpose.',
+		['travel']
+	],
+	['Car for the Douro leg only. Driving in either city is a bad idea.', ['travel', 'money']],
+	['Money: cards everywhere, but the markets are cash and the good ones are markets.', ['money']],
+	['Adapter is the same as France. Not the same as here.', ['travel']],
+	['Walking shoes. Everything in Lisbon is a hill and the pavement is polished stone.', ['travel']],
+	['Sunset from the miradouro above the cathedral, if we can get a seat.', ['travel']],
+	['Bought the train tickets — reserved seats, which apparently matter in September.', ['travel']],
+	['Rough budget is nine hundred each, flights in. Food is cheap, the wine is not.', ['money']],
+	['Day in Coimbra on the way north if the train times work.', ['travel']],
+	['List of what is left to book, in the tasks.', ['travel']],
+	['Ask Mum whether Dad still has the phrasebook from 1994.', ['family']]
+];
+
+const PORTUGAL_TASKS = [
+	['book the flights', true, 5, 5, 4, ['travel', 'money']],
+	['book the Lisbon flat', true, 5, 4, 3, ['travel']],
+	['book the Porto flat', true, 4, 4, 3, ['travel']],
+	['book the Douro place', true, 4, 5, 3, ['travel']],
+	['buy the train tickets', true, 4, 3, 4, ['travel']],
+	['hire the car for the Douro leg', true, 3, 2, 3, ['travel']],
+	['check the passports are in date', true, 5, 1, 5, ['travel']],
+	['tell the bank we are going', true, 3, 1, 5, ['money']],
+	['sort travel insurance', true, 4, 1, 4, ['money']],
+	['ask Ana about Sintra', true, 2, 4, 5, ['family']],
+	['find somewhere for the first night dinner', false, 3, 5, 3, ['food']],
+	['book Sintra tickets for a weekday', false, 4, 4, 3, ['travel']],
+	['work out the Coimbra train times', true, 2, 3, 2, ['travel']],
+	['pack the adapter', false, 2, 1, 5, ['travel']],
+	['break in the walking shoes', false, 3, 2, 4, ['travel']],
+	['get euros for the markets', false, 3, 1, 4, ['money']],
+	['download the maps for offline', false, 2, 2, 5, ['travel']],
+	['ask Mum about the phrasebook', false, 1, 3, 5, ['family']],
+	['stop the post', true, 3, 1, 4, ['home']],
+	['ask Marco to water the plants', true, 3, 2, 5, ['family']],
+	['set the heating to away', false, 2, 1, 5, ['home']],
+	['charge the camera battery', false, 2, 2, 5, ['travel']],
+	['print the booking confirmations', true, 2, 1, 5, ['travel']],
+	['check the flat has a kettle', true, 1, 2, 5, ['travel']],
+	['make the list of tile places', true, 2, 4, 4, ['travel']],
+	['book the tile museum for the Saturday', false, 3, 4, 3, ['travel']],
+	['find out what is open on the Sunday', false, 3, 3, 2, ['travel']],
+	['write down the emergency numbers', true, 3, 1, 5, ['travel']],
+	['put the itinerary somewhere we can both see it', true, 4, 3, 4, ['travel']],
+	['leave a key with Ana', true, 4, 1, 5, ['family']],
+	['decide whether the Douro is two nights or three', true, 3, 4, 3, ['travel']]
+];
+
+const fill = (notebookId, notes, tasks) => {
+	for (const [content, labels] of notes) notebookNote(notebookId, content, labels);
+	tasks.forEach(([title, done, urgency, interest, ease, labels], at) =>
+		notebookTodo(notebookId, title, {
+			status: done ? 'done' : 'todo',
+			urgency,
+			interest,
+			ease,
+			tags: labels,
+			sortOrder: 100 + at
+		})
+	);
+	renumber(notebookId);
+};
+
+fill(kitchen, KITCHEN_NOTES, KITCHEN_TASKS);
+fill(portugal, PORTUGAL_NOTES, PORTUGAL_TASKS);
 
 orphanNote('The old flat: the landlord kept the deposit over the scuffed floor.');
 
@@ -2151,18 +2406,39 @@ if (horsePicture) {
 		);
 }
 
+/*
+ * A cover on every notebook.
+ *
+ * A shelf is picked by looking at it — that is the whole reason the notebooks
+ * page draws covers rather than rows — and a shelf of blank dashed rectangles
+ * demonstrates the placeholder. Photographs rather than paintings: a framed
+ * oil on a renovation reads as a museum catalogue.
+ */
+for (const [id, file, alt] of [
+	[kitchen, 'cover-kitchen.jpg', 'Stonework, before the scaffolding'],
+	[portugal, 'cover-portugal.jpg', 'A barque at anchor in the bay'],
+	[readingNotebook, 'cover-reading.jpg', 'A long garden and the pavilion at the end of it'],
+	[republic, 'cover-republic.jpg', 'A soldier, photographed in 1859']
+]) {
+	const cover = picture(file, alt, demoPicture(file));
+	if (cover && !one('select id from notebooks where id = ? and picture_id is not null', id))
+		db.prepare('update notebooks set picture_id = ? where id = ? and user_id = ?').run(
+			cover,
+			id,
+			uid
+		);
+}
+
 const pastaPicture = picture(
 	'tomato-pasta.jpg',
 	'Tomatoes for the sauce',
 	demoPicture('tomato-pasta.jpg')
 );
+// Any picture at all, not this one: a recipe holds one main picture, and the
+// one it has may be an older demo picture or one attached by hand.
 if (
 	pastaPicture &&
-	!one(
-		'select id from recipe_images where recipe_id = ? and media_id = ?',
-		tomatoPasta,
-		pastaPicture
-	)
+	!one('select id from recipe_images where user_id = ? and recipe_id = ?', uid, tomatoPasta)
 )
 	run(
 		`insert into recipe_images (user_id, recipe_id, media_id, position, is_main, created_at)

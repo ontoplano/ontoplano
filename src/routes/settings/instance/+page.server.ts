@@ -112,7 +112,8 @@ export const actions: Actions = {
 
 		try {
 			const mode = formData.get('mode');
-			if (!isRegistrationMode(mode)) throw new ValidationError('Unknown registration mode');
+			if (!isRegistrationMode(mode))
+				throw new ValidationError({ key: 'errors.instance.unknownRegistrationMode' });
 
 			setRegistrationMode(mode);
 			return { success: true, action: 'setRegistration' };

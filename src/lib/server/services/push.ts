@@ -174,7 +174,7 @@ export function saveSubscription(
 	const p256dh = str(subscription?.keys?.p256dh, 'Key', { max: 300 });
 	const auth = str(subscription?.keys?.auth, 'Key', { max: 300 });
 	if (!/^https:\/\//.test(endpoint)) {
-		throw new ValidationError('A push endpoint has to be https');
+		throw new ValidationError({ key: 'errors.push.aPushEndpoint' });
 	}
 	// A push endpoint is a URL this server will POST to on the account's say-so,
 	// so a hosted instance holds it to the same rule as a webhook. A self-hosted

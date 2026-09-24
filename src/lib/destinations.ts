@@ -7,12 +7,14 @@ import type { PlainKey } from '$lib/i18n/keys';
  */
 import type { Pathname } from '$app/types';
 import type { IconName } from '$lib/components/Icon.svelte';
-import type { HideableSection } from '$lib/sections';
+import { isHidden, isHideableSection, ROOM_TABS, type HideableSection } from '$lib/sections';
+import { NAV_PLACES } from '$lib/sections-nav';
+import type { Translate } from '$lib/i18n/core';
 
 export type Destination = {
 	label: PlainKey;
-	/** The section it belongs to, shown after the label in a flat list. */
-	group: string;
+	/** The room it belongs to, shown after the label in a flat list. */
+	group?: PlainKey;
 	/**
 	 * A real route of this app, not a string that looks like one. `resolve()`
 	 * only takes these, and typing it here means a destination pointing at a
@@ -21,64 +23,60 @@ export type Destination = {
 	 */
 	href: Pathname;
 	icon: IconName;
-	/** The preference toggle that puts this row away, if any. */
-	hide?: HideableSection;
+	/** The preferences that put this row away — its own, and its room's. */
+	hide: HideableSection[];
 };
 
+/**
+ * The places that are not rooms of the bar: settings, reached from the account
+ * menu rather than the wheel.
+ */
+const OUTSIDE_THE_ROOMS: Destination[] = [
+	{
+		label: 'app.account',
+		group: 'rooms.settings.title',
+		href: '/settings/account',
+		icon: 'settings',
+		hide: []
+	},
+	{
+		label: 'app.preferences',
+		group: 'rooms.settings.title',
+		href: '/settings/preferences',
+		icon: 'settings',
+		hide: []
+	},
+	{
+		label: 'app.integrations',
+		group: 'rooms.settings.title',
+		href: '/settings/integrations',
+		icon: 'plug',
+		hide: []
+	}
+];
+
+/**
+ * Every room of the bar, and every tab inside it — read off `NAV_PLACES` and
+ * `ROOM_TABS`, the lists the bar, the wheel and the rooms' own strips draw. It
+ * used to be written out here, and had drifted: no Workouts, no Finance, no
+ * Media, and Inventory's two tabs as one entry.
+ */
 export const DESTINATIONS: Destination[] = [
-	{ label: 'app.today', group: '', href: '/', icon: 'home' },
-
-	{ label: 'app.plan', group: 'Tasks', href: '/tasks/plan', icon: 'planner' },
-	{ label: 'app.board', group: 'Tasks', href: '/tasks/board', icon: 'planner' },
-	{ label: 'app.toDo', group: 'Tasks', href: '/tasks/todo', icon: 'check' },
-	{ label: 'app.activities', group: 'Tasks', href: '/tasks/activities', icon: 'tag' },
-	{ label: 'app.review', group: 'Tasks', href: '/tasks/review', icon: 'check' },
-
-	{ label: 'app.goals', group: '', href: '/goals', icon: 'goals', hide: 'goals' },
-
-	// No `hide`: the notebooks are what the room is, and the room is always on.
-	{
-		label: 'app.notebooks',
-		group: 'Notebooks',
-		href: '/notebooks',
-		icon: 'notebook'
-	},
-	{
-		label: 'app.diary',
-		group: 'Notebooks',
-		href: '/notebooks/diary',
-		icon: 'diary',
-		hide: 'diary'
-	},
-	{
-		label: 'app.people',
-		group: 'Notebooks',
-		href: '/notebooks/people',
-		icon: 'user',
-		hide: 'people'
-	},
-	{ label: 'app.ideas', group: 'Writing', href: '/notebooks/ideas', icon: 'ideas', hide: 'ideas' },
-
-	{ label: 'app.habits', group: 'Health', href: '/health/habits', icon: 'health', hide: 'health' },
-
-	{
-		label: 'app.inventory',
-		group: 'Inventory',
-		href: '/inventory',
-		icon: 'shopping',
-		hide: 'inventory'
-	},
-	{
-		label: 'app.recipes',
-		group: 'Health',
-		href: '/health/recipes',
-		icon: 'shopping',
-		hide: 'recipes'
-	},
-
-	{ label: 'app.account', group: 'Settings', href: '/settings/account', icon: 'settings' },
-	{ label: 'app.preferences', group: 'Settings', href: '/settings/preferences', icon: 'settings' },
-	{ label: 'app.integrations', group: 'Settings', href: '/settings/integrations', icon: 'plug' }
+	{ label: 'app.today', href: '/', icon: 'home', hide: [] },
+	...NAV_PLACES.flatMap((place): Destination[] => {
+		const room = place.hide ? [place.hide] : [];
+		const tabs = ROOM_TABS[place.key];
+		if (tabs.length === 0)
+			return [{ label: place.name, href: place.href as Pathname, icon: place.icon, hide: room }];
+		return tabs.map((tab) => ({
+			label: tab.label,
+			group: place.name,
+			href: tab.href,
+			icon: tab.icon ?? place.icon,
+			hide: tab.id && isHideableSection(tab.id) ? [...room, tab.id] : room
+		}));
+	}),
+	...OUTSIDE_THE_ROOMS
 ];
 
 /**
@@ -104,9 +102,20 @@ export function matchScore(haystack: string, needle: string): number | null {
 	return 100 - gaps;
 }
 
-export function findDestinations(query: string, hidden: readonly string[] = []): Destination[] {
-	return DESTINATIONS.filter((d) => !d.hide || !hidden.includes(d.hide))
-		.map((d) => ({ d, score: matchScore(`${d.group} ${d.label}`.trim(), query) }))
+/**
+ * The places matching what somebody typed, best first — matched against the
+ * words on their screen, in their language, not against the catalogue keys.
+ */
+export function findDestinations(
+	query: string,
+	t: Translate,
+	hidden: readonly string[] = []
+): Destination[] {
+	return DESTINATIONS.filter((d) => !d.hide.some((id) => isHidden(hidden, id)))
+		.map((d) => ({
+			d,
+			score: matchScore(`${d.group ? t(d.group) : ''} ${t(d.label)}`.trim(), query)
+		}))
 		.filter((r): r is { d: Destination; score: number } => r.score !== null)
 		.sort((a, b) => b.score - a.score)
 		.map((r) => r.d);

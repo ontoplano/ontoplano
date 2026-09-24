@@ -29,11 +29,12 @@ works is a key listed here and the reverse.
 
 ## Goals — `/goals`
 
-| Key          | Does          |
-| ------------ | ------------- |
-| <kbd>n</kbd> | New goal      |
-| <kbd>j</kbd> | Next goal     |
-| <kbd>k</kbd> | Previous goal |
+| Key          | Does                          |
+| ------------ | ----------------------------- |
+| <kbd>n</kbd> | New goal                      |
+| <kbd>j</kbd> | Next goal                     |
+| <kbd>k</kbd> | Previous goal                 |
+| <kbd>e</kbd> | Edit the one under the cursor |
 
 ## Habits — `/health/habits`
 
@@ -50,21 +51,19 @@ works is a key listed here and the reverse.
 | ------------ | ---------- |
 | <kbd>n</kbd> | New recipe |
 
-## To buy — `/inventory`
+## To buy — `/inventory/stock`
 
-| Key          | Does                    |
-| ------------ | ----------------------- |
-| <kbd>j</kbd> | Navigate items          |
-| <kbd>k</kbd> | Navigate items          |
-| <kbd>n</kbd> | New item                |
-| <kbd>e</kbd> | Edit item               |
-| <kbd>d</kbd> | Delete item             |
-| <kbd>D</kbd> | Toggle done             |
-| <kbd>z</kbd> | Archive/unarchive       |
-| <kbd>1</kbd> | Toggle someday filter   |
-| <kbd>2</kbd> | Toggle replenish filter |
-| <kbd>b</kbd> | Toggle show bought      |
-| <kbd>s</kbd> | Toggle show archived    |
+| Key          | Does                 |
+| ------------ | -------------------- |
+| <kbd>j</kbd> | Navigate items       |
+| <kbd>k</kbd> | Navigate items       |
+| <kbd>n</kbd> | New item             |
+| <kbd>e</kbd> | Edit item            |
+| <kbd>d</kbd> | Delete item          |
+| <kbd>D</kbd> | Toggle done          |
+| <kbd>z</kbd> | Archive/unarchive    |
+| <kbd>b</kbd> | Toggle show bought   |
+| <kbd>s</kbd> | Toggle show archived |
 
 ## Notebooks — `/notebooks`
 

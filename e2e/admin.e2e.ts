@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { PASSWORD, clientAddress, testEmail } from './helpers/account';
+import { PASSWORD, clientAddress, register, testEmail } from './helpers/account';
 import Database from 'better-sqlite3';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -56,6 +56,39 @@ test('administration is a tab you can leave again', async ({ page }) => {
 	await page.getByRole('link', { name: 'Account', exact: true }).click();
 	await expect(page).toHaveURL(/\/settings\/account$/);
 	await expect(page.locator('[aria-current="page"]')).toHaveText('Account');
+});
+
+/**
+ * The account menu names Instance and Administration for whoever may open
+ * them, and for nobody else — a link to a 404 is worse than no link.
+ */
+test('the account menu offers Instance and Administration to the owner', async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 900 });
+	await signInAsOwner(page);
+	await page.goto('/settings/preferences');
+	await page.getByRole('button', { name: 'Menu', exact: true }).click();
+
+	await page
+		.locator('.menu-container')
+		.getByRole('link', { name: 'Instance', exact: true })
+		.click();
+	await expect(page).toHaveURL(/\/settings\/instance$/);
+
+	await page.getByRole('button', { name: 'Menu', exact: true }).click();
+	const menu = page.locator('.menu-container');
+	await menu.getByRole('link', { name: 'Administration', exact: true }).click();
+	await expect(page).toHaveURL(/\/admin$/);
+});
+
+test('the account menu leaves them out for anybody else', async ({ page }) => {
+	await page.setViewportSize({ width: 1600, height: 900 });
+	await register(page, testEmail('menu-member'));
+	await page.getByRole('button', { name: 'Menu', exact: true }).click();
+
+	const menu = page.locator('.menu-container');
+	await expect(menu.getByRole('link', { name: 'Preferences', exact: true })).toBeVisible();
+	await expect(menu.getByRole('link', { name: 'Instance', exact: true })).toHaveCount(0);
+	await expect(menu.getByRole('link', { name: 'Administration', exact: true })).toHaveCount(0);
 });
 
 test('does not interface with the box', async ({ page }) => {

@@ -4,6 +4,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import MoreOptions from '$lib/components/MoreOptions.svelte';
+	import NotebookField from '$lib/components/NotebookField.svelte';
 	import { namedAttributes } from '$lib/actions/named-attributes';
 	import { useT } from '$lib/i18n';
 
@@ -35,7 +36,11 @@
 		showFields = false,
 		/** Only when writing something down: see `createItem` for why. */
 		askLocation = false,
-		compact = false
+		compact = false,
+		notebooks = [],
+		/** The notebook a thing written down inside one belongs to. */
+		startingNotebook = null,
+		notebookId = $bindable<number | null>(null)
 	}: {
 		label?: string;
 		notes?: string;
@@ -50,6 +55,9 @@
 		showFields?: boolean;
 		askLocation?: boolean;
 		compact?: boolean;
+		notebooks?: { id: number; title: string }[];
+		startingNotebook?: number | null;
+		notebookId?: number | null;
 	} = $props();
 
 	const filled = $derived((notes ? 1 : 0) + (price ? 1 : 0) + (type !== 'replenish' ? 1 : 0));
@@ -154,6 +162,8 @@
 			</button>
 		</Field>
 	{/if}
+
+	<NotebookField {notebooks} value={notebookId ?? startingNotebook} span={12} />
 
 	<Field label={t('ui.notes')} span={8}>
 		<OneLine name="notes" bind:value={notes} class="input" />

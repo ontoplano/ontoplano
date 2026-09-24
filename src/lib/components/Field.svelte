@@ -15,12 +15,24 @@
 		/** Columns out of twelve, at `sm` and up. Below that everything is full width. */
 		span = 12,
 		required = false,
+		/**
+		 * Several controls under one heading, rather than one control.
+		 *
+		 * A field is a `<label>`, which is what makes clicking its words focus
+		 * its input — and what makes it wrong for a group: a label wrapping
+		 * five checkboxes lends its whole text to each of them, so the first
+		 * box in a list of modules was announced as the heading, the
+		 * explanation and every other box's name. A group is a `<fieldset>`
+		 * with a `<legend>`, which is the same thing said correctly.
+		 */
+		group = false,
 		children
 	}: {
 		label: string;
 		hint?: string;
 		span?: 3 | 4 | 6 | 8 | 12;
 		required?: boolean;
+		group?: boolean;
 		children: Snippet;
 	} = $props();
 
@@ -33,14 +45,28 @@
 	} as const;
 </script>
 
-<label class="col-span-12 block {SPANS[span]}">
-	<span class="eyebrow text-gray-600">
-		{label}{#if required}<span class="text-gray-500"> *</span>{/if}
-	</span>
-	<span class="mt-1 block">
-		{@render children()}
-	</span>
-	{#if hint}
-		<span class="mt-1 block text-xs text-gray-500">{hint}</span>
-	{/if}
-</label>
+{#if group}
+	<fieldset class="col-span-12 block {SPANS[span]}">
+		<legend class="eyebrow text-gray-600">
+			{label}{#if required}<span class="text-gray-500"> *</span>{/if}
+		</legend>
+		<div class="mt-1 block">
+			{@render children()}
+		</div>
+		{#if hint}
+			<span class="mt-1 block text-xs text-gray-500">{hint}</span>
+		{/if}
+	</fieldset>
+{:else}
+	<label class="col-span-12 block {SPANS[span]}">
+		<span class="eyebrow text-gray-600">
+			{label}{#if required}<span class="text-gray-500"> *</span>{/if}
+		</span>
+		<span class="mt-1 block">
+			{@render children()}
+		</span>
+		{#if hint}
+			<span class="mt-1 block text-xs text-gray-500">{hint}</span>
+		{/if}
+	</label>
+{/if}

@@ -115,22 +115,22 @@ describe('the theme and the style', () => {
 });
 
 describe('a refusal, on its way back out', () => {
-	test('keeps its status and its words for a form', () => {
-		const failure = http.toActionFailure(new errors.ConflictError('Already exists'));
+	test('keeps its status and its words for a form', async () => {
+		const failure = await http.toActionFailure(new errors.ConflictError('Already exists'));
 		expect(failure.status).toBe(409);
 		expect(failure.data.message).toBe('Already exists');
 		expect(failure.data.code).toBe('conflict');
 	});
 
-	test('becomes a 400 for a form when it was a 422', () => {
+	test('becomes a 400 for a form when it was a 422', async () => {
 		// Form actions historically use 400 for validation; client code checks
 		// `form?.message` and would stop recognising a 422.
-		const failure = http.toActionFailure(new errors.ValidationError('Too long'));
+		const failure = await http.toActionFailure(new errors.ValidationError('Too long'));
 		expect(failure.status).toBe(400);
 	});
 
 	test('keeps its status and its shape for a plugin', async () => {
-		const response = http.toJsonError(new errors.ForbiddenError('Insufficient scope'));
+		const response = await http.toJsonError(new errors.ForbiddenError('Insufficient scope'));
 		expect(response.status).toBe(403);
 		const body = await response.json();
 		expect(body.error.code).toBe('forbidden');
@@ -139,23 +139,23 @@ describe('a refusal, on its way back out', () => {
 
 	test('tells an API client nothing about an error it did not expect', async () => {
 		// Database error text is not something to hand out.
-		const response = http.toJsonError(new Error('SQLITE_CONSTRAINT: users.email'));
+		const response = await http.toJsonError(new Error('SQLITE_CONSTRAINT: users.email'));
 		expect(response.status).toBe(500);
 		const body = await response.json();
-		expect(body.error.message).toBe('Unexpected error');
+		expect(body.error.message).toBe('Something went wrong.');
 		expect(JSON.stringify(body)).not.toContain('SQLITE');
 	});
 
 	test('carries the details a plan limit needs to be actionable', async () => {
-		const response = http.toJsonError(
+		const response = await http.toJsonError(
 			new errors.PlanLimitError('Too many notebooks', { limit: 3 })
 		);
 		expect(response.status).toBe(402);
 		expect((await response.json()).error.details).toEqual({ limit: 3 });
 	});
 
-	test('says when to come back, when it is a rate limit', () => {
-		const failure = http.toActionFailure(new errors.RateLimitedError('Try again in 40s'));
+	test('says when to come back, when it is a rate limit', async () => {
+		const failure = await http.toActionFailure(new errors.RateLimitedError('Try again in 40s'));
 		expect(failure.status).toBe(429);
 		expect(failure.data.message).toContain('40s');
 	});

@@ -363,12 +363,18 @@ function wordTables(source) {
  * see it — it is a bare string in a `.ts`, in no table and under no property
  * name — and it is copy as much as a heading is.
  *
- * Counted rather than converted, for now: a service is synchronous and has no
- * translator, so making these translatable is a decision about how an error
- * carries its words rather than a sweep. The number is what keeps that honest.
+ * These carry a message key now (`{ key: 'errors.…' }`), translated by the
+ * adapter that turns the error into a response, so a quoted one here is a
+ * file that has not been swept yet.
+ *
+ * `NotFoundError` is not among them: a string given to it is the *kind* of
+ * thing that was not found — `'seat'`, `'workout category'` — which goes in the
+ * log and never on screen, because saying which thing is missing is how that
+ * error would leak what exists. One with something to say to a person takes a
+ * key like the rest.
  */
 const REFUSALS =
-	/\b(?:Validation|Forbidden|NotFound|Conflict|Unauthorized)Error\(\s*'((?:[^'\\]|\\.){6,}?)'/g;
+	/\b(?:Validation|Forbidden|Conflict|Unauthorized|PlanLimit|RateLimited)Error\(\s*'((?:[^'\\]|\\.){6,}?)'/g;
 
 function refusals(source) {
 	const found = [];
@@ -417,6 +423,12 @@ export function copyIn(source, { markup: hasMarkup = true } = {}) {
 	)) {
 		const value = match[1].trim();
 		if (!value || value.includes('{') || !WORDS.test(value)) continue;
+		// A message key is not copy: a component that takes its label as a key
+		// and translates it inside — `<RemindLead hint="tasks.plan.…">` — has
+		// moved the words, not left them here. The property scan above already
+		// knew this; the attribute one did not, so extracting a component with
+		// a key-taking prop looked like copy arriving.
+		if (LOOKS_LIKE_A_KEY.test(value)) continue;
 		found.push(value);
 	}
 

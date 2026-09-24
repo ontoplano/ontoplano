@@ -5,6 +5,7 @@ import { habitOccurrences, habits } from '$lib/db/schema.js';
 import { localDateOf, type Ctx } from './ctx.js';
 import { created } from './time.js';
 import { ConflictError, NotFoundError } from './errors.js';
+import { notebookPatch } from './notebooks.js';
 import { num, oneOf, optionalStr, str } from './validate.js';
 
 /**
@@ -30,9 +31,17 @@ export type HabitInput = {
 	description?: unknown;
 	type?: unknown;
 	scheduledDays?: unknown;
+	notebookId?: unknown;
 };
 
-export function listHabits(ctx: Ctx) {
+/**
+ * The habits, all of them or one subject's.
+ *
+ * `notebookId` narrows rather than changing the shape: the notebook's Habits
+ * tab is this room looking at one subject, and it draws the rows with the same
+ * component, so it needs exactly what the room needs.
+ */
+export function listHabits(ctx: Ctx, scope: { notebookId?: number } = {}) {
 	const rows = db
 		.select({
 			id: habits.id,
@@ -40,10 +49,15 @@ export function listHabits(ctx: Ctx) {
 			description: habits.description,
 			type: habits.type,
 			scheduledDays: habits.scheduledDays,
+			notebookId: habits.notebookId,
 			createdAt: habits.createdAt
 		})
 		.from(habits)
-		.where(eq(habits.userId, ctx.userId))
+		.where(
+			scope.notebookId === undefined
+				? eq(habits.userId, ctx.userId)
+				: and(eq(habits.userId, ctx.userId), eq(habits.notebookId, scope.notebookId))
+		)
 		.orderBy(habits.name)
 		.all();
 
@@ -85,7 +99,7 @@ export function today(ctx: Ctx): string {
 export function createHabit(ctx: Ctx, raw: HabitInput): number {
 	const result = db
 		.insert(habits)
-		.values({ ...created(ctx), userId: ctx.userId, ...parseHabit(raw) })
+		.values({ ...created(ctx), userId: ctx.userId, ...parseHabit(ctx, raw) })
 		.run();
 	return Number(result.lastInsertRowid);
 }
@@ -93,7 +107,7 @@ export function createHabit(ctx: Ctx, raw: HabitInput): number {
 export function updateHabit(ctx: Ctx, id: number, raw: HabitInput): void {
 	const res = db
 		.update(habits)
-		.set(parseHabit(raw))
+		.set(parseHabit(ctx, raw))
 		.where(and(eq(habits.id, id), eq(habits.userId, ctx.userId)))
 		.run();
 
@@ -109,6 +123,42 @@ export function deleteHabit(ctx: Ctx, id: number): void {
 	if (res.changes === 0) throw new NotFoundError('habit');
 }
 
+/**
+ * A day, written down — or refused because it is already there.
+ *
+ * Asking first and inserting second is two statements, and two presses landing
+ * together both read nothing and both write. `habit_occurrences_once_a_day_idx`
+ * is what actually stops that; this turns what SQLite says about it into the
+ * answer the caller was going to get anyway, so a race and a plain second
+ * attempt are refused in the same words.
+ *
+ * Answers whether it wrote, for the toggle: the day is logged either way, and
+ * the loser of a race has nothing left to do.
+ */
+function writeOccurrence(
+	ctx: Ctx,
+	values: { habitId: number; date: string; notes: string | null }
+): boolean {
+	try {
+		db.insert(habitOccurrences)
+			.values({ ...created(ctx), userId: ctx.userId, ...values })
+			.run();
+		return true;
+	} catch (error) {
+		if (!alreadyLogged(error)) throw error;
+		return false;
+	}
+}
+
+/** SQLite's word for "that day is taken", and nobody else's. */
+function alreadyLogged(error: unknown): boolean {
+	const code = (error as { code?: string })?.code;
+	return (
+		code === 'SQLITE_CONSTRAINT_UNIQUE' &&
+		String((error as Error)?.message ?? '').includes('habit_occurrences')
+	);
+}
+
 export function logOccurrence(
 	ctx: Ctx,
 	raw: { habitId: unknown; date?: unknown; notes?: unknown }
@@ -117,11 +167,10 @@ export function logOccurrence(
 	const date = parseDate(ctx, raw.date);
 	const notes = optionalStr(raw.notes, 'notes', { max: MAX_NOTES_LENGTH });
 
-	if (occurrenceOn(habitId, date)) throw new ConflictError('Already logged for this date');
-
-	db.insert(habitOccurrences)
-		.values({ ...created(ctx), userId: ctx.userId, habitId, date, notes })
-		.run();
+	// One statement rather than "is it there?" then "put it there": the second
+	// shape is what let two presses both write.
+	if (!writeOccurrence(ctx, { habitId, date, notes }))
+		throw new ConflictError({ key: 'errors.habits.alreadyLoggedForThisDate' });
 }
 
 /** Clicking a day in the heatmap: log it, or take it back. */
@@ -135,9 +184,9 @@ export function toggleOccurrence(ctx: Ctx, raw: { habitId: unknown; date: unknow
 			.where(and(eq(habitOccurrences.id, existing.id), eq(habitOccurrences.userId, ctx.userId)))
 			.run();
 	} else {
-		db.insert(habitOccurrences)
-			.values({ ...created(ctx), userId: ctx.userId, habitId, date, notes: '' })
-			.run();
+		// A second press that arrives alongside the first finds the day logged
+		// rather than an error: what it asked for has happened.
+		writeOccurrence(ctx, { habitId, date, notes: '' });
 	}
 }
 
@@ -202,7 +251,7 @@ export function parseScheduledDays(raw: string | null): number[] {
 		.filter((n) => !isNaN(n) && n >= 0 && n <= 6);
 }
 
-function parseHabit(raw: HabitInput) {
+function parseHabit(ctx: Ctx, raw: HabitInput) {
 	return {
 		name: str(raw.name, 'name', { max: MAX_NAME_LENGTH }),
 		description: optionalStr(raw.description, 'description', { max: MAX_DESCRIPTION_LENGTH }),
@@ -212,7 +261,11 @@ function parseHabit(raw: HabitInput) {
 				: oneOf(raw.type, 'type', HABIT_TYPES),
 		scheduledDays: parseScheduledDays(
 			raw.scheduledDays === undefined || raw.scheduledDays === null ? '' : String(raw.scheduledDays)
-		).join(',')
+		).join(','),
+		// Only when the caller mentioned it. An update that says nothing about
+		// the notebook must leave it alone, or every assistant renaming a habit
+		// would quietly take it out of the subject it belongs to.
+		...notebookPatch(ctx, raw)
 	};
 }
 

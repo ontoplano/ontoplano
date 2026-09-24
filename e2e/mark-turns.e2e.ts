@@ -50,3 +50,45 @@ test('a route change turns the mark at least once, however quick it is', async (
 		.poll(async () => mark.evaluate((el) => (el as HTMLElement).style.rotate), { timeout: 5000 })
 		.toBe('');
 });
+
+/**
+ * And nothing else on the page turns with it.
+ *
+ * The phone bar draws an octagon of flat colour behind the mark's button, a
+ * hair larger, so the clipped button has an edge to end at. It used to be
+ * turned along with the mark — correct while the whole mark turned, and wrong
+ * ever since the turn became a disc inside the ring: an octagon revolving
+ * behind one that is standing still swings its corners out past the rim, and
+ * the ground is a colour meant never to be seen as a shape.
+ *
+ * Asked of the page rather than of that one element, because the rule is the
+ * general one: the medallion turns and nothing else does, whatever else a
+ * caller hands to `startMarkSpin`.
+ */
+test('and nothing behind it turns', async ({ page }) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await register(page, testEmail('mark-ground'));
+	// Somewhere other than home, so the bar's home link is a navigation.
+	await visit(page, '/goals');
+
+	/** Everything the turn has written a `rotate` on, medallion or not. */
+	const turned = async () =>
+		page.evaluate(() =>
+			[...document.querySelectorAll<HTMLElement>('[style*="rotate"]')]
+				.filter((el) => el.style.rotate)
+				.map((el) => (el.classList.contains('mark-turn') ? 'medallion' : el.tagName.toLowerCase()))
+		);
+
+	const going = page.getByRole('link', { name: 'Home' }).click();
+
+	const seen = new Set<string>();
+	const until = Date.now() + 1500;
+	while (Date.now() < until) for (const one of await turned()) seen.add(one);
+	await going;
+
+	// The medallion, and nothing else. Both halves matter: without the first
+	// this passes on a bar that never turned at all.
+	expect([...seen].sort(), 'the medallion did not turn, or something else did').toEqual([
+		'medallion'
+	]);
+});

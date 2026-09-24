@@ -272,6 +272,7 @@ input[type='radio'] {
 	 * is supposed to be flush against. The one thing he circled and asked about
 	 * twice.
 	 */
+	.room-body,
 	.room-body > *,
 	.room-body > * > .room-surface,
 	.room-body .room-surface {
@@ -483,6 +484,41 @@ html[data-style='playful'] dialog > div > footer,
 html[data-style='playful'] details.no-round,
 html[data-style='playful'] svg {
 	border-radius: 0;
+}
+
+/*
+ * The same for anything whose only border is a rule across it — a toolbar
+ * row, a tab strip. Rounded, the rule curves up at both ends and meets the
+ * edge of the card as a hook, which is the notebook's tab strip inside its
+ * accented card. A shape with a rule along one side only has no corners to
+ * round.
+ */
+html[data-style='playful']
+	:is(.border-b, .border-t, .border-y):not(.border, .border-x, .border-l, .border-r) {
+	border-radius: 0;
+}
+
+/*
+ * A line of text cut off at its end clips, and a clip follows the radius:
+ * the corner took the top off a leading "l", so "lunch" read "ıunch".
+ */
+html[data-style='playful'] .truncate {
+	border-radius: 0;
+}
+
+/*
+ * A dialog that is part of the page, not a panel over it.
+ *
+ * The rules above round and clip `dialog > div` because that is a modal's
+ * panel. A notebook's surface is a `<dialog>` laid out with `display:
+ * contents` until it is maximized, so its body matched them too: a 16px
+ * clipped curve inside the square pane beside the shelf, cutting the corner
+ * off the last note's row and bending the tab strip's rule. Its children are
+ * rows of the pane it stands in, and when maximized they are the screen.
+ */
+html[data-style='playful'] dialog.as-surface > div {
+	border-radius: 0;
+	overflow: visible;
 }
 
 /*
@@ -1872,6 +1908,44 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * buttons was shipped twice, which is twice more than a layout this
 	 * common should be reinvented.
 	 */
+	/*
+	 * The task somebody is on.
+	 *
+	 * `doing` has always been a status and the board has always drawn it; the
+	 * list could not even be told about it, so the one screen people work from
+	 * had no way to say "this is the one". Blue because it is the app's own
+	 * colour for the planner — the room this task belongs to — and because the
+	 * two states it has to be told apart from are grey (done) and nothing.
+	 *
+	 * A wash and a spine, the same two marks everything else here uses for
+	 * "this one" — see `.is-pinned`.
+	 */
+	/*
+	 * `html` in front of both: the rows are a `divide-y` list, and that utility
+	 * sets `border-color` on every child — so a bare `.is-doing` had its spine
+	 * painted the divider's grey. The alternating row wash wins the background
+	 * the same way. One step of specificity is enough and is what
+	 * `.pill-soft.kbd-cursor` above does for the same reason.
+	 */
+	html .is-doing {
+		/*
+		 * The spine is an inset shadow rather than a left border.
+		 *
+		 * These rows are a `divide-y` list, and that utility paints
+		 * `border-color` on every child — same specificity, written later, so a
+		 * border here came out the divider's grey however blue it was asked to
+		 * be. A shadow is nobody else's property and takes no room in the box.
+		 */
+		box-shadow: inset 3px 0 0 var(--color-blue-500);
+		background-color: color-mix(in srgb, var(--color-blue-500) 10%, transparent);
+	}
+
+	/* The tick box on that row, in the same colour as the row. */
+	html .doing-box {
+		border-color: var(--color-blue-500);
+		background-color: color-mix(in srgb, var(--color-blue-500) 20%, transparent);
+	}
+
 	.list-row {
 		display: flex;
 		flex-wrap: wrap;
@@ -2064,8 +2138,14 @@ label:has(> input[type='radio']:not(:disabled)) {
 		color: var(--color-gray-400);
 	}
 
-	.todo-fold:hover {
+	.todo-fold:hover,
+	.todo-notes-hot .todo-fold {
 		color: var(--color-gray-900);
+	}
+
+	/* Where a press would fold or unfold it — see `foldHover`. */
+	.todo-notes-hot {
+		cursor: pointer;
 	}
 
 	.row-actions-stack {
@@ -2129,12 +2209,19 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	@media (hover: hover) {
-		.row-actions {
+		.row-actions,
+		.row-actions-stack {
 			opacity: 0.35;
 		}
 
-		.row-actions-stack,
-		.task-actions {
+		/*
+		 * A task's number and its labels share that line with its buttons and
+		 * are not among them: they say what the row is, not what can be done to
+		 * it. Fading the whole line took a label's ink down to a grey nobody
+		 * could read — "this text and border should be black, it was black
+		 * before" — so the fade is on the controls, one by one.
+		 */
+		.task-actions > :not(.task-labels) {
 			opacity: 0.35;
 		}
 
@@ -2144,6 +2231,18 @@ label:has(> input[type='radio']:not(:disabled)) {
 		*:hover > .row-actions-stack,
 		*:focus-within > .row-actions-stack,
 		.row-actions-stack:focus-within {
+			opacity: 1;
+		}
+
+		/*
+		 * And they come back on hover, which they never did: the row that
+		 * faded was `.task-actions` and the rule that brought one back named
+		 * only the other two, so a task's buttons stayed at a third whatever
+		 * the pointer was doing.
+		 */
+		*:hover > .task-actions > :not(.task-labels),
+		*:focus-within > .task-actions > :not(.task-labels),
+		.task-actions:focus-within > :not(.task-labels) {
 			opacity: 1;
 		}
 	}
@@ -2624,6 +2723,32 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
+	 * A row of positions that stays one row, however long the words.
+	 *
+	 * The block form's five frequencies wrapped their last one onto a line of
+	 * its own in Portuguese, which reads as a sixth thing rather than the end
+	 * of the row. Here the row fills its box and the tiles share it, each
+	 * starting from its word's width; where that does not fit, a label breaks
+	 * inside its own tile rather than the row breaking.
+	 */
+	.seg.seg-fill {
+		display: flex;
+		flex-wrap: nowrap;
+		width: 100%;
+		align-items: stretch;
+	}
+
+	.seg.seg-fill > button {
+		flex: 1 1 auto;
+		min-width: 0;
+		padding-inline: 0.5rem;
+		text-align: center;
+		white-space: normal;
+		text-wrap: balance;
+		line-height: 1.2;
+	}
+
+	/*
 	 * The row that scrolls inside a track.
 	 *
 	 * Where a `.seg` holds more than fits — a room's tabs — the choices live in
@@ -2925,6 +3050,21 @@ label:has(> input[type='radio']:not(:disabled)) {
 html[data-style='playful'] .card-accent {
 	border-top: 1px solid var(--color-gray-200);
 	border-left: 4px solid var(--card-accent);
+}
+
+/*
+ * A stripe down one side squares that side.
+ *
+ * A thick left border on a rounded shape bends round the corner and thins
+ * into the hairline along the top, so the stripe ends in two curved slivers
+ * — the accented cards, every banner, the pinned note. One
+ * of the two shapes has to give up its radius, and the stripe cannot bend, so
+ * the corner does: anything wearing a stripe carries `.edge-stripe`, or is
+ * one of the shared classes below that always wear one.
+ */
+html[data-style='playful'] :is(.edge-stripe, .card-accent, .page-intro, .is-pinned) {
+	border-start-start-radius: 0;
+	border-end-start-radius: 0;
 }
 
 /*
@@ -3466,6 +3606,9 @@ html[data-theme='dark'] {
 	/* Above the page *and* above a card, so a button reads on either. */
 	--btn-face: #2f3644;
 
+	/* One step further up in the dark, or it is the card. See the light block. */
+	--gauge-ground: var(--color-gray-300);
+
 	--color-gray-50: #161a20;
 	--color-gray-100: #1c212a;
 	--color-gray-150: #222732;
@@ -3587,6 +3730,9 @@ html[data-theme='dark'] {
 
 		/* Above the page *and* above a card, so a button reads on either. */
 		--btn-face: #2f3644;
+
+		/* One step further up in the dark, or it is the card. See the light block. */
+		--gauge-ground: var(--color-gray-300);
 
 		--color-gray-50: #161a20;
 		--color-gray-100: #1c212a;
@@ -3734,6 +3880,17 @@ option {
 	--ink-on-fill: #ffffff;
 	/* What a plain button is made of. Above the page in every theme. */
 	--btn-face: var(--color-gray-150);
+
+	/*
+	 * The box a full set of ratings would fill, behind the gauges.
+	 *
+	 * A ruler rather than a fourth shape: faint, and the same wash whichever of
+	 * the app's grounds it lands on. One step above the card in the light
+	 * theme; in the dark one that same step is `--color-gray-200`, which is
+	 * within a hair of the card itself and left the gauges standing on nothing.
+	 * So it is a token with an answer per theme rather than a grey named once.
+	 */
+	--gauge-ground: var(--color-gray-200);
 
 	/*
 	 * The mark on the phone's bottom bar, and everything that follows from it.
@@ -4212,8 +4369,9 @@ html button.tab-link {
  *
  * A cover is a fixed size rather than a share of the width: `1fr` in a panel
  * somebody has dragged narrow gives one cover the whole column, and a book
- * three hundred pixels tall is a poster. As many across as fit, and no fewer
- * than two on the narrowest the panel goes.
+ * three hundred pixels tall is a poster. As many across as fit — and the panel
+ * stops at exactly one of them (`NOTEBOOK_PANEL_MIN`), so the narrowest shelf
+ * is a spine of covers rather than one cover beside a band of nothing.
  */
 .notebook-shelf {
 	display: grid;
@@ -4224,13 +4382,36 @@ html button.tab-link {
 	padding: 0.75rem;
 }
 
-/*
- * What is inside a folder sits under it, indented, so a spine of covers reads
- * as belonging to the one above rather than as more of the same shelf.
- */
 .notebook-cover {
 	position: relative;
-	margin-left: calc(var(--cover-depth, 0) * 0.75rem);
+}
+
+/*
+ * An open folder and what is inside it, on one ground.
+ *
+ * They were flat siblings with the children nudged a few pixels right, which
+ * is an indent the eye does not read on a grid of pictures: opening a folder
+ * looked like the shelf getting longer. The block takes the whole width of the
+ * shelf and holds its own grid, so the covers inside it keep the size and the
+ * spacing of every other cover and only the ground says they belong together.
+ *
+ * A folder inside an open folder gets its own block, one step darker, because
+ * the tint is what depth is drawn with now.
+ */
+.notebook-family {
+	display: grid;
+	grid-column: 1 / -1;
+	grid-template-columns: repeat(auto-fill, 6.5rem);
+	justify-content: space-between;
+	gap: 0.75rem;
+	align-content: start;
+	border-radius: var(--radius, 0);
+	background-color: color-mix(in srgb, var(--color-gray-500) 9%, transparent);
+	padding: 0.5rem;
+}
+
+.notebook-family .notebook-family {
+	background-color: color-mix(in srgb, var(--color-gray-500) 9%, transparent);
 }
 
 .cover-face {
@@ -4273,6 +4454,45 @@ html button.tab-link {
 }
 
 /*
+ * The line under the shelf, and what is behind it.
+ *
+ * A closed notebook is history — a trip that happened, a renovation that
+ * ended — and it sat on the same shelf as the ones being written in, only
+ * greyer, so a shelf of five became a shelf of twelve over a year. The rule
+ * IS the control: pressing the line opens what is under it, so there is no
+ * button drawn beside a divider that does nothing.
+ */
+.shelf-fold {
+	display: flex;
+	align-items: center;
+	gap: 0.625rem;
+	width: 100%;
+	margin: 0.75rem 0 0.25rem;
+	padding: 0.25rem 0.5rem;
+	color: var(--color-gray-500);
+	cursor: pointer;
+}
+
+.shelf-fold:hover {
+	color: var(--color-gray-900);
+}
+
+.shelf-fold-line {
+	flex: 1;
+	height: 1px;
+	background-color: var(--color-gray-200);
+}
+
+.shelf-fold-label {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	font-size: 0.75rem;
+	font-weight: 500;
+	white-space: nowrap;
+}
+
+/*
  * What is left over, as a bin in the corner of the shelf.
  *
  * Notes whose notebook was deleted are not a notebook, and a row of them at
@@ -4286,14 +4506,16 @@ html button.tab-link {
 	z-index: 1;
 	display: inline-flex;
 	align-items: center;
-	gap: 0.25rem;
+	/* The glyph and its number read as one thing, centred on the same line. */
+	justify-content: center;
+	gap: 0.375rem;
 	align-self: end;
-	margin: 0 0.5rem 0 auto;
-	border: 1px solid var(--color-gray-200);
+	margin: 0 0.75rem 0 auto;
 	border-radius: var(--radius, 0);
 	background-color: var(--color-white);
-	padding: 0.375rem 0.5rem;
+	padding: 0.5rem 0.75rem;
 	color: var(--color-gray-500);
+	line-height: 1;
 	box-shadow: var(--shadow-card);
 }
 
@@ -4583,6 +4805,36 @@ html[data-style='playful'] .room-surface {
 	.room-body > * > [class*='shadow-card'],
 	.room-body > * > * > .room-surface,
 	.room-body > * > * > [class*='shadow-card'] {
+		margin-inline: -1rem;
+	}
+
+	/*
+	 * Stepped out, it runs down both sides of the body, so it is square like
+	 * anything else flush with the edge of what holds it. Rounded, its bottom
+	 * corners sat a rem inside the body's own — two curves nested at each
+	 * corner of the notebooks room, with a strip of white between them.
+	 */
+	html[data-style='playful'] .room-body > .room-surface,
+	html[data-style='playful'] .room-body > [class*='shadow-card'],
+	html[data-style='playful'] .room-body > * > .room-surface,
+	html[data-style='playful'] .room-body > * > [class*='shadow-card'],
+	html[data-style='playful'] .room-body > * > * > .room-surface,
+	html[data-style='playful'] .room-body > * > * > [class*='shadow-card'] {
+		border-radius: 0;
+	}
+
+	/*
+	 * Only a card that is the full width. Two in a row stepping out of both
+	 * sides slid under each other by a rem; cards laid out side by side go in
+	 * a `CardGrid`, and stay inside the room's gutter.
+	 */
+	.room-body .card-grid > * {
+		margin-inline: 0;
+	}
+
+	/* A grid on a page of full-width cards steps out as one, so its outer
+	   edges line up with theirs. */
+	.room-body .card-grid-bleed {
 		margin-inline: -1rem;
 	}
 }

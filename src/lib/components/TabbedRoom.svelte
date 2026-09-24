@@ -18,6 +18,12 @@
 		stopHiding
 	} from '$lib/slide';
 	import { hintMarkSpin } from '$lib/mark-spin';
+	import { resolve } from '$app/paths';
+	import { visibleRoomTabs } from '$lib/sections';
+	import type { NavKey } from '$lib/sections-nav';
+	import { useT } from '$lib/i18n';
+
+	const t = useT();
 
 	/**
 	 * A room with tabs: the strip, and the movement between them.
@@ -30,28 +36,33 @@
 	 */
 	let {
 		title,
-		tabs,
+		room,
+		tabs: given = [],
+		extra = [],
 		label,
-		belongsTo,
 		dataTour,
 		nested = false,
 		actions,
 		children
 	}: {
 		title: string;
-		/** In the order they are shown, which is the order a swipe walks. */
-		tabs: { href: string; label: string }[];
+		/**
+		 * Which room of the bar this is. Its tabs then come from `ROOM_TABS` —
+		 * the same list the wheel and the palette read — less whatever the
+		 * account put away. A room in the bar always passes this rather than
+		 * `tabs`; `tests/room-tabs.test.ts` holds that.
+		 */
+		room?: NavKey;
+		/**
+		 * The tabs of a room that is not in the bar — Settings and what hangs
+		 * off it, whose tabs depend on who is signed in. In the order they are
+		 * shown, which is the order a swipe walks.
+		 */
+		tabs?: { href: string; label: string }[];
+		/** Tabs this account adds after the room's own: Health's data streams. */
+		extra?: { href: string; label: string }[];
 		/** What the strip is called, for a screen reader. */
 		label: string;
-		/**
-		 * Which tab a page belongs to when its address says otherwise.
-		 *
-		 * A page can be part of a room and live somewhere else — a data
-		 * stream is reached from Connections and answers at `/data/<slug>`.
-		 * Without this the strip drew with nothing underlined and the page
-		 * read as somewhere else entirely, which is what it looked like.
-		 */
-		belongsTo?: string;
 		/** What a guided tour calls this strip, where one points at it. */
 		dataTour?: string;
 		/**
@@ -72,6 +83,20 @@
 	 * menu before, which is a different list with a different order and holes
 	 * in it where a room has no menu entries at all.
 	 */
+	const tabs = $derived(
+		room
+			? [
+					...visibleRoomTabs(room, page.data.hiddenSections ?? []).map((tab) => ({
+						// `resolve` takes one literal at a time; `RoomTab.href` is already a
+						// `Pathname`, so a tab pointing at no route has failed to build there.
+						href: resolve(tab.href as '/'),
+						label: t(tab.label)
+					})),
+					...extra
+				]
+			: given
+	);
+
 	$effect(() => {
 		setRoomTabs(tabs);
 		return () => setRoomTabs([]);
@@ -101,7 +126,7 @@
 		return best;
 	}
 
-	const at = $derived(tabFor(belongsTo ?? page.url.pathname));
+	const at = $derived(tabFor(page.url.pathname));
 	const here = (index: number) => index === at;
 
 	/** The panel that moves. Its content is `body`, which is what is replaced. */

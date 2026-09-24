@@ -7,6 +7,7 @@ import {
 	notebookTree
 } from '$lib/services/notebooks';
 import { getPanelWidth, NOTEBOOK_PANEL_WIDTH_KEY } from '$lib/services/settings';
+import { tagsInNotebook } from '$lib/services/tags';
 import { notebookActions } from './actions';
 import { notebookPanelData } from './panel-data';
 
@@ -41,6 +42,8 @@ export const load = async ({ locals, url }: IsolatedEvent) => {
 		orphaned,
 		orphanedSelected: wantsOrphaned || (selected === null && orphaned.length > 0),
 		contents: selected ? contentsOf(ctx, selected) : null,
+		// The labels on what is filed in whichever notebook is showing.
+		notebookTags: selected ? tagsInNotebook(ctx.userId, selected) : [],
 		...notebookPanelData(ctx),
 		// Where this reader dragged the divider between the list and the panel.
 		listPanelRem: getPanelWidth(ctx.userId, NOTEBOOK_PANEL_WIDTH_KEY)

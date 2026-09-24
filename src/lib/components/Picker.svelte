@@ -27,6 +27,13 @@
 
 	const t = useT();
 
+	/** Pixels kept clear between the list and the screen's edges. */
+	const EDGE_GUTTER = 16;
+	/** Pixels between the button and the list it opens. */
+	const LIST_GAP = 4;
+	/** The tallest the list gets before it scrolls: 16rem. */
+	const LIST_MAX_HEIGHT = 256;
+
 	let {
 		value,
 		values,
@@ -108,22 +115,44 @@
 	 * longer sits under the button — so where it goes is arithmetic, done
 	 * against the button's own box each time it opens.
 	 */
-	let where = $state({ left: 0, top: 0, width: 0 });
+	let where = $state({ left: 0, top: 0, width: 0, tall: LIST_MAX_HEIGHT });
 
+	/*
+	 * And the arithmetic keeps it on the screen.
+	 *
+	 * A goal's parent is "Year: get the band playing again", and a list of
+	 * those at a phone's width ran off the right edge, while a field near the
+	 * bottom of a dialog opened its list below the fold. So the list is never
+	 * wider than the screen less a gutter each side — a long row wraps rather
+	 * than scrolls sideways — slides left when it would cross the right edge,
+	 * opens upwards when there is more room above, and is never taller than
+	 * the room on the side it opened to. Measured against the list's own
+	 * size, which does not depend on where it is.
+	 */
 	function place() {
 		const box = face?.getBoundingClientRect();
 		if (!box) return;
-		where = { left: box.left, top: box.bottom + 4, width: box.width };
+		const across = window.innerWidth;
+		const down = window.innerHeight;
+		const wide = list?.offsetWidth ?? box.width;
+		const high = list?.scrollHeight ?? 0;
+		const left = Math.max(EDGE_GUTTER, Math.min(box.left, across - EDGE_GUTTER - wide));
+		const below = down - box.bottom - LIST_GAP - EDGE_GUTTER;
+		const above = box.top - LIST_GAP - EDGE_GUTTER;
+		const upwards = high > below && above > below;
+		const tall = Math.max(0, Math.min(LIST_MAX_HEIGHT, upwards ? above : below));
+		const top = upwards ? box.top - LIST_GAP - Math.min(high, tall) : box.bottom + LIST_GAP;
+		where = { left, top, width: box.width, tall };
 	}
 
 	$effect(() => {
 		if (!open || !list) return;
-		place();
 		try {
 			list.showPopover?.();
 		} catch {
 			/* already open, or a browser without popovers: it still draws */
 		}
+		place();
 
 		/*
 		 * A popover does not move with the page, because it is not on it. So
@@ -208,6 +237,18 @@
 	 * used a dropdown expects to pick "craft" out of three.
 	 */
 	function onFaceKey(event: KeyboardEvent) {
+		/*
+		 * Escape closes the list and nothing else. Inside a dialog the same key
+		 * closes the dialog — the platform's own cancel, and the page's handler
+		 * that only stands aside for a real `<select>` — so the form went with
+		 * the list. Stopped here, before either hears it.
+		 */
+		if (open && event.key === 'Escape') {
+			event.preventDefault();
+			event.stopPropagation();
+			open = false;
+			return;
+		}
 		if (!open) {
 			if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) {
 				event.preventDefault();
@@ -308,8 +349,9 @@
 		<ul
 			bind:this={list}
 			popover="manual"
-			style="left:{where.left}px; top:{where.top}px; min-width:{where.width}px"
-			class="overlay-face fixed m-0 max-h-64 overflow-y-auto border p-0 shadow-overlay"
+			style="left:{where.left}px; top:{where.top}px; min-width:{where.width}px; max-height:{where.tall}px; max-width:calc(100vw - {EDGE_GUTTER *
+				2}px)"
+			class="overlay-face fixed m-0 w-max overflow-y-auto border p-0 shadow-overlay"
 			role="listbox"
 			aria-multiselectable={many ? true : undefined}
 			aria-label={label}
@@ -322,7 +364,7 @@
 						role="option"
 						data-value={option.value}
 						aria-selected={many ? chosenMany.has(option.value) : option.value === now}
-						class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm whitespace-nowrap {(
+						class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm {(
 							many ? chosenMany.has(option.value) : option.value === now
 						)
 							? 'overlay-face-on'

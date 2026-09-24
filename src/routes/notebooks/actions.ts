@@ -8,8 +8,18 @@ import { removeNotebookPicture, setNotebookPicture } from '$lib/services/media';
 import { setEntryPeople } from '$lib/services/people';
 import { NOTEBOOK_PANEL_WIDTH_KEY, setPanelWidth } from '$lib/services/settings';
 import { toActionFailure } from '$lib/http-errors';
+import { describeTag, recolorTag, renameTag } from '$lib/services/tags';
 import { importVaultAction } from '$lib/import-vault-action';
 import { todoHandlers } from '$lib/services/todo-actions';
+import { under } from '$lib/services/scoped-actions';
+import { fileUnderNotebook } from '$lib/services/notebook-linking';
+import { billHandlers } from '$lib/services/bill-actions';
+import { habitHandlers } from '$lib/services/habit-actions';
+import { ideaHandlers } from '$lib/services/idea-actions';
+import { itemHandlers } from '$lib/services/item-actions';
+import { ledgerHandlers } from '$lib/services/ledger-actions';
+import { workoutHandlers } from '$lib/services/workout-actions';
+import { recipeActions } from '../health/recipes/actions';
 import {
 	createNotebook,
 	deleteNotebook,
@@ -26,13 +36,42 @@ import {
  * rather than being written twice and drifting.
  */
 export const notebookActions = {
+	/*
+	 * What a label is, saved from inside a notebook.
+	 *
+	 * The same act as on the Tags screen and deliberately the same three
+	 * calls: a label is the account's one word, so renaming it here renames it
+	 * on the week too. Deleting one is not offered from in here — taking a
+	 * word out of the vocabulary because one subject has finished with it is a
+	 * decision for the screen that can see all of them.
+	 */
+	saveTag: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const userId = locals.user!.id;
+		try {
+			const after = renameTag(userId, Number(formData.get('id')), formData.get('label'));
+			recolorTag(userId, after.id, formData.get('color'));
+			describeTag(userId, after.id, formData.get('description'));
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
 	create: async ({ request, locals }) => {
 		const formData = await request.formData();
 		try {
 			createNotebook(buildCtx(locals.user!.id), {
 				title: formData.get('heading'),
+				// Where it goes, as its own field: the place is part of the name,
+				// and the service is what puts the two halves together.
+				parent: formData.get('parent'),
 				description: formData.get('description'),
-				defaultTags: formData.get('defaultTags')
+				defaultTags: formData.get('defaultTags'),
+				// What it holds, when whoever is making it said. The dialog does
+				// not ask — a notebook is made in one field and answered for
+				// afterwards — so this is usually the default.
+				modules: formData.has('modules') ? formData.getAll('modules') : undefined
 			});
 			return { success: true };
 		} catch (e) {
@@ -45,8 +84,19 @@ export const notebookActions = {
 		try {
 			updateNotebook(buildCtx(locals.user!.id), Number(formData.get('id')), {
 				title: formData.get('heading'),
+				parent: formData.get('parent'),
 				description: formData.get('description'),
-				defaultTags: formData.get('defaultTags')
+				defaultTags: formData.get('defaultTags'),
+				/*
+				 * What it holds, when the form asked about it.
+				 *
+				 * `modulesPosted` rather than the boxes themselves: unticking
+				 * every one of them sends no `modules` field at all, which is
+				 * indistinguishable from a form that never asked — and would
+				 * quietly leave the tabs as they were instead of clearing them.
+				 * A form that asked says so.
+				 */
+				modules: formData.has('modulesPosted') ? formData.getAll('modules') : undefined
 			});
 			return { success: true };
 		} catch (e) {
@@ -307,6 +357,39 @@ export const notebookActions = {
 	},
 
 	/**
+	 * Put something that already exists under this notebook.
+	 *
+	 * One action for every module, because linking is one act — see
+	 * `$lib/services/notebook-linking`. The module travels in the form rather
+	 * than being nine actions with the same body.
+	 */
+	linkIntoNotebook: async ({ request, locals }) => {
+		const formData = await request.formData();
+		const ctx = buildCtx(locals.user!.id);
+		const module = String(formData.get('module') ?? '');
+		const notebookId = Number(formData.get('notebookId')) || null;
+
+		/*
+		 * Several at once, because that is what somebody is doing here.
+		 *
+		 * Starting a renovation halfway through means bringing in the six
+		 * things already on the shopping list, and one press per thing — each
+		 * closing the dialog and reopening it — is the picker refusing to be
+		 * used for the thing it exists for. The ids arrive as one field
+		 * repeated, so one and six are the same code path.
+		 */
+		const ids = formData.getAll('id');
+		if (ids.length === 0) return fail(400, { message: 'Nothing chosen' });
+
+		try {
+			for (const id of ids) fileUnderNotebook(ctx, module, id, notebookId);
+			return { success: true, action: 'linkIntoNotebook', brought: ids.length };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/**
 	 * A folder of markdown, brought in from this page.
 	 *
 	 * The same action the account's import screen runs — see
@@ -345,5 +428,27 @@ export const notebookActions = {
 	todoSchedule: todoHandlers.schedule,
 	todoDelegate: todoHandlers.delegate,
 	todoArchive: todoHandlers.archive,
-	todoDelete: todoHandlers.remove
+	todoDelete: todoHandlers.remove,
+
+	/*
+	 * Every other module a notebook can hold, answering here too.
+	 *
+	 * Each room's own handlers, mounted under the module's prefix — ticking a
+	 * habit on a notebook's Habits tab runs the code the Health room runs, and
+	 * a bill paid here is paid there. `under` applies the same naming rule the
+	 * markup's action names come from, so a form and its handler cannot drift
+	 * apart; see `$lib/services/scoped-actions`.
+	 *
+	 * All of them, whatever this notebook is switched on for: what a notebook
+	 * holds is a preference about what to draw, not about what may be posted,
+	 * and a tab that appeared the moment a module was switched on would
+	 * otherwise post to an action that was not mounted.
+	 */
+	...under('idea', ideaHandlers),
+	...under('item', itemHandlers),
+	...under('ledger', ledgerHandlers),
+	...under('bill', billHandlers),
+	...under('habit', habitHandlers),
+	...under('workout', workoutHandlers),
+	...under('recipe', recipeActions)
 } satisfies Actions;

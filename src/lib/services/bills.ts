@@ -19,6 +19,7 @@ import { db } from '$lib/db/index.js';
 import { billPayments, bills, categories, financeTransactions, goals } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
+import { notebookPatch } from './notebooks.js';
 import { created, stamp, stamps } from './time.js';
 import { num, oneOf, optionalStr, str } from './validate.js';
 
@@ -57,6 +58,8 @@ export type Bill = {
 	notes: string;
 	active: boolean;
 	sortOrder: number;
+	/** The subject it belongs to, if any. */
+	notebookId: number | null;
 };
 
 export type BillPayment = {
@@ -84,6 +87,8 @@ type BillInput = {
 	categoryId?: unknown;
 	goalId?: unknown;
 	notes?: unknown;
+	/** The subject it belongs to, when it is part of one. */
+	notebookId?: unknown;
 };
 
 /** The period key a rhythm settles into for a given instant. */
@@ -135,16 +140,28 @@ function row(r: {
 		goalId: r.bill.goalId,
 		notes: r.bill.notes ?? '',
 		active: r.bill.active,
-		sortOrder: r.bill.sortOrder
+		sortOrder: r.bill.sortOrder,
+		notebookId: r.bill.notebookId
 	};
 }
 
-/** Every bill, active first, newest within each. */
-export function listBills(ctx: Ctx, opts: { includeArchived?: boolean; flow?: Flow } = {}): Bill[] {
-	const direction = eq(bills.flow, opts.flow ?? 'out');
-	const where = opts.includeArchived
-		? and(eq(bills.userId, ctx.userId), direction)
-		: and(eq(bills.userId, ctx.userId), eq(bills.active, true), direction);
+/**
+ * Every bill, active first, newest within each — or one subject's.
+ *
+ * `notebookId` narrows rather than changing the shape: a notebook's Bills tab
+ * is this room looking at one subject and draws the rows with the same
+ * component, so it needs exactly what the room needs.
+ */
+export function listBills(
+	ctx: Ctx,
+	opts: { includeArchived?: boolean; flow?: Flow; notebookId?: number } = {}
+): Bill[] {
+	const where = and(
+		eq(bills.userId, ctx.userId),
+		eq(bills.flow, opts.flow ?? 'out'),
+		opts.includeArchived ? undefined : eq(bills.active, true),
+		opts.notebookId === undefined ? undefined : eq(bills.notebookId, opts.notebookId)
+	);
 	return db
 		.select({
 			bill: bills,
@@ -157,6 +174,26 @@ export function listBills(ctx: Ctx, opts: { includeArchived?: boolean; flow?: Fl
 		.orderBy(desc(bills.active), asc(bills.sortOrder), desc(bills.id))
 		.all()
 		.map(row);
+}
+
+/**
+ * The bills, each saying which period it is in and whether that one is settled.
+ *
+ * The Finance room worked this out in its own `load`, so anywhere else that
+ * showed a bill — a notebook's Bills tab — had the row without the two things
+ * the row is about: which period the tick would pay, and whether it is already
+ * paid. A row drawn without them offers to pay a bill that is paid.
+ */
+export function listBillsThisPeriod(
+	ctx: Ctx,
+	opts: { includeArchived?: boolean; flow?: Flow; notebookId?: number } = {}
+): (Bill & { period: string; paidThisPeriod: boolean })[] {
+	const bills = listBills(ctx, opts);
+	return bills.map((bill) => {
+		const period = periodFor(bill.rhythm, ctx.now);
+		const paid = listPayments(ctx, bill.id).some((payment) => payment.period === period);
+		return { ...bill, period, paidThisPeriod: paid };
+	});
 }
 
 export function getBill(ctx: Ctx, id: number): Bill {
@@ -183,7 +220,7 @@ function ownedCategory(ctx: Ctx, value: unknown): number | null {
 		.from(categories)
 		.where(and(eq(categories.id, id), eq(categories.userId, ctx.userId)))
 		.get();
-	if (!owned) throw new ValidationError('That category is not yours.');
+	if (!owned) throw new ValidationError({ key: 'errors.bills.thatCategoryIsNotYours' });
 	return id;
 }
 
@@ -195,7 +232,7 @@ function ownedGoal(ctx: Ctx, value: unknown): number | null {
 		.from(goals)
 		.where(and(eq(goals.id, id), eq(goals.userId, ctx.userId)))
 		.get();
-	if (!owned) throw new ValidationError('That goal is not yours.');
+	if (!owned) throw new ValidationError({ key: 'errors.bills.thatGoalIsNotYours' });
 	return id;
 }
 
@@ -227,7 +264,9 @@ function fields(ctx: Ctx, input: BillInput) {
 		flow: input.flow === undefined ? ('out' as Flow) : oneOf(input.flow, 'flow', FLOWS),
 		categoryId: ownedCategory(ctx, input.categoryId),
 		goalId: ownedGoal(ctx, input.goalId),
-		notes: optionalStr(input.notes, 'notes', { max: MAX_NOTE_LENGTH }) || ''
+		notes: optionalStr(input.notes, 'notes', { max: MAX_NOTE_LENGTH }) || '',
+		// Only when the caller mentioned it — see `notebookPatch`.
+		...notebookPatch(ctx, input)
 	};
 }
 

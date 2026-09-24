@@ -49,7 +49,8 @@ export const actions = {
 				notebookId: formData.get('notebookId')
 			});
 			setEntryPeople(ctx, id, formData.get('people'));
-			return { success: true };
+			// The id comes back so a receipt can offer a way straight into it.
+			return { success: true, id };
 		} catch (e) {
 			return toActionFailure(e);
 		}

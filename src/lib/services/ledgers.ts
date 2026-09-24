@@ -16,6 +16,7 @@ import { parserFor } from '../bank-parsers/index.js';
 import type { Ctx } from './ctx.js';
 import { stamp, stamps } from './time.js';
 import { ConflictError, NotFoundError, ValidationError } from './errors.js';
+import { notebookPatch } from './notebooks.js';
 import { oneOf, str } from './validate.js';
 
 export const LEDGER_KINDS = ['bank', 'card', 'cash', 'other'] as const;
@@ -38,6 +39,8 @@ export type Ledger = {
 	currency: string | null;
 	archived: boolean;
 	sortOrder: number;
+	/** The subject it belongs to, if any. */
+	notebookId: number | null;
 	/** How many lines it holds, and what they add up to. */
 	count: number;
 	balanceCents: number;
@@ -50,14 +53,17 @@ type LedgerInput = {
 	kind?: unknown;
 	defaultParser?: unknown;
 	currency?: unknown;
+	/** The subject it belongs to, when it is part of one. */
+	notebookId?: unknown;
 };
 
-function fields(input: LedgerInput, fallback?: Ledger) {
+function fields(ctx: Ctx, input: LedgerInput, fallback?: Ledger) {
 	const parser =
 		input.defaultParser === undefined || input.defaultParser === null || input.defaultParser === ''
 			? null
 			: str(input.defaultParser, 'parser', { max: 100 });
-	if (parser && !parserFor(parser)) throw new ValidationError('No parser knows that export.');
+	if (parser && !parserFor(parser))
+		throw new ValidationError({ key: 'errors.ledgers.noParserKnowsThatExport' });
 	return {
 		name: str(input.name ?? fallback?.name, 'name', { max: MAX_LEDGER_NAME_LENGTH }),
 		kind: oneOf(input.kind ?? fallback?.kind ?? 'bank', 'kind', LEDGER_KINDS),
@@ -65,18 +71,32 @@ function fields(input: LedgerInput, fallback?: Ledger) {
 		currency:
 			input.currency === undefined || input.currency === null || input.currency === ''
 				? (fallback?.currency ?? null)
-				: str(input.currency, 'currency', { max: 8 })
+				: str(input.currency, 'currency', { max: 8 }),
+		// Only when the caller mentioned it — see `notebookPatch`.
+		...notebookPatch(ctx, input)
 	};
 }
 
-export function listLedgers(ctx: Ctx, opts: { includeArchived?: boolean } = {}): Ledger[] {
+/**
+ * The ledgers, all of them or one subject's.
+ *
+ * `notebookId` narrows rather than changing the shape: a notebook's Ledgers
+ * tab is this room looking at one subject and draws the rows with the same
+ * component, so it needs exactly what the room needs.
+ */
+export function listLedgers(
+	ctx: Ctx,
+	opts: { includeArchived?: boolean; notebookId?: number } = {}
+): Ledger[] {
 	const rows = db
 		.select()
 		.from(ledgers)
 		.where(
-			opts.includeArchived
-				? eq(ledgers.userId, ctx.userId)
-				: and(eq(ledgers.userId, ctx.userId), eq(ledgers.archived, false))
+			and(
+				eq(ledgers.userId, ctx.userId),
+				opts.includeArchived ? undefined : eq(ledgers.archived, false),
+				opts.notebookId === undefined ? undefined : eq(ledgers.notebookId, opts.notebookId)
+			)
 		)
 		.orderBy(asc(ledgers.sortOrder), asc(ledgers.id))
 		.all();
@@ -103,6 +123,7 @@ export function listLedgers(ctx: Ctx, opts: { includeArchived?: boolean } = {}):
 			currency: l.currency,
 			archived: l.archived,
 			sortOrder: l.sortOrder,
+			notebookId: l.notebookId,
 			count: mine.length,
 			balanceCents: mine.reduce((sum, t) => sum + t.amountCents, 0),
 			lastOn: mine.reduce<string | null>(
@@ -120,10 +141,10 @@ export function getLedger(ctx: Ctx, id: number): Ledger {
 }
 
 export function createLedger(ctx: Ctx, input: LedgerInput): Ledger {
-	const f = fields(input);
+	const f = fields(ctx, input);
 	const existing = listLedgers(ctx, { includeArchived: true });
 	if (existing.some((l) => l.name === f.name))
-		throw new ConflictError('A ledger by that name already exists.');
+		throw new ConflictError({ key: 'errors.ledgers.aLedgerByThatName' });
 	const inserted = db
 		.insert(ledgers)
 		.values({ userId: ctx.userId, ...f, sortOrder: existing.length, ...stamps(ctx) })
@@ -134,12 +155,12 @@ export function createLedger(ctx: Ctx, input: LedgerInput): Ledger {
 
 export function updateLedger(ctx: Ctx, id: number, input: LedgerInput): Ledger {
 	const before = getLedger(ctx, id);
-	const f = fields(input, before);
+	const f = fields(ctx, input, before);
 	if (
 		f.name !== before.name &&
 		listLedgers(ctx, { includeArchived: true }).some((l) => l.name === f.name)
 	)
-		throw new ConflictError('A ledger by that name already exists.');
+		throw new ConflictError({ key: 'errors.ledgers.aLedgerByThatName' });
 	db.update(ledgers)
 		.set({ ...f, updatedAt: stamp(ctx) })
 		.where(and(eq(ledgers.id, id), eq(ledgers.userId, ctx.userId)))

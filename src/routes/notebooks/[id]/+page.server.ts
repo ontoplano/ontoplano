@@ -4,6 +4,7 @@ import { buildCtx } from '$lib/services/ctx';
 import { host } from '$lib/services/host';
 import { NotFoundError } from '$lib/services/errors';
 import { contentsOf, getNotebook } from '$lib/services/notebooks';
+import { tagsInNotebook } from '$lib/services/tags';
 import { notebookActions } from '../actions';
 import { notebookPanelData } from '../panel-data';
 
@@ -23,6 +24,8 @@ export const load = async ({ locals, params }: IsolatedEvent) => {
 		return {
 			notebook: getNotebook(ctx, id),
 			contents: contentsOf(ctx, id),
+			// The labels on what is filed here, with what carries each of them.
+			notebookTags: tagsInNotebook(ctx.userId, id),
 			...notebookPanelData(ctx),
 			onFamilyPlan: host.familyUserIds(ctx.userId).length > 1
 		};

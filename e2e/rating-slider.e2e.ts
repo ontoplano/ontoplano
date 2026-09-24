@@ -115,3 +115,112 @@ test('the button beside it leaves the card unrated', async ({ page }) => {
 	// must not arrive wearing the lowest number on the scale.
 	await expect(page.getByTitle(/^Ease: /)).toHaveCount(0);
 });
+
+/*
+ * A quick drag with a mouse stays where the button came up, and moving the
+ * mouse afterwards leaves it there.
+ *
+ * The bar takes the pointer for itself, and the invisible range laid over it
+ * used to see the press as well. Firefox runs its own thumb drag off that
+ * press, and the capture the bar takes stole the mouseup that ends it — so
+ * the native drag never finished, and the next movement of the mouse, after
+ * letting go, set the answer to wherever the pointer had wandered: the value
+ * flicked back. Firefox is the browser that shows it; the `firefox` project
+ * runs this one.
+ */
+test.describe('with a mouse', () => {
+	test('a fast drag keeps where the button came up', async ({ page }) => {
+		await register(page, testEmail('rating-mouse'));
+		await openTheScales(page, 'Dragged with a mouse');
+
+		const track = page.locator('#card-form [data-rating="urgency"] .rating-track');
+		const posted = page.locator('#card-form input[name="urgency"]');
+		await track.scrollIntoViewIfNeeded();
+		const box = (await track.boundingBox())!;
+		const y = box.y + box.height / 2;
+		const on = (n: number) => box.x + (box.width * (n - 0.5)) / 5;
+
+		// The pointer is the bar's alone; the range under it is for the keys.
+		const under = await page.evaluate(
+			([x, y]) => document.elementFromPoint(x, y)?.matches('input[type="range"]'),
+			[on(3), y]
+		);
+		expect(under).toBe(false);
+
+		for (const [from, to, moves] of [
+			[1, 5, 1],
+			[5, 1, 2],
+			[2, 4, 1]
+		] as const) {
+			await page.mouse.move(on(from), y);
+			await page.mouse.down();
+			await page.mouse.move(on(to), y, { steps: moves });
+			await page.mouse.up();
+			await expect(posted).toHaveValue(String(to));
+
+			// Away, as a hand does after letting go — across the bar and off it.
+			await page.mouse.move(on(from), y, { steps: 3 });
+			await page.mouse.move(on(from), y + 120, { steps: 3 });
+			await page.waitForTimeout(300);
+			await expect(posted).toHaveValue(String(to));
+		}
+
+		// And the keys still move it on from there.
+		await page.keyboard.press('ArrowLeft');
+		await expect(posted).toHaveValue('3');
+	});
+});
+
+/*
+ * A quick drag across a gauge with a finger stays where the finger left it.
+ *
+ * The screen swipes between tabs on a sideways finger, listened for on the
+ * whole scroller, and the gauge sits inside it. A drag long enough to cross a
+ * block or two was also a swipe, so letting go changed tab under the form:
+ * the screen flicked away and the answer went with it. A control that takes
+ * sideways movement for itself, and anything in an open dialog, is not the
+ * page's to swipe.
+ */
+test.describe('on a phone', () => {
+	test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+	test('a fast drag on a gauge keeps the answer and the form', async ({ page }) => {
+		await register(page, testEmail('rating-drag'));
+		await openTheScales(page, 'Dragged in a hurry');
+		const where = page.url();
+
+		const track = page.locator('#card-form [data-rating="urgency"] .rating-track');
+		const posted = page.locator('#card-form input[name="urgency"]');
+		await track.scrollIntoViewIfNeeded();
+		const box = (await track.boundingBox())!;
+		const y = box.y + box.height / 2;
+		// The middle of the nth block.
+		const on = (n: number) => box.x + (box.width * (n - 0.5)) / 5;
+
+		const cdp = await page.context().newCDPSession(page);
+		const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', x?: number) =>
+			cdp.send('Input.dispatchTouchEvent', {
+				type,
+				touchPoints: x === undefined ? [] : [{ x, y, id: 1 }]
+			});
+
+		// Across the bar and back, in one to three moves each: fast.
+		for (const [from, to, moves] of [
+			[1, 5, 3],
+			[5, 1, 2],
+			[2, 4, 1]
+		] as const) {
+			await touch('touchStart', on(from));
+			for (let i = 1; i <= moves; i++)
+				await touch('touchMove', on(from) + ((on(to) - on(from)) * i) / moves);
+			await touch('touchEnd');
+
+			await expect(posted).toHaveValue(String(to));
+			// And it holds once whatever the gesture set off has settled.
+			await page.waitForTimeout(600);
+			await expect(posted).toHaveValue(String(to));
+			expect(page.url()).toBe(where);
+		}
+		await cdp.detach();
+	});
+});

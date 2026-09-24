@@ -1,5 +1,6 @@
 <script lang="ts">
 	import TagInput from '$lib/components/TagInput.svelte';
+	import type { Snippet } from 'svelte';
 	import { page } from '$app/state';
 	import Field from '$lib/components/Field.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -40,6 +41,15 @@
 		notebooks = [],
 		ratings = $bindable({ urgency: null, interest: null, ease: null }),
 		compact = false,
+		/**
+		 * Where this would land in the queue, drawn under the scales.
+		 *
+		 * Passed in rather than worked out here: the answer is a place among
+		 * the other tasks, and this component knows about one task. Absent
+		 * where the form has no list to be ranked against — the capture sheet
+		 * on the dashboard is written without one.
+		 */
+		place = undefined,
 		scheduledDate = ''
 	}: {
 		title?: string;
@@ -51,6 +61,7 @@
 		notebooks?: { id: number; title: string }[];
 		ratings?: Record<Rating, number | null>;
 		compact?: boolean;
+		place?: Snippet;
 		/** The day it sits on, or '' for a task with no day yet. */
 		scheduledDate?: string;
 	} = $props();
@@ -67,6 +78,16 @@
 			(notes ? 1 : 0) +
 			(tags ? 1 : 0)
 	);
+
+	/*
+	 * With a notebook chosen, the words that subject already uses; with none,
+	 * the whole account's vocabulary.
+	 */
+	const knownTags = $derived(
+		notebookId
+			? (page.data.tagVocabularyByNotebook?.[notebookId] ?? [])
+			: (page.data.tagVocabulary ?? [])
+	);
 </script>
 
 <Field label={t('ui.title')} span={12} required>
@@ -78,6 +99,51 @@
 </Field>
 
 {#snippet details()}
+	<!--
+		The writing, straight under the name.
+
+		Half the tasks on a working list are a line of title and a paragraph of
+		what actually happened. That paragraph was below the day, the category
+		and the notebook — three answers somebody usually leaves alone — so the
+		one field they came to fill in was the one they had to scroll past the
+		rest to reach. What the task is, then what it is about, then where it
+		goes.
+	-->
+	<Field label={t('ui.notes')} span={12}>
+		<!-- The same box a note is written in, showing what the words already
+		     are rather than the address of the screenshot in the middle of
+		     them. `written` because that is what draws a task's notes on the
+		     list afterwards. -->
+		<!--
+			As tall as the room the form is given.
+
+			Three rows in a dialog that opens with half a screen of space under
+			it is a box you type two sentences into and then scroll inside,
+			while the space it could have used sits empty below. The compact
+			form — the one that shares a card with a list — keeps the short box,
+			because there the space is not going spare.
+		-->
+		<MarkdownBox
+			bind:element={box}
+			value={notes}
+			name="notes"
+			rows={compact ? 3 : NOTES_ROWS}
+			preview="written"
+		/>
+		<!-- A task said out loud is still a task, and a task is as often a
+		     screenshot: the same two attachments a note and an idea have,
+		     because "ring the plumber about the thing behind the boiler" is
+		     quicker said than typed and "this screen is wrong" is a picture. -->
+		<PictureAttach target={box} />
+		<RecordingAttach target={box} />
+	</Field>
+
+	<Field label={t('ui.tags')} span={12} hint={t('fields.todo.separateWithCommasOrSpaces')}>
+		<!-- The account's one vocabulary, not a second one: a word used on a
+		     diary entry is the same word here. -->
+		<TagInput value={tags} known={knownTags} placeholder={t('fields.todo.tagsExample')} />
+	</Field>
+
 	<!--
 		A day, optionally.
 		
@@ -107,45 +173,6 @@
 	</Field>
 
 	<NotebookField {notebooks} bind:value={notebookId} />
-
-	<Field label={t('ui.tags')} span={12} hint={t('fields.todo.separateWithCommasOrSpaces')}>
-		<!-- The account's one vocabulary, not a second one: a word used on a
-		     diary entry is the same word here. -->
-		<TagInput
-			value={tags}
-			known={page.data.tagVocabulary ?? []}
-			placeholder={t('fields.todo.tagsExample')}
-		/>
-	</Field>
-
-	<Field label={t('ui.notes')} span={12}>
-		<!-- The same box a note is written in, showing what the words already
-		     are rather than the address of the screenshot in the middle of
-		     them. `written` because that is what draws a task's notes on the
-		     list afterwards. -->
-		<!--
-			As tall as the room the form is given.
-
-			Three rows in a dialog that opens with half a screen of space under
-			it is a box you type two sentences into and then scroll inside,
-			while the space it could have used sits empty below. The compact
-			form — the one that shares a card with a list — keeps the short box,
-			because there the space is not going spare.
-		-->
-		<MarkdownBox
-			bind:element={box}
-			value={notes}
-			name="notes"
-			rows={compact ? 3 : NOTES_ROWS}
-			preview="written"
-		/>
-		<!-- A task said out loud is still a task, and a task is as often a
-		     screenshot: the same two attachments a note and an idea have,
-		     because "ring the plumber about the thing behind the boiler" is
-		     quicker said than typed and "this screen is wrong" is a picture. -->
-		<PictureAttach target={box} />
-		<RecordingAttach target={box} />
-	</Field>
 {/snippet}
 
 {#snippet scales()}
@@ -160,6 +187,9 @@
 	<MoreOptions label={t('fields.todo.categoryNotebookTagsNotesRatings')} count={filled}>
 		{@render details()}
 		{@render scales()}
+		<!-- Unfolded, the scales are on screen, and what they decide should be
+		     on screen with them rather than only in the full editor. -->
+		{@render place?.()}
 	</MoreOptions>
 {:else}
 	{@render details()}

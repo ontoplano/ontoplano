@@ -1,7 +1,14 @@
 <script lang="ts">
 	import { say } from '$lib/said.svelte';
+	import { openFromUrl } from '$lib/open-from-url.svelte';
 	import { discardForm, keptForm } from '$lib/kept-form';
 	import Picker from '$lib/components/Picker.svelte';
+	import TagFilter from '$lib/components/TagFilter.svelte';
+	import { tagFilterInUrl } from '$lib/tag-filter-url.svelte';
+	import { filtersInUrl } from '$lib/filters-in-url.svelte';
+	import SavedFilters from '$lib/components/SavedFilters.svelte';
+	import RemindLead from '$lib/components/RemindLead.svelte';
+	import { NO_TAG_FILTER, UNTAGGED, isTagFiltering, passesTagFilter } from '$lib/tag-filter';
 	import SortControl from '$lib/components/SortControl.svelte';
 	import { agoOf, momentOf } from '$lib/when';
 	import { compareByPriority, type RatingValues } from '$lib/ratings';
@@ -152,9 +159,21 @@
 	 */
 	let looking = $state('');
 
-	let showCompleted = $state(false);
+	/*
+	 * What is narrowing this list, kept in the address.
+	 *
+	 * All of it rather than the labels alone: a filtered list was a thing you
+	 * could see and not a thing you could send, a reload threw it away, and a
+	 * saved filter had nothing to save. See `$lib/filters-in-url`.
+	 *
+	 * Absent means the default, so an unfiltered list still has a clean
+	 * address.
+	 */
+	const filters = filtersInUrl({ done: '', away: '', notebook: '' });
+
+	const showCompleted = $derived(filters.get('done') === 'show');
 	/** Put-away tasks are out of the way by default; that is what putting away is. */
-	let showArchived = $state(false);
+	const showArchived = $derived(filters.get('away') === 'show');
 
 	/** Whether the filters are behind a button right now — see `FilterBar`. */
 	const phone = phoneWidth();
@@ -166,17 +185,20 @@
 	 * exactly what somebody goes looking for. Not offered inside a notebook,
 	 * where the answer is already fixed.
 	 */
-	let notebookFilter = $state('');
+	const notebookFilter = $derived(filters.get('notebook'));
 	/**
-	 * Which label to show, `''` for all and `'none'` for the ones with none.
+	 * Which labels to show and which to hide — see `$lib/tag-filter`.
 	 *
 	 * A label is what several assistants on one list use to say whose work is
-	 * whose — `a1`, `done` — so being able to read back one of them is the
-	 * point of having them at all.
+	 * whose — `a1`, `done` — so being able to read back one of them, or
+	 * everything not yet marked by one, is the point of having them at all.
+	 * Kept in the address, so a reload or a shared link keeps it.
 	 */
-	let tagFilter = $state<string[]>([]);
+	const tagFilter = tagFilterInUrl();
 	let selectedIndex = $state(0);
 	let delegatingId: number | null = $state(null);
+	/** How long before it starts to be nudged — see `RemindLead`. */
+	let delegateLead: number | string = $state(0);
 	let confirmingDelete: number | null = $state(null);
 	/**
 	 * Which rows are showing everything written on them.
@@ -228,21 +250,34 @@
 	 * been simpler and would have swallowed the links in it.
 	 */
 	function foldPress(todo: Todo, press: MouseEvent) {
-		if (!hasMore(todo)) return;
+		if (folds(todo, press)) toggleNotes(todo.id);
+	}
 
-		const target = press.target as HTMLElement;
-		if (target.closest('a, button, audio, input, textarea')) return;
+	/** Whether a press where this pointer is would fold or unfold the writing. */
+	function folds(todo: Todo, at: MouseEvent): boolean {
+		if (!hasMore(todo)) return false;
 
-		if (!openNotes.has(todo.id)) {
-			toggleNotes(todo.id);
-			return;
-		}
+		const target = at.target as HTMLElement;
+		if (target.closest('a, button, audio, input, textarea')) return false;
+		if (!openNotes.has(todo.id)) return true;
 
-		const block = press.currentTarget as HTMLElement;
+		const block = at.currentTarget as HTMLElement;
 		const box = block.getBoundingClientRect();
 		const line = parseFloat(getComputedStyle(block).lineHeight);
-		if (press.clientY - box.top > (Number.isFinite(line) ? line : FALLBACK_LINE)) return;
-		toggleNotes(todo.id);
+		return at.clientY - box.top <= (Number.isFinite(line) ? line : FALLBACK_LINE);
+	}
+
+	/**
+	 * The pointer says so before the press does.
+	 *
+	 * Over the line that folds an open note the cursor was the text one, so
+	 * the line read as words to select rather than a handle, and the chevron
+	 * beside it stayed grey. Asked with the same test the press uses, so the
+	 * two cannot disagree; a class on the block rather than state, since it
+	 * changes on every pixel of movement.
+	 */
+	function foldHover(todo: Todo, move: PointerEvent) {
+		(move.currentTarget as HTMLElement).classList.toggle('todo-notes-hot', folds(todo, move));
 	}
 
 	/** If a browser answers `normal` for the line height, a line is about this. */
@@ -280,19 +315,6 @@
 		ease: null
 	});
 
-	/**
-	 * Where this draft would land among the open tasks here, by priority.
-	 *
-	 * A number out of a thousand said what the answers *were*; this says what
-	 * they *do* — which is the only reason anybody moves one of those sliders.
-	 * Counted against the open tasks this list is showing, which is the list
-	 * the task is about to join, and against itself excluded: a task does not
-	 * queue behind the version of itself that is being edited.
-	 *
-	 * A task being written has no age yet, so it takes now — and ties are
-	 * broken towards the older one, which puts a new task behind everything it
-	 * matches exactly. That is the honest answer: it has waited least.
-	 */
 	const editing = $derived(todos.find((one: Todo) => one.id === editingId));
 
 	/**
@@ -304,23 +326,6 @@
 	 * choosing.
 	 */
 	let formNotebookId: number | null = $state(null);
-
-	const draftPlace = $derived.by(() => {
-		const draft = {
-			ratings: formRatings as RatingValues,
-			sortOrder: editing?.sortOrder ?? 0,
-			createdAt: editing?.createdAt ?? new Date().toISOString()
-		};
-		const ahead = todos.filter(
-			(one: Todo) =>
-				one.id !== editingId &&
-				one.notebookId === formNotebookId &&
-				!CLOSED_STATUSES.includes(one.status) &&
-				!one.archivedAt &&
-				compareByPriority(one, draft) < 0
-		);
-		return ahead.length + 1;
-	});
 
 	/**
 	 * How long a task stays on screen after it is ticked.
@@ -552,6 +557,36 @@
 		);
 	});
 
+	/**
+	 * Which row this is in the list on screen, live.
+	 *
+	 * A number out of a thousand said what the answers *were*; this says what
+	 * they *do*, which is the only reason anybody moves one of those sliders.
+	 *
+	 * **Always by priority, whatever the list is sorted by.** The three sliders
+	 * decide one thing — where this comes in the queue — and priority is the
+	 * order that reads them. Counting instead against whatever the list happens
+	 * to be showing made the number answer a different question every time the
+	 * sort control moved: alphabetically it said where the word fell, and a
+	 * slider moved under it and changed nothing, which is the sliders looking
+	 * broken.
+	 *
+	 * Counted against the rows on screen — the same filters, the same notebook
+	 * — because that is the claim somebody can check by looking, and against
+	 * the draft's own answers rather than where its row already is, which is
+	 * what makes the number move as a slider does. A task being written has no
+	 * row yet and joins by when it was written down, which is now.
+	 */
+	const draftPlace = $derived.by(() => {
+		const others = visibleTodos.filter((one: Todo) => one.id !== editingId);
+		const draft = {
+			ratings: formRatings as RatingValues,
+			sortOrder: editing?.sortOrder ?? 0,
+			createdAt: editing?.createdAt ?? new Date().toISOString()
+		};
+		return others.filter((one: Todo) => compareByPriority(one, draft) < 0).length + 1;
+	});
+
 	/** Whatever the notebook picker lets through, before the two toggles. */
 	let inScope = $derived.by(() => {
 		let held = todos;
@@ -603,29 +638,13 @@
 		...notebooks.map((book) => ({ value: String(book.id), label: book.title }))
 	]);
 
-	/*
-	 * Several labels at once, because one was not a filter.
-	 *
-	 * "Show me the urgent ones" is a question a single label answers; "the
-	 * urgent ones and the ones about the house" is the question anybody with a
-	 * list long enough to filter is actually asking. Any of them rather than
-	 * all: a task carries two or three labels, and asking for the ones
-	 * carrying every label you picked usually asks for nothing.
-	 *
-	 * "No label" stands apart — it is not a label, so it cannot be combined
-	 * with one, and choosing it clears the rest.
-	 */
-	const NO_TAG = 'none';
-
-	let tagChoices = $derived([
-		{ value: NO_TAG, label: t('todoRows.noTag') },
-		...tagsInUse.map((name) => ({ value: name, label: name }))
-	]);
-
 	function byTag(rows: Todo[]): Todo[] {
-		if (tagFilter.length === 0) return rows;
-		if (tagFilter.includes(NO_TAG)) return rows.filter((t: Todo) => t.tags.length === 0);
-		return rows.filter((t: Todo) => t.tags.some((one) => tagFilter.includes(one.name)));
+		return rows.filter((t: Todo) =>
+			passesTagFilter(
+				t.tags.map((one) => one.name),
+				tagFilter.current
+			)
+		);
 	}
 
 	/** How many are hidden by the two toggles, so neither is a silent filter. */
@@ -660,7 +679,7 @@
 	 * list telling you it is empty while it is holding six rows back.
 	 */
 	let narrowed = $derived(
-		notebookFilter !== '' || tagFilter.length > 0 || looking.trim().length > 0
+		notebookFilter !== '' || isTagFiltering(tagFilter.current) || looking.trim().length > 0
 	);
 
 	/**
@@ -676,7 +695,9 @@
 		if (showArchived) said.push(t('todoRows.archived'));
 		if (notebookFilter !== '')
 			said.push(notebookChoices.find((one) => one.value === notebookFilter)?.label ?? '');
-		for (const one of tagFilter) said.push(one === NO_TAG ? t('todoRows.noTag') : `#${one}`);
+		const word = (one: string) => (one === UNTAGGED ? t('tagFilter.untagged') : `#${one}`);
+		for (const one of tagFilter.current.include) said.push(word(one));
+		for (const one of tagFilter.current.exclude) said.push(`−${word(one)}`);
 		return said.filter(Boolean).join(', ');
 	}
 
@@ -684,10 +705,8 @@
 	    it is the thing being typed into, and clearing it under the cursor is
 	    the app taking the word out of somebody's hands. */
 	function clearFilters() {
-		showCompleted = false;
-		showArchived = false;
-		notebookFilter = '';
-		tagFilter = [];
+		filters.clear();
+		tagFilter.current = { ...NO_TAG_FILTER };
 		selectedIndex = 0;
 	}
 
@@ -795,6 +814,16 @@
 	}
 
 	/*
+	 * And the address can ask for one, which is how the receipt after a quick
+	 * capture offers a way straight into the task it just wrote. See
+	 * `$lib/open-from-url`.
+	 */
+	openFromUrl((id) => {
+		const todo = todos.find((one: Todo) => one.id === id);
+		if (todo) startEdit(todo);
+	});
+
+	/*
 	 * Land on the first scale, once the dialog has actually drawn one.
 	 *
 	 * The focus is the point rather than the scroll: it puts the arrow keys on
@@ -824,6 +853,9 @@
 
 	function startDelegate(todo: Todo) {
 		delegatingId = todo.id;
+		// Each task is asked afresh: a reminder carried over from the last one
+		// is a nudge nobody asked for about something else.
+		delegateLead = 0;
 	}
 
 	function formatDate(d: Date): string {
@@ -943,6 +975,31 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
+<!--
+	Where this task would land, and the bars it will wear.
+
+	One snippet, drawn in two places: at the foot of the full editor, and under
+	the scales in the quick form once they are unfolded. They are the same
+	claim about the same draft, so two copies of it would be two things to keep
+	in step.
+
+	What the sliders set is a drawing on a row, and the form used to ask
+	somebody to imagine it: three numbers here, three bars out there. It is the
+	drawing itself now, so what is being made is in front of whoever is making
+	it.
+-->
+{#snippet whereItWouldSit()}
+	<span
+		class="flex flex-1 items-center justify-center gap-2 text-sm"
+		title={t('ratings.whereItWouldSit')}
+	>
+		<RatingBadges values={formRatings} />
+		<span class="tabular text-gray-700">
+			{t('ratings.nthInLine', { nth: ordinal(t, draftPlace) })}
+		</span>
+	</span>
+{/snippet}
+
 <div class="space-y-4">
 	<!--
 		The filters and the list they narrow are one object.
@@ -1009,18 +1066,19 @@
 						<!--
 							In a slot as wide as the longest it can be.
 
-							Held open by the same sentence at the count of the whole list,
-							which is the largest it can say and does not change when a
-							filter does. See `.count-slot`.
+							Held open by the same sentence at the count of the whole list —
+							`todos`, not `inScope`, which the notebook and tag filters have
+							already narrowed — so it is the largest it can say and does not
+							change when a filter does. See `.count-slot`.
 						-->
 						<span
 							class="tabular count-slot shrink-0 self-center text-xs text-gray-500"
 							title={t('todoRows.showingCount', { count: visibleTodos.length })}
 						>
 							<span class="count-widest" aria-hidden="true">
-								<span class="sm:hidden">{inScope.length}</span>
+								<span class="sm:hidden">{todos.length}</span>
 								<span class="hidden sm:inline"
-									>{t('todoRows.showingCount', { count: inScope.length })}</span
+									>{t('todoRows.showingCount', { count: todos.length })}</span
 								>
 							</span>
 							<span>
@@ -1055,7 +1113,7 @@
 						*showing* is the count beside the search box.
 					-->
 					<button
-						onclick={() => (showCompleted = !showCompleted)}
+						onclick={() => filters.set('done', showCompleted ? '' : 'show')}
 						aria-pressed={showCompleted}
 						class="btn btn-sm shrink-0"
 					>
@@ -1066,7 +1124,7 @@
 					<!-- Named with its number so a put-away task is never quietly gone:
 				     nothing is hidden without the list saying how much. -->
 					<button
-						onclick={() => (showArchived = !showArchived)}
+						onclick={() => filters.set('away', showArchived ? '' : 'show')}
 						aria-pressed={showArchived}
 						class="btn btn-sm"
 						hidden={putAway === 0 && !showArchived}
@@ -1085,30 +1143,29 @@
 						<Picker
 							value={notebookFilter}
 							options={notebookChoices}
-							onpick={(next) => (notebookFilter = next)}
+							onpick={(next) => filters.set('notebook', next)}
 							label={t('ui.notebook')}
 							class="min-w-36 flex-1 sm:flex-none"
 						/>
 					{/if}
 					<!-- Only where there is something to pick: a list nobody has labelled
 				     gets no control for labels. -->
-					{#if tagsInUse.length > 0}
-						<Picker
-							values={tagFilter}
-							options={[{ value: '', label: t('todoRows.everyTag') }, ...tagChoices]}
-							onpickMany={(next) => {
-								// Two rows that are not labels. "Every tag" is the way back to
-								// no filter at all, and "no label" answers the question on its
-								// own — neither combines with a label.
-								if (next.includes('')) tagFilter = [];
-								else if (next.includes(NO_TAG))
-									tagFilter = tagFilter.includes(NO_TAG)
-										? next.filter((one) => one !== NO_TAG)
-										: [NO_TAG];
-								else tagFilter = next;
+					<!-- The narrowings this screen has kept, with the controls that
+					     make one. See `SavedFilters`. -->
+					<SavedFilters
+						surface="/tasks/todo"
+						narrowed={narrowed || showCompleted || showArchived}
+					/>
+					{#if tagsInUse.length > 0 || isTagFiltering(tagFilter.current)}
+						<TagFilter
+							tags={tagsInUse}
+							value={tagFilter.current}
+							onchange={(next) => {
+								tagFilter.current = next;
+								selectedIndex = 0;
 							}}
-							label={t('todoRows.filterByTag')}
-							class="min-w-28 flex-1 sm:flex-none"
+							name="todo-tags"
+							class="min-w-36 flex-1 sm:flex-none"
 						/>
 					{/if}
 					<!--
@@ -1165,12 +1222,12 @@
 						{#if phone.current}
 							<div class="flex justify-center gap-2">
 								{#if !showCompleted && finished > 0}
-									<button onclick={() => (showCompleted = true)} class="btn btn-sm">
+									<button onclick={() => filters.set('done', 'show')} class="btn btn-sm">
 										{t('todoRows.showCompletedCount', { count: finished })}
 									</button>
 								{/if}
 								{#if !showArchived && putAway > 0}
-									<button onclick={() => (showArchived = true)} class="btn btn-sm">
+									<button onclick={() => filters.set('away', 'show')} class="btn btn-sm">
 										{t('todoRows.showArchivedCount', { count: putAway })}
 									</button>
 								{/if}
@@ -1195,7 +1252,7 @@
 						class="flex flex-wrap items-stretch gap-x-4 px-4 py-3 {shortcutRoom &&
 						selectedIndex === i
 							? 'kb-cursor'
-							: ''} {isDone(todo) ? 'opacity-50' : ''}"
+							: ''} {isDone(todo) ? 'opacity-50' : ''} {todo.status === 'doing' ? 'is-doing' : ''}"
 					>
 						<!--
 							The tick box and the three gauges are one column.
@@ -1264,10 +1321,14 @@
 											})
 										: undefined}
 								>
+									<!-- Blue while it is the one being worked on, so the state is
+									     on the box that owns it rather than only on the row. -->
 									<span
 										class="flex size-7 items-center justify-center border {isDone(todo)
 											? 'border-gray-400 bg-gray-400'
-											: 'border-gray-400 bg-white'}"
+											: todo.status === 'doing'
+												? 'doing-box'
+												: 'border-gray-400 bg-white'}"
 									>
 										{#if isDone(todo)}
 											<svg class="h-4 w-4 text-white" viewBox="0 0 20 20" fill="currentColor">
@@ -1414,11 +1475,11 @@
 									<!-- svelte-ignore a11y_click_events_have_key_events -->
 									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<div
-										class="todo-notes {hasMore(todo) ? 'todo-notes-foldable' : ''} {hasMore(todo) &&
-										!openNotes.has(todo.id)
-											? 'cursor-pointer'
-											: ''}"
+										class="todo-notes {hasMore(todo) ? 'todo-notes-foldable' : ''}"
 										onclick={(press) => foldPress(todo, press)}
+										onpointermove={(move) => foldHover(todo, move)}
+										onpointerleave={(leave) =>
+											(leave.currentTarget as HTMLElement).classList.remove('todo-notes-hot')}
 									>
 										{#if hasMore(todo)}
 											<button
@@ -1478,6 +1539,39 @@
 								reads better on a laptop too.
 							-->
 							<div class="task-actions">
+								{#if !isDone(todo)}
+									<!--
+										What you are on, said on the list rather than only on the
+										board.
+
+										`doing` has always been a status and the board has always
+										been able to set it; the list could not, so the one place
+										somebody actually works from could not say "this is the one
+										I am on". It is a toggle rather than a step in a cycle:
+										pressing it says so, pressing it again says you are not.
+									-->
+									<form method="post" action={actions.setStatus} use:enhance>
+										<input type="hidden" name="id" value={todo.id} />
+										<input
+											type="hidden"
+											name="status"
+											value={todo.status === 'doing' ? 'todo' : 'doing'}
+										/>
+										<button
+											type="submit"
+											class="icon-btn"
+											aria-pressed={todo.status === 'doing'}
+											aria-label={todo.status === 'doing'
+												? t('todoRows.stopDoing')
+												: t('todoRows.startDoing')}
+											title={todo.status === 'doing'
+												? t('todoRows.stopDoing')
+												: t('todoRows.startDoing')}
+										>
+											<Icon name="play" />
+										</button>
+									</form>
+								{/if}
 								{#if !isDone(todo)}
 									<!-- One column changes; nothing is copied anywhere. -->
 									<form method="post" action={actions.schedule} use:enhance>
@@ -1599,7 +1693,11 @@
 									with the number: both of them say how to find this task
 									again rather than what it is.
 								-->
-								<div class="order-first mr-auto flex min-w-0 flex-wrap items-center gap-1">
+								<!-- `task-labels`: what the row says, so it keeps its ink while
+								     the buttons beside it are held back — see `.task-actions`. -->
+								<div
+									class="task-labels order-first mr-auto flex min-w-0 flex-wrap items-center gap-1"
+								>
 									{#if todo.notebookSeq !== null}
 										<span class="tabular text-[11px] text-gray-500" title={whenOf(todo)}>
 											#{todo.notebookSeq}
@@ -1619,17 +1717,21 @@
 										-->
 										<TagChip
 											name={tag.name}
-											active={tagFilter.includes(tag.name)}
+											active={tagFilter.current.include.includes(tag.name)}
 											title={tag.taggedAt
 												? t('todoRows.taggedAgo', { ago: agoOf(tag.taggedAt, now()) })
 												: undefined}
 											onclick={() => {
-												// Pressing a label adds it to the filter rather than
-												// replacing it, so two presses is two labels — the
-												// same thing the picker above does.
-												tagFilter = tagFilter.includes(tag.name)
-													? tagFilter.filter((one) => one !== tag.name)
-													: [...tagFilter.filter((one) => one !== NO_TAG), tag.name];
+												// Pressing a label adds it to the ones shown rather
+												// than replacing them, so two presses is two labels.
+												const held = tagFilter.current;
+												tagFilter.current = held.include.includes(tag.name)
+													? { ...held, include: held.include.filter((one) => one !== tag.name) }
+													: {
+															...held,
+															include: [...held.include, tag.name],
+															exclude: held.exclude.filter((one) => one !== tag.name)
+														};
 												selectedIndex = 0;
 											}}
 										/>
@@ -1713,6 +1815,7 @@
 					{categories}
 					{notebooks}
 					bind:ratings={formRatings}
+					place={whereItWouldSit}
 				/>
 			</FormGrid>
 		</form>
@@ -1768,23 +1871,7 @@
 				number is the only way to see what moving one slider did to the
 				task's place in the list.
 			-->
-			<span
-				class="flex flex-1 items-center justify-center gap-2 text-sm"
-				title={t('ratings.whereItWouldSit')}
-			>
-				<!--
-					The same three bars the card will wear, moving as the sliders do.
-
-					What the sliders set is a drawing on a row, and the form asked
-					somebody to imagine it: three numbers here, three bars out
-					there. It is the drawing itself now, so what you are making is
-					in front of you while you make it.
-				-->
-				<RatingBadges values={formRatings} />
-				<span class="tabular text-gray-700">
-					{t('ratings.nthInLine', { nth: ordinal(t, draftPlace) })}
-				</span>
-			</span>
+			{@render whereItWouldSit()}
 
 			<!--
 				Cancel throws the draft away; Escape and the backdrop keep it.
@@ -1863,6 +1950,12 @@
 							{/each}
 						</select>
 					</Field>
+					<!--
+						And a nudge, since this is where somebody says "do it on
+						Thursday" — which is exactly when they want telling. It is the
+						same control the planner's own block form asks with.
+					-->
+					<RemindLead bind:value={delegateLead} />
 				</FormGrid>
 			</form>
 		{/if}

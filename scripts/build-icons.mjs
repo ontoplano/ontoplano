@@ -201,15 +201,17 @@ const STAGING_BAND = '#b45309';
 // Dev wears blue where staging wears amber — same band, different answer.
 const DEV_BAND = '#1d4ed8';
 /*
- * And the demo wears violet.
+ * And the demo wears yellow.
  *
  * It is the third copy of this app somebody can have open, and it was wearing
  * production's mark — so a tab of somebody's own week and a tab of a sandbox
- * that is wiped every hour were the same picture. Violet because the other
- * two are taken and because it means neither broken nor fine, which is what a
- * demo is.
+ * that is wiped every hour were the same picture. It wore violet next, which
+ * solved that and left a different pair looking alike: at the sixteen pixels
+ * of a browser tab, violet and dev's blue are one dark smudge. Yellow is the
+ * one bright answer none of the others is using, and like amber it means
+ * neither broken nor fine, which is what a demo is.
  */
-const DEMO_BAND = '#6d28d9';
+const DEMO_BAND = '#facc15';
 
 /**
  * `top` is where the band sits, as a fraction of the height.

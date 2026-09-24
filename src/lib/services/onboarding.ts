@@ -66,7 +66,7 @@ export function needsFirstRun(userId: string): boolean {
 
 export function templateFor(key: TemplateKey): Template {
 	const found = TEMPLATES.find((t) => t.key === key);
-	if (!found) throw new ValidationError('Unknown template');
+	if (!found) throw new ValidationError({ key: 'errors.onboarding.unknownTemplate' });
 	return found;
 }
 

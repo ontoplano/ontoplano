@@ -59,8 +59,6 @@ import { getGridHours } from '$lib/services/settings';
 // Not exported: a `+page.server.ts` may only export what SvelteKit names.
 const NARROW_COOKIE = 'onto_narrow';
 
-const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-
 /**
  * How much of the plan is on screen.
  *
@@ -263,7 +261,6 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 		return {
 			date: formatDate(d),
 			weekday,
-			name: WEEKDAYS[weekday],
 			isToday: formatDate(d) === formatDate(today)
 		};
 	});
@@ -329,7 +326,6 @@ export const load = async ({ locals, url, cookies }: IsolatedEvent) => {
 		schemes: listSchemes(ctx),
 		// The starter weeks onboarding offers, offered again.
 		templates: TEMPLATES.map((t) => ({ key: t.key, label: t.label, description: t.description })),
-		weekdays: WEEKDAYS,
 		today: formatDate(today),
 		/*
 		 * What became of each block, for the days that have been.

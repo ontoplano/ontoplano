@@ -31,7 +31,8 @@ export function listSchemes(ctx: Ctx) {
 export function saveScheme(ctx: Ctx, rawName: unknown): number {
 	const name = str(rawName, 'Scheme name', { max: MAX_NAME_LENGTH });
 
-	if (schemeNamed(ctx, name)) throw new ConflictError('A scheme with this name already exists');
+	if (schemeNamed(ctx, name))
+		throw new ConflictError({ key: 'errors.schemes.aSchemeWithThisName' });
 
 	return db.transaction((tx) => {
 		const inserted = tx
@@ -117,7 +118,7 @@ export function renameScheme(ctx: Ctx, schemeId: number, rawName: unknown): void
 
 	const clash = schemeNamed(ctx, name);
 	if (clash && clash.id !== schemeId)
-		throw new ConflictError('A scheme with this name already exists');
+		throw new ConflictError({ key: 'errors.schemes.aSchemeWithThisName' });
 
 	const res = db
 		.update(planningSchemes)

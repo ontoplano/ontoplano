@@ -8,6 +8,7 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
+import { refusal } from './helpers/refusal';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -52,6 +53,6 @@ describe('grantTrial', () => {
 
 	test('an account with plan history is refused', () => {
 		expect(admin.accountById(OWNER).canGrantTrial).toBe(false);
-		expect(() => admin.grantTrial(STRANGER, OWNER)).toThrow(/history/i);
+		expect(refusal(() => admin.grantTrial(STRANGER, OWNER))).toMatch(/history/i);
 	});
 });

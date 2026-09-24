@@ -56,7 +56,7 @@ export function serialiseMeta(input: unknown): string {
 	} else if (typeof input === 'object' && !Array.isArray(input)) {
 		entries = Object.entries(input as Record<string, unknown>);
 	} else {
-		throw new ValidationError('metadata must be an object');
+		throw new ValidationError({ key: 'errors.meta.metadataMustBeAnObject' });
 	}
 
 	const out: SlotMeta = {};

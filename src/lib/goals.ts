@@ -12,6 +12,13 @@ import type { Translate } from './i18n/core.js';
 export const HORIZONS = ['day', 'week', 'month', 'quarter', 'semester', 'year'] as const;
 export type Horizon = (typeof HORIZONS)[number];
 
+/** The word for how a goal ended; `open` has none, it is simply there. */
+export const STATUS_LABELS: Record<Exclude<GoalStatus, 'open'>, PlainKey> = {
+	achieved: 'goals.achieved',
+	missed: 'goals.missed',
+	abandoned: 'goals.abandoned'
+};
+
 export const HORIZON_LABELS: Record<Horizon, PlainKey> = {
 	day: 'tasks.plan.day',
 	week: 'goals.week',

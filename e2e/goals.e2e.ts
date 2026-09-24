@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { register, testEmail } from './helpers/account';
 import { visit } from './helpers/visit';
 import { pressUntil } from './helpers/press-until';
+import { choose } from './helpers/choose';
 
 /**
  * A done todo stays linked to its goal.
@@ -216,4 +217,94 @@ test('a goal can be measured by several things, and each keeps its own number', 
 	 */
 	await expect(page.getByText('50%')).toBeVisible();
 	await expect(rows.first().getByRole('button', { name: /One fewer/ })).toBeEnabled();
+});
+
+/**
+ * A goal row reaches its card's edges, and deleting it asks first.
+ *
+ * The list used to sit inset in the card's padding, so the hover wash was a
+ * square floating inside a rounded card. And delete was a second button where
+ * the first had been, which a double press confirmed by itself.
+ */
+test('a goal row spans its card, and delete asks in a dialog', async ({ page }) => {
+	await register(page, testEmail('goal-row'));
+	await visit(page, '/goals');
+	const heading = page.locator('[name="heading"]');
+	await pressUntil(page, page.getByRole('button', { name: /New goal/ }).first(), heading);
+	await heading.fill('paint the fence');
+	await page.getByRole('button', { name: 'Create goal' }).click();
+
+	const row = page.locator('[id^="goal-"]', { hasText: 'paint the fence' });
+	await expect(row).toBeVisible();
+	const card = page.locator('section', { has: row });
+	const [rowBox, cardBox] = [await row.boundingBox(), await card.boundingBox()];
+	// Inside the card's border on both sides, and no further in.
+	expect(rowBox!.x - cardBox!.x).toBeLessThanOrEqual(4);
+	expect(cardBox!.x + cardBox!.width - (rowBox!.x + rowBox!.width)).toBeLessThanOrEqual(2);
+
+	await row.getByRole('button', { name: 'Delete' }).click();
+	const dialog = page.getByRole('dialog');
+	await expect(dialog).toContainText('paint the fence');
+	await expect(row).toBeVisible();
+	await page.waitForTimeout(500);
+	await dialog.getByRole('button', { name: 'Delete' }).click();
+	await expect(row).toHaveCount(0);
+});
+
+/**
+ * A long list of parent goals stays on a phone's screen.
+ *
+ * "Part of" lists every open goal as "Horizon: title", which at 390px ran off
+ * the right edge, and the field sits at the bottom of the dialog, so the list
+ * opened below the fold. The keyboard picks from it the way it picks from a
+ * select, Escape closes only the list, and a pick closes the list rather
+ * than reopening it.
+ */
+test('the parent goal list fits a phone and answers the keyboard', async ({ page }) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await register(page, testEmail('goal-parent-picker'));
+	await visit(page, '/goals');
+	const heading = page.locator('[name="heading"]');
+	const titles = Array.from(
+		{ length: 8 },
+		(_, i) => `get the band playing again, and record the long album number ${i + 1}`
+	);
+	for (const title of titles) {
+		await pressUntil(page, page.getByRole('button', { name: /New goal/ }).first(), heading);
+		await heading.fill(title);
+		// A year's goal, so the week's goal made below can sit under it.
+		await choose(page.locator('#goal-form'), 'horizon', 'Year');
+		await page.getByRole('button', { name: 'Create goal' }).click();
+		await expect(heading).toBeHidden();
+	}
+
+	await pressUntil(page, page.getByRole('button', { name: /New goal/ }).first(), heading);
+	const field = page.locator('#goal-form [data-picker="parentId"]');
+	const face = field.getByRole('button').first();
+	await face.scrollIntoViewIfNeeded();
+	await face.focus();
+	await page.keyboard.press('Enter');
+	const list = field.getByRole('listbox');
+	await expect(list).toBeVisible();
+
+	const box = (await list.boundingBox())!;
+	expect(box.x).toBeGreaterThanOrEqual(0);
+	expect(box.x + box.width).toBeLessThanOrEqual(390);
+	expect(box.y).toBeGreaterThanOrEqual(0);
+	expect(box.y + box.height).toBeLessThanOrEqual(844);
+	// Taller than it is allowed to be, so it scrolls inside itself.
+	expect(await list.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+
+	// Escape closes the list, not the dialog it is in.
+	await page.keyboard.press('Escape');
+	await expect(list).toBeHidden();
+	await expect(page.locator('#goal-form')).toBeVisible();
+
+	await page.keyboard.press('Enter');
+	await expect(list).toBeVisible();
+	await page.keyboard.press('ArrowDown');
+	await page.keyboard.press('Enter');
+	await expect(list).toBeHidden();
+	await expect(field.locator('input[name="parentId"]')).not.toHaveValue('');
+	await expect(face).toContainText('get the band playing again');
 });

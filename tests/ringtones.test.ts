@@ -8,6 +8,7 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
+import { refusal } from './helpers/refusal';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -46,19 +47,23 @@ describe('uploading a sound', () => {
 	});
 
 	test('something that is not audio is refused, saying what is accepted', () => {
-		expect(() =>
-			s.ringtones.addRingtone(ctx, { name: 'Sneaky', mime: 'application/zip', data: bytes(10) })
-		).toThrow(/MP3, OGG or WAV/);
+		expect(
+			refusal(() =>
+				s.ringtones.addRingtone(ctx, { name: 'Sneaky', mime: 'application/zip', data: bytes(10) })
+			)
+		).toMatch(/MP3, OGG or WAV/);
 	});
 
 	test('too big is refused, and says how big it was', () => {
-		expect(() =>
-			s.ringtones.addRingtone(ctx, {
-				name: 'Symphony',
-				mime: 'audio/mpeg',
-				data: bytes(s.ringtones.MAX_RINGTONE_BYTES + 1)
-			})
-		).toThrow(/KB/);
+		expect(
+			refusal(() =>
+				s.ringtones.addRingtone(ctx, {
+					name: 'Symphony',
+					mime: 'audio/mpeg',
+					data: bytes(s.ringtones.MAX_RINGTONE_BYTES + 1)
+				})
+			)
+		).toMatch(/KB/);
 	});
 
 	test('an empty file is refused rather than stored as silence', () => {
@@ -68,9 +73,11 @@ describe('uploading a sound', () => {
 	});
 
 	test('two with the same name is refused, because the list is chosen from by name', () => {
-		expect(() =>
-			s.ringtones.addRingtone(ctx, { name: 'Chimes', mime: 'audio/mpeg', data: bytes(64) })
-		).toThrow(/already have a sound/);
+		expect(
+			refusal(() =>
+				s.ringtones.addRingtone(ctx, { name: 'Chimes', mime: 'audio/mpeg', data: bytes(64) })
+			)
+		).toMatch(/already have a sound/);
 	});
 
 	test('the eleventh is refused', () => {

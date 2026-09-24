@@ -129,12 +129,15 @@ describe('the choices the form is given', () => {
 		expect(notebooks?.things.map((t) => t.label)).toContain('The flat');
 		expect(notebooks?.things.map((t) => t.id)).not.toContain(notMine);
 
-		// Tasks and notes, because that is what lives in a notebook. Not the
-		// shopping list, which would be a box that granted nothing.
+		// Everything a notebook can be switched on to hold, because every one of
+		// those is a room its subject reaches. Not the rooms it cannot: a person
+		// is somebody in your life, and a box that granted nothing would be
+		// worse than no box.
 		expect(notebooks?.scopes).toContain('tasks:write');
 		expect(notebooks?.scopes).toContain('notes:read');
-		expect(notebooks?.scopes).not.toContain('inventory:write');
-		expect(notebooks?.scopes).not.toContain('bills:read');
+		expect(notebooks?.scopes).toContain('inventory:write');
+		expect(notebooks?.scopes).toContain('bills:read');
+		expect(notebooks?.scopes).not.toContain('people:write');
 	});
 
 	it('leaves out a kind with nothing to point at', () => {

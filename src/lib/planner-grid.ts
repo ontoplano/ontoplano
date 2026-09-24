@@ -1,17 +1,8 @@
 import type { PlainKey } from './i18n/keys.js';
+import type { Translate } from './i18n/core.js';
 import type { Calendar } from '@event-calendar/core';
 import { CATEGORY_FALLBACK_COLOR } from './colors.js';
 import { describeRecurrence, formatDate, occursOn, parseRecurrence } from './recurrence.js';
-
-const WEEKDAY_LABELS = [
-	'Monday',
-	'Tuesday',
-	'Wednesday',
-	'Thursday',
-	'Friday',
-	'Saturday',
-	'Sunday'
-];
 
 /**
  * The default stretch of the day, when the account has not said otherwise.
@@ -560,21 +551,19 @@ export interface GridEventDetail {
 /** What a block with no title of its own is called. */
 export const UNTITLED_BLOCK: PlainKey = 'tasks.plan.untitledBlock';
 
-export function describeGridEvent(event: GridEventLike): GridEventDetail {
+export function describeGridEvent(event: GridEventLike, t: Translate): GridEventDetail {
 	const props = event.extendedProps ?? {};
-	// A block nobody named. The word is the app's, not the person's, so it is a
-	// key — the caller is a component and has a translator.
-	const title = typeof event.title === 'string' && event.title ? event.title : UNTITLED_BLOCK;
+	const title = typeof event.title === 'string' && event.title ? event.title : t(UNTITLED_BLOCK);
 	const rawLabel = typeof props.label === 'string' ? props.label.trim() : '';
 	const rawCategory = typeof props.categoryName === 'string' ? props.categoryName.trim() : '';
 	const minutes = Math.max(0, Math.round((event.end.getTime() - event.start.getTime()) / 60_000));
 
 	let state: string | null = null;
-	if (props.kind === 'exceptional') state = 'One-off';
+	if (props.kind === 'exceptional') state = t('app.oneOff');
 	// "Skipped", not "skipped this week": a block that comes back every two days
 	// has four occurrences in a week and only one of them was skipped.
-	else if (props.suppressed) state = 'Skipped';
-	else if (props.active === false) state = 'Inactive';
+	else if (props.suppressed) state = t('tasks.plan.stateSkipped');
+	else if (props.active === false) state = t('tasks.plan.stateInactive');
 
 	// A fortnightly block and a weekly one are the same rectangle, so the only
 	// place the difference can be read is here. Weekly says nothing, because
@@ -582,7 +571,7 @@ export function describeGridEvent(event: GridEventLike): GridEventDetail {
 	const rule = parseRecurrence(typeof props.recurrence === 'string' ? props.recurrence : null);
 	const repeats =
 		props.kind === 'slot' && rule.kind !== 'weekly'
-			? describeRecurrence(rule, WEEKDAY_LABELS[(event.start.getDay() + 6) % 7])
+			? describeRecurrence(rule, (event.start.getDay() + 6) % 7, t)
 			: null;
 
 	return {

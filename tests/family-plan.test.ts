@@ -16,6 +16,7 @@ import { eq } from 'drizzle-orm';
 import { writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
+import { refusal, refusalOf } from './helpers/refusal';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -76,7 +77,9 @@ describe('seats', () => {
 	test('a plan covers one account until the provider says otherwise', () => {
 		payerHas(1);
 		expect(subscriptions.seatsFor(OWNER)).toBe(1);
-		expect(() => subscriptions.addToPlan(OWNER, strangerEmail())).toThrow(/covers one account/);
+		expect(refusal(() => subscriptions.addToPlan(OWNER, strangerEmail()))).toMatch(
+			/covers one account/
+		);
 	});
 
 	test('a family plan lets the payer OFFER a seat — and nothing more', () => {
@@ -120,11 +123,13 @@ describe('seats', () => {
 	});
 
 	test('the same account cannot be added twice', () => {
-		expect(() => subscriptions.addToPlan(OWNER, strangerEmail())).toThrow(/already on a plan/);
+		expect(refusal(() => subscriptions.addToPlan(OWNER, strangerEmail()))).toMatch(
+			/already on a plan/
+		);
 	});
 
 	test('an address with no account here is refused, and says no more than that', () => {
-		expect(() => subscriptions.addToPlan(OWNER, 'nobody@test.invalid')).toThrow(
+		expect(refusal(() => subscriptions.addToPlan(OWNER, 'nobody@test.invalid'))).toMatch(
 			/No account here uses that address/
 		);
 	});
@@ -303,17 +308,21 @@ describe('an offer nobody has answered', () => {
 		subscriptions.addToPlan(OWNER, strangerEmail());
 		subscriptions.cancelPlanInvite(OWNER, STRANGER);
 		expect(subscriptions.invitesOf(OWNER)).toEqual([]);
-		expect(() => subscriptions.cancelPlanInvite(OWNER, STRANGER)).toThrow(/no invitation/i);
+		expect(refusal(() => subscriptions.cancelPlanInvite(OWNER, STRANGER))).toMatch(
+			/no invitation/i
+		);
 	});
 
 	test('cannot be answered by an account that was never asked', () => {
-		expect(() => subscriptions.acceptPlanInvite(STRANGER)).toThrow(/no invitation/i);
-		expect(() => subscriptions.declinePlanInvite(STRANGER)).toThrow(/no invitation/i);
+		expect(refusal(() => subscriptions.acceptPlanInvite(STRANGER))).toMatch(/no invitation/i);
+		expect(refusal(() => subscriptions.declinePlanInvite(STRANGER))).toMatch(/no invitation/i);
 	});
 
 	test('is not sent twice to the same account', () => {
 		subscriptions.addToPlan(OWNER, strangerEmail());
-		expect(() => subscriptions.addToPlan(OWNER, strangerEmail())).toThrow(/already been asked/);
+		expect(refusal(() => subscriptions.addToPlan(OWNER, strangerEmail()))).toMatch(
+			/already been asked/
+		);
 	});
 
 	test('cannot be accepted by somebody paying for their own account', () => {
@@ -331,7 +340,9 @@ describe('an offer nobody has answered', () => {
 			seats: 1
 		});
 		expect(subscriptions.invitationFor(STRANGER)?.ownPlanEnds).toBeTruthy();
-		expect(() => subscriptions.acceptPlanInvite(STRANGER)).toThrow(/Cancel your own subscription/);
+		expect(refusal(() => subscriptions.acceptPlanInvite(STRANGER))).toMatch(
+			/Cancel your own subscription/
+		);
 
 		// And once they stop paying for themselves, it goes through.
 		subscriptions.applySubscription(STRANGER, {
@@ -434,7 +445,9 @@ describe('inviting somebody with no account', () => {
 		const invite = await import('../src/lib/server/services/family-invite');
 		const partner = subscriptions.membersOf(OWNER).find((m) => m.email.startsWith('partner@'))!;
 
-		await expect(invite.chooseFirstPassword(partner.id, 'short')).rejects.toThrow(/characters/);
+		expect(await refusalOf(() => invite.chooseFirstPassword(partner.id, 'short'))).toMatch(
+			/characters/
+		);
 		await invite.chooseFirstPassword(partner.id, 'a-real-password-8');
 
 		expect(invite.passwordPending(partner.id)).toBe(false);
@@ -462,7 +475,7 @@ describe('inviting somebody with no account', () => {
 		payerHas(5);
 		const { inviteToPlan } = await import('../src/lib/server/services/family-invite');
 		setRegistration('invite');
-		await expect(inviteToPlan(OWNER, 'nobody-here@example.test')).rejects.toThrow(
+		expect(await refusalOf(() => inviteToPlan(OWNER, 'nobody-here@example.test'))).toMatch(
 			/No account here uses that address/
 		);
 		setRegistration('open');
@@ -477,7 +490,7 @@ describe('inviting somebody with no account', () => {
 		setRegistration('open');
 		process.env.ONTOPLANO_REGISTRATION = 'closed';
 		try {
-			await expect(inviteToPlan(OWNER, 'nobody-else@example.test')).rejects.toThrow(
+			expect(await refusalOf(() => inviteToPlan(OWNER, 'nobody-else@example.test'))).toMatch(
 				/No account here uses that address/
 			);
 		} finally {
@@ -509,9 +522,11 @@ describe('the seat ceiling', () => {
 		// The fifth other person is the sixth account, and both doors say no —
 		// minting a new account, and seating one that exists (partner@ does,
 		// from the invite tests above, and is off the plan by now).
-		await expect(inviteToPlan(OWNER, 'seat-5@example.test')).rejects.toThrow(/all taken/);
-		await expect(inviteToPlan(OWNER, 'partner@example.test')).rejects.toThrow(/all taken/);
-		expect(() => subscriptions.addToPlan(OWNER, 'partner@example.test')).toThrow(/all taken/);
+		expect(await refusalOf(() => inviteToPlan(OWNER, 'seat-5@example.test'))).toMatch(/all taken/);
+		expect(await refusalOf(() => inviteToPlan(OWNER, 'partner@example.test'))).toMatch(/all taken/);
+		expect(refusal(() => subscriptions.addToPlan(OWNER, 'partner@example.test'))).toMatch(
+			/all taken/
+		);
 		expect(subscriptions.membersOf(OWNER).length).toBe(4);
 	});
 });

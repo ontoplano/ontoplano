@@ -6,6 +6,8 @@
 	import RoomBar from '$lib/components/RoomBar.svelte';
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
+	import { goto } from '$app/navigation';
+	import Picker from '$lib/components/Picker.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { enhance } from '$lib/enhance';
@@ -61,6 +63,8 @@
 		measureActivity: string;
 	}[] = $state([]);
 	let selectedIndex = $state(0);
+	/* Drawn once the keys have moved it, not as a ring on the first goal. */
+	let cursorShown = $state(false);
 
 	const accent = SECTION_COLORS.home;
 
@@ -92,6 +96,28 @@
 			return { horizon: h, goals: of, loose, filed };
 		}).filter((c) => c.goals.length > 0 || showForm)
 	);
+
+	/** Every goal in the order it is drawn, which is the order j and k walk. */
+	const ordered = $derived(
+		byHorizon.flatMap((c) => [...c.loose, ...c.filed.flatMap((b) => b.goals)])
+	);
+	const cursorId = $derived(ordered[Math.min(selectedIndex, ordered.length - 1)]?.id ?? null);
+
+	/** The area filter as the picker holds it: a string, 'all' for none. */
+	const ALL_AREAS = 'all';
+	const areaOptions = $derived([
+		{ value: ALL_AREAS, label: t('goals.allAreas') },
+		...data.areas.map((a) => ({ value: String(a.id), label: a.name }))
+	]);
+
+	function toggleClosed() {
+		// Both branches are resolved; the rule does not look inside a conditional.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		void goto(data.includeClosed ? resolve('/goals') : resolve('/goals?closed=1'), {
+			noScroll: true,
+			keepFocus: true
+		});
+	}
 
 	/** Parents a goal of this horizon could genuinely belong to. */
 	const parentOptions = $derived(
@@ -207,9 +233,24 @@
 		}
 		if (action === 'next' || action === 'prev') {
 			e.preventDefault();
-			const max = visible.length - 1;
+			const max = ordered.length - 1;
 			if (max < 0) return;
+			if (!cursorShown) {
+				cursorShown = true;
+				selectedIndex = Math.min(selectedIndex, max);
+				return;
+			}
 			selectedIndex = Math.min(Math.max(selectedIndex + (action === 'next' ? 1 : -1), 0), max);
+			document.getElementById(`goal-${ordered[selectedIndex].id}`)?.scrollIntoView({
+				block: 'nearest'
+			});
+			return;
+		}
+		if (action === 'edit') {
+			const under = cursorShown ? ordered.find((g) => g.id === cursorId) : undefined;
+			if (!under) return;
+			e.preventDefault();
+			openEdit(under);
 		}
 	}
 
@@ -226,18 +267,47 @@
 
 <div class="space-y-4">
 	<RoomBar title={t('goals.goals')} />
-	<RoomToolbar>
-		{#snippet tools()}
-			<!-- Managing areas is not filtering by them, so it stands with the
-			     tools rather than among the filters below. Nothing to manage on
-			     an account with no goals. -->
-			{#if data.goals.length > 0}
-				<button onclick={() => (showAreas = true)} class="btn btn-sm" data-tour="goal-areas">
-					{t('goals.areas')}
-				</button>
-			{/if}
-		{/snippet}
-	</RoomToolbar>
+	<!--
+		One row: what narrows the list on the left, managing the areas on the
+		right. It wraps as a row, never into a stack of one control per line.
+	-->
+	<!-- On a phone the cards run to the screen's edges; the controls do not. -->
+	{#if data.areas.length > 0 || data.goals.length > 0}
+		<div class="px-4 sm:px-0">
+			<RoomToolbar>
+				{#snippet tools()}
+					{#if data.areas.length > 0}
+						<Picker
+							value={areaFilter === null ? ALL_AREAS : String(areaFilter)}
+							options={areaOptions}
+							onpick={(next) => (areaFilter = next === ALL_AREAS ? null : Number(next))}
+							label={t('goals.area')}
+						/>
+					{/if}
+					{#if data.goals.length > 0}
+						<button
+							type="button"
+							class="btn btn-sm"
+							aria-pressed={data.includeClosed}
+							onclick={toggleClosed}
+						>
+							<Icon name="archive" size={14} />
+							{t('goals.showClosed')}
+						</button>
+						<button
+							type="button"
+							onclick={() => (showAreas = true)}
+							class="btn btn-sm btn-quiet ml-auto"
+							data-tour="goal-areas"
+						>
+							<Icon name="tag" size={14} />
+							{t('goals.areas')}
+						</button>
+					{/if}
+				{/snippet}
+			</RoomToolbar>
+		</div>
+	{/if}
 
 	<FormError message={form?.message} />
 
@@ -289,53 +359,6 @@
 			<button type="submit" form="area-form" class="btn btn-primary">{t('goals.addArea')}</button>
 		{/snippet}
 	</Modal>
-
-	<!--
-		The filters, together and on one line.
-
-		An area chip and "Show closed" do the same kind of thing — they narrow
-		what is on the page — so they sit in the same row, with the areas on the
-		left where reading starts and the closed switch at the far right where it
-		is not mistaken for one more area.
-	-->
-	{#if data.areas.length > 0 || data.goals.length > 0}
-		<div class="flex flex-wrap items-center gap-1 text-xs">
-			{#if data.areas.length > 0}
-				<span class="eyebrow mr-1 text-gray-500">{t('goals.area')}</span>
-			{/if}
-			{#if data.areas.length > 0}
-				<button
-					onclick={() => (areaFilter = null)}
-					class="border px-2 py-0.5 {areaFilter === null
-						? 'on-fill font-semibold'
-						: 'border-gray-300 bg-white text-gray-600 hover:text-gray-900'}">{t('ui.all')}</button
-				>
-			{/if}
-			{#each data.areas as area (area.id)}
-				<button
-					onclick={() => (areaFilter = areaFilter === area.id ? null : area.id)}
-					class="border px-2 py-0.5 {areaFilter === area.id
-						? 'on-fill font-semibold'
-						: 'border-gray-300 bg-white text-gray-600 hover:text-gray-900'}"
-				>
-					{area.name}
-				</button>
-			{/each}
-
-			{#if data.goals.length > 0}
-				<!-- Both branches are resolved; the rule reads the href expression
-				     and does not look inside a conditional. -->
-				<!-- eslint-disable svelte/no-navigation-without-resolve -->
-				<a
-					href={data.includeClosed ? resolve('/goals') : resolve('/goals?closed=1')}
-					class="ml-auto border border-gray-300 bg-white px-2 py-0.5 text-gray-600 hover:text-gray-900"
-				>
-					{data.includeClosed ? t('goals.hideClosed') : t('goals.showClosed')}
-				</a>
-				<!-- eslint-enable svelte/no-navigation-without-resolve -->
-			{/if}
-		</div>
-	{/if}
 
 	<Modal
 		bind:open={showForm}
@@ -425,6 +448,7 @@
 				if (one) openEdit(one);
 			}}
 			onlink={(id) => (linkingId = id)}
+			selected={cursorShown && goal.id === cursorId}
 		/>
 	{/snippet}
 
@@ -439,12 +463,10 @@
 	<div class="space-y-0 sm:space-y-4" data-tour="goal-list">
 		{#each byHorizon as column (column.horizon)}
 			<section
-				class="card-accent border border-gray-200 bg-white p-4 shadow-card"
+				class="card-accent border border-gray-200 bg-white shadow-card"
 				style="--card-accent: {accent}"
 			>
-				<div
-					class="-mx-4 -mt-4 mb-3 flex items-center justify-between border-b border-b-gray-200 px-4 py-2"
-				>
+				<div class="flex items-center justify-between border-b border-b-gray-200 px-4 py-2">
 					<span class="eyebrow text-gray-600">{t(HORIZON_LABELS[column.horizon])}</span>
 					<span class="tabular text-xs text-gray-500">{column.goals.length}</span>
 				</div>
@@ -455,7 +477,7 @@
 					{/each}
 
 					{#if column.goals.length === 0}
-						<p class="py-3 text-xs text-gray-500">{t('goals.nothingAtThisHorizon')}</p>
+						<p class="px-4 py-3 text-xs text-gray-500">{t('goals.nothingAtThisHorizon')}</p>
 					{/if}
 				</div>
 
@@ -465,10 +487,10 @@
 					The name is a link: the notebook is where the rest of it is.
 				-->
 				{#each column.filed as book (book.id)}
-					<div class="mt-3 border-t-2 border-gray-300 pt-2">
+					<div class="notebook-rule border-t-2 border-gray-300 pt-2">
 						<a
 							href={resolve('/notebooks/[id]', { id: String(book.id) })}
-							class="eyebrow flex items-center gap-1.5 text-gray-600 hover:text-gray-900"
+							class="eyebrow flex items-center gap-1.5 px-4 text-gray-600 hover:text-gray-900"
 						>
 							<Icon name="notebook" size={12} />
 							{book.title}
@@ -495,3 +517,10 @@
 		onclose={() => (linkingId = null)}
 	/>
 </div>
+
+<style>
+	/* A rule across the card, not the top of a box: square at both ends. */
+	.notebook-rule {
+		border-radius: 0;
+	}
+</style>

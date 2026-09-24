@@ -29,6 +29,7 @@ export type DashboardCardId =
 	| 'threeWins'
 	| 'latestTodos'
 	| 'ideas'
+	| 'notebooks'
 	| 'bills'
 	| 'workouts';
 
@@ -93,6 +94,14 @@ export const DASHBOARD_CARDS: DashboardCard[] = [
 		defaultOn: true,
 		width: 'half',
 		section: 'planner'
+	},
+	{
+		id: 'notebooks',
+		label: 'app.notebooks',
+		description: 'card.theNotebooksYouHaveWritten',
+		defaultOn: true,
+		width: 'half',
+		section: 'diary'
 	},
 	{
 		id: 'goals',

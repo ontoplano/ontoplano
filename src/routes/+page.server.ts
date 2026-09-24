@@ -22,6 +22,7 @@ import { listActiveOn } from '$lib/services/goals';
 import { listHabits, today as todayOf } from '$lib/services/habits';
 import { generateForDate, listForDate } from '$lib/services/instances';
 import { listIdeas } from '$lib/services/ideas';
+import { recentlyEditedNotebooks } from '$lib/services/notebooks';
 import { listQuotes } from '$lib/services/quotes';
 import { readWeek, reviewPending, weekStartOf } from '$lib/services/review';
 import { shoppingRun } from '$lib/services/inventory';
@@ -41,6 +42,14 @@ import { localDay, minutesOfDay } from '$lib/services/time';
  * a plan is a guess anyway.
  */
 const NEXT_DAYS = 3;
+
+/**
+ * How many notebooks the notebooks card shows.
+ *
+ * Three covers is one row of them at the width of a half card, and a shelf is
+ * read by looking rather than by scrolling.
+ */
+const RECENT_NOTEBOOKS = 3;
 
 /**
  * The dashboard, for whoever is signed in — which on an isolated instance is
@@ -279,6 +288,13 @@ export const load = async ({ locals }: IsolatedEvent) => {
 			.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 			.slice(0, 12),
 		latestIdeas: listIdeas(ctx).slice(0, 12),
+		/**
+		 * The notebooks last written in, for the card that shows their covers.
+		 *
+		 * Three, because the card is half a row wide and a shelf of covers is
+		 * read by looking rather than by scrolling.
+		 */
+		recentNotebooks: recentlyEditedNotebooks(ctx, RECENT_NOTEBOOKS),
 		/** Set when last week had blocks in it and nobody has written it up yet. */
 		pendingReview: reviewPending(ctx),
 		nextDays,

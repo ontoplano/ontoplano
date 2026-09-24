@@ -263,10 +263,12 @@ existed, so there is nothing to learn by walking the numbers.
   A task's line carries an opening of its notes and the links in them; a note's
   line the same. `media` fetches one when it turns out to matter — a list is
   rarely read for its pictures, and always read to find something.
-- **A list can be asked for narrowly.** `status`, `tag`, `withoutTag` and
-  `taggedSince` on the task list; `tag` and `taggedSince` on notes. The date
-  read is the label's own — it does not move when the thing is edited — so
-  "what went into review since this morning" is one call.
+- **A list can be asked for narrowly.** `status`, `tags`, `withoutTags` and
+  `taggedSince` on the task list; `tags` and `taggedSince` on notes. `tags`
+  takes as many labels as you like and answers with anything carrying any one
+  of them, so a queue spread over `u5`, `e2` and `i5` is one call rather than
+  three. The date read is the label's own — it does not move when the thing is
+  edited — so "what went into review since this morning" is one call.
 - **`up_next` answers what to do next**, by the ratings on the tasks
   themselves: most urgent first, then the one that takes least energy, then the
   one most wanted. Energy runs the other way to the other two — low is good. A
@@ -332,17 +334,17 @@ Add a one-off block to one day: a title, a start time and how long it runs. This
 
 _Needs `schedule:write`; writes._
 
-| Parameter    | Type    | Required | What it is                                                                                                                                                                                           |
-| ------------ | ------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `date`       | string  | yes      | The day, as YYYY-MM-DD.                                                                                                                                                                              |
-| `title`      | string  | yes      | What it is — shown on the block.                                                                                                                                                                     |
-| `start_time` | string  | yes      | When it starts, as HH:MM on a 24-hour clock.                                                                                                                                                         |
-| `minutes`    | integer | —        | How long it runs, in minutes. Default `60`.                                                                                                                                                          |
-| `category`   | string  | —        | Which part of life it belongs to, by name — `categories` lists them. A name that matches nothing is refused, never guessed. The first category is used only when this is left out entirely.          |
-| `urgency`    | integer | —        | How soon it has to happen, 0–5.                                                                                                                                                                      |
-| `interest`   | integer | —        | How much they want to do it, 0–5.                                                                                                                                                                    |
-| `ease`       | integer | —        | How easy it is, 0–5, five being easiest. Replaces `energy`, which asked the opposite question on a scale that began at one.                                                                          |
-| `energy`     | integer | —        | Deprecated — use \`ease\`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in …. **Deprecated.** |
+| Parameter    | Type    | Required | What it is                                                                                                                                                                                             |
+| ------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `date`       | string  | yes      | The day, as YYYY-MM-DD.                                                                                                                                                                                |
+| `title`      | string  | yes      | What it is — shown on the block.                                                                                                                                                                       |
+| `start_time` | string  | yes      | When it starts, as HH:MM on a 24-hour clock.                                                                                                                                                           |
+| `minutes`    | integer | —        | How long it runs, in minutes. Default `60`.                                                                                                                                                            |
+| `category`   | string  | —        | Which part of life it belongs to, by name — `categories` lists them. A name that matches nothing is refused, never guessed. The first category is used only when this is left out entirely.            |
+| `urgency`    | integer | —        | How soon it has to happen, 0–5.                                                                                                                                                                        |
+| `interest`   | integer | —        | How much they want to do it, 0–5.                                                                                                                                                                      |
+| `ease`       | integer | —        | How easy it is, 0–5, five being easiest. Replaces `energy`, which asked the opposite question on a scale that began at one.                                                                            |
+| `energy`     | integer | —        | Deprecated — use `ease`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190. **Deprecated.** |
 
 ### `change_block` — Move or rename a block
 
@@ -412,38 +414,44 @@ _Needs any of `notes:read`, `ideas:read`, `tasks:read`, `people:read`, `kitchen:
 
 ### `todos` — The todo list
 
-Tasks with no date on them yet. A todo gains a date by being put on a day, which promotes it onto the week. Answers with a line per task; `verbose` or `fields` for more. Narrow it rather than reading it whole — `notebookId` for one subject, `status: "open"`, `tag`, `withoutTag`, `taggedSince`.
+Tasks with no date on them yet. A todo gains a date by being put on a day, which promotes it onto the week. Answers with a line per task; `verbose` or `fields` for more. Narrow it rather than reading it whole — `notebookId` for one subject, `status: "open"`, `tags`, `withoutTags`, `taggedSince`.
 
 _Needs `tasks:read`; read-only._
 
-| Parameter         | Type    | Required | What it is                                                                                                                                                                                                        |
-| ----------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `limit`           | integer | —        | How many to return. Default `50`.                                                                                                                                                                                 |
-| `offset`          | integer | —        | Skip this many before counting, so the rest of the list can be read a page at a time. Default `0`.                                                                                                                |
-| `notebookId`      | integer | —        | Only the tasks filed under this notebook, as `notebooks` gives its id. `0` is the ones filed under nothing.                                                                                                       |
-| `includeArchived` | boolean | —        | Include the tasks that have been put away. Off by default, which is what putting away means.                                                                                                                      |
-| `status`          | string  | —        | Only the tasks in this state. `open` is everything not finished and not skipped, which is what a list is usually read for. One of: `todo`, `doing`, `done`, `skipped`, `open`, `closed`.                          |
-| `tag`             | string  | —        | Only the ones carrying this label. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours.                                         |
-| `withoutTag`      | string  | —        | Only the ones NOT carrying this label. The mirror of `tag`; both may be given.                                                                                                                                    |
-| `taggedSince`     | string  | —        | Only the ones labelled at or after this moment — `2026-09-21` or a full ISO timestamp. With `tag`, it is that label’s own date; without, any label’s. A label put on before dates were kept does not answer this. |
-| `verbose`         | boolean | —        | Send the whole of each row rather than a line. Off by default: a list is usually read to find something, and the thing found is then asked about by id.                                                           |
-| `fields`          | string  | —        | Only these parts of each row, comma-separated — `title,status,tags`. `id` always comes back. Unknown names are refused rather than ignored.                                                                       |
+| Parameter         | Type    | Required | What it is                                                                                                                                                                                                                                                                                                                                        |
+| ----------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `limit`           | integer | —        | How many to return. Default `50`.                                                                                                                                                                                                                                                                                                                 |
+| `offset`          | integer | —        | Skip this many before counting, so the rest of the list can be read a page at a time. Default `0`.                                                                                                                                                                                                                                                |
+| `notebookId`      | integer | —        | Only the tasks filed under this notebook, as `notebooks` gives its id. `0` is the ones filed under nothing.                                                                                                                                                                                                                                       |
+| `includeArchived` | boolean | —        | Include the tasks that have been put away. Off by default, which is what putting away means.                                                                                                                                                                                                                                                      |
+| `status`          | string  | —        | Only the tasks in this state. `open` is everything not finished and not skipped, which is what a list is usually read for. One of: `todo`, `doing`, `done`, `skipped`, `open`, `closed`.                                                                                                                                                          |
+| `tags`            | array   | —        | Only the ones carrying at least one of these labels, so naming several reads several queues in one call — `["u5", "e2", "i5"]`. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours. A single string of them, separated by commas or spaces, is understood too. |
+| `tagMode`         | string  | —        | How `tags` combine. `any` (the default) keeps what carries at least one of them; `all` keeps only what carries every one. `withoutTags` drops the same either way.                                                                                                                                                                                |
+| `withoutTags`     | array   | —        | Leave out the ones carrying any of these labels. The mirror of `tags`, written the same way; both may be given.                                                                                                                                                                                                                                   |
+| `tag`             | string  | —        | Deprecated — use `tags`, which asks the same thing of any number of labels at once. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated.**                                                                                                                                           |
+| `withoutTag`      | string  | —        | Deprecated — use `withoutTags`, which drops anything carrying any of the labels named. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated.**                                                                                                                                        |
+| `taggedSince`     | string  | —        | Only the ones labelled at or after this moment — `2026-09-21` or a full ISO timestamp. With `tags`, it is the date of whichever of those labels the thing carries; without, any label’s. A label put on before dates were kept does not answer this.                                                                                              |
+| `verbose`         | boolean | —        | Send the whole of each row rather than a line. Off by default: a list is usually read to find something, and the thing found is then asked about by id.                                                                                                                                                                                           |
+| `fields`          | string  | —        | Only these parts of each row, comma-separated — `title,status,tags`. `id` always comes back. Unknown names are refused rather than ignored.                                                                                                                                                                                                       |
 
 ### `up_next` — What to do next
 
-The task to do next, by the ratings on it: most urgent first, then the easiest, then the one most wanted. All three run the same way — five is the most of what the word says. An unrated one is not a zero: it counts as the middle of the scale, 2.5, so anything marked 4 or 5 beats it and 1 or 2 falls below it as the postpone tiers. Open, unarchived, undated tasks only — anything with a day on it is on the week and `today` answers for that. Answers with one line by default; `limit` for a short list to choose between.
+The task to do next, by the ratings on it: most urgent first, then the easiest, then the one most wanted. All three run the same way — five is the most of what the word says. An unrated one is not a zero: it counts as the middle of the scale, 2.5, so anything marked 4 or 5 beats it and 1 or 2 falls below it as the postpone tiers. Open, unarchived, undated tasks only — anything with a day on it is on the week and `today` answers for that. Answers with one line by default; `limit` for a short list to choose between, and `tags` to ask it of one queue or of several at once.
 
 _Needs `tasks:read`; read-only._
 
-| Parameter     | Type    | Required | What it is                                                                                                                                                                                                        |
-| ------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `limit`       | integer | —        | How many to return. One is the usual question. Default `1`.                                                                                                                                                       |
-| `notebookId`  | integer | —        | Only tasks filed under this notebook, as `notebooks` gives its id.                                                                                                                                                |
-| `tag`         | string  | —        | Only the ones carrying this label. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours.                                         |
-| `withoutTag`  | string  | —        | Only the ones NOT carrying this label. The mirror of `tag`; both may be given.                                                                                                                                    |
-| `taggedSince` | string  | —        | Only the ones labelled at or after this moment — `2026-09-21` or a full ISO timestamp. With `tag`, it is that label’s own date; without, any label’s. A label put on before dates were kept does not answer this. |
-| `verbose`     | boolean | —        | Send the whole of each row rather than a line. Off by default: a list is usually read to find something, and the thing found is then asked about by id.                                                           |
-| `fields`      | string  | —        | Only these parts of each row, comma-separated — `title,status,tags`. `id` always comes back. Unknown names are refused rather than ignored.                                                                       |
+| Parameter     | Type    | Required | What it is                                                                                                                                                                                                                                                                                                                                        |
+| ------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `limit`       | integer | —        | How many to return. One is the usual question. Default `1`.                                                                                                                                                                                                                                                                                       |
+| `notebookId`  | integer | —        | Only tasks filed under this notebook, as `notebooks` gives its id.                                                                                                                                                                                                                                                                                |
+| `tags`        | array   | —        | Only the ones carrying at least one of these labels, so naming several reads several queues in one call — `["u5", "e2", "i5"]`. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours. A single string of them, separated by commas or spaces, is understood too. |
+| `tagMode`     | string  | —        | How `tags` combine. `any` (the default) keeps what carries at least one of them; `all` keeps only what carries every one. `withoutTags` drops the same either way.                                                                                                                                                                                |
+| `withoutTags` | array   | —        | Leave out the ones carrying any of these labels. The mirror of `tags`, written the same way; both may be given.                                                                                                                                                                                                                                   |
+| `tag`         | string  | —        | Deprecated — use `tags`, which asks the same thing of any number of labels at once. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated.**                                                                                                                                           |
+| `withoutTag`  | string  | —        | Deprecated — use `withoutTags`, which drops anything carrying any of the labels named. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated.**                                                                                                                                        |
+| `taggedSince` | string  | —        | Only the ones labelled at or after this moment — `2026-09-21` or a full ISO timestamp. With `tags`, it is the date of whichever of those labels the thing carries; without, any label’s. A label put on before dates were kept does not answer this.                                                                                              |
+| `verbose`     | boolean | —        | Send the whole of each row rather than a line. Off by default: a list is usually read to find something, and the thing found is then asked about by id.                                                                                                                                                                                           |
+| `fields`      | string  | —        | Only these parts of each row, comma-separated — `title,status,tags`. `id` always comes back. Unknown names are refused rather than ignored.                                                                                                                                                                                                       |
 
 ### `add_todo` — Add a todo
 
@@ -538,7 +546,7 @@ _Needs `tasks:write`; writes._
 | `urgency`    | integer | —        | How soon it has to happen, 0–5.                                                                                                                                                                        |
 | `interest`   | integer | —        | How much they want to do it, 0–5.                                                                                                                                                                      |
 | `ease`       | integer | —        | How easy it is, 0–5, five being easiest. Replaces `energy`, which asked the opposite question on a scale that began at one.                                                                            |
-| `energy`     | integer | —        | Deprecated — use \`ease\`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in …. **Deprecated.**   |
+| `energy`     | integer | —        | Deprecated — use `ease`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190. **Deprecated.** |
 
 ### `schedule_todo` — Put a todo on a day
 
@@ -640,15 +648,18 @@ What has been written lately, newest first. An entry can belong to a notebook or
 
 _Needs `notes:read`; read-only._
 
-| Parameter     | Type    | Required | What it is                                                                                                                                                                                                        |
-| ------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `limit`       | integer | —        | How many entries. Default `20`.                                                                                                                                                                                   |
-| `offset`      | integer | —        | Skip this many before counting, so the rest of the diary can be read a page at a time. Default `0`.                                                                                                               |
-| `tag`         | string  | —        | Only the ones carrying this label. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours.                                         |
-| `withoutTag`  | string  | —        | Only the ones NOT carrying this label. The mirror of `tag`; both may be given.                                                                                                                                    |
-| `taggedSince` | string  | —        | Only the ones labelled at or after this moment — `2026-09-21` or a full ISO timestamp. With `tag`, it is that label’s own date; without, any label’s. A label put on before dates were kept does not answer this. |
-| `verbose`     | boolean | —        | Send the whole of each row rather than a line. Off by default: a list is usually read to find something, and the thing found is then asked about by id.                                                           |
-| `fields`      | string  | —        | Only these parts of each row, comma-separated — `title,status,tags`. `id` always comes back. Unknown names are refused rather than ignored.                                                                       |
+| Parameter     | Type    | Required | What it is                                                                                                                                                                                                                                                                                                                                        |
+| ------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `limit`       | integer | —        | How many entries. Default `20`.                                                                                                                                                                                                                                                                                                                   |
+| `offset`      | integer | —        | Skip this many before counting, so the rest of the diary can be read a page at a time. Default `0`.                                                                                                                                                                                                                                               |
+| `tags`        | array   | —        | Only the ones carrying at least one of these labels, so naming several reads several queues in one call — `["u5", "e2", "i5"]`. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours. A single string of them, separated by commas or spaces, is understood too. |
+| `tagMode`     | string  | —        | How `tags` combine. `any` (the default) keeps what carries at least one of them; `all` keeps only what carries every one. `withoutTags` drops the same either way.                                                                                                                                                                                |
+| `withoutTags` | array   | —        | Leave out the ones carrying any of these labels. The mirror of `tags`, written the same way; both may be given.                                                                                                                                                                                                                                   |
+| `tag`         | string  | —        | Deprecated — use `tags`, which asks the same thing of any number of labels at once. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated.**                                                                                                                                           |
+| `withoutTag`  | string  | —        | Deprecated — use `withoutTags`, which drops anything carrying any of the labels named. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated.**                                                                                                                                        |
+| `taggedSince` | string  | —        | Only the ones labelled at or after this moment — `2026-09-21` or a full ISO timestamp. With `tags`, it is the date of whichever of those labels the thing carries; without, any label’s. A label put on before dates were kept does not answer this.                                                                                              |
+| `verbose`     | boolean | —        | Send the whole of each row rather than a line. Off by default: a list is usually read to find something, and the thing found is then asked about by id.                                                                                                                                                                                           |
+| `fields`      | string  | —        | Only these parts of each row, comma-separated — `title,status,tags`. `id` always comes back. Unknown names are refused rather than ignored.                                                                                                                                                                                                       |
 
 ### `write_entry` — Write a diary entry
 
@@ -665,21 +676,24 @@ _Needs `notes:write`; writes._
 
 ### `notebook_notes` — The notes in a notebook
 
-What has been written against one subject, newest first, with the id of each note. `diary` deliberately shows only entries outside a notebook, so this is the way to read one — and the way to find the id `archive_note` wants. Answers with a line and an opening per note; `verbose` for the writing itself, `tag` and `taggedSince` to narrow.
+What has been written against one subject, newest first, with the id of each note. `diary` deliberately shows only entries outside a notebook, so this is the way to read one — and the way to find the id `archive_note` wants. Answers with a line and an opening per note; `verbose` for the writing itself, `tags` and `taggedSince` to narrow.
 
 _Needs `notes:read`; read-only._
 
-| Parameter         | Type    | Required | What it is                                                                                                                                                                                                        |
-| ----------------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`              | integer | yes      | The notebook’s id, as `notebooks` gives it.                                                                                                                                                                       |
-| `includeArchived` | boolean | —        | Include the notes that have been put away. Off by default, as on the page.                                                                                                                                        |
-| `limit`           | integer | —        | How many to return. Default `50`.                                                                                                                                                                                 |
-| `offset`          | integer | —        | Skip this many before counting, so the rest of the notebook can be read a page at a time. Default `0`.                                                                                                            |
-| `tag`             | string  | —        | Only the ones carrying this label. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours.                                         |
-| `withoutTag`      | string  | —        | Only the ones NOT carrying this label. The mirror of `tag`; both may be given.                                                                                                                                    |
-| `taggedSince`     | string  | —        | Only the ones labelled at or after this moment — `2026-09-21` or a full ISO timestamp. With `tag`, it is that label’s own date; without, any label’s. A label put on before dates were kept does not answer this. |
-| `verbose`         | boolean | —        | Send the whole of each row rather than a line. Off by default: a list is usually read to find something, and the thing found is then asked about by id.                                                           |
-| `fields`          | string  | —        | Only these parts of each row, comma-separated — `title,status,tags`. `id` always comes back. Unknown names are refused rather than ignored.                                                                       |
+| Parameter         | Type    | Required | What it is                                                                                                                                                                                                                                                                                                                                        |
+| ----------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`              | integer | yes      | The notebook’s id, as `notebooks` gives it.                                                                                                                                                                                                                                                                                                       |
+| `includeArchived` | boolean | —        | Include the notes that have been put away. Off by default, as on the page.                                                                                                                                                                                                                                                                        |
+| `limit`           | integer | —        | How many to return. Default `50`.                                                                                                                                                                                                                                                                                                                 |
+| `offset`          | integer | —        | Skip this many before counting, so the rest of the notebook can be read a page at a time. Default `0`.                                                                                                                                                                                                                                            |
+| `tags`            | array   | —        | Only the ones carrying at least one of these labels, so naming several reads several queues in one call — `["u5", "e2", "i5"]`. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours. A single string of them, separated by commas or spaces, is understood too. |
+| `tagMode`         | string  | —        | How `tags` combine. `any` (the default) keeps what carries at least one of them; `all` keeps only what carries every one. `withoutTags` drops the same either way.                                                                                                                                                                                |
+| `withoutTags`     | array   | —        | Leave out the ones carrying any of these labels. The mirror of `tags`, written the same way; both may be given.                                                                                                                                                                                                                                   |
+| `tag`             | string  | —        | Deprecated — use `tags`, which asks the same thing of any number of labels at once. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated.**                                                                                                                                           |
+| `withoutTag`      | string  | —        | Deprecated — use `withoutTags`, which drops anything carrying any of the labels named. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated.**                                                                                                                                        |
+| `taggedSince`     | string  | —        | Only the ones labelled at or after this moment — `2026-09-21` or a full ISO timestamp. With `tags`, it is the date of whichever of those labels the thing carries; without, any label’s. A label put on before dates were kept does not answer this.                                                                                              |
+| `verbose`         | boolean | —        | Send the whole of each row rather than a line. Off by default: a list is usually read to find something, and the thing found is then asked about by id.                                                                                                                                                                                           |
+| `fields`          | string  | —        | Only these parts of each row, comma-separated — `title,status,tags`. `id` always comes back. Unknown names are refused rather than ignored.                                                                                                                                                                                                       |
 
 ### `pin_note` — Keep a note at the top
 
@@ -747,7 +761,7 @@ _Needs `notes:write`; writes._
 
 ### `notebooks` — Notebooks
 
-The subjects being written against — a trip, a renovation, a book — with the id every other tool means by `notebookId`. Ask for these before writing an entry into one. A key tied to one notebook is answered with that one.
+The subjects being written against — a trip, a renovation, a book — with the id every other tool means by `notebookId`. Ask for these before writing an entry into one. A key tied to one notebook is answered with that one. `modules` is what each one holds: the tabs it shows, which is also what it will accept being filed under it.
 
 _Needs `notes:read`; read-only._
 
@@ -761,28 +775,30 @@ Make a notebook — a subject written against with no deadline: a book, a trip, 
 
 _Needs `notes:write`; writes._
 
-| Parameter     | Type   | Required | What it is                                                                                                                                                                                                          |
-| ------------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `title`       | string | yes      | What it is about.                                                                                                                                                                                                   |
-| `description` | string | —        | A line under the title, shown on its page.                                                                                                                                                                          |
-| `defaultTags` | string | —        | Labels a new note in it starts with, comma or space separated — the ones writing about this subject always carries, so nobody types them on every note. The person can still take them off a note as they write it. |
+| Parameter     | Type   | Required | What it is                                                                                                                                                                                                                                                                                                                    |
+| ------------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`       | string | yes      | What it is about.                                                                                                                                                                                                                                                                                                             |
+| `description` | string | —        | A line under the title, shown on its page.                                                                                                                                                                                                                                                                                    |
+| `defaultTags` | string | —        | Labels a new note in it starts with, comma or space separated — the ones writing about this subject always carries, so nobody types them on every note. The person can still take them off a note as they write it.                                                                                                           |
+| `modules`     | string | —        | What it holds, comma separated — notes, tasks, goals, ideas, inventory, ledgers, bills, habits, workouts, recipes. Notes and tasks unless this says otherwise, and notes are always in it. Only name what the subject actually accumulates: nine tabs on a reading list is the app deciding what somebody’s subject is about. |
 
 ### `change_notebook` — Change a notebook
 
-Rename a notebook, rewrite the line under its title, or set the labels a new note in it starts with. The title is always sent; the other two change only when given.
+Rename a notebook, rewrite the line under its title, set the labels a new note in it starts with, or change what it holds. The title is always sent; the rest change only when given.
 
 _Needs `notes:write`; writes._
 
-| Parameter     | Type    | Required | What it is                                                                                                                |
-| ------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `id`          | integer | yes      | The notebook’s id, as `notebooks` gives it.                                                                               |
-| `title`       | string  | yes      | What it is about. Renaming with the — separator moves it under another.                                                   |
-| `description` | string  | —        | A line under the title, shown on its page.                                                                                |
-| `defaultTags` | string  | —        | Labels a new note in it starts with, comma or space separated. An empty string clears them; left out, they are untouched. |
+| Parameter     | Type    | Required | What it is                                                                                                                                                                                                                                                                               |
+| ------------- | ------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | integer | yes      | The notebook’s id, as `notebooks` gives it.                                                                                                                                                                                                                                              |
+| `title`       | string  | yes      | What it is about. Renaming with the — separator moves it under another.                                                                                                                                                                                                                  |
+| `description` | string  | —        | A line under the title, shown on its page.                                                                                                                                                                                                                                               |
+| `defaultTags` | string  | —        | Labels a new note in it starts with, comma or space separated. An empty string clears them; left out, they are untouched.                                                                                                                                                                |
+| `modules`     | string  | —        | What it holds, comma separated — notes, tasks, goals, ideas, inventory, ledgers, bills, habits, workouts, recipes. The whole list, not an addition. Notes are always in it. Switching one off keeps whatever is already filed under it; it stops being a tab, and stays in its own room. |
 
 ### `remove_notebook` — Remove an empty notebook
 
-Delete a notebook that holds nothing — no notes, no tasks, no goals. One with anything in it is refused with what it holds: somebody’s writing is deleted by them in the app, never through a tool. For a notebook made by mistake.
+Delete a notebook that holds nothing — no notes, no tasks, nothing filed under it at all. One with anything in it is refused with what it holds: somebody’s writing is deleted by them in the app, never through a tool. For a notebook made by mistake.
 
 _Needs `notes:write` and `destructive`; deletes._
 
@@ -818,10 +834,11 @@ Write an idea down without deciding where it belongs. The lowest-friction thing 
 
 _Needs `ideas:write`; writes._
 
-| Parameter | Type   | Required | What it is            |
-| --------- | ------ | -------- | --------------------- |
-| `content` | string | yes      | The idea.             |
-| `tags`    | string | —        | Comma-separated tags. |
+| Parameter    | Type    | Required | What it is                                                                                                                                                                                                     |
+| ------------ | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `content`    | string  | yes      | The idea.                                                                                                                                                                                                      |
+| `tags`       | string  | —        | Comma-separated tags.                                                                                                                                                                                          |
+| `notebookId` | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
 
 ### `remove_idea` — Delete an idea
 
@@ -852,6 +869,27 @@ Every label the account uses, alphabetically, with the colour it wears and how m
 _Needs `tags:read`; read-only._
 
 _Takes no parameters._
+
+### `notebook_tags` — The labels in one notebook
+
+The labels on what is filed under one subject, with how much of it carries each — and what kind: notes, tasks, ideas. Narrower than `tags`, which counts a word across the whole account, and the one to ask before labelling something the way this notebook labels things. A label the notebook suggests by default is listed at nought.
+
+_Needs `tags:read`; read-only._
+
+| Parameter    | Type    | Required | What it is                                 |
+| ------------ | ------- | -------- | ------------------------------------------ |
+| `notebookId` | integer | yes      | The notebook, as `notebooks` gives its id. |
+
+### `describe_tag` — Say what a label means
+
+Write down what a word means in this account — `#short` on the shopping is low on something, `#short` on a book is the book. One line; an empty one takes the meaning off again. The label itself is not changed: `rename_tag` is for that.
+
+_Needs `tags:write`; writes._
+
+| Parameter     | Type    | Required | What it is                                          |
+| ------------- | ------- | -------- | --------------------------------------------------- |
+| `id`          | integer | yes      | The label’s id, as `tags` gives it.                 |
+| `description` | string  | —        | What the word means here. Empty takes it off again. |
 
 ### `rename_tag` — Rename a label
 
@@ -901,12 +939,13 @@ Put something on the list. If the cupboard already has it, this says so rather t
 
 _Needs `inventory:write`; writes._
 
-| Parameter | Type   | Required | What it is                                                                                                                                                                   |
-| --------- | ------ | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `name`    | string | yes      | What to buy.                                                                                                                                                                 |
-| `type`    | string | —        | `replenish` is something the cupboard runs out of and wants again; `someday` is a wishlist item. Default `replenish`. One of: `replenish`, `someday`. Default `'replenish'`. |
-| `notes`   | string | —        | Anything else about it.                                                                                                                                                      |
-| `section` | string | —        | The section to file it under, by name — `inventory_categories` lists them.                                                                                                   |
+| Parameter    | Type    | Required | What it is                                                                                                                                                                                                     |
+| ------------ | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`       | string  | yes      | What to buy.                                                                                                                                                                                                   |
+| `type`       | string  | —        | `replenish` is something the cupboard runs out of and wants again; `someday` is a wishlist item. Default `replenish`. One of: `replenish`, `someday`. Default `'replenish'`.                                   |
+| `notes`      | string  | —        | Anything else about it.                                                                                                                                                                                        |
+| `section`    | string  | —        | The section to file it under, by name — `inventory_categories` lists them.                                                                                                                                     |
+| `notebookId` | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
 
 ### `tick_bought` — Tick something bought
 
@@ -974,14 +1013,15 @@ Write a recipe down. Ingredients are one per line — "200 g flour", "2 eggs" �
 
 _Needs `kitchen:write`; writes._
 
-| Parameter     | Type    | Required | What it is                    |
-| ------------- | ------- | -------- | ----------------------------- |
-| `title`       | string  | yes      | What it is called.            |
-| `ingredients` | string  | —        | One per line, quantity first. |
-| `method`      | string  | —        | How to make it, as Markdown.  |
-| `servings`    | integer | —        | How many it feeds.            |
-| `minutes`     | integer | —        | How long it takes.            |
-| `source`      | string  | —        | Where it came from.           |
+| Parameter     | Type    | Required | What it is                                                                                                                                                                                                     |
+| ------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`       | string  | yes      | What it is called.                                                                                                                                                                                             |
+| `ingredients` | string  | —        | One per line, quantity first.                                                                                                                                                                                  |
+| `method`      | string  | —        | How to make it, as Markdown.                                                                                                                                                                                   |
+| `servings`    | integer | —        | How many it feeds.                                                                                                                                                                                             |
+| `minutes`     | integer | —        | How long it takes.                                                                                                                                                                                             |
+| `source`      | string  | —        | Where it came from.                                                                                                                                                                                            |
+| `notebookId`  | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
 
 ### `change_recipe` — Change a recipe
 
@@ -1173,12 +1213,13 @@ Start tracking a habit: something to keep doing (`good`), to avoid (`bad`), or j
 
 _Needs `habits:write`; writes._
 
-| Parameter       | Type   | Required | What it is                                                                      |
-| --------------- | ------ | -------- | ------------------------------------------------------------------------------- |
-| `name`          | string | yes      | The habit, in the person’s own words.                                           |
-| `type`          | string | —        | good to keep, bad to avoid, neutral to watch. One of: `bad`, `good`, `neutral`. |
-| `description`   | string | —        | Anything else about it.                                                         |
-| `scheduledDays` | string | —        | The days it is due, in the shape `all_habits` shows. Every day if left out.     |
+| Parameter       | Type    | Required | What it is                                                                                                                                                                                                     |
+| --------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`          | string  | yes      | The habit, in the person’s own words.                                                                                                                                                                          |
+| `type`          | string  | —        | good to keep, bad to avoid, neutral to watch. One of: `bad`, `good`, `neutral`.                                                                                                                                |
+| `description`   | string  | —        | Anything else about it.                                                                                                                                                                                        |
+| `scheduledDays` | string  | —        | The days it is due, in the shape `all_habits` shows. Every day if left out.                                                                                                                                    |
+| `notebookId`    | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
 
 ### `change_habit` — Change a habit
 
@@ -1289,7 +1330,7 @@ _Needs `schedule:write`; writes._
 | `urgency`        | integer | —        | How soon it has to happen, 0–5.                                                                                                                                                                                  |
 | `interest`       | integer | —        | How much they want to do it, 0–5.                                                                                                                                                                                |
 | `ease`           | integer | —        | How easy it is, 0–5, five being easiest. Replaces `energy`, which asked the opposite question on a scale that began at one.                                                                                      |
-| `energy`         | integer | —        | Deprecated — use \`ease\`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in …. **Deprecated.**             |
+| `energy`         | integer | —        | Deprecated — use `ease`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190. **Deprecated.**           |
 
 ### `change_repeating_block` — Change a repeating block
 
@@ -1692,14 +1733,15 @@ Write a workout down: a title, a category (one of the account’s own, from `wor
 
 _Needs `workouts:write`; writes._
 
-| Parameter     | Type    | Required | What it is                                                                                                                                                                     |
-| ------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `title`       | string  | yes      | What the session is called.                                                                                                                                                    |
-| `category_id` | integer | —        | Its category, from `workout_categories`.                                                                                                                                       |
-| `plan`        | string  | —        | What to do, as Markdown.                                                                                                                                                       |
-| `minutes`     | integer | —        | Roughly how long it takes.                                                                                                                                                     |
-| `notes`       | string  | —        | Anything else.                                                                                                                                                                 |
-| `measures`    | array   | —        | What this workout is measured by, in the order a session should be asked for them. Names and units in the person’s own words; no amounts. Each one carries `activity`, `unit`. |
+| Parameter     | Type    | Required | What it is                                                                                                                                                                                                     |
+| ------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`       | string  | yes      | What the session is called.                                                                                                                                                                                    |
+| `category_id` | integer | —        | Its category, from `workout_categories`.                                                                                                                                                                       |
+| `plan`        | string  | —        | What to do, as Markdown.                                                                                                                                                                                       |
+| `minutes`     | integer | —        | Roughly how long it takes.                                                                                                                                                                                     |
+| `notes`       | string  | —        | Anything else.                                                                                                                                                                                                 |
+| `measures`    | array   | —        | What this workout is measured by, in the order a session should be asked for them. Names and units in the person’s own words; no amounts. Each one carries `activity`, `unit`.                                 |
+| `notebookId`  | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
 
 ### `change_workout` — Change a workout
 
@@ -1751,11 +1793,12 @@ A new place money moves through. `kind` is bank, card, cash or other; `default_p
 
 _Needs `statements:write`; writes._
 
-| Parameter        | Type   | Required | What it is                                  |
-| ---------------- | ------ | -------- | ------------------------------------------- |
-| `name`           | string | yes      | What it is called — "Nubank", "Visa".       |
-| `kind`           | string | —        | bank, card, cash or other.                  |
-| `default_parser` | string | —        | An export key like 'nubank:conta_corrente'. |
+| Parameter        | Type    | Required | What it is                                                                                                                                                                                                     |
+| ---------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`           | string  | yes      | What it is called — "Nubank", "Visa".                                                                                                                                                                          |
+| `kind`           | string  | —        | bank, card, cash or other.                                                                                                                                                                                     |
+| `default_parser` | string  | —        | An export key like 'nubank:conta_corrente'.                                                                                                                                                                    |
+| `notebookId`     | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
 
 ### `record_movement` — Put a line in a ledger
 
@@ -1895,16 +1938,17 @@ Write down a bill you expect to pay: a name, the expected amount in minor units 
 
 _Needs `bills:write`; writes._
 
-| Parameter         | Type    | Required | What it is                                                                                   |
-| ----------------- | ------- | -------- | -------------------------------------------------------------------------------------------- |
-| `name`            | string  | yes      | What the bill is called.                                                                     |
-| `amount_expected` | integer | —        | The expected amount, in minor units (cents).                                                 |
-| `rhythm`          | string  | —        | weekly, monthly, yearly, or once.                                                            |
-| `due_day`         | integer | —        | Day of the month it falls due, 1-28 (monthly) — the last day it can be paid.                 |
-| `pay_lead_days`   | integer | —        | Pay it this many days before the due day (0 = on the day). It turns up on the week that day. |
-| `currency`        | string  | —        | A currency code like BRL. The account’s default if left out.                                 |
-| `flow`            | string  | —        | 'out' for a bill (the default), 'in' for income.                                             |
-| `notes`           | string  | —        | Anything else.                                                                               |
+| Parameter         | Type    | Required | What it is                                                                                                                                                                                                     |
+| ----------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`            | string  | yes      | What the bill is called.                                                                                                                                                                                       |
+| `amount_expected` | integer | —        | The expected amount, in minor units (cents).                                                                                                                                                                   |
+| `rhythm`          | string  | —        | weekly, monthly, yearly, or once.                                                                                                                                                                              |
+| `due_day`         | integer | —        | Day of the month it falls due, 1-28 (monthly) — the last day it can be paid.                                                                                                                                   |
+| `pay_lead_days`   | integer | —        | Pay it this many days before the due day (0 = on the day). It turns up on the week that day.                                                                                                                   |
+| `currency`        | string  | —        | A currency code like BRL. The account’s default if left out.                                                                                                                                                   |
+| `flow`            | string  | —        | 'out' for a bill (the default), 'in' for income.                                                                                                                                                               |
+| `notes`           | string  | —        | Anything else.                                                                                                                                                                                                 |
+| `notebookId`      | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
 
 ### `change_bill` — Change a bill
 

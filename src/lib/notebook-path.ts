@@ -12,3 +12,27 @@ export const NOTEBOOK_SEPARATOR = ' — ';
 export function leafNotebookName(title: string): string {
 	return title.split(NOTEBOOK_SEPARATOR).at(-1) ?? title;
 }
+
+/** Everything in front of that name: the notebook it sits inside, or ''. */
+export function parentNotebookPath(title: string): string {
+	const parts = title.split(NOTEBOOK_SEPARATOR);
+	parts.pop();
+	return parts.join(NOTEBOOK_SEPARATOR);
+}
+
+/**
+ * A full title from the two halves a form asks for.
+ *
+ * The place is the name — that is what makes renaming a notebook the way to
+ * move it — but typing an em dash is not something anybody should have to
+ * know, so the form asks for the name and the notebook it goes inside and
+ * this puts them back together.
+ */
+export function joinNotebookPath(parent: string, leaf: string): string {
+	return parent ? `${parent}${NOTEBOOK_SEPARATOR}${leaf}` : leaf;
+}
+
+/** Whether `title` is `ancestor` itself or somewhere inside it. */
+export function isInsideNotebook(title: string, ancestor: string): boolean {
+	return title === ancestor || title.startsWith(ancestor + NOTEBOOK_SEPARATOR);
+}

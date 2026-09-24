@@ -17,8 +17,10 @@
 import type { Ctx } from '$lib/services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 import { ForbiddenError, ServiceError } from '$lib/services/errors.js';
+import { translator, type MessageKey, type MessageValues } from '$lib/i18n/core.js';
+import { messages as englishMessages } from '$lib/i18n/catalogues/en.js';
 import { TOOLS, TOOLS_BY_NAME, type Tool } from './tools.js';
-import { assertRefs, resolveRef, type Reach, type Ref } from './refs.js';
+import { assertRefs, madeRow, resolveRef, type Reach, type Ref } from './refs.js';
 import { confine, reachOf, withinConfinement, type Confinement } from './confinement.js';
 import { changed, type Room } from '../live.js';
 import { spendCallBudget } from '../api/auth.js';
@@ -145,6 +147,25 @@ function offered(caller: Caller, tool: Tool): boolean {
 	return true;
 }
 
+/**
+ * What this caller is not being offered, and the grant that would offer it.
+ *
+ * An absence says nothing. A tool missing from the list could be a permission
+ * this token does not hold, or a feature this build does not have, and an
+ * assistant cannot tell those apart — so the careful ones stop and do
+ * something worse quietly, and the person never learns their key was narrow.
+ *
+ * Named here so the answer can say it: the tool, and the scope to ask for.
+ * Nothing about what it does — that is what the offered list is for, and a
+ * catalogue of everything the app can do is not this endpoint's business.
+ */
+export function withheldTools(caller: Caller): { name: string; needs: string }[] {
+	return TOOLS.filter((t) => !offered(caller, t)).map((t) => ({
+		name: t.name,
+		needs: t.destroys && !caller.scopes.includes('destructive') ? 'destructive' : t.scope
+	}));
+}
+
 /** The tools this caller can see. A tool it cannot use is not offered to it. */
 export function visibleTools(caller: Caller) {
 	return TOOLS.filter((t) => offered(caller, t)).map((t) => ({
@@ -232,6 +253,11 @@ function fileResult(value: Bytes) {
 	};
 }
 
+/** The id a create answered with, wherever it put it. */
+function idOf(value: unknown): unknown {
+	return value && typeof value === 'object' ? (value as { id?: unknown }).id : undefined;
+}
+
 function toolResult(value: unknown, mutation?: { before: unknown; after: unknown }) {
 	if (!mutation && isBytes(value)) return fileResult(value);
 	const structured = mutation ? { ...structuredFrom(value), ...mutation } : structuredFrom(value);
@@ -291,8 +317,18 @@ function toolFailure(message: string) {
 	};
 }
 
+/**
+ * The tools speak English, whatever the account reads the app in — so a
+ * refusal that carries a message key is read out of the English catalogue
+ * here rather than handed over as `errors.schedule.aDayLooksLike2026`.
+ */
+const english = translator('en', englishMessages) as (
+	key: MessageKey,
+	values?: MessageValues
+) => string;
+
 function messageOf(e: unknown): string {
-	if (e instanceof ServiceError) return e.message;
+	if (e instanceof ServiceError) return e.key ? english(e.key, e.values) : e.message;
 	if (e instanceof Error) return e.message;
 	return 'Something went wrong.';
 }
@@ -329,7 +365,10 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 					'the weekly review, three daily wins, data streams, the shopping list and recipes. ' +
 					'Ask `today` before answering "what should I be doing", and `search` before guessing ' +
 					'which room a thing is in. The tools offered follow the token\u2019s grants: a tool ' +
-					'missing from the list is a permission not held, not a feature that does not exist. ' +
+					'missing from the list is a permission not held, not a feature that does not exist — ' +
+					'`tools/list` says which ones are being held back and the grant each needs, so ask ' +
+					'for the grant rather than working around the gap. An argument a tool accepts is in ' +
+					'its schema; where the answer looks cut short, `verbose` or `fields` is why. ' +
 					'Asked to write a diary entry, write it — keeping their words where you have them. Just never invent one unasked.'
 			});
 
@@ -342,8 +381,24 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 		case 'ping':
 			return isNotification ? null : ok(id, {});
 
-		case 'tools/list':
-			return ok(id, { tools: visibleTools(caller) });
+		case 'tools/list': {
+			/*
+			 * What is offered, and what is being held back.
+			 *
+			 * `_withheld` is ours rather than the protocol's, which is why it
+			 * wears an underscore: a client that has never heard of it ignores
+			 * an unknown field, and one that reads it can tell an assistant the
+			 * difference between "this app cannot do that" and "your key may
+			 * not". An assistant that cannot tell those apart stops and does
+			 * something worse without saying why — and the person never finds
+			 * out their key was narrow.
+			 */
+			const withheld = withheldTools(caller);
+			return ok(id, {
+				tools: visibleTools(caller),
+				...(withheld.length > 0 ? { _withheld: withheld } : {})
+			});
+		}
 
 		case 'tools/call': {
 			const name = typeof params.name === 'string' ? params.name : '';
@@ -408,10 +463,25 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 					scopes: caller.scopes,
 					confinement: caller.confinement ?? null
 				});
+				/*
+				 * A create says what it made, and fails if it made nothing.
+				 *
+				 * `peek` reads the *subject* an argument names, which a create has
+				 * not got — so `after` was null on every one of them and nothing
+				 * ever checked that the id being handed back pointed at a row. It
+				 * did not once, and the caller found out by being told the task it
+				 * had just made did not exist.
+				 */
+				const made = tool.creates ? madeRow(caller.ctx, tool.creates, idOf(value)) : undefined;
+				if (tool.creates && made === null)
+					throw new Error(
+						`\`${tool.name}\` answered with an id for a ${tool.creates} that is not there.`
+					);
+
 				const answer = toolResult(
 					value,
 					tool.writes && !tool.quiet
-						? { before, after: peek(tool, caller.ctx, args, reach) }
+						? { before, after: made ?? peek(tool, caller.ctx, args, reach) }
 						: undefined
 				);
 

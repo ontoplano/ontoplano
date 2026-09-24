@@ -1,3 +1,6 @@
+import type { Pathname } from '$app/types';
+import type { IconName } from '$lib/components/Icon.svelte';
+import type { NavKey } from './sections-nav.js';
 import type { Translate } from './i18n/index.js';
 import type { PlainKey } from './i18n/keys.js';
 
@@ -101,19 +104,134 @@ export const HIDEABLE_SECTIONS = [
  * it, and nothing said so.
  */
 export const NOTEBOOK_TABS = [
-	{ id: 'notebooks', href: '/notebooks', label: 'rooms.notebooks.tabs.notebooks' },
+	{
+		id: 'notebooks',
+		href: '/notebooks',
+		label: 'rooms.notebooks.tabs.notebooks',
+		icon: 'notebook'
+	},
 	{ id: 'diary', href: '/notebooks/diary', label: 'rooms.notebooks.tabs.diary' },
 	// Ideas is writing too — a line you jot and come back to — and a room of
 	// its own in the bar for something that small was a room nobody entered.
-	{ id: 'ideas', href: '/notebooks/ideas', label: 'rooms.notebooks.tabs.ideas' },
+	{ id: 'ideas', href: '/notebooks/ideas', label: 'rooms.notebooks.tabs.ideas', icon: 'ideas' },
 	// What the weekly review writes. It is writing, and it was reachable only
 	// from the week it belonged to, which is a thing nobody navigates to.
 	{ id: 'weekly', href: '/notebooks/weekly', label: 'rooms.notebooks.tabs.weekly' },
-	{ id: 'people', href: '/notebooks/people', label: 'rooms.notebooks.tabs.people' },
-	// The labels themselves. They are the account's one vocabulary rather than
-	// a notebook's, and this is the room where the writing is.
-	{ id: 'tags', href: '/notebooks/tags', label: 'rooms.notebooks.tabs.tags' }
+	{ id: 'people', href: '/notebooks/people', label: 'rooms.notebooks.tabs.people', icon: 'user' }
+	/*
+	 * The labels are not a tab here any more.
+	 *
+	 * `/notebooks/tags` is still the page — it is where a label is deleted or
+	 * merged, which are account-wide acts and belong on a screen that can see
+	 * every label at once. It stopped being a tab because a tab is a thing you
+	 * meet while browsing your subjects, and "every word in the account, with
+	 * a number beside it" is not a question anybody has while looking at a
+	 * renovation. What they want there is that notebook's own words, which is
+	 * the Manage tags button on it — see `NotebookTags` — and the way here is
+	 * at the foot of that.
+	 */
 ] as const;
+
+/** The planner's tabs, in the order it shows them. */
+export const TASK_TABS = [
+	{ href: '/tasks/plan', label: 'rooms.tasks.tabs.plan' },
+	{ href: '/tasks/board', label: 'rooms.tasks.tabs.board' },
+	{ href: '/tasks/todo', label: 'rooms.tasks.tabs.todo', icon: 'check' },
+	{ href: '/tasks/activities', label: 'rooms.tasks.tabs.activities', icon: 'tag' },
+	{ href: '/tasks/review', label: 'rooms.tasks.tabs.review', icon: 'check' }
+] as const;
+
+/**
+ * The Health room's fixed tabs. Whatever this account measures is appended by
+ * the layout — a data stream earns a tab by existing, so it cannot be listed
+ * here.
+ */
+export const HEALTH_TABS = [
+	{ id: 'habits', href: '/health/habits', label: 'rooms.health.tabs.habits' },
+	{ id: 'workouts', href: '/health/workouts', label: 'rooms.health.tabs.workouts' },
+	{ id: 'recipes', href: '/health/recipes', label: 'rooms.health.tabs.recipes', icon: 'shopping' }
+] as const;
+
+/** The Finance room's tabs, in the order it shows them. */
+export const FINANCE_TABS = [
+	{ href: '/finance/ledgers', label: 'rooms.finance.tabs.ledgers' },
+	// Bills had a room and nothing pointing at it, which is a room nobody
+	// finds. Beside Ledgers, because a bill is money leaving on a date and
+	// that is the same subject as the lines it will turn into.
+	{ href: '/finance/bills', label: 'rooms.finance.tabs.bills' },
+	{ href: '/finance/rules', label: 'rooms.finance.tabs.rules' },
+	{ href: '/finance/insights', label: 'rooms.finance.tabs.insights' }
+] as const;
+
+/**
+ * The Media room's tabs.
+ *
+ * Recordings first: a picture is chosen from a disk, a recording is made
+ * here, so it is the one the room lands on.
+ */
+export const MEDIA_TABS = [
+	{ id: 'audios', href: '/media/audios', label: 'rooms.media.tabs.audios' },
+	{ id: 'gallery', href: '/media/gallery', label: 'rooms.media.tabs.gallery' }
+] as const;
+
+/** The Inventory room's tabs: what you keep, and what you might get one day. */
+export const INVENTORY_TABS = [
+	{ href: '/inventory/stock', label: 'inventory.stock' },
+	{ href: '/inventory/wishlist', label: 'inventory.wishlist' }
+] as const;
+
+/**
+ * A tab inside a room: where it goes, what it is called, and the preference
+ * that puts it away when it has one.
+ *
+ * `id` is a `string` rather than a `HideableSection` because one tab is not
+ * one — Notebooks names its own room and deliberately has no switch.
+ */
+export type RoomTab = {
+	id?: string;
+	href: Pathname;
+	label: PlainKey;
+	/** What the palette draws beside it; the room's own glyph when absent. */
+	icon?: IconName;
+};
+
+/**
+ * What each room holds, by the key the navigation knows it as.
+ *
+ * The one list of a room's tabs. `TabbedRoom` draws its strip from here when
+ * given a `room`, the wheel names the tabs under each wedge from here, and the
+ * palette offers each tab as a place from here. It is keyed by every room the
+ * bar has, so a new room cannot be left out of it: Inventory's two tabs were
+ * written into its layout alone, and the wheel showed nothing under it.
+ *
+ * A room with one page is an empty list.
+ */
+export const ROOM_TABS: Record<NavKey, readonly RoomTab[]> = {
+	planner: TASK_TABS,
+	diary: NOTEBOOK_TABS,
+	health: HEALTH_TABS,
+	inventory: INVENTORY_TABS,
+	finance: FINANCE_TABS,
+	goals: [],
+	media: MEDIA_TABS,
+	reminders: []
+};
+
+/**
+ * A room's tabs, leaving out whatever this account put away.
+ *
+ * The data streams Health appends are not here: they are this account's own
+ * measurements rather than the room's shape, and a wheel that named three of
+ * them would be saying something different on every install.
+ */
+export function visibleRoomTabs(room: NavKey, hidden: readonly string[] = []): RoomTab[] {
+	return ROOM_TABS[room].filter((tab) => !(tab.id && isHidden(hidden, tab.id as HideableSection)));
+}
+
+/** What is inside a room, named — the words the wheel runs together. */
+export function roomTabNames(t: Translate, room: NavKey, hidden: readonly string[] = []): string[] {
+	return visibleRoomTabs(room, hidden).map((tab) => t(tab.label));
+}
 
 /**
  * The rooms themselves, without the tabs inside them.

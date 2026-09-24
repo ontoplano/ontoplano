@@ -11,8 +11,9 @@
 	const ranges = [30, 90, 180, 365];
 </script>
 
+<!-- A phone's room has no gutter, so the loose text brings its own. -->
 <div class="space-y-4">
-	<div class="flex flex-wrap items-baseline justify-between gap-2">
+	<div class="flex flex-wrap items-baseline justify-between gap-2 max-sm:px-4 max-sm:pt-3">
 		<div>
 			<h1 class="text-lg font-bold text-gray-900">{data.stream.name}</h1>
 			<p class="mt-0.5 text-sm text-gray-500">
@@ -39,7 +40,7 @@
 		<StreamChart points={data.points} display={data.stream.display} unit={data.stream.unit} />
 	</div>
 
-	<p class="text-xs text-gray-500">
+	<p class="text-xs text-gray-500 max-sm:px-4 max-sm:pb-3">
 		{t('data.slug.changeHowThisIsDisplayed')}
 		<a href={resolve('/settings/integrations/connections')} class="underline underline-offset-2"
 			>{t('data.slug.integrations')}</a

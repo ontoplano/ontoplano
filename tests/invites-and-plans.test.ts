@@ -12,6 +12,7 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
+import { refusal } from './helpers/refusal';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -227,6 +228,6 @@ describe('mail that did not go out', () => {
 		// The admin page offers the button on a list that may have moved on, and
 		// a silent no-op there reads as "it worked" for a row somebody else
 		// already dealt with.
-		expect(() => mailLog.dismissFailure(999_999)).toThrow(/gone/);
+		expect(refusal(() => mailLog.dismissFailure(999_999))).toMatch(/gone/);
 	});
 });

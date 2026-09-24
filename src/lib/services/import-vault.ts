@@ -194,19 +194,16 @@ export function importVault(
 	const named = input.files.filter((f) => /\.md$/i.test(f.path));
 	const files = named.filter((f) => looksLikeText(f.text));
 
-	if (named.length === 0)
-		throw new ValidationError('No markdown files in that — choose the .md files from the vault.');
+	if (named.length === 0) throw new ValidationError({ key: 'errors.importVault.noMarkdownFiles' });
 	if (files.length === 0) {
-		throw new ValidationError(
-			'None of those are text files. A `.md` name does not make something markdown.'
-		);
+		throw new ValidationError({ key: 'errors.importVault.noneOfThoseAreText' });
 	}
 	if (files.length > MAX_FILES) {
 		throw new ValidationError(`That is ${files.length} notes; ${MAX_FILES} is the most at once.`);
 	}
 
 	const total = files.reduce((sum, f) => sum + f.text.length, 0);
-	if (total > MAX_TOTAL) throw new ValidationError('That vault is too big to bring in at once.');
+	if (total > MAX_TOTAL) throw new ValidationError({ key: 'errors.importVault.thatVaultIsTooBig' });
 
 	const skipped: string[] = [];
 	// Named and dropped, so the count somebody gets back adds up.
@@ -221,7 +218,8 @@ export function importVault(
 		else skipped.push(`${file.path} — empty`);
 	}
 
-	if (notes.length === 0) throw new ValidationError('Every note in that vault is empty.');
+	if (notes.length === 0)
+		throw new ValidationError({ key: 'errors.importVault.everyNoteInThatVault' });
 
 	const title = freeNotebookTitle(ctx, input.notebook, 'Obsidian');
 	const seen = new Set<string>();

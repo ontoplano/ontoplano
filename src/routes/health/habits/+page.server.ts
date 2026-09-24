@@ -1,118 +1,27 @@
 import type { IsolatedEvent } from '$lib/isolated/routes';
 import { buildCtx } from '$lib/services/ctx';
-import { toActionFailure } from '$lib/http-errors';
-import {
-	createHabit,
-	deleteHabit,
-	deleteOccurrence,
-	listHabits,
-	listOccurrences,
-	logOccurrence,
-	today,
-	toggleOccurrence,
-	updateHabit,
-	updateOccurrence
-} from '$lib/services/habits';
+import { pickableNotebooks } from '$lib/services/notebooks';
+import { habitHandlers } from '$lib/services/habit-actions';
+import { listHabits, listOccurrences, today } from '$lib/services/habits';
 
 export const load = async ({ locals }: IsolatedEvent) => {
 	const ctx = buildCtx(locals.user!.id);
 
 	return {
+		// The subject a thing belongs to, asked in the room's own form: the
+		// notebook's tab opens this same form with its own notebook chosen.
+		notebooks: pickableNotebooks(ctx),
 		habits: listHabits(ctx),
 		occurrences: listOccurrences(ctx),
 		today: today(ctx)
 	};
 };
 
-export const actions = {
-	create: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			createHabit(buildCtx(locals.user!.id), {
-				name: formData.get('label'),
-				description: formData.get('description'),
-				type: formData.get('type'),
-				scheduledDays: formData.get('scheduledDays')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	update: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			updateHabit(buildCtx(locals.user!.id), Number(formData.get('id')), {
-				name: formData.get('label'),
-				description: formData.get('description'),
-				type: formData.get('type'),
-				scheduledDays: formData.get('scheduledDays')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	delete: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			deleteHabit(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	logOccurrence: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			logOccurrence(buildCtx(locals.user!.id), {
-				habitId: formData.get('habitId'),
-				date: formData.get('date'),
-				notes: formData.get('notes')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	toggleOccurrence: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			toggleOccurrence(buildCtx(locals.user!.id), {
-				habitId: formData.get('habitId'),
-				date: formData.get('date')
-			});
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	updateOccurrence: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			updateOccurrence(
-				buildCtx(locals.user!.id),
-				Number(formData.get('id')),
-				formData.get('notes')
-			);
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	},
-
-	deleteOccurrence: async ({ request, locals }: IsolatedEvent) => {
-		const formData = await request.formData();
-		try {
-			deleteOccurrence(buildCtx(locals.user!.id), Number(formData.get('id')));
-			return { success: true };
-		} catch (e) {
-			return toActionFailure(e);
-		}
-	}
-};
+/*
+ * The room's own names for the room's own handlers.
+ *
+ * The same handlers answer inside a notebook under a prefix — see
+ * `$lib/services/habit-actions`, which is where they live so the two screens
+ * cannot mean different things by the same button.
+ */
+export const actions = habitHandlers;

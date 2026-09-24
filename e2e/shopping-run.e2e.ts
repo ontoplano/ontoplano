@@ -41,6 +41,9 @@ test('the shopping list adds up what has run low, and keeps the wishlist out of 
 	await wish.locator('[name="type"]').selectOption('someday');
 	await wish.locator('[name="price"]').fill('80.00');
 	await wish.getByRole('button', { name: 'Add item', exact: true }).click();
+	// Written on the cupboard's tab and filed on the wishlist, which is where
+	// it now shows: the list a thing is on is a tab rather than a filter.
+	await page.getByRole('link', { name: 'Wishlist', exact: true }).click();
 	await expect(page.getByText('A better pan')).toBeVisible();
 
 	await page.getByRole('button', { name: /Shopping list/ }).click();

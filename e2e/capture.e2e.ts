@@ -61,8 +61,12 @@ async function pickWedge(page: Page, name: string, wheel = 'capture'): Promise<b
 	// layer carries its own name, so a helper shared between them has to be
 	// told which one it is pointing at.
 	const wedges = page.locator(`[data-pie="${wheel}"] [role=menuitem]`);
-	const hud = page.locator(`[data-pie="${wheel}"] .pie-hud`);
-	const said = async () => (await hud.innerText()).trim().toLowerCase();
+	// The name alone: the rooms wheel also says what is inside the room under
+	// it, and that line is not what a wedge is called.
+	const hud = page.locator(`[data-pie="${wheel}"] .pie-hud-name`);
+	// Nothing is named until a wedge is pointed at, and an absent element has
+	// no `innerText` to read.
+	const said = async () => ((await hud.allInnerTexts())[0] ?? '').trim().toLowerCase();
 
 	const count = await wedges.count();
 	let before = await said();
@@ -223,7 +227,7 @@ test('the section pie lands you in the room', async ({ page }) => {
 	for (let i = 0; i < (await wedges.count()); i++) {
 		await wedges.nth(i).hover();
 		announced.push(
-			(await page.locator('[data-pie="rooms"] .pie-hud').innerText()).trim().toLowerCase()
+			(await page.locator('[data-pie="rooms"] .pie-hud-name').innerText()).trim().toLowerCase()
 		);
 	}
 	for (const room of ['Tasks', 'Goals', 'Notebooks', 'Health', 'Finance', 'Inventory']) {
@@ -301,7 +305,9 @@ test.describe('with a finger', () => {
 		const named: string[] = [];
 		for (let i = 0; i < count; i += 1) {
 			await wedges.nth(i).hover();
-			named.push(((await page.locator('[data-pie="rooms"] .pie-hud').textContent()) ?? '').trim());
+			named.push(
+				((await page.locator('[data-pie="rooms"] .pie-hud-name').textContent()) ?? '').trim()
+			);
 		}
 
 		for (const room of ['Tasks', 'Goals', 'Notebooks', 'Inventory']) {

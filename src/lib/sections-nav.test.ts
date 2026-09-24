@@ -53,6 +53,6 @@ describe('the places the app can take you', () => {
 		// It was here, and a stored order that predated it pushed it to the far
 		// end of the bar: the way home, last, beside the wordmark that already
 		// went there. The header logo and the phone bar's house are the door.
-		expect(NAV_PLACES.find((p) => p.key === 'home')).toBeUndefined();
+		expect(NAV_PLACES.find((p) => (p.key as string) === 'home')).toBeUndefined();
 	});
 });

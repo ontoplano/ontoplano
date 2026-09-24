@@ -173,6 +173,37 @@ describe('putting a todo on the calendar', () => {
 		expect(() => todos.demoteToTodo(theirs, block.id)).toThrow();
 	});
 
+	/*
+	 * Putting a task on a day is the same act as making a block, and a block
+	 * has always been able to ask for a reminder — so the one dialog that
+	 * could not was the one people reach for when they think "do this on
+	 * Thursday", which is exactly when they want telling.
+	 */
+	test('delegating one can ask to be reminded, and nought means not at all', () => {
+		const withNudge = todos.createTodo(ctx, { title: 'ring the plumber' });
+		todos.delegateTodo(ctx, withNudge, {
+			date: '2026-08-19',
+			startTime: '09:00',
+			mode: 'category',
+			categoryId: work,
+			remindLeadMinutes: 30
+		});
+
+		const quiet = todos.createTodo(ctx, { title: 'water the plants' });
+		todos.delegateTodo(ctx, quiet, {
+			date: '2026-08-19',
+			startTime: '10:00',
+			mode: 'category',
+			categoryId: work,
+			remindLeadMinutes: 0
+		});
+
+		const onTheDay = slots.listExceptionals(ctx, '2026-08-19', '2026-08-20');
+		expect(onTheDay.find((one) => one.label === 'ring the plumber')?.remindLeadMinutes).toBe(30);
+		// Nought and "never asked" are the same answer and are stored alike.
+		expect(onTheDay.find((one) => one.label === 'water the plants')?.remindLeadMinutes).toBeNull();
+	});
+
 	test('delegating one to a block refuses a time that is not one', () => {
 		const id = todos.createTodo(ctx, { title: 'call the bank' });
 		expect(() =>
@@ -355,7 +386,7 @@ describe('notebooks as folders', () => {
 
 		const root = notebooks.notebookTree(ctx).find((n) => n.title === 'Reading list')!;
 		expect(root.entries).toBe(1);
-		expect(root.totals?.entries).toBe(3);
+		expect(root.totals?.notes).toBe(3);
 	});
 });
 

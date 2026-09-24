@@ -9,6 +9,7 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
+import { refusal } from './helpers/refusal';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -77,6 +78,39 @@ describe('logging a day', () => {
 	test("another account's habit cannot be logged against", () => {
 		const mine = habits.listHabits(ctx)[0];
 		expect(() => habits.logOccurrence(theirs, { habitId: mine.id, date: '2026-08-17' })).toThrow();
+	});
+
+	test('the same day twice is refused', () => {
+		const id = habits.createHabit(ctx, { name: 'stretch', type: 'good' });
+		habits.logOccurrence(ctx, { habitId: id, date: '2026-08-17' });
+
+		expect(refusal(() => habits.logOccurrence(ctx, { habitId: id, date: '2026-08-17' }))).toMatch(
+			/already logged/i
+		);
+		expect(habits.listOccurrences(ctx).filter((o) => o.habitId === id)).toHaveLength(1);
+	});
+
+	/*
+	 * The refusal above is a read followed by a write, and two presses landing
+	 * together get past it — which is how a day came to be logged twice. The
+	 * database is what actually stops it, so that is what is asked here: the
+	 * row is written around the service, the way a racing request would.
+	 */
+	test('and the day is taken even for a writer that never asked', () => {
+		const id = habits.createHabit(ctx, { name: 'push-ups', type: 'good' });
+		habits.logOccurrence(ctx, { habitId: id, date: '2026-08-18' });
+
+		expect(
+			refusal(() =>
+				database.exec(
+					`insert into habit_occurrences (user_id, habit_id, date, notes, created_at)
+				 values (?, ?, ?, '', '2026-08-18T09:00:00')`,
+					OWNER,
+					id,
+					'2026-08-18'
+				)
+			)
+		).toMatch(/unique/i);
 	});
 });
 

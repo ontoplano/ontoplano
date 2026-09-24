@@ -32,6 +32,7 @@ import ts from 'typescript';
 import * as prettier from 'prettier';
 
 import { anchor } from './lib/anchor.mjs';
+import { literalText, paramRow } from './lib/mcp-docs.mjs';
 import { REPO, assetNames, downloadUrl, releaseTag, versionOf } from './lib/release-assets.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -331,20 +332,6 @@ function argTablesOf(source) {
 		}
 	}
 	return { tables, lists };
-}
-
-/** The text of a string literal or template with no substitutions. */
-function literalText(node, source) {
-	if (!node) return '';
-	if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return node.text;
-	if (ts.isTemplateExpression(node)) {
-		// `from()` builds its sentence with the thing it pages through in it.
-		return node
-			.getText(source)
-			.replace(/^`|`$/g, '')
-			.replace(/\$\{[^}]*\}/g, '…');
-	}
-	return '';
 }
 
 function paramFrom(name, value, source, required, lists, tables) {
@@ -1405,16 +1392,6 @@ const FRAGMENTS = {
 		 * read `tools.ts` or guessed. It all comes from the same array that
 		 * serves the tools, so the page cannot drift from the server.
 		 */
-		const asRow = (p) => {
-			const bits = [p.description];
-			if (p.enum) bits.push(`One of: ${p.enum.map((v) => `\`${v}\``).join(', ')}.`);
-			if (p.fields) bits.push(`Each one carries ${p.fields.map((f) => `\`${f}\``).join(', ')}.`);
-			if (p.default !== undefined) bits.push(`Default \`${p.default}\`.`);
-			if (p.deprecated) bits.push('**Deprecated.**');
-			const said = bits.filter(Boolean).join(' ').replace(/\|/g, '\\|').replace(/\n+/g, ' ');
-			return `| \`${p.name}\` | ${p.type} | ${p.required ? 'yes' : '—'} | ${said} |`;
-		};
-
 		return mcpTools()
 			.map((t) => {
 				const needs = t.destroys
@@ -1433,7 +1410,7 @@ const FRAGMENTS = {
 								'',
 								'| Parameter | Type | Required | What it is |',
 								'| --- | --- | --- | --- |',
-								...t.params.map(asRow)
+								...t.params.map(paramRow)
 							].join('\n')
 						: '\n_Takes no parameters._';
 

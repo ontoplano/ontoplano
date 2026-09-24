@@ -19,7 +19,9 @@ async function makeNotebook(page: Page, title: string) {
 	const origin = new URL(page.url()).origin;
 	await page.request.post('/notebooks?/create', {
 		headers: { Origin: origin, 'x-sveltekit-action': 'true' },
-		form: { heading: title }
+		// Goals among them: a notebook starts with notes and tasks now, and what
+		// these are about is the tabs rather than which of them there are.
+		form: { heading: title, modules: 'notes,tasks,goals' }
 	});
 }
 
@@ -97,4 +99,80 @@ test('New goal opens a form in the notebook, and the goal lands in it', async ({
 	await expect(page.getByText('Cook something new each week').first()).toBeVisible({
 		timeout: 30_000
 	});
+});
+
+test('several things come in at once, and what moves is named first', async ({ page }) => {
+	test.setTimeout(240_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('link-many'));
+
+	await visit(page, '/notebooks');
+	for (const title of ['Kitchen', 'Trip']) {
+		await page
+			.getByRole('button', { name: /New notebook/ })
+			.first()
+			.click();
+		const dialog = page.getByRole('dialog');
+		await dialog.locator('[name="heading"]').fill(title);
+		await dialog
+			.getByRole('button', { name: /Create|Add/ })
+			.last()
+			.click();
+		await expect(page.getByText(title).first()).toBeVisible({ timeout: 30_000 });
+	}
+
+	// Two notes under the trip, and one under nothing.
+	await page.getByRole('link', { name: /Trip/ }).first().click();
+	for (const content of ['nine days in September', 'the train is three hours']) {
+		await page.getByRole('button', { name: 'New note', exact: true }).first().click();
+		await page.locator('textarea[name="content"]').first().fill(content);
+		await page
+			.getByRole('button', { name: /Add note/ })
+			.last()
+			.click();
+		await expect(page.getByText(content).first()).toBeVisible({ timeout: 30_000 });
+	}
+
+	await page
+		.getByRole('link', { name: /Kitchen/ })
+		.first()
+		.click();
+	await page.getByRole('button', { name: 'New note', exact: true }).first().click();
+	await page.locator('textarea[name="content"]').first().fill('the plumber can move the pipes');
+	await page
+		.getByRole('button', { name: /Add note/ })
+		.last()
+		.click();
+	await expect(page.getByText('the plumber can move the pipes').first()).toBeVisible({
+		timeout: 30_000
+	});
+
+	await page
+		.getByRole('button', { name: /Link note/ })
+		.first()
+		.click();
+	const picker = page.getByRole('dialog');
+	const elsewhere = picker.locator('label').filter({ hasText: 'IN ANOTHER NOTEBOOK' });
+
+	// A note has no heading, so the picker has to list it by its first line —
+	// it used to read `title` and draw a column of blank rows.
+	await expect(elsewhere.first()).toContainText('nine days in September');
+
+	await elsewhere.nth(0).locator('input[type=checkbox]').check();
+	await elsewhere.nth(1).locator('input[type=checkbox]').check();
+	await page.getByRole('button', { name: 'Bring 2 things' }).click();
+
+	// Both are under the trip, so both are named before anything moves.
+	const warning = page.getByText(/These live in another notebook/);
+	await expect(warning).toBeVisible();
+	await page.getByRole('button', { name: 'Proceed' }).click();
+
+	/*
+	 * Arriving is the point, and it used to need a reload. Under that, the
+	 * numbering: a note carried its number across and collided with the one
+	 * already here, which answered "Unexpected error".
+	 */
+	await expect(page.getByText('nine days in September').first()).toBeVisible({ timeout: 30_000 });
+	await expect(page.getByText('the train is three hours').first()).toBeVisible();
+	await expect(page.getByText(/Brought 2 things to Kitchen/)).toBeVisible();
 });

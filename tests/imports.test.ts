@@ -12,6 +12,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts } from './helpers/db';
+import { refusal } from './helpers/refusal';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -127,7 +128,9 @@ describe('a Todoist export', () => {
 	});
 
 	it('refuses a file that is not one', () => {
-		expect(() => imports.parseTodoistCsv('name,when\nsomething,today\n')).toThrow(/Todoist/);
+		expect(refusal(() => imports.parseTodoistCsv('name,when\nsomething,today\n'))).toMatch(
+			/Todoist/
+		);
 	});
 });
 
@@ -154,8 +157,8 @@ describe('a Google Tasks export', () => {
 	});
 
 	it('says so when the file is not JSON, or is the wrong JSON', () => {
-		expect(() => imports.parseGoogleTasks('TYPE,CONTENT')).toThrow(/not JSON/);
-		expect(() => imports.parseGoogleTasks('{"nope":1}')).toThrow(/task lists/);
+		expect(refusal(() => imports.parseGoogleTasks('TYPE,CONTENT'))).toMatch(/not JSON/);
+		expect(refusal(() => imports.parseGoogleTasks('{"nope":1}'))).toMatch(/task lists/);
 	});
 });
 
@@ -338,8 +341,8 @@ describe('what the import writes', () => {
 	});
 
 	it('refuses an empty paste and a file it does not know', () => {
-		expect(() => imports.importTasks(ctx, { text: '   ' })).toThrow(/Nothing to import/);
-		expect(() => imports.importTasks(ctx, { text: 'just some words' })).toThrow(
+		expect(refusal(() => imports.importTasks(ctx, { text: '   ' }))).toMatch(/Nothing to import/);
+		expect(refusal(() => imports.importTasks(ctx, { text: 'just some words' }))).toMatch(
 			/not a Todoist CSV/
 		);
 	});

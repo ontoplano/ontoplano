@@ -28,17 +28,24 @@ import { localeForAddress } from '$lib/server/locale';
  * facts, and keeping them unrelated is what stops "unsubscribe" from ever being
  * confused with "delete my account".
  *
- * ## Double opt-in, and what that buys
+ * ## One step, and what stands in for the second
  *
- * A row is created unconfirmed. Nothing is ever sent to it but the one
- * confirmation, and if the link is never followed the row stays a dead address
- * that costs nothing. So typing somebody else's address into the form
- * subscribes nobody, which is both the law here and in the EU and the reason a
- * list is worth having: everyone on it asked twice.
+ * An address is on the list the moment somebody types it and presses the
+ * button. Double opt-in is the safer arrangement and this deliberately is not
+ * it: a confirming click loses the people who do not go back to their mail.
  *
- * The confirmation token is *not* cleared afterwards, because it is also what
- * the unsubscribe link in every issue carries. A way in that becomes no way out
- * is precisely how a domain gets filed as spam.
+ * A welcome note still goes out, and it is not that click. It asks for
+ * nothing; it says the address is on the list, says what will arrive, and
+ * carries the way off. Somebody who has handed over an address and been shown
+ * a sentence on a web page has no other evidence the thing worked, and an
+ * address typed by mistake — or by somebody else — has nowhere to complain to
+ * until a message arrives at it.
+ *
+ * What stands in its place is the part that actually protects a domain: a hard
+ * rate limit in front of the endpoint, and an unsubscribe link in every single
+ * message — one click, nobody signed in to anything.
+ *
+ * Every row still carries a token, because that link is what it carries.
  *
  * ## What it never says
  *
@@ -48,10 +55,21 @@ import { localeForAddress } from '$lib/server/locale';
  * differed.
  */
 
+/**
+ * What the form says when it has worked.
+ *
+ * Here rather than in the route, beside the code that decides what actually
+ * happens: the sentence went on saying "check your inbox — there is one link
+ * to follow" for a while after the confirming mail stopped being sent, and a
+ * promise kept in a different file from the thing it promises is how that
+ * happens. `tests/newsletter.test.ts` holds it to what `subscribe` does.
+ */
+export const SUBSCRIBE_ACCEPTED = "You're on the list.";
+
 /** Long enough that a token cannot be guessed, short enough to sit in a URL. */
 const TOKEN_BYTES = 24;
 
-/** RFC-shaped enough to catch a typo; the confirmation catches the rest. */
+/** RFC-shaped enough to catch a typo, which is all a form can do for one. */
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_EMAIL_LENGTH = 254;
 
@@ -80,22 +98,27 @@ function normalise(raw: unknown): string {
 		.trim()
 		.toLowerCase();
 	if (!email || email.length > MAX_EMAIL_LENGTH || !EMAIL.test(email)) {
-		throw new ValidationError('That does not look like an email address.');
+		throw new ValidationError({ key: 'errors.newsletter.thatDoesNotLookLike' });
 	}
 	return email;
 }
 
 /**
- * Take an address, and send exactly one confirmation to it.
+ * Take an address, and put it on the list.
  *
- * Answers `true` whatever happened, because the caller is a public form and
+ * Answers the same whatever happened, because the caller is a public form and
  * the difference between "new" and "already on the list" is not the form's to
- * disclose. A send that fails is a mail-log row like any other; the person is
- * told the same thing either way, because "check your inbox" is true and
- * "our SMTP is down" is not their problem to act on.
+ * disclose. Mail follows the same rule: a welcome goes to an address that has
+ * just joined and to nothing else, so the form cannot be used to send anything
+ * to an address that did not ask for it twice.
+ *
+ * The send is after the write and cannot undo it. A subscriber whose welcome
+ * bounced is subscribed — the list is the row — and the failure belongs in the
+ * mail log where the operator sees it, not in an answer to a stranger.
  */
 export async function subscribe(rawEmail: unknown, source = 'site'): Promise<void> {
-	if (!newsletterEnabled()) throw new ValidationError('Not available here.');
+	if (!newsletterEnabled())
+		throw new ValidationError({ key: 'errors.newsletter.notAvailableHere' });
 
 	const email = normalise(rawEmail);
 	const existing = db.select().from(subscribers).where(eq(subscribers.email, email)).get();
@@ -123,17 +146,52 @@ export async function subscribe(rawEmail: unknown, source = 'site'): Promise<voi
 			.set({ unsubscribedAt: null, confirmedAt: now })
 			.where(eq(subscribers.id, existing.id))
 			.run();
-		return;
+	} else {
+		db.insert(subscribers)
+			.values({
+				email,
+				token: randomBytes(TOKEN_BYTES).toString('base64url'),
+				source,
+				confirmedAt: now
+			})
+			.run();
 	}
 
-	db.insert(subscribers)
-		.values({
-			email,
-			token: randomBytes(TOKEN_BYTES).toString('base64url'),
-			source,
-			confirmedAt: now
-		})
-		.run();
+	await welcome(email);
+}
+
+/**
+ * The one message that is not a release.
+ *
+ * Built like an issue — the same rendering, the same way off at the foot, the
+ * subscriber's own language where they have an account here — because it is
+ * the same list and should not arrive looking like something else.
+ */
+async function welcome(email: string): Promise<void> {
+	const where = origin();
+	const stop = where ? `${where}/newsletter/off?t=${tokenFor(email)}` : '';
+	const t = await translatorFor(localeForAddress(email));
+
+	try {
+		await sendLogged(
+			'newsletter-welcome',
+			{
+				to: email,
+				...renderEmail({
+					subject: t('mail.newsletterWelcome.subject'),
+					lines: [t('mail.newsletterWelcome.line1'), t('mail.newsletterWelcome.line2')],
+					action: where ? { label: t('mail.newsletterWelcome.action'), url: where } : undefined,
+					small: stop ? [t('mail.stopThese', { url: stop })] : []
+				})
+			},
+			// Re-sendable: nothing in it expires, so an operator clearing a
+			// failure can send the same words rather than nothing.
+			{ retryable: true }
+		);
+	} catch {
+		// The row is written and the person is subscribed. What went wrong with
+		// the sending is the mail log's business — see `sendLogged`.
+	}
 }
 
 /**
@@ -230,7 +288,8 @@ export type Issue = { version: string; subject: string; lines: string[] };
  * person running it.
  */
 export async function announce(issue: Issue): Promise<{ sent: number; failed: number }> {
-	if (!newsletterEnabled()) throw new ValidationError('The newsletter is off on this instance.');
+	if (!newsletterEnabled())
+		throw new ValidationError({ key: 'errors.newsletter.theNewsletterIsOff' });
 	if (announced(issue.version))
 		throw new ValidationError(`${issue.version} has already gone out to the list.`);
 

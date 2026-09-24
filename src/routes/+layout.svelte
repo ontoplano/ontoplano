@@ -3,6 +3,7 @@
 	import { sliding } from '$lib/actions/sliding';
 	// Generated beside the masks it names: scripts/build-eink-masks.mjs.
 	import { enhance } from '$lib/enhance';
+	import { guardSubmits, releaseHeldButtons } from '$lib/one-press';
 	import { resolve } from '$app/paths';
 	import { navigating, page } from '$app/state';
 	import { live } from '$lib/live';
@@ -66,17 +67,27 @@
 	let { children, data }: { children: Snippet; data: LayoutData } = $props();
 
 	/*
-	 * The update warning can be put away, per instance version: "not now" said
-	 * to 0.174.0 holds until the instance moves past it. Read in an effect
-	 * rather than at init so the server and the first client render agree, and
-	 * a storage that throws (private mode) leaves the warning standing, which
-	 * is the safe way round.
+	 * The update warning can be put away for as long as the app stays open.
+	 *
+	 * `sessionStorage`, not `localStorage`: "not now" is an answer about right
+	 * now — somebody on a train, mid-sentence — and it used to be an answer
+	 * about that whole version, so an app closed and opened again a week later
+	 * still said nothing while running a build the instance had moved past.
+	 * Shutting the app down and starting it again is the clearest way somebody
+	 * says "ask me again", and a fresh launch is a fresh session.
+	 *
+	 * It is still per instance version, so a hush said to 0.174.0 does not
+	 * carry over to the next one even within a session.
+	 *
+	 * Read in an effect rather than at init so the server and the first client
+	 * render agree, and a storage that throws (private mode) leaves the
+	 * warning standing, which is the safe way round.
 	 */
 	let updateHushed = $state(false);
 	$effect(() => {
 		if (!data.appUpdate) return;
 		try {
-			updateHushed = localStorage.getItem(APP_UPDATE_HUSH_KEY) === data.appUpdate.instance;
+			updateHushed = sessionStorage.getItem(APP_UPDATE_HUSH_KEY) === data.appUpdate.instance;
 		} catch {
 			updateHushed = false;
 		}
@@ -84,9 +95,10 @@
 	function hushUpdate() {
 		updateHushed = true;
 		try {
-			localStorage.setItem(APP_UPDATE_HUSH_KEY, data.appUpdate!.instance);
+			sessionStorage.setItem(APP_UPDATE_HUSH_KEY, data.appUpdate!.instance);
 		} catch {
-			// Nowhere to remember it: it comes back next launch, which is fair.
+			// Nowhere to remember it: it comes back on the next page, which is
+			// noisier than intended and still the safe way round.
 		}
 	}
 
@@ -372,7 +384,8 @@
 			);
 		if (href === '/tasks/plan') return page.url.pathname.startsWith('/tasks');
 		if (href === '/goals') return page.url.pathname.startsWith('/goals');
-		if (href === '/health/habits') return page.url.pathname.startsWith('/health');
+		if (href === '/health/habits')
+			return page.url.pathname.startsWith('/health') || page.url.pathname.startsWith('/data/');
 		return page.url.pathname === href;
 	}
 
@@ -555,8 +568,7 @@
 		 * `-changedRoom`, so the medallion turns the way the rooms are sweeping;
 		 * zero where nothing slid, which spins it the one way it always did.
 		 */
-		if (navigation.to && !navigation.willUnload)
-			startMarkSpin([deskMark, barMark, barMarkGround], -changedRoom);
+		if (navigation.to && !navigation.willUnload) startMarkSpin([deskMark, barMark], -changedRoom);
 
 		// Named again rather than left to `slides`: the same test, in the shape
 		// that tells the compiler these three are really here.
@@ -581,7 +593,17 @@
 		roomArriving = slideOn(page$, changedRoom, true);
 	});
 
+	/*
+	 * One press, one submission — on every form in the app, not only the ones
+	 * `$lib/enhance` wraps. Here because it is a property of the app rather
+	 * than of any screen in it; see `$lib/one-press`.
+	 */
+	$effect(() => guardSubmits());
+
 	afterNavigate(() => {
+		// A plain form's press ends in a navigation, and arriving is what says
+		// the press is over. Enhanced forms let go of their own buttons.
+		releaseHeldButtons();
 		// Asked to stop as soon as the room is here; it finishes its turn on the
 		// way, so the quickest navigation still leaves a mark that went round.
 		stopMarkSpin();
@@ -758,8 +780,6 @@
 	/* The two marks the spin turns: the header's and the phone bar's. */
 	let deskMark = $state<HTMLElement>();
 	let barMark = $state<HTMLElement>();
-	/** The octagon behind it, which turns with it. See the note by the markup. */
-	let barMarkGround = $state<HTMLElement>();
 	/*
 	 * The turn is started and stopped by the navigation itself — see
 	 * `beforeNavigate` and `afterNavigate` above. This is only the giving up:
@@ -802,7 +822,7 @@
 	 */
 	$effect(() => {
 		if (!busy()) return;
-		startMarkSpin([deskMark, barMark, barMarkGround], 0);
+		startMarkSpin([deskMark, barMark], 0);
 		return () => void stopMarkSpin();
 	});
 
@@ -1312,6 +1332,24 @@
 							>
 								{t('home.aiAmpIntegrations')}
 							</a>
+							{#if data.canEditInstance}
+								<a
+									href={resolve('/settings/instance')}
+									onclick={() => (menuOpen = false)}
+									class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
+								>
+									{t('rooms.settings.tabs.instance')}
+								</a>
+							{/if}
+							{#if data.canAdminister}
+								<a
+									href={resolve('/admin')}
+									onclick={() => (menuOpen = false)}
+									class="block px-4 py-2 text-sm {NAV_DROPDOWN_ITEM} transition"
+								>
+									{t('rooms.settings.tabs.administration')}
+								</a>
+							{/if}
 							<!--
 								Not on the demo. The account was handed over by a cookie and
 								has no password anybody knows, so signing out of it is leaving
@@ -1519,23 +1557,17 @@
 						larger, which gives the mark an edge to end at.
 					-->
 					<!--
-						It turns with the mark, and that is the whole reason it is marked.
+						And it stands still while the mark turns.
 
-						Both shapes are the same octagon, and the ring between them is
-						the difference between the outer one's flats and the inner one's
-						corners. Turn only the inner one and that difference breathes
-						eight times a turn — 3.2px of rim where the corners agree, 0.2px
-						a moment later where a corner points at a flat. Nothing moves off
-						centre; the rim around it thins and thickens, and the eye reads
-						that as a wobble.
-
-						Spinning the ground with it holds the two in step, so the rim is
-						the same width at every angle. It is a flat colour, so turning it
-						is invisible except for the thing it fixes.
+						It used to turn with it, from back when the whole mark turned:
+						two octagons out of step leave a rim that thins and thickens
+						eight times a turn, and holding them together fixed that. What
+						turns now is the medallion inside the ring, a disc, so there is
+						nothing left to keep in step with — and a second octagon turning
+						behind one that is not swings its corners out past the rim, in a
+						colour meant never to be seen as a shape.
 					-->
 					<span
-						bind:this={barMarkGround}
-						data-mark
 						aria-hidden="true"
 						style="clip-path: {MARK_CLIP_PATH}; top: calc(-1 * var(--bar-mark-ground-rise)); height: var(--bar-mark-ground); width: var(--bar-mark-ground); background: {barField}"
 						class="pointer-events-none absolute left-1/2 -translate-x-1/2"

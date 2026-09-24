@@ -16,12 +16,14 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import Written from '$lib/components/Written.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
+	import Modal from '$lib/components/Modal.svelte';
+	import { pillStyle } from '$lib/pill-ink';
 	import { enhance } from '$lib/enhance';
 	import { invalidateAll } from '$app/navigation';
 	import { armed } from '$lib/actions/armed';
 	import { cancelFor, changeNow, isPending } from '$lib/undo.svelte';
 	import { COUNT_STEP } from '$lib/number-kinds';
-	import { describePeriod } from '$lib/goals';
+	import { describePeriod, isGoalStatus, STATUS_LABELS } from '$lib/goals';
 	import type { GoalActionNames } from '$lib/goal-action-names';
 	import { useT } from '$lib/i18n';
 	import { useWhen } from '$lib/when-context.svelte';
@@ -63,7 +65,8 @@
 		actions,
 		accent,
 		onedit,
-		onlink
+		onlink,
+		selected = false
 	}: {
 		goal: Shown;
 		/** The others, only so a nested goal can name its parent. */
@@ -78,6 +81,8 @@
 		   narrowed copy of it would make the caller widen it again. */
 		onedit: (id: number) => void;
 		onlink: (id: number) => void;
+		/** Where the keyboard's cursor is, on a page that has one. */
+		selected?: boolean;
 	} = $props();
 
 	const t = useT();
@@ -91,6 +96,10 @@
 	function percent(g: Shown): number | null {
 		return g.progress.fraction === null ? null : Math.round(g.progress.fraction * 100);
 	}
+
+	const linkedCount = $derived(
+		goal.linkedSlotIds.length + goal.linkedTodoIds.length + goal.linkedActivityIds.length
+	);
 
 	/** The bar's width, or nothing where there is nothing to count. */
 	const pct = $derived(percent(goal));
@@ -149,279 +158,241 @@
 	}
 </script>
 
-<!-- Named so anything that belongs to this goal can link straight at it. -->
-<div id="goal-{goal.id}" class="py-3 target:bg-yellow-50">
-	<!-- The buttons do not shrink, so on a phone they used to squeeze
-		     the title into a one-word-per-line ribbon. Below `sm` they go
-		     underneath instead. -->
-	<div class="flex flex-col gap-3 sm:flex-row sm:items-start">
-		<div class="flex min-w-0 flex-1 items-start gap-3">
-			<span
-				class="mt-1 h-4 w-1 shrink-0"
-				style="background-color: {goal.areaColor ?? '#d1d5db'}"
-				title={goal.areaName ?? t('goals.noArea')}
-			></span>
+<!--
+	Named so anything that belongs to this goal can link straight at it.
 
-			<div class="min-w-0 flex-1">
-				<div class="flex flex-wrap items-baseline gap-2">
-					<span
-						class="text-sm font-medium {goal.status !== 'open' ? 'text-gray-400' : 'text-gray-900'}"
-						>{goal.title}</span
-					>
-					<span class="tabular text-xs text-gray-500"
-						>{describePeriod(t, now(), goal.horizon, goal.periodStart)}</span
-					>
-					{#if goal.parentId}
-						{@const parent = goals.find((g) => g.id === goal.parentId)}
-						{#if parent}
-							<span class="text-xs text-gray-500"
-								>{t('goals.partOf2', { title: parent.title })}</span
-							>
-						{/if}
-					{/if}
-					{#if goal.status !== 'open'}
-						<span class="eyebrow text-gray-600">{goal.status}</span>
-					{/if}
-				</div>
-
-				{#if goal.notes}
-					<Written content={goal.notes} compact class="mt-0.5" />
+	The padding is the row's own, not the list's: a list inset inside its card
+	left the hover wash as a square floating in the card's padding, and a row
+	that reaches the card's edges takes the card's corners instead.
+-->
+<div
+	id="goal-{goal.id}"
+	class="goal-row px-4 py-3 target:bg-yellow-50 {selected ? 'kbd-cursor' : ''}"
+>
+	<div class="flex items-start gap-3">
+		<div class="min-w-0 flex-1">
+			<p
+				class="text-sm leading-snug font-medium break-words {goal.status !== 'open'
+					? 'text-gray-500'
+					: 'text-gray-900'}"
+			>
+				{goal.title}
+			</p>
+			<div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500">
+				{#if goal.areaName}
+					<span class="pill" style={pillStyle(goal.areaColor)}>{goal.areaName}</span>
 				{/if}
-
-				<!-- No bar without a measure. An empty track under a goal with
-					     nothing to count reads as "0%", which is a claim about
-					     progress rather than the absence of one. -->
-				<div class="mt-2 flex items-center gap-3">
-					{#if pct !== null}
-						<!-- Grows into the width instead of leaving it empty: on a
-							     phone a fixed 6rem bar left two thirds of the row blank. -->
-						<div class="h-1.5 min-w-24 flex-1 bg-gray-200 sm:max-w-40 sm:flex-none">
-							<div
-								class="h-full"
-								style="width: {pct}%; background-color: {goal.areaColor ?? accent}"
-							></div>
-						</div>
+				<span class="tabular">{describePeriod(t, now(), goal.horizon, goal.periodStart)}</span>
+				{#if goal.parentId}
+					{@const parent = goals.find((g) => g.id === goal.parentId)}
+					{#if parent}
+						<span>{t('goals.partOf2', { title: parent.title })}</span>
 					{/if}
-					<span class="tabular text-xs text-gray-500">
-						{progressLabel(goal)}{pct !== null ? ` · ${pct}%` : ''}
-					</span>
-				</div>
-
-				<!--
-						Every measure the goal was given, each with the number it
-						stands at. A goal counted from linked tasks keeps them
-						visible and editable: they are what somebody typed in, and
-						hiding them because a todo got attached loses the record.
-					-->
-				{#if goal.targets.length > 0}
-					<div class="mt-2 space-y-1">
-						{#each goal.targets as target (target.id)}
-							<form
-								method="post"
-								action={actions.setProgress}
-								use:enhance
-								class="flex flex-wrap items-center gap-2"
-							>
-								<input type="hidden" name="targetId" value={target.id} />
-								<!--
-										A measure counted from the workouts is read, not typed.
-
-										The number is the sum of what the register holds for
-										that activity inside the goal's period, so there is
-										nothing to press: a box here would let somebody write
-										a total their own sessions contradict, with nothing on
-										screen to say which one is true. The word it counts is
-										shown instead, so the figure is not a mystery.
-									-->
-								{#if target.measureActivity}
-									<span class="chip shrink-0" title={t('goals.countedFromYourWorkouts')}>
-										<Icon name="health" size={12} class="mr-1" />
-										{target.measureActivity}
-									</span>
-									<span class="tabular text-xs text-gray-700">
-										{target.currentValue}
-									</span>
-								{:else if target.whole}
-									<!--
-											A thing you count moves one at a time.
-
-											Twelve books is finished a book at a time, and
-											reaching for a keyboard to turn 3 into 4 is absurd —
-											so a counted measure gets a minus and a plus, each of
-											which is the whole gesture: the button carries the new
-											number, so a press is a submit and there is nothing to
-											save afterwards. A measured one keeps its field,
-											because 14.6 is not two presses away from anything.
-										-->
-									<button
-										class="icon-btn"
-										name="currentValue"
-										value={Math.max(0, target.currentValue - COUNT_STEP)}
-										disabled={target.currentValue <= 0}
-										title={t('goals.oneFewer')}
-										aria-label={t('goals.oneFewerUnit', {
-											unit: target.unit || t('goals.towardsThis')
-										}).trim()}
-									>
-										<Icon name="minus" />
-									</button>
-									<span class="tabular text-xs text-gray-700">
-										{target.currentValue}
-									</span>
-									<button
-										class="icon-btn"
-										name="currentValue"
-										value={target.currentValue + COUNT_STEP}
-										title={t('goals.oneMore')}
-										aria-label={t('goals.oneMoreUnit', {
-											unit: target.unit || t('goals.towardsThis')
-										}).trim()}
-									>
-										<Icon name="plus" />
-									</button>
-								{:else}
-									<NumberBox
-										autocomplete="off"
-										name="currentValue"
-										min="0"
-										step="any"
-										value={target.currentValue}
-										aria-label={t('goals.progressTowards', {
-											value: target.targetValue,
-											unit: target.unit
-										}).trim()}
-										class="w-20"
-									/>
-								{/if}
-								<span class="tabular text-xs text-gray-500">
-									/ {target.targetValue}
-									{target.unit}
-								</span>
-								<div class="h-1 w-16 shrink-0 bg-gray-200">
-									<div
-										class="h-full"
-										style="width: {Math.round(target.fraction * 100)}%;
-												background-color: {goal.areaColor ?? accent}"
-									></div>
-								</div>
-								{#if !target.whole && !target.measureActivity}
-									<button
-										class="icon-btn"
-										title={t('goals.saveProgress')}
-										aria-label={t('goals.saveProgress')}
-									>
-										<Icon name="check" />
-									</button>
-								{/if}
-							</form>
-						{/each}
-					</div>
 				{/if}
-
-				<!--
-						What counts towards this goal, under the goal rather than
-						among the buttons that close it. It reveals a part of this
-						card, so it belongs to the card's own column.
-					-->
-				<button
-					onclick={() => (openTasks = !openTasks)}
-					class="btn btn-sm btn-quiet mt-2"
-					title={t('goals.whatCountsTowardsThisGoal')}
-					>{t('goals.tasks', {
-						length:
-							goal.linkedSlotIds.length + goal.linkedTodoIds.length + goal.linkedActivityIds.length
-					})}<Icon name={openTasks ? 'chevron-up' : 'chevron-down'} size={12} />
-				</button>
+				{#if goal.status !== 'open' && isGoalStatus(goal.status)}
+					<span class="eyebrow text-gray-600"
+						>{t(STATUS_LABELS[goal.status as keyof typeof STATUS_LABELS])}</span
+					>
+				{/if}
 			</div>
 		</div>
 
 		<!--
-				The controls, in three treatments, starting wherever the goal's
-				text happened to end. The rail puts them at the same place on
-				every row, and the two that matter — how it ended — keep their
-				words, because "achieved" and "missed" are a judgement you make
-				once and not a routine action you would recognise from a glyph.
-
-				Four of them, not five: "Tasks (n)" went back to the goal's own
-				column below. It is a disclosure for what is already on the card
-				and not something done to the goal, and as the rail's fifth
-				member it was what pushed the row past the width of a phone —
-				which put delete on a line of its own, alone, in the corner.
-			-->
-		<!--
-				The words on the left, under the goal's own text; the two
-				glyphs against the right edge. On a phone the whole rail sat
-				left and the right half of the card was air.
-			-->
-		<!--
-				Full width only where the card is a column.
-
-				`.row-actions` is `flex: none`, so `w-full` on a row makes
-				it take the whole width and the text beside it collapses to
-				one character per line. That is what a goal card did on a
-				desktop: the title read downwards, a letter at a time.
-			-->
-		<div class="row-actions w-full gap-1 sm:w-auto">
+			How it ended, then edit and delete — icons, at the same place on
+			every row. Closing waits a few seconds before it is final, the way
+			ticking a task off does, so a slip is one press on Undo.
+		-->
+		<div class="row-actions">
 			{#if goal.status === 'open'}
-				<!--
-						Closing a goal is a verdict on months of work, and it was
-						one click with nothing between the click and the verdict.
-						Both answers wait a few seconds now, the way ticking a
-						task off does.
-					-->
 				<button
 					type="button"
-					class="btn btn-sm"
-					title={t('goals.closeItAsDone')}
+					class="icon-btn"
+					title={t('goals.achieved')}
+					aria-label={t('goals.achieved')}
 					onclick={() => closeLater('achieved')}
 				>
-					{t('goals.achieved')}
+					<Icon name="check" />
 				</button>
 				<button
 					type="button"
-					class="btn btn-sm btn-quiet"
-					title={t('goals.closeItAsNotDone')}
+					class="icon-btn"
+					title={t('goals.missed')}
+					aria-label={t('goals.missed')}
 					onclick={() => closeLater('missed')}
 				>
-					{t('goals.missed')}
+					<Icon name="close" />
 				</button>
 			{:else}
-				<form method="post" action={actions.close} use:enhance>
+				<form method="post" action={actions.close} use:enhance class="contents">
 					<input type="hidden" name="id" value={goal.id} />
 					<input type="hidden" name="status" value="open" />
-					<button class="btn btn-sm">{t('goals.reopen')}</button>
+					<button class="icon-btn" title={t('goals.reopen')} aria-label={t('goals.reopen')}>
+						<Icon name="undo" />
+					</button>
 				</form>
 			{/if}
 			<button
+				type="button"
 				title={t('ui.edit')}
 				aria-label={t('ui.edit')}
 				onclick={() => onedit(goal.id)}
-				class="icon-btn ml-auto"><Icon name="edit" /></button
+				class="icon-btn"><Icon name="edit" /></button
 			>
-			{#if confirmingDelete}
-				<form method="post" action={actions.remove} use:enhance>
-					<input type="hidden" name="id" value={goal.id} />
-					<button class="btn btn-sm btn-danger" use:armed>{t('goals.confirm')}</button>
-				</form>
-			{:else}
-				<button
-					title={t('ui.delete')}
-					aria-label={t('ui.delete')}
-					onclick={() => (confirmingDelete = true)}
-					class="icon-btn icon-btn-danger"><Icon name="trash" /></button
-				>
-			{/if}
+			<button
+				type="button"
+				title={t('ui.delete')}
+				aria-label={t('ui.delete')}
+				onclick={() => (confirmingDelete = true)}
+				class="icon-btn icon-btn-danger"><Icon name="trash" /></button
+			>
 		</div>
 	</div>
 
+	{#if goal.notes}
+		<Written content={goal.notes} compact class="mt-1" />
+	{/if}
+
+	<!-- No bar without a measure. An empty track under a goal with nothing to
+	     count reads as "0%", which is a claim about progress rather than the
+	     absence of one. -->
+	<div class="mt-2 flex items-center gap-3">
+		{#if pct !== null}
+			<div class="h-1.5 min-w-16 flex-1 bg-gray-200 sm:max-w-xs">
+				<div
+					class="h-full"
+					style="width: {pct}%; background-color: {goal.areaColor ?? accent}"
+				></div>
+			</div>
+		{/if}
+		<span class="tabular shrink-0 text-xs text-gray-600">
+			{progressLabel(goal)}{pct !== null ? ` · ${pct}%` : ''}
+		</span>
+	</div>
+
+	<!--
+		Every measure the goal was given, each with the number it stands at. A
+		goal counted from linked tasks keeps them visible and editable: they are
+		what somebody typed in, and hiding them because a todo got attached
+		loses the record.
+	-->
+	{#if goal.targets.length > 0}
+		<div class="mt-1.5 space-y-1">
+			{#each goal.targets as target (target.id)}
+				<form
+					method="post"
+					action={actions.setProgress}
+					use:enhance
+					class="flex flex-wrap items-center gap-2"
+				>
+					<input type="hidden" name="targetId" value={target.id} />
+					<!--
+						A measure counted from the workouts is read, not typed: the
+						sum of what the register holds for that activity inside the
+						goal's period. A box here would let somebody write a total
+						their own sessions contradict.
+					-->
+					{#if target.measureActivity}
+						<span class="chip shrink-0" title={t('goals.countedFromYourWorkouts')}>
+							<Icon name="health" size={12} class="mr-1" />
+							{target.measureActivity}
+						</span>
+						<span class="tabular text-xs text-gray-700">
+							{target.currentValue}
+						</span>
+					{:else if target.whole}
+						<!--
+							A thing you count moves one at a time: each button carries
+							the new number, so a press is the whole gesture. A measured
+							one keeps its field, because 14.6 is not two presses away
+							from anything.
+						-->
+						<button
+							class="icon-btn"
+							name="currentValue"
+							value={Math.max(0, target.currentValue - COUNT_STEP)}
+							disabled={target.currentValue <= 0}
+							title={t('goals.oneFewer')}
+							aria-label={t('goals.oneFewerUnit', {
+								unit: target.unit || t('goals.towardsThis')
+							}).trim()}
+						>
+							<Icon name="minus" />
+						</button>
+						<span class="tabular min-w-4 text-center text-xs text-gray-700">
+							{target.currentValue}
+						</span>
+						<button
+							class="icon-btn"
+							name="currentValue"
+							value={target.currentValue + COUNT_STEP}
+							title={t('goals.oneMore')}
+							aria-label={t('goals.oneMoreUnit', {
+								unit: target.unit || t('goals.towardsThis')
+							}).trim()}
+						>
+							<Icon name="plus" />
+						</button>
+					{:else}
+						<NumberBox
+							autocomplete="off"
+							name="currentValue"
+							min="0"
+							step="any"
+							value={target.currentValue}
+							aria-label={t('goals.progressTowards', {
+								value: target.targetValue,
+								unit: target.unit
+							}).trim()}
+							class="w-20"
+						/>
+					{/if}
+					<span class="tabular text-xs text-gray-500">
+						/ {target.targetValue}
+						{target.unit}
+					</span>
+					<div class="h-1 w-16 shrink-0 bg-gray-200">
+						<div
+							class="h-full"
+							style="width: {Math.round(target.fraction * 100)}%;
+								background-color: {goal.areaColor ?? accent}"
+						></div>
+					</div>
+					{#if !target.whole && !target.measureActivity}
+						<button
+							class="icon-btn"
+							title={t('goals.saveProgress')}
+							aria-label={t('goals.saveProgress')}
+						>
+							<Icon name="check" />
+						</button>
+					{/if}
+				</form>
+			{/each}
+		</div>
+	{/if}
+
+	<!--
+		What counts towards this goal. It reveals a part of this card, so it
+		starts where the card's text starts rather than in a button's padding.
+	-->
+	<button
+		type="button"
+		onclick={() => (openTasks = !openTasks)}
+		class="goal-fold mt-1.5"
+		aria-expanded={openTasks}
+		title={t('goals.whatCountsTowardsThisGoal')}
+		>{t('goals.tasks', { length: linkedCount })}<Icon
+			name={openTasks ? 'chevron-up' : 'chevron-down'}
+			size={12}
+		/>
+	</button>
+
 	{#if openTasks}
 		<!--
-				What already counts, on the card. The modal is for choosing;
-				this is for looking and ticking — a list you could see but not
-				tick sent you to the todo page for the one action the list
-				exists for.
-			-->
-		<div class="mt-3 border border-gray-200 bg-gray-50 p-3">
+			What already counts, on the card. The modal is for choosing; this is
+			for looking and ticking.
+		-->
+		<div class="goal-tasks mt-1 border-l-2 border-gray-200 pl-3">
 			{#each allTodos.filter((t) => goal.linkedTodoIds.includes(t.id)) as todo (todo.id)}
 				<form method="post" action={actions.setTodoStatus} use:enhance class="contents">
 					<input type="hidden" name="todoId" value={todo.id} />
@@ -433,7 +404,7 @@
 							onchange={(e) => e.currentTarget.form?.requestSubmit()}
 							class="h-3.5 w-3.5"
 						/>
-						<span class={todo.status === 'done' ? 'text-gray-400' : 'text-gray-800'}
+						<span class={todo.status === 'done' ? 'text-gray-500' : 'text-gray-800'}
 							>{todo.title}</span
 						>
 					</label>
@@ -453,7 +424,7 @@
 				</p>
 			{/each}
 
-			{#if goal.linkedTodoIds.length + goal.linkedSlotIds.length + goal.linkedActivityIds.length === 0}
+			{#if linkedCount === 0}
 				<p class="py-1 text-xs text-gray-500">
 					{t('goals.nothingLinkedYetProgress')}
 				</p>
@@ -465,3 +436,61 @@
 		</div>
 	{/if}
 </div>
+
+<Modal bind:open={confirmingDelete} title={t('goals.deleteGoal')} size="sm">
+	<p class="text-sm text-gray-700">{t('goals.deleteGoalBody', { title: goal.title })}</p>
+
+	{#snippet footer()}
+		<button type="button" class="btn" onclick={() => (confirmingDelete = false)}
+			>{t('ui.cancel')}</button
+		>
+		<form
+			method="post"
+			action={actions.remove}
+			use:enhance={() =>
+				async ({ update }) => {
+					confirmingDelete = false;
+					await update();
+				}}
+		>
+			<input type="hidden" name="id" value={goal.id} />
+			<button class="btn btn-danger" use:armed>{t('ui.delete')}</button>
+		</form>
+	{/snippet}
+</Modal>
+
+<style>
+	/*
+	 * A disclosure that reads as part of the text column: no box, no inset, the
+	 * same small type as the lines around it.
+	 */
+	.goal-fold {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		font-size: 0.75rem;
+		line-height: 1rem;
+		color: var(--color-gray-600);
+	}
+
+	.goal-fold:hover {
+		color: var(--color-gray-900);
+		text-decoration: underline;
+	}
+
+	/* A rule down one side is a line, not a box: it has no corners to round. */
+	.goal-tasks {
+		border-radius: 0;
+	}
+
+	/*
+	 * The rail comes up for the whole goal, not only its title line: a pointer
+	 * on a measure is a pointer on this goal.
+	 */
+	@media (hover: hover) {
+		.goal-row:hover .row-actions,
+		.goal-row:focus-within .row-actions {
+			opacity: 1;
+		}
+	}
+</style>

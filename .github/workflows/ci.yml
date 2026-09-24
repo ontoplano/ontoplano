@@ -119,9 +119,10 @@ jobs:
 
       - run: yarn test:unit
 
-      # Only the browser the suite actually uses. `--with-deps` because a bare
-      # runner has none of the shared libraries Chromium needs.
-      - run: yarn playwright install --with-deps chromium
+      # Only the browsers the suite actually uses — Firefox for the one spec
+      # its project runs. `--with-deps` because a bare runner has none of the
+      # shared libraries either needs.
+      - run: yarn playwright install --with-deps chromium firefox
       - run: yarn test:e2e
 
       - name: Keep the report from a failed run

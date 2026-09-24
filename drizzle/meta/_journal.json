@@ -701,6 +701,34 @@
       "when": 1790128315051,
       "tag": "0099_notebook_default_tags",
       "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "6",
+      "when": 1790191463620,
+      "tag": "0100_notebooks_hold_modules",
+      "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "6",
+      "when": 1790191468594,
+      "tag": "0101_existing_notebooks_keep_goals",
+      "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "6",
+      "when": 1790236684495,
+      "tag": "0102_a_tag_says_what_it_means",
+      "breakpoints": true
+    },
+    {
+      "idx": 103,
+      "version": "6",
+      "when": 1790247925183,
+      "tag": "0103_a_habit_is_logged_once_a_day",
+      "breakpoints": true
     }
   ]
 }

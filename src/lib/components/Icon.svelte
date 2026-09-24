@@ -40,6 +40,9 @@
 		bell: 'M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6M10 20a2 2 0 0 0 4 0',
 		search: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM16 16l4 4',
 		filter: 'M4 5h16l-6 7v6l-4 2v-8z',
+		/* A tag filter's two modes: carrying all of them (∩) or any (∪). */
+		intersect: 'M6 19v-7a6 6 0 0 1 12 0v7',
+		union: 'M6 5v7a6 6 0 0 0 12 0V5',
 		download: 'M12 4v10M8 10l4 4 4-4M5 19h14',
 		copy: 'M9 4h9v13M5 8h9v12H5z',
 		drag: 'M9 6h.01M9 12h.01M9 18h.01M15 6h.01M15 12h.01M15 18h.01',
@@ -71,6 +74,20 @@
 		// Put away rather than thrown away: the lid, the box, and the arrow down
 		// into it — the gesture a chat app archives a conversation with.
 		archive: 'M3 5h18v4H3zM5 9v10h14V9M10 13h4',
+		/*
+		 * Three arrows chasing each other round a triangle.
+		 *
+		 * For notes whose notebook was deleted: they were not thrown away, they
+		 * are waiting to be put somewhere. A bin says the opposite of what that
+		 * chip is for — it is where things go to come back.
+		 *
+		 * Six subpaths in one `d`: three sides, each ending in a chevron. Drawn
+		 * on the same 24x24 grid as the rest, and it has to survive being 16px
+		 * in a corner — the first attempt at this was hand-placed coordinates
+		 * and rendered as a squiggle.
+		 */
+		recycle:
+			'M7 19H4.8a1.8 1.8 0 0 1-1.57-2.67L7.2 9.5M11 19h8.2a1.8 1.8 0 0 0 1.56-2.67l-1.23-2.12M14 16l-3 3 3 3M8.3 13.6 7.2 9.5l-4.1 1.1M9.34 5.81l1.1-1.89A1.8 1.8 0 0 1 12 3a1.8 1.8 0 0 1 1.53.89l3.94 6.84M13.38 9.63l4.1 1.1 1.1-4.1',
 		// A drawing pin seen from the side: the head, the collar, the point.
 		pin: 'M9 4h6l-1 5 3 3H7l3-3-1-5zM12 12v8',
 		wallet:

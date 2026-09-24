@@ -30,13 +30,13 @@ const MAX_TIMEZONE_LENGTH = 64;
 
 export function setUserTheme(ctx: Ctx, value: unknown): void {
 	const theme = String(value ?? '');
-	if (!isTheme(theme)) throw new ValidationError('Unknown theme');
+	if (!isTheme(theme)) throw new ValidationError({ key: 'errors.preferences.unknownTheme' });
 	setTheme(ctx.userId, theme);
 }
 
 export function setUserLanguage(ctx: Ctx, value: unknown): void {
 	const locale = String(value ?? '');
-	if (!isLocale(locale)) throw new ValidationError('Unknown language');
+	if (!isLocale(locale)) throw new ValidationError({ key: 'errors.preferences.unknownLanguage' });
 	setLocale(ctx.userId, locale);
 }
 
@@ -49,13 +49,13 @@ export function setUserLanguage(ctx: Ctx, value: unknown): void {
  */
 export function setUserClock(ctx: Ctx, value: unknown): void {
 	const clock = String(value ?? '');
-	if (!isClock(clock)) throw new ValidationError('Unknown clock');
+	if (!isClock(clock)) throw new ValidationError({ key: 'errors.preferences.unknownClock' });
 	setClock(ctx.userId, clock);
 }
 
 export function setUserStyle(ctx: Ctx, value: unknown): void {
 	const style = String(value ?? '');
-	if (!isStyle(style)) throw new ValidationError('Unknown style');
+	if (!isStyle(style)) throw new ValidationError({ key: 'errors.preferences.unknownStyle' });
 	setStyle(ctx.userId, style);
 }
 
@@ -88,7 +88,7 @@ export function saveGridHours(ctx: Ctx, raw: { start: unknown; end: unknown }): 
 	const start = num(raw.start, 'start hour', { int: true, min: 0, max: 23 });
 	const end = num(raw.end, 'end hour', { int: true, min: 1, max: 24 });
 
-	if (end <= start) throw new ValidationError('The day has to end after it starts');
+	if (end <= start) throw new ValidationError({ key: 'errors.preferences.theDayHasToEnd' });
 
 	setGridHours(ctx.userId, { start, end });
 }
@@ -100,7 +100,7 @@ export function parseTimezone(value: unknown): string {
 		new Intl.DateTimeFormat('en-CA', { timeZone: tz });
 		return tz;
 	} catch {
-		throw new ValidationError('Unknown timezone');
+		throw new ValidationError({ key: 'errors.preferences.unknownTimezone' });
 	}
 }
 

@@ -81,6 +81,8 @@ sentence somebody agrees to when they grant it.
 | `/api/reminders`                             | POST   | —                 |
 | `/api/report`                                | POST   | —                 |
 | `/api/ringtones/[id]`                        | GET    | —                 |
+| `/api/saved-filters`                         | GET    | —                 |
+| `/api/saved-filters`                         | POST   | —                 |
 | `/api/search`                                | GET    | —                 |
 | `/api/subscribe`                             | POST   | —                 |
 | `/api/tutorial`                              | POST   | —                 |
@@ -486,6 +488,21 @@ Cached hard because the bytes never change — a ringtone is replaced by
 uploading another one under another name, not by editing this one.
 
 **GET**
+
+### `/api/saved-filters`
+
+The filters one screen has kept, and the two things done to them.
+
+An endpoint rather than actions on each page: every list that narrows itself
+wants this, and the alternative is the same three handlers copied into the
+task list, the diary, the gallery and whatever comes next. The screen names
+itself in `surface`, and the service refuses anything that is not a path
+this app serves — the key goes into a settings row, so a caller that could
+put anything there could write over another setting.
+
+**GET**
+
+**POST**
 
 ### `/api/search`
 

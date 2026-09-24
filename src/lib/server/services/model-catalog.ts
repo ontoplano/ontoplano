@@ -163,8 +163,8 @@ export async function listModels(
 	baseUrl: string | null
 ): Promise<ModelChoice[]> {
 	const meta = providerOf(provider);
-	if (!meta) throw new ValidationError('Unknown provider');
-	if (meta.needsKey && !key) throw new ValidationError('A key is needed to ask for the models.');
+	if (!meta) throw new ValidationError({ key: 'errors.modelCatalog.unknownProvider' });
+	if (meta.needsKey && !key) throw new ValidationError({ key: 'errors.modelCatalog.aKeyIsNeeded' });
 
 	/*
 	 * Judged before it is dialled, so the answer is the same sentence saving

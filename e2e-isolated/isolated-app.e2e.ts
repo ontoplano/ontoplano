@@ -144,7 +144,8 @@ test('every room that runs on the device opens on it', async ({ page }) => {
 		'/finance/bills',
 		'/media/audios',
 		'/media/gallery',
-		'/inventory',
+		'/inventory/stock',
+		'/inventory/wishlist',
 		'/reminders'
 	];
 

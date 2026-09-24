@@ -81,7 +81,7 @@ export const POST: RequestHandler = async (event) => {
 			headers: { 'mcp-protocol-version': PROTOCOL_VERSION }
 		});
 	} catch (e) {
-		const answer = toJsonError(e);
+		const answer = await toJsonError(e);
 		/*
 		 * A 401 says where to ask permission, which is the whole of "no
 		 * configuration" from the client's side (RFC 9728). A client that does

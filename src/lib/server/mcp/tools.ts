@@ -22,7 +22,7 @@
  */
 import { localDateOf, type Ctx } from '$lib/services/ctx.js';
 import type { Scope } from '../services/tokens.js';
-import type { Ref } from './refs.js';
+import type { Ref, RefKind } from './refs.js';
 import { CLOSED_STATUSES } from '../../task-status.js';
 import { compareByPriority } from '../../ratings.js';
 import type { Confinement } from './confinement.js';
@@ -68,6 +68,8 @@ import {
 	parseRecurrence,
 	serialiseRecurrence
 } from '../../recurrence.js';
+import { translator } from '../../i18n/core.js';
+import { messages as englishMessages } from '../../i18n/catalogues/en.js';
 import {
 	createIdea,
 	deleteIdea,
@@ -76,7 +78,14 @@ import {
 	toggleFavorite,
 	updateIdea
 } from '$lib/services/ideas.js';
-import { deleteTag, listTagsWithUses, recolorTag, renameTag } from '$lib/services/tags.js';
+import {
+	deleteTag,
+	describeTag,
+	recolorTag,
+	renameTag,
+	tagsInNotebook,
+	tagsWithUses
+} from '$lib/services/tags.js';
 import {
 	addGoalLinks,
 	addGoalTarget,
@@ -94,10 +103,11 @@ import {
 import {
 	contentsOf,
 	createNotebook,
-	updateNotebook,
 	deleteNotebook,
+	getNotebook,
 	listNotebooks,
-	setNotebookShared
+	setNotebookShared,
+	updateNotebook
 } from '$lib/services/notebooks.js';
 import {
 	cooked,
@@ -204,6 +214,7 @@ import {
 	listItems as listInventoryItems
 } from '$lib/services/inventory.js';
 import { NotFoundError, ValidationError } from '$lib/services/errors.js';
+import { passesTagFilter, TAG_MODES, type TagFilter, type TagMode } from '$lib/tag-filter.js';
 
 /** JSON Schema, the subset a tool's arguments actually use. */
 type Shape = {
@@ -311,6 +322,20 @@ export type Tool = {
 	 * there, and the protocol layer answers `before: null` for it.
 	 */
 	subject?: (ctx: Ctx, args: Record<string, unknown>) => unknown;
+	/**
+	 * What this call brings into being, so the id it answers with can be read
+	 * back.
+	 *
+	 * An id in an answer has to mean a row that is there. It did not once: an
+	 * `add_todo` answered `{ id: 559 }`, and a minute later nothing by that
+	 * number existed — so the caller went to label its own work, was told the
+	 * task was not found, and the work was gone with nothing anywhere saying
+	 * so. Set this and the protocol layer reads the row back through the same
+	 * registry that resolves an id somebody passed in: `after` carries the
+	 * thing that was made, and a create that made nothing readable is an
+	 * error rather than a number.
+	 */
+	creates?: RefKind;
 	/**
 	 * `caller` is the connection's own grants, for the one rule that cannot be
 	 * decided from the arguments: which files this key may see. Every other
@@ -450,13 +475,24 @@ function detailOf(args: Record<string, unknown>): Detail {
 	return { verbose: args.verbose === true, fields: names };
 }
 
+/** A shaped row without the keys it holds nothing under. */
+function present(row: Record<string, unknown>): Record<string, unknown> {
+	return Object.fromEntries(Object.entries(row).filter(([, value]) => value !== undefined));
+}
+
 /**
  * One row, cut to what was asked for.
  *
  * `full` is everything this kind of thing can say; `line` is the handful that
- * identifies it. A named field that the full row does not have is a mistake
- * worth saying out loud — silently sending less than was asked for is how a
- * caller comes to believe a task has no notes.
+ * identifies it. Both are built with every key they can carry, set to
+ * `undefined` where this row has nothing — so the names a caller may ask for
+ * are the shape's, not whichever this particular row happens to fill, and a
+ * task with no labels yet does not refuse `tags`. The empty keys are dropped
+ * before anything is sent.
+ *
+ * A named field that neither shape has is a mistake worth saying out loud —
+ * silently sending less than was asked for is how a caller comes to believe a
+ * task has no notes.
  */
 function detailed(
 	full: Record<string, unknown>,
@@ -464,43 +500,132 @@ function detailed(
 	detail: Detail
 ): Record<string, unknown> {
 	if (detail.fields) {
-		const known = Object.keys(full);
+		const known = [...new Set([...Object.keys(full), ...Object.keys(line)])];
 		const unknown = detail.fields.filter((name) => !known.includes(name) && name !== 'id');
 		if (unknown.length > 0)
 			throw new ValidationError(
 				`No such field${unknown.length > 1 ? 's' : ''}: ${unknown.join(', ')}. This one has ${known.join(', ')}.`
 			);
 		const out: Record<string, unknown> = { id: full.id };
-		for (const name of detail.fields) if (name in full) out[name] = full[name];
-		return out;
+		for (const name of detail.fields)
+			out[name] = Object.hasOwn(full, name) ? full[name] : line[name];
+		return present(out);
 	}
-	return detail.verbose ? full : line;
+	return present(detail.verbose ? full : line);
 }
+
+/**
+ * The release the single-label `tag` and `withoutTag` stop being accepted in.
+ *
+ * Named rather than "a future release": the caller is a model reading the
+ * answer, and it can act on a version number. One constant, so the schema and
+ * the sentence the answer carries cannot drift apart.
+ */
+const SINGLE_TAG_REMOVED_IN = '0.185.0';
+
+/** Each label filter's old spelling, beside the one that replaced it. */
+const SINGLE_TAG_ARGS = [
+	['tag', 'tags'],
+	['withoutTag', 'withoutTags']
+] as const;
 
 /**
  * The label filters every listing takes.
  *
- * `tag` narrows to what carries a word, `withoutTag` to what does not — "open
- * and not yet `done-by-ai`" is one call rather than a list read and filtered
- * by hand — and `taggedSince` answers the question a review queue is always
- * asking: what has been marked since I last looked. It reads the date on the
- * join, which is the tag's own and does not move when the thing is edited.
+ * `tags` narrows to what carries one of a set of words and `withoutTags`
+ * drops what carries any of them — "open and not yet `done-by-ai`" is one
+ * call rather than a list read and filtered by hand, and a queue spread over
+ * `u5`, `e2` and `i5` is one call rather than three. `taggedSince` answers the
+ * question a review queue is always asking: what has been marked since I last
+ * looked. It reads the date on the join, which is the tag's own and does not
+ * move when the thing is edited.
  */
 const TAG_ARGS = {
-	tag: text(
-		'Only the ones carrying this label. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours.'
-	),
-	withoutTag: text(
-		'Only the ones NOT carrying this label. The mirror of `tag`; both may be given.'
-	),
+	tags: {
+		type: 'array',
+		items: { type: 'string' },
+		description:
+			'Only the ones carrying at least one of these labels, so naming several reads several queues in one call — `["u5", "e2", "i5"]`. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours. A single string of them, separated by commas or spaces, is understood too.'
+	},
+	tagMode: {
+		type: 'string',
+		enum: [...TAG_MODES],
+		description:
+			'How `tags` combine. `any` (the default) keeps what carries at least one of them; `all` keeps only what carries every one. `withoutTags` drops the same either way.'
+	},
+	withoutTags: {
+		type: 'array',
+		items: { type: 'string' },
+		description:
+			'Leave out the ones carrying any of these labels. The mirror of `tags`, written the same way; both may be given.'
+	},
+	tag: {
+		type: 'string',
+		deprecated: true,
+		description: `Deprecated — use \`tags\`, which asks the same thing of any number of labels at once. Still accepted so an assistant written against the old shape keeps working, and removed in ${SINGLE_TAG_REMOVED_IN}.`
+	},
+	withoutTag: {
+		type: 'string',
+		deprecated: true,
+		description: `Deprecated — use \`withoutTags\`, which drops anything carrying any of the labels named. Still accepted so an assistant written against the old shape keeps working, and removed in ${SINGLE_TAG_REMOVED_IN}.`
+	},
 	taggedSince: text(
-		'Only the ones labelled at or after this moment — `2026-09-21` or a full ISO timestamp. With `tag`, it is that label\u2019s own date; without, any label\u2019s. A label put on before dates were kept does not answer this.'
+		'Only the ones labelled at or after this moment — `2026-09-21` or a full ISO timestamp. With `tags`, it is the date of whichever of those labels the thing carries; without, any label\u2019s. A label put on before dates were kept does not answer this.'
 	)
 };
 
 /** A label as the caller wrote it: lower case, no leading hashes, trimmed. */
 function tagWord(value: unknown): string {
 	return String(value).replace(/^#+/, '').trim().toLowerCase();
+}
+
+/**
+ * The labels one filter names.
+ *
+ * A real JSON array and a single string holding all of them both turn up in
+ * practice — assistants send `["u5","e2"]` and `"u5, e2"` about equally — and
+ * refusing one of them teaches the caller nothing that accepting it does not.
+ */
+function tagWords(value: unknown): string[] {
+	const said = Array.isArray(value) ? value : String(value).split(/[,\s]+/);
+	return said.map(tagWord).filter(Boolean);
+}
+
+/** The labels one filter names, from the current spelling or the old one. */
+function tagsAsked(args: Record<string, unknown>, many: string, one: string): string[] {
+	const said = args[many] ?? args[one];
+	return said === undefined ? [] : tagWords(said);
+}
+
+/**
+ * What to say back to a caller that used the single-label spelling.
+ *
+ * In the answer rather than only in the schema, because a translation nobody
+ * is told about is invisible: the call worked, so the assistant goes on using
+ * the dead spelling right up to the release that removes it.
+ */
+function tagWarning(args: Record<string, unknown>): string | null {
+	const old = SINGLE_TAG_ARGS.filter(
+		([one, many]) => args[one] !== undefined && args[many] === undefined
+	);
+	if (old.length === 0) return null;
+
+	const were = old.map(([one]) => `\`${one}\``).join(' and ');
+	const instead = old.map(([, many]) => `\`${many}\``).join(' and ');
+	return (
+		`${were} ${old.length > 1 ? 'are' : 'is'} deprecated and will be removed in ${SINGLE_TAG_REMOVED_IN}. ` +
+		`Use ${instead}, which ${old.length > 1 ? 'take' : 'takes'} any number of labels — a thing matches if it carries any one of them. ` +
+		'This call was translated.'
+	);
+}
+
+/** A listing's answer, carrying the note when the call used the old spelling. */
+function sayingTags(
+	answer: Record<string, unknown>,
+	args: Record<string, unknown>
+): Record<string, unknown> {
+	const warning = tagWarning(args);
+	return warning ? { ...answer, warning } : answer;
 }
 
 /**
@@ -520,19 +645,36 @@ function momentArg(value: unknown, what: string): string {
 	return at.toISOString();
 }
 
-/** Whether a thing's labels satisfy the three filters above. */
+/** The label filters a call asked for, in the shape the app's own filter takes. */
+function tagFilterOf(args: Record<string, unknown>): TagFilter {
+	if (args.tagMode !== undefined && !TAG_MODES.includes(args.tagMode as TagMode))
+		throw new ValidationError('tagMode has to be `any` or `all`.');
+	return {
+		include: tagsAsked(args, 'tags', 'tag'),
+		exclude: tagsAsked(args, 'withoutTags', 'withoutTag'),
+		mode: args.tagMode === 'all' ? 'all' : 'any'
+	};
+}
+
+/** Whether a thing's labels satisfy the filters above. */
 function passesTags(
 	labels: readonly { name: string; taggedAt?: string | null }[],
 	args: Record<string, unknown>
 ): boolean {
-	if (args.tag !== undefined && !labels.some((one) => one.name === tagWord(args.tag))) return false;
-	if (args.withoutTag !== undefined && labels.some((one) => one.name === tagWord(args.withoutTag)))
+	const asked = tagFilterOf(args);
+	const wanted = asked.include;
+	if (
+		!passesTagFilter(
+			labels.map((one) => one.name),
+			asked
+		)
+	)
 		return false;
 
 	if (args.taggedSince !== undefined) {
 		const since = momentArg(args.taggedSince, 'taggedSince');
 		const counted =
-			args.tag === undefined ? labels : labels.filter((one) => one.name === tagWord(args.tag));
+			wanted.length === 0 ? labels : labels.filter((one) => wanted.includes(one.name));
 		if (!counted.some((one) => one.taggedAt && one.taggedAt >= since)) return false;
 	}
 	return true;
@@ -540,6 +682,13 @@ function passesTags(
 
 /** How long an opening is: enough to tell two things apart. */
 const PREVIEW_CHARS = 140;
+
+/** The start of a piece of writing on one line, or nothing when it is empty. */
+function openingOf(text: string): string | undefined {
+	const opening = text.trim().replace(/\s+/g, ' ');
+	if (!opening) return undefined;
+	return opening.length > PREVIEW_CHARS ? `${opening.slice(0, PREVIEW_CHARS)}\u2026` : opening;
+}
 
 /** The pictures and recordings a piece of writing refers to, as links. */
 const MEDIA_LINK = /\/media\/(?:audio\/)?\d+/g;
@@ -558,16 +707,16 @@ function briefly(todo: Todo): Record<string, unknown> {
 	const out: Record<string, unknown> = { id: todo.id, title: todo.title, status: todo.status };
 	// The number a person can see on the screen and say out loud — the fourth
 	// task about the kitchen is #4. The id is ours; this one is theirs.
-	if (todo.notebookSeq !== null) out.seq = todo.notebookSeq;
-	if (todo.notes) out.notes = todo.notes;
-	if (todo.scheduledDate) out.scheduledDate = todo.scheduledDate;
-	if (todo.categoryName) out.category = todo.categoryName;
-	if (todo.notebookId !== null) out.notebookId = todo.notebookId;
-	if (todo.notebookTitle) out.notebook = todo.notebookTitle;
-	if (todo.archivedAt) out.archivedAt = todo.archivedAt;
+	out.seq = todo.notebookSeq ?? undefined;
+	out.notes = todo.notes || undefined;
+	out.scheduledDate = todo.scheduledDate || undefined;
+	out.category = todo.categoryName || undefined;
+	out.notebookId = todo.notebookId ?? undefined;
+	out.notebook = todo.notebookTitle || undefined;
+	out.archivedAt = todo.archivedAt || undefined;
 	// Names, not ids: the id of a tag is of no use to a reader, and the whole
 	// point of a label here is the word.
-	if (todo.tags.length > 0) out.tags = todo.tags.map((one) => one.name);
+	out.tags = todo.tags.length > 0 ? todo.tags.map((one) => one.name) : undefined;
 	/*
 	 * And when each went on, where that is known.
 	 *
@@ -577,13 +726,12 @@ function briefly(todo: Todo): Record<string, unknown> {
 	 * `updatedAt` moves for every edit and cannot say.
 	 */
 	const dated = todo.tags.filter((one) => one.taggedAt);
-	if (dated.length > 0) {
-		out.taggedAt = Object.fromEntries(dated.map((one) => [one.name, one.taggedAt]));
-	}
+	out.taggedAt =
+		dated.length > 0 ? Object.fromEntries(dated.map((one) => [one.name, one.taggedAt])) : undefined;
 	const ratings = Object.fromEntries(
 		Object.entries(todo.ratings).filter(([, value]) => value !== null)
 	);
-	if (Object.keys(ratings).length > 0) out.ratings = ratings;
+	out.ratings = Object.keys(ratings).length > 0 ? ratings : undefined;
 	return out;
 }
 
@@ -596,8 +744,8 @@ function briefly(todo: Todo): Record<string, unknown> {
  */
 function asLine(todo: Todo): Record<string, unknown> {
 	const out: Record<string, unknown> = { id: todo.id, title: todo.title, status: todo.status };
-	if (todo.notebookSeq !== null) out.seq = todo.notebookSeq;
-	if (todo.tags.length > 0) out.tags = todo.tags.map((one) => one.name);
+	out.seq = todo.notebookSeq ?? undefined;
+	out.tags = todo.tags.length > 0 ? todo.tags.map((one) => one.name) : undefined;
 
 	/*
 	 * An opening, and what it refers to — the same two a note's line carries.
@@ -609,12 +757,9 @@ function asLine(todo: Todo): Record<string, unknown> {
 	 * this is about and the links say what to fetch if it matters; `verbose`
 	 * is still there for the whole of it.
 	 */
-	const opening = (todo.notes ?? '').trim().replace(/\s+/g, ' ');
-	if (opening)
-		out.opening =
-			opening.length > PREVIEW_CHARS ? `${opening.slice(0, PREVIEW_CHARS)}\u2026` : opening;
+	out.opening = openingOf(todo.notes ?? '');
 	const links = [...new Set((todo.notes ?? '').match(MEDIA_LINK) ?? [])];
-	if (links.length > 0) out.media = links;
+	out.media = links.length > 0 ? links : undefined;
 	return out;
 }
 
@@ -644,15 +789,12 @@ type NoteRow = {
 
 function noteLine(note: NoteRow): Record<string, unknown> {
 	const out: Record<string, unknown> = { id: note.id, createdAt: note.createdAt };
-	if (note.seq !== null && note.seq !== undefined) out.seq = note.seq;
-	if (note.title) out.title = note.title;
-	const opening = note.content.trim().replace(/\s+/g, ' ');
-	if (opening)
-		out.opening =
-			opening.length > PREVIEW_CHARS ? `${opening.slice(0, PREVIEW_CHARS)}\u2026` : opening;
-	if (note.tags.length > 0) out.tags = note.tags.map((one) => one.name);
-	if (note.pinnedAt) out.pinned = true;
-	if (note.archivedAt) out.archivedAt = note.archivedAt;
+	out.seq = note.seq ?? undefined;
+	out.title = note.title || undefined;
+	out.opening = openingOf(note.content);
+	out.tags = note.tags.length > 0 ? note.tags.map((one) => one.name) : undefined;
+	out.pinned = note.pinnedAt ? true : undefined;
+	out.archivedAt = note.archivedAt || undefined;
 
 	/*
 	 * What it refers to, as links rather than as bytes.
@@ -663,17 +805,17 @@ function noteLine(note: NoteRow): Record<string, unknown> {
 	 * before the pictures would otherwise hide them entirely.
 	 */
 	const links = [...new Set(note.content.match(MEDIA_LINK) ?? [])];
-	if (links.length > 0) out.media = links;
+	out.media = links.length > 0 ? links : undefined;
 	return out;
 }
 
 function noteFull(note: NoteRow): Record<string, unknown> {
 	const out: Record<string, unknown> = { ...noteLine(note), content: note.content };
 	delete out.opening;
-	if (note.updatedAt) out.updatedAt = note.updatedAt;
+	out.updatedAt = note.updatedAt || undefined;
 	const dated = note.tags.filter((one) => one.taggedAt);
-	if (dated.length > 0)
-		out.taggedAt = Object.fromEntries(dated.map((one) => [one.name, one.taggedAt]));
+	out.taggedAt =
+		dated.length > 0 ? Object.fromEntries(dated.map((one) => [one.name, one.taggedAt])) : undefined;
 	return out;
 }
 
@@ -1065,9 +1207,16 @@ function recurrenceFromArgs(args: Record<string, unknown>, anchor: string): stri
 	return serialiseRecurrence({ kind: 'weekly', anchor });
 }
 
+/**
+ * The tools speak English — their descriptions, their errors, their answers —
+ * whatever language the account reads the app in, so a rhythm described here
+ * is described from the English catalogue.
+ */
+const english = translator('en', englishMessages);
+
 /** The rhythm in words, so a row does not have to be decoded to be read. */
-function repeatsInWords(recurrence: string | null, weekdayName: string): string {
-	return describeRecurrence(parseRecurrence(recurrence), weekdayName);
+function repeatsInWords(recurrence: string | null, weekday: number): string {
+	return describeRecurrence(parseRecurrence(recurrence), weekday, english);
 }
 
 /** The next date on or after `from` that falls on this Monday-indexed weekday. */
@@ -1077,16 +1226,6 @@ function nextWeekdayOnOrAfter(from: Date, weekday: unknown): Date {
 	d.setDate(d.getDate() + ahead);
 	return d;
 }
-
-const WEEKDAY_NAMES = [
-	'Monday',
-	'Tuesday',
-	'Wednesday',
-	'Thursday',
-	'Friday',
-	'Saturday',
-	'Sunday'
-];
 
 export const TOOLS: Tool[] = [
 	// ── Looking ──────────────────────────────────────────────────────────────
@@ -1420,7 +1559,7 @@ export const TOOLS: Tool[] = [
 		name: 'todos',
 		title: 'The todo list',
 		description:
-			'Tasks with no date on them yet. A todo gains a date by being put on a day, which promotes it onto the week. Answers with a line per task; `verbose` or `fields` for more. Narrow it rather than reading it whole \u2014 `notebookId` for one subject, `status: "open"`, `tag`, `withoutTag`, `taggedSince`.',
+			'Tasks with no date on them yet. A todo gains a date by being put on a day, which promotes it onto the week. Answers with a line per task; `verbose` or `fields` for more. Narrow it rather than reading it whole \u2014 `notebookId` for one subject, `status: "open"`, `tags`, `withoutTags`, `taggedSince`.',
 		scope: 'tasks:read',
 		writes: false,
 		refs: [{ arg: 'notebookId', kind: 'notebook' }],
@@ -1448,7 +1587,7 @@ export const TOOLS: Tool[] = [
 		}),
 		run: (ctx, args) => {
 			const detail = detailOf(args);
-			let rows = listTodos(ctx);
+			let rows = listTodos(ctx, { tags: tagFilterOf(args) });
 			if (!args.includeArchived) rows = rows.filter((todo) => !todo.archivedAt);
 			if (args.notebookId !== undefined) {
 				const wanted = Number(args.notebookId);
@@ -1458,7 +1597,7 @@ export const TOOLS: Tool[] = [
 			}
 			if (args.status !== undefined) rows = rows.filter((todo) => matchesState(todo, args.status));
 			rows = rows.filter((todo) => passesTags(todo.tags, args));
-			return paged(rows.map(shapeTodo(detail)), args, 50);
+			return sayingTags(paged(rows.map(shapeTodo(detail)), args, 50), args);
 		}
 	},
 	/*
@@ -1479,7 +1618,7 @@ export const TOOLS: Tool[] = [
 		name: 'up_next',
 		title: 'What to do next',
 		description:
-			'The task to do next, by the ratings on it: most urgent first, then the easiest, then the one most wanted. All three run the same way \u2014 five is the most of what the word says. An unrated one is not a zero: it counts as the middle of the scale, 2.5, so anything marked 4 or 5 beats it and 1 or 2 falls below it as the postpone tiers. Open, unarchived, undated tasks only \u2014 anything with a day on it is on the week and `today` answers for that. Answers with one line by default; `limit` for a short list to choose between.',
+			'The task to do next, by the ratings on it: most urgent first, then the easiest, then the one most wanted. All three run the same way \u2014 five is the most of what the word says. An unrated one is not a zero: it counts as the middle of the scale, 2.5, so anything marked 4 or 5 beats it and 1 or 2 falls below it as the postpone tiers. Open, unarchived, undated tasks only \u2014 anything with a day on it is on the week and `today` answers for that. Answers with one line by default; `limit` for a short list to choose between, and `tags` to ask it of one queue or of several at once.',
 		scope: 'tasks:read',
 		writes: false,
 		refs: [{ arg: 'notebookId', kind: 'notebook' }],
@@ -1494,7 +1633,7 @@ export const TOOLS: Tool[] = [
 		}),
 		run: (ctx, args) => {
 			const detail = detailOf(args);
-			let rows = listTodos(ctx).filter(
+			let rows = listTodos(ctx, { tags: tagFilterOf(args) }).filter(
 				(todo) => !todo.archivedAt && !CLOSED_STATUSES.includes(todo.status)
 			);
 			if (args.notebookId !== undefined)
@@ -1503,12 +1642,16 @@ export const TOOLS: Tool[] = [
 
 			const ordered = [...rows].sort(compareByPriority);
 
-			return pageOf(ordered.slice(0, limitOf(args, 1, 20)).map(shapeTodo(detail)), rows.length, 0);
+			return sayingTags(
+				pageOf(ordered.slice(0, limitOf(args, 1, 20)).map(shapeTodo(detail)), rows.length, 0),
+				args
+			);
 		}
 	},
 	{
 		name: 'add_todo',
 		title: 'Add a todo',
+		creates: 'todo' as const,
 		description:
 			'Put a task on the todo list. Leave the date off unless the person said when — a todo with no date is the normal case here, not an unfinished one.',
 		scope: 'tasks:write',
@@ -1996,7 +2139,7 @@ export const TOOLS: Tool[] = [
 			const rows = listEntries(ctx)
 				.filter((entry) => passesTags(entry.tags, args))
 				.map((entry) => ({ ...entry, seq: entry.diarySeq ?? entry.seq }));
-			return paged(rows.map(shapeNote(detail)), args, 20);
+			return sayingTags(paged(rows.map(shapeNote(detail)), args, 20), args);
 		}
 	},
 	{
@@ -2032,7 +2175,7 @@ export const TOOLS: Tool[] = [
 		name: 'notebook_notes',
 		title: 'The notes in a notebook',
 		description:
-			'What has been written against one subject, newest first, with the id of each note. `diary` deliberately shows only entries outside a notebook, so this is the way to read one \u2014 and the way to find the id `archive_note` wants. Answers with a line and an opening per note; `verbose` for the writing itself, `tag` and `taggedSince` to narrow.',
+			'What has been written against one subject, newest first, with the id of each note. `diary` deliberately shows only entries outside a notebook, so this is the way to read one \u2014 and the way to find the id `archive_note` wants. Answers with a line and an opening per note; `verbose` for the writing itself, `tags` and `taggedSince` to narrow.',
 		scope: 'notes:read',
 		writes: false,
 		refs: [{ arg: 'id', kind: 'notebook' }],
@@ -2055,7 +2198,7 @@ export const TOOLS: Tool[] = [
 			let notes = contentsOf(ctx, Number(args.id)).entries;
 			if (!args.includeArchived) notes = notes.filter((note) => !note.archivedAt);
 			notes = notes.filter((note) => passesTags(note.tags, args));
-			return paged(notes.map(shapeNote(detail)), args, 50);
+			return sayingTags(paged(notes.map(shapeNote(detail)), args, 50), args);
 		}
 	},
 	{
@@ -2223,7 +2366,7 @@ export const TOOLS: Tool[] = [
 		name: 'notebooks',
 		title: 'Notebooks',
 		description:
-			'The subjects being written against \u2014 a trip, a renovation, a book \u2014 with the id every other tool means by `notebookId`. Ask for these before writing an entry into one. A key tied to one notebook is answered with that one.',
+			'The subjects being written against \u2014 a trip, a renovation, a book \u2014 with the id every other tool means by `notebookId`. Ask for these before writing an entry into one. A key tied to one notebook is answered with that one. `modules` is what each one holds: the tabs it shows, which is also what it will accept being filed under it.',
 		scope: 'notes:read',
 		writes: false,
 		refs: [{ arg: 'id', kind: 'notebook' }],
@@ -2252,6 +2395,9 @@ export const TOOLS: Tool[] = [
 				description: text('A line under the title, shown on its page.'),
 				defaultTags: text(
 					'Labels a new note in it starts with, comma or space separated \u2014 the ones writing about this subject always carries, so nobody types them on every note. The person can still take them off a note as they write it.'
+				),
+				modules: text(
+					'What it holds, comma separated \u2014 notes, tasks, goals, ideas, inventory, ledgers, bills, habits, workouts, recipes. Notes and tasks unless this says otherwise, and notes are always in it. Only name what the subject actually accumulates: nine tabs on a reading list is the app deciding what somebody\u2019s subject is about.'
 				)
 			},
 			['title']
@@ -2260,7 +2406,8 @@ export const TOOLS: Tool[] = [
 			id: createNotebook(ctx, {
 				title: args.title,
 				description: args.description,
-				defaultTags: args.defaultTags
+				defaultTags: args.defaultTags,
+				modules: args.modules
 			})
 		})
 	},
@@ -2268,7 +2415,7 @@ export const TOOLS: Tool[] = [
 		name: 'change_notebook',
 		title: 'Change a notebook',
 		description:
-			'Rename a notebook, rewrite the line under its title, or set the labels a new note in it starts with. The title is always sent; the other two change only when given.',
+			'Rename a notebook, rewrite the line under its title, set the labels a new note in it starts with, or change what it holds. The title is always sent; the rest change only when given.',
 		scope: 'notes:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'notebook', subject: true }],
@@ -2279,6 +2426,9 @@ export const TOOLS: Tool[] = [
 				description: text('A line under the title, shown on its page.'),
 				defaultTags: text(
 					'Labels a new note in it starts with, comma or space separated. An empty string clears them; left out, they are untouched.'
+				),
+				modules: text(
+					'What it holds, comma separated \u2014 notes, tasks, goals, ideas, inventory, ledgers, bills, habits, workouts, recipes. The whole list, not an addition. Notes are always in it. Switching one off keeps whatever is already filed under it; it stops being a tab, and stays in its own room.'
 				)
 			},
 			['id', 'title']
@@ -2287,7 +2437,8 @@ export const TOOLS: Tool[] = [
 			updateNotebook(ctx, Number(args.id), {
 				title: args.title,
 				description: args.description,
-				defaultTags: args.defaultTags
+				defaultTags: args.defaultTags,
+				modules: args.modules
 			});
 			return { id: Number(args.id) };
 		}
@@ -2305,7 +2456,7 @@ export const TOOLS: Tool[] = [
 		name: 'remove_notebook',
 		title: 'Remove an empty notebook',
 		description:
-			'Delete a notebook that holds nothing — no notes, no tasks, no goals. One with anything in it is refused with what it holds: somebody\u2019s writing is deleted by them in the app, never through a tool. For a notebook made by mistake.',
+			'Delete a notebook that holds nothing \u2014 no notes, no tasks, nothing filed under it at all. One with anything in it is refused with what it holds: somebody\u2019s writing is deleted by them in the app, never through a tool. For a notebook made by mistake.',
 		scope: 'notes:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'notebook' }],
@@ -2315,13 +2466,19 @@ export const TOOLS: Tool[] = [
 			['id']
 		),
 		run: (ctx, args) => {
-			const held = contentsOf(ctx, Number(args.id));
-			const entries = held.entries.length;
-			const tasks = held.todos.length + held.blocks.length;
-			const goals = held.goals.length;
-			if (entries + tasks + goals > 0)
+			/*
+			 * Empty means empty of everything, not of the three it used to hold.
+			 *
+			 * A notebook can hold its subject's shopping, its bills and the
+			 * account it is paid from now. Counting only notes, tasks and goals
+			 * would let an assistant delete a renovation that holds forty items
+			 * because nobody had written a note in it.
+			 */
+			const notebook = getNotebook(ctx, Number(args.id));
+			const held = Object.entries(notebook.counts).filter(([, n]) => n > 0);
+			if (held.length > 0)
 				throw new ValidationError(
-					`That notebook holds ${entries} note(s), ${tasks} task(s) and ${goals} goal(s). What is written in it is deleted by the person, in the app — not through a tool.`
+					`That notebook holds ${held.map(([what, n]) => `${n} ${what}`).join(', ')}. What is filed under it is deleted by the person, in the app — not through a tool.`
 				);
 			deleteNotebook(ctx, Number(args.id));
 			return { ok: true };
@@ -2368,8 +2525,26 @@ export const TOOLS: Tool[] = [
 			'Write an idea down without deciding where it belongs. The lowest-friction thing here; prefer it to a todo when the person has not said they will do it.',
 		scope: 'ideas:write',
 		writes: true,
-		input: object({ content: text('The idea.'), tags: text('Comma-separated tags.') }, ['content']),
-		run: (ctx, args) => ({ id: createIdea(ctx, { content: args.content, tags: args.tags ?? '' }) })
+		refs: [{ arg: 'notebookId', kind: 'notebook' }],
+		input: object(
+			{
+				content: text('The idea.'),
+				tags: text('Comma-separated tags.'),
+				notebookId: {
+					type: 'integer',
+					description:
+						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this.'
+				}
+			},
+			['content']
+		),
+		run: (ctx, args) => ({
+			id: createIdea(ctx, {
+				content: args.content,
+				tags: args.tags ?? '',
+				...(args.notebookId === undefined ? {} : { notebookId: args.notebookId })
+			})
+		})
 	},
 
 	// ── The kitchen and the list ─────────────────────────────────────────────
@@ -2437,7 +2612,62 @@ export const TOOLS: Tool[] = [
 		scope: 'tags:read',
 		writes: false,
 		input: object({}),
-		run: (ctx) => ({ tags: listTagsWithUses(ctx.userId) })
+		run: (ctx) => ({ tags: tagsWithUses(ctx.userId) })
+	},
+	{
+		/*
+		 * The same vocabulary, seen from one subject.
+		 *
+		 * `tags` counts a word across the whole account, which is the wrong
+		 * answer to "what is this renovation actually about": `#home` doing
+		 * forty things somewhere says nothing about why it is on this. Here the
+		 * count is the notebook's own, and it is broken down by what carries
+		 * it, so an assistant asked to label something the way this subject
+		 * labels things has the subject's words rather than the account's.
+		 *
+		 * `refs` is what keeps it honest: `notebookId` is declared as naming a
+		 * notebook, so the reference machinery resolves it against what this
+		 * token may list before `run` is ever called. A notebook belonging to
+		 * somebody else, or to a notebook this key is confined away from,
+		 * answers exactly as one that was never there — and the service reads
+		 * `ctx.userId` on every join besides, so a stranger's id would come
+		 * back empty even if it got this far.
+		 */
+		name: 'notebook_tags',
+		title: 'The labels in one notebook',
+		description:
+			'The labels on what is filed under one subject, with how much of it carries each — and what kind: notes, tasks, ideas. Narrower than `tags`, which counts a word across the whole account, and the one to ask before labelling something the way this notebook labels things. A label the notebook suggests by default is listed at nought.',
+		scope: 'tags:read',
+		writes: false,
+		refs: [{ arg: 'notebookId', kind: 'notebook' }],
+		alsoNeeds: 'notes:read',
+		input: object(
+			{
+				notebookId: {
+					type: 'integer',
+					description: 'The notebook, as `notebooks` gives its id.'
+				}
+			},
+			['notebookId']
+		),
+		run: (ctx, args) => ({ tags: tagsInNotebook(ctx.userId, Number(args.notebookId)) })
+	},
+	{
+		name: 'describe_tag',
+		title: 'Say what a label means',
+		description:
+			'Write down what a word means in this account — `#short` on the shopping is low on something, `#short` on a book is the book. One line; an empty one takes the meaning off again. The label itself is not changed: `rename_tag` is for that.',
+		scope: 'tags:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'tag' }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The label’s id, as `tags` gives it.' },
+				description: text('What the word means here. Empty takes it off again.')
+			},
+			['id']
+		),
+		run: (ctx, args) => describeTag(ctx.userId, Number(args.id), args.description ?? '')
 	},
 	{
 		name: 'rename_tag',
@@ -2525,6 +2755,7 @@ export const TOOLS: Tool[] = [
 			'Put something on the list. If the cupboard already has it, this says so rather than adding a second one.',
 		scope: 'inventory:write',
 		writes: true,
+		refs: [{ arg: 'notebookId', kind: 'notebook' }],
 		input: object(
 			{
 				name: text('What to buy.'),
@@ -2536,7 +2767,12 @@ export const TOOLS: Tool[] = [
 					default: 'replenish'
 				},
 				notes: text('Anything else about it.'),
-				section: text('The section to file it under, by name — `inventory_categories` lists them.')
+				section: text('The section to file it under, by name — `inventory_categories` lists them.'),
+				notebookId: {
+					type: 'integer',
+					description:
+						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this.'
+				}
 			},
 			['name']
 		),
@@ -2558,7 +2794,8 @@ export const TOOLS: Tool[] = [
 				name: args.name,
 				type: args.type ?? 'replenish',
 				notes: args.notes ?? '',
-				...(inventoryCategoryId !== undefined ? { inventoryCategoryId } : {})
+				...(inventoryCategoryId !== undefined ? { inventoryCategoryId } : {}),
+				...(args.notebookId === undefined ? {} : { notebookId: args.notebookId })
 			});
 		}
 	},
@@ -2658,6 +2895,7 @@ export const TOOLS: Tool[] = [
 			'Write a recipe down. Ingredients are one per line — "200 g flour", "2 eggs" — and each becomes a shopping item, so the list knows about them the day the meal is planned.',
 		scope: 'kitchen:write',
 		writes: true,
+		refs: [{ arg: 'notebookId', kind: 'notebook' }],
 		input: object(
 			{
 				title: text('What it is called.'),
@@ -2665,7 +2903,12 @@ export const TOOLS: Tool[] = [
 				method: text('How to make it, as Markdown.'),
 				servings: { type: 'integer', description: 'How many it feeds.' },
 				minutes: { type: 'integer', description: 'How long it takes.' },
-				source: text('Where it came from.')
+				source: text('Where it came from.'),
+				notebookId: {
+					type: 'integer',
+					description:
+						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this.'
+				}
 			},
 			['title']
 		),
@@ -2676,7 +2919,8 @@ export const TOOLS: Tool[] = [
 				notes: '',
 				servings: args.servings ?? null,
 				minutes: args.minutes ?? null,
-				source: args.source ?? ''
+				source: args.source ?? '',
+				...(args.notebookId === undefined ? {} : { notebookId: args.notebookId })
 			});
 			// The ingredients are a second call because each one becomes a shopping
 			// item: `importIngredients` is the same parser the paste box uses, so a
@@ -3116,6 +3360,7 @@ export const TOOLS: Tool[] = [
 			'Start tracking a habit: something to keep doing (`good`), to avoid (`bad`), or just to watch (`neutral`). Scheduled days come in the same shape `all_habits` shows for existing ones; leave them out for every day.',
 		scope: 'habits:write',
 		writes: true,
+		refs: [{ arg: 'notebookId', kind: 'notebook' }],
 		input: object(
 			{
 				name: text('The habit, in the person\u2019s own words.'),
@@ -3127,7 +3372,12 @@ export const TOOLS: Tool[] = [
 				description: text('Anything else about it.'),
 				scheduledDays: text(
 					'The days it is due, in the shape `all_habits` shows. Every day if left out.'
-				)
+				),
+				notebookId: {
+					type: 'integer',
+					description:
+						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this.'
+				}
 			},
 			['name']
 		),
@@ -3136,7 +3386,8 @@ export const TOOLS: Tool[] = [
 				name: args.name,
 				type: args.type,
 				description: args.description,
-				scheduledDays: args.scheduledDays
+				scheduledDays: args.scheduledDays,
+				...(args.notebookId === undefined ? {} : { notebookId: args.notebookId })
 			})
 		})
 	},
@@ -3328,7 +3579,7 @@ export const TOOLS: Tool[] = [
 		run: (ctx) =>
 			listWeeklySlots(ctx).map((slot) => ({
 				...slot,
-				repeats: repeatsInWords(slot.recurrence, WEEKDAY_NAMES[slot.weekday] ?? 'that day')
+				repeats: repeatsInWords(slot.recurrence, slot.weekday)
 			}))
 	},
 	{
@@ -4264,6 +4515,7 @@ export const TOOLS: Tool[] = [
 			'Write a workout down: a title, a category (one of the account\u2019s own, from `workout_categories`), a plan as Markdown, and roughly how long it takes. Scheduling it onto a day is a block with its workoutId, the way a meal is a block with a recipe.',
 		scope: 'workouts:write',
 		writes: true,
+		refs: [{ arg: 'notebookId', kind: 'notebook' }],
 		input: object(
 			{
 				title: text('What the session is called.'),
@@ -4271,7 +4523,12 @@ export const TOOLS: Tool[] = [
 				plan: text('What to do, as Markdown.'),
 				minutes: { type: 'integer', description: 'Roughly how long it takes.' },
 				notes: text('Anything else.'),
-				measures: MEASURE_NAMES
+				measures: MEASURE_NAMES,
+				notebookId: {
+					type: 'integer',
+					description:
+						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this.'
+				}
 			},
 			['title']
 		),
@@ -4282,7 +4539,8 @@ export const TOOLS: Tool[] = [
 				plan: args.plan ?? '',
 				minutes: args.minutes ?? null,
 				notes: args.notes ?? '',
-				measures: args.measures
+				measures: args.measures,
+				...(args.notebookId === undefined ? {} : { notebookId: args.notebookId })
 			})
 		})
 	},
@@ -4377,11 +4635,17 @@ export const TOOLS: Tool[] = [
 			'A new place money moves through. `kind` is bank, card, cash or other; `default_parser` preselects an export format when importing into it.',
 		scope: 'statements:write',
 		writes: true,
+		refs: [{ arg: 'notebookId', kind: 'notebook' }],
 		input: object(
 			{
 				name: text('What it is called — "Nubank", "Visa".'),
 				kind: text('bank, card, cash or other.'),
-				default_parser: text("An export key like 'nubank:conta_corrente'.")
+				default_parser: text("An export key like 'nubank:conta_corrente'."),
+				notebookId: {
+					type: 'integer',
+					description:
+						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this.'
+				}
 			},
 			['name']
 		),
@@ -4389,7 +4653,8 @@ export const TOOLS: Tool[] = [
 			id: createLedger(ctx, {
 				name: args.name,
 				kind: args.kind ?? 'bank',
-				defaultParser: args.default_parser
+				defaultParser: args.default_parser,
+				...(args.notebookId === undefined ? {} : { notebookId: args.notebookId })
 			}).id
 		})
 	},
@@ -4629,6 +4894,7 @@ export const TOOLS: Tool[] = [
 			'Write down a bill you expect to pay: a name, the expected amount in minor units (cents), and a rhythm (weekly, monthly, yearly, once). A monthly bill can name the day of the month it falls due.',
 		scope: 'bills:write',
 		writes: true,
+		refs: [{ arg: 'notebookId', kind: 'notebook' }],
 		input: object(
 			{
 				name: text('What the bill is called.'),
@@ -4649,7 +4915,12 @@ export const TOOLS: Tool[] = [
 				},
 				currency: text('A currency code like BRL. The account\u2019s default if left out.'),
 				flow: text("'out' for a bill (the default), 'in' for income."),
-				notes: text('Anything else.')
+				notes: text('Anything else.'),
+				notebookId: {
+					type: 'integer',
+					description:
+						'The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this.'
+				}
 			},
 			['name']
 		),
@@ -4663,7 +4934,8 @@ export const TOOLS: Tool[] = [
 				dueMonth: args.due_month,
 				payLeadDays: args.pay_lead_days,
 				currency: args.currency,
-				notes: args.notes ?? ''
+				notes: args.notes ?? '',
+				...(args.notebookId === undefined ? {} : { notebookId: args.notebookId })
 			}).id
 		})
 	},

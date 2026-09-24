@@ -49,6 +49,15 @@
 		icon: IconName;
 		color: string;
 		/**
+		 * What is inside, said in passing under the name.
+		 *
+		 * A room's name does not tell you whether the thing you want is in it.
+		 * This is the room's own tab strip, already run together into one line
+		 * — plain text, nothing to press: the wheel takes you to the room and
+		 * the strip that is already there does the rest.
+		 */
+		tabs?: string;
+		/**
 		 * Drawn a little stronger, for a wedge that belongs to a group.
 		 *
 		 * The wheel holds two kinds of thing: four you write and two you add.
@@ -204,19 +213,23 @@
 	const GLYPH_INK = 55;
 
 	/**
-	 * What an edge is when it is nobody's.
+	 * The mark's own dark, for the ground the plus is drawn on.
 	 *
-	 * The mark's own dark, measured off `mark.png` by `yarn icons` — the same
-	 * colour the drawing separates its wedges with, and the one the phone bar
-	 * wears. It was pure black, which is a colour the drawing does not
-	 * contain: a wheel made of the mark is made of the mark's colours.
-	 *
-	 * Dark in both themes, deliberately: the wheel is a ring of wedges over a
-	 * dimmed page, and an edge that followed the theme would be a white
-	 * outline in the dark one — a second bright shape competing with the mark
-	 * in the middle.
+	 * Measured off `mark.png` by `yarn icons`, and the one the phone bar wears.
+	 * It was pure black, which is a colour the drawing does not contain: a
+	 * wheel made of the mark is made of the mark's colours.
 	 */
 	const EDGE_DARK = $derived(isIsolatedBuild() ? MARK_FIELD_ISOLATED : MARK_FIELD);
+
+	/**
+	 * What the wheel is outlined in: the theme's ink.
+	 *
+	 * White in the dark theme, black in the light one, because `--color-white`
+	 * and `--color-black` swap with the ramp. The rim was the mark's dark in
+	 * both — which on a dark page is an edge drawn in very nearly the colour
+	 * behind it, so the wheel had no outline at all where it needed one most.
+	 */
+	const EDGE_INK = 'var(--color-black)';
 
 	/**
 	 * A circle, as a path, for a clip that also holds the mark's outline.
@@ -637,7 +650,10 @@
 				{@const chosen = items[active]}
 				<div class="pie-hud-inner" style="color: {chosen.color}">
 					<span class="pie-hud-icon"><Icon name={chosen.icon} size={56} /></span>
-					<span>{chosen.label}</span>
+					<!-- The name in an element of its own: it is what a test asks the
+					     wheel for, and the line under it is not part of that answer. -->
+					<span class="pie-hud-name">{chosen.label}</span>
+					{#if chosen.tabs}<span class="pie-hud-tabs">{chosen.tabs}</span>{/if}
 				</div>
 			{/if}
 		</div>
@@ -901,18 +917,19 @@
 					clip allows and come back cut in half.
 				-->
 				<!--
-					Both edges, black, until something is chosen.
-					
-					The wheel is a ring of wedges over a dimmed page: an outline that
-					followed the theme would be a white shape in the dark one,
-					competing with the mark in the middle. Black reads as the gap
-					between the pieces, which is what it is until one of them is
-					being pointed at.
+					The rim in the theme's ink, which is the only colour that is an
+					edge on both grounds.
+
+					It was the mark's dark in both themes: over a dimmed dark page
+					that is an outline you cannot see, so the wheel ended in a soft
+					nothing instead of a line. The ink flips with the ramp — white
+					up there, black on a light page — and the wheel is bounded
+					either way.
 				-->
 				<circle
 					r={OUTER - RIM / 2}
 					fill="none"
-					stroke={EDGE_DARK}
+					stroke={EDGE_INK}
 					stroke-width={RIM}
 					class="pie-edge"
 					style="pointer-events: none"
@@ -959,10 +976,48 @@
 	 * now: the wedges say their icon, and the name is said once, large.
 	 */
 	.pie-hud {
+		/*
+		 * How far down the name sits, and how hard it is drawn.
+		 *
+		 * Named because both are the kind of thing somebody will want to nudge:
+		 * where it sits depends on how big a thumb's reach is, and how hard it
+		 * is drawn depends on what it lands over.
+		 */
+		--hud-top: 12%;
+		/* Tight and dark, not a halo — see the note under this rule. */
+		/* A hairline under the letters, on top of the plate below. */
+		--hud-edge: 0 1px 2px rgb(0 0 0 / 0.55);
+		/*
+		 * What the words stand on, and how much of the room's colour survives it.
+		 *
+		 * Measured rather than guessed. A room's accent is a mid-tone by design,
+		 * and the scrim over a light page is a light grey — Finance's teal on that
+		 * came out at about 2.5:1, which is under the 3:1 a heading needs and
+		 * exactly what "still hard to read" meant. At this plate and this mix
+		 * every room lands between 5.9:1 (Goals, the darkest) and 8.1:1.
+		 *
+		 * Lifting towards white rather than to white: the colour is how somebody
+		 * knows which room they are on before they have read the word.
+		 */
+		--hud-plate: rgb(0 0 0 / 0.78);
+		/*
+		 * How much of the page behind it is taken out of focus.
+		 *
+		 * Free here, whatever it costs elsewhere: the wheel is a press and a
+		 * hold, and while it is up the page under it is not scrolling — there
+		 * is a scrim over it and the finger is on the handle. The blur is
+		 * composited once and then only when the label changes wedge, so it
+		 * never lands in the middle of a scroll. It is not on the scrim
+		 * itself, which is full-screen and would be a different question.
+		 */
+		--hud-blur: 8px;
+		--hud-ink: 62%;
+
 		position: fixed;
-		/* A fifth of the way down: clear of the status bar and the app's own
-			   header, and well above the ring, which sits under the thumb. */
-		top: 22%;
+		/* Well above the ring, which sits under the thumb, and clear of the
+			   status bar and the app's own header. It was a fifth of the way down
+			   and read as sitting on the wheel rather than over the page. */
+		top: var(--hud-top);
 		left: 0;
 		right: 0;
 		display: flex;
@@ -972,41 +1027,118 @@
 	}
 
 	/*
-		 * Outlined letters over the page, with no card behind them.
+		 * Letters over the page, with no card and no halo behind them.
 		 *
 		 * A panel would be a second surface floating over a dimmed page, and the
-		 * dimming is already doing that job. What the letters need is not a
-		 * background but an edge: the section's colour filled, the page's own
-		 * ground stroked around it, so the name reads over a busy dashboard,
-		 * a photograph or a dark theme without carrying a box around with it.
+		 * dimming is already doing that job. The letters used to carry a
+		 * five-pixel outline in the page's own ground and the icon two glows of
+		 * the same colour — an edge to read over anything, which at this size is
+		 * a bright cloud sitting behind the name. The scrim is what separates
+		 * the name from the page; the section's colour on its own is the name.
+		 */
+	/*
+		 * A plate under the words, after all.
 		 *
-		 * `paint-order` puts the stroke behind the fill; without it the stroke is
-		 * drawn centred on the glyph and eats half the letter.
+		 * Two attempts without one: a five-pixel outline in the page's own ground,
+		 * which at this size is a bright cloud rather than an edge, and then dark
+		 * shadows alone. The shadows are right and they are not enough — a room's
+		 * colour is a mid-tone by design, the scrim over a light page is a light
+		 * grey, and mid-tone letters on light grey do not read however they are
+		 * edged. Finance, which is a teal, was the one that proved it.
+		 *
+		 * So the letters get something dark to stand on and are lifted towards
+		 * white on it, which keeps them the room's colour rather than making them
+		 * white. It is a second surface over a dimmed page, which is what the
+		 * scrim was supposed to avoid — but a label nobody can read is not a
+		 * label, and this one is the wheel's whole answer to "where am I going".
 		 */
 	.pie-hud-inner {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		gap: 0.5rem;
-		font-size: 2.5rem;
+		border-radius: var(--radius-lg, 0);
+		/* Edged in the letters' own colour, so the plate belongs to the room it
+		   is naming rather than being a grey card the name landed on. */
+		border: 1px solid color-mix(in srgb, currentColor var(--hud-ink), white);
+		background-color: var(--hud-plate);
+		-webkit-backdrop-filter: blur(var(--hud-blur));
+		backdrop-filter: blur(var(--hud-blur));
+		padding: 0.875rem 1.5rem 1rem;
 		font-weight: 800;
 		letter-spacing: 0.08em;
 		/* The tracking above pushes the last letter off centre by its own
 			   width; this takes it back. */
 		text-indent: 0.08em;
 		line-height: 1.05;
-		text-transform: uppercase;
-		paint-order: stroke fill;
-		-webkit-text-stroke: 5px var(--color-white);
-		stroke: var(--color-white);
-		stroke-width: 5px;
 	}
 
-	/* The icon is a line drawing already, so it takes the same treatment the
-		   letters do: its own stroke widened, drawn under itself. */
+	/*
+		 * What holds the letters together over whatever is behind them.
+		 *
+		 * The room's own colour at this size is a thin bright shape on a dimmed
+		 * page, and a pale room over a pale photograph disappeared. A panel is
+		 * the obvious answer and the wrong one — a second surface floating over
+		 * a surface the scrim is already dimming — and the version before that
+		 * was a five-pixel outline in the page's ground, which at 2.5rem is a
+		 * bright cloud sitting behind the name rather than an edge on it.
+		 *
+		 * So: shadows rather than an outline, dark rather than light, and tight
+		 * rather than wide. One hairline directly under the letters to separate
+		 * them from what they sit on, one three-pixel blur that acts as the
+		 * edge, and one soft wide one that does the work a background would —
+		 * it darkens the page under the words without drawing a shape with
+		 * corners. `paint-order` puts that under the glyphs rather than over
+		 * them, so the colour stays the colour.
+		 */
+	.pie-hud-name {
+		/* Lifted towards white on the plate, so it stays the room's colour
+		   rather than becoming white. The inline colour is on the block above,
+		   so this is the first place it can be mixed. */
+		color: color-mix(in srgb, currentColor var(--hud-ink), white);
+		font-size: 2.5rem;
+		text-transform: uppercase;
+		text-shadow: var(--hud-edge);
+		paint-order: stroke fill;
+	}
+
+	/*
+	 * What is in the room, under its name.
+	 *
+	 * A hint rather than a heading, and never a control: the tab strip inside
+	 * the room is where those words are pressable. Small enough that the
+	 * longest room — Notebooks, six shelves — stays on one line, which is why
+	 * it is allowed to be wider than the wheel it labels; a second line would
+	 * move the name every time the pointer crossed a wedge.
+	 */
+	.pie-hud-tabs {
+		/* Lifted towards white on the plate, so it stays the room's colour
+		   rather than becoming white. The inline colour is on the block above,
+		   so this is the first place it can be mixed. */
+		color: color-mix(in srgb, currentColor var(--hud-ink), white);
+		/*
+		 * Small enough that the longest room stays on one line — on a phone
+		 * too, where the line is what has to give.
+		 *
+		 * At this weight and tracking the words run about thirty-three times
+		 * the font size, and Notebooks is the longest of them at six shelves.
+		 * `2.6vw` is that ratio with a margin either side; the rem caps it,
+		 * because beyond a certain width this is a hint and not a heading.
+		 */
+		font-size: min(0.8125rem, 2.6vw);
+		font-weight: 600;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		white-space: nowrap;
+		/* The same edge the name gets: a hint nobody can read is not a hint. */
+		text-shadow: var(--hud-edge);
+		opacity: 0.85;
+	}
+
+	/* The icon is a line drawing already, so its own stroke is widened to sit
+		   beside letters this heavy. */
 	.pie-hud-icon :global(svg) {
 		stroke-width: 2.25;
-		filter: drop-shadow(0 0 10px var(--color-white)) drop-shadow(0 0 20px var(--color-white));
 	}
 
 	/* Grows out of the point it was summoned from, so the gesture and the menu

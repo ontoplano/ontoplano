@@ -646,8 +646,10 @@ export function setStatusOn(
 	dateStr: string,
 	rawStatus: unknown
 ): void {
-	if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) throw new ValidationError('Invalid date');
-	if (!Number.isInteger(refId) || refId < 1) throw new ValidationError('Invalid block');
+	if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr))
+		throw new ValidationError({ key: 'errors.instances.invalidDate' });
+	if (!Number.isInteger(refId) || refId < 1)
+		throw new ValidationError({ key: 'errors.instances.invalidBlock' });
 
 	// The one-off carries its own date, and the id resolver already exists.
 	if (kind === 'exceptional') return setOccurrenceStatus(ctx, `exceptional:${refId}`, rawStatus);
@@ -673,7 +675,7 @@ export function setStatusOn(
 }
 
 export function setInstanceStatus(ctx: Ctx, id: number, rawStatus: unknown): void {
-	if (!isStatus(rawStatus)) throw new ValidationError('Invalid status');
+	if (!isStatus(rawStatus)) throw new ValidationError({ key: 'errors.instances.invalidStatus' });
 	const status = rawStatus;
 
 	const instance = db
@@ -902,9 +904,7 @@ export function changeOccurrence(
 		!wants('title') &&
 		!wants('categoryId')
 	) {
-		throw new ValidationError(
-			'Nothing to change — say a new time, day, length, title or category.'
-		);
+		throw new ValidationError({ key: 'errors.instances.nothingToChangeSay' });
 	}
 
 	if (kind === 'exceptional') {
@@ -979,7 +979,7 @@ export function changeOccurrence(
 	 * moving something means; the other says "I did not do it", which the
 	 * weekly review asks about. Only the second is a fact about a person.
 	 */
-	if (!record.slotId) throw new ValidationError('That block has nothing to move.');
+	if (!record.slotId) throw new ValidationError({ key: 'errors.instances.thatBlockHasNothing' });
 
 	const movedId = moveOccurrence(ctx, {
 		slotId: record.slotId,

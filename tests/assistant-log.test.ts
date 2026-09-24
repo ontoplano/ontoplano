@@ -12,6 +12,7 @@
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { OWNER, STRANGER, makeDatabase, seedAccounts } from './helpers/db';
+import { refusal } from './helpers/refusal';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -118,7 +119,7 @@ describe('put it back', () => {
 		expect(opts.found(rpc(opts.list, {}).items), 'the put back did not put back').toBe(true);
 
 		// Offered once: the row is marked restored and refuses a second press.
-		expect(() => log.putBack(ctx(), row.id)).toThrow(/already/i);
+		expect(refusal(() => log.putBack(ctx(), row.id))).toMatch(/already/i);
 	}
 
 	it('a dropped todo', () => {
@@ -263,7 +264,7 @@ describe('put it back', () => {
 
 	it('refuses a call that deleted nothing', () => {
 		rpc('add_todo', { title: 'just an add' });
-		expect(() => log.putBack(ctx(), newestCall().id)).toThrow(/deleted nothing/i);
+		expect(refusal(() => log.putBack(ctx(), newestCall().id))).toMatch(/deleted nothing/i);
 	});
 
 	it("refuses another account's row", () => {
@@ -281,6 +282,6 @@ describe('put it back', () => {
 			before: { subjectKind: 'instance', subjectId: 1, remindAt: '2026-03-14T09:00:00' },
 			destroyed: true
 		});
-		expect(() => log.putBack(ctx(), newestCall().id)).toThrow(/belonged to something/i);
+		expect(refusal(() => log.putBack(ctx(), newestCall().id))).toMatch(/belonged to something/i);
 	});
 });

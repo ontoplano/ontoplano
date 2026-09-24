@@ -44,6 +44,28 @@
 	} from '$lib/note-order';
 	import TodoRows from '$lib/components/TodoRows.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
+	import IdeaCard from '$lib/components/IdeaCard.svelte';
+	import BillRow from '$lib/components/BillRow.svelte';
+	import HabitCard from '$lib/components/HabitCard.svelte';
+	import LedgerTile from '$lib/components/LedgerTile.svelte';
+	import RecipeCard from '$lib/components/RecipeCard.svelte';
+	import WorkoutCard from '$lib/components/WorkoutCard.svelte';
+	import ItemRow from '$lib/components/ItemRow.svelte';
+	import LinkIntoNotebook from '$lib/components/LinkIntoNotebook.svelte';
+	import { NOTEBOOK_ITEM_ACTIONS } from '$lib/item-action-names';
+	import { NOTEBOOK_WORKOUT_ACTIONS } from '$lib/workout-action-names';
+	import { NOTEBOOK_HABIT_ACTIONS } from '$lib/habit-action-names';
+	import { NOTEBOOK_BILL_ACTIONS } from '$lib/bill-action-names';
+	import IdeaFields from '$lib/components/fields/IdeaFields.svelte';
+	import BillFields from '$lib/components/fields/BillFields.svelte';
+	import BuyFields from '$lib/components/fields/BuyFields.svelte';
+	import HabitFields from '$lib/components/fields/HabitFields.svelte';
+	import LedgerFields from '$lib/components/fields/LedgerFields.svelte';
+	import RecipeFields from '$lib/components/fields/RecipeFields.svelte';
+	import WorkoutFields from '$lib/components/fields/WorkoutFields.svelte';
+	import { NOTEBOOK_IDEA_ACTIONS } from '$lib/idea-action-names';
+	import { DEFAULT_MODULES, moduleMeta, type NotebookModule } from '$lib/notebook-modules';
+	import type { Currency } from '$lib/money';
 	import { NOTEBOOK_TODO_ACTIONS } from '$lib/todo-actions';
 	import type { Todo } from '$lib/services/todos';
 	import { browsable } from '$lib/browse.svelte';
@@ -52,6 +74,9 @@
 	import { say } from '$lib/said.svelte';
 	import { useT } from '$lib/i18n';
 	import type { PlainKey } from '$lib/i18n/keys';
+
+	/** What the picker is given, per module. */
+	type LinkableList = ComponentProps<typeof LinkIntoNotebook>['candidates'];
 
 	const t = useT();
 	const now = useWhen();
@@ -91,6 +116,10 @@
 		showingOrphans = false,
 		allPeople = [],
 		categories = [],
+		inventoryCategories = [],
+		workoutCategories = [],
+		parsers = [],
+		currency = 'BRL',
 		pickableNotebooks = [],
 		areas = [],
 		workoutMeasures = [],
@@ -112,15 +141,65 @@
 		// `$bindable()` is a compiler directive, not an assignment: this one is
 		// only ever written from here, which is what the rule mistakes it for.
 		// eslint-disable-next-line no-useless-assignment
-		newAction = $bindable()
+		newAction = $bindable(),
+		/**
+		 * The Link button, beside New, for whichever tab is showing.
+		 *
+		 * Drawn by the page for the same reason `newAction` is — the strip
+		 * beside the tabs has no room for it at 390px. Every tab has it: a
+		 * subject started halfway through has its things already, and the only
+		 * way to gather them was to delete each one and write it again.
+		 */
+		// eslint-disable-next-line no-useless-assignment
+		linkAction = $bindable()
 	}: {
-		notebook?: { id: number; title: string; description: string } | null;
+		notebook?: {
+			id: number;
+			title: string;
+			description: string;
+			/** What it holds, already narrowed by what this account has put away. */
+			modules?: NotebookModule[];
+		} | null;
 		contents?: {
 			entries: Entry[];
 			todos: Todo[];
 			blocks: { id: number; label: string | null; date: string; startTime: string }[];
 			/* The whole goal: the tab draws the goals room's own card. */
 			goals: ComponentProps<typeof GoalCard>['goal'][];
+			/* And the whole idea, for the same reason — see `IdeaCard`. */
+			ideas: ComponentProps<typeof IdeaCard>['idea'][];
+			/* And the whole bill, with the period its tick would pay. */
+			bills: (ComponentProps<typeof BillRow>['bill'] & {
+				period: string;
+				paidThisPeriod: boolean;
+			})[];
+			/* And the whole habit, with the days it has been logged. */
+			habits: ComponentProps<typeof HabitCard>['habit'][];
+			habitOccurrences: ComponentProps<typeof HabitCard>['occurrences'];
+			/** The account's today, which the heatmap and the tick both read. */
+			today: string;
+			/** 0 for Monday — where the heatmap's weeks start. */
+			weekFirstDay: number;
+			/* The ledgers this subject's money moves through — see `LedgerTile`. */
+			ledgers: ComponentProps<typeof LedgerTile>['ledger'][];
+			/* And the whole recipe, with what the cupboard has not got. */
+			recipes: ComponentProps<typeof RecipeCard>['recipe'][];
+			/* And the whole workout, with the register under its plan. */
+			workouts: ComponentProps<typeof WorkoutCard>['workout'][];
+			workoutSessions: ComponentProps<typeof WorkoutCard>['sessions'];
+			/* And the whole thing, with its count and its own fields. */
+			inventory: ComponentProps<typeof ItemRow>['item'][];
+			/* What each tab could take that it has not got — see `LinkIntoNotebook`. */
+			linkable: Record<string, LinkableList>;
+			/*
+			 * The other modules, each as its room's own rows.
+			 *
+			 * Loosely typed on purpose: `ModuleTab` reads them through
+			 * `$lib/notebook-rows`, which is the one place that knows what a
+			 * habit's row looks like as against a bill's. Naming seven row types
+			 * here would be that knowledge written twice.
+			 */
+			[module: string]: unknown;
 		} | null;
 		orphaned?: Entry[];
 		showingOrphans?: boolean;
@@ -128,6 +207,12 @@
 		allPeople?: { id: number; name: string }[];
 		/** What the Tasks tab's editor offers, the same as the to-do room's. */
 		categories?: { id: number; name: string }[];
+		/** What the other tabs' own forms offer, the same as their rooms'. */
+		inventoryCategories?: { id: number; name: string }[];
+		workoutCategories?: { id: number; name: string }[];
+		parsers?: { key: string; name: string }[];
+		/** For the money a ledger holds and a bill expects. */
+		currency?: Currency;
 		pickableNotebooks?: { id: number; title: string }[];
 		areas?: { id: number; name: string }[];
 		workoutMeasures?: { activity: string; unit: string }[];
@@ -139,6 +224,7 @@
 		/** Whether the composer is open, so a page can put the button elsewhere. */
 		composing?: boolean;
 		newAction?: { label: string; run?: () => void; href?: string } | undefined;
+		linkAction?: { label: string; run: () => void } | undefined;
 	} = $props();
 
 	let editingNoteId = $state<number | null>(null);
@@ -313,9 +399,39 @@
 	 * A notebook with a dozen notes pushed its tasks below the fold, so the two
 	 * halves of "everything about this" could not be seen together at all.
 	 */
-	const TAB_KEYS = ['notes', 'tasks', 'goals'] as const;
-	type Tab = (typeof TAB_KEYS)[number];
-	let tab = $state<Tab>('notes');
+	/*
+	 * Which tabs this notebook has is the notebook's own answer now.
+	 *
+	 * Notes and tasks by default, and whatever else the subject accumulates —
+	 * its shopping, its bills, the account it is paid from. The list arrives
+	 * already narrowed by what this account has put away altogether, so a room
+	 * hidden in Preferences cannot come back as a tab in here; see
+	 * `$lib/notebook-modules`.
+	 */
+	const TAB_KEYS = $derived<readonly NotebookModule[]>(notebook?.modules ?? DEFAULT_MODULES);
+	type Tab = NotebookModule;
+
+	/*
+	 * A notebook opens on its own first tab.
+	 *
+	 * It always opened on Notes, which made the order somebody put the tabs in
+	 * a decoration: a renovation whose first tab is its shopping opened on the
+	 * writing anyway. The first tab is the answer to "what is this notebook
+	 * mostly", and it is the notebook's to give.
+	 */
+	const firstTab = $derived<Tab>(TAB_KEYS[0] ?? 'notes');
+	let tab = $state<Tab>(untrack(() => firstTab));
+
+	/*
+	 * A tab that was showing and is not offered any more.
+	 *
+	 * Switching Inventory off while standing on it would otherwise leave the
+	 * strip with nothing lit and the body drawing a module the notebook no
+	 * longer has. It falls back to the first tab, the same one it opened on.
+	 */
+	$effect(() => {
+		if (!TAB_KEYS.includes(tab)) tab = firstTab;
+	});
 
 	/**
 	 * The Tasks tab's own New, reached from a button the page draws.
@@ -410,6 +526,104 @@
 		composingGoal = true;
 	}
 
+	/** Which tab's picker is open, if any. */
+	let linking = $state(false);
+
+	/**
+	 * What the Link button says, per tab.
+	 *
+	 * The singular noun, matching the New button beside it: a tab offering
+	 * "New thing" and "Link Inventory" is naming the same thing twice in two
+	 * registers.
+	 */
+	const LINK_LABEL: Partial<Record<NotebookModule, PlainKey>> = {
+		notes: 'notebooks.linkNote',
+		tasks: 'notebooks.linkTask',
+		goals: 'notebooks.linkGoal',
+		ideas: 'notebooks.linkIdea',
+		inventory: 'notebooks.linkItem',
+		ledgers: 'notebooks.linkLedger',
+		bills: 'notebooks.linkBill',
+		habits: 'notebooks.linkHabit',
+		workouts: 'notebooks.linkWorkout',
+		recipes: 'notebooks.linkRecipe'
+	};
+
+	$effect(() => {
+		linkAction = notebook
+			? { label: t(LINK_LABEL[tab] ?? 'ui.add'), run: () => (linking = true) }
+			: undefined;
+	});
+
+	/**
+	 * Which prefix each module's own handlers answer under, here.
+	 *
+	 * The notebook page mounts every room's handlers under its module's name —
+	 * see `$lib/services/scoped-actions` — so a form on a tab posts to the code
+	 * the room runs rather than to a second implementation of it.
+	 */
+	const ACTION_PREFIX: Partial<Record<NotebookModule, string>> = {
+		inventory: 'item',
+		ledgers: 'ledger',
+		bills: 'bill',
+		habits: 'habit',
+		workouts: 'workout',
+		recipes: 'recipe'
+	};
+
+	const NEW_LABELS: Partial<Record<NotebookModule, PlainKey>> = {
+		inventory: 'notebooks.newItem',
+		ledgers: 'notebooks.newLedger',
+		bills: 'notebooks.newBill',
+		habits: 'notebooks.newHabit',
+		workouts: 'notebooks.newWorkout',
+		recipes: 'notebooks.newRecipe'
+	};
+
+	/*
+	 * The Ideas tab's own composer, and which idea it is editing.
+	 *
+	 * `IdeaFields` rather than fields written here, for the same reason the
+	 * Goals tab uses `GoalFields`: an idea written in a notebook has to be the
+	 * same idea, with the same box, the same attachments and the same tags.
+	 */
+	let composingIdea = $state(false);
+	let editingIdeaId = $state<number | null>(null);
+	const editedIdea = $derived(
+		(
+			contents?.ideas as { id: number; content: string; tags: { name: string }[] }[] | undefined
+		)?.find((one) => one.id === editingIdeaId)
+	);
+
+	function closeIdeaForm() {
+		composingIdea = false;
+		editingIdeaId = null;
+	}
+
+	/*
+	 * The other six tabs' composer: the room's own form, opened here.
+	 *
+	 * New used to be a link to the room, which threw you out of the notebook to
+	 * write the thing and then filed it back under the subject by magic — "is
+	 * this a joke? Just open the same modal". It is the same modal: the room's
+	 * fields, the room's handlers, and the notebook selector every one of those
+	 * forms now carries, already set to this one.
+	 */
+	let composingModule = $state<NotebookModule | null>(null);
+	let billRhythm = $state('monthly');
+	let habitKind = $state<'bad' | 'good' | 'neutral'>('bad');
+	let habitDays = $state<boolean[]>([false, false, false, false, false, false, false]);
+	let newMeasures = $state<{ activity: string; unit: string }[]>([{ activity: '', unit: '' }]);
+
+	function openComposer(module: NotebookModule) {
+		// Opened fresh: what the last one was left on is not part of this one.
+		billRhythm = 'monthly';
+		habitKind = 'bad';
+		habitDays = [false, false, false, false, false, false, false];
+		newMeasures = [{ activity: '', unit: '' }];
+		composingModule = module;
+	}
+
 	$effect(() => {
 		if (!notebook) {
 			newAction = undefined;
@@ -423,30 +637,48 @@
 					}
 				: tab === 'tasks'
 					? { label: t('notebookDetail.newTask'), run: () => openNewTodo?.() }
-					: {
-							/*
-							 * Written here, like a task.
-							 *
-							 * This used to be a link to the goals room carrying the
-							 * notebook — which meant the same press stayed put on one
-							 * tab and threw you out of the notebook on the next. The
-							 * form is the goals room's own fields (`GoalFields`), so
-							 * it is the same form in both places.
-							 */
-							label: composingGoal ? t('ui.cancel') : t('notebookDetail.newGoal'),
-							run: () => {
-								// Opening it fresh: the same modal edits a goal, and a
-								// half-filled form from the last edit is not a new goal.
-								editingGoalId = null;
-								goalTargets = [];
-								composingGoal = !composingGoal;
+					: tab === 'ideas'
+						? {
+								label: composingIdea ? t('ui.cancel') : t('notebooks.newIdea'),
+								run: () => {
+									editingIdeaId = null;
+									composingIdea = !composingIdea;
+								}
 							}
-						};
+						: tab === 'goals'
+							? {
+									/*
+									 * Written here, like a task.
+									 *
+									 * This used to be a link to the goals room carrying the
+									 * notebook — which meant the same press stayed put on one
+									 * tab and threw you out of the notebook on the next. The
+									 * form is the goals room's own fields (`GoalFields`), so
+									 * it is the same form in both places.
+									 */
+									label: composingGoal ? t('ui.cancel') : t('notebookDetail.newGoal'),
+									run: () => {
+										// Opening it fresh: the same modal edits a goal, and a
+										// half-filled form from the last edit is not a new goal.
+										editingGoalId = null;
+										goalTargets = [];
+										composingGoal = !composingGoal;
+									}
+								}
+							: // The rest: the room's own form, opened here — see `openComposer`.
+								{
+									label: t(NEW_LABELS[tab] ?? 'ui.add'),
+									run: () => openComposer(tab)
+								};
 	});
 
 	/*
-	 * Whichever notebook you move to opens on its notes, not on whichever tab
-	 * the last one happened to be showing.
+	 * Whichever notebook you move to opens on its own first tab, not on
+	 * whichever one the last notebook happened to be showing.
+	 *
+	 * Its first, not Notes: the order somebody puts a notebook's tabs in is
+	 * that notebook's answer to "what is this mostly", and opening on the
+	 * writing regardless made that order a decoration.
 	 *
 	 * Compared by which notebook it is, not by the object: the props arrive
 	 * fresh from every load, so watching `notebook` itself sent you back to
@@ -460,7 +692,7 @@
 		const subject = showingOrphans ? 'orphans' : String(notebook?.id ?? '');
 		if (subject === subjectOnScreen) return;
 		subjectOnScreen = subject;
-		tab = 'notes';
+		tab = firstTab;
 	});
 
 	/**
@@ -579,23 +811,83 @@
 		(contents?.entries ?? orphaned).filter((entry) => entry.archivedAt).length
 	);
 
-	const tabs = $derived<{ key: Tab; label: PlainKey; count: number; done?: number }[]>([
-		{ key: 'notes', label: 'app.notes', count: shownNotes.length },
-		{
-			key: 'tasks',
-			label: 'app.tasks',
-			count: (contents?.todos.length ?? 0) + (contents?.blocks.length ?? 0),
-			// A block on the grid is a thing that happens rather than a thing to
-			// finish, so only the todos are counted as done or not.
-			done: contents?.todos.filter((todo) => CLOSED_STATUSES.includes(todo.status)).length ?? 0
-		},
-		{
-			key: 'goals',
-			label: 'app.goals',
-			count: contents?.goals.length ?? 0,
-			done: contents?.goals.filter((goal) => goal.status !== 'open').length ?? 0
-		}
-	]);
+	/**
+	 * The strip: one entry per module this notebook holds, in the app's order.
+	 *
+	 * Built from the same list the body switches on, so a tab can never be
+	 * drawn with nothing behind it. Notes, tasks and goals count themselves
+	 * because they are drawn here; everything else is counted through
+	 * `rowsFor`, which is what the tab itself draws — so the number beside a
+	 * tab is exactly how many lines pressing it shows.
+	 */
+	const tabs = $derived<{ key: Tab; label: PlainKey; count: number; done?: number }[]>(
+		TAB_KEYS.map((key) => {
+			if (key === 'notes') return { key, label: 'app.notes' as PlainKey, count: shownNotes.length };
+			if (key === 'tasks')
+				return {
+					key,
+					label: 'app.tasks' as PlainKey,
+					count: (contents?.todos.length ?? 0) + (contents?.blocks.length ?? 0),
+					// A block on the grid is a thing that happens rather than a thing
+					// to finish, so only the todos are counted as done or not.
+					done: contents?.todos.filter((todo) => CLOSED_STATUSES.includes(todo.status)).length ?? 0
+				};
+			if (key === 'goals')
+				return {
+					key,
+					label: 'app.goals' as PlainKey,
+					count: contents?.goals.length ?? 0,
+					done: contents?.goals.filter((goal) => goal.status !== 'open').length ?? 0
+				};
+			if (key === 'ideas')
+				return {
+					key,
+					label: moduleMeta(key).name,
+					count: contents?.ideas.length ?? 0,
+					done: contents?.ideas.filter((idea) => idea.isApplied).length ?? 0
+				};
+			if (key === 'inventory')
+				return {
+					key,
+					label: moduleMeta(key).name,
+					count: contents?.inventory.length ?? 0,
+					// Got it, which is what the tick on a row says.
+					done: contents?.inventory.filter((item) => item.bought).length ?? 0
+				};
+			if (key === 'workouts')
+				return { key, label: moduleMeta(key).name, count: contents?.workouts.length ?? 0 };
+			if (key === 'recipes')
+				return { key, label: moduleMeta(key).name, count: contents?.recipes.length ?? 0 };
+			if (key === 'ledgers')
+				return { key, label: moduleMeta(key).name, count: contents?.ledgers.length ?? 0 };
+			if (key === 'habits')
+				return {
+					key,
+					label: moduleMeta(key).name,
+					count: contents?.habits.length ?? 0,
+					// Done today, which is the one thing a habit row is pressed for.
+					done:
+						contents?.habits.filter((habit) =>
+							contents.habitOccurrences.some(
+								(one) => one.habitId === habit.id && one.date === contents.today
+							)
+						).length ?? 0
+				};
+			if (key === 'bills')
+				return {
+					key,
+					label: moduleMeta(key).name,
+					count: contents?.bills.length ?? 0,
+					// Put away, not paid: a bill comes round again, and whether this
+					// month's is settled is the mark on the row rather than a tally.
+					done: contents?.bills.filter((bill) => !bill.active).length ?? 0
+				};
+
+			// Every module above names itself; this is the compiler's proof that
+			// none is missing rather than a fallback anybody reaches.
+			return { key, label: moduleMeta(key).name, count: 0 };
+		})
+	);
 
 	/**
 	 * Where the cursor is among the notes, for the keyboard.
@@ -667,7 +959,7 @@
 	bind:this={surface}
 	onclose={leaveMaximized}
 	aria-label={notebook?.title ?? 'Notes'}
-	class="nb-surface bg-white"
+	class="nb-surface as-surface bg-white"
 	style="--nb-type: {TYPE_STEPS[typeStep]}"
 >
 	{#if maximized}
@@ -767,7 +1059,7 @@
 				control for the panel rather than for what is in it.
 			-->
 			<div class="flex items-center border-b border-gray-200 pr-2">
-				<div class="snap-strip min-w-0 flex-1 gap-1 px-2 md:flex">
+				<div data-tour="notebook-tabs" class="snap-strip min-w-0 flex-1 gap-1 px-2 md:flex">
 					{#each tabs as option (option.key)}
 						<!--
 							The strip gives up its width to the controls beside it, so on a
@@ -878,7 +1170,6 @@
 							name="content"
 							rows={6}
 							required
-							start="both"
 							todos={todoRefs}
 							placeholder={t('notebookDetail.writeANoteAbout', { title: notebook.title })}
 						/>
@@ -990,11 +1281,7 @@
 						{/each}
 					</ul>
 				{/if}
-			{:else if contents.goals.length === 0}
-				<p class="px-4 py-3 text-sm text-gray-500">
-					{t('notebookDetail.noGoalPointsAtThis')}
-				</p>
-			{:else}
+			{:else if tab === 'goals'}
 				<!--
 					The goals room's own card, not a line of text.
 
@@ -1004,7 +1291,7 @@
 					counts towards it. Filing a goal under a notebook is supposed
 					to scope it, not strip it.
 				-->
-				<div class="divide-y divide-gray-200 px-4">
+				<div class="divide-y divide-gray-200">
 					{#each contents.goals as goal, at (goal.id)}
 						<div class={tab === 'goals' && cursor === at ? 'kb-cursor' : ''}>
 							<GoalCard
@@ -1021,6 +1308,149 @@
 						</div>
 					{/each}
 				</div>
+			{:else if tab === 'ideas'}
+				<!--
+					The Ideas room's own card, not a line with a tick beside it.
+
+					An idea filed under a subject is an idea: its star, its tags, the
+					note saying what was applied, and the verbs up its right-hand
+					edge. Drawing a thinner version of it here is how the two screens
+					stopped agreeing about what an idea is — see `IdeaCard`.
+				-->
+				{#if contents.ideas.length === 0}
+					<EmptyState icon="ideas" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+				{:else}
+					<div class="divide-y divide-gray-200 px-4">
+						{#each contents.ideas as idea (idea.id)}
+							<div class="py-2">
+								<IdeaCard
+									{idea}
+									actions={NOTEBOOK_IDEA_ACTIONS}
+									selected
+									onedit={(id) => {
+										editingIdeaId = id;
+										composingIdea = true;
+									}}
+								/>
+							</div>
+						{/each}
+					</div>
+				{/if}
+			{:else if tab === 'inventory'}
+				<!--
+					The Inventory room's own row: the count you press up and down, the
+					price, the thing's own fields and the recipes that use it. The
+					count is the whole point of the list — two tins and none are both
+					"unticked" until you look — see `ItemRow`.
+				-->
+				{#if contents.inventory.length === 0}
+					<EmptyState icon="shopping" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+				{:else}
+					<div class="divide-y divide-gray-200">
+						{#each contents.inventory as item (item.id)}
+							<div class="flex items-center gap-x-3 px-4 py-2">
+								<ItemRow {item} {currency} actions={NOTEBOOK_ITEM_ACTIONS} />
+							</div>
+						{/each}
+					</div>
+				{/if}
+			{:else if tab === 'workouts'}
+				<!--
+					The Health room's own card: the plan, and the record of what was
+					actually done under it. Writing a session down is the room's own
+					dialog, which is why that one is a link out rather than a form
+					here — see `WorkoutCard`.
+				-->
+				{#if contents.workouts.length === 0}
+					<EmptyState icon="flame" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+				{:else}
+					<ul class="divide-y divide-gray-200">
+						{#each contents.workouts as workout (workout.id)}
+							<WorkoutCard
+								{workout}
+								sessions={contents.workoutSessions}
+								actions={NOTEBOOK_WORKOUT_ACTIONS}
+							/>
+						{/each}
+					</ul>
+				{/if}
+			{:else if tab === 'recipes'}
+				<!--
+					The Kitchen's own card: the picture it is known by, and what it
+					needs that the cupboard has not got. The loop between a recipe, the
+					week and the shopping list is what the room is for, and a card
+					without it is a title in a list — see `RecipeCard`.
+				-->
+				{#if contents.recipes.length === 0}
+					<EmptyState icon="utensils" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+				{:else}
+					<div class="grid gap-px bg-gray-200 sm:grid-cols-2">
+						{#each contents.recipes as recipe (recipe.id)}
+							<RecipeCard {recipe} />
+						{/each}
+					</div>
+				{/if}
+			{:else if tab === 'ledgers'}
+				<!--
+					The Finance room's own tile: what it is called over what it holds,
+					with the balance at the end. A statement is a page rather than a
+					panel, so pressing one goes there — a notebook is not where
+					somebody reads a bank export.
+				-->
+				{#if contents.ledgers.length === 0}
+					<EmptyState icon="wallet" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+				{:else}
+					<div class="flex flex-wrap gap-2 px-4 py-3">
+						{#each contents.ledgers as ledger (ledger.id)}
+							<LedgerTile
+								{ledger}
+								{currency}
+								href={`${resolve('/finance/ledgers')}?ledger=${ledger.id}`}
+							/>
+						{/each}
+					</div>
+				{/if}
+			{:else if tab === 'habits'}
+				<!--
+					The Health room's own card: the streak, the year at a glance, the
+					backdating and the note on each day. A habit without those is a
+					checkbox — see `HabitCard`.
+				-->
+				{#if contents.habits.length === 0}
+					<EmptyState icon="health" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+				{:else}
+					<div class="divide-y divide-gray-200">
+						{#each contents.habits as habit (habit.id)}
+							<HabitCard
+								{habit}
+								occurrences={contents.habitOccurrences}
+								today={contents.today}
+								firstDay={contents.weekFirstDay}
+								actions={NOTEBOOK_HABIT_ACTIONS}
+							/>
+						{/each}
+					</div>
+				{/if}
+			{:else if tab === 'bills'}
+				<!--
+					The Finance room's own row: what it costs, its rhythm, the day it
+					falls due, the tick that pays it and the undo beside it.
+				-->
+				{#if contents.bills.length === 0}
+					<EmptyState icon="wallet" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+				{:else}
+					<ul class="divide-y divide-gray-200">
+						{#each contents.bills as bill (bill.id)}
+							<BillRow
+								{bill}
+								{currency}
+								actions={NOTEBOOK_BILL_ACTIONS}
+								period={bill.period}
+								paid={bill.paidThisPeriod}
+							/>
+						{/each}
+					</ul>
+				{/if}
 			{/if}
 		{/if}
 	</div>
@@ -1242,7 +1672,6 @@
 								name="content"
 								rows={8}
 								required
-								start="both"
 								todos={todoRefs}
 							/>
 							<PictureAttach target={editBox} />
@@ -1587,6 +2016,139 @@
 		</button>
 	{/snippet}
 </Modal>
+
+<!--
+	The Ideas tab's composer, which is the Ideas room's form.
+
+	`IdeaFields` — the same box, the same picture and recording attachments,
+	the same tag input — so an idea caught against a subject is the same idea
+	caught anywhere else. The notebook rides along hidden, which is what files
+	it here.
+-->
+<Modal
+	bind:open={composingIdea}
+	title={editedIdea ? t('ui.edit') : t('notebooks.newIdea')}
+	onclose={closeIdeaForm}
+>
+	<form
+		id="notebook-idea-form"
+		method="post"
+		action={editedIdea ? '?/ideaUpdate' : '?/ideaCreate'}
+		use:enhance={() => {
+			const wasEditing = editedIdea !== undefined;
+			return async ({ result, update }) => {
+				await update({ reset: false });
+				if (result.type !== 'success') return;
+				closeIdeaForm();
+				say(wasEditing ? t('notebookDetail.saved') : t('notebooks.newIdea'));
+			};
+		}}
+	>
+		{#if editedIdea}
+			<input type="hidden" name="id" value={editedIdea.id} />
+		{/if}
+		<!-- What files it under this subject, on edits too, so saving an idea
+		     from in here never takes it out of the notebook. -->
+		<input type="hidden" name="notebookId" value={notebook?.id ?? ''} />
+		<FormGrid>
+			<IdeaFields
+				content={editedIdea?.content ?? ''}
+				tags={editedIdea?.tags.map((one) => one.name).join(', ') ?? ''}
+			/>
+		</FormGrid>
+	</form>
+
+	{#snippet footer()}
+		<button type="button" class="btn" onclick={closeIdeaForm}>{t('ui.cancel')}</button>
+		<button type="submit" form="notebook-idea-form" class="btn btn-primary">{t('ui.save')}</button>
+	{/snippet}
+</Modal>
+
+<!--
+	The other tabs' composer: the room's own form, in the notebook.
+
+	Same fields, same handlers, and the notebook selector each of those forms
+	carries is already on this one — so writing a bill here is writing a bill,
+	and the subject it belongs to is a question the form asks rather than a
+	thing that happens to it.
+-->
+{#if notebook && composingModule}
+	{@const module = composingModule}
+	<Modal open title={t(NEW_LABELS[module] ?? 'ui.add')} onclose={() => (composingModule = null)}>
+		<form
+			id="notebook-module-form"
+			method="post"
+			action="?/{ACTION_PREFIX[module]}Create"
+			use:enhance={() =>
+				async ({ result, update }) => {
+					await update({ reset: false });
+					if (result.type !== 'success') return;
+					say(t(NEW_LABELS[module] ?? 'ui.add'));
+					composingModule = null;
+				}}
+		>
+			{#if module === 'inventory'}
+				<FormGrid>
+					<BuyFields
+						categories={inventoryCategories}
+						notebooks={pickableNotebooks}
+						startingNotebook={notebook.id}
+						showFields
+					/>
+				</FormGrid>
+			{:else if module === 'ledgers'}
+				<LedgerFields {parsers} notebooks={pickableNotebooks} startingNotebook={notebook.id} />
+			{:else if module === 'bills'}
+				<BillFields
+					bind:rhythm={billRhythm}
+					notebooks={pickableNotebooks}
+					startingNotebook={notebook.id}
+				/>
+			{:else if module === 'habits'}
+				<HabitFields
+					bind:kind={habitKind}
+					bind:days={habitDays}
+					notebooks={pickableNotebooks}
+					startingNotebook={notebook.id}
+				/>
+			{:else if module === 'workouts'}
+				<WorkoutFields
+					categories={workoutCategories}
+					bind:measures={newMeasures}
+					notebooks={pickableNotebooks}
+					startingNotebook={notebook.id}
+				/>
+			{:else if module === 'recipes'}
+				<RecipeFields notebooks={pickableNotebooks} startingNotebook={notebook.id} />
+			{/if}
+		</form>
+
+		{#snippet footer()}
+			<button type="button" class="btn" onclick={() => (composingModule = null)}
+				>{t('ui.cancel')}</button
+			>
+			<button type="submit" form="notebook-module-form" class="btn btn-primary"
+				>{t('ui.save')}</button
+			>
+		{/snippet}
+	</Modal>
+{/if}
+
+<!--
+	One picker for every tab: linking is the same act whatever the thing is.
+	It reads the tab that is showing rather than being drawn nine times.
+-->
+{#if notebook}
+	<LinkIntoNotebook
+		bind:open={linking}
+		module={tab}
+		what={t(LINK_LABEL[tab] ?? 'ui.add')}
+		notebookId={notebook.id}
+		notebookTitle={notebook.title}
+		candidates={(contents?.linkable as Record<string, LinkableList> | undefined)?.[tab]}
+		action="?/linkIntoNotebook"
+	/>
+{/if}
 
 <!-- What counts towards a goal, the same modal the goals room opens. -->
 <GoalLinksModal

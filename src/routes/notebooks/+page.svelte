@@ -1,19 +1,22 @@
 <script lang="ts">
 	import { SvelteSet } from 'svelte/reactivity';
 	import { setRoomAction } from '$lib/room-action.svelte';
-	import { NOTEBOOK_SEPARATOR } from '$lib/services/notebooks';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { enhance } from '$lib/enhance';
 	import { resolve } from '$app/paths';
 	import Card from '$lib/components/Card.svelte';
 	import SplitColumns from '$lib/components/SplitColumns.svelte';
+	import { NOTEBOOK_PANEL_MIN } from '$lib/services/settings';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import MarkdownImport from '$lib/components/MarkdownImport.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import NotebookDetail from '$lib/components/NotebookDetail.svelte';
+	import NotebookTags from '$lib/components/NotebookTags.svelte';
 	import NotebookFields from '$lib/components/fields/NotebookFields.svelte';
+	import { SECTION_COLORS } from '$lib/colors';
+	import NotebookCover from '$lib/components/NotebookCover.svelte';
 	import NotebookPicture from '$lib/components/NotebookPicture.svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { useT } from '$lib/i18n';
@@ -27,6 +30,8 @@
 	/** Whether the markdown importer is open. Closed until asked for. */
 
 	let showForm = $state(false);
+	/** The labels on what is filed in the notebook showing — see `NotebookTags`. */
+	let managingTags = $state(false);
 	let editingId = $state<number | null>(null);
 	/** Whether the note composer in the panel is open; the button for it is up here. */
 	let composing = $state(false);
@@ -42,6 +47,8 @@
 	let panelForm = $state<HTMLFormElement>();
 	/** The New button for whichever tab the panel is showing — see NotebookDetail. */
 	let newAction = $state<{ label: string; run?: () => void; href?: string } | undefined>(undefined);
+	/** The Link button beside it — see NotebookDetail. */
+	let linkAction = $state<{ label: string; run: () => void } | undefined>(undefined);
 
 	const editing = $derived(
 		editingId ? (data.notebooks.find((n) => n.id === editingId) ?? null) : null
@@ -55,8 +62,6 @@
 		else opened.add(id);
 	};
 
-	/** The name as it reads under its parent: the last part of the path. */
-	const leafTitle = (title: string) => title.split(NOTEBOOK_SEPARATOR).at(-1) ?? title;
 	const orphaned = $derived(data.orphaned);
 
 	/**
@@ -67,9 +72,18 @@
 	 * the order is about how the shelf reads, and the tree the server builds is
 	 * about what is inside what — two different questions.
 	 */
-	const shelved = $derived(
-		[...data.tree].sort((a, b) => Number(Boolean(a.closedAt)) - Number(Boolean(b.closedAt)))
-	);
+	const shelved = $derived(data.tree.filter((node) => !node.closedAt));
+
+	/*
+	 * The ones that are finished with, folded away.
+	 *
+	 * A closed notebook is history — a trip that happened, a renovation that
+	 * ended — and it was sitting on the same shelf as the ones being written
+	 * in, only greyer. They are behind a line now, closed to begin with,
+	 * because the shelf is for what you are working on.
+	 */
+	const closed = $derived(data.tree.filter((node) => Boolean(node.closedAt)));
+	let showClosed = $state(false);
 	const showingOrphans = $derived(data.orphanedSelected && !selected);
 
 	function openCreate() {
@@ -99,20 +113,6 @@
 			e.preventDefault();
 			openCreate();
 		}
-	}
-
-	/**
-	 * "12 notes · 3 tasks · 1 goal", with nothing said about what is empty.
-	 *
-	 * Notes, not entries: writing in a notebook is a note and writing in the
-	 * diary is an entry, and the tab above this list already says so.
-	 */
-	function tally(n: Notebook): string {
-		const parts: string[] = [];
-		if (n.entries) parts.push(t('notebooks.notesCount', { count: n.entries }));
-		if (n.tasks) parts.push(t('notebooks.tasksCount', { count: n.tasks }));
-		if (n.goals) parts.push(t('notebooks.goalsCount', { count: n.goals }));
-		return parts.join(' · ') || t('notebooks.nothingInItYet');
 	}
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
@@ -151,9 +151,17 @@
 		card's own edge away; the border and the section's accent belong to both
 		of them, drawn once around the pair rather than once each.
 	-->
-	<div class="border border-gray-200 bg-white shadow-card">
+	<!-- The room's colour down the side, the same as every other tab in it: the
+	     shelf was the one page here standing on a card with no accent. -->
+	<div
+		class="card-accent border border-gray-200 bg-white shadow-card"
+		style="--card-accent: {SECTION_COLORS.diary}"
+	>
+		<!-- The shelf's own floor: one cover wide. A list of names cannot go this
+		     narrow and a grid of covers can — see `NOTEBOOK_PANEL_MIN`. -->
 		<SplitColumns
 			bind:rem={panelRem}
+			min={NOTEBOOK_PANEL_MIN}
 			label={t('notebooks.widenOrNarrowTheList')}
 			onsettle={() => panelForm?.requestSubmit()}
 		>
@@ -181,56 +189,22 @@
 							album and the same tree inventory draws for a location. Nothing
 							to keep in step and nothing new to learn — renaming one moves it.
 						-->
-						{#snippet notebookRow(node: (typeof data.tree)[number])}
-							<!--
-								A notebook is its cover.
+						<!--
+							A notebook is its cover.
 
-								They were rows with a stamp of a picture at the front, which
-								is a list of names with a decoration; a shelf of subjects is a
-								shelf of things, and you pick one the way you pick a book —
-								by looking at it. The picture is the object and the name hangs
-								under it, glued on rather than beside it.
-
-								A notebook with children keeps its fold, and what is inside it
-								opens as its own shelf under it — indented, so a spine of
-								covers reads as belonging to the one above.
-							-->
-							<div class="notebook-cover" style="--cover-depth: {node.depth}">
-								<a
-									href="{resolve('/notebooks')}?notebook={node.id}"
-									class="cover-face {node.id === data.selected ? 'is-chosen' : ''}"
-									aria-current={node.id === data.selected ? 'true' : undefined}
-								>
-									<!-- A cover with no picture is a blank cover, not a cover with a
-									     notebook drawn on it: a shelf of identical glyphs is noise
-									     where the picture is supposed to be the thing you read. -->
-									{#if node.pictureId}
-										<img src="/media/{node.pictureId}" alt="" loading="lazy" class="cover-art" />
-									{:else}
-										<span class="cover-art cover-art-empty" aria-hidden="true"></span>
-									{/if}
-
-									<span class="cover-name" class:text-gray-500={node.closedAt}>
-										{leafTitle(node.title)}
-									</span>
-									<span class="cover-tally">
-										{tally(node)}
-										{#if !node.mine}
-											· {node.sharedBy}’s
-										{:else if node.sharedWithFamily}
-											· {t('notebooks.family')}
-										{/if}
-										{#if node.closedAt}
-											· {t('notebooks.closed')}
-										{/if}
-									</span>
-								</a>
-
-								<!--
-									What you do to it, on the cover rather than in a column of
-									their own: a shelf has no columns.
-								-->
-								<div class="cover-actions">
+							They were rows with a stamp of a picture at the front, which is a
+							list of names with a decoration; a shelf of subjects is a shelf of
+							things, and you pick one the way you pick a book — by looking at
+							it. The picture is the object and the name hangs under it, glued
+							on rather than beside it.
+						-->
+						{#snippet cover(node: (typeof data.tree)[number])}
+							<NotebookCover
+								notebook={node}
+								href="{resolve('/notebooks')}?notebook={node.id}"
+								chosen={node.id === data.selected}
+							>
+								{#snippet actions()}
 									{#if node.children.length > 0}
 										<button
 											class="icon-btn"
@@ -278,21 +252,69 @@
 											{/if}
 										</button>
 									</form>
-								</div>
-							</div>
+								{/snippet}
+							</NotebookCover>
+						{/snippet}
 
-							{#if opened.has(node.id)}
-								{#each node.children as child (child.id)}
-									{@render notebookRow(child)}
-								{/each}
+						<!--
+							An open folder and what is inside it are one block.
+
+							They were flat siblings on one shelf with the children nudged a
+							little to the right, so opening a folder produced covers that
+							belonged to it and looked like more of the shelf — the indent is
+							a few pixels and the eye does not count pixels. A ground behind
+							the pair says it instead: the folder and its contents sit on one
+							tint, and a folder inside that one gets a tint of its own.
+						-->
+						{#snippet notebookRow(node: (typeof data.tree)[number])}
+							{#if node.children.length > 0 && opened.has(node.id)}
+								<div class="notebook-family">
+									{@render cover(node)}
+									{#each node.children as child (child.id)}
+										{@render notebookRow(child)}
+									{/each}
+								</div>
+							{:else}
+								{@render cover(node)}
 							{/if}
 						{/snippet}
 
-						<div class="notebook-shelf">
+						<div data-tour="notebook-shelf" class="notebook-shelf">
 							{#each shelved as node (node.id)}
 								{@render notebookRow(node)}
 							{/each}
 						</div>
+
+						{#if closed.length > 0}
+							<!--
+								The line under the shelf, and what is behind it.
+
+								Pressing the line is what opens it — the rule and its label
+								are one control, so there is nothing to hunt for and nothing
+								drawn that is not the thing itself.
+							-->
+							<button
+								type="button"
+								class="shelf-fold"
+								onclick={() => (showClosed = !showClosed)}
+								aria-expanded={showClosed}
+							>
+								<span class="shelf-fold-line" aria-hidden="true"></span>
+								<span class="shelf-fold-label">
+									<Icon name={showClosed ? 'chevron-down' : 'chevron-right'} size={14} />
+									{t('notebooks.closedCount', { count: closed.length })}
+								</span>
+								<span class="shelf-fold-line" aria-hidden="true"></span>
+							</button>
+
+							{#if showClosed}
+								<div class="notebook-shelf">
+									{#each closed as node (node.id)}
+										{@render notebookRow(node)}
+									{/each}
+								</div>
+							{/if}
+						{/if}
 
 						<!--
 							What is left over, as a bin in the corner.
@@ -312,7 +334,7 @@
 								})}
 								aria-label={t('notebooks.notesWithoutANotebook')}
 							>
-								<Icon name="trash" size={16} />
+								<Icon name="recycle" size={16} />
 								<span class="tabular text-xs">{orphaned.length}</span>
 							</a>
 						{/if}
@@ -337,6 +359,7 @@
 							: selected
 								? (selected.description ?? '')
 								: t('notebooks.pickANotebookToSee')}
+						foldDescription={!!selected && !showingOrphans}
 						flush
 						pane
 					>
@@ -355,41 +378,75 @@
 						{/snippet}
 						{#snippet actions()}
 							{#if selected}
-								<!-- The way to the notebook's own page, from the column that is
-								     showing it. The list on the left chooses what appears here. -->
-								<a
-									href={resolve('/notebooks/[id]', { id: String(selected.id) })}
-									class="btn btn-sm"
-								>
-									{t('ui.open')}
-									<Icon name="arrow-right" />
-								</a>
 								<!--
-									Writing, where deleting the whole notebook used to be.
+									Two rows, and what goes in each.
 
-									This is a page for browsing notebooks, and the thing most
-									often wanted from one on screen is another note in it —
-									not destroying it, one press away, beside a list you are
-									moving through. Deleting a notebook is on the notebook's
-									own page, which is a place you go to on purpose.
-
-									What it says follows the tab below it: it read "New note"
-									while the Tasks tab was showing, which is a button offering
-									the wrong thing about the list under it.
+									Filling the notebook is the top one — the two ways to put
+									something in it, with the primary verb at the end where a
+									hand comes from. Leaving it is the bottom one: the labels
+									on what is in here, and the way through to its own page.
+									They were one row of four, which reads as four things of
+									equal weight and is exactly what it is not.
 								-->
-								{#if newAction?.href}
-									<!-- Already resolved: NotebookDetail builds this with `resolve()`. -->
-									<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-									<a href={newAction.href} class="btn btn-sm btn-primary">
-										<Icon name="plus" />
-										{newAction.label}
-									</a>
-								{:else if newAction}
-									<button onclick={newAction.run} class="btn btn-sm btn-primary">
-										<Icon name="plus" />
-										{newAction.label}
-									</button>
-								{/if}
+								<div class="flex flex-col items-end gap-2">
+									<div class="flex flex-wrap items-center justify-end gap-2">
+										{#if linkAction}
+											<!-- The other way to fill a tab: take something that is
+											     already there. See `LinkIntoNotebook`. -->
+											<button onclick={linkAction.run} class="btn btn-sm">
+												<Icon name="link" />
+												{linkAction.label}
+											</button>
+										{/if}
+										<!--
+											Writing, where deleting the whole notebook used to be.
+
+											This is a page for browsing notebooks, and the thing most
+											often wanted from one on screen is another note in it —
+											not destroying it, one press away, beside a list you are
+											moving through. Deleting a notebook is on the notebook's
+											own page, which is a place you go to on purpose.
+
+											What it says follows the tab below it: it read "New note"
+											while the Tasks tab was showing, which is a button
+											offering the wrong thing about the list under it.
+										-->
+										{#if newAction?.href}
+											<!-- Already resolved: NotebookDetail builds this with `resolve()`. -->
+											<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+											<a href={newAction.href} class="btn btn-sm btn-primary">
+												<Icon name="plus" />
+												{newAction.label}
+											</a>
+										{:else if newAction}
+											<button onclick={newAction.run} class="btn btn-sm btn-primary">
+												<Icon name="plus" />
+												{newAction.label}
+											</button>
+										{/if}
+									</div>
+
+									<div class="flex flex-wrap items-center justify-end gap-2">
+										<!-- This subject's own words, rather than the whole
+										     account's: the Tags tab used to sit in the room strip,
+										     answering a question nobody has while looking at one
+										     notebook. -->
+										<button onclick={() => (managingTags = true)} class="btn btn-sm">
+											<Icon name="tag" />
+											{t('tags.manageTags')}
+										</button>
+										<!-- The way to the notebook's own page, from the column
+										     that is showing it. The list on the left chooses what
+										     appears here. -->
+										<a
+											href={resolve('/notebooks/[id]', { id: String(selected.id) })}
+											class="btn btn-sm"
+										>
+											{t('ui.open')}
+											<Icon name="arrow-right" />
+										</a>
+									</div>
+								</div>
 							{/if}
 						{/snippet}
 
@@ -400,6 +457,10 @@
 							{showingOrphans}
 							allPeople={data.allPeople}
 							categories={data.categories}
+							inventoryCategories={data.inventoryCategories}
+							workoutCategories={data.workoutCategories}
+							parsers={data.parsers}
+							currency={data.currency}
 							pickableNotebooks={data.pickableNotebooks}
 							areas={data.areas}
 							workoutMeasures={data.workoutMeasures}
@@ -409,6 +470,7 @@
 							activities={data.activities}
 							bind:composing
 							bind:newAction
+							bind:linkAction
 						/>
 					</Card>
 				</div>
@@ -426,6 +488,14 @@
 		<input type="hidden" name="rem" value={panelRem} />
 	</form>
 </div>
+
+<NotebookTags
+	bind:open={managingTags}
+	title={selected?.title ?? ''}
+	tags={data.notebookTags}
+	action="?/saveTag"
+	error={form?.message ?? null}
+/>
 
 <Modal
 	bind:open={showForm}
@@ -455,23 +525,11 @@
 			title={editing?.title ?? ''}
 			description={editing?.description ?? ''}
 			defaultTags={editing?.defaultTags ?? ''}
+			notebook={editing}
+			notebooks={data.notebooks}
+			pictureKilobytes={data.pictureKilobytes}
 		/>
 	</form>
-
-	<!-- Beside the form rather than in it: a picture goes up as multipart the
-	     moment it is chosen, which is not the same submission as the words. A
-	     notebook that does not exist yet has nothing to attach one to. -->
-	{#if editing && editing.mine !== false}
-		<div class="mt-3 flex items-start gap-3 border-t border-gray-200 pt-3">
-			<NotebookPicture
-				notebook={editing}
-				kilobytes={data.pictureKilobytes}
-				size="size-24"
-				removable
-			/>
-			<p class="text-sm text-gray-500">{t('notebooks.id.thePicture')}</p>
-		</div>
-	{/if}
 
 	<!--
 		The other way to make one: bring a folder of markdown in.

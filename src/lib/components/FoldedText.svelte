@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Icon from '$lib/components/Icon.svelte';
 	import { useT } from '$lib/i18n';
+	import { untrack } from 'svelte';
 
 	/**
 	 * A paragraph that folds itself when it is long.
@@ -24,6 +25,14 @@
 	let open = $state(false);
 	let box = $state<HTMLParagraphElement>();
 	let overflows = $state(false);
+
+	// A different text starts folded: the notebooks shelf swaps it in place.
+	let shown = untrack(() => text);
+	$effect.pre(() => {
+		if (text === shown) return;
+		shown = text;
+		open = false;
+	});
 
 	/*
 	 * Measured rather than guessed from the length of the string: whether three

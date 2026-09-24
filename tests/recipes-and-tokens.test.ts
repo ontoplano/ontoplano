@@ -13,6 +13,7 @@
  */
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
+import { refusal } from './helpers/refusal';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -240,9 +241,11 @@ describe('a token a plugin holds', () => {
 			// Otherwise a key that writes to the shopping list ends up in a URL
 			// pasted into somebody's calendar app — and it would not work as a
 			// feed either, since the route accepts that one scope alone.
-			expect(() =>
-				tokens.createToken(ctx, { name: 'mixed', scopes: ['calendar:read', 'inventory:write'] })
-			).toThrow(/cannot be combined/i);
+			expect(
+				refusal(() =>
+					tokens.createToken(ctx, { name: 'mixed', scopes: ['calendar:read', 'inventory:write'] })
+				)
+			).toMatch(/cannot be combined/i);
 		});
 
 		test('runs out at five', () => {
@@ -251,9 +254,9 @@ describe('a token a plugin holds', () => {
 				tokens.createToken(fresh, { name: `link ${i}`, scopes: 'calendar:read' });
 			}
 
-			expect(() =>
-				tokens.createToken(fresh, { name: 'one too many', scopes: 'calendar:read' })
-			).toThrow(/revoke one/i);
+			expect(
+				refusal(() => tokens.createToken(fresh, { name: 'one too many', scopes: 'calendar:read' }))
+			).toMatch(/revoke one/i);
 
 			// And revoking one makes room again, rather than the count being of
 			// everything ever made.
@@ -283,7 +286,9 @@ describe('a token a plugin holds', () => {
 		const authed = tokens.authenticateToken(made.plaintext, now);
 
 		expect(() => tokens.requireScope(authed, 'today:read')).not.toThrow();
-		expect(() => tokens.requireScope(authed, 'inventory:write')).toThrow(/inventory:write/);
+		expect(refusal(() => tokens.requireScope(authed, 'inventory:write'))).toMatch(
+			/inventory:write/
+		);
 	});
 
 	test('refuses anything that is not one of its tokens', () => {
@@ -295,7 +300,7 @@ describe('a token a plugin holds', () => {
 	test('stops working the moment it is revoked', () => {
 		const made = tokens.createToken(ctx, { name: 'doomed', scopes: 'today:read' });
 		tokens.revokeToken(ctx, made.id);
-		expect(() => tokens.authenticateToken(made.plaintext, now)).toThrow(/revoked/i);
+		expect(refusal(() => tokens.authenticateToken(made.plaintext, now))).toMatch(/revoked/i);
 	});
 
 	test('stops working when it expires', () => {
@@ -306,7 +311,7 @@ describe('a token a plugin holds', () => {
 		});
 
 		const later = new Date(now.getTime() + 3 * 86400_000);
-		expect(() => tokens.authenticateToken(made.plaintext, later)).toThrow(/expired/i);
+		expect(refusal(() => tokens.authenticateToken(made.plaintext, later))).toMatch(/expired/i);
 	});
 
 	test("is not another account's to revoke", () => {

@@ -129,11 +129,19 @@ export function startMarkSpin(
 	if (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches)
 		return;
 
-	// Only the medallion turns — the rim of the mark stands still. The layer
-	// is the Logo's own (`.mark-turn`); a root without one turns whole.
+	/*
+	 * Only the medallion turns — the rim of the mark stands still.
+	 *
+	 * The layer is the Logo's own (`.mark-turn`), and a root that has not got
+	 * one turns nothing at all. It used to turn whole, which is right for a
+	 * mark and wrong for everything else that might be handed in: the phone
+	 * bar's ground is an octagon of flat colour a little larger than the
+	 * button, and turning it swept its corners out past a mark that was
+	 * standing still.
+	 */
 	els = marks
-		.filter((el): el is HTMLElement => Boolean(el))
-		.map((el) => el.querySelector<HTMLElement>('.mark-turn') ?? el);
+		.map((el) => el?.querySelector<HTMLElement>('.mark-turn'))
+		.filter((el): el is HTMLElement => Boolean(el));
 	// The turn writes `rotate` every frame; a utility transition covering the
 	// rotate property would smear each step into the next.
 	for (const el of els) el.style.transition = 'none';

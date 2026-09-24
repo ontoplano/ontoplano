@@ -15,8 +15,6 @@
 
 `.deb` · `.rpm` · Arch · Docker · Android
 
-</div>
-
 > [!NOTE]
 > This software was released on September 5th, 2026. It's still maturing, and
 > it may contain bugs. LLMs are used extensively during development; their
@@ -25,6 +23,8 @@
 > Help improve it by creating issues and pull requests.
 
 [![Try the demo](.github/badges/try-the-demo.svg)](https://demo.ontoplano.com)
+
+</div>
 
 ---
 

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import FoldedText from '$lib/components/FoldedText.svelte';
 
 	/**
 	 * A card, everywhere.
@@ -23,6 +24,12 @@
 		title = '',
 		description = '',
 		/**
+		 * Fold a long description to two lines behind a Show more, the way a
+		 * notebook's own page does. For a description somebody wrote, which can
+		 * run to paragraphs; the app's own one-sentence descriptions do not need it.
+		 */
+		foldDescription = false,
+		/**
 		 * A name for the section, so a link or a notification can point at it
 		 * and land on it rather than at the top of the page.
 		 */
@@ -40,15 +47,22 @@
 		 * `SplitColumns` without `spaced`.
 		 */
 		pane = false,
+		/** Placement from outside — a grid cell's span, say. Not for restyling. */
+		class: className = '',
+		/** The anchor a tutorial step points at. */
+		dataTour = '',
 		lead,
 		actions,
 		children
 	}: {
 		title?: string;
 		description?: string;
+		foldDescription?: boolean;
 		accent?: string;
 		flush?: boolean;
 		pane?: boolean;
+		class?: string;
+		dataTour?: string;
 		id?: string;
 		/** Drawn before the title: the picture of whatever this card is about. */
 		lead?: Snippet;
@@ -76,9 +90,10 @@
 -->
 <section
 	id={id || undefined}
+	data-tour={dataTour || undefined}
 	class="flex flex-col {pane ? 'card-pane' : 'border border-gray-200 shadow-card'} bg-white {accent
 		? 'card-accent'
-		: ''}"
+		: ''} {className}"
 	style="{accent ? `--card-accent: ${accent};` : ''}{id ? ' scroll-margin-top: 1rem;' : ''}"
 >
 	<!--
@@ -98,8 +113,16 @@
 			     picture, the way a person's face sits beside their name. -->
 			<div class="shrink-0">{@render lead()}</div>
 		{/if}
-		<div class="min-w-0 flex-1">
-			{#if title}<h2 class="eyebrow text-gray-600">{title}</h2>{/if}
+		<!--
+			A basis, not just a grow: with `flex-1` alone the title's hypothetical
+			width is nothing, so the row never wraps and the actions squeeze it to
+			a column one syllable wide. At 12rem the actions drop under it first.
+		-->
+		<div class="min-w-0 flex-[1_1_12rem]">
+			<!-- As tall as a line of small text, so a card whose header carries a
+			     count or a note is the same height as the card beside it that
+			     carries nothing: two headers in a row meet in one line. -->
+			{#if title}<h2 class="eyebrow flex min-h-4 items-center text-gray-600">{title}</h2>{/if}
 			{#if description}
 				<!--
 					pre-line: a description may break itself onto a second line with \n.
@@ -110,7 +133,11 @@
 					from. The cap is on the paragraph, not the card — the layout still
 					uses the width, only the sentence stops.
 				-->
-				<p class="mt-1.5 max-w-2xl text-sm whitespace-pre-line text-gray-500">{description}</p>
+				{#if foldDescription}
+					<FoldedText text={description} class="mt-1.5" />
+				{:else}
+					<p class="mt-1.5 max-w-2xl text-sm whitespace-pre-line text-gray-500">{description}</p>
+				{/if}
 			{/if}
 		</div>
 		{#if actions}

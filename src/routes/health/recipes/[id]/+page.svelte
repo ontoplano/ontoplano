@@ -13,6 +13,9 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import CookMode from '$lib/components/CookMode.svelte';
+	import Card from '$lib/components/Card.svelte';
+	import CardGrid from '$lib/components/CardGrid.svelte';
+	import DetailHeader from '$lib/components/DetailHeader.svelte';
 	import { renderMarkdown } from '$lib/markdown';
 	import type { PageServerData, ActionData } from './$types';
 	import { useT } from '$lib/i18n';
@@ -80,15 +83,12 @@
 {/if}
 
 <div class="space-y-4">
-	<div class="flex flex-wrap items-start justify-between gap-3">
-		<div class="min-w-0">
-			<a
-				href={resolve('/health/recipes')}
-				class="text-xs text-gray-500 hover:text-gray-900 hover:underline"
-				>{t('health.recipes.id.larrAllRecipes')}</a
-			>
-			<h1 class="mt-1 text-lg font-bold text-gray-900">{data.recipe.title}</h1>
-			<p class="mt-1 flex flex-wrap items-center gap-3 text-sm text-gray-500">
+	<DetailHeader
+		title={data.recipe.title}
+		back={{ href: resolve('/health/recipes'), label: t('health.recipes.id.larrAllRecipes') }}
+	>
+		{#snippet meta()}
+			<p class="flex flex-wrap items-center gap-3 text-sm text-gray-500">
 				{#if data.recipe.minutes}<span class="tabular"
 						>{t('health.recipes.id.min', { minutes: data.recipe.minutes })}</span
 					>{/if}
@@ -103,9 +103,9 @@
 					>
 				{/if}
 			</p>
-		</div>
+		{/snippet}
 
-		<div class="flex flex-wrap items-center gap-2">
+		{#snippet actions()}
 			<button
 				onclick={() => (cookMode = true)}
 				class="btn btn-sm"
@@ -136,122 +136,128 @@
 				title={t('ui.delete')}
 				aria-label={t('ui.delete')}><Icon name="trash" /></button
 			>
-		</div>
-	</div>
+		{/snippet}
+	</DetailHeader>
 
 	<FormError message={form?.message} />
 
-	<div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
-		<section class="flex flex-col border border-gray-200 bg-white shadow-card">
-			<header class="flex items-center justify-between border-b border-gray-200 px-4 py-3">
-				<h2 class="eyebrow text-gray-600">{t('health.recipes.id.ingredients')}</h2>
+	<!--
+		Ingredients and pictures down the narrow column, the method down the wide
+		one: the method spans both rows, so a long one does not push the pictures
+		away from the list they belong beside. On a phone it is one column, in
+		the order somebody cooks from.
+	-->
+	<CardGrid columns="aside" class="lg:grid-rows-[auto_1fr]">
+		<Card title={t('health.recipes.id.ingredients')} flush>
+			{#snippet actions()}
 				{#if missing.length > 0}
 					<span class="text-xs text-amber-700"
 						>{t('health.recipes.id.notInTheCupboard', { length: missing.length })}</span
 					>
 				{/if}
-			</header>
+			{/snippet}
 
 			{#if data.ingredients.length > 0}
 				<ul class="divide-y divide-gray-200">
 					{#each data.ingredients as ingredient (ingredient.id)}
-						<li class="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 text-sm">
+						<li class="list-row py-1.5 text-sm">
 							<span class="tabular w-20 shrink-0 text-gray-500">
 								{[ingredient.quantity, ingredient.unit].filter(Boolean).join(' ')}
 							</span>
-							<span class="min-w-0 flex-1 text-gray-900">
+							<span class="list-row-main text-gray-900">
 								{ingredient.name}
 								{#if ingredient.note}
 									<span class="text-xs text-gray-500">· {ingredient.note}</span>
 								{/if}
 							</span>
-							{#if !ingredient.inStock}
-								<span class="chip text-amber-700">{t('health.recipes.id.toBuy')}</span>
-							{/if}
-							<!-- Every ingredient is a shopping item; this is the way to it,
+							<span class="list-row-actions">
+								{#if !ingredient.inStock}
+									<span class="chip mr-1 text-amber-700">{t('health.recipes.id.toBuy')}</span>
+								{/if}
+								<!-- Every ingredient is a shopping item; this is the way to it,
 							     for when you want to check the price or tick it off. -->
-							<a
-								href={resolve('/inventory')}
-								class="shrink-0 text-gray-500 hover:text-gray-900"
-								title={t('health.recipes.id.findOnTheShoppingList', { name: ingredient.name })}
-								aria-label={t('health.recipes.id.findOnTheShoppingList', { name: ingredient.name })}
-							>
-								<Icon name="shopping" size={14} />
-							</a>
-							<form method="post" action="?/removeIngredient" use:enhance>
-								<input type="hidden" name="id" value={ingredient.id} />
-								<button
-									class="text-xs text-gray-500 hover:text-red-600"
-									title={t('ui.remove')}
-									aria-label={t('ui.remove')}>&times;</button
+								<a
+									href={resolve('/inventory/stock')}
+									class="icon-btn"
+									title={t('health.recipes.id.findOnTheShoppingList', { name: ingredient.name })}
+									aria-label={t('health.recipes.id.findOnTheShoppingList', {
+										name: ingredient.name
+									})}
 								>
-							</form>
+									<Icon name="shopping" />
+								</a>
+								<form method="post" action="?/removeIngredient" use:enhance>
+									<input type="hidden" name="id" value={ingredient.id} />
+									<button class="icon-btn" title={t('ui.remove')} aria-label={t('ui.remove')}
+										><Icon name="close" /></button
+									>
+								</form>
+							</span>
 						</li>
 					{/each}
 				</ul>
 			{/if}
 
-			<!-- Typing something new here puts it on the shopping list, which is how
+			<!-- Both ways in share one footer at the card's own padding: a line at a
+			     time, or the whole list pasted. -->
+			<div class="space-y-3 p-4 {data.ingredients.length > 0 ? 'border-t border-gray-200' : ''}">
+				<!-- Typing something new here puts it on the shopping list, which is how
 			     the list stays current without anybody maintaining it. -->
-			<form
-				method="post"
-				action="?/addIngredient"
-				use:enhance={() =>
-					async ({ update, result }) => {
-						await update({ reset: result.type === 'success' });
-						if (result.type !== 'success') return;
+				<form
+					method="post"
+					action="?/addIngredient"
+					use:enhance={() =>
+						async ({ update, result }) => {
+							await update({ reset: result.type === 'success' });
+							if (result.type !== 'success') return;
 
-						ingredientName = '';
-						// Straight back to the name box: writing a recipe is typing
-						// fifteen of these, and reaching for the mouse between each one is
-						// the reason the fifteenth never gets typed.
-						await tick();
-						nameBox?.focus();
-					}}
-				class="border-t border-gray-200 px-4 py-3"
-			>
-				<input type="hidden" name="recipeId" value={data.recipe.id} />
-				<div class="flex flex-wrap gap-2">
-					<NumberBox
-						autocomplete="off"
-						name="quantity"
-						step="any"
-						min="0"
-						placeholder="2"
-						class="w-20"
-						aria-label={t('ui.amount')}
-					/>
-					<input
-						name="unit"
-						placeholder={t('health.recipes.id.tbsp')}
-						autocomplete="off"
-						class="input w-20"
-						aria-label={t('ui.unit')}
-					/>
-					<input
-						name="label"
-						bind:this={nameBox}
-						bind:value={ingredientName}
-						list="pantry"
-						required
-						placeholder={t('health.recipes.id.oliveOil')}
-						autocomplete="off"
-						class="input min-w-0 flex-1"
-						aria-label={t('health.recipes.id.ingredient')}
-					/>
-					<datalist id="pantry">
-						{#each data.pantry as item (item.id)}
-							<option value={item.name}></option>
-						{/each}
-					</datalist>
-					<button class="btn btn-sm"><Icon name="plus" /> {t('ui.add')}</button>
-				</div>
-				<p class="mt-2 text-xs text-gray-500">
-					{t('health.recipes.id.anythingNewGoesOntoThe')}
-				</p>
-			</form>
+							ingredientName = '';
+							// Straight back to the name box: writing a recipe is typing
+							// fifteen of these, and reaching for the mouse between each one is
+							// the reason the fifteenth never gets typed.
+							await tick();
+							nameBox?.focus();
+						}}
+				>
+					<input type="hidden" name="recipeId" value={data.recipe.id} />
+					<div class="flex flex-wrap gap-2">
+						<NumberBox
+							autocomplete="off"
+							name="quantity"
+							step="any"
+							min="0"
+							placeholder="2"
+							class="w-20"
+							aria-label={t('ui.amount')}
+						/>
+						<input
+							name="unit"
+							placeholder={t('health.recipes.id.tbsp')}
+							autocomplete="off"
+							class="input w-20"
+							aria-label={t('ui.unit')}
+						/>
+						<input
+							name="label"
+							bind:this={nameBox}
+							bind:value={ingredientName}
+							list="pantry"
+							required
+							placeholder={t('health.recipes.id.oliveOil')}
+							autocomplete="off"
+							class="input min-w-0 flex-1"
+							aria-label={t('health.recipes.id.ingredient')}
+						/>
+						<datalist id="pantry">
+							{#each data.pantry as item (item.id)}
+								<option value={item.name}></option>
+							{/each}
+						</datalist>
+						<button class="btn btn-sm"><Icon name="plus" /> {t('ui.add')}</button>
+					</div>
+				</form>
 
-			<!--
+				<!--
 				Or paste the whole list.
 
 				Every recipe on the internet is a list of lines, and typing them back
@@ -259,13 +265,22 @@
 				Behind a disclosure because it is the second way to do the same
 				thing, and one form has one button.
 			-->
-			<div class="border-t border-gray-200 px-4 py-3">
-				{#if !pasting}
-					<button onclick={() => (pasting = true)} class="btn btn-sm">
+				<div class="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+					<p class="min-w-0 flex-1 basis-48 text-xs text-gray-500">
+						{t('health.recipes.id.anythingNewGoesOntoThe')}
+					</p>
+					<!-- Hidden rather than removed while the paste box is open, so the row
+				     keeps its height. -->
+					<button
+						onclick={() => (pasting = true)}
+						class="btn btn-sm shrink-0 {pasting ? 'invisible' : ''}"
+						disabled={pasting}
+					>
 						<Icon name="copy" />
 						{t('health.recipes.id.pasteAList')}
 					</button>
-				{:else}
+				</div>
+				{#if pasting}
 					<form
 						method="post"
 						action="?/importIngredients"
@@ -308,40 +323,35 @@
 				{/if}
 
 				{#if form?.added}
-					<p class="mt-2 text-xs text-gray-600">
+					<p class="text-xs text-gray-600">
 						{t('health.recipes.id.addedOfThem', { added: form.added })}
 					</p>
 				{/if}
 			</div>
-		</section>
+		</Card>
 
-		<section class="border border-gray-200 bg-white shadow-card">
-			<header class="border-b border-gray-200 px-4 py-3">
-				<h2 class="eyebrow text-gray-600">{t('health.recipes.id.method')}</h2>
-			</header>
-			<div class="p-4">
-				{#if data.recipe.method}
-					<div class="md text-sm text-gray-900">
-						<!-- `renderMarkdown` escapes everything before it emits a tag. -->
-						<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-						{@html renderMarkdown(data.recipe.method)}
-					</div>
-				{:else}
-					<p class="text-sm text-gray-500">
-						{t('health.recipes.id.nothingWrittenYet')}
-						<button onclick={() => (editing = true)} class="underline hover:text-gray-600"
-							>{t('health.recipes.id.writeIt')}</button
-						>.
-					</p>
-				{/if}
+		<Card title={t('health.recipes.id.method')} class="lg:row-span-2">
+			{#if data.recipe.method}
+				<div class="md text-sm text-gray-900">
+					<!-- `renderMarkdown` escapes everything before it emits a tag. -->
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+					{@html renderMarkdown(data.recipe.method)}
+				</div>
+			{:else}
+				<p class="text-sm text-gray-500">
+					{t('health.recipes.id.nothingWrittenYet')}
+					<button onclick={() => (editing = true)} class="underline hover:text-gray-600"
+						>{t('health.recipes.id.writeIt')}</button
+					>.
+				</p>
+			{/if}
 
-				{#if data.recipe.source}
-					<p class="mt-4 border-t border-gray-200 pt-3 text-xs text-gray-500">
-						{t('health.recipes.id.from', { source: data.recipe.source })}
-					</p>
-				{/if}
-			</div>
-		</section>
+			{#if data.recipe.source}
+				<p class="mt-4 border-t border-gray-200 pt-3 text-xs text-gray-500">
+					{t('health.recipes.id.from', { source: data.recipe.source })}
+				</p>
+			{/if}
+		</Card>
 
 		<!--
 			The pictures, and which one is the recipe.
@@ -351,11 +361,8 @@
 			because that is the same word the rest of the app uses for "this is the
 			one" — and it is never only a colour, which nobody can rely on seeing.
 		-->
-		<section class="border border-gray-200 bg-white shadow-card" data-tour="recipe-pictures">
-			<header
-				class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-200 px-4 py-3"
-			>
-				<h2 class="eyebrow shrink-0 text-gray-600">{t('health.recipes.id.pictures')}</h2>
+		<Card title={t('health.recipes.id.pictures')} dataTour="recipe-pictures">
+			{#snippet actions()}
 				<span class="text-xs text-gray-500"
 					>{t('health.recipes.id.ofUpTo', {
 						length: data.pictures.length,
@@ -363,93 +370,91 @@
 						kilobytes: data.pictureLimits.kilobytes
 					})}</span
 				>
-			</header>
+			{/snippet}
+			{#if data.pictures.length > 0}
+				<ul class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+					{#each data.pictures as picture (picture.id)}
+						<li class="group relative">
+							<img
+								src="/media/{picture.id}"
+								alt={picture.alt || picture.filename}
+								loading="lazy"
+								class="aspect-square w-full rounded-md border border-gray-200 bg-white object-cover"
+							/>
 
-			<div class="p-4">
-				{#if data.pictures.length > 0}
-					<ul class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-						{#each data.pictures as picture (picture.id)}
-							<li class="group relative">
-								<img
-									src="/media/{picture.id}"
-									alt={picture.alt || picture.filename}
-									loading="lazy"
-									class="aspect-square w-full rounded-md border border-gray-200 bg-white object-cover"
-								/>
+							{#if picture.isMain}
+								<span
+									class="overlay-face absolute top-1 left-1 flex items-center gap-1 rounded px-1.5 py-0.5 text-[0.65rem] font-medium"
+								>
+									<Icon name="star" />
+									{t('health.recipes.id.main')}
+								</span>
+							{/if}
 
-								{#if picture.isMain}
-									<span
-										class="overlay-face absolute top-1 left-1 flex items-center gap-1 rounded px-1.5 py-0.5 text-[0.65rem] font-medium"
-									>
-										<Icon name="star" />
-										{t('health.recipes.id.main')}
-									</span>
+							<div class="mt-1 flex items-center justify-between gap-1">
+								{#if !picture.isMain}
+									<form method="post" action="?/setMainPicture" use:enhance>
+										<input type="hidden" name="recipeId" value={data.recipe.id} />
+										<input type="hidden" name="mediaId" value={picture.id} />
+										<button
+											class="btn btn-sm btn-quiet"
+											title={t('health.recipes.id.makeThisTheMainPicture')}
+											aria-label={t('health.recipes.id.makeThisTheMainPicture')}
+											><Icon name="star" /></button
+										>
+									</form>
+								{:else}
+									<span></span>
 								{/if}
 
-								<div class="mt-1 flex items-center justify-between gap-1">
-									{#if !picture.isMain}
-										<form method="post" action="?/setMainPicture" use:enhance>
-											<input type="hidden" name="recipeId" value={data.recipe.id} />
-											<input type="hidden" name="mediaId" value={picture.id} />
-											<button
-												class="btn btn-sm btn-quiet"
-												title={t('health.recipes.id.makeThisTheMainPicture')}
-												aria-label={t('health.recipes.id.makeThisTheMainPicture')}
-												><Icon name="star" /></button
-											>
-										</form>
-									{:else}
-										<span></span>
-									{/if}
-
-									<!--
+								<!--
 										Two steps, and the second one where the first one was not:
 										a bin under the cursor that removes on the second click is
 										a picture lost to a double-click. `use:armed` ignores the
 										first 450ms of the confirm for the same reason.
 									-->
-									{#if confirmingPicture === picture.id}
-										<span class="flex items-center gap-1">
-											<button
-												type="button"
-												class="btn btn-sm btn-quiet"
-												onclick={() => (confirmingPicture = null)}
-												title={t('health.recipes.id.keepIt')}
-												aria-label={t('health.recipes.id.keepIt')}><Icon name="close" /></button
-											>
-											<form method="post" action="?/removePicture" use:enhance>
-												<input type="hidden" name="recipeId" value={data.recipe.id} />
-												<input type="hidden" name="mediaId" value={picture.id} />
-												<button
-													class="btn btn-sm btn-danger"
-													use:armed
-													title={t('health.recipes.id.removeIt')}
-													aria-label={t('health.recipes.id.removeIt')}>{t('ui.remove')}</button
-												>
-											</form>
-										</span>
-									{:else}
+								{#if confirmingPicture === picture.id}
+									<span class="flex items-center gap-1">
 										<button
 											type="button"
 											class="btn btn-sm btn-quiet"
-											onclick={() => (confirmingPicture = picture.id)}
-											title={t('health.recipes.id.removeThisPicture')}
-											aria-label={t('health.recipes.id.removeThisPicture')}
-											><Icon name="trash" /></button
+											onclick={() => (confirmingPicture = null)}
+											title={t('health.recipes.id.keepIt')}
+											aria-label={t('health.recipes.id.keepIt')}><Icon name="close" /></button
 										>
-									{/if}
-								</div>
-							</li>
-						{/each}
-					</ul>
-				{:else}
-					<p class="text-sm text-gray-500">
-						{t('health.recipes.id.noPicturesYetThe')}
-					</p>
-				{/if}
+										<form method="post" action="?/removePicture" use:enhance>
+											<input type="hidden" name="recipeId" value={data.recipe.id} />
+											<input type="hidden" name="mediaId" value={picture.id} />
+											<button
+												class="btn btn-sm btn-danger"
+												use:armed
+												title={t('health.recipes.id.removeIt')}
+												aria-label={t('health.recipes.id.removeIt')}>{t('ui.remove')}</button
+											>
+										</form>
+									</span>
+								{:else}
+									<button
+										type="button"
+										class="btn btn-sm btn-quiet"
+										onclick={() => (confirmingPicture = picture.id)}
+										title={t('health.recipes.id.removeThisPicture')}
+										aria-label={t('health.recipes.id.removeThisPicture')}
+										><Icon name="trash" /></button
+									>
+								{/if}
+							</div>
+						</li>
+					{/each}
+				</ul>
+			{:else}
+				<p class="text-sm text-gray-500">
+					{t('health.recipes.id.noPicturesYetThe')}
+				</p>
+			{/if}
 
-				{#if data.pictures.length < data.pictureLimits.most}
-					<!--
+			{#if data.pictures.length < data.pictureLimits.most}
+				<!--
 						Choosing the file is the whole gesture.
 
 						There was a second button to press afterwards, which is a step
@@ -463,62 +468,61 @@
 						The input is emptied either way, so the same file can be chosen
 						again after a refusal.
 					-->
-					<form
-						bind:this={pictureForm}
-						method="post"
-						action="?/addPicture"
-						enctype="multipart/form-data"
-						use:enhance={() =>
-							async ({ update }) => {
-								uploading = false;
-								await update();
+				<form
+					bind:this={pictureForm}
+					method="post"
+					action="?/addPicture"
+					enctype="multipart/form-data"
+					use:enhance={() =>
+						async ({ update }) => {
+							uploading = false;
+							await update();
+						}}
+					class="mt-3 flex flex-wrap items-center gap-2"
+				>
+					<input type="hidden" name="recipeId" value={data.recipe.id} />
+					<label class="btn btn-sm">
+						<Icon name="image" />
+						{t('health.recipes.id.addAPicture')}
+						<input
+							type="file"
+							name="file"
+							required
+							accept="image/png,image/jpeg,image/webp,image/gif"
+							class="sr-only"
+							onchange={(e) => {
+								const field = e.currentTarget as HTMLInputElement;
+								const file = field.files?.[0];
+								pictureProblem = '';
+								if (!file) return;
+								if (file.size > data.pictureLimits.kilobytes * 1024) {
+									pictureProblem = `Pictures here are at most ${data.pictureLimits.kilobytes}KB, and ${file.name} is ${Math.ceil(file.size / 1024)}KB.`;
+									field.value = '';
+									return;
+								}
+								uploading = true;
+								pictureForm?.requestSubmit();
 							}}
-						class="mt-3 flex flex-wrap items-center gap-2"
-					>
-						<input type="hidden" name="recipeId" value={data.recipe.id} />
-						<label class="btn btn-sm">
-							<Icon name="image" />
-							{t('health.recipes.id.addAPicture')}
-							<input
-								type="file"
-								name="file"
-								required
-								accept="image/png,image/jpeg,image/webp,image/gif"
-								class="sr-only"
-								onchange={(e) => {
-									const field = e.currentTarget as HTMLInputElement;
-									const file = field.files?.[0];
-									pictureProblem = '';
-									if (!file) return;
-									if (file.size > data.pictureLimits.kilobytes * 1024) {
-										pictureProblem = `Pictures here are at most ${data.pictureLimits.kilobytes}KB, and ${file.name} is ${Math.ceil(file.size / 1024)}KB.`;
-										field.value = '';
-										return;
-									}
-									uploading = true;
-									pictureForm?.requestSubmit();
-								}}
-							/>
-						</label>
-						{#if uploading}
-							<span class="text-xs text-gray-500">{t('health.recipes.id.uploading')}</span>
-						{:else}
-							<span class="text-xs text-gray-500"
-								>{t('health.recipes.id.upToKb', { kilobytes: data.pictureLimits.kilobytes })}</span
-							>
-						{/if}
-					</form>
-					{#if pictureProblem}
-						<p class="mt-1 text-xs text-red-700">{pictureProblem}</p>
+						/>
+					</label>
+					{#if uploading}
+						<span class="text-xs text-gray-500">{t('health.recipes.id.uploading')}</span>
+					{:else}
+						<span class="text-xs text-gray-500"
+							>{t('health.recipes.id.upToKb', { kilobytes: data.pictureLimits.kilobytes })}</span
+						>
 					{/if}
-				{:else}
-					<p class="mt-3 text-xs text-gray-500">
-						{t('health.recipes.id.thatIsAsManyAs')}
-					</p>
+				</form>
+				{#if pictureProblem}
+					<p class="mt-1 text-xs text-red-700">{pictureProblem}</p>
 				{/if}
-			</div>
-		</section>
-	</div>
+			{:else}
+				<p class="mt-3 text-xs text-gray-500">
+					{t('health.recipes.id.thatIsAsManyAs')}
+				</p>
+			{/if}
+		</Card>
+	</CardGrid>
 </div>
 
 <Modal bind:open={editing} error={form?.message} title={t('health.recipes.id.editRecipe')}>

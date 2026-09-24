@@ -166,7 +166,7 @@ export function createWins(
 		.filter(Boolean)
 		.map((w) => str(w, 'win', { max: MAX_WIN_LENGTH }));
 
-	if (wins.length === 0) throw new ValidationError('At least one win is required');
+	if (wins.length === 0) throw new ValidationError({ key: 'errors.diary.atLeastOneWin' });
 
 	const forDate = civilDate(ctx, raw.forDate);
 	const content = wins.map((w, i) => `Win ${i + 1}: ${w}`).join('\n');

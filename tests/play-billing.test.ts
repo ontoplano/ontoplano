@@ -15,6 +15,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, test, vi } from 'vite
 import { generateKeyPairSync } from 'node:crypto';
 import { makeDatabase, OWNER, seedAccounts, STRANGER } from './helpers/db';
 import { hasPlayChannel } from './helpers/billing';
+import { refusalOf } from './helpers/refusal';
 
 const database = makeDatabase();
 seedAccounts(database.path);
@@ -97,9 +98,11 @@ describe.skipIf(!hasPlayChannel())('a purchase made in the store copy', () => {
 
 	test('a token for a cheaper plan cannot claim a dearer one', async () => {
 		vi.stubGlobal('fetch', googleAnswers(activePurchase('ontoplano.solo.monthly')));
-		await expect(
-			billing.playClaim(OWNER, { sku: 'ontoplano.family.yearly', purchaseToken: 'tok-good-1' })
-		).rejects.toThrow(/different plan/);
+		expect(
+			await refusalOf(() =>
+				billing.playClaim(OWNER, { sku: 'ontoplano.family.yearly', purchaseToken: 'tok-good-1' })
+			)
+		).toMatch(/different plan/);
 	});
 
 	test('a token already bound to another account cannot be claimed again', async () => {
@@ -107,9 +110,11 @@ describe.skipIf(!hasPlayChannel())('a purchase made in the store copy', () => {
 		// handing it around must not turn one payment into many accounts.
 		const fetcher = googleAnswers(activePurchase('ontoplano.solo.monthly'));
 		vi.stubGlobal('fetch', fetcher);
-		await expect(
-			billing.playClaim(STRANGER, { sku: 'ontoplano.solo.monthly', purchaseToken: 'tok-good-1' })
-		).rejects.toThrow(/another account/);
+		expect(
+			await refusalOf(() =>
+				billing.playClaim(STRANGER, { sku: 'ontoplano.solo.monthly', purchaseToken: 'tok-good-1' })
+			)
+		).toMatch(/another account/);
 		// Refused before Google is even asked, and the buyer keeps what they paid for.
 		expect(fetcher).not.toHaveBeenCalled();
 		expect(subscriptions.resolvePlan(OWNER).plan).toBe('pro');
@@ -118,17 +123,21 @@ describe.skipIf(!hasPlayChannel())('a purchase made in the store copy', () => {
 
 	test('a token Google does not recognise is refused, loudly', async () => {
 		vi.stubGlobal('fetch', googleAnswers(activePurchase('ontoplano.solo.monthly')));
-		await expect(
-			billing.playClaim(OWNER, { sku: 'ontoplano.solo.monthly', purchaseToken: 'unknown-token' })
-		).rejects.toThrow(/does not recognise/);
+		expect(
+			await refusalOf(() =>
+				billing.playClaim(OWNER, { sku: 'ontoplano.solo.monthly', purchaseToken: 'unknown-token' })
+			)
+		).toMatch(/does not recognise/);
 	});
 
 	test('a sku this app does not sell is refused before Google is asked', async () => {
 		const fetcher = googleAnswers(activePurchase('whatever'));
 		vi.stubGlobal('fetch', fetcher);
-		await expect(
-			billing.playClaim(OWNER, { sku: 'com.somebody.else', purchaseToken: 'tok' })
-		).rejects.toThrow(/not a plan/);
+		expect(
+			await refusalOf(() =>
+				billing.playClaim(OWNER, { sku: 'com.somebody.else', purchaseToken: 'tok' })
+			)
+		).toMatch(/not a plan/);
 		expect(fetcher).not.toHaveBeenCalled();
 	});
 });

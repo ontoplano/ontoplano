@@ -26,7 +26,7 @@ export const actions: Actions = {
 		try {
 			const password = formData.get('password');
 			if (password !== formData.get('confirm'))
-				throw new ValidationError('The two passwords are not the same');
+				throw new ValidationError({ key: 'errors.password.theTwoPasswords' });
 
 			await chooseFirstPassword(locals.user!.id, password);
 		} catch (e) {

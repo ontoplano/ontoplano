@@ -178,9 +178,9 @@ export function accountById(id: string): Account {
 export function grantTrial(actorId: string, subjectId: string, now = new Date()): void {
 	requireAdmin(actorId);
 
-	if (isSelfHosted()) throw new ValidationError('A self-hosted instance has no plans');
+	if (isSelfHosted()) throw new ValidationError({ key: 'errors.admin.aSelfHostedInstance' });
 	if (hasPlanHistory(subjectId))
-		throw new ValidationError('This account already has a plan history');
+		throw new ValidationError({ key: 'errors.admin.thisAccountAlready' });
 
 	startTrial(subjectId, now, actorId);
 }
@@ -195,10 +195,10 @@ export function grantTrial(actorId: string, subjectId: string, now = new Date())
  */
 export function setPlanEnd(actorId: string, subjectId: string, endsAt: string): void {
 	requireAdmin(actorId);
-	if (isSelfHosted()) throw new ValidationError('A self-hosted instance has no plans');
+	if (isSelfHosted()) throw new ValidationError({ key: 'errors.admin.aSelfHostedInstance' });
 
 	const date = new Date(endsAt);
-	if (isNaN(date.getTime())) throw new ValidationError('That is not a date');
+	if (isNaN(date.getTime())) throw new ValidationError({ key: 'errors.admin.thatIsNotADate' });
 	const iso = date.toISOString();
 
 	const row = db
@@ -206,7 +206,7 @@ export function setPlanEnd(actorId: string, subjectId: string, endsAt: string): 
 		.from(subscriptions)
 		.where(eq(subscriptions.userId, subjectId))
 		.get();
-	if (!row) throw new NotFoundError('This account has no plan to end');
+	if (!row) throw new NotFoundError({ key: 'errors.admin.thisAccountHasNoPlan' });
 
 	db.update(subscriptions)
 		.set({
@@ -252,19 +252,20 @@ export function setRole(actorId: string, subjectId: string, raw: unknown): void 
 	requireAdmin(actorId);
 
 	const role = str(raw, 'role', { max: 20 });
-	if (!isRole(role)) throw new ValidationError('Unknown role');
+	if (!isRole(role)) throw new ValidationError({ key: 'errors.admin.unknownRole' });
 
 	// You cannot take your own keys away. An instance whose last administrator
 	// demoted themselves has nobody who can undo it, and the mistake is one
 	// click from the button that does the legitimate thing.
-	if (actorId === subjectId) throw new ValidationError('Change somebody else, not yourself');
+	if (actorId === subjectId)
+		throw new ValidationError({ key: 'errors.admin.changeSomebodyElseNotYourself' });
 
 	// And you cannot take the owner's, because you would not be taking anything:
 	// whoever installed the instance is an administrator by virtue of being
 	// first, whatever this column says. Letting the change succeed would show a
 	// "member" badge on somebody who still has every power.
 	if (isInstanceOwner(subjectId) && role !== 'admin') {
-		throw new ValidationError('This account owns the instance and is always an administrator');
+		throw new ValidationError({ key: 'errors.admin.thisAccountOwnsTheInstance' });
 	}
 
 	const result = db.update(user).set({ role }).where(eq(user.id, subjectId)).run();
@@ -300,16 +301,16 @@ export function deleteAccountAsAdmin(actorId: string, subjectId: string, typed: 
 	requireAdmin(actorId);
 
 	if (actorId === subjectId) {
-		throw new ValidationError('Delete your own account from Settings, not from here');
+		throw new ValidationError({ key: 'errors.admin.deleteYourOwnAccountFrom' });
 	}
 	if (isInstanceOwner(subjectId)) {
-		throw new ValidationError('This account owns the instance and cannot be deleted here');
+		throw new ValidationError({ key: 'errors.admin.thisAccountOwnsTheInstanceAndCannot' });
 	}
 
 	const subject = accountById(subjectId);
 	const said = str(typed, 'address', { max: 320 }).trim().toLowerCase();
 	if (said !== subject.email.trim().toLowerCase()) {
-		throw new ValidationError('That is not this account’s address — nothing was deleted');
+		throw new ValidationError({ key: 'errors.admin.thatIsNotThisAccounts' });
 	}
 
 	/*

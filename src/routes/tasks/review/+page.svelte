@@ -12,6 +12,7 @@
 	import { resolve } from '$app/paths';
 	import type { ActionData, PageData } from './$types';
 	import Card from '$lib/components/Card.svelte';
+	import CardGrid from '$lib/components/CardGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -199,7 +200,7 @@
 			/>
 		</div>
 	{:else}
-		<div class="grid gap-4 lg:grid-cols-3">
+		<CardGrid columns={3} bleed>
 			<!-- What you planned against what you did. -->
 			<Card title={t('tasks.review.theWeek')} accent="var(--section-accent)">
 				<div class="space-y-3">
@@ -285,7 +286,7 @@
 					</ul>
 				</div>
 			</Card>
-		</div>
+		</CardGrid>
 
 		<!--
 			The week, read either way round.

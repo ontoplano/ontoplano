@@ -1,0 +1,1 @@
+ALTER TABLE `tags` ADD `description` text DEFAULT '' NOT NULL;

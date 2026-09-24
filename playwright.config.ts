@@ -182,6 +182,20 @@ export default defineConfig({
 		{ name: 'admin', testMatch: '**/admin.e2e.ts', dependencies: ['app'] },
 		{ name: 'registration', testMatch: '**/registration.e2e.ts', dependencies: ['app', 'admin'] },
 		/*
+		 * Firefox, for what only Firefox gets wrong.
+		 *
+		 * Its range input runs a thumb drag of its own, and a rating dragged
+		 * with the mouse used to flick back after letting go there and nowhere
+		 * else. One spec, not the suite: the rest is layout and wiring, which
+		 * one engine answers.
+		 */
+		{
+			name: 'firefox',
+			testMatch: '**/rating-slider.e2e.ts',
+			grep: /with a mouse/,
+			use: { browserName: 'firefox' }
+		},
+		/*
 		 * The build that ships to the stores.
 		 *
 		 * Its own server, its own address, and no accounts anywhere — there is

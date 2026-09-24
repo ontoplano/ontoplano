@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { NAV_PLACES, roomFor } from '$lib/sections-nav';
+	import { roomTabNames } from '$lib/sections';
 	import { placesFor } from '$lib/nav-order';
 	import RadialMenu from '$lib/components/RadialMenu.svelte';
 	import { cssVarPx } from '$lib/css-length';
@@ -88,10 +89,26 @@
 	 * house in the phone bar are the way back, and a slot spent on "go to the
 	 * start" is a slot a real room could have used.
 	 */
+	/**
+	 * What a room's shelves are called, run together under its name.
+	 *
+	 * A room is a word — Health, Notebooks — and the word does not say whether
+	 * the thing you are after is in there. The tab names do, and they come
+	 * from `ROOM_TABS`, which is what the rooms' own strips draw, so the wheel
+	 * cannot promise a tab the room does not have.
+	 */
+	const TAB_SEPARATOR = ' | ';
+
 	const wedges = $derived(
 		placesFor(NAV_PLACES, { order, colors })
 			.filter((r) => !(r.hide && hidden.includes(r.hide)))
-			.map((r) => ({ key: r.key, label: t(r.name), icon: r.icon, color: r.accent }))
+			.map((r) => ({
+				key: r.key,
+				label: t(r.name),
+				icon: r.icon,
+				color: r.accent,
+				tabs: roomTabNames(t, r.key, hidden).join(TAB_SEPARATOR)
+			}))
 	);
 
 	export function summon(e: PointerEvent) {

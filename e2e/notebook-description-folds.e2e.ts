@@ -67,3 +67,51 @@ test('a long notebook description folds, a short one has nothing to press', asyn
 	await expect(page.getByText('Two weeks in March.')).toBeVisible();
 	await expect(page.getByRole('button', { name: 'Show more' })).toHaveCount(0);
 });
+
+/**
+ * The same description on the shelf's own panel, at phone width.
+ *
+ * There the title sat in one row with "Open" and "New note", and the row
+ * never wrapped: the buttons took the width and the title and description
+ * were left a column two letters wide.
+ */
+test('on the shelf, the title and description get the width and the description folds', async ({
+	page
+}) => {
+	test.setTimeout(150_000);
+	await page.setViewportSize({ width: 390, height: 844 });
+	await register(page, testEmail('shelf-fold'));
+	await makeNotebook(page, 'Kitchen renovation', LONG);
+
+	await visit(page, '/notebooks');
+	const href = await page
+		.getByRole('link', { name: /Kitchen renovation/ })
+		.first()
+		.getAttribute('href');
+	await visit(page, href ?? '/notebooks');
+
+	const heading = page.getByRole('heading', { name: 'Kitchen renovation' });
+	const paragraph = page.getByText(/Everything about the kitchen renovation/);
+	await expect(paragraph).toBeVisible();
+	/*
+	 * Two widths, because whether the squeeze happens depends on how many
+	 * buttons the tab below offers: three of them wrapped on their own at
+	 * 390px, and it took a phone held a little wider to leave them on the
+	 * title's line.
+	 */
+	for (const width of [390, 480]) {
+		await page.setViewportSize({ width, height: 844 });
+		await expect
+			.poll(async () => (await heading.boundingBox())?.width ?? 0, {
+				message: `title at ${width}px`
+			})
+			.toBeGreaterThan(200);
+		expect((await paragraph.boundingBox())?.width ?? 0).toBeGreaterThan(200);
+	}
+	await page.setViewportSize({ width: 390, height: 844 });
+
+	const folded = (await paragraph.boundingBox())?.height ?? 0;
+	await page.getByRole('button', { name: 'Show more' }).click();
+	await expect(page.getByRole('button', { name: 'Show less' })).toBeVisible();
+	expect((await paragraph.boundingBox())?.height ?? 0).toBeGreaterThan(folded);
+});

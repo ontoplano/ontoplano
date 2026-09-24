@@ -56,8 +56,23 @@ export type Room = {
  * Notebooks names the room and its first tab; the diary is the second,
  * which is where somebody looking for their notes actually looks.
  */
+/**
+ * The rooms, by name. A room added to the bar is added here first, and
+ * `ROOM_TABS` is keyed by this — so a room with no entry there does not build,
+ * rather than turning up in the wheel and the palette with nothing inside it.
+ */
+export type NavKey =
+	| 'planner'
+	| 'diary'
+	| 'health'
+	| 'inventory'
+	| 'finance'
+	| 'goals'
+	| 'media'
+	| 'reminders';
+
 export type NavPlace = {
-	key: string;
+	key: NavKey;
 	/** What it is called — a message key; see `Room`. */
 	name: PlainKey;
 	/** The section it belongs to — its colour, and the wash behind its pages. */
@@ -115,7 +130,7 @@ export const NAV_PLACES: NavPlace[] = [
 		name: 'sections.inventory.label',
 		section: 'inventory',
 		icon: 'shopping',
-		href: '/inventory',
+		href: '/inventory/stock',
 		hide: 'inventory'
 	},
 	{

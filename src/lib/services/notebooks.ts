@@ -1,15 +1,48 @@
-import { and, asc, inArray, or, count, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import { and, asc, inArray, max, or, count, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import type { SQLiteColumn, SQLiteTable } from 'drizzle-orm/sqlite-core';
 
 import { db } from '$lib/db/index.js';
 import { user } from '$lib/db/auth.schema.js';
 import { host } from './host.js';
-import { diaryEntries, exceptionalTasks, goals, notebooks, todoTasks } from '$lib/db/schema.js';
+import {
+	bills,
+	diaryEntries,
+	exceptionalTasks,
+	goals,
+	habits,
+	ideas,
+	inventoryItems,
+	ledgers,
+	notebooks,
+	recipes,
+	todoTasks,
+	workouts
+} from '$lib/db/schema.js';
 import { listGoals } from './goals.js';
+import {
+	DEFAULT_MODULES,
+	NOTEBOOK_MODULES,
+	modulesFor,
+	parseModules,
+	serializeModules,
+	type NotebookModule
+} from '../notebook-modules.js';
 import type { Ctx } from './ctx.js';
 import { tagsForEntries } from './diary.js';
 import { peopleForEntries } from './people.js';
 import { listTodosIn } from './todos.js';
-import { ConflictError, NotFoundError } from './errors.js';
+import { listIdeas } from './ideas.js';
+import { listItems } from './inventory.js';
+import { listLedgers } from './ledgers.js';
+import { listBillsThisPeriod } from './bills.js';
+import { listHabits, listOccurrences, today as habitsToday } from './habits.js';
+import { listWorkouts, listSessions as listWorkoutSessions } from './workouts.js';
+import { withMissingCounts } from './recipes.js';
+import { mainPictures } from './media.js';
+import { getHiddenSections, getWeekSettings } from './settings.js';
+import { linkableInto } from './notebook-linking.js';
+import { isHidden } from '../sections.js';
+import { ConflictError, NotFoundError, ValidationError } from './errors.js';
 import { stamp, stamps } from './time.js';
 import { num, optionalStr, str } from './validate.js';
 import { optionalTagInput, parseTags } from './tags.js';
@@ -23,6 +56,15 @@ import { optionalTagInput, parseTags } from './tags.js';
  * deleting a notebook leaves every one of them where it is. That is the whole
  * design, and the reason this is not a second task system.
  */
+
+/**
+ * How much of the workout register a notebook carries.
+ *
+ * The same reasoning the Health room's own page uses: the history under a
+ * workout is read rather than paged, and a few hundred rows is far enough back
+ * to be useful without the page being a database dump.
+ */
+const NOTEBOOK_SESSIONS = 300;
 
 export const MAX_TITLE_LENGTH = 120;
 export const MAX_DESCRIPTION_LENGTH = 2000;
@@ -41,6 +83,22 @@ export type Notebook = {
 	sharedWithFamily: boolean;
 	/** The owner's name, for a notebook that arrived by sharing; null on your own. */
 	sharedBy?: string | null;
+	/**
+	 * What it holds — see `$lib/notebook-modules`.
+	 *
+	 * Already narrowed by what this account has put away, so a caller can draw
+	 * this list as tabs without asking a second question.
+	 */
+	modules: NotebookModule[];
+	/** How much of each is in it, whether or not that module is switched on. */
+	counts: Tally;
+	/*
+	 * The first three counts, by their old names.
+	 *
+	 * `counts` is the list now, one entry per module. These stay because the
+	 * API and the MCP tools answer with them and something out there is reading
+	 * them; they are the same three numbers, not a second source of truth.
+	 */
 	entries: number;
 	tasks: number;
 	goals: number;
@@ -56,13 +114,13 @@ export type Notebook = {
  * rather than two.
  */
 export { NOTEBOOK_SEPARATOR } from '../notebook-path.js';
-import { NOTEBOOK_SEPARATOR } from '../notebook-path.js';
+import { NOTEBOOK_SEPARATOR, isInsideNotebook, joinNotebookPath } from '../notebook-path.js';
 
 export type NotebookNode = Notebook & {
 	depth: number;
 	children: NotebookNode[];
 	/** Everything under it, so a folder can say what it holds. */
-	totals?: { entries: number; tasks: number; goals: number };
+	totals?: Tally;
 };
 
 /** The notebooks as they belong to each other, roots first. */
@@ -93,17 +151,17 @@ export function notebookTree(ctx: Ctx): NotebookNode[] {
 	// What a folder holds is what is under it: a notebook whose writing all
 	// lives in its children was reading "0 notes", which is true of the row
 	// and false of the thing somebody is looking at.
-	const withTotals = (node: NotebookNode): { entries: number; tasks: number; goals: number } => {
+	const withTotals = (node: NotebookNode): Tally => {
 		const totals = node.children.reduce(
 			(sum, child) => {
 				const under = withTotals(child);
-				return {
-					entries: sum.entries + under.entries,
-					tasks: sum.tasks + under.tasks,
-					goals: sum.goals + under.goals
-				};
+				for (const module of NOTEBOOK_MODULES) sum[module.id] += under[module.id];
+				return sum;
 			},
-			{ entries: node.entries, tasks: node.tasks, goals: node.goals }
+			// Its own counts first: a folder holds what is under it AND what is
+			// in it, and seeding empty made a notebook with children report zero
+			// of its own notes.
+			{ ...node.counts }
 		);
 		node.totals = totals;
 		return totals;
@@ -112,68 +170,123 @@ export function notebookTree(ctx: Ctx): NotebookNode[] {
 	return roots;
 }
 
-type Tally = { entries: number; tasks: number; goals: number };
+/**
+ * A table whose rows can point at a notebook.
+ *
+ * Every module's table carries the same two columns, so counting them is one
+ * function rather than eleven near-identical queries — which is what this was
+ * on the way to becoming.
+ */
+type Scopable = SQLiteTable & { notebookId: SQLiteColumn; userId: SQLiteColumn };
 
-const NOTHING: Tally = { entries: 0, tasks: 0, goals: 0 };
+/**
+ * Every table a notebook can scope, the module it belongs to, and the column
+ * that says when one of its rows last changed.
+ *
+ * One list, because two things read it and they must not disagree: how much is
+ * in a notebook, and when it was last worked on. A table added to a notebook
+ * without a line here is a module that counts nothing and never looks recent.
+ *
+ * `createdAt` where there is no `updatedAt`: a table without one cannot answer
+ * "when did this change", and the day the row arrived is nearer the truth than
+ * nothing at all.
+ */
+const SCOPED: readonly { module: NotebookModule; table: Scopable; stamp: SQLiteColumn }[] = [
+	{ module: 'notes', table: diaryEntries, stamp: diaryEntries.updatedAt },
+	// A todo and a block are the same task at two stages, so they share a count.
+	{ module: 'tasks', table: todoTasks, stamp: todoTasks.updatedAt },
+	{ module: 'tasks', table: exceptionalTasks, stamp: exceptionalTasks.createdAt },
+	{ module: 'goals', table: goals, stamp: goals.updatedAt },
+	{ module: 'ideas', table: ideas, stamp: ideas.updatedAt },
+	{ module: 'inventory', table: inventoryItems, stamp: inventoryItems.updatedAt },
+	{ module: 'ledgers', table: ledgers, stamp: ledgers.updatedAt },
+	{ module: 'bills', table: bills, stamp: bills.updatedAt },
+	{ module: 'habits', table: habits, stamp: habits.createdAt },
+	{ module: 'workouts', table: workouts, stamp: workouts.updatedAt },
+	{ module: 'recipes', table: recipes, stamp: recipes.updatedAt }
+];
+
+/** One number per module — see `$lib/notebook-modules`. */
+export type Tally = Record<NotebookModule, number>;
+
+const NOTHING: Tally = Object.fromEntries(NOTEBOOK_MODULES.map((m) => [m.id, 0])) as Tally;
 
 /**
  * How much is in each notebook.
  *
- * Four grouped counts merged here rather than four correlated subqueries: the
- * house rule is no raw SQL (I11), and the first version of this proved why —
- * drizzle renders a bare column name inside a `sql` template, so the
- * correlation silently compared the wrong two columns and every notebook
+ * One grouped count per module merged here rather than a correlated subquery
+ * each: the house rule is no raw SQL (I11), and the first version of this
+ * proved why — drizzle renders a bare column name inside a `sql` template, so
+ * the correlation silently compared the wrong two columns and every notebook
  * reported the same tally.
+ *
+ * Counted whether or not the module is switched on. A notebook that was told
+ * to stop showing Inventory still has its items, and the Edit dialog says so
+ * beside the switch — a count that vanished with the tab would make turning
+ * something off look like deleting it.
  */
 function tallies(ctx: Ctx): Map<number, Tally> {
 	const totals = new Map<number, Tally>();
 
-	const add = (id: number | null, key: keyof Tally, n: number) => {
+	const add = (id: number | null, key: NotebookModule, n: number) => {
 		if (id === null) return;
 		const tally = totals.get(id) ?? { ...NOTHING };
 		tally[key] += n;
 		totals.set(id, tally);
 	};
 
-	for (const row of db
-		.select({ id: diaryEntries.notebookId, n: count() })
-		.from(diaryEntries)
-		.where(eq(diaryEntries.userId, ctx.userId))
-		.groupBy(diaryEntries.notebookId)
-		.all())
-		add(row.id, 'entries', row.n);
+	/** Every row of one table, grouped by the notebook it points at. */
+	const countBy = (key: NotebookModule, table: Scopable) => {
+		for (const r of db
+			.select({ id: table.notebookId, n: count() })
+			.from(table)
+			.where(eq(table.userId, ctx.userId))
+			.groupBy(table.notebookId)
+			.all())
+			add(r.id as number | null, key, r.n);
+	};
 
-	// A todo and a block are the same task at two stages, so they share a count.
-	for (const row of db
-		.select({ id: todoTasks.notebookId, n: count() })
-		.from(todoTasks)
-		.where(eq(todoTasks.userId, ctx.userId))
-		.groupBy(todoTasks.notebookId)
-		.all())
-		add(row.id, 'tasks', row.n);
-
-	for (const row of db
-		.select({ id: exceptionalTasks.notebookId, n: count() })
-		.from(exceptionalTasks)
-		.where(eq(exceptionalTasks.userId, ctx.userId))
-		.groupBy(exceptionalTasks.notebookId)
-		.all())
-		add(row.id, 'tasks', row.n);
-
-	for (const row of db
-		.select({ id: goals.notebookId, n: count() })
-		.from(goals)
-		.where(eq(goals.userId, ctx.userId))
-		.groupBy(goals.notebookId)
-		.all())
-		add(row.id, 'goals', row.n);
+	for (const { module, table } of SCOPED) countBy(module, table);
 
 	return totals;
+}
+
+/**
+ * When each notebook was last written in, as the newest stamp on anything in
+ * it — its own row included, because renaming one or giving it a picture is
+ * working on it too.
+ *
+ * Notebooks with nothing in them are absent rather than nought: a notebook
+ * with no rows has only its own stamp, and the caller already has that.
+ */
+function lastTouched(ctx: Ctx): Map<number, string> {
+	const newest = new Map<number, string>();
+
+	const note = (id: number | null, at: string | null) => {
+		if (id === null || !at) return;
+		const held = newest.get(id);
+		if (!held || at > held) newest.set(id, at);
+	};
+
+	for (const { table, stamp } of SCOPED)
+		for (const r of db
+			.select({ id: table.notebookId, at: max(stamp) })
+			.from(table)
+			.where(eq(table.userId, ctx.userId))
+			.groupBy(table.notebookId)
+			.all())
+			note(r.id as number | null, r.at as string | null);
+
+	return newest;
 }
 
 /** Open ones first: a closed notebook is history, not a place you are writing. */
 export function listNotebooks(ctx: Ctx): Notebook[] {
 	const totals = tallies(ctx);
+	// One read for the whole list: which rooms this account has put away is a
+	// fact about the account, and asking it once per notebook is one settings
+	// lookup per row for an answer that cannot differ between them.
+	const hidden = getHiddenSections(ctx.userId);
 
 	const others = host.familyUserIds(ctx.userId).filter((one) => one !== ctx.userId);
 
@@ -184,6 +297,7 @@ export function listNotebooks(ctx: Ctx): Notebook[] {
 			description: notebooks.description,
 			pictureId: notebooks.pictureId,
 			defaultTags: notebooks.defaultTags,
+			modules: notebooks.modules,
 			closedAt: notebooks.closedAt,
 			sharedWithFamily: notebooks.sharedWithFamily,
 			ownerId: notebooks.userId,
@@ -201,13 +315,86 @@ export function listNotebooks(ctx: Ctx): Notebook[] {
 		)
 		.orderBy(notebooks.closedAt, notebooks.title)
 		.all()
-		.map(({ ownerId, ownerName, ...n }) => ({
-			...n,
-			description: n.description ?? '',
-			mine: ownerId === ctx.userId,
-			sharedBy: ownerId === ctx.userId ? null : ownerName,
-			...(totals.get(n.id) ?? NOTHING)
-		}));
+		.map(({ ownerId, ownerName, ...n }) =>
+			shape(
+				{ ...n, mine: ownerId === ctx.userId, sharedBy: ownerId === ctx.userId ? null : ownerName },
+				totals,
+				hidden
+			)
+		);
+}
+
+/**
+ * The notebooks worked on most recently, newest first.
+ *
+ * "Worked on" is the newest stamp on anything the notebook holds, not the
+ * notebook row's own: writing five notes into the kitchen today has to put it
+ * above a notebook that was renamed last week, or the word means the opposite
+ * of what somebody reading it expects. The row's own stamp still counts, so a
+ * notebook that has just been made and not yet written in is recent.
+ *
+ * Closed ones are left out. A closed notebook is history — a trip that
+ * happened — and the last thing that happened in it was closing it, which
+ * would put it at the top of exactly the list nobody wants it in.
+ */
+export function recentlyEditedNotebooks(ctx: Ctx, limit: number): Notebook[] {
+	const touched = lastTouched(ctx);
+	const own = new Map(
+		db
+			.select({ id: notebooks.id, at: notebooks.updatedAt })
+			.from(notebooks)
+			.where(eq(notebooks.userId, ctx.userId))
+			.all()
+			.map((r) => [r.id, r.at])
+	);
+
+	const when = (id: number) => {
+		const inIt = touched.get(id);
+		const itself = own.get(id) ?? '';
+		return inIt && inIt > itself ? inIt : itself;
+	};
+
+	return listNotebooks(ctx)
+		.filter((n) => !n.closedAt)
+		.sort((a, b) => when(b.id).localeCompare(when(a.id)))
+		.slice(0, limit);
+}
+
+/**
+ * A row from the table, as the rest of the app wants it.
+ *
+ * One place so the list and the single-notebook read cannot disagree about
+ * what a notebook is — which they did, before this: only one of them narrowed
+ * the modules by what the account had put away.
+ */
+function shape(
+	row: {
+		id: number;
+		title: string;
+		description: string | null;
+		pictureId: number | null;
+		defaultTags: string | null;
+		modules: string | null;
+		closedAt: string | null;
+		sharedWithFamily: boolean;
+		mine: boolean;
+		sharedBy: string | null;
+	},
+	totals: Map<number, Tally>,
+	/** Read once by the caller: it is one answer about the account, not per row. */
+	hidden: readonly string[]
+): Notebook {
+	const counts = totals.get(row.id) ?? NOTHING;
+	return {
+		...row,
+		description: row.description ?? '',
+		defaultTags: row.defaultTags ?? '',
+		modules: modulesFor(row.modules, hidden),
+		counts,
+		entries: counts.notes,
+		tasks: counts.tasks,
+		goals: counts.goals
+	};
 }
 
 /**
@@ -278,6 +465,7 @@ export function getNotebook(ctx: Ctx, id: number): Notebook {
 			description: notebooks.description,
 			pictureId: notebooks.pictureId,
 			defaultTags: notebooks.defaultTags,
+			modules: notebooks.modules,
 			closedAt: notebooks.closedAt,
 			sharedWithFamily: notebooks.sharedWithFamily,
 			ownerId: notebooks.userId,
@@ -291,13 +479,52 @@ export function getNotebook(ctx: Ctx, id: number): Notebook {
 	if (!found) throw new NotFoundError('notebook');
 
 	const { ownerId, ownerName, ...rest } = found;
-	return {
-		...rest,
-		description: rest.description ?? '',
-		mine: ownerId === ctx.userId,
-		sharedBy: ownerId === ctx.userId ? null : ownerName,
-		...(tallies(ctx).get(id) ?? NOTHING)
-	};
+	return shape(
+		{
+			...rest,
+			mine: ownerId === ctx.userId,
+			sharedBy: ownerId === ctx.userId ? null : ownerName
+		},
+		tallies(ctx),
+		getHiddenSections(ctx.userId)
+	);
+}
+
+/**
+ * What the Edit dialog offers: every module, with this notebook's answer.
+ *
+ * The whole list rather than only what is on, because the dialog's job is
+ * switching them, and each row carries how much is already filed under it —
+ * the number is what makes turning one off legible as "this tab goes" rather
+ * than "this is deleted".
+ *
+ * A module whose room this account has put away is left out altogether. It
+ * would be a switch that changes nothing on screen, and the honest place to
+ * answer for it is Preferences, where the room itself was put away.
+ */
+export function moduleChoices(ctx: Ctx, id: number) {
+	const notebook = getNotebook(ctx, id);
+	const on = new Set(parseModules(rawModules(ctx, id)));
+	const hidden = getHiddenSections(ctx.userId);
+
+	return NOTEBOOK_MODULES.filter((m) => !('hide' in m && m.hide) || !isHidden(hidden, m.hide)).map(
+		(m) => ({
+			id: m.id,
+			name: m.name,
+			always: 'always' in m,
+			on: on.has(m.id),
+			held: notebook.counts[m.id]
+		})
+	);
+}
+
+/** What is stored, before the account's hidden rooms are taken off it. */
+function rawModules(ctx: Ctx, id: number): string | null {
+	assertReachable(ctx, id);
+	return (
+		db.select({ modules: notebooks.modules }).from(notebooks).where(eq(notebooks.id, id)).get()
+			?.modules ?? null
+	);
 }
 
 /** Everything pointed at this notebook, in the three shapes it can arrive in. */
@@ -376,16 +603,96 @@ export function contentsOf(ctx: Ctx, id: number) {
 		// card the goals room does, which needs the measures, the links and the
 		// area — see `GoalCard`. Closed ones are included, because a notebook is
 		// also the record of what was attempted there.
-		goals: listGoals(ctx, { includeClosed: true, notebookId: id })
+		goals: listGoals(ctx, { includeClosed: true, notebookId: id }),
+
+		/*
+		 * The rest, each through its own room's list function, for exactly the
+		 * reason the goals above go through theirs.
+		 *
+		 * The tab draws these rows with the room's own component, so they have
+		 * to be the rows the room would have handed it — the same joins, the
+		 * same derived fields, the same order. A second query shaped by hand
+		 * here is how two screens start disagreeing about what a row is.
+		 *
+		 * All of them, whatever the notebook is switched on for. A module can
+		 * be turned off with things still filed under it, and the Edit dialog
+		 * says how many; the page draws the tabs it was given.
+		 */
+		ideas: listIdeas(ctx, { notebookId: id }),
+		inventory: listItems(ctx, { notebookId: id }),
+		ledgers: listLedgers(ctx, { notebookId: id, includeArchived: true }),
+		bills: listBillsThisPeriod(ctx, { notebookId: id, includeArchived: true }),
+		habits: listHabits(ctx, { notebookId: id }),
+		// What the heatmap draws and the tick reads, the same two the Health
+		// room's own load hands its cards.
+		habitOccurrences: listOccurrences(ctx),
+		today: habitsToday(ctx),
+		weekFirstDay: getWeekSettings(ctx.userId).firstDay,
+		workouts: listWorkouts(ctx, { notebookId: id, includeArchived: true }),
+		// The register under each plan, the same list the Health room hands its
+		// cards. Every session, narrowed by the card to its own workout.
+		workoutSessions: listWorkoutSessions(ctx, { limit: NOTEBOOK_SESSIONS }),
+		// The same rows the Kitchen hands its cards: what each needs, and what
+		// of that the cupboard has not got, plus the picture it is known by.
+		recipes: withRecipePictures(ctx, withMissingCounts(ctx, { notebookId: id })),
+
+		/*
+		 * And what each tab could take that it has not got.
+		 *
+		 * Loaded with the notebook rather than fetched when the picker opens:
+		 * it is one query per module over a personal account's own rows, the
+		 * dialog filters what it was given, and a device instance has nowhere
+		 * to fetch from anyway.
+		 */
+		linkable: Object.fromEntries(
+			NOTEBOOK_MODULES.map((module) => [module.id, linkableInto(ctx, module.id, id)])
+		) as Record<NotebookModule, ReturnType<typeof linkableInto>>
 	};
+}
+
+/**
+ * The full title, from the name somebody typed and the notebook they filed it
+ * inside.
+ *
+ * A notebook's place is its name — `Renovation — Kitchen` sits inside
+ * `Renovation` — which is one fact rather than two and is why renaming one
+ * moves it. The form asks the two halves separately all the same, because
+ * typing an em dash is not something anybody should have to know about.
+ *
+ * `parent` left out entirely means "the name is the whole title", which is
+ * what an assistant renaming a notebook over MCP is saying; an empty string
+ * means "not inside anything", which is a form that asked.
+ */
+function titleUnder(ctx: Ctx, raw: { title: unknown; parent?: unknown }, self?: number): string {
+	const leaf = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
+	const given = raw.parent;
+	if (given === undefined || given === null || given === '') return leaf;
+
+	const parent = getNotebook(ctx, Number(given));
+	// Its own child is a title that contains itself, which is a notebook that
+	// can never be drawn and a tree that never terminates.
+	if (self !== undefined && isInsideNotebook(parent.title, getNotebook(ctx, self).title))
+		throw new ValidationError({ key: 'errors.notebooks.aNotebookCannotGoInside' });
+
+	const full = joinNotebookPath(parent.title, leaf);
+	if (full.length > MAX_TITLE_LENGTH)
+		throw new ValidationError({ key: 'errors.notebooks.thatNameIsTooLong' });
+	return full;
 }
 
 export function createNotebook(
 	ctx: Ctx,
-	raw: { title: unknown; description?: unknown; defaultTags?: unknown }
+	raw: {
+		title: unknown;
+		parent?: unknown;
+		description?: unknown;
+		defaultTags?: unknown;
+		modules?: unknown;
+	}
 ): number {
-	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
-	if (notebookTitled(ctx, title)) throw new ConflictError('A notebook by that name already exists');
+	const title = titleUnder(ctx, raw);
+	if (notebookTitled(ctx, title))
+		throw new ConflictError({ key: 'errors.notebooks.aNotebookByThatName' });
 
 	const result = db
 		.insert(notebooks)
@@ -394,7 +701,11 @@ export function createNotebook(
 			userId: ctx.userId,
 			title,
 			description: optionalStr(raw.description, 'description', { max: MAX_DESCRIPTION_LENGTH }),
-			defaultTags: parseTags(optionalTagInput(raw.defaultTags)).join(', ')
+			defaultTags: parseTags(optionalTagInput(raw.defaultTags)).join(', '),
+			// Written out rather than left null, so a notebook says what it holds
+			// from the day it is made and a change to the default later does not
+			// silently rearrange notebooks people already have.
+			modules: serializeModules(wantedModules(raw.modules) ?? DEFAULT_MODULES)
 		})
 		.run();
 
@@ -404,12 +715,21 @@ export function createNotebook(
 export function updateNotebook(
 	ctx: Ctx,
 	id: number,
-	raw: { title: unknown; description?: unknown; defaultTags?: unknown }
+	raw: {
+		title: unknown;
+		parent?: unknown;
+		description?: unknown;
+		defaultTags?: unknown;
+		modules?: unknown;
+	}
 ): void {
-	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
+	const title = titleUnder(ctx, raw, id);
 
 	const clash = notebookTitled(ctx, title);
-	if (clash && clash.id !== id) throw new ConflictError('A notebook by that name already exists');
+	if (clash && clash.id !== id)
+		throw new ConflictError({ key: 'errors.notebooks.aNotebookByThatName' });
+
+	const wanted = wantedModules(raw.modules);
 
 	const res = db
 		.update(notebooks)
@@ -421,6 +741,9 @@ export function updateNotebook(
 			...(raw.defaultTags === undefined
 				? {}
 				: { defaultTags: parseTags(optionalTagInput(raw.defaultTags)).join(', ') }),
+			// The same rule for the modules: renaming a notebook over MCP must
+			// not empty its tabs down to the default.
+			...(wanted === null ? {} : { modules: keepingHidden(ctx, id, wanted) }),
 			updatedAt: stamp(ctx)
 		})
 		.where(and(eq(notebooks.id, id), eq(notebooks.userId, ctx.userId)))
@@ -444,6 +767,42 @@ export function defaultTagsOf(ctx: Ctx, notebookId: number | null): string {
 		.where(eq(notebooks.id, notebookId))
 		.get();
 	return found?.defaultTags ?? '';
+}
+
+/**
+ * The modules a caller asked for — a list, a comma-separated string, or nothing.
+ *
+ * Null means the caller said nothing, which is different from an empty list:
+ * an empty list is somebody switching everything off in the dialog, and Notes
+ * survives it because `serializeModules` always keeps it.
+ */
+function wantedModules(raw: unknown): string[] | null {
+	if (raw === undefined || raw === null) return null;
+	// Split whether it arrived as a list or as one comma-separated string, and
+	// whether a list's entries are single ids or lists themselves: a form posts
+	// one field per ticked box, an assistant sends a sentence's worth of them,
+	// and `FormData.getAll` on a single comma-joined field gives one of each.
+	return (Array.isArray(raw) ? raw : [raw])
+		.flatMap((one) => String(one).split(','))
+		.map((part) => part.trim())
+		.filter(Boolean);
+}
+
+/**
+ * What to store, given what the dialog could not show.
+ *
+ * The dialog only lists modules whose rooms this account can see, so posting
+ * what it shows would switch off anything hidden — put Finance away, rename a
+ * notebook, and its Bills tab is gone for good when Finance comes back. So
+ * what was already stored for a hidden module is carried over untouched.
+ */
+function keepingHidden(ctx: Ctx, id: number, wanted: readonly string[]): string {
+	const hidden = getHiddenSections(ctx.userId);
+	const stored = new Set(parseModules(rawModules(ctx, id)));
+	const kept = NOTEBOOK_MODULES.filter(
+		(m) => 'hide' in m && m.hide && isHidden(hidden, m.hide) && stored.has(m.id)
+	).map((m) => m.id);
+	return serializeModules([...wanted, ...kept]);
 }
 
 /** Close a finished subject, or reopen one you went back to. */
@@ -487,6 +846,15 @@ export function deleteNotebook(ctx: Ctx, id: number): void {
 			.where(and(eq(goals.notebookId, id), eq(goals.userId, ctx.userId)))
 			.run();
 
+		// Everything else a notebook can hold, cut the same way. The rooms keep
+		// their rows; only the pointer at this subject goes.
+		for (const table of [ideas, inventoryItems, ledgers, bills, habits, workouts, recipes]) {
+			tx.update(table)
+				.set({ notebookId: null })
+				.where(and(eq(table.notebookId, id), eq(table.userId, ctx.userId)))
+				.run();
+		}
+
 		const res = tx
 			.delete(notebooks)
 			.where(and(eq(notebooks.id, id), eq(notebooks.userId, ctx.userId)))
@@ -511,6 +879,19 @@ export function ownedNotebookId(ctx: Ctx, value: unknown): number | null {
 	// notebook is the point of it being shared. The entry stays the writer's.
 	assertReachable(ctx, id);
 	return id;
+}
+
+/**
+ * `{ notebookId }` when the caller named one, and nothing at all when it did not.
+ *
+ * Spread into the values a room writes. The distinction matters because these
+ * rooms are reached two ways: a form posts every field it has, including an
+ * empty notebook meaning "none", while an assistant changing a habit's name
+ * over MCP says nothing about the notebook and must not be read as taking the
+ * habit out of its subject.
+ */
+export function notebookPatch(ctx: Ctx, raw: { notebookId?: unknown }) {
+	return 'notebookId' in raw ? { notebookId: ownedNotebookId(ctx, raw.notebookId) } : {};
 }
 
 /** The open notebooks, for the selector on every form that can point at one. */
@@ -555,6 +936,17 @@ function notebookTitled(ctx: Ctx, title: string) {
  * delete, the share switch — stays the owner's alone, which is why the
  * writers below keep their own userId WHERE and the readers call this.
  */
+/**
+ * A notebook this account may reach, or a loud refusal.
+ *
+ * Exported because linking something into one has to make the same check —
+ * see `notebook-linking.ts`. Reachable, not owned: a family member's shared
+ * notebook is one you may file things under.
+ */
+export function assertReachableNotebook(ctx: Ctx, id: number): void {
+	assertReachable(ctx, id);
+}
+
 function assertReachable(ctx: Ctx, id: number): void {
 	const others = host.familyUserIds(ctx.userId).filter((one) => one !== ctx.userId);
 	const reachable = db
@@ -585,4 +977,19 @@ export function setNotebookShared(ctx: Ctx, id: number, shared: boolean): void {
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('notebook');
+}
+
+/**
+ * Each recipe with the picture it is known by.
+ *
+ * One query for the whole list rather than one per card, which is the same
+ * bargain the Kitchen's own load makes — forty round trips to ask "does this
+ * one have a picture" is how a list stops being instant.
+ */
+function withRecipePictures<T extends { id: number }>(ctx: Ctx, recipes: T[]) {
+	const main = mainPictures(
+		ctx,
+		recipes.map((one) => one.id)
+	);
+	return recipes.map((one) => ({ ...one, mainPicture: main.get(one.id) ?? null }));
 }

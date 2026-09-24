@@ -70,7 +70,7 @@ export const POST: RequestHandler = async (event) => {
 		);
 	} catch (error) {
 		// The shape RFC 7591 asks for, with the sentence the service wrote.
-		const answer = toJsonError(error);
+		const answer = await toJsonError(error);
 		const said = await answer.json().catch(() => ({ message: 'Invalid client metadata' }));
 		return json(
 			{ error: 'invalid_client_metadata', error_description: said.message },

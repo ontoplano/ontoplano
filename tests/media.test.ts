@@ -5,6 +5,7 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { OWNER, STRANGER, makeDatabase, seedAccounts } from './helpers/db';
+import { refusal, refusalOf } from './helpers/refusal';
 
 /**
  * Pictures: what is accepted, what is refused, and whose they are.
@@ -134,20 +135,20 @@ describe('what is accepted', () => {
 			['pdf', pdf],
 			['zip', zip]
 		] as const)
-			await expect(
-				media.store(ctx(), { bytes, filename: `nice.${what}.png` }),
+			expect(
+				await refusalOf(() => media.store(ctx(), { bytes, filename: `nice.${what}.png` })),
 				what
-			).rejects.toThrow(/not a picture/i);
+			).toMatch(/not a picture/i);
 	});
 
 	it('refuses an empty file', async () => {
-		await expect(media.store(ctx(), { bytes: Buffer.alloc(0) })).rejects.toThrow(/empty/i);
+		expect(await refusalOf(() => media.store(ctx(), { bytes: Buffer.alloc(0) }))).toMatch(/empty/i);
 	});
 
 	it('refuses one over the instance’s ceiling, and says the number', async () => {
 		withLimits('[media]\nmax_kilobytes = "16"\n');
 		const big = Buffer.concat([png(), Buffer.alloc(20 * 1024, 0)]);
-		await expect(media.store(ctx(), { bytes: big })).rejects.toThrow(/16KB/);
+		expect(await refusalOf(() => media.store(ctx(), { bytes: big }))).toMatch(/16KB/);
 	});
 
 	/**
@@ -184,10 +185,12 @@ describe('what is accepted', () => {
 		// that thinks it stored a megabyte would pass whatever the code did.
 		const heavy = (n: number) => Buffer.concat([png(8, [n, 0, 0]), randomBytes(200 * 1024)]);
 
-		await expect(async () => {
-			for (let i = 0; i < 10; i++)
-				await media.store(ctx(), { bytes: heavy(i), filename: `${i}.png` });
-		}).rejects.toThrow(/1MB/);
+		expect(
+			await refusalOf(async () => {
+				for (let i = 0; i < 10; i++)
+					await media.store(ctx(), { bytes: heavy(i), filename: `${i}.png` });
+			})
+		).toMatch(/1MB/);
 	});
 });
 
@@ -197,21 +200,23 @@ describe('whose it is', () => {
 	it('is not readable by anybody else, and not found rather than refused', async () => {
 		const mine = await media.store(ctx(), { bytes: png(12), filename: 'mine.png' });
 		expect(media.read(ctx(), mine.id).bytes.length).toBeGreaterThan(0);
-		expect(() => media.read(other(), mine.id)).toThrow(/no such picture/i);
+		expect(refusal(() => media.read(other(), mine.id))).toMatch(/no such picture/i);
 	});
 
 	it('cannot be deleted by anybody else', async () => {
 		const mine = await media.store(ctx(), { bytes: png(13), filename: 'mine.png' });
-		expect(() => media.remove(other(), mine.id)).toThrow(/no such picture/i);
+		expect(refusal(() => media.remove(other(), mine.id))).toMatch(/no such picture/i);
 		// …and it is still there.
 		expect(media.read(ctx(), mine.id).bytes.length).toBeGreaterThan(0);
 	});
 
 	it('cannot be attached to somebody else’s recipe', async () => {
 		const theirs = recipes.createRecipe(other(), { title: 'Not yours' });
-		await expect(
-			media.attachToRecipe(ctx(), theirs, { bytes: png(14), filename: 'x.png' })
-		).rejects.toThrow(/no such recipe/i);
+		expect(
+			await refusalOf(() =>
+				media.attachToRecipe(ctx(), theirs, { bytes: png(14), filename: 'x.png' })
+			)
+		).toMatch(/no such recipe/i);
 	});
 });
 
@@ -263,9 +268,11 @@ describe('a recipe’s gallery', () => {
 		for (let i = 0; i < 3; i++)
 			await media.attachToRecipe(ctx(), id, { bytes: png(23, [i, 0, 0]), filename: `${i}.png` });
 
-		await expect(
-			media.attachToRecipe(ctx(), id, { bytes: png(23, [9, 0, 0]), filename: 'x.png' })
-		).rejects.toThrow(/at most 3/);
+		expect(
+			await refusalOf(() =>
+				media.attachToRecipe(ctx(), id, { bytes: png(23, [9, 0, 0]), filename: 'x.png' })
+			)
+		).toMatch(/at most 3/);
 	});
 
 	/**
@@ -278,7 +285,7 @@ describe('a recipe’s gallery', () => {
 		const only = await media.attachToRecipe(ctx(), id, { bytes: png(24), filename: 'only.png' });
 
 		media.detachFromRecipe(ctx(), id, only.id);
-		expect(() => media.read(ctx(), only.id)).toThrow(/no such picture/i);
+		expect(refusal(() => media.read(ctx(), only.id))).toMatch(/no such picture/i);
 	});
 
 	it('keeps them when somebody’s writing still mentions it', async () => {
@@ -309,7 +316,7 @@ describe('pictures inside writing', () => {
 	it('refuses an entry over the instance’s per-entry ceiling', async () => {
 		withLimits('[media]\nentry_images = "2"\n');
 		const three = [1, 2, 3].map((n) => `![p](/media/${n})`).join('\n');
-		expect(() => media.assertEntryWithinLimit(three)).toThrow(/at most 2/);
+		expect(refusal(() => media.assertEntryWithinLimit(three))).toMatch(/at most 2/);
 		expect(() => media.assertEntryWithinLimit('![p](/media/1)')).not.toThrow();
 	});
 });
@@ -378,7 +385,7 @@ describe('a person’s face', () => {
 
 		expect(second.id).not.toBe(first.id);
 		// The one it replaced is gone, because nothing else was using it.
-		expect(() => media.read(ctx(), first.id)).toThrow(/no such picture/i);
+		expect(refusal(() => media.read(ctx(), first.id))).toMatch(/no such picture/i);
 		expect(media.read(ctx(), second.id).bytes.length).toBeGreaterThan(0);
 		expect(people.listPeople(ctx()).find((p) => p.id === person)?.pictureId).toBe(second.id);
 	});
@@ -393,7 +400,7 @@ describe('a person’s face', () => {
 
 		media.removePersonPicture(ctx(), person);
 		expect(people.listPeople(ctx()).find((p) => p.id === person)?.pictureId).toBeNull();
-		expect(() => media.read(ctx(), face.id)).toThrow(/no such picture/i);
+		expect(refusal(() => media.read(ctx(), face.id))).toMatch(/no such picture/i);
 	});
 
 	it('keeps a face that a recipe is also using', async () => {
@@ -413,8 +420,10 @@ describe('a person’s face', () => {
 	it('is not somebody else’s to set', async () => {
 		const people = await import('../src/lib/services/people');
 		const mine = people.createPerson(ctx(), { name: 'Mine' });
-		await expect(
-			media.setPersonPicture(other(), mine, { bytes: png(43), filename: 'x.png' })
-		).rejects.toThrow(/no such person/i);
+		expect(
+			await refusalOf(() =>
+				media.setPersonPicture(other(), mine, { bytes: png(43), filename: 'x.png' })
+			)
+		).toMatch(/no such person/i);
 	});
 });

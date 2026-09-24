@@ -78,15 +78,16 @@ function startOfDay(d: Date): Date {
 function dayFrom(raw: unknown): Date {
 	const text = String(raw ?? '').trim();
 	if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
-		throw new ValidationError('A day looks like 2026-09-01');
+		throw new ValidationError({ key: 'errors.schedule.aDayLooksLike2026' });
 	}
 
 	const day = new Date(`${text}T00:00:00`);
-	if (Number.isNaN(day.getTime())) throw new ValidationError('A day looks like 2026-09-01');
+	if (Number.isNaN(day.getTime()))
+		throw new ValidationError({ key: 'errors.schedule.aDayLooksLike2026' });
 
 	const year = 365 * 24 * 3600_000;
 	if (Math.abs(day.getTime() - Date.now()) > year) {
-		throw new ValidationError('That is more than a year away — ask about a nearer week');
+		throw new ValidationError({ key: 'errors.schedule.thatIsMoreThan' });
 	}
 	return day;
 }

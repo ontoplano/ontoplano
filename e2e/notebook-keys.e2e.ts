@@ -18,7 +18,9 @@ async function makeNotebook(page: Page, title: string) {
 	const origin = new URL(page.url()).origin;
 	await page.request.post('/notebooks?/create', {
 		headers: { Origin: origin, 'x-sveltekit-action': 'true' },
-		form: { heading: title }
+		// Goals among them: a notebook starts with notes and tasks now, and what
+		// these are about is the tabs rather than which of them there are.
+		form: { heading: title, modules: 'notes,tasks,goals' }
 	});
 }
 

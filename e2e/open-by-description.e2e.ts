@@ -73,6 +73,19 @@ test('the first line of a task’s writing folds it, and the rest of it does not
 
 	await fold.click();
 	await expect(fold).toHaveAttribute('aria-expanded', 'true');
+
+	/*
+	 * And the pointer says which line that is before anything is pressed: a
+	 * hand and a lit chevron over the first line, the text cursor and a grey
+	 * one over the lines being read.
+	 */
+	const open = (await notes.boundingBox())!;
+	await page.mouse.move(open.x + open.width / 2, open.y + open.height - 4);
+	await expect(notes).not.toHaveCSS('cursor', 'pointer');
+	await expect(notes).not.toHaveClass(/todo-notes-hot/);
+	await page.mouse.move(open.x + open.width / 2, open.y + 6);
+	await expect(notes).toHaveCSS('cursor', 'pointer');
+	await expect(notes).toHaveClass(/todo-notes-hot/);
 });
 
 /**

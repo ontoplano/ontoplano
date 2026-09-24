@@ -18,6 +18,265 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.183.3 — 2026-09-23
+
+- **A payment that fails says so in your language too.** The last English
+  sentences in the app were the ones a payment provider refuses with, which
+  is the worst place for them.
+- **Refusals are in your own language.** "A notebook by that name already
+  exists" and two hundred and fifty-six sentences like it were English
+  wherever you read the app — which is the wrong moment to be handed a
+  language you did not choose. They are translated now, in all four.
+- **A habit's day is logged once.** Two presses arriving together — a double
+  tap, a form sent twice — could both land, giving one day two squares' worth
+  of credit and a streak that counted it more than once. Any day already
+  doubled is merged when you upgrade, keeping whichever copy carries a note.
+- **The mark turns without dragging a shadow round with it.** While the app
+  was loading a page, a second octagon behind the phone bar's mark turned
+  with it and swung its corners out past the rim.
+- **An assistant that adds something is told what it added,** and a create
+  that produced nothing now says so instead of answering with an id for a
+  task that is not there.
+- **An assistant is told which tools your key is not giving it,** and the
+  permission each would need — so it can ask you to widen the key instead of
+  quietly working around the gap.
+- **The trial-ending email is in your own language,** like every other
+  message the app sends. It was written in literal English.
+- **Putting a task on a day can ask to be reminded about it** — the same
+  control the planner's own blocks use. It is where you say "do this on
+  Thursday", which is when you most want telling.
+- **A narrowed task list is a link.** Which filters are on now lives in the
+  address, so it survives a reload and can be bookmarked or sent.
+- **Keep a set of filters under a name.** "Everything urgent about the
+  house that nobody has done" is four controls set four ways; save it once
+  and it is a chip beside them.
+- **A notebook opens on its own first tab,** rather than on Notes whatever
+  order you put its tabs in.
+- **"Not now" on the update warning lasts as long as the app is open,** not
+  for the whole version — closing it and starting it again asks you once
+  more. It is on your account page too, where there is nothing to dismiss.
+- **Say which task you are on, from the task list.** The board could always
+  set it; the list — the screen you actually work from — could not. The one
+  you are on is washed blue and keeps a blue spine.
+- **"3rd in line" is always the priority order,** whatever the list is
+  sorted by — it is what the three sliders are for. And the quick sheet says
+  it too, once the rest of the form is unfolded.
+- **A quick capture offers to open what it just wrote.** "Added to your
+  to-dos" left you to go and find the row again to say anything more about
+  it; there is an Edit on the receipt now, which lands in the room with
+  that thing's own editor open.
+- **Bring several things into a notebook at once.** Tick them, press Bring,
+  and anything that is under another subject is named before it moves —
+  a notebook holds the row rather than a copy of it. What arrives shows up
+  straight away, and a line says how many.
+- **The picker lists notes by their first line,** instead of a column of
+  blank rows: a note usually has no heading, because the writing is the
+  note.
+- **Bringing a note or a task into a notebook no longer fails** with
+  "Unexpected error" when that notebook already holds a few. It takes the
+  next number there rather than carrying its old one across.
+- **The tag filter's Any and All are one control,** with the ∪ or ∩ at the
+  front of the labels it applies to. A comma or a space takes the word, a
+  word that is not one of your labels just clears rather than closing the
+  panel, and the panel is a light surface in the light theme.
+- **The notebooks shelf wears the room's colour** down its side, like every
+  other tab in the room.
+- **An assistant can ask what a notebook's labels are** — `notebook_tags` —
+  and write down what a label means with `describe_tag`.
+- **A notebook says which labels are on what is filed in it,** from a Manage
+  tags button on the notebook itself. "3 things carry it" unfolds into two
+  notes and a task, so it is somewhere to go and look rather than a number.
+- **A label can say what it means** — one line, for whoever reads it in a
+  year and for an assistant asked to label something the same way.
+- **Tags is no longer a tab in the Notebooks room.** Every word in the
+  account with a number beside it is not what anybody wants while they are
+  looking at one subject; the whole list is still there, one press on from
+  a notebook's own labels, and it is still where one is deleted or merged.
+- **A notebook's page is one card,** so the coloured rule down its side
+  starts at the title rather than half way down.
+- **A notebook's tabs can be put in the order you want them,** from the same
+  dialog that switches them on.
+- **The demo's notebooks have a year in them.** The renovation and the trip
+  carry twenty-odd notes and thirty-odd tasks each, tagged and rated, and
+  every notebook has a cover.
+- **The notebooks card is on the dashboard from the start,** under the two
+  that draw the week.
+- **Joining the mailing list sends you a note saying so** — nothing to
+  confirm, and the way off is in it.
+- **A notebook can be filed inside another from the form,** instead of only
+  by typing an em dash into its name.
+- **An open folder and the notebooks inside it share one ground,** rather
+  than being flat neighbours with a small indent.
+- **The task form asks for the notes straight after the title.**
+- **Link comes before New** in a notebook's header.
+- **The wheel's room name sits higher and can be read** over whatever is
+  behind it — it stands on a dark plate that blurs the page, and every room
+  clears 5.9:1.
+- **One press, one submission, on every form** — a Save button goes dead
+  while the request it started is still out.
+- **Saving a notebook's tabs no longer blanks them on the way out,** and a
+  tab ticked in that dialog now looks ticked.
+- **The Notebooks tour says what a notebook can hold** — the shelf of
+  covers, how one sits inside another, and the tabs that are other rooms
+  looking at one subject.
+- **A notebooks card for the dashboard,** showing the covers of the three
+  you have written in most recently.
+- **Every markdown box opens side by side** — the writing and what it will
+  look like — wherever there is room for two columns.
+- **The demo's icon is yellow.** It was violet, which is one dark smudge
+  beside the dev icon's blue in a row of browser tabs.
+- **A task's three rating bars show slivers of one width,** with a strip of
+  the ruler beside them that nothing covers. Every bar was rounded on all
+  four corners, so the one in front bit a crescent out of the one behind
+  at each junction, and a task rated 5 on all three filled the box with
+  nothing to read it against.
+- **The list of labels under a tag filter is no longer cut off** at the
+  bottom of the panel it opens in.
+- **The task count no longer nudges the filters beside it** when a tag
+  filter narrows the list.
+- **The diary, ideas and the gallery filter by tags the same way,** and a
+  filter that matches nothing keeps its controls on screen so it can be undone.
+- **Filter by tags to show and tags to hide.** The task list and a
+  notebook's tasks take tags to show and tags to hide, and whether a task
+  needs any of them (∪) or all of them (∩); "Untagged" works on either side.
+  Folded, the button says what it is doing — `+2 −1 ∩` — and the filter stays
+  in the address, so a reload or a shared link comes back the same.
+- **Assistants can ask for tasks carrying every tag named.** `todos` and
+  `up_next` take `tagMode: "all"` beside `tags` and `withoutTags`.
+- **A notebook's name and description no longer shrink to a sliver on a
+  phone.** On the Notebooks shelf the buttons drop below the name when there
+  isn't room, and a long description folds behind Show more, as it does on the
+  notebook's own page.
+- **Tag suggestions follow the notebook.** With a notebook picked in the task
+  form, the Tags box offers only the tags that notebook already uses; with
+  none picked, all of yours as before.
+- **A block's rhythm reads in your language.** The plan's hover card said
+  "Every other Thursday" in English whatever language you chose, along with
+  "One-off", "Skipped" and "Inactive"; it says them in yours now.
+- **Dropdown lists stay on the screen.** A long list, like the parent goals
+  in the goal form, fits a phone's width and opens upwards near the bottom of
+  a form, and Escape closes the list without closing the form.
+- **An assistant can ask a list for just the labels.** `fields: "title,tags"`
+  on the task and note lists was refused whenever the first row had none.
+- **The line that folds a task's notes looks pressable.** Over it the cursor
+  is a hand and the chevron lights up; the lines under it keep the text
+  cursor, since pressing them does nothing.
+- **The block form's frequency choices stay on one row.** In Portuguese the
+  last one no longer drops to a line of its own; on a phone a long label
+  breaks inside its own choice instead.
+- **The planner says its weekdays in your language** — the block form's day,
+  the some-days choices, copy-to-weekdays and the phone's day switcher, which
+  also said "Today" in English.
+- **A rating dragged with the mouse stays where you let go.** In Firefox,
+  moving the mouse after a quick drag on urgency, ease or interest no longer
+  sends it back to where it was.
+- **Dragging a rating with your finger keeps where you let go.** A quick
+  sideways drag on a gauge no longer changes tab and closes the form.
+- **A recipe's page lines up.** Ingredients, method and pictures no longer
+  overlap, their edges and headers match, and the buttons sit beside the
+  recipe's name. The weekly review's two top cards and a notebook's header got
+  the same fix.
+- **The wheel names Inventory's tabs**, Stock and Wishlist, the way it names
+  every other room's. The search box offers every tab of every room too —
+  Workouts, Finance, Media and both Inventory lists were missing — and matches
+  what you type against the words on your screen, in your language.
+- **Stock is translated** into Portuguese, Spanish and German.
+- **The goals toolbar is one row.** Area is a picker, Show closed is a toggle,
+  and Areas sits quietly at the right.
+- **A goal reads top to bottom.** Title, area and period first, then progress
+  and measures; achieved, missed, edit and delete are icons on the right, and
+  hovering lights the whole row to the card's edges.
+- **Deleting a goal asks first, in its own dialog,** and says its linked tasks
+  are kept.
+- **j and k show which goal they are on,** and e edits it.
+- **Rounded corners no longer leave slivers.** In the playful style, accent
+  stripes, banners, the notebook list and its notes, and the dashboard's day
+  columns meet their corners cleanly, and a short label no longer loses its
+  first letter to a rounded edge.
+- **A data stream's page stays inside Health.** Opening Sleep or Weight keeps
+  Health's tabs on screen with that stream underlined, and Shift+H / Shift+L
+  move between them as they do in the rest of the room.
+- **The account menu takes you to Instance and Administration.** Whoever
+  can open those pages finds them under AI & Integrations; nobody else sees
+  them.
+- **New, on a notebook's tab, opens the room's own form.** Pressing New item,
+  New bill, New ledger, New habit, New workout or New recipe inside a notebook
+  used to take you to that room and file whatever you wrote back under the
+  subject afterwards. It opens the same dialog the room opens, in the notebook,
+  with everything that form asks — a bill written against a subject can say
+  when it falls due, and a workout can name what it measures.
+- **Every one of those forms asks which notebook it belongs to.** In the room
+  the field starts empty; inside a notebook it starts on that notebook, and
+  editing something from the room never quietly takes it out of one.
+- **The rating gauges stand on something you can see in the dark theme.** The
+  box behind them is a ruler — it says how big a five would be — and it was the
+  grey that sits one step above a card in the light theme, which in the dark
+  one is within a hair of the card itself. It has an answer per theme now.
+- **Inventory is two tabs: Stock and Wishlist.** They were one list with a
+  segment over it — All, Restock, Wishlist, Short — which read as four equal
+  readings of one thing. What you keep and how much of it is one question; what
+  you might buy one day is another. Each is a tab with an address of its own,
+  and "short" stays where it belongs, a filter beside the others on the
+  cupboard. Every old link to /inventory still lands on the cupboard.
+- **The shelf of notebooks squeezes down to one cover.** Dragging the list
+  narrow stopped a long way short of that, leaving a single cover beside a band
+  of space too narrow to hold a second and no way to take it in further. The
+  panel has its own floor now — the width of one cover — rather than the one
+  meant for a column of names.
+- **The mailing-list form stops promising an email.** "Check your inbox — there
+  is one link to follow" was the answer for a while after the confirming
+  message stopped being sent. An address is on the list the moment it is typed,
+  and the form says so: "You're on the list."
+- **A task's labels are at full strength again.** They share a line with the
+  row's buttons, and that whole line was faded until the pointer was on it — so
+  a label's ink came out a grey nobody could read. The fade belongs to the
+  buttons. The buttons, in turn, now come back when the row is under the
+  pointer, which they had stopped doing.
+- **The number in the task form says which row this is.** It counted against
+  every open task in the notebook whatever the list was doing, so opening the
+  top row of a list ordered by when things were added was told it was third.
+  It is the list on screen now — same rows, same order, same filters — and
+  ordered by priority it still moves as the sliders do, which is what it is
+  for.
+- **The diary's tags fold away, the way the Ideas room's already did.** Every
+  tag anybody has ever used sat in a loose row above the entries, wider than
+  the list under it and belonging to nothing. It is the same control in both
+  rooms now, on the same surface as what it filters, starting folded and saying
+  how many there are — with the one in force still visible while the rest are
+  away.
+
+## 0.183.2 — 2026-09-23
+
+- **A notebook holds what its subject actually accumulates.** A renovation is
+  not only notes and tasks: it is the tiles to buy, the account the payments
+  leave from, the invoices, and the recipe for the kitchen it ends in. Every
+  notebook can now be switched on to hold inventory, ledgers, bills, habits,
+  workouts, recipes and ideas beside its notes, tasks and goals — each as a tab
+  that does the room's own work, not a list of links. Adding a habit on a
+  notebook's Habits tab makes the same habit the Health room shows.
+- **Which of them a notebook has is its own answer.** In the notebook's Edit
+  dialog, under _What it holds_. A new notebook starts with notes and tasks
+  only, so a reading list is not born with nine tabs; everything that exists
+  today keeps the three it had. Switching one off takes the tab and nothing
+  else — the dialog says how much is filed under it, and those rows stay in
+  their own rooms.
+- **A room you have put away stays away.** Hide Finance in Preferences and no
+  notebook offers Ledgers or Bills, which is what putting a room away was
+  always supposed to mean.
+- **Show/Hide became a tick.** The rooms and their tabs in Preferences are
+  checkboxes now: ticked means it is there. The old button relabelled itself
+  under the cursor and changed width doing it, so you could not press it twice
+  without reading it again. It is the same control a notebook's _What it holds_
+  list uses.
+- **A key tied to one notebook reaches everything in it.** Not just its notes,
+  tasks and goals — whatever that notebook has been switched on to hold. An
+  assistant given the renovation can add its shopping and tick it off, and
+  still see nothing else in the account.
+- **For assistants:** `add_notebook` takes `modules`, `change_notebook` is new,
+  and `add_idea`, `add_inventory_item`, `add_bill`, `add_ledger`, `add_habit`,
+  `add_workout` and `add_recipe` each take a `notebookId`. `notebooks` answers
+  with what each one holds.
+
 ## 0.183.1 — 2026-09-23
 
 - **A room is one object now, not a handful of cards floating on the

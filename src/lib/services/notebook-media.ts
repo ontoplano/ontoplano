@@ -168,7 +168,8 @@ export function notebookMediaView(
 ): { folders: NotebookMediaFolder[]; pictures: AlbumPicture[] } {
 	const all = notebookMediaFolders(ctx);
 	const here = path ? all.find((folder) => folder.name === path) : undefined;
-	if (path && !here) throw new NotFoundError('No notebook pictures here.');
+	if (path && !here)
+		throw new NotFoundError({ key: 'errors.notebookMedia.noNotebookPicturesHere' });
 
 	const under = path ? `${path}${NOTEBOOK_SEPARATOR}` : '';
 	const inside = all.filter((folder) => folder.name.startsWith(under) && folder.name !== path);

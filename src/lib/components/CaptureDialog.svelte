@@ -4,6 +4,9 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import { notify } from '$lib/notify.svelte';
+	import { say } from '$lib/said.svelte';
+	import { editUrl } from '$lib/open-from-url.svelte';
+	import { goto } from '$app/navigation';
 	import type { Capture } from '$lib/capture';
 	import { useT } from '$lib/i18n';
 
@@ -83,11 +86,33 @@
 					 */
 					await update({ reset: false });
 					if (result.type === 'success') {
-						notify.success(
-							said
-								? t('capture.addedToWithContent', { into: which.into, content: said })
-								: t('capture.addedTo', { into: which.into })
-						);
+						/*
+						 * The receipt, and a way into the thing it is about.
+						 *
+						 * Capture writes into a room you are not looking at, so
+						 * "Added to your to-dos" left somebody to go and find the row
+						 * again to say anything more about it — and on a phone, where
+						 * most quick adds happen, that is the difference between a
+						 * line and the thing written properly. `say` rather than
+						 * `notify` because only one of them carries a button.
+						 *
+						 * A failure still goes to `notify`: an error has to wait to be
+						 * dismissed rather than leave on a timer.
+						 */
+						const made = Number((result.data as { id?: unknown } | undefined)?.id ?? 0);
+						const receipt = said
+							? t('capture.addedToWithContent', { into: which.into, content: said })
+							: t('capture.addedTo', { into: which.into });
+
+						if (made > 0)
+							say(receipt, {
+								label: t('ui.edit'),
+								// Already a room this app owns; `editUrl` only puts the id on
+								// the end of it. See `$lib/open-from-url`.
+								// eslint-disable-next-line svelte/no-navigation-without-resolve
+								run: () => goto(editUrl(which.room, made))
+							});
+						else say(receipt);
 						onclose();
 						return;
 					}

@@ -35,17 +35,14 @@ const ALLOWED: Record<string, number> = {
 	'src/routes/finance/ledgers/+page.svelte': 3,
 	// Finished, hidden, or not the chosen one — dimmed on purpose.
 	'src/lib/components/Backlinks.svelte': 1,
-	'src/lib/components/GoalCard.svelte': 2,
 	'src/lib/components/GoalLinksModal.svelte': 1,
 	'src/lib/components/NotebookDetail.svelte': 2,
 	// One chevron, and two greyings of a finished task.
 	'src/lib/components/TodoRows.svelte': 3,
 	'src/routes/+page.svelte': 2,
 	'src/routes/demo/+page.svelte': 1,
-	'src/routes/health/workouts/+page.svelte': 1,
 	'src/routes/instance/+page.svelte': 1,
-	'src/routes/inventory/+page.svelte': 3,
-	'src/routes/settings/preferences/+page.svelte': 1,
+	'src/lib/components/InventoryRoom.svelte': 3,
 	'src/routes/start/+page.svelte': 2,
 	// The in-app chat, which is switched off — see `$lib/features`.
 	'src/routes/assistant/+page.svelte': 2

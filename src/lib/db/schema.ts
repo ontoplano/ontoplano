@@ -249,6 +249,24 @@ export const notebooks = sqliteTable(
 		 * their writers' user_id — sharing widens who may look, never who owns.
 		 */
 		sharedWithFamily: integer('shared_with_family', { mode: 'boolean' }).notNull().default(false),
+		/**
+		 * What this notebook holds, as a comma-separated list of module ids.
+		 *
+		 * A subject accumulates more than writing — the renovation has tiles to
+		 * buy, an account the payments leave from, invoices and a recipe for
+		 * the kitchen it ends in. Each of those is a room already, and a module
+		 * here is that room's rows seen from the subject. The ids and what they
+		 * mean live in `$lib/notebook-modules`, which reads the same
+		 * preferences the navbar does so a room put away account-wide does not
+		 * reappear as a tab in here.
+		 *
+		 * Null means never written — a notebook made before this column, or one
+		 * made since and left alone — and reads back as the default. The
+		 * migration writes the old three onto everything that already existed
+		 * rather than letting the new default take a Goals tab off a screen
+		 * somebody was using.
+		 */
+		modules: text('modules'),
 		// Closed rather than deleted: a finished trip should stop cluttering the
 		// list without taking its entries' context with it.
 		closedAt: text('closed_at'),
@@ -459,7 +477,20 @@ export const tags = sqliteTable(
 		 * colour is drawn as the plain chip it has always been; one with a
 		 * colour is drawn as a `.pill` in it.
 		 */
-		color: text('color')
+		color: text('color'),
+		/*
+		 * What the word means here, in the account's own terms.
+		 *
+		 * A tag is one word and a word is not always its own definition:
+		 * `#short` on the shopping means low on something and `#short` on a
+		 * note about a book means the book is. Whoever chose it knows; whoever
+		 * reads it a year later does not, and neither does an assistant asked
+		 * to label something the same way.
+		 *
+		 * Empty rather than null, because there is no difference worth keeping
+		 * between a tag nobody described and one described as nothing.
+		 */
+		description: text('description').notNull().default('')
 	},
 	(table) => [
 		index('tags_user_idx').on(table.userId),
@@ -513,11 +544,23 @@ export const habits = sqliteTable(
 			.notNull()
 			.default('bad'),
 		scheduledDays: text('scheduled_days').default(''), // comma-separated weekday numbers (0=Mon..6=Sun), empty = every day
+		/**
+		 * The subject this belongs to, if it belongs to one.
+		 *
+		 * The same link notes, tasks and goals have had: pointed at rather than
+		 * owned, so deleting the notebook leaves the habit exactly where it is
+		 * and the room still lists it. A notebook is a second way of looking at
+		 * these rows, never the place they live.
+		 */
+		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`)
 	},
-	(table) => [index('habits_user_idx').on(table.userId)]
+	(table) => [
+		index('habits_user_idx').on(table.userId),
+		index('habits_notebook_idx').on(table.notebookId)
+	]
 );
 
 export const habitOccurrences = sqliteTable(
@@ -539,7 +582,20 @@ export const habitOccurrences = sqliteTable(
 	(table) => [
 		index('habit_occurrences_user_idx').on(table.userId),
 		index('habit_occurrences_habit_idx').on(table.habitId),
-		index('habit_occurrences_date_idx').on(table.date)
+		index('habit_occurrences_date_idx').on(table.date),
+		/*
+		 * A day is either done or it is not.
+		 *
+		 * The services asked first and inserted second, which holds until two
+		 * presses land together — a double tap on the heatmap, a form sent
+		 * twice — and then both read nothing and both write. What came out was
+		 * a habit logged twice on one day: two squares' worth of credit for one
+		 * day's work, and a streak counting a day more than once.
+		 *
+		 * The check belongs here rather than in the reading, because here is the
+		 * only place two requests cannot get past at the same time.
+		 */
+		uniqueIndex('habit_occurrences_once_a_day_idx').on(table.habitId, table.date)
 	]
 );
 
@@ -809,6 +865,8 @@ export const inventoryItems = sqliteTable(
 		// a shape, so the shape is the item's, not a column.
 		attributes: text('attributes').notNull().default('{}'),
 		snoozed: integer('snoozed', { mode: 'boolean' }).notNull().default(false),
+		/** The subject this belongs to, if any — see `habits.notebookId`. */
+		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),
@@ -822,7 +880,8 @@ export const inventoryItems = sqliteTable(
 		index('inventory_items_bought_idx').on(table.bought),
 		check('inventory_items_qty_positive', sql`${table.qty} >= 0 AND ${table.idealQty} >= 0`),
 		index('inventory_items_snoozed_idx').on(table.snoozed),
-		index('inventory_items_category_idx').on(table.inventoryCategoryId)
+		index('inventory_items_category_idx').on(table.inventoryCategoryId),
+		index('inventory_items_notebook_idx').on(table.notebookId)
 	]
 );
 
@@ -854,6 +913,8 @@ export const recipes = sqliteTable(
 		source: text('source').default(''),
 		lastCookedAt: text('last_cooked_at'),
 		archivedAt: text('archived_at'),
+		/** The subject this belongs to, if any — see `habits.notebookId`. */
+		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),
@@ -863,6 +924,7 @@ export const recipes = sqliteTable(
 	},
 	(table) => [
 		index('recipes_user_idx').on(table.userId),
+		index('recipes_notebook_idx').on(table.notebookId),
 		check('recipes_servings_positive', sql`${table.servings} IS NULL OR ${table.servings} > 0`),
 		check('recipes_minutes_positive', sql`${table.minutes} IS NULL OR ${table.minutes} > 0`)
 	]
@@ -1080,6 +1142,8 @@ export const ideas = sqliteTable(
 		isApplied: integer('is_applied', { mode: 'boolean' }).notNull().default(false),
 		appliedNote: text('applied_note'),
 		favorite: integer('favorite', { mode: 'boolean' }).notNull().default(false),
+		/** The subject this belongs to, if any — see `habits.notebookId`. */
+		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),
@@ -1089,6 +1153,7 @@ export const ideas = sqliteTable(
 	},
 	(table) => [
 		index('ideas_user_idx').on(table.userId),
+		index('ideas_notebook_idx').on(table.notebookId),
 		index('ideas_created_idx').on(table.createdAt)
 	]
 );
@@ -1613,7 +1678,7 @@ export const apiTokens = sqliteTable(
 		 * The one thing this key may work on, where it is pinned to one.
 		 *
 		 * Scopes say what a key may do to the account; these two say which row
-		 * it may do it to — "this notebook, its tasks, its goals and its notes".
+		 * it may do it to — "this notebook, and everything filed under it".
 		 * Null for an ordinary key, which reaches the whole account within its
 		 * scopes. The kind is a name from the table in `mcp/confinement.ts` and
 		 * never a string off a request; the id is resolved against what the
@@ -2612,6 +2677,8 @@ export const bills = sqliteTable(
 		// the point, and deleting it would take the payments with it.
 		active: integer('active', { mode: 'boolean' }).notNull().default(true),
 		sortOrder: integer('sort_order').notNull().default(0),
+		/** The subject this belongs to, if any — see `habits.notebookId`. */
+		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),
@@ -2622,6 +2689,7 @@ export const bills = sqliteTable(
 	(table) => [
 		index('bills_user_idx').on(table.userId),
 		index('bills_active_idx').on(table.userId, table.active),
+		index('bills_notebook_idx').on(table.notebookId),
 		check('bills_rhythm_dueday', sql`${table.dueDay} IS NULL OR ${table.dueDay} BETWEEN 1 AND 28`),
 		check(
 			'bills_rhythm_duemonth',
@@ -2707,6 +2775,8 @@ export const ledgers = sqliteTable(
 		currency: text('currency'),
 		sortOrder: integer('sort_order').notNull().default(0),
 		archived: integer('archived', { mode: 'boolean' }).notNull().default(false),
+		/** The subject this belongs to, if any — see `habits.notebookId`. */
+		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),
@@ -2716,6 +2786,7 @@ export const ledgers = sqliteTable(
 	},
 	(table) => [
 		index('ledgers_user_idx').on(table.userId),
+		index('ledgers_notebook_idx').on(table.notebookId),
 		uniqueIndex('ledgers_user_name_unique').on(table.userId, table.name)
 	]
 );
@@ -2950,6 +3021,8 @@ export const workouts = sqliteTable(
 		minutes: integer('minutes'),
 		lastDoneAt: text('last_done_at'),
 		archivedAt: text('archived_at'),
+		/** The subject this belongs to, if any — see `habits.notebookId`. */
+		notebookId: integer('notebook_id').references(() => notebooks.id, { onDelete: 'set null' }),
 		createdAt: text('created_at')
 			.notNull()
 			.default(sql`(CURRENT_TIMESTAMP)`),
@@ -2959,6 +3032,7 @@ export const workouts = sqliteTable(
 	},
 	(table) => [
 		index('workouts_user_idx').on(table.userId),
+		index('workouts_notebook_idx').on(table.notebookId),
 		check('workouts_minutes_positive', sql`${table.minutes} IS NULL OR ${table.minutes} > 0`)
 	]
 );

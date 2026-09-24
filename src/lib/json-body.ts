@@ -14,18 +14,19 @@ const MAX_BODY_BYTES = 256 * 1024;
 export async function readJson(event: { request: Request }): Promise<Record<string, unknown>> {
 	const declared = Number(event.request.headers.get('content-length'));
 	if (Number.isFinite(declared) && declared > MAX_BODY_BYTES)
-		throw new ValidationError('Request body is too large');
+		throw new ValidationError({ key: 'errors.jsonBody.requestBodyIsTooLarge' });
 
 	let body: unknown;
 	try {
 		const text = await event.request.text();
-		if (text.length > MAX_BODY_BYTES) throw new ValidationError('Request body is too large');
+		if (text.length > MAX_BODY_BYTES)
+			throw new ValidationError({ key: 'errors.jsonBody.requestBodyIsTooLarge' });
 		body = JSON.parse(text);
 	} catch (e) {
 		if (e instanceof ValidationError) throw e;
-		throw new ValidationError('Request body must be valid JSON');
+		throw new ValidationError({ key: 'errors.jsonBody.requestBodyMustBeValid' });
 	}
 	if (typeof body !== 'object' || body === null || Array.isArray(body))
-		throw new ValidationError('Request body must be a JSON object');
+		throw new ValidationError({ key: 'errors.jsonBody.requestBodyMust' });
 	return body as Record<string, unknown>;
 }

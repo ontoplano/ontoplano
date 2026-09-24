@@ -184,7 +184,8 @@ interface NormalisedPoint {
 const VALUE_BOUNDS = { min: -1e15, max: 1e15 };
 
 function normalisePoint(ctx: Ctx, raw: unknown, kind: StreamKind): NormalisedPoint {
-	if (typeof raw !== 'object' || raw === null) throw new ValidationError('point must be an object');
+	if (typeof raw !== 'object' || raw === null)
+		throw new ValidationError({ key: 'errors.streams.pointMustBeAnObject' });
 	const p = raw as Record<string, unknown>;
 
 	const at = isoInstant(p.at, 'at');
@@ -229,7 +230,8 @@ function normalisePoint(ctx: Ctx, raw: unknown, kind: StreamKind): NormalisedPoi
 export function pushPoints(ctx: Ctx, streamSlug: string, rawPoints: unknown): PushResult {
 	const stream = getStreamBySlug(ctx, streamSlug)!;
 
-	if (!Array.isArray(rawPoints)) throw new ValidationError('points must be an array');
+	if (!Array.isArray(rawPoints))
+		throw new ValidationError({ key: 'errors.streams.pointsMustBeAnArray' });
 	if (rawPoints.length === 0) return { accepted: 0, duplicates: 0, rejected: [] };
 	if (rawPoints.length > MAX_POINTS_PER_BATCH)
 		throw new ValidationError(`at most ${MAX_POINTS_PER_BATCH} points per request`);

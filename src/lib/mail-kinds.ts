@@ -17,6 +17,7 @@ export const MAIL_KINDS = {
 	'trial-notice': 'Trial notice',
 	'weekly-review': 'Weekly review',
 	'newsletter-issue': 'Newsletter',
+	'newsletter-welcome': 'Newsletter welcome',
 	/*
 	 * Retired, and kept because rows outlive code.
 	 *

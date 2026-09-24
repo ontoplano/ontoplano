@@ -25,6 +25,7 @@ import {
 } from '$lib/db/schema.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
+import { notebookPatch } from './notebooks.js';
 import { stamp, stamps } from './time.js';
 import { num, optionalStr, str } from './validate.js';
 
@@ -55,6 +56,8 @@ export type Recipe = {
 	source: string;
 	lastCookedAt: string | null;
 	archivedAt: string | null;
+	/** The subject it belongs to, if any. */
+	notebookId: number | null;
 };
 
 /**
@@ -114,7 +117,7 @@ function firstFoodCategory(ctx: Ctx): { id: number; name: string } {
 		.where(eq(inventoryCategories.userId, ctx.userId))
 		.get();
 
-	if (any) throw new ValidationError('No shopping category holds food yet — tick one in settings');
+	if (any) throw new ValidationError({ key: 'errors.recipes.noShoppingCategoryHoldsFood' });
 
 	const id = db
 		.insert(inventoryCategories)
@@ -178,7 +181,17 @@ function itemFor(ctx: Ctx, raw: { itemId?: unknown; name?: unknown }): number {
 
 // --- recipes --------------------------------------------------------------------
 
-export function listRecipes(ctx: Ctx, options: { includeArchived?: boolean } = {}): Recipe[] {
+/**
+ * The recipes, all of them or one subject's.
+ *
+ * `notebookId` narrows rather than changing the shape: a notebook's Recipes
+ * tab is this room looking at one subject and draws the rows with the same
+ * component, so it needs exactly what the room needs.
+ */
+export function listRecipes(
+	ctx: Ctx,
+	options: { includeArchived?: boolean; notebookId?: number } = {}
+): Recipe[] {
 	return db
 		.select({
 			id: recipes.id,
@@ -189,13 +202,15 @@ export function listRecipes(ctx: Ctx, options: { includeArchived?: boolean } = {
 			minutes: recipes.minutes,
 			source: recipes.source,
 			lastCookedAt: recipes.lastCookedAt,
-			archivedAt: recipes.archivedAt
+			archivedAt: recipes.archivedAt,
+			notebookId: recipes.notebookId
 		})
 		.from(recipes)
 		.where(
 			and(
 				eq(recipes.userId, ctx.userId),
-				options.includeArchived ? undefined : isNull(recipes.archivedAt)
+				options.includeArchived ? undefined : isNull(recipes.archivedAt),
+				options.notebookId === undefined ? undefined : eq(recipes.notebookId, options.notebookId)
 			)
 		)
 		.orderBy(asc(recipes.title))
@@ -214,7 +229,8 @@ export function getRecipe(ctx: Ctx, id: number): Recipe {
 			minutes: recipes.minutes,
 			source: recipes.source,
 			lastCookedAt: recipes.lastCookedAt,
-			archivedAt: recipes.archivedAt
+			archivedAt: recipes.archivedAt,
+			notebookId: recipes.notebookId
 		})
 		.from(recipes)
 		.where(and(eq(recipes.id, id), eq(recipes.userId, ctx.userId)))
@@ -255,9 +271,11 @@ type RecipeInput = {
 	servings?: unknown;
 	minutes?: unknown;
 	source?: unknown;
+	/** The subject it belongs to, when it is part of one. */
+	notebookId?: unknown;
 };
 
-function parseRecipe(raw: RecipeInput) {
+function parseRecipe(ctx: Ctx, raw: RecipeInput) {
 	const optionalCount = (value: unknown, field: string) =>
 		value === undefined || value === null || value === ''
 			? null
@@ -269,14 +287,16 @@ function parseRecipe(raw: RecipeInput) {
 		notes: optionalStr(raw.notes, 'notes', { max: 2000 }),
 		servings: optionalCount(raw.servings, 'servings'),
 		minutes: optionalCount(raw.minutes, 'minutes'),
-		source: optionalStr(raw.source, 'source', { max: MAX_SOURCE_LENGTH })
+		source: optionalStr(raw.source, 'source', { max: MAX_SOURCE_LENGTH }),
+		// Only when the caller mentioned it — see `notebookPatch`.
+		...notebookPatch(ctx, raw)
 	};
 }
 
 export function createRecipe(ctx: Ctx, raw: RecipeInput): number {
 	return db
 		.insert(recipes)
-		.values({ ...stamps(ctx), userId: ctx.userId, ...parseRecipe(raw) })
+		.values({ ...stamps(ctx), userId: ctx.userId, ...parseRecipe(ctx, raw) })
 		.returning({ id: recipes.id })
 		.get().id;
 }
@@ -284,7 +304,7 @@ export function createRecipe(ctx: Ctx, raw: RecipeInput): number {
 export function updateRecipe(ctx: Ctx, id: number, raw: RecipeInput): void {
 	const res = db
 		.update(recipes)
-		.set({ ...parseRecipe(raw), updatedAt: stamp(ctx) })
+		.set({ ...parseRecipe(ctx, raw), updatedAt: stamp(ctx) })
 		.where(and(eq(recipes.id, id), eq(recipes.userId, ctx.userId)))
 		.run();
 
@@ -596,7 +616,7 @@ export function mealsBetween(ctx: Ctx, from: string, to: string) {
 }
 
 /** Recipes ordered by how much of them you already have. */
-export function withMissingCounts(ctx: Ctx) {
+export function withMissingCounts(ctx: Ctx, options: { notebookId?: number } = {}) {
 	const counts = db
 		.select({
 			recipeId: recipeItems.recipeId,
@@ -611,7 +631,7 @@ export function withMissingCounts(ctx: Ctx) {
 
 	const byRecipe = new Map(counts.map((c) => [c.recipeId, c]));
 
-	return listRecipes(ctx).map((recipe) => {
+	return listRecipes(ctx, options).map((recipe) => {
 		const count = byRecipe.get(recipe.id);
 		return {
 			...recipe,

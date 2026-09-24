@@ -136,13 +136,16 @@ export async function inviteToPlan(
 
 	// The seat checks, before an account is made for a plan with no room.
 	const owner = resolvePlan(ownerId);
-	if (owner.plan === 'none') throw new ValidationError('This plan is not active');
+	if (owner.plan === 'none')
+		throw new ValidationError({ key: 'errors.familyInvite.thisPlanIsNotActive' });
 	const seats = seatsFor(ownerId);
-	if (seats <= 1) throw new ValidationError('This plan covers one account');
+	if (seats <= 1)
+		throw new ValidationError({ key: 'errors.familyInvite.thisPlanCoversOneAccount' });
 	if (membersOf(ownerId).length >= seats - 1) {
 		throw new ValidationError(`This plan covers ${seats} accounts, and they are all taken`);
 	}
-	if (!wanted || !wanted.includes('@')) throw new ValidationError('An email address is needed');
+	if (!wanted || !wanted.includes('@'))
+		throw new ValidationError({ key: 'errors.familyInvite.anEmailAddressIsNeeded' });
 
 	// `registrationMode()`, not the TOML directly: the env override is how a
 	// box gets closed in a hurry, and a closed box must not keep minting
@@ -150,7 +153,7 @@ export async function inviteToPlan(
 	if (registrationMode() !== 'open') {
 		// The message an existing-but-taken address gets, on purpose: a closed
 		// instance does not confirm which addresses have accounts either way.
-		throw new ValidationError('No account here uses that address');
+		throw new ValidationError({ key: 'errors.familyInvite.noAccountHereUses' });
 	}
 
 	const payer = db.select({ name: user.name }).from(user).where(eq(user.id, ownerId)).get();
