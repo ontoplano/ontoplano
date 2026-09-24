@@ -224,10 +224,10 @@ describe('a tool that runs', () => {
 			['tick_bought', ['untick_bought']],
 			['archive_item', ['unarchive_item']],
 			['add_inventory_item', ['remove_inventory_item']],
-			['finish_todo', ['reopen_todo']],
-			['drop_todo', ['reopen_todo']],
-			['schedule_todo', ['unschedule_todo']],
-			['add_todo', ['drop_todo']],
+			['finish_task', ['reopen_task']],
+			['drop_task', ['reopen_task']],
+			['schedule_task', ['unschedule_task']],
+			['add_task', ['drop_task']],
 			['close_goal', ['reopen_goal']],
 			['add_idea', ['remove_idea']],
 			['add_block', ['cancel_block']],
@@ -311,7 +311,7 @@ describe('a tool that runs', () => {
 			id: 1,
 			method: 'tools/call',
 			params: {
-				name: 'add_todo',
+				name: 'add_task',
 				arguments: { title: 'A task with no goal' }
 			}
 		});
@@ -352,7 +352,7 @@ describe('a tool that runs', () => {
 			id: 3,
 			method: 'tools/call',
 			params: {
-				name: 'add_todo',
+				name: 'add_task',
 				arguments: { title: 'Book the first lesson', goalId: target }
 			}
 		});
@@ -400,7 +400,7 @@ describe('a tool that runs', () => {
 			jsonrpc: '2.0',
 			id: 1,
 			method: 'tools/call',
-			params: { name: 'add_todo', arguments: { title: 'Buy garlic' } }
+			params: { name: 'add_task', arguments: { title: 'Buy garlic' } }
 		});
 		expect(made.result.isError).toBe(false);
 		const id = made.result.structuredContent.id;
@@ -410,7 +410,7 @@ describe('a tool that runs', () => {
 			jsonrpc: '2.0',
 			id: 2,
 			method: 'tools/call',
-			params: { name: 'todos', arguments: {} }
+			params: { name: 'tasks', arguments: {} }
 		});
 		expect(
 			listed.result.structuredContent.items.some((t: { title: string }) => t.title === 'Buy garlic')
@@ -429,7 +429,7 @@ describe('a tool that runs', () => {
 			jsonrpc: '2.0',
 			id: 1,
 			method: 'tools/call',
-			params: { name: 'add_todo', arguments: { title: 'x', scheduledDate: 'thursday' } }
+			params: { name: 'add_task', arguments: { title: 'x', scheduledDate: 'thursday' } }
 		});
 		expect(answer.error).toBeUndefined();
 		expect(answer.result.isError).toBe(true);
@@ -540,7 +540,7 @@ describe('a tool that runs', () => {
 			jsonrpc: '2.0',
 			id: 1,
 			method: 'tools/call',
-			params: { name: 'add_todo', arguments: { title: '' } }
+			params: { name: 'add_task', arguments: { title: '' } }
 		});
 		expect(answer.result.isError).toBe(true);
 	});
@@ -550,7 +550,7 @@ describe('a tool that runs', () => {
  * Every tool is described well enough to be chosen correctly.
  *
  * A model picks a tool from its name and its sentence and nothing else. A tool
- * whose description restates its name — "add_todo: adds a todo" — is a tool
+ * whose description restates its name — "add_task: adds a todo" — is a tool
  * that gets called for the wrong reasons, and the cost lands in somebody's
  * actual diary.
  */
@@ -720,11 +720,11 @@ describe('the shape of the surface', () => {
 
 	it('can take a todo back off a day, and bin one', () => {
 		for (const verb of [
-			'add_todo',
-			'finish_todo',
-			'schedule_todo',
-			'unschedule_todo',
-			'drop_todo'
+			'add_task',
+			'finish_task',
+			'schedule_task',
+			'unschedule_task',
+			'drop_task'
 		]) {
 			expect(names().has(verb), verb).toBe(true);
 		}
@@ -780,17 +780,17 @@ describe('editing what was created', () => {
 		call(scopes, { jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args } });
 
 	it('changes a todo, and only the fields given', () => {
-		const made = rpc(1, 'add_todo', { title: 'buy stamps', notes: 'the square ones' }, [
+		const made = rpc(1, 'add_task', { title: 'buy stamps', notes: 'the square ones' }, [
 			'tasks:write'
 		]);
 		const id = made.result.structuredContent.id as number;
 
-		const changed = rpc(2, 'change_todo', { id, title: 'buy ten stamps' }, ['tasks:write']);
+		const changed = rpc(2, 'change_task', { id, title: 'buy ten stamps' }, ['tasks:write']);
 		expect(changed.result.isError).toBe(false);
 
 		// `verbose`, because a listing answers with a line: the notes are the
 		// expensive part of a task and the part a list is least likely to want.
-		const list = rpc(3, 'todos', { verbose: true }, ['tasks:read']);
+		const list = rpc(3, 'tasks', { verbose: true }, ['tasks:read']);
 		const row = list.result.structuredContent.items.find((t: { id: number }) => t.id === id);
 		expect(row.title).toBe('buy ten stamps');
 		expect(row.notes).toBe('the square ones');
@@ -799,33 +799,33 @@ describe('editing what was created', () => {
 	/*
 	 * Started is a state a caller can reach.
 	 *
-	 * `finish_todo` and `reopen_todo` set the two ends and nothing set the
+	 * `finish_task` and `reopen_task` set the two ends and nothing set the
 	 * middle, so an assistant working through a list could say a task was done
 	 * but never that it had begun — the board's own middle column, unreachable
 	 * from outside the app.
 	 */
 	it('marks a todo as started, and refuses a word that is not a state', () => {
-		const made = rpc(1, 'add_todo', { title: 'strip the hallway' }, ['tasks:write']);
+		const made = rpc(1, 'add_task', { title: 'strip the hallway' }, ['tasks:write']);
 		const id = made.result.structuredContent.id as number;
 
-		expect(rpc(2, 'change_todo', { id, status: 'doing' }, ['tasks:write']).result.isError).toBe(
+		expect(rpc(2, 'change_task', { id, status: 'doing' }, ['tasks:write']).result.isError).toBe(
 			false
 		);
-		const started = rpc(3, 'todos', { verbose: true }, ['tasks:read']);
+		const started = rpc(3, 'tasks', { verbose: true }, ['tasks:read']);
 		expect(
 			started.result.structuredContent.items.find((t: { id: number }) => t.id === id).status
 		).toBe('doing');
 
 		// And the title given beside it still lands: one call, both fields.
-		rpc(4, 'change_todo', { id, title: 'strip the hallway walls', status: 'done' }, [
+		rpc(4, 'change_task', { id, title: 'strip the hallway walls', status: 'done' }, [
 			'tasks:write'
 		]);
-		const list = rpc(5, 'todos', { verbose: true, status: 'closed' }, ['tasks:read']);
+		const list = rpc(5, 'tasks', { verbose: true, status: 'closed' }, ['tasks:read']);
 		const row = list.result.structuredContent.items.find((t: { id: number }) => t.id === id);
 		expect(row.title).toBe('strip the hallway walls');
 		expect(row.status).toBe('done');
 
-		const refused = rpc(6, 'change_todo', { id, status: 'started' }, ['tasks:write']);
+		const refused = rpc(6, 'change_task', { id, status: 'started' }, ['tasks:write']);
 		expect(refused.result.isError).toBe(true);
 	});
 
@@ -1741,18 +1741,18 @@ describe('the destructive grant', () => {
 				(t: { name: string }) => t.name
 			);
 
-		expect(offered(['tasks:write'])).not.toContain('drop_todo');
-		expect(offered(['tasks:write', 'destructive'])).toContain('drop_todo');
+		expect(offered(['tasks:write'])).not.toContain('drop_task');
+		expect(offered(['tasks:write', 'destructive'])).toContain('drop_task');
 	});
 
 	it('with the grant, a delete still goes through', () => {
-		const made = rpc(1, 'add_todo', { title: 'a passing thought' }, ['tasks:write']);
+		const made = rpc(1, 'add_task', { title: 'a passing thought' }, ['tasks:write']);
 		const id = made.result.structuredContent.id as number;
 
-		const dropped = rpc(2, 'drop_todo', { id }, ['tasks:write', 'destructive']);
+		const dropped = rpc(2, 'drop_task', { id }, ['tasks:write', 'destructive']);
 		expect(dropped.result.isError, dropped.result.content?.[0]?.text).toBe(false);
 
-		const list = rpc(3, 'todos', {}, ['tasks:read']);
+		const list = rpc(3, 'tasks', {}, ['tasks:read']);
 		expect(list.result.structuredContent.items.some((t: { id: number }) => t.id === id)).toBe(
 			false
 		);
@@ -1804,22 +1804,22 @@ describe('the before and the after', () => {
 		call(scopes, { jsonrpc: '2.0', id, method: 'tools/call', params: { name, arguments: args } });
 
 	it('a change reports the state it replaced, and the one it made', () => {
-		const made = rpc(1, 'add_todo', { title: 'water the plants' }, ['tasks:write']);
+		const made = rpc(1, 'add_task', { title: 'water the plants' }, ['tasks:write']);
 		const id = made.result.structuredContent.id as number;
 
-		const changed = rpc(2, 'change_todo', { id, title: 'water every plant' }, ['tasks:write']);
+		const changed = rpc(2, 'change_task', { id, title: 'water every plant' }, ['tasks:write']);
 		const answer = changed.result.structuredContent;
 		expect(answer.before.title).toBe('water the plants');
 		expect(answer.after.title).toBe('water every plant');
 	});
 
 	it('a delete answers with the whole row, so it can be put back from the answer', () => {
-		const made = rpc(1, 'add_todo', { title: 'a passing errand', notes: 'by the station' }, [
+		const made = rpc(1, 'add_task', { title: 'a passing errand', notes: 'by the station' }, [
 			'tasks:write'
 		]);
 		const id = made.result.structuredContent.id as number;
 
-		const dropped = rpc(2, 'drop_todo', { id }, ['tasks:write', 'destructive']);
+		const dropped = rpc(2, 'drop_task', { id }, ['tasks:write', 'destructive']);
 		const answer = dropped.result.structuredContent;
 		expect(answer.before.title).toBe('a passing errand');
 		expect(answer.before.notes).toBe('by the station');
@@ -1828,14 +1828,14 @@ describe('the before and the after', () => {
 	});
 
 	it('a create has nothing before it, and says so', () => {
-		const made = rpc(1, 'add_todo', { title: 'a fresh thought' }, ['tasks:write']);
+		const made = rpc(1, 'add_task', { title: 'a fresh thought' }, ['tasks:write']);
 		const answer = made.result.structuredContent;
 		expect(answer).toHaveProperty('before');
 		expect(answer.before).toBe(null);
 	});
 
 	it('a read carries no before — it replaced nothing', () => {
-		const list = rpc(1, 'todos', {}, ['tasks:read']);
+		const list = rpc(1, 'tasks', {}, ['tasks:read']);
 		expect(list.result.structuredContent).not.toHaveProperty('before');
 	});
 

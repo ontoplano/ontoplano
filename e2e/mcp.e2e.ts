@@ -119,7 +119,7 @@ test('an AI assistant introduces itself, is offered what its token holds, and do
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const names = (list.body as any).result.tools.map((t: { name: string }) => t.name);
 	expect(names).toContain('today');
-	expect(names).toContain('add_todo');
+	expect(names).toContain('add_task');
 	// Not granted, so not offered.
 	expect(names).not.toContain('write_entry');
 
@@ -128,7 +128,7 @@ test('an AI assistant introduces itself, is offered what its token holds, and do
 		jsonrpc: '2.0',
 		id: 3,
 		method: 'tools/call',
-		params: { name: 'add_todo', arguments: { title: 'Ring the dentist' } }
+		params: { name: 'add_task', arguments: { title: 'Ring the dentist' } }
 	});
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	expect((added.body as any).result.isError).toBe(false);
@@ -156,7 +156,7 @@ test('a tool the token was never offered is refused by name', async ({ playwrigh
 		jsonrpc: '2.0',
 		id: 1,
 		method: 'tools/call',
-		params: { name: 'add_todo', arguments: { title: 'should not happen' } }
+		params: { name: 'add_task', arguments: { title: 'should not happen' } }
 	});
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const result = (answer.body as any).result;

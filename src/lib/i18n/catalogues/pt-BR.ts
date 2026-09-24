@@ -2110,8 +2110,8 @@ export const messages: Catalogue = {
 		other: '{count} regras de classificação'
 	},
 	'notify.noun.tag': { one: '{count} etiqueta', other: '{count} etiquetas' },
+	'notify.noun.task': { one: '{count} tarefa', other: '{count} tarefas' },
 	'notify.noun.toGoal': { one: '{count} vínculo de meta', other: '{count} vínculos de meta' },
-	'notify.noun.todo': { one: '{count} tarefa', other: '{count} tarefas' },
 	'notify.noun.win': { one: '{count} vitória', other: '{count} vitórias' },
 	'notify.noun.workout': { one: '{count} treino', other: '{count} treinos' },
 	'notify.noun.workoutCategory': {
@@ -2151,7 +2151,7 @@ export const messages: Catalogue = {
 	'notify.verb.finish': 'concluiu',
 	'notify.verb.link': 'vinculou',
 	'notify.verb.log': 'registrou',
-	'notify.verb.madeTodosOutOf': 'criou tarefas a partir de',
+	'notify.verb.madeTasksOutOf': 'criou tarefas a partir de',
 	'notify.verb.pay': 'pagou',
 	'notify.verb.pin': 'fixou',
 	'notify.verb.put': 'guardou',

@@ -138,21 +138,21 @@ beforeAll(async () => {
 
 describe('narrowing a task list', () => {
 	test('by state, with `open` meaning not finished and not skipped', () => {
-		const open = itemsOf(call(['tasks:read'], 'todos', { status: 'open', notebookId: kitchen }));
+		const open = itemsOf(call(['tasks:read'], 'tasks', { status: 'open', notebookId: kitchen }));
 		const titles = open.map((one) => one.title);
 		expect(titles).toContain('ring the plumber');
 		expect(titles).not.toContain('buy stamps');
 
-		const done = itemsOf(call(['tasks:read'], 'todos', { status: 'done', notebookId: kitchen }));
+		const done = itemsOf(call(['tasks:read'], 'tasks', { status: 'done', notebookId: kitchen }));
 		expect(done.map((one) => one.title)).toEqual(['buy stamps']);
 	});
 
 	test('by a label, and by the absence of one', () => {
-		const marked = itemsOf(call(['tasks:read'], 'todos', { tag: 'done-by-ai' }));
+		const marked = itemsOf(call(['tasks:read'], 'tasks', { tag: 'done-by-ai' }));
 		expect(marked.map((one) => one.title)).toEqual(['ring the plumber']);
 
 		const rest = itemsOf(
-			call(['tasks:read'], 'todos', { withoutTag: 'done-by-ai', notebookId: kitchen })
+			call(['tasks:read'], 'tasks', { withoutTag: 'done-by-ai', notebookId: kitchen })
 		);
 		expect(rest.map((one) => one.title)).not.toContain('ring the plumber');
 		expect(rest.map((one) => one.title)).toContain('book the skip');
@@ -160,11 +160,11 @@ describe('narrowing a task list', () => {
 
 	test('by any of several labels, sent as a list or as one string', () => {
 		expect(
-			titlesOf(call(['tasks:read'], 'todos', { tags: ['u5', 'i5'], notebookId: queue }))
+			titlesOf(call(['tasks:read'], 'tasks', { tags: ['u5', 'i5'], notebookId: queue }))
 		).toEqual(['file the tax return', 'read the manual']);
 
 		// Assistants send both shapes, so both have to mean the same thing.
-		expect(titlesOf(call(['tasks:read'], 'todos', { tags: 'u5, i5', notebookId: queue }))).toEqual([
+		expect(titlesOf(call(['tasks:read'], 'tasks', { tags: 'u5, i5', notebookId: queue }))).toEqual([
 			'file the tax return',
 			'read the manual'
 		]);
@@ -172,7 +172,7 @@ describe('narrowing a task list', () => {
 
 	test('`withoutTags` drops anything carrying any one of them', () => {
 		expect(
-			titlesOf(call(['tasks:read'], 'todos', { withoutTags: ['u5', 'e2'], notebookId: queue }))
+			titlesOf(call(['tasks:read'], 'tasks', { withoutTags: ['u5', 'e2'], notebookId: queue }))
 		).toEqual(['read the manual', 'sort the shed']);
 	});
 
@@ -185,7 +185,7 @@ describe('narrowing a task list', () => {
 		try {
 			expect(
 				titlesOf(
-					call(['tasks:read'], 'todos', { tags: ['u5', 'e2'], tagMode: 'all', notebookId: queue })
+					call(['tasks:read'], 'tasks', { tags: ['u5', 'e2'], tagMode: 'all', notebookId: queue })
 				)
 			).toEqual(['urgent and easy']);
 			expect(
@@ -194,7 +194,7 @@ describe('narrowing a task list', () => {
 			// A mode it does not know is a sentence, not a filter quietly read as `any`.
 			expect(
 				JSON.stringify(
-					call(['tasks:read'], 'todos', { tags: ['u5'], tagMode: 'some', notebookId: queue })
+					call(['tasks:read'], 'tasks', { tags: ['u5'], tagMode: 'some', notebookId: queue })
 				)
 			).toMatch(/tagMode has to be/);
 		} finally {
@@ -203,18 +203,18 @@ describe('narrowing a task list', () => {
 	});
 
 	test('the single-label spelling still works, and the answer says it is going', () => {
-		const old = call(['tasks:read'], 'todos', { tag: 'u5', notebookId: queue });
+		const old = call(['tasks:read'], 'tasks', { tag: 'u5', notebookId: queue });
 		expect(titlesOf(old)).toEqual(['file the tax return']);
 		expect(warningOf(old)).toMatch(/`tag` is deprecated/);
 		expect(warningOf(old)).toContain('0.185.0');
 
-		const mirror = call(['tasks:read'], 'todos', { withoutTag: 'u5', notebookId: queue });
+		const mirror = call(['tasks:read'], 'tasks', { withoutTag: 'u5', notebookId: queue });
 		expect(titlesOf(mirror)).not.toContain('file the tax return');
 		expect(warningOf(mirror)).toMatch(/`withoutTag` is deprecated/);
 
 		// The spelling that replaced it is not nagged at.
 		expect(
-			warningOf(call(['tasks:read'], 'todos', { tags: ['u5'], notebookId: queue }))
+			warningOf(call(['tasks:read'], 'tasks', { tags: ['u5'], notebookId: queue }))
 		).toBeUndefined();
 	});
 
@@ -225,18 +225,18 @@ describe('narrowing a task list', () => {
 			new Date(Date.parse('2026-09-21T00:00:00Z') + shift * 86_400_000).toISOString().slice(0, 10);
 
 		const recent = itemsOf(
-			call(['tasks:read'], 'todos', { tag: 'done-by-ai', taggedSince: day(-400) })
+			call(['tasks:read'], 'tasks', { tag: 'done-by-ai', taggedSince: day(-400) })
 		);
 		expect(recent.map((one) => one.title)).toEqual(['ring the plumber']);
 
 		const later = itemsOf(
-			call(['tasks:read'], 'todos', { tag: 'done-by-ai', taggedSince: day(400) })
+			call(['tasks:read'], 'tasks', { tag: 'done-by-ai', taggedSince: day(400) })
 		);
 		expect(later).toEqual([]);
 	});
 
 	test('a malformed moment is a sentence, not a filter that matches everything', () => {
-		const answer = call(['tasks:read'], 'todos', { taggedSince: 'yesterdayish' });
+		const answer = call(['tasks:read'], 'tasks', { taggedSince: 'yesterdayish' });
 		expect(answer.result.isError).toBe(true);
 		expect(answer.result.content[0].text).toMatch(/ISO|date/i);
 	});
@@ -244,7 +244,7 @@ describe('narrowing a task list', () => {
 
 describe('how much of a row comes back', () => {
 	test('a line by default: what it is, not what is written on it', () => {
-		const [one] = itemsOf(call(['tasks:read'], 'todos', { tag: 'done-by-ai' }));
+		const [one] = itemsOf(call(['tasks:read'], 'tasks', { tag: 'done-by-ai' }));
 		expect(one.title).toBe('ring the plumber');
 		expect(one.status).toBe('todo');
 		expect(one.seq).toBe(1);
@@ -263,7 +263,7 @@ describe('how much of a row comes back', () => {
 			notes: 'look at this ![shot](/media/39) — the goals header is primitive',
 			notebookId: trip
 		});
-		const [one] = itemsOf(call(['tasks:read'], 'todos', { notebookId: trip })).filter(
+		const [one] = itemsOf(call(['tasks:read'], 'tasks', { notebookId: trip })).filter(
 			(row) => row.id === withShot
 		);
 		expect(one.opening).toContain('the goals header is primitive');
@@ -273,20 +273,20 @@ describe('how much of a row comes back', () => {
 	});
 
 	test('`verbose` is the whole row', () => {
-		const [one] = itemsOf(call(['tasks:read'], 'todos', { tag: 'done-by-ai', verbose: true }));
+		const [one] = itemsOf(call(['tasks:read'], 'tasks', { tag: 'done-by-ai', verbose: true }));
 		expect(one.notes).toBe('the boiler makes a noise');
 		expect(one.notebook).toBe('Kitchen');
 	});
 
 	test('`fields` is exactly what was named, and always the id', () => {
 		const [one] = itemsOf(
-			call(['tasks:read'], 'todos', { tag: 'done-by-ai', fields: 'title,notes' })
+			call(['tasks:read'], 'tasks', { tag: 'done-by-ai', fields: 'title,notes' })
 		);
 		expect(Object.keys(one).sort()).toEqual(['id', 'notes', 'title']);
 	});
 
 	test('a field that does not exist is refused by name', () => {
-		const answer = call(['tasks:read'], 'todos', { fields: 'title,password' });
+		const answer = call(['tasks:read'], 'tasks', { fields: 'title,password' });
 		expect(answer.result.isError).toBe(true);
 		expect(answer.result.content[0].text).toContain('password');
 	});
@@ -306,7 +306,7 @@ describe('how much of a row comes back', () => {
 			'userId',
 			'user_id'
 		]) {
-			const answer = call(['tasks:read'], 'todos', { fields: attempt });
+			const answer = call(['tasks:read'], 'tasks', { fields: attempt });
 			expect(answer.result.isError, `${attempt} was not refused`).toBe(true);
 		}
 	});
@@ -314,7 +314,7 @@ describe('how much of a row comes back', () => {
 	test('a label filter is a word, not a pattern', () => {
 		// No globbing, no regex: a label either is the word or is not.
 		for (const attempt of ['done%', 'done-by-%', '.*', 'done-by-ai; drop table tags']) {
-			expect(itemsOf(call(['tasks:read'], 'todos', { tag: attempt }))).toEqual([]);
+			expect(itemsOf(call(['tasks:read'], 'tasks', { tag: attempt }))).toEqual([]);
 		}
 	});
 });
@@ -331,7 +331,7 @@ describe('`fields` offers what the shape can carry', () => {
 			(tool) => 'fields' in ((tool.input as { properties?: object }).properties ?? {})
 		);
 		expect(takingFields.map((tool) => tool.name).sort()).toEqual(
-			['diary', 'notebook_notes', 'todos', 'up_next'].sort()
+			['diary', 'notebook_notes', 'tasks', 'up_next'].sort()
 		);
 
 		diary.createEntry(mine, { content: 'A quiet day.', title: 'Sunday', tags: 'rest' });
@@ -350,7 +350,7 @@ describe('`fields` offers what the shape can carry', () => {
 	test('`tags` can be asked of a list whose rows carry none', () => {
 		// The shape has labels whether or not this row does; refusing the word
 		// because the first task happened to be unlabelled was the bug.
-		for (const name of ['todos', 'up_next']) {
+		for (const name of ['tasks', 'up_next']) {
 			const answer = call(['tasks:read'], name, {
 				notebookId: trip,
 				fields: 'title,tags,taggedAt,ratings,opening,media'
@@ -444,7 +444,7 @@ describe('none of it widens what a key can see', () => {
 			{ withoutTag: 'nothing' },
 			{ limit: 500 }
 		]) {
-			const titles = itemsOf(call(['tasks:read'], 'todos', args)).map((one) => one.title);
+			const titles = itemsOf(call(['tasks:read'], 'tasks', args)).map((one) => one.title);
 			expect(titles).not.toContain('somebody else’s secret');
 		}
 	});
@@ -452,7 +452,7 @@ describe('none of it widens what a key can see', () => {
 	test('a key tied to one notebook stays tied to it through every filter', () => {
 		const confined = { kind: 'notebook', id: kitchen };
 		for (const args of [{}, { status: 'open' }, { verbose: true }, { tag: 'done-by-ai' }]) {
-			const rows = itemsOf(call(['tasks:read'], 'todos', args, confined));
+			const rows = itemsOf(call(['tasks:read'], 'tasks', args, confined));
 			expect(rows.map((one) => one.title)).not.toContain('pack');
 		}
 
@@ -482,7 +482,7 @@ describe('none of it widens what a key can see', () => {
 
 	test('asking for another notebook by id is answered about the confined one', () => {
 		const rows = itemsOf(
-			call(['tasks:read'], 'todos', { notebookId: trip }, { kind: 'notebook', id: kitchen })
+			call(['tasks:read'], 'tasks', { notebookId: trip }, { kind: 'notebook', id: kitchen })
 		);
 		expect(rows.map((one) => one.title)).not.toContain('pack');
 	});
@@ -490,7 +490,7 @@ describe('none of it widens what a key can see', () => {
 
 describe('marking a task says only what changed', () => {
 	test('the labels it has now, and not two copies of the task', () => {
-		const answer = call(['tasks:write'], 'tag_todo', { id: made.tiles, add: 'done-by-ai' });
+		const answer = call(['tasks:write'], 'tag_task', { id: made.tiles, add: 'done-by-ai' });
 		const said = answer.result.structuredContent;
 		expect(said.tags).toEqual(['done-by-ai']);
 		expect(said.id).toBe(made.tiles);

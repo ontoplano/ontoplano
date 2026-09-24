@@ -1941,16 +1941,16 @@ const assistantCall = (tool, args, before, destroyed, hoursAgo) => {
 		stamp(at)
 	);
 };
-assistantCall('add_todo', { title: 'book the dentist' }, null, false, 30);
+assistantCall('add_task', { title: 'book the dentist' }, null, false, 30);
 assistantCall(
-	'change_todo',
+	'change_task',
 	{ id: 9001, title: 'book the dentist for Tuesday' },
 	{ id: 9001, title: 'book the dentist', notes: '', status: 'todo' },
 	false,
 	29
 );
 assistantCall(
-	'drop_todo',
+	'drop_task',
 	{ id: 9002 },
 	{ id: 9002, title: 'return the drill', notes: 'to M.', status: 'todo', scheduledDate: null },
 	true,

@@ -186,7 +186,7 @@ export function putBack(ctx: Ctx, id: number): { made: string } {
 /** One case per deleting tool. A tool this does not know is a bug, not a shrug. */
 function recreate(ctx: Ctx, tool: string, before: Record<string, unknown>): string {
 	switch (tool) {
-		case 'drop_todo': {
+		case 'drop_task': {
 			createTodo(ctx, {
 				title: before.title,
 				notes: before.notes,

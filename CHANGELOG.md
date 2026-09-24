@@ -18,6 +18,22 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.183.4 — 2026-09-24
+
+- **Every label you use is a tab of the writing room again.** The screen that
+  shows the whole vocabulary — where a label is renamed, merged or deleted —
+  could only be reached through Manage tags inside some notebook. It sits
+  beside People now, and the door from that dialog says "All tags".
+- **An assistant can say a task has been started.** There were tools for
+  finishing one and for putting it back, and nothing for the column between
+  them, so "doing" could only be set by hand in the app. `change_task` takes a
+  status.
+- **The task tools over MCP are named after tasks.** `add_todo` is `add_task`,
+  `change_todo` is `change_task`, the listing is `tasks`, and so on through
+  the set — the app has called them tasks everywhere else for a long time.
+  **This renames them outright:** an assistant with the old names saved will
+  be told the tool does not exist, and reconnecting picks the new ones up.
+
 ## 0.183.3 — 2026-09-23
 
 - **A payment that fails says so in your language too.** The last English

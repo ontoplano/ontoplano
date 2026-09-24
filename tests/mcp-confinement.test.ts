@@ -155,21 +155,21 @@ beforeAll(async () => {
 
 describe('what a key tied to one notebook can do', () => {
 	it('reads the notebook’s own tasks', () => {
-		const answer = call('todos', {});
+		const answer = call('tasks', {});
 		expect(failed(answer)).toBe(false);
 		expect(said(answer)).toContain('call the plumber');
 	});
 
 	it('writes into it, without being told which notebook', () => {
-		const answer = call('add_todo', { title: 'get a quote' });
+		const answer = call('add_task', { title: 'get a quote' });
 		expect(failed(answer)).toBe(false);
 
-		const back = said(call('todos', {}));
+		const back = said(call('tasks', {}));
 		expect(back).toContain('get a quote');
 	});
 
 	it('finishes one of its own', () => {
-		expect(failed(call('finish_todo', { id: inside.todo }))).toBe(false);
+		expect(failed(call('finish_task', { id: inside.todo }))).toBe(false);
 	});
 
 	it('reads and writes its notes and its goals', () => {
@@ -181,7 +181,7 @@ describe('what a key tied to one notebook can do', () => {
 	/*
 	 * The three reads a confined key is likeliest to be missing, named.
 	 *
-	 * `todos` being offered says nothing about the rest: these are the ones
+	 * `tasks` being offered says nothing about the rest: these are the ones
 	 * that answer "what should I do next", "which notebooks are there" and
 	 * "show me that picture", and an assistant without them has to read the
 	 * whole list and sort it itself — which is what it was doing, on a key
@@ -194,7 +194,7 @@ describe('what a key tied to one notebook can do', () => {
 			scopes: Object.keys(SCOPES),
 			confinement: { kind: 'notebook', id: mine }
 		} as never).map((t: { name: string }) => t.name);
-		for (const name of ['todos', 'up_next', 'notebooks', 'notebook_notes', 'media'])
+		for (const name of ['tasks', 'up_next', 'notebooks', 'notebook_notes', 'media'])
 			expect(offered, `${name} is missing from a confined key's tool list`).toContain(name);
 	});
 
@@ -207,12 +207,12 @@ describe('what a key tied to one notebook can do', () => {
 
 describe('what it cannot do', () => {
 	it('cannot touch a task that is not in the notebook', () => {
-		const answer = call('finish_todo', { id: outside.todo });
+		const answer = call('finish_task', { id: outside.todo });
 		expect(failed(answer)).toBe(true);
 	});
 
 	it('cannot touch one in a different notebook', () => {
-		expect(failed(call('finish_todo', { id: outside.notebookTodo }))).toBe(true);
+		expect(failed(call('finish_task', { id: outside.notebookTodo }))).toBe(true);
 	});
 
 	it('cannot read a goal or a note from outside', () => {
@@ -247,8 +247,8 @@ describe('what it cannot do', () => {
 			confinement: { kind: 'notebook', id: mine }
 		} as never).map((t: { name: string }) => t.name);
 
-		expect(offered).toContain('todos');
-		expect(offered).toContain('add_todo');
+		expect(offered).toContain('tasks');
+		expect(offered).toContain('add_task');
 		expect(offered).not.toContain('diary');
 		// Offered, because a notebook holds its subject's shopping now.
 		expect(offered).toContain('tick_bought');
@@ -328,11 +328,11 @@ describe('asking about another notebook', () => {
 	});
 
 	it('cannot file a new task into another notebook', () => {
-		expect(failed(call('add_todo', { title: 'sneaky', notebookId: other }))).toBe(false);
+		expect(failed(call('add_task', { title: 'sneaky', notebookId: other }))).toBe(false);
 
 		// It landed in the confinement, not where it was asked to go.
-		expect(said(call('todos', {}))).toContain('sneaky');
-		expect(said(call('todos', {}, false))).toContain('sneaky');
+		expect(said(call('tasks', {}))).toContain('sneaky');
+		expect(said(call('tasks', {}, false))).toContain('sneaky');
 		expect(
 			said(call('notebook_notes', { id: other }, false)).includes('sneaky'),
 			'it reached the other notebook'
@@ -340,10 +340,10 @@ describe('asking about another notebook', () => {
 	});
 
 	it('cannot move one of its own tasks out', () => {
-		expect(failed(call('change_todo', { id: inside.todo, notebookId: other }))).toBe(false);
+		expect(failed(call('change_task', { id: inside.todo, notebookId: other }))).toBe(false);
 		// Still in the notebook it started in: a confined key cannot post
 		// something out through the letterbox.
-		expect(said(call('todos', {}))).toContain('call the plumber');
+		expect(said(call('tasks', {}))).toContain('call the plumber');
 	});
 
 	it('says nothing different for a notebook that does not exist', () => {
@@ -362,15 +362,15 @@ describe('when the notebook is gone', () => {
 	it('the key stops working rather than falling back to the account', async () => {
 		const { deleteNotebook } = await import('../src/lib/services/notebooks');
 		const gone = (() => {
-			const made = call('add_todo', { title: 'before it went' });
+			const made = call('add_task', { title: 'before it went' });
 			return made;
 		})();
 		expect(failed(gone)).toBe(false);
 
 		deleteNotebook(ctx(), mine);
 
-		expect(failed(call('todos', {}))).toBe(true);
-		expect(failed(call('add_todo', { title: 'after it went' }))).toBe(true);
+		expect(failed(call('tasks', {}))).toBe(true);
+		expect(failed(call('add_task', { title: 'after it went' }))).toBe(true);
 	});
 });
 
@@ -385,7 +385,7 @@ describe('a key tied to a kind this build no longer knows', () => {
 			jsonrpc: '2.0',
 			id: 1,
 			method: 'tools/call',
-			params: { name: 'todos', arguments: {} }
+			params: { name: 'tasks', arguments: {} }
 		}) as { error?: unknown; result?: { isError?: boolean } };
 
 		expect(Boolean(answer.error) || Boolean(answer.result?.isError)).toBe(true);
@@ -394,7 +394,7 @@ describe('a key tied to a kind this build no longer knows', () => {
 
 describe('a key that is not confined', () => {
 	it('still reaches the whole account', () => {
-		const answer = call('todos', {}, false);
+		const answer = call('tasks', {}, false);
 		expect(failed(answer)).toBe(false);
 		expect(said(answer)).toContain('a private errand');
 	});
@@ -416,12 +416,12 @@ describe('what is being held back', () => {
 		const offered = visibleTools(narrow).map((one) => one.name);
 		const held = withheldTools(narrow);
 
-		expect(offered).toContain('todos');
+		expect(offered).toContain('tasks');
 		expect(held.length).toBeGreaterThan(0);
 		// Nothing is in both lists, and everything is in one of them.
 		expect(held.map((one) => one.name).filter((name) => offered.includes(name))).toEqual([]);
 
-		const writing = held.find((one) => one.name === 'add_todo');
+		const writing = held.find((one) => one.name === 'add_task');
 		expect(writing?.needs, 'it should say which grant would offer it').toBe('tasks:write');
 	});
 
@@ -432,7 +432,7 @@ describe('what is being held back', () => {
 		};
 
 		const held = withheldTools(everythingButDeleting);
-		expect(held.find((one) => one.name === 'drop_todo')?.needs).toBe('destructive');
+		expect(held.find((one) => one.name === 'drop_task')?.needs).toBe('destructive');
 	});
 
 	it('holds nothing back from a key that may do everything', async () => {

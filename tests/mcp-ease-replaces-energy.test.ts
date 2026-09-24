@@ -53,7 +53,7 @@ describe('a caller still sending `energy`', () => {
 	test('has it stored as the ease it means, not as the number it typed', () => {
 		// Draining, on the old scale. The hardest thing on the list.
 		const id = fresh('strip the wallpaper');
-		call('change_todo', { id, energy: 5 });
+		call('change_task', { id, energy: 5 });
 		expect(easeOf(id)).toBe(1);
 	});
 
@@ -66,20 +66,20 @@ describe('a caller still sending `energy`', () => {
 			[5, 1]
 		]) {
 			const id = fresh(`energy ${energy}`);
-			call('change_todo', { id, energy });
+			call('change_task', { id, energy });
 			expect(easeOf(id), `energy ${energy}`).toBe(ease);
 		}
 	});
 
 	test('and `ease` wins where a caller sends both, being the one that is current', () => {
 		const id = fresh('both');
-		call('change_todo', { id, energy: 5, ease: 4 });
+		call('change_task', { id, energy: 5, ease: 4 });
 		expect(easeOf(id)).toBe(4);
 	});
 
 	test('is told so in the answer, with the release that removes it', () => {
 		const id = fresh('warned');
-		const said = call('change_todo', { id, energy: 2 }) as { warning?: string };
+		const said = call('change_task', { id, energy: 2 }) as { warning?: string };
 		expect(said.warning).toMatch(/`energy` is deprecated/);
 		expect(said.warning).toContain('0.190');
 		// And the replacement is named, not merely the removal.
@@ -88,13 +88,13 @@ describe('a caller still sending `energy`', () => {
 
 	test('and a caller using `ease` is not warned about anything', () => {
 		const id = fresh('unwarned');
-		const said = call('change_todo', { id, ease: 2 }) as { warning?: string };
+		const said = call('change_task', { id, ease: 2 }) as { warning?: string };
 		expect(said.warning).toBeUndefined();
 	});
 
 	test('while an edit that mentions neither leaves the rating alone', () => {
 		const id = todos.createTodo(ctx, { title: 'sand the floor', ratings: { ease: 5 } });
-		call('change_todo', { id, title: 'sand the floor properly' });
+		call('change_task', { id, title: 'sand the floor properly' });
 		expect(easeOf(id)).toBe(5);
 	});
 });

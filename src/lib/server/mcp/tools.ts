@@ -327,7 +327,7 @@ export type Tool = {
 	 * back.
 	 *
 	 * An id in an answer has to mean a row that is there. It did not once: an
-	 * `add_todo` answered `{ id: 559 }`, and a minute later nothing by that
+	 * `add_task` answered `{ id: 559 }`, and a minute later nothing by that
 	 * number existed — so the caller went to label its own work, was told the
 	 * task was not found, and the work was gone with nothing anywhere saying
 	 * so. Set this and the protocol layer reads the row back through the same
@@ -1313,14 +1313,14 @@ export const TOOLS: Tool[] = [
 		 * A block on one day, which is not a todo.
 		 *
 		 * A todo is a thing to do with no hour attached; this is an hour. Asked
-		 * for "deep work 9 to 11 today", an assistant with only `add_todo` writes
+		 * for "deep work 9 to 11 today", an assistant with only `add_task` writes
 		 * the time into the title and the day still looks empty, which is the
 		 * failure this exists to stop.
 		 */
 		name: 'add_block',
 		title: 'Put a block on a day',
 		description:
-			'Add a one-off block to one day: a title, a start time and how long it runs. This is for "deep work from 9 to 11 today" — a thing with an hour. Use `add_todo` instead when there is no time attached, and `change_block` to move or rename something already on the day rather than adding a second copy of it. It does not touch the repeating week; this is that day only.',
+			'Add a one-off block to one day: a title, a start time and how long it runs. This is for "deep work from 9 to 11 today" — a thing with an hour. Use `add_task` instead when there is no time attached, and `change_block` to move or rename something already on the day rather than adding a second copy of it. It does not touch the repeating week; this is that day only.',
 		scope: 'schedule:write',
 		writes: true,
 		input: object(
@@ -1556,7 +1556,7 @@ export const TOOLS: Tool[] = [
 
 	// ── The todo list ────────────────────────────────────────────────────────
 	{
-		name: 'todos',
+		name: 'tasks',
 		title: 'The todo list',
 		description:
 			'Tasks with no date on them yet. A todo gains a date by being put on a day, which promotes it onto the week. Answers with a line per task; `verbose` or `fields` for more. Narrow it rather than reading it whole \u2014 `notebookId` for one subject, `status: "open"`, `tags`, `withoutTags`, `taggedSince`.',
@@ -1649,7 +1649,7 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
-		name: 'add_todo',
+		name: 'add_task',
 		title: 'Add a todo',
 		creates: 'todo' as const,
 		description:
@@ -1701,10 +1701,10 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
-		name: 'finish_todo',
+		name: 'finish_task',
 		title: 'Finish a todo',
 		description:
-			'Mark a todo done, which is what "I did that" means here — it is not deleted, it moves to done and stays in the record. Ask `todos` first for the id.',
+			'Mark a todo done, which is what "I did that" means here — it is not deleted, it moves to done and stays in the record. Ask `tasks` first for the id.',
 		scope: 'tasks:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'todo' }],
@@ -1715,10 +1715,10 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
-		name: 'drop_todo',
+		name: 'drop_task',
 		title: 'Delete a todo',
 		description:
-			'Remove a todo entirely, because it is not going to happen and is not worth a record — "bin that one", "forget it". Different from `finish_todo`, which keeps it as something that was done. Gone for good; prefer finishing it when it actually happened.',
+			'Remove a todo entirely, because it is not going to happen and is not worth a record — "bin that one", "forget it". Different from `finish_task`, which keeps it as something that was done. Gone for good; prefer finishing it when it actually happened.',
 		scope: 'tasks:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'todo' }],
@@ -1733,11 +1733,11 @@ export const TOOLS: Tool[] = [
 		/*
 		 * Both closing verbs have one way back, and it is the same way back.
 		 *
-		 * `finish_todo` and `drop_todo` each set a status; nothing set it to
+		 * `finish_task` and `drop_task` each set a status; nothing set it to
 		 * `todo` again. So "actually I haven't done that yet" had no answer,
 		 * and the workaround is a second row with the same words on it.
 		 */
-		name: 'reopen_todo',
+		name: 'reopen_task',
 		title: 'Put a todo back on the list',
 		description:
 			'Undo a finish or a drop: the todo goes back to not-done. Use it when something was ticked by mistake, or when a dropped thing turns out to matter after all. It keeps its notes, its day and everything linked to it.',
@@ -1754,16 +1754,16 @@ export const TOOLS: Tool[] = [
 		/*
 		 * Put away, which is neither done nor dropped.
 		 *
-		 * `finish_todo` says it happened and `drop_todo` says it will not; this
+		 * `finish_task` says it happened and `drop_task` says it will not; this
 		 * says "not now, and I am not throwing it out". A task keeps everything
 		 * about itself, including whether it was half-started, and comes back
 		 * exactly as it was — so it needs both directions, as archiving always
 		 * does.
 		 */
-		name: 'archive_todo',
+		name: 'archive_task',
 		title: 'Put a todo away for now',
 		description:
-			'Put a todo out of the way without finishing it or dropping it — for something that matters but not this month. It keeps its notes, its notebook and its state, and comes back with `unarchive_todo`. Prefer this to dropping when somebody says "not now" rather than "not going to".',
+			'Put a todo out of the way without finishing it or dropping it — for something that matters but not this month. It keeps its notes, its notebook and its state, and comes back with `unarchive_task`. Prefer this to dropping when somebody says "not now" rather than "not going to".',
 		scope: 'tasks:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'todo' }],
@@ -1774,10 +1774,10 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
-		name: 'unarchive_todo',
+		name: 'unarchive_task',
 		title: 'Bring a todo back',
 		description:
-			'Bring back a todo that was put away, so it shows on the list again. It returns in whatever state it left in. `todos` says which ones are archived.',
+			'Bring back a todo that was put away, so it shows on the list again. It returns in whatever state it left in. `tasks` says which ones are archived.',
 		scope: 'tasks:write',
 		writes: true,
 		refs: [{ arg: 'id', kind: 'todo' }],
@@ -1791,15 +1791,15 @@ export const TOOLS: Tool[] = [
 		/*
 		 * Labels, added and removed by name.
 		 *
-		 * `change_todo` takes the whole set and replaces it, which is right for
+		 * `change_task` takes the whole set and replaces it, which is right for
 		 * a form and wrong for a caller that wants to mark one thing: it would
 		 * have to read the todo, rebuild the list and write it back, and a
 		 * caller that gets that wrong deletes labels somebody else put on.
 		 */
-		name: 'tag_todo',
+		name: 'tag_task',
 		title: 'Label a todo',
 		description:
-			'Put labels on a todo or take them off, leaving its other labels alone — this is the one to use for marking a task, and `change_todo` is for replacing every label at once. Several assistants sharing a list mark their own work this way; `todos` takes a `tag` to read back only the ones you marked. Answers with the labels it has afterwards.',
+			'Put labels on a todo or take them off, leaving its other labels alone — this is the one to use for marking a task, and `change_task` is for replacing every label at once. Several assistants sharing a list mark their own work this way; `tasks` takes a `tag` to read back only the ones you marked. Answers with the labels it has afterwards.',
 		scope: 'tasks:write',
 		writes: true,
 		/*
@@ -1811,7 +1811,7 @@ export const TOOLS: Tool[] = [
 		refs: [{ arg: 'id', kind: 'todo', subject: true }],
 		input: object(
 			{
-				id: { type: 'integer', description: 'The todo\u2019s id, as `todos` gives it.' },
+				id: { type: 'integer', description: 'The todo\u2019s id, as `tasks` gives it.' },
 				add: text(
 					'Labels to put on it, comma or space separated \u2014 "done-by-ai". Lower case, no #; the account\u2019s one vocabulary, the same words a diary entry or an idea is tagged with.'
 				),
@@ -1827,10 +1827,10 @@ export const TOOLS: Tool[] = [
 		})
 	},
 	{
-		name: 'change_todo',
+		name: 'change_task',
 		title: 'Change a todo',
 		description:
-			'Rewrite a todo\u2019s title, notes or state. Only the fields given change. Moving it on or off a day is `schedule_todo`; `finish_todo` and `reopen_todo` are the shorthands for the two ends of `status`.',
+			'Rewrite a todo\u2019s title, notes or state. Only the fields given change. Moving it on or off a day is `schedule_task`; `finish_task` and `reopen_task` are the shorthands for the two ends of `status`.',
 		scope: 'tasks:write',
 		writes: true,
 		refs: [
@@ -1839,13 +1839,13 @@ export const TOOLS: Tool[] = [
 		],
 		input: object(
 			{
-				id: { type: 'integer', description: 'The todo\u2019s id, as `todos` gives it.' },
+				id: { type: 'integer', description: 'The todo\u2019s id, as `tasks` gives it.' },
 				title: text('The new title, in the person\u2019s own words.'),
 				notes: text('The new notes.'),
 				/*
 				 * Started, which had no spelling at all.
 				 *
-				 * `finish_todo` and `reopen_todo` set the two ends and nothing set
+				 * `finish_task` and `reopen_task` set the two ends and nothing set
 				 * the middle, so "I have begun that one" \u2014 a column on the board,
 				 * and what an assistant working a list wants to say before it is
 				 * finished \u2014 could only be said by hand in the app.
@@ -1859,7 +1859,7 @@ export const TOOLS: Tool[] = [
 				notebookId: {
 					type: 'integer',
 					description:
-						'The notebook to file it under, as `notebooks` gives its id. `0` takes it out of whichever one it is in. `add_todo` can file a task at birth; this is how one already made moves.'
+						'The notebook to file it under, as `notebooks` gives its id. `0` takes it out of whichever one it is in. `add_task` can file a task at birth; this is how one already made moves.'
 				},
 				tags: text(
 					'The labels it should carry from now on, comma or space separated — this replaces whatever it had, so include the ones to keep. An empty string takes them all off. Left out, the labels are untouched.'
@@ -1904,7 +1904,7 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
-		name: 'schedule_todo',
+		name: 'schedule_task',
 		title: 'Put a todo on a day',
 		description:
 			'Give a todo a date, which moves it onto that day’s board. This is what "do it on Thursday" means here.',
@@ -1924,7 +1924,7 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
-		name: 'unschedule_todo',
+		name: 'unschedule_task',
 		title: 'Take a todo off its day',
 		description:
 			'Take the date off a todo, which moves it back to the list of things with no time yet. This is "not today after all" — the todo is kept, it just stops being on a day.',
@@ -1989,7 +1989,7 @@ export const TOOLS: Tool[] = [
 		/*
 		 * Putting existing work against a goal.
 		 *
-		 * `add_todo` links what it creates, which covers "break this goal into
+		 * `add_task` links what it creates, which covers "break this goal into
 		 * tasks". This is the other half: work that already exists and turns out
 		 * to belong to something.
 		 *
@@ -2014,7 +2014,7 @@ export const TOOLS: Tool[] = [
 				todoIds: {
 					type: 'array',
 					items: { type: 'integer' },
-					description: 'Todo ids, as `todos` gives them.'
+					description: 'Todo ids, as `tasks` gives them.'
 				},
 				slotIds: {
 					type: 'array',
@@ -2306,7 +2306,7 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
-		name: 'note_to_todos',
+		name: 'note_to_tasks',
 		title: 'Make todos out of a checklist note',
 		description:
 			'Turn a note that is really a checklist into the tasks it describes. Every `- [ ]` line becomes a task, with whatever is written under it as that task\u2019s notes; a `- [x]` line comes across already done. Each is filed under the note\u2019s own notebook, and each box is replaced by a reference to the task it became \u2014 `TASK:#4` \u2014 so the note keeps its words and stops being a second copy of the list.',

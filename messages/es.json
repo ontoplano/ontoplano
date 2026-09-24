@@ -1981,13 +1981,13 @@
 		"one": "{count} etiqueta",
 		"other": "{count} etiquetas"
 	},
+	"notify.noun.task": {
+		"one": "{count} tarea",
+		"other": "{count} tareas"
+	},
 	"notify.noun.toGoal": {
 		"one": "{count} vínculo de meta",
 		"other": "{count} vínculos de meta"
-	},
-	"notify.noun.todo": {
-		"one": "{count} tarea",
-		"other": "{count} tareas"
 	},
 	"notify.noun.win": {
 		"one": "{count} logro",
@@ -2040,7 +2040,7 @@
 	"notify.verb.finish": "terminó",
 	"notify.verb.link": "vinculó",
 	"notify.verb.log": "registró",
-	"notify.verb.madeTodosOutOf": "creó tareas a partir de",
+	"notify.verb.madeTasksOutOf": "creó tareas a partir de",
 	"notify.verb.pay": "pagó",
 	"notify.verb.pin": "fijó",
 	"notify.verb.put": "guardó",

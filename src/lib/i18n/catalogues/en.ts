@@ -2063,8 +2063,8 @@ export const messages: Catalogue = {
 	'notify.noun.reviewNote': { one: '{count} review note', other: '{count} review notes' },
 	'notify.noun.sortRule': { one: '{count} sorting rule', other: '{count} sorting rules' },
 	'notify.noun.tag': { one: '{count} tag', other: '{count} tags' },
+	'notify.noun.task': { one: '{count} task', other: '{count} tasks' },
 	'notify.noun.toGoal': { one: '{count} goal link', other: '{count} goal links' },
-	'notify.noun.todo': { one: '{count} todo', other: '{count} todos' },
 	'notify.noun.win': { one: '{count} win', other: '{count} wins' },
 	'notify.noun.workout': { one: '{count} workout', other: '{count} workouts' },
 	'notify.noun.workoutCategory': {
@@ -2104,7 +2104,7 @@ export const messages: Catalogue = {
 	'notify.verb.finish': 'finished',
 	'notify.verb.link': 'linked',
 	'notify.verb.log': 'logged',
-	'notify.verb.madeTodosOutOf': 'made todos out of',
+	'notify.verb.madeTasksOutOf': 'made tasks out of',
 	'notify.verb.pay': 'paid',
 	'notify.verb.pin': 'pinned',
 	'notify.verb.put': 'put away',

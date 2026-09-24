@@ -271,8 +271,8 @@ describe("somebody else's id", () => {
 	it('is refused the same way an id that never existed is', async () => {
 		// Two different refusals would be a way to ask what exists, one number at
 		// a time — so the answer for a foreign row and for no row must match.
-		const foreign = JSON.stringify(await callAsOwner('change_todo', { id: theirs.todo }));
-		const absent = JSON.stringify(await callAsOwner('change_todo', { id: NOBODYS }));
+		const foreign = JSON.stringify(await callAsOwner('change_task', { id: theirs.todo }));
+		const absent = JSON.stringify(await callAsOwner('change_task', { id: NOBODYS }));
 
 		expect(foreign).toEqual(absent);
 	});

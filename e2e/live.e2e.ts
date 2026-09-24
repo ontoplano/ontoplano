@@ -97,7 +97,7 @@ test('a todo added by an assistant turns up without a reload', async ({ page, pl
 			jsonrpc: '2.0',
 			id: 1,
 			method: 'tools/call',
-			params: { name: 'add_todo', arguments: { title } }
+			params: { name: 'add_task', arguments: { title } }
 		}
 	});
 	expect(wrote.ok(), await wrote.text()).toBe(true);

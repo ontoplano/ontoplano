@@ -2130,8 +2130,8 @@ export const messages: Catalogue = {
 	'notify.noun.reviewNote': { one: '{count} Rückblicknotiz', other: '{count} Rückblicknotizen' },
 	'notify.noun.sortRule': { one: '{count} Sortierregel', other: '{count} Sortierregeln' },
 	'notify.noun.tag': { one: '{count} Schlagwort', other: '{count} Schlagwörter' },
+	'notify.noun.task': { one: '{count} Aufgabe', other: '{count} Aufgaben' },
 	'notify.noun.toGoal': { one: '{count} Zielverknüpfung', other: '{count} Zielverknüpfungen' },
-	'notify.noun.todo': { one: '{count} Aufgabe', other: '{count} Aufgaben' },
 	'notify.noun.win': { one: '{count} Erfolg', other: '{count} Erfolge' },
 	'notify.noun.workout': { one: '{count} Training', other: '{count} Trainings' },
 	'notify.noun.workoutCategory': {
@@ -2170,7 +2170,7 @@ export const messages: Catalogue = {
 	'notify.verb.finish': 'abgeschlossen',
 	'notify.verb.link': 'verknüpft',
 	'notify.verb.log': 'erfasst',
-	'notify.verb.madeTodosOutOf': 'Aufgaben gemacht aus',
+	'notify.verb.madeTasksOutOf': 'Aufgaben gemacht aus',
 	'notify.verb.pay': 'bezahlt',
 	'notify.verb.pin': 'angeheftet',
 	'notify.verb.put': 'weggelegt',

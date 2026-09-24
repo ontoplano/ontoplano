@@ -512,7 +512,7 @@
 			}
 		}
 	},
-	"add_todo": {
+	"add_task": {
 		"scope": "tasks:write",
 		"writes": true,
 		"destroys": false,
@@ -662,7 +662,7 @@
 			}
 		}
 	},
-	"archive_todo": {
+	"archive_task": {
 		"scope": "tasks:write",
 		"writes": true,
 		"destroys": false,
@@ -1189,7 +1189,7 @@
 			}
 		}
 	},
-	"change_todo": {
+	"change_task": {
 		"scope": "tasks:write",
 		"writes": true,
 		"destroys": false,
@@ -1443,7 +1443,7 @@
 			}
 		}
 	},
-	"drop_todo": {
+	"drop_task": {
 		"scope": "tasks:write",
 		"writes": true,
 		"destroys": true,
@@ -1523,7 +1523,7 @@
 			}
 		}
 	},
-	"finish_todo": {
+	"finish_task": {
 		"scope": "tasks:write",
 		"writes": true,
 		"destroys": false,
@@ -1715,7 +1715,7 @@
 			}
 		}
 	},
-	"note_to_todos": {
+	"note_to_tasks": {
 		"scope": "tasks:write",
 		"writes": true,
 		"destroys": false,
@@ -2136,7 +2136,7 @@
 			}
 		}
 	},
-	"reopen_todo": {
+	"reopen_task": {
 		"scope": "tasks:write",
 		"writes": true,
 		"destroys": false,
@@ -2153,7 +2153,7 @@
 		"destroys": false,
 		"params": {}
 	},
-	"schedule_todo": {
+	"schedule_task": {
 		"scope": "tasks:write",
 		"writes": true,
 		"destroys": false,
@@ -2290,7 +2290,7 @@
 			}
 		}
 	},
-	"tag_todo": {
+	"tag_task": {
 		"scope": "tasks:write",
 		"writes": true,
 		"destroys": false,
@@ -2315,43 +2315,7 @@
 		"destroys": false,
 		"params": {}
 	},
-	"tick_bought": {
-		"scope": "inventory:write",
-		"writes": true,
-		"destroys": false,
-		"params": {
-			"id": {
-				"type": "integer",
-				"required": true
-			}
-		}
-	},
-	"tick_habit": {
-		"scope": "habits:write",
-		"writes": true,
-		"destroys": false,
-		"params": {
-			"date": {
-				"type": "string",
-				"required": false
-			},
-			"id": {
-				"type": "integer",
-				"required": false
-			},
-			"name": {
-				"type": "string",
-				"required": false
-			}
-		}
-	},
-	"today": {
-		"scope": "today:read",
-		"writes": false,
-		"destroys": false,
-		"params": {}
-	},
-	"todos": {
+	"tasks": {
 		"scope": "tasks:read",
 		"writes": false,
 		"destroys": false,
@@ -2424,6 +2388,42 @@
 			}
 		}
 	},
+	"tick_bought": {
+		"scope": "inventory:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"tick_habit": {
+		"scope": "habits:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"date": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": false
+			},
+			"name": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
+	"today": {
+		"scope": "today:read",
+		"writes": false,
+		"destroys": false,
+		"params": {}
+	},
 	"unarchive_item": {
 		"scope": "inventory:write",
 		"writes": true,
@@ -2446,7 +2446,7 @@
 			}
 		}
 	},
-	"unarchive_todo": {
+	"unarchive_task": {
 		"scope": "tasks:write",
 		"writes": true,
 		"destroys": false,
@@ -2502,7 +2502,7 @@
 			}
 		}
 	},
-	"unschedule_todo": {
+	"unschedule_task": {
 		"scope": "tasks:write",
 		"writes": true,
 		"destroys": false,

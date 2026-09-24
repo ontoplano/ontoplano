@@ -1849,8 +1849,8 @@ export type MessageKey =
 	| 'notify.noun.reviewNote'
 	| 'notify.noun.sortRule'
 	| 'notify.noun.tag'
+	| 'notify.noun.task'
 	| 'notify.noun.toGoal'
-	| 'notify.noun.todo'
 	| 'notify.noun.win'
 	| 'notify.noun.workout'
 	| 'notify.noun.workoutCategory'
@@ -1881,7 +1881,7 @@ export type MessageKey =
 	| 'notify.verb.finish'
 	| 'notify.verb.link'
 	| 'notify.verb.log'
-	| 'notify.verb.madeTodosOutOf'
+	| 'notify.verb.madeTasksOutOf'
 	| 'notify.verb.pay'
 	| 'notify.verb.pin'
 	| 'notify.verb.put'
@@ -3860,8 +3860,8 @@ export interface MessageValuesFor {
 	'notify.noun.reviewNote': { count: number };
 	'notify.noun.sortRule': { count: number };
 	'notify.noun.tag': { count: number };
+	'notify.noun.task': { count: number };
 	'notify.noun.toGoal': { count: number };
-	'notify.noun.todo': { count: number };
 	'notify.noun.win': { count: number };
 	'notify.noun.workout': { count: number };
 	'notify.noun.workoutCategory': { count: number };

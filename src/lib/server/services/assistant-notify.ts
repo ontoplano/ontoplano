@@ -62,7 +62,7 @@ const NOTIFIED_UP_TO_KEY = 'notify.assistant.upTo';
 /**
  * The verb a tool's name starts with, in the past tense.
  *
- * Tool names are `verb_noun` — `add_todo`, `finish_block`, `change_habit` — so
+ * Tool names are `verb_noun` — `add_task`, `finish_block`, `change_habit` — so
  * the phrase can be built from the name rather than written out ninety-one
  * times and kept in step by somebody remembering to. A tool added next year
  * gets a sentence for free if it is named the way the rest are, and
@@ -72,14 +72,14 @@ const NOTIFIED_UP_TO_KEY = 'notify.assistant.upTo';
 /*
  * The verbs a tool name can start with, as catalogue keys.
  *
- * A sentence here is assembled from a tool's own name — `add_todo` becomes
- * "added 3 todos" — which for a long time meant it could only be English: the
+ * A sentence here is assembled from a tool's own name — `add_task` becomes
+ * "added 3 tasks" — which for a long time meant it could only be English: the
  * noun came from the identifier and was pluralised with an `s`, which is
  * English grammar written in TypeScript.
  *
  * It is a real sentence now, in whatever language the account reads. The verb
  * is a key rather than a word (`notify.verb.add`), the noun is a plural
- * message that carries its own count (`notify.noun.todo`), and the order of
+ * message that carries its own count (`notify.noun.task`), and the order of
  * the two is `notify.phrase` — which German reverses, because the participle
  * goes last there and no amount of translating the words alone would have
  * fixed that.
@@ -132,7 +132,7 @@ export const VERB_KEYS = new Set([
  *
  * `workout_done` and `cooked_recipe` read as noun-first, and splitting them on
  * the underscore gives "workouted a done" and "cookeded a recipe".
- * `note_to_todos` names where it starts and where it ends, which is the
+ * `note_to_tasks` names where it starts and where it ends, which is the
  * clearest thing to call it and reads as nothing at all split on the
  * underscore. Named here rather than renamed: the tool names are a public
  * surface that assistants have in their saved prompts.
@@ -140,7 +140,7 @@ export const VERB_KEYS = new Set([
 export const PHRASE_OVERRIDES: Record<string, Phrase> = {
 	workout_done: { verb: 'finish', noun: 'workout' },
 	cooked_recipe: { verb: 'cooked', noun: 'recipe' },
-	note_to_todos: { verb: 'madeTodosOutOf', noun: 'note' }
+	note_to_tasks: { verb: 'madeTasksOutOf', noun: 'note' }
 };
 
 /** A verb's catalogue key, and the noun it acts on, as the identifier spells it. */
@@ -208,7 +208,7 @@ export const NOUN_KEYS = new Set([
 	'sortRule',
 	'tag',
 	'toGoal',
-	'todo',
+	'task',
 	'win',
 	'workout',
 	'workoutCategory',
@@ -422,7 +422,7 @@ function fromJson(text: string | null): unknown {
 /**
  * Where a notification opens: the log of what an assistant did, always.
  *
- * It used to work out the room a burst was about — "added 4 todos" opened the
+ * It used to work out the room a burst was about — "added 4 tasks" opened the
  * todo list — and that was the wrong guess about what somebody is asking when
  * they press it: "i don't like it taking to tasks either, i wanted to go to
  * integrations in the logs of AI changes". The tasks are already where they

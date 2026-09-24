@@ -186,7 +186,7 @@ describe('the gate every call goes through', () => {
 	});
 
 	it('refuses when one of several ids is foreign and the rest are fine', () => {
-		// `change_todo` moves a to-do into a notebook, so a call carries two ids.
+		// `change_task` moves a to-do into a notebook, so a call carries two ids.
 		// Somebody else's notebook with your own to-do is the interesting shape:
 		// the first argument is beyond reproach and the call is still a reach.
 		expect(() =>

@@ -61,18 +61,18 @@ function newestCall(user = OWNER) {
 describe('what gets written down', () => {
 	it('a write lands in the log with its before; a read leaves no trace', () => {
 		const countBefore = log.listAssistantCalls(ctx(), { limit: 200 }).length;
-		rpc('todos', {});
+		rpc('tasks', {});
 		expect(log.listAssistantCalls(ctx(), { limit: 200 })).toHaveLength(countBefore);
 
-		const made = rpc('add_todo', { title: 'read the meter' });
+		const made = rpc('add_task', { title: 'read the meter' });
 		const row = newestCall();
-		expect(row.tool).toBe('add_todo');
+		expect(row.tool).toBe('add_task');
 		expect(row.before).toBe(null);
 		expect(row.destroyed).toBe(false);
 
-		rpc('change_todo', { id: made.id, title: 'read both meters' });
+		rpc('change_task', { id: made.id, title: 'read both meters' });
 		const changed = newestCall();
-		expect(changed.tool).toBe('change_todo');
+		expect(changed.tool).toBe('change_task');
 		expect((changed.before as { title: string }).title).toBe('read the meter');
 	});
 
@@ -84,7 +84,7 @@ describe('what gets written down', () => {
 		const { recordAssistantCall, listAssistantCalls, CALLS_KEPT } = log;
 		for (let i = 0; i < CALLS_KEPT + 20; i++) {
 			recordAssistantCall(ctx(STRANGER), {
-				tool: 'add_todo',
+				tool: 'add_task',
 				args: { i },
 				before: null,
 				destroyed: false
@@ -124,9 +124,9 @@ describe('put it back', () => {
 
 	it('a dropped todo', () => {
 		roundTrip({
-			make: () => rpc('add_todo', { title: 'fix the gate', notes: 'left hinge' }).id,
-			remove: 'drop_todo',
-			list: 'todos',
+			make: () => rpc('add_task', { title: 'fix the gate', notes: 'left hinge' }).id,
+			remove: 'drop_task',
+			list: 'tasks',
 			found: (items) => items.some((t) => t.title === 'fix the gate')
 		});
 	});
@@ -263,13 +263,13 @@ describe('put it back', () => {
 	});
 
 	it('refuses a call that deleted nothing', () => {
-		rpc('add_todo', { title: 'just an add' });
+		rpc('add_task', { title: 'just an add' });
 		expect(refusal(() => log.putBack(ctx(), newestCall().id))).toMatch(/deleted nothing/i);
 	});
 
 	it("refuses another account's row", () => {
-		const made = rpc('add_todo', { title: 'mine to lose' });
-		rpc('drop_todo', { id: made.id });
+		const made = rpc('add_task', { title: 'mine to lose' });
+		rpc('drop_task', { id: made.id });
 		const row = newestCall();
 
 		expect(() => log.putBack(ctx(STRANGER), row.id)).toThrow();

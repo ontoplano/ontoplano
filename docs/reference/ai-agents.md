@@ -54,7 +54,7 @@ the tab open while you set the assistant up.
 Every permission the tools use is ticked to begin with, reading and writing
 both. Untick what you would rather it did not see — a tool whose permission was
 not granted is not offered to the assistant at all, so a read-only key does not
-know that `add_todo` exists.
+know that `add_task` exists.
 
 Deleting is a box of its own below that table, and the one thing that starts
 unticked. Without it an assistant can add and change but never remove, and the
@@ -185,7 +185,7 @@ worked.
 
 A **to-do** is something to do with no hour attached; a **block** is an hour.
 "Ring the dentist" is a to-do, "deep work from 9 to 11" is a block. An assistant
-that only has `add_todo` answers the second by writing the time into the title,
+that only has `add_task` answers the second by writing the time into the title,
 and your day still looks empty.
 
 With `schedule:write` it puts a real block on the day and can answer for the
@@ -249,7 +249,7 @@ existed, so there is nothing to learn by walking the numbers.
 - **Every write answers with what it replaced** — `before` and `after`, and for a
   delete the whole removed row — so a bad call can be put back from the
   conversation itself. Two exceptions say so in their own description:
-  `tag_todo` answers with the labels and nothing else, because two copies of a
+  `tag_task` answers with the labels and nothing else, because two copies of a
   task to report one label is most of what marking a list costs, and the
   person's own copy of the change is in the log under Settings → Integrations
   either way.
@@ -330,7 +330,7 @@ _Needs `schedule:write`; writes._
 
 ### `add_block` — Put a block on a day
 
-Add a one-off block to one day: a title, a start time and how long it runs. This is for "deep work from 9 to 11 today" — a thing with an hour. Use `add_todo` instead when there is no time attached, and `change_block` to move or rename something already on the day rather than adding a second copy of it. It does not touch the repeating week; this is that day only.
+Add a one-off block to one day: a title, a start time and how long it runs. This is for "deep work from 9 to 11 today" — a thing with an hour. Use `add_task` instead when there is no time attached, and `change_block` to move or rename something already on the day rather than adding a second copy of it. It does not touch the repeating week; this is that day only.
 
 _Needs `schedule:write`; writes._
 
@@ -412,7 +412,7 @@ _Needs any of `notes:read`, `ideas:read`, `tasks:read`, `people:read`, `kitchen:
 | --------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `path`    | string | yes      | The link, exactly as the text writes it: `/media/12`, or `/media/audio/12` for a recording. The number alone is taken as a picture. |
 
-### `todos` — The todo list
+### `tasks` — The todo list
 
 Tasks with no date on them yet. A todo gains a date by being put on a day, which promotes it onto the week. Answers with a line per task; `verbose` or `fields` for more. Narrow it rather than reading it whole — `notebookId` for one subject, `status: "open"`, `tags`, `withoutTags`, `taggedSince`.
 
@@ -453,7 +453,7 @@ _Needs `tasks:read`; read-only._
 | `verbose`     | boolean | —        | Send the whole of each row rather than a line. Off by default: a list is usually read to find something, and the thing found is then asked about by id.                                                                                                                                                                                           |
 | `fields`      | string  | —        | Only these parts of each row, comma-separated — `title,status,tags`. `id` always comes back. Unknown names are refused rather than ignored.                                                                                                                                                                                                       |
 
-### `add_todo` — Add a todo
+### `add_task` — Add a todo
 
 Put a task on the todo list. Leave the date off unless the person said when — a todo with no date is the normal case here, not an unfinished one.
 
@@ -468,9 +468,9 @@ _Needs `tasks:write`; writes._
 | `goalId`        | integer | —        | A goal to count this towards, as `goals` gives its id. Breaking a goal into tasks is the ordinary reason to make several at once, and a task linked here moves that goal’s progress when it is finished.                |
 | `tags`          | string  | —        | Labels, comma or space separated — "a1, done". The account’s one vocabulary, the same words a diary entry or an idea is tagged with. Mark your own work with a label of your own where several assistants share a list. |
 
-### `finish_todo` — Finish a todo
+### `finish_task` — Finish a todo
 
-Mark a todo done, which is what "I did that" means here — it is not deleted, it moves to done and stays in the record. Ask `todos` first for the id.
+Mark a todo done, which is what "I did that" means here — it is not deleted, it moves to done and stays in the record. Ask `tasks` first for the id.
 
 _Needs `tasks:write`; writes._
 
@@ -478,9 +478,9 @@ _Needs `tasks:write`; writes._
 | --------- | ------- | -------- | -------------- |
 | `id`      | integer | yes      | The todo’s id. |
 
-### `drop_todo` — Delete a todo
+### `drop_task` — Delete a todo
 
-Remove a todo entirely, because it is not going to happen and is not worth a record — "bin that one", "forget it". Different from `finish_todo`, which keeps it as something that was done. Gone for good; prefer finishing it when it actually happened.
+Remove a todo entirely, because it is not going to happen and is not worth a record — "bin that one", "forget it". Different from `finish_task`, which keeps it as something that was done. Gone for good; prefer finishing it when it actually happened.
 
 _Needs `tasks:write` and `destructive`; deletes._
 
@@ -488,7 +488,7 @@ _Needs `tasks:write` and `destructive`; deletes._
 | --------- | ------- | -------- | -------------- |
 | `id`      | integer | yes      | The todo’s id. |
 
-### `reopen_todo` — Put a todo back on the list
+### `reopen_task` — Put a todo back on the list
 
 Undo a finish or a drop: the todo goes back to not-done. Use it when something was ticked by mistake, or when a dropped thing turns out to matter after all. It keeps its notes, its day and everything linked to it.
 
@@ -498,19 +498,9 @@ _Needs `tasks:write`; writes._
 | --------- | ------- | -------- | -------------- |
 | `id`      | integer | yes      | The todo’s id. |
 
-### `archive_todo` — Put a todo away for now
+### `archive_task` — Put a todo away for now
 
-Put a todo out of the way without finishing it or dropping it — for something that matters but not this month. It keeps its notes, its notebook and its state, and comes back with `unarchive_todo`. Prefer this to dropping when somebody says "not now" rather than "not going to".
-
-_Needs `tasks:write`; writes._
-
-| Parameter | Type    | Required | What it is     |
-| --------- | ------- | -------- | -------------- |
-| `id`      | integer | yes      | The todo’s id. |
-
-### `unarchive_todo` — Bring a todo back
-
-Bring back a todo that was put away, so it shows on the list again. It returns in whatever state it left in. `todos` says which ones are archived.
+Put a todo out of the way without finishing it or dropping it — for something that matters but not this month. It keeps its notes, its notebook and its state, and comes back with `unarchive_task`. Prefer this to dropping when somebody says "not now" rather than "not going to".
 
 _Needs `tasks:write`; writes._
 
@@ -518,38 +508,48 @@ _Needs `tasks:write`; writes._
 | --------- | ------- | -------- | -------------- |
 | `id`      | integer | yes      | The todo’s id. |
 
-### `tag_todo` — Label a todo
+### `unarchive_task` — Bring a todo back
 
-Put labels on a todo or take them off, leaving its other labels alone — this is the one to use for marking a task, and `change_todo` is for replacing every label at once. Several assistants sharing a list mark their own work this way; `todos` takes a `tag` to read back only the ones you marked. Answers with the labels it has afterwards.
+Bring back a todo that was put away, so it shows on the list again. It returns in whatever state it left in. `tasks` says which ones are archived.
+
+_Needs `tasks:write`; writes._
+
+| Parameter | Type    | Required | What it is     |
+| --------- | ------- | -------- | -------------- |
+| `id`      | integer | yes      | The todo’s id. |
+
+### `tag_task` — Label a todo
+
+Put labels on a todo or take them off, leaving its other labels alone — this is the one to use for marking a task, and `change_task` is for replacing every label at once. Several assistants sharing a list mark their own work this way; `tasks` takes a `tag` to read back only the ones you marked. Answers with the labels it has afterwards.
 
 _Needs `tasks:write`; writes._
 
 | Parameter | Type    | Required | What it is                                                                                                                                                            |
 | --------- | ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`      | integer | yes      | The todo’s id, as `todos` gives it.                                                                                                                                   |
+| `id`      | integer | yes      | The todo’s id, as `tasks` gives it.                                                                                                                                   |
 | `add`     | string  | —        | Labels to put on it, comma or space separated — "done-by-ai". Lower case, no #; the account’s one vocabulary, the same words a diary entry or an idea is tagged with. |
 | `remove`  | string  | —        | Labels to take off it, comma or space separated. Ones it does not have are ignored.                                                                                   |
 
-### `change_todo` — Change a todo
+### `change_task` — Change a todo
 
-Rewrite a todo’s title, notes or state. Only the fields given change. Moving it on or off a day is `schedule_todo`; `finish_todo` and `reopen_todo` are the shorthands for the two ends of `status`.
+Rewrite a todo’s title, notes or state. Only the fields given change. Moving it on or off a day is `schedule_task`; `finish_task` and `reopen_task` are the shorthands for the two ends of `status`.
 
 _Needs `tasks:write`; writes._
 
 | Parameter    | Type    | Required | What it is                                                                                                                                                                                             |
 | ------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `id`         | integer | yes      | The todo’s id, as `todos` gives it.                                                                                                                                                                    |
+| `id`         | integer | yes      | The todo’s id, as `tasks` gives it.                                                                                                                                                                    |
 | `title`      | string  | —        | The new title, in the person’s own words.                                                                                                                                                              |
 | `notes`      | string  | —        | The new notes.                                                                                                                                                                                         |
 | `status`     | string  | —        | What state it is in: `todo` waiting, `doing` started, `done` finished, `skipped` given up on. Left out, it is untouched. One of: `todo`, `doing`, `done`, `skipped`.                                   |
-| `notebookId` | integer | —        | The notebook to file it under, as `notebooks` gives its id. `0` takes it out of whichever one it is in. `add_todo` can file a task at birth; this is how one already made moves.                       |
+| `notebookId` | integer | —        | The notebook to file it under, as `notebooks` gives its id. `0` takes it out of whichever one it is in. `add_task` can file a task at birth; this is how one already made moves.                       |
 | `tags`       | string  | —        | The labels it should carry from now on, comma or space separated — this replaces whatever it had, so include the ones to keep. An empty string takes them all off. Left out, the labels are untouched. |
 | `urgency`    | integer | —        | How soon it has to happen, 0–5.                                                                                                                                                                        |
 | `interest`   | integer | —        | How much they want to do it, 0–5.                                                                                                                                                                      |
 | `ease`       | integer | —        | How easy it is, 0–5, five being easiest. Replaces `energy`, which asked the opposite question on a scale that began at one.                                                                            |
 | `energy`     | integer | —        | Deprecated — use `ease`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190. **Deprecated.** |
 
-### `schedule_todo` — Put a todo on a day
+### `schedule_task` — Put a todo on a day
 
 Give a todo a date, which moves it onto that day’s board. This is what "do it on Thursday" means here.
 
@@ -560,7 +560,7 @@ _Needs `tasks:write`; writes._
 | `id`      | integer | yes      | The todo’s id.          |
 | `date`    | string  | yes      | The day, as YYYY-MM-DD. |
 
-### `unschedule_todo` — Take a todo off its day
+### `unschedule_task` — Take a todo off its day
 
 Take the date off a todo, which moves it back to the list of things with no time yet. This is "not today after all" — the todo is kept, it just stops being on a day.
 
@@ -601,7 +601,7 @@ _Needs `tasks:write`; writes._
 | Parameter | Type    | Required | What it is                                                         |
 | --------- | ------- | -------- | ------------------------------------------------------------------ |
 | `goalId`  | integer | yes      | The goal’s id, as `goals` gave it.                                 |
-| `todoIds` | array   | —        | Todo ids, as `todos` gives them.                                   |
+| `todoIds` | array   | —        | Todo ids, as `tasks` gives them.                                   |
 | `slotIds` | array   | —        | Ids of repeating blocks, for a goal met by doing something weekly. |
 
 ### `unlink_from_goal` — Take work off a goal
@@ -729,7 +729,7 @@ _Needs `notes:write`; writes._
 | `title`   | string  | —        | What to call it. Left out, the name is untouched; an empty string takes the name off, which is what an ordinary day’s diary entry has. |
 | `tags`    | string  | —        | The tags it should carry from now on, comma or space separated — this replaces the ones it has. Left out, they are untouched.          |
 
-### `note_to_todos` — Make todos out of a checklist note
+### `note_to_tasks` — Make todos out of a checklist note
 
 Turn a note that is really a checklist into the tasks it describes. Every `- [ ]` line becomes a task, with whatever is written under it as that task’s notes; a `- [x]` line comes across already done. Each is filed under the note’s own notebook, and each box is replaced by a reference to the task it became — `TASK:#4` — so the note keeps its words and stops being a second copy of the list.
 

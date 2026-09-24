@@ -89,9 +89,9 @@ describe('every write tool can say what it did', () => {
 
 describe('the line somebody reads', () => {
 	test('one kind of change is the whole sentence', () => {
-		const { title, body } = summarise(['add_todo', 'add_todo', 'add_todo'], 'Claude', en);
-		expect(title).toBe('Claude added 3 todos');
-		expect(body).toBe('added 3 todos');
+		const { title, body } = summarise(['add_task', 'add_task', 'add_task'], 'Claude', en);
+		expect(title).toBe('Claude added 3 tasks');
+		expect(body).toBe('added 3 tasks');
 	});
 
 	test('one change is singular', () => {
@@ -100,22 +100,22 @@ describe('the line somebody reads', () => {
 
 	test('several kinds are counted, largest first', () => {
 		const { title, body } = summarise(
-			['change_block', 'add_todo', 'change_block', 'change_block', 'write_entry'],
+			['change_block', 'add_task', 'change_block', 'change_block', 'write_entry'],
 			'Claude',
 			en
 		);
 		expect(title).toBe('Claude changed 5 things');
-		expect(body).toBe('changed 3 blocks, added 1 todo, wrote 1 entry');
+		expect(body).toBe('changed 3 blocks, added 1 task, wrote 1 entry');
 	});
 
 	test('a name it cannot read is counted rather than guessed at', () => {
-		const { title, body } = summarise(['add_todo', 'sideways'], 'Claude', en);
+		const { title, body } = summarise(['add_task', 'sideways'], 'Claude', en);
 		expect(title).toBe('Claude changed 2 things');
 		expect(body).toContain('1 other');
 	});
 
 	test('the token names itself', () => {
-		expect(summarise(['add_todo'], 'Kitchen tablet', en).title).toContain('Kitchen tablet');
+		expect(summarise(['add_task'], 'Kitchen tablet', en).title).toContain('Kitchen tablet');
 	});
 
 	test('an irregular plural is not a noun with an s on it', () => {
@@ -123,7 +123,7 @@ describe('the line somebody reads', () => {
 		expect(summarise(['add_data_point', 'add_data_point'], 'Claude', en).body).toBe(
 			'added 2 data points'
 		);
-		expect(summarise(['add_todo'], 'Claude', en).body).toBe('added 1 todo');
+		expect(summarise(['add_task'], 'Claude', en).body).toBe('added 1 task');
 	});
 
 	/*
@@ -132,11 +132,11 @@ describe('the line somebody reads', () => {
 	 * from identifiers rather than from the catalogue.
 	 */
 	test("it is written in the language the account reads, not the caller's", () => {
-		const { title, body } = summarise(['add_todo', 'add_todo'], 'Claude', pt);
+		const { title, body } = summarise(['add_task', 'add_task'], 'Claude', pt);
 		expect(title).toBe('Claude adicionou 2 tarefas');
 		expect(body).toBe('adicionou 2 tarefas');
 
-		const many = summarise(['add_todo', 'write_entry'], 'Claude', pt);
+		const many = summarise(['add_task', 'write_entry'], 'Claude', pt);
 		expect(many.title).toBe('Claude alterou 2 coisas');
 		expect(many.body).toBe('adicionou 1 tarefa, escreveu 1 entrada');
 	});
@@ -151,7 +151,7 @@ describe('the line somebody reads', () => {
 		const { title, body } = summarise(
 			[
 				{
-					tool: 'tag_todo',
+					tool: 'tag_task',
 					args: { id: 7, add: 'done-by-ai' },
 					before: { title: 'bad filter button' }
 				}
@@ -167,7 +167,7 @@ describe('the line somebody reads', () => {
 		const { body } = summarise(
 			[
 				{
-					tool: 'tag_todo',
+					tool: 'tag_task',
 					args: { id: 7, add: 'reviewed-by-ai', remove: 'ai-review' },
 					before: { title: 'bad filter button' }
 				}
@@ -180,25 +180,25 @@ describe('the line somebody reads', () => {
 
 	test('a create has no before, so the name comes from what was sent', () => {
 		const { title, body } = summarise(
-			[{ tool: 'add_todo', args: { title: 'Buy milk' } }],
+			[{ tool: 'add_task', args: { title: 'Buy milk' } }],
 			'Claude',
 			en
 		);
 		expect(title).toBe('Claude added \u201cBuy milk\u201d');
 		// No labels to say, so the kind of thing is still worth carrying.
-		expect(body).toBe('added 1 todo');
+		expect(body).toBe('added 1 task');
 	});
 
 	test('two writes are counted, named or not', () => {
 		const { title } = summarise(
 			[
-				{ tool: 'tag_todo', args: { id: 7 }, before: { title: 'bad filter button' } },
-				{ tool: 'tag_todo', args: { id: 8 }, before: { title: 'filter header bar' } }
+				{ tool: 'tag_task', args: { id: 7 }, before: { title: 'bad filter button' } },
+				{ tool: 'tag_task', args: { id: 8 }, before: { title: 'filter header bar' } }
 			],
 			'Claude',
 			en
 		);
-		expect(title).toBe('Claude labelled 2 todos');
+		expect(title).toBe('Claude labelled 2 tasks');
 	});
 
 	test('a write about something nameless is counted, not invented', () => {
@@ -223,7 +223,7 @@ describe('the line somebody reads', () => {
 
 	test('a title longer than a lock screen is cut, not sent whole', () => {
 		const long = 'x'.repeat(SUBJECT_MAX * 2);
-		const named = subjectName({ tool: 'change_todo', before: { title: long } });
+		const named = subjectName({ tool: 'change_task', before: { title: long } });
 		expect(named).toHaveLength(SUBJECT_MAX);
 		expect(named?.endsWith('\u2026')).toBe(true);
 	});

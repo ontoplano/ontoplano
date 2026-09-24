@@ -128,7 +128,7 @@ export type RefKind = keyof typeof KINDS;
  * The row a create just made, read back the way any other id is read.
  *
  * An id in an answer has to mean a row that is there. It did not once: a
- * `add_todo` answered `{ id: 559 }` and nothing by that number existed a
+ * `add_task` answered `{ id: 559 }` and nothing by that number existed a
  * minute later — so the caller labelled its own work, was told the task was
  * not found, and the work was lost with no error anywhere to say so.
  *

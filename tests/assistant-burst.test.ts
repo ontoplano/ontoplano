@@ -60,8 +60,8 @@ beforeAll(async () => {
 
 describe('a burst of writes', () => {
 	test('is not said while it is still going', async () => {
-		wrote(OWNER, 'add_todo');
-		wrote(OWNER, 'add_todo');
+		wrote(OWNER, 'add_task');
+		wrote(OWNER, 'add_task');
 
 		const result = await notify.notifyAssistantBursts();
 		expect(result.waiting).toBe(1);
@@ -76,7 +76,7 @@ describe('a burst of writes', () => {
 		expect(first.pushed).toBe(1);
 		expect(pushes).toHaveLength(1);
 		expect(pushes[0].userId).toBe(OWNER);
-		expect(pushes[0].title).toMatch(/2 todos/);
+		expect(pushes[0].title).toMatch(/2 tasks/);
 	});
 
 	test('and not again on the next sweep', async () => {
@@ -98,7 +98,7 @@ describe('a burst of writes', () => {
 describe('and nobody else', () => {
 	test("one account's writes never reach another account", async () => {
 		pushes.length = 0;
-		wrote(STRANGER, 'add_todo');
+		wrote(STRANGER, 'add_task');
 		wrote(STRANGER, 'finish_block');
 		ageEverything(notify.BURST_QUIET_SECONDS + 5);
 
@@ -111,7 +111,7 @@ describe('and nobody else', () => {
 		setUserSetting(OWNER, notify.ASSISTANT_PUSH_KEY, 'off');
 		pushes.length = 0;
 
-		wrote(OWNER, 'add_todo');
+		wrote(OWNER, 'add_task');
 		ageEverything(notify.BURST_QUIET_SECONDS + 5);
 		const result = await notify.notifyAssistantBursts();
 
@@ -120,6 +120,6 @@ describe('and nobody else', () => {
 		// The write is still in the log, which is the record rather than the
 		// telling: turning the notification off is not turning off the history.
 		const rows = log.listAssistantCalls(ctxFor(OWNER) as never, { limit: 50 });
-		expect(rows.some((r) => r.tool === 'add_todo')).toBe(true);
+		expect(rows.some((r) => r.tool === 'add_task')).toBe(true);
 	});
 });

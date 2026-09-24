@@ -4,7 +4,7 @@ import { OWNER, makeDatabase, seedAccounts } from './helpers/db';
 /**
  * A capped list says what it capped.
  *
- * `todos` answered with fifty rows and `count: 50` whether the account held
+ * `tasks` answered with fifty rows and `count: 50` whether the account held
  * fifty or five hundred, so the newest were invisible and the tool read as a
  * list that had stopped being updated rather than one that was cut short.
  * The answer now carries `total` beside `count`, and `remaining` and
@@ -38,7 +38,7 @@ function run(name: string, args: Record<string, unknown> = {}) {
 
 describe('a list that was cut short says so', () => {
 	it('names the whole size, not the size of the piece', () => {
-		const page = run('todos', { limit: 3 });
+		const page = run('tasks', { limit: 3 });
 		expect(page.count).toBe(3);
 		expect(page.total).toBe(HELD);
 		expect(page.remaining).toBe(HELD - 3);
@@ -46,7 +46,7 @@ describe('a list that was cut short says so', () => {
 	});
 
 	it('says nothing about more when there is none', () => {
-		const page = run('todos', { limit: 50 });
+		const page = run('tasks', { limit: 50 });
 		expect(page.count).toBe(HELD);
 		expect(page.total).toBe(HELD);
 		expect(page).not.toHaveProperty('remaining');
@@ -54,8 +54,8 @@ describe('a list that was cut short says so', () => {
 	});
 
 	it('reaches the rest through the offset it handed out', () => {
-		const first = run('todos', { limit: 3 });
-		const second = run('todos', { limit: 3, offset: first.nextOffset });
+		const first = run('tasks', { limit: 3 });
+		const second = run('tasks', { limit: 3, offset: first.nextOffset });
 		expect(second.offset).toBe(3);
 		expect(second.count).toBe(3);
 		expect(second.total).toBe(HELD);
@@ -64,13 +64,13 @@ describe('a list that was cut short says so', () => {
 		// Disjoint: a page that repeats what the last one said is worse than a cap.
 		expect(ids(first.items).some((id) => ids(second.items).includes(id))).toBe(false);
 
-		const last = run('todos', { limit: 3, offset: second.nextOffset });
+		const last = run('tasks', { limit: 3, offset: second.nextOffset });
 		expect(last.count).toBe(HELD - 6);
 		expect(last).not.toHaveProperty('nextOffset');
 	});
 
 	it('walks off the end without inventing rows', () => {
-		const page = run('todos', { limit: 3, offset: 999 });
+		const page = run('tasks', { limit: 3, offset: 999 });
 		expect(page.count).toBe(0);
 		expect(page.total).toBe(HELD);
 		expect(page).not.toHaveProperty('nextOffset');
@@ -82,7 +82,7 @@ describe('a list that was cut short says so', () => {
 		const id = createNotebook(ctx(), { title: 'one subject' });
 		createTodo(ctx(), { title: 'filed', notes: '', notebookId: id });
 
-		const page = run('todos', { notebookId: id, limit: 50 });
+		const page = run('tasks', { notebookId: id, limit: 50 });
 		expect(page.count).toBe(1);
 		expect(page.total).toBe(1);
 	});
@@ -91,7 +91,7 @@ describe('a list that was cut short says so', () => {
 describe('every capped list takes an offset', () => {
 	// A cap on one tool and not on its neighbour is the same surprise in a
 	// different room, so the ones that slice are checked together.
-	for (const name of ['todos', 'diary', 'ideas', 'workout_sessions']) {
+	for (const name of ['tasks', 'diary', 'ideas', 'workout_sessions']) {
 		it(`${name} offers one`, () => {
 			const tool = TOOLS.find((t) => t.name === name);
 			const properties = tool?.input.properties as Record<string, unknown>;

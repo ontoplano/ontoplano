@@ -148,7 +148,7 @@ the tab open while you set the assistant up.
 Every permission the tools use is ticked to begin with, reading and writing
 both. Untick what you would rather it did not see — a tool whose permission was
 not granted is not offered to the assistant at all, so a read-only key does not
-know that `add_todo` exists.
+know that `add_task` exists.
 
 Deleting is a box of its own below that table, and the one thing that starts
 unticked. Without it an assistant can add and change but never remove, and the
@@ -279,7 +279,7 @@ worked.
 
 A **to-do** is something to do with no hour attached; a **block** is an hour.
 "Ring the dentist" is a to-do, "deep work from 9 to 11" is a block. An assistant
-that only has `add_todo` answers the second by writing the time into the title,
+that only has `add_task` answers the second by writing the time into the title,
 and your day still looks empty.
 
 With `schedule:write` it puts a real block on the day and can answer for the
@@ -343,7 +343,7 @@ existed, so there is nothing to learn by walking the numbers.
 - **Every write answers with what it replaced** — `before` and `after`, and for a
   delete the whole removed row — so a bad call can be put back from the
   conversation itself. Two exceptions say so in their own description:
-  `tag_todo` answers with the labels and nothing else, because two copies of a
+  `tag_task` answers with the labels and nothing else, because two copies of a
   task to report one label is most of what marking a list costs, and the
   person's own copy of the change is in the log under Settings → Integrations
   either way.

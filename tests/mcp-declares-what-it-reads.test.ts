@@ -7,7 +7,7 @@
  * caller reads a truncated preview, concludes the whole note is out of reach,
  * and asks the person to paste it.
  *
- * That is not hypothetical. `todos` accepted `fields` on a build whose schema
+ * That is not hypothetical. `tasks` accepted `fields` on a build whose schema
  * never mentioned it, and a whole session was spent reading openings cut off
  * at a hundred characters while the full text was one argument away.
  *
