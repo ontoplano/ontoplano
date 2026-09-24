@@ -29,6 +29,11 @@ releases mattered.
 - **Every one of those forms asks which notebook it belongs to.** In the room
   the field starts empty; inside a notebook it starts on that notebook, and
   editing something from the room never quietly takes it out of one.
+- **A task's labels are at full strength again.** They share a line with the
+  row's buttons, and that whole line was faded until the pointer was on it — so
+  a label's ink came out a grey nobody could read. The fade belongs to the
+  buttons. The buttons, in turn, now come back when the row is under the
+  pointer, which they had stopped doing.
 - **The number in the task form says which row this is.** It counted against
   every open task in the notebook whatever the list was doing, so opening the
   top row of a list ordered by when things were added was told it was third.

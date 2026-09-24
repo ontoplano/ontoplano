@@ -2129,12 +2129,19 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	@media (hover: hover) {
-		.row-actions {
+		.row-actions,
+		.row-actions-stack {
 			opacity: 0.35;
 		}
 
-		.row-actions-stack,
-		.task-actions {
+		/*
+		 * A task's number and its labels share that line with its buttons and
+		 * are not among them: they say what the row is, not what can be done to
+		 * it. Fading the whole line took a label's ink down to a grey nobody
+		 * could read — "this text and border should be black, it was black
+		 * before" — so the fade is on the controls, one by one.
+		 */
+		.task-actions > :not(.task-labels) {
 			opacity: 0.35;
 		}
 
@@ -2144,6 +2151,18 @@ label:has(> input[type='radio']:not(:disabled)) {
 		*:hover > .row-actions-stack,
 		*:focus-within > .row-actions-stack,
 		.row-actions-stack:focus-within {
+			opacity: 1;
+		}
+
+		/*
+		 * And they come back on hover, which they never did: the row that
+		 * faded was `.task-actions` and the rule that brought one back named
+		 * only the other two, so a task's buttons stayed at a third whatever
+		 * the pointer was doing.
+		 */
+		*:hover > .task-actions > :not(.task-labels),
+		*:focus-within > .task-actions > :not(.task-labels),
+		.task-actions:focus-within > :not(.task-labels) {
 			opacity: 1;
 		}
 	}

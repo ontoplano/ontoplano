@@ -1607,7 +1607,11 @@
 									with the number: both of them say how to find this task
 									again rather than what it is.
 								-->
-								<div class="order-first mr-auto flex min-w-0 flex-wrap items-center gap-1">
+								<!-- `task-labels`: what the row says, so it keeps its ink while
+								     the buttons beside it are held back — see `.task-actions`. -->
+								<div
+									class="task-labels order-first mr-auto flex min-w-0 flex-wrap items-center gap-1"
+								>
 									{#if todo.notebookSeq !== null}
 										<span class="tabular text-[11px] text-gray-500" title={whenOf(todo)}>
 											#{todo.notebookSeq}
