@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { SvelteSet } from 'svelte/reactivity';
 	import { setRoomAction } from '$lib/room-action.svelte';
-	import { NOTEBOOK_SEPARATOR } from '$lib/services/notebooks';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { enhance } from '$lib/enhance';
 	import { resolve } from '$app/paths';
@@ -15,8 +14,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import NotebookDetail from '$lib/components/NotebookDetail.svelte';
 	import NotebookFields from '$lib/components/fields/NotebookFields.svelte';
-	import type { NotebookModule } from '$lib/notebook-modules';
-	import type { KeyWithValues } from '$lib/i18n/keys';
+	import NotebookCover from '$lib/components/NotebookCover.svelte';
 	import NotebookPicture from '$lib/components/NotebookPicture.svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import { useT } from '$lib/i18n';
@@ -60,8 +58,6 @@
 		else opened.add(id);
 	};
 
-	/** The name as it reads under its parent: the last part of the path. */
-	const leafTitle = (title: string) => title.split(NOTEBOOK_SEPARATOR).at(-1) ?? title;
 	const orphaned = $derived(data.orphaned);
 
 	/**
@@ -113,41 +109,6 @@
 			e.preventDefault();
 			openCreate();
 		}
-	}
-
-	/**
-	 * "12 notes · 3 tasks · 1 goal", with nothing said about what is empty.
-	 *
-	 * Notes, not entries: writing in a notebook is a note and writing in the
-	 * diary is an entry, and the tab above this list already says so.
-	 */
-	/** Each of these takes a `count`, so none of them is a `PlainKey`. */
-	type CountKey = Extract<KeyWithValues, `notebooks.${string}Count`>;
-
-	const COUNT_LABELS: Partial<Record<NotebookModule, CountKey>> = {
-		notes: 'notebooks.notesCount',
-		tasks: 'notebooks.tasksCount',
-		goals: 'notebooks.goalsCount',
-		ideas: 'notebooks.ideasCount',
-		inventory: 'notebooks.inventoryCount',
-		ledgers: 'notebooks.ledgersCount',
-		bills: 'notebooks.billsCount',
-		habits: 'notebooks.habitsCount',
-		workouts: 'notebooks.workoutsCount',
-		recipes: 'notebooks.recipesCount'
-	};
-
-	function tally(n: Notebook): string {
-		// One part per module the notebook actually holds, in the order its tabs
-		// are in, so the row and the tabs agree about what is in there.
-		const parts = n.modules
-			.map((module) => {
-				const count = n.counts[module] ?? 0;
-				const label = COUNT_LABELS[module];
-				return count && label ? t(label, { count }) : null;
-			})
-			.filter((part): part is string => part !== null);
-		return parts.join(' · ') || t('notebooks.nothingInItYet');
 	}
 
 	/* This screen's one verb, drawn by the room's bar — see $lib/room-action. */
@@ -233,42 +194,13 @@
 								opens as its own shelf under it — indented, so a spine of
 								covers reads as belonging to the one above.
 							-->
-							<div class="notebook-cover" style="--cover-depth: {node.depth}">
-								<a
-									href="{resolve('/notebooks')}?notebook={node.id}"
-									class="cover-face {node.id === data.selected ? 'is-chosen' : ''}"
-									aria-current={node.id === data.selected ? 'true' : undefined}
-								>
-									<!-- A cover with no picture is a blank cover, not a cover with a
-									     notebook drawn on it: a shelf of identical glyphs is noise
-									     where the picture is supposed to be the thing you read. -->
-									{#if node.pictureId}
-										<img src="/media/{node.pictureId}" alt="" loading="lazy" class="cover-art" />
-									{:else}
-										<span class="cover-art cover-art-empty" aria-hidden="true"></span>
-									{/if}
-
-									<span class="cover-name" class:text-gray-500={node.closedAt}>
-										{leafTitle(node.title)}
-									</span>
-									<span class="cover-tally">
-										{tally(node)}
-										{#if !node.mine}
-											· {node.sharedBy}’s
-										{:else if node.sharedWithFamily}
-											· {t('notebooks.family')}
-										{/if}
-										{#if node.closedAt}
-											· {t('notebooks.closed')}
-										{/if}
-									</span>
-								</a>
-
-								<!--
-									What you do to it, on the cover rather than in a column of
-									their own: a shelf has no columns.
-								-->
-								<div class="cover-actions">
+							<NotebookCover
+								notebook={node}
+								href="{resolve('/notebooks')}?notebook={node.id}"
+								depth={node.depth}
+								chosen={node.id === data.selected}
+							>
+								{#snippet actions()}
 									{#if node.children.length > 0}
 										<button
 											class="icon-btn"
@@ -316,8 +248,8 @@
 											{/if}
 										</button>
 									</form>
-								</div>
-							</div>
+								{/snippet}
+							</NotebookCover>
 
 							{#if opened.has(node.id)}
 								{#each node.children as child (child.id)}

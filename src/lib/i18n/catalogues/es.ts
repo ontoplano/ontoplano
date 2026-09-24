@@ -284,6 +284,7 @@ export const messages: Catalogue = {
 	'card.theHoursYouHaveTicked': 'Las horas que has completado esta semana, por categoría.',
 	'card.theLastFewIdeasYou': 'Las últimas ideas que tuviste.',
 	'card.theMostRecentThingsYou': 'Lo último que escribiste, lo más reciente primero.',
+	'card.theNotebooksYouHaveWritten': 'The notebooks you have written in most recently.',
 	'card.theThingsYouWouldLike':
 		'Las cosas que te gustaría algún día, que no son la compra de esta semana.',
 	'card.theWeekAtAGlance': 'La semana de un vistazo.',
@@ -994,6 +995,8 @@ export const messages: Catalogue = {
 	'home.noIdeasYetThisIs':
 		'Aún no hay ideas. Este es el lugar para las que no tienen otro sitio adónde ir.',
 	'home.noMeasure': 'sin medida',
+	'home.noNotebooksYetOneHolds':
+		'No notebooks yet. One holds everything about a subject you keep coming back to.',
 	'home.noQuotesYetAddSome': 'Aún no hay frases. Añade algunas en la configuración.',
 	'home.noThanks': 'No, gracias',
 	'home.noWorkoutsYetWriteOne':

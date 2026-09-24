@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **A notebooks card for the dashboard,** showing the covers of the three
+  you have written in most recently.
 - **Every markdown box opens side by side** — the writing and what it will
   look like — wherever there is room for two columns.
 - **The demo's icon is yellow.** It was violet, which is one dark smudge

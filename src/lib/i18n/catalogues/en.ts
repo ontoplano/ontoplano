@@ -276,6 +276,7 @@ export const messages: Catalogue = {
 	'card.theHoursYouHaveTicked': 'The hours you have ticked off this week, by category.',
 	'card.theLastFewIdeasYou': 'The last few ideas you had.',
 	'card.theMostRecentThingsYou': 'The most recent things you wrote down, newest first.',
+	'card.theNotebooksYouHaveWritten': 'The notebooks you have written in most recently.',
 	'card.theThingsYouWouldLike':
 		'The things you would like one day, which are not this week’s shopping.',
 	'card.theWeekAtAGlance': 'The week at a glance.',
@@ -972,6 +973,8 @@ export const messages: Catalogue = {
 		'No goals for this period. A goal is a commitment with a date attached.',
 	'home.noIdeasYetThisIs': 'No ideas yet. This is the place for the ones with nowhere else to go.',
 	'home.noMeasure': 'no measure',
+	'home.noNotebooksYetOneHolds':
+		'No notebooks yet. One holds everything about a subject you keep coming back to.',
 	'home.noQuotesYetAddSome': 'No quotes yet. Add some in config.',
 	'home.noThanks': 'No thanks',
 	'home.noWorkoutsYetWriteOne':

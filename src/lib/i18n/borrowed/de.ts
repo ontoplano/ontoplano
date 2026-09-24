@@ -9,7 +9,9 @@
  * bundle a reader downloads.
  */
 export const borrowed: ReadonlySet<string> = new Set([
+	'card.theNotebooksYouHaveWritten',
 	'finance.ledgers.pasteExample',
+	'home.noNotebooksYetOneHolds',
 	'notebooks.aNotebookStartsWith',
 	'notebooks.alreadyFiled',
 	'notebooks.billsCount',

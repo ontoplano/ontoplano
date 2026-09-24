@@ -1,4 +1,4 @@
-import { and, asc, inArray, or, count, desc, eq, isNotNull, isNull } from 'drizzle-orm';
+import { and, asc, inArray, max, or, count, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 import type { SQLiteColumn, SQLiteTable } from 'drizzle-orm/sqlite-core';
 
 import { db } from '$lib/db/index.js';
@@ -179,6 +179,33 @@ export function notebookTree(ctx: Ctx): NotebookNode[] {
  */
 type Scopable = SQLiteTable & { notebookId: SQLiteColumn; userId: SQLiteColumn };
 
+/**
+ * Every table a notebook can scope, the module it belongs to, and the column
+ * that says when one of its rows last changed.
+ *
+ * One list, because two things read it and they must not disagree: how much is
+ * in a notebook, and when it was last worked on. A table added to a notebook
+ * without a line here is a module that counts nothing and never looks recent.
+ *
+ * `createdAt` where there is no `updatedAt`: a table without one cannot answer
+ * "when did this change", and the day the row arrived is nearer the truth than
+ * nothing at all.
+ */
+const SCOPED: readonly { module: NotebookModule; table: Scopable; stamp: SQLiteColumn }[] = [
+	{ module: 'notes', table: diaryEntries, stamp: diaryEntries.updatedAt },
+	// A todo and a block are the same task at two stages, so they share a count.
+	{ module: 'tasks', table: todoTasks, stamp: todoTasks.updatedAt },
+	{ module: 'tasks', table: exceptionalTasks, stamp: exceptionalTasks.createdAt },
+	{ module: 'goals', table: goals, stamp: goals.updatedAt },
+	{ module: 'ideas', table: ideas, stamp: ideas.updatedAt },
+	{ module: 'inventory', table: inventoryItems, stamp: inventoryItems.updatedAt },
+	{ module: 'ledgers', table: ledgers, stamp: ledgers.updatedAt },
+	{ module: 'bills', table: bills, stamp: bills.updatedAt },
+	{ module: 'habits', table: habits, stamp: habits.createdAt },
+	{ module: 'workouts', table: workouts, stamp: workouts.updatedAt },
+	{ module: 'recipes', table: recipes, stamp: recipes.updatedAt }
+];
+
 /** One number per module — see `$lib/notebook-modules`. */
 export type Tally = Record<NotebookModule, number>;
 
@@ -219,20 +246,38 @@ function tallies(ctx: Ctx): Map<number, Tally> {
 			add(r.id as number | null, key, r.n);
 	};
 
-	countBy('notes', diaryEntries);
-	// A todo and a block are the same task at two stages, so they share a count.
-	countBy('tasks', todoTasks);
-	countBy('tasks', exceptionalTasks);
-	countBy('goals', goals);
-	countBy('ideas', ideas);
-	countBy('inventory', inventoryItems);
-	countBy('ledgers', ledgers);
-	countBy('bills', bills);
-	countBy('habits', habits);
-	countBy('workouts', workouts);
-	countBy('recipes', recipes);
+	for (const { module, table } of SCOPED) countBy(module, table);
 
 	return totals;
+}
+
+/**
+ * When each notebook was last written in, as the newest stamp on anything in
+ * it — its own row included, because renaming one or giving it a picture is
+ * working on it too.
+ *
+ * Notebooks with nothing in them are absent rather than nought: a notebook
+ * with no rows has only its own stamp, and the caller already has that.
+ */
+function lastTouched(ctx: Ctx): Map<number, string> {
+	const newest = new Map<number, string>();
+
+	const note = (id: number | null, at: string | null) => {
+		if (id === null || !at) return;
+		const held = newest.get(id);
+		if (!held || at > held) newest.set(id, at);
+	};
+
+	for (const { table, stamp } of SCOPED)
+		for (const r of db
+			.select({ id: table.notebookId, at: max(stamp) })
+			.from(table)
+			.where(eq(table.userId, ctx.userId))
+			.groupBy(table.notebookId)
+			.all())
+			note(r.id as number | null, r.at as string | null);
+
+	return newest;
 }
 
 /** Open ones first: a closed notebook is history, not a place you are writing. */
@@ -277,6 +322,42 @@ export function listNotebooks(ctx: Ctx): Notebook[] {
 				hidden
 			)
 		);
+}
+
+/**
+ * The notebooks worked on most recently, newest first.
+ *
+ * "Worked on" is the newest stamp on anything the notebook holds, not the
+ * notebook row's own: writing five notes into the kitchen today has to put it
+ * above a notebook that was renamed last week, or the word means the opposite
+ * of what somebody reading it expects. The row's own stamp still counts, so a
+ * notebook that has just been made and not yet written in is recent.
+ *
+ * Closed ones are left out. A closed notebook is history — a trip that
+ * happened — and the last thing that happened in it was closing it, which
+ * would put it at the top of exactly the list nobody wants it in.
+ */
+export function recentlyEditedNotebooks(ctx: Ctx, limit: number): Notebook[] {
+	const touched = lastTouched(ctx);
+	const own = new Map(
+		db
+			.select({ id: notebooks.id, at: notebooks.updatedAt })
+			.from(notebooks)
+			.where(eq(notebooks.userId, ctx.userId))
+			.all()
+			.map((r) => [r.id, r.at])
+	);
+
+	const when = (id: number) => {
+		const inIt = touched.get(id);
+		const itself = own.get(id) ?? '';
+		return inIt && inIt > itself ? inIt : itself;
+	};
+
+	return listNotebooks(ctx)
+		.filter((n) => !n.closedAt)
+		.sort((a, b) => when(b.id).localeCompare(when(a.id)))
+		.slice(0, limit);
 }
 
 /**
