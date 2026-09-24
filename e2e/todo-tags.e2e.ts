@@ -59,6 +59,7 @@ test('a task takes labels, and the list narrows to one', async ({ page }) => {
 	await page.getByRole('button', { name: 'Filter by tag' }).click();
 	const show = page.locator('#todo-tags-panel [data-side="include"] input[role="combobox"]');
 	await expect(show).toBeFocused();
+	await show.click();
 	await expect(page.getByRole('option')).toHaveText(['Untagged', 'a1', 'a2', 'done']);
 	await page.getByRole('option', { name: 'a1', exact: true }).click();
 	await expect(page.getByText('renew the domain')).toBeVisible();

@@ -86,6 +86,7 @@ test('a word left in the box when the form is saved still counts', async ({ page
 	const filter = page.getByRole('button', { name: /Filter by tag/i });
 	await expect(filter).toBeVisible({ timeout: 30_000 });
 	await filter.click();
+	await page.locator('#todo-tags-panel [data-side="include"] input').click();
 	await expect(page.getByRole('option', { name: 'fitness', exact: true })).toHaveCount(1);
 });
 

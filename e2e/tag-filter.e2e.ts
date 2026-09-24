@@ -58,7 +58,12 @@ test('labels to show, labels to hide, any or all — and the address keeps it', 
 
 	// Where the list starts, and where the button beside the filter is: opening
 	// the panel and choosing labels must move neither.
-	const list = page.locator('[data-tour]').filter({ has: page.getByText('ring the plumber') });
+	const tour = await page
+		.locator('[data-tour]')
+		.filter({ has: page.getByText('ring the plumber') })
+		.last()
+		.getAttribute('data-tour');
+	const list = page.locator(`[data-tour="${tour}"]`);
 	const listTop = (await list.first().boundingBox())!.y;
 	const faceBox = (await face(page).boundingBox())!;
 
@@ -114,7 +119,11 @@ test('labels to show, labels to hide, any or all — and the address keeps it', 
 	await expect(panel(page).getByRole('option', { name: 'home', exact: true })).toHaveCount(0);
 
 	// Untagged, shown on its own.
-	await box(page, 'include').fill('');
+	// Escape takes the word, then the list, off the box — not the panel.
+	await box(page, 'include').press('Escape');
+	await box(page, 'include').press('Escape');
+	await expect(panel(page).getByRole('listbox')).toHaveCount(0);
+	await expect(panel(page)).toBeVisible();
 	await panel(page).locator('[data-side="exclude"] button[aria-label="Remove #home"]').click();
 	await box(page, 'include').fill('untag');
 	await box(page, 'include').press('Enter');

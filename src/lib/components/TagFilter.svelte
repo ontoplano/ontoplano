@@ -64,6 +64,13 @@
 	/** Which side's suggestions are showing, and which row the keyboard is on. */
 	let typing = $state<Side | null>(null);
 	let at = $state(0);
+	/*
+	 * Whether the list under the box is out. Not on focus alone: opening the
+	 * panel focuses the Show box, and a list dropped over the Hide box before
+	 * anybody asked for it covers the other half of the control. A press on
+	 * the box, a letter or an arrow brings it.
+	 */
+	let listing = $state(false);
 
 	const on = $derived(isTagFiltering(value));
 	const untaggedWord = $derived(t('tagFilter.untagged'));
@@ -85,7 +92,7 @@
 		return untagged ? [UNTAGGED, ...words] : words;
 	}
 
-	const suggestions = $derived(typing ? offered(typing) : []);
+	const suggestions = $derived(typing && listing ? offered(typing) : []);
 
 	function change(next: Partial<TagFilter>) {
 		onchange({ ...value, ...next });
@@ -96,6 +103,7 @@
 		const other: Side = side === 'include' ? 'exclude' : 'include';
 		change({ [side]: [...value[side], entry], [other]: value[other].filter((e) => e !== entry) });
 		drafts[side] = '';
+		listing = false;
 		at = 0;
 	}
 
@@ -114,17 +122,30 @@
 
 	function onBoxKey(side: Side, event: KeyboardEvent) {
 		const list = offered(side);
-		if (event.key === 'ArrowDown' || (event.key === 'Tab' && !event.shiftKey && list.length > 0)) {
+		// Arrows walk the list; Tab leaves the box, as it does from any field.
+		const walk = event.key === 'ArrowDown' || event.key === 'ArrowUp';
+		if (walk) {
 			if (list.length === 0) return;
 			event.preventDefault();
-			at = (at + 1) % list.length;
-		} else if (event.key === 'ArrowUp' || (event.key === 'Tab' && event.shiftKey && list.length)) {
-			if (list.length === 0) return;
-			event.preventDefault();
-			at = (at - 1 + list.length) % list.length;
+			if (!listing) {
+				listing = true;
+				at = 0;
+				return;
+			}
+			const step = event.key === 'ArrowUp' ? -1 : 1;
+			at = (at + step + list.length) % list.length;
 		} else if (event.key === 'Enter') {
 			event.preventDefault();
-			if (list.length > 0) add(side, list[Math.min(at, list.length - 1)]);
+			if (list.length > 0 && (listing || drafts[side] !== ''))
+				add(side, list[Math.min(at, list.length - 1)]);
+		} else if (event.key === 'Escape' && (drafts[side] !== '' || listing)) {
+			// A word half typed goes first, then the list under it; only then
+			// does Escape reach the window and fold the panel. Stopped here so
+			// the shell does not take it as "leave the field" in the meantime.
+			event.preventDefault();
+			event.stopPropagation();
+			if (drafts[side] !== '') drafts[side] = '';
+			else listing = false;
 		} else if (event.key === 'Backspace' && drafts[side] === '' && value[side].length > 0) {
 			event.preventDefault();
 			change({ [side]: value[side].slice(0, -1) });
@@ -177,6 +198,7 @@
 	function close(refocus = true) {
 		open = false;
 		typing = null;
+		listing = false;
 		if (refocus) face?.focus();
 	}
 
@@ -188,8 +210,7 @@
 		if (open && event.key === 'Escape') {
 			// Kept from the phone's filter sheet, which would close on it too.
 			event.preventDefault();
-			if (typing && drafts[typing] !== '') drafts[typing] = '';
-			else close();
+			close();
 		}
 	}
 
@@ -333,13 +354,18 @@
 								placeholder={t(side === 'include' ? 'tagFilter.addToKeep' : 'tagFilter.addToHide')}
 								onfocus={() => {
 									typing = side;
+									listing = false;
 									at = 0;
 								}}
+								onpointerdown={() => (listing = true)}
 								onblur={() =>
 									setTimeout(() => {
 										if (typing === side && document.activeElement !== boxes[side]) typing = null;
 									}, BLUR_GRACE)}
-								oninput={() => (at = 0)}
+								oninput={() => {
+									listing = true;
+									at = 0;
+								}}
 								onkeydown={(event) => onBoxKey(side, event)}
 							/>
 						</div>

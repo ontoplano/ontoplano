@@ -40,6 +40,7 @@ test('the filters are out on a wide screen, and clear in one press', async ({ pa
 
 	// Narrow by a label.
 	await page.getByRole('button', { name: 'Filter by tag' }).first().click();
+	await page.locator('#todo-tags-panel [data-side="include"] input').click();
 	await page.getByRole('option', { name: 'home', exact: true }).click();
 	await page.keyboard.press('Escape');
 	await expect(page.getByText('post the parcel')).toBeHidden();
@@ -78,6 +79,7 @@ test('on a phone they are a sheet, and the button says one is on', async ({ page
 	// Narrow, and close it: the button carries that something is on, so a
 	// filter behind a press is never a list that has quietly lost rows.
 	await page.getByRole('button', { name: 'Filter by tag' }).first().click();
+	await page.locator('#todo-tags-panel [data-side="include"] input').click();
 	await page.getByRole('option', { name: 'home', exact: true }).click();
 	await page.keyboard.press('Escape');
 	await page.getByRole('button', { name: 'Done' }).click();
