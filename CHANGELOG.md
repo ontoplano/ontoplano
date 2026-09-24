@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.183.6 — 2026-09-24
+
+- Copying task text with Ctrl+C no longer marks the task complete.
+
 ## 0.183.5 — 2026-09-24
 
 - Select several tasks at once in the task list or a notebook: change their status, add or remove labels, move them to another notebook, or delete them after confirmation.

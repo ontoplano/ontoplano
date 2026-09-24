@@ -931,6 +931,9 @@
 			return;
 		}
 
+		// Let browser and assistive shortcuts such as Ctrl+C keep their native meaning.
+		if (e.ctrlKey || e.metaKey || e.altKey) return;
+
 		if (
 			e.target instanceof HTMLInputElement ||
 			e.target instanceof HTMLTextAreaElement ||
