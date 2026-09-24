@@ -870,6 +870,27 @@ _Needs `tags:read`; read-only._
 
 _Takes no parameters._
 
+### `notebook_tags` — The labels in one notebook
+
+The labels on what is filed under one subject, with how much of it carries each — and what kind: notes, tasks, ideas. Narrower than `tags`, which counts a word across the whole account, and the one to ask before labelling something the way this notebook labels things. A label the notebook suggests by default is listed at nought.
+
+_Needs `tags:read`; read-only._
+
+| Parameter    | Type    | Required | What it is                                 |
+| ------------ | ------- | -------- | ------------------------------------------ |
+| `notebookId` | integer | yes      | The notebook, as `notebooks` gives its id. |
+
+### `describe_tag` — Say what a label means
+
+Write down what a word means in this account — `#short` on the shopping is low on something, `#short` on a book is the book. One line; an empty one takes the meaning off again. The label itself is not changed: `rename_tag` is for that.
+
+_Needs `tags:write`; writes._
+
+| Parameter     | Type    | Required | What it is                                          |
+| ------------- | ------- | -------- | --------------------------------------------------- |
+| `id`          | integer | yes      | The label’s id, as `tags` gives it.                 |
+| `description` | string  | —        | What the word means here. Empty takes it off again. |
+
 ### `rename_tag` — Rename a label
 
 Rename a label everywhere at once — for a typo, or for two words that turned out to mean one thing. Renaming onto a name the account already uses merges the two: everything that carried the old label carries the surviving one, and the old label stops existing. Answers with the label that survived.

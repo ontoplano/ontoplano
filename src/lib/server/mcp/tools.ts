@@ -78,7 +78,14 @@ import {
 	toggleFavorite,
 	updateIdea
 } from '$lib/services/ideas.js';
-import { deleteTag, listTagsWithUses, recolorTag, renameTag } from '$lib/services/tags.js';
+import {
+	deleteTag,
+	describeTag,
+	recolorTag,
+	renameTag,
+	tagsInNotebook,
+	tagsWithUses
+} from '$lib/services/tags.js';
 import {
 	addGoalLinks,
 	addGoalTarget,
@@ -2590,7 +2597,62 @@ export const TOOLS: Tool[] = [
 		scope: 'tags:read',
 		writes: false,
 		input: object({}),
-		run: (ctx) => ({ tags: listTagsWithUses(ctx.userId) })
+		run: (ctx) => ({ tags: tagsWithUses(ctx.userId) })
+	},
+	{
+		/*
+		 * The same vocabulary, seen from one subject.
+		 *
+		 * `tags` counts a word across the whole account, which is the wrong
+		 * answer to "what is this renovation actually about": `#home` doing
+		 * forty things somewhere says nothing about why it is on this. Here the
+		 * count is the notebook's own, and it is broken down by what carries
+		 * it, so an assistant asked to label something the way this subject
+		 * labels things has the subject's words rather than the account's.
+		 *
+		 * `refs` is what keeps it honest: `notebookId` is declared as naming a
+		 * notebook, so the reference machinery resolves it against what this
+		 * token may list before `run` is ever called. A notebook belonging to
+		 * somebody else, or to a notebook this key is confined away from,
+		 * answers exactly as one that was never there — and the service reads
+		 * `ctx.userId` on every join besides, so a stranger's id would come
+		 * back empty even if it got this far.
+		 */
+		name: 'notebook_tags',
+		title: 'The labels in one notebook',
+		description:
+			'The labels on what is filed under one subject, with how much of it carries each — and what kind: notes, tasks, ideas. Narrower than `tags`, which counts a word across the whole account, and the one to ask before labelling something the way this notebook labels things. A label the notebook suggests by default is listed at nought.',
+		scope: 'tags:read',
+		writes: false,
+		refs: [{ arg: 'notebookId', kind: 'notebook' }],
+		alsoNeeds: 'notes:read',
+		input: object(
+			{
+				notebookId: {
+					type: 'integer',
+					description: 'The notebook, as `notebooks` gives its id.'
+				}
+			},
+			['notebookId']
+		),
+		run: (ctx, args) => ({ tags: tagsInNotebook(ctx.userId, Number(args.notebookId)) })
+	},
+	{
+		name: 'describe_tag',
+		title: 'Say what a label means',
+		description:
+			'Write down what a word means in this account — `#short` on the shopping is low on something, `#short` on a book is the book. One line; an empty one takes the meaning off again. The label itself is not changed: `rename_tag` is for that.',
+		scope: 'tags:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'tag' }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The label’s id, as `tags` gives it.' },
+				description: text('What the word means here. Empty takes it off again.')
+			},
+			['id']
+		),
+		run: (ctx, args) => describeTag(ctx.userId, Number(args.id), args.description ?? '')
 	},
 	{
 		name: 'rename_tag',

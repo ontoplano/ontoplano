@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **An assistant can ask what a notebook's labels are** — `notebook_tags` —
+  and write down what a label means with `describe_tag`.
 - **A notebook says which labels are on what is filed in it,** from a Manage
   tags button on the notebook itself. "3 things carry it" unfolds into two
   notes and a task, so it is somewhere to go and look rather than a number.

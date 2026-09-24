@@ -1354,6 +1354,21 @@
 			}
 		}
 	},
+	"describe_tag": {
+		"scope": "tags:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"description": {
+				"type": "string",
+				"required": false
+			},
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"diary": {
 		"scope": "notes:read",
 		"writes": false,
@@ -1763,6 +1778,17 @@
 			"withoutTags": {
 				"type": "array",
 				"required": false
+			}
+		}
+	},
+	"notebook_tags": {
+		"scope": "tags:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"notebookId": {
+				"type": "integer",
+				"required": true
 			}
 		}
 	},
