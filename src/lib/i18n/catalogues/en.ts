@@ -364,6 +364,20 @@ export const messages: Catalogue = {
 	'errors.audio.thatRecordingWasEmpty': 'That recording was empty.',
 	'errors.auth.provideABearerToken': 'Provide a bearer token or sign in',
 	'errors.authenticationRequired': 'Sign in to do that.',
+	'errors.billing.bodyIsNotJson': 'That notification did not arrive as JSON.',
+	'errors.billing.cycleNotSoldHere': 'That is not a billing cycle this instance sells.',
+	'errors.billing.noPurchaseToken': 'That purchase came with nothing to check.',
+	'errors.billing.noSubscriptionToChange': 'There is no subscription to change.',
+	'errors.billing.notConfiguredHere': 'This instance takes no payments.',
+	'errors.billing.planNotSoldHere': 'That is not a plan this instance sells.',
+	'errors.billing.providerAnsweredStrangely': 'The payment provider answered strangely. Try again.',
+	'errors.billing.providerDidNotAnswer':
+		'The payment provider did not answer. Try again in a minute.',
+	'errors.billing.providerRefusedTheChange':
+		'The payment provider did not accept the change. Try again in a minute.',
+	'errors.billing.purchaseBelongsElsewhere': 'That purchase already belongs to another account.',
+	'errors.billing.purchaseIsForAnotherPlan': 'That purchase is for a different plan.',
+	'errors.billing.storeDoesNotKnowThatPurchase': 'The store does not recognise that purchase.',
 	'errors.billing.youHaveAlreadySwitchedTwice':
 		'You have already switched twice today. You can switch again tomorrow.',
 	'errors.bills.thatCategoryIsNotYours': 'That category is not yours.',

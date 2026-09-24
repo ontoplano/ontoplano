@@ -1,5 +1,5 @@
 {
-	"total": 36,
+	"total": 21,
 	"files": {
 		"src/lib/assistant-providers.ts": 4,
 		"src/lib/components/CaptureDialog.svelte": 1,
@@ -8,8 +8,6 @@
 		"src/lib/components/Picker.svelte": 1,
 		"src/lib/components/TagFilter.svelte": 1,
 		"src/lib/components/fields/HabitFields.svelte": 3,
-		"src/lib/server/billing/providers/paddle.ts": 9,
-		"src/lib/server/billing/providers/play.ts": 6,
 		"src/routes/+layout.svelte": 7,
 		"src/routes/settings/integrations/connections/+page.svelte": 1
 	}

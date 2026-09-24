@@ -1,4 +1,5 @@
 import type { Pricing, SubscriptionStatus } from '../../plans.js';
+import type { MessageKey } from '$lib/i18n/core.js';
 
 /**
  * What a billing provider has to be able to do, and nothing about who it is.
@@ -54,6 +55,48 @@ export type ClientConfig = {
 export type WebhookOutcome =
 	| { applied: true; userId: string; event: string }
 	| { applied: false; reason: 'duplicate' | 'ignored' | 'unknown_account'; event: string };
+
+/**
+ * What a provider is allowed to refuse with.
+ *
+ * A refusal in this app is a message key, translated where the request is
+ * answered — so a person reads it in the language the rest of their screen is
+ * in. A provider cannot add keys: it is dropped into `providers/` from its own
+ * checkout and this repository's catalogue is not its to write to. Throwing an
+ * English sentence would work and would be the one place in the app that is
+ * still English on a Portuguese screen, which is the worst possible one: it is
+ * read at the moment somebody's payment has just failed.
+ *
+ * So the vocabulary is here, with the rest of the contract. What a provider can
+ * refuse with is as much part of the seam as what it can be asked, and it is
+ * deliberately about money and not about any one company — `store`, not the
+ * name of a store.
+ *
+ *     throw new ValidationError({ key: BILLING_REFUSALS.providerDidNotAnswer });
+ *
+ * A provider that needs to say something this list cannot say should have the
+ * word added here rather than write a sentence of its own.
+ */
+export const BILLING_REFUSALS = {
+	/** This instance takes no payments at all. */
+	notConfiguredHere: 'errors.billing.notConfiguredHere',
+	/** It sells, but not this plan or this billing cycle. */
+	planNotSoldHere: 'errors.billing.planNotSoldHere',
+	cycleNotSoldHere: 'errors.billing.cycleNotSoldHere',
+	/** The company did not answer, or answered something unreadable. */
+	providerDidNotAnswer: 'errors.billing.providerDidNotAnswer',
+	providerAnsweredStrangely: 'errors.billing.providerAnsweredStrangely',
+	providerRefusedTheChange: 'errors.billing.providerRefusedTheChange',
+	/** There is nothing on this account to change. */
+	noSubscriptionToChange: 'errors.billing.noSubscriptionToChange',
+	/** A store purchase that cannot be turned into a subscription here. */
+	noPurchaseToken: 'errors.billing.noPurchaseToken',
+	storeDoesNotKnowThatPurchase: 'errors.billing.storeDoesNotKnowThatPurchase',
+	purchaseBelongsElsewhere: 'errors.billing.purchaseBelongsElsewhere',
+	purchaseIsForAnotherPlan: 'errors.billing.purchaseIsForAnotherPlan',
+	/** A notification that did not arrive as JSON. */
+	bodyIsNotJson: 'errors.billing.bodyIsNotJson'
+} as const satisfies Record<string, MessageKey>;
 
 export interface BillingProvider {
 	/** Stored on the subscription row, so a row says who charged for it. */

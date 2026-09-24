@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **A payment that fails says so in your language too.** The last English
+  sentences in the app were the ones a payment provider refuses with, which
+  is the worst place for them.
 - **Refusals are in your own language.** "A notebook by that name already
   exists" and two hundred and fifty-six sentences like it were English
   wherever you read the app — which is the wrong moment to be handed a

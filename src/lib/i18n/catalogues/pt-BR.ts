@@ -376,6 +376,21 @@ export const messages: Catalogue = {
 	'errors.audio.thatRecordingWasEmpty': 'Essa gravação estava vazia.',
 	'errors.auth.provideABearerToken': 'Informe uma chave ou entre na sua conta',
 	'errors.authenticationRequired': 'Entre na sua conta para fazer isso.',
+	'errors.billing.bodyIsNotJson': 'Essa notificação não chegou como JSON.',
+	'errors.billing.cycleNotSoldHere': 'Esse não é um ciclo de cobrança que esta instância vende.',
+	'errors.billing.noPurchaseToken': 'Essa compra veio sem nada para conferir.',
+	'errors.billing.noSubscriptionToChange': 'Não há assinatura para mudar.',
+	'errors.billing.notConfiguredHere': 'Esta instância não recebe pagamentos.',
+	'errors.billing.planNotSoldHere': 'Esse não é um plano que esta instância vende.',
+	'errors.billing.providerAnsweredStrangely':
+		'O provedor de pagamento respondeu de um jeito estranho. Tente de novo.',
+	'errors.billing.providerDidNotAnswer':
+		'O provedor de pagamento não respondeu. Tente de novo em um minuto.',
+	'errors.billing.providerRefusedTheChange':
+		'O provedor de pagamento não aceitou a mudança. Tente de novo em um minuto.',
+	'errors.billing.purchaseBelongsElsewhere': 'Essa compra já pertence a outra conta.',
+	'errors.billing.purchaseIsForAnotherPlan': 'Essa compra é de outro plano.',
+	'errors.billing.storeDoesNotKnowThatPurchase': 'A loja não reconhece essa compra.',
 	'errors.billing.youHaveAlreadySwitchedTwice':
 		'Você já trocou duas vezes hoje. Pode trocar de novo amanhã.',
 	'errors.bills.thatCategoryIsNotYours': 'Essa categoria não é sua.',
