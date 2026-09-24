@@ -14,6 +14,8 @@
 	import TagInput from '$lib/components/TagInput.svelte';
 	import ToggleRow from '$lib/components/ToggleRow.svelte';
 	import NotebookPicture from '$lib/components/NotebookPicture.svelte';
+	import { untrack } from 'svelte';
+	import Icon from '$lib/components/Icon.svelte';
 	import { moduleChoicesOf, type NotebookModule } from '$lib/notebook-modules';
 	import NotebookField from '$lib/components/NotebookField.svelte';
 	import { isInsideNotebook, leafNotebookName, parentNotebookPath } from '$lib/notebook-path';
@@ -94,9 +96,40 @@
 		notebooks.filter((one) => !notebook || !isInsideNotebook(one.title, notebook.title))
 	);
 
-	const modules = $derived(
+	const offered = $derived(
 		notebook ? moduleChoicesOf(notebook, page.data.hiddenSections ?? []) : []
 	);
+
+	/*
+	 * The order the tabs come in, which is the notebook's to set.
+	 *
+	 * Held here rather than posted as a field of its own: the checkboxes post
+	 * in the order they stand in the page, so moving a row *is* the answer —
+	 * `formData.getAll('modules')` arrives in this order and the service keeps
+	 * it. Seeded from the notebook and re-seeded when a different one is
+	 * opened, the same shape `Picker` and `TagInput` use.
+	 */
+	let order = $state<string[]>(untrack(() => offered.map((one) => one.id)));
+	let seededFor = untrack(() => notebook?.id ?? null);
+	$effect(() => {
+		if ((notebook?.id ?? null) === seededFor) return;
+		seededFor = notebook?.id ?? null;
+		order = offered.map((one) => one.id);
+	});
+
+	const modules = $derived([...offered].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id)));
+
+	/** The last row that has a place in the order: an off one has no tab. */
+	const lastOn = $derived(modules.map((one) => one.on).lastIndexOf(true));
+
+	function shift(id: string, by: number) {
+		const at = order.indexOf(id);
+		const to = at + by;
+		if (at < 0 || to < 0 || to >= order.length) return;
+		const next = [...order];
+		[next[at], next[to]] = [next[to], next[at]];
+		order = next;
+	}
 </script>
 
 <FormGrid>
@@ -164,8 +197,10 @@
 			     the action the form asked. -->
 			<input type="hidden" name="modulesPosted" value="1" />
 			<p class="mb-2 text-xs text-gray-500">{t('notebooks.aNotebookStartsWith')}</p>
+			<!-- The arrows set the order of the tabs, and the boxes post in the
+			     order they stand in — so moving a row is the whole answer. -->
 			<div class="space-y-1">
-				{#each modules as module (module.id)}
+				{#each modules as module, at (module.id)}
 					<ToggleRow
 						label={t(module.name)}
 						name="modules"
@@ -173,7 +208,50 @@
 						on={module.on}
 						always={module.always}
 						note={module.held ? t('notebooks.alreadyFiled', { count: module.held }) : undefined}
-					/>
+					>
+						{#snippet leading()}
+							<!--
+								A module that is always on has no checkbox to post, so it had
+								no place in the order either: moving Notes sent it to the end,
+								because the only thing that came back from the form was the
+								boxes. This is its place in the list, said out loud.
+							-->
+							{#if module.always}
+								<input type="hidden" name="modules" value={module.id} />
+							{/if}
+
+							<!-- A number only where there is a place: a module that is off
+							     has no tab and so no position in the strip. -->
+							<span class="tabular w-5 shrink-0 text-xs text-gray-500">
+								{module.on ? at + 1 : ''}
+							</span>
+						{/snippet}
+
+						{#snippet trailing()}
+							{#if module.on}
+								<button
+									type="button"
+									onclick={() => shift(module.id, -1)}
+									disabled={at === 0}
+									class="p-1 text-gray-500 hover:text-gray-900 disabled:opacity-30"
+									title={t('settings.preferences.moveUp')}
+									aria-label={t('settings.menu.moveUp', { what: t(module.name) })}
+								>
+									<Icon name="chevron-up" size={16} />
+								</button>
+								<button
+									type="button"
+									onclick={() => shift(module.id, 1)}
+									disabled={at === lastOn}
+									class="p-1 text-gray-500 hover:text-gray-900 disabled:opacity-30"
+									title={t('settings.preferences.moveDown')}
+									aria-label={t('settings.menu.moveDown', { what: t(module.name) })}
+								>
+									<Icon name="chevron-down" size={16} />
+								</button>
+							{/if}
+						{/snippet}
+					</ToggleRow>
 				{/each}
 			</div>
 		</Field>

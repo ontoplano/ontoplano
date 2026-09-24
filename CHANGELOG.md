@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **A notebook's tabs can be put in the order you want them,** from the same
+  dialog that switches them on.
 - **The demo's notebooks have a year in them.** The renovation and the trip
   carry twenty-odd notes and thirty-odd tasks each, tagged and rated, and
   every notebook has a cover.

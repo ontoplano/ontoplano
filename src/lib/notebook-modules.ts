@@ -129,18 +129,40 @@ export function moduleMeta(id: NotebookModule): (typeof NOTEBOOK_MODULES)[number
  * `null` means a notebook whose modules have never been written — a new one —
  * and gets the default.
  */
+/**
+ * What a notebook holds, in the order it holds it.
+ *
+ * The stored order is the notebook's own: a renovation is mostly a list of
+ * things to buy and a trip is mostly a list of things to book, and a tab strip
+ * that always opens on the same tab in the same place is one this file decided
+ * rather than the person. Both of these used to sort by `NOTEBOOK_MODULES`,
+ * which quietly threw an ordering away on every read and every write.
+ *
+ * Anything stored that this version has never heard of is dropped, and a
+ * module that is always there is added at the end if a stored list somehow
+ * lacks it — added rather than forced to the front, because Notes being first
+ * is a default and not a rule: a renovation whose first tab is its shopping is
+ * a notebook somebody has arranged.
+ */
 export function parseModules(stored: string | null | undefined): NotebookModule[] {
 	if (stored === null || stored === undefined) return [...DEFAULT_MODULES];
-	const wanted = new Set(stored.split(',').map((part) => part.trim()));
-	return NOTEBOOK_MODULES.filter((m) => 'always' in m || wanted.has(m.id)).map((m) => m.id);
+	return ordered(stored.split(',').map((part) => part.trim()));
 }
 
-/** The list, in this file's order, ready to store. Notes is always in it. */
+/** The list, in the order given, ready to store. Notes is always in it. */
 export function serializeModules(ids: readonly string[]): string {
-	const wanted = new Set(ids);
-	return NOTEBOOK_MODULES.filter((m) => 'always' in m || wanted.has(m.id))
-		.map((m) => m.id)
-		.join(',');
+	return ordered(ids).join(',');
+}
+
+/** A list of ids as this version knows them: real, unrepeated, always-ons first. */
+function ordered(ids: readonly string[]): NotebookModule[] {
+	const known = new Set(NOTEBOOK_MODULES.map((m) => m.id as string));
+	const out: NotebookModule[] = [];
+	for (const id of ids)
+		if (known.has(id) && !out.includes(id as NotebookModule)) out.push(id as NotebookModule);
+
+	const always = NOTEBOOK_MODULES.filter((m) => 'always' in m).map((m) => m.id);
+	return [...out, ...always.filter((id) => !out.includes(id))];
 }
 
 /**
@@ -181,15 +203,31 @@ export function moduleChoicesOf(
 	hiddenSections: readonly string[] = []
 ): { id: NotebookModule; name: PlainKey; always: boolean; on: boolean; held: number }[] {
 	const on = new Set(notebook.modules);
-	return NOTEBOOK_MODULES.filter(
-		(m) => !('hide' in m && m.hide) || !isHidden(hiddenSections, m.hide)
-	).map((m) => ({
-		id: m.id,
-		name: m.name,
-		always: 'always' in m,
-		on: on.has(m.id),
-		// Counted whether or not it is switched on: turning a module off is one
-		// tab fewer, not four things deleted, and the row has to say so.
-		held: notebook.counts[m.id] ?? 0
-	}));
+	/*
+	 * The notebook's own order first, then everything it does not hold.
+	 *
+	 * The dialog is where the order is set, so it has to be the order the
+	 * dialog shows. A module that is off has no tab and so no place in the
+	 * order; it waits at the end in this file's order, and takes a place when
+	 * it is switched on — the same arrangement Preferences gives a room that
+	 * has been put away.
+	 */
+	const offered = [
+		...notebook.modules
+			.map((id) => NOTEBOOK_MODULES.find((m) => m.id === id))
+			.filter((m) => m !== undefined),
+		...NOTEBOOK_MODULES.filter((m) => !on.has(m.id))
+	];
+
+	return offered
+		.filter((m) => !('hide' in m && m.hide) || !isHidden(hiddenSections, m.hide))
+		.map((m) => ({
+			id: m.id,
+			name: m.name,
+			always: 'always' in m,
+			on: on.has(m.id),
+			// Counted whether or not it is switched on: turning a module off is one
+			// tab fewer, not four things deleted, and the row has to say so.
+			held: notebook.counts[m.id] ?? 0
+		}));
 }
