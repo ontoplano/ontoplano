@@ -18,7 +18,7 @@ import type { Ctx } from '$lib/services/ctx.js';
 import type { Scope } from '../services/tokens.js';
 import { ForbiddenError, ServiceError } from '$lib/services/errors.js';
 import { TOOLS, TOOLS_BY_NAME, type Tool } from './tools.js';
-import { assertRefs, resolveRef, type Reach, type Ref } from './refs.js';
+import { assertRefs, madeRow, resolveRef, type Reach, type Ref } from './refs.js';
 import { confine, reachOf, withinConfinement, type Confinement } from './confinement.js';
 import { changed, type Room } from '../live.js';
 import { spendCallBudget } from '../api/auth.js';
@@ -251,6 +251,11 @@ function fileResult(value: Bytes) {
 	};
 }
 
+/** The id a create answered with, wherever it put it. */
+function idOf(value: unknown): unknown {
+	return value && typeof value === 'object' ? (value as { id?: unknown }).id : undefined;
+}
+
 function toolResult(value: unknown, mutation?: { before: unknown; after: unknown }) {
 	if (!mutation && isBytes(value)) return fileResult(value);
 	const structured = mutation ? { ...structuredFrom(value), ...mutation } : structuredFrom(value);
@@ -446,10 +451,25 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 					scopes: caller.scopes,
 					confinement: caller.confinement ?? null
 				});
+				/*
+				 * A create says what it made, and fails if it made nothing.
+				 *
+				 * `peek` reads the *subject* an argument names, which a create has
+				 * not got — so `after` was null on every one of them and nothing
+				 * ever checked that the id being handed back pointed at a row. It
+				 * did not once, and the caller found out by being told the task it
+				 * had just made did not exist.
+				 */
+				const made = tool.creates ? madeRow(caller.ctx, tool.creates, idOf(value)) : undefined;
+				if (tool.creates && made === null)
+					throw new Error(
+						`\`${tool.name}\` answered with an id for a ${tool.creates} that is not there.`
+					);
+
 				const answer = toolResult(
 					value,
 					tool.writes && !tool.quiet
-						? { before, after: peek(tool, caller.ctx, args, reach) }
+						? { before, after: made ?? peek(tool, caller.ctx, args, reach) }
 						: undefined
 				);
 

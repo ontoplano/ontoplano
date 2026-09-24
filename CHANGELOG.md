@@ -20,6 +20,9 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **An assistant that adds something is told what it added,** and a create
+  that produced nothing now says so instead of answering with an id for a
+  task that is not there.
 - **An assistant is told which tools your key is not giving it,** and the
   permission each would need — so it can ask you to widen the key instead of
   quietly working around the gap.

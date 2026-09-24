@@ -125,6 +125,23 @@ export const KINDS = kinds({
 export type RefKind = keyof typeof KINDS;
 
 /**
+ * The row a create just made, read back the way any other id is read.
+ *
+ * An id in an answer has to mean a row that is there. It did not once: a
+ * `add_todo` answered `{ id: 559 }` and nothing by that number existed a
+ * minute later — so the caller labelled its own work, was told the task was
+ * not found, and the work was lost with no error anywhere to say so.
+ *
+ * Whatever the cause, the contract is the fixable part: the same registry
+ * that resolves an id somebody passed in resolves the one the app just handed
+ * out, and a create that cannot find what it made says so instead of
+ * answering with a number.
+ */
+export function madeRow(ctx: Ctx, kind: RefKind, id: unknown): unknown | null {
+	return resolveRef(ctx, { arg: 'id', kind }, { id });
+}
+
+/**
  * What a tool declares: this argument names a thing of this kind.
  *
  * `subject` marks the one the call is *about*, which is what the answer reads

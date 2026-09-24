@@ -22,7 +22,7 @@
  */
 import { localDateOf, type Ctx } from '$lib/services/ctx.js';
 import type { Scope } from '../services/tokens.js';
-import type { Ref } from './refs.js';
+import type { Ref, RefKind } from './refs.js';
 import { CLOSED_STATUSES } from '../../task-status.js';
 import { compareByPriority } from '../../ratings.js';
 import type { Confinement } from './confinement.js';
@@ -322,6 +322,20 @@ export type Tool = {
 	 * there, and the protocol layer answers `before: null` for it.
 	 */
 	subject?: (ctx: Ctx, args: Record<string, unknown>) => unknown;
+	/**
+	 * What this call brings into being, so the id it answers with can be read
+	 * back.
+	 *
+	 * An id in an answer has to mean a row that is there. It did not once: an
+	 * `add_todo` answered `{ id: 559 }`, and a minute later nothing by that
+	 * number existed — so the caller went to label its own work, was told the
+	 * task was not found, and the work was gone with nothing anywhere saying
+	 * so. Set this and the protocol layer reads the row back through the same
+	 * registry that resolves an id somebody passed in: `after` carries the
+	 * thing that was made, and a create that made nothing readable is an
+	 * error rather than a number.
+	 */
+	creates?: RefKind;
 	/**
 	 * `caller` is the connection's own grants, for the one rule that cannot be
 	 * decided from the arguments: which files this key may see. Every other
@@ -1637,6 +1651,7 @@ export const TOOLS: Tool[] = [
 	{
 		name: 'add_todo',
 		title: 'Add a todo',
+		creates: 'todo' as const,
 		description:
 			'Put a task on the todo list. Leave the date off unless the person said when — a todo with no date is the normal case here, not an unfinished one.',
 		scope: 'tasks:write',
