@@ -28,6 +28,12 @@ releases mattered.
   finishing one and for putting it back, and nothing for the column between
   them, so "doing" could only be set by hand in the app. `change_task` takes a
   status.
+- **A task's labels get a line of their own on a phone.** Six buttons and a
+  row of labels could not fit, and the only thing that gave was the labels:
+  each pill was squeezed narrower than the word inside it, so `#done-by-ai`
+  came out on two lines across the first button. The labels sit under the
+  number now and the buttons drop below them, and a label is never broken in
+  half — the strip wraps instead.
 - **A page that lost its live connection catches up when it gets it back.**
   The stream carries no replay, so anything an assistant wrote while the
   connection was down reached nobody — and the tab went on showing what it had

@@ -53,8 +53,17 @@
 	 * pill is the pale-tag-on-pale-background bug again. A ring sits outside
 	 * the fill and reads the same over both.
 	 */
+	/*
+	 * `tag-chip` is what says a label is one word.
+	 *
+	 * A pill that breaks across two lines is not a smaller pill, it is a
+	 * shape with a word torn in half — and on a phone, where the row has no
+	 * room to spare, every label was drawn that way. The rule lives in the
+	 * stylesheet beside the chip's own; the strip that holds them is what
+	 * wraps.
+	 */
 	const look = $derived(
-		`${ink ? 'pill' : 'chip'} ${active ? 'ring-1 ring-gray-900 ring-offset-1' : ''} ${klass}`
+		`${ink ? 'pill' : 'chip'} tag-chip ${active ? 'ring-1 ring-gray-900 ring-offset-1' : ''} ${klass}`
 	);
 </script>
 

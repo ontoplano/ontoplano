@@ -2099,10 +2099,31 @@ label:has(> input[type='radio']:not(:disabled)) {
 	.task-actions {
 		width: 100%;
 		display: flex;
+		/*
+		 * The labels take a line of their own rather than being squeezed.
+		 *
+		 * Without this the line could not break, so the only give was in the
+		 * strip of labels: it shrank under the six buttons until each pill was
+		 * narrower than the word inside it, and on a phone every task wore a
+		 * two-line `#done-by-ai` overlapping the first button. The number and
+		 * the labels are `order-first`, so what wraps is the buttons — which
+		 * is the right way round: the labels say what the row is.
+		 */
+		flex-wrap: wrap;
 		align-items: center;
 		justify-content: flex-end;
 		gap: 0.25rem;
 		margin-top: 0.375rem;
+	}
+
+	/*
+	 * A label is one word, and never two lines of one.
+	 *
+	 * The strip around it wraps — one more row of pills is the right answer
+	 * to a narrow screen — so nothing is lost by refusing to break inside.
+	 */
+	.tag-chip {
+		white-space: nowrap;
 	}
 
 	/*
