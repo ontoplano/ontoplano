@@ -11,6 +11,8 @@ export type TodoActionNames = {
 	update: string;
 	setStatus: string;
 	schedule: string;
+	/** A label on or off, without going through the whole row. */
+	tag: string;
 	delegate: string;
 	archive: string;
 	remove: string;
@@ -22,6 +24,7 @@ export const TODO_ROOM_ACTIONS: TodoActionNames = {
 	update: '?/update',
 	setStatus: '?/setStatus',
 	schedule: '?/schedule',
+	tag: '?/tag',
 	delegate: '?/delegate',
 	archive: '?/archive',
 	remove: '?/delete'
@@ -33,6 +36,7 @@ export const NOTEBOOK_TODO_ACTIONS: TodoActionNames = {
 	update: '?/todoUpdate',
 	setStatus: '?/todoStatus',
 	schedule: '?/todoSchedule',
+	tag: '?/todoTag',
 	delegate: '?/todoDelegate',
 	archive: '?/todoArchive',
 	remove: '?/todoDelete'

@@ -28,6 +28,10 @@ releases mattered.
   finishing one and for putting it back, and nothing for the column between
   them, so "doing" could only be set by hand in the app. `change_task` takes a
   status.
+- **A label goes on a task from the row itself.** There is a `+` at the end of
+  the labels; pressing it gives you a box that completes from the words you
+  already use, and Enter puts one on. Adding a label used to mean opening the
+  editor, finding the field, saving, and watching the list reorder.
 - **A task's labels get a line of their own on a phone.** Six buttons and a
   row of labels could not fit, and the only thing that gave was the labels:
   each pill was squeezed narrower than the word inside it, so `#done-by-ai`

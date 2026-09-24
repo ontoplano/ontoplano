@@ -32,6 +32,7 @@
 	import RatingBadges from '$lib/components/RatingBadges.svelte';
 	import { phoneWidth } from '$lib/breakpoints.svelte';
 	import TagChip from '$lib/components/TagChip.svelte';
+	import QuickTag from '$lib/components/QuickTag.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -39,6 +40,7 @@
 	import { ordinal } from '$lib/ordinal';
 	import { keepInView } from '$lib/actions/keep-in-view';
 	import { invalidateAll } from '$app/navigation';
+	import { page } from '$app/state';
 	import { cancelFor, changeNow, isPending } from '$lib/undo.svelte';
 	import type { SubmitFunction } from '@sveltejs/kit';
 	import type { GoalBacklink } from '$lib/services/backlinks';
@@ -1736,6 +1738,20 @@
 											}}
 										/>
 									{/each}
+									<!--
+										And the way to add one, at the end of the strip.
+
+										Where the cursor already is when somebody reads the row
+										and decides it needs a word. The alternative was the
+										edit dialog, which is five steps and a list that
+										reorders underneath you for one label.
+									-->
+									<QuickTag
+										id={todo.id}
+										action={actions.tag}
+										has={todo.tags.map((one) => one.name)}
+										known={page.data.tagVocabulary ?? []}
+									/>
 								</div>
 							</div>
 						</div>

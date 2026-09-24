@@ -8,6 +8,7 @@ import {
 	deleteTodo,
 	scheduleTodo,
 	setTodoStatus,
+	tagTodo,
 	updateTodo
 } from '$lib/services/todos';
 import type { RequestEvent } from '@sveltejs/kit';
@@ -70,6 +71,28 @@ export const todoHandlers = {
 				notebookId: formData.get('notebookId'),
 				...(formData.has('tags') ? { tags: formData.get('tags') } : {}),
 				ratings: ratingsFromForm(formData)
+			});
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/*
+	 * A label on or off, and nothing else touched.
+	 *
+	 * `update` replaces the whole row, so putting one word on a task through
+	 * it means sending the title, the notes, the notebook and every other
+	 * label back unchanged — which is a dialog, not a press, and is wrong for
+	 * the one beside the labels themselves. The same pair the MCP tool takes,
+	 * over the same service function.
+	 */
+	tag: async ({ request, locals }: Event) => {
+		const formData = await request.formData();
+		try {
+			tagTodo(buildCtx(locals.user!.id), Number(formData.get('id')), {
+				add: formData.get('add'),
+				remove: formData.get('remove')
 			});
 			return { success: true };
 		} catch (e) {

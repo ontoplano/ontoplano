@@ -1943,6 +1943,8 @@ export type MessageKey =
 	| 'pictures.uploading'
 	| 'plans.exportsPerDay'
 	| 'plans.storedDataPoints'
+	| 'quickTag.addALabel'
+	| 'quickTag.placeholder'
 	| 'ratingPicker.leaveUnanswered'
 	| 'ratingPicker.notSet'
 	| 'ratings.ease'

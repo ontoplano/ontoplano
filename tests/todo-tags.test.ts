@@ -164,6 +164,38 @@ describe('labelling one without disturbing the rest', () => {
 		expect(() => todos.tagTodo(theirs, id, { add: 'theirs' })).toThrow();
 		expect(named(id)).toEqual(['a1']);
 	});
+
+	/*
+	 * And the press beside the labels posts only the labels.
+	 *
+	 * The `+` at the end of a task's strip sends one word. Through `update`
+	 * that would have meant sending the title, the notes and the notebook back
+	 * unchanged as well — and a form that forgets one of them silently empties
+	 * it, which is how a quick press becomes a lost sentence. It is its own
+	 * action for that reason, and this is what says so.
+	 */
+	test('the row’s own tag action touches nothing but the labels', async () => {
+		const { todoHandlers } = await import('../src/lib/services/todo-actions');
+		const id = todos.createTodo(ctx, {
+			title: 'strip the hallway',
+			notes: 'the paper under the paper',
+			tags: 'a1'
+		});
+
+		const body = new FormData();
+		body.set('id', String(id));
+		body.set('add', 'done-by-ai');
+		const answer = await todoHandlers.tag({
+			request: new Request('http://test/', { method: 'POST', body }),
+			locals: { user: { id: ctx.userId } }
+		} as never);
+
+		expect(answer).toMatchObject({ success: true });
+		const after = todos.listTodos(ctx).find((t) => t.id === id)!;
+		expect(after.tags.map((one) => one.name)).toEqual(['a1', 'done-by-ai']);
+		expect(after.title).toBe('strip the hallway');
+		expect(after.notes).toBe('the paper under the paper');
+	});
 });
 
 /**

@@ -35,6 +35,7 @@ export const actions = {
 	archive: todoHandlers.archive,
 	setStatus: todoHandlers.setStatus,
 	schedule: todoHandlers.schedule,
+	tag: todoHandlers.tag,
 	delete: todoHandlers.remove,
 	delegate: todoHandlers.delegate
 };

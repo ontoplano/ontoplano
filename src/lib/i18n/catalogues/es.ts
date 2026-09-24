@@ -2231,6 +2231,8 @@ export const messages: Catalogue = {
 	'pictures.uploading': 'subiendo…',
 	'plans.exportsPerDay': 'Exportaciones por día',
 	'plans.storedDataPoints': 'Puntos de datos almacenados',
+	'quickTag.addALabel': 'Añadir etiqueta',
+	'quickTag.placeholder': 'etiqueta',
 	'ratingPicker.leaveUnanswered': 'Dejar {rating} sin responder',
 	'ratingPicker.notSet': 'sin definir',
 	'ratings.ease': 'Facilidad',
