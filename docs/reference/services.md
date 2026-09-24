@@ -97,6 +97,7 @@ shows up here on the next build.
 | [`review-mail`](#review-mail)                    | The morning a week begins: what last week actually was, in the inbox.                                                                                                                                                                                                |
 | [`review`](#review)                              | Closing a week.                                                                                                                                                                                                                                                      |
 | [`ringtones`](#ringtones)                        | The sounds a reminder can make.                                                                                                                                                                                                                                      |
+| [`saved-filters`](#saved-filters)                | A narrowing somebody wants back, under a name they chose.                                                                                                                                                                                                            |
 | [`schedule`](#schedule)                          | Read-only view of what's coming up.                                                                                                                                                                                                                                  |
 | [`schemes`](#schemes)                            | Saved weeks.                                                                                                                                                                                                                                                         |
 | [`scoped-actions`](#scoped-actions)              | A room's handlers, mounted under a prefix.                                                                                                                                                                                                                           |
@@ -3416,9 +3417,24 @@ that are elsewhere say so, so moving one is a choice rather than a surprise.
 
 File one under this notebook, or take it out.
 
-One statement, scoped by the account as well as the id (I1) — never a check
-followed by an unscoped write. A null notebook is how a thing is unfiled,
-which is the same act in reverse.
+Scoped by the account as well as the id (I1) — never a check followed by an
+unscoped write. A null notebook is how a thing is unfiled, which is the same
+act in reverse.
+
+## The number goes with the notebook
+
+A note and a task are numbered inside their notebook as well as in the
+account — `#4` on a card, and what `TASK:#4` in somebody's writing points
+at — and `(notebook_id, notebook_seq)` is unique. So moving one that already
+had a number into a notebook that already has that number is a constraint
+failure, and it is the ordinary case rather than a corner: bringing anything
+into a notebook with more than three things in it hit it. What came back was
+"Unexpected error", which is the least useful thing this could have said.
+
+The number is therefore not carried. It is dropped on the way out and the
+next one in the new notebook is taken, which is what the number means: where
+this sits in that notebook, not where it sat in the last one. `seed-dev.mjs`
+has the same note beside its own version of this.
 
 ### Types
 
@@ -4900,6 +4916,45 @@ is whatever its kind says. `null` means show it and say nothing.
 
 - `Ringtone`
 - `SoundChoice`
+
+## saved-filters
+
+A narrowing somebody wants back, under a name they chose.
+
+"Everything urgent about the house that nobody has done" is four controls
+set four ways, and setting them again every Monday is the work the controls
+were supposed to save. So a filter can be kept: a name, and the query string
+the list is already writing into the address.
+
+**The query string is the whole of it.** Since `$lib/filters-in-url` put a
+list's narrowing into the address, applying a saved filter is navigating to
+it — so there is no shape here to keep in step with the controls, and a
+filter saved today still means something after a control is added or
+renamed. What it cannot express is anything a list keeps outside the
+address, which is also exactly what is not worth saving.
+
+Stored per surface, because the task list's filters are not the diary's and
+a name that means one thing on one screen means nothing on another.
+
+### Functions
+
+#### `savedFilters(userId, surface)`
+
+One surface's saved filters, oldest first, or nothing at all.
+
+#### `saveFilter(userId, surface, rawName, rawQuery)`
+
+Keep this narrowing under this name, replacing one of the same name.
+
+Replacing rather than refusing: somebody saving "This week" twice has
+adjusted it, and being told the name is taken sends them to delete the old
+one first for no reason.
+
+#### `deleteFilter(userId, surface, rawName)`
+
+### Types
+
+- `SavedFilter`
 
 ## schedule
 

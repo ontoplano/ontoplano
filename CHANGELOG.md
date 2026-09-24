@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **The trial-ending email is in your own language,** like every other
+  message the app sends. It was written in literal English.
 - **Putting a task on a day can ask to be reminded about it** — the same
   control the planner's own blocks use. It is where you say "do this on
   Thursday", which is when you most want telling.

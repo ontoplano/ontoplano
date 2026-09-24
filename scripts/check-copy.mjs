@@ -417,6 +417,12 @@ export function copyIn(source, { markup: hasMarkup = true } = {}) {
 	)) {
 		const value = match[1].trim();
 		if (!value || value.includes('{') || !WORDS.test(value)) continue;
+		// A message key is not copy: a component that takes its label as a key
+		// and translates it inside — `<RemindLead hint="tasks.plan.…">` — has
+		// moved the words, not left them here. The property scan above already
+		// knew this; the attribute one did not, so extracting a component with
+		// a key-taking prop looked like copy arriving.
+		if (LOOKS_LIKE_A_KEY.test(value)) continue;
 		found.push(value);
 	}
 

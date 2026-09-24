@@ -1454,10 +1454,17 @@ export const messages: Catalogue = {
 	},
 	'mail.stopThese': 'Diese stoppen: {url}',
 	'mail.trial.action': 'Plan verwalten',
+	'mail.trial.billingPage': 'the billing page in your settings',
 	'mail.trial.inYourSettings': 'die Abrechnungsseite in Ihren Einstellungen',
 	'mail.trial.line': 'Ihre Testphase endet am {date} — {consequence}.',
+	'mail.trial.lineCard':
+		'Your trial ends on {date} — your subscription starts and the first charge happens then. If you would rather stop, cancel before that date and you will not be charged.',
+	'mail.trial.lineNoCard':
+		'Your trial ends on {date} — everything you wrote stays yours and stays readable, but nothing new can be added until you subscribe.',
+	'mail.trial.manageAt': 'Manage it on {where}.',
 	'mail.trial.manageOn': 'Verwalten Sie es unter {where}.',
 	'mail.trial.questions': 'Fragen? Antworten Sie einfach auf diese Nachricht.',
+	'mail.trial.reply': 'Questions? Just reply to this message.',
 	'mail.trial.subject': 'Ihre ontoplano-Testphase endet am {date}',
 	'mail.trial.withCard':
 		'beginnt Ihr Abo, und die erste Abbuchung erfolgt dann. Wenn Sie lieber aufhören möchten, kündigen Sie vor diesem Datum, und es wird nichts berechnet',

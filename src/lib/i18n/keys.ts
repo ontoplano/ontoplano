@@ -1267,10 +1267,15 @@ export type MessageKey =
 	| 'mail.review.unanswered'
 	| 'mail.stopThese'
 	| 'mail.trial.action'
+	| 'mail.trial.billingPage'
 	| 'mail.trial.inYourSettings'
 	| 'mail.trial.line'
+	| 'mail.trial.lineCard'
+	| 'mail.trial.lineNoCard'
+	| 'mail.trial.manageAt'
 	| 'mail.trial.manageOn'
 	| 'mail.trial.questions'
+	| 'mail.trial.reply'
 	| 'mail.trial.subject'
 	| 'mail.trial.withCard'
 	| 'mail.trial.withoutCard'
@@ -3554,6 +3559,9 @@ export interface MessageValuesFor {
 	'mail.review.unanswered': { andMore: string | number; count: number; titles: string | number };
 	'mail.stopThese': { url: string | number };
 	'mail.trial.line': { consequence: string | number; date: string | number };
+	'mail.trial.lineCard': { date: string | number };
+	'mail.trial.lineNoCard': { date: string | number };
+	'mail.trial.manageAt': { where: string | number };
 	'mail.trial.manageOn': { where: string | number };
 	'mail.trial.subject': { date: string | number };
 	'markdownImport.ready': { length: string | number; notes: string | number };
