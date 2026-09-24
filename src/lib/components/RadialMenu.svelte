@@ -1010,7 +1010,7 @@
 		 * never lands in the middle of a scroll. It is not on the scrim
 		 * itself, which is full-screen and would be a different question.
 		 */
-		--hud-blur: 8px;
+		--hud-blur: 4px;
 		--hud-ink: 62%;
 
 		position: fixed;
@@ -1060,12 +1060,12 @@
 		border-radius: var(--radius-lg, 0);
 		/* Edged in the letters' own colour, so the plate belongs to the room it
 		   is naming rather than being a grey card the name landed on. */
-		border: 1px solid color-mix(in srgb, currentColor var(--hud-ink), white);
+		border: 4px solid color-mix(in srgb, currentColor var(--hud-ink), white);
 		background-color: var(--hud-plate);
 		-webkit-backdrop-filter: blur(var(--hud-blur));
 		backdrop-filter: blur(var(--hud-blur));
 		padding: 0.875rem 1.5rem 1rem;
-		font-weight: 800;
+		font-weight: 600;
 		letter-spacing: 0.08em;
 		/* The tracking above pushes the last letter off centre by its own
 			   width; this takes it back. */
