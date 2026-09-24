@@ -15,6 +15,7 @@
 	import NotebookDetail from '$lib/components/NotebookDetail.svelte';
 	import NotebookTags from '$lib/components/NotebookTags.svelte';
 	import NotebookFields from '$lib/components/fields/NotebookFields.svelte';
+	import { SECTION_COLORS } from '$lib/colors';
 	import NotebookCover from '$lib/components/NotebookCover.svelte';
 	import NotebookPicture from '$lib/components/NotebookPicture.svelte';
 	import type { PageServerData, ActionData } from './$types';
@@ -150,7 +151,12 @@
 		card's own edge away; the border and the section's accent belong to both
 		of them, drawn once around the pair rather than once each.
 	-->
-	<div class="border border-gray-200 bg-white shadow-card">
+	<!-- The room's colour down the side, the same as every other tab in it: the
+	     shelf was the one page here standing on a card with no accent. -->
+	<div
+		class="card-accent border border-gray-200 bg-white shadow-card"
+		style="--card-accent: {SECTION_COLORS.diary}"
+	>
 		<!-- The shelf's own floor: one cover wide. A list of names cannot go this
 		     narrow and a grid of covers can — see `NOTEBOOK_PANEL_MIN`. -->
 		<SplitColumns

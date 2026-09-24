@@ -20,6 +20,12 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **The tag filter's Any and All are one control,** and what the labels are
+  doing is shown where they are typed rather than on the button that would
+  change it. A comma or a space takes the word, the way they do everywhere
+  else.
+- **The notebooks shelf wears the room's colour** down its side, like every
+  other tab in the room.
 - **An assistant can ask what a notebook's labels are** — `notebook_tags` —
   and write down what a label means with `describe_tag`.
 - **A notebook says which labels are on what is filed in it,** from a Manage

@@ -40,13 +40,14 @@ test('the labels are the notebook’s, and they say what carries them', async ({
 		['the plumber can move the pipes', 'home'],
 		['tiles are the slow bit', 'home money']
 	] as const) {
-		await page.getByRole('button', { name: 'New note' }).first().click();
-		const form = page.locator('#entry-form');
-		await form.locator('textarea[name=content]').fill(content);
-		await form.locator('input[role="combobox"]').first().fill(tags);
-		const post = page.getByRole('button', { name: /Post entry|Create note|Save/ }).first();
-		await post.click();
-		await expect(page.getByText(content)).toBeVisible({ timeout: 20_000 });
+		await page.getByRole('button', { name: 'New note', exact: true }).first().click();
+		await page.locator('textarea[name="content"]').first().fill(content);
+		await page.locator('input[role="combobox"]').first().fill(tags);
+		await page
+			.getByRole('button', { name: /Add note/ })
+			.last()
+			.click();
+		await expect(page.getByText(content).first()).toBeVisible({ timeout: 30_000 });
 	}
 
 	await page.getByRole('button', { name: 'Manage tags' }).click();

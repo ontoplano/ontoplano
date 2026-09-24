@@ -18,6 +18,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import TagChip from '$lib/components/TagChip.svelte';
 	import { afterPress } from '$lib/after-press';
+	import { sliding } from '$lib/actions/sliding';
 	import { suggestTags } from '$lib/tag-typing';
 	import {
 		NO_TAG_FILTER,
@@ -134,7 +135,17 @@
 			}
 			const step = event.key === 'ArrowUp' ? -1 : 1;
 			at = (at + step + list.length) % list.length;
-		} else if (event.key === 'Enter') {
+		} else if (event.key === 'Enter' || event.key === ',' || event.key === ' ') {
+			/*
+			 * A comma and a space take the word too.
+			 *
+			 * They are what separates two labels everywhere else in the app —
+			 * `TagInput` takes both, and so does the box on a note — so typing
+			 * `home, money` into this one and getting one label called "home,"
+			 * was this control being the odd one out. Enter still works and is
+			 * still what the list's keyboard walk lands on.
+			 */
+			if (drafts[side] === '' && event.key !== 'Enter') return;
 			event.preventDefault();
 			if (list.length > 0 && (listing || drafts[side] !== ''))
 				add(side, list[Math.min(at, list.length - 1)]);
@@ -293,22 +304,30 @@
 							{t(side === 'include' ? 'tagFilter.keep' : 'tagFilter.hide')}
 						</span>
 						{#if side === 'include'}
-							<!-- Both states drawn at once, so pressing one moves nothing. -->
+							<!--
+								The same strip the markdown box uses for Write and Preview.
+
+								Two buttons side by side is two things that might both be on;
+								this is one control with two positions, which is what it is.
+								The symbol moved off them and into the box below — a ∪ on a
+								button says what pressing it would do, and a ∪ where the
+								words are typed says what the words are doing.
+							-->
 							<div
-								class="inline-flex shrink-0"
-								role="group"
+								class="seg shrink-0"
+								use:sliding
+								role="tablist"
 								aria-label={t('tagFilter.howTheyCombine')}
 							>
-								{#each [{ mode: 'any' as const, icon: 'union' as const, word: t('tagFilter.any'), hint: t('tagFilter.anyHint') }, { mode: 'all' as const, icon: 'intersect' as const, word: t('tagFilter.all'), hint: t('tagFilter.allHint') }] as choice (choice.mode)}
+								{#each [{ mode: 'any' as const, word: t('tagFilter.any'), hint: t('tagFilter.anyHint') }, { mode: 'all' as const, word: t('tagFilter.all'), hint: t('tagFilter.allHint') }] as choice (choice.mode)}
 									<button
 										type="button"
-										class="btn btn-sm gap-1"
-										aria-pressed={value.mode === choice.mode}
+										role="tab"
+										aria-selected={value.mode === choice.mode}
 										title={choice.hint}
 										aria-label={choice.hint}
 										onclick={() => setMode(choice.mode)}
 									>
-										<Icon name={choice.icon} size={14} />
 										{choice.word}
 									</button>
 								{/each}
@@ -351,6 +370,20 @@
 									</TagChip>
 								{/if}
 							{/each}
+							{#if side === 'include' && value.include.length > 1}
+								<!--
+									What the words in this box are doing, where they are typed.
+									Only once there are two of them: one label is one label
+									however they are meant to combine.
+								-->
+								<span
+									class="shrink-0 text-gray-500"
+									title={t(value.mode === 'all' ? 'tagFilter.allHint' : 'tagFilter.anyHint')}
+									aria-hidden="true"
+								>
+									<Icon name={value.mode === 'all' ? 'intersect' : 'union'} size={14} />
+								</span>
+							{/if}
 							<input
 								bind:this={boxes[side]}
 								bind:value={drafts[side]}

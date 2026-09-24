@@ -81,7 +81,7 @@ test('labels to show, labels to hide, any or all — and the address keeps it', 
 	// Any of them, by default.
 	await expect.poll(() => showing(page)).toEqual(['ring the plumber', 'fix the roof']);
 
-	await panel(page).getByRole('button', { name: 'Carrying all of them' }).click();
+	await panel(page).getByRole('tab', { name: 'Carrying all of them' }).click();
 	await expect.poll(() => showing(page)).toEqual(['fix the roof']);
 
 	expect((await list.first().boundingBox())!.y).toBe(listTop);
@@ -201,7 +201,7 @@ test('the diary filters by the same control', async ({ page }) => {
 	const show = diaryPanel.locator('[data-side="include"] input[role="combobox"]');
 	await show.fill('planning');
 	await show.press('Enter');
-	await diaryPanel.getByRole('button', { name: 'Carrying all of them' }).click();
+	await diaryPanel.getByRole('tab', { name: 'Carrying all of them' }).click();
 	await page.keyboard.press('Escape');
 	await expect(page.getByText('Nothing matches these tags.')).toBeVisible();
 	await expect(diaryFace).toBeVisible();
@@ -242,4 +242,35 @@ test('the suggestions under a box are not cut off at the panel edge', async ({ p
 	// And the label at the far end of it is still a press away.
 	await list.getByRole('option', { name: 'urgent', exact: true }).click();
 	await expect(face(page)).toContainText('+1');
+});
+
+test('a comma or a space takes the word, and the symbol sits where it is typed', async ({
+	page
+}) => {
+	test.setTimeout(180_000);
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await register(page, testEmail('tag-filter-typing'));
+	await visit(page, '/tasks/todo');
+	for (const [title, tags] of TASKS) await newTask(page, title, tags);
+
+	await openFilters(page);
+	await face(page).click();
+
+	/*
+	 * A comma and a space separate two labels everywhere else in the app — the
+	 * box on a note takes both — so this one taking only Enter made it the odd
+	 * control out, and typing `home, urgent` into it made one label called
+	 * "home,".
+	 */
+	await box(page, 'include').click();
+	await page.keyboard.type('home,');
+	await page.keyboard.type('urgent ');
+
+	await expect(panel(page).locator('[data-side="include"] .chip')).toHaveCount(2);
+	await expect(face(page)).toContainText('+2');
+
+	// And what the two of them are doing is said where they were typed, rather
+	// than on the button that would change it.
+	const symbol = panel(page).locator('[data-side="include"] [title]').first();
+	await expect(symbol).toBeVisible();
 });
