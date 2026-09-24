@@ -1020,18 +1020,19 @@
 						<!--
 							In a slot as wide as the longest it can be.
 
-							Held open by the same sentence at the count of the whole list,
-							which is the largest it can say and does not change when a
-							filter does. See `.count-slot`.
+							Held open by the same sentence at the count of the whole list —
+							`todos`, not `inScope`, which the notebook and tag filters have
+							already narrowed — so it is the largest it can say and does not
+							change when a filter does. See `.count-slot`.
 						-->
 						<span
 							class="tabular count-slot shrink-0 self-center text-xs text-gray-500"
 							title={t('todoRows.showingCount', { count: visibleTodos.length })}
 						>
 							<span class="count-widest" aria-hidden="true">
-								<span class="sm:hidden">{inScope.length}</span>
+								<span class="sm:hidden">{todos.length}</span>
 								<span class="hidden sm:inline"
-									>{t('todoRows.showingCount', { count: inScope.length })}</span
+									>{t('todoRows.showingCount', { count: todos.length })}</span
 								>
 							</span>
 							<span>

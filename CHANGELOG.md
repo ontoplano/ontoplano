@@ -20,6 +20,8 @@ releases mattered.
 
 ## 0.183.3 — 2026-09-23
 
+- **The task count no longer nudges the filters beside it** when a tag
+  filter narrows the list.
 - **The diary, ideas and the gallery filter by tags the same way,** and a
   filter that matches nothing keeps its controls on screen so it can be undone.
 - **Filter by tags to show and tags to hide.** The task list and a
