@@ -3243,17 +3243,19 @@ join to `user`. Somebody who subscribed and later signed up is two unrelated
 facts, and keeping them unrelated is what stops "unsubscribe" from ever being
 confused with "delete my account".
 
-## Double opt-in, and what that buys
+## One step, and what stands in for the second
 
-A row is created unconfirmed. Nothing is ever sent to it but the one
-confirmation, and if the link is never followed the row stays a dead address
-that costs nothing. So typing somebody else's address into the form
-subscribes nobody, which is both the law here and in the EU and the reason a
-list is worth having: everyone on it asked twice.
+An address is on the list the moment somebody types it and presses the
+button. Double opt-in is the safer arrangement and this deliberately is not
+it: a confirming click loses the people who do not go back to their mail,
+and the form promising a message it then has to send is the thing that was
+saying "check your inbox" for a mail nobody was sending.
 
-The confirmation token is _not_ cleared afterwards, because it is also what
-the unsubscribe link in every issue carries. A way in that becomes no way out
-is precisely how a domain gets filed as spam.
+What stands in its place is the part that actually protects a domain: a hard
+rate limit in front of the endpoint, and an unsubscribe link in every single
+message — one click, nobody signed in to anything.
+
+Every row still carries a token, because that link is what it carries.
 
 ## What it never says
 
@@ -3274,13 +3276,11 @@ The one other origin allowed to post the form, if there is one.
 
 #### `subscribe(rawEmail, source)`
 
-Take an address, and send exactly one confirmation to it.
+Take an address, and put it on the list.
 
-Answers `true` whatever happened, because the caller is a public form and
-the difference between "new" and "already on the list" is not the form's to
-disclose. A send that fails is a mail-log row like any other; the person is
-told the same thing either way, because "check your inbox" is true and
-"our SMTP is down" is not their problem to act on.
+Nothing is sent. Answers the same whatever happened, because the caller is a
+public form and the difference between "new" and "already on the list" is not
+the form's to disclose.
 
 #### `unsubscribe(token)`
 
@@ -5156,6 +5156,10 @@ checked at both ends rather than trusted at either.
 
 #### `markOnboarded(userId)`
 
+#### `panelWidthMin(key)`
+
+The narrowest this particular panel goes. See `NOTEBOOK_PANEL_MIN`.
+
 #### `getPanelWidth(userId, key)`
 
 #### `setPanelWidth(userId, key, rem)`
@@ -5787,6 +5791,20 @@ during a migration.
 #### `tagByName(userId, name)`
 
 The label the account calls this word, if it has one.
+
+#### `tagsByNotebook(userId)`
+
+The labels each notebook uses: the ones on the notes, tasks and ideas filed
+in it, and the ones it hands a new note by default.
+
+What a tag field suggests once a notebook is chosen — a subject's own few
+words rather than the whole account's vocabulary. Every row read is this
+account's own, so a notebook somebody else filed things in contributes only
+what this account filed there.
+
+#### `notebookTags(userId, notebookId)`
+
+One notebook's labels — nothing, for a notebook this account never filed anything in.
 
 ### Types
 

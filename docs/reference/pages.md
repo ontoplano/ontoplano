@@ -11,7 +11,7 @@ own write surface, the way the endpoints in [the API](api.md) are the
 write surface for everything else; both end up calling the same
 [services](services.md).
 
-**61 pages, 208 actions.**
+**63 pages, 193 actions.**
 
 | Page                                 | Actions                                                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -33,7 +33,9 @@ write surface for everything else; both end up calling the same
 | `/health/recipes/[id]`               | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/health/workouts`                   | `createCategory`, `renameCategory`, `deleteCategory`                                                                                                                                                                                                                                                                                                                                |
 | `/instance`                          | —                                                                                                                                                                                                                                                                                                                                                                                   |
-| `/inventory`                         | `renameAttribute`, `renameAttributeValue`, `removeAttribute`, `setAttributeColor`, `setCategoryFood`, `setCategoryShared`, `renameCategory`, `deleteCategory`, `saveCategories`, `createCategory`, `createLocation`, `updateLocation`, `deleteLocation`, `setLocationPanelWidth`, `putItem`                                                                                         |
+| `/inventory`                         | —                                                                                                                                                                                                                                                                                                                                                                                   |
+| `/inventory/stock`                   | —                                                                                                                                                                                                                                                                                                                                                                                   |
+| `/inventory/wishlist`                | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/legal/privacy`                     | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/legal/refunds`                     | —                                                                                                                                                                                                                                                                                                                                                                                   |
 | `/legal/terms`                       | —                                                                                                                                                                                                                                                                                                                                                                                   |
@@ -188,59 +190,12 @@ The workouts filed under it keep existing, without a kind.
 
 ### `/inventory`
 
-Every action here is the same shape: read the form, call the service, map errors.
+The room's address, which is now a pair of them.
 
-What an item itself can be asked to do is in `$lib/services/item-actions`,
-spread in below — a notebook's Inventory tab mounts the same handlers, so
-ticking something bought there is the same code as ticking it here. What
-stays is the room managing itself: its sections, its locations, and the
-vocabulary its things describe themselves with.
-
-**`renameAttribute`**
-
-Rename an attribute everywhere it is used — or merge it into another.
-
-**`renameAttributeValue`**
-
-Rename one value of one, wherever a thing says it.
-
-**`removeAttribute`**
-
-Take an attribute off everything that has it. The things stay.
-
-**`setAttributeColor`**
-
-A colour on an attribute, or on one of its values. Empty takes it off.
-
-**`setCategoryFood`**
-
-One tick, saved as it lands — the modal has no save button any more.
-
-**`setCategoryShared`**
-
-The owner's switch: the family sees the section and fills it.
-
-**`createCategory`**
-
-Making a category is its own act, and needs its own action.
-
-It used to be a second pair of fields inside `saveCategories`, so one Save
-meant two things. Splitting the form was right and left this behind: the
-new form posted here and there was nothing here to post to, so the dialog
-simply did nothing and said nothing about it.
-
-**`setLocationPanelWidth`**
-
-Where the reader dragged the divider. Posted once, when they let go.
-
-**`putItem`**
-
-Where a thing lives. An empty value takes its address away.
-
-Its own action rather than a field on `update`, because this is what a
-drag posts: one item, one location, nothing else touched — and `update`
-re-parses the whole row, which would mean a drag re-sending a name and a
-price to move something into a drawer.
+Inventory is two lists — the cupboard and the wishlist — and each is a tab
+with a page of its own. This is the name everything already points at:
+bookmarks, the search, a link in a recipe, the installed shell. Opening it
+goes to the cupboard, which is what the room is mostly for.
 
 ### `/login`
 

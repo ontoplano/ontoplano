@@ -22,7 +22,7 @@ Can be put away in Preferences (`health`), which takes it out of the bar, the wh
 
 ###
 
-- `/inventory` — one page, no tabs
+- `/inventory/stock` — one page, no tabs
 
 Can be put away in Preferences (`inventory`), which takes it out of the bar, the wheel and the dashboard.
 
