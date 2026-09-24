@@ -2175,13 +2175,11 @@ const pastaPicture = picture(
 	'Tomatoes for the sauce',
 	demoPicture('tomato-pasta.jpg')
 );
+// Any picture at all, not this one: a recipe holds one main picture, and the
+// one it has may be an older demo picture or one attached by hand.
 if (
 	pastaPicture &&
-	!one(
-		'select id from recipe_images where recipe_id = ? and media_id = ?',
-		tomatoPasta,
-		pastaPicture
-	)
+	!one('select id from recipe_images where user_id = ? and recipe_id = ?', uid, tomatoPasta)
 )
 	run(
 		`insert into recipe_images (user_id, recipe_id, media_id, position, is_main, created_at)
