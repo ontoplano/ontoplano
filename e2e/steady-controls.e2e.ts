@@ -18,7 +18,6 @@ import { visit } from './helpers/visit';
  * than against one button because the point is the class, not the instance.
  */
 test('the task strip does not shift when its toggles are pressed', async ({ page }) => {
-	test.setTimeout(240_000);
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await register(page, testEmail('steady'));
 	await visit(page, '/tasks/todo');
@@ -51,20 +50,22 @@ test('the task strip does not shift when its toggles are pressed', async ({ page
 			const strip = document.querySelector('.room-toolbar-row:has(button[aria-pressed])');
 			if (!strip) return [];
 			const from = strip.getBoundingClientRect().left;
-			return [...strip.querySelectorAll('button, input, [role="combobox"]')].map((el) => {
-				const box = el.getBoundingClientRect();
-				/*
-				 * To the nearest two pixels. A button whose pressed state paints a
-				 * ring lays out a fraction of a pixel differently, and rounding
-				 * lands that on either side of a whole number. What this is for is
-				 * a control moving because the words in it got shorter, which is
-				 * tens of pixels, not one.
-				 */
-				return `${el.textContent?.trim().slice(0, 12) || el.tagName}@${
-					Math.round((box.x - from) / 2) * 2
-				}`;
-			});
+			return [...strip.querySelectorAll('button, input, [role="combobox"]')].map((el) => ({
+				name: el.textContent?.trim().slice(0, 12) || el.tagName,
+				x: el.getBoundingClientRect().left - from
+			}));
 		});
+	const expectSteady = (before: Awaited<ReturnType<typeof places>>, after: typeof before) => {
+		expect(after.map(({ name }) => name)).toEqual(before.map(({ name }) => name));
+		for (let index = 0; index < before.length; index++) {
+			// Pressed-state paint and scrollbar rounding can move an edge by a
+			// pixel or two. A changing button label used to move neighbors by tens.
+			expect(
+				Math.abs(after[index].x - before[index].x),
+				`${before[index].name} moved`
+			).toBeLessThanOrEqual(3);
+		}
+	};
 
 	const toggle = page.getByRole('button', { name: /^Completed/ });
 	const before = await places();
@@ -73,10 +74,10 @@ test('the task strip does not shift when its toggles are pressed', async ({ page
 	const after = await places();
 
 	expect(before.length).toBeGreaterThan(2);
-	expect(after, 'pressing Completed moved the controls beside it').toEqual(before);
+	expectSteady(before, after);
 
 	// And back, which is the same promise in the other direction.
 	await toggle.click();
 	await page.waitForTimeout(800);
-	expect(await places()).toEqual(before);
+	expectSteady(before, await places());
 });

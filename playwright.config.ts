@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test';
 import { existsSync, readdirSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { browserChecks, DEVICE_TEST_TIMEOUT } from './e2e/settings';
+import { browserChecks, chromiumBrowser, DEVICE_TEST_TIMEOUT } from './e2e/settings';
 
 // CI shards ordinary app tests; instance-wide mutations and the device build
 // get their own runners. With no selection, local runs still cover everything.
@@ -171,10 +171,12 @@ export default defineConfig({
 	projects: [
 		{
 			name: 'owner',
-			testMatch: '**/owner.setup.ts'
+			testMatch: '**/owner.setup.ts',
+			use: chromiumBrowser
 		},
 		{
 			name: 'app',
+			use: chromiumBrowser,
 			// A project's own `testIgnore` replaces the one above rather than
 			// adding to it, so the list of other checkouts has to be spread in
 			// here as well. `admin` and `registration` set only `testMatch` and
@@ -197,9 +199,15 @@ export default defineConfig({
 		{
 			name: 'admin',
 			testMatch: '**/admin.e2e.ts',
+			use: chromiumBrowser,
 			dependencies: [suite === 'admin' ? 'owner' : 'app']
 		},
-		{ name: 'registration', testMatch: '**/registration.e2e.ts', dependencies: ['admin'] },
+		{
+			name: 'registration',
+			testMatch: '**/registration.e2e.ts',
+			dependencies: ['admin'],
+			use: chromiumBrowser
+		},
 		/*
 		 * Firefox, for what only Firefox gets wrong.
 		 *
@@ -232,7 +240,7 @@ export default defineConfig({
 			timeout: DEVICE_TEST_TIMEOUT,
 			testDir: 'e2e-isolated',
 			testIgnore: ['**/.*/**', ...otherCheckouts],
-			use: { baseURL: 'http://localhost:4180' }
+			use: { ...chromiumBrowser, baseURL: 'http://localhost:4180' }
 		}
 	].filter(({ name }) => {
 		if (suite === 'all') return name !== 'owner';

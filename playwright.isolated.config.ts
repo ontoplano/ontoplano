@@ -1,5 +1,5 @@
 import { defineConfig } from '@playwright/test';
-import { browserChecks, DEVICE_TEST_TIMEOUT } from './e2e/settings';
+import { browserChecks, chromiumBrowser, DEVICE_TEST_TIMEOUT } from './e2e/settings';
 
 /**
  * The isolated instance, tested as the thing it actually is.
@@ -27,6 +27,7 @@ export default defineConfig({
 		 * passed under one and failed under the other.
 		 */
 		...browserChecks.use,
+		...chromiumBrowser,
 		baseURL: 'http://localhost:4180'
 	},
 	webServer: {

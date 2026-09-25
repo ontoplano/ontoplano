@@ -644,6 +644,8 @@ html[data-style='playful'] .page-surface {
  */
 html {
 	overscroll-behavior-y: contain;
+	/* Tab swipes at the first or last tab must not become browser Back/Forward. */
+	overscroll-behavior-x: contain;
 }
 
 .section-pattern {

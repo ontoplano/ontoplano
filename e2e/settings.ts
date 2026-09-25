@@ -2,6 +2,10 @@ import type { PlaywrightTestConfig } from '@playwright/test';
 
 export const DEVICE_TEST_TIMEOUT = 60_000;
 
+// The bundled headless shell crashes while opening new contexts on both local
+// Linux and CI. Use Playwright's full Chromium in headless mode instead.
+export const chromiumBrowser = { channel: 'chromium' as const };
+
 /** A missing control fails promptly, even inside a longer workflow. */
 export const browserChecks = {
 	forbidOnly: !!process.env.CI,
