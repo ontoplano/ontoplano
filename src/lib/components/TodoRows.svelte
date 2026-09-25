@@ -943,7 +943,11 @@
 			return;
 
 		if (batchVerb || showForm || delegatingId !== null) return;
-		if (selecting && e.key === ' ' && !(e.target instanceof HTMLButtonElement)) {
+		if (
+			selecting &&
+			e.key === ' ' &&
+			(!(e.target instanceof HTMLButtonElement) || e.target.getAttribute('role') === 'checkbox')
+		) {
 			e.preventDefault();
 			if (visibleTodos[selectedIndex]) toggleSelected(visibleTodos[selectedIndex].id);
 			return;
@@ -1283,13 +1287,6 @@
 			>
 				{selecting ? t('ui.cancel') : t('todoRows.selectMany')}
 			</button>
-			<span
-				class="tabular min-w-24 text-xs text-gray-600"
-				aria-live="polite"
-				class:invisible={!selecting}
-			>
-				{t('todoRows.selectedCount', { count: selectedTodos.length })}
-			</span>
 			<div class="flex items-center gap-1" class:invisible={!selecting}>
 				<button
 					type="button"
@@ -1299,7 +1296,7 @@
 					disabled={!visibleTodos.length}
 					onclick={() => {
 						for (const todo of visibleTodos) chosen.add(todo.id);
-					}}><Icon name="check" /></button
+					}}><Icon name="select-all" /></button
 				>
 				<button
 					type="button"
@@ -1309,6 +1306,18 @@
 					disabled={!selectedTodos.length}
 					onclick={() => chosen.clear()}><Icon name="close" /></button
 				>
+			</div>
+			<span
+				class="tabular min-w-24 text-xs text-gray-600"
+				aria-live="polite"
+				class:invisible={!selecting}
+			>
+				{t('todoRows.selectedCount', { count: selectedTodos.length })}
+			</span>
+			<div
+				class="flex items-center gap-1 border-l border-gray-200 pl-2"
+				class:invisible={!selecting}
+			>
 				{#each ['status', 'tag', 'notebook', 'remove'] as verb (verb)}
 					{@const kind = verb as NonNullable<typeof batchVerb>}
 					<button

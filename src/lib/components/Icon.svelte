@@ -45,6 +45,8 @@
 		union: 'M6 5v7a6 6 0 0 0 12 0V5',
 		download: 'M12 4v10M8 10l4 4 4-4M5 19h14',
 		copy: 'M9 4h9v13M5 8h9v12H5z',
+		// Four outlined cells: choosing the whole visible set, not completing it.
+		'select-all': 'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z',
 		drag: 'M9 6h.01M9 12h.01M9 18h.01M15 6h.01M15 12h.01M15 18h.01',
 		// Four corners leaving: take the whole screen.
 		maximize: 'M9 4H4v5M15 4h5v5M20 15v5h-5M4 15v5h5',

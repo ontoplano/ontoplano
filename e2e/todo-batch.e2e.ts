@@ -63,7 +63,7 @@ test('selection changes tags, status, notebook and deletes only selected tasks',
 	await page.getByRole('button', { name: 'Delete selected tasks', exact: true }).click();
 	// armed intentionally ignores a reflex click for 450ms.
 	await page.waitForTimeout(500);
-	await page.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click();
+	await page.getByRole('button', { name: 'Delete', exact: true }).last().click();
 	await expect(page.locator('[data-todo-id]')).toHaveCount(0);
 	await visit(page, '/tasks/todo');
 	await expect(page.locator('[data-todo-id]')).toHaveCount(1);
@@ -106,4 +106,25 @@ test('circles select without completion; filtering drops hidden selections and l
 	await expect(page.getByRole('checkbox', { checked: true })).toHaveCount(2);
 	await page.getByRole('button', { name: 'Clear selection', exact: true }).click();
 	await expect(page.getByRole('checkbox', { checked: true })).toHaveCount(0);
+});
+
+test('Space selects the row under j/k even when another row checkbox has focus', async ({
+	page
+}) => {
+	test.setTimeout(120_000);
+	await register(page, testEmail('batch-keyboard-cursor'));
+	await visit(page, '/tasks/todo');
+	await add(page, 'Keyboard first task');
+	await add(page, 'Keyboard second task');
+	await page.getByRole('button', { name: 'Select many', exact: true }).click();
+
+	const first = page.locator('[data-todo-id]').nth(0);
+	const second = page.locator('[data-todo-id]').nth(1);
+	await first.getByRole('checkbox').click();
+	await page.keyboard.press('j');
+	await expect(second).toHaveClass(/kb-cursor/);
+	await page.keyboard.press('Space');
+
+	await expect(first.getByRole('checkbox')).toHaveAttribute('aria-checked', 'true');
+	await expect(second.getByRole('checkbox')).toHaveAttribute('aria-checked', 'true');
 });
