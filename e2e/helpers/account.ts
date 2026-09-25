@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import { visit } from './visit';
 
 /**
@@ -91,7 +91,6 @@ export async function register(
 	const register = page.getByRole('button', { name: 'Register' });
 	if (await register.count()) {
 		await register.click();
-		await page.waitForTimeout(200);
 	}
 
 	await page.fill('input[name=name]', name);
@@ -120,21 +119,23 @@ export async function register(
 		for (let step = 0; step < 8; step += 1) {
 			const next = page.getByRole('button', { name: 'Next', exact: true });
 			if ((await next.count()) === 0) break;
+			const marker = page.locator('[aria-current="step"]');
+			const current = await marker.getAttribute('aria-label');
 			await next.click();
-			await page.waitForTimeout(150);
+			await expect(marker).not.toHaveAttribute('aria-label', current!);
 		}
 		// The wizard defaults to Blank now; the fixtures want a full week.
 		const remote = page.getByText('Remote worker', { exact: true });
 		if ((await remote.count()) > 0) await remote.click();
 		await page.getByRole('button', { name: 'Start planning' }).click();
-		await page.waitForTimeout(1500);
+		await page.waitForURL((url) => url.pathname === '/tasks/plan');
 	}
 
 	// And then the dashboard, which is where a person goes next and which is
 	// what generates the current week's occurrences from the template that
 	// onboarding just installed. Without this the account has weekly slots and
 	// no blocks, which is a state nobody using the app is ever in for long.
-	await visit(page, '/');
+	if (new URL(page.url()).pathname !== '/') await visit(page, '/');
 
 	// A new account is shown around, once, on this screen — so every test that
 	// makes one would otherwise start behind a modal. Dismissed here rather than

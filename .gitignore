@@ -27,6 +27,7 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 # Playwright
 test-results
+/playwright-report/
 # SQLite
 *.db
 
@@ -121,5 +122,3 @@ scripts/demo-media/birds/
 # What the icon scripts last drew from, so an unchanged logo is not redrawn.
 .icons-from
 .flavours-from
-
-

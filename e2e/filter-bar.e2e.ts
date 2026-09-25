@@ -42,6 +42,9 @@ test('the filters are out on a wide screen, and clear in one press', async ({ pa
 	await page.getByRole('button', { name: 'Filter by tag' }).first().click();
 	await page.locator('#todo-tags-panel [data-side="include"] input').click();
 	await page.getByRole('option', { name: 'home', exact: true }).click();
+	// Wait for the filter to land before closing. Otherwise its navigation
+	// can finish after the history pop and accidentally hide a lost filter.
+	await expect(page).toHaveURL(/tag=home/);
 	await page.keyboard.press('Escape');
 	await expect(page.getByText('post the parcel')).toBeHidden();
 
