@@ -1950,7 +1950,7 @@
 						</Field>
 					{:else if batchVerb === 'tag'}
 						<Field label={t('todoRows.addLabels')} span={12}
-							><OneLine name="add" class="input" use:autofocus /></Field
+							><OneLine name="add" class="input" autofocus /></Field
 						>
 						<Field label={t('todoRows.removeLabels')} span={12}
 							><OneLine name="remove" class="input" /></Field
