@@ -189,8 +189,9 @@ describe('single-line free text', () => {
 				// A date, a number, a checkbox, a file: the browser draws the
 				// control, and none of them raise the bar.
 				if (type && type[1] !== 'text') continue;
-				// A datalist is the one thing a textarea cannot carry.
-				if (tag.includes('list="')) continue;
+				// A datalist is the one thing a textarea cannot carry. It may be
+				// supplied as a literal id or bound to a variable.
+				if (/\blist(?:="|=\{)/.test(tag)) continue;
 				const name = /name="([^"]+)"/.exec(tag);
 				if (!name || EXEMPT_NAMES.has(name[1])) continue;
 				offenders.push(`${path}: name="${name[1]}"`);

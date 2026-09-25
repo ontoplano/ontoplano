@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.183.7 — 2026-09-24
+
+- Adding or removing labels in the task list no longer brings Android's autofill bar over the keyboard.
+
 ## 0.183.6 — 2026-09-24
 
 - Copying task text with Ctrl+C no longer marks the task complete.

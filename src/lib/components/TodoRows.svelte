@@ -34,6 +34,7 @@
 	import { phoneWidth } from '$lib/breakpoints.svelte';
 	import TagChip from '$lib/components/TagChip.svelte';
 	import QuickTag from '$lib/components/QuickTag.svelte';
+	import OneLine from '$lib/components/OneLine.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -1949,10 +1950,10 @@
 						</Field>
 					{:else if batchVerb === 'tag'}
 						<Field label={t('todoRows.addLabels')} span={12}
-							><input name="add" class="input" use:autofocus /></Field
+							><OneLine name="add" class="input" use:autofocus /></Field
 						>
 						<Field label={t('todoRows.removeLabels')} span={12}
-							><input name="remove" class="input" /></Field
+							><OneLine name="remove" class="input" /></Field
 						>
 					{:else if batchVerb === 'notebook'}
 						<Field label={t('ui.notebook')} span={12}>
