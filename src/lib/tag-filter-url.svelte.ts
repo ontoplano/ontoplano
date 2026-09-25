@@ -35,7 +35,12 @@ export function tagFilterInUrl() {
 			const href = `${page.url.pathname}${search ? `?${search}` : ''}${page.url.hash}`;
 			// The page's own path, already resolved; only the query changes.
 			// eslint-disable-next-line svelte/no-navigation-without-resolve
-			goto(href, { replaceState: true, noScroll: true, keepFocus: true });
+			goto(href, {
+				state: page.state,
+				replaceState: true,
+				noScroll: true,
+				keepFocus: true
+			});
 		}
 	};
 }

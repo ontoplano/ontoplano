@@ -43,7 +43,12 @@ export function filtersInUrl(defaults: Filters) {
 		// the scroll nor the focus may move: this is a control being pressed,
 		// not somewhere being gone to.
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		goto(href, { replaceState: true, noScroll: true, keepFocus: true });
+		goto(href, {
+			state: page.state,
+			replaceState: true,
+			noScroll: true,
+			keepFocus: true
+		});
 	}
 
 	return {

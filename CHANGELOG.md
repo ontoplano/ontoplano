@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.183.11 — 2026-09-25
+
+- Tag filters stay open in the phone filter sheet while you change them.
+
 ## 0.183.10 — 2026-09-25
 
 - Bulk task selection has clearer controls, and Space selects the task under the keyboard cursor.

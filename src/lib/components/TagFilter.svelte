@@ -48,6 +48,22 @@
 		class?: string;
 	} = $props();
 
+	/* Keep quick successive picks together while their URL replacements settle. */
+	let pending = $state<TagFilter | null>(null);
+	const selected = $derived(pending ?? value);
+	$effect(() => {
+		const next = pending;
+		if (
+			next &&
+			next.mode === value.mode &&
+			next.include.length === value.include.length &&
+			next.include.every((entry, i) => entry === value.include[i]) &&
+			next.exclude.length === value.exclude.length &&
+			next.exclude.every((entry, i) => entry === value.exclude[i])
+		)
+			pending = null;
+	});
+
 	type Side = 'include' | 'exclude';
 	const SIDES: readonly Side[] = ['include', 'exclude'];
 
@@ -73,7 +89,7 @@
 	 */
 	let listing = $state(false);
 
-	const on = $derived(isTagFiltering(value));
+	const on = $derived(isTagFiltering(selected));
 	const untaggedWord = $derived(t('tagFilter.untagged'));
 
 	/** How an entry is said: a label's name, or the word for carrying none. */
@@ -84,7 +100,7 @@
 	 * out: a label kept and dropped at once asks for nothing.
 	 */
 	function offered(side: Side): string[] {
-		const taken = [...value.include, ...value.exclude];
+		const taken = [...selected.include, ...selected.exclude];
 		const draft = drafts[side];
 		const words = suggestTags(tags, draft, taken);
 		const wanted = draft.trim().replace(/^#+/, '').toLowerCase();
@@ -96,13 +112,18 @@
 	const suggestions = $derived(typing && listing ? offered(typing) : []);
 
 	function change(next: Partial<TagFilter>) {
-		onchange({ ...value, ...next });
+		const updated = { ...selected, ...next };
+		pending = updated;
+		onchange(updated);
 	}
 
 	function add(side: Side, entry: string) {
-		if (value[side].includes(entry)) return;
+		if (selected[side].includes(entry)) return;
 		const other: Side = side === 'include' ? 'exclude' : 'include';
-		change({ [side]: [...value[side], entry], [other]: value[other].filter((e) => e !== entry) });
+		change({
+			[side]: [...selected[side], entry],
+			[other]: selected[other].filter((e) => e !== entry)
+		});
 		drafts[side] = '';
 		listing = false;
 		at = 0;
@@ -112,13 +133,13 @@
 		// See `$lib/after-press`: removing the chip under a press hands the
 		// rest of the press to whatever moves into its place.
 		afterPress(() => {
-			change({ [side]: value[side].filter((e) => e !== entry) });
+			change({ [side]: selected[side].filter((e) => e !== entry) });
 			boxes[side]?.focus();
 		});
 	}
 
 	function setMode(mode: TagMode) {
-		if (mode !== value.mode) change({ mode });
+		if (mode !== selected.mode) change({ mode });
 	}
 
 	function onBoxKey(side: Side, event: KeyboardEvent) {
@@ -174,9 +195,9 @@
 			event.stopPropagation();
 			if (drafts[side] !== '') drafts[side] = '';
 			else listing = false;
-		} else if (event.key === 'Backspace' && drafts[side] === '' && value[side].length > 0) {
+		} else if (event.key === 'Backspace' && drafts[side] === '' && selected[side].length > 0) {
 			event.preventDefault();
-			change({ [side]: value[side].slice(0, -1) });
+			change({ [side]: selected[side].slice(0, -1) });
 		}
 	}
 
@@ -248,6 +269,7 @@
 		if (open && event.key === 'Escape') {
 			// Kept from the phone's filter sheet, which would close on it too.
 			event.preventDefault();
+			event.stopPropagation();
 			close();
 		}
 	}
@@ -256,14 +278,14 @@
 	const sentence = $derived.by(() => {
 		if (!on) return t('tagFilter.filterByTag');
 		const parts: string[] = [];
-		if (value.include.length > 0)
+		if (selected.include.length > 0)
 			parts.push(
-				t(value.mode === 'all' ? 'tagFilter.withAll' : 'tagFilter.withAny', {
-					tags: value.include.map(said).join(', ')
+				t(selected.mode === 'all' ? 'tagFilter.withAll' : 'tagFilter.withAny', {
+					tags: selected.include.map(said).join(', ')
 				})
 			);
-		if (value.exclude.length > 0)
-			parts.push(t('tagFilter.without', { tags: value.exclude.map(said).join(', ') }));
+		if (selected.exclude.length > 0)
+			parts.push(t('tagFilter.without', { tags: selected.exclude.map(said).join(', ') }));
 		return parts.join('; ');
 	});
 </script>
@@ -279,7 +301,7 @@
 	two-line field with a stray caret in it.
 -->
 {#snippet picked(side: Side)}
-	{#if side === 'include' && value.include.length > 1}
+	{#if side === 'include' && selected.include.length > 1}
 		<!--
 			What the labels are doing, in front of them.
 
@@ -289,13 +311,13 @@
 		-->
 		<span
 			class="shrink-0 text-gray-500"
-			title={t(value.mode === 'all' ? 'tagFilter.allHint' : 'tagFilter.anyHint')}
+			title={t(selected.mode === 'all' ? 'tagFilter.allHint' : 'tagFilter.anyHint')}
 			aria-hidden="true"
 		>
-			<Icon name={value.mode === 'all' ? 'intersect' : 'union'} size={14} />
+			<Icon name={selected.mode === 'all' ? 'intersect' : 'union'} size={14} />
 		</span>
 	{/if}
-	{#each value[side] as entry (entry)}
+	{#each selected[side] as entry (entry)}
 		{#if entry === UNTAGGED}
 			<span class="chip tag-chip inline-flex items-center gap-1 italic">
 				{#if side === 'exclude'}<Icon name="minus" size={10} />{/if}
@@ -347,8 +369,8 @@
 			<Icon name="tag" size={14} />
 			{#if on}
 				<span class="tabular inline-flex items-center gap-2" data-testid="tag-filter-counts">
-					<span class="min-w-[2.5ch]">+{value.include.length}</span>
-					<span class="min-w-[2.5ch]">−{value.exclude.length}</span>
+					<span class="min-w-[2.5ch]">+{selected.include.length}</span>
+					<span class="min-w-[2.5ch]">−{selected.exclude.length}</span>
 				</span>
 				<span class="w-3.5 shrink-0" aria-hidden="true"> </span>
 			{:else}
@@ -420,7 +442,7 @@
 								button says what pressing it would do, and a ∪ where the
 								words are typed says what the words are doing.
 							-->
-							{@const together = value.include.length > 1}
+							{@const together = selected.include.length > 1}
 							<div
 								class="seg shrink-0 {together ? '' : 'opacity-40'}"
 								use:sliding
@@ -433,7 +455,7 @@
 										type="button"
 										role="tab"
 										disabled={!together}
-										aria-selected={value.mode === choice.mode}
+										aria-selected={selected.mode === choice.mode}
 										title={together ? choice.hint : t('tagFilter.onlyWithTwo')}
 										aria-label={together ? choice.hint : t('tagFilter.onlyWithTwo')}
 										onclick={() => setMode(choice.mode)}

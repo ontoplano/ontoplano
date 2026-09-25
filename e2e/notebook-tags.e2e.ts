@@ -54,8 +54,9 @@ test('the labels are the notebook’s, and they say what carries them', async ({
 	await makeNotebook(page, 'Trip');
 	await visit(page, '/notebooks');
 
-	// Tags is not a tab in the room any more.
-	await expect(page.getByRole('link', { name: 'Tags', exact: true })).toHaveCount(0);
+	// The account-wide vocabulary remains in the room strip. This panel below
+	// is the narrower view of only the notebook currently open.
+	await expect(page.getByRole('link', { name: 'Tags', exact: true })).toBeVisible();
 
 	// Two notes about the kitchen, one of them labelled twice.
 	const kitchen = await notebookId(page, 'Kitchen');
@@ -72,15 +73,17 @@ test('the labels are the notebook’s, and they say what carries them', async ({
 	});
 
 	await page.getByRole('button', { name: 'Manage tags' }).click();
-	const panel = page.getByRole('dialog').filter({ hasText: 'The labels on what is filed here' });
+	const panel = page.getByRole('dialog').filter({
+		hasText: 'The tags on what is filed here, and what carries each of them.'
+	});
 	await expect(panel).toBeVisible();
 
 	// The count is this notebook's, and it unfolds into what carries it.
 	const home = panel.getByRole('button', { name: /what carries home/ });
-	await expect(home).toContainText('2');
+	await expect(home).toContainText('2 things carry it');
 	await home.click();
 	await expect(panel.getByText('2 notes')).toBeVisible();
 
 	// And the whole vocabulary is one press further on, where a label is deleted.
-	await expect(panel.getByRole('link', { name: 'All labels' })).toBeVisible();
+	await expect(panel.getByRole('link', { name: 'All tags' })).toBeVisible();
 });

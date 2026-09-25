@@ -48,7 +48,7 @@ test('the task strip does not shift when its toggles are pressed', async ({ page
 	 */
 	const places = () =>
 		page.evaluate(() => {
-			const strip = document.querySelector('.room-toolbar-row > div');
+			const strip = document.querySelector('.room-toolbar-row:has(button[aria-pressed])');
 			if (!strip) return [];
 			const from = strip.getBoundingClientRect().left;
 			return [...strip.querySelectorAll('button, input, [role="combobox"]')].map((el) => {

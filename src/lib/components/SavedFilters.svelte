@@ -132,7 +132,10 @@
 	function goTo(query: string) {
 		// The screen's own path with a query on it, already resolved.
 		// eslint-disable-next-line svelte/no-navigation-without-resolve
-		goto(`${page.url.pathname}${query ? `?${query}` : ''}`, { noScroll: true });
+		goto(`${page.url.pathname}${query ? `?${query}` : ''}`, {
+			state: page.state,
+			noScroll: true
+		});
 	}
 
 	/** Picking one shows it; picking the empty row is the way back to everything. */

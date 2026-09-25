@@ -21,6 +21,39 @@ async function span(page: import('@playwright/test').Page): Promise<string> {
 	return /([A-Z][a-z]{2} \d+ — [A-Z][a-z]{2} \d+)/.exec(text.replace(/\n/g, ' '))?.[1] ?? text;
 }
 
+/** The two dates in a span, with a shared leap year so month ends are real. */
+function dates(value: string): [number, number] {
+	const months = [
+		'Jan',
+		'Feb',
+		'Mar',
+		'Apr',
+		'May',
+		'Jun',
+		'Jul',
+		'Aug',
+		'Sep',
+		'Oct',
+		'Nov',
+		'Dec'
+	];
+	const [start, end] = value.split(' — ');
+	const date = (part: string, year: number) => {
+		const [month, day] = part.split(' ');
+		return new Date(Date.UTC(year, months.indexOf(month), Number(day))).getTime();
+	};
+	const from = date(start, 2024);
+	let to = date(end, 2024);
+	if (to < from) to = date(end, 2025);
+	return [from, to];
+}
+
+/** The signed day difference, wrapping at New Year. */
+function dayDifference(from: number, to: number): number {
+	const difference = Math.round((to - from) / 86_400_000);
+	return difference > 182 ? difference - 366 : difference < -182 ? difference + 366 : difference;
+}
+
 test('the week can be started a day earlier or a day later', async ({ page }) => {
 	test.setTimeout(150_000);
 	await register(page, testEmail('plan-week-start'));
@@ -34,9 +67,10 @@ test('the week can be started a day earlier or a day later', async ({ page }) =>
 	const back = await span(page);
 
 	// Both ends moved by one: this is the window sliding, not growing.
-	const days = (s: string) => s.split(' — ').map((half) => Number(half.split(' ')[1]));
-	expect(days(back)[0]).toBe(days(started)[0] - 1);
-	expect(days(back)[1]).toBe(days(started)[1] - 1);
+	const [startedFirst, startedLast] = dates(started);
+	const [backFirst, backLast] = dates(back);
+	expect(dayDifference(startedFirst, backFirst)).toBe(-1);
+	expect(dayDifference(startedLast, backLast)).toBe(-1);
 
 	await page.getByRole('button', { name: 'Start the week a day later' }).click();
 	await expect.poll(() => span(page)).toBe(started);

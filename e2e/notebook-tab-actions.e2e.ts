@@ -156,10 +156,13 @@ test('several things come in at once, and what moves is named first', async ({ p
 
 	// A note has no heading, so the picker has to list it by its first line —
 	// it used to read `title` and draw a column of blank rows.
-	await expect(elsewhere.first()).toContainText('nine days in September');
+	const septemberNote = elsewhere.filter({ hasText: 'nine days in September' });
+	const trainNote = elsewhere.filter({ hasText: 'the train is three hours' });
+	await expect(septemberNote).toHaveCount(1);
+	await expect(trainNote).toHaveCount(1);
 
-	await elsewhere.nth(0).locator('input[type=checkbox]').check();
-	await elsewhere.nth(1).locator('input[type=checkbox]').check();
+	await septemberNote.locator('input[type=checkbox]').check();
+	await trainNote.locator('input[type=checkbox]').check();
 	await page.getByRole('button', { name: 'Bring 2 things' }).click();
 
 	// Both are under the trip, so both are named before anything moves.

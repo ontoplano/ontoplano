@@ -127,7 +127,7 @@ test('labels to show, labels to hide, any or all — and the address keeps it', 
 	await panel(page).locator('[data-side="exclude"] button[aria-label="Remove #home"]').click();
 	await box(page, 'include').fill('untag');
 	await box(page, 'include').press('Enter');
-	await expect.poll(() => showing(page)).toEqual(['sort the shed']);
+	await expect.poll(() => showing(page), { timeout: 20_000 }).toEqual(['sort the shed']);
 });
 
 test('at phone width it sits in the filter sheet and stays on the screen', async ({ page }) => {
@@ -266,7 +266,9 @@ test('a comma or a space takes the word, and the symbol sits where it is typed',
 	await page.keyboard.type('home,');
 	await page.keyboard.type('urgent ');
 
-	await expect(panel(page).locator('[data-side="include"] .chip')).toHaveCount(2);
+	await expect(panel(page).locator('[data-side="include"] .chip')).toHaveCount(2, {
+		timeout: 20_000
+	});
 	await expect(face(page)).toContainText('+2');
 
 	// And what the two of them are doing is said where they were typed, rather

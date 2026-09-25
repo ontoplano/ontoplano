@@ -36,16 +36,16 @@ test('a filter can be kept by name, and putting it back sets the controls', asyn
 	const name = page.getByPlaceholder(/What to call it/);
 	await name.fill('Done and dusted');
 	await name.press('Enter');
-
-	const chip = page.getByRole('button', { name: 'Show Done and dusted' });
-	await expect(chip).toBeVisible({ timeout: 20_000 });
+	const savedPicker = page.getByRole('button', { name: 'Saved', exact: true });
+	await expect(savedPicker).toContainText('Done and dusted', { timeout: 20_000 });
 
 	// Back to everything, and then back to the saved one.
 	await completed.click();
 	await expect.poll(() => new URL(page.url()).searchParams.get('done')).toBeNull();
 	await expect(completed).toHaveAttribute('aria-pressed', 'false');
 
-	await chip.click();
+	await savedPicker.click();
+	await page.getByRole('option', { name: 'Done and dusted' }).click();
 	await expect.poll(() => new URL(page.url()).searchParams.get('done')).toBe('show');
 	// The control itself, not only the address: a saved filter that changes the
 	// link and leaves the buttons saying something else is two answers on one
@@ -58,7 +58,8 @@ test('a filter can be kept by name, and putting it back sets the controls', asyn
 		'aria-pressed',
 		'true'
 	);
-	await expect(page.getByRole('button', { name: 'Show Done and dusted' })).toBeVisible({
-		timeout: 20_000
-	});
+	await expect(page.getByRole('button', { name: 'Saved', exact: true })).toContainText(
+		'Done and dusted',
+		{ timeout: 20_000 }
+	);
 });
