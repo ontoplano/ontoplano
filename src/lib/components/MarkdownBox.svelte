@@ -24,6 +24,7 @@
 	 * somebody glanced at the preview.
 	 */
 	import TextBox from './TextBox.svelte';
+	import { DEFAULT_AUTOGROW_MAX_HEIGHT } from '$lib/actions/autogrow';
 	import Written from './Written.svelte';
 	import { renderMarkdown, type TodoRefs } from '$lib/markdown';
 	import { sliding } from '$lib/actions/sliding';
@@ -45,6 +46,7 @@
 		value = $bindable(''),
 		element = $bindable(),
 		rows = 6,
+		maxHeight = DEFAULT_AUTOGROW_MAX_HEIGHT,
 		preview = 'markdown',
 		start = 'both',
 		todos = undefined,
@@ -55,6 +57,8 @@
 		/** The textarea itself, for whatever writes into it. See `TextBox`. */
 		element?: HTMLTextAreaElement;
 		rows?: number;
+		/** Maximum height for the editor, in pixels. */
+		maxHeight?: number;
 		/**
 		 * Which drawing of the words the preview shows.
 		 *
@@ -273,7 +277,7 @@
 			aria-hidden={showing === 'preview' ? 'true' : undefined}
 			inert={showing === 'preview' ? true : undefined}
 		>
-			<TextBox bind:value={text} bind:element {rows} {...rest} />
+			<TextBox bind:value={text} bind:element {rows} {maxHeight} {...rest} />
 		</div>
 
 		<!--

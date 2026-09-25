@@ -1678,11 +1678,15 @@
 								placeholder={t('ui.title')}
 								class="input mb-2 w-full font-medium"
 							/>
+							<!-- An existing note already owns this space. Let its editor show
+							     the whole text alongside the preview instead of adding an
+							     inner scrollbar at the generic box's height ceiling. -->
 							<MarkdownBox
 								bind:element={editBox}
 								value={entry.content}
 								name="content"
 								rows={8}
+								maxHeight={Infinity}
 								required
 								todos={todoRefs}
 							/>

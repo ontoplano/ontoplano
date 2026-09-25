@@ -10,7 +10,9 @@
  * The `rows` attribute still sets the minimum, so an empty composer stays the
  * modest two lines it was written as.
  */
-export function autogrow(node: HTMLTextAreaElement, maxHeight = 480) {
+export const DEFAULT_AUTOGROW_MAX_HEIGHT = 480;
+
+export function autogrow(node: HTMLTextAreaElement, maxHeight = DEFAULT_AUTOGROW_MAX_HEIGHT) {
 	/**
 	 * Everything between this box and the top of the page that can scroll.
 	 *

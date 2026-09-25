@@ -160,6 +160,13 @@ describe('a textarea the size of what is in it', () => {
 		expect(node.style.overflowY).toBe('auto');
 	});
 
+	test('can grow to the full height of an existing note', () => {
+		const node = aTextarea(2000);
+		autogrow(node, Number.POSITIVE_INFINITY);
+		expect(node.style.height).toBe('2000px');
+		expect(node.style.overflowY).toBe('hidden');
+	});
+
 	test('remeasures as it is typed into', () => {
 		const node = aTextarea(96);
 		autogrow(node);

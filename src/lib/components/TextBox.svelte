@@ -10,7 +10,7 @@
 	 * For a single line use `OneLine`, which is a textarea pretending to be an
 	 * input for a reason worth reading there.
 	 */
-	import { autogrow } from '$lib/actions/autogrow';
+	import { autogrow, DEFAULT_AUTOGROW_MAX_HEIGHT } from '$lib/actions/autogrow';
 	import type { HTMLTextareaAttributes } from 'svelte/elements';
 
 	let {
@@ -18,6 +18,7 @@
 		element = $bindable(),
 		rows = 3,
 		grow = true,
+		maxHeight = DEFAULT_AUTOGROW_MAX_HEIGHT,
 		class: extra = '',
 		...rest
 	}: HTMLTextareaAttributes & {
@@ -30,12 +31,20 @@
 		rows?: number;
 		/** Follow what is typed instead of keeping one height. */
 		grow?: boolean;
+		/** Maximum height for a growing box, in pixels. */
+		maxHeight?: number;
 		class?: string;
 	} = $props();
 </script>
 
 {#if grow}
-	<textarea bind:this={element} bind:value {rows} use:autogrow class="textarea {extra}" {...rest}
+	<textarea
+		bind:this={element}
+		bind:value
+		{rows}
+		use:autogrow={maxHeight}
+		class="textarea {extra}"
+		{...rest}
 	></textarea>
 {:else}
 	<textarea bind:this={element} bind:value {rows} class="textarea {extra}" {...rest}></textarea>
