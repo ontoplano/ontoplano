@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { deflateSync } from 'node:zlib';
 
+import { visit } from '../e2e/helpers/visit';
+
 import { REMINDER_CHANNEL } from '../src/lib/reminder-channel';
 
 /** Wait until nothing on the flower is still moving. */
@@ -63,12 +65,11 @@ function png(colour: [number, number, number]): { name: string; mimeType: string
  * form, and the row still there after the page is torn down and reopened.
  */
 test('the app opens onto a working instance and keeps what it is told', async ({ page }) => {
-	test.setTimeout(120_000);
 	page.on('pageerror', (e) => console.log('PAGEERROR ' + String(e).slice(0, 300)));
 
 	await page.goto('/');
 	// No login, no welcome: the holder of the device is the account.
-	await expect(page.getByText("TODAY'S TASKS")).toBeVisible({ timeout: 60_000 });
+	await expect(page.getByText("TODAY'S TASKS")).toBeVisible({ timeout: 20_000 });
 
 	// The first open is shown around, exactly like a first visit anywhere;
 	// dismissing it is remembered by the device, so it happens once.
@@ -103,7 +104,7 @@ test('the app opens onto a working instance and keeps what it is told', async ({
 	// The only test that matters for a record of a life: close it, open it,
 	// it is still there.
 	await page.reload({ waitUntil: 'load' });
-	await expect(page.getByText(title)).toBeVisible({ timeout: 60_000 });
+	await expect(page.getByText(title)).toBeVisible({ timeout: 20_000 });
 	// And the tour does not come back: its dismissal was a write too.
 	await expect(page.getByRole('dialog', { name: 'Tutorial' })).toBeHidden();
 });
@@ -129,7 +130,6 @@ test('the app opens onto a working instance and keeps what it is told', async ({
  * work on the device and both were on the list of things it refuses.
  */
 test('every room that runs on the device opens on it', async ({ page }) => {
-	test.setTimeout(180_000);
 	const rooms = [
 		'/tasks/todo',
 		'/tasks/board',
@@ -150,7 +150,7 @@ test('every room that runs on the device opens on it', async ({ page }) => {
 	];
 
 	await page.goto('/');
-	await expect(page.getByText("TODAY'S TASKS")).toBeVisible({ timeout: 60_000 });
+	await expect(page.getByText("TODAY'S TASKS")).toBeVisible({ timeout: 20_000 });
 
 	const missing: string[] = [];
 	for (const room of rooms) {
@@ -174,9 +174,8 @@ test('every room that runs on the device opens on it', async ({ page }) => {
  * this phone.
  */
 test('a picture goes into a note on the device', async ({ page }) => {
-	test.setTimeout(120_000);
 	await page.goto('/notebooks/diary');
-	await expect(page.getByRole('heading', { name: 'Notebooks' })).toBeVisible({ timeout: 60_000 });
+	await expect(page.getByRole('heading', { name: 'Notebooks' })).toBeVisible({ timeout: 20_000 });
 
 	const tour = page.getByRole('dialog', { name: 'Tutorial' });
 	if (await tour.isVisible().catch(() => false)) {
@@ -210,11 +209,10 @@ test('a picture goes into a note on the device', async ({ page }) => {
  * is re-fetched from it — so this is where that round trip is pinned.
  */
 test('a ledger made on the device appears without a reload', async ({ page }) => {
-	test.setTimeout(120_000);
 	// As the app launches it, mark and all: on a device with no server there is
 	// nothing to redirect the mark away, so every request carries it.
 	await page.goto('/finance/ledgers?app=android');
-	await expect(page.getByRole('heading', { name: 'Finance' })).toBeVisible({ timeout: 60_000 });
+	await expect(page.getByRole('heading', { name: 'Finance' })).toBeVisible({ timeout: 20_000 });
 
 	const tour = page.getByRole('dialog', { name: 'Tutorial' });
 	if (await tour.isVisible().catch(() => false)) {
@@ -232,12 +230,11 @@ test('a ledger made on the device appears without a reload', async ({ page }) =>
 });
 
 test('a picture is stored and drawn with no server anywhere', async ({ page }) => {
-	test.setTimeout(120_000);
 	page.on('pageerror', (e) => console.log('PAGEERROR ' + String(e).slice(0, 300)));
 	await page.goto('/media/gallery');
 	// The room is Media; Gallery is one of its tabs.
 	await expect(page.getByRole('heading', { name: 'Media' }).first()).toBeVisible({
-		timeout: 60_000
+		timeout: 20_000
 	});
 
 	const tour = page.getByRole('dialog', { name: 'Tutorial' });
@@ -266,7 +263,7 @@ test('a picture is stored and drawn with no server anywhere', async ({ page }) =
 	// And it is still there, and still draws, after the app is closed and opened.
 	await page.reload({ waitUntil: 'load' });
 	const again = page.locator('li img').first();
-	await expect(again).toBeVisible({ timeout: 60_000 });
+	await expect(again).toBeVisible({ timeout: 20_000 });
 	await expect
 		.poll(() => again.evaluate((img: HTMLImageElement) => img.naturalWidth), { timeout: 30_000 })
 		.toBeGreaterThan(0);
@@ -284,10 +281,8 @@ test('a picture is stored and drawn with no server anywhere', async ({ page }) =
  * is a bug report.
  */
 test('a screen with no twin says it needs a server', async ({ page }) => {
-	test.setTimeout(120_000);
-
 	await page.goto('/');
-	await expect(page.getByText("TODAY'S TASKS")).toBeVisible({ timeout: 60_000 });
+	await expect(page.getByText("TODAY'S TASKS")).toBeVisible({ timeout: 20_000 });
 
 	// Billing, because it is about a subscription to something somebody else
 	// runs. Account used to stand here and no longer can: a device has one now
@@ -310,12 +305,11 @@ test('a screen with no twin says it needs a server', async ({ page }) => {
  * server.
  */
 test('the phone can leave the instance it is', async ({ page }) => {
-	test.setTimeout(120_000);
 	// The bar this press lives in is the phone's.
 	await page.setViewportSize({ width: 420, height: 900 });
 
 	await page.goto('/');
-	await expect(page.getByText("TODAY'S TASKS")).toBeVisible({ timeout: 60_000 });
+	await expect(page.getByText("TODAY'S TASKS")).toBeVisible({ timeout: 20_000 });
 
 	/*
 	 * Shown around already, said before anything is pressed.
@@ -335,7 +329,7 @@ test('the phone can leave the instance it is', async ({ page }) => {
 		})
 	);
 	await page.reload({ waitUntil: 'load' });
-	await expect(page.getByText("TODAY'S TASKS")).toBeVisible({ timeout: 60_000 });
+	await expect(page.getByText("TODAY'S TASKS")).toBeVisible({ timeout: 20_000 });
 	await expect(page.getByRole('dialog', { name: 'Tutorial' })).toBeHidden();
 
 	/*
@@ -390,9 +384,8 @@ test('the phone can leave the instance it is', async ({ page }) => {
  * got an account page, because one flag was gating both.
  */
 test('settings offers nothing that needs somebody else to connect', async ({ page }) => {
-	test.setTimeout(120_000);
 	await page.goto('/settings/preferences');
-	await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible({ timeout: 60_000 });
+	await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible({ timeout: 20_000 });
 
 	const tabs = await page.locator('nav[aria-label="Settings sections"] a').allInnerTexts();
 	expect(tabs).toContain('Account');
@@ -410,9 +403,8 @@ test('settings offers nothing that needs somebody else to connect', async ({ pag
  * dismissal was never recorded and the tour came back on the next screen.
  */
 test('an endpoint that answers with no content is answered, not thrown', async ({ page }) => {
-	test.setTimeout(120_000);
 	await page.goto('/');
-	await expect(page.getByText("TODAY'S TASKS")).toBeVisible({ timeout: 60_000 });
+	await expect(page.getByText("TODAY'S TASKS")).toBeVisible({ timeout: 20_000 });
 
 	const answered = await page.evaluate(async () => {
 		const res = await fetch('/api/tutorial', {
@@ -440,11 +432,10 @@ test('an endpoint that answers with no content is answered, not thrown', async (
  * replaced.
  */
 test('the main menu’s mark wears the device’s own field', async ({ page }) => {
-	test.setTimeout(120_000);
 	await page.goto('/tasks/todo');
 
 	const handle = page.locator('.pie-handle').first();
-	await expect(handle).toBeVisible({ timeout: 60_000 });
+	await expect(handle).toBeVisible({ timeout: 20_000 });
 
 	/*
 	 * The handle first, because that is the menu when it is shut.
@@ -485,10 +476,9 @@ test('the main menu’s mark wears the device’s own field', async ({ page }) =
  * versions.
  */
 test('the Instance tab says this one is isolated', async ({ page }) => {
-	test.setTimeout(120_000);
 	await page.goto('/settings/instance');
 
-	await expect(page.getByText('What is running')).toBeVisible({ timeout: 60_000 });
+	await expect(page.getByText('What is running')).toBeVisible({ timeout: 20_000 });
 	// The word and the sentence under it are one `dd`, so this asks the row
 	// rather than the words: `exact` would want a node holding only "Isolated".
 	await expect(page.getByText(/^Isolated/)).toBeVisible();
@@ -524,8 +514,6 @@ test.describe('booking with Android', () => {
 	test.use({ userAgent: `Mozilla/5.0 (Linux; Android 14) Mobile OntoplanoApp/0.1.0` });
 
 	test('a block that is still to come is booked with Android', async ({ page }) => {
-		test.setTimeout(180_000);
-
 		/*
 		 * The shell, recording what it was asked to book.
 		 *
@@ -574,23 +562,17 @@ test.describe('booking with Android', () => {
 		 * behaves like somebody's second one.
 		 */
 		await page.addInitScript(() => {
-			try {
-				localStorage.setItem('ontoplano:instance', 'phone');
-			} catch {
-				// A profile that refuses storage: the chooser below handles it.
-			}
+			localStorage.setItem('ontoplano:instance', 'phone');
 		});
 
-		await page.goto('/');
-		// Either the dashboard, or the chooser if the line above did not take.
-		const chooser = page.getByRole('button', { name: /Use this phone|Start here/i });
-		if (await chooser.isVisible({ timeout: 10_000 }).catch(() => false)) await chooser.click();
-
-		await expect(page.getByText("TODAY'S TASKS")).toBeVisible({ timeout: 60_000 });
+		await visit(page, '/');
+		await expect(page.getByText("TODAY'S TASKS")).toBeVisible();
+		// The first-run tour opens after the dashboard paints. An immediate
+		// isVisible() check races that timer and sometimes skips the dismissal.
 		const tour = page.getByRole('dialog', { name: 'Tutorial' });
-		if (await tour.isVisible().catch(() => false)) {
-			await tour.getByRole('button', { name: 'Dismiss' }).click();
-		}
+		await expect(tour).toBeVisible();
+		await tour.getByRole('button', { name: 'Dismiss' }).click();
+		await expect(tour).toBeHidden();
 
 		/*
 		 * Two days out, at nine in the morning, in UTC on both sides.
@@ -616,9 +598,12 @@ test.describe('booking with Android', () => {
 			0,
 			0
 		);
-		await page.goto('/reminders');
+		await visit(page, '/reminders');
+		await expect(page.getByRole('heading', { name: 'Reminders', exact: true })).toBeVisible();
 		// The form is behind "New reminder" in the room's bar.
-		await page.getByRole('button', { name: /New reminder/ }).click();
+		const newReminder = page.getByRole('button', { name: 'New reminder' });
+		await expect(newReminder).toBeVisible();
+		await newReminder.click();
 		await expect(page.locator('[name="day"]')).toBeVisible({ timeout: 30_000 });
 		await page
 			.locator('[name="day"]')
@@ -635,7 +620,7 @@ test.describe('booking with Android', () => {
 		 */
 		booked.length = 0;
 		await page.reload();
-		await expect(page.locator('html[data-ready]')).toBeAttached({ timeout: 60_000 });
+		await expect(page.locator('html[data-ready]')).toBeAttached({ timeout: 20_000 });
 
 		await expect
 			.poll(() => booked.length, {

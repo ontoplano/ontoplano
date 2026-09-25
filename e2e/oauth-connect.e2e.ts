@@ -20,27 +20,34 @@ import { visit } from './helpers/visit';
 const verifier = randomBytes(32).toString('base64url');
 const challenge = createHash('sha256').update(verifier).digest('base64url');
 
+const CALLBACK_PATH = '/callback';
+
 /** A desktop client listens on its own machine for the code. So does this. */
-function callbackListener(port: number) {
+function callbackListener() {
 	let landed = '';
+	let baseURL = '';
 	const server = createServer((req, res) => {
-		landed = `http://127.0.0.1:${port}${req.url}`;
+		const url = new URL(req.url ?? '/', baseURL);
+		if (url.pathname === CALLBACK_PATH) landed = url.href;
 		res.end('connected');
 	});
 	return {
-		start: () => new Promise<void>((ready) => server.listen(port, ready)),
-		stop: () => server.close(),
+		start: async () => {
+			await new Promise<void>((ready) => server.listen(0, '127.0.0.1', ready));
+			const address = server.address();
+			if (!address || typeof address === 'string') throw new Error('callback listener has no port');
+			baseURL = `http://127.0.0.1:${address.port}`;
+			return `${baseURL}${CALLBACK_PATH}`;
+		},
+		stop: () => new Promise<void>((done) => server.close(() => done())),
 		seen: () => landed
 	};
 }
 
 test('an assistant connects itself, and the key it gets works', async ({ page, request }) => {
 	test.setTimeout(120_000);
-	// A port of this test's own, so it never collides with another spec.
-	const port = 9880;
-	const redirect = `http://127.0.0.1:${port}/callback`;
-	const listener = callbackListener(port);
-	await listener.start();
+	const listener = callbackListener();
+	const redirect = await listener.start();
 
 	try {
 		await register(page, testEmail('oauth'));
@@ -74,8 +81,13 @@ test('an assistant connects itself, and the key it gets works', async ({ page, r
 		// 3. Yes — and the code goes home to the address it registered.
 		await page.getByRole('button', { name: 'Connect it' }).click();
 		await expect.poll(() => listener.seen(), { timeout: 30_000 }).toContain('code=');
+		// The browser may ask the callback origin for an icon after arriving.
+		// That request must not replace the code the client came to receive.
+		await request.get(new URL('/favicon.ico', redirect).href);
 
 		const came = new URL(listener.seen());
+		expect(came.pathname).toBe(CALLBACK_PATH);
+		expect(came.searchParams.has('code')).toBe(true);
 		const code = came.searchParams.get('code') ?? '';
 		expect(came.searchParams.get('state')).toBe('said-so');
 
@@ -140,7 +152,7 @@ test('an assistant connects itself, and the key it gets works', async ({ page, r
 		await visit(page, '/settings/integrations/connections');
 		await expect(page.getByText('Claude', { exact: false }).first()).toBeVisible();
 	} finally {
-		listener.stop();
+		await listener.stop();
 	}
 });
 

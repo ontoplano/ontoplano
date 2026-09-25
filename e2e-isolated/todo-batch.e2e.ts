@@ -1,10 +1,9 @@
 import { expect, test } from '@playwright/test';
 
 test('task batch actions persist on the isolated instance', async ({ page }) => {
-	test.setTimeout(120_000);
 	await page.goto('/');
 	const tour = page.getByRole('dialog', { name: 'Tutorial' });
-	await expect(tour).toBeVisible({ timeout: 60_000 });
+	await expect(tour).toBeVisible({ timeout: 20_000 });
 	await tour.getByRole('button', { name: 'Dismiss' }).click();
 	await page.goto('/tasks/todo');
 	for (const title of ['Device first', 'Device second']) {

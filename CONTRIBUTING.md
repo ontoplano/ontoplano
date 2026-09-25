@@ -39,8 +39,31 @@ switches each one takes, `make vars ONLY=package` for one.
 ```sh
 make lint           # prettier + eslint, and that the generated docs are current
 yarn test:unit      # vitest
+yarn test:coverage  # unit coverage for rules and services
 make test           # the Playwright e2e suite
 ```
+
+CI runs four app shards, an administration job and a device job in parallel.
+Each job owns its database and only builds the server it uses. Reproduce one with:
+
+```sh
+PLAYWRIGHT_SUITE=app yarn test:e2e --workers=2 --shard=1/4
+PLAYWRIGHT_SUITE=admin yarn test:e2e --workers=2
+PLAYWRIGHT_SUITE=device yarn test:e2e --workers=2
+```
+
+Browser actions time out after 10 seconds and navigations after 20 seconds.
+Chromium tests use the full browser in headless mode, which avoids a crash in
+Playwright's separate headless-shell binary on Linux.
+The default test budget is 30 seconds; the device suite gets 60 seconds without
+per-test extensions. Longer app workflows retain their explicit total budgets,
+but a missing control still fails within 10 seconds. Retries are off, and CI
+stops a shard after three failures.
+`playwright-report/` holds the HTML report; `test-results/` holds failure traces,
+screenshots and `timings.json` with per-test durations. CI uploads both directories
+for every job, including successful runs. Open a trace with `yarn playwright show-trace`.
+The coverage threshold applies to rules and services. Browser actions and
+device code are exercised by Playwright and excluded from the unit metric.
 
 ## Submitting changes
 

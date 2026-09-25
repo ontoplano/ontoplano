@@ -1,4 +1,5 @@
 import { defineConfig } from '@playwright/test';
+import { browserChecks, chromiumBrowser, DEVICE_TEST_TIMEOUT } from './e2e/settings';
 
 /**
  * The isolated instance, tested as the thing it actually is.
@@ -10,12 +11,11 @@ import { defineConfig } from '@playwright/test';
  * contract Capacitor honours. No accounts exist, because no server does.
  */
 export default defineConfig({
+	...browserChecks,
+	timeout: DEVICE_TEST_TIMEOUT,
 	testDir: 'e2e-isolated',
 	testMatch: '**/*.e2e.{ts,js}',
-	forbidOnly: !!process.env.CI,
-	retries: process.env.CI ? 2 : 0,
 	use: {
-		baseURL: 'http://localhost:4180',
 		/*
 		 * The same clock the other suite pins, and for a sharper reason here.
 		 *
@@ -26,8 +26,9 @@ export default defineConfig({
 		 * config has always pinned this; this one did not, so the same test
 		 * passed under one and failed under the other.
 		 */
-		timezoneId: 'UTC',
-		trace: 'retain-on-failure'
+		...browserChecks.use,
+		...chromiumBrowser,
+		baseURL: 'http://localhost:4180'
 	},
 	webServer: {
 		command: 'make -s isolated && node scripts/serve-isolated.mjs',

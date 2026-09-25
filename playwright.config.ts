@@ -2,6 +2,14 @@ import { defineConfig } from '@playwright/test';
 import { existsSync, readdirSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { browserChecks, chromiumBrowser, DEVICE_TEST_TIMEOUT } from './e2e/settings';
+
+// CI shards ordinary app tests; instance-wide mutations and the device build
+// get their own runners. With no selection, local runs still cover everything.
+const suite = process.env.PLAYWRIGHT_SUITE ?? 'all';
+if (!['all', 'app', 'admin', 'device'].includes(suite)) {
+	throw new Error(`Unknown PLAYWRIGHT_SUITE: ${suite}`);
+}
 
 /**
  * Every other checkout sitting inside this one.
@@ -59,6 +67,7 @@ export const TEST_CONFIG_DIR =
 	process.env.PLAYWRIGHT_CONFIG_DIR ?? join(tmpdir(), 'ontoplano-e2e-config');
 
 export default defineConfig({
+	...browserChecks,
 	/*
 	 * Two servers, because there are two builds to test.
 	 *
@@ -90,6 +99,7 @@ export default defineConfig({
 			command: 'node e2e/prepare.mjs && npm run build && node build',
 			port: 4173,
 			reuseExistingServer: !process.env.CI,
+			timeout: 300_000,
 			env: {
 				DATABASE_URL: TEST_DB,
 				// adapter-node listens where it is told; vite preview picked this.
@@ -100,6 +110,7 @@ export default defineConfig({
 				// about to write to.
 				KEEP_ALIVE_TIMEOUT: '120',
 				ORIGIN: 'http://localhost:4173',
+				BETTER_AUTH_URL: 'http://localhost:4173',
 				BETTER_AUTH_SECRET: 'playwright-secret-playwright-secret',
 				// Lets a test flip one page into local mode with `?isolated`, so the
 				// suite can drive the device instance and the server through one
@@ -137,13 +148,13 @@ export default defineConfig({
 			reuseExistingServer: !process.env.CI,
 			timeout: 300_000
 		}
-	],
+	].filter((_, index) => suite === 'all' || index === (suite === 'device' ? 1 : 0)),
 	// The browser keeps the server's clock, for the same reason the server is
 	// pinned to UTC above. Left on the machine's own timezone, a browser three
 	// hours west computes a "today" the server calls yesterday, and anything
 	// planned for today lands outside the window the plan draws — a suite that
 	// passes all day and fails after 21:00.
-	use: { baseURL: 'http://localhost:4173', timezoneId: 'UTC' },
+	use: { ...browserChecks.use, baseURL: 'http://localhost:4173' },
 	testMatch: '**/*.e2e.{ts,js}',
 	// Worktrees are whole copies of the repo; without this every spec would
 	// run once per open worktree.
@@ -159,7 +170,13 @@ export default defineConfig({
 	 */
 	projects: [
 		{
+			name: 'owner',
+			testMatch: '**/owner.setup.ts',
+			use: chromiumBrowser
+		},
+		{
 			name: 'app',
+			use: chromiumBrowser,
 			// A project's own `testIgnore` replaces the one above rather than
 			// adding to it, so the list of other checkouts has to be spread in
 			// here as well. `admin` and `registration` set only `testMatch` and
@@ -179,8 +196,18 @@ export default defineConfig({
 		 * them: "the oldest account" is a moving target while that project
 		 * runs, and signing in as it races.
 		 */
-		{ name: 'admin', testMatch: '**/admin.e2e.ts', dependencies: ['app'] },
-		{ name: 'registration', testMatch: '**/registration.e2e.ts', dependencies: ['app', 'admin'] },
+		{
+			name: 'admin',
+			testMatch: '**/admin.e2e.ts',
+			use: chromiumBrowser,
+			dependencies: [suite === 'admin' ? 'owner' : 'app']
+		},
+		{
+			name: 'registration',
+			testMatch: '**/registration.e2e.ts',
+			dependencies: ['admin'],
+			use: chromiumBrowser
+		},
 		/*
 		 * Firefox, for what only Firefox gets wrong.
 		 *
@@ -210,9 +237,15 @@ export default defineConfig({
 		 */
 		{
 			name: 'device',
+			timeout: DEVICE_TEST_TIMEOUT,
 			testDir: 'e2e-isolated',
 			testIgnore: ['**/.*/**', ...otherCheckouts],
-			use: { baseURL: 'http://localhost:4180' }
+			use: { ...chromiumBrowser, baseURL: 'http://localhost:4180' }
 		}
-	]
+	].filter(({ name }) => {
+		if (suite === 'all') return name !== 'owner';
+		if (suite === 'app') return ['app', 'firefox'].includes(name);
+		if (suite === 'admin') return ['owner', 'admin', 'registration'].includes(name);
+		return name === 'device';
+	})
 });

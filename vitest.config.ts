@@ -112,6 +112,17 @@ export default defineConfig({
 				// Schema and migrations describe shape; there is nothing to cover.
 				'src/lib/server/db/**',
 				'src/lib/db/**',
+				// The browser and device builds exercise these adapters. Counting
+				// them in the unit metric reports untouched code despite e2e coverage.
+				'src/lib/isolated/**',
+				'src/lib/actions/**',
+				'src/lib/**/*.svelte.ts',
+				'src/lib/*-actions.ts',
+				'src/lib/services/*-actions.ts',
+				'src/lib/push.ts',
+				'src/lib/back-closes.ts',
+				'src/lib/enhance.ts',
+				'src/lib/one-press.ts',
 				// Wired at boot and driven by the e2e suite, not by unit tests.
 				'src/lib/server/auth.ts'
 			],
@@ -125,10 +136,8 @@ export default defineConfig({
 			// testing. Six real bugs fell out of writing them, which is the
 			// argument for the number going up rather than the number itself.
 			//
-			// What is deliberately still low: billing.ts (checked against Paddle
-			// fixtures by scripts/check-billing.ts, which this provider cannot
-			// see) and email.ts (SMTP). Covering those here would mean mocking
-			// the two things whose real behaviour is the entire question.
+			// Provider and SMTP integrations remain hard to cover in this unit
+			// suite. They stay in the measured scope so the gap is visible.
 			thresholds: { lines: 80, functions: 83, statements: 77, branches: 64 }
 		}
 	}

@@ -4,8 +4,8 @@
 # incantation, because a check that only exists in CI is one nobody can
 # reproduce when it fails.
 #
-# One job rather than three: the install and the Playwright browsers are most of
-# the wall-clock, and paying for them once beats running the suites in parallel.
+# Browser shards run beside the source checks. Each has its own throwaway
+# database; instance-wide mutations and the device build have separate jobs.
 name: checks
 
 on:
@@ -25,15 +25,9 @@ permissions:
   contents: read
 
 jobs:
-  check:
+  quality:
     runs-on: ubuntu-latest
-    # Everything in one job, on two runner cores: the installs, seven checks, a
-    # build, the unit suite and 351 browser tests. Twenty was enough until the
-    # e2e suite grew past it, and what a job that runs out of time prints is
-    # "Error: The operation was canceled." — which reads as somebody cancelling
-    # it rather than as a check that never finished. Forty-five leaves room and
-    # still catches a hang.
-    timeout-minutes: 45
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v4
@@ -119,16 +113,53 @@ jobs:
 
       - run: yarn test:unit
 
-      # Only the browsers the suite actually uses — Firefox for the one spec
-      # its project runs. `--with-deps` because a bare runner has none of the
-      # shared libraries either needs.
-      - run: yarn playwright install --with-deps chromium firefox
-      - run: yarn test:e2e
-
-      - name: Keep the report from a failed run
-        if: failure()
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { suite: app, shard: '1/4', name: app-1 }
+          - { suite: app, shard: '2/4', name: app-2 }
+          - { suite: app, shard: '3/4', name: app-3 }
+          - { suite: app, shard: '4/4', name: app-4 }
+          - { suite: admin, shard: '1/1', name: admin }
+          - { suite: device, shard: '1/1', name: device }
+    name: e2e (${{ matrix.name }})
+    env:
+      PLAYWRIGHT_SUITE: ${{ matrix.suite }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: yarn
+      - run: yarn install --frozen-lockfile
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('yarn.lock') }}
+      - run: yarn playwright install --with-deps --no-shell chromium firefox
+      - run: yarn test:e2e --workers=2 --shard=${{ matrix.shard }}
+      - name: Keep traces, screenshots and per-test timings
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
-          path: playwright-report/
+          name: playwright-${{ matrix.name }}
+          path: |
+            playwright-report/
+            test-results/
           retention-days: 7
+
+  # Keep the existing required check name, and make it wait for every shard.
+  check:
+    if: always()
+    needs: [quality, e2e]
+    runs-on: ubuntu-latest
+    steps:
+      - name: All checks passed
+        env:
+          QUALITY: ${{ needs.quality.result }}
+          E2E: ${{ needs.e2e.result }}
+        run: test "$QUALITY" = success && test "$E2E" = success

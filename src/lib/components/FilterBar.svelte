@@ -40,6 +40,8 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import { phoneWidth } from '$lib/breakpoints.svelte';
 	import { useT } from '$lib/i18n';
+	import { afterNavigate, goto } from '$app/navigation';
+	import { navigating, page } from '$app/state';
 	import type { Snippet } from 'svelte';
 
 	const phone = phoneWidth();
@@ -96,6 +98,29 @@
 
 	/** Whether the phone's sheet is up. Nothing on a desktop, where they are out. */
 	let open = $state(false);
+	let chosenLocation: URL | undefined;
+
+	// A phone sheet owns a history entry. Popping it must not undo filters
+	// applied while it was open; remember forward changes, not the pop itself.
+	afterNavigate(({ type, to }) => {
+		if (open && type !== 'popstate') chosenLocation = to?.url;
+	});
+
+	function closing() {
+		if (navigating.type === 'goto') chosenLocation = navigating.to?.url ?? chosenLocation;
+	}
+
+	async function closed() {
+		const wanted = chosenLocation;
+		chosenLocation = undefined;
+		// BackCloses has popped the entry; wait for the router to finish that
+		// navigation before replacing its old query with the chosen one.
+		await navigating.complete;
+		if (!wanted || wanted.pathname !== page.url.pathname || wanted.href === page.url.href) return;
+		// Same resolved route; only its filter query is being restored.
+		// eslint-disable-next-line svelte/no-navigation-without-resolve
+		await goto(wanted, { replaceState: true, noScroll: true, keepFocus: true, state: page.state });
+	}
 
 	/*
 	 * What the button says it is doing, for whoever is not looking at it.
@@ -153,7 +178,10 @@
 		-->
 		<button
 			type="button"
-			onclick={() => (open = true)}
+			onclick={() => {
+				chosenLocation = page.url;
+				open = true;
+			}}
 			aria-haspopup="dialog"
 			aria-pressed={on}
 			class="filter-toggle btn btn-sm btn-quiet shrink-0"
@@ -209,7 +237,7 @@
 		two things with the same accessible name and a tab order that walks the
 		hidden one.
 	-->
-	<Modal bind:open title={t('filters.filters')} size="sm">
+	<Modal bind:open title={t('filters.filters')} size="sm" onclose={closing} onclosed={closed}>
 		{#if banner}
 			<div class="mb-3 flex flex-wrap items-center gap-2">{@render banner()}</div>
 		{/if}

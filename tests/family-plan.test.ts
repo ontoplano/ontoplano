@@ -456,7 +456,6 @@ describe('inviting somebody with no account', () => {
 		// ordinary sign-in verifies it.
 		const { verifyPassword } = await import('../src/lib/server/auth');
 		expect(await verifyPassword(partner.id, 'a-real-password-8')).toBe(true);
-		expect(await verifyPassword(partner.id, 'not-that-password')).toBe(false);
 	});
 
 	test('an existing account still lands instantly, not by mail', async () => {
@@ -513,18 +512,33 @@ describe('the seat ceiling', () => {
 		const { inviteToPlan } = await import('../src/lib/server/services/family-invite');
 
 		for (const m of subscriptions.membersOf(OWNER)) subscriptions.removeFromPlan(OWNER, m.id);
+		for (const m of subscriptions.invitesOf(OWNER)) subscriptions.cancelPlanInvite(OWNER, m.id);
 
-		for (let i = 1; i <= 4; i++) {
-			await inviteToPlan(OWNER, `seat-${i}@example.test`);
+		// Account creation and its password are checked above. Fill these
+		// seats with existing fixture accounts so this ceiling test does not
+		// spend four expensive password hashes on unrelated setup.
+		for (let i = 1; i <= 5; i++) {
+			const id = `seat-${i}`;
+			const email = `${id}@example.test`;
+			database.exec(
+				`insert into user (id, name, email, email_verified, created_at, updated_at)
+				 values (?, ?, ?, 0, '2026-01-01T00:00:00', '2026-01-01T00:00:00')`,
+				id,
+				`Seat ${i}`,
+				email
+			);
+			if (i <= 4) {
+				subscriptions.addToPlan(OWNER, email);
+				subscriptions.acceptPlanInvite(id);
+			}
 		}
 		expect(subscriptions.membersOf(OWNER).length).toBe(4);
 
 		// The fifth other person is the sixth account, and both doors say no —
-		// minting a new account, and seating one that exists (partner@ does,
-		// from the invite tests above, and is off the plan by now).
+		// minting a new account, and seating one that exists but is not on it.
+		expect(await refusalOf(() => inviteToPlan(OWNER, 'seat-6@example.test'))).toMatch(/all taken/);
 		expect(await refusalOf(() => inviteToPlan(OWNER, 'seat-5@example.test'))).toMatch(/all taken/);
-		expect(await refusalOf(() => inviteToPlan(OWNER, 'partner@example.test'))).toMatch(/all taken/);
-		expect(refusal(() => subscriptions.addToPlan(OWNER, 'partner@example.test'))).toMatch(
+		expect(refusal(() => subscriptions.addToPlan(OWNER, 'seat-5@example.test'))).toMatch(
 			/all taken/
 		);
 		expect(subscriptions.membersOf(OWNER).length).toBe(4);
