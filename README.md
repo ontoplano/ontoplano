@@ -15,7 +15,7 @@
 
 `.deb` · `.rpm` · Arch · Docker · Android
 
-> [!NOTE]
+>
 > This software was released on September 5th, 2026. It's still maturing, and
 > it may contain bugs. LLMs are used extensively during development; their
 > output is reviewed and tested before it lands.
@@ -29,32 +29,26 @@
 ---
 
 ## Running it
-
-### systemd
-
-A service that starts on boot, upgraded by the package manager you use:
+ A local instance keeps its settings in
+`~/.config/ontoplano/` and its database in `~/.local/share/ontoplano/`.
 
 ```sh
-# Debian, Ubuntu, Mint, Pop!_OS
-sudo apt install ./ontoplano_*_amd64.deb
-
-# Fedora, RHEL, openSUSE
-sudo dnf install ./ontoplano-*.x86_64.rpm
-
-# Arch, Manjaro (not on the AUR yet — it has suspended new accounts)
-mkdir ontoplano && cd ontoplano
-curl -LO https://github.com/ontoplano/ontoplano/releases/latest/download/PKGBUILD
-curl -LO https://github.com/ontoplano/ontoplano/releases/latest/download/ontoplano.install
-makepkg -si
+git clone https://github.com/ontoplano/ontoplano && \
+cd ontoplano && \
+yarn && \
+yarn dev             # dev server at http://localhost:1493
 ```
 
-then `sudo ontoplano config` to set the origin and
-`sudo systemctl enable --now ontoplano`. The `.deb` and the `.rpm` are on the
-[releases page](https://github.com/ontoplano/ontoplano/releases); they carry
-their own Node, so there is nothing else to install. A packaged install keeps
-its settings in `/etc/ontoplano/` and its database in `/var/lib/ontoplano/`.
-There is no Windows installer yet — [help build one](CONTRIBUTING.md). Windows
-runs it from source; see below.
+Optionally:
+```sh
+make db-seed    # synthetic data for the dev account
+```
+
+### Systemd
+```sh
+make install-service
+```
+
 
 ### Docker
 
@@ -71,18 +65,31 @@ registration is closed until changed at `/settings/instance`.
 
 The reminders timer comes installed.
 
-## Developing it
+### Binaries
+
 
 ```sh
-yarn
-make dev        # dev server at http://localhost:1493, as a systemd user service
-make dev-logs   # follow it; make dev-stop stops it; make dev-fg holds the terminal
-make db-seed    # synthetic data for the dev account
+# Debian, Ubuntu, Mint, Pop!_OS
+sudo apt install ./ontoplano_*_amd64.deb
+
+# Fedora, RHEL, openSUSE
+sudo dnf install ./ontoplano-*.x86_64.rpm
+
+# Arch, Manjaro (not on the AUR yet)
+mkdir ontoplano && cd ontoplano
+curl -LO https://github.com/ontoplano/ontoplano/releases/latest/download/PKGBUILD
+curl -LO https://github.com/ontoplano/ontoplano/releases/latest/download/ontoplano.install
+makepkg -si
 ```
 
-`make dev` wants Linux with systemd — on anything else, `yarn dev` runs
-the same server in the foreground. A from-source instance keeps its settings in
-`~/.config/ontoplano/` and its database in `~/.local/share/ontoplano/`.
+then `sudo ontoplano config` to set the origin and
+`sudo systemctl enable --now ontoplano`. The `.deb` and the `.rpm` are on the
+[releases page](https://github.com/ontoplano/ontoplano/releases); they carry
+their own Node, so there is nothing else to install. A packaged install keeps
+its settings in `/etc/ontoplano/` and its database in `/var/lib/ontoplano/`.
+There is no Windows installer yet — [help build one](CONTRIBUTING.md).
+
+
 
 ### On Windows
 
