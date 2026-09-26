@@ -15,20 +15,19 @@
 
 `.deb` · `.rpm` · Arch · Docker · Android
 
->
 > This software was released on September 5th, 2026. It's still maturing, and
 > it may contain bugs. LLMs are used extensively during development; their
 > output is reviewed and tested before it lands.
 >
 > Help improve it by creating issues and pull requests.
 
+## Summary
 
-Summary
----
 Ontoplano is a central hub for organizing your life. Powerful enough to handle small details,
 simple enough to be able to add a task or a note in your phone with one finger movement.
 You can [Connect with an AI agent](https://docs.ontoplano.com/ai-agents) (or not), and
 scope all your tasks, recipes, inventory, notes, bills etc. in specific notebooks.
+
 </div>
 
 [![Try the demo](.github/badges/try-the-demo.svg)](https://demo.ontoplano.com)
@@ -36,7 +35,8 @@ scope all your tasks, recipes, inventory, notes, bills etc. in specific notebook
 ---
 
 ## Running it
- A local instance keeps its settings in
+
+A local instance keeps its settings in
 `~/.config/ontoplano/` and its database in `~/.local/share/ontoplano/`.
 
 ```sh
@@ -47,15 +47,16 @@ yarn dev             # dev server at http://localhost:1493
 ```
 
 Optionally:
+
 ```sh
 make db-seed    # synthetic data for the dev account
 ```
 
 ### Systemd
+
 ```sh
 make install-service
 ```
-
 
 ### Docker
 
@@ -73,7 +74,6 @@ registration is closed until changed at `/settings/instance`.
 The reminders timer comes installed.
 
 ### Binaries
-
 
 ```sh
 # Debian, Ubuntu, Mint, Pop!_OS
@@ -95,8 +95,6 @@ then `sudo ontoplano config` to set the origin and
 their own Node, so there is nothing else to install. A packaged install keeps
 its settings in `/etc/ontoplano/` and its database in `/var/lib/ontoplano/`.
 There is no Windows installer yet — [help build one](CONTRIBUTING.md).
-
-
 
 ### On Windows
 
