@@ -121,8 +121,11 @@ test('several things come in at once, and what moves is named first', async ({ p
 		await expect(page.getByText(title).first()).toBeVisible({ timeout: 30_000 });
 	}
 
-	// Two notes under the trip, and one under nothing.
+	// Two notes under the trip, then one under the kitchen.
 	await page.getByRole('link', { name: /Trip/ }).first().click();
+	// The New note button also exists for the previously selected notebook.
+	// Wait for the panel to change before writing into it.
+	await expect(page.getByRole('heading', { name: 'Trip', exact: true })).toBeVisible();
 	for (const content of ['nine days in September', 'the train is three hours']) {
 		await page.getByRole('button', { name: 'New note', exact: true }).first().click();
 		await page.locator('textarea[name="content"]').first().fill(content);
@@ -137,6 +140,7 @@ test('several things come in at once, and what moves is named first', async ({ p
 		.getByRole('link', { name: /Kitchen/ })
 		.first()
 		.click();
+	await expect(page.getByRole('heading', { name: 'Kitchen', exact: true })).toBeVisible();
 	await page.getByRole('button', { name: 'New note', exact: true }).first().click();
 	await page.locator('textarea[name="content"]').first().fill('the plumber can move the pipes');
 	await page

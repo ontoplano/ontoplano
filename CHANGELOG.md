@@ -18,6 +18,10 @@ the shape of the data changing. Bumping the minor per batch is what ran this
 file to 0.161 in a few months, which tells a reader nothing about which
 releases mattered.
 
+## 0.183.14 — 2026-09-26
+
+- Notebook linking checks wait for the selected notebook before writing notes.
+
 ## 0.183.13 — 2026-09-25
 
 - Swiping across tabs at an edge no longer takes the browser back or forward.
