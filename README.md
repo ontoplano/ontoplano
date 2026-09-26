@@ -22,9 +22,16 @@
 >
 > Help improve it by creating issues and pull requests.
 
-[![Try the demo](.github/badges/try-the-demo.svg)](https://demo.ontoplano.com)
 
+Summary
+---
+Ontoplano is a central hub for organizing your life. Powerful enough to handle small details,
+simple enough to be able to add a task or a note in your phone with one finger movement.
+You can [Connect with an AI agent](https://docs.ontoplano.com/ai-agents) (or not), and
+scope all your tasks, recipes, inventory, notes, bills etc. in specific notebooks.
 </div>
+
+[![Try the demo](.github/badges/try-the-demo.svg)](https://demo.ontoplano.com)
 
 ---
 
