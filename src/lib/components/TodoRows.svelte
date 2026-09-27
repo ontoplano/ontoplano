@@ -620,20 +620,31 @@
 	 * slider moved under it and changed nothing, which is the sliders looking
 	 * broken.
 	 *
-	 * Counted against the rows on screen — the same filters, the same notebook
-	 * — because that is the claim somebody can check by looking, and against
-	 * the draft's own answers rather than where its row already is, which is
-	 * what makes the number move as a slider does. A task being written has no
-	 * row yet and joins by when it was written down, which is now.
+	 * Counted against every open task in the notebook the form files it under —
+	 * not the rows on screen. A search, a label filter or the hidden completed
+	 * ones are about what is being looked at, and the place is about the
+	 * queue: it said 1st for a task that went in behind three older ones rated
+	 * the same, because they were filtered out. And against the draft's own
+	 * answers rather than where its row already is, which is what makes the
+	 * number move as a slider does.
+	 *
+	 * A task being written has no row yet. The server puts a new one after
+	 * every task it has, so it joins behind its equals rather than in front.
 	 */
 	const draftPlace = $derived.by(() => {
-		const others = visibleTodos.filter((one: Todo) => one.id !== editingId);
+		const queue = todos.filter(
+			(one: Todo) =>
+				one.id !== editingId &&
+				one.archivedAt === null &&
+				!CLOSED_STATUSES.includes(one.status) &&
+				(formNotebookId === null || one.notebookId === formNotebookId)
+		);
 		const draft = {
 			ratings: formRatings as RatingValues,
-			sortOrder: editing?.sortOrder ?? 0,
+			sortOrder: editing?.sortOrder ?? Number.MAX_SAFE_INTEGER,
 			createdAt: editing?.createdAt ?? new Date().toISOString()
 		};
-		return others.filter((one: Todo) => compareByPriority(one, draft) < 0).length + 1;
+		return queue.filter((one: Todo) => compareByPriority(one, draft) < 0).length + 1;
 	});
 
 	/** Whatever the notebook picker lets through, before the two toggles. */

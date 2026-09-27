@@ -14,6 +14,10 @@ import { visit } from './helpers/visit';
  *
  * So the claim is checkable by looking whenever the list is in the order the
  * number is about, which is what this walks.
+ *
+ * And it counts the whole open queue, not the rows a search or a filter left
+ * on screen: the place is where the task will go, not where it would sit in
+ * what is being looked at.
  */
 async function add(page: Page, title: string) {
 	await page.getByRole('button', { name: 'New task' }).first().click();
@@ -52,4 +56,20 @@ test('the place in the form is the place in the list', async ({ page }) => {
 	await orderByPriority(page);
 	await page.getByRole('button', { name: /Edit/ }).nth(2).click();
 	await expect(page.getByText(/in line/).first()).toContainText('3rd');
+});
+
+test('a new task goes behind the ones rated the same, whatever is on screen', async ({ page }) => {
+	test.setTimeout(180_000);
+	await register(page, testEmail('todo-place-new'));
+	await visit(page, '/tasks/todo');
+
+	await add(page, 'First thing');
+	await add(page, 'Second thing');
+	await add(page, 'Third thing');
+
+	// A search that hides all three says nothing about the queue.
+	await page.getByPlaceholder('Search these tasks').fill('nothing matches this');
+
+	await page.getByRole('button', { name: 'New task' }).first().click();
+	await expect(page.getByText(/in line/).first()).toContainText('4th');
 });
