@@ -17,7 +17,6 @@ plugin manifests. MCP
 reaches further — todos, diary, notebooks, ideas, goals, habits, recipes — and
 those have no REST equivalent.
 
-
 ---
 
 ## Small improvements
@@ -40,7 +39,7 @@ those have no REST equivalent.
 ## One day, maybe
 
 - **More media**: annexing PDFs
-- Cool plugins: webhook  + API for a server that trasliterates text
+- Cool plugins: webhook + API for a server that trasliterates text
 - **A scheme you can schedule** rather than apply by hand, and an MCP tool
   for changing schemes.
 

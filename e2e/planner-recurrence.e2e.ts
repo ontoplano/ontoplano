@@ -467,7 +467,9 @@ test.describe('the preview on the grid', () => {
 		await form.locator('[name="startTime"]').fill('11:00');
 		await expect(page.locator('.og-event--preview')).toHaveCount(1);
 
-		await form.getByRole('button', { name: /Save task block|Add one-off|Add repeating task block/ }).click();
+		await form
+			.getByRole('button', { name: /Save task block|Add one-off|Add repeating task block/ })
+			.click();
 		await expect(form).toBeHidden({ timeout: 20_000 });
 		await expect(page.getByText('just-this-once', { exact: true })).toBeVisible();
 

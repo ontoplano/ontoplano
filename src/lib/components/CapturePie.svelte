@@ -69,7 +69,11 @@
 
 	/** Where a form opened from here starts — see `startingNotebook`. */
 	const notebookId = $derived(
-		startingNotebook(settings, { id: page.route.id, params: page.params, search: page.url.searchParams })
+		startingNotebook(settings, {
+			id: page.route.id,
+			params: page.params,
+			search: page.url.searchParams
+		})
 	);
 
 	let open = $state(false);
