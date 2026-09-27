@@ -2491,13 +2491,12 @@ export const messages: Catalogue = {
 	'scopeGroups.acrossEverything': 'Über alles hinweg',
 	'scopeGroups.habitsAndWorkouts': 'Gewohnheiten und Workouts',
 	'scopeGroups.money': 'Geld',
+	'scopeGroups.neededToWrite': 'nötig zum Schreiben',
 	'scopeGroups.people': 'Menschen',
 	'scopeGroups.plumbing': 'Integrationen',
 	'scopeGroups.removingThings': 'Dinge löschen',
 	'scopeGroups.todosAndGoals': 'Aufgaben und Ziele',
 	'scopeGroups.whatYouWrite': 'Tagebuch, Notizbücher und Ideen',
-	'scopeGroups.withoutTheLineAbove':
-		'Ohne die Zeile darüber kann er hinzufügen und ändern, aber nicht finden, was zu ändern ist.',
 	'scopeGroups.yourHome': 'Zuhause, Küche und Einkauf',
 	'scopeGroups.yourWeek': 'Ihre Woche',
 	'scopes.billsRead':
@@ -3023,8 +3022,6 @@ export const messages: Catalogue = {
 		'https://example.com/ontoplano-hook',
 	'settings.integrations.connections.isTheMostRevoke':
 		'{calendarLinkLimit} ist das Maximum. Widerrufen Sie einen, um einen weiteren zu erstellen.',
-	'settings.integrations.connections.itCanWriteButNot':
-		'es kann schreiben, aber nicht lesen: die meisten Änderungen benennen etwas über die ID, die das entsprechende Lesen\n\t\t\t\t\t\t\t\t\t\t\t\tliefert.',
 	'settings.integrations.connections.itMay': 'Es darf: {join}',
 	'settings.integrations.connections.itSendsYouBackHere':
 		'Sie werden hierher zurückgeschickt, um die Verbindung zu bestätigen; sie erscheint dann in der Liste unten wie jeder andere Schlüssel.',
@@ -3086,7 +3083,6 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.when': 'Wann',
 	'settings.integrations.connections.whereItIsGoing': 'Wohin es geht',
 	'settings.integrations.connections.withATokenThatHas': 'mit einem Token mit dem',
-	'settings.integrations.connections.without': 'Ohne',
 	'settings.integrations.connections.writingAPluginSee': 'Schreiben Sie ein Plugin? Siehe',
 	'settings.integrations.connections.yourNewCalendarAddress': 'Ihre neue Kalenderadresse',
 	'settings.integrations.copyTheKey': 'Den Schlüssel kopieren',

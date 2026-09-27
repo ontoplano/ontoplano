@@ -30,6 +30,7 @@ releases mattered.
 - A notebook can have a category: a new task written in it starts with that category, the way a new note starts with the notebook's labels. Add card on the board keeps the notebook and labels you chose.
 - The label filter's suggestions list every label, in a list that scrolls, not just the first six.
 - Opening the Android app clears its reminders from the phone's notification tray, so the count on the app's icon no longer sticks.
+- A key or an assistant granted to write somewhere is granted to read there too; the permission screens tick the read line with the write and say why.
 - A notebook's Open and Manage tags sit beside its name, apart from the buttons that add to it.
 - The demo's kitchen notebook opens on its tasks, with colour-coded tags and a shopping list; other demo notebooks now hold goals, inventory and ideas.
 - On a phone, a notebook's header and task toolbar are tidier: Open and tags are icons in the corner, the search, filter, clear and count share one line, and the order sits beside Select many.

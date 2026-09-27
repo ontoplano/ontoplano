@@ -148,3 +148,17 @@ describe('the choices the form is given', () => {
 		expect(confinementChoices(fresh)).toEqual([]);
 	});
 });
+
+describe('writing needs reading', () => {
+	it('a key granted a write is granted its read with it', () => {
+		const made = createToken(ctx(), {
+			name: 'writes only',
+			scopes: ['notes:write', 'destructive']
+		});
+		const held = authenticateToken(made.plaintext, new Date()).scopes;
+		expect(held).toEqual(expect.arrayContaining(['notes:write', 'notes:read', 'destructive']));
+		// A grant with no read partner brings nothing along.
+		expect(held).not.toContain('destructive:read');
+		expect(listTokens(ctx()).find((t) => t.name === 'writes only')?.scopes).toContain('notes:read');
+	});
+});

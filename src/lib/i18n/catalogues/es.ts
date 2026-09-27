@@ -2489,13 +2489,12 @@ export const messages: Catalogue = {
 	'scopeGroups.acrossEverything': 'En todo',
 	'scopeGroups.habitsAndWorkouts': 'Hábitos y entrenamientos',
 	'scopeGroups.money': 'Dinero',
+	'scopeGroups.neededToWrite': 'necesario para escribir',
 	'scopeGroups.people': 'Personas',
 	'scopeGroups.plumbing': 'Integraciones',
 	'scopeGroups.removingThings': 'Borrar cosas',
 	'scopeGroups.todosAndGoals': 'Tareas y metas',
 	'scopeGroups.whatYouWrite': 'Diario, cuadernos e ideas',
-	'scopeGroups.withoutTheLineAbove':
-		'Sin la línea de arriba puede añadir y cambiar, pero no encontrar qué cambiar.',
 	'scopeGroups.yourHome': 'Casa, cocina y compras',
 	'scopeGroups.yourWeek': 'Tu semana',
 	'scopes.billsRead':
@@ -3008,8 +3007,6 @@ export const messages: Catalogue = {
 		'https://example.com/ontoplano-hook',
 	'settings.integrations.connections.isTheMostRevoke':
 		'{calendarLinkLimit} es el máximo. Revoca uno para crear otro.',
-	'settings.integrations.connections.itCanWriteButNot':
-		'puede escribir pero no mirar: la mayoría de los cambios nombran algo por el id que da la\n\t\t\t\t\t\t\t\t\t\t\t\tlectura correspondiente.',
 	'settings.integrations.connections.itMay': 'Puede: {join}',
 	'settings.integrations.connections.itSendsYouBackHere':
 		'Te trae de vuelta aquí para aprobar la conexión, que luego aparece en la lista de abajo como cualquier otra clave.',
@@ -3070,7 +3067,6 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.when': 'Cuándo',
 	'settings.integrations.connections.whereItIsGoing': 'Adónde va',
 	'settings.integrations.connections.withATokenThatHas': 'con un token que tiene el',
-	'settings.integrations.connections.without': 'Sin',
 	'settings.integrations.connections.writingAPluginSee': '¿Escribiendo un plugin? Mira',
 	'settings.integrations.connections.yourNewCalendarAddress': 'Tu nueva dirección de calendario',
 	'settings.integrations.copyTheKey': 'Copiar la clave',

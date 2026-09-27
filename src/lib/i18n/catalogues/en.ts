@@ -2428,13 +2428,12 @@ export const messages: Catalogue = {
 	'scopeGroups.acrossEverything': 'Across everything',
 	'scopeGroups.habitsAndWorkouts': 'Habits and workouts',
 	'scopeGroups.money': 'Money',
+	'scopeGroups.neededToWrite': 'needed to write',
 	'scopeGroups.people': 'People',
 	'scopeGroups.plumbing': 'Integrations',
 	'scopeGroups.removingThings': 'Removing things',
 	'scopeGroups.todosAndGoals': 'Todos and goals',
 	'scopeGroups.whatYouWrite': 'Diary, notebooks and ideas',
-	'scopeGroups.withoutTheLineAbove':
-		'Without the line above it can add and change, but not find what to change.',
 	'scopeGroups.yourHome': 'Home, kitchen and shopping',
 	'scopeGroups.yourWeek': 'Your week',
 	'scopes.billsRead':
@@ -2935,8 +2934,6 @@ export const messages: Catalogue = {
 		'https://example.com/ontoplano-hook',
 	'settings.integrations.connections.isTheMostRevoke':
 		'{calendarLinkLimit} is the most. Revoke one to make another.',
-	'settings.integrations.connections.itCanWriteButNot':
-		'it can write but not look: most changes name a thing by the id the matching read\n\t\t\t\t\t\t\t\t\t\t\t\tgives.',
 	'settings.integrations.connections.itMay': 'It may: {join}',
 	'settings.integrations.connections.itSendsYouBackHere':
 		'It sends you back here to approve the connection, which then stands in the list below like any other key.',
@@ -2997,7 +2994,6 @@ export const messages: Catalogue = {
 	'settings.integrations.connections.when': 'When',
 	'settings.integrations.connections.whereItIsGoing': 'Where it is going',
 	'settings.integrations.connections.withATokenThatHas': 'with a token that has the',
-	'settings.integrations.connections.without': 'Without',
 	'settings.integrations.connections.writingAPluginSee': 'Writing a plugin? See',
 	'settings.integrations.connections.yourNewCalendarAddress': 'Your new calendar address',
 	'settings.integrations.copyTheKey': 'Copy the key',

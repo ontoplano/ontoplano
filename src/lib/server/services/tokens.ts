@@ -1,4 +1,5 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { withNeededReads } from '$lib/scope-groups';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 
 import { db } from '$lib/db/index.js';
@@ -303,6 +304,8 @@ export function createToken(
 		)
 	];
 	if (scopes.length === 0) throw new ForbiddenError({ key: 'errors.tokens.atLeastOneValidScope' });
+	// Writing a room needs reading it; see `readNeededBy`.
+	scopes.splice(0, scopes.length, ...withNeededReads(scopes, ALL_SCOPES));
 
 	/*
 	 * A calendar link stands alone, and it is refused rather than trimmed.
@@ -438,7 +441,7 @@ export function listTokens(ctx: Ctx): TokenSummary[] {
 			id: t.id,
 			name: t.name,
 			prefix: t.prefix,
-			scopes: t.scopes.split(',').filter(Boolean) as Scope[],
+			scopes: withNeededReads(t.scopes.split(',').filter(Boolean) as Scope[], ALL_SCOPES),
 			plaintext: t.plaintext,
 			confinement: confinementOf(t.confinedKind, t.confinedId),
 			lastUsedAt: t.lastUsedAt,
@@ -516,7 +519,8 @@ export function authenticateToken(plaintext: string, now: Date): AuthenticatedTo
 	return {
 		userId: row.userId,
 		tokenId: row.id,
-		scopes: row.scopes.split(',').filter(Boolean) as Scope[],
+		// Keys minted before writing needed reading get it here too.
+		scopes: withNeededReads(row.scopes.split(',').filter(Boolean) as Scope[], ALL_SCOPES),
 		confinement: confinementOf(row.confinedKind, row.confinedId)
 	};
 }
