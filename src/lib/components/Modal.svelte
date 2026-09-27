@@ -435,12 +435,14 @@
 			transition: background-color 120ms ease;
 		}
 
+		/* Inside the panel: the dialog clips anything past it, and a press that
+		   misses the edge lands on the dialog, which is the backdrop and closes. */
 		.widen-edge.left {
-			left: -0.25rem;
+			left: 0;
 		}
 
 		.widen-edge.right {
-			right: -0.25rem;
+			right: 0;
 		}
 
 		.widen-edge:hover {
