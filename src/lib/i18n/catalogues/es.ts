@@ -1764,6 +1764,7 @@ export const messages: Catalogue = {
 	'metaEditor.value': 'valor',
 	'metaKeys.linkToOpenWithTheBlock': 'Enlace para abrir con el bloque',
 	'metaKeys.whereThisHappens': 'Dónde pasa esto',
+	'modal.dragToWiden': 'Arrastra para ensanchar; doble clic para volver',
 	'newsletter.off.goToOntoplano': 'Ir a ontoplano',
 	'newsletter.off.nothingMoreWillBeSent': 'No se enviará nada más a {email}.',
 	'newsletter.off.unsubscribedOntoplano': 'Dado de baja · ontoplano',

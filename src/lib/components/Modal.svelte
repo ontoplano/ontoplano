@@ -109,6 +109,38 @@
 
 	const WIDTHS = { sm: '28rem', md: '36rem', lg: '52rem' } as const;
 
+	/*
+	 * Wider, by hand, on a screen with room.
+	 *
+	 * Writing side by side in a 36rem dialog leaves each half a column wide,
+	 * and a picture in the preview is a thumbnail. Either side edge drags: the
+	 * dialog is centred, so both edges move together, at the same rate. A
+	 * double-click on an edge puts it back. Kept while the page is, so the
+	 * form opens as wide as it was left.
+	 */
+	/** Pixels kept clear between a widened dialog and the window's edges. */
+	const WIDEN_GUTTER = 32;
+	let widened = $state(0);
+	let widening: { x: number; from: number; side: 1 | -1 } | null = null;
+
+	function widenDown(event: PointerEvent, side: 1 | -1) {
+		event.preventDefault();
+		(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+		widening = { x: event.clientX, from: widened, side };
+	}
+
+	function widenMove(event: PointerEvent) {
+		if (!widening || !dialog) return;
+		const base = dialog.getBoundingClientRect().width - widened;
+		const room = Math.max(0, window.innerWidth - WIDEN_GUTTER * 2 - base);
+		const moved = (event.clientX - widening.x) * widening.side * 2;
+		widened = Math.min(room, Math.max(0, widening.from + moved));
+	}
+
+	function widenUp() {
+		widening = null;
+	}
+
 	let dialog: HTMLDialogElement | undefined = $state();
 
 	/**
@@ -236,7 +268,7 @@
 	onclick={handleClick}
 	aria-label={title}
 	class:docked={dock === 'side'}
-	style="--modal-width: {WIDTHS[size]}"
+	style="--modal-width: calc({WIDTHS[size]} + {widened}px)"
 >
 	{#if open}
 		<div
@@ -310,6 +342,21 @@
 				</button>
 			</header>
 
+			{#if dock === 'centre'}
+				{#each [-1, 1] as const as side (side)}
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<div
+						class="widen-edge {side < 0 ? 'left' : 'right'}"
+						title={t('modal.dragToWiden')}
+						onpointerdown={(event) => widenDown(event, side)}
+						onpointermove={widenMove}
+						onpointerup={widenUp}
+						onpointercancel={widenUp}
+						ondblclick={() => (widened = 0)}
+					></div>
+				{/each}
+			{/if}
+
 			<div class="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 py-4 sm:px-5">
 				{#if error}
 					<div class="mb-4"><Banner kind="error" message={error} /></div>
@@ -364,6 +411,41 @@
 		max-height: 100dvh;
 		border: 0;
 		padding-top: var(--safe-top, 0px);
+	}
+
+	/* The edges that widen it: only with a mouse, and only where it floats. */
+	.widen-edge {
+		display: none;
+	}
+
+	@media (min-width: 640px) and (pointer: fine) {
+		.panel {
+			position: relative;
+		}
+
+		.widen-edge {
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			z-index: 1;
+			display: block;
+			width: 0.5rem;
+			cursor: ew-resize;
+			touch-action: none;
+			transition: background-color 120ms ease;
+		}
+
+		.widen-edge.left {
+			left: -0.25rem;
+		}
+
+		.widen-edge.right {
+			right: -0.25rem;
+		}
+
+		.widen-edge:hover {
+			background-color: color-mix(in srgb, var(--color-gray-400) 35%, transparent);
+		}
 	}
 
 	/* The spring back after a drag that was not far enough to close. */

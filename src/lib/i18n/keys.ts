@@ -1546,6 +1546,7 @@ export type MessageKey =
 	| 'metaEditor.value'
 	| 'metaKeys.linkToOpenWithTheBlock'
 	| 'metaKeys.whereThisHappens'
+	| 'modal.dragToWiden'
 	| 'newsletter.off.goToOntoplano'
 	| 'newsletter.off.nothingMoreWillBeSent'
 	| 'newsletter.off.unsubscribedOntoplano'
