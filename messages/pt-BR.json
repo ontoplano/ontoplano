@@ -1859,6 +1859,8 @@
 	"notebooks.tags.thingCarriesIt": "coisa a carrega",
 	"notebooks.tags.thingsCarryIt": "coisas a carregam",
 	"notebooks.tags.yesDelete": "Sim, excluir",
+	"notebooks.tags.removeFromThisNotebook": "Remover deste caderno",
+	"notebooks.tags.removeHere": "Remover aqui",
 	"notebooks.tasksCount": {
 		"one": "{count} tarefa",
 		"other": "{count} tarefas"

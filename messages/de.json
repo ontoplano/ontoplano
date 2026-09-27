@@ -1859,6 +1859,8 @@
 	"notebooks.tags.thingCarriesIt": "Sache trägt es",
 	"notebooks.tags.thingsCarryIt": "Sachen tragen es",
 	"notebooks.tags.yesDelete": "Ja, löschen",
+	"notebooks.tags.removeFromThisNotebook": "Aus diesem Notizbuch entfernen",
+	"notebooks.tags.removeHere": "Hier entfernen",
 	"notebooks.tasksCount": {
 		"one": "{count} Aufgabe",
 		"other": "{count} Aufgaben"

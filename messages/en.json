@@ -1901,6 +1901,8 @@
 	"notebooks.tags.thingCarriesIt": "thing carries it",
 	"notebooks.tags.thingsCarryIt": "things carry it",
 	"notebooks.tags.yesDelete": "Yes, delete",
+	"notebooks.tags.removeFromThisNotebook": "Remove from this notebook",
+	"notebooks.tags.removeHere": "Remove here",
 	"notebooks.tasksCount": {
 		"one": "{count} task",
 		"other": "{count} tasks"

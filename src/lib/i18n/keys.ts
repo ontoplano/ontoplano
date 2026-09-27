@@ -1818,6 +1818,8 @@ export type MessageKey =
 	| 'notebooks.tags.noColour'
 	| 'notebooks.tags.noTagsYet'
 	| 'notebooks.tags.oneVocabularyForTheWhole'
+	| 'notebooks.tags.removeFromThisNotebook'
+	| 'notebooks.tags.removeHere'
 	| 'notebooks.tags.renamingOntoAName'
 	| 'notebooks.tags.tagsOntoplano'
 	| 'notebooks.tags.thingCarriesIt'

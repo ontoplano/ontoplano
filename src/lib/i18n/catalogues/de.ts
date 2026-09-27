@@ -2084,6 +2084,8 @@ export const messages: Catalogue = {
 	'notebooks.tags.noTagsYet': 'Noch keine Schlagwörter',
 	'notebooks.tags.oneVocabularyForTheWhole':
 		'Ein Satz Schlagwörter für das ganze Konto — dasselbe Wort an einer Aufgabe, einer Notiz, einer Idee, einem Block und einem Bild. Wer eines hier umbenennt oder entfernt, ändert es überall.',
+	'notebooks.tags.removeFromThisNotebook': 'Aus diesem Notizbuch entfernen',
+	'notebooks.tags.removeHere': 'Hier entfernen',
 	'notebooks.tags.renamingOntoAName':
 		'Ein Name, den es schon gibt, führt die beiden Schlagwörter zusammen.',
 	'notebooks.tags.tagsOntoplano': 'Schlagwörter · Ontoplano',

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import type { PlainKey } from '$lib/i18n/keys';
 	/**
 	 * A list of labels, with what each of them is doing.
 	 *
@@ -28,11 +29,16 @@
 		cursor = -1,
 		/** Where the delete form posts. Absent, a label cannot be removed here. */
 		deleteAction,
+		/** What the delete says, where it removes less than the whole label. */
+		deleteTitle = 'ui.delete',
+		deleteConfirm = 'notebooks.tags.yesDelete',
 		onedit
 	}: {
 		tags: NotebookTag[];
 		cursor?: number;
 		deleteAction?: string;
+		deleteTitle?: PlainKey;
+		deleteConfirm?: PlainKey;
 		onedit: (tag: NotebookTag) => void;
 	} = $props();
 
@@ -147,13 +153,13 @@
 								{t('ui.cancel')}
 							</button>
 							<button class="btn btn-danger btn-sm" use:armed>
-								{t('notebooks.tags.yesDelete')}
+								{t(deleteConfirm)}
 							</button>
 						</form>
 					{:else}
 						<button
-							title={t('ui.delete')}
-							aria-label={t('ui.delete')}
+							title={t(deleteTitle)}
+							aria-label={t(deleteTitle)}
 							onclick={() => (confirmDelete = tag.id)}
 							class="icon-btn icon-btn-danger"
 						>

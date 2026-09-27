@@ -8,7 +8,7 @@ import { removeNotebookPicture, setNotebookPicture } from '$lib/services/media';
 import { setEntryPeople } from '$lib/services/people';
 import { NOTEBOOK_PANEL_WIDTH_KEY, setPanelWidth } from '$lib/services/settings';
 import { toActionFailure } from '$lib/http-errors';
-import { describeTag, recolorTag, renameTag } from '$lib/services/tags';
+import { describeTag, recolorTag, renameTag, untagNotebook } from '$lib/services/tags';
 import { importVaultAction } from '$lib/import-vault-action';
 import { todoHandlers } from '$lib/services/todo-actions';
 import { under } from '$lib/services/scoped-actions';
@@ -54,6 +54,21 @@ export const notebookActions = {
 			const after = renameTag(userId, Number(formData.get('id')), formData.get('label'));
 			recolorTag(userId, after.id, formData.get('color'));
 			describeTag(userId, after.id, formData.get('description'));
+			return { success: true };
+		} catch (e) {
+			return toActionFailure(e);
+		}
+	},
+
+	/** A label off everything in this notebook — the notebook named in the URL. */
+	untagNotebook: async ({ request, locals, url }) => {
+		const formData = await request.formData();
+		try {
+			untagNotebook(
+				locals.user!.id,
+				Number(url.searchParams.get('notebook')),
+				Number(formData.get('id'))
+			);
 			return { success: true };
 		} catch (e) {
 			return toActionFailure(e);

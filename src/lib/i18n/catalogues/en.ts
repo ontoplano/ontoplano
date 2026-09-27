@@ -2019,6 +2019,8 @@ export const messages: Catalogue = {
 	'notebooks.tags.noTagsYet': 'No tags yet',
 	'notebooks.tags.oneVocabularyForTheWhole':
 		'One set of tags for the whole account — the same word on a task, a note, an idea, a block and a picture. Renaming or removing one here changes it everywhere.',
+	'notebooks.tags.removeFromThisNotebook': 'Remove from this notebook',
+	'notebooks.tags.removeHere': 'Remove here',
 	'notebooks.tags.renamingOntoAName':
 		'Renaming onto a name you already use merges the two tags into one.',
 	'notebooks.tags.tagsOntoplano': 'Tags · Ontoplano',

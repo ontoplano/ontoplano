@@ -40,12 +40,15 @@
 		tags,
 		/** Where the save posts — the page's own action, so it reloads its list. */
 		action,
+		/** Where taking a label off this notebook's things posts. */
+		untagAction,
 		error = null
 	}: {
 		open?: boolean;
 		title: string;
 		tags: NotebookTag[];
 		action: string;
+		untagAction?: string;
 		error?: string | null;
 	} = $props();
 
@@ -70,7 +73,13 @@
 			description={t('tags.aLabelIsMadeByTyping')}
 		/>
 	{:else}
-		<TagRows {tags} onedit={openEdit} />
+		<TagRows
+			{tags}
+			onedit={openEdit}
+			deleteAction={untagAction}
+			deleteTitle="notebooks.tags.removeFromThisNotebook"
+			deleteConfirm="notebooks.tags.removeHere"
+		/>
 	{/if}
 
 	{#snippet footer()}

@@ -1859,6 +1859,8 @@
 	"notebooks.tags.thingCarriesIt": "cosa la lleva",
 	"notebooks.tags.thingsCarryIt": "cosas la llevan",
 	"notebooks.tags.yesDelete": "Sí, eliminar",
+	"notebooks.tags.removeFromThisNotebook": "Quitar de este cuaderno",
+	"notebooks.tags.removeHere": "Quitar aquí",
 	"notebooks.tasksCount": {
 		"one": "{count} tarea",
 		"other": "{count} tareas"

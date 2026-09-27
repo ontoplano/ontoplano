@@ -108,3 +108,14 @@ test('a stranger cannot describe this account’s label', () => {
 	const home = inKitchen().find((one) => one.name === 'home')!;
 	expect(() => tagsService.describeTag(STRANGER, home.id, 'mine now')).toThrow();
 });
+
+test('a label comes off one notebook and stays on everything outside it', () => {
+	const money = tagsService.tagsInNotebook(OWNER, kitchen).find((tag) => tag.name === 'money')!;
+	// A stranger naming this notebook gets the same answer as a notebook that is not there.
+	expect(() => tagsService.untagNotebook(STRANGER, kitchen, money.id)).toThrow();
+
+	expect(tagsService.untagNotebook(OWNER, kitchen, money.id)).toBe(1);
+	expect(tagsService.tagsInNotebook(OWNER, kitchen).map((tag) => tag.name)).not.toContain('money');
+	// The trip's todo still carries it, so the label itself is still there.
+	expect(tagsService.tagsInNotebook(OWNER, trip).map((tag) => tag.name)).toContain('money');
+});

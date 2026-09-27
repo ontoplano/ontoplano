@@ -568,6 +568,40 @@ const FILED = [
 ];
 
 /**
+ * Take a label off everything in one notebook, and nothing outside it.
+ *
+ * The notebook's own tag list could rename and recolour, which are account-
+ * wide, but not remove — and removing across the whole account is the Tags
+ * tab's job, not something to do from inside one subject. A label nothing
+ * carries any more afterwards goes, as it does when the last thing drops it.
+ */
+export function untagNotebook(userId: string, notebookId: number, tagId: number): number {
+	const book = db
+		.select({ id: notebooks.id })
+		.from(notebooks)
+		.where(and(eq(notebooks.id, notebookId), eq(notebooks.userId, userId)))
+		.get();
+	if (!book) throw new NotFoundError('notebook');
+	tagOf(tagId, userId);
+
+	let removed = 0;
+	db.transaction((tx) => {
+		for (const { join, owner, thing } of FILED) {
+			const inside = tx
+				.select({ id: thing.id })
+				.from(thing)
+				.where(and(eq(thing.userId, userId), eq(thing.notebookId, notebookId)));
+			removed += tx
+				.delete(join)
+				.where(and(eq(join.userId, userId), eq(join.tagId, tagId), inArray(owner, inside)))
+				.run().changes;
+		}
+	});
+	cleanupOrphanTags(userId);
+	return removed;
+}
+
+/**
  * What a label means here, in the account's own words.
  *
  * Empty takes the meaning off again, which is a real answer: most labels are

@@ -33,6 +33,10 @@
 				"type": "integer",
 				"required": false
 			},
+			"automatic": {
+				"type": "boolean",
+				"required": false
+			},
 			"currency": {
 				"type": "string",
 				"required": false
@@ -696,6 +700,17 @@
 			}
 		}
 	},
+	"bill_history": {
+		"scope": "bills:read",
+		"writes": false,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"bill_payments": {
 		"scope": "bills:read",
 		"writes": false,
@@ -795,6 +810,10 @@
 		"params": {
 			"amount_expected": {
 				"type": "integer",
+				"required": false
+			},
+			"automatic": {
+				"type": "boolean",
 				"required": false
 			},
 			"due_day": {
@@ -2300,6 +2319,25 @@
 			}
 		}
 	},
+	"skip_bill": {
+		"scope": "bills:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"notes": {
+				"type": "string",
+				"required": false
+			},
+			"period": {
+				"type": "string",
+				"required": false
+			}
+		}
+	},
 	"sort_rules": {
 		"scope": "statements:read",
 		"writes": false,
@@ -2554,6 +2592,36 @@
 		"destroys": false,
 		"params": {
 			"id": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
+	"unskip_bill": {
+		"scope": "bills:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"period": {
+				"type": "string",
+				"required": true
+			}
+		}
+	},
+	"untag_notebook": {
+		"scope": "tags:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"id": {
+				"type": "integer",
+				"required": true
+			},
+			"notebookId": {
 				"type": "integer",
 				"required": true
 			}

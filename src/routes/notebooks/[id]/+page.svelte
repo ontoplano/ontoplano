@@ -257,6 +257,7 @@
 	title={data.notebook.title}
 	tags={data.notebookTags}
 	action="?/saveTag"
+	untagAction={`?/untagNotebook&notebook=${data.notebook.id}`}
 	error={form?.message ?? null}
 />
 

@@ -2063,6 +2063,8 @@ export const messages: Catalogue = {
 	'notebooks.tags.noTagsYet': 'Aún no hay etiquetas',
 	'notebooks.tags.oneVocabularyForTheWhole':
 		'Un solo conjunto de etiquetas para toda la cuenta — la misma palabra en una tarea, una nota, una idea, un bloque y una foto. Renombrar o quitar una aquí la cambia en todas partes.',
+	'notebooks.tags.removeFromThisNotebook': 'Quitar de este cuaderno',
+	'notebooks.tags.removeHere': 'Quitar aquí',
 	'notebooks.tags.renamingOntoAName':
 		'Renombrar a un nombre que ya usas fusiona las dos etiquetas en una.',
 	'notebooks.tags.tagsOntoplano': 'Etiquetas · Ontoplano',

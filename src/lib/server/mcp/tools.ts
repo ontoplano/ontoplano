@@ -80,6 +80,7 @@ import {
 } from '$lib/services/ideas.js';
 import {
 	deleteTag,
+	untagNotebook,
 	describeTag,
 	recolorTag,
 	renameTag,
@@ -150,7 +151,11 @@ import {
 	setArchived as setBillArchived,
 	markPaid,
 	unmarkPaid,
+	skipPeriod,
+	unskipPeriod,
 	listPayments,
+	billHistory,
+	recordAutomaticPayments,
 	monthSummary,
 	billsDueBetween
 } from '$lib/services/bills.js';
@@ -2850,6 +2855,31 @@ export const TOOLS: Tool[] = [
 		}
 	},
 	{
+		name: 'untag_notebook',
+		title: 'Take a label off one notebook',
+		description:
+			'Take a label off everything filed in one notebook — its notes, tasks and ideas — and off nothing outside it. The label stays in the vocabulary while anything else carries it. Answers with how many things lost it. To remove a label everywhere, `remove_tag`.',
+		scope: 'tags:write',
+		writes: true,
+		refs: [
+			{ arg: 'notebookId', kind: 'notebook' },
+			{ arg: 'id', kind: 'tag' }
+		],
+		input: object(
+			{
+				notebookId: {
+					type: 'integer',
+					description: 'The notebook, as `notebooks` gives its id.'
+				},
+				id: { type: 'integer', description: 'The label\u2019s id, as `tags` gives it.' }
+			},
+			['notebookId', 'id']
+		),
+		run: (ctx, args) => ({
+			removed: untagNotebook(ctx.userId, Number(args.notebookId), Number(args.id))
+		})
+	},
+	{
 		name: 'shopping_list',
 		title: 'The shopping list',
 		description:
@@ -4948,7 +4978,7 @@ export const TOOLS: Tool[] = [
 		name: 'bills',
 		title: 'Your bills',
 		description:
-			'The bills you expect to pay, and what you have actually paid. Amounts are in minor units (cents): 12000 is R$120,00. Marking one paid records the real amount, which can differ from the expected one.',
+			'The bills you expect to pay, and what you have actually paid. Amounts are in minor units (cents): 12000 is R$120,00. Marking one paid records the real amount, which can differ from the expected one. An `automatic` bill pays itself (a subscription, a direct debit): it is never reminded, and its payment is recorded on each due day.',
 		scope: 'bills:read',
 		writes: false,
 		input: object({
@@ -4957,23 +4987,41 @@ export const TOOLS: Tool[] = [
 				"Which direction: 'out' (bills, the default) or 'in' — income, recorded exactly the way bills are."
 			)
 		}),
-		run: (ctx, args) => ({
-			bills: listBills(ctx, {
-				includeArchived: !!args.include_archived,
-				flow: args.flow === 'in' ? 'in' : 'out'
-			})
-		})
+		run: (ctx, args) => {
+			// Reading bills is when automatic ones catch up on what they paid.
+			recordAutomaticPayments(ctx);
+			return {
+				bills: listBills(ctx, {
+					includeArchived: !!args.include_archived,
+					flow: args.flow === 'in' ? 'in' : 'out'
+				})
+			};
+		}
 	},
 	{
 		name: 'bill_payments',
 		title: 'What a bill has cost',
 		description:
-			'Every period a bill has been paid for, with the expected amount and what was actually paid. Amounts in minor units (cents).',
+			'Every period a bill has been settled for, with the expected amount and what was actually paid. `status` is paid or skipped; a skipped period paid nothing. `automatic` marks a payment the app recorded for an automatic bill. Amounts in minor units (cents).',
 		scope: 'bills:read',
 		writes: false,
 		refs: [{ arg: 'id', kind: 'bill' }],
 		input: object({ id: { type: 'integer', description: 'The bill\u2019s id.' } }, ['id']),
-		run: (ctx, args) => ({ payments: listPayments(ctx, Number(args.id)) })
+		run: (ctx, args) => ({ payments: billHistory(ctx, Number(args.id)).entries })
+	},
+	{
+		name: 'bill_history',
+		title: 'A bill\u2019s history and average',
+		description:
+			'One bill\u2019s whole history — every period paid or skipped, newest first — with how many were paid and skipped, the total paid, and the average paid per period (per week, month or year, following the bill\u2019s rhythm; null before anything was paid). Amounts in minor units (cents).',
+		scope: 'bills:read',
+		writes: false,
+		refs: [{ arg: 'id', kind: 'bill' }],
+		input: object({ id: { type: 'integer', description: 'The bill\u2019s id.' } }, ['id']),
+		run: (ctx, args) => {
+			const id = Number(args.id);
+			return { bill: getBill(ctx, id), ...billHistory(ctx, id) };
+		}
 	},
 	{
 		name: 'month_bills',
@@ -4995,7 +5043,7 @@ export const TOOLS: Tool[] = [
 		name: 'bills_due',
 		title: 'Bills that want paying',
 		description:
-			'The bills falling due between two dates, each on the day it wants paying (the due day less its lead), with whether that one is already paid. This is what the week shows.',
+			'The bills falling due between two dates, each on the day it wants paying (the due day less its lead), with whether that one is already paid. This is what the week shows. Automatic bills and skipped periods ask for nothing and are left out.',
 		scope: 'bills:read',
 		writes: false,
 		input: object(
@@ -5035,6 +5083,11 @@ export const TOOLS: Tool[] = [
 					description:
 						'Pay it this many days before the due day (0 = on the day). It turns up on the week that day.'
 				},
+				automatic: {
+					type: 'boolean',
+					description:
+						'It pays itself — a subscription on a card, a direct debit. Never reminded and never on the week; its payment is recorded on each due day from today on.'
+				},
 				currency: text('A currency code like BRL. The account\u2019s default if left out.'),
 				flow: text("'out' for a bill (the default), 'in' for income."),
 				notes: text('Anything else.'),
@@ -5055,6 +5108,7 @@ export const TOOLS: Tool[] = [
 				dueDay: args.due_day,
 				dueMonth: args.due_month,
 				payLeadDays: args.pay_lead_days,
+				automatic: args.automatic === true,
 				currency: args.currency,
 				notes: args.notes ?? '',
 				...(args.notebookId === undefined ? {} : { notebookId: args.notebookId })
@@ -5088,6 +5142,11 @@ export const TOOLS: Tool[] = [
 					type: 'integer',
 					description: 'Pay it this many days before the due day (0 = on the day).'
 				},
+				automatic: {
+					type: 'boolean',
+					description:
+						'true when it pays itself, false when somebody pays it. Left alone if not given.'
+				},
 				notes: text('Notes, replacing the old ones.')
 			},
 			['id']
@@ -5101,6 +5160,7 @@ export const TOOLS: Tool[] = [
 				dueDay: args.due_day ?? current.dueDay,
 				dueMonth: args.due_month ?? current.dueMonth,
 				payLeadDays: args.pay_lead_days ?? current.payLeadDays,
+				automatic: typeof args.automatic === 'boolean' ? args.automatic : current.automatic,
 				currency: current.currency,
 				goalId: current.goalId,
 				categoryId: current.categoryId,
@@ -5187,6 +5247,50 @@ export const TOOLS: Tool[] = [
 		subject: billWithPayments,
 		run: (ctx, args) => {
 			unmarkPaid(ctx, Number(args.id), String(args.period));
+			return { ok: true };
+		}
+	},
+	{
+		name: 'skip_bill',
+		title: 'Skip a bill for a period',
+		description:
+			'Say nothing was owed for a period — the gym frozen for a month, a week with no cleaner. The period reads as settled without a payment, stops asking to be paid, and counts as skipped in the history. Refused on a period already paid: undo that with unpay_bill first. The period defaults to the current one.',
+		scope: 'bills:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'bill' }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The bill\u2019s id.' },
+				period: text(
+					'The period: YYYY-Www for weekly, YYYY-MM for monthly, YYYY for yearly. This period if left out.'
+				),
+				notes: text('Why it was skipped.')
+			},
+			['id']
+		),
+		subject: billWithPayments,
+		run: (ctx, args) => ({
+			skipped: skipPeriod(ctx, Number(args.id), { period: args.period, notes: args.notes })
+		})
+	},
+	{
+		name: 'unskip_bill',
+		title: 'Undo a skipped period',
+		description:
+			'Take back a skip, so the period is open and asks to be paid again. The inverse of skip_bill.',
+		scope: 'bills:write',
+		writes: true,
+		refs: [{ arg: 'id', kind: 'bill' }],
+		input: object(
+			{
+				id: { type: 'integer', description: 'The bill\u2019s id.' },
+				period: text('The period to reopen, e.g. 2026-09.')
+			},
+			['id', 'period']
+		),
+		subject: billWithPayments,
+		run: (ctx, args) => {
+			unskipPeriod(ctx, Number(args.id), String(args.period));
 			return { ok: true };
 		}
 	}
