@@ -393,6 +393,24 @@ const orphanNote = (content) => {
  * that has none: a colour somebody picked on a re-seeded account stays.
  */
 const tagColours = new Map();
+/*
+ * The labels the two long notebooks use, given their colours up front and in
+ * this order, so every label on the kitchen's tasks wears a different one and
+ * the trip's do too. Everything else takes the colours after these.
+ */
+const TAGS_COLOURED_FIRST = [
+	'home',
+	'plumbing',
+	'money',
+	'electrics',
+	'tiles',
+	'deliveries',
+	'paint',
+	'travel',
+	'family',
+	'food'
+];
+for (const name of TAGS_COLOURED_FIRST) tagColours.set(name, nextColour());
 const tag = (name) => {
 	if (!tagColours.has(name)) tagColours.set(name, nextColour());
 	const colour = tagColours.get(name);
@@ -1243,11 +1261,11 @@ inNotebook('goals', 'title', 'read twelve books', readingNotebook);
  * where nobody answered draws three half-height bars on every row.
  */
 const KITCHEN_NOTES = [
-	['The tiler wants the wall re-skimmed first. That is another week.', ['home', 'plumbing']],
+	['The tiler wants the wall re-skimmed first. That is another week.', ['tiles', 'plumbing']],
 	['Three quotes in. The middle one can start in April; the cheap one cannot say when.', ['money']],
 	['Measured again: 3.42 by 2.79. The old drawing was out by four centimetres.', ['home']],
 	['The boiler is staying. Moving it is two thousand on its own and it works.', ['money']],
-	['Tiles: the matt ones mark, the gloss ones show every fingerprint. Ask about satin.', ['home']],
+	['Tiles: the matt ones mark, the gloss ones show every fingerprint. Ask about satin.', ['tiles']],
 	[
 		'Worktop shops worth visiting are the two on Bridge Street. The third is a showroom for one brand.',
 		['home']
@@ -1256,12 +1274,12 @@ const KITCHEN_NOTES = [
 		'Quartz against oak: quartz wins on the sink side, oak everywhere else. Ugly, but honest.',
 		['home']
 	],
-	['Electrician wants the layout final before he books. Fair enough.', ['plumbing']],
+	['Electrician wants the layout final before he books. Fair enough.', ['electrics']],
 	['The window is coming out after all — the frame is gone at the bottom corner.', ['home']],
-	['Skip booked for the 14th. Two weeks, which the plumber says is optimistic.', ['home']],
+	['Skip booked for the 14th. Two weeks, which the plumber says is optimistic.', ['deliveries']],
 	[
 		'Paint: the sample looks grey in the morning and green after four. Living with it a week.',
-		['home']
+		['paint']
 	],
 	[
 		'Cabinet doors are the cheapest way to change our minds later, so the carcasses go plain.',
@@ -1286,31 +1304,31 @@ const KITCHEN_TASKS = [
 	['book the plumber for the first week', true, 5, 2, 3, ['plumbing']],
 	['get three quotes for the counter', false, 3, 2, 2, ['money']],
 	['measure the wall properly', true, 4, 1, 4, ['home']],
-	['order the skip', true, 5, 1, 5, ['home']],
+	['order the skip', true, 5, 1, 5, ['deliveries']],
 	['empty the top cupboards', true, 3, 1, 4, ['home']],
 	['take the old cooker out', true, 4, 2, 2, ['home']],
-	['strip the tiles off the splashback wall', true, 4, 2, 2, ['home']],
+	['strip the tiles off the splashback wall', true, 4, 2, 2, ['tiles']],
 	['cap the old feed before the units go', true, 5, 1, 2, ['plumbing']],
 	['choose the worktop', false, 4, 4, 2, ['home']],
-	['choose the tiles', false, 3, 4, 3, ['home']],
-	['get the electrician to quote the sockets', true, 4, 2, 3, ['plumbing']],
+	['choose the tiles', false, 3, 4, 3, ['tiles']],
+	['get the electrician to quote the sockets', true, 4, 2, 3, ['electrics']],
 	['decide where the fridge goes', true, 3, 3, 4, ['home']],
 	['confirm the window measurements with the fitter', true, 5, 1, 3, ['home']],
 	['pay the deposit on the units', true, 5, 1, 5, ['money']],
-	['chase the delivery date', false, 4, 1, 4, ['money']],
-	['clear the hall for the delivery', false, 3, 1, 5, ['home']],
-	['sand and fill the ceiling before painting', true, 2, 1, 2, ['home']],
-	['paint the ceiling', true, 2, 2, 3, ['home']],
-	['live with the paint sample for a week', true, 1, 3, 5, ['home']],
-	['book the tiler for after the plumber', false, 4, 2, 3, ['plumbing']],
-	['order the handles', false, 2, 4, 5, ['home']],
+	['chase the delivery date', false, 4, 1, 4, ['deliveries', 'money']],
+	['clear the hall for the delivery', false, 3, 1, 5, ['deliveries']],
+	['sand and fill the ceiling before painting', true, 2, 1, 2, ['paint']],
+	['paint the ceiling', true, 2, 2, 3, ['paint']],
+	['live with the paint sample for a week', true, 1, 3, 5, ['paint']],
+	['book the tiler for after the plumber', false, 4, 2, 3, ['tiles', 'plumbing']],
+	['order the handles', false, 2, 4, 5, ['deliveries']],
 	['sort out a temporary sink', true, 4, 1, 3, ['home']],
 	['move the microwave to the landing', true, 2, 1, 5, ['home']],
-	['take the old units to the tip', true, 3, 1, 2, ['home']],
+	['take the old units to the tip', true, 3, 1, 2, ['deliveries']],
 	['seal round the new window', false, 3, 1, 3, ['home']],
-	['fit the extractor', false, 3, 3, 2, ['plumbing']],
+	['fit the extractor', false, 3, 3, 2, ['electrics']],
 	['put the doors on', false, 3, 5, 3, ['home']],
-	['touch up the skirting', false, 1, 1, 4, ['home']],
+	['touch up the skirting', false, 1, 1, 4, ['paint']],
 	['get the final invoice from the plumber', true, 4, 1, 4, ['money']],
 	['photograph everything for the insurance', true, 2, 2, 4, ['home']],
 	['send Marco the cooker collection time', true, 3, 2, 5, ['home']]
@@ -3408,6 +3426,136 @@ for (const [title, daysAgo] of FINISHED) {
 }
 
 console.log(`  ${HISTORY_WEEKS} weeks of history: ${kept} blocks kept`);
+
+// --- What each notebook holds ------------------------------------------------------
+
+/*
+ * A notebook is a subject, and a subject holds more than notes: the kitchen is
+ * mostly a list of jobs and things to buy, the trip has a budget and a bag to
+ * pack. Left alone every seeded notebook showed the same two tabs, so the one
+ * thing notebooks are for — the rest of the app seen from one subject — was
+ * never on screen.
+ *
+ * The order is the tab order. It is written only over what the seed used to
+ * leave, nothing or the default pair, so an arrangement made by hand survives
+ * a re-seed.
+ */
+const SEEDED_DEFAULT_MODULES = [null, 'notes,tasks'];
+const holds = (notebookId, modules) => {
+	const current = one('select modules from notebooks where id = ?', notebookId)?.modules ?? null;
+	if (SEEDED_DEFAULT_MODULES.includes(current))
+		run('update notebooks set modules = ? where id = ?', modules.join(','), notebookId);
+};
+
+/** A thing to buy or already bought, filed in a notebook. */
+const notebookItem = (notebookId, name, type, extra = {}) => {
+	const id = shoppingItem(name, type, extra);
+	run('update inventory_items set notebook_id = ? where id = ?', notebookId, id);
+	return id;
+};
+
+holds(kitchen, ['tasks', 'notes', 'inventory', 'recipes']);
+for (const [name, bought, attributes, notes] of [
+	['splashback tiles', false, { finish: 'satin', size: '10x10cm', colour: 'sage' }, '4.5m²'],
+	['cabinet handles', false, { material: 'brass', length: '160mm', count: '14' }, ''],
+	['worktop', false, { material: 'quartz', length: '3.4m' }, 'waiting on the wall'],
+	['extractor', true, { power: '240W', kind: 'ducted' }, ''],
+	['ceiling paint', true, { colour: 'off-white', volume: '5L', finish: 'matt' }, ''],
+	['tile grout', false, { colour: 'warm grey', weight: '5kg' }, ''],
+	['pendant lights', false, { fitting: 'E27', count: '3', budget: '240' }, 'over the counter'],
+	['silicone sealant', true, { colour: 'clear', kind: 'kitchen and bath' }, '']
+]) {
+	notebookItem(kitchen, name, 'someday', {
+		qty: bought ? 1 : 0,
+		bought,
+		notes,
+		attributes
+	});
+}
+// The first meal in the finished kitchen is the point of the whole thing.
+inNotebook('recipes', 'title', 'Tomato pasta', kitchen);
+
+holds(countertops, ['notes', 'inventory']);
+for (const [name, attributes] of [
+	['quartz sample', { material: 'quartz', price: '420/m', thickness: '20mm' }],
+	['oak sample', { material: 'oak', price: '260/m', thickness: '40mm' }],
+	['granite sample', { material: 'granite', price: '380/m', thickness: '30mm' }]
+]) {
+	notebookItem(countertops, name, 'someday', { qty: 1, bought: true, attributes });
+}
+
+holds(portugal, ['tasks', 'notes', 'goals', 'inventory']);
+const tripFund = goal('save for Portugal', 'quarter', quarterStart, {
+	notes: 'nine hundred each, flights in',
+	measures: [
+		{ target: 1800, current: 1350, unit: 'EUR' },
+		{ target: 4, current: 4, unit: 'bookings' }
+	]
+});
+inNotebook('goals', 'title', 'save for Portugal', portugal);
+for (const title of ['book the flights', 'book the Lisbon flat', 'book the Porto flat']) {
+	const task = one('select id from todo_tasks where user_id = ? and title = ?', uid, title);
+	if (task) linkGoal(tripFund, { todoId: task.id });
+}
+for (const [name, bought, attributes] of [
+	['travel adapter', false, { plug: 'type F', count: '2' }],
+	['walking shoes', true, { size: '42', kind: 'trail' }],
+	['sun cream', false, { kind: 'SPF 50', volume: '200ml' }],
+	['phrasebook', false, { kind: 'Portuguese', for: 'the markets' }],
+	['day bag', true, { capacity: '20L', colour: 'navy' }]
+]) {
+	notebookItem(portugal, name, 'someday', { qty: bought ? 1 : 0, bought, attributes });
+}
+
+holds(readingNotebook, ['notes', 'goals', 'ideas']);
+goal('read one book in Portuguese', 'year', yearStart, {
+	notes: 'a short one, before the trip if possible',
+	measures: [{ target: 180, current: 64, unit: 'pages' }]
+});
+inNotebook('goals', 'title', 'read one book in Portuguese', readingNotebook);
+idea('A book club of two with Ana — one book a month, dinner after', ['reading', 'family']);
+idea('Reread one old favourite every year, in the same week', ['reading']);
+inNotebook(
+	'ideas',
+	'content',
+	'A book club of two with Ana — one book a month, dinner after',
+	readingNotebook
+);
+inNotebook(
+	'ideas',
+	'content',
+	'Reread one old favourite every year, in the same week',
+	readingNotebook
+);
+
+holds(republic, ['notes', 'goals', 'tasks']);
+goal('finish The Republic', 'quarter', quarterStart, {
+	notes: 'a book at a time, notes on each',
+	measures: [{ target: 10, current: 7, unit: 'books' }]
+});
+inNotebook('goals', 'title', 'finish The Republic', republic);
+const republicGoal = one(
+	'select id from goals where user_id = ? and title = ?',
+	uid,
+	'finish The Republic'
+);
+const bookEight = one(
+	'select id from todo_tasks where user_id = ? and title = ?',
+	uid,
+	'finish Book VIII before the group meets'
+);
+if (republicGoal && bookEight) linkGoal(republicGoal.id, { todoId: bookEight.id });
+
+holds(twelve, ['goals', 'tasks', 'notes']);
+holds(leak, ['notes', 'tasks']);
+for (const [title, labels] of [
+	['get the ceiling re-plastered', ['plumbing']],
+	['send the photos to the insurer', ['money']],
+	['pay the plumber', ['money']]
+]) {
+	notebookTodo(leak, title, { status: 'done', tags: labels, sortOrder: 9400 });
+}
+renumber(leak);
 
 // --- Attribute colours (inventory) ----------------------------------------------
 

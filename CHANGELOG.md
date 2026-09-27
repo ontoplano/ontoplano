@@ -23,6 +23,7 @@ releases mattered.
 - Demo tags and inventory attributes now come in distinct colours.
 - Editing a task, note or idea with long notes opens the text box at the full length of the writing, level with its preview.
 - A notebook's Open and Manage tags sit beside its name, apart from the buttons that add to it.
+- The demo's kitchen notebook opens on its tasks, with colour-coded tags and a shopping list; other demo notebooks now hold goals, inventory and ideas.
 
 ## 0.183.14 — 2026-09-26
 
