@@ -2562,19 +2562,18 @@ if (horsePicture) {
  *
  * A shelf is picked by looking at it — that is the whole reason the notebooks
  * page draws covers rather than rows — and a shelf of blank dashed rectangles
- * demonstrates the placeholder. Photographs rather than paintings: a framed
- * oil on a renovation reads as a museum catalogue.
+ * demonstrates the placeholder.
  */
 const twelve = notebook(
 	'Twelve in a year',
 	'Twelve things I said I would do this year. Ten of them are done.'
 );
 for (const [id, file, alt] of [
-	[kitchen, 'cover-kitchen.jpg', 'Stonework, before the scaffolding'],
-	[portugal, 'cover-portugal.jpg', 'A barque at anchor in the bay'],
-	[readingNotebook, 'cover-reading.jpg', 'A long garden and the pavilion at the end of it'],
-	[republic, 'cover-republic.jpg', 'A soldier, photographed in 1859']
-	[twelve, 'cover-twelve.jpg', 'Zoadiac or whatever']
+	[kitchen, 'cover-kitchen.jpg', 'A terracotta kitchen under an arch'],
+	[portugal, 'cover-portugal.jpg', 'A yellow tram on a Lisbon hill'],
+	[readingNotebook, 'cover-reading.jpg', 'A stair of light rising out of an open book'],
+	[republic, 'cover-republic.jpg', 'A marble bust beside a column'],
+	[twelve, 'cover-twelve.jpg', 'The twelve months around a sun']
 ]) {
 	const cover = picture(file, alt, demoPicture(file));
 	if (cover && !one('select id from notebooks where id = ? and picture_id is not null', id))
