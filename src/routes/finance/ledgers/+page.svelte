@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { routeGlyph } from '$lib/glyphs';
 	import Picker from '$lib/components/Picker.svelte';
 	import { dayStamp, monthOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
@@ -214,7 +215,7 @@
 
 	{#if !data.current}
 		<EmptyState
-			icon="wallet"
+			icon={routeGlyph('/finance/ledgers')!}
 			title={t('finance.ledgers.noLedgersYet')}
 			description={t('finance.ledgers.aLedgerIsOnePlace')}
 		/>
@@ -349,7 +350,7 @@
 
 			{#if data.movements.length === 0}
 				<EmptyState
-					icon="wallet"
+					icon={routeGlyph('/finance/ledgers')!}
 					title={t('finance.ledgers.nothingHereYet')}
 					description={t('finance.ledgers.importThisLedgerSExportOr')}
 				/>

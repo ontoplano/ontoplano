@@ -146,6 +146,40 @@
 		info: 'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zM12 11v5M12 8h.01',
 		shield: 'M12 3l8 3v6c0 4.4-3.2 7.5-8 9-4.8-1.5-8-4.6-8-9V6z',
 
+		/*
+		 * Places that had been borrowing another place's glyph. Each one is the
+		 * shape of the thing: a board is columns of cards, a to-do list is ticks
+		 * beside lines, a bill is a receipt, a rule sends one line two ways.
+		 */
+		kanban: 'M4 4h4v12H4zM10 4h4v7h-4zM16 4h4v16h-4z',
+		checklist: 'M3 6l2 2 3-3M11 7h10M3 13l2 2 3-3M11 14h10M4 20h3M11 20h10',
+		// Three bricks: what a block of the plan is made of.
+		blocks: 'M3 13h8v8H3zM13 13h8v8h-8zM8 3h8v8H8z',
+		// A clipboard with a tick: the week gone through and signed off.
+		clipboard: 'M8 4H5v17h14V4h-3M8 3h8v3H8zM8 13l3 3 5-6',
+		// A calendar with one row marked: a week, which is what these notes are filed by.
+		week: 'M4 6h16v15H4zM4 10h16M8 3v4M16 3v4M7 14h10v3H7z',
+		// An address card: somebody you know, as distinct from you (`user`).
+		contacts: 'M4 4h16v16H4zM12 7.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5zM7.5 17a4.5 4.5 0 0 1 9 0',
+		// A grown-up and a child.
+		family:
+			'M9 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM3 20a6 6 0 0 1 12 0M17 12a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM15.5 15.2A4.5 4.5 0 0 1 21 20',
+		// A closed box: everything kept in the house.
+		box: 'M3 7l9-4 9 4v10l-9 4-9-4zM3 7l9 4 9-4M12 11v10',
+		// Columns under a pediment: an account somewhere, which is what a ledger is.
+		bank: 'M3 9l9-5 9 5M5 9v9M9.5 9v9M14.5 9v9M19 9v9M3 20h18',
+		receipt: 'M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L6 21zM9 8h6M9 12h6M9 16h3',
+		// One line in, sent one of two ways: a sorting rule.
+		sort: 'M4 12h6l5-6h5M10 12l5 6h5M17 3l3 3-3 3M17 15l3 3-3 3',
+		chart: 'M4 20h16M6 20v-6M10 20V8M14 20v-9M18 20V5',
+		// A frame with a play mark in it: pictures and recordings together.
+		media: 'M3 5h18v14H3zM10 9v6l5-3z',
+		// A clock with two bells: an alarm, as distinct from the time (`clock`).
+		alarm:
+			'M12 6a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM12 10v3l2 1.5M3 6l3-3M21 6l-3-3M7 20l-1.5 1.5M17 20l1.5 1.5',
+		sliders: 'M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4',
+		card: 'M3 6h18v12H3zM3 10h18M7 15h4',
+
 		// the help dock, bottom right
 		// A keyboard, because the sheet behind this button is a list of keys —
 		// a bare "?" said "help of some kind" and there are three kinds now.

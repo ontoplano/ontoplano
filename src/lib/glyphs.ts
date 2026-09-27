@@ -1,97 +1,81 @@
 import type { IconName } from '$lib/components/Icon.svelte';
+import { NAV_PLACES } from './sections-nav.js';
+import { ROOM_TABS } from './sections.js';
+import { SETTINGS_ROUTES } from './settings-tabs.js';
+import { SHELL_ROUTES } from './destinations.js';
+import { NOTEBOOK_MODULES, type NotebookModule } from './notebook-modules.js';
 
 /**
- * Every glyph the navigation draws, in one place.
+ * Every glyph the app draws for a place, indexed.
  *
- * A room in the bar, a tab inside it, a tab on a notebook and a wedge of the
- * wheel are four renderings of the same handful of ideas, and each of them
- * used to carry its own `icon:` beside its own label. So changing what Ideas
- * looks like meant finding it in three files and hoping there was not a
- * fourth — and the tabs that had simply never been given one were invisible
- * as a gap rather than as a mistake.
+ * Nothing is declared here. A glyph is written once, beside the route it
+ * belongs to — a room in `sections-nav.ts`, a tab in `sections.ts`, a settings
+ * page in `settings-tabs.ts`, home and search in `destinations.ts` — and this
+ * reads them all into one index that everything else asks.
  *
- * This is the one list. Everything that draws a glyph asks here, by the name
- * it already knows the thing as, and a change here shows up everywhere at
- * once.
- *
- * ## Keyed by what the caller already has
- *
- * A room knows its `NavKey`, a tab knows its `href`, a notebook's module
- * knows its id. Those are three kinds of string and they share one map on
- * purpose: `goals` the room and `goals` the notebook tab are the same idea
- * seen from two places and must not drift into two pictures. Where a thing
- * has both — a tab whose href is here and whose id is too — the href wins,
- * because it is the more specific of the two.
- *
- * Adding a room, a tab or a module without adding its glyph is caught by
- * `tests/glyphs.test.ts` rather than noticed later on a screen.
+ * One thing, one glyph. Two different places never share a picture, a room
+ * never wears its first tab's (Health is not Habits), and nothing that is a
+ * place goes without. The one way for two keys to share a glyph is for one of
+ * them to say it *is* the other — the Notebooks room is its Notebooks tab, a
+ * notebook's Bills tab is the Bills page seen from a subject — and then the
+ * glyph is taken from there rather than written twice.
+ * `tests/glyphs.test.ts` holds all of that.
  */
-export const GLYPHS: Record<string, IconName> = {
-	/* ── The rooms of the bar ─────────────────────────────────────────── */
-	planner: 'planner',
-	diary: 'diary',
-	health: 'health',
-	inventory: 'shopping',
-	finance: 'wallet',
-	goals: 'goals',
-	media: 'image',
-	reminders: 'clock',
-
-	/* ── The writing room's tabs ──────────────────────────────────────── */
-	'/notebooks': 'notebook',
-	'/notebooks/diary': 'diary',
-	'/notebooks/ideas': 'ideas',
-	// What the weekly review writes: a week, which is what it is filed by.
-	'/notebooks/weekly': 'calendar',
-	'/notebooks/people': 'user',
-	'/notebooks/tags': 'tag',
-
-	/* ── The planner's ───────────────────────────────────────────────── */
-	'/tasks/plan': 'calendar',
-	'/tasks/board': 'planner',
-	'/tasks/todo': 'check',
-	'/tasks/activities': 'tag',
-	'/tasks/review': 'check',
-
-	/* ── Health's ────────────────────────────────────────────────────── */
-	'/health/habits': 'health',
-	'/health/workouts': 'flame',
-	'/health/recipes': 'utensils',
-
-	/* ── Money's ─────────────────────────────────────────────────────── */
-	'/finance/ledgers': 'wallet',
-	// A bill is money leaving on a date, which is the thing about it.
-	'/finance/bills': 'calendar',
-	'/finance/rules': 'filter',
-	'/finance/insights': 'info',
-
-	/* ── What is in the house, and what is not yet ───────────────────── */
-	'/inventory/stock': 'shopping',
-	'/inventory/wishlist': 'star',
-
-	/* ── Media ───────────────────────────────────────────────────────── */
-	'/media/audios': 'mic',
-	'/media/gallery': 'image',
-
-	/* ── A notebook's own tabs ───────────────────────────────────────── */
-	notes: 'note',
-	tasks: 'planner',
-	ideas: 'ideas',
-	ledgers: 'wallet',
-	bills: 'wallet',
-	habits: 'health',
-	workouts: 'flame',
-	recipes: 'utensils'
+export type GlyphThing = {
+	/** A room's key, a route, or `notebook/<module>` for a notebook's tab. */
+	key: string;
+	glyph: IconName;
+	/** The key of the thing this is — present only when it is another one. */
+	is?: string;
 };
 
+/** A notebook module's key in the index. Its id alone is a room's key. */
+export const moduleKey = (id: NotebookModule): string => `notebook/${id}`;
+
+const own: GlyphThing[] = [
+	...NAV_PLACES.map((place) => ({ key: place.key, glyph: place.icon, is: place.is })),
+	...Object.values(ROOM_TABS)
+		.flat()
+		.map((tab) => ({ key: tab.href as string, glyph: tab.glyph })),
+	...Object.entries(SETTINGS_ROUTES).map(([key, glyph]) => ({ key, glyph })),
+	...Object.entries(SHELL_ROUTES).map(([key, glyph]) => ({ key, glyph }))
+];
+
+const byKey = new Map(own.map((thing) => [thing.key, thing.glyph]));
+
+export const GLYPH_THINGS: GlyphThing[] = [
+	...own,
+	...NOTEBOOK_MODULES.map((module): GlyphThing => {
+		if ('glyph' in module) return { key: moduleKey(module.id), glyph: module.glyph };
+		const glyph = byKey.get(module.is);
+		if (!glyph) throw new Error(`notebook module ${module.id} is ${module.is}, which has no glyph`);
+		return { key: moduleKey(module.id), glyph, is: module.is };
+	})
+];
+
+export const GLYPHS: Readonly<Record<string, IconName>> = Object.fromEntries(
+	GLYPH_THINGS.map((thing) => [thing.key, thing.glyph])
+);
+
 /**
- * The glyph for a thing, by whatever it is called.
- *
- * Several keys may be given — a tab's href and then its id — and the first
- * one the list knows wins. `undefined` where nothing does, so a caller can
- * fall back to the room's own rather than draw a hole.
+ * The glyph for a thing, by its key. Several keys may be given and the first
+ * one known wins; `undefined` where none is.
  */
 export function glyphFor(...keys: (string | undefined)[]): IconName | undefined {
 	for (const key of keys) if (key && key in GLYPHS) return GLYPHS[key];
 	return undefined;
+}
+
+/**
+ * The glyph for a route: its own, or — for a room's bare prefix such as
+ * `/inventory`, which redirects — the first place under it.
+ */
+export function routeGlyph(href: string): IconName | undefined {
+	if (href in GLYPHS) return GLYPHS[href];
+	return GLYPH_THINGS.find((thing) => thing.key.startsWith(`${href}/`))?.glyph;
+}
+
+/** A notebook tab's glyph: the room's or page's it shows, or its own. */
+export function moduleGlyph(id: NotebookModule): IconName {
+	return GLYPHS[moduleKey(id)];
 }

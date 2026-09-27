@@ -32,6 +32,7 @@ releases mattered.
 - A task card keeps its number and the add-a-label button under the tick box, its labels on a line of their own, and its buttons on one line that never wraps.
 - Assistants connected over MCP are told to name a task or note by the number the app shows, not by its internal id.
 - A goal inside a notebook offers, and accepts, only that notebook's tasks.
+- Every place wears its own glyph, the same one everywhere: Bills is a receipt, Rules a sorting arrow, Insights a chart, Board a kanban, Habits a target, Inventory a box. Search results and settings tabs carry their place's glyph too.
 
 ## 0.183.14 — 2026-09-26
 

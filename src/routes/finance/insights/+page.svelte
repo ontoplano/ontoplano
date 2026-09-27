@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { routeGlyph } from '$lib/glyphs';
 	import Picker from '$lib/components/Picker.svelte';
 	import { monthOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
@@ -78,7 +79,7 @@
 
 	{#if !anything}
 		<EmptyState
-			icon="wallet"
+			icon={routeGlyph('/finance/insights')!}
 			title={t('finance.insights.nothingToReadYet')}
 			description={t('finance.insights.importAStatementIntoA')}
 		/>

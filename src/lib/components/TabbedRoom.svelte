@@ -19,7 +19,7 @@
 	} from '$lib/slide';
 	import { hintMarkSpin } from '$lib/mark-spin';
 	import { resolve } from '$app/paths';
-	import { tabGlyph, visibleRoomTabs } from '$lib/sections';
+	import { visibleRoomTabs } from '$lib/sections';
 	import Icon from '$lib/components/Icon.svelte';
 	import type { NavKey } from '$lib/sections-nav';
 	import type { IconName } from '$lib/components/Icon.svelte';
@@ -93,8 +93,8 @@
 						// `Pathname`, so a tab pointing at no route has failed to build there.
 						href: resolve(tab.href as '/'),
 						label: t(tab.label),
-						// From `$lib/glyphs`, which is where every glyph in the app lives.
-						icon: tabGlyph(tab, room)
+						// Declared beside the route in `$lib/sections`; see `$lib/glyphs`.
+						icon: tab.glyph
 					})),
 					...extra
 				]

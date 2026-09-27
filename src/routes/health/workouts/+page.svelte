@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { routeGlyph } from '$lib/glyphs';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
@@ -258,7 +259,7 @@
 
 	{#if active.length === 0}
 		<EmptyState
-			icon="health"
+			icon={routeGlyph('/health/workouts')!}
 			title={t('health.workouts.noWorkoutsYet')}
 			description={t('health.workouts.writeAWorkoutDown')}
 		/>

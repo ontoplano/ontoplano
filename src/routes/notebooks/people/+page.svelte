@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { routeGlyph } from '$lib/glyphs';
 	import { dateOf } from '$lib/when';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { resolve } from '$app/paths';
@@ -134,7 +135,7 @@
 		<Card flush pane>
 			{#if data.people.length === 0}
 				<EmptyState
-					icon="user"
+					icon={routeGlyph('/notebooks/people')!}
 					title={t('notebooks.people.nobodyYet')}
 					description={t('notebooks.people.addThePeopleWhoTurn')}
 				>

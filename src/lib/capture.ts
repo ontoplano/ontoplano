@@ -2,6 +2,7 @@ import type { PlainKey } from '$lib/i18n/keys';
 import { SECTION_COLORS } from '$lib/colors';
 import type { IconName } from '$lib/components/Icon.svelte';
 import type { HideableSection } from '$lib/sections';
+import { routeGlyph } from '$lib/glyphs';
 
 /**
  * The four things worth writing down before they evaporate.
@@ -50,13 +51,13 @@ export type Capture = {
 	room: string;
 };
 
-export const CAPTURES: Capture[] = [
+/** Each wears the glyph of the place it lands in, so a capture and its room agree. */
+const DECLARED: Omit<Capture, 'icon'>[] = [
 	{
 		key: 'idea',
 		room: '/notebooks/ideas',
 		shortcut: 'i',
 		label: 'app.idea',
-		icon: 'ideas',
 		color: SECTION_COLORS.ideas,
 		lead: 'content',
 		into: 'your ideas',
@@ -70,7 +71,6 @@ export const CAPTURES: Capture[] = [
 		// The singular, because the dialog says "New {thing}": the tab is
 		// called Tasks and one of them is a task.
 		label: 'app.task',
-		icon: 'check',
 		color: SECTION_COLORS.planner,
 		lead: 'heading',
 		into: 'your to-dos',
@@ -81,7 +81,6 @@ export const CAPTURES: Capture[] = [
 		room: '/notebooks/diary',
 		shortcut: 'd',
 		label: 'app.note',
-		icon: 'diary',
 		color: SECTION_COLORS.diary,
 		lead: 'content',
 		into: 'the diary',
@@ -93,7 +92,6 @@ export const CAPTURES: Capture[] = [
 		room: '/inventory',
 		shortcut: 'b',
 		label: 'app.buy',
-		icon: 'shopping',
 		color: SECTION_COLORS.inventory,
 		lead: 'label',
 		into: 'the shopping list',
@@ -101,6 +99,11 @@ export const CAPTURES: Capture[] = [
 		hide: 'inventory'
 	}
 ];
+
+export const CAPTURES: Capture[] = DECLARED.map((capture) => ({
+	...capture,
+	icon: routeGlyph(capture.room)!
+}));
 
 /** The captures left once an account's hidden sections are taken out. */
 export function visibleCaptures(hidden: readonly string[]): Capture[] {

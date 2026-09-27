@@ -6,6 +6,7 @@
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import RingerHealth from '$lib/components/RingerHealth.svelte';
 	import RoomBar from '$lib/components/RoomBar.svelte';
+	import { glyphFor, routeGlyph } from '$lib/glyphs';
 	import { browser } from '$app/environment';
 	import { enhance } from '$lib/enhance';
 	import Banner from '$lib/components/Banner.svelte';
@@ -61,19 +62,20 @@
 	 * A glyph per kind rather than the same clock six times: a list where every
 	 * row carries the identical icon is a list where the icon column is wasted,
 	 * and "which of these is a bill" is the question somebody scanning it is
-	 * actually asking. A cake is a birthday everywhere; a wallet is money.
+	 * actually asking. A kind that is about a place wears that place's glyph,
+	 * from `$lib/glyphs`; a cake is a birthday everywhere.
 	 */
 	const KINDS: Record<string, { label: PlainKey; icon: IconName }> = {
-		instance: { label: 'app.blocks', icon: 'planner' },
-		todo: { label: 'app.todos', icon: 'check' },
-		free: { label: 'app.alarms', icon: 'clock' },
-		review: { label: 'app.theWeeklyReview', icon: 'book' },
-		bill: { label: 'app.bills', icon: 'wallet' },
+		instance: { label: 'app.blocks', icon: routeGlyph('/tasks/plan')! },
+		todo: { label: 'app.todos', icon: routeGlyph('/tasks/todo')! },
+		free: { label: 'app.alarms', icon: 'alarm' },
+		review: { label: 'app.theWeeklyReview', icon: routeGlyph('/tasks/review')! },
+		bill: { label: 'app.bills', icon: routeGlyph('/finance/bills')! },
 		person: { label: 'app.birthdays', icon: 'cake' },
 		day: { label: 'app.theEndOfTheDay', icon: 'moon' }
 	};
 
-	const kindOf = (key: string) => KINDS[key] ?? { label: key, icon: 'clock' as IconName };
+	const kindOf = (key: string) => KINDS[key] ?? { label: key, icon: 'alarm' as IconName };
 
 	/**
 	 * The windows worth a button. Anything else goes in the box beside them.
@@ -992,7 +994,7 @@
 
 		{#if upcoming.length === 0}
 			<EmptyState
-				icon="clock"
+				icon={glyphFor('reminders')!}
 				title={data.past ? t('reminders.nothingWentOff') : t('reminders.nothingWaiting')}
 				description={data.past
 					? t('reminders.remindersThatHaveAlreadyFired')

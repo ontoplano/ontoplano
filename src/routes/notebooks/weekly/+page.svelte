@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { routeGlyph } from '$lib/glyphs';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { dayOf } from '$lib/when';
 	import { resolve } from '$app/paths';
@@ -40,7 +41,7 @@
 	{#if data.weeks.length === 0}
 		<div class="border border-gray-200 bg-white shadow-sm">
 			<EmptyState
-				icon="note"
+				icon={routeGlyph('/notebooks/weekly')!}
 				title={t('notebooks.weekly.nothingWrittenYet')}
 				description={t('notebooks.weekly.everyWeekYouWriteAbout')}
 			/>

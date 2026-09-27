@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { routeGlyph } from '$lib/glyphs';
 	import { CAPTURES, visibleCaptures, type Capture } from '$lib/capture';
 	import CaptureDialog from '$lib/components/CaptureDialog.svelte';
 	import RadialMenu from '$lib/components/RadialMenu.svelte';
@@ -69,8 +70,19 @@
 	 */
 	const MEDIA_TINT = 62;
 	const MEDIA_WEDGES = [
-		{ key: 'picture', label: 'app.picture' as const, icon: 'image' as const, tint: 100 },
-		{ key: 'recording', label: 'app.recording' as const, icon: 'sound' as const, tint: MEDIA_TINT }
+		// The glyphs of the tabs they land in, from `$lib/glyphs`.
+		{
+			key: 'picture',
+			label: 'app.picture' as const,
+			icon: routeGlyph('/media/gallery')!,
+			tint: 100
+		},
+		{
+			key: 'recording',
+			label: 'app.recording' as const,
+			icon: routeGlyph('/media/audios')!,
+			tint: MEDIA_TINT
+		}
 	];
 
 	const mediaWedges = $derived(

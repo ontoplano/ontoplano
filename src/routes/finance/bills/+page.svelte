@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { routeGlyph } from '$lib/glyphs';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import { enhance } from '$lib/enhance';
 	import OneLine from '$lib/components/OneLine.svelte';
@@ -96,7 +97,7 @@
 
 	{#if active.length === 0}
 		<EmptyState
-			icon="wallet"
+			icon={routeGlyph('/finance/bills')!}
 			title={t('finance.bills.noBillsYet')}
 			description={t('finance.bills.theBillsYouExpectTo')}
 		/>

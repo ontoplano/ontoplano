@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { routeGlyph } from '$lib/glyphs';
 	import { enhance } from '$lib/enhance';
 	import { invalidateAll } from '$app/navigation';
 	import AudioPlayer from '$lib/components/AudioPlayer.svelte';
@@ -157,7 +158,7 @@
 	{/if}
 
 	{#if data.recordings.length === 0}
-		<EmptyState icon="sound" title={t('audio.none')} />
+		<EmptyState icon={routeGlyph('/media/audios')!} title={t('audio.none')} />
 	{:else}
 		<ul class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card">
 			{#each data.recordings as one (one.id)}

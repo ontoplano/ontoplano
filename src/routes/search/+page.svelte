@@ -2,7 +2,9 @@
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
-	import { MIN_QUERY } from '$lib/search';
+	import { KIND_PLACES, MIN_QUERY } from '$lib/search';
+	import { glyphFor, routeGlyph } from '$lib/glyphs';
+	import Icon from '$lib/components/Icon.svelte';
 	import type { PageServerData } from './$types';
 	import { useT } from '$lib/i18n';
 
@@ -48,12 +50,12 @@
 
 	{#if data.q.trim().length < MIN_QUERY}
 		<EmptyState
-			icon="tag"
+			icon={routeGlyph('/search')!}
 			title={t('search.whatAreYouLookingFor')}
 			description={t('search.notesDiaryEntriesTodosBlocks')}
 		/>
 	{:else if total === 0}
-		<EmptyState icon="tag" title={t('search.nothingMatches', { q: data.q })} />
+		<EmptyState icon={routeGlyph('/search')!} title={t('search.nothingMatches', { q: data.q })} />
 	{:else}
 		<p class="text-xs text-gray-500">
 			{t('search.for', { total: total, results: total === 1 ? 'result' : 'results', q: data.q })}
@@ -62,7 +64,10 @@
 		<div class="gap-4 lg:columns-2 2xl:columns-3">
 			{#each data.groups as group (group.kind)}
 				<section class="mb-4 break-inside-avoid border border-gray-200 bg-white shadow-card">
-					<h2 class="eyebrow border-b border-gray-200 px-4 py-2 text-gray-500">
+					<h2
+						class="eyebrow flex items-center gap-1.5 border-b border-gray-200 px-4 py-2 text-gray-500"
+					>
+						<Icon name={glyphFor(KIND_PLACES[group.kind])!} size={12} />
 						{t(group.label)}
 						<span class="tabular ml-1 text-xs text-gray-500">{group.hits.length}</span>
 					</h2>

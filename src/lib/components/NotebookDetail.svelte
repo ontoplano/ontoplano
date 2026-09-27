@@ -64,12 +64,8 @@
 	import RecipeFields from '$lib/components/fields/RecipeFields.svelte';
 	import WorkoutFields from '$lib/components/fields/WorkoutFields.svelte';
 	import { NOTEBOOK_IDEA_ACTIONS } from '$lib/idea-action-names';
-	import {
-		DEFAULT_MODULES,
-		moduleGlyph,
-		moduleMeta,
-		type NotebookModule
-	} from '$lib/notebook-modules';
+	import { DEFAULT_MODULES, moduleMeta, type NotebookModule } from '$lib/notebook-modules';
+	import { moduleGlyph } from '$lib/glyphs';
 	import type { Currency } from '$lib/money';
 	import { NOTEBOOK_TODO_ACTIONS } from '$lib/todo-actions';
 	import type { Todo } from '$lib/services/todos';
@@ -1085,9 +1081,7 @@
 						     list the rooms' own strips read, so a notebook's Tasks tab
 						     and the planner in the bar cannot end up wearing two
 						     different pictures of the same idea. -->
-							{#if moduleGlyph(option.key)}
-								<Icon name={moduleGlyph(option.key)!} size={14} />
-							{/if}
+							<Icon name={moduleGlyph(option.key)} size={14} />
 							{t(option.label)}
 							<span class="tabular ml-1 text-xs text-gray-500">
 								{option.done !== undefined && option.count > 0
@@ -1330,7 +1324,11 @@
 					stopped agreeing about what an idea is — see `IdeaCard`.
 				-->
 				{#if contents.ideas.length === 0}
-					<EmptyState icon="ideas" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+					<EmptyState
+						icon={moduleGlyph('ideas')}
+						title={t('notebooks.nothingUnderThisSubjectYet')}
+						compact
+					/>
 				{:else}
 					<div class="divide-y divide-gray-200 px-4">
 						{#each contents.ideas as idea (idea.id)}
@@ -1356,7 +1354,11 @@
 					"unticked" until you look — see `ItemRow`.
 				-->
 				{#if contents.inventory.length === 0}
-					<EmptyState icon="shopping" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+					<EmptyState
+						icon={moduleGlyph('inventory')}
+						title={t('notebooks.nothingUnderThisSubjectYet')}
+						compact
+					/>
 				{:else}
 					<div class="divide-y divide-gray-200">
 						{#each contents.inventory as item (item.id)}
@@ -1374,7 +1376,11 @@
 					here — see `WorkoutCard`.
 				-->
 				{#if contents.workouts.length === 0}
-					<EmptyState icon="flame" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+					<EmptyState
+						icon={moduleGlyph('workouts')}
+						title={t('notebooks.nothingUnderThisSubjectYet')}
+						compact
+					/>
 				{:else}
 					<ul class="divide-y divide-gray-200">
 						{#each contents.workouts as workout (workout.id)}
@@ -1394,7 +1400,11 @@
 					without it is a title in a list — see `RecipeCard`.
 				-->
 				{#if contents.recipes.length === 0}
-					<EmptyState icon="utensils" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+					<EmptyState
+						icon={moduleGlyph('recipes')}
+						title={t('notebooks.nothingUnderThisSubjectYet')}
+						compact
+					/>
 				{:else}
 					<div class="grid gap-px bg-gray-200 sm:grid-cols-2">
 						{#each contents.recipes as recipe (recipe.id)}
@@ -1410,7 +1420,11 @@
 					somebody reads a bank export.
 				-->
 				{#if contents.ledgers.length === 0}
-					<EmptyState icon="wallet" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+					<EmptyState
+						icon={moduleGlyph('ledgers')}
+						title={t('notebooks.nothingUnderThisSubjectYet')}
+						compact
+					/>
 				{:else}
 					<div class="flex flex-wrap gap-2 px-4 py-3">
 						{#each contents.ledgers as ledger (ledger.id)}
@@ -1429,7 +1443,11 @@
 					checkbox — see `HabitCard`.
 				-->
 				{#if contents.habits.length === 0}
-					<EmptyState icon="health" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+					<EmptyState
+						icon={moduleGlyph('habits')}
+						title={t('notebooks.nothingUnderThisSubjectYet')}
+						compact
+					/>
 				{:else}
 					<div class="divide-y divide-gray-200">
 						{#each contents.habits as habit (habit.id)}
@@ -1449,7 +1467,11 @@
 					falls due, the tick that pays it and the undo beside it.
 				-->
 				{#if contents.bills.length === 0}
-					<EmptyState icon="wallet" title={t('notebooks.nothingUnderThisSubjectYet')} compact />
+					<EmptyState
+						icon={moduleGlyph('bills')}
+						title={t('notebooks.nothingUnderThisSubjectYet')}
+						compact
+					/>
 				{:else}
 					<ul class="divide-y divide-gray-200">
 						{#each contents.bills as bill (bill.id)}

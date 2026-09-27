@@ -3,7 +3,8 @@
 	import { resolve } from '$app/paths';
 	import Icon from '$lib/components/Icon.svelte';
 	import { findDestinations, type Destination } from '$lib/destinations';
-	import { KIND_LABELS, MIN_QUERY, type Hit } from '$lib/search';
+	import { KIND_LABELS, KIND_PLACES, MIN_QUERY, type Hit } from '$lib/search';
+	import { glyphFor } from '$lib/glyphs';
 	import { palette } from '$lib/palette.svelte';
 	import { useT } from '$lib/i18n';
 
@@ -177,7 +178,7 @@
 								<span class="text-xs text-gray-500">{t(row.place.group)}</span>
 							{/if}
 						{:else}
-							<Icon name="tag" class="shrink-0 text-gray-300" />
+							<Icon name={glyphFor(KIND_PLACES[row.hit.kind])!} class="shrink-0 text-gray-500" />
 							<span class="min-w-0 flex-1 truncate text-gray-900">{row.hit.title}</span>
 							<span class="eyebrow shrink-0 text-gray-500">{t(KIND_LABELS[row.hit.kind])}</span>
 						{/if}

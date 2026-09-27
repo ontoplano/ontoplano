@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { routeGlyph } from '$lib/glyphs';
 	/**
 	 * One goal, wherever a goal is shown.
 	 *
@@ -293,7 +294,7 @@
 					-->
 					{#if target.measureActivity}
 						<span class="chip shrink-0" title={t('goals.countedFromYourWorkouts')}>
-							<Icon name="health" size={12} class="mr-1" />
+							<Icon name={routeGlyph('/health/workouts')!} size={12} class="mr-1" />
 							{target.measureActivity}
 						</span>
 						<span class="tabular text-xs text-gray-700">

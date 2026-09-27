@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { routeGlyph } from '$lib/glyphs';
 	import { enhance } from '$lib/enhance';
 	import FilterChips from '$lib/components/FilterChips.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
@@ -214,7 +215,7 @@
 		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
 			{#if typeFilter === 'all'}
 				<EmptyState
-					icon="health"
+					icon={routeGlyph('/health/habits')!}
 					title={t('health.habits.nothingTrackedYet')}
 					description={t('health.habits.aHabitIsSomethingYou')}
 				>
@@ -226,7 +227,10 @@
 					{/snippet}
 				</EmptyState>
 			{:else}
-				<EmptyState icon="health" title={t('health.habits.nothingTrackedInThisFilter')}>
+				<EmptyState
+					icon={routeGlyph('/health/habits')!}
+					title={t('health.habits.nothingTrackedInThisFilter')}
+				>
 					{#snippet action()}
 						<button onclick={() => (typeFilter = 'all')} class="btn"
 							>{t('health.habits.showAllHabits')}</button

@@ -1,4 +1,5 @@
 import type { Translate } from './i18n/index.js';
+import type { IconName } from './components/Icon.svelte';
 
 /**
  * Which tabs Settings has, for whoever is looking at it.
@@ -8,7 +9,27 @@ import type { Translate } from './i18n/index.js';
  * not one of these routes, with a layout of its own — draws it too, or going
  * there would be a one-way trip.
  */
-export type SettingsTab = { href: string; label: string };
+export type SettingsTab = { href: string; label: string; icon: IconName };
+
+/**
+ * Every Settings route and the glyph it wears. Declared here, beside the
+ * routes, and read into `$lib/glyphs` with every other place's.
+ */
+export const SETTINGS_ROUTES = {
+	'/settings/account': 'user',
+	'/settings/preferences': 'sliders',
+	'/settings/billing': 'card',
+	'/settings/family': 'family',
+	'/settings/integrations': 'plug',
+	'/settings/instance': 'server',
+	'/admin': 'shield'
+} as const satisfies Record<string, IconName>;
+
+type SettingsRoute = keyof typeof SETTINGS_ROUTES;
+
+function tab(href: SettingsRoute, label: string): SettingsTab {
+	return { href, label, icon: SETTINGS_ROUTES[href] };
+}
 
 /**
  * The translator is an argument, not something this module reaches for.
@@ -52,22 +73,16 @@ export function settingsTabs(
 	const account = who.hasAccount !== false;
 	const reachable = who.reachable !== false;
 	return [
-		...(account ? [{ href: '/settings/account', label: t('rooms.settings.tabs.account') }] : []),
-		{ href: '/settings/preferences', label: t('rooms.settings.tabs.preferences') },
-		...(who.billable
-			? [{ href: '/settings/billing', label: t('rooms.settings.tabs.billing') }]
-			: []),
-		...(who.family ? [{ href: '/settings/family', label: t('rooms.settings.tabs.family') }] : []),
+		...(account ? [tab('/settings/account', t('rooms.settings.tabs.account'))] : []),
+		tab('/settings/preferences', t('rooms.settings.tabs.preferences')),
+		...(who.billable ? [tab('/settings/billing', t('rooms.settings.tabs.billing'))] : []),
+		...(who.family ? [tab('/settings/family', t('rooms.settings.tabs.family'))] : []),
 		// Named for the half people come here for. The tab strip inside splits
 		// assistants from the calendar link, the webhooks and the data streams.
 		...(account && reachable
-			? [{ href: '/settings/integrations', label: t('rooms.settings.tabs.integrations') }]
+			? [tab('/settings/integrations', t('rooms.settings.tabs.integrations'))]
 			: []),
-		...(who.canEditInstance
-			? [{ href: '/settings/instance', label: t('rooms.settings.tabs.instance') }]
-			: []),
-		...(who.canAdminister
-			? [{ href: '/admin', label: t('rooms.settings.tabs.administration') }]
-			: [])
+		...(who.canEditInstance ? [tab('/settings/instance', t('rooms.settings.tabs.instance'))] : []),
+		...(who.canAdminister ? [tab('/admin', t('rooms.settings.tabs.administration'))] : [])
 	];
 }

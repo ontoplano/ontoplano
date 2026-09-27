@@ -3,7 +3,6 @@ import type { PlainKey } from './i18n/keys.js';
 import type { HideableSection } from './sections.js';
 import { isHidden } from './sections.js';
 import type { IconName } from './components/Icon.svelte';
-import { glyphFor } from './glyphs.js';
 
 /**
  * What a notebook can hold.
@@ -27,42 +26,54 @@ import { glyphFor } from './glyphs.js';
  * a subject; one that cannot be written in is a filter, not a notebook.
  */
 export const NOTEBOOK_MODULES = [
-	{ id: 'notes', name: 'app.notes', section: 'diary', always: true },
-	{ id: 'tasks', name: 'app.tasks', section: 'planner' },
-	{ id: 'goals', name: 'app.goals', section: 'goals', hide: 'goals' },
-	{ id: 'ideas', name: 'sections.ideas.label', section: 'ideas', hide: 'ideas' },
+	{ id: 'notes', name: 'app.notes', section: 'diary', glyph: 'note', always: true },
+	{ id: 'tasks', name: 'app.tasks', section: 'planner', is: '/tasks/todo' },
+	{ id: 'goals', name: 'app.goals', section: 'goals', is: 'goals', hide: 'goals' },
+	{
+		id: 'ideas',
+		name: 'sections.ideas.label',
+		section: 'ideas',
+		is: '/notebooks/ideas',
+		hide: 'ideas'
+	},
 	{
 		id: 'inventory',
+		is: 'inventory',
 		name: 'sections.inventory.label',
 		section: 'inventory',
 		hide: 'inventory'
 	},
 	{
 		id: 'ledgers',
+		is: '/finance/ledgers',
 		name: 'rooms.finance.tabs.ledgers',
 		section: 'finance',
 		hide: 'finance'
 	},
 	{
 		id: 'bills',
+		is: '/finance/bills',
 		name: 'rooms.finance.tabs.bills',
 		section: 'finance',
 		hide: 'finance'
 	},
 	{
 		id: 'habits',
+		is: '/health/habits',
 		name: 'sections.habits.label',
 		section: 'health',
 		hide: 'habits'
 	},
 	{
 		id: 'workouts',
+		is: '/health/workouts',
 		name: 'sections.workouts.label',
 		section: 'health',
 		hide: 'workouts'
 	},
 	{
 		id: 'recipes',
+		is: '/health/recipes',
 		name: 'sections.recipes.label',
 		section: 'health',
 		hide: 'recipes'
@@ -73,6 +84,13 @@ export const NOTEBOOK_MODULES = [
 	name: PlainKey;
 	/** Whose colour it wears, so a notebook's tabs match the rooms they lead to. */
 	section: SectionKey;
+	/**
+	 * The room or page this tab is, seen from a subject — a room's key or a
+	 * route — so it wears that one's glyph (`$lib/glyphs`). A module that is
+	 * nothing but itself gives its own `glyph` instead.
+	 */
+	is?: string;
+	glyph?: IconName;
 	/** The account-wide preference that puts its room away, if it has one. */
 	hide?: HideableSection;
 	/** Not offered as a choice: a notebook you cannot write in is not a notebook. */
@@ -108,20 +126,6 @@ export function isNotebookModule(value: unknown): value is NotebookModule {
 
 export function moduleMeta(id: NotebookModule): (typeof NOTEBOOK_MODULES)[number] {
 	return NOTEBOOK_MODULES.find((m) => m.id === id)!;
-}
-
-/**
- * A module's glyph, from the one list rather than from beside its name.
- *
- * `$lib/glyphs` holds every glyph the navigation draws, keyed by what the
- * caller already knows the thing as — so `goals` the room and `goals` the
- * notebook tab are one entry and cannot drift into two pictures. The section
- * is the fallback, which is what a module without one of its own should wear:
- * its room's.
- */
-export function moduleGlyph(id: NotebookModule): IconName | undefined {
-	const meta = moduleMeta(id);
-	return glyphFor(id, meta.section);
 }
 
 /**
