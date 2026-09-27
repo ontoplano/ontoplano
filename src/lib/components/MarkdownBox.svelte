@@ -24,7 +24,6 @@
 	 * somebody glanced at the preview.
 	 */
 	import TextBox from './TextBox.svelte';
-	import { DEFAULT_AUTOGROW_MAX_HEIGHT } from '$lib/actions/autogrow';
 	import Written from './Written.svelte';
 	import { renderMarkdown, type TodoRefs } from '$lib/markdown';
 	import { sliding } from '$lib/actions/sliding';
@@ -46,7 +45,7 @@
 		value = $bindable(''),
 		element = $bindable(),
 		rows = 6,
-		maxHeight = DEFAULT_AUTOGROW_MAX_HEIGHT,
+		maxHeight = Infinity,
 		preview = 'markdown',
 		start = 'both',
 		todos = undefined,
@@ -57,7 +56,11 @@
 		/** The textarea itself, for whatever writes into it. See `TextBox`. */
 		element?: HTMLTextAreaElement;
 		rows?: number;
-		/** Maximum height for the editor, in pixels. */
+		/**
+		 * Maximum height for the editor, in pixels. None by default: the
+		 * preview beside it has no ceiling, and an editor stopping short of
+		 * it is a box to drag open before writing.
+		 */
 		maxHeight?: number;
 		/**
 		 * Which drawing of the words the preview shows.

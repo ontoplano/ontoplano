@@ -176,6 +176,30 @@ describe('a textarea the size of what is in it', () => {
 		expect(node.style.height).toBe('200px');
 	});
 
+	test('measures again once a closed dialog shows it', () => {
+		let laidOut = () => {};
+		vi.stubGlobal(
+			'ResizeObserver',
+			class {
+				constructor(callback: () => void) {
+					laidOut = callback;
+				}
+				observe() {}
+				disconnect() {}
+			}
+		);
+		// Inside a closed dialog there is no layout: no width, nothing to measure.
+		const node = aTextarea(0);
+		Object.defineProperty(node, 'clientWidth', { value: 0, configurable: true });
+		autogrow(node);
+
+		Object.defineProperty(node, 'scrollHeight', { value: 300, configurable: true });
+		Object.defineProperty(node, 'clientHeight', { value: 0, configurable: true });
+		Object.defineProperty(node, 'clientWidth', { value: 300, configurable: true });
+		laidOut();
+		expect(node.style.height).toBe('300px');
+	});
+
 	test('and stops measuring once it is gone', () => {
 		const node = aTextarea(96);
 		const handle = autogrow(node);

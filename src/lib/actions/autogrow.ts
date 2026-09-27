@@ -83,6 +83,22 @@ export function autogrow(node: HTMLTextAreaElement, maxHeight = DEFAULT_AUTOGROW
 		restore(kept);
 	};
 
+	/*
+	 * A box mounted inside a closed dialog has no layout, so the first
+	 * measurement reads zero and the editor opened at its `rows` height under
+	 * a preview a screen long. Measure again whenever the box gains or changes
+	 * its width — being shown is the first of those, and a narrower box wraps
+	 * onto more lines. Width only: this action sets the height, and watching
+	 * that would answer itself.
+	 */
+	let width = node.clientWidth;
+	const laidOut = new ResizeObserver(() => {
+		if (node.clientWidth === width) return;
+		width = node.clientWidth;
+		resize();
+	});
+	laidOut.observe(node);
+
 	resize();
 	node.addEventListener('input', resize);
 
@@ -92,6 +108,7 @@ export function autogrow(node: HTMLTextAreaElement, maxHeight = DEFAULT_AUTOGROW
 			resize();
 		},
 		destroy() {
+			laidOut.disconnect();
 			node.removeEventListener('input', resize);
 		}
 	};

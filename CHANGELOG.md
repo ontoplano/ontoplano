@@ -21,6 +21,7 @@ releases mattered.
 ## 0.183.15 — 2026-09-27
 
 - Demo tags and inventory attributes now come in distinct colours.
+- Editing a task, note or idea with long notes opens the text box at the full length of the writing, level with its preview.
 
 ## 0.183.14 — 2026-09-26
 
