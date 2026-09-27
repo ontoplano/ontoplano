@@ -122,14 +122,23 @@ export function wheelKinds(settings: CaptureSettings, available: readonly string
  */
 export function startingNotebook(
 	settings: CaptureSettings,
-	route: { id: string | null; params: Record<string, string | undefined> }
-): number | null {
-	if (route.id === NOTEBOOK_ROUTE) {
-		const here = notebookOf(route.params.id);
-		if (here !== null) return here;
+	route: {
+		id: string | null;
+		params: Record<string, string | undefined>;
+		search?: URLSearchParams;
 	}
-	return settings.notebookId;
+): number | null {
+	const here =
+		route.id === NOTEBOOK_ROUTE
+			? notebookOf(route.params.id)
+			: route.id === NOTEBOOKS_ROUTE
+				? notebookOf(route.search?.get(NOTEBOOK_PARAM) ?? null)
+				: null;
+	return here ?? settings.notebookId;
 }
 
-/** The one screen that is a notebook. */
+/** The screen that is one notebook, */
 const NOTEBOOK_ROUTE = '/notebooks/[id]';
+/** and the shelf, which opens one in place and names it in the address. */
+const NOTEBOOKS_ROUTE = '/notebooks';
+const NOTEBOOK_PARAM = 'notebook';

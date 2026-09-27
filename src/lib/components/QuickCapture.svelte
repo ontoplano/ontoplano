@@ -36,7 +36,8 @@
 	const notebookId = $derived(
 		startingNotebook(page.data.captureSettings ?? DEFAULT_CAPTURE_SETTINGS, {
 			id: page.route.id,
-			params: page.params
+			params: page.params,
+			search: page.url.searchParams
 		})
 	);
 

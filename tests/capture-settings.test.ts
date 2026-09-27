@@ -70,6 +70,15 @@ describe('reading what is stored', () => {
 		const set = { ...capture.DEFAULT_CAPTURE_SETTINGS, notebookId: 3 };
 		expect(capture.startingNotebook(set, { id: '/', params: {} })).toBe(3);
 		expect(capture.startingNotebook(set, { id: '/notebooks/[id]', params: { id: '8' } })).toBe(8);
+		// The shelf opens a notebook in place and names it in the address.
+		const shelf = (query: string) =>
+			capture.startingNotebook(set, {
+				id: '/notebooks',
+				params: {},
+				search: new URLSearchParams(query)
+			});
+		expect(shelf('notebook=5')).toBe(5);
+		expect(shelf('')).toBe(3);
 		expect(
 			capture.startingNotebook(capture.DEFAULT_CAPTURE_SETTINGS, { id: '/', params: {} })
 		).toBe(null);
