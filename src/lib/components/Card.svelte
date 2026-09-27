@@ -52,6 +52,7 @@
 		/** The anchor a tutorial step points at. */
 		dataTour = '',
 		lead,
+		titleActions,
 		actions,
 		children
 	}: {
@@ -66,6 +67,11 @@
 		id?: string;
 		/** Drawn before the title: the picture of whatever this card is about. */
 		lead?: Snippet;
+		/**
+		 * Drawn on the title's own line, after it: the ways into and around the
+		 * thing the title names, as against `actions`, which put something in it.
+		 */
+		titleActions?: Snippet;
 		actions?: Snippet;
 		/** Optional: a card can be its title alone — the family seat's is. */
 		children?: Snippet;
@@ -122,7 +128,12 @@
 			<!-- As tall as a line of small text, so a card whose header carries a
 			     count or a note is the same height as the card beside it that
 			     carries nothing: two headers in a row meet in one line. -->
-			{#if title}<h2 class="eyebrow flex min-h-4 items-center text-gray-600">{title}</h2>{/if}
+			{#if title && titleActions}
+				<div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+					<h2 class="eyebrow flex min-h-4 shrink-0 items-center text-gray-600">{title}</h2>
+					{@render titleActions()}
+				</div>
+			{:else if title}<h2 class="eyebrow flex min-h-4 items-center text-gray-600">{title}</h2>{/if}
 			{#if description}
 				<!--
 					pre-line: a description may break itself onto a second line with \n.

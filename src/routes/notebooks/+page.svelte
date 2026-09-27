@@ -376,17 +376,29 @@
 								/>
 							{/if}
 						{/snippet}
+						{#snippet titleActions()}
+							{#if selected}
+								<!-- The way to the notebook's own page, beside its name. -->
+								<a
+									href={resolve('/notebooks/[id]', { id: String(selected.id) })}
+									class="btn btn-sm"
+								>
+									{t('ui.open')}
+									<Icon name="arrow-right" />
+								</a>
+								<!-- This subject's own words, rather than the whole account's. -->
+								<button onclick={() => (managingTags = true)} class="btn btn-sm">
+									<Icon name="tag" />
+									{t('tags.manageTags')}
+								</button>
+							{/if}
+						{/snippet}
 						{#snippet actions()}
 							{#if selected}
 								<!--
-									Two rows, and what goes in each.
-
-									Filling the notebook is the top one — the two ways to put
-									something in it, with the primary verb at the end where a
-									hand comes from. Leaving it is the bottom one: the labels
-									on what is in here, and the way through to its own page.
-									They were one row of four, which reads as four things of
-									equal weight and is exactly what it is not.
+									Filling the notebook: the two ways to put something in it,
+									with the primary verb at the end where a hand comes from.
+									Leaving it — its labels and its own page — sits by the name.
 								-->
 								<div class="flex flex-col items-end gap-2">
 									<div class="flex flex-wrap items-center justify-end gap-2">
@@ -424,27 +436,6 @@
 												{newAction.label}
 											</button>
 										{/if}
-									</div>
-
-									<div class="flex flex-wrap items-center justify-end gap-2">
-										<!-- This subject's own words, rather than the whole
-										     account's: the Tags tab used to sit in the room strip,
-										     answering a question nobody has while looking at one
-										     notebook. -->
-										<button onclick={() => (managingTags = true)} class="btn btn-sm">
-											<Icon name="tag" />
-											{t('tags.manageTags')}
-										</button>
-										<!-- The way to the notebook's own page, from the column
-										     that is showing it. The list on the left chooses what
-										     appears here. -->
-										<a
-											href={resolve('/notebooks/[id]', { id: String(selected.id) })}
-											class="btn btn-sm"
-										>
-											{t('ui.open')}
-											<Icon name="arrow-right" />
-										</a>
 									</div>
 								</div>
 							{/if}
