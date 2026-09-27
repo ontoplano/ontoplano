@@ -992,9 +992,13 @@
 				>
 					<input type="hidden" name="id" value={card.id} />
 					<input type="hidden" name="kind" value={card.kind} />
-					<button class="btn btn-danger btn-sm" use:armed>
+					<button
+						class="btn btn-danger btn-sm"
+						use:armed
+						title={t('ui.delete')}
+						aria-label={t('ui.delete')}
+					>
 						<Icon name="trash" />
-						{t('ui.delete')}
 					</button>
 				</form>
 			{/if}

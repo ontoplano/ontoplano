@@ -28,6 +28,7 @@ releases mattered.
 - The wheel's room name, its icon and the border around them are the same colour.
 - Every passing message — saved, failed, Task added, Deleted — is one kind of toast in one place. One with a button (Edit or Undo) stays for the undo window and shows it running down.
 - A task's place in line counts every open task in its notebook, whatever the list is filtered to, and a new task goes behind older ones rated the same.
+- Delete in the task and card editors is the bin alone, so their buttons stay on one line on a phone.
 
 ## 0.183.14 — 2026-09-26
 

@@ -2128,9 +2128,14 @@
 					}}
 				>
 					<input type="hidden" name="id" value={editingId} />
-					<button type="submit" class="btn btn-danger" use:armed>
+					<button
+						type="submit"
+						class="btn btn-danger"
+						use:armed
+						title={t('ui.delete')}
+						aria-label={t('ui.delete')}
+					>
 						<Icon name="trash" />
-						{t('ui.delete')}
 					</button>
 				</form>
 			{/if}
