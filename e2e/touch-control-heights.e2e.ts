@@ -79,7 +79,7 @@ test('the goal card’s controls sit on one row inside the card', async ({ page 
 	await page.waitForTimeout(800);
 
 	const card = page.locator('[id^="goal-"]').first();
-	const rail = card.locator('.row-actions');
+	const rail = card.locator('.task-actions');
 	await expect(rail).toBeVisible();
 
 	/*

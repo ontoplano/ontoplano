@@ -270,17 +270,239 @@ existed, so there is nothing to learn by walking the numbers.
   three. The date read is the label's own — it does not move when the thing is
   edited — so "what went into review since this morning" is one call.
 - **`up_next` answers what to do next**, by the ratings on the tasks
-  themselves: most urgent first, then the one that takes least energy, then the
-  one most wanted. Energy runs the other way to the other two — low is good. A
-  rating nobody set is not a zero: it counts half a step to the losing side of
-  the middle of the scale, so a task deliberately marked 3 beats an unrated one,
-  and urgency 1–2 and energy 4–5 are the tiers that mean "later".
+  themselves: most urgent first, then the easiest, then the one most wanted.
+  All three run the same way — five is the most of what the word says. A
+  rating nobody set is not a zero: it counts as 2.5, the middle of the scale,
+  so a task marked 3 beats an unrated one and 0–2 are the tiers that mean
+  "later".
+- **A change names only what changes.** Every `change_*` and `edit_*` tool
+  takes an id and the fields being changed; a field left out keeps what it
+  had. Where a field can be emptied, its description says how — `null` for a
+  rating, an empty string for notes, `{}` for attributes. An argument that
+  holds a whole set, such as `tags` on `change_task`, replaces it; `tag_task`
+  adds and removes one label at a time.
+- **A list comes a page at a time.** A tool marked "answers a page" takes
+  `limit` and `offset`, and answers with `count` (what is in this answer) and
+  `total` (what matched). While more is left the answer also carries
+  `remaining` and `nextOffset`; pass `nextOffset` as `offset` to read on. No
+  `nextOffset` means nothing is left.
+- **A wrong argument is refused before anything runs.** An argument the tool
+  does not take, a string where it wants a number, a value outside its enum or
+  its bounds: the answer is a JSON-RPC error `-32602` naming the argument, and
+  nothing is written.
+
+## Common requests
+
+What somebody asks, the call an assistant makes for it, and the part of the
+answer worth reading. They run in this order against a fresh account in the
+test suite, which checks each answer holds what is printed here.
+
+**“Start a notebook for the kitchen, under Home.”**
+
+```json
+{
+	"name": "add_notebook",
+	"arguments": { "title": "Kitchen", "folder": "Home" }
+}
+```
+
+The answer holds, among the rest:
+
+```json
+{ "id": 1 }
+```
+
+**“Add ‘descale the kettle’ to the kitchen notebook.”**
+
+```json
+{
+	"name": "add_task",
+	"arguments": { "title": "Descale the kettle", "notebookId": 1 }
+}
+```
+
+The answer holds, among the rest:
+
+```json
+{ "id": 1, "before": null, "after": { "id": 1, "title": "Descale the kettle" } }
+```
+
+**“And ‘fix the cupboard hinge’.”**
+
+```json
+{
+	"name": "add_task",
+	"arguments": { "title": "Fix the cupboard hinge", "notebookId": 1 }
+}
+```
+
+The answer holds, among the rest:
+
+```json
+{ "id": 2 }
+```
+
+**“The hinge is urgent.”**
+
+```json
+{ "name": "change_task", "arguments": { "id": 2, "urgency": 5 } }
+```
+
+The answer holds, among the rest:
+
+```json
+{ "after": { "id": 2, "ratings": { "urgency": 5 } } }
+```
+
+Only `id` and the field being changed are sent; everything left out keeps what it had.
+
+**“What should I do next?”**
+
+```json
+{ "name": "up_next", "arguments": {} }
+```
+
+The answer holds, among the rest:
+
+```json
+{
+	"items": [{ "id": 2, "title": "Fix the cupboard hinge" }],
+	"count": 1,
+	"total": 2,
+	"remaining": 1,
+	"nextOffset": 1
+}
+```
+
+One task by default. `remaining` and `nextOffset` are there because more is left: passing `offset: 1` reads the next one.
+
+**“Actually, the hinge can wait — forget the urgency.”**
+
+```json
+{ "name": "change_task", "arguments": { "id": 2, "urgency": null } }
+```
+
+The answer holds, among the rest:
+
+```json
+{
+	"before": { "ratings": { "urgency": 5 } },
+	"after": { "ratings": { "urgency": null } }
+}
+```
+
+`null` clears a rating; leaving `urgency` out would have kept it.
+
+**“I descaled the kettle.”**
+
+```json
+{ "name": "finish_task", "arguments": { "id": 1 } }
+```
+
+The answer holds, among the rest:
+
+```json
+{ "ok": true, "after": { "id": 1, "status": "done" } }
+```
+
+**“Which kitchen tasks are still open?”**
+
+```json
+{
+	"name": "tasks",
+	"arguments": { "notebookId": 1, "status": "open", "fields": "title,status" }
+}
+```
+
+The answer holds, among the rest:
+
+```json
+{
+	"items": [{ "id": 2, "title": "Fix the cupboard hinge", "status": "todo" }],
+	"count": 1,
+	"total": 1
+}
+```
+
+No `nextOffset` in the answer means there is nothing more to read.
+
+**“Note down that the oven runs hot.”**
+
+```json
+{
+	"name": "write_entry",
+	"arguments": {
+		"content": "The oven runs about 20° hot — set it lower than the recipe says."
+	}
+}
+```
+
+The answer holds, among the rest:
+
+```json
+{ "id": 1 }
+```
+
+**“File that note under the kitchen notebook.”**
+
+```json
+{ "name": "move_notes", "arguments": { "ids": [1], "notebookId": 1 } }
+```
+
+The answer holds, among the rest:
+
+```json
+{ "ok": true, "moved": 1 }
+```
+
+**“What is labelled kitchen?”**
+
+```json
+{ "name": "tasks", "arguments": { "tag": "kitchen" } }
+```
+
+The answer holds, among the rest:
+
+```json
+{
+	"count": 0,
+	"total": 0,
+	"warning": "`tag` is deprecated and will be removed in 0.185.0. …"
+}
+```
+
+`tag` is the old spelling of `tags`. It still works until the release named, and the answer says so.
+
+**“Make the hinge a 3 for urgency.”**
+
+```json
+{ "name": "change_task", "arguments": { "id": 2, "urgncy": 3 } }
+```
+
+Refused before the tool runs, as a JSON-RPC error `-32602` with the message “`urgncy` is not an argument this tool takes.”
+
+A misspelt argument is named back, and nothing is written.
+
+## Old spellings
 
 The surface is additive within a major version: a tool or a parameter is not
-removed, a parameter does not become required, and an enum does not lose a value
-without a release in between that marks it deprecated. That is enforced by
-`src/lib/server/mcp/manifest.json` and a test that refuses any change breaking an
-existing caller.
+removed, a parameter does not become required, an enum does not lose a value,
+a bound does not tighten, a default does not move and a tool does not start
+needing another grant — at any depth, fields inside a list included — without
+a release in between that marks the old shape deprecated. That is enforced by
+`src/lib/server/mcp/manifest.json` and a test that refuses any change breaking
+an existing caller.
+
+A deprecated argument keeps working until the release named below. A call
+that uses one is translated, and its answer carries a `warning` naming the
+replacement and the release.
+
+| Old spelling | Use instead   | Removed in | Tools that take it                                                                                      |
+| ------------ | ------------- | ---------- | ------------------------------------------------------------------------------------------------------- |
+| `energy`     | `ease`        | 0.190.0    | `add_block`, `change_task`, `add_repeating_block`                                                       |
+| `meta`       | `attributes`  | 0.190.0    | `add_block`, `change_block`, `add_task`, `change_task`, `add_repeating_block`, `change_repeating_block` |
+| `tag`        | `tags`        | 0.185.0    | `tasks`, `up_next`, `diary`, `notebook_notes`                                                           |
+| `withoutTag` | `withoutTags` | 0.185.0    | `tasks`, `up_next`, `diary`, `notebook_notes`                                                           |
 
 ## The tools
 
@@ -288,6 +510,10 @@ Every tool the server offers, with the exact description a model is handed —
 published from the same array that serves them, so the two cannot drift. A key
 is only offered the tools its permissions reach. The permissions themselves are
 on [the permissions page](permissions.md).
+
+Under each description: the permissions the key must hold, whether the tool
+writes, and what its answer carries. Parameters inside a list of objects are
+named with `[]` — `measures[].unit` is the `unit` of each line in `measures`.
 
 ### `today` — Today's plan
 
@@ -309,7 +535,7 @@ _Takes no parameters._
 
 Tick a habit for a day: for something being built, the tick means it was done; for something being avoided, it means it happened. Name it or give the id `habits` gave; a name that matches two habits is refused rather than guessed. Ticking twice is not an error; the second call takes it back, which is how the app’s own tick behaves.
 
-_Needs `habits:write`; writes._
+_Needs `habits:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                                                    |
 | --------- | ------- | -------- | ------------------------------------------------------------- |
@@ -321,7 +547,7 @@ _Needs `habits:write`; writes._
 
 Answer for one block on the day: it happened, or it did not. Takes the id `today` gives for that block. Skipping is a real answer — say skipped when the person says they did not do it. It is NOT a way to clear something off the day: a skip goes into the week’s record and the review asks about it. To move a block use `change_block`; to take one off because it was never happening use `cancel_block`. `todo` takes an answer back, for one ticked by mistake.
 
-_Needs `schedule:write`; writes._
+_Needs `schedule:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type   | Required | What it is                                                            |
 | --------- | ------ | -------- | --------------------------------------------------------------------- |
@@ -332,46 +558,46 @@ _Needs `schedule:write`; writes._
 
 Add a one-off block to one day: a title, a start time and how long it runs. This is for "deep work from 9 to 11 today" — a thing with an hour. Use `add_task` instead when there is no time attached, and `change_block` to move or rename something already on the day rather than adding a second copy of it. It does not touch the repeating week; this is that day only.
 
-_Needs `schedule:write`; writes._
+_Needs `schedule:write`; writes; answers with `before` and `after`._
 
-| Parameter    | Type    | Required | What it is                                                                                                                                                                                                                                                                                                         |
-| ------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `date`       | string  | yes      | The day, as YYYY-MM-DD.                                                                                                                                                                                                                                                                                            |
-| `title`      | string  | yes      | What it is — shown on the block.                                                                                                                                                                                                                                                                                   |
-| `start_time` | string  | yes      | When it starts, as HH:MM on a 24-hour clock.                                                                                                                                                                                                                                                                       |
-| `minutes`    | integer | —        | How long it runs, in minutes. Default `60`.                                                                                                                                                                                                                                                                        |
-| `category`   | string  | —        | Which part of life it belongs to, by name — `categories` lists them. A name that matches nothing is refused, never guessed. The first category is used only when this is left out entirely.                                                                                                                        |
-| `notebookId` | integer | —        | The notebook it belongs to, as `notebooks` gives its id — the subject it is part of. `0` takes it out of the one it is in.                                                                                                                                                                                         |
-| `urgency`    | integer | —        | How soon it has to happen, 0–5.                                                                                                                                                                                                                                                                                    |
-| `interest`   | integer | —        | How much they want to do it, 0–5.                                                                                                                                                                                                                                                                                  |
-| `ease`       | integer | —        | How easy it is, 0–5, five being easiest. Replaces `energy`, which asked the opposite question on a scale that began at one.                                                                                                                                                                                        |
-| `energy`     | integer | —        | Deprecated — use `ease`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190. **Deprecated.**                                                                                                             |
-| `attributes` | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. |
-| `meta`       | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in …. **Deprecated.**                                                                                                                  |
+| Parameter    | Type    | Required | What it is                                                                                                                                                                                                                                                                                                                                         |
+| ------------ | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `date`       | string  | yes      | The day, as YYYY-MM-DD.                                                                                                                                                                                                                                                                                                                            |
+| `title`      | string  | yes      | What it is — shown on the block.                                                                                                                                                                                                                                                                                                                   |
+| `start_time` | string  | yes      | When it starts, as HH:MM on a 24-hour clock.                                                                                                                                                                                                                                                                                                       |
+| `minutes`    | integer | —        | How long it runs, in minutes. Default `60`.                                                                                                                                                                                                                                                                                                        |
+| `category`   | string  | —        | Which part of life it belongs to, by name — `categories` lists them. A name that matches nothing is refused, never guessed. The first category is used only when this is left out entirely.                                                                                                                                                        |
+| `notebookId` | integer | —        | The notebook it belongs to, as `notebooks` gives its id — the subject it is part of. `0` takes it out of the one it is in.                                                                                                                                                                                                                         |
+| `urgency`    | integer | —        | How soon it has to happen, 0–5. On a change, `null` clears it.                                                                                                                                                                                                                                                                                     |
+| `interest`   | integer | —        | How much they want to do it, 0–5. On a change, `null` clears it.                                                                                                                                                                                                                                                                                   |
+| `ease`       | integer | —        | How easy it is, 0–5, five being easiest. On a change, `null` clears it. Replaces `energy`, which asked the opposite question on a scale that began at one.                                                                                                                                                                                         |
+| `energy`     | integer | —        | Deprecated — use `ease`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190.0. **Deprecated** — removed in 0.190.0.                                                                                                                      |
+| `attributes` | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. Any key, each holding a string. |
+| `meta`       | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190.0. Any key, each holding a string. **Deprecated** — removed in 0.190.0.                                                                                       |
 
 ### `change_block` — Move or rename a task block
 
-Change one task block on one day: its time, its day, how long it runs, or what it is called — and, for a one-off, the notebook it is filed under and its attributes. This is "push the study block to four", "make it two hours", "that was actually client work". Takes the id `today` or `upcoming` gives. Only the fields you pass change. It affects that day only — moving this Thursday’s gym does not move gym — and it never edits the repeating week. Renaming keeps which part of life it belongs to and stops it being the named activity it was, because that is what saying it was something else means.
+Change one task block on one day: its time, its day, how long it runs, or what it is called — and, for a one-off, the notebook it is filed under and its attributes. This is "push the study block to four", "make it two hours", "that was actually client work". Takes the id `today` or `upcoming` gives. Only the fields you pass change, and nothing is written unless all of them are valid; `notebookId` of `0` unfiles it and `attributes` of {} empties them. It affects that day only — moving this Thursday’s gym does not move gym — and it never edits the repeating week. Renaming keeps which part of life it belongs to and stops it being the named activity it was, because that is what saying it was something else means.
 
-_Needs `schedule:write`; writes._
+_Needs `schedule:write`; writes; answers with `before` and `after`._
 
-| Parameter    | Type    | Required | What it is                                                                                                                                                                                                                                                                                                         |
-| ------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `id`         | string  | yes      | The block’s id, exactly as the day gave it — like `slot:42`.                                                                                                                                                                                                                                                       |
-| `date`       | string  | —        | Move it to this day, as YYYY-MM-DD. Leave out to keep the day it is on.                                                                                                                                                                                                                                            |
-| `start_time` | string  | —        | The new start, as HH:MM on a 24-hour clock.                                                                                                                                                                                                                                                                        |
-| `minutes`    | integer | —        | How long it should run, in minutes.                                                                                                                                                                                                                                                                                |
-| `title`      | string  | —        | What it should be called instead.                                                                                                                                                                                                                                                                                  |
-| `category`   | string  | —        | Refile it under this part of life, by name — `categories` lists them. Affects that day only, like everything here.                                                                                                                                                                                                 |
-| `notebookId` | integer | —        | The notebook it belongs to, as `notebooks` gives its id — the subject it is part of. `0` takes it out of the one it is in.                                                                                                                                                                                         |
-| `attributes` | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. |
-| `meta`       | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in …. **Deprecated.**                                                                                                                  |
+| Parameter    | Type    | Required | What it is                                                                                                                                                                                                                                                                                                                                         |
+| ------------ | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`         | string  | yes      | The block’s id, exactly as the day gave it — like `slot:42`.                                                                                                                                                                                                                                                                                       |
+| `date`       | string  | —        | Move it to this day, as YYYY-MM-DD. Leave out to keep the day it is on.                                                                                                                                                                                                                                                                            |
+| `start_time` | string  | —        | The new start, as HH:MM on a 24-hour clock.                                                                                                                                                                                                                                                                                                        |
+| `minutes`    | integer | —        | How long it should run, in minutes.                                                                                                                                                                                                                                                                                                                |
+| `title`      | string  | —        | What it should be called instead.                                                                                                                                                                                                                                                                                                                  |
+| `category`   | string  | —        | Refile it under this part of life, by name — `categories` lists them. Affects that day only, like everything here.                                                                                                                                                                                                                                 |
+| `notebookId` | integer | —        | The notebook it belongs to, as `notebooks` gives its id — the subject it is part of. `0` takes it out of the one it is in.                                                                                                                                                                                                                         |
+| `attributes` | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. Any key, each holding a string. |
+| `meta`       | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190.0. Any key, each holding a string. **Deprecated** — removed in 0.190.0.                                                                                       |
 
 ### `cancel_block` — Take a block off the day
 
 Remove a block from a day because it is not happening — the meeting moved, the class was called off, it was put on the wrong day. This is NOT the same as marking it skipped: skipped means it was meant to happen and did not, which is a fact the weekly review asks about, and cancelled means it was never going to. Use `finish_block` with "skipped" for the first and this for the second. A repeating block is only removed from that one day.
 
-_Needs `schedule:write` and `destructive`; deletes._
+_Needs `schedule:write` and `destructive`; deletes; answers with `before` and `after`._
 
 | Parameter | Type   | Required | What it is                                                   |
 | --------- | ------ | -------- | ------------------------------------------------------------ |
@@ -412,7 +638,7 @@ _Needs `search:read`; read-only._
 
 The bytes of a file this key may see, given the link as it appears in the writing — `/media/12` for a picture, `/media/audio/12` for a recording. A file answers to whatever refers to it, so the grant that lets you read the note lets you see the picture in it; one nothing refers to is reachable by nobody.
 
-_Needs any of `notes:read`, `ideas:read`, `tasks:read`, `people:read`, `kitchen:read`; read-only._
+_Needs any of `ideas:read`, `kitchen:read`, `notes:read`, `people:read`, `tasks:read`; read-only._
 
 | Parameter | Type   | Required | What it is                                                                                                                          |
 | --------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------- |
@@ -420,67 +646,99 @@ _Needs any of `notes:read`, `ideas:read`, `tasks:read`, `people:read`, `kitchen:
 
 ### `tasks` — The todo list
 
-Tasks with no date on them yet. A todo gains a date by being put on a day, which promotes it onto the week. Answers with a line per task; `verbose` or `fields` for more. Narrow it rather than reading it whole — `notebookId` for one subject, `status: "open"`, `tags`, `withoutTags`, `taggedSince`.
+The to-do list: every task, including the ones already put on a day unless `scheduled: "undated"` asks for only the dateless ones. Answers with a line per task; `verbose` or `fields` for more. Narrow it rather than reading it whole — `notebookId` for one subject, `status: "open"`, `query` for words, `tags`, `withoutTags`, `taggedSince`, dates and ratings — and `sort` to read it in another order. `up_next` is this list in priority order.
 
-_Needs `tasks:read`; read-only._
+_Needs `tasks:read`; read-only; answers a page._
 
-| Parameter         | Type    | Required | What it is                                                                                                                                                                                                                                                                                                                                        |
-| ----------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `limit`           | integer | —        | How many to return. Default `50`.                                                                                                                                                                                                                                                                                                                 |
-| `offset`          | integer | —        | Skip this many before counting, so the rest of the list can be read a page at a time. Default `0`.                                                                                                                                                                                                                                                |
-| `notebookId`      | integer | —        | Only the tasks filed under this notebook, as `notebooks` gives its id. `0` is the ones filed under nothing.                                                                                                                                                                                                                                       |
-| `includeArchived` | boolean | —        | Include the tasks that have been put away. Off by default, which is what putting away means.                                                                                                                                                                                                                                                      |
-| `status`          | string  | —        | Only the tasks in this state. `open` is everything not finished and not skipped, which is what a list is usually read for. One of: `todo`, `doing`, `done`, `skipped`, `open`, `closed`.                                                                                                                                                          |
-| `tags`            | array   | —        | Only the ones carrying at least one of these labels, so naming several reads several queues in one call — `["u5", "e2", "i5"]`. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours. A single string of them, separated by commas or spaces, is understood too. |
-| `tagMode`         | string  | —        | How `tags` combine. `any` (the default) keeps what carries at least one of them; `all` keeps only what carries every one. `withoutTags` drops the same either way.                                                                                                                                                                                |
-| `withoutTags`     | array   | —        | Leave out the ones carrying any of these labels. The mirror of `tags`, written the same way; both may be given.                                                                                                                                                                                                                                   |
-| `tag`             | string  | —        | Deprecated — use `tags`, which asks the same thing of any number of labels at once. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated.**                                                                                                                                           |
-| `withoutTag`      | string  | —        | Deprecated — use `withoutTags`, which drops anything carrying any of the labels named. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated.**                                                                                                                                        |
-| `taggedSince`     | string  | —        | Only the ones labelled at or after this moment — `2026-09-21` or a full ISO timestamp. With `tags`, it is the date of whichever of those labels the thing carries; without, any label’s. A label put on before dates were kept does not answer this.                                                                                              |
-| `verbose`         | boolean | —        | Send the whole of each row rather than a line. Off by default: a list is usually read to find something, and the thing found is then asked about by id.                                                                                                                                                                                           |
-| `fields`          | string  | —        | Only these parts of each row, comma-separated — `title,status,tags`. `id` always comes back. Unknown names are refused rather than ignored.                                                                                                                                                                                                       |
+| Parameter         | Type      | Required | What it is                                                                                                                                                                                                                                                                                                                                        |
+| ----------------- | --------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `limit`           | integer   | —        | How many to return. Default `50`.                                                                                                                                                                                                                                                                                                                 |
+| `offset`          | integer   | —        | Skip this many before counting, so the rest of the list can be read a page at a time. `nextOffset` on the answer is what to pass here next. Default `0`.                                                                                                                                                                                          |
+| `ids`             | integer[] | —        | Only these tasks, by id.                                                                                                                                                                                                                                                                                                                          |
+| `query`           | string    | —        | Only tasks whose title or notes contain these words, as written, ignoring case.                                                                                                                                                                                                                                                                   |
+| `notebookId`      | integer   | —        | Only the tasks filed under this notebook, as `notebooks` gives its id. `0` is the ones filed under nothing.                                                                                                                                                                                                                                       |
+| `scheduled`       | string    | —        | `any` (the default) is every task; `undated` only the ones with no day yet, which is the to-do list proper; `dated` only the ones put on a day. One of: `any`, `undated`, `dated`.                                                                                                                                                                |
+| `scheduledFrom`   | string    | —        | Only tasks put on this day or later, as YYYY-MM-DD.                                                                                                                                                                                                                                                                                               |
+| `scheduledTo`     | string    | —        | Only tasks put on this day or earlier, as YYYY-MM-DD.                                                                                                                                                                                                                                                                                             |
+| `createdSince`    | string    | —        | Only tasks written at or after this moment — `2026-09-21` or a full ISO timestamp.                                                                                                                                                                                                                                                                |
+| `updatedSince`    | string    | —        | Only tasks changed at or after this moment.                                                                                                                                                                                                                                                                                                       |
+| `completedSince`  | string    | —        | Only tasks finished at or after this moment.                                                                                                                                                                                                                                                                                                      |
+| `minUrgency`      | number    | —        | Only tasks whose urgency is at least this, 0 to 5. An unrated one counts as 2.5. From 0 to 5.                                                                                                                                                                                                                                                     |
+| `maxUrgency`      | number    | —        | Only tasks whose urgency is at most this, 0 to 5. An unrated one counts as 2.5. From 0 to 5.                                                                                                                                                                                                                                                      |
+| `minEase`         | number    | —        | Only tasks whose ease is at least this, 0 to 5. An unrated one counts as 2.5. From 0 to 5.                                                                                                                                                                                                                                                        |
+| `maxEase`         | number    | —        | Only tasks whose ease is at most this, 0 to 5. An unrated one counts as 2.5. From 0 to 5.                                                                                                                                                                                                                                                         |
+| `minInterest`     | number    | —        | Only tasks whose interest is at least this, 0 to 5. An unrated one counts as 2.5. From 0 to 5.                                                                                                                                                                                                                                                    |
+| `maxInterest`     | number    | —        | Only tasks whose interest is at most this, 0 to 5. An unrated one counts as 2.5. From 0 to 5.                                                                                                                                                                                                                                                     |
+| `tags`            | string[]  | —        | Only the ones carrying at least one of these labels, so naming several reads several queues in one call — `["u5", "e2", "i5"]`. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours. A single string of them, separated by commas or spaces, is understood too. |
+| `tagMode`         | string    | —        | How `tags` combine. `any` (the default) keeps what carries at least one of them; `all` keeps only what carries every one. `withoutTags` drops the same either way. One of: `all`, `any`.                                                                                                                                                          |
+| `withoutTags`     | string[]  | —        | Leave out the ones carrying any of these labels. The mirror of `tags`, written the same way; both may be given.                                                                                                                                                                                                                                   |
+| `tag`             | string    | —        | Deprecated — use `tags`, which asks the same thing of any number of labels at once. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated** — removed in 0.185.0.                                                                                                                      |
+| `withoutTag`      | string    | —        | Deprecated — use `withoutTags`, which drops anything carrying any of the labels named. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated** — removed in 0.185.0.                                                                                                                   |
+| `taggedSince`     | string    | —        | Only the ones labelled at or after this moment — `2026-09-21` or a full ISO timestamp. With `tags`, it is the date of whichever of those labels the thing carries; without, any label’s. A label put on before dates were kept does not answer this.                                                                                              |
+| `status`          | string    | —        | Only the tasks in this state. `open` is everything not finished and not skipped, which is what a list is usually read for. One of: `todo`, `doing`, `done`, `skipped`, `open`, `closed`.                                                                                                                                                          |
+| `archived`        | string    | —        | The tasks that have been put away: `exclude` (the default, which is what putting away means), `include`, or `only`. One of: `exclude`, `include`, `only`.                                                                                                                                                                                         |
+| `includeArchived` | boolean   | —        | The same as `archived: "include"`.                                                                                                                                                                                                                                                                                                                |
+| `sort`            | string    | —        | The order. `manual` (the default) is the order the board is dragged into; `priority` is the order `up_next` answers in; the rest sort by that one field. Ties always fall to the id, so paging never repeats or skips a task. One of: `manual`, `priority`, `created`, `updated`, `completed`, `scheduled`, `title`.                              |
+| `direction`       | string    | —        | Which way `sort` runs. By default the way it is usually read: `priority` best first, dates newest first, `manual`, `scheduled` and `title` ascending. Tasks with no date sort last either way. One of: `asc`, `desc`.                                                                                                                             |
+| `verbose`         | boolean   | —        | Send the whole of each row rather than a line. Off by default: a list is usually read to find something, and the thing found is then asked about by id.                                                                                                                                                                                           |
+| `fields`          | string    | —        | Only these parts of each row, comma-separated — `title,status,tags`. `id` always comes back. Unknown names are refused rather than ignored.                                                                                                                                                                                                       |
 
 ### `up_next` — What to do next
 
-The task to do next, by the ratings on it: most urgent first, then the easiest, then the one most wanted. All three run the same way — five is the most of what the word says. An unrated one is not a zero: it counts as the middle of the scale, 2.5, so anything marked 4 or 5 beats it and 1 or 2 falls below it as the postpone tiers. Open, unarchived, undated tasks only — anything with a day on it is on the week and `today` answers for that. Answers with one line by default; `limit` for a short list to choose between, and `tags` to ask it of one queue or of several at once.
+The task to do next, by the ratings on it: most urgent first, then the easiest, then the one most wanted. All three run the same way — five is the most of what the word says. An unrated one is not a zero: it counts as the middle of the scale, 2.5, so anything marked 4 or 5 beats it and 1 or 2 falls below it as the postpone tiers. Open, unarchived tasks only; tasks already put on a day are included unless `scheduled: "undated"`. Answers with one line by default; `limit` for a short list to choose between, `offset` for the next page, and the same filters `tasks` takes — `tags` to ask it of one queue or of several at once.
 
-_Needs `tasks:read`; read-only._
+_Needs `tasks:read`; read-only; answers a page._
 
-| Parameter     | Type    | Required | What it is                                                                                                                                                                                                                                                                                                                                        |
-| ------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `limit`       | integer | —        | How many to return. One is the usual question. Default `1`.                                                                                                                                                                                                                                                                                       |
-| `notebookId`  | integer | —        | Only tasks filed under this notebook, as `notebooks` gives its id.                                                                                                                                                                                                                                                                                |
-| `tags`        | array   | —        | Only the ones carrying at least one of these labels, so naming several reads several queues in one call — `["u5", "e2", "i5"]`. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours. A single string of them, separated by commas or spaces, is understood too. |
-| `tagMode`     | string  | —        | How `tags` combine. `any` (the default) keeps what carries at least one of them; `all` keeps only what carries every one. `withoutTags` drops the same either way.                                                                                                                                                                                |
-| `withoutTags` | array   | —        | Leave out the ones carrying any of these labels. The mirror of `tags`, written the same way; both may be given.                                                                                                                                                                                                                                   |
-| `tag`         | string  | —        | Deprecated — use `tags`, which asks the same thing of any number of labels at once. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated.**                                                                                                                                           |
-| `withoutTag`  | string  | —        | Deprecated — use `withoutTags`, which drops anything carrying any of the labels named. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated.**                                                                                                                                        |
-| `taggedSince` | string  | —        | Only the ones labelled at or after this moment — `2026-09-21` or a full ISO timestamp. With `tags`, it is the date of whichever of those labels the thing carries; without, any label’s. A label put on before dates were kept does not answer this.                                                                                              |
-| `verbose`     | boolean | —        | Send the whole of each row rather than a line. Off by default: a list is usually read to find something, and the thing found is then asked about by id.                                                                                                                                                                                           |
-| `fields`      | string  | —        | Only these parts of each row, comma-separated — `title,status,tags`. `id` always comes back. Unknown names are refused rather than ignored.                                                                                                                                                                                                       |
+| Parameter        | Type      | Required | What it is                                                                                                                                                                                                                                                                                                                                        |
+| ---------------- | --------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `limit`          | integer   | —        | How many to return. One is the usual question. Default `1`.                                                                                                                                                                                                                                                                                       |
+| `offset`         | integer   | —        | Skip this many before counting, so the rest of the queue can be read a page at a time. `nextOffset` on the answer is what to pass here next. Default `0`.                                                                                                                                                                                         |
+| `ids`            | integer[] | —        | Only these tasks, by id.                                                                                                                                                                                                                                                                                                                          |
+| `query`          | string    | —        | Only tasks whose title or notes contain these words, as written, ignoring case.                                                                                                                                                                                                                                                                   |
+| `notebookId`     | integer   | —        | Only the tasks filed under this notebook, as `notebooks` gives its id. `0` is the ones filed under nothing.                                                                                                                                                                                                                                       |
+| `scheduled`      | string    | —        | `any` (the default) is every task; `undated` only the ones with no day yet, which is the to-do list proper; `dated` only the ones put on a day. One of: `any`, `undated`, `dated`.                                                                                                                                                                |
+| `scheduledFrom`  | string    | —        | Only tasks put on this day or later, as YYYY-MM-DD.                                                                                                                                                                                                                                                                                               |
+| `scheduledTo`    | string    | —        | Only tasks put on this day or earlier, as YYYY-MM-DD.                                                                                                                                                                                                                                                                                             |
+| `createdSince`   | string    | —        | Only tasks written at or after this moment — `2026-09-21` or a full ISO timestamp.                                                                                                                                                                                                                                                                |
+| `updatedSince`   | string    | —        | Only tasks changed at or after this moment.                                                                                                                                                                                                                                                                                                       |
+| `completedSince` | string    | —        | Only tasks finished at or after this moment.                                                                                                                                                                                                                                                                                                      |
+| `minUrgency`     | number    | —        | Only tasks whose urgency is at least this, 0 to 5. An unrated one counts as 2.5. From 0 to 5.                                                                                                                                                                                                                                                     |
+| `maxUrgency`     | number    | —        | Only tasks whose urgency is at most this, 0 to 5. An unrated one counts as 2.5. From 0 to 5.                                                                                                                                                                                                                                                      |
+| `minEase`        | number    | —        | Only tasks whose ease is at least this, 0 to 5. An unrated one counts as 2.5. From 0 to 5.                                                                                                                                                                                                                                                        |
+| `maxEase`        | number    | —        | Only tasks whose ease is at most this, 0 to 5. An unrated one counts as 2.5. From 0 to 5.                                                                                                                                                                                                                                                         |
+| `minInterest`    | number    | —        | Only tasks whose interest is at least this, 0 to 5. An unrated one counts as 2.5. From 0 to 5.                                                                                                                                                                                                                                                    |
+| `maxInterest`    | number    | —        | Only tasks whose interest is at most this, 0 to 5. An unrated one counts as 2.5. From 0 to 5.                                                                                                                                                                                                                                                     |
+| `tags`           | string[]  | —        | Only the ones carrying at least one of these labels, so naming several reads several queues in one call — `["u5", "e2", "i5"]`. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours. A single string of them, separated by commas or spaces, is understood too. |
+| `tagMode`        | string    | —        | How `tags` combine. `any` (the default) keeps what carries at least one of them; `all` keeps only what carries every one. `withoutTags` drops the same either way. One of: `all`, `any`.                                                                                                                                                          |
+| `withoutTags`    | string[]  | —        | Leave out the ones carrying any of these labels. The mirror of `tags`, written the same way; both may be given.                                                                                                                                                                                                                                   |
+| `tag`            | string    | —        | Deprecated — use `tags`, which asks the same thing of any number of labels at once. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated** — removed in 0.185.0.                                                                                                                      |
+| `withoutTag`     | string    | —        | Deprecated — use `withoutTags`, which drops anything carrying any of the labels named. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated** — removed in 0.185.0.                                                                                                                   |
+| `taggedSince`    | string    | —        | Only the ones labelled at or after this moment — `2026-09-21` or a full ISO timestamp. With `tags`, it is the date of whichever of those labels the thing carries; without, any label’s. A label put on before dates were kept does not answer this.                                                                                              |
+| `verbose`        | boolean   | —        | Send the whole of each row rather than a line. Off by default: a list is usually read to find something, and the thing found is then asked about by id.                                                                                                                                                                                           |
+| `fields`         | string    | —        | Only these parts of each row, comma-separated — `title,status,tags`. `id` always comes back. Unknown names are refused rather than ignored.                                                                                                                                                                                                       |
 
 ### `add_task` — Add a todo
 
 Put a task on the todo list. Leave the date off unless the person said when — a todo with no date is the normal case here, not an unfinished one.
 
-_Needs `tasks:write`; writes._
+_Needs `tasks:write`; writes; answers with `before` and `after`, `after` being the new todo._
 
-| Parameter       | Type    | Required | What it is                                                                                                                                                                                                                                                                                                         |
-| --------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `title`         | string  | yes      | What the task is, in the person’s own words.                                                                                                                                                                                                                                                                       |
-| `notes`         | string  | —        | Anything else about it.                                                                                                                                                                                                                                                                                            |
-| `scheduledDate` | string  | —        | The day to put it on, as YYYY-MM-DD. Usually omitted.                                                                                                                                                                                                                                                              |
-| `notebookId`    | integer | —        | The notebook this task belongs to, as `notebooks` gives its id. A subject somebody is working through — a renovation, a project — keeps its tasks together, and the app shows them on the notebook itself. The task takes the notebook’s category, when it has one.                                                |
-| `goalId`        | integer | —        | A goal to count this towards, as `goals` gives its id. Breaking a goal into tasks is the ordinary reason to make several at once, and a task linked here moves that goal’s progress when it is finished.                                                                                                           |
-| `tags`          | string  | —        | Labels, comma or space separated — "a1, done". The account’s one vocabulary, the same words a diary entry or an idea is tagged with. Mark your own work with a label of your own where several assistants share a list.                                                                                            |
-| `attributes`    | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. |
-| `meta`          | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in …. **Deprecated.**                                                                                                                  |
+| Parameter       | Type    | Required | What it is                                                                                                                                                                                                                                                                                                                                         |
+| --------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`         | string  | yes      | What the task is, in the person’s own words.                                                                                                                                                                                                                                                                                                       |
+| `notes`         | string  | —        | Anything else about it.                                                                                                                                                                                                                                                                                                                            |
+| `scheduledDate` | string  | —        | The day to put it on, as YYYY-MM-DD. Usually omitted.                                                                                                                                                                                                                                                                                              |
+| `notebookId`    | integer | —        | The notebook this task belongs to, as `notebooks` gives its id. A subject somebody is working through — a renovation, a project — keeps its tasks together, and the app shows them on the notebook itself. The task takes the notebook’s category, when it has one.                                                                                |
+| `goalId`        | integer | —        | A goal to count this towards, as `goals` gives its id. Breaking a goal into tasks is the ordinary reason to make several at once, and a task linked here moves that goal’s progress when it is finished.                                                                                                                                           |
+| `tags`          | string  | —        | Labels, comma or space separated — "a1, done". The account’s one vocabulary, the same words a diary entry or an idea is tagged with. Mark your own work with a label of your own where several assistants share a list.                                                                                                                            |
+| `attributes`    | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. Any key, each holding a string. |
+| `meta`          | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190.0. Any key, each holding a string. **Deprecated** — removed in 0.190.0.                                                                                       |
 
 ### `finish_task` — Finish a todo
 
 Mark a todo done, which is what "I did that" means here — it is not deleted, it moves to done and stays in the record. Ask `tasks` first for the id.
 
-_Needs `tasks:write`; writes._
+_Needs `tasks:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is     |
 | --------- | ------- | -------- | -------------- |
@@ -490,7 +748,7 @@ _Needs `tasks:write`; writes._
 
 Remove a todo entirely, because it is not going to happen and is not worth a record — "bin that one", "forget it". Different from `finish_task`, which keeps it as something that was done. Gone for good; prefer finishing it when it actually happened.
 
-_Needs `tasks:write` and `destructive`; deletes._
+_Needs `tasks:write` and `destructive`; deletes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is     |
 | --------- | ------- | -------- | -------------- |
@@ -500,7 +758,7 @@ _Needs `tasks:write` and `destructive`; deletes._
 
 Undo a finish or a drop: the todo goes back to not-done. Use it when something was ticked by mistake, or when a dropped thing turns out to matter after all. It keeps its notes, its day and everything linked to it.
 
-_Needs `tasks:write`; writes._
+_Needs `tasks:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is     |
 | --------- | ------- | -------- | -------------- |
@@ -510,7 +768,7 @@ _Needs `tasks:write`; writes._
 
 Put a todo out of the way without finishing it or dropping it — for something that matters but not this month. It keeps its notes, its notebook and its state, and comes back with `unarchive_task`. Prefer this to dropping when somebody says "not now" rather than "not going to".
 
-_Needs `tasks:write`; writes._
+_Needs `tasks:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is     |
 | --------- | ------- | -------- | -------------- |
@@ -520,7 +778,7 @@ _Needs `tasks:write`; writes._
 
 Bring back a todo that was put away, so it shows on the list again. It returns in whatever state it left in. `tasks` says which ones are archived.
 
-_Needs `tasks:write`; writes._
+_Needs `tasks:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is     |
 | --------- | ------- | -------- | -------------- |
@@ -530,7 +788,7 @@ _Needs `tasks:write`; writes._
 
 Put labels on a todo or take them off, leaving its other labels alone — this is the one to use for marking a task, and `change_task` is for replacing every label at once. Several assistants sharing a list mark their own work this way; `tasks` takes a `tag` to read back only the ones you marked. Answers with the labels it has afterwards.
 
-_Needs `tasks:write`; writes._
+_Needs `tasks:write`; writes; answers without `before` and `after`._
 
 | Parameter | Type    | Required | What it is                                                                                                                                                            |
 | --------- | ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -540,30 +798,30 @@ _Needs `tasks:write`; writes._
 
 ### `change_task` — Change a todo
 
-Rewrite a todo’s title, notes or state. Only the fields given change. Moving it on or off a day is `schedule_task`; `finish_task` and `reopen_task` are the shorthands for the two ends of `status`.
+Rewrite a todo’s title, notes or state. Only `id` is needed: a field left out is untouched. Everything is checked before anything is written, and the change lands whole or not at all. Moving it on or off a day is `schedule_task`; `finish_task` and `reopen_task` are the shorthands for the two ends of `status`.
 
-_Needs `tasks:write`; writes._
+_Needs `tasks:write`; writes; answers with `before` and `after`._
 
-| Parameter    | Type    | Required | What it is                                                                                                                                                                                                                                                                                                         |
-| ------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `id`         | integer | yes      | The todo’s id, as `tasks` gives it.                                                                                                                                                                                                                                                                                |
-| `title`      | string  | —        | The new title, in the person’s own words.                                                                                                                                                                                                                                                                          |
-| `notes`      | string  | —        | The new notes.                                                                                                                                                                                                                                                                                                     |
-| `status`     | string  | —        | What state it is in: `todo` waiting, `doing` started, `done` finished, `skipped` given up on. Left out, it is untouched. One of: `todo`, `doing`, `done`, `skipped`.                                                                                                                                               |
-| `notebookId` | integer | —        | The notebook to file it under, as `notebooks` gives its id. `0` takes it out of whichever one it is in. `add_task` can file a task at birth; this is how one already made moves.                                                                                                                                   |
-| `tags`       | string  | —        | The labels it should carry from now on, comma or space separated — this replaces whatever it had, so include the ones to keep. An empty string takes them all off. Left out, the labels are untouched.                                                                                                             |
-| `urgency`    | integer | —        | How soon it has to happen, 0–5.                                                                                                                                                                                                                                                                                    |
-| `interest`   | integer | —        | How much they want to do it, 0–5.                                                                                                                                                                                                                                                                                  |
-| `ease`       | integer | —        | How easy it is, 0–5, five being easiest. Replaces `energy`, which asked the opposite question on a scale that began at one.                                                                                                                                                                                        |
-| `energy`     | integer | —        | Deprecated — use `ease`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190. **Deprecated.**                                                                                                             |
-| `attributes` | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. |
-| `meta`       | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in …. **Deprecated.**                                                                                                                  |
+| Parameter    | Type    | Required | What it is                                                                                                                                                                                                                                                                                                                                         |
+| ------------ | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`         | integer | yes      | The todo’s id, as `tasks` gives it.                                                                                                                                                                                                                                                                                                                |
+| `title`      | string  | —        | The new title, in the person’s own words. It cannot be emptied.                                                                                                                                                                                                                                                                                    |
+| `notes`      | string  | —        | The new notes. An empty string clears them.                                                                                                                                                                                                                                                                                                        |
+| `status`     | string  | —        | What state it is in: `todo` waiting, `doing` started, `done` finished, `skipped` given up on. Left out, it is untouched. One of: `todo`, `doing`, `done`, `skipped`.                                                                                                                                                                               |
+| `notebookId` | integer | —        | The notebook to file it under, as `notebooks` gives its id. `0` takes it out of whichever one it is in. `add_task` can file a task at birth; this is how one already made moves.                                                                                                                                                                   |
+| `tags`       | string  | —        | The labels it should carry from now on, comma or space separated — this replaces whatever it had, so include the ones to keep. An empty string takes them all off. Left out, the labels are untouched.                                                                                                                                             |
+| `urgency`    | integer | —        | How soon it has to happen, 0–5. On a change, `null` clears it.                                                                                                                                                                                                                                                                                     |
+| `interest`   | integer | —        | How much they want to do it, 0–5. On a change, `null` clears it.                                                                                                                                                                                                                                                                                   |
+| `ease`       | integer | —        | How easy it is, 0–5, five being easiest. On a change, `null` clears it. Replaces `energy`, which asked the opposite question on a scale that began at one.                                                                                                                                                                                         |
+| `energy`     | integer | —        | Deprecated — use `ease`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190.0. **Deprecated** — removed in 0.190.0.                                                                                                                      |
+| `attributes` | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. Any key, each holding a string. |
+| `meta`       | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190.0. Any key, each holding a string. **Deprecated** — removed in 0.190.0.                                                                                       |
 
 ### `schedule_task` — Put a todo on a day
 
 Give a todo a date, which moves it onto that day’s board. This is what "do it on Thursday" means here.
 
-_Needs `tasks:write`; writes._
+_Needs `tasks:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is              |
 | --------- | ------- | -------- | ----------------------- |
@@ -574,7 +832,7 @@ _Needs `tasks:write`; writes._
 
 Take the date off a todo, which moves it back to the list of things with no time yet. This is "not today after all" — the todo is kept, it just stops being on a day.
 
-_Needs `tasks:write`; writes._
+_Needs `tasks:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is     |
 | --------- | ------- | -------- | -------------- |
@@ -594,7 +852,7 @@ _Needs `tasks:read`; read-only._
 
 Close a goal: achieved, missed, or abandoned. Missed and abandoned are different — missed is a deadline that passed, abandoned is a decision to stop — and both are worth recording honestly rather than being rounded to one. Takes the id `goals` gives. There is no tool that opens a goal; that is the person’s to make.
 
-_Needs `tasks:write`; writes._
+_Needs `tasks:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                                               |
 | --------- | ------- | -------- | -------------------------------------------------------- |
@@ -606,31 +864,31 @@ _Needs `tasks:write`; writes._
 
 Attach todos or repeating blocks to a goal, so finishing them moves its progress. Adds to what is already linked; nothing is replaced. `goals` gives the goal id and what it already has on it.
 
-_Needs `tasks:write`; writes._
+_Needs `tasks:write`; writes; answers with `before` and `after`._
 
-| Parameter | Type    | Required | What it is                                                         |
-| --------- | ------- | -------- | ------------------------------------------------------------------ |
-| `goalId`  | integer | yes      | The goal’s id, as `goals` gave it.                                 |
-| `todoIds` | array   | —        | Todo ids, as `tasks` gives them.                                   |
-| `slotIds` | array   | —        | Ids of repeating blocks, for a goal met by doing something weekly. |
+| Parameter | Type      | Required | What it is                                                         |
+| --------- | --------- | -------- | ------------------------------------------------------------------ |
+| `goalId`  | integer   | yes      | The goal’s id, as `goals` gave it.                                 |
+| `todoIds` | integer[] | —        | Todo ids, as `tasks` gives them.                                   |
+| `slotIds` | integer[] | —        | Ids of repeating blocks, for a goal met by doing something weekly. |
 
 ### `unlink_from_goal` — Take work off a goal
 
 Detach todos or blocks from a goal. Only the ones named; everything else it counts stays.
 
-_Needs `tasks:write`; writes._
+_Needs `tasks:write`; writes; answers with `before` and `after`._
 
-| Parameter | Type    | Required | What it is               |
-| --------- | ------- | -------- | ------------------------ |
-| `goalId`  | integer | yes      | The goal’s id.           |
-| `todoIds` | array   | —        | Todo ids.                |
-| `slotIds` | array   | —        | Ids of repeating blocks. |
+| Parameter | Type      | Required | What it is               |
+| --------- | --------- | -------- | ------------------------ |
+| `goalId`  | integer   | yes      | The goal’s id.           |
+| `todoIds` | integer[] | —        | Todo ids.                |
+| `slotIds` | integer[] | —        | Ids of repeating blocks. |
 
 ### `reopen_goal` — Reopen a goal
 
 Put a closed goal back to open. Its outcome note is cleared and the date it was closed on goes with it, so a reopened goal does not read as having been finished at some point in the past.
 
-_Needs `tasks:write`; writes._
+_Needs `tasks:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is     |
 | --------- | ------- | -------- | -------------- |
@@ -638,45 +896,48 @@ _Needs `tasks:write`; writes._
 
 ### `change_goal` — Change a goal
 
-Rename a goal, or change its notes, horizon, start date, or what it is measured by. Only the fields given change; `targets` replaces every measure at once, so read `goals` first. Adding one without disturbing the rest is `add_goal_target`. Saying how it ended is `close_goal`, not this.
+Rename a goal, or change its notes, horizon, start date, or what it is measured by. Only `id` is needed: a field left out is untouched, and nothing is written unless all of it is valid. `targets` replaces every measure at once, so read `goals` first. Adding one without disturbing the rest is `add_goal_target`. Saying how it ended is `close_goal`, not this.
 
-_Needs `tasks:write`; writes._
+_Needs `tasks:write`; writes; answers with `before` and `after`._
 
-| Parameter     | Type    | Required | What it is                                                                                                                                                                                                                                           |
-| ------------- | ------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`          | integer | yes      | The goal’s id, as `goals` gives it.                                                                                                                                                                                                                  |
-| `title`       | string  | —        | The new name, in the person’s own words.                                                                                                                                                                                                             |
-| `notes`       | string  | —        | The new notes.                                                                                                                                                                                                                                       |
-| `horizon`     | string  | —        | week, month, quarter, semester or year.                                                                                                                                                                                                              |
-| `startDate`   | string  | —        | The day its period starts from, as YYYY-MM-DD.                                                                                                                                                                                                       |
-| `targets`     | array   | —        | Everything the goal is measured by, replacing what it has: `[{ "value": 3, "unit": "gigs" }, { "value": 5, "unit": "songs" }]`. A goal met by doing one thing can say `targetValue` and `unit` instead. Each one carries `value`, `unit`, `measure`. |
-| `targetValue` | number  | —        | The number it is aiming at, for a goal that counts one thing.                                                                                                                                                                                        |
-| `unit`        | string  | —        | What that number counts — pages, km, sessions.                                                                                                                                                                                                       |
+| Parameter           | Type     | Required | What it is                                                                                                                                                                                                                                                                                                                               |
+| ------------------- | -------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                | integer  | yes      | The goal’s id, as `goals` gives it.                                                                                                                                                                                                                                                                                                      |
+| `title`             | string   | —        | The new name, in the person’s own words. It cannot be emptied.                                                                                                                                                                                                                                                                           |
+| `notes`             | string   | —        | The new notes. An empty string clears them.                                                                                                                                                                                                                                                                                              |
+| `horizon`           | string   | —        | week, month, quarter, semester or year.                                                                                                                                                                                                                                                                                                  |
+| `startDate`         | string   | —        | The day its period starts from, as YYYY-MM-DD.                                                                                                                                                                                                                                                                                           |
+| `targets`           | object[] | —        | Everything the goal is measured by, replacing what it has: `[{ "value": 3, "unit": "gigs" }, { "value": 5, "unit": "songs" }]`. A goal met by doing one thing can say `targetValue` and `unit` instead.                                                                                                                                  |
+| `targets[].value`   | number   | yes      | How much of it.                                                                                                                                                                                                                                                                                                                          |
+| `targets[].unit`    | string   | —        | What is being counted — gigs, songs, km.                                                                                                                                                                                                                                                                                                 |
+| `targets[].measure` | string   | —        | A workout measure this counts, in the word the sessions use — "ran", "deadlifted". Set it and the number is the sum of what the register holds for that activity inside the goal’s period, read rather than typed; `workout_sessions` and `workouts` show what has been measured. Leave it off for a number the person keeps themselves. |
+| `targetValue`       | number   | —        | The number it is aiming at, for a goal that counts one thing.                                                                                                                                                                                                                                                                            |
+| `unit`              | string   | —        | What that number counts — pages, km, sessions. Sent alone, it renames the measure of a goal that counts one thing.                                                                                                                                                                                                                       |
 
 ### `diary` — Recent diary entries
 
 What has been written lately, newest first. An entry can belong to a notebook or to no notebook at all. Answers with a line and an opening per entry; `verbose` for the writing itself.
 
-_Needs `notes:read`; read-only._
+_Needs `notes:read`; read-only; answers a page._
 
-| Parameter     | Type    | Required | What it is                                                                                                                                                                                                                                                                                                                                        |
-| ------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `limit`       | integer | —        | How many entries. Default `20`.                                                                                                                                                                                                                                                                                                                   |
-| `offset`      | integer | —        | Skip this many before counting, so the rest of the diary can be read a page at a time. Default `0`.                                                                                                                                                                                                                                               |
-| `tags`        | array   | —        | Only the ones carrying at least one of these labels, so naming several reads several queues in one call — `["u5", "e2", "i5"]`. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours. A single string of them, separated by commas or spaces, is understood too. |
-| `tagMode`     | string  | —        | How `tags` combine. `any` (the default) keeps what carries at least one of them; `all` keeps only what carries every one. `withoutTags` drops the same either way.                                                                                                                                                                                |
-| `withoutTags` | array   | —        | Leave out the ones carrying any of these labels. The mirror of `tags`, written the same way; both may be given.                                                                                                                                                                                                                                   |
-| `tag`         | string  | —        | Deprecated — use `tags`, which asks the same thing of any number of labels at once. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated.**                                                                                                                                           |
-| `withoutTag`  | string  | —        | Deprecated — use `withoutTags`, which drops anything carrying any of the labels named. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated.**                                                                                                                                        |
-| `taggedSince` | string  | —        | Only the ones labelled at or after this moment — `2026-09-21` or a full ISO timestamp. With `tags`, it is the date of whichever of those labels the thing carries; without, any label’s. A label put on before dates were kept does not answer this.                                                                                              |
-| `verbose`     | boolean | —        | Send the whole of each row rather than a line. Off by default: a list is usually read to find something, and the thing found is then asked about by id.                                                                                                                                                                                           |
-| `fields`      | string  | —        | Only these parts of each row, comma-separated — `title,status,tags`. `id` always comes back. Unknown names are refused rather than ignored.                                                                                                                                                                                                       |
+| Parameter     | Type     | Required | What it is                                                                                                                                                                                                                                                                                                                                        |
+| ------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `limit`       | integer  | —        | How many entries. Default `20`.                                                                                                                                                                                                                                                                                                                   |
+| `offset`      | integer  | —        | Skip this many before counting, so the rest of the diary can be read a page at a time. `nextOffset` on the answer is what to pass here next. Default `0`.                                                                                                                                                                                         |
+| `tags`        | string[] | —        | Only the ones carrying at least one of these labels, so naming several reads several queues in one call — `["u5", "e2", "i5"]`. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours. A single string of them, separated by commas or spaces, is understood too. |
+| `tagMode`     | string   | —        | How `tags` combine. `any` (the default) keeps what carries at least one of them; `all` keeps only what carries every one. `withoutTags` drops the same either way. One of: `all`, `any`.                                                                                                                                                          |
+| `withoutTags` | string[] | —        | Leave out the ones carrying any of these labels. The mirror of `tags`, written the same way; both may be given.                                                                                                                                                                                                                                   |
+| `tag`         | string   | —        | Deprecated — use `tags`, which asks the same thing of any number of labels at once. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated** — removed in 0.185.0.                                                                                                                      |
+| `withoutTag`  | string   | —        | Deprecated — use `withoutTags`, which drops anything carrying any of the labels named. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated** — removed in 0.185.0.                                                                                                                   |
+| `taggedSince` | string   | —        | Only the ones labelled at or after this moment — `2026-09-21` or a full ISO timestamp. With `tags`, it is the date of whichever of those labels the thing carries; without, any label’s. A label put on before dates were kept does not answer this.                                                                                              |
+| `verbose`     | boolean  | —        | Send the whole of each row rather than a line. Off by default: a list is usually read to find something, and the thing found is then asked about by id.                                                                                                                                                                                           |
+| `fields`      | string   | —        | Only these parts of each row, comma-separated — `title,status,tags`. `id` always comes back. Unknown names are refused rather than ignored.                                                                                                                                                                                                       |
 
 ### `write_entry` — Write a diary entry
 
 Add an entry. Markdown. Writing one when asked is the point of this tool — keep their words and their voice where you have them, and do not invent an entry nobody asked for. Put it in a notebook when it is about one subject; leave the notebook off for an ordinary day.
 
-_Needs `notes:write`; writes._
+_Needs `notes:write`; writes; answers with `before` and `after`._
 
 | Parameter    | Type    | Required | What it is                                                                                                                                                                |
 | ------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -689,28 +950,28 @@ _Needs `notes:write`; writes._
 
 What has been written against one subject, newest first, with the id of each note. `diary` deliberately shows only entries outside a notebook, so this is the way to read one — and the way to find the id `archive_note` wants. Answers with a line and an opening per note; `verbose` for the writing itself, `tags` and `taggedSince` to narrow.
 
-_Needs `notes:read`; read-only._
+_Needs `notes:read`; read-only; answers a page._
 
-| Parameter         | Type    | Required | What it is                                                                                                                                                                                                                                                                                                                                        |
-| ----------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`              | integer | yes      | The notebook’s id, as `notebooks` gives it.                                                                                                                                                                                                                                                                                                       |
-| `includeArchived` | boolean | —        | Include the notes that have been put away. Off by default, as on the page.                                                                                                                                                                                                                                                                        |
-| `limit`           | integer | —        | How many to return. Default `50`.                                                                                                                                                                                                                                                                                                                 |
-| `offset`          | integer | —        | Skip this many before counting, so the rest of the notebook can be read a page at a time. Default `0`.                                                                                                                                                                                                                                            |
-| `tags`            | array   | —        | Only the ones carrying at least one of these labels, so naming several reads several queues in one call — `["u5", "e2", "i5"]`. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours. A single string of them, separated by commas or spaces, is understood too. |
-| `tagMode`         | string  | —        | How `tags` combine. `any` (the default) keeps what carries at least one of them; `all` keeps only what carries every one. `withoutTags` drops the same either way.                                                                                                                                                                                |
-| `withoutTags`     | array   | —        | Leave out the ones carrying any of these labels. The mirror of `tags`, written the same way; both may be given.                                                                                                                                                                                                                                   |
-| `tag`             | string  | —        | Deprecated — use `tags`, which asks the same thing of any number of labels at once. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated.**                                                                                                                                           |
-| `withoutTag`      | string  | —        | Deprecated — use `withoutTags`, which drops anything carrying any of the labels named. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated.**                                                                                                                                        |
-| `taggedSince`     | string  | —        | Only the ones labelled at or after this moment — `2026-09-21` or a full ISO timestamp. With `tags`, it is the date of whichever of those labels the thing carries; without, any label’s. A label put on before dates were kept does not answer this.                                                                                              |
-| `verbose`         | boolean | —        | Send the whole of each row rather than a line. Off by default: a list is usually read to find something, and the thing found is then asked about by id.                                                                                                                                                                                           |
-| `fields`          | string  | —        | Only these parts of each row, comma-separated — `title,status,tags`. `id` always comes back. Unknown names are refused rather than ignored.                                                                                                                                                                                                       |
+| Parameter         | Type     | Required | What it is                                                                                                                                                                                                                                                                                                                                        |
+| ----------------- | -------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`              | integer  | yes      | The notebook’s id, as `notebooks` gives it.                                                                                                                                                                                                                                                                                                       |
+| `includeArchived` | boolean  | —        | Include the notes that have been put away. Off by default, as on the page.                                                                                                                                                                                                                                                                        |
+| `limit`           | integer  | —        | How many to return. Default `50`.                                                                                                                                                                                                                                                                                                                 |
+| `offset`          | integer  | —        | Skip this many before counting, so the rest of the notebook can be read a page at a time. `nextOffset` on the answer is what to pass here next. Default `0`.                                                                                                                                                                                      |
+| `tags`            | string[] | —        | Only the ones carrying at least one of these labels, so naming several reads several queues in one call — `["u5", "e2", "i5"]`. Lower case, no #. Several assistants on one list mark their own work this way — `a1`, `done` — so this is how to read back only yours. A single string of them, separated by commas or spaces, is understood too. |
+| `tagMode`         | string   | —        | How `tags` combine. `any` (the default) keeps what carries at least one of them; `all` keeps only what carries every one. `withoutTags` drops the same either way. One of: `all`, `any`.                                                                                                                                                          |
+| `withoutTags`     | string[] | —        | Leave out the ones carrying any of these labels. The mirror of `tags`, written the same way; both may be given.                                                                                                                                                                                                                                   |
+| `tag`             | string   | —        | Deprecated — use `tags`, which asks the same thing of any number of labels at once. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated** — removed in 0.185.0.                                                                                                                      |
+| `withoutTag`      | string   | —        | Deprecated — use `withoutTags`, which drops anything carrying any of the labels named. Still accepted so an assistant written against the old shape keeps working, and removed in 0.185.0. **Deprecated** — removed in 0.185.0.                                                                                                                   |
+| `taggedSince`     | string   | —        | Only the ones labelled at or after this moment — `2026-09-21` or a full ISO timestamp. With `tags`, it is the date of whichever of those labels the thing carries; without, any label’s. A label put on before dates were kept does not answer this.                                                                                              |
+| `verbose`         | boolean  | —        | Send the whole of each row rather than a line. Off by default: a list is usually read to find something, and the thing found is then asked about by id.                                                                                                                                                                                           |
+| `fields`          | string   | —        | Only these parts of each row, comma-separated — `title,status,tags`. `id` always comes back. Unknown names are refused rather than ignored.                                                                                                                                                                                                       |
 
 ### `pin_note` — Keep a note at the top
 
 Hold a note at the top of its notebook — the measurements, the account number, the thing the notebook is actually for. As many as the person likes; the most recently pinned leads. `unpin_note` lets one go.
 
-_Needs `notes:write`; writes._
+_Needs `notes:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                                   |
 | --------- | ------- | -------- | -------------------------------------------- |
@@ -720,7 +981,7 @@ _Needs `notes:write`; writes._
 
 Let a pinned note fall back into its notebook’s own order, where it is read with the rest.
 
-_Needs `notes:write`; writes._
+_Needs `notes:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                                   |
 | --------- | ------- | -------- | -------------------------------------------- |
@@ -730,7 +991,7 @@ _Needs `notes:write`; writes._
 
 Rewrite a note or a diary entry — its words, its title, its tags. Only the fields given change; the rest of it, and the notebook it lives in, are left alone. `notebook_notes` gives the id. To put one out of the way instead, `archive_note`.
 
-_Needs `notes:write`; writes._
+_Needs `notes:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                                                                                                                             |
 | --------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------- |
@@ -743,18 +1004,18 @@ _Needs `notes:write`; writes._
 
 Turn a note that is really a checklist into the tasks it describes. Every `- [ ]` line becomes a task, with whatever is written under it as that task’s notes; a `- [x]` line comes across already done. Each is filed under the note’s own notebook, and each box is replaced by a reference to the task it became — `TASK:#4` — so the note keeps its words and stops being a second copy of the list.
 
-_Needs `tasks:write`; writes._
+_Needs `tasks:write` and `notes:read`; writes; answers with `before` and `after`._
 
-| Parameter | Type    | Required | What it is                                                                      |
-| --------- | ------- | -------- | ------------------------------------------------------------------------------- |
-| `id`      | integer | yes      | The note’s id, as `notebook_notes` gives it.                                    |
-| `only`    | array   | —        | Which checkboxes to take, counting from 0 down the note. Left out, all of them. |
+| Parameter | Type      | Required | What it is                                                                      |
+| --------- | --------- | -------- | ------------------------------------------------------------------------------- |
+| `id`      | integer   | yes      | The note’s id, as `notebook_notes` gives it.                                    |
+| `only`    | integer[] | —        | Which checkboxes to take, counting from 0 down the note. Left out, all of them. |
 
 ### `archive_note` — Put a note away
 
 Hide a note without deleting it — for one that has stopped being current and is not something to throw out: the trip is over, the flat is rented. It stays in its notebook and comes back with `unarchive_note`. Notes are never deleted through a tool.
 
-_Needs `notes:write`; writes._
+_Needs `notes:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                                   |
 | --------- | ------- | -------- | -------------------------------------------- |
@@ -764,11 +1025,22 @@ _Needs `notes:write`; writes._
 
 Bring back a note that was put away, so it shows in its notebook again. `notebook_notes` with `includeArchived` says which ones are away.
 
-_Needs `notes:write`; writes._
+_Needs `notes:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is     |
 | --------- | ------- | -------- | -------------- |
 | `id`      | integer | yes      | The note’s id. |
+
+### `move_notes` — Move notes to another notebook
+
+File one or more notes or diary entries under a notebook, or with `notebookId` 0 into the diary. All of them move or none do, and each takes the next number free where it lands. `notebook_notes` and `diary` give the ids.
+
+_Needs `notes:write`; writes; answers with `before` and `after`._
+
+| Parameter    | Type      | Required | What it is                                          |
+| ------------ | --------- | -------- | --------------------------------------------------- |
+| `ids`        | integer[] | yes      | The notes’ ids.                                     |
+| `notebookId` | integer   | yes      | Where they go: a notebook’s id, or 0 for the diary. |
 
 ### `notebooks` — Notebooks
 
@@ -784,7 +1056,7 @@ _Needs `notes:read`; read-only._
 
 Make a notebook — a subject written against with no deadline: a book, a trip, a renovation. `write_entry` files notes into it by name.
 
-_Needs `notes:write`; writes._
+_Needs `notes:write`; writes; answers with `before` and `after`._
 
 | Parameter     | Type   | Required | What it is                                                                                                                                                                                                                                                                                                                    |
 | ------------- | ------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -797,25 +1069,25 @@ _Needs `notes:write`; writes._
 
 ### `change_notebook` — Change a notebook
 
-Rename a notebook, move it to another folder, rewrite the line under its title, set the labels a new note in it starts with or the category a new task in it starts with, or change what it holds. The title is always sent; the rest change only when given.
+Rename a notebook, move it to another folder, rewrite the line under its title, set the labels a new note in it starts with or the category a new task in it starts with, or change what it holds. Only `id` is needed: a field left out is untouched, and nothing is written unless all of it is valid.
 
-_Needs `notes:write`; writes._
+_Needs `notes:write`; writes; answers with `before` and `after`._
 
-| Parameter     | Type    | Required | What it is                                                                                                                                                                                                                                                                               |
-| ------------- | ------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`          | integer | yes      | The notebook’s id, as `notebooks` gives it.                                                                                                                                                                                                                                              |
-| `title`       | string  | yes      | What it is about.                                                                                                                                                                                                                                                                        |
-| `folder`      | string  | —        | The folder it sits in, a slash-separated path such as `Home/Kitchen`; an empty string puts it at the top. Left out, it stays where it is.                                                                                                                                                |
-| `description` | string  | —        | A line under the title, shown on its page.                                                                                                                                                                                                                                               |
-| `defaultTags` | string  | —        | Labels a new note in it starts with, comma or space separated. An empty string clears them; left out, they are untouched.                                                                                                                                                                |
-| `category`    | string  | —        | The category a new task in it starts with, by name as `categories` gives them. An empty string clears it; left out, it is untouched.                                                                                                                                                     |
-| `modules`     | string  | —        | What it holds, comma separated — notes, tasks, goals, ideas, inventory, ledgers, bills, habits, workouts, recipes. The whole list, not an addition. Notes are always in it. Switching one off keeps whatever is already filed under it; it stops being a tab, and stays in its own room. |
+| Parameter     | Type    | Required | What it is                                                                                                                                                                                                                                                                                                          |
+| ------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | integer | yes      | The notebook’s id, as `notebooks` gives it.                                                                                                                                                                                                                                                                         |
+| `title`       | string  | —        | What it is about. It cannot be emptied; left out, the name is untouched.                                                                                                                                                                                                                                            |
+| `folder`      | string  | —        | The folder it sits in, a slash-separated path such as `Home/Kitchen`; an empty string puts it at the top. Left out, it stays where it is.                                                                                                                                                                           |
+| `description` | string  | —        | A line under the title, shown on its page. An empty string clears it; left out, it is untouched.                                                                                                                                                                                                                    |
+| `defaultTags` | string  | —        | Labels a new note in it starts with, comma or space separated. An empty string clears them; left out, they are untouched.                                                                                                                                                                                           |
+| `category`    | string  | —        | The category a new task in it starts with, by name as `categories` gives them. An empty string clears it; left out, it is untouched.                                                                                                                                                                                |
+| `modules`     | string  | —        | What it holds, comma separated — notes, tasks, goals, ideas, inventory, ledgers, bills, habits, workouts, recipes. The whole list, not an addition. Notes are always in it. Switching one off keeps whatever is already filed under it; it stops being a tab, and stays in its own room. Left out, it is untouched. |
 
 ### `rename_notebook_folder` — Rename a notebook folder
 
 Rename or move a folder of notebooks: every notebook in it, and in the folders inside it, has that part of its path rewritten. `notebooks` gives each notebook its `folder`. Moving a folder into its own parent removes it; nothing is deleted.
 
-_Needs `notes:write`; writes._
+_Needs `notes:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type   | Required | What it is                                                                                                            |
 | --------- | ------ | -------- | --------------------------------------------------------------------------------------------------------------------- |
@@ -826,7 +1098,7 @@ _Needs `notes:write`; writes._
 
 Delete a notebook that holds nothing — no notes, no tasks, nothing filed under it at all. One with anything in it is refused with what it holds: somebody’s writing is deleted by them in the app, never through a tool. For a notebook made by mistake.
 
-_Needs `notes:write` and `destructive`; deletes._
+_Needs `notes:write` and `destructive`; deletes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                                  |
 | --------- | ------- | -------- | ------------------------------------------- |
@@ -836,7 +1108,7 @@ _Needs `notes:write` and `destructive`; deletes._
 
 Keep a notebook at the front of the shelf and at the top of every notebook picker, or take the star off with `favourite: false`. The star is the person’s own, so a notebook shared with them can carry one too. `notebooks` says which have one.
 
-_Needs `notes:write`; writes._
+_Needs `notes:write`; writes; answers with `before` and `after`._
 
 | Parameter   | Type    | Required | What it is                                  |
 | ----------- | ------- | -------- | ------------------------------------------- |
@@ -847,7 +1119,7 @@ _Needs `notes:write`; writes._
 
 Share one of the person’s notebooks with everybody on their family plan — they read it and write their own entries into it — or stop sharing with `shared: false`. Only its owner’s to flip, and only when they asked.
 
-_Needs `notes:write`; writes._
+_Needs `notes:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                                  |
 | --------- | ------- | -------- | ------------------------------------------- |
@@ -858,18 +1130,18 @@ _Needs `notes:write`; writes._
 
 Things caught before they evaporated, newest first. An idea is not a task: nobody has committed to doing it, which is what makes it cheap to write down.
 
-_Needs `ideas:read`; read-only._
+_Needs `ideas:read`; read-only; answers a page._
 
-| Parameter | Type    | Required | What it is                                                                                          |
-| --------- | ------- | -------- | --------------------------------------------------------------------------------------------------- |
-| `limit`   | integer | —        | How many. Default `50`.                                                                             |
-| `offset`  | integer | —        | Skip this many before counting, so the rest of the ideas can be read a page at a time. Default `0`. |
+| Parameter | Type    | Required | What it is                                                                                                                                                |
+| --------- | ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `limit`   | integer | —        | How many. Default `50`.                                                                                                                                   |
+| `offset`  | integer | —        | Skip this many before counting, so the rest of the ideas can be read a page at a time. `nextOffset` on the answer is what to pass here next. Default `0`. |
 
 ### `add_idea` — Catch an idea
 
 Write an idea down without deciding where it belongs. The lowest-friction thing here; prefer it to a todo when the person has not said they will do it.
 
-_Needs `ideas:write`; writes._
+_Needs `ideas:write`; writes; answers with `before` and `after`._
 
 | Parameter    | Type    | Required | What it is                                                                                                                                                                                                     |
 | ------------ | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -881,7 +1153,7 @@ _Needs `ideas:write`; writes._
 
 Delete an idea — for one added by mistake, or one that has been dealt with. It is gone, not archived, so prefer leaving it alone unless the person asked.
 
-_Needs `ideas:write` and `destructive`; deletes._
+_Needs `ideas:write` and `destructive`; deletes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is     |
 | --------- | ------- | -------- | -------------- |
@@ -889,15 +1161,15 @@ _Needs `ideas:write` and `destructive`; deletes._
 
 ### `change_idea` — Change an idea
 
-Rewrite an idea, or retag it. Only the fields given change — this is for a misheard word or a better tag, not for turning it into something else.
+Rewrite an idea, or retag it — for a misheard word or a better tag, not for turning it into something else. Only `id` is needed: a field left out is untouched.
 
-_Needs `ideas:write`; writes._
+_Needs `ideas:write`; writes; answers with `before` and `after`._
 
-| Parameter | Type    | Required | What it is                                    |
-| --------- | ------- | -------- | --------------------------------------------- |
-| `id`      | integer | yes      | The idea’s id, as `ideas` gives it.           |
-| `content` | string  | —        | The idea, rewritten.                          |
-| `tags`    | string  | —        | Comma-separated tags, replacing the old ones. |
+| Parameter | Type    | Required | What it is                                                                                                      |
+| --------- | ------- | -------- | --------------------------------------------------------------------------------------------------------------- |
+| `id`      | integer | yes      | The idea’s id, as `ideas` gives it.                                                                             |
+| `content` | string  | —        | The idea, rewritten. It cannot be emptied.                                                                      |
+| `tags`    | string  | —        | Comma-separated tags, replacing the old ones. An empty string takes them all off; left out, they are untouched. |
 
 ### `tags` — The labels
 
@@ -911,7 +1183,7 @@ _Takes no parameters._
 
 The labels on what is filed under one subject, with how much of it carries each — and what kind: notes, tasks, ideas. Narrower than `tags`, which counts a word across the whole account, and the one to ask before labelling something the way this notebook labels things. A label the notebook suggests by default is listed at nought.
 
-_Needs `tags:read`; read-only._
+_Needs `tags:read` and `notes:read`; read-only._
 
 | Parameter    | Type    | Required | What it is                                 |
 | ------------ | ------- | -------- | ------------------------------------------ |
@@ -921,7 +1193,7 @@ _Needs `tags:read`; read-only._
 
 Write down what a word means in this account — `#short` on the shopping is low on something, `#short` on a book is the book. One line; an empty one takes the meaning off again. The label itself is not changed: `rename_tag` is for that.
 
-_Needs `tags:write`; writes._
+_Needs `tags:write`; writes; answers with `before` and `after`._
 
 | Parameter     | Type    | Required | What it is                                          |
 | ------------- | ------- | -------- | --------------------------------------------------- |
@@ -932,7 +1204,7 @@ _Needs `tags:write`; writes._
 
 Rename a label everywhere at once — for a typo, or for two words that turned out to mean one thing. Renaming onto a name the account already uses merges the two: everything that carried the old label carries the surviving one, and the old label stops existing. Answers with the label that survived.
 
-_Needs `tags:write`; writes._
+_Needs `tags:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                                                                                        |
 | --------- | ------- | -------- | ------------------------------------------------------------------------------------------------- |
@@ -943,7 +1215,7 @@ _Needs `tags:write`; writes._
 
 Give a label a colour, so it is drawn in it wherever a chip for it appears. An empty string takes the colour off again, which is the plain chip every label starts as.
 
-_Needs `tags:write`; writes._
+_Needs `tags:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                                                         |
 | --------- | ------- | -------- | ------------------------------------------------------------------ |
@@ -954,7 +1226,7 @@ _Needs `tags:write`; writes._
 
 Take a label out of the vocabulary and off everything that carried it — the tasks, notes, ideas, blocks and pictures keep everything else about them. Nothing is archived; the label is gone. To fold it into another label instead, `rename_tag` onto that one.
 
-_Needs `tags:write` and `destructive`; deletes._
+_Needs `tags:write` and `destructive`; deletes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                          |
 | --------- | ------- | -------- | ----------------------------------- |
@@ -964,7 +1236,7 @@ _Needs `tags:write` and `destructive`; deletes._
 
 Take a label off everything filed in one notebook — its notes, tasks and ideas — and off nothing outside it. The label stays in the vocabulary while anything else carries it. Answers with how many things lost it. To remove a label everywhere, `remove_tag`.
 
-_Needs `tags:write`; writes._
+_Needs `tags:write`; writes; answers with `before` and `after`._
 
 | Parameter    | Type    | Required | What it is                                 |
 | ------------ | ------- | -------- | ------------------------------------------ |
@@ -985,12 +1257,12 @@ _Needs `inventory:read`; read-only._
 
 Put something on the list. If the cupboard already has it, this says so rather than adding a second one.
 
-_Needs `inventory:write`; writes._
+_Needs `inventory:write`; writes; answers with `before` and `after`._
 
 | Parameter    | Type    | Required | What it is                                                                                                                                                                                                     |
 | ------------ | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `name`       | string  | yes      | What to buy.                                                                                                                                                                                                   |
-| `type`       | string  | —        | `replenish` is something the cupboard runs out of and wants again; `someday` is a wishlist item. Default `replenish`. One of: `replenish`, `someday`. Default `'replenish'`.                                   |
+| `type`       | string  | —        | `replenish` is something the cupboard runs out of and wants again; `someday` is a wishlist item. Default `replenish`. One of: `replenish`, `someday`. Default `replenish`.                                     |
 | `notes`      | string  | —        | Anything else about it.                                                                                                                                                                                        |
 | `section`    | string  | —        | The section to file it under, by name — `inventory_categories` lists them.                                                                                                                                     |
 | `notebookId` | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
@@ -999,7 +1271,7 @@ _Needs `inventory:write`; writes._
 
 Mark an item bought, which moves it out of "to buy" and into the cupboard. The row stays: the same thing is bought again the next time it runs out.
 
-_Needs `inventory:write`; writes._
+_Needs `inventory:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is     |
 | --------- | ------- | -------- | -------------- |
@@ -1009,7 +1281,7 @@ _Needs `inventory:write`; writes._
 
 Undo a tick: the item comes out of the cupboard and back onto "to buy". Use it when something was marked bought by mistake, or when it has run out again. Nothing is lost either way — the row, its category and its price history are the same row.
 
-_Needs `inventory:write`; writes._
+_Needs `inventory:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is     |
 | --------- | ------- | -------- | -------------- |
@@ -1019,7 +1291,7 @@ _Needs `inventory:write`; writes._
 
 Put an item away without deleting it — for something not wanted this week. It keeps everything about itself and comes back with `unarchive_item`. Prefer this to removing when somebody says "not now" rather than "never".
 
-_Needs `inventory:write`; writes._
+_Needs `inventory:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is     |
 | --------- | ------- | -------- | -------------- |
@@ -1029,7 +1301,7 @@ _Needs `inventory:write`; writes._
 
 Bring back an item that was put away, so it shows on the list again. `shopping_list` says which items are archived.
 
-_Needs `inventory:write`; writes._
+_Needs `inventory:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is     |
 | --------- | ------- | -------- | -------------- |
@@ -1039,7 +1311,7 @@ _Needs `inventory:write`; writes._
 
 Remove an item because it is not wanted — "take milk off", "we already have that". Not the same as `tick_bought`, which records that it _was_ bought and keeps it in the history and the price record. Takes the id `shopping_list` gives.
 
-_Needs `inventory:write` and `destructive`; deletes._
+_Needs `inventory:write` and `destructive`; deletes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is     |
 | --------- | ------- | -------- | -------------- |
@@ -1059,7 +1331,7 @@ _Needs `kitchen:read`; read-only._
 
 Write a recipe down. Ingredients are one per line — "200 g flour", "2 eggs" — and each becomes a shopping item, so the list knows about them the day the meal is planned.
 
-_Needs `kitchen:write`; writes._
+_Needs `kitchen:write`; writes; answers with `before` and `after`._
 
 | Parameter     | Type    | Required | What it is                                                                                                                                                                                                     |
 | ------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1073,9 +1345,9 @@ _Needs `kitchen:write`; writes._
 
 ### `change_recipe` — Change a recipe
 
-Change a recipe’s title, method, servings, time or source, and add ingredients — one per line, quantity first. Only the fields given change, and existing ingredients stay.
+Change a recipe’s title, method, servings, time or source, and add ingredients — one per line, quantity first. Only `id` is needed: a field left out is untouched, and existing ingredients stay. An empty string clears a text field, `0` or `null` clears servings or time. The recipe and its new ingredients land together or not at all.
 
-_Needs `kitchen:write`; writes._
+_Needs `kitchen:write`; writes; answers with `before` and `after`._
 
 | Parameter     | Type    | Required | What it is                              |
 | ------------- | ------- | -------- | --------------------------------------- |
@@ -1091,18 +1363,18 @@ _Needs `kitchen:write`; writes._
 
 Record that a meal was made — `recipes` shows when each was last cooked, and this is what sets it. Name the ingredient ids that ran out and they land back on the shopping list, which is the loop the kitchen exists to close.
 
-_Needs `kitchen:write`; writes._
+_Needs `kitchen:write`; writes; answers with `before` and `after`._
 
-| Parameter  | Type    | Required | What it is                                                                         |
-| ---------- | ------- | -------- | ---------------------------------------------------------------------------------- |
-| `id`       | integer | yes      | The recipe’s id, as `recipes` gives it.                                            |
-| `ranOutOf` | array   | —        | Ingredient item ids that were used up, as the recipe’s ingredient list gives them. |
+| Parameter  | Type      | Required | What it is                                                                                                                                                  |
+| ---------- | --------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`       | integer   | yes      | The recipe’s id, as `recipes` gives it.                                                                                                                     |
+| `ranOutOf` | integer[] | —        | Ingredient item ids that were used up, as the recipe’s ingredient list gives them. Only this recipe’s own ingredients; any other id refuses the whole call. |
 
 ### `archive_recipe` — Put a recipe away
 
 Archive a recipe — out of the everyday list, not deleted — or bring one back with `archived: false`. For the dish nobody makes any more that somebody may yet ask for.
 
-_Needs `kitchen:write`; writes._
+_Needs `kitchen:write`; writes; answers with `before` and `after`._
 
 | Parameter  | Type    | Required | What it is                                              |
 | ---------- | ------- | -------- | ------------------------------------------------------- |
@@ -1113,7 +1385,7 @@ _Needs `kitchen:write`; writes._
 
 Move a shopping item into a section — "put the milk under Dairy". Takes the item’s id from `shopping_list` and the section by name from `inventory_categories`; an empty section name unfiles it. A name matching no section is refused with the ones that exist.
 
-_Needs `inventory:write`; writes._
+_Needs `inventory:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                                    |
 | --------- | ------- | -------- | --------------------------------------------- |
@@ -1132,7 +1404,7 @@ _Takes no parameters._
 
 Make a new section for the shopping list — and say whether it holds food, because only food sections can feed recipes as ingredients.
 
-_Needs `inventory:write`; writes._
+_Needs `inventory:write`; writes; answers with `before` and `after`._
 
 | Parameter   | Type    | Required | What it is                                      |
 | ----------- | ------- | -------- | ----------------------------------------------- |
@@ -1141,9 +1413,9 @@ _Needs `inventory:write`; writes._
 
 ### `change_inventory_category` — Rename a shopping section
 
-Rename a section, or change whether it holds food. Only the fields given change; the items filed under it stay exactly where they are.
+Rename a section, or change whether it holds food. Only `id` is needed: a field left out is untouched, and the change lands whole or not at all — a refused share leaves the name as it was. The items filed under it stay exactly where they are.
 
-_Needs `inventory:write`; writes._
+_Needs `inventory:write`; writes; answers with `before` and `after`._
 
 | Parameter         | Type    | Required | What it is                                                                              |
 | ----------------- | ------- | -------- | --------------------------------------------------------------------------------------- |
@@ -1156,7 +1428,7 @@ _Needs `inventory:write`; writes._
 
 Delete a section. Its items are not touched — they stay on the list, just unfiled. A section is a shelf label, and removing the label must not empty the shelf.
 
-_Needs `inventory:write` and `destructive`; deletes._
+_Needs `inventory:write` and `destructive`; deletes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is        |
 | --------- | ------- | -------- | ----------------- |
@@ -1166,7 +1438,7 @@ _Needs `inventory:write` and `destructive`; deletes._
 
 Write down what was paid for a shopping item — "milk was 6,50 today". The list keeps a small price history per item, which is how it can notice drift. Takes the id `shopping_list` gives, and the price as the person said it.
 
-_Needs `inventory:write`; writes._
+_Needs `inventory:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                                                             |
 | --------- | ------- | -------- | ---------------------------------------------------------------------- |
@@ -1177,25 +1449,28 @@ _Needs `inventory:write`; writes._
 
 Transcribe a goal the person just committed to, in their own words — "apply to twenty companies this quarter". Never invent one, and never add a goal they did not say: a goal is a commitment, and the commitment is theirs. `goal_areas` lists the areas one can be filed under.
 
-_Needs `tasks:write`; writes._
+_Needs `tasks:write`; writes; answers with `before` and `after`._
 
-| Parameter     | Type    | Required | What it is                                                                                                                                                                                                                                           |
-| ------------- | ------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `title`       | string  | yes      | The goal, in the person’s own words.                                                                                                                                                                                                                 |
-| `horizon`     | string  | yes      | week, month, quarter, semester or year.                                                                                                                                                                                                              |
-| `notes`       | string  | —        | Anything else they said about it.                                                                                                                                                                                                                    |
-| `startDate`   | string  | —        | The day its period starts from, as YYYY-MM-DD. Today if left out.                                                                                                                                                                                    |
-| `area`        | string  | —        | The area to file it under, by name — `goal_areas` lists them.                                                                                                                                                                                        |
-| `targets`     | array   | —        | Everything the goal is measured by, replacing what it has: `[{ "value": 3, "unit": "gigs" }, { "value": 5, "unit": "songs" }]`. A goal met by doing one thing can say `targetValue` and `unit` instead. Each one carries `value`, `unit`, `measure`. |
-| `targetValue` | number  | —        | The number it aims at, when it counts one thing.                                                                                                                                                                                                     |
-| `unit`        | string  | —        | What that number counts — applications, km, pages.                                                                                                                                                                                                   |
-| `notebookId`  | integer | —        | The notebook it belongs to, as `notebooks` gives it — a goal that is part of one subject rather than the year in general.                                                                                                                            |
+| Parameter           | Type     | Required | What it is                                                                                                                                                                                                                                                                                                                               |
+| ------------------- | -------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`             | string   | yes      | The goal, in the person’s own words.                                                                                                                                                                                                                                                                                                     |
+| `horizon`           | string   | yes      | week, month, quarter, semester or year.                                                                                                                                                                                                                                                                                                  |
+| `notes`             | string   | —        | Anything else they said about it.                                                                                                                                                                                                                                                                                                        |
+| `startDate`         | string   | —        | The day its period starts from, as YYYY-MM-DD. Today if left out.                                                                                                                                                                                                                                                                        |
+| `area`              | string   | —        | The area to file it under, by name — `goal_areas` lists them.                                                                                                                                                                                                                                                                            |
+| `targets`           | object[] | —        | Everything the goal is measured by, replacing what it has: `[{ "value": 3, "unit": "gigs" }, { "value": 5, "unit": "songs" }]`. A goal met by doing one thing can say `targetValue` and `unit` instead.                                                                                                                                  |
+| `targets[].value`   | number   | yes      | How much of it.                                                                                                                                                                                                                                                                                                                          |
+| `targets[].unit`    | string   | —        | What is being counted — gigs, songs, km.                                                                                                                                                                                                                                                                                                 |
+| `targets[].measure` | string   | —        | A workout measure this counts, in the word the sessions use — "ran", "deadlifted". Set it and the number is the sum of what the register holds for that activity inside the goal’s period, read rather than typed; `workout_sessions` and `workouts` show what has been measured. Leave it off for a number the person keeps themselves. |
+| `targetValue`       | number   | —        | The number it aims at, when it counts one thing.                                                                                                                                                                                                                                                                                         |
+| `unit`              | string   | —        | What that number counts — applications, km, pages.                                                                                                                                                                                                                                                                                       |
+| `notebookId`        | integer  | —        | The notebook it belongs to, as `notebooks` gives it — a goal that is part of one subject rather than the year in general.                                                                                                                                                                                                                |
 
 ### `log_goal_progress` — Move a goal’s number
 
 Record progress on a goal that counts something: pass `value` to set where it stands, or `delta` to add what just happened — "I sent three more CVs" is `delta: 3`. Exactly one of the two. A goal measured by several things also needs `unit`, to say which of them moved; `goals` shows them and where each stands.
 
-_Needs `tasks:write`; writes._
+_Needs `tasks:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                                                                |
 | --------- | ------- | -------- | ------------------------------------------------------------------------- |
@@ -1208,7 +1483,7 @@ _Needs `tasks:write`; writes._
 
 Give a goal another measure — "and fifty kilometres run". Leaves the measures already on it alone, and starts at zero. `goals` shows what it is measured by.
 
-_Needs `tasks:write`; writes._
+_Needs `tasks:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                                                                                                                                                                                                                                                                                                                               |
 | --------- | ------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1221,7 +1496,7 @@ _Needs `tasks:write`; writes._
 
 Drop one of the things a goal is measured by, by its unit. The goal and its other measures stay. For a measure that was a mistake — one that simply did not happen is what `close_goal` is for.
 
-_Needs `tasks:write` and `destructive`; deletes._
+_Needs `tasks:write` and `destructive`; deletes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                                                                   |
 | --------- | ------- | -------- | ---------------------------------------------------------------------------- |
@@ -1240,7 +1515,7 @@ _Takes no parameters._
 
 Make a new area to file goals under. Only when the person named one that does not exist — `goal_areas` says what already does.
 
-_Needs `tasks:write`; writes._
+_Needs `tasks:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type   | Required | What it is                                    |
 | --------- | ------ | -------- | --------------------------------------------- |
@@ -1259,7 +1534,7 @@ _Takes no parameters._
 
 Start tracking a habit: something to keep doing (`good`), to avoid (`bad`), or just to watch (`neutral`). Scheduled days come in the same shape `all_habits` shows for existing ones; leave them out for every day.
 
-_Needs `habits:write`; writes._
+_Needs `habits:write`; writes; answers with `before` and `after`._
 
 | Parameter       | Type    | Required | What it is                                                                                                                                                                                                     |
 | --------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1271,9 +1546,9 @@ _Needs `habits:write`; writes._
 
 ### `change_habit` — Change a habit
 
-Rename a habit or change its type, description or days. Only the fields given change; its history of kept days stays exactly as it was.
+Rename a habit or change its type, description or days. Only `id` is needed: a field left out is untouched. An empty `description` clears it; an empty `scheduledDays` clears the days. Its history of kept days stays exactly as it was.
 
-_Needs `habits:write`; writes._
+_Needs `habits:write`; writes; answers with `before` and `after`._
 
 | Parameter       | Type    | Required | What it is                                              |
 | --------------- | ------- | -------- | ------------------------------------------------------- |
@@ -1297,7 +1572,7 @@ _Needs `schedule:read`; read-only._
 
 A time and a sentence, reaching the phone even with the app closed — "take the bread out at ten past", "ring mum at six". Use this when there is nothing to schedule; when the reminder is _about_ something already on the day, `remind_before_block` hangs it on that block instead, which keeps the two together. `cancel_alarm` takes it back.
 
-_Needs `schedule:write`; writes._
+_Needs `schedule:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                                                                                                                                                                                                              |
 | --------- | ------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1307,9 +1582,9 @@ _Needs `schedule:write`; writes._
 
 ### `change_reminder` — Change a reminder that is already set
 
-Move a reminder, reword it, or change whether it makes a noise — the one `set_alarm` made, or a nudge before a block. Send only what changes; anything left out stays as it is. Takes the id `reminders` gives.
+Move a reminder, reword it, or change whether it makes a noise — the one `set_alarm` made, or a nudge before a block. Send only what changes; anything left out stays as it is, and nothing is written unless all of it is valid. `sound: null` hands the choice back to the default. Takes the id `reminders` gives.
 
-_Needs `schedule:write`; writes._
+_Needs `schedule:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                                                                                                                                  |
 | --------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1322,7 +1597,7 @@ _Needs `schedule:write`; writes._
 
 Remove a reminder outright — the one `set_alarm` made, or any other. `dismiss_reminder` waves one off and leaves the row; this deletes it. Takes the id `reminders` gives.
 
-_Needs `schedule:write` and `destructive`; deletes._
+_Needs `schedule:write` and `destructive`; deletes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is         |
 | --------- | ------- | -------- | ------------------ |
@@ -1332,7 +1607,7 @@ _Needs `schedule:write` and `destructive`; deletes._
 
 Be told some minutes before a block starts — it reaches the phone even with the app closed. A reminder belongs to a block: for "remind me at three to call the dentist", first `add_block` the call at three, then set the reminder on it. Takes the id the day gives, like `slot:42`.
 
-_Needs `schedule:write`; writes._
+_Needs `schedule:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                                                   |
 | --------- | ------- | -------- | ------------------------------------------------------------ |
@@ -1344,7 +1619,7 @@ _Needs `schedule:write`; writes._
 
 Wave one reminder off so it does not fire — for "no need to remind me about that any more". Takes the id `reminders` gives; the block it sat on is untouched.
 
-_Needs `schedule:write`; writes._
+_Needs `schedule:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is         |
 | --------- | ------- | -------- | ------------------ |
@@ -1362,54 +1637,54 @@ _Takes no parameters._
 
 Add a block that comes back — "gym on Tuesdays at seven", "the bins every other Tuesday", "rent on the first". Weekly unless `repeats` says otherwise. This changes every week from now on; `add_block` is the one for a single day. Weekdays count from Monday: 0 is Monday, 6 is Sunday. A block can be a bare category rather than a named thing — leave the title out and it shows as the category itself, which is what "put work in those hours" means.
 
-_Needs `schedule:write`; writes._
+_Needs `schedule:write`; writes; answers with `before` and `after`._
 
-| Parameter        | Type    | Required | What it is                                                                                                                                                                                                                                                                                                         |
-| ---------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `weekday`        | integer | yes      | 0 is Monday, 6 is Sunday — the week starts on Monday here.                                                                                                                                                                                                                                                         |
-| `title`          | string  | —        | What it is — shown on the block. Leave it out for a block that is just the category.                                                                                                                                                                                                                               |
-| `start_time`     | string  | yes      | When it starts, as HH:MM on a 24-hour clock.                                                                                                                                                                                                                                                                       |
-| `minutes`        | integer | —        | How long it runs, in minutes. Default `60`.                                                                                                                                                                                                                                                                        |
-| `category`       | string  | —        | Which part of life it belongs to, by name — `categories` lists them.                                                                                                                                                                                                                                               |
-| `remind_minutes` | integer | —        | Minutes before each occurrence to be reminded. No reminder if left out.                                                                                                                                                                                                                                            |
-| `notebookId`     | integer | —        | The notebook it belongs to, as `notebooks` gives its id — the subject it is part of. `0` takes it out of the one it is in.                                                                                                                                                                                         |
-| `repeats`        | string  | —        | How often it comes back. Weekly if left out. `every_n_weeks` and `every_n_days` need `every`; `monthly` needs `month_day` and ignores the weekday. One of: `weekly`, `every_n_weeks`, `every_n_days`, `monthly`.                                                                                                   |
-| `every`          | integer | —        | The N in every N weeks or every N days — 2 is "every other".                                                                                                                                                                                                                                                       |
-| `month_day`      | integer | —        | For `monthly`: which day of the month, 1 to 31. A month too short for it uses its last day.                                                                                                                                                                                                                        |
-| `urgency`        | integer | —        | How soon it has to happen, 0–5.                                                                                                                                                                                                                                                                                    |
-| `interest`       | integer | —        | How much they want to do it, 0–5.                                                                                                                                                                                                                                                                                  |
-| `ease`           | integer | —        | How easy it is, 0–5, five being easiest. Replaces `energy`, which asked the opposite question on a scale that began at one.                                                                                                                                                                                        |
-| `energy`         | integer | —        | Deprecated — use `ease`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190. **Deprecated.**                                                                                                             |
-| `attributes`     | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. |
-| `meta`           | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in …. **Deprecated.**                                                                                                                  |
+| Parameter        | Type    | Required | What it is                                                                                                                                                                                                                                                                                                                                         |
+| ---------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `weekday`        | integer | yes      | 0 is Monday, 6 is Sunday — the week starts on Monday here.                                                                                                                                                                                                                                                                                         |
+| `title`          | string  | —        | What it is — shown on the block. Leave it out for a block that is just the category.                                                                                                                                                                                                                                                               |
+| `start_time`     | string  | yes      | When it starts, as HH:MM on a 24-hour clock.                                                                                                                                                                                                                                                                                                       |
+| `minutes`        | integer | —        | How long it runs, in minutes. Default `60`.                                                                                                                                                                                                                                                                                                        |
+| `category`       | string  | —        | Which part of life it belongs to, by name — `categories` lists them.                                                                                                                                                                                                                                                                               |
+| `remind_minutes` | integer | —        | Minutes before each occurrence to be reminded. No reminder if left out.                                                                                                                                                                                                                                                                            |
+| `notebookId`     | integer | —        | The notebook it belongs to, as `notebooks` gives its id — the subject it is part of. `0` takes it out of the one it is in.                                                                                                                                                                                                                         |
+| `repeats`        | string  | —        | How often it comes back. Weekly if left out. `every_n_weeks` and `every_n_days` need `every`; `monthly` needs `month_day` and ignores the weekday. One of: `weekly`, `every_n_weeks`, `every_n_days`, `monthly`.                                                                                                                                   |
+| `every`          | integer | —        | The N in every N weeks or every N days — 2 is "every other".                                                                                                                                                                                                                                                                                       |
+| `month_day`      | integer | —        | For `monthly`: which day of the month, 1 to 31. A month too short for it uses its last day.                                                                                                                                                                                                                                                        |
+| `urgency`        | integer | —        | How soon it has to happen, 0–5. On a change, `null` clears it.                                                                                                                                                                                                                                                                                     |
+| `interest`       | integer | —        | How much they want to do it, 0–5. On a change, `null` clears it.                                                                                                                                                                                                                                                                                   |
+| `ease`           | integer | —        | How easy it is, 0–5, five being easiest. On a change, `null` clears it. Replaces `energy`, which asked the opposite question on a scale that began at one.                                                                                                                                                                                         |
+| `energy`         | integer | —        | Deprecated — use `ease`, which is this turned round: an energy of 5 is an ease of 1. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190.0. **Deprecated** — removed in 0.190.0.                                                                                                                      |
+| `attributes`     | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. Any key, each holding a string. |
+| `meta`           | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190.0. Any key, each holding a string. **Deprecated** — removed in 0.190.0.                                                                                       |
 
 ### `change_repeating_block` — Change a repeating task block
 
-Change every future occurrence of a repeating block: its weekday, time, length, how often it comes back, the text on it, its category, its reminder, its notebook or its attributes. This is "move gym to Wednesdays" or "make it every other week"; `change_block` is "move this Wednesday’s gym". Only the fields given change. Takes the id `repeating_week` gives.
+Change every future occurrence of a repeating block: its weekday, time, length, how often it comes back, the text on it, its category, its reminder, its notebook or its attributes. This is "move gym to Wednesdays" or "make it every other week"; `change_block` is "move this Wednesday’s gym". Only `id` is needed: a field left out is untouched, and nothing is written unless all of it is valid. An empty `title` takes the text off. Takes the id `repeating_week` gives.
 
-_Needs `schedule:write`; writes._
+_Needs `schedule:write`; writes; answers with `before` and `after`._
 
-| Parameter        | Type    | Required | What it is                                                                                                                                                                                                                                                                                                         |
-| ---------------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `id`             | integer | yes      | The repeating block’s id, as `repeating_week` gives it.                                                                                                                                                                                                                                                            |
-| `weekday`        | integer | —        | The new weekday. 0 is Monday, 6 is Sunday.                                                                                                                                                                                                                                                                         |
-| `start_time`     | string  | —        | The new start, as HH:MM.                                                                                                                                                                                                                                                                                           |
-| `minutes`        | integer | —        | The new length, in minutes.                                                                                                                                                                                                                                                                                        |
-| `title`          | string  | —        | The text shown on the block. A block that names an activity stays that activity — this only changes what the block says, which is how "add stretching to the morning routine’s text" is done.                                                                                                                      |
-| `category`       | string  | —        | Refile it under this part of life, by name.                                                                                                                                                                                                                                                                        |
-| `remind_minutes` | integer | —        | The new reminder lead. 0 turns it off.                                                                                                                                                                                                                                                                             |
-| `notebookId`     | integer | —        | The notebook it belongs to, as `notebooks` gives its id — the subject it is part of. `0` takes it out of the one it is in.                                                                                                                                                                                         |
-| `repeats`        | string  | —        | How often it comes back. Weekly if left out. `every_n_weeks` and `every_n_days` need `every`; `monthly` needs `month_day` and ignores the weekday. One of: `weekly`, `every_n_weeks`, `every_n_days`, `monthly`.                                                                                                   |
-| `every`          | integer | —        | The N in every N weeks or every N days — 2 is "every other".                                                                                                                                                                                                                                                       |
-| `month_day`      | integer | —        | For `monthly`: which day of the month, 1 to 31. A month too short for it uses its last day.                                                                                                                                                                                                                        |
-| `attributes`     | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. |
-| `meta`           | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in …. **Deprecated.**                                                                                                                  |
+| Parameter        | Type    | Required | What it is                                                                                                                                                                                                                                                                                                                                         |
+| ---------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`             | integer | yes      | The repeating block’s id, as `repeating_week` gives it.                                                                                                                                                                                                                                                                                            |
+| `weekday`        | integer | —        | The new weekday. 0 is Monday, 6 is Sunday.                                                                                                                                                                                                                                                                                                         |
+| `start_time`     | string  | —        | The new start, as HH:MM.                                                                                                                                                                                                                                                                                                                           |
+| `minutes`        | integer | —        | The new length, in minutes.                                                                                                                                                                                                                                                                                                                        |
+| `title`          | string  | —        | The text shown on the block. A block that names an activity stays that activity — this only changes what the block says, which is how "add stretching to the morning routine’s text" is done.                                                                                                                                                      |
+| `category`       | string  | —        | Refile it under this part of life, by name.                                                                                                                                                                                                                                                                                                        |
+| `remind_minutes` | integer | —        | The new reminder lead. 0 turns it off.                                                                                                                                                                                                                                                                                                             |
+| `notebookId`     | integer | —        | The notebook it belongs to, as `notebooks` gives its id — the subject it is part of. `0` takes it out of the one it is in.                                                                                                                                                                                                                         |
+| `repeats`        | string  | —        | How often it comes back. Weekly if left out. `every_n_weeks` and `every_n_days` need `every`; `monthly` needs `month_day` and ignores the weekday. One of: `weekly`, `every_n_weeks`, `every_n_days`, `monthly`.                                                                                                                                   |
+| `every`          | integer | —        | The N in every N weeks or every N days — 2 is "every other".                                                                                                                                                                                                                                                                                       |
+| `month_day`      | integer | —        | For `monthly`: which day of the month, 1 to 31. A month too short for it uses its last day.                                                                                                                                                                                                                                                        |
+| `attributes`     | object  | —        | Its attributes: key/value pairs such as { "url": "https://…", "room": "B12" }, read by plugins and shown on the task. Keys are lowercase letters, digits and underscores. This replaces the whole set: send every pair to keep, an empty value removes one, and {} removes them all. Left out, they are untouched. Any key, each holding a string. |
+| `meta`           | object  | —        | Deprecated — use `attributes`, which is the same thing under the name the app uses. Still accepted so an assistant written against the old shape keeps working, and removed in 0.190.0. Any key, each holding a string. **Deprecated** — removed in 0.190.0.                                                                                       |
 
 ### `remove_repeating_block` — Take a block out of the week
 
 Remove a repeating block from every week to come. Its past occurrences and their record stay. For one day only, use `cancel_block` instead — this is the whole pattern.
 
-_Needs `schedule:write` and `destructive`; deletes._
+_Needs `schedule:write` and `destructive`; deletes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                |
 | --------- | ------- | -------- | ------------------------- |
@@ -1435,7 +1710,7 @@ _Takes no parameters._
 
 Add an activity — a named thing inside a category, like "piano" inside "music" — so blocks can name it instead of the bare category.
 
-_Needs `schedule:write`; writes._
+_Needs `schedule:write`; writes; answers with `before` and `after`._
 
 | Parameter     | Type   | Required | What it is                                                     |
 | ------------- | ------ | -------- | -------------------------------------------------------------- |
@@ -1445,9 +1720,9 @@ _Needs `schedule:write`; writes._
 
 ### `change_activity` — Rename an activity, or say what it is
 
-Change an activity: its name, the line describing it, or which category it belongs to. Takes the id `activities` gives. Only the fields you pass change. Blocks that name it follow the change; nothing on any day is moved.
+Change an activity: its name, the line describing it, or which category it belongs to. Takes the id `activities` gives. Only `id` is needed: a field left out is untouched. Blocks that name it follow the change; nothing on any day is moved.
 
-_Needs `schedule:write`; writes._
+_Needs `schedule:write`; writes; answers with `before` and `after`._
 
 | Parameter     | Type    | Required | What it is                                             |
 | ------------- | ------- | -------- | ------------------------------------------------------ |
@@ -1478,7 +1753,7 @@ _Needs `people:read`; read-only._
 
 Keep a page for somebody — name at minimum; birthday as YYYY-MM-DD, or --MM-DD when the year is unknown. A birthday written down announces itself on the morning, unless told not to.
 
-_Needs `people:write`; writes._
+_Needs `people:write`; writes; answers with `before` and `after`._
 
 | Parameter          | Type    | Required | What it is                                                                                                                             |
 | ------------------ | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1492,9 +1767,9 @@ _Needs `people:write`; writes._
 
 ### `change_person` — Change a person’s page
 
-Correct or extend what is recorded about somebody — a birthday learnt, a number changed. Only the fields given change. Takes the id `people` gives.
+Correct or extend what is recorded about somebody — a birthday learnt, a number changed. Only `id` is needed: a field left out is untouched, and an empty string clears a birthday, phone, email or notes. Takes the id `people` gives.
 
-_Needs `people:write`; writes._
+_Needs `people:write`; writes; answers with `before` and `after`._
 
 | Parameter          | Type    | Required | What it is                                                                                          |
 | ------------------ | ------- | -------- | --------------------------------------------------------------------------------------------------- |
@@ -1521,7 +1796,7 @@ _Needs `notes:read`; read-only._
 
 Write one of the day’s three good things, in the person’s own words, into the first empty line. Refused when all three are written — a day holds three, and the fourth is tomorrow’s first.
 
-_Needs `notes:write`; writes._
+_Needs `notes:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type   | Required | What it is                                               |
 | --------- | ------ | -------- | -------------------------------------------------------- |
@@ -1542,7 +1817,7 @@ _Needs `tasks:read`; read-only._
 
 Replace the note on a week’s review — in the person’s own words, and only when they said them. This is what they will reread in a year; never compose it unasked. It used to be three separate lines and is one piece of writing now, so a note somebody dictates in three sentences is stored as they said it.
 
-_Needs `tasks:write`; writes._
+_Needs `tasks:write`; writes; answers with `before` and `after`._
 
 | Parameter   | Type   | Required | What it is                                                                                                                |
 | ----------- | ------ | -------- | ------------------------------------------------------------------------------------------------------------------------- |
@@ -1561,7 +1836,7 @@ _Takes no parameters._
 
 Write one point into a data stream — "I weigh 82 today", "slept 6 hours". Takes the stream’s slug as `data_streams` gives it; a slug that names nothing is refused with the list, never created on the quiet.
 
-_Needs `streams:write`; writes._
+_Needs `streams:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type   | Required | What it is                                             |
 | --------- | ------ | -------- | ------------------------------------------------------ |
@@ -1574,7 +1849,7 @@ _Needs `streams:write`; writes._
 
 Say an idea was acted on, with a note about what came of it — or take that back by calling it again. Applied is not deleted: the idea stays, wearing what happened.
 
-_Needs `ideas:write`; writes._
+_Needs `ideas:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                          |
 | --------- | ------- | -------- | ----------------------------------- |
@@ -1585,7 +1860,7 @@ _Needs `ideas:write`; writes._
 
 Star an idea, or unstar it by calling this again. A star is the person’s to ask for — never decorate their inbox on your own judgement.
 
-_Needs `ideas:write`; writes._
+_Needs `ideas:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is     |
 | --------- | ------- | -------- | -------------- |
@@ -1613,7 +1888,7 @@ _Takes no parameters._
 
 Add a location things can live in — a room, a chest, a drawer — optionally inside another location.
 
-_Needs `locations:write`; writes._
+_Needs `locations:write`; writes; answers with `before` and `after`._
 
 | Parameter   | Type    | Required | What it is                                   |
 | ----------- | ------- | -------- | -------------------------------------------- |
@@ -1622,21 +1897,21 @@ _Needs `locations:write`; writes._
 
 ### `change_location` — Rename or move a location
 
-Rename a location, or move it under a different parent (no parent_id moves it to the top level). It refuses to be put inside itself.
+Rename a location, or move it under a different parent. Only `id` is needed: a field left out is untouched, its notes included. `parent_id` of `0` or `null` moves it to the top level. It refuses to be put inside itself.
 
-_Needs `locations:write`; writes._
+_Needs `locations:write`; writes; answers with `before` and `after`._
 
-| Parameter   | Type    | Required | What it is                                  |
-| ----------- | ------- | -------- | ------------------------------------------- |
-| `id`        | integer | yes      | The location’s id.                          |
-| `name`      | string  | —        | The name, rewritten.                        |
-| `parent_id` | integer | —        | The new parent, or leave out for top level. |
+| Parameter   | Type    | Required | What it is                                                                               |
+| ----------- | ------- | -------- | ---------------------------------------------------------------------------------------- |
+| `id`        | integer | yes      | The location’s id.                                                                       |
+| `name`      | string  | —        | The name, rewritten.                                                                     |
+| `parent_id` | integer | —        | The new parent. `0` or `null` moves it to the top level; left out, it stays where it is. |
 
 ### `remove_location` — Remove a location
 
 Remove a location. Locations inside it rise to where it was; things in it stay, just without an address.
 
-_Needs `locations:write` and `destructive`; deletes._
+_Needs `locations:write` and `destructive`; deletes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is         |
 | --------- | ------- | -------- | ------------------ |
@@ -1646,7 +1921,7 @@ _Needs `locations:write` and `destructive`; deletes._
 
 Put a shopping/inventory item in a location, or take its address away by leaving location_id out. The item itself is untouched.
 
-_Needs `locations:write`; writes._
+_Needs `locations:write`; writes; answers with `before` and `after`._
 
 | Parameter     | Type    | Required | What it is                                           |
 | ------------- | ------- | -------- | ---------------------------------------------------- |
@@ -1657,12 +1932,12 @@ _Needs `locations:write`; writes._
 
 Replace an item’s attributes wholesale — { "length": "5m", "plug": "USB-C" }. Not every thing shares a shape; these are this thing’s. A name with an empty value is a whole attribute: "cable" says as much as "kind": "cable". Send the full set: removing one is writing the rest.
 
-_Needs `inventory:write`; writes._
+_Needs `inventory:write`; writes; answers with `before` and `after`._
 
-| Parameter    | Type    | Required | What it is                                                |
-| ------------ | ------- | -------- | --------------------------------------------------------- |
-| `id`         | integer | yes      | The item’s id.                                            |
-| `attributes` | object  | yes      | The attributes, string values. An empty value is allowed. |
+| Parameter    | Type    | Required | What it is                                                                                |
+| ------------ | ------- | -------- | ----------------------------------------------------------------------------------------- |
+| `id`         | integer | yes      | The item’s id.                                                                            |
+| `attributes` | object  | yes      | The attributes, string values. An empty value is allowed. Any key, each holding a string. |
 
 ### `workouts` — Your workouts
 
@@ -1678,57 +1953,65 @@ _Needs `workouts:read`; read-only._
 
 Declare what a workout is measured by — a run by kilometres and a pace, a push day by what was benched and for how many reps. Names and units only; no amounts. Replaces the list it has, so send all of them. A session may still measure anything: this decides what its form opens on.
 
-_Needs `workouts:write`; writes._
+_Needs `workouts:write`; writes; answers with `before` and `after`._
 
-| Parameter  | Type    | Required | What it is                                                                                                                                                                     |
-| ---------- | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `id`       | integer | yes      | The workout, from `workouts`.                                                                                                                                                  |
-| `measures` | array   | yes      | What this workout is measured by, in the order a session should be asked for them. Names and units in the person’s own words; no amounts. Each one carries `activity`, `unit`. |
+| Parameter             | Type     | Required | What it is                                                                                                                                |
+| --------------------- | -------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                  | integer  | yes      | The workout, from `workouts`.                                                                                                             |
+| `measures`            | object[] | yes      | What this workout is measured by, in the order a session should be asked for them. Names and units in the person’s own words; no amounts. |
+| `measures[].activity` | string   | yes      | What is measured: “ran”, “benched”.                                                                                                       |
+| `measures[].unit`     | string   | —        | Of what: “km”, “kg”, “reps”.                                                                                                              |
 
 ### `workout_sessions` — What was actually done
 
 Sessions, newest first: the day, anything noted, and lines of activity, amount and unit in the person’s own words — ran 5 km, deadlifted 120 kg. Narrow it with `workout_id` or `since` rather than reading everything.
 
-_Needs `workouts:read`; read-only._
+_Needs `workouts:read`; read-only; answers a page._
 
-| Parameter    | Type    | Required | What it is                                                                                             |
-| ------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------ |
-| `workout_id` | integer | —        | Only this workout’s, from `workouts`.                                                                  |
-| `since`      | string  | —        | Only sessions on or after this day, as YYYY-MM-DD.                                                     |
-| `limit`      | integer | —        | How many sessions. Default `50`.                                                                       |
-| `offset`     | integer | —        | Skip this many before counting, so the rest of the register can be read a page at a time. Default `0`. |
+| Parameter    | Type    | Required | What it is                                                                                                                                                   |
+| ------------ | ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `workout_id` | integer | —        | Only this workout’s, from `workouts`.                                                                                                                        |
+| `since`      | string  | —        | Only sessions on or after this day, as YYYY-MM-DD.                                                                                                           |
+| `limit`      | integer | —        | How many sessions. Default `50`.                                                                                                                             |
+| `offset`     | integer | —        | Skip this many before counting, so the rest of the register can be read a page at a time. `nextOffset` on the answer is what to pass here next. Default `0`. |
 
 ### `log_workout` — Write down a session
 
 Record that a workout happened, and how much of what was done. Everything but the workout is optional: a session with no lines is one that happened. Use the person’s own words and units — "ran" and "km", not a normalised distance — because that is what a chart of it will be grouped by. `workout_sessions` shows what they have called things before.
 
-_Needs `workouts:write`; writes._
+_Needs `workouts:write`; writes; answers with `before` and `after`._
 
-| Parameter    | Type    | Required | What it is                                                                                                                                                            |
-| ------------ | ------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `workout_id` | integer | yes      | Which workout, from `workouts`.                                                                                                                                       |
-| `done_on`    | string  | —        | The day, as YYYY-MM-DD. Today if left off.                                                                                                                            |
-| `notes`      | string  | —        | Anything worth saying about it.                                                                                                                                       |
-| `measures`   | array   | —        | What was done, a line each. `amount` and `unit` may be left off for something that happened without a number attached. Each one carries `activity`, `amount`, `unit`. |
+| Parameter             | Type     | Required | What it is                                                                                                             |
+| --------------------- | -------- | -------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `workout_id`          | integer  | yes      | Which workout, from `workouts`.                                                                                        |
+| `done_on`             | string   | —        | The day, as YYYY-MM-DD. Today if left off.                                                                             |
+| `notes`               | string   | —        | Anything worth saying about it.                                                                                        |
+| `measures`            | object[] | —        | What was done, a line each. `amount` and `unit` may be left off for something that happened without a number attached. |
+| `measures[].activity` | string   | yes      | What was done: "ran", "deadlifted".                                                                                    |
+| `measures[].amount`   | number   | —        | How much.                                                                                                              |
+| `measures[].unit`     | string   | —        | Of what: "km", "kg", "reps".                                                                                           |
 
 ### `change_workout_session` — Correct a session
 
-Rewrite a session that was written down wrong. The lines are replaced by the ones given, so send them all; leaving `measures` off keeps the ones it has.
+Rewrite a session that was written down wrong. Only `id` is needed: a field left out is untouched. The lines are replaced by the ones given, so send them all; leaving `measures` off keeps the ones it has, and `[]` removes them. An empty `notes` clears the notes. The session and its lines land together or not at all.
 
-_Needs `workouts:write`; writes._
+_Needs `workouts:write`; writes; answers with `before` and `after`._
 
-| Parameter  | Type    | Required | What it is                                                                            |
-| ---------- | ------- | -------- | ------------------------------------------------------------------------------------- |
-| `id`       | integer | yes      | The session’s id, from `workout_sessions`.                                            |
-| `done_on`  | string  | —        | The day it actually happened, as YYYY-MM-DD.                                          |
-| `notes`    | string  | —        | What to say about it instead.                                                         |
-| `measures` | array   | —        | The lines, replacing every one it has. Each one carries `activity`, `amount`, `unit`. |
+| Parameter             | Type     | Required | What it is                                   |
+| --------------------- | -------- | -------- | -------------------------------------------- |
+| `id`                  | integer  | yes      | The session’s id, from `workout_sessions`.   |
+| `done_on`             | string   | —        | The day it actually happened, as YYYY-MM-DD. |
+| `notes`               | string   | —        | What to say about it instead.                |
+| `measures`            | object[] | —        | The lines, replacing every one it has.       |
+| `measures[].activity` | string   | yes      | What was done: "ran", "deadlifted".          |
+| `measures[].amount`   | number   | —        | How much.                                    |
+| `measures[].unit`     | string   | —        | Of what: "km", "kg", "reps".                 |
 
 ### `remove_workout_session` — Remove a session
 
 Delete a session that was logged by accident. Its lines go with it; the workout itself stays. For correcting one rather than removing it, use `change_workout_session`.
 
-_Needs `workouts:write` and `destructive`; deletes._
+_Needs `workouts:write` and `destructive`; deletes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                                 |
 | --------- | ------- | -------- | ------------------------------------------ |
@@ -1765,7 +2048,7 @@ _Takes no parameters._
 
 Add a category to this account’s list — "Swimming", "Physio". Answering with one that already exists returns it rather than making a second.
 
-_Needs `workouts:write`; writes._
+_Needs `workouts:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type   | Required | What it is                   |
 | --------- | ------ | -------- | ---------------------------- |
@@ -1775,7 +2058,7 @@ _Needs `workouts:write`; writes._
 
 Take a category off the list. Workouts filed under it keep existing, without one.
 
-_Needs `workouts:write` and `destructive`; deletes._
+_Needs `workouts:write` and `destructive`; deletes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                 |
 | --------- | ------- | -------- | -------------------------- |
@@ -1785,23 +2068,25 @@ _Needs `workouts:write` and `destructive`; deletes._
 
 Write a workout down: a title, a category (one of the account’s own, from `workout_categories`), a plan as Markdown, and roughly how long it takes. Scheduling it onto a day is a block with its workoutId, the way a meal is a block with a recipe.
 
-_Needs `workouts:write`; writes._
+_Needs `workouts:write`; writes; answers with `before` and `after`._
 
-| Parameter     | Type    | Required | What it is                                                                                                                                                                                                     |
-| ------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `title`       | string  | yes      | What the session is called.                                                                                                                                                                                    |
-| `category_id` | integer | —        | Its category, from `workout_categories`.                                                                                                                                                                       |
-| `plan`        | string  | —        | What to do, as Markdown.                                                                                                                                                                                       |
-| `minutes`     | integer | —        | Roughly how long it takes.                                                                                                                                                                                     |
-| `notes`       | string  | —        | Anything else.                                                                                                                                                                                                 |
-| `measures`    | array   | —        | What this workout is measured by, in the order a session should be asked for them. Names and units in the person’s own words; no amounts. Each one carries `activity`, `unit`.                                 |
-| `notebookId`  | integer | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
+| Parameter             | Type     | Required | What it is                                                                                                                                                                                                     |
+| --------------------- | -------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`               | string   | yes      | What the session is called.                                                                                                                                                                                    |
+| `category_id`         | integer  | —        | Its category, from `workout_categories`.                                                                                                                                                                       |
+| `plan`                | string   | —        | What to do, as Markdown.                                                                                                                                                                                       |
+| `minutes`             | integer  | —        | Roughly how long it takes.                                                                                                                                                                                     |
+| `notes`               | string   | —        | Anything else.                                                                                                                                                                                                 |
+| `measures`            | object[] | —        | What this workout is measured by, in the order a session should be asked for them. Names and units in the person’s own words; no amounts.                                                                      |
+| `measures[].activity` | string   | yes      | What is measured: “ran”, “benched”.                                                                                                                                                                            |
+| `measures[].unit`     | string   | —        | Of what: “km”, “kg”, “reps”.                                                                                                                                                                                   |
+| `notebookId`          | integer  | —        | The notebook this belongs to, as `notebooks` gives its id — a subject somebody is working through, like a renovation. Only when they said so, and only when that notebook’s `modules` list says it holds this. |
 
 ### `change_workout` — Change a workout
 
-Rewrite a workout. Only the fields given change — for a misheard word or a better plan, not to turn it into a different session.
+Rewrite a workout — for a misheard word or a better plan, not to turn it into a different session. Only `id` is needed: a field left out is untouched. An empty string clears the plan or the notes; `0` or `null` clears `minutes` or `category_id`.
 
-_Needs `workouts:write`; writes._
+_Needs `workouts:write`; writes; answers with `before` and `after`._
 
 | Parameter     | Type    | Required | What it is                                |
 | ------------- | ------- | -------- | ----------------------------------------- |
@@ -1816,7 +2101,7 @@ _Needs `workouts:write`; writes._
 
 Take a workout out of the working list, or restore it. Nothing is lost either way — its history stays.
 
-_Needs `workouts:write`; writes._
+_Needs `workouts:write`; writes; answers with `before` and `after`._
 
 | Parameter  | Type    | Required | What it is                                               |
 | ---------- | ------- | -------- | -------------------------------------------------------- |
@@ -1827,7 +2112,7 @@ _Needs `workouts:write`; writes._
 
 Record that a workout happened just now — the gym’s version of marking a recipe cooked. It stamps the last-done time.
 
-_Needs `workouts:write`; writes._
+_Needs `workouts:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is        |
 | --------- | ------- | -------- | ----------------- |
@@ -1845,7 +2130,7 @@ _Takes no parameters._
 
 A new place money moves through. `kind` is bank, card, cash or other; `default_parser` preselects an export format when importing into it.
 
-_Needs `statements:write`; writes._
+_Needs `statements:write`; writes; answers with `before` and `after`._
 
 | Parameter        | Type    | Required | What it is                                                                                                                                                                                                     |
 | ---------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1858,7 +2143,7 @@ _Needs `statements:write`; writes._
 
 One movement, for a plugin that reads a bank the parsers do not, or for a purchase the statement has not published yet. Amounts are signed minor units: negative left the account. Give `external_id` and re-sending the same movement adds nothing.
 
-_Needs `statements:write`; writes._
+_Needs `statements:write`; writes; answers with `before` and `after`._
 
 | Parameter      | Type    | Required | What it is                                                |
 | -------------- | ------- | -------- | --------------------------------------------------------- |
@@ -1892,9 +2177,9 @@ _Needs `statements:read`; read-only._
 
 ### `change_sort_rule` — Change a sorting rule
 
-Rewrite a rule’s name, pattern or colour. Only the fields given change, and the change re-sorts every line at once, past ones included.
+Rewrite a rule’s name, pattern or colour. Only `id` is needed: a field left out is untouched, and a pattern that does not compile is refused before anything is written. The change re-sorts every line at once, past ones included.
 
-_Needs `statements:write`; writes._
+_Needs `statements:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                                                   |
 | --------- | ------- | -------- | ------------------------------------------------------------ |
@@ -1918,7 +2203,7 @@ _Needs `statements:read`; read-only._
 
 A regular expression that sorts statement lines, applied at read time — past lines included. Categories partition (first match, in position order, wins); tags overlap freely.
 
-_Needs `statements:write`; writes._
+_Needs `statements:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type   | Required | What it is                                                   |
 | --------- | ------ | -------- | ------------------------------------------------------------ |
@@ -1930,7 +2215,7 @@ _Needs `statements:write`; writes._
 
 The rule goes; the lines it sorted stay, now sorted by the rules that remain.
 
-_Needs `statements:write` and `destructive`; deletes._
+_Needs `statements:write` and `destructive`; deletes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                         |
 | --------- | ------- | -------- | ---------------------------------- |
@@ -2000,7 +2285,7 @@ _Needs `bills:read`; read-only._
 
 Write down a bill you expect to pay: a name, the expected amount in minor units (cents), and a rhythm (weekly, monthly, yearly, once). A monthly bill can name the day of the month it falls due.
 
-_Needs `bills:write`; writes._
+_Needs `bills:write`; writes; answers with `before` and `after`._
 
 | Parameter         | Type    | Required | What it is                                                                                                                                                                                                     |
 | ----------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -2017,9 +2302,9 @@ _Needs `bills:write`; writes._
 
 ### `change_bill` — Change a bill
 
-Rewrite a bill. Only the fields given change. Editing the expected amount does not rewrite what past payments recorded — those are snapshots of the day they were paid.
+Rewrite a bill. Only `id` is needed: a field left out is untouched, and nothing is written unless all of it is valid. `0` or `null` clears `due_day` or `due_month`; an empty string clears the notes. Editing the expected amount does not rewrite what past payments recorded — those are snapshots of the day they were paid.
 
-_Needs `bills:write`; writes._
+_Needs `bills:write`; writes; answers with `before` and `after`._
 
 | Parameter         | Type    | Required | What it is                                                                                               |
 | ----------------- | ------- | -------- | -------------------------------------------------------------------------------------------------------- |
@@ -2037,7 +2322,7 @@ _Needs `bills:write`; writes._
 
 Take a bill out of the active list (it stopped being paid), or restore it. Its payment history stays either way.
 
-_Needs `bills:write`; writes._
+_Needs `bills:write`; writes; answers with `before` and `after`._
 
 | Parameter  | Type    | Required | What it is                                               |
 | ---------- | ------- | -------- | -------------------------------------------------------- |
@@ -2048,7 +2333,7 @@ _Needs `bills:write`; writes._
 
 Record a bill paid for a period. The amount defaults to the expected one; give amount_paid in minor units (cents) when it differed. The period defaults to the current one for the bill’s rhythm. Paying the same period again corrects it, never doubles it.
 
-_Needs `bills:write`; writes._
+_Needs `bills:write`; writes; answers with `before` and `after`._
 
 | Parameter     | Type    | Required | What it is                                                                                      |
 | ------------- | ------- | -------- | ----------------------------------------------------------------------------------------------- |
@@ -2061,7 +2346,7 @@ _Needs `bills:write`; writes._
 
 Remove the payment recorded for a period — it was not actually paid, or was recorded by mistake. The inverse of pay_bill.
 
-_Needs `bills:write`; writes._
+_Needs `bills:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                        |
 | --------- | ------- | -------- | --------------------------------- |
@@ -2072,7 +2357,7 @@ _Needs `bills:write`; writes._
 
 Say nothing was owed for a period — the gym frozen for a month, a week with no cleaner. The period reads as settled without a payment, stops asking to be paid, and counts as skipped in the history. Refused on a period already paid: undo that with unpay_bill first. The period defaults to the current one.
 
-_Needs `bills:write`; writes._
+_Needs `bills:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                                                                                      |
 | --------- | ------- | -------- | ----------------------------------------------------------------------------------------------- |
@@ -2084,7 +2369,7 @@ _Needs `bills:write`; writes._
 
 Take back a skip, so the period is open and asks to be paid again. The inverse of skip_bill.
 
-_Needs `bills:write`; writes._
+_Needs `bills:write`; writes; answers with `before` and `after`._
 
 | Parameter | Type    | Required | What it is                          |
 | --------- | ------- | -------- | ----------------------------------- |

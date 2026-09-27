@@ -345,14 +345,59 @@ export function deleteRecipe(ctx: Ctx, id: number): void {
  * screen asks which ones actually ran out — usually none, sometimes the milk.
  */
 export function cooked(ctx: Ctx, id: number, ranOutOf: number[] = []): void {
-	const res = db
-		.update(recipes)
-		.set({ lastCookedAt: stamp(ctx), updatedAt: stamp(ctx) })
-		.where(and(eq(recipes.id, id), eq(recipes.userId, ctx.userId)))
-		.run();
+	// Only this recipe's own ingredients can run out by cooking it. An item id
+	// from anywhere else in the account is refused before anything is written,
+	// so naming a stranger to the recipe cannot reach into the rest of the
+	// inventory — nor into another notebook's.
+	const ids = [...new Set(ranOutOf)];
+	if (ids.some((one) => !Number.isInteger(one) || one <= 0)) throw new NotFoundError('ingredient');
 
-	if (res.changes === 0) throw new NotFoundError('recipe');
-	if (ranOutOf.length > 0) markOutOfStock(ctx, ranOutOf);
+	db.transaction(() => {
+		const res = db
+			.update(recipes)
+			.set({ lastCookedAt: stamp(ctx), updatedAt: stamp(ctx) })
+			.where(and(eq(recipes.id, id), eq(recipes.userId, ctx.userId)))
+			.run();
+		if (res.changes === 0) throw new NotFoundError('recipe');
+		if (ids.length === 0) return;
+
+		const inRecipe = new Set(
+			db
+				.select({ itemId: recipeItems.itemId })
+				.from(recipeItems)
+				.where(
+					and(
+						eq(recipeItems.userId, ctx.userId),
+						eq(recipeItems.recipeId, id),
+						inArray(recipeItems.itemId, ids)
+					)
+				)
+				.all()
+				.map((row) => row.itemId)
+		);
+		if (ids.some((one) => !inRecipe.has(one))) throw new NotFoundError('ingredient');
+
+		markOutOfStock(ctx, ids);
+	});
+}
+
+/**
+ * The inventory items that are an ingredient of some recipe, as `{ id }` rows
+ * keyed by the item's id — optionally only the recipes filed in one notebook.
+ */
+export function listIngredientItems(ctx: Ctx, options: { notebookId?: number } = {}) {
+	return db
+		.selectDistinct({ id: recipeItems.itemId })
+		.from(recipeItems)
+		.innerJoin(recipes, eq(recipes.id, recipeItems.recipeId))
+		.where(
+			and(
+				eq(recipeItems.userId, ctx.userId),
+				eq(recipes.userId, ctx.userId),
+				options.notebookId === undefined ? undefined : eq(recipes.notebookId, options.notebookId)
+			)
+		)
+		.all();
 }
 
 /** Out of the cupboard is onto the list — the two are one state. */

@@ -78,7 +78,10 @@
 		"params": {
 			"attributes": {
 				"type": "object",
-				"required": false
+				"required": false,
+				"additionalProperties": {
+					"type": "string"
+				}
 			},
 			"category": {
 				"type": "string",
@@ -95,7 +98,8 @@
 			"energy": {
 				"type": "integer",
 				"required": false,
-				"deprecated": true
+				"deprecated": true,
+				"removedIn": "0.190.0"
 			},
 			"interest": {
 				"type": "integer",
@@ -104,11 +108,16 @@
 			"meta": {
 				"type": "object",
 				"required": false,
-				"deprecated": true
+				"deprecated": true,
+				"removedIn": "0.190.0",
+				"additionalProperties": {
+					"type": "string"
+				}
 			},
 			"minutes": {
 				"type": "integer",
-				"required": false
+				"required": false,
+				"default": 60
 			},
 			"notebookId": {
 				"type": "integer",
@@ -155,7 +164,24 @@
 			},
 			"targets": {
 				"type": "array",
-				"required": false
+				"required": false,
+				"items": {
+					"type": "object",
+					"properties": {
+						"measure": {
+							"type": "string",
+							"required": false
+						},
+						"unit": {
+							"type": "string",
+							"required": false
+						},
+						"value": {
+							"type": "number",
+							"required": true
+						}
+					}
+				}
 			},
 			"targetValue": {
 				"type": "number",
@@ -302,7 +328,8 @@
 				"enum": [
 					"replenish",
 					"someday"
-				]
+				],
+				"default": "replenish"
 			}
 		}
 	},
@@ -459,7 +486,10 @@
 		"params": {
 			"attributes": {
 				"type": "object",
-				"required": false
+				"required": false,
+				"additionalProperties": {
+					"type": "string"
+				}
 			},
 			"category": {
 				"type": "string",
@@ -472,7 +502,8 @@
 			"energy": {
 				"type": "integer",
 				"required": false,
-				"deprecated": true
+				"deprecated": true,
+				"removedIn": "0.190.0"
 			},
 			"every": {
 				"type": "integer",
@@ -485,11 +516,16 @@
 			"meta": {
 				"type": "object",
 				"required": false,
-				"deprecated": true
+				"deprecated": true,
+				"removedIn": "0.190.0",
+				"additionalProperties": {
+					"type": "string"
+				}
 			},
 			"minutes": {
 				"type": "integer",
-				"required": false
+				"required": false,
+				"default": 60
 			},
 			"month_day": {
 				"type": "integer",
@@ -554,10 +590,14 @@
 		"scope": "tasks:write",
 		"writes": true,
 		"destroys": false,
+		"creates": "todo",
 		"params": {
 			"attributes": {
 				"type": "object",
-				"required": false
+				"required": false,
+				"additionalProperties": {
+					"type": "string"
+				}
 			},
 			"goalId": {
 				"type": "integer",
@@ -566,7 +606,11 @@
 			"meta": {
 				"type": "object",
 				"required": false,
-				"deprecated": true
+				"deprecated": true,
+				"removedIn": "0.190.0",
+				"additionalProperties": {
+					"type": "string"
+				}
 			},
 			"notebookId": {
 				"type": "integer",
@@ -601,7 +645,20 @@
 			},
 			"measures": {
 				"type": "array",
-				"required": false
+				"required": false,
+				"items": {
+					"type": "object",
+					"properties": {
+						"activity": {
+							"type": "string",
+							"required": true
+						},
+						"unit": {
+							"type": "string",
+							"required": false
+						}
+					}
+				}
 			},
 			"minutes": {
 				"type": "integer",
@@ -701,7 +758,8 @@
 		"params": {
 			"archived": {
 				"type": "boolean",
-				"required": false
+				"required": false,
+				"default": true
 			},
 			"id": {
 				"type": "integer",
@@ -888,7 +946,10 @@
 		"params": {
 			"attributes": {
 				"type": "object",
-				"required": false
+				"required": false,
+				"additionalProperties": {
+					"type": "string"
+				}
 			},
 			"category": {
 				"type": "string",
@@ -905,7 +966,11 @@
 			"meta": {
 				"type": "object",
 				"required": false,
-				"deprecated": true
+				"deprecated": true,
+				"removedIn": "0.190.0",
+				"additionalProperties": {
+					"type": "string"
+				}
 			},
 			"minutes": {
 				"type": "integer",
@@ -948,7 +1013,24 @@
 			},
 			"targets": {
 				"type": "array",
-				"required": false
+				"required": false,
+				"items": {
+					"type": "object",
+					"properties": {
+						"measure": {
+							"type": "string",
+							"required": false
+						},
+						"unit": {
+							"type": "string",
+							"required": false
+						},
+						"value": {
+							"type": "number",
+							"required": true
+						}
+					}
+				}
 			},
 			"targetValue": {
 				"type": "number",
@@ -1088,7 +1170,7 @@
 			},
 			"title": {
 				"type": "string",
-				"required": true
+				"required": false
 			}
 		}
 	},
@@ -1203,7 +1285,10 @@
 		"params": {
 			"attributes": {
 				"type": "object",
-				"required": false
+				"required": false,
+				"additionalProperties": {
+					"type": "string"
+				}
 			},
 			"category": {
 				"type": "string",
@@ -1220,7 +1305,11 @@
 			"meta": {
 				"type": "object",
 				"required": false,
-				"deprecated": true
+				"deprecated": true,
+				"removedIn": "0.190.0",
+				"additionalProperties": {
+					"type": "string"
+				}
 			},
 			"minutes": {
 				"type": "integer",
@@ -1292,7 +1381,10 @@
 		"params": {
 			"attributes": {
 				"type": "object",
-				"required": false
+				"required": false,
+				"additionalProperties": {
+					"type": "string"
+				}
 			},
 			"ease": {
 				"type": "integer",
@@ -1301,7 +1393,8 @@
 			"energy": {
 				"type": "integer",
 				"required": false,
-				"deprecated": true
+				"deprecated": true,
+				"removedIn": "0.190.0"
 			},
 			"id": {
 				"type": "integer",
@@ -1314,7 +1407,11 @@
 			"meta": {
 				"type": "object",
 				"required": false,
-				"deprecated": true
+				"deprecated": true,
+				"removedIn": "0.190.0",
+				"additionalProperties": {
+					"type": "string"
+				}
 			},
 			"notebookId": {
 				"type": "integer",
@@ -1394,7 +1491,24 @@
 			},
 			"measures": {
 				"type": "array",
-				"required": false
+				"required": false,
+				"items": {
+					"type": "object",
+					"properties": {
+						"activity": {
+							"type": "string",
+							"required": true
+						},
+						"amount": {
+							"type": "number",
+							"required": false
+						},
+						"unit": {
+							"type": "string",
+							"required": false
+						}
+					}
+				}
 			},
 			"notes": {
 				"type": "string",
@@ -1437,7 +1551,10 @@
 			},
 			"ranOutOf": {
 				"type": "array",
-				"required": false
+				"required": false,
+				"items": {
+					"type": "integer"
+				}
 			}
 		}
 	},
@@ -1488,6 +1605,7 @@
 		"scope": "notes:read",
 		"writes": false,
 		"destroys": false,
+		"pages": true,
 		"params": {
 			"fields": {
 				"type": "string",
@@ -1495,16 +1613,19 @@
 			},
 			"limit": {
 				"type": "integer",
-				"required": false
+				"required": false,
+				"default": 20
 			},
 			"offset": {
 				"type": "integer",
-				"required": false
+				"required": false,
+				"default": 0
 			},
 			"tag": {
 				"type": "string",
 				"required": false,
-				"deprecated": true
+				"deprecated": true,
+				"removedIn": "0.185.0"
 			},
 			"taggedSince": {
 				"type": "string",
@@ -1520,7 +1641,10 @@
 			},
 			"tags": {
 				"type": "array",
-				"required": false
+				"required": false,
+				"items": {
+					"type": "string"
+				}
 			},
 			"verbose": {
 				"type": "boolean",
@@ -1529,11 +1653,15 @@
 			"withoutTag": {
 				"type": "string",
 				"required": false,
-				"deprecated": true
+				"deprecated": true,
+				"removedIn": "0.185.0"
 			},
 			"withoutTags": {
 				"type": "array",
-				"required": false
+				"required": false,
+				"items": {
+					"type": "string"
+				}
 			}
 		}
 	},
@@ -1667,7 +1795,8 @@
 		"params": {
 			"includeClosed": {
 				"type": "boolean",
-				"required": false
+				"required": false,
+				"default": false
 			}
 		}
 	},
@@ -1681,14 +1810,17 @@
 		"scope": "ideas:read",
 		"writes": false,
 		"destroys": false,
+		"pages": true,
 		"params": {
 			"limit": {
 				"type": "integer",
-				"required": false
+				"required": false,
+				"default": 50
 			},
 			"offset": {
 				"type": "integer",
-				"required": false
+				"required": false,
+				"default": 0
 			}
 		}
 	},
@@ -1715,11 +1847,17 @@
 			},
 			"slotIds": {
 				"type": "array",
-				"required": false
+				"required": false,
+				"items": {
+					"type": "integer"
+				}
 			},
 			"todoIds": {
 				"type": "array",
-				"required": false
+				"required": false,
+				"items": {
+					"type": "integer"
+				}
 			}
 		}
 	},
@@ -1786,7 +1924,24 @@
 			},
 			"measures": {
 				"type": "array",
-				"required": false
+				"required": false,
+				"items": {
+					"type": "object",
+					"properties": {
+						"activity": {
+							"type": "string",
+							"required": true
+						},
+						"amount": {
+							"type": "number",
+							"required": false
+						},
+						"unit": {
+							"type": "string",
+							"required": false
+						}
+					}
+				}
 			},
 			"notes": {
 				"type": "string",
@@ -1800,6 +1955,13 @@
 	},
 	"media": {
 		"scope": "notes:read",
+		"anyScope": [
+			"ideas:read",
+			"kitchen:read",
+			"notes:read",
+			"people:read",
+			"tasks:read"
+		],
 		"writes": false,
 		"destroys": false,
 		"params": {
@@ -1820,6 +1982,24 @@
 			}
 		}
 	},
+	"move_notes": {
+		"scope": "notes:write",
+		"writes": true,
+		"destroys": false,
+		"params": {
+			"ids": {
+				"type": "array",
+				"required": true,
+				"items": {
+					"type": "integer"
+				}
+			},
+			"notebookId": {
+				"type": "integer",
+				"required": true
+			}
+		}
+	},
 	"movements": {
 		"scope": "statements:read",
 		"writes": false,
@@ -1837,6 +2017,7 @@
 	},
 	"note_to_tasks": {
 		"scope": "tasks:write",
+		"alsoNeeds": "notes:read",
 		"writes": true,
 		"destroys": false,
 		"params": {
@@ -1846,7 +2027,10 @@
 			},
 			"only": {
 				"type": "array",
-				"required": false
+				"required": false,
+				"items": {
+					"type": "integer"
+				}
 			}
 		}
 	},
@@ -1854,6 +2038,7 @@
 		"scope": "notes:read",
 		"writes": false,
 		"destroys": false,
+		"pages": true,
 		"params": {
 			"fields": {
 				"type": "string",
@@ -1869,16 +2054,19 @@
 			},
 			"limit": {
 				"type": "integer",
-				"required": false
+				"required": false,
+				"default": 50
 			},
 			"offset": {
 				"type": "integer",
-				"required": false
+				"required": false,
+				"default": 0
 			},
 			"tag": {
 				"type": "string",
 				"required": false,
-				"deprecated": true
+				"deprecated": true,
+				"removedIn": "0.185.0"
 			},
 			"taggedSince": {
 				"type": "string",
@@ -1894,7 +2082,10 @@
 			},
 			"tags": {
 				"type": "array",
-				"required": false
+				"required": false,
+				"items": {
+					"type": "string"
+				}
 			},
 			"verbose": {
 				"type": "boolean",
@@ -1903,16 +2094,21 @@
 			"withoutTag": {
 				"type": "string",
 				"required": false,
-				"deprecated": true
+				"deprecated": true,
+				"removedIn": "0.185.0"
 			},
 			"withoutTags": {
 				"type": "array",
-				"required": false
+				"required": false,
+				"items": {
+					"type": "string"
+				}
 			}
 		}
 	},
 	"notebook_tags": {
 		"scope": "tags:read",
+		"alsoNeeds": "notes:read",
 		"writes": false,
 		"destroys": false,
 		"params": {
@@ -1940,7 +2136,8 @@
 		"params": {
 			"days": {
 				"type": "integer",
-				"required": false
+				"required": false,
+				"default": 7
 			},
 			"startingOn": {
 				"type": "string",
@@ -2112,7 +2309,8 @@
 		"params": {
 			"includePast": {
 				"type": "boolean",
-				"required": false
+				"required": false,
+				"default": false
 			}
 		}
 	},
@@ -2340,7 +2538,10 @@
 		"params": {
 			"attributes": {
 				"type": "object",
-				"required": true
+				"required": true,
+				"additionalProperties": {
+					"type": "string"
+				}
 			},
 			"id": {
 				"type": "integer",
@@ -2359,7 +2560,20 @@
 			},
 			"measures": {
 				"type": "array",
-				"required": true
+				"required": true,
+				"items": {
+					"type": "object",
+					"properties": {
+						"activity": {
+							"type": "string",
+							"required": true
+						},
+						"unit": {
+							"type": "string",
+							"required": false
+						}
+					}
+				}
 			}
 		}
 	},
@@ -2448,6 +2662,7 @@
 		"scope": "tasks:write",
 		"writes": true,
 		"destroys": false,
+		"quiet": true,
 		"params": {
 			"add": {
 				"type": "string",
@@ -2473,10 +2688,43 @@
 		"scope": "tasks:read",
 		"writes": false,
 		"destroys": false,
+		"pages": true,
 		"params": {
+			"archived": {
+				"type": "string",
+				"required": false,
+				"enum": [
+					"exclude",
+					"include",
+					"only"
+				]
+			},
+			"completedSince": {
+				"type": "string",
+				"required": false
+			},
+			"createdSince": {
+				"type": "string",
+				"required": false
+			},
+			"direction": {
+				"type": "string",
+				"required": false,
+				"enum": [
+					"asc",
+					"desc"
+				]
+			},
 			"fields": {
 				"type": "string",
 				"required": false
+			},
+			"ids": {
+				"type": "array",
+				"required": false,
+				"items": {
+					"type": "integer"
+				}
 			},
 			"includeArchived": {
 				"type": "boolean",
@@ -2484,7 +2732,44 @@
 			},
 			"limit": {
 				"type": "integer",
-				"required": false
+				"required": false,
+				"default": 50
+			},
+			"maxEase": {
+				"type": "number",
+				"required": false,
+				"minimum": 0,
+				"maximum": 5
+			},
+			"maxInterest": {
+				"type": "number",
+				"required": false,
+				"minimum": 0,
+				"maximum": 5
+			},
+			"maxUrgency": {
+				"type": "number",
+				"required": false,
+				"minimum": 0,
+				"maximum": 5
+			},
+			"minEase": {
+				"type": "number",
+				"required": false,
+				"minimum": 0,
+				"maximum": 5
+			},
+			"minInterest": {
+				"type": "number",
+				"required": false,
+				"minimum": 0,
+				"maximum": 5
+			},
+			"minUrgency": {
+				"type": "number",
+				"required": false,
+				"minimum": 0,
+				"maximum": 5
 			},
 			"notebookId": {
 				"type": "integer",
@@ -2492,7 +2777,42 @@
 			},
 			"offset": {
 				"type": "integer",
+				"required": false,
+				"default": 0
+			},
+			"query": {
+				"type": "string",
 				"required": false
+			},
+			"scheduled": {
+				"type": "string",
+				"required": false,
+				"enum": [
+					"any",
+					"dated",
+					"undated"
+				]
+			},
+			"scheduledFrom": {
+				"type": "string",
+				"required": false
+			},
+			"scheduledTo": {
+				"type": "string",
+				"required": false
+			},
+			"sort": {
+				"type": "string",
+				"required": false,
+				"enum": [
+					"completed",
+					"created",
+					"manual",
+					"priority",
+					"scheduled",
+					"title",
+					"updated"
+				]
 			},
 			"status": {
 				"type": "string",
@@ -2509,7 +2829,8 @@
 			"tag": {
 				"type": "string",
 				"required": false,
-				"deprecated": true
+				"deprecated": true,
+				"removedIn": "0.185.0"
 			},
 			"taggedSince": {
 				"type": "string",
@@ -2525,6 +2846,13 @@
 			},
 			"tags": {
 				"type": "array",
+				"required": false,
+				"items": {
+					"type": "string"
+				}
+			},
+			"updatedSince": {
+				"type": "string",
 				"required": false
 			},
 			"verbose": {
@@ -2534,11 +2862,15 @@
 			"withoutTag": {
 				"type": "string",
 				"required": false,
-				"deprecated": true
+				"deprecated": true,
+				"removedIn": "0.185.0"
 			},
 			"withoutTags": {
 				"type": "array",
-				"required": false
+				"required": false,
+				"items": {
+					"type": "string"
+				}
 			}
 		}
 	},
@@ -2622,11 +2954,17 @@
 			},
 			"slotIds": {
 				"type": "array",
-				"required": false
+				"required": false,
+				"items": {
+					"type": "integer"
+				}
 			},
 			"todoIds": {
 				"type": "array",
-				"required": false
+				"required": false,
+				"items": {
+					"type": "integer"
+				}
 			}
 		}
 	},
@@ -2712,23 +3050,103 @@
 		"scope": "tasks:read",
 		"writes": false,
 		"destroys": false,
+		"pages": true,
 		"params": {
+			"completedSince": {
+				"type": "string",
+				"required": false
+			},
+			"createdSince": {
+				"type": "string",
+				"required": false
+			},
 			"fields": {
 				"type": "string",
 				"required": false
 			},
+			"ids": {
+				"type": "array",
+				"required": false,
+				"items": {
+					"type": "integer"
+				}
+			},
 			"limit": {
 				"type": "integer",
-				"required": false
+				"required": false,
+				"default": 1
+			},
+			"maxEase": {
+				"type": "number",
+				"required": false,
+				"minimum": 0,
+				"maximum": 5
+			},
+			"maxInterest": {
+				"type": "number",
+				"required": false,
+				"minimum": 0,
+				"maximum": 5
+			},
+			"maxUrgency": {
+				"type": "number",
+				"required": false,
+				"minimum": 0,
+				"maximum": 5
+			},
+			"minEase": {
+				"type": "number",
+				"required": false,
+				"minimum": 0,
+				"maximum": 5
+			},
+			"minInterest": {
+				"type": "number",
+				"required": false,
+				"minimum": 0,
+				"maximum": 5
+			},
+			"minUrgency": {
+				"type": "number",
+				"required": false,
+				"minimum": 0,
+				"maximum": 5
 			},
 			"notebookId": {
 				"type": "integer",
 				"required": false
 			},
+			"offset": {
+				"type": "integer",
+				"required": false,
+				"default": 0
+			},
+			"query": {
+				"type": "string",
+				"required": false
+			},
+			"scheduled": {
+				"type": "string",
+				"required": false,
+				"enum": [
+					"any",
+					"dated",
+					"undated"
+				]
+			},
+			"scheduledFrom": {
+				"type": "string",
+				"required": false
+			},
+			"scheduledTo": {
+				"type": "string",
+				"required": false
+			},
 			"tag": {
 				"type": "string",
 				"required": false,
-				"deprecated": true
+				"deprecated": true,
+				"removedIn": "0.185.0"
 			},
 			"taggedSince": {
 				"type": "string",
@@ -2744,6 +3162,13 @@
 			},
 			"tags": {
 				"type": "array",
+				"required": false,
+				"items": {
+					"type": "string"
+				}
+			},
+			"updatedSince": {
+				"type": "string",
 				"required": false
 			},
 			"verbose": {
@@ -2753,11 +3178,15 @@
 			"withoutTag": {
 				"type": "string",
 				"required": false,
-				"deprecated": true
+				"deprecated": true,
+				"removedIn": "0.185.0"
 			},
 			"withoutTags": {
 				"type": "array",
-				"required": false
+				"required": false,
+				"items": {
+					"type": "string"
+				}
 			}
 		}
 	},
@@ -2768,7 +3197,8 @@
 		"params": {
 			"days": {
 				"type": "integer",
-				"required": false
+				"required": false,
+				"default": 7
 			}
 		}
 	},
@@ -2779,7 +3209,8 @@
 		"params": {
 			"days": {
 				"type": "integer",
-				"required": false
+				"required": false,
+				"default": 30
 			}
 		}
 	},
@@ -2847,14 +3278,17 @@
 		"scope": "workouts:read",
 		"writes": false,
 		"destroys": false,
+		"pages": true,
 		"params": {
 			"limit": {
 				"type": "integer",
-				"required": false
+				"required": false,
+				"default": 50
 			},
 			"offset": {
 				"type": "integer",
-				"required": false
+				"required": false,
+				"default": 0
 			},
 			"since": {
 				"type": "string",

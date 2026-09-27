@@ -12,6 +12,7 @@ import {
 	updateEntry
 } from '$lib/services/diary';
 import { toActionFailure } from '$lib/http-errors';
+import { entryHandlers } from '$lib/services/entry-actions';
 import { listPeople, peopleForEntries, setEntryPeople } from '$lib/services/people';
 
 export const load = async ({ locals }: IsolatedEvent) => {
@@ -91,6 +92,8 @@ export const actions = {
 			return toActionFailure(e);
 		}
 	},
+
+	batch: entryHandlers.batch,
 
 	delete: async ({ request, locals }: IsolatedEvent) => {
 		const formData = await request.formData();

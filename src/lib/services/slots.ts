@@ -1,4 +1,4 @@
-import { optionalTagInput, parseTags, replaceBlockTags } from './tags.js';
+import { optionalTagInput, parseTags, replaceBlockTags, tagsForBlock } from './tags.js';
 import { and, eq, gte, inArray, isNull, lt, sql } from 'drizzle-orm';
 
 import { ratingsFromForm, type RatingValues } from '../ratings.js';
@@ -763,17 +763,9 @@ export function moveOccurrence(
 				...created(ctx),
 				userId: ctx.userId,
 				date,
+				...blockBody(slot),
 				startTime,
-				durationMinutes,
-				mode: slot.mode,
-				categoryId: slot.categoryId,
-				activityId: slot.activityId,
-				label: slot.label,
-				urgency: slot.urgency,
-				interest: slot.interest,
-				ease: slot.ease,
-				attributes: slot.attributes,
-				notebookId: slot.notebookId
+				durationMinutes
 			})
 			.returning({ id: exceptionalTasks.id })
 			.get();
@@ -787,17 +779,56 @@ export function moveOccurrence(
 }
 
 /**
+ * What a block says about itself, whichever table it is in.
+ *
+ * Everything but the day. A switch between repeating and once only, or one
+ * occurrence moved off its week, copies exactly this: a column left out here
+ * is a column the switch silently drops — and for `workoutId` the row then
+ * breaks the table's own check and the switch fails outright.
+ */
+function blockBody(row: typeof recurringTasks.$inferSelect | typeof exceptionalTasks.$inferSelect) {
+	return {
+		startTime: row.startTime,
+		durationMinutes: row.durationMinutes,
+		mode: row.mode,
+		categoryId: row.categoryId,
+		activityId: row.activityId,
+		workoutId: row.workoutId,
+		recipeId: row.recipeId,
+		label: row.label,
+		active: row.active,
+		remindLeadMinutes: row.remindLeadMinutes,
+		urgency: row.urgency,
+		interest: row.interest,
+		ease: row.ease,
+		attributes: row.attributes,
+		notebookId: row.notebookId
+	};
+}
+
+/** The block a switch made: which table it is in now, and its id there. */
+export type ConvertedBlock = { kind: 'slot' | 'exceptional'; id: number };
+
+/**
  * Turn a one-off into a recurring block, or a recurring block into a one-off.
  *
  * The two differ only in which day they name — a weekday versus a date — so
  * changing your mind should not mean deleting one and retyping the other.
- * Everything else about the block travels with it.
+ * Everything else about the block travels with it, labels included.
+ *
+ * They are two tables, so the block comes out with a new id, and that id is
+ * what is returned: whatever goes on editing it — saving, switching back —
+ * has to name the new row. The old one no longer exists.
  *
  * A recurring block becoming a one-off keeps only the occurrence in the visible
  * window; its other occurrences were never separate things, so there is nothing
  * else to preserve.
  */
-export function convertRepeat(ctx: Ctx, id: number, raw: { to: unknown; date: unknown }): void {
+export function convertRepeat(
+	ctx: Ctx,
+	id: number,
+	raw: { to: unknown; date: unknown }
+): ConvertedBlock {
 	const to = oneOf(raw.to, 'target', ['weekly', 'once'] as const);
 	const date = requiredDate(raw.date);
 
@@ -809,36 +840,31 @@ export function convertRepeat(ctx: Ctx, id: number, raw: { to: unknown; date: un
 			.get();
 
 		if (!one) throw new NotFoundError('block');
+		const labels = tagsForBlock('exceptional', id, ctx.userId).map((t) => t.name);
 
-		db.transaction((tx) => {
-			tx.insert(recurringTasks)
+		const made = db.transaction((tx) => {
+			const row = tx
+				.insert(recurringTasks)
 				.values({
 					...stamps(ctx),
 					userId: ctx.userId,
 					// The date it sits on decides which weekday it repeats on.
 					weekday: (new Date(`${one.date}T00:00:00`).getDay() + 6) % 7,
-					startTime: one.startTime,
-					durationMinutes: one.durationMinutes,
-					mode: one.mode,
-					categoryId: one.categoryId,
-					activityId: one.activityId,
-					label: one.label,
-					urgency: one.urgency,
-					interest: one.interest,
-					ease: one.ease,
-					attributes: one.attributes,
-					notebookId: one.notebookId
+					...blockBody(one)
 				})
-				.run();
+				.returning({ id: recurringTasks.id })
+				.get();
 
 			// Cascades to the instance it produced; the new weekly slot generates
 			// its own.
 			tx.delete(exceptionalTasks)
 				.where(and(eq(exceptionalTasks.id, id), eq(exceptionalTasks.userId, ctx.userId)))
 				.run();
+			return row.id;
 		});
 
-		return;
+		if (labels.length > 0) replaceBlockTags('recurring', made, labels, ctx.userId);
+		return { kind: 'slot', id: made };
 	}
 
 	const slot = db
@@ -848,26 +874,19 @@ export function convertRepeat(ctx: Ctx, id: number, raw: { to: unknown; date: un
 		.get();
 
 	if (!slot) throw new NotFoundError('block');
+	const labels = tagsForBlock('recurring', id, ctx.userId).map((t) => t.name);
 
-	db.transaction((tx) => {
-		tx.insert(exceptionalTasks)
+	const made = db.transaction((tx) => {
+		const row = tx
+			.insert(exceptionalTasks)
 			.values({
 				...created(ctx),
 				userId: ctx.userId,
 				date,
-				startTime: slot.startTime,
-				durationMinutes: slot.durationMinutes,
-				mode: slot.mode,
-				categoryId: slot.categoryId,
-				activityId: slot.activityId,
-				label: slot.label,
-				urgency: slot.urgency,
-				interest: slot.interest,
-				ease: slot.ease,
-				attributes: slot.attributes,
-				notebookId: slot.notebookId
+				...blockBody(slot)
 			})
-			.run();
+			.returning({ id: exceptionalTasks.id })
+			.get();
 
 		tx.delete(taskRecords)
 			.where(and(eq(taskRecords.userId, ctx.userId), eq(taskRecords.slotId, id)))
@@ -878,7 +897,11 @@ export function convertRepeat(ctx: Ctx, id: number, raw: { to: unknown; date: un
 		tx.delete(recurringTasks)
 			.where(and(eq(recurringTasks.id, id), eq(recurringTasks.userId, ctx.userId)))
 			.run();
+		return row.id;
 	});
+
+	if (labels.length > 0) replaceBlockTags('exceptional', made, labels, ctx.userId);
+	return { kind: 'exceptional', id: made };
 }
 
 // --- Import -------------------------------------------------------------------

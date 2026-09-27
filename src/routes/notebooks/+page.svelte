@@ -13,6 +13,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import MarkdownImport from '$lib/components/MarkdownImport.svelte';
 	import Modal from '$lib/components/Modal.svelte';
+	import NotebookDelete from '$lib/components/NotebookDelete.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import { autofocus } from '$lib/actions/autofocus';
@@ -47,6 +48,13 @@
 	/** The labels on what is filed in the notebook showing — see `NotebookTags`. */
 	let managingTags = $state(false);
 	let editingId = $state<number | null>(null);
+	/**
+	 * The delete confirmation, opened from the Edit notebook dialogue. It holds
+	 * its own notebook: on a phone the edit sheet gives up its history entry to
+	 * the confirmation stacked on it, and closes.
+	 */
+	let deleting = $state<Notebook | null>(null);
+	let confirmingDelete = $state(false);
 	/** Whether the note composer in the panel is open; the button for it is up here. */
 	let composing = $state(false);
 	/*
@@ -206,10 +214,7 @@
 	-->
 	<!-- The room's colour down the side, the same as every other tab in it: the
 	     shelf was the one page here standing on a card with no accent. -->
-	<div
-		class="card-accent border border-gray-200 bg-white shadow-card"
-		style="--card-accent: {SECTION_COLORS.diary}"
-	>
+	<Card flush accent={SECTION_COLORS.diary}>
 		<!-- The shelf's own floor: one cover wide. A list of names cannot go this
 		     narrow and a grid of covers can — see `NOTEBOOK_PANEL_MIN`. -->
 		<SplitColumns
@@ -584,7 +589,7 @@
 				</div>
 			{/snippet}
 		</SplitColumns>
-	</div>
+	</Card>
 
 	{#if selected}
 		<form
@@ -697,12 +702,38 @@
 	{/if}
 
 	{#snippet footer()}
+		{#if editing}
+			<button
+				type="button"
+				class="icon-btn mr-auto"
+				title={t('ui.delete')}
+				aria-label={t('ui.delete')}
+				onclick={() => {
+					deleting = editing;
+					confirmingDelete = true;
+				}}
+			>
+				<Icon name="trash" />
+			</button>
+		{/if}
 		<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 		<button type="submit" form="notebook-form" class="btn btn-primary">
 			{editingId ? t('ui.save') : t('notebooks.createNotebook')}
 		</button>
 	{/snippet}
 </Modal>
+
+{#if deleting}
+	<NotebookDelete
+		bind:open={confirmingDelete}
+		notebook={deleting}
+		error={form?.message}
+		ondeleted={() => {
+			showForm = false;
+			editingId = null;
+		}}
+	/>
+{/if}
 
 <!--
 	Renaming a folder is rewriting a path.

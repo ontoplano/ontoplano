@@ -9,9 +9,9 @@ import { listHabits } from '$lib/services/habits.js';
 import { listLedgers } from '$lib/services/ledgers.js';
 import { FLOWS, listBills } from '$lib/services/bills.js';
 import { listWorkouts } from '$lib/services/workouts.js';
-import { listRecipes } from '$lib/services/recipes.js';
+import { listIngredientItems, listRecipes } from '$lib/services/recipes.js';
 import { ForbiddenError } from '$lib/services/errors.js';
-import type { Ref, RefKind } from './refs.js';
+import { setAt, type Ref, type RefKind } from './refs.js';
 import { TOOLS } from './tools.js';
 
 /**
@@ -91,7 +91,10 @@ export const CONFINEMENTS: Record<string, Confinable> = Object.freeze({
 			bill: (ctx, id) =>
 				FLOWS.flatMap((flow) => listBills(ctx, { notebookId: id, includeArchived: true, flow })),
 			workout: (ctx, id) => listWorkouts(ctx, { notebookId: id, includeArchived: true }),
-			recipe: (ctx, id) => listRecipes(ctx, { notebookId: id, includeArchived: true })
+			recipe: (ctx, id) => listRecipes(ctx, { notebookId: id, includeArchived: true }),
+			// The ingredients of its own recipes — what cooking one of them can
+			// say ran out — and no other item in the cupboard.
+			ingredient: (ctx, id) => listIngredientItems(ctx, { notebookId: id })
 		}
 	}
 });
@@ -138,7 +141,20 @@ export function withinConfinement(
 	if (!table) return false;
 
 	const named = tool.refs ?? [];
-	if (!named.some((ref) => table.contains[ref.kind])) return false;
+	const required = new Set(tool.input?.required ?? []);
+
+	/*
+	 * Something the call is about has to be inside: the confining kind itself,
+	 * which is pinned below, or a required argument of a kind it contains. An
+	 * optional one is not enough — `movements` with its optional `ledger_id`
+	 * left out would answer about every ledger in the account.
+	 */
+	if (
+		!named.some(
+			(ref) => ref.kind === table.kind || (required.has(ref.arg) && table.contains[ref.kind])
+		)
+	)
+		return false;
 
 	/*
 	 * An optional argument of a kind the confinement does not hold is allowed
@@ -152,7 +168,6 @@ export function withinConfinement(
 	 * that takes an optional list this key has none of: usable, and the id of a
 	 * block still resolves against an empty reach and is refused.
 	 */
-	const required = new Set(tool.input?.required ?? []);
 	return named.every((ref) => !required.has(ref.arg) || Boolean(table.contains[ref.kind]));
 }
 
@@ -177,7 +192,7 @@ export function confine(
 			`This key can only work on ${table.label}, and that is not something it can reach.`
 		);
 
-	for (const ref of refs ?? []) if (ref.kind === table.kind) args[ref.arg] = confinement.id;
+	for (const ref of refs ?? []) if (ref.kind === table.kind) setAt(args, ref.arg, confinement.id);
 }
 
 /**

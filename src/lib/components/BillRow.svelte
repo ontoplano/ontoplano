@@ -13,6 +13,7 @@
 	 * draws these, with the form and the delete confirmation, on both screens.
 	 */
 	import Icon from '$lib/components/Icon.svelte';
+	import RowCard from '$lib/components/RowCard.svelte';
 	import { enhance } from '$lib/enhance';
 	import { autofocus } from '$lib/actions/autofocus';
 	import { AVERAGE_LABEL, asDecimal, summaryOf } from '$lib/bill-summary';
@@ -91,198 +92,215 @@
 </script>
 
 <li>
-	<div class="list-row">
-		<button
-			type="button"
-			class="icon-btn -ml-2 shrink-0"
-			aria-expanded={expanded}
-			aria-controls="bill-history-{bill.id}"
-			title={t('finance.bills.historyOf', { name: bill.name })}
-			aria-label={t('finance.bills.historyOf', { name: bill.name })}
-			data-tour="bill-history"
-			onclick={() => (expanded = !expanded)}
-		>
-			<Icon name={expanded ? 'chevron-down' : 'chevron-right'} />
-		</button>
-
-		<!-- Wide enough that on a phone the actions wrap under the name rather
-		     than squeezing it into a column of short lines. -->
-		<div class="list-row-main min-w-48">
-			<div class="flex flex-wrap items-center gap-2">
-				<span class="font-medium break-words text-gray-900">{bill.name}</span>
-				{#if paid}
-					<span class="rounded bg-blue-50 px-1.5 py-0.5 text-xs font-medium text-blue-700">
-						{t('finance.bills.paid')}
+	<!--
+		The card a task is drawn on — `RowCard`: this period's settling where a
+		task has its tick, the name beside it, the verbs along the foot. The
+		history unfolds under the whole card.
+	-->
+	<div class="flex items-stretch gap-x-4 px-4 py-3">
+		<RowCard>
+			{#snippet rail()}
+				{#if !bill.active}
+					<!-- Put away: nothing is owed any more, so nothing to pay or skip. -->
+					<span class="-m-1 flex shrink-0 self-start p-1 pointer-coarse:w-11" aria-hidden="true">
+						<span class="size-7 border border-dashed border-gray-300"></span>
 					</span>
-				{:else if skipped}
-					<span class="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-600">
-						{t('finance.bills.skipped')}
-					</span>
-				{/if}
-				{#if bill.automatic}
-					<span
-						class="inline-flex items-center gap-1 rounded border border-gray-300 px-1.5 py-0.5 text-xs text-gray-600"
-						title={t('finance.bills.automaticTitle')}
-					>
-						<Icon name="clock" />{t('finance.bills.automatic')}
-					</span>
-				{/if}
-			</div>
-			<div class="text-xs text-gray-500">{summaryOf(t, bill, currency)}</div>
-		</div>
-
-		<div class="ml-auto flex flex-wrap items-center justify-end gap-2">
-			{#if !bill.active}
-				<!-- Put away: nothing is owed any more, so nothing to pay or skip. -->
-			{:else if paid}
-				<form method="post" action={actions.unpay} use:enhance>
-					<input type="hidden" name="id" value={bill.id} />
-					<input type="hidden" name="period" value={period} />
-					<button
-						class="icon-btn"
-						title={t('finance.bills.undoThisPeriodSPayment')}
-						aria-label={t('finance.bills.undoThePaymentFor', { name: bill.name })}
-					>
-						<Icon name="undo" />
-					</button>
-				</form>
-			{:else if skipped}
-				<form method="post" action={actions.unskip} use:enhance>
-					<input type="hidden" name="id" value={bill.id} />
-					<input type="hidden" name="period" value={period} />
-					<button
-						class="icon-btn"
-						title={t('finance.bills.undoThisPeriodSSkip')}
-						aria-label={t('finance.bills.undoTheSkipFor', { name: bill.name })}
-					>
-						<Icon name="undo" />
-					</button>
-				</form>
-			{:else if paying}
-				<form
-					method="post"
-					action={actions.pay}
-					class="flex items-center gap-1"
-					use:enhance={() =>
-						({ result, update }) => {
-							if (result.type === 'success') paying = false;
-							return update();
-						}}
-				>
-					<input type="hidden" name="id" value={bill.id} />
-					<input type="hidden" name="period" value={period} />
-					<input
-						name="amount"
-						inputmode="decimal"
-						use:autofocus
-						class="input w-24"
-						placeholder={asDecimal(bill.amountExpected)}
-						onkeydown={(e) => {
-							if (e.key === 'Escape') paying = false;
-						}}
-					/>
-					<button class="btn btn-primary btn-sm" type="submit">{t('finance.bills.paid2')}</button>
-					<button
-						class="icon-btn"
-						type="button"
-						title={t('ui.cancel')}
-						aria-label={t('ui.cancel')}
-						onclick={() => (paying = false)}
-					>
-						<Icon name="close" />
-					</button>
-				</form>
-			{:else}
-				<button
-					class="icon-btn"
-					title={t('finance.bills.markPaid')}
-					aria-label={t('finance.bills.markPaid2', { name: bill.name })}
-					onclick={() => (paying = true)}
-				>
-					<Icon name="check" />
-				</button>
-				<form method="post" action={actions.skip} use:enhance>
-					<input type="hidden" name="id" value={bill.id} />
-					<input type="hidden" name="period" value={period} />
-					<button
-						class="icon-btn"
-						title={t('finance.bills.skipThisPeriod')}
-						aria-label={t('finance.bills.skipName', { name: bill.name })}
-					>
-						<Icon name="skip" />
-					</button>
-				</form>
-				<!--
-					And the other way to pay one: point at the line that did it.
-
-					The tick is somebody saying a bill was paid; this is the bank saying
-					so, and the amount comes from the statement rather than from what was
-					expected. Both are real — cash, a transfer that has not landed, an
-					account this instance does not import — so neither replaces the
-					other. Only where the statements are: a notebook is not where
-					somebody goes through a bank export.
-				-->
-				{#if onattach}
-					<button
-						class="icon-btn"
-						title={t('finance.bills.attachThePayment')}
-						aria-label={t('finance.bills.attachATransactionTo', { name: bill.name })}
-						onclick={() => onattach(bill.id)}
-					>
-						<Icon name="link" />
-					</button>
-				{/if}
-			{/if}
-
-			{#if onedit}
-				<button
-					class="icon-btn"
-					title={t('ui.edit')}
-					aria-label={t('finance.bills.edit', { name: bill.name })}
-					onclick={() => onedit(bill.id)}
-				>
-					<Icon name="edit" />
-				</button>
-			{/if}
-
-			<form method="post" action={actions.archive} use:enhance>
-				<input type="hidden" name="id" value={bill.id} />
-				<input type="hidden" name="archived" value={bill.active ? 'true' : 'false'} />
-				{#if bill.active}
-					<button
-						class="icon-btn"
-						title={t('finance.bills.putThisBillAway')}
-						aria-label={t('finance.bills.archive', { name: bill.name })}
-					>
-						<Icon name="archive" />
-					</button>
+				{:else if paid || skipped}
+					<form method="post" action={paid ? actions.unpay : actions.unskip} use:enhance>
+						<input type="hidden" name="id" value={bill.id} />
+						<input type="hidden" name="period" value={period} />
+						<button
+							class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
+							title={paid
+								? t('finance.bills.undoThisPeriodSPayment')
+								: t('finance.bills.undoThisPeriodSSkip')}
+							aria-label={paid
+								? t('finance.bills.undoThePaymentFor', { name: bill.name })
+								: t('finance.bills.undoTheSkipFor', { name: bill.name })}
+						>
+							<span
+								class="flex size-7 items-center justify-center border border-gray-400 bg-gray-400 text-white"
+							>
+								<Icon name={paid ? 'check' : 'skip'} size={14} />
+							</span>
+						</button>
+					</form>
 				{:else}
 					<button
-						class="icon-btn"
-						title={t('finance.bills.restore')}
-						aria-label={t('finance.bills.restore')}
+						type="button"
+						class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
+						title={t('finance.bills.markPaid')}
+						aria-label={t('finance.bills.markPaid2', { name: bill.name })}
+						aria-pressed={paying}
+						onclick={() => (paying = !paying)}
 					>
-						<Icon name="undo" />
+						<span
+							class="flex size-7 items-center justify-center border border-gray-400 bg-white {paying
+								? 'text-gray-500'
+								: 'text-transparent'}"
+						>
+							<Icon name="check" size={14} />
+						</span>
 					</button>
 				{/if}
-			</form>
+			{/snippet}
 
-			{#if !bill.active && ondelete}
+			{#snippet controls()}
+				{#if bill.active && !paid && !skipped}
+					{#if paying}
+						<form
+							method="post"
+							action={actions.pay}
+							class="flex items-center gap-1"
+							use:enhance={() =>
+								({ result, update }) => {
+									if (result.type === 'success') paying = false;
+									return update();
+								}}
+						>
+							<input type="hidden" name="id" value={bill.id} />
+							<input type="hidden" name="period" value={period} />
+							<input
+								name="amount"
+								inputmode="decimal"
+								use:autofocus
+								class="input w-24"
+								placeholder={asDecimal(bill.amountExpected)}
+								aria-label={t('finance.bills.amount')}
+								onkeydown={(e) => {
+									if (e.key === 'Escape') paying = false;
+								}}
+							/>
+							<button class="btn btn-primary btn-sm" type="submit"
+								>{t('finance.bills.paid2')}</button
+							>
+							<button
+								class="icon-btn"
+								type="button"
+								title={t('ui.cancel')}
+								aria-label={t('ui.cancel')}
+								onclick={() => (paying = false)}
+							>
+								<Icon name="close" />
+							</button>
+						</form>
+					{:else}
+						<form method="post" action={actions.skip} use:enhance>
+							<input type="hidden" name="id" value={bill.id} />
+							<input type="hidden" name="period" value={period} />
+							<button
+								class="icon-btn"
+								title={t('finance.bills.skipThisPeriod')}
+								aria-label={t('finance.bills.skipName', { name: bill.name })}
+							>
+								<Icon name="skip" />
+							</button>
+						</form>
+						<!--
+							And the other way to pay one: point at the line that did it.
+
+							The tick is somebody saying a bill was paid; this is the bank
+							saying so, and the amount comes from the statement rather than
+							from what was expected. Both are real — cash, a transfer that has
+							not landed, an account this instance does not import — so neither
+							replaces the other. Only where the statements are: a notebook is
+							not where somebody goes through a bank export.
+						-->
+						{#if onattach}
+							<button
+								type="button"
+								class="icon-btn"
+								title={t('finance.bills.attachThePayment')}
+								aria-label={t('finance.bills.attachATransactionTo', { name: bill.name })}
+								onclick={() => onattach(bill.id)}
+							>
+								<Icon name="link" />
+							</button>
+						{/if}
+					{/if}
+				{/if}
+
 				<button
+					type="button"
 					class="icon-btn"
-					title={t('ui.delete')}
-					aria-label={t('finance.bills.delete', { name: bill.name })}
-					onclick={() => ondelete(bill.id)}
+					aria-expanded={expanded}
+					aria-controls="bill-history-{bill.id}"
+					title={t('finance.bills.historyOf', { name: bill.name })}
+					aria-label={t('finance.bills.historyOf', { name: bill.name })}
+					data-tour="bill-history"
+					onclick={() => (expanded = !expanded)}
 				>
-					<Icon name="trash" />
+					<Icon name={expanded ? 'chevron-up' : 'chevron-down'} />
 				</button>
-			{/if}
-		</div>
+
+				{#if onedit}
+					<button
+						type="button"
+						class="icon-btn"
+						title={t('ui.edit')}
+						aria-label={t('finance.bills.edit', { name: bill.name })}
+						onclick={() => onedit(bill.id)}
+					>
+						<Icon name="edit" />
+					</button>
+				{/if}
+
+				<form method="post" action={actions.archive} use:enhance>
+					<input type="hidden" name="id" value={bill.id} />
+					<input type="hidden" name="archived" value={bill.active ? 'true' : 'false'} />
+					{#if bill.active}
+						<button
+							class="icon-btn"
+							title={t('finance.bills.putThisBillAway')}
+							aria-label={t('finance.bills.archive', { name: bill.name })}
+						>
+							<Icon name="archive" />
+						</button>
+					{:else}
+						<button
+							class="icon-btn"
+							title={t('finance.bills.restore')}
+							aria-label={t('finance.bills.restore')}
+						>
+							<Icon name="undo" />
+						</button>
+					{/if}
+				</form>
+
+				{#if !bill.active && ondelete}
+					<button
+						type="button"
+						class="icon-btn icon-btn-danger"
+						title={t('ui.delete')}
+						aria-label={t('finance.bills.delete', { name: bill.name })}
+						onclick={() => ondelete(bill.id)}
+					>
+						<Icon name="trash" />
+					</button>
+				{/if}
+			{/snippet}
+
+			<p class="text-sm leading-snug font-medium break-words text-gray-900">{bill.name}</p>
+			<!-- How this period stands, on the line a task's notebook sits on. -->
+			<div class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
+				{#if paid}
+					<span class="font-medium text-blue-700">{t('finance.bills.paid')}</span>
+				{:else if skipped}
+					<span class="font-medium text-gray-600">{t('finance.bills.skipped')}</span>
+				{/if}
+				{#if bill.automatic}
+					<span class="inline-flex items-center gap-1" title={t('finance.bills.automaticTitle')}>
+						<Icon name="clock" size={12} />{t('finance.bills.automatic')}
+					</span>
+				{/if}
+				<span>{summaryOf(t, bill, currency)}</span>
+			</div>
+		</RowCard>
 	</div>
 
 	{#if expanded}
 		<!-- What it has cost so far: every period settled, and one period's average. -->
-		<div id="bill-history-{bill.id}" class="border-t border-gray-100 px-4 pt-2 pb-3 sm:pl-12">
+		<div id="bill-history-{bill.id}" class="border-t border-gray-100 px-4 pt-2 pb-3 sm:pl-15">
 			{#if bill.history.entries.length === 0}
 				<p class="text-sm text-gray-500">{t('finance.bills.nothingRecordedYet')}</p>
 			{:else}

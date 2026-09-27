@@ -15,8 +15,10 @@ import { localDateOf, type Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { host } from './host.js';
 import { defaultTagsOf, ownedNotebookId } from './notebooks.js';
+import { fileUnderNotebook } from './notebook-linking.js';
+import { MAX_BATCH } from './todos.js';
 import { stamp, stamps } from './time.js';
-import { str } from './validate.js';
+import { num, str } from './validate.js';
 
 /** The journal: free text, free-form tags, one running number per account. */
 
@@ -187,6 +189,10 @@ export function updateEntry(
 	const content = str(raw.content, 'content', { max: MAX_ENTRY_LENGTH });
 	host.assertEntryWithinLimit(content);
 
+	const current = placeOf(ctx, id);
+	const notebookId =
+		raw.notebookId === undefined ? current.notebookId : ownedNotebookId(ctx, raw.notebookId);
+
 	const res = db
 		.update(diaryEntries)
 		.set({
@@ -201,13 +207,15 @@ export function updateEntry(
 			 * rather than as "not my business".
 			 */
 			...(raw.title === undefined ? {} : { title: noteTitle(raw.title) }),
-			...(raw.notebookId === undefined ? {} : { notebookId: ownedNotebookId(ctx, raw.notebookId) }),
 			updatedAt: stamp(ctx)
 		})
 		.where(and(eq(diaryEntries.id, id), eq(diaryEntries.userId, ctx.userId)))
 		.run();
 
 	if (res.changes === 0) throw new NotFoundError('entry');
+
+	// A different notebook is a move, which renumbers — see `moveEntry`.
+	if (raw.notebookId !== undefined && !sitsIn(current, notebookId)) moveEntry(ctx, id, notebookId);
 
 	/*
 	 * And the tags, on the same rule as the title and the notebook above.
@@ -299,6 +307,149 @@ export function deleteEntry(ctx: Ctx, id: number): void {
 	if (res.changes === 0) throw new NotFoundError('entry');
 
 	cleanupOrphanTags(ctx.userId);
+}
+
+/**
+ * File a note under another notebook, or under none.
+ *
+ * The notebook's number is not carried: the next one free in the new notebook
+ * is taken, as `fileUnderNotebook` does for everything numbered by notebook.
+ * A note that lands in the diary gets the diary's next number if it never had
+ * one, or it would be the one entry there with no `#` to be referred to by.
+ */
+export function moveEntry(ctx: Ctx, id: number, notebookId: number | null): void {
+	db.transaction(() => {
+		fileUnderNotebook(ctx, 'notes', id, notebookId);
+		if (notebookId !== null) return;
+		const row = db
+			.select({ diarySeq: diaryEntries.diarySeq })
+			.from(diaryEntries)
+			.where(and(eq(diaryEntries.id, id), eq(diaryEntries.userId, ctx.userId)))
+			.get();
+		if (!row || row.diarySeq !== null) return;
+		db.update(diaryEntries)
+			.set({ diarySeq: nextDiarySeq(ctx) })
+			.where(and(eq(diaryEntries.id, id), eq(diaryEntries.userId, ctx.userId)))
+			.run();
+	});
+}
+
+/**
+ * What can be done to several notes at once.
+ *
+ * The row's own verbs — move, label, put away, bring back, delete — with more
+ * reach, never more capability.
+ */
+export const ENTRY_BATCH_VERBS = ['notebook', 'tag', 'archive', 'unarchive', 'remove'] as const;
+export type EntryBatchVerb = (typeof ENTRY_BATCH_VERBS)[number];
+
+export function isEntryBatchVerb(value: unknown): value is EntryBatchVerb {
+	return typeof value === 'string' && (ENTRY_BATCH_VERBS as readonly string[]).includes(value);
+}
+
+/**
+ * Add and take off labels, leaving the others where they are.
+ *
+ * `updateEntry`'s `tags` replaces the whole set, which is right for a form
+ * showing all of them and wrong for nine notes that each carry different ones.
+ */
+export function tagEntry(ctx: Ctx, id: number, change: { add?: unknown; remove?: unknown }): void {
+	const owned = db
+		.select({ id: diaryEntries.id })
+		.from(diaryEntries)
+		.where(and(eq(diaryEntries.id, id), eq(diaryEntries.userId, ctx.userId)))
+		.get();
+	if (!owned) throw new NotFoundError('entry');
+
+	const add = parseTags(optionalTagInput(change.add));
+	const remove = new Set(parseTags(optionalTagInput(change.remove)));
+	const now = tagsForEntries(ctx, [id]).get(id) ?? [];
+	const wanted = [...new Set([...now.map((one) => one.name), ...add])].filter(
+		(name) => !remove.has(name)
+	);
+	replaceDiaryTags(id, wanted, ctx.userId);
+	cleanupOrphanTags(ctx.userId);
+	db.update(diaryEntries)
+		.set({ updatedAt: stamp(ctx) })
+		.where(and(eq(diaryEntries.id, id), eq(diaryEntries.userId, ctx.userId)))
+		.run();
+}
+
+/**
+ * Do one thing to each of these notes, or to none of them.
+ *
+ * One transaction, as `batchTodos` is: a note that is not this account's, or a
+ * notebook that is not, refuses the whole press rather than leaving half of it
+ * done and no way to tell which half.
+ */
+export function batchEntries(
+	ctx: Ctx,
+	verb: unknown,
+	rawIds: unknown[],
+	what: { add?: unknown; remove?: unknown; notebookId?: unknown }
+): number {
+	if (!isEntryBatchVerb(verb)) throw new ValidationError({ key: 'errors.diary.invalidBatch' });
+	if (rawIds.length === 0) throw new ValidationError({ key: 'errors.diary.nothingWasChosen' });
+	if (rawIds.length > MAX_BATCH)
+		throw new ValidationError({ key: 'errors.diary.thatIsTooManyAtOnce' });
+	const ids = [...new Set(rawIds.map((id) => num(id, 'id', { int: true, min: 1 })))];
+	if (verb === 'notebook' && what.notebookId === undefined)
+		throw new ValidationError({ key: 'errors.diary.invalidBatch' });
+
+	db.transaction(() => {
+		const notebookId = verb === 'notebook' ? ownedNotebookId(ctx, what.notebookId) : null;
+		for (const id of ids) {
+			if (verb === 'tag') tagEntry(ctx, id, { add: what.add, remove: what.remove });
+			else if (verb === 'archive') archiveEntry(ctx, id, true);
+			else if (verb === 'unarchive') archiveEntry(ctx, id, false);
+			else if (verb === 'remove') deleteEntry(ctx, id);
+			else {
+				if (!sitsIn(placeOf(ctx, id), notebookId)) moveEntry(ctx, id, notebookId);
+			}
+		}
+	});
+	return ids.length;
+}
+
+/** Where a note is filed, or not found when it is not this account's. */
+function placeOf(ctx: Ctx, id: number) {
+	const row = db
+		.select({ notebookId: diaryEntries.notebookId, notebookSeq: diaryEntries.notebookSeq })
+		.from(diaryEntries)
+		.where(and(eq(diaryEntries.id, id), eq(diaryEntries.userId, ctx.userId)))
+		.get();
+	if (!row) throw new NotFoundError('entry');
+	return row;
+}
+
+/**
+ * Whether a note is already where it is being sent.
+ *
+ * A note whose notebook was deleted has no notebook and still has that
+ * notebook's number, which keeps it out of the diary — so sending it to the
+ * diary is a move, not a no-op.
+ */
+function sitsIn(
+	place: { notebookId: number | null; notebookSeq: number | null },
+	to: number | null
+) {
+	return place.notebookId === to && (to !== null || place.notebookSeq === null);
+}
+
+/**
+ * The diary's next number, on the high-water bargain `insertEntry` describes.
+ */
+function nextDiarySeq(ctx: Ctx): number {
+	const present =
+		db
+			.select({ value: max(diaryEntries.diarySeq) })
+			.from(diaryEntries)
+			.where(eq(diaryEntries.userId, ctx.userId))
+			.get()?.value ?? 0;
+	const everDiary = Number(getUserSetting(ctx.userId, DIARY_MARK_KEY) ?? 0);
+	const next = Math.max(present, everDiary) + 1;
+	setUserSetting(ctx.userId, DIARY_MARK_KEY, String(next));
+	return next;
 }
 
 /**

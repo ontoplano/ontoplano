@@ -331,6 +331,11 @@ export const TUTORIALS: Record<string, Tutorial> = {
 				target: '[data-tour="diary-list"]',
 				title: 'tour.findItAgainByTag',
 				body: 'tour.everyTagOnAnEntry'
+			},
+			{
+				target: '[data-tour="diary-selection"]',
+				title: 'selection.selectMany',
+				body: 'tour.noteSelection'
 			}
 		]
 	},

@@ -10,7 +10,7 @@ import { describe, expect, test } from 'vitest';
 import { readFileSync } from 'node:fs';
 import ts from 'typescript';
 
-import { literalText, paramRow } from '../scripts/lib/mcp-docs.mjs';
+import { literalText, paramRows } from '../scripts/lib/mcp-docs.mjs';
 
 const SOURCE = [
 	"const GONE_IN = '9.9.0';",
@@ -46,10 +46,14 @@ describe('a deprecated parameter on the tools page', () => {
 		const description = descriptionOf('old');
 		expect(description).toBe('Deprecated — use `new`, which says it better. Removed in 9.9.0.');
 		expect(
-			paramRow({ name: 'old', type: 'integer', required: false, deprecated: true, description })
-		).toBe(
-			'| `old` | integer | — | Deprecated — use `new`, which says it better. Removed in 9.9.0. **Deprecated.** |'
-		);
+			paramRows(
+				'old',
+				{ type: 'integer', required: false, deprecated: true, removedIn: '9.9.0' },
+				{ description }
+			)
+		).toEqual([
+			'| `old` | integer | — | Deprecated — use `new`, which says it better. Removed in 9.9.0. **Deprecated** — removed in 9.9.0. |'
+		]);
 	});
 
 	test('a substitution only the running code knows is still an ellipsis', () => {
@@ -58,10 +62,21 @@ describe('a deprecated parameter on the tools page', () => {
 
 	test('the published page says it that way too', () => {
 		const page = readFileSync('docs/reference/ai-agents.md', 'utf8');
-		const energy = page.split('\n').find((line) => line.startsWith('| `energy`'));
+		const energy = page
+			.split('\n')
+			.find((line) => line.startsWith('| `energy`') && line.includes('Deprecated —'));
 		expect(energy).toBeDefined();
 		expect(energy).not.toContain('\\`');
 		expect(energy).not.toContain('removed in …');
 		expect(energy).toMatch(/removed in \d+\.\d+/);
+	});
+
+	test('a release named by a constant from another file is said too', () => {
+		const page = readFileSync('docs/reference/ai-agents.md', 'utf8');
+		const meta = page
+			.split('\n')
+			.find((line) => line.startsWith('| `meta`') && line.includes('Deprecated —'));
+		expect(meta).toMatch(/removed in \d+\.\d+\.\d+\. /);
+		expect(page).not.toContain('removed in …');
 	});
 });

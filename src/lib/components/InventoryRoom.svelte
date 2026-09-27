@@ -1273,7 +1273,7 @@
 															dragOver = null;
 															stopFollowing();
 														}}
-														class="flex cursor-grab items-center gap-x-3 px-4 py-2 {item.snoozed
+														class="flex cursor-grab items-stretch gap-x-3 px-4 py-2 {item.snoozed
 															? 'bg-gray-50 opacity-50'
 															: item.bought
 																? 'bg-blue-50'
@@ -1340,7 +1340,7 @@
 											dragOver = null;
 											stopFollowing();
 										}}
-										class="flex cursor-grab items-center gap-x-3 px-4 py-2 {globalIdx ===
+										class="flex cursor-grab items-stretch gap-x-3 px-4 py-2 {globalIdx ===
 										selectedIndex
 											? 'bg-gray-50'
 											: ''} {item.snoozed ? 'opacity-50' : ''}"

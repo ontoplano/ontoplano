@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Card from '$lib/components/Card.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
@@ -123,19 +124,20 @@
 			that line is a one-pixel grid gap with the surface showing through it,
 			which is why the surface is gray behind cells that are white.
 		-->
-		<div
-			class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card lg:grid lg:grid-cols-2 lg:gap-px lg:divide-y-0 lg:bg-gray-200 2xl:grid-cols-3"
-			data-tour="recipe-list"
-		>
-			{#each visible as recipe (recipe.id)}
-				<!--
+		<Card flush dataTour="recipe-list">
+			<div
+				class="divide-y divide-gray-200 lg:grid lg:grid-cols-2 lg:gap-px lg:divide-y-0 lg:bg-gray-200 2xl:grid-cols-3"
+			>
+				{#each visible as recipe (recipe.id)}
+					<!--
 					The card is a component, so a recipe filed under a notebook is the
 					same recipe this room shows — its picture, and what it needs that
 					the cupboard has not got. See `RecipeCard`.
 				-->
-				<RecipeCard {recipe} onplan={(one) => (planning = one)} />
-			{/each}
-		</div>
+					<RecipeCard {recipe} onplan={(one) => (planning = one)} />
+				{/each}
+			</div>
+		</Card>
 	{/if}
 </div>
 

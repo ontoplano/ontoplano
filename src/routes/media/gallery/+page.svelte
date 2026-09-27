@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Card from '$lib/components/Card.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import { enhance } from '$lib/enhance';
@@ -436,7 +437,7 @@
 		locations are, and the tiles beside them are one level: what is directly
 		inside wherever the panel says you are standing.
 	-->
-	<div class="border border-gray-200 bg-white shadow-card">
+	<Card flush>
 		<!--
 			Where you are, along the top of the same white.
 
@@ -568,7 +569,7 @@
 				{/if}
 			</div>
 		</div>
-	</div>
+	</Card>
 </div>
 
 <Modal bind:open={showNew} error={form?.message} title={t('gallery.newAlbum')} size="sm">

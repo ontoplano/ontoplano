@@ -43,6 +43,7 @@ shows up here on the next build.
 | [`demo`](#demo)                                  | A demo where everybody gets their own copy.                                                                                                                                                                                                                          |
 | [`diary`](#diary)                                | The journal: free text, free-form tags, one running number per account.                                                                                                                                                                                              |
 | [`digest`](#digest)                              | The content hash a picture is deduplicated by.                                                                                                                                                                                                                       |
+| [`entry-actions`](#entry-actions)                | Several notes at once, from wherever they are listed.                                                                                                                                                                                                                |
 | [`errors`](#errors)                              | Typed errors thrown by service functions.                                                                                                                                                                                                                            |
 | [`family-invite`](#family-invite)                | Inviting somebody to the plan, and the account that makes for them.                                                                                                                                                                                                  |
 | [`gallery`](#gallery)                            | Albums: lists of references over the one media table.                                                                                                                                                                                                                |
@@ -1651,6 +1652,32 @@ of you is not a number anybody else can pick.
 
 #### `deleteEntry(ctx, id)`
 
+#### `moveEntry(ctx, id, notebookId)`
+
+File a note under another notebook, or under none.
+
+The notebook's number is not carried: the next one free in the new notebook
+is taken, as `fileUnderNotebook` does for everything numbered by notebook.
+A note that lands in the diary gets the diary's next number if it never had
+one, or it would be the one entry there with no `#` to be referred to by.
+
+#### `isEntryBatchVerb(value)`
+
+#### `tagEntry(ctx, id, change)`
+
+Add and take off labels, leaving the others where they are.
+
+`updateEntry`'s `tags` replaces the whole set, which is right for a form
+showing all of them and wrong for nine notes that each carry different ones.
+
+#### `batchEntries(ctx, verb, rawIds, what)`
+
+Do one thing to each of these notes, or to none of them.
+
+One transaction, as `batchTodos` is: a note that is not this account's, or a
+notebook that is not, refuses the whole press rather than leaving half of it
+done and no way to tell which half.
+
 #### `latestEntry(ctx)`
 
 The most recent entry, for the dashboard card.
@@ -1665,6 +1692,7 @@ notebook, under the diary's heading, with the diary's own last entry nowhere.
 ### Types
 
 - `Tag` — Null on a label that went on before the join carried a date.
+- `EntryBatchVerb`
 
 ## digest
 
@@ -1682,6 +1710,14 @@ phone still knows that two rows are one picture.
 ### Functions
 
 #### `sha256Hex(bytes)`
+
+## entry-actions
+
+Several notes at once, from wherever they are listed.
+
+The diary lists entries and a notebook lists its notes; both are rows of the
+same table and a selection means the same thing on either, so both screens
+mount this one handler.
 
 ## errors
 
@@ -4227,6 +4263,11 @@ the shopping list after every meal and teaches people to ignore the list. So
 this only records that it happened; `ranOutOf` is the second half, and the
 screen asks which ones actually ran out — usually none, sometimes the milk.
 
+#### `listIngredientItems(ctx, options)`
+
+The inventory items that are an ingredient of some recipe, as `{ id }` rows
+keyed by the item's id — optionally only the recipes filed in one notebook.
+
 #### `markOutOfStock(ctx, itemIds)`
 
 Out of the cupboard is onto the list — the two are one state.
@@ -5410,7 +5451,11 @@ Turn a one-off into a recurring block, or a recurring block into a one-off.
 
 The two differ only in which day they name — a weekday versus a date — so
 changing your mind should not mean deleting one and retyping the other.
-Everything else about the block travels with it.
+Everything else about the block travels with it, labels included.
+
+They are two tables, so the block comes out with a new id, and that id is
+what is returned: whatever goes on editing it — saving, switching back —
+has to name the new row. The old one no longer exists.
 
 A recurring block becoming a one-off keeps only the occurrence in the visible
 window; its other occurrences were never separate things, so there is nothing
@@ -5442,6 +5487,7 @@ quietly give it one — that would cut a year-old routine off at today.
 
 - `Mode`
 - `BlockInput`
+- `ConvertedBlock` — The block a switch made: which table it is in now, and its id there.
 - `CsvImportResult`
 
 ## stale
@@ -6249,6 +6295,15 @@ One task, as the list would have shown it.
 
 Every todo, or the ones a tag filter lets through.
 
+#### `queryTodos(ctx, query)`
+
+The one query behind every listing of todos a caller can shape.
+
+Filters, order and the page are all SQL: the page is `LIMIT`/`OFFSET` and
+`total` is a `COUNT` over the same `WHERE`, so a list of thousands costs
+the rows asked for rather than all of them. Labels are read for the page
+alone. Everything is scoped to `ctx.userId` in the statement itself.
+
 #### `listTodosIn(ctx, notebookId, options)`
 
 Everything filed under one notebook.
@@ -6392,6 +6447,12 @@ across collides with whatever already holds it.
 
 - `Todo`
 - `Tag`
+- `TodoSort`
+- `SortDirection`
+- `TodoScheduled`
+- `TodoArchived`
+- `TodoState`
+- `TodoQuery`
 - `TodoInput`
 - `BatchVerb`
 

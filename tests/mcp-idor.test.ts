@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { OWNER, STRANGER, makeDatabase, seedAccounts } from './helpers/db';
+import { baselineArgs, withRef } from './helpers/mcp-baseline';
 
 /**
  * Every tool that names something, pointed at somebody else's row.
@@ -47,9 +48,13 @@ let buildCtx: typeof import('../src/lib/services/ctx').buildCtx;
 let TOOLS: typeof import('../src/lib/server/mcp/tools').TOOLS;
 let SCOPES: typeof import('../src/lib/server/services/tokens').SCOPES;
 let KINDS: typeof import('../src/lib/server/mcp/refs').KINDS;
+let assertRefs: typeof import('../src/lib/server/mcp/refs').assertRefs;
+let argumentProblem: typeof import('../src/lib/server/mcp/arguments').argumentProblem;
 
 /** One of the stranger's rows for each kind a tool can name. */
 const theirs: Record<string, number | string> = {};
+/** And one of the caller's own, for each. */
+const mine: Record<string, number | string> = {};
 
 /** The tables a confused tool could read from or write to. */
 const WATCHED = [
@@ -72,6 +77,7 @@ const WATCHED = [
 	'inventory_items',
 	'inventory_categories',
 	'recipes',
+	'recipe_items',
 	'locations',
 	'workouts',
 	'workout_sessions',
@@ -82,12 +88,9 @@ const WATCHED = [
 	'task_records'
 ];
 
-function snapshot(): string {
+function snapshot(user = STRANGER): string {
 	return JSON.stringify(
-		WATCHED.map((table) => [
-			table,
-			database.all(`select * from ${table} where user_id = ?`, STRANGER)
-		])
+		WATCHED.map((table) => [table, database.all(`select * from ${table} where user_id = ?`, user)])
 	);
 }
 
@@ -96,9 +99,10 @@ beforeAll(async () => {
 	({ buildCtx } = await import('../src/lib/services/ctx'));
 	({ TOOLS } = await import('../src/lib/server/mcp/tools'));
 	({ SCOPES } = await import('../src/lib/server/services/tokens'));
-	({ KINDS } = await import('../src/lib/server/mcp/refs'));
+	({ KINDS, assertRefs } = await import('../src/lib/server/mcp/refs'));
+	({ argumentProblem } = await import('../src/lib/server/mcp/arguments'));
 
-	const them = buildCtx(STRANGER, { tz: 'UTC', now: new Date('2026-03-14T10:00:00Z') });
+	const at = (user: string) => buildCtx(user, { tz: 'UTC', now: new Date('2026-03-14T10:00:00Z') });
 
 	const { createTodo } = await import('../src/lib/services/todos');
 	const { createGoal } = await import('../src/lib/services/goals');
@@ -111,13 +115,14 @@ beforeAll(async () => {
 	const { createActivity, createCategory: createActivityCategory } =
 		await import('../src/lib/services/activities');
 	const { createFreeReminder } = await import('../src/lib/services/reminders');
-	const { createSlot } = await import('../src/lib/services/slots');
+	const { createSlot, createExceptional } = await import('../src/lib/services/slots');
+	const { recordIdOf } = await import('../src/lib/services/instances');
 	const {
 		createItem,
 		createCategory: createInventoryCategory,
 		listItems
 	} = await import('../src/lib/services/inventory');
-	const { createRecipe } = await import('../src/lib/services/recipes');
+	const { createRecipe, addIngredient } = await import('../src/lib/services/recipes');
 	const { createLocation } = await import('../src/lib/services/locations');
 	const { createWorkout, createWorkoutCategory, logWorkout } =
 		await import('../src/lib/services/workouts');
@@ -125,56 +130,77 @@ beforeAll(async () => {
 	const { createBill } = await import('../src/lib/services/bills');
 	const { ensureTagIds } = await import('../src/lib/services/tags');
 
-	/** Some services answer with the row, some with its id; both are fine here. */
-	const idOf = (made: unknown): number =>
-		typeof made === 'number' ? made : (made as { id: number }).id;
+	/** One row of every kind a tool can name, under this account. */
+	const seedEveryKind = (
+		c: ReturnType<typeof at>,
+		m: string,
+		o: Record<string, number | string>
+	) => {
+		/** Some services answer with the row, some with its id; both are fine here. */
+		const idOf = (made: unknown): number =>
+			typeof made === 'number' ? made : (made as { id: number }).id;
 
-	theirs.todo = idOf(createTodo(them, { title: `todo ${MARK}` }));
-	theirs.goal = idOf(createGoal(them, { title: `goal ${MARK}`, horizon: 'week' }));
-	theirs.habit = idOf(createHabit(them, { name: `habit ${MARK}` }));
-	theirs.notebook = idOf(createNotebook(them, { title: `notebook ${MARK}` }));
-	theirs.note = idOf(createEntry(them, { content: `note ${MARK}` }));
-	theirs.ledger = idOf(createLedger(them, { name: `ledger ${MARK}` }));
-	theirs.idea = idOf(createIdea(them, { content: `idea ${MARK}` }));
-	theirs.person = idOf(createPerson(them, { name: `person ${MARK}` }));
-	theirs.reminder = idOf(
-		createFreeReminder(them, { at: '2026-03-20T09:00', message: `reminder ${MARK}` })
-	);
-	theirs.location = idOf(createLocation(them, { name: `place ${MARK}` }));
-	theirs.recipe = idOf(createRecipe(them, { title: `recipe ${MARK}` }));
-	theirs.sortRule = idOf(createRule(them, { kind: 'tag', name: `rule ${MARK}`, pattern: MARK }));
-	theirs.bill = idOf(createBill(them, { name: `bill ${MARK}`, dueDay: 5 }));
+		o.todo = idOf(createTodo(c, { title: `todo ${m}` }));
+		o.goal = idOf(createGoal(c, { title: `goal ${m}`, horizon: 'week' }));
+		o.habit = idOf(createHabit(c, { name: `habit ${m}` }));
+		o.notebook = idOf(createNotebook(c, { title: `notebook ${m}` }));
+		o.note = idOf(createEntry(c, { content: `note ${m}` }));
+		o.ledger = idOf(createLedger(c, { name: `ledger ${m}` }));
+		o.idea = idOf(createIdea(c, { content: `idea ${m}` }));
+		o.person = idOf(createPerson(c, { name: `person ${m}` }));
+		o.reminder = idOf(createFreeReminder(c, { at: '2026-03-20T09:00', message: `reminder ${m}` }));
+		o.location = idOf(createLocation(c, { name: `place ${m}` }));
+		o.recipe = idOf(createRecipe(c, { title: `recipe ${m}` }));
+		o.sortRule = idOf(createRule(c, { kind: 'tag', name: `rule ${m}`, pattern: m }));
+		o.bill = idOf(createBill(c, { name: `bill ${m}`, dueDay: 5 }));
 
-	const activityCategory = idOf(createActivityCategory(them, { name: `cat ${MARK}` }));
-	theirs.activity = idOf(
-		createActivity(them, { name: `activity ${MARK}`, categoryId: activityCategory })
-	);
-	theirs.repeatingBlock = idOf(
-		createSlot(them, {
-			weekday: 1,
+		const activityCategory = idOf(createActivityCategory(c, { name: `cat ${m}` }));
+		o.activity = idOf(createActivity(c, { name: `activity ${m}`, categoryId: activityCategory }));
+		o.repeatingBlock = idOf(
+			createSlot(c, {
+				weekday: 1,
+				startTime: '09:00',
+				durationMinutes: 30,
+				mode: 'activity',
+				activityId: o.activity
+			})
+		);
+		// A block is one occurrence on a day, and its id says which kind. Its
+		// record is made now, so resolving it later writes nothing.
+		o.block = `exceptional:${createExceptional(c, {
+			date: '2026-03-16',
 			startTime: '09:00',
 			durationMinutes: 30,
 			mode: 'activity',
-			activityId: theirs.activity
-		})
-	);
-	// A block is an occurrence of one of those, and its id says which.
-	theirs.block = `slot:${theirs.repeatingBlock}`;
+			activityId: o.activity
+		})}`;
+		recordIdOf(c, o.block);
 
-	theirs.inventoryCategory = idOf(createInventoryCategory(them, { name: `section ${MARK}` }));
-	createItem(them, { name: `item ${MARK}`, type: 'someday' });
-	theirs.item = listItems(them).find((item) => item.name.includes(MARK))!.id;
+		o.inventoryCategory = idOf(createInventoryCategory(c, { name: `section ${m}` }));
+		createItem(c, { name: `item ${m}`, type: 'someday' });
+		o.item = listItems(c).find((item) => item.name.includes(m))!.id;
+		// The same item, as an ingredient of that recipe.
+		addIngredient(c, Number(o.recipe), { itemId: o.item });
+		o.ingredient = o.item;
 
-	// A label of theirs, which is the account's vocabulary and not a room's.
-	theirs.tag = ensureTagIds([`tag-${MARK}`], them.userId)[0];
+		// A label, which is the account's vocabulary and not a room's.
+		o.tag = ensureTagIds([`tag-${m}`], c.userId)[0];
 
-	theirs.workoutCategory = idOf(createWorkoutCategory(them, `group ${MARK}`));
-	theirs.workout = idOf(
-		createWorkout(them, { title: `exercise ${MARK}`, categoryId: theirs.workoutCategory })
-	);
-	theirs.workoutSession = idOf(
-		logWorkout(them, Number(theirs.workout), { doneOn: '2026-03-14', notes: `session ${MARK}` })
-	);
+		o.workoutCategory = idOf(createWorkoutCategory(c, `group ${m}`));
+		o.workout = idOf(createWorkout(c, { title: `exercise ${m}`, categoryId: o.workoutCategory }));
+		o.workoutSession = idOf(
+			logWorkout(c, Number(o.workout), { doneOn: '2026-03-14', notes: `session ${m}` })
+		);
+	};
+
+	seedEveryKind(at(STRANGER), MARK, theirs);
+	// And the caller's own, for the baselines a substitution starts from.
+	seedEveryKind(at(OWNER), 'the-owners-own', mine);
+
+	// Some listings seed defaults the first time they are read — an account's
+	// exercise groups. Read each kind once now, so the snapshots below see
+	// only what a call does.
+	for (const kind of Object.values(KINDS)) kind.rows(at(OWNER));
 });
 
 /**
@@ -276,4 +302,80 @@ describe("somebody else's id", () => {
 
 		expect(foreign).toEqual(absent);
 	});
+});
+
+/**
+ * The same, from arguments the tool would otherwise accept.
+ *
+ * The sweep above hands each tool crude arguments and asks only whether the
+ * stranger's rows moved — which a tool refusing for a missing argument
+ * answers "no" to without ever looking at the id. Here every tool starts from
+ * a baseline naming the caller's own row for each reference, checked to get
+ * past the schema and those references, and each reference in turn is
+ * replaced by the stranger's row and by a number nobody has. Both must be
+ * refused by the reference check — not by the schema — identically, and with
+ * nothing changed in either account.
+ */
+describe('one reference at a time, from a valid baseline', () => {
+	const ownerCtx = () => buildCtx(OWNER, { tz: 'UTC', now: new Date('2026-03-14T10:00:00Z') });
+	const nobodys = (row: number | string) =>
+		typeof row === 'string' ? row.replace(/\d+$/, String(NOBODYS)) : NOBODYS;
+
+	it('has a baseline the tool accepts for every tool that names something', () => {
+		const invalid: string[] = [];
+		for (const tool of TOOLS.filter((t) => (t.refs ?? []).length)) {
+			const args = baselineArgs(tool, (kind) => mine[kind]);
+			if (!args) {
+				invalid.push(`${tool.name}: no row of a kind it names`);
+				continue;
+			}
+			const problem = argumentProblem(tool.input, args);
+			if (problem) {
+				invalid.push(`${tool.name}: ${JSON.stringify(problem)}`);
+				continue;
+			}
+			try {
+				assertRefs(ownerCtx(), tool.refs, args);
+			} catch (e) {
+				invalid.push(`${tool.name}: ${(e as Error).message}`);
+			}
+		}
+		expect(invalid, 'these baselines would be refused before any reference is swapped').toEqual([]);
+	});
+
+	it('refuses a stranger’s row as it refuses no row, by the reference, changing nothing', async () => {
+		const leaked: string[] = [];
+		const byShape: string[] = [];
+		const differed: string[] = [];
+		let checked = 0;
+
+		for (const tool of TOOLS) {
+			const base = baselineArgs(tool, (kind) => mine[kind]);
+			if (!base) continue; // the test above fails on it
+			for (const ref of tool.refs ?? []) {
+				const before = [snapshot(STRANGER), snapshot(OWNER)].join();
+				const foreign = (await callAsOwner(
+					tool.name,
+					withRef(tool, base, ref.arg, theirs[ref.kind])
+				)) as { error?: unknown; result?: { isError?: boolean } };
+				const absent = await callAsOwner(
+					tool.name,
+					withRef(tool, base, ref.arg, nobodys(mine[ref.kind]))
+				);
+				checked++;
+				const at = `${tool.name}.${ref.arg}`;
+
+				if ([snapshot(STRANGER), snapshot(OWNER)].join() !== before) leaked.push(at);
+				else if (foreign.error) byShape.push(at);
+				else if (!foreign.result?.isError) leaked.push(at);
+				else if (JSON.stringify(foreign) !== JSON.stringify(absent)) differed.push(at);
+			}
+		}
+
+		// Every declared reference, not a sample of them.
+		expect(checked).toBe(TOOLS.reduce((n, t) => n + (t.refs ?? []).length, 0));
+		expect(leaked, 'these reached a stranger’s row, or changed something').toEqual([]);
+		expect(byShape, 'these were refused by the schema, not by the reference').toEqual([]);
+		expect(differed, 'these refused a stranger’s row differently from no row').toEqual([]);
+	}, 60_000);
 });

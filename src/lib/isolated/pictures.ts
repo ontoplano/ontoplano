@@ -15,7 +15,15 @@
  * one an `<img>` cannot go around.
  */
 import { ask } from './client.js';
-import { PICTURE_REQUEST, type PictureReply, type PictureRequest } from './picture-protocol.js';
+import {
+	PICTURE_PATH,
+	PICTURE_REQUEST,
+	type PictureReply,
+	type PictureRequest
+} from './picture-protocol.js';
+
+/** Only there to make the browser ask again; the worker reads the path alone. */
+const RETRY_PARAM = 'retry';
 
 let listening = false;
 
@@ -24,6 +32,7 @@ export function servePicturesToServiceWorker(): void {
 	if (listening || typeof navigator === 'undefined' || !navigator.serviceWorker) return;
 	listening = true;
 
+	navigator.serviceWorker.addEventListener('controllerchange', retryBrokenPictures);
 	navigator.serviceWorker.addEventListener('message', (event: MessageEvent) => {
 		const message = event.data as PictureRequest | undefined;
 		if (message?.kind !== PICTURE_REQUEST) return;
@@ -50,4 +59,19 @@ export function servePicturesToServiceWorker(): void {
 				port.postMessage(reply);
 			});
 	});
+}
+
+/*
+ * On the first launch the service worker takes over only once it has stored the
+ * app, and a picture asked for before then went to the static host, got a page
+ * back, and stayed broken. Asked again now, it reaches the worker.
+ */
+function retryBrokenPictures(): void {
+	for (const img of document.querySelectorAll('img')) {
+		const url = new URL(img.src, location.href);
+		if (url.origin !== location.origin || !PICTURE_PATH.test(url.pathname)) continue;
+		if (!img.complete || img.naturalWidth > 0) continue;
+		url.searchParams.set(RETRY_PARAM, String(Date.now()));
+		img.src = url.pathname + url.search;
+	}
 }

@@ -12,6 +12,9 @@
 /** The message the service worker sends a page when an `<img>` wants bytes. */
 export const PICTURE_REQUEST = 'ontoplano:picture';
 
+/** `/media/3` and nothing else — never `/media/3/anything`. */
+export const PICTURE_PATH = /^\/media\/(\d+)$/;
+
 export type PictureRequest = { kind: typeof PICTURE_REQUEST; id: number };
 
 export type PictureReply =

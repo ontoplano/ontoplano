@@ -8,10 +8,13 @@
 	 * they were sharing a line with. So the places are fixed here, once:
 	 *
 	 *     rail      | the words
-	 *     (tick,    | labels, a line of their own
-	 *      number,  | actions, a line of their own that never wraps
-	 *      +label,  |
-	 *      gauges)  |
+	 *     (tick,    |
+	 *      number,  |
+	 *      gauges)  | labels ... +label        actions
+	 *
+	 * On a phone the labels keep a line of their own under the words, the
+	 * add-a-label chip stays in the rail, and the actions sit alone at the
+	 * bottom on a line that never wraps.
 	 *
 	 * The rail runs the height of the card; whatever is last in it sits at
 	 * the bottom (give it `mt-auto`). Goes inside the row's own element, which
@@ -40,18 +43,46 @@
 	{@render rail()}
 </div>
 
-<div class="flex min-w-0 flex-1 flex-col">
+<div class="row-card-body flex min-w-0 flex-1 flex-col">
 	{@render children()}
-	{#if labels}
-		<div class="task-labels mt-1.5 flex min-w-0 flex-wrap items-center gap-1">
-			{@render labels()}
-		</div>
-	{/if}
-	{#if controls}
-		<!-- One line, always: six buttons fit a phone, and a wrapped half-row of
-		     them reads as a second, different set. -->
-		<div class="task-actions" inert={quiet} class:opacity-50={quiet}>
-			{@render controls()}
-		</div>
-	{/if}
+	<!--
+		The foot of the card: labels and actions at its bottom edge, whatever
+		the rail beside them makes the card's height.
+
+		From `sm` up they share one line — labels from the left, actions at
+		the right — so a tall rail does not leave the buttons floating halfway
+		down beside nothing. On a phone the labels stay under the words and the
+		actions drop to the bottom on a line of their own.
+	-->
+	<div
+		class="flex flex-col max-sm:flex-1 sm:mt-auto sm:flex-row sm:items-center sm:gap-3 sm:pt-1.5"
+	>
+		{#if labels}
+			<div class="task-labels mt-1.5 flex min-w-0 flex-wrap items-center gap-1 sm:mt-0 sm:flex-1">
+				{@render labels()}
+			</div>
+		{/if}
+		{#if controls}
+			<!-- One line, always: six buttons fit a phone, and a wrapped half-row of
+			     them reads as a second, different set. -->
+			<div
+				class="task-actions max-sm:mt-auto max-sm:pt-1.5 sm:mt-0 sm:ml-auto sm:w-auto sm:shrink-0"
+				inert={quiet}
+				class:opacity-50={quiet}
+			>
+				{@render controls()}
+			</div>
+		{/if}
+	</div>
 </div>
+
+<style>
+	/* Back to full strength while the pointer is anywhere on the words, not
+	   only on the line the buttons are in. */
+	@media (hover: hover) {
+		.row-card-body:hover .task-actions > :global(*),
+		.row-card-body:focus-within .task-actions > :global(*) {
+			opacity: 1;
+		}
+	}
+</style>

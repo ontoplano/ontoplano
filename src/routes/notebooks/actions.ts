@@ -11,6 +11,7 @@ import { toActionFailure } from '$lib/http-errors';
 import { describeTag, recolorTag, renameTag, untagNotebook } from '$lib/services/tags';
 import { importVaultAction } from '$lib/import-vault-action';
 import { todoHandlers } from '$lib/services/todo-actions';
+import { entryHandlers } from '$lib/services/entry-actions';
 import { under } from '$lib/services/scoped-actions';
 import { fileUnderNotebook } from '$lib/services/notebook-linking';
 import { billHandlers } from '$lib/services/bill-actions';
@@ -103,8 +104,9 @@ export const notebookActions = {
 				title: formData.get('heading'),
 				// Absent (the inline rename) keeps the folder it is in.
 				folder: formData.get('folder'),
-				description: formData.get('description'),
-				defaultTags: formData.get('defaultTags'),
+				// Absent means untouched, as for the fields below; an emptied box clears.
+				description: formData.has('description') ? formData.get('description') : undefined,
+				defaultTags: formData.has('defaultTags') ? formData.get('defaultTags') : undefined,
 				// Absent where the form does not ask, which leaves it as it was.
 				categoryId: formData.has('categoryId') ? formData.get('categoryId') : undefined,
 				/*
@@ -380,6 +382,9 @@ export const notebookActions = {
 			return toActionFailure(e);
 		}
 	},
+
+	/** Move, label, put away or delete several notes in one press. */
+	batchEntries: entryHandlers.batch,
 
 	deleteEntry: async ({ request, locals }) => {
 		const formData = await request.formData();

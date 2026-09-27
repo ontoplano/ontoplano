@@ -20,11 +20,13 @@ import { ForbiddenError, ServiceError } from '$lib/services/errors.js';
 import { translator, type MessageKey, type MessageValues } from '$lib/i18n/core.js';
 import { messages as englishMessages } from '$lib/i18n/catalogues/en.js';
 import { TOOLS, TOOLS_BY_NAME, type Tool } from './tools.js';
+import { argumentProblem, describeProblem } from './arguments.js';
 import { assertRefs, madeRow, resolveRef, type Reach, type Ref } from './refs.js';
 import { confine, reachOf, withinConfinement, type Confinement } from './confinement.js';
 import { changed, type Room } from '../live.js';
 import { spendCallBudget } from '../api/auth.js';
 import { recordAssistantCall } from '../services/assistant-log.js';
+import { db } from '$lib/db/index.js';
 
 /** The revision this server speaks. Echoed back at whatever asks. */
 export const PROTOCOL_VERSION = '2025-06-18';
@@ -44,8 +46,8 @@ export const SERVER_INFO = {
 };
 
 /** JSON-RPC's own codes, plus the one for a method that does not exist. */
-const PARSE_ERROR = -32700;
-const INVALID_REQUEST = -32600;
+export const PARSE_ERROR = -32700;
+export const INVALID_REQUEST = -32600;
 const METHOD_NOT_FOUND = -32601;
 const INVALID_PARAMS = -32602;
 const INTERNAL_ERROR = -32603;
@@ -333,6 +335,44 @@ function messageOf(e: unknown): string {
 	return 'Something went wrong.';
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+	return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+/** An id JSON-RPC allows: a string, a whole number, or null. */
+function validId(id: unknown): id is Id | undefined {
+	return (
+		id === undefined ||
+		id === null ||
+		typeof id === 'string' ||
+		(typeof id === 'number' && Number.isSafeInteger(id))
+	);
+}
+
+/** The members a request may have; anything else is not one. */
+const ENVELOPE = new Set(['jsonrpc', 'id', 'method', 'params']);
+
+/**
+ * What is wrong with a message as a JSON-RPC 2.0 request, or null.
+ *
+ * The envelope is checked whole before anything reads it: a `method` that
+ * is a number, `params` that are a list, an id that is an object. Each used
+ * to fall through to a default — an empty method, empty params — which
+ * answered a question the client had not asked.
+ */
+function envelopeProblem(request: unknown): string | null {
+	if (!isPlainObject(request)) return 'A JSON-RPC message is an object.';
+	if (request.jsonrpc !== '2.0') return 'Not a JSON-RPC 2.0 message.';
+	const extra = Object.keys(request).find((key) => !ENVELOPE.has(key));
+	if (extra) return `\`${extra}\` is not part of a JSON-RPC request.`;
+	if (!validId(request.id)) return 'An id is a string, a whole number or null.';
+	if (typeof request.method !== 'string' || !request.method)
+		return '`method` is required, and is a string.';
+	if (request.params !== undefined && !isPlainObject(request.params))
+		return '`params` has to be an object.';
+	return null;
+}
+
 /**
  * One JSON-RPC message in, one out — or nothing, for a notification.
  *
@@ -341,13 +381,15 @@ function messageOf(e: unknown): string {
  * for a reply to something it never asked about.
  */
 export function handle(caller: Caller, request: RpcRequest): RpcResponse | null {
+	const refused = envelopeProblem(request);
+	// A message that is not a request is answered, notification or not, and
+	// with a null id unless the id it carried was a legal one (JSON-RPC 2.0 §5).
+	if (refused)
+		return fail(validId(request.id) ? (request.id ?? null) : null, INVALID_REQUEST, refused);
+
 	const id = request.id ?? null;
 	const isNotification = request.id === undefined;
-
-	if (request.jsonrpc !== '2.0')
-		return isNotification ? null : fail(id, INVALID_REQUEST, 'Not a JSON-RPC 2.0 message.');
-
-	const method = typeof request.method === 'string' ? request.method : '';
+	const method = request.method as string;
 	const params = (request.params ?? {}) as Record<string, unknown>;
 
 	switch (method) {
@@ -404,14 +446,39 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 		}
 
 		case 'tools/call': {
-			const name = typeof params.name === 'string' ? params.name : '';
+			if (typeof params.name !== 'string')
+				return fail(id, INVALID_PARAMS, '`name` is required, and is the tool\u2019s name.', {
+					argument: 'name',
+					problem: 'missing'
+				});
+			const name = params.name;
 			const tool = TOOLS_BY_NAME.get(name);
 			if (!tool) return fail(id, INVALID_PARAMS, `No tool called \`${name}\`.`);
 
+			if (params.arguments !== undefined && !isPlainObject(params.arguments))
+				return fail(id, INVALID_PARAMS, '`arguments` has to be an object.', {
+					argument: 'arguments',
+					problem: 'type',
+					expected: 'object'
+				});
 			const args = (params.arguments ?? {}) as Record<string, unknown>;
 			const reach = caller.confinement ? reachOf(caller.confinement) : undefined;
 			try {
 				assertAllowed(caller, tool);
+
+				/*
+				 * The arguments are the ones the schema advertised, or nothing runs.
+				 *
+				 * Checked after the grant — a key that may not call the tool is
+				 * told that, not how to spell its arguments — and before
+				 * anything else: the confinement, the references, the budget and
+				 * the tool all read arguments that are the shape they were
+				 * promised. A protocol error rather than a tool failure, with the
+				 * argument named in `data`, because it is the request that is
+				 * wrong and the same request will be refused the same way again.
+				 */
+				const problem = argumentProblem(tool.input, args);
+				if (problem) return fail(id, INVALID_PARAMS, describeProblem(problem), problem);
 
 				/*
 				 * A key confined to one thing works on that thing.
@@ -429,6 +496,19 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 					confine(caller.confinement, tool.refs, tool.input, args);
 
 				/*
+				 * The same budget a plugin spends on the REST API: reads are cheap
+				 * and writes grow the database, so "make a thousand goals" is told
+				 * to slow down after the sixtieth, not obeyed at machine speed.
+				 *
+				 * Spent before the references are resolved, which is the costly
+				 * part of a refused call: each id is looked up among the rows the
+				 * caller can list, and a caller guessing at ids pays for every
+				 * guess rather than only for the ones that landed.
+				 */
+				if (caller.tokenId !== undefined)
+					spendCallBudget(caller.tokenId, caller.ctx.userId, tool.writes);
+
+				/*
 				 * Every id it was handed belongs to whoever is calling.
 				 *
 				 * Each tool declares which of its arguments name a thing and what
@@ -440,13 +520,6 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 				 * through, so no tool can be written that skips it.
 				 */
 				assertRefs(caller.ctx, tool.refs, args, reach);
-				/*
-				 * The same budget a plugin spends on the REST API: reads are cheap
-				 * and writes grow the database, so "make a thousand goals" is told
-				 * to slow down after the sixtieth, not obeyed at machine speed.
-				 */
-				if (caller.tokenId !== undefined)
-					spendCallBudget(caller.tokenId, caller.ctx.userId, tool.writes);
 
 				/*
 				 * Every mutation answers with what it replaced.
@@ -462,10 +535,23 @@ export function handle(caller: Caller, request: RpcRequest): RpcResponse | null 
 				const before = tool.writes ? peek(tool, caller.ctx, args, reach) : undefined;
 				// A quiet tool still peeks — the log below wants it — and simply
 				// does not put the two copies in the answer.
-				const value = tool.run(caller.ctx, args, {
-					scopes: caller.scopes,
-					confinement: caller.confinement ?? null
-				});
+				/*
+				 * One call, one change: all of it or none of it.
+				 *
+				 * A change tool often writes more than one row — a todo's words and
+				 * then its state, a recipe and then its ingredients, a session and
+				 * then its lines — and a refusal from the second half used to leave
+				 * the first half written, so an assistant told "invalid status" had
+				 * in fact rewritten the title. Here rather than in each tool for the
+				 * same reason as `before` above. The services' own transactions nest
+				 * inside this one as savepoints.
+				 */
+				const invoke = () =>
+					tool.run(caller.ctx, args, {
+						scopes: caller.scopes,
+						confinement: caller.confinement ?? null
+					});
+				const value = tool.writes ? db.transaction(invoke) : invoke();
 				/*
 				 * A create says what it made, and fails if it made nothing.
 				 *
@@ -569,8 +655,27 @@ function roomsOf(tool: { scope: string }): Room[] {
 	}
 }
 
+/** The largest request body the endpoint reads — the same 256 KB every other endpoint takes, batch included. */
+export const MAX_MCP_BODY_BYTES = 256 * 1024;
+
 /** How many messages one JSON-RPC batch may carry. */
 const MAX_BATCH = 50;
+
+/**
+ * How much one batch may answer with, all messages together, in bytes of JSON.
+ *
+ * Fifty messages is a small request and can be a large answer: fifty
+ * `tools/list` calls, or fifty pages of two hundred tasks, are built in
+ * memory before any of it is sent. Once the answers so far pass this, the
+ * rest of the batch is not run — each is refused, by id, with a sentence
+ * saying to send it on its own — so nothing is done that nobody will hear
+ * about. A single message is always answered whole: its size is bounded by
+ * the tool's own page ceilings, and a file by the media limit.
+ */
+export const MAX_BATCH_ANSWER_BYTES = 2 * 1024 * 1024;
+
+/** The code for a message left unrun because its batch had said enough. */
+const BATCH_TOO_LARGE = -32000;
 
 export function handleBody(caller: Caller, body: unknown): RpcResponse | RpcResponse[] | null {
 	if (Array.isArray(body)) {
@@ -584,14 +689,31 @@ export function handleBody(caller: Caller, body: unknown): RpcResponse | RpcResp
 		 */
 		if (body.length > MAX_BATCH)
 			return fail(null, INVALID_REQUEST, `A batch may hold at most ${MAX_BATCH} messages.`);
-		const answers = body
-			.map((one) => handle(caller, (one ?? {}) as RpcRequest))
-			.filter((a): a is RpcResponse => a !== null);
+		const answers: RpcResponse[] = [];
+		let spent = 0;
+		for (const one of body) {
+			if (spent > MAX_BATCH_ANSWER_BYTES) {
+				const request = isPlainObject(one) ? one : {};
+				// A notification skipped is still not answered.
+				if (request.id === undefined) continue;
+				answers.push(
+					fail(
+						validId(request.id) ? (request.id ?? null) : null,
+						BATCH_TOO_LARGE,
+						`Not run: this batch\u2019s answers already passed ${MAX_BATCH_ANSWER_BYTES} bytes. Send it on its own.`
+					)
+				);
+				continue;
+			}
+			const answer = handle(caller, one as RpcRequest);
+			if (answer === null) continue;
+			spent += JSON.stringify(answer).length;
+			answers.push(answer);
+		}
 		return answers.length > 0 ? answers : null;
 	}
 
-	if (!body || typeof body !== 'object')
-		return fail(null, PARSE_ERROR, 'The body is not a JSON-RPC message.');
+	if (!isPlainObject(body)) return fail(null, INVALID_REQUEST, 'A JSON-RPC message is an object.');
 
 	return handle(caller, body as RpcRequest);
 }

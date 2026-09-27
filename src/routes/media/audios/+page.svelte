@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Card from '$lib/components/Card.svelte';
 	import { routeGlyph } from '$lib/glyphs';
 	import { enhance } from '$lib/enhance';
 	import { invalidateAll } from '$app/navigation';
@@ -160,82 +161,88 @@
 	{#if data.recordings.length === 0}
 		<EmptyState icon={routeGlyph('/media/audios')!} title={t('audio.none')} />
 	{:else}
-		<ul class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card">
-			{#each data.recordings as one (one.id)}
-				<li class="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:gap-4">
-					<div class="min-w-0 flex-1">
-						{#if renaming === one.id}
-							<form
-								method="post"
-								action="?/rename"
-								class="flex flex-wrap items-center gap-2"
-								use:enhance={() => {
-									return async ({ update }) => {
-										renaming = null;
-										await update();
-									};
-								}}
-							>
-								<input type="hidden" name="id" value={one.id} />
-								<OneLine
-									name="label"
-									value={one.name}
-									class="input w-auto flex-1 sm:max-w-72"
-									ariaLabel={t('audio.nameIt')}
-									required
-								/>
-								<button class="btn btn-sm btn-primary" type="submit">{t('ui.save')}</button>
-								<button
-									type="button"
-									class="btn btn-sm btn-quiet"
-									onclick={() => (renaming = null)}
+		<Card flush>
+			<ul class="divide-y divide-gray-200">
+				{#each data.recordings as one (one.id)}
+					<li class="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:gap-4">
+						<div class="min-w-0 flex-1">
+							{#if renaming === one.id}
+								<form
+									method="post"
+									action="?/rename"
+									class="flex flex-wrap items-center gap-2"
+									use:enhance={() => {
+										return async ({ update }) => {
+											renaming = null;
+											await update();
+										};
+									}}
 								>
-									{t('ui.cancel')}
-								</button>
-							</form>
-						{:else}
-							<p class="truncate text-sm font-medium text-gray-900">{one.name}</p>
-							<p class="mt-0.5 text-xs text-gray-500">
-								{said(one.createdAt)} · {size(one.byteSize)}
-							</p>
-						{/if}
-					</div>
+									<input type="hidden" name="id" value={one.id} />
+									<OneLine
+										name="label"
+										value={one.name}
+										class="input w-auto flex-1 sm:max-w-72"
+										ariaLabel={t('audio.nameIt')}
+										required
+									/>
+									<button class="btn btn-sm btn-primary" type="submit">{t('ui.save')}</button>
+									<button
+										type="button"
+										class="btn btn-sm btn-quiet"
+										onclick={() => (renaming = null)}
+									>
+										{t('ui.cancel')}
+									</button>
+								</form>
+							{:else}
+								<p class="truncate text-sm font-medium text-gray-900">{one.name}</p>
+								<p class="mt-0.5 text-xs text-gray-500">
+									{said(one.createdAt)} · {size(one.byteSize)}
+								</p>
+							{/if}
+						</div>
 
-					<!-- The app's own transport rather than the browser's, which
+						<!-- The app's own transport rather than the browser's, which
 					     arrives at a fixed size in a grey of its own and reads as a
 					     foreign object in the list. See `AudioPlayer`. -->
-					<AudioPlayer
-						src="/media/audio/{one.id}"
-						label={one.name}
-						seconds={one.seconds}
-						class="w-full sm:w-72"
-					/>
+						<AudioPlayer
+							src="/media/audio/{one.id}"
+							label={one.name}
+							seconds={one.seconds}
+							class="w-full sm:w-72"
+						/>
 
-					<div class="flex shrink-0 items-center gap-2">
-						<button
-							type="button"
-							class="btn btn-sm"
-							onclick={() => (renaming = renaming === one.id ? null : one.id)}
-						>
-							<Icon name="edit" class="mr-1.5" />
-							{t('audio.rename')}
-						</button>
-						<button
-							type="button"
-							class="btn btn-sm"
-							onclick={() => (ideaOf = { id: one.id, name: one.name })}
-						>
-							<Icon name="ideas" class="mr-1.5" />
-							{t('audio.makeAnIdea')}
-						</button>
-						<button type="button" class="btn btn-sm btn-danger" onclick={() => (doomedId = one.id)}>
-							<Icon name="trash" class="mr-1.5" />
-							{t('audio.delete')}
-						</button>
-					</div>
-				</li>
-			{/each}
-		</ul>
+						<div class="flex shrink-0 items-center gap-2">
+							<button
+								type="button"
+								class="btn btn-sm"
+								onclick={() => (renaming = renaming === one.id ? null : one.id)}
+							>
+								<Icon name="edit" class="mr-1.5" />
+								{t('audio.rename')}
+							</button>
+							<button
+								type="button"
+								class="btn btn-sm"
+								onclick={() => (ideaOf = { id: one.id, name: one.name })}
+							>
+								<Icon name="ideas" class="mr-1.5" />
+								{t('audio.makeAnIdea')}
+							</button>
+							<button
+								type="button"
+								class="btn btn-sm btn-danger"
+								onclick={() => (doomedId = one.id)}
+							>
+								<Icon name="trash" class="mr-1.5" />
+								{t('audio.delete')}
+							</button>
+						</div>
+					</li>
+				{/each}
+			</ul>
+		</Card>
 	{/if}
 </div>
 

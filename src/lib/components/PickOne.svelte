@@ -45,7 +45,9 @@
 		required = false,
 		placeholder = '',
 		id,
-		ariaLabel
+		ariaLabel,
+		free = false,
+		maxlength
 	}: {
 		name: string;
 		value?: string;
@@ -54,6 +56,12 @@
 		placeholder?: string;
 		id?: string;
 		ariaLabel?: string;
+		/**
+		 * Whatever is typed is the value, and the options are only suggestions —
+		 * a notebook's folder can be one the shelf already has or a new one.
+		 */
+		free?: boolean;
+		maxlength?: number;
 	} = $props();
 
 	let open = $state(false);
@@ -61,9 +69,12 @@
 	let active = $state(0);
 	let field = $state<HTMLInputElement>();
 	let above = $state(false);
+	/* Whether anything has been typed since it opened: until then a free field
+	   offers the whole list, not only the entries matching what it holds. */
+	let typed = $state(false);
 
 	const chosen = $derived(options.find((o) => o.value === value) ?? null);
-	const shown = $derived(fuzzyRank(options, query, (o) => o.label));
+	const shown = $derived(fuzzyRank(options, free && !typed ? '' : query, (o) => o.label));
 
 	/** Room for about six rows; past that the list scrolls rather than the page. */
 	const LIST_MAX_HEIGHT = 240;
@@ -78,7 +89,8 @@
 
 	function show() {
 		if (open) return;
-		query = '';
+		query = free ? value : '';
+		typed = false;
 		active = 0;
 		open = true;
 		place();
@@ -141,7 +153,7 @@
 	});
 
 	/** What the closed field shows: what was chosen, or nothing yet. */
-	const shownText = $derived(open ? query : (chosen?.label ?? ''));
+	const shownText = $derived(open ? query : free ? value : (chosen?.label ?? ''));
 	const listId = $derived(`${name}-list`);
 </script>
 
@@ -162,10 +174,13 @@
 		autocomplete="off"
 		class="input pr-8"
 		{placeholder}
+		{maxlength}
 		value={shownText}
 		oninput={(e) => {
 			if (!open) show();
 			query = e.currentTarget.value;
+			typed = true;
+			if (free) value = query;
 			active = 0;
 		}}
 		onfocus={show}
@@ -183,7 +198,8 @@
 		<Icon name={open ? 'chevron-up' : 'chevron-down'} size={16} />
 	</span>
 
-	{#if open}
+	<!-- A free field with nothing to suggest is somebody naming a new one. -->
+	{#if open && !(free && shown.length === 0)}
 		<ul
 			id={listId}
 			role="listbox"

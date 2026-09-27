@@ -29,6 +29,12 @@
 	import { getAction } from '$lib/shortcuts';
 	import { keepInView } from '$lib/actions/keep-in-view';
 	import { useT } from '$lib/i18n';
+	import { Selection } from '$lib/selection.svelte';
+	import SelectionBar from '$lib/components/SelectionBar.svelte';
+	import SelectBox from '$lib/components/SelectBox.svelte';
+	import BatchDialog from '$lib/components/BatchDialog.svelte';
+	import NotebookField from '$lib/components/NotebookField.svelte';
+	import type { EntryBatchVerb } from '$lib/services/diary';
 
 	const t = useT();
 	const now = useWhen();
@@ -81,6 +87,29 @@
 			)
 		);
 	}
+
+	/*
+	 * Several entries at once, with the task list's own selection. No "put
+	 * away" here: the diary shows every entry, so hiding one would do nothing.
+	 */
+	const selection = new Selection<EntryBatchVerb>();
+	const shownIds = $derived(filteredEntries().map((entry) => entry.id));
+	const chosenIds = $derived(shownIds.filter((id) => selection.has(id)));
+	$effect(() => selection.keep(shownIds));
+	const BATCH_LABELS = {
+		notebook: 'notebookDetail.batchMove',
+		tag: 'notebookDetail.batchTag',
+		remove: 'notebookDetail.batchDelete'
+	} as const;
+	const batchVerbs = $derived(
+		(
+			[
+				['notebook', 'notebook'],
+				['tag', 'tag'],
+				['remove', 'trash']
+			] as const
+		).map(([key, icon]) => ({ key, icon, label: t(BATCH_LABELS[key]) }))
+	);
 
 	function editingEntry() {
 		if (!editingId) return null;
@@ -149,6 +178,7 @@
 			// A `<dialog>` closes itself on Escape; `preventDefault()` here cancels
 			// that. Nothing on this page needs the key while one is open.
 			if (document.querySelector('dialog[open]')) return;
+			if (selection.handleKey(e, () => undefined)) return;
 
 			e.preventDefault();
 			showForm = false;
@@ -167,6 +197,8 @@
 			return;
 
 		const items = filteredEntries();
+		if (document.querySelector('dialog[open]')) return;
+		if (selection.handleKey(e, () => items[selectedIndex]?.id)) return;
 		const action = getAction('/notebooks/diary', e.key);
 		if (!action) return;
 		e.preventDefault();
@@ -329,13 +361,13 @@
 			{/if}
 
 			<FormGrid>
-				<!-- No notebook picker: the diary is not one notebook among others,
-				     and offering to move a note out of it at the moment of writing
-				     answered a question this page had already answered. -->
+				<!-- No notebook picker while writing: the diary is not one notebook
+				     among others, and the page has already answered where this goes.
+				     Editing is a later decision, and there it can move. -->
 				<NoteFields
 					content={editingId ? (editingEntry()?.content ?? '') : ''}
 					tags={editingId ? editingTagString() : ''}
-					notebook={false}
+					notebook={editingId !== null}
 					notebooks={data.notebooks}
 				/>
 
@@ -422,6 +454,13 @@
 					/>
 				{/if}
 			{/snippet}
+			<SelectionBar
+				{selection}
+				visible={shownIds}
+				verbs={batchVerbs}
+				selectAllLabel={t('notebookDetail.selectVisibleNotes')}
+				dataTour="diary-selection"
+			/>
 			<!-- Inside the surface, so the control that emptied it stays to undo it. -->
 			{#if filteredEntries().length === 0}
 				<div class="p-8 text-center text-sm text-gray-500">
@@ -439,34 +478,43 @@
 					<div
 						use:keepInView={i === selectedIndex}
 						id="diary-{entry.diarySeq ?? entry.seq}"
-						class="relative p-4 {i === selectedIndex ? 'kb-cursor' : ''}"
+						class="relative flex gap-3 p-4 {i === selectedIndex ? 'kb-cursor' : ''}"
+						class:bg-gray-100={selection.selecting && selection.has(entry.id)}
 					>
-						<div class="md mb-2 text-sm text-gray-900">
-							<!-- `renderMarkdown` escapes every character of the input before it emits a
+						{#if selection.selecting}
+							<SelectBox
+								checked={selection.has(entry.id)}
+								label={t('notebookDetail.selectNote', { title: `#${entry.diarySeq ?? entry.seq}` })}
+								ontoggle={() => selection.toggle(entry.id)}
+							/>
+						{/if}
+						<div class="min-w-0 flex-1">
+							<div class="md mb-2 text-sm text-gray-900">
+								<!-- `renderMarkdown` escapes every character of the input before it emits a
 						     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
-							<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-							{@html renderMarkdown(entry.content)}
-						</div>
+								<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+								{@html renderMarkdown(entry.content)}
+							</div>
 
-						<!--
+							<!--
 						One footer row: what the entry is on the left, what you can do to it
 						on the right. Edit and Delete used to sit beside the writing and
 						refuse to shrink, which on a phone left the writing a column one
 						word wide — and cost a whole row of height on any screen.
 					-->
-						<div class="flex flex-wrap items-center gap-2">
-							<span class="text-xs text-gray-500">{formatDate(entry.createdAt)}</span>
-							{#if entry.forDate}
-								<span class="text-xs font-medium text-amber-600"
-									>{t('notebooks.diary.for', { forDate: entry.forDate })}</span
-								>
-							{/if}
-							{#if entry.updatedAt !== entry.createdAt}
-								<span class="text-xs text-gray-500"
-									>{t('notebooks.diary.edited', { updatedAt: formatDate(entry.updatedAt) })}</span
-								>
-							{/if}
-							<!--
+							<div class="flex flex-wrap items-center gap-2">
+								<span class="text-xs text-gray-500">{formatDate(entry.createdAt)}</span>
+								{#if entry.forDate}
+									<span class="text-xs font-medium text-amber-600"
+										>{t('notebooks.diary.for', { forDate: entry.forDate })}</span
+									>
+								{/if}
+								{#if entry.updatedAt !== entry.createdAt}
+									<span class="text-xs text-gray-500"
+										>{t('notebooks.diary.edited', { updatedAt: formatDate(entry.updatedAt) })}</span
+									>
+								{/if}
+								<!--
 							`@` in front of a person, the way `#` goes in front of a tag.
 
 							They are the same chip in the same row and they were telling
@@ -475,98 +523,99 @@
 							the people list. One character, and the row is legible without
 							knowing anything.
 						-->
-							{#each entry.people as person (person.id)}
-								<a href={resolve('/notebooks/people')} class="chip">
-									@{person.name}
-								</a>
-							{/each}
-							{#each entry.tags as tag (tag.id)}
-								<TagChip
-									name={tag.name}
-									active={tagFilter.current.include.includes(tag.name)}
-									onclick={() => {
-										const held = tagFilter.current;
-										if (!held.include.includes(tag.name))
-											tagFilter.current = {
-												...held,
-												include: [...held.include, tag.name],
-												exclude: held.exclude.filter((one) => one !== tag.name)
-											};
-										selectedIndex = 0;
-									}}
-								/>
-							{/each}
-
-							<div class="ml-auto flex flex-wrap items-center gap-2">
-								{#if confirmingDeleteId === entry.id}
-									<form
-										method="post"
-										action="?/delete"
-										use:enhance={() => {
-											return async ({ update }) => {
-												await update({ reset: false });
-												confirmingDeleteId = null;
-											};
+								{#each entry.people as person (person.id)}
+									<a href={resolve('/notebooks/people')} class="chip">
+										@{person.name}
+									</a>
+								{/each}
+								{#each entry.tags as tag (tag.id)}
+									<TagChip
+										name={tag.name}
+										active={tagFilter.current.include.includes(tag.name)}
+										onclick={() => {
+											const held = tagFilter.current;
+											if (!held.include.includes(tag.name))
+												tagFilter.current = {
+													...held,
+													include: [...held.include, tag.name],
+													exclude: held.exclude.filter((one) => one !== tag.name)
+												};
+											selectedIndex = 0;
 										}}
-									>
-										<input type="hidden" name="id" value={entry.id} />
-										<button
-											type="submit"
-											class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
-											use:armed
+									/>
+								{/each}
+
+								<div class="ml-auto flex flex-wrap items-center gap-2">
+									{#if confirmingDeleteId === entry.id}
+										<form
+											method="post"
+											action="?/delete"
+											use:enhance={() => {
+												return async ({ update }) => {
+													await update({ reset: false });
+													confirmingDeleteId = null;
+												};
+											}}
 										>
-											{t('notebooks.diary.confirm')}
+											<input type="hidden" name="id" value={entry.id} />
+											<button
+												type="submit"
+												class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
+												use:armed
+											>
+												{t('notebooks.diary.confirm')}
+											</button>
+										</form>
+										<button
+											type="button"
+											onclick={() => {
+												confirmingDeleteId = null;
+											}}
+											class="btn btn-sm"
+										>
+											{t('ui.cancel')}
 										</button>
-									</form>
-									<button
-										type="button"
-										onclick={() => {
-											confirmingDeleteId = null;
-										}}
-										class="btn btn-sm"
-									>
-										{t('ui.cancel')}
-									</button>
-								{:else}
-									<button
-										title={t('ui.edit')}
-										aria-label={t('ui.edit')}
-										onclick={() => {
-											editingId = entry.id;
-											showForm = true;
-											tick().then(() => {
-												const ta = document.querySelector<HTMLTextAreaElement>(
-													'textarea[name="content"]'
-												);
-												ta?.focus();
-											});
-										}}
-										class="icon-btn"
-									>
-										<Icon name="edit" />
-									</button>
-									<button
-										title={t('ui.delete')}
-										aria-label={t('ui.delete')}
-										type="button"
-										onclick={() => {
-											confirmingDeleteId = entry.id;
-										}}
-										class="icon-btn icon-btn-danger"
-									>
-										<Icon name="trash" />
-									</button>
-								{/if}
+									{:else}
+										<button
+											title={t('ui.edit')}
+											aria-label={t('ui.edit')}
+											onclick={() => {
+												editingId = entry.id;
+												showForm = true;
+												tick().then(() => {
+													const ta = document.querySelector<HTMLTextAreaElement>(
+														'textarea[name="content"]'
+													);
+													ta?.focus();
+												});
+											}}
+											class="icon-btn"
+										>
+											<Icon name="edit" />
+										</button>
+										<button
+											title={t('ui.delete')}
+											aria-label={t('ui.delete')}
+											type="button"
+											onclick={() => {
+												confirmingDeleteId = entry.id;
+											}}
+											class="icon-btn icon-btn-danger"
+										>
+											<Icon name="trash" />
+										</button>
+									{/if}
 
-								<!-- The number entries are referred to by, as `#12` in another
+									<!-- The number entries are referred to by, as `#12` in another
 							     entry's text. At the end of the row rather than the start of
 							     it: what the entry is reads from the left, and the number is
 							     a handle for pointing at it rather than part of the reading. -->
-								<!-- The diary's own number, not the account's count of everything it
+									<!-- The diary's own number, not the account's count of everything it
 					     holds: the thirtieth entry is #30 and used to read #127. -->
-								<span class="tabular text-xs font-medium text-gray-900"
-									>#{entry.diarySeq ?? entry.seq}</span
-								>
+									<span class="tabular text-xs font-medium text-gray-900"
+										>#{entry.diarySeq ?? entry.seq}</span
+									>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -574,6 +623,36 @@
 			</div>
 		</RoomSurface>
 	{/if}
+
+	<BatchDialog
+		{selection}
+		ids={chosenIds}
+		action="?/batch"
+		id="diary-batch-form"
+		title={selection.verb ? t(BATCH_LABELS[selection.verb as keyof typeof BATCH_LABELS]) : ''}
+		destructive={selection.verb === 'remove'}
+		done={(count) => t('notebookDetail.batchUpdated', { count })}
+	>
+		{#snippet fields(verb)}
+			{#if verb === 'notebook'}
+				<NotebookField
+					notebooks={data.notebooks}
+					value={null}
+					span={12}
+					noneLabel={t('sections.diary.label')}
+				/>
+			{:else if verb === 'tag'}
+				<Field label={t('todoRows.addLabels')} span={12}
+					><OneLine name="add" class="input" autofocus /></Field
+				>
+				<Field label={t('todoRows.removeLabels')} span={12}
+					><OneLine name="remove" class="input" /></Field
+				>
+			{:else}
+				<p class="col-span-12 text-sm text-gray-700">{t('notebookDetail.deleteSelectedNotes')}</p>
+			{/if}
+		{/snippet}
+	</BatchDialog>
 </div>
 
 {#if tooltip.visible}

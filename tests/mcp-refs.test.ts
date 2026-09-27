@@ -27,7 +27,8 @@ seedAccounts(database.path);
 afterAll(() => database.remove());
 
 let TOOLS: typeof import('../src/lib/server/mcp/tools').TOOLS;
-let ID_ARGUMENT: typeof import('../src/lib/server/mcp/refs').ID_ARGUMENT;
+let referenceLike: typeof import('../src/lib/server/mcp/refs').referenceLike;
+let valuesAt: typeof import('../src/lib/server/mcp/refs').valuesAt;
 let KINDS: typeof import('../src/lib/server/mcp/refs').KINDS;
 let resolveRef: typeof import('../src/lib/server/mcp/refs').resolveRef;
 let assertRefs: typeof import('../src/lib/server/mcp/refs').assertRefs;
@@ -35,14 +36,28 @@ let buildCtx: typeof import('../src/lib/services/ctx').buildCtx;
 
 beforeAll(async () => {
 	({ TOOLS } = await import('../src/lib/server/mcp/tools'));
-	({ ID_ARGUMENT, KINDS, assertRefs, resolveRef } = await import('../src/lib/server/mcp/refs'));
+	({ referenceLike, valuesAt, KINDS, assertRefs, resolveRef } =
+		await import('../src/lib/server/mcp/refs'));
 	({ buildCtx } = await import('../src/lib/services/ctx'));
 });
 
+/** Every argument path the schema reads as naming a thing — derived, never listed. */
 function idArgumentsOf(tool: (typeof TOOLS)[number]): string[] {
-	return Object.keys((tool.input?.properties ?? {}) as object).filter((name) =>
-		ID_ARGUMENT.test(name)
-	);
+	return referenceLike(tool.input, new Set(TOOLS.map((one) => one.name)));
+}
+
+/** Every path a schema has, nested ones spelled the way a `Ref` spells them. */
+function pathsOf(node: unknown, path = ''): string[] {
+	type Node = { type?: unknown; properties?: Record<string, Node>; items?: Node };
+	const out: string[] = [];
+	for (const [name, child] of Object.entries((node as Node)?.properties ?? {})) {
+		const at = path ? `${path}.${name}` : name;
+		out.push(at);
+		if (child.type === 'object') out.push(...pathsOf(child, at));
+		if (child.type === 'array' && child.items?.type === 'object')
+			out.push(...pathsOf(child.items, `${at}[]`));
+	}
+	return out;
 }
 
 describe('the ids a tool takes', () => {
@@ -50,7 +65,10 @@ describe('the ids a tool takes', () => {
 		const missing: string[] = [];
 
 		for (const tool of TOOLS) {
-			const declared = new Set((tool.refs ?? []).map((ref) => ref.arg));
+			const declared = new Set([
+				...(tool.refs ?? []).map((ref) => ref.arg),
+				...(tool.opaque ?? [])
+			]);
 			const undeclared = idArgumentsOf(tool).filter((name) => !declared.has(name));
 			if (undeclared.length) missing.push(`${tool.name} (${undeclared.join(', ')})`);
 		}
@@ -73,9 +91,57 @@ describe('the ids a tool takes', () => {
 		for (const tool of TOOLS)
 			for (const ref of tool.refs ?? [])
 				expect(
-					Object.keys((tool.input?.properties ?? {}) as object),
+					pathsOf(tool.input),
 					`${tool.name} declares ${ref.arg}, which it does not take`
 				).toContain(ref.arg);
+	});
+
+	it('are caught however they are spelled, and wherever they sit', () => {
+		const names = new Set(['recipes', 'locations']);
+		const found = referenceLike(
+			{
+				properties: {
+					parent_id: { type: 'integer' },
+					ranOutOf: { type: 'array', items: { type: 'integer' }, description: 'Item ids.' },
+					home: { type: 'integer', description: 'The place, from `locations`.' },
+					lines: {
+						type: 'array',
+						items: { type: 'object', properties: { recipeId: { type: 'integer' } } }
+					},
+					where: {
+						type: 'object',
+						properties: { dish: { type: 'integer', description: 'As `recipes` gives it.' } }
+					},
+					minutes: { type: 'integer', description: 'How long it takes.' },
+					only: { type: 'array', items: { type: 'integer' }, description: 'Counting from 0.' }
+				}
+			},
+			names
+		);
+		expect(found.sort()).toEqual([
+			'home',
+			'lines[].recipeId',
+			'parent_id',
+			'ranOutOf',
+			'where.dish'
+		]);
+	});
+
+	it('opaque ones are ones the tool actually takes', () => {
+		for (const tool of TOOLS)
+			for (const arg of tool.opaque ?? []) expect(pathsOf(tool.input), tool.name).toContain(arg);
+	});
+});
+
+describe('a path into the arguments', () => {
+	it('reaches plain values, lists, and fields of objects in a list', () => {
+		expect(valuesAt({ id: 3 }, 'id')).toEqual([3]);
+		expect(valuesAt({ ids: [1, 2] }, 'ids')).toEqual([1, 2]);
+		expect(valuesAt({ lines: [{ itemId: 4 }, { itemId: 5 }, 'x'] }, 'lines[].itemId')).toEqual([
+			4, 5
+		]);
+		expect(valuesAt({ where: { ids: [6] } }, 'where.ids')).toEqual([6]);
+		expect(valuesAt({}, 'where.ids')).toEqual([]);
 	});
 });
 

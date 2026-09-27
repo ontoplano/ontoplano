@@ -193,13 +193,13 @@
 	</PeriodNav>
 
 	{#if data.reading.planned === 0}
-		<div class="border border-gray-200 bg-white shadow-card">
+		<Card flush>
 			<EmptyState
 				icon="calendar"
 				title={t('tasks.review.nothingWasPlannedThatWeek')}
 				description={t('tasks.review.aReviewNeedsAWeek')}
 			/>
-		</div>
+		</Card>
 	{:else}
 		<CardGrid columns={3} bleed>
 			<!-- What you planned against what you did. -->

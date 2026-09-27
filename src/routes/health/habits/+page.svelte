@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Card from '$lib/components/Card.svelte';
 	import { routeGlyph } from '$lib/glyphs';
 	import { enhance } from '$lib/enhance';
 	import FilterChips from '$lib/components/FilterChips.svelte';
@@ -212,33 +213,35 @@
 	</Modal>
 
 	{#if filteredHabits().length === 0}
-		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
-			{#if typeFilter === 'all'}
-				<EmptyState
-					icon={routeGlyph('/health/habits')!}
-					title={t('health.habits.nothingTrackedYet')}
-					description={t('health.habits.aHabitIsSomethingYou')}
-				>
-					{#snippet action()}
-						<button onclick={openNewHabit} class="btn btn-primary">
-							<Icon name="plus" />
-							{t('health.habits.newHabit')}
-						</button>
-					{/snippet}
-				</EmptyState>
-			{:else}
-				<EmptyState
-					icon={routeGlyph('/health/habits')!}
-					title={t('health.habits.nothingTrackedInThisFilter')}
-				>
-					{#snippet action()}
-						<button onclick={() => (typeFilter = 'all')} class="btn"
-							>{t('health.habits.showAllHabits')}</button
-						>
-					{/snippet}
-				</EmptyState>
-			{/if}
-		</div>
+		<Card flush>
+			<div class="p-8 text-center text-sm text-gray-500">
+				{#if typeFilter === 'all'}
+					<EmptyState
+						icon={routeGlyph('/health/habits')!}
+						title={t('health.habits.nothingTrackedYet')}
+						description={t('health.habits.aHabitIsSomethingYou')}
+					>
+						{#snippet action()}
+							<button onclick={openNewHabit} class="btn btn-primary">
+								<Icon name="plus" />
+								{t('health.habits.newHabit')}
+							</button>
+						{/snippet}
+					</EmptyState>
+				{:else}
+					<EmptyState
+						icon={routeGlyph('/health/habits')!}
+						title={t('health.habits.nothingTrackedInThisFilter')}
+					>
+						{#snippet action()}
+							<button onclick={() => (typeFilter = 'all')} class="btn"
+								>{t('health.habits.showAllHabits')}</button
+							>
+						{/snippet}
+					</EmptyState>
+				{/if}
+			</div>
+		</Card>
 	{:else}
 		<!--
 			One surface, and a habit is a row on it.
@@ -248,32 +251,31 @@
 			that, and a screen of separate boxes read as a scatter rather than as
 			the list it is.
 		-->
-		<div
-			class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card"
-			data-tour="habit-list"
-		>
-			{#each filteredHabits() as habit, i (habit.id)}
-				<!--
+		<Card flush dataTour="habit-list">
+			<div class="divide-y divide-gray-200">
+				{#each filteredHabits() as habit, i (habit.id)}
+					<!--
 					The card is a component, so a habit filed under a notebook is the
 					same habit this room shows — its streak, its year at a glance, its
 					backdating and the notes on each day. See `HabitCard`.
 				-->
-				<div
-					use:keepInView={i === selectedHabitIndex}
-					class={i === selectedHabitIndex ? 'kbd-cursor' : ''}
-				>
-					<HabitCard
-						{habit}
-						occurrences={data.occurrences}
-						today={data.today}
-						firstDay={data.config.week.firstDay}
-						actions={HABIT_ROOM_ACTIONS}
-						onedit={() => startEdit(habit)}
-						expanded={expandedHabitId === habit.id}
-						onexpand={(id) => (expandedHabitId = expandedHabitId === id ? null : id)}
-					/>
-				</div>
-			{/each}
-		</div>
+					<div
+						use:keepInView={i === selectedHabitIndex}
+						class={i === selectedHabitIndex ? 'kbd-cursor' : ''}
+					>
+						<HabitCard
+							{habit}
+							occurrences={data.occurrences}
+							today={data.today}
+							firstDay={data.config.week.firstDay}
+							actions={HABIT_ROOM_ACTIONS}
+							onedit={() => startEdit(habit)}
+							expanded={expandedHabitId === habit.id}
+							onexpand={(id) => (expandedHabitId = expandedHabitId === id ? null : id)}
+						/>
+					</div>
+				{/each}
+			</div>
+		</Card>
 	{/if}
 </div>

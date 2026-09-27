@@ -2023,70 +2023,6 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	/*
-	 * The rail those actions live in.
-	 *
-	 * The complaint this answers: actions used to be appended inline after the
-	 * row's text, in a wrapping flex, so their left edge moved with the length of
-	 * whatever was written — every row's buttons in a different place, and a
-	 * long note pushing them onto a second line. Here they are pinned to the
-	 * right edge of every row in a list, in the same order, at the same x.
-	 *
-	 * On a pointer they rest at a third opacity and come up when the row is
-	 * hovered or holds focus, so a list of thirty reads as thirty things you
-	 * wrote rather than ninety controls. The space is reserved either way —
-	 * nothing moves when they appear, which is what makes a revealed action safe
-	 * to click for.
-	 */
-	.row-actions {
-		display: flex;
-		/*
-		 * It wraps, and it wraps to the right.
-		 *
-		 * Five controls do not fit across a 360px card, and a rail that cannot
-		 * wrap makes its buttons squeeze instead — which is how the same row came
-		 * out neat on a desktop and ragged on a phone. Wrapping keeps every
-		 * control its own size and lands the overflow under the right-hand end,
-		 * where the rail already sits.
-		 */
-		flex-wrap: wrap;
-		justify-content: flex-end;
-		flex: none;
-		align-items: center;
-		gap: 0.125rem;
-		margin-left: auto;
-	}
-
-	/*
-	 * On a phone the rail is under the text, so it lines up with it.
-	 *
-	 * Pushed right, on its own line, it left the whole left half of a card
-	 * empty and the buttons aligned with nothing — the card read as mostly
-	 * air. Below the phone breakpoint the card is a column, and a column
-	 * has one edge: this one.
-	 */
-	@media (max-width: 639px) {
-		.row-actions {
-			justify-content: flex-start;
-			margin-left: 0;
-		}
-	}
-
-	/*
-	 * A card's actions, blocked into the corner rather than strung along a row.
-	 *
-	 * They used to be a row above the text, which squeezed it and put delete
-	 * next to edit. Blocked into the corner keeps delete away from edit and —
-	 * unlike a single column — a card with five actions does not end up four
-	 * times taller than the line of text it holds.
-	 *
-	 * Three abreast rather than two. Two put five buttons in a column of two
-	 * and three, which is a shape with a hole in it and a card as tall as the
-	 * tallest thing on the row. Three fills the first line and right-aligns
-	 * what is left over, so the block is two lines wherever it appears, and a
-	 * row with three actions — a finished task, which has no "do it today" or
-	 * "put it on a day" — is one line and a shorter card.
-	 */
-	/*
 	 * A task's actions, on a line of their own under the words.
 	 *
 	 * They used to be `.row-actions-stack` — three buttons wide, pinned to the
@@ -2166,21 +2102,6 @@ label:has(> input[type='radio']:not(:disabled)) {
 		cursor: pointer;
 	}
 
-	.row-actions-stack {
-		display: flex;
-		flex-wrap: wrap;
-		/* Wide enough for exactly three, so the fourth wraps. */
-		max-width: calc(3 * var(--row-action-size) + 2 * 0.25rem);
-		flex: none;
-		align-self: start;
-		/* A part-full last line sits under the right-hand end of the one above,
-		   rather than starting a second column on the left. */
-		justify-content: flex-end;
-		gap: 0.25rem;
-		margin-left: auto;
-	}
-
-	.row-actions-stack,
 	.task-actions {
 		--row-action-size: 2.25rem;
 	}
@@ -2189,12 +2110,10 @@ label:has(> input[type='radio']:not(:disabled)) {
 	 * Compact with a mouse. A finger keeps the 44px every other control has.
 	 */
 	@media (pointer: fine) {
-		.row-actions-stack,
 		.task-actions {
 			--row-action-size: 1.75rem;
 		}
 
-		.row-actions-stack .icon-btn,
 		.task-actions .icon-btn {
 			width: var(--row-action-size);
 			height: var(--row-action-size);
@@ -2227,11 +2146,6 @@ label:has(> input[type='radio']:not(:disabled)) {
 	}
 
 	@media (hover: hover) {
-		.row-actions,
-		.row-actions-stack {
-			opacity: 0.35;
-		}
-
 		/*
 		 * The controls fade one by one rather than as a line, so a confirm that
 		 * replaces one of them can come back on its own.
@@ -2240,21 +2154,7 @@ label:has(> input[type='radio']:not(:disabled)) {
 			opacity: 0.35;
 		}
 
-		*:hover > .row-actions,
-		*:focus-within > .row-actions,
-		.row-actions:focus-within,
-		*:hover > .row-actions-stack,
-		*:focus-within > .row-actions-stack,
-		.row-actions-stack:focus-within {
-			opacity: 1;
-		}
-
-		/*
-		 * And they come back on hover, which they never did: the row that
-		 * faded was `.task-actions` and the rule that brought one back named
-		 * only the other two, so a task's buttons stayed at a third whatever
-		 * the pointer was doing.
-		 */
+		/* And they come back while the pointer or the focus is on the row. */
 		*:hover > .task-actions > *,
 		*:focus-within > .task-actions > *,
 		.task-actions:focus-within > * {

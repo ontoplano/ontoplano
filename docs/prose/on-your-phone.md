@@ -28,6 +28,10 @@ that carries the app lists `ontoplano-v<version>.apk` among its files, beside
 To check a download on a computer, put it beside that release's `SHA256SUMS`
 and run `sha256sum -c SHA256SUMS --ignore-missing`.
 
+The APK is signed with the project's release key, so each one updates the last
+in place. A build from a store is signed with a different key: switching
+between the two means uninstalling first.
+
 ### Building it from source
 
 You need Node and yarn, JDK 21 and an Android SDK.

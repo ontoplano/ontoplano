@@ -12,6 +12,7 @@
 	import FormGrid from '$lib/components/FormGrid.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import TagInput from '$lib/components/TagInput.svelte';
+	import PickOne from '$lib/components/PickOne.svelte';
 	import ToggleRow from '$lib/components/ToggleRow.svelte';
 	import NotebookPicture from '$lib/components/NotebookPicture.svelte';
 	import { untrack } from 'svelte';
@@ -77,8 +78,6 @@
 
 	/** The folders the shelf already has, for the field's suggestions. */
 	const folders = $derived(allFolders(notebooks));
-	/** One list per dialog on the page, so two open forms never share an id. */
-	const suggestions = $props.id();
 
 	const offered = $derived(
 		notebook ? moduleChoicesOf(notebook, page.data.hiddenSections ?? []) : []
@@ -163,21 +162,17 @@
 	</div>
 
 	<!-- Where it sits on the shelf: a path, with the folders already in use
-	     offered by the browser's own suggestion list. -->
+	     offered the moment the field is entered. -->
 	<Field label={t('notebooks.folder')} span={12} hint={t('notebooks.folderHint')}>
-		<input
+		<PickOne
 			name="folder"
 			value={folder}
-			list="{suggestions}-folders"
+			free
+			options={folders.map((one) => ({ value: one, label: one }))}
 			maxlength={MAX_FOLDER_LENGTH}
 			placeholder={t('notebooks.folderPlaceholder')}
-			class="input"
+			ariaLabel={t('notebooks.folder')}
 		/>
-		<datalist id="{suggestions}-folders">
-			{#each folders as one (one)}
-				<option value={one}></option>
-			{/each}
-		</datalist>
 	</Field>
 
 	<Field label={t('notebooks.whatItIsFor')} span={12}>

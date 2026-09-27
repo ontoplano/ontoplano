@@ -22,7 +22,7 @@ under the pointer.
 | `/health/recipes`                    | tour.recipes      | 5     |
 | `/inventory/stock`                   | tour.shopping     | 3     |
 | `/notebooks`                         | tour.notebooks    | 5     |
-| `/notebooks/diary`                   | tour.diary        | 4     |
+| `/notebooks/diary`                   | tour.diary        | 5     |
 | `/notebooks/ideas`                   | tour.ideas        | 3     |
 | `/notebooks/people`                  | tour.people       | 3     |
 | `/notebooks/tags`                    | tour.tags         | 2     |
@@ -132,6 +132,7 @@ at the button that reopens it, so it is not listed here.
 2. tour.tagsAndPeopleAsYou
 3. tour.threeWins
 4. tour.findItAgainByTag
+5. selection.selectMany
 
 ### `/notebooks/ideas` — tour.ideas
 

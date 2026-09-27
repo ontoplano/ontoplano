@@ -5,7 +5,7 @@
 	 * This was written inside the Ideas page, so a notebook's Ideas tab drew an
 	 * idea a second way: a line of text with a tick beside it, next to a room
 	 * where the same idea is a card with its star, its tags, the note saying
-	 * what was applied, and the verbs up its right-hand edge. The same thing in
+	 * what was applied, and its verbs. The same thing in
 	 * two shapes is the drift `GoalCard` was pulled out to stop, and this is
 	 * the same move for the same reason.
 	 *
@@ -14,6 +14,7 @@
 	 * same handler either way (`$lib/services/idea-actions`).
 	 */
 	import Icon from '$lib/components/Icon.svelte';
+	import RowCard from '$lib/components/RowCard.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import TagChip from '$lib/components/TagChip.svelte';
 	import Written from '$lib/components/Written.svelte';
@@ -74,46 +75,124 @@
 	}
 </script>
 
-<div class="mb-2 flex items-start gap-4">
-	<form method="post" action={actions.toggleFavorite} data-favorite-toggle-id={idea.id} use:enhance>
-		<input type="hidden" name="id" value={idea.id} />
-		<button
-			type="submit"
-			class="mt-0.5 text-lg leading-none transition {idea.favorite
-				? 'text-amber-600 hover:text-amber-700'
-				: 'text-gray-300 hover:text-amber-600'}"
-			aria-label={idea.favorite
-				? t('notebooks.ideas.removeFavorite')
-				: t('notebooks.ideas.markAsFavorite')}
-		>
-			{idea.favorite ? '★' : '☆'}
-		</button>
-	</form>
+<!--
+	The card a task is drawn on — `RowCard`: the star where a task has its tick,
+	the words beside it, the tags and the verbs along the foot. The row around
+	it keeps the padding and the cursor.
+-->
+<div class="flex items-stretch gap-x-4">
+	<RowCard>
+		{#snippet rail()}
+			<form
+				method="post"
+				action={actions.toggleFavorite}
+				data-favorite-toggle-id={idea.id}
+				use:enhance
+			>
+				<input type="hidden" name="id" value={idea.id} />
+				<button
+					type="submit"
+					class="flex size-7 items-center justify-center text-lg leading-none transition {idea.favorite
+						? 'text-amber-600 hover:text-amber-700'
+						: 'text-gray-300 hover:text-amber-600'}"
+					aria-label={idea.favorite
+						? t('notebooks.ideas.removeFavorite')
+						: t('notebooks.ideas.markAsFavorite')}
+				>
+					{idea.favorite ? '★' : '☆'}
+				</button>
+			</form>
+		{/snippet}
 
-	<div class="min-w-0 flex-1">
+		{#snippet labels()}
+			{#each idea.tags as tag (tag.id)}
+				<TagChip name={tag.name} onclick={ontag ? () => ontag(tag.name) : undefined} />
+			{/each}
+		{/snippet}
+
+		{#snippet controls()}
+			{#if confirmingDelete}
+				<form
+					method="post"
+					action={actions.remove}
+					use:enhance={() => {
+						return async ({ update }) => {
+							await update({ reset: false });
+							confirmingDelete = false;
+						};
+					}}
+				>
+					<input type="hidden" name="id" value={idea.id} />
+					<button type="submit" class="btn btn-sm btn-danger" use:armed>
+						{t('notebooks.ideas.confirm')}
+					</button>
+				</form>
+				<button type="button" onclick={() => (confirmingDelete = false)} class="btn btn-sm">
+					{t('ui.cancel')}
+				</button>
+			{:else}
+				<button
+					type="button"
+					title={t('ui.edit')}
+					aria-label={t('ui.edit')}
+					onclick={() => onedit?.(idea.id)}
+					class="icon-btn"
+				>
+					<Icon name="edit" />
+				</button>
+
+				<form
+					method="post"
+					action={actions.toggleApplied}
+					data-applied-toggle-id={idea.id}
+					use:enhance={() => {
+						return async ({ update }) => {
+							await update({ reset: false });
+							editingNote = false;
+							noteDraft = '';
+						};
+					}}
+				>
+					<input type="hidden" name="id" value={idea.id} />
+					<button
+						type="submit"
+						title={idea.isApplied
+							? t('notebooks.ideas.appliedUndo')
+							: t('notebooks.ideas.markApplied')}
+						aria-label={idea.isApplied
+							? t('notebooks.ideas.appliedUndo')
+							: t('notebooks.ideas.markApplied')}
+						aria-pressed={idea.isApplied}
+						class="icon-btn {idea.isApplied ? 'text-blue-700' : ''}"
+					>
+						<Icon name="check" />
+					</button>
+				</form>
+
+				<button
+					title={t('ui.delete')}
+					aria-label={t('ui.delete')}
+					type="button"
+					onclick={() => (confirmingDelete = true)}
+					class="icon-btn icon-btn-danger"
+				>
+					<Icon name="trash" />
+				</button>
+			{/if}
+		{/snippet}
+
 		<Written content={idea.content} />
 
-		<!-- Date and tags wrap as one row. The buttons are not in here any
-		     more: they are the column up the right-hand edge. -->
-		<div class="mt-2 flex flex-wrap items-center gap-2">
-			<div class="flex flex-wrap items-center gap-2">
-				<span class="text-xs text-gray-500">{formatDate(idea.createdAt)}</span>
-				{#if idea.isApplied}
-					<span class="text-xs font-medium text-blue-700">{t('notebooks.ideas.applied2')}</span>
-				{/if}
-				{#if idea.updatedAt !== idea.createdAt}
-					<span class="text-xs text-gray-500"
-						>{t('notebooks.ideas.edited', { updatedAt: formatDate(idea.updatedAt) })}</span
-					>
-				{/if}
-				{#if idea.tags.length > 0}
-					<div class="flex flex-wrap gap-1">
-						{#each idea.tags as tag (tag.id)}
-							<TagChip name={tag.name} onclick={ontag ? () => ontag(tag.name) : undefined} />
-						{/each}
-					</div>
-				{/if}
-			</div>
+		<!-- When it was written, and whether it was applied: the line a task's
+		     notebook sits on. -->
+		<div class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-gray-500">
+			<span>{formatDate(idea.createdAt)}</span>
+			{#if idea.isApplied}
+				<span class="font-medium text-blue-700">{t('notebooks.ideas.applied2')}</span>
+			{/if}
+			{#if idea.updatedAt !== idea.createdAt}
+				<span>{t('notebooks.ideas.edited', { updatedAt: formatDate(idea.updatedAt) })}</span>
+			{/if}
 		</div>
 
 		{#if idea.isApplied && selected}
@@ -175,85 +254,5 @@
 				</div>
 			</div>
 		{/if}
-	</div>
-
-	<!--
-		The card's actions, stacked up its right-hand edge: edit and the applied
-		toggle at the top, delete as far from them as the card is tall. They used
-		to be a row above the text, which squeezed it and put delete under the
-		thumb.
-	-->
-	<div class="row-actions-stack">
-		{#if confirmingDelete}
-			<form
-				method="post"
-				action={actions.remove}
-				use:enhance={() => {
-					return async ({ update }) => {
-						await update({ reset: false });
-						confirmingDelete = false;
-					};
-				}}
-			>
-				<input type="hidden" name="id" value={idea.id} />
-				<button
-					type="submit"
-					class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700"
-					use:armed
-				>
-					{t('notebooks.ideas.confirm')}
-				</button>
-			</form>
-			<button type="button" onclick={() => (confirmingDelete = false)} class="btn btn-sm">
-				{t('ui.cancel')}
-			</button>
-		{:else}
-			<button
-				title={t('ui.edit')}
-				aria-label={t('ui.edit')}
-				onclick={() => onedit?.(idea.id)}
-				class="icon-btn"
-			>
-				<Icon name="edit" />
-			</button>
-
-			<form
-				method="post"
-				action={actions.toggleApplied}
-				data-applied-toggle-id={idea.id}
-				use:enhance={() => {
-					return async ({ update }) => {
-						await update({ reset: false });
-						editingNote = false;
-						noteDraft = '';
-					};
-				}}
-			>
-				<input type="hidden" name="id" value={idea.id} />
-				<button
-					type="submit"
-					title={idea.isApplied
-						? t('notebooks.ideas.appliedUndo')
-						: t('notebooks.ideas.markApplied')}
-					aria-label={idea.isApplied
-						? t('notebooks.ideas.appliedUndo')
-						: t('notebooks.ideas.markApplied')}
-					aria-pressed={idea.isApplied}
-					class="icon-btn {idea.isApplied ? 'text-blue-700' : ''}"
-				>
-					<Icon name="check" />
-				</button>
-			</form>
-
-			<button
-				title={t('ui.delete')}
-				aria-label={t('ui.delete')}
-				type="button"
-				onclick={() => (confirmingDelete = true)}
-				class="icon-btn icon-btn-danger"
-			>
-				<Icon name="trash" />
-			</button>
-		{/if}
-	</div>
+	</RowCard>
 </div>

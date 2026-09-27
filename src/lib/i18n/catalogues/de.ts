@@ -438,6 +438,9 @@ export const messages: Catalogue = {
 	'errors.clientErrors.errorReportingIsNotEnabledForThisAccount':
 		'Fehlerberichte sind für dieses Konto nicht eingeschaltet',
 	'errors.diary.atLeastOneWin': 'Mindestens ein Erfolg wird gebraucht',
+	'errors.diary.invalidBatch': 'Wähle eine gültige Sammelaktion.',
+	'errors.diary.nothingWasChosen': 'Nichts ausgewählt',
+	'errors.diary.thatIsTooManyAtOnce': 'Das sind mehr Notizen, als ein Klick ändern darf',
 	'errors.familyInvite.anEmailAddressIsNeeded': 'Eine E-Mail-Adresse wird gebraucht',
 	'errors.familyInvite.noAccountHereUses': 'Kein Konto hier benutzt diese Adresse',
 	'errors.familyInvite.thisPlanCoversOneAccount': 'Dieser Tarif deckt ein Konto ab',
@@ -1839,12 +1842,22 @@ export const messages: Catalogue = {
 	'notebookDetail.alreadyDone': 'erledigt',
 	'notebookDetail.anaJoão': 'Anna, Jonas',
 	'notebookDetail.anyoneThisNoteIsAbout': 'Alle, um die es in dieser Notiz geht.',
+	'notebookDetail.archiveSelectedNotes':
+		'Ausgewählte Notizen weglegen? Sie lassen sich zurückholen.',
 	'notebookDetail.archived': '· archiviert',
 	'notebookDetail.archivedCount': 'Archiviert ({count})',
 	'notebookDetail.ascendingPressForDescending': 'Aufsteigend — für absteigend drücken',
 	'notebookDetail.backToThePage': 'Zurück zur Seite',
+	'notebookDetail.batchArchive': 'Ausgewählte Notizen archivieren',
+	'notebookDetail.batchDelete': 'Ausgewählte Notizen löschen',
+	'notebookDetail.batchMove': 'Ausgewählte Notizen verschieben',
+	'notebookDetail.batchTag': 'Ausgewählte Notizen taggen',
+	'notebookDetail.batchUnarchive': 'Ausgewählte Notizen wiederherstellen',
+	'notebookDetail.batchUpdated': '{count} Notizen aktualisiert.',
 	'notebookDetail.biggerType': 'Größere Schrift',
 	'notebookDetail.clearLabels': 'Labels entfernen',
+	'notebookDetail.deleteSelectedNotes':
+		'Ausgewählte Notizen löschen? Das lässt sich nicht rückgängig machen.',
 	'notebookDetail.deleteThisNote': 'Diese Notiz löschen',
 	'notebookDetail.descendingPressForAscending': 'Absteigend — für aufsteigend drücken',
 	'notebookDetail.editThisNote': 'Diese Notiz bearbeiten',
@@ -1868,6 +1881,8 @@ export const messages: Catalogue = {
 	'notebookDetail.people': 'Personen',
 	'notebookDetail.saved': 'Gespeichert',
 	'notebookDetail.searchTheseNotes': 'Diese Notizen durchsuchen',
+	'notebookDetail.selectNote': '{title} auswählen',
+	'notebookDetail.selectVisibleNotes': 'Alle sichtbaren Notizen auswählen',
 	'notebookDetail.separateWithCommasOrSpaces':
 		'Trennen Sie mit Kommas oder Leerzeichen. Ein vorangestelltes # ist in Ordnung.',
 	'notebookDetail.showArchived': 'Archivierte zeigen ({count})',
@@ -1881,6 +1896,7 @@ export const messages: Catalogue = {
 	'notebookDetail.takeItBackOut': 'Wieder herausnehmen',
 	'notebookDetail.theNoteStaysAsItIs': 'Die Notiz bleibt, wie sie ist.',
 	'notebookDetail.theWholeScreen': 'Der ganze Bildschirm',
+	'notebookDetail.unarchiveSelectedNotes': 'Ausgewählte Notizen zurückholen?',
 	'notebookDetail.workHealth': 'Arbeit, Gesundheit',
 	'notebookDetail.writeANoteAbout': 'Eine Notiz über {title} schreiben',
 	'notebookDetail.yesDelete': 'Ja, löschen',
@@ -2684,6 +2700,10 @@ export const messages: Catalogue = {
 	'sections.workouts.blurb':
 		'Was Sie vorhatten und was Sie tatsächlich getan haben, in Ihren eigenen Einheiten.',
 	'sections.workouts.label': 'Training',
+	'selection.clear': 'Auswahl aufheben',
+	'selection.count': '{count} ausgewählt',
+	'selection.keys': 'Mit j/k navigieren; mit Leertaste auswählen; mit Escape abbrechen.',
+	'selection.selectMany': 'Mehrere auswählen',
 	'settings.account.aListFromTodoistGoogle':
 		'Eine Liste aus Todoist, Google Tasks oder Google Keep, oder ein Export aus einer anderen Instanz.',
 	'settings.account.aNewAddressHasTo':
@@ -3848,7 +3868,6 @@ export const messages: Catalogue = {
 	'todoRows.batchStatus': 'Status der Auswahl ändern',
 	'todoRows.batchTag': 'Ausgewählte Aufgaben verschlagworten',
 	'todoRows.batchUpdated': '{count} Aufgaben aktualisiert.',
-	'todoRows.clearSelection': 'Auswahl aufheben',
 	'todoRows.completed': 'Abgeschlossen',
 	'todoRows.completedCount': 'Erledigt ({count})',
 	'todoRows.completedTitle': 'Erledigt: {title}',
@@ -3895,8 +3914,6 @@ export const messages: Catalogue = {
 	'todoRows.selectMany': 'Mehrere auswählen',
 	'todoRows.selectTask': '{title} auswählen',
 	'todoRows.selectVisible': 'Alle sichtbaren Aufgaben auswählen',
-	'todoRows.selectedCount': '{count} ausgewählt',
-	'todoRows.selectionKeys': 'Mit j/k navigieren; mit Leertaste auswählen; mit Escape abbrechen.',
 	'todoRows.setTheRatings': 'Dringlichkeit, Leichtigkeit und Interesse setzen',
 	'todoRows.showArchivedCount': 'Archivierte zeigen ({count})',
 	'todoRows.showCompleted': 'Abgeschlossene anzeigen',
@@ -4069,6 +4086,8 @@ export const messages: Catalogue = {
 	'tour.notACalendarOfAppointments':
 		'Die Aufgabenblöcke, die sich wiederholen sollen. Alles andere in Aufgaben baut darauf auf.',
 	'tour.notJustNotesAndTasks': 'Not just notes and tasks',
+	'tour.noteSelection':
+		'Wähle mehrere Einträge aus, um sie in ein Notizbuch zu verschieben, Schlagwörter hinzuzufügen oder zu entfernen oder sie auf einmal zu löschen.',
 	'tour.notebooks': 'Notizbücher',
 	'tour.nothingCarriesItselfOver': 'Nichts überträgt sich von selbst',
 	'tour.numbersFromElsewhere': 'Zahlen von anderswo',

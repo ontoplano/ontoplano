@@ -10,10 +10,14 @@
 import {
 	and,
 	asc,
+	desc,
 	eq,
 	exists,
+	gte,
 	inArray,
+	isNotNull,
 	isNull,
+	lte,
 	max,
 	not,
 	notExists,
@@ -22,6 +26,8 @@ import {
 	sql,
 	type SQL
 } from 'drizzle-orm';
+
+import type { SQLiteColumn } from 'drizzle-orm/sqlite-core';
 
 import { db } from '$lib/db/index.js';
 import {
@@ -37,7 +43,13 @@ import {
 } from '$lib/db/schema.js';
 import { CLOSED_STATUSES, isStatus, type Status } from '../task-status.js';
 import { UNTAGGED, isTagFiltering, type TagFilter } from '../tag-filter.js';
-import type { RatingValues } from '../ratings.js';
+import {
+	RATINGS,
+	RATING_ORDER,
+	RATING_UNRATED,
+	type Rating,
+	type RatingValues
+} from '../ratings.js';
 import type { Ctx } from './ctx.js';
 import { NotFoundError, ValidationError } from './errors.js';
 import { defaultCategoryOf, ownedNotebookId } from './notebooks.js';
@@ -282,6 +294,244 @@ export function listTodos(ctx: Ctx, options: { tags?: TagFilter } = {}): Todo[] 
 }
 
 /**
+ * The orders a list of todos can be read in. A closed set: a caller names one
+ * of these and never a column, so nothing it sends reaches `ORDER BY`.
+ *
+ * - `manual` — the drag position, then the older first: the board's order.
+ * - `priority` — the order "what should I be doing" is answered in, which is
+ *   `compareByPriority` from `$lib/ratings` written as SQL. Urgency, then
+ *   ease, then interest, an unset one counting as `RATING_UNRATED`; ties by
+ *   the drag position, then the older.
+ * - the rest are one column each.
+ *
+ * Whatever the order, the id comes last, so two rows alike in every key still
+ * come out the same way on every page and an offset never repeats or skips.
+ */
+export const TODO_SORTS = [
+	'manual',
+	'priority',
+	'created',
+	'updated',
+	'completed',
+	'scheduled',
+	'title'
+] as const;
+export type TodoSort = (typeof TODO_SORTS)[number];
+
+export const SORT_DIRECTIONS = ['asc', 'desc'] as const;
+export type SortDirection = (typeof SORT_DIRECTIONS)[number];
+
+/** Which way each order runs when nobody says: the way it is usually read. */
+export const TODO_SORT_DEFAULT_DIRECTION: Record<TodoSort, SortDirection> = {
+	manual: 'asc',
+	// Best first: the higher rating is the one to do.
+	priority: 'desc',
+	created: 'desc',
+	updated: 'desc',
+	completed: 'desc',
+	scheduled: 'asc',
+	title: 'asc'
+};
+
+/** Whether dated and undated todos are both wanted, or only one kind. */
+export const TODO_SCHEDULED = ['any', 'undated', 'dated'] as const;
+export type TodoScheduled = (typeof TODO_SCHEDULED)[number];
+
+/** Whether archived todos are left out, let in, or the only ones. */
+export const TODO_ARCHIVED = ['exclude', 'include', 'only'] as const;
+export type TodoArchived = (typeof TODO_ARCHIVED)[number];
+
+/** The four states, plus `open` (not finished, not skipped) and `closed`. */
+export const TODO_STATES = ['todo', 'doing', 'done', 'skipped', 'open', 'closed'] as const;
+export type TodoState = (typeof TODO_STATES)[number];
+
+/** The most rows one page may hold, and the most ids one filter may name. */
+export const TODO_PAGE_CEILING = 200;
+export const TODO_IDS_CEILING = 200;
+
+export type TodoQuery = {
+	/** Only these ids. An id that is not this account's matches nothing. */
+	ids?: number[];
+	/** Words in the title or the notes, case-insensitively. */
+	text?: string;
+	/** One notebook; `null` for the ones filed under nothing. */
+	notebookId?: number | null;
+	state?: TodoState;
+	scheduled?: TodoScheduled;
+	/** Put on a day from this one, inclusive. Implies a date. */
+	scheduledFrom?: string;
+	/** Put on a day up to this one, inclusive. Implies a date. */
+	scheduledTo?: string;
+	createdSince?: string;
+	updatedSince?: string;
+	completedSince?: string;
+	archived?: TodoArchived;
+	tags?: TagFilter;
+	/** Labelled at or after this instant — by one of `tags.include`, or by any label. */
+	taggedSince?: string;
+	/** Bounds on a rating, inclusive; an unset rating counts as `RATING_UNRATED`. */
+	ratings?: Partial<Record<Rating, { min?: number; max?: number }>>;
+	sort?: TodoSort;
+	direction?: SortDirection;
+	limit: number;
+	offset?: number;
+};
+
+const RATING_COLUMNS = {
+	urgency: todoTasks.urgency,
+	ease: todoTasks.ease,
+	interest: todoTasks.interest
+} as const;
+
+/** A rating as `compareByPriority` weighs it: the value, or the unrated middle. */
+const weighed = (rating: Rating) => sql`coalesce(${RATING_COLUMNS[rating]}, ${RATING_UNRATED})`;
+
+/** `LIKE` treats these as wildcards; a caller's words are matched literally. */
+const LIKE_ESCAPE = '\\';
+const likeLiteral = (said: string) => said.replace(/[\\%_]/g, (c) => `${LIKE_ESCAPE}${c}`);
+
+function queryCondition(ctx: Ctx, query: TodoQuery): SQL | undefined {
+	const parts: (SQL | undefined)[] = [eq(todoTasks.userId, ctx.userId)];
+
+	if (query.ids !== undefined) {
+		if (query.ids.length > TODO_IDS_CEILING)
+			throw new ValidationError(`At most ${TODO_IDS_CEILING} ids at once.`);
+		parts.push(query.ids.length === 0 ? sql`0` : inArray(todoTasks.id, query.ids));
+	}
+
+	const text = query.text?.trim();
+	if (text) {
+		const pattern = `%${likeLiteral(text)}%`;
+		parts.push(
+			or(
+				sql`${todoTasks.title} LIKE ${pattern} ESCAPE ${LIKE_ESCAPE}`,
+				sql`coalesce(${todoTasks.notes}, '') LIKE ${pattern} ESCAPE ${LIKE_ESCAPE}`
+			)
+		);
+	}
+
+	if (query.notebookId === null) parts.push(isNull(todoTasks.notebookId));
+	else if (query.notebookId !== undefined) parts.push(eq(todoTasks.notebookId, query.notebookId));
+
+	const state = query.state;
+	if (state === 'open') parts.push(notInArray(todoTasks.status, [...CLOSED_STATUSES]));
+	else if (state === 'closed') parts.push(inArray(todoTasks.status, [...CLOSED_STATUSES]));
+	else if (state !== undefined) parts.push(eq(todoTasks.status, state));
+
+	const scheduled = query.scheduled ?? 'any';
+	if (scheduled === 'undated') parts.push(isNull(todoTasks.scheduledDate));
+	if (scheduled === 'dated') parts.push(isNotNull(todoTasks.scheduledDate));
+	if (query.scheduledFrom) parts.push(gte(todoTasks.scheduledDate, query.scheduledFrom));
+	if (query.scheduledTo) parts.push(lte(todoTasks.scheduledDate, query.scheduledTo));
+
+	if (query.createdSince) parts.push(gte(todoTasks.createdAt, query.createdSince));
+	if (query.updatedSince) parts.push(gte(todoTasks.updatedAt, query.updatedSince));
+	if (query.completedSince) parts.push(gte(todoTasks.completedAt, query.completedSince));
+
+	const archived = query.archived ?? 'exclude';
+	if (archived === 'exclude') parts.push(isNull(todoTasks.archivedAt));
+	if (archived === 'only') parts.push(isNotNull(todoTasks.archivedAt));
+
+	parts.push(tagCondition(ctx, query.tags));
+	if (query.taggedSince) {
+		const named = (query.tags?.include ?? []).filter((one) => one !== UNTAGGED);
+		const counting = query.tags && query.tags.include.length > 0;
+		parts.push(
+			exists(
+				db
+					.select({ one: sql`1` })
+					.from(todoTags)
+					.innerJoin(tags, eq(todoTags.tagId, tags.id))
+					.where(
+						and(
+							eq(todoTags.todoId, todoTasks.id),
+							eq(todoTags.userId, ctx.userId),
+							eq(tags.userId, ctx.userId),
+							gte(todoTags.taggedAt, query.taggedSince),
+							// Asked about some labels: the date is one of theirs.
+							counting ? (named.length > 0 ? inArray(tags.name, named) : sql`0`) : undefined
+						)
+					)
+			)
+		);
+	}
+
+	for (const rating of RATINGS) {
+		const bounds = query.ratings?.[rating];
+		if (bounds?.min !== undefined) parts.push(sql`${weighed(rating)} >= ${bounds.min}`);
+		if (bounds?.max !== undefined) parts.push(sql`${weighed(rating)} <= ${bounds.max}`);
+	}
+
+	return and(...parts);
+}
+
+function queryOrder(query: TodoQuery): SQL[] {
+	const sort = query.sort ?? 'manual';
+	const direction = query.direction ?? TODO_SORT_DEFAULT_DIRECTION[sort];
+	const way = (column: SQL | SQLiteColumn) => (direction === 'asc' ? asc(column) : desc(column));
+	// Nothing to sort by sits at the end whichever way the rest runs.
+	const lastly = (column: SQLiteColumn) => [asc(sql`${column} IS NULL`), way(column)];
+
+	const keys: SQL[] = (() => {
+		switch (sort) {
+			case 'priority':
+				return [
+					...RATING_ORDER.map((rating) => way(weighed(rating))),
+					asc(todoTasks.sortOrder),
+					asc(todoTasks.createdAt)
+				];
+			case 'created':
+				return [way(todoTasks.createdAt)];
+			case 'updated':
+				return [way(todoTasks.updatedAt)];
+			case 'completed':
+				return lastly(todoTasks.completedAt);
+			case 'scheduled':
+				return lastly(todoTasks.scheduledDate);
+			case 'title':
+				return [way(sql`${todoTasks.title} COLLATE NOCASE`)];
+			default:
+				return [way(todoTasks.sortOrder), way(todoTasks.createdAt)];
+		}
+	})();
+	return [...keys, asc(todoTasks.id)];
+}
+
+/**
+ * The one query behind every listing of todos a caller can shape.
+ *
+ * Filters, order and the page are all SQL: the page is `LIMIT`/`OFFSET` and
+ * `total` is a `COUNT` over the same `WHERE`, so a list of thousands costs
+ * the rows asked for rather than all of them. Labels are read for the page
+ * alone. Everything is scoped to `ctx.userId` in the statement itself.
+ */
+export function queryTodos(ctx: Ctx, query: TodoQuery): { items: Todo[]; total: number } {
+	const where = queryCondition(ctx, query);
+	const limit = Math.min(Math.max(1, Math.floor(query.limit)), TODO_PAGE_CEILING);
+	const offset = Math.max(0, Math.floor(query.offset ?? 0));
+
+	const total =
+		db
+			.select({ n: sql<number>`count(*)` })
+			.from(todoTasks)
+			.where(where)
+			.get()?.n ?? 0;
+
+	const rows = db
+		.select(SELECTION)
+		.from(todoTasks)
+		.leftJoin(categories, eq(todoTasks.categoryId, categories.id))
+		.leftJoin(notebooks, eq(todoTasks.notebookId, notebooks.id))
+		.where(where)
+		.orderBy(...queryOrder(query))
+		.limit(limit)
+		.offset(offset)
+		.all()
+		.map(shape);
+	return { items: withTags(ctx, rows), total };
+}
+
+/**
  * Everything filed under one notebook.
  *
  * The same rows `listTodos` returns, narrowed — the notebook's Tasks tab is
@@ -405,7 +655,7 @@ export function promoteTodo(
 		durationMinutes?: number;
 		status?: Status;
 	}
-): { ok: true } | { ok: false; message: string } {
+): { ok: true; id: number } | { ok: false; message: string } {
 	const todo = db
 		.select()
 		.from(todoTasks)
@@ -427,7 +677,7 @@ export function promoteTodo(
 
 	if (!categoryId) return { ok: false, message: 'Create a category before scheduling todos' };
 
-	db.transaction((tx) => {
+	const id = db.transaction((tx) => {
 		const slot = tx
 			.insert(exceptionalTasks)
 			.values({
@@ -466,9 +716,11 @@ export function promoteTodo(
 		tx.delete(todoTasks)
 			.where(and(eq(todoTasks.id, input.todoId), eq(todoTasks.userId, ctx.userId)))
 			.run();
+		return slot.id;
 	});
 
-	return { ok: true };
+	// The one-off it became, so whatever goes on with it can name it.
+	return { ok: true, id };
 }
 
 /**
@@ -877,8 +1129,10 @@ export function delegateTodo(
 			})
 			.run();
 
+		// The day goes on the task too, so its card says when it is — the same
+		// date pulling it onto a day would have written.
 		tx.update(todoTasks)
-			.set({ completed: true, updatedAt: stamp(ctx) })
+			.set({ completed: true, scheduledDate: date, updatedAt: stamp(ctx) })
 			.where(and(eq(todoTasks.id, id), eq(todoTasks.userId, ctx.userId)))
 			.run();
 	});

@@ -17,9 +17,8 @@
 	 * bar draws for it — and it is not a button. It was a house that went
 	 * home, which is a second way to do what the bar underneath already does
 	 * with a bigger target, in the corner where a phone puts a back arrow.
-	 * What a header is for is saying where you are. It is a phone
-	 * affordance only: on a wide screen the navigation bar is already on the
-	 * page and a second way home would be noise.
+	 * What a header is for is saying where you are, so it is part of the
+	 * heading, at every width.
 	 *
 	 * Four rooms drew this markup themselves and had already drifted — Tasks
 	 * hid its own name on a phone, the others did not.
@@ -76,12 +75,15 @@
 			<a href={back} class="icon-btn shrink-0" aria-label={backLabel}>
 				<Icon name="undo" />
 			</a>
-		{:else if glyph}
-			<span class="shrink-0 text-gray-500 sm:hidden" aria-hidden="true">
-				<Icon name={glyph} size={20} />
-			</span>
 		{/if}
-		<h1 class="min-w-0 shrink-0 truncate text-lg font-bold text-gray-900">{title}</h1>
+		<h1 class="flex min-w-0 shrink-0 items-center gap-2 text-lg font-bold text-gray-900">
+			{#if glyph && !back}
+				<span class="shrink-0 text-gray-500" aria-hidden="true" data-room-glyph>
+					<Icon name={glyph} size={20} />
+				</span>
+			{/if}
+			<span class="truncate">{title}</span>
+		</h1>
 		<!--
 			The screen's one verb, in the corner every screen keeps it in.
 

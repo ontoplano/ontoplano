@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Card from '$lib/components/Card.svelte';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
@@ -18,7 +19,10 @@
 <svelte:head><title>{t('search.searchOntoplano')}</title></svelte:head>
 
 <div class="space-y-4">
-	<h1 class="text-lg font-bold text-gray-900">{t('ui.search')}</h1>
+	<h1 class="flex items-center gap-2 text-lg font-bold text-gray-900">
+		<span class="shrink-0 text-gray-500" aria-hidden="true"><Icon name="search" size={20} /></span>
+		{t('ui.search')}
+	</h1>
 
 	<!-- A plain GET form: the URL is the state, so a search can be linked to and
 	     gone back to, and it works before any JavaScript has run. -->
@@ -63,7 +67,7 @@
 
 		<div class="gap-4 lg:columns-2 2xl:columns-3">
 			{#each data.groups as group (group.kind)}
-				<section class="mb-4 break-inside-avoid border border-gray-200 bg-white shadow-card">
+				<Card flush class="mb-4 break-inside-avoid">
 					<h2
 						class="eyebrow flex items-center gap-1.5 border-b border-gray-200 px-4 py-2 text-gray-500"
 					>
@@ -84,7 +88,7 @@
 							</a>
 						{/each}
 					</div>
-				</section>
+				</Card>
 			{/each}
 		</div>
 	{/if}

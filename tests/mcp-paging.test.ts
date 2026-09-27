@@ -88,18 +88,27 @@ describe('a list that was cut short says so', () => {
 	});
 });
 
-describe('every capped list takes an offset', () => {
-	// A cap on one tool and not on its neighbour is the same surprise in a
-	// different room, so the ones that slice are checked together.
-	for (const name of ['tasks', 'diary', 'ideas', 'workout_sessions']) {
-		it(`${name} offers one`, () => {
-			const tool = TOOLS.find((t) => t.name === name);
-			const properties = tool?.input.properties as Record<string, unknown>;
-			expect(Object.keys(properties)).toContain('offset');
-		});
+describe('every tool that takes an offset answers a page', () => {
+	/*
+	 * The docs mark these "answers a page" from the manifest, which reads the
+	 * `offset` argument — so every tool that has one is held to the answer the
+	 * page promises, rather than a list somebody keeps here.
+	 */
+	it('covers the ones that slice', () => {
+		const paging = TOOLS.filter((t) => 'offset' in t.input.properties).map((t) => t.name);
+		for (const name of ['tasks', 'up_next', 'diary', 'ideas', 'workout_sessions', 'notebook_notes'])
+			expect(paging).toContain(name);
+	});
 
-		it(`${name} answers with a total`, () => {
-			expect(run(name, {})).toHaveProperty('total');
-		});
-	}
+	it('answers with count and total, whichever tool it is', async () => {
+		const { createNotebook } = await import('../src/lib/services/notebooks');
+		const notebook = createNotebook(ctx(), { title: 'paging' });
+		for (const tool of TOOLS.filter((t) => 'offset' in t.input.properties)) {
+			// The one argument any of them requires is the thing they list.
+			const args = (tool.input.required ?? []).includes('id') ? { id: notebook } : {};
+			const page = run(tool.name, args);
+			expect(page, tool.name).toHaveProperty('total');
+			expect(page, tool.name).toHaveProperty('count');
+		}
+	});
 });

@@ -718,7 +718,8 @@ export function updateNotebook(
 	ctx: Ctx,
 	id: number,
 	raw: {
-		title: unknown;
+		/** Left out, the name it has — an assistant changing one field sends one. */
+		title?: unknown;
 		folder?: unknown;
 		description?: unknown;
 		defaultTags?: unknown;
@@ -726,10 +727,13 @@ export function updateNotebook(
 		modules?: unknown;
 	}
 ): void {
-	const title = str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
-	// Left out, it stays in the folder it is in — which is a read of its own,
-	// and a 404 for a notebook that is not this account's.
-	const folder = folderInput(raw.folder) ?? ownFolderOf(ctx, id);
+	// Left out, it keeps its name and stays in the folder it is in — which is a
+	// read of its own, and a 404 for a notebook that is not this account's.
+	const own =
+		raw.title === undefined || folderInput(raw.folder) === null ? ownPlaceOf(ctx, id) : null;
+	const title =
+		raw.title === undefined ? own!.title : str(raw.title, 'title', { max: MAX_TITLE_LENGTH });
+	const folder = folderInput(raw.folder) ?? own!.folder;
 
 	const clash = notebookTitled(ctx, folder, title);
 	if (clash && clash.id !== id)
@@ -742,9 +746,16 @@ export function updateNotebook(
 		.set({
 			title,
 			folder,
-			description: optionalStr(raw.description, 'description', { max: MAX_DESCRIPTION_LENGTH }),
-			// Left out entirely, they stay as they were: this takes the whole
-			// form and also one field at a time from an assistant.
+			// Left out entirely, these stay as they were: this takes the whole
+			// form and also one field at a time from an assistant. '' or null
+			// clears the line, as the form's emptied box does.
+			...(raw.description === undefined
+				? {}
+				: {
+						description: optionalStr(raw.description, 'description', {
+							max: MAX_DESCRIPTION_LENGTH
+						})
+					}),
 			...(raw.defaultTags === undefined
 				? {}
 				: { defaultTags: parseTags(optionalTagInput(raw.defaultTags)).join(', ') }),
@@ -987,15 +998,15 @@ function notebookTitled(ctx: Ctx, folder: string, title: string) {
 		.get();
 }
 
-/** The folder one of this account's own notebooks is in. */
-function ownFolderOf(ctx: Ctx, id: number): string {
+/** The name and folder of one of this account's own notebooks. */
+function ownPlaceOf(ctx: Ctx, id: number): { title: string; folder: string } {
 	const found = db
-		.select({ folder: notebooks.folder })
+		.select({ title: notebooks.title, folder: notebooks.folder })
 		.from(notebooks)
 		.where(and(eq(notebooks.id, id), eq(notebooks.userId, ctx.userId)))
 		.get();
 	if (!found) throw new NotFoundError('notebook');
-	return found.folder;
+	return found;
 }
 
 /** Not a character a folder can hold, so a notebook parked under it clashes with nothing. */

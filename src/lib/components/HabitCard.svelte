@@ -12,6 +12,7 @@
 	 * the same handler either way (`$lib/services/habit-actions`).
 	 */
 	import Icon from '$lib/components/Icon.svelte';
+	import RowCard from '$lib/components/RowCard.svelte';
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { enhance } from '$lib/enhance';
 	import { invalidateAll } from '$app/navigation';
@@ -165,133 +166,157 @@
 			? HABIT_NEUTRAL_ACCENT
 			: HABIT_GOOD_ACCENT}"
 >
-	<div class="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
-		<div class="min-w-0 flex-1">
-			<div class="flex items-center gap-2">
-				<span class="text-sm font-medium text-gray-900">{habit.name}</span>
+	<!--
+		The card a task is drawn on — `RowCard`: the mark that logs today where a
+		task has its tick, the name and its streak beside it, the verbs along the
+		foot. The year unfolds under the whole card, which is the width it needs.
+	-->
+	<div class="flex items-stretch gap-x-4 px-4 py-3">
+		<RowCard>
+			{#snippet rail()}
+				{#if todayLogged}
+					<!--
+						Once today is logged, the mark that logs it is not there.
+
+						Which is the whole of the double-tap answer: a second press lands
+						on a filled square rather than on the control, so one day cannot
+						be counted twice by accident. Logging it again is a press of its
+						own in the actions — deliberate, and nowhere near where the first
+						press landed.
+					-->
+					<span
+						class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
+					>
+						<span
+							class="tabular flex size-7 items-center justify-center border border-gray-400 bg-gray-400 text-xs font-medium text-white"
+							role="img"
+							aria-label={todayCount > 1
+								? t('health.habits.loggedTodayTimes', { count: todayCount })
+								: isBad
+									? t('health.habits.loggedToday')
+									: t('health.habits.doneToday')}
+						>
+							{#if todayCount > 1}×{todayCount}{:else}<Icon name="check" size={14} />{/if}
+						</span>
+					</span>
+				{:else}
+					<button
+						type="submit"
+						form="habit-log-{habit.id}"
+						title={logLabel(habit)}
+						aria-label={logLabel(habit)}
+						class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
+					>
+						<span
+							class="flex size-7 items-center justify-center border bg-white transition {isBad
+								? 'border-red-200 text-red-600 hover:bg-red-50'
+								: isNeutral
+									? 'border-gray-300 text-gray-600 hover:bg-gray-50'
+									: 'border-blue-200 text-blue-600 hover:bg-blue-50'}"
+						>
+							<Icon name="target" size={16} />
+						</span>
+					</button>
+				{/if}
+			{/snippet}
+
+			{#snippet controls()}
+				{#if todayLogged}
+					<form method="post" action={actions.logOccurrence} use:enhance>
+						<input type="hidden" name="habitId" value={habit.id} />
+						<input type="hidden" name="date" value={today} />
+						<button
+							type="submit"
+							class="icon-btn"
+							title={t('health.habits.logItAgain')}
+							aria-label={t('health.habits.logItAgain')}
+						>
+							<Icon name="plus" size={14} />
+						</button>
+					</form>
+				{:else}
+					<!-- The form the mark in the rail sends, with a word on today. -->
+					<form method="post" action={actions.logOccurrence} use:enhance id="habit-log-{habit.id}">
+						<input type="hidden" name="habitId" value={habit.id} />
+						<input type="hidden" name="date" value={today} />
+						<OneLine
+							name="notes"
+							placeholder={t('health.habits.note')}
+							ariaLabel={t('health.habits.note')}
+							class="w-24 border border-gray-200 px-1.5 py-1 text-xs focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
+						/>
+					</form>
+				{/if}
+				<button
+					type="button"
+					title={t('ui.edit')}
+					aria-label={t('ui.edit')}
+					onclick={() => onedit?.(habit.id)}
+					class="icon-btn"
+				>
+					<Icon name="edit" />
+				</button>
+				<button
+					type="button"
+					onclick={toggleExpanded}
+					class="icon-btn"
+					title={open ? t('health.habits.collapse') : t('health.habits.expand')}
+					aria-label={open ? t('health.habits.collapse') : t('health.habits.expand')}
+					aria-expanded={open}
+				>
+					<Icon name={open ? 'chevron-up' : 'chevron-down'} />
+				</button>
+				{#if confirmingDelete}
+					<form method="post" action={actions.remove} use:enhance>
+						<input type="hidden" name="id" value={habit.id} />
+						<button type="submit" class="btn btn-sm btn-danger" use:armed>
+							{t('health.habits.confirm')}
+						</button>
+					</form>
+					<button type="button" onclick={() => (confirmingDelete = false)} class="btn btn-sm">
+						{t('ui.cancel')}
+					</button>
+				{:else}
+					<button
+						type="button"
+						title={t('ui.delete')}
+						aria-label={t('ui.delete')}
+						onclick={() => (confirmingDelete = true)}
+						class="icon-btn icon-btn-danger"
+					>
+						<Icon name="trash" />
+					</button>
+				{/if}
+			{/snippet}
+
+			<p class="text-sm leading-snug font-medium break-words text-gray-900">{habit.name}</p>
+			<!-- Where it stands, on the line a task's notebook sits on. -->
+			<div class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-gray-500">
+				{#if todayLogged}
+					<span class="font-medium {isNeutral ? 'text-gray-600' : 'text-blue-700'}">
+						{todayCount > 1
+							? t('health.habits.loggedTodayTimes', { count: todayCount })
+							: isBad
+								? t('health.habits.loggedToday')
+								: t('health.habits.doneToday')}
+					</span>
+				{/if}
 				{#if habit.streak > 0}
-					<span class="text-xs font-medium {isNeutral ? 'text-gray-600' : 'text-blue-600'}">
+					<span class="font-medium {isNeutral ? 'text-gray-600' : 'text-blue-700'}">
 						{isBad
 							? t('health.habits.daysClean', { count: habit.streak })
 							: t('health.habits.dayStreak', { count: habit.streak })}
 					</span>
 				{/if}
-				<span class="text-xs text-gray-500">{t('health.habits.total', { length: occ.length })}</span
-				>
+				<span class="tabular">{t('health.habits.total', { length: occ.length })}</span>
+				{#if !isBad}
+					<span>{formatScheduledDays(habit.scheduledDays)}</span>
+				{/if}
 			</div>
 			{#if habit.description}
-				<p class="truncate text-xs text-gray-500">{habit.description}</p>
+				<p class="mt-0.5 text-xs break-words text-gray-500">{habit.description}</p>
 			{/if}
-			{#if !isBad}
-				<p class="text-xs text-gray-500">{formatScheduledDays(habit.scheduledDays)}</p>
-			{/if}
-		</div>
-
-		<div class="ml-auto flex items-center gap-2 sm:shrink-0">
-			{#if todayLogged}
-				<!--
-					Once today is logged, the mark that logs it is not there.
-
-					Which is the whole of the double-tap answer: a second press
-					lands on a label rather than on the control, so one day cannot
-					be counted twice by accident. What it says is the count, not
-					just the fact — a bad habit is a thing you count, and "logged
-					today" three times over is three cigarettes rather than one.
-
-					Logging it again is a press of its own beside the label. Small
-					and separate on purpose: deliberate, and nowhere near where the
-					first press landed.
-				-->
-				<span
-					class="border {isBad
-						? 'border-red-200 bg-red-50 text-red-600'
-						: isNeutral
-							? 'border-gray-300 bg-gray-50 text-gray-600'
-							: 'border-blue-200 bg-blue-50 text-blue-600'} px-2 py-1 text-xs font-medium"
-				>
-					{todayCount > 1
-						? t('health.habits.loggedTodayTimes', { count: todayCount })
-						: isBad
-							? t('health.habits.loggedToday')
-							: t('health.habits.doneToday')}
-				</span>
-				<form method="post" action={actions.logOccurrence} use:enhance>
-					<input type="hidden" name="habitId" value={habit.id} />
-					<input type="hidden" name="date" value={today} />
-					<button
-						type="submit"
-						class="icon-btn"
-						title={t('health.habits.logItAgain')}
-						aria-label={t('health.habits.logItAgain')}
-					>
-						<Icon name="plus" size={14} />
-					</button>
-				</form>
-			{:else}
-				<form method="post" action={actions.logOccurrence} use:enhance>
-					<input type="hidden" name="habitId" value={habit.id} />
-					<input type="hidden" name="date" value={today} />
-					<div class="flex items-center gap-1">
-						<OneLine
-							name="notes"
-							placeholder={t('health.habits.note')}
-							class="w-20 border border-gray-200 px-1.5 py-1 text-xs focus:border-gray-900 focus:ring-1 focus:ring-gray-900 focus:outline-none"
-						/>
-						<button
-							type="submit"
-							title={logLabel(habit)}
-							aria-label={logLabel(habit)}
-							class="flex h-9 w-9 items-center justify-center border {isBad
-								? 'border-red-200 bg-white text-red-600 hover:bg-red-50'
-								: isNeutral
-									? 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
-									: 'border-blue-200 bg-white text-blue-600 hover:bg-blue-50'} transition"
-						>
-							<Icon name="target" size={16} />
-						</button>
-					</div>
-				</form>
-			{/if}
-			<button
-				title={t('ui.edit')}
-				aria-label={t('ui.edit')}
-				onclick={() => onedit?.(habit.id)}
-				class="icon-btn"
-			>
-				<Icon name="edit" />
-			</button>
-			<button
-				onclick={toggleExpanded}
-				class="icon-btn"
-				title={open ? t('health.habits.collapse') : t('health.habits.expand')}
-				aria-label={open ? t('health.habits.collapse') : t('health.habits.expand')}
-			>
-				<Icon name={open ? 'chevron-up' : 'chevron-down'} />
-			</button>
-			{#if confirmingDelete}
-				<form method="post" action={actions.remove} use:enhance>
-					<input type="hidden" name="id" value={habit.id} />
-					<button
-						type="submit"
-						class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
-						use:armed
-					>
-						{t('health.habits.confirm')}
-					</button>
-				</form>
-			{:else}
-				<button
-					title={t('ui.delete')}
-					aria-label={t('ui.delete')}
-					onclick={() => {
-						confirmingDelete = true;
-					}}
-					class="icon-btn icon-btn-danger"
-				>
-					<Icon name="trash" />
-				</button>
-			{/if}
-		</div>
+		</RowCard>
 	</div>
 
 	{#if open}

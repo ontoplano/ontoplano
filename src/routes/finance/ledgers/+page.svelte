@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Card from '$lib/components/Card.svelte';
 	import { routeGlyph } from '$lib/glyphs';
 	import Picker from '$lib/components/Picker.svelte';
 	import { dayStamp, monthOf } from '$lib/when';
@@ -232,7 +233,7 @@
 			painted straight onto the ground. One white surface now, with a rule
 			under each band.
 		-->
-		<div class="border border-gray-200 bg-white shadow-card">
+		<Card flush>
 			<!-- What this ledger is, and what can be done to it. -->
 			<div class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-3 py-2">
 				<span class="text-sm font-semibold text-gray-900">{current.name}</span>
@@ -524,7 +525,7 @@
 					</table>
 				</div>
 			{/if}
-		</div>
+		</Card>
 	{/if}
 
 	<p class="text-xs text-gray-500">

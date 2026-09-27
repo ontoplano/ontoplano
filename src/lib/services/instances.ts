@@ -949,6 +949,9 @@ export function changeOccurrence(
 			date: wants('date') ? changes.date : one.date,
 			startTime: wants('startTime') ? changes.startTime : one.startTime,
 			durationMinutes: wants('minutes') ? changes.minutes : one.durationMinutes,
+			// A workout block is its workout, and the service refuses one naming
+			// none — so a rename or a move of it used to be refused outright.
+			workoutId: one.workoutId,
 			...filed,
 			label: wants('title') ? changes.title : one.label,
 			...(refiling
@@ -1023,6 +1026,7 @@ export function changeOccurrence(
 				date: moved.date,
 				startTime: moved.startTime,
 				durationMinutes: moved.durationMinutes,
+				workoutId: moved.workoutId,
 				...renamed(ctx, true, {
 					mode: moved.mode,
 					activityId: moved.activityId,

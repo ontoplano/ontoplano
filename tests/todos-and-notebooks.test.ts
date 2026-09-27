@@ -204,6 +204,18 @@ describe('putting a todo on the calendar', () => {
 		expect(onTheDay.find((one) => one.label === 'water the plants')?.remindLeadMinutes).toBeNull();
 	});
 
+	test('delegating one to a day dates the task as well as the block', () => {
+		const id = todos.createTodo(ctx, { title: 'book the dentist' });
+		todos.delegateTodo(ctx, id, {
+			date: '2026-08-21',
+			startTime: '11:00',
+			mode: 'category',
+			categoryId: work
+		});
+
+		expect(todos.listTodos(ctx).find((one) => one.id === id)?.scheduledDate).toBe('2026-08-21');
+	});
+
 	test('delegating one to a block refuses a time that is not one', () => {
 		const id = todos.createTodo(ctx, { title: 'call the bank' });
 		expect(() =>

@@ -388,6 +388,9 @@ export type MessageKey =
 	| 'errors.clientErrors.errorReportingIsNotEnabled'
 	| 'errors.clientErrors.errorReportingIsNotEnabledForThisAccount'
 	| 'errors.diary.atLeastOneWin'
+	| 'errors.diary.invalidBatch'
+	| 'errors.diary.nothingWasChosen'
+	| 'errors.diary.thatIsTooManyAtOnce'
 	| 'errors.familyInvite.anEmailAddressIsNeeded'
 	| 'errors.familyInvite.noAccountHereUses'
 	| 'errors.familyInvite.thisPlanCoversOneAccount'
@@ -1593,12 +1596,20 @@ export type MessageKey =
 	| 'notebookDetail.alreadyDone'
 	| 'notebookDetail.anaJoão'
 	| 'notebookDetail.anyoneThisNoteIsAbout'
+	| 'notebookDetail.archiveSelectedNotes'
 	| 'notebookDetail.archived'
 	| 'notebookDetail.archivedCount'
 	| 'notebookDetail.ascendingPressForDescending'
 	| 'notebookDetail.backToThePage'
+	| 'notebookDetail.batchArchive'
+	| 'notebookDetail.batchDelete'
+	| 'notebookDetail.batchMove'
+	| 'notebookDetail.batchTag'
+	| 'notebookDetail.batchUnarchive'
+	| 'notebookDetail.batchUpdated'
 	| 'notebookDetail.biggerType'
 	| 'notebookDetail.clearLabels'
+	| 'notebookDetail.deleteSelectedNotes'
 	| 'notebookDetail.deleteThisNote'
 	| 'notebookDetail.descendingPressForAscending'
 	| 'notebookDetail.editThisNote'
@@ -1622,6 +1633,8 @@ export type MessageKey =
 	| 'notebookDetail.people'
 	| 'notebookDetail.saved'
 	| 'notebookDetail.searchTheseNotes'
+	| 'notebookDetail.selectNote'
+	| 'notebookDetail.selectVisibleNotes'
 	| 'notebookDetail.separateWithCommasOrSpaces'
 	| 'notebookDetail.showArchived'
 	| 'notebookDetail.showingCount'
@@ -1631,6 +1644,7 @@ export type MessageKey =
 	| 'notebookDetail.takeItBackOut'
 	| 'notebookDetail.theNoteStaysAsItIs'
 	| 'notebookDetail.theWholeScreen'
+	| 'notebookDetail.unarchiveSelectedNotes'
 	| 'notebookDetail.workHealth'
 	| 'notebookDetail.writeANoteAbout'
 	| 'notebookDetail.yesDelete'
@@ -2319,6 +2333,10 @@ export type MessageKey =
 	| 'sections.weekly.label'
 	| 'sections.workouts.blurb'
 	| 'sections.workouts.label'
+	| 'selection.clear'
+	| 'selection.count'
+	| 'selection.keys'
+	| 'selection.selectMany'
 	| 'settings.account.aListFromTodoistGoogle'
 	| 'settings.account.aNewAddressHasTo'
 	| 'settings.account.bringThingsIn'
@@ -3284,7 +3302,6 @@ export type MessageKey =
 	| 'todoRows.batchStatus'
 	| 'todoRows.batchTag'
 	| 'todoRows.batchUpdated'
-	| 'todoRows.clearSelection'
 	| 'todoRows.completed'
 	| 'todoRows.completedCount'
 	| 'todoRows.completedTitle'
@@ -3330,8 +3347,6 @@ export type MessageKey =
 	| 'todoRows.selectMany'
 	| 'todoRows.selectTask'
 	| 'todoRows.selectVisible'
-	| 'todoRows.selectedCount'
-	| 'todoRows.selectionKeys'
 	| 'todoRows.setTheRatings'
 	| 'todoRows.showArchivedCount'
 	| 'todoRows.showCompleted'
@@ -3451,6 +3466,7 @@ export type MessageKey =
 	| 'tour.movingAndSharing'
 	| 'tour.notACalendarOfAppointments'
 	| 'tour.notJustNotesAndTasks'
+	| 'tour.noteSelection'
 	| 'tour.notebooks'
 	| 'tour.nothingCarriesItselfOver'
 	| 'tour.numbersFromElsewhere'
@@ -3909,8 +3925,10 @@ export interface MessageValuesFor {
 	'newsletter.off.nothingMoreWillBeSent': { email: string | number };
 	'notebookDetail.addWithTodos': { count: number };
 	'notebookDetail.archivedCount': { count: number };
+	'notebookDetail.batchUpdated': { count: number };
 	'notebookDetail.madeTodos': { count: number };
 	'notebookDetail.makeCountTodos': { count: number };
+	'notebookDetail.selectNote': { title: string | number };
 	'notebookDetail.showArchived': { count: number };
 	'notebookDetail.showingCount': { count: number };
 	'notebookDetail.writeANoteAbout': { title: string | number };
@@ -4056,6 +4074,7 @@ export interface MessageValuesFor {
 	'reportDialog.whereItGoes': { where: string | number };
 	'search.for': { q: string | number; results: string | number; total: string | number };
 	'search.nothingMatches': { q: string | number };
+	'selection.count': { count: number };
 	'settings.account.exportsLeft': { count: number; remaining: string | number };
 	'settings.account.import.typeWordToConfirm': { word: string | number };
 	'settings.account.noExportsLeftToday': { allowed: string | number; unlocksIn: string | number };
@@ -4191,7 +4210,6 @@ export interface MessageValuesFor {
 	'todoRows.lastChanged': { when: string | number };
 	'todoRows.noneMatchTheseFilters': { count: number };
 	'todoRows.selectTask': { title: string | number };
-	'todoRows.selectedCount': { count: number };
 	'todoRows.showArchivedCount': { count: number };
 	'todoRows.showCompletedCount': { count: number };
 	'todoRows.showingCount': { count: number };

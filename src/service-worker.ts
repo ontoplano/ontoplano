@@ -28,7 +28,7 @@
  */
 import { build, files, version } from '$service-worker';
 import { APP_LAUNCH_PARAM, APP_LAUNCH_VALUE, APP_VERSION_PARAM } from '$lib/platform';
-import { PICTURE_REQUEST, type PictureReply } from '$lib/isolated/picture-protocol';
+import { PICTURE_PATH, PICTURE_REQUEST, type PictureReply } from '$lib/isolated/picture-protocol';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 
@@ -82,9 +82,6 @@ sw.addEventListener('activate', (event) => {
 			.then(() => sw.clients.claim())
 	);
 });
-
-/** `/media/3` and nothing else — never `/media/3/anything`. */
-const PICTURE_PATH = /^\/media\/(\d+)$/;
 
 /** How long a page has to find a picture before the image is a broken one. */
 const PICTURE_DEADLINE_MS = 10_000;

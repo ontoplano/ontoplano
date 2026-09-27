@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Card from '$lib/components/Card.svelte';
 	import { pillStyle } from '$lib/pill-ink';
 	import RemindLead from '$lib/components/RemindLead.svelte';
 	import { dayOf, wantsTwelveHour } from '$lib/when';
@@ -15,14 +16,12 @@
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import { resolve } from '$app/paths';
 	import OneLine from '$lib/components/OneLine.svelte';
-	import Banner from '$lib/components/Banner.svelte';
 	import Icon, { ICONS } from '$lib/components/Icon.svelte';
 	import Swatch from '$lib/components/Swatch.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import { armed } from '$lib/actions/armed';
 	import { enhance } from '$lib/enhance';
 	import { deserialize } from '$app/forms';
-	import FormError from '$lib/components/FormError.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Field from '$lib/components/Field.svelte';
 	import FormGrid from '$lib/components/FormGrid.svelte';
@@ -30,7 +29,7 @@
 	import { SECTION_COLORS } from '$lib/colors';
 	import { navigating, page } from '$app/state';
 	import { browser } from '$app/environment';
-	import { tick } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import type { PageServerData, ActionData } from './$types.js';
 	import AttributeFields from '$lib/components/AttributeFields.svelte';
 	import NotebookField from '$lib/components/NotebookField.svelte';
@@ -58,6 +57,7 @@
 	import { useT } from '$lib/i18n';
 	import { WEEKDAYS } from '$lib/bill-summary';
 	import { say } from '$lib/said.svelte';
+	import { notify } from '$lib/notify.svelte';
 	import type { PlainKey } from '$lib/i18n/keys';
 
 	const t = useT();
@@ -197,7 +197,6 @@
 
 	let prefillTime = $state('09:00');
 	let prefillDuration = $state(60);
-	let gridError: string | null = $state(null);
 	let createFormEl: HTMLElement | undefined = $state();
 	/**
 	 * The calendar itself, for the one thing done imperatively.
@@ -697,6 +696,14 @@
 		await invalidateAll();
 		const nowOneOff = editingKind === 'slot';
 		editingKind = nowOneOff ? 'exceptional' : 'slot';
+		/*
+		 * The block is a new row in the other table, with a new id.
+		 *
+		 * Keeping the old one is what made the second switch answer "Not
+		 * found" — and Save post to a row that no longer exists, or to an
+		 * unrelated one that happened to carry the same number over there.
+		 */
+		editingBlockId = Number(result.id);
 
 		/*
 		 * And the form follows it.
@@ -969,8 +976,9 @@
 		takenOffGrid = true;
 
 		if (decoded.kind !== 'exceptional') {
-			gridError =
-				'That block repeats every week. Skip it for this day, or remove it from the week.';
+			notify.error(
+				'That block repeats every week. Skip it for this day, or remove it from the week.'
+			);
 			return;
 		}
 
@@ -2204,6 +2212,24 @@
 		body.set('label', source.label ?? '');
 	}
 
+	/*
+	 * A refused form, said as a toast.
+	 *
+	 * It was a banner above the grid, which is where nobody is looking: the
+	 * press was in the block editor at the side, or on a block halfway down the
+	 * week. The editor still shows its own refusal beside the fields, so that
+	 * one is not said twice. Each answer is said once — reopening the editor
+	 * must not repeat an old one.
+	 */
+	let formSaid: unknown = null;
+	$effect(() => {
+		const answer = form as { message?: string } | null;
+		if (!answer?.message || answer === formSaid) return;
+		formSaid = answer;
+		if (!untrack(() => showForm)) notify.error(answer.message);
+	});
+
+	/** A write the grid makes itself; a refusal is said as a toast. */
 	async function postGridAction(
 		action: string,
 		body: FormData,
@@ -2217,14 +2243,14 @@
 			});
 			const result = deserialize(await res.text());
 			if (result.type === 'failure' || result.type === 'error') {
-				gridError =
-					(result.type === 'failure' && (result.data?.message as string)) || fallbackMessage;
+				notify.error(
+					(result.type === 'failure' && (result.data?.message as string)) || fallbackMessage
+				);
 				return null;
 			}
-			gridError = null;
 			return result.type === 'success' ? ((result.data as Record<string, unknown>) ?? {}) : {};
 		} catch {
-			gridError = fallbackMessage;
+			notify.error(fallbackMessage);
 			return null;
 		}
 	}
@@ -2373,7 +2399,7 @@
 			}
 		});
 
-		if (failed > 0) gridError = `${failed} block(s) could not be moved.`;
+		if (failed > 0) notify.error(`${failed} block(s) could not be moved.`);
 		// The selection survives the move: nudging a group into place usually
 		// takes more than one drag, and reselecting between each is the tedious
 		// part of doing it by hand.
@@ -2781,12 +2807,6 @@
 		</div>
 	</div>
 
-	<FormError message={form?.message} />
-
-	{#if gridError}
-		<Banner kind="error" message={gridError} />
-	{/if}
-
 	<!--
 		The panel, when it is open. The control that opens it is in the toolbar.
 
@@ -2839,7 +2859,7 @@
 					</div>
 				</form>
 
-				<div class="border border-gray-200 bg-white shadow-card">
+				<Card flush>
 					<div class="eyebrow border-b border-gray-200 px-4 py-2.5 text-gray-500">
 						{t('tasks.plan.savedSchemes')}
 					</div>
@@ -2975,7 +2995,7 @@
 							{/each}
 						</div>
 					{/if}
-				</div>
+				</Card>
 
 				<!--
 					Calendars somebody else controls.
@@ -2994,7 +3014,7 @@
 					under the schemes, open, every time the drawer was opened for the
 					schemes. It is not the reason anybody comes here.
 				-->
-				<div class="border border-gray-200 bg-white shadow-card">
+				<Card flush>
 					<button
 						type="button"
 						onclick={() => (calendarsOpen = !calendarsOpen)}
@@ -3101,7 +3121,7 @@
 							</p>
 						</form>
 					{/if}
-				</div>
+				</Card>
 
 				<!--
 					The starter weeks, still available.
@@ -3111,7 +3131,7 @@
 					no way back to them. Same three weeks, same application, behind the
 					same confirmation as loading a scheme, because it replaces the plan.
 				-->
-				<div class="border border-gray-200 bg-white shadow-card">
+				<Card flush>
 					<div class="eyebrow border-b border-gray-200 px-4 py-2.5 text-gray-500">
 						{t('tasks.plan.startFromATemplate')}
 					</div>
@@ -3155,13 +3175,13 @@
 							</div>
 						{/each}
 					</div>
-				</div>
+				</Card>
 			</div>
 		{/if}
 	</div>
 
 	{#if showCopyPanel}
-		<div class="border border-gray-200 bg-white p-4 shadow-sm">
+		<Card>
 			<h3 class="mb-3 text-sm font-medium text-gray-900">{t('tasks.plan.copyToDays')}</h3>
 			<form
 				method="post"
@@ -3219,7 +3239,7 @@
 					</button>
 				</div>
 			</form>
-		</div>
+		</Card>
 	{/if}
 
 	{#if multiselect && selectedIds.size > 0}

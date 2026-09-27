@@ -32,7 +32,7 @@ import ts from 'typescript';
 import * as prettier from 'prettier';
 
 import { anchor } from './lib/anchor.mjs';
-import { literalText, paramRow } from './lib/mcp-docs.mjs';
+import { literalText, mcpExamples, mcpToolSection } from './lib/mcp-docs.mjs';
 import { REPO, assetNames, downloadUrl, releaseTag, versionOf } from './lib/release-assets.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -300,8 +300,9 @@ function cautionTable() {
  *
  * The page used to give a name, a sentence and a scope, and nothing about
  * what to pass — so anybody writing a call had to read `tools.ts` or guess.
- * Everything needed is in the `input` schema beside the description: the
- * type, whether it is required, the values an enum allows, the default.
+ * The words come from here; the shape — type, required, default, bounds,
+ * nested fields, the release a deprecated one goes in — from `manifest.json`,
+ * which the running tool table writes.
  *
  * Three shapes turn up in that schema and all three are handled here: an
  * object literal (`{ type, description, enum, default }`), one of the helpers
@@ -334,8 +335,17 @@ function argTablesOf(source) {
 	return { tables, lists };
 }
 
-function paramFrom(name, value, source, required, lists, tables) {
-	const out = { name, required, type: 'string', description: '' };
+/**
+ * What the source says about one schema node: its words, and the order its
+ * enum is written in. Everything else about a parameter — type, required,
+ * default, bounds, the fields inside it — comes from `manifest.json`, which
+ * is the running schema; source text is only trusted for the prose.
+ *
+ * Nested nodes are followed through `items` and `properties`, so a field
+ * inside a list of objects (a goal's `targets[].unit`) has its words too.
+ */
+function nodeFrom(value, source, lists, tables) {
+	const out = { description: '' };
 
 	// `targets: targetsParam` — the shape is a `const` in the same file.
 	if (ts.isIdentifier(value)) {
@@ -348,19 +358,9 @@ function paramFrom(name, value, source, required, lists, tables) {
 	if (ts.isCallExpression(value)) {
 		const called = value.expression.getText(source);
 		const first = literalText(value.arguments[0], source);
-		if (called === 'text') Object.assign(out, { type: 'string', description: first });
-		else if (called === 'count')
-			Object.assign(out, {
-				type: 'integer',
-				description: first,
-				default: value.arguments[1]?.getText(source)
-			});
+		if (called === 'text' || called === 'count') out.description = first;
 		else if (called === 'from')
-			Object.assign(out, {
-				type: 'integer',
-				description: `Skip this many before counting, so the rest of ${first} can be read a page at a time.`,
-				default: '0'
-			});
+			out.description = `Skip this many before counting, so the rest of ${first} can be read a page at a time. \`nextOffset\` on the answer is what to pass here next.`;
 		else return null;
 		return out;
 	}
@@ -369,9 +369,7 @@ function paramFrom(name, value, source, required, lists, tables) {
 	for (const prop of value.properties) {
 		if (!ts.isPropertyAssignment(prop)) continue;
 		const key = prop.name.getText(source).replace(/['"]/g, '');
-		if (key === 'type') out.type = literalText(prop.initializer, source) || out.type;
 		if (key === 'description') out.description = literalText(prop.initializer, source);
-		if (key === 'default') out.default = prop.initializer.getText(source);
 		if (key === 'enum' && ts.isArrayLiteralExpression(prop.initializer)) {
 			const values = [];
 			for (const el of prop.initializer.elements) {
@@ -385,38 +383,19 @@ function paramFrom(name, value, source, required, lists, tables) {
 			}
 			if (values.length > 0) out.enum = values;
 		}
-		if (key === 'deprecated') out.deprecated = true;
-		/*
-		 * An array of objects — a goal's measures, a workout's readings. The
-		 * fields of one item are what a caller needs to know, and they are
-		 * described inside `items.properties`.
-		 */
-		if (key === 'items' && ts.isObjectLiteralExpression(prop.initializer)) {
-			for (const inner of prop.initializer.properties) {
-				if (!ts.isPropertyAssignment(inner)) continue;
-				if (inner.name.getText(source) !== 'properties') continue;
-				if (!ts.isObjectLiteralExpression(inner.initializer)) continue;
-				out.fields = inner.initializer.properties
-					.filter((one) => ts.isPropertyAssignment(one))
-					.map((one) => one.name.getText(source).replace(/['"]/g, ''));
-			}
+		if (key === 'items') {
+			const item = nodeFrom(prop.initializer, source, lists, tables);
+			if (item) out.items = item;
 		}
+		if (key === 'properties' && ts.isObjectLiteralExpression(prop.initializer))
+			out.properties = propertiesOf(prop.initializer, source, lists, tables);
 	}
 	return out;
 }
 
-function paramsOf(input, source, tables, lists) {
-	if (!input || !ts.isCallExpression(input)) return [];
-	const [shape, requiredList] = input.arguments;
-	if (!shape || !ts.isObjectLiteralExpression(shape)) return [];
-
-	const required = new Set(
-		requiredList && ts.isArrayLiteralExpression(requiredList)
-			? requiredList.elements.map((el) => literalText(el, source))
-			: []
-	);
-
-	const params = [];
+/** An object literal of named schema nodes, spreads of shared tables included. */
+function propertiesOf(shape, source, lists, tables) {
+	const found = {};
 	const take = (node) => {
 		for (const prop of node.properties) {
 			if (ts.isSpreadAssignment(prop)) {
@@ -426,13 +405,24 @@ function paramsOf(input, source, tables, lists) {
 			}
 			if (!ts.isPropertyAssignment(prop)) continue;
 			const name = prop.name.getText(source).replace(/['"]/g, '');
-			const param = paramFrom(name, prop.initializer, source, required.has(name), lists, tables);
-			if (param) params.push(param);
+			const node = nodeFrom(prop.initializer, source, lists, tables);
+			if (node) found[name] = node;
 		}
 	};
 	take(shape);
-	return params;
+	return found;
 }
+
+function paramsOf(input, source, tables, lists) {
+	if (!input || !ts.isCallExpression(input)) return {};
+	const [shape] = input.arguments;
+	if (!shape || !ts.isObjectLiteralExpression(shape)) return {};
+	return propertiesOf(shape, source, lists, tables);
+}
+
+const MCP_MANIFEST = JSON.parse(
+	readFileSync(join(ROOT, 'src/lib/server/mcp/manifest.json'), 'utf8')
+);
 
 function mcpTools() {
 	const source = parse(join(ROOT, 'src/lib/server/mcp/tools.ts'));
@@ -447,7 +437,8 @@ function mcpTools() {
 	for (const from of [
 		'src/lib/services/habits.ts',
 		'src/lib/people.ts',
-		'src/lib/task-status.ts'
+		'src/lib/task-status.ts',
+		'src/lib/services/todos.ts'
 	]) {
 		const other = argTablesOf(parse(join(ROOT, from)));
 		for (const [name, values] of other.lists) if (!lists.has(name)) lists.set(name, values);
@@ -466,21 +457,21 @@ function mcpTools() {
 				for (const prop of el.properties) {
 					if (!ts.isPropertyAssignment(prop)) continue;
 					const key = prop.name.getText(source);
-					if (['name', 'title', 'description', 'scope'].includes(key)) {
+					if (['name', 'title', 'description'].includes(key)) {
 						if (ts.isStringLiteral(prop.initializer)) tool[key] = prop.initializer.text;
 					}
-					if (key === 'writes') tool.writes = prop.initializer.kind === ts.SyntaxKind.TrueKeyword;
-					if (key === 'destroys')
-						tool.destroys = prop.initializer.kind === ts.SyntaxKind.TrueKeyword;
-					if (key === 'input') tool.params = paramsOf(prop.initializer, source, tables, lists);
-					// A tool any one of several grants reaches — a file answers to
-					// whatever refers to it, so `media` is not one scope's.
-					if (key === 'anyScope' && ts.isArrayLiteralExpression(prop.initializer))
-						tool.anyScope = prop.initializer.elements
-							.map((el) => literalText(el, source))
-							.filter(Boolean);
+					if (key === 'input') tool.words = paramsOf(prop.initializer, source, tables, lists);
 				}
-				if (tool.name) tools.push(tool);
+				if (!tool.name) continue;
+				// Everything but the words is the running schema's.
+				const shape = MCP_MANIFEST[tool.name];
+				if (!shape) {
+					console.error(
+						`MCP tool \`${tool.name}\` is not in manifest.json — run \`yarn mcp:manifest\``
+					);
+					process.exit(1);
+				}
+				tools.push({ ...shape, ...tool });
 			}
 		}
 		ts.forEachChild(n, visit);
@@ -1384,39 +1375,51 @@ const FRAGMENTS = {
 		].join('\n'),
 	'mcp-tools': () => {
 		/*
-		 * Each tool: what it is for, what it needs, and what to pass it.
-		 *
-		 * The parameters are the part this page was missing. Somebody writing
-		 * a call had the sentence and nothing else — no names, no types, no
-		 * idea which of them was required or what an enum allowed — so they
-		 * read `tools.ts` or guessed. It all comes from the same array that
-		 * serves the tools, so the page cannot drift from the server.
+		 * Each tool: what it is for, what it needs, what it answers, and what
+		 * to pass it — down to the fields inside a list of objects. It all
+		 * comes from the array that serves the tools and the manifest that
+		 * array writes, so the page cannot drift from the server.
 		 */
-		return mcpTools()
-			.map((t) => {
-				const needs = t.destroys
-					? // Deleting is its own grant on top of the room's write scope —
-						// see `destructive` in the scope table.
-						`\`${t.scope}\` and \`destructive\`; deletes`
-					: t.anyScope
-						? // Any one of several is enough: a file answers to whichever
-							// grant reads the thing it sits in.
-							`any of ${t.anyScope.map((one) => `\`${one}\``).join(', ')}; read-only`
-						: `\`${t.scope}\`; ${t.writes ? 'writes' : 'read-only'}`;
-
-				const table =
-					t.params && t.params.length > 0
-						? [
-								'',
-								'| Parameter | Type | Required | What it is |',
-								'| --- | --- | --- | --- |',
-								...t.params.map(paramRow)
-							].join('\n')
-						: '\n_Takes no parameters._';
-
-				return `### \`${t.name}\` — ${t.title}\n\n${t.description}\n\n_Needs ${needs}._\n${table}`;
-			})
-			.join('\n\n');
+		return mcpTools().map(mcpToolSection).join('\n\n');
+	},
+	'mcp-examples': () =>
+		mcpExamples(JSON.parse(readFileSync(join(ROOT, 'src/lib/server/mcp/examples.json'), 'utf8'))),
+	'mcp-deprecations': () => {
+		/*
+		 * One row per old spelling, not per tool: `meta` is the same promise on
+		 * every tool that takes it, and the release it goes in is the same.
+		 */
+		const rows = new Map();
+		for (const t of mcpTools()) {
+			if (t.deprecated)
+				rows.set(`tool ${t.name}`, {
+					what: t.name,
+					removedIn: t.removedIn,
+					tools: [],
+					instead: ''
+				});
+			for (const [name, spec] of Object.entries(t.params)) {
+				if (!spec.deprecated) continue;
+				const row = rows.get(name) ?? {
+					what: name,
+					removedIn: spec.removedIn,
+					tools: [],
+					instead: /use `([^`]+)`/.exec(t.words[name]?.description ?? '')?.[1] ?? ''
+				};
+				row.tools.push(t.name);
+				rows.set(name, row);
+			}
+		}
+		if (rows.size === 0) return '_Nothing is deprecated at the moment._';
+		const code = (word) => (word ? `\`${word}\`` : '—');
+		return [
+			'| Old spelling | Use instead | Removed in | Tools that take it |',
+			'| --- | --- | --- | --- |',
+			...[...rows.values()].map(
+				(r) =>
+					`| ${code(r.what)} | ${code(r.instead)} | ${r.removedIn ?? '—'} | ${r.tools.length ? r.tools.map(code).join(', ') : 'the whole tool'} |`
+			)
+		].join('\n');
 	},
 	permissions: () => {
 		const uses = new Map();

@@ -11,11 +11,13 @@
 	import OneLine from '$lib/components/OneLine.svelte';
 	import { getAction, keyFor } from '$lib/shortcuts';
 	import { enhance } from '$lib/enhance';
+	import { armed } from '$lib/actions/armed';
 	import FormError from '$lib/components/FormError.svelte';
 	import EmptyState from '$lib/components/EmptyState.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import type { PageServerData, ActionData } from './$types';
 	import Field from '$lib/components/Field.svelte';
+	import Card from '$lib/components/Card.svelte';
 	import GoalCard from '$lib/components/GoalCard.svelte';
 	import GoalLinksModal from '$lib/components/GoalLinksModal.svelte';
 	import GoalFields from '$lib/components/fields/GoalFields.svelte';
@@ -43,6 +45,8 @@
 
 	let showForm = $state(false);
 	let showAreas = $state(false);
+	/** The area whose removal has been asked for and not yet confirmed. */
+	let removingArea: number | null = $state(null);
 	let editingId: number | null = $state(null);
 	let linkingId: number | null = $state(null);
 	let areaFilter: number | null = $state(null);
@@ -321,13 +325,42 @@
 		{#if data.areas.length > 0}
 			<div class="divide-y divide-gray-200 border border-gray-200">
 				{#each data.areas as area (area.id)}
-					<div class="flex items-center gap-3 px-3 py-2">
-						<Swatch color={area.color} shape="tall" />
-						<span class="flex-1 text-sm text-gray-900">{area.name}</span>
-						<form method="post" action="?/deleteArea" use:enhance>
-							<input type="hidden" name="id" value={area.id} />
-							<button class="btn btn-quiet btn-sm"><Icon name="trash" /> {t('ui.remove')}</button>
-						</form>
+					<div class="list-row">
+						<div class="list-row-main flex items-center gap-3">
+							<Swatch color={area.color} shape="tall" />
+							<span class="min-w-0 text-sm break-words text-gray-900">{area.name}</span>
+						</div>
+						<!-- Two steps, like every removal: the bin arms it, the worded
+						     button does it, and Cancel sits where the bin was. -->
+						<div class="list-row-actions">
+							{#if removingArea === area.id}
+								<form
+									method="post"
+									action="?/deleteArea"
+									use:enhance={() =>
+										async ({ update }) => {
+											removingArea = null;
+											await update();
+										}}
+								>
+									<input type="hidden" name="id" value={area.id} />
+									<button class="btn btn-sm btn-danger" use:armed>{t('ui.remove')}</button>
+								</form>
+								<button type="button" class="btn btn-sm" onclick={() => (removingArea = null)}
+									>{t('ui.cancel')}</button
+								>
+							{:else}
+								<button
+									type="button"
+									class="icon-btn icon-btn-danger"
+									title={t('ui.remove')}
+									aria-label={t('ui.remove')}
+									onclick={() => (removingArea = area.id)}
+								>
+									<Icon name="trash" />
+								</button>
+							{/if}
+						</div>
 					</div>
 				{/each}
 			</div>
@@ -402,13 +435,13 @@
 		{#snippet footer()}
 			<button type="button" class="btn" onclick={() => (showForm = false)}>{t('ui.cancel')}</button>
 			<button type="submit" form="goal-form" class="btn btn-primary">
-				{editingId ? 'Save' : t('goals.createGoal')}
+				{editingId ? t('ui.save') : t('goals.createGoal')}
 			</button>
 		{/snippet}
 	</Modal>
 
 	{#if visible.length === 0 && !showForm}
-		<div class="border border-gray-200 bg-white shadow-card">
+		<Card flush>
 			{#if data.goals.length === 0}
 				<EmptyState
 					icon="goals"
@@ -431,7 +464,7 @@
 					{/snippet}
 				</EmptyState>
 			{/if}
-		</div>
+		</Card>
 	{/if}
 
 	{#snippet card(goal: Goal)}
@@ -462,14 +495,10 @@
 	-->
 	<div class="space-y-0 sm:space-y-4" data-tour="goal-list">
 		{#each byHorizon as column (column.horizon)}
-			<section
-				class="card-accent border border-gray-200 bg-white shadow-card"
-				style="--card-accent: {accent}"
-			>
-				<div class="flex items-center justify-between border-b border-b-gray-200 px-4 py-2">
-					<span class="eyebrow text-gray-600">{t(HORIZON_LABELS[column.horizon])}</span>
+			<Card title={t(HORIZON_LABELS[column.horizon])} {accent} flush>
+				{#snippet actions()}
 					<span class="tabular text-xs text-gray-500">{column.goals.length}</span>
-				</div>
+				{/snippet}
 
 				<div class="divide-y divide-gray-200">
 					{#each column.loose as goal (goal.id)}
@@ -502,7 +531,7 @@
 						</div>
 					</div>
 				{/each}
-			</section>
+			</Card>
 		{/each}
 	</div>
 

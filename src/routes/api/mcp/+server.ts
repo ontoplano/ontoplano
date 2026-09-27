@@ -5,7 +5,15 @@ import { buildCtx } from '$lib/services/ctx';
 import { UnauthorizedError } from '$lib/services/errors';
 import { toJsonError } from '$lib/http-errors';
 import { authenticateToken } from '$lib/server/services/tokens';
-import { PROTOCOL_VERSION, SERVER_INFO, handleBody } from '$lib/server/mcp/protocol';
+import { readTextWithin } from '$lib/json-body';
+import {
+	INVALID_REQUEST,
+	MAX_MCP_BODY_BYTES,
+	PARSE_ERROR,
+	PROTOCOL_VERSION,
+	SERVER_INFO,
+	handleBody
+} from '$lib/server/mcp/protocol';
 
 /**
  * The one address an assistant talks to.
@@ -24,9 +32,6 @@ import { PROTOCOL_VERSION, SERVER_INFO, handleBody } from '$lib/server/mcp/proto
  * stream is told there is not one, rather than being left holding a connection
  * that will never carry anything.
  */
-/** The same 256 KB every other endpoint takes, batch included. */
-const MAX_MCP_BODY_BYTES = 256 * 1024;
-
 export const POST: RequestHandler = async (event) => {
 	try {
 		const header = event.request.headers.get('authorization') ?? '';
@@ -47,26 +52,39 @@ export const POST: RequestHandler = async (event) => {
 			confinement: token.confinement ?? undefined
 		};
 
+		/*
+		 * With a ceiling, like every other endpoint, held on the stream.
+		 *
+		 * JSON-RPC lets a body be a batch, so an unbounded body is an unbounded
+		 * amount of work for one authenticated request. The bytes are counted
+		 * as they arrive and reading stops at the limit, rather than buffering
+		 * whatever was sent and measuring it afterwards.
+		 */
+		let text: string | null;
+		try {
+			text = await readTextWithin(event.request, MAX_MCP_BODY_BYTES);
+		} catch {
+			text = '';
+		}
+		if (text === null)
+			return Response.json(
+				{
+					jsonrpc: '2.0',
+					id: null,
+					error: {
+						code: INVALID_REQUEST,
+						message: `The request is larger than ${MAX_MCP_BODY_BYTES} bytes.`
+					}
+				},
+				{ status: 413 }
+			);
+
 		let body: unknown;
 		try {
-			/*
-			 * With a ceiling, like every other endpoint.
-			 *
-			 * This was the one route reading an unbounded body, and JSON-RPC
-			 * lets a body be a batch — so one authenticated request could ask
-			 * for the whole tool list a quarter of a million times and the
-			 * process would build every answer before sending any of them.
-			 * `readJson` is not reusable here (it insists on an object), so
-			 * the same cap is applied to the text.
-			 */
-			const declared = Number(event.request.headers.get('content-length'));
-			if (Number.isFinite(declared) && declared > MAX_MCP_BODY_BYTES) throw new Error('too large');
-			const text = await event.request.text();
-			if (text.length > MAX_MCP_BODY_BYTES) throw new Error('too large');
 			body = JSON.parse(text);
 		} catch {
 			return Response.json(
-				{ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'That is not JSON.' } },
+				{ jsonrpc: '2.0', id: null, error: { code: PARSE_ERROR, message: 'That is not JSON.' } },
 				{ status: 400 }
 			);
 		}

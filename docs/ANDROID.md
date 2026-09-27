@@ -73,14 +73,20 @@ committed has to be buildable exactly as it stands. The icon scripts write the
 same bytes from the same source every time, which is what makes committing
 generated files sane rather than a diff after every build.
 
-`make android` leaves the release APK **unsigned** on purpose: F-Droid signs
-what it builds, and a signing key in that path is only a key to lose.
+`make android-store` leaves the release APK **unsigned** on purpose: F-Droid
+signs what it builds, and a signing key in that path is only a key to lose.
 
 ## Signing keys
 
 There are none in this repository and there should never be. A debug key is
 whatever your SDK generated; anything a store distributes is signed by the
 store or by a key kept outside the tree.
+
+The APK attached to a GitHub release is that same unsigned build, signed with
+the project's release key — kept outside the tree, and neither the Play key nor
+F-Droid's. Android only updates an app with one signed by the same key, so an
+APK from a release updates only an APK from a release; switching to a store's
+build means uninstalling first.
 
 ## HTTPS while developing, so a phone gets a real browser
 

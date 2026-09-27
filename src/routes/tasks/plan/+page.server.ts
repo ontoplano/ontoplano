@@ -602,11 +602,12 @@ export const actions = {
 	convertRepeat: async ({ request, locals }: IsolatedEvent) => {
 		const formData = await request.formData();
 		try {
-			convertRepeat(buildCtx(locals.user!.id), Number(formData.get('id')), {
+			// The block has a new id in its new table; the editor carries on with it.
+			const made = convertRepeat(buildCtx(locals.user!.id), Number(formData.get('id')), {
 				to: formData.get('to'),
 				date: formData.get('date')
 			});
-			return { success: true };
+			return { success: true, kind: made.kind, id: made.id };
 		} catch (e) {
 			return toActionFailure(e);
 		}

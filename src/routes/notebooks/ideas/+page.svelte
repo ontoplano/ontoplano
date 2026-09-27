@@ -258,7 +258,7 @@
 				{#each filteredIdeas as idea, i (idea.id)}
 					<div
 						use:keepInView={i === clampedSelectedIndex}
-						class="relative p-4 {i === clampedSelectedIndex ? 'kb-cursor' : ''}"
+						class="relative px-4 py-3 {i === clampedSelectedIndex ? 'kb-cursor' : ''}"
 					>
 						<!--
 							The card is a component, so a notebook's Ideas tab shows the

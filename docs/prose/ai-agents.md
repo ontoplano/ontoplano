@@ -364,17 +364,50 @@ existed, so there is nothing to learn by walking the numbers.
   three. The date read is the label's own — it does not move when the thing is
   edited — so "what went into review since this morning" is one call.
 - **`up_next` answers what to do next**, by the ratings on the tasks
-  themselves: most urgent first, then the one that takes least energy, then the
-  one most wanted. Energy runs the other way to the other two — low is good. A
-  rating nobody set is not a zero: it counts half a step to the losing side of
-  the middle of the scale, so a task deliberately marked 3 beats an unrated one,
-  and urgency 1–2 and energy 4–5 are the tiers that mean "later".
+  themselves: most urgent first, then the easiest, then the one most wanted.
+  All three run the same way — five is the most of what the word says. A
+  rating nobody set is not a zero: it counts as 2.5, the middle of the scale,
+  so a task marked 3 beats an unrated one and 0–2 are the tiers that mean
+  "later".
+- **A change names only what changes.** Every `change_*` and `edit_*` tool
+  takes an id and the fields being changed; a field left out keeps what it
+  had. Where a field can be emptied, its description says how — `null` for a
+  rating, an empty string for notes, `{}` for attributes. An argument that
+  holds a whole set, such as `tags` on `change_task`, replaces it; `tag_task`
+  adds and removes one label at a time.
+- **A list comes a page at a time.** A tool marked "answers a page" takes
+  `limit` and `offset`, and answers with `count` (what is in this answer) and
+  `total` (what matched). While more is left the answer also carries
+  `remaining` and `nextOffset`; pass `nextOffset` as `offset` to read on. No
+  `nextOffset` means nothing is left.
+- **A wrong argument is refused before anything runs.** An argument the tool
+  does not take, a string where it wants a number, a value outside its enum or
+  its bounds: the answer is a JSON-RPC error `-32602` naming the argument, and
+  nothing is written.
+
+## Common requests
+
+What somebody asks, the call an assistant makes for it, and the part of the
+answer worth reading. They run in this order against a fresh account in the
+test suite, which checks each answer holds what is printed here.
+
+<!-- generated: mcp-examples -->
+
+## Old spellings
 
 The surface is additive within a major version: a tool or a parameter is not
-removed, a parameter does not become required, and an enum does not lose a value
-without a release in between that marks it deprecated. That is enforced by
-`src/lib/server/mcp/manifest.json` and a test that refuses any change breaking an
-existing caller.
+removed, a parameter does not become required, an enum does not lose a value,
+a bound does not tighten, a default does not move and a tool does not start
+needing another grant — at any depth, fields inside a list included — without
+a release in between that marks the old shape deprecated. That is enforced by
+`src/lib/server/mcp/manifest.json` and a test that refuses any change breaking
+an existing caller.
+
+A deprecated argument keeps working until the release named below. A call
+that uses one is translated, and its answer carries a `warning` naming the
+replacement and the release.
+
+<!-- generated: mcp-deprecations -->
 
 ## The tools
 
@@ -382,5 +415,9 @@ Every tool the server offers, with the exact description a model is handed —
 published from the same array that serves them, so the two cannot drift. A key
 is only offered the tools its permissions reach. The permissions themselves are
 on [the permissions page](permissions.md).
+
+Under each description: the permissions the key must hold, whether the tool
+writes, and what its answer carries. Parameters inside a list of objects are
+named with `[]` — `measures[].unit` is the `unit` of each line in `measures`.
 
 <!-- generated: mcp-tools -->

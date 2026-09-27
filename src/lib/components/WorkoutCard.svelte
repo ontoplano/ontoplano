@@ -14,6 +14,7 @@
 	 * rather than carrying them.
 	 */
 	import Icon from '$lib/components/Icon.svelte';
+	import RowCard from '$lib/components/RowCard.svelte';
 	import Written from '$lib/components/Written.svelte';
 	import { enhance } from '$lib/enhance';
 	import { dateOf, dayOf as shortDay } from '$lib/when';
@@ -92,18 +93,88 @@
 	}
 </script>
 
-<li class="list-row">
-	<button
-		class="list-row-main text-left"
-		aria-label={t('health.workouts.showThePlanFor', { title: workout.title })}
-		aria-expanded={open}
-		onclick={toggleExpanded}
-	>
-		<span class="font-medium text-gray-900">
-			<Icon name={open ? 'chevron-down' : 'chevron-right'} />
-			{workout.title}
-		</span>
-		<span class="block text-xs text-gray-500">
+<!--
+	The card a task is drawn on — `RowCard`: "done just now" where a task has
+	its tick, the name beside it, the verbs along the foot. The plan and its
+	register unfold under the whole card.
+-->
+<li class="flex flex-wrap items-stretch gap-x-4 px-4 py-3">
+	<RowCard>
+		{#snippet rail()}
+			<form method="post" action={actions.done} use:enhance class="flex">
+				<input type="hidden" name="id" value={workout.id} />
+				<button
+					class="-m-1 flex shrink-0 items-start justify-center self-start p-1 pointer-coarse:w-11"
+					title={t('health.workouts.doneJustNow')}
+					aria-label={t('health.workouts.markDone', { title: workout.title })}
+				>
+					<span
+						class="flex size-7 items-center justify-center border border-gray-400 bg-white text-gray-500 hover:border-gray-600"
+					>
+						<Icon name="check" size={14} />
+					</span>
+				</button>
+			</form>
+		{/snippet}
+
+		{#snippet controls()}
+			<!-- The tick says it happened; this says how much of what. -->
+			<button
+				type="button"
+				class="icon-btn"
+				title={t('health.workouts.writeDownWhatYouDid')}
+				aria-label={t('health.workouts.writeDownWhatYouDid2', { title: workout.title })}
+				onclick={() => onlog?.(workout.id)}
+			>
+				<Icon name="note" />
+			</button>
+
+			<button
+				type="button"
+				class="icon-btn"
+				title={t('health.workouts.putItOnADay')}
+				aria-label={t('health.workouts.planOntoADay', { title: workout.title })}
+				onclick={() => onschedule?.(workout.id)}
+			>
+				<Icon name="calendar" />
+			</button>
+
+			<button
+				type="button"
+				class="icon-btn"
+				title={t('ui.edit')}
+				aria-label={t('health.workouts.edit', { title: workout.title })}
+				onclick={() => onedit?.(workout.id)}
+			>
+				<Icon name="edit" />
+			</button>
+
+			<button
+				type="button"
+				class="icon-btn"
+				title={open ? t('health.habits.collapse') : t('health.habits.expand')}
+				aria-label={t('health.workouts.showThePlanFor', { title: workout.title })}
+				aria-expanded={open}
+				onclick={toggleExpanded}
+			>
+				<Icon name={open ? 'chevron-up' : 'chevron-down'} />
+			</button>
+
+			<form method="post" action={actions.archive} use:enhance>
+				<input type="hidden" name="id" value={workout.id} />
+				<input type="hidden" name="archived" value="true" />
+				<button
+					class="icon-btn"
+					title={t('health.workouts.putThisWorkoutAway')}
+					aria-label={t('health.workouts.archive', { title: workout.title })}
+				>
+					<Icon name="archive" />
+				</button>
+			</form>
+		{/snippet}
+
+		<p class="text-sm leading-snug font-medium break-words text-gray-900">{workout.title}</p>
+		<span class="mt-0.5 block text-xs text-gray-500">
 			{workout.categoryName ?? t('health.workouts.noCategory2')}{#if workout.minutes}{t(
 					'health.workouts.aboutMinutes',
 					{ minutes: workout.minutes }
@@ -111,63 +182,10 @@
 					date: workout.lastDoneAt.slice(0, 10)
 				})}{/if}
 		</span>
-	</button>
-
-	<div class="list-row-actions">
-		<form method="post" action={actions.done} use:enhance>
-			<input type="hidden" name="id" value={workout.id} />
-			<button
-				class="icon-btn"
-				title={t('health.workouts.doneJustNow')}
-				aria-label={t('health.workouts.markDone', { title: workout.title })}
-			>
-				<Icon name="check" />
-			</button>
-		</form>
-
-		<!-- The tick says it happened; this says how much of what. -->
-		<button
-			class="icon-btn"
-			title={t('health.workouts.writeDownWhatYouDid')}
-			aria-label={t('health.workouts.writeDownWhatYouDid2', { title: workout.title })}
-			onclick={() => onlog?.(workout.id)}
-		>
-			<Icon name="note" />
-		</button>
-
-		<button
-			class="icon-btn"
-			title={t('health.workouts.putItOnADay')}
-			aria-label={t('health.workouts.planOntoADay', { title: workout.title })}
-			onclick={() => onschedule?.(workout.id)}
-		>
-			<Icon name="calendar" />
-		</button>
-
-		<button
-			class="icon-btn"
-			aria-label={t('health.workouts.edit', { title: workout.title })}
-			onclick={() => onedit?.(workout.id)}
-		>
-			<Icon name="edit" />
-		</button>
-
-		<form
-			method="post"
-			action={actions.archive}
-			use:enhance
-			title={t('health.workouts.putThisWorkoutAway')}
-		>
-			<input type="hidden" name="id" value={workout.id} />
-			<input type="hidden" name="archived" value="true" />
-			<button class="icon-btn" aria-label={t('health.workouts.archive', { title: workout.title })}>
-				<Icon name="archive" />
-			</button>
-		</form>
-	</div>
+	</RowCard>
 
 	{#if open}
-		<div class="w-full space-y-3 border-t border-gray-100 pt-3">
+		<div class="mt-3 w-full space-y-3 border-t border-gray-100 pt-3">
 			<div class="text-sm whitespace-pre-wrap text-gray-700">
 				{#if workout.plan}{workout.plan}{:else}<span class="text-gray-500"
 						>{t('health.workouts.noPlanWrittenYet')}</span

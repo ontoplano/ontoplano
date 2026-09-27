@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Card from '$lib/components/Card.svelte';
 	import { routeGlyph } from '$lib/glyphs';
 	import { useWhen } from '$lib/when-context.svelte';
 	import { dayOf } from '$lib/when';
@@ -39,13 +40,13 @@
 -->
 <div class="space-y-4">
 	{#if data.weeks.length === 0}
-		<div class="border border-gray-200 bg-white shadow-sm">
+		<Card flush>
 			<EmptyState
 				icon={routeGlyph('/notebooks/weekly')!}
 				title={t('notebooks.weekly.nothingWrittenYet')}
 				description={t('notebooks.weekly.everyWeekYouWriteAbout')}
 			/>
-		</div>
+		</Card>
 	{:else}
 		<!--
 			One surface, and a week is a row on it.
@@ -58,25 +59,24 @@
 			surface, a hairline between rows, and the accent on the surface
 			rather than on each row of it.
 		-->
-		<div
-			class="card-accent divide-y divide-gray-200 border border-gray-200 bg-white shadow-card"
-			style="--card-accent: var(--section-accent)"
-		>
-			{#each data.weeks as week (week.weekStart)}
-				<article class="p-4">
-					<h2 class="mb-2 text-sm font-semibold text-gray-900">{weekLabel(week.weekStart)}</h2>
-					<!-- The note as it was typed: paragraphs stay paragraphs. -->
-					<p class="text-sm whitespace-pre-wrap text-gray-900">{week.note}</p>
-					<div class="mt-2">
-						<a
-							href="{resolve('/tasks/review')}?week={week.weekStart}"
-							class="text-xs text-gray-500 hover:text-gray-900 hover:underline"
-						>
-							{t('notebooks.weekly.openThatWeek')}
-						</a>
-					</div>
-				</article>
-			{/each}
-		</div>
+		<Card flush accent="var(--section-accent)">
+			<div class="divide-y divide-gray-200">
+				{#each data.weeks as week (week.weekStart)}
+					<article class="p-4">
+						<h2 class="mb-2 text-sm font-semibold text-gray-900">{weekLabel(week.weekStart)}</h2>
+						<!-- The note as it was typed: paragraphs stay paragraphs. -->
+						<p class="text-sm whitespace-pre-wrap text-gray-900">{week.note}</p>
+						<div class="mt-2">
+							<a
+								href="{resolve('/tasks/review')}?week={week.weekStart}"
+								class="text-xs text-gray-500 hover:text-gray-900 hover:underline"
+							>
+								{t('notebooks.weekly.openThatWeek')}
+							</a>
+						</div>
+					</article>
+				{/each}
+			</div>
+		</Card>
 	{/if}
 </div>

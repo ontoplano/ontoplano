@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Card from '$lib/components/Card.svelte';
 	import Backlinks from '$lib/components/Backlinks.svelte';
 	import Swatch from '$lib/components/Swatch.svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
@@ -361,131 +362,133 @@
 	</Modal>
 
 	{#if filteredActivities().length === 0}
-		<div class="border border-gray-200 bg-white p-8 text-center text-sm text-gray-500 shadow-sm">
-			{#if activeFilters.size > 0}
-				{t('tasks.activities.noActivitiesMatchTheSelected')}
-			{:else}
-				<EmptyState
-					icon="planner"
-					title={t('tasks.activities.noActivitiesYet')}
-					description={t('tasks.activities.anActivityIsANamed')}
-				>
-					{#snippet action()}
-						<button onclick={() => (showForm = true)} class="btn btn-primary">
-							<Icon name="plus" />
-							{t('tasks.activities.newActivity')}
-						</button>
-					{/snippet}
-				</EmptyState>
-			{/if}
-		</div>
+		<Card flush>
+			<div class="p-8 text-center text-sm text-gray-500">
+				{#if activeFilters.size > 0}
+					{t('tasks.activities.noActivitiesMatchTheSelected')}
+				{:else}
+					<EmptyState
+						icon="planner"
+						title={t('tasks.activities.noActivitiesYet')}
+						description={t('tasks.activities.anActivityIsANamed')}
+					>
+						{#snippet action()}
+							<button onclick={() => (showForm = true)} class="btn btn-primary">
+								<Icon name="plus" />
+								{t('tasks.activities.newActivity')}
+							</button>
+						{/snippet}
+					</EmptyState>
+				{/if}
+			</div>
+		</Card>
 	{:else}
-		<div
-			class="divide-y divide-gray-200 border border-gray-200 bg-white shadow-card"
-			data-tour="activity-list"
-		>
-			{#each filteredActivities() as activity, i (activity.id)}
-				<div
-					use:keepInView={i === selectedIndex}
-					class="flex flex-col gap-2 px-4 py-3 transition-colors sm:flex-row sm:items-center sm:gap-4 {i ===
-					selectedIndex
-						? 'kbd-cursor'
-						: ''} {!activity.active ? 'opacity-50' : ''}"
-					style="border-left: 4px solid {catColor(activity.categoryId)}"
-				>
-					<div class="min-w-0 flex-1">
-						<div class="flex items-center gap-2">
-							<span class="text-sm font-medium text-gray-900">{activity.name}</span>
-							<!-- The colour is the mark; the name is in ink. A category colour
+		<Card flush dataTour="activity-list">
+			<div class="divide-y divide-gray-200">
+				{#each filteredActivities() as activity, i (activity.id)}
+					<div
+						use:keepInView={i === selectedIndex}
+						class="flex flex-col gap-2 px-4 py-3 transition-colors sm:flex-row sm:items-center sm:gap-4 {i ===
+						selectedIndex
+							? 'kbd-cursor'
+							: ''} {!activity.active ? 'opacity-50' : ''}"
+						style="border-left: 4px solid {catColor(activity.categoryId)}"
+					>
+						<div class="min-w-0 flex-1">
+							<div class="flex items-center gap-2">
+								<span class="text-sm font-medium text-gray-900">{activity.name}</span>
+								<!-- The colour is the mark; the name is in ink. A category colour
 							     is the user's to choose, so it cannot be relied on to be
 							     readable as text on either theme's ground. -->
-							<span class="inline-flex items-center gap-1 text-xs font-medium text-gray-600">
-								<span
-									class="h-2.5 w-0.5 rounded-full"
-									style="background-color: {catColor(activity.categoryId)}"
-								></span>
-								{activity.categoryName}
-							</span>
+								<span class="inline-flex items-center gap-1 text-xs font-medium text-gray-600">
+									<span
+										class="h-2.5 w-0.5 rounded-full"
+										style="background-color: {catColor(activity.categoryId)}"
+									></span>
+									{activity.categoryName}
+								</span>
+							</div>
+							{#if activity.description}
+								<p class="truncate text-xs text-gray-500">{activity.description}</p>
+							{/if}
+							<Backlinks goals={data.goalLinks.activities[activity.id]} />
 						</div>
-						{#if activity.description}
-							<p class="truncate text-xs text-gray-500">{activity.description}</p>
-						{/if}
-						<Backlinks goals={data.goalLinks.activities[activity.id]} />
-					</div>
 
-					<div class="flex flex-wrap items-center gap-2 sm:shrink-0">
-						<button
-							title={t('ui.edit')}
-							aria-label={t('ui.edit')}
-							onclick={() => {
-								editingId = activity.id;
-								showForm = true;
-								tick().then(() => {
-									const nameInput = document.querySelector<HTMLInputElement>('input[name="label"]');
-									nameInput?.focus();
-								});
-							}}
-							class="btn btn-sm"
-						>
-							<Icon name="edit" />
-						</button>
-						<form method="post" action="?/toggleActive" use:enhance>
-							<input type="hidden" name="id" value={activity.id} />
-							<input type="hidden" name="active" value={String(activity.active)} />
-							<button type="submit" class="btn btn-sm">
-								{activity.active ? 'Disable' : 'Enable'}
-							</button>
-						</form>
-						{#if confirmingDelete === `act-${activity.id}` && !activity.hasReferences}
-							<form
-								method="post"
-								action="?/delete"
-								use:enhance={() => {
-									return async ({ update }) => {
-										await update({ reset: false });
-										confirmingDelete = null;
-									};
-								}}
-							>
-								<input type="hidden" name="id" value={activity.id} />
-								<button
-									type="submit"
-									class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
-									use:armed
-								>
-									{t('tasks.activities.confirm')}
-								</button>
-							</form>
+						<div class="flex flex-wrap items-center gap-2 sm:shrink-0">
 							<button
-								type="button"
+								title={t('ui.edit')}
+								aria-label={t('ui.edit')}
 								onclick={() => {
-									confirmingDelete = null;
+									editingId = activity.id;
+									showForm = true;
+									tick().then(() => {
+										const nameInput =
+											document.querySelector<HTMLInputElement>('input[name="label"]');
+										nameInput?.focus();
+									});
 								}}
 								class="btn btn-sm"
 							>
-								{t('ui.cancel')}
+								<Icon name="edit" />
 							</button>
-						{:else}
-							<button
-								aria-label={t('ui.delete')}
-								type="button"
-								onclick={() => {
-									if (!activity.hasReferences) confirmingDelete = `act-${activity.id}`;
-								}}
-								disabled={activity.hasReferences}
-								class="border px-2 py-1 text-xs transition {activity.hasReferences
-									? 'cursor-not-allowed border-gray-100 text-gray-300'
-									: 'border-red-200 bg-white text-red-600 hover:bg-red-50'}"
-								title={activity.hasReferences
-									? t('tasks.activities.cannotDeleteReferencedByPlanner')
-									: t('tasks.activities.deleteActivity')}
-							>
-								<Icon name="trash" />
-							</button>
-						{/if}
+							<form method="post" action="?/toggleActive" use:enhance>
+								<input type="hidden" name="id" value={activity.id} />
+								<input type="hidden" name="active" value={String(activity.active)} />
+								<button type="submit" class="btn btn-sm">
+									{activity.active ? 'Disable' : 'Enable'}
+								</button>
+							</form>
+							{#if confirmingDelete === `act-${activity.id}` && !activity.hasReferences}
+								<form
+									method="post"
+									action="?/delete"
+									use:enhance={() => {
+										return async ({ update }) => {
+											await update({ reset: false });
+											confirmingDelete = null;
+										};
+									}}
+								>
+									<input type="hidden" name="id" value={activity.id} />
+									<button
+										type="submit"
+										class="border border-red-300 bg-red-50 px-2 py-1 text-xs font-medium text-red-700 transition hover:bg-red-100"
+										use:armed
+									>
+										{t('tasks.activities.confirm')}
+									</button>
+								</form>
+								<button
+									type="button"
+									onclick={() => {
+										confirmingDelete = null;
+									}}
+									class="btn btn-sm"
+								>
+									{t('ui.cancel')}
+								</button>
+							{:else}
+								<button
+									aria-label={t('ui.delete')}
+									type="button"
+									onclick={() => {
+										if (!activity.hasReferences) confirmingDelete = `act-${activity.id}`;
+									}}
+									disabled={activity.hasReferences}
+									class="border px-2 py-1 text-xs transition {activity.hasReferences
+										? 'cursor-not-allowed border-gray-100 text-gray-300'
+										: 'border-red-200 bg-white text-red-600 hover:bg-red-50'}"
+									title={activity.hasReferences
+										? t('tasks.activities.cannotDeleteReferencedByPlanner')
+										: t('tasks.activities.deleteActivity')}
+								>
+									<Icon name="trash" />
+								</button>
+							{/if}
+						</div>
 					</div>
-				</div>
-			{/each}
-		</div>
+				{/each}
+			</div>
+		</Card>
 	{/if}
 </div>

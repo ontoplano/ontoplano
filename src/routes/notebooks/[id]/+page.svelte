@@ -1,9 +1,9 @@
 <script lang="ts">
+	import Card from '$lib/components/Card.svelte';
 	import { enhance } from '$lib/enhance';
 	import FoldedText from '$lib/components/FoldedText.svelte';
 	import DetailHeader from '$lib/components/DetailHeader.svelte';
 	import { resolve } from '$app/paths';
-	import { armed } from '$lib/actions/armed';
 	import FormError from '$lib/components/FormError.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Modal from '$lib/components/Modal.svelte';
@@ -11,6 +11,7 @@
 	import NotebookTags from '$lib/components/NotebookTags.svelte';
 	import NotebookPicture from '$lib/components/NotebookPicture.svelte';
 	import NotebookDetail from '$lib/components/NotebookDetail.svelte';
+	import NotebookDelete from '$lib/components/NotebookDelete.svelte';
 	import NotebookStar from '$lib/components/NotebookStar.svelte';
 	import { SECTION_COLORS } from '$lib/colors';
 	import type { PageServerData, ActionData } from './$types';
@@ -75,10 +76,7 @@
 		page — under the title it was supposed to be colouring. One surface, one
 		edge: the header is a pane of it and so is everything below.
 	-->
-	<div
-		class="card-accent flex min-w-0 flex-col border border-gray-200 bg-white shadow-card"
-		style="--card-accent: {SECTION_COLORS.diary}"
-	>
+	<Card flush accent={SECTION_COLORS.diary} class="min-w-0">
 		<!--
 		The header stands on a surface of its own.
 
@@ -250,7 +248,7 @@
 				bind:linkAction
 			/>
 		</section>
-	</div>
+	</Card>
 </div>
 
 <NotebookTags
@@ -288,32 +286,23 @@
 	</form>
 
 	{#snippet footer()}
+		<button
+			type="button"
+			class="icon-btn mr-auto"
+			title={t('ui.delete')}
+			aria-label={t('ui.delete')}
+			onclick={() => (confirmingDelete = true)}
+		>
+			<Icon name="trash" />
+		</button>
 		<button type="button" class="btn" onclick={() => (editing = false)}>{t('ui.cancel')}</button>
 		<button type="submit" form="notebook-form" class="btn btn-primary">{t('ui.save')}</button>
 	{/snippet}
 </Modal>
 
-<!-- The same dialog as the index: a confirmation somewhere the cursor is not. -->
-<Modal
+<NotebookDelete
 	bind:open={confirmingDelete}
-	title={t('notebooks.id.deleteThisNotebook')}
-	description={t('notebooks.id.titleWillBeGone', { title: data.notebook.title })}
-	size="sm"
->
-	<p class="text-sm text-gray-600">
-		{t('notebooks.id.itsNotesTasksAndGoals')}
-		<strong class="font-medium text-gray-900">{t('notebooks.id.notesWithoutANotebook')}</strong>{t(
-			'notebooks.id.atTheBottomOf'
-		)}
-	</p>
-
-	{#snippet footer()}
-		<button type="button" class="btn" onclick={() => (confirmingDelete = false)}
-			>{t('ui.cancel')}</button
-		>
-		<form method="post" action="?/delete" use:enhance>
-			<input type="hidden" name="id" value={data.notebook.id} />
-			<button class="btn btn-danger" use:armed>{t('notebooks.id.deleteTheNotebook')}</button>
-		</form>
-	{/snippet}
-</Modal>
+	notebook={data.notebook}
+	error={form?.message}
+	ondeleted={() => (editing = false)}
+/>

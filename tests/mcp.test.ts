@@ -195,7 +195,7 @@ describe('a tool that runs', () => {
 			const structured = answer.result?.structuredContent;
 			// A tool that refused the empty arguments has said so properly; what
 			// it refused with is another test's business.
-			if (answer.result?.isError) continue;
+			if (answer.error || answer.result?.isError) continue;
 			if (structured === null || typeof structured !== 'object' || Array.isArray(structured)) {
 				wrong.push(`${tool.name}: ${Array.isArray(structured) ? 'array' : typeof structured}`);
 			}
@@ -827,8 +827,10 @@ describe('editing what was created', () => {
 		expect(row.title).toBe('strip the hallway walls');
 		expect(row.status).toBe('done');
 
+		// Not a state the schema names, so refused before the tool runs.
 		const refused = rpc(6, 'change_task', { id, status: 'started' }, ['tasks:write']);
-		expect(refused.result.isError).toBe(true);
+		expect(refused.error.code).toBe(-32602);
+		expect(refused.error.data).toMatchObject({ argument: 'status', problem: 'enum' });
 	});
 
 	it('changes a goal the person already committed to', () => {
@@ -1165,7 +1167,7 @@ describe('the opened rooms', () => {
 	});
 
 	it('ticks a habit by name, with the write grant alone', () => {
-		const made = rpc(50, 'add_habit', { name: 'stretching', kind: 'good' }, ['habits:write']);
+		const made = rpc(50, 'add_habit', { name: 'stretching', type: 'good' }, ['habits:write']);
 		const habitId = made.result.structuredContent?.id as number | undefined;
 		expect(made.result.isError, made.result.content?.[0]?.text).toBe(false);
 

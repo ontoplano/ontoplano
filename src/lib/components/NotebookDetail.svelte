@@ -43,6 +43,13 @@
 		type NoteOrder
 	} from '$lib/note-order';
 	import TodoRows from '$lib/components/TodoRows.svelte';
+	import NotebookField from '$lib/components/NotebookField.svelte';
+	import { Selection } from '$lib/selection.svelte';
+	import SelectionBar from '$lib/components/SelectionBar.svelte';
+	import RowCard from '$lib/components/RowCard.svelte';
+	import SelectBox from '$lib/components/SelectBox.svelte';
+	import BatchDialog from '$lib/components/BatchDialog.svelte';
+	import type { EntryBatchVerb } from '$lib/services/diary';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
 	import IdeaCard from '$lib/components/IdeaCard.svelte';
 	import BillList from '$lib/components/BillList.svelte';
@@ -827,6 +834,57 @@
 		return orderNotes(out, noteOrder, noteDirection);
 	});
 
+	/*
+	 * Several notes at once — the same selection the task list has.
+	 *
+	 * Only your own: in a shared notebook somebody else's note is theirs to
+	 * move or delete, as it is on its own row.
+	 */
+	const noteSelection = new Selection<EntryBatchVerb>();
+	const selectableNotes = $derived(
+		shownNotes.filter((entry) => !('mine' in entry) || entry.mine !== false)
+	);
+	const chosenNoteIds = $derived(
+		selectableNotes.filter((entry) => noteSelection.has(entry.id)).map((entry) => entry.id)
+	);
+	$effect(() => noteSelection.keep(selectableNotes.map((entry) => entry.id)));
+	const NOTE_BATCH_LABELS = {
+		notebook: 'notebookDetail.batchMove',
+		tag: 'notebookDetail.batchTag',
+		archive: 'notebookDetail.batchArchive',
+		unarchive: 'notebookDetail.batchUnarchive',
+		remove: 'notebookDetail.batchDelete'
+	} as const;
+	const noteBatchVerbs = $derived(
+		(
+			[
+				['notebook', 'notebook'],
+				['tag', 'tag'],
+				['archive', 'archive'],
+				// Only while the put-away ones are on screen to be chosen.
+				...(showArchivedNotes ? ([['unarchive', 'undo']] as const) : []),
+				['remove', 'trash']
+			] as const
+		).map(([key, icon]) => ({ key, icon, label: t(NOTE_BATCH_LABELS[key]) }))
+	);
+
+	function noteSelectionKeys(e: KeyboardEvent) {
+		if (tab !== 'notes' && !showingOrphans) return;
+		if (e.key !== 'Escape') {
+			if (e.ctrlKey || e.metaKey || e.altKey) return;
+			if (
+				e.target instanceof HTMLInputElement ||
+				e.target instanceof HTMLTextAreaElement ||
+				e.target instanceof HTMLSelectElement
+			)
+				return;
+		}
+		if (noteSelection.verb && e.key !== 'Escape') return;
+		const under = shownNotes[cursor];
+		const selectable = under && selectableNotes.includes(under) ? under.id : undefined;
+		if (noteSelection.handleKey(e, () => selectable)) e.stopPropagation();
+	}
+
 	/** How many are put away, so the button can say what it would bring back. */
 	const putAwayNotes = $derived(
 		(contents?.entries ?? orphaned).filter((entry) => entry.archivedAt).length
@@ -970,6 +1028,8 @@
 		return momentOf(iso, now());
 	}
 </script>
+
+<svelte:window onkeydown={noteSelectionKeys} />
 
 <!--
 	The dialog is the notebook's own surface, inline until `showModal()` — see
@@ -1344,8 +1404,7 @@
 					The Ideas room's own card, not a line with a tick beside it.
 
 					An idea filed under a subject is an idea: its star, its tags, the
-					note saying what was applied, and the verbs up its right-hand
-					edge. Drawing a thinner version of it here is how the two screens
+					note saying what was applied, and its verbs. Drawing a thinner version of it here is how the two screens
 					stopped agreeing about what an idea is — see `IdeaCard`.
 				-->
 				{#if contents.ideas.length === 0}
@@ -1357,7 +1416,7 @@
 				{:else}
 					<div class="divide-y divide-gray-200 px-4">
 						{#each contents.ideas as idea (idea.id)}
-							<div class="py-2">
+							<div class="py-3">
 								<IdeaCard
 									{idea}
 									actions={NOTEBOOK_IDEA_ACTIONS}
@@ -1387,7 +1446,7 @@
 				{:else}
 					<div class="divide-y divide-gray-200">
 						{#each contents.inventory as item (item.id)}
-							<div class="flex items-center gap-x-3 px-4 py-2">
+							<div class="flex items-stretch gap-x-3 px-4 py-2">
 								<ItemRow {item} {currency} actions={NOTEBOOK_ITEM_ACTIONS} />
 							</div>
 						{/each}
@@ -1673,6 +1732,15 @@
 {/snippet}
 
 {#snippet noteList(entries: Entry[], notebookId: number | null)}
+	{#if (contents?.entries ?? orphaned).length > 0}
+		<SelectionBar
+			selection={noteSelection}
+			visible={selectableNotes.map((entry) => entry.id)}
+			verbs={noteBatchVerbs}
+			selectAllLabel={t('notebookDetail.selectVisibleNotes')}
+			dataTour="notebook-note-selection"
+		/>
+	{/if}
 	{#if entries.length === 0}
 		<p class="px-4 py-3 text-sm text-gray-500">{t('notebookDetail.nothingWrittenHereYet')}</p>
 	{:else}
@@ -1693,6 +1761,10 @@
 				<article
 					use:keepInView={notebookId !== null && cursor === at}
 					class="px-4 py-3 {cursor === at ? 'kb-cursor' : ''}"
+					class:flex={editingNoteId !== entry.id}
+					class:items-stretch={editingNoteId !== entry.id}
+					class:gap-x-4={editingNoteId !== entry.id}
+					class:bg-gray-100={noteSelection.selecting && noteSelection.has(entry.id)}
 					class:is-pinned={'pinnedAt' in entry && entry.pinnedAt}
 				>
 					{#if editingNoteId === entry.id}
@@ -1713,9 +1785,6 @@
 							oninput={() => (noteSaved = false)}
 						>
 							<input type="hidden" name="id" value={entry.id} />
-							{#if notebookId !== null}
-								<input type="hidden" name="notebookId" value={notebookId} />
-							{/if}
 							<OneLine
 								name="heading"
 								value={entry.title ?? ''}
@@ -1734,6 +1803,14 @@
 							<PictureAttach target={editBox} />
 							<div class="mt-3">
 								<FormGrid>
+									<!-- Where it lives, which an edit may change: the diary is
+									     the choice of no notebook. -->
+									<NotebookField
+										notebooks={pickableNotebooks}
+										value={notebookId}
+										span={12}
+										noneLabel={t('sections.diary.label')}
+									/>
 									{@render tagsAndPeople(
 										entry.tags.map((t) => t.name).join(', '),
 										entry.people.map((p) => p.name).join(', ')
@@ -1770,53 +1847,190 @@
 						</form>
 					{:else}
 						<!--
-							A note is its name until you open it.
+							The card a task is drawn on — `RowCard`: the fold and the note's
+							number in the rail, the name and when beside them, the people and
+							labels along the foot with the verbs at the end of that line.
 
-							A notebook is a subject somebody comes back to for months, and a
-							column of full notes is a wall: what a list of them is for is
-							finding the one you meant. Pressing the title opens it, and it
-							stays open until pressed again.
+							A note is its name until you open it. A notebook is a subject
+							somebody comes back to for months, and a column of full notes is
+							a wall: what a list of them is for is finding the one you meant.
+							Pressing the title opens it, and it stays open until pressed again.
 						-->
-						<button
-							type="button"
-							class="flex w-full items-baseline gap-2 text-left"
-							aria-expanded={openNotes.has(entry.id)}
-							onclick={() => toggleNote(entry.id)}
-						>
-							<span class="shrink-0 text-gray-400">
-								<Icon name={openNotes.has(entry.id) ? 'chevron-down' : 'chevron-right'} size={14} />
-							</span>
-							<!-- Named for the suite, which asserts the order the list is in. -->
-							<span
-								data-note-title
-								class="min-w-0 flex-1 truncate text-sm font-medium text-gray-900"
-							>
-								{noteName(entry)}
-							</span>
-						</button>
-						{#if openNotes.has(entry.id)}
-							<!--
-								A reference in the writing opens the task it names.
+						<RowCard quiet={noteSelection.selecting}>
+							{#snippet rail()}
+								{#if noteSelection.selecting && !('mine' in entry && entry.mine === false)}
+									<SelectBox
+										checked={noteSelection.has(entry.id)}
+										label={t('notebookDetail.selectNote', { title: noteName(entry) })}
+										ontoggle={() => noteSelection.toggle(entry.id)}
+									/>
+								{:else}
+									<!-- The same fold as the title; the title is the one a
+									     keyboard and a screen reader reach. -->
+									<button
+										type="button"
+										tabindex="-1"
+										aria-hidden="true"
+										class="-m-1 flex shrink-0 items-start justify-center self-start p-1 text-gray-500 hover:text-gray-900 pointer-coarse:w-11"
+										onclick={() => toggleNote(entry.id)}
+									>
+										<span class="flex size-7 items-center justify-center">
+											<Icon
+												name={openNotes.has(entry.id) ? 'chevron-down' : 'chevron-right'}
+												size={14}
+											/>
+										</span>
+									</button>
+								{/if}
+								{#if entry.seq !== null}
+									<span class="tabular text-[11px] text-gray-500">#{entry.seq}</span>
+								{/if}
+							{/snippet}
 
-								`TASK:#4` is rendered as a link by the markdown renderer,
-								which is pure and knows nothing about this screen — so the
-								press is caught here, where the list and its editor are.
-								Delegated from the whole block rather than bound per link:
-								the html is written by `{@html}` and has no components in it
-								to put a handler on.
-							-->
-							<!-- svelte-ignore a11y_click_events_have_key_events -->
-							<!-- svelte-ignore a11y_no_static_element_interactions -->
-							<div class="md mt-2 text-sm text-gray-900" onclick={openReferencedTodo}>
-								<!-- `renderMarkdown` escapes every character of the input before it emits a
-								     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
-								<!-- eslint-disable-next-line svelte/no-at-html-tags -->
-								{@html renderMarkdown(entry.content, { tasks: todoRefs, notes: noteRefs })}
-							</div>
-						{/if}
-						<div class="mt-1 flex flex-wrap items-center gap-2">
-							<span class="tabular text-xs text-gray-500">
-								{entry.seq === null ? '' : `#${entry.seq} · `}{when(entry.createdAt)}
+							{#snippet labels()}
+								<!-- `@` for a person and `#` for a tag, the same one character
+								     that makes the diary's rows legible. -->
+								{#each entry.people as person (person.id)}
+									<a href={resolve('/notebooks/people')} class="chip">@{person.name}</a>
+								{/each}
+								{#each entry.tags as tag (tag.id)}
+									<TagChip
+										name={tag.name}
+										active={noteTagFilter.includes(tag.name)}
+										onclick={() => toggleNoteTag(tag.name)}
+									/>
+								{/each}
+							{/snippet}
+
+							{#snippet controls()}
+								<!-- In a shared notebook everybody reads everything, but a note
+								     is edited and deleted only by whoever wrote it. -->
+								{#if !('mine' in entry && entry.mine === false)}
+									<!--
+										Kept at the top, or let go. As many as somebody likes: what
+										is worth having in front of you when you open a notebook is
+										not a number anybody else can pick.
+									-->
+									{#if notebookId !== null}
+										<form method="post" action="?/pinEntry" use:enhance>
+											<input type="hidden" name="id" value={entry.id} />
+											<input
+												type="hidden"
+												name="pinned"
+												value={'pinnedAt' in entry && entry.pinnedAt ? 'false' : 'true'}
+											/>
+											<button
+												type="submit"
+												class="icon-btn"
+												aria-pressed={'pinnedAt' in entry && Boolean(entry.pinnedAt)}
+												title={'pinnedAt' in entry && entry.pinnedAt
+													? t('notebookDetail.stopKeepingThisAtThe')
+													: t('notebookDetail.keepThisAtTheTop')}
+												aria-label={'pinnedAt' in entry && entry.pinnedAt
+													? t('notebookDetail.stopKeepingThisAtThe')
+													: t('notebookDetail.keepThisAtTheTop')}
+											>
+												<Icon name="pin" />
+											</button>
+										</form>
+									{/if}
+									<!--
+										Offered by what the note says, not by where the pointer is.
+
+										It is here for as long as the note has a checkbox in it and
+										gone the moment it does not, so the row never changes shape
+										under somebody reaching for the button beside it. The
+										tooltip is what explains it: an icon alone would be a
+										guess.
+									-->
+									{#if checklistItems(entry.content).length > 0}
+										<button
+											type="button"
+											onclick={() => offerTodos(entry)}
+											class="icon-btn"
+											title={t('notebookDetail.makeTodosOfTheCheckboxes')}
+											aria-label={t('notebookDetail.makeTodosOfTheCheckboxes')}
+											><Icon name="check" /></button
+										>
+									{/if}
+									<button
+										onclick={() => {
+											editingNoteId = entry.id;
+											noteSaved = false;
+										}}
+										class="icon-btn"
+										title={t('notebookDetail.editThisNote')}
+										aria-label={t('notebookDetail.editThisNote')}><Icon name="edit" /></button
+									>
+									<!--
+										Away, and back. No confirmation: this is the reversible one
+										— the note stays where it is and comes back unchanged. The
+										button beside it is what deletes, and that one asks.
+									-->
+									<form method="post" action="?/archiveEntry" use:enhance>
+										<input type="hidden" name="id" value={entry.id} />
+										<input type="hidden" name="away" value={entry.archivedAt ? 'false' : 'true'} />
+										<button
+											type="submit"
+											class="icon-btn"
+											title={entry.archivedAt
+												? t('notebookDetail.takeItBackOut')
+												: t('finance.ledgers.putItAway')}
+											aria-label={entry.archivedAt
+												? t('notebookDetail.takeItBackOut')
+												: t('finance.ledgers.putItAway')}
+										>
+											<Icon name={entry.archivedAt ? 'undo' : 'archive'} />
+										</button>
+									</form>
+									{#if confirmDeleteNote === entry.id}
+										<form
+											method="post"
+											action="?/deleteEntry"
+											use:enhance={() =>
+												async ({ update }) => {
+													await update({ reset: false });
+													confirmDeleteNote = null;
+												}}
+											class="flex items-center gap-2"
+										>
+											<input type="hidden" name="id" value={entry.id} />
+											<button
+												type="button"
+												class="btn btn-sm"
+												onclick={() => (confirmDeleteNote = null)}>{t('ui.cancel')}</button
+											>
+											<button class="btn btn-danger btn-sm" use:armed
+												>{t('notebookDetail.yesDelete')}</button
+											>
+										</form>
+									{:else}
+										<button
+											onclick={() => (confirmDeleteNote = entry.id)}
+											class="icon-btn icon-btn-danger"
+											title={t('notebookDetail.deleteThisNote')}
+											aria-label={t('notebookDetail.deleteThisNote')}><Icon name="trash" /></button
+										>
+									{/if}
+								{/if}
+							{/snippet}
+
+							<button
+								type="button"
+								class="flex min-w-0 items-baseline self-start text-left"
+								aria-expanded={openNotes.has(entry.id)}
+								onclick={() => toggleNote(entry.id)}
+							>
+								<!-- Named for the suite, which asserts the order the list is in. -->
+								<span
+									data-note-title
+									class="min-w-0 text-sm leading-snug font-medium break-words text-gray-900"
+								>
+									{noteName(entry)}
+								</span>
+							</button>
+							<span class="tabular mt-0.5 text-xs text-gray-500">
+								{when(entry.createdAt)}
 								{#if entry.archivedAt}
 									{t('notebookDetail.archived')}
 								{/if}
@@ -1824,140 +2038,67 @@
 									· {entry.author}
 								{/if}
 							</span>
-
-							<!-- `@` for a person and `#` for a tag, the same one character
-							     that makes the diary's rows legible. -->
-							{#each entry.people as person (person.id)}
-								<a href={resolve('/notebooks/people')} class="chip">@{person.name}</a>
-							{/each}
-							{#each entry.tags as tag (tag.id)}
-								<TagChip
-									name={tag.name}
-									active={noteTagFilter.includes(tag.name)}
-									onclick={() => toggleNoteTag(tag.name)}
-								/>
-							{/each}
-
-							<!-- In a shared notebook everybody reads everything, but a note
-							     is edited and deleted only by whoever wrote it. -->
-							<div
-								class="ml-auto flex items-center gap-2"
-								hidden={'mine' in entry && entry.mine === false}
-							>
+							{#if openNotes.has(entry.id)}
 								<!--
-									Kept at the top, or let go. As many as somebody likes: what
-									is worth having in front of you when you open a notebook is
-									not a number anybody else can pick.
-								-->
-								{#if notebookId !== null}
-									<form method="post" action="?/pinEntry" use:enhance>
-										<input type="hidden" name="id" value={entry.id} />
-										<input
-											type="hidden"
-											name="pinned"
-											value={'pinnedAt' in entry && entry.pinnedAt ? 'false' : 'true'}
-										/>
-										<button
-											type="submit"
-											class="icon-btn"
-											aria-pressed={'pinnedAt' in entry && Boolean(entry.pinnedAt)}
-											title={'pinnedAt' in entry && entry.pinnedAt
-												? t('notebookDetail.stopKeepingThisAtThe')
-												: t('notebookDetail.keepThisAtTheTop')}
-											aria-label={'pinnedAt' in entry && entry.pinnedAt
-												? t('notebookDetail.stopKeepingThisAtThe')
-												: t('notebookDetail.keepThisAtTheTop')}
-										>
-											<Icon name="pin" />
-										</button>
-									</form>
-								{/if}
-								<!--
-									Offered by what the note says, not by where the pointer is.
+									A reference in the writing opens the task it names.
 
-									It is here for as long as the note has a checkbox in it and
-									gone the moment it does not, so the row never changes shape
-									under somebody reaching for the button beside it. The
-									tooltip is what explains it: an icon alone would be a
-									guess.
+									`TASK:#4` is rendered as a link by the markdown renderer,
+									which is pure and knows nothing about this screen — so the
+									press is caught here, where the list and its editor are.
+									Delegated from the whole block rather than bound per link:
+									the html is written by `{@html}` and has no components in it
+									to put a handler on.
 								-->
-								{#if checklistItems(entry.content).length > 0}
-									<button
-										type="button"
-										onclick={() => offerTodos(entry)}
-										class="icon-btn"
-										title={t('notebookDetail.makeTodosOfTheCheckboxes')}
-										aria-label={t('notebookDetail.makeTodosOfTheCheckboxes')}
-										><Icon name="check" /></button
-									>
-								{/if}
-								<button
-									onclick={() => {
-										editingNoteId = entry.id;
-										noteSaved = false;
-									}}
-									class="icon-btn"
-									title={t('notebookDetail.editThisNote')}
-									aria-label={t('notebookDetail.editThisNote')}><Icon name="edit" /></button
-								>
-								<!--
-									Away, and back. No confirmation: this is the reversible one
-									— the note stays where it is and comes back unchanged. The
-									button beside it is what deletes, and that one asks.
-								-->
-								<form method="post" action="?/archiveEntry" use:enhance>
-									<input type="hidden" name="id" value={entry.id} />
-									<input type="hidden" name="away" value={entry.archivedAt ? 'false' : 'true'} />
-									<button
-										type="submit"
-										class="icon-btn"
-										title={entry.archivedAt
-											? t('notebookDetail.takeItBackOut')
-											: t('finance.ledgers.putItAway')}
-										aria-label={entry.archivedAt
-											? t('notebookDetail.takeItBackOut')
-											: t('finance.ledgers.putItAway')}
-									>
-										<Icon name={entry.archivedAt ? 'undo' : 'archive'} />
-									</button>
-								</form>
-								{#if confirmDeleteNote === entry.id}
-									<form
-										method="post"
-										action="?/deleteEntry"
-										use:enhance={() =>
-											async ({ update }) => {
-												await update({ reset: false });
-												confirmDeleteNote = null;
-											}}
-										class="flex items-center gap-2"
-									>
-										<input type="hidden" name="id" value={entry.id} />
-										<button
-											type="button"
-											class="btn btn-sm"
-											onclick={() => (confirmDeleteNote = null)}>{t('ui.cancel')}</button
-										>
-										<button class="btn btn-danger btn-sm" use:armed
-											>{t('notebookDetail.yesDelete')}</button
-										>
-									</form>
-								{:else}
-									<button
-										onclick={() => (confirmDeleteNote = entry.id)}
-										class="icon-btn icon-btn-danger"
-										title={t('notebookDetail.deleteThisNote')}
-										aria-label={t('notebookDetail.deleteThisNote')}><Icon name="trash" /></button
-									>
-								{/if}
-							</div>
-						</div>
+								<!-- svelte-ignore a11y_click_events_have_key_events -->
+								<!-- svelte-ignore a11y_no_static_element_interactions -->
+								<div class="md mt-2 text-sm text-gray-900" onclick={openReferencedTodo}>
+									<!-- `renderMarkdown` escapes every character of the input before it emits a
+									     tag, and emits only attributes it writes itself. See `$lib/markdown.ts`. -->
+									<!-- eslint-disable-next-line svelte/no-at-html-tags -->
+									{@html renderMarkdown(entry.content, { tasks: todoRefs, notes: noteRefs })}
+								</div>
+							{/if}
+						</RowCard>
 					{/if}
 				</article>
 			{/each}
 		</div>
 	{/if}
 {/snippet}
+
+<BatchDialog
+	selection={noteSelection}
+	ids={chosenNoteIds}
+	action="?/batchEntries"
+	id="note-batch-form"
+	title={noteSelection.verb ? t(NOTE_BATCH_LABELS[noteSelection.verb]) : ''}
+	destructive={noteSelection.verb === 'remove'}
+	done={(count) => t('notebookDetail.batchUpdated', { count })}
+>
+	{#snippet fields(verb)}
+		{#if verb === 'notebook'}
+			<NotebookField
+				notebooks={pickableNotebooks}
+				value={notebook?.id ?? null}
+				span={12}
+				noneLabel={t('sections.diary.label')}
+			/>
+		{:else if verb === 'tag'}
+			<Field label={t('todoRows.addLabels')} span={12}
+				><OneLine name="add" class="input" autofocus /></Field
+			>
+			<Field label={t('todoRows.removeLabels')} span={12}
+				><OneLine name="remove" class="input" /></Field
+			>
+		{:else if verb === 'archive'}
+			<p class="col-span-12 text-sm text-gray-700">{t('notebookDetail.archiveSelectedNotes')}</p>
+		{:else if verb === 'unarchive'}
+			<p class="col-span-12 text-sm text-gray-700">{t('notebookDetail.unarchiveSelectedNotes')}</p>
+		{:else}
+			<p class="col-span-12 text-sm text-gray-700">{t('notebookDetail.deleteSelectedNotes')}</p>
+		{/if}
+	{/snippet}
+</BatchDialog>
 
 <!--
 	What the note is about to become.

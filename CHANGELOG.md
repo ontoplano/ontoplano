@@ -20,6 +20,21 @@ releases mattered.
 
 ## 0.184.0 — 2026-09-27
 
+- The AI agents reference lists, for every MCP tool, the permissions it needs, what its answer carries, the fields inside its arguments with their defaults and limits, and the old argument spellings with the release each is removed in, plus worked examples of common requests.
+- Ideas, inventory, habits, workouts, bills, recipes and notebook notes now use the same card layout as tasks: the tick or count on the left, labels along the bottom, and the buttons in the bottom-right corner.
+- A message shown while a dialog is open appears at the top, clear of the dialog's buttons.
+- Assistants now get a clear error naming the argument when a call doesn't match the tool's published arguments, and nothing runs until it does.
+- Notes can be selected several at a time, in a notebook or in the diary, to move, tag, archive or delete them together; editing a note can now move it to another notebook or into the diary.
+- Assistants can now search, filter by date and rating, sort and page through the task list, and page through up_next, and both answer faster on long lists.
+- A key tied to one notebook can no longer put items from outside it back on the shopping list through a cooked recipe, or read the whole account's recipes, habits, statements or workout sessions.
+- Switching a task block between "once only" and "comes back" works back and forth without a "Not found" error and keeps its workout, reminder and labels; the plan's errors now appear as toasts, shown above an open editor.
+- An assistant changing something over MCP now changes only the fields it names — a notebook's description, a location's notes and whether a bill is income all stay as they were — and a change that is refused leaves nothing half-written.
+- A notebook's folder field lists the folders you already have as soon as you click into it, and still takes a new one.
+- A notebook can be deleted again, from the trash button in its Edit notebook dialog.
+- A task card's buttons sit at its bottom right with its labels beside them, and putting a task on a day now shows that day on the card.
+- Goals are drawn on the same card as tasks, with a tick box to mark one achieved, and removing a goal area now asks first.
+- Every room's title now carries the room's icon on the desktop too, not just on a phone.
+- On a phone running on its own, a picture added in the first moments after install now shows at once instead of staying broken until the app is reopened.
 - Tag suggestions no longer vanish when you step out of the tag box and straight back in.
 - Demo tags and inventory attributes now come in distinct colours.
 - Editing a task, note or idea with long notes opens the text box at the full length of the writing, level with its preview.

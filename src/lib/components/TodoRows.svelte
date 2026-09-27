@@ -16,6 +16,11 @@
 	import { deleteLater, isLeaving } from '$lib/undo.svelte';
 	import NumberBox from '$lib/components/NumberBox.svelte';
 	import { SvelteSet } from 'svelte/reactivity';
+	import { Selection } from '$lib/selection.svelte';
+	import SelectionBar from '$lib/components/SelectionBar.svelte';
+	import SelectBox from '$lib/components/SelectBox.svelte';
+	import BatchDialog from '$lib/components/BatchDialog.svelte';
+	import type { BatchVerb } from '$lib/services/todos';
 	import { tick } from 'svelte';
 	import { setRoomAction } from '$lib/room-action.svelte';
 	import RoomToolbar from '$lib/components/RoomToolbar.svelte';
@@ -152,43 +157,23 @@
 		openTodo?: ((id: number) => void) | undefined;
 	} = $props();
 
-	let selecting = $state(false);
-	const chosen = new SvelteSet<number>();
-	let batchVerb = $state<'status' | 'tag' | 'notebook' | 'remove' | null>(null);
-	let batchError = $state<string | undefined>();
-
-	function endSelection() {
-		selecting = false;
-		chosen.clear();
-		batchVerb = null;
-		batchError = undefined;
-	}
-	function toggleSelected(id: number) {
-		if (chosen.has(id)) chosen.delete(id);
-		else chosen.add(id);
-	}
-	function openBatch(verb: NonNullable<typeof batchVerb>) {
-		batchError = undefined;
-		batchVerb = verb;
-	}
+	const selection = new Selection<BatchVerb>();
 	const batchLabels = {
 		status: 'todoRows.batchStatus',
 		tag: 'todoRows.batchTag',
 		notebook: 'todoRows.batchNotebook',
 		remove: 'todoRows.batchDelete'
 	} as const;
-	const submitBatch: SubmitFunction = () => {
-		batchError = undefined;
-		return async ({ update, result }) => {
-			await update({ reset: false });
-			if (result.type === 'success') {
-				endSelection();
-				say(t('todoRows.batchUpdated', { count: Number(result.data?.count ?? 0) }));
-			} else if (result.type === 'failure') {
-				batchError = String(result.data?.message ?? '');
-			}
-		};
-	};
+	const batchVerbs = $derived(
+		(
+			[
+				['status', 'play'],
+				['tag', 'tag'],
+				['notebook', 'notebook'],
+				['remove', 'trash']
+			] as const
+		).map(([key, icon]) => ({ key, icon, label: t(batchLabels[key]) }))
+	);
 
 	let showForm = $state(false);
 	let editingId: number | null = $state(null);
@@ -608,11 +593,8 @@
 	});
 
 	// Only visible rows participate. Filtering cannot leave hidden tasks selected.
-	const selectedTodos = $derived(visibleTodos.filter((todo) => chosen.has(todo.id)));
-	$effect(() => {
-		const visible = new Set(visibleTodos.map((todo) => todo.id));
-		for (const id of chosen) if (!visible.has(id)) chosen.delete(id);
-	});
+	const selectedTodos = $derived(visibleTodos.filter((todo) => selection.has(todo.id)));
+	$effect(() => selection.keep(visibleTodos.map((todo) => todo.id)));
 
 	/**
 	 * Which row this is in the list on screen, live.
@@ -827,11 +809,6 @@
 			);
 		};
 
-	/** Today, as the value the scheduling form wants. */
-	function todayStr(): string {
-		return formatDate(new Date());
-	}
-
 	function startNew() {
 		showForm = true;
 		editingId = null;
@@ -934,14 +911,7 @@
 		if (!shortcutRoom) return;
 
 		if (e.key === 'Escape') {
-			if (batchVerb) {
-				batchVerb = null;
-				return;
-			}
-			if (selecting) {
-				endSelection();
-				return;
-			}
+			if (selection.handleKey(e, () => undefined)) return;
 			e.preventDefault();
 			showForm = false;
 			editingId = null;
@@ -962,16 +932,8 @@
 		)
 			return;
 
-		if (batchVerb || showForm || delegatingId !== null || attributesId !== null) return;
-		if (
-			selecting &&
-			e.key === ' ' &&
-			(!(e.target instanceof HTMLButtonElement) || e.target.getAttribute('role') === 'checkbox')
-		) {
-			e.preventDefault();
-			if (visibleTodos[selectedIndex]) toggleSelected(visibleTodos[selectedIndex].id);
-			return;
-		}
+		if (selection.verb || showForm || delegatingId !== null || attributesId !== null) return;
+		if (selection.handleKey(e, () => visibleTodos[selectedIndex]?.id)) return;
 		const action = getAction(shortcutRoom, e.key);
 		if (!action) return;
 		e.preventDefault();
@@ -998,8 +960,8 @@
 				}
 				break;
 			case 'toggle-done':
-				if (selecting) {
-					if (visibleTodos[selectedIndex]) toggleSelected(visibleTodos[selectedIndex].id);
+				if (selection.selecting) {
+					if (visibleTodos[selectedIndex]) selection.toggle(visibleTodos[selectedIndex].id);
 					break;
 				}
 				if (visibleTodos.length > 0 && visibleTodos[selectedIndex]) {
@@ -1017,8 +979,8 @@
 				}
 				break;
 			case 'delete':
-				if (selecting) {
-					if (selectedTodos.length) openBatch('remove');
+				if (selection.selecting) {
+					if (selectedTodos.length) selection.open('remove');
 					break;
 				}
 				if (visibleTodos.length > 0 && visibleTodos[selectedIndex]) {
@@ -1096,60 +1058,6 @@
 			{t('ratings.nthInLine', { nth: ordinal(t, draftPlace) })}
 		</span>
 	</span>
-{/snippet}
-
-{#snippet selectionTools()}
-	<div class="flex items-center gap-1">
-		<button
-			type="button"
-			class="icon-btn"
-			title={t('todoRows.selectVisible')}
-			aria-label={t('todoRows.selectVisible')}
-			disabled={!visibleTodos.length}
-			onclick={() => {
-				for (const todo of visibleTodos) chosen.add(todo.id);
-			}}><Icon name="select-all" /></button
-		>
-		<button
-			type="button"
-			class="icon-btn"
-			title={t('todoRows.clearSelection')}
-			aria-label={t('todoRows.clearSelection')}
-			disabled={!selectedTodos.length}
-			onclick={() => chosen.clear()}><Icon name="close" /></button
-		>
-	</div>
-	<span
-		class="tabular min-w-24 text-xs text-gray-600"
-		aria-live="polite"
-		class:invisible={!selecting}
-	>
-		{t('todoRows.selectedCount', { count: selectedTodos.length })}
-	</span>
-	<div class="flex items-center gap-1 border-l border-gray-200 pl-2" class:invisible={!selecting}>
-		{#each ['status', 'tag', 'notebook', 'remove'] as verb (verb)}
-			{@const kind = verb as NonNullable<typeof batchVerb>}
-			<button
-				type="button"
-				class="icon-btn"
-				title={t(batchLabels[kind])}
-				aria-label={t(batchLabels[kind])}
-				disabled={!selectedTodos.length}
-				onclick={() => openBatch(kind)}
-			>
-				<Icon
-					name={kind === 'status'
-						? 'play'
-						: kind === 'tag'
-							? 'tag'
-							: kind === 'notebook'
-								? 'notebook'
-								: 'trash'}
-				/>
-			</button>
-		{/each}
-		<kbd class="text-xs" title={t('todoRows.selectionKeys')}></kbd>
-	</div>
 {/snippet}
 
 {#snippet sortControl()}
@@ -1348,45 +1256,14 @@
 				</FilterBar>
 			{/snippet}
 		</RoomToolbar>
-		<div
-			data-tour="todo-selection"
-			class="flex flex-wrap items-center gap-2 border-b border-gray-200 px-4 py-2"
-		>
-			<button
-				type="button"
-				class="btn btn-sm w-36 shrink-0"
-				aria-pressed={selecting}
-				onclick={() => {
-					if (selecting) endSelection();
-					else selecting = true;
-				}}
-			>
-				{selecting ? t('ui.cancel') : t('todoRows.selectMany')}
-			</button>
-			<!-- On a phone the order shares this line, so the one above is the
-			     search and what narrows it. -->
-			{#if phone.current}<div class="ml-auto">{@render sortControl()}</div>{/if}
-			<!-- Reserved beside the button on a wide screen, so pressing it
-			     moves nothing. A phone has no room beside it: the tools float
-			     over the foot of the screen instead, and only while selecting. -->
-			{#if !phone.current}
-				<div class="contents {selecting ? '' : '[&>*]:invisible'}">
-					{@render selectionTools()}
-				</div>
-			{/if}
-		</div>
-		{#if phone.current && selecting}
-			<!-- Over the page rather than in it: a bar at the thumb that says how
-			     many are chosen and what can be done to them. -->
-			<div
-				class="float-layer overlay-face fixed inset-x-3 z-40 flex flex-wrap items-center justify-between gap-2 border px-3 py-2 shadow-overlay"
-				style="bottom: calc(var(--safe-bottom) + var(--mobile-nav-height) + 0.75rem)"
-				role="toolbar"
-				aria-label={t('todoRows.selectMany')}
-			>
-				{@render selectionTools()}
-			</div>
-		{/if}
+		<SelectionBar
+			{selection}
+			visible={visibleTodos.map((todo) => todo.id)}
+			verbs={batchVerbs}
+			selectAllLabel={t('todoRows.selectVisible')}
+			dataTour="todo-selection"
+			aside={sortControl}
+		/>
 		{#if visibleTodos.length === 0}
 			<!--
 				Empty because there is nothing, or empty because it is all hidden.
@@ -1446,7 +1323,7 @@
 				{#each visibleTodos as todo, i (todo.id)}
 					<div
 						data-todo-id={todo.id}
-						class:bg-gray-100={selecting && chosen.has(todo.id)}
+						class:bg-gray-100={selection.selecting && selection.has(todo.id)}
 						use:keepInView={shortcutRoom !== null && selectedIndex === i}
 						class="flex flex-wrap items-stretch gap-x-4 px-4 py-3 {shortcutRoom &&
 						selectedIndex === i
@@ -1469,25 +1346,22 @@
 							their own fixed height: what stretches is the column, not the
 							scale, or a taller card would draw a taller 4 than a short one.
 						-->
-						<RowCard quiet={selecting}>
+						{#snippet quickTag()}
+							<QuickTag
+								id={todo.id}
+								action={actions.tag}
+								has={todo.tags.map((one) => one.name)}
+								known={page.data.tagVocabulary ?? []}
+							/>
+						{/snippet}
+						<RowCard quiet={selection.selecting}>
 							{#snippet rail()}
-								{#if selecting}
-									<button
-										type="button"
-										role="checkbox"
-										aria-checked={chosen.has(todo.id)}
-										aria-label={t('todoRows.selectTask', { title: todo.title })}
-										title={t('todoRows.selectTask', { title: todo.title })}
-										class="-m-1 flex items-start justify-center self-start p-1 pointer-coarse:w-11"
-										onclick={() => toggleSelected(todo.id)}
-									>
-										<span
-											style="border-radius: 50%"
-											class="flex size-7 items-center justify-center border border-gray-500 hover:bg-gray-200"
-											class:bg-gray-200={chosen.has(todo.id)}
-											>{#if chosen.has(todo.id)}<Icon name="check" />{/if}</span
-										>
-									</button>
+								{#if selection.selecting}
+									<SelectBox
+										checked={selection.has(todo.id)}
+										label={t('todoRows.selectTask', { title: todo.title })}
+										ontoggle={() => selection.toggle(todo.id)}
+									/>
 								{:else}
 									<form
 										id="toggle-form-{todo.id}"
@@ -1598,17 +1472,18 @@
 								edit dialog, which is five steps and a list that
 								reorders underneath you for one label.
 							-->
-								<div class="mt-auto">
-									<QuickTag
-										id={todo.id}
-										action={actions.tag}
-										has={todo.tags.map((one) => one.name)}
-										known={page.data.tagVocabulary ?? []}
-									/>
-								</div>
+								<!--
+								On a phone only. Anything wider has the chip after the last
+								label, on the card's bottom line — see `labels` below.
+							-->
+								{#if phone.current}
+									<div class="mt-auto">
+										{@render quickTag()}
+									</div>
+								{/if}
 								<button
 									type="button"
-									class="cursor-pointer"
+									class="cursor-pointer {phone.current ? '' : 'mt-auto'}"
 									onclick={() => startEdit(todo, { atRatings: true })}
 									aria-label={t('todoRows.setTheRatings')}
 								>
@@ -1649,6 +1524,7 @@
 										}}
 									/>
 								{/each}
+								{#if !phone.current}{@render quickTag()}{/if}
 							{/snippet}
 							{#snippet controls()}
 								<!-- First, and only where there is something to read: what the
@@ -1697,30 +1573,6 @@
 												: t('todoRows.startDoing')}
 										>
 											<Icon name="play" />
-										</button>
-									</form>
-								{/if}
-								{#if !isDone(todo)}
-									<!-- One column changes; nothing is copied anywhere. -->
-									<form method="post" action={actions.schedule} use:enhance>
-										<input type="hidden" name="id" value={todo.id} />
-										<input
-											type="hidden"
-											name="scheduledDate"
-											value={todo.scheduledDate ? '' : todayStr()}
-										/>
-										<button
-											type="submit"
-											class="icon-btn"
-											aria-pressed={!!todo.scheduledDate}
-											aria-label={todo.scheduledDate
-												? t('todoRows.putBackOnTheGeneral')
-												: t('todoRows.pullOntoToday')}
-											title={todo.scheduledDate
-												? t('todoRows.putBackOnTheGeneral')
-												: t('todoRows.pullOntoToday')}
-										>
-											<Icon name={todo.scheduledDate ? 'undo' : 'arrow-down'} />
 										</button>
 									</form>
 								{/if}
@@ -1948,73 +1800,45 @@
 		{/if}
 	</div>
 
-	<Modal
-		open={batchVerb !== null}
-		title={batchVerb ? t(batchLabels[batchVerb]) : ''}
-		description={t('todoRows.selectedCount', { count: selectedTodos.length })}
-		error={batchError}
-		onclose={() => (batchVerb = null)}
-		size="sm"
+	<BatchDialog
+		{selection}
+		ids={selectedTodos.map((todo) => todo.id)}
+		action={actions.batch}
+		id="todo-batch-form"
+		title={selection.verb ? t(batchLabels[selection.verb]) : ''}
+		destructive={selection.verb === 'remove'}
+		done={(count) => t('todoRows.batchUpdated', { count })}
 	>
-		{#if batchVerb}
-			<form id="todo-batch-form" method="post" action={actions.batch} use:enhance={submitBatch}>
-				<input type="hidden" name="do" value={batchVerb} />
-				{#each selectedTodos as todo (todo.id)}<input
-						type="hidden"
-						name="id"
-						value={todo.id}
-					/>{/each}
-				<FormGrid>
-					{#if batchVerb === 'status'}
-						<Field label={t('todoRows.batchStatus')} span={12}>
-							<select name="status" class="select" use:autofocus>
-								{#each STATUSES as status (status)}<option value={status}
-										>{t(STATUS_LABELS[status])}</option
-									>{/each}
-							</select>
-						</Field>
-					{:else if batchVerb === 'tag'}
-						<Field label={t('todoRows.addLabels')} span={12}
-							><OneLine name="add" class="input" autofocus /></Field
-						>
-						<Field label={t('todoRows.removeLabels')} span={12}
-							><OneLine name="remove" class="input" /></Field
-						>
-					{:else if batchVerb === 'notebook'}
-						<Field label={t('ui.notebook')} span={12}>
-							<select name="notebookId" class="select" use:autofocus>
-								<option value="">{t('todoRows.notInOne')}</option>
-								{#each notebooks as notebook (notebook.id)}<option value={notebook.id}
-										>{notebook.title}</option
-									>{/each}
-							</select>
-						</Field>
-					{:else}
-						<p class="col-span-12 text-sm text-gray-700">{t('todoRows.deleteSelectedWarning')}</p>
-					{/if}
-				</FormGrid>
-			</form>
-		{/if}
-		{#snippet footer()}
-			<button type="button" class="btn" onclick={() => (batchVerb = null)}>{t('ui.cancel')}</button>
-			{#if batchVerb === 'remove'}
-				<button
-					type="submit"
-					form="todo-batch-form"
-					class="btn btn-danger"
-					use:armed
-					disabled={!selectedTodos.length}>{t('ui.delete')}</button
+		{#snippet fields(verb)}
+			{#if verb === 'status'}
+				<Field label={t('todoRows.batchStatus')} span={12}>
+					<select name="status" class="select" use:autofocus>
+						{#each STATUSES as status (status)}<option value={status}
+								>{t(STATUS_LABELS[status])}</option
+							>{/each}
+					</select>
+				</Field>
+			{:else if verb === 'tag'}
+				<Field label={t('todoRows.addLabels')} span={12}
+					><OneLine name="add" class="input" autofocus /></Field
 				>
+				<Field label={t('todoRows.removeLabels')} span={12}
+					><OneLine name="remove" class="input" /></Field
+				>
+			{:else if verb === 'notebook'}
+				<Field label={t('ui.notebook')} span={12}>
+					<select name="notebookId" class="select" use:autofocus>
+						<option value="">{t('todoRows.notInOne')}</option>
+						{#each notebooks as notebook (notebook.id)}<option value={notebook.id}
+								>{notebook.title}</option
+							>{/each}
+					</select>
+				</Field>
 			{:else}
-				<button
-					type="submit"
-					form="todo-batch-form"
-					class="btn btn-primary"
-					disabled={!selectedTodos.length}>{t('ui.save')}</button
-				>
+				<p class="col-span-12 text-sm text-gray-700">{t('todoRows.deleteSelectedWarning')}</p>
 			{/if}
 		{/snippet}
-	</Modal>
+	</BatchDialog>
 
 	<Modal
 		bind:open={showForm}
